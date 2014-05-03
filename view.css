@@ -1,0 +1,223 @@
+body {
+	margin: 0px;
+	font-family:arial, helvetica, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+
+form {
+	padding:0px;
+	margin:0px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	font-weight:normal;
+	font-size: 12pt;
+}
+
+a {
+	color: #5ba4e5;
+}
+
+hr {
+	size:1;
+	color:#222222;
+}
+
+table {
+	/*border: 1px solid #000;*/
+}
+
+/* See http://stackoverflow.com/questions/3949762/how-to-wrap-text-using-css */
+pre {
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	word-break: break-all;
+}
+
+/*
+#header {
+	padding-top:4px;
+	padding-bottom:4px;
+	padding-left:4px;
+	padding-right:4px;
+	background-color: #242424;
+	position:fixed;
+	top:0px;
+	left:0px;
+	right:0px;
+	opacity:0.0;
+	-webkit-transition: opacity 1s ease-in-out;
+}
+
+#header:hover {
+	opacity:0.99;
+}*/
+
+
+#divsubscribe {
+	background-color: #efefef;
+	left:0px;
+	right:0px;
+	padding:20px;
+}
+
+#addurl {
+	font-size:14pt;
+	width:750px;
+}
+
+#addbutton {
+	font-size:14pt;
+}
+
+#feedtable {
+	width:100%;
+	border: 0px;
+}
+
+td {
+	padding:10px;
+}
+
+.feed_list_url_input {
+	width:500px;
+}
+
+#divfeedlist {
+	background-color: #FFFFD4;
+	left:0px;
+	right:0px;
+	padding:20px;
+}
+
+
+.option_section_header {
+	font-size:14pt;
+}
+
+#divhelp {
+	background-color: #FFDFFF;
+	left:0px;
+	right:0px;
+	padding:20px;
+}
+
+#nosubscriptions {
+	display: none;
+}
+
+#errorMessageContainer {
+	display:none;
+	background-color:red;
+	color:#ffffff;
+	font-size:14pt;
+	position:fixed;
+	float:left;
+	top:100px;
+	left:20%;
+	right:20%;
+	overflow:auto;
+	padding:20px 20px 20px 20px;
+	border-radius: 10px;
+	background-clip: padding-box;
+	box-shadow: 2px 2px 4px 0px #000000;
+}
+
+#noentries {
+	padding:30px;
+	font-size:18pt;
+	display:none;
+}
+
+#errorMessage {
+	margin-right:10px;
+}
+
+#dismiss {
+	text-decoration:none;
+	border-radius: 2px;
+	background-clip: padding-box;
+	padding:4px 4px 4px 4px;
+	background-color:#efefef;
+}
+
+#entries {
+	margin-top:0px;
+	padding-top:0px;
+	border-top:0px;
+	/*background: url("img/linen.jpg");*/
+}
+
+div.entry {
+	border-bottom: 1px dotted #cccccc;
+	margin: 2px;
+	padding: 16px;
+	background-color: rgba(255, 255, 255, 0.68);
+	font-size:14pt;
+	
+	/*margin: 20px 20px 20px 20px;*/
+	/*padding: 30px 30px 30px 30px;*/	
+	/*box-shadow: 2px 2px 4px 0px #222222;*/
+	/*overflow:hidden;*/
+}
+
+div.entry a {
+	text-decoration:none;
+
+	/* Sanitizing causes spacing issues */
+	margin-right: 3px;
+}
+
+div.entry a:hover {
+	text-decoration:underline;
+}
+
+div.entry img {
+	border: 0px;
+	max-width:90%;
+}
+
+.entrycontent {
+  /* Fixes layout issue with long non-breaking text */
+	word-wrap: break-word;
+}
+
+.entrysource {
+	display: block;
+	font-size:10pt;
+	color:#cccccc;
+	margin-top: 6px;
+	margin-bottom: 3px;
+}
+
+.entrysource a {
+	font-size:10pt;
+	color:#cccccc;
+	text-decoration: none;
+}
+
+a.entrysourcelink:hover {
+	color:#5ba4e5;
+	text-decoration: underline;
+}
+
+a.entryTitle {
+	font-family: "nimbus-sans",Helvetica,Arial,sans-serif;
+	font-weight: 300;
+	color: rgb(90, 90, 111);
+	font-size: 2.9em;
+	line-height: .87em;
+	letter-spacing: -0.02em;
+	word-spacing: -0.04em;
+	padding: 13px 0 20px 0;
+	margin-bottom:3px;
+	text-decoration:none;
+	display:block;
+  word-wrap: break-word;
+}
+
+a.entryTitle:hover {
+	color:#5ba4e5;
+	text-decoration:none;
+}
