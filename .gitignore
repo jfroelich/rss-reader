@@ -1,4 +1,9 @@
 #################
+# My own local files
+#################
+notes.txt
+
+#################
 ## Eclipse
 #################
 
@@ -27,11 +32,6 @@ local.properties
 
 # PDT-specific
 .buildpath
-
-#################
-# My own local files
-#################
-notes.txt
 
 #################
 ## Visual Studio
