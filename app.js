@@ -3,8 +3,6 @@
 var POLL_INTERVAL = 20;
 var pollRunning = false;
 
-// Checks for updates to all the feeds
-
 function startPoll() {
   
   if(pollRunning) {
@@ -69,7 +67,6 @@ function showNotification(message) {
   notification.show();
 }
 
-// Respond to extension button click
 chrome.browserAction.onClicked.addListener(function(tab) {
 
   var viewURL = {'url': chrome.extension.getURL('view.html') };
@@ -91,13 +88,11 @@ chrome.runtime.onInstalled.addListener(function(){
   chrome.browserAction.setBadgeText({'text':"0"});
 });
 
-// Register the alarm
 chrome.runtime.onStartup.addListener(function() {
   updateBadge();
   chrome.alarms.create('poll', {'periodInMinutes': POLL_INTERVAL});
 });
 
-// Handle the alarm
 chrome.alarms.onAlarm.addListener(function(alarm) {
   if(alarm.name == 'poll') {
     startPoll();

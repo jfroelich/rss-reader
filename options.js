@@ -1,9 +1,7 @@
 // Options user interface lib
 
-// Get access to our background scripts
 var app = chrome.extension.getBackgroundPage();
 
-// Ms before attempt to subscribe to URL fails
 var SUBSCRIBE_TIMEOUT = 5000;
 
 var feedTable;
