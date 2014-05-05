@@ -26,7 +26,7 @@ feedParser.parseXML = function(xmlDoc) {
   
   if(tmp) {
     if(isAtom) {
-      console.log('Atom feed link %s, %s', tmp, tmp.getAttribute('href'));
+      // console.log('Atom feed link %s, %s', tmp, tmp.getAttribute('href'));
       
       tmp = tmp.getAttribute('href');
     } else {

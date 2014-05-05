@@ -83,9 +83,15 @@ function loadFeeds() {
 
 function listFeed(feed) {
 
+  var favIconURL = app.getFavIcon(feed.link);
+  if(!favIconURL) {
+    // console.log('No fav icon found for %s', feed.title);
+    favIcon = 'img/rss_icon_trans.gif';
+  }
+
   var row = document.createElement('tr');
   var template = [
-    '<td><img src="img/rss_icon_trans.gif" width="20"></td>',
+    '<td><img src="',favIconURL,'" style="max-width:19px;"></td>',
     '<td>',app.escapeHTML(feed.title) || 'Untitled','</td>',
     '<td><input type="text" class="feed_list_url_input" value="',
     app.escapeHTMLInputValue(feed.url),

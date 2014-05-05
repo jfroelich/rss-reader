@@ -40,7 +40,7 @@ each([
 
 function isBlacklisted(url) {
   var uo = URI.parse(url);
-  return has(blacklist, URI.toString({'scheme': uo.scheme, 'host': uo.host}));
+  return blacklist.hasOwnProperty(URI.toString({'scheme': uo.scheme, 'host': uo.host}));
 }
 
 // Returns a sanitized HTMLDocument object with the body element as the root'
@@ -70,7 +70,7 @@ function sanitize(strBaseURL, doc) {
 
         // Sanitize attributes
         if(result == RETAIN || result == REPLACE) {
-          each(filter(node.attributes, isUnknwownAttribute),
+          each(Array.prototype.filter.call(node.attributes, isUnknwownAttribute),
             function(att) {
               node.removeAttribute(att.nodeName);
             }
@@ -160,7 +160,9 @@ function walk(root, cb) {
 }
 
 // Trim leading and trailing content from a document
+// TODO: This is not working as expected.
 function trimDocument(doc) {
+
   var node = doc.body.firstChild, sibling;
 
   // Traverse from the front
@@ -172,7 +174,10 @@ function trimDocument(doc) {
 
   // If the first non-whitespace node is a text node, leading whitespace
   // was merged into its content, and we still want to trim that content
+  // TODO: wait this is partially wrong, because this could happen and 
+  // then its an empty string and then the next node is br!
   if(node && node.nodeType == Node.TEXT_NODE && node.innerText) {
+    console.log('Trimming leading whitespace from %s', node);
     node.innerText = node.innerText.trim();
   }
 
@@ -191,6 +196,8 @@ function trimDocument(doc) {
     node.parentNode.removeChild(node);
     node = sibling;
   }
+  
+  //console.log(doc);
 }
 
 // Returns true if the node is whitespace
@@ -203,10 +210,10 @@ function trimDocument(doc) {
 
 function isTrimmableNode(node) {
   var t = node.nodeType;
-  
+  //console.log(node.nodeName);
   return (t == Node.COMMENT_NODE) ||
     (t == Node.ELEMENT_NODE && node.nodeName == 'BR') ||
-    (t == Node.TEXT_NODE && node.innerText && node.innerText.trim().length == 0)    ;
+    (t == Node.TEXT_NODE && node.innerText && node.innerText.trim().length == 0);
 }
 
 // TODO: rename to be more specific

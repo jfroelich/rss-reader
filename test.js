@@ -57,6 +57,6 @@ test.clearDB = function() {
 test.unwrap = function(str, tag) {
   var doc = app.parseHTML(str);
   var nodeHandler = function(node) { app.unwrap(node); };
-  app.legacyEach(doc.querySelectorAll(tag), nodeHandler);
+  app.each(doc.querySelectorAll(tag), nodeHandler);
   return doc.innerHTML;
 };

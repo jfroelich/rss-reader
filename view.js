@@ -14,12 +14,12 @@ function scanForRead() {
   var divEntries = document.getElementById('entries');
 
   var cutoff = document.body.scrollTop + window.innerHeight + 10;
-  var readEntries = app.filter(divEntries.childNodes, function(entryElement) {
+  var readEntries = Array.prototype.filter.call(divEntries.childNodes, function(entryElement) {
     return isEntryUnread(entryElement) &&
       (entryElement.offsetTop + entryElement.offsetHeight <= cutoff);
   });
 
-  var ids = app.map(readEntries, function(el) {
+  var ids = Array.prototype.map.call(readEntries, function(el) {
     return el.getAttribute('entry');
   });
 
@@ -50,7 +50,7 @@ function appendEntries(limit, onComplete) {
 
   app.model.connect(function(db) {
     app.model.forEachEntry(db, params, function(entry) {
-      if(!app.has(entryCache, entry.id)) {
+      if(!entryCache.hasOwnProperty(entry.id)) {
         renderEntry(entry);
       } else {
         // console.log('Entry %s already loaded (paging error)', entry.id);
@@ -79,6 +79,9 @@ function renderEntry(entry) {
   var entryContent = entry.content || 'No content';
   var entryAuthor = entry.author;
 
+  var favIconURL = app.getFavIcon(entry.baseURI);
+  favIconURL = favIconURL || 'img/rss_icon_trans.gif';
+
   var entryPubDate = '';
   if(entry.pubdate && entry.pubdate > 0) {
     entryPubDate = app.formatDate(new Date(entry.pubdate));
@@ -91,6 +94,7 @@ function renderEntry(entry) {
     '</a><span class="entrycontent">', entryContent,'</span>',
     '<span class="entrysource">from <span class="entrysourcelink" title="',
     app.prepareHTMLAttributeValueForRender(feedTitle),'">',
+    '<img src="',favIconURL,'" style="max-width:19px;margin-right:3px;">',
     app.escapeHTML(app.truncate(feedTitle, 40)),
     '</span>',
     (entryAuthor ? ' by ' + app.escapeHTML(app.truncate(entry.author,40)):''),
@@ -184,7 +188,7 @@ document.onkeydown = function(event) {
   var divEntries = document.getElementById('entries');
   var entries = divEntries.childNodes;
 
-  if(app.has(NEXT_KEYS, event.keyCode)) {
+  if(NEXT_KEYS.hasOwnProperty(event.keyCode)) {
     event.preventDefault();
     app.until(entries, function(e) {
       if(e.offsetTop + e.offsetHeight - document.body.scrollTop > 40) {
@@ -193,7 +197,7 @@ document.onkeydown = function(event) {
       }
       return true;
     });
-  } else if(app.has(PREV_KEYS, event.keyCode)) {
+  } else if(PREV_KEYS.hasOwnProperty(event.keyCode)) {
     app.until(entries, function(e) {
       if(e.offsetTop >= document.body.scrollTop) {
         // Found a previous entry
