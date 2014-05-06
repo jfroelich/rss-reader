@@ -5,6 +5,16 @@ var feedParser = {};
 // Parses XML doc and stores values as object properties
 feedParser.parseXML = function(xmlDoc) {
 
+  if(!xmlDoc) {
+    return {
+      'error':'Invalid XML'
+    };
+  } else if(!xmlDoc.documentElement) {
+    return {
+      'error':'Invalid XML - no document element'
+    };
+  }
+
   var doc = xmlDoc.documentElement;
   var rootName = doc.nodeName.toLowerCase();
   var isAtom = rootName == 'feed';

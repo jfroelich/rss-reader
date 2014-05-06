@@ -218,12 +218,12 @@ function unwrapAndWarnHandler(element) {
 }
 
 function retainAndWarnHandler(element) {
-  console.warn(element.outerHTML);
+  //console.log(element.outerHTML);
   return RETAIN;
 }
 
 function removeAndWarnHandler(element) {
-  console.warn(element.outerHTML);
+  //console.log(element.outerHTML);
   return REMOVE;
 }
 

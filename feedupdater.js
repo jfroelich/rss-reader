@@ -5,8 +5,7 @@ var feedUpdater = {};
 // Starts updating a single feed
 feedUpdater.update = function(db, feed, callback, timeout) {
   var entriesProcessed = 0, entriesAdded = 0;
-  fetcher.fetchFeed(feed.url, function(responseXML) {
-
+  fetchFeed(feed.url, function(responseXML) {
     var fetchedFeed = feedParser.parseXML(responseXML);
 
     if(fetchedFeed.error) {

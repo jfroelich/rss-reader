@@ -60,6 +60,11 @@ function updateBadge() {
 }
 
 function showNotification(message) {
+  if(typeof webkitNotifications == 'undefined') {
+    // console.log('webkitNotifications is not defined, cannot show notifications');
+    return;
+  }
+
   var notification = webkitNotifications.createNotification(
     'img/rss_icon_trans.gif','Josh\'s RSS Reader',message
   );

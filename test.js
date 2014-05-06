@@ -19,7 +19,7 @@ test.seed = function() {
 };
 
 test.fetchParseURL = function(url) {
-  app.fetcher.fetchFeed(url, function(responseXML) {
+  app.fetchFeed(url, function(responseXML) {
     var feed = app.feedParser.parseXML(responseXML);
     if(feed.error) {
       console.log('Error %s',feed.error);

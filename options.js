@@ -39,7 +39,7 @@ function onSubscribeSubmit(event) {
 function onSubscribeComplete(feed, entriesProcessed, entriesAdded) {
   if(feed.error) {
     app.console.log(feed.error);
-    alert('Error: ' + feed.error);
+    alert('An error occurred when trying to subscribe to "'+feed.url+'". Details: ' + feed.error);
     return;
   }
 

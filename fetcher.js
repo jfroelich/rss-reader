@@ -1,30 +1,49 @@
 // Fetch lib
 
-var fetcher = {};
-
-// Fetches a feed and pass it to the callback
-fetcher.fetchFeed = function(url, callback, timeout) {
- 
+// Asynchronously fetches an XML file
+function fetchFeed(url, callback, timeout) {
+  var abortTimer = 0;
   var request = new XMLHttpRequest();
-
   request.open('GET', url, true);
-  
   request.responseType = 'document';
+  request.onerror = fetchOnError(abortTimer, callback);
+  request.onabort = fetchOnAbort(url, abortTimer, callback);
+  request.onload = fetchOnLoad(url, abortTimer, callback);
 
-  request.onerror = function(event) {
-    clearTimeout(fetcher.abortTimer);
-    callback({'error': event});
-  };
+  try {
+    request.send();
+  } catch(exception) {
+    console.log('Fetch exception %s', exception);
+    if(request) {
+      request.abort();
+    }
+  }
 
-  request.onabort = function(event) {
-    clearTimeout(fetcher.abortTimer);
+  if(timeout) {
+    abortTimer = setTimeout(fetchTriggerAbort(request), timeout);
+  }
+}
+
+function fetchOnAbort(url, abortTimer, callback) {
+  return function(event) {
+    clearTimeout(abortTimer);
     callback({'error': 'The request to \'' + url + '\' was aborted or timed out.'});
   };
+}
 
-  request.onload = function(event) {
+function fetchOnError(abortTimer, callback) {
+  return function(event) {
+    clearTimeout(abortTimer);
+    callback({'error': event});
+  };
+}
+
+function fetchOnLoad(url, abortTimer, callback) {
+  return function(event) {
+
+    clearTimeout(abortTimer);
+    
     var response = event.target;
-    clearTimeout(fetcher.abortTimer);
-
     if(response.status != 200 || !response.responseXML ||
       !response.responseXML.documentElement) {
 
@@ -34,21 +53,13 @@ fetcher.fetchFeed = function(url, callback, timeout) {
 
     callback(response.responseXML);
   };
+}
 
-  try {
-    request.send();
-  } catch(exception) {
-    console.log('Fetcher exception %s', exception);
-    if(request) {
+
+function fetchTriggerAbort(request) {
+  return function() {
+    if(request && request.readyState < XMLHttpRequest.DONE) {
       request.abort();
     }
-  }
-  
-  if(timeout) {
-    fetcher.abortTimer = setTimeout(function() {
-      if(request && request.readyState < XMLHttpRequest.DONE) {
-        request.abort();
-      }
-    }, timeout);
-  }
+  };
 }

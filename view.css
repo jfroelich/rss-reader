@@ -35,26 +35,6 @@ pre {
 	word-break: break-all;
 }
 
-/*
-#header {
-	padding-top:4px;
-	padding-bottom:4px;
-	padding-left:4px;
-	padding-right:4px;
-	background-color: #242424;
-	position:fixed;
-	top:0px;
-	left:0px;
-	right:0px;
-	opacity:0.0;
-	-webkit-transition: opacity 1s ease-in-out;
-}
-
-#header:hover {
-	opacity:0.99;
-}*/
-
-
 #divsubscribe {
 	background-color: #efefef;
 	left:0px;
@@ -63,12 +43,20 @@ pre {
 }
 
 #addurl {
-	font-size:14pt;
+	font-size:18pt;
 	width:750px;
+	padding: 14px;
+	background-color:#cccccc;
+	border: 1px solid #efefef;
+	outline: none;
 }
 
 #addbutton {
-	font-size:14pt;
+	font-size:18pt;
+	padding:14px;
+	background-color:#cccccc;
+	border: 1px solid #efefef;
+	outline: none;
 }
 
 #feedtable {
@@ -170,7 +158,7 @@ div.entry a {
 }
 
 div.entry a:hover {
-	text-decoration:underline;
+	/*text-decoration:underline;*/
 }
 
 div.entry img {
@@ -219,5 +207,5 @@ a.entryTitle {
 
 a.entryTitle:hover {
 	color:#5ba4e5;
-	text-decoration:none;
+	/*text-decoration:none;*/
 }

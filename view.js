@@ -315,10 +315,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 });
-
-document.addEventListener('blur', function(event) {
-  console.log('document lost focus');
-  
-  // Regain it.
-  // document.body.blur();
-});
