@@ -75,7 +75,10 @@ chrome.browserAction.onClicked.addListener(function(tab) {
     if(tabs && tabs.length > 0) {
       // The tab for the extension is open. Reload it and mark it 
       // as selected
-      chrome.tabs.reload(tabs[0].id);
+      
+      // There is no longer a need to reload
+      //chrome.tabs.reload(tabs[0].id);
+      
       chrome.tabs.update(tabs[0].id, {'selected':true});
     } else {
       // Open a new tab and show the extension

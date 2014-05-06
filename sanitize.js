@@ -1,11 +1,11 @@
-// Sanitizes an article in preparation for display
+// Sanitize entry content
 
 // Node handling behaviors when traversing a document's DOM, constants
 var RETAIN = 0, UNWRAP = 1, REMOVE = 2, RETAIN_RAW = 3, REPLACE = 4;
 
 // Attributes allowed in any element
 var ALLOWED_ATTRIBUTES = {
-  'align': true,
+  //'align': true,
   'alt':true,
   'href':true,
   'src':true,
@@ -19,9 +19,7 @@ var COMMENT_NODE = Node.COMMENT_NODE, ELEMENT_NODE = Node.ELEMENT_NODE;
 // Map between lowercase tagnames and handlers
 var elementHandler = {};
 
-// Initialize our blacklist. This needs to be completely refactored but it is at least
-// a basic working implementation for now.
-
+// Initialize blacklist
 var blacklist = {};
 each([
   'javascript:',
@@ -62,13 +60,10 @@ function sanitize(strBaseURL, doc) {
       // Strip comments
       return REMOVE;
     } else if(node.nodeType == ELEMENT_NODE) {
-      
       var elementHandler = getHandler(node);
       if(elementHandler) {
-        // Delegate sanitization
         var result = elementHandler(node, baseURI);
 
-        // Sanitize attributes
         if(result == RETAIN || result == REPLACE) {
           each(Array.prototype.filter.call(node.attributes, isUnknwownAttribute),
             function(att) {
@@ -162,58 +157,33 @@ function walk(root, cb) {
 // Trim leading and trailing content from a document
 // TODO: This is not working as expected.
 function trimDocument(doc) {
-
   var node = doc.body.firstChild, sibling;
-
-  // Traverse from the front
   while(node && isTrimmableNode(node)) {
     sibling = node.nextSibling;
     node.parentNode.removeChild(node);
     node = sibling;
   }
-
-  // If the first non-whitespace node is a text node, leading whitespace
-  // was merged into its content, and we still want to trim that content
-  // TODO: wait this is partially wrong, because this could happen and 
-  // then its an empty string and then the next node is br!
-  if(node && node.nodeType == Node.TEXT_NODE && node.innerText) {
-    console.log('Trimming leading whitespace from %s', node);
-    node.innerText = node.innerText.trim();
-  }
-
-  // Traverse from the back
   node = doc.body.lastChild;
-
-  // If the final node is a text node, trailing whitespace
-  // has been merged into its content, and we still want to
-  // trim that content.
-  if(node && node.nodeType == Node.TEXT_NODE && node.innerText) {
-    node.innerText = node.innerText.trim();
-  }
-
   while(node && isTrimmableNode(node)) {
     sibling = node.previousSibling;
     node.parentNode.removeChild(node);
     node = sibling;
   }
-  
-  //console.log(doc);
 }
 
-// Returns true if the node is whitespace
-// todo?: <p></p> or <p> \n </p>
-// TODO: Should I be using lowercase localName here?
-// TODO: not sure if this is working? I think if i have
-// <br><br>(whitespace), then the brs remain, because im not removing empty inner texts
-// after trimming and then continuing to check for more trimmables?
-// TODO: reuse the constants above, COMMENT_NODE and such
-
+// Returns true if the node is trimmable
+// TODO: <p></p> or <p> \n </p>
 function isTrimmableNode(node) {
-  var t = node.nodeType;
-  //console.log(node.nodeName);
-  return (t == Node.COMMENT_NODE) ||
-    (t == Node.ELEMENT_NODE && node.nodeName == 'BR') ||
-    (t == Node.TEXT_NODE && node.innerText && node.innerText.trim().length == 0);
+  if(node.nodeType == Node.COMMENT_NODE) {
+    return true;
+  } else if(node.nodeType == Node.ELEMENT_NODE && node.nodeName == "BR") {
+    return true;
+  } else if(node.nodeType == Node.TEXT_NODE) {
+    node.textContent = node.textContent.trim();
+    if(node.textContent.length == 0) {
+      return true;
+    }
+  }
 }
 
 // TODO: rename to be more specific
@@ -229,13 +199,15 @@ function getHandler(element) {
 }
 
 // Returns true if the given attribute is not a known attribute
-// This is helpful for filtering attributes from node.attributes
 function isUnknwownAttribute(attribute) {
   return !ALLOWED_ATTRIBUTES.hasOwnProperty(attribute.nodeName);
 }
 
 // Basic handlers
+
+// The default behavior is RETAIN (not REMOVE)!
 function defaultHandler() { return RETAIN; }
+
 function removeHandler() { return REMOVE; }
 function unwrapHandler() { return UNWRAP; }
 
@@ -290,13 +262,13 @@ elementHandler.audio = retainAndWarnHandler;
 elementHandler.canvas = retainAndWarnHandler;
 
 elementHandler.embed = function(element) {
-  console.warn(element.outerHTML);
+  // console.log(element.outerHTML);
 
   var source = element.getAttribute('src');
   if(source) {
     var sourceURI = URI.parse(source);
     if(sourceURI.host && sourceURI.host.indexOf('www.youtube.com') == 0 && sourceURI.scheme != 'https') {
-      console.warn('HACK: Rewriting youtube URL to comply with CSP, %s', source);
+      // console.log('HACK: Rewriting youtube URL to comply with CSP, %s', source);
       sourceURI.scheme = 'https';
       element.setAttribute('src', URI.toString(sourceURI));
     }

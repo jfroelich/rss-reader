@@ -4,19 +4,17 @@ var feedUpdater = {};
 
 // Starts updating a single feed
 feedUpdater.update = function(db, feed, callback, timeout) {
-  var entriesProcessed = 0;
-  var entriesAdded = 0;
-  
-  fetcher.fetchFeed(feed.url, function(fetchedFeed) {
+  var entriesProcessed = 0, entriesAdded = 0;
+  fetcher.fetchFeed(feed.url, function(responseXML) {
+
+    var fetchedFeed = feedParser.parseXML(responseXML);
 
     if(fetchedFeed.error) {
-    
-      // Set the error so caller can respond to it
       feed.error = fetchedFeed.error;
       callback(feed, 0, 0);
       return;
     }
-    
+
     if(fetchedFeed.title) {
       feed.title = fetchedFeed.title;
     }
@@ -24,7 +22,7 @@ feedUpdater.update = function(db, feed, callback, timeout) {
     if(fetchedFeed.link) {
       feed.link = fetchedFeed.link;
     }
-    
+
     if(fetchedFeed.date) {
       var feedDate = parseDate(fetchedFeed.date);
       if(feedDate) {
@@ -35,20 +33,23 @@ feedUpdater.update = function(db, feed, callback, timeout) {
     var entryCount = fetchedFeed.entries.length;
 
     model.insertOrUpdateFeed(db, feed, function(feed) {
-
-      
       var entryUpdated = function() {
-        // TODO: what if entryCount is 0? Use >= here?
+
+        // TODO: what if entryCount is 0? Use >= here?        
+        if(entryCount == 0) {
+          console.log('entry count was 0, possible unexpected behavior');
+        }
+
         if(++entriesProcessed == entryCount) {
           callback(feed, entriesProcessed, entriesAdded);
         }
       };
-      
+
       var onEntryUpdateSuccess = function() {
         entriesAdded++;
         entryUpdated();
       };
-      
+
       var onEntryUpdateError = function() {
         entryUpdated();
       };
@@ -59,17 +60,15 @@ feedUpdater.update = function(db, feed, callback, timeout) {
         if(feed.link) {
           entry.feedLink = feed.link;
         }
-        
+
         // Store feed title per entry for later rendering
         // (denormalization)
         entry.feedTitle = feed.title;
         entry.feedDate = feed.date;
-        
+
         feedUpdater.updateEntry(db, entry, onEntryUpdateSuccess, onEntryUpdateError);
       });
-      
     });
-
   }, timeout);
 };
 

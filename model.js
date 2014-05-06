@@ -155,12 +155,6 @@ model.markRead = function(db, ids, callback) {
         'read': model.READ_STATE.READ,
         'feed': entry.feed
       });
-    } else {
-      // This can occur when the user unsubscribes on the options page
-      // but some entries are still present and unread on the view page
-      // and the unsubscribe event listener did not unload the entries
-      // in time.
-      console.log('Could not mark entry as read');
     }
   };
 
@@ -168,6 +162,24 @@ model.markRead = function(db, ids, callback) {
     store.get(id).onsuccess = onGetEntry;
   });
 };
+
+model.markEntryRead = function(db, entryId, callback) {
+  var tx = db.transaction('entry','readwrite');
+  tx.oncomplete = callback;
+  var store = tx.objectStore('entry');
+  
+  store.get(entryId).onsuccess = function(event) {
+    var entry = event.target.result;
+    if(entry) {
+      store.put({
+        'id': entry.id,
+        'read': model.READ_STATE.READ,
+        'feed': entry.feed
+      });
+    }
+  };
+};
+
 
 // Iterate over some entries, sending each entry to callback
 model.forEachEntry = function(db, params, callback, onComplete) {

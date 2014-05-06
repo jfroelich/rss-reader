@@ -89,11 +89,11 @@ function renderEntry(entry) {
 
   var template = ['<a href="',entry.link,
     '" class="entryTitle" target="_blank" title="',
-    app.prepareHTMLAttributeValueForRender(entryTitle),
+    app.escapeHTMLAttribute(entryTitle),
     '">',app.truncate(app.escapeHTML(entryTitle),100),
     '</a><span class="entrycontent">', entryContent,'</span>',
     '<span class="entrysource">from <span class="entrysourcelink" title="',
-    app.prepareHTMLAttributeValueForRender(feedTitle),'">',
+    app.escapeHTMLAttribute(feedTitle),'">',
     '<img src="',favIconURL,'" style="max-width:19px;margin-right:3px;">',
     app.escapeHTML(app.truncate(feedTitle, 40)),
     '</span>',
@@ -126,6 +126,53 @@ function showError(msg) {
 
 function hideErrorMessage(event) {
   document.getElementById('errorMessageContainer').style.display = 'none';
+}
+
+function showNoEntriesInfo() {
+  var lastPolled = document.getElementById('lastpolled');
+  var lastPollDateMs = parseInt(localStorage.LAST_POLL_DATE_MS);
+  if(isFinite(lastPollDateMs)) {
+    lastPolled.innerText = (new Date(lastPollDateMs)).toString();
+  } else {
+    lastPolled.innerText = 'Unknown';
+  }
+  
+  document.getElementById('noentries').style.display = 'block';
+}
+
+// Click handler for entries container
+function entryLinkClicked(event) {  
+  // Only handle links
+  if(!event.target.href) {
+    //app.console.log('entryLinkClicked: clicked on non-link target');
+    return;
+  }
+
+  // Walk up the DOM to find the entry id
+  var node = event.target;
+  while((node = node.parentNode) && !node.hasAttribute('entry'));
+
+  //app.console.log('Possibly marking article %s as read', node.getAttribute('entry'));
+
+  // Mark the entry as read if it is not yet read
+  
+  // TODO: think about if this is racing with scroll and 
+  // if there is a problem with that. E.g. does the scroll handler
+  // need to do an extra check for unread before the db call.
+  
+  if(node && !node.hasAttribute('read')) {
+    //app.console.log('Marking article %s as read', node.getAttribute('entry'));
+    app.model.connect(function(db) {
+      app.model.markEntryRead(db, node.getAttribute('entry'), function() {
+        
+        //app.console.log('Marked %s as read from click', node.getAttribute('entry'));
+        node.setAttribute('read','');
+        app.updateBadge();
+      });
+    });
+  } else {
+    //app.console.log('entryLinkClicked: null container or article already read');
+  }
 }
 
 // Event handler for pollCompleted message from background page
@@ -179,8 +226,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 var NEXT_KEYS = {'32':32, '39':39, '78':78};
 var PREV_KEYS = {'37':37, '80':80};
 
-// TODO: change to addEventListener
-document.onkeydown = function(event) {
+addEventListener('keydown', function(event) {
   if(event.target != document.body) {
     return;
   }
@@ -221,7 +267,7 @@ document.onkeydown = function(event) {
       return true;
     });
   }
-};
+});
 
 var scanForReadTimer;
 document.addEventListener('scroll', function(event) {
@@ -245,26 +291,18 @@ document.addEventListener('scroll', function(event) {
 
 });
 
-window.addEventListener('resize', function(event) {
+addEventListener('resize', function(event) {
   // Check for entries to mark as read given resize
   // Defer the check using the same timer id to avoid repeated calls
   clearTimeout(scanForReadTimer);
   scanForReadTimer = setTimeout(scanForRead, READ_SCAN_DELAY);
 });
 
-function showNoEntriesInfo() {
-  var lastPolled = document.getElementById('lastpolled');
-  var lastPollDateMs = parseInt(localStorage.LAST_POLL_DATE_MS);
-  if(isFinite(lastPollDateMs)) {
-    lastPolled.innerText = (new Date(lastPollDateMs)).toString();
-  } else {
-    lastPolled.innerText = 'Unknown';
-  }
-  
-  document.getElementById('noentries').style.display = 'block';
-}
-
 document.addEventListener('DOMContentLoaded', function() {
+  var entries = document.getElementById('entries');
+
+  entries.addEventListener('click', entryLinkClicked);
+
   document.getElementById('dismiss').onclick = hideErrorMessage;
 
   app.model.connect(function(db) {
@@ -272,8 +310,15 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   function appendCompleted() {
-    if(document.getElementById('entries').childNodes.length == 0) {
+    if(entries.childNodes.length == 0) {
       showNoEntriesInfo();
     }
   }
+});
+
+document.addEventListener('blur', function(event) {
+  console.log('document lost focus');
+  
+  // Regain it.
+  // document.body.blur();
 });

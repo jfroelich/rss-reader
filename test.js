@@ -1,6 +1,5 @@
 var app = chrome.extension.getBackgroundPage();
 
-
 var test = {};
 
 test.seed = function() {
@@ -19,28 +18,17 @@ test.seed = function() {
   return 'Seeding ' + urls.length + ' urls';
 };
 
-test.parse = function(url) {
-  var onFetch = function(feed) {
+test.fetchParseURL = function(url) {
+  app.fetcher.fetchFeed(url, function(responseXML) {
+    var feed = app.feedParser.parseXML(responseXML);
     if(feed.error) {
       console.log('Error %s',feed.error);
       return;
     }
 
     console.dir(feed);
-  };
-
-  app.fetchFeed(url, onFetch, 5000);
-  return 'Parsing ' + url;
-};
-
-test.rawXML = function(url) {
-  var r = new XMLHttpRequest();
-  r.open('GET', url, true);
-  r.responseType='document';
-  r.onerror = function(e) { console.dir(this); };
-  r.onload = function(e) { console.log(this.responseXML); };
-  r.send();
-  return 'Fetching ' + url;
+  }, 5000);
+  return 'Fetching and parsing ' + url;
 };
 
 test.clearDB = function() {
@@ -59,4 +47,19 @@ test.unwrap = function(str, tag) {
   var nodeHandler = function(node) { app.unwrap(node); };
   app.each(doc.querySelectorAll(tag), nodeHandler);
   return doc.innerHTML;
+};
+
+test.escapeHTMLAttribute = function() {
+  console.assert(app.escapeHTMLAttribute, 'app.escapeHTMLAttribute is undefined');
+  console.assert(app.escapeHTMLAttribute('"') == '&#34;', 'failed to escape quote');
+  console.assert(app.escapeHTMLAttribute('a"bc') == 'a&#34;bc', 'failed to escape quote');
+  return 'Running test escapeHTMLAttribute';
+};
+
+test.trim = function() {
+  var html = '<br>\n<br><p><br><br>\nTest\n<br>\n'+
+    '</p>prelinebreak\n<br><!-- howdy--><br>\n<br>\n<br>';
+  var doc = app.parseHTML(html);
+  app.trimDocument(doc);
+  console.log(doc.body.innerHTML);
 };

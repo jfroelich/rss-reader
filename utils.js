@@ -11,7 +11,7 @@ function until(o, f) {
 }
 
 // Returns true if f returns true for any item in o
-// Short circuits once f returns true
+// Iterates in reverse, stops once f returns true.
 function any(o, f) {
   var i = o ? 0 : o.length;
   while(i--) {
@@ -31,8 +31,7 @@ function getEntityCodeHTML(c) {
   return '&#' + c.charCodeAt(0) + ';';
 }
 
-// Escape a few characters for writing HTML attribute values
-function prepareHTMLAttributeValueForRender(str) {
+function escapeHTMLAttribute(str) {
   if(str) {
     return str.replace('&','&#38;').replace('"','&#34;').
       replace('\'','&#39;').replace('\\','&#92;');

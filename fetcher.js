@@ -1,5 +1,4 @@
-// Fetches a remote xml file 
-// and returns it as a parsed feed object to the callback
+// Fetch lib
 
 var fetcher = {};
 
@@ -23,10 +22,7 @@ fetcher.fetchFeed = function(url, callback, timeout) {
   };
 
   request.onload = function(event) {
-
     var response = event.target;
-    
-    // Got a response so stop checking for timeout
     clearTimeout(fetcher.abortTimer);
 
     if(response.status != 200 || !response.responseXML ||
@@ -36,12 +32,7 @@ fetcher.fetchFeed = function(url, callback, timeout) {
       return;
     }
 
-    var result = feedParser.parseXML(response.responseXML);
-
-    // Expose the requested URL
-    result.url = url;
- 
-    callback(result);
+    callback(response.responseXML);
   };
 
   try {
