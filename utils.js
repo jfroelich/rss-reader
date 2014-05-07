@@ -44,6 +44,12 @@ function escapeHTMLInputValue(str) {
   }
 }
 
+function escapeHTMLHREF(str) {
+  if(str) {
+    return str.replace('"', '&#34;');
+  }
+}
+
 function isArray(obj) {
   return obj instanceof Array;
 }

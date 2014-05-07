@@ -1,0 +1,70 @@
+body {
+  margin: 0px;
+  font-family:arial, helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+form {
+	padding:0px;
+	margin:0px;
+}
+
+#divsubscribe {
+	background-color: #efefef;
+	left:0px;
+	right:0px;
+	padding:20px;
+}
+
+#addurl {
+	font-size:18pt;
+	width:750px;
+	padding: 14px;
+	background-color:#cccccc;
+	border: 1px solid #efefef;
+	outline: none;
+}
+
+#addbutton {
+	font-size:18pt;
+	padding:14px;
+	background-color:#cccccc;
+	border: 1px solid #efefef;
+	outline: none;
+}
+
+#feedtable {
+	width:100%;
+	border: 0px;
+}
+
+td {
+  padding:10px;
+}
+
+.feed_list_url_input {
+	width:500px;
+}
+
+#divfeedlist {
+	background-color: #FFFFD4;
+	left:0px;
+	right:0px;
+	padding:20px;
+}
+
+.option_section_header {
+	font-size:14pt;
+}
+
+#divhelp {
+	background-color: #FFDFFF;
+	left:0px;
+	right:0px;
+	padding:20px;
+}
+
+#nosubscriptions {
+	display: none;
+}

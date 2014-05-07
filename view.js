@@ -6,13 +6,20 @@ var MAX_APPEND_COUNT = 10;
 var READ_SCAN_DELAY = 200;
 var APPEND_DELAY = 100;
 var entryCache = {};
-var updateBadgeTimer;
+
+function addPrefetchLink(url) {
+  var link = document.createElement('link');
+  // prefetch is a bit less greedy than prerender
+  link.setAttribute('rel','prefetch');
+  link.setAttribute('href', url);
+  var head = document.documentElement.firstChild;
+  head.appendChild(link);
+}
 
 // Look for entries to mark as read
 function scanForRead() {
   //console.log('Scanning for read articles');
   var divEntries = document.getElementById('entries');
-
   var cutoff = document.body.scrollTop + window.innerHeight + 10;
   var readEntries = Array.prototype.filter.call(divEntries.childNodes, function(entryElement) {
     return isEntryUnread(entryElement) &&
@@ -86,15 +93,17 @@ function renderEntry(entry) {
   if(entry.pubdate && entry.pubdate > 0) {
     entryPubDate = app.formatDate(new Date(entry.pubdate));
   }
+  
+  var entryLink = app.escapeHTMLHREF(entry.link);
 
-  var template = ['<a href="',entry.link,
+  var template = ['<a href="',entryLink,
     '" class="entryTitle" target="_blank" title="',
     app.escapeHTMLAttribute(entryTitle),
     '">',app.truncate(app.escapeHTML(entryTitle),100),
     '</a><span class="entrycontent">', entryContent,'</span>',
     '<span class="entrysource">from <span class="entrysourcelink" title="',
     app.escapeHTMLAttribute(feedTitle),'">',
-    '<img src="',favIconURL,'" style="max-width:19px;margin-right:3px;">',
+    '<img src="',favIconURL,'" width="16" height="16" style="max-width:19px;margin-right:3px;">',
     app.escapeHTML(app.truncate(feedTitle, 40)),
     '</span>',
     (entryAuthor ? ' by ' + app.escapeHTML(app.truncate(entry.author,40)):''),
@@ -110,6 +119,11 @@ function renderEntry(entry) {
   
   var divEntries = document.getElementById('entries');
   divEntries.appendChild(elem);
+  
+  // Experimental
+  if(entryLink) {
+    addPrefetchLink(entryLink);
+  }
 }
 
 function showError(msg) {

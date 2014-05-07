@@ -206,7 +206,9 @@ model.forEachEntry = function(db, params, callback, onComplete) {
   request.onsuccess = function(event) {
     var cursor = event.target.result;
     if(cursor) {
-      callback(cursor.value);
+      if(callback) {
+        callback(cursor.value);
+      }
       if(++counter < limit) {
         cursor.continue();
       }
