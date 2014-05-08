@@ -3,9 +3,12 @@
 var model = {};
 
 model.DATABASE_NAME = 'reader';
-model.DATABASE_VERSION = 3;
+model.DATABASE_VERSION = 4;
 
-model.READ_STATE = {'READ': 1, 'UNREAD': 2};
+// Flag for the unread property of entries representing that
+// the entry is unread
+// Recall that indexedDB does not support indices on boolean properties
+model.UNREAD = 1;
 
 // Connect to indexedDB
 model.connect = function(callback) {
@@ -31,6 +34,11 @@ model.onUpgradeNeeded = function(event) {
       console.log('deleting object store "entry"');
       db.deleteObjectStore('entry');
     }
+  } else if(event.oldVersion == 3) {
+    if(db.objectStoreNames.contains('entry')) {
+      console.log('deleting object store "entry"');
+      db.deleteObjectStore('entry');
+    }
   }
 
   if(!db.objectStoreNames.contains('feed')) {
@@ -43,24 +51,21 @@ model.onUpgradeNeeded = function(event) {
   console.log('Creating object store "entry"');
   var entryStore = db.createObjectStore('entry', {keyPath:'id',autoIncrement:true});
 
-  // For quickly counting unread
-  entryStore.createIndex('read','read');
+  // For quickly counting unread 
+  // and for iterating over unread in id order
+  entryStore.createIndex('unread','unread');
 
   // For quickly deleting entries when unsubscribing
   entryStore.createIndex('feed','feed');
 
   // For quickly checking whether a similar entry exists
   entryStore.createIndex('hash','hash');
-
-  // For iterating unread by insertion order
-  entryStore.createIndex('id-read',['id','read']);
 };
 
 model.countUnread = function(db, callback) {
   var tx = db.transaction('entry');
-  var index = tx.objectStore('entry').index('read');
-  var range = IDBKeyRange.only(this.READ_STATE.UNREAD);
-  var request = index.count(range);
+  var index = tx.objectStore('entry').index('unread');
+  var request = index.count(IDBKeyRange.only(model.UNREAD));
   request.onsuccess = function(event) {
     callback(event.target.result);
   };
@@ -139,28 +144,11 @@ model.unsubscribe = function(db, feedId, callback) {
   tx.oncomplete = callback;
 };
 
-// This fails (intentionally) if the entry already exists, where exists is 
-// true if an entry with the same id property value already exists
 model.addEntry = function(store, entry, onSuccess, onError) {
-  //console.log('Inserting a new entry with hash %s', entry.hash);
+  // Intentionally fails if an entry with the same id exists
   var request = store.add(entry);
-  //request.onsuccess = onSuccess;
-
-  request.onsuccess = function(event) {
-    var newId = event.target.result;
-
-    // At this point both the id and read parameters can be properly defined
-    // to achieve the desired side effect of populating the id-read index
-    console.log('Overwriting %s in an attempt to generate value in the id-read index', newId);
-    entry.id = newId;
-    entry.read = model.READ_STATE.UNREAD;
-    var overwriteRequest = store.put(entry);
-    overwriteRequest.onsucess = onSuccess;
-    overwriteRequest.onerror = onError;
-  };
-  
+  request.onsuccess = onSuccess;
   request.onerror = onError;
-
 };
 
 model.containsEntryHash = function(store, hash, callback) {
@@ -174,6 +162,7 @@ model.containsEntryHash = function(store, hash, callback) {
 }
 
 // Marks entries as read and deletes unused properties
+// TODO: could use index('unread').get instead of store.get
 model.markRead = function(db, ids, callback) {
 
   var tx = db.transaction('entry','readwrite');  
@@ -184,7 +173,6 @@ model.markRead = function(db, ids, callback) {
     if(entry) {
       var request = store.put({
         'id': entry.id,
-        'read': model.READ_STATE.READ,
         'feed': entry.feed,
         'hash' : entry.hash
       });
@@ -197,6 +185,7 @@ model.markRead = function(db, ids, callback) {
   });
 };
 
+// TODO: could use index.get instead of store.get
 model.markEntryRead = function(db, entryId, callback) {
   var tx = db.transaction('entry','readwrite');
   tx.oncomplete = callback;
@@ -207,7 +196,6 @@ model.markEntryRead = function(db, entryId, callback) {
     if(entry) {
       store.put({
         'id': entry.id,
-        'read': model.READ_STATE.READ,
         'feed': entry.feed,
         'hash': entry.hash
       });
@@ -230,36 +218,29 @@ model.forEachEntry = function(db, params, callback, onComplete) {
   var tx = db.transaction('entry');
   tx.oncomplete = onComplete;
   var store = tx.objectStore('entry');
-  var index = store.index('id-read');
+  var index = store.index('unread');
   var counter = 0;
   
-  console.log('Iterating with lower bound [%s,%s]', minimumId, model.READ_STATE.UNREAD);
+  console.log('Iterating with lower bound %s', minimumId);
   
   // Pass in true to exclude the minimumId
-  var range = IDBKeyRange.lowerBound([minimumId, model.READ_STATE.UNREAD], true);
-  //var range = IDBKeyRange.lowerBound(minimumId, true);
+  var range = IDBKeyRange.lowerBound(minimumId, true);
 
   if(callback) {
     index.openCursor(range).onsuccess = function(event) {
-    //store.openCursor(range).onsuccess = function(event) {
       var cursor = event.target.result;
       if(cursor) {
-        console.log('Iterating over entry %s', cursor.value.title);
-        // Because of the bug with id-read index, I have to load all
-        // and do the check here. If that bug is fixed then this 
-        // can change. Need to do more testing
-        //if(entry.read == model.READ_STATE.UNREAD) {
-        //  callback(cursor.value);
-        //  counter++;
-        //}
+        if(!cursor.value.hasOwnProperty('unread')) {
+          console.log('Error, displaying already read entry %s', cursor.value.id);
+        }
+        
+        console.log('Iterating over entry %s', cursor.value.id);
         
         callback(cursor.value);
         
         if(unlimited || (++counter < limit)) {
           cursor.continue();
         }
-      } else {
-        // console.log('undefined cursor when iterating entries');
       }
     };
   }

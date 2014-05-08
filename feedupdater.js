@@ -88,6 +88,10 @@ function updateEntry(store, entry, onSuccess, onError) {
     // the overwrite request completes.
     //newEntry.read = model.READ_STATE.UNREAD;
     
+    // All we have to do here is define a property with a value
+    entry.unread = model.UNREAD;
+    
+    
     if(entry.feedLink) newEntry.baseURI = entry.feedLink;
     if(entry.feedTitle) newEntry.feedTitle = entry.feedTitle;
     if(entry.author) newEntry.author = entry.author;
