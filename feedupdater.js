@@ -45,20 +45,22 @@ function updateFeed(db, feed, callback, timeout) {
       var onEntryUpdateError = function() {
         entryUpdated();
       };
-
+      
+      var store = db.transaction('entry','readwrite').objectStore('entry');
+      
       each(fetchedFeed.entries, function(entry) {
         entry.feedId = feed.id;
         if(feed.link) entry.feedLink = feed.link;
         if(feed.title) entry.feedTitle = feed.title;
         if(feed.feedDate) entry.feedDate = feed.date;
-        updateEntry(db, entry, onEntryUpdateSuccess, onEntryUpdateError);
+        updateEntry(store, entry, onEntryUpdateSuccess, onEntryUpdateError);
       });
     });
   }, timeout);
 };
 
 // Prep and attempt to store an entry
-function updateEntry(db, entry, onSuccess, onError) {
+function updateEntry(store, entry, onSuccess, onError) {
   var hash = model.generateEntryHash(entry);
 
   if(!hash) {
@@ -67,7 +69,6 @@ function updateEntry(db, entry, onSuccess, onError) {
     return;
   }
 
-  var store = db.transaction('entry','readwrite').objectStore('entry');
   model.containsEntryHash(store, hash, function(hashedEntry) {
     if(hashedEntry) {
       console.log('entries already contains %s', hash);
