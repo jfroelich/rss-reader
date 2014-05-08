@@ -79,7 +79,15 @@ function updateEntry(store, entry, onSuccess, onError) {
     var newEntry = {};
     newEntry.hash = hash;
     newEntry.feed = entry.feedId;
-    newEntry.read = model.READ_STATE.UNREAD;
+    
+    // The entry's read property is set later in the overwrite request
+    // within model.addEntry, which is done because otherwise the add request
+    // (due to how entry id is auto-incremented) does not set id.
+    // Setting it here also works but it feels better to set it later to enforce
+    // the concept that the entry will not yet appear in the id-read index until
+    // the overwrite request completes.
+    //newEntry.read = model.READ_STATE.UNREAD;
+    
     if(entry.feedLink) newEntry.baseURI = entry.feedLink;
     if(entry.feedTitle) newEntry.feedTitle = entry.feedTitle;
     if(entry.author) newEntry.author = entry.author;

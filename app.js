@@ -5,6 +5,12 @@ var pollRunning = false;
 
 function startPoll() {
   
+  if(navigator.hasOwnProperty('onLine') && !navigator.onLine) {
+    console.log('offline, poll cancelled');
+    pollRunning = false;
+    return;
+  }
+  
   if(pollRunning) {
     console.log('Poll already in progress');
     return;

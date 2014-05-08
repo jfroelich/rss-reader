@@ -139,10 +139,26 @@ model.unsubscribe = function(db, feedId, callback) {
   tx.oncomplete = callback;
 };
 
+// This fails (intentionally) if the entry already exists, where exists is 
+// true if an entry with the same id property value already exists
 model.addEntry = function(store, entry, onSuccess, onError) {
   //console.log('Inserting a new entry with hash %s', entry.hash);
   var request = store.add(entry);
-  request.onsuccess = onSuccess;
+  //request.onsuccess = onSuccess;
+
+  request.onsuccess = function(event) {
+    var newId = event.target.result;
+
+    // At this point both the id and read parameters can be properly defined
+    // to achieve the desired side effect of populating the id-read index
+    console.log('Overwriting %s in an attempt to generate value in the id-read index', newId);
+    entry.id = newId;
+    entry.read = model.READ_STATE.UNREAD;
+    var overwriteRequest = store.put(entry);
+    overwriteRequest.onsucess = onSuccess;
+    overwriteRequest.onerror = onError;
+  };
+  
   request.onerror = onError;
 
 };
@@ -201,14 +217,11 @@ model.markEntryRead = function(db, entryId, callback) {
 
 // Iterate over all unread entries with an id greater than the minimumId
 model.forEachEntry = function(db, params, callback, onComplete) {
-
-
-  var minimumId = 0;
+  var minimumId = 0, limit = 0, unlimited = false;
   if(params && params.hasOwnProperty('minimumId')) {
     minimumId = parseInt(params.minimumId);
   }
 
-  var limit = 0, unlimited = false;
   if(params && params.hasOwnProperty('limit')) {
     limit = parseInt(params.limit);
     unlimited = limit <= 0;
@@ -217,32 +230,32 @@ model.forEachEntry = function(db, params, callback, onComplete) {
   var tx = db.transaction('entry');
   tx.oncomplete = onComplete;
   var store = tx.objectStore('entry');
-  //var index = store.index('id-read');
+  var index = store.index('id-read');
   var counter = 0;
   
-  // BUG: the bug is that the index 'id-index' has nothing in it, which might
-  // be because I cannot create indices when part of the keypath is the id?
+  console.log('Iterating with lower bound [%s,%s]', minimumId, model.READ_STATE.UNREAD);
   
   // Pass in true to exclude the minimumId
-  //var range = IDBKeyRange.lowerBound([minimumId, model.READ_STATE.UNREAD], false);
-  var range = IDBKeyRange.lowerBound(minimumId, true);
+  var range = IDBKeyRange.lowerBound([minimumId, model.READ_STATE.UNREAD], true);
+  //var range = IDBKeyRange.lowerBound(minimumId, true);
 
   if(callback) {
-    // index.openCursor(range).onsuccess = function(event) {
-    store.openCursor(range).onsuccess = function(event) {
+    index.openCursor(range).onsuccess = function(event) {
+    //store.openCursor(range).onsuccess = function(event) {
       var cursor = event.target.result;
       if(cursor) {
-        // console.log('Iterating over entry %s', cursor.value);
-        var entry = cursor.value;
-
+        console.log('Iterating over entry %s', cursor.value.title);
         // Because of the bug with id-read index, I have to load all
-        // and do the check here
-        if(entry.read == model.READ_STATE.UNREAD) {
-          callback(cursor.value);
-          counter++;
-        }
+        // and do the check here. If that bug is fixed then this 
+        // can change. Need to do more testing
+        //if(entry.read == model.READ_STATE.UNREAD) {
+        //  callback(cursor.value);
+        //  counter++;
+        //}
         
-        if(unlimited || (counter < limit)) {
+        callback(cursor.value);
+        
+        if(unlimited || (++counter < limit)) {
           cursor.continue();
         }
       } else {
