@@ -1,9 +1,6 @@
 // FX functions
 
 // Animated scrolling to a target element
-// BUG: only works scrolling down
-// BUG: when element is 2nd to last element it its parent, it scrolls to page bottom
-// BUG: choppy when images are still loading
 function smoothScrollTo(element, delta, delay) {
   var timer = setInterval(function(){
     if(document.body.scrollTop + delta >= element.offsetTop) {

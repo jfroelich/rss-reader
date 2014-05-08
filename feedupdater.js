@@ -1,12 +1,11 @@
 // Feed update lib
 
-var feedUpdater = {};
-
 // Starts updating a single feed
-feedUpdater.update = function(db, feed, callback, timeout) {
+function updateFeed(db, feed, callback, timeout) {
   var entriesProcessed = 0, entriesAdded = 0;
   fetchFeed(feed.url, function(responseXML) {
-    var fetchedFeed = feedParser.parseXML(responseXML);
+
+    var fetchedFeed = parseFeedXML(responseXML);
 
     if(fetchedFeed.error) {
       feed.error = fetchedFeed.error;
@@ -33,13 +32,7 @@ feedUpdater.update = function(db, feed, callback, timeout) {
 
     model.insertOrUpdateFeed(db, feed, function(feed) {
       var entryUpdated = function() {
-
-        // TODO: what if entryCount is 0? Use >= here?        
-        if(entryCount == 0) {
-          console.log('entry count was 0, possible unexpected behavior');
-        }
-
-        if(++entriesProcessed == entryCount) {
+        if(++entriesProcessed >= entryCount) {
           callback(feed, entriesProcessed, entriesAdded);
         }
       };
@@ -55,68 +48,58 @@ feedUpdater.update = function(db, feed, callback, timeout) {
 
       each(fetchedFeed.entries, function(entry) {
         entry.feedId = feed.id;
-
-        if(feed.link) {
-          entry.feedLink = feed.link;
-        }
-
-        // Store feed title per entry for later rendering
-        // (denormalization)
-        entry.feedTitle = feed.title;
-        entry.feedDate = feed.date;
-
-        feedUpdater.updateEntry(db, entry, onEntryUpdateSuccess, onEntryUpdateError);
+        if(feed.link) entry.feedLink = feed.link;
+        if(feed.title) entry.feedTitle = feed.title;
+        if(feed.feedDate) entry.feedDate = feed.date;
+        updateEntry(db, entry, onEntryUpdateSuccess, onEntryUpdateError);
       });
     });
   }, timeout);
 };
 
 // Prep and attempt to store an entry
-feedUpdater.updateEntry = function(db, entry, onSuccess, onError) {
+function updateEntry(db, entry, onSuccess, onError) {
+  var hash = model.generateEntryHash(entry);
 
-  var newEntry = {};
-
-  newEntry.id = model.generateEntryId(entry);
-  if(!newEntry.id) {
-    console.log('Could not generate id for entry %s', entry);
+  if(!hash) {
+    console.log('Could not generate hash for entry %s', entry);
     onError();
     return;
   }
 
-  newEntry.baseURI = entry.feedLink;
-  newEntry.feed = entry.feedId;
-  newEntry.read = model.READ_STATE.UNREAD;
-  newEntry.feedTitle = entry.feedTitle;
+  var store = db.transaction('entry','readwrite').objectStore('entry');
+  model.containsEntryHash(store, hash, function(hashedEntry) {
+    if(hashedEntry) {
+      console.log('entries already contains %s', hash);
+      onError();
+      return;
+    }
 
-  if(entry.author) {
-    newEntry.author = entry.author;
-  }
+    var newEntry = {};
+    newEntry.hash = hash;
+    newEntry.feed = entry.feedId;
+    newEntry.read = model.READ_STATE.UNREAD;
+    if(entry.feedLink) newEntry.baseURI = entry.feedLink;
+    if(entry.feedTitle) newEntry.feedTitle = entry.feedTitle;
+    if(entry.author) newEntry.author = entry.author;
+    if(entry.link) newEntry.link = entry.link;
+    if(entry.title) newEntry.title = entry.title;
 
-  if(entry.link) {
-    newEntry.link = entry.link;
-  }
+    var pubdate = parseDate(entry.pubdate);
+    if(pubdate) {
+      newEntry.pubdate = pubdate.getTime();
+    } else if(entry.feedDate) {
+      newEntry.pubdate = entry.feedDate;
+    }
 
-  if(entry.title) {
-    newEntry.title = entry.title;
-  }
+    if(entry.content) {
+        var doc = parseHTML(entry.content);
+        var sanitizedDOM = sanitize(entry.feedLink, doc);
+        if(sanitizedDOM) {
+          newEntry.content = sanitizedDOM.body.innerHTML;
+        }
+    }
 
-  var pubdate = parseDate(entry.pubdate);
-  if(pubdate) {
-    newEntry.pubdate = pubdate.getTime();
-  } else if(entry.feedDate) {
-    newEntry.pubdate = entry.feedDate;
-  }
-
-  if(entry.content) {
-      
-      // Sanitize the content pre storage
-      var doc = parseHTML(entry.content);
-      var sanitizedDOM = sanitize(entry.feedLink, doc);
-      if(sanitizedDOM) {
-        newEntry.content = sanitizedDOM.body.innerHTML;
-      }
-  }
-  
-  newEntry.fetched = (new Date()).getTime();
-  model.addEntry(db, newEntry, onSuccess, onError);
+    model.addEntry(store, newEntry, onSuccess, onError);
+  });
 };

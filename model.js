@@ -3,35 +3,45 @@
 var model = {};
 
 model.DATABASE_NAME = 'reader';
-model.DATABASE_VERSION = 1;
+model.DATABASE_VERSION = 3;
 
 model.READ_STATE = {'READ': 1, 'UNREAD': 2};
 
-// Wraps indexedDB.open to apply common callbacks to all connections
+// Connect to indexedDB
 model.connect = function(callback) {
   var request = indexedDB.open(this.DATABASE_NAME, this.DATABASE_VERSION);
-
   request.onerror = request.onblocked = console.error;
-  request.onupgradeneeded = this.upgradeDatabase;
-
+  request.onupgradeneeded = this.onUpgradeNeeded;
   request.onsuccess = function(event) {
     callback(event.target.result);
   };
+};
 
-  return 'Connecting to ' + this.DATABASE_NAME + ' version ' +
-    this.DATABASE_VERSION;
-}
-
-model.upgradeDatabase = function(event) {
-  console.log('Upgrading database, old version %s', event.oldVersion);
+model.onUpgradeNeeded = function(event) {
+  console.log('Upgrading database from %s to %s', event.oldVersion, model.DATABASE_VERSION);
   var db = event.target.result;
-  var entryStore, feedStore;
 
-  feedStore = db.createObjectStore('feed', {keyPath:'id',autoIncrement:true});
-  entryStore = db.createObjectStore('entry', {keyPath: 'id'});
+  if(event.oldVersion == 1) {
+    if(db.objectStoreNames.contains('entry')) {
+      console.log('deleting object store "entry"');
+      db.deleteObjectStore('entry');
+    }
+  } else if(event.oldVersion == 2) {
+    if(db.objectStoreNames.contains('entry')) {
+      console.log('deleting object store "entry"');
+      db.deleteObjectStore('entry');
+    }
+  }
 
-  // For checking if already subscribed
-  feedStore.createIndex('url','url',{unique:true});
+  if(!db.objectStoreNames.contains('feed')) {
+    console.log('Creating object store "feed"');
+    var feedStore = db.createObjectStore('feed', {keyPath:'id',autoIncrement:true});
+    // For checking if already subscribed
+    feedStore.createIndex('url','url',{unique:true});    
+  }
+
+  console.log('Creating object store "entry"');
+  var entryStore = db.createObjectStore('entry', {keyPath:'id',autoIncrement:true});
 
   // For quickly counting unread
   entryStore.createIndex('read','read');
@@ -39,8 +49,11 @@ model.upgradeDatabase = function(event) {
   // For quickly deleting entries when unsubscribing
   entryStore.createIndex('feed','feed');
 
-  // For iterating unread by date ascending
-  entryStore.createIndex('read-fetched',['read','fetched']);
+  // For quickly checking whether a similar entry exists
+  entryStore.createIndex('hash','hash');
+
+  // For iterating unread by insertion order
+  entryStore.createIndex('id-read',['id','read']);
 };
 
 model.countUnread = function(db, callback) {
@@ -84,11 +97,10 @@ model.isSubscribed = function(db, url, callback) {
   };
 };
 
-model.generateEntryId = function(entry) {
+model.generateEntryHash = function(entry) {
   var seed = entry.link || entry.title || entry.content;
   if(seed) {
-    var hash = hashCode(seed.split(''));
-    return decToHex(hash);
+    return hashCode(seed.split(''));
   }
 };
 
@@ -127,21 +139,25 @@ model.unsubscribe = function(db, feedId, callback) {
   tx.oncomplete = callback;
 };
 
-// Add an entry. If the entry already exists, a uniqueness constraint
-// violation will occur and request.onerror is triggered instead of
-// request.onsuccess. This is why we use a separate tx for each request
-// when adding a batch of entries.
-
-model.addEntry = function(db, entry, onSuccess, onError) {
-  var tx = db.transaction('entry','readwrite');
-  var store = tx.objectStore('entry');
+model.addEntry = function(store, entry, onSuccess, onError) {
+  //console.log('Inserting a new entry with hash %s', entry.hash);
   var request = store.add(entry);
   request.onsuccess = onSuccess;
   request.onerror = onError;
+
 };
 
-// Marks entries with the given ids as read and also archives 
-// some of each entry's properties
+model.containsEntryHash = function(store, hash, callback) {
+  store.index('hash').get(IDBKeyRange.only(hash)).onsuccess = function(event) {
+    if(event.target.result) {
+      callback(event.target.result);
+    } else {
+      callback();
+    }
+  }
+}
+
+// Marks entries as read and deletes unused properties
 model.markRead = function(db, ids, callback) {
 
   var tx = db.transaction('entry','readwrite');  
@@ -150,16 +166,18 @@ model.markRead = function(db, ids, callback) {
   var onGetEntry = function(event) {
     var entry = event.target.result;
     if(entry) {
-      store.put({
+      var request = store.put({
         'id': entry.id,
         'read': model.READ_STATE.READ,
-        'feed': entry.feed
+        'feed': entry.feed,
+        'hash' : entry.hash
       });
+      request.onerror = console.log;
     }
   };
 
   each(ids, function(id) {
-    store.get(id).onsuccess = onGetEntry;
+    store.get(parseInt(id)).onsuccess = onGetEntry;
   });
 };
 
@@ -174,44 +192,62 @@ model.markEntryRead = function(db, entryId, callback) {
       store.put({
         'id': entry.id,
         'read': model.READ_STATE.READ,
-        'feed': entry.feed
+        'feed': entry.feed,
+        'hash': entry.hash
       });
     }
   };
 };
 
-
-// Iterate over some entries, sending each entry to callback
+// Iterate over all unread entries with an id greater than the minimumId
 model.forEachEntry = function(db, params, callback, onComplete) {
 
-  var fromDate = params.fromDate || 0;
-  var endDate = (new Date(2030,0)).getTime();
-  var limit = params.limit;
-  var unread = model.READ_STATE.UNREAD;
-  var tx = db.transaction('entry');
-  tx.oncomplete = onComplete;
-  var index = tx.objectStore('entry').index('read-fetched');
-  var range;
-  var counter = 0;
 
-  if(fromDate) {
-    range = IDBKeyRange.bound([unread, fromDate],[unread, endDate]);
-  } else {
-    // Load any unread articles
-    range = IDBKeyRange.bound([unread, 0],[unread, endDate]);
+  var minimumId = 0;
+  if(params && params.hasOwnProperty('minimumId')) {
+    minimumId = parseInt(params.minimumId);
   }
 
-  var request = index.openCursor(range);
+  var limit = 0, unlimited = false;
+  if(params && params.hasOwnProperty('limit')) {
+    limit = parseInt(params.limit);
+    unlimited = limit <= 0;
+  }
 
-  request.onsuccess = function(event) {
-    var cursor = event.target.result;
-    if(cursor) {
-      if(callback) {
-        callback(cursor.value);
+  var tx = db.transaction('entry');
+  tx.oncomplete = onComplete;
+  var store = tx.objectStore('entry');
+  //var index = store.index('id-read');
+  var counter = 0;
+  
+  // BUG: the bug is that the index 'id-index' has nothing in it, which might
+  // be because I cannot create indices when part of the keypath is the id?
+  
+  // Pass in true to exclude the minimumId
+  //var range = IDBKeyRange.lowerBound([minimumId, model.READ_STATE.UNREAD], false);
+  var range = IDBKeyRange.lowerBound(minimumId, true);
+
+  if(callback) {
+    // index.openCursor(range).onsuccess = function(event) {
+    store.openCursor(range).onsuccess = function(event) {
+      var cursor = event.target.result;
+      if(cursor) {
+        // console.log('Iterating over entry %s', cursor.value);
+        var entry = cursor.value;
+
+        // Because of the bug with id-read index, I have to load all
+        // and do the check here
+        if(entry.read == model.READ_STATE.UNREAD) {
+          callback(cursor.value);
+          counter++;
+        }
+        
+        if(unlimited || (counter < limit)) {
+          cursor.continue();
+        }
+      } else {
+        // console.log('undefined cursor when iterating entries');
       }
-      if(++counter < limit) {
-        cursor.continue();
-      }
-    }
-  };
+    };
+  }
 };

@@ -75,9 +75,7 @@ function sanitize(strBaseURL, doc) {
         return result;
 
       } else {
-        
-        // No handler defined
-        console.warn('Unknown node %s',node.outerHTML);
+        console.log('No handler for node %s',node.outerHTML);
         return REMOVE;
       }
     }
@@ -89,20 +87,7 @@ function sanitize(strBaseURL, doc) {
   return doc;
 }
 
-/**
- * Stackless DOM walk that supports some mutation. The native functions
- * getElementsByName and querySelectorAll only iterate elements, but
- * we want to be able to iterate nodes such as HTML comments. 
- * TreeWalkers and NodeIterators do not play nice with dom manipulation 
- * during iteration. Recursive functions are concise but I hate recursion. 
- * So we can roll our own stack. But Array.shift and Array.unshift suffer from 
- * poor performance, so we can use a FIFO-like queue class that just manipulates a 
- * head pointer. But as it turns out, the DOM stores graph traversal pointers,
- * so we can just perform a stackless walk.
- *
- * @param root the root of the DOM tree to traverse
- * @param cb called as each node is visited
- */
+// Stackless DOM walk that supports some mutation
 function walk(root, cb) {
   // We do not sanitize the root node. We actually iterate off of first child 
   // as the root node is merely our container, so that we do not have to check 
@@ -347,7 +332,6 @@ elementHandler.video = retainAndWarnHandler;
 ].forEach(function(el) {
   elementHandler[el] = removeHandler;
 });
-
 
 ['article','details','div','font','help','insert','label','nobr',
 'noscript','section','span','st1'].forEach(function(el) {

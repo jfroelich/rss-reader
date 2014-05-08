@@ -1,5 +1,3 @@
-// Fetch lib
-
 // Asynchronously fetches an XML file
 function fetchFeed(url, callback, timeout) {
   var abortTimer = 0;
@@ -9,6 +7,11 @@ function fetchFeed(url, callback, timeout) {
   request.onerror = fetchOnError(abortTimer, callback);
   request.onabort = fetchOnAbort(url, abortTimer, callback);
   request.onload = fetchOnLoad(url, abortTimer, callback);
+
+  // Untested, I think I should have always been doing this
+  if(timeout) {
+    request.timeout = timeout;
+  }
 
   try {
     request.send();
@@ -40,13 +43,9 @@ function fetchOnError(abortTimer, callback) {
 
 function fetchOnLoad(url, abortTimer, callback) {
   return function(event) {
-
     clearTimeout(abortTimer);
-    
     var response = event.target;
-    if(response.status != 200 || !response.responseXML ||
-      !response.responseXML.documentElement) {
-
+    if(response.status != 200 || !response.responseXML || !response.responseXML.documentElement) {
       callback({'error': 'Invalid response for '+ url+'. Status was ' + response.status});
       return;
     }
@@ -54,7 +53,6 @@ function fetchOnLoad(url, abortTimer, callback) {
     callback(response.responseXML);
   };
 }
-
 
 function fetchTriggerAbort(request) {
   return function() {

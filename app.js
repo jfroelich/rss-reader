@@ -22,7 +22,7 @@ function startPoll() {
       }
 
       model.forEachFeed(db, function(feed) {
-        feedUpdater.update(db, feed, function(feed, entriesProcessed, entriesAdded){
+        updateFeed(db, feed, function(feed, entriesProcessed, entriesAdded){
           if(feed.error) { console.log('Polling error: %s', feed.error); }
           totalEntriesAdded += entriesAdded;
           if(++feedCounter == feedCount) {
@@ -38,16 +38,14 @@ function pollCompleted(feedsProcessed, entriesAdded) {
 
   console.log('Polling completed. Processed %s feeds. Added %s entries.', 
     feedsProcessed, entriesAdded);
-  
+
   if(feedsProcessed && entriesAdded) {
     updateBadge();
     showNotification(entriesAdded + ' new articles added.');
-    
     chrome.runtime.sendMessage({'type':'pollCompleted','entriesAdded':entriesAdded});
   }
 
   localStorage.LAST_POLL_DATE_MS = String(new Date().getTime());
-  
   pollRunning = false;
 }
 
@@ -61,7 +59,6 @@ function updateBadge() {
 
 function showNotification(message) {
   if(typeof webkitNotifications == 'undefined') {
-    // console.log('webkitNotifications is not defined, cannot show notifications');
     return;
   }
 
@@ -75,18 +72,10 @@ function showNotification(message) {
 chrome.browserAction.onClicked.addListener(function(tab) {
 
   var viewURL = {'url': chrome.extension.getURL('view.html') };
-
   chrome.tabs.query(viewURL, function(tabs) {
     if(tabs && tabs.length > 0) {
-      // The tab for the extension is open. Reload it and mark it 
-      // as selected
-      
-      // There is no longer a need to reload
-      //chrome.tabs.reload(tabs[0].id);
-      
       chrome.tabs.update(tabs[0].id, {'selected':true});
     } else {
-      // Open a new tab and show the extension
       chrome.tabs.create(viewURL);
     }
   });

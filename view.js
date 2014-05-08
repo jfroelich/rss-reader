@@ -9,7 +9,6 @@ var entryCache = {};
 
 function addPrefetchLink(url) {
   var link = document.createElement('link');
-  // prefetch is a bit less greedy than prerender
   link.setAttribute('rel','prefetch');
   link.setAttribute('href', url);
   var head = document.documentElement.firstChild;
@@ -27,7 +26,7 @@ function scanForRead() {
   });
 
   var ids = Array.prototype.map.call(readEntries, function(el) {
-    return el.getAttribute('entry');
+    return parseInt(el.getAttribute('entry'));
   });
 
   var onModelUpdate = function() {
@@ -51,27 +50,29 @@ function isEntryUnread(entry) {
 
 // Append new entries to the bottom of the entry list
 function appendEntries(limit, onComplete) {
+
   var params = {};
-  params.fromDate = getLastDate();
+  params.minimumId = getLastId() || 0;
   params.limit = limit || MAX_APPEND_COUNT;
 
   app.model.connect(function(db) {
     app.model.forEachEntry(db, params, function(entry) {
       if(!entryCache.hasOwnProperty(entry.id)) {
+        // console.log('Loading entry %s', entry.id);
         renderEntry(entry);
       } else {
-        // console.log('Entry %s already loaded (paging error)', entry.id);
+        console.log('Entry %s already loaded (paging error)', entry.id);
       }
     }, onComplete);
   });
 };
 
 // Get the fetch date of the bottom-most entry loaded into the UI
-function getLastDate() {
+function getLastId() {
   var divEntries = document.getElementById('entries');
   var lastEntry = divEntries.lastChild;
   if(lastEntry) {
-    var str = lastEntry.getAttribute('fetched');
+    var str = lastEntry.getAttribute('entry');
     if(str) {
       return parseInt(str);
     }
@@ -79,7 +80,8 @@ function getLastDate() {
 }
 
 function renderEntry(entry) {
-  entryCache[entry.id] = true;// Paging hack
+  // Paging hack - add it as a property, not an index
+  entryCache[''+entry.id] = true;
 
   var entryTitle = entry.title || 'Untitled';
   var feedTitle = entry.feedTitle || 'Untitled';
@@ -104,8 +106,7 @@ function renderEntry(entry) {
     '<span class="entrysource">from <span class="entrysourcelink" title="',
     app.escapeHTMLAttribute(feedTitle),'">',
     '<img src="',favIconURL,'" width="16" height="16" style="max-width:19px;margin-right:3px;">',
-    app.escapeHTML(app.truncate(feedTitle, 40)),
-    '</span>',
+    app.escapeHTML(app.truncate(feedTitle, 40)),'</span>',
     (entryAuthor ? ' by ' + app.escapeHTML(app.truncate(entry.author,40)):''),
     ' on ',entryPubDate,'</span>'
   ];
@@ -114,16 +115,15 @@ function renderEntry(entry) {
   elem.setAttribute('entry', entry.id);
   elem.setAttribute('feed', entry.feed);
   elem.setAttribute('class','entry');
-  elem.setAttribute('fetched', entry.fetched);
   elem.innerHTML = template.join('');
   
   var divEntries = document.getElementById('entries');
   divEntries.appendChild(elem);
-  
+
   // Experimental
-  if(entryLink) {
-    addPrefetchLink(entryLink);
-  }
+  //if(entryLink) {
+  //  addPrefetchLink(entryLink);
+  //}
 }
 
 function showError(msg) {
@@ -150,42 +150,23 @@ function showNoEntriesInfo() {
   } else {
     lastPolled.innerText = 'Unknown';
   }
-  
+
   document.getElementById('noentries').style.display = 'block';
 }
 
 // Click handler for entries container
 function entryLinkClicked(event) {  
-  // Only handle links
-  if(!event.target.href) {
-    //app.console.log('entryLinkClicked: clicked on non-link target');
-    return;
-  }
-
-  // Walk up the DOM to find the entry id
   var node = event.target;
+  if(!node.href)
+    return;
   while((node = node.parentNode) && !node.hasAttribute('entry'));
-
-  //app.console.log('Possibly marking article %s as read', node.getAttribute('entry'));
-
-  // Mark the entry as read if it is not yet read
-  
-  // TODO: think about if this is racing with scroll and 
-  // if there is a problem with that. E.g. does the scroll handler
-  // need to do an extra check for unread before the db call.
-  
   if(node && !node.hasAttribute('read')) {
-    //app.console.log('Marking article %s as read', node.getAttribute('entry'));
     app.model.connect(function(db) {
       app.model.markEntryRead(db, node.getAttribute('entry'), function() {
-        
-        //app.console.log('Marked %s as read from click', node.getAttribute('entry'));
         node.setAttribute('read','');
         app.updateBadge();
       });
     });
-  } else {
-    //app.console.log('entryLinkClicked: null container or article already read');
   }
 }
 
@@ -199,7 +180,7 @@ function handlePollCompleted() {
   }
 }
 
-// TODO: there is a bug here, if this gets called BEFORE
+// TODO: there is a bug here if this gets called BEFORE
 // the entries exist in the database
 function handleSubscribe(feedId) {
   console.log('Handling subscription event, feed id %s', feedId);
@@ -240,7 +221,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 var NEXT_KEYS = {'32':32, '39':39, '78':78};
 var PREV_KEYS = {'37':37, '80':80};
 
-addEventListener('keydown', function(event) {
+window.addEventListener('keydown', function(event) {
   if(event.target != document.body) {
     return;
   }
@@ -273,7 +254,7 @@ addEventListener('keydown', function(event) {
       } else if(!e.nextSibling) {
 
         // Nothing to scroll to, go to the top of the page
-        // TODO: maybe dont call it if we are already at the top? or maybe
+        // TODO: maybe don't call it if we are already at the top? or maybe
         // scroll to is smart enough to do nothing in this case
         window.scrollTo(0, e.offsetTop);
         return false;
@@ -284,48 +265,46 @@ addEventListener('keydown', function(event) {
 });
 
 var scanForReadTimer;
-document.addEventListener('scroll', function(event) {
+document.addEventListener('scroll', function scrollListener(event) {
 
-  var deltaY = (this.pageYOffset || pageYOffset) - pageYOffset;
-  this.pageYOffset = pageYOffset;
+  var deltaY = (scrollListener.pageYOffset || pageYOffset) - pageYOffset;
+  scrollListener.pageYOffset = pageYOffset;
 
-  if(deltaY < 0) {
-    // Check for read entries
-    clearTimeout(scanForReadTimer);
-    scanForReadTimer = setTimeout(scanForRead, READ_SCAN_DELAY);
-
-    // Check if we should append new entries
-    var divEntries = document.getElementById('entries');
-    var appendThreshold = document.body.scrollTop + window.innerHeight + 100;
-    if(divEntries.lastChild && divEntries.lastChild.offsetTop < appendThreshold) {
-      clearTimeout(this.appendEntriesTimer);
-      this.appendEntriesTimer = setTimeout(appendEntries, APPEND_DELAY);
-    }
+  if(deltaY >= 0) {
+    // no scroll, or scrolled up
+    return;
   }
 
+  // Check for read entries
+  clearTimeout(scanForReadTimer);
+  scanForReadTimer = setTimeout(scanForRead, READ_SCAN_DELAY);
+
+  // Check if we should append new entries
+  var divEntries = document.getElementById('entries');
+  var appendThreshold = document.body.scrollTop + window.innerHeight + 100;
+  if(divEntries.lastChild && divEntries.lastChild.offsetTop < appendThreshold) {
+    clearTimeout(scrollListener.appendEntriesTimer);
+    scrollListener.appendEntriesTimer = setTimeout(appendEntries, APPEND_DELAY);
+  }
 });
 
-addEventListener('resize', function(event) {
-  // Check for entries to mark as read given resize
-  // Defer the check using the same timer id to avoid repeated calls
+window.addEventListener('resize', function(event) {
   clearTimeout(scanForReadTimer);
   scanForReadTimer = setTimeout(scanForRead, READ_SCAN_DELAY);
 });
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function domContentLoadedListener(event) {
+
+  document.removeEventListener('DOMContentLoaded', domContentLoadedListener);
+
   var entries = document.getElementById('entries');
-
   entries.addEventListener('click', entryLinkClicked);
-
   document.getElementById('dismiss').onclick = hideErrorMessage;
-
   app.model.connect(function(db) {
-    appendEntries(ONLOAD_DISPLAY_COUNT, appendCompleted);
+    appendEntries(ONLOAD_DISPLAY_COUNT, function appendCompleted() {
+      if(entries.childNodes.length == 0) {
+        showNoEntriesInfo();
+      }
+    });
   });
-
-  function appendCompleted() {
-    if(entries.childNodes.length == 0) {
-      showNoEntriesInfo();
-    }
-  }
 });

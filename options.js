@@ -29,7 +29,7 @@ function onSubscribeSubmit(event) {
         alert('You are already subscribed to \'' + url + '\'');
       } else {
         app.console.log('Subscribing to %s', url);
-        app.feedUpdater.update(db, {'url': url},
+        app.updateFeed(db, {'url': url},
           onSubscribeComplete, SUBSCRIBE_TIMEOUT);
       }
     });

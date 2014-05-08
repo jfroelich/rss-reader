@@ -2,16 +2,14 @@ var app = chrome.extension.getBackgroundPage();
 
 var test = {};
 
-test.seed = function() {
-  var urls = [];
-
+test.seed = function(urls) {
   var onComplete = function(f,c){
     console.log('Seeded %s with %s articles', f.url, c);
   };
   
   app.model.connect(function(db) {
     app.each(urls, function(url) {
-      app.feedUpdater.update(db, {'url': url}, onComplete, 1000);
+      app.updateFeed(db, {'url': url}, onComplete, 1000);
     });
   });
 
@@ -20,7 +18,7 @@ test.seed = function() {
 
 test.fetchParseURL = function(url) {
   app.fetchFeed(url, function(responseXML) {
-    var feed = app.feedParser.parseXML(responseXML);
+    var feed = app.parseFeedXML(responseXML);
     if(feed.error) {
       console.log('Error %s',feed.error);
       return;
