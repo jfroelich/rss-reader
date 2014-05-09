@@ -54,10 +54,9 @@ test.escapeHTMLAttribute = function() {
   return 'Running test escapeHTMLAttribute';
 };
 
-test.trim = function() {
-  var html = '<br>\n<br><p><br><br>\nTest\n<br>\n'+
-    '</p>prelinebreak\n<br><!-- howdy--><br>\n<br>\n<br>';
+test.trimHTML = function(html) {
   var doc = app.parseHTML(html);
   app.trimDocument(doc);
   console.log(doc.body.innerHTML);
+  return 'Testing HTML trim';
 };
