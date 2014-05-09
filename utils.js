@@ -23,7 +23,8 @@ function any(o, f) {
 
 function escapeHTML(str) {
   if(str) {
-    return str.replace(/[&<>"”'`]/g, getEntityCodeHTML);
+    // return str.replace(/[&<>"”'`]/g, getEntityCodeHTML);
+    return str.replace(/[<>"”'`]/g, getEntityCodeHTML);
   }
 }
 
