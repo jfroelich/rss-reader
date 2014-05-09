@@ -50,15 +50,15 @@ function isEntryUnread(entry) {
 
 // Append new entries to the bottom of the entry list
 function appendEntries(limit, onComplete) {
-
   var params = {};
   params.minimumId = getLastId() || 0;
   params.limit = limit || MAX_APPEND_COUNT;
 
+  console.log('Appending entries, minId=%s',params.minimumId);
+
   app.model.connect(function(db) {
     app.model.forEachEntry(db, params, function(entry) {
       if(!entryCache.hasOwnProperty(entry.id)) {
-        // console.log('Loading entry %s', entry.id);
         renderEntry(entry);
       } else {
         console.log('Entry %s already loaded (paging error)', entry.id);
@@ -119,17 +119,11 @@ function renderEntry(entry) {
   
   var divEntries = document.getElementById('entries');
   divEntries.appendChild(elem);
-
-  // Experimental
-  //if(entryLink) {
-  //  addPrefetchLink(entryLink);
-  //}
 }
 
 function showError(msg) {
   var messageElement = document.getElementById('errorMessage');
   messageElement.innerHTML = msg;
-  
   var container = document.getElementById('errorMessageContainer');
   if(container.style.display != 'block') {
     container.style.opacity = 0.0;
@@ -162,7 +156,7 @@ function entryLinkClicked(event) {
   while((node = node.parentNode) && !node.hasAttribute('entry'));
   if(node && !node.hasAttribute('read')) {
     app.model.connect(function(db) {
-      app.model.markEntryRead(db, node.getAttribute('entry'), function() {
+      app.model.markEntryRead(db, parseInt(node.getAttribute('entry')), function() {
         node.setAttribute('read','');
         app.updateBadge();
       });

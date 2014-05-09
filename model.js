@@ -130,8 +130,7 @@ model.unsubscribe = function(db, feedId, callback) {
   var entries = tx.objectStore('entry');
   var feeds = tx.objectStore('feed');
 
-  var entryCursor = 
-    entries.index('feed').openKeyCursor(IDBKeyRange.only(feedId));
+  var entryCursor = entries.index('feed').openKeyCursor(IDBKeyRange.only(feedId));
   entryCursor.onsuccess = function(event) {
     var cursor = event.target.result;
     if(cursor) {
@@ -153,11 +152,7 @@ model.addEntry = function(store, entry, onSuccess, onError) {
 
 model.containsEntryHash = function(store, hash, callback) {
   store.index('hash').get(IDBKeyRange.only(hash)).onsuccess = function(event) {
-    if(event.target.result) {
-      callback(event.target.result);
-    } else {
-      callback();
-    }
+    callback(event.target.result);
   }
 }
 
@@ -176,7 +171,6 @@ model.markRead = function(db, ids, callback) {
         'feed': entry.feed,
         'hash' : entry.hash
       });
-      request.onerror = console.log;
     }
   };
 
@@ -185,7 +179,7 @@ model.markRead = function(db, ids, callback) {
   });
 };
 
-// TODO: could use index.get instead of store.get
+// TODO: could use index('unread').get instead of store.get
 model.markEntryRead = function(db, entryId, callback) {
   var tx = db.transaction('entry','readwrite');
   tx.oncomplete = callback;
@@ -204,6 +198,7 @@ model.markEntryRead = function(db, entryId, callback) {
 };
 
 // Iterate over all unread entries with an id greater than the minimumId
+// TODO: rename this more appropriately
 model.forEachEntry = function(db, params, callback, onComplete) {
   var minimumId = 0, limit = 0, unlimited = false;
   if(params && params.hasOwnProperty('minimumId')) {
@@ -221,10 +216,24 @@ model.forEachEntry = function(db, params, callback, onComplete) {
   var index = store.index('unread');
   var counter = 0;
   
-  console.log('Iterating with lower bound %s', minimumId);
+  // Some type of bug here when minimumId is not 0, it does not iterate
+  // Just realized, the index just contains the value 1 for every key,
+  // so of course the query fails.
+  // Instead I think I have to seek, using cursor.advance(x)
+  // The question is, what is x?
+  
+  // If I know the last 'read' entry, and the last 'loaded but unread',
+  // then the difference between them is x. Essentially I want to skip over
+  // loaded but unread entries to avoid reloading them.
+  
+  // All I need to do is get a count of loaded but unread in the view
+  // and pass it here as the advance param
+  
   
   // Pass in true to exclude the minimumId
-  var range = IDBKeyRange.lowerBound(minimumId, true);
+  //var range = IDBKeyRange.lowerBound(minimumId, true);
+  
+  var range = IDBKeyRange.lowerBound(0);
 
   if(callback) {
     index.openCursor(range).onsuccess = function(event) {
@@ -232,10 +241,10 @@ model.forEachEntry = function(db, params, callback, onComplete) {
       if(cursor) {
         if(!cursor.value.hasOwnProperty('unread')) {
           console.log('Error, displaying already read entry %s', cursor.value.id);
+        } else {
+          console.log('Iterating over entry %s', cursor.value.id);
         }
-        
-        console.log('Iterating over entry %s', cursor.value.id);
-        
+
         callback(cursor.value);
         
         if(unlimited || (++counter < limit)) {
