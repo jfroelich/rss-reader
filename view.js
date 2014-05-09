@@ -17,7 +17,6 @@ function addPrefetchLink(url) {
 
 // Look for entries to mark as read
 function scanForRead() {
-  //console.log('Scanning for read articles');
   var divEntries = document.getElementById('entries');
   var cutoff = document.body.scrollTop + window.innerHeight + 10;
   var readEntries = Array.prototype.filter.call(divEntries.childNodes, function(entryElement) {
@@ -51,36 +50,28 @@ function isEntryUnread(entry) {
 // Append new entries to the bottom of the entry list
 function appendEntries(limit, onComplete) {
   var params = {};
-  params.minimumId = getLastId() || 0;
-  params.limit = limit || MAX_APPEND_COUNT;
 
-  console.log('Appending entries, minId=%s',params.minimumId);
+  params.limit = limit || MAX_APPEND_COUNT;
+  params.offset = countRenderedUnread();
 
   app.model.connect(function(db) {
     app.model.forEachEntry(db, params, function(entry) {
-      if(!entryCache.hasOwnProperty(entry.id)) {
-        renderEntry(entry);
-      } else {
+      if(entryCache.hasOwnProperty(entry.id)) {
         console.log('Entry %s already loaded (paging error)', entry.id);
       }
+
+      renderEntry(entry);
+
     }, onComplete);
   });
 };
 
-// Get the fetch date of the bottom-most entry loaded into the UI
-function getLastId() {
-  var divEntries = document.getElementById('entries');
-  var lastEntry = divEntries.lastChild;
-  if(lastEntry) {
-    var str = lastEntry.getAttribute('entry');
-    if(str) {
-      return parseInt(str);
-    }
-  }
+function countRenderedUnread() {
+  return document.getElementById('entries').querySelectorAll('div:not([read])').length;
 }
 
 function renderEntry(entry) {
-  // Paging hack - add it as a property, not an index
+  // Paging hack
   entryCache[''+entry.id] = true;
 
   var entryTitle = entry.title || 'Untitled';
@@ -261,6 +252,9 @@ window.addEventListener('keydown', function(event) {
 var scanForReadTimer;
 document.addEventListener('scroll', function scrollListener(event) {
 
+  // TODO: we should still continue if scrollListener is undefined
+  // in the very first call, otherwise the first scroll down event
+  // doesn't trigger the check, when in fact it should
   var deltaY = (scrollListener.pageYOffset || pageYOffset) - pageYOffset;
   scrollListener.pageYOffset = pageYOffset;
 
@@ -272,6 +266,9 @@ document.addEventListener('scroll', function scrollListener(event) {
   // Check for read entries
   clearTimeout(scanForReadTimer);
   scanForReadTimer = setTimeout(scanForRead, READ_SCAN_DELAY);
+
+  // TODO: due to async behavior, we should not be appending
+  // until read check completes
 
   // Check if we should append new entries
   var divEntries = document.getElementById('entries');

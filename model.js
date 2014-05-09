@@ -200,57 +200,29 @@ model.markEntryRead = function(db, entryId, callback) {
 // Iterate over all unread entries with an id greater than the minimumId
 // TODO: rename this more appropriately
 model.forEachEntry = function(db, params, callback, onComplete) {
-  var minimumId = 0, limit = 0, unlimited = false;
-  if(params && params.hasOwnProperty('minimumId')) {
-    minimumId = parseInt(params.minimumId);
-  }
+  var counter = 0, offset = params.offset || 0, 
+    limit = parseInt(params.limit) || 0, 
+    unlimited = limit <= 0, 
+    advanced = false;
 
-  if(params && params.hasOwnProperty('limit')) {
-    limit = parseInt(params.limit);
-    unlimited = limit <= 0;
-  }
+  if(!callback) return;
 
   var tx = db.transaction('entry');
   tx.oncomplete = onComplete;
-  var store = tx.objectStore('entry');
-  var index = store.index('unread');
-  var counter = 0;
-  
-  // Some type of bug here when minimumId is not 0, it does not iterate
-  // Just realized, the index just contains the value 1 for every key,
-  // so of course the query fails.
-  // Instead I think I have to seek, using cursor.advance(x)
-  // The question is, what is x?
-  
-  // If I know the last 'read' entry, and the last 'loaded but unread',
-  // then the difference between them is x. Essentially I want to skip over
-  // loaded but unread entries to avoid reloading them.
-  
-  // All I need to do is get a count of loaded but unread in the view
-  // and pass it here as the advance param
-  
-  
-  // Pass in true to exclude the minimumId
-  //var range = IDBKeyRange.lowerBound(minimumId, true);
-  
-  var range = IDBKeyRange.lowerBound(0);
+  tx.objectStore('entry').index('unread').openCursor().onsuccess = function(event) {
+    var cursor = event.target.result;
+    if(!cursor) return;
+    if(offset > 0 && !advanced) {
+      //console.log('Advancing %s entries', offset);
+      advanced = true;
+      cursor.advance(offset);
+      return;
+    }
 
-  if(callback) {
-    index.openCursor(range).onsuccess = function(event) {
-      var cursor = event.target.result;
-      if(cursor) {
-        if(!cursor.value.hasOwnProperty('unread')) {
-          console.log('Error, displaying already read entry %s', cursor.value.id);
-        } else {
-          console.log('Iterating over entry %s', cursor.value.id);
-        }
-
-        callback(cursor.value);
-        
-        if(unlimited || (++counter < limit)) {
-          cursor.continue();
-        }
-      }
-    };
-  }
+    //console.log('Iterating over entry %s', cursor.value.id);
+    callback(cursor.value);
+    if(unlimited || (++counter < limit)) {
+      cursor.continue();
+    }
+  };
 };
