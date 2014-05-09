@@ -76,15 +76,25 @@ function showNotification(message) {
 }
 
 chrome.browserAction.onClicked.addListener(function(tab) {
-
-  var viewURL = {'url': chrome.extension.getURL('view.html') };
-  chrome.tabs.query(viewURL, function(tabs) {
-    if(tabs && tabs.length > 0) {
-      chrome.tabs.update(tabs[0].id, {'selected':true});
+  var viewURL = chrome.extension.getURL('view.html');
+  var newTabURL = 'chrome://newtab/';
+  var newTabQueryHandler = function(newTabs){
+    if(newTabs.length > 0) {
+      chrome.tabs.update(newTabs[0].id, {'active':true,'url': viewURL});
     } else {
-      chrome.tabs.create(viewURL);
+      chrome.tabs.create({'url': viewURL});
     }
-  });
+  };
+
+  var viewQueryHandler = function(tabs) {
+    if(tabs.length > 0) {
+      chrome.tabs.update(tabs[0].id, {'active':true});
+    } else {
+      chrome.tabs.query({'url':newTabURL}, newTabQueryHandler);
+    }
+  };
+
+  chrome.tabs.query({'url': viewURL}, viewQueryHandler);
 });
 
 chrome.runtime.onInstalled.addListener(function(){
