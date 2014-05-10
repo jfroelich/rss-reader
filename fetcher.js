@@ -1,5 +1,4 @@
 // Lib for fetching feeds
-// TODO: can i send a header that limits it to text/xml? Acccepts or something?
 
 var ALLOWED_MIME_TYPES = [
   'application/atom+xml',
@@ -59,10 +58,7 @@ function fetchFeed(url, onSuccess, onError, timeout) {
 
   request.open('GET', url, true);
   request.responseType = 'document';
-
-  // Must be called after open and before send
-  //request.setRequestHeader('Accept:', 'asdf')
-
+  request.setRequestHeader('Accept', ALLOWED_MIME_TYPES.join(', '));
   request.send();
 }
 

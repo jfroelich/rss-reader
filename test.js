@@ -16,6 +16,15 @@ test.seed = function(urls) {
   return 'Seeding ' + urls.length + ' urls';
 };
 
+test.fetch = function(url) {
+  app.fetchFeed(url, function(xml) {
+    console.dir(xml);  
+  }, function(e) {
+    console.log('fetch test error message: %s', e);
+  });
+  return 'Fetching ' + url;
+};
+
 test.fetchParseURL = function(url) {
   app.fetchFeed(url, function(responseXML) {
     var feed = app.parseFeedXML(responseXML);
