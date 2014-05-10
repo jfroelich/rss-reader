@@ -23,7 +23,7 @@ function onSubscribeSubmit(event) {
 
   if(navigator.hasOwnProperty('onLine') && !navigator.onLine) {
     console.log('!navigator.onLine');
-    alert('Subscribing to a new feed requires an Internet connection');
+    alert('Unable to subscribe while offline');
     return;
   }
 

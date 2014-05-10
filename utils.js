@@ -116,8 +116,6 @@ function decToHex(d) {
 
 // Returns a URL to the favicon for the given URL
 function getFavIcon(url) {
-  if(url) {
-    return 'http://www.google.com/s2/favicons?domain_url=' +
-      encodeURIComponent(url);
-  }
+  return url ? 'http://www.google.com/s2/favicons?domain_url=' +
+      encodeURIComponent(url) : 'img/rss_icon_trans.gif'
 }

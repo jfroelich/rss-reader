@@ -5,7 +5,8 @@ var ONLOAD_DISPLAY_COUNT = 10;
 var MAX_APPEND_COUNT = 10;
 var READ_SCAN_DELAY = 200;
 var APPEND_DELAY = 100;
-var entryCache = {};
+var NEXT_KEYS = {'32':32, '39':39, '78':78};
+var PREV_KEYS = {'37':37, '80':80};
 
 function addPrefetchLink(url) {
   var link = document.createElement('link');
@@ -52,41 +53,26 @@ function appendEntries(limit, onComplete) {
   var params = {};
 
   params.limit = limit || MAX_APPEND_COUNT;
-  params.offset = countRenderedUnread();
+  params.offset = 
+    document.getElementById('entries').querySelectorAll('div:not([read])').length;
 
   app.model.connect(function(db) {
     app.model.forEachEntry(db, params, function(entry) {
-      if(entryCache.hasOwnProperty(entry.id)) {
-        console.log('Entry %s already loaded (paging error)', entry.id);
-      }
-
       renderEntry(entry);
-
     }, onComplete);
   });
 };
 
-function countRenderedUnread() {
-  return document.getElementById('entries').querySelectorAll('div:not([read])').length;
-}
-
 function renderEntry(entry) {
-  // Paging hack
-  entryCache[''+entry.id] = true;
-
   var entryTitle = entry.title || 'Untitled';
   var feedTitle = entry.feedTitle || 'Untitled';
   var entryContent = entry.content || 'No content';
   var entryAuthor = entry.author;
-
-  var favIconURL = app.getFavIcon(entry.baseURI);
-  favIconURL = favIconURL || 'img/rss_icon_trans.gif';
-
   var entryPubDate = '';
   if(entry.pubdate && entry.pubdate > 0) {
     entryPubDate = app.formatDate(new Date(entry.pubdate));
   }
-  
+
   var entryLink = app.escapeHTMLHREF(entry.link);
 
   var template = ['<a href="',entryLink,
@@ -94,9 +80,11 @@ function renderEntry(entry) {
     app.escapeHTMLAttribute(entryTitle),
     '">',app.truncate(app.escapeHTML(entryTitle),100),
     '</a><span class="entrycontent">', entryContent,'</span>',
-    '<span class="entrysource">from <span class="entrysourcelink" title="',
+    '<span class="entrysource">',
+    '<a class="entrysourcelink" url="',entryLink,'" title="',app.escapeHTMLAttribute(entryTitle),'">Bookmark</a> - ',
+    '<span title="',
     app.escapeHTMLAttribute(feedTitle),'">',
-    '<img src="',favIconURL,'" width="16" height="16" style="max-width:19px;margin-right:3px;">',
+    '<img src="',app.getFavIcon(entry.baseURI),'" width="16" height="16" style="max-width:19px;margin-right:3px;">',
     app.escapeHTML(app.truncate(feedTitle, 40)),'</span>',
     (entryAuthor ? ' by ' + app.escapeHTML(app.truncate(entry.author,40)):''),
     ' on ',entryPubDate,'</span>'
@@ -108,8 +96,34 @@ function renderEntry(entry) {
   elem.setAttribute('class','entry');
   elem.innerHTML = template.join('');
   
+  var bookmark = elem.querySelector('a[url]');
+  bookmark.addEventListener('click', addBookmarkClick);
+  
+  
   var divEntries = document.getElementById('entries');
   divEntries.appendChild(elem);
+}
+
+function addBookmarkClick(event) {
+  
+  if(!chrome || !chrome.bookmarks) {
+    app.console.log('chrome.bookmarks is undefined');
+    return;
+  }
+  
+  var url = event.target.getAttribute('url');
+  var title = event.target.getAttribute('title');
+  if(!url) return;
+  if(title) title = title.trim();
+  title = title || url;
+  
+  chrome.bookmarks.create({
+      'title': title,
+      'url': url
+    }, function(){
+    app.console.log('Added bookmark %s', url);  
+  });
+  return false;
 }
 
 function showError(msg) {
@@ -155,7 +169,6 @@ function entryLinkClicked(event) {
   }
 }
 
-// Event handler for pollCompleted message from background page
 function handlePollCompleted() {
   var container = document.getElementById('entries');
   if(container.childNodes.length == 0 || !app.any(container.childNodes, isEntryUnread)) {
@@ -180,15 +193,13 @@ function handleSubscribe(feedId) {
 function handleUnsubscribe(feedId) {
   var container = document.getElementById('entries');
   var entries = container.querySelectorAll('div[feed="'+feedId+'"]');
-  if(entries) {
-    app.each(entries, function(entry){
-      container.removeChild(entry);
-    });
+  app.each(entries, function(entry){
+    container.removeChild(entry);
+  });
 
-    if(container.childNodes.length == 0) {
-      container.style.display = 'none';
-      showNoEntriesInfo();
-    } 
+  if(container.childNodes.length == 0) {
+    container.style.display = 'none';
+    showNoEntriesInfo();
   }
 }
 
@@ -201,10 +212,6 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     handleUnsubscribe(request.feed);
   }
 });
-
-// Keyboard shortcut keycodes for moving to next or previous
-var NEXT_KEYS = {'32':32, '39':39, '78':78};
-var PREV_KEYS = {'37':37, '80':80};
 
 window.addEventListener('keydown', function(event) {
   if(event.target != document.body) {
@@ -287,13 +294,12 @@ window.addEventListener('resize', function(event) {
 document.addEventListener('DOMContentLoaded', function domContentLoadedListener(event) {
 
   document.removeEventListener('DOMContentLoaded', domContentLoadedListener);
-
-  var entries = document.getElementById('entries');
-  entries.addEventListener('click', entryLinkClicked);
-  document.getElementById('dismiss').onclick = hideErrorMessage;
+  document.getElementById('entries').addEventListener('click', entryLinkClicked);
+  document.getElementById('dismiss').addEventListener('click', hideErrorMessage);
   app.model.connect(function(db) {
-    appendEntries(ONLOAD_DISPLAY_COUNT, function appendCompleted() {
-      if(entries.childNodes.length == 0) {
+    appendEntries(ONLOAD_DISPLAY_COUNT, function() {
+      if(document.getElementById('entries').childNodes.length == 0) {
+        document.getElementById('entries').style.display = 'none';
         showNoEntriesInfo();
       }
     });

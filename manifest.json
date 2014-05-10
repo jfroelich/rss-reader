@@ -29,10 +29,11 @@
   "permissions": [
 		"alarms",
 		"background",
-		"unlimitedStorage",
-		"notifications",
+		"bookmarks",
 		"http://*/*",
-		"https://*/*"
+		"https://*/*",
+		"notifications",
+		"unlimitedStorage"
   ],
 
   "content_security_policy": 

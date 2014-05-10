@@ -96,6 +96,10 @@ div.entry img {
   margin-bottom: 3px;
 }
 
+.entrysourcelink {
+  text-decoration: underline;
+}
+
 /*
 .entrysource a {
   font-size:10pt;

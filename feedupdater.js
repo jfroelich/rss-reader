@@ -4,22 +4,15 @@
 function updateFeed(db, feed, callback, timeout) {
   var entriesProcessed = 0, entriesAdded = 0;
   fetchFeed(feed.url, function(responseXML) {
-
     var fetchedFeed = parseFeedXML(responseXML);
-
     if(fetchedFeed.error) {
       feed.error = fetchedFeed.error;
       callback(feed, 0, 0);
       return;
     }
 
-    if(fetchedFeed.title) {
-      feed.title = fetchedFeed.title;
-    }
-
-    if(fetchedFeed.link) {
-      feed.link = fetchedFeed.link;
-    }
+    if(fetchedFeed.title) feed.title = fetchedFeed.title;
+    if(fetchedFeed.link) feed.link = fetchedFeed.link;
 
     if(fetchedFeed.date) {
       var feedDate = parseDate(fetchedFeed.date);
@@ -47,7 +40,6 @@ function updateFeed(db, feed, callback, timeout) {
       };
       
       var store = db.transaction('entry','readwrite').objectStore('entry');
-      
       each(fetchedFeed.entries, function(entry) {
         entry.feedId = feed.id;
         if(feed.link) entry.feedLink = feed.link;
