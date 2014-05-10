@@ -1,4 +1,4 @@
-// Asynchronously fetch an XML file
+// Lib for fetching feeds
 // TODO: can i send a header that limits it to text/xml? Acccepts or something?
 
 var ALLOWED_MIME_TYPES = [
@@ -9,7 +9,7 @@ var ALLOWED_MIME_TYPES = [
   'text/xml'
 ];
 
-
+// Asynchronously fetch an XML file
 function fetchFeed(url, onSuccess, onError, timeout) {
   var abortTimer = 0;
   var timeoutOccurred = false;
@@ -18,20 +18,22 @@ function fetchFeed(url, onSuccess, onError, timeout) {
   request.responseType = 'document';
 
   // Must be called after open and before send
-  //request.setRequestHeader('Accepts:')
+  //request.setRequestHeader('Accept:', 'asdf')
 
+  // 'timeout' in new XMLHttpRequest() returns "true" in console
+  // consider using it
   // request.timeout = timeout;
   // request.ontimeout = function(event) {'ontimeout'};
 
-  request.onerror = function(event) {
+  request.addEventListener('error', function(event) {
     clearTimeout(abortTimer);
 
     // Chrome whines about accessing event.target.responseText
-    // when responseType is document.
+    // when event.target.responseType is document.
     onError('The request to "'+url+'" encountered an unknown error.');
-  };
+  });
 
-  request.onabort = function(event) {
+  request.addEventListener('abort', function(event) {
     clearTimeout(abortTimer);
     
     if(timeoutOccurred) {
@@ -39,9 +41,9 @@ function fetchFeed(url, onSuccess, onError, timeout) {
     } else {
       onError('The request to "' + url + '" was aborted.');  
     }
-  };
+  });
 
-  request.onload = function(event) {
+  request.addEventListener('load', function(event) {
     clearTimeout(abortTimer);
     
     if(event.target.status != 200) {
@@ -51,7 +53,7 @@ function fetchFeed(url, onSuccess, onError, timeout) {
       return;
     }
 
-    var type = (event.target.getResponseHeader('Content-type') || '').toLowerCase();
+    var type = (event.target.getResponseHeader('Content-Type') || '').toLowerCase();
     if(!isAllowedMimeType(type)) {
       onError('The request to "'+ url+
         '" did not return a valid content type ('+type+').');
@@ -71,7 +73,7 @@ function fetchFeed(url, onSuccess, onError, timeout) {
     }
 
     onSuccess(event.target.responseXML);
-  };
+  });
 
   request.send();
 
