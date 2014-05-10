@@ -9,43 +9,25 @@ var ALLOWED_MIME_TYPES = [
   'text/xml'
 ];
 
-// Asynchronously fetch an XML file
+// Fetch an XML file (async)
 function fetchFeed(url, onSuccess, onError, timeout) {
-  var abortTimer = 0;
-  var timeoutOccurred = false;
   var request = new XMLHttpRequest();
-  request.open('GET', url, true);
-  request.responseType = 'document';
-
-  // Must be called after open and before send
-  //request.setRequestHeader('Accept:', 'asdf')
-
-  // 'timeout' in new XMLHttpRequest() returns "true" in console
-  // consider using it
-  // request.timeout = timeout;
-  // request.ontimeout = function(event) {'ontimeout'};
+  request.timeout = timeout;
 
   request.addEventListener('error', function(event) {
-    clearTimeout(abortTimer);
-
-    // Chrome whines about accessing event.target.responseText
-    // when event.target.responseType is document.
     onError('The request to "'+url+'" encountered an unknown error.');
   });
 
   request.addEventListener('abort', function(event) {
-    clearTimeout(abortTimer);
-    
-    if(timeoutOccurred) {
-      onError('The request to "' + url + '" timed out.');
-    } else {
-      onError('The request to "' + url + '" was aborted.');  
-    }
+    onError('The request to "' + url + '" was aborted.');
+  });
+
+  request.addEventListener('timeout', function(event) {
+    onError('The request to "' + url + '" timed out.');
   });
 
   request.addEventListener('load', function(event) {
-    clearTimeout(abortTimer);
-    
+
     if(event.target.status != 200) {
       onError('The request to "'+ url+
         '" returned an invalid response code (' + 
@@ -75,16 +57,13 @@ function fetchFeed(url, onSuccess, onError, timeout) {
     onSuccess(event.target.responseXML);
   });
 
-  request.send();
+  request.open('GET', url, true);
+  request.responseType = 'document';
 
-  if(timeout) {
-    abortTimer = setTimeout(function() {
-      if(request && request.readyState < XMLHttpRequest.DONE) {
-        timeoutOccurred = true;
-        request.abort();
-      }
-    }, timeout);
-  }
+  // Must be called after open and before send
+  //request.setRequestHeader('Accept:', 'asdf')
+
+  request.send();
 }
 
 function isAllowedMimeType(type) {

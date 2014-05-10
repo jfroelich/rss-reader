@@ -60,3 +60,16 @@ test.trimHTML = function(html) {
   console.log(doc.body.innerHTML);
   return 'Testing HTML trim';
 };
+
+test.testOnTimeout = function(timeout) {
+  var r = new XMLHttpRequest();
+  r.timeout = timeout;
+  r.ontimeout = function(event) {
+    console.log('timed out!');
+  };
+  r.onload = function() {
+    console.log('onload reached');
+  };
+  r.open('GET', 'http://www.google.com', true);
+  r.send();
+};
