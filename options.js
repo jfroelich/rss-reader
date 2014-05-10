@@ -21,6 +21,11 @@ function onSubscribeSubmit(event) {
     return;
   }
 
+  if(!app.URI.isValid(app.URI.parse(url))) {
+    alert('"' + url + '" is not a valid URL.');
+    return;
+  }
+
   if(navigator.hasOwnProperty('onLine') && !navigator.onLine) {
     console.log('!navigator.onLine');
     alert('Unable to subscribe while offline');
@@ -46,7 +51,7 @@ function onSubscribeComplete(feed, entriesProcessed, entriesAdded) {
   if(feed.error) {
     app.console.log(feed.error);
     window.alert('An error occurred when trying to subscribe to "'+
-      feed.url+'".\n\nDetails: ' + feed.error);
+      feed.url+'".\n\nDetails:\n\n' + feed.error);
     return;
   }
 

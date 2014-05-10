@@ -66,15 +66,19 @@ function updateBadge() {
 }
 
 function showNotification(message) {
-  if(typeof webkitNotifications == 'undefined') {
-    return;
-  }
-
-  var notification = webkitNotifications.createNotification(
-    'img/rss_icon_trans.gif','Josh\'s RSS Reader',message
-  );
-
-  notification.show();
+  chrome.notifications.getPermissionLevel(function(level) {
+    if(level == 'granted') {
+      var id = '';
+      chrome.notifications.create(id, {
+        'type':'basic',
+        'title':'Josh\'s RSS Reader',
+        'iconUrl':'img/rss_icon_trans.gif',
+        'message':message
+      }, function(notificationId){});
+    } else {
+      console.log('This extension is not authorized to show notifications.');
+    }
+  });
 }
 
 chrome.browserAction.onClicked.addListener(function(tab) {

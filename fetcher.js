@@ -22,7 +22,7 @@ function fetchFeed(url, onSuccess, onError, timeout) {
   });
 
   request.addEventListener('timeout', function(event) {
-    onError('The request to "' + url + '" timed out.');
+    onError('The request to "' + url + '" took too long to complete.');
   });
 
   request.addEventListener('load', function(event) {
@@ -30,7 +30,7 @@ function fetchFeed(url, onSuccess, onError, timeout) {
     if(event.target.status != 200) {
       onError('The request to "'+ url+
         '" returned an invalid response code (' + 
-        event.target.status + ').');
+        event.target.status + ' ' + event.target.statusText + ').');
       return;
     }
 

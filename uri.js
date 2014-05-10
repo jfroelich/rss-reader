@@ -1,5 +1,4 @@
-// Simple URI functions
-// Adapted from https://code.google.com/p/js-uri/source/browse/trunk/lib/URI.js
+// Very basic URI lib
 
 var URI = {};
 
@@ -37,5 +36,18 @@ URI.resolve = function(base,path) {
     if(!path.scheme) path.scheme = base.scheme;
     if(!path.host) path.host = base.host;
     return URI.toString(path);
+  }
+};
+
+// Very basic URL validition
+URI.isValid = function(obj) {
+  // A defined object, with a host property, that contains a period, 
+  // that does not start with a period.
+  
+  // If there is no scheme, URI.parse shoves host into path, 
+  // which is a bug. Treat path as the host
+  if(obj) {
+    var host = obj.scheme ? obj.host : obj.path;
+    return host && host.indexOf('.') > 0 && host.indexOf(' ') == -1;    
   }
 };
