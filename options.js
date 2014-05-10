@@ -34,7 +34,7 @@ function onSubscribeSubmit(event) {
       if(subscribed) {
         alert('You are already subscribed to \'' + url + '\'');
       } else {
-        app.console.log('Subscribing to %s', url);
+        // app.console.log('Subscribing to %s', url);
         app.updateFeed(db, {'url': url},
           onSubscribeComplete, SUBSCRIBE_TIMEOUT);
       }
@@ -45,7 +45,8 @@ function onSubscribeSubmit(event) {
 function onSubscribeComplete(feed, entriesProcessed, entriesAdded) {
   if(feed.error) {
     app.console.log(feed.error);
-    alert('An error occurred when trying to subscribe to "'+feed.url+'". Details: ' + feed.error);
+    window.alert('An error occurred when trying to subscribe to "'+
+      feed.url+'".\n\nDetails: ' + feed.error);
     return;
   }
 

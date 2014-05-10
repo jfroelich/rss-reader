@@ -4,9 +4,12 @@
 function updateFeed(db, feed, callback, timeout) {
   var entriesProcessed = 0, entriesAdded = 0;
   fetchFeed(feed.url, function(responseXML) {
-    var fetchedFeed = parseFeedXML(responseXML);
-    if(fetchedFeed.error) {
-      feed.error = fetchedFeed.error;
+
+    var fetchedFeed;
+    try {
+      fetchedFeed = parseFeedXML(responseXML);
+    } catch(exceptionString) {
+      feed.error = exceptionString;
       callback(feed, 0, 0);
       return;
     }
@@ -48,7 +51,10 @@ function updateFeed(db, feed, callback, timeout) {
         updateEntry(store, entry, onEntryUpdateSuccess, onEntryUpdateError);
       });
     });
-  }, timeout);
+  }, function(errorMessage) {
+    feed.error = errorMessage;
+    callback(feed, 0, 0);
+  },timeout);
 };
 
 // Prep and attempt to store an entry

@@ -29,7 +29,9 @@ function startPoll() {
 
       model.forEachFeed(db, function(feed) {
         updateFeed(db, feed, function(feed, entriesProcessed, entriesAdded){
+          
           if(feed.error) { console.log('Polling error: %s', feed.error); }
+          
           totalEntriesAdded += entriesAdded;
           if(++feedCounter == feedCount) {
             pollCompleted(feedCount, totalEntriesAdded);

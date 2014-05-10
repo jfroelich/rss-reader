@@ -55,6 +55,11 @@ function isArray(obj) {
   return obj instanceof Array;
 }
 
+function startsWith(str1, str2) {
+  return str1 && str1.lastIndexOf(str2, 0) === 0;
+}
+
+
 // Generates a new DOM object from a string. The object is detached. 
 // Detaching avoids aggressive resource fetching (in Chrome)
 function parseHTML(htmlString) {

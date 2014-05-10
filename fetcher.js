@@ -1,63 +1,96 @@
-// Asynchronously fetches an XML file
-function fetchFeed(url, callback, timeout) {
+// Asynchronously fetch an XML file
+// TODO: can i send a header that limits it to text/xml? Acccepts or something?
+
+var ALLOWED_MIME_TYPES = [
+  'application/atom+xml',
+  'application/rdf+xml',
+  'application/rss+xml',
+  'application/xml',
+  'text/xml'
+];
+
+
+function fetchFeed(url, onSuccess, onError, timeout) {
   var abortTimer = 0;
+  var timeoutOccurred = false;
   var request = new XMLHttpRequest();
   request.open('GET', url, true);
   request.responseType = 'document';
-  request.onerror = fetchOnError(abortTimer, callback);
-  request.onabort = fetchOnAbort(url, abortTimer, callback);
-  request.onload = fetchOnLoad(url, abortTimer, callback);
 
-  // Untested, I think I should have always been doing this
-  if(timeout) {
-    request.timeout = timeout;
-  }
+  // Must be called after open and before send
+  //request.setRequestHeader('Accepts:')
 
-  try {
-    request.send();
-  } catch(exception) {
-    console.log('Fetch exception %s', exception);
-    if(request) {
-      request.abort();
+  // request.timeout = timeout;
+  // request.ontimeout = function(event) {'ontimeout'};
+
+  request.onerror = function(event) {
+    clearTimeout(abortTimer);
+
+    // Chrome whines about accessing event.target.responseText
+    // when responseType is document.
+    onError('The request to "'+url+'" encountered an unknown error.');
+  };
+
+  request.onabort = function(event) {
+    clearTimeout(abortTimer);
+    
+    if(timeoutOccurred) {
+      onError('The request to "' + url + '" timed out.');
+    } else {
+      onError('The request to "' + url + '" was aborted.');  
     }
-  }
-
-  if(timeout) {
-    abortTimer = setTimeout(fetchTriggerAbort(request), timeout);
-  }
-}
-
-function fetchOnAbort(url, abortTimer, callback) {
-  return function(event) {
-    clearTimeout(abortTimer);
-    callback({'error': 'The request to \'' + url + '\' was aborted or timed out.'});
   };
-}
 
-function fetchOnError(abortTimer, callback) {
-  return function(event) {
+  request.onload = function(event) {
     clearTimeout(abortTimer);
-    callback({'error': event});
-  };
-}
-
-function fetchOnLoad(url, abortTimer, callback) {
-  return function(event) {
-    clearTimeout(abortTimer);
-    var response = event.target;
-    if(response.status != 200 || !response.responseXML || !response.responseXML.documentElement) {
-      callback({'error': 'Invalid response for '+ url+'. Status was ' + response.status});
+    
+    if(event.target.status != 200) {
+      onError('The request to "'+ url+
+        '" returned an invalid response code (' + 
+        event.target.status + ').');
       return;
     }
 
-    callback(response.responseXML);
+    var type = (event.target.getResponseHeader('Content-type') || '').toLowerCase();
+    if(!isAllowedMimeType(type)) {
+      onError('The request to "'+ url+
+        '" did not return a valid content type ('+type+').');
+      return;
+    }
+
+    if(!event.target.responseXML) {
+      onError('The request to "'+ url+
+        '" did not return an XML document.');
+      return;
+    }
+
+    if(!event.target.responseXML.documentElement) {
+      onError('The request to "'+ url+
+        '" did not return a valid XML document (no document element found).');
+      return;
+    }
+
+    onSuccess(event.target.responseXML);
   };
+
+  request.send();
+
+  if(timeout) {
+    abortTimer = setTimeout(function() {
+      if(request && request.readyState < XMLHttpRequest.DONE) {
+        timeoutOccurred = true;
+        request.abort();
+      }
+    }, timeout);
+  }
 }
 
-function fetchTriggerAbort(request) {
-  return function() {
-    if(request && request.readyState < XMLHttpRequest.DONE) {
-      request.abort();
+function isAllowedMimeType(type) {
+  if(type) {
+    for(var i = 0; i < ALLOWED_MIME_TYPES.length;i++) {
+      if(type.lastIndexOf(ALLOWED_MIME_TYPES[i], 0) === 0) {
+        return true;
+      }
     }
-  };
+  }
 }

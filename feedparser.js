@@ -1,23 +1,10 @@
 // Parse a feed XML file and generate a feed object
-// Instead of returning an error, this should be throwing an exception
-// Parsing errors are the ideal situation for an exception throwing design pattern
 function parseFeedXML(xmlDoc) {
-
-  if(!xmlDoc) {
-    return {'error':'Invalid XML - no document'};
-  } 
-
-  if(!xmlDoc.documentElement) {
-    return {'error':'Invalid XML - no document element'};
-  }
-
   var doc = xmlDoc.documentElement;
   var rootName = doc.nodeName.toLowerCase();
-    
-  if(rootName != 'feed' && rootName != 'rss' && rootName != 'rdf:rdf' && rootName != 'rdf') {
-    return {
-      'error': 'Invalid XML - invalid document element "' + rootName + '"'
-    };
+
+  if(rootName != 'feed' && rootName != 'rss' && rootName != 'rdf:rdf') {
+    throw 'Invalid XML - invalid document element "' + rootName + '"';
   }
 
   var isAtom = rootName == 'feed';
