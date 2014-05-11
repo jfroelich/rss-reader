@@ -19,6 +19,12 @@ function onSubscribeSubmit(event) {
   if(!url) {
     return;
   }
+  
+  var subMonitor = document.getElementById('options_subscription_monitor');
+  if(subMonitor) {
+    console.log('subscription in progress, ignoring subscription button click');
+    return;
+  }
 
   if(!app.URI.isValid(app.URI.parse(url))) {
     showErrorMessage('"' + url + '" is not a valid URL.');
@@ -33,12 +39,18 @@ function onSubscribeSubmit(event) {
 
   elementAddURL.value = '';
 
+  showSubscriptionMonitor();
+
+
   app.model.connect(function(db) {
+    updateSubscriptionMonitor('Checking for existing subscription...');
     app.model.isSubscribed(db, url, function(subscribed){
       if(subscribed) {
-        showErrorMessage('You are already subscribed to "' + url + '".');
+        hideSubscriptionMonitor(function() {
+          showErrorMessage('You are already subscribed to "' + url + '".');  
+        });
       } else {
-        // app.console.log('Subscribing to %s', url);
+        updateSubscriptionMonitor('Downloading "'+url+'"...');
         app.updateFeed(db, {'url': url},
           onSubscribeComplete, SUBSCRIBE_TIMEOUT);
       }
@@ -46,11 +58,63 @@ function onSubscribeSubmit(event) {
   });
 }
 
-function showErrorMessage(msg) {
+function showSubscriptionMonitor() {
+  var oldContainer = document.getElementById('options_subscription_monitor');
+  if(oldContainer) {
+    console.log('old container still present');
+    
+    // Note: instead of removing think how to reuse so we avoid this
+    // remove then add ugliness (in the UI, and the code too). Also do 
+    // this for the error message code.
+    // BUG: possible bug if container is concurrently fading out
+    oldContainer.parentNode.removeChild(oldContainer);
+  }
 
+  var container = document.createElement('div')
+  container.setAttribute('id','options_subscription_monitor');
+  container.style.opacity = '1';
+  document.body.appendChild(container);
+}
+
+// For now let's do a simple append message
+function updateSubscriptionMonitor(message) {
+  var container = document.getElementById('options_subscription_monitor');
+  if(!container) {
+    console.log('no subscription monitor container!');
+    return;
+  }
+
+  var elMessage = document.createElement('p');
+  elMessage.appendChild(document.createTextNode(message));
+  container.appendChild(elMessage);
+}
+
+function hideSubscriptionMonitor(onComplete) {
+  var container = document.getElementById('options_subscription_monitor');
+  if(container) {
+    if(typeof fade != 'undefined') {
+      fade(container, 2, 2, function() {
+        document.body.removeChild(container);
+        if(onComplete) onComplete();
+      });
+    } else {
+      console.log('not sure why but this cannot call fade');
+    }
+
+  } else {
+    console.log('cannot hide monitor, it was undefined');
+    if(onComplete) onComplete();
+  }
+}
+
+function showErrorMessage(msg) {
   var dismissClickListener = function(event) {
     event.target.removeEventListener('click', dismissClickListener);
-    container.parentNode.removeChild(container);
+    if(container) {
+      container.parentNode.removeChild(container);
+    } else {
+      console.error('container was undefined when clicking dismiss');
+    }
   }
 
   var oldContainer = document.getElementById('options_error_message');
@@ -62,9 +126,10 @@ function showErrorMessage(msg) {
 
   var container = document.createElement('div');
   container.setAttribute('id','options_error_message');
+  container.style.opacity = '0';
 
   var elMessage = document.createElement('span');
-  elMessage.innerHTML = app.escapeHTML(msg);
+  elMessage.appendChild(document.createTextNode(msg));
   container.appendChild(elMessage);
 
   var elDismiss = document.createElement('input');
@@ -74,19 +139,27 @@ function showErrorMessage(msg) {
   elDismiss.addEventListener('click', dismissClickListener);
   container.appendChild(elDismiss);
   document.body.appendChild(container);
-  app.fade(container, 0.1, 100);
+  
+  fade(container, 2, 0);
 }
 
 function onSubscribeComplete(feed, entriesProcessed, entriesAdded) {
   if(feed.error) {
-    var errorMessage = feed.error || 'An unknown error occurred.';
-    showErrorMessage('Unable to subscribe to "'+ feed.url+'". ' + 
-      errorMessage);
+    
+    hideSubscriptionMonitor(function() {
+      var errorMessage = feed.error || 'An unknown error occurred.';
+      showErrorMessage('Unable to subscribe to "'+ feed.url+'". ' + 
+        errorMessage);
+    });
     return;
   }
 
-  app.console.log('Subscribed to %s, processed %s entries, added %s entries', 
-    feed.title, entriesProcessed, entriesAdded);
+  updateSubscriptionMonitor('Successfully subscribed! Found '+
+    entriesAdded + 
+    ' new articles.');
+
+  //app.console.log('Subscribed to %s, processed %s entries, added %s entries', 
+  //  feed.title, entriesProcessed, entriesAdded);
   app.updateBadge();
 
   app.showNotification('Subscribed to ' + feed.title + '. Found ' + entriesAdded + ' new articles.');
@@ -96,9 +169,8 @@ function onSubscribeComplete(feed, entriesProcessed, entriesAdded) {
 
   // Broadcast the subscription event
   chrome.runtime.sendMessage({'type':'subscribe','feed':feed.id});
-  
-  
-  // TODO: show something in the UI in case notification was not clear enough?
+
+  hideSubscriptionMonitor();
 }
 
 function loadFeeds() {

@@ -12,16 +12,15 @@
 
   "background": {
   	"scripts": [
-		"utils.js",
-		"uri.js",
-		"fx.js",
-		"hashing.js",
-		"sanitize.js",
-		"fetcher.js",
-		"feedparser.js",
-		"feedupdater.js",
-		"model.js",
-		"app.js"]
+	  "utils.js",
+	  "uri.js",
+	  "hashing.js",
+	  "sanitize.js",
+	  "fetcher.js",
+	  "feedparser.js",
+	  "feedupdater.js",
+	  "model.js",
+	  "app.js"]
   },
 	
   "options_page": "options.html",

@@ -32,31 +32,24 @@ function shrink(el, delta, delay, callback) {
   }, delay);
 }
 
-// Fade in/out an element by modifying opacity
-function fade(element, delta, delay) {
-  var op, timer;
-
-  if(delta >= 0) {
-    // fade in
-    op = 0.0;
-    timer = setInterval(function() {
-      if(op >= 1.0) {
-        clearInterval(timer);
-        op = 1.0;
-      }
-      element.style.opacity = op;
-      op += delta;
-    }, delay);
-  } else {
-    // fade out
-    op = 1.0;
-    timer = setInterval(function() {
-      if(op <= 0.0) {
-        clearInterval(timer);
-        op = 0.0;
-      }
-      element.style.opacity = op;
-      op += delta;
-    }, delay);
+// Fade an element in/out
+// Elements must have opacity defined as 0 or 1 for this to work
+function fade(element, duration, delay, callback) {
+  if(element.style.display == 'none') {
+    element.style.display = '';
+    element.style.opacity = '0';
   }
+
+  if(!element.style.opacity) {
+    element.style.opacity = element.style.display == 'none' ? '0' : '1';
+  }
+
+  element.addEventListener('webkitTransitionEnd', function webkitTransitionEnd(event) {
+    event.target.removeEventListener('webkitTransitionEnd', webkitTransitionEnd);
+    if(callback) callback(element);
+  });
+
+  // element duration function delay
+  element.style.transition = 'opacity '+duration+'s ease '+delay+'s';
+  element.style.opacity = element.style.opacity == '1' ? '0' : '1';
 }

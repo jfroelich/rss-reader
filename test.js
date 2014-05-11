@@ -70,6 +70,13 @@ test.trimHTML = function(html) {
   return 'Testing HTML trim';
 };
 
+test.fade = function(id) {
+  fade(document.getElementById(id), 2, 1, function(){
+    console.log('toggle completed');
+  });
+  return 'Toggling ' + id;
+};
+
 test.testOnTimeout = function(timeout) {
   var r = new XMLHttpRequest();
   r.timeout = timeout;

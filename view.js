@@ -133,7 +133,7 @@ function showError(msg) {
   if(container.style.display != 'block') {
     container.style.opacity = 0.0;
     container.style.display = 'block';
-    app.fade(container,0.1, 50);
+    fade(container,0.1, 0, 50);
   }
 }
 
