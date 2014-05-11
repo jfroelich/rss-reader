@@ -4,8 +4,7 @@ var app = chrome.extension.getBackgroundPage();
 
 var SUBSCRIBE_TIMEOUT = 5000;
 
-var feedTable;
-var noFeedsMessage;
+var feedTable, noFeedsMessage;
 
 // Respond to subscription form submission
 function onSubscribeSubmit(event) {
@@ -22,13 +21,13 @@ function onSubscribeSubmit(event) {
   }
 
   if(!app.URI.isValid(app.URI.parse(url))) {
-    alert('"' + url + '" is not a valid URL.');
+    showErrorMessage('"' + url + '" is not a valid URL.');
     return;
   }
 
   if(navigator.hasOwnProperty('onLine') && !navigator.onLine) {
     console.log('!navigator.onLine');
-    alert('Unable to subscribe while offline');
+    showErrorMessage('Unable to subscribe while offline');
     return;
   }
 
@@ -37,7 +36,7 @@ function onSubscribeSubmit(event) {
   app.model.connect(function(db) {
     app.model.isSubscribed(db, url, function(subscribed){
       if(subscribed) {
-        alert('You are already subscribed to \'' + url + '\'');
+        showErrorMessage('You are already subscribed to "' + url + '".');
       } else {
         // app.console.log('Subscribing to %s', url);
         app.updateFeed(db, {'url': url},
@@ -47,11 +46,42 @@ function onSubscribeSubmit(event) {
   });
 }
 
+function showErrorMessage(msg) {
+
+  var dismissClickListener = function(event) {
+    event.target.removeEventListener('click', dismissClickListener);
+    container.parentNode.removeChild(container);
+  }
+
+  var oldContainer = document.getElementById('options_error_message');
+  if(oldContainer) {
+    document.getElementById('options_dismiss_error_button').removeEventListener(
+      'click', dismissClickListener);
+    oldContainer.parentNode.removeChild(oldContainer);
+  }
+
+  var container = document.createElement('div');
+  container.setAttribute('id','options_error_message');
+
+  var elMessage = document.createElement('span');
+  elMessage.innerHTML = app.escapeHTML(msg);
+  container.appendChild(elMessage);
+
+  var elDismiss = document.createElement('input');
+  elDismiss.setAttribute('type','button');
+  elDismiss.setAttribute('id','options_dismiss_error_button');
+  elDismiss.setAttribute('value','Dismiss');
+  elDismiss.addEventListener('click', dismissClickListener);
+  container.appendChild(elDismiss);
+  document.body.appendChild(container);
+  app.fade(container, 0.1, 100);
+}
+
 function onSubscribeComplete(feed, entriesProcessed, entriesAdded) {
   if(feed.error) {
-    app.console.log(feed.error);
-    window.alert('An error occurred when trying to subscribe to "'+
-      feed.url+'".\n\nDetails:\n\n' + feed.error);
+    var errorMessage = feed.error || 'An unknown error occurred.';
+    showErrorMessage('Unable to subscribe to "'+ feed.url+'". ' + 
+      errorMessage);
     return;
   }
 
@@ -63,9 +93,12 @@ function onSubscribeComplete(feed, entriesProcessed, entriesAdded) {
 
   // Add the feed to the feed list
   listFeed(feed);
-  
+
   // Broadcast the subscription event
   chrome.runtime.sendMessage({'type':'subscribe','feed':feed.id});
+  
+  
+  // TODO: show something in the UI in case notification was not clear enough?
 }
 
 function loadFeeds() {
@@ -119,7 +152,7 @@ function listFeed(feed) {
   var unsubButton = row.querySelector('input[type=button]');
   unsubButton.onclick = onUnsubscribeButtonClicked;
   feedTable.appendChild(row);
-  
+
   // TODO: check it is visible and hide the no feeds message
 };
 

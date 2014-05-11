@@ -100,18 +100,6 @@ div.entry img {
   text-decoration: underline;
 }
 
-/*
-.entrysource a {
-  font-size:10pt;
-  color:#cccccc;
-  text-decoration: none;
-}
-
-a.entrysourcelink:hover {
-  color:#5ba4e5;
-  text-decoration: underline;
-}*/
-
 a.entryTitle {
   font-family: "nimbus-sans",Helvetica,Arial,sans-serif;
   font-weight: 300;
