@@ -32,7 +32,6 @@
 		"http://*/*",
 		"https://*/*",
 		"notifications",
-		"permissions",
 		"unlimitedStorage"
   ],
 
