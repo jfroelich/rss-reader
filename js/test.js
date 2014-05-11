@@ -27,7 +27,7 @@ test.fetch = function(url) {
 
 test.fetchParseURL = function(url) {
   app.fetchFeed(url, function(responseXML) {
-    var feed = app.parseFeedXML(responseXML);
+    var feed = app.xml2json(responseXML);
     if(feed.error) {
       console.log('Error %s',feed.error);
       return;

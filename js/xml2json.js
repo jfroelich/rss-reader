@@ -1,5 +1,5 @@
-// Parse a feed XML file and generate a feed object
-function parseFeedXML(xmlDoc) {
+// Convert/marshall a feed's xml representation into a custom json represtation
+function xml2json(xmlDoc) {
   var doc = xmlDoc.documentElement;
   var rootName = doc.nodeName.toLowerCase();
 

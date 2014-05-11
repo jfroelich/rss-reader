@@ -7,7 +7,7 @@ function updateFeed(db, feed, callback, timeout) {
 
     var fetchedFeed;
     try {
-      fetchedFeed = parseFeedXML(responseXML);
+      fetchedFeed = xml2json(responseXML);
     } catch(exceptionString) {
       feed.error = exceptionString;
       callback(feed, 0, 0);
