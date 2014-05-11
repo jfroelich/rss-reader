@@ -10,15 +10,15 @@
   },
   "background": {
   	"scripts": [
-	  "utils.js",
-	  "uri.js",
-	  "hashing.js",
-	  "sanitize.js",
-	  "fetcher.js",
-	  "feedparser.js",
-	  "feedupdater.js",
-	  "model.js",
-	  "app.js"]
+	  "js/utils.js",
+	  "js/uri.js",
+	  "js/hashing.js",
+	  "js/fetcher.js",
+	  "js/feedupdater.js",
+	  "js/model.js",
+	  "js/sanitize.js",
+	  "js/xml2json.js",
+	  "js/app.js"]
   },
   "options_page": "options.html",
   "permissions": [
