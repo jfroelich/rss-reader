@@ -72,6 +72,7 @@ div.entry {
   padding: 16px;
   background-color: rgba(255, 255, 255, 0.68);
   font-size:14pt;
+  text-align: justify;
 }
 
 div.entry a {
@@ -86,6 +87,7 @@ div.entry img {
 
 .entrycontent {
   word-wrap: break-word;
+  text-align: justify;
 }
 
 .entrysource {
