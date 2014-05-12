@@ -8,8 +8,9 @@ function updateFeed(db, feed, callback, timeout) {
     var fetchedFeed;
     try {
       fetchedFeed = xml2json(responseXML);
-    } catch(exceptionString) {
-      feed.error = exceptionString;
+    } catch(exception) {
+      //feed.errorType = exception.type;
+      feed.error = exception.message;
       callback(feed, 0, 0);
       return;
     }

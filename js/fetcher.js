@@ -71,3 +71,11 @@ function isAllowedMimeType(type) {
     }
   }
 }
+
+function testFetchFeed(url) {
+  fetchFeed(url, function(xml){
+    console.log(xml);
+  }, function(error){
+    console.log(error);
+  });
+}
