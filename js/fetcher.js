@@ -71,7 +71,6 @@ var ALLOWED_MIME_TYPES = [
 
 var ACCEPT_VALUE = ALLOWED_MIME_TYPES.join(', ');
 
-
 function isAllowedMimeType(type) {
   if(type) {
     for(var i = 0; i < ALLOWED_MIME_TYPES.length;i++) {

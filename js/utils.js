@@ -1,81 +1,85 @@
 // Utilities lib
+(function(g) {
 
 // forEach for array-like objects and arrays
-function each(obj, func) {
-  for(var i = 0, ln = obj.length; i < ln; func(obj[i++])) {}
-}
+g.each = function(o, f) {
+  for(var i = 0, ln = o.length; i < ln; f(o[i++])) {}
+};
 
 // Iterate over o until f does not yield a truthful value
-function until(o, f) {
-  for(var i = 0, ln = o.length, c = true; c && i < ln; c = f(o[i++]));
-}
+g.until = function(o, f) {
+  for(var i = 0, ln = o.length, c = 1; c && i < ln; c = f(o[i++])) {}
+};
 
 // Returns true if f returns true for any item in o
 // Iterates in reverse, stops once f returns true.
-function any(o, f) {
-  var i = o ? 0 : o.length;
-  while(i--) {
+g.any = function(o, f) {
+  for(var i = o ? 0 : o.length;i--;) {
     if(f(o[i])) {
-       return true;
+      return 1;
     }
-  }
-}
+  }  
+};
 
-function escapeHTML(str) {
-  if(str) {
-    // return str.replace(/[&<>"”'`]/g, getEntityCodeHTML);
-    return str.replace(/[<>"”'`]/g, getEntityCodeHTML);
+/*var i = o ? 0 : o.length;
+while(i--) {
+  if(f(o[i])) {
+     return true;
   }
-}
+}*/
 
-function getEntityCodeHTML(c) {
+var getEntityCode = function(c) {
   return '&#' + c.charCodeAt(0) + ';';
-}
+};
 
-function escapeHTMLAttribute(str) {
-  if(str) {
+// & not being escaped at the moment, intentionally
+g.escapeHTML = function(str) {
+  if(str)
+    return str.replace(/[<>"”'`]/g, getEntityCode);
+};
+
+
+g.escapeHTMLAttribute = function(str) {
+  if(str)
     return str.replace('&','&#38;').replace('"','&#34;').
       replace('\'','&#39;').replace('\\','&#92;');
-  }
-}
+};
 
-function escapeHTMLInputValue(str) {
-  if(str) {
+g.escapeHTMLInputValue = function(str) {
+  if(str)
     return str.replace('"', '&#34;');
-  }
-}
+};
 
-function escapeHTMLHREF(str) {
-  if(str) {
+g.escapeHTMLHREF = function(str) {
+  if(str)
     return str.replace('"', '&#34;');
-  }
-}
+};
 
-function isArray(obj) {
+g.isArray = function(obj) {
   return obj instanceof Array;
-}
+};
 
-function startsWith(str1, str2) {
-  return str1 && str1.lastIndexOf(str2, 0) === 0;
-}
+g.startsWith = function(str1, str2) {
+  return str1 && str1.lastIndexOf(str2, 0) == 0;
+};
 
-
-// Generates a new DOM object from a string. The object is detached. 
-// Detaching avoids aggressive resource fetching (in Chrome)
-function parseHTML(htmlString) {
+// Generates a detached DOM object
+g.parseHTML = function(htmlString) {
+  //var doc = (new DOMParser()).parseFromString(htmlString,'text/html');
   var doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = htmlString;
   return doc;
-}
+};
 
-// Replace a DOM node with its children.
-function unwrap(node) {
+// Replace a node with its children.
+g.unwrap = function(node) {
   while(node.firstChild)
     node.parentNode.insertBefore(node.firstChild, node);
   node.parentNode.removeChild(node);
-}
+};
 
-// Possibly better way of unwrapping live nodes (untested)
+// Possibly better way of unwrapping live nodes
+// NOT EXPORTED, UNTESTED
 function unwrapAttached(node) {
   var doc = node.ownerDocument;
   var fragment = doc.createDocumentFragment();
@@ -87,22 +91,22 @@ function unwrapAttached(node) {
 
 // Truncates a string
 // ext is optional override of default ellipsis replacement
-function truncate(str, pos, ext) {
+g.truncate = function(str, pos, ext) {
   return str && (str.length > pos) ? str.substr(0,pos) + (ext || '...') : str;
-}
+};
 
 // Very simple date formatting
-function formatDate(date, sep) {
+g.formatDate = function(date, sep) {
   if(date) {
     return [date.getMonth() + 1, date.getDate(), date.getFullYear()
       ].join(sep || '-');
   } else {
     return '';
   }
-}
+};
 
 // Very simple date parsing
-function parseDate(str) {
+g.parseDate = function(str) {
   if(str) {
     var date = new Date(str);
     if(Object.prototype.toString.call(date) == '[object Date]' &&
@@ -110,17 +114,19 @@ function parseDate(str) {
       return date;
     }
   }
-}
+};
 
 // Converts a decimal to hexadecimal (uppercase)
-function decToHex(d) {
+g.decToHex = function(d) {
   if(typeof d != 'undefined') {
     return ((d < 0) ? 0xFFFFFFFF + d + 1 : d).toString(16).toUpperCase();
   }
-}
+};
 
 // Returns a URL to the favicon for the given URL
-function getFavIcon(url) {
+g.getFavIcon = function(url) {
   return url ? 'http://www.google.com/s2/favicons?domain_url=' +
       encodeURIComponent(url) : 'img/rss_icon_trans.gif'
-}
+};
+
+}(this));
