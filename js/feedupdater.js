@@ -3,13 +3,35 @@
 // Starts updating a single feed
 function updateFeed(db, feed, callback, timeout) {
   var entriesProcessed = 0, entriesAdded = 0;
+
+  var fetchErrorHandler = function(err) {
+    var url = err.url;
+    if(err.type == 'unknown') {
+      feed.error = 'The request to "'+url+'" encountered an unknown error.';
+    } else if(err.type == 'abort') {
+      feed.error = 'The request to "' + url + '" was aborted.';
+    } else if(err.type == 'timeout') {
+      feed.error = 'The request to "' + url + '" took longer than '+err.timeout+'ms to complete.';
+    } else if(err.type == 'status') {
+      feed.error = 'The request to "'+ url+'" returned an invalid response (' +
+        err.status + ' ' + err.statusText + ').';
+    } else if(err.type == 'contentType') {
+      feed.error = 'The request to "'+ url+'" did not return a valid content type ('+err.contentType+').';
+    } else if(err.type == 'undefinedResponseXML') {
+      feed.error = 'The request to "'+url+'" did not return an XML document.';
+    } else if(err.type == 'undefinedDocumentElement') {
+      feed.error = 'The request to "'+ url+'" did not return a valid XML document.';
+    }
+
+    callback(feed, 0, 0);
+  };
+
   fetchFeed(feed.url, function(responseXML) {
 
     var fetchedFeed;
     try {
       fetchedFeed = xml2json(responseXML);
     } catch(exception) {
-      //feed.errorType = exception.type;
       feed.error = exception.message;
       callback(feed, 0, 0);
       return;
@@ -52,10 +74,7 @@ function updateFeed(db, feed, callback, timeout) {
         updateEntry(store, entry, onEntryUpdateSuccess, onEntryUpdateError);
       });
     });
-  }, function(errorMessage) {
-    feed.error = errorMessage;
-    callback(feed, 0, 0);
-  },timeout);
+  }, fetchErrorHandler, timeout);
 };
 
 // Prep and attempt to store an entry

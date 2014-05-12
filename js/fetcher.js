@@ -1,55 +1,54 @@
 // Lib for fetching feeds
 
-var ALLOWED_MIME_TYPES = [
-  'application/atom+xml',
-  'application/rdf+xml',
-  'application/rss+xml',
-  'application/xml',
-  'text/xml'
-];
+(function(global) {
 
-// Fetch an XML file (async)
-function fetchFeed(url, onSuccess, onError, timeout) {
+// noop
+function defaultErrorCallback() {}
+
+function fetchErrorHandler(event) {
+  event.target.errorCallback({'type':'unknown','url':event.target.originalURL});
+}
+
+function fetchAbortHandler(event) {
+  event.target.errorCallback({'type':'abort','url':event.target.originalURL});
+}
+
+function fetchTimeoutHandler(event) {
+  event.target.errorCallback({
+    'type':'timeout',
+    'url':event.target.originalURL,
+    'timeout':event.target.timeout});
+}
+
+function fetch(url, onSuccess, onError, timeout) {
   var request = new XMLHttpRequest();
   request.timeout = timeout;
-
-  request.addEventListener('error', function(event) {
-    onError('The request to "'+url+'" encountered an unknown error.');
-  });
-
-  request.addEventListener('abort', function(event) {
-    onError('The request to "' + url + '" was aborted.');
-  });
-
-  request.addEventListener('timeout', function(event) {
-    onError('The request to "' + url + '" took too long to complete.');
-  });
-
+  request.originalURL = url;
+  request.errorCallback = onError || defaultErrorCallback;
+  request.addEventListener('error', fetchErrorHandler);
+  request.addEventListener('abort', fetchAbortHandler);
+  request.addEventListener('timeout', fetchTimeoutHandler);
   request.addEventListener('load', function(event) {
 
     if(event.target.status != 200) {
-      onError('The request to "'+ url+
-        '" returned an invalid response code (' + 
-        event.target.status + ' ' + event.target.statusText + ').');
+      onError({'type':'status','url':event.target.originalURL,'status':event.target.status,
+        'statusText':event.target.statusText});
       return;
     }
 
     var type = (event.target.getResponseHeader('Content-Type') || '').toLowerCase();
     if(!isAllowedMimeType(type)) {
-      onError('The request to "'+ url+
-        '" did not return a valid content type ('+type+').');
+      onError({'type':'contentType','url':event.target.originalURL,'contentType': type});
       return;
     }
 
     if(!event.target.responseXML) {
-      onError('The request to "'+ url+
-        '" did not return an XML document.');
+      onError({'type':'undefinedResponseXML','url':event.target.originalURL});
       return;
     }
 
     if(!event.target.responseXML.documentElement) {
-      onError('The request to "'+ url+
-        '" did not return a valid XML document (no document element found).');
+      onError({'type':'undefinedDocumentElement','url':event.target.originalURL});
       return;
     }
 
@@ -58,9 +57,20 @@ function fetchFeed(url, onSuccess, onError, timeout) {
 
   request.open('GET', url, true);
   request.responseType = 'document';
-  request.setRequestHeader('Accept', ALLOWED_MIME_TYPES.join(', '));
+  request.setRequestHeader('Accept', ACCEPT_VALUE);
   request.send();
 }
+
+var ALLOWED_MIME_TYPES = [
+  'application/atom+xml',
+  'application/rdf+xml',
+  'application/rss+xml',
+  'application/xml',
+  'text/xml'
+];
+
+var ACCEPT_VALUE = ALLOWED_MIME_TYPES.join(', ');
+
 
 function isAllowedMimeType(type) {
   if(type) {
@@ -72,10 +82,14 @@ function isAllowedMimeType(type) {
   }
 }
 
+global.fetchFeed = fetch;
+
+}(this));
+
 function testFetchFeed(url) {
   fetchFeed(url, function(xml){
     console.log(xml);
-  }, function(error){
-    console.log(error);
+  }, function(event){
+    console.log(event);
   });
 }
