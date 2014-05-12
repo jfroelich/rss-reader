@@ -1,4 +1,5 @@
-(function(global) {
+(function(g) {
+'use strict';
 
 // Transform RSS/Atom/RDF XML to normalized JSON
 function xml2json(xmlDocument) {
@@ -146,8 +147,8 @@ function isXMLFeed(xmlDocument) {
   return name == 'rss' || name == 'feed' || name == 'rdf:rdf';
 }
 
-global.xml2json = xml2json;
-global.isXMLFeed = isXMLFeed;
+g.xml2json = xml2json;
+g.isXMLFeed = isXMLFeed;
 
 }(this));
 

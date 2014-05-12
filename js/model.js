@@ -1,9 +1,11 @@
 // Storage-related functions
-
+(function(g) {
+'use strict';
+  
 var model = {};
 
-model.DATABASE_NAME = 'reader';
-model.DATABASE_VERSION = 4;
+var DATABASE_NAME = 'reader';
+var DATABASE_VERSION = 4;
 
 // Flag for the unread property of entries representing that
 // the entry is unread
@@ -12,7 +14,7 @@ model.UNREAD = 1;
 
 // Connect to indexedDB
 model.connect = function(callback) {
-  var request = indexedDB.open(this.DATABASE_NAME, this.DATABASE_VERSION);
+  var request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
   request.onerror = request.onblocked = console.error;
   request.onupgradeneeded = this.onUpgradeNeeded;
   request.onsuccess = function(event) {
@@ -21,7 +23,7 @@ model.connect = function(callback) {
 };
 
 model.onUpgradeNeeded = function(event) {
-  console.log('Upgrading database from %s to %s', event.oldVersion, model.DATABASE_VERSION);
+  console.log('Upgrading database from %s to %s', event.oldVersion, DATABASE_VERSION);
   var db = event.target.result;
 
   if(event.oldVersion == 1) {
@@ -226,3 +228,7 @@ model.forEachEntry = function(db, params, callback, onComplete) {
     }
   };
 };
+
+g.model = model;
+
+}(this));

@@ -1,7 +1,7 @@
 // Hash lib
-
-(function(exports) {
-   
+(function(g) {
+  'use strict';
+  
   function callback(previousValue, currentValue) {
     return (previousValue * 31 + currentValue.charCodeAt(0)) % 4294967296;
   }
@@ -13,6 +13,6 @@
     }
   }
 
-  exports.hashCode = hashCode;
+  g.hashCode = hashCode;
     
 }(this));

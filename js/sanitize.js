@@ -1,4 +1,6 @@
 // Sanitize entry content
+(function(g){
+'use strict';
 
 // Node handling behaviors when traversing a document's DOM, constants
 var RETAIN = 0, UNWRAP = 1, REMOVE = 2, RETAIN_RAW = 3, REPLACE = 4;
@@ -386,3 +388,8 @@ elementHandler.video = retainAndWarnHandler;
 ].forEach(function(el) {
   elementHandler[el] = defaultHandler;
 });
+
+
+g.sanitize = sanitize;
+
+}(this));

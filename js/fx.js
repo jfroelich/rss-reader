@@ -2,6 +2,7 @@
 
 // Animated scrolling to a target element
 function smoothScrollTo(element, delta, delay) {
+  'use strict';
   var timer = setInterval(function(){
     if(document.body.scrollTop + delta >= element.offsetTop) {
       clearInterval(timer);
@@ -18,7 +19,8 @@ function smoothScrollTo(element, delta, delay) {
 }
 
 // Vertically shrink and hide element
-function shrink(el, delta, delay, callback) {
+function shrinkY(el, delta, delay, callback) {
+  'use strict';
   var timer = setInterval(function() {
     if(el.offsetHeight <= delta) {
       clearInterval(timer);
@@ -35,6 +37,7 @@ function shrink(el, delta, delay, callback) {
 // Fade an element in/out
 // Elements must have opacity defined as 0 or 1 for this to work
 function fade(element, duration, delay, callback) {
+  'use strict';
   if(element.style.display == 'none') {
     element.style.display = '';
     element.style.opacity = '0';

@@ -1,6 +1,9 @@
 // Very basic URI lib
+(function(g) {
+'use strict';
 
 var URI = {};
+
 
 // Parse a string into a URI
 URI.parse = function(str) {
@@ -51,3 +54,7 @@ URI.isValid = function(obj) {
     return host && host.indexOf('.') > 0 && host.indexOf(' ') == -1;    
   }
 };
+
+g.URI = URI;
+
+}(this));

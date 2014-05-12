@@ -1,4 +1,6 @@
 // Options user interface lib
+(function(){
+'use strict';
 
 var app = chrome.extension.getBackgroundPage();
 
@@ -256,3 +258,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
   loadFeeds();
 });
+
+}(this));

@@ -1,24 +1,25 @@
+'use strict';
+
 // Utilities lib
 (function(g) {
 
 // forEach for array-like objects and arrays
 g.each = function(o, f) {
-  for(var i = 0, ln = o.length; i < ln; f(o[i++])) {}
+  for(var i = 0, ln = o?o.length:0; i < ln; f(o[i++])) {}
 };
 
 // Iterate over o until f does not yield a truthful value
 g.until = function(o, f) {
-  for(var i = 0, ln = o.length, c = 1; c && i < ln; c = f(o[i++])) {}
+  for(var i = 0, ln = o ? o.length : 0, c = 1; c && i < ln; c = f(o[i++])) {}
 };
 
-// Returns true if f returns true for any item in o
+// Returns truthy if f returns true for any item in o
 // Iterates in reverse, stops once f returns true.
 g.any = function(o, f) {
-  for(var i = o ? 0 : o.length;i--;) {
-    if(f(o[i])) {
+  for(var i = o ? o.length : 0; i--;) {
+    if(f(o[i]))
       return 1;
-    }
-  }  
+  }
 };
 
 /*var i = o ? 0 : o.length;
@@ -113,13 +114,6 @@ g.parseDate = function(str) {
       isFinite(date)) {
       return date;
     }
-  }
-};
-
-// Converts a decimal to hexadecimal (uppercase)
-g.decToHex = function(d) {
-  if(typeof d != 'undefined') {
-    return ((d < 0) ? 0xFFFFFFFF + d + 1 : d).toString(16).toUpperCase();
   }
 };
 

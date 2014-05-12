@@ -1,7 +1,6 @@
 // Lib for fetching feeds
-
 (function(global) {
-
+'use strict';
 // noop
 function defaultErrorCallback() {}
 
