@@ -1,5 +1,18 @@
 // App lib
 
+
+// Map from display names (and storage key) to CSS class names
+// Also just a pre sorted list of fonts to provide as selectable options
+var FONT_FAMILIES = {
+  'Arial Sans Serif': 'arialsans',
+  'Calibri':'calibri',
+  'Calibri Light': 'calibri-light',
+  'Cambria':'cambria',
+  'Georgia':'georgia',
+  'MS Sans Serif': 'mssansseerif',
+  'News Cycle': 'newscycle'
+};
+
 var POLL_INTERVAL = 20;
 var pollRunning = false;
 

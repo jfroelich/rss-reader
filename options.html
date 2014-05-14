@@ -2,26 +2,48 @@
 <html>
 <head>
 <title>Options for Josh's RSS Reader</title>
+<link rel="stylesheet" href="common.css"/>
 <link rel="stylesheet" href="options.css"/>
 <link href="img/rss_icon_trans.gif" rel="shortcut icon" />
 <script src="js/fx.js"></script>
 <script src="js/options.js"></script>
 </head>
 <body>
-<div id="divsubscribe">
+<div id="divsubscribe" class="options_section">
 	<!--<p class="option_section_header">Subscribe (e.g. http://www.example.com/feed.rss):</p>-->
 	<form id="subscribe">
 		<input type="text" id="addurl" autofocus/>
 		<input type="submit" id="addbutton" value="Subscribe"/>
 	</form>
 </div>
-<div id="divfeedlist">
+<div id="divfeedlist" class="options_section">
 	<p class="option_section_header">Manage your subscriptions:</p>
 	<p id="nosubscriptions">You are not currently subscribed to any feeds. Subscribe to a new feed
 	using the above form to get started!</p>
 	<table id="feedtable"></table>
 </div>
-<div id="divhelp">
+<div id="divoptions" class="options_section">
+	<p class="option_section_header">Customize your options:</p>
+	<table id="options_table">
+	<tr>
+		<td valign="top" nowrap="">Header Font:</td>
+		<td valign="top"><select id="select_header_font"></select></td>
+		<td><span id="header_font_preview" style="font-size:18pt;">Lorem ipsum dolor sit amet, 
+		consectetur adipiscing elit.</span></td>
+	</tr>
+	<tr>
+		<td valign="top" nowrap="">Body Font:</td>
+		<td valign="top"><select id="select_body_font"></select></td>
+		<td><span id="body_font_preview" style="font-size:12pt;">Lorem ipsum dolor sit amet, consectetur 
+		adipiscing elit. Aliquam ipsum ante, tempor et velit vel, iaculis molestie odio. Donec eget urna 
+		sit amet leo lacinia blandit. Mauris sit amet orci hendrerit turpis ornare adipiscing id et leo. 
+		Mauris at lacus nibh. Mauris eu eros metus. Integer massa tellus, vulputate ut eros eu, luctus 
+		viverra ligula. Nunc suscipit arcu in felis congue lobortis. Nulla posuere ut libero eu ultrices. 
+		Fusce molestie quam quis congue tempus.</span></td></tr>
+	</table>
+</div>
+
+<div id="divhelp" class="options_section">
 	<p class="option_section_header">Help using this news reader</p>
 	<p>No help is currently available.</p>
 </div>

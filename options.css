@@ -1,10 +1,3 @@
-body {
-  margin: 0px;
-  font-family:arial, helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-}
-
 form {
 	padding:0px;
 	margin:0px;
@@ -12,9 +5,6 @@ form {
 
 #divsubscribe {
 	background-color: #efefef;
-	left:0px;
-	right:0px;
-	padding:20px;
 }
 
 #addurl {
@@ -49,20 +39,25 @@ td {
 
 #divfeedlist {
 	background-color: #FFFFD4;
+}
+
+.options_section {
+	padding:20px;
 	left:0px;
 	right:0px;
-	padding:20px;
 }
 
 .option_section_header {
+	font-family:arial, sans-serif;
 	font-size:14pt;
 }
 
 #divhelp {
 	background-color: #FFDFFF;
-	left:0px;
-	right:0px;
-	padding:20px;
+}
+
+#divoptions {
+	background-color:#D1FFC2;
 }
 
 #nosubscriptions {
@@ -105,3 +100,4 @@ td {
   padding:2px;
   float:right;
 }
+

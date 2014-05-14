@@ -63,6 +63,7 @@ function appendEntries(limit, onComplete) {
   });
 };
 
+
 function renderEntry(entry) {
   var entryTitle = entry.title || 'Untitled';
   var feedTitle = entry.feedTitle || 'Untitled';
@@ -75,11 +76,14 @@ function renderEntry(entry) {
 
   var entryLink = app.escapeHTMLHREF(entry.link);
 
+  var headerFontFamilyClass = app.FONT_FAMILIES[localStorage.HEADER_FONT_FAMILY] || '';
+  var bodyFontFamilyClass = app.FONT_FAMILIES[localStorage.BODY_FONT_FAMILY] || '';
+
   var template = ['<a href="',entryLink,
-    '" class="entryTitle" target="_blank" title="',
+    '" class="entryTitle ',headerFontFamilyClass,'" target="_blank" title="',
     app.escapeHTMLAttribute(entryTitle),
     '">',app.truncate(app.escapeHTML(entryTitle),100),
-    '</a><span class="entrycontent">', entryContent,'</span>',
+    '</a><span class="entrycontent ',bodyFontFamilyClass,'">', entryContent,'</span>',
     '<span class="entrysource">',
     '<a class="entrysourcelink" url="',entryLink,'" title="',app.escapeHTMLAttribute(entryTitle),'">Bookmark</a> - ',
     '<span title="',
@@ -203,13 +207,46 @@ function handleUnsubscribe(feedId) {
   }
 }
 
+function handleHeaderFontChanged() {
+  console.log('Handling header font change event');
+  var newHeaderFont = app.FONT_FAMILIES[localStorage.HEADER_FONT_FAMILY] || '';
+  var container = document.getElementById('entries');
+  var titles = container.querySelectorAll('.entryTitle');
+  console.log('Found %s titles to update header font class to %s', 
+    titles.length, newHeaderFont || 'the browser defaults');
+
+  app.each(titles, function(title){
+    // http://stackoverflow.com/questions/195951/change-an-elements-css-class-with-javascript
+    title.className = 'entryTitle ' + newHeaderFont;
+  });
+}
+
+function handleBodyFontChanged() {
+  console.log('Handling body font change event');
+  var newBodyFont = app.FONT_FAMILIES[localStorage.BODY_FONT_FAMILY] || '';
+  var container = document.getElementById('entries');
+  var contents = container.querySelectorAll('.entrycontent');
+  console.log('Found %s bodies to update body font class to %s', 
+    contents.length, newBodyFont || 'the browser defaults');
+  app.each(contents, function(content){
+    content.className = 'entrycontent ' + newBodyFont;
+  });
+}
+
+
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  console.log('Received message of type %s', request.type);
+  
   if(request.type == 'pollCompleted') {
     handlePollCompleted();
   } else if(request.type == 'subscribe') {
     handleSubscribe(request.feed);
   } else if(request.type == 'unsubscribe') {
     handleUnsubscribe(request.feed);
+  } else if(request.type == 'headerFontChanged') {
+    handleHeaderFontChanged();
+  } else if(request.type == 'bodyFontChanged') {
+    handleBodyFontChanged();
   }
 });
 

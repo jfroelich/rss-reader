@@ -230,6 +230,86 @@ function listFeed(feed) {
   // TODO: check it is visible and hide the no feeds message
 };
 
+function setupBodyFontMenu() {
+  var menu = document.getElementById('select_body_font');
+  var preview = document.getElementById('body_font_preview');
+  var currentFontFamily = localStorage.BODY_FONT_FAMILY;
+  
+  var fontOption = document.createElement('option');
+  fontOption.textContent = 'Use Chrome font settings';
+  menu.appendChild(fontOption);
+  
+  for(var key in app.FONT_FAMILIES) {
+    fontOption = document.createElement('option');
+    fontOption.value = key;
+    if(key == currentFontFamily)
+      fontOption.selected = true;
+    fontOption.textContent = key;
+    menu.appendChild(fontOption);
+  }
+  
+  preview.className = app.FONT_FAMILIES[currentFontFamily] || '';
+  menu.addEventListener('change', function(event) {
+    var value = event.target.value;
+    console.log('Changing body font family to %s', value || 'the default browser settings');
+
+    // Update the preview
+    preview.className = app.FONT_FAMILIES[value] || '';
+    
+    // Update the stored setting
+    if(value) {
+      localStorage.BODY_FONT_FAMILY = value;
+    } else {
+      delete localStorage.BODY_FONT_FAMILY;
+    }
+
+    // Notify other views of the change
+    chrome.runtime.sendMessage({'type':'bodyFontChanged'});    
+  });
+}
+
+function setupHeaderFontMenu() {
+  
+  var menu = document.getElementById('select_header_font');
+  var preview = document.getElementById('header_font_preview');
+  
+  var currentFontFamily = localStorage.HEADER_FONT_FAMILY;
+  
+  var fontOption = document.createElement('option');
+  fontOption.textContent = 'Use Chrome font settings';
+  menu.appendChild(fontOption);
+
+  for(var key in app.FONT_FAMILIES) {
+    fontOption = document.createElement('option');
+    fontOption.setAttribute('value',key);
+    if(key == currentFontFamily)
+      fontOption.setAttribute('selected','');
+    fontOption.textContent = key;
+    menu.appendChild(fontOption);
+  }
+
+  preview.className = app.FONT_FAMILIES[currentFontFamily] || '';
+  menu.addEventListener('change', function(event){
+    // Get the new value
+    var value = event.target.value;
+    
+    console.log('Changing header font family to %s', value || 'the default browser settings');
+
+    // Update the preview
+    preview.className = app.FONT_FAMILIES[value] || '';
+    
+    // Update the stored setting
+    if(value) {
+      localStorage.HEADER_FONT_FAMILY = value;
+    } else {
+      delete localStorage.HEADER_FONT_FAMILY;
+    }
+
+    // Notify other views of the change
+    chrome.runtime.sendMessage({'type':'headerFontChanged'});
+  });
+}
+
 function onUnsubscribeButtonClicked(event) {
   var unsubButton = event.target;
   var feedId = parseInt(unsubButton.attributes.feed.value);
@@ -255,6 +335,9 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('subscribe').onsubmit = onSubscribeSubmit;
   noFeedsMessage = document.getElementById('nosubscriptions');
   feedTable = document.getElementById('feedtable');
+
+  setupHeaderFontMenu();
+  setupBodyFontMenu();
 
   loadFeeds();
 });
