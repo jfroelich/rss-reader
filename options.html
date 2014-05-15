@@ -9,31 +9,51 @@
 <script src="js/options.js"></script>
 </head>
 <body>
+<div id="navigation">
+<ul id="navigation-menu">
+<li id="mi-view-subscriptions" class="navigation-item">Manage subscriptions</li>
+<li id="mi-add-subscription" class="navigation-item">Add a subscription</li>
+<li id="mi-discover-subscription" class="navigation-item">Discover feeds</li>
+<li id="mi-view-settings" class="navigation-item">Settings</li>
+<li id="mi-view-help" class="navigation-item">Help</li>
+<li id="mi-view-about" class="navigation-item">About</li>
+</ul>
+</div>
 <div id="divsubscribe" class="options_section">
-	<!--<p class="option_section_header">Subscribe (e.g. http://www.example.com/feed.rss):</p>-->
-	<form id="subscribe">
-		<input type="text" id="addurl" autofocus/>
+	<h1>Add a subscription</h1>
+	<p class="option-text">Copy and paste or type in the web address for a feed, and then hit Enter or click Subscribe.
+	For example, &quot;http://www.example.com/myfeed.rss&quot; (without the quotes).</p>
+	<form id="subscription-form">
+		<input type="text" id="addurl" autofocus="autofocus"/>
 		<input type="submit" id="addbutton" value="Subscribe"/>
 	</form>
 </div>
+<div id="divdiscover" class="options_section">
+	<h1>Discover feeds</h1>
+	<p class="option-text">This feature is not yet implemented. There is no ETA.</p>
+</div>
 <div id="divfeedlist" class="options_section">
-	<p class="option_section_header">Manage your subscriptions:</p>
-	<p id="nosubscriptions">You are not currently subscribed to any feeds. Subscribe to a new feed
-	using the above form to get started!</p>
-	<table id="feedtable"></table>
+	<h1>Manage subscriptions
+	<span id="subscription-count"></span>
+	<button id="import-subscriptions">Import</button>
+	<button id="export-subscriptions">Export</button>
+	</h1>
+	<p id="nosubscriptions" class="option-text">You are not currently subscribed to any feeds. 
+	Subscribe to a new feed to get started!</p>
+	<ul id="feedlist"></ul>
 </div>
 <div id="divoptions" class="options_section">
-	<p class="option_section_header">Customize your options:</p>
+	<h1>Settings</h1>
 	<table id="options_table">
 	<tr>
-		<td valign="top" nowrap="">Header Font:</td>
-		<td valign="top"><select id="select_header_font"></select></td>
+		<td class="option-text">Header Font:</td>
+		<td><select id="select_header_font"></select></td>
 		<td><span id="header_font_preview" style="font-size:18pt;">Lorem ipsum dolor sit amet, 
 		consectetur adipiscing elit.</span></td>
 	</tr>
 	<tr>
-		<td valign="top" nowrap="">Body Font:</td>
-		<td valign="top"><select id="select_body_font"></select></td>
+		<td class="option-text">Body Font:</td>
+		<td><select id="select_body_font"></select></td>
 		<td><span id="body_font_preview" style="font-size:12pt;">Lorem ipsum dolor sit amet, consectetur 
 		adipiscing elit. Aliquam ipsum ante, tempor et velit vel, iaculis molestie odio. Donec eget urna 
 		sit amet leo lacinia blandit. Mauris sit amet orci hendrerit turpis ornare adipiscing id et leo. 
@@ -42,10 +62,18 @@
 		Fusce molestie quam quis congue tempus.</span></td></tr>
 	</table>
 </div>
-
 <div id="divhelp" class="options_section">
-	<p class="option_section_header">Help using this news reader</p>
-	<p>No help is currently available.</p>
+	<h1>Help</h1>
+	<p class="option-text">No help is currently available.</p>
+</div>
+<div id="divabout" class="options_section">
+	<h1>About</h1>
+	<p class="option-text">Name: <span id="extension-name"></span></p>
+	<p class="option-text">Author: <span id="extension-author"></span></p>
+	<p class="option-text">Description: <span id="extension-description"></span></p>
+	<p class="option-text">Version: <span id="extension-version"></span></p>
+	<p class="option-text">Source code: <a href="https://github.com/jfroelich/rss-reader" target="blank">https://github.com/jfroelich/rss-reader</a></p>
+	<p class="option-text">License information, including notice of use of custom fonts, is available in the LICENSE file on GitHub.</p>
 </div>
 </body>
 </html>

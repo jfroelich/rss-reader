@@ -40,6 +40,9 @@ function updateFeed(db, feed, callback, timeout) {
     if(fetchedFeed.title) feed.title = fetchedFeed.title;
     if(fetchedFeed.link) feed.link = fetchedFeed.link;
 
+    // Store description too
+    if(fetchedFeed.description) feed.description = fetchedFeed.description;
+
     if(fetchedFeed.date) {
       var feedDate = parseDate(fetchedFeed.date);
       if(feedDate) {

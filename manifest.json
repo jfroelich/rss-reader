@@ -1,13 +1,15 @@
 {
+  "manifest_version": 2,
   "name": "Josh's RSS Reader",
   "version": "2.5",
-  "author": "Josh",
-  "description": "A simple news reader extension for Chrome",
-  "manifest_version": 2,
+  "author": "Josh Froelich",
+  "description": "A simple RSS reader Chrome extension built for speed, scalability, and simplicity",
+
   "browser_action": { 
   	"default_icon": "img/rss_icon_trans.png",
   	"default_title": "Josh's RSS Reader"
   },
+
   "background": {
   	"scripts": [
 	  "js/utils.js",
@@ -20,7 +22,9 @@
 	  "js/xml2json.js",
 	  "js/app.js"]
   },
+
   "options_page": "options.html",
+
   "permissions": [
     "alarms",
     "background",
@@ -30,6 +34,7 @@
     "notifications",
     "unlimitedStorage"
   ],
+
   "content_security_policy": 
-  	"script-src 'self'; object-src 'self' https://vimeo.com https://www.youtube.com https://www.youtube.com https://www.ustream.tv; frame-src http://www.dailymotion.com/ http://player.vimeo.com http://www.youtube.com http://www.hulu.com http://www.nbc.com/assets/video/ http://www.ustream.tv/embed/ https://w.soundcloud.com/player/ https://maps.google.com/ http://www.scribd.com/embeds/ http://www.slideshare.net/slideshow/embed_code/ http://www.kickstarter.com/ https://www.kickstarter.com/ http://i.cdn.turner.com/ http://www.viddler.com/embed/ http://html5-player.libsyn.com/embed/ http://coub.com/embed/ http://www.youtube-nocookie.com/embed/ https://www.youtube-nocookie.com/embed/ https://vine.co/ http://i.cdn.turner.com/ https://plot.ly/ http://new.livestream.com/ https://download-ssl.xbox.com/ https://www.youtube.com/  http://www.washingtonpost.com/wp-srv/video/ http://docs.google.com/ https://docs.google.com/"
+  	"script-src 'self'; object-src 'self' https://vimeo.com https://www.youtube.com https://www.youtube.com https://www.ustream.tv; frame-src http://www.dailymotion.com/ http://player.vimeo.com http://www.youtube.com http://www.hulu.com http://www.nbc.com/assets/video/ http://www.ustream.tv/embed/ https://w.soundcloud.com/player/ https://maps.google.com/ http://www.scribd.com/embeds/ http://www.slideshare.net/slideshow/embed_code/ http://www.kickstarter.com/ https://www.kickstarter.com/ http://i.cdn.turner.com/ http://www.viddler.com/embed/ http://html5-player.libsyn.com/embed/ http://coub.com/embed/ http://www.youtube-nocookie.com/embed/ https://www.youtube-nocookie.com https://vine.co http://i.cdn.turner.com https://plot.ly http://new.livestream.com https://download-ssl.xbox.com https://www.youtube.com  http://www.washingtonpost.com http://docs.google.com https://docs.google.com http://instagram.com"
 }

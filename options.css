@@ -1,63 +1,150 @@
+body,html {
+	height:100%;
+}
+
+#navigation {
+	float:left;
+	width:15%;
+	height: 100%;
+	margin:0px;
+	padding:0px;	
+}
+
+#navigation-menu {
+	color: rgb(48, 57, 66);
+	list-style-type:none;
+	font-family: 'Segoe UI', Tahoma, sans-serif;
+	font-size: 94%;
+	-webkit-margin-before: 1em;
+	-webkit-margin-after: 1em;
+	-webkit-margin-start: 0px;
+	-webkit-margin-end: 0px;
+	-webkit-padding-start: 0px;
+}
+
+li.navigation-item {
+	-webkit-border-start: 6px solid transparent;
+	-webkit-padding-start: 10px;
+	-webkit-user-select: none;
+	cursor: pointer;
+	line-height: 1.8em;
+}
+
+li.navigation-item-selected {
+	-webkit-border-start-color: blue;
+	cursor: default;
+	pointer-events: none;
+}
+
+div.options_section {
+	margin:0px;
+	padding-top: 10px;
+	padding-left:0px;
+	float:left;
+	width:84%;
+}
+
+#divsubscribe {
+	display:none;
+}
+
+#divdiscover {
+	display:none;
+}
+
+#divfeedlist {
+	display:none;
+}
+
+#divfeedlist h1 button {
+	margin-left: 20px;
+}
+
+#divhelp {
+	display:none;
+}
+
+#divoptions {
+	display:none;
+}
+
+#divabout {
+	display:none;
+}
+
+#options_table tr td {
+	vertical-align:top;
+	padding-left:0px;
+	padding-right:4px;
+	padding-top:0px;
+	padding-bottom:10px;
+}
+
+#options_table tr td:first-child {
+	white-space: nowrap;
+}
+
+
 form {
 	padding:0px;
 	margin:0px;
 }
 
-#divsubscribe {
-	background-color: #efefef;
+h1 {
+	color: rgb(48, 57, 66);
+	margin-top: 0px;
+	font-size:130%;
+	font-weight:normal;
+	font-family: 'Segoe UI', Tahoma, sans-serif;
+	padding-bottom: 8px;
+	border-bottom: 1px solid #cccccc;
+}
+
+.option-text {
+	font-size:90%;
+	font-family: 'Segoe UI', Tahoma, sans-serif;
 }
 
 #addurl {
-	font-size:18pt;
-	width:750px;
-	padding: 14px;
-	background-color:#cccccc;
-	border: 1px solid #efefef;
-	outline: none;
-}
-
-#addbutton {
-	font-size:18pt;
-	padding:14px;
-	background-color:#cccccc;
-	border: 1px solid #efefef;
-	outline: none;
-}
-
-#feedtable {
-	width:100%;
-	border: 0px;
-}
-
-td {
-  padding:10px;
-}
-
-.feed_list_url_input {
 	width:500px;
 }
 
-#divfeedlist {
-	background-color: #FFFFD4;
+#addbutton {
+	
 }
 
-.options_section {
-	padding:20px;
-	left:0px;
-	right:0px;
+#feedlist {
+	list-style-type:none;
+	display:block;
+	padding-left:0px;
+	padding-top:1px;
+	padding-bottom:1px;
+	margin: 0px;
 }
 
-.option_section_header {
-	font-family:arial, sans-serif;
-	font-size:14pt;
+#feedlist li {
+	display:block;
+	margin-bottom:10px;
+	padding-left:10px;
+	padding-top:10px;
+	padding-bottom:10px;
+	padding-right:0px;
+	/*border-bottom: 1px solid #efefef;*/
+	font-size:110%;
+	font-family: 'Segoe UI', Tahoma, sans-serif;
+
+	border-radius: 3px;
+	box-shadow: 0px 2px 2px 0px #999999;
 }
 
-#divhelp {
-	background-color: #FFDFFF;
+#feedlist li img {
+	 max-width:26px;
+	 margin-right: 10px;
 }
 
-#divoptions {
-	background-color:#D1FFC2;
+#feedlist li button {
+	float:right;
+	margin-right: 30px;
 }
 
 #nosubscriptions {
@@ -90,7 +177,6 @@ td {
   left:20%;
   right:20%;
   padding:20px 20px 20px 20px;
-  
   border-radius: 10px;
   background-clip: padding-box;
   box-shadow: 2px 2px 4px 0px #000000;
@@ -100,4 +186,3 @@ td {
   padding:2px;
   float:right;
 }
-

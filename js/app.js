@@ -2,7 +2,7 @@
 
 
 // Map from display names (and storage key) to CSS class names
-// Also just a pre sorted list of fonts to provide as selectable options
+// Also servess as a pre sorted list
 var FONT_FAMILIES = {
   'Arial Sans Serif': 'arialsans',
   'Calibri':'calibri',
@@ -10,14 +10,16 @@ var FONT_FAMILIES = {
   'Cambria':'cambria',
   'Georgia':'georgia',
   'MS Sans Serif': 'mssansseerif',
-  'News Cycle': 'newscycle'
+  'News Cycle': 'newscycle',
+  'Open Sans Regular': 'opensansreg',
+  'Raleway':'raleway'
 };
 
 var POLL_INTERVAL = 20;
 var pollRunning = false;
 
 function startPoll() {
-  
+
   if(navigator.hasOwnProperty('onLine') && !navigator.onLine) {
     console.log('offline, poll cancelled');
     pollRunning = false;

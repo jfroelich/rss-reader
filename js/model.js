@@ -81,7 +81,7 @@ model.countFeeds = function(db, cb) {
 
 model.forEachFeed = function(db, callback, oncomplete) {
   var tx = db.transaction('feed');
-  
+
   // WARNING: this could complete before the callback on 
   // the last feed completes, leading to unexpected behavior.
   tx.oncomplete = oncomplete;
