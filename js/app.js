@@ -79,6 +79,25 @@ function updateBadge() {
   });
 }
 
+function unsubscribe(feedId, callback) {
+  model.connect(function(db) {
+    model.unsubscribe(db, feedId, function() {     
+      // Update badge
+      updateBadge();
+      
+      // Broadcast event
+      chrome.runtime.sendMessage({'type':'unsubscribe', 'feed': feedId});
+      
+      // NOTE: why call a callback here if I am sending a message?
+      // Can't the views just handle the message event? Or does the message
+      // only get sent to the first view that handles it?
+      if(callback) {
+        callback(feedId);
+      }
+    });
+  });
+}
+
 function showNotification(message) {
   chrome.notifications.getPermissionLevel(function(level) {
     if(level == 'granted') {

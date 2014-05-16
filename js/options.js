@@ -111,7 +111,6 @@ function discoverSubscribeClick(event) {
 
 function startSubscription(url) {
 
-
   // Stop and warn if we are not online
   if(navigator.hasOwnProperty('onLine') && !navigator.onLine) {
     console.log('!navigator.onLine');
@@ -342,39 +341,6 @@ function onDiscoverFeedsError(errorMessage) {
   showErrorMessage('An error occurred. Details: ' + errorMessage);
 }
 
-// Load feeds from storage and print them out
-function initFeedList() {
-  // Track number of feeds loaded
-  var feedCount = 0;
-
-  // Callback for when all feeds have been loaded
-  var onComplete = function() {
-    // Show or hide the no-subscriptions message and the feed list
-    var feedList = document.getElementById('feedlist');
-    if(feedCount == 0) {
-      document.getElementById('nosubscriptions').style.display = 'block';
-      feedList.style.display = 'none';
-    } else {
-      document.getElementById('nosubscriptions').style.display = 'none';
-      feedList.style.display = 'block';
-    }
-  };
-
-  // Callback for when one feed has been loaded
-  var handleFeed = function(feed) {
-    feedCount++;
-    appendFeed(feed);
-    
-    // Update this every call, so we get a progressive update effect
-    updateFeedCountMessage();
-  };
-
-  // Connect and iterate over feeds
-  app.model.connect(function(db) {
-    app.model.forEachFeed(db, handleFeed, onComplete);
-  });
-}
-
 function updateFeedCountMessage() {  
   var feedList = document.getElementById('feedlist');
   var feedCount = feedList ? feedList.childNodes.length : 0;
@@ -499,88 +465,70 @@ function initHeaderFontMenu() {
 // Handle unsubscribe for a specific feed in feed list
 function onUnsubscribeButtonClicked(event) {
   var unsubButton = event.target;
+  
+  // TODO: if we use a button we can just use button.value
   var feedId = parseInt(unsubButton.attributes.feed.value);
+  
   var feedList = document.getElementById('feedlist');
-  app.model.connect(function(db) {
-    app.model.unsubscribe(db, feedId, function() {
-      // Remove the feed from the list
-      var listItem = unsubButton.parentNode.parentNode;
-      
-      if(listItem) {
-        // Remove it from the list
-       feedList.removeChild(listItem);
-        
-        // Update the count message
-        updateFeedCountMessage();
-      } else {
-        console.log('no list item found to remove when unsubscribe');
-      }
-
-      
-
-      if(feedList && feedList.childNodes.length == 0) {
-        feedList.style.display = 'none';
-        document.getElementById('nosubscriptions').style.display = 'block';
-      } else {
-        console.warn('feedList undefined');
-      }
-      
-      chrome.runtime.sendMessage({'type':'unsubscribe', 'feed': feedId});
-
-      app.updateBadge();
-    });
+  
+  app.unsubscribe(feedId, function() {
+    feedList.removeChild(unsubButton.parentNode);
+    updateFeedCountMessage();
+    if(feedList.childNodes.length == 0) {
+      feedList.style.display = 'none';
+      document.getElementById('nosubscriptions').style.display = 'block';
+    }
   });
 }
 
-function initDiscoverFeedsSection() {
-  var form = document.getElementById('discover-feeds');
-  form.addEventListener('submit', onDiscoverFormSubmit);
-}
+function initOptionsPage(event) {
+  // Initialize the navigation menu
+  app.each(document.querySelectorAll('li.navigation-item'), function(item) {
+    item.addEventListener('click', navigationClick);
+  });
 
-function initSettingsSection() {
+  // Select the default navigation item and show the default section
+  showSection(document.getElementById('mi-view-subscriptions'));
+
+  // Initialize the Add subscription section
+  document.getElementById('subscription-form').addEventListener('submit', onSubscribeSubmit);
+
+  // Initialize the Discover feeds section
+  document.getElementById('discover-feeds').addEventListener('submit', onDiscoverFormSubmit);
+
+  // Initialize the Manage subscriptions section
+  // Connect and iterate over feeds
+  var feedCount = 0;
+  var feedList = document.getElementById('feedlist');
+  var noSubscriptionsMessage = document.getElementById('nosubscriptions');
+  app.model.connect(function(db) {
+    app.model.forEachFeed(db, function(feed) {
+      feedCount++;
+      appendFeed(feed);
+      updateFeedCountMessage();
+    }, function() {
+      // Show or hide the no-subscriptions message and the feed list
+      if(feedCount == 0) {
+        noSubscriptionsMessage.style.display = 'block';
+        feedList.style.display = 'none';
+      } else {
+        noSubscriptionsMessage.style.display = 'none';
+        feedList.style.display = 'block';
+      }
+    });
+  });
+
+  // Initialize the Display settings section
   initHeaderFontMenu();
   initBodyFontMenu();
-}
 
-function initAboutSection() {
+  // Initialize the About section
   var manifest = chrome.runtime.getManifest();
   document.getElementById('extension-name').textContent = manifest.name || '?';
   document.getElementById('extension-version').textContent = manifest.version || '?';
   document.getElementById('extension-author').textContent = manifest.author || '?';
   document.getElementById('extension-description').textContent = manifest.description || '';
   document.getElementById('extension-homepage').textContent = manifest.homepage_url || '';
-}
-
-function initNavigationMenu() {
-  // Attach navigation menu click handler
-  var navigationItems = document.querySelectorAll('li.navigation-item');
-  app.each(navigationItems, function(item) {
-    item.addEventListener('click', navigationClick);
-  });
-}
-
-function initOptionsPage(event) {
-  initNavigationMenu();
-
-  // Select the default navigation item and show the default section
-  showSection(document.getElementById('mi-view-subscriptions'));
-
-  // Initialize the Add subscription section
-  // Attach the subscription form submit handler
-  document.getElementById('subscription-form').addEventListener('submit', onSubscribeSubmit);
-
-  // Initialize the Discover feeds section
-  // TODO: when implemented
-  initDiscoverFeedsSection();
-
-  // Initialize the Manage subscriptions section
-  initFeedList();  
-
-  // Initialize the Settings section
-  initSettingsSection();
-
-  // Initialize the About section
-  initAboutSection();
 }
 
 // Export globals
