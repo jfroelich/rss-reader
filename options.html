@@ -14,7 +14,7 @@
 <li id="mi-view-subscriptions" class="navigation-item">Manage subscriptions</li>
 <li id="mi-add-subscription" class="navigation-item">Add a subscription</li>
 <li id="mi-discover-subscription" class="navigation-item">Discover feeds</li>
-<li id="mi-view-settings" class="navigation-item">Settings</li>
+<li id="mi-display-settings" class="navigation-item">Display settings</li>
 <li id="mi-view-blacklist" class="navigation-item">Blacklist</li>
 <li id="mi-view-help" class="navigation-item">Help</li>
 <li id="mi-view-about" class="navigation-item">About</li>
@@ -54,24 +54,27 @@
 	Subscribe to a new feed to get started!</p>
 	<ul id="feedlist"></ul>
 </div>
-<div id="divoptions" class="options_section">
-	<h1>Settings</h1>
+<div id="section-display-settings" class="options_section">
+	<h1>Display settings</h1>
+	<div id="display-preview">
+<span id="header_font_preview" style="font-size:18pt;">Lorem ipsum dolor sit amet, 
+consectetur adipiscing elit.</span>
+<span id="body_font_preview" style="font-size:12pt;">Lorem ipsum dolor sit amet, consectetur 
+adipiscing elit. Aliquam ipsum ante, tempor et velit vel, iaculis molestie odio. Donec eget urna 
+sit amet leo lacinia blandit. Mauris sit amet orci hendrerit turpis ornare adipiscing id et leo. 
+Mauris at lacus nibh. Mauris eu eros metus. Integer massa tellus, vulputate ut eros eu, luctus 
+viverra ligula. Nunc suscipit arcu in felis congue lobortis. Nulla posuere ut libero eu ultrices. 
+Fusce molestie quam quis congue tempus.</span>
+	</div>
 	<table id="options_table">
 	<tr>
 		<td class="option-text">Header Font:</td>
 		<td><select id="select_header_font"></select></td>
-		<td><span id="header_font_preview" style="font-size:18pt;">Lorem ipsum dolor sit amet, 
-		consectetur adipiscing elit.</span></td>
 	</tr>
 	<tr>
 		<td class="option-text">Body Font:</td>
 		<td><select id="select_body_font"></select></td>
-		<td><span id="body_font_preview" style="font-size:12pt;">Lorem ipsum dolor sit amet, consectetur 
-		adipiscing elit. Aliquam ipsum ante, tempor et velit vel, iaculis molestie odio. Donec eget urna 
-		sit amet leo lacinia blandit. Mauris sit amet orci hendrerit turpis ornare adipiscing id et leo. 
-		Mauris at lacus nibh. Mauris eu eros metus. Integer massa tellus, vulputate ut eros eu, luctus 
-		viverra ligula. Nunc suscipit arcu in felis congue lobortis. Nulla posuere ut libero eu ultrices. 
-		Fusce molestie quam quis congue tempus.</span></td></tr>
+	</tr>
 	</table>
 </div>
 <div id="section-blacklist" class="options_section">
@@ -85,10 +88,6 @@ are removed from the content of articles when the articles are added. Use one UR
 </textarea><br>
 <button>Save</button>
 </div>
-<div id="divhelp" class="options_section">
-	<h1>Help</h1>
-	<p class="option-text">No help is currently available.</p>
-</div>
 <div id="divabout" class="options_section">
 	<h1>About</h1>
 	<p class="option-text">Name: <span id="extension-name"></span></p>
@@ -97,6 +96,10 @@ are removed from the content of articles when the articles are added. Use one UR
 	<p class="option-text">Version: <span id="extension-version"></span></p>
 	<p class="option-text">Source code: <a href="https://github.com/jfroelich/rss-reader" target="blank" id="extension-homepage"></a></p>
 	<p class="option-text">License information, including notice of use of custom fonts, is available in the LICENSE file on GitHub.</p>
+</div>
+<div id="divhelp" class="options_section">
+	<h1>Help</h1>
+	<p class="option-text">No help is currently available.</p>
 </div>
 </body>
 </html>

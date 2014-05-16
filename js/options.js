@@ -15,7 +15,7 @@ var menuItemIdToSectionIdMap = {
   'mi-add-subscription':'divsubscribe',
   'mi-discover-subscription':'divdiscover',
   'mi-view-subscriptions':'divfeedlist',
-  'mi-view-settings':'divoptions',
+  'mi-display-settings':'section-display-settings',
   'mi-view-blacklist':'section-blacklist',
   'mi-view-help':'divhelp',
   'mi-view-about':'divabout'

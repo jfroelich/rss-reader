@@ -64,7 +64,7 @@ div.options_section {
 	display:none;
 }
 
-#divoptions {
+#section-display-settings {
 	display:none;
 }
 
@@ -199,6 +199,16 @@ h1 {
 #blacklist {
 	width:500px;
 	height:500px;
+}
+
+#display-preview {
+	padding:10px;
+	margin-bottom:20px;
+}
+
+#header_font_preview {
+	display:block;
+	margin-bottom:5px;
 }
 
 #options_subscription_monitor {
