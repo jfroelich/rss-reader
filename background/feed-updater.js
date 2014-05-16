@@ -1,4 +1,6 @@
 // Feed update lib
+(function(exports) {
+'use strict';
 
 // Starts updating a single feed
 function updateFeed(db, feed, callback, timeout) {
@@ -146,3 +148,8 @@ function unsubscribe(feedId, callback) {
     });
   });
 }
+
+exports.updateFeed = updateFeed;
+exports.unsubscribe = unsubscribe;
+
+})(this);

@@ -1,5 +1,5 @@
 // Browser action lib
-(function(global, model) {
+(function(exports, model) {
 'use strict';
 
 // Updates the badge text to the current unread count
@@ -8,51 +8,49 @@ function updateBadge() {
 }
 
 function onUpdateBadgeConnect(db) {
-  model.countUnread(db, onCountUnread);
+  model.countUnread(db, setBadgeText);
 }
 
-function onCountUnread(count) {
+function setBadgeText(count) {
+  var count = parseInt(count) || 0;
   chrome.browserAction.setBadgeText({'text': count.toString()});
 }
 
+// Constants used by tab management
+var viewURL = chrome.extension.getURL('view.html');
+var newTabURL = 'chrome://newtab/';
+var viewTabQuery = {'url': viewURL};
+
+// Opens the view either in a new tab, by activating an inactive tab
+// or by replacing the first new tab
+function openExtensionView(tab) {
+  chrome.tabs.query(viewTabQuery, activateOrCheckNewTab);
+}
+
 // Either updates the extisting view or searches for the newtab tab
-function handleViewQuery(tabs) {
+function activateOrCheckNewTab(tabs) {
   if(tabs.length) {
-    // Found existing view, select it
     chrome.tabs.update(tabs[0].id, {'active':true});
   } else {
-    // Check for new tabs and either replace or create
-    chrome.tabs.query({'url': 'chrome://newtab/'}, handleTabQuery);
+    chrome.tabs.query({'url': newTabURL}, createOrUpdateTab);
   }
 }
 
 // Replaces the existing newtab with the view, or creates a new tab
-function handleTabQuery(newTabs){
-  var viewURL = chrome.extension.getURL('view.html');
-  if(newTabs.length) {
-    // Found the first new tab, replace it with view
+function createOrUpdateTab(tabs){
+  if(tabs.length) {
     chrome.tabs.update(newTabs[0].id, {'active':true,'url': viewURL});
   } else {
-    // Didn't find any new tabs, create one
     chrome.tabs.create({'url': viewURL});
   }
 }
 
-// Export globals
-global.updateBadge = updateBadge;
+// Exports
+exports.updateBadge = updateBadge;
 
 // Bindings
-chrome.runtime.onInstalled.addListener(function() {
-    chrome.browserAction.setBadgeText({'text':"0"});
-});
-
-chrome.runtime.onStartup.addListener(function() {
-  updateBadge();  
-});
-
-chrome.browserAction.onClicked.addListener(function(tab) {
-  var query = {'url': chrome.extension.getURL('view.html')};
-  chrome.tabs.query(query, handleViewQuery);
-});
+chrome.runtime.onInstalled.addListener(setBadgeText);
+chrome.runtime.onStartup.addListener(updateBadge);
+chrome.browserAction.onClicked.addListener(openExtensionView);
 
 })(this, model);

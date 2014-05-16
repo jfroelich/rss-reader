@@ -14,11 +14,15 @@
   "background": {
     "persistent": true,
   "scripts": [
-    "background/utils.js",
+    "background/collections.js",
+    "background/string-utils.js",
+    "background/favicon.js",
+    "background/dates.js",
     "background/uri.js",
     "background/hashing.js",
+    "background/html-parser.js",
     "background/fetcher.js",
-    "background/feedupdater.js",
+    "background/feed-updater.js",
     "background/model.js",
     "background/sanitize.js",
     "background/xml2json.js",

@@ -88,7 +88,7 @@ function renderEntry(entry) {
     '<a class="entrysourcelink" url="',entryLink,'" title="',app.escapeHTMLAttribute(entryTitle),'">Bookmark</a> - ',
     '<span title="',
     app.escapeHTMLAttribute(feedTitle),'">',
-    '<img src="',app.getFavIcon(entry.baseURI),'" width="16" height="16" style="max-width:19px;margin-right:3px;">',
+    '<img src="',app.getFavIconURL(entry.baseURI),'" width="16" height="16" style="max-width:19px;margin-right:3px;">',
     app.escapeHTML(app.truncate(feedTitle, 40)),'</span>',
     (entryAuthor ? ' by ' + app.escapeHTML(app.truncate(entry.author,40)):''),
     ' on ',entryPubDate,'</span>'

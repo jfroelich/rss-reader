@@ -1,5 +1,5 @@
 // Sanitize entry content
-(function(g){
+(function(exports){
 'use strict';
 
 // Node handling behaviors when traversing a document's DOM, constants
@@ -41,6 +41,13 @@ each([
 function isBlacklisted(url) {
   var uo = URI.parse(url);
   return blacklist.hasOwnProperty(URI.toString({'scheme': uo.scheme, 'host': uo.host}));
+}
+
+// Replace a node with its children.
+function unwrap(node) {
+  while(node.firstChild)
+    node.parentNode.insertBefore(node.firstChild, node);
+  node.parentNode.removeChild(node);
 }
 
 // Returns a sanitized HTMLDocument object with the body element as the root'
@@ -389,7 +396,8 @@ elementHandler.video = retainAndWarnHandler;
   elementHandler[el] = defaultHandler;
 });
 
-
-g.sanitize = sanitize;
+// Exports
+exports.unwrap = unwrap;
+exports.sanitize = sanitize;
 
 }(this));

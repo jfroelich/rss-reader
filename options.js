@@ -311,7 +311,7 @@ function onDiscoverFeedsComplete(query, results) {
 
     var snippet = result.contentSnippet.replace('<br>','');
 
-    var favIconURL = app.getFavIcon(result.url);
+    var favIconURL = app.getFavIconURL(result.url);
 
     listItem = document.createElement('li');
     listItem.innerHTML = [
@@ -355,7 +355,7 @@ function updateFeedCountMessage() {
 function appendFeed(feed) {
   // Prepare properties for display
   var prepped = {
-    favIconURL: app.getFavIcon(feed.link) || 'img/rss_icon_trans.gif',
+    favIconURL: app.getFavIconURL(feed.link),
     favIconAltText: app.escapeHTMLAttribute(feed.title) || '',
     title: app.escapeHTML(feed.title) || 'Untitled',
     link: app.escapeHTMLAttribute(feed.link),
