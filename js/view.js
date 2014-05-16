@@ -76,8 +76,8 @@ function renderEntry(entry) {
 
   var entryLink = app.escapeHTMLHREF(entry.link);
 
-  var headerFontFamilyClass = app.FONT_FAMILIES[localStorage.HEADER_FONT_FAMILY] || '';
-  var bodyFontFamilyClass = app.FONT_FAMILIES[localStorage.BODY_FONT_FAMILY] || '';
+  var headerFontFamilyClass = FONT_FAMILIES[localStorage.HEADER_FONT_FAMILY] || '';
+  var bodyFontFamilyClass = FONT_FAMILIES[localStorage.BODY_FONT_FAMILY] || '';
 
   var template = ['<a href="',entryLink,
     '" class="entryTitle ',headerFontFamilyClass,'" target="_blank" title="',
@@ -209,7 +209,7 @@ function handleUnsubscribe(feedId) {
 
 function handleHeaderFontChanged() {
   console.log('Handling header font change event');
-  var newHeaderFont = app.FONT_FAMILIES[localStorage.HEADER_FONT_FAMILY] || '';
+  var newHeaderFont = FONT_FAMILIES[localStorage.HEADER_FONT_FAMILY] || '';
   var container = document.getElementById('entries');
   var titles = container.querySelectorAll('.entryTitle');
   console.log('Found %s titles to update header font class to %s', 
@@ -223,7 +223,7 @@ function handleHeaderFontChanged() {
 
 function handleBodyFontChanged() {
   console.log('Handling body font change event');
-  var newBodyFont = app.FONT_FAMILIES[localStorage.BODY_FONT_FAMILY] || '';
+  var newBodyFont = FONT_FAMILIES[localStorage.BODY_FONT_FAMILY] || '';
   var container = document.getElementById('entries');
   var contents = container.querySelectorAll('.entrycontent');
   console.log('Found %s bodies to update body font class to %s', 

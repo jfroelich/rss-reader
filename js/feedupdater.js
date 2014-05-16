@@ -78,7 +78,7 @@ function updateFeed(db, feed, callback, timeout) {
       });
     });
   }, fetchErrorHandler, timeout);
-};
+}
 
 // Prep and attempt to store an entry
 function updateEntry(store, entry, onSuccess, onError) {
@@ -126,4 +126,23 @@ function updateEntry(store, entry, onSuccess, onError) {
 
     model.addEntry(store, newEntry, onSuccess, onError);
   });
-};
+}
+
+function unsubscribe(feedId, callback) {
+  model.connect(function(db) {
+    model.unsubscribe(db, feedId, function() {     
+      // Update badge
+      updateBadge();
+      
+      // Broadcast event
+      chrome.runtime.sendMessage({'type':'unsubscribe', 'feed': feedId});
+      
+      // NOTE: why call a callback here if I am sending a message?
+      // Can't the views just handle the message event? Or does the message
+      // only get sent to the first view that handles it?
+      if(callback) {
+        callback(feedId);
+      }
+    });
+  });
+}

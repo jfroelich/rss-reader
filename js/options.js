@@ -392,7 +392,7 @@ function initBodyFontMenu() {
   fontOption.textContent = 'Use Chrome font settings';
   menu.appendChild(fontOption);
   
-  for(var key in app.FONT_FAMILIES) {
+  for(var key in FONT_FAMILIES) {
     fontOption = document.createElement('option');
     fontOption.value = key;
     if(key == currentFontFamily)
@@ -401,13 +401,13 @@ function initBodyFontMenu() {
     menu.appendChild(fontOption);
   }
   
-  preview.className = app.FONT_FAMILIES[currentFontFamily] || '';
+  preview.className = FONT_FAMILIES[currentFontFamily] || '';
   menu.addEventListener('change', function(event) {
     var value = event.target.value;
     console.log('Changing body font family to %s', value || 'the default browser settings');
 
     // Update the preview
-    preview.className = app.FONT_FAMILIES[value] || '';
+    preview.className = FONT_FAMILIES[value] || '';
     
     // Update the stored setting
     if(value) {
@@ -431,7 +431,7 @@ function initHeaderFontMenu() {
   fontOption.textContent = 'Use Chrome font settings';
   menu.appendChild(fontOption);
 
-  for(var key in app.FONT_FAMILIES) {
+  for(var key in FONT_FAMILIES) {
     fontOption = document.createElement('option');
     fontOption.setAttribute('value',key);
     if(key == currentFontFamily)
@@ -440,7 +440,7 @@ function initHeaderFontMenu() {
     menu.appendChild(fontOption);
   }
 
-  preview.className = app.FONT_FAMILIES[currentFontFamily] || '';
+  preview.className = FONT_FAMILIES[currentFontFamily] || '';
   menu.addEventListener('change', function(event){
     // Get the new value
     var value = event.target.value;
@@ -448,7 +448,7 @@ function initHeaderFontMenu() {
     console.log('Changing header font family to %s', value || 'the default browser settings');
 
     // Update the preview
-    preview.className = app.FONT_FAMILIES[value] || '';
+    preview.className = FONT_FAMILIES[value] || '';
     
     // Update the stored setting
     if(value) {
