@@ -464,21 +464,23 @@ function initHeaderFontMenu() {
 
 // Handle unsubscribe for a specific feed in feed list
 function onUnsubscribeButtonClicked(event) {
-  var unsubButton = event.target;
-  
   // TODO: if we use a button we can just use button.value
-  var feedId = parseInt(unsubButton.attributes.feed.value);
+  var feedId = parseInt(event.target.attributes.feed.value);
   
+  // Remove it regardless of whether call to app.unsubscribe
+  // is successful
+  document.getElementById('feedlist').removeChild(event.target.parentNode);
+  
+  app.unsubscribe(feedId);
+}
+
+function handleUnsubscribeMessage(feed) {
   var feedList = document.getElementById('feedlist');
-  
-  app.unsubscribe(feedId, function() {
-    feedList.removeChild(unsubButton.parentNode);
-    updateFeedCountMessage();
-    if(feedList.childNodes.length == 0) {
-      feedList.style.display = 'none';
-      document.getElementById('nosubscriptions').style.display = 'block';
-    }
-  });
+  if(feedList.childNodes.length == 0) {
+    feedList.style.display = 'none';
+    document.getElementById('nosubscriptions').style.display = 'block';
+  }
+  updateFeedCountMessage();
 }
 
 function initOptionsPage(event) {
@@ -531,10 +533,19 @@ function initOptionsPage(event) {
   document.getElementById('extension-homepage').textContent = manifest.homepage_url || '';
 }
 
+
+function messageListener(event) {
+  if(event.type == 'unsubscribe') {
+    handleUnsubscribeMessage(event.feed);
+  }
+}
+
 // Export globals
 global.initOptionsPage = initOptionsPage;
+global.messageListener = messageListener;
 
 }(this));
 
 // Bindings
 document.addEventListener('DOMContentLoaded', initOptionsPage);
+chrome.runtime.onMessage.addListener(messageListener);

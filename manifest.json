@@ -23,6 +23,9 @@
 	  "js/sanitize.js",
 	  "js/xml2json.js",
 	  "js/google-feeds.js",
+	  "js/polling.js",
+	  "js/notifications.js",
+	  "js/browser-action.js",
 	  "js/app.js"]
   },
 	
