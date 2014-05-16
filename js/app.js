@@ -1,6 +1,5 @@
 // App lib
 
-
 // Map from display names (and storage key) to CSS class names
 // Also servess as a pre sorted list
 var FONT_FAMILIES = {

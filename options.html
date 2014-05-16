@@ -5,8 +5,8 @@
 <link rel="stylesheet" href="common.css"/>
 <link rel="stylesheet" href="options.css"/>
 <link href="img/rss_icon_trans.gif" rel="shortcut icon" />
-<script src="js/fx.js"></script>
-<script src="js/options.js"></script>
+<script type="text/javascript" src="js/fx.js"></script>
+<script type="text/javascript" src="js/options.js"></script>
 </head>
 <body>
 <div id="navigation">
@@ -15,14 +15,18 @@
 <li id="mi-add-subscription" class="navigation-item">Add a subscription</li>
 <li id="mi-discover-subscription" class="navigation-item">Discover feeds</li>
 <li id="mi-view-settings" class="navigation-item">Settings</li>
+<li id="mi-view-blacklist" class="navigation-item">Blacklist</li>
 <li id="mi-view-help" class="navigation-item">Help</li>
 <li id="mi-view-about" class="navigation-item">About</li>
 </ul>
 </div>
 <div id="divsubscribe" class="options_section">
 	<h1>Add a subscription</h1>
-	<p class="option-text">Copy and paste or type in the web address for a feed, and then hit Enter or click Subscribe.
-	For example, &quot;http://www.example.com/myfeed.rss&quot; (without the quotes).</p>
+	<p class="option-text">Copy and paste or type in the web address for a feed, 
+	and then hit Enter or click Subscribe. For example, 
+	&quot;http://www.example.com/myfeed.rss&quot; (without the quotes). If you 
+	do not know the address, try searching for the feed by name using the 
+	Discover feeds tool.</p>
 	<form id="subscription-form">
 		<input type="text" id="addurl" autofocus="autofocus"/>
 		<input type="submit" id="addbutton" value="Subscribe"/>
@@ -30,7 +34,15 @@
 </div>
 <div id="divdiscover" class="options_section">
 	<h1>Discover feeds</h1>
-	<p class="option-text">This feature is not yet implemented. There is no ETA.</p>
+	<p class="option-text">Search for feeds just like you would on Google&trade; and subscribe to feeds
+	you find interesting. Limited to 10 results.</p>
+	<form id="discover-feeds">
+	<input type="text" id="discover-query" autofocus>
+	<input type="submit" value="Search">
+	</form>
+	<p id="discover-no-results" class="option-text">No results matched your query.</p>
+	<ul id="discover-results-list"></ul>
+	<p id="discover-in-progress" class="option-text">Search in progress.. please wait (a maximum of 5 seconds).</p>
 </div>
 <div id="divfeedlist" class="options_section">
 	<h1>Manage subscriptions
@@ -62,6 +74,17 @@
 		Fusce molestie quam quis congue tempus.</span></td></tr>
 	</table>
 </div>
+<div id="section-blacklist" class="options_section">
+<h1>Blacklist</h1>
+<p class="option-text">Manage a list of URLs. Images and links matching the URLs in this list 
+are removed from the content of articles when the articles are added. Use one URL per line. Use the 
+* symbol as a wildcard to match any number of any characters (or none).</p>
+<p class="option-text">This feature is not yet implemented</p>
+<textarea id="blacklist">
+*.feedsportal.com*
+</textarea><br>
+<button>Save</button>
+</div>
 <div id="divhelp" class="options_section">
 	<h1>Help</h1>
 	<p class="option-text">No help is currently available.</p>
@@ -72,7 +95,7 @@
 	<p class="option-text">Author: <span id="extension-author"></span></p>
 	<p class="option-text">Description: <span id="extension-description"></span></p>
 	<p class="option-text">Version: <span id="extension-version"></span></p>
-	<p class="option-text">Source code: <a href="https://github.com/jfroelich/rss-reader" target="blank">https://github.com/jfroelich/rss-reader</a></p>
+	<p class="option-text">Source code: <a href="https://github.com/jfroelich/rss-reader" target="blank" id="extension-homepage"></a></p>
 	<p class="option-text">License information, including notice of use of custom fonts, is available in the LICENSE file on GitHub.</p>
 </div>
 </body>

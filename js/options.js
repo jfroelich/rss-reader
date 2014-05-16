@@ -16,6 +16,7 @@ var menuItemIdToSectionIdMap = {
   'mi-discover-subscription':'divdiscover',
   'mi-view-subscriptions':'divfeedlist',
   'mi-view-settings':'divoptions',
+  'mi-view-blacklist':'section-blacklist',
   'mi-view-help':'divhelp',
   'mi-view-about':'divabout'
 };
@@ -71,18 +72,45 @@ function onSubscribeSubmit(event) {
     return;
   }
 
-  // Disable future clicks while subscription in progress
+  // Ignore future clicks while subscription in progress
   var subMonitor = document.getElementById('options_subscription_monitor');
-  if(subMonitor) {
+  if(subMonitor && subMonitor.style.display == 'block') {
     console.log('subscription in progress, ignoring subscription button click');
     return;
   }
 
   // Stop and warn if we did not get a valid url
   if(!app.URI.isValid(app.URI.parse(url))) {
-    showErrorMessage('"' + url + '" is not a valid webpage location.');
+    showErrorMessage('"' + url + '" is not a valid webpage location.');    
     return;
   }
+
+  // Reset
+  elementAddURL.value = '';
+  startSubscription(url);
+  return false;
+}
+
+function discoverSubscribeClick(event) {
+  var button = event.target;
+  var url = button.value;
+  if(!url) {
+    console.log('no url in discover subscribe click');
+    return;
+  }
+
+  // Ignore future clicks while subscription in progress
+  var subMonitor = document.getElementById('options_subscription_monitor');
+  if(subMonitor && subMonitor.style.display == 'block') {
+    console.log('subscription in progress, ignoring subscription button click');
+    return;
+  }
+
+  startSubscription(url);
+}
+
+function startSubscription(url) {
+
 
   // Stop and warn if we are not online
   if(navigator.hasOwnProperty('onLine') && !navigator.onLine) {
@@ -90,9 +118,6 @@ function onSubscribeSubmit(event) {
     showErrorMessage('Unable to subscribe while offline.');
     return;
   }
-
-  // Reset the input
-  elementAddURL.value = '';
 
   showSubscriptionMonitor();
 
@@ -210,36 +235,129 @@ function onSubscribeComplete(feed, entriesProcessed, entriesAdded) {
 
   app.showNotification('Subscribed to ' + feed.title + '. Found ' + entriesAdded + ' new articles.');
 
+  // Navigate back to the view feeds list
+  showSection('mi-view-subscriptions');
+
   // Add the feed to the feed list
   appendFeed(feed);
   
   // Update the total feed count message
-  updateFeedCountMessage();
+  // Don't call this here since we call it in appendFeed
+  //updateFeedCountMessage();
 
   // Broadcast the subscription event
   chrome.runtime.sendMessage({'type':'subscribe','feed':feed.id});
 }
 
-// Load feeds from the database and print them out
+function onDiscoverFormSubmit(event) {
+
+  // Prevent the form submission that would normally occur
+  event.preventDefault();
+
+  var queryElement = document.getElementById('discover-query');
+  var query = queryElement.value ? queryElement.value.trim() : '';
+  if(!query) {
+
+    // Return false to prevent form submit
+    return false;
+  }
+
+  // Suppress re-clicks
+  if(document.getElementById('discover-in-progress').style.display == 'block') {
+    console.log('Cancelling, search already in progress');
+
+    // Return false to prevent form submit
+    return false;
+  }
+
+  // Show that we are in progress
+  document.getElementById('discover-in-progress').style.display='block';
+
+  console.log('Query: %s', query);
+
+  // Perform the query
+  app.discoverFeeds(query,onDiscoverFeedsComplete, onDiscoverFeedsError, 5000);
+  
+  // Return false to prevent form submit
+  return false;
+}
+
+function onDiscoverFeedsComplete(query, results) {
+  console.log('Searching for %s yielded %s results', query, results.length);
+
+  var resultsList = document.getElementById('discover-results-list');
+  var noResultsMessage = document.getElementById('discover-no-results');
+
+  document.getElementById('discover-in-progress').style.display='none';
+
+  if(results.length < 1) {
+    resultsList.style.display = 'none';
+    noResultsMessage.style.display = 'block';
+    return;
+  }
+
+  if(resultsList.style.display == 'block') {
+    resultsList.innerHTML = '';
+  } else {
+    noResultsMessage.style.display='none';
+    resultsList.style.display = 'block';      
+  }
+
+  var listItem = document.createElement('li');
+  listItem.textContent = 'Found ' + results.length + ' results.';
+  resultsList.appendChild(listItem);
+
+  // Now display the results
+  app.each(results, function(result){
+
+    var snippet = result.contentSnippet.replace('<br>','');
+
+    var favIconURL = app.getFavIcon(result.url);
+
+    listItem = document.createElement('li');
+    listItem.innerHTML = [
+      '<button value="',result.url,'" title="',app.escapeHTMLAttribute(result.url),
+      '">Subscribe</button>','<img src="',favIconURL,'" title="',
+      app.escapeHTMLAttribute(result.link),'">',
+      '<a href="',result.link,'" title="',app.escapeHTMLAttribute(result.link),
+      '" target="_blank">',result.title,'</a> ',app.truncate(snippet,400)
+
+    ].join('');
+
+    var button = listItem.querySelector('button');
+    button.addEventListener('click',discoverSubscribeClick);
+
+    resultsList.appendChild(listItem);
+  });
+
+}
+
+function onDiscoverFeedsError(errorMessage) {
+  // Stop showing progress
+  document.getElementById('discover-in-progress').style.display='none';
+  
+  console.log('Search error: %s', errorMessage);
+  
+  // Report a visual error
+  showErrorMessage('An error occurred. Details: ' + errorMessage);
+}
+
+// Load feeds from storage and print them out
 function initFeedList() {
   // Track number of feeds loaded
   var feedCount = 0;
 
-  // NOTE: UNEXPECTED BEHAVIOR. onComplete is getting called
-  // every single time a feed is handled. I think I am interpreting
-  // how transaction.oncomplete works incorrectly.
-
   // Callback for when all feeds have been loaded
   var onComplete = function() {
+    // Show or hide the no-subscriptions message and the feed list
+    var feedList = document.getElementById('feedlist');
     if(feedCount == 0) {
       document.getElementById('nosubscriptions').style.display = 'block';
-      document.getElementById('feedlist').style.display = 'none';
+      feedList.style.display = 'none';
     } else {
       document.getElementById('nosubscriptions').style.display = 'none';
-      document.getElementById('feedlist').style.display = 'block';
+      feedList.style.display = 'block';
     }
-    
-    // updateFeedCountMessage();
   };
 
   // Callback for when one feed has been loaded
@@ -259,7 +377,7 @@ function initFeedList() {
 
 function updateFeedCountMessage() {  
   var feedList = document.getElementById('feedlist');
-  var feedCount = feedList.childNodes.length;
+  var feedCount = feedList ? feedList.childNodes.length : 0;
   var feedCountMessage = document.getElementById('subscription-count');
   if(feedCount == 0) {
     feedCount.textContent = '';
@@ -274,20 +392,20 @@ function appendFeed(feed) {
     favIconURL: app.getFavIcon(feed.link) || 'img/rss_icon_trans.gif',
     favIconAltText: app.escapeHTMLAttribute(feed.title) || '',
     title: app.escapeHTML(feed.title) || 'Untitled',
-    url: app.escapeHTMLAttribute(feed.url),
-    description: ''
+    link: app.escapeHTMLAttribute(feed.link),
+    url: app.escapeHTMLAttribute(feed.url)
   };
   if(feed.description) {
-    prepped.description = ' - ' + app.escapeHTML(feed.description);
+    prepped.description = app.escapeHTML(feed.description);
   }
 
   var listItem = document.createElement('li');
   var template = [
     '<img src="',prepped.favIconURL,'" title="',prepped.favIconAltText,'">',
-    '<span title="',prepped.url,'">',prepped.title,'</span>',
-    '<span class="feed-description">',prepped.description,'</span>',
+    '<a href="',prepped.link,'" title="',prepped.url,'" target="_blank">',prepped.title,'</a>',
+    ' <span class="feed-description">',prepped.description,'</span>',
     //'<br>Active: <span>?</span>',
-    //'<input type="button" value="Unsubscribe" feed="',feed.id,'"/>'
+    // TODO: should simply use button.value, not a custom attribute
     '<button feed="',feed.id,'">Unsubscribe</button>'
   ];
   listItem.innerHTML = template.join('');
@@ -382,13 +500,15 @@ function initHeaderFontMenu() {
 function onUnsubscribeButtonClicked(event) {
   var unsubButton = event.target;
   var feedId = parseInt(unsubButton.attributes.feed.value);
+  var feedList = document.getElementById('feedlist');
   app.model.connect(function(db) {
     app.model.unsubscribe(db, feedId, function() {
       // Remove the feed from the list
       var listItem = unsubButton.parentNode.parentNode;
+      
       if(listItem) {
         // Remove it from the list
-        document.getElementById('feedlist').removeChild(listItem);
+       feedList.removeChild(listItem);
         
         // Update the count message
         updateFeedCountMessage();
@@ -396,9 +516,13 @@ function onUnsubscribeButtonClicked(event) {
         console.log('no list item found to remove when unsubscribe');
       }
 
-      if(document.getElementById('feedlist').childNodes.length == 0) {
-        document.getElementById('feedlist').style.display = 'none';
+      
+
+      if(feedList && feedList.childNodes.length == 0) {
+        feedList.style.display = 'none';
         document.getElementById('nosubscriptions').style.display = 'block';
+      } else {
+        console.warn('feedList undefined');
       }
       
       chrome.runtime.sendMessage({'type':'unsubscribe', 'feed': feedId});
@@ -406,6 +530,11 @@ function onUnsubscribeButtonClicked(event) {
       app.updateBadge();
     });
   });
+}
+
+function initDiscoverFeedsSection() {
+  var form = document.getElementById('discover-feeds');
+  form.addEventListener('submit', onDiscoverFormSubmit);
 }
 
 function initSettingsSection() {
@@ -419,6 +548,7 @@ function initAboutSection() {
   document.getElementById('extension-version').textContent = manifest.version || '?';
   document.getElementById('extension-author').textContent = manifest.author || '?';
   document.getElementById('extension-description').textContent = manifest.description || '';
+  document.getElementById('extension-homepage').textContent = manifest.homepage_url || '';
 }
 
 function initNavigationMenu() {
@@ -430,7 +560,6 @@ function initNavigationMenu() {
 }
 
 function initOptionsPage(event) {
-  
   initNavigationMenu();
 
   // Select the default navigation item and show the default section
@@ -442,6 +571,7 @@ function initOptionsPage(event) {
 
   // Initialize the Discover feeds section
   // TODO: when implemented
+  initDiscoverFeedsSection();
 
   // Initialize the Manage subscriptions section
   initFeedList();  
