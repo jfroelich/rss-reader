@@ -6,28 +6,28 @@
   "homepage_url": "https://github.com/jfroelich/rss-reader",
   "description": "A simple RSS reader Chrome extension built for speed, scalability, and simplicity",
 
-  "browser_action": { 
-  	"default_icon": "img/rss_icon_trans.png",
-  	"default_title": "Josh's RSS Reader"
+  "browser_action": {
+    "default_icon": "img/rss_icon_trans.png",
+    "default_title": "Josh's RSS Reader"
   },
 
   "background": {
-  	"persistent": true,
-	"scripts": [
-	  "js/utils.js",
-	  "js/uri.js",
-	  "js/hashing.js",
-	  "js/fetcher.js",
-	  "js/feedupdater.js",
-	  "js/model.js",
-	  "js/sanitize.js",
-	  "js/xml2json.js",
-	  "js/google-feeds.js",
-	  "js/polling.js",
-	  "js/notifications.js",
-	  "js/browser-action.js"]
+    "persistent": true,
+  "scripts": [
+    "background/utils.js",
+    "background/uri.js",
+    "background/hashing.js",
+    "background/fetcher.js",
+    "background/feedupdater.js",
+    "background/model.js",
+    "background/sanitize.js",
+    "background/xml2json.js",
+    "background/google-feeds.js",
+    "background/polling.js",
+    "background/notifications.js",
+    "background/browser-action.js"]
   },
-	
+
   "options_page": "options.html",
 
   "permissions": [
@@ -40,6 +40,6 @@
     "unlimitedStorage"
   ],
 
-  "content_security_policy": 
-  	"script-src 'self'; object-src 'self' https://vimeo.com https://www.youtube.com https://www.ustream.tv; frame-src http: https:"
+  "content_security_policy":
+    "script-src 'self'; object-src 'self' https://vimeo.com https://www.youtube.com https://www.ustream.tv; frame-src http: https:"
 }
