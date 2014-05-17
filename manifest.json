@@ -24,6 +24,7 @@
     "background/fetcher.js",
     "background/feed-updater.js",
     "background/model.js",
+    "background/content-filters.js",
     "background/sanitize.js",
     "background/content-trimming.js",
     "background/xml2json.js",

@@ -108,6 +108,16 @@ h1 {
 	border-bottom: 1px solid #cccccc;
 }
 
+h2 {
+	color: rgb(48, 57, 66);
+	margin-top: 0px;
+	font-size:110%;
+	font-weight:normal;
+	font-family: 'Segoe UI', Tahoma, sans-serif;
+	padding-bottom: 8px;
+	border-bottom: 1px solid #cccccc;	
+}
+
 .option-text {
 	font-size:90%;
 	font-family: 'Segoe UI', Tahoma, sans-serif;
@@ -218,9 +228,23 @@ h1 {
 #content-filters-list {
 	list-style-type: none;
 	padding-left:0px;
+	font-family: 'Segoe UI', Tahoma, sans-serif;
+	display:block;
+	width:100%;
 }
+
 #create-filter-text {
 	width:200px;
+}
+
+#content-filters-list li {
+	padding-top: 10px;
+	padding-bottom: 10px;
+	border-bottom: 1px dotted #cccccc;
+}
+
+#content-filters-list li button {
+  float:right;
 }
 
 #options_subscription_monitor {

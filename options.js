@@ -2,13 +2,19 @@
 (function(global){
 'use strict';
 
+// Handle of the background page
 var app = chrome.extension.getBackgroundPage();
-
-var SUBSCRIBE_TIMEOUT = 5000;
 
 // Keep track of the currently displayed section 
 // and selected menu item
 var currentSection, currentMenuItem;
+
+// Default timeout(ms) for subscribing
+var SUBSCRIBE_TIMEOUT = 5000;
+
+// Max chars for create content filter feed menu
+var CREATE_CONTENT_FILTER_FEED_MENU_MAX_TEXT_LENGTH = 30;
+
 
 // Map between menu items and sections
 // TODO: embed custom attribute in the li tag itself
@@ -393,10 +399,20 @@ function appendFeed(feed) {
   document.getElementById('feedlist').appendChild(listItem);
 };
 
-function createFilterClick(event) {
+function createContentFilterClick(event) {
   console.log('Clicked create filter');
-}
 
+  var feedMenu = document.getElementById('create-filter-feed');
+  var typeMenu = document.getElementById('create-filter-type');
+
+  var rule = {
+    'feed': parseInt(feedMenu.options[feedMenu.selectedIndex].value),
+    'type': typeMenu.options[typeMenu.selectedIndex].value,
+    'match': document.getElementById('create-filter-match').value || ''
+  };
+
+  app.createContentFilterRule(rule);
+}
 
 function initBodyFontMenu() {
   var menu = document.getElementById('select_body_font');
@@ -488,13 +504,40 @@ function onUnsubscribeButtonClicked(event) {
   app.unsubscribe(feedId);
 }
 
-function handleUnsubscribeMessage(feed) {
-  var feedList = document.getElementById('feedlist');
-  if(feedList.childNodes.length == 0) {
-    feedList.style.display = 'none';
-    document.getElementById('nosubscriptions').style.display = 'block';
+function contentFilterCreatedMessageListener(event) {
+  if(event.type != 'createContentFilter') {
+    return;
   }
-  updateFeedCountMessage();
+  
+  if(!event.rule) {
+    console.error('undefined rule received');
+    return;
+  }
+  
+  // Append the rule to the list
+  appendContentFilterRule(event.rule);
+  
+  // TODO: scroll to the new rule???
+}
+
+function appendContentFilterRule(rule) {
+  console.log('Appending content filter rule %s', JSON.stringify(rule));
+  var list = document.getElementById('content-filters-list');
+  var listItem = document.createElement('li');
+  listItem.id = rule.id;
+  listItem.textContent = app.getRuleTextualFormat(rule);
+  var button = document.createElement('button');
+  button.value = rule.id;
+  button.textContent = 'Remove';
+  
+  button.addEventListener('click', removeContentFilterClick);
+  
+  listItem.appendChild(button);
+  list.appendChild(listItem);
+}
+
+function removeContentFilterClick(event) {
+  console.log('Clicked remove content filter, filter id is %s', event.target.value);
 }
 
 function initOptionsPage(event) {
@@ -538,9 +581,9 @@ function initOptionsPage(event) {
   initHeaderFontMenu();
   initBodyFontMenu();
 
-  // Initialize the content rules section
-  // Side note: unsubscribe has to update the list.
-  // Side note: unsubscribe has to invalidate or delete rules for the feed.
+  // Initialize the Content filters section
+  
+  // Initialize the Create content filter subsection
   var createFilterFeedMenu = document.getElementById('create-filter-feed');
   app.model.connect(function(db){
     var feeds = [];
@@ -553,29 +596,41 @@ function initOptionsPage(event) {
       feeds.forEach(function(feed){
         var option = document.createElement('option');
         option.value = feed.id;
-        option.textContent = feed.title;
+        
+        // Set the title attribute to help the user disambiguate post truncation
+        // conflated option text
+        // TODO: test whether I need to strip quotes here
+        option.title = feed.title.replace('"','&quot;');
+
+        // Hard limit to 30 to prevent large title from messing up the form
+        option.textContent = app.truncate(feed.title,
+          CREATE_CONTENT_FILTER_FEED_MENU_MAX_TEXT_LENGTH);
+
         createFilterFeedMenu.appendChild(option);
       });
     });
   });
-  
-  var CONTENT_FILTER_TYPES = [
-    {'value':'a-href-matches','text':'Link locations matching the text'},
-    {'value':'img-src-matches','text':'Image locations matching the text'},
-    {'value':'img-or-link-src-matches','text':'Link or image locations matching the text'},
-    {'value':'text-matches','text':'Paragraphs matching the text'}
-  ];
-  
+
   var createFilterTypeMenu = document.getElementById('create-filter-type');
-  CONTENT_FILTER_TYPES.forEach(function(type) {
+  app.CONTENT_FILTER_TYPES.forEach(function(type) {
     var option = document.createElement('option');
     option.value = type.value;
     option.textContent = type.text;
     createFilterTypeMenu.appendChild(option);
   });
 
-  var createFilterAction = document.getElementById('create-filter-action');
-  createFilterAction.addEventListener('click', createFilterClick);
+  var createContentFilterAction = document.getElementById('create-filter-action');
+  createContentFilterAction.addEventListener('click', createContentFilterClick);
+
+  // Load up and display the content rules
+  var contentFiltersList = document.getElementById('content-filters-list');
+  
+  var rules = app.getContentFilterRules();
+  console.log('Initializing content filters rules list. %s rules found.', rules.length);
+  rules.forEach(function(rule){
+    appendContentFilterRule(rule);
+  });
+  
 
 
   // Initialize the About section
@@ -588,18 +643,56 @@ function initOptionsPage(event) {
 }
 
 
-function messageListener(event) {
-  if(event.type == 'unsubscribe') {
-    handleUnsubscribeMessage(event.feed);
+function unsubscribeMessageListener(event) {
+  
+  // Only handle unsubscribe messages
+  if(event.type != 'unsubscribe') {
+    return;
   }
+
+  // Only handle messages with the proper event properties set
+  // valid feed id can never be zero so this works
+  if(!event.feed) {
+    console.error('unsubscribe event handler did not get feed id');
+    return;
+  }
+
+  // Update the feed list
+  // TODO: notice how I am not removing the element here,
+  // that kind of seems incorrect. I should probably be removing it here
+  // not in the button click handler.
+  var feedList = document.getElementById('feedlist');
+  if(feedList.childNodes.length == 0) {
+    feedList.style.display = 'none';
+    document.getElementById('nosubscriptions').style.display = 'block';
+  }
+
+  // Update the feed counter element above the feed list
+  updateFeedCountMessage();
+
+  // TODO: Remove content filter rules specific to the feed
+  // from the content filter ui
+  // NOTE: actually i think that i am sending a command to app
+  // background and therefore I should not be doing this here. that 
+  // should happen in a separate callback? that way I can use the same 
+  // handler for when user deletes a rule he has created manually, or 
+  // as a result of some console command
+
+  // Remove the feed from the create content filter menu
+  var feedOption = document.getElementById('create-filter-feed').querySelector('option[id='+event.feed+']');
+  if(feedOption) {
+    console.log('Removing feed with id %s from create content filter form', event.feed);
+    feedOption.parentNode.removeChild(feedOption);
+  } else {
+    console.error('Could not locate feed in create content filter feed menu for id %s', event.feed);
+  }
+
 }
 
-// Export globals
-global.initOptionsPage = initOptionsPage;
-global.messageListener = messageListener;
+// Bindings
+chrome.runtime.onMessage.addListener(unsubscribeMessageListener);
+chrome.runtime.onMessage.addListener(contentFilterCreatedMessageListener);
+
+document.addEventListener('DOMContentLoaded', initOptionsPage);
 
 }(this));
-
-// Bindings
-document.addEventListener('DOMContentLoaded', initOptionsPage);
-chrome.runtime.onMessage.addListener(messageListener);
