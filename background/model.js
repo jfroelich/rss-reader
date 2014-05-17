@@ -1,5 +1,5 @@
 // Storage-related functions
-(function(g) {
+(function(exports) {
 'use strict';
   
 var model = {};
@@ -229,6 +229,6 @@ model.forEachEntry = function(db, params, callback, onComplete) {
   };
 };
 
-g.model = model;
+exports.model = model;
 
-}(this));
+})(this);

@@ -122,7 +122,19 @@ function updateEntry(store, entry, onSuccess, onError) {
         var doc = parseHTML(entry.content);
         var sanitizedDOM = sanitize(entry.feedLink, doc);
         if(sanitizedDOM) {
+          
+          // Do we apply content filtering before or after sanitize?
+          // Here would be after
+
+
+          // Trim the document
+          trimDocument(sanitizedDOM);
+
+          // Set the content property after sanitization, trimming
           newEntry.content = sanitizedDOM.body.innerHTML;
+
+        } else {
+          console.log('unclear what to do without sanitzed dom');
         }
     }
 

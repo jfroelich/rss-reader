@@ -44,7 +44,7 @@ div.options_section {
 	width:84%;
 }
 
-#divsubscribe {
+#section-add-subscription {
 	display:none;
 }
 
@@ -65,6 +65,10 @@ div.options_section {
 }
 
 #section-display-settings {
+	display:none;
+}
+
+#section-content-filters {
 	display:none;
 }
 
@@ -209,6 +213,14 @@ h1 {
 #header_font_preview {
 	display:block;
 	margin-bottom:5px;
+}
+
+#content-filters-list {
+	list-style-type: none;
+	padding-left:0px;
+}
+#create-filter-text {
+	width:200px;
 }
 
 #options_subscription_monitor {

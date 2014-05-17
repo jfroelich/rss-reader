@@ -1,5 +1,5 @@
 // Hash lib
-(function(g) {
+(function(exports) {
   'use strict';
   
   function callback(previousValue, currentValue) {
@@ -13,6 +13,6 @@
     }
   }
 
-  g.hashCode = hashCode;
+  exports.hashCode = hashCode;
     
-}(this));
+})(this);

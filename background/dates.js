@@ -14,7 +14,7 @@ exports.formatDate = function(date, sep) {
 
 // Very simple date parsing
 exports.parseDate = function(str) {
-  if(str) {
+  if(typeof str != 'undefined') {
     var date = new Date(str);
     if(Object.prototype.toString.call(date) == '[object Date]' &&
       isFinite(date)) {

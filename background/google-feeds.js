@@ -1,5 +1,5 @@
 // Google Feeds API - ajax search service wrapper
-(function(global) {
+(function(exports) {
 'use strict';
 
 var BASE_URL = 'https://ajax.googleapis.com/ajax/services/feed/find';
@@ -52,38 +52,42 @@ function discoverFeeds(query, onSuccess, onError, timeout) {
   }
   
   if(!window.navigator.onLine) {
+    console.log('discoverFeeds - offline');
     onError('Not online');
     return;
   }
 
   var url = buildRequestURL(query);
   var request = new XMLHttpRequest();
+
   if(timeout) {
     request.timeout = timeout;
   }
 
   request.addEventListener('error', function(event) {
+    console.log('discoverFeeds - error event');
     onError('Problem making request');
   });
 
   request.addEventListener('timeout', function(event) {
+    console.log('discoverFeeds - timeout event');
     onError('The request timed out');
   });
 
   request.addEventListener('abort', function(event) {
+    console.log('discoverFeeds - abort event');
     onError('The request was aborted');
   });
 
   request.addEventListener('load', function(event) {
-
-    console.log('load event: %s', url);
-
     if(event.target.status != 200) {
+      console.log('discoverFeeds - invalid status %s %s', event.target.status, event.target.statusText);
       onError('Invalid response code (' + event.target.status + ' ' + event.target.statusText + ')');
       return;
     }
 
     if(!event.target.response) {
+      console.log('discoverFeeds - event.target.response is undefined');
       onError('Missing response');
       return;
     }
@@ -91,11 +95,14 @@ function discoverFeeds(query, onSuccess, onError, timeout) {
     var data = event.target.response.responseData;
 
     if(!data) {
+      console.log('discoverFeeds - event.target.response.responseData is undefined');
       onError('Missing response data');
       return;
     }
 
     sanitizeEntries(data.entries);
+
+    console.log('The search for "%s" found %s results', data.query, data.entries.length);
 
     onSuccess(data.query, data.entries);
   });
@@ -108,12 +115,13 @@ function discoverFeeds(query, onSuccess, onError, timeout) {
 function sanitizeEntries(entries) {
   var original = 0;
   for(var i = 0, ln = entries.length;i< ln;i++) {
-    entries[i].contentSnippet = 
-      entries[i].contentSnippet.replace('<br>','').replace('<BR>','');
+    //entries[i].contentSnippet = 
+    //  entries[i].contentSnippet.replace('<br>','').replace('<BR>','');
+    entries[i].contentSnippet = entries[i].contentSnippet.replace(/<br>/gi,''); 
   }
 }
 
 // Exports
-global.discoverFeeds = discoverFeeds;
+exports.discoverFeeds = discoverFeeds;
 
 })(this);

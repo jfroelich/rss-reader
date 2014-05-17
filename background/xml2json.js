@@ -1,4 +1,4 @@
-(function(g) {
+(function(exports) {
 'use strict';
 
 // Transform RSS/Atom/RDF XML to normalized JSON
@@ -147,19 +147,7 @@ function isXMLFeed(xmlDocument) {
   return name == 'rss' || name == 'feed' || name == 'rdf:rdf';
 }
 
-g.xml2json = xml2json;
-g.isXMLFeed = isXMLFeed;
+exports.xml2json = xml2json;
+exports.isXMLFeed = isXMLFeed;
 
 }(this));
-
-function testIsXMLFeed(url) {
-  fetchFeed(url, function(xmlDocument) {
-    console.log(isXMLFeed(xmlDocument));
-  });
-}
-
-function testXML2Json(url) {
-  fetchFeed(url, function(xmlDocument) {
-    console.dir(xml2json(xmlDocument));
-  });
-}

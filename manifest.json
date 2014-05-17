@@ -25,11 +25,13 @@
     "background/feed-updater.js",
     "background/model.js",
     "background/sanitize.js",
+    "background/content-trimming.js",
     "background/xml2json.js",
     "background/google-feeds.js",
     "background/polling.js",
     "background/notifications.js",
-    "background/browser-action.js"]
+    "background/browser-action.js",
+    "background/background-test.js"]
   },
 
   "options_page": "options.html",

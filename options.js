@@ -11,12 +11,14 @@ var SUBSCRIBE_TIMEOUT = 5000;
 var currentSection, currentMenuItem;
 
 // Map between menu items and sections
+// TODO: embed custom attribute in the li tag itself
+// and read from that, then deprecate this map.
 var menuItemIdToSectionIdMap = {
-  'mi-add-subscription':'divsubscribe',
+  'mi-add-subscription':'section-add-subscription',
   'mi-discover-subscription':'divdiscover',
   'mi-view-subscriptions':'divfeedlist',
   'mi-display-settings':'section-display-settings',
-  'mi-view-blacklist':'section-blacklist',
+  'mi-content-filters':'section-content-filters',
   'mi-view-help':'divhelp',
   'mi-view-about':'divabout'
 };
@@ -28,8 +30,15 @@ function navigationClick(event) {
 
 // Update the menu and show the desired section
 function showSection(menuItem) {
+  
+  if(!menuItem) {
+    console.error('undefined menuItem');
+    return;
+  }
+
   // Ignore re-selection
   if(currentMenuItem == menuItem) {
+    console.log('Ignoring reclick of same menu item');
     return;
   }
 
@@ -384,6 +393,11 @@ function appendFeed(feed) {
   document.getElementById('feedlist').appendChild(listItem);
 };
 
+function createFilterClick(event) {
+  console.log('Clicked create filter');
+}
+
+
 function initBodyFontMenu() {
   var menu = document.getElementById('select_body_font');
   var preview = document.getElementById('body_font_preview');
@@ -523,6 +537,46 @@ function initOptionsPage(event) {
   // Initialize the Display settings section
   initHeaderFontMenu();
   initBodyFontMenu();
+
+  // Initialize the content rules section
+  // Side note: unsubscribe has to update the list.
+  // Side note: unsubscribe has to invalidate or delete rules for the feed.
+  var createFilterFeedMenu = document.getElementById('create-filter-feed');
+  app.model.connect(function(db){
+    var feeds = [];
+    app.model.forEachFeed(db, function(feed){
+      feeds.push({'id':feed.id,'title':feed.title || 'Untitled'});
+    }, function() {
+      // Sort the menu alphabetically by title
+      feeds.sort(function(a,b) { return a.title > b.title ? 1 : -1; });
+
+      feeds.forEach(function(feed){
+        var option = document.createElement('option');
+        option.value = feed.id;
+        option.textContent = feed.title;
+        createFilterFeedMenu.appendChild(option);
+      });
+    });
+  });
+  
+  var CONTENT_FILTER_TYPES = [
+    {'value':'a-href-matches','text':'Link locations matching the text'},
+    {'value':'img-src-matches','text':'Image locations matching the text'},
+    {'value':'img-or-link-src-matches','text':'Link or image locations matching the text'},
+    {'value':'text-matches','text':'Paragraphs matching the text'}
+  ];
+  
+  var createFilterTypeMenu = document.getElementById('create-filter-type');
+  CONTENT_FILTER_TYPES.forEach(function(type) {
+    var option = document.createElement('option');
+    option.value = type.value;
+    option.textContent = type.text;
+    createFilterTypeMenu.appendChild(option);
+  });
+
+  var createFilterAction = document.getElementById('create-filter-action');
+  createFilterAction.addEventListener('click', createFilterClick);
+
 
   // Initialize the About section
   var manifest = chrome.runtime.getManifest();

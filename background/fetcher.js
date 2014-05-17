@@ -1,6 +1,18 @@
 // Lib for fetching feeds
-(function(global) {
+(function(exports) {
 'use strict';
+
+var ALLOWED_MIME_TYPES = [
+  'application/atom+xml',
+  'application/rdf+xml',
+  'application/rss+xml',
+  'application/xml',
+  'text/xml'
+];
+
+var HEADER_ACCEPT_VALUE = ALLOWED_MIME_TYPES.join(', ');
+
+
 // noop
 function defaultErrorCallback() {}
 
@@ -56,19 +68,9 @@ function fetch(url, onSuccess, onError, timeout) {
 
   request.open('GET', url, true);
   request.responseType = 'document';
-  request.setRequestHeader('Accept', ACCEPT_VALUE);
+  request.setRequestHeader('Accept', HEADER_ACCEPT_VALUE);
   request.send();
 }
-
-var ALLOWED_MIME_TYPES = [
-  'application/atom+xml',
-  'application/rdf+xml',
-  'application/rss+xml',
-  'application/xml',
-  'text/xml'
-];
-
-var ACCEPT_VALUE = ALLOWED_MIME_TYPES.join(', ');
 
 function isAllowedMimeType(type) {
   if(type) {
@@ -80,14 +82,6 @@ function isAllowedMimeType(type) {
   }
 }
 
-global.fetchFeed = fetch;
+exports.fetchFeed = fetch;
 
-}(this));
-
-function testFetchFeed(url) {
-  fetchFeed(url, function(xml){
-    console.log(xml);
-  }, function(event){
-    console.log(event);
-  });
-}
+})(this);

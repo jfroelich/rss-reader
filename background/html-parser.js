@@ -32,4 +32,4 @@ exports.parseHTML = function(htmlString) {
   return doc;
 };
 
-}(this));
+})(this);
