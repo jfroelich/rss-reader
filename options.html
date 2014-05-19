@@ -8,8 +8,8 @@
 <script type="text/javascript" src="fx.js"></script>
 <script type="text/javascript" src="fonts.js"></script>
 <script type="text/javascript" src="options-navigation.js"></script>
-<script type="text/javascript" src="options-feeds.js"></script>
-<script type="text/javascript" src="options-add-feed.js"></script>
+<script type="text/javascript" src="options-feedlist.js"></script>
+<script type="text/javascript" src="options-subscribe.js"></script>
 <script type="text/javascript" src="options-discover.js"></script>
 <script type="text/javascript" src="options-content-filters.js"></script>
 <script type="text/javascript" src="options-display-settings.js"></script>
@@ -23,12 +23,20 @@
 <li id="mi-add-subscription" class="navigation-item">Add a subscription</li>
 <li id="mi-discover-subscription" class="navigation-item">Discover feeds</li>
 <li id="mi-display-settings" class="navigation-item">Display settings</li>
-<li id="mi-embeds" class="navigation-item">Allowed embeds</li>
+<li id="mi-embeds" class="navigation-item">Embedded content</li>
 <li id="mi-content-filters" class="navigation-item">Content filters</li>
+<li id="mi-import-export" class="navigation-item">Import/export</li>
 <li id="mi-view-help" class="navigation-item">Help</li>
 <li id="mi-view-about" class="navigation-item">About</li>
 </ul>
 </div>
+<div id="divfeedlist" class="options_section">
+	<h1>Manage subscriptions<span id="subscription-count"></span></h1>
+	<p id="nosubscriptions" class="option-text">You are not currently subscribed to any feeds. 
+	Subscribe to a new feed to get started!</p>
+	<ul id="feedlist"></ul>
+</div>
+
 <div id="section-add-subscription" class="options_section">
 	<h1>Add a subscription</h1>
 	<p class="option-text">Copy and paste or type in the web address for a feed, 
@@ -54,16 +62,7 @@
 	<ul id="discover-results-list"></ul>
 	<p id="discover-in-progress" class="option-text">Search in progress.. please wait (a maximum of 5 seconds).</p>
 </div>
-<div id="divfeedlist" class="options_section">
-	<h1>Manage subscriptions
-	<span id="subscription-count"></span>
-	<button id="import-subscriptions">Import</button>
-	<button id="export-subscriptions">Export</button>
-	</h1>
-	<p id="nosubscriptions" class="option-text">You are not currently subscribed to any feeds. 
-	Subscribe to a new feed to get started!</p>
-	<ul id="feedlist"></ul>
-</div>
+
 <div id="section-display-settings" class="options_section">
 	<h1>Display settings</h1>
 	<div id="display-preview">
@@ -89,15 +88,15 @@ Fusce molestie quam quis congue tempus.</span>
 </div>
 
 <div id="section-embeds" class="options_section">
-<h1>Manage embeds</h1>
+<h1>Embedded content</h1>
 
 <ul id="embed-behavior-policy-list">
-<li><input type="radio" name="embed-behavior-policy" value="all">Allow all embedded content</li>
-<li><input type="radio" name="embed-behavior-policy" value="none">Never allow embedded content</li>
-<li><input type="radio" name="embed-behavior-policy" value="approved">Only allow approved content</li>
+<li><input type="radio" name="embed-behavior-policy" value="all">Always show embedded content</li>
+<li><input type="radio" name="embed-behavior-policy" value="none">Never show embedded content</li>
+<li><input type="radio" name="embed-behavior-policy" value="approved">Ask before showing embedded content</li>
 </ul>
 
-<h2>Approved content</h2>
+<h2>Approved embedded content</h2>
 <ul id="approved-embeds-list">
 <li>Allow <a href="">http://www.google.com</a> for the Google News feed<button>Revoke</button></li>
 <li>Allow <a href="">https://www.youtube.com</a> for all feeds<button>Revoke</button></li>
@@ -107,10 +106,6 @@ Fusce molestie quam quis congue tempus.</span>
 
 <div id="section-content-filters" class="options_section">
 <h1>Manage content filters</h1>
-<p class="option-text">Content filters are customizable rules that allow you to filter content from articles. 
-You can use the * wildcard symbol to match zero or more of any characters 
-in a sequence. For example, dog* matches any value starting with dog, and *dog* matches 
-any value containing dog.</p>
 
 <h2>Create a filter</h2>
 <p class="option-text">For 
@@ -125,6 +120,19 @@ any value containing dog.</p>
 </p>
 <h2>Content filters</h2>
 <ul id="content-filters-list"></ul>
+</div>
+
+
+<div id="section-import-export" class="options_section">
+<h1>Import/export</h1>
+
+<ul>
+<li>Import feeds from OPML</li>
+<li>Export feeds to OPML</li>
+<li>Import app settings</li>
+<li>Export app settings</li>
+</ul>
+
 </div>
 
 <div id="divabout" class="options_section">

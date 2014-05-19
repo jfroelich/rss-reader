@@ -1,3 +1,5 @@
+// TODO: make into IEAF
+
 var app = app || chrome.extension.getBackgroundPage();
 
 //Appends a new rule in the filters list
@@ -79,14 +81,17 @@ function contentFilterUnsubscribeMessageListener(event) {
   if(event.type != 'unsubscribe') {
     return;
   }
+  
+  var elementSelectFeed = document.getElementById('create-filter-feed');
+  
 
   // Remove the feed from the create content filter menu
-  var feedOption = document.getElementById('create-filter-feed').querySelector('option[id='+event.feed+']');
+  var feedOption = elementSelectFeed.querySelector('option[value="'+event.feed+'"]');
   if(feedOption) {
-    console.log('Removing feed with id %s from create content filter form', event.feed);
-    feedOption.parentNode.removeChild(feedOption);
+    // console.log('Removing feed with id %s from create content filter form', event.feed);
+    elementSelectFeed.removeChild(feedOption);
   } else {
-    console.error('Could not locate feed in create content filter feed menu for id %s', event.feed);
+    console.log('Could not locate feed in create content filter feed menu for id %s', event.feed);
   }
 
   // TODO: Remove content filter rules specific to the feed
@@ -102,6 +107,46 @@ chrome.runtime.onMessage.addListener(contentFilterUnsubscribeMessageListener);
 // Max chars to display for options in the create content filter feed menu
 var CREATE_CONTENT_FILTER_FEED_MENU_MAX_TEXT_LENGTH = 30;
 
+function createContentFilterSelectFeedAppendOption(container, feed, insertSorted) {
+  
+  var option = document.createElement('option');
+  option.value = feed.id;
+
+  // Set the title attribute to help the user disambiguate post truncation
+  // conflated option text
+  // TODO: test whether I need to strip quotes here
+  option.title = feed.title.replace('"','&quot;');
+
+  // Constrain long feed titles
+  option.textContent = app.truncate(feed.title,
+    CREATE_CONTENT_FILTER_FEED_MENU_MAX_TEXT_LENGTH);
+
+  if(insertSorted) {
+    //console.log('Appending feed to create content filter select feed menu in sorted order');
+    
+    var currentItems = container.childNodes;
+    var added = false;
+    
+    for(var i = 0, len = currentItems.length; i < len; i++) {
+      if(feed.title < currentItems[i].title) {
+        added = true;
+        //console.log('Inserting %s before %s in feed menu', feed.title, currentItems[i].title);
+        container.insertBefore(option, currentItems[i]);
+        break;
+      }
+    }
+    
+    if(!added) {
+      //console.log('inserted sort - appending %s to end of feed menu', feed.title);
+      container.appendChild(option);
+    }
+    
+  } else {
+    container.appendChild(option);  
+  }
+}
+
+
 // Initialize the Content filters section UI
 function initContentFiltersSection(event) {
   document.removeEventListener('DOMContentLoaded', initContentFiltersSection);
@@ -109,29 +154,9 @@ function initContentFiltersSection(event) {
   // Initialize the Create content filter subsection
   var createFilterFeedMenu = document.getElementById('create-filter-feed');
   app.model.connect(function(db){
-    var feeds = [];
-    app.model.forEachFeed(db, function(feed){
-      feeds.push({'id':feed.id,'title':feed.title || 'Untitled'});
-    }, function() {
-      // Sort the menu alphabetically by title
-      feeds.sort(function(a,b) { return a.title > b.title ? 1 : -1; });
-
-      feeds.forEach(function(feed){
-        var option = document.createElement('option');
-        option.value = feed.id;
-        
-        // Set the title attribute to help the user disambiguate post truncation
-        // conflated option text
-        // TODO: test whether I need to strip quotes here
-        option.title = feed.title.replace('"','&quot;');
-
-        // Constrain long feed titles
-        option.textContent = app.truncate(feed.title,
-          CREATE_CONTENT_FILTER_FEED_MENU_MAX_TEXT_LENGTH);
-
-        createFilterFeedMenu.appendChild(option);
-      });
-    });
+    app.model.forEachFeed(db, function(feed) {
+      createContentFilterSelectFeedAppendOption(createFilterFeedMenu, feed, false);
+    }, null, true);
   });
 
   // Initialize the type menu

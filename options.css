@@ -76,10 +76,9 @@ div.options_section {
 	display:none;
 }
 
-#section-blacklist {
+#section-import-export {
 	display:none;
 }
-
 
 
 #divabout {
@@ -138,31 +137,23 @@ h2 {
 }
 
 #feedlist {
+	font-family: 'Segoe UI', Tahoma, sans-serif;
+	font-size:100%;
 	list-style-type:none;
-	display:block;
 	padding-left:0px;
-	padding-top:1px;
-	padding-bottom:1px;
 	margin: 0px;
+	
 }
 
 #feedlist li {
-	display:block;
-	margin-bottom:10px;
 	padding-left:10px;
 	padding-top:10px;
 	padding-bottom:10px;
-	padding-right:0px;
-	/*border-bottom: 1px solid #efefef;*/
-	font-size:110%;
-	font-family: 'Segoe UI', Tahoma, sans-serif;
-
-	border-radius: 3px;
-	box-shadow: 0px 2px 2px 0px #999999;
+	border-bottom: 1px solid #cccccc;
 }
 
 #feedlist li a {
-	margin-right: 3px;
+	margin-right: 10px;
 }
 
 #feedlist li img {
@@ -171,8 +162,7 @@ h2 {
 }
 
 #feedlist li button {
-	float:right;
-	margin-right: 30px;
+	margin-right: 10px;
 }
 
 #nosubscriptions {

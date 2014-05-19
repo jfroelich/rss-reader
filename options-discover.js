@@ -15,6 +15,8 @@ function discoverSubscribeClick(event) {
     return;
   }
 
+  // console.log('Clicked subscribe on discover search result, calling startSubscription with URL %s', url);
+
   startSubscription(url);
 }
 
@@ -42,7 +44,7 @@ function onDiscoverFormSubmit(event) {
   // Show that we are in progress
   document.getElementById('discover-in-progress').style.display='block';
 
-  console.log('Query: %s', query);
+  // console.log('Query: %s', query);
 
   // Perform the query
   app.discoverFeeds(query,onDiscoverFeedsComplete, onDiscoverFeedsError, 5000);
@@ -53,7 +55,7 @@ function onDiscoverFormSubmit(event) {
 
 
 function onDiscoverFeedsComplete(query, results) {
-  console.log('Searching for %s yielded %s results', query, results.length);
+  //console.log('Searching for %s yielded %s results', query, results.length);
 
   var resultsList = document.getElementById('discover-results-list');
   var noResultsMessage = document.getElementById('discover-no-results');

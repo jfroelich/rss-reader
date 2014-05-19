@@ -35,7 +35,7 @@ function buildRequestURL(query) {
  */
 function discoverFeeds(query, onSuccess, onError, timeout) {
   
-  console.log('Sending feed search query %s', query);
+  // console.log('Sending feed search query %s', query);
 
   if(query) {
     query = query.trim();
@@ -102,7 +102,7 @@ function discoverFeeds(query, onSuccess, onError, timeout) {
 
     sanitizeEntries(data.entries);
 
-    console.log('The search for "%s" found %s results', data.query, data.entries.length);
+    // console.log('The search for "%s" found %s results', data.query, data.entries.length);
 
     onSuccess(data.query, data.entries);
   });

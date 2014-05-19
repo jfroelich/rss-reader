@@ -15,6 +15,7 @@ var menuItemIdToSectionIdMap = {
   'mi-display-settings':'section-display-settings',
   'mi-embeds':'section-embeds',
   'mi-content-filters':'section-content-filters',
+  'mi-import-export':'section-import-export',
   'mi-view-help':'divhelp',
   'mi-view-about':'divabout'
 };
@@ -26,6 +27,9 @@ function navigationClick(event) {
 
 // Update the menu and show the desired section
 function showSection(menuItem) {
+  
+  // console.log('Called showSection with menuItem %s', menuItem);
+  // console.log('typeof menuItem is %s', typeof menuItem);
   
   if(!menuItem) {
     console.error('undefined menuItem');

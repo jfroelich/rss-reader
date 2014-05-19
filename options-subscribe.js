@@ -2,6 +2,10 @@
 
 var app = app || chrome.extension.getBackgroundPage();
 
+// Default timeout(ms) for subscribing
+// Used by startSubscription
+var SUBSCRIBE_TIMEOUT = 5000;
+
 // Respond to subscription form submission
 function onSubscribeSubmit(event) {
 
@@ -35,13 +39,11 @@ function onSubscribeSubmit(event) {
   return false;
 }
 
-// Default timeout(ms) for subscribing
-// Used by startSubscription
-var SUBSCRIBE_TIMEOUT = 5000;
-
 
 // Note this is also called in discover code
 function startSubscription(url) {
+
+  // console.log('startSubscription called with url %s', url);
 
   // Stop and warn if we are not online
   if(navigator.hasOwnProperty('onLine') && !navigator.onLine) {
@@ -54,13 +56,23 @@ function startSubscription(url) {
 
   app.model.connect(function(db) {
     updateSubscriptionMonitor('Checking for existing subscription...');
+    
     app.model.isSubscribed(db, url, function(subscribed){
+      
+      // console.log('Checked whether subscribed to %s', url);
+      
       if(subscribed) {
+        console.log('Showing already subscribed error');
+        
         hideSubscriptionMonitor(function() {
           showErrorMessage('You are already subscribed to "' + url + '".');  
         });
+        
       } else {
+        // console.log('Not subscribed to %s, continuing subscription process', url);
+        
         updateSubscriptionMonitor('Downloading "'+url+'"...');
+        console.log('Calling updateFeed on url %s', url);
         app.updateFeed(db, {'url': url},
           onSubscribeComplete, SUBSCRIBE_TIMEOUT);
       }
@@ -70,42 +82,55 @@ function startSubscription(url) {
 
 
 function onSubscribeComplete(feed, entriesProcessed, entriesAdded) {
+  // console.log('onSubscribeComplete - start of function');
+
+
   if(feed.error) {
+    // console.log('onSubscribeComplete - Subscribe completed with error %s', feed.error);
+    
     hideSubscriptionMonitor(function() {
-      var errorMessage = feed.error || 'An unknown error occurred.';
       showErrorMessage('Unable to subscribe to "'+ feed.url+'". ' + 
-        errorMessage);
+        (feed.error || 'An unknown error occurred.'));
     });
     return;
   }
+
+  // console.log('onSubscribeComplete - Subscribe completed without an error');
 
   updateSubscriptionMonitor('Successfully subscribed! Added '+
     entriesAdded + ' articles.');
 
   hideSubscriptionMonitor();
 
+  // console.log('onSubscribeComplete - Calling update badge');
   app.updateBadge();
 
+  // console.log('onSubscribeComplete - Calling show notification');
   app.showNotification('Subscribed to ' + feed.title + '. Found ' + entriesAdded + ' new articles.');
 
-  // TODO: there is some bug in the code below that doesnt work
-  // after subscribing
-
-/*
-Uncaught TypeError: Cannot read property 'add' of undefined
-entryUpdated feed-updater.js:60
-onEntryUpdateSuccess
-*/
 
   // TODO: Should we not be doing this here? It is supposed to be in a callback
   // from somewhere else?
   // Navigate back to the view feeds list
-  showSection('mi-view-subscriptions');
+  // console.log('onSubscribeComplete - Calling showSection');
+  // NOTE: the bug was calling this as a string instead of element
+  // add undefined because 'string'.classlist.add means classlist undefined because
+  // classlist not a property of tring
+  showSection(document.getElementById('mi-view-subscriptions'));
 
   // TODO: Should we not be doing this here? It is supposed to be in a callback
   // from somewhere else?
   // Add the feed to the feed list
-  appendFeed(feed);
+  // Set 2nd param to true to indicate inserted sort
+  appendFeed(feed, true);
+
+  // TODO: we need to add the feed as an option in the content filters create rule
+  createContentFilterSelectFeedAppendOption(
+    document.getElementById('create-filter-feed'),
+    feed,
+    true
+  );
+
 
   // TODO: should we not be doing this here? should this be from some function
   // in the background page that broadcasts instead?
@@ -115,10 +140,8 @@ onEntryUpdateSuccess
 
 function initAddSubscriptionSection(event) {
   document.removeEventListener('DOMContentLoaded', initAddSubscriptionSection);
-    
   // Initialize the Add subscription section
   document.getElementById('subscription-form').addEventListener('submit', onSubscribeSubmit);
-
 }
 
 document.addEventListener('DOMContentLoaded', initAddSubscriptionSection);

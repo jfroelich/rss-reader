@@ -4,6 +4,7 @@
 
 // Updates the badge text to the current unread count
 function updateBadge() {
+  // console.log('Updating badge');
   model.connect(onUpdateBadgeConnect);
 }
 

@@ -5,7 +5,7 @@
 var model = {};
 
 var DATABASE_NAME = 'reader';
-var DATABASE_VERSION = 4;
+var DATABASE_VERSION = 7;
 
 // Flag for the unread property of entries representing that
 // the entry is unread
@@ -15,53 +15,55 @@ model.UNREAD = 1;
 // Connect to indexedDB
 model.connect = function(callback) {
   var request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
-  request.onerror = request.onblocked = console.error;
-  request.onupgradeneeded = this.onUpgradeNeeded;
-  request.onsuccess = function(event) {
+  request.addEventListener('error', console.error);
+  request.addEventListener('blocked', console.error);
+  request.addEventListener('upgradeneeded', this.onUpgradeNeeded);
+  request.addEventListener('success', function(event) {
     callback(event.target.result);
-  };
+  });
 };
 
 model.onUpgradeNeeded = function(event) {
-  console.log('Upgrading database from %s to %s', event.oldVersion, DATABASE_VERSION);
+  //console.log('Upgrading database from %s to %s', event.oldVersion, DATABASE_VERSION);
   var db = event.target.result;
 
-  if(event.oldVersion == 1) {
-    if(db.objectStoreNames.contains('entry')) {
-      console.log('deleting object store "entry"');
-      db.deleteObjectStore('entry');
-    }
-  } else if(event.oldVersion == 2) {
-    if(db.objectStoreNames.contains('entry')) {
-      console.log('deleting object store "entry"');
-      db.deleteObjectStore('entry');
-    }
-  } else if(event.oldVersion == 3) {
-    if(db.objectStoreNames.contains('entry')) {
-      console.log('deleting object store "entry"');
-      db.deleteObjectStore('entry');
-    }
-  }
-
-  if(!db.objectStoreNames.contains('feed')) {
-    console.log('Creating object store "feed"');
+  if(event.oldVersion == 0) {
+    // TODO: this branch needs testing again
+    
+    console.log('Setting up database for first time');
+    
+    console.log('Creating feed store');
     var feedStore = db.createObjectStore('feed', {keyPath:'id',autoIncrement:true});
     // For checking if already subscribed
-    feedStore.createIndex('url','url',{unique:true});    
+    feedStore.createIndex('url','url',{unique:true});
+
+    // For loading feeds in alphabetical order
+    feedStore.createIndex('title','title');
+
+    console.log('Create entry store');
+    var entryStore = db.createObjectStore('entry', {keyPath:'id',autoIncrement:true});
+
+    // For quickly counting unread 
+    // and for iterating over unread in id order
+    entryStore.createIndex('unread','unread');
+
+    // For quickly deleting entries when unsubscribing
+    entryStore.createIndex('feed','feed');
+
+    // For quickly checking whether a similar entry exists
+    entryStore.createIndex('hash','hash');
+
+  } else if(event.oldVersion == 6) {
+    console.log('Upgrading database from %s', event.oldVersion);
+    var tx = event.currentTarget.transaction;
+    console.dir(tx);
+    
+    // Add the title index
+    var feedStore = tx.objectStore('feed');
+    feedStore.createIndex('title','title');
+  } else {
+    console.error('Unhandled database upgrade, old version was %s', event.oldVersion);
   }
-
-  console.log('Creating object store "entry"');
-  var entryStore = db.createObjectStore('entry', {keyPath:'id',autoIncrement:true});
-
-  // For quickly counting unread 
-  // and for iterating over unread in id order
-  entryStore.createIndex('unread','unread');
-
-  // For quickly deleting entries when unsubscribing
-  entryStore.createIndex('feed','feed');
-
-  // For quickly checking whether a similar entry exists
-  entryStore.createIndex('hash','hash');
 };
 
 model.countUnread = function(db, callback) {
@@ -79,16 +81,12 @@ model.countFeeds = function(db, cb) {
   };
 };
 
-model.forEachFeed = function(db, callback, oncomplete) {
+model.forEachFeed = function(db, callback, oncomplete, sortByTitle) {
   var tx = db.transaction('feed');
-
-  // WARNING: this could complete before the callback on 
-  // the last feed completes, leading to unexpected behavior.
   tx.oncomplete = oncomplete;
 
-  var store = tx.objectStore('feed');
-  var request = store.openCursor();
-  request.onsuccess = function(event) {
+  var store = sortByTitle ? tx.objectStore('feed').index('title') : tx.objectStore('feed');
+  store.openCursor().onsuccess = function(event) {
     var cursor = event.target.result;
     if(cursor) {
       callback(cursor.value);
@@ -96,6 +94,9 @@ model.forEachFeed = function(db, callback, oncomplete) {
     }
   };
 };
+
+
+
 
 model.isSubscribed = function(db, url, callback) {
   var index = db.transaction('feed').objectStore('feed').index('url');
@@ -146,6 +147,8 @@ model.unsubscribe = function(db, feedId, callback) {
 };
 
 model.addEntry = function(store, entry, onSuccess, onError) {
+  // console.log('Adding entry %s', entry.title);
+  
   // Intentionally fails if an entry with the same id exists
   var request = store.add(entry);
   request.onsuccess = onSuccess;

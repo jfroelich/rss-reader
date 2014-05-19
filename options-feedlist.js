@@ -27,7 +27,7 @@ function initManageFeedsList(event) {
         ELEMENT_NO_SUBSCRIPTIONS.style.display = 'none';
         ELEMENT_MANAGE_FEEDS_LIST.style.display = 'block';
       }
-    });
+    }, true);
   });
 }
 
@@ -43,9 +43,20 @@ function updateFeedCountMessage() {
 
 // TODO: stop using custom feed attribute
 // TODO: use one event listener for the entire list, not per button
-function appendFeed(feed) {
+function appendFeed(feed, insertedSort) {
   
   var listItem = document.createElement('li');
+
+  // Set a hidden compare key to make later insertion sort easier
+  // TODO: do I need to escape?
+  listItem.setAttribute('sort-key', feed.title);
+
+  var unsub = document.createElement('button');
+  unsub.setAttribute('feed',feed.id);
+  unsub.value = feed.id;
+  unsub.textContent = 'Unsubscribe';
+  unsub.addEventListener('click', onUnsubscribeButtonClicked);
+  listItem.appendChild(unsub);
   
   var favIcon = document.createElement('img');
   favIcon.src = app.getFavIconURL(feed.link);
@@ -64,14 +75,35 @@ function appendFeed(feed) {
   description.textContent = app.stripTags(feed.description) || '';
   listItem.appendChild(description);
   
-  var unsub = document.createElement('button');
-  unsub.setAttribute('feed',feed.id);
-  unsub.value = feed.id;
-  unsub.textContent = 'Unsubscribe';
-  unsub.addEventListener('click', onUnsubscribeButtonClicked);
-  listItem.appendChild(unsub);
+  if(insertedSort) {
+    // console.log('Appending feed to feed list in insertion order');
+    
+    // Walk the list, checking each one if it comes before or after
+    // If this feed comes before, insert before.
+    // If we reach the end of the list, just append to end
+    
+    var currentItems = ELEMENT_MANAGE_FEEDS_LIST.childNodes;
+    var added = false;
 
-  ELEMENT_MANAGE_FEEDS_LIST.appendChild(listItem);
+    for(var i = 0, len = currentItems.length; i < len; i++) {
+      var currentKey = currentItems[i].getAttribute('sort-key');
+      if(window.indexedDB.cmp(feed.title, currentKey) == -1) {
+        added = true;
+        //console.log('Inserting feed "%s" before "%s" in feed list', feed.title, currentKey);
+        ELEMENT_MANAGE_FEEDS_LIST.insertBefore(listItem, currentItems[i]);
+        break;        
+      }
+    }
+    
+    if(!added) {
+      //console.log('Inserted sort - appending to end of feeds list');
+      ELEMENT_MANAGE_FEEDS_LIST.appendChild(listItem);
+    }
+  } else {
+    ELEMENT_MANAGE_FEEDS_LIST.appendChild(listItem);  
+  }
+
+  
 }
 
 // Handle unsubscribe for a specific feed in feed list

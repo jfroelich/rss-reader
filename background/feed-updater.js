@@ -4,6 +4,9 @@
 
 // Starts updating a single feed
 function updateFeed(db, feed, callback, timeout) {
+  
+  // console.log('updateFeed - url %s', feed.url);
+  
   var entriesProcessed = 0, entriesAdded = 0;
 
   var fetchErrorHandler = function(err) {
@@ -40,10 +43,24 @@ function updateFeed(db, feed, callback, timeout) {
     }
 
     if(fetchedFeed.title) feed.title = fetchedFeed.title;
-    if(fetchedFeed.link) feed.link = fetchedFeed.link;
+
+    // We need to ensure that the feed has a title so that 
+    // it appears when querying the title index (such as 
+    // on the options feeds list page). So set it here as 
+    // untitled.
+
+    if(!feed.title) {
+      feed.title = 'Untitled';
+    }
+
+    if(fetchedFeed.link) {
+      feed.link = fetchedFeed.link;
+    }
 
     // Store description too
-    if(fetchedFeed.description) feed.description = fetchedFeed.description;
+    if(fetchedFeed.description) {
+      feed.description = fetchedFeed.description;
+    }
 
     if(fetchedFeed.date) {
       var feedDate = parseDate(fetchedFeed.date);
@@ -55,9 +72,16 @@ function updateFeed(db, feed, callback, timeout) {
     var entryCount = fetchedFeed.entries.length;
 
     model.insertOrUpdateFeed(db, feed, function(feed) {
+      //console.log('Inserted or updated feed');
+      
       var entryUpdated = function() {
         if(++entriesProcessed >= entryCount) {
-          callback(feed, entriesProcessed, entriesAdded);
+          if(callback) {
+            //console.log('feedUpdater callback is defined, calling');
+            callback(feed, entriesProcessed, entriesAdded);
+          } else {
+            //console.log('callback undefined?');
+          }
         }
       };
 
@@ -70,7 +94,9 @@ function updateFeed(db, feed, callback, timeout) {
         entryUpdated();
       };
       
+      // Use a single transaction for all the entries
       var store = db.transaction('entry','readwrite').objectStore('entry');
+      
       each(fetchedFeed.entries, function(entry) {
         entry.feedId = feed.id;
         if(feed.link) entry.feedLink = feed.link;
@@ -84,6 +110,9 @@ function updateFeed(db, feed, callback, timeout) {
 
 // Prep and attempt to store an entry
 function updateEntry(store, entry, onSuccess, onError) {
+  
+  // console.log('Updating entry');
+  
   var hash = model.generateEntryHash(entry);
 
   if(!hash) {
@@ -97,6 +126,8 @@ function updateEntry(store, entry, onSuccess, onError) {
       // console.log('entries already contains %s', hash);
       onError();
       return;
+    } else {
+      // console.log('entries does not already contain %s', hash);
     }
 
     var newEntry = {};
@@ -132,6 +163,8 @@ function updateEntry(store, entry, onSuccess, onError) {
 
           // Set the content property after sanitization, trimming
           newEntry.content = sanitizedDOM.body.innerHTML;
+
+          // console.log('Sanitized and trimmed content for entry %s', newEntry.title);
 
         } else {
           console.log('unclear what to do without sanitzed dom');

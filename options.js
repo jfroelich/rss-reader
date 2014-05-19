@@ -6,9 +6,11 @@
 var app = app || chrome.extension.getBackgroundPage();
 
 function showSubscriptionMonitor() {
+  // console.log('Showing subscription monitor');
+  
   var oldContainer = document.getElementById('options_subscription_monitor');
   if(oldContainer) {
-    console.log('old container still present');
+    console.log('old container still present, removing');
     
     // Note: instead of removing think how to reuse so we avoid this
     // remove then add ugliness (in the UI, and the code too). Also do 
@@ -18,13 +20,14 @@ function showSubscriptionMonitor() {
   }
 
   var container = document.createElement('div');
-  container.setAttribute('id','options_subscription_monitor');
+  container.id = 'options_subscription_monitor';
   container.style.opacity = '1';
   document.body.appendChild(container);
 }
 
 // Add a message to the subscription monitor element
 function updateSubscriptionMonitor(message) {
+  // console.log('Updating subscription monitor with message %s', message);
   var container = document.getElementById('options_subscription_monitor');
   if(!container) {
     console.log('no subscription monitor container when trying to update');
@@ -37,6 +40,7 @@ function updateSubscriptionMonitor(message) {
 }
 
 function hideSubscriptionMonitor(onComplete) {
+  // console.log('Hiding subscription monitor');
   var container = document.getElementById('options_subscription_monitor');
   if(!container) {
     console.log('cannot hide monitor');
@@ -51,6 +55,8 @@ function hideSubscriptionMonitor(onComplete) {
 }
 
 function showErrorMessage(msg) {
+  // console.log('Showing error message %s', msg);
+  
   var dismissClickListener = function(event) {
     event.target.removeEventListener('click', dismissClickListener);
     if(container) {
