@@ -104,9 +104,6 @@ function contentFilterUnsubscribeMessageListener(event) {
 chrome.runtime.onMessage.addListener(contentFilterUnsubscribeMessageListener);
 
 
-// Max chars to display for options in the create content filter feed menu
-var CREATE_CONTENT_FILTER_FEED_MENU_MAX_TEXT_LENGTH = 30;
-
 function createContentFilterSelectFeedAppendOption(container, feed, insertSorted) {
   
   var option = document.createElement('option');
@@ -118,26 +115,21 @@ function createContentFilterSelectFeedAppendOption(container, feed, insertSorted
   option.title = feed.title.replace('"','&quot;');
 
   // Constrain long feed titles
-  option.textContent = app.truncate(feed.title,
-    CREATE_CONTENT_FILTER_FEED_MENU_MAX_TEXT_LENGTH);
+  option.textContent = app.truncate(feed.title, 30);
 
   if(insertSorted) {
-    //console.log('Appending feed to create content filter select feed menu in sorted order');
-    
-    var currentItems = container.childNodes;
     var added = false;
-    
-    for(var i = 0, len = currentItems.length; i < len; i++) {
-      if(feed.title < currentItems[i].title) {
+    app.until(container.childNodes, function(node) {
+      if(window.indexedDB.cmp(feed.title, node.title) == -1) {
         added = true;
-        //console.log('Inserting %s before %s in feed menu', feed.title, currentItems[i].title);
-        container.insertBefore(option, currentItems[i]);
-        break;
+        container.insertBefore(option, node);
+        return false;
       }
-    }
+      
+      return true;
+    });
     
     if(!added) {
-      //console.log('inserted sort - appending %s to end of feed menu', feed.title);
       container.appendChild(option);
     }
     

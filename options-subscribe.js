@@ -72,7 +72,7 @@ function startSubscription(url) {
         // console.log('Not subscribed to %s, continuing subscription process', url);
         
         updateSubscriptionMonitor('Downloading "'+url+'"...');
-        console.log('Calling updateFeed on url %s', url);
+        // console.log('Calling updateFeed on url %s', url);
         app.updateFeed(db, {'url': url},
           onSubscribeComplete, SUBSCRIBE_TIMEOUT);
       }
