@@ -5,23 +5,21 @@
 <link rel="stylesheet" href="common.css"/>
 <link rel="stylesheet" href="options.css"/>
 <link href="img/rss_icon_trans.gif" rel="shortcut icon" />
-<script type="text/javascript" src="fx.js"></script>
-<script type="text/javascript" src="fonts.js"></script>
-<script type="text/javascript" src="options-navigation.js"></script>
-<script type="text/javascript" src="options-feedlist.js"></script>
-<script type="text/javascript" src="options-subscribe.js"></script>
-<script type="text/javascript" src="options-discover.js"></script>
-<script type="text/javascript" src="options-content-filters.js"></script>
-<script type="text/javascript" src="options-display-settings.js"></script>
-<script type="text/javascript" src="options-about.js"></script>
-<script type="text/javascript" src="options.js"></script>
+<script type="text/javascript" src="/lib/foreground/fx.js"></script>
+<script type="text/javascript" src="/lib/foreground/fonts.js"></script>
+<script type="text/javascript" src="/lib/foreground/options-navigation.js"></script>
+<script type="text/javascript" src="/lib/foreground/options-feedlist.js"></script>
+<script type="text/javascript" src="/lib/foreground/options-subscribe.js"></script>
+<script type="text/javascript" src="/lib/foreground/options-content-filters.js"></script>
+<script type="text/javascript" src="/lib/foreground/options-display-settings.js"></script>
+<script type="text/javascript" src="/lib/foreground/options-about.js"></script>
+<script type="text/javascript" src="/lib/foreground/options.js"></script>
 </head>
 <body>
 <div id="navigation">
 <ul id="navigation-menu">
 <li id="mi-view-subscriptions" class="navigation-item">Manage subscriptions</li>
 <li id="mi-add-subscription" class="navigation-item">Add a subscription</li>
-<li id="mi-discover-subscription" class="navigation-item">Discover feeds</li>
 <li id="mi-display-settings" class="navigation-item">Display settings</li>
 <li id="mi-embeds" class="navigation-item">Embedded content</li>
 <li id="mi-content-filters" class="navigation-item">Content filters</li>
@@ -39,27 +37,21 @@
 
 <div id="section-add-subscription" class="options_section">
 	<h1>Add a subscription</h1>
-	<p class="option-text">Copy and paste or type in the web address for a feed, 
-	and then hit Enter or click Subscribe. For example, 
-	&quot;http://www.example.com/myfeed.rss&quot; (without the quotes). If you 
-	do not know the address, try searching for the feed by name using the 
-	Discover feeds tool.</p>
+	<p class="option-text">Enter a feed location 
+	(e.g. <span style="color:#888888;">http://www.website.com/feed.rss</span>) or a 
+	search query (e.g. <span style="color:#888888;">&quot;grumpy cats&quot;</span>).</p>
 	<form id="subscription-form">
-		<input type="text" id="addurl" autofocus="autofocus"/>
-		<input type="submit" id="addbutton" value="Subscribe"/>
+		<input type="text" id="subscribe-discover-query">
+		<input type="submit" value="Subscribe or Search">
 	</form>
-</div>
-<div id="divdiscover" class="options_section">
-	<h1>Discover feeds</h1>
-	<p class="option-text">Search for feeds just like you would on Google&trade; and subscribe to feeds
-	you find interesting. Limited to 10 results. Feeds may be outdated. The same feed may appear multiple 
-	times. Search results are provided by Google's findFeeds API.</p>
-	<form id="discover-feeds">
+
+	<ul id="discover-results-list"></ul>
+
+	<!--<form id="discover-feeds">
 	<input type="text" id="discover-query" autofocus>
 	<input type="submit" value="Search">
-	</form>
+	</form>-->
 	<p id="discover-no-results" class="option-text">No results matched your query.</p>
-	<ul id="discover-results-list"></ul>
 	<p id="discover-in-progress" class="option-text">Search in progress.. please wait (a maximum of 5 seconds).</p>
 </div>
 

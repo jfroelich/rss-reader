@@ -2,6 +2,11 @@ body,html {
 	height:100%;
 }
 
+form {
+	padding:0px;
+	margin:0px;
+}
+
 #navigation {
 	float:left;
 	width:15%;
@@ -48,12 +53,9 @@ div.options_section {
 	display:none;
 }
 
-#divdiscover {
-	display:none;
-}
-
 #divfeedlist {
 	display:none;
+	margin-bottom:100px;
 }
 
 #divfeedlist h1 button {
@@ -98,10 +100,7 @@ div.options_section {
 }
 
 
-form {
-	padding:0px;
-	margin:0px;
-}
+
 
 h1 {
 	color: rgb(48, 57, 66);
@@ -128,13 +127,10 @@ h2 {
 	font-family: 'Segoe UI', Tahoma, sans-serif;
 }
 
-#addurl {
+#subscribe-discover-query {
 	width:500px;
 }
 
-#addbutton {
-	
-}
 
 #feedlist {
 	font-family: 'Segoe UI', Tahoma, sans-serif;
@@ -167,10 +163,6 @@ h2 {
 
 #nosubscriptions {
 	display: none;
-}
-
-#discover-query {
-	width: 500px;
 }
 
 #discover-no-results {
