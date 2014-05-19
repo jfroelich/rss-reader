@@ -39,7 +39,7 @@ function activateOrCheckNewTab(tabs) {
 // Replaces the existing newtab with the view, or creates a new tab
 function createOrUpdateTab(tabs){
   if(tabs.length) {
-    chrome.tabs.update(newTabs[0].id, {'active':true,'url': viewURL});
+    chrome.tabs.update(tabs[0].id, {'active':true,'url': viewURL});
   } else {
     chrome.tabs.create({'url': viewURL});
   }

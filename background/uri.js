@@ -1,4 +1,7 @@
 // Very basic URI lib
+
+// TODO: look into using https://developer.mozilla.org/en-US/docs/Web/API/URL
+
 (function(g) {
 'use strict';
 

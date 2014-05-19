@@ -7,6 +7,13 @@
 <link href="img/rss_icon_trans.gif" rel="shortcut icon" />
 <script type="text/javascript" src="fx.js"></script>
 <script type="text/javascript" src="fonts.js"></script>
+<script type="text/javascript" src="options-navigation.js"></script>
+<script type="text/javascript" src="options-feeds.js"></script>
+<script type="text/javascript" src="options-add-feed.js"></script>
+<script type="text/javascript" src="options-discover.js"></script>
+<script type="text/javascript" src="options-content-filters.js"></script>
+<script type="text/javascript" src="options-display-settings.js"></script>
+<script type="text/javascript" src="options-about.js"></script>
 <script type="text/javascript" src="options.js"></script>
 </head>
 <body>
@@ -16,6 +23,7 @@
 <li id="mi-add-subscription" class="navigation-item">Add a subscription</li>
 <li id="mi-discover-subscription" class="navigation-item">Discover feeds</li>
 <li id="mi-display-settings" class="navigation-item">Display settings</li>
+<li id="mi-embeds" class="navigation-item">Allowed embeds</li>
 <li id="mi-content-filters" class="navigation-item">Content filters</li>
 <li id="mi-view-help" class="navigation-item">Help</li>
 <li id="mi-view-about" class="navigation-item">About</li>
@@ -36,7 +44,8 @@
 <div id="divdiscover" class="options_section">
 	<h1>Discover feeds</h1>
 	<p class="option-text">Search for feeds just like you would on Google&trade; and subscribe to feeds
-	you find interesting. Limited to 10 results.</p>
+	you find interesting. Limited to 10 results. Feeds may be outdated. The same feed may appear multiple 
+	times. Search results are provided by Google's findFeeds API.</p>
 	<form id="discover-feeds">
 	<input type="text" id="discover-query" autofocus>
 	<input type="submit" value="Search">
@@ -77,6 +86,23 @@ Fusce molestie quam quis congue tempus.</span>
 		<td><select id="select_body_font"></select></td>
 	</tr>
 	</table>
+</div>
+
+<div id="section-embeds" class="options_section">
+<h1>Manage embeds</h1>
+
+<ul id="embed-behavior-policy-list">
+<li><input type="radio" name="embed-behavior-policy" value="all">Allow all embedded content</li>
+<li><input type="radio" name="embed-behavior-policy" value="none">Never allow embedded content</li>
+<li><input type="radio" name="embed-behavior-policy" value="approved">Only allow approved content</li>
+</ul>
+
+<h2>Approved content</h2>
+<ul id="approved-embeds-list">
+<li>Allow <a href="">http://www.google.com</a> for the Google News feed<button>Revoke</button></li>
+<li>Allow <a href="">https://www.youtube.com</a> for all feeds<button>Revoke</button></li>
+</ul>
+
 </div>
 
 <div id="section-content-filters" class="options_section">

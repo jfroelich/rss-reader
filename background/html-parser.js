@@ -17,6 +17,8 @@ exports.parseHTML = function(htmlString) {
   // var parser = new DOMParser();
   // var doc = parser.parseFromString(htmlString,'text/html');
   
+  // Note: can I just use new HTMLDocument() ?
+  
   // The problem with using createElement is that Chrome aggressively 
   // resolves resources in live elements (e.g. fetches images/css/scripts). 
   // Since we want to be able to do things with the HTMLDocument 

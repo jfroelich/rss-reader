@@ -85,22 +85,33 @@ function createContentFilterRule(rule) {
   if(exists) {
     console.log('Rule already exists. Should prevent?');
     // TODO: broadcast error and return?
+    // call on error, or send an error message?
   }
 
-  // Set the rule's id? 
   rule.id = generateRuleId(rules);
-
   console.log('Storing content filter rule %s', JSON.stringify(rule));
-
-  // Add the rule to the array
   rules.push(rule);
-
-  // Save the rules
   saveRules(rules);
-
-  // Broadcast creation event to views
   chrome.runtime.sendMessage({'type':'createContentFilter','rule':rule});
 }
+
+function removeContentFilter(ruleId) {
+  
+  console.log('Removing content filter rule with id %s', ruleId);
+  
+  var rules = loadAndGetRules();
+  
+  // Could use splice and such, but this is roughly
+  // the same thing
+  var newRules = rules.filter(function(rule) {
+    return rule.id != ruleId;
+  });
+  
+  saveRules(newRules);
+  
+  chrome.runtime.sendMessage({'type':'removedContentFilterRule', 'rule': ruleId});
+}
+
 
 function getRuleTextualFormat(rule) {
   var str = 'Filter content for ';
@@ -128,6 +139,7 @@ function getRuleTextualFormat(rule) {
   return str;
 }
 
+exports.removeContentFilter = removeContentFilter;
 exports.getContentFilterRules = loadAndGetRules;
 exports.getRuleTextualFormat = getRuleTextualFormat;
 exports.createContentFilterRule = createContentFilterRule;

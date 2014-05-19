@@ -1,12 +1,7 @@
 // view.html script
 
-var app = chrome.extension.getBackgroundPage();
+var app = app || chrome.extension.getBackgroundPage();
 var ONLOAD_DISPLAY_COUNT = 10;
-var MAX_APPEND_COUNT = 10;
-var READ_SCAN_DELAY = 200;
-var APPEND_DELAY = 100;
-var NEXT_KEYS = {'32':32, '39':39, '78':78};
-var PREV_KEYS = {'37':37, '80':80};
 
 function addPrefetchLink(url) {
   var link = document.createElement('link');
@@ -16,45 +11,16 @@ function addPrefetchLink(url) {
   head.appendChild(link);
 }
 
-// Look for entries to mark as read
-function scanForRead() {
-  var divEntries = document.getElementById('entries');
-  var cutoff = document.body.scrollTop + window.innerHeight + 10;
-  var readEntries = Array.prototype.filter.call(divEntries.childNodes, function(entryElement) {
-    return isEntryUnread(entryElement) &&
-      (entryElement.offsetTop + entryElement.offsetHeight <= cutoff);
-  });
-
-  var ids = Array.prototype.map.call(readEntries, function(el) {
-    return parseInt(el.getAttribute('entry'));
-  });
-
-  var onModelUpdate = function() {
-    app.updateBadge();
-    app.each(readEntries, function(el) {
-      el.setAttribute('read','');
-    });
-  };
-
-  if(ids.length) {
-    app.model.connect(function(db) {
-      app.model.markRead(db, ids, onModelUpdate);
-    });
-  }
-}
-
-// This is based on the UI, not the store
-function isEntryUnread(entry) {
-  return !entry.hasAttribute('read');
-}
 
 // Append new entries to the bottom of the entry list
 function appendEntries(limit, onComplete) {
   var params = {};
 
-  params.limit = limit || MAX_APPEND_COUNT;
+  params.limit = limit || 10;
   params.offset = 
     document.getElementById('entries').querySelectorAll('div:not([read])').length;
+
+  // console.log('Append entries limit is %s', params.limit);
 
   app.model.connect(function(db) {
     app.model.forEachEntry(db, params, function(entry) {
@@ -65,6 +31,7 @@ function appendEntries(limit, onComplete) {
 
 
 function renderEntry(entry) {
+  // console.log('Rendering %s', entry.title);
   var entryTitle = entry.title || 'Untitled';
   var feedTitle = entry.feedTitle || 'Untitled';
   var entryContent = entry.content || 'No content';
@@ -157,30 +124,9 @@ function showNoEntriesInfo() {
   document.getElementById('noentries').style.display = 'block';
 }
 
-// Click handler for entries container
-function entryLinkClicked(event) {  
-  var node = event.target;
-  if(!node.href)
-    return;
-  while((node = node.parentNode) && !node.hasAttribute('entry'));
-  if(node && !node.hasAttribute('read')) {
-    app.model.connect(function(db) {
-      app.model.markEntryRead(db, parseInt(node.getAttribute('entry')), function() {
-        node.setAttribute('read','');
-        app.updateBadge();
-      });
-    });
-  }
-}
 
-function handlePollCompleted() {
-  var container = document.getElementById('entries');
-  if(container.childNodes.length == 0 || !app.any(container.childNodes, isEntryUnread)) {
-    container.style.display = 'block';
-    document.getElementById('noentries').style.display = 'none';
-    appendEntries();
-  }
-}
+
+
 
 // TODO: there is a bug here if this gets called BEFORE
 // the entries exist in the database
@@ -234,12 +180,8 @@ function handleBodyFontChanged() {
 }
 
 
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  console.log('Received message of type %s', request.type);
-  
-  if(request.type == 'pollCompleted') {
-    handlePollCompleted();
-  } else if(request.type == 'subscribe') {
+chrome.runtime.onMessage.addListener(function(request) {
+  if(request.type == 'subscribe') {
     handleSubscribe(request.feed);
   } else if(request.type == 'unsubscribe') {
     handleUnsubscribe(request.feed);
@@ -250,88 +192,11 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   }
 });
 
-window.addEventListener('keydown', function(event) {
-  if(event.target != document.body) {
-    return;
-  }
 
-  var divEntries = document.getElementById('entries');
-  var entries = divEntries.childNodes;
+document.addEventListener('DOMContentLoaded', function viewLoadedListener(event) {
 
-  if(NEXT_KEYS.hasOwnProperty(event.keyCode)) {
-    event.preventDefault();
-    app.until(entries, function(e) {
-      if(e.offsetTop + e.offsetHeight - document.body.scrollTop > 40) {
-        window.scrollTo(0, e.nextSibling ? e.nextSibling.offsetTop : e.offsetTop + e.offsetHeight);
-        return false;
-      }
-      return true;
-    });
-  } else if(PREV_KEYS.hasOwnProperty(event.keyCode)) {
-    app.until(entries, function(e) {
-      if(e.offsetTop >= document.body.scrollTop) {
-        // Found a previous entry
-        if(e.previousSibling) {
-          window.scrollTo(0, e.previousSibling.offsetTop);
-        } else if(document.body.scrollTop !== 0) {
-          window.scrollTo(0, e.offsetTop);
-        } else {
-          console.log('Unclear case for prev key navigation? Maybe already at top?');
-          // TODO: I think it means we are already at the top?
-        }
-        return false;
-      } else if(!e.nextSibling) {
-
-        // Nothing to scroll to, go to the top of the page
-        // TODO: maybe don't call it if we are already at the top? or maybe
-        // scroll to is smart enough to do nothing in this case
-        window.scrollTo(0, e.offsetTop);
-        return false;
-      }
-      return true;
-    });
-  }
-});
-
-var scanForReadTimer;
-document.addEventListener('scroll', function scrollListener(event) {
-
-  // TODO: we should still continue if scrollListener is undefined
-  // in the very first call, otherwise the first scroll down event
-  // doesn't trigger the check, when in fact it should
-  var deltaY = (scrollListener.pageYOffset || pageYOffset) - pageYOffset;
-  scrollListener.pageYOffset = pageYOffset;
-
-  if(deltaY >= 0) {
-    // no scroll, or scrolled up
-    return;
-  }
-
-  // Check for read entries
-  clearTimeout(scanForReadTimer);
-  scanForReadTimer = setTimeout(scanForRead, READ_SCAN_DELAY);
-
-  // TODO: due to async behavior, we should not be appending
-  // until read check completes
-
-  // Check if we should append new entries
-  var divEntries = document.getElementById('entries');
-  var appendThreshold = document.body.scrollTop + window.innerHeight + 100;
-  if(divEntries.lastChild && divEntries.lastChild.offsetTop < appendThreshold) {
-    clearTimeout(scrollListener.appendEntriesTimer);
-    scrollListener.appendEntriesTimer = setTimeout(appendEntries, APPEND_DELAY);
-  }
-});
-
-window.addEventListener('resize', function(event) {
-  clearTimeout(scanForReadTimer);
-  scanForReadTimer = setTimeout(scanForRead, READ_SCAN_DELAY);
-});
-
-document.addEventListener('DOMContentLoaded', function domContentLoadedListener(event) {
-
-  document.removeEventListener('DOMContentLoaded', domContentLoadedListener);
-  document.getElementById('entries').addEventListener('click', entryLinkClicked);
+  document.removeEventListener('DOMContentLoaded', viewLoadedListener);
+  
   document.getElementById('dismiss').addEventListener('click', hideErrorMessage);
   app.model.connect(function(db) {
     appendEntries(ONLOAD_DISPLAY_COUNT, function() {

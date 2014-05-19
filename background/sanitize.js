@@ -16,8 +16,6 @@ var ALLOWED_ATTRIBUTES = {
   'valign':true
 };
 
-var COMMENT_NODE = Node.COMMENT_NODE, ELEMENT_NODE = Node.ELEMENT_NODE;
-
 // Map between lowercase tagnames and handlers
 var elementHandler = {};
 
@@ -65,10 +63,10 @@ function sanitize(strBaseURL, doc) {
   // Traverse the documents nodes, handling each node sequentially
   walk(doc.body, function(node) {
     
-    if(node.nodeType == COMMENT_NODE) {
+    if(node.nodeType == Node.COMMENT_NODE) {
       // Strip comments
       return REMOVE;
-    } else if(node.nodeType == ELEMENT_NODE) {
+    } else if(node.nodeType == Node.ELEMENT_NODE) {
       var elementHandler = getHandler(node);
       if(elementHandler) {
         var result = elementHandler(node, baseURI);
