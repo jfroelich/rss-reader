@@ -36,7 +36,7 @@
 </div>
 
 <div id="section-add-subscription" class="options_section">
-	<!--<h1>Add a subscription</h1>-->
+	<h1>Add a subscription</h1>
 	<p class="option-text">Enter a feed location 
 	(e.g. <span style="color:#888888;">http://www.website.com/feed.rss</span>) or a 
 	search query (e.g. <span style="color:#888888;">&quot;grumpy cats&quot;</span>).</p>
@@ -56,7 +56,7 @@
 </div>
 
 <div id="section-display-settings" class="options_section">
-	<!--<h1>Display settings</h1>-->
+	<h1>Display settings</h1>
 	<div id="display-preview">
 		<div class="entry">
 		<a href="#" class="entry-title">Lorem ipsum dolor sit amet, 
@@ -70,6 +70,10 @@
 		</div>
 	</div>
 	<table id="options_table">
+	<tr>
+		<td class="option-text">Background image:</td>
+		<td colspan="2"><select id="entry-background-image"></select></td>
+	</tr>
 	<tr>
 		<td class="option-text">Background color:</td>
 		<td><input type="text" id="entry-background-color"></td>
@@ -99,8 +103,8 @@
 		<td class="option-text">Examples: 20px, normal, 2, 110%, 2cm</td>
 	</tr>
 	<tr>
-		<td class="option-text" colspan="3">
-		<input type="checkbox" id="justify-text">
+		<td colspan="3" class="option-text">
+		<input type="checkbox" id="justify-text" style="width:20px;">
 		Justify text
 		</td>
 	</tr>
@@ -111,7 +115,7 @@
 <h1>Embedded content</h1>
 
 <ul id="embed-behavior-policy-list">
-<li><input type="radio" name="embed-behavior-policy" value="all">Always show embedded content</li>
+<li><input type="radio" name="embed-behavior-policy" value="all" checked>Always show embedded content</li>
 <li><input type="radio" name="embed-behavior-policy" value="none">Never show embedded content</li>
 <li><input type="radio" name="embed-behavior-policy" value="approved">Ask before showing embedded content</li>
 </ul>

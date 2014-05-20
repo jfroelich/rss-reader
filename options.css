@@ -11,8 +11,9 @@ form {
 	float:left;
 	width:15%;
 	height: 100%;
-	margin:0px;
-	padding:0px;	
+	margin:0px 10px 0px 0px;
+	padding:0px;
+	border-right: 1px dotted #cccccc;
 }
 
 #navigation-menu {
@@ -58,8 +59,9 @@ div.options_section {
 	margin-bottom:100px;
 }
 
-#divfeedlist h1 button {
-	margin-left: 20px;
+ul#feedlist li span.feed-list-url {
+	margin-left: 10px;
+	color: rgb(55, 164, 55);
 }
 
 #divhelp {
@@ -88,38 +90,26 @@ div.options_section {
 }
 
 #options_table tr td {
-	/*vertical-align:top;*/
 	padding-left:0px;
 	padding-right:30px;
 	padding-top:0px;
 	padding-bottom:10px;
 }
 
-#options_table tr td:first-child {
-	white-space: nowrap;
-	font-size:110%;
-	align:left;
-}
-
 #display-preview {
   padding:0px;
-  margin-bottom:20px;
-  width:100%;
   margin-left:0px;
+  margin-bottom:20px;
+  margin-right:5px;
 }
 
 #options_table input {
 	width:225px;
-	
-	font-size:110%;
 }
 
 #options_table select {
 	margin-left: 0px;
-	font-size:110%;
 }
-
-
 
 h1 {
 	color: rgb(48, 57, 66);
@@ -226,8 +216,6 @@ h2 {
 	margin-left: 10px;
 }
 
-
-
 #embed-behavior-policy-list {
 	list-style-type:none;
 	padding-left:0px;
@@ -255,7 +243,6 @@ h2 {
 #approved-embeds-list li button {
 	float:right;
 }
-
 
 #content-filters-list {
 	list-style-type: none;
