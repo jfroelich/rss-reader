@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="options.css"/>
 <link href="img/rss_icon_trans.gif" rel="shortcut icon" />
 <script type="text/javascript" src="/lib/foreground/fx.js"></script>
-<script type="text/javascript" src="/lib/foreground/fonts.js"></script>
+<script type="text/javascript" src="/lib/foreground/stylize.js"></script>
 <script type="text/javascript" src="/lib/foreground/options-navigation.js"></script>
 <script type="text/javascript" src="/lib/foreground/options-feedlist.js"></script>
 <script type="text/javascript" src="/lib/foreground/options-subscribe.js"></script>
@@ -36,7 +36,7 @@
 </div>
 
 <div id="section-add-subscription" class="options_section">
-	<h1>Add a subscription</h1>
+	<!--<h1>Add a subscription</h1>-->
 	<p class="option-text">Enter a feed location 
 	(e.g. <span style="color:#888888;">http://www.website.com/feed.rss</span>) or a 
 	search query (e.g. <span style="color:#888888;">&quot;grumpy cats&quot;</span>).</p>
@@ -56,25 +56,53 @@
 </div>
 
 <div id="section-display-settings" class="options_section">
-	<h1>Display settings</h1>
+	<!--<h1>Display settings</h1>-->
 	<div id="display-preview">
-<span id="header_font_preview" style="font-size:18pt;">Lorem ipsum dolor sit amet, 
-consectetur adipiscing elit.</span>
-<span id="body_font_preview" style="font-size:12pt;">Lorem ipsum dolor sit amet, consectetur 
-adipiscing elit. Aliquam ipsum ante, tempor et velit vel, iaculis molestie odio. Donec eget urna 
-sit amet leo lacinia blandit. Mauris sit amet orci hendrerit turpis ornare adipiscing id et leo. 
-Mauris at lacus nibh. Mauris eu eros metus. Integer massa tellus, vulputate ut eros eu, luctus 
-viverra ligula. Nunc suscipit arcu in felis congue lobortis. Nulla posuere ut libero eu ultrices. 
-Fusce molestie quam quis congue tempus.</span>
+		<div class="entry">
+		<a href="#" class="entry-title">Lorem ipsum dolor sit amet, 
+		consectetur adipiscing elit.</a>
+		<span class="entry-content">Lorem ipsum dolor sit amet, consectetur 
+		adipiscing elit. Aliquam ipsum ante, tempor et velit vel, iaculis molestie odio. Donec eget urna 
+		sit amet leo lacinia blandit. Mauris sit amet orci hendrerit turpis ornare adipiscing id et leo. 
+		Mauris at lacus nibh. Mauris eu eros metus. Integer massa tellus, vulputate ut eros eu, luctus 
+		viverra ligula. Nunc suscipit arcu in felis congue lobortis. Nulla posuere ut libero eu ultrices. 
+		Fusce molestie quam quis congue tempus.</span>
+		</div>
 	</div>
 	<table id="options_table">
 	<tr>
+		<td class="option-text">Background color:</td>
+		<td><input type="text" id="entry-background-color"></td>
+		<td class="option-text">Examples: red, green, blue, #cccccc, #FFFFFF, rgb(255,255,255,0.5)</td>
+	</tr>
+	<tr>
 		<td class="option-text">Header Font:</td>
-		<td><select id="select_header_font"></select></td>
+		<td colspan="2"><select id="select_header_font"></select></td>
+	</tr>
+	<tr>
+		<td class="option-text">Header Font Size:</td>
+		<td><input type="text" id="header-font-size"></td>
+		<td class="option-text">Examples: 200%, 2.6em</td>
 	</tr>
 	<tr>
 		<td class="option-text">Body Font:</td>
-		<td><select id="select_body_font"></select></td>
+		<td colspan="2"><select id="select_body_font"></select></td>
+	</tr>
+	<tr>
+		<td class="option-text">Body Font Size:</td>
+		<td><input type="text" id="body-font-size"></td>
+		<td class="option-text">Examples: 120%, 1.15em</td>
+	</tr>
+	<tr>
+		<td class="option-text">Body Line Height:</td>
+		<td><input type="text" id="body-line-height"></td>
+		<td class="option-text">Examples: 20px, normal, 2, 110%, 2cm</td>
+	</tr>
+	<tr>
+		<td class="option-text" colspan="3">
+		<input type="checkbox" id="justify-text">
+		Justify text
+		</td>
 	</tr>
 	</table>
 </div>
@@ -88,7 +116,7 @@ Fusce molestie quam quis congue tempus.</span>
 <li><input type="radio" name="embed-behavior-policy" value="approved">Ask before showing embedded content</li>
 </ul>
 
-<h2>Approved embedded content</h2>
+<h2>Permitted content</h2>
 <ul id="approved-embeds-list">
 <li>Allow <a href="">http://www.google.com</a> for the Google News feed<button>Revoke</button></li>
 <li>Allow <a href="">https://www.youtube.com</a> for all feeds<button>Revoke</button></li>

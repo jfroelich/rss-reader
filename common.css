@@ -16,39 +16,3 @@ body {
   font-family: News Cycle;
   src: url('/font/news-cycle/NewsCycle-Regular.ttf') format('truetype');
 }
-
-.arialsans {
-  font-family: Arial, sans-serif;
-}
-
-.calibri {
-  font-family: Calibri;
-}
-
-.calibri-light {
-  font-family: Calibri Light;
-}
-
-.cambria {
-  font-family: Cambria;
-}
-
-.georgia {
-  font-family: Georgia; 
-}
-
-.mssansseerif {
-  font-family: MS Sans Serif;
-}
-
-.newscycle {
-  font-family: News Cycle, sans-serif;
-}
-
-.opensansreg {
-  font-family: Open Sans Regular;
-}
-
-.raleway {
-  font-family: Raleway, sans-serif;
-}

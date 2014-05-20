@@ -90,15 +90,34 @@ div.options_section {
 #options_table tr td {
 	/*vertical-align:top;*/
 	padding-left:0px;
-	padding-right:4px;
+	padding-right:30px;
 	padding-top:0px;
 	padding-bottom:10px;
 }
 
 #options_table tr td:first-child {
 	white-space: nowrap;
+	font-size:110%;
+	align:left;
 }
 
+#display-preview {
+  padding:0px;
+  margin-bottom:20px;
+  width:100%;
+  margin-left:0px;
+}
+
+#options_table input {
+	width:225px;
+	
+	font-size:110%;
+}
+
+#options_table select {
+	margin-left: 0px;
+	font-size:110%;
+}
 
 
 
@@ -202,16 +221,12 @@ h2 {
 	margin-right:6px;
 }
 
-
-#display-preview {
-	padding:10px;
-	margin-bottom:20px;
+#discover-results-list li span.discover-search-result-url {
+	color: #41BD00;
+	margin-left: 10px;
 }
 
-#header_font_preview {
-	display:block;
-	margin-bottom:5px;
-}
+
 
 #embed-behavior-policy-list {
 	list-style-type:none;
