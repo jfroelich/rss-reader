@@ -244,6 +244,57 @@ h2 {
 	float:right;
 }
 
+
+
+
+#content-filter-view-original {
+	margin-top:50px;
+	margin-left:20px;
+	background-color:maroon;
+}
+
+#content-filter-view-filtered {
+	background-color:navy;
+}
+
+.content-filter-preview-tab {
+	color:white;
+	font-weight: 700;
+	margin-bottom:0px;
+	padding:5px;
+	font-family: 'Segoe UI', Tahoma, sans-serif;
+	cursor: pointer;
+}
+
+.preview-content-viewer-area {
+	margin-top:2px;
+	margin-bottom:10px;
+	height:150px;
+	width:98%;
+	white-space: normal;
+	word-wrap:break-word;
+	overflow: auto;
+}
+
+#raw-content-viewer {
+	border:3px solid maroon;
+
+}
+
+#filtered-content-viewer {
+	border:3px solid navy;
+	display:none;
+}
+
+#raw-select-entry {
+	width:300px;
+}
+
+#raw-content-holder-hidden {
+	visibility:hidden;
+	display:none;
+}
+
 #content-filters-list {
 	list-style-type: none;
 	padding-left:0px;
