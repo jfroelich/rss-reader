@@ -18,8 +18,8 @@
 <body>
 <div id="navigation">
 <ul id="navigation-menu">
-<li id="mi-view-subscriptions" class="navigation-item">Manage subscriptions</li>
-<li id="mi-add-subscription" class="navigation-item">Add a subscription</li>
+<!--<li id="mi-view-subscriptions" class="navigation-item">Manage subscriptions</li>-->
+<li id="mi-add-subscription" class="navigation-item">Add subscription</li>
 <li id="mi-display-settings" class="navigation-item">Display settings</li>
 <li id="mi-embeds" class="navigation-item">Embedded content</li>
 <li id="mi-content-filters" class="navigation-item">Content filters</li>
@@ -27,13 +27,62 @@
 <li id="mi-view-help" class="navigation-item">Help</li>
 <li id="mi-view-about" class="navigation-item">About</li>
 </ul>
+
+<p id="mi-feed-details" class="navigation-item">Subscriptions<span id="subscription-count"></span></p>
+<p id="nosubscriptions" class="option-text">No subscriptions</p>
+<ul id="feedlist"></ul>
 </div>
-<div id="divfeedlist" class="options_section">
-	<h1>Manage subscriptions<span id="subscription-count"></span></h1>
-	<p id="nosubscriptions" class="option-text">You are not currently subscribed to any feeds. 
-	Subscribe to a new feed to get started!</p>
-	<ul id="feedlist"></ul>
+
+<div id="section-feed-details" class="options_section">
+<h1 id="details-title-container">
+<img id="details-favicon">
+<span id="details-title"></span>
+</h1>
+
+<table>
+<tr>
+	<td>Description:</td>
+	<td id="details-feed-description"></td>
+</tr>
+<tr>
+	<td>Feed location:</td>
+	<td id="details-feed-url"></td>
+</tr>
+<tr>
+	<td>Website:</td>
+	<td id="details-feed-link"></td>
+</tr>
+
+</table>
+
+
+<h2>Proxy URL Settings</h2>
+<table>
+<tr>
+	<td colspan="2">
+		<input type="checkbox" id="details-override-proxy">
+		Enable override
+	</td>
+</tr>
+<tr>
+	<td>Proxy host/path:</td>
+	<td><input id="details-proxy-host"></td>
+</tr>
+<tr>
+	<td>Proxy query parameter:</td>
+	<td><input id="details-proxy-param"></td>
+</tr>
+<tr>
+	<td colspan="2">
+	<button id="details-unsubscribe">Unsubscribe</button>
+	</td>
+</tr>
+</table>
+
+
+
 </div>
+
 
 <div id="section-add-subscription" class="options_section">
 	<h1>Add a subscription</h1>
@@ -174,7 +223,23 @@ Match: <input type="text" id="create-filter-attribute-value-match">
 </div>
 <div id="divhelp" class="options_section">
 	<h1>Help</h1>
-	<p class="option-text">No help is currently available.</p>
+
+<a name="proxy-urls" class="help-section">About proxy urls</a>
+
+<p>
+Some RSS feeds are setup so that when you click to view the full article, you must first visit 
+an intermediate URL controlled by the feed's provider, which then redirects you to the article. Content 
+providers sometimes do this to track your reading habits. You can avoid this behavior by providing the 
+technical details on how the extension can bypass the intermediate link. To do this, you need to examine the 
+link to the article (e.g. right click on an article's title and select Copy link location and then paste it somewhere
+like NotePad). There are two interesting parts to a proxy URL. The first is the base part, that is essentially the link
+to the intermediate location. This is the first part of the url up to the point of the first ?. The first part is referred
+to below as the proxy host.  The second part is located somewhere after the ?, in the list of pairs of key names and key 
+values. Look for a key name like &quot;url&quot;, followed by an = character, followed by what looks like a website 
+address. For example, given the URL http://www.evilproxy.com/itrackurclicks?url=http://www.example.com/example-article.html,
+the base is http://www.evilproxy.com/itrackurclicks, and the key name of interest is url.
+</p>
+
 </div>
 </body>
 </html>
