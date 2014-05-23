@@ -15,7 +15,7 @@
     "persistent": true,
     "scripts": [
       "lib/background/collections.js",
-      "lib/background/string-utils.js",
+      "lib/background/strings.js",
       "lib/background/favicon.js",
       "lib/background/dates.js",
       "lib/background/uri.js",
