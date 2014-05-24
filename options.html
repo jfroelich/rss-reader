@@ -14,6 +14,7 @@
 <script type="text/javascript" src="/lib/options/subscribe.js"></script>
 <script type="text/javascript" src="/lib/options/content-filters.js"></script>
 <script type="text/javascript" src="/lib/options/display-settings.js"></script>
+<script type="text/javascript" src="/lib/options/url-rewriting.js"></script>
 <script type="text/javascript" src="/lib/options/about.js"></script>
 </head>
 <body>
@@ -24,6 +25,7 @@
 <li id="mi-display-settings" class="navigation-item">Display settings</li>
 <li id="mi-embeds" class="navigation-item">Embedded content</li>
 <li id="mi-content-filters" class="navigation-item">Content filters</li>
+<li id="mi-rewriting" class="navigation-item">URL Rewriting</li>
 <li id="mi-import-export" class="navigation-item">Import/export</li>
 <li id="mi-view-help" class="navigation-item">Help</li>
 <li id="mi-view-about" class="navigation-item">About</li>
@@ -39,8 +41,7 @@
 <img id="details-favicon">
 <span id="details-title"></span>
 </h1>
-
-<table>
+<table id="feed-details-table">
 <tr>
 	<td>Description:</td>
 	<td id="details-feed-description"></td>
@@ -53,37 +54,8 @@
 	<td>Website:</td>
 	<td id="details-feed-link"></td>
 </tr>
-
 </table>
-
-
-<h2>Proxy URL Settings</h2>
-<table>
-<tr>
-	<td colspan="2">
-		<input type="checkbox" id="details-override-proxy">
-		Enable override
-	</td>
-</tr>
-<tr>
-	<td>Proxy host/path:</td>
-	<td><input id="details-proxy-host"></td>
-</tr>
-<tr>
-	<td>Proxy query parameter:</td>
-	<td><input id="details-proxy-param"></td>
-</tr>
-<tr>
-	<td colspan="2">
-	<button id="details-unsubscribe">Unsubscribe</button>
-	</td>
-</tr>
-</table>
-
-
-
 </div>
-
 
 <div id="section-add-subscription" class="options_section">
 	<h1>Add a subscription</h1>
@@ -94,13 +66,7 @@
 		<input type="text" id="subscribe-discover-query">
 		<input type="submit" value="Subscribe or Search">
 	</form>
-
 	<ul id="discover-results-list"></ul>
-
-	<!--<form id="discover-feeds">
-	<input type="text" id="discover-query" autofocus>
-	<input type="submit" value="Search">
-	</form>-->
 	<p id="discover-no-results" class="option-text">No results matched your query.</p>
 	<p id="discover-in-progress" class="option-text">Search in progress.. please wait (a maximum of 5 seconds).</p>
 </div>
@@ -201,6 +167,25 @@ Match: <input type="text" id="create-filter-attribute-value-match">
 <ul id="content-filters-list"></ul>
 </div>
 
+<div id="section-url-rewriting" class="options_section">
+<h1>URL Rewriting</h1>
+
+<p><input type="checkbox" id="rewriting-enable"> Enable URL rewriting</p>
+
+<h2>Create URL Rewriting rule</h2>
+Scheme + Host+ path: <input id="rewriting-create-path">
+Parameter Name: <input id="rewriting-create-parameter-name">
+<button id="rewriting-create">Create</button>
+
+<h2>Test rules</h2>
+<p><input id="rewriting-test-input">
+<button id="rewriting-test">Test</button></p>
+<p>Output: <input id="rewriting-test-output"></p>
+
+<h2>URL Rewriting rules</h2>
+<ul id="rewrite-rules-list"></ul>
+</div>
+
 <div id="section-import-export" class="options_section">
 <h1>Import/export</h1>
 
@@ -225,21 +210,7 @@ Match: <input type="text" id="create-filter-attribute-value-match">
 <div id="divhelp" class="options_section">
 	<h1>Help</h1>
 
-<a name="proxy-urls" class="help-section">About proxy urls</a>
 
-<p>
-Some RSS feeds are setup so that when you click to view the full article, you must first visit 
-an intermediate URL controlled by the feed's provider, which then redirects you to the article. Content 
-providers sometimes do this to track your reading habits. You can avoid this behavior by providing the 
-technical details on how the extension can bypass the intermediate link. To do this, you need to examine the 
-link to the article (e.g. right click on an article's title and select Copy link location and then paste it somewhere
-like NotePad). There are two interesting parts to a proxy URL. The first is the base part, that is essentially the link
-to the intermediate location. This is the first part of the url up to the point of the first ?. The first part is referred
-to below as the proxy host.  The second part is located somewhere after the ?, in the list of pairs of key names and key 
-values. Look for a key name like &quot;url&quot;, followed by an = character, followed by what looks like a website 
-address. For example, given the URL http://www.evilproxy.com/itrackurclicks?url=http://www.example.com/example-article.html,
-the base is http://www.evilproxy.com/itrackurclicks, and the key name of interest is url.
-</p>
 
 </div>
 </body>
