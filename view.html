@@ -5,12 +5,15 @@
 <link rel="stylesheet" href="common.css"/>
 <link rel="stylesheet" href="view.css"/>
 <link href="img/rss_icon_trans.gif" rel="shortcut icon" />
-<script type="text/javascript" src="/lib/foreground/fx.js"></script>
-<script type="text/javascript" src="/lib/foreground/view-read-detection.js"></script>
-<script type="text/javascript" src="/lib/foreground/view-auto-append.js"></script>
-<script type="text/javascript" src="/lib/foreground/view-key-events.js"></script>
-<script type="text/javascript" src="/lib/foreground/stylize.js"></script>
-<script type="text/javascript" src="/lib/foreground/view.js"></script>
+<script type="text/javascript" src="/lib/fx.js"></script>
+<script type="text/javascript" src="/lib/stylize.js"></script>
+<script type="text/javascript" src="/lib/view/prefetch.js"></script>
+<script type="text/javascript" src="/lib/view/subscribe.js"></script>
+<script type="text/javascript" src="/lib/view/reading.js"></script>
+<script type="text/javascript" src="/lib/view/appending.js"></script>
+<script type="text/javascript" src="/lib/view/shortcuts.js"></script>
+<script type="text/javascript" src="/lib/view/rendering.js"></script>
+<script type="text/javascript" src="/lib/view/error-message.js"></script>
 </head>
 <body>
 <div id="entries"></div>
@@ -18,7 +21,6 @@
 	<p>No entries to display</p>
 	<p>Last checked: <span id="lastpolled"></span></p>
 </div>
-
 <div id="errorMessageContainer">
 	<span id="errorMessage"></span><a href="#" id="dismiss">Dismiss</a>
 </div>
