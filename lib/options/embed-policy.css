@@ -1,0 +1,31 @@
+#section-embeds {
+	display:none;
+}
+
+#embed-behavior-policy-list {
+	list-style-type:none;
+	padding-left:0px;
+	width:100%;
+	font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+#embed-behavior-policy-list li {
+	padding-bottom: 10px;
+}
+
+#approved-embeds-list {
+	list-style-type:none;
+	padding-left:0px;
+	width:100%;
+	font-family: 'Segoe UI', Tahoma, sans-serif;	
+}
+
+#approved-embeds-list li {
+	padding-top: 10px;
+	padding-bottom: 10px;
+	border-bottom: 1px dotted #cccccc;
+}
+
+#approved-embeds-list li button {
+	float:right;
+}

@@ -1,0 +1,49 @@
+#section-add-subscription {
+	display:none;
+}
+
+#subscribe-discover-query {
+	width:500px;
+}
+
+#discover-no-results {
+	display:none;
+	font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+#discover-in-progress {
+	display:none;
+	font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+#discover-results-list {
+	display:none;
+	list-style-type:none;
+	display:block;
+	padding-left:0px;
+	margin-top:0px;
+}
+
+#discover-results-list li {
+	display:block;
+	font-family: 'Segoe UI', Tahoma, sans-serif;
+	margin-bottom:0px;
+	padding-left:0px;
+	padding-top:10px;
+	padding-bottom:10px;
+	padding-right:0px;
+	border-bottom: 1px dotted #cccccc;
+}
+
+#discover-results-list li button {
+	margin-right:6px;
+}
+
+#discover-results-list li img {
+	margin-right:6px;
+}
+
+#discover-results-list li span.discover-search-result-url {
+	color: #41BD00;
+	margin-left: 10px;
+}

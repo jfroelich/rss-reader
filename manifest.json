@@ -21,6 +21,7 @@
       "lib/background/uri.js",
       "lib/background/hashing.js",
       "lib/background/html-parser.js",
+      "lib/background/url-rewriting.js",
       "lib/background/fetcher.js",
       "lib/background/feed-updater.js",
       "lib/background/model.js",

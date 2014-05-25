@@ -2,9 +2,21 @@
 <html>
 <head>
 <title>Options for Josh's RSS Reader</title>
-<link rel="stylesheet" href="common.css"/>
-<link rel="stylesheet" href="options.css"/>
 <link href="img/rss_icon_trans.gif" rel="shortcut icon" />
+
+<link rel="stylesheet" href="/lib/common.css"/>
+<link rel="stylesheet" href="/lib/options/options.css"/>
+<link rel="stylesheet" href="/lib/options/navigation.css"/>
+<link rel="stylesheet" href="/lib/options/subscribe.css"/>
+<link rel="stylesheet" href="/lib/options/display-settings.css"/>
+<link rel="stylesheet" href="/lib/options/embed-policy.css"/>
+<link rel="stylesheet" href="/lib/options/content-filters.css"/>
+<link rel="stylesheet" href="/lib/options/help.css"/>
+<link rel="stylesheet" href="/lib/options/feed-details.css"/>
+<link rel="stylesheet" href="/lib/options/url-rewriting.css"/>
+<link rel="stylesheet" href="/lib/options/import-export.css"/>
+<link rel="stylesheet" href="/lib/options/about.css"/>
+
 <script type="text/javascript" src="/lib/fx.js"></script>
 <script type="text/javascript" src="/lib/stylize.js"></script>
 <script type="text/javascript" src="/lib/options/subscription-monitor.js"></script>
@@ -170,17 +182,40 @@ Match: <input type="text" id="create-filter-attribute-value-match">
 <div id="section-url-rewriting" class="options_section">
 <h1>URL Rewriting</h1>
 
-<p><input type="checkbox" id="rewriting-enable"> Enable URL rewriting</p>
+<p class="option-text"><input type="checkbox" id="rewriting-enable"> Enable URL rewriting</p>
 
 <h2>Create URL Rewriting rule</h2>
-Scheme + Host+ path: <input id="rewriting-create-path">
-Parameter Name: <input id="rewriting-create-parameter-name">
-<button id="rewriting-create">Create</button>
 
+<table id="rewriting-create-table">
+<tr>
+	<td class="option-text" valign="top">Base URL:</td>
+	<td valign="top"><input id="rewriting-create-path"></td>
+	<td class="option-text">Required. The start of the URL. For example, 
+	in the url http://www.example.com/thengoto?nexturl=http://www.next-website.com/page.html, the 
+	base URL is http://www.example.com/thengoto (everything up to the ?). For example, in 
+	http://www.example.com/thengoto/http://www.next-website.com/page.html, the base URL is 
+	http://www.example.com/thengoto (everything up to the / after thengoto).</td>
+</tr>
+<tr>
+	<td class="option-text" valign="top">Parameter:</td>
+	<td valign="top"><input id="rewriting-create-parameter"></td>
+	<td class="option-text">Optional. The name of the parameter. For example,
+	in http://www.example.com/thengoto?nexturl=http://www.next-website.com/page.html, 
+	the parameter of interest is named nexturl. For example, in 
+	http://www.example.com/thengoto/http://www.next-website.com/page.html, there is no 
+	parameter of interest, so leave the Parameter field blank.</td>
+</tr>
+<tr>
+	<td colspan="3"><button id="rewriting-create">Create</button></td>
+</tr>
+</table>
+
+
+</p>
 <h2>Test rules</h2>
-<p><input id="rewriting-test-input">
-<button id="rewriting-test">Test</button></p>
-<p>Output: <input id="rewriting-test-output"></p>
+<p class="option-text">Input: <input id="rewriting-test-input">
+<button id="rewriting-test">Test</button> 
+Output: <input id="rewriting-test-output"></p>
 
 <h2>URL Rewriting rules</h2>
 <ul id="rewrite-rules-list"></ul>
