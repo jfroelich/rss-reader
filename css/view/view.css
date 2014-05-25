@@ -1,0 +1,43 @@
+h1, h2, h3, h4, h5, h6 {
+  font-weight:normal;
+  font-size: 12pt;
+}
+
+a {
+  color: #5ba4e5;
+}
+
+hr {
+  size:1;
+  color:#222222;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
+#noentries {
+  padding:30px;
+  font-size:18pt;
+  display:none;
+}
+
+#entries {
+  margin-top:0px;
+  padding-top:0px;
+  border-top:0px;
+}
+
+.entrysource {
+  display: block;
+  font-size:10pt;
+  color:#cccccc;
+  margin-top: 6px;
+  margin-bottom: 3px;
+}
+
+.entrysourcelink {
+  text-decoration: underline;
+}

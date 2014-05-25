@@ -1,0 +1,22 @@
+
+#options_error_message {
+  display:block;
+  opacity: 0;
+  background-color:red;
+  color:#ffffff;
+  font-size:14pt;
+  position:fixed;
+  float:left;
+  top:100px;
+  left:20%;
+  right:20%;
+  padding:20px 20px 20px 20px;
+  border-radius: 10px;
+  background-clip: padding-box;
+  box-shadow: 2px 2px 4px 0px #000000;
+}
+
+#options_dismiss_error_button {
+  padding:2px;
+  float:right;
+}
