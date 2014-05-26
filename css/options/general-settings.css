@@ -1,0 +1,14 @@
+#section-general-settings {
+    display:none;
+}
+
+#general-settings-table {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    padding:0px;
+    margin:0px;
+    border-spacing:0px;
+}
+
+#general-settings-table td {
+    padding: 0px;
+}

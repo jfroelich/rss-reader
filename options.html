@@ -6,6 +6,7 @@
 
 <link rel="stylesheet" href="/css/common.css"/>
 <link rel="stylesheet" href="/css/options/options.css"/>
+<link rel="stylesheet" href="/css/options/general-settings.css"/>
 <link rel="stylesheet" href="/css/options/subscription-monitor.css"/>
 <link rel="stylesheet" href="/css/options/error-message.css"/>
 <link rel="stylesheet" href="/css/options/navigation.css"/>
@@ -34,10 +35,10 @@
 <body>
 <div id="navigation">
 <ul id="navigation-menu">
-<!--<li id="mi-view-subscriptions" class="navigation-item">Manage subscriptions</li>-->
-<li id="mi-add-subscription" class="navigation-item">Add subscription</li>
+<li id="mi-general-settings" class="navigation-item">General settings</li>
+<li id="mi-add-subscription" class="navigation-item">Subscribe</li>
 <li id="mi-display-settings" class="navigation-item">Display settings</li>
-<li id="mi-embeds" class="navigation-item">Embedded content</li>
+<li id="mi-embeds" class="navigation-item">Approved embeds</li>
 <li id="mi-content-filters" class="navigation-item">Content filters</li>
 <li id="mi-rewriting" class="navigation-item">URL Rewriting</li>
 <li id="mi-import-export" class="navigation-item">Import/export</li>
@@ -50,12 +51,129 @@
 <ul id="feedlist"></ul>
 </div>
 
+<div id="section-general-settings" class="options_section">
+<h1>General settings</h1>
+
+<table id="general-settings-table">
+<tr>
+	<td colspan="2">
+		<input type="checkbox"> Preview articles when subscribing
+	</td>
+</tr>
+<tr>
+	<td>Show this many articles initially:</td>
+	<td width="80%">
+		<select>
+		<option>10</option>
+		<option>20</option>
+		<option>50</option>
+		</select>
+	</td>
+</tr>
+<tr>
+	<td>Append this many articles when scrolling:</td>
+	<td width="80%">
+		<select>
+		<option>10</option>
+		<option>20</option>
+		<option>50</option>
+		</select>
+	</td>
+</tr>
+<tr>
+	<td>Mark feeds inactive after:</td>
+	<td width="80%">
+		<select>
+		<option>20 days without updates</option>
+		<option>30 days without updates</option>
+		<option>2 months without updates</option>
+		</select>
+	</td>
+</tr>
+<tr>
+	<td>Embedded content policy:</td>
+	<td>
+		<select>
+		<option>Always show embedded content</option>
+		<option>Show a link to open embedded content in a new tab</option>
+		<option>Ask before showing embedded content</option>
+		</select>
+	</td>
+</tr>
+<tr>
+	<td colspan="2">
+		<h2>Check for updates settings</h2>
+	</td>
+</tr>
+<tr>
+	<td colspan="2">
+		<input type="checkbox" checked> Disable checking for updates
+	</td>
+</tr>
+<tr>
+	<td>Give up checking a feed after:</td>
+	<td>
+		<select>
+			<option>500 milliseconds</option>
+			<option>1 second</option>
+			<option>5 seconds</option>
+			<option>10 seconds</option>
+			<option>20 seconds</option>
+			<option>30 seconds</option>
+		</select>
+	</td>
+</tr>
+<tr>
+	<td>Check for updates every:</td>
+	<td>
+		<select>
+			<option>1 minute</option>
+			<option>5 minutes</option>
+			<option>10 minutes</option>
+			<option>20 minutes</option>
+			<option>30 minutes</option>
+			<option>1 hour</option>
+			<option>5 hours</option>
+			<option>20 hours</option>
+		</select>
+	</td>
+</tr>
+<tr>
+	<td colspan="2">
+		<h2>Advanced settings</h2>
+	</td>
+</tr>
+<tr>
+	<td colspan="2">
+		<p class="option-text"><input type="checkbox" id="enable-content-filters"> Enable HTML-based content filters</p>
+	</td>
+</tr>
+<tr>
+	<td colspan="2">
+		<p class="option-text"><input type="checkbox" id="rewriting-enable"> Enable URL rewriting</p>
+	</td>
+</tr>
+<tr>
+	<td colspan="2">
+		<p class="option-text"><input type="checkbox" id="rewriting-enable"> Suggest predicted network 
+		actions to Google Chrome to improve page load performance</p>
+	</td>
+</tr>
+</table>
+</div>
+
+
 <div id="section-feed-details" class="options_section">
 <h1 id="details-title-container">
 <img id="details-favicon">
 <span id="details-title"></span>
 </h1>
 <table id="feed-details-table">
+<tr>
+	<td colspan="2">
+	<button id="details-unsubscribe">Unsubscribe</button>
+	</td>
+</tr>
 <tr>
 	<td>Description:</td>
 	<td id="details-feed-description"></td>
@@ -68,7 +186,47 @@
 	<td>Website:</td>
 	<td id="details-feed-link"></td>
 </tr>
+<tr>
+	<td>Status:</td>
+	<td>Active (in inactive show inactive and button to reactivate)</td>
+</tr>
+<tr>
+	<td>Last checked:</td>
+	<td>Unknown date (unknown time ago)</td>
+</tr>
+<tr>
+	<td>Last updated:</td>
+	<td>Unknown date (unknown time ago) (this is time a new entry was last added, not just when we checked)</td>
+</tr>
+<tr>
+	<td>Give up trying to update after:</td>
+	<td><select>
+	<option>Use the default setting</option>
+	<option>500 milliseconds</option>
+	<option>1 second</option>
+	<option>5 seconds</option>
+	<option>10 seconds</option>
+	<option>20 seconds</option>
+	<option>30 seconds</option>
+	</select></td>
+</tr>
+<tr>
+	<td>Check for updates every:</td>
+	<td><select>
+	<option>Use the default setting</option>
+	<option>1 minute</option>
+	<option>5 minutes</option>
+	<option>10 minutes</option>
+	<option>20 minutes</option>
+	<option>30 minutes</option>
+	<option>1 hour</option>
+	<option>5 hours</option>
+	<option>20 hours</option>
+	</select></td>
+</tr>
 </table>
+
+
 </div>
 
 <div id="section-add-subscription" class="options_section">
@@ -138,29 +296,38 @@
 		Justify text
 		</td>
 	</tr>
+	<tr>
+		<td class="option-text">Limit article title length to:</td>
+		<td colspan="2">
+			<select>
+				<option>No limit</option>
+				<option>50 characters</option>
+				<option>100 characters</option>
+				<option>150 characters</option>
+				<option>200 characters</option>
+			</select>
+		</td>
+	</tr>	
 	</table>
 </div>
 
 <div id="section-embeds" class="options_section">
-<h1>Embedded content</h1>
-
-<ul id="embed-behavior-policy-list">
-<li><input type="radio" name="embed-behavior-policy" value="all" checked>Always show embedded content</li>
-<li><input type="radio" name="embed-behavior-policy" value="none">Never show embedded content</li>
-<li><input type="radio" name="embed-behavior-policy" value="approved">Ask before showing embedded content</li>
-</ul>
-
-<h2>Permitted content</h2>
+<h1>Approved embeds</h1>
 <ul id="approved-embeds-list">
-<li>Allow <a href="">http://www.google.com</a> for the Google News feed<button>Revoke</button></li>
-<li>Allow <a href="">https://www.youtube.com</a> for all feeds<button>Revoke</button></li>
+<li><a href="">http://www.google.com</a><button>Revoke</button></li>
+<li><a href="">https://www.youtube.com</a><button>Revoke</button></li>
 </ul>
-
 </div>
 
 <div id="section-content-filters" class="options_section">
 <h1>Manage content filters</h1>
-<p class="option-text"><input type="checkbox" id="enable-content-filters"> Enable content filters</p>
+<p class="option-text" style="border-bottom:1px dotted #cccccc;padding-bottom:6px;">
+Tag name: <input type="text" id="create-filter-tag-name">
+Attribute name: <input type="text" id="create-filter-attribute-name">
+Match: <input type="text" id="create-filter-attribute-value-match">
+<button id="create-filter-action">Create</button>
+</p>
+<ul id="content-filters-list"></ul>
 
 <h2>Preview filter rules</h2>
 <select id="raw-browser-select-feed"></select>
@@ -170,24 +337,12 @@
 <div id="raw-content-viewer" class="preview-content-viewer-area"></div>
 <div id="filtered-content-viewer" class="preview-content-viewer-area"></div>
 <ul id="raw-content-holder-hidden"></ul>
-<h2>Create a filter</h2>
-<p class="option-text">
-Tag name: <input type="text" id="create-filter-tag-name">
-Attribute name: <input type="text" id="create-filter-attribute-name">
-Match: <input type="text" id="create-filter-attribute-value-match">
-<button id="create-filter-action">Create</button>
-</p>
-<h2>Content filters</h2>
-<ul id="content-filters-list"></ul>
+
+
 </div>
 
 <div id="section-url-rewriting" class="options_section">
 <h1>URL Rewriting</h1>
-
-<p class="option-text"><input type="checkbox" id="rewriting-enable"> Enable URL rewriting</p>
-
-<h2>Create URL Rewriting rule</h2>
-
 <table id="rewriting-create-table">
 <tr>
 	<td class="option-text" valign="top">Base URL:</td>
@@ -211,14 +366,11 @@ Match: <input type="text" id="create-filter-attribute-value-match">
 	<td colspan="3"><button id="rewriting-create">Create</button></td>
 </tr>
 </table>
-
-
-</p>
 <h2>Test rules</h2>
-<p class="option-text">Input: <input id="rewriting-test-input">
-<button id="rewriting-test">Test</button> 
-Output: <input id="rewriting-test-output"></p>
-
+<p class="option-text">Input:
+<input id="rewriting-test-input">
+<button id="rewriting-test">Test</button> </p>
+<p>Output: <span id="rewriting-test-output"></span></p>
 <h2>URL Rewriting rules</h2>
 <ul id="rewrite-rules-list"></ul>
 </div>
@@ -246,9 +398,7 @@ Output: <input id="rewriting-test-output"></p>
 </div>
 <div id="divhelp" class="options_section">
 	<h1>Help</h1>
-
-
-
+<p>I have not created any help material yet.</p>
 </div>
 </body>
 </html>

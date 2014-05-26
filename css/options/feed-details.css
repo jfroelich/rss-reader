@@ -1,3 +1,13 @@
 #section-feed-details {
-	display:none;
+  display:none;
+}
+
+#feed-details-table {
+  width:100%;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+#feed-details-table td {
+  padding:10px;
+
 }
