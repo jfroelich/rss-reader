@@ -1,14 +1,14 @@
 {
   "manifest_version": 2,
-  "name": "Josh's RSS Reader",
-  "version": "2.5",
-  "author": "Josh Froelich",
+  "name": "Honey Badger News Reader - So Nasty!",
+  "version": "1",
+  "author": "JDF",
   "homepage_url": "https://github.com/jfroelich/rss-reader",
-  "description": "A simple and fast RSS reader",
+  "description": "A simple RSS news reader that likes to eat snakes",
 
   "browser_action": {
     "default_icon": "img/rss_icon_trans.png",
-    "default_title": "Josh's RSS Reader"
+    "default_title": "Honey Badger News Reader - So Nasty!"
   },
 
   "background": {
