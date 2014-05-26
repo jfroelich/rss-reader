@@ -18,6 +18,7 @@
       "lib/background/strings.js",
       "lib/background/favicon.js",
       "lib/background/dates.js",
+      "lib/background/opml.js",
       "lib/background/uri.js",
       "lib/background/hashing.js",
       "lib/background/html-parser.js",
