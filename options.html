@@ -2,8 +2,7 @@
 <html>
 <head>
 <title>Options for Honey Badger News Reader</title>
-<link href="img/rss_icon_trans.gif" rel="shortcut icon" />
-
+<link rel="shortcut icon" href="/img/rss_icon_trans.gif"/>
 <link rel="stylesheet" href="/css/common.css"/>
 <link rel="stylesheet" href="/css/options/options.css"/>
 <link rel="stylesheet" href="/css/options/general-settings.css"/>
@@ -19,20 +18,10 @@
 <link rel="stylesheet" href="/css/options/url-rewriting.css"/>
 <link rel="stylesheet" href="/css/options/import-export.css"/>
 <link rel="stylesheet" href="/css/options/about.css"/>
-
 <script type="text/javascript" src="/lib/utils.js"></script>
 <script type="text/javascript" src="/lib/fx.js"></script>
 <script type="text/javascript" src="/lib/stylize.js"></script>
-<script type="text/javascript" src="/lib/options/general-settings.js"></script>
-<script type="text/javascript" src="/lib/options/subscription-monitor.js"></script>
-<script type="text/javascript" src="/lib/options/error-message.js"></script>
-<script type="text/javascript" src="/lib/options/navigation.js"></script>
-<script type="text/javascript" src="/lib/options/feed-list.js"></script>
-<script type="text/javascript" src="/lib/options/subscribe.js"></script>
-<script type="text/javascript" src="/lib/options/content-filters.js"></script>
-<script type="text/javascript" src="/lib/options/display-settings.js"></script>
-<script type="text/javascript" src="/lib/options/url-rewriting.js"></script>
-<script type="text/javascript" src="/lib/options/about.js"></script>
+<script type="text/javascript" src="/lib/options.js"></script>
 </head>
 <body>
 <div id="navigation">
@@ -58,7 +47,12 @@
 <table id="general-settings-table">
 <tr>
 	<td colspan="2">
-		<input type="checkbox"> Preview articles when subscribing
+		<input type="checkbox" checked> Preview articles before subscribing
+	</td>
+</tr>
+<tr>
+	<td colspan="2">
+		<input type="checkbox"> Enable Chrome notifications
 	</td>
 </tr>
 <tr>
@@ -71,16 +65,7 @@
 		</select>
 	</td>
 </tr>
-<tr>
-	<td>Append this many articles when scrolling:</td>
-	<td width="80%">
-		<select>
-		<option>10</option>
-		<option>20</option>
-		<option>50</option>
-		</select>
-	</td>
-</tr>
+
 <tr>
 	<td>Mark feeds inactive after:</td>
 	<td width="80%">
@@ -200,7 +185,22 @@
 </tr>
 <tr>
 	<td colspan="2">
+		<p class="option-text"><input type="checkbox"> Automatically enlarge and emphasize body text when appropriate</p>
+	</td>
+</tr>
+<tr>
+	<td colspan="2">
 		<p class="option-text"><input type="checkbox"> Try to layout text in columns where appropriate</p>
+	</td>
+</tr>
+<tr>
+	<td class="option-text">Append this many articles in the background:</td>
+	<td>
+		<select>
+		<option>10</option>
+		<option>20</option>
+		<option>50</option>
+		</select>
 	</td>
 </tr>
 </table>
