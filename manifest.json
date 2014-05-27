@@ -25,6 +25,7 @@
       "lib/background/url-rewriting.js",
       "lib/background/fetcher.js",
       "lib/background/feed-updater.js",
+      "lib/background/feeds-importer.js",
       "lib/background/model.js",
       "lib/background/content-filters.js",
       "lib/background/sanitize.js",
