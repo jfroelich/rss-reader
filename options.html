@@ -5,6 +5,7 @@
 <link rel="shortcut icon" href="/img/rss_icon_trans.gif"/>
 <link rel="stylesheet" href="/css/common.css"/>
 <link rel="stylesheet" href="/css/options/options.css"/>
+<link rel="stylesheet" href="/css/options/subscriptions.css"/>
 <link rel="stylesheet" href="/css/options/general-settings.css"/>
 <link rel="stylesheet" href="/css/options/subscription-monitor.css"/>
 <link rel="stylesheet" href="/css/options/error-message.css"/>
@@ -24,19 +25,27 @@
 <script type="text/javascript" src="/lib/options.js"></script>
 </head>
 <body>
-<div id="navigation">
+
+<table id="f-it"><tr><td id="nav-cell-container">
+
+
 <ul id="navigation-menu">
-<li id="mi-add-subscription" section="section-add-subscription" class="navigation-item">Add a subscription</li>
-<li id="mi-general-settings" section="section-general-settings" class="navigation-item">General settings</li>
-<li id="mi-display-settings" section="section-display-settings" class="navigation-item">Display settings</li>
-<li id="mi-embeds" section="section-embeds" class="navigation-item">Approved embeds</li>
-<li id="mi-content-filters" section="section-content-filters" class="navigation-item">Content filters</li>
-<li id="mi-rewriting" section="section-url-rewriting" class="navigation-item">URL Rewriting</li>
-<li id="mi-view-help" section="divhelp" class="navigation-item">Help</li>
-<li id="mi-view-about" section="divabout" class="navigation-item">About</li>
+<li id="mi-subscriptions" section="section-subscriptions">Subscriptions<span id="subscription-count"></span></li>
+<li id="mi-add-subscription" section="section-add-subscription">Add a subscription</li>
+<li id="mi-general-settings" section="section-general-settings">General settings</li>
+<li id="mi-display-settings" section="section-display-settings">Display settings</li>
+<li id="mi-embeds" section="section-embeds">Approved embeds</li>
+<li id="mi-content-filters" section="section-content-filters">Content filters</li>
+<li id="mi-rewriting" section="section-url-rewriting">URL Rewriting</li>
+<li id="mi-view-help" section="divhelp">Help</li>
+<li id="mi-view-about" section="divabout">About</li>
+<li id="mi-feed-details" section="section-feed-details" style="display:none;">feed details placeholder</li>
 </ul>
 
-<p id="mi-feed-details" section="section-feed-details" class="navigation-item">Subscriptions<span id="subscription-count"></span></p>
+</td><td id="section-layout-container">
+
+<div id="section-subscriptions" class="options_section">
+<h1>Subscriptions</h1>
 <p id="nosubscriptions" class="option-text">No subscriptions</p>
 <ul id="feedlist"></ul>
 </div>
@@ -272,8 +281,6 @@
 	</td>
 </tr>
 </table>
-
-
 </div>
 
 <div id="section-add-subscription" class="options_section">
@@ -435,5 +442,8 @@ Match: <input type="text" id="create-filter-attribute-value-match">
 	<h1>Help</h1>
 <p>I have not created any help material yet.</p>
 </div>
+
+
+</td></tr></table>
 </body>
 </html>

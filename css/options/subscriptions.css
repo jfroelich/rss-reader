@@ -1,0 +1,38 @@
+#section-subscriptions {
+    display:none;
+}
+
+#feedlist {
+	font-family: 'Segoe UI', Tahoma, sans-serif;
+	font-size:94%;
+	list-style-type:none;
+	padding-left:0px;
+}
+
+#feedlist li {
+	cursor: pointer;
+	padding-left:5px;
+	padding-top:5px;
+	padding-bottom:5px;
+	padding-right:8px;
+	border-bottom: 1px solid #cccccc;
+	-webkit-user-select: none;	
+}
+
+#feedlist li:hover {
+	background-color: rgb(50, 80, 184);
+	color:#efefef;
+}
+
+#feedlist li a {
+	margin-right: 10px;
+}
+
+#feedlist li img {
+	 max-width:26px;
+	 margin-right: 8px;
+}
+
+#nosubscriptions {
+	display: none;
+}

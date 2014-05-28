@@ -1,20 +1,37 @@
-body,html {
+html {
+	margin:0px;
+	padding:0px;
+}
+
+body {
+	margin:0px;
+	padding:0px;
+}
+
+#f-it {
+	position:absolute;
+	width:100%;
+	border-spacing:0px;
 	height:100%;
+}
+
+#section-layout-container {
+	vertical-align:top;
+	padding-left:6px;
+	border-left:2px solid #efefef;
+	padding-right:10px;
+}
+
+.options_section {
+	margin-top:0px;
+	margin-left:1px;
+	padding-top: 10px;
+	padding-left:0px;
 }
 
 form {
 	padding:0px;
 	margin:0px;
-}
-
-.options_section {
-	position:absolute;
-	left:200px;
-	right:0px;
-	margin-top:0px;
-	margin-right:10px;
-	padding-top: 10px;
-	padding-left:0px;
 }
 
 .option-text {
