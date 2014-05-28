@@ -16,6 +16,7 @@
     "scripts": [
       "lib/background/collections.js",
       "lib/background/strings.js",
+      "lib/background/xml.js",
       "lib/background/favicon.js",
       "lib/background/dates.js",
       "lib/background/opml.js",
