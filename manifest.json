@@ -35,6 +35,8 @@
       "lib/background/google-feeds.js",
       "lib/background/polling.js",
       "lib/background/notifications.js",
+      "lib/background/subscriptions.js",
+      "lib/background/messages.js",
       "lib/background/browser-action.js",
       "lib/background/background-test.js"]
   },
