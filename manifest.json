@@ -7,38 +7,28 @@
   "description": "A simple RSS news reader that likes to eat snakes",
 
   "browser_action": {
-    "default_icon": "img/rss_icon_trans.png",
+    "default_icon": "/img/rss_icon_trans.png",
     "default_title": "Honey Badger News Reader - So Nasty!"
   },
 
   "background": {
     "persistent": true,
     "scripts": [
-      "lib/background/collections.js",
-      "lib/background/strings.js",
-      "lib/background/xml.js",
-      "lib/background/favicon.js",
-      "lib/background/dates.js",
+      "lib/background/extension.js",
+      "lib/background/utilities.js",
       "lib/background/opml.js",
       "lib/background/uri.js",
-      "lib/background/hashing.js",
-      "lib/background/html-parser.js",
       "lib/background/url-rewriting.js",
-      "lib/background/fetcher.js",
-      "lib/background/feed-updater.js",
       "lib/background/feeds-importer.js",
       "lib/background/model.js",
       "lib/background/content-filters.js",
       "lib/background/sanitize.js",
-      "lib/background/content-trimming.js",
+      "lib/background/trimming.js",
       "lib/background/xml2json.js",
       "lib/background/google-feeds.js",
       "lib/background/polling.js",
-      "lib/background/notifications.js",
       "lib/background/subscriptions.js",
-      "lib/background/messages.js",
-      "lib/background/browser-action.js",
-      "lib/background/background-test.js"]
+      "lib/background/test.js"]
   },
 
   "options_page": "options.html",
@@ -49,7 +39,8 @@
     "http://*/*",
     "https://*/*",
     "notifications",
-    "unlimitedStorage"  ],
+    "unlimitedStorage"
+  ],
 
   "content_security_policy":
     "script-src 'self'; object-src 'self' https://vimeo.com https://www.youtube.com https://www.ustream.tv; frame-src http: https:"
