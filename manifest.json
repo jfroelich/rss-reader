@@ -1,45 +1,45 @@
 {
   "manifest_version": 2,
-  "name": "Honey Badger News Reader - So Nasty!",
+  "name": "Honey Badger News Reader",
   "version": "1",
   "author": "JDF",
   "homepage_url": "https://github.com/jfroelich/rss-reader",
-  "description": "A simple RSS news reader that likes to eat snakes",
+  "description": "A simple news reader that likes to eat snakes",
 
   "browser_action": {
     "default_icon": "/img/rss_icon_trans.png",
-    "default_title": "Honey Badger News Reader - So Nasty!"
+    "default_title": "Honey Badger News Reader"
   },
 
   "background": {
-    "persistent": true,
+    "persistent": false,
     "scripts": [
-      "lib/background/extension.js",
-      "lib/background/utilities.js",
-      "lib/background/opml.js",
-      "lib/background/uri.js",
-      "lib/background/url-rewriting.js",
-      "lib/background/feeds-importer.js",
-      "lib/background/model.js",
-      "lib/background/content-filters.js",
-      "lib/background/sanitize.js",
-      "lib/background/trimming.js",
-      "lib/background/xml2json.js",
-      "lib/background/google-feeds.js",
-      "lib/background/polling.js",
-      "lib/background/subscriptions.js",
-      "lib/background/test.js"]
+      "lib/utilities.js",
+      "lib/uri.js",
+      "lib/url-rewriting.js",
+      "lib/model.js",
+      "lib/content-filters.js",
+      "lib/sanitize.js",
+      "lib/trimming.js",
+      "lib/xml2json.js",
+      "lib/polling.js",
+      "lib/subscriptions.js",
+      "lib/background.js"]
   },
 
   "options_page": "options.html",
 
   "permissions": [
     "alarms",
-    "background",
     "http://*/*",
     "https://*/*",
-    "notifications",
     "unlimitedStorage"
+  ],
+  
+  "optional_permissions": [
+    "background",
+    "idle",
+    "notifications"
   ],
 
   "content_security_policy":

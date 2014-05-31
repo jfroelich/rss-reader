@@ -19,10 +19,23 @@
 <link rel="stylesheet" href="/css/options/url-rewriting.css"/>
 <link rel="stylesheet" href="/css/options/import-export.css"/>
 <link rel="stylesheet" href="/css/options/about.css"/>
-<script type="text/javascript" src="/lib/utils.js"></script>
+
+<script type="text/javascript" src="/lib/utilities.js"></script>
 <script type="text/javascript" src="/lib/fx.js"></script>
 <script type="text/javascript" src="/lib/stylize.js"></script>
+<script type="text/javascript" src="/lib/opml.js"></script>
+<script type="text/javascript" src="/lib/feeds-importer.js"></script>
+<script type="text/javascript" src="/lib/content-filters.js"></script>
+<script type="text/javascript" src="/lib/subscriptions.js"></script>
+<script type="text/javascript" src="/lib/xml2json.js"></script>
+<script type="text/javascript" src="/lib/sanitize.js"></script>
+<script type="text/javascript" src="/lib/url-rewriting.js"></script>
+<script type="text/javascript" src="/lib/google-feeds.js"></script>
+<script type="text/javascript" src="/lib/model.js"></script>
+<script type="text/javascript" src="/lib/trimming.js"></script>
+<script type="text/javascript" src="/lib/uri.js"></script>
 <script type="text/javascript" src="/lib/options.js"></script>
+
 </head>
 <body>
 
@@ -44,33 +57,46 @@
 </td><td id="section-layout-container">
 
 <div id="section-subscriptions" class="options_section">
-<h1>Subscriptions</h1>
+<h1>Subscriptions <button id="button-import-opml">Import OPML file</button>
+		<button id="button-export-opml">Export OPML file</button></h1>
 <p id="nosubscriptions" class="option-text">No subscriptions</p>
 <ul id="feedlist"></ul>
 </div>
 
 <div id="section-general-settings" class="options_section">
 <h1>General settings</h1>
-
 <table id="general-settings-table">
 <tr>
-	<td colspan="2">
+	<td colspan="2" class="option-text">
 		<input type="checkbox" id="enable-subscription-preview"> Preview articles before subscribing
 	</td>
 </tr>
 <tr>
-	<td colspan="2">
-		<input type="checkbox"> Enable Chrome notifications
+	<td colspan="2" class="option-text">
+		<input type="checkbox" id="enable-notifications"> Enable notifications
 	</td>
 </tr>
 <tr>
-	<td nowrap>Show this many articles initially:</td>
-	<td width="80%">
-		<select>
-		<option>10</option>
-		<option>20</option>
-		<option>50</option>
-		</select>
+	<td colspan="2" class="option-text">
+		<input type="checkbox" id="enable-background"> Permit this extension to check for 
+		updates in the background if the option <em>Continue running background apps when 
+		Google Chrome is closed</em> is enabled in Chrome's advanced settings.
+	</td>
+</tr>
+<tr>
+	<td colspan="2" class="option-text">
+		<input type="checkbox" id="enable-content-filters"> Enable content filters
+	</td>
+</tr>
+<tr>
+	<td colspan="2" class="option-text">
+		<input type="checkbox" id="rewriting-enable"> Enable URL rewriting
+	</td>
+</tr>
+
+<tr>
+	<td colspan="2">
+		<h2 style="margin-top:30px">Settings below are not yet implemented</h2>
 	</td>
 </tr>
 
@@ -92,11 +118,6 @@
 		<option>Show a link to open embedded content in a new tab</option>
 		<option>Ask before showing embedded content</option>
 		</select>
-	</td>
-</tr>
-<tr>
-	<td colspan="2">
-		<h2 style="margin-top:30px">Check for updates settings</h2>
 	</td>
 </tr>
 <tr>
@@ -150,33 +171,7 @@
 </tr>
 <tr>
 	<td colspan="2">
-		<h2 style="margin-top:30px">Import/export</h2>
-	</td>
-</tr>
-<tr>
-	<td colspan="2">
-		<button id="button-import-opml">Import OPML file</button>
-		<button id="button-export-opml">Export OPML file</button>
-	</td>
-</tr>
-<tr>
-	<td colspan="2">
-		<h2 style="margin-top:30px">Advanced settings</h2>
-	</td>
-</tr>
-<tr>
-	<td colspan="2">
-		<p class="option-text"><input type="checkbox" id="enable-content-filters"> Enable custom content filters</p>
-	</td>
-</tr>
-<tr>
-	<td colspan="2">
-		<p class="option-text"><input type="checkbox" id="rewriting-enable"> Enable URL rewriting</p>
-	</td>
-</tr>
-<tr>
-	<td colspan="2">
-		<p class="option-text"><input type="checkbox" id="enable-prefresh"> After a substantial area of an 
+		<p class="option-text"><input type="checkbox" id="enable-prefetch"> After a substantial area of an 
 		article is visible on the screen for a few moments, ask Google Chrome to preload the original 
 		article in the background, so that if I decide to view the full article, it opens more quickly.</p>
 	</td>
@@ -322,13 +317,8 @@
 		<td class="option-text">Background image:</td>
 		<td colspan="2"><select id="entry-background-image"></select></td>
 	</tr>
-	<!--<tr>
-		<td class="option-text">Background color:</td>
-		<td><input type="text" id="entry-background-color"></td>
-		<td class="option-text">Examples: red, green, blue, #cccccc, #FFFFFF, rgb(255,255,255,0.5)</td>
-	</tr>-->
 	<tr>
-		<td class="option-text">Background color (TEST):</td>
+		<td class="option-text">Background color:</td>
 		<td colspan="2"><input type="color" id="entry-background-color" placeholder="#ffffff"></td>
 	</tr>
 	<tr>
@@ -384,7 +374,7 @@
 </div>
 
 <div id="section-content-filters" class="options_section">
-<h1>Manage content filters</h1>
+<h1>Content filters</h1>
 <p class="option-text" style="border-bottom:1px dotted #cccccc;padding-bottom:6px;">
 Tag name: <input type="text" id="create-filter-tag-name">
 Attribute name: <input type="text" id="create-filter-attribute-name">
@@ -447,9 +437,6 @@ Match: <input type="text" id="create-filter-attribute-value-match">
 	<p class="option-text">Version: <span id="extension-version"></span></p>
 	<p class="option-text">Source code: <a href="https://github.com/jfroelich/rss-reader" target="blank" id="extension-homepage"></a></p>
 	<p class="option-text">License information, including notice of use of custom fonts, is available in the LICENSE file on GitHub.</p>
-	<!--<h2>Storage information</h2>
-	<p class="option-text">Used: <span id="storage-used"></span></p>
-	<p class="option-text">Remaining: <span id="storage-remaining"></span></p>-->
 </div>
 </td></tr></table>
 </body>
