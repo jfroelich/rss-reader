@@ -37,9 +37,8 @@
 <li id="mi-embeds" section="section-embeds">Approved embeds</li>
 <li id="mi-content-filters" section="section-content-filters">Content filters</li>
 <li id="mi-rewriting" section="section-url-rewriting">URL Rewriting</li>
-<li id="mi-view-help" section="divhelp">Help</li>
 <li id="mi-view-about" section="divabout">About</li>
-<li id="mi-feed-details" section="section-feed-details" style="display:none;">feed details placeholder</li>
+<li id="mi-feed-details" section="section-feed-details" style="display:none;">hidden feed details placeholder</li>
 </ul>
 
 </td><td id="section-layout-container">
@@ -56,7 +55,7 @@
 <table id="general-settings-table">
 <tr>
 	<td colspan="2">
-		<input type="checkbox" checked> Preview articles before subscribing
+		<input type="checkbox" id="enable-subscription-preview"> Preview articles before subscribing
 	</td>
 </tr>
 <tr>
@@ -285,16 +284,23 @@
 
 <div id="section-add-subscription" class="options_section">
 	<h1>Add a subscription</h1>
-	<p class="option-text">Enter a feed location 
-	(e.g. <span style="color:#888888;">http://www.website.com/feed.rss</span>) or a 
-	search query (e.g. <span style="color:#888888;">&quot;grumpy cats&quot;</span>).</p>
 	<form id="subscription-form">
-		<input type="text" id="subscribe-discover-query">
-		<input type="submit" value="Subscribe or Search">
+		<input type="search" id="subscribe-discover-query" placeholder="e.g http://example.com/feed.rss or &quot;grumpy cats&quot;" required>
+		<input type="submit" value="GO">
 	</form>
 	<ul id="discover-results-list"></ul>
 	<p id="discover-no-results" class="option-text">No results matched your query.</p>
-	<p id="discover-in-progress" class="option-text">Search in progress.. please wait (a maximum of 5 seconds).</p>
+	<p id="discover-in-progress" class="option-text">
+	<progress style="width:200px">Searching</progress>
+	</p>
+	<div id="subscription-preview">
+		<progress id="subscription-preview-load-progress"></progress>
+		<p>
+			<button id="subscription-preview-continue">Subscribe</button>
+			<span id="subscription-preview-title"></span>
+		</p>
+		<ul id="subscription-preview-entries"></ul>
+	</div>
 </div>
 
 <div id="section-display-settings" class="options_section">
@@ -316,10 +322,14 @@
 		<td class="option-text">Background image:</td>
 		<td colspan="2"><select id="entry-background-image"></select></td>
 	</tr>
-	<tr>
+	<!--<tr>
 		<td class="option-text">Background color:</td>
 		<td><input type="text" id="entry-background-color"></td>
 		<td class="option-text">Examples: red, green, blue, #cccccc, #FFFFFF, rgb(255,255,255,0.5)</td>
+	</tr>-->
+	<tr>
+		<td class="option-text">Background color (TEST):</td>
+		<td colspan="2"><input type="color" id="entry-background-color" placeholder="#ffffff"></td>
 	</tr>
 	<tr>
 		<td class="option-text">Header Font:</td>
@@ -437,13 +447,10 @@ Match: <input type="text" id="create-filter-attribute-value-match">
 	<p class="option-text">Version: <span id="extension-version"></span></p>
 	<p class="option-text">Source code: <a href="https://github.com/jfroelich/rss-reader" target="blank" id="extension-homepage"></a></p>
 	<p class="option-text">License information, including notice of use of custom fonts, is available in the LICENSE file on GitHub.</p>
+	<!--<h2>Storage information</h2>
+	<p class="option-text">Used: <span id="storage-used"></span></p>
+	<p class="option-text">Remaining: <span id="storage-remaining"></span></p>-->
 </div>
-<div id="divhelp" class="options_section">
-	<h1>Help</h1>
-<p>I have not created any help material yet.</p>
-</div>
-
-
 </td></tr></table>
 </body>
 </html>
