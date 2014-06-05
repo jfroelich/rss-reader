@@ -6,11 +6,27 @@ div.entry a {
   text-decoration:none;
   margin-left: 1px;
   margin-right: 3px;
+  color: rgba(0, 84, 129, 0.84);
 }
 
 div.entry img {
-  border:0px;
+  border:1px solid #777777;
   max-width:100%;
+}
+
+div.entry p {
+  margin-top:0px;
+  
+}
+
+div.entry h1, div.entry h2, div.entry h3 {
+  border-top:1px dotted #cccccc;
+  -webkit-column-span: all;
+}
+
+/* See if this helps layout for things like Google news */
+div.entry table {
+  -webkit-column-span: all;
 }
 
 .entrysource {
