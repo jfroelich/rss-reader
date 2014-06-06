@@ -19,24 +19,22 @@
 <link rel="stylesheet" href="/css/options/url-rewriting.css"/>
 <link rel="stylesheet" href="/css/options/import-export.css"/>
 <link rel="stylesheet" href="/css/options/about.css"/>
-
 <script type="text/javascript" src="/lib/utilities.js"></script>
 <script type="text/javascript" src="/lib/fx.js"></script>
 <script type="text/javascript" src="/lib/stylize.js"></script>
 <script type="text/javascript" src="/lib/opml.js"></script>
 <script type="text/javascript" src="/lib/feeds-importer.js"></script>
 <script type="text/javascript" src="/lib/content-filters.js"></script>
+<script type="text/javascript" src="/lib/feed-http-request.js"></script>
 <script type="text/javascript" src="/lib/subscriptions.js"></script>
 <script type="text/javascript" src="/lib/xml2json.js"></script>
 <script type="text/javascript" src="/lib/sanitize.js"></script>
-<script type="text/javascript" src="/lib/url-rewriting.js"></script>
 <script type="text/javascript" src="/lib/google-feeds.js"></script>
 <script type="text/javascript" src="/lib/model.js"></script>
 <script type="text/javascript" src="/lib/trimming.js"></script>
 <script type="text/javascript" src="/lib/uri.js"></script>
 <script type="text/javascript" src="/lib/options.js"></script>
 <script type="text/javascript" src="/lib/thumbnails.js"></script>
-
 </head>
 <body>
 
@@ -50,7 +48,6 @@
 <li id="mi-display-settings" section="section-display-settings">Display settings</li>
 <li id="mi-embeds" section="section-embeds">Approved embeds</li>
 <li id="mi-content-filters" section="section-content-filters">Content filters</li>
-<li id="mi-rewriting" section="section-url-rewriting">URL Rewriting</li>
 <li id="mi-view-about" section="divabout">About</li>
 <li id="mi-feed-details" section="section-feed-details" style="display:none;">hidden feed details placeholder</li>
 </ul>
@@ -400,40 +397,6 @@ Match: <input type="text" id="create-filter-attribute-value-match">
 <ul id="raw-content-holder-hidden"></ul>
 
 
-</div>
-
-<div id="section-url-rewriting" class="options_section">
-<h1>URL Rewriting</h1>
-<table id="rewriting-create-table">
-<tr>
-	<td class="option-text" valign="top">Base URL:</td>
-	<td valign="top"><input id="rewriting-create-path"></td>
-	<td class="option-text">Required. The start of the URL. For example, 
-	in the url http://www.example.com/thengoto?nexturl=http://www.next-website.com/page.html, the 
-	base URL is http://www.example.com/thengoto (everything up to the ?). For example, in 
-	http://www.example.com/thengoto/http://www.next-website.com/page.html, the base URL is 
-	http://www.example.com/thengoto (everything up to the / after thengoto).</td>
-</tr>
-<tr>
-	<td class="option-text" valign="top">Parameter:</td>
-	<td valign="top"><input id="rewriting-create-parameter"></td>
-	<td class="option-text">Optional. The name of the parameter. For example,
-	in http://www.example.com/thengoto?nexturl=http://www.next-website.com/page.html, 
-	the parameter of interest is named nexturl. For example, in 
-	http://www.example.com/thengoto/http://www.next-website.com/page.html, there is no 
-	parameter of interest, so leave the Parameter field blank.</td>
-</tr>
-<tr>
-	<td colspan="3"><button id="rewriting-create">Create</button></td>
-</tr>
-</table>
-<h2>Test rules</h2>
-<p class="option-text">Input:
-<input id="rewriting-test-input">
-<button id="rewriting-test">Test</button> </p>
-<p>Output: <span id="rewriting-test-output"></span></p>
-<h2>URL Rewriting rules</h2>
-<ul id="rewrite-rules-list"></ul>
 </div>
 
 <div id="divabout" class="options_section">

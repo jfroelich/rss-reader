@@ -14,17 +14,17 @@
   "background": {
     "persistent": false,
     "scripts": [
-      "lib/utilities.js",
-      "lib/uri.js",
-      "lib/url-rewriting.js",
-      "lib/model.js",
-      "lib/content-filters.js",
-      "lib/sanitize.js",
-      "lib/trimming.js",
-      "lib/xml2json.js",
-      "lib/polling.js",
-      "lib/subscriptions.js",
-      "lib/background.js"]
+      "/lib/utilities.js",
+      "/lib/uri.js",
+      "/lib/model.js",
+      "/lib/content-filters.js",
+      "/lib/sanitize.js",
+      "/lib/trimming.js",
+      "/lib/xml2json.js",
+      "/lib/polling.js",
+      "/lib/feed-http-request.js",
+      "/lib/subscriptions.js",
+      "/lib/background.js"]
   },
 
   "options_page": "options.html",
