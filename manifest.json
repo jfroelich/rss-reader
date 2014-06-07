@@ -25,7 +25,8 @@
       "/lib/feed-http-request.js",
       "/lib/subscriptions.js",
       "/lib/feed-update.js",
-      "/lib/background.js"]
+      "/lib/background.js",
+      "/lib/test.js"]
   },
 
   "options_page": "options.html",

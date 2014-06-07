@@ -19,15 +19,23 @@ div.entry p {
   
 }
 
+/* 
+While debugging sanitizer, columns are not being used in 
+stylize so I want to avoid page breaks here for now in the next
+2 rules
+*/
+
+/*
 div.entry h1, div.entry h2, div.entry h3 {
   border-top:1px dotted #cccccc;
   -webkit-column-span: all;
-}
+}*/
 
 /* See if this helps layout for things like Google news */
+/*
 div.entry table {
   -webkit-column-span: all;
-}
+}*/
 
 .entrysource {
   display: block;
