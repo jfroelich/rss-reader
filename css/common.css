@@ -55,8 +55,33 @@ div.entry table {
 }
 
 @font-face {
+  /* Free from http://www.fontex.org/download/carto-gothic-std.otf */
+  font-family: CartoGothicStd;
+  src: url('/font/CartoGothicStd-Book.otf') format('opentype');
+}
+
+@font-face {
+/*
+http://jaydorsey.com/free-traffic-font/
+Clearly Different is released under the SIL Open Font License (OFL) 1.1.
+Based on http://mutcd.fhwa.dot.gov/pdfs/clearviewspacingia5.pdf
+*/
+  font-family:Clearly Different;
+  src: url('/font/ClearlyDifferent1WNegativeContrast-Regular.otf') format('opentype');
+}
+
+@font-face {
   font-family: Open Sans Regular;
   src: url('/font/OpenSans-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: PathwayGothicOne;
+  src: url('/font/PathwayGothicOne-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: PlayfairDisplaySC;
+  src: url('/font/PlayfairDisplaySC-Regular.ttf');
 }
 
 @font-face {
