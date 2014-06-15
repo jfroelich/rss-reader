@@ -71,6 +71,11 @@ Based on http://mutcd.fhwa.dot.gov/pdfs/clearviewspacingia5.pdf
 }
 
 @font-face {
+  font-family: FeltTip;
+  src: url('/font/FontPalace-Free-Felt-Tip-Roman.ttf') format('truetype');
+}
+
+@font-face {
   font-family: Open Sans Regular;
   src: url('/font/OpenSans-Regular.ttf') format('truetype');
 }
