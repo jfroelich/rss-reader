@@ -51,13 +51,13 @@ div.entry table {
 
 @font-face {
   font-family: ArchivoNarrow-Regular;
-  src: url('/font/ArchivoNarrow-Regular.ttf') format('truetype');
+  src: url('ArchivoNarrow-Regular.ttf') format('truetype');
 }
 
 @font-face {
   /* Free from http://www.fontex.org/download/carto-gothic-std.otf */
   font-family: CartoGothicStd;
-  src: url('/font/CartoGothicStd-Book.otf') format('opentype');
+  src: url('CartoGothicStd-Book.otf') format('opentype');
 }
 
 @font-face {
@@ -67,26 +67,26 @@ Clearly Different is released under the SIL Open Font License (OFL) 1.1.
 Based on http://mutcd.fhwa.dot.gov/pdfs/clearviewspacingia5.pdf
 */
   font-family:Clearly Different;
-  src: url('/font/ClearlyDifferent1WNegativeContrast-Regular.otf') format('opentype');
+  src: url('ClearlyDifferent1WNegativeContrast-Regular.otf') format('opentype');
 }
 
 @font-face {
   font-family: FeltTip;
-  src: url('/font/FontPalace-Free-Felt-Tip-Roman.ttf') format('truetype');
+  src: url('FontPalace-Free-Felt-Tip-Roman.ttf') format('truetype');
 }
 
 @font-face {
   font-family: Open Sans Regular;
-  src: url('/font/OpenSans-Regular.ttf') format('truetype');
+  src: url('OpenSans-Regular.ttf') format('truetype');
 }
 
 @font-face {
   font-family: PathwayGothicOne;
-  src: url('/font/PathwayGothicOne-Regular.ttf') format('truetype');
+  src: url('PathwayGothicOne-Regular.ttf') format('truetype');
 }
 @font-face {
   font-family: PlayfairDisplaySC;
-  src: url('/font/PlayfairDisplaySC-Regular.ttf');
+  src: url('PlayfairDisplaySC-Regular.ttf');
 }
 
 @font-face {
@@ -96,5 +96,5 @@ Based on http://mutcd.fhwa.dot.gov/pdfs/clearviewspacingia5.pdf
 
 @font-face {
   font-family: News Cycle;
-  src: url('/font/NewsCycle-Regular.ttf') format('truetype');
+  src: url('NewsCycle-Regular.ttf') format('truetype');
 }

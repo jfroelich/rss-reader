@@ -825,7 +825,8 @@ opt.init = function(event) {
   stylize.BACKGROUND_IMAGES.forEach(function(path) {
     option = document.createElement('option');
     option.value = path;
-    option.textContent = path.substring(15);
+    //option.textContent = path.substring(15);
+    option.textContent = path;
     option.selected = localStorage.BACKGROUND_IMAGE == path;
     $('#entry-background-image').appendChild(option);
   });
@@ -901,32 +902,6 @@ opt.init = function(event) {
   };
 
   $('#create-filter-action').onclick = opt.onCreateContentFilterClick;
-  $('#content-filter-view-original').onclick = function() {
-    $('#raw-content-viewer').style.display = 'block';
-    $('#filtered-content-viewer').style.display='none';
-  };
-  $('#content-filter-view-filtered').onclick = function() {
-    $('#raw-content-viewer').style.display = 'none';
-    $('#filtered-content-viewer').style.display='block';
-  };
-
-  option = document.createElement('option');
-  option.value = '';// NIT: This must be defined, right?
-  option.textContent = 'Select a feed URL';
-  $('#raw-browser-select-feed').appendChild(option);
-
-  model.connect(function(db) {
-    model.forEachFeed(db, function(feed) {
-      var option = document.createElement('option');
-      option.value = feed.url;
-      option.title = feed.title;
-      option.textContent = util.truncate(feed.title, 30);
-      $('#raw-browser-select-feed').appendChild(option);
-    }, null, true);
-  });
-
-  $('#raw-browser-select-feed').onchange = opt.onContentFiltersPreviewSelectFeed;
-  $('#raw-select-entry').onchange = opt.onContentFiltersPreviewSelectEntry;  
 
   contentFiltering.loadRules().forEach(function(rule){
     opt.appendContentFilterRule($('#content-filters-list'), rule);

@@ -7,26 +7,26 @@
   "description": "A simple news reader that likes to eat snakes",
 
   "browser_action": {
-    "default_icon": "/img/rss_icon_trans.png",
+    "default_icon": "rss_icon_trans.png",
     "default_title": "Honey Badger News Reader"
   },
 
   "background": {
     "persistent": false,
     "scripts": [
-      "/lib/utilities.js",
-      "/lib/uri.js",
-      "/lib/model.js",
-      "/lib/content-filters.js",
-      "/lib/sanitize.js",
-      "/lib/trimming.js",
-      "/lib/xml2json.js",
-      "/lib/polling.js",
-      "/lib/feed-http-request.js",
-      "/lib/subscriptions.js",
-      "/lib/feed-update.js",
-      "/lib/background.js",
-      "/lib/test.js"]
+      "utilities.js",
+      "uri.js",
+      "model.js",
+      "content-filters.js",
+      "sanitize.js",
+      "trimming.js",
+      "xml2json.js",
+      "polling.js",
+      "feed-http-request.js",
+      "subscriptions.js",
+      "feed-update.js",
+      "background.js",
+      "test.js"]
   },
 
   "options_page": "options.html",

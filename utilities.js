@@ -33,7 +33,7 @@ util.notify = function(message) {
   var options = {
     type:'basic',
     title: manifest.name || 'Untitled',
-    iconUrl:'/img/rss_icon_trans.gif',
+    iconUrl:'rss_icon_trans.gif',
     message:message
   };
 
@@ -221,7 +221,7 @@ util.parseXML = function(str) {
 
 util.getFavIconURL = function(url) {
   return url ? 'http://www.google.com/s2/favicons?domain_url=' +
-    encodeURIComponent(url) : '/img/rss_icon_trans.gif';
+    encodeURIComponent(url) : 'rss_icon_trans.gif';
 };
 
 // Generate a simple hashcode from a character array
