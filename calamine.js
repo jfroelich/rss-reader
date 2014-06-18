@@ -3,10 +3,17 @@
  *
  * A simple module for removing boilerplate from web pages.
  *
- * TODO: support for iframes and embed objects
- * TODO: group some the functions that can occur in the same iteration 
- * together, like the feature extraction function. If i can rework the 
- * sibling bias I can also merge it into scoring.
+ * TODO: support for iframes and embed objects and audio/video
+ * TODO: refactor to use block generation. Group lis together. Group
+ * dds together, etc.
+ * TODO: refactor to use block weighting. The return signature is simply
+ * those blocks above a minimum threshold, which could be based on a 
+ * percentage of blocks to return value. But this time use the element
+ * weighting technique. Consider treating divs as inline and using 
+ * only certain block parents (e.g. look for ul/ol/p/img/iframe as the only 
+ * allowable block segments).
+ * TODO: do not necessarily exclude textnodes that are immediate children of body.
+ * All top level text should probably be converted to paragraphs before scoring.
  * TODO: include other proximate or high scoring elements outside of the 
  * best element, then rescan and filter out any extreme boilerplate 
  * such as certain lists or ads. When building the frag, consider removing
@@ -18,14 +25,15 @@
  * pick the blocks to return. I would have to incorporate some better
  * all blocks in this element type of biasing that promotes blocks like
  * they do now, but also get rid of upward propagation.
- * The fundamental problem is that I am not obtaining "all" of the desired
+ * NOTE: this wouldn't simplify the BR transform, that is still screwed up
+ * NOTE: The fundamental problem is that I am not obtaining "all" of the desired
  * elements from the age because sometimes they are not all in the same block.
  * And when I do get the parent element right, sometimes I still end up 
  * getting alot of nested boilerplate. At that point I would need to filter
  * the boilerplate, at which point I am nearly back to block score.
  * TODO: performance testing, memory testing
  */
-var calamine = (function(exports) {
+var calamine = (function() {
 'use strict';
 
 var filter = Array.prototype.filter,
@@ -57,7 +65,8 @@ TAG_NAME_BIAS = {
   a:-1, address:-3, article:100, aside:-200, blockquote:3, button:-100, dd:-3,
   div:20, dl:-10, dt:-3, figcaption: 10, figure: 10, footer:-20, font:0, form: -20, 
   header: -5, h1: -2, h2: -2, h3: -2, h4: -2, h5: -2, h6: -2, li: -20, nav: -50,
-  ol:-20, p:10, pre:3, section:10, small:-1,td:3, time:-3, tr:1, th:-3, ul:-20},
+  ol:-20, p:10, pre:3, section:10, small:-1,td:3, time:-3, tr:1, th:-3, ul:-20
+},
 
 ID_CLASS_BIAS = {
   about: -35, 'ad-': -100, ads: -50, advert: -100, article: 100,
@@ -87,31 +96,36 @@ ID_CLASS_VALUES = ID_CLASS_KEYS.map(function(key) {
 DESCENDANT_BIAS = {
   p:5, h1:1, h2:1, h3:1, h4:1, h5:1, h6:1, blockquote:3,
   sub:2, sup:2, pre:2, code:2, time:2, span:1, i:1, em:1,
-  strong:1, b:1},
+  strong:1, b:1
+},
 
 /** These ancestor elements bias all descendants. */
 ANCESTOR_BIAS = {
   nav:-20, div:1, header:-5, table:-2, ol:-5, ul:-5, li:-3,
-  dl:-5, p:10, blockquote:10, pre:10, code:10};
+  dl:-5, p:10, blockquote:10, pre:10, code:10
+};
 
 /** public API */
 return {
   transform: transformDocument
-};
+}
 
 /**
- * Returns coherent element(s) of an HTMLDocument object
+ * Returns a DocumentFragment containing 
+ * the content element(s) of an HTMLDocument object
  */
 function transformDocument(doc, options) {
   options = options || {};
 
   eachNode(doc.body, NodeFilter.SHOW_COMMENT, removeNode);
   each(doc.body.querySelectorAll(SELECTOR_REMOVABLE), removeNode);
+
+  // Always unwrap noscript elements pre processing. This must happen before
+  // checking visibility.
+  each(doc.body.querySelectorAll('noscript'), unwrapElement);
+
   each(doc.body.querySelectorAll('*'), filterInvisibleElement);
   each(doc.body.getElementsByTagName('img'), filter1DImage);
-
-  // Always unwrap noscript pre processing
-  each(doc.body.querySelectorAll('noscript'), unwrapElement);
 
   // BUGGY: in process of fixing
   // each(doc.body.querySelectorAll(SELECTOR_INLINE_SEPARATOR), transformRuleElement);
@@ -166,15 +180,23 @@ function transformDocument(doc, options) {
   return results;
 }
 
+/**
+ * Collects some basic textual properties of the node
+ * and stashes them in the native object. Propagates the 
+ * properties up the DOM to doc.body.
+ */
 function deriveTextFeatures(textNode) {
 
-  var root = textNode.ownerDocument.body, parent = textNode.parentElement;
-  parent.copyrightCount = /[©]|&copy;|&#169;/i.test(textNode.nodeValue) ? 1 : 0;
-  parent.dotCount = countChar(textNode.nodeValue,'•');
-  parent.pipeCount = countChar(textNode.nodeValue,'|');
+  var root = textNode.ownerDocument.body, 
+    parent = textNode.parentElement, 
+    value = textNode.nodeValue,
+    charCount = 0;
 
-  var charCount = textNode.nodeValue.length - 
-    textNode.nodeValue.split(/[\s\.]/g).length + 1;
+  // TODO: this attribute should be discrete not continuous
+  parent.copyrightCount = /[\u00a9]|&copy;|&#169;/i.test(value) ? 1 : 0;
+  parent.dotCount = countChar(value,'\u2022');
+  parent.pipeCount = countChar(value,'|');
+  charCount = value.length - value.split(/[\s\.]/g).length + 1;
 
   while(parent != root) {
     parent.charCount = (parent.charCount || 0) + charCount;
@@ -194,19 +216,22 @@ function deriveAnchorFeatures(anchor) {
 }
 
 function deriveAttributeTextFeatures(element) {
-  element.attributeText = ((element.getAttribute('id') || '') + ' ' + 
+
+  var text = ((element.getAttribute('id') || '') + ' ' + 
     (element.getAttribute('class') || '')).trim().toLowerCase();
-  if(!element.attributeText) {
-    delete element.attributeText;
+
+  if(text) {
+    element.attributeText = text;
   }
 }
 
 /**
- * Apply our 'model' to an element. This is similar to a simple 
- * regression model. We generate a 'score' that is the sum of several
- * terms from the right hand side of a basic formula.
+ * Apply our 'model' to an element. We generate a 'score' that is the 
+ * sum of several terms.
  */
 function scoreElement(element) {
+
+  var root = element.ownerDocument.body;
 
   element.score = element.score || 0;
 
@@ -274,7 +299,7 @@ function scoreElement(element) {
       element.score += 30;
 
       // Reward its parent
-      if(element.parentElement && element.parentElement != element.ownerDocument.body) {
+      if(element.parentElement && element.parentElement != root) {
         element.parentElement.score = (element.parentElement.score || 0) + 10;
       }
 
@@ -291,10 +316,8 @@ function scoreElement(element) {
         var firstFigCaptionText = firstFigCaption.textContent;
         if(firstFigCaptionText) firstFigCaptionText = firstFigCaptionText.trim();
         if(firstFigCaptionText.length) {
-          console.log('Rewarding %s for caption text', element.outerHTML);
-          // This image had a caption associated with it. Reward it.
           element.score += 30;
-          if(element.parentElement && element.parentElement != element.ownerDocument.body) {
+          if(element.parentElement && element.parentElement != root) {
             element.parentElement.score = (element.parentElement.score || 0) + 10;
           }
         }
@@ -314,53 +337,53 @@ function scoreElement(element) {
       // height, fetched those images, and set width or height.
       element.imageBranch = 1;
       element.score += 100;
-      if(element.parentElement && element.parentElement != element.ownerDocument.body) {
+      if(element.parentElement && element.parentElement != root) {
         element.parentElement.score = (element.parentElement.score || 0) + 100;
       }
-    } else if(area > 100000) {
+    } else if(area > 1E5) {
       element.imageBranch = 2;
       element.score += 150;
-      if(element.parentElement && element.parentElement != element.ownerDocument.body) {
+      if(element.parentElement && element.parentElement != root) {
         element.parentElement.score = (element.parentElement.score || 0) + 150;
       }
     } else if(area > 50000) {
       element.imageBranch = 3;
       element.score += 150;
-      if(element.parentElement && element.parentElement != element.ownerDocument.body) {
+      if(element.parentElement && element.parentElement != root) {
         element.parentElement.score = (element.parentElement.score || 0) + 150;
       }
     } else if(area > 10000) {
       element.imageBranch = 4;
       element.score += 70;
-      if(element.parentElement && element.parentElement != element.ownerDocument.body) {
+      if(element.parentElement && element.parentElement != root) {
         element.parentElement.score = (element.parentElement.score || 0) + 70;
       }
     } else if(area > 3000) {
       element.imageBranch = 5;
       element.score += 30;
-      if(element.parentElement && element.parentElement != element.ownerDocument.body) {
+      if(element.parentElement && element.parentElement != root) {
         element.parentElement.score = (element.parentElement.score || 0) + 10;
       }
     } else if(area > 500) {
       element.imageBranch = 6;
       element.score += 10;
-      if(element.parentElement && element.parentElement != element.ownerDocument.body) {
+      if(element.parentElement && element.parentElement != root) {
         element.parentElement.score = (element.parentElement.score || 0) + 10;
       }
     } else {
       element.imageBranch = 7;
       element.score -= 10;
-      if(element.parentElement && element.parentElement != element.ownerDocument.body) {
+      if(element.parentElement && element.parentElement != root) {
         element.parentElement.score = (element.parentElement.score || 0) - 10;
       }
     } 
   }
 
   element.score += element.siblingCount ? 
-    (2 - 2 * element.previousSiblingCount / element.siblingCount) : 0;
+    2 - 2 * element.previousSiblingCount / element.siblingCount : 0;
   element.score += element.siblingCount ? 
-    (2 - 2 * (Math.abs(element.previousSiblingCount - (element.siblingCount / 2) ) / 
-      (element.siblingCount / 2) ) ) : 0;
+    2 - 2 * (Math.abs(element.previousSiblingCount - (element.siblingCount / 2) ) / 
+      (element.siblingCount / 2) )  : 0;
 
   element.score += TAG_NAME_BIAS[element.localName] || 0;
 
@@ -379,43 +402,42 @@ function scoreElement(element) {
   element.score += -20 * (element.dotCount || 0);
   element.score += -10 * (element.pipeCount || 0);
 
-  // Bias all of the descendants of certain ancestor elements
   var ancestorBias = ANCESTOR_BIAS[element.localName];
-  if(isFinite(ancestorBias)) {
-    each(element.getElementsByTagName('*'), function(childElement) {
-      childElement.score = childElement.score || 0;
-      childElement.score += ancestorBias;
-    });
-  }
+  ancestorBias && each(element.getElementsByTagName('*'), function(childElement) {
+    childElement.score = (childElement.score || 0) + ancestorBias;
+  });
 
-  // Bias the immediate ancestor of certain elements
   var descendantBias = DESCENDANT_BIAS[element.localName];
-  if(descendantBias && element.parentElement != element.ownerDocument.body) {
-    element.parentElement.score = element.parentElement.score || 0;
-    element.parentElement.score += descendantBias;
+  if(descendantBias && element.parentElement != root) {
+    element.parentElement.score = (element.parentElement.score || 0) + descendantBias;
   }
 }
 
+/**
+ * Returns the area of an image, in pixels. If the image's dimensions are
+ * undefined, then returns undefined. If the image's dimensions are 
+ * greater than 800x600, then the area is clamped.
+ */
 function getImageArea(element) {
-  var width = element.width || element.getAttribute('width') || element.style.width;
-  var height = element.height || element.getAttribute('height') || element.style.height;
-  width = parseInt(width);
-  height = parseInt(height);
+  // TODO: use offsetWidth and offsetHeight instead?
+  if(isFinite(element.width) && isFinite(element.height)) {
+    var area = element.width * element.height;
 
-  if(isFinite(width) && isFinite(height)) {
-    var area = width * height;
-
+    // Clamp to 800x600
     if(area > 360000) {
       area = 360000;
     }
 
     return area;
   }
-
-  // Return a default approximate area
-  return NaN;
 }
 
+/**
+ * Cache a count of siblings and a count of prior siblings
+ *
+ * TODO: see if there is a better way to get a node's own index in 
+ * the childNodes property of the parent without calculating it ourself.
+ */
 function deriveSiblingFeatures(element) {
   element.siblingCount = element.parentElement.childElementCount - 1;
   element.previousSiblingCount = 0;
@@ -435,10 +457,13 @@ function deriveSiblingFeatures(element) {
  * Contiguous blocks should get promoted by virture of their 
  * context.
  *
- * TODO: consider refactoring to just bias the element itself
- * based on its siblings, instead of biasing the siblings. If we
- * are doing this while scoring then only previousSibling is 
- * available.
+ * TODO: instead of biasing the siblings based on the element, 
+ * bias the element itself based on its siblings. Rather, only
+ * bias the element itself based on its prior sibling. That way,
+ * we can bias while iterating more easily because we don't have to
+ * abide the requirement that nextSibling is scored. Then it is
+ * easy to incorporate this into the scoreElement function
+ * and deprecate this function.
  */
 function applySiblingBias(element) {
   var elementBias = element.score > 0 ? 5 : -5;
@@ -474,76 +499,81 @@ function getHigherScoringElement(previous, current) {
   return current.score > previous.score ? current : previous;
 }
 
+/**
+ * Sets some html attributes for debugging
+ */
 function exposeAttributes(element, options) {
-
-  if(options.SHOW_BRANCH && element.branch) {
-    element.setAttribute('branch', element.branch);
-  }
-
-  if(options.SHOW_ANCHOR_DENSITY && element.anchorDensity) {
+  options.SHOW_BRANCH && element.branch && element.setAttribute('branch', element.branch);
+  options.SHOW_ANCHOR_DENSITY && element.anchorDensity && 
     element.setAttribute('anchorDensity', element.anchorDensity.toFixed(2));
-  }
-
-  if(options.SHOW_CHAR_COUNT && element.charCount) {
-    element.setAttribute('charCount', element.charCount);  
-  }
-
-  if(options.SHOW_COPYRIGHT_COUNT && element.copyrightCount) {
+  options.SHOW_CHAR_COUNT && element.charCount && element.setAttribute('charCount', element.charCount);
+  options.SHOW_COPYRIGHT_COUNT && element.copyrightCount && 
     element.setAttribute('copyrightCount', element.copyrightCount);
-  }
-
-  if(options.SHOW_DOT_COUNT && element.dotCount) {
-    element.setAttribute('dotCount', element.dotCount);
-  }
-
-  if(options.SHOW_IMAGE_BRANCH && element.imageBranch) {
-    element.setAttribute('imageBranch', element.imageBranch);
-  }
-
-  if(options.SHOW_PIPE_COUNT && element.pipeCount) {
-    element.setAttribute('pipeCount', element.pipeCount);
-  }
-
-  if(options.SHOW_SCORE && element.score) {
-    element.setAttribute('score', element.score.toFixed(2));
-  }
+  options.SHOW_DOT_COUNT && element.dotCount && element.setAttribute('dotCount', element.dotCount);
+  options.SHOW_IMAGE_BRANCH && element.imageBranch && element.setAttribute('imageBranch', element.imageBranch);
+  options.SHOW_PIPE_COUNT && element.pipeCount && element.setAttribute('pipeCount', element.pipeCount);
+  options.SHOW_SCORE && element.score && element.setAttribute('score', element.score.toFixed(2));
 }
 
-/** Remove an element if it is not visible */
+/**
+ * Remove an element if it is not visible
+ *
+ * NOTE: this does not consider offscreen elements (e.g. left:-100%;right:-100%;)
+ * as invisible.
+ * NOTE: this does not consider dimensionless elements as invisible 
+ * (e.g. width:0px). Certain elements exhibit strange behaviors, like SPAN,
+ * that report no width/height, even when the element contains non-empty
+ * descendants. We cannot do anything about the native objects reporting
+ * 'incorrect' properties, so we cannot filter using this condition.
+ */
 function filterInvisibleElement(element) {
-  // The element is undefined if an ancestor was removed
+  // We have to check whether the element is defined because an ancestor of the element
+  // may have been removed in a prior iteration, in the case of nested invisible elements,
+  // and also because of iteration order, in that if this is called from getElementsByTagName,
+  // then in document order, the parent element comes before the child element, meaning that
+  // a hidden parent that is removed means the children should never be reached. But they 
+  // are reached for some reason, so we have to check.
   if(element && (element.style.display == 'none' || element.style.visibility == 'hidden' || 
       parseInt(element.style.opacity) === 0)) {
     element.remove();
   }
 }
 
-/** Remove a one-dimensional image */
+/**
+ * Remove a an image if it is 'one-dimensional'
+ *
+ * TODO: use offsetWidth and offsetHeight?
+ */
 function filter1DImage(element) {
   if(element && (element.width == 1 || element.height == 1)) {
     element.remove();
   }
 }
 
-/** Removes attributes */
+/**
+ * Removes attributes
+ *
+ * NOTE: using filter avoids the issue with removing while iterating.
+ * NOTE: attribute.ownerElement is deprecated so we no way of referencing
+ * the element unless we specify the forEach function here.
+ */
 function filterElementAttributes(element) {
-  // NOTE: filtering avoids the issue with removing while iterating
-  // NOTE: attribute.ownerElement is deprecated so we must create the 
-  // function every time.
   filter.call(element.attributes, isRemovableAttribute).forEach(function(attribute) {
       element.removeAttribute(attribute.name);
   });
 }
 
+/**
+ * Returns true if an attribute is removable. We only allow 
+ * href and src. All other attributes are removed.
+ */
 function isRemovableAttribute(attribute) {
   return attribute.name != 'href' && attribute.name != 'src';
 }
 
 /**
  * Replaces each occurrence of <br/> or <hr/> with <p></p>.
- * NOTE: per VIPs, HR should move remaining children to sibling
- * div of parent, whereas BR just replaced with P, which is 
- * more like node.splitText
+ * NOTES: this was never working correctly, under heavy construction
  */
 function transformRuleElement(element) { 
 
@@ -614,15 +644,33 @@ function transformRuleElement(element) {
   }*/
 }
 
+/**
+ * Marks the current element as whitespaceImportant and then
+ * marks all direct and indirect descendants as whiteSpace important.
+ * Propagating from the top down (cascading) allows us to quickly
+ * determine whether text is trimmable searching a text node's
+ * axis for the presence of a whitespaceImportant element.
+ */
 function cascadeWhitespaceImportant(element) {
   setWhitespaceImportant(element);
   each(element.getElementsByTagName('*'), setWhitespaceImportant);
 }
 
 function setWhitespaceImportant(element) {
-  element.whitespaceImportant = true;
+  element.whitespaceImportant = 1;
 }
 
+
+/**
+ * Trims a text node. If the text node is sandwiched between
+ * two inline elements, it is not trimmed. If the text node
+ * only follows an inline element, it is right trimmed. If 
+ * the text node only precedes an inline element, it is left
+ * trimmed. Otherwise, nodeValue is fully trimmed.
+ *
+ * Then, if nodeValue if falsy (undefined/empty string), 
+ * the node is removed.
+ */
 function trimAndMaybeRemoveTextNode(node) {
   if(!node.parentElement.whitespaceImportant) {
     if(isInlineElement(node.previousSibling)) {
@@ -639,35 +687,58 @@ function trimAndMaybeRemoveTextNode(node) {
     }
 
     if(!node.nodeValue) {
-      // CharacterData implements ChildNode
       node.remove();
     }
   }
 }
 
-/** get parent of element with side effect of removing the element */
+/** 
+ * Get parent of element with side effect of removing the element. This exists
+ * primarily because it is necessary to cache the reference to parentElement
+ * before removing the element. Once an element is removed it no longer 
+ * has a parentElement, unless it was an ancestor of the element that was 
+ * actually removed. But we know we are directly removing the element here and not 
+ * an ancestor, so caching the parentElement reference is sometimes necessary.
+ */
 function removeElementAndReturnParent(element) {
   var parentElement = element.parentElement;
   parentElement.removeChild(element);
   return parentElement;
 }
 
-/* Returns true if the element is fertile but childless */
+/**
+ * Returns true if the element is fertile but childless
+ */
 function isEmptyLikeElement(element) {
   return !element.firstChild && !element.matches(SELECTOR_LEAFY);
 }
 
+/**
+ * TODO: Using stack is unecessary. We can instead just find 
+ * the parent to remove. No need for an array, stack, etc.
+ * That was per element. Here we have an array of parents to 
+ * remove, so a stack makes a bit of sense. What I really mean
+ * is that removes should happen only once on the shallowest
+ * parent. If this were on a live doc we would be causing 
+ * several unecessary reflows. Nevertheless I know we are 
+ * not on a live doc so the inefficiency of this is not 
+ * really punishing, and at the moment, the behavior is 
+ * accurate.
+ *
+ * In other words, in the case of <div><p></p><p></p></div>,
+ * there are 3 remove operations, when only 1 needed to occur.
+ */
 function pruneEmptyElements(doc) {
 
   // Use our own filter here because :empty is bunk
-  var root = doc.body, parent, grandParent, safeguard = 0,
-  stack = filter.call(
-    doc.body.getElementsByTagName('*'), isEmptyLikeElement).map(
-      removeElementAndReturnParent);
+  var root = doc.body, parent, grandParent,
+    stack = filter.call(
+      doc.body.getElementsByTagName('*'), isEmptyLikeElement).map(
+        removeElementAndReturnParent);
 
   // The removal of any element could leave its parent empty, meaning
   // we must remove the parent too (unless its doc.body).
-  while(stack.length && safeguard++ < 10000) {
+  while(stack.length) {
     parent = stack.pop();
     if(!parent.firstChild) {
       grandParent = parent.parentElement;
@@ -680,21 +751,40 @@ function pruneEmptyElements(doc) {
   }
 }
 
+/**
+ * Returns true if the node is a defined element that 
+ * is considered inline. Essentially elements by default behave 
+ * according to either "display: block" or "display: inline". This can be changed
+ * by CSS but calamine ignores that fact and returns to the most basic
+ * assumptions about the natural behavior based on the element's type. In other words,
+ * <p> is a block, but <span> is inline.
+ *
+ * Note: divs are technically inline, but are frequently used instead as blocks, so
+ * divs are not considered inline.
+ */
 function isInlineElement(node) {
   return node && node.nodeType == Node.ELEMENT_NODE && node.matches(SELECTOR_INLINE);
 }
 
+/**
+ * Returns the frequency of ch in str.
+ *
+ * Note: http://jsperf.com/count-the-number-of-characters-in-a-string
+ * The alternate way is return str.split('|').length - 1;
+ */
 function countChar(str, ch) {
-  // http://jsperf.com/count-the-number-of-characters-in-a-string
-  // return str.split('|').length - 1;
-
   for(var count = -1, index = 0; index != -1; count++) {
     index = str.indexOf(ch, index+1);    
   }
-
   return count;
 }
 
+/**
+ * A simple forEach for objects. This is useful primarily for objects
+ * like HTMLCollection/NodeList objects that are returned by calls
+ * to querySelectorAll or getElementsByTagName that do not provide a native
+ * forEach method but support indexed property access.
+ */
 function each(obj, func) {
   for(var i = 0, len = obj ? obj.length : 0; i < len; 
     func(obj[i++])) {
@@ -702,7 +792,7 @@ function each(obj, func) {
 }
 
 /**
- * Simple helper to use foreach against traversal API
+ * Simple helper to use foreach against traversal API. Filter is optional.
  */
 function eachNode(element, type, func, filter) {
   var node, iterator = element.ownerDocument.createNodeIterator(element, type, filter);
@@ -711,15 +801,25 @@ function eachNode(element, type, func, filter) {
 
 /**
  * Removes the element but retains its children. Useful for 
- * removing 'wrapper' style elements like span/div/form
+ * removing 'wrapper' style elements like span/div/form. This is like
+ * element.remove() but we keep the children.
  *
  * TODO: element.replace(element.childNodes) ???
- * See http://dom.spec.whatwg.org/#childnode
+ * See http://dom.spec.whatwg.org/#childnode.
+ * It looks like Chrome currently supports ChildNode.remove but 
+ * does not support replace/after/before.
  */
 function unwrapElement(element) {
+  // We have to check element is defined since this is called every iteration
+  // and a prior iteration may have somehow removed the element.
   if(element) {
-    while(element.firstChild)
+    while(element.firstChild) {
+      // insertBefore is a MOVE operation. It simply reassigns the parent
+      // if the element is attached to the DOM. There is no need to follow
+      // up with a remove operation on the previous parent.
       element.parentNode.insertBefore(element.firstChild, element);
+    }
+
     element.parentNode.removeChild(element);    
   }
 }
@@ -730,8 +830,9 @@ function unwrapElement(element) {
  */
 function removeNode(node) {
   if(node && node.parentNode) {
+    // node.remove();
     node.parentNode.removeChild(node);
   }
 }
 
-}(this)); 
+}()); 

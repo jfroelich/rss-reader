@@ -39,7 +39,7 @@ test.applyCalamine = function(url) {
     document.body.html = '';
 
     util.each(results.childNodes, function(n) {
-      document.body.appendChild(n);
+      if(n) document.body.appendChild(n);
     });
     util.each(doc.body.getElementsByTagName('*'), function(n) {
       if(n) document.body.appendChild(n);
