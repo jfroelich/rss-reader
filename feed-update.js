@@ -258,7 +258,7 @@ FeedUpdate.prototype.insertFeed = function() {
   var self = this;  
   var feedStore = this.db.transaction('feed','readwrite').objectStore('feed');
 
-  feedStore.add(storedFeed).onsuccess = function(event) {
+  feedStore.add(this.storedFeed).onsuccess = function(event) {
     
     console.log('Inserted %s, new id is %s', self.url, this.result);
     
@@ -430,6 +430,13 @@ FeedUpdate.prototype.generateEntryHash = function(entry) {
 
 FeedUpdate.prototype.callOncomplete = function() {
   
+  // TODO: in case of invalid XML this is still reached and 
+  // causing an error
+  if(!this.storedFeed) {
+    console.log('storedFeed undefined in callOnComplete, not calling oncomplete');
+    return;
+  }
+
   if(this.actionType == this.CREATE) {
     chrome.runtime.sendMessage({type:'subscribe',feed:this.storedFeed});
   }
@@ -449,4 +456,7 @@ FeedUpdate.prototype.callOncomplete = function() {
   delete this.onerror;
   
   this.oncomplete(this.storedFeed, this.entriesProcessed, this.entriesAdded);
+  delete this.storedFeed;
+  delete this.entriesProcessed;
+  delete this.entriesAdded;
 };
