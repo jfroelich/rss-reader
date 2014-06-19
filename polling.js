@@ -25,11 +25,11 @@ polling.start = function() {
 
   var pollcomplete = function() {
     //console.log('complete');
-    localStorage.LAST_POLL_DATE_MS = String(new Date().getTime());
+    localStorage.LAST_POLL_DATE_MS = String(Date.now());
     polling.running_ = false;
 
-    var endTime = new Date().getTime();
-    var elapsed = ((endTime - polling.startTime)/1000).toFixed(2);
+    var endTime = Date.now();
+    var elapsed = parseFloat(((endTime - polling.startTime)/1000).toFixed(2));
 
     chrome.runtime.sendMessage({type:'pollCompleted',
       entriesAdded:totalEntriesAdded,
@@ -42,7 +42,6 @@ polling.start = function() {
     db.transaction('feed').objectStore('feed').count().onsuccess = function(event) {
       var feedCount = event.target.result;
       if(!feedCount) {
-        //console.log('no feeds to update');
         pollcomplete();
         return;
       }
