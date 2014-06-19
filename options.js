@@ -41,7 +41,9 @@ opt.MessageDispatcher.onMessage = function(message) {
     opt.updateFeedCountMessage();
     opt.showSection($('#mi-subscriptions'));
   } else if('entryRead' == message.type) {
-    console.log('entryRead %s', message.entry.id);    
+    //console.log('entryRead %s', message.entry.id);
+    // If we ever start showing unread counts per feed
+    // this would need to update the unread count
 
   } else {
     console.warn('Unknown message type %s', message.type);
@@ -302,16 +304,9 @@ opt.showOrSkipSubscriptionPreview = function(url) {
   };
 
   console.log('Checking if already subscribed to %s', url);
-  subscriptions.isSubscribed(url, function(exists) {
-    if(exists) {
-      console.log('already subscribed to %s, showing error', url);
-      onerror({type:'exists',url:url});
-    } else {
-      console.log('not already subscribed to %s, fetching', url);
-      subscriptions.requestPreview(url,onFetchSuccess,onerror, timeout);    
-    }
-  });
 
+  var fu = new FeedUpdater();
+  fu.requestPreview(url,onFetchSuccess,onerror, timeout);
 };
 
 opt.hideSubscriptionPreview = function() {
@@ -332,38 +327,41 @@ opt.startSubscription = function(url) {
   opt.SubscriptionMonitor.show();
   opt.SubscriptionMonitor.update('Subscribing...');
 
-  var params = {url:url,fetch: 1,notify:1,timeout: 6000};
-  params.onerror = function(err) {
-    console.dir(err);
+  ///var params = {url:url,fetch: 1,notify:1,timeout: 6000};
 
+  var fu = new FeedUpdate();
+  fu.fetch = 1;
+  fu.notify = 1;
+  fu.timeout = 5000;
+
+  // Add our onerror event listener
+  fu.onerror = function(err) {
     opt.SubscriptionMonitor.hide(function(){
       if(err.type == 'invalidurl') {
-        
-        // Technically this should enver happen because a search query 
-        // should have run instead but handle it neverthelesss
+        // Should never happen since we treat invalid urls
+        // as search queries
         opt.errorMessage.show('Not a valid url "'+url+'"');
-        
       } if(err.type == 'exists') {
-
         opt.errorMessage.show('You are already subscribed to "' + url + '".');
-
+      } else if(err.type =='responsexmlundefined') {
+        opt.errorMessage.show('The URL ' +url+ ' is not a valid feed (invalid XML)');
       } else {
+        console.dir(err);
         opt.errorMessage.show('Error "' + err + '".');
       }
     });
   };
-  
-  params.oncomplete = function(feed, entriesProcessed,entriesAdded) {
+
+  // Add our oncomplete event listener
+  fu.oncomplete = function(feed, entriesProcessed,entriesAdded) {
     opt.SubscriptionMonitor.update('Subcribed to ' + feed.url);
     opt.SubscriptionMonitor.hide(function() {
-      
-      opt.showSection($('#mi-subscriptions'));
-      
+      opt.showSection($('#mi-subscriptions'));      
     },true);
-  }
+  };
 
-  // Switch to feed update
-  subscriptions.add(params);
+  // Start the proces
+  fu.add(url);
 };
 
 opt.populateFeedDetailsSection = function(feedId) {
