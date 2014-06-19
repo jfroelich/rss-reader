@@ -648,8 +648,9 @@ function transformRuleElement(element) {
  * Marks the current element as whitespaceImportant and then
  * marks all direct and indirect descendants as whiteSpace important.
  * Propagating from the top down (cascading) allows us to quickly
- * determine whether text is trimmable searching a text node's
- * axis for the presence of a whitespaceImportant element.
+ * determine whether text is trimmable as opposed to searching each 
+ * text node's axis (path from root) for the presence of a 
+ * whitespaceImportant element.
  */
 function cascadeWhitespaceImportant(element) {
   setWhitespaceImportant(element);
@@ -812,26 +813,32 @@ function eachNode(element, type, func, filter) {
 function unwrapElement(element) {
   // We have to check element is defined since this is called every iteration
   // and a prior iteration may have somehow removed the element.
-  if(element) {
+
+  // We check parent element just in case this is somehow called on an 
+  // element that was removed. This can work on detached nodes, but only
+  // if those nodes still have a parentElement defined. The root of a detached
+  // hierarchy does not, but its children do.
+
+  if(element && element.parentElement) {
     while(element.firstChild) {
-      // insertBefore is a MOVE operation. It simply reassigns the parent
-      // if the element is attached to the DOM. There is no need to follow
-      // up with a remove operation on the previous parent.
-      element.parentNode.insertBefore(element.firstChild, element);
+      element.parentElement.insertBefore(element.firstChild, element);
     }
 
-    element.parentNode.removeChild(element);    
+    element.remove();
+    //element.parentElement.removeChild(element);    
   }
 }
 
 /**
- * For passing to forEach and such. Also works for nodes.
- * May also work for attribute nodes?
+ * For passing to iterators like forEach
  */
 function removeNode(node) {
-  if(node && node.parentNode) {
-    // node.remove();
-    node.parentNode.removeChild(node);
+  //if(node && node.parentNode) {
+  //  node.parentNode.removeChild(node);
+  //}
+
+  if(node) {
+    node.remove();
   }
 }
 
