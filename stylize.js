@@ -2,7 +2,7 @@
 
 // TODO: consider caching the lookups to findCSSRule
 // by storing the results in globals and then checking globals
-// instead of checking every time. Perf seems fine at the moment 
+// instead of checking every time. Perf seems fine at the moment
 // though.
 // TODO: use a namespace
 
@@ -10,66 +10,50 @@ var stylize = {};
 
 stylize.BACKGROUND_IMAGES = [
   //http://www.desktopwallpapers4.me/abstract/leather-texture-21220/
-  'abstract-leather-texture.jpg',
+  '/media/abstract-leather-texture.jpg',
+  '/media/bgfons-paper_texture318.jpg',
+  '/media/bone-yellow-1.jpg',
+  '/media/CCXXXXXXI_by_aqueous.jpg',
+  '/media/designova-subtle-carbon.png',
+  '/media/dominik-kiss-grid.png',
+  '/media/krisp-designs-vertical-cloth.png',
 
-  'bgfons-paper_texture318.jpg',
-  'bling-whitepaper.jpg',
-  'bone-1600-x-1200.png',
-  'bone-yellow-1.jpg',
-  'CCXXXXXXI_by_aqueous.jpg',
-  'designova-subtle-carbon.png',
-  'deviant-art-powerpuff.jpg',
-  'dominik-kiss-grid.png',
 
-  //http://galleryhip.com/cloth-texture.html
-  'green-cloth-texture.jpg',
-  'krisp-designs-vertical-cloth.png',
-  'OTF_Crumpled_Paper_09.jpg',
-  'OTF_Light_Grunge_14.jpg',
-  'OTF_Snow_11.jpg',
-  'OTF_Towel_07.jpg',
-  'paper-background-cardboard.jpg',
-  'paper-backgrounds-natural.jpg',
-  'paper-backgrounds-vintage-white.jpg',
-  'papertank-black-padded-diamond.png',
-  'pig-quill-oatmeal-linen-paper-texture.jpeg',
-  'pickering-texturetastic-gray.png',
-  'ppd-white-paper-texture.jpg',
-  'reusage-recycled-paper-white-first.png',
-  'recycled_paper_texture.jpg',
+  '/media/paper-backgrounds-vintage-white.jpg',
+  '/media/papertank-black-padded-diamond.png',
+
+  '/media/pickering-texturetastic-gray.png',
+
+  '/media/reusage-recycled-paper-white-first.png',
+  '/media/recycled_paper_texture.jpg',
 
   //http://seamless-pixels.blogspot.com/p/free-seamless-ground-textures.html
-  'seamless-beach-sand.jpg',
-  'slodive-canvas-texture-paper.jpg',
-  'subtle-patterns-beige-paper.png',
-  'subtle-patterns-black-paper.png',
-  'subtle-patterns-brickwall.png',
-  'subtle-patterns-cardboard.png',
-  'subtle-patterns-cream-paper.png',
-  'subtle-patterns-exclusive-paper.png',
-  'subtle-patterns-extra-clean-paper.png',
-  'subtle-patterns-groove-paper.png',
-  'subtle-patterns-handmade-paper.png',
-  'subtle-patterns-noisy-net.png',
-  'subtle-patterns-paper-1.png',
-  'subtle-patterns-paper-2.png',
-  'subtle-patterns-paper.png',
-  'subtle-patterns-rice-paper-2.png',
-  'subtle-patterns-rice-paper-3.png',
-  'subtle-patterns-sand-paper.png',
-  'subtle-patterns-soft-wallpaper.png',
-  'subtle-patterns-white-wall.png',
-  'subtle-patterns-witewall-3.png',
-  'tabor-classy-fabric.png',
-  'texturemate-4097.jpg',
-  'texture-palance-vintage-paper.jpg',
-  'thomas-zucx-noise-lines.png',
 
+  '/media/slodive-canvas-texture-paper.jpg',
+  '/media/subtle-patterns-beige-paper.png',
+  '/media/subtle-patterns-black-paper.png',
+  '/media/subtle-patterns-brickwall.png',
+
+  '/media/subtle-patterns-cream-paper.png',
+  '/media/subtle-patterns-exclusive-paper.png',
+  '/media/subtle-patterns-extra-clean-paper.png',
+  '/media/subtle-patterns-groove-paper.png',
+  '/media/subtle-patterns-handmade-paper.png',
+  '/media/subtle-patterns-noisy-net.png',
+  '/media/subtle-patterns-paper-1.png',
+  '/media/subtle-patterns-paper-2.png',
+  '/media/subtle-patterns-paper.png',
+  '/media/subtle-patterns-rice-paper-2.png',
+  '/media/subtle-patterns-rice-paper-3.png',
+  '/media/subtle-patterns-sand-paper.png',
+  '/media/subtle-patterns-soft-wallpaper.png',
+  '/media/subtle-patterns-white-wall.png',
+  '/media/subtle-patterns-witewall-3.png',
+  '/media/tabor-classy-fabric.png',
+  '/media/texturemate-4097.jpg',
+  '/media/thomas-zucx-noise-lines.png',
   // http://background-pictures.vidzshare.net
-  'towel-white-free-background.jpg',
-
-  'yvrelle_towel_beige.jpg',
-  'yvrelle_towel_beige.jpg'
+  '/media/towel-white-free-background.jpg'
 ];
 
 stylize.FONT_FAMILIES = [
@@ -105,7 +89,7 @@ stylize.FONT_FAMILIES = [
 
 stylize.findCSSRule = function(selectorText) {
   var matchingRule;
-  
+
   // We are always using styleSheets[0], so we can cheat here
   var sheet = document.styleSheets[0];
   util.until(sheet.rules, function(rule) {
@@ -127,7 +111,6 @@ stylize.applyEntryStylesOnchange = function() {
   if(entryRule) {
     //console.log('found div.entry');
     if(localStorage.BACKGROUND_IMAGE) {
-      //console.log('setting background image to %s', localStorage.BACKGROUND_IMAGE);
       entryRule.style.backgroundColor = '';
       entryRule.style.backgroundImage = 'url(' + localStorage.BACKGROUND_IMAGE + ')';
     } else if(localStorage.ENTRY_BACKGROUND_COLOR) {
@@ -151,14 +134,14 @@ stylize.applyEntryStylesOnchange = function() {
   if(contentRule) {
     contentRule.style.fontFamily = localStorage.BODY_FONT_FAMILY || 'initial';
     contentRule.style.fontSize = localStorage.BODY_FONT_SIZE || '100%';
-    contentRule.style.textAlign = (localStorage.JUSTIFY_TEXT == '1') ? 'justify' : 'left';  
+    contentRule.style.textAlign = (localStorage.JUSTIFY_TEXT == '1') ? 'justify' : 'left';
     contentRule.style.lineHeight = localStorage.BODY_LINE_HEIGHT || 'normal';
   }
 };
 
 stylize.applyEntryStylesOnload = function() {
   var sheet = document.styleSheets[0];
-  
+
   var s = '';
   if(localStorage.BACKGROUND_IMAGE) {
     s += 'background: url('+ localStorage.BACKGROUND_IMAGE  +');';
@@ -201,11 +184,11 @@ stylize.applyEntryStylesOnload = function() {
   s += 'padding-top:0px;';
   s += 'padding-right: 10px;';
   s += 'margin: 0px;';
-  
+
   // TODO: use this if columns enabled (use 1(none), 2, 3 as options).
   s += '-webkit-column-count: 2;';
   s += '-webkit-column-gap: 30px;';
   s += '-webkit-column-rule:1px outset #cccccc;';
-  
+
   sheet.addRule('div.entry span.entry-content', s);
 };

@@ -144,7 +144,7 @@ FeedUpdate.prototype.insertOrUpdate = function() {
     // Ensure the url is valid
     if(!URI.isValidString(this.url)) {
       this.onerror({type:'invalidurl',url:this.url});
-      return this.callOncomplete();
+      return this.dispatchOncomplete();
     }
 
     // If creating, start by checking that we are not 
@@ -173,7 +173,7 @@ FeedUpdate.prototype.fetchFeedIfNotExists = function() {
   schemelessIndex.get(schemelessURL).onsuccess = function(event) {
     if(event.target.result) {
       self.onerror({type:'exists',url:self.url,feed:event.target.result});
-      self.callOncomplete();
+      self.dispatchOncomplete();
     } else {
       self.fetchFeed();
     }
@@ -214,7 +214,7 @@ FeedUpdate.prototype.fetchFeed = function() {
     // Since we are not updating, simulate an updatedFeed object
     // self.storedFeed = {id:0,url:self.url};
     // We are done.
-    this.callOncomplete();
+    this.dispatchOncomplete();
   }
 };
 
@@ -226,7 +226,7 @@ FeedUpdate.prototype.onFeedLoaded = function(feed) {
     // A problem occurred while fetching. The error was 
     // dispatched by the onerror callback from FeedHttpRequest
     // so we are done
-    this.callOncomplete();
+    this.dispatchOncomplete();
     return;
   }
 
@@ -267,7 +267,7 @@ FeedUpdate.prototype.insertFeed = function() {
     if(self.fetchedFeed && self.fetchedFeed.fetched) {
       self.addEntries();
     } else {
-      self.callOncomplete();
+      self.dispatchOncomplete();
     }
   };  
 };
@@ -289,7 +289,7 @@ FeedUpdate.prototype.updateFeed = function() {
 
     if(!existingFeed) {
       self.onerror({type:'feednotfound',feedId: self.feedId});
-      return self.callOncomplete();
+      return self.dispatchOncomplete();
     }
 
     if(self.storedFeed.title) existingFeed.title = self.storedFeed.title;
@@ -347,7 +347,7 @@ FeedUpdate.prototype.addEntries = function() {
   //console.log('FeedUpdate.addEntries %s', this.url);
   
   if(!this.fetchedFeed || !this.fetchedFeed.entries || !this.fetchedFeed.entries.length) {
-    return this.callOncomplete();
+    return this.dispatchOncomplete();
   }
   
   this.entriesProcessed = 0;
@@ -358,7 +358,7 @@ FeedUpdate.prototype.addEntries = function() {
   var onUpdateComplete = function() {
     self.entriesProcessed++;
     if(self.entriesProcessed >= self.fetchedFeed.entries.length) {
-      self.callOncomplete();
+      self.dispatchOncomplete();
     }
   };
   
@@ -425,38 +425,28 @@ FeedUpdate.prototype.addEntries = function() {
 
 FeedUpdate.prototype.generateEntryHash = function(entry) {
   var seed = entry.link || entry.title || entry.content;
-  if(seed) return util.generateHashCode(seed.split(''));
+  if(seed) {
+    return util.generateHashCode(seed.split(''));
+  }
 };
 
-FeedUpdate.prototype.callOncomplete = function() {
+FeedUpdate.prototype.dispatchOncomplete = function() {
   
-  // TODO: in case of invalid XML this is still reached and 
-  // causing an error
-  if(!this.storedFeed) {
-    console.log('storedFeed undefined in callOnComplete, not calling oncomplete');
-    return;
+  if(this.storedFeed) {
+    if(this.actionType == this.CREATE) {
+      chrome.runtime.sendMessage({type:'subscribe',feed:this.storedFeed});
+    }
+
+    if(this.notify) {
+      util.notify('Subscribed to '+this.storedFeed.title+'. Found '+this.entriesAdded+' new articles.');
+    }
+
+    this.oncomplete(this.storedFeed, this.entriesProcessed, this.entriesAdded);
+  } else {
+    // This was called after some error that skipped storage.
+    // Still need to call oncomplete, but we do it without info.
+    // NOTE: will callers react appropriately? how?
+    this.oncomplete();
   }
 
-  if(this.actionType == this.CREATE) {
-    chrome.runtime.sendMessage({type:'subscribe',feed:this.storedFeed});
-  }
-  
-  if(this.notify) {
-    util.notify('Subscribed to '+this.storedFeed.title+'. Found '+this.entriesAdded+' new articles.');
-  }
-  
-  // Force dispose (temp)
-  delete this.db;
-  delete this.fetchedFeed;
-  delete this.url;
-  delete this.notify;
-  delete this.feedId;
-  delete this.fetch;
-  delete this.actionType;
-  delete this.onerror;
-  
-  this.oncomplete(this.storedFeed, this.entriesProcessed, this.entriesAdded);
-  delete this.storedFeed;
-  delete this.entriesProcessed;
-  delete this.entriesAdded;
 };

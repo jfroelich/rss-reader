@@ -28,7 +28,7 @@ test.replaceBR = function(str) {
 
     var root = element.ownerDocument.body;
 
-    // Find the path from the element to the first blocking element.    
+    // Find the path from the element to the first blocking element.
     var parent = element.parentElement;
     var path = [parent];
     while(isInline(parent)) {
@@ -100,7 +100,7 @@ test.applyCalamine = function(url) {
       if(n) document.body.appendChild(n);
     });
   };
-  
+
   req.open('GET', url);
   req.responseType = 'document';
   req.send();
@@ -151,24 +151,24 @@ test.feedUpdate = function(url) {
   var uri = URI.parse(url);
   delete uri.scheme;
   var schemeless = URI.toString(uri);
-  
+
   model.connect(function(db) {
     db.transaction('feed').objectStore('feed').index('schemeless').get(schemeless).onsuccess = function(event) {
       var feed = this.result;
-      
+
       var updater = new FeedUpdate();
       updater.fetch = 1;
       updater.notify = 0;
       updater.db = db;
-      
+
       updater.onerror = function(error) {
         console.log(error);
       };
-      
+
       updater.oncomplete = function(feed, processed, added) {
         console.log('Updated %s. Processed %s, added %s', feed.url, processed, added);
       };
-      
+
       updater.update(feed.id, feed.url);
     };
   });
@@ -181,7 +181,7 @@ test.fhr = function(url) {
   request.oncomplete = function(feed) {
     console.dir(feed);
   };
-  
+
   request.send(url);
 };
 
@@ -202,10 +202,6 @@ test.createOPMLDocument = function() {
 
   var xmlDocument = opml.createXMLDocument(feeds);
   return xmlDocument;
-};
-
-test.parseHTML = function(str) {
-  return util.parseHTML(str);
 };
 
 test.isFeed = function(url) {
@@ -235,7 +231,7 @@ test.seed = function(urls) {
   var onComplete = function(f,c){
     console.log('Seeded %s with %s articles', f.url, c);
   };
-  
+
   model.connect(function(db) {
     util.each(urls, function(url) {
       var params = {url:url};
@@ -262,7 +258,7 @@ test.fetch = function(url) {
 
 test.fetch = function(url) {
   app.subscriptions.request(url, function(xml) {
-    console.dir(xml);  
+    console.dir(xml);
   }, function(e) {
     console.log('fetch test error message: %s', e);
   });
@@ -300,13 +296,6 @@ test.unwrap = function(str, tag) {
   return doc.innerHTML;
 };
 
-test.escapeHTMLAttribute = function() {
-  console.assert(util.escapeHTMLAttribute, 'escapeHTMLAttribute is undefined');
-  console.assert(util.escapeHTMLAttribute('"') == '&#34;', 'failed to escape quote');
-  console.assert(util.escapeHTMLAttribute('a"bc') == 'a&#34;bc', 'failed to escape quote');
-  return 'Running test escapeHTMLAttribute';
-};
-
 test.trimHTML = function(html) {
   var doc = util.parseHTML(html);
   trimming.trimDocument(doc);
@@ -339,12 +328,12 @@ test.detectRedirect = function(url) {
   request.onabort = console.log;
   request.ontimeout = console.log;
   request.onerror = console.log;
-  request.onload = function(event) {   
+  request.onload = function(event) {
     var headers = event.target.getAllResponseHeaders();
     console.log(headers);
     console.log('Location: %s', event.target.getResponseHeader('location'));
   };
-  
+
   request.open('HEAD', url, true);
   request.send();
   return 'Checking ' + url;

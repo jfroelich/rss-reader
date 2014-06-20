@@ -7,7 +7,7 @@
   "description": "A simple news reader that likes to eat snakes",
 
   "browser_action": {
-    "default_icon": "rss_icon_trans.png",
+    "default_icon": "media/rss_icon_trans.png",
     "default_title": "Honey Badger News Reader"
   },
 
@@ -37,7 +37,7 @@
     "https://*/*",
     "unlimitedStorage"
   ],
-  
+
   "optional_permissions": [
     "background",
     "idle",

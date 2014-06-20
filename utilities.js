@@ -17,6 +17,18 @@ var util = {};
 
 util.noop = function() {};
 
+/**
+ * Copies properties from src (specific to src) to
+ * target.
+ */
+util.extend = function(target,src) {
+  for(var key in src) {
+    if(src.hasOwnProperty(key)) {
+      target[key] = src[key];
+    }
+  }
+  return target;
+};
 
 util.updateBadge =  function() {
   model.connect(function(db) {
@@ -45,7 +57,7 @@ util.notify = function(message) {
 };
 
 util.each = function(obj, func) {
-  for(var i = 0, len = obj ? obj.length : 0; i < len; 
+  for(var i = 0, len = obj ? obj.length : 0; i < len;
     func(obj[i++])) {
   }
 };
@@ -63,7 +75,7 @@ util.filter = function(obj, func) {
 
 // Deprecate in favor of inverted [].some?
 util.until = function(obj, func) {
-  for(var i = 0, len = obj ? obj.length : 0, continues = 1; 
+  for(var i = 0, len = obj ? obj.length : 0, continues = 1;
     continues && i < len; continues = func(obj[i++])) {
   }
 };
@@ -99,15 +111,15 @@ util.values = function(obj) {
 util.arrayMax = function(arr) {
   if(arr && arr.length) {
     return arr.reduce(function(previousValue, currentValue) {
-      return Math.max(previousValue, currentValue); 
+      return Math.max(previousValue, currentValue);
     }, -Infinity);
   }
 };
 
 // Extremely simple date formatting
 util.formatDate = function(date, sep) {
-  return date? 
-    [date.getMonth() + 1, date.getDate(), date.getFullYear()].join(sep || '-') : 
+  return date?
+    [date.getMonth() + 1, date.getDate(), date.getFullYear()].join(sep || '-') :
     '';
 };
 
@@ -116,13 +128,13 @@ util.parseDate = function(str) {
   if(!str) {
     return;
   }
-  
+
   var date = new Date(str);
-  
+
   if(Object.prototype.toString.call(date) != '[object Date]') {
     return;
   }
-  
+
   if(!isFinite(date)) {
     return;
   }
@@ -144,39 +156,10 @@ util.truncate = function(str, pos, ext) {
   return str && (str.length > pos) ? str.substr(0,pos) + (ext || '...') : str;
 };
 
-
-util.escapeHTML = function(str) {
-  if(str) {
-    // & not being escaped at the moment, intentionally
-    return str.replace(/[<>"”'`]/g, function(entityCharacter) {
-      return '&#' + entityCharacter.charCodeAt(0) + ';';
-    });
-  }
-};
-
-util.escapeHTMLAttribute = function(str) {
-  if(str) {
-    return str.replace('&','&#38;').replace('"','&#34;').
-      replace('\'','&#39;').replace('\\','&#92;');
-  }
-};
-
-util.escapeHTMLInputValue = function(str) {
-  if(str) {
-    return str.replace('"', '&#34;');
-  }
-};
-
-util.escapeHTMLHREF = function(str) {
-  if(str) {
-    return str.replace('"', '&#34;');
-  }
-};
-
 /**
  * Strip HTML tags from a string
  * Replacement is an optional parameter, string, that is included
- * in the place of tags. Specifying a replacement works 
+ * in the place of tags. Specifying a replacement works
  * considerably slower and may differ in behavior.
  */
 util.stripTags = function(str, replacement) {
@@ -188,7 +171,7 @@ util.stripTags = function(str, replacement) {
       while(node = it.nextNode()) {
         textNodes.push(node.data);
       }
-      
+
       return textNodes.join(replacement);
     }
 
@@ -204,7 +187,7 @@ util.parseHTML = function(str) {
 
 util.parseXML = function(str) {
   var parser = new DOMParser();
-  
+
   // TODO: does this ever actually throw?
   var doc = parser.parseFromString(str, 'application/xml');
 
@@ -230,11 +213,11 @@ util.generateHashCode = function(arr) {
     return arr.reduce(function (previousValue, currentValue) {
       return (previousValue * 31 + currentValue.charCodeAt(0)) % 4294967296;
     }, 0);
-  } 
+  }
 };
 
 util.isAnchor = function(element) {
-  return element && 
+  return element &&
     element.__proto__ == HTMLAnchorElement.prototype;
 };
 
@@ -266,11 +249,11 @@ util.key = {
 util.smoothScrollToY = function(element, delta, targetY) {
   clearTimeout(util.scrollYStartTimer);
   clearInterval(util.scrollYIntervalTimer);
-  
+
   var start = function() {
     util.scrollYIntervalTimer = setInterval(scrollY,20);
   };
-  
+
   var scrollY = function() {
     var currentY = element.scrollTop;
     element.scrollTop += delta;
@@ -282,3 +265,57 @@ util.smoothScrollToY = function(element, delta, targetY) {
 
   util.scrollYStartTimer = setTimeout(start,5);
 };
+
+
+/**
+ * Fetches a webpage. Basically wraps an XMLHttpRequest
+ * but tailors it to getting HTML only, and maybe does some
+ * other things.
+ *
+ * TODO: before calling onload, set image dimensions
+ * TODO: before calling onload, consider embedding iframe
+ * content and/or sandboxing
+ * TODO: think about how to define onload function only once.
+ *
+ * Params:
+ * - url
+ * - onload -callback when completed without errors, passed HTMLDocument object
+ * - onerror - callback when an error occurs that prevents completion
+ * - timeout -optional, ms
+ */
+util.fetchHTML = function(params) {
+
+  var request = new XMLHttpRequest();
+  request.timeout = params.timeout;
+  request.onerror = params.onerror;
+  request.onabort = params.onerror;
+  request.ontimeout = params.onerror;
+
+  request.onload = function(event) {
+
+    var response = event.target;
+    var doc = response.responseXML;
+    var type = response.getResponseHeader('content-type');
+
+    if(!/text\/html/i.test(type)) {
+      return params.onerror({type:'wrong-content-type',contentType:type});
+    }
+
+    if(!doc || !doc.body) {
+      return params.onerror({type:'invalid-document',target:this});
+    }
+
+    var images = doc.body.getElementsByTagName('img');
+
+    // TODO:
+    // Resolve the URLs
+    // Fetch each of the images async
+    // When all fetched call onload
+
+    params.onload(doc);
+  };
+
+  request.open('GET', params.url, true);
+  request.responseType = 'document';
+  request.send();
+}
