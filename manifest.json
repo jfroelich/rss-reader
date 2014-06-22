@@ -15,7 +15,11 @@
     "persistent": false,
     "scripts": [
       "utilities.js",
+      "fetch.js",
+      "rewrite.js",
+      "feeds.js",
       "uri.js",
+      "storage.js",
       "model.js",
       "content-filters.js",
       "sanitize.js",
