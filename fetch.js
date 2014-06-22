@@ -212,7 +212,7 @@ reader.fetch.discoverFeeds = function(params) {
     oncomplete(data.query, data.entries);
   };
 
-  console.log('discoverFeeds requestURL %s', requestURL);
+  //console.log('discoverFeeds requestURL %s', requestURL);
 
   request.open('GET', requestURL, true);
   request.responseType = 'json';
@@ -220,7 +220,10 @@ reader.fetch.discoverFeeds = function(params) {
 };
 
 /**
- * Returns a URL string pointing to the fav icon for a url.
+ * Returns a URL string pointing to the fav icon for a url. If url is
+ * undefined/empty, the locally stored default fav icon url is returned
+ * instead.
+ *
  * NOTE: Currently this is sync and does not use some type of
  * remote service, but it might in the future be refactored to use
  * a callback that is called async.
@@ -228,8 +231,8 @@ reader.fetch.discoverFeeds = function(params) {
  * NOTE: chrome://favicons/url only works for urls present in
  * history, so it is useless.
  *
- * @param url {string} the url of a webpage for which to find a
- * fav icon
+ * @param url {string} the url of a webpage for which to find the
+ * corresponding fav icon.
  * @return {string} the url of the favicon
  */
 reader.fetch.getFavIconURL = function(url) {
