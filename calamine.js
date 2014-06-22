@@ -3,6 +3,7 @@
  *
  * A simple module for removing boilerplate from web pages.
  *
+ * TODO: https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement.dataset
  * TODO: support for iframes and embed objects and audio/video
  * TODO: refactor to use block generation. Group lis together. Group
  * dds together, etc.
