@@ -130,23 +130,46 @@ reader.fetch.augmentImageData = function(doc, baseURL, oncomplete) {
 };
 
 /**
- * Tests whether an image should be loaded
+ * Tests whether an image should be loaded. The basic criteria:
+ * - A src url exists
+ * - The image is missing width
+ * - The src url is not an object URL (data uri).
+ *
+ * @param image {HTMLImageElement} the element to inspect
+ * @return {boolean} true if the image should be loaded
  */
 reader.fetch.shouldLoadImage = function(image) {
   var source = (image.getAttribute('src') || '').trim();
   return source && !image.width && !reader.fetch.isDataURI(source);
 };
 
+/**
+ * Tests whether contentType corresponds to text/html mime type.
+ * The test is an informal regex. Content type could contain
+ * a full header like text/html;encoding=UTF-8,
+ * we just check if it contains 'text/html'. This is not intended
+ * to be secure nor 100% accurate.
+ *
+ * Allows leading spaces, case-insensitive.
+ *
+ * @param contentType {string} the string to search
+ * @return {boolean} true if is text/html mime type
+ */
 reader.fetch.isContentTypeHTML = function(contentType) {
   return /text\/html/i.test(contentType);
 };
 
 /**
- * Tests whether str is a data uri. This is not meant to be perfect,
- * just good enough to avoid issues with like trying to resolve or
- * fetch data uris
+ * Tests whether str is a data uri. Only intended to be good enough
+ * to avoid issues such as trying to resolve or fetch data uris.
+ *
+ * NOTE: would be nice if we could check some property of the
+ * element containing the url, but I could not find another
+ * indicator. element.src always returns a DOMString.
+ *
  * NOTE: https://gist.github.com/bgrins/6194623 is helpful
  * @param url {string} the url to test
+ * @return {boolean} true if it looks like an object url
  */
 reader.fetch.isDataURI = function(url) {
   return /^data:/i.test(url);
@@ -194,4 +217,23 @@ reader.fetch.discoverFeeds = function(params) {
   request.open('GET', requestURL, true);
   request.responseType = 'json';
   request.send();
+};
+
+/**
+ * Returns a URL string pointing to the fav icon for a url.
+ * NOTE: Currently this is sync and does not use some type of
+ * remote service, but it might in the future be refactored to use
+ * a callback that is called async.
+ *
+ * NOTE: chrome://favicons/url only works for urls present in
+ * history, so it is useless.
+ *
+ * @param url {string} the url of a webpage for which to find a
+ * fav icon
+ * @return {string} the url of the favicon
+ */
+reader.fetch.getFavIconURL = function(url) {
+  var GOOGLE_BASE_URL = 'http://www.google.com/s2/favicons?domain_url=';
+  var FALLBACK_URL = '/media/rss_icon_trans.gif';
+  return url ?  GOOGLE_BASE_URL + encodeURIComponent(url) : FALLBACK_URL;
 };

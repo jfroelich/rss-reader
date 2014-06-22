@@ -197,7 +197,7 @@ opt.appendFeed = function(feed, insertedSort) {
   item.setAttribute('title', util.stripTags(feed.description) || '');
   item.onclick = opt.onFeedListItemClick;
   var favIconElement = document.createElement('img');
-  favIconElement.src = util.getFavIconURL(feed.link);
+  favIconElement.src = reader.fetch.getFavIconURL(feed.link);
   if(feed.title) favIconElement.title = feed.title;
   item.appendChild(favIconElement);
 
@@ -369,7 +369,7 @@ opt.populateFeedDetailsSection = function(feedId) {
     db.transaction('feed').objectStore('feed').get(feedId).onsuccess = function(event) {
       var feed = event.target.result;
       $('#details-title').textContent = feed.title || 'Untitled';
-      $('#details-favicon').setAttribute('src', util.getFavIconURL(feed.url));
+      $('#details-favicon').setAttribute('src', reader.fetch.getFavIconURL(feed.url));
       $('#details-feed-description').textContent =
         util.stripTags(feed.description) || 'No description';
       $('#details-feed-url').textContent = feed.url;
@@ -506,7 +506,7 @@ opt.onDiscoverFeedsComplete = function(query, results) {
     item.appendChild(button);
 
     var image = document.createElement('img');
-    image.setAttribute('src', util.getFavIconURL(result.url));
+    image.setAttribute('src', reader.fetch.getFavIconURL(result.url));
     image.title = result.link;
     item.appendChild(image);
 

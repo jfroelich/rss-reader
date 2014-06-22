@@ -7,12 +7,12 @@ slideshow.onMessage = function(message) {
     stylize.applyEntryStylesOnchange();
   } else if('pollCompleted' == message.type) {
     if(!slideshow.countUnread()) {
-      slideshow.appendSlides(slideshow.hideNoUnreadArticlesSlide, 
+      slideshow.appendSlides(slideshow.hideNoUnreadArticlesSlide,
         !$('#slideshow-container').childElementCount);
     }
   } else if('subscribe' == message.type) {
     if(!slideshow.countUnread()) {
-      slideshow.appendSlides(slideshow.hideNoUnreadArticlesSlide, 
+      slideshow.appendSlides(slideshow.hideNoUnreadArticlesSlide,
         !$('#slideshow-container').childElementCount);
     }
   } else if('unsubscribe' == message.type) {
@@ -30,17 +30,17 @@ slideshow.onMessage = function(message) {
     if(removedCurrentSlide) {
       console.log('removed current slide when unsubscribing, not implemented');
     }
-    
+
     slideshow.maybeShowNoUnreadArticlesSlide();
   }
 };
 
 slideshow.markSlideRead = function(slideElement) {
-  
+
   if(!slideElement || slideElement.hasAttribute('read')) {
     return;
   }
-  
+
   var entryId = parseInt(slideElement.getAttribute('entry'));
 
   model.connect(function(db) {
@@ -50,7 +50,7 @@ slideshow.markSlideRead = function(slideElement) {
       slideElement.setAttribute('read','');
       util.updateBadge();
     };
-    
+
     store.get(entryId).onsuccess = function(event) {
       if(this.result) {
         delete this.result.unread;
@@ -76,7 +76,7 @@ slideshow.appendSlides = function(oncomplete, isFirst) {
       notAdvanced = 0;
       return event.target.result.advance(offset);
     }
-    
+
     slideshow.appendSlide(event.target.result.value, isFirst);
     if(isFirst && counter == 0) {
       // Setup the slide cursor as pointing to the first slide
@@ -91,7 +91,7 @@ slideshow.appendSlides = function(oncomplete, isFirst) {
 slideshow.onSlideClick = function(event) {
   if(util.isImage(event.target)) {
     if(!util.isAnchor(event.target.parentNode)) {
-      return;      
+      return;
     }
   } else if(!util.isAnchor(event.target)) {
     return;
@@ -151,7 +151,7 @@ slideshow.appendSlide = function(entry, isFirst) {
       var relativeImageSourceURI = URI.parse(source);
       if(relativeImageSourceURI.scheme) return;
       img.setAttribute('src', URI.resolve(baseURI, relativeImageSourceURI));
-    });    
+    });
   }
 
   trimming.trimDocument(doc);
@@ -171,7 +171,7 @@ slideshow.appendSlide = function(entry, isFirst) {
   slide.appendChild(source);
 
   var favIcon = document.createElement('img');
-  favIcon.setAttribute('src', util.getFavIconURL(entry.feedLink || entry.baseURI));
+  favIcon.setAttribute('src', reader.fetch.getFavIconURL(entry.feedLink || entry.baseURI));
   favIcon.setAttribute('width', '16');
   favIcon.setAttribute('height', '16');
   source.appendChild(favIcon);
@@ -179,7 +179,7 @@ slideshow.appendSlide = function(entry, isFirst) {
   var feedTitle = document.createElement('span');
   feedTitle.setAttribute('title',entry.feedLink);
   var entryPubDate = entry.pubdate ? ' on ' + util.formatDate(new Date(entry.pubdate)) : '';
-  feedTitle.textContent = (entry.feedTitle || 'Unknown feed') + ' by ' + 
+  feedTitle.textContent = (entry.feedTitle || 'Unknown feed') + ' by ' +
     (entry.author || 'Unknown author') + entryPubDate;
   source.appendChild(feedTitle);
   $('#slideshow-container').appendChild(slide);
@@ -195,7 +195,7 @@ slideshow.showNextSlide = function() {
       current.nextSibling.style.right = '0px';
       current.scrollTop = 0;
 
-      // NOTE: i also need to mark read initially 
+      // NOTE: i also need to mark read initially
       // if in view and fully in view
       // This marks as read if not already read
       slideshow.markSlideRead(current);
@@ -204,9 +204,9 @@ slideshow.showNextSlide = function() {
       // Set the new slide as focused so that downarrow works as expected
       // and causes scroll. NOTE: this did not solve the bug.
       // current.focus();
-    }  
+    }
   };
-  
+
   if(slideshow.countUnread() < 2) {
     slideshow.appendSlides(function() {
         var c = $('#slideshow-container');
@@ -238,7 +238,7 @@ slideshow.isEntryUnread = function(entryElement) {
 };
 
 slideshow.countUnread = function() {
-  return util.filter($('#slideshow-container').childNodes, 
+  return util.filter($('#slideshow-container').childNodes,
     slideshow.isEntryUnread).length;
 };
 
@@ -253,11 +253,11 @@ slideshow.hideNoUnreadArticlesSlide = function() {
 };
 
 slideshow.didWheelScrollY = function(event) {
-  // event.currentTarget is undefined here, I think because we bind to window 
+  // event.currentTarget is undefined here, I think because we bind to window
   // and not an element.
-  // event.target is not div.entry when the mouse pointer is hovering over 
+  // event.target is not div.entry when the mouse pointer is hovering over
   // any element within the div, so we cheat because we know currentSlide
-  // if we bothered to bind mouse wheel to each slide we 
+  // if we bothered to bind mouse wheel to each slide we
   // could use currentTarget and would be 'cheating' less
 
   if(slideshow.currentSlide) {
@@ -274,7 +274,7 @@ slideshow.didWheelScrollY = function(event) {
 slideshow.onMouseWheel = function(event) {
   clearTimeout(slideshow.mouseWheelTimer);
   slideshow.mouseWheelTimer = setTimeout(function() {
-    if(event.ctrlKey || slideshow.didWheelScrollY(event)) return;    
+    if(event.ctrlKey || slideshow.didWheelScrollY(event)) return;
     if(event.deltaY > 0) {
       slideshow.showNextSlide();
     } else if(event.deltaY < 0) {
@@ -283,11 +283,11 @@ slideshow.onMouseWheel = function(event) {
   }, 300);
 };
 
-// TODO: instead of binding this to window, I should bind 
-// it to each slide, and then attach/detach as needed. Same 
+// TODO: instead of binding this to window, I should bind
+// it to each slide, and then attach/detach as needed. Same
 // with scroll. This way we don't have to do hacks.
 
-slideshow.onKeyDown = function(event) {  
+slideshow.onKeyDown = function(event) {
   //event.target is body
   //event.currentTarget is window
 
@@ -298,8 +298,8 @@ slideshow.onKeyDown = function(event) {
       event.preventDefault();
       //slideshow.currentSlide.scrollTop += 200;
       util.smoothScrollToY(slideshow.currentSlide, 50, slideshow.currentSlide.scrollTop + 200)
-      return;  
-    }    
+      return;
+    }
   } else if(event.keyCode == key.PAGE_DOWN) {
     if(slideshow.currentSlide) {
       event.preventDefault();
@@ -347,10 +347,10 @@ slideshow.init = function(event) {
 
 // TODO: pay more attention to the 3rd argument to addEventListener. I belive
 // this is the useCapture flag. See https://developers.google.com/closure/library/docs/events_tutorial
-// for a basic explanation. See also 
+// for a basic explanation. See also
 // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.addEventListener.
-// I believe if we capture from top down we can intercept events that are being forwarded to 
-// embedded objects and we can prevent events of interest from propagating to those 
+// I believe if we capture from top down we can intercept events that are being forwarded to
+// embedded objects and we can prevent events of interest from propagating to those
 // embedded objects.
 
 // Simultaneously, we might be able to solve the UP/DOWN issues.
@@ -360,7 +360,7 @@ window.addEventListener('keydown', slideshow.onKeyDown, true);
 
 
 // Turns out this is incredibly annoying because it is too sensitive
-// and does not wait until I repeatedly try to extend beyond the top 
+// and does not wait until I repeatedly try to extend beyond the top
 // or bottom. It runs immediately upon reaching top or bottom. It needs
 // to be refactored. For now just disabling.
 //window.addEventListener('mousewheel', slideshow.onMouseWheel);

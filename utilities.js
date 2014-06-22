@@ -211,11 +211,6 @@ util.parseXML = function(str) {
   return doc;
 };
 
-util.getFavIconURL = function(url) {
-  return url ? 'http://www.google.com/s2/favicons?domain_url=' +
-    encodeURIComponent(url) : 'rss_icon_trans.gif';
-};
-
 // Generate a simple hashcode from a character array
 util.generateHashCode = function(arr) {
   if(arr && arr.length) {
