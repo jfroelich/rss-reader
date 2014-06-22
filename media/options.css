@@ -56,7 +56,7 @@ h2 {
 	font-weight:normal;
 	font-family: 'Segoe UI', Tahoma, sans-serif;
 	padding-bottom: 8px;
-	border-bottom: 1px solid #cccccc;	
+	border-bottom: 1px solid #cccccc;
 }
 
 /***************************** DISPLAY SETTINGS **********************************/
@@ -172,15 +172,13 @@ ul#navigation-menu li.navigation-item-selected {
 	list-style-type:none;
 	margin-left:0px;
 	padding-left:2px;
-	
+
 }
 #subscription-preview-entries li {
 	padding-top:2px;
 	padding-bottom:2px;
 	border-bottom:1px dotted #efefef;
 }
-
-
 
 
 #discover-no-results {
@@ -196,7 +194,6 @@ ul#navigation-menu li.navigation-item-selected {
 #discover-results-list {
 	display:none;
 	list-style-type:none;
-	display:block;
 	padding-left:0px;
 	margin-top:0px;
 }
@@ -210,6 +207,11 @@ ul#navigation-menu li.navigation-item-selected {
 	padding-bottom:10px;
 	padding-right:0px;
 	border-bottom: 1px dotted #cccccc;
+
+  /* Otherwise any search result can screw up the size*/
+  word-wrap: break-word;
+  word-break: break-all;
+  max-width:100%;
 }
 
 #discover-results-list li a {
@@ -247,7 +249,7 @@ ul#navigation-menu li.navigation-item-selected {
 
 #general-settings-table td {
     padding: 5px;
-    
+
 }
 
 /***************************** SUBSCRIPTIONS **********************************/
@@ -270,7 +272,7 @@ ul#navigation-menu li.navigation-item-selected {
 	padding-bottom:5px;
 	padding-right:8px;
 	border-bottom: 1px solid #cccccc;
-	-webkit-user-select: none;	
+	-webkit-user-select: none;
 }
 
 #feedlist li:hover {
@@ -329,7 +331,7 @@ ul#navigation-menu li.navigation-item-selected {
 	list-style-type:none;
 	padding-left:0px;
 	width:100%;
-	font-family: 'Segoe UI', Tahoma, sans-serif;	
+	font-family: 'Segoe UI', Tahoma, sans-serif;
 }
 
 #approved-embeds-list li {
