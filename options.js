@@ -1,15 +1,15 @@
-// TODO: can onFileInputChanged remove the input element 
+// TODO: can onFileInputChanged remove the input element
 // or do we need to wait until the file was read in the callback?
-// TODO: catch numerical error codes in onFileReaderLoad 
+// TODO: catch numerical error codes in onFileReaderLoad
 // instead of English sentence strings
 // TODO: notify the user if there was an error parsing the OPML
 // in onFileReaderLoad
 // TODO: onFeedsImported needs to notify the user of a successful
 // import. In the UI and maybe in a notification. Maybe also combine
-// with the immediate visual feedback (like a simple progress monitor 
+// with the immediate visual feedback (like a simple progress monitor
 // popup but no progress bar). The monitor should be hideable. No
 // need to be cancelable.
-// TODO: the user needs immediate visual feedback that we are importing 
+// TODO: the user needs immediate visual feedback that we are importing
 // the OPML file.
 
 // TODO: content-filtering - simplify the preview to just be textarea with preview button
@@ -72,11 +72,11 @@ opt.errorMessage.show = function(message, fadeIn) {
   dismissButton.textContent = 'Dismiss';
   dismissButton.onclick = opt.errorMessage.hide;
 
-  var container = document.createElement('div'); 
+  var container = document.createElement('div');
   container.setAttribute('id','options_error_message');
   container.appendChild(elMessage);
   container.appendChild(dismissButton);
-  
+
   if(fadeIn) {
     container.style.opacity = '0';
     document.body.appendChild(container);
@@ -137,7 +137,7 @@ opt.SubscriptionMonitor.hide = function(onComplete, fadeOut) {
     fx.fade(container, 2, 1, function() {
       document.body.removeChild(container);
       onComplete();
-    });    
+    });
   } else {
     document.body.removeChild(container);
     onComplete();
@@ -152,27 +152,27 @@ opt.showSection = function(menuItem) {
 
   menuItem.classList.add('navigation-item-selected');
   if(opt.currentMenuItem_)
-    opt.currentMenuItem_.classList.remove('navigation-item-selected'); 
+    opt.currentMenuItem_.classList.remove('navigation-item-selected');
   if(opt.currentSection_)
     opt.currentSection_.style.display = 'none';
   var section = $('#' + menuItem.getAttribute('section'));
   if(section) {
-    section.style.display = 'block';    
+    section.style.display = 'block';
   } else {
     // This should never happen but in case it does log something.
     console.warn('Could not locate section for %s', menuItem);
   }
   opt.currentMenuItem_ = menuItem;
-  opt.currentSection_ = section;  
+  opt.currentSection_ = section;
 };
 
 opt.setNavigationOnClick = function(menuItem) {
   menuItem.onclick = opt.onNavigationClick;
 };
 
-opt.updateFeedCountMessage = function() {  
+opt.updateFeedCountMessage = function() {
   var count = $('#feedlist').childElementCount;
-  
+
   if(count) {
     // Show him da klamps!
     if(count > 1000) {
@@ -180,7 +180,7 @@ opt.updateFeedCountMessage = function() {
     } else {
       $('#subscription-count').textContent = ' ('+ count +')';
     }
-    
+
   } else {
     $('#subscription-count').textContent = '';
   }
@@ -189,7 +189,7 @@ opt.updateFeedCountMessage = function() {
 opt.appendFeed = function(feed, insertedSort) {
   var item = document.createElement('li');
   item.setAttribute('sort-key', feed.title);
-  
+
   // TODO: stop using custom feed attribute?
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
@@ -200,7 +200,7 @@ opt.appendFeed = function(feed, insertedSort) {
   favIconElement.src = util.getFavIconURL(feed.link);
   if(feed.title) favIconElement.title = feed.title;
   item.appendChild(favIconElement);
-  
+
   var title = document.createElement('span');
   title.textContent = util.truncate(feed.title,300) || 'Untitled';
   item.appendChild(title);
@@ -214,7 +214,7 @@ opt.appendFeed = function(feed, insertedSort) {
       if(indexedDB.cmp(feed.title || '', currentKey || '') == -1) {
         added = true;
         $('#feedlist').insertBefore(item, currentItems[i]);
-        break;        
+        break;
       }
     }
 
@@ -222,7 +222,7 @@ opt.appendFeed = function(feed, insertedSort) {
       $('#feedlist').appendChild(item);
     }
   } else {
-    $('#feedlist').appendChild(item);  
+    $('#feedlist').appendChild(item);
   }
 };
 
@@ -233,19 +233,19 @@ opt.onEnableSubscriptionPreviewChange = function(event) {
 
 
 opt.showOrSkipSubscriptionPreview = function(url) {
-  
+
   console.log('showOrSkipSubscriptionPreview %s',url);
   opt.hideSubscriptionPreview();
 
   if(!localStorage.ENABLE_SUBSCRIBE_PREVIEW) {
     console.log('subscription preview not enabled, skipping preview');
-    opt.startSubscription(url); 
+    opt.startSubscription(url);
     return;
   }
 
   if(!navigator.onLine) {
     console.log('cannot preview while offline, skipping preview');
-    opt.startSubscription(url); 
+    opt.startSubscription(url);
     return;
   }
 
@@ -260,10 +260,10 @@ opt.showOrSkipSubscriptionPreview = function(url) {
   var onerror = function(error) {
     console.log('error fetching %s for preview', error);
     console.dir(error);
-    
+
     // If an error occurs hide the preview elements.
     opt.hideSubscriptionPreview();
-    
+
     // TODO: inspect error props and show a better error message.
     // There could be parsing errors, HTTP status !200 errors,
     // unhandled content type errors, invalid xml errors, etc.
@@ -280,7 +280,7 @@ opt.showOrSkipSubscriptionPreview = function(url) {
     //$('#subscription-preview-title').style.display = 'block';
     $('#subscription-preview-title').textContent = result.title || 'Untitled';
 
-    // Update the value of the continue button so its click handler 
+    // Update the value of the continue button so its click handler
     // can get the vvalue for subscription
     $('#subscription-preview-continue').value = result.url;
 
@@ -290,7 +290,7 @@ opt.showOrSkipSubscriptionPreview = function(url) {
       item.textContent = 'No entries found to preview';
       $('#subscription-preview-entries').appendChild(item);
     }
-    
+
     // Show up to 5 (inclusive) entries.
     for(var i = 0, len = Math.min(5,result.entries.length); i < len;i++) {
       var entry = result.entries[i];
@@ -315,15 +315,15 @@ opt.hideSubscriptionPreview = function() {
   // Clear the list of previewed articles
   $('#subscription-preview-entries').innerHTML = '';
   // These are inside the preview element, no need to hide them
-  //$('#subscription-preview-load-progress').style.display = 'none'; 
+  //$('#subscription-preview-load-progress').style.display = 'none';
   //$('#subscription-preview-continue').style.display = 'none';
 };
 
 opt.startSubscription = function(url) {
-  
+
   // Done with preview, make sure it is hidden.
   opt.hideSubscriptionPreview();
-  
+
   opt.SubscriptionMonitor.show();
   opt.SubscriptionMonitor.update('Subscribing...');
 
@@ -356,7 +356,7 @@ opt.startSubscription = function(url) {
   fu.oncomplete = function(feed, entriesProcessed,entriesAdded) {
     opt.SubscriptionMonitor.update('Subcribed to ' + feed.url);
     opt.SubscriptionMonitor.hide(function() {
-      opt.showSection($('#mi-subscriptions'));      
+      opt.showSection($('#mi-subscriptions'));
     },true);
   };
 
@@ -370,7 +370,7 @@ opt.populateFeedDetailsSection = function(feedId) {
       var feed = event.target.result;
       $('#details-title').textContent = feed.title || 'Untitled';
       $('#details-favicon').setAttribute('src', util.getFavIconURL(feed.url));
-      $('#details-feed-description').textContent = 
+      $('#details-feed-description').textContent =
         util.stripTags(feed.description) || 'No description';
       $('#details-feed-url').textContent = feed.url;
       $('#details-feed-link').textContent = feed.link;
@@ -400,16 +400,16 @@ opt.onPostPreviewSubscribeClick = function(event) {
 opt.onFeedListItemClick = function(event) {
 
   opt.populateFeedDetailsSection(parseInt(event.currentTarget.getAttribute('feed')));
-  
-  // TODO: These calls should really be in an async callback 
+
+  // TODO: These calls should really be in an async callback
   // passed to populateFeedDetailsSection
   opt.showSection($('#mi-feed-details'));
   window.scrollTo(0,0);
 };
 
 opt.onNavigationClick = function(event) {
-  
-  // Use currentTarget instead of event.target as some of the menu items have a 
+
+  // Use currentTarget instead of event.target as some of the menu items have a
   // nested element that is the event.target
   opt.showSection(event.currentTarget);
 };
@@ -419,8 +419,8 @@ opt.onSubscribeSubmit = function(event) {
   var query = ($('#subscribe-discover-query').value || '').trim();
   if(!query) return false;
   if($('#discover-in-progress').style.display == 'block') return false;
-  
-  // TODO: Suppress resubmits if last query was a search and the 
+
+  // TODO: Suppress resubmits if last query was a search and the
   // query did not change
 
   // Suppress resubmits if subscription in progress
@@ -438,8 +438,14 @@ opt.onSubscribeSubmit = function(event) {
     $('#discover-results-list').innerHTML = '';
     $('#discover-no-results').style.display='none';
     $('#discover-in-progress').style.display='block';
-    googleFeeds.search(query,opt.onDiscoverFeedsComplete, 
-      opt.onDiscoverFeedsError, 5000);
+
+    reader.fetch.discoverFeeds({
+      query: query,
+      oncomplete: opt.onDiscoverFeedsComplete,
+      onerror: opt.onDiscoverFeedsError,
+      timeout: 5000
+    });
+
   }
   return false;
 };
@@ -465,7 +471,7 @@ opt.onDiscoverFeedsComplete = function(query, results) {
   var resultsList = $('#discover-results-list');
   $('#discover-in-progress').style.display='none';
 
-  // Need to filter as for some reason the discover feeds 
+  // Need to filter as for some reason the discover feeds
   // service sometimes returns results that do not have a url
   var displayableResults = results.filter(function(result) {
     return result.url;
@@ -481,13 +487,13 @@ opt.onDiscoverFeedsComplete = function(query, results) {
     resultsList.innerHTML = '';
   } else {
     $('#discover-no-results').style.display='none';
-    resultsList.style.display = 'block';      
+    resultsList.style.display = 'block';
   }
 
   var listItem = document.createElement('li');
   listItem.textContent = 'Found ' + displayableResults.length + ' results.';
   resultsList.appendChild(listItem);
-    
+
   util.each(displayableResults, function(result) {
     var item = document.createElement('li');
     resultsList.appendChild(item);
@@ -498,12 +504,12 @@ opt.onDiscoverFeedsComplete = function(query, results) {
     button.textContent = 'Subscribe';
     button.onclick = opt.discoverSubscribeClick;
     item.appendChild(button);
-    
+
     var image = document.createElement('img');
     image.setAttribute('src', util.getFavIconURL(result.url));
     image.title = result.link;
     item.appendChild(image);
-    
+
     var a = document.createElement('a');
     a.setAttribute('href', result.link);
     a.setAttribute('target', '_blank');
@@ -511,15 +517,15 @@ opt.onDiscoverFeedsComplete = function(query, results) {
     a.innerHTML = util.truncate(result.title, 70);
     item.appendChild(a);
 
-    // The snippet contains HTML, not text. It does this because 
-    // Google provides pre-emphasized text that corresponds to the 
+    // The snippet contains HTML, not text. It does this because
+    // Google provides pre-emphasized text that corresponds to the
     // query. So we want to get rid of only certain tags, not all
-    // tags.    
+    // tags.
     var snippetSpan = document.createElement('span');
-    snippetSpan.innerHTML = 
+    snippetSpan.innerHTML =
       util.truncate(result.contentSnippet.replace('<br>',''), 400);
     item.appendChild(snippetSpan);
-    
+
     var span = document.createElement('span');
     span.setAttribute('class','discover-search-result-url');
     span.textContent = result.url;
@@ -583,7 +589,7 @@ opt.onExportOPMLClick = function(event) {
 
   var onSelectFeed = function(feed) {
     feeds.push({title: feed.title,description: feed.description,
-      link: feed.link,url: feed.url});  
+      link: feed.link,url: feed.url});
   };
 
   model.connect(function(db) {
@@ -595,7 +601,7 @@ opt.onFeedsImported = function(feedsImported, totalFeedsAttempted, exceptions) {
   if(exceptions && exceptions.length) {
     console.dir(exceptions);
   }
-  
+
   // TODO: stop the import progress monitor
   // TODO: notify the user
 };
@@ -603,7 +609,7 @@ opt.onFeedsImported = function(feedsImported, totalFeedsAttempted, exceptions) {
 opt.onFileInputChanged = function(event) {
   if(!event.target.files || !event.target.files.length) return;
   // TODO: start import progress monitor
-  feedsImporter.importOPMLFiles(event.target.files, 
+  feedsImporter.importOPMLFiles(event.target.files,
     function(feedsImported, totalFeedsAttempted, exceptions) {
       event.target.removeEventListener('change', opt.onFileInputChanged);
       document.body.removeChild(event.target);
@@ -613,8 +619,8 @@ opt.onFileInputChanged = function(event) {
 
 opt.onCreateContentFilterClick = function(event) {
   var rule = contentFiltering.createRule(
-    $('#create-filter-tag-name').value, 
-    $('#create-filter-attribute-name').value, 
+    $('#create-filter-tag-name').value,
+    $('#create-filter-attribute-name').value,
     $('#create-filter-attribute-value-match').value);
   $('#create-filter-tag-name').value = '';
   $('#create-filter-attribute-name').value = '';
@@ -639,7 +645,7 @@ opt.onContentFiltersPreviewSelectFeed = function(event) {
   option.textContent = 'Select an article';
   $('#raw-select-entry').appendChild(option);
   var counter = 0;
-  
+
   subscriptions.request(event.target.value, function(xml) {
     var feed = xml2json.transform(xml);
     util.each(feed.entries, function(entry) {
@@ -656,7 +662,7 @@ opt.onContentFiltersPreviewSelectFeed = function(event) {
     }, function() {
       console.log('fetch error');
     }, 2000);
-  });  
+  });
 };
 
 opt.onContentFiltersPreviewSelectEntry = function(event) {
@@ -673,17 +679,17 @@ opt.onContentFiltersPreviewSelectEntry = function(event) {
   var html = util.parseHTML(item.textContent);
   sanitizer.sanitize('http://', html);
   $('#filtered-content-viewer').textContent = html.innerHTML;
-  $('#filtered-content-viewer').innerHTML = 
+  $('#filtered-content-viewer').innerHTML =
     $('#filtered-content-viewer').innerHTML.replace(/&lt;/g,
-      '<br>$&').replace(/&gt;/g,'$&<br>');  
+      '<br>$&').replace(/&gt;/g,'$&<br>');
 };
 
 opt.onRemoveRewritingRuleClick = function(event) {
   if(event.target.localName != 'button') return;
   event.currentTarget.removeEventListener('click', opt.onRemoveRewritingRuleClick);
-  var ruleId = parseInt(event.currentTarget.getAttribute('rule'));  
+  var ruleId = parseInt(event.currentTarget.getAttribute('rule'));
   rewriting.removeRule(ruleId);
-  
+
   event.currentTarget.parentNode.removeChild(event.currentTarget);
 };
 
@@ -703,7 +709,7 @@ opt.onCreateRewritingRuleClick = function(event) {
     alert('Base URL is required. Rewrite rule not created.');
     return;
   }
-  
+
   var testURL = URI.parse(path);
   if(!URI.isValid(testURL)) {
     alert('Invalid Base URL. Rewrite rule not created. Check that you did not use spaces');
@@ -819,7 +825,7 @@ opt.init = function(event) {
   option.value = '';
   option.textContent = 'Use background color';
   $('#entry-background-image').appendChild(option);
-  
+
   stylize.BACKGROUND_IMAGES.forEach(function(path) {
     option = document.createElement('option');
     option.value = path;
@@ -829,7 +835,7 @@ opt.init = function(event) {
     $('#entry-background-image').appendChild(option);
   });
 
-  $('#entry-background-image').onchange = opt.onBackgroundImageChange;   
+  $('#entry-background-image').onchange = opt.onBackgroundImageChange;
 
   option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
@@ -857,14 +863,14 @@ opt.init = function(event) {
 
   $('#select_header_font').onchange = opt.onHeaderFontChange;
   $('#select_body_font').onchange = opt.onBodyFontChange;
-  
+
   var inputChangedTimer, inputChangedDelay = 400;
-  
+
   $('#entry-background-color').value = localStorage.ENTRY_BACKGROUND_COLOR || '';
   $('#entry-background-color').oninput = function(){
     if(event.target.value) localStorage.ENTRY_BACKGROUND_COLOR = event.target.value;
     else delete localStorage.ENTRY_BACKGROUND_COLOR;
-    chrome.runtime.sendMessage({'type':'displaySettingsChanged'});      
+    chrome.runtime.sendMessage({'type':'displaySettingsChanged'});
   };
 
   $('#header-font-size').value = localStorage.HEADER_FONT_SIZE || '';
@@ -873,7 +879,7 @@ opt.init = function(event) {
     inputChangedTimer = setTimeout(function() {
       if(event.target.value) localStorage.HEADER_FONT_SIZE = event.target.value;
       else delete localStorage.HEADER_FONT_SIZE;
-      chrome.runtime.sendMessage({'type':'displaySettingsChanged'});   
+      chrome.runtime.sendMessage({'type':'displaySettingsChanged'});
     }, inputChangedDelay);
   };
 
@@ -883,7 +889,7 @@ opt.init = function(event) {
     inputChangedTimer = setTimeout(function() {
       if(event.target.value) localStorage.BODY_FONT_SIZE = event.target.value;
       else delete localStorage.BODY_FONT_SIZE;
-      chrome.runtime.sendMessage({'type':'displaySettingsChanged'}); 
+      chrome.runtime.sendMessage({'type':'displaySettingsChanged'});
     }, inputChangedDelay);
   };
 
@@ -895,7 +901,7 @@ opt.init = function(event) {
     inputChangedTimer = setTimeout(function() {
       if(event.target.value) localStorage.BODY_LINE_HEIGHT = event.target.value;
       else delete localStorage.BODY_LINE_HEIGHT;
-      chrome.runtime.sendMessage({'type':'displaySettingsChanged'}); 
+      chrome.runtime.sendMessage({'type':'displaySettingsChanged'});
     }, inputChangedDelay);
   };
 

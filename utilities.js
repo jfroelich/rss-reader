@@ -179,6 +179,15 @@ util.stripTags = function(str, replacement) {
   }
 };
 
+/**
+ * Quick and dirty string replacement of <br>
+ */
+util.stripBRs = function(str) {
+  if(str) {
+    return str.replace(/<br>/gi,'');
+  }
+};
+
 util.parseHTML = function(str) {
   var doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = str;
