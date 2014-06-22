@@ -1,25 +1,17 @@
 /**
+ * TODO: deprecate this entirely and use refactored reader.fetch.fetchFeed instead.
+ * This should just be requestFeed({url,onload,onerror,timeout}).
  * TODO: response.responseURL i think lets me detect redirects now?
  * i think its final url not start url?
- * TODO: integrate EventTargetMixin
- * TODO: create HTMLHttpRequest and separate out the code from here
- * into there. that should also mixin EventTargetMixin
- * TODO: once EventTargetMixin is fixed then the callers all need
- * to use the new event listener approach
  *
- * TODO: shouldn't this really be just a function? What is really
- * stateful about this from request to request? Are there ever
- * multiple listeners? I may be just overcomplicating the code
- * with all this stuff. In the end it is all just two async callbacks:
- * resolve and reject. resolve is oncomplete and reject is onerror.
- *
- * This should just be requestFeed({url,onload,onerror,timeout}).
- * NOTE: url validation happens when the request is send and funnels
+ * TODO: url validation happens when the request is sent and funnels
  * into an exception or an XMLHttpRequest error event, I don't need
  * to do it myself.
- * NOTE: online check happens when the request is sent and funnels
+ * TODO: online check happens when the request is sent and funnels
  * into an exception or an XMLHttpRequest error event, I don't need
  * to do it myself.
+ * TODO: is an approach that uses overrideMimeType better than
+ * checking content type?
  */
 
 var FeedHttpRequest = function() {};
@@ -87,8 +79,6 @@ FeedHttpRequest.prototype.onFeedLoaded = function(event) {
     // TODO: dispatch complete event
     return this.oncomplete();
   }
-
-  // TODO: would overrideMimeType work?
 
   var type = response.getResponseHeader('Content-Type') || '';
 
