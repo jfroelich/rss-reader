@@ -1,4 +1,6 @@
 /**
+ * TODO: response.responseURL i think lets me detect redirects now?
+ * i think its final url not start url?
  * TODO: integrate EventTargetMixin
  * TODO: create HTMLHttpRequest and separate out the code from here
  * into there. that should also mixin EventTargetMixin
