@@ -4,7 +4,7 @@
 /**
  * Subscriptions module
  *
- * TODO: test import, subscribe offline, update 
+ * TODO: test import, subscribe offline, update
  */
 var subscriptions = {};
 
@@ -14,7 +14,7 @@ var subscriptions = {};
  */
 subscriptions.add = function(params) {
 
-  var url = util.stripControls((params.url || '').trim());
+  var url = stripControls((params.url || '').trim());
   var db = params.db;
   var fetch = params.fetch;
   var notify = params.notify;
@@ -52,7 +52,7 @@ subscriptions.add = function(params) {
   } else {
     model.connect(function(db) {
       advanceIfNotSubscribed(db);
-    });  
+    });
   }
 };
 
@@ -124,7 +124,7 @@ subscriptions.request = function(url, onsuccess, onerror, timeout) {
 
     if(/text\/(plain|html)/i.test(contentType)) {
       try {
-        onsuccess(util.parseXML(this.responseText), contentType);
+        onsuccess(parseXML(this.responseText), contentType);
       } catch(error) {
         onerror({type:'requestparse',url:url,contentType: contentType,error:error});
       }
@@ -136,7 +136,7 @@ subscriptions.request = function(url, onsuccess, onerror, timeout) {
   };
 
   request.open('GET', url, true);
-  request.send();  
+  request.send();
 };
 
 subscriptions.requestPreview = function(url,onsuccess,onerror,timeout) {
@@ -147,43 +147,43 @@ subscriptions.requestPreview = function(url,onsuccess,onerror,timeout) {
     } catch(error) {
       return onerror(error);
     }
-    
+
     var result = {};
     result.url = url;
     if(feed.title) {
       feed.title = feed.title.trim();
-      feed.title = util.stripControls(feed.title);
-      feed.title = util.stripTags(feed.title);
+      feed.title = stripControls(feed.title);
+      feed.title = stripTags(feed.title);
       if(feed.title) {
         result.title = feed.title;
       }
     }
-    
-    result.entries = [];    
+
+    result.entries = [];
     feed.entries.forEach(function(entry) {
       var resultEntry = {};
       if(entry.title) {
         entry.title = entry.title.trim();
-        entry.title = util.stripControls(entry.title);
-        entry.title = util.stripTags(entry.title);
+        entry.title = stripControls(entry.title);
+        entry.title = stripTags(entry.title);
         resultEntry.title = entry.title;
       }
 
       if(!resultEntry.title) return;
       if(entry.content) {
-        var doc = util.parseHTML(entry.content);
+        var doc = parseHTML(entry.content);
         sanitizer.sanitize(null, doc);
         trimming.trimDocument(doc);
         resultEntry.content = doc.textContent.substring(200);
       }
       result.entries.push(resultEntry);
     });
-    
+
     onsuccess(result);
-    
-    
+
+
   };
-  
+
   subscriptions.request(url, onRequest, onerror, timeout);
 };
 
@@ -192,7 +192,7 @@ subscriptions.isSubscribed = function(url, callback) {
     db.transaction('feed').objectStore('feed').index('schemeless').get(
       subscriptions.getSchemelessURL(url)).onsuccess = function(event) {
       callback(event.target.result ? 1 : 0);
-    };    
+    };
   });
 };
 
@@ -215,7 +215,7 @@ subscriptions.fetch = function(url,feedId,fetch,notify,oncomplete,onerror,timeou
     subscriptions.oncomplete({id:0,url:url},oncomplete,notify,0,0);
   } else {
     model.connect(function(db) {
-      subscriptions.insertFeed(db,{url:url},notify,oncomplete,onerror);  
+      subscriptions.insertFeed(db,{url:url},notify,oncomplete,onerror);
     });
   }
 };
@@ -270,7 +270,7 @@ subscriptions.updateFeed = function(db,fetchedFeed,notify,oncomplete,onerror) {
     if(storableFeed.date) existingFeed.date = storableFeed.date;
     if(storableFeed.link) existingFeed.link = storableFeed.link;
     existingFeed.updated = new Date().getTime();
-    if(storableFeed.fetched) existingFeed.fetched = storableFeed.fetched;  
+    if(storableFeed.fetched) existingFeed.fetched = storableFeed.fetched;
     if(!existingFeed.created) existingFeed.created = existingFeed.updated;
     var putRequest = feedStore.put(existingFeed);
     putRequest.onerror = function(err) {
@@ -286,14 +286,14 @@ subscriptions.addEntries = function(db,storedFeed,fetchedFeed,notify,oncomplete,
   if(!fetchedFeed.entries || !fetchedFeed.entries.length) {
     return subscriptions.oncomplete(storedFeed, oncomplete,notify,0,0);
   }
-  
+
   var entriesProcessed = 0, entriesAdded = 0;
   var onUpdateComplete = function() {
     entriesProcessed++;
     if(entriesProcessed >= fetchedFeed.entries.length) {
       subscriptions.oncomplete(storedFeed,oncomplete,notify,entriesProcessed,entriesAdded,isNewSubscription);
     }
-  };  
+  };
   var onUpdateSuccess = function() {
     entriesAdded++;
     onUpdateComplete();
@@ -301,14 +301,14 @@ subscriptions.addEntries = function(db,storedFeed,fetchedFeed,notify,oncomplete,
   var onUpdateError = function() {
     onUpdateComplete();
   };
-  util.each(fetchedFeed.entries, function(fetchedEntry) {
+  each(fetchedFeed.entries, function(fetchedEntry) {
     var storableEntry = {};
     storableEntry.hash = subscriptions.generateEntryHash(fetchedEntry);
     if(!storableEntry.hash) {
       onUpdateError();
       return;
     }
-    
+
     var entryStore = db.transaction('entry','readwrite').objectStore('entry');
     var getHashRequest = entryStore.index('hash').get(IDBKeyRange.only(storableEntry.hash));
     getHashRequest.onerror = function(error) {
@@ -323,7 +323,7 @@ subscriptions.addEntries = function(db,storedFeed,fetchedFeed,notify,oncomplete,
       if(fetchedEntry.author) storableEntry.author = fetchedEntry.author;
       if(fetchedEntry.link) storableEntry.link = fetchedEntry.link;
       if(fetchedEntry.title) storableEntry.title = fetchedEntry.title;
-      var pubdate = util.parseDate(fetchedEntry.pubdate);
+      var pubdate = parseDate(fetchedEntry.pubdate);
       if(pubdate) storableEntry.pubdate = pubdate.getTime();
       else if(storedFeed.date) storableEntry.pubdate = storedFeed.date;
       storableEntry.created = new Date().getTime();
@@ -335,14 +335,14 @@ subscriptions.addEntries = function(db,storedFeed,fetchedFeed,notify,oncomplete,
       var insertRequest = entryStore.add(storableEntry);
       insertRequest.onerror = onUpdateError;
       insertRequest.onsuccess = onUpdateSuccess;
-      
+
     };
 
   });
 };
 
 subscriptions.prepareEntryContent = function(text, baseURL) {
-  var doc = util.parseHTML(text);
+  var doc = parseHTML(text);
   sanitizer.sanitize(baseURL, doc);
   trimming.trimDocument(doc);
   return doc.innerHTML;
@@ -350,13 +350,13 @@ subscriptions.prepareEntryContent = function(text, baseURL) {
 
 subscriptions.oncomplete = function(feed,oncomplete,notify,entriesProcessed,entriesAdded,isNewSubscription) {
   if(isNewSubscription) chrome.runtime.sendMessage({type:'subscribe',feed:feed});
-  if(notify) util.notify('Subscribed to '+feed.title+'. Found '+entriesAdded+' new articles.');
+  if(notify) notify('Subscribed to '+feed.title+'. Found '+entriesAdded+' new articles.');
   oncomplete(feed, entriesProcessed, entriesAdded);
 };
 
 subscriptions.generateEntryHash = function(entry) {
   var seed = entry.link || entry.title || entry.content;
-  if(seed) return util.generateHashCode(seed.split(''));
+  if(seed) return generateHashCode(seed.split(''));
 };
 
 subscriptions.getStorableFeed = function(input) {
@@ -366,27 +366,27 @@ subscriptions.getStorableFeed = function(input) {
   output.schemeless = subscriptions.getSchemelessURL(input.url);
 
   if(input.title) {
-    output.title = util.stripTags(util.stripControls(input.title));
+    output.title = stripTags(stripControls(input.title));
   } else {
     //output.title = 'Untitled';
-    output.title = util.stripTags(util.stripControls(input.url));
+    output.title = stripTags(stripControls(input.url));
   }
 
   if(input.description) {
-    output.description = util.stripTags(util.stripControls(input.description));
+    output.description = stripTags(stripControls(input.description));
   }
 
   if(input.link) {
-    output.link = util.stripControls(input.link);
+    output.link = stripControls(input.link);
   }
 
   if(input.date) {
-    var d = util.parseDate(util.stripControls(input.date));
-    if(d) output.date = d.getTime();  
+    var d = parseDate(stripControls(input.date));
+    if(d) output.date = d.getTime();
   }
 
-  if(input.fetched) output.fetched = input.fetched; 
-  if(input.created) output.created = input.created;  
+  if(input.fetched) output.fetched = input.fetched;
+  if(input.created) output.created = input.created;
   if(input.updated) output.updated = input.updated;
   return output;
 };

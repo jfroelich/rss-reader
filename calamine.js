@@ -136,6 +136,10 @@ function transformDocument(doc, options) {
   // each(doc.body.querySelectorAll(SELECTOR_INLINE_SEPARATOR), transformRuleElement);
 
   each(doc.body.querySelectorAll(SELECTOR_WHITESPACE_IMPORTANT), cascadeWhitespaceImportant);
+
+  // TODO: Replace &#160; and &nbsp; (and any other such entities) with space
+  // TODO: if not whitespace important, nodeValue = nodeValue.replace(/\s+/g,' ');
+
   eachNode(doc.body, NodeFilter.SHOW_TEXT, trimAndMaybeRemoveTextNode);
   pruneEmptyElements(doc);
 

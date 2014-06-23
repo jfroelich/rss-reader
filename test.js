@@ -52,7 +52,7 @@ test.replaceBR = function(str) {
     //}
   };
 
-  util.each(doc.body.getElementsByTagName('br'), splitBlock);
+  each(doc.body.getElementsByTagName('br'), splitBlock);
   return doc.body.innerHTML;
 };
 
@@ -68,7 +68,7 @@ test.applyCalamine = function(url) {
 
     // Resolve images
     var baseURI = URI.parse(url);
-    util.each(doc.querySelectorAll('img'), function(img) {
+    each(doc.querySelectorAll('img'), function(img) {
       img.style.maxWidth = '100%';
       var source = img.getAttribute('src');
       if(source) {
@@ -93,10 +93,10 @@ test.applyCalamine = function(url) {
     var results = calamine.transform(doc, options);
     document.body.html = '';
 
-    util.each(results.childNodes, function(n) {
+    each(results.childNodes, function(n) {
       if(n) document.body.appendChild(n);
     });
-    util.each(doc.body.getElementsByTagName('*'), function(n) {
+    each(doc.body.getElementsByTagName('*'), function(n) {
       if(n) document.body.appendChild(n);
     });
   };
@@ -117,7 +117,7 @@ test.fetchHTML = function(url) {
     var doc = this.responseXML;
 
     // Minor cleanup
-    util.each(doc.querySelectorAll('script'), function(script) {
+    each(doc.querySelectorAll('script'), function(script) {
       script.parentNode.removeChild(script);
     });
     var comments = doc.createNodeIterator(doc.body, NodeFilter.SHOW_COMMENT);
@@ -222,7 +222,7 @@ test.asJSON = function(url) {
 };
 
 test.sanitizeString = function(str) {
-  var doc = util.parseHTML(str);
+  var doc = parseHTML(str);
   sanitizer.sanitize(null, doc);
   return doc.innerHTML;
 };
@@ -233,7 +233,7 @@ test.seed = function(urls) {
   };
 
   model.connect(function(db) {
-    util.each(urls, function(url) {
+    each(urls, function(url) {
       var params = {url:url};
       params.onerror = function(err) {
         console.log('err %s', JSON.stringify(err));
@@ -290,14 +290,14 @@ test.clearDB = function() {
 };
 
 test.unwrap = function(str, tag) {
-  var doc = util.parseHTML(str);
+  var doc = parseHTML(str);
   var nodeHandler = function(node) { app.sanitizer.unwrap(node); };
-  util.each(doc.querySelectorAll(tag), nodeHandler);
+  each(doc.querySelectorAll(tag), nodeHandler);
   return doc.innerHTML;
 };
 
 test.trimHTML = function(html) {
-  var doc = util.parseHTML(html);
+  var doc = parseHTML(html);
   trimming.trimDocument(doc);
   console.log(doc.innerHTML);
   return 'Testing HTML trim';

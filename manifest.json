@@ -14,21 +14,7 @@
   "background": {
     "persistent": false,
     "scripts": [
-      "utilities.js",
-      "fetch.js",
-      "rewrite.js",
-      "feeds.js",
-      "uri.js",
-      "storage.js",
-      "model.js",
-      "content-filters.js",
-      "sanitize.js",
-      "trimming.js",
-      "xml2json.js",
-      "polling.js",
-      "feed-http-request.js",
-      "subscriptions.js",
-      "feed-update.js",
+      "backend.js",
       "background.js",
       "test.js"]
   },

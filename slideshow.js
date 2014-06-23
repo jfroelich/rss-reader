@@ -18,7 +18,7 @@ slideshow.onMessage = function(message) {
   } else if('unsubscribe' == message.type) {
     console.log('unsubscribed from %s', message.feed);
     var removedCurrentSlide = false;
-    util.each($$('div["'+ message.feed +'"]'), function(slide) {
+    each($$('div["'+ message.feed +'"]'), function(slide) {
       if(slide == slideshow.currentSlide) {
         removedCurrentSlide;
       }
@@ -48,7 +48,7 @@ slideshow.markSlideRead = function(slideElement) {
     var store = tx.objectStore('entry');
     tx.oncomplete = function(event) {
       slideElement.setAttribute('read','');
-      util.updateBadge();
+      updateBadge();
     };
 
     store.get(entryId).onsuccess = function(event) {
@@ -89,11 +89,11 @@ slideshow.appendSlides = function(oncomplete, isFirst) {
 };
 
 slideshow.onSlideClick = function(event) {
-  if(util.isImage(event.target)) {
-    if(!util.isAnchor(event.target.parentNode)) {
+  if(isImage(event.target)) {
+    if(!isAnchor(event.target.parentNode)) {
       return;
     }
-  } else if(!util.isAnchor(event.target)) {
+  } else if(!isAnchor(event.target)) {
     return;
   }
 
@@ -127,8 +127,8 @@ slideshow.appendSlide = function(entry, isFirst) {
   title.setAttribute('target','_blank');
   title.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
-    var titleText = util.stripTags(entry.title);
-    titleText = util.truncate(titleText, 200);
+    var titleText = stripTags(entry.title);
+    titleText = truncate(titleText, 200);
     title.innerHTML = titleText;
   } else {
     title.textContent = 'Untitled';
@@ -145,7 +145,7 @@ slideshow.appendSlide = function(entry, isFirst) {
   // Resolve relative images
   var baseURI = URI.parse(entry.link);
   if(baseURI) {
-    util.each(doc.body.getElementsByTagName('img'), function(img) {
+    each(doc.body.getElementsByTagName('img'), function(img) {
       var source = img.getAttribute('src');
       if(!source) return;
       var relativeImageSourceURI = URI.parse(source);
@@ -160,7 +160,7 @@ slideshow.appendSlide = function(entry, isFirst) {
     FILTER_ATTRIBUTES: 1,
     UNWRAP_UNWRAPPABLES: 1
   });
-  util.each(results.childNodes, function(n) {
+  each(results.childNodes, function(n) {
     if(n) content.appendChild(n);
   });
 
@@ -178,7 +178,7 @@ slideshow.appendSlide = function(entry, isFirst) {
 
   var feedTitle = document.createElement('span');
   feedTitle.setAttribute('title',entry.feedLink);
-  var entryPubDate = entry.pubdate ? ' on ' + util.formatDate(new Date(entry.pubdate)) : '';
+  var entryPubDate = entry.pubdate ? ' on ' + formatDate(new Date(entry.pubdate)) : '';
   feedTitle.textContent = (entry.feedTitle || 'Unknown feed') + ' by ' +
     (entry.author || 'Unknown author') + entryPubDate;
   source.appendChild(feedTitle);
@@ -238,7 +238,7 @@ slideshow.isEntryUnread = function(entryElement) {
 };
 
 slideshow.countUnread = function() {
-  return util.filter($('#slideshow-container').childNodes,
+  return filter($('#slideshow-container').childNodes,
     slideshow.isEntryUnread).length;
 };
 
@@ -291,34 +291,34 @@ slideshow.onKeyDown = function(event) {
   //event.target is body
   //event.currentTarget is window
 
-  var key = util.key;
+  var key = key;
 
   if(event.keyCode == key.DOWN) {
     if(slideshow.currentSlide) {
       event.preventDefault();
       //slideshow.currentSlide.scrollTop += 200;
-      util.smoothScrollToY(slideshow.currentSlide, 50, slideshow.currentSlide.scrollTop + 200)
+      smoothScrollToY(slideshow.currentSlide, 50, slideshow.currentSlide.scrollTop + 200)
       return;
     }
   } else if(event.keyCode == key.PAGE_DOWN) {
     if(slideshow.currentSlide) {
       event.preventDefault();
       //slideshow.currentSlide.scrollTop += 600;
-      util.smoothScrollToY(slideshow.currentSlide, 100, slideshow.currentSlide.scrollTop + 800);
+      smoothScrollToY(slideshow.currentSlide, 100, slideshow.currentSlide.scrollTop + 800);
       return;
     }
   } else if(event.keyCode == key.UP) {
     if(slideshow.currentSlide) {
       event.preventDefault();
       //slideshow.currentSlide.scrollTop -= 200;
-      util.smoothScrollToY(slideshow.currentSlide, -50, slideshow.currentSlide.scrollTop - 200);
+      smoothScrollToY(slideshow.currentSlide, -50, slideshow.currentSlide.scrollTop - 200);
       return;
     }
   } else if(event.keyCode == key.PAGE_UP) {
     if(slideshow.currentSlide) {
       event.preventDefault();
       //slideshow.currentSlide.scrollTop -= 600;
-      util.smoothScrollToY(slideshow.currentSlide, -100, slideshow.currentSlide.scrollTop - 800);
+      smoothScrollToY(slideshow.currentSlide, -100, slideshow.currentSlide.scrollTop - 800);
       return;
     }
   }

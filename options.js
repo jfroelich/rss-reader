@@ -144,7 +144,6 @@ opt.SubscriptionMonitor.hide = function(onComplete, fadeOut) {
   }
 };
 
-
 opt.showSection = function(menuItem) {
   if(!menuItem || opt.currentMenuItem_ == menuItem) {
     return;
@@ -194,7 +193,7 @@ opt.appendFeed = function(feed, insertedSort) {
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
   item.setAttribute('feed',feed.id);
-  item.setAttribute('title', util.stripTags(feed.description) || '');
+  item.setAttribute('title', stripTags(feed.description) || '');
   item.onclick = opt.onFeedListItemClick;
   var favIconElement = document.createElement('img');
   favIconElement.src = reader.fetch.getFavIconURL(feed.link);
@@ -202,13 +201,13 @@ opt.appendFeed = function(feed, insertedSort) {
   item.appendChild(favIconElement);
 
   var title = document.createElement('span');
-  title.textContent = util.truncate(feed.title,300) || 'Untitled';
+  title.textContent = truncate(feed.title,300) || 'Untitled';
   item.appendChild(title);
 
   if(insertedSort) {
     var currentItems = $('#feedlist').childNodes;
     var added = false;
-    // TODO: use util.until or something to that effect
+    // TODO: use until or something to that effect
     for(var i = 0, len = currentItems.length; i < len; i++) {
       var currentKey = currentItems[i].getAttribute('sort-key');
       if(indexedDB.cmp(feed.title || '', currentKey || '') == -1) {
@@ -371,7 +370,7 @@ opt.populateFeedDetailsSection = function(feedId) {
       $('#details-title').textContent = feed.title || 'Untitled';
       $('#details-favicon').setAttribute('src', reader.fetch.getFavIconURL(feed.url));
       $('#details-feed-description').textContent =
-        util.stripTags(feed.description) || 'No description';
+        stripTags(feed.description) || 'No description';
       $('#details-feed-url').textContent = feed.url;
       $('#details-feed-link').textContent = feed.link;
       $('#details-unsubscribe').value = feed.id;
@@ -494,7 +493,7 @@ opt.onDiscoverFeedsComplete = function(query, results) {
   listItem.textContent = 'Found ' + displayableResults.length + ' results.';
   resultsList.appendChild(listItem);
 
-  util.each(displayableResults, function(result) {
+  each(displayableResults, function(result) {
     var item = document.createElement('li');
     resultsList.appendChild(item);
 
@@ -513,8 +512,8 @@ opt.onDiscoverFeedsComplete = function(query, results) {
     var a = document.createElement('a');
     a.setAttribute('href', result.link);
     a.setAttribute('target', '_blank');
-    a.title = util.stripTags(result.title);
-    a.innerHTML = util.truncate(result.title, 70);
+    a.title = stripTags(result.title);
+    a.innerHTML = truncate(result.title, 70);
     item.appendChild(a);
 
     // The snippet contains HTML, not text. It does this because
@@ -523,7 +522,7 @@ opt.onDiscoverFeedsComplete = function(query, results) {
     // tags.
     var snippetSpan = document.createElement('span');
     snippetSpan.innerHTML =
-      util.truncate(result.contentSnippet.replace('<br>',''), 400);
+      truncate(result.contentSnippet.replace('<br>',''), 400);
     item.appendChild(snippetSpan);
 
     var span = document.createElement('span');
@@ -648,10 +647,10 @@ opt.onContentFiltersPreviewSelectFeed = function(event) {
 
   subscriptions.request(event.target.value, function(xml) {
     var feed = xml2json.transform(xml);
-    util.each(feed.entries, function(entry) {
+    each(feed.entries, function(entry) {
       var option = document.createElement('option');
       option.value = counter;
-      option.textContent = util.truncate(entry.title, 100);
+      option.textContent = truncate(entry.title, 100);
       $('#raw-select-entry').appendChild(option);
 
       var li = document.createElement('li');
@@ -676,7 +675,7 @@ opt.onContentFiltersPreviewSelectEntry = function(event) {
   var item = $('#raw-content-holder-hidden li[id="entry'+event.target.value+'"');
   $('#raw-content-viewer').innerHTML = item.innerHTML.replace(/&lt;/g,
     '<br>$&').replace(/&gt;/g,'$&<br>');
-  var html = util.parseHTML(item.textContent);
+  var html = parseHTML(item.textContent);
   sanitizer.sanitize('http://', html);
   $('#filtered-content-viewer').textContent = html.innerHTML;
   $('#filtered-content-viewer').innerHTML =
@@ -788,7 +787,7 @@ opt.init = function(event) {
     $('#enable-idle-check').checked = permitted;
   });
 
-  util.each($$('ul#navigation-menu li'), opt.setNavigationOnClick);
+  each($$('ul#navigation-menu li'), opt.setNavigationOnClick);
 
   // Initialize the subscriptions list
   var feedCount = 0;
