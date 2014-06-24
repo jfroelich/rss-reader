@@ -33,6 +33,38 @@ function countDBFeeds(db, callback) {
 
 
 
+function getStorableFeed(input) {
+  var output = {};
+
+  if(input.id) output.id = input.id;
+
+  output.url = input.url;
+  output.schemeless = getSchemelessURL(input.url);
+
+  if(input.title) {
+    output.title = stripTags(stripControls(input.title));
+  } else {
+    output.title = stripTags(stripControls(input.url));
+  }
+
+  if(input.description) {
+    output.description = stripTags(stripControls(input.description));
+  }
+
+  if(input.link) {
+    output.link = stripControls(input.link);
+  }
+
+  if(input.date) {
+    var d = parseDate(stripControls(input.date));
+    if(d) output.date = d.getTime();
+  }
+
+  if(input.fetched) output.fetched = input.fetched;
+  if(input.created) output.created = input.created;
+  if(input.updated) output.updated = input.updated;
+  return output;
+}
 
 
 
@@ -160,6 +192,19 @@ function removeFeedById(id) {
     chrome.runtime.sendMessage({type:'unsubscribe',feed:id,entriesDeleted:counter});
   }
 }
+
+
+/**
+ * NOTE: this could maybe use an onerror as well?
+ */
+function findFeedBySchemelessURL(db, url, callback) {
+  var schemelessURL = getSchemelessURL(feed.url);
+  var schemelessIndex = db.transaction('feed').objectStore('feed').index('schemeless');
+  schemelessIndex.get(schemelessURL).onsuccess = function() {
+    callback(this.result);
+  };
+}
+
 
 
 /************** FEED XML HANDLING **************************************

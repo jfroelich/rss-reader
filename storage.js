@@ -24,12 +24,6 @@ function openDB(callback) {
   };
 }
 
-
-
-
-
-
-
 /**
  * Changes from version 0 to 7 were not recorded, no longer important
  * Changes from old version 6 to version 7 added the title index to
