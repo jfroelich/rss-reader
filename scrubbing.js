@@ -36,7 +36,58 @@
  *
  * TODO: consider using element.dataset to store custom properties instead
  * of our own direct storage on native objects. Wary of performance impact.
- * See also http://www.w3.org/TR/2009/WD-html5-20090825/microdata.html
+ * See also http://www.w3.org/TR/2009/WD-html5-20090825/microdata.html.
+ * NOTE: actually that would be pretty backwards, that is strings based. Also,
+ * those properties stick around with every element even when I do not want
+ * them to persist longer.
+ *
+ * TODO: custom properties added to DOM objects (or any object) are known in the dev community
+ * as 'expando' properties.  Actually any property that was not explicitly defined as a
+ * a part of the original object is an 'expando' property.
+ *
+ * More confusingly, since almost no object (DOM or basic {}), has a pre-defined property
+ * named 'expando', the examples are written as object.expando= value, where the assignment
+ * of a value to the .expando results in the definition of a new property in the object
+ *
+ * I am under the impression that it will not cause
+ * memory leak issues, but it is not clear. It would cause a memory leak, for
+ * example, if we did element.specialprop = element. This circular reference
+ * would have to be deleted before the element could ever be garbage collected.
+ * Currently I only attach primitives like booleans/numbers, not objects.
+ * It is permissible to use expando properties. Setting a custom property
+ * does not throw an error except in old versions of IE that I dont care about.
+ *
+ * Options:
+ * 1) create a single custom object per element during feature extraction. store all
+ * custom properties in this single custom object. Then, when all is said and done,
+ * use delete node.customObjectName on all nodes, and then produce the results. This
+ * ensures, even if it is not a problem, that no added references remain, so there is
+ * no risk of keeping around unwanted references later
+ * 2) do not store any custom properties in the nodes. Separately store a set of properties
+ * that contains references to nodes, like a big wrapper. Then just nullify or not return to
+ * let the references be eventually gced. jquery accomplishes this by giving element a
+ * GUID, then using the GUID to map between the element object and its cached reference
+ * in a corresponding wrapper object. Gross.
+ * 3) Use attributes. This would not work. We need properties for text nodes, which are
+ * not elements, and thus do not have attributes. Also, attributes are strings, and we
+ * want to use numbers and booleans and other primitives, leading to alot of unecessary
+ * type coercion.
+ * 4) Use data-* attirbutes. This again would not work, for all the same reasons as #3.
+ * 5) use several custom properties. make sure not to create references to elements, only
+ * use separate primitive-like values (although those may turn into objects depending on how
+ * they are used, like true.toString()).make sure to cleanup? cleanup may not even be
+ * necessary. really it depends on underestanding how chrome deals with non-native properties
+ * of elements. one concern is that chrome may not even provide in-memory objects for nodes
+ * until those nodes are accessed, and by setting custom properties, it flags that the node has
+ * to remain in mem, which means that by setting any one custom property on a node, it make
+ * it persist in mem. the second concern is the dereferencing, whether the custom property
+ * can be a contributing factor in preventing GC after the node is detached from the DOM.
+ *
+ * According to http://canjs.com/docco/node_lists.html, trying to set an expando on a
+ * node in certain browsers causes an exception
+ * Good explanation of the basic leaks:
+ * http://www.javascriptkit.com/javatutors/closuresleak/index3.shtml
+ *
  */
 var calamine = (function() {
 'use strict';
@@ -900,3 +951,323 @@ function removeNode(node) {
 }
 
 }());
+
+
+
+
+
+
+
+/************************ SANITIZER FUNCTIONALITY ********************************
+ * NOTE: broke apart sanitzer module into these functions
+ * NOTE: might integrate with calamine functions
+ */
+
+function sanitizeAnchor(element) {
+
+
+  var href = element.getAttribute('href');
+  if(!href) {
+    return unwrapElement(element);
+  }
+
+  // Scrub javascript urls
+  if(/^javascript:/i.test(href)) {
+    return unwrapElement(element);
+  }
+
+  // TODO: resolve
+
+  // TODO: should be using a link handler to do this
+  // this is a deprecated way of forcing new window. Also it
+  // will be easier to make it a customizable preference if the
+  // click handler can determine it later.
+  node.setAttribute('target','_blank');
+}
+
+function sanitizeEmbed(element) {
+  var src = node.getAttribute('src');
+  if(src) {
+    var srcURI = URI.parse(src.trim());
+
+    // Rewrite youtube embeds to always use https so
+    // as to comply with our CSP
+    if(srcURI && srcURI.host && srcURI.scheme != 'https' &&
+      srcURI.host.indexOf('www.youtube.com') == 0) {
+      srcURI.scheme = 'https';
+
+      node.setAttribute('src', URI.toString(srcURI));
+    }
+  }
+}
+
+
+
+// From sanitizer, needs refactoring
+function resolveRelativeURLNode(node, base) {
+
+  // No point in doing anything without a base uri
+  if(!base) {
+    return;
+  }
+
+  // TODO: maybe clean this up a bit to clarify which tags
+  // use src and which use href. Maybe a function like
+  // getURLAttributeForNode(node).
+  var attributeName = node.matches('a') ? 'href' : 'src';
+  var source = node.getAttribute(attributeName);
+
+  // Cannot resolve nodes without an attribute containing a URL
+  if(!source) {
+    return;
+  }
+
+  var uri = parseURI(source);
+
+  // Do not try and resolve absolute URLs
+  if(uri.scheme) {
+    return;
+  }
+
+  node.setAttribute(attributeName, resolveURI(base, uri));
+}
+
+// elements with resolvable attributes (href/src)
+var SELECTOR_RESOLVABLE = 'a,applet,audio,embed,iframe,img,object,video';
+
+// TODO: add a not href
+var SELECTOR_UNWRAPPABLE = 'article,center,details,div,font,help,insert,'+
+  'label,nobr,noscript,section,span,st1';
+
+// from sanitizer
+var SELECTOR_BLACKLIST = 'base:1,basefont,command,datalist,dialog,'+
+  'fieldset,frame,frameset,html,input,legend,link,math,meta,noframes,'+
+  'option,optgroup,output,script,select,style,title,iframe';
+
+var SELECTOR_WHITELIST = 'a,abbr,acronym,address,applet,'+
+'area,article,aside,audio,b,base,basefont,bdi,bdo,big,'+
+'br,blockquote,canvas,caption,center,cite,code,col,colgroup,'+
+'command,data,datalist,details,dialog,dir,dd,del,dfn,div,'+
+'dl,dt,em,embed,entry,fieldset,figcaption,figure,font,'+
+'footer,frame,frameset,header,help,hgroup,hr,h1,h2,h3,'+
+'h4,h5,h6,html,i,iframe,img,input,ins,insert,inset,'+
+'label,legend,li,link,kbd,main,mark,map,math,meta,'+
+'meter,nav,nobr,noframes,noscript,ol,object,option,'+
+'optgroup,output,p,param,pre,progress,q,rp,rt,ruby,s,'+
+'samp,script,section,select,small,span,strike,strong,style,'+
+'st1,sub,summary,sup,vg,table,tbody,td,tfood,th,thead,time,'+
+'title,tr,track,tt,u,ul,var,video,wbr';
+
+// Based on https://github.com/kangax/html-minifier/blob/gh-pages/src/htmlminifier.js
+var BOOLEAN_ATTRIBUTES = {
+  allowfullscreen:1,async:1,autofocus:1,autoplay:1,checked:1,compact:1,controls:1,
+  declare:1,'default':1,defaultchecked:1,defaultmuted:1,defaultselected:1,
+  defer:1,disable:1,draggable:1,enabled:1,formnovalidate:1,hidden:1,
+  indeterminate:1,inert:1,ismap:1,itemscope:1,loop:1,multiple:1,muted:1,
+  nohref:1,noresize:1,noshade:1,novalidate:1,nowrap:1,open:1,pauseonexit:1,
+  readonly:1,required:1,reversed:1,scoped:1,seamless:1,selected:1,
+  sortable:1,spellcheck:1,translate:1,truespeed:1,typemustmatch:1,
+  visible:1
+};
+
+/**
+ * Removes leading and trailing whitespace nodes from an HTMLDocument
+ * The doc object itself is modified in place, no return value.
+ * Note: we only traverse the first level of the DOM hiearchy
+ */
+function trimDocument(doc) {
+  // Trim leading
+  var node = doc.firstChild, sibling;
+  while(node && isTrimmableNode(node)) {
+    sibling = node.nextSibling;
+    node.parentNode.removeChild(node);
+    node = sibling;
+  }
+
+  // Trim trailing
+  node = doc.lastChild;
+  while(node && isTrimmableNode(node)) {
+    sibling = node.previousSibling;
+    node.parentNode.removeChild(node);
+    node = sibling;
+  }
+}
+
+/**
+ *  Returns true if the node is trimmable. Note
+ * side effect it will trim text nodes (not quite right)
+ */
+function isTrimmableNode(node) {
+
+  // Trim comments
+  if(node.nodeType == Node.COMMENT_NODE) {
+    return true;
+  }
+
+  // Trim empty text nodes.
+  if(node.nodeType == Node.TEXT_NODE) {
+    node.textContent = node.textContent.trim();
+    if(node.textContent.length == 0) {
+      return true;
+    }
+  }
+
+  if(node.matches && node.matches('br')) {
+    return true;
+  }
+
+  // Trim empty paragraphs.
+  if(node.matches && node.matches('p')) {
+    // This works for several cases. For it to be really accurate we would have
+    // to something like a DFS that trims while backtracking over a set of allowed
+    // child tags. Those situations are probably more rare and it is for only a small
+    // benefit so this is probably sufficient.
+
+    // TODO: consider &nbsp; and other whitespace entities. We are not at this
+    // point sanitizing those. <p>&nbsp;</p> is a thing.
+
+    // Note: consider childElementCount instead of childNodes.length. Although it might
+    // be different here? Need to test the differences.
+
+    if(node.childNodes.length == 0) {
+      // <p></p>
+      return true;
+    } else if(node.childNodes.length == 1 && node.firstChild.nodeType == Node.TEXT_NODE &&
+      node.firstChild.textContent.trim().length == 0) {
+      // <p>whitespace</p>
+      return true;
+    }
+  }
+};
+
+
+
+
+
+/*************** CONTENT FILTER FUNCTIONS ****************************
+ * TODO: this should maintain its own state by saving
+ * an array of rules in memory, instead of having caller
+ * pass around a rules array.
+ * TODO: comments
+ * TODO: update dependencies
+ */
+
+function convertContentFilterToRegex(query) {
+  // Escape regexp chars (except *) and then replace * with .*
+  return query.replace(/[-[\]{}()+?.\\^$|#\s]/g,'\\$&').replace(/\*+/g,'.*');
+}
+
+function translateContentFilterRule(rule) {
+  if(rule.match) {
+    var pattern = convertContentFilterToRegex(rule.match);
+
+    // Recreate the regular expression object as set as
+    // the property 're'
+    rule.re = new RegExp(pattern, 'i');
+  }
+}
+
+function loadContentFilterRules() {
+  var str = localStorage.CONTENT_FILTERS;
+  if(!str) return [];
+  var obj = JSON.parse(str);
+  obj.rules.forEach(translateContentFilterRule);
+  return obj.rules;
+}
+
+function saveContentFilterRules(rules) {
+  localStorage.CONTENT_FILTERS = JSON.stringify({rules: rules || []});
+}
+
+function areContentFilterRulesEqual(rule1, rule2) {
+  if(rule1.id && rule2.id)
+    return rule1.id == rule2.id;
+  return rule1.tag === rule2.tag && rule1.attr === rule2.attr &&
+    rule1.match === rule2.match;
+}
+
+function getContentFilterRuleId(rule) {
+  return rule.id;
+}
+
+function generateContentFilterId(rules) {
+  var ids = rules.map(getContentFilterRuleId);
+  var max = arrayMax(ids);
+  return (!max || max < 1) ? 1 : (max + 1);
+}
+
+function createContentFilterRule(tag, attr, match) {
+  var rules = loadContentFilterRules();
+
+  var rule = {
+    id: generateContentFilterId(rules),
+    tag: tag,
+    attr: attr,
+    match: match
+  };
+
+  rules.push(rule);
+  saveContentFilterRules(rules);
+  return rule;
+}
+
+function removeContentFilterRule(ruleId) {
+  var rules = loadContentFilterRules();
+  var differentRuleId = function(rule) {
+    return rule.id != ruleId;
+  };
+
+  var newRules = rules.filter(differentRuleId);
+  saveContentFilterRules(newRules);
+  return ruleId;
+}
+
+function contentFilterRuleToString(rule) {
+  var s = '<';
+  s += rule.tag ? rule.tag : 'any-tag';
+  s += ' ';
+
+  if(rule.attr) {
+    s += rule.attr;
+    if(rule.match) {
+      s += '="' + rule.match + '"';
+    }
+  } else if(rule.match) {
+    s += 'any-attribute="' + rule.match + '"'
+  }
+
+  s += rule.tag ? '></' + rule.tag + '>' : '/>';
+  return s;
+}
+
+
+
+/**
+ * NOTE: replaced evaluateRule in sanitizer
+ */
+function testContentFilterRuleMatchesNode(rule, node) {
+  if(rule.tag && rule.re && rule.tag.toLowerCase() == node.localName.toLowerCase()) {
+    var attr = node.getAttribute(rule.attr);
+    if(attr) {
+      return rule.re.test(attr);
+    }
+  }
+}
+
+/**
+ * NOTE: returns true means keep, return false means remove it
+ * TODO: refactor
+ */
+function applyContentFilterRulesToNode(node, rules) {
+
+  if(!localStorage.ENABLE_CONTENT_FILTERS) {
+    return 1;
+  }
+
+  var matched = any(rules, function(rule) {
+    return testContentFilterRuleMatchesNode(rule, node);
+  });
+
+  // 0 = remove, 1 = retain
+  return matched ? 0 : 1;
+}

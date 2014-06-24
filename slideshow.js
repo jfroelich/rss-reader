@@ -1,41 +1,76 @@
+/**
+ * TODO: review all node removal. Using element.remove() or
+ * node.parentNode.removeChild(node) just detaches the node
+ * from the DOM. For the node to get eventually GCed, all
+ * references to the node must also be removed. This specifically
+ * includes event listeners and anywhere the node is referenced
+ * in memory.
+ */
 
-var slideshow = {};
-slideshow.currentSlide = null;
+var currentSlide = null;
 
-slideshow.onMessage = function(message) {
+function onViewMessage(message) {
   if('displaySettingsChanged' == message.type) {
-    stylize.applyEntryStylesOnchange();
+    // TODO: Onchange => OnChange
+    applyEntryStylesOnchange();
   } else if('pollCompleted' == message.type) {
-    if(!slideshow.countUnread()) {
-      slideshow.appendSlides(slideshow.hideNoUnreadArticlesSlide,
-        !$('#slideshow-container').childElementCount);
+    // Append more articles that ere created as a result of the
+    // poll if there are no slides or all the slides are read
+    if(!countUnreadSlides()) {
+      // TODO: we do not actually need a count here, just a check
+      // of whether firstElementChild is defined.
+      // TODO: we can use querySelector to get the first slide
+      // itself instead of getting the parent container and
+      // checking its children.
+      // TODO: if the 'all read' slide is implemented, this condition
+      // would be inaccurate.
+      var isFirst = !$('#slideshow-container').childElementCount;
+      appendSlides(hideNoUnreadArticlesSlide,isFirst);
     }
   } else if('subscribe' == message.type) {
-    if(!slideshow.countUnread()) {
-      slideshow.appendSlides(slideshow.hideNoUnreadArticlesSlide,
-        !$('#slideshow-container').childElementCount);
+    // Append more articles for the new subscription if
+    // there are no slides or all the slides are read
+    // NOTE: this actually just appends any new articles
+    // not just those from the new subscription
+    if(!countUnreadSlides()) {
+      // TODO: see notes above in poll completed
+      var isFirst = !$('#slideshow-container').childElementCount;
+      appendSlides(hideNoUnreadArticlesSlide,isFirst);
     }
   } else if('unsubscribe' == message.type) {
-    console.log('unsubscribed from %s', message.feed);
+
+    // TODO: rather than this separate variable and
+    // a check per iteration, use
+    // a function like 'any' that returns whether
+    // any slide was removed in aggregate
+
     var removedCurrentSlide = false;
-    each($$('div["'+ message.feed +'"]'), function(slide) {
-      if(slide == slideshow.currentSlide) {
-        removedCurrentSlide;
+
+    //TODO: what attribute is being used by this query?
+    var slidesForFeed = $$('div["'+ message.feed +'"]');
+
+    each(slidesForFeed, function(slide) {
+      if(slide == currentSlide) {
+        removedCurrentSlide = true;
       }
-      slide.removeEventListener('click', slideshow.onSlideClick);
-      slide.parentNode.removeChild(slide);
+
+      // TODO: we need to remove all references to the slide
+      // NOTE: currentSlide can be one of the references
+      // NOTE: other listeners can be references. Are there
+      // other listeners?
+      slide.removeEventListener('click', onSlideClick);
+      slide.remove();
     });
 
-    // TODO: implement me
     if(removedCurrentSlide) {
-      console.log('removed current slide when unsubscribing, not implemented');
+      // TODO: implement
     }
 
-    slideshow.maybeShowNoUnreadArticlesSlide();
+    maybeShowNoUnreadArticlesSlide();
   }
-};
+}
 
-slideshow.markSlideRead = function(slideElement) {
+function markSlideRead(slideElement) {
 
   if(!slideElement || slideElement.hasAttribute('read')) {
     return;
@@ -43,75 +78,125 @@ slideshow.markSlideRead = function(slideElement) {
 
   var entryId = parseInt(slideElement.getAttribute('entry'));
 
-  model.connect(function(db) {
+  // TODO: using openCursor and then cursor.update
+  // might be better than using get then put? because the cursor
+  // is at the position? the perf diff is probably not
+  // great since we get by integer id, but it feels like
+  // a better practice. also, we would not need to keep track
+  // of store so onsuccess function can be outside
+
+  var entryStore;
+
+  openDB(function(db) {
     var tx = db.transaction('entry','readwrite');
-    var store = tx.objectStore('entry');
-    tx.oncomplete = function(event) {
-      slideElement.setAttribute('read','');
-      updateBadge();
-    };
-
-    store.get(entryId).onsuccess = function(event) {
-      if(this.result) {
-        delete this.result.unread;
-        this.result.readDate = Date.now();
-        chrome.runtime.sendMessage({'type':'entryRead',entry:this.result});
-        store.put(this.result);
-      }
-    };
+    entryStore = tx.objectStore('entry');
+    entryStore.get(entryId).onsuccess = onGetEntry;
   });
-};
 
-slideshow.appendSlides = function(oncomplete, isFirst) {
-  var counter = 0, limit = 3, offset = slideshow.countUnread(), notAdvanced = 1;
-  model.connect(function(db) {
+  function onGetEntry() {
+    var entry = this.result;
+    if(entry) {
+      delete entry.unread;
+      entry.readDate = Date.now();
+      chrome.runtime.sendMessage({type:'entryRead',entry:entry});
+      entryStore.put(entry);
+
+      updateBadge();
+    }
+
+    slideElement.setAttribute('read','');
+  }
+}
+
+function appendSlides(oncomplete, isFirst) {
+  var counter = 0;
+  var limit = 3;
+  var offset = countUnreadSlides();
+  var notAdvanced = true;
+
+  openDB(function(db) {
     var tx = db.transaction('entry');
     tx.oncomplete = oncomplete;
     tx.objectStore('entry').index('unread').openCursor().onsuccess = renderEntry;
   });
 
-  var renderEntry = function(event) {
-    if(!event.target.result) return;
-    if(notAdvanced && offset) {
-      notAdvanced = 0;
-      return event.target.result.advance(offset);
+  function renderEntry() {
+    var cursor = this.result;
+
+    if(cursor) {
+      if(notAdvanced && offset) {
+        notAdvanced = false;
+        cursor.advance(offset);
+      } else {
+
+        appendSlide(cursor.value, isFirst);
+        if(isFirst && counter == 0) {
+          // TODO: could just directly query for the slide
+          // using querySelector, which would match first slide
+          // in doc order.
+          currentSlide = $('#slideshow-container').firstChild;
+          isFirst = false;
+        }
+
+        if(++counter < limit)
+          cursor.continue();
+      }
     }
+  }
+}
 
-    slideshow.appendSlide(event.target.result.value, isFirst);
-    if(isFirst && counter == 0) {
-      // Setup the slide cursor as pointing to the first slide
-      slideshow.currentSlide = $('#slideshow-container').firstChild;
-      isFirst = false;
-    }
-
-    if(++counter < limit) event.target.result.continue();
-  };
-};
-
-slideshow.onSlideClick = function(event) {
-  if(isImage(event.target)) {
-    if(!isAnchor(event.target.parentNode)) {
+/**
+ * React to slide clicked. Only interested in anchor clicks.
+ *
+ * TODO: just checking if image parent is in anchor is incorrect
+ * The correct condition is if image is a descendant of an anchor
+ * TODO: this should probably be the handler that determines
+ * whether to open an anchor click in a new tab, instead of
+ * setting a target attribute per anchor.
+ *
+ * NOTE: event.target is what was clicked. event.currentTarget
+ * is where the listener is attached.
+ */
+function onSlideClick(event) {
+  if(event.target.matches('img')) {
+    if(!event.target.parentElement.matches('a')) {
       return;
     }
-  } else if(!isAnchor(event.target)) {
+  } else if(!event.target.matches('a')) {
     return;
   }
 
   if(!event.currentTarget.hasAttribute('read')) {
-    event.currentTarget.removeEventListener('click', slideshow.onSlideClick);
-    slideshow.markSlideRead(event.currentTarget);
+    event.currentTarget.removeEventListener('click', onSlideClick);
+    markSlideRead(event.currentTarget);
   }
-};
+}
 
-slideshow.appendSlide = function(entry, isFirst) {
-  // TODO: use a DocumentFragment here
-  // See also https://developers.google.com/speed/articles/javascript-dom
+/**
+ * Add a new slide to the view. If isFirst is true, the slide
+ * is immediately visible. Otherwise, the slide is positioned
+ * off screen.
+ *
+ * NOTE: in the current design, fetched content scrubbing is
+ * done onLoad instead of onBeforeStore. This is not
+ * the best performance. This is done primarily to simplify
+ * development. However, it also means we can defer decisions
+ * about rendering, which provides a chance to customize the
+ * rendering for already stored content and not just content
+ * fetched in the future. It also emphasizes that scrubbing
+ * must be tuned to be fast enough not to cause lag while
+ * blocking, because this is synchronous.
+ *
+ * TODO: looking into other performance tuning. See
+ * https://developers.google.com/speed/articles/javascript-dom
+ */
+function appendSlide(entry, isFirst) {
 
   var slide = document.createElement('div');
   slide.setAttribute('entry', entry.id);
   slide.setAttribute('feed', entry.feed);
   slide.setAttribute('class','entry');
-  slide.addEventListener('click', this.onSlideClick);
+  slide.addEventListener('click', onSlideClick);
 
   slide.style.position='absolute';
   slide.style.left = isFirst ? '0%' : '100%';
@@ -154,12 +239,14 @@ slideshow.appendSlide = function(entry, isFirst) {
     });
   }
 
-  trimming.trimDocument(doc);
+  trimDocument(doc);
 
-  var results = calamine.transform(doc,  {
+  var results = calamine.transform(doc, {
     FILTER_ATTRIBUTES: 1,
     UNWRAP_UNWRAPPABLES: 1
   });
+
+  // No need to adopt I guess
   each(results.childNodes, function(n) {
     if(n) content.appendChild(n);
   });
@@ -171,7 +258,7 @@ slideshow.appendSlide = function(entry, isFirst) {
   slide.appendChild(source);
 
   var favIcon = document.createElement('img');
-  favIcon.setAttribute('src', reader.fetch.getFavIconURL(entry.feedLink || entry.baseURI));
+  favIcon.setAttribute('src', getFavIconURL(entry.feedLink || entry.baseURI));
   favIcon.setAttribute('width', '16');
   favIcon.setAttribute('height', '16');
   source.appendChild(favIcon);
@@ -183,11 +270,25 @@ slideshow.appendSlide = function(entry, isFirst) {
     (entry.author || 'Unknown author') + entryPubDate;
   source.appendChild(feedTitle);
   $('#slideshow-container').appendChild(slide);
-};
+}
 
-slideshow.showNextSlide = function() {
-  var showNext = function() {
-    var current = slideshow.currentSlide;
+function showNextSlide() {
+  if(countUnreadSlides() < 2) {
+    appendSlides(function() {
+        var c = $('#slideshow-container');
+        while(c.childElementCount > 30 && c.firstChild != currentSlide) {
+          c.removeChild(c.firstChild);
+        }
+
+        showNext();
+        maybeShowNoUnreadArticlesSlide();
+    }, false);
+  } else {
+    showNext();
+  }
+
+  function showNext() {
+    var current = currentSlide;
     if(current.nextSibling) {
       current.style.left = '-100%';
       current.style.right = '100%';
@@ -195,64 +296,44 @@ slideshow.showNextSlide = function() {
       current.nextSibling.style.right = '0px';
       current.scrollTop = 0;
 
-      // NOTE: i also need to mark read initially
-      // if in view and fully in view
-      // This marks as read if not already read
-      slideshow.markSlideRead(current);
-      slideshow.currentSlide = current.nextSibling;
-
-      // Set the new slide as focused so that downarrow works as expected
-      // and causes scroll. NOTE: this did not solve the bug.
-      // current.focus();
+      markSlideRead(current);
+      currentSlide = current.nextSibling;
     }
-  };
-
-  if(slideshow.countUnread() < 2) {
-    slideshow.appendSlides(function() {
-        var c = $('#slideshow-container');
-        while(c.childElementCount > 30 && c.firstChild != slideshow.currentSlide) {
-          c.removeChild(c.firstChild);
-        }
-
-        showNext();
-        slideshow.maybeShowNoUnreadArticlesSlide();
-    }, false);
-  } else {
-    showNext();
   }
-};
+}
 
-slideshow.showPreviousSlide = function() {
-  var current = slideshow.currentSlide;
+function showPreviousSlide() {
+  var current = currentSlide;
   if(current.previousSibling) {
     current.style.left = '100%';
     current.style.right = '-100%';
     current.previousSibling.style.left = '0px';
     current.previousSibling.style.right = '0px';
-    slideshow.currentSlide = current.previousSibling;
+    currentSlide = current.previousSibling;
   }
 }
 
-slideshow.isEntryUnread = function(entryElement) {
+function isEntryElementUnread(entryElement) {
   return !entryElement.hasAttribute('read');
-};
+}
 
-slideshow.countUnread = function() {
-  return filter($('#slideshow-container').childNodes,
-    slideshow.isEntryUnread).length;
-};
+function countUnreadSlides() {
+  // TODO: should $$ the slides
+  var slideNodes = $('#slideshow-container').childNodes;
+  return filter(slideNodes, isEntryElementUnread).length;
+}
 
-slideshow.maybeShowNoUnreadArticlesSlide = function() {
-  if(slideshow.countUnread() == 0) {
-    console.log('all read slide not yet implemented');
+function maybeShowNoUnreadArticlesSlide() {
+  if(countUnreadSlides() == 0) {
+    console.log('not implemented');
   }
-};
+}
 
-slideshow.hideNoUnreadArticlesSlide = function() {
-  console.log('hideNoUnreadArticlesSlide not implemented');
-};
+function hideNoUnreadArticlesSlide() {
+  console.log('not implemented');
+}
 
-slideshow.didWheelScrollY = function(event) {
+function didWheelScrollY(event) {
   // event.currentTarget is undefined here, I think because we bind to window
   // and not an element.
   // event.target is not div.entry when the mouse pointer is hovering over
@@ -260,7 +341,7 @@ slideshow.didWheelScrollY = function(event) {
   // if we bothered to bind mouse wheel to each slide we
   // could use currentTarget and would be 'cheating' less
 
-  if(slideshow.currentSlide) {
+  if(currentSlide) {
     var t = slideshow.currentSlide;
     if(!t.scrollTop || t.scrollTop + t.offsetHeight >= t.scrollHeight) {
       return false;
