@@ -4,54 +4,34 @@
  * TODO: in the future, we should be storing two titles, a
  * human readonable one, and one for sorting when loading. Both
  * addFeed and updateFeed would be refactored.
+ *
+ * TODO: because i do not validate a feed is live before adding,
+ * i need to peroidically identify invalid feeds later.
+ * TODO: feed.add no longer sends message when complete so the caller
+ * needs to do this.
+ * //chrome.runtime.sendMessage({type:'subscribe',feed:feed});
+ * TODO: remoteById no longer sends message when complete, caller
+ * needs to do this.
+ * //chrome.runtime.sendMessage({type:'unsubscribe',feed:id,entriesDeleted:counter});
+ * TODO: the caller of feed.update needs to set feed.fetched
+ * TODO: the caller of feed.update should pass in last modified
+ * date of the remote xml file so we can avoid pointless updates
+ * TODO: feed.update should not be changing the date updated unless
+ * something actually changed.
  */
-
 var feed = {};
 
 /**
- * Adds the feed to the database. If successful,
- * calls oncomplete with the stored feed object and the
- * the number of entries added. If the feed already exists,
- * then the add is unsuccessful, and this calls onerror instead
- * with an error object.
- *
- * feed.url is required. This is not validated. It should already
- * be trimmed. Other properties are cleaned up.
- *
- * TODO: the caller needs to do sendmessage since whether to do this
- * varies per caller need (batch import, subscribe offline, subscribe)
- * //chrome.runtime.sendMessage({type:'subscribe',feed:feed});
+ * Sanitizes the remote feed and then adds it to the feed store
  */
 feed.add = function(db, remoteFeed, oncomplete, onerror) {
   console.log('feed.add url %s', remoteFeed.url);
 
   var storableFeed = {};
-  var cleanedFeed = feed.sanitize(remoteFeed);
+  var cleanedFeed = feed.asSanitized(remoteFeed);
 
-  // Set the url property. The url represents the feed's
-  // HTTP location, and should not be confused with the feed's
-  // link property. It is a string property.
-  // The url is assumed to always be defined and non empty. This
-  // is not checked. It will cause errors later. It is the
-  // responsibility of the caller to ensure it is defined and not
-  // empty. This function should not even be called in that case.
-  // The url is not validated. It could be an invalid url
-  // if added from an import or when subscribing offline. If
-  // could just not even be a well-formatted URL. This could cause
-  // errors later. We cannot catch these errors upfront because
-  // no HTTP requests are involved. Some feature later on has to
-  // delete such feeds after repeated fetch failures.
-  // TODO: implement that code feature
-  // The url is assumed to be canonical and absolute. If not the
-  // same fetch errors errors will occur later.
-  // The url should already be trimmed.
-  // The url is not sanitized. The renderer should take care
-  // when displaying the URL in HTML.
   storableFeed.url = remoteFeed.url;
 
-  // Derive the schemeless property based on the url. This will be
-  // used in the test for equality to determine if the feed
-  // already exists.
   storableFeed.schemeless = getSchemelessURL(storableFeed.url);
 
   // Setup the feed's title.
@@ -112,86 +92,29 @@ feed.add = function(db, remoteFeed, oncomplete, onerror) {
  * Updates the localFeed according to the properties in remoteFeed,
  * merges in any new entries present in the remoteFeed, and then
  * calls oncomplete.
- *
- * Certain properties of a feed can change on every update. For example,
- * the author of the remote feed file could change the feed's link property,
- * or the general date property (pubdate). The local representation of the
- * remote feed is updated to reflect some of the latest remote values every call
- * to updateFeed.
- *
- * It is the caller's responsibility to ensure that the fetched property
- * is set in the remoteFeed object, that the localFeed has an id and
- * all its old properties set (otherwise you could end up deleting properties).
- *
- * TODO: have the caller set a property in remoteFeed indicating
- * the last time the remote XML file was modified by the server.
- * We should store that every time in the localFeed. It should
- * also be stored initially if the initial storage was from
- * an online fetch. We should check that if both lastModifieds
- * are set, that the new one is different. If it is not
- * different than no change occurred and we can exit early.
- *
- * TODO: the date fetched and the date updated
- * seem to kind of the same thing. The idea is that
- * we could check a feed multiple times but never
- * notice any real changes. The fetched date should be
- * changed every fetch. However, the date updated should
- * only be changed if (1) the feed's properties changed,
- * or (2) new entries were added, (3) entries were removed
- * TODO: so this still needs some clarification and refactoring
- * I do not want to do a second database update.
- * First I need to update the feed's entries first, track how
- * many were added, and only then update the feed.  Second, I
- * need to check each individual property to see if it is
- * different than the old property.
- *
- * TODO: should this be called something like
- * synchronizeFeed? Or, rather should that be the name
- * of an outer function that couples fetch and update?
- *
- * @param db {IDBDatabase} - an open database connection
- * @param localFeed - the existing feed object retrieved from indexedDB
- * @param remoteFeed - the feed object retrieved from the remote URL
- * @param oncomplete - callback when finished, passed the updated
- * feed object, the number of entries processed, and the number of
- * entries added.
  */
 feed.update = function(db, localFeed, remoteFeed, oncomplete) {
 
-  // Sanitize relevant properties from the remote feed.
-  // We will be re-inserting localFeed back into
-  // the entry store, so update the localFeed object's
-  // properties accordingly
+  var cleanedFeed = feed.asSanitized(remoteFeed);
 
-  // In preparation, clean up relevant remote properties
-  var cleanedFeed = feed.sanitize(remoteFeed);
-
-  // Replace local title with cleaned remote title
   if(cleanedFeed.title) {
     localFeed.title = cleanedFeed.title;
   }
 
-  // Replace local description with cleaned remote description
   if(cleanedFeed.description) {
     localFeed.description = cleanedFeed.description;
   }
 
-  // Replace local link with cleaned remote link
   if(cleanedFeed.link) {
     localFeed.link = cleanedFeed.link;
   }
 
-  // Replace local date with cleaned remote date
   if(cleanedFeed.date) {
     localFeed.date = cleanedFeed.date;
   }
 
-  // Replace the date fetched. The caller should
-  // have set this appropriately in the remoteFeed
-  // argument.
   localFeed.fetched = remoteFeed.fetched;
 
-  // Set the date updated to now
   localFeed.updated = Date.now();
 
   feed.putInStore(db, localFeed, function() {
@@ -211,10 +134,6 @@ feed.addToStore = function(db, storableFeed, oncomplete, onerror) {
 
 /**
  * Puts a feed into the indexedDB feed store.
- *
- * @param db - open database connection
- * @param feed - the feed object to put
- * @param oncomplete - the callback to call
  */
 feed.putInStore = function(db, storableFeed, oncomplete, onerror) {
   var putRequest = db.transaction('feed','readwrite').objectStore('feed').put(storableFeed);
@@ -224,22 +143,15 @@ feed.putInStore = function(db, storableFeed, oncomplete, onerror) {
 
 /**
  * Returns a sanitized version of a remote feed object.
- * The remoteFeed object is not modified.
- *
- * Properties of the returned feed object are only set if
- * they are non-empty after sanitization.
- *
- * Only certain properties are sanitized based on whether
- * the property was system or user-generated.
- *
- * Entries in the feed.entries property are not sanitized.
+ * The remoteFeed object is not modified. Only certain
+ * properties are sanitized and included in the returned object
  */
-feed.sanitize = function(remoteFeed) {
+feed.asSanitized = function(remoteFeed) {
   var output = {};
 
   // Sanitize the title. Note that this does not sanitize
   // HTML entities in the title.
-  var title = feed.sanitizeString(remoteFeed.title);
+  var title = feed.asSanitizedString(remoteFeed.title);
   if(title) {
     output.title = title;
   }
@@ -247,7 +159,7 @@ feed.sanitize = function(remoteFeed) {
   // Sanitize the description. Some feed descriptions contain
   // HTML, but we do not allow that.
   // NOTE: this does not sanitize HTML entities in the description
-  var description = feed.sanitizeString(remoteFeed.description);
+  var description = feed.asSanitizedString(remoteFeed.description);
   if(description) {
     output.description = description;
   }
@@ -256,7 +168,7 @@ feed.sanitize = function(remoteFeed) {
   // For now sanitize it generally but this may need
   // special handling.
   // NOTE: html entities are not sanitized.
-  var link = feed.sanitizeString(remoteFeed.link);
+  var link = feed.asSanitizedString(remoteFeed.link);
   if(link) {
     output.link = link;
   }
@@ -293,7 +205,7 @@ feed.sanitize = function(remoteFeed) {
  * stripping tags? Some entities? All entities?
  *
  */
-feed.sanitizeString = function(str) {
+feed.asSanitizedString = function(str) {
 
   if(!str) {
     return;
@@ -357,38 +269,20 @@ feed.countAll = function(db, callback) {
 };
 
 /**
- * Removes a feed and its dependent entries
- *
- * //Callers responsibility, dont do this here
- * //chrome.runtime.sendMessage({type:'unsubscribe',feed:id,entriesDeleted:counter});
+ * Removes a feed and its dependencies
  */
 feed.removeById = function(db, id, oncomplete) {
-  //console.log('removing %s', id);
-
-  var counter = 0,
-      entryStore,
-      tx = db.transaction(['entry','feed'],'readwrite'),
-      keys;
-
-  tx.objectStore('feed').delete(id);
-  entryStore = tx.objectStore('entry');
-  tx.oncomplete = function () {
-    oncomplete(id, counter);
-  };
-
-  // TODO: is IDBKeyRange necessary?
-  keys = entryStore.index('feed').openKeyCursor(IDBKeyRange.only(id));
-  keys.onsuccess = function() {
-    var keyCursor = this.result;
-    if(keyCursor) {
-      entryStore.delete(keyCursor.primaryKey);
-      counter++;
-      keyCursor.continue();
-    }
+  var tx = db.transaction(['entry','feed'],'readwrite');
+  tx.objectStore('feed').delete(id).onsuccess = function() {
+    entry.removeByFeedId(tx, id, function(numDeleted) {
+      oncomplete(id, counter);
+    });
   };
 };
 
 /**
+ * Finds the feed corresponding to the url, without regard
+ * to its scheme.
  */
 feed.findBySchemelessURL = function(db, url, callback) {
   var schemelessURL = getSchemelessURL(feed.url);
