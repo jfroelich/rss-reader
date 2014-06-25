@@ -9,13 +9,14 @@ function isRewritingEnabled() {
 }
 
 
-/************* STORAGE RELATED FUNCTIONS *******************************
- * TODO: needs refactoring
+/************* indexedDB *******************************
  */
+
+var DATABASE_VERSION = 10;
 
 // Connect to indexedDB
 function openDB(callback) {
-  var request = indexedDB.open('reader', 9);
+  var request = indexedDB.open('reader', DATABASE_VERSION);
   request.onerror = console.error;
   request.onblocked = console.error;
   request.onupgradeneeded = onDBUpgradeNeeded;
@@ -25,18 +26,20 @@ function openDB(callback) {
 }
 
 /**
- * Changes from version 0 to 7 were not recorded, no longer important
- * Changes from old version 6 to version 7 added the title index to
+ * - Changes from version 0 to 7 were not recorded, no longer important
+ * - Changes from old version 6 to version 7 added the title index to
  * feed store for sorting by title
- * Changes from old version 7 to version 8 drop the store.url index
+ * - Changes from old version 7 to version 8 drop the store.url index
  * and added the store.schemeless index. The url index was used to
  * check if a feed already existed when subscribing. The new schemeless
  * index serves the same purpose but is based on a property where the URLs
  * scheme is not stored.
- * Changes from 8 to 9: adding link index to entry store. the link index
+ * - Changes from 8 to 9: adding link index to entry store. the link index
  * is used to check if the article has already been downloaded.
+ * - Changes from 9 to 10: the index on entry.hash should have the flag
+ * unique:true
  *
- * Note: ideally we would never store both schemeless and url, we would just
+ * TODO: ideally we would never store both schemeless and url, we would just
  * store scheme and schemeless props as parts of the url property. Consider
  * making this change at some point prior to release when I dont mind deleting
  * the test data.
@@ -49,22 +52,15 @@ function openDB(callback) {
 function onDBUpgradeNeeded(event) {
   var db = event.target.result;
 
-  console.log('Upgrading database from %s to %s',
-    event.oldVersion, model.DATABASE_VERSION);
+  console.log('Upgrading database from version %s to version %s',
+    event.oldVersion, DATABASE_VERSION);
 
   if(event.oldVersion == 0) {
-    // TODO: this branch needs testing again
-    // - is the initial version 0 or 1????
-
-    //console.log('Setting up database for first time');
-
     //console.log('Creating feed store');
     var feedStore = db.createObjectStore('feed', {keyPath:'id',autoIncrement:true});
 
-    // For checking if already subscribed
-    // No longer in use, use schemeless instead
-    //feedStore.createIndex('url','url',{unique:true});
-
+    // For checking if already subscribed, and ensuring that attempts to
+    // insert feed with same schemeless url fail.
     feedStore.createIndex('schemeless','schemeless',{unique:true});
 
     // For loading feeds in alphabetical order
@@ -73,15 +69,18 @@ function onDBUpgradeNeeded(event) {
     //console.log('Create entry store');
     var entryStore = db.createObjectStore('entry', {keyPath:'id',autoIncrement:true});
 
-    // For quickly counting unread
-    // and for iterating over unread in id order
+    // For quickly finding unread entries
+    // and for iterating over unread entries in id order
     entryStore.createIndex('unread','unread');
 
     // For quickly deleting entries when unsubscribing
     entryStore.createIndex('feed','feed');
 
     // For quickly checking whether a similar entry exists
-    entryStore.createIndex('hash','hash');
+    // and also, due to unique:true, for ensuring no two entries with the same hash
+    // exist (later attempts to insert entry with same hash generate
+    // a transactional error and fail).
+    entryStore.createIndex('hash','hash',{unique:true});
 
     // For checking if URL fetched
     entryStore.createIndex('link','link');
@@ -105,6 +104,10 @@ function onDBUpgradeNeeded(event) {
 
     entryStore.createIndex('link','link');
 
+    // Adding unique flag to hash index
+    entryStore.deleteIndex('hash');
+    entryStore.createIndex('hash','hash',{unique:true});
+
   } else if(event.oldVersion == 7) {
 
     var tx = event.currentTarget.transaction;
@@ -119,12 +122,25 @@ function onDBUpgradeNeeded(event) {
     var entryStore = tx.objectStore('entry');
     entryStore.createIndex('link','link');
 
+    // Adding unique flag to hash index
+    entryStore.deleteIndex('hash');
+    entryStore.createIndex('hash','hash',{unique:true});
+
   } else if(event.oldVersion == 8) {
 
     var tx = event.currentTarget.transaction;
     var entryStore = tx.objectStore('entry');
 
     entryStore.createIndex('link','link');
+
+    // Adding unique flag to hash index
+    entryStore.deleteIndex('hash');
+    entryStore.createIndex('hash','hash',{unique:true});
+  } else if(event.oldVersion == 9) {
+
+    // Adding unique flag to hash index
+    entryStore.deleteIndex('hash');
+    entryStore.createIndex('hash','hash',{unique:true});
 
   } else {
     console.error('Unhandled database upgrade, old version was %s', event.oldVersion);
