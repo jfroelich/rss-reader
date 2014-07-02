@@ -14,9 +14,23 @@
   "background": {
     "persistent": false,
     "scripts": [
-      "backend.js",
-      "background.js",
-      "test.js"]
+      "/lib/extension.js",
+      "/lib/background.js",
+      "/lib/create-feed-from-document.js",
+      "/lib/database.js",
+      "/lib/date-utilities.js",
+      "/lib/entry.js",
+      "/lib/feed.js",
+      "/lib/feed-fetch.js",
+      "/lib/feed-poll.js",
+      "/lib/hashing.js",
+      "/lib/http.js",
+      "/lib/parse-html.js",
+      "/lib/parse-xml.js",
+      "/lib/string-utilities.js",
+      "/lib/uri.js",
+      "/lib/utilities.js"
+      ]
   },
 
   "options_page": "options.html",
