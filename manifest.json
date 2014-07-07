@@ -19,6 +19,7 @@
       "/lib/create-feed-from-document.js",
       "/lib/database.js",
       "/lib/date-utilities.js",
+      "/lib/dom-utilities.js",
       "/lib/entry.js",
       "/lib/feed.js",
       "/lib/feed-fetch.js",
