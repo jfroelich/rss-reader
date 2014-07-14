@@ -3,8 +3,9 @@
 // that can be found in the LICENSE file
 
 'use strict';
-// Functions for sanitizing, removing boilerplate
 
+
+// Functions for sanitizing, removing boilerplate
 
 function removeElementAttribute(element, attribute) {
   element.removeAttribute(attribute.name);

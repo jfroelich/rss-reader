@@ -17,7 +17,6 @@ var BOOLEAN_ELEMENT_ATTRIBUTES = {
   typemustmatch:1,visible:1
 };
 
-
 /**
  * Returns true if an element is invisible according to our own very
  * simplified definition of visibility. We are really only going after some
@@ -54,15 +53,12 @@ function isInvisibleElement(element) {
     parseInt(element.style.opacity) === 0;
 }
 
-
-
 /**
  * Leaf like elements
  */
 function isLeafLikeElement(element) {
   return element.matches('applet,audio,br,canvas,embed,frame,hr,iframe,img,object,video');
 }
-
 
 /**
  * Returns true if the node is a defined element that
@@ -84,8 +80,6 @@ function isInlineElement(node) {
     node.matches('a,abbr,acronym,b,bdo,big,blink,cite,code,dfn,'+
     'em,kbd,i,q,samp,small,span,strong,sub,sup,tt,var');
 }
-
-
 
 /**
  * Removes the element but retains its children.
@@ -130,7 +124,6 @@ function removeNode(node) {
   }
 }
 
-
 /**
  * A simple helper to use forEach against traversal API.
  *
@@ -149,7 +142,6 @@ function eachNode(element, type, func, filter) {
     func(node);
   }
 }
-
 
 /**
  * Returns the area of an image, in pixels. If the image's dimensions are
@@ -171,7 +163,6 @@ function getImageArea(element) {
 
   return 0;
 }
-
 
 /**
  * Mutates an image element in place by changing its src property
@@ -217,7 +208,6 @@ function resolveImageElement(baseURI, imageElement) {
 
   return imageElement;
 }
-
 
 /**
  * Periodically scroll from the current position to a new position

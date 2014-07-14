@@ -164,7 +164,6 @@ function fetchAndSetImageDimensions(onComplete, remoteImage) {
   localImage.src = src;
 }
 
-
 function isAugmentableImage(imageElement) {
 
   if(imageElement.width) {

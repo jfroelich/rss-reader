@@ -75,7 +75,7 @@ function showErrorMessage(message, fadeIn) {
     container.style.opacity = '1';
     document.body.appendChild(container);
   }
-};
+}
 
 // TODO: instead of removing and re-adding, reset and reuse
 
@@ -606,7 +606,7 @@ function onFileInputChanged(event) {
       document.body.removeChild(event.target);
       onFeedsImported(feedsImported, totalFeedsAttempted, exceptions);
   });
-};
+}
 
 function onFeedsImported(feedsImported, totalFeedsAttempted, exceptions) {
   if(exceptions && exceptions.length) {
@@ -618,7 +618,6 @@ function onFeedsImported(feedsImported, totalFeedsAttempted, exceptions) {
   // switch to section
   console.log('feed imported');
 }
-
 
 function onExportOPMLClick(event) {
   exportOPMLString(function(xmlString) {
@@ -633,7 +632,6 @@ function onExportOPMLClick(event) {
     document.body.removeChild(anchor);
   });
 }
-
 
 function onCreateContentFilterClick(event) {
   var rule = contentFiltering.createRule(
@@ -873,11 +871,9 @@ function initOptionsPage(event) {
   document.getElementById('extension-author').textContent = manifest.author || '?';
   document.getElementById('extension-description').textContent = manifest.description || '';
   document.getElementById('extension-homepage').textContent = manifest.homepage_url || '';
-};
-
+}
 
 document.addEventListener('DOMContentLoaded', initOptionsPage);
-
 
 
 /*

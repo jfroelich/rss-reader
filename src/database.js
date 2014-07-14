@@ -17,9 +17,14 @@ function openIndexedDB(callback) {
   request.onerror = console.error;
   request.onblocked = console.error;
   request.onupgradeneeded = upgradeDatabase;
-  request.onsuccess = function onOpenIndexedDBSuccess() {
-    callback(this.result);
-  };
+  //request.onsuccess = function onOpenIndexedDBSuccess() {
+  //  callback(this.result);
+  //};
+  request.onsuccess = onOpenIndexedDBSuccess.bind(request, callback);
+}
+
+function onOpenIndexedDBSuccess(callback) {
+  callback(this.result);
 }
 
 /**
@@ -88,4 +93,4 @@ function upgradeDatabase(event) {
   } else {
     console.error('failed to upgrade database from version %s', oldVersion);
   }
-};
+}

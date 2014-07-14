@@ -3,6 +3,7 @@
 // that can be found in the LICENSE file
 
 'use strict';
+
 /**
  * Parses the string into an XMLDocument.
  * If the XML is invalid, an exception is thrown

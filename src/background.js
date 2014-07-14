@@ -47,7 +47,6 @@ function onBackgroundMessage(message) {
   }
 }
 
-
 /**
  * Called when the extension's icon button is clicked
  * in Chrome's toolbar. Browser action distinguishes it
@@ -92,7 +91,6 @@ function onBrowserActionClick() {
     }
   });
 }
-
 
 /**
  * Called when any of the extension's alarms wakeup. For the time being

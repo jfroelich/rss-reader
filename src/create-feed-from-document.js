@@ -3,6 +3,7 @@
 // that can be found in the LICENSE file
 
 'use strict';
+
 /**
  * Convert an XMLDocument representing a feed into a feed object.
  *

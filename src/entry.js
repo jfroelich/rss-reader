@@ -3,6 +3,7 @@
 // that can be found in the LICENSE file
 
 'use strict';
+
 /**
  * TODO: use entries as a separate parameter rather than pack into
  * feed. feed just represents those properties that should be

@@ -37,7 +37,8 @@ function queryGoogleFeeds(query, timeout, onComplete, onerror) {
 
   var baseURL = 'https://ajax.googleapis.com/ajax/services/feed/find';
   var apiVersion = '1.0';
-  var requestURL = baseURL + '?v=' + apiVersion + '&q=' + encodeURIComponent(query);
+  var requestURL = baseURL + '?v=' + apiVersion + '&q=' +
+    encodeURIComponent(query);
 
   request.open('GET', requestURL, true);
   request.responseType = 'json';

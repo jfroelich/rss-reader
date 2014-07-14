@@ -121,7 +121,6 @@ function onRemoteFeedFetched(onComplete, onError, shouldAugmentEntries,
 
 }
 
-
 function convertToFeed(xmlDocument, onComplete, onError,
   shouldAugmentEntries, shouldAugmentImages, rewriteLinks, entryTimeout) {
 
