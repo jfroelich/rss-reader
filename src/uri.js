@@ -102,9 +102,17 @@ function rewriteURL(urlString) {
   return urlString;
 }
 
-//Loosely tests whether urlString is a data uri
-//NOTE: https://gist.github.com/bgrins/6194623 is helpful
+// Loosely tests whether urlString represents a data uri
 function isDataURL(urlString) {
+
+  // NOTE: https://gist.github.com/bgrins/6194623 is a more accurate
+  // and helpful reference implementation. But I am more concerned about
+  // false negatives than false positives here so loose is fine.
+
+  // TODO: consider relaxing to allow leading space here?
+  // not really a defensive guard. or maybe its better to say
+  // that callers must trim.
+
   return /^data:/i.test(urlString);
 }
 
