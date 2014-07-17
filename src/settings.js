@@ -138,9 +138,10 @@ function applyEntryStylesOnLoad() {
 
   s =  'font-size:'+ (localStorage.HEADER_FONT_SIZE || '') +';';
   s += 'font-family:'+ (localStorage.HEADER_FONT_FAMILY || '')  +';';
+
   s += 'letter-spacing: -0.03em;';
   s += 'color: rgba(50, 50, 50, 0.9);';
-  s += 'padding: 0px 0px 0px 0px;';
+
   s += 'margin-bottom:12px;';
   s += 'margin-left:0px;';
   s += 'text-decoration:none;';
@@ -149,25 +150,38 @@ function applyEntryStylesOnLoad() {
   s += 'text-shadow: 1px 1px 2px #cccccc;';
   s += 'text-transform: capitalize;';
   //s += 'text-align:justify;';
+
+  // s += 'padding: 0px 0px 0px 0px;';
+  s += 'padding-top: 10px;';
+  s += 'padding-left: 150px;';
+  s += 'padding-right: 150px;';
+  s += 'padding-bottom: 10px;';
+
+
+
   sheet.addRule('div.entry a.entry-title', s);
 
   s =  'font-size: '+ (localStorage.BODY_FONT_SIZE || '')+';';
   s += 'text-align: '+ ((localStorage.JUSTIFY_TEXT == '1') ? 'justify' : 'left')+';';
   s += 'font-family:'+ (localStorage.BODY_FONT_FAMILY || '')  +';';
   s += 'line-height:'+(localStorage.BODY_LINE_HEIGHT || 'normal')+';';
-  s += 'vertical-align:text-top;';
+  s += 'vertical-align: text-top;';
   //s += 'letter-spacing: -0.03em;';
   //s += 'word-spacing: -0.5em;';
   s += 'display:block;';
   s += 'word-wrap: break-word;';
-  s += 'padding-top:0px;';
-  s += 'padding-right: 10px;';
+
+  s += 'padding-top: 30px;';
+  s += 'padding-right: 150px;';
+  s += 'padding-left: 150px;';
+  s += 'padding-bottom: 20px;';
+
   s += 'margin: 0px;';
 
   // TODO: use this if columns enabled (use 1(none), 2, 3 as options).
-  s += '-webkit-column-count: 2;';
-  s += '-webkit-column-gap: 30px;';
-  s += '-webkit-column-rule:1px outset #cccccc;';
+  // s += '-webkit-column-count: 2;';
+  // s += '-webkit-column-gap: 30px;';
+  // s += '-webkit-column-rule:1px outset #cccccc;';
 
   sheet.addRule('div.entry span.entry-content', s);
 }
