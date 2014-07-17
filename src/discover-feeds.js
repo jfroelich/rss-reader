@@ -56,7 +56,7 @@ function onGoogleResultsReceived(onComplete) {
 function sanitizeGoogleResultEntry(entry) {
   // TODO: this should be creating a modified clone, not mutating
   // in place as a side effect.
-  // Remove <br> elements to avoid unwanted formatting issues
+
   entry.contentSnippet = stripBRs(entry.contentSnippet);
   return entry;
 }
