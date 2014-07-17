@@ -167,6 +167,8 @@ function getImageArea(element) {
 /**
  * Mutates an image element in place by changing its src property
  * to be a resolved url, and then returns the image element.
+ *
+ * NOTE: requires isDataURL from uri.js
  */
 function resolveImageElement(baseURI, imageElement) {
 
@@ -179,6 +181,23 @@ function resolveImageElement(baseURI, imageElement) {
 
   // No source, so not resolvable
   if(!sourceURL) {
+    return imageElement;
+  }
+
+  // this should not be resolving data: urls. Test and
+  // exit early here. In at least one calling context,
+  // augmentImages in http.js, it is not bothering to pre-filter
+  // data: uri images before calling this function, so the
+  // test has to be done here. i think it is better to do it here
+  // than require the caller to avoid calling this on uri because
+  // this does the attribute empty check.
+  // note: in reality the URI module should be able to handle
+  // this edge case and seamlessly work (calls to resolve would
+  // be no ops). But the current URI module implementation is
+  // shite so we have to check.
+
+  if(isDataURL(sourceURL)) {
+    console.debug('encountered data: url %s', sourceURL);
     return imageElement;
   }
 

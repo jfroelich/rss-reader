@@ -228,7 +228,17 @@ function appendSlide(entry, isFirst) {
   // Resolve relative images
   // TODO: move this out of here, into a function ro part of calamine or
   // something
-  var baseURI = parseURI(entry.link);
+
+  // NOTE: currently testing not doing it here. Not 100% sure but I think this
+  // is now already done when the content is fetched, which means this is
+  // entirely redundant and nonsense. Furthermore, it is causing bugs
+  // because fetch resolution handles data: but this is causing console errors
+  // by trying to resolve data: urls.
+
+  // Actually, the error is that this is doing nothing, and the resolution
+  // on fetch is not properly resolving data (it should not be resolving these)
+
+  /*var baseURI = parseURI(entry.link);
   if(baseURI) {
     Array.prototype.forEach.call(doc.body.getElementsByTagName('img'), function(img) {
       var source = img.getAttribute('src');
@@ -237,7 +247,7 @@ function appendSlide(entry, isFirst) {
       if(relativeImageSourceURI.scheme) return;
       img.setAttribute('src', resolveURI(baseURI, relativeImageSourceURI));
     });
-  }
+  }*/
 
   trimDocument(doc);
 
