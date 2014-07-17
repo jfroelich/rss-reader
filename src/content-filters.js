@@ -74,11 +74,13 @@ function createContentFilterRule(tag, attr, match) {
 }
 
 function removeContentFilterRule(ruleId) {
-  var rules = loadContentFilterRules();
+
+
   var differentRuleId = function(rule) {
     return rule.id != ruleId;
   };
 
+  var rules = loadContentFilterRules();
   var newRules = rules.filter(differentRuleId);
   saveContentFilterRules(newRules);
   return ruleId;
