@@ -156,9 +156,7 @@ function optionsShowSection(menuItem) {
   currentSection_ = section;
 }
 
-function setNavigationOnClick(menuItem) {
-  menuItem.onclick = onNavigationClick;
-}
+
 
 function optionsUpdateFeedCount() {
   var count = document.getElementById('feedlist').childElementCount;
@@ -427,12 +425,6 @@ function onFeedListItemClick(event) {
   window.scrollTo(0,0);
 }
 
-function onNavigationClick(event) {
-
-  // Use currentTarget instead of event.target as some of the menu items have a
-  // nested element that is the event.target
-  optionsShowSection(event.currentTarget);
-}
 
 function onSubscribeSubmit(event) {
   event.preventDefault();// Prevent normal form submission event
@@ -597,7 +589,13 @@ function onImportOPMLClick(event) {
   uploader.click();
 }
 
+// TODO: can onFileInputChanged remove the input element
+// or do we need to wait until the file was read in the callback?
 function onFileInputChanged(event) {
+
+  // TODO: catch numerical error codes in onFileReaderLoad
+  // instead of English sentence strings?
+
   if(!event.target.files || !event.target.files.length) return;
   // TODO: start import progress monitor
   importOPMLFiles(event.target.files,
@@ -608,6 +606,7 @@ function onFileInputChanged(event) {
   });
 }
 
+// TODO: notify the user if there was an error parsing the OPML
 function onFeedsImported(feedsImported, totalFeedsAttempted, exceptions) {
   if(exceptions && exceptions.length) {
     console.dir(exceptions);
@@ -701,16 +700,29 @@ function onEnableIdleCheckChange(event) {
     chrome.permissions.remove({permissions:['idle']}, function(removed){});
 }
 
-function initOptionsPage(event) {
-  document.removeEventListener('DOMContentLoaded', initOptionsPage);
+function initNavigation() {
+  var menuItem = document.getElementById('mi-content-filters');
+  menuItem.style.display = localStorage.ENABLE_CONTENT_FILTERS ? 'block' : 'none';
 
-  optionsShowSection(document.getElementById('mi-subscriptions'));
+  menuItem = document.getElementById('mi-embeds');
+  menuItem.style.display = localStorage.EMBED_POLICY == 'ask' ? 'block' : 'none';
 
-  document.getElementById('mi-content-filters').style.display =
-    localStorage.ENABLE_CONTENT_FILTERS ? 'block' : 'none';
+  var menuItems = document.querySelectorAll('#navigation-menu li');
+  Array.prototype.forEach.call(menuItems, setNavigationOnClick);
+}
 
-  document.getElementById('mi-embeds').style.display =
-    localStorage.EMBED_POLICY == 'ask' ? 'block' : 'none';
+function setNavigationOnClick(menuItem) {
+  menuItem.onclick = onNavigationClick;
+}
+
+function onNavigationClick(event) {
+  // Use currentTarget instead of event.target as some of the menu items have a
+  // nested element that is the event.target
+  optionsShowSection(event.currentTarget);
+}
+
+
+function initGeneralSettingsSection() {
 
   document.getElementById('enable-notifications').onclick =
     onEnableNotificationsChange;
@@ -731,10 +743,23 @@ function initOptionsPage(event) {
     document.getElementById('enable-idle-check').checked = permitted;
   });
 
-  Array.prototype.forEach.call(document.querySelectorAll('#navigation-menu li'),
-    setNavigationOnClick);
+  document.getElementById('enable-subscription-preview').checked =
+    !!localStorage.ENABLE_SUBSCRIBE_PREVIEW;
 
-  // Initialize the subscriptions list
+  document.getElementById('enable-subscription-preview').onchange =
+    onEnableSubscriptionPreviewChange;
+
+  document.getElementById('enable-content-filters').checked = !!localStorage.ENABLE_CONTENT_FILTERS;
+  document.getElementById('enable-content-filters').onchange = onEnableContentFiltersChange;
+  document.getElementById('rewriting-enable').checked = !!localStorage.URL_REWRITING_ENABLED;
+  document.getElementById('rewriting-enable').onchange = onEnableURLRewritingChange;
+}
+
+function initSubscriptionsSection() {
+
+  document.getElementById('button-export-opml').onclick = onExportOPMLClick;
+  document.getElementById('button-import-opml').onclick = onImportOPMLClick;
+
   var feedCount = 0;
   openIndexedDB(function(db) {
 
@@ -752,20 +777,26 @@ function initOptionsPage(event) {
       }
     }, true);
   });
+}
 
-  document.getElementById('enable-subscription-preview').checked = !!localStorage.ENABLE_SUBSCRIBE_PREVIEW;
-  document.getElementById('enable-subscription-preview').onchange = onEnableSubscriptionPreviewChange;
-  document.getElementById('details-unsubscribe').onclick = onUnsubscribeButtonClicked;
+function initFeedDetailsSection() {
+  var unsubscribeButton = document.getElementById('details-unsubscribe');
+  unsubscribeButton.onclick = onUnsubscribeButtonClicked;
+}
+
+function initSubscribeDiscoverSection() {
   document.getElementById('subscription-form').onsubmit = onSubscribeSubmit;
-  document.getElementById('enable-content-filters').checked = !!localStorage.ENABLE_CONTENT_FILTERS;
-  document.getElementById('enable-content-filters').onchange = onEnableContentFiltersChange;
-  document.getElementById('rewriting-enable').checked = !!localStorage.URL_REWRITING_ENABLED;
-  document.getElementById('rewriting-enable').onchange = onEnableURLRewritingChange;
-  document.getElementById('button-export-opml').onclick = onExportOPMLClick;
-  document.getElementById('button-import-opml').onclick = onImportOPMLClick;
-  document.getElementById('subscription-preview-continue').onclick = onPostPreviewSubscribeClick;
 
+  var previewContinueButton = document.getElementById('subscription-preview-continue');
+  previewContinueButton.onclick = onPostPreviewSubscribeClick;
+}
+
+function initDisplaySettingsSection() {
+
+  // Apply the dynamic CSS on load to set the article preview
+  // area within the display settings section
   applyEntryStylesOnLoad();
+
 
   var option = document.createElement('option');
   option.value = '';
@@ -858,31 +889,62 @@ function initOptionsPage(event) {
       chrome.runtime.sendMessage({'type':'displaySettingsChanged'});
     }, inputChangedDelay);
   };
+}
 
-  document.getElementById('create-filter-action').onclick = onCreateContentFilterClick;
+function initContentFiltersSection() {
 
-  loadContentFilterRules().forEach(function(rule){
-    appendContentFilterRule(document.getElementById('content-filters-list'), rule);
-  });
+  var createButton = document.getElementById('create-filter-action');
+  createButton.onclick = onCreateContentFilterClick;
 
+  var listElement = document.getElementById('content-filters-list');
+  var rules = loadContentFilterRules();
+
+  var appendRuleToList = appendContentFilterRule.bind(null, listElement);
+  rules.forEach(appendRuleToList);
+}
+
+function initAboutSection() {
   var manifest = chrome.runtime.getManifest();
-  document.getElementById('extension-name').textContent = manifest.name || '?';
-  document.getElementById('extension-version').textContent = manifest.version || '?';
-  document.getElementById('extension-author').textContent = manifest.author || '?';
-  document.getElementById('extension-description').textContent = manifest.description || '';
-  document.getElementById('extension-homepage').textContent = manifest.homepage_url || '';
+
+  var label = document.getElementById('extension-name');
+  label.textContent = manifest.name || '';
+  label = document.getElementById('extension-version');
+  label.textContent = manifest.version || '';
+  label = document.getElementById('extension-author');
+  label.textContent = manifest.author || '';
+  label = document.getElementById('extension-description');
+  label.textContent = manifest.description || '';
+  label = document.getElementById('extension-homepage');
+  label.textContent = manifest.homepage_url || '';
+}
+
+
+function initOptionsPage(event) {
+  // Side note: this function is a good example of procedural and
+  // temporal cohesion
+
+  document.removeEventListener('DOMContentLoaded', initOptionsPage);
+
+  initNavigation();
+
+  // Show the default section immediately
+  optionsShowSection(document.getElementById('mi-subscriptions'));
+
+  initGeneralSettingsSection();
+  initSubscriptionsSection();
+  initFeedDetailsSection();
+  initSubscribeDiscoverSection();
+  initDisplaySettingsSection();
+  initContentFiltersSection();
+  initAboutSection();
 }
 
 document.addEventListener('DOMContentLoaded', initOptionsPage);
 
 
 /*
-// TODO: can onFileInputChanged remove the input element
-// or do we need to wait until the file was read in the callback?
-// TODO: catch numerical error codes in onFileReaderLoad
-// instead of English sentence strings
-// TODO: notify the user if there was an error parsing the OPML
-// in onFileReaderLoad
+
+
 // TODO: onFeedsImported needs to notify the user of a successful
 // import. In the UI and maybe in a notification. Maybe also combine
 // with the immediate visual feedback (like a simple progress monitor
