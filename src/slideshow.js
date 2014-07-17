@@ -2,23 +2,17 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-'use strict';
+// TODO: use class 'slideRead' instead of custom attribute 'read'
+// TODO: need to resolve anchors (here or somewhere else)
 
-/**
- * TODO: review all node removal. Using element.remove() or
- * node.parentNode.removeChild(node) just detaches the node
- * from the DOM. For the node to get eventually GCed, all
- * references to the node must also be removed. This specifically
- * includes event listeners and anywhere the node is referenced
- * in memory.
- */
+'use strict';
 
 var currentSlide = null;
 
 var VIEW_MESSAGE_HANDLER_MAP = {
-  displaySettingsChanged: viewOnDisplaySettingsChangedMessage,
-  pollCompleted: viewOnPollCompletedMessage,
-  subscribe: viewOnSubscribeMessage,
+  displaySettingsChanged: applyEntryStylesOnChange,
+  pollCompleted: maybeAppendMoreSlides,
+  subscribe: maybeAppendMoreSlides,
   unsubscribe: viewOnUnsubscribeMessage
 };
 
@@ -31,19 +25,14 @@ function viewDispatchMessage(message) {
 
 chrome.runtime.onMessage.addListener(viewDispatchMessage);
 
-function viewOnDisplaySettingsChangedMessage(message) {
-  applyEntryStylesOnChange();
-}
-
-function viewOnPollCompletedMessage(message) {
+function maybeAppendMoreSlides() {
 
   var unreadCount = countUnreadSlides();
 
   // There are still some unread slides loaded, so do not bother
   // appending
-  if(unreadCount) {
+  if(unreadCount)
     return;
-  }
 
   // TODO: we do not actually need a count here, just a check
   // of whether firstElementChild is defined.
@@ -52,18 +41,6 @@ function viewOnPollCompletedMessage(message) {
   // checking its children.
   var isFirst = !document.getElementById('slideshow-container').firstChild;
   appendSlides(hideNoUnreadArticlesSlide,isFirst);
-}
-
-function viewOnSubscribeMessage(message) {
-  // Append more articles for the new subscription if
-  // there are no slides or all the slides are read
-  // NOTE: this actually just appends any new articles
-  // not just those from the new subscription
-  if(!countUnreadSlides()) {
-    // TODO: see notes above in poll completed
-    var isFirst = !document.getElementById('slideshow-container').firstChild;
-    appendSlides(hideNoUnreadArticlesSlide,isFirst);
-  }
 }
 
 function viewOnUnsubscribeMessage(message) {
@@ -79,36 +56,28 @@ function viewOnUnsubscribeMessage(message) {
 
   if(removedCurrentSlide) {
     // TODO: implement
+    console.warn('Removed current slide as a result of unsubscribing but did not update UI');
   }
 
   maybeShowNoUnreadArticlesSlide();
 }
 
 function markSlideRead(slideElement) {
-
-  if(!slideElement) {
+  if(!slideElement)
     return;
-  }
-
-
-  if(slideElement.hasAttribute('read')) {
+  if(slideElement.hasAttribute('read'))
     return;
-  }
-
+  var updateElement = HTMLElement.prototype.setAttribute.bind(slideElement,'read','');
   openIndexedDB(function(db) {
     var entryId = parseInt(slideElement.getAttribute('entry'));
-    markEntryAsRead(db, entryId, markSlideElementAsRead.bind(null, slideElement));
+    markEntryAsRead(db, entryId, updateElement);
   });
-}
-
-function markSlideElementAsRead(slideElement) {
-  slideElement.setAttribute('read','');
 }
 
 function appendSlides(oncomplete, isFirst) {
 
   // TODO: encapsulate most of this in a forEachEntry
-  // function in entry.js
+  // function in entry.js?
 
   var counter = 0;
   var limit = 3;
@@ -226,10 +195,15 @@ function appendSlide(entry, isFirst) {
   var content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
 
+  // TODO: this should be using parseHTML
   var doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = entry.content;
 
+  // TODO: is this worthwhile? seems out of place
   trimDocument(doc);
+
+  // TODO: all anchors should open in new window?
+
 
   var calamineOptions = { FILTER_ATTRIBUTES: true, UNWRAP_UNWRAPPABLES: true };
   var results = calamineTransformDocument(doc, calamineOptions);
@@ -267,7 +241,7 @@ function showNextSlide() {
         // TODO: this is still producing UI latency
         var c = document.getElementById('slideshow-container');
         while(c.childElementCount > 30 && c.firstChild != currentSlide) {
-          c.removeChild(c.firstChild);
+          c.firstChild.remove();
         }
 
         showNext();
@@ -335,6 +309,7 @@ function onKeyDown(event) {
   //event.target is body
   //event.currentTarget is window
 
+  // TODO: this does not belong here
   var KEY = {
     SPACE: 32,
     PAGE_UP: 33,
@@ -379,22 +354,13 @@ function onKeyDown(event) {
   }
 }
 
-// TODO: pay more attention to the 3rd argument to addEventListener. I belive
-// this is the useCapture flag. See
-// https://developers.google.com/closure/library/docs/events_tutorial
-// See https://developer.mozilla.org/en-US/docs/Web/API/EventTarget.addEventListener.
-// I believe if we capture from top down we can intercept events that are being forwarded to
-// embedded objects and we can prevent events of interest from propagating to those
-// embedded objects.
-
-// TODO: instead of binding this to window, bind to each slide?
-window.addEventListener('keydown', onKeyDown);
+// TODO: instead of binding this to window, bind to each slide? that way
+// we don't have to use the currentSlide hack?
+window.addEventListener('keydown', onKeyDown, false);
 
 function initSlideShow(event) {
   document.removeEventListener('DOMContentLoaded', initSlideShow);
-
   applyEntryStylesOnLoad();
-
   appendSlides(maybeShowNoUnreadArticlesSlide, true);
 }
 
