@@ -45,10 +45,6 @@ function fetchHTMLDocument(params) {
 
 function onHTMLDocumentLoad(onComplete, onError, shouldAugmentImages, event) {
 
-  //if(this.responseURL != params.url) {
-  //  console.debug('originalURL %s responseURL %s', params.url, this.responseURL);
-  //}
-
   var contentType = this.getResponseHeader('Content-Type');
 
   if(!isContentTypeHTML(contentType)) {
@@ -66,10 +62,13 @@ function onHTMLDocumentLoad(onComplete, onError, shouldAugmentImages, event) {
     });
   }
 
-  if(shouldAugmentImages) {
+  // NOTE: this uses the post-redirect url as the base url for anchors
+  var baseURI = parseURI(this.responseURL);
+  var anchors = this.responseXML.body.querySelectorAll('a');
+  Array.prototype.forEach.call(anchors, resolveAnchorElement.bind(null, baseURI));
 
-    // NOTE: this uses the post-redirect responseURL as the base
-    // url
+  if(shouldAugmentImages) {
+    // NOTE: this uses the post-redirect responseURL as the base url
     return augmentImages(this.responseXML, this.responseURL, onComplete);
   }
 

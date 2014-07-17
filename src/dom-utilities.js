@@ -164,6 +164,22 @@ function getImageArea(element) {
   return 0;
 }
 
+function resolveAnchorElement(baseURI, anchorElement) {
+  if(!baseURI)
+    return;
+  // NOTE: use attribute, not property, because property access does
+  // not return the original value
+  var sourceURL = (anchorElement.getAttribute('href') || '').trim();
+  if(!sourceURL)
+    return;
+  var sourceURI = parseURI(sourceURL);
+  var resolvedURL = resolveURI(baseURI, sourceURI);
+  if(resolvedURL == sourceURL)
+    return;
+  console.debug('Changing anchor url from %s to %s', sourceURL, resolvedURL);
+  anchorElement.setAttribute('href', resolvedURL);
+}
+
 /**
  * Mutates an image element in place by changing its src property
  * to be a resolved url, and then returns the image element.
