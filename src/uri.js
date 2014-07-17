@@ -55,6 +55,7 @@ function uriToString(obj) {
  *
  * TODO: this cannot handle data uri
  * TODO: this cannot handle .. or ./ syntax. It is causing a lot of errors
+ * TODO: this is not handlng things like "#" as a url.
  */
 function resolveURI(baseURI,relativeURI) {
   if(baseURI && relativeURI) {

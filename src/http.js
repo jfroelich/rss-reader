@@ -183,6 +183,14 @@ function isAugmentableImage(imageElement) {
 
     console.debug('data uri image without dimensions? %o', imageElement);
 
+
+    // this certainly appears for data uris. i notice it is appearing when
+    // width/height attribute not expressly set in html. maybe we just need to
+    // read in the width/height property and set the attributes?
+    // but wait, we never even reach reach is width is set. so width isnt
+    // set for a data uri somehow. how in the hell does that happen?
+    // is it because the element remains inert (according to how parseHTML works)?
+
     return false;
   }
 

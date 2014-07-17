@@ -20,32 +20,7 @@ var BOOLEAN_ELEMENT_ATTRIBUTES = {
 /**
  * Returns true if an element is invisible according to our own very
  * simplified definition of visibility. We are really only going after some
- * common tactics on the web that are used by article authors to hide
- * elements in articles, not a true visibility test. Many websites do things
- * like use display:none for DHTML effects, advertising, etc
- *
- * TODO: learn more about HTMLElement.hidden
- *
- * NOTE: this does not consider offscreen elements (e.g. left:-100%;right:-100%;)
- * as invisible.
- *
- * NOTE: this does not consider dimensionless elements as invisible
- * (e.g. width:0px). Certain elements exhibit strange behaviors, like SPAN,
- * that report no width/height, even when the element contains non-empty
- * descendants and is therefore visible. We cannot do anything about the native
- * objects reporting 'incorrect' properties, so we cannot say an element is invisible
- * even though it has no dimensions.
- *
- * NOTE: this does not consider visibility of parents. Technically if parents are
- * invisible then this element is invisible.
- * NOTE: this does not consider if the element is in an overflow:none ancestor path and
- * happens to lay outside the visible rect
- * NOTE: this does not consider clipping.
- * NOTE: this does not consider scroll offset. In other words, the test is not about
- * whether the element is "currently" visible in this sense.
- * NOTE: this does not consider overlapping elements (e.g. higher z-index rectangle
- * that shares same coordinate space)
- * NOTE: this does not consider page visibility (e.g. in background tab)
+ * common tactics like using display:none for progressive loading or SEO
  */
 function isInvisibleElement(element) {
   return element.style.display == 'none' ||
@@ -172,11 +147,31 @@ function resolveAnchorElement(baseURI, anchorElement) {
   var sourceURL = (anchorElement.getAttribute('href') || '').trim();
   if(!sourceURL)
     return;
+
+  // TODO: do not resolve certain schemes: mailto, javascript
+  // calendar (caldav?), filesystem..? feed:???
+  if(/^mailto:/.test(sourceURL)) {
+    return;
+  }
+
+
+  if(/^javascript:/.test(sourceURL)) {
+    return;
+  }
+
   var sourceURI = parseURI(sourceURL);
+
+  if(sourceURI.scheme) {
+    if(sourceURI.scheme != 'http' && sourceURI.scheme != 'https') {
+      console.warn('probable resolution bug %s', sourceURL);
+    }
+  }
+
   var resolvedURL = resolveURI(baseURI, sourceURI);
+
   if(resolvedURL == sourceURL)
     return;
-  console.debug('Changing anchor url from %s to %s', sourceURL, resolvedURL);
+  //console.debug('Changing anchor url from %s to %s', sourceURL, resolvedURL);
   anchorElement.setAttribute('href', resolvedURL);
 }
 
@@ -214,6 +209,14 @@ function resolveImageElement(baseURI, imageElement) {
 
   if(isDataURL(sourceURL)) {
     console.debug('encountered data: url %s', sourceURL);
+    return imageElement;
+  }
+
+
+  // NOTE: seeing GET resource://.....image.png
+  // errors in log. I guess these are not resolved either?
+  if(/^resource:/.test(sourceURL)) {
+    console.debug('encountered resource: url %s', sourceURL);
     return imageElement;
   }
 
