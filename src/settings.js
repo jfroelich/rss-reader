@@ -77,7 +77,10 @@ var FONT_FAMILIES = [
 
   'PlayfairDisplaySC',
 
-  'Raleway, sans-serif'
+  'Raleway, sans-serif',
+
+  // http://www.google.com/design/spec/resources/roboto-font.html
+  'Roboto Regular'
 ];
 
 
