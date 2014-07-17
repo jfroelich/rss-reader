@@ -15,69 +15,74 @@
 
 var currentSlide = null;
 
-function onViewMessage(message) {
-  if('displaySettingsChanged' == message.type) {
-    applyEntryStylesOnChange();
-  } else if('pollCompleted' == message.type) {
-    // Append more articles that were created as a result of the
-    // poll if there are no slides or all the slides are read
-    if(!countUnreadSlides()) {
-      // TODO: we do not actually need a count here, just a check
-      // of whether firstElementChild is defined.
-      // TODO: we can use querySelector to get the first slide
-      // itself instead of getting the parent container and
-      // checking its children.
-      // TODO: if the 'all read' slide is implemented, this condition
-      // would be inaccurate.
-      var isFirst = !document.getElementById('slideshow-container').firstChild;
-      appendSlides(hideNoUnreadArticlesSlide,isFirst);
-    }
-  } else if('subscribe' == message.type) {
-    // Append more articles for the new subscription if
-    // there are no slides or all the slides are read
-    // NOTE: this actually just appends any new articles
-    // not just those from the new subscription
-    if(!countUnreadSlides()) {
-      // TODO: see notes above in poll completed
-      var isFirst = !document.getElementById('slideshow-container').firstChild;
-      appendSlides(hideNoUnreadArticlesSlide,isFirst);
-    }
-  } else if('unsubscribe' == message.type) {
+var VIEW_MESSAGE_HANDLER_MAP = {
+  displaySettingsChanged: viewOnDisplaySettingsChangedMessage,
+  pollCompleted: viewOnPollCompletedMessage,
+  subscribe: viewOnSubscribeMessage,
+  unsubscribe: viewOnUnsubscribeMessage
+};
 
-    // TODO: rather than this separate variable and
-    // a check per iteration, use
-    // a function like 'any' that returns whether
-    // any slide was removed in aggregate
-
-    var removedCurrentSlide = false;
-
-    //TODO: what attribute is being used by this query?
-    // this needs testing and revision
-    var slidesForFeed = document.querySelectorAll('div["'+ message.feed +'"]');
-
-    Array.prototype.forEach.call(slidesForFeed, function(slide) {
-      if(slide == currentSlide) {
-        removedCurrentSlide = true;
-      }
-
-      // TODO: we need to remove all references to the slide
-      // NOTE: currentSlide can be one of the references
-      // NOTE: other listeners can be references. Are there
-      // other listeners?
-      slide.removeEventListener('click', onSlideClick);
-      slide.remove();
-    });
-
-    if(removedCurrentSlide) {
-      // TODO: implement
-    }
-
-    maybeShowNoUnreadArticlesSlide();
+function viewDispatchMessage(message) {
+  var handler = VIEW_MESSAGE_HANDLER_MAP[message.type];
+  if(handler) {
+    handler(message);
   }
 }
 
-chrome.runtime.onMessage.addListener(onViewMessage);
+chrome.runtime.onMessage.addListener(viewDispatchMessage);
 
+function viewOnDisplaySettingsChangedMessage(message) {
+  applyEntryStylesOnChange();
+}
+
+function viewOnPollCompletedMessage(message) {
+
+  var unreadCount = countUnreadSlides();
+
+  // There are still some unread slides loaded, so do not bother
+  // appending
+  if(unreadCount) {
+    return;
+  }
+
+  // TODO: we do not actually need a count here, just a check
+  // of whether firstElementChild is defined.
+  // TODO: we can use querySelector to get the first slide
+  // itself instead of getting the parent container and
+  // checking its children.
+  var isFirst = !document.getElementById('slideshow-container').firstChild;
+  appendSlides(hideNoUnreadArticlesSlide,isFirst);
+}
+
+function viewOnSubscribeMessage(message) {
+  // Append more articles for the new subscription if
+  // there are no slides or all the slides are read
+  // NOTE: this actually just appends any new articles
+  // not just those from the new subscription
+  if(!countUnreadSlides()) {
+    // TODO: see notes above in poll completed
+    var isFirst = !document.getElementById('slideshow-container').firstChild;
+    appendSlides(hideNoUnreadArticlesSlide,isFirst);
+  }
+}
+
+function viewOnUnsubscribeMessage(message) {
+
+  var slidesForFeed = document.querySelectorAll('div[feed="'+ message.feed +'"]');
+  var removedCurrentSlide = Array.prototype.reduce.call(
+    slidesForFeed, function(removedCurrent, slide) {
+    // TODO: verify removing all listeners
+    slide.removeEventListener('click', onSlideClick);
+    slide.remove();
+    return removedCurrent || (slide == currentSlide);
+  }, false);
+
+  if(removedCurrentSlide) {
+    // TODO: implement
+  }
+
+  maybeShowNoUnreadArticlesSlide();
+}
 
 function markSlideRead(slideElement) {
 
@@ -99,7 +104,6 @@ function markSlideRead(slideElement) {
 function markSlideElementAsRead(slideElement) {
   slideElement.setAttribute('read','');
 }
-
 
 function appendSlides(oncomplete, isFirst) {
 
@@ -225,42 +229,13 @@ function appendSlide(entry, isFirst) {
   var doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = entry.content;
 
-  // Resolve relative images
-  // TODO: move this out of here, into a function ro part of calamine or
-  // something
-
-  // NOTE: currently testing not doing it here. Not 100% sure but I think this
-  // is now already done when the content is fetched, which means this is
-  // entirely redundant and nonsense. Furthermore, it is causing bugs
-  // because fetch resolution handles data: but this is causing console errors
-  // by trying to resolve data: urls.
-
-  // Actually, the error is that this is doing nothing, and the resolution
-  // on fetch is not properly resolving data (it should not be resolving these)
-
-  /*var baseURI = parseURI(entry.link);
-  if(baseURI) {
-    Array.prototype.forEach.call(doc.body.getElementsByTagName('img'), function(img) {
-      var source = img.getAttribute('src');
-      if(!source) return;
-      var relativeImageSourceURI = parseURI(source);
-      if(relativeImageSourceURI.scheme) return;
-      img.setAttribute('src', resolveURI(baseURI, relativeImageSourceURI));
-    });
-  }*/
-
   trimDocument(doc);
 
-  var results = calamineTransformDocument(doc, {
-    FILTER_ATTRIBUTES: 1,
-    UNWRAP_UNWRAPPABLES: 1
-  });
+  var calamineOptions = { FILTER_ATTRIBUTES: true, UNWRAP_UNWRAPPABLES: true };
+  var results = calamineTransformDocument(doc, calamineOptions);
 
-  // NOTE: this is the major source of the RSS
-  // No need to adopt I guess
-  Array.prototype.forEach.call(results.childNodes, function(n) {
-    if(n) content.appendChild(n);
-  });
+  Array.prototype.forEach.call(results.childNodes,
+    HTMLElement.prototype.appendChild.bind(content));
 
   slide.appendChild(content);
 
