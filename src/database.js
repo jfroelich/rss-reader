@@ -14,12 +14,9 @@ var DATABASE_VERSION = 10;
  */
 function openIndexedDB(callback) {
   var request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
-  request.onerror = console.error;
-  request.onblocked = console.error;
+  //request.onerror = console.error;
+  //request.onblocked = console.error;
   request.onupgradeneeded = upgradeDatabase;
-  //request.onsuccess = function onOpenIndexedDBSuccess() {
-  //  callback(this.result);
-  //};
   request.onsuccess = onOpenIndexedDBSuccess.bind(request, callback);
 }
 
@@ -91,6 +88,6 @@ function upgradeDatabase(event) {
     entryStore.deleteIndex('hash');
     entryStore.createIndex('hash','hash', {unique:true});
   } else {
-    console.error('failed to upgrade database from version %s', oldVersion);
+    console.error('Failed to upgrade database from version %s', oldVersion);
   }
 }
