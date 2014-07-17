@@ -76,6 +76,11 @@ Based on http://mutcd.fhwa.dot.gov/pdfs/clearviewspacingia5.pdf
 }
 
 @font-face {
+  font-family: News Cycle;
+  src: url('/media/NewsCycle-Regular.ttf') format('truetype');
+}
+
+@font-face {
   font-family: Open Sans Regular;
   src: url('/media/OpenSans-Regular.ttf') format('truetype');
 }
@@ -95,6 +100,6 @@ Based on http://mutcd.fhwa.dot.gov/pdfs/clearviewspacingia5.pdf
 }
 
 @font-face {
-  font-family: News Cycle;
-  src: url('/media/NewsCycle-Regular.ttf') format('truetype');
+  font-family: Roboto Regular;
+  src: url('/media/Roboto-Regular.ttf');
 }
