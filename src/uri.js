@@ -54,7 +54,7 @@ function uriToString(obj) {
  * TODO: this should not be modifying the properties of relative
  *
  * TODO: this cannot handle data uri
- * TODO: this cannot handle .. or ./ syntax
+ * TODO: this cannot handle .. or ./ syntax. It is causing a lot of errors
  */
 function resolveURI(baseURI,relativeURI) {
   if(baseURI && relativeURI) {

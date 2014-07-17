@@ -748,20 +748,18 @@ function calamineTestSplitBR(str) {
 
 /*
 
+TODO: unwrap javascript: anchors
 
-TODO: support for iframes and embed objects and audio/video
-for all iframes, set sandbox attribute
-
-TODO: refactor to use block generation. Group lis together. Group
+TODO: support iframes and embed objects and audio/video
+TODO: for all iframes, set sandbox attribute?
+TODO: refactor to use block generation. Group list items together. Group
 dds together, etc.
-
 TODO: refactor to use block weighting. The return signature is simply
 those blocks above a minimum threshold, which could be based on a
 percentage of blocks to return value. But this time use the element
 weighting technique. Consider treating divs as inline and using
 only certain block parents (e.g. look for ul/ol/p/img/iframe as the only
 allowable block segments).
-
 TODO: do not necessarily exclude textnodes that are immediate children of body.
 All top level text should probably be converted to paragraphs before scoring.
 TODO: include other proximate or high scoring elements outside of the
@@ -781,32 +779,10 @@ elements from the age because sometimes they are not all in the same block.
 And when I do get the parent element right, sometimes I still end up
 getting alot of nested boilerplate. At that point I would need to filter
 the boilerplate, at which point I am nearly back to block score.
-TODO: performance testing, memory testing
 
-TODO: consider using element.dataset to store custom properties instead
-of our own direct storage on native objects. Wary of performance impact.
-See also http://www.w3.org/TR/2009/WD-html5-20090825/microdata.html.
-NOTE: actually that would be pretty backwards, that is strings based. Also,
-those properties stick around with every element even when I do not want
-them to persist longer.
-
-TODO: custom properties added to DOM objects (or any object) are known in the dev community
-as 'expando' properties.  Actually any property that was not explicitly defined as a
-a part of the original object is an 'expando' property.
-
-More confusingly, since almost no object (DOM or basic {}), has a pre-defined property
-named 'expando', the examples are written as object.expando= value, where the assignment
-of a value to the .expando results in the definition of a new property in the object
-
-I am under the impression that it will not cause
-memory leak issues, but it is not clear. It would cause a memory leak, for
-example, if we did element.expando = element. This circular reference
-would have to be deleted before the element could ever be garbage collected.
-Currently I only attach primitives like booleans/numbers, not objects.
-It is permissible to use expando properties. Setting a custom property
-does not throw an error except in old versions of IE that I dont care about.
-
-Options:
+TODO: look into alternatives to expandos (using dom as the dataset). There are reported
+issues, warnings against extending native host objects, performance warnings against
+shape changes, etc.
 1) create a single custom object per element during feature extraction. store all
 custom properties in this single custom object. Then, when all is said and done,
 use delete node.customObjectName on all nodes, and then produce the results. This
@@ -836,5 +812,4 @@ According to http://canjs.com/docco/node_lists.html, trying to set an expando on
 node in certain browsers causes an exception
 Good explanation of the basic leaks:
 http://www.javascriptkit.com/javatutors/closuresleak/index3.shtml
-
 */
