@@ -10,16 +10,19 @@ function noop() {
 
 // Retrieves the value of the key property from obj
 function valueAt(obj, key) {
-  return obj[key];
-}
 
-// Uses Object.prototype.hasOwnProperty to avoid using possibly
-// overwritten object.hasOwnProperty
-function hasOwn(obj, key) {
-  return Object.prototype.hasOwnProperty.call(obj, key);
+  // Ugh....
+  // var descriptor = Object.getOwnPropertyDescriptor(obj, key);
+  // return descriptor.value;
+  // return String.prototype.charAt.call(obj, key);
+  // return CSSStyleDeclaration.prototype.getPropertyValue.call(obj,key);
+
+  return obj[key];
 }
 
 // Gets the values of the properties of an array-like object
 function objectValues(obj) {
-  return Object.keys(obj).filter(hasOwn.bind(null,obj)).map(valueAt.bind(null,obj));
+  return Object.keys(obj).
+      filter(Object.prototype.hasOwnProperty.bind(obj)).
+      map(valueAt.bind(null,obj));
 }
