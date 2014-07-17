@@ -36,14 +36,16 @@
  * NOTE: because this returns the body element, a simple way to get to
  * the containing document is by doc.body.ownerDocument
  */
-function parseHTML(str) {
+function parseHTML(string) {
   var doc = document.implementation.createHTMLDocument();
-  doc.body.innerHTML = str;
+  doc.body.innerHTML = string;
   return doc.body;
 }
 
 /**
- * See http://www.html5rocks.com/en/tutorials/webcomponents/template/
+ * Possibly simpler parseHTML function that uses a template
+ * element.
+ *
  * Using a template approach could be better for several reasons.
  * Template HTML is inert until appended, unlike createElement. It still
  * uses what is basically the innerHTML hack. It gives us something
@@ -52,54 +54,15 @@ function parseHTML(str) {
  * like it also requires adoptNode instead of doing it implicitly in
  * appendChild, which could reduce errors and XSS surprises.
  *
+ * See http://www.html5rocks.com/en/tutorials/webcomponents/template/
+ *
  * UNDER DEVELOPMENT, UNTESTED
  */
-function parseHTML2(str) {
+function parseHTML2(string) {
+
+  console.warn('CALLED UNTESTED FUNCTION parseHTML2');
+
   var template = document.createElement('template');
-  template.content = str;
+  template.content = string;
   return template;
-}
-
-/**
- * Scrubs html from a string by parsing into HTML and then
- * back into text without element tags. Specifying a replacement is
- * slower because of non-native iteration.
- */
-function stripTags(str, replacement) {
-  if(!str) {
-    return;
-  }
-
-  var htmlDocumentBody = parseHTML(str);
-
-  if(replacement) {
-
-    var ownerDocument = htmlDocumentBody.ownerDocument;
-    var textNodeIterator = ownerDocument.createNodeIterator(
-      htmlDocumentBody, NodeFilter.SHOW_TEXT);
-    var textNode;
-    var textNodes = [];
-
-    while(textNode = textNodeIterator.nextNode()) {
-      textNodes.push(textNode);
-    }
-
-    return textNodes.map(getNodeValue).join(replacement);
-  }
-
-  return htmlDocumentBody.textContent;
-}
-
-function getNodeValue(node) {
-  return node.nodeValue;
-}
-
-/**
- * Simple regex approach to strip basic BR tags from string
- * This is not always accurate, just convenient.
- */
-function stripBRs(str) {
-  if(str) {
-    return str.replace(/<br>/gi,'');
-  }
 }

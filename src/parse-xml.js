@@ -19,6 +19,9 @@ function parseXML(str) {
     throw new SyntaxError('invalid xml');
   }
 
+  // TODO: this can be simplified to use querySelector instead of gebtn
+  // because the perf diff is insignificant
+
   // Check for the presence of a parsererror element in the output
   // and if so, undo the mixing of a parse exception event with
   // the parsed content, and throw an error instead
@@ -27,6 +30,8 @@ function parseXML(str) {
 
     // Only work with the first error element
     parserError = parserError[0];
+
+    console.debug('parsing error %o', parserError);
 
     // Search for the text content of just the error message
     if(parserError.firstChild && parserError.firstChild.nextSibling) {

@@ -202,7 +202,7 @@ function addEntry(db, storableEntry, oncomplete, onerror) {
 
 function markEntryAsRead(db, entryId, onComplete) {
 
-  //console.log('markEntryAsRead entryId %s', entryId);
+  //console.debug('markEntryAsRead entryId %s', entryId);
 
   // TODO: intead of get/put, use openCursor and cursor.update
 

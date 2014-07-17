@@ -2,7 +2,56 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+
+// TODO: maybe name this something like string-select.js?
+// I basically have a bunch of 'strip' functions and a count
+// Even truncate is just a length based sql-like SELECT.
+
 'use strict';
+
+/**
+ * Scrubs html from a string by parsing into HTML and then
+ * back into text without element tags. Specifying a replacement is
+ * slower because of non-native iteration.
+ *
+ * NOTE: depends on parseHTML
+ */
+function stripTags(str, replacement) {
+  if(!str) {
+    return;
+  }
+
+  var htmlDocumentBody = parseHTML(str);
+
+  if(replacement) {
+
+    var ownerDocument = htmlDocumentBody.ownerDocument;
+    var textNodeIterator = ownerDocument.createNodeIterator(
+      htmlDocumentBody, NodeFilter.SHOW_TEXT);
+    var textNode;
+    var textNodes = [];
+
+    while(textNode = textNodeIterator.nextNode()) {
+      textNodes.push(textNode);
+    }
+
+    return textNodes.map(getNodeValue).join(replacement);
+  }
+
+  return htmlDocumentBody.textContent;
+}
+
+// TODO: is there a native functional way to accomplish what this does?
+function getNodeValue(node) {
+  return node.nodeValue;
+}
+
+// Naive <br> removal
+function stripBRs(str) {
+  if(str) {
+    return str.replace(/<br>/gi,'');
+  }
+}
 
 /**
  * Returns a string without control-like characters

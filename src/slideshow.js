@@ -337,11 +337,11 @@ function maybeShowNoUnreadArticlesSlide() {
     return;
   }
 
-  console.log('maybeShowNoUnreadArticlesSlide not implemented');
+  console.warn('not implemented');
 }
 
 function hideNoUnreadArticlesSlide() {
-  console.log('not implemented');
+  console.warn('not implemented');
 }
 
 var keyDownTimer;

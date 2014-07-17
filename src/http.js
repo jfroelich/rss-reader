@@ -46,7 +46,7 @@ function fetchHTMLDocument(params) {
 function onHTMLDocumentLoad(onComplete, onError, shouldAugmentImages, event) {
 
   //if(this.responseURL != params.url) {
-  //  console.log('originalURL %s responseURL %s', params.url, this.responseURL);
+  //  console.debug('originalURL %s responseURL %s', params.url, this.responseURL);
   //}
 
   var contentType = this.getResponseHeader('Content-Type');
@@ -152,7 +152,7 @@ function fetchAndSetImageDimensions(onComplete, remoteImage) {
     // the local image properties
     remoteImage.width = this.width;
     remoteImage.height = this.height;
-    //console.log('W %s H %s', remoteImage.width, remoteImage.height);
+    //console.debug('W %s H %s', remoteImage.width, remoteImage.height);
     onComplete();
   };
 
@@ -182,7 +182,7 @@ function isAugmentableImage(imageElement) {
   // such images
   if(isDataURL(source)) {
 
-    console.log('data uri image without dimensions? %o', imageElement);
+    console.debug('data uri image without dimensions? %o', imageElement);
 
     return false;
   }

@@ -25,7 +25,7 @@
  * something actually changed.
  */
 function addFeed(db, feed, oncomplete, onerror) {
-  console.log('addFeed url %s', feed.url);
+  console.debug('addFeed url %s', feed.url);
 
 
   var cleanedFeed = sanitizeRemoteFeed(feed);
@@ -111,7 +111,7 @@ function updateFeed(db, localFeed, remoteFeed, oncomplete) {
   var putFeedTransaction = db.transaction('feed','readwrite');
   var feedStore = putFeedTransaction.objectStore('feed');
   var putFeedRequest = feedStore.put(localFeed);
-  putFeedRequest.onerror = console.error;
+  putFeedRequest.onerror = console.debug;
   putFeedRequest.onsuccess = function() {
     mergeEntries(db, localFeed, remoteFeed.entries, oncomplete);
   }

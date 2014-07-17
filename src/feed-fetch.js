@@ -190,7 +190,7 @@ function convertToFeed(xmlDocument, onComplete, onError,
         dispatchIfComplete();
       },
       onerror: function(error) {
-        console.log(error);
+        console.debug('augmentEntry error %o', error);
         dispatchIfComplete();
       },
       timeout: entryTimeout

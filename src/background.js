@@ -129,7 +129,7 @@ function onExtensionInstalled() {
 
   var manifest = chrome.runtime.getManifest();
 
-  console.log('Installing %s', manifest.name);
+  console.info('Installing %s', manifest.name);
 
   // This also triggers database creation
   updateBadge();

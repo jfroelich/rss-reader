@@ -15,7 +15,7 @@ function startPolling() {
   var isPollRunning = localStorage.POLL_ACTIVE;
 
   if(isPollRunning) {
-    console.log('Poll already in progress');
+    console.debug('Poll already in progress');
     return;
   }
 

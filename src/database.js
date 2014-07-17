@@ -14,8 +14,12 @@ var DATABASE_VERSION = 10;
  */
 function openIndexedDB(callback) {
   var request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
-  //request.onerror = console.error;
-  //request.onblocked = console.error;
+
+  // TODO: are these automatically raised to the top or would not setting
+  // these cause silence?
+  request.onerror = console.error;
+  request.onblocked = console.error;
+
   request.onupgradeneeded = upgradeDatabase;
   request.onsuccess = onOpenIndexedDBSuccess.bind(request, callback);
 }
@@ -51,7 +55,7 @@ function upgradeDatabase(event) {
   // TODO: is this.transaction be sufficient?
   var transaction = event.currentTarget.transaction;
 
-  console.log('Upgrading database from %s to %s', oldVersion, DATABASE_VERSION);
+  console.info('Upgrading database from %s to %s', oldVersion, DATABASE_VERSION);
 
   if(oldVersion) {
     feedStore = transaction.objectStore('feed');

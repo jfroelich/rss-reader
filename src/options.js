@@ -150,7 +150,8 @@ function optionsShowSection(menuItem) {
     section.style.display = 'block';
   } else {
     // If this happens then there is a bug in the UI
-    console.warn('Could not locate section for %s', menuItem);
+    // so this is an actual error
+    console.error('Could not locate section for %s', menuItem);
   }
   currentMenuItem_ = menuItem;
   currentSection_ = section;
@@ -226,17 +227,17 @@ function onEnableSubscriptionPreviewChange() {
 
 function showOrSkipSubscriptionPreview(url) {
 
-  console.log('showOrSkipSubscriptionPreview %s',url);
+  console.debug('showOrSkipSubscriptionPreview %s',url);
   hideSubscriptionPreview();
 
   if(!localStorage.ENABLE_SUBSCRIBE_PREVIEW) {
-    console.log('subscription preview not enabled, skipping preview');
+    console.debug('subscription preview not enabled, skipping preview');
     startSubscription(url);
     return;
   }
 
   if(!navigator.onLine) {
-    console.log('cannot preview while offline, skipping preview');
+    console.debug('cannot preview while offline, skipping preview');
     startSubscription(url);
     return;
   }
@@ -248,8 +249,12 @@ function showOrSkipSubscriptionPreview(url) {
 
   // invalid url or parse error or exists
   var onerror = function(error) {
-    console.log('error fetching %s for preview', error);
-    console.dir(error);
+
+    // NOTE: use console.debug, not error, because this is not an error in the code
+    // but an error fetching. reserve calls to console.error when encountering
+    // something like a TypeError.
+
+    console.debug('error fetching %o for preview', error);
 
     // If an error occurs hide the preview elements.
     hideSubscriptionPreview();
@@ -335,7 +340,7 @@ function startSubscription(url) {
 
       if(!navigator.onLine) {
         // Subscribe while offline
-        return addFeed(db, {url: url}, onSubscriptionSuccessful, console.error);
+        return addFeed(db, {url: url}, onSubscriptionSuccessful, console.debug);
       }
 
       fetchFeed({
@@ -356,12 +361,12 @@ function startSubscription(url) {
     remoteFeed.fetched = Date.now();
 
     openIndexedDB(function(db) {
-      addFeed(db, remoteFeed, onSubscriptionSuccessful, console.error);
+      addFeed(db, remoteFeed, onSubscriptionSuccessful, console.debug);
     });
   }
 
   function onFetchError(error) {
-    console.dir(error);
+    console.debug('fetch error %o', error);
     hideSubsciptionMonitor(function() {
       showErrorMessage('An error occurred while trying to subscribe to ' + url);
     });
@@ -549,7 +554,7 @@ function onDiscoverFeedsComplete(query, results) {
 
 function onDiscoverFeedsError(errorMessage) {
   document.getElementById('discover-in-progress').style.display='none';
-  console.dir(errorMessage);
+  console.debug('discover feeds error %o',errorMessage);
   showErrorMessage('An error occurred when searching for feeds. Details: ' + errorMessage);
 }
 
@@ -557,7 +562,7 @@ function onUnsubscribeButtonClicked(event) {
   var feedId = parseInt(event.target.value);
   openIndexedDB(function(db) {
     removeFeedById(db, feedId, function() {
-      console.log('unsubscribed from %s', feedId);
+      console.info('Unsubscribed from %s', feedId);
       optionsShowSection(document.getElementById('mi-subscriptions'));
     });
   });
@@ -609,13 +614,13 @@ function onFileInputChanged(event) {
 // TODO: notify the user if there was an error parsing the OPML
 function onFeedsImported(feedsImported, totalFeedsAttempted, exceptions) {
   if(exceptions && exceptions.length) {
-    console.dir(exceptions);
+    console.debug('Encountered exceptions when importing: %o', exceptions);
   }
 
   // TODO: stop the import progress monitor
   // TODO: notify the user
   // switch to section
-  console.log('feed imported');
+  console.info('Completed import of feeds');
 }
 
 function onExportOPMLClick(event) {
