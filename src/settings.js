@@ -152,7 +152,7 @@ function applyEntryStylesOnLoad() {
   //s += 'text-align:justify;';
 
   // s += 'padding: 0px 0px 0px 0px;';
-  s += 'padding-top: 10px;';
+  s += 'padding-top: 20px;';
   s += 'padding-left: 150px;';
   s += 'padding-right: 150px;';
   s += 'padding-bottom: 10px;';
