@@ -49,8 +49,9 @@ function viewOnUnsubscribeMessage(message) {
   var removedCurrentSlide = Array.prototype.reduce.call(
     slidesForFeed, function(removedCurrent, slide) {
     // TODO: verify removing all listeners
-    slide.removeEventListener('click', onSlideClick);
-    slide.remove();
+    //slide.removeEventListener('click', onSlideClick);
+    //slide.remove();
+    removeSlideElement(slideElement);
     return removedCurrent || (slide == currentSlide);
   }, false);
 
@@ -61,6 +62,13 @@ function viewOnUnsubscribeMessage(message) {
 
   maybeShowNoUnreadArticlesSlide();
 }
+
+
+function removeSlideElement(slideElement) {
+  slideElement.removeEventListener('click', onSlideClick);
+  slideElement.remove();
+}
+
 
 function markSlideRead(slideElement) {
   if(!slideElement)
@@ -241,7 +249,7 @@ function showNextSlide() {
         // TODO: this is still producing UI latency
         var c = document.getElementById('slideshow-container');
         while(c.childElementCount > 30 && c.firstChild != currentSlide) {
-          c.firstChild.remove();
+          removeSlideElement(c.firstChild);
         }
 
         showNext();
@@ -282,11 +290,8 @@ function isEntryElementUnread(entryElement) {
 }
 
 function countUnreadSlides() {
-  // TODO: should just document.querySelectorAll the slides
-  // TODO: even better, just select slides with unread attribute
-  // and return its length property
-  var slideNodes = document.getElementById('slideshow-container').childNodes;
-  return Array.prototype.filter.call(slideNodes, isEntryElementUnread).length;
+  var slides = document.body.querySelectorAll('div[entry]:not([read])');
+  return slides ? slides.length : 0;
 }
 
 function maybeShowNoUnreadArticlesSlide() {
