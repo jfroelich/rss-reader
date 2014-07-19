@@ -14,38 +14,49 @@ function onBackgroundMessage(message) {
       updateBadge();
       break;
     case 'importFeedsCompleted':
-
-      var notification = (message.feedsAdded || 0) + ' of ';
-      notification += (message.feedsProcessed || 0) + ' feeds imported with ';
-      notification += message.exceptions ? message.exceptions.length : 0;
-      notification += ' error(s).';
-      showNotification(notification);
-
+      backgroundOnImportFeedsCompletedMessage(message);
       break;
     case 'subscribe':
-      updateBadge();
-
-      if(message.feed) {
-        var title = message.feed.title || message.feed.url;
-        showNotification('Subscribed to ' + title);
-      }
-
+      backgroundOnSubscribeMessage(message);
       break;
     case 'unsubscribe':
       updateBadge();
       break;
     case 'pollCompleted':
-
-      updateBadge();
-
-      if(message.entriesAdded) {
-        showNotification(message.entriesAdded + ' new articles added.');
-      }
+      backgroundOnPollCompletedMessage(message);
       break;
     default:
       break;
   }
 }
+
+function backgroundOnImportFeedsCompletedMessage(message) {
+  var notification = (message.feedsAdded || 0) + ' of ';
+  notification += (message.feedsProcessed || 0) + ' feeds imported with ';
+  notification += message.exceptions ? message.exceptions.length : 0;
+  notification += ' error(s).';
+  showNotification(notification);
+}
+
+function backgroundOnSubscribeMessage(message) {
+  updateBadge();
+
+  if(message.feed) {
+    var title = message.feed.title || message.feed.url;
+    showNotification('Subscribed to ' + title);
+  }
+}
+
+function backgroundOnPollCompletedMessage(message) {
+  updateBadge();
+
+  if(message.entriesAdded) {
+    showNotification(message.entriesAdded + ' new articles added.');
+  }
+}
+
+
+var BACKGROUND_VIEW_URL = chrome.extension.getURL('slides.html');
 
 /**
  * Called when the extension's icon button is clicked
@@ -70,26 +81,24 @@ function onBackgroundMessage(message) {
  * perm is not decl in manifest.
  */
 function onBrowserActionClick() {
+  chrome.tabs.query({'url': BACKGROUND_VIEW_URL}, onTabsViewQueried);
+}
 
-  var viewURL = chrome.extension.getURL('slides.html');
+function onTabsViewQueried(tabs) {
+  if(tabs.length) {
+    chrome.tabs.update(tabs[0].id, {active:true});
+  } else {
+    chrome.tabs.query({url: 'chrome://newtab/'}, onTabsNewTabQueried);
+  }
+}
 
-  chrome.tabs.query({'url': viewURL}, function(tabs) {
-    if(tabs.length) {
-      // Open in one or more tabs
-      chrome.tabs.update(tabs[0].id, {active:true});
-    } else {
-      // Not open in any tabs
-      chrome.tabs.query({url: 'chrome://newtab/'}, function(tabs) {
-        if(tabs.length) {
-          // Replace the first available new tab
-          chrome.tabs.update(tabs[0].id, {active:true,url: viewURL});
-        } else {
-          // Create a new tab
-          chrome.tabs.create({url: viewURL});
-        }
-      });
-    }
-  });
+function onTabsNewTabQueried(tabs) {
+  if(tabs.length) {
+    // Replace the new tab
+    chrome.tabs.update(tabs[0].id, {active:true, url: BACKGROUND_VIEW_URL});
+  } else {
+    chrome.tabs.create({url: BACKGROUND_VIEW_URL});
+  }
 }
 
 /**
