@@ -23,11 +23,7 @@ function importOPMLFiles(files, onComplete) {
   // a single large array and then aggregate at the end
   var outlinesHash = {};
 
-  Array.prototype.forEach.call(files, function(file) {
-    var reader = new FileReader();
-    reader.onload = onFileLoad;
-    reader.readAsText(file);
-  });
+  Array.prototype.forEach.call(files, loadFileAsText.bind(null, onFileLoad));
 
   function onFileLoad(event) {
 
@@ -36,6 +32,10 @@ function importOPMLFiles(files, onComplete) {
       var xmlDocument = parseXML(this.result);
 
     } catch(parseError) {
+
+      // BUG?: exiting early means filecounter is never checked
+      // leading to the continuation never being called
+
       return exceptions.push(parseError);
     }
 
@@ -49,12 +49,16 @@ function importOPMLFiles(files, onComplete) {
     });
 
     if(--fileCounter == 0) {
-
       var distinctFeeds = objectValues(outlinesHash);
-
       importFeeds(distinctFeeds, exceptions, onComplete);
     }
   }
+}
+
+function loadFileAsText(onFileLoad, file) {
+  var reader = new FileReader();
+  reader.onload = onFileLoad;
+  reader.readAsText(file);
 }
 
 function importFeeds(feeds, exceptions, onComplete) {
