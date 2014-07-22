@@ -162,7 +162,16 @@ function applyEntryStylesOnLoad() {
 
   sheet.addRule('div.entry a.entry-title', s);
 
+  // BUG FIX: the change to bfs uses s += '' so the above
+  // props were being applied to the body. now we properly
+  // set s to empty.
+  s = '';
+
+
   var bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10) || 0;
+
+  console.debug('Setting body font size to %s em', (bfs / 10).toFixed(2));
+
   s += 'font-size:' + (bfs / 10).toFixed(2) + 'em;';
 
   s += 'text-align: '+ ((localStorage.JUSTIFY_TEXT == '1') ? 'justify' : 'left')+';';
