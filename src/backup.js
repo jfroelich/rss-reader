@@ -19,6 +19,10 @@ function importOPMLFiles(files, onComplete) {
 
   var fileCounter = files.length;
 
+
+  // TODO: decide whether to aggregate? We could just allow for add feed
+  // to fail on dup and not try to even prevent it here.
+
   // TODO: rather than aggregate per file load, just combine into
   // a single large array and then aggregate at the end
   var outlinesHash = {};
