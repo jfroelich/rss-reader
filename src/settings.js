@@ -6,47 +6,25 @@
 // TODO: proper attribution comments for all images and fonts
 
 var BACKGROUND_IMAGES = [
-  //http://www.desktopwallpapers4.me/abstract/leather-texture-21220/
-  '/media/abstract-leather-texture.jpg',
-
   '/media/bgfons-paper_texture318.jpg',
-  '/media/bone-yellow-1.jpg',
   '/media/CCXXXXXXI_by_aqueous.jpg',
-  '/media/designova-subtle-carbon.png',
-  '/media/dominik-kiss-grid.png',
-  '/media/krisp-designs-vertical-cloth.png',
   '/media/paper-backgrounds-vintage-white.jpg',
-  '/media/papertank-black-padded-diamond.png',
   '/media/pickering-texturetastic-gray.png',
   '/media/reusage-recycled-paper-white-first.png',
-  '/media/recycled_paper_texture.jpg',
-
-  //http://seamless-pixels.blogspot.com/p/free-seamless-ground-textures.html
-  '/media/slodive-canvas-texture-paper.jpg',
   '/media/subtle-patterns-beige-paper.png',
-  '/media/subtle-patterns-black-paper.png',
-  '/media/subtle-patterns-brickwall.png',
   '/media/subtle-patterns-cream-paper.png',
   '/media/subtle-patterns-exclusive-paper.png',
-  '/media/subtle-patterns-extra-clean-paper.png',
   '/media/subtle-patterns-groove-paper.png',
   '/media/subtle-patterns-handmade-paper.png',
-  '/media/subtle-patterns-noisy-net.png',
   '/media/subtle-patterns-paper-1.png',
   '/media/subtle-patterns-paper-2.png',
   '/media/subtle-patterns-paper.png',
   '/media/subtle-patterns-rice-paper-2.png',
   '/media/subtle-patterns-rice-paper-3.png',
-  '/media/subtle-patterns-sand-paper.png',
   '/media/subtle-patterns-soft-wallpaper.png',
   '/media/subtle-patterns-white-wall.png',
   '/media/subtle-patterns-witewall-3.png',
-  '/media/tabor-classy-fabric.png',
-  '/media/texturemate-4097.jpg',
-  '/media/thomas-zucx-noise-lines.png',
-
-  // http://background-pictures.vidzshare.net
-  '/media/towel-white-free-background.jpg'
+  '/media/thomas-zucx-noise-lines.png'
 ];
 
 var FONT_FAMILIES = [
@@ -103,23 +81,41 @@ function applyEntryStylesOnChange() {
     }
   }
 
+  // BUG: as a result of some recent auto-update, the background image/color
+  // is no longer properly cascading. hopefully, nullifying the property for
+  // title and body content will fix it.
+
   var titleRule = findCSSRule(sheet,'div.entry a.entry-title');
   if(titleRule) {
+
+    // Workaround chrome bug
+    titleRule.style.background = '';
+
     titleRule.style.fontFamily = localStorage.HEADER_FONT_FAMILY;
 
     var hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
+    console.debug('Setting header font size to %s', (hfs / 10).toFixed(2));
     titleRule.style.fontSize = (hfs / 10).toFixed(2) + 'em';
+
+
   }
 
   var contentRule = findCSSRule(sheet, 'div.entry span.entry-content');
   if(contentRule) {
+
+    // Workaround chrome bug
+    contentRule.style.background = '';
+
     contentRule.style.fontFamily = localStorage.BODY_FONT_FAMILY || 'initial';
 
     var bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10) || 0;
+    console.debug('Setting body font size to %s', (bfs / 10).toFixed(2));
     contentRule.style.fontSize = (bfs / 10).toFixed(2) + 'em';
 
     contentRule.style.textAlign = (localStorage.JUSTIFY_TEXT == '1') ? 'justify' : 'left';
     contentRule.style.lineHeight = localStorage.BODY_LINE_HEIGHT || 'normal';
+
+
   }
 }
 

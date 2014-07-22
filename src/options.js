@@ -825,8 +825,10 @@ function initDisplaySettingsSection() {
   BACKGROUND_IMAGES.forEach(function(path) {
     option = document.createElement('option');
     option.value = path;
-    //option.textContent = path.substring(15);
-    option.textContent = path;
+
+    option.textContent = path.substring('/media/'.length);
+    //option.textContent = path;
+
     option.selected = localStorage.BACKGROUND_IMAGE == path;
     document.getElementById('entry-background-image').appendChild(option);
   });
