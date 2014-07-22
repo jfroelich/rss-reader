@@ -106,13 +106,18 @@ function applyEntryStylesOnChange() {
   var titleRule = findCSSRule(sheet,'div.entry a.entry-title');
   if(titleRule) {
     titleRule.style.fontFamily = localStorage.HEADER_FONT_FAMILY;
-    titleRule.style.fontSize = localStorage.HEADER_FONT_SIZE;
+
+    var hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
+    titleRule.style.fontSize = (hfs / 10).toFixed(2) + 'em';
   }
 
   var contentRule = findCSSRule(sheet, 'div.entry span.entry-content');
   if(contentRule) {
     contentRule.style.fontFamily = localStorage.BODY_FONT_FAMILY || 'initial';
-    contentRule.style.fontSize = localStorage.BODY_FONT_SIZE || '100%';
+
+    var bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10) || 0;
+    contentRule.style.fontSize = (bfs / 10).toFixed(2) + 'em';
+
     contentRule.style.textAlign = (localStorage.JUSTIFY_TEXT == '1') ? 'justify' : 'left';
     contentRule.style.lineHeight = localStorage.BODY_LINE_HEIGHT || 'normal';
   }
@@ -136,12 +141,12 @@ function applyEntryStylesOnLoad() {
   s += 'padding-bottom:20px;';
   sheet.addRule('div.entry',s);
 
-  s =  'font-size:'+ (localStorage.HEADER_FONT_SIZE || '') +';';
-  s += 'font-family:'+ (localStorage.HEADER_FONT_FAMILY || '')  +';';
+  var hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
+  s += 'font-size:' + (hfs / 10).toFixed(2) + 'em;';
 
+  s += 'font-family:'+ (localStorage.HEADER_FONT_FAMILY || '')  +';';
   s += 'letter-spacing: -0.03em;';
   s += 'color: rgba(50, 50, 50, 0.9);';
-
   s += 'margin-bottom:12px;';
   s += 'margin-left:0px;';
   s += 'text-decoration:none;';
@@ -149,19 +154,17 @@ function applyEntryStylesOnLoad() {
   s += 'word-wrap: break-word;';
   s += 'text-shadow: 1px 1px 2px #cccccc;';
   s += 'text-transform: capitalize;';
-  //s += 'text-align:justify;';
-
-  // s += 'padding: 0px 0px 0px 0px;';
   s += 'padding-top: 20px;';
   s += 'padding-left: 150px;';
   s += 'padding-right: 150px;';
   s += 'padding-bottom: 10px;';
 
 
-
   sheet.addRule('div.entry a.entry-title', s);
 
-  s =  'font-size: '+ (localStorage.BODY_FONT_SIZE || '')+';';
+  var bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10) || 0;
+  s += 'font-size:' + (bfs / 10).toFixed(2) + 'em;';
+
   s += 'text-align: '+ ((localStorage.JUSTIFY_TEXT == '1') ? 'justify' : 'left')+';';
   s += 'font-family:'+ (localStorage.BODY_FONT_FAMILY || '')  +';';
   s += 'line-height:'+(localStorage.BODY_LINE_HEIGHT || 'normal')+';';

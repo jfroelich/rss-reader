@@ -657,8 +657,15 @@ function onRemoveContentFilterClick(event) {
 }
 
 function onHeaderFontChange(event){
-  if(event.target.value) localStorage.HEADER_FONT_FAMILY = event.target.value;
-  else delete localStorage.HEADER_FONT_FAMILY;
+  if(event.target.value)
+    localStorage.HEADER_FONT_FAMILY = event.target.value;
+  else
+    delete localStorage.HEADER_FONT_FAMILY;
+  chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
+}
+
+function onHeaderFontSizeChange(event) {
+  localStorage.HEADER_FONT_SIZE = parseInt(event.target.value) || 1;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
 }
 
@@ -670,9 +677,16 @@ function onBodyFontChange(event) {
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
 }
 
+function onBodyFontSizeChange(event) {
+  localStorage.BODY_FONT_SIZE = parseInt(event.target.value) || 1;
+  chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
+}
+
 function onBackgroundImageChange(event) {
-  if(event.target.value) localStorage.BACKGROUND_IMAGE = event.target.value;
-  else delete localStorage.BACKGROUND_IMAGE;
+  if(event.target.value)
+    localStorage.BACKGROUND_IMAGE = event.target.value;
+  else
+    delete localStorage.BACKGROUND_IMAGE;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
 }
 
@@ -857,29 +871,12 @@ function initDisplaySettingsSection() {
     chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
   };
 
-  document.getElementById('header-font-size').value = localStorage.HEADER_FONT_SIZE || '';
-  document.getElementById('header-font-size').oninput = function(event) {
-    clearTimeout(inputChangedTimer);
-    inputChangedTimer = setTimeout(function() {
-      if(event.target.value)
-        localStorage.HEADER_FONT_SIZE = event.target.value;
-      else
-        delete localStorage.HEADER_FONT_SIZE;
-      chrome.runtime.sendMessage({'type':'displaySettingsChanged'});
-    }, inputChangedDelay);
-  };
+  document.getElementById('header-font-size').value = parseInt(localStorage.HEADER_FONT_SIZE) || '1';
+  document.getElementById('header-font-size').onchange = onHeaderFontSizeChange;
 
-  document.getElementById('body-font-size').value = localStorage.BODY_FONT_SIZE || '';
-  document.getElementById('body-font-size').oninput = function(event) {
-    clearTimeout(inputChangedTimer);
-    inputChangedTimer = setTimeout(function() {
-      if(event.target.value)
-        localStorage.BODY_FONT_SIZE = event.target.value;
-      else
-        delete localStorage.BODY_FONT_SIZE;
-      chrome.runtime.sendMessage({'type':'displaySettingsChanged'});
-    }, inputChangedDelay);
-  };
+
+  document.getElementById('body-font-size').value = parseInt(localStorage.BODY_FONT_SIZE) || '1';
+  document.getElementById('body-font-size').onchange = onBodyFontSizeChange;
 
   document.getElementById('justify-text').checked = (localStorage.JUSTIFY_TEXT == '1') ? true : false;
   document.getElementById('justify-text').onchange = onJustifyChange;

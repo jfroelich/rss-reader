@@ -71,6 +71,9 @@ h2 {
   margin-left:0px;
   margin-bottom:20px;
   margin-right:5px;
+  overflow-x: none;
+  overflow-y: auto;
+  height:200px;
 }
 
 #options_table tr td {
@@ -425,8 +428,8 @@ ul#navigation-menu li.navigation-item-selected {
 
 /***************************** IMPORT-EXPORT **********************************/
 
-#section-import-export {
-	display:none;
+#section-backup {
+  display:none;
 }
 
 /***************************** HELP **********************************/

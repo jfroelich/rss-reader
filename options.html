@@ -40,6 +40,7 @@
 <li id="mi-display-settings" section="section-display-settings">Display settings</li>
 <li id="mi-embeds" section="section-embeds">Approved embeds</li>
 <li id="mi-content-filters" section="section-content-filters">Content filters</li>
+<li id="mi-backup" section="section-backup">Import/export</li>
 <li id="mi-view-about" section="divabout">About</li>
 <li id="mi-feed-details" section="section-feed-details" style="display:none;">hidden feed details placeholder</li>
 </ul>
@@ -47,230 +48,228 @@
 </td><td id="section-layout-container">
 
 <div id="section-subscriptions" class="options_section">
-<h1>Subscriptions <button id="button-import-opml">Import OPML file</button>
-		<button id="button-export-opml">Export OPML file</button></h1>
-<p id="nosubscriptions" class="option-text">No subscriptions</p>
-<ul id="feedlist"></ul>
+	<h1>Subscriptions</h1>
+	<p id="nosubscriptions" class="option-text">No subscriptions</p>
+	<ul id="feedlist"></ul>
 </div>
 
 <div id="section-general-settings" class="options_section">
-<h1>General settings</h1>
-<table id="general-settings-table">
-<tr>
-	<td colspan="2" class="option-text">
-		<input type="checkbox" id="enable-subscription-preview"> Preview articles before subscribing
-	</td>
-</tr>
-<tr>
-	<td colspan="2" class="option-text">
-		<input type="checkbox" id="enable-notifications"> Enable notifications
-	</td>
-</tr>
-<tr>
-	<td colspan="2" class="option-text">
-		<input type="checkbox" id="enable-background"> Permit this extension to check for
-		updates in the background if the option <em>Continue running background apps when
-		Google Chrome is closed</em> is enabled in Chrome's advanced settings.
-	</td>
-</tr>
-<tr>
-	<td colspan="2" class="option-text">
-		<input type="checkbox" id="enable-content-filters"> Enable content filters
-	</td>
-</tr>
-<tr>
-	<td colspan="2" class="option-text">
-		<input type="checkbox" id="rewriting-enable"> Enable URL rewriting
-	</td>
-</tr>
+	<h1>General settings</h1>
+	<table id="general-settings-table">
+	<tr>
+		<td colspan="2" class="option-text">
+			<input type="checkbox" id="enable-subscription-preview"> Preview articles before subscribing
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="option-text">
+			<input type="checkbox" id="enable-notifications"> Enable notifications
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="option-text">
+			<input type="checkbox" id="enable-background"> Permit this extension to check for
+			updates in the background if the option <em>Continue running background apps when
+			Google Chrome is closed</em> is enabled in Chrome's advanced settings.
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="option-text">
+			<input type="checkbox" id="enable-content-filters"> Enable content filters
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2" class="option-text">
+			<input type="checkbox" id="rewriting-enable"> Enable URL rewriting
+		</td>
+	</tr>
 
-<tr>
-	<td colspan="2" class="option-text">
-		<input type="checkbox" id="enable-idle-check"> Only check for updates when my computer is idle
-	</td>
-</tr>
+	<tr>
+		<td colspan="2" class="option-text">
+			<input type="checkbox" id="enable-idle-check"> Only check for updates when my computer is idle
+		</td>
+	</tr>
 
-<!--
-<tr>
-	<td colspan="2">
-		<h2 style="margin-top:30px">Settings below are not yet implemented</h2>
-	</td>
-</tr>
+	<!--
+	<tr>
+		<td colspan="2">
+			<h2 style="margin-top:30px">Settings below are not yet implemented</h2>
+		</td>
+	</tr>
 
-<tr>
-	<td>Mark feeds inactive after:</td>
-	<td width="80%">
-		<select>
-		<option>20 days without updates</option>
-		<option>30 days without updates</option>
-		<option>2 months without updates</option>
-		</select>
-	</td>
-</tr>
-<tr>
-	<td>Embedded content policy:</td>
-	<td>
-		<select>
-		<option>Always show embedded content</option>
-		<option>Show a link to open embedded content in a new tab</option>
-		<option>Ask before showing embedded content</option>
-		</select>
-	</td>
-</tr>
-<tr>
-	<td colspan="2">
-		The most recent check for updates was 5 minutes ago...
-	</td>
-</tr>
-<tr>
-	<td colspan="2">
-		<input type="checkbox"> Disable checking for updates
-	</td>
-</tr>
+	<tr>
+		<td>Mark feeds inactive after:</td>
+		<td width="80%">
+			<select>
+			<option>20 days without updates</option>
+			<option>30 days without updates</option>
+			<option>2 months without updates</option>
+			</select>
+		</td>
+	</tr>
+	<tr>
+		<td>Embedded content policy:</td>
+		<td>
+			<select>
+			<option>Always show embedded content</option>
+			<option>Show a link to open embedded content in a new tab</option>
+			<option>Ask before showing embedded content</option>
+			</select>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2">
+			The most recent check for updates was 5 minutes ago...
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2">
+			<input type="checkbox"> Disable checking for updates
+		</td>
+	</tr>
 
 
-<tr>
-	<td>Give up checking a feed after:</td>
-	<td>
-		<select>
-			<option>500 milliseconds</option>
-			<option>1 second</option>
-			<option>5 seconds</option>
-			<option>10 seconds</option>
-			<option>20 seconds</option>
-			<option>30 seconds</option>
-		</select>
-	</td>
-</tr>
-<tr>
-	<td>Check for updates every:</td>
-	<td>
-		<select>
-			<option>1 minute</option>
-			<option>5 minutes</option>
-			<option>10 minutes</option>
-			<option>20 minutes</option>
-			<option>30 minutes</option>
-			<option>1 hour</option>
-			<option>5 hours</option>
-			<option>20 hours</option>
-		</select>
-	</td>
-</tr>
-<tr>
-	<td colspan="2">
-		<button>Check now</button>
-	</td>
-</tr>
-<tr>
-	<td colspan="2">
-		<p class="option-text"><input type="checkbox" id="enable-prefetch"> After a substantial area of an
-		article is visible on the screen for a few moments, ask Google Chrome to preload the original
-		article in the background, so that if I decide to view the full article, it opens more quickly.</p>
-	</td>
-</tr>
-<tr>
-	<td colspan="2">
-		<p class="option-text"><input type="checkbox"> Try to augment shorter articles</p>
-	</td>
-</tr>
-<tr>
-	<td colspan="2">
-		<p class="option-text"><input type="checkbox"> Try to summarize longer articles</p>
-	</td>
-</tr>
-<tr>
-	<td colspan="2">
-		<p class="option-text"><input type="checkbox"> Automatically enlarge and emphasize body text when appropriate</p>
-	</td>
-</tr>
-<tr>
-	<td colspan="2">
-		<p class="option-text"><input type="checkbox"> Try to layout text in columns where appropriate</p>
-	</td>
-</tr>
-<tr>
-	<td class="option-text">Append this many articles in the background:</td>
-	<td>
-		<select>
-		<option>10</option>
-		<option>20</option>
-		<option>50</option>
-		</select>
-	</td>
-</tr>
+	<tr>
+		<td>Give up checking a feed after:</td>
+		<td>
+			<select>
+				<option>500 milliseconds</option>
+				<option>1 second</option>
+				<option>5 seconds</option>
+				<option>10 seconds</option>
+				<option>20 seconds</option>
+				<option>30 seconds</option>
+			</select>
+		</td>
+	</tr>
+	<tr>
+		<td>Check for updates every:</td>
+		<td>
+			<select>
+				<option>1 minute</option>
+				<option>5 minutes</option>
+				<option>10 minutes</option>
+				<option>20 minutes</option>
+				<option>30 minutes</option>
+				<option>1 hour</option>
+				<option>5 hours</option>
+				<option>20 hours</option>
+			</select>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2">
+			<button>Check now</button>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2">
+			<p class="option-text"><input type="checkbox" id="enable-prefetch"> After a substantial area of an
+			article is visible on the screen for a few moments, ask Google Chrome to preload the original
+			article in the background, so that if I decide to view the full article, it opens more quickly.</p>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2">
+			<p class="option-text"><input type="checkbox"> Try to augment shorter articles</p>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2">
+			<p class="option-text"><input type="checkbox"> Try to summarize longer articles</p>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2">
+			<p class="option-text"><input type="checkbox"> Enlarge and emphasize body text when appropriate</p>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2">
+			<p class="option-text"><input type="checkbox"> Try to layout text in columns where appropriate</p>
+		</td>
+	</tr>
+	<tr>
+		<td class="option-text">Append this many articles in the background:</td>
+		<td>
+			<select>
+			<option>10</option>
+			<option>20</option>
+			<option>50</option>
+			</select>
+		</td>
+	</tr>
 
--->
+	-->
 
-</table>
+	</table>
 </div>
 
-
 <div id="section-feed-details" class="options_section">
-<h1 id="details-title-container">
-<img id="details-favicon">
-<span id="details-title"></span>
-</h1>
-<table id="feed-details-table">
-<tr>
-	<td colspan="2">
-	<button id="details-unsubscribe">Unsubscribe</button>
+	<h1 id="details-title-container">
+	<img id="details-favicon">
+	<span id="details-title"></span>
+	</h1>
+	<table id="feed-details-table">
+	<tr>
+		<td colspan="2">
+		<button id="details-unsubscribe">Unsubscribe</button>
 
-	</td>
-</tr>
-<tr>
-	<td>Description:</td>
-	<td id="details-feed-description"></td>
-</tr>
-<tr>
-	<td>Feed location:</td>
-	<td id="details-feed-url"></td>
-</tr>
-<tr>
-	<td>Website:</td>
-	<td id="details-feed-link"></td>
-</tr>
-<tr>
-	<td>Status:</td>
-	<td>Active (in inactive show inactive and button to reactivate)</td>
-</tr>
-<tr>
-	<td>Last checked:</td>
-	<td>Unknown date (unknown time ago)</td>
-</tr>
-<tr>
-	<td>Last updated:</td>
-	<td>Unknown date (unknown time ago) (this is time a new entry was last added, not just when we checked)</td>
-</tr>
-<tr>
-	<td>Give up trying to update after:</td>
-	<td><select>
-	<option>Use the default setting</option>
-	<option>500 milliseconds</option>
-	<option>1 second</option>
-	<option>5 seconds</option>
-	<option>10 seconds</option>
-	<option>20 seconds</option>
-	<option>30 seconds</option>
-	</select></td>
-</tr>
-<tr>
-	<td>Check for updates every:</td>
-	<td><select>
-	<option>Use the default setting</option>
-	<option>1 minute</option>
-	<option>5 minutes</option>
-	<option>10 minutes</option>
-	<option>20 minutes</option>
-	<option>30 minutes</option>
-	<option>1 hour</option>
-	<option>5 hours</option>
-	<option>20 hours</option>
-	</select>
-	<button>Check for updates now</button>
-	</td>
-</tr>
-</table>
+		</td>
+	</tr>
+	<tr>
+		<td>Description:</td>
+		<td id="details-feed-description"></td>
+	</tr>
+	<tr>
+		<td>Feed location:</td>
+		<td id="details-feed-url"></td>
+	</tr>
+	<tr>
+		<td>Website:</td>
+		<td id="details-feed-link"></td>
+	</tr>
+	<tr>
+		<td>Status:</td>
+		<td>Active (in inactive show inactive and button to reactivate)</td>
+	</tr>
+	<tr>
+		<td>Last checked:</td>
+		<td>Unknown date (unknown time ago)</td>
+	</tr>
+	<tr>
+		<td>Last updated:</td>
+		<td>Unknown date (unknown time ago) (this is time a new entry was last added, not just when we checked)</td>
+	</tr>
+	<tr>
+		<td>Give up trying to update after:</td>
+		<td><select>
+		<option>Use the default setting</option>
+		<option>500 milliseconds</option>
+		<option>1 second</option>
+		<option>5 seconds</option>
+		<option>10 seconds</option>
+		<option>20 seconds</option>
+		<option>30 seconds</option>
+		</select></td>
+	</tr>
+	<tr>
+		<td>Check for updates every:</td>
+		<td><select>
+		<option>Use the default setting</option>
+		<option>1 minute</option>
+		<option>5 minutes</option>
+		<option>10 minutes</option>
+		<option>20 minutes</option>
+		<option>30 minutes</option>
+		<option>1 hour</option>
+		<option>5 hours</option>
+		<option>20 hours</option>
+		</select>
+		<button>Check for updates now</button>
+		</td>
+	</tr>
+	</table>
 </div>
 
 <div id="section-add-subscription" class="options_section">
@@ -323,7 +322,9 @@
 	</tr>
 	<tr>
 		<td class="option-text">Header Font Size:</td>
-		<td colspan="2"><input type="text" id="header-font-size" placeholder="200%, 2.6em"></td>
+		<td colspan="2">
+			<input type="range" id="header-font-size" min="1" max="50" step="1">
+		</td>
 	</tr>
 	<tr>
 		<td class="option-text">Body Font:</td>
@@ -331,7 +332,7 @@
 	</tr>
 	<tr>
 		<td class="option-text">Body Font Size:</td>
-		<td colspan="2"><input type="text" id="body-font-size" placeholder="120%, 1.15em"></td>
+		<td colspan="2"><input type="range" id="body-font-size" min="1" max="50" step="1"></td>
 	</tr>
 	<tr>
 		<td class="option-text">Body Line Height:</td>
@@ -375,6 +376,16 @@ Match: <input type="text" id="create-filter-attribute-value-match">
 <button id="create-filter-action">Create</button>
 </p>
 <ul id="content-filters-list"></ul>
+
+</div>
+
+<div id="section-backup" class="options_section">
+<h1>Import/export</h1>
+
+<p class="option-text">Import feeds from an OPML file:</p>
+<p><button id="button-import-opml">Import OPML file</button></p>
+<p class="option-text">Export feeds to an OPML file:</p>
+<p><button id="button-export-opml">Export OPML file</button></p>
 
 </div>
 
