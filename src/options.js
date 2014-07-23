@@ -611,7 +611,14 @@ function onFileInputChanged(event) {
   });
 }
 
+// TODO: onFeedsImported needs to notify the user of a successful
+// import. In the UI and maybe in a notification. Maybe also combine
+// with the immediate visual feedback (like a simple progress monitor
+// popup but no progress bar). The monitor should be hideable. No
+// need to be cancelable.
 // TODO: notify the user if there was an error parsing the OPML
+// TODO: the user needs immediate visual feedback that we are importing
+// the OPML file.
 function onFeedsImported(feedsImported, totalFeedsAttempted, exceptions) {
   if(exceptions && exceptions.length) {
     console.debug('Encountered exceptions when importing: %o', exceptions);
@@ -875,11 +882,8 @@ function initDisplaySettingsSection() {
 
   document.getElementById('header-font-size').value = parseInt(localStorage.HEADER_FONT_SIZE) || '1';
   document.getElementById('header-font-size').onchange = onHeaderFontSizeChange;
-
-
   document.getElementById('body-font-size').value = parseInt(localStorage.BODY_FONT_SIZE) || '1';
   document.getElementById('body-font-size').onchange = onBodyFontSizeChange;
-
   document.getElementById('justify-text').checked = (localStorage.JUSTIFY_TEXT == '1') ? true : false;
   document.getElementById('justify-text').onchange = onJustifyChange;
   document.getElementById('body-line-height').value = localStorage.BODY_LINE_HEIGHT || '';
@@ -902,7 +906,6 @@ function initContentFiltersSection() {
 
   var listElement = document.getElementById('content-filters-list');
   var rules = loadContentFilterRules();
-
   var appendRuleToList = appendContentFilterRule.bind(null, listElement);
   rules.forEach(appendRuleToList);
 }
@@ -922,11 +925,7 @@ function initAboutSection() {
   label.textContent = manifest.homepage_url || '';
 }
 
-
 function initOptionsPage(event) {
-  // Side note: this function is a good example of procedural and
-  // temporal cohesion
-
   document.removeEventListener('DOMContentLoaded', initOptionsPage);
 
   initNavigation();
@@ -944,17 +943,3 @@ function initOptionsPage(event) {
 }
 
 document.addEventListener('DOMContentLoaded', initOptionsPage);
-
-
-/*
-
-
-// TODO: onFeedsImported needs to notify the user of a successful
-// import. In the UI and maybe in a notification. Maybe also combine
-// with the immediate visual feedback (like a simple progress monitor
-// popup but no progress bar). The monitor should be hideable. No
-// need to be cancelable.
-// TODO: the user needs immediate visual feedback that we are importing
-// the OPML file.
-
-*/

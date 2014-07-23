@@ -61,16 +61,6 @@ function mergeEntries(db, feed, entries, oncomplete) {
     return oncomplete(feed, entriesProcessed, entriesAdded);
   }
 
-  // Get an array of entries in a storable format
-  // TODO: could we pass feed as 'thisArg' to map and
-  // avoid having to declare this inner function? asStorable
-  // could use 'this' to refer to the feed.
-  //var storableEntries = entries.map(function(remoteEntry) {
-  //  return getStorableEntry(remoteEntry, feed);
-  //});
-
-  // Use bind and alternate argument order to create a partial in place
-  // instead of using an explicitly declared nested function
   var storableEntries = entries.map(getStorableEntry.bind(null, feed));
 
   // Filter hashless entries. This also results in filtering
@@ -87,7 +77,6 @@ function mergeEntries(db, feed, entries, oncomplete) {
   if(entriesProcessed == entries.length) {
     return oncomplete(feed, entries.length, entriesAdded);
   }
-
 
   // TODO: to make this bindable and partial, storableEntry has to be
   // specified as the last argument
@@ -264,12 +253,11 @@ function removeEntriesByFeedId(tx, feedId, oncomplete) {
   var entryStore = tx.objectStore('entry');
   var feedIndex = entryStore.index('feed');
 
-  // This method performs three tiny optimizations: (1) uses key cursor
+  // This method performs three micro optimizations: (1) uses key cursor
   // instead of a normal cursor, (2) uses a primitive-like parameter to
   // openKeyCursor instead of explicitly and unecessarily creating a new
   // IBDKeyRange, and (3) uses cursor.delete instead of a subsequent call
-  // to store.delete. The performance benefit is marginal, but it was a
-  // good learning exercise.
+  // to store.delete.
   var requestKeyCursor = feedIndex.openKeyCursor(feedId);
   requestKeyCursor.onsuccess = function() {
     var keyCursor = this.result;

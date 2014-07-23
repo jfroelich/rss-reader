@@ -64,7 +64,7 @@ var FONT_FAMILIES = [
 
 function applyEntryStylesOnChange() {
 
-  // We can cheat here because we know a sheet is loaded
+  // Assume a sheet is always available
   var sheet = document.styleSheets[0];
 
   var entryRule = findCSSRule(sheet,'div.entry');
@@ -81,10 +81,6 @@ function applyEntryStylesOnChange() {
     }
   }
 
-  // BUG: as a result of some recent auto-update, the background image/color
-  // is no longer properly cascading. hopefully, nullifying the property for
-  // title and body content will fix it.
-
   var titleRule = findCSSRule(sheet,'div.entry a.entry-title');
   if(titleRule) {
 
@@ -96,8 +92,6 @@ function applyEntryStylesOnChange() {
     var hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
     console.debug('Setting header font size to %s', (hfs / 10).toFixed(2));
     titleRule.style.fontSize = (hfs / 10).toFixed(2) + 'em';
-
-
   }
 
   var contentRule = findCSSRule(sheet, 'div.entry span.entry-content');
@@ -114,8 +108,6 @@ function applyEntryStylesOnChange() {
 
     contentRule.style.textAlign = (localStorage.JUSTIFY_TEXT == '1') ? 'justify' : 'left';
     contentRule.style.lineHeight = localStorage.BODY_LINE_HEIGHT || 'normal';
-
-
   }
 }
 
