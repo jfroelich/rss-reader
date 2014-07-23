@@ -4,7 +4,8 @@
 
 'use strict';
 
-// NOTE: not currently in use
+// NOTE: not currently in use. Keeping around as a note in the event I want to do
+// minimization as one of the transformations on remote html data.
 // Based on https://github.com/kangax/html-minifier/blob/gh-pages/src/htmlminifier.js
 var BOOLEAN_ELEMENT_ATTRIBUTES = {
   allowfullscreen:1,async:1,autofocus:1,autoplay:1,checked:1,compact:1,
@@ -18,14 +19,65 @@ var BOOLEAN_ELEMENT_ATTRIBUTES = {
 };
 
 /**
+ * Gets the textContent of a specific element or the value of a specific
+ * attribute in the element. The value of the attribute is retrieved if an
+ * attribute is specified. Returns undefined if nothing matches or
+ * the value for anything that did match was empty.
+ *
+ * Reasons why this function is useful:
+ * 1) Searching for a comma separated list of selectors works in document
+ * order, regardless of the order of the selectors. By using an array
+ * of separate selectors, we can prioritize selector order over
+ * document order in the specification.
+ * 2) We sometimes want to get the value of an attribute instead of
+ * the text content. Searching for the attribute involves nearly all the
+ * same steps as searching for the element.
+ * 3) We want to only consider non-empty values as matching.
+ * querySelectorAll stops once the element matches, and does not let
+ * us compose additional concise and exact conditions on the textContent
+ * value or attribute value. So this function enables us to fallback to later
+ * selectors by merging in the non-empty-after-trimming condition.
+ * 4) We want short circuiting. querySelectorAll walks the entire
+ * document every time, which is a waste.
+ */
+function getElementTextOrAttribute(rootElement, selectors, attribute) {
+
+  // TODO: instead of defining our own functions, use
+  // something like HTMLElement.prototype.getAttribute instead of the
+  // fromAttribute function.
+  // TODO: define the getText function externally.
+
+  // Which value is accessed is loop invariant.
+  var accessText = attribute ? function fromAttribute(element) {
+    return element.getAttribute(attribute);
+  } : function fromTextContent(element) {
+    return element.textContent;
+  };
+
+  // NOTE: using a raw loop because nothing in the native iteration API
+  // fits because of the need to use side effects and the need short
+  // circuit
+
+  for(var i = 0, temp; i < selectors.length; i++) {
+    temp = rootElement.querySelector(selectors[i]);
+    if(!temp) continue;
+    temp = accessText(temp);
+    if(!temp) continue;
+    temp = temp.trim();
+    if(!temp) continue;
+    return temp;
+  }
+}
+
+/**
  * Returns true if an element is invisible according to our own very
  * simplified definition of visibility. We are really only going after some
  * common tactics like using display:none for progressive loading or SEO
  */
 function isInvisibleElement(element) {
   return element.style.display == 'none' ||
-    element.style.visibility == 'hidden' ||
-    parseInt(element.style.opacity) === 0;
+      element.style.visibility == 'hidden' ||
+      parseInt(element.style.opacity) === 0;
 }
 
 /**
@@ -94,6 +146,10 @@ function unwrapElement(element) {
 
 // A simple helper for passing to iterators like forEach
 function removeNode(node) {
+
+  // This uses the new node.remove function instead of
+  // node.parentNode.removeChild(node).
+
   if(node) {
     node.remove();
   }
@@ -128,6 +184,9 @@ function getImageArea(element) {
   if(element.width && element.height) {
     var area = element.width * element.height;
 
+    // TODO: this clamping really should be done in the caller
+    // and not here.
+
     // Clamp to 800x600
     if(area > 360000) {
       area = 360000;
@@ -139,21 +198,27 @@ function getImageArea(element) {
   return 0;
 }
 
+// Depends on uri
 function resolveAnchorElement(baseURI, anchorElement) {
+
   if(!baseURI)
     return;
-  // NOTE: use attribute, not property, because property access does
-  // not return the original value
+
+  // Use the attribute to get the url, not the property, because
+  // property access does not return the original value
   var sourceURL = (anchorElement.getAttribute('href') || '').trim();
+
   if(!sourceURL)
     return;
 
   // TODO: do not resolve certain schemes: mailto, javascript
-  // calendar (caldav?), filesystem..? feed:???
+  // calendar (caldav?), filesystem..? feed:???  This should
+  // be a feature of the URI API but the URI API currently sucks
+  // and is incomplete so we have to do the checks here.
+
   if(/^mailto:/.test(sourceURL)) {
     return;
   }
-
 
   if(/^javascript:/.test(sourceURL)) {
     return;
@@ -161,9 +226,11 @@ function resolveAnchorElement(baseURI, anchorElement) {
 
   var sourceURI = parseURI(sourceURL);
 
+  // At this point we should have a resolvable URI. This is a simple
+  // debugging check for learning about url resolution errors
   if(sourceURI.scheme) {
     if(sourceURI.scheme != 'http' && sourceURI.scheme != 'https') {
-      console.warn('probable resolution bug %s', sourceURL);
+      console.warn('probable url resolution bug %s', sourceURL);
     }
   }
 
@@ -171,7 +238,14 @@ function resolveAnchorElement(baseURI, anchorElement) {
 
   if(resolvedURL == sourceURL)
     return;
+
   //console.debug('Changing anchor url from %s to %s', sourceURL, resolvedURL);
+
+  // TODO: perhaps this function should be redesigned so that it can be
+  // passed as a parameter to HTMLElement.prototype.setAttribute that was
+  // bound to the element. This way it is less of a side-effect style function
+  // At the same time it introduces more boilerplate into the calling context.
+
   anchorElement.setAttribute('href', resolvedURL);
 }
 
@@ -183,7 +257,6 @@ function resolveAnchorElement(baseURI, anchorElement) {
  */
 function resolveImageElement(baseURI, imageElement) {
 
-  // Cannot resolve without a base uri so exit early
   if(!baseURI) {
     return imageElement;
   }
@@ -208,13 +281,15 @@ function resolveImageElement(baseURI, imageElement) {
   // shite so we have to check.
 
   if(isDataURL(sourceURL)) {
-    console.debug('encountered data: url %s', sourceURL);
+    // console.debug('encountered data: url %s', sourceURL);
     return imageElement;
   }
 
+  // NOTE: seeing GET resource://.....image.png errors in log.
 
-  // NOTE: seeing GET resource://.....image.png
-  // errors in log. I guess these are not resolved either?
+  // TODO: I guess these should not be resolved either? Need to
+  // learn more about resource URLs
+
   if(/^resource:/.test(sourceURL)) {
     console.debug('encountered resource: url %s', sourceURL);
     return imageElement;
@@ -222,15 +297,12 @@ function resolveImageElement(baseURI, imageElement) {
 
   var sourceURI = parseURI(sourceURL);
 
-  // There was a problem parsing the source url
   if(!sourceURI) {
     return imageElement;
   }
 
   // NOTE: this is not working correctly sometimes when resolving relative URLs
-  // For example:
-  // GET http://www.pantagraph.comcomponents/lee_core_2/resources/images/user_no_avatar.gif
-  // Notice the missing leading slash
+  // For example: GET http://example.compath/path.gif is missing leading slash
 
   // NOTE: resolveURI currently returns a string. In the future it should
   // return a URL, but that is not how it works right now, so we do not have
