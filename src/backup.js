@@ -99,19 +99,20 @@ function importFeeds(feeds, exceptions, onComplete) {
   }
 }
 
-// Useful for creating input to Blob in UI Save As code
 // TODO: this can go further and also create the blob because
 // nothing needs the intermediate string
 function exportOPMLString(onComplete) {
 
-  openIndexedDB(function(db) {
-    getAllFeeds(db, onGetAllFeeds);
-  });
+  openIndexedDB(onConnect);
 
-  function onGetAllFeeds(feeds) {
-    var xmlDocument = createOPMLDocument(feeds,'subscriptions.xml');
-    var serializer = new XMLSerializer();
-    var str = serializer.serializeToString(xmlDocument);
-    onComplete(str);
+  function onConnect(db) {
+    getAllFeeds(db, serializeFeedsAsOPMLString.bind(null, onComplete));
   }
+}
+
+function serializeFeedsAsOPMLString(onComplete, feeds) {
+  var xmlDocument = createOPMLDocument(feeds,'subscriptions.xml');
+  var serializer = new XMLSerializer();
+  var str = serializer.serializeToString(xmlDocument);
+  onComplete(str);
 }
