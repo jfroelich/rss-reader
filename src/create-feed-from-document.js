@@ -28,6 +28,14 @@ function createFeedFromDocument(xmlDocument) {
     return result;
   }
 
+  // TODO: This should be an enum instead of 3 boolean flags. It will
+  // simplify passing around the enum. Or, instead, I should be
+  // passing documentElement to createEntryFromElement which should
+  // recreate these booleans locally. Or, even better, I should be using
+  // some statically defined JSON-like specification that controls these
+  // flags and a factory-like method that looks up the per-type
+  // fields
+
   var isRSS = documentElement.matches('rss');
   var isAtom = documentElement.matches('feed');
   var isRDF = documentElement.matches('rdf');
@@ -84,20 +92,12 @@ function createFeedFromDocument(xmlDocument) {
   var entryElementSelector = isAtom ? 'feed > entry' :
       isRSS ? 'channel > item' : 'item';
   var entryElements = documentElement.querySelectorAll(entryElementSelector);
-  var entryObjects = Array.prototype.map.call(entryElements,
-      createEntryFromElement.bind(null, isAtom, isRSS));
-  result.entries = [];
 
-  // TEMP (this works, but thinking about how to write it more elegantly below)
-  entryObjects.forEach(function(entry) {
-    result.entries.push(entry);
-  });
+  // NOTE: this might not be necessary, but it is unclear to me
+  entryElements = entryElements || [];
 
-  //entryObjects.forEach(Array.prototype.push.bind(result.entries));
-
-  // TODO: use push.apply/call somehow? push can accept multiple args to add,
-  // so using forEach is not necessary
-  //result.entries.push.apply(entryObjects);
+  result.entries = Array.prototype.map.call(entryElements,
+    createEntryFromElement.bind(null, isAtom, isRSS));
 
   return result;
 }
