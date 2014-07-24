@@ -4,25 +4,28 @@
 
 'use strict';
 
-// No operation 'singleton'
+// No operation singleton
 function noop() {
 }
 
 // Retrieves the value of the key property from obj
 function valueAt(obj, key) {
 
-  // Ugh....
-  // var descriptor = Object.getOwnPropertyDescriptor(obj, key);
-  // return descriptor.value;
-  // return String.prototype.charAt.call(obj, key);
-  // return CSSStyleDeclaration.prototype.getPropertyValue.call(obj,key);
+  // I cannot find a way to undo the syntactic sugar :(
 
   return obj[key];
 }
 
 // Gets the values of the properties of an array-like object
 function objectValues(obj) {
-  return Object.keys(obj).
-      filter(Object.prototype.hasOwnProperty.bind(obj)).
-      map(valueAt.bind(null,obj));
+
+  // It would be nice if we could use some type of 'convoluted' approach.
+  // It would be nice if Object.keys had a 'restrictToOwnProps' parameter
+
+  var keys = Object.keys(obj);
+  var boundHasOwn = Object.prototype.hasOwnProperty.bind(obj);
+  var ownKeys = keys.filter(boundHasOwn);
+  var boundValueAt = valueAt.bind(null,obj);
+  var values = ownKeys.map(boundValueAt);
+  return values;
 }
