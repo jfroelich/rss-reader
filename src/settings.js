@@ -47,6 +47,8 @@ var FONT_FAMILIES = [
 
   'Georgia',
 
+  'Montserrat',
+
   'MS Sans Serif',
   'News Cycle, sans-serif',
   'Open Sans Regular',

@@ -76,6 +76,11 @@ Based on http://mutcd.fhwa.dot.gov/pdfs/clearviewspacingia5.pdf
 }
 
 @font-face {
+  font-family: Montserrat;
+  src: url('/media/montserrat/Montserrat-Regular.ttf') format('truetype');
+}
+
+@font-face {
   font-family: News Cycle;
   src: url('/media/NewsCycle-Regular.ttf') format('truetype');
 }
