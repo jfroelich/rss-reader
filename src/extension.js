@@ -9,7 +9,7 @@
  * may be the value of 0.
  */
 function updateBadge() {
-  openIndexedDB(onConnectCountUnreadToUpdateBadge);
+  lucu.database.open(onConnectCountUnreadToUpdateBadge);
 }
 
 function onConnectCountUnreadToUpdateBadge(db) {

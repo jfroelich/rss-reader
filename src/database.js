@@ -4,33 +4,40 @@
 
 'use strict';
 
-var DATABASE_NAME = 'reader';
-var DATABASE_VERSION = 10;
+var lucu = lucu || {};
+lucu.database = {};
+
+lucu.database.NAME = 'reader';
+
+lucu.database.VERSION = 10;
 
 /**
  * Opens a connection to indexedDB, attaches the common
  * error handlers and the upgrade callback, and then passes
  * the connection to the callback
  */
-function openIndexedDB(callback) {
-  var request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
+lucu.database.open = function(callback) {
+  var request = indexedDB.open(lucu.database.NAME,
+    lucu.database.VERSION);
 
   // TODO: are these automatically raised to the top or would not setting
   // these cause silence?
   request.onerror = console.error;
   request.onblocked = console.error;
 
-  request.onupgradeneeded = upgradeDatabase;
-  request.onsuccess = onOpenIndexedDBSuccess.bind(request, callback);
-}
+  request.onupgradeneeded = lucu.database.onUpgradeNeeded_;
+  request.onsuccess = lucu.database.onOpen_.bind(request, callback);
+};
 
-function onOpenIndexedDBSuccess(callback) {
+// Private helper that pulls out the connection object to pass it to
+// the callback so that the callback is not aware of the wrapping request
+lucu.database.onOpen_ = function(callback) {
+  // NOTE: this instanceof IDBRequest
   callback(this.result);
-}
+};
 
 /**
- * This gets automatically called every time the version is incremented and
- * is responsible for changing the schema of the database.
+ * Called when the version is incremented. Changes the schema
  *
  * Changes:
  * Version 7: added feedStore title index
@@ -39,23 +46,27 @@ function onOpenIndexedDBSuccess(callback) {
  * Version 10: entryStore hash index is now unique
  *
  * TODO: ideally we would never store both schemeless and url, we would just
- * store scheme and schemeless props as parts of the url property.
+ * store scheme and schemeless props as parts of a url property.
  *
  * TODO: every single branch below needs to bring the old version all the way
  * to the current version. This is because the user could be affected by an
  * upgrade that bumps them several versions at once. Make less DRY.
  */
-function upgradeDatabase(event) {
+lucu.database.onUpgradeNeeded_ = function(event) {
+
+  // NOTE: this instanceof IDBRequest, right?
+
   var db = this.result;
   var oldVersion = event.oldVersion;
+  var newVersion = lucu.database.VERSION;
 
   var feedStore;
   var entryStore;
 
-  // TODO: is this.transaction be sufficient?
+  // TODO: just use this.transaction?
   var transaction = event.currentTarget.transaction;
 
-  console.info('Upgrading database from %s to %s', oldVersion, DATABASE_VERSION);
+  console.info('Upgrading database from %s to %s', oldVersion, newVersion);
 
   if(oldVersion) {
     feedStore = transaction.objectStore('feed');
@@ -94,4 +105,4 @@ function upgradeDatabase(event) {
   } else {
     console.error('Failed to upgrade database from version %s', oldVersion);
   }
-}
+};

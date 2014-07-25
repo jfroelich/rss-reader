@@ -28,7 +28,7 @@ function startPolling() {
   var totalEntriesAdded = 0, feedCounter = 0, totalEntriesProcessed = 0;
   var feedCounter = 0;
 
-  openIndexedDB(function(db) {
+  lucu.database.open(function(db) {
     getAllFeeds(db, onGetAllFeeds);
   });
 
@@ -86,7 +86,7 @@ function pollFeed(localFeed, oncomplete, onerror) {
   function onFetch(remoteFeed) {
     remoteFeed.fetched = Date.now();
 
-    openIndexedDB(function(db) {
+    lucu.database.open(function(db) {
       updateFeed(db, localFeed, remoteFeed, oncomplete);
     });
   }

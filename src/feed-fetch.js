@@ -167,7 +167,7 @@ function convertToFeed(xmlDocument, onComplete, onError,
   // augmented. need to use something like findEntryByFeedIdAndLinkURL
   // that uses a composite index
 
-  openIndexedDB(function(db) {
+  lucu.database.open(function(db) {
     fetchableEntries.forEach(function(entry) {
       findEntryByLink(db, entry.link, function(existingEntry) {
         if(existingEntry) {

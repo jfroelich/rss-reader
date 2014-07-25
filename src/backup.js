@@ -79,7 +79,7 @@ function importFeeds(feeds, exceptions, onComplete) {
   }
 
   // TODO: this needs cleanup, externally defined functions
-  openIndexedDB(function(db) {
+  lucu.database.open(function(db) {
     feeds.forEach(function(feed) {
       addFeed(db, feed, function() {
         feedsAdded++;
@@ -110,7 +110,7 @@ function importFeeds(feeds, exceptions, onComplete) {
 // nothing needs the intermediate string
 function exportOPMLString(onComplete) {
 
-  openIndexedDB(onConnect);
+  lucu.database.open(onConnect);
 
   // TODO: move this function out of here
   function onConnect(db) {
