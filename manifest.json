@@ -15,6 +15,7 @@
     "persistent": false,
     "scripts": [
       "/src/function-utils.js",
+      "/src/object-utils.js",
       "/src/extension.js",
       "/src/background.js",
       "/src/create-feed-from-document.js",
@@ -30,8 +31,7 @@
       "/src/parse-html.js",
       "/src/parse-xml.js",
       "/src/string-utilities.js",
-      "/src/uri.js",
-      "/src/utilities.js"
+      "/src/uri.js"
     ]
   },
 

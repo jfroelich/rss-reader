@@ -28,6 +28,9 @@ function objectValues(obj) {
   var boundHasOwn = Object.prototype.hasOwnProperty.bind(obj);
   var ownKeys = keys.filter(boundHasOwn);
 
+
+  // TODO: confirm that this == lucu.objectUtils
+
   var boundValueAt = this.valueAt.bind(null,obj);
   var values = ownKeys.map(boundValueAt);
 
