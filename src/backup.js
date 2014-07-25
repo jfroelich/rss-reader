@@ -19,16 +19,18 @@ function importOPMLFiles(files, onComplete) {
 
   var fileCounter = files.length;
 
-
   // TODO: decide whether to aggregate? We could just allow for add feed
   // to fail on dup and not try to even prevent it here.
 
   // TODO: rather than aggregate per file load, just combine into
   // a single large array and then aggregate at the end
+  // TODO: the term hash is not really appropriate. What I want is
+  // hashmap or hashset or just some concept like distinct or aggregated
   var outlinesHash = {};
 
   Array.prototype.forEach.call(files, loadFileAsText.bind(null, onFileLoad));
 
+  // TODO: move this function out of here
   function onFileLoad(event) {
 
     try {
@@ -45,6 +47,7 @@ function importOPMLFiles(files, onComplete) {
 
     var outlines = createOutlinesFromOPMLDocument(xmlDocument);
 
+    // TODO: move this function out of here somehow
     // Aggregate feeds by url
     outlines.forEach(function(outline) {
       if(outline.url) {
@@ -53,12 +56,14 @@ function importOPMLFiles(files, onComplete) {
     });
 
     if(--fileCounter == 0) {
-      var distinctFeeds = objectValues(outlinesHash);
+      var distinctFeeds = lucu.objectUtils.values(outlinesHash);
       importFeeds(distinctFeeds, exceptions, onComplete);
     }
   }
 }
 
+// TODO: move this function into some other file where it is more appropriate
+// like file-utils
 function loadFileAsText(onFileLoad, file) {
   var reader = new FileReader();
   reader.onload = onFileLoad;
@@ -73,6 +78,7 @@ function importFeeds(feeds, exceptions, onComplete) {
     return onComplete(feedsAdded, feedsProcessed, exceptions);
   }
 
+  // TODO: this needs cleanup, externally defined functions
   openIndexedDB(function(db) {
     feeds.forEach(function(feed) {
       addFeed(db, feed, function() {
@@ -82,6 +88,7 @@ function importFeeds(feeds, exceptions, onComplete) {
     });
   });
 
+  // TODO: move this function out of here somehow
   function onFeedAdded() {
     feedsProcessed++;
 
@@ -105,10 +112,13 @@ function exportOPMLString(onComplete) {
 
   openIndexedDB(onConnect);
 
+  // TODO: move this function out of here
   function onConnect(db) {
     getAllFeeds(db, serializeFeedsAsOPMLString.bind(null, onComplete));
   }
 }
+
+// TODO: think of a better name, like createOPMLStringFromFeeds
 
 function serializeFeedsAsOPMLString(onComplete, feeds) {
   var xmlDocument = createOPMLDocument(feeds,'subscriptions.xml');
