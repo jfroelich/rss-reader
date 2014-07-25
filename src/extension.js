@@ -43,5 +43,5 @@ function showNotificationIfPermitted(message, permitted) {
     title: title,
     iconUrl: '/media/rss_icon_trans.gif',
     message: message
-  }, noop);
+  }, lucu.functionUtils.noop);
 }

@@ -52,8 +52,8 @@
 function fetchFeed(params) {
 
   var url = (params.url || '').trim();
-  var oncomplete = params.oncomplete || noop;
-  var onerror = params.onerror || noop;
+  var oncomplete = params.oncomplete || lucu.functionUtils.noop;
+  var onerror = params.onerror || lucu.functionUtils.noop;
   var timeout = timeout;
   var augmentImageData = params.augmentImageData;
   var augmentEntries = params.augmentEntries;

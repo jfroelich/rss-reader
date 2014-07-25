@@ -7,7 +7,7 @@
 function discoverFeeds(params) {
 
   var onComplete = params.oncomplete;
-  var onerror = params.onerror || noop;
+  var onerror = params.onerror || lucu.functionUtils.noop;
   var query = (params.query || '').trim();
   var timeout = params.timeout;
 

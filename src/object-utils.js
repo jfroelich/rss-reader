@@ -13,12 +13,11 @@ lucu.objectUtils.valueAt = function(object, key) {
   return object[key];
 };
 
-
 // Gets the values of the properties of an object as an array
 lucu.objectUtils.values = function(object) {
 
-  // TODO: would be nice if we could use some type of convolutional approach
-  // that avoids using intermediate arrays
+  // TODO: consider some type of convolutional approach that avoids using
+  // intermediate arrays but also avoids an explicit loop
 
   var keys = Object.keys(object);
 
@@ -29,9 +28,6 @@ lucu.objectUtils.values = function(object) {
   // not certain that is correct
   var boundHasOwn = Object.prototype.hasOwnProperty.bind(object);
   var ownKeys = keys.filter(boundHasOwn);
-
-
-  // TODO: confirm that this == lucu.objectUtils
 
   var boundValueAt = this.valueAt.bind(null,object);
   var vals = ownKeys.map(boundValueAt);

@@ -4,7 +4,8 @@
 
 'use strict';
 
-// TODO: move this into function-utils.js
-// No operation singleton
-function noop() {
-}
+var lucu = lucu || {};
+lucu.functionUtils = {};
+
+// A simple no operation function singleton
+lucu.functionUtils.noop = function() {};

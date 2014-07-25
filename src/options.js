@@ -112,7 +112,8 @@ function updateSubscriptionMonitor(message) {
 function hideSubsciptionMonitor(onComplete, fadeOut) {
   var container = document.getElementById('options_subscription_monitor');
 
-  onComplete = onComplete || noop;
+  // NOTE: possible bug here, should be checking arguments.length
+  onComplete = onComplete || lucu.functionUtils.noop;
 
   if(!container) {
     return onComplete();
