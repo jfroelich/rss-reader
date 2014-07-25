@@ -14,9 +14,9 @@ lucu.xml = {};
  * Returns the document (not documentElement), which
  * is a bit different than what parseHTML returns
  */
-lucu.xml.parse = function(str) {
+lucu.xml.parse = function(string) {
   var parser = new DOMParser();
-  var doc = parser.parseFromString(str, 'application/xml');
+  var doc = parser.parseFromString(string, 'application/xml');
 
   if(!doc || !doc.documentElement) {
     throw new SyntaxError('invalid xml');

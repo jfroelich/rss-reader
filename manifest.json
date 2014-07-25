@@ -29,7 +29,7 @@
       "/src/hashing.js",
       "/src/http.js",
       "/src/parse-html.js",
-      "/src/parse-xml.js",
+      "/src/xml.js",
       "/src/string-utilities.js",
       "/src/uri.js"
     ]
