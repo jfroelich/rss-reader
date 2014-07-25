@@ -104,7 +104,7 @@ function onRemoteFeedFetched(onComplete, onError, shouldAugmentEntries,
   if(isContentTypeHTMLOrText(contentType)) {
 
     try {
-      var xmlDocument = parseXML(this.responseText);
+      var xmlDocument = lucu.xml.parse(this.responseText);
     } catch(e) {
       return onError(e);
     }

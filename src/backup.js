@@ -35,7 +35,7 @@ function importOPMLFiles(files, onComplete) {
 
     try {
 
-      var xmlDocument = parseXML(this.result);
+      var xmlDocument = lucu.xml.parse(this.result);
 
     } catch(parseError) {
 

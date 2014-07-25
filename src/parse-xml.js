@@ -4,6 +4,9 @@
 
 'use strict';
 
+var lucu = lucu || {};
+lucu.xml = {};
+
 /**
  * Parses the string into an XMLDocument.
  * If the XML is invalid, an exception is thrown
@@ -11,21 +14,20 @@
  * Returns the document (not documentElement), which
  * is a bit different than what parseHTML returns
  */
-function parseXML(str) {
+lucu.xml.parse = function(str) {
   var parser = new DOMParser();
-  var xmlDocument = parser.parseFromString(str, 'application/xml');
+  var doc = parser.parseFromString(str, 'application/xml');
 
-  if(!xmlDocument || !xmlDocument.documentElement) {
+  if(!doc || !doc.documentElement) {
     throw new SyntaxError('invalid xml');
   }
 
-  // TODO: this can be simplified to use querySelector instead of gebtn
-  // because the perf diff is insignificant
+  // TODO: use querySelector instead of gebtn
 
   // Check for the presence of a parsererror element in the output
   // and if so, undo the mixing of a parse exception event with
   // the parsed content, and throw an error instead
-  var parserError = xmlDocument.documentElement.getElementsByTagName('parsererror');
+  var parserError = doc.documentElement.getElementsByTagName('parsererror');
   if(parserError && parserError.length) {
 
     // Only work with the first error element
@@ -45,5 +47,5 @@ function parseXML(str) {
     throw new SyntaxError(parserError.textContent);
   }
 
-  return xmlDocument;
-}
+  return doc;
+};
