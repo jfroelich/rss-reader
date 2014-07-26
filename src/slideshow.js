@@ -233,7 +233,8 @@ function appendSlide(entry, isFirst) {
 
   var feedTitle = document.createElement('span');
   feedTitle.setAttribute('title',entry.feedLink);
-  var entryPubDate = entry.pubdate ? ' on ' + formatDate(new Date(entry.pubdate)) : '';
+  var entryPubDate = entry.pubdate ?
+    ' on ' + lucu.date.simpleFormat(new Date(entry.pubdate)) : '';
   feedTitle.textContent = (entry.feedTitle || 'Unknown feed') + ' by ' +
     (entry.author || 'Unknown author') + entryPubDate;
   source.appendChild(feedTitle);

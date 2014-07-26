@@ -7,22 +7,27 @@
 
 'use strict';
 
-function formatDate(date, sep) {
+var lucu = lucu || {};
+lucu.date = {};
+
+
+lucu.date.simpleFormat = function(date, sep) {
   if(date) {
     return [date.getMonth() + 1, date.getDate(),date.getFullYear()].join(sep || '');
   }
 
   return '';
-}
+};
 
-function parseDate(str) {
+lucu.date.parse = function(str) {
   if(!str) {
     return;
   }
 
   var date = new Date(str);
 
-  // Native date parsing does not always yield a valid date.
+  // Native date parsing
+  // Does not always yield a valid date.
   // Try to avoid returning an invalid date
 
   if(Object.prototype.toString.call(date) != '[object Date]') {
@@ -34,4 +39,4 @@ function parseDate(str) {
   }
 
   return date;
-}
+};

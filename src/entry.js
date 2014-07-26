@@ -164,7 +164,7 @@ function getStorableEntry(feed, remoteEntry) {
     output.title = remoteEntry.title;
   }
 
-  var publicationDate = parseDate(remoteEntry.pubdate);
+  var publicationDate = lucu.date.parse(remoteEntry.pubdate);
   if(publicationDate) {
     output.pubdate = publicationDate.getTime();
   }
