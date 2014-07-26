@@ -29,6 +29,7 @@
       "/src/hashing.js",
       "/src/http.js",
       "/src/image.js",
+      "/src/mime.js",
       "/src/html.js",
       "/src/xml.js",
       "/src/string.js",

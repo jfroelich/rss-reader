@@ -74,19 +74,3 @@ function onHTMLDocumentLoad(onComplete, onError, shouldAugmentImages, event) {
 
   onComplete(this.responseXML);
 }
-
-function isContentTypeFeed(contentType) {
-  return /(application|text)\/(atom|rdf|rss)?\+?xml/i.test(contentType);
-}
-
-function isContentTypeHTML(contentType) {
-  return /text\/html/i.test(contentType);
-}
-
-function isContentTypeText(contentType) {
-  return /text\/plain/i.test(contentType);
-}
-
-function isContentTypeHTMLOrText(contentType) {
-  return /text\/(plain|html)/i.test(contentType);
-}
