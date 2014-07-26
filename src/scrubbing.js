@@ -113,7 +113,7 @@ function calaminePreprocessDocument(doc) {
   var body = doc.body;
   var forEach = Array.prototype.forEach;
 
-  eachNode(body, NodeFilter.SHOW_COMMENT, removeNode);
+  lucu.node.forEach(body, NodeFilter.SHOW_COMMENT, lucu.node.remove);
 
   var SELECTOR_BLACKLIST = 'applet,base,basefont,button,'+
     'command,datalist,dialog,embed,fieldset,frame,frameset,'+
@@ -138,17 +138,17 @@ function calaminePreprocessDocument(doc) {
 
     // Remove any element in the blacklist
     if(element.matches(SELECTOR_BLACKLIST)) {
-      return removeNode(element);
+      return lucu.node.remove(element);
     }
 
     // Remove any element not in the whitelist
     if(!element.matches(SELECTOR_WHITELIST)) {
-      return removeNode(element);
+      return lucu.node.remove(element);
     }
 
     // Remove sourceless images
     if(element.matches('img:not([src])')) {
-      return removeNode(element);
+      return lucu.node.remove(element);
     }
 
     // Must occur before visibility checks to deal with
@@ -159,13 +159,13 @@ function calaminePreprocessDocument(doc) {
 
     // Remove invisible elements
     if(isInvisibleElement(element)) {
-      return removeNode(element);
+      return lucu.node.remove(element);
     }
 
     // Remove one-dimensional images
     if(element.matches('img')) {
       if(element.width === 1 || element.height === 1) {
-        return removeNode(element);
+        return lucu.node.remove(element);
       }
     }
   });
@@ -194,7 +194,7 @@ function calaminePreprocessDocument(doc) {
   // trimmed. If the text node follows an inline element, it is right trimmed. If
   // the text node precedes an ineline element, it is left trimmed. Otherwise the
   // nodeValue is fully trimmed. Then, if the nodeValue is empty, remove the node.
-  eachNode(body, NodeFilter.SHOW_TEXT, function(node) {
+  lucu.node.forEach(body, NodeFilter.SHOW_TEXT, function(node) {
     if(!node.parentElement.whitespaceImportant) {
       if(isInlineElement(node.previousSibling)) {
         if(!isInlineElement(node.nextSibling)) {
@@ -285,7 +285,7 @@ function calamineExtractFeaturesInDocument(doc) {
 
   // Extract text features for text nodes and then propagate those properties
   // upward in the dom (up to root)
-  eachNode(body, NodeFilter.SHOW_TEXT, function deriveTextFeatures(textNode) {
+  lucu.node.forEach(body, NodeFilter.SHOW_TEXT, function deriveTextFeatures(textNode) {
     var parent = textNode.parentElement;
 
     // TODO: this should be discrete not continuous

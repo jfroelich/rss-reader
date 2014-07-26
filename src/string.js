@@ -34,7 +34,7 @@ lucu.string.stripTags = function(string, replacement) {
     textNodes.push(textNode);
   }
 
-  return textNodes.map(getNodeValue).join(replacement);
+  return textNodes.map(lucu.node.getValue).join(replacement);
 };
 
 

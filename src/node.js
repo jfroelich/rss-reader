@@ -4,8 +4,15 @@
 
 'use strict';
 
+var lucu = lucu || {};
+lucu.node = {};
+
+// TODO: now that I think about it, this should be deprecated
+// and the caller should just use something like
+// Node.prototype.removeChild that is bound to parent, or just use
+// Node.prototype.remove bound to node.
 // A simple helper for passing to iterators like forEach
-function removeNode(node) {
+lucu.node.remove = function(node) {
 
   // This uses the new node.remove function instead of
   // node.parentNode.removeChild(node).
@@ -13,14 +20,12 @@ function removeNode(node) {
   if(node) {
     node.remove();
   }
-}
-
+};
 
 // TODO: is there a native functional way to accomplish this?
-function getNodeValue(node) {
+lucu.node.getValue = function(node) {
   return node.nodeValue;
-}
-
+};
 
 /**
  * A simple helper to use forEach against traversal API.
@@ -31,7 +36,7 @@ function getNodeValue(node) {
  * @param func - a function to apply to each node as it is iterated
  * @param filter - an optional filter function to pass to createNodeIterator
  */
-function eachNode(element, type, func, filter) {
+lucu.node.forEach = function(element, type, func, filter) {
   var ownerDocument = element.ownerDocument;
   var iterator = ownerDocument.createNodeIterator(element, type, filter);
   var node;
@@ -39,4 +44,4 @@ function eachNode(element, type, func, filter) {
   while(node = iterator.nextNode()) {
     func(node);
   }
-}
+};
