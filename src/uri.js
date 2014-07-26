@@ -78,15 +78,26 @@ lucu.uri.resolve = function(baseURI, relativeURI) {
 
 // Very naive uri validation, basically good if has a path
 lucu.uri.isValid = function(object) {
-  if(object) {
-    // If there is no scheme, uri.parse shoves host into path,
-    // which is  a bug we have to work around.
-    // Treat path as the host when schemeless.
-    var host = object.scheme ? object.host : object.path;
-    return host &&
-        host.indexOf('.') > 0 &&
-        host.indexOf(' ') == -1;
-  }
+  if(!object)
+    return false;
+
+  // If there is no scheme, uri.parse shoves host into path,
+  // which is  a bug we have to work around.
+  // Treat path as the host when schemeless.
+  var host = object.scheme ? object.host : object.path;
+
+  if(!host)
+    return false;
+
+  // Must have a period and must not start with a period
+  if(host.indexOf('.') < 1)
+    return false;
+
+  // Must not have a space
+  if(host.indexOf(' ') !== -1)
+    return false;
+
+  return true;
 };
 
 lucu.uri.isValidString = function(string) {
