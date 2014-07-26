@@ -123,7 +123,7 @@ function onRemoteFeedFetched(onComplete, onError, shouldAugmentEntries,
 function convertToFeed(xmlDocument, onComplete, onError,
   shouldAugmentEntries, shouldAugmentImages, rewriteLinks, entryTimeout) {
 
-  var feed = createFeedFromDocument(xmlDocument);
+  var feed = lucu.feed.createFromDocument(xmlDocument);
 
   if(feed.ERROR_UNDEFINED_DOCUMENT ||
      feed.ERROR_UNDEFINED_DOCUMENT_ELEMENT ||

@@ -4,7 +4,11 @@
 
 'use strict';
 
-// Note: requires lucu.element.getTextOrAttribute from dom-utilities
+var lucu = lucu || {};
+
+// Requires lucu.element.getTextOrAttribute
+// .feed is a namespace present in other files so avoid resetting it here
+lucu.feed = lucu.feed || {};
 
 /**
  * Convert an XMLDocument representing a feed into a feed object.
@@ -12,7 +16,7 @@
  * Returns an error property if xmlDocument is undefined, or if xmlDocument.documentElement
  * is undefined, or if the document is not one of the supported types.
  */
-function createFeedFromDocument(xmlDocument) {
+lucu.feed.createFromDocument = function(xmlDocument) {
 
   var result = {};
 
@@ -48,13 +52,14 @@ function createFeedFromDocument(xmlDocument) {
     return result;
   }
 
-  var feedTitleText = lucu.element.getTextOrAttribute(documentElement,
-    isAtom ? ['feed > title'] : ['channel > title']);
+  var access = lucu.element.getTextOrAttribute;
+
+  var feedTitleText = access(documentElement, isAtom ? ['feed > title'] : ['channel > title']);
   if(feedTitleText) {
     result.title = feedTitleText;
   }
 
-  var feedDescriptionText = lucu.element.getTextOrAttribute(documentElement,
+  var feedDescriptionText = access(documentElement,
     isAtom ? ['feed > subtitle'] : ['channel > description']);
   if(feedDescriptionText) {
     result.description = feedDescriptionText;
@@ -63,18 +68,18 @@ function createFeedFromDocument(xmlDocument) {
   var feedLinkSelectors, feedLinkText;
   if(isAtom) {
     feedLinkSelectors = ['feed > link[rel="alternate"]', 'feed > link[rel="self"]', 'feed > link'];
-    feedLinkText = lucu.element.getTextOrAttribute(documentElement, feedLinkSelectors, 'href');
+    feedLinkText = access(documentElement, feedLinkSelectors, 'href');
     if(feedLinkText) {
       result.link = feedLinkText;
     }
   } else {
     // Prefer the textContent of a link element that does not have an href
-    feedLinkText = lucu.element.getTextOrAttribute(documentElement, ['channel > link:not([href])']);
+    feedLinkText = access(documentElement, ['channel > link:not([href])']);
     if(feedLinkText) {
       result.link = feedLinkText;
     } else {
       // Fall back to href attribute value for any link
-      feedLinkText = lucu.element.getTextOrAttribute(documentElement, ['channel > link'], 'href');
+      feedLinkText = access(documentElement, ['channel > link'], 'href');
       if(feedLinkText) {
         result.link = feedLinkText;
       }
@@ -84,7 +89,7 @@ function createFeedFromDocument(xmlDocument) {
   // Set feed date (pubdate or similar, for entire feed)
   var feedDateSelectors = isAtom ? ['feed > updated'] :
     (isRSS ? ['channel > pubdate', 'channel > lastBuildDate', 'channel > date'] : ['channel > date']);
-  var feedDateText = lucu.element.getTextOrAttribute(documentElement, feedDateSelectors);
+  var feedDateText = access(documentElement, feedDateSelectors);
   if(feedDateText) {
     result.date = feedDateText;
   }
@@ -93,50 +98,58 @@ function createFeedFromDocument(xmlDocument) {
       isRSS ? 'channel > item' : 'item';
   var entryElements = documentElement.querySelectorAll(entryElementSelector);
 
-  // NOTE: this might not be necessary, but it is unclear to me
+  // TODO: rather than map, do something like
+  // lucu.element.map(entryElements, toEntry);
+
+  // NOTE: unclear if this is needed
   entryElements = entryElements || [];
 
-  result.entries = Array.prototype.map.call(entryElements,
-    createEntryFromElement.bind(null, isAtom, isRSS));
+  var map = Array.prototype.map;
+  var toEntry = lucu.feed.createEntryFromElement.bind(null, isAtom, isRSS);
+  result.entries = map.call(entryElements, toEntry);
 
   return result;
-}
+};
 
-function createEntryFromElement(isAtom, isRSS, entryElement) {
+lucu.feed.createEntryFromElement = function(isAtom, isRSS, entryElement) {
   var result = {};
 
-  var entryTitleText = lucu.element.getTextOrAttribute(entryElement, ['title']);
+  var access = lucu.element.getTextOrAttribute;
+
+  var entryTitleText = access(entryElement, ['title']);
   if(entryTitleText) {
     result.title = entryTitleText;
   }
 
-  var entryLinkText = isAtom ?  lucu.element.getTextOrAttribute(entryElement,
+  var entryLinkText = isAtom ?  access(entryElement,
     ['link[rel="alternate"]','link[rel="self"]','link[href]'], 'href') :
-    lucu.element.getTextOrAttribute(entryElement, ['origLink','link']);
+    access(entryElement, ['origLink','link']);
   if(entryLinkText) {
     result.link = entryLinkText;
   }
 
-  var entryAuthorText = lucu.element.getTextOrAttribute(entryElement,
+  var entryAuthorText = access(entryElement,
     isAtom ? ['author name'] : ['creator','publisher']);
   if(entryAuthorText) {
     result.author = entryAuthorText;
   }
 
-  var entryPubDateText = lucu.element.getTextOrAttribute(entryElement,
+  var entryPubDateText = access(entryElement,
     isAtom ? ['published','updated'] : (isRSS ? ['pubDate'] : ['date']));
   if(entryPubDateText) {
     result.pubdate = entryPubDateText;
   }
 
-  var entryContentText = isAtom ?  getTextContentForAtomEntry(entryElement) :
-    lucu.element.getTextOrAttribute(entryElement,['encoded','description','summary']);
+  var accessAtom = lucu.feed.getTextContentForAtomEntry;
+
+  var entryContentText = isAtom ? accessAtom(entryElement) :
+    access(entryElement,['encoded','description','summary']);
   if(entryContentText) {
     result.content = entryContentText;
   }
 
   return result;
-}
+};
 
 
 /**
@@ -146,7 +159,7 @@ function createEntryFromElement(isAtom, isRSS, entryElement) {
  * I am sure a cleaner solution exists or I am missing something basic.
  * However, this at least for now gives the desired result.
  */
-function getTextContentForAtomEntry(entryElement) {
+lucu.feed.getTextContentForAtomEntry = function(entryElement) {
 
   var contentElement = entryElement.querySelector('content');
   var text;
@@ -177,4 +190,4 @@ function getTextContentForAtomEntry(entryElement) {
   }
 
   return text;
-}
+};
