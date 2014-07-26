@@ -94,19 +94,10 @@ lucu.feed.createFromDocument = function(xmlDocument) {
     result.date = feedDateText;
   }
 
-  var entryElementSelector = isAtom ? 'feed > entry' :
-      isRSS ? 'channel > item' : 'item';
-  var entryElements = documentElement.querySelectorAll(entryElementSelector);
-
-  // TODO: rather than map, do something like
-  // lucu.element.map(entryElements, toEntry);
-
-  // NOTE: unclear if this is needed
-  entryElements = entryElements || [];
-
-  var map = Array.prototype.map;
-  var toEntry = lucu.feed.createEntryFromElement.bind(null, isAtom, isRSS);
-  result.entries = map.call(entryElements, toEntry);
+  var entrySelector = isAtom ? 'feed > entry' : isRSS ? 'channel > item' : 'item';
+  var entries = documentElement.querySelectorAll(entrySelector);
+  var toEntryObject = lucu.feed.createEntryFromElement.bind(null, isAtom, isRSS);
+  result.entries = lucu.element.map(entries, toEntryObject);
 
   return result;
 };
