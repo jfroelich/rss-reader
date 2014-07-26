@@ -19,6 +19,11 @@
  * if we provide the plaintext fallback?
  * TODO: consider an option to embed iframe content
  * TODO: consider an option to auto-sandboxing iframes
+ * TODO: use overrideMimeType instead of the content type check?
+ * TODO: check for 404 and other status messages and handle those separately?
+ * TODO: move image prefetching out of here to some type of caller, this should
+ * only fetch
+ *
  * Params is object with following properties
  * @param {string} url - the url to fetch
  * @param {function} onload - callback when completed without errors,
@@ -26,7 +31,7 @@
  * @param {function} onerror - callback when an error occurs that
  * prevents completion, such as abort, timeout, missing body tag, wrong content type
  * @param {integer} timeout - optional, ms
- * @param {boolean} augmentImageData - if true, will also fetch images
+ * @param {boolean} augmentImageData - if true, will pre-fetch images
  * and store dimensions as html attributes.
  */
 function fetchHTMLDocument(params) {
