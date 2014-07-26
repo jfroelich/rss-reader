@@ -32,7 +32,7 @@ function addFeed(db, feed, oncomplete, onerror) {
 
   var storableFeed = {};
   storableFeed.url = feed.url;
-  storableFeed.schemeless = getSchemelessURL(storableFeed.url);
+  storableFeed.schemeless = lucu.uri.filterScheme(storableFeed.url);
 
   // title must be somehow defined or else it wont be returned when
   // sorting by title in forAllFeeds
@@ -220,7 +220,7 @@ function removeFeedById(db, id, oncomplete) {
  * to its scheme.
  */
 function findFeedBySchemelessURL(db, url, callback) {
-  var schemelessURL = getSchemelessURL(url);
+  var schemelessURL = lucu.uri.filterScheme(url);
   var feedStore = db.transaction('feed').objectStore('feed');
   var schemelessIndex = feedStore.index('schemeless');
   schemelessIndex.get(schemelessURL).onsuccess = function() {

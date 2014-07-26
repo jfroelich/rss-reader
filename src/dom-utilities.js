@@ -224,7 +224,7 @@ function resolveAnchorElement(baseURI, anchorElement) {
     return;
   }
 
-  var sourceURI = parseURI(sourceURL);
+  var sourceURI = lucu.uri.parse(sourceURL);
 
   // At this point we should have a resolvable URI. This is a simple
   // debugging check for learning about url resolution errors
@@ -234,7 +234,7 @@ function resolveAnchorElement(baseURI, anchorElement) {
     }
   }
 
-  var resolvedURL = resolveURI(baseURI, sourceURI);
+  var resolvedURL = lucu.uri.resolve(baseURI, sourceURI);
 
   if(resolvedURL == sourceURL)
     return;
@@ -280,7 +280,7 @@ function resolveImageElement(baseURI, imageElement) {
   // be no ops). But the current URI module implementation is
   // shite so we have to check.
 
-  if(isDataURL(sourceURL)) {
+  if(lucu.uri.isDataURL(sourceURL)) {
     // console.debug('encountered data: url %s', sourceURL);
     return imageElement;
   }
@@ -295,7 +295,7 @@ function resolveImageElement(baseURI, imageElement) {
     return imageElement;
   }
 
-  var sourceURI = parseURI(sourceURL);
+  var sourceURI = lucu.uri.parse(sourceURL);
 
   if(!sourceURI) {
     return imageElement;
@@ -307,7 +307,7 @@ function resolveImageElement(baseURI, imageElement) {
   // NOTE: resolveURI currently returns a string. In the future it should
   // return a URL, but that is not how it works right now, so we do not have
   // to convert the uri to a string explicitly here.
-  var resolvedURL = resolveURI(baseURI, sourceURI);
+  var resolvedURL = lucu.uri.resolve(baseURI, sourceURI);
 
   if(resolvedURL == sourceURL) {
     // Resolving had no effect

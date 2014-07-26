@@ -210,5 +210,5 @@ function entryHasLinkProperty(entry) {
 }
 
 function rewriteEntryLink(entry) {
-  entry.link = rewriteURL(entry.link);
+  entry.link = lucu.rewrite.rewriteURL(entry.link);
 }

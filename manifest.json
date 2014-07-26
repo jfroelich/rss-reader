@@ -31,7 +31,8 @@
       "/src/html.js",
       "/src/xml.js",
       "/src/string-utilities.js",
-      "/src/uri.js"
+      "/src/uri.js",
+      "/src/rewrite.js"
     ]
   },
 

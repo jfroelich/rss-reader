@@ -226,7 +226,7 @@ function appendSlide(entry, isFirst) {
   slide.appendChild(source);
 
   var favIcon = document.createElement('img');
-  favIcon.setAttribute('src', getFavIconURL(entry.feedLink || entry.baseURI));
+  favIcon.setAttribute('src', lucu.favIcon.getURL(entry.feedLink || entry.baseURI));
   favIcon.setAttribute('width', '16');
   favIcon.setAttribute('height', '16');
   source.appendChild(favIcon);

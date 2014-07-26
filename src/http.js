@@ -63,7 +63,7 @@ function onHTMLDocumentLoad(onComplete, onError, shouldAugmentImages, event) {
   }
 
   // NOTE: this uses the post-redirect url as the base url for anchors
-  var baseURI = parseURI(this.responseURL);
+  var baseURI = lucu.uri.parse(this.responseURL);
   var anchors = this.responseXML.body.querySelectorAll('a');
   Array.prototype.forEach.call(anchors, resolveAnchorElement.bind(null, baseURI));
 
@@ -96,7 +96,7 @@ function augmentImages(doc, baseURL, onComplete) {
   // baseURL just means we should skip the resolve step
 
   var resolvedImages;
-  var baseURI = parseURI(baseURL);
+  var baseURI = lucu.uri.parse(baseURL);
 
   if(baseURI) {
     resolvedImages = Array.prototype.map.call(allBodyImages,
@@ -179,7 +179,7 @@ function isAugmentableImage(imageElement) {
   // parsed, because it essentially represents an already loaded
   // image. However, we want to make sure we do not try to fetch
   // such images
-  if(isDataURL(source)) {
+  if(lucu.uri.isDataURL(source)) {
 
     console.debug('data uri image without dimensions? %o', imageElement);
 

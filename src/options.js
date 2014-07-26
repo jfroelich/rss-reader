@@ -186,7 +186,7 @@ function optionsAppendFeed(feed, insertedSort) {
   item.setAttribute('title', stripTags(feed.description) || '');
   item.onclick = onFeedListItemClick;
   var favIconElement = document.createElement('img');
-  favIconElement.src = getFavIconURL(feed.link);
+  favIconElement.src = lucu.favIcon.getURL(feed.link);
   if(feed.title) favIconElement.title = feed.title;
   item.appendChild(favIconElement);
 
@@ -323,7 +323,7 @@ function startSubscription(url) {
   // Done with preview, ensure it is hidden.
   hideSubscriptionPreview();
 
-  if(!isValidURIString(url)) {
+  if(!lucu.uri.isValid(url)) {
     return showErrorMessage('Invalid url "' + url + '".');
   }
 
@@ -393,7 +393,8 @@ function populateFeedDetailsSection(feedId) {
     db.transaction('feed').objectStore('feed').get(feedId).onsuccess = function(event) {
       var feed = event.target.result;
       document.getElementById('details-title').textContent = feed.title || 'Untitled';
-      document.getElementById('details-favicon').setAttribute('src', getFavIconURL(feed.url));
+      document.getElementById('details-favicon').setAttribute('src',
+        lucu.favIcon.getURL(feed.url));
       document.getElementById('details-feed-description').textContent =
         stripTags(feed.description) || 'No description';
       document.getElementById('details-feed-url').textContent = feed.url;
@@ -450,7 +451,7 @@ function onSubscribeSubmit(event) {
     return false;
 
 
-  if(isValidURIString(query)) {
+  if(lucu.uri.isValid(query)) {
     document.getElementById('discover-results-list').innerHTML = '';
     document.getElementById('discover-no-results').style.display='none';
      document.getElementById('discover-in-progress').style.display='none';
@@ -527,7 +528,7 @@ function onDiscoverFeedsComplete(query, results) {
     item.appendChild(button);
 
     var image = document.createElement('img');
-    image.setAttribute('src', getFavIconURL(result.url));
+    image.setAttribute('src', lucu.favIcon.getURL(result.url));
     image.title = result.link;
     item.appendChild(image);
 
