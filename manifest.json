@@ -20,7 +20,7 @@
       "/src/create-feed-from-document.js",
       "/src/database.js",
       "/src/date-utilities.js",
-      "/src/dom-utilities.js",
+      "/src/element.js",
       "/src/entry.js",
       "/src/feed.js",
       "/src/feed-fetch.js",
