@@ -30,7 +30,7 @@
       "/src/http.js",
       "/src/html.js",
       "/src/xml.js",
-      "/src/string-utilities.js",
+      "/src/string.js",
       "/src/uri.js",
       "/src/rewrite.js"
     ]

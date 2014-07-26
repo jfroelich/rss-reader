@@ -290,8 +290,8 @@ function calamineExtractFeaturesInDocument(doc) {
 
     // TODO: this should be discrete not continuous
     parent.copyrightCount = /[\u00a9]|&copy;|&#169;/i.test(textNode.nodeValue) ? 1 : 0;
-    parent.dotCount = countChar(textNode.nodeValue,'\u2022');
-    parent.pipeCount = countChar(textNode.nodeValue,'|');
+    parent.dotCount = lucu.string.countChar(textNode.nodeValue,'\u2022');
+    parent.pipeCount = lucu.string.countChar(textNode.nodeValue,'|');
 
     var charCount = textNode.nodeValue.length - textNode.nodeValue.split(/[\s\.]/g).length + 1;
 

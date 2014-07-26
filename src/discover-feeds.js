@@ -57,6 +57,6 @@ function sanitizeGoogleResultEntry(entry) {
   // TODO: this should be creating a modified clone, not mutating
   // in place as a side effect.
 
-  entry.contentSnippet = stripBRs(entry.contentSnippet);
+  entry.contentSnippet = lucu.string.stripBRs(entry.contentSnippet);
   return entry;
 }

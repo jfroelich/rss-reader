@@ -191,8 +191,8 @@ function appendSlide(entry, isFirst) {
   title.setAttribute('target','_blank');
   title.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
-    var titleText = stripTags(entry.title);
-    titleText = truncate(titleText, 200);
+    var titleText = lucu.string.stripTags(entry.title);
+    titleText = lucu.string.truncate(titleText, 200);
     title.innerHTML = titleText;
   } else {
     title.textContent = 'Untitled';

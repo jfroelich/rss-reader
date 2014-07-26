@@ -121,15 +121,15 @@ function createOutlinesFromOPMLDocument(xmlDocument) {
       title = title.trim();
     }
 
-    title = stripControls(title);
+    title = lucu.string.stripControls(title);
 
     if(title) {
       outline.title = title;
     }
 
     var description = element.getAttribute('description');
-    description = stripControls(description);
-    description = stripTags(description);
+    description = lucu.string.stripControls(description);
+    description = lucu.string.stripTags(description);
     description = description.trim();
 
     if(description) {
@@ -137,7 +137,7 @@ function createOutlinesFromOPMLDocument(xmlDocument) {
     }
 
     var url = element.getAttribute('xmlUrl') || '';
-    url = stripControls(url);
+    url = lucu.string.stripControls(url);
     url = url.trim();
 
     if(url) {
@@ -145,7 +145,7 @@ function createOutlinesFromOPMLDocument(xmlDocument) {
     }
 
     var link = element.getAttribute('htmlUrl') || '';
-    link = stripControls(link);
+    link = lucu.string.stripControls(link);
     link = link.trim();
 
     if(link) {

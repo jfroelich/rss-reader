@@ -158,14 +158,14 @@ function sanitizeRemoteFeedProperty(str) {
     return;
   }
 
-  str = stripTags(str);
+  str = lucu.string.stripTags(str);
 
   if(str) {
-    str = stripControls(str);
+    str = lucu.string.stripControls(str);
   }
 
   // TODO: this should be a call to a separate function
-  // or maybe merged with stripControls
+  // or maybe merged with lucu.string.stripControls
   // (one pass instead of two)
   if(str) {
     str = str.replace(/\s+/,' ');

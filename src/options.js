@@ -183,7 +183,7 @@ function optionsAppendFeed(feed, insertedSort) {
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
   item.setAttribute('feed',feed.id);
-  item.setAttribute('title', stripTags(feed.description) || '');
+  item.setAttribute('title', lucu.string.stripTags(feed.description) || '');
   item.onclick = onFeedListItemClick;
   var favIconElement = document.createElement('img');
   favIconElement.src = lucu.favIcon.getURL(feed.link);
@@ -191,7 +191,7 @@ function optionsAppendFeed(feed, insertedSort) {
   item.appendChild(favIconElement);
 
   var title = document.createElement('span');
-  title.textContent = truncate(feed.title,300) || 'Untitled';
+  title.textContent = lucu.string.truncate(feed.title,300) || 'Untitled';
   item.appendChild(title);
 
   var feedListElement = document.getElementById('feedlist');
@@ -291,9 +291,9 @@ function showOrSkipSubscriptionPreview(url) {
     for(var i = 0, len = Math.min(5,result.entries.length); i < len;i++) {
       var entry = result.entries[i];
       var item = document.createElement('li');
-      item.innerHTML = stripTags(entry.title);
+      item.innerHTML = lucu.string.stripTags(entry.title);
       var content = document.createElement('span');
-      content.innerHTML = stripTags(entry.content);
+      content.innerHTML = lucu.string.stripTags(entry.content);
       item.appendChild(content);
       document.getElementById('subscription-preview-entries').appendChild(item);
     }
@@ -396,7 +396,7 @@ function populateFeedDetailsSection(feedId) {
       document.getElementById('details-favicon').setAttribute('src',
         lucu.favIcon.getURL(feed.url));
       document.getElementById('details-feed-description').textContent =
-        stripTags(feed.description) || 'No description';
+        lucu.string.stripTags(feed.description) || 'No description';
       document.getElementById('details-feed-url').textContent = feed.url;
       document.getElementById('details-feed-link').textContent = feed.link;
       document.getElementById('details-unsubscribe').value = feed.id;
@@ -535,8 +535,8 @@ function onDiscoverFeedsComplete(query, results) {
     var a = document.createElement('a');
     a.setAttribute('href', result.link);
     a.setAttribute('target', '_blank');
-    a.title = stripTags(result.title);
-    a.innerHTML = truncate(result.title, 70);
+    a.title = lucu.string.stripTags(result.title);
+    a.innerHTML = lucu.string.truncate(result.title, 70);
     item.appendChild(a);
 
     // The snippet contains HTML, not text. It does this because
@@ -544,7 +544,7 @@ function onDiscoverFeedsComplete(query, results) {
     // query. So we want to get rid of only certain tags, not all
     // tags.
     var snippetSpan = document.createElement('span');
-    snippetSpan.innerHTML = truncate(stripBRs(result.contentSnippet), 400);
+    snippetSpan.innerHTML = lucu.string.truncate(lucu.string.stripBRs(result.contentSnippet), 400);
     item.appendChild(snippetSpan);
 
     var span = document.createElement('span');
