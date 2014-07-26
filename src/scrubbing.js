@@ -58,7 +58,7 @@ function calamineTransformDocument(doc, options) {
     var unwrappableElements = body.querySelectorAll(SELECTOR_UNWRAPPABLE);
     forEach.call(unwrappableElements, function(element) {
       if(element != bestElement) {
-        unwrapElement(element);
+        lucu.element.unwrap(element);
       }
     });
   }
@@ -154,11 +154,11 @@ function calaminePreprocessDocument(doc) {
     // Must occur before visibility checks to deal with
     // template unhiding techniques
     if(element.matches('noscript')) {
-      return unwrapElement(element);
+      return lucu.element.unwrap(element);
     }
 
     // Remove invisible elements
-    if(isInvisibleElement(element)) {
+    if(lucu.element.isInvisible(element)) {
       return lucu.node.remove(element);
     }
 
@@ -196,11 +196,11 @@ function calaminePreprocessDocument(doc) {
   // nodeValue is fully trimmed. Then, if the nodeValue is empty, remove the node.
   lucu.node.forEach(body, NodeFilter.SHOW_TEXT, function(node) {
     if(!node.parentElement.whitespaceImportant) {
-      if(isInlineElement(node.previousSibling)) {
-        if(!isInlineElement(node.nextSibling)) {
+      if(lucu.element.isInline(node.previousSibling)) {
+        if(!lucu.element.isInline(node.nextSibling)) {
           node.nodeValue = node.nodeValue.trimRight();
         }
-      } else if(isInlineElement(node.nextSibling)) {
+      } else if(lucu.element.isInline(node.nextSibling)) {
         node.nodeValue = node.nodeValue.trimLeft();
       } else {
         node.nodeValue = node.nodeValue.trim();
@@ -242,7 +242,7 @@ function calaminePreprocessDocument(doc) {
 
   allElements = body.getElementsByTagName('*');
   var emptyLikeElements = Array.prototype.filter.call(allElements, function(element) {
-    return !element.firstChild && !isLeafLikeElement(element);
+    return !element.firstChild && !lucu.element.isLeafLike(element);
   });
 
   // TODO: just add children that should be removed to the stack insead of
@@ -350,7 +350,7 @@ function scoreElement(element) {
 
   element.score = element.score || 0;
 
-  if(element.charCount && !isLeafLikeElement(element)) {
+  if(element.charCount && !lucu.element.isLeafLike(element)) {
     element.anchorDensity = element.anchorCharCount / element.charCount;
 
     if(element.charCount > 1000) {

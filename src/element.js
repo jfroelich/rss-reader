@@ -4,10 +4,13 @@
 
 'use strict';
 
+var lucu = lucu || {};
+lucu.element = {};
+
 // NOTE: not currently in use. Keeping around as a note in the event I want to do
 // minimization as one of the transformations on remote html data.
 // Based on https://github.com/kangax/html-minifier/blob/gh-pages/src/htmlminifier.js
-var BOOLEAN_ELEMENT_ATTRIBUTES = {
+lucu.element.BOOLEAN_ATTRIBUTES = {
   allowfullscreen:1,async:1,autofocus:1,autoplay:1,checked:1,compact:1,
   controls:1,declare:1,'default':1,defaultchecked:1,defaultmuted:1,
   defaultselected:1,defer:1,disable:1,draggable:1,enabled:1,
@@ -40,19 +43,11 @@ var BOOLEAN_ELEMENT_ATTRIBUTES = {
  * 4) We want short circuiting. querySelectorAll walks the entire
  * document every time, which is a waste.
  */
-function getElementTextOrAttribute(rootElement, selectors, attribute) {
+lucu.element.getTextOrAttribute = function(rootElement, selectors, attribute) {
 
-  // TODO: instead of defining our own functions, use
-  // something like HTMLElement.prototype.getAttribute instead of the
-  // fromAttribute function.
-  // TODO: define the getText function externally.
-
-  // Which value is accessed is loop invariant.
-  var accessText = attribute ? function fromAttribute(element) {
-    return element.getAttribute(attribute);
-  } : function fromTextContent(element) {
-    return element.textContent;
-  };
+  var attr = lucu.element.getAttribute.bind(this, attribute);
+  var text = lucu.element.getTextContent;
+  var getter = attribute ? attr : text;
 
   // NOTE: using a raw loop because nothing in the native iteration API
   // fits because of the need to use side effects and the need short
@@ -61,31 +56,41 @@ function getElementTextOrAttribute(rootElement, selectors, attribute) {
   for(var i = 0, temp; i < selectors.length; i++) {
     temp = rootElement.querySelector(selectors[i]);
     if(!temp) continue;
-    temp = accessText(temp);
+    temp = getter(temp);
     if(!temp) continue;
     temp = temp.trim();
     if(!temp) continue;
     return temp;
   }
-}
+};
+
+// Wraps element.getAttribute. Used for partial on attribute (due to arg order)
+// instead of just HTMLElement.prototype.getAttribute
+lucu.element.getAttribute = function(attribute, element) {
+  return element.getAttribute(attribute);
+};
+
+lucu.element.getTextContent = function(element) {
+  return element.textContent;
+};
 
 /**
  * Returns true if an element is invisible according to our own very
  * simplified definition of visibility. We are really only going after some
  * common tactics like using display:none for progressive loading or SEO
  */
-function isInvisibleElement(element) {
+lucu.element.isInvisible = function(element) {
   return element.style.display == 'none' ||
       element.style.visibility == 'hidden' ||
       parseInt(element.style.opacity) === 0;
-}
+};
 
 /**
  * Leaf like elements
  */
-function isLeafLikeElement(element) {
+lucu.element.isLeafLike = function(element) {
   return element.matches('applet,audio,br,canvas,embed,frame,hr,iframe,img,object,video');
-}
+};
 
 /**
  * Returns true if the node is a defined element that
@@ -102,16 +107,16 @@ function isLeafLikeElement(element) {
  * TODO: why are we checking if node is an element? When is this ever called on
  * nodes and not elements?
  */
-function isInlineElement(node) {
+lucu.element.isInline = function(node) {
   return node && node.nodeType == Node.ELEMENT_NODE &&
     node.matches('a,abbr,acronym,b,bdo,big,blink,cite,code,dfn,'+
     'em,kbd,i,q,samp,small,span,strong,sub,sup,tt,var');
-}
+};
 
 /**
  * Removes the element but retains its children.
  */
-function unwrapElement(element) {
+lucu.element.unwrap = function(element) {
   // We have to check element is defined since this is called every iteration
   // and a prior iteration may have somehow removed the element.
 
@@ -142,4 +147,4 @@ function unwrapElement(element) {
 
     element.remove();
   }
-}
+};

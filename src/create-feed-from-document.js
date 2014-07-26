@@ -4,7 +4,7 @@
 
 'use strict';
 
-// Note: requires getElementTextOrAttribute from dom-utilities
+// Note: requires lucu.element.getTextOrAttribute from dom-utilities
 
 /**
  * Convert an XMLDocument representing a feed into a feed object.
@@ -48,13 +48,13 @@ function createFeedFromDocument(xmlDocument) {
     return result;
   }
 
-  var feedTitleText = getElementTextOrAttribute(documentElement,
+  var feedTitleText = lucu.element.getTextOrAttribute(documentElement,
     isAtom ? ['feed > title'] : ['channel > title']);
   if(feedTitleText) {
     result.title = feedTitleText;
   }
 
-  var feedDescriptionText = getElementTextOrAttribute(documentElement,
+  var feedDescriptionText = lucu.element.getTextOrAttribute(documentElement,
     isAtom ? ['feed > subtitle'] : ['channel > description']);
   if(feedDescriptionText) {
     result.description = feedDescriptionText;
@@ -63,18 +63,18 @@ function createFeedFromDocument(xmlDocument) {
   var feedLinkSelectors, feedLinkText;
   if(isAtom) {
     feedLinkSelectors = ['feed > link[rel="alternate"]', 'feed > link[rel="self"]', 'feed > link'];
-    feedLinkText = getElementTextOrAttribute(documentElement, feedLinkSelectors, 'href');
+    feedLinkText = lucu.element.getTextOrAttribute(documentElement, feedLinkSelectors, 'href');
     if(feedLinkText) {
       result.link = feedLinkText;
     }
   } else {
     // Prefer the textContent of a link element that does not have an href
-    feedLinkText = getElementTextOrAttribute(documentElement, ['channel > link:not([href])']);
+    feedLinkText = lucu.element.getTextOrAttribute(documentElement, ['channel > link:not([href])']);
     if(feedLinkText) {
       result.link = feedLinkText;
     } else {
       // Fall back to href attribute value for any link
-      feedLinkText = getElementTextOrAttribute(documentElement, ['channel > link'], 'href');
+      feedLinkText = lucu.element.getTextOrAttribute(documentElement, ['channel > link'], 'href');
       if(feedLinkText) {
         result.link = feedLinkText;
       }
@@ -84,7 +84,7 @@ function createFeedFromDocument(xmlDocument) {
   // Set feed date (pubdate or similar, for entire feed)
   var feedDateSelectors = isAtom ? ['feed > updated'] :
     (isRSS ? ['channel > pubdate', 'channel > lastBuildDate', 'channel > date'] : ['channel > date']);
-  var feedDateText = getElementTextOrAttribute(documentElement, feedDateSelectors);
+  var feedDateText = lucu.element.getTextOrAttribute(documentElement, feedDateSelectors);
   if(feedDateText) {
     result.date = feedDateText;
   }
@@ -105,32 +105,32 @@ function createFeedFromDocument(xmlDocument) {
 function createEntryFromElement(isAtom, isRSS, entryElement) {
   var result = {};
 
-  var entryTitleText = getElementTextOrAttribute(entryElement, ['title']);
+  var entryTitleText = lucu.element.getTextOrAttribute(entryElement, ['title']);
   if(entryTitleText) {
     result.title = entryTitleText;
   }
 
-  var entryLinkText = isAtom ?  getElementTextOrAttribute(entryElement,
+  var entryLinkText = isAtom ?  lucu.element.getTextOrAttribute(entryElement,
     ['link[rel="alternate"]','link[rel="self"]','link[href]'], 'href') :
-    getElementTextOrAttribute(entryElement, ['origLink','link']);
+    lucu.element.getTextOrAttribute(entryElement, ['origLink','link']);
   if(entryLinkText) {
     result.link = entryLinkText;
   }
 
-  var entryAuthorText = getElementTextOrAttribute(entryElement,
+  var entryAuthorText = lucu.element.getTextOrAttribute(entryElement,
     isAtom ? ['author name'] : ['creator','publisher']);
   if(entryAuthorText) {
     result.author = entryAuthorText;
   }
 
-  var entryPubDateText = getElementTextOrAttribute(entryElement,
+  var entryPubDateText = lucu.element.getTextOrAttribute(entryElement,
     isAtom ? ['published','updated'] : (isRSS ? ['pubDate'] : ['date']));
   if(entryPubDateText) {
     result.pubdate = entryPubDateText;
   }
 
   var entryContentText = isAtom ?  getTextContentForAtomEntry(entryElement) :
-    getElementTextOrAttribute(entryElement,['encoded','description','summary']);
+    lucu.element.getTextOrAttribute(entryElement,['encoded','description','summary']);
   if(entryContentText) {
     result.content = entryContentText;
   }
