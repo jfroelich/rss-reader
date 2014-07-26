@@ -138,8 +138,9 @@ lucu.opml.createOutlineObject = function(element) {
 };
 
 lucu.opml.isValidOutlineElement = function(element) {
- return /rss|rdf|feed/i.test(element.getAttribute('type')) &&
-     (element.getAttribute('xmlUrl') || '').trim();
+  var type = element.getAttribute('type');
+  var url = element.getAttribute('xmlUrl') || '';
+  return /rss|rdf|feed/i.test(type) && url.trim();
 };
 
 lucu.opml.isValidDocument = function(doc) {
