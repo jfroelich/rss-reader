@@ -3,21 +3,20 @@
 // that can be found in the LICENSE file
 
 
-// TODO: consider renaming this to just lucu.object
+// TODO: rename to just lucu.object
 
 'use strict';
 
 var lucu = lucu || {};
-lucu.objectUtils = {};
+lucu.object = {};
 
-// Retrieves the value of the key property from object. I cannot find a more elegant
-// manner to undo the syntactic sugar
-lucu.objectUtils.valueAt = function(object, key) {
+// Retrieves the value of the key property from object
+lucu.object.at = function(object, key) {
   return object[key];
 };
 
 // Gets the values of the properties of an object as an array
-lucu.objectUtils.values = function(object) {
+lucu.object.values = function(object) {
 
   // TODO: consider some type of convolutional approach that avoids using
   // intermediate arrays but also avoids an explicit loop
@@ -32,7 +31,7 @@ lucu.objectUtils.values = function(object) {
   var boundHasOwn = Object.prototype.hasOwnProperty.bind(object);
   var ownKeys = keys.filter(boundHasOwn);
 
-  var boundValueAt = this.valueAt.bind(null,object);
+  var boundValueAt = lucu.object.at.bind(null,object);
   var vals = ownKeys.map(boundValueAt);
 
   return vals;

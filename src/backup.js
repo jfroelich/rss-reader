@@ -56,7 +56,7 @@ function importOPMLFiles(files, onComplete) {
     });
 
     if(--fileCounter == 0) {
-      var distinctFeeds = lucu.objectUtils.values(outlinesHash);
+      var distinctFeeds = lucu.object.values(outlinesHash);
       importFeeds(distinctFeeds, exceptions, onComplete);
     }
   }
