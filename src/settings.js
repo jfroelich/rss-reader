@@ -160,7 +160,7 @@ function applyEntryStylesOnLoad() {
 
   var bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10) || 0;
 
-  console.debug('Setting body font size to %s em', (bfs / 10).toFixed(2));
+  // console.debug('Setting body font size to %s em', (bfs / 10).toFixed(2));
 
   s += 'font-size:' + (bfs / 10).toFixed(2) + 'em;';
 
