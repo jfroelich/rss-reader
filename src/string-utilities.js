@@ -3,10 +3,6 @@
 // that can be found in the LICENSE file
 
 
-// TODO: maybe name this something like string-select.js?
-// I basically have a bunch of 'strip' functions and a count
-// Even truncate is just a length based sql-like SELECT.
-
 'use strict';
 
 /**
@@ -23,28 +19,25 @@ function stripTags(str, replacement) {
 
   var htmlDocumentBody = lucu.html.parse(str);
 
-  if(replacement) {
-
-    var ownerDocument = htmlDocumentBody.ownerDocument;
-    var textNodeIterator = ownerDocument.createNodeIterator(
-      htmlDocumentBody, NodeFilter.SHOW_TEXT);
-    var textNode;
-    var textNodes = [];
-
-    while(textNode = textNodeIterator.nextNode()) {
-      textNodes.push(textNode);
-    }
-
-    return textNodes.map(getNodeValue).join(replacement);
+  if(!replacement) {
+    return htmlDocumentBody.textContent;
   }
 
-  return htmlDocumentBody.textContent;
+
+  var ownerDocument = htmlDocumentBody.ownerDocument;
+  var textNodeIterator = ownerDocument.createNodeIterator(
+    htmlDocumentBody, NodeFilter.SHOW_TEXT);
+  var textNode;
+  var textNodes = [];
+
+  while(textNode = textNodeIterator.nextNode()) {
+    textNodes.push(textNode);
+  }
+
+  return textNodes.map(getNodeValue).join(replacement);
+
 }
 
-// TODO: is there a native functional way to accomplish what this does?
-function getNodeValue(node) {
-  return node.nodeValue;
-}
 
 // Naive <br> removal
 function stripBRs(str) {

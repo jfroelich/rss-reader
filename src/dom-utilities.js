@@ -155,6 +155,13 @@ function removeNode(node) {
   }
 }
 
+
+// TODO: is there a native functional way to accomplish this?
+function getNodeValue(node) {
+  return node.nodeValue;
+}
+
+
 /**
  * A simple helper to use forEach against traversal API.
  *
