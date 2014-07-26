@@ -88,11 +88,10 @@ function fetchFeed(params) {
 function onRemoteFeedFetched(onComplete, onError, shouldAugmentEntries,
   shouldAugmentImages, rewriteLinks, entryTimeout) {
 
-  // TODO: parse content type into mime type and encoding?
 
-  var contentType = this.getResponseHeader('Content-Type') || '';
+  var mime = lucu.mime.getType(this) || '';
 
-  if(isContentTypeFeed(contentType)) {
+  if(lucu.mime.isFeed(mime)) {
     if(!this.responseXML || !this.responseXML.documentElement) {
       return onError({type:'invalid-xml',target:this});
     }
@@ -101,7 +100,7 @@ function onRemoteFeedFetched(onComplete, onError, shouldAugmentEntries,
       shouldAugmentImages, rewriteLinks, entryTimeout);
   }
 
-  if(isContentTypeHTMLOrText(contentType)) {
+  if(lucu.mime.isTextHTMLOrPlain(mime)) {
 
     try {
       var xmlDocument = lucu.xml.parse(this.responseText);
@@ -202,13 +201,4 @@ function convertToFeed(xmlDocument, onComplete, onError,
       onComplete(feed);
     }
   }
-}
-
-
-function entryHasLinkProperty(entry) {
-  return !!entry.link;
-}
-
-function rewriteEntryLink(entry) {
-  entry.link = lucu.rewrite.rewriteURL(entry.link);
 }

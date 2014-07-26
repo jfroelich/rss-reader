@@ -45,27 +45,21 @@ function fetchHTMLDocument(params) {
 
 function onHTMLDocumentLoad(onComplete, onError, shouldAugmentImages, event) {
 
-  var contentType = this.getResponseHeader('Content-Type');
+  var mime = lucu.mime.getType(this);
 
-  if(!isContentTypeHTML(contentType)) {
-    return onError({
-      type: 'invalid-content-type',
-      target: this,
-      contentType: contentType
-    });
+  if(!lucu.mime.isTextHTML(mime)) {
+    return onError({type: 'invalid-content-type', target: this, contentType: mime});
   }
 
   if(!this.responseXML || !this.responseXML.body) {
-    return onError({
-      type: 'invalid-document',
-      target: this
-    });
+    return onError({type: 'invalid-document', target: this});
   }
 
   // NOTE: this uses the post-redirect url as the base url for anchors
+  var each = Array.prototype.forEach;
   var baseURI = lucu.uri.parse(this.responseURL);
   var anchors = this.responseXML.body.querySelectorAll('a');
-  Array.prototype.forEach.call(anchors, resolveAnchorElement.bind(null, baseURI));
+  each.call(anchors, resolveAnchorElement.bind(null, baseURI));
 
   if(shouldAugmentImages) {
     // NOTE: this uses the post-redirect responseURL as the base url

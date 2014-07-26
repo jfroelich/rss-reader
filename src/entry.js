@@ -109,6 +109,15 @@ function entryHasHashProperty(entry) {
   return entry.hash;
 }
 
+function entryHasLinkProperty(entry) {
+  return !!entry.link;
+}
+
+function rewriteEntryLink(entry) {
+  entry.link = lucu.rewrite.rewriteURL(entry.link);
+}
+
+
 /**
  * Create an object that is ready for storage in
  * the entries object store in indexedDB.

@@ -4,18 +4,29 @@
 
 'use strict';
 
-function isContentTypeFeed(contentType) {
+var lucu = lucu || {};
+lucu.mime = {};
+
+// Gets the mime type from the XMLHttpRequest. Note that for now
+// this does not actually parse it, it just gets the full header
+lucu.mime.getType = function(request) {
+  if(request) {
+    return request.getResponseHeader('Content-Type');
+  }
+};
+
+lucu.mime.isFeed = function(contentType) {
   return /(application|text)\/(atom|rdf|rss)?\+?xml/i.test(contentType);
-}
+};
 
-function isContentTypeHTML(contentType) {
+lucu.mime.isTextHTML = function(contentType) {
   return /text\/html/i.test(contentType);
-}
+};
 
-function isContentTypeText(contentType) {
+lucu.mime.isTextPlain = function(contentType) {
   return /text\/plain/i.test(contentType);
-}
+};
 
-function isContentTypeHTMLOrText(contentType) {
+lucu.mime.isTextHTMLOrPlain = function(contentType) {
   return /text\/(plain|html)/i.test(contentType);
-}
+};
