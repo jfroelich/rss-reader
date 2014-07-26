@@ -4,13 +4,16 @@
 
 'use strict';
 
+var lucu = lucu || {};
+lucu.opml = {};
+
 /**
  * Generates an OPML XMLDocument object. feeds should be
  * an array of feed objects. feed objects should have properties
  * title, url, description, and link. url is the only required
  * property. titleElementValue is optional.
  */
-function createOPMLDocument(feeds, titleElementValue) {
+lucu.opml.createDocument = function(feeds, titleElementValue) {
 
   var opmlDocument = document.implementation.createDocument(null, null);
 
@@ -53,105 +56,102 @@ function createOPMLDocument(feeds, titleElementValue) {
   var bodyElement = opmlDocument.createElement('body');
   elementOPML.appendChild(bodyElement);
 
-  feedsWithURLs.map(createOutlineElement.bind(null, opmlDocument)).forEach(
-    appendOutlineToBody.bind(null, bodyElement));
+  var boundCOE = lucu.opml.createOutlineElement.bind(this, opmlDocument);
+
+  // TODO: use something like Element.prototype.appendChild.bind
+  var boundAOTB = lucu.opml.appendOutlineToBody.bind(this, bodyElement);
+
+  feedsWithURLs.map(boundCOE).forEach(boundAOTB);
 
   return opmlDocument;
-}
+};
 
-function createOutlineElement(opmlDocument, feed) {
-  var outlineElement = opmlDocument.createElement('outline');
+// TODO: deprecate, use Element.prototype.appendChild
+lucu.opml.appendOutlineToBody = function(bodyElement, element) {
+  bodyElement.appendChild(element);
+};
+
+lucu.opml.createOutlineElement = function(doc, feed) {
+  var element = doc.createElement('outline');
 
   // NOTE: this makes a major assumption about each feed's
   // format. We do not track the format from the time the
   // feed was imported so there is no way to know. This is
   // only marginal though because I assume most reader apps
   // do not rely on this type to determine the format.
-  outlineElement.setAttribute('type', 'rss');
-
-  // Fallback to using url as title if it is missing
+  element.setAttribute('type', 'rss');
   var title = feed.title || feed.url;
-  outlineElement.setAttribute('text', title);
-  outlineElement.setAttribute('title', title);
+  element.setAttribute('text', title);
+  element.setAttribute('title', title);
+  element.setAttribute('xmlUrl', feed.url);
+  if(feed.description)
+    element.setAttribute('description', feed.description);
+  if(feed.link)
+    element.setAttribute('htmlUrl', feed.link);
+  return element;
+};
 
-  outlineElement.setAttribute('xmlUrl', feed.url);
+lucu.opml.createOutlineObject = function(element) {
+  // Build and return a feed object with properties
+  // title, description, url, and link
 
-  if(feed.description) {
-    outlineElement.setAttribute('description', feed.description);
-  }
-
-  if(feed.link) {
-    outlineElement.setAttribute('htmlUrl', feed.link);
-  }
-
-  return outlineElement;
-}
-
-function appendOutlineToBody(bodyElement, outlineElement) {
-  bodyElement.appendChild(outlineElement);
-}
-
-/**
- * Generates an array of outline objects from an OPML XMLDocument object.
- */
-function createOutlinesFromOPMLDocument(xmlDocument) {
-
-  // Create an array-like list of outline elements or an empty array
-  // depending on whether the document looks like an opml document
-  var outlineElements = xmlDocument && xmlDocument.documentElement &&
-    xmlDocument.documentElement.matches('opml') ?
-    xmlDocument.getElementsByTagName('outline') : [];
-
-  // Filter out outlines that are not one of the supported types or
-  // are missing urls, then create outline objects for each outline
-  // element and return the resulting array.
-  return Array.prototype.filter.call(outlineElements, function(outlineElement) {
-    return /rss|rdf|feed/i.test(outlineElement.getAttribute('type')) &&
-      (outlineElement.getAttribute('xmlUrl') || '').trim();
-  }).map(function(element) {
-
-    // Build and return a feed object with properties
-    // title, description, url, and link
-
-    var outline = {};
-    var title = element.getAttribute('title') || '';
+  var outline = {};
+  var title = element.getAttribute('title') || '';
+  title = title.trim();
+  if(!title) {
+    title = element.getAttribute('text') || '';
     title = title.trim();
-    if(!title) {
-      title = element.getAttribute('text') || '';
-      title = title.trim();
-    }
+  }
 
-    title = lucu.string.stripControls(title);
+  title = lucu.string.stripControls(title);
 
-    if(title) {
-      outline.title = title;
-    }
+  if(title) {
+    outline.title = title;
+  }
 
-    var description = element.getAttribute('description');
-    description = lucu.string.stripControls(description);
-    description = lucu.string.stripTags(description);
-    description = description.trim();
+  var description = element.getAttribute('description');
+  description = lucu.string.stripControls(description);
+  description = lucu.string.stripTags(description);
+  description = description.trim();
 
-    if(description) {
-      outline.description = description;
-    }
+  if(description) {
+    outline.description = description;
+  }
 
-    var url = element.getAttribute('xmlUrl') || '';
-    url = lucu.string.stripControls(url);
-    url = url.trim();
+  var url = element.getAttribute('xmlUrl') || '';
+  url = lucu.string.stripControls(url);
+  url = url.trim();
 
-    if(url) {
-      outline.url = url;
-    }
+  if(url) {
+    outline.url = url;
+  }
 
-    var link = element.getAttribute('htmlUrl') || '';
-    link = lucu.string.stripControls(link);
-    link = link.trim();
+  var link = element.getAttribute('htmlUrl') || '';
+  link = lucu.string.stripControls(link);
+  link = link.trim();
 
-    if(link) {
-      outline.link = link;
-    }
+  if(link) {
+    outline.link = link;
+  }
 
-    return outline;
-  });
-}
+  return outline;
+};
+
+lucu.opml.isValidOutlineElement = function(element) {
+ return /rss|rdf|feed/i.test(element.getAttribute('type')) &&
+     (element.getAttribute('xmlUrl') || '').trim();
+};
+
+lucu.opml.isValidDocument = function(doc) {
+  return doc && doc.documentElement && doc.documentElement.matches('opml');
+};
+
+// Generates an array of outline objects from an OPML XMLDocument object.
+lucu.opml.createOutlines = function(doc) {
+  var filter = Array.prototype.filter;
+  var isOutline = lucu.opml.isValidOutlineElement;
+  var asObject = lucu.opml.createOutlineObject;
+  var isValid = lucu.opml.isValidDocument(doc);
+  var elements = isValid ? doc.getElementsByTagName('outline') : [];
+  return filter.call(elements, isOutline).map(asObject);
+};

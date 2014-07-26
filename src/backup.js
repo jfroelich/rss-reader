@@ -45,7 +45,7 @@ function importOPMLFiles(files, onComplete) {
       return exceptions.push(parseError);
     }
 
-    var outlines = createOutlinesFromOPMLDocument(xmlDocument);
+    var outlines = lucu.opml.createOutlines(xmlDocument);
 
     // TODO: move this function out of here somehow
     // Aggregate feeds by url
@@ -121,7 +121,7 @@ function exportOPMLString(onComplete) {
 // TODO: think of a better name, like createOPMLStringFromFeeds
 
 function serializeFeedsAsOPMLString(onComplete, feeds) {
-  var xmlDocument = createOPMLDocument(feeds,'subscriptions.xml');
+  var xmlDocument = lucu.opml.createDocument(feeds,'subscriptions.xml');
   var serializer = new XMLSerializer();
   var str = serializer.serializeToString(xmlDocument);
   onComplete(str);
