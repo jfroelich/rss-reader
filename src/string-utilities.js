@@ -21,7 +21,7 @@ function stripTags(str, replacement) {
     return;
   }
 
-  var htmlDocumentBody = parseHTML(str);
+  var htmlDocumentBody = lucu.html.parse(str);
 
   if(replacement) {
 

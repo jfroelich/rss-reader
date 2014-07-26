@@ -28,7 +28,7 @@
       "/src/feed-poll.js",
       "/src/hashing.js",
       "/src/http.js",
-      "/src/parse-html.js",
+      "/src/html.js",
       "/src/xml.js",
       "/src/string-utilities.js",
       "/src/uri.js"

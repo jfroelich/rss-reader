@@ -4,6 +4,9 @@
 
 'use strict';
 
+var lucu = lucu || {};
+lucu.html = {};
+
 /**
  * Parses an HTML string into an HTML element. For now
  * this parses into a new HTML document and returns
@@ -35,12 +38,15 @@
  *
  * NOTE: because this returns the body element, a simple way to get to
  * the containing document is by doc.body.ownerDocument
+ *
+ * TODO: return the doc, not doc.body. Will conform with xml.parse and
+ * require fewer caller gymnastics
  */
-function parseHTML(string) {
+lucu.html.parse = function(string) {
   var doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = string;
   return doc.body;
-}
+};
 
 /**
  * Possibly simpler parseHTML function that uses a template
@@ -58,11 +64,9 @@ function parseHTML(string) {
  *
  * UNDER DEVELOPMENT, UNTESTED
  */
-function parseHTML2(string) {
-
-  console.warn('CALLED UNTESTED FUNCTION parseHTML2');
-
+lucu.html.parse2 = function(string) {
+  console.warn('CALLED UNTESTED FUNCTION lucu.html.parse2');
   var template = document.createElement('template');
   template.content = string;
   return template;
-}
+};
