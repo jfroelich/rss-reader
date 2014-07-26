@@ -2,23 +2,27 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Very basic date handling functions
-// TODO: eventually switch to moments.js and deprecate this
-
 'use strict';
 
 var lucu = lucu || {};
+
+// Very basic date handling functions
+// TODO: eventually switch to moments.js and deprecate this
 lucu.date = {};
 
-
+// Simple date formatting
 lucu.date.simpleFormat = function(date, sep) {
-  if(date) {
-    return [date.getMonth() + 1, date.getDate(),date.getFullYear()].join(sep || '');
-  }
+  if(!date)
+    return '';
 
-  return '';
+  var parts = [];
+  parts.push(date.getMonth() + 1);
+  parts.push(date.getDate());
+  parts.push(date.getFullYear());
+  return parts.join(sep || '');
 };
 
+// Simple date parsing
 lucu.date.parse = function(str) {
   if(!str) {
     return;
