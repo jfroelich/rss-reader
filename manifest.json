@@ -14,8 +14,7 @@
   "background": {
     "persistent": false,
     "scripts": [
-      "/src/function-utils.js",
-      "/src/object.js",
+      "/src/anchor.js",
       "/src/extension.js",
       "/src/background.js",
       "/src/create-feed-from-document.js",
@@ -26,15 +25,18 @@
       "/src/feed.js",
       "/src/feed-fetch.js",
       "/src/feed-poll.js",
+      "/src/function-utils.js",
       "/src/hashing.js",
+      "/src/html.js",
       "/src/http.js",
       "/src/image.js",
       "/src/mime.js",
-      "/src/html.js",
-      "/src/xml.js",
+      "/src/object.js",
+      "/src/node.js",
+      "/src/rewrite.js",
       "/src/string.js",
       "/src/uri.js",
-      "/src/rewrite.js"
+      "/src/xml.js"
     ]
   },
 
