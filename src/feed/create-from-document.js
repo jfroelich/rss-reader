@@ -96,7 +96,7 @@ lucu.feed.createFromDocument = function(xmlDocument) {
 
   var entrySelector = isAtom ? 'feed > entry' : isRSS ? 'channel > item' : 'item';
   var entries = documentElement.querySelectorAll(entrySelector);
-  var toEntryObject = lucu.feed.createEntryFromElement.bind(null, isAtom, isRSS);
+  var toEntryObject = lucu.feed.createEntryFromElement.bind(this, isAtom, isRSS);
   result.entries = lucu.element.map(entries, toEntryObject);
 
   return result;
@@ -142,7 +142,6 @@ lucu.feed.createEntryFromElement = function(isAtom, isRSS, entryElement) {
   return result;
 };
 
-
 /**
  * I ran into weirdness for atom feed entry content, hence the more
  * detailed handling of this situation.
@@ -157,20 +156,24 @@ lucu.feed.getTextContentForAtomEntry = function(entryElement) {
 
   if(contentElement) {
 
-    var contentParts = [];
+    // TODO: clean this up more? On the one hand it is all a hack I want to
+    // deprecate. On the other, using Array.prototype.map is more
+    // appropriate than forEach + push
+
+    var parts = [];
 
     // Serialize element content differently than text content
     Array.prototype.forEach.call(contentElement.childNodes, function(atomContentNode) {
       if(atomContentNode.nodeType == Node.ELEMENT_NODE) {
-        contentParts.push(atomContentNode.innerHTML);
+        parts.push(atomContentNode.innerHTML);
       } else if(atomContentNode.nodeType == Node.TEXT_NODE) {
-        contentParts.push(atomContentNode.textContent);
+        parts.push(atomContentNode.textContent);
       } else if(atomContentNode.nodeType == Node.CDATA_SECTION_NODE) {
-        contentParts.push(atomContentNode.textContent);
+        parts.push(atomContentNode.textContent);
       }
     });
 
-    text = contentParts.join('').trim();
+    text = parts.join('').trim();
 
     // A last ditch effort, may produce garbage or even be
     // redundant with above
