@@ -5,7 +5,6 @@
 'use strict';
 
 var lucu = lucu || {};
-lucu.uri = {};
 
 /**
  * Functions for working with URLs
@@ -13,13 +12,12 @@ lucu.uri = {};
  * TODO: this currently has many problems with data uris,
  * doesnt support authentication, uris with .. syntax, etc.
  *
- * Deprecate or facade this
+ * TODO: Deprecate. Facade medialize or inexorable-tash's URL polyfill
  * https://github.com/medialize/URI.js
  */
+lucu.uri = {};
 
-/**
- * Parse a string into a URI
- */
+// Parse a string into a URI
 lucu.uri.parse = function(str) {
   if(str) {
     var m = str.match(/^(?:([^:\/?\#]+):)?(?:\/\/([^\/?\#]*))?([^?\#]*)(?:\?([^\#]*))?(?:\#(.*))?/);
@@ -64,7 +62,6 @@ lucu.uri.uriToString = function(object) {
  *
  * TODO: return a object instead of a string
  * TODO: this should not be modifying the properties of relative
- *
  * TODO: this cannot handle data uri
  * TODO: this cannot handle .. or ./ syntax. It is causing a lot of errors
  * TODO: this is not handlng things like "#" as a url.
@@ -79,9 +76,7 @@ lucu.uri.resolve = function(baseURI, relativeURI) {
   }
 };
 
-/**
- * Very naive uri validation, basically good if has a path
- */
+// Very naive uri validation, basically good if has a path
 lucu.uri.isValid = function(object) {
   if(object) {
     // If there is no scheme, uri.parse shoves host into path,
@@ -107,7 +102,6 @@ lucu.uri.filterScheme = function(urlString) {
     return lucu.uri.uriToString(uriObject);
   }
 };
-
 
 // Loosely tests whether urlString represents a data uri
 lucu.uri.isDataURL = function(urlString) {
