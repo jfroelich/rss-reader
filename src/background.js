@@ -2,8 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// This page is loaded exclusisely in the extension's background
-// page.
+// Loaded exclusively in the extension's background page.
 
 'use strict';
 
@@ -154,7 +153,6 @@ chrome.runtime.onMessage.addListener(onBackgroundMessage);
 chrome.alarms.onAlarm.addListener(onBackgroundAlarm);
 
 chrome.browserAction.onClicked.addListener(onBrowserActionClick);
-
 
 // Eventually this may be customizable per feed and will
 // need to be refactored.
