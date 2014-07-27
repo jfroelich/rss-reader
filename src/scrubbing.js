@@ -40,8 +40,7 @@ function calamineTransformDocument(doc, options) {
   lucu.element.forEach(body.getElementsByTagName('*'), scoreElement);
   lucu.element.forEach(body.getElementsByTagName('*'), applySiblingBias);
 
-  // Remove attributes. Using filter avoids the issue with removing while
-  // iterating over element.attributes, which is a live list
+  // Remove attributes
   if(options.FILTER_ATTRIBUTES) {
     lucu.element.forEach(body.getElementsByTagName('*'), calamineFilterElementAttributes);
   }
