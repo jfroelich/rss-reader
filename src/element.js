@@ -23,6 +23,15 @@ lucu.element.map = function(list, fn) {
   return Array.prototype.map.call(list, fn);
 };
 
+lucu.element.forEach = function(list, fn) {
+
+  if(!list) {
+    return;
+  }
+
+  return Array.prototype.forEach.call(list, fn);
+};
+
 
 
 // NOTE: not currently in use. Keeping around as a note in the event I want to do
