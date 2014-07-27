@@ -7,6 +7,9 @@
 var lucu = lucu || {};
 lucu.feed = lucu.feed || {};
 
+// TODO: decide if this really belongs in the feed namespace.
+
+
 // Fetches an array of search results and passes them to onComplete.
 lucu.feed.discover = function(query, onComplete, onError, timeout) {
   return lucu.feed.queryGoogleFeeds_(query, timeout, onComplete, onError);
@@ -18,9 +21,9 @@ lucu.feed.discover = function(query, onComplete, onError, timeout) {
  *
  * @param params {object} an object containing props:
  * - query {string} the text query to send to google, assumed defined
- * - oncomplete {function} the callback function to pass query and
+ * - onComplete {function} the callback function to pass query and
  * entries, an array of entry objects from the Google JSON result
- * - onerror {function} the fallback function in case of an error
+ * - onError {function} the fallback function in case of an error
  * - timeout {integer} optional timeout before giving up, ms
  */
 lucu.feed.queryGoogleFeeds_ = function(query, timeout, onComplete, onError) {
