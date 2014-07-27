@@ -86,6 +86,11 @@ Based on http://mutcd.fhwa.dot.gov/pdfs/clearviewspacingia5.pdf
 }
 
 @font-face {
+  font-family: Noto Sans;
+  src: url('/media/noto-sans/NotoSans-Regular.ttf') format('truetype');
+}
+
+@font-face {
   font-family: Open Sans Regular;
   src: url('/media/OpenSans-Regular.ttf') format('truetype');
 }

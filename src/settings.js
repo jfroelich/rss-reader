@@ -51,6 +51,7 @@ var FONT_FAMILIES = [
 
   'MS Sans Serif',
   'News Cycle, sans-serif',
+  'Noto Sans',
   'Open Sans Regular',
 
   'PathwayGothicOne',
