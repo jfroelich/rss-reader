@@ -7,9 +7,24 @@
 var lucu = lucu || {};
 lucu.element = {};
 
+lucu.element.filter = function(list, fn) {
+  if(!list) {
+    return [];
+  }
+
+  return Array.prototype.filter.call(list, fn);
+};
+
+lucu.element.forEach = function(list, fn) {
+
+  if(!list) {
+    return;
+  }
+
+  return Array.prototype.forEach.call(list, fn);
+};
 
 // Map a function over a HTMLCollection or NodeList
-
 lucu.element.map = function(list, fn) {
 
   // This defensive guard lets us avoid the null check
@@ -21,15 +36,6 @@ lucu.element.map = function(list, fn) {
   }
 
   return Array.prototype.map.call(list, fn);
-};
-
-lucu.element.forEach = function(list, fn) {
-
-  if(!list) {
-    return;
-  }
-
-  return Array.prototype.forEach.call(list, fn);
 };
 
 

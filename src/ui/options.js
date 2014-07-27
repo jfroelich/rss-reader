@@ -516,6 +516,9 @@ function onDiscoverFeedsComplete(query, results) {
   listItem.textContent = 'Found ' + displayableResults.length + ' results.';
   resultsList.appendChild(listItem);
 
+  // TODO: displayableResults is an array, right? Why am I using forEach.call?
+  // Just use displayableResults.forEach ...?
+
   Array.prototype.forEach.call(displayableResults, function(result) {
     var item = document.createElement('li');
     resultsList.appendChild(item);
@@ -736,7 +739,7 @@ function initNavigation() {
   menuItem.style.display = localStorage.EMBED_POLICY == 'ask' ? 'block' : 'none';
 
   var menuItems = document.querySelectorAll('#navigation-menu li');
-  Array.prototype.forEach.call(menuItems, setNavigationOnClick);
+  lucu.element.forEach(menuItems, setNavigationOnClick);
 }
 
 function setNavigationOnClick(menuItem) {

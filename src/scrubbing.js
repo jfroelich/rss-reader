@@ -28,19 +28,22 @@ function calamineFilterElementAttributes(element) {
 function calamineTransformDocument(doc, options) {
   options = options || {};
 
-  var forEach = Array.prototype.forEach;
+  // TODO: review gebtn, maybe i do not need to keep calling it?
+  // e.g. maybe i should just do a single querySelectorAll instead if its not-live?
+  // or is it better to re-call it to avoid read-after-delete issues?
+
   var body = doc.body;
 
   calaminePreprocessDocument(doc);
   calamineExtractFeaturesInDocument(doc);
 
-  forEach.call(body.getElementsByTagName('*'), scoreElement);
-  forEach.call(body.getElementsByTagName('*'), applySiblingBias);
+  lucu.element.forEach(body.getElementsByTagName('*'), scoreElement);
+  lucu.element.forEach(body.getElementsByTagName('*'), applySiblingBias);
 
   // Remove attributes. Using filter avoids the issue with removing while
   // iterating over element.attributes, which is a live list
   if(options.FILTER_ATTRIBUTES) {
-    forEach.call(body.getElementsByTagName('*'), calamineFilterElementAttributes);
+    lucu.element.forEach(body.getElementsByTagName('*'), calamineFilterElementAttributes);
   }
 
   body.score = -Infinity;
@@ -56,7 +59,7 @@ function calamineTransformDocument(doc, options) {
 
   if(options.UNWRAP_UNWRAPPABLES) {
     var unwrappableElements = body.querySelectorAll(SELECTOR_UNWRAPPABLE);
-    forEach.call(unwrappableElements, function(element) {
+    lucu.element.forEach(unwrappableElements, function(element) {
       if(element != bestElement) {
         lucu.element.unwrap(element);
       }
@@ -64,7 +67,7 @@ function calamineTransformDocument(doc, options) {
   }
 
   // Expose some attributes for debugging
-  forEach.call(body.getElementsByTagName('*'), function(element) {
+  lucu.element.forEach(body.getElementsByTagName('*'), function(element) {
     options.SHOW_BRANCH && element.branch &&
       element.setAttribute('branch', element.branch);
     options.SHOW_ANCHOR_DENSITY && element.anchorDensity &&
@@ -97,6 +100,9 @@ function calamineTransformDocument(doc, options) {
   // Build and return the results
   var results = doc.createDocumentFragment();
   if(bestElement == body) {
+
+    // TODO: bind Node.prototype.appendChild instead here
+    var forEach = Array.prototype.forEach;
     forEach.call(body.childNodes, function(element) {
       results.appendChild(element);
     });
@@ -134,7 +140,7 @@ function calaminePreprocessDocument(doc) {
     'wbr';
 
   var allElements = body.querySelectorAll('*');
-  forEach.call(allElements, function(element) {
+  lucu.element.forEach(allElements, function(element) {
 
     // Remove any element in the blacklist
     if(element.matches(SELECTOR_BLACKLIST)) {
@@ -171,16 +177,16 @@ function calaminePreprocessDocument(doc) {
   });
 
   // BUGGY: in process of fixing
-  // forEach.call(doc.body.querySelectorAll('br,hr'), calamineTransformRuleElement);
+  // lucu.element.forEach(doc.body.querySelectorAll('br,hr'), calamineTransformRuleElement);
 
   // Marks code/pre elements as whitespaceImportant and then marks all direct and indirect
   // descendant elements as whiteSpaceImportant. Propagating this property from the top
   // down (cascading) enables the trimNode function to quickly determine whether its
   // nodeValue is trimmable, as opposed to having the trimNode function search each text
   // node's axis (path from root) for the presence of a pre/code element.
-  forEach.call(body.querySelectorAll('code,pre'), function(element) {
+  lucu.element.forEach(body.querySelectorAll('code,pre'), function(element) {
     element.whitespaceImportant = 1;
-    forEach.call(element.getElementsByTagName('*'), function(descendantElement) {
+    lucu.element.forEach(element.getElementsByTagName('*'), function(descendantElement) {
       descendantElement.whitespaceImportant = 1;
     });
   });
@@ -238,10 +244,8 @@ function calaminePreprocessDocument(doc) {
   // kind of redundant since we already identified the children, so that
   // still might need improvement.
 
-
-
   allElements = body.getElementsByTagName('*');
-  var emptyLikeElements = Array.prototype.filter.call(allElements, function(element) {
+  var emptyLikeElements = lucu.element.filter(allElements, function(element) {
     return !element.firstChild && !lucu.element.isLeafLike(element);
   });
 
@@ -302,7 +306,7 @@ function calamineExtractFeaturesInDocument(doc) {
   });
 
   // Extract anchor features. Based on charCount from text features
-  forEach.call(body.getElementsByTagName('a'), function deriveAnchorFeatures(anchor) {
+  lucu.element.forEach(body.getElementsByTagName('a'), function deriveAnchorFeatures(anchor) {
     var parent = anchor.parentElement;
 
     if(anchor.charCount && anchor.hasAttribute('href')) {
@@ -316,7 +320,7 @@ function calamineExtractFeaturesInDocument(doc) {
   });
 
   // Store id and class attribute values before attributes are removed
-  forEach.call(body.getElementsByTagName('*'), function (element) {
+  lucu.element.forEach(body.getElementsByTagName('*'), function (element) {
     var text = ((element.getAttribute('id') || '') + ' ' +
       (element.getAttribute('class') || '')).trim().toLowerCase();
 
@@ -326,7 +330,7 @@ function calamineExtractFeaturesInDocument(doc) {
   });
 
   // Cache a count of siblings and a count of prior siblings
-  forEach.call(body.getElementsByTagName('*'), function(element) {
+  lucu.element.forEach(body.getElementsByTagName('*'), function(element) {
     element.siblingCount = element.parentElement.childElementCount - 1;
     element.previousSiblingCount = 0;
     if(element.siblingCount) {
