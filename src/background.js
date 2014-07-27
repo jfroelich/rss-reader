@@ -6,56 +6,59 @@
 
 'use strict';
 
-function onBackgroundMessage(message) {
+var lucu = lucu || {};
+lucu.background = {};
 
-  switch(message.type) {
-    case 'entryRead':
-      updateBadge();
-      break;
-    case 'importFeedsCompleted':
-      backgroundOnImportFeedsCompletedMessage(message);
-      break;
-    case 'subscribe':
-      backgroundOnSubscribeMessage(message);
-      break;
-    case 'unsubscribe':
-      updateBadge();
-      break;
-    case 'pollCompleted':
-      backgroundOnPollCompletedMessage(message);
-      break;
-    default:
-      break;
+lucu.background.VIEW_URL = chrome.extension.getURL('slides.html');
+
+lucu.background.MESSAGE_MAP = {
+  entryRead: lucu.background.updateBadge,
+  importFeedsCompleted: lucu.background.onImportCompleted,
+  pollCompleted: lucu.background.onPollCompleted,
+  subscribe: lucu.background.onSubscribe,
+  unsubscribe: lucu.background.updateBadge
+};
+
+lucu.background.onMessage = function(message) {
+
+  if(!Object.prototype.hasOwnProperty.call(message, 'type')) {
+    return;
   }
-}
 
-function backgroundOnImportFeedsCompletedMessage(message) {
+  var handler = lucu.background.MESSAGE_MAP[message.type];
+  if(handler) {
+    handler(message);
+  }
+};
+
+lucu.background.updateBadge = function(message) {
+  updateBadge();
+};
+
+lucu.background.onImportCompleted = function(message) {
   var notification = (message.feedsAdded || 0) + ' of ';
   notification += (message.feedsProcessed || 0) + ' feeds imported with ';
   notification += message.exceptions ? message.exceptions.length : 0;
   notification += ' error(s).';
   showNotification(notification);
-}
+};
 
-function backgroundOnSubscribeMessage(message) {
+lucu.background.onSubscribe = function(message) {
   updateBadge();
 
   if(message.feed) {
     var title = message.feed.title || message.feed.url;
     showNotification('Subscribed to ' + title);
   }
-}
+};
 
-function backgroundOnPollCompletedMessage(message) {
+lucu.background.onPollCompleted = function(message) {
   updateBadge();
 
   if(message.entriesAdded) {
     showNotification(message.entriesAdded + ' new articles added.');
   }
-}
-
-
-var BACKGROUND_VIEW_URL = chrome.extension.getURL('slides.html');
+};
 
 /**
  * Called when the extension's icon button is clicked
@@ -79,26 +82,28 @@ var BACKGROUND_VIEW_URL = chrome.extension.getURL('slides.html');
  * required but im not seeing it since im in dev context. tabs
  * perm is not decl in manifest.
  */
-function onBrowserActionClick() {
-  chrome.tabs.query({'url': BACKGROUND_VIEW_URL}, onTabsViewQueried);
-}
+lucu.background.onBrowserActionClick = function() {
+  chrome.tabs.query({'url': lucu.background.VIEW_URL},
+    lucu.background.onTabsViewQueried);
+};
 
-function onTabsViewQueried(tabs) {
+lucu.background.onTabsViewQueried = function(tabs) {
   if(tabs.length) {
     chrome.tabs.update(tabs[0].id, {active:true});
   } else {
-    chrome.tabs.query({url: 'chrome://newtab/'}, onTabsNewTabQueried);
+    chrome.tabs.query({url: 'chrome://newtab/'},
+      lucu.background.onTabsNewTabQueried);
   }
-}
+};
 
-function onTabsNewTabQueried(tabs) {
+lucu.background.onTabsNewTabQueried = function(tabs) {
   if(tabs.length) {
     // Replace the new tab
-    chrome.tabs.update(tabs[0].id, {active:true, url: BACKGROUND_VIEW_URL});
+    chrome.tabs.update(tabs[0].id, {active:true, url: lucu.background.VIEW_URL});
   } else {
-    chrome.tabs.create({url: BACKGROUND_VIEW_URL});
+    chrome.tabs.create({url: lucu.background.VIEW_URL});
   }
-}
+};
 
 /**
  * Called when any of the extension's alarms wakeup. For the time being
@@ -108,32 +113,31 @@ function onTabsNewTabQueried(tabs) {
  * NOTE: this all might need to be revised if we end up using per-feed
  * polling, so there is no need to agonize over the details yet.
  */
-function onBackgroundAlarm(alarm) {
+lucu.background.onAlarm = function(alarm) {
   if('poll' == alarm.name) {
-    chrome.permissions.contains({permissions: ['idle']}, startPollingIfNotPermittedOrIdle);
+    chrome.permissions.contains({permissions: ['idle']},
+      lucu.background.startPollingIfNotPermittedOrIdle);
   }
-}
+};
 
-function startPollingIfNotPermittedOrIdle(permitted) {
+lucu.background.startPollingIfNotPermittedOrIdle = function(permitted) {
   var INACTIVITY_INTERVAL = 60 * 5;
 
   if(permitted) {
-    chrome.idle.queryState(INACTIVITY_INTERVAL, startPollingIfIdle);
+    chrome.idle.queryState(INACTIVITY_INTERVAL,
+      lucu.background.startPollingIfIdle);
   } else {
     startPolling();
   }
-}
+};
 
-function startPollingIfIdle(idleState) {
+lucu.background.startPollingIfIdle = function(idleState) {
   if(idleState == 'locked' || idleState == 'idle') {
     startPolling();
   }
-}
+};
 
-/**
- * Binds stuff, maybe causes database install/upgrade.
- */
-function onExtensionInstalled() {
+lucu.background.onInstalled = function() {
 
   var manifest = chrome.runtime.getManifest();
 
@@ -141,18 +145,18 @@ function onExtensionInstalled() {
 
   // This also triggers database creation
   updateBadge();
-}
+};
 
 // TODO: is there a way to avoid this being called every time
 // the background page is loaded or reloaded?
 // This is also calling the function when the extension is
 // enabled or disabled.
-chrome.runtime.onInstalled.addListener(onExtensionInstalled);
+chrome.runtime.onInstalled.addListener(lucu.background.onInstalled);
 
-chrome.runtime.onMessage.addListener(onBackgroundMessage);
-chrome.alarms.onAlarm.addListener(onBackgroundAlarm);
+chrome.runtime.onMessage.addListener(lucu.background.onMessage);
+chrome.alarms.onAlarm.addListener(lucu.background.onAlarm);
 
-chrome.browserAction.onClicked.addListener(onBrowserActionClick);
+chrome.browserAction.onClicked.addListener(lucu.background.onBrowserActionClick);
 
 // Eventually this may be customizable per feed and will
 // need to be refactored.
