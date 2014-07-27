@@ -64,7 +64,8 @@ function onHTMLDocumentLoad(onComplete, onError, shouldAugmentImages, event) {
   var each = Array.prototype.forEach;
   var baseURI = lucu.uri.parse(this.responseURL);
   var anchors = this.responseXML.body.querySelectorAll('a');
-  each.call(anchors, resolveAnchorElement.bind(null, baseURI));
+  var resolver = lucu.anchor.resolve.bind(null, baseURI);
+  each.call(anchors, resolver);
 
   if(shouldAugmentImages) {
     // NOTE: this uses the post-redirect responseURL as the base url

@@ -4,8 +4,12 @@
 
 'use strict';
 
+var lucu = lucu || {};
+
+lucu.anchor = {};
+
 // Requires uri
-function resolveAnchorElement(baseURI, anchorElement) {
+lucu.anchor.resolve = function(baseURI, anchorElement) {
 
   if(!baseURI)
     return;
@@ -53,4 +57,4 @@ function resolveAnchorElement(baseURI, anchorElement) {
   // At the same time it introduces more boilerplate into the calling context.
 
   anchorElement.setAttribute('href', resolvedURL);
-}
+};
