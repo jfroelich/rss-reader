@@ -4,6 +4,9 @@
 
 'use strict';
 
+var lucu = lucu || {};
+lucu.effects = {};
+
 /**
  * Fade an element in/out
  * Elements must have opacity defined as 0 or 1 for this to work
@@ -12,7 +15,7 @@
  * greatly simplified, it could make fewer assumptions about the element's
  * state
  */
-function fadeElement(element, duration, delay, callback) {
+lucu.effects.fade = function(element, duration, delay, callback) {
 
   if(element.style.display == 'none') {
     element.style.display = '';
@@ -34,4 +37,4 @@ function fadeElement(element, duration, delay, callback) {
     if(callback)
       callback(element);
   }
-}
+};
