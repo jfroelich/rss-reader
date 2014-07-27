@@ -6,9 +6,9 @@
 
 var lucu = lucu || {};
 
+// Requires lucu.uri
 lucu.anchor = {};
 
-// Requires uri
 lucu.anchor.resolve = function(baseURI, anchorElement) {
 
   if(!baseURI)
