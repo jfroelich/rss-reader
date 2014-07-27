@@ -4,15 +4,13 @@
 
 'use strict';
 
-function discoverFeeds(params) {
+var lucu = lucu || {};
+lucu.feed = lucu.feed || {};
 
-  var onComplete = params.oncomplete;
-  var onerror = params.onerror || lucu.functionUtils.noop;
-  var query = (params.query || '').trim();
-  var timeout = params.timeout;
-
-  return queryGoogleFeeds(query, timeout, onComplete, onerror);
-}
+// Fetches an array of search results and passes them to onComplete.
+lucu.feed.discover = function(query, onComplete, onError, timeout) {
+  return lucu.feed.queryGoogleFeeds_(query, timeout, onComplete, onError);
+};
 
 /**
  * Use Google's find feed service to find feed URLs corresponding to a
@@ -25,15 +23,17 @@ function discoverFeeds(params) {
  * - onerror {function} the fallback function in case of an error
  * - timeout {integer} optional timeout before giving up, ms
  */
-function queryGoogleFeeds(query, timeout, onComplete, onerror) {
+lucu.feed.queryGoogleFeeds_ = function(query, timeout, onComplete, onError) {
+
+  query = (query || '').trim();
+  onError = onError || lucu.functionUtils.noop;
 
   var request = new XMLHttpRequest();
   request.timeout = timeout;
-  request.onerror = onerror;
-  request.ontimeout = onerror;
-  request.onabort = onerror;
-  request.onload = onGoogleResultsReceived.bind(request, onComplete);
-
+  request.onerror = onError;
+  request.ontimeout = onError;
+  request.onabort = onError;
+  request.onload = lucu.feed.onGoogleResultsReceived_.bind(request, onComplete);
 
   var baseURL = 'https://ajax.googleapis.com/ajax/services/feed/find';
   var apiVersion = '1.0';
@@ -43,20 +43,22 @@ function queryGoogleFeeds(query, timeout, onComplete, onerror) {
   request.open('GET', requestURL, true);
   request.responseType = 'json';
   request.send();
-}
+};
 
-function onGoogleResultsReceived(onComplete) {
+lucu.feed.onGoogleResultsReceived_ = function(onComplete) {
+  // Expects this instanceof XMLHttpRequest
   var data = this.response.responseData;
   data.entries = data.entries || [];
   data.query = data.query || '';
-  var entries = data.entries.map(sanitizeGoogleResultEntry);
+  var sanitize = lucu.feed.sanitizeGoogleResultEntry_;
+  var entries = data.entries.map(sanitize);
   onComplete(data.query, entries);
-}
+};
 
-function sanitizeGoogleResultEntry(entry) {
+lucu.feed.sanitizeGoogleResultEntry_ = function(entry) {
   // TODO: this should be creating a modified clone, not mutating
   // in place as a side effect.
 
   entry.contentSnippet = lucu.string.stripBRs(entry.contentSnippet);
   return entry;
-}
+};

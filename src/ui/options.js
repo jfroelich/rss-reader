@@ -462,12 +462,9 @@ function onSubscribeSubmit(event) {
     document.getElementById('discover-no-results').style.display='none';
     document.getElementById('discover-in-progress').style.display='block';
 
-    discoverFeeds({
-      query: query,
-      oncomplete: onDiscoverFeedsComplete,
-      onerror: onDiscoverFeedsError,
-      timeout: 5000
-    });
+    lucu.feed.discover(query, onDiscoverFeedsComplete, onDiscoverFeedsError,
+      5000);
+
   }
   return false;
 }
