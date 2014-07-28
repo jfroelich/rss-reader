@@ -14,16 +14,9 @@ lucu.backup = {};
  * Calls onComplete with num feeds added, num feeds processed, and
  * array of exceptions
  */
-function importOPMLFiles(files, onComplete) {
+lucu.backup.importOPMLFiles = function(files, onComplete) {
 
-  var exceptions = [];
-
-  if(!files || !files.length) {
-    onComplete(0, 0, exceptions);
-    return;
-  }
-
-  var fileCounter = files.length;
+  // TODO: move onFileLoad out of here
 
   // TODO: decide whether to aggregate? We could just allow for add feed
   // to fail on dup and not try to even prevent it here.
@@ -32,11 +25,20 @@ function importOPMLFiles(files, onComplete) {
   // a single large array and then aggregate at the end
   // TODO: the term hash is not really appropriate. What I want is
   // hashmap or hashset or just some concept like distinct or aggregated
+
+  if(!files || !files.length) {
+    onComplete(0, 0, []);
+    return;
+  }
+
+  var exceptions = [];
+  var fileCounter = files.length;
+
   var outlinesHash = {};
 
-  Array.prototype.forEach.call(files, loadFileAsText.bind(null, onFileLoad));
+  var loadText = lucu.file.loadAsText.bind(null, onFileLoad);
+  Array.prototype.forEach.call(files, loadText);
 
-  // TODO: move this function out of here
   function onFileLoad(event) {
 
     try {
@@ -63,20 +65,12 @@ function importOPMLFiles(files, onComplete) {
 
     if(--fileCounter == 0) {
       var distinctFeeds = lucu.object.values(outlinesHash);
-      importFeeds(distinctFeeds, exceptions, onComplete);
+      lucu.backup.importFeeds(distinctFeeds, exceptions, onComplete);
     }
   }
-}
+};
 
-// TODO: move this function into some other file where it is more appropriate
-// like file-utils
-function loadFileAsText(onFileLoad, file) {
-  var reader = new FileReader();
-  reader.onload = onFileLoad;
-  reader.readAsText(file);
-}
-
-function importFeeds(feeds, exceptions, onComplete) {
+lucu.backup.importFeeds = function(feeds, exceptions, onComplete) {
   var feedsProcessed = 0;
   var feedsAdded = 0;
 
@@ -110,25 +104,25 @@ function importFeeds(feeds, exceptions, onComplete) {
       onComplete(feedsAdded, feedsProcessed, exceptions);
     }
   }
-}
+};
 
 // TODO: this can go further and also create the blob because
 // nothing needs the intermediate string
-function exportOPMLString(onComplete) {
+lucu.backup.exportOPMLString = function(onComplete) {
 
   lucu.database.open(onConnect);
 
   // TODO: move this function out of here
   function onConnect(db) {
-    getAllFeeds(db, serializeFeedsAsOPMLString.bind(null, onComplete));
+    getAllFeeds(db, lucu.backup.serializeFeedsAsOPMLString.bind(null, onComplete));
   }
-}
+};
 
 // TODO: think of a better name, like createOPMLStringFromFeeds
 
-function serializeFeedsAsOPMLString(onComplete, feeds) {
+lucu.backup.serializeFeedsAsOPMLString = function(onComplete, feeds) {
   var xmlDocument = lucu.opml.createDocument(feeds,'subscriptions.xml');
   var serializer = new XMLSerializer();
   var str = serializer.serializeToString(xmlDocument);
   onComplete(str);
-}
+};

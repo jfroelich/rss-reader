@@ -605,7 +605,9 @@ function onFileInputChanged(event) {
 
   if(!event.target.files || !event.target.files.length) return;
   // TODO: start import progress monitor
-  importOPMLFiles(event.target.files,
+
+  // TODO: move the nested function out of here
+  lucu.backup.importOPMLFiles(event.target.files,
     function(feedsImported, totalFeedsAttempted, exceptions) {
       event.target.removeEventListener('change', onFileInputChanged);
       document.body.removeChild(event.target);
@@ -633,7 +635,10 @@ function onFeedsImported(feedsImported, totalFeedsAttempted, exceptions) {
 }
 
 function onExportOPMLClick(event) {
-  exportOPMLString(function(xmlString) {
+
+  // TODO: move the nested function out of here
+
+  lucu.backup.exportOPMLString(function(xmlString) {
     var blob = new Blob([xmlString], {type:'application/xml'});
     var anchor = document.createElement('a');
     anchor.href = URL.createObjectURL(blob);
