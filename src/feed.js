@@ -113,6 +113,7 @@ function updateFeed(db, localFeed, remoteFeed, oncomplete) {
   var putFeedRequest = feedStore.put(localFeed);
   putFeedRequest.onerror = console.debug;
   putFeedRequest.onsuccess = function() {
+    // console.debug('Updated feed %s', localFeed.title);
     mergeEntries(db, localFeed, remoteFeed.entries, oncomplete);
   }
 }
