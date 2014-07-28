@@ -4,6 +4,12 @@
 
 'use strict';
 
+var lucu = lucu || {};
+
+// TODO: think of a better name that captures both import and export
+// Backup module
+lucu.backup = {};
+
 /**
  * Calls onComplete with num feeds added, num feeds processed, and
  * array of exceptions
