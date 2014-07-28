@@ -110,10 +110,9 @@ function isAugmentableImage(imageElement) {
   // such images
   if(lucu.uri.isDataURL(source)) {
 
-    console.debug('data uri image without dimensions? %o', imageElement);
+    //console.debug('data uri image without dimensions? %o', imageElement);
 
-
-    // this certainly appears for data uris. i notice it is appearing when
+    // NOTE: above sometimes appears for data uris. i notice it is appearing when
     // width/height attribute not expressly set in html. maybe we just need to
     // read in the width/height property and set the attributes?
     // but wait, we never even reach reach is width is set. so width isnt
