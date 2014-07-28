@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: deprecate filter, forEach, etc. Use lucu.array.fns instead
+
 'use strict';
 
 var lucu = lucu || {};
@@ -77,10 +79,12 @@ lucu.element.BOOLEAN_ATTRIBUTES = {
  * document every time, which is a waste.
  */
 lucu.element.getTextOrAttribute = function(rootElement, selectors, attribute) {
-
-  var attr = lucu.element.getAttribute.bind(this, attribute);
-  var text = lucu.element.getTextContent;
-  var getter = attribute ? attr : text;
+  var getter;
+  if(attribute) {
+    getter = lucu.element.getAttribute.bind(this, attribute);
+  } else {
+    getter = lucu.element.getTextContent;
+  }
 
   // NOTE: using a raw loop because nothing in the native iteration API
   // fits because of the need to use side effects and the need short
