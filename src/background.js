@@ -11,14 +11,6 @@ lucu.background = {};
 
 lucu.background.VIEW_URL = chrome.extension.getURL('slides.html');
 
-lucu.background.MESSAGE_MAP = {
-  entryRead: lucu.background.updateBadge,
-  importFeedsCompleted: lucu.background.onImportCompleted,
-  pollCompleted: lucu.background.onPollCompleted,
-  subscribe: lucu.background.onSubscribe,
-  unsubscribe: lucu.background.updateBadge
-};
-
 lucu.background.onMessage = function(message) {
 
   if(!Object.prototype.hasOwnProperty.call(message, 'type')) {
@@ -58,6 +50,16 @@ lucu.background.onPollCompleted = function(message) {
   if(message.entriesAdded) {
     showNotification(message.entriesAdded + ' new articles added.');
   }
+};
+
+// NOTE: this must defined after above, which is incredibly annoying. Consider
+// lazy-initialization so order does not matter.
+lucu.background.MESSAGE_MAP = {
+  entryRead: lucu.background.updateBadge,
+  importFeedsCompleted: lucu.background.onImportCompleted,
+  pollCompleted: lucu.background.onPollCompleted,
+  subscribe: lucu.background.onSubscribe,
+  unsubscribe: lucu.background.updateBadge
 };
 
 /**
