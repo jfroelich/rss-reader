@@ -19,7 +19,10 @@ function startPolling() {
     return;
   }
 
+  // console.log('Starting poll');
+
   if(!navigator.onLine) {
+    console.debug('Cannot poll while offline');
     return;
   }
 
@@ -71,6 +74,8 @@ function pollFeed(localFeed, oncomplete, onerror) {
 
   // TODO: timeout and entryTimeout should be derived
   // from feed properties
+
+  // console.log('Polling %s', localFeed.title);
 
   fetchFeed({
     url: localFeed.url,
