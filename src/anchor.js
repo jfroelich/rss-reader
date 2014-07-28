@@ -26,11 +26,15 @@ lucu.anchor.resolve = function(baseURI, anchorElement) {
   // be a feature of the URI API but the URI API currently sucks
   // and is incomplete so we have to do the checks here.
 
-  if(/^mailto:/.test(sourceURL)) {
+  if(/^tel:/.test(sourceURL)) {
     return;
   }
 
-  if(/^javascript:/.test(sourceURL)) {
+  if(/^mailto:/i.test(sourceURL)) {
+    return;
+  }
+
+  if(/^javascript:/i.test(sourceURL)) {
     return;
   }
 
