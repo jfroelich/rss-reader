@@ -8,6 +8,10 @@ var lucu = lucu || {};
 
 // TODO: think of a better name that captures both import and export
 // Backup module
+
+// TODO: this module, as a whole, needs alot of cleanup. There are a lot
+// of nested functions and the continuation passing style is obscure.
+
 lucu.backup = {};
 
 /**
