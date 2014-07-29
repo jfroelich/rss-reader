@@ -24,6 +24,11 @@
  * TODO: move image prefetching out of here to some type of caller, this should
  * only fetch
  *
+ *
+ * TODO: one of the problems with fetching images before scrubbing is that
+ * tracker gifs are pinged by the image loader. think of how to avoid stupid
+ * requests like that
+ *
  * Params is object with following properties
  * @param {string} url - the url to fetch
  * @param {function} onload - callback when completed without errors,
