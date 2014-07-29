@@ -138,7 +138,7 @@ function convertToFeed(xmlDocument, onComplete, onError,
 
   var entries = feed.entries || [];
 
-  var fetchableEntries = entries.filter(entryHasLinkProperty);
+  var fetchableEntries = entries.filter(lucu.entry.hasLink);
 
   var numEntriesToProcess = fetchableEntries.length;
   if(numEntriesToProcess == 0) {
@@ -146,7 +146,7 @@ function convertToFeed(xmlDocument, onComplete, onError,
   }
 
   if(rewriteLinks) {
-    fetchableEntries.forEach(rewriteEntryLink);
+    fetchableEntries.forEach(lucu.entry.rewriteLink);
   }
 
   // In order to ensure consistent storage of entry.link values,
@@ -166,9 +166,14 @@ function convertToFeed(xmlDocument, onComplete, onError,
   // augmented. need to use something like findEntryByFeedIdAndLinkURL
   // that uses a composite index
 
+
+  // TODO: move this function out
   lucu.database.open(function(db) {
+    // TODO: move this function out
     fetchableEntries.forEach(function(entry) {
-      findEntryByLink(db, entry.link, function(existingEntry) {
+
+      // TODO: move this function out
+      lucu.entry.findByLink(db, entry.link, function(existingEntry) {
         if(existingEntry) {
           dispatchIfComplete();
         } else {
@@ -178,6 +183,7 @@ function convertToFeed(xmlDocument, onComplete, onError,
     });
   });
 
+  // TODO: move this function out
   function augmentEntry(entry) {
     fetchHTMLDocument({
       augmentImageData: shouldAugmentImages,

@@ -4,10 +4,13 @@
 
 'use strict';
 
+var lucu = lucu || {};
+
+lucu.entry = lucu.entry || {};
+
 /**
- * TODO: use entries as a separate parameter rather than pack into
- * feed. feed just represents those properties that should be
- * propagated
+ * TODO: maybe there is no need to use a hash, just use link, require link
+ * for all entries?
  *
  * Merges zero or more entry objects into storage. Calls oncomplete
  * when finished, passing back the original feed argument, the
@@ -17,7 +20,7 @@
  * one failure rolls back the entire set of addition requests.
  * Trying to add an entry whose hash value is the same
  * as any stored entry's hash value fails. This occurs frequently
- * because of how feed's polled, in that feeds
+ * because of how feeds are polled, in that feeds
  * usually contain the same articles for a long period of time but
  * the update checks occur over a much smaller interval. This produces
  * an expected failure that is not treated as a processing error.
@@ -40,19 +43,16 @@
  * an invalid id could lead to orphaned entries. The caller should prepare
  * entry content before merging because it is inserted "as is".
  *
- * TODO: maybe there is no need to use a hash, just use link, require link
- * for all entries
- *
  * @param db {IDBDatabase} - an open database connection
  * @param feed {object} - a feed object, such as one created as a result
  * of fetching the feed's XML and converting into a feed object
+ * @param entries
  * @param oncomplete {function} - callback when completed
  */
-function mergeEntries(db, feed, entries, oncomplete) {
+lucu.entry.mergeAll = function(db, feed, entries, oncomplete) {
 
   var entriesAdded = 0;
   var entriesProcessed = 0;
-
 
   if(!entries) {
     // when addFeed is used by import opml or subscribe offline
@@ -61,12 +61,13 @@ function mergeEntries(db, feed, entries, oncomplete) {
     return oncomplete(feed, entriesProcessed, entriesAdded);
   }
 
-  var storableEntries = entries.map(getStorableEntry.bind(null, feed));
+  var asStorableWithFeed = lucu.entry.asStorable.bind(this, feed);
+  var storableEntries = entries.map(asStorableWithFeed);
 
   // Filter hashless entries. This also results in filtering
   // out entries that do not contain the required properties
   // for storage (either a link, a title, or content).
-  storableEntries = storableEntries.filter(entryHasHashProperty);
+  storableEntries = storableEntries.filter(lucu.entry.hasHash);
 
   // Update entriesProcessed to reflect that we preprocessed some of
   // the entries when filtering
@@ -81,7 +82,7 @@ function mergeEntries(db, feed, entries, oncomplete) {
   // TODO: to make this bindable and partial, storableEntry has to be
   // specified as the last argument
   storableEntries.forEach(function(storableEntry) {
-    addEntry(db, storableEntry, onEntryInsertSuccessful, onEntryInsertAttempted);
+    lucu.entry.add(db, storableEntry, onEntryInsertSuccessful, onEntryInsertAttempted);
   });
 
   // Basically we intervene before calling attempted in order to track added
@@ -103,20 +104,22 @@ function mergeEntries(db, feed, entries, oncomplete) {
       oncomplete(feed, entries.length, entriesAdded);
     }
   }
-}
+};
 
-function entryHasHashProperty(entry) {
-  return entry.hash;
-}
+// TODO: use something like
+// Object.prototype.hasOwnProperty.bind(entry,'hash');
+// instead, and then deprecate
+lucu.entry.hasHash = function(entry) {
+  return !!entry.hash;
+};
 
-function entryHasLinkProperty(entry) {
+lucu.entry.hasLink = function(entry) {
   return !!entry.link;
-}
+};
 
-function rewriteEntryLink(entry) {
+lucu.entry.rewriteLink = function(entry) {
   entry.link = lucu.rewrite.rewriteURL(entry.link);
-}
-
+};
 
 /**
  * Create an object that is ready for storage in
@@ -132,7 +135,7 @@ function rewriteEntryLink(entry) {
  * entry.date-created to Date.now(), and does not
  * transfer properties such as entry.date-updated.
  */
-function getStorableEntry(feed, remoteEntry) {
+lucu.entry.asStorable = function(feed, remoteEntry) {
   var output = {};
 
   if(feed.link) {
@@ -147,7 +150,7 @@ function getStorableEntry(feed, remoteEntry) {
 
   // Store a hash property for equality testing
   // and indexed lookup in indexedDB
-  output.hash = generateEntryHash(remoteEntry);
+  output.hash = lucu.entry.generateHash(remoteEntry);
 
   // Initialize as unread
   output.unread = 1;
@@ -182,7 +185,7 @@ function getStorableEntry(feed, remoteEntry) {
   }
 
   return output;
-}
+};
 
 /**
  * Insert an entry into the database. Async. Calls
@@ -191,22 +194,23 @@ function getStorableEntry(feed, remoteEntry) {
  * constraint violation (e.g. entry with same hash
  * already exists).
  */
-function addEntry(db, storableEntry, oncomplete, onerror) {
+lucu.entry.add = function(db, storableEntry, oncomplete, onerror) {
   var addTransaction = db.transaction('entry','readwrite');
   var addRequest = addTransaction.objectStore('entry').add(storableEntry);
   addRequest.onsuccess = oncomplete;
   addRequest.onerror = onerror;
-}
+};
 
-function markEntryAsRead(db, entryId, onComplete) {
-
-  //console.debug('markEntryAsRead entryId %s', entryId);
+lucu.entry.markAsRead = function(db, entryId, onComplete) {
 
   // TODO: intead of get/put, use openCursor and cursor.update
 
   var tx = db.transaction('entry','readwrite');
   tx.oncomplete = onComplete;
   var entryStore = tx.objectStore('entry');
+
+  // TODO: move this function out of here
+
   entryStore.get(entryId).onsuccess = function() {
     var entry = this.result;
     if(!entry)
@@ -215,9 +219,9 @@ function markEntryAsRead(db, entryId, onComplete) {
     delete entry.unread;
     entry.readDate = Date.now();
     entryStore.put(entry);
-    chrome.runtime.sendMessage({type:'entryRead',entry:entry});
+    chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
   };
-}
+};
 
 
 /**
@@ -256,7 +260,7 @@ function markEntryAsRead(db, entryId, onComplete) {
  * are inserted is pretty much random and uncontrollable. Using a single
  * entry store in this way makes enforcing this order nonsensical.
  */
-function removeEntriesByFeedId(tx, feedId, oncomplete) {
+lucu.entry.removeByFeed = function(tx, feedId, oncomplete) {
 
   var count = 0;
   var entryStore = tx.objectStore('entry');
@@ -267,7 +271,12 @@ function removeEntriesByFeedId(tx, feedId, oncomplete) {
   // openKeyCursor instead of explicitly and unecessarily creating a new
   // IBDKeyRange, and (3) uses cursor.delete instead of a subsequent call
   // to store.delete.
+
+
+
   var requestKeyCursor = feedIndex.openKeyCursor(feedId);
+
+  // TODO: move the function out of here
   requestKeyCursor.onsuccess = function() {
     var keyCursor = this.result;
     if(keyCursor) {
@@ -278,7 +287,7 @@ function removeEntriesByFeedId(tx, feedId, oncomplete) {
       oncomplete(count);
     }
   };
-}
+};
 
 /**
  * Creates a hash value for an entry. This is what ultimately
@@ -290,12 +299,12 @@ function removeEntriesByFeedId(tx, feedId, oncomplete) {
  * Returns undefined if there was no suitable seed to input to
  * the hashCode function.
  */
-function generateEntryHash(remoteEntry) {
+lucu.entry.generateHash = function(remoteEntry) {
   var seed = remoteEntry.link || remoteEntry.title || remoteEntry.content;
   if(seed) {
     return generateHashCode(seed.split(''));
   }
-}
+};
 
 /**
  * Finds the first entry that contains the given url in its
@@ -305,10 +314,10 @@ function generateEntryHash(remoteEntry) {
  * This is used when fetching full text of articles to avoid
  * refetching.
  */
-function findEntryByLink(db, link, callback) {
+lucu.entry.findByLink = function(db, link, callback) {
   var entryStore = db.transaction('entry').objectStore('entry');
   var linkIndex = entryStore.index('link');
   linkIndex.get(link).onsuccess = function() {
     callback(this.result);
   };
-}
+};

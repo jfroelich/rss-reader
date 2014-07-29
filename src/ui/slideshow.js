@@ -78,7 +78,7 @@ function markSlideRead(slideElement) {
   var updateElement = HTMLElement.prototype.setAttribute.bind(slideElement,'read','');
   lucu.database.open(function(db) {
     var entryId = parseInt(slideElement.getAttribute('entry'));
-    markEntryAsRead(db, entryId, updateElement);
+    lucu.entry.markAsRead(db, entryId, updateElement);
   });
 }
 

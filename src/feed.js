@@ -74,7 +74,7 @@ function addFeed(db, feed, oncomplete, onerror) {
   addFeedRequest.onerror = onerror;
   addFeedRequest.onsuccess = function() {
     storableFeed.id = this.result;
-    mergeEntries(db, storableFeed, feed.entries, oncomplete);
+    lucu.entry.mergeAll(db, storableFeed, feed.entries, oncomplete);
   };
 }
 
@@ -113,8 +113,7 @@ function updateFeed(db, localFeed, remoteFeed, oncomplete) {
   var putFeedRequest = feedStore.put(localFeed);
   putFeedRequest.onerror = console.debug;
   putFeedRequest.onsuccess = function() {
-    // console.debug('Updated feed %s', localFeed.title);
-    mergeEntries(db, localFeed, remoteFeed.entries, oncomplete);
+    lucu.entry.mergeAll(db, localFeed, remoteFeed.entries, oncomplete);
   }
 }
 
@@ -199,6 +198,8 @@ function getAllFeedsConsumeCursor(feedsArray) {
 
 function countAllFeeds(db, callback) {
   var feedStore = db.transaction('feed').objectStore('feed');
+
+  // TODO: move this function out of ere
   feedStore.count().onsuccess = function() {
     callback(this.result);
   };
@@ -209,8 +210,10 @@ function countAllFeeds(db, callback) {
  */
 function removeFeedById(db, id, oncomplete) {
   var tx = db.transaction(['entry','feed'],'readwrite');
+
+  // TODO: move this function out of here
   tx.objectStore('feed').delete(id).onsuccess = function() {
-    removeEntriesByFeedId(tx, id, function(numDeleted) {
+    lucu.entry.removeByFeed(tx, id, function(numDeleted) {
       oncomplete(id, numDeleted);
     });
   };
@@ -224,6 +227,8 @@ function findFeedBySchemelessURL(db, url, callback) {
   var schemelessURL = lucu.uri.filterScheme(url);
   var feedStore = db.transaction('feed').objectStore('feed');
   var schemelessIndex = feedStore.index('schemeless');
+
+  // TODO: move this function out of here
   schemelessIndex.get(schemelessURL).onsuccess = function() {
     callback(this.result);
   };
