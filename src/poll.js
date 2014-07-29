@@ -26,13 +26,16 @@ lucu.poll.start = function() {
 
   localStorage.POLL_ACTIVE = '1';
 
+  // TODO: i think the trick to moving out the nested functions is
+  // to make these bindable. But these are passed by value. By shoving
+  // these into an object, I can pass it around like a token that represents
+  // shared state. Call it something like 'context' or 'pollProgress'
+
   var totalEntriesAdded = 0, feedCounter = 0, totalEntriesProcessed = 0;
   var feedCounter = 0;
 
-  // TODO: move function out of here
-  lucu.database.open(function(db) {
-    getAllFeeds(db, onGetAllFeeds);
-  });
+  var getAll = lucu.poll.getAllFeeds.bind(this, onGetAllFeeds);
+  lucu.database.open(getAll);
 
   // TODO: move function out of here
   function onGetAllFeeds(feeds) {
@@ -42,6 +45,7 @@ lucu.poll.start = function() {
     }
 
     // TODO: move function out of here
+    // NOTE: if we put feed as final arg, we can just bind directly
     feeds.forEach(function(feed) {
       lucu.poll.fetchAndUpdateFeed(feed, onFeedProcessed, onFeedProcessed);
     });
@@ -71,24 +75,28 @@ lucu.poll.start = function() {
   }
 };
 
+lucu.poll.getAllFeeds = function(onComplete, db) {
+  getAllFeeds(db, onComplete);
+};
+
 // Fetches and updates the local feed.
 lucu.poll.fetchAndUpdateFeed = function(localFeed, oncomplete, onerror) {
 
+  var args = {};
+  args.url = localFeed.url;
+  args.oncomplete = lucu.poll.onFetchFeed.bind(this, localFeed, oncomplete);
+  args.onerror = onerror;
+
   // TODO: timeout and entryTimeout should be derived
   // from feed properties, not hardcoded
+  args.timeout = 20 * 1000;
+  args.entryTimeout = 20 * 1000;
 
-  var onFetch = lucu.poll.onFetchFeed.bind(this, localFeed, oncomplete);
+  args.augmentEntries = true;
+  args.augmentImageData = true;
+  args.rewriteLinks = true;
 
-  lucu.feed.fetch({
-    url: localFeed.url,
-    oncomplete: onFetch,
-    onerror: onerror,
-    timeout: 20 * 1000,
-    entryTimeout: 20 * 1000,
-    augmentImageData: true,
-    augmentEntries: true,
-    rewriteLinks: true
-  });
+  lucu.feed.fetch(args);
 };
 
 lucu.poll.onFetchFeed = function(localFeed, onComplete, remoteFeed) {
