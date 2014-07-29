@@ -4,89 +4,154 @@
 
 'use strict';
 
-// TODO: this should maintain its own state by saving
-// an array of rules in memory, instead of having caller
-// pass around a rules array.
-// TODO: add this functionality back into scrubbing/calamine
-// this is currently not in use.
-// TODO: rename to something like DOMFilterRules?
+var lucu = lucu || {};
 
-function convertContentFilterToRegex(query) {
-  // Escape regexp chars (except *) and then replace * with .*
-  return query.replace(/[-[\]{}()+?.\\^$|#\s]/g,'\\$&').replace(/\*+/g,'.*');
-}
+// TODO: this still needs a lot of cleanup.
+// TODO: consider ContentFilterRule class, moving per rule methods to it.
 
-function translateContentFilterRule(rule) {
-  if(rule.match) {
-    var pattern = convertContentFilterToRegex(rule.match);
+// constructor. Note that this does not initialize the rules array,
+// and should be followed by a call to load
+lucu.ContentFilterList = function() {
 
-    // Recreate the regular expression object as set as
-    // the property 're'
-    rule.re = new RegExp(pattern, 'i');
+  // An in memory set of loaded rules
+  this.rules;
+};
+
+// Create a RegExp from a query string
+lucu.ContentFilterList.prototype.toRegExp = function(query) {
+
+  // just throw if query undefined, not string, etc.
+
+  // Escape regexp syntax (except *)
+  var escaped = query.replace(/[-[\]{}()+?.\\^$|#\s]/g, '\\$&');
+
+  // Replace * with .*
+  // Treat consecutive *s as single *
+  escaped = escaped.replace(/\*+/g, '.*');
+
+  var pattern = new RegExp(escaped, 'i');
+  return pattern;
+};
+
+// Set rule.re by translating rule.match
+// Necessary because we must unmarshall regexps every time on load because
+// regexps are not serializable part of json which is how content filters
+// are saved
+lucu.ContentFilterList.prototype.setRegExp = function(rule) {
+
+  // Ignore rule if match undefined
+  if(!rule.match) {
+    return;
   }
-}
 
-function loadContentFilterRules() {
-  var str = localStorage.CONTENT_FILTERS;
-  if(!str) return [];
-  var obj = JSON.parse(str);
-  obj.rules.forEach(translateContentFilterRule);
-  return obj.rules;
-}
+  // NOTE: expects this instanceof ContentFilterList
+  // or do I need to use lucu.ContentFilterList.prototype.toRegExp?
+  var buildPattern = this.toRegExp;
 
-function saveContentFilterRules(rules) {
-  localStorage.CONTENT_FILTERS = JSON.stringify({rules: rules || []});
-}
+  // Set the 're' property.
+  // TODO: ideally this function would be side-effect free?
+  rule.re = buildPattern(rule.match);
+};
 
-function areContentFilterRulesEqual(rule1, rule2) {
+// Sets up the internal rules array by loading from localStorage
+// NOTE: repeated calls will just overwrite the previous rules array
+// in memory in the member variable of the ContentFilterList instance
+lucu.ContentFilterList.prototype.load = function() {
+  var string = localStorage.CONTENT_FILTERS;
 
+  // Expects this instanceof ContentFilterList
+
+  // Initialize to empty array if no rules found
+  if(!string) {
+    this.rules = [];
+    return;
+  }
+
+  var object = JSON.parse(string);
+
+  // TODO: it would be better to use map here, which means
+  // setRegExp should be redesigned as a side-effect-free
+  // function that clones the input rule and sets a property
+  // of the output rule
+  object.rules.forEach(this.setRegExp);
+  this.rules = object.rules;
+};
+
+// NOTE: unlike the old method, this saves the internal list member
+// variable and not a parameter to a function
+lucu.ContentFilterList.prototype.save = function() {
+
+  // Expects this instanceof ContentFilterList
+
+  var rules = this.rules || [];
+
+  // TODO: because Array is subclass of Object, is it possible to
+  // directly serialize an array? In other words, can we just pass
+  // this.rules to JSON.stringify?
+
+  // Wrap the rule array in an object so that we can call JSON.stringify on it
+  var ruleWrapper = {rules: rules};
+
+  var serialized = JSON.stringify(ruleWrapper);
+
+  localStorage.CONTENT_FILTERS = serialized;
+};
+
+lucu.ContentFilterList.prototype.areRulesEqual = function(rule1, rule2) {
   if(rule1.id && rule2.id)
     return rule1.id == rule2.id;
 
   return rule1.tag === rule2.tag &&
          rule1.attr === rule2.attr &&
          rule1.match === rule2.match;
-}
+};
 
-function getContentFilterRuleId(rule) {
+lucu.ContentFilterList.prototype.getRuleId = function(rule) {
   return rule.id;
-}
+};
 
-function generateContentFilterId(rules) {
-  var ids = rules.map(getContentFilterRuleId);
+lucu.ContentFilterList.prototype.generateId = function() {
+
+  if(!this.rules || !this.rules.length) {
+    return 1;
+  }
+
+  var ids = this.rules.map(this.getRuleId);
   var max = Math.max.apply(Math, ids);
   return max < 1 ? 1 : max + 1;
-}
+};
 
-function createContentFilterRule(tag, attr, match) {
-  var rules = loadContentFilterRules();
+lucu.ContentFilterList.prototype.createRule = function(tag, attr, match) {
 
-  var rule = {
-    id: generateContentFilterId(rules),
-    tag: tag,
-    attr: attr,
-    match: match
-  };
+  var rule = {};
+  rule.id = this.generateId();
+  rule.tag = tag;
+  rule.attr = attr;
+  rule.match = match;
 
-  rules.push(rule);
-  saveContentFilterRules(rules);
+  // NOTE: this does not set re.
+
+  // NOTE: this pushes the rule in mem, but does not serialize
+
+  this.rules.push(rule);
   return rule;
+};
+
+lucu.ContentFilterList.prototype.testRuleNotHasId = function(id, rule) {
+  return rule.id != id;
 }
 
-function removeContentFilterRule(ruleId) {
+lucu.ContentFilterList.prototype.removeById = function(id) {
 
+  var predicate = this.testRuleNotHasId.bind(this, id);
 
-  var differentRuleId = function(rule) {
-    return rule.id != ruleId;
-  };
+  var newRules = this.rules.filter(predicate);
+  this.rules = newRules;
 
-  var rules = loadContentFilterRules();
-  var newRules = rules.filter(differentRuleId);
-  saveContentFilterRules(newRules);
-  return ruleId;
-}
+  return id;
+};
 
-function contentFilterRuleToString(rule) {
+lucu.ContentFilterList.prototype.ruleToString = function(rule) {
   var s = '<';
   s += rule.tag ? rule.tag : 'any-tag';
   s += ' ';
@@ -102,9 +167,9 @@ function contentFilterRuleToString(rule) {
 
   s += rule.tag ? '></' + rule.tag + '>' : '/>';
   return s;
-}
+};
 
-function testContentFilterRuleMatchesNode(rule, node) {
+lucu.ContentFilterList.prototype.ruleMatchesNode = function(node, rule) {
 
   if(!rule || !node) {
     return false;
@@ -126,23 +191,23 @@ function testContentFilterRuleMatchesNode(rule, node) {
   // rule.attr is defined?
   var attr = node.getAttribute(rule.attr);
   return rule.re.test(attr);
-}
+};
 
-/**
- * TODO: revise this to make more sense, it works this way now
- * as an artifact of the old sanitizer code. returns true means
- * retain the node, return false means remove the node. this is
- * counter intuitive
- */
-function applyContentFilterRulesToNode(node, rules) {
+lucu.ContentFilterList.prototype.matches = function(node) {
+   // TODO: revise this to make more sense, it works this way now
+   // as an artifact of the old sanitizer code. returns true means
+   // retain the node, return false means remove the node. this is
+   // counter intuitive
 
   if(!localStorage.ENABLE_CONTENT_FILTERS) {
     return true;
   }
 
-  var matched = any(rules, function(rule) {
-    return testContentFilterRuleMatchesNode(rule, node);
-  });
+  if(!this.rules || !this.rules.length) {
+    return true;
+  }
 
-  return matched ? false : true;
-}
+  var matches = this.ruleMatchesNode.bind(this, node);
+  var anyMatches = this.rules.some(matches);
+  return anyMatches ? false : true;
+};
