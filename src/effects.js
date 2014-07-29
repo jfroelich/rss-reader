@@ -34,7 +34,6 @@ lucu.effects.fade = function(element, duration, delay, callback) {
 
   function ended(event) {
     this.removeEventListener('webkitTransitionEnd', ended);
-    if(callback)
-      callback(element);
+    callback(element);
   }
 };
