@@ -301,7 +301,7 @@ function showOrSkipSubscriptionPreview(url) {
 
   // TODO: check if already subscribed before preview?
 
-  fetchFeed({
+  lucu.feed.fetch({
     url: url,
     oncomplete: onFetchSuccess,
     onerror: onerror,
@@ -344,7 +344,7 @@ function startSubscription(url) {
         return addFeed(db, {url: url}, onSubscriptionSuccessful, console.debug);
       }
 
-      fetchFeed({
+      lucu.feed.fetch({
         url: url,
         oncomplete: onFetchComplete,
         onerror: onFetchError,

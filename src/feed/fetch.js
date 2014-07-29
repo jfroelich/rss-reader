@@ -4,6 +4,10 @@
 
 'use strict';
 
+var lucu = lucu || {};
+
+lucu.feed = lucu.feed || {};
+
 /**
  * Fetches the XML for a feed from a URL, then parses it into
  * a javascript object, and passes this along to a callback. If an error
@@ -49,7 +53,7 @@
  * prior to fetching or checking if already fetched in db
  * - entryTimeout - optional timeout before giving up on fetching webpage for entry
  */
-function fetchFeed(params) {
+lucu.feed.fetch = function(params) {
 
   var url = (params.url || '').trim();
   var oncomplete = params.oncomplete || lucu.functionUtils.noop;
@@ -78,16 +82,15 @@ function fetchFeed(params) {
   request.onerror = onerror;
   request.ontimeout = onerror;
   request.onabort = onerror;
-  request.onload = onRemoteFeedFetched.bind(request, oncomplete, onerror,
-    augmentEntries, augmentImageData, rewriteLinks, entryTimeout);
+  request.onload = lucu.feed.onFetch.bind(request, oncomplete,
+    onerror, augmentEntries, augmentImageData, rewriteLinks, entryTimeout);
   request.open('GET', url, true);
   request.send();
-}
+};
 
 // expects to be bound to an XMLHttpRequest
-function onRemoteFeedFetched(onComplete, onError, shouldAugmentEntries,
+lucu.feed.onFetch = function(onComplete, onError, shouldAugmentEntries,
   shouldAugmentImages, rewriteLinks, entryTimeout) {
-
 
   var mime = lucu.mime.getType(this) || '';
 
@@ -96,7 +99,7 @@ function onRemoteFeedFetched(onComplete, onError, shouldAugmentEntries,
       return onError({type:'invalid-xml',target:this});
     }
 
-    return convertToFeed(this.responseXML, onComplete, onError, shouldAugmentEntries,
+    return lucu.feed.convertFromXML(this.responseXML, onComplete, onError, shouldAugmentEntries,
       shouldAugmentImages, rewriteLinks, entryTimeout);
   }
 
@@ -112,15 +115,15 @@ function onRemoteFeedFetched(onComplete, onError, shouldAugmentEntries,
       return onError({type:'invalid-xml',target:this});
     }
 
-    return convertToFeed(xmlDocument, onComplete, onError, shouldAugmentEntries,
+    return lucu.feed.convertFromXML(xmlDocument, onComplete, onError, shouldAugmentEntries,
       shouldAugmentImages, rewriteLinks, entryTimeout);
   }
 
   return onError({type:'invalid-content-type',target:this});
 
-}
+};
 
-function convertToFeed(xmlDocument, onComplete, onError,
+lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
   shouldAugmentEntries, shouldAugmentImages, rewriteLinks, entryTimeout) {
 
   var feed = lucu.feed.createFromDocument(xmlDocument);
@@ -207,4 +210,4 @@ function convertToFeed(xmlDocument, onComplete, onError,
       onComplete(feed);
     }
   }
-}
+};

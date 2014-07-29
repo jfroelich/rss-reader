@@ -77,7 +77,7 @@ function pollFeed(localFeed, oncomplete, onerror) {
 
   // console.log('Polling %s', localFeed.title);
 
-  fetchFeed({
+  lucu.feed.fetch({
     url: localFeed.url,
     oncomplete: onFetch,
     onerror: onerror,
