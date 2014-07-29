@@ -6,23 +6,18 @@
 // That was I do not perma-lock-out polling in event of an error
 // during poll.
 
-
 'use strict';
 
-function resetPollActive() {
-  delete localStorage.POLL_ACTIVE;
-}
+var lucu = lucu || {};
 
-function startPolling() {
+lucu.poll = {};
 
-  var isPollRunning = localStorage.POLL_ACTIVE;
+lucu.poll.start = function() {
 
-  if(isPollRunning) {
+  if(localStorage.POLL_ACTIVE) {
     console.debug('Poll already in progress');
     return;
   }
-
-  // console.log('Starting poll');
 
   if(!navigator.onLine) {
     console.debug('Cannot poll while offline');
@@ -34,21 +29,25 @@ function startPolling() {
   var totalEntriesAdded = 0, feedCounter = 0, totalEntriesProcessed = 0;
   var feedCounter = 0;
 
+  // TODO: move function out of here
   lucu.database.open(function(db) {
     getAllFeeds(db, onGetAllFeeds);
   });
 
+  // TODO: move function out of here
   function onGetAllFeeds(feeds) {
     feedCounter = feeds.length;
     if(feedCounter === 0) {
       return pollCompleted();
     }
 
+    // TODO: move function out of here
     feeds.forEach(function(feed) {
-      pollFeed(feed, onFeedProcessed, onFeedProcessed);
+      lucu.poll.fetchAndUpdateFeed(feed, onFeedProcessed, onFeedProcessed);
     });
   }
 
+  // TODO: move function out of here
   function onFeedProcessed(processedFeed, entriesProcessed, entriesAdded) {
     totalEntriesProcessed += entriesProcessed || 0;
     totalEntriesAdded += entriesAdded || 0;
@@ -58,6 +57,7 @@ function startPolling() {
     }
   }
 
+  // TODO: move function out of here
   function pollCompleted() {
     delete localStorage.POLL_ACTIVE;
     localStorage.LAST_POLL_DATE_MS = String(Date.now());
@@ -69,11 +69,11 @@ function startPolling() {
       entriesProcessed: totalEntriesProcessed
     });
   }
-}
+};
 
 
 // Fetches and updates the local feed.
-function pollFeed(localFeed, oncomplete, onerror) {
+lucu.poll.fetchAndUpdateFeed = function(localFeed, oncomplete, onerror) {
 
   // TODO: timeout and entryTimeout should be derived
   // from feed properties
@@ -91,11 +91,17 @@ function pollFeed(localFeed, oncomplete, onerror) {
     rewriteLinks: true
   });
 
+  // TODO: move function out of here
   function onFetch(remoteFeed) {
     remoteFeed.fetched = Date.now();
 
+    // TODO: move function out of here
     lucu.database.open(function(db) {
       updateFeed(db, localFeed, remoteFeed, oncomplete);
     });
   }
-}
+};
+
+lucu.poll.reset = function() {
+  delete localStorage.POLL_ACTIVE;
+};

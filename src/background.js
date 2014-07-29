@@ -129,13 +129,13 @@ lucu.background.startPollingIfNotPermittedOrIdle = function(permitted) {
     chrome.idle.queryState(INACTIVITY_INTERVAL,
       lucu.background.startPollingIfIdle);
   } else {
-    startPolling();
+    lucu.poll.start();
   }
 };
 
 lucu.background.startPollingIfIdle = function(idleState) {
   if(idleState == 'locked' || idleState == 'idle') {
-    startPolling();
+    lucu.poll.start();
   }
 };
 
