@@ -9,6 +9,10 @@ lucu.feed = lucu.feed || {};
 
 // TODO: decide if this really belongs in the feed namespace.
 
+// TODO: move queryGoogleFeeds into discover. There is no point to decorating
+// a single function at the current time, and this is not really 'planning ahead'
+// in the right manner.
+
 
 // Fetches an array of search results and passes them to onComplete.
 lucu.feed.discover = function(query, onComplete, onError, timeout) {
