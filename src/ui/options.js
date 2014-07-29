@@ -912,9 +912,10 @@ function initContentFiltersSection() {
   createButton.onclick = onCreateContentFilterClick;
 
   var listElement = document.getElementById('content-filters-list');
-  var rules = loadContentFilterRules();
-  var appendRuleToList = appendContentFilterRule.bind(null, listElement);
-  rules.forEach(appendRuleToList);
+  // TODO: change this to use the new ContentFilterList module
+  //var rules = loadContentFilterRules();
+  //var appendRuleToList = appendContentFilterRule.bind(null, listElement);
+  //rules.forEach(appendRuleToList);
 }
 
 function initAboutSection() {
