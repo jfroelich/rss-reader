@@ -71,14 +71,13 @@ lucu.poll.start = function() {
   }
 };
 
-
 // Fetches and updates the local feed.
 lucu.poll.fetchAndUpdateFeed = function(localFeed, oncomplete, onerror) {
 
   // TODO: timeout and entryTimeout should be derived
-  // from feed properties
+  // from feed properties, not hardcoded
 
-  // console.log('Polling %s', localFeed.title);
+  var onFetch = lucu.poll.onFetchFeed.bind(this, localFeed, oncomplete);
 
   lucu.feed.fetch({
     url: localFeed.url,
@@ -90,18 +89,18 @@ lucu.poll.fetchAndUpdateFeed = function(localFeed, oncomplete, onerror) {
     augmentEntries: true,
     rewriteLinks: true
   });
-
-  // TODO: move function out of here
-  function onFetch(remoteFeed) {
-    remoteFeed.fetched = Date.now();
-
-    // TODO: move function out of here
-    lucu.database.open(function(db) {
-      updateFeed(db, localFeed, remoteFeed, oncomplete);
-    });
-  }
 };
 
-lucu.poll.reset = function() {
+lucu.poll.onFetchFeed = function(localFeed, onComplete, remoteFeed) {
+  remoteFeed.fetched = Date.now();
+  lucu.database.open(lucu.poll.updateFeed.bind(this, localFeed,
+    remoteFeed, onComplete));
+};
+
+lucu.poll.updateFeed = function(localFeed, remoteFeed, onComplete, db) {
+  updateFeed(db, localFeed, remoteFeed, onComplete);
+};
+
+lucu.poll.unlock = function() {
   delete localStorage.POLL_ACTIVE;
 };
