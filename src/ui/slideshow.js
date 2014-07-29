@@ -208,7 +208,7 @@ function appendSlide(entry, isFirst) {
   doc.body.innerHTML = entry.content;
 
   // TODO: is this worthwhile? seems out of place
-  trimDocument(doc);
+  lucu.trimDocument(doc);
 
   // TODO: all anchors should open in new window?
 

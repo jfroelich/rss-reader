@@ -4,18 +4,22 @@
 
 'use strict';
 
+var lucu = lucu || {};
+
+
+
 /**
  * Removes leading and trailing whitespace nodes from an HTMLDocument
  * The doc object itself is modified in place, no return value.
  * Note: we only traverse the first level of the DOM hiearchy
  */
-function trimDocument(doc) {
+lucu.trimDocument = function(doc) {
 
   var rootElement = doc.body;
 
   // Trim leading
   var node = rootElement.firstChild, sibling;
-  while(node && isTrimmableNode(node)) {
+  while(node && lucu.isTrimmableNode(node)) {
     sibling = node.nextSibling;
     node.parentNode.removeChild(node);
     node = sibling;
@@ -23,18 +27,18 @@ function trimDocument(doc) {
 
   // Trim trailing
   node = rootElement.lastChild;
-  while(node && isTrimmableNode(node)) {
+  while(node && lucu.isTrimmableNode(node)) {
     sibling = node.previousSibling;
     node.parentNode.removeChild(node);
     node = sibling;
   }
-}
+};
 
 /**
  * Returns true if the node is trimmable. Note
  * side effect it will trim text nodes (not quite right)
  */
-function isTrimmableNode(node) {
+lucu.isTrimmableNode = function(node) {
 
   // Trim comments
   if(node.nodeType == Node.COMMENT_NODE) {
@@ -75,4 +79,4 @@ function isTrimmableNode(node) {
       return true;
     }
   }
-}
+};
