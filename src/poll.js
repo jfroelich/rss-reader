@@ -2,9 +2,12 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: use sessionStorage.POLL_ACTIVE instead of localStorage?
+// That was I do not perma-lock-out polling in event of an error
+// during poll.
+
 
 'use strict';
-// todo: use sessionStorage.POLL_ACTIVE instead of localStorage?
 
 function resetPollActive() {
   delete localStorage.POLL_ACTIVE;

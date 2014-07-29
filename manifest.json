@@ -21,7 +21,6 @@
       "/src/element.js",
       "/src/entry.js",
       "/src/feed.js",
-      "/src/feed-poll.js",
       "/src/feed/create-from-document.js",
       "/src/feed/fetch.js",
       "/src/hash.js",
@@ -34,6 +33,7 @@
       "/src/lang/string.js",
       "/src/mime.js",
       "/src/node.js",
+      "/src/poll.js",
       "/src/rewrite.js",
       "/src/uri.js",
       "/src/xml.js"
