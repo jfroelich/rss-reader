@@ -302,7 +302,7 @@ lucu.entry.removeByFeed = function(tx, feedId, oncomplete) {
 lucu.entry.generateHash = function(remoteEntry) {
   var seed = remoteEntry.link || remoteEntry.title || remoteEntry.content;
   if(seed) {
-    return generateHashCode(seed.split(''));
+    return lucu.hash.generate(seed.split(''));
   }
 };
 
