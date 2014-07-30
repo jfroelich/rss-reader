@@ -46,7 +46,7 @@ lucu.calamine.filterImage = function(image) {
 
   // Remove one-dimensional images. Typically these are tracker images that
   // are a part of boilerplate.
-  if(element.width === 1 || element.height === 1) {
+  if(image.width === 1 || image.height === 1) {
     lucu.node.remove(image);
     return;
   }
