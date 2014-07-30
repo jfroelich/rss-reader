@@ -112,8 +112,7 @@ function calamineTransformDocument(doc, options) {
 }
 
 // Preps document for analysis
-// TODO: move iframe from blacklist to whitelist once supported
-// TODO: replace &nbsp; with space
+
 function calaminePreprocessDocument(doc) {
 
   var body = doc.body;
@@ -138,17 +137,16 @@ function calaminePreprocessDocument(doc) {
   var noscripts = doc.body.querySelectorAll('noscript');
   lucu.element.forEach(noscripts, lucu.element.unwrap);
 
+  // Remove invisible elements
+  var invisibles = lucu.element.filter(allElements,
+    lucu.element.isInvisible);
+  invisibles.forEach(lucu.node.remove);
 
-  lucu.element.forEach(allElements, function(element) {
-
-    // Remove invisible elements
-    if(lucu.element.isInvisible(element)) {
-      return lucu.node.remove(element);
-    }
-  });
 
   // BUGGY: in process of fixing
   // lucu.element.forEach(doc.body.querySelectorAll('br,hr'), calamineTransformRuleElement);
+
+
 
   // Marks code/pre elements as whitespaceImportant and then marks all direct and indirect
   // descendant elements as whiteSpaceImportant. Propagating this property from the top
@@ -161,6 +159,8 @@ function calaminePreprocessDocument(doc) {
       descendantElement.whitespaceImportant = 1;
     });
   });
+
+  // TODO: replace &nbsp; with space
 
   // TODO: Replace &#160; and &nbsp; (and any other such entities) with space
   // before trimming
