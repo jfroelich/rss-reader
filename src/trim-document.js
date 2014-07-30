@@ -6,8 +6,6 @@
 
 var lucu = lucu || {};
 
-
-
 /**
  * Removes leading and trailing whitespace nodes from an HTMLDocument
  * The doc object itself is modified in place, no return value.
