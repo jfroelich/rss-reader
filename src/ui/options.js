@@ -563,7 +563,7 @@ function onDiscoverFeedsError(errorMessage) {
 function onUnsubscribeButtonClicked(event) {
   var feedId = parseInt(event.target.value);
   lucu.database.open(function(db) {
-    removeFeedById(db, feedId, function() {
+    lucu.feed.removeById(db, feedId, function() {
       console.info('Unsubscribed from %s', feedId);
       optionsShowSection(document.getElementById('mi-subscriptions'));
     });

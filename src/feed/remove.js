@@ -4,19 +4,27 @@
 
 'use strict';
 
+var lucu = lucu || {};
+lucu.feed = lucu.feed || {};
+
 /**
  * Removes a feed and its dependencies
- * TODO: removeFeedById no longer sends message when complete, caller
+ * TODO: lucu.feed.removeById no longer sends message when complete, caller
  * needs to do this.
  * //chrome.runtime.sendMessage({type:'unsubscribe',feed:id,entriesDeleted:counter});
  */
-function removeFeedById(db, id, oncomplete) {
+lucu.feed.removeById = function(db, id, onComplete) {
   var tx = db.transaction(['entry','feed'],'readwrite');
+  var feedStore = tx.objectStore('feed');
+  var deleteRequest = feedStore.delete(id);
+  deleteRequest.onsuccess = lucu.entry.removeByFeed.bind(
+    deleteRequest, tx, id, onComplete.bind(null, id));
 
-  // TODO: move this function out of here
-  tx.objectStore('feed').delete(id).onsuccess = function() {
-    lucu.entry.removeByFeed(tx, id, function(numDeleted) {
-      oncomplete(id, numDeleted);
-    });
-  };
-}
+  // TODO: delete this once the new bind stuff tested
+  //deleteRequest.onsuccess = function() {
+  //  lucu.entry.removeByFeed(tx, id, function(numDeleted) {
+  //    onComplete(id, numDeleted);
+  //  });
+  //};
+
+};
