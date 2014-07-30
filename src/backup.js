@@ -85,7 +85,7 @@ lucu.backup.importFeeds = function(feeds, exceptions, onComplete) {
   // TODO: this needs cleanup, externally defined functions
   lucu.database.open(function(db) {
     feeds.forEach(function(feed) {
-      addFeed(db, feed, function() {
+      lucu.feed.add(db, feed, function() {
         feedsAdded++;
         onFeedAdded();
       }, onFeedAdded);

@@ -55,7 +55,7 @@ lucu.entry.mergeAll = function(db, feed, entries, oncomplete) {
   var entriesProcessed = 0;
 
   if(!entries) {
-    // when addFeed is used by import opml or subscribe offline
+    // when lucu.feed.add is used by import opml or subscribe offline
     // then it is perfectly normal for entries to be undefined
     // in which case we are done
     return oncomplete(feed, entriesProcessed, entriesAdded);

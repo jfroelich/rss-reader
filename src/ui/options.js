@@ -341,7 +341,7 @@ function startSubscription(url) {
 
       if(!navigator.onLine) {
         // Subscribe while offline
-        return addFeed(db, {url: url}, onSubscriptionSuccessful, console.debug);
+        return lucu.feed.add(db, {url: url}, onSubscriptionSuccessful, console.debug);
       }
 
       lucu.feed.fetch({
@@ -362,7 +362,7 @@ function startSubscription(url) {
     remoteFeed.fetched = Date.now();
 
     lucu.database.open(function(db) {
-      addFeed(db, remoteFeed, onSubscriptionSuccessful, console.debug);
+      lucu.feed.add(db, remoteFeed, onSubscriptionSuccessful, console.debug);
     });
   }
 
