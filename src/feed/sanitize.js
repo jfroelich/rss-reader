@@ -31,7 +31,7 @@ lucu.feed.sanitize = function(dirtyFeed) {
     cleanFeed.link = link;
   }
 
-  if(feed.date) {
+  if(dirtyFeed.date) {
     cleanFeed.date = dirtyFeed.date;
   }
 
