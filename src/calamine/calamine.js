@@ -12,13 +12,15 @@ function calamineIsRemovableAttribute(attribute) {
 
 function calamineFilterElementAttributes(element) {
 
-  var removables = Array.prototype.filter.call(
-    element.attributes,
-    calamineIsRemovableAttribute
-  );
+  var attributes = Array.prototype.filter.call(
+    element.attributes, calamineIsRemovableAttribute);
 
-  var removeAttribute = Element.prototype.removeAttribute.bind(element, element);
-  removables.forEach(removeAttribute);
+  var names = attributes.map(function(attribute) {
+    return attribute.name;
+  });
+
+  var removeAttribute = Element.prototype.removeAttribute.bind(element);
+  names.forEach(removeAttribute);
 }
 
 /**
@@ -111,43 +113,21 @@ function calamineTransformDocument(doc, options) {
 
 // Preps document for analysis
 // TODO: move iframe from blacklist to whitelist once supported
+// TODO: replace &nbsp; with space
 function calaminePreprocessDocument(doc) {
 
   var body = doc.body;
   var forEach = Array.prototype.forEach;
 
+  // Filter comment nodes
   lucu.node.forEach(body, NodeFilter.SHOW_COMMENT, lucu.node.remove);
 
-  var SELECTOR_BLACKLIST = 'applet,base,basefont,button,'+
-    'command,datalist,dialog,embed,fieldset,frame,frameset,'+
-    'html,head,iframe,input,legend,link,math,meta,noframes,'+
-    'object,option,optgroup,output,param,script,select,style,'+
-    'title,textarea';
+  var allElements = doc.body.querySelectorAll('*');
 
-  var SELECTOR_WHITELIST = 'a,abbr,acronym,address,area,'+
-    'article,aside,audio,b,bdi,bdo,big,br,blockquote,'+
-    'canvas,caption,center,cite,code,col,colgroup,'+
-    'command,data,details,dir,dd,del,dfn,div,dl,dt,em,'+
-    'entry,fieldset,figcaption,figure,font,footer,header,'+
-    'help,hgroup,hr,h1,h2,h3,h4,h5,h6,i,img,ins,insert,'+
-    'inset,label,li,kbd,main,mark,map,meter,nav,nobr,'+
-    'noscript,ol,p,pre,progress,q,rp,rt,ruby,s,samp,section,'+
-    'small,span,strike,strong,st1,sub,summary,sup,vg,table,'+
-    'tbody,td,tfood,th,thead,time,tr,track,tt,u,ul,var,video,'+
-    'wbr';
+  // Blacklist/whitelist filtering
+  lucu.element.forEach(allElements, lucu.calamine.filterByElementName);
 
-  var allElements = body.querySelectorAll('*');
   lucu.element.forEach(allElements, function(element) {
-
-    // Remove any element in the blacklist
-    if(element.matches(SELECTOR_BLACKLIST)) {
-      return lucu.node.remove(element);
-    }
-
-    // Remove any element not in the whitelist
-    if(!element.matches(SELECTOR_WHITELIST)) {
-      return lucu.node.remove(element);
-    }
 
     // Remove sourceless images
     if(element.matches('img:not([src])')) {
@@ -216,6 +196,8 @@ function calaminePreprocessDocument(doc) {
   });
 
   // TODO: cleanup the whitespaceImportant expando?
+
+
 
   // Now remove all empty-like elements from the document. If removing
   // an element would change the state of the element's parent to also
