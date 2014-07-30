@@ -181,7 +181,7 @@ function calaminePreprocessDocument(doc) {
   // down (cascading) enables the trimNode function to quickly determine whether its
   // nodeValue is trimmable, as opposed to having the trimNode function search each text
   // node's axis (path from root) for the presence of a pre/code element.
-  lucu.element.forEach(body.querySelectorAll('code,pre'), function(element) {
+  lucu.element.forEach(body.querySelectorAll('code, pre'), function(element) {
     element.whitespaceImportant = 1;
     lucu.element.forEach(element.getElementsByTagName('*'), function(descendantElement) {
       descendantElement.whitespaceImportant = 1;
