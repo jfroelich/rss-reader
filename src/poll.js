@@ -27,9 +27,23 @@ lucu.poll.start = function() {
   localStorage.POLL_ACTIVE = '1';
 
   // TODO: i think the trick to moving out the nested functions is
-  // to make these bindable. But these are passed by value. By shoving
-  // these into an object, I can pass it around like a token that represents
-  // shared state. Call it something like 'context' or 'pollProgress'
+  // to make these variables bindable. But these are passed by value (copied), and
+  // are effectively immutable state, because changing these values inside the later
+  // functions just updates each function's local copy, and not desired variable.
+  // By shoving these into an object, I can pass it around like a token that
+  // represents shared state. Call it something like 'context' or 'pollProgress'
+
+  // For that matter, we could treat context as the 'thisArg' parameter to
+  // the bind function, and have the later functions just use this. to access
+  // context, instead of making it an explicit argument. We just need to
+  //  make sure that all the later functions are properly bound and not
+  // trying to use 'this' for other purposes, or implicitly rebinding this
+  // to something else.
+
+  // All this is basically doing is changing the implied closure access
+  // in the nested functions to the variables defined in this main function
+  // scope into an explicit access against an explicit environment.
+
 
   var totalEntriesAdded = 0, feedCounter = 0, totalEntriesProcessed = 0;
   var feedCounter = 0;
