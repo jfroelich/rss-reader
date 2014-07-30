@@ -335,18 +335,21 @@ function onKeyDown(event) {
     event.preventDefault();
   }
 
+  // TODO: lot of DRY violation here. I should use a {} map
+  // to deltas and make one call to lucu.scroll.to instead
+
   if(currentSlide) {
     if(key == KEY.DOWN) {
-      smoothScrollToY(currentSlide, 50, currentSlide.scrollTop + 200)
+      lucu.scroll.to(currentSlide, 50, currentSlide.scrollTop + 200)
       return;
     } else if(key == KEY.PAGE_DOWN) {
-      smoothScrollToY(currentSlide, 100, currentSlide.scrollTop + 800);
+      lucu.scroll.to(currentSlide, 100, currentSlide.scrollTop + 800);
       return;
     } else if(key == KEY.UP) {
-      smoothScrollToY(currentSlide, -50, currentSlide.scrollTop - 200);
+      lucu.scroll.to(currentSlide, -50, currentSlide.scrollTop - 200);
       return;
     } else if(key == KEY.PAGE_UP) {
-      smoothScrollToY(currentSlide, -100, currentSlide.scrollTop - 800);
+      lucu.scroll.to(currentSlide, -100, currentSlide.scrollTop - 800);
       return;
     }
   }

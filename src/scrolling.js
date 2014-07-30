@@ -4,6 +4,9 @@
 
 'use strict';
 
+var lucu = lucu || {};
+lucu.scroll = {};
+
 /**
  * Periodically scroll from the current position to a new position
  *
@@ -15,7 +18,7 @@
  * @param delta {int} the amount of pixels by which to scroll per increment
  * @param targetY {int} the desired vertical end position
  */
-function smoothScrollToY(element, delta, targetY) {
+lucu.scroll.to = function(element, delta, targetY) {
   var scrollYStartTimer;
   var scrollYIntervalTimer;
   var amountToScroll = 0;
@@ -48,4 +51,4 @@ function smoothScrollToY(element, delta, targetY) {
       clearInterval(scrollYIntervalTimer);
     }
   }
-}
+};
