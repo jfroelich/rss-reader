@@ -3,9 +3,17 @@
 // that can be found in the LICENSE file
 
 'use strict';
+
 // TODO: proper attribution comments for all images and fonts
 
-var BACKGROUND_IMAGES = [
+// TODO: I am not really happy with calling this settings.js.
+// or storing these constants here. Not quite sure what to
+// call this or where it goes or whether it should be split up.
+
+
+var lucu = lucu || {};
+
+lucu.BACKGROUND_IMAGES = [
   '/media/bgfons-paper_texture318.jpg',
   '/media/CCXXXXXXI_by_aqueous.jpg',
   '/media/paper-backgrounds-vintage-white.jpg',
@@ -27,7 +35,7 @@ var BACKGROUND_IMAGES = [
   '/media/thomas-zucx-noise-lines.png'
 ];
 
-var FONT_FAMILIES = [
+lucu.FONT_FAMILIES = [
   'ArchivoNarrow-Regular',
   'Arial, sans-serif',
   'Calibri',
