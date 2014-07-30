@@ -6,19 +6,19 @@
 
 // Functions for sanitizing, removing boilerplate
 
-function removeElementAttribute(element, attribute) {
-  element.removeAttribute(attribute.name);
-}
-
 function calamineIsRemovableAttribute(attribute) {
   return attribute.name != 'href' && attribute.name != 'src';
 }
 
 function calamineFilterElementAttributes(element) {
-  Array.prototype.filter.call(
+
+  var removables = Array.prototype.filter.call(
     element.attributes,
     calamineIsRemovableAttribute
-  ).forEach(removeElementAttribute.bind(null, element));
+  );
+
+  var removeAttribute = Element.prototype.removeAttribute.bind(element, element);
+  removables.forEach(removeAttribute);
 }
 
 /**
@@ -49,7 +49,6 @@ function calamineTransformDocument(doc, options) {
     // Favor previous, so use > not >=
     return current.score > previous.score ? current : previous;
   }, body);
-
 
   var SELECTOR_UNWRAPPABLE = 'a:not([href]),article,big,blink,'+
     'body,center,details,div,font,form,help,html,insert,label,'+
