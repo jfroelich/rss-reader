@@ -4,12 +4,11 @@
 
 'use strict';
 
-// TODO: modularize
+var lucu = lucu || {};
+lucu.calamine = lucu.calamine || {};
 
-
-// Preps document for analysis
-
-function calaminePreprocessDocument(doc) {
+// Preps document for feature extraction and analysis
+lucu.calamine.preprocess = function(doc) {
 
   var body = doc.body;
   var forEach = Array.prototype.forEach;
@@ -147,4 +146,4 @@ function calaminePreprocessDocument(doc) {
       }
     }
   }
-}
+};

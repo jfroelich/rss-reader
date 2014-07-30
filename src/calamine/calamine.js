@@ -12,7 +12,7 @@ function calamineTransformDocument(doc, options) {
 
   var body = doc.body;
 
-  calaminePreprocessDocument(doc);
+  lucu.calamine.preprocess(doc);
   calamineExtractFeaturesInDocument(doc);
 
   lucu.element.forEach(body.getElementsByTagName('*'), scoreElement);
