@@ -119,8 +119,10 @@ lucu.poll.onFetchFeed = function(localFeed, onComplete, remoteFeed) {
     remoteFeed, onComplete));
 };
 
+// A private helper function that exists primarily because of argument
+// order to support late binding
 lucu.poll.updateFeed = function(localFeed, remoteFeed, onComplete, db) {
-  updateFeed(db, localFeed, remoteFeed, onComplete);
+  lucu.feed.update(db, localFeed, remoteFeed, onComplete);
 };
 
 lucu.poll.unlock = function() {

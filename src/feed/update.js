@@ -4,18 +4,21 @@
 
 'use strict';
 
+var lucu = lucu || {};
+lucu.feed = lucu.feed || {};
+
 /**
  * Updates the localFeed according to the properties in remoteFeed,
  * merges in any new entries present in the remoteFeed, and then
  * calls oncomplete. This expects local feed to be the feed object
  * loaded from the feedStore in the database.
- * TODO: the caller of updateFeed needs to set feed.fetched
- * TODO: the caller of updateFeed should pass in last modified
+ * TODO: the caller of lucu.feed.update needs to set feed.fetched
+ * TODO: the caller of lucu.feed.update should pass in last modified
  * date of the remote xml file so we can avoid pointless updates
- * TODO: updateFeed should not be changing the date updated unless
+ * TODO: lucu.feed.update should not be changing the date updated unless
  * something actually changed.
  */
-function updateFeed(db, localFeed, remoteFeed, oncomplete) {
+lucu.feed.update = function(db, localFeed, remoteFeed, oncomplete) {
 
   var cleanedFeed = lucu.feed.sanitize(remoteFeed);
 
@@ -43,7 +46,13 @@ function updateFeed(db, localFeed, remoteFeed, oncomplete) {
   var feedStore = putFeedTransaction.objectStore('feed');
   var putFeedRequest = feedStore.put(localFeed);
   putFeedRequest.onerror = console.debug;
-  putFeedRequest.onsuccess = function() {
-    lucu.entry.mergeAll(db, localFeed, remoteFeed.entries, oncomplete);
-  }
-}
+
+  // TODO: move this out
+  //putFeedRequest.onsuccess = function() {
+  //  lucu.entry.mergeAll(db, localFeed, remoteFeed.entries, oncomplete);
+  //}
+
+  var merge = lucu.entry.mergeAll.bind(this, db, localFeed,
+    remoteFeed.entries, oncomplete);
+  putFeedRequest.onsuccess = merge;
+};

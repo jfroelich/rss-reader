@@ -1,6 +1,6 @@
 * in the future, we should be storing two titles, a
 human readonable one, and one for sorting when loading. Both
-lucu.feed.add and updateFeed would be refactored.
+lucu.feed.add and lucu.feed.update would be refactored.
 
 * because i do not validate a feed is live before adding,
  need to periodically identify invalid feeds later.
