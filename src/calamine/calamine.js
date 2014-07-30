@@ -6,23 +6,6 @@
 
 // Functions for sanitizing, removing boilerplate
 
-function calamineIsRemovableAttribute(attribute) {
-  return attribute.name != 'href' && attribute.name != 'src';
-}
-
-function calamineFilterElementAttributes(element) {
-
-  var attributes = Array.prototype.filter.call(
-    element.attributes, calamineIsRemovableAttribute);
-
-  var names = attributes.map(function(attribute) {
-    return attribute.name;
-  });
-
-  var removeAttribute = Element.prototype.removeAttribute.bind(element);
-  names.forEach(removeAttribute);
-}
-
 /**
  * Returns a DocumentFragment
  */
