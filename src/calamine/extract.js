@@ -4,65 +4,111 @@
 
 'use strict';
 
-// TODO: modularize, split up functions
+var lucu = lucu || {};
+lucu.calamine = lucu.calamine || {};
 
-function calamineExtractFeaturesInDocument(doc) {
+lucu.calamine.extractFeatures = function(doc) {
 
+  // Expects this instanceof lucu.calamine
+
+  lucu.node.forEach(doc.body, NodeFilter.SHOW_TEXT,
+    this.deriveTextFeatures);
+
+  var efe = lucu.element.forEach;
+  // NOTE: this must be called after deriveTextFeatures because it
+  // depends on charCount being set
+  var anchors = doc.body.getElementsByTagName('a');
+  efe(anchors, this.deriveAnchorFeatures);
+
+  var elements = doc.body.getElementsByTagName('*');
+  efe(elements, this.deriveAttributeFeatures);
+
+  // TODO: why repeatedly query all elements??? can i just re-iterate
+  // over the same node list (e.g. if I used querySelectorAll?)
+
+  elements = doc.body.getElementsByTagName('*');
+  efe(elements, this.deriveSiblingFeatures);
+};
+
+
+// Extract text features for text nodes and then propagate those properties
+// upward in the dom (up to root)
+// NOTE: think more about the situation <body>text</body> because right now
+// it gets ignored
+lucu.calamine.deriveTextFeatures = function(node) {
+
+  var doc = node.ownerDocument;
   var body = doc.body;
-  var forEach = Array.prototype.forEach;
+  var parent = node.parentElement;
+  var value = node.nodeValue;
 
-  // Extract text features for text nodes and then propagate those properties
-  // upward in the dom (up to root)
-  lucu.node.forEach(body, NodeFilter.SHOW_TEXT, function deriveTextFeatures(textNode) {
-    var parent = textNode.parentElement;
+  // TODO: this should be discrete not continuous
+  parent.copyrightCount = /[\u00a9]|&copy;|&#169;/i.test(
+    value) ? 1 : 0;
 
-    // TODO: this should be discrete not continuous
-    parent.copyrightCount = /[\u00a9]|&copy;|&#169;/i.test(textNode.nodeValue) ? 1 : 0;
-    parent.dotCount = lucu.string.countChar(textNode.nodeValue,'\u2022');
-    parent.pipeCount = lucu.string.countChar(textNode.nodeValue,'|');
+  parent.dotCount = lucu.string.countChar(value,'\u2022');
 
-    var charCount = textNode.nodeValue.length - textNode.nodeValue.split(/[\s\.]/g).length + 1;
+  parent.pipeCount = lucu.string.countChar(value,'|');
 
-    while(parent != body) {
-      parent.charCount = (parent.charCount || 0) + charCount;
+  // NOTE: we don't care about setting the count in the node itself
+  // just in the parent element path to body
+
+  var charCount = value.length - value.split(/[\s\.]/g).length + 1;
+
+  while(parent != body) {
+    parent.charCount = (parent.charCount || 0) + charCount;
+    parent = parent.parentElement;
+  }
+};
+
+// Extract anchor features. Based on charCount from text features
+lucu.calamine.deriveAnchorFeatures = function(anchor) {
+  var doc = anchor.ownerDocument;
+  var parent = anchor.parentElement;
+
+  if(anchor.charCount && anchor.hasAttribute('href')) {
+    anchor.anchorCharCount = anchor.charCount;
+
+    while(parent != doc.body) {
+      parent.anchorCharCount = (parent.anchorCharCount || 0 ) + anchor.charCount;
       parent = parent.parentElement;
     }
-  });
+  }
+};
 
-  // Extract anchor features. Based on charCount from text features
-  lucu.element.forEach(body.getElementsByTagName('a'), function deriveAnchorFeatures(anchor) {
-    var parent = anchor.parentElement;
+// Store id and class attribute values before attributes are removed
+lucu.calamine.deriveAttributeFeatures = function(element) {
+  var text = ((element.getAttribute('id') || '') + ' ' +
+    (element.getAttribute('class') || '')).trim().toLowerCase();
 
-    if(anchor.charCount && anchor.hasAttribute('href')) {
-      anchor.anchorCharCount = anchor.charCount;
+  if(text) {
+    element.attributeText = text;
+  }
+};
 
-      while(parent != body) {
-        parent.anchorCharCount = (parent.anchorCharCount || 0 ) + anchor.charCount;
-        parent = parent.parentElement;
-      }
-    }
-  });
+// Cache a count of siblings and a count of prior siblings
+lucu.calamine.deriveSiblingFeatures = function(element) {
 
-  // Store id and class attribute values before attributes are removed
-  lucu.element.forEach(body.getElementsByTagName('*'), function (element) {
-    var text = ((element.getAttribute('id') || '') + ' ' +
-      (element.getAttribute('class') || '')).trim().toLowerCase();
+  element.siblingCount = element.parentElement.childElementCount - 1;
+  element.previousSiblingCount = 0;
 
-    if(text) {
-      element.attributeText = text;
-    }
-  });
+  if(!element.siblingCount) {
+    return;
+  }
 
-  // Cache a count of siblings and a count of prior siblings
-  lucu.element.forEach(body.getElementsByTagName('*'), function(element) {
-    element.siblingCount = element.parentElement.childElementCount - 1;
-    element.previousSiblingCount = 0;
-    if(element.siblingCount) {
-      var sibling = element.previousElementSibling;
-      while(sibling) {
-        element.previousSiblingCount++;
-        sibling = sibling.previousElementSibling;
-      }
-    }
-  });
-}
+  // TODO: this could actually be improved by recognizing that
+  // this function is called in order over the elements at the
+  // same level. Therefore we could easily just check if there
+  // a previous sibling. If there is not, then we know the
+  // previous sibling count is 0. If there is, then we know the
+  // previousSiblingCount is just 1 + the previous
+  // previousSiblingCount
+
+  // One less inner loop would be nice.
+
+  var sibling = element.previousElementSibling;
+  while(sibling) {
+    element.previousSiblingCount++;
+    sibling = sibling.previousElementSibling;
+  }
+};

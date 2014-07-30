@@ -13,7 +13,7 @@ function calamineTransformDocument(doc, options) {
   var body = doc.body;
 
   lucu.calamine.preprocess(doc);
-  calamineExtractFeaturesInDocument(doc);
+  lucu.calamine.extractFeatures(doc);
 
   lucu.element.forEach(body.getElementsByTagName('*'), scoreElement);
   lucu.element.forEach(body.getElementsByTagName('*'), applySiblingBias);
