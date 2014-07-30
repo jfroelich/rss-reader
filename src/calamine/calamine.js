@@ -122,34 +122,28 @@ function calaminePreprocessDocument(doc) {
   // Filter comment nodes
   lucu.node.forEach(body, NodeFilter.SHOW_COMMENT, lucu.node.remove);
 
-  var allElements = doc.body.querySelectorAll('*');
-
   // Blacklist/whitelist filtering
+  var allElements = doc.body.querySelectorAll('*');
   lucu.element.forEach(allElements, lucu.calamine.filterByElementName);
 
+  // Image filtering
+  var imageElements = doc.body.querySelectorAll('img');
+  lucu.element.forEach(imageElements, lucu.calamine.filterImage);
+
+  // Unwrap noscript tags. This step must occur before filtering
+  // invisible elements in order to properly deal with the
+  // template-unhiding trick uses by many frameworks.
+  // NOTE: this causes boilerplate to appear in content, and needs
+  // improvement.
+  var noscripts = doc.body.querySelectorAll('noscript');
+  lucu.element.forEach(noscripts, lucu.element.unwrap);
+
+
   lucu.element.forEach(allElements, function(element) {
-
-    // Remove sourceless images
-    if(element.matches('img:not([src])')) {
-      return lucu.node.remove(element);
-    }
-
-    // Must occur before visibility checks to deal with
-    // template unhiding techniques
-    if(element.matches('noscript')) {
-      return lucu.element.unwrap(element);
-    }
 
     // Remove invisible elements
     if(lucu.element.isInvisible(element)) {
       return lucu.node.remove(element);
-    }
-
-    // Remove one-dimensional images
-    if(element.matches('img')) {
-      if(element.width === 1 || element.height === 1) {
-        return lucu.node.remove(element);
-      }
     }
   });
 
