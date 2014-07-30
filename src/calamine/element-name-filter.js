@@ -7,7 +7,12 @@
 var lucu = lucu || {};
 lucu.calamine = lucu.calamine || {};
 
+// TODO: move iframe from blacklist to whitelist once supported
+
 // Filters according to blacklist and whitelist
+// TODO: maybe this should be two queries that directly
+// use blacklist/whitelist selector to pull up elements
+
 lucu.calamine.filterByElementName = function(element) {
 
   // A defensive guard just because of oddities with removing
@@ -26,6 +31,10 @@ lucu.calamine.filterByElementName = function(element) {
     return;
   }
 };
+
+// TODO: separate these into multiple lines, use array.join
+// or something. A list with one thing per line in alphabetical
+// order will be much easier to maintain.
 
 lucu.calamine.SELECTOR_BLACKLIST = 'applet,base,basefont,button,'+
   'command,datalist,dialog,embed,fieldset,frame,frameset,'+
