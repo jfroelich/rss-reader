@@ -4,6 +4,9 @@
 
 'use strict';
 
+var lucu = lucu || {};
+lucu.image = {};
+
 /**
  * Set dimensions for image elements that are missing dimensions.
  *
@@ -11,11 +14,15 @@
  * TODO: srcset, picture (image families)
  * TODO: just accept an xhr instead of doc + baseURL?
  *
+ * TODO: does this function really belong in image module or
+ * somewhere else? I am not really happy with the current
+ * organization.
+ *
  * @param doc {HTMLDocument} an HTMLDocument object to inspect
  * @param baseURL {string} for resolving image urls
  * @param oncomplete {function}
  */
-function augmentImages(doc, baseURL, onComplete) {
+lucu.image.augmentDocument = function(doc, baseURL, onComplete) {
 
   var allBodyImages = doc.body.getElementsByTagName('img');
 
@@ -29,14 +36,14 @@ function augmentImages(doc, baseURL, onComplete) {
 
   if(baseURI) {
     resolvedImages = Array.prototype.map.call(allBodyImages,
-      resolveImageElement.bind(null, baseURI));
+      lucu.image.resolve.bind(null, baseURI));
   } else {
     resolvedImages = Array.prototype.slice.call(allBodyImages);
   }
 
   // Filter out data-uri images, images without src urls, and images
   // with dimensions, to obtain a subset of images that are augmentable
-  var loadableImages = resolvedImages.filter(isAugmentableImage);
+  var loadableImages = resolvedImages.filter(lucu.image.shouldUpdate);
 
   var numImagesToLoad = loadableImages.length;
 
@@ -47,17 +54,19 @@ function augmentImages(doc, baseURL, onComplete) {
   // NOTE: rather than using forEach and numImages check, see if there is some type
   // of async technique that empties a queue and calls onComplete when queue is empty
 
-  loadableImages.forEach(fetchAndSetImageDimensions.bind(null, dispatchIfComplete));
+  loadableImages.forEach(lucu.image.updateImageElement.bind(null, dispatchIfComplete));
+
+
+  // TODO: move this out of here
 
   function dispatchIfComplete() {
     if(--numImagesToLoad === 0) {
       onComplete(doc);
     }
   }
-}
+};
 
-
-function fetchAndSetImageDimensions(onComplete, remoteImage) {
+lucu.image.updateImageElement = function(onComplete, remoteImage) {
 
   // Nothing happens when changing the src property of an HTMLImageElement
   // that is located in a foreign Document context. Therefore we have to
@@ -74,6 +83,7 @@ function fetchAndSetImageDimensions(onComplete, remoteImage) {
   // the image or augment it.
   localImage.onerror = onComplete;
 
+  // TODO: move this nested function out of here
   localImage.onload = function() {
 
     // Modify the remote image properties according to
@@ -90,9 +100,9 @@ function fetchAndSetImageDimensions(onComplete, remoteImage) {
   var src = localImage.src;
   localImage.src = void src;
   localImage.src = src;
-}
+};
 
-function isAugmentableImage(imageElement) {
+lucu.image.shouldUpdate = function(imageElement) {
 
   if(imageElement.width) {
     return false;
@@ -125,15 +135,17 @@ function isAugmentableImage(imageElement) {
   // We have a fetchable image with unknown dimensions
   // that we can augment
   return true;
-}
-
+};
 
 /**
  * Returns the area of an image, in pixels. If the image's dimensions are
  * undefined, then returns undefined. If the image's dimensions are
  * greater than 800x600, then the area is clamped.
+ *
+ * TODO: does this function belong somewhere else, like in
+ * lucu.element?
  */
-function getImageArea(element) {
+lucu.image.getArea = function(element) {
   // TODO: use offsetWidth and offsetHeight instead?
   if(element.width && element.height) {
     var area = element.width * element.height;
@@ -150,8 +162,7 @@ function getImageArea(element) {
   }
 
   return 0;
-}
-
+};
 
 /**
  * Mutates an image element in place by changing its src property
@@ -159,7 +170,7 @@ function getImageArea(element) {
  *
  * NOTE: requires isDataURL from uri.js
  */
-function resolveImageElement(baseURI, imageElement) {
+lucu.image.resolve = function(baseURI, imageElement) {
 
   if(!baseURI) {
     return imageElement;
@@ -221,4 +232,4 @@ function resolveImageElement(baseURI, imageElement) {
   imageElement.setAttribute('src', resolvedURL);
 
   return imageElement;
-}
+};

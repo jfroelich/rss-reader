@@ -441,7 +441,7 @@ function scoreElement(element) {
       }
     }
 
-    var area = getImageArea(element);
+    var area = lucu.image.getArea(element);
     if(!isFinite(area)) {
       // The only way to do this synchronously is to have
       // the dimensions be explicitly set when fetched prior to calling transform.

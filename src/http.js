@@ -105,7 +105,7 @@ lucu.http.onGetHTML = function(onComplete, onError, shouldAugmentImages, event) 
 
   if(shouldAugmentImages) {
     // NOTE: this uses the post-redirect responseURL as the base url
-    return augmentImages(this.responseXML, this.responseURL, onComplete);
+    return lucu.image.augmentDocument(this.responseXML, this.responseURL, onComplete);
   }
 
   onComplete(this.responseXML);
