@@ -14,9 +14,9 @@ lucu.feed = lucu.feed || {};
  */
 lucu.feed.add = function(db, feed, oncomplete, onerror) {
 
-  console.debug('lucu.feed.add url %s', feed.url);
+  // console.debug('lucu.feed.add url %s', feed.url);
 
-  var cleanedFeed = sanitizeRemoteFeed(feed);
+  var cleanedFeed = lucu.feed.sanitize(feed);
 
   var storableFeed = {};
   storableFeed.url = feed.url;

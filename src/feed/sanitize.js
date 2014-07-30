@@ -4,42 +4,47 @@
 
 'use strict';
 
+var lucu = lucu || {};
+lucu.feed = lucu.feed || {};
+
 /**
- * Returns a sanitized version of a remote feed object.
- * The remoteFeed object is not modified. Only certain
+ * Returns a sanitized version of a feed object.
+ * The object is not modified. Only certain
  * properties are sanitized and included in the returned object
  * TODO: deal with html entities
  */
-function sanitizeRemoteFeed(remoteFeed) {
-  var output = {};
+lucu.feed.sanitize = function(dirtyFeed) {
+  var cleanFeed = {};
 
-  var title = sanitizeRemoteFeedProperty(remoteFeed.title);
+  var title = lucu.feed.sanitizeProp(dirtyFeed.title);
   if(title) {
-    output.title = title;
+    cleanFeed.title = title;
   }
 
-  var description = sanitizeRemoteFeedProperty(remoteFeed.description);
+  var description = lucu.feed.sanitizeProp(dirtyFeed.description);
   if(description) {
-    output.description = description;
+    cleanFeed.description = description;
   }
 
-  var link = sanitizeRemoteFeedProperty(remoteFeed.link);
+  var link = lucu.feed.sanitizeProp(dirtyFeed.link);
   if(link) {
-    output.link = link;
+    cleanFeed.link = link;
   }
 
-  if(remoteFeed.date) {
-    output.date = remoteFeed.date;
+  if(feed.date) {
+    cleanFeed.date = dirtyFeed.date;
   }
 
-  return output;
-}
+  return cleanFeed;
+};
 
 /**
  * TODO: should we replace HTML entities after
  * stripping tags? Some entities? All entities?
+ *
+ * TODO: does this function belong somewhere else?
  */
-function sanitizeRemoteFeedProperty(str) {
+lucu.feed.sanitizeProp = function(str) {
 
   if(!str) {
     return;
@@ -64,4 +69,4 @@ function sanitizeRemoteFeedProperty(str) {
   }
 
   return str;
-}
+};

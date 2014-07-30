@@ -17,7 +17,7 @@
  */
 function updateFeed(db, localFeed, remoteFeed, oncomplete) {
 
-  var cleanedFeed = sanitizeRemoteFeed(remoteFeed);
+  var cleanedFeed = lucu.feed.sanitize(remoteFeed);
 
   if(cleanedFeed.title) {
     localFeed.title = cleanedFeed.title;
