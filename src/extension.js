@@ -4,44 +4,54 @@
 
 'use strict';
 
+var lucu = lucu || {};
+lucu.extension = {};
+
 /**
  * Sets the badge text to a count of unread entries, which
  * may be the value of 0.
  */
-function updateBadge() {
-  lucu.database.open(onConnectCountUnreadToUpdateBadge);
-}
+lucu.extension.updateBadge = function() {
+  lucu.database.open(lucu.extension.countUnread);
+};
 
-function onConnectCountUnreadToUpdateBadge(db) {
+// Private helper
+lucu.extension.countUnread = function(db) {
   var transactionEntry = db.transaction('entry');
   var storeEntry = transactionEntry.objectStore('entry');
   var indexUnread = storeEntry.index('unread');
   var requestCount = indexUnread.count();
-  requestCount.onsuccess = onUnreadCountUpdateBadge;
-}
+  requestCount.onsuccess = lucu.extension.setBadgeText;
+};
 
-function onUnreadCountUpdateBadge() {
+// Private helper
+lucu.extension.setBadgeText = function() {
+
+  // Expects this instanceof IDBRequest
+
   // For the moment this intentionally does not set an upper bound
   // (if count > 999 then '999+' else count.tostring)
   var count = this.result || 0;
   chrome.browserAction.setBadgeText({text: count.toString()});
-}
+};
 
-function showNotification(message) {
+lucu.extension.showNotification = function(message) {
   chrome.permissions.contains({permissions: ['notifications']},
-    showNotificationIfPermitted.bind(null, message));
-}
+    lucu.extension.notifyIfPermitted.bind(null, message));
+};
 
-function showNotificationIfPermitted(message, permitted) {
+lucu.extension.notifyIfPermitted = function(message, permitted) {
   if(!permitted)
     return;
 
+  var noteId = 'honeybadger';
+  var cb = lucu.functionUtils.noop;
   var title = chrome.runtime.getManifest().name || 'Untitled';
 
-  chrome.notifications.create('honeybadger', {
-    type: 'basic',
-    title: title,
-    iconUrl: '/media/rss_icon_trans.gif',
-    message: message
-  }, lucu.functionUtils.noop);
-}
+  var note = {};
+  note.type = 'basic';
+  note.title = title;
+  note.iconUrl = '/media/rss_icon_trans.gif';
+  note.message = message;
+  chrome.notifications.create(noteId, note, cb);
+};

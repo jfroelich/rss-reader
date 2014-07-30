@@ -24,7 +24,7 @@ lucu.background.onMessage = function(message) {
 };
 
 lucu.background.updateBadge = function(message) {
-  updateBadge();
+  lucu.extension.updateBadge();
 };
 
 lucu.background.onImportCompleted = function(message) {
@@ -32,23 +32,23 @@ lucu.background.onImportCompleted = function(message) {
   notification += (message.feedsProcessed || 0) + ' feeds imported with ';
   notification += message.exceptions ? message.exceptions.length : 0;
   notification += ' error(s).';
-  showNotification(notification);
+  lucu.extension.showNotification(notification);
 };
 
 lucu.background.onSubscribe = function(message) {
-  updateBadge();
+  lucu.extension.updateBadge();
 
   if(message.feed) {
     var title = message.feed.title || message.feed.url;
-    showNotification('Subscribed to ' + title);
+    lucu.extension.showNotification('Subscribed to ' + title);
   }
 };
 
 lucu.background.onPollCompleted = function(message) {
-  updateBadge();
+  lucu.extension.updateBadge();
 
   if(message.entriesAdded) {
-    showNotification(message.entriesAdded + ' new articles added.');
+    lucu.extension.showNotification(message.entriesAdded + ' new articles added.');
   }
 };
 
@@ -146,7 +146,7 @@ lucu.background.onInstalled = function() {
   console.info('Installing %s', manifest.name);
 
   // This also triggers database creation
-  updateBadge();
+  lucu.extension.updateBadge();
 };
 
 // TODO: is there a way to avoid this being called every time
