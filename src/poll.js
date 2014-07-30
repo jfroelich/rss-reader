@@ -90,7 +90,7 @@ lucu.poll.start = function() {
 };
 
 lucu.poll.getAllFeeds = function(onComplete, db) {
-  getAllFeeds(db, onComplete);
+  lucu.feed.getAll(db, onComplete);
 };
 
 // Fetches and updates the local feed.

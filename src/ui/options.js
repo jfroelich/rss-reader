@@ -331,7 +331,7 @@ function startSubscription(url) {
   updateSubscriptionMonitor('Subscribing...');
 
   lucu.database.open(function(db) {
-    findFeedBySchemelessURL(db, url, function(existingFeed) {
+    lucu.feed.findBySchemelessURL(db, url, function(existingFeed) {
 
       if(existingFeed) {
         return hideSubsciptionMonitor(function() {
@@ -796,7 +796,7 @@ function initSubscriptionsSection() {
   var feedCount = 0;
   lucu.database.open(function(db) {
 
-    forEachFeed(db, function(feed) {
+    lucu.feed.forEach(db, function(feed) {
       feedCount++;
       optionsAppendFeed(feed);
       optionsUpdateFeedCount();

@@ -118,7 +118,7 @@ lucu.backup.exportOPMLString = function(onComplete) {
 
   // TODO: move this function out of here
   function onConnect(db) {
-    getAllFeeds(db, lucu.backup.serializeFeedsAsOPMLString.bind(null, onComplete));
+    lucu.feed.getAll(db, lucu.backup.serializeFeedsAsOPMLString.bind(null, onComplete));
   }
 };
 
