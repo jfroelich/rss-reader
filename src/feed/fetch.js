@@ -188,7 +188,7 @@ lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
 
   // TODO: move this function out
   function augmentEntry(entry) {
-    fetchHTMLDocument({
+    lucu.http.getHTML({
       augmentImageData: shouldAugmentImages,
       url: entry.link,
       onload: function(doc) {

@@ -4,6 +4,38 @@
 
 'use strict';
 
+/*
+NOTE: i am not sure this module is correct, where to package
+it, etc., but I am deferring that decision for now and
+just making this into a basic 'thing'.
+
+There are issues with the current approach. For example,
+images are fetched in other places, feeds are fetched
+in other places. So this module does not involve those,
+but it is named and organized like it does. Which is bad.
+I am intentionally ignoring this issue for now.
+
+NOTE: not sure that this should also be doing the image
+processing. maybe it should be the caller that does it.
+I think right now that only fetch.js even uses this
+so...
+
+NOTE: I am not sure that this module should even exist
+apart from fetch.js. maybe these are just fetch.js subroutines.
+After all, only fetch.js uses this. So maybe this whole
+module should be deprecated and split up into subroutines
+of fetch.js
+
+NOTE: i think the fact that there are so many parameters
+to this function (ignoring the wrapper parameter object)
+is a sign that it does too much.
+
+*/
+
+
+var lucu = lucu || {};
+lucu.http = {};
+
 /**
  * Fetches a webpage. Basically wraps an XMLHttpRequest.
  *
@@ -24,7 +56,6 @@
  * TODO: move image prefetching out of here to some type of caller, this should
  * only fetch
  *
- *
  * TODO: one of the problems with fetching images before scrubbing is that
  * tracker gifs are pinged by the image loader. think of how to avoid stupid
  * requests like that
@@ -39,21 +70,21 @@
  * @param {boolean} augmentImageData - if true, will pre-fetch images
  * and store dimensions as html attributes.
  */
-function fetchHTMLDocument(params) {
+lucu.http.getHTML = function(params) {
 
   var request = new XMLHttpRequest();
   request.timeout = params.timeout;
   request.ontimeout = params.onerror;
   request.onerror = params.onerror;
   request.onabort = params.onerror;
-  request.onload = onHTMLDocumentLoad.bind(request, params.onload,
-      params.onerror, params.augmentImageData);
+  request.onload = lucu.http.onGetHTML.bind(request, params.onload,
+    params.onerror, params.augmentImageData);
   request.open('GET', params.url, true);
   request.responseType = 'document';
   request.send();
-}
+};
 
-function onHTMLDocumentLoad(onComplete, onError, shouldAugmentImages, event) {
+lucu.http.onGetHTML = function(onComplete, onError, shouldAugmentImages, event) {
 
   var mime = lucu.mime.getType(this);
 
@@ -78,4 +109,4 @@ function onHTMLDocumentLoad(onComplete, onError, shouldAugmentImages, event) {
   }
 
   onComplete(this.responseXML);
-}
+};
