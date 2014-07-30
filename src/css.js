@@ -4,8 +4,11 @@
 
 'use strict';
 
+var lucu = lucu || {};
+lucu.css = {};
+
 //Finds first matching CSS rule by selectorText query.
-function findCSSRule(sheet, selectorText) {
+lucu.css.findRule = function(sheet, selectorText) {
 
   if(!sheet) {
     return;
@@ -23,4 +26,4 @@ function findCSSRule(sheet, selectorText) {
   if(matches.length) {
     return matches[0];
   }
-}
+};

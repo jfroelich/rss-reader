@@ -70,7 +70,7 @@ function applyEntryStylesOnChange() {
   // Assume a sheet is always available
   var sheet = document.styleSheets[0];
 
-  var entryRule = findCSSRule(sheet,'div.entry');
+  var entryRule = lucu.css.findRule(sheet,'div.entry');
   if(entryRule) {
     if(localStorage.BACKGROUND_IMAGE) {
       entryRule.style.backgroundColor = '';
@@ -84,7 +84,7 @@ function applyEntryStylesOnChange() {
     }
   }
 
-  var titleRule = findCSSRule(sheet,'div.entry a.entry-title');
+  var titleRule = lucu.css.findRule(sheet,'div.entry a.entry-title');
   if(titleRule) {
 
     // Workaround chrome bug
@@ -97,7 +97,7 @@ function applyEntryStylesOnChange() {
     titleRule.style.fontSize = (hfs / 10).toFixed(2) + 'em';
   }
 
-  var contentRule = findCSSRule(sheet, 'div.entry span.entry-content');
+  var contentRule = lucu.css.findRule(sheet, 'div.entry span.entry-content');
   if(contentRule) {
 
     // Workaround chrome bug
