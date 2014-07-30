@@ -6,7 +6,7 @@
 
 function onOptionsPageMessage(message) {
   if('displaySettingsChanged' == message.type) {
-    applyEntryStylesOnChange();
+    lucu.style.onChange();
   } else if('pollCompleted' == message.type) {
     // noop
   } else if('subscribe' == message.type) {
@@ -828,7 +828,7 @@ function initDisplaySettingsSection() {
 
   // Apply the dynamic CSS on load to set the article preview
   // area within the display settings section
-  applyEntryStylesOnLoad();
+  lucu.style.onLoad();
 
 
   var option = document.createElement('option');

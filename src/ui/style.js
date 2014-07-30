@@ -4,7 +4,13 @@
 
 'use strict';
 
-function applyEntryStylesOnChange() {
+// TODO: think of a better name for this
+// TODO: should it be lucu.ui.style?
+
+var lucu = lucu || {};
+lucu.style = {};
+
+lucu.style.onChange = function() {
 
   // Assume a sheet is always available
   var sheet = document.styleSheets[0];
@@ -51,9 +57,9 @@ function applyEntryStylesOnChange() {
     contentRule.style.textAlign = (localStorage.JUSTIFY_TEXT == '1') ? 'justify' : 'left';
     contentRule.style.lineHeight = localStorage.BODY_LINE_HEIGHT || 'normal';
   }
-}
+};
 
-function applyEntryStylesOnLoad() {
+lucu.style.onLoad = function() {
   var sheet = document.styleSheets[0];
 
   var s = '';
@@ -89,14 +95,12 @@ function applyEntryStylesOnLoad() {
   s += 'padding-right: 150px;';
   s += 'padding-bottom: 10px;';
 
-
   sheet.addRule('div.entry a.entry-title', s);
 
   // BUG FIX: the change to bfs uses s += '' so the above
   // props were being applied to the body. now we properly
   // set s to empty.
   s = '';
-
 
   var bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10) || 0;
 
@@ -126,4 +130,4 @@ function applyEntryStylesOnLoad() {
   // s += '-webkit-column-rule:1px outset #cccccc;';
 
   sheet.addRule('div.entry span.entry-content', s);
-}
+};
