@@ -6,15 +6,9 @@
 
 // Functions for sanitizing, removing boilerplate
 
-/**
- * Returns a DocumentFragment
- */
+// Returns a DocumentFragment
 function calamineTransformDocument(doc, options) {
   options = options || {};
-
-  // TODO: review gebtn, maybe i do not need to keep calling it?
-  // e.g. maybe i should just do a single querySelectorAll instead if its not-live?
-  // or is it better to re-call it to avoid read-after-delete issues?
 
   var body = doc.body;
 
@@ -75,9 +69,6 @@ function calamineTransformDocument(doc, options) {
       bestElement.style.border = '2px solid green';
     }
   }
-
-  // TODO: resolve relative href and src attributes
-  var SELECTOR_RESOLVABLE = 'a,applet,audio,embed,iframe,img,object,video';
 
   // Build and return the results
   var results = doc.createDocumentFragment();

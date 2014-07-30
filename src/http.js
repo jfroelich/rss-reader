@@ -96,6 +96,9 @@ lucu.http.onGetHTML = function(onComplete, onError, shouldAugmentImages, event) 
     return onError({type: 'invalid-document', target: this});
   }
 
+//  var SELECTOR_RESOLVABLE = 'a,applet,audio,embed,iframe,img,object,video';
+
+
   // NOTE: this uses the post-redirect url as the base url for anchors
 
   var baseURI = lucu.uri.parse(this.responseURL);

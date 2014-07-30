@@ -1,3 +1,6 @@
+// TODO: review gebtn, maybe i do not need to keep calling it?
+// e.g. maybe i should just do a single querySelectorAll instead if its not-live?
+// or is it better to re-call it to avoid read-after-delete issues?
 
 TODO: unwrap javascript: anchors
 
