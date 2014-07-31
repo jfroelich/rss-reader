@@ -17,9 +17,7 @@ lucu.calamine.transformDocument = function(doc, options) {
   options = options || {};
   this.preprocess(doc);
   this.extractFeatures(doc);
-
-  lucu.element.forEach(doc.body.getElementsByTagName('*'), scoreElement);
-  lucu.element.forEach(doc.body.getElementsByTagName('*'), applySiblingBias);
+  this.score(doc);
 
   // Remove attributes
   if(options.FILTER_ATTRIBUTES) {
