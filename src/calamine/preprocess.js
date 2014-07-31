@@ -41,7 +41,7 @@ lucu.calamine.preprocess = function(doc) {
   // BUGGY: in process of fixing
   // lucu.element.forEach(doc.body.querySelectorAll('br,hr'), calamineTransformRuleElement);
 
-  calamineTrimNodes(doc);
+  lucu.calamine.trimNodes(doc);
 
 
 
