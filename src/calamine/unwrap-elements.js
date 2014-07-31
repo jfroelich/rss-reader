@@ -7,17 +7,28 @@
 var lucu = lucu || {};
 lucu.calamine = lucu.calamine || {};
 
-lucu.calamine.unwrapElements = function(doc, bestElement, options) {
-  var SELECTOR_UNWRAPPABLE = 'a:not([href]),article,big,blink,'+
-    'body,center,details,div,font,form,help,html,insert,label,'+
-    'legend,nobr,noscript,section,small,span,tbody,thead';
+lucu.calamine.SELECTOR_UNWRAPPABLE = 'a:not([href]),article,big,blink,'+
+  'body,center,details,div,font,form,help,html,insert,label,'+
+  'legend,nobr,noscript,section,small,span,tbody,thead';
 
-  if(options.UNWRAP_UNWRAPPABLES) {
-    var unwrappableElements = doc.body.querySelectorAll(SELECTOR_UNWRAPPABLE);
-    lucu.element.forEach(unwrappableElements, function(element) {
-      if(element != bestElement) {
-        lucu.element.unwrap(element);
-      }
-    });
+lucu.calamine.unwrapElements = function(doc, bestElement, options) {
+
+  if(!options.UNWRAP_UNWRAPPABLES) {
+    return;
   }
+
+  var unwrappables = doc.body.querySelectorAll(lucu.calamine.SELECTOR_UNWRAPPABLE);
+  var notBest = lucu.calamine.isNotBestElement.bind(this, bestElement);
+  var lessBest = lucu.element.filter(unwrappables, notBest);
+  lessBest.forEach(lucu.element.unwrap);
+
+  //lucu.element.forEach(unwrappables, function(element) {
+  //  if(element != bestElement) {
+  //    lucu.element.unwrap(element);
+  //  }
+  //});
+};
+
+lucu.calamine.isNotBestElement = function(bestElement, element) {
+  return bestElement != element;
 };
