@@ -7,6 +7,9 @@
 var lucu = lucu || {};
 lucu.calamine = lucu.calamine || {};
 
+// TODO: maybe split this up into separate filters/transforms
+// and make the caller explicitly call each thing
+
 // Preps document for feature extraction and analysis
 lucu.calamine.preprocess = function(doc) {
 
@@ -14,7 +17,7 @@ lucu.calamine.preprocess = function(doc) {
   var forEach = Array.prototype.forEach;
 
   // Filter comment nodes
-  lucu.node.forEach(body, NodeFilter.SHOW_COMMENT, lucu.node.remove);
+  lucu.node.forEach(doc.body, NodeFilter.SHOW_COMMENT, lucu.node.remove);
 
   // Blacklist/whitelist filtering
   var allElements = doc.body.querySelectorAll('*');
@@ -70,7 +73,7 @@ lucu.calamine.preprocess = function(doc) {
   // kind of redundant since we already identified the children, so that
   // still might need improvement.
 
-  allElements = body.getElementsByTagName('*');
+  allElements = doc.body.getElementsByTagName('*');
   var emptyLikeElements = lucu.element.filter(allElements, function(element) {
     return !element.firstChild && !lucu.element.isLeafLike(element);
   });
@@ -84,7 +87,7 @@ lucu.calamine.preprocess = function(doc) {
     parentElement.removeChild(element);
     return parentElement;
   }).filter(function(element) {
-    return element != body;
+    return element != doc.body;
   });
 
   var parentElement, grandParentElement;
@@ -101,7 +104,7 @@ lucu.calamine.preprocess = function(doc) {
       grandParentElement = parentElement.parentElement;
       if(grandParentElement) {
         grandParentElement.removeChild(parentElement);
-        if(grandParentElement != body)
+        if(grandParentElement != doc.body)
           stack.push(grandParentElement);
       }
     }

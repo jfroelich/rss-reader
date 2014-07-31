@@ -7,9 +7,7 @@
 var lucu = lucu || {};
 lucu.calamine = lucu.calamine || {};
 
-// Functions for sanitizing, removing boilerplate
-
-// Returns a DocumentFragment
+// Returns a DocumentFragment with some boilerplate removed
 lucu.calamine.transformDocument = function(doc, options) {
 
   // Expects this instanceof lucu.calamine
