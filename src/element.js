@@ -117,6 +117,12 @@ lucu.element.getTextContent = function(element) {
  * common tactics like using display:none for progressive loading or SEO
  */
 lucu.element.isInvisible = function(element) {
+
+
+
+  // NOTE: element.offsetWidth < 1 || element.offsetHeight < 1; ??
+  // saw that somewhere, need to read up on offset props again
+
   return element.style.display == 'none' ||
       element.style.visibility == 'hidden' ||
       parseInt(element.style.opacity) === 0;
