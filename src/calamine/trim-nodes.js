@@ -35,7 +35,8 @@ lucu.calamine.trimNodes = function(doc) {
   // nodeValue is fully trimmed. Then, if the nodeValue is empty, remove the node.
   lucu.node.forEach(doc.body, NodeFilter.SHOW_TEXT, lucu.calamine.trimNode);
 
-  // TODO: cleanup the whitespaceImportant expando?
+  // TODO: cleanup the whitespaceImportant expando? Would that be something done
+  // here or elsewhere?
 };
 
 
@@ -59,12 +60,17 @@ lucu.calamine.trimNode = function(node) {
 
   // A node is either sandwiched between inline elements
   // or just preceding one or just trailing one
+  var isInline = lucu.element.isInline;
 
-  if(lucu.element.isInline(node.previousSibling)) {
-    if(!lucu.element.isInline(node.nextSibling)) {
+
+  // NOTE: are we actually just looking up the function
+  // to use here? like a factory?
+
+  if(isInline(node.previousSibling)) {
+    if(!isInline(node.nextSibling)) {
       node.nodeValue = node.nodeValue.trimRight();
     }
-  } else if(lucu.element.isInline(node.nextSibling)) {
+  } else if(isInline(node.nextSibling)) {
     node.nodeValue = node.nodeValue.trimLeft();
   } else {
     node.nodeValue = node.nodeValue.trim();
@@ -81,7 +87,8 @@ lucu.calamine.trimNode = function(node) {
   // reiterate.  Maybe something with map/filter would
   // work?
   // I just don't like the idea of having to do a
-  // second pass.
+  // second pass. I also don't like the intermediate
+  // data structure
 
   if(!node.nodeValue) {
     node.remove();
