@@ -18,11 +18,7 @@ lucu.calamine.transformDocument = function(doc, options) {
   this.preprocess(doc);
   this.extractFeatures(doc);
   this.score(doc);
-
-  // Remove attributes
-  if(options.FILTER_ATTRIBUTES) {
-    lucu.element.forEach(doc.body.getElementsByTagName('*'), calamineFilterElementAttributes);
-  }
+  this.filterAttributes(doc, options);
 
   doc.body.score = -Infinity;
   var bestElement = Array.prototype.reduce.call(doc.body.getElementsByTagName('*'), function(previous, current) {
