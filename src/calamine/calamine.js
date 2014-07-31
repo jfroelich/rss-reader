@@ -20,11 +20,7 @@ lucu.calamine.transformDocument = function(doc, options) {
   this.score(doc);
   this.filterAttributes(doc, options);
 
-  doc.body.score = -Infinity;
-  var bestElement = Array.prototype.reduce.call(doc.body.getElementsByTagName('*'), function(previous, current) {
-    // Favor previous, so use > not >=
-    return current.score > previous.score ? current : previous;
-  }, doc.body);
+  var bestElement = lucu.calamine.findBestElement(doc);
 
   var SELECTOR_UNWRAPPABLE = 'a:not([href]),article,big,blink,'+
     'body,center,details,div,font,form,help,html,insert,label,'+
