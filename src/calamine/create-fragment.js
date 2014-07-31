@@ -7,16 +7,23 @@
 var lucu = lucu || {};
 lucu.calamine = lucu.calamine || {};
 
+// TODO: think of a better name here. createFragment is maybe
+// too specific to the type of result to return, in the event this
+// is changed in the future.
+
 lucu.calamine.createFragment = function(doc, bestElement) {
-  // Build and return the results
+
   var results = doc.createDocumentFragment();
   if(bestElement == doc.body) {
 
-    // TODO: bind Node.prototype.appendChild instead here
+    // TODO: avoid using this nested function
+
     var forEach = Array.prototype.forEach;
-    forEach.call(doc.body.childNodes, function(element) {
-      results.appendChild(element);
-    });
+    var append = Node.prototype.appendChild.bind(element);
+    forEach.call(doc.body.childNodes, append);
+    //forEach.call(doc.body.childNodes, function(element) {
+    //  results.appendChild(element);
+    //});
   } else {
     results.appendChild(bestElement);
   }

@@ -7,7 +7,7 @@
 var lucu = lucu || {};
 lucu.calamine = lucu.calamine || {};
 
-// TODO: maybe split this up into separate filters/transforms
+// TODO: split this up into separate filters/transforms
 // and make the caller explicitly call each thing
 
 // Preps document for feature extraction and analysis
