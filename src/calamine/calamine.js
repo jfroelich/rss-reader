@@ -4,37 +4,40 @@
 
 'use strict';
 
+var lucu = lucu || {};
+lucu.calamine = lucu.calamine || {};
+
 // Functions for sanitizing, removing boilerplate
 
 // Returns a DocumentFragment
-function calamineTransformDocument(doc, options) {
+lucu.calamine.transformDocument = function(doc, options) {
+
+  // Expects this instanceof lucu.calamine
+
   options = options || {};
+  this.preprocess(doc);
+  this.extractFeatures(doc);
 
-  var body = doc.body;
-
-  lucu.calamine.preprocess(doc);
-  lucu.calamine.extractFeatures(doc);
-
-  lucu.element.forEach(body.getElementsByTagName('*'), scoreElement);
-  lucu.element.forEach(body.getElementsByTagName('*'), applySiblingBias);
+  lucu.element.forEach(doc.body.getElementsByTagName('*'), scoreElement);
+  lucu.element.forEach(doc.body.getElementsByTagName('*'), applySiblingBias);
 
   // Remove attributes
   if(options.FILTER_ATTRIBUTES) {
-    lucu.element.forEach(body.getElementsByTagName('*'), calamineFilterElementAttributes);
+    lucu.element.forEach(doc.body.getElementsByTagName('*'), calamineFilterElementAttributes);
   }
 
-  body.score = -Infinity;
-  var bestElement = Array.prototype.reduce.call(body.getElementsByTagName('*'), function(previous, current) {
+  doc.body.score = -Infinity;
+  var bestElement = Array.prototype.reduce.call(doc.body.getElementsByTagName('*'), function(previous, current) {
     // Favor previous, so use > not >=
     return current.score > previous.score ? current : previous;
-  }, body);
+  }, doc.body);
 
   var SELECTOR_UNWRAPPABLE = 'a:not([href]),article,big,blink,'+
     'body,center,details,div,font,form,help,html,insert,label,'+
     'legend,nobr,noscript,section,small,span,tbody,thead';
 
   if(options.UNWRAP_UNWRAPPABLES) {
-    var unwrappableElements = body.querySelectorAll(SELECTOR_UNWRAPPABLE);
+    var unwrappableElements = doc.body.querySelectorAll(SELECTOR_UNWRAPPABLE);
     lucu.element.forEach(unwrappableElements, function(element) {
       if(element != bestElement) {
         lucu.element.unwrap(element);
@@ -43,7 +46,7 @@ function calamineTransformDocument(doc, options) {
   }
 
   // Expose some attributes for debugging
-  lucu.element.forEach(body.getElementsByTagName('*'), function(element) {
+  lucu.element.forEach(doc.body.getElementsByTagName('*'), function(element) {
     options.SHOW_BRANCH && element.branch &&
       element.setAttribute('branch', element.branch);
     options.SHOW_ANCHOR_DENSITY && element.anchorDensity &&
@@ -72,15 +75,15 @@ function calamineTransformDocument(doc, options) {
 
   // Build and return the results
   var results = doc.createDocumentFragment();
-  if(bestElement == body) {
+  if(bestElement == doc.body) {
 
     // TODO: bind Node.prototype.appendChild instead here
     var forEach = Array.prototype.forEach;
-    forEach.call(body.childNodes, function(element) {
+    forEach.call(doc.body.childNodes, function(element) {
       results.appendChild(element);
     });
   } else {
     results.appendChild(bestElement);
   }
   return results;
-}
+};

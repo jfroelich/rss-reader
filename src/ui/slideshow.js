@@ -212,9 +212,8 @@ function appendSlide(entry, isFirst) {
 
   // TODO: all anchors should open in new window?
 
-
   var calamineOptions = { FILTER_ATTRIBUTES: true, UNWRAP_UNWRAPPABLES: true };
-  var results = calamineTransformDocument(doc, calamineOptions);
+  var results = lucu.calamine.transformDocument(doc, calamineOptions);
 
   Array.prototype.forEach.call(results.childNodes,
     HTMLElement.prototype.appendChild.bind(content));
