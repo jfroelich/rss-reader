@@ -7,6 +7,7 @@
 var lucu = lucu || {};
 lucu.calamine = lucu.calamine || {};
 
+// TODO: use array and join to make this more editable/readable
 lucu.calamine.SELECTOR_UNWRAPPABLE = 'a:not([href]),article,big,blink,'+
   'body,center,details,div,font,form,help,html,insert,label,'+
   'legend,nobr,noscript,section,small,span,tbody,thead';
@@ -21,12 +22,6 @@ lucu.calamine.unwrapElements = function(doc, bestElement, options) {
   var notBest = lucu.calamine.isNotBestElement.bind(this, bestElement);
   var lessBest = lucu.element.filter(unwrappables, notBest);
   lessBest.forEach(lucu.element.unwrap);
-
-  //lucu.element.forEach(unwrappables, function(element) {
-  //  if(element != bestElement) {
-  //    lucu.element.unwrap(element);
-  //  }
-  //});
 };
 
 lucu.calamine.isNotBestElement = function(bestElement, element) {
