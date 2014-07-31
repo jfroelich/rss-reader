@@ -9,6 +9,10 @@ lucu.calamine = lucu.calamine || {};
 
 lucu.calamine.score = function(doc) {
 
+  // This prepares the body element for later aggregation when
+  // using the find-best-element technique
+  doc.body.score = -Infinity;
+
   // Expects this instanceof lucu.calamine
 
   var elements = doc.body.getElementsByTagName('*');
