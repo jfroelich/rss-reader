@@ -22,18 +22,8 @@ lucu.calamine.transformDocument = function(doc, options) {
 
   var bestElement = lucu.calamine.findBestElement(doc);
 
-  var SELECTOR_UNWRAPPABLE = 'a:not([href]),article,big,blink,'+
-    'body,center,details,div,font,form,help,html,insert,label,'+
-    'legend,nobr,noscript,section,small,span,tbody,thead';
+  this.unwrapElements(doc, bestElement, options);
 
-  if(options.UNWRAP_UNWRAPPABLES) {
-    var unwrappableElements = doc.body.querySelectorAll(SELECTOR_UNWRAPPABLE);
-    lucu.element.forEach(unwrappableElements, function(element) {
-      if(element != bestElement) {
-        lucu.element.unwrap(element);
-      }
-    });
-  }
 
   // Expose some attributes for debugging
   lucu.element.forEach(doc.body.getElementsByTagName('*'), function(element) {
