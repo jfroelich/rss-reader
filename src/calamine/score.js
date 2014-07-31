@@ -20,6 +20,22 @@ lucu.calamine.score = function(doc) {
 
   lucu.element.forEach(elements, this.scoreElement.bind(this));
 
+  // NOTE: this next function must be separate (tentatively) because
+  // it is based on a ratio of neigboring scores, which mean the
+  // score must have settled, which is not done until the first
+  // pass completes. so we have to have a separate pass, or we
+  // have to redesign applySibBias a different way. I do want
+  // to think about how to do this. Like just use some
+  // constant score.
+
+  // I also want to redesign applySibBias so it is more 'online'
+  // in the sense that it only needs to react to the scores of
+  // elements preceding or above it in depth-first-search order.
+
+  // Once the above two tasks are tackled then the call to
+  // applySiblingBias can be done as a part of scoreElement in
+  // the first pass, making scoring a one pass approach
+
   // TODO: can i just reuse the previous? maybe
   // lucu.calamine.applySiblingBias would need null checks
   elements = doc.body.getElementsByTagName('*');
@@ -34,47 +50,16 @@ lucu.calamine.scoreElement = function(element) {
 
   // TODO: split up this giant function
 
-  var root = element.ownerDocument.body;
 
   element.score = element.score || 0;
 
   this.applyTextScore(element);
   this.applyImageScore(element);
-
   this.applyPositionScore(element);
-
   this.applyTagNameScore(element);
-
   this.applyAttributeScore(element);
-
-  element.score += -20 * (element.copyrightCount || 0);
-  element.score += -20 * (element.dotCount || 0);
-  element.score += -10 * (element.pipeCount || 0);
-
-
-  var forEach = Array.prototype.forEach;
-
-
-  var ANCESTOR_BIASES = {
-    nav:-20, div:1, header:-5, table:-2, ol:-5, ul:-5, li:-3,
-    dl:-5, p:10, blockquote:10, pre:10, code:10
-  };
-  var ancestorBias = ANCESTOR_BIASES[element.localName];
-  ancestorBias && forEach.call(element.getElementsByTagName('*'), function(childElement) {
-    childElement.score = (childElement.score || 0) + ancestorBias;
-  });
-
-  var DESCENDANT_BIASES = {
-    p:5, h1:1, h2:1, h3:1, h4:1, h5:1, h6:1, blockquote:3,
-    sub:2, sup:2, pre:2, code:2, time:2, span:1, i:1, em:1,
-    strong:1, b:1
-  };
-
-  var descendantBias = DESCENDANT_BIASES[element.localName];
-  if(descendantBias && element.parentElement != root) {
-    element.parentElement.score = (element.parentElement.score || 0) + descendantBias;
-  }
-
+  this.applyAncestorBiasScore(element);
+  this.applyDescendantBiasScore(element);
 };
 
 lucu.calamine.applyTextScore = function(element) {
@@ -86,6 +71,10 @@ lucu.calamine.applyTextScore = function(element) {
   if(lucu.element.isLeafLike(element)) {
     return;
   }
+
+  element.score += -20 * (element.copyrightCount || 0);
+  element.score += -20 * (element.dotCount || 0);
+  element.score += -10 * (element.pipeCount || 0);
 
   // Calculate anchor density and store it as an expando
   element.anchorDensity = element.anchorCharCount / element.charCount;
@@ -428,7 +417,7 @@ lucu.calamine.ID_CLASS_BIAS = {
 // Calc once
 lucu.calamine.ID_CLASS_KEYS = Object.keys(lucu.calamine.ID_CLASS_BIAS);
 
-// Calc once
+// Calc once. I prefer the anon function here since we are in glob scope
 lucu.calamine.ID_CLASS_VALUES = lucu.calamine.ID_CLASS_KEYS.map(function(key) {
   return lucu.calamine.ID_CLASS_BIAS[key];
 });
@@ -439,7 +428,8 @@ lucu.calamine.applyAttributeScore = function(element) {
     return;
   }
 
-  var summer = lucu.calamine.sumAttributeBiases.bind(this, element);
+  var text = element.attributeText;
+  var summer = lucu.calamine.sumAttributeBiases.bind(this, text);
 
   element.score += lucu.calamine.ID_CLASS_KEYS.reduce(summer, 0);
 
@@ -449,10 +439,85 @@ lucu.calamine.applyAttributeScore = function(element) {
   // this encroach on tag name bias though?
 };
 
-lucu.calamine.sumAttributeBiases = function(element, sum, key, index) {
+lucu.calamine.sumAttributeBiases = function(text, sum, key, index) {
 
-  return element.attributeText.indexOf(key) > -1 ?
-    sum + lucu.calamine.ID_CLASS_VALUES[index] : sum;
+  var containsKey = text.indexOf(key) > -1;
+  var delta = containsKey ? lucu.calamine.ID_CLASS_VALUES[index] : 0;
+  return sum + delta;
+};
+
+
+lucu.calamine.ANCESTOR_BIASES = {
+  blockquote:10,
+  code:10,
+  div:1,
+  dl:-5,
+  header:-5,
+  li:-3,
+  nav:-20,
+  ol:-5,
+  p:10,
+  pre:10,
+  table:-2,
+  ul:-5
+};
+
+lucu.calamine.applyAncestorBiasScore = function(element) {
+  var bias = lucu.calamine.ANCESTOR_BIASES[element.localName];
+
+  if(!bias) {
+    return;
+  }
+
+  var descendants = element.getElementsByTagName('*');
+  var update = lucu.calamine.updateDescendantWithAncestorBias.bind(this, bias);
+  lucu.element.forEach(descendants, update);
+};
+
+// Private helper
+lucu.calamine.updateDescendantWithAncestorBias = function(bias, element) {
+  element.score = (element.score || 0) + bias;
+};
+
+lucu.calamine.DESCENDANT_BIASES = {
+  b: 1,
+  blockquote: 3,
+  code: 2,
+  em: 1,
+  h1: 1,
+  h2: 1,
+  h3: 1,
+  h4: 1,
+  h5: 1,
+  h6: 1,
+  i: 1,
+  p: 5,
+  pre: 2,
+  span: 1,
+  strong: 1,
+  sub: 2,
+  sup: 2,
+  time: 2
+};
+
+lucu.calamine.applyDescendantBiasScore = function(element) {
+  var bias = lucu.calamine.DESCENDANT_BIASES[element.localName];
+
+  if(!bias) {
+    return;
+  }
+
+  var parent = element.parentElement;
+
+  if(!parent) {
+    return;
+  }
+
+  if(parent == element.ownerDocument.body) {
+    return;
+  }
+
+  parent.score = (parent.score || 0) + bias;
 };
 
 /**
@@ -471,6 +536,8 @@ lucu.calamine.sumAttributeBiases = function(element, sum, key, index) {
  * and deprecate this function. In my head I am thinking of an analogy
  * to something like a YACC lexer that avoids doing peek operations
  * (lookahead parsing). We want something more stream-oriented.
+ *
+ * Want an 'online' approach (not in the Internet sense)
  */
 lucu.calamine.applySiblingBias = function(element) {
   var elementBias = element.score > 0 ? 5 : -5;
