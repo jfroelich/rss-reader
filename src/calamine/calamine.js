@@ -21,17 +21,6 @@ lucu.calamine.transformDocument = function(doc, options) {
   this.unwrapElements(doc, bestElement, options);
   this.markupOutput(doc, bestElement, options);
 
-  // Build and return the results
-  var results = doc.createDocumentFragment();
-  if(bestElement == doc.body) {
-
-    // TODO: bind Node.prototype.appendChild instead here
-    var forEach = Array.prototype.forEach;
-    forEach.call(doc.body.childNodes, function(element) {
-      results.appendChild(element);
-    });
-  } else {
-    results.appendChild(bestElement);
-  }
-  return results;
+  var fragment = this.createFragment(doc, bestElement);
+  return fragment;
 };
