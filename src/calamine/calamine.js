@@ -13,7 +13,12 @@ lucu.calamine.transformDocument = function(doc, options) {
   // Expects this instanceof lucu.calamine
 
   options = options || {};
+
+  // Start the pipeline with filter transforms
+  this.filterComments(doc);
   this.preprocess(doc);
+
+
   this.extractFeatures(doc);
   this.score(doc);
   this.filterAttributes(doc, options);

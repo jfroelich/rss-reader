@@ -13,12 +13,6 @@ lucu.calamine = lucu.calamine || {};
 // Preps document for feature extraction and analysis
 lucu.calamine.preprocess = function(doc) {
 
-  var body = doc.body;
-  var forEach = Array.prototype.forEach;
-
-  // Filter comment nodes
-  lucu.node.forEach(doc.body, NodeFilter.SHOW_COMMENT, lucu.node.remove);
-
   // Blacklist/whitelist filtering
   var allElements = doc.body.querySelectorAll('*');
   lucu.element.forEach(allElements, lucu.calamine.filterByElementName);
