@@ -37,6 +37,12 @@ lucu.node.getValue = function(node) {
  * @param filter - an optional filter function to pass to createNodeIterator
  */
 lucu.node.forEach = function(element, type, func, filter) {
+
+  if(!func) {
+    console.warn('undefined func');
+    return;
+  }
+
   var ownerDocument = element.ownerDocument;
   var iterator = ownerDocument.createNodeIterator(element, type, filter);
   var node;
