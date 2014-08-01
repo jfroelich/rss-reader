@@ -103,9 +103,6 @@ lucu.style.onLoad = function() {
   s = '';
 
   var bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10) || 0;
-
-  // console.debug('Setting body font size to %s em', (bfs / 10).toFixed(2));
-
   s += 'font-size:' + (bfs / 10).toFixed(2) + 'em;';
 
   s += 'text-align: '+ ((localStorage.JUSTIFY_TEXT == '1') ? 'justify' : 'left')+';';
@@ -115,6 +112,14 @@ lucu.style.onLoad = function() {
   //s += 'letter-spacing: -0.03em;';
   //s += 'word-spacing: -0.5em;';
   s += 'display:block;';
+
+
+  // BUG: https://news.ycombinator.com/item?id=8123152
+  // Rendering this page it looks like very long strings were not broken
+  // so right margin was not present and due to overflow-x:none a bunch
+  // of content just disappeared off the right side. Need to force wrap.
+  // I forget exactly how I did that, look at the 'pre' style rule?
+
   s += 'word-wrap: break-word;';
 
   s += 'padding-top: 30px;';
