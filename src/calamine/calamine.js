@@ -22,7 +22,6 @@ lucu.calamine.transformDocument = function(doc, options) {
   // Side note: I suppose we could 'compose' the steps
   // like a giant reduce operation
 
-
   // Preprocessing operations
   this.filterComments(doc);
   this.filterElementsByName(doc);
@@ -30,6 +29,7 @@ lucu.calamine.transformDocument = function(doc, options) {
   this.transformNoscripts(doc);
   this.filterInvisibleElements(doc);
   this.transformBreaks(doc);
+  this.unwrapJavascriptAnchors(doc);
   this.trimNodes(doc);
   this.filterEmptyElements(doc);
 
@@ -39,7 +39,10 @@ lucu.calamine.transformDocument = function(doc, options) {
   this.deriveAttributeFeatures(doc);
   this.deriveSiblingFeatures(doc);
 
+  // Score
   this.score(doc);
+
+  // Post processing and best element identification
   this.filterAttributes(doc, options);
   var bestElement = this.findBestElement(doc);
   this.unwrapElements(doc, bestElement, options);
