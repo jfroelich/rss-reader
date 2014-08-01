@@ -11,18 +11,20 @@ lucu.calamine.transformBreaks = function(doc) {
 
   // Not yet implemented
   // BUGGY: in process of fixing
+  // NOTE: calamineTransformRuleElement no longer exists
   // lucu.element.forEach(doc.body.querySelectorAll('br,hr'), calamineTransformRuleElement);
 };
 
 
 // Trying to break apart break rule elements by block
 // UNDER DEVELOPMENT
-function calamineTestSplitBR(str) {
+lucu.calamine.testSplitBR = function(str) {
   if(!str) return;
 
   var doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = str;
 
+  // TODO: use the isInline function defined somewhere, do not redefine
   var isInline = function(element) {
     return element.matches('a,abbr,acronym,b,bdo,big,blink,cite,code,dfn,'+
       'em,kbd,i,q,samp,small,span,strong,sub,sup,tt,var');
@@ -69,4 +71,4 @@ function calamineTestSplitBR(str) {
 
   Array.prototype.forEach.call(doc.body.getElementsByTagName('br'), splitBlock);
   return doc.body.innerHTML;
-}
+};

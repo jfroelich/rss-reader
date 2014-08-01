@@ -34,11 +34,14 @@ lucu.calamine.transformDocument = function(doc, options) {
   this.filterEmptyElements(doc);
 
   // Feature extraction operations
-  this.extractFeatures(doc);
+  this.deriveTextFeatures(doc);
+  this.deriveAnchorFeatures(doc);
+  this.deriveAttributeFeatures(doc);
+  this.deriveSiblingFeatures(doc);
 
   this.score(doc);
   this.filterAttributes(doc, options);
-  var bestElement = lucu.calamine.findBestElement(doc);
+  var bestElement = this.findBestElement(doc);
   this.unwrapElements(doc, bestElement, options);
   this.markupOutput(doc, bestElement, options);
 

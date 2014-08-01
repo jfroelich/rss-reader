@@ -8,7 +8,10 @@ var lucu = lucu || {};
 lucu.calamine = lucu.calamine || {};
 
 // TODO: maybe rename this to something like transformWhitespace
-// or filterWhitespace
+// or filterWhitespace, or at least trimAndRemoveTextNodes
+
+// TODO: i am starting to think that node removal really does not
+// belong here, this should just be trimWhitespace
 
 lucu.calamine.trimNodes = function(doc) {
 
@@ -23,6 +26,10 @@ lucu.calamine.trimNodes = function(doc) {
   lucu.element.forEach(elements, lucu.calamine.cascadeWhitespaceImportant);
 
   // TODO: replace &nbsp; with space
+  // this transform should actually be its own explicit step. Along with transforms
+  // for other purposes. For example, when deriving text features, I am not always
+  // counting variations of the features. I think this should be called something
+  // like normalization or canonicalization
 
   // TODO: Replace &#160; and &nbsp; (and any other such entities) with space
   // before trimming
