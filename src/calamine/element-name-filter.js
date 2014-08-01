@@ -7,24 +7,31 @@
 var lucu = lucu || {};
 lucu.calamine = lucu.calamine || {};
 
-  // Blacklist/whitelist filtering
+// TODO: rename this file to filter-elements-by-name or something
+// similar to its main function, or something based on black/white
+// list filtering. It is equally appropriate to think of elements
+// as elements, and filter by element, as opposed to by name which
+// has more to do with the string tag name. We could easily
+// be filtering by instanceof for example.
+// TODO: move iframe from blacklist to whitelist once supported
+
+
+// Blacklist/whitelist filtering
 lucu.calamine.filterElementsByName = function(doc) {
-
-
 
   // TODO: maybe this should be two queries that directly
   // use blacklist/whitelist selector to pull up elements. It seems
   // kind of dumb to iterate over all elements and call element.matches
-  // but that is kinda wonky with whitelist, the selector would have
-  // to use CSS not() for every element?
+
+  // But ... that is kinda wonky with whitelist because the selector
+  // would have to use CSS not() for every element?
 
   var elements = doc.body.querySelectorAll('*');
   lucu.element.forEach(elements, lucu.calamine.filterByElementName);
 };
 
-// TODO: move iframe from blacklist to whitelist once supported
-// Filters according to blacklist and whitelist
 
+// Filters according to blacklist and whitelist
 lucu.calamine.filterByElementName = function(element) {
 
   // A defensive guard just because of oddities with removing
@@ -33,14 +40,24 @@ lucu.calamine.filterByElementName = function(element) {
     return;
   }
 
+  // NOTE: there is no real benefit to requiring lucu.node.remove
+  // when we have direct access to element.remove.
+  // Unless, of course, we change this so that we use
+  // the selectors to find the elements instead of iterating over
+  // all elements
+
   if(element.matches(lucu.calamine.SELECTOR_BLACKLIST)) {
-    lucu.node.remove(element);
+    element.remove();
+    //lucu.node.remove(element);
     return;
   }
 
   if(!element.matches(lucu.calamine.SELECTOR_WHITELIST)) {
-    lucu.node.remove(element);
-    return;
+
+    console.debug('Removing element not in white list %s', element.outerHTML);
+
+    element.remove();
+    //lucu.node.remove(element);
   }
 };
 
@@ -54,11 +71,13 @@ lucu.calamine.SELECTOR_BLACKLIST = 'applet,base,basefont,button,'+
   'object,option,optgroup,output,param,script,select,style,'+
   'title,textarea';
 
+// NOTE: this must include 'form', even though we unwrap it later
+
 lucu.calamine.SELECTOR_WHITELIST = 'a,abbr,acronym,address,area,'+
   'article,aside,audio,b,bdi,bdo,big,br,blockquote,'+
   'canvas,caption,center,cite,code,col,colgroup,'+
   'command,data,details,dir,dd,del,dfn,div,dl,dt,em,'+
-  'entry,fieldset,figcaption,figure,font,footer,header,'+
+  'entry,fieldset,figcaption,figure,font,footer,form,header,'+
   'help,hgroup,hr,h1,h2,h3,h4,h5,h6,i,img,ins,insert,'+
   'inset,label,li,kbd,main,mark,map,meter,nav,nobr,'+
   'noscript,ol,p,pre,progress,q,rp,rt,ruby,s,samp,section,'+
