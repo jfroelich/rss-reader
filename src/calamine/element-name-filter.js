@@ -27,37 +27,32 @@ lucu.calamine.filterElementsByName = function(doc) {
   // would have to use CSS not() for every element?
 
   var elements = doc.body.querySelectorAll('*');
-  lucu.element.forEach(elements, lucu.calamine.filterByElementName);
+
+  var filter = lucu.calamine.removeIfBlacklistedOrNotInWhitelist.bind(this, doc);
+
+  lucu.element.forEach(elements, filter);
 };
 
-
+// TODO: think of a better name
 // Filters according to blacklist and whitelist
-lucu.calamine.filterByElementName = function(element) {
-
-
-  // TODO: this is re-removing elements that were already detached
-  // because those elements are included in the querySelectorAll
-  // nodelist despite the parent of the element being removed
-  // Find out how to quickly tell if an element is already detached
-  // and if so how to skip it. Maybe it has to do with how we are
-  // iterating, in that maybe treewalker/nodeiterator would be smart
-  // to skip the children of removing elements
-
-
-
+lucu.calamine.removeIfBlacklistedOrNotInWhitelist = function(doc, element) {
 
   // A defensive guard just because of oddities with removing
   // while iterating (e.g. querySelectorAll vs getElementsByTagName)
+  // NOTE: currently this is dead
   if(!element) {
+    console.warn('removeIfBlacklistedOrNotInWhitelist somehow called on undefined element');
     return;
   }
 
-  // NOTE: there is no real benefit to requiring lucu.node.remove
-  // when we have direct access to element.remove.
-  // Unless, of course, we change this so that we use
-  // the selectors to find the elements instead of iterating over
-  // all elements
-
+  // Using querySelectorAll results in visiting nodes that lie within a
+  // detached axis. I cannot find a way to express the intent not do to this
+  // (perhaps with TreeWalker/NodeIterator?). This check prevents
+  // detaching detached elements
+  if(!doc.contains(element)) {
+    // console.debug('Document does not contain %s', element.outerHTML);
+    return;
+  }
 
   // NOTE: matches works differently for namespaced elements. It turns out that
   // in my previous approach where I was using localName, I was catching these
@@ -65,24 +60,21 @@ lucu.calamine.filterByElementName = function(element) {
   // such all namespaced elements (e.g. g:plusone) fall through to the whitelist
   // test (and then fail it and are effectively removed).
 
+  // NOTE: expects element to be in an inert context
+
   if(element.matches(lucu.calamine.SELECTOR_BLACKLIST)) {
     element.remove();
     return;
   }
 
   if(!element.matches(lucu.calamine.SELECTOR_WHITELIST)) {
-
-    console.debug('Removing element not in white list %s', element.outerHTML);
-
+    // console.debug('Removing element not in white list %s', element.outerHTML);
     element.remove();
 
   }
 };
 
-// TODO: separate these into multiple lines, use array.join
-// or something. A list with one thing per line in alphabetical
-// order will be much easier to maintain.
-
+// TODO: separate this into multiple lines
 lucu.calamine.SELECTOR_BLACKLIST = 'applet,base,basefont,button,'+
   'command,datalist,dialog,embed,fieldset,frame,frameset,'+
   'html,head,iframe,input,legend,link,math,meta,noframes,'+
@@ -92,103 +84,123 @@ lucu.calamine.SELECTOR_BLACKLIST = 'applet,base,basefont,button,'+
 // NOTE: this must include 'form', even though we unwrap it later
 
 lucu.calamine.SELECTOR_WHITELIST =
-'a,'+
-'abbr,'+
-'acronym,'+
-'address,'+
-'area,'+
-'article,'+
-'aside,'+
-'audio,'+
-'b,'+
-'bdi,'+
-'bdo,'+
-'big,'+
-'br,'+
-'blockquote,'+
-'canvas,'+
-'caption,'+
-'center,'+
-'cite,'+
-'code,'+
-'col,'+
-'colgroup,'+
-'command,'+
-'data,'+
-'details,'+
-'dir,'+
-'dd,'+
-'del,'+
-'dfn,'+
-'div,'+
-'dl,'+
-'dt,'+
-'em,'+
-'entry,'+
-'fieldset,'+
-'figcaption,'+
-'figure,'+
-'font,'+
-'footer,'+
-'form,'+
-'header,'+
-'help,'+
-'hgroup,'+
-'hr,'+
-'h1,'+
-'h2,'+
-'h3,'+
-'h4,'+
-'h5,'+
-'h6,'+
-'i,'+
-'img,'+
-'ins,'+
-'insert,'+
-'inset,'+
-'label,'+
-'li,'+
-'kbd,'+
-'main,'+
-'mark,'+
-'map,'+
-'meter,'+
-'nav,'+
-'nobr,'+
-'noscript,'+
-'ol,'+
-'p,'+
-'pre,'+
-'progress,'+
-'q,'+
-'rect,'+
-'rp,'+
-'rt,'+
-'ruby,'+
-'s,'+
-'samp,'+
-'section,'+
-'small,'+
-'span,'+
-'strike,'+
-'strong,'+
-'st1,'+
-'sub,'+
-'summary,'+
-'sup,'+
-'svg,'+
-'table,'+
-'tbody,'+
-'td,'+
-'tfood,'+
-'th,'+
-'thead,'+
-'time,'+
-'tr,'+
-'track,'+
-'tt,'+
-'u,'+
-'ul,'+
-'var,'+
-'video,'+
-'wbr';
+  'a,'+
+  'abbr,'+
+  'acronym,'+
+  'address,'+
+  'area,'+
+  'article,'+
+  'aside,'+
+  'audio,'+
+  'b,'+
+  'bdi,'+
+  'bdo,'+
+  'big,'+
+  'br,'+
+  'blockquote,'+
+  'canvas,'+
+  'caption,'+
+  'center,'+
+  'cite,'+
+  'code,'+
+  'col,'+
+  'colgroup,'+
+  'command,'+
+  'data,'+
+  'details,'+
+  'dir,'+
+  'dd,'+
+  'del,'+
+  'dfn,'+
+  'div,'+
+  'dl,'+
+  'dt,'+
+  'em,'+
+  'entry,'+
+  'fieldset,'+
+  'figcaption,'+
+  'figure,'+
+  'font,'+
+  'footer,'+
+  'form,'+
+  'header,'+
+  'help,'+
+  'hgroup,'+
+  'hr,'+
+  'h1,'+
+  'h2,'+
+  'h3,'+
+  'h4,'+
+  'h5,'+
+  'h6,'+
+  'i,'+
+  'img,'+
+  'ins,'+
+  'insert,'+
+  'inset,'+
+  'label,'+
+  'li,'+
+  'kbd,'+
+  'main,'+
+  'mark,'+
+  'map,'+
+  'menu,'+
+  'menuitem,'+
+  'meter,'+
+  'nav,'+
+  'nobr,'+
+  'noscript,'+
+  'ol,'+
+  'p,'+
+  'pre,'+
+  'progress,'+
+  'q,'+
+  'rect,'+
+  'rp,'+
+  'rt,'+
+  'ruby,'+
+  's,'+
+  'samp,'+
+  'section,'+
+  'small,'+
+  'span,'+
+  'strike,'+
+  'strong,'+
+  'st1,'+
+  'sub,'+
+  'summary,'+
+  'sup,'+
+  'svg,'+
+  'table,'+
+  'tbody,'+
+  'td,'+
+  'tfood,'+
+  'th,'+
+  'thead,'+
+  'time,'+
+  'tr,'+
+  'track,'+
+  'tt,'+
+  'u,'+
+  'ul,'+
+  'var,'+
+  'video,'+
+  'wbr';
+
+/*
+https://developer.mozilla.org/en-US/docs/Web/HTML/Element
+https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/HTML5/HTML5_element_list
+
+NOTE: is st1 a real element?
+
+Elements seen in the wild:
+include - saw this, I suppose it is a custom element?
+g:plusone
+l:script
+fb:login-button
+fb:like
+
+
+The bigger issue is that I cannot support custom elements using a
+whitelist approach.
+*/
