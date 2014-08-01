@@ -1,0 +1,36 @@
+Misc thoughts on block weighting vs element hierarchy scoring
+
+
+
+TODO: refactor to use block generation. Group list items together. Group
+dds together, etc.
+TODO: refactor to use block weighting. The return signature is simply
+those blocks above a minimum threshold, which could be based on a
+percentage of blocks to return value. But this time use the element
+weighting technique. Consider treating divs as inline and using
+only certain block parents (e.g. look for ul/ol/p/img/iframe as the only
+allowable block segments).
+
+TODO: do not necessarily exclude textnodes that are immediate children of body.
+All top level text should probably be converted to paragraphs before scoring.
+
+TODO: include other proximate or high scoring elements outside of the
+best element, then rescan and filter out any extreme boilerplate
+such as certain lists or ads. When building the frag, consider removing
+each element from the original body such that each successive search for
+another element does not have perform intersection tests.
+
+TODO: the more I think about the above, the more I think I should go
+back to blocks, but this time add in
+hierarchical weighting. The crux of the problem then becomes how
+pick the blocks to return. I would have to incorporate some better
+all blocks in this element type of biasing that promotes blocks like
+they do now, but also get rid of upward propagation.
+
+NOTE: this wouldn't simplify the BR transform
+
+NOTE: The fundamental problem is that I am not obtaining "all" of the desired
+elements from the age because sometimes they are not all in the same block.
+And when I do get the parent element right, sometimes I still end up
+getting alot of nested boilerplate. At that point I would need to filter
+the boilerplate, at which point I am nearly back to block score.

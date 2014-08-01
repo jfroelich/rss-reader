@@ -1,0 +1,34 @@
+
+Explore alternatives to expandos. There are reported
+issues, warnings against extending native host objects, performance warnings against
+shape changes, etc.
+
+1) create a single custom object per element during feature extraction. store all
+custom properties in this single custom object. Then, when all is said and done,
+use delete node.customObjectName on all nodes, and then produce the results. This
+ensures, even if it is not a problem, that no added references remain, so there is
+no risk of keeping around unwanted references later
+2) do not store any custom properties in the nodes. Separately store a set of properties
+that contains references to nodes, like a big wrapper. Then just nullify or not return to
+let the references be eventually gced. jquery accomplishes this by giving element a
+GUID, then using the GUID to map between the element object and its cached reference
+in a corresponding wrapper object. Gross.
+3) Use attributes. This would not work. We need properties for text nodes, which are
+not elements, and thus do not have attributes. Also, attributes are strings, and we
+want to use numbers and booleans and other primitives, leading to alot of unecessary
+type coercion.
+4) Use data-* attirbutes. This again would not work, for all the same reasons as #3.
+5) use several custom properties. make sure not to create references to elements, only
+use separate primitive-like values (although those may turn into objects depending on how
+they are used, like true.toString()).make sure to cleanup? cleanup may not even be
+necessary. really it depends on underestanding how chrome deals with non-native properties
+of elements. one concern is that chrome may not even provide in-memory objects for nodes
+until those nodes are accessed, and by setting custom properties, it flags that the node has
+to remain in mem, which means that by setting any one custom property on a node, it make
+it persist in mem. the second concern is the dereferencing, whether the custom property
+can be a contributing factor in preventing GC after the node is detached from the DOM.
+
+According to http://canjs.com/docco/node_lists.html, trying to set an expando on a
+node in certain browsers causes an exception
+Good explanation of the basic leaks:
+http://www.javascriptkit.com/javatutors/closuresleak/index3.shtml
