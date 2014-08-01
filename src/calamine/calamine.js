@@ -14,12 +14,28 @@ lucu.calamine.transformDocument = function(doc, options) {
 
   options = options || {};
 
-  // Start the pipeline with filter transforms
+  // This function works by treating the DOM of the input
+  // document like a dataset that is the source of a stream,
+  // or 'data pipeline'. Each of the following functions are
+  // basically pipes in the pipeline, passing along the
+  // modified document.
+  // Side note: I suppose we could 'compose' the steps
+  // like a giant reduce operation
+
+
+  // Preprocessing operations
   this.filterComments(doc);
-  this.preprocess(doc);
+  this.filterElementsByName(doc);
+  this.filterImages(doc);
+  this.transformNoscripts(doc);
+  this.filterInvisibleElements(doc);
+  this.transformBreaks(doc);
+  this.trimNodes(doc);
+  this.filterEmptyElements(doc);
 
-
+  // Feature extraction operations
   this.extractFeatures(doc);
+
   this.score(doc);
   this.filterAttributes(doc, options);
   var bestElement = lucu.calamine.findBestElement(doc);
@@ -27,5 +43,9 @@ lucu.calamine.transformDocument = function(doc, options) {
   this.markupOutput(doc, bestElement, options);
 
   var fragment = this.createFragment(doc, bestElement);
+
+  // TODO: consider cleaning up the expando properties
+  // before returning the fragment?
+
   return fragment;
 };

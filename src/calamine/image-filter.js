@@ -7,6 +7,11 @@
 var lucu = lucu || {};
 lucu.calamine = lucu.calamine || {};
 
+lucu.calamine.filterImages = function(doc) {
+  var images = doc.body.querySelectorAll('img');
+  lucu.element.forEach(images, lucu.calamine.filterImage);
+};
+
 lucu.calamine.filterImage = function(image) {
 
   // I'd prefer not to do this check but it just removes the concern

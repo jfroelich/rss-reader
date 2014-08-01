@@ -7,11 +7,23 @@
 var lucu = lucu || {};
 lucu.calamine = lucu.calamine || {};
 
-// TODO: move iframe from blacklist to whitelist once supported
+  // Blacklist/whitelist filtering
+lucu.calamine.filterElementsByName = function(doc) {
 
+
+
+  // TODO: maybe this should be two queries that directly
+  // use blacklist/whitelist selector to pull up elements. It seems
+  // kind of dumb to iterate over all elements and call element.matches
+  // but that is kinda wonky with whitelist, the selector would have
+  // to use CSS not() for every element?
+
+  var elements = doc.body.querySelectorAll('*');
+  lucu.element.forEach(elements, lucu.calamine.filterByElementName);
+};
+
+// TODO: move iframe from blacklist to whitelist once supported
 // Filters according to blacklist and whitelist
-// TODO: maybe this should be two queries that directly
-// use blacklist/whitelist selector to pull up elements
 
 lucu.calamine.filterByElementName = function(element) {
 

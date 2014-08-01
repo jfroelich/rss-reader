@@ -7,41 +7,9 @@
 var lucu = lucu || {};
 lucu.calamine = lucu.calamine || {};
 
-// TODO: split this up into separate filters/transforms
-// and make the caller explicitly call each thing
+// TODO: This needs a lot of cleanup
 
-// Preps document for feature extraction and analysis
-lucu.calamine.preprocess = function(doc) {
-
-  // Blacklist/whitelist filtering
-  var allElements = doc.body.querySelectorAll('*');
-  lucu.element.forEach(allElements, lucu.calamine.filterByElementName);
-
-  // Image filtering
-  var imageElements = doc.body.querySelectorAll('img');
-  lucu.element.forEach(imageElements, lucu.calamine.filterImage);
-
-  // Unwrap noscript tags. This step must occur before filtering
-  // invisible elements in order to properly deal with the
-  // template-unhiding trick uses by many frameworks.
-  // NOTE: this causes boilerplate to appear in content, and needs
-  // improvement.
-  var noscripts = doc.body.querySelectorAll('noscript');
-  lucu.element.forEach(noscripts, lucu.element.unwrap);
-
-  // Remove invisible elements
-  var invisibles = lucu.element.filter(allElements,
-    lucu.element.isInvisible);
-  invisibles.forEach(lucu.node.remove);
-
-
-  // BUGGY: in process of fixing
-  // lucu.element.forEach(doc.body.querySelectorAll('br,hr'), calamineTransformRuleElement);
-
-  lucu.calamine.trimNodes(doc);
-
-
-
+lucu.calamine.filterEmptyElements = function(doc) {
 
   // Now remove all empty-like elements from the document. If removing
   // an element would change the state of the element's parent to also
@@ -67,7 +35,7 @@ lucu.calamine.preprocess = function(doc) {
   // kind of redundant since we already identified the children, so that
   // still might need improvement.
 
-  allElements = doc.body.getElementsByTagName('*');
+  var allElements = doc.body.getElementsByTagName('*');
   var emptyLikeElements = lucu.element.filter(allElements, function(element) {
     return !element.firstChild && !lucu.element.isLeafLike(element);
   });

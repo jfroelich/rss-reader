@@ -4,6 +4,16 @@
 
 'use strict';
 
+var lucu = lucu || {};
+lucu.calamine = lucu.calamine || {};
+
+lucu.calamine.transformBreaks = function(doc) {
+
+  // Not yet implemented
+  // BUGGY: in process of fixing
+  // lucu.element.forEach(doc.body.querySelectorAll('br,hr'), calamineTransformRuleElement);
+};
+
 
 // Trying to break apart break rule elements by block
 // UNDER DEVELOPMENT

@@ -87,7 +87,7 @@ lucu.element.getTextOrAttribute = function(rootElement, selectors, attribute) {
   }
 
   // NOTE: using a raw loop because nothing in the native iteration API
-  // fits because of the need to use side effects and the need short
+  // fits because of the need to use side effects and the need to short
   // circuit
 
   for(var i = 0, temp; i < selectors.length; i++) {
@@ -109,23 +109,6 @@ lucu.element.getAttribute = function(attribute, element) {
 
 lucu.element.getTextContent = function(element) {
   return element.textContent;
-};
-
-/**
- * Returns true if an element is invisible according to our own very
- * simplified definition of visibility. We are really only going after some
- * common tactics like using display:none for progressive loading or SEO
- */
-lucu.element.isInvisible = function(element) {
-
-
-
-  // NOTE: element.offsetWidth < 1 || element.offsetHeight < 1; ??
-  // saw that somewhere, need to read up on offset props again
-
-  return element.style.display == 'none' ||
-      element.style.visibility == 'hidden' ||
-      parseInt(element.style.opacity) === 0;
 };
 
 /**
