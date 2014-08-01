@@ -34,6 +34,18 @@ lucu.calamine.filterElementsByName = function(doc) {
 // Filters according to blacklist and whitelist
 lucu.calamine.filterByElementName = function(element) {
 
+
+  // TODO: this is re-removing elements that were already detached
+  // because those elements are included in the querySelectorAll
+  // nodelist despite the parent of the element being removed
+  // Find out how to quickly tell if an element is already detached
+  // and if so how to skip it. Maybe it has to do with how we are
+  // iterating, in that maybe treewalker/nodeiterator would be smart
+  // to skip the children of removing elements
+
+
+
+
   // A defensive guard just because of oddities with removing
   // while iterating (e.g. querySelectorAll vs getElementsByTagName)
   if(!element) {
@@ -81,6 +93,6 @@ lucu.calamine.SELECTOR_WHITELIST = 'a,abbr,acronym,address,area,'+
   'help,hgroup,hr,h1,h2,h3,h4,h5,h6,i,img,ins,insert,'+
   'inset,label,li,kbd,main,mark,map,meter,nav,nobr,'+
   'noscript,ol,p,pre,progress,q,rp,rt,ruby,s,samp,section,'+
-  'small,span,strike,strong,st1,sub,summary,sup,vg,table,'+
+  'small,span,strike,strong,st1,sub,summary,sup,svg,table,'+
   'tbody,td,tfood,th,thead,time,tr,track,tt,u,ul,var,video,'+
   'wbr';
