@@ -58,9 +58,15 @@ lucu.calamine.filterByElementName = function(element) {
   // the selectors to find the elements instead of iterating over
   // all elements
 
+
+  // NOTE: matches works differently for namespaced elements. It turns out that
+  // in my previous approach where I was using localName, I was catching these
+  // ignoring the namespace by using localName. But this no longer works. As
+  // such all namespaced elements (e.g. g:plusone) fall through to the whitelist
+  // test (and then fail it and are effectively removed).
+
   if(element.matches(lucu.calamine.SELECTOR_BLACKLIST)) {
     element.remove();
-    //lucu.node.remove(element);
     return;
   }
 
@@ -69,7 +75,7 @@ lucu.calamine.filterByElementName = function(element) {
     console.debug('Removing element not in white list %s', element.outerHTML);
 
     element.remove();
-    //lucu.node.remove(element);
+
   }
 };
 
@@ -85,14 +91,104 @@ lucu.calamine.SELECTOR_BLACKLIST = 'applet,base,basefont,button,'+
 
 // NOTE: this must include 'form', even though we unwrap it later
 
-lucu.calamine.SELECTOR_WHITELIST = 'a,abbr,acronym,address,area,'+
-  'article,aside,audio,b,bdi,bdo,big,br,blockquote,'+
-  'canvas,caption,center,cite,code,col,colgroup,'+
-  'command,data,details,dir,dd,del,dfn,div,dl,dt,em,'+
-  'entry,fieldset,figcaption,figure,font,footer,form,header,'+
-  'help,hgroup,hr,h1,h2,h3,h4,h5,h6,i,img,ins,insert,'+
-  'inset,label,li,kbd,main,mark,map,meter,nav,nobr,'+
-  'noscript,ol,p,pre,progress,q,rp,rt,ruby,s,samp,section,'+
-  'small,span,strike,strong,st1,sub,summary,sup,svg,table,'+
-  'tbody,td,tfood,th,thead,time,tr,track,tt,u,ul,var,video,'+
-  'wbr';
+lucu.calamine.SELECTOR_WHITELIST =
+'a,'+
+'abbr,'+
+'acronym,'+
+'address,'+
+'area,'+
+'article,'+
+'aside,'+
+'audio,'+
+'b,'+
+'bdi,'+
+'bdo,'+
+'big,'+
+'br,'+
+'blockquote,'+
+'canvas,'+
+'caption,'+
+'center,'+
+'cite,'+
+'code,'+
+'col,'+
+'colgroup,'+
+'command,'+
+'data,'+
+'details,'+
+'dir,'+
+'dd,'+
+'del,'+
+'dfn,'+
+'div,'+
+'dl,'+
+'dt,'+
+'em,'+
+'entry,'+
+'fieldset,'+
+'figcaption,'+
+'figure,'+
+'font,'+
+'footer,'+
+'form,'+
+'header,'+
+'help,'+
+'hgroup,'+
+'hr,'+
+'h1,'+
+'h2,'+
+'h3,'+
+'h4,'+
+'h5,'+
+'h6,'+
+'i,'+
+'img,'+
+'ins,'+
+'insert,'+
+'inset,'+
+'label,'+
+'li,'+
+'kbd,'+
+'main,'+
+'mark,'+
+'map,'+
+'meter,'+
+'nav,'+
+'nobr,'+
+'noscript,'+
+'ol,'+
+'p,'+
+'pre,'+
+'progress,'+
+'q,'+
+'rect,'+
+'rp,'+
+'rt,'+
+'ruby,'+
+'s,'+
+'samp,'+
+'section,'+
+'small,'+
+'span,'+
+'strike,'+
+'strong,'+
+'st1,'+
+'sub,'+
+'summary,'+
+'sup,'+
+'svg,'+
+'table,'+
+'tbody,'+
+'td,'+
+'tfood,'+
+'th,'+
+'thead,'+
+'time,'+
+'tr,'+
+'track,'+
+'tt,'+
+'u,'+
+'ul,'+
+'var,'+
+'video,'+
+'wbr';
