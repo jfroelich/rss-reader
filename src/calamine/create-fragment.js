@@ -14,16 +14,11 @@ lucu.calamine = lucu.calamine || {};
 lucu.calamine.createFragment = function(doc, bestElement) {
 
   var results = doc.createDocumentFragment();
+  var forEach = Array.prototype.forEach;
+  var append = Node.prototype.appendChild.bind(element);
+
   if(bestElement == doc.body) {
-
-    // TODO: avoid using this nested function
-
-    var forEach = Array.prototype.forEach;
-    var append = Node.prototype.appendChild.bind(element);
     forEach.call(doc.body.childNodes, append);
-    //forEach.call(doc.body.childNodes, function(element) {
-    //  results.appendChild(element);
-    //});
   } else {
     results.appendChild(bestElement);
   }
