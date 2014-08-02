@@ -696,6 +696,11 @@ function onBodyFontSizeChange(event) {
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
 }
 
+function onEntryMarginChange(event) {
+  localStorage.ENTRY_MARGIN = parseInt(event.target.value) || 1;
+  chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
+}
+
 function onBackgroundImageChange(event) {
   if(event.target.value)
     localStorage.BACKGROUND_IMAGE = event.target.value;
@@ -886,6 +891,9 @@ function initDisplaySettingsSection() {
       delete localStorage.ENTRY_BACKGROUND_COLOR;
     chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
   };
+
+  document.getElementById('entry-margin').value = parseInt(localStorage.ENTRY_MARGIN) || '1';
+  document.getElementById('entry-margin').onchange = onEntryMarginChange;
 
   document.getElementById('header-font-size').value = parseInt(localStorage.HEADER_FONT_SIZE) || '1';
   document.getElementById('header-font-size').onchange = onHeaderFontSizeChange;

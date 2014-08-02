@@ -27,6 +27,11 @@ lucu.style.onChange = function() {
       entryRule.style.backgroundColor = '';
       entryRule.style.backgroundImage = '';
     }
+
+    var entryMargin = parseInt(localStorage.ENTRY_MARGIN) || 5;
+    console.log('Setting padding left right to %spx', entryMargin);
+    entryRule.style.paddingLeft = entryMargin + 'px';
+    entryRule.style.paddingRight = entryMargin + 'px';
   }
 
   var titleRule = lucu.css.findRule(sheet,'div.entry a.entry-title');
@@ -38,7 +43,7 @@ lucu.style.onChange = function() {
     titleRule.style.fontFamily = localStorage.HEADER_FONT_FAMILY;
 
     var hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
-    console.debug('Setting header font size to %s', (hfs / 10).toFixed(2));
+    //console.debug('Setting header font size to %s', (hfs / 10).toFixed(2));
     titleRule.style.fontSize = (hfs / 10).toFixed(2) + 'em';
   }
 
@@ -51,7 +56,7 @@ lucu.style.onChange = function() {
     contentRule.style.fontFamily = localStorage.BODY_FONT_FAMILY || 'initial';
 
     var bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10) || 0;
-    console.debug('Setting body font size to %s', (bfs / 10).toFixed(2));
+    //console.debug('Setting body font size to %s', (bfs / 10).toFixed(2));
     contentRule.style.fontSize = (bfs / 10).toFixed(2) + 'em';
 
     contentRule.style.textAlign = (localStorage.JUSTIFY_TEXT == '1') ? 'justify' : 'left';
@@ -71,11 +76,17 @@ lucu.style.onLoad = function() {
 
   s += 'margin-left: 0px;margin-right: 0px; margin-bottom: 0px; margin-top:0px;';
   s += 'padding-top: 12px;';
-  s += 'padding-left:12px;';
-  s += 'padding-right:12px;';
-  //s += 'padding-bottom:160px;';
   s += 'padding-bottom:20px;';
+
+  var entryMargin = parseInt(localStorage.ENTRY_MARGIN) || 5;
+
+  s += 'padding-left: '+entryMargin+'px;';
+  s += 'padding-right: '+entryMargin+'px;';
+
   sheet.addRule('div.entry',s);
+
+
+
 
   var hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
   s += 'font-size:' + (hfs / 10).toFixed(2) + 'em;';
@@ -91,8 +102,8 @@ lucu.style.onLoad = function() {
   s += 'text-shadow: 1px 1px 2px #cccccc;';
   s += 'text-transform: capitalize;';
   s += 'padding-top: 20px;';
-  s += 'padding-left: 150px;';
-  s += 'padding-right: 150px;';
+  s += 'padding-left: 0px;';
+  s += 'padding-right: 0px;';
   s += 'padding-bottom: 10px;';
 
   sheet.addRule('div.entry a.entry-title', s);
@@ -123,8 +134,8 @@ lucu.style.onLoad = function() {
   s += 'word-wrap: break-word;';
 
   s += 'padding-top: 30px;';
-  s += 'padding-right: 150px;';
-  s += 'padding-left: 150px;';
+  s += 'padding-right: 0px;';
+  s += 'padding-left: 0px;';
   s += 'padding-bottom: 20px;';
 
   s += 'margin: 0px;';
