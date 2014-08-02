@@ -696,6 +696,11 @@ function onBodyFontSizeChange(event) {
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
 }
 
+function onBodyLineHeightChange(event) {
+  localStorage.BODY_LINE_HEIGHT = event.target.value || '10';
+  chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
+}
+
 function onEntryMarginChange(event) {
   localStorage.ENTRY_MARGIN = parseInt(event.target.value) || 10;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
@@ -901,17 +906,10 @@ function initDisplaySettingsSection() {
   document.getElementById('body-font-size').onchange = onBodyFontSizeChange;
   document.getElementById('justify-text').checked = (localStorage.JUSTIFY_TEXT == '1') ? true : false;
   document.getElementById('justify-text').onchange = onJustifyChange;
-  document.getElementById('body-line-height').value = localStorage.BODY_LINE_HEIGHT || '';
-  document.getElementById('body-line-height').oninput = function(event) {
-    clearTimeout(inputChangedTimer);
-    inputChangedTimer = setTimeout(function() {
-      if(event.target.value)
-        localStorage.BODY_LINE_HEIGHT = event.target.value;
-      else
-        delete localStorage.BODY_LINE_HEIGHT;
-      chrome.runtime.sendMessage({'type':'displaySettingsChanged'});
-    }, inputChangedDelay);
-  };
+
+  var bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
+  document.getElementById('body-line-height').value = (bodyLineHeight / 10).toFixed(2);
+  document.getElementById('body-line-height').oninput = onBodyLineHeightChange;
 }
 
 function initContentFiltersSection() {

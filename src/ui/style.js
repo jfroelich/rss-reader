@@ -60,7 +60,9 @@ lucu.style.onChange = function() {
     contentRule.style.fontSize = (bfs / 10).toFixed(2) + 'em';
 
     contentRule.style.textAlign = (localStorage.JUSTIFY_TEXT == '1') ? 'justify' : 'left';
-    contentRule.style.lineHeight = localStorage.BODY_LINE_HEIGHT || 'normal';
+
+    var bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
+    contentRule.style.lineHeight = (bodyLineHeight / 10).toFixed(2);
   }
 };
 
@@ -124,10 +126,10 @@ lucu.style.onLoad = function() {
     s += 'font-family:' + localStorage.BODY_FONT_FAMILY + ';';
   }
 
-  var bodyLineHeight = localStorage.BODY_LINE_HEIGHT;
+  var bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
   if(bodyLineHeight) {
     // TODO: units?
-    s += 'line-height:' + localStorage.BODY_LINE_HEIGHT + ';';
+    s += 'line-height:' + (localStorage.BODY_LINE_HEIGHT / 10).toFixed(2) + ';';
   }
 
   s += 'vertical-align: text-top;';

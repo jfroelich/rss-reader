@@ -1,6 +1,6 @@
 html {
-	margin:0px;
-	padding:0px;
+	margin: 0px;
+	padding: 0px;
 }
 
 body {
@@ -9,41 +9,39 @@ body {
 }
 
 #f-it {
-	position:absolute;
-	width:100%;
-	border-spacing:0px;
-	height:100%;
+	position: absolute;
+	width: 100%;
+	border-spacing: 0px;
+	height: 100%;
 }
 
 #section-layout-container {
-	vertical-align:top;
-	padding-left:6px;
-	border-left:2px solid #efefef;
-	padding-right:10px;
+	vertical-align: top;
+	padding-left: 6px;
+	border-left: 2px solid #efefef;
+	padding-right: 10px;
 }
 
 .options_section {
-	margin-top:0px;
-	margin-left:1px;
+	margin-top: 0px;
+	margin-left: 1px;
 	padding-top: 10px;
-	padding-left:0px;
+	padding-left: 0px;
 }
 
 form {
-	padding:0px;
-	margin:0px;
+	padding: 0px;
+	margin: 0px;
 }
 
 .option-text {
-	font-size:90%;
 	font-family: 'Segoe UI', Tahoma, sans-serif;
 }
 
 h1 {
 	color: rgb(48, 57, 66);
 	margin-top: 0px;
-	font-size:130%;
-	font-weight:normal;
+	font-weight: 400;
 	font-family: 'Segoe UI', Tahoma, sans-serif;
 	padding-bottom: 8px;
 	border-bottom: 1px solid #cccccc;
@@ -52,8 +50,7 @@ h1 {
 h2 {
 	color: rgb(48, 57, 66);
 	margin-top: 0px;
-	font-size:110%;
-	font-weight:normal;
+	font-weight: 400;
 	font-family: 'Segoe UI', Tahoma, sans-serif;
 	padding-bottom: 8px;
 	border-bottom: 1px solid #cccccc;
@@ -101,6 +98,7 @@ h2 {
 /***************************** NAVIGATION **********************************/
 
 td#nav-cell-container {
+  font-size: 130%;
 	width:180px;
 	margin:0px;
 	padding:0px;
@@ -128,7 +126,7 @@ ul#navigation-menu li {
 	-webkit-padding-start: 10px;
 	-webkit-user-select: none;
 	cursor: pointer;
-	line-height: 1.8em;
+	line-height: 2em;
 }
 
 ul#navigation-menu li.navigation-item-selected {
@@ -147,7 +145,6 @@ ul#navigation-menu li.navigation-item-selected {
 #subscribe-discover-query {
 	width:500px;
 }
-
 
 #subscription-preview {
 	display:none;
@@ -182,7 +179,6 @@ ul#navigation-menu li.navigation-item-selected {
 	padding-bottom:2px;
 	border-bottom:1px dotted #efefef;
 }
-
 
 #discover-no-results {
 	display:none;
@@ -238,7 +234,6 @@ ul#navigation-menu li.navigation-item-selected {
 
 /***************************** GENERAL SETTINGS **********************************/
 
-
 #section-general-settings {
     display:none;
 }
@@ -252,7 +247,6 @@ ul#navigation-menu li.navigation-item-selected {
 
 #general-settings-table td {
     padding: 5px;
-
 }
 
 /***************************** SUBSCRIPTIONS **********************************/
@@ -296,7 +290,6 @@ ul#navigation-menu li.navigation-item-selected {
 	display: none;
 }
 
-
 /***************************** FEED DETAILS **********************************/
 
 #section-feed-details {
@@ -310,7 +303,6 @@ ul#navigation-menu li.navigation-item-selected {
 
 #feed-details-table td {
   padding:10px;
-
 }
 
 /***************************** EMBED POLICY **********************************/
@@ -347,9 +339,7 @@ ul#navigation-menu li.navigation-item-selected {
 	float:right;
 }
 
-
 /***************************** CONTENT FILTERS **********************************/
-
 
 #section-content-filters {
 	display:none;
@@ -386,7 +376,6 @@ ul#navigation-menu li.navigation-item-selected {
 
 #raw-content-viewer {
 	border:3px solid maroon;
-
 }
 
 #filtered-content-viewer {
@@ -424,7 +413,6 @@ ul#navigation-menu li.navigation-item-selected {
 #content-filters-list li button {
   float:right;
 }
-
 
 /***************************** IMPORT-EXPORT **********************************/
 
