@@ -39,6 +39,9 @@ lucu.feed = lucu.feed || {};
  * TODO: responseURL contains the redirected URL. Need to update the url
  * when that happens.
  *
+ * TODO: this is always going to augment entries and images. these
+ * do not need to be parameters
+ *
  * @param params {object} an object literal that should contain props:
  * - url the remote url of the feed to fetch
  * - oncomplete - a callback to call when the feed is fetched, that is passed
@@ -72,6 +75,9 @@ lucu.feed.fetch = function(params) {
 
   // NOTE: still getting this error. It is like onLine is not returning
   // false when offline.
+
+  // NOTE: should this be the caller's responsibility? It seems kind of
+  // strange to be able to call a 'fetch' operation while offline
 
   if(!navigator.onLine) {
     return onerror({type: 'offline', url: url});
@@ -120,7 +126,6 @@ lucu.feed.onFetch = function(onComplete, onError, shouldAugmentEntries,
   }
 
   return onError({type: 'invalid-content-type', target: this});
-
 };
 
 lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
@@ -159,23 +164,19 @@ lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
     return onComplete(feed);
   }
 
-  var onOpenAugment = lucu.feed.onDatabaseOpenAugmentEntries.bind(
-    this, fetchableEntries, entryTimeout, shouldAugmentImages,
-    dispatchIfComplete);
+  var augmentContext = {};
+  augmentContext.numEntriesToProcess = numEntriesToProcess;
+  augmentContext.feed = feed;
+  augmentContext.entries = fetchableEntries;
+  augmentContext.timeout = entryTimeout;
+  augmentContext.augmentImages = shouldAugmentImages;
+  augmentContext.onComplete = onComplete;
 
+  var onOpenAugment = lucu.feed.onDatabaseOpenAugmentEntries.bind(augmentContext);
   lucu.database.open(onOpenAugment);
-
-  // TODO: this can be moved into onDatabaseOpenAugmentEntries
-  function dispatchIfComplete() {
-    numEntriesToProcess -= 1;
-    if(numEntriesToProcess == 0) {
-      onComplete(feed);
-    }
-  }
 };
 
-lucu.feed.onDatabaseOpenAugmentEntries = function(entries, timeout,
-  augmentImages, onEntryProcessed, db) {
+lucu.feed.onDatabaseOpenAugmentEntries = function(db) {
 
   // console.debug('lucu.feed.onDatabaseOpenAugmentEntries processing %s entries', entries.length);
 
@@ -184,8 +185,10 @@ lucu.feed.onDatabaseOpenAugmentEntries = function(entries, timeout,
   // We have some urls to fetch. But we don't want to fetch
   // for entries that are already stored in the local cache.
 
+  var self = this;
+
   // TODO: move this function out
-  entries.forEach(function(entry) {
+  this.entries.forEach(function(entry) {
 
     // TODO: this lookup check should be per feed, not across all entries,
     // otherwise if two feeds link to the same article, only the first gets
@@ -196,16 +199,25 @@ lucu.feed.onDatabaseOpenAugmentEntries = function(entries, timeout,
     lucu.entry.findByLink(db, entry.link, function(existingEntry) {
 
       if(existingEntry) {
-        onEntryProcessed();
+        dispatchIfComplete();
         return;
       }
 
-      var replace = lucu.feed.replaceEntryContent.bind(this,
-        entry, onEntryProcessed);
-      lucu.feed.fetchHTML(entry.link, timeout,
-        augmentImages, replace, onEntryProcessed);
+      var replace = lucu.feed.replaceEntryContent.bind(null,
+        entry, dispatchIfComplete);
+      lucu.feed.fetchHTML(entry.link, self.timeout,
+        self.augmentImages, replace, dispatchIfComplete);
     });
   });
+
+  // TODO: this can be moved into onDatabaseOpenAugmentEntries
+
+  function dispatchIfComplete() {
+    self.numEntriesToProcess -= 1;
+    if(self.numEntriesToProcess == 0) {
+      self.onComplete(self.feed);
+    }
+  }
 };
 
 lucu.feed.replaceEntryContent = function(entry, onComplete, doc) {
@@ -254,7 +266,7 @@ lucu.feed.replaceEntryContent = function(entry, onComplete, doc) {
  */
 lucu.feed.fetchHTML = function(url, timeout, augmentImages, onComplete, onError) {
 
-  console.debug('fetchHTML %s', url);
+  // console.debug('fetchHTML %s', url);
 
   var request = new XMLHttpRequest();
   request.timeout = timeout;
