@@ -59,12 +59,17 @@ lucu.anchor.resolve = function(baseURI, anchorElement) {
   // probable url resolution bug javacsript:void(0)
   // actually, note in the above examle, it is a misspell. So what should
   // we be doing in this edge case?
+  // another misspell: javscript:void(0)
   if(/^\s*javascript:/i.test(sourceURL)) {
     return;
   }
 
   // TODO: is '-' allowed here or is it part of regex syntax?
   if(/^\s*github-windows:/i.test(sourceURL)) {
+    return;
+  }
+
+  if(/^\s*whatsapp:/i.test(sourceURL)) {
     return;
   }
 
