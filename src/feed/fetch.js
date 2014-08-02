@@ -160,58 +160,63 @@ lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
     return onComplete(feed);
   }
 
-  // The following needs revision and just outright better design
-  // We have some urls to fetch. But we don't want to fetch
-  // for entries that are already stored in the local cache. It would
-  // be nice to do things like retry later fetching.
-  // TODO: this lookup check should be per feed, not across all entries,
-  // otherwise if two feeds link to the same article, only the first gets
-  // augmented. need to use something like findEntryByFeedIdAndLinkURL
-  // that uses a composite index
+  var onOpenAugment = lucu.feed.onDatabaseOpenAugmentEntries.bind(
+    this, fetchableEntries, entryTimeout, shouldAugmentImages,
+    dispatchIfComplete);
 
+  lucu.database.open(onOpenAugment);
 
-  // TODO: move this function out
-  lucu.database.open(function(db) {
-    // TODO: move this function out
-    fetchableEntries.forEach(function(entry) {
-
-      // TODO: move this function out
-      lucu.entry.findByLink(db, entry.link, function(existingEntry) {
-        if(existingEntry) {
-          dispatchIfComplete();
-        } else {
-          augmentEntry(entry);
-        }
-      });
-    });
-  });
-
-  // TODO: move this function out
-  function augmentEntry(entry) {
-    lucu.feed.fetchHTML({
-      augmentImageData: shouldAugmentImages,
-      url: entry.link,
-      onload: function(doc) {
-        var html = doc.body.innerHTML;
-        if(html)
-          entry.content = html;
-        dispatchIfComplete();
-      },
-      onerror: function(error) {
-        console.debug('augmentEntry error %o', error);
-        dispatchIfComplete();
-      },
-      timeout: entryTimeout
-    });
-  }
-
+  // TODO: this can be moved into onDatabaseOpenAugmentEntries
   function dispatchIfComplete() {
-    if(--numEntriesToProcess == 0) {
+    numEntriesToProcess -= 1;
+    if(numEntriesToProcess == 0) {
       onComplete(feed);
     }
   }
 };
 
+lucu.feed.onDatabaseOpenAugmentEntries = function(entries, timeout,
+  augmentImages, onEntryProcessed, db) {
+
+  // console.debug('lucu.feed.onDatabaseOpenAugmentEntries processing %s entries', entries.length);
+
+  // TODO: support retry after fetch?
+
+  // We have some urls to fetch. But we don't want to fetch
+  // for entries that are already stored in the local cache.
+
+  // TODO: move this function out
+  entries.forEach(function(entry) {
+
+    // TODO: this lookup check should be per feed, not across all entries,
+    // otherwise if two feeds link to the same article, only the first gets
+    // augmented. need to use something like findEntryByFeedIdAndLinkURL
+    // that uses a composite index
+    // TODO: move this function out
+    // console.debug('Calling findByLink %s', entry.link);
+    lucu.entry.findByLink(db, entry.link, function(existingEntry) {
+
+      if(existingEntry) {
+        onEntryProcessed();
+        return;
+      }
+
+      var replace = lucu.feed.replaceEntryContent.bind(this,
+        entry, onEntryProcessed);
+      lucu.feed.fetchHTML(entry.link, timeout,
+        augmentImages, replace, onEntryProcessed);
+    });
+  });
+};
+
+lucu.feed.replaceEntryContent = function(entry, onComplete, doc) {
+  var html = doc.body.innerHTML;
+  if(html) {
+    entry.content = html;
+  }
+
+  onComplete();
+};
 
 
 /**
@@ -248,21 +253,23 @@ lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
  * @param {boolean} augmentImageData - if true, will pre-fetch images
  * and store dimensions as html attributes.
  */
-lucu.feed.fetchHTML = function(params) {
+lucu.feed.fetchHTML = function(url, timeout, augmentImages, onComplete, onError) {
+
+  console.debug('fetchHTML %s', url);
 
   var request = new XMLHttpRequest();
-  request.timeout = params.timeout;
-  request.ontimeout = params.onerror;
-  request.onerror = params.onerror;
-  request.onabort = params.onerror;
-  request.onload = lucu.feed.onFetchHTML.bind(request, params.onload,
-    params.onerror, params.augmentImageData);
-  request.open('GET', params.url, true);
+  request.timeout = timeout;
+  request.ontimeout = onError;
+  request.onerror = onError;
+  request.onabort = onError;
+  request.onload = lucu.feed.onFetchHTML.bind(request, onComplete,
+    onError, augmentImages);
+  request.open('GET', url, true);
   request.responseType = 'document';
   request.send();
 };
 
-lucu.feed.onFetchHTML = function(onComplete, onError, shouldAugmentImages, event) {
+lucu.feed.onFetchHTML = function(onComplete, onError, augmentImages, event) {
 
   var mime = lucu.mime.getType(this);
 
@@ -285,12 +292,12 @@ lucu.feed.onFetchHTML = function(onComplete, onError, shouldAugmentImages, event
 
   var baseURI = lucu.uri.parse(this.responseURL);
   var anchors = this.responseXML.body.querySelectorAll('a');
-  var resolveAnchor = lucu.anchor.resolve.bind(null, baseURI);
+  var resolveAnchor = lucu.anchor.resolve.bind(this, baseURI);
   lucu.element.forEach(anchors, resolveAnchor);
 
   // TODO: the caller should be responsible for choosing this followup
   // process. This should not be controlling the flow here
-  if(shouldAugmentImages) {
+  if(augmentImages) {
     // NOTE: this uses the post-redirect responseURL as the base url
     return lucu.image.augmentDocument(this.responseXML, this.responseURL, onComplete);
   }
