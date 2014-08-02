@@ -188,7 +188,7 @@ lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
 
   // TODO: move this function out
   function augmentEntry(entry) {
-    lucu.http.getHTML({
+    lucu.feed.fetchHTML({
       augmentImageData: shouldAugmentImages,
       url: entry.link,
       onload: function(doc) {
@@ -210,4 +210,90 @@ lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
       onComplete(feed);
     }
   }
+};
+
+
+
+/**
+ * Fetches a webpage. Basically wraps an XMLHttpRequest.
+ *
+ * TODO: should we notify the callback of responseURL (is it
+ * the url after redirects or is it the same url passed in?). i think
+ * the onload callback should also receive responseURL. maybe onerror
+ * should also receive responseURL if it is defined. that way the caller
+ * can choose to also replace the original url
+ * TODO: consider support for a fallback to plaintext
+ * and recharacterizing this as fetchHTMLOrPlaintextDocument or something.
+ * TODO: could this pass the xhr along instead of HTMLDocument? it works in
+ * the normal case because caller ust accesses responseXML, but what about
+ * if we provide the plaintext fallback?
+ * TODO: consider an option to embed iframe content
+ * TODO: consider an option to auto-sandboxing iframes
+ * TODO: use overrideMimeType instead of the content type check?
+ * TODO: check for 404 and other status messages and handle those separately?
+ * TODO: move image prefetching out of here to some type of caller, this should
+ * only fetch
+ *
+ * TODO: one of the problems with fetching images before scrubbing is that
+ * tracker gifs are pinged by the image loader. think of how to avoid stupid
+ * requests like that
+ *
+ * Params is object with following properties
+ * @param {string} url - the url to fetch
+ * @param {function} onload - callback when completed without errors,
+ * passed HTMLDocument object as only parameter
+ * @param {function} onerror - callback when an error occurs that
+ * prevents completion, such as abort, timeout, missing body tag, wrong content type
+ * @param {integer} timeout - optional, ms
+ * @param {boolean} augmentImageData - if true, will pre-fetch images
+ * and store dimensions as html attributes.
+ */
+lucu.feed.fetchHTML = function(params) {
+
+  var request = new XMLHttpRequest();
+  request.timeout = params.timeout;
+  request.ontimeout = params.onerror;
+  request.onerror = params.onerror;
+  request.onabort = params.onerror;
+  request.onload = lucu.feed.onFetchHTML.bind(request, params.onload,
+    params.onerror, params.augmentImageData);
+  request.open('GET', params.url, true);
+  request.responseType = 'document';
+  request.send();
+};
+
+lucu.feed.onFetchHTML = function(onComplete, onError, shouldAugmentImages, event) {
+
+  var mime = lucu.mime.getType(this);
+
+  if(!lucu.mime.isTextHTML(mime)) {
+    return onError({type: 'invalid-content-type', target: this, contentType: mime});
+  }
+
+  if(!this.responseXML || !this.responseXML.body) {
+    return onError({type: 'invalid-document', target: this});
+  }
+
+  // TODO: resolve element URLs
+  // Leaving this here as a note. At some point we have to resolve the URLs
+  // for href and src attributes. We already resolve a/img in other places
+  // explicitly but we are not yet doing so for these other elements
+  // var SELECTOR_RESOLVABLE = 'a,applet,audio,embed,iframe,img,object,video';
+
+  // TODO: store redirects properly
+  // NOTE: this uses the post-redirect url as the base url for anchors
+
+  var baseURI = lucu.uri.parse(this.responseURL);
+  var anchors = this.responseXML.body.querySelectorAll('a');
+  var resolveAnchor = lucu.anchor.resolve.bind(null, baseURI);
+  lucu.element.forEach(anchors, resolveAnchor);
+
+  // TODO: the caller should be responsible for choosing this followup
+  // process. This should not be controlling the flow here
+  if(shouldAugmentImages) {
+    // NOTE: this uses the post-redirect responseURL as the base url
+    return lucu.image.augmentDocument(this.responseXML, this.responseURL, onComplete);
+  }
+
+  onComplete(this.responseXML);
 };
