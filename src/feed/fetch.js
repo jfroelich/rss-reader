@@ -96,11 +96,11 @@ lucu.feed.onFetch = function(onComplete, onError, shouldAugmentEntries,
 
   if(lucu.mime.isFeed(mime)) {
     if(!this.responseXML || !this.responseXML.documentElement) {
-      return onError({type:'invalid-xml',target:this});
+      return onError({type: 'invalid-xml', target: this});
     }
 
-    return lucu.feed.convertFromXML(this.responseXML, onComplete, onError, shouldAugmentEntries,
-      shouldAugmentImages, rewriteLinks, entryTimeout);
+    return lucu.feed.convertFromXML(this.responseXML, onComplete, onError,
+      shouldAugmentEntries, shouldAugmentImages, rewriteLinks, entryTimeout);
   }
 
   if(lucu.mime.isTextHTMLOrPlain(mime)) {
@@ -112,14 +112,14 @@ lucu.feed.onFetch = function(onComplete, onError, shouldAugmentEntries,
     }
 
     if(!xmlDocument || !xmlDocument.documentElement) {
-      return onError({type:'invalid-xml',target:this});
+      return onError({type: 'invalid-xml', target: this});
     }
 
-    return lucu.feed.convertFromXML(xmlDocument, onComplete, onError, shouldAugmentEntries,
-      shouldAugmentImages, rewriteLinks, entryTimeout);
+    return lucu.feed.convertFromXML(xmlDocument, onComplete, onError,
+      shouldAugmentEntries, shouldAugmentImages, rewriteLinks, entryTimeout);
   }
 
-  return onError({type:'invalid-content-type',target:this});
+  return onError({type: 'invalid-content-type', target: this});
 
 };
 
@@ -128,11 +128,10 @@ lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
 
   var feed = lucu.feed.createFromDocument(xmlDocument);
 
-  if(feed.ERROR_UNDEFINED_DOCUMENT ||
-     feed.ERROR_UNDEFINED_DOCUMENT_ELEMENT ||
+  if(feed.ERROR_UNDEFINED_DOCUMENT || feed.ERROR_UNDEFINED_DOCUMENT_ELEMENT ||
      feed.ERROR_UNSUPPORTED_DOCUMENT_ELEMENT) {
 
-    return onError({type:'invalid-xml'});
+    return onError({type: 'invalid-xml'});
   }
 
   if(!feed.entries.length) {
