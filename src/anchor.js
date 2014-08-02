@@ -15,26 +15,56 @@ lucu.anchor.resolve = function(baseURI, anchorElement) {
     return;
 
   // Use the attribute to get the url, not the property, because
-  // property access does not return the original value
-  var sourceURL = (anchorElement.getAttribute('href') || '').trim();
-
-  if(!sourceURL)
+  // property access returns a modified value
+  var sourceURL = anchorElement.getAttribute('href');
+  if(!sourceURL) {
     return;
+  }
+
+  // TODO: does getAttribute implicitly trim the value for us ever?
+  // Or does the behavior vary by agent?
+  sourceURL = sourceURL.trim();
+  if(!sourceURL) {
+    return;
+  }
 
   // TODO: do not resolve certain schemes: mailto, javascript
   // calendar (caldav?), filesystem..? feed:???  This should
   // be a feature of the URI API but the URI API currently sucks
   // and is incomplete so we have to do the checks here.
 
-  if(/^tel:/.test(sourceURL)) {
+  // TODO: these checks are extremely incomplete. It may not even
+  // be feasible. Maybe we should just check if is either http or
+  // https only, and if so, only resolve those, otherwise consider
+  // it to not be resolvable?
+
+  // The problem is that in order to do that, we need to get the
+  // 'protocol' part of the URL in the first place. Because without a
+  // protocol it is a relative url, which we want to allow. If it
+  // has a protocol, then only allow if http(s)?
+
+  // TODO: is ':' part of regex syntax?
+
+  if(/^\s*tel:/.test(sourceURL)) {
     return;
   }
 
-  if(/^mailto:/i.test(sourceURL)) {
+  if(/^\s*mailto:/i.test(sourceURL)) {
     return;
   }
 
-  if(/^javascript:/i.test(sourceURL)) {
+  // Allow for leading whitespace. Otherwise this seems to miss
+  // some javascript: urls
+  // For example I am seeing this in the log:
+  // probable url resolution bug javacsript:void(0)
+  // actually, note in the above examle, it is a misspell. So what should
+  // we be doing in this edge case?
+  if(/^\s*javascript:/i.test(sourceURL)) {
+    return;
+  }
+
+  // TODO: is '-' allowed here or is it part of regex syntax?
+  if(/^\s*github-windows:/i.test(sourceURL)) {
     return;
   }
 
