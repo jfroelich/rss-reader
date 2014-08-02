@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Honey Badger News Reader",
-  "version": "1",
+  "version": "350",
   "author": "JDF",
   "homepage_url": "https://github.com/jfroelich/rss-reader",
   "description": "A simple news reader that likes to eat snakes",
