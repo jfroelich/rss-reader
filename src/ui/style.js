@@ -28,8 +28,8 @@ lucu.style.onChange = function() {
       entryRule.style.backgroundImage = '';
     }
 
-    var entryMargin = parseInt(localStorage.ENTRY_MARGIN) || 5;
-    console.log('Setting padding left right to %spx', entryMargin);
+    var entryMargin = localStorage.ENTRY_MARGIN || '10';
+    // console.log('Setting padding left right to %spx', entryMargin);
     entryRule.style.paddingLeft = entryMargin + 'px';
     entryRule.style.paddingRight = entryMargin + 'px';
   }
@@ -75,18 +75,17 @@ lucu.style.onLoad = function() {
   }
 
   s += 'margin-left: 0px;margin-right: 0px; margin-bottom: 0px; margin-top:0px;';
-  s += 'padding-top: 12px;';
+  s += 'padding-top: 6px;';
   s += 'padding-bottom:20px;';
 
-  var entryMargin = parseInt(localStorage.ENTRY_MARGIN) || 5;
-
+  var entryMargin = localStorage.ENTRY_MARGIN || '10';
   s += 'padding-left: '+entryMargin+'px;';
   s += 'padding-right: '+entryMargin+'px;';
 
   sheet.addRule('div.entry',s);
 
-
-
+  // RESET s !!!!
+  s = '';
 
   var hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
   s += 'font-size:' + (hfs / 10).toFixed(2) + 'em;';
@@ -104,21 +103,33 @@ lucu.style.onLoad = function() {
   s += 'padding-top: 20px;';
   s += 'padding-left: 0px;';
   s += 'padding-right: 0px;';
-  s += 'padding-bottom: 10px;';
+  s += 'padding-bottom: 4px;';
 
   sheet.addRule('div.entry a.entry-title', s);
 
-  // BUG FIX: the change to bfs uses s += '' so the above
-  // props were being applied to the body. now we properly
-  // set s to empty.
+  // Reset s !!
   s = '';
 
   var bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10) || 0;
   s += 'font-size:' + (bfs / 10).toFixed(2) + 'em;';
 
-  s += 'text-align: '+ ((localStorage.JUSTIFY_TEXT == '1') ? 'justify' : 'left')+';';
-  s += 'font-family:'+ (localStorage.BODY_FONT_FAMILY || '')  +';';
-  s += 'line-height:'+(localStorage.BODY_LINE_HEIGHT || 'normal')+';';
+  var bodyTextJustify = localStorage.JUSTIFY_TEXT == '1';
+  if(bodyTextJustify) {
+    s += 'text-align: justify;';
+  }
+
+
+  var bodyFontFamily = localStorage.BODY_FONT_FAMILY;
+  if(bodyFontFamily) {
+    s += 'font-family:' + localStorage.BODY_FONT_FAMILY + ';';
+  }
+
+  var bodyLineHeight = localStorage.BODY_LINE_HEIGHT;
+  if(bodyLineHeight) {
+    // TODO: units?
+    s += 'line-height:' + localStorage.BODY_LINE_HEIGHT + ';';
+  }
+
   s += 'vertical-align: text-top;';
   //s += 'letter-spacing: -0.03em;';
   //s += 'word-spacing: -0.5em;';
@@ -133,7 +144,7 @@ lucu.style.onLoad = function() {
 
   s += 'word-wrap: break-word;';
 
-  s += 'padding-top: 30px;';
+  s += 'padding-top: 20px;';
   s += 'padding-right: 0px;';
   s += 'padding-left: 0px;';
   s += 'padding-bottom: 20px;';

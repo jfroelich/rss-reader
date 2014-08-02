@@ -697,7 +697,7 @@ function onBodyFontSizeChange(event) {
 }
 
 function onEntryMarginChange(event) {
-  localStorage.ENTRY_MARGIN = parseInt(event.target.value) || 1;
+  localStorage.ENTRY_MARGIN = parseInt(event.target.value) || 10;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
 }
 
@@ -892,7 +892,7 @@ function initDisplaySettingsSection() {
     chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
   };
 
-  document.getElementById('entry-margin').value = parseInt(localStorage.ENTRY_MARGIN) || '1';
+  document.getElementById('entry-margin').value = parseInt(localStorage.ENTRY_MARGIN) || '10';
   document.getElementById('entry-margin').onchange = onEntryMarginChange;
 
   document.getElementById('header-font-size').value = parseInt(localStorage.HEADER_FONT_SIZE) || '1';
