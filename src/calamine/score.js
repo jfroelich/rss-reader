@@ -201,7 +201,7 @@ lucu.calamine.applyImageScore = function(element) {
   // TODO: is there some nicer way of updating the parentElement? I am not
   // entirely happy that we secretly update other elements here
 
-  var area = lucu.image.getArea(element);
+  var area = lucu.calamine.getImageArea(element);
 
   if(!isFinite(area)) {
 
@@ -308,8 +308,6 @@ lucu.calamine.applyTagNameScore = function(element) {
 
   element.score += bias || 0;
 };
-
-
 
 lucu.calamine.ID_CLASS_BIAS = {
   about: -35,
@@ -523,6 +521,31 @@ lucu.calamine.applyDescendantBiasScore = function(element) {
 
   parent.score = (parent.score || 0) + bias;
 };
+
+/**
+ * Returns the area of an image, in pixels. If the image's dimensions are
+ * undefined, then returns undefined. If the image's dimensions are
+ * greater than 800x600, then the area is clamped.
+ */
+lucu.calamine.getImageArea = function(element) {
+  // TODO: use offsetWidth and offsetHeight instead?
+  if(element.width && element.height) {
+    var area = element.width * element.height;
+
+    // TODO: this clamping really should be done in the caller
+    // and not here.
+
+    // Clamp to 800x600
+    if(area > 360000) {
+      area = 360000;
+    }
+
+    return area;
+  }
+
+  return 0;
+};
+
 
 /**
  * Propagate scores to nearby siblings. Look up to 2 elements
