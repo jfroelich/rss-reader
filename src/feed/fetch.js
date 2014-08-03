@@ -177,47 +177,54 @@ lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
 };
 
 lucu.feed.onDatabaseOpenAugmentEntries = function(db) {
+  this.entries.forEach(lucu.feed.augmentEntry, {
+    db: db,
+    dispatchIfComplete: lucu.feed.onFetchDispatchIfComplete.bind(this),
+    timeout: this.timeout,
+    augmentImages: this.augmentImages
+  });
+};
 
-  // console.debug('lucu.feed.onDatabaseOpenAugmentEntries processing %s entries', entries.length);
+lucu.feed.onFetchDispatchIfComplete = function() {
+  this.numEntriesToProcess -= 1;
+
+  if(this.numEntriesToProcess) {
+    return;
+  }
+
+  console.debug('onFetchDispatchIfComplete calling onComplete');
+  this.onComplete(this.feed);
+};
+
+lucu.feed.augmentEntry = function(entry) {
+
+  // TODO: this lookup check should be per feed, not across all entries,
+  // otherwise if two feeds link to the same article, only the first gets
+  // augmented. need to use something like findEntryByFeedIdAndLinkURL
+  // that uses a composite index
+
+  var onFind = lucu.feed.onAugmentFindByLink.bind(this, entry);
+  lucu.entry.findByLink(this.db, entry.link, onFind);
+};
+
+lucu.feed.onAugmentFindByLink = function(entry, existingEntry) {
+  if(existingEntry) {
+    console.debug('onAugmentFindByLink found existing entry');
+    this.dispatchIfComplete();
+    return;
+  }
+
+  console.debug('onAugmentFindByLink replacing content for new entry');
+
+  var replace = lucu.feed.replaceEntryContent.bind(null,
+    entry, this.dispatchIfComplete);
 
   // TODO: support retry after fetch?
 
-  // We have some urls to fetch. But we don't want to fetch
-  // for entries that are already stored in the local cache.
-
-  var self = this;
-
-  // TODO: move this function out
-  this.entries.forEach(function(entry) {
-
-    // TODO: this lookup check should be per feed, not across all entries,
-    // otherwise if two feeds link to the same article, only the first gets
-    // augmented. need to use something like findEntryByFeedIdAndLinkURL
-    // that uses a composite index
-    // TODO: move this function out
-    // console.debug('Calling findByLink %s', entry.link);
-    lucu.entry.findByLink(db, entry.link, function(existingEntry) {
-
-      if(existingEntry) {
-        dispatchIfComplete();
-        return;
-      }
-
-      var replace = lucu.feed.replaceEntryContent.bind(null,
-        entry, dispatchIfComplete);
-      lucu.feed.fetchHTML(entry.link, self.timeout,
-        self.augmentImages, replace, dispatchIfComplete);
-    });
-  });
-
-  // TODO: this can be moved into onDatabaseOpenAugmentEntries
-
-  function dispatchIfComplete() {
-    self.numEntriesToProcess -= 1;
-    if(self.numEntriesToProcess == 0) {
-      self.onComplete(self.feed);
-    }
-  }
+  // TODO: move augmentImage followup out of fetchHTML
+  // and turn it into a continuation
+  lucu.feed.fetchHTML(entry.link, this.timeout,
+    this.augmentImages, replace, this.dispatchIfComplete);
 };
 
 lucu.feed.replaceEntryContent = function(entry, onComplete, doc) {
@@ -265,9 +272,6 @@ lucu.feed.replaceEntryContent = function(entry, onComplete, doc) {
  * and store dimensions as html attributes.
  */
 lucu.feed.fetchHTML = function(url, timeout, augmentImages, onComplete, onError) {
-
-  // console.debug('fetchHTML %s', url);
-
   var request = new XMLHttpRequest();
   request.timeout = timeout;
   request.ontimeout = onError;
