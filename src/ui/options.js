@@ -306,9 +306,7 @@ function showOrSkipSubscriptionPreview(url) {
     oncomplete: onFetchSuccess,
     onerror: onerror,
     timeout: timeout,
-    entryTimeout: 0,
-    augmentEntries: false,
-    augmentImageData: false
+    augmentEntries: false
   });
 }
 
@@ -349,8 +347,7 @@ function startSubscription(url) {
         onerror: onFetchError,
         timeout: 10 * 1000,
         entryTimeout: 20 * 1000,
-        augmentEntries: true,
-        augmentImageData: true
+        augmentEntries: true
       });
     });
   });

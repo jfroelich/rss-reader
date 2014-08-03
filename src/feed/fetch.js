@@ -39,8 +39,6 @@ lucu.feed = lucu.feed || {};
  * TODO: responseURL contains the redirected URL. Need to update the url
  * when that happens.
  *
- * TODO: this is always going to augment entries and images. these
- * do not need to be parameters
  *
  * @param params {object} an object literal that should contain props:
  * - url the remote url of the feed to fetch
@@ -48,29 +46,20 @@ lucu.feed = lucu.feed || {};
  * a javascript object representing the contents of the feed
  * - onerror - a callback to call in case of an error, that is called instead
  * of oncomplete
- * - timeout - optional timeout before giving up on feed (or web pages)
+ * - timeout - optional timeout before giving up on feed
  * - augmentEntries - if true, fetches full content of entry.link and
  * uses that instead of the feed content
- * - augmentImageData - augment image data in fetched web pages
  * - entryTimeout - optional timeout before giving up on fetching webpage for entry
  */
 lucu.feed.fetch = function(params) {
 
-  // TODO: i think this will always be augmenting entries and images. At least
-  // it will always be augmenting images if it is augmenting entries. So I think
-  // the augmentImageData parameter should be deprecated
-  // In addition, links will always be re-written?
-
-  // NOTE: actually we are not. This is also used by preview, which does not
-  // fetch articles
-
-  // however we can still rewrite always
+  // NOTE: augmentEntries has to exist as a paramter because
+  // we do not want to augment in a preview context.
 
   var url = (params.url || '').trim();
   var oncomplete = params.oncomplete || lucu.functionUtils.noop;
   var onerror = params.onerror || lucu.functionUtils.noop;
   var timeout = params.timeout;
-  var augmentImageData = params.augmentImageData;
   var augmentEntries = params.augmentEntries;
   var entryTimeout = params.entryTimeout;
 
@@ -96,13 +85,13 @@ lucu.feed.fetch = function(params) {
   request.ontimeout = onerror;
   request.onabort = onerror;
   request.onload = lucu.feed.onFetch.bind(request, oncomplete,
-    onerror, augmentEntries, augmentImageData, entryTimeout);
+    onerror, augmentEntries, entryTimeout);
   request.open('GET', url, true);
   request.send();
 };
 
 lucu.feed.onFetch = function(onComplete, onError, shouldAugmentEntries,
-  shouldAugmentImages, entryTimeout) {
+  entryTimeout) {
 
   // Expects this instanceof XMLHttpRequest
 
@@ -114,7 +103,7 @@ lucu.feed.onFetch = function(onComplete, onError, shouldAugmentEntries,
     }
 
     return lucu.feed.convertFromXML(this.responseXML, onComplete, onError,
-      shouldAugmentEntries, shouldAugmentImages, entryTimeout);
+      shouldAugmentEntries, entryTimeout);
   }
 
   if(lucu.mime.isTextHTMLOrPlain(mime)) {
@@ -130,14 +119,14 @@ lucu.feed.onFetch = function(onComplete, onError, shouldAugmentEntries,
     }
 
     return lucu.feed.convertFromXML(xmlDocument, onComplete, onError,
-      shouldAugmentEntries, shouldAugmentImages, entryTimeout);
+      shouldAugmentEntries, entryTimeout);
   }
 
   return onError({type: 'invalid-content-type', target: this});
 };
 
 lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
-  shouldAugmentEntries, shouldAugmentImages, entryTimeout) {
+  shouldAugmentEntries, entryTimeout) {
 
   var feed = lucu.feed.createFromDocument(xmlDocument);
 
@@ -171,7 +160,6 @@ lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
   augmentContext.feed = feed;
   augmentContext.entries = fetchableEntries;
   augmentContext.timeout = entryTimeout;
-  augmentContext.augmentImages = shouldAugmentImages;
   augmentContext.onComplete = onComplete;
 
   var onOpenAugment = lucu.feed.onDatabaseOpenAugmentEntries.bind(augmentContext);
@@ -182,8 +170,7 @@ lucu.feed.onDatabaseOpenAugmentEntries = function(db) {
   this.entries.forEach(lucu.feed.augmentEntry, {
     db: db,
     dispatchIfComplete: lucu.feed.onFetchDispatchIfComplete.bind(this),
-    timeout: this.timeout,
-    augmentImages: this.augmentImages
+    timeout: this.timeout
   });
 };
 
@@ -234,7 +221,7 @@ lucu.feed.onAugmentFindByLink = function(entry, existingEntry) {
   request.onerror = this.dispatchIfComplete;
   request.onabort = this.dispatchIfComplete;
   request.onload = lucu.feed.onFetchHTML.bind(request, replace,
-    this.dispatchIfComplete, this.augmentImages);
+    this.dispatchIfComplete);
   request.open('GET', entry.link, true);
   request.responseType = 'document';
   request.send();
@@ -249,7 +236,7 @@ lucu.feed.replaceEntryContent = function(entry, onComplete, doc) {
   onComplete();
 };
 
-lucu.feed.onFetchHTML = function(onComplete, onError, augmentImages, event) {
+lucu.feed.onFetchHTML = function(onComplete, onError, event) {
 
   // Expects this instanceof XMLHttpRequest
 
@@ -285,7 +272,6 @@ lucu.feed.onFetchHTML = function(onComplete, onError, augmentImages, event) {
   var resolveAnchor = lucu.anchor.resolve.bind(this, baseURI);
   lucu.element.forEach(anchors, resolveAnchor);
 
-
   // TODO: should we notify the callback of responseURL (is it
   // the url after redirects or is it the same url passed in?). i think
   // the onload callback should also receive responseURL. maybe onerror
@@ -299,10 +285,7 @@ lucu.feed.onFetchHTML = function(onComplete, onError, augmentImages, event) {
   // process. This should not be controlling the flow here
   // TODO: move image prefetching out of here to some type of caller, this should
   // only fetch
-  if(augmentImages) {
-    // NOTE: this uses the post-redirect responseURL as the base url
-    return lucu.image.augmentDocument(this.responseXML, this.responseURL, onComplete);
-  }
 
-  onComplete(this.responseXML);
+  // NOTE: this uses the post-redirect responseURL as the base url
+  lucu.image.augmentDocument(this.responseXML, this.responseURL, onComplete);
 };

@@ -45,8 +45,14 @@ lucu.poll.start = function() {
   // scope into an explicit access against an explicit environment.
 
 
-  var totalEntriesAdded = 0, feedCounter = 0, totalEntriesProcessed = 0;
+  // NOTE: this approach to using a custom env works as demonstrated in
+  // fetch.js so it should not be too difficult to change this code to
+  // use custom contexts. Something like
+  // var env = {totalEntriesAdded, feedCounter, totalEntriesProcessed}
+
+  var totalEntriesAdded = 0;
   var feedCounter = 0;
+  var totalEntriesProcessed = 0;
 
   var getAll = lucu.poll.getAllFeeds.bind(this, onGetAllFeeds);
   lucu.database.open(getAll);
@@ -100,12 +106,12 @@ lucu.poll.fetchAndUpdateFeed = function(localFeed, oncomplete, onerror) {
   args.url = localFeed.url;
   args.oncomplete = lucu.poll.onFetchFeed.bind(this, localFeed, oncomplete);
   args.onerror = onerror;
+
   // TODO: timeout and entryTimeout should be derived
   // from feed properties, not hardcoded
   args.timeout = 20 * 1000;
   args.entryTimeout = 20 * 1000;
   args.augmentEntries = true;
-  args.augmentImageData = true;
   lucu.feed.fetch(args);
 };
 
