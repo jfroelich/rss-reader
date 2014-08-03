@@ -94,9 +94,10 @@ lucu.feed.fetch = function(params) {
   request.send();
 };
 
-// expects to be bound to an XMLHttpRequest
 lucu.feed.onFetch = function(onComplete, onError, shouldAugmentEntries,
   shouldAugmentImages, rewriteLinks, entryTimeout) {
+
+  // Expects this instanceof XMLHttpRequest
 
   var mime = lucu.mime.getType(this) || '';
 
@@ -208,23 +209,33 @@ lucu.feed.augmentEntry = function(entry) {
 };
 
 lucu.feed.onAugmentFindByLink = function(entry, existingEntry) {
+
+  // Expects this instanceof an object containing props
+  // See onDatabaseOpenAugmentEntries second parameter to forEach
+
   if(existingEntry) {
-    console.debug('onAugmentFindByLink found existing entry');
     this.dispatchIfComplete();
     return;
   }
 
-  console.debug('onAugmentFindByLink replacing content for new entry');
+  // Fetch the page at entry.link and if possible then replace
+  // entry.content.
+  // TODO: move code that sets image dimension out of onFetchHTML
+  // and into an explicitly specified continuation here
 
   var replace = lucu.feed.replaceEntryContent.bind(null,
     entry, this.dispatchIfComplete);
 
-  // TODO: support retry after fetch?
-
-  // TODO: move augmentImage followup out of fetchHTML
-  // and turn it into a continuation
-  lucu.feed.fetchHTML(entry.link, this.timeout,
-    this.augmentImages, replace, this.dispatchIfComplete);
+  var request = new XMLHttpRequest();
+  request.timeout = this.timeout;
+  request.ontimeout = this.dispatchIfComplete;
+  request.onerror = this.dispatchIfComplete;
+  request.onabort = this.dispatchIfComplete;
+  request.onload = lucu.feed.onFetchHTML.bind(request, replace,
+    this.dispatchIfComplete, this.augmentImages);
+  request.open('GET', entry.link, true);
+  request.responseType = 'document';
+  request.send();
 };
 
 lucu.feed.replaceEntryContent = function(entry, onComplete, doc) {
@@ -236,65 +247,27 @@ lucu.feed.replaceEntryContent = function(entry, onComplete, doc) {
   onComplete();
 };
 
-
-/**
- * Fetches a webpage. Basically wraps an XMLHttpRequest.
- *
- * TODO: should we notify the callback of responseURL (is it
- * the url after redirects or is it the same url passed in?). i think
- * the onload callback should also receive responseURL. maybe onerror
- * should also receive responseURL if it is defined. that way the caller
- * can choose to also replace the original url
- * TODO: consider support for a fallback to plaintext
- * and recharacterizing this as fetchHTMLOrPlaintextDocument or something.
- * TODO: could this pass the xhr along instead of HTMLDocument? it works in
- * the normal case because caller ust accesses responseXML, but what about
- * if we provide the plaintext fallback?
- * TODO: consider an option to embed iframe content
- * TODO: consider an option to auto-sandboxing iframes
- * TODO: use overrideMimeType instead of the content type check?
- * TODO: check for 404 and other status messages and handle those separately?
- * TODO: move image prefetching out of here to some type of caller, this should
- * only fetch
- *
- * TODO: one of the problems with fetching images before scrubbing is that
- * tracker gifs are pinged by the image loader. think of how to avoid stupid
- * requests like that
- *
- * Params is object with following properties
- * @param {string} url - the url to fetch
- * @param {function} onload - callback when completed without errors,
- * passed HTMLDocument object as only parameter
- * @param {function} onerror - callback when an error occurs that
- * prevents completion, such as abort, timeout, missing body tag, wrong content type
- * @param {integer} timeout - optional, ms
- * @param {boolean} augmentImageData - if true, will pre-fetch images
- * and store dimensions as html attributes.
- */
-lucu.feed.fetchHTML = function(url, timeout, augmentImages, onComplete, onError) {
-  var request = new XMLHttpRequest();
-  request.timeout = timeout;
-  request.ontimeout = onError;
-  request.onerror = onError;
-  request.onabort = onError;
-  request.onload = lucu.feed.onFetchHTML.bind(request, onComplete,
-    onError, augmentImages);
-  request.open('GET', url, true);
-  request.responseType = 'document';
-  request.send();
-};
-
 lucu.feed.onFetchHTML = function(onComplete, onError, augmentImages, event) {
+
+  // Expects this instanceof XMLHttpRequest
 
   var mime = lucu.mime.getType(this);
 
+  // TODO: use overrideMimeType instead of this content type check?
   if(!lucu.mime.isTextHTML(mime)) {
     return onError({type: 'invalid-content-type', target: this, contentType: mime});
   }
 
+  // TODO: check for 404 and other status messages and handle those separately?
+  // This was attached to onload. Does onload get called for other status?
+
   if(!this.responseXML || !this.responseXML.body) {
     return onError({type: 'invalid-document', target: this});
   }
+
+  // TODO: consider embedding iframe content
+  // TODO: consider sandboxing iframes
+
 
   // TODO: resolve element URLs
   // Leaving this here as a note. At some point we have to resolve the URLs
@@ -310,8 +283,20 @@ lucu.feed.onFetchHTML = function(onComplete, onError, augmentImages, event) {
   var resolveAnchor = lucu.anchor.resolve.bind(this, baseURI);
   lucu.element.forEach(anchors, resolveAnchor);
 
+
+  // TODO: should we notify the callback of responseURL (is it
+  // the url after redirects or is it the same url passed in?). i think
+  // the onload callback should also receive responseURL. maybe onerror
+  // should also receive responseURL if it is defined. that way the caller
+  // can choose to also replace the original url
+
+  // TODO: one of the problems with fetching images before scrubbing is that
+  // tracker gifs are pinged by the image loader. think of how to avoid stupid
+  // requests like that
   // TODO: the caller should be responsible for choosing this followup
   // process. This should not be controlling the flow here
+  // TODO: move image prefetching out of here to some type of caller, this should
+  // only fetch
   if(augmentImages) {
     // NOTE: this uses the post-redirect responseURL as the base url
     return lucu.image.augmentDocument(this.responseXML, this.responseURL, onComplete);
