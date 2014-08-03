@@ -43,7 +43,11 @@ lucu.anchor.resolve = function(baseURI, anchorElement) {
   // protocol it is a relative url, which we want to allow. If it
   // has a protocol, then only allow if http(s)?
 
-  // TODO: is ':' part of regex syntax?
+  // javacsript:void(0)
+  // javscript:void(0)
+  // To deal with those edge cases I think I need to actually
+  // just restrict url resolution to http/https or learn more
+  // about urls in the first place.
 
   if(/^\s*tel:/.test(sourceURL)) {
     return;
@@ -53,18 +57,10 @@ lucu.anchor.resolve = function(baseURI, anchorElement) {
     return;
   }
 
-  // Allow for leading whitespace. Otherwise this seems to miss
-  // some javascript: urls
-  // For example I am seeing this in the log:
-  // probable url resolution bug javacsript:void(0)
-  // actually, note in the above examle, it is a misspell. So what should
-  // we be doing in this edge case?
-  // another misspell: javscript:void(0)
   if(/^\s*javascript:/i.test(sourceURL)) {
     return;
   }
 
-  // TODO: is '-' allowed here or is it part of regex syntax?
   if(/^\s*github-windows:/i.test(sourceURL)) {
     return;
   }
@@ -74,6 +70,10 @@ lucu.anchor.resolve = function(baseURI, anchorElement) {
   }
 
   if(/^\s*itpc:/i.test(sourceURL)) {
+    return;
+  }
+
+  if(/^\s*news:/i.test(sourceURL)) {
     return;
   }
 
