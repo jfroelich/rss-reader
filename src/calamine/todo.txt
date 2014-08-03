@@ -4,3 +4,6 @@
 
 TODO: support iframes and embed objects and audio/video
 TODO: for all iframes, set sandbox attribute?
+
+
+TODO: Turn into a rule-based processing system
