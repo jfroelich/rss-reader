@@ -419,7 +419,7 @@ lucu.feed.shouldUpdateImage = function(imageElement) {
   // parsed, because it essentially represents an already loaded
   // image. However, we want to make sure we do not try to fetch
   // such images
-  if(lucu.uri.isDataURL(source)) {
+  if(/^\s*data:/i.test(source)) {
     // console.debug('data uri image without dimensions? %o', imageElement);
     // NOTE: above sometimes appears for data uris. i notice it is appearing when
     // width/height attribute not expressly set in html. maybe we just need to

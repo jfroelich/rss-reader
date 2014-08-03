@@ -114,21 +114,6 @@ lucu.uri.filterScheme = function(urlString) {
   }
 };
 
-// Loosely tests whether urlString represents a data uri
-lucu.uri.isDataURL = function(urlString) {
-
-  // NOTE: https://gist.github.com/bgrins/6194623 is a more accurate
-  // and helpful reference implementation. But I am more concerned about
-  // false negatives than false positives here so loose is fine.
-
-  // TODO: consider relaxing to allow leading space here?
-  // not really a defensive guard. or maybe its better to say
-  // that callers must trim.
-
-  return /^data:/i.test(urlString);
-};
-
-
 /////////////////////////////////////////////////////////////////
 
 // Under development. The goal of version 2 is to provide more accurate

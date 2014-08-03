@@ -67,13 +67,12 @@ lucu.image.resolve = function(baseURI, imageElement) {
   // be no ops). But the current URI module implementation is
   // shite so we have to check.
 
-  if(lucu.uri.isDataURL(sourceURL)) {
+  if(/^\s*data:/i.test(sourceURL)) {
     // console.debug('encountered data: url %s', sourceURL);
     return imageElement;
   }
 
   // NOTE: seeing GET resource://.....image.png errors in log.
-
   // TODO: I guess these should not be resolved either? Need to
   // learn more about resource URLs
 
