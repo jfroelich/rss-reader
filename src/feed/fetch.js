@@ -6,6 +6,10 @@
 
 var lucu = lucu || {};
 
+// TODO: maybe this module does not really belong
+// as a 'feed' submodule, maybe it is its own
+// fetch module?
+
 lucu.feed = lucu.feed || {};
 
 /**
@@ -196,6 +200,12 @@ lucu.feed.augmentEntry = function(entry) {
   lucu.entry.findByLink(this.db, entry.link, onFind);
 };
 
+/**
+ * Callback after searching for whether an entry already exists in
+ * storage with the same link. If it already exists then this exits
+ * early. If it does not then it tries to fetch the page and
+ * overwrite the entry.content property.
+ */
 lucu.feed.onAugmentFindByLink = function(entry, existingEntry) {
 
   // Expects this instanceof an object containing props
@@ -207,8 +217,9 @@ lucu.feed.onAugmentFindByLink = function(entry, existingEntry) {
     return;
   }
 
-  // Fetch the page at entry.link and if possible then replace
-  // entry.content.
+  // TODO: think more about what happens if content is not successfully
+  // retrieved.
+
   // TODO: move code that sets image dimension out of onFetchHTML
   // and into an explicitly specified continuation here
 
@@ -257,7 +268,6 @@ lucu.feed.onFetchHTML = function(onComplete, onError, event) {
   // TODO: consider embedding iframe content
   // TODO: consider sandboxing iframes
 
-
   // TODO: resolve element URLs
   // Leaving this here as a note. At some point we have to resolve the URLs
   // for href and src attributes. We already resolve a/img in other places
@@ -287,5 +297,144 @@ lucu.feed.onFetchHTML = function(onComplete, onError, event) {
   // only fetch
 
   // NOTE: this uses the post-redirect responseURL as the base url
-  lucu.image.augmentDocument(this.responseXML, this.responseURL, onComplete);
+  lucu.feed.augmentImages(this.responseXML, this.responseURL, onComplete);
+};
+
+
+/**
+ * Set dimensions for image elements that are missing dimensions.
+ *
+ * TODO: maybe most of this code can be moved into onFetchHTML
+ * above since it is not really a callback, just a next-step-in-sequence
+ * type of call, because I have removed the augmentImages parameter and
+ * also moved this code out of the lucu.image namespace.
+ *
+ * TODO: srcset, picture (image families)
+ * TODO: just accept an xhr instead of doc + baseURL?
+ *
+ * TODO: does this function really belong in image module or
+ * somewhere else? I am not really happy with the current
+ * organization.
+ *
+ * @param doc {HTMLDocument} an HTMLDocument object to inspect
+ * @param baseURL {string} for resolving image urls
+ * @param oncomplete {function}
+ */
+lucu.feed.augmentImages = function(doc, baseURL, onComplete) {
+
+  var allBodyImages = doc.body.getElementsByTagName('img');
+
+  // TODO: parse base URL here.
+  // NOTE: we cannot exit early here if missing base url. All images
+  // could be absolute and still need to be loaded. Rather, a missing
+  // baseURL just means we should skip the resolve step
+
+  var resolvedImages;
+  var baseURI = lucu.uri.parse(baseURL);
+
+  if(baseURI) {
+    resolvedImages = Array.prototype.map.call(allBodyImages,
+      lucu.image.resolve.bind(null, baseURI));
+  } else {
+    resolvedImages = Array.prototype.slice.call(allBodyImages);
+  }
+
+  // Filter out data-uri images, images without src urls, and images
+  // with dimensions, to obtain a subset of images that are augmentable
+  var loadableImages = resolvedImages.filter(lucu.feed.shouldUpdateImage);
+
+  var numImagesToLoad = loadableImages.length;
+
+  if(numImagesToLoad === 0) {
+    return onComplete(doc);
+  }
+
+  // NOTE: rather than using forEach and numImages check, see if there is some type
+  // of async technique that empties a queue and calls onComplete when queue is empty
+
+  loadableImages.forEach(lucu.feed.updateImageElement.bind(null, dispatchIfComplete));
+
+  // TODO: move this out of here
+  function dispatchIfComplete() {
+    if(--numImagesToLoad === 0) {
+      onComplete(doc);
+    }
+  }
+};
+
+lucu.feed.updateImageElement = function(onComplete, remoteImage) {
+
+  // TODO: maybe onComplete should be a member of the env and not
+  // a pre-supplied (partial) parameter to this function
+
+  // Nothing happens when changing the src property of an HTMLImageElement
+  // that is located in a foreign Document context. Therefore we have to
+  // create an image element within the local document context for each
+  // image in the remote context (technically we could reuse one local
+  // element). Rather than creating new ones, we can just import the
+  // remote, which does a shallow element clone from remote to local.
+
+  // TODO: does this next line cause an immediate fetch? If it does
+  // then it kind of defeats the point of changing the source later on,
+  // right?
+
+  var localImage = document.importNode(remoteImage, false);
+
+  // If a problem occurs just go straight to onComplete and do not load
+  // the image or augment it.
+  localImage.onerror = onComplete;
+
+  // TODO: move this nested function out of here
+  localImage.onload = function() {
+
+    // Modify the remote image properties according to
+    // the local image properties
+    remoteImage.width = this.width;
+    remoteImage.height = this.height;
+    //console.debug('W %s H %s', remoteImage.width, remoteImage.height);
+    onComplete();
+  };
+
+  // Setting the src property is what triggers the fetch. Unfortunately
+  // the 'set' operation is ignored unless the new value is different
+  // than the old value.
+  var src = localImage.src;
+  localImage.src = void src;
+  localImage.src = src;
+};
+
+lucu.feed.shouldUpdateImage = function(imageElement) {
+
+  if(imageElement.width) {
+    return false;
+  }
+
+  var source = (imageElement.getAttribute('src') || '').trim();
+
+  if(!source) {
+    return false;
+  }
+
+  // I assume dimensions for data uris are set when the data uri is
+  // parsed, because it essentially represents an already loaded
+  // image. However, we want to make sure we do not try to fetch
+  // such images
+  if(lucu.uri.isDataURL(source)) {
+    // console.debug('data uri image without dimensions? %o', imageElement);
+    // NOTE: above sometimes appears for data uris. i notice it is appearing when
+    // width/height attribute not expressly set in html. maybe we just need to
+    // read in the width/height property and set the attributes?
+    // but wait, we never even reach reach is width is set. so width isnt
+    // set for a data uri somehow. how in the hell does that happen?
+    // is it because the element remains inert (according to how parseHTML works)?
+
+    // Is it even possible to send a GET request to a data uri? Does that
+    // even make sense?
+
+    return false;
+  }
+
+  // We have a fetchable image with unknown dimensions
+  // that we can augment
+  return true;
 };
