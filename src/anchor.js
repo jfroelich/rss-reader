@@ -73,6 +73,10 @@ lucu.anchor.resolve = function(baseURI, anchorElement) {
     return;
   }
 
+  if(/^\s*itpc:/i.test(sourceURL)) {
+    return;
+  }
+
   var sourceURI = lucu.uri.parse(sourceURL);
 
   // At this point we should have a resolvable URI. This is a simple
