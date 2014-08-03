@@ -58,10 +58,15 @@ lucu.feed = lucu.feed || {};
  */
 lucu.feed.fetch = function(params) {
 
+  // TODO: i think this will always be augmenting entries and images. At least
+  // it will always be augmenting images if it is augmenting entries. So I think
+  // the augmentImageData parameter should be deprecated
+  // In addition, links will always be re-written?
+
   var url = (params.url || '').trim();
   var oncomplete = params.oncomplete || lucu.functionUtils.noop;
   var onerror = params.onerror || lucu.functionUtils.noop;
-  var timeout = timeout;
+  var timeout = params.timeout;
   var augmentImageData = params.augmentImageData;
   var augmentEntries = params.augmentEntries;
   var rewriteLinks = params.rewriteLinks;
@@ -212,6 +217,7 @@ lucu.feed.onAugmentFindByLink = function(entry, existingEntry) {
 
   // Expects this instanceof an object containing props
   // See onDatabaseOpenAugmentEntries second parameter to forEach
+  // which gets passed to augmentEntry
 
   if(existingEntry) {
     this.dispatchIfComplete();
