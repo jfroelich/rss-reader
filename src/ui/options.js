@@ -308,8 +308,7 @@ function showOrSkipSubscriptionPreview(url) {
     timeout: timeout,
     entryTimeout: 0,
     augmentEntries: false,
-    augmentImageData: false,
-    rewriteLinks: false
+    augmentImageData: false
   });
 }
 
@@ -351,8 +350,7 @@ function startSubscription(url) {
         timeout: 10 * 1000,
         entryTimeout: 20 * 1000,
         augmentEntries: true,
-        augmentImageData: true,
-        rewriteLinks: true
+        augmentImageData: true
       });
     });
   });

@@ -100,16 +100,12 @@ lucu.poll.fetchAndUpdateFeed = function(localFeed, oncomplete, onerror) {
   args.url = localFeed.url;
   args.oncomplete = lucu.poll.onFetchFeed.bind(this, localFeed, oncomplete);
   args.onerror = onerror;
-
   // TODO: timeout and entryTimeout should be derived
   // from feed properties, not hardcoded
   args.timeout = 20 * 1000;
   args.entryTimeout = 20 * 1000;
-
   args.augmentEntries = true;
   args.augmentImageData = true;
-  args.rewriteLinks = true;
-
   lucu.feed.fetch(args);
 };
 

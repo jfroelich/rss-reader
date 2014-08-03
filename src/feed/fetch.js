@@ -52,8 +52,6 @@ lucu.feed = lucu.feed || {};
  * - augmentEntries - if true, fetches full content of entry.link and
  * uses that instead of the feed content
  * - augmentImageData - augment image data in fetched web pages
- * - rewriteLinks - if true, entry.link values are rewritten in the feed
- * prior to fetching or checking if already fetched in db
  * - entryTimeout - optional timeout before giving up on fetching webpage for entry
  */
 lucu.feed.fetch = function(params) {
@@ -63,20 +61,24 @@ lucu.feed.fetch = function(params) {
   // the augmentImageData parameter should be deprecated
   // In addition, links will always be re-written?
 
+  // NOTE: actually we are not. This is also used by preview, which does not
+  // fetch articles
+
+  // however we can still rewrite always
+
   var url = (params.url || '').trim();
   var oncomplete = params.oncomplete || lucu.functionUtils.noop;
   var onerror = params.onerror || lucu.functionUtils.noop;
   var timeout = params.timeout;
   var augmentImageData = params.augmentImageData;
   var augmentEntries = params.augmentEntries;
-  var rewriteLinks = params.rewriteLinks;
   var entryTimeout = params.entryTimeout;
 
   // For some unexpected reason this function is sometimes
   // called when offline so we need to check for that here
   // and exit early. This avoids a bunch of net::ERR_NETWORK_IO_SUSPENDED
-  // error messages produced by request.send. request.send()
-  // does not appear to throw a catchable exception.
+  // error messages produced by request.send.
+  // request.send() does not appear to throw a catchable exception.
 
   // NOTE: still getting this error. It is like onLine is not returning
   // false when offline.
@@ -94,13 +96,13 @@ lucu.feed.fetch = function(params) {
   request.ontimeout = onerror;
   request.onabort = onerror;
   request.onload = lucu.feed.onFetch.bind(request, oncomplete,
-    onerror, augmentEntries, augmentImageData, rewriteLinks, entryTimeout);
+    onerror, augmentEntries, augmentImageData, entryTimeout);
   request.open('GET', url, true);
   request.send();
 };
 
 lucu.feed.onFetch = function(onComplete, onError, shouldAugmentEntries,
-  shouldAugmentImages, rewriteLinks, entryTimeout) {
+  shouldAugmentImages, entryTimeout) {
 
   // Expects this instanceof XMLHttpRequest
 
@@ -112,7 +114,7 @@ lucu.feed.onFetch = function(onComplete, onError, shouldAugmentEntries,
     }
 
     return lucu.feed.convertFromXML(this.responseXML, onComplete, onError,
-      shouldAugmentEntries, shouldAugmentImages, rewriteLinks, entryTimeout);
+      shouldAugmentEntries, shouldAugmentImages, entryTimeout);
   }
 
   if(lucu.mime.isTextHTMLOrPlain(mime)) {
@@ -128,14 +130,14 @@ lucu.feed.onFetch = function(onComplete, onError, shouldAugmentEntries,
     }
 
     return lucu.feed.convertFromXML(xmlDocument, onComplete, onError,
-      shouldAugmentEntries, shouldAugmentImages, rewriteLinks, entryTimeout);
+      shouldAugmentEntries, shouldAugmentImages, entryTimeout);
   }
 
   return onError({type: 'invalid-content-type', target: this});
 };
 
 lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
-  shouldAugmentEntries, shouldAugmentImages, rewriteLinks, entryTimeout) {
+  shouldAugmentEntries, shouldAugmentImages, entryTimeout) {
 
   var feed = lucu.feed.createFromDocument(xmlDocument);
 
@@ -158,14 +160,8 @@ lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
     return onComplete(feed);
   }
 
-  if(rewriteLinks) {
-    fetchableEntries.forEach(lucu.entry.rewriteLink);
-  }
+  fetchableEntries.forEach(lucu.entry.rewriteLink);
 
-  // In order to ensure consistent storage of entry.link values,
-  // this check for whether to augment does not occur until after
-  // entries with links have been possibly rewritten, so that
-  // rewritten links are stored either way
   if(!shouldAugmentEntries) {
     return onComplete(feed);
   }
