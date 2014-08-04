@@ -77,6 +77,30 @@ lucu.anchor.resolve = function(baseURI, anchorElement) {
     return;
   }
 
+  if(/^\s*bitcoin:/i.test(sourceURL)) {
+    return;
+  }
+
+  if(/^\s*ssh:/i.test(sourceURL)) {
+    return;
+  }
+
+  if(/^\s*file:/i.test(sourceURL)) {
+    return;
+  }
+
+  // A misspell?
+  if(/^\s*ttp:/i.test(sourceURL)) {
+    return;
+  }
+
+
+
+  // BUG:
+  //%20http://thehill.com/policy/healthcare/214166-cdc-director-we-can-stop-ebola#ixzz39N3iqO1Z%20
+  // I have no idea how to support this. This is a malformed href value because of the
+  // leading %20.
+
   var sourceURI = lucu.uri.parse(sourceURL);
 
   // At this point we should have a resolvable URI. This is a simple
