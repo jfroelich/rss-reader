@@ -28,10 +28,12 @@ lucu.feed = lucu.feed || {};
  * need error codes because identifying each error by string key is making
  * it difficult to respond to different errors differently.
  *
- * TODO: this should not also do the xml to feed conversion. The coupling is
+ * TODO: this should not also do the xml to feed conversion? The coupling is
  * too tight because I want to be able to test fetching and transformation
  * separately. but separate web page fetching requires the feed be
- * converted first to identify links
+ * converted first to identify links. Maybe what I am saying is I want
+ * fetching to only be about fetching, and some more abstract controller
+ * does the sequential cohesion by composing fetch+convert
  *
  * TODO: separate timeout for feed fetch and web page fetch
  * TODO: option to fetch/not fetch webpages instead of always fetch
@@ -43,6 +45,9 @@ lucu.feed = lucu.feed || {};
  * TODO: responseURL contains the redirected URL. Need to update the url
  * when that happens.
  *
+ *
+ * TODO: entryTimeout should maybe be deprecated? Where should it really
+ * be coming from?
  *
  * @param params {object} an object literal that should contain props:
  * - url the remote url of the feed to fetch
@@ -57,8 +62,10 @@ lucu.feed = lucu.feed || {};
  */
 lucu.feed.fetch = function(params) {
 
+
   // NOTE: augmentEntries has to exist as a paramter because
-  // we do not want to augment in a preview context.
+  // we we want to augment in a poll update context but do not
+  // want to augment in a subscribe preview context.
 
   var url = (params.url || '').trim();
   var oncomplete = params.oncomplete || lucu.functionUtils.noop;
@@ -185,7 +192,7 @@ lucu.feed.onFetchDispatchIfComplete = function() {
     return;
   }
 
-  console.debug('onFetchDispatchIfComplete calling onComplete');
+  // console.debug('onFetchDispatchIfComplete calling onComplete');
   this.onComplete(this.feed);
 };
 
@@ -300,19 +307,12 @@ lucu.feed.onFetchHTML = function(onComplete, onError, event) {
   lucu.feed.augmentImages(this.responseXML, this.responseURL, onComplete);
 };
 
-
 /**
  * Set dimensions for image elements that are missing dimensions.
  *
  * TODO: maybe most of this code can be moved into onFetchHTML
  * above
- *
  * TODO: srcset, picture (image families)
- * TODO: just accept an xhr instead of doc + baseURL?
- *
- * TODO: does this function really belong in image module or
- * somewhere else? I am not really happy with the current
- * organization.
  *
  * @param doc {HTMLDocument} an HTMLDocument object to inspect
  * @param baseURL {string} for resolving image urls
@@ -320,54 +320,30 @@ lucu.feed.onFetchHTML = function(onComplete, onError, event) {
  */
 lucu.feed.augmentImages = function(doc, baseURL, onComplete) {
 
-  var allBodyImages = doc.body.getElementsByTagName('img');
-
-  // TODO: parse base URL here.
-  // NOTE: we cannot exit early here if missing base url. All images
-  // could be absolute and still need to be loaded. Rather, a missing
-  // baseURL just means we should skip the resolve step
-
-  var resolvedImages;
+  var images = doc.body.getElementsByTagName('img');
   var baseURI = lucu.uri.parse(baseURL);
-
-  // TODO: this baseURI check pre-condition might be pointless
-  // because resolveImage makes this determination for us
-  // so I should just be calling it regardless
-
-  if(baseURI) {
-    resolvedImages = Array.prototype.map.call(allBodyImages,
-      lucu.feed.resolveImage.bind(null, baseURI));
-  } else {
-    resolvedImages = Array.prototype.slice.call(allBodyImages);
-  }
-
-  // Filter out data-uri images, images without src urls, and images
-  // with dimensions, to obtain a subset of images that are augmentable
+  var map = Array.prototype.map;
+  var resolve = lucu.feed.resolveImage.bind(null, baseURI);
+  var resolvedImages = map.call(images, resolve);
   var loadableImages = resolvedImages.filter(lucu.feed.shouldUpdateImage);
 
-  var numImagesToLoad = loadableImages.length;
-
-  if(numImagesToLoad === 0) {
+  if(!loadableImages.length) {
     return onComplete(doc);
   }
 
-  // NOTE: rather than using forEach and numImages check, see if there is some type
-  // of async technique that empties a queue and calls onComplete when queue is empty
+  var updateContext = {
+    numImagesToLoad: loadableImages.length,
+    onComplete: onComplete,
+    doc: doc
+  };
 
-  loadableImages.forEach(lucu.feed.updateImageElement.bind(null, dispatchIfComplete));
-
-  // TODO: move this out of here
-  function dispatchIfComplete() {
-    if(--numImagesToLoad === 0) {
-      onComplete(doc);
-    }
-  }
+  loadableImages.forEach(lucu.feed.updateImageElement, updateContext);
 };
 
-lucu.feed.updateImageElement = function(onComplete, remoteImage) {
+lucu.feed.updateImageElement = function(remoteImage) {
 
-  // TODO: maybe onComplete should be a member of the env and not
-  // a pre-supplied (partial) parameter to this function
+  // Expects this to be instanceof a special context object set
+  // in lucu.feed.augmentImages
 
   // Nothing happens when changing the src property of an HTMLImageElement
   // that is located in a foreign Document context. Therefore we have to
@@ -378,23 +354,34 @@ lucu.feed.updateImageElement = function(onComplete, remoteImage) {
 
   // TODO: does this next line cause an immediate fetch? If it does
   // then it kind of defeats the point of changing the source later on,
-  // right?
-
+  // right? Should we instead be creating an image element and
+  // just setting its source?
   var localImage = document.importNode(remoteImage, false);
 
   // If a problem occurs just go straight to onComplete and do not load
   // the image or augment it.
-  localImage.onerror = onComplete;
+  localImage.onerror = this.onComplete.bind(null, this.doc);
 
   // TODO: move this nested function out of here
+  var self = this;
   localImage.onload = function() {
 
     // Modify the remote image properties according to
     // the local image properties
     remoteImage.width = this.width;
     remoteImage.height = this.height;
-    //console.debug('W %s H %s', remoteImage.width, remoteImage.height);
-    onComplete();
+
+    // console.debug('W %s H %s', remoteImage.width, remoteImage.height);
+
+    self.numImagesToLoad--;
+
+    // console.debug('%s images remaining', self.numImagesToLoad);
+
+    if(self.numImagesToLoad) {
+      return;
+    }
+
+    self.onComplete(self.doc);
   };
 
   // Setting the src property is what triggers the fetch. Unfortunately
@@ -406,6 +393,9 @@ lucu.feed.updateImageElement = function(onComplete, remoteImage) {
 };
 
 lucu.feed.shouldUpdateImage = function(imageElement) {
+
+  // Filter out data-uri images, images without src urls, and images
+  // with dimensions
 
   if(imageElement.width) {
     return false;
@@ -471,6 +461,9 @@ lucu.feed.resolveImage = function(baseURI, imageElement) {
   // be no ops). But the current URI module implementation is
   // shite so we have to check.
 
+  // TODO: rather than exclude cases for various protocols,
+  // change this to only handle no protocol, http, and https
+
   if(/^\s*data:/i.test(sourceURL)) {
     // console.debug('encountered data: url %s', sourceURL);
     return imageElement;
@@ -481,7 +474,7 @@ lucu.feed.resolveImage = function(baseURI, imageElement) {
   // learn more about resource URLs
 
   if(/^resource:/.test(sourceURL)) {
-    console.debug('encountered resource: url %s', sourceURL);
+    // console.debug('encountered resource: url %s', sourceURL);
     return imageElement;
   }
 
