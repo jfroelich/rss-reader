@@ -27,25 +27,17 @@ lucu.feed = lucu.feed || {};
  * error object that is passed to onerror. I also think it really does
  * need error codes because identifying each error by string key is making
  * it difficult to respond to different errors differently.
- *
  * TODO: this should not also do the xml to feed conversion? The coupling is
  * too tight because I want to be able to test fetching and transformation
  * separately. but separate web page fetching requires the feed be
  * converted first to identify links. Maybe what I am saying is I want
  * fetching to only be about fetching, and some more abstract controller
  * does the sequential cohesion by composing fetch+convert
- *
- * TODO: separate timeout for feed fetch and web page fetch
- * TODO: option to fetch/not fetch webpages instead of always fetch
- * TODO: formalize/standardize the parameter to onerror?
  * TODO: is an approach that uses overrideMimeType better than
  * checking content type? will it just cause the native parsing errors I
  * was trying to avoid?
- *
  * TODO: responseURL contains the redirected URL. Need to update the url
- * when that happens.
- *
- *
+ * when that happens. Maybe I need to be storing both urls in the db.
  * TODO: entryTimeout should maybe be deprecated? Where should it really
  * be coming from?
  *
@@ -62,10 +54,27 @@ lucu.feed = lucu.feed || {};
  */
 lucu.feed.fetch = function(params) {
 
-
   // NOTE: augmentEntries has to exist as a paramter because
   // we we want to augment in a poll update context but do not
   // want to augment in a subscribe preview context.
+
+  // NOTE: now that I think about it, the reason augmentEntries exists
+  // is because fetch.js is doing two things instead of one thing. I should
+  // never haved mixed together the augmentEntry code with the fetch code.
+  // The caller can easily just pass the result of fetch to augmentEntries
+  // using two function calls. Calling only fetch is the equivalent of
+  // passing in augmentEntries:false.
+  // As a result of the above change, it should cut this file size in half
+  // and move all the augment code into its own file.
+  // It would move the entryTimeout function out of here as well.
+  // It would make the number of arguments small enough to go back to using
+  // basic explicit arguments
+
+  // A part of the above involves the 'url exists' check. I really don't
+  // like how this queries the storage.  Id rather have the caller do
+  // some kind of array.filter(async method) that passes in just those
+  // distinct entries to fetch. Something like that at least
+
 
   var url = (params.url || '').trim();
   var oncomplete = params.oncomplete || lucu.functionUtils.noop;
@@ -186,13 +195,18 @@ lucu.feed.onDatabaseOpenAugmentEntries = function(db) {
 };
 
 lucu.feed.onFetchDispatchIfComplete = function() {
+
+  // TODO: deprecate this function. this code can be handled
+  // by the called function by putting these values in its
+  // context. Kind of like what I did with image loading below
+
+
   this.numEntriesToProcess -= 1;
 
   if(this.numEntriesToProcess) {
     return;
   }
 
-  // console.debug('onFetchDispatchIfComplete calling onComplete');
   this.onComplete(this.feed);
 };
 
@@ -281,6 +295,11 @@ lucu.feed.onFetchHTML = function(onComplete, onError, event) {
   // explicitly but we are not yet doing so for these other elements
   // var SELECTOR_RESOLVABLE = 'a,applet,audio,embed,iframe,img,object,video';
 
+  // NOTES: above is incomplete.  See http://medialize.github.io/URI.js/docs.html
+  // blockquote.cite, track.src, link.href, base.href, source.src, area.href,
+  // form.action, script.src
+
+
   // TODO: store redirects properly
   // NOTE: this uses the post-redirect url as the base url for anchors
 
@@ -360,6 +379,9 @@ lucu.feed.updateImageElement = function(remoteImage) {
 
   // If a problem occurs just go straight to onComplete and do not load
   // the image or augment it.
+  // TODO: wait, this is wrong. this should be doing what onload is doing
+  // regarding decrementing images. Right now this causes an early exit if
+  // any image in the list, before the last one, fails to load
   localImage.onerror = this.onComplete.bind(null, this.doc);
 
   // TODO: move this nested function out of here
@@ -412,7 +434,8 @@ lucu.feed.shouldUpdateImage = function(imageElement) {
   // image. However, we want to make sure we do not try to fetch
   // such images
   if(/^\s*data:/i.test(source)) {
-    // console.debug('data uri image without dimensions? %o', imageElement);
+
+    console.debug('dimensionless data uri image: %o', imageElement);
     // NOTE: above sometimes appears for data uris. i notice it is appearing when
     // width/height attribute not expressly set in html. maybe we just need to
     // read in the width/height property and set the attributes?
@@ -423,6 +446,9 @@ lucu.feed.shouldUpdateImage = function(imageElement) {
     // Is it even possible to send a GET request to a data uri? Does that
     // even make sense?
 
+    // NOTE: i wonder if data-uri images have naturalWidth set but not
+    // width? We could set the dimensions for this case?
+
     return false;
   }
 
@@ -430,7 +456,6 @@ lucu.feed.shouldUpdateImage = function(imageElement) {
   // that we can augment
   return true;
 };
-
 
 /**
  * Mutates an image element in place by changing its src property

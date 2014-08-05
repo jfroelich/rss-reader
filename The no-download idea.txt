@@ -19,3 +19,9 @@ sanitizing and all this junk.
 
 If online, the keys are speed (page fetch and display speed), and just maintaining
 a list of whats left to read and whats already been read.
+
+
+----------------------
+
+Continuing on these lines is the question of why I am converting XML to json to store
+in indexedDB in the first place. Why not just store the XML?
