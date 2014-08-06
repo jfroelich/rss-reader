@@ -467,39 +467,13 @@ lucu.feed.resolveImage = function(baseURI, imageElement) {
     return imageElement;
   }
 
-  var sourceURL = (imageElement.getAttribute('src') || '').trim();
-
-  // No source, so not resolvable
+  var sourceURL = imageElement.getAttribute('src');
   if(!sourceURL) {
     return imageElement;
   }
 
-  // this should not be resolving data: urls. Test and
-  // exit early here. In at least one calling context,
-  // augmentImages in http.js, it is not bothering to pre-filter
-  // data: uri images before calling this function, so the
-  // test has to be done here. i think it is better to do it here
-  // than require the caller to avoid calling this on uri because
-  // this does the attribute empty check.
-  // note: in reality the URI module should be able to handle
-  // this edge case and seamlessly work (calls to resolve would
-  // be no ops). But the current URI module implementation is
-  // shite so we have to check.
-
-  // TODO: rather than exclude cases for various protocols,
-  // change this to only handle no protocol, http, and https
-
-  if(/^\s*data:/i.test(sourceURL)) {
-    // console.debug('encountered data: url %s', sourceURL);
-    return imageElement;
-  }
-
-  // NOTE: seeing GET resource://.....image.png errors in log.
-  // TODO: I guess these should not be resolved either? Need to
-  // learn more about resource URLs
-
-  if(/^resource:/.test(sourceURL)) {
-    // console.debug('encountered resource: url %s', sourceURL);
+  sourceURL = sourceURL.trim();
+  if(!sourceURL) {
     return imageElement;
   }
 
@@ -509,131 +483,66 @@ lucu.feed.resolveImage = function(baseURI, imageElement) {
     return imageElement;
   }
 
-  // NOTE: this is not working correctly sometimes when resolving relative URLs
-  // For example: GET http://example.compath/path.gif is missing leading slash
-
-  // NOTE: resolveURI currently returns a string. In the future it should
-  // return a URL, but that is not how it works right now, so we do not have
-  // to convert the uri to a string explicitly here.
-  var resolvedURL = lucu.uri.resolve(baseURI, sourceURI);
-
-  if(resolvedURL == sourceURL) {
-    // Resolving had no effect
+  // Avoid resolution when the url appears absolute.
+  // This also avoids resolution of data: and resource:
+  if(sourceURI.scheme) {
     return imageElement;
   }
+
+  // NOTE: lucu.uri.resolve is buggy
+  var resolvedURL = lucu.uri.resolve(baseURI, sourceURI);
+
+  // Is this really necessary?
+  if(resolvedURL == sourceURL) {
+    return imageElement;
+  }
+
+  // TODO: this is the side effect. Maybe I should just be returning
+  // the absolute url, and the caller can set the attribute?
 
   imageElement.setAttribute('src', resolvedURL);
 
   return imageElement;
 };
 
-
 lucu.feed.resolveAnchor = function(baseURI, anchorElement) {
 
-  if(!baseURI)
-    return;
+  // TODO: perhaps this function should be redesigned so that it can be
+  // passed as a parameter to HTMLElement.prototype.setAttribute that was
+  // bound to the element. This way it is less of a side-effect style function
+  // At the same time it introduces more boilerplate into the calling context?
 
-  // Use the attribute to get the url, not the property, because
-  // property access returns a modified value
+  if(!baseURI) {
+    return;
+  }
+
   var sourceURL = anchorElement.getAttribute('href');
   if(!sourceURL) {
     return;
   }
 
-  // TODO: does getAttribute implicitly trim the value for us ever?
-  // Or does the behavior vary by agent?
   sourceURL = sourceURL.trim();
   if(!sourceURL) {
     return;
   }
 
-  // TODO: do not resolve certain schemes: mailto, javascript
-  // calendar (caldav?), filesystem..? feed:???  This should
-  // be a feature of the URI API but the URI API currently sucks
-  // and is incomplete so we have to do the checks here.
-
-  // TODO: these checks are extremely incomplete. It may not even
-  // be feasible. Maybe we should just check if is either http or
-  // https only, and if so, only resolve those, otherwise consider
-  // it to not be resolvable?
-
-  // The problem is that in order to do that, we need to get the
-  // 'protocol' part of the URL in the first place. Because without a
-  // protocol it is a relative url, which we want to allow. If it
-  // has a protocol, then only allow if http(s)?
-
-  // javacsript:void(0)
-  // javscript:void(0)
-  // To deal with those edge cases I think I need to actually
-  // just restrict url resolution to http/https or learn more
-  // about urls in the first place.
-
-  if(/^\s*tel:/.test(sourceURL)) {
-    return;
-  }
-
-  if(/^\s*mailto:/i.test(sourceURL)) {
-    return;
-  }
-
-  if(/^\s*javascript:/i.test(sourceURL)) {
-    return;
-  }
-
-  if(/^\s*github-windows:/i.test(sourceURL)) {
-    return;
-  }
-
-  if(/^\s*whatsapp:/i.test(sourceURL)) {
-    return;
-  }
-
-  if(/^\s*itpc:/i.test(sourceURL)) {
-    return;
-  }
-
-  if(/^\s*news:/i.test(sourceURL)) {
-    return;
-  }
-
-  if(/^\s*bitcoin:/i.test(sourceURL)) {
-    return;
-  }
-
-  if(/^\s*ssh:/i.test(sourceURL)) {
-    return;
-  }
-
-  if(/^\s*file:/i.test(sourceURL)) {
-    return;
-  }
-
-  // A misspell?
-  if(/^\s*ttp:/i.test(sourceURL)) {
-    return;
-  }
-
   var sourceURI = lucu.uri.parse(sourceURL);
 
-  // At this point we should have a resolvable URI. This is a simple
-  // debugging check for learning about url resolution errors
+  // Avoid resolution when the url appears absolute
+  // TODO: this condition should be a part of lucu.uri.resolve and
+  // should not be this function's responsibility.
   if(sourceURI.scheme) {
-    if(sourceURI.scheme != 'http' && sourceURI.scheme != 'https') {
-      console.warn('probable url resolution bug %s', sourceURL);
-    }
+    return;
   }
 
   var resolvedURL = lucu.uri.resolve(baseURI, sourceURI);
 
-  if(resolvedURL == sourceURL)
+  // Is this really necessary?
+  if(resolvedURL == sourceURL) {
     return;
+  }
 
-  //console.debug('Changing anchor url from %s to %s', sourceURL, resolvedURL);
-
-  // TODO: perhaps this function should be redesigned so that it can be
-  // passed as a parameter to HTMLElement.prototype.setAttribute that was
-  // bound to the element. This way it is less of a side-effect style function
-  // At the same time it introduces more boilerplate into the calling context.
+  // console.debug('Changing anchor url from %s to %s', sourceURL, resolvedURL);
 
   anchorElement.setAttribute('href', resolvedURL);
 };
