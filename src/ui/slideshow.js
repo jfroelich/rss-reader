@@ -63,12 +63,10 @@ function viewOnUnsubscribeMessage(message) {
   maybeShowNoUnreadArticlesSlide();
 }
 
-
 function removeSlideElement(slideElement) {
   slideElement.removeEventListener('click', onSlideClick);
   slideElement.remove();
 }
-
 
 function markSlideRead(slideElement) {
   if(!slideElement)
@@ -137,18 +135,42 @@ function appendSlides(oncomplete, isFirst) {
  * is where the listener is attached.
  */
 function onSlideClick(event) {
+
+  // TODO: this should be checking if in anchor axis, not
+  // just immediate parent
   if(event.target.matches('img')) {
     if(!event.target.parentElement.matches('a')) {
-      return;
+      return false;
     }
   } else if(!event.target.matches('a')) {
-    return;
+    return false;
   }
 
   if(!event.currentTarget.hasAttribute('read')) {
-    event.currentTarget.removeEventListener('click', onSlideClick);
+
+    // We cannot remove the listener here because there may be additional
+    // clicks on other links that we still want to capture. So we have to
+    // defer until slide removal. So we just need to ensure that
+    // currentTarget has not already been read.
+    // NOTE: this means that super-fast extra clicks can retrigger
+    // this call.
+    //event.currentTarget.removeEventListener('click', onSlideClick);
+
     markSlideRead(event.currentTarget);
   }
+
+  // Prevent the normal link click behavior
+  event.preventDefault();
+
+  // Apparently opening a link in a new tab is now a complicated thing to do
+  // when using plain javascript. So we are going to cheat here
+  chrome.tabs.create({
+    active: true,
+    url: event.target.getAttribute('href')
+  });
+
+  // Prevent the normal link click behavior
+  return false;
 }
 
 /**
