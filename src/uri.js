@@ -6,6 +6,20 @@
 
 var lucu = lucu || {};
 
+
+/*
+Idea: URIResolver that uses the base element in new document trick
+
+uses:
+- resolving
+- isvalid
+- filter scheme
+
+
+
+*/
+
+
 /**
  * Functions for working with URLs
  *
@@ -98,11 +112,6 @@ lucu.uri.isValid = function(object) {
     return false;
 
   return true;
-};
-
-lucu.uri.isValidString = function(string) {
-  var object = lucu.uri.parse(string);
-  return lucu.uri.isValid(object);
 };
 
 // Accepts a url string, returns a url string without the scheme
