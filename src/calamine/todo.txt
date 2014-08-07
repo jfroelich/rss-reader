@@ -1,9 +1,23 @@
-// TODO: review gebtn, maybe i do not need to keep calling it?
-// e.g. maybe i should just do a single querySelectorAll instead if its not-live?
-// or is it better to re-call it to avoid read-after-delete issues?
+* review gebtn, maybe i do not need to keep calling it?
+e.g. maybe i should just do a single querySelectorAll instead if its not-live?
+or is it better to re-call it to avoid read-after-delete issues?
 
-TODO: support iframes and embed objects and audio/video
-TODO: for all iframes, set sandbox attribute?
+* support iframes and embed objects and audio/video
+* for all iframes, set sandbox attribute?
 
 
-TODO: Turn into a rule-based processing system
+* Turn into a rule-based processing system
+
+* idea bout external vs internal links, diff weights
+e.g. if same origin then +- x else +- y. internal i assume
+to be more likely to be boilerplate because part of sites
+template but articles tend to link to others. also more objective
+because authors hate to link outside as anti-sticky. would
+of course fail for in-content same origin links but as a whole
+these are less likely.
+
+* better credits to research papers
+
+* move to completely external dependency
+
+* better support for live document scrubbing
