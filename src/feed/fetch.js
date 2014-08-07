@@ -75,7 +75,6 @@ lucu.feed.fetch = function(params) {
   // some kind of array.filter(async method) that passes in just those
   // distinct entries to fetch. Something like that at least
 
-
   var url = (params.url || '').trim();
   var oncomplete = params.oncomplete || lucu.functionUtils.noop;
   var onerror = params.onerror || lucu.functionUtils.noop;
@@ -171,6 +170,11 @@ lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
 
   fetchableEntries.forEach(lucu.entry.rewriteLink);
 
+
+  // TODO: this is around the critical break in the data flow
+  // where augmenting entries (and images and so forth) should
+  // occur in a separate module
+
   if(!shouldAugmentEntries) {
     return onComplete(feed);
   }
@@ -200,7 +204,6 @@ lucu.feed.onFetchDispatchIfComplete = function() {
   // by the called function by putting these values in its
   // context. Kind of like what I did with image loading below
 
-
   this.numEntriesToProcess -= 1;
 
   if(this.numEntriesToProcess) {
@@ -212,7 +215,7 @@ lucu.feed.onFetchDispatchIfComplete = function() {
 
 lucu.feed.augmentEntry = function(entry) {
 
-  // TODO: this lookup check should be per feed, not across all entries,
+  // TODO: this lookup check should be per feed, not across all feeds,
   // otherwise if two feeds link to the same article, only the first gets
   // augmented. need to use something like findEntryByFeedIdAndLinkURL
   // that uses a composite index
@@ -299,7 +302,6 @@ lucu.feed.onFetchHTML = function(onComplete, onError, event) {
   // blockquote.cite, track.src, link.href, base.href, source.src, area.href,
   // form.action, script.src
 
-
   // TODO: store redirects properly
   // NOTE: this uses the post-redirect url as the base url for anchors
 
@@ -341,9 +343,8 @@ lucu.feed.augmentImages = function(doc, baseURL, onComplete) {
 
   var images = doc.body.getElementsByTagName('img');
   var baseURI = lucu.uri.parse(baseURL);
-  var map = Array.prototype.map;
   var resolve = lucu.feed.resolveImage.bind(null, baseURI);
-  var resolvedImages = map.call(images, resolve);
+  var resolvedImages = Array.prototype.map.call(images, resolve);
   var loadableImages = resolvedImages.filter(lucu.feed.shouldUpdateImage);
 
   if(!loadableImages.length) {
@@ -396,9 +397,6 @@ lucu.feed.updateImageElement = function(remoteImage) {
     // console.debug('W %s H %s', remoteImage.width, remoteImage.height);
 
     self.numImagesToLoad--;
-
-    // console.debug('%s images remaining', self.numImagesToLoad);
-
     if(self.numImagesToLoad) {
       return;
     }
@@ -506,6 +504,11 @@ lucu.feed.resolveImage = function(baseURI, imageElement) {
 };
 
 lucu.feed.resolveAnchor = function(baseURI, anchorElement) {
+
+  // TODO: kind of a dry violation with resolveImage. I should have a
+  // generic element resolver that works for all elements with url
+  // attributes
+
 
   // TODO: perhaps this function should be redesigned so that it can be
   // passed as a parameter to HTMLElement.prototype.setAttribute that was
