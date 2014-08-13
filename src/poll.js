@@ -14,6 +14,11 @@ lucu.poll = {};
 
 lucu.poll.start = function() {
 
+  // TODO: once this is rewritten and debugged, remove this
+  // or make it a variable that is not in localStorage and not
+  // in sessionStorage to prevent permanent lockout. I noticed that
+  // sometimes a shutdown while running means the flag is persisted
+  // which permanently prevents updates which is horrid.
   if(localStorage.POLL_ACTIVE) {
     console.debug('Poll already in progress');
     return;

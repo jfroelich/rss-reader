@@ -34,9 +34,13 @@ lucu.string.stripTags = function(string, replacement) {
     textNodes.push(textNode);
   }
 
-  return textNodes.map(lucu.node.getValue).join(replacement);
+  return textNodes.map(lucu.string.getNodeValue_).join(replacement);
 };
 
+// priate helper for above
+lucu.string.getNodeValue_ = function(node) {
+  return node.nodeValue;
+}
 
 // Naive <br> removal
 lucu.string.stripBRs = function(str) {
@@ -67,20 +71,4 @@ lucu.string.truncate = function(str, position, extension) {
   return str && (str.length > position) ?
     str.substr(0,position) + (extension || '...') :
     str;
-};
-
-/**
- * Returns the frequency of ch in str.
- */
-lucu.string.countChar = function(str, ch) {
-
-  // I assume this is a hot spot so not using reduce approach nor
-  // the split.length-1 approach. See
-  // http://jsperf.com/count-the-number-of-characters-in-a-string
-
-  for(var count = -1, index = 0; index != -1; count++) {
-    index = str.indexOf(ch, index+1);
-  }
-
-  return count;
 };

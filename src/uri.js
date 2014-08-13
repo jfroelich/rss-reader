@@ -11,9 +11,9 @@ var lucu = lucu || {};
 Idea: URIResolver that uses the base element in new document trick
 
 uses:
-- resolving
-- isvalid
-- filter scheme
+- resolveURL
+- isURLLike
+- filterScheme
 
 
 
@@ -91,6 +91,7 @@ lucu.uri.resolve = function(baseURI, relativeURI) {
 };
 
 // Very naive uri validation, basically good if has a path
+// TODO: rename to 'isURLLike'?
 lucu.uri.isValid = function(object) {
   if(!object)
     return false;
@@ -100,16 +101,20 @@ lucu.uri.isValid = function(object) {
   // Treat path as the host when schemeless.
   var host = object.scheme ? object.host : object.path;
 
-  if(!host)
+  if(!host) {
     return false;
+  }
+
 
   // Must have a period and must not start with a period
   if(host.indexOf('.') < 1)
     return false;
 
   // Must not have a space
-  if(host.indexOf(' ') !== -1)
+  if(host.indexOf(' ') !== -1) {
     return false;
+  }
+
 
   return true;
 };

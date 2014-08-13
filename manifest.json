@@ -34,7 +34,6 @@
       "/src/lang/object.js",
       "/src/lang/string.js",
       "/src/mime.js",
-      "/src/node.js",
       "/src/poll.js",
       "/src/rewrite.js",
       "/src/uri.js",
