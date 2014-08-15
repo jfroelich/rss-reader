@@ -11,22 +11,29 @@ var calamine = {};
  */
 calamine.transformDocument = function(doc, options) {
 
+  // It is the caller's responsibility to set doc
+
   // TODO: apparently this should be a more proper check based on
-  // arguments.length?
+  // arguments.length or typeof options == 'undefined'?
   options = options || {};
 
-  // TODO: guard against undefined body, e.g. <html><head></head></html>
+  // Unlike doc, doc.body is important to check because a valid
+  // doc could lack a body element.
+  if(!doc.body) {
+    console.warn('Missing body element in document %o', doc);
+    return;
+  }
 
   var elements = doc.body.querySelectorAll('*');
 
-  // Filter comment nodes
+  // Filter comment nodes, including conditional comments.
   calamine.forEachNode(doc.body, NodeFilter.SHOW_COMMENT, calamine.removeNode);
 
   // Filter blacklisted elements
   var blacklistedElements = doc.body.querySelectorAll(calamine.SELECTOR_BLACKLIST);
   calamine.forEach(blacklistedElements, calamine.filterBlacklistedElement);
 
-  // Filter non-whitelisted elements
+  // Filter unknown elements
   calamine.forEach(elements, calamine.filterNonWhitelistedElement);
 
   // Filter certain images
@@ -36,10 +43,6 @@ calamine.transformDocument = function(doc, options) {
   // Unwrap noscript elements. This must occur before filtering
   // invisible elements to properly handle template-unhiding tricks.
   // NOTE: this unfortunately causes boilerplate to appear in content
-  // TODO: check doc.contains(noscript) for each element?
-  // NOTE: one idea about noscript handling is to show it
-  // but avoid removing it here even if it is invisible
-  // like, filterIfInvisibleAndNotNoscript...
   var noscripts = doc.body.querySelectorAll('noscript');
   calamine.forEach(noscripts, calamine.unwrapElement);
 
@@ -178,15 +181,6 @@ calamine.transformDocument = function(doc, options) {
   calamine.forEach(elements, expose);
 
   if(options.HIGHLIGHT_MAX_ELEMENT) {
-    // TODO: This no longer makes any sense. If it is body
-    // then why are we doing body.body...? bestElement
-    // _is_ body, so just set it (if defined)
-    //if(bestElement == doc.body) {
-    //  bestElement.body.style.border = '2px solid green';
-    //} else {
-    //  bestElement.style.border = '2px solid green';
-    //}
-
     if(bestElement) {
       bestElement.style.border = '2px solid green';
     }
@@ -256,29 +250,28 @@ calamine.exposeAttributes = function(options, element)  {
     return;
   }
 
-  // TODO: rewrite using ifs
-
-  options.SHOW_BRANCH && element.branch &&
+  if(options.SHOW_BRANCH && element.branch)
     element.setAttribute('branch', element.branch);
-  options.SHOW_ANCHOR_DENSITY && element.anchorDensity &&
+  if(options.SHOW_ANCHOR_DENSITY && element.anchorDensity)
     element.setAttribute('anchorDensity', element.anchorDensity.toFixed(2));
-  options.SHOW_CHAR_COUNT && element.charCount &&
+  if(options.SHOW_CHAR_COUNT && element.charCount)
     element.setAttribute('charCount', element.charCount);
-  options.SHOW_COPYRIGHT_COUNT && element.copyrightCount &&
+  if(options.SHOW_COPYRIGHT_COUNT && element.copyrightCount)
     element.setAttribute('copyrightCount', element.copyrightCount);
-  options.SHOW_DOT_COUNT && element.dotCount &&
+  if(options.SHOW_DOT_COUNT && element.dotCount)
     element.setAttribute('dotCount', element.dotCount);
-  options.SHOW_IMAGE_BRANCH && element.imageBranch &&
+  if(options.SHOW_IMAGE_BRANCH && element.imageBranch)
     element.setAttribute('imageBranch', element.imageBranch);
-  options.SHOW_PIPE_COUNT && element.pipeCount &&
+  if(options.SHOW_PIPE_COUNT && element.pipeCount)
     element.setAttribute('pipeCount', element.pipeCount);
-  options.SHOW_SCORE && element.score &&
+  if(options.SHOW_SCORE && element.score)
     element.setAttribute('score', element.score.toFixed(2));
 };
 
 // TODO: think of a better name here. createFragment is maybe
 // too specific to the type of result to return, in the event this
-// is changed in the future.
+// is changed in the future. Or maybe just delete this and move
+// it back into transformDocument
 calamine.createFragment = function(doc, bestElement) {
 
   var results = doc.createDocumentFragment();
@@ -295,9 +288,7 @@ calamine.createFragment = function(doc, bestElement) {
 };
 
 /**
- * Returns true if an element is invisible according to our own very
- * simplified definition of visibility. We are really only going after some
- * common tactics like using display:none for progressive loading or SEO
+ * Whether an element is invisible
  */
 calamine.isInvisible = function(element) {
 
@@ -361,27 +352,17 @@ calamine.filterEmptyElements = function(doc) {
   // kind of redundant since we already identified the children, so that
   // still might need improvement.
 
-  // TODO: do not nest the function
+  var elements = doc.body.getElementsByTagName('*');
+  var emptyLikeElements = calamine.filter(elements, calamine.isEmptyLike);
 
-  var allElements = doc.body.getElementsByTagName('*');
-  var emptyLikeElements = calamine.filter(allElements, function(element) {
-    return !element.firstChild && !calamine.isLeafLike(element);
-  });
-
-  // Remove all the empty children and shove all the parents on the stack
   // TODO: just add children that should be removed to the stack insead of
   // removing them and adding their parents to the stack.
-  // TODO: don't use nested functions
 
-  var stack = emptyLikeElements.map(function(element) {
-    var parentElement = element.parentElement;
-    parentElement.removeChild(element);
-    return parentElement;
-  }).filter(function(element) {
-    return element != doc.body;
-  });
+  // Remove all the empty children and shove all the parents on the stack
+  var parents = emptyLikeElements.map(calamine.removeAndReturnParent);
+  var stack = parents.filter(calamine.isNotRoot);
 
-  var parentElement, grandParentElement;
+  var parent, grandParent;
 
   // NOTE: stack.length might have a really surprising issue, I forget
   // exactly but there is possibly something unexpected regarding
@@ -390,22 +371,64 @@ calamine.filterEmptyElements = function(doc) {
   // reading on stackoverflow about emptying arrays.
 
   while(stack.length) {
-    parentElement = stack.pop();
-    if(!parentElement.firstChild) {
-      grandParentElement = parentElement.parentElement;
-      if(grandParentElement) {
-        grandParentElement.removeChild(parentElement);
-        if(grandParentElement != doc.body)
-          stack.push(grandParentElement);
-      }
+    parent = stack.pop();
+
+    if(parent.firstChild) {
+      // There are other nodes/elements in the parent after
+      // the child was removed (when building the stack),
+      // so do not remove the parent.
+      continue;
     }
+
+    // Grab a reference to the grand parent before removal
+    // because after removal it is undefined
+    grandParent = parent.parentElement;
+    parent.remove();
+
+    // If there was no parent (how would that ever happen?)
+    // or the parent is the root, then do not add the new
+    // grand parent to the stack
+    if(!grandParent || grandParent == doc.body) {
+      continue;
+    }
+
+    stack.push(grandParent);
   }
 };
 
+calamine.isNotRoot = function(element) {
+  if(!element) {
+    return true;
+  }
 
-// Trying to break apart break rule elements by block
-// UNDER DEVELOPMENT
+  var doc = element.ownerDocument;
+  if(!doc) {
+    return true;
+  }
+
+  var root = doc.body;
+  if(!root) {
+    return true;
+  }
+
+  return root != element;
+};
+
+calamine.removeAndReturnParent = function(element) {
+  var parentElement = element.parentElement;
+  parentElement.removeChild(element);
+  return parentElement;
+};
+
+calamine.isEmptyLike = function(element) {
+  return !element.firstChild &&
+    !element.matches(calamine.SELECTOR_LEAF);
+};
+
 calamine.testSplitBreaks = function(str) {
+  // Trying to break apart break rule elements by block
+  // UNDER HEAVY DEVELOPMENT
+
   if(!str) return;
 
   var doc = document.implementation.createHTMLDocument();
@@ -461,7 +484,6 @@ calamine.testSplitBreaks = function(str) {
   return doc.body.innerHTML;
 };
 
-
 calamine.deriveTextFeatures = function(node) {
   var doc = node.ownerDocument;
   var body = doc.body;
@@ -507,32 +529,41 @@ calamine.setWhitespaceImportant = function(element) {
 
 calamine.trimNode = function(node) {
 
-  // If whitespace is important then we do nothing
+  // If whitespace is important then we do not trim
   if(node.parentElement.whitespaceImportant) {
     return;
   }
 
   // A node is either sandwiched between inline elements
   // or just preceding one or just trailing one
-  var isInline = calamine.isInline;
 
   // NOTE: are we actually just looking up the function
-  // to use here? like a factory?
+  // to use here? like a factory? E.g. get a function that
+  // returns String.prototype.x (or undefined), and then call
+  // that function?
 
+  var isInline = calamine.isInline;
   if(isInline(node.previousSibling)) {
     if(!isInline(node.nextSibling)) {
+      // It follows an inline element but does not precede one
+      // so only trim the right side
       node.nodeValue = node.nodeValue.trimRight();
+    } else {
+      // It is sandwiched and should not be modified
     }
   } else if(isInline(node.nextSibling)) {
+    // It does not follow an inline element but it does
+    // precede one so only trim the left side
     node.nodeValue = node.nodeValue.trimLeft();
   } else {
+    // It does not follow an inline element and it does
+    // not precede one, so trim both sides
     node.nodeValue = node.nodeValue.trim();
   }
 
   // NOTE: the name of this function is misleading. There
-  // is a blatant non-obvious side effect here. This also
-  // removes text nodes that after trimming do not have
-  // a value
+  // is a blatant non-obvious side effect here.
+
   // TODO: think of a way to move this out of here or/ make the side
   // effect more explict. I just don't like the idea of having to do
   // a second pass. I also don't like the intermediate data structure
@@ -678,7 +709,7 @@ calamine.applyTextScore = function(element) {
     return;
   }
 
-  if(calamine.isLeafLike(element)) {
+  if(element.matches(calamine.SELECTOR_LEAF)) {
     return;
   }
 
@@ -885,6 +916,9 @@ calamine.applyTagNameScore = function(element) {
   element.score += bias || 0;
 };
 
+calamine.lookupIdClassBias = function(key) {
+  return calamine.ID_CLASS_BIAS[key];
+};
 
 calamine.applyAttributeScore = function(element) {
 
@@ -1164,16 +1198,12 @@ calamine.countChar = function(str, ch) {
  */
 calamine.forEachNode = function(element, type, func, filter) {
 
-  if(!func) {
-    console.warn('undefined func passed to forEachNode');
-    return;
-  }
-
-  var iterator = element.ownerDocument.createNodeIterator(element,
-    type, filter);
-  var node;
-  while(node = iterator.nextNode()) {
+  var it = element.ownerDocument.createNodeIterator(
+    element, type, filter);
+  var node = it.nextNode();
+  while(node) {
     func(node);
+    node = it.nextNode();
   }
 };
 
@@ -1193,15 +1223,14 @@ calamine.forEachNode = function(element, type, func, filter) {
  * nodes and not elements?
  */
 calamine.isInline = function(node) {
+
+  // TODO: random thought, is it possible to just check
+  // that element.style.display == 'inline' or something to
+  // that effect? Or is that too much deference to native
+  // behavior?
+
   return node && node.nodeType == Node.ELEMENT_NODE &&
     node.matches(calamine.SELECTOR_INLINE);
-};
-
-/**
- * Leaf like elements
- */
-calamine.isLeafLike = function(element) {
-  return element.matches(calamine.SELECTOR_LEAF);
 };
 
 /**
@@ -1251,19 +1280,46 @@ calamine.removeNode = function(node) {
   }
 };
 
+
+
+/*
+
+// TODO: maybe instead of all these separate objects
+// I should just store one super structure? Something like:
+
+calamine.ELEMENT_PROPERTIES = {
+  a: {
+    ancestorBias: 1,
+    descendantBias: 1,
+    nameBias: 3,
+    leafLike: 0,
+    inline: 1,
+    blacklisted: 0,
+    allowedAttributes: {
+      href: 1
+    }
+  },
+  b: {
+    etc:
+  },
+  etc
+
+};
+*/
+
 calamine.ANCESTOR_BIASES = {
-  blockquote:10,
-  code:10,
-  div:1,
-  dl:-5,
-  header:-5,
-  li:-3,
-  nav:-20,
-  ol:-5,
-  p:10,
-  pre:10,
-  table:-2,
-  ul:-5
+  blockquote: 10,
+  code: 10,
+  div: 1,
+  dl: -5,
+  header: -5,
+  li: -3,
+  nav: -20,
+  ol: -5,
+  p: 10,
+  pre: 10,
+  table: -2,
+  ul: -5
 };
 
 calamine.DESCENDANT_BIASES = {
@@ -1430,64 +1486,57 @@ calamine.ID_CLASS_BIAS = {
 // These next two variables are created on the ASSUMPTION that it yields
 // better performance regardless of whether the performance is even bad
 // in the first place. Never tested perf. This might be stupid.
-
-// Calc once
 calamine.ID_CLASS_KEYS = Object.keys(calamine.ID_CLASS_BIAS);
-
-// Calc once. I prefer the anon function here since we are in glob scope
-calamine.ID_CLASS_VALUES = calamine.ID_CLASS_KEYS.map(function(key) {
-  return calamine.ID_CLASS_BIAS[key];
-});
-
+calamine.ID_CLASS_VALUES = calamine.ID_CLASS_KEYS.map(calamine.lookupIdClassBias);
 
 // NOTE: not currently in use. Keeping around as a note in the event I want to do
 // minimization as one of the transformations on remote html data.
 // Based on https://github.com/kangax/html-minifier/blob/gh-pages/src/htmlminifier.js
 calamine.BOOLEAN_ATTRIBUTES = {
-  allowfullscreen:1,
-  async:1,
-  autofocus:1,
-  autoplay:1,
-  checked:1,
-  compact:1,
-  controls:1,
-  declare:1,
-  'default':1,
-  defaultchecked:1,
-  defaultmuted:1,
-  defaultselected:1,
-  defer:1,
-  disable:1,
-  draggable:1,
-  enabled:1,
-  formnovalidate:1,
+  allowfullscreen: 1,
+  async: 1,
+  autofocus: 1,
+  autoplay: 1,
+  checked: 1,
+  compact: 1,
+  controls: 1,
+  declare: 1,
+  'default': 1,
+  defaultchecked: 1,
+  defaultmuted: 1,
+  defaultselected: 1,
+  defer: 1,
+  disable: 1,
+  draggable: 1,
+  enabled: 1,
+  formnovalidate: 1,
   hidden:1,
   indeterminate:1,
-  inert:1,
-  ismap:1,
-  itemscope:1,
-  loop:1,
-  multiple:1,
-  muted:1,
-  nohref:1,
-  noresize:1,
-  noshade:1,
-  novalidate:1,
-  nowrap:1,
-  open:1,
-  pauseonexit:1,
-  readonly:1,
-  required:1,
-  reversed:1,
-  scoped:1,
-  seamless:1,
-  selected:1,
-  sortable:1,
-  spellcheck:1,
-  translate:1,
-  truespeed:1,
-  typemustmatch:1,
-  visible:1
+  inert: 1,
+  ismap: 1,
+  itemscope: 1,
+  loop: 1,
+  multiple: 1,
+  muted: 1,
+  nohref: 1,
+  noresize: 1,
+  noshade: 1,
+  novalidate: 1,
+  nowrap: 1,
+  open: 1,
+  pauseonexit: 1,
+  readonly: 1,
+  required: 1,
+  reversed: 1,
+  scoped: 1,
+  seamless: 1,
+  selected: 1,
+  sortable: 1,
+  spellcheck: 1,
+  translate: 1,
+  truespeed: 1,
+  typemustmatch: 1,
+  visible: 1
 };
 
 calamine.SELECTOR_LEAF = 'applet,audio,br,canvas,embed,frame,hr,iframe,'+
@@ -1506,7 +1555,7 @@ calamine.SELECTOR_BLACKLIST = 'applet,base,basefont,button,'+
   'command,datalist,dialog,embed,fieldset,frame,frameset,'+
   'html,head,iframe,input,legend,link,math,meta,noframes,'+
   'object,option,optgroup,output,param,script,select,style,'+
-  'title,textarea';
+  'textarea,title';
 
 // Allowed elements
 // NOTE: elements not in this list, such as custom elements
@@ -1517,16 +1566,20 @@ calamine.SELECTOR_WHITELIST =
   'abbr,'+
   'acronym,'+
   'address,'+
+  'applet,'+
   'area,'+
   'article,'+
   'aside,'+
   'audio,'+
   'b,'+
+  'base,'+
+  'basefont,'+
   'bdi,'+
   'bdo,'+
   'big,'+
-  'br,'+
   'blockquote,'+
+  'br,'+
+  'button,'+
   'canvas,'+
   'caption,'+
   'center,'+
@@ -1536,7 +1589,9 @@ calamine.SELECTOR_WHITELIST =
   'colgroup,'+
   'command,'+
   'data,'+
+  'datalist,'+
   'details,'+
+  'dialog,'+
   'dir,'+
   'dd,'+
   'del,'+
@@ -1545,6 +1600,7 @@ calamine.SELECTOR_WHITELIST =
   'dl,'+
   'dt,'+
   'em,'+
+  'embed,'+
   'entry,'+
   'fieldset,'+
   'figcaption,'+
@@ -1552,10 +1608,14 @@ calamine.SELECTOR_WHITELIST =
   'font,'+
   'footer,'+
   'form,'+
+  'frame,'+
+  'frameset,'+
+  'head,'+
   'header,'+
   'help,'+
   'hgroup,'+
   'hr,'+
+  'html,'+
   'h1,'+
   'h2,'+
   'h3,'+
@@ -1563,24 +1623,36 @@ calamine.SELECTOR_WHITELIST =
   'h5,'+
   'h6,'+
   'i,'+
+  'iframe,'+
   'img,'+
+  'input,'+
   'ins,'+
   'insert,'+
   'inset,'+
   'label,'+
+  'legend,'+
   'li,'+
+  'link,'+
   'kbd,'+
   'main,'+
   'mark,'+
   'map,'+
+  'math,'+
   'menu,'+
   'menuitem,'+
+  'meta,'+
   'meter,'+
   'nav,'+
   'nobr,'+
+  'noframes,'+
   'noscript,'+
+  'object,'+
   'ol,'+
+  'option,'+
+  'optgroup,'+
+  'output,'+
   'p,'+
+  'param,'+
   'pre,'+
   'progress,'+
   'q,'+
@@ -1590,11 +1662,14 @@ calamine.SELECTOR_WHITELIST =
   'ruby,'+
   's,'+
   'samp,'+
+  'script,'+
   'section,'+
+  'select,'+
   'small,'+
   'span,'+
   'strike,'+
   'strong,'+
+  'style,'+
   'st1,'+
   'sub,'+
   'summary,'+
@@ -1603,10 +1678,12 @@ calamine.SELECTOR_WHITELIST =
   'table,'+
   'tbody,'+
   'td,'+
+  'textarea,'+
   'tfood,'+
   'th,'+
   'thead,'+
   'time,'+
+  'title,'+
   'tr,'+
   'track,'+
   'tt,'+
