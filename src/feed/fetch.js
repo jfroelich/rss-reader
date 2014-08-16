@@ -76,8 +76,8 @@ lucu.feed.fetch = function(params) {
   // distinct entries to fetch. Something like that at least
 
   var url = (params.url || '').trim();
-  var oncomplete = params.oncomplete || lucu.functionUtils.noop;
-  var onerror = params.onerror || lucu.functionUtils.noop;
+  var oncomplete = params.oncomplete || lucu.noop;
+  var onerror = params.onerror || lucu.noop;
   var timeout = params.timeout;
   var augmentEntries = params.augmentEntries;
   var entryTimeout = params.entryTimeout;
@@ -114,9 +114,9 @@ lucu.feed.onFetch = function(onComplete, onError, shouldAugmentEntries,
 
   // Expects this instanceof XMLHttpRequest
 
-  var mime = lucu.mime.getType(this) || '';
+  var mime = lucu.getMimeType(this) || '';
 
-  if(lucu.mime.isFeed(mime)) {
+  if(lucu.isMimeFeed(mime)) {
     if(!this.responseXML || !this.responseXML.documentElement) {
       return onError({type: 'invalid-xml', target: this});
     }
@@ -125,10 +125,10 @@ lucu.feed.onFetch = function(onComplete, onError, shouldAugmentEntries,
       shouldAugmentEntries, entryTimeout);
   }
 
-  if(lucu.mime.isTextHTMLOrPlain(mime)) {
+  if(lucu.isTextHTMLOrPlain(mime)) {
 
     try {
-      var xmlDocument = lucu.xml.parse(this.responseText);
+      var xmlDocument = lucu.parseXML(this.responseText);
     } catch(e) {
       return onError(e);
     }
@@ -275,10 +275,10 @@ lucu.feed.onFetchHTML = function(onComplete, onError, event) {
 
   // Expects this instanceof XMLHttpRequest
 
-  var mime = lucu.mime.getType(this);
+  var mime = lucu.getMimeType(this);
 
   // TODO: use overrideMimeType instead of this content type check?
-  if(!lucu.mime.isTextHTML(mime)) {
+  if(!lucu.isTextHTML(mime)) {
     return onError({type: 'invalid-content-type', target: this, contentType: mime});
   }
 
@@ -308,7 +308,7 @@ lucu.feed.onFetchHTML = function(onComplete, onError, event) {
   var baseURI = lucu.uri.parse(this.responseURL);
   var anchors = this.responseXML.body.querySelectorAll('a');
   var resolveAnchor = lucu.feed.resolveAnchor.bind(this, baseURI);
-  lucu.element.forEach(anchors, resolveAnchor);
+  lucu.forEach(anchors, resolveAnchor);
 
   // TODO: should we notify the callback of responseURL (is it
   // the url after redirects or is it the same url passed in?). i think

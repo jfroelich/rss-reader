@@ -118,8 +118,25 @@ lucu.entry.hasLink = function(entry) {
 };
 
 lucu.entry.rewriteLink = function(entry) {
-  entry.link = lucu.rewrite.rewriteURL(entry.link);
+  entry.link = lucu.rewriteURL(entry.link);
 };
+
+lucu.RE_GOOGLE_NEWS = /^https?:\/\/news.google.com\/news\/url\?.*url=(.*)/i;
+
+// Returns a rewritten url, or the original url if no rewriting rules were applicable.
+lucu.rewriteURL = function(string) {
+  // NOTES: if exec does not match it returns undefined/null. If it does match
+  // and there is a sub capture, it returns [0] as the full text and [1] as
+  // the text of the first sub capture.
+  var matches = lucu.RE_GOOGLE_NEWS.exec(string);
+  if(matches && matches.length === 2 && matches[1]) {
+    var newURL = decodeURIComponent(matches[1]);
+    return newURL;
+  }
+
+  return string;
+};
+
 
 /**
  * Create an object that is ready for storage in
@@ -167,7 +184,7 @@ lucu.entry.asStorable = function(feed, remoteEntry) {
     output.title = remoteEntry.title;
   }
 
-  var publicationDate = lucu.date.parse(remoteEntry.pubdate);
+  var publicationDate = lucu.parseDate(remoteEntry.pubdate);
   if(publicationDate) {
     output.pubdate = publicationDate.getTime();
   }
@@ -302,7 +319,7 @@ lucu.entry.removeByFeed = function(tx, feedId, oncomplete) {
 lucu.entry.generateHash = function(remoteEntry) {
   var seed = remoteEntry.link || remoteEntry.title || remoteEntry.content;
   if(seed) {
-    return lucu.hash.generate(seed.split(''));
+    return lucu.generateHash(seed.split(''));
   }
 };
 

@@ -7,7 +7,7 @@
 var lucu = lucu || {};
 lucu.feed = lucu.feed || {};
 
-// Could lucu.object.at.bind(null, 'url') or something like that
+// Could lucu.at.bind(null, 'url') or something like that
 // work instead?
 lucu.feed.hasURL = function(feed) {
   return !!feed.url;

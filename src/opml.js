@@ -103,15 +103,15 @@ lucu.opml.createOutlineObject = function(element) {
     title = title.trim();
   }
 
-  title = lucu.string.stripControls(title);
+  title = lucu.stripControls(title);
 
   if(title) {
     outline.title = title;
   }
 
   var description = element.getAttribute('description');
-  description = lucu.string.stripControls(description);
-  description = lucu.string.stripTags(description);
+  description = lucu.stripControls(description);
+  description = lucu.stripTags(description);
   description = description.trim();
 
   if(description) {
@@ -119,7 +119,7 @@ lucu.opml.createOutlineObject = function(element) {
   }
 
   var url = element.getAttribute('xmlUrl') || '';
-  url = lucu.string.stripControls(url);
+  url = lucu.stripControls(url);
   url = url.trim();
 
   if(url) {
@@ -127,7 +127,7 @@ lucu.opml.createOutlineObject = function(element) {
   }
 
   var link = element.getAttribute('htmlUrl') || '';
-  link = lucu.string.stripControls(link);
+  link = lucu.stripControls(link);
   link = link.trim();
 
   if(link) {

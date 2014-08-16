@@ -50,10 +50,10 @@ lucu.feed.sanitizeProp = function(str) {
     return;
   }
 
-  str = lucu.string.stripTags(str);
+  str = lucu.stripTags(str);
 
   if(str) {
-    str = lucu.string.stripControls(str);
+    str = lucu.stripControls(str);
   }
 
   // TODO: this should be a call to a separate function

@@ -4,6 +4,68 @@
 
 'use strict';
 
+var lucu = lucu || {};
+
+lucu.BACKGROUND_IMAGES = [
+  '/media/bgfons-paper_texture318.jpg',
+  '/media/CCXXXXXXI_by_aqueous.jpg',
+  '/media/paper-backgrounds-vintage-white.jpg',
+  '/media/pickering-texturetastic-gray.png',
+  '/media/reusage-recycled-paper-white-first.png',
+  '/media/subtle-patterns-beige-paper.png',
+  '/media/subtle-patterns-cream-paper.png',
+  '/media/subtle-patterns-exclusive-paper.png',
+  '/media/subtle-patterns-groove-paper.png',
+  '/media/subtle-patterns-handmade-paper.png',
+  '/media/subtle-patterns-paper-1.png',
+  '/media/subtle-patterns-paper-2.png',
+  '/media/subtle-patterns-paper.png',
+  '/media/subtle-patterns-rice-paper-2.png',
+  '/media/subtle-patterns-rice-paper-3.png',
+  '/media/subtle-patterns-soft-wallpaper.png',
+  '/media/subtle-patterns-white-wall.png',
+  '/media/subtle-patterns-witewall-3.png',
+  '/media/thomas-zucx-noise-lines.png'
+];
+
+
+lucu.FONT_FAMILIES = [
+  'ArchivoNarrow-Regular',
+  'Arial, sans-serif',
+  'Calibri',
+  'Calibri Light',
+
+  'Cambria',
+
+  'CartoGothicStd',
+
+  //http://jaydorsey.com/free-traffic-font/
+  //Clearly Different is released under the SIL Open Font License (OFL) 1.1.
+  //Based on http://mutcd.fhwa.dot.gov/pdfs/clearviewspacingia5.pdf
+  'Clearly Different',
+
+  // Downloaded free font from fontpalace.com, unknown author
+  'FeltTip',
+
+  'Georgia',
+
+  'Montserrat',
+
+  'MS Sans Serif',
+  'News Cycle, sans-serif',
+  'Noto Sans',
+  'Open Sans Regular',
+
+  'PathwayGothicOne',
+
+  'PlayfairDisplaySC',
+
+  'Raleway, sans-serif',
+
+  // http://www.google.com/design/spec/resources/roboto-font.html
+  'Roboto Regular'
+];
+
 function onOptionsPageMessage(message) {
   if('displaySettingsChanged' == message.type) {
     lucu.style.onChange();
@@ -68,7 +130,7 @@ function showErrorMessage(message, fadeIn) {
     container.style.opacity = '0';
     document.body.appendChild(container);
 
-    lucu.effects.fade(container, 1, 0);
+    lucu.fade(container, 1, 0);
 
   } else {
     container.style.display = '';
@@ -113,14 +175,14 @@ function hideSubsciptionMonitor(onComplete, fadeOut) {
   var container = document.getElementById('options_subscription_monitor');
 
   // NOTE: possible bug here, should be checking arguments.length
-  onComplete = onComplete || lucu.functionUtils.noop;
+  onComplete = onComplete || lucu.noop;
 
   if(!container) {
     return onComplete();
   }
 
   if(fadeOut) {
-    lucu.effects.fade(container, 2, 1, removeAndComplete);
+    lucu.fade(container, 2, 1, removeAndComplete);
   } else {
     removeAndComplete();
   }
@@ -183,15 +245,15 @@ function optionsAppendFeed(feed, insertedSort) {
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
   item.setAttribute('feed',feed.id);
-  item.setAttribute('title', lucu.string.stripTags(feed.description) || '');
+  item.setAttribute('title', lucu.stripTags(feed.description) || '');
   item.onclick = onFeedListItemClick;
   var favIconElement = document.createElement('img');
-  favIconElement.src = lucu.favIcon.getURL(feed.link);
+  favIconElement.src = lucu.getFavIconURL(feed.link);
   if(feed.title) favIconElement.title = feed.title;
   item.appendChild(favIconElement);
 
   var title = document.createElement('span');
-  title.textContent = lucu.string.truncate(feed.title,300) || 'Untitled';
+  title.textContent = lucu.truncate(feed.title,300) || 'Untitled';
   item.appendChild(title);
 
   var feedListElement = document.getElementById('feedlist');
@@ -291,9 +353,9 @@ function showOrSkipSubscriptionPreview(url) {
     for(var i = 0, len = Math.min(5,result.entries.length); i < len;i++) {
       var entry = result.entries[i];
       var item = document.createElement('li');
-      item.innerHTML = lucu.string.stripTags(entry.title);
+      item.innerHTML = lucu.stripTags(entry.title);
       var content = document.createElement('span');
-      content.innerHTML = lucu.string.stripTags(entry.content);
+      content.innerHTML = lucu.stripTags(entry.content);
       item.appendChild(content);
       document.getElementById('subscription-preview-entries').appendChild(item);
     }
@@ -389,9 +451,9 @@ function populateFeedDetailsSection(feedId) {
       var feed = event.target.result;
       document.getElementById('details-title').textContent = feed.title || 'Untitled';
       document.getElementById('details-favicon').setAttribute('src',
-        lucu.favIcon.getURL(feed.url));
+        lucu.getFavIconURL(feed.url));
       document.getElementById('details-feed-description').textContent =
-        lucu.string.stripTags(feed.description) || 'No description';
+        lucu.stripTags(feed.description) || 'No description';
       document.getElementById('details-feed-url').textContent = feed.url;
       document.getElementById('details-feed-link').textContent = feed.link;
       document.getElementById('details-unsubscribe').value = feed.id;
@@ -523,15 +585,15 @@ function onDiscoverFeedsComplete(query, results) {
     item.appendChild(button);
 
     var image = document.createElement('img');
-    image.setAttribute('src', lucu.favIcon.getURL(result.url));
+    image.setAttribute('src', lucu.getFavIconURL(result.url));
     image.title = result.link;
     item.appendChild(image);
 
     var a = document.createElement('a');
     a.setAttribute('href', result.link);
     a.setAttribute('target', '_blank');
-    a.title = lucu.string.stripTags(result.title);
-    a.innerHTML = lucu.string.truncate(result.title, 70);
+    a.title = lucu.stripTags(result.title);
+    a.innerHTML = lucu.truncate(result.title, 70);
     item.appendChild(a);
 
     // The snippet contains HTML, not text. It does this because
@@ -539,7 +601,7 @@ function onDiscoverFeedsComplete(query, results) {
     // query. So we want to get rid of only certain tags, not all
     // tags.
     var snippetSpan = document.createElement('span');
-    snippetSpan.innerHTML = lucu.string.truncate(lucu.string.stripBRs(result.contentSnippet), 400);
+    snippetSpan.innerHTML = lucu.truncate(lucu.stripBRs(result.contentSnippet), 400);
     item.appendChild(snippetSpan);
 
     var span = document.createElement('span');
@@ -746,7 +808,7 @@ function initNavigation() {
   menuItem.style.display = localStorage.EMBED_POLICY == 'ask' ? 'block' : 'none';
 
   var menuItems = document.querySelectorAll('#navigation-menu li');
-  lucu.element.forEach(menuItems, setNavigationOnClick);
+  lucu.forEach(menuItems, setNavigationOnClick);
 }
 
 function setNavigationOnClick(menuItem) {

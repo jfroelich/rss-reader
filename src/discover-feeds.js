@@ -33,7 +33,7 @@ lucu.feed.discover = function(query, onComplete, onError, timeout) {
 lucu.feed.queryGoogleFeeds_ = function(query, timeout, onComplete, onError) {
 
   query = (query || '').trim();
-  onError = onError || lucu.functionUtils.noop;
+  onError = onError || lucu.noop;
 
   var request = new XMLHttpRequest();
   request.timeout = timeout;
@@ -66,6 +66,6 @@ lucu.feed.sanitizeGoogleResultEntry_ = function(entry) {
   // TODO: this should be creating a modified clone, not mutating
   // in place as a side effect.
 
-  entry.contentSnippet = lucu.string.stripBRs(entry.contentSnippet);
+  entry.contentSnippet = lucu.stripBRs(entry.contentSnippet);
   return entry;
 };

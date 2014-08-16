@@ -45,7 +45,7 @@ lucu.extension.notifyIfPermitted = function(message, permitted) {
     return;
 
   var noteId = 'honeybadger';
-  var cb = lucu.functionUtils.noop;
+  var cb = lucu.noop;
   var title = chrome.runtime.getManifest().name || 'Untitled';
 
   var note = {};

@@ -17,7 +17,6 @@
       "/src/extension.js",
       "/src/background.js",
       "/src/database.js",
-      "/src/element.js",
       "/src/entry.js",
       "/src/feed/add.js",
       "/src/feed/create-from-document.js",
@@ -27,17 +26,9 @@
       "/src/feed/sanitize.js",
       "/src/feed/select.js",
       "/src/feed/update.js",
-      "/src/hash.js",
-      "/src/html.js",
-      "/src/lang/date.js",
-      "/src/lang/function-utils.js",
-      "/src/lang/object.js",
-      "/src/lang/string.js",
-      "/src/mime.js",
       "/src/poll.js",
-      "/src/rewrite.js",
       "/src/uri.js",
-      "/src/xml.js"
+      "/src/utilities.js"
     ]
   },
 

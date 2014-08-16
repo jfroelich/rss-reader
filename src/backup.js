@@ -40,14 +40,14 @@ lucu.backup.importOPMLFiles = function(files, onComplete) {
 
   var outlinesHash = {};
 
-  var loadText = lucu.file.loadAsText.bind(null, onFileLoad);
+  var loadText = lucu.loadAsText.bind(null, onFileLoad);
   Array.prototype.forEach.call(files, loadText);
 
   function onFileLoad(event) {
 
     try {
 
-      var xmlDocument = lucu.xml.parse(this.result);
+      var xmlDocument = lucu.parseXML(this.result);
 
     } catch(parseError) {
 
@@ -68,7 +68,7 @@ lucu.backup.importOPMLFiles = function(files, onComplete) {
     });
 
     if(--fileCounter == 0) {
-      var distinctFeeds = lucu.object.values(outlinesHash);
+      var distinctFeeds = lucu.values(outlinesHash);
       lucu.backup.importFeeds(distinctFeeds, exceptions, onComplete);
     }
   }

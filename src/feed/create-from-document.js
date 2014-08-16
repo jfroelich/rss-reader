@@ -6,7 +6,6 @@
 
 var lucu = lucu || {};
 
-// Requires lucu.element.getTextOrAttribute
 // .feed is a namespace present in other files so avoid resetting it here
 lucu.feed = lucu.feed || {};
 
@@ -52,7 +51,7 @@ lucu.feed.createFromDocument = function(xmlDocument) {
     return result;
   }
 
-  var access = lucu.element.getTextOrAttribute;
+  var access = lucu.getTextOrAttribute;
 
   var feedTitleText = access(documentElement, isAtom ? ['feed > title'] : ['channel > title']);
   if(feedTitleText) {
@@ -97,7 +96,7 @@ lucu.feed.createFromDocument = function(xmlDocument) {
   var entrySelector = isAtom ? 'feed > entry' : isRSS ? 'channel > item' : 'item';
   var entries = documentElement.querySelectorAll(entrySelector);
   var toEntryObject = lucu.feed.createEntryFromElement.bind(this, isAtom, isRSS);
-  result.entries = lucu.element.map(entries, toEntryObject);
+  result.entries = lucu.map(entries, toEntryObject);
 
   return result;
 };
@@ -105,7 +104,7 @@ lucu.feed.createFromDocument = function(xmlDocument) {
 lucu.feed.createEntryFromElement = function(isAtom, isRSS, entryElement) {
   var result = {};
 
-  var access = lucu.element.getTextOrAttribute;
+  var access = lucu.getTextOrAttribute;
 
   var entryTitleText = access(entryElement, ['title']);
   if(entryTitleText) {
@@ -184,4 +183,59 @@ lucu.feed.getTextContentForAtomEntry = function(entryElement) {
   }
 
   return text;
+};
+
+// Wraps element.getAttribute. Used for partial on attribute (due to arg order)
+// instead of just HTMLElement.prototype.getAttribute
+lucu.getAttribute = function(attribute, element) {
+  return element.getAttribute(attribute);
+};
+
+lucu.getTextContent = function(element) {
+  return element.textContent;
+};
+
+/**
+ * Gets the textContent of a specific element or the value of a specific
+ * attribute in the element. The value of the attribute is retrieved if an
+ * attribute is specified. Returns undefined if nothing matches or
+ * the value for anything that did match was empty.
+ *
+ * Reasons why this function is useful:
+ * 1) Searching for a comma separated list of selectors works in document
+ * order, regardless of the order of the selectors. By using an array
+ * of separate selectors, we can prioritize selector order over
+ * document order in the specification.
+ * 2) We sometimes want to get the value of an attribute instead of
+ * the text content. Searching for the attribute involves nearly all the
+ * same steps as searching for the element.
+ * 3) We want to only consider non-empty values as matching.
+ * querySelectorAll stops once the element matches, and does not let
+ * us compose additional concise and exact conditions on the textContent
+ * value or attribute value. So this function enables us to fallback to later
+ * selectors by merging in the non-empty-after-trimming condition.
+ * 4) We want short circuiting. querySelectorAll walks the entire
+ * document every time, which is a waste.
+ */
+lucu.getTextOrAttribute = function(rootElement, selectors, attribute) {
+  var getter;
+  if(attribute) {
+    getter = lucu.getAttribute.bind(this, attribute);
+  } else {
+    getter = lucu.getTextContent;
+  }
+
+  // NOTE: using a raw loop because nothing in the native iteration API
+  // fits because of the need to use side effects and the need to short
+  // circuit
+
+  for(var i = 0, temp; i < selectors.length; i++) {
+    temp = rootElement.querySelector(selectors[i]);
+    if(!temp) continue;
+    temp = getter(temp);
+    if(!temp) continue;
+    temp = temp.trim();
+    if(!temp) continue;
+    return temp;
+  }
 };

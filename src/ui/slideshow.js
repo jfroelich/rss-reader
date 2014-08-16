@@ -213,8 +213,8 @@ function appendSlide(entry, isFirst) {
   title.setAttribute('target','_blank');
   title.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
-    var titleText = lucu.string.stripTags(entry.title);
-    titleText = lucu.string.truncate(titleText, 200);
+    var titleText = lucu.stripTags(entry.title);
+    titleText = lucu.truncate(titleText, 200);
     title.innerHTML = titleText;
   } else {
     title.textContent = 'Untitled';
@@ -247,7 +247,7 @@ function appendSlide(entry, isFirst) {
   slide.appendChild(source);
 
   var favIcon = document.createElement('img');
-  favIcon.setAttribute('src', lucu.favIcon.getURL(entry.feedLink || entry.baseURI));
+  favIcon.setAttribute('src', lucu.getFavIconURL(entry.feedLink || entry.baseURI));
   favIcon.setAttribute('width', '16');
   favIcon.setAttribute('height', '16');
   source.appendChild(favIcon);
@@ -255,7 +255,7 @@ function appendSlide(entry, isFirst) {
   var feedTitle = document.createElement('span');
   feedTitle.setAttribute('title',entry.feedLink);
   var entryPubDate = entry.pubdate ?
-    ' on ' + lucu.date.simpleFormat(new Date(entry.pubdate)) : '';
+    ' on ' + lucu.formatDate(new Date(entry.pubdate)) : '';
   feedTitle.textContent = (entry.feedTitle || 'Unknown feed') + ' by ' +
     (entry.author || 'Unknown author') + entryPubDate;
   source.appendChild(feedTitle);
@@ -357,20 +357,20 @@ function onKeyDown(event) {
   }
 
   // TODO: lot of DRY violation here. I should use a {} map
-  // to deltas and make one call to lucu.scroll.to instead
+  // to deltas and make one call to animatedScrollTo instead
 
   if(currentSlide) {
     if(key == KEY.DOWN) {
-      lucu.scroll.to(currentSlide, 50, currentSlide.scrollTop + 200)
+      animatedScrollTo(currentSlide, 50, currentSlide.scrollTop + 200)
       return;
     } else if(key == KEY.PAGE_DOWN) {
-      lucu.scroll.to(currentSlide, 100, currentSlide.scrollTop + 800);
+      animatedScrollTo(currentSlide, 100, currentSlide.scrollTop + 800);
       return;
     } else if(key == KEY.UP) {
-      lucu.scroll.to(currentSlide, -50, currentSlide.scrollTop - 200);
+      animatedScrollTo(currentSlide, -50, currentSlide.scrollTop - 200);
       return;
     } else if(key == KEY.PAGE_UP) {
-      lucu.scroll.to(currentSlide, -100, currentSlide.scrollTop - 800);
+      animatedScrollTo(currentSlide, -100, currentSlide.scrollTop - 800);
       return;
     }
   }
@@ -381,6 +381,54 @@ function onKeyDown(event) {
   } else if(key == KEY.LEFT || key == KEY.P) {
     clearTimeout(keyDownTimer);
     keyDownTimer = setTimeout(showPreviousSlide, 50);
+  }
+}
+
+/**
+ * Periodically scroll from the current position to a new position
+ *
+ * NOTE: the start timer is basically to debounce calls to this function
+ * whereas the interval timer is to track the interval and stop it when
+ * finished
+ *
+ * TODO: break apart into functions
+ *
+ * @param element {Element} the element to scroll
+ * @param delta {int} the amount of pixels by which to scroll per increment
+ * @param targetY {int} the desired vertical end position
+ */
+function animatedScrollTo(element, delta, targetY) {
+  var scrollYStartTimer;
+  var scrollYIntervalTimer;
+  var amountToScroll = 0;
+  var amountScrolled = 0;
+
+  return function() {
+    clearTimeout(scrollYStartTimer);
+    clearInterval(scrollYIntervalTimer);
+    scrollYStartTimer = setTimeout(start,5);
+  }();
+
+  function start() {
+    amountToScroll = Math.abs(targetY - element.scrollTop);
+    amountScrolled = 0;
+
+    if(amountToScroll == 0) {
+      return;
+    }
+
+    scrollYIntervalTimer = setInterval(scrollToY,20);
+  }
+
+  function scrollToY() {
+    var currentY = element.scrollTop;
+    element.scrollTop += delta;
+    amountScrolled += Math.abs(delta);
+
+    // If there was no change or we scrolled too far, then we are done.
+    if(currentY == element.scrollTop || amountScrolled >= amountToScroll) {
+      clearInterval(scrollYIntervalTimer);
+    }
   }
 }
 
