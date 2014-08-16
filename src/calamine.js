@@ -11,20 +11,20 @@ var calamine = {};
  */
 calamine.transformDocument = function(doc, options) {
 
-  // It is the caller's responsibility to set doc
 
-  // TODO: apparently this should be a more proper check based on
-  // arguments.length or typeof options == 'undefined'?
+
   options = options || {};
 
-  // Unlike doc, doc.body is important to check because a valid
-  // doc could lack a body element.
+  // It is the caller's responsibility to set doc, so its validity
+  // is not guarded. However, unlike doc, doc.body is important to
+  // check because a valid doc could lack a body element.
   if(!doc.body) {
     console.warn('Missing body element in document %o', doc);
     return;
   }
 
   var elements = doc.body.querySelectorAll('*');
+  var anchors = doc.body.querySelectorAll('a');
 
   // Filter comment nodes, including conditional comments.
   calamine.forEachNode(doc.body, NodeFilter.SHOW_COMMENT, calamine.removeNode);
@@ -68,13 +68,8 @@ calamine.transformDocument = function(doc, options) {
   just normal minification that has a semantic effect on the text so
   it would be important.
   Or we could remove the has-href check in derive-anchor-features?
-
-  TODO: combine anchorsWithHref with anchors query below for
-  deriving anchor features
   */
-  var anchorsWithHref = doc.body.querySelectorAll('a[href]');
-  var scriptAnchors = calamine.filter(anchorsWithHref,
-    calamine.isJavascriptAnchor);
+  var scriptAnchors = calamine.filter(anchors, calamine.isJavascriptAnchor);
   scriptAnchors.forEach(calamine.unwrapElement);
 
   // Marks code/pre elements as whitespaceImportant and then marks all
@@ -106,8 +101,6 @@ calamine.transformDocument = function(doc, options) {
   // TODO: make node removal a separate step
   calamine.forEachNode(doc.body, NodeFilter.SHOW_TEXT, calamine.trimNode);
 
-  // TODO: cleanup the whitespaceImportant expando? Would that be something done
-  // here or elsewhere?
 
   calamine.filterEmptyElements(doc);
 
@@ -119,10 +112,8 @@ calamine.transformDocument = function(doc, options) {
   calamine.forEachNode(doc.body, NodeFilter.SHOW_TEXT,
     calamine.deriveTextFeatures);
 
-  var anchors = doc.body.getElementsByTagName('a');
   calamine.forEach(anchors, calamine.deriveAnchorFeatures);
 
-  calamine.forEach(elements, calamine.deriveAttributeFeatures);
   calamine.forEach(elements, calamine.deriveSiblingFeatures);
 
   // Score
@@ -151,11 +142,8 @@ calamine.transformDocument = function(doc, options) {
   // best element.
   doc.body.score = -Infinity;
 
-  // Prepare the body element for later aggregation when
-  // using the find-best-element technique
-
   var bestElement = calamine.reduce(elements,
-    calamine.getHigherScoringElement, doc.body);
+    calamine.getMaxScore, doc.body);
 
   if(options.UNWRAP_UNWRAPPABLES) {
 
@@ -193,13 +181,14 @@ calamine.transformDocument = function(doc, options) {
 
 calamine.filterAttributes = function(element) {
 
-  // NOTE: is there a better way to get a list of the attributes for
+  // TODO: is there a better way to get a list of the attributes for
   // an element? I just want the names, not name value pairs.
   // Object.keys?
-  var removables = calamine.filter(element.attributes,
-    calamine.isRemovableAttribute);
-  var names = removables.map(calamine.getAttributeName);
-  names.forEach(Element.prototype.removeAttribute.bind(element));
+
+  var names = calamine.map(element.attributes, calamine.getAttributeName);
+  var removables = names.filter(calamine.isRemovableAttribute);
+  var remove = Element.prototype.removeAttribute.bind(element);
+  removables.forEach(remove);
 };
 
 calamine.isNotBestElement = function(bestElement, element) {
@@ -210,24 +199,22 @@ calamine.getAttributeName = function(attribute) {
   return attribute.name;
 };
 
-calamine.isRemovableAttribute = function(attribute) {
+calamine.isRemovableAttribute = function(attributeName) {
 
   // TODO: allow title? allow alt?
 
-  var name = attribute.name;
-
-  if('href' == name) {
+  if('href' == attributeName) {
     return false;
   }
 
-  if('src' == name) {
+  if('src' == attributeName) {
     return false;
   }
 
   return true;
 };
 
-calamine.getHigherScoringElement = function(previous, current) {
+calamine.getMaxScore = function(previous, current) {
 
   // current could be undefined due to mutation-while-iterating
   // issues so we check here and default to previous
@@ -235,12 +222,17 @@ calamine.getHigherScoringElement = function(previous, current) {
     return previous;
   }
 
-  // TODO: do we need to check the presence of the score property?
-  // are we comparing undefineds sometimes? Review how > works
-  // with undefined.
+  // Some elements may not have a score
+  if(!current.hasOwnProperty('score')) {
+    return previous;
+  }
 
-  // Favor previous in case of a tie, so use > not >=
-  return current.score > previous.score ? current : previous;
+  // Favor previous in case of equal score
+  if(current.score > previous.score) {
+    return current;
+  }
+
+  return previous;
 };
 
 calamine.exposeAttributes = function(options, element)  {
@@ -608,26 +600,6 @@ calamine.deriveAnchorFeatures = function(anchor) {
   }
 };
 
-calamine.deriveAttributeFeatures = function(element) {
-
-  if(!element) {
-    return;
-  }
-
-  // Store id and class attribute values
-  // TODO: this is dumb. Why not just score before removing attributes
-  // and avoid this step entirely? The section of the scoring code that
-  // scores based on attributes can do the lookup at that point
-  var text = (element.getAttribute('id') || '');
-  text += ' ';
-  text += (element.getAttribute('class') || '');
-  text = text.trim().toLowerCase();
-
-  if(text) {
-    element.attributeText = text;
-  }
-};
-
 calamine.deriveSiblingFeatures = function(element) {
 
   // Guard due to mutation-while-iterating issues
@@ -670,11 +642,16 @@ calamine.deriveSiblingFeatures = function(element) {
 };
 
 calamine.isJavascriptAnchor = function(anchor) {
+
+  // Guard due to mutation-while-iterating issues
+  if(!anchor) {
+    return false;
+  }
+
   var href = anchor.getAttribute('href');
 
-  // Side note: re.test accepts undefined/null and
-  // returns false, which still yields the desired result
-
+  // NOTE: this returns the desired result even
+  // if href is undefined
   return /^\s*javascript\s*:/i.test(href);
 };
 
@@ -775,10 +752,11 @@ calamine.applyTextScore = function(element) {
 };
 
 calamine.applyImageScore = function(element) {
+  // NOTE: this expects dimensions to be defined for images or it
+  // does not behave as well.
 
   // NOTE: is there some faster or more appropriate way than matches, like
   // element instanceof HTMLImageElement?
-
   // element instanceof HTMLImageElement works, but apparently there is a strange
   // issue with cross-frame compatibility.
 
@@ -828,11 +806,8 @@ calamine.applyImageScore = function(element) {
     }
   }
 
-  // NOTE: this expects dimensions to be defined for images or it
-  // does not behave as well.
 
   // Image branch property is just a helpful debugging property
-
 
   // TODO: rather than mutate the score property, it would be nicer to have
   // a separate function that returns a score. That does, however, make it
@@ -896,17 +871,29 @@ calamine.applyImageScore = function(element) {
 
 calamine.applyPositionScore = function(element) {
 
-  // TODO: use if statements here to improve readability
-  // TODO: use temp variables here to improve readability
+  // If there are no siblings, then score is not affected
+  // TODO: is this right? This is no longer based on actual
+  // distance from start but sibling count. But should it be?
+  // If there are no siblings then it could still be near
+  // start or mid. So this heuristic is messed up. If we were
+  // dealing with an actual array of blocks it would make more sense
+  // to look at block index. But this is within the hierarchy.
+  if(!element.siblingCount) {
+    return;
+  }
+
+  var prevCount = element.previousSiblingCount || 0;
 
   // Distance from start
-  element.score += element.siblingCount ?
-    2 - 2 * element.previousSiblingCount / element.siblingCount : 0;
+  var startRatio = prevCount / element.siblingCount;
+  element.score += 2 - 2 * startRatio;
 
   // Distance from middle
-  element.score += element.siblingCount ?
-    2 - 2 * (Math.abs(element.previousSiblingCount - (element.siblingCount / 2) ) /
-      (element.siblingCount / 2) )  : 0;
+
+  var halfCount = element.siblingCount / 2;
+  var middleOffset = Math.abs(prevCount - halfCount);
+  var middleRatio = middleOffset / halfCount;
+  element.score += 2 - 2 * middleRatio;
 };
 
 calamine.applyTagNameScore = function(element) {
@@ -916,20 +903,24 @@ calamine.applyTagNameScore = function(element) {
   element.score += bias || 0;
 };
 
-calamine.lookupIdClassBias = function(key) {
-  return calamine.ID_CLASS_BIAS[key];
-};
-
 calamine.applyAttributeScore = function(element) {
 
-  if(!element.attributeText) {
+  var text = (element.getAttribute('id') || '');
+  text += ' ';
+  text += (element.getAttribute('class') || '');
+  text = text.trim().toLowerCase();
+
+  if(!text) {
     return;
   }
 
-  var text = element.attributeText;
-  var summer = calamine.sumAttributeBiases.bind(this, text);
+  // TODO: rather than bind and create the sum function,
+  // use the thisArg parameter to reduce and change
+  // sumAttributeBiases to access it
+  var sum = calamine.sumAttributeBiases.bind(this, text);
+  var keys = Object.keys(calamine.ID_CLASS_BIAS);
 
-  element.score += calamine.ID_CLASS_KEYS.reduce(summer, 0);
+  element.score += keys.reduce(sum, 0);
 
   // TODO: propagate partial attribute text bias to children, in the same
   // way that certain ancestor elements bias their children? After all,
@@ -939,16 +930,12 @@ calamine.applyAttributeScore = function(element) {
 
 calamine.sumAttributeBiases = function(text, sum, key, index) {
 
-  //var containsKey = text.indexOf(key) > -1;
-  //var delta = containsKey ? calamine.ID_CLASS_VALUES[index] : 0;
-  //return sum + delta;
-
   // TODO: is there something like string.contains that is
   // more boolean? We don't care about the index, maybe it would
   // be more semantically accurate
 
   if(text.indexOf(key) > -1) {
-    return sum + calamine.ID_CLASS_VALUES[index];
+    return sum + calamine.ID_CLASS_BIAS[key];
   }
 
   return sum;
@@ -1160,6 +1147,14 @@ calamine.filter = function(list, fn) {
   }
 
   return Array.prototype.filter.call(list, fn);
+};
+
+calamine.map = function(list, fn) {
+  if(!list) {
+    return [];
+  }
+
+  return Array.prototype.map.call(list, fn);
 };
 
 calamine.reduce = function(list, func, initialValue) {
@@ -1483,12 +1478,6 @@ calamine.ID_CLASS_BIAS = {
   zone: -50
 };
 
-// These next two variables are created on the ASSUMPTION that it yields
-// better performance regardless of whether the performance is even bad
-// in the first place. Never tested perf. This might be stupid.
-calamine.ID_CLASS_KEYS = Object.keys(calamine.ID_CLASS_BIAS);
-calamine.ID_CLASS_VALUES = calamine.ID_CLASS_KEYS.map(calamine.lookupIdClassBias);
-
 // NOTE: not currently in use. Keeping around as a note in the event I want to do
 // minimization as one of the transformations on remote html data.
 // Based on https://github.com/kangax/html-minifier/blob/gh-pages/src/htmlminifier.js
@@ -1551,10 +1540,10 @@ calamine.SELECTOR_UNWRAPPABLE = 'a:not([href]),article,big,blink,'+
   'legend,nobr,noscript,section,small,span,tbody,thead';
 
 // TODO: separate this into multiple lines for easier maintenance
-calamine.SELECTOR_BLACKLIST = 'applet,base,basefont,button,'+
+calamine.SELECTOR_BLACKLIST = 'applet,base,basefont,bgsound,button,'+
   'command,datalist,dialog,embed,fieldset,frame,frameset,'+
   'html,head,iframe,input,legend,link,math,meta,noframes,'+
-  'object,option,optgroup,output,param,script,select,style,'+
+  'object,option,optgroup,output,param,script,select,spacer,style,'+
   'textarea,title';
 
 // Allowed elements
@@ -1576,7 +1565,9 @@ calamine.SELECTOR_WHITELIST =
   'basefont,'+
   'bdi,'+
   'bdo,'+
+  'bgsound,'+
   'big,'+
+  'blink,'+
   'blockquote,'+
   'br,'+
   'button,'+
@@ -1624,6 +1615,7 @@ calamine.SELECTOR_WHITELIST =
   'h6,'+
   'i,'+
   'iframe,'+
+  'ilayer,'+
   'img,'+
   'input,'+
   'ins,'+
@@ -1634,25 +1626,30 @@ calamine.SELECTOR_WHITELIST =
   'li,'+
   'link,'+
   'kbd,'+
+  'keygen,'+
   'main,'+
   'mark,'+
+  'marquee,'+
   'map,'+
   'math,'+
   'menu,'+
   'menuitem,'+
   'meta,'+
   'meter,'+
+  'multicol,'+
   'nav,'+
   'nobr,'+
+  'noembed,'+
   'noframes,'+
   'noscript,'+
   'object,'+
   'ol,'+
-  'option,'+
   'optgroup,'+
+  'option,'+
   'output,'+
   'p,'+
   'param,'+
+  'plaintext,'+
   'pre,'+
   'progress,'+
   'q,'+
@@ -1666,6 +1663,7 @@ calamine.SELECTOR_WHITELIST =
   'section,'+
   'select,'+
   'small,'+
+  'spacer,'+
   'span,'+
   'strike,'+
   'strong,'+
