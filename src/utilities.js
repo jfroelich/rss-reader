@@ -315,7 +315,7 @@ exports.stripTags = function(string, replacement) {
     return;
   }
 
-  var htmlDocumentBody = lucu.html.parse(string);
+  var htmlDocumentBody = lucu.parseHTML(string);
 
   if(!replacement) {
     return htmlDocumentBody.textContent;
