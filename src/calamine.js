@@ -10,14 +10,8 @@ var calamine = {};
  * Returns a DocumentFragment with some boilerplate removed
  */
 calamine.transformDocument = function(doc, options) {
-
-
-
   options = options || {};
 
-  // It is the caller's responsibility to set doc, so its validity
-  // is not guarded. However, unlike doc, doc.body is important to
-  // check because a valid doc could lack a body element.
   if(!doc.body) {
     console.warn('Missing body element in document %o', doc);
     return;
@@ -25,27 +19,14 @@ calamine.transformDocument = function(doc, options) {
 
   var elements = doc.body.querySelectorAll('*');
   var anchors = doc.body.querySelectorAll('a');
-
-  // Filter comment nodes, including conditional comments.
   calamine.forEachNode(doc.body, NodeFilter.SHOW_COMMENT, calamine.removeNode);
-
-  // Filter blacklisted elements
   var blacklistedElements = doc.body.querySelectorAll(calamine.SELECTOR_BLACKLIST);
   calamine.forEach(blacklistedElements, calamine.filterBlacklistedElement);
-
-  // Filter unknown elements
   calamine.forEach(elements, calamine.filterNonWhitelistedElement);
-
-  // Filter certain images
   var images = doc.body.querySelectorAll('img');
   calamine.forEach(images, calamine.filterImage);
-
-  // Unwrap noscript elements. This must occur before filtering
-  // invisible elements to properly handle template-unhiding tricks.
-  // NOTE: this unfortunately causes boilerplate to appear in content
   var noscripts = doc.body.querySelectorAll('noscript');
   calamine.forEach(noscripts, calamine.unwrapElement);
-
   var invisibles = calamine.filter(elements, calamine.isInvisible);
   invisibles.forEach(calamine.removeNode);
 
@@ -72,15 +53,18 @@ calamine.transformDocument = function(doc, options) {
   var scriptAnchors = calamine.filter(anchors, calamine.isJavascriptAnchor);
   scriptAnchors.forEach(calamine.unwrapElement);
 
+  // TODO: the above might be what is causing text from links to appear
+  // without delimiting whitespace. Maybe I need to insert a text node
+  // spacer following each unwrapped anchor?
+
   // Marks code/pre elements as whitespaceImportant and then marks all
   // direct and indirect descendant elements as whiteSpaceImportant.
   // Propagating this property from the top down (cascading) enables
   // the trimNode function to quickly determine whether its nodeValue is
   // trimmable, as opposed to having the trimNode function search each
   // text node's axis (path from root) for the presence of a pre/code element.
-  var whitespaceImportantElements = doc.body.querySelectorAll('code, pre');
-  calamine.forEach(whitespaceImportantElements,
-    calamine.cascadeWhitespaceImportant);
+  var preformatted = doc.body.querySelectorAll(calamine.SELECTOR_PREFORMATTED);
+  calamine.forEach(preformatted, calamine.propagatePreformatted);
 
   // TODO: Replace &#160; and &nbsp; (and any other such entities) with space
   // before trimming
@@ -89,18 +73,15 @@ calamine.transformDocument = function(doc, options) {
   // counting variations of the features. I think this should be called something
   // like normalization or canonicalization
 
+  // Side thought: Why mutate? Why not just expand the query to account for variations?
+  // This is a similar thought about element removal, unwrapping, etc. Why modify
+  // the original if we are returning a representation of the original?
+
   // TODO: if not whitespace important condense whitespace
   // e.g. nodeValue = nodeValue.replace(/\s+/g,' ');
 
-  // Trim text nodes. If the text node is between two inline elements, it is not
-  // trimmed. If the text node follows an inline element, it is right trimmed. If
-  // the text node precedes an ineline element, it is left trimmed. Otherwise the
-  // nodeValue is fully trimmed.
-
-  // Then, if the nodeValue is empty, remove the node.
-  // TODO: make node removal a separate step
   calamine.forEachNode(doc.body, NodeFilter.SHOW_TEXT, calamine.trimNode);
-
+  calamine.forEachNode(doc.body, NodeFilter.SHOW_TEXT, calamine.filterEmptyNode);
 
   calamine.filterEmptyElements(doc);
 
@@ -151,6 +132,11 @@ calamine.transformDocument = function(doc, options) {
     // but the current approach relies on using the element as the
     // return value so we unwrap everything but the best element.
 
+    // TODO: Special query to unwrap anchors without href values
+    // a:not([href])
+
+
+    // Unwrap everything else
     var unwrappables = doc.body.querySelectorAll(
       calamine.SELECTOR_UNWRAPPABLE);
     var notBest = calamine.isNotBestElement.bind(this, bestElement);
@@ -162,9 +148,6 @@ calamine.transformDocument = function(doc, options) {
   // <br> elements and such. Look at the old sanitizer code
   // that was doing trim document
 
-  // TODO: instead of binding the function, pass it as a thisArg. So
-  // forEach needs to accept a thisArg and exposeAttributes need to
-  // access it instead of a partial?
   var expose = calamine.exposeAttributes.bind(this, options);
   calamine.forEach(elements, expose);
 
@@ -181,10 +164,6 @@ calamine.transformDocument = function(doc, options) {
 
 calamine.filterAttributes = function(element) {
 
-  // TODO: is there a better way to get a list of the attributes for
-  // an element? I just want the names, not name value pairs.
-  // Object.keys?
-
   var names = calamine.map(element.attributes, calamine.getAttributeName);
   var removables = names.filter(calamine.isRemovableAttribute);
   var remove = Element.prototype.removeAttribute.bind(element);
@@ -200,7 +179,6 @@ calamine.getAttributeName = function(attribute) {
 };
 
 calamine.isRemovableAttribute = function(attributeName) {
-
   // TODO: allow title? allow alt?
 
   if('href' == attributeName) {
@@ -301,16 +279,19 @@ calamine.isInvisible = function(element) {
     return true;
   }
 
-  // TODO: now that I think about it parsesInt might be bad. E.g. parsing
-  // 0.1 could result in 0 or something to that effect? Or would it reslt
-  // in NaN? Nail down the behavior of it.
+  if(element.style.visibility == 'collapse') {
+    return true;
+  }
+
   // TODO: this should not really just be absolutely invisible, but also
   // nearly-invisible. More like opacity < 0.3, where 0.3 is the assumed
   // threshold where text becomes non-visible
-  var opacity = parseInt(element.style.opacity);
+  var opacity = parseFloat(element.style.opacity);
   if(opacity === 0) {
     return true;
   }
+
+  // TODO: consider if(element.hidden) ?
 
   return false;
 };
@@ -505,24 +486,24 @@ calamine.deriveTextFeatures = function(node) {
   }
 };
 
-calamine.cascadeWhitespaceImportant = function(element) {
+calamine.propagatePreformatted = function(element) {
   if(!element) {
     return;
   }
 
-  calamine.setWhitespaceImportant(element);
+  calamine.setPreformatted(element);
   var descendants = element.getElementsByTagName('*');
-  calamine.forEach(descendants, calamine.setWhitespaceImportant);
+  calamine.forEach(descendants, calamine.setPreformatted);
 }
 
-calamine.setWhitespaceImportant = function(element) {
-  element.whitespaceImportant = 1;
+calamine.setPreformatted = function(element) {
+  element.preformatted = 1;
 };
 
 calamine.trimNode = function(node) {
 
   // If whitespace is important then we do not trim
-  if(node.parentElement.whitespaceImportant) {
+  if(node.parentElement.preformatted) {
     return;
   }
 
@@ -531,19 +512,17 @@ calamine.trimNode = function(node) {
 
   // NOTE: are we actually just looking up the function
   // to use here? like a factory? E.g. get a function that
-  // returns String.prototype.x (or undefined), and then call
+  // returns String.prototype.trimX, and then call
   // that function?
-
-  var isInline = calamine.isInline;
-  if(isInline(node.previousSibling)) {
-    if(!isInline(node.nextSibling)) {
+  if(calamine.isInline(node.previousSibling)) {
+    if(!calamine.isInline(node.nextSibling)) {
       // It follows an inline element but does not precede one
       // so only trim the right side
       node.nodeValue = node.nodeValue.trimRight();
     } else {
       // It is sandwiched and should not be modified
     }
-  } else if(isInline(node.nextSibling)) {
+  } else if(calamine.isInline(node.nextSibling)) {
     // It does not follow an inline element but it does
     // precede one so only trim the left side
     node.nodeValue = node.nodeValue.trimLeft();
@@ -552,17 +531,25 @@ calamine.trimNode = function(node) {
     // not precede one, so trim both sides
     node.nodeValue = node.nodeValue.trim();
   }
-
-  // NOTE: the name of this function is misleading. There
-  // is a blatant non-obvious side effect here.
-
-  // TODO: think of a way to move this out of here or/ make the side
-  // effect more explict. I just don't like the idea of having to do
-  // a second pass. I also don't like the intermediate data structure
-  if(!node.nodeValue) {
-    node.remove();
-  }
 };
+
+// Remove the node if it does not have a value
+calamine.filterEmptyNode = function(node) {
+  if(!node) {
+    return;
+  }
+
+  // TODO: think more about what happens if
+  // node value is something like '0'
+  // e.g. should condition include node.nodeValue.length ?
+
+  if(node.nodeValue) {
+    return;
+  }
+
+  node.remove();
+};
+
 
 // Extract anchor features. Based on charCount from text features
 calamine.deriveAnchorFeatures = function(anchor) {
@@ -897,10 +884,22 @@ calamine.applyPositionScore = function(element) {
 };
 
 calamine.applyTagNameScore = function(element) {
+  var descriptor = calamine.ELEMENT[element.localName];
 
-  var bias = calamine.TAG_NAME_BIAS[element.localName];
+  // All elements should have passed through the whilelist
+  // filter by the time this function is called so this check
+  // should not be necessary, but apparently some elements
+  // somehow are remaining? Ok it is the elements with
+  // namespaces. Wait a sec, why the hell is localName including
+  // the namespace now? And how are they making it past the
+  // white list filter?
+  if(!descriptor) {
+    console.warn('No descriptor for %o with local name %s', element, element.localName);
+    return;
+  }
 
-  element.score += bias || 0;
+  // NOTE: not all props have a nameBias so use 0 fallback
+  element.score += descriptor.nameBias || 0;
 };
 
 calamine.applyAttributeScore = function(element) {
@@ -942,35 +941,70 @@ calamine.sumAttributeBiases = function(text, sum, key, index) {
 };
 
 calamine.applyAncestorBiasScore = function(element) {
-  var bias = calamine.ANCESTOR_BIASES[element.localName];
 
+  if(!element) {
+    return;
+  }
+
+  var descriptor = calamine.ELEMENT[element.localName];
+
+  // Not all elements have descriptors
+  if(!descriptor) {
+    return;
+  }
+
+  var bias = descriptor.ancestorBias;
+
+  // Not all elements have ancestor bias
   if(!bias) {
     return;
   }
 
+  // TODO: use querySelectorAll?
   var descendants = element.getElementsByTagName('*');
   var update = calamine.updateDescendantWithAncestorBias.bind(this, bias);
   calamine.forEach(descendants, update);
 };
 
-// Private helper
+// Private helper for applyAncestorBiasScore
 calamine.updateDescendantWithAncestorBias = function(bias, element) {
   element.score = (element.score || 0) + bias;
 };
 
 calamine.applyDescendantBiasScore = function(element) {
-  var bias = calamine.DESCENDANT_BIASES[element.localName];
 
+  // Guard due to mutation while iterating issues
+  if(!element) {
+    return;
+  }
+
+  var descriptor = calamine.ELEMENT[element.localName];
+
+  // Not all elements have a descriptor. They should, because those
+  // elements should be filtered out previously by the whitelist test,
+  // but at this point in the design it is not guaranteed, so this
+  // check is tentatively required.
+  if(!descriptor) {
+    return;
+  }
+
+  var bias = descriptor.descendantBias;
+
+  // Not all descriptors have descendant bias
   if(!bias) {
     return;
   }
 
   var parent = element.parentElement;
 
+  // Not all elements have parents (due to removal)
+  // Ideally we should never see these elements but there are
+  // issues with mutation-while-iterating
   if(!parent) {
     return;
   }
 
+  // Avoid scoring of the body element
   if(parent == element.ownerDocument.body) {
     return;
   }
@@ -1219,6 +1253,12 @@ calamine.forEachNode = function(element, type, func, filter) {
  */
 calamine.isInline = function(node) {
 
+  // NOTE: this is called from within trimNode which is
+  // handling nodes, which may be adjacent to other nodes
+  // somehow (despite presumably being normalized), so
+  // we have to check that the node passed here is
+  // an element
+
   // TODO: random thought, is it possible to just check
   // that element.style.display == 'inline' or something to
   // that effect? Or is that too much deference to native
@@ -1275,105 +1315,457 @@ calamine.removeNode = function(node) {
   }
 };
 
+calamine.lookupElementProp = function(prop, key) {
+  var desc = calamine.ELEMENT[key];
+  return desc && desc[prop];
+};
 
-
-/*
-
-// TODO: maybe instead of all these separate objects
-// I should just store one super structure? Something like:
-
-calamine.ELEMENT_PROPERTIES = {
+calamine.ELEMENT = {
   a: {
-    ancestorBias: 1,
-    descendantBias: 1,
-    nameBias: 3,
-    leafLike: 0,
-    inline: 1,
-    blacklisted: 0,
-    allowedAttributes: {
-      href: 1
-    }
+    inline: true,
+    nameBias: -1
+  },
+  abbr: {
+    inline: true
+  },
+  acronym: {
+    inline: true
+  },
+  address: {
+    inline: true,
+    nameBias: -3
+  },
+  applet: {
+    blacklisted: true,
+    leaf: true
+  },
+  area: {},
+  article: {
+    nameBias: 100,
+    unwrappable: true
+  },
+  aside: {
+    nameBias: -200
+  },
+  audio: {
+    leaf: true
   },
   b: {
-    etc:
+    descendantBias: 1,
+    inline: true
   },
-  etc
-
+  base: {
+    blacklisted: true
+  },
+  basefont: {
+    blacklisted: true
+  },
+  bdi: {
+    inline: true
+  },
+  bdo: {
+    inline: true
+  },
+  bgsound: {
+    blacklisted: true
+  },
+  big: {
+    unwrappable: true
+  },
+  blink: {
+    inline: true,
+    unwrappable: true
+  },
+  blockquote: {
+    ancestorBias: 10,
+    descendantBias: 3,
+    nameBias: 5
+  },
+  body: {
+    unwrappable: true
+  },
+  br: {
+    leaf: true
+  },
+  button: {
+    blacklisted: true,
+    nameBias: -100
+  },
+  canvas: {
+    leaf: true
+  },
+  caption: {},
+  center: {
+    unwrappable: true
+  },
+  cite: {
+    inline: true
+  },
+  code: {
+    ancestorBias: 10,
+    descendantBias: 2,
+    inline: true,
+    preformatted: true
+  },
+  col: {},
+  colgroup: {},
+  command: {
+    blacklisted: true
+  },
+  data: {},
+  datalist: {
+    blacklisted: true
+  },
+  details: {
+    unwrappable: true
+  },
+  dialog: {
+    blacklisted: true
+  },
+  dir: {},
+  dd: {
+    nameBias: -3
+  },
+  del: {
+    inline: true
+  },
+  dfn: {
+    inline: true
+  },
+  div: {
+    ancestorBias: 1,
+    nameBias: 20,
+    unwrappable: true
+  },
+  dl: {
+    ancestorBias: -5,
+    nameBias: -10
+  },
+  dt: {
+    nameBias: -3
+  },
+  em: {
+    descendantBias: 1,
+    inline: true
+  },
+  embed: {
+    blacklisted: true,
+    leaf: true
+  },
+  entry: {},
+  fieldset: {
+    blacklisted: true
+  },
+  figcaption: {
+    nameBias: 10
+  },
+  figure: {
+    nameBias: 10
+  },
+  font: {
+    unwrappable: true
+  },
+  footer: {
+    nameBias: -20,
+    unwrappable: true
+  },
+  form: {
+    nameBias: -20,
+    unwrappable: true
+  },
+  frame: {
+    blacklisted: true,
+    leaf: true
+  },
+  frameset: {
+    blacklisted: true
+  },
+  head: {
+    blacklisted: true
+  },
+  header: {
+    ancestorBias: -5,
+    nameBias: -5,
+    unwrappable: true
+  },
+  help: {
+    unwrappable: true
+  },
+  hgroup: {},
+  hr: {
+    leaf: true
+  },
+  html: {
+    blacklisted: true,
+    unwrappable: true
+  },
+  h1: {
+    descendantBias: 1,
+    nameBias: -2
+  },
+  h2: {
+    descendantBias: 1,
+    nameBias: -2
+  },
+  h3: {
+    descendantBias: 1,
+    nameBias: -2
+  },
+  h4: {
+    descendantBias: 1,
+    nameBias: -2
+  },
+  h5: {
+    descendantBias: 1,
+    nameBias: -2
+  },
+  h6: {
+    descendantBias: 1,
+    nameBias: -2
+  },
+  i: {
+    descendantBias: 1,
+    inline: true
+  },
+  iframe: {
+    blacklisted: true,
+    leaf: true
+  },
+  ilayer: {
+    // TODO: treat like div?
+  },
+  img: {
+    leaf: true
+  },
+  input: {
+    blacklisted: true
+  },
+  ins: {
+    inline: true
+  },
+  insert: {
+    unwrappable: true
+  },
+  inset: {},
+  label: {
+    unwrappable: true
+  },
+  layer: {
+    // TODO: treat like div?
+    unwrappable: true
+  }
+  legend: {
+    // NOTE: should legend not be blacklisted?
+    unwrappable: true,
+    blacklisted: true
+  },
+  li: {
+    ancestorBias: -3,
+    nameBias: -20
+  },
+  link: {
+    blacklisted: true
+  },
+  kbd: {
+    inline: true
+  },
+  keygen: {},
+  main: {},
+  mark: {},
+  marquee: {},
+  map: {},
+  math: {
+    blacklisted: true
+  },
+  menu: {},
+  menuitem: {},
+  meta: {
+    blacklisted: true
+  },
+  meter: {},
+  multicol: {},
+  nav: {
+    ancestorBias: -20,
+    nameBias: -50
+  },
+  nobr: {
+    unwrappable: true
+  },
+  noembed: {},
+  noframes: {
+    blacklisted: true
+  },
+  noscript: {
+    unwrappable: true
+  },
+  object: {
+    blacklisted: true,
+    leaf: true
+  },
+  ol: {
+    ancestorBias: -5,
+    nameBias: -20
+  },
+  optgroup: {
+    blacklisted: true
+  },
+  option: {
+    blacklisted: true
+  },
+  output: {
+    blacklisted: true
+  },
+  p: {
+    ancestorBias: 10,
+    descendantBias: 5,
+    nameBias: 10
+  },
+  param: {
+    blacklisted: true,
+    leaf: true
+  },
+  plaintext: {
+    // TODO: is plaintext whitespace important?
+    unwrappable: true
+  },
+  pre: {
+    ancestorBias: 10,
+    descendantBias: 2,
+    nameBias: 5,
+    preformatted: true
+  },
+  progress: {},
+  q: {
+    inline: true
+  },
+  rect: {},
+  rp: {},
+  rt: {},
+  ruby: {
+    ancestorBias: 5,
+    nameBias: 5,
+    preformatted: true
+  },
+  s: {},
+  samp: {
+    inline: true
+  },
+  script: {
+    blacklisted: true
+  },
+  section: {
+    nameBias: 10,
+    unwrappable: true
+  },
+  select: {
+    blacklisted: true
+  },
+  small: {
+    inline: true,
+    nameBias: -1,
+    unwrappable: true
+  },
+  spacer: {
+    blacklisted: true
+  },
+  span: {
+    descendantBias: 1,
+    inline: true,
+    unwrappable: true
+  },
+  strike: {
+    inline: true
+  },
+  strong: {
+    descendantBias: 1,
+    inline: true
+  },
+  style: {
+    blacklisted: true
+  },
+  // fairly certain this should not be an allowed element?
+  st1: {
+    inline: true,
+    unwrappable: true
+  },
+  sub: {
+    descendantBias: 2,
+    inline: true
+  },
+  summary: {
+    ancestorBias: 2,
+    descendantBias: 1,
+    nameBias: 5
+  },
+  sup: {
+    descendantBias: 2,
+    inline: true
+  },
+  svg: {
+    leaf: true
+  },
+  table: {
+    ancestorBias: -2
+  },
+  tbody: {
+    unwrappable: true
+  },
+  td: {
+    nameBias: 3
+  },
+  textarea: {
+    blacklisted: true
+  },
+  tfood: {},
+  th: {
+    nameBias: -3
+  },
+  thead: {
+    unwrappable: true
+  },
+  time: {
+    descendantBias: 2,
+    inline: true,
+    nameBias: 2
+  },
+  title: {
+    blacklisted: true
+  },
+  tr: {
+    nameBias: 1
+  },
+  track: {},
+  tt: {
+    inline: true
+  },
+  u: {
+    inline: true
+  },
+  ul: {
+    ancestorBias: -5,
+    nameBias: -20
+  },
+  'var': {
+    inline: true
+  },
+  video: {
+    leaf: true
+  },
+  wbr: {}
 };
-*/
 
-calamine.ANCESTOR_BIASES = {
-  blockquote: 10,
-  code: 10,
-  div: 1,
-  dl: -5,
-  header: -5,
-  li: -3,
-  nav: -20,
-  ol: -5,
-  p: 10,
-  pre: 10,
-  table: -2,
-  ul: -5
-};
-
-calamine.DESCENDANT_BIASES = {
-  b: 1,
-  blockquote: 3,
-  code: 2,
-  em: 1,
-  h1: 1,
-  h2: 1,
-  h3: 1,
-  h4: 1,
-  h5: 1,
-  h6: 1,
-  i: 1,
-  p: 5,
-  pre: 2,
-  span: 1,
-  strong: 1,
-  sub: 2,
-  sup: 2,
-  time: 2
-};
-
-calamine.TAG_NAME_BIAS = {
-  a: -1,
-  address: -3,
-  article: 100,
-  aside: -200,
-  blockquote: 3,
-  button: -100,
-  dd: -3,
-  div: 20,
-  dl: -10,
-  dt: -3,
-  figcaption: 10,
-  figure: 10,
-  footer: -20,
-  font: 0,
-  form: -20,
-  header: -5,
-  h1: -2,
-  h2: -2,
-  h3: -2,
-  h4: -2,
-  h5: -2,
-  h6: -2,
-  li: -20,
-  nav: -50,
-  ol: -20,
-  p: 10,
-  pre: 3,
-  section: 10,
-  small: -1,
-  td: 3,
-  time: -3,
-  tr: 1,
-  th: -3,
-  ul: -20
-};
+calamine.ELEMENT_KEYS = Object.keys(calamine.ELEMENT);
+calamine.SELECTOR_PREFORMATTED = calamine.ELEMENT_KEYS.filter(
+  calamine.lookupElementProp.bind(this, 'preformatted')).join(',');
+calamine.SELECTOR_LEAF = calamine.ELEMENT_KEYS.filter(
+  calamine.lookupElementProp.bind(this, 'leaf')).join(',');
+calamine.SELECTOR_INLINE = calamine.ELEMENT_KEYS.filter(
+  calamine.lookupElementProp.bind(this, 'inline')).join(',');
+calamine.SELECTOR_UNWRAPPABLE = calamine.ELEMENT_KEYS.filter(
+  calamine.lookupElementProp.bind(this, 'unwrappable')).join(',');
+calamine.SELECTOR_BLACKLIST = calamine.ELEMENT_KEYS.filter(
+  calamine.lookupElementProp.bind(this, 'blacklisted')).join(',');
+calamine.SELECTOR_WHITELIST = calamine.ELEMENT_KEYS.join(',');
 
 calamine.ID_CLASS_BIAS = {
   about: -35,
@@ -1481,6 +1873,7 @@ calamine.ID_CLASS_BIAS = {
 // NOTE: not currently in use. Keeping around as a note in the event I want to do
 // minimization as one of the transformations on remote html data.
 // Based on https://github.com/kangax/html-minifier/blob/gh-pages/src/htmlminifier.js
+// TODO: use ECMA6 Set?
 calamine.BOOLEAN_ATTRIBUTES = {
   allowfullscreen: 1,
   async: 1,
@@ -1527,166 +1920,3 @@ calamine.BOOLEAN_ATTRIBUTES = {
   typemustmatch: 1,
   visible: 1
 };
-
-calamine.SELECTOR_LEAF = 'applet,audio,br,canvas,embed,frame,hr,iframe,'+
-  'img,object,video';
-
-calamine.SELECTOR_INLINE = 'a,abbr,acronym,b,bdo,big,blink,cite,code,dfn,'+
-  'em,kbd,i,q,samp,small,span,strong,sub,sup,tt,var';
-
-// TODO: use array and join to make this more editable/readable?
-calamine.SELECTOR_UNWRAPPABLE = 'a:not([href]),article,big,blink,'+
-  'body,center,details,div,font,form,help,html,insert,label,'+
-  'legend,nobr,noscript,section,small,span,tbody,thead';
-
-// TODO: separate this into multiple lines for easier maintenance
-calamine.SELECTOR_BLACKLIST = 'applet,base,basefont,bgsound,button,'+
-  'command,datalist,dialog,embed,fieldset,frame,frameset,'+
-  'html,head,iframe,input,legend,link,math,meta,noframes,'+
-  'object,option,optgroup,output,param,script,select,spacer,style,'+
-  'textarea,title';
-
-// Allowed elements
-// NOTE: elements not in this list, such as custom elements
-// will be removed. Normal elements with a namespace may also be
-// removed.
-calamine.SELECTOR_WHITELIST =
-  'a,'+
-  'abbr,'+
-  'acronym,'+
-  'address,'+
-  'applet,'+
-  'area,'+
-  'article,'+
-  'aside,'+
-  'audio,'+
-  'b,'+
-  'base,'+
-  'basefont,'+
-  'bdi,'+
-  'bdo,'+
-  'bgsound,'+
-  'big,'+
-  'blink,'+
-  'blockquote,'+
-  'br,'+
-  'button,'+
-  'canvas,'+
-  'caption,'+
-  'center,'+
-  'cite,'+
-  'code,'+
-  'col,'+
-  'colgroup,'+
-  'command,'+
-  'data,'+
-  'datalist,'+
-  'details,'+
-  'dialog,'+
-  'dir,'+
-  'dd,'+
-  'del,'+
-  'dfn,'+
-  'div,'+
-  'dl,'+
-  'dt,'+
-  'em,'+
-  'embed,'+
-  'entry,'+
-  'fieldset,'+
-  'figcaption,'+
-  'figure,'+
-  'font,'+
-  'footer,'+
-  'form,'+
-  'frame,'+
-  'frameset,'+
-  'head,'+
-  'header,'+
-  'help,'+
-  'hgroup,'+
-  'hr,'+
-  'html,'+
-  'h1,'+
-  'h2,'+
-  'h3,'+
-  'h4,'+
-  'h5,'+
-  'h6,'+
-  'i,'+
-  'iframe,'+
-  'ilayer,'+
-  'img,'+
-  'input,'+
-  'ins,'+
-  'insert,'+
-  'inset,'+
-  'label,'+
-  'legend,'+
-  'li,'+
-  'link,'+
-  'kbd,'+
-  'keygen,'+
-  'main,'+
-  'mark,'+
-  'marquee,'+
-  'map,'+
-  'math,'+
-  'menu,'+
-  'menuitem,'+
-  'meta,'+
-  'meter,'+
-  'multicol,'+
-  'nav,'+
-  'nobr,'+
-  'noembed,'+
-  'noframes,'+
-  'noscript,'+
-  'object,'+
-  'ol,'+
-  'optgroup,'+
-  'option,'+
-  'output,'+
-  'p,'+
-  'param,'+
-  'plaintext,'+
-  'pre,'+
-  'progress,'+
-  'q,'+
-  'rect,'+
-  'rp,'+
-  'rt,'+
-  'ruby,'+
-  's,'+
-  'samp,'+
-  'script,'+
-  'section,'+
-  'select,'+
-  'small,'+
-  'spacer,'+
-  'span,'+
-  'strike,'+
-  'strong,'+
-  'style,'+
-  'st1,'+
-  'sub,'+
-  'summary,'+
-  'sup,'+
-  'svg,'+
-  'table,'+
-  'tbody,'+
-  'td,'+
-  'textarea,'+
-  'tfood,'+
-  'th,'+
-  'thead,'+
-  'time,'+
-  'title,'+
-  'tr,'+
-  'track,'+
-  'tt,'+
-  'u,'+
-  'ul,'+
-  'var,'+
-  'video,'+
-  'wbr';
