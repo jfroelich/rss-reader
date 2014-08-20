@@ -12,14 +12,11 @@ var lucu = lucu || {};
 
 lucu.poll = {};
 
+lucu.poll.active = false;
+
 lucu.poll.start = function() {
 
-  // TODO: once this is rewritten and debugged, remove this
-  // or make it a variable that is not in localStorage and not
-  // in sessionStorage to prevent permanent lockout. I noticed that
-  // sometimes a shutdown while running means the flag is persisted
-  // which permanently prevents updates which is horrid.
-  if(localStorage.POLL_ACTIVE) {
+  if(lucu.poll.active) {
     console.debug('Poll already in progress');
     return;
   }
@@ -29,7 +26,7 @@ lucu.poll.start = function() {
     return;
   }
 
-  localStorage.POLL_ACTIVE = '1';
+  lucu.poll.active = true;
 
   // TODO: i think the trick to moving out the nested functions is
   // to make these variables bindable. But these are passed by value (copied), and
@@ -48,7 +45,6 @@ lucu.poll.start = function() {
   // All this is basically doing is changing the implied closure access
   // in the nested functions to the variables defined in this main function
   // scope into an explicit access against an explicit environment.
-
 
   // NOTE: this approach to using a custom env works as demonstrated in
   // fetch.js so it should not be too difficult to change this code to
@@ -88,7 +84,7 @@ lucu.poll.start = function() {
 
   // TODO: move function out of here
   function pollCompleted() {
-    delete localStorage.POLL_ACTIVE;
+    lucu.poll.active = false;
     localStorage.LAST_POLL_DATE_MS = String(Date.now());
 
     chrome.runtime.sendMessage({
