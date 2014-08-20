@@ -894,7 +894,7 @@ calamine.applyTagNameScore = function(element) {
   // the namespace now? And how are they making it past the
   // white list filter?
   if(!descriptor) {
-    console.warn('No descriptor for %o with local name %s', element, element.localName);
+    //console.warn('No descriptor for %o with local name %s', element, element.localName);
     return;
   }
 
@@ -1160,9 +1160,21 @@ calamine.filterNonWhitelistedElement = function(element) {
     return;
   }
 
-  if(element.matches(calamine.SELECTOR_WHITELIST)) {
+  // TODO: change this to use localName. For consistency. This causes
+  // a strange side effect where custom namespaced elements are allowed through
+  // and therefore not removed (e.g. g:plusone, fb:like, l:script)
+
+  var descriptor = calamine.ELEMENT[element.localName];
+
+  if(descriptor) {
     return;
   }
+
+  //if(element.matches(calamine.SELECTOR_WHITELIST)) {
+  //  return;
+  //}
+
+  console.debug('Removing unknown element %o', element);
 
   element.remove();
 };
@@ -1553,7 +1565,7 @@ calamine.ELEMENT = {
   layer: {
     // TODO: treat like div?
     unwrappable: true
-  }
+  },
   legend: {
     // NOTE: should legend not be blacklisted?
     unwrappable: true,
