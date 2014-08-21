@@ -125,6 +125,10 @@ lucu.feed.onFetch = function(onComplete, onError, shouldAugmentEntries,
       shouldAugmentEntries, entryTimeout);
   }
 
+  lucu.isTextHTMLOrPlain = function(s) {
+    return /text\/html|plain/i.test(s);
+  };
+
   if(lucu.isTextHTMLOrPlain(mime)) {
 
     try {
