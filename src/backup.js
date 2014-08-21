@@ -40,9 +40,13 @@ lucu.backup.importOPMLFiles = function(files, onComplete) {
 
   var outlinesHash = {};
 
+  // TODO: instead of binding loadAsText, pass in a this arg
+  // and put stuff in the thisArg
+
   var loadText = lucu.loadAsText.bind(null, onFileLoad);
   Array.prototype.forEach.call(files, loadText);
 
+  // TODO: move this out of here
   function onFileLoad(event) {
 
     try {

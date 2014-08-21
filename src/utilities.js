@@ -139,7 +139,7 @@ exports.isTextHTML = function(contentType) {
 
 /**
  * TODO: if this function is only called by one thing then it belongs
- * there not here
+ * there not here. Move this to backup.js
  */
 exports.loadAsText = function(onFileLoad, file) {
   var reader = new FileReader();
