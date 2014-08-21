@@ -38,7 +38,7 @@ calamine.transformDocument = function(doc, options) {
   One possible issue with this is that is screws over the anchor
   density metric. Maybe a better tactic would be to just empty
   the href value in this case? Or remove the href attribute?
-  Removing the href attribute would mean that anchor desntiy would
+  Removing the href attribute would mean that anchor density would
   still be effected.  The function in derive-anchor-features just
   requires the presence of the href attribute to derive
   anchorCharCount. Therefore the best best would be to set it
@@ -52,6 +52,9 @@ calamine.transformDocument = function(doc, options) {
   */
   var scriptAnchors = calamine.filter(anchors, calamine.isJavascriptAnchor);
   scriptAnchors.forEach(calamine.unwrapElement);
+
+  // TODO: i could just unwrap href-less anchors here instead of later, since
+  // I will pretty much always be unwrapping them for scoring purposes?
 
   // TODO: the above might be what is causing text from links to appear
   // without delimiting whitespace. Maybe I need to insert a text node
@@ -114,17 +117,13 @@ calamine.transformDocument = function(doc, options) {
   // the first pass, making scoring a one pass approach
   calamine.forEach(elements, calamine.applySiblingBias);
 
-  // Post processing and best element identification
   if(options.FILTER_ATTRIBUTES) {
     calamine.forEach(elements, calamine.filterAttributes);
   }
 
-  // Score the root element in preparation for finding the
-  // best element.
+  // Find the best element, defaulting to the body element
   doc.body.score = -Infinity;
-
-  var bestElement = calamine.reduce(elements,
-    calamine.getMaxScore, doc.body);
+  var bestElement = calamine.reduce(elements, calamine.getMaxScore, doc.body);
 
   if(options.UNWRAP_UNWRAPPABLES) {
 
@@ -132,13 +131,19 @@ calamine.transformDocument = function(doc, options) {
     // but the current approach relies on using the element as the
     // return value so we unwrap everything but the best element.
 
-    // TODO: Special query to unwrap anchors without href values
-    // a:not([href])
+    var unwrappables = doc.body.querySelectorAll(calamine.SELECTOR_UNWRAPPABLE);
 
 
-    // Unwrap everything else
-    var unwrappables = doc.body.querySelectorAll(
-      calamine.SELECTOR_UNWRAPPABLE);
+    // Rather than concat here, do this along with isJavascriptAnchor unwrapping
+    var anchorsWithoutHrefs = calamine.filter(anchors, function(a) {
+      if(!a) return false;
+      var href = a.getAttribute('href');
+      if(href) href = href.trim();
+      return !href;
+    });
+
+    unwrappables = Array.prototype.slice.call(unwrappables).concat(anchorsWithoutHrefs);
+
     var notBest = calamine.isNotBestElement.bind(this, bestElement);
     var lessBest = calamine.filter(unwrappables, notBest);
     lessBest.forEach(calamine.unwrapElement);
@@ -152,14 +157,21 @@ calamine.transformDocument = function(doc, options) {
   calamine.forEach(elements, expose);
 
   if(options.HIGHLIGHT_MAX_ELEMENT) {
-    if(bestElement) {
-      bestElement.style.border = '2px solid green';
-    }
+    bestElement.style.border = '2px solid green';
   }
 
   // TODO: cleanup expando properties before returning?
 
-  return calamine.createFragment(doc, bestElement);
+  var results = doc.createDocumentFragment();
+  if(bestElement == doc.body) {
+    // We don't want to append body itself, just its children
+    calamine.forEach(doc.body.childNodes,
+      Node.prototype.appendChild.bind(results));
+  } else {
+    results.appendChild(bestElement);
+  }
+
+  return results;
 };
 
 calamine.filterAttributes = function(element) {
@@ -226,8 +238,8 @@ calamine.exposeAttributes = function(options, element)  {
     element.setAttribute('anchorDensity', element.anchorDensity.toFixed(2));
   if(options.SHOW_CHAR_COUNT && element.charCount)
     element.setAttribute('charCount', element.charCount);
-  if(options.SHOW_COPYRIGHT_COUNT && element.copyrightCount)
-    element.setAttribute('copyrightCount', element.copyrightCount);
+  if(options.SHOW_COPYRIGHT_COUNT && element.hasCopyrightSymbol)
+    element.setAttribute('hasCopyrightSymbol', element.hasCopyrightSymbol);
   if(options.SHOW_DOT_COUNT && element.dotCount)
     element.setAttribute('dotCount', element.dotCount);
   if(options.SHOW_IMAGE_BRANCH && element.imageBranch)
@@ -238,24 +250,6 @@ calamine.exposeAttributes = function(options, element)  {
     element.setAttribute('score', element.score.toFixed(2));
 };
 
-// TODO: think of a better name here. createFragment is maybe
-// too specific to the type of result to return, in the event this
-// is changed in the future. Or maybe just delete this and move
-// it back into transformDocument
-calamine.createFragment = function(doc, bestElement) {
-
-  var results = doc.createDocumentFragment();
-  var append = Node.prototype.appendChild.bind(results);
-
-  if(bestElement == doc.body) {
-    //Array.prototype.forEach.call(doc.body.childNodes, append);
-    calamine.forEach(doc.body.childNodes, append);
-  } else {
-    results.appendChild(bestElement);
-  }
-
-  return results;
-};
 
 /**
  * Whether an element is invisible
@@ -337,12 +331,6 @@ calamine.filterEmptyElements = function(doc) {
 
   var parent, grandParent;
 
-  // NOTE: stack.length might have a really surprising issue, I forget
-  // exactly but there is possibly something unexpected regarding
-  // popping elements from an array until it is empty, like,
-  // the length gets incorrectly updated or something. Something I was
-  // reading on stackoverflow about emptying arrays.
-
   while(stack.length) {
     parent = stack.pop();
 
@@ -358,8 +346,8 @@ calamine.filterEmptyElements = function(doc) {
     grandParent = parent.parentElement;
     parent.remove();
 
-    // If there was no parent (how would that ever happen?)
-    // or the parent is the root, then do not add the new
+    // If there was no grand parent (how would that ever happen?)
+    // or the grand parent is the root, then do not add the new
     // grand parent to the stack
     if(!grandParent || grandParent == doc.body) {
       continue;
@@ -465,9 +453,7 @@ calamine.deriveTextFeatures = function(node) {
 
   // TODO: this should be using the copyright character itself as well
   // TODO: this should be acting upon text that normalized the variants
-  // TODO: this should be discrete not continuous
-  parent.copyrightCount = /[\u00a9]|&copy;|&#169;/i.test(
-    value) ? 1 : 0;
+  parent.hasCopyrightSymbol = /[\u00a9]|&copy;|&#169;/i.test(value) ? 1 : 0;
 
   // TODO: this should also be looking for the dot character itself
   parent.dotCount = calamine.countChar(value,'\u2022');
@@ -475,7 +461,7 @@ calamine.deriveTextFeatures = function(node) {
   // TODO: this should also be looking at other expressions of pipes
   parent.pipeCount = calamine.countChar(value,'|');
 
-  // NOTE: we don't care about setting the count in the node itself
+  // NOTE: we don't care about setting the count in the node itself,
   // just in the parent element path to body
 
   var charCount = value.length - value.split(/[\s\.]/g).length + 1;
@@ -492,6 +478,7 @@ calamine.propagatePreformatted = function(element) {
   }
 
   calamine.setPreformatted(element);
+  // TODO: use querySelectorAll
   var descendants = element.getElementsByTagName('*');
   calamine.forEach(descendants, calamine.setPreformatted);
 }
@@ -520,7 +507,7 @@ calamine.trimNode = function(node) {
       // so only trim the right side
       node.nodeValue = node.nodeValue.trimRight();
     } else {
-      // It is sandwiched and should not be modified
+      // It is sandwiched in inline elements and should not be trimmed
     }
   } else if(calamine.isInline(node.nextSibling)) {
     // It does not follow an inline element but it does
@@ -589,6 +576,14 @@ calamine.deriveAnchorFeatures = function(anchor) {
 
 calamine.deriveSiblingFeatures = function(element) {
 
+  // NOTE: can we avoid storing this information as expandos
+  // and just calculate on demand in applySiblingScore? No,
+  // because previousSiblingCount has to be cached as each element
+  // is visited, which would be a surprise side effect of calling
+  // applySiblingScore. Calculating siblingCount could be deferred,
+  // except that previousSiblingCount is not calculated if
+  // siblingCount is 0.
+
   // Guard due to mutation-while-iterating issues
   if(!element) {
     return;
@@ -599,32 +594,18 @@ calamine.deriveSiblingFeatures = function(element) {
     return;
   }
 
-  // Cache a count of siblings and a count of prior siblings
   element.siblingCount = element.parentElement.childElementCount - 1;
   element.previousSiblingCount = 0;
 
-  // If there are no siblings, then there are obviously no previous
-  // siblings, so we are done
   if(!element.siblingCount) {
     return;
   }
 
-  // TODO: this could actually be improved by recognizing that
-  // this function is called in document order over the elements at the
-  // same level. Therefore we could easily just check if there
-  // a previous sibling. If there is not, then we know the
-  // previous sibling count is 0. If there is, then we know the
-  // previousSiblingCount is just 1 + the previous
-  // previousSiblingCount
-  // One less inner loop would be nice.
-  // It also makes the call more 'online' in that the back-history
-  // buffer of recently processed elements could be 'smaller'
-  // (of course, the entire doc is in mem so splitting hairs)
-
-  var sibling = element.previousElementSibling;
-  while(sibling) {
-    element.previousSiblingCount++;
-    sibling = sibling.previousElementSibling;
+  var pes = element.previousElementSibling;
+  if(pes) {
+    // Basic memoized approach that takes advantage of the fact that
+    // pes was already visited and already has a count.
+    element.previousSiblingCount = pes.previousSiblingCount + 1;
   }
 };
 
@@ -669,23 +650,40 @@ calamine.scoreElement = function(element) {
 
 calamine.applyTextScore = function(element) {
 
+  if(!element) {
+    return;
+  }
+
+  // Elements without a character count, for whatever reason,
+  // are not scored
   if(!element.charCount) {
     return;
   }
 
-  if(element.matches(calamine.SELECTOR_LEAF)) {
+  var descriptor = calamine.ELEMENT[element.localName];
+
+  if(descriptor && descriptor.leaf) {
+    // Leaf elements do not have a text score
     return;
   }
 
-  element.score += -20 * (element.copyrightCount || 0);
+  // Apply character scores
+  if(element.hasCopyrightSymbol) {
+    element.score -= 40;
+  }
+
   element.score += -20 * (element.dotCount || 0);
   element.score += -10 * (element.pipeCount || 0);
 
-  // Calculate anchor density and store it as an expando
+  // Calculate anchor density and store it as an expando so that
+  // it can optionally be exposed later
   element.anchorDensity = element.anchorCharCount / element.charCount;
 
   // TODO: this could still use a lot of improvement. Maybe look at
   // how any decision tree implementations have done it.
+
+  // NOTE: we store a special branch property just for
+  // debugging purposes when exposing attributes
 
   if(element.charCount > 1000) {
     if(element.anchorDensity > 0.35) {
@@ -731,8 +729,7 @@ calamine.applyTextScore = function(element) {
       element.branch = 8;
       element.score += 20;
     } else {
-      // BUG: duplicate branch id
-      element.branch = 8;
+      element.branch = 13;
       element.score += 5;
     }
   }
@@ -793,7 +790,6 @@ calamine.applyImageScore = function(element) {
     }
   }
 
-
   // Image branch property is just a helpful debugging property
 
   // TODO: rather than mutate the score property, it would be nicer to have
@@ -853,7 +849,6 @@ calamine.applyImageScore = function(element) {
       element.parentElement.score = (element.parentElement.score || 0) - 10;
     }
   }
-
 };
 
 calamine.applyPositionScore = function(element) {
@@ -886,15 +881,11 @@ calamine.applyPositionScore = function(element) {
 calamine.applyTagNameScore = function(element) {
   var descriptor = calamine.ELEMENT[element.localName];
 
-  // All elements should have passed through the whilelist
-  // filter by the time this function is called so this check
-  // should not be necessary, but apparently some elements
-  // somehow are remaining? Ok it is the elements with
-  // namespaces. Wait a sec, why the hell is localName including
-  // the namespace now? And how are they making it past the
-  // white list filter?
+  // TODO: this check should not be necessary but some elements
+  // get through (because white list filtering uses element.matches
+  // but this uses element.localName lookup). Once whitespace
+  // filtering is refactored, removed this condition
   if(!descriptor) {
-    //console.warn('No descriptor for %o with local name %s', element, element.localName);
     return;
   }
 
@@ -904,34 +895,21 @@ calamine.applyTagNameScore = function(element) {
 
 calamine.applyAttributeScore = function(element) {
 
-  var text = (element.getAttribute('id') || '');
+  var text = element.getAttribute('id') || '';
   text += ' ';
-  text += (element.getAttribute('class') || '');
+  text += element.getAttribute('class') || '';
   text = text.trim().toLowerCase();
 
   if(!text) {
     return;
   }
 
-  // TODO: rather than bind and create the sum function,
-  // use the thisArg parameter to reduce and change
-  // sumAttributeBiases to access it
-  var sum = calamine.sumAttributeBiases.bind(this, text);
   var keys = Object.keys(calamine.ID_CLASS_BIAS);
-
+  var sum = calamine.sumAttributeBiases.bind(this, text);
   element.score += keys.reduce(sum, 0);
-
-  // TODO: propagate partial attribute text bias to children, in the same
-  // way that certain ancestor elements bias their children? After all,
-  // <article/> should be nearly equivalent to <div id="article"/> ? Does
-  // this encroach on tag name bias though?
 };
 
-calamine.sumAttributeBiases = function(text, sum, key, index) {
-
-  // TODO: is there something like string.contains that is
-  // more boolean? We don't care about the index, maybe it would
-  // be more semantically accurate
+calamine.sumAttributeBiases = function(text, sum, key) {
 
   if(text.indexOf(key) > -1) {
     return sum + calamine.ID_CLASS_BIAS[key];
@@ -1170,11 +1148,7 @@ calamine.filterNonWhitelistedElement = function(element) {
     return;
   }
 
-  //if(element.matches(calamine.SELECTOR_WHITELIST)) {
-  //  return;
-  //}
-
-  console.debug('Removing unknown element %o', element);
+  //console.debug('Removing unknown element %o', element);
 
   element.remove();
 };
@@ -1284,54 +1258,46 @@ calamine.isInline = function(node) {
  * Removes the element but retains its children.
  */
 calamine.unwrapElement = function(element) {
-  // We have to check element is defined since this is called every iteration
-  // and a prior iteration may have somehow removed the element.
 
-  // We check if parent element is defined just in case this is somehow
-  // called on an element that was removed.
-  // This function can work on detached nodes, but only if those nodes still have a
-  // parentElement defined. The root element/node of a detached hierarchy does not
-  // have a parentElement, but its children do have parents despite being deatched
-  // from the main document.
-  // NOTE: detachment can be tested easily, albeit inefficiently, by using
-  // doc.body.contains(element).
+  // Guard due to mutation while iterating
+  if(!element) {
+    return;
+  }
 
-  // NOTE: this function is not currently designed to perform well on
-  // attached nodes, because it causes a reflow per move (per iteration
-  // of the while loop below). It could be improved by moving the child
-  // nodes into a DocumentFragment and then by replacing the original parent
-  // with the fragment, which would cause fewer reflows. It could probably
+  // Extra guard to due mutation while iterating, due to
+  // remove or unwrap
+  if(!element.parentElement) {
+    return;
+  }
+
+  // Could be improved by moving the child nodes into a DocumentFragment
+  // and then replace the original parent with the fragment
   // be further improved by detaching the element itself first, then
   // building the fragment, and then inserting the fragment in the place
   // of the element (which means we need to store a reference to prev or
   // next sibling and also a reference to the parent element prior to
   // removing the element).
-
-  if(element && element.parentElement) {
-    while(element.firstChild) {
-      element.parentElement.insertBefore(element.firstChild, element);
-    }
-
-    element.remove();
+  while(element.firstChild) {
+    element.parentElement.insertBefore(element.firstChild, element);
   }
+
+  element.remove();
 };
 
-// A simple helper for passing to iterators like forEach
+// Simple helper for passing to iterators like forEach
 calamine.removeNode = function(node) {
-  // TODO: can i use Node/Element.prototype.remove instead?
-
-  // This uses the new node.remove function instead of
-  // node.parentNode.removeChild(node).
   if(node) {
     node.remove();
   }
 };
 
+// Simple helper for looking up properties in the ELEMENT map
 calamine.lookupElementProp = function(prop, key) {
   var desc = calamine.ELEMENT[key];
   return desc && desc[prop];
 };
 
+// Our schema/policy/meta-properties/directives for element handling
 calamine.ELEMENT = {
   a: {
     inline: true,
@@ -1404,7 +1370,8 @@ calamine.ELEMENT = {
     nameBias: -100
   },
   canvas: {
-    leaf: true
+    leaf: true,
+    nameBias: 3
   },
   caption: {},
   center: {
@@ -1768,16 +1735,15 @@ calamine.ELEMENT = {
 
 calamine.ELEMENT_KEYS = Object.keys(calamine.ELEMENT);
 calamine.SELECTOR_PREFORMATTED = calamine.ELEMENT_KEYS.filter(
-  calamine.lookupElementProp.bind(this, 'preformatted')).join(',');
+  calamine.lookupElementProp.bind(undefined, 'preformatted')).join(',');
 calamine.SELECTOR_LEAF = calamine.ELEMENT_KEYS.filter(
-  calamine.lookupElementProp.bind(this, 'leaf')).join(',');
+  calamine.lookupElementProp.bind(undefined, 'leaf')).join(',');
 calamine.SELECTOR_INLINE = calamine.ELEMENT_KEYS.filter(
-  calamine.lookupElementProp.bind(this, 'inline')).join(',');
+  calamine.lookupElementProp.bind(undefined, 'inline')).join(',');
 calamine.SELECTOR_UNWRAPPABLE = calamine.ELEMENT_KEYS.filter(
-  calamine.lookupElementProp.bind(this, 'unwrappable')).join(',');
+  calamine.lookupElementProp.bind(undefined, 'unwrappable')).join(',');
 calamine.SELECTOR_BLACKLIST = calamine.ELEMENT_KEYS.filter(
-  calamine.lookupElementProp.bind(this, 'blacklisted')).join(',');
-calamine.SELECTOR_WHITELIST = calamine.ELEMENT_KEYS.join(',');
+  calamine.lookupElementProp.bind(undefined, 'blacklisted')).join(',');
 
 calamine.ID_CLASS_BIAS = {
   about: -35,
@@ -1794,7 +1760,9 @@ calamine.ID_CLASS_BIAS = {
   breadcrumbs: -20,
   button: -100,
   byline: 20,
+  caption: 10,
   carousel: 30,
+  column: 10,
   combx: -20,
   comic: 75,
   comment: -300,
@@ -1829,6 +1797,7 @@ calamine.ID_CLASS_BIAS = {
   meta: -50,
   nav: -200,
   navbar: -100,
+  page: 50,
   pagetools: -50,
   parse: -50,
   pinnion: 50,
@@ -1839,6 +1808,7 @@ calamine.ID_CLASS_BIAS = {
   power: -100,
   print: -50,
   promo: -200,
+  reading: 100,
   recap: -100,
   relate: -300,
   replies: -100,
