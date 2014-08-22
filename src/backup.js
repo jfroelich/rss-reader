@@ -7,10 +7,10 @@
 var lucu = lucu || {};
 
 // TODO: think of a better name that captures both import and export
-// Backup module
-
 // TODO: this module, as a whole, needs alot of cleanup. There are a lot
 // of nested functions and the continuation passing style is obscure.
+
+// TODO: I don't need the backup namespace, deprecate it
 
 lucu.backup = {};
 
@@ -129,7 +129,7 @@ lucu.backup.exportOPMLString = function(onComplete) {
 // TODO: think of a better name, like createOPMLStringFromFeeds
 
 lucu.backup.serializeFeedsAsOPMLString = function(onComplete, feeds) {
-  var xmlDocument = lucu.opml.createDocument(feeds,'subscriptions.xml');
+  var xmlDocument = lucu.opml.createDocument(feeds, 'subscriptions.xml');
   var serializer = new XMLSerializer();
   var str = serializer.serializeToString(xmlDocument);
   onComplete(str);
