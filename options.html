@@ -2,12 +2,11 @@
 <html>
 <head>
 <title>Options for Honey Badger News Reader</title>
-<link rel="shortcut icon" href="media/rss_icon_trans.gif"/>
-<link rel="stylesheet" href="media/common.css"/>
-<link rel="stylesheet" href="media/options.css"/>
+<link rel="shortcut icon" href="/media/rss_icon_trans.gif"/>
+<link rel="stylesheet" href="/media/common.css"/>
+<link rel="stylesheet" href="/media/options.css"/>
 
 <script type="text/javascript" src="/src/backup.js"></script>
-<script type="text/javascript" src="/src/content-filters.js"></script>
 <script type="text/javascript" src="/src/database.js"></script>
 <script type="text/javascript" src="/src/discover-feeds.js"></script>
 <script type="text/javascript" src="/src/entry.js"></script>
@@ -39,7 +38,6 @@
 <li id="mi-general-settings" section="section-general-settings">General settings</li>
 <li id="mi-display-settings" section="section-display-settings">Display settings</li>
 <li id="mi-embeds" section="section-embeds">Approved embeds</li>
-<li id="mi-content-filters" section="section-content-filters">Content filters</li>
 <li id="mi-backup" section="section-backup">Import/export</li>
 <li id="mi-view-about" section="divabout">About</li>
 <li id="mi-feed-details" section="section-feed-details" style="display:none;">hidden feed details placeholder</li>
@@ -71,11 +69,6 @@
 			<input type="checkbox" id="enable-background"> Permit this extension to check for
 			updates in the background if the option <em>Continue running background apps when
 			Google Chrome is closed</em> is enabled in Chrome's advanced settings.
-		</td>
-	</tr>
-	<tr>
-		<td colspan="2" class="option-text">
-			<input type="checkbox" id="enable-content-filters"> Enable content filters
 		</td>
 	</tr>
 	<tr>
@@ -355,18 +348,6 @@
 <li><a href="">http://www.google.com</a><button>Revoke</button></li>
 <li><a href="">https://www.youtube.com</a><button>Revoke</button></li>
 </ul>
-</div>
-
-<div id="section-content-filters" class="options_section">
-<h1>Content filters</h1>
-<p class="option-text" style="border-bottom:1px dotted #cccccc;padding-bottom:6px;">
-Tag name: <input type="text" id="create-filter-tag-name">
-Attribute name: <input type="text" id="create-filter-attribute-name">
-Match: <input type="text" id="create-filter-attribute-value-match">
-<button id="create-filter-action">Create</button>
-</p>
-<ul id="content-filters-list"></ul>
-
 </div>
 
 <div id="section-backup" class="options_section">

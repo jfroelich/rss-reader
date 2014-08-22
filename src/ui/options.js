@@ -461,17 +461,6 @@ function populateFeedDetailsSection(feedId) {
   });
 }
 
-function appendContentFilterRule(listElement, rule) {
-  var listItem = document.createElement('li');
-  listItem.id = rule.id;
-  listItem.textContent = contentFiltering.ruleToString(rule);
-  var button = document.createElement('button');
-  button.value = rule.id;
-  button.textContent = 'Remove';
-  button.onclick = onRemoveContentFilterClick;
-  listItem.appendChild(button);
-  listElement.appendChild(listItem);
-}
 
 function onPostPreviewSubscribeClick(event) {
   var url = event.currentTarget.value;
@@ -634,16 +623,6 @@ function onEnableURLRewritingChange(event) {
     delete localStorage.URL_REWRITING_ENABLED;
 }
 
-function onEnableContentFiltersChange(event) {
-  if(event.target.checked) {
-    localStorage.ENABLE_CONTENT_FILTERS = '1';
-    document.getElementById('mi-content-filters').style.display = 'block';
-  } else {
-    delete localStorage.ENABLE_CONTENT_FILTERS;
-    document.getElementById('mi-content-filters').style.display = 'none';
-  }
-}
-
 function onImportOPMLClick(event) {
   var uploader = document.createElement('input');
   uploader.setAttribute('type', 'file');
@@ -706,25 +685,6 @@ function onExportOPMLClick(event) {
     URL.revokeObjectURL(blob);
     document.body.removeChild(anchor);
   });
-}
-
-function onCreateContentFilterClick(event) {
-  var rule = contentFiltering.createRule(
-    document.getElementById('create-filter-tag-name').value,
-    document.getElementById('create-filter-attribute-name').value,
-    document.getElementById('create-filter-attribute-value-match').value);
-
-  document.getElementById('create-filter-tag-name').value = '';
-  document.getElementById('create-filter-attribute-name').value = '';
-  document.getElementById('create-filter-attribute-value-match').value = '';
-
-  appendContentFilterRule(document.getElementById('content-filters-list'), rule);
-}
-
-function onRemoveContentFilterClick(event) {
-  event.target.removeEventListener('click', onRemoveContentFilterClick);
-  contentFiltering.removeRule(parseInt(event.target.value));
-  event.currentTarget.parentNode.removeChild(event.currentTarget);
 }
 
 function onHeaderFontChange(event){
@@ -801,10 +761,7 @@ function onEnableIdleCheckChange(event) {
 }
 
 function initNavigation() {
-  var menuItem = document.getElementById('mi-content-filters');
-  menuItem.style.display = localStorage.ENABLE_CONTENT_FILTERS ? 'block' : 'none';
-
-  menuItem = document.getElementById('mi-embeds');
+  var menuItem = document.getElementById('mi-embeds');
   menuItem.style.display = localStorage.EMBED_POLICY == 'ask' ? 'block' : 'none';
 
   var menuItems = document.querySelectorAll('#navigation-menu li');
@@ -849,8 +806,6 @@ function initGeneralSettingsSection() {
   document.getElementById('enable-subscription-preview').onchange =
     onEnableSubscriptionPreviewChange;
 
-  document.getElementById('enable-content-filters').checked = !!localStorage.ENABLE_CONTENT_FILTERS;
-  document.getElementById('enable-content-filters').onchange = onEnableContentFiltersChange;
   document.getElementById('rewriting-enable').checked = !!localStorage.URL_REWRITING_ENABLED;
   document.getElementById('rewriting-enable').onchange = onEnableURLRewritingChange;
 }
@@ -969,18 +924,6 @@ function initDisplaySettingsSection() {
   document.getElementById('body-line-height').oninput = onBodyLineHeightChange;
 }
 
-function initContentFiltersSection() {
-
-  var createButton = document.getElementById('create-filter-action');
-  createButton.onclick = onCreateContentFilterClick;
-
-  var listElement = document.getElementById('content-filters-list');
-  // TODO: change this to use the new ContentFilterList module
-  //var rules = loadContentFilterRules();
-  //var appendRuleToList = appendContentFilterRule.bind(null, listElement);
-  //rules.forEach(appendRuleToList);
-}
-
 function initAboutSection() {
   var manifest = chrome.runtime.getManifest();
 
@@ -1009,7 +952,6 @@ function initOptionsPage(event) {
   initFeedDetailsSection();
   initSubscribeDiscoverSection();
   initDisplaySettingsSection();
-  initContentFiltersSection();
   initAboutSection();
 }
 
