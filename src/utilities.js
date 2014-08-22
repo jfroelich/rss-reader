@@ -49,6 +49,27 @@ exports.fade = function(element, duration, delay, callback) {
   }
 };
 
+//Finds first matching CSS rule by selectorText query.
+exports.findCSSRule = function(sheet, selectorText) {
+
+  if(!sheet) {
+    return;
+  }
+
+  var rules = sheet.cssRules;
+
+  // TODO: use a partial instead of an outer scope ref
+
+  var matches = Array.prototype.filter.call(rules, function(rule) {
+    return rule.selectorText == selectorText;
+  });
+
+  // TODO: is the length check even necessary?
+  if(matches.length) {
+    return matches[0];
+  }
+};
+
 exports.forEach = function(arrayLikeObject, fn) {
 
   if(!arrayLikeObject) {
