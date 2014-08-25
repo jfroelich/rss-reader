@@ -11,61 +11,34 @@ var calamine = {};
  */
 calamine.transformDocument = function(doc, options) {
   options = options || {};
+  calamine.forEachNode(doc.body, NodeFilter.SHOW_COMMENT |
+    NodeFilter.SHOW_ELEMENT, calamine.removeNode,
+    calamine.acceptIfShouldRemove);
 
-  if(!doc.body) {
-    console.warn('Missing body element in document %o', doc);
-    return;
-  }
-
-  var elements = doc.body.querySelectorAll('*');
-  var anchors = doc.body.querySelectorAll('a');
-  calamine.forEachNode(doc.body, NodeFilter.SHOW_COMMENT, calamine.removeNode);
-  var blacklistedElements = doc.body.querySelectorAll(calamine.SELECTOR_BLACKLIST);
-  calamine.forEach(blacklistedElements, calamine.filterBlacklistedElement);
-  calamine.forEach(elements, calamine.filterNonWhitelistedElement);
-  var images = doc.body.querySelectorAll('img');
-  calamine.forEach(images, calamine.filterImage);
-  var noscripts = doc.body.querySelectorAll('noscript');
-  calamine.forEach(noscripts, calamine.unwrapElement);
-  var invisibles = calamine.filter(elements, calamine.isInvisible);
-  invisibles.forEach(calamine.removeNode);
+  // This sucks. We have to unwrap instead of remove due to template unhiding
+  // but this is actually adding boilerplate. Maybe test length of innerText?
+  calamine.forEach(doc.body.querySelectorAll('noembed, noscript'),
+    calamine.unwrap);
 
   // Not yet implemented
-  // BUGGY: in process of fixing
-  // calamine.forEach(doc.body.querySelectorAll('br,hr'), calamine.testSplitBreaks);
+  // calamine.forEach(doc.body.querySelectorAll('br,hr'),
+  //   calamine.testSplitBreaks);
 
-  /*
-  One possible issue with this is that is screws over the anchor
-  density metric. Maybe a better tactic would be to just empty
-  the href value in this case? Or remove the href attribute?
-  Removing the href attribute would mean that anchor density would
-  still be effected.  The function in derive-anchor-features just
-  requires the presence of the href attribute to derive
-  anchorCharCount. Therefore the best best would be to set it
-  to empty?
-  But then this leads to the problem if the anchor makes it through
-  the gauntlet, in that we end up presenting bad anchors to the viewer
-  Maybe we could later filter out empty href attributes? That isn't
-  just normal minification that has a semantic effect on the text so
-  it would be important.
-  Or we could remove the has-href check in derive-anchor-features?
-  */
+  var anchors = doc.body.querySelectorAll('a');
+
+  // TODO: handling javascript: anchors requires more consideration
   var scriptAnchors = calamine.filter(anchors, calamine.isJavascriptAnchor);
-  scriptAnchors.forEach(calamine.unwrapElement);
+  //scriptAnchors.forEach(calamine.unwrap);
+  scriptAnchors.forEach(function(anchor) {
+    anchor.removeAttribute('href');
+  });
 
-  // TODO: i could just unwrap href-less anchors here instead of later, since
-  // I will pretty much always be unwrapping them for scoring purposes?
-
-  // TODO: the above might be what is causing text from links to appear
-  // without delimiting whitespace. Maybe I need to insert a text node
-  // spacer following each unwrapped anchor?
-
-  // Marks code/pre elements as whitespaceImportant and then marks all
-  // direct and indirect descendant elements as whiteSpaceImportant.
-  // Propagating this property from the top down (cascading) enables
-  // the trimNode function to quickly determine whether its nodeValue is
-  // trimmable, as opposed to having the trimNode function search each
-  // text node's axis (path from root) for the presence of a pre/code element.
+  // Marks certain elements as whitespaceImportant and then marks all direct
+  // and indirect descendant elements as whiteSpaceImportant. Propagating this
+  // property from the top down (cascading) enables the trimNode function to
+  // quickly determine whether its nodeValue is trimmable, as opposed to having
+  // the trimNode function search each text node's axis (path from root) for
+  // the presence of a pre/code element.
   var preformatted = doc.body.querySelectorAll(calamine.SELECTOR_PREFORMATTED);
   calamine.forEach(preformatted, calamine.propagatePreformatted);
 
@@ -98,6 +71,7 @@ calamine.transformDocument = function(doc, options) {
 
   calamine.forEach(anchors, calamine.deriveAnchorFeatures);
 
+  var elements = doc.body.querySelectorAll('*');
   calamine.forEach(elements, calamine.deriveSiblingFeatures);
 
   // Score
@@ -125,6 +99,10 @@ calamine.transformDocument = function(doc, options) {
   doc.body.score = -Infinity;
   var bestElement = calamine.reduce(elements, calamine.getMaxScore, doc.body);
 
+
+  // TODO: unwrap JavaScript anchors here, not above. Do it regardless
+  // of whether UNWRAP_UNWRAPPABLES is true.
+
   if(options.UNWRAP_UNWRAPPABLES) {
 
     // The best element could be something we would prefer to unwrap
@@ -133,29 +111,22 @@ calamine.transformDocument = function(doc, options) {
 
     var unwrappables = doc.body.querySelectorAll(calamine.SELECTOR_UNWRAPPABLE);
 
-
     // Rather than concat here, do this along with isJavascriptAnchor unwrapping
-    var anchorsWithoutHrefs = calamine.filter(anchors, function(a) {
+    var nominalAnchors = calamine.filter(anchors, function(a) {
       if(!a) return false;
       var href = a.getAttribute('href');
       if(href) href = href.trim();
       return !href;
     });
 
-    unwrappables = Array.prototype.slice.call(unwrappables).concat(anchorsWithoutHrefs);
+    unwrappables = Array.prototype.slice.call(unwrappables).concat(nominalAnchors);
 
     var notBest = calamine.isNotBestElement.bind(this, bestElement);
     var lessBest = calamine.filter(unwrappables, notBest);
-    lessBest.forEach(calamine.unwrapElement);
+    lessBest.forEach(calamine.unwrap);
   }
 
-  // TODO: trim the element. E.g. remove leading or trailing
-  // <br> elements and such. Look at the old sanitizer code
-  // that was doing trim document
-
-  var expose = calamine.exposeAttributes.bind(this, options);
-  calamine.forEach(elements, expose);
-
+  calamine.forEach(elements, calamine.exposeAttributes.bind(this, options));
   if(options.HIGHLIGHT_MAX_ELEMENT) {
     bestElement.style.border = '2px solid green';
   }
@@ -171,7 +142,43 @@ calamine.transformDocument = function(doc, options) {
     results.appendChild(bestElement);
   }
 
+  // TODO: trim the fragment. E.g. remove leading or trailing
+  // <br> elements and such. Look at the old sanitizer code
+  // that was doing trim document
+
   return results;
+};
+
+/**
+ * Parameter to createNodeIterator. Returns FILTER_ACCEPT for
+ * various nodes/elements that should be removed.
+ */
+calamine.acceptIfShouldRemove = function(node) {
+  if(node.nodeType == Node.COMMENT_NODE) {
+    return NodeFilter.FILTER_ACCEPT;
+  }
+
+  var descriptor = calamine.getDescriptor(node);
+  if(!descriptor) {
+    // console.warn('Removing unknown element %o', node);
+    return NodeFilter.FILTER_ACCEPT;
+  }
+
+  if(descriptor.blacklisted) {
+    return NodeFilter.FILTER_ACCEPT;
+  }
+
+  if(node.localName == 'img' && (!node.hasAttribute('src') ||
+      node.width === 1 || node.height === 1)) {
+    return NodeFilter.FILTER_ACCEPT;
+  }
+
+  if(node.localName != 'noscript' && node.localName != 'noembed' &&
+    calamine.isInvisible(node)) {
+    return NodeFilter.FILTER_ACCEPT;
+  }
+
+  return NodeFilter.FILTER_REJECT;
 };
 
 calamine.filterAttributes = function(element) {
@@ -212,12 +219,10 @@ calamine.getMaxScore = function(previous, current) {
     return previous;
   }
 
-  // Some elements may not have a score
   if(!current.hasOwnProperty('score')) {
     return previous;
   }
 
-  // Favor previous in case of equal score
   if(current.score > previous.score) {
     return current;
   }
@@ -250,7 +255,6 @@ calamine.exposeAttributes = function(options, element)  {
     element.setAttribute('score', element.score.toFixed(2));
 };
 
-
 /**
  * Whether an element is invisible
  */
@@ -277,11 +281,8 @@ calamine.isInvisible = function(element) {
     return true;
   }
 
-  // TODO: this should not really just be absolutely invisible, but also
-  // nearly-invisible. More like opacity < 0.3, where 0.3 is the assumed
-  // threshold where text becomes non-visible
   var opacity = parseFloat(element.style.opacity);
-  if(opacity === 0) {
+  if(opacity < 0.2) {
     return true;
   }
 
@@ -382,8 +383,8 @@ calamine.removeAndReturnParent = function(element) {
 };
 
 calamine.isEmptyLike = function(element) {
-  return !element.firstChild &&
-    !element.matches(calamine.SELECTOR_LEAF);
+  // TODO: rewrite to use descriptor
+  return !element.firstChild && !element.matches(calamine.SELECTOR_LEAF);
 };
 
 calamine.testSplitBreaks = function(str) {
@@ -447,7 +448,6 @@ calamine.testSplitBreaks = function(str) {
 
 calamine.deriveTextFeatures = function(node) {
   var doc = node.ownerDocument;
-  var body = doc.body;
   var parent = node.parentElement;
   var value = node.nodeValue;
 
@@ -466,7 +466,7 @@ calamine.deriveTextFeatures = function(node) {
 
   var charCount = value.length - value.split(/[\s\.]/g).length + 1;
 
-  while(parent != body) {
+  while(parent != doc.body) {
     parent.charCount = (parent.charCount || 0) + charCount;
     parent = parent.parentElement;
   }
@@ -489,33 +489,22 @@ calamine.setPreformatted = function(element) {
 
 calamine.trimNode = function(node) {
 
-  // If whitespace is important then we do not trim
   if(node.parentElement.preformatted) {
     return;
   }
 
-  // A node is either sandwiched between inline elements
-  // or just preceding one or just trailing one
-
-  // NOTE: are we actually just looking up the function
-  // to use here? like a factory? E.g. get a function that
-  // returns String.prototype.trimX, and then call
-  // that function?
   if(calamine.isInline(node.previousSibling)) {
     if(!calamine.isInline(node.nextSibling)) {
       // It follows an inline element but does not precede one
-      // so only trim the right side
       node.nodeValue = node.nodeValue.trimRight();
-    } else {
-      // It is sandwiched in inline elements and should not be trimmed
     }
   } else if(calamine.isInline(node.nextSibling)) {
     // It does not follow an inline element but it does
-    // precede one so only trim the left side
+    // precede one
     node.nodeValue = node.nodeValue.trimLeft();
   } else {
     // It does not follow an inline element and it does
-    // not precede one, so trim both sides
+    // not precede one
     node.nodeValue = node.nodeValue.trim();
   }
 };
@@ -526,9 +515,7 @@ calamine.filterEmptyNode = function(node) {
     return;
   }
 
-  // TODO: think more about what happens if
-  // node value is something like '0'
-  // e.g. should condition include node.nodeValue.length ?
+  // TODO: should condition be node.nodeValue.length ?
 
   if(node.nodeValue) {
     return;
@@ -576,11 +563,8 @@ calamine.deriveAnchorFeatures = function(anchor) {
 
 calamine.deriveSiblingFeatures = function(element) {
 
-  // NOTE: can we avoid storing this information as expandos
-  // and just calculate on demand in applySiblingScore? No,
-  // because previousSiblingCount has to be cached as each element
-  // is visited, which would be a surprise side effect of calling
-  // applySiblingScore. Calculating siblingCount could be deferred,
+  // NOTE: previousSiblingCount has to be cached as each element
+  // is visited. Calculating siblingCount could be deferred,
   // except that previousSiblingCount is not calculated if
   // siblingCount is 0.
 
@@ -610,16 +594,11 @@ calamine.deriveSiblingFeatures = function(element) {
 };
 
 calamine.isJavascriptAnchor = function(anchor) {
-
   // Guard due to mutation-while-iterating issues
   if(!anchor) {
     return false;
   }
-
   var href = anchor.getAttribute('href');
-
-  // NOTE: this returns the desired result even
-  // if href is undefined
   return /^\s*javascript\s*:/i.test(href);
 };
 
@@ -632,6 +611,11 @@ calamine.scoreElement = function(element) {
   }
 
   element.score = element.score || 0;
+
+  // TODO: anchors beginning with # before resolution are
+  // probably table of contents links. We should differentiate
+  // See http://plato.stanford.edu/entries/other-minds/
+  // where the TOC was missed
 
   // Idea: rather than applying, we should be trying to
   // just get the score from each function and accumulating
@@ -660,7 +644,8 @@ calamine.applyTextScore = function(element) {
     return;
   }
 
-  var descriptor = calamine.ELEMENT[element.localName];
+  // TODO: use calamine.getDescriptor
+  var descriptor = calamine.ELEMENT_POLICY[element.localName];
 
   if(descriptor && descriptor.leaf) {
     // Leaf elements do not have a text score
@@ -744,7 +729,7 @@ calamine.applyImageScore = function(element) {
   // element instanceof HTMLImageElement works, but apparently there is a strange
   // issue with cross-frame compatibility.
 
-  if(!element.matches('img')) {
+  if(element.localName != 'img') {
     return;
   }
 
@@ -791,7 +776,6 @@ calamine.applyImageScore = function(element) {
   }
 
   // Image branch property is just a helpful debugging property
-
   // TODO: rather than mutate the score property, it would be nicer to have
   // a separate function that returns a score. That does, however, make it
   // harder to set imageBranch. So the function would need destructuring which
@@ -803,7 +787,6 @@ calamine.applyImageScore = function(element) {
   var area = calamine.getImageArea(element);
 
   if(!isFinite(area)) {
-
     element.imageBranch = 1;
     element.score += 100;
     if(element.parentElement && element.parentElement != root) {
@@ -871,7 +854,6 @@ calamine.applyPositionScore = function(element) {
   element.score += 2 - 2 * startRatio;
 
   // Distance from middle
-
   var halfCount = element.siblingCount / 2;
   var middleOffset = Math.abs(prevCount - halfCount);
   var middleRatio = middleOffset / halfCount;
@@ -879,12 +861,13 @@ calamine.applyPositionScore = function(element) {
 };
 
 calamine.applyTagNameScore = function(element) {
-  var descriptor = calamine.ELEMENT[element.localName];
+  // TODO: use calamine.getDescriptor
+  var descriptor = calamine.ELEMENT_POLICY[element.localName];
 
   // TODO: this check should not be necessary but some elements
   // get through (because white list filtering uses element.matches
   // but this uses element.localName lookup). Once whitespace
-  // filtering is refactored, removed this condition
+  // filtering is refactored, remove this condition
   if(!descriptor) {
     return;
   }
@@ -924,7 +907,7 @@ calamine.applyAncestorBiasScore = function(element) {
     return;
   }
 
-  var descriptor = calamine.ELEMENT[element.localName];
+  var descriptor = calamine.getDescriptor(element);
 
   // Not all elements have descriptors
   if(!descriptor) {
@@ -956,7 +939,7 @@ calamine.applyDescendantBiasScore = function(element) {
     return;
   }
 
-  var descriptor = calamine.ELEMENT[element.localName];
+  var descriptor = calamine.getDescriptor(element);
 
   // Not all elements have a descriptor. They should, because those
   // elements should be filtered out previously by the whitelist test,
@@ -1062,97 +1045,6 @@ calamine.applySiblingBias = function(element) {
   }
 };
 
-calamine.filterImage = function(image) {
-
-  // Guard against mutation-while-iterating issues
-  if(!image) {
-    return;
-  }
-
-  var source = image.getAttribute('src');
-  if(source) {
-    source = source.trim();
-  }
-
-  // Remove sourceless images. Technically we should never encounter such
-  // images, and this filter's purpose is closer to minifying than
-  // filtering for statistical reasons. I also am not clear how browsers
-  // react to sourceless images, and whether behavior varies. I assume such
-  // images would never be displayed and not affect layout. It would be
-  // something to eventually learn about.
-  if(!source) {
-    image.remove();
-    return;
-  }
-
-  // NOTE: I assume that tracker images are not a good indicator of whether
-  // the containing element is boilerplate. They seem to be randomly
-  // distributed. I admit my sample size is pretty small and this could turn
-  // out to be incorrect, but I am fairly confident for now.
-  // I suppose another way to look at it however, since we are not testing
-  // both dimensions at once, is that another common technique before CSS
-  // was widespread was the whole 1px width trick to simulate box-shadow. In that
-  // sense, if the ratio of the image is something like 1px to 1000px or 1000px to
-  // 1px, such images are indicators of section boundaries. I am not sure of the
-  // strength of the indication. It might be a heuristic kind of like what
-  // MS VIPS paper mentioned.
-
-  // Remove one-dimensional images. Typically these are tracker images that
-  // are a part of boilerplate.
-  if(image.width === 1 || image.height === 1) {
-    image.remove();
-    return;
-  }
-};
-
-calamine.filterBlacklistedElement = function(element) {
-
-  if(!element) {
-    return;
-  }
-
-  var doc = element.ownerDocument;
-  if(!doc) {
-    return;
-  }
-
-  if(!doc.contains(element)) {
-    return;
-  }
-
-  element.remove();
-};
-
-calamine.filterNonWhitelistedElement = function(element) {
-
-  if(!element) {
-    return;
-  }
-
-  var doc = element.ownerDocument;
-  if(!doc) {
-    return;
-  }
-
-  if(!doc.contains(element)) {
-    return;
-  }
-
-  // TODO: change this to use localName. For consistency. This causes
-  // a strange side effect where custom namespaced elements are allowed through
-  // and therefore not removed (e.g. g:plusone, fb:like, l:script)
-
-  var descriptor = calamine.ELEMENT[element.localName];
-
-  if(descriptor) {
-    return;
-  }
-
-  //console.debug('Removing unknown element %o', element);
-
-  element.remove();
-};
-
 calamine.forEach = function(list, func) {
   if(!list) {
     return;
@@ -1212,13 +1104,11 @@ calamine.countChar = function(str, ch) {
  * @param filter - an optional filter function to pass to createNodeIterator
  */
 calamine.forEachNode = function(element, type, func, filter) {
-
-  var it = element.ownerDocument.createNodeIterator(
-    element, type, filter);
-  var node = it.nextNode();
-  while(node) {
+  var doc = element.ownerDocument,
+      node,
+      it = doc.createNodeIterator(element, type, filter);
+  while(node = it.nextNode()) {
     func(node);
-    node = it.nextNode();
   }
 };
 
@@ -1257,7 +1147,7 @@ calamine.isInline = function(node) {
 /**
  * Removes the element but retains its children.
  */
-calamine.unwrapElement = function(element) {
+calamine.unwrap = function(element) {
 
   // Guard due to mutation while iterating
   if(!element) {
@@ -1270,13 +1160,25 @@ calamine.unwrapElement = function(element) {
     return;
   }
 
-  // Could be improved by moving the child nodes into a DocumentFragment
-  // and then replace the original parent with the fragment
-  // be further improved by detaching the element itself first, then
-  // building the fragment, and then inserting the fragment in the place
-  // of the element (which means we need to store a reference to prev or
-  // next sibling and also a reference to the parent element prior to
-  // removing the element).
+/*
+  // TODO: test if this works
+
+  var doc = element.ownerDocument;
+  var frag = doc.createDocumentFragment();
+  var next = element.nextSibling;
+  var parent = element.parentElement;
+  element.remove();
+  while(element.firstChild) {
+    frag.appendChild(element.firstChild);
+  }
+  if(next) {
+    // TODO: arg order?
+    parent.insertBefore(next, frag);
+  } else {
+    parent.appendChild(frag);
+  }
+*/
+
   while(element.firstChild) {
     element.parentElement.insertBefore(element.firstChild, element);
   }
@@ -1291,459 +1193,175 @@ calamine.removeNode = function(node) {
   }
 };
 
-// Simple helper for looking up properties in the ELEMENT map
+calamine.getDescriptor = function(element) {
+  // NOTE: element lookup is done using localName (which is lowercase).
+  // Using element.matches provides inconsistent behavior against
+  // namespaced names  (e.g. g:plusone, fb:like, l:script)
+  return calamine.ELEMENT_POLICY[element.localName];
+};
+
+// Simple "private" helper for looking up properties in the policy map
 calamine.lookupElementProp = function(prop, key) {
-  var desc = calamine.ELEMENT[key];
+  var desc = calamine.ELEMENT_POLICY[key];
   return desc && desc[prop];
 };
 
-// Our schema/policy/meta-properties/directives for element handling
-calamine.ELEMENT = {
-  a: {
-    inline: true,
-    nameBias: -1
-  },
-  abbr: {
-    inline: true
-  },
-  acronym: {
-    inline: true
-  },
-  address: {
-    inline: true,
-    nameBias: -3
-  },
-  applet: {
-    blacklisted: true,
-    leaf: true
-  },
-  area: {},
-  article: {
-    nameBias: 100,
-    unwrappable: true
-  },
-  aside: {
-    nameBias: -200
-  },
-  audio: {
-    leaf: true
-  },
-  b: {
-    descendantBias: 1,
-    inline: true
-  },
-  base: {
-    blacklisted: true
-  },
-  basefont: {
-    blacklisted: true
-  },
-  bdi: {
-    inline: true
-  },
-  bdo: {
-    inline: true
-  },
-  bgsound: {
-    blacklisted: true
-  },
-  big: {
-    unwrappable: true
-  },
-  blink: {
-    inline: true,
-    unwrappable: true
-  },
-  blockquote: {
-    ancestorBias: 10,
-    descendantBias: 3,
-    nameBias: 5
-  },
-  body: {
-    unwrappable: true
-  },
-  br: {
-    leaf: true
-  },
-  button: {
-    blacklisted: true,
-    nameBias: -100
-  },
-  canvas: {
-    leaf: true,
-    nameBias: 3
-  },
+// Element policies name to policy map
+calamine.ELEMENT_POLICY = {
+  a: {inline: true, nameBias: -1},
+  abbr: {inline: true},
+  acronym: {inline: true},
+  address: {inline: true, nameBias: -3},
+  applet: {blacklisted: true, leaf: true},
+  area: {leaf: true},
+  article: {nameBias: 100, unwrappable: true},
+  aside: {nameBias: -200},
+  audio: {leaf: true},
+  b: {descendantBias: 1, inline: true},
+  base: {blacklisted: true, leaf: true},
+  basefont: {blacklisted: true, leaf: true},
+  bdi: {inline: true},
+  bdo: {inline: true},
+  bgsound: {blacklisted: true, leaf: true},
+  big: {unwrappable: true},
+  blink: {inline: true, unwrappable: true},
+  blockquote: {ancestorBias: 10, descendantBias: 3, nameBias: 5},
+  body: {unwrappable: true},
+  br: {leaf: true},
+  button: {blacklisted: true, nameBias: -100},
+  canvas: {leaf: true, nameBias: 3},
   caption: {},
-  center: {
-    unwrappable: true
-  },
-  cite: {
-    inline: true
-  },
-  code: {
-    ancestorBias: 10,
-    descendantBias: 2,
-    inline: true,
-    preformatted: true
-  },
-  col: {},
-  colgroup: {},
-  command: {
-    blacklisted: true
-  },
-  data: {},
-  datalist: {
-    blacklisted: true
-  },
-  details: {
-    unwrappable: true
-  },
-  dialog: {
-    blacklisted: true
-  },
-  dir: {},
-  dd: {
-    nameBias: -3
-  },
-  del: {
-    inline: true
-  },
-  dfn: {
-    inline: true
-  },
-  div: {
-    ancestorBias: 1,
-    nameBias: 20,
-    unwrappable: true
-  },
-  dl: {
-    ancestorBias: -5,
-    nameBias: -10
-  },
-  dt: {
-    nameBias: -3
-  },
-  em: {
-    descendantBias: 1,
-    inline: true
-  },
-  embed: {
-    blacklisted: true,
-    leaf: true
-  },
-  entry: {},
-  fieldset: {
-    blacklisted: true
-  },
-  figcaption: {
-    nameBias: 10
-  },
-  figure: {
-    nameBias: 10
-  },
-  font: {
-    unwrappable: true
-  },
-  footer: {
-    nameBias: -20,
-    unwrappable: true
-  },
-  form: {
-    nameBias: -20,
-    unwrappable: true
-  },
-  frame: {
-    blacklisted: true,
-    leaf: true
-  },
-  frameset: {
-    blacklisted: true
-  },
-  head: {
-    blacklisted: true
-  },
-  header: {
-    ancestorBias: -5,
-    nameBias: -5,
-    unwrappable: true
-  },
-  help: {
-    unwrappable: true
-  },
-  hgroup: {},
-  hr: {
-    leaf: true
-  },
-  html: {
-    blacklisted: true,
-    unwrappable: true
-  },
-  h1: {
-    descendantBias: 1,
-    nameBias: -2
-  },
-  h2: {
-    descendantBias: 1,
-    nameBias: -2
-  },
-  h3: {
-    descendantBias: 1,
-    nameBias: -2
-  },
-  h4: {
-    descendantBias: 1,
-    nameBias: -2
-  },
-  h5: {
-    descendantBias: 1,
-    nameBias: -2
-  },
-  h6: {
-    descendantBias: 1,
-    nameBias: -2
-  },
-  i: {
-    descendantBias: 1,
-    inline: true
-  },
-  iframe: {
-    blacklisted: true,
-    leaf: true
-  },
-  ilayer: {
-    // TODO: treat like div?
-  },
-  img: {
-    leaf: true
-  },
-  input: {
-    blacklisted: true
-  },
-  ins: {
-    inline: true
-  },
-  insert: {
-    unwrappable: true
-  },
-  inset: {},
-  label: {
-    unwrappable: true
-  },
-  layer: {
-    // TODO: treat like div?
-    unwrappable: true
-  },
-  legend: {
-    // NOTE: should legend not be blacklisted?
-    unwrappable: true,
-    blacklisted: true
-  },
-  li: {
-    ancestorBias: -3,
-    nameBias: -20
-  },
-  link: {
-    blacklisted: true
-  },
-  kbd: {
-    inline: true
-  },
+  center: {unwrappable: true},
+  cite: {inline: true},
+  code: {ancestorBias: 10, descendantBias: 2, inline: true, preformatted: true},
+  col: {leaf: true},
+  colgroup: {unwrappable: true},
+  command: {blacklisted: true, leaf: true},
+  data: {inline: true, unwrappable: true},
+  datalist: {blacklisted: true},
+  details: {unwrappable: true},
+  dialog: {blacklisted: true},
+  dir: {ancestorBias: -5, nameBias: -20},
+  dd: {nameBias: -3},
+  del: {inline: true},
+  dfn: {inline: true},
+  div: {ancestorBias: 1, nameBias: 20, unwrappable: true},
+  dl: {ancestorBias: -5, nameBias: -10},
+  dt: {nameBias: -3},
+  em: {descendantBias: 1, inline: true},
+  embed: {blacklisted: true, leaf: true},
+  fieldset: {blacklisted: true},
+  figcaption: {nameBias: 10},
+  figure: {nameBias: 10},
+  font: {inline: true, unwrappable: true},
+  footer: {nameBias: -20, unwrappable: true},
+  form: {nameBias: -20, unwrappable: true},
+  frame: {blacklisted: true, leaf: true},
+  frameset: {blacklisted: true},
+  head: {blacklisted: true},
+  header: {ancestorBias: -5, nameBias: -5, unwrappable: true},
+  help: {unwrappable: true},
+  hgroup: {unwrappable: true},
+  hr: {leaf: true},
+  html: {blacklisted: true, unwrappable: true},
+  h1: {descendantBias: 1, nameBias: -2},
+  h2: {descendantBias: 1, nameBias: -2},
+  h3: {descendantBias: 1, nameBias: -2},
+  h4: {descendantBias: 1, nameBias: -2},
+  h5: {descendantBias: 1, nameBias: -2},
+  h6: {descendantBias: 1, nameBias: -2},
+  i: {descendantBias: 1, inline: true},
+  iframe: {blacklisted: true, leaf: true},
+  ilayer: {unwrappable: true},
+  img: {leaf: true},
+  input: {blacklisted: true, leaf: true},
+  ins: {inline: true},
+  insert: {unwrappable: true},
+  isindex: {blacklisted: true},
+  label: {unwrappable: true},
+  layer: {unwrappable: true},
+  legend: {unwrappable: true},
+  li: {ancestorBias: -3, nameBias: -20},
+  link: {blacklisted: true, leaf: true},
+  kbd: {inline: true},
   keygen: {},
-  main: {},
-  mark: {},
-  marquee: {},
-  map: {},
-  math: {
-    blacklisted: true
-  },
-  menu: {},
-  menuitem: {},
-  meta: {
-    blacklisted: true
-  },
-  meter: {},
-  multicol: {},
-  nav: {
-    ancestorBias: -20,
-    nameBias: -50
-  },
-  nobr: {
-    unwrappable: true
-  },
-  noembed: {},
-  noframes: {
-    blacklisted: true
-  },
-  noscript: {
-    unwrappable: true
-  },
-  object: {
-    blacklisted: true,
-    leaf: true
-  },
-  ol: {
-    ancestorBias: -5,
-    nameBias: -20
-  },
-  optgroup: {
-    blacklisted: true
-  },
-  option: {
-    blacklisted: true
-  },
-  output: {
-    blacklisted: true
-  },
-  p: {
-    ancestorBias: 10,
-    descendantBias: 5,
-    nameBias: 10
-  },
-  param: {
-    blacklisted: true,
-    leaf: true
-  },
-  plaintext: {
-    // TODO: is plaintext whitespace important?
-    unwrappable: true
-  },
-  pre: {
-    ancestorBias: 10,
-    descendantBias: 2,
-    nameBias: 5,
-    preformatted: true
-  },
-  progress: {},
-  q: {
-    inline: true
-  },
+  main: {nameBias: 100, unwrappable: true},
+  mark: {inline: true},
+  marquee: {unwrappable: true},
+  map: {inline: true},
+  math: {blacklisted: true},
+  menu: {ancestorBias: -5, blacklisted: true},
+  menuitem: {ancestorBias: -5, blacklisted: true},
+  meta: {blacklisted: true, leaf: true},
+  meter: {inline: true, unwrappable: true},
+  multicol: {unwrappable: true},
+  nav: {ancestorBias: -20, nameBias: -50},
+  nobr: {unwrappable: true},
+  noembed: {unwrappable: true},
+  noframes: {blacklisted: true},
+  noscript: {unwrappable: true},
+  object: {blacklisted: true, leaf: true},
+  ol: {ancestorBias: -5, nameBias: -20},
+  optgroup: {blacklisted: true},
+  option: {blacklisted: true, leaf: true},
+  output: {blacklisted: true},
+  p: {ancestorBias: 10, descendantBias: 5, nameBias: 10},
+  param: {blacklisted: true, leaf: true},
+  plaintext: {unwrappable: true},
+  pre: {ancestorBias: 10, descendantBias: 2, nameBias: 5, preformatted: true},
+  progress: {blacklisted: true, leaf: true},
+  q: {inline: true},
   rect: {},
-  rp: {},
-  rt: {},
-  ruby: {
-    ancestorBias: 5,
-    nameBias: 5,
-    preformatted: true
-  },
+  rp: {inline: true},
+  rt: {inline: true},
+  ruby: {ancestorBias: 5, nameBias: 5, preformatted: true},
   s: {},
-  samp: {
-    inline: true
-  },
-  script: {
-    blacklisted: true
-  },
-  section: {
-    nameBias: 10,
-    unwrappable: true
-  },
-  select: {
-    blacklisted: true
-  },
-  small: {
-    inline: true,
-    nameBias: -1,
-    unwrappable: true
-  },
-  spacer: {
-    blacklisted: true
-  },
-  span: {
-    descendantBias: 1,
-    inline: true,
-    unwrappable: true
-  },
-  strike: {
-    inline: true
-  },
-  strong: {
-    descendantBias: 1,
-    inline: true
-  },
-  style: {
-    blacklisted: true
-  },
-  // fairly certain this should not be an allowed element?
-  st1: {
-    inline: true,
-    unwrappable: true
-  },
-  sub: {
-    descendantBias: 2,
-    inline: true
-  },
-  summary: {
-    ancestorBias: 2,
-    descendantBias: 1,
-    nameBias: 5
-  },
-  sup: {
-    descendantBias: 2,
-    inline: true
-  },
-  svg: {
-    leaf: true
-  },
-  table: {
-    ancestorBias: -2
-  },
-  tbody: {
-    unwrappable: true
-  },
-  td: {
-    nameBias: 3
-  },
-  textarea: {
-    blacklisted: true
-  },
-  tfood: {},
-  th: {
-    nameBias: -3
-  },
-  thead: {
-    unwrappable: true
-  },
-  time: {
-    descendantBias: 2,
-    inline: true,
-    nameBias: 2
-  },
-  title: {
-    blacklisted: true
-  },
-  tr: {
-    nameBias: 1
-  },
-  track: {},
-  tt: {
-    inline: true
-  },
-  u: {
-    inline: true
-  },
-  ul: {
-    ancestorBias: -5,
-    nameBias: -20
-  },
-  'var': {
-    inline: true
-  },
-  video: {
-    leaf: true
-  },
-  wbr: {}
+  samp: {inline: true},
+  script: {blacklisted: true},
+  section: {nameBias: 10, unwrappable: true},
+  select: {blacklisted: true},
+  small: {inline: true, nameBias: -1, unwrappable: true},
+  source: {leaf: true},
+  spacer: {blacklisted: true},
+  span: {descendantBias: 1, inline: true, unwrappable: true},
+  strike: {inline: true},
+  strong: {descendantBias: 1, inline: true},
+  style: {blacklisted: true},
+  sub: {descendantBias: 2, inline: true},
+  summary: {ancestorBias: 2, descendantBias: 1, nameBias: 5},
+  sup: {descendantBias: 2, inline: true},
+  svg: {leaf: true},
+  table: {ancestorBias: -2},
+  tbody: {unwrappable: true},
+  td: {nameBias: 3},
+  textarea: {blacklisted: true, leaf: true, preformatted: true},
+  tfoot: {unwrappable:true},
+  th: {nameBias: -3},
+  thead: {unwrappable: true},
+  time: {descendantBias: 2, inline: true, nameBias: 2},
+  title: {blacklisted: true, leaf: true},
+  tr: {nameBias: 1},
+  track: {leaf:true},
+  tt: {inline: true},
+  u: {inline: true},
+  ul: {ancestorBias: -5, nameBias: -20},
+  'var': {inline: true},
+  video: {leaf: true},
+  wbr: {},
+  xmp: {blacklisted: true, preformatted: true}
 };
 
-calamine.ELEMENT_KEYS = Object.keys(calamine.ELEMENT);
-calamine.SELECTOR_PREFORMATTED = calamine.ELEMENT_KEYS.filter(
-  calamine.lookupElementProp.bind(undefined, 'preformatted')).join(',');
-calamine.SELECTOR_LEAF = calamine.ELEMENT_KEYS.filter(
-  calamine.lookupElementProp.bind(undefined, 'leaf')).join(',');
-calamine.SELECTOR_INLINE = calamine.ELEMENT_KEYS.filter(
-  calamine.lookupElementProp.bind(undefined, 'inline')).join(',');
-calamine.SELECTOR_UNWRAPPABLE = calamine.ELEMENT_KEYS.filter(
-  calamine.lookupElementProp.bind(undefined, 'unwrappable')).join(',');
-calamine.SELECTOR_BLACKLIST = calamine.ELEMENT_KEYS.filter(
-  calamine.lookupElementProp.bind(undefined, 'blacklisted')).join(',');
+calamine.ELEMENT_POLICY_KEYS = Object.keys(calamine.ELEMENT_POLICY);
+calamine.SELECTOR_PREFORMATTED = calamine.ELEMENT_POLICY_KEYS.filter(
+  calamine.lookupElementProp.bind(this, 'preformatted')).join(',');
+calamine.SELECTOR_LEAF = calamine.ELEMENT_POLICY_KEYS.filter(
+  calamine.lookupElementProp.bind(this, 'leaf')).join(',');
+calamine.SELECTOR_INLINE = calamine.ELEMENT_POLICY_KEYS.filter(
+  calamine.lookupElementProp.bind(this, 'inline')).join(',');
+calamine.SELECTOR_UNWRAPPABLE = calamine.ELEMENT_POLICY_KEYS.filter(
+  calamine.lookupElementProp.bind(this, 'unwrappable')).join(',');
+calamine.SELECTOR_BLACKLIST = calamine.ELEMENT_POLICY_KEYS.filter(
+  calamine.lookupElementProp.bind(this, 'blacklisted')).join(',');
 
 calamine.ID_CLASS_BIAS = {
   about: -35,
@@ -1850,55 +1468,4 @@ calamine.ID_CLASS_BIAS = {
   welcome_form: -50,
   widg: -200,
   zone: -50
-};
-
-// NOTE: not currently in use. Keeping around as a note in the event I want to do
-// minimization as one of the transformations on remote html data.
-// Based on https://github.com/kangax/html-minifier/blob/gh-pages/src/htmlminifier.js
-// TODO: use ECMA6 Set?
-calamine.BOOLEAN_ATTRIBUTES = {
-  allowfullscreen: 1,
-  async: 1,
-  autofocus: 1,
-  autoplay: 1,
-  checked: 1,
-  compact: 1,
-  controls: 1,
-  declare: 1,
-  'default': 1,
-  defaultchecked: 1,
-  defaultmuted: 1,
-  defaultselected: 1,
-  defer: 1,
-  disable: 1,
-  draggable: 1,
-  enabled: 1,
-  formnovalidate: 1,
-  hidden:1,
-  indeterminate:1,
-  inert: 1,
-  ismap: 1,
-  itemscope: 1,
-  loop: 1,
-  multiple: 1,
-  muted: 1,
-  nohref: 1,
-  noresize: 1,
-  noshade: 1,
-  novalidate: 1,
-  nowrap: 1,
-  open: 1,
-  pauseonexit: 1,
-  readonly: 1,
-  required: 1,
-  reversed: 1,
-  scoped: 1,
-  seamless: 1,
-  selected: 1,
-  sortable: 1,
-  spellcheck: 1,
-  translate: 1,
-  truespeed: 1,
-  typemustmatch: 1,
-  visible: 1
 };
