@@ -1,14 +1,14 @@
 {
   "manifest_version": 2,
-  "name": "Honey Badger News Reader",
-  "version": "350",
-  "author": "JDF",
+  "name": "Lucubrate",
+  "version": "620",
+  "author": "Josh Froelich",
   "homepage_url": "https://github.com/jfroelich/rss-reader",
-  "description": "A simple news reader that likes to eat snakes",
+  "description": "Reading late into the night",
 
   "browser_action": {
     "default_icon": "media/rss_icon_trans.png",
-    "default_title": "Honey Badger News Reader"
+    "default_title": "Lucubrate"
   },
 
   "background": {
