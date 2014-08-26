@@ -3,7 +3,8 @@
 // that can be found in the LICENSE file
 
 // TODO: use class 'slideRead' instead of custom attribute 'read'
-// TODO: need to resolve anchors (here or somewhere else)
+// TODO: use article element instead of a div
+
 
 'use strict';
 
@@ -222,15 +223,13 @@ function appendSlide(entry, isFirst) {
 
   slide.appendChild(title);
 
+
   var content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
 
   // TODO: this should be using parseHTML
   var doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = entry.content;
-
-  // TODO: is this worthwhile? seems out of place
-  lucu.trimDocument(doc);
 
   // TODO: all anchors should open in new window?
 

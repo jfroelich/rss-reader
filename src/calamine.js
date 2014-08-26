@@ -11,12 +11,14 @@ var calamine = {};
  */
 calamine.transformDocument = function(doc, options) {
   options = options || {};
+
   calamine.forEachNode(doc.body, NodeFilter.SHOW_COMMENT |
     NodeFilter.SHOW_ELEMENT, calamine.removeNode,
     calamine.acceptIfShouldRemove);
 
-  // This sucks. We have to unwrap instead of remove due to template unhiding
-  // but this is actually adding boilerplate. Maybe test length of innerText?
+  // Template unhiding requires not pruning noscript.
+  // TODO: test length of innerText to determine whether to remove? test
+  // for presence of "requires javascript" or similar subtext?
   calamine.forEach(doc.body.querySelectorAll('noembed, noscript'),
     calamine.unwrap);
 
@@ -24,26 +26,15 @@ calamine.transformDocument = function(doc, options) {
   // calamine.forEach(doc.body.querySelectorAll('br,hr'),
   //   calamine.testSplitBreaks);
 
-  var anchors = doc.body.querySelectorAll('a');
-
-  // TODO: handling javascript: anchors requires more consideration
-  var scriptAnchors = calamine.filter(anchors, calamine.isJavascriptAnchor);
-  //scriptAnchors.forEach(calamine.unwrap);
-  scriptAnchors.forEach(function(anchor) {
-    anchor.removeAttribute('href');
-  });
-
-  // Marks certain elements as whitespaceImportant and then marks all direct
-  // and indirect descendant elements as whiteSpaceImportant. Propagating this
-  // property from the top down (cascading) enables the trimNode function to
-  // quickly determine whether its nodeValue is trimmable, as opposed to having
-  // the trimNode function search each text node's axis (path from root) for
-  // the presence of a pre/code element.
   var preformatted = doc.body.querySelectorAll(calamine.SELECTOR_PREFORMATTED);
   calamine.forEach(preformatted, calamine.propagatePreformatted);
 
   // TODO: Replace &#160; and &nbsp; (and any other such entities) with space
   // before trimming
+
+  // TODO: if not whitespace important condense whitespace
+  // e.g. nodeValue = nodeValue.replace(/\s+/g,' ');
+
   // this transform should actually be its own explicit step. Along with transforms
   // for other purposes. For example, when deriving text features, I am not always
   // counting variations of the features. I think this should be called something
@@ -53,65 +44,41 @@ calamine.transformDocument = function(doc, options) {
   // This is a similar thought about element removal, unwrapping, etc. Why modify
   // the original if we are returning a representation of the original?
 
-  // TODO: if not whitespace important condense whitespace
-  // e.g. nodeValue = nodeValue.replace(/\s+/g,' ');
-
   calamine.forEachNode(doc.body, NodeFilter.SHOW_TEXT, calamine.trimNode);
-  calamine.forEachNode(doc.body, NodeFilter.SHOW_TEXT, calamine.filterEmptyNode);
+  calamine.forEachNode(doc.body, NodeFilter.SHOW_TEXT,
+    calamine.filterEmptyNode);
 
   calamine.filterEmptyElements(doc);
 
-  // Feature extraction operations
-
-  // Extract text features for text nodes and then propagate those properties
-  // upward in the dom (up to root)
-  // TODO: support <body>text</body> (text under root node)
+  // TODO: support <body>text</body> (text under root node)?
   calamine.forEachNode(doc.body, NodeFilter.SHOW_TEXT,
     calamine.deriveTextFeatures);
-
+  var anchors = doc.body.querySelectorAll('a');
   calamine.forEach(anchors, calamine.deriveAnchorFeatures);
-
   var elements = doc.body.querySelectorAll('*');
   calamine.forEach(elements, calamine.deriveSiblingFeatures);
-
-  // Score
   calamine.forEach(elements, calamine.scoreElement);
-
-  // NOTE: this next function must be separate (tentatively) because
-  // it is based on a ratio of neigboring scores, which mean the
-  // score must have settled, which is not done until the first
-  // pass completes. so we have to have a separate pass, or we
-  // have to redesign applySibBias a different way. E.g. use some
-  // constant score.
-  // I also want to redesign applySibBias so it is more 'online'
-  // in the sense that it only needs to react to the scores of
-  // elements preceding or above it in depth-first-search order.
-  // Once the above two tasks are tackled then the call to
-  // applySiblingBias can be done as a part of scoreElement in
-  // the first pass, making scoring a one pass approach
+  // TODO: refactor as online in order to fold into score element
   calamine.forEach(elements, calamine.applySiblingBias);
-
   if(options.FILTER_ATTRIBUTES) {
     calamine.forEach(elements, calamine.filterAttributes);
   }
-
   // Find the best element, defaulting to the body element
   doc.body.score = -Infinity;
   var bestElement = calamine.reduce(elements, calamine.getMaxScore, doc.body);
 
-
-  // TODO: unwrap JavaScript anchors here, not above. Do it regardless
-  // of whether UNWRAP_UNWRAPPABLES is true.
+  // Transform javascript: anchors into nominal anchors (tentative)
+  var scriptAnchors = calamine.filter(anchors, calamine.isJavascriptAnchor);
+  //scriptAnchors.forEach(calamine.unwrap);
+  scriptAnchors.forEach(function(anchor) {
+    anchor.removeAttribute('href');
+  });
 
   if(options.UNWRAP_UNWRAPPABLES) {
 
-    // The best element could be something we would prefer to unwrap
-    // but the current approach relies on using the element as the
-    // return value so we unwrap everything but the best element.
-
     var unwrappables = doc.body.querySelectorAll(calamine.SELECTOR_UNWRAPPABLE);
 
-    // Rather than concat here, do this along with isJavascriptAnchor unwrapping
+    // TODO: do this along with isJavascriptAnchor unwrapping?
     var nominalAnchors = calamine.filter(anchors, function(a) {
       if(!a) return false;
       var href = a.getAttribute('href');
@@ -121,32 +88,69 @@ calamine.transformDocument = function(doc, options) {
 
     unwrappables = Array.prototype.slice.call(unwrappables).concat(nominalAnchors);
 
+    // We must avoid unwrapping the best element itself
     var notBest = calamine.isNotBestElement.bind(this, bestElement);
     var lessBest = calamine.filter(unwrappables, notBest);
     lessBest.forEach(calamine.unwrap);
+
+    // BUG http://www.cbsnews.com/news/report-ice-bucket-challenge-video-leads-cops-to-fugitive/
+    // There is a set of span elements with no intervening space that once trimmed
+    // and unwrapped become adjacent
   }
 
   calamine.forEach(elements, calamine.exposeAttributes.bind(this, options));
-  if(options.HIGHLIGHT_MAX_ELEMENT) {
-    bestElement.style.border = '2px solid green';
-  }
 
-  // TODO: cleanup expando properties before returning?
-
+  // NOTE: does this cause any issues if the best element itself
+  // has semantic value?
   var results = doc.createDocumentFragment();
-  if(bestElement == doc.body) {
-    // We don't want to append body itself, just its children
-    calamine.forEach(doc.body.childNodes,
-      Node.prototype.appendChild.bind(results));
-  } else {
-    results.appendChild(bestElement);
-  }
+  calamine.forEach(bestElement.childNodes,
+    Node.prototype.appendChild.bind(results));
 
-  // TODO: trim the fragment. E.g. remove leading or trailing
-  // <br> elements and such. Look at the old sanitizer code
-  // that was doing trim document
+  calamine.trimElement(results);
 
   return results;
+};
+
+calamine.trimElement = function(element) {
+  var node = element.firstChild;
+  var sibling;
+
+  // console.debug('trimElement firstChild is %o', node);
+
+  while(node && calamine.isTrimmableElement(node)) {
+    // console.debug('trimming leading %o', node);
+    sibling = node.nextSibling;
+    node.remove();
+    node = sibling;
+  }
+
+  node = element.lastChild;
+
+  // console.debug('trimElement lastChild is %o', node);
+
+  while(node && calamine.isTrimmableElement(node)) {
+    // console.debug('trimming trailing %o', node);
+    sibling = node.previousSibling;
+    node.remove();
+    node = sibling;
+  }
+};
+
+calamine.isTrimmableElement = function(element) {
+
+  if(element.nodeType != Node.ELEMENT_NODE) {
+    return false;
+  }
+
+  if(element.localName == 'br') {
+    return true;
+  }
+
+  if(element.localName == 'p' && element.childNodes.length == 0) {
+    return true;
+  }
+
+  return false;
 };
 
 /**
@@ -180,6 +184,8 @@ calamine.acceptIfShouldRemove = function(node) {
 
   return NodeFilter.FILTER_REJECT;
 };
+
+
 
 calamine.filterAttributes = function(element) {
 
@@ -292,15 +298,33 @@ calamine.isInvisible = function(element) {
 };
 
 calamine.filterEmptyElements = function(doc) {
-  // TODO: This needs a lot of cleanup
 
-  // NOTE: the :empty pseudoselector does not produce the
-  // desired behavior so we have to roll our own
-
-  // Now remove all empty-like elements from the document. If removing
+  // Remove all empty-like elements from the document. If removing
   // an element would change the state of the element's parent to also
   // meet the empty-like criteria, then the parent is also removed, and
   // so forth, up the hierarchy, but stopping before doc.body.
+
+
+
+  // TODO: there is a specific edge case not being handled
+  // where certain elements, e.g. anchors, that do not contain
+  // any child nodes, should be considered empty. And this must
+  // be recursive as well, up the tree.
+  // In the case of <ul><li><a></a></li></ul>, the result should
+  // be that the entire subtree is removed.
+  // Because this case is not currently handled, and because we
+  // remove other nodes, this leads to some funny looking junk
+  // areas of content (e.g. a list of empty bullet points)
+  // This gets trickier because the logic, in the current impl,
+  // has to be in a couple places. in isEmptyLike, an anchor without
+  // a firstChild should be considered empty. That should be handled
+  // right now but for some odd reason it is not. Then once any element
+  // is removed and we check its parent, its parent should go through
+  // the same logic, which does not seem to happen, even though
+  // the logic is plainly there to do that.
+
+
+  // TODO: This needs a lot of cleanup
 
   // TODO: removes should happen only once on the shallowest
   // parent. If this were called on a live doc we would be causing
@@ -383,8 +407,18 @@ calamine.removeAndReturnParent = function(element) {
 };
 
 calamine.isEmptyLike = function(element) {
-  // TODO: rewrite to use descriptor
-  return !element.firstChild && !element.matches(calamine.SELECTOR_LEAF);
+
+  if(element.firstChild) {
+    return false;
+  }
+
+  var descriptor = calamine.getDescriptor(element);
+  if(!descriptor) {
+    console.debug('no descriptor for %o', element);
+    return false;
+  }
+
+  return descriptor.leaf;
 };
 
 calamine.testSplitBreaks = function(str) {
@@ -644,8 +678,7 @@ calamine.applyTextScore = function(element) {
     return;
   }
 
-  // TODO: use calamine.getDescriptor
-  var descriptor = calamine.ELEMENT_POLICY[element.localName];
+  var descriptor = calamine.getDescriptor(element);
 
   if(descriptor && descriptor.leaf) {
     // Leaf elements do not have a text score
@@ -861,8 +894,7 @@ calamine.applyPositionScore = function(element) {
 };
 
 calamine.applyTagNameScore = function(element) {
-  // TODO: use calamine.getDescriptor
-  var descriptor = calamine.ELEMENT_POLICY[element.localName];
+  var descriptor = calamine.getDescriptor(element);
 
   // TODO: this check should not be necessary but some elements
   // get through (because white list filtering uses element.matches
@@ -1129,19 +1161,12 @@ calamine.forEachNode = function(element, type, func, filter) {
  */
 calamine.isInline = function(node) {
 
-  // NOTE: this is called from within trimNode which is
-  // handling nodes, which may be adjacent to other nodes
-  // somehow (despite presumably being normalized), so
-  // we have to check that the node passed here is
-  // an element
-
   // TODO: random thought, is it possible to just check
   // that element.style.display == 'inline' or something to
   // that effect? Or is that too much deference to native
   // behavior?
-
-  return node && node.nodeType == Node.ELEMENT_NODE &&
-    node.matches(calamine.SELECTOR_INLINE);
+  var descriptor = calamine.getDescriptor(node);
+  return descriptor && descriptor.inline;
 };
 
 /**
@@ -1194,10 +1219,13 @@ calamine.removeNode = function(node) {
 };
 
 calamine.getDescriptor = function(element) {
-  // NOTE: element lookup is done using localName (which is lowercase).
+  // NOTE: element lookup is done using localName (lowercase).
   // Using element.matches provides inconsistent behavior against
   // namespaced names  (e.g. g:plusone, fb:like, l:script)
-  return calamine.ELEMENT_POLICY[element.localName];
+  // Using element.tagName is uppercase, but includes namespace
+  // Maybe tagName is simpler?
+
+  return element && calamine.ELEMENT_POLICY[element.localName];
 };
 
 // Simple "private" helper for looking up properties in the policy map
@@ -1354,14 +1382,8 @@ calamine.ELEMENT_POLICY = {
 calamine.ELEMENT_POLICY_KEYS = Object.keys(calamine.ELEMENT_POLICY);
 calamine.SELECTOR_PREFORMATTED = calamine.ELEMENT_POLICY_KEYS.filter(
   calamine.lookupElementProp.bind(this, 'preformatted')).join(',');
-calamine.SELECTOR_LEAF = calamine.ELEMENT_POLICY_KEYS.filter(
-  calamine.lookupElementProp.bind(this, 'leaf')).join(',');
-calamine.SELECTOR_INLINE = calamine.ELEMENT_POLICY_KEYS.filter(
-  calamine.lookupElementProp.bind(this, 'inline')).join(',');
 calamine.SELECTOR_UNWRAPPABLE = calamine.ELEMENT_POLICY_KEYS.filter(
   calamine.lookupElementProp.bind(this, 'unwrappable')).join(',');
-calamine.SELECTOR_BLACKLIST = calamine.ELEMENT_POLICY_KEYS.filter(
-  calamine.lookupElementProp.bind(this, 'blacklisted')).join(',');
 
 calamine.ID_CLASS_BIAS = {
   about: -35,
