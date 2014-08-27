@@ -137,6 +137,9 @@ function appendSlides(oncomplete, isFirst) {
  */
 function onSlideClick(event) {
 
+  // BUG: when clicking on an image in a link, it is still a link
+  // click that should open the link in a new window...
+
   // TODO: this should be checking if in anchor axis, not
   // just immediate parent
   if(event.target.matches('img')) {
@@ -231,13 +234,18 @@ function appendSlide(entry, isFirst) {
   var doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = entry.content;
 
-  // TODO: all anchors should open in new window?
+  var calamineOptions = {
+    FILTER_ATTRIBUTES: true,
+    UNWRAP: true
+  };
 
-  var calamineOptions = { FILTER_ATTRIBUTES: true, UNWRAP_UNWRAPPABLES: true };
   var results = calamine.transformDocument(doc, calamineOptions);
 
-  Array.prototype.forEach.call(results.childNodes,
-    HTMLElement.prototype.appendChild.bind(content));
+
+  // Temp commented while debugging some element ordering issues
+  //Array.prototype.forEach.call(results.childNodes,
+  //  HTMLElement.prototype.appendChild.bind(content));
+  content.appendChild(results);
 
   slide.appendChild(content);
 
