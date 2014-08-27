@@ -1,3 +1,24 @@
+* trimElement seems buggy
+This seems to be causing layout issues. In some cases it was
+stripping valid BRs that followed non-trimmable nodes.
+Maybe when iterating its considering siblings that were already
+removed? How could this bug out so badly?
+
+* Side thought: Why mutate? Why not just expand the query to account for variations?
+This is a similar thought about element removal, unwrapping, etc. Why modify
+the original if we are returning a representation of the original?
+* better support for live document scrubbing, related to above
+
+Maybe i can drop all trimming/unwrapping/etc, update other methods to account
+for this. Armchair costs outweight supposed benefits.
+
+Maybe it is that scrubbing and scoring are two different functions.
+
+I do not truly need minimization/compression.
+
+* NOTE: does unwrapping best element cause any issues if the best element
+itself has semantic value?
+
 * review gebtn, maybe i do not need to keep calling it?
 e.g. maybe i should just do a single querySelectorAll instead if its not-live?
 or is it better to re-call it to avoid read-after-delete issues?
@@ -5,8 +26,7 @@ or is it better to re-call it to avoid read-after-delete issues?
 * support iframes and embed objects and audio/video
 * for all iframes, set sandbox attribute?
 
-
-* Turn into a rule-based processing system
+* Turn into a rule-based processing system?
 
 * idea bout external vs internal links, diff weights
 e.g. if same origin then +- x else +- y. internal i assume
@@ -18,6 +38,4 @@ these are less likely.
 
 * better credits to research papers
 
-* move to completely external dependency
-
-* better support for live document scrubbing
+TODO: support <body>text</body> (text under root node)? How?

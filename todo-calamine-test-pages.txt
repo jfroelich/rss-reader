@@ -1,0 +1,10 @@
+
+https://news.ycombinator.com/item?id=8232896
+- this one is strange, because the heading points straight to the article
+
+NOTE: pages below are pre-8/27/2014 bug fixes and refactoring
+https://pragprog.com/articles/erlang
+http://www.nbcdfw.com/news/local/Four-Dead-in-Suspected-Murder-Suicide-in-Tulsa-272701701.html
+http://monica-at-mozilla.blogspot.com/2014/08/firefox-32-supports-public-key-pinning.html
+http://googleprojectzero.blogspot.com/2014/08/the-poisoned-nul-byte-2014-edition.html
+http://blog.golang.org/constants
