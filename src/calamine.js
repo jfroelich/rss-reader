@@ -7,155 +7,148 @@
 var calamine = {};
 
 /**
- * Returns a DocumentFragment with some boilerplate removed
+ * Returns the best element of the document. Does some mutation
+ * to the document.
  */
 calamine.transformDocument = function(doc, options) {
+  var c = calamine;
   options = options || {};
-
-  calamine.forEachNode(doc.body, NodeFilter.SHOW_COMMENT |
-    NodeFilter.SHOW_ELEMENT, calamine.removeNode,
-    calamine.acceptIfShouldRemove);
-
-  // Template unhiding requires not pruning noscript.
-  // TODO: test length of innerText to determine whether to remove? test
-  // for presence of "requires javascript" or similar subtext?
-  calamine.forEach(doc.body.querySelectorAll('noembed, noscript'),
-    calamine.unwrap);
-
-  // Not yet implemented
-  // calamine.forEach(doc.body.querySelectorAll('br,hr'),
-  //   calamine.testSplitBreaks);
-
-  var preformatted = doc.body.querySelectorAll(calamine.SELECTOR_PREFORMATTED);
-  calamine.forEach(preformatted, calamine.propagatePreformatted);
-
-  // TODO: Replace &#160; and &nbsp; (and any other such entities) with space
-  // before trimming
-
-  // TODO: if not whitespace important condense whitespace
-  // e.g. nodeValue = nodeValue.replace(/\s+/g,' ');
-
-  // this transform should actually be its own explicit step. Along with transforms
-  // for other purposes. For example, when deriving text features, I am not always
-  // counting variations of the features. I think this should be called something
-  // like normalization or canonicalization
-
-  // Side thought: Why mutate? Why not just expand the query to account for variations?
-  // This is a similar thought about element removal, unwrapping, etc. Why modify
-  // the original if we are returning a representation of the original?
-
-  calamine.forEachNode(doc.body, NodeFilter.SHOW_TEXT, calamine.trimNode);
-  calamine.forEachNode(doc.body, NodeFilter.SHOW_TEXT,
-    calamine.filterEmptyNode);
-
-  calamine.filterEmptyElements(doc);
-
-  // TODO: support <body>text</body> (text under root node)?
-  calamine.forEachNode(doc.body, NodeFilter.SHOW_TEXT,
-    calamine.deriveTextFeatures);
+  c.forEachNode(doc.body, NodeFilter.SHOW_COMMENT | NodeFilter.SHOW_ELEMENT,
+    c.removeNode, c.acceptIfShouldRemove);
+  c.forEachNode(doc.body, NodeFilter.SHOW_ELEMENT, c.transformShim,
+    c.acceptIfShouldTransformShim);
+  // Next line under dev
+  // c.forEach(doc.body.querySelectorAll('br,hr'), c.testSplitBreaks);
+  c.forEachNode(doc.body, NodeFilter.SHOW_TEXT, c.canonicalizeSpace);
+  c.forEachNode(doc.body, NodeFilter.SHOW_ELEMENT, c.propagatePreformatted,
+    calamine.acceptIfPreformatted);
+  c.forEachNode(doc.body, NodeFilter.SHOW_TEXT, c.trimNode);
+  c.forEachNode(doc.body, NodeFilter.SHOW_TEXT, c.filterEmptyNode);
+  c.filterEmptyElements(doc);
+  c.forEachNode(doc.body, NodeFilter.SHOW_TEXT, c.deriveTextFeatures);
   var anchors = doc.body.querySelectorAll('a');
-  calamine.forEach(anchors, calamine.deriveAnchorFeatures);
+  c.forEach(anchors, c.deriveAnchorFeatures);
   var elements = doc.body.querySelectorAll('*');
-  calamine.forEach(elements, calamine.deriveSiblingFeatures);
-  calamine.forEach(elements, calamine.scoreElement);
-  // TODO: refactor as online in order to fold into score element
-  calamine.forEach(elements, calamine.applySiblingBias);
+  c.forEach(elements, c.deriveSiblingFeatures);
+  c.forEach(elements, c.scoreElement);
+  c.forEach(elements, c.applySiblingBias);
   if(options.FILTER_ATTRIBUTES) {
-    calamine.forEach(elements, calamine.filterAttributes);
+    c.forEachNode(doc.body, NodeFilter.SHOW_ELEMENT, c.filterAttributes);
   }
-  // Find the best element, defaulting to the body element
   doc.body.score = -Infinity;
-  var bestElement = calamine.reduce(elements, calamine.getMaxScore, doc.body);
+  var bestElement = c.reduce(elements, c.getMaxScore, doc.body);
+  if(options.UNWRAP) {
+    c.forEachNode(bestElement, NodeFilter.SHOW_ELEMENT, c.unwrap,
+      calamine.acceptIfShouldUnwrap.bind(this, bestElement));
+  }
+  c.forEach(elements, c.exposeAttributes.bind(this, options));
+  c.trimElement(bestElement);
+  return bestElement;
+};
 
-  // Transform javascript: anchors into nominal anchors (tentative)
-  var scriptAnchors = calamine.filter(anchors, calamine.isJavascriptAnchor);
-  //scriptAnchors.forEach(calamine.unwrap);
-  scriptAnchors.forEach(function(anchor) {
-    anchor.removeAttribute('href');
-  });
-
-  if(options.UNWRAP_UNWRAPPABLES) {
-
-    var unwrappables = doc.body.querySelectorAll(calamine.SELECTOR_UNWRAPPABLE);
-
-    // TODO: do this along with isJavascriptAnchor unwrapping?
-    var nominalAnchors = calamine.filter(anchors, function(a) {
-      if(!a) return false;
-      var href = a.getAttribute('href');
-      if(href) href = href.trim();
-      return !href;
-    });
-
-    unwrappables = Array.prototype.slice.call(unwrappables).concat(nominalAnchors);
-
-    // We must avoid unwrapping the best element itself
-    var notBest = calamine.isNotBestElement.bind(this, bestElement);
-    var lessBest = calamine.filter(unwrappables, notBest);
-    lessBest.forEach(calamine.unwrap);
-
-    // BUG http://www.cbsnews.com/news/report-ice-bucket-challenge-video-leads-cops-to-fugitive/
-    // There is a set of span elements with no intervening space that once trimmed
-    // and unwrapped become adjacent
+calamine.acceptIfShouldUnwrap = function(bestElement, e) {
+  if(e === bestElement) {
+    return NodeFilter.FILTER_REJECT;
   }
 
-  calamine.forEach(elements, calamine.exposeAttributes.bind(this, options));
+  if(e.localName == 'a') {
+    var href = e.getAttribute('href');
+    if(href) {
+      href = href.trim();
+    }
 
-  // NOTE: does this cause any issues if the best element itself
-  // has semantic value?
-  var results = doc.createDocumentFragment();
-  calamine.forEach(bestElement.childNodes,
-    Node.prototype.appendChild.bind(results));
+    if(!href) {
+      console.debug('unwrapping nominal anchor %o', e);
+      return NodeFilter.FILTER_ACCEPT;
+    }
 
-  calamine.trimElement(results);
+    if(/^\s*javascript\s*:/i.test(href)) {
+      console.debug('unwrapping anchor with javascript url %s', href);
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  }
 
-  return results;
+  var descriptor = calamine.getDescriptor(e);
+  if(descriptor.unwrappable) {
+    return NodeFilter.FILTER_ACCEPT;
+  }
+
+  return NodeFilter.FILTER_REJECT;
+};
+
+calamine.acceptIfPreformatted = function(element) {
+  var descriptor = calamine.getDescriptor(element);
+  return NodeFilter['FILTER_' + descriptor.preformatted ? 'ACCEPT' : 'REJECT'];
+};
+
+calamine.acceptIfShouldTransformShim = function(element) {
+  if(element.localName == 'noembed' || element.localName == 'noscript') {
+    return NodeFilter.FILTER_ACCEPT;
+  }
+  return NodeFilter.FILTER_REJECT;
+};
+
+calamine.transformShim = function(element) {
+  // TODO: this needs to check contains to avoid
+  // processing <noscript><noscript>..</noscript></noscript>
+
+  // The idea is that we either unwrap or remove
+  if(element.childNodes.length == 1) {
+    console.debug('child node length 1');
+    // Very probably a traditional text message
+    element.remove();
+    return;
+  }
+
+  var text = element.innerText || '';
+
+  if(element.childNodes.length < 3 || text.length < 100) {
+    // Probably a traditional text message
+    element.remove();
+    return;
+  }
+
+  // TODO: is visibility a clue?
+  // Otherwise, it is probably a template that contains possibly important
+  // content (like the entire article in the case of cbsnews) so we just
+  // unwrap it. We must do something with it, because we disable the
+  // javascript that would normally expose its content on load.
+  calamine.unwrap(element);
+};
+
+calamine.canonicalizeSpace = function(node) {
+  node.nodeValue = node.nodeValue.replace(/&(nbsp|#(xA0|160));/,' ');
 };
 
 calamine.trimElement = function(element) {
   var node = element.firstChild;
   var sibling;
-
-  // console.debug('trimElement firstChild is %o', node);
-
-  while(node && calamine.isTrimmableElement(node)) {
-    // console.debug('trimming leading %o', node);
+  while(calamine.isTrimmableElement(node)) {
     sibling = node.nextSibling;
     node.remove();
     node = sibling;
   }
-
   node = element.lastChild;
-
-  // console.debug('trimElement lastChild is %o', node);
-
-  while(node && calamine.isTrimmableElement(node)) {
-    // console.debug('trimming trailing %o', node);
+  while(calamine.isTrimmableElement(node)) {
     sibling = node.previousSibling;
     node.remove();
     node = sibling;
   }
 };
 
+/**
+ * Returns true if an element is trimmable, which currently
+ * is just BR and empty P
+ */
 calamine.isTrimmableElement = function(element) {
-
-  if(element.nodeType != Node.ELEMENT_NODE) {
-    return false;
-  }
-
-  if(element.localName == 'br') {
-    return true;
-  }
-
-  if(element.localName == 'p' && element.childNodes.length == 0) {
-    return true;
-  }
-
-  return false;
+  return element && element.nodeType == Node.ELEMENT_NODE &&
+    (element.localName == 'br' || element.localName === 'p' &&
+     element.childNodes.length == 0);
 };
 
 /**
- * Parameter to createNodeIterator. Returns FILTER_ACCEPT for
- * various nodes/elements that should be removed.
+ * Parameter to createNodeIterator. Returns NodeFilter.FILTER_ACCEPT for
+ * nodes that should be removed.
  */
 calamine.acceptIfShouldRemove = function(node) {
   if(node.nodeType == Node.COMMENT_NODE) {
@@ -169,11 +162,12 @@ calamine.acceptIfShouldRemove = function(node) {
   }
 
   if(descriptor.blacklisted) {
+    // console.debug('Removing blacklisted element %s', node);
     return NodeFilter.FILTER_ACCEPT;
   }
 
-  if(node.localName == 'img' && (!node.hasAttribute('src') ||
-      node.width === 1 || node.height === 1)) {
+  if(calamine.isTracerImage(node)) {
+    //console.debug('Removing tracer image %o', node);
     return NodeFilter.FILTER_ACCEPT;
   }
 
@@ -185,10 +179,12 @@ calamine.acceptIfShouldRemove = function(node) {
   return NodeFilter.FILTER_REJECT;
 };
 
-
+calamine.isTracerImage = function(element) {
+  return element.localName == 'img' &&
+    (element.width == 1 || element.height == 1);
+};
 
 calamine.filterAttributes = function(element) {
-
   var names = calamine.map(element.attributes, calamine.getAttributeName);
   var removables = names.filter(calamine.isRemovableAttribute);
   var remove = Element.prototype.removeAttribute.bind(element);
@@ -222,6 +218,7 @@ calamine.getMaxScore = function(previous, current) {
   // current could be undefined due to mutation-while-iterating
   // issues so we check here and default to previous
   if(!current) {
+    console.debug('current element undefined in getMaxScore');
     return previous;
   }
 
@@ -251,8 +248,8 @@ calamine.exposeAttributes = function(options, element)  {
     element.setAttribute('charCount', element.charCount);
   if(options.SHOW_COPYRIGHT_COUNT && element.hasCopyrightSymbol)
     element.setAttribute('hasCopyrightSymbol', element.hasCopyrightSymbol);
-  if(options.SHOW_DOT_COUNT && element.dotCount)
-    element.setAttribute('dotCount', element.dotCount);
+  if(options.SHOW_DOT_COUNT && element.bulletCount)
+    element.setAttribute('bulletCount', element.bulletCount);
   if(options.SHOW_IMAGE_BRANCH && element.imageBranch)
     element.setAttribute('imageBranch', element.imageBranch);
   if(options.SHOW_PIPE_COUNT && element.pipeCount)
@@ -262,38 +259,26 @@ calamine.exposeAttributes = function(options, element)  {
 };
 
 /**
- * Whether an element is invisible
+ * Tests whether an element is invisible
  */
 calamine.isInvisible = function(element) {
 
-  // Guard due to remove-while-iterating issues
-  if(!element) {
-    return false;
-  }
-
-  // NOTE: element.offsetWidth < 1 || element.offsetHeight < 1; ??
+  // TODO: element.offsetWidth < 1 || element.offsetHeight < 1; ??
   // saw that somewhere, need to read up on offset props again.
   // Something about emulating how jquery does it?
-
-  if(element.style.display == 'none') {
-    return true;
-  }
-
-  if(element.style.visibility == 'hidden') {
-    return true;
-  }
-
-  if(element.style.visibility == 'collapse') {
-    return true;
-  }
-
-  var opacity = parseFloat(element.style.opacity);
-  if(opacity < 0.2) {
-    return true;
-  }
-
   // TODO: consider if(element.hidden) ?
+  var s = element.style;
 
+  if(s.display == 'none' || s.visibility == 'hidden' ||
+    s.visibility == 'collapse') {
+    return true;
+  }
+
+  var opacity = parseFloat(s.opacity);
+  if(opacity < 0.3) {
+    console.debug('low opacity element %o', element);
+    return true;
+  }
   return false;
 };
 
@@ -303,8 +288,6 @@ calamine.filterEmptyElements = function(doc) {
   // an element would change the state of the element's parent to also
   // meet the empty-like criteria, then the parent is also removed, and
   // so forth, up the hierarchy, but stopping before doc.body.
-
-
 
   // TODO: there is a specific edge case not being handled
   // where certain elements, e.g. anchors, that do not contain
@@ -322,7 +305,6 @@ calamine.filterEmptyElements = function(doc) {
   // is removed and we check its parent, its parent should go through
   // the same logic, which does not seem to happen, even though
   // the logic is plainly there to do that.
-
 
   // TODO: This needs a lot of cleanup
 
@@ -407,18 +389,8 @@ calamine.removeAndReturnParent = function(element) {
 };
 
 calamine.isEmptyLike = function(element) {
-
-  if(element.firstChild) {
-    return false;
-  }
-
   var descriptor = calamine.getDescriptor(element);
-  if(!descriptor) {
-    console.debug('no descriptor for %o', element);
-    return false;
-  }
-
-  return descriptor.leaf;
+  return !element.firstChild && !descriptor.leaf;
 };
 
 calamine.testSplitBreaks = function(str) {
@@ -431,10 +403,8 @@ calamine.testSplitBreaks = function(str) {
   doc.body.innerHTML = str;
 
   // TODO: use the isInline function defined somewhere, do not redefine
-  var isInline = function(element) {
-    return element.matches('a,abbr,acronym,b,bdo,big,blink,cite,code,dfn,'+
-      'em,kbd,i,q,samp,small,span,strong,sub,sup,tt,var');
-  };
+
+  var isInline = calamine.getPolicyProp.bind(this,'inline');
 
   var insertAfter = function(newElement, oldElement) {
     if(oldElement.nextSibling) {
@@ -487,10 +457,11 @@ calamine.deriveTextFeatures = function(node) {
 
   // TODO: this should be using the copyright character itself as well
   // TODO: this should be acting upon text that normalized the variants
-  parent.hasCopyrightSymbol = /[\u00a9]|&copy;|&#169;/i.test(value) ? 1 : 0;
+  parent.hasCopyrightSymbol = /&copy;|&#169;|&#xA9;/i.test(value) ? 1 : 0;
 
-  // TODO: this should also be looking for the dot character itself
-  parent.dotCount = calamine.countChar(value,'\u2022');
+  // TODO: this should also be looking for the character itself
+  // &#8226, •, &#x2022;
+  parent.bulletCount = calamine.countChar(value,'\u2022');
 
   // TODO: this should also be looking at other expressions of pipes
   parent.pipeCount = calamine.countChar(value,'|');
@@ -515,7 +486,7 @@ calamine.propagatePreformatted = function(element) {
   // TODO: use querySelectorAll
   var descendants = element.getElementsByTagName('*');
   calamine.forEach(descendants, calamine.setPreformatted);
-}
+};
 
 calamine.setPreformatted = function(element) {
   element.preformatted = 1;
@@ -690,7 +661,7 @@ calamine.applyTextScore = function(element) {
     element.score -= 40;
   }
 
-  element.score += -20 * (element.dotCount || 0);
+  element.score += -20 * (element.bulletCount || 0);
   element.score += -10 * (element.pipeCount || 0);
 
   // Calculate anchor density and store it as an expando so that
@@ -1035,7 +1006,7 @@ calamine.getImageArea = function(element) {
  * follows content, and boilerplate generally follows boilerplate.
  * Contiguous blocks should get promoted by virture of their
  * context.
- *
+ * TODO: refactor as online in order to fold into score element
  * TODO: instead of biasing the siblings based on the element,
  * bias the element itself based on its siblings. Rather, only
  * bias the element itself based on its prior sibling. That way,
@@ -1045,8 +1016,6 @@ calamine.getImageArea = function(element) {
  * and deprecate this function. In my head I am thinking of an analogy
  * to something like a YACC lexer that avoids doing peek operations
  * (lookahead parsing). We want something more stream-oriented.
- *
- * Want an 'online' approach (not in the Internet sense)
  */
 calamine.applySiblingBias = function(element) {
   if(!element) {
@@ -1144,30 +1113,6 @@ calamine.forEachNode = function(element, type, func, filter) {
   }
 };
 
-/**
- * Returns true if the node is a defined element that
- * is considered inline. Elements by default behave
- * according to either "display: block" or "display: inline". This can be changed
- * by CSS but we ignore that and use basic assumptions. In other words,
- * <p> is not inline and <span> is inline.
- *
- * Note: divs are technically inline, but are frequently used instead as blocks, so
- * divs are not considered inline.
- *
- * TODO: rename to something like isDefaultInlineElement
- * TODO: why are we checking if node is defined here?
- * TODO: why are we checking if node is an element? When is this ever called on
- * nodes and not elements?
- */
-calamine.isInline = function(node) {
-
-  // TODO: random thought, is it possible to just check
-  // that element.style.display == 'inline' or something to
-  // that effect? Or is that too much deference to native
-  // behavior?
-  var descriptor = calamine.getDescriptor(node);
-  return descriptor && descriptor.inline;
-};
 
 /**
  * Removes the element but retains its children.
@@ -1229,14 +1174,51 @@ calamine.getDescriptor = function(element) {
 };
 
 // Simple "private" helper for looking up properties in the policy map
-calamine.lookupElementProp = function(prop, key) {
+calamine.getPolicyProp = function(prop, key) {
   var desc = calamine.ELEMENT_POLICY[key];
   return desc && desc[prop];
 };
 
-// Element policies name to policy map
+calamine.isInline = function(element) {
+
+  // Element may be undefined since the caller does not check
+  // if node.nextSibling or node.previousSibling are defined
+  // before the call. This is expected.
+  if(!element) {
+    return false;
+  }
+
+  // TODO: why is this condition ever triggered? Is chrome not
+  // always renormalizing text nodes after dom mutation? How is it
+  // possible for two text nodes to be adjacent?
+  if(element.nodeType != Node.ELEMENT_NODE) {
+    // This condition definitely happens. It looks like
+    // it is always an adjacent text node that contains
+    // an empty string.
+    // TODO: does this mean it is inline? should this
+    // be returning true?
+    return false;
+  }
+
+  // TODO: random thought, is it possible to just check
+  // that element.style.display == 'inline' or something to
+  // that effect? Or is that too much deference to native
+  // behavior? No, it looks like display is not set at this
+  // point
+
+  var desc = calamine.getDescriptor(element);
+  return desc.inline;
+};
+
+
+// Element policies name-to-policy map
 calamine.ELEMENT_POLICY = {
-  a: {inline: true, nameBias: -1},
+  a: {
+    inline: true,
+    nameBias: -1,
+    // Only certain anchors are unwrappable
+    unwrappable: false
+  },
   abbr: {inline: true},
   acronym: {inline: true},
   address: {inline: true, nameBias: -3},
@@ -1378,12 +1360,6 @@ calamine.ELEMENT_POLICY = {
   wbr: {},
   xmp: {blacklisted: true, preformatted: true}
 };
-
-calamine.ELEMENT_POLICY_KEYS = Object.keys(calamine.ELEMENT_POLICY);
-calamine.SELECTOR_PREFORMATTED = calamine.ELEMENT_POLICY_KEYS.filter(
-  calamine.lookupElementProp.bind(this, 'preformatted')).join(',');
-calamine.SELECTOR_UNWRAPPABLE = calamine.ELEMENT_POLICY_KEYS.filter(
-  calamine.lookupElementProp.bind(this, 'unwrappable')).join(',');
 
 calamine.ID_CLASS_BIAS = {
   about: -35,
