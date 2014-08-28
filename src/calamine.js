@@ -35,14 +35,6 @@ calamine.acceptIfEmpty = function(node) {
 };
 
 /**
- * Filter that accepts elements where whitespace is important, such as <pre>.
- */
-calamine.acceptIfPreformatted = function(element) {
-  var descriptor = calamine.getDescriptor(element);
-  return NodeFilter['FILTER_' + descriptor.preformatted ? 'ACCEPT' : 'REJECT'];
-};
-
-/**
  * Parameter to createNodeIterator that accepts nodes that should be removed.
  */
 calamine.acceptIfRemovable = function(node) {
@@ -1104,6 +1096,11 @@ calamine.removeNode = function(node) {
   }
 };
 
+calamine.SELECT_PREFORMATTED = Object.keys(calamine.ELEMENT_POLICY).filter(function(e) {
+  var p = calamine.ELEMENT_POLICY[e];
+  return p && p.preformatted;
+}).join(',');
+
 /**
  * Marks an element as preformatted
  */
@@ -1226,8 +1223,10 @@ calamine.transformDocument = function(doc, options) {
   loop(doc.body, NodeFilter.SHOW_ELEMENT, c.transformShim, c.isTemplateLike);
   // c.forEach(doc.body.querySelectorAll('br,hr'), c.testSplitBreaks);
   loop(doc.body, NodeFilter.SHOW_TEXT, c.canonicalizeSpace);
-  loop(doc.body, NodeFilter.SHOW_ELEMENT, c.propagatePreformatted,
-    c.acceptIfPreformatted);
+
+  // Use qsa here for perf
+  var preformatted = doc.body.querySelectorAll(c.SELECT_PREFORMATTED);
+  c.forEach(preformatted, c.propagatePreformatted);
   loop(doc.body, NodeFilter.SHOW_TEXT, c.trimNode);
   loop(doc.body, NodeFilter.SHOW_TEXT, c.removeNode, c.acceptIfEmpty);
   c.filterEmptyElements(doc);
