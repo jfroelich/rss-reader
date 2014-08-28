@@ -312,11 +312,47 @@ calamine.applyTextScore = function(element) {
 };
 
 /**
- * Converts variations of the ' ' character into
- * the ' ' character.
+ * Replace variations of the space character with the ' ' character
+ * in the node's value.
  */
 calamine.canonicalizeSpace = function(node) {
   node.nodeValue = node.nodeValue.replace(/&(nbsp|#(xA0|160));/,' ');
+};
+
+/**
+ * Builds a WeakSet of elements that are preformatted, including
+ * descendants of preformatted elements.
+ *
+ * TODO: WeakSet added in Chrome 36, ensure min version in manifest.json
+ */
+calamine.collectPreformatted = function(doc) {
+  var set = new WeakSet();
+
+  // TODO: maybe it is simple enough here to just inline
+  // the selector string and move it out of the policy map
+
+  // TODO: is there a way to query for children of such elements
+  // instead of doing a call to getElementsByTagName and an innerloop?
+  // That would be even simpler, and I think there is. (e.g. pre, pre *)
+
+  // TODO: at some point the assumption that pre-collecting these elements
+  // is faster than repeated calls to isDescendantOf(anyPreformattedElement)
+  // needs to be tested
+
+  // TODO: does WeakSet.prototype.add work like Array.prototype.push? Could
+  // we just use add.apply(elements)? Or would it work if we used
+  // set = new WeakSet(elements) ?
+  var elements = doc.body.querySelectorAll(calamine.SELECT_PREFORMATTED);
+  for(var i = 0, len = elements.length, element; i < len; i++) {
+    element = elements[i];
+    set.add(element);
+    for(var j = 0, descendants = element.getElementsByTagName('*'),
+      dlen = descendants.length; j < dlen; j++) {
+      set.add(descendants[j]);
+    }
+  }
+
+  return set;
 };
 
 /**
@@ -1023,23 +1059,6 @@ calamine.LEXICON_BIAS = {
 calamine.LEXICON_BIAS_KEYS = Object.keys(calamine.LEXICON_BIAS);
 
 /**
- * Marks an element as preformatted and marks its descendants as
- * preformatted.
- */
-//calamine.propagatePreformatted = function(element) {
-//  calamine.setPreformatted(element);
-//  calamine.forEach(element.querySelectorAll('*'), calamine.setPreformatted);
-//};
-
-calamine.propagatePreformatted = function(set, element) {
-  set.add(element);
-  var descendants = element.getElementsByTagName('*');
-  for(var i = 0, len = descendants.length; i < len; i++) {
-    set.add(descendants[i]);
-  }
-};
-
-/**
  * Simple decorator that accepts array-like objects
  * such as NodeList
  */
@@ -1075,13 +1094,6 @@ calamine.SELECT_PREFORMATTED = Object.keys(calamine.ELEMENT_POLICY).filter(funct
   var p = calamine.ELEMENT_POLICY[e];
   return p && p.preformatted;
 }).join(',');
-
-/**
- * Marks an element as preformatted
- */
-calamine.setPreformatted = function(element) {
-  element.preformatted = 1;
-};
 
 /**
  * Apply our 'model' to an element. We generate a score that is the
@@ -1194,6 +1206,7 @@ calamine.testSplitBreaks = function(str) {
   return doc.body.innerHTML;
 };
 
+
 /**
  * Returns the best element of the document. Does some mutation
  * to the document.
@@ -1208,17 +1221,8 @@ calamine.transformDocument = function(doc, options) {
   // c.forEach(doc.body.querySelectorAll('br,hr'), c.testSplitBreaks);
   loop(doc.body, NodeFilter.SHOW_TEXT, c.canonicalizeSpace);
 
-  // TODO: expandos seem to be the #1 perf culprit. Experiment with WeakMap
-  // here and in trimNode
-  var preformattedSet = new WeakSet();
-  var preformattedElements = doc.body.querySelectorAll(c.SELECT_PREFORMATTED);
-  c.forEach(preformattedElements, c.propagatePreformatted.bind(this, preformattedSet));
-
-  //var preformatted = doc.body.querySelectorAll(c.SELECT_PREFORMATTED);
-  //c.forEach(preformatted, c.propagatePreformatted);
-  //loop(doc.body, NodeFilter.SHOW_TEXT, c.trimNode);
-  loop(doc.body, NodeFilter.SHOW_TEXT, c.trimNode.bind(this, preformattedSet));
-
+  var preformatted = calamine.collectPreformatted(doc);
+  loop(doc.body, NodeFilter.SHOW_TEXT, c.trimNode.bind(this, preformatted));
   loop(doc.body, NodeFilter.SHOW_TEXT, c.removeNode, c.acceptIfEmpty);
   c.filterEmptyElements(doc);
   loop(doc.body, NodeFilter.SHOW_TEXT, c.deriveTextFeatures);
@@ -1311,15 +1315,11 @@ calamine.trimElement = function(element) {
  * varies based on whether the node is adjacent
  * to inline elements.
  */
-calamine.trimNode = function(set, node) {
+calamine.trimNode = function(preformattedParents, node) {
 
-  if(set.has(node.parentElement)) {
+  if(preformattedParents.has(node.parentElement)) {
     return;
   }
-
-  //if(node.parentElement.preformatted) {
-  //  return;
-  //}
 
   if(calamine.isInline(node.previousSibling)) {
     if(!calamine.isInline(node.nextSibling)) {
