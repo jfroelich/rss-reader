@@ -84,29 +84,10 @@ calamine.acceptIfShouldUnwrap = function(bestElement, e) {
  * Updates the score of descendant elements
  */
 calamine.applyAncestorBiasScore = function(element, ancestorBias) {
-  var descendant = null, descendants = element.getElementsByTagName('*');
-  for(var i = 0, len = descendants.length; i < len; i++) {
-    descendant = descendants[i];
-    if(descendant.hasOwnProperty('score')) {
-      descendant.score += ancestorBias;
-    } else {
-      descendant.score = ancestorBias;
-    }
-  }
+
 };
 
 calamine.RE_TOKEN_SPLIT = /[\s-_]+/g;
-/**
- * Updates the element's score based on strings present in
- * the elements id or class attributes
- */
-calamine.applyAttributeScore = function(element) {
-  for(var i = 0, tokens = ((element.id || '') + ' ' +
-    (element.className || '')).trim().toLowerCase().split(calamine.RE_TOKEN_SPLIT),
-    len = tokens.length; i < len; i++) {
-    element.score += calamine.LEXICON_BIAS[tokens[i]] || 0;
-  }
-};
 
 /**
  * If the element has descendant bias, this updates the
@@ -908,6 +889,9 @@ calamine.isInline = function(element) {
  * Tests whether an element is invisible
  */
 calamine.isInvisible = function(element) {
+
+  // TODO: this is alarmingly slow
+
   // TODO: element.offsetWidth < 1 || element.offsetHeight < 1; ??
   // saw that somewhere, need to read up on offset props again.
   // Something about emulating how jquery does it?
@@ -1164,10 +1148,21 @@ calamine.scoreElement = function(element) {
   // Score based on tag name
   element.score += descriptor.nameBias || 0;
 
-  calamine.applyAttributeScore(element);
+  // Attribute scoring
+  var tokens = ((element.id || '') + ' ' + (element.className || '')).trim().
+    toLowerCase().split(calamine.RE_TOKEN_SPLIT);
+  for(var i = 0, len = tokens.length; i < len; i++) {
+    element.score += calamine.LEXICON_BIAS[tokens[i]] || 0;
+  }
 
-  if(descriptor.hasOwnProperty('ancestorBias')) {
-    calamine.applyAncestorBiasScore(element, descriptor.ancestorBias);
+  // Downward bias
+  var ancestorBias = descriptor.ancestorBias;
+  if(ancestorBias) {
+    var descendants = element.getElementsByTagName('*');
+    for(var i = 0, len = descendants.length, descendant; i < len; i++) {
+      descendant = descendants[i];
+      descendant.score = (descendant.score || 0) + ancestorBias;
+    }
   }
 
   calamine.applyDescendantBiasScore(element);
