@@ -84,20 +84,25 @@ calamine.acceptIfShouldUnwrap = function(bestElement, e) {
  * Updates the score of descendant elements
  */
 calamine.applyAncestorBiasScore = function(element, ancestorBias) {
-  var descendant, descendants = element.getElementsByTagName('*');
-  for(var i = 0, len = descendants.length, descendant; i < len; i++) {
+  var descendant = null, descendants = element.getElementsByTagName('*');
+  for(var i = 0, len = descendants.length; i < len; i++) {
     descendant = descendants[i];
-    descendant.score = (descendant.score || 0) + ancestorBias;
+    if(descendant.hasOwnProperty('score')) {
+      descendant.score += ancestorBias;
+    } else {
+      descendant.score = ancestorBias;
+    }
   }
 };
 
+calamine.RE_TOKEN_SPLIT = /[\s-_]+/g;
 /**
  * Updates the element's score based on strings present in
  * the elements id or class attributes
  */
 calamine.applyAttributeScore = function(element) {
   for(var i = 0, tokens = ((element.id || '') + ' ' +
-    (element.className || '')).trim().toLowerCase().split(/[\s-_]+/g),
+    (element.className || '')).trim().toLowerCase().split(calamine.RE_TOKEN_SPLIT),
     len = tokens.length; i < len; i++) {
     element.score += calamine.LEXICON_BIAS[tokens[i]] || 0;
   }
@@ -280,7 +285,7 @@ calamine.applyPositionScore = function(element) {
  * bias the element itself based on its prior sibling. That way,
  * we can bias while iterating more easily because we don't have to
  * abide the requirement that nextSibling is scored. Then it is
- * easy to incorporate this into the scoreElement function
+ * easy to incorporate this into the score function
  * and deprecate this function. In my head I am thinking of an analogy
  * to something like a YACC lexer that avoids doing peek operations
  * (lookahead parsing). We want something more stream-oriented.
@@ -311,24 +316,10 @@ calamine.applySiblingBias = function(element) {
 };
 
 /**
- * Updates the element's score based on the element's
- * local name, as in, the element itself.
- */
-calamine.applyTagNameScore = function(element) {
-  var descriptor = calamine.getDescriptor(element);
-  element.score += descriptor.nameBias || 0;
-};
-
-/**
  * Updates the element's score based on the content
  * of its text nodes.
  */
 calamine.applyTextScore = function(element) {
-  var descriptor = calamine.getDescriptor(element);
-  if(!element.charCount || descriptor.leaf) {
-    return;
-  }
-
   if(element.hasCopyrightSymbol) {
     element.score -= 40;
   }
@@ -1163,10 +1154,16 @@ calamine.scoreElement = function(element) {
   // in the calls below
   var descriptor = calamine.getDescriptor(element);
 
-  calamine.applyTextScore(element);
+  if(element.hasOwnProperty('charCount') && !descriptor.leaf) {
+    calamine.applyTextScore(element);
+  }
+
   calamine.applyImageScore(element);
   calamine.applyPositionScore(element);
-  calamine.applyTagNameScore(element);
+
+  // Score based on tag name
+  element.score += descriptor.nameBias || 0;
+
   calamine.applyAttributeScore(element);
 
   if(descriptor.hasOwnProperty('ancestorBias')) {
