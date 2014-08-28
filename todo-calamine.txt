@@ -39,3 +39,21 @@ these are less likely.
 * better credits to research papers
 
 TODO: support <body>text</body> (text under root node)? How?
+
+TODO: anchors beginning with # before resolution are
+probably table of contents links. We should differentiate
+See http://plato.stanford.edu/entries/other-minds/
+where the TOC was missed
+
+Idea: rather than applying score in scoreElement, we should be trying to
+just get the score from each function and accumulating
+it here. However, there is the issue that we implicitly
+score other elements when scoring the current element
+which means evil side effects
+
+TODO: in deriveAnchorFeatures, if the main function ever receives a
+document without a body or without a root, is this an infinite
+loop?
+
+
+go after the share subsection specifically and filter it

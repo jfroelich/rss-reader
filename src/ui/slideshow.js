@@ -226,6 +226,7 @@ function appendSlide(entry, isFirst) {
 
   slide.appendChild(title);
 
+  // TODO: use section instead of span
 
   var content = document.createElement('span');
   content.setAttribute('class', 'entry-content');

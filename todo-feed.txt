@@ -4,3 +4,7 @@ lucu.feed.add and lucu.feed.update would be refactored.
 
 * because i do not validate a feed is live before adding,
  need to periodically identify invalid feeds later.
+
+
+- Reference ui for next/prev
+-https://infoactive.co/data-design/preface01.html

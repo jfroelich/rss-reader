@@ -4,6 +4,11 @@
 
 'use strict';
 
+/**
+ * The calamine module provides functions for removing boilerplate content
+ * In other words, applying lotion to soothe NLP shingles. The principle
+ * and sole 'public' function is transformDocument.
+ */
 var calamine = {};
 
 /**
@@ -12,38 +17,75 @@ var calamine = {};
  */
 calamine.transformDocument = function(doc, options) {
   var c = calamine;
+  var loop = c.forEachNode;
   options = options || {};
-  c.forEachNode(doc.body, NodeFilter.SHOW_COMMENT | NodeFilter.SHOW_ELEMENT,
-    c.removeNode, c.acceptIfShouldRemove);
-  c.forEachNode(doc.body, NodeFilter.SHOW_ELEMENT, c.transformShim,
-    c.acceptIfShouldTransformShim);
-  // Next line under dev
+  loop(doc.body, NodeFilter.SHOW_COMMENT | NodeFilter.SHOW_ELEMENT,
+    c.removeNode, c.acceptIfRemovable);
+  loop(doc.body, NodeFilter.SHOW_ELEMENT, c.transformShim,
+    c.acceptIfTransformableShim);
   // c.forEach(doc.body.querySelectorAll('br,hr'), c.testSplitBreaks);
-  c.forEachNode(doc.body, NodeFilter.SHOW_TEXT, c.canonicalizeSpace);
-  c.forEachNode(doc.body, NodeFilter.SHOW_ELEMENT, c.propagatePreformatted,
-    calamine.acceptIfPreformatted);
-  c.forEachNode(doc.body, NodeFilter.SHOW_TEXT, c.trimNode);
-  c.forEachNode(doc.body, NodeFilter.SHOW_TEXT, c.filterEmptyNode);
+  loop(doc.body, NodeFilter.SHOW_TEXT, c.canonicalizeSpace);
+  loop(doc.body, NodeFilter.SHOW_ELEMENT, c.propagatePreformatted,
+    c.acceptIfPreformatted);
+  loop(doc.body, NodeFilter.SHOW_TEXT, c.trimNode);
+  loop(doc.body, NodeFilter.SHOW_TEXT, c.removeNode, c.acceptIfEmptyNode);
   c.filterEmptyElements(doc);
-  c.forEachNode(doc.body, NodeFilter.SHOW_TEXT, c.deriveTextFeatures);
-  var anchors = doc.body.querySelectorAll('a');
-  c.forEach(anchors, c.deriveAnchorFeatures);
-  var elements = doc.body.querySelectorAll('*');
-  c.forEach(elements, c.deriveSiblingFeatures);
-  c.forEach(elements, c.scoreElement);
-  c.forEach(elements, c.applySiblingBias);
+  loop(doc.body, NodeFilter.SHOW_TEXT, c.deriveTextFeatures);
+  loop(doc.body, NodeFilter.SHOW_ELEMENT, c.deriveAnchorFeatures,
+    c.acceptIfAnalyzableAnchor);
+  loop(doc.body, NodeFilter.SHOW_ELEMENT, c.deriveSiblingFeatures);
+  loop(doc.body, NodeFilter.SHOW_ELEMENT, c.scoreElement);
+  loop(doc.body, NodeFilter.SHOW_ELEMENT, c.applySiblingBias);
   if(options.FILTER_ATTRIBUTES) {
-    c.forEachNode(doc.body, NodeFilter.SHOW_ELEMENT, c.filterAttributes);
+    loop(doc.body, NodeFilter.SHOW_ELEMENT, c.filterAttributes);
   }
+
+/*
+Idea: stick the above in a transforms array and just iterate over the array
+Except that we cannot because of c.filterEmptyElements
+  // Ordered array of transforms, static constant
+  var transforms = [
+    {
+      expose: NodeFilter.SHOW_COMMENT | NodeFilter.SHOW_ELEMENT,
+      filter: c.acceptIfRemovable,
+      operation: c.removeNode
+    },
+    {
+      expose: NodeFilter.SHOW_ELEMENT,
+      filter: c.acceptIfTransformableShim,
+      operation: c.transformShim
+    },
+    etc
+  ];
+
+  transforms.forEach(function applyTransform(element, t) {
+    calamine.forEachNode(element, t.expose, t.operation. t.filter);
+  }.bind(this, doc.body));
+*/
+
   doc.body.score = -Infinity;
+  var elements = doc.body.querySelectorAll('*');
   var bestElement = c.reduce(elements, c.getMaxScore, doc.body);
   if(options.UNWRAP) {
-    c.forEachNode(bestElement, NodeFilter.SHOW_ELEMENT, c.unwrap,
-      calamine.acceptIfShouldUnwrap.bind(this, bestElement));
+    loop(bestElement, NodeFilter.SHOW_ELEMENT, c.unwrap,
+      c.acceptIfShouldUnwrap.bind(this, bestElement));
   }
-  c.forEach(elements, c.exposeAttributes.bind(this, options));
+  loop(bestElement, NodeFilter.SHOW_ELEMENT,
+    c.exposeAttributes.bind(this, options));
   c.trimElement(bestElement);
   return bestElement;
+};
+
+calamine.acceptIfAnalyzableAnchor = function(element) {
+  // Anchors without hrefs are considered basic inline elements that can be
+  // unwrapped. We ignore such anchors when setting anchorCharCount because
+  // the boilerplate signal is stronger for hrefs. Side menus typically use
+  // anchors for links, not for inline span effects.
+  if(element.localName != 'a' || !element.charCount ||
+    !element.hasAttribute('href')) {
+    return NodeFilter.FILTER_REJECT;
+  }
+  return NodeFilter.FILTER_ACCEPT;
 };
 
 calamine.acceptIfShouldUnwrap = function(bestElement, e) {
@@ -56,12 +98,10 @@ calamine.acceptIfShouldUnwrap = function(bestElement, e) {
     if(href) {
       href = href.trim();
     }
-
     if(!href) {
       console.debug('unwrapping nominal anchor %o', e);
       return NodeFilter.FILTER_ACCEPT;
     }
-
     if(/^\s*javascript\s*:/i.test(href)) {
       console.debug('unwrapping anchor with javascript url %s', href);
       return NodeFilter.FILTER_ACCEPT;
@@ -69,11 +109,8 @@ calamine.acceptIfShouldUnwrap = function(bestElement, e) {
   }
 
   var descriptor = calamine.getDescriptor(e);
-  if(descriptor.unwrappable) {
-    return NodeFilter.FILTER_ACCEPT;
-  }
-
-  return NodeFilter.FILTER_REJECT;
+  return descriptor.unwrappable ? NodeFilter.FILTER_ACCEPT :
+    NodeFilter.FILTER_REJECT;
 };
 
 calamine.acceptIfPreformatted = function(element) {
@@ -81,33 +118,22 @@ calamine.acceptIfPreformatted = function(element) {
   return NodeFilter['FILTER_' + descriptor.preformatted ? 'ACCEPT' : 'REJECT'];
 };
 
-calamine.acceptIfShouldTransformShim = function(element) {
-  if(element.localName == 'noembed' || element.localName == 'noscript') {
-    return NodeFilter.FILTER_ACCEPT;
-  }
-  return NodeFilter.FILTER_REJECT;
+calamine.acceptIfTransformableShim = function(element) {
+  return element.localName == 'noembed' || element.localName == 'noscript' ?
+    NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
 };
 
+/**
+ * Unwraps or removes noscript-like elements.
+ */
 calamine.transformShim = function(element) {
   // TODO: this needs to check contains to avoid
   // processing <noscript><noscript>..</noscript></noscript>
-
-  // The idea is that we either unwrap or remove
-  if(element.childNodes.length == 1) {
-    console.debug('child node length 1');
-    // Very probably a traditional text message
-    element.remove();
-    return;
-  }
-
   var text = element.innerText || '';
-
   if(element.childNodes.length < 3 || text.length < 100) {
-    // Probably a traditional text message
     element.remove();
     return;
   }
-
   // TODO: is visibility a clue?
   // Otherwise, it is probably a template that contains possibly important
   // content (like the entire article in the case of cbsnews) so we just
@@ -142,32 +168,20 @@ calamine.trimElement = function(element) {
  */
 calamine.isTrimmableElement = function(element) {
   return element && element.nodeType == Node.ELEMENT_NODE &&
-    (element.localName == 'br' || element.localName === 'p' &&
-     element.childNodes.length == 0);
+    (element.localName == 'br' || element.localName == 'p' &&
+    !element.firstChild);
 };
 
 /**
- * Parameter to createNodeIterator. Returns NodeFilter.FILTER_ACCEPT for
- * nodes that should be removed.
+ * Parameter to createNodeIterator that accepts nodes that should be removed.
  */
-calamine.acceptIfShouldRemove = function(node) {
+calamine.acceptIfRemovable = function(node) {
   if(node.nodeType == Node.COMMENT_NODE) {
     return NodeFilter.FILTER_ACCEPT;
   }
 
   var descriptor = calamine.getDescriptor(node);
-  if(!descriptor) {
-    // console.warn('Removing unknown element %o', node);
-    return NodeFilter.FILTER_ACCEPT;
-  }
-
-  if(descriptor.blacklisted) {
-    // console.debug('Removing blacklisted element %s', node);
-    return NodeFilter.FILTER_ACCEPT;
-  }
-
-  if(calamine.isTracerImage(node)) {
-    //console.debug('Removing tracer image %o', node);
+  if(!descriptor || descriptor.blacklisted || calamine.isTracerImage(node)) {
     return NodeFilter.FILTER_ACCEPT;
   }
 
@@ -191,32 +205,20 @@ calamine.filterAttributes = function(element) {
   removables.forEach(remove);
 };
 
-calamine.isNotBestElement = function(bestElement, element) {
-  return bestElement != element;
-};
-
 calamine.getAttributeName = function(attribute) {
   return attribute.name;
 };
 
 calamine.isRemovableAttribute = function(attributeName) {
   // TODO: allow title? allow alt?
-
-  if('href' == attributeName) {
-    return false;
-  }
-
-  if('src' == attributeName) {
-    return false;
-  }
-
-  return true;
+  return attributeName != 'href' && attributeName != 'src';
 };
 
 calamine.getMaxScore = function(previous, current) {
 
   // current could be undefined due to mutation-while-iterating
   // issues so we check here and default to previous
+  // TODO: deprecate
   if(!current) {
     console.debug('current element undefined in getMaxScore');
     return previous;
@@ -234,12 +236,6 @@ calamine.getMaxScore = function(previous, current) {
 };
 
 calamine.exposeAttributes = function(options, element)  {
-
-  // Guard due to issues with mutation during iteration
-  if(!element) {
-    return;
-  }
-
   if(options.SHOW_BRANCH && element.branch)
     element.setAttribute('branch', element.branch);
   if(options.SHOW_ANCHOR_DENSITY && element.anchorDensity)
@@ -262,18 +258,15 @@ calamine.exposeAttributes = function(options, element)  {
  * Tests whether an element is invisible
  */
 calamine.isInvisible = function(element) {
-
   // TODO: element.offsetWidth < 1 || element.offsetHeight < 1; ??
   // saw that somewhere, need to read up on offset props again.
   // Something about emulating how jquery does it?
   // TODO: consider if(element.hidden) ?
   var s = element.style;
-
   if(s.display == 'none' || s.visibility == 'hidden' ||
     s.visibility == 'collapse') {
     return true;
   }
-
   var opacity = parseFloat(s.opacity);
   if(opacity < 0.3) {
     console.debug('low opacity element %o', element);
@@ -404,7 +397,7 @@ calamine.testSplitBreaks = function(str) {
 
   // TODO: use the isInline function defined somewhere, do not redefine
 
-  var isInline = calamine.getPolicyProp.bind(this,'inline');
+  var isInline = calamine.isInline;
 
   var insertAfter = function(newElement, oldElement) {
     if(oldElement.nextSibling) {
@@ -454,23 +447,17 @@ calamine.deriveTextFeatures = function(node) {
   var doc = node.ownerDocument;
   var parent = node.parentElement;
   var value = node.nodeValue;
-
-  // TODO: this should be using the copyright character itself as well
-  // TODO: this should be acting upon text that normalized the variants
+  // TODO: check for the copyright character itself?
+  // TODO: check unicode variants?
   parent.hasCopyrightSymbol = /&copy;|&#169;|&#xA9;/i.test(value) ? 1 : 0;
-
   // TODO: this should also be looking for the character itself
-  // &#8226, •, &#x2022;
+  // &#8226,•, &#x2022;
   parent.bulletCount = calamine.countChar(value,'\u2022');
-
   // TODO: this should also be looking at other expressions of pipes
   parent.pipeCount = calamine.countChar(value,'|');
-
   // NOTE: we don't care about setting the count in the node itself,
   // just in the parent element path to body
-
   var charCount = value.length - value.split(/[\s\.]/g).length + 1;
-
   while(parent != doc.body) {
     parent.charCount = (parent.charCount || 0) + charCount;
     parent = parent.parentElement;
@@ -478,14 +465,8 @@ calamine.deriveTextFeatures = function(node) {
 };
 
 calamine.propagatePreformatted = function(element) {
-  if(!element) {
-    return;
-  }
-
   calamine.setPreformatted(element);
-  // TODO: use querySelectorAll
-  var descendants = element.getElementsByTagName('*');
-  calamine.forEach(descendants, calamine.setPreformatted);
+  calamine.forEach(element.querySelectorAll('*'), calamine.setPreformatted);
 };
 
 calamine.setPreformatted = function(element) {
@@ -500,66 +481,26 @@ calamine.trimNode = function(node) {
 
   if(calamine.isInline(node.previousSibling)) {
     if(!calamine.isInline(node.nextSibling)) {
-      // It follows an inline element but does not precede one
       node.nodeValue = node.nodeValue.trimRight();
     }
   } else if(calamine.isInline(node.nextSibling)) {
-    // It does not follow an inline element but it does
-    // precede one
     node.nodeValue = node.nodeValue.trimLeft();
   } else {
-    // It does not follow an inline element and it does
-    // not precede one
     node.nodeValue = node.nodeValue.trim();
   }
 };
 
-// Remove the node if it does not have a value
-calamine.filterEmptyNode = function(node) {
-  if(!node) {
-    return;
-  }
-
-  // TODO: should condition be node.nodeValue.length ?
-
-  if(node.nodeValue) {
-    return;
-  }
-
-  node.remove();
+calamine.acceptIfEmptyNode = function(node) {
+  return node.nodeValue ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
 };
 
-
-// Extract anchor features. Based on charCount from text features
+/**
+ * Extract anchor features. Based on charCount from text features
+ */
 calamine.deriveAnchorFeatures = function(anchor) {
-
-  if(!anchor) {
-    return;
-  }
-
-  if(!anchor.charCount) {
-    return;
-  }
-
-  // Anchors without hrefs are considered basic inline elements
-  // that can be unwrapped. We ignore such
-  // anchors when setting anchorCharCount because
-  // the boilerplate signal is stronger for hrefs. Side menus
-  // typically use anchors for links, not for inline span effects.
-
-  if(!anchor.hasAttribute('href')) {
-    return;
-  }
-
   anchor.anchorCharCount = anchor.charCount;
-
   var doc = anchor.ownerDocument;
   var parent = anchor.parentElement;
-
-  // Random side thought: if the main function ever receives a
-  // document without a body or without a root, is this an infinite
-  // loop?
-
   while(parent != doc.body) {
     parent.anchorCharCount = (parent.anchorCharCount || 0 ) + anchor.charCount;
     parent = parent.parentElement;
@@ -567,67 +508,23 @@ calamine.deriveAnchorFeatures = function(anchor) {
 };
 
 calamine.deriveSiblingFeatures = function(element) {
-
-  // NOTE: previousSiblingCount has to be cached as each element
-  // is visited. Calculating siblingCount could be deferred,
-  // except that previousSiblingCount is not calculated if
-  // siblingCount is 0.
-
-  // Guard due to mutation-while-iterating issues
-  if(!element) {
-    return;
-  }
-
-  // Extra guard due to mutation-while-iterating issues
-  if(!element.parentElement) {
-    return;
-  }
-
   element.siblingCount = element.parentElement.childElementCount - 1;
   element.previousSiblingCount = 0;
-
   if(!element.siblingCount) {
     return;
   }
-
   var pes = element.previousElementSibling;
   if(pes) {
-    // Basic memoized approach that takes advantage of the fact that
-    // pes was already visited and already has a count.
     element.previousSiblingCount = pes.previousSiblingCount + 1;
   }
 };
 
-calamine.isJavascriptAnchor = function(anchor) {
-  // Guard due to mutation-while-iterating issues
-  if(!anchor) {
-    return false;
-  }
-  var href = anchor.getAttribute('href');
-  return /^\s*javascript\s*:/i.test(href);
-};
-
-//Apply our 'model' to an element. We generate a score that is the
-//sum of several terms.
+/**
+ * Apply our 'model' to an element. We generate a score that is the
+ * sum of several terms.
+ */
 calamine.scoreElement = function(element) {
-
-  if(!element) {
-    return;
-  }
-
   element.score = element.score || 0;
-
-  // TODO: anchors beginning with # before resolution are
-  // probably table of contents links. We should differentiate
-  // See http://plato.stanford.edu/entries/other-minds/
-  // where the TOC was missed
-
-  // Idea: rather than applying, we should be trying to
-  // just get the score from each function and accumulating
-  // it here. However, there is the issue that we implicitly
-  // score other elements when scoring the current element
-  // which means evil side effects
-
   calamine.applyTextScore(element);
   calamine.applyImageScore(element);
   calamine.applyPositionScore(element);
@@ -638,41 +535,23 @@ calamine.scoreElement = function(element) {
 };
 
 calamine.applyTextScore = function(element) {
-
-  if(!element) {
-    return;
-  }
-
-  // Elements without a character count, for whatever reason,
-  // are not scored
-  if(!element.charCount) {
-    return;
-  }
-
   var descriptor = calamine.getDescriptor(element);
-
-  if(descriptor && descriptor.leaf) {
-    // Leaf elements do not have a text score
+  if(!element.charCount || descriptor.leaf) {
     return;
   }
 
-  // Apply character scores
   if(element.hasCopyrightSymbol) {
     element.score -= 40;
   }
-
   element.score += -20 * (element.bulletCount || 0);
   element.score += -10 * (element.pipeCount || 0);
-
-  // Calculate anchor density and store it as an expando so that
-  // it can optionally be exposed later
+  // NOTE: This could just be a local variable but we store it for debugging
   element.anchorDensity = element.anchorCharCount / element.charCount;
 
   // TODO: this could still use a lot of improvement. Maybe look at
   // how any decision tree implementations have done it.
 
-  // NOTE: we store a special branch property just for
-  // debugging purposes when exposing attributes
+  // NOTE: branch is just simple debugging
 
   if(element.charCount > 1000) {
     if(element.anchorDensity > 0.35) {
@@ -724,14 +603,10 @@ calamine.applyTextScore = function(element) {
   }
 };
 
+/**
+ * NOTE: expects defined dimensions
+ */
 calamine.applyImageScore = function(element) {
-  // NOTE: this expects dimensions to be defined for images or it
-  // does not behave as well.
-
-  // NOTE: is there some faster or more appropriate way than matches, like
-  // element instanceof HTMLImageElement?
-  // element instanceof HTMLImageElement works, but apparently there is a strange
-  // issue with cross-frame compatibility.
 
   if(element.localName != 'img') {
     return;
@@ -866,16 +741,6 @@ calamine.applyPositionScore = function(element) {
 
 calamine.applyTagNameScore = function(element) {
   var descriptor = calamine.getDescriptor(element);
-
-  // TODO: this check should not be necessary but some elements
-  // get through (because white list filtering uses element.matches
-  // but this uses element.localName lookup). Once whitespace
-  // filtering is refactored, remove this condition
-  if(!descriptor) {
-    return;
-  }
-
-  // NOTE: not all props have a nameBias so use 0 fallback
   element.score += descriptor.nameBias || 0;
 };
 
@@ -890,84 +755,56 @@ calamine.applyAttributeScore = function(element) {
     return;
   }
 
-  var keys = Object.keys(calamine.ID_CLASS_BIAS);
   var sum = calamine.sumAttributeBiases.bind(this, text);
-  element.score += keys.reduce(sum, 0);
+  element.score += calamine.LEXICON_BIAS_KEYS.reduce(sum, 0);
 };
 
 calamine.sumAttributeBiases = function(text, sum, key) {
-
   if(text.indexOf(key) > -1) {
-    return sum + calamine.ID_CLASS_BIAS[key];
+    return sum + calamine.LEXICON_BIAS[key];
   }
-
   return sum;
 };
 
 calamine.applyAncestorBiasScore = function(element) {
-
-  if(!element) {
-    return;
-  }
-
   var descriptor = calamine.getDescriptor(element);
-
-  // Not all elements have descriptors
-  if(!descriptor) {
+  if(!descriptor.ancestorBias) {
     return;
   }
-
-  var bias = descriptor.ancestorBias;
-
-  // Not all elements have ancestor bias
-  if(!bias) {
-    return;
-  }
-
-  // TODO: use querySelectorAll?
-  var descendants = element.getElementsByTagName('*');
-  var update = calamine.updateDescendantWithAncestorBias.bind(this, bias);
-  calamine.forEach(descendants, update);
+  calamine.forEach(element.querySelectorAll('*'),
+    calamine.updateDescendantWithAncestorBias.bind(this,
+      descriptor.ancestorBias));
 };
 
-// Private helper for applyAncestorBiasScore
+/**
+ * Private helper for applyAncestorBiasScore
+ */
 calamine.updateDescendantWithAncestorBias = function(bias, element) {
   element.score = (element.score || 0) + bias;
 };
 
 calamine.applyDescendantBiasScore = function(element) {
-
-  // Guard due to mutation while iterating issues
-  if(!element) {
-    return;
-  }
-
   var descriptor = calamine.getDescriptor(element);
-
   // Not all elements have a descriptor. They should, because those
   // elements should be filtered out previously by the whitelist test,
   // but at this point in the design it is not guaranteed, so this
   // check is tentatively required.
-  if(!descriptor) {
-    return;
-  }
-
   var bias = descriptor.descendantBias;
-
-  // Not all descriptors have descendant bias
   if(!bias) {
     return;
   }
 
   var parent = element.parentElement;
-
   // Not all elements have parents (due to removal)
   // Ideally we should never see these elements but there are
   // issues with mutation-while-iterating
+  // TODO: deprecate
   if(!parent) {
     return;
   }
 
+  // TODO: is it necessary to avoid scoring body? It just
+  // gets overwritten later to -Infinity, maybe no need to check
   // Avoid scoring of the body element
   if(parent == element.ownerDocument.body) {
     return;
@@ -1018,6 +855,8 @@ calamine.getImageArea = function(element) {
  * (lookahead parsing). We want something more stream-oriented.
  */
 calamine.applySiblingBias = function(element) {
+
+  // TODO: deprecate this check
   if(!element) {
     return;
   }
@@ -1047,6 +886,10 @@ calamine.applySiblingBias = function(element) {
 };
 
 calamine.forEach = function(list, func) {
+  // TODO: is there ever an undefined list?
+  // If list is undefined, do we even need to
+  // check or can forEach.call fail cleanly when
+  // presented an undefined?
   if(!list) {
     return;
   }
@@ -1080,22 +923,20 @@ calamine.reduce = function(list, func, initialValue) {
 
 /**
  * Returns the frequency of ch in str.
+ * See http://jsperf.com/count-the-number-of-characters-in-a-string
  */
 calamine.countChar = function(str, ch) {
-
-  // I assume this is a hot spot so not using reduce approach nor
-  // the split.length-1 approach. See
-  // http://jsperf.com/count-the-number-of-characters-in-a-string
-
   for(var count = -1, index = 0; index != -1; count++) {
     index = str.indexOf(ch, index+1);
   }
-
   return count;
 };
 
 /**
  * A simple helper to use forEach against traversal API.
+ *
+ * TODO: maybe reorder parameters to make filter required and before
+ * func, to make order more intuitive (natural).
  *
  * @param element - the root element, only nodes under the root are
  * iterated. The root element itself is not 'under' itself so it is not
@@ -1119,11 +960,13 @@ calamine.forEachNode = function(element, type, func, filter) {
  */
 calamine.unwrap = function(element) {
 
+  // TODO: deprecate
   // Guard due to mutation while iterating
   if(!element) {
     return;
   }
 
+  // TODO: deprecate
   // Extra guard to due mutation while iterating, due to
   // remove or unwrap
   if(!element.parentElement) {
@@ -1131,7 +974,7 @@ calamine.unwrap = function(element) {
   }
 
 /*
-  // TODO: test if this works
+  // TODO: test if this works instead of below
 
   var doc = element.ownerDocument;
   var frag = doc.createDocumentFragment();
@@ -1158,6 +1001,7 @@ calamine.unwrap = function(element) {
 
 // Simple helper for passing to iterators like forEach
 calamine.removeNode = function(node) {
+  // TODO: would node ever be undefined here?
   if(node) {
     node.remove();
   }
@@ -1171,12 +1015,6 @@ calamine.getDescriptor = function(element) {
   // Maybe tagName is simpler?
 
   return element && calamine.ELEMENT_POLICY[element.localName];
-};
-
-// Simple "private" helper for looking up properties in the policy map
-calamine.getPolicyProp = function(prop, key) {
-  var desc = calamine.ELEMENT_POLICY[key];
-  return desc && desc[prop];
 };
 
 calamine.isInline = function(element) {
@@ -1210,15 +1048,11 @@ calamine.isInline = function(element) {
   return desc.inline;
 };
 
-
-// Element policies name-to-policy map
+/**
+ * Element policies name-to-policy map
+ */
 calamine.ELEMENT_POLICY = {
-  a: {
-    inline: true,
-    nameBias: -1,
-    // Only certain anchors are unwrappable
-    unwrappable: false
-  },
+  a: {inline: true, nameBias: -1},
   abbr: {inline: true},
   acronym: {inline: true},
   address: {inline: true, nameBias: -3},
@@ -1361,7 +1195,7 @@ calamine.ELEMENT_POLICY = {
   xmp: {blacklisted: true, preformatted: true}
 };
 
-calamine.ID_CLASS_BIAS = {
+calamine.LEXICON_BIAS = {
   about: -35,
   'ad-': -100,
   ads: -50,
@@ -1467,3 +1301,5 @@ calamine.ID_CLASS_BIAS = {
   widg: -200,
   zone: -50
 };
+
+calamine.LEXICON_BIAS_KEYS = Object.keys(calamine.LEXICON_BIAS);
