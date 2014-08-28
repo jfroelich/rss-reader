@@ -55,10 +55,11 @@ calamine.acceptIfRemovable = function(node) {
     return NodeFilter.FILTER_ACCEPT;
   }
 
-  if(node.localName != 'noscript' && node.localName != 'noembed' &&
-    calamine.isInvisible(node)) {
-    return NodeFilter.FILTER_ACCEPT;
-  }
+  // Testing to see if this is the perf culprit
+  //if(node.localName != 'noscript' && node.localName != 'noembed' &&
+  //  calamine.isInvisible(node)) {
+  //  return NodeFilter.FILTER_ACCEPT;
+  //}
 
   return NodeFilter.FILTER_REJECT;
 };
@@ -306,59 +307,44 @@ calamine.applyTextScore = function(element) {
   }
   element.score += -20 * (element.bulletCount || 0);
   element.score += -10 * (element.pipeCount || 0);
+
   // NOTE: This could just be a local variable but we store it for debugging
   element.anchorDensity = element.anchorCharCount / element.charCount;
 
-  // TODO: this could still use a lot of improvement. Maybe look at
-  // how any decision tree implementations have done it.
-
-  // NOTE: branch is just simple debugging
-
-  if(element.charCount > 1000) {
-    if(element.anchorDensity > 0.35) {
-      element.branch = 1;
+  var cc = element.charCount;
+  var density = element.anchorDensity;
+  if(cc > 1000) {
+    if(density > 0.35) {
       element.score += 50;
-    } else if(element.anchorDensity > 0.2) {
-      element.branch = 9;
+    } else if(density > 0.2) {
       element.score += 100;
-    } else if (element.anchorDensity > 0.1) {
-      element.branch = 11;
+    } else if (density > 0.1) {
       element.score += 100;
-    } else if(element.anchorDensity > 0.05) {
-      element.branch = 12;
+    } else if(density > 0.05) {
       element.score += 250;
     } else {
-      element.branch = 2;
       element.score += 300;
     }
-  } else if(element.charCount > 500) {
-    if(element.anchorDensity > 0.35) {
-      element.branch = 3;
+  } else if(cc > 500) {
+    if(density > 0.35) {
       element.score += 30;
-    } else if(element.anchorDensity > 0.1) {
-      element.branch = 10;
+    } else if(density > 0.1) {
       element.score += 180;
     } else {
-      element.branch = 4;
       element.score += 220;
     }
-  } else if(element.charCount > 100) {
-    if(element.anchorDensity > 0.35) {
-      element.branch = 5;
+  } else if(cc > 100) {
+    if(density > 0.35) {
       element.score += -100;
     } else {
-      element.branch = 6;
       element.score += 60;
     }
   } else {
-    if(element.anchorDensity > 0.35) {
-      element.branch = 7;
+    if(density > 0.35) {
       element.score -= 200;
-    } else if(isFinite(element.anchorDensity)) {
-      element.branch = 8;
+    } else if(isFinite(density)) {
       element.score += 20;
     } else {
-      element.branch = 13;
       element.score += 5;
     }
   }
@@ -596,8 +582,6 @@ calamine.ELEMENT_POLICY = {
  * exposed in options
  */
 calamine.exposeAttributes = function(options, element)  {
-  if(options.SHOW_BRANCH && element.branch)
-    element.setAttribute('branch', element.branch);
   if(options.SHOW_ANCHOR_DENSITY && element.anchorDensity)
     element.setAttribute('anchorDensity', element.anchorDensity.toFixed(2));
   if(options.SHOW_CHAR_COUNT && element.charCount)
@@ -890,23 +874,23 @@ calamine.isInline = function(element) {
  */
 calamine.isInvisible = function(element) {
 
-  // TODO: this is alarmingly slow
+  // TODO: this is alarmingly slow. My best guess is that
+  // element.style is lazily computed, or that opacity
+  // calc is slow
 
   // TODO: element.offsetWidth < 1 || element.offsetHeight < 1; ??
   // saw that somewhere, need to read up on offset props again.
   // Something about emulating how jquery does it?
   // TODO: consider if(element.hidden) ?
   var s = element.style;
-  if(s.display == 'none' || s.visibility == 'hidden' ||
-    s.visibility == 'collapse') {
+  if(s.display === 'none') {
+    return true;
+  }
+  if(s.visibility === 'hidden' || s.visibility === 'collapse') {
     return true;
   }
   var opacity = parseFloat(s.opacity);
-  if(opacity < 0.3) {
-    console.debug('low opacity element %o', element);
-    return true;
-  }
-  return false;
+  return opacity < 0.3;
 };
 
 /**
