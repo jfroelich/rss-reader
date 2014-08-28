@@ -73,37 +73,9 @@ calamine.acceptIfShouldUnwrap = function(bestElement, e) {
     NodeFilter.FILTER_REJECT;
 };
 
-/**
- * Updates the score of descendant elements
- */
-calamine.applyAncestorBiasScore = function(element, ancestorBias) {
-
-};
 
 calamine.RE_TOKEN_SPLIT = /[\s-_]+/g;
 
-/**
- * If the element has descendant bias, this updates the
- * the score of the immediate parent of the element.
- */
-calamine.applyDescendantBiasScore = function(element) {
-
-  var descriptor = calamine.getDescriptor(element);
-  var bias = descriptor.descendantBias || 0;
-  var parent = element.parentElement;
-
-  // TODO: deprecate? why would parent ever be undefined here?
-  if(!parent) {
-    console.debug('undefined parent in applyDescendantBiasScore');
-    return;
-  }
-
-  // TODO: deprecate? is it necessary to avoid scoring body?
-  if(parent == element.ownerDocument.body) {
-    return;
-  }
-  parent.score = (parent.score || 0) + bias;
-};
 
 /**
  * NOTE: expects defined dimensions
@@ -300,11 +272,8 @@ calamine.applyTextScore = function(element) {
   element.score += -20 * (element.bulletCount || 0);
   element.score += -10 * (element.pipeCount || 0);
 
-  // NOTE: This could just be a local variable but we store it for debugging
-  element.anchorDensity = element.anchorCharCount / element.charCount;
-
   var cc = element.charCount;
-  var density = element.anchorDensity;
+  var density = element.anchorCharCount / element.charCount;
   if(cc > 1000) {
     if(density > 0.35) {
       element.score += 50;
@@ -574,8 +543,6 @@ calamine.ELEMENT_POLICY = {
  * exposed in options
  */
 calamine.exposeAttributes = function(options, element)  {
-  if(options.SHOW_ANCHOR_DENSITY && element.anchorDensity)
-    element.setAttribute('anchorDensity', element.anchorDensity.toFixed(2));
   if(options.SHOW_CHAR_COUNT && element.charCount)
     element.setAttribute('charCount', element.charCount);
   if(options.SHOW_COPYRIGHT_COUNT && element.hasCopyrightSymbol)
@@ -1059,9 +1026,17 @@ calamine.LEXICON_BIAS_KEYS = Object.keys(calamine.LEXICON_BIAS);
  * Marks an element as preformatted and marks its descendants as
  * preformatted.
  */
-calamine.propagatePreformatted = function(element) {
-  calamine.setPreformatted(element);
-  calamine.forEach(element.querySelectorAll('*'), calamine.setPreformatted);
+//calamine.propagatePreformatted = function(element) {
+//  calamine.setPreformatted(element);
+//  calamine.forEach(element.querySelectorAll('*'), calamine.setPreformatted);
+//};
+
+calamine.propagatePreformatted = function(set, element) {
+  set.add(element);
+  var descendants = element.getElementsByTagName('*');
+  for(var i = 0, len = descendants.length; i < len; i++) {
+    set.add(descendants[i]);
+  }
 };
 
 /**
@@ -1136,7 +1111,7 @@ calamine.scoreElement = function(element) {
     element.score += calamine.LEXICON_BIAS[tokens[i]] || 0;
   }
 
-  // Downward bias
+  // Downward bias. Affects all descendants
   var ancestorBias = descriptor.ancestorBias;
   if(ancestorBias) {
     var descendants = element.getElementsByTagName('*');
@@ -1146,7 +1121,16 @@ calamine.scoreElement = function(element) {
     }
   }
 
-  calamine.applyDescendantBiasScore(element);
+  // Upward bias. Affects only the immediate parent of this element.
+  var descendantBias = descriptor.descendantBias;
+  if(descendantBias) {
+    var parent = element.parentElement;
+    if(parent.hasOwnProperty('score')) {
+      parent.score += descendantBias;
+    } else {
+      parent.score = descendantBias;
+    }
+  }
 };
 
 /**
@@ -1224,10 +1208,17 @@ calamine.transformDocument = function(doc, options) {
   // c.forEach(doc.body.querySelectorAll('br,hr'), c.testSplitBreaks);
   loop(doc.body, NodeFilter.SHOW_TEXT, c.canonicalizeSpace);
 
-  // Use qsa here for perf
-  var preformatted = doc.body.querySelectorAll(c.SELECT_PREFORMATTED);
-  c.forEach(preformatted, c.propagatePreformatted);
-  loop(doc.body, NodeFilter.SHOW_TEXT, c.trimNode);
+  // TODO: expandos seem to be the #1 perf culprit. Experiment with WeakMap
+  // here and in trimNode
+  var preformattedSet = new WeakSet();
+  var preformattedElements = doc.body.querySelectorAll(c.SELECT_PREFORMATTED);
+  c.forEach(preformattedElements, c.propagatePreformatted.bind(this, preformattedSet));
+
+  //var preformatted = doc.body.querySelectorAll(c.SELECT_PREFORMATTED);
+  //c.forEach(preformatted, c.propagatePreformatted);
+  //loop(doc.body, NodeFilter.SHOW_TEXT, c.trimNode);
+  loop(doc.body, NodeFilter.SHOW_TEXT, c.trimNode.bind(this, preformattedSet));
+
   loop(doc.body, NodeFilter.SHOW_TEXT, c.removeNode, c.acceptIfEmpty);
   c.filterEmptyElements(doc);
   loop(doc.body, NodeFilter.SHOW_TEXT, c.deriveTextFeatures);
@@ -1320,11 +1311,15 @@ calamine.trimElement = function(element) {
  * varies based on whether the node is adjacent
  * to inline elements.
  */
-calamine.trimNode = function(node) {
+calamine.trimNode = function(set, node) {
 
-  if(node.parentElement.preformatted) {
+  if(set.has(node.parentElement)) {
     return;
   }
+
+  //if(node.parentElement.preformatted) {
+  //  return;
+  //}
 
   if(calamine.isInline(node.previousSibling)) {
     if(!calamine.isInline(node.nextSibling)) {
