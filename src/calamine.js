@@ -81,17 +81,14 @@ calamine.acceptIfShouldUnwrap = function(bestElement, e) {
 };
 
 /**
- * If the element has ancestor bias, this updates the score of the descendants
- * of the given element
+ * Updates the score of descendant elements
  */
-calamine.applyAncestorBiasScore = function(element) {
-  var descriptor = calamine.getDescriptor(element);
-  if(!descriptor.ancestorBias) {
-    return;
+calamine.applyAncestorBiasScore = function(element, ancestorBias) {
+  var descendant, descendants = element.getElementsByTagName('*');
+  for(var i = 0, len = descendants.length, descendant; i < len; i++) {
+    descendant = descendants[i];
+    descendant.score = (descendant.score || 0) + ancestorBias;
   }
-  calamine.forEach(element.querySelectorAll('*'),
-    calamine.updateDescendantWithAncestorBias.bind(this,
-      descriptor.ancestorBias));
 };
 
 /**
@@ -111,6 +108,7 @@ calamine.applyAttributeScore = function(element) {
  * the score of the immediate parent of the element.
  */
 calamine.applyDescendantBiasScore = function(element) {
+
   var descriptor = calamine.getDescriptor(element);
   var bias = descriptor.descendantBias || 0;
   var parent = element.parentElement;
@@ -1160,12 +1158,21 @@ calamine.setPreformatted = function(element) {
  */
 calamine.scoreElement = function(element) {
   element.score = element.score || 0;
+
+  // TODO: now that this was moved here, avoid doing it
+  // in the calls below
+  var descriptor = calamine.getDescriptor(element);
+
   calamine.applyTextScore(element);
   calamine.applyImageScore(element);
   calamine.applyPositionScore(element);
   calamine.applyTagNameScore(element);
   calamine.applyAttributeScore(element);
-  calamine.applyAncestorBiasScore(element);
+
+  if(descriptor.hasOwnProperty('ancestorBias')) {
+    calamine.applyAncestorBiasScore(element, descriptor.ancestorBias);
+  }
+
   calamine.applyDescendantBiasScore(element);
 };
 
@@ -1389,11 +1396,4 @@ calamine.unwrap = function(element) {
   }
 
   element.remove();
-};
-
-/**
- * Private helper for applyAncestorBiasScore
- */
-calamine.updateDescendantWithAncestorBias = function(bias, element) {
-  element.score = (element.score || 0) + bias;
 };
