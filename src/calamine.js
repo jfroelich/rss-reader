@@ -722,13 +722,12 @@ calamine.filter = function(list, fn) {
 calamine.filterAttributes = function(element) {
   // NOTE: confirmed hotspot, hence plain loop
   // TODO: allow title? allow alt?
-  var attributes = element.attributes, name, node;
-  var counter = attributes.length ? attributes.length - 1 : 0;
+  var attributes = element.attributes, node;
+  var counter = attributes.length;
   while(counter--) {
     node = attributes[counter];
-    name = node.name;
-    if(name != 'href' && name != 'src') {
-      element.removeAttributeNode(node);
+    if(node.name != 'href' && node.name != 'src') {
+      element.removeAttribute(node.name);
     }
   }
 };
