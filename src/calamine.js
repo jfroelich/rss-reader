@@ -15,16 +15,23 @@ var calamine = {};
  * A filter that accepts anchors that can be used as factors
  * in scoring.
  */
-calamine.acceptIfAnalyzableAnchor = function(element) {
+calamine.acceptIfAnalyzableAnchor = function(textFeatures, element) {
   // Anchors without hrefs are considered basic inline elements that can be
   // unwrapped. We ignore such anchors when setting anchorCharCount because
   // the boilerplate signal is stronger for hrefs. Side menus typically use
   // anchors for links, not for inline span effects.
-  if(element.localName != 'a' || !element.charCount ||
-    !element.hasAttribute('href')) {
-    return NodeFilter.FILTER_REJECT;
+
+  var entry = textFeatures.get(element);
+  var charCount = 0;
+  if(entry && entry.hasOwnProperty('charCount')) {
+    charCount = entry.charCount;
   }
-  return NodeFilter.FILTER_ACCEPT;
+
+  // TODO: this could not be improved, just use || !entry || !entry.charCount
+  // there is no need to even have a charCount var or set it
+
+  return element.localName != 'a' || !charCount || !element.hasAttribute('href') ?
+    NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
 };
 
 /**
@@ -265,15 +272,22 @@ calamine.applySiblingBias = function(element) {
  * Updates the element's score based on the content
  * of its text nodes.
  */
-calamine.applyTextScore = function(element) {
-  if(element.hasCopyrightSymbol) {
+calamine.applyTextScore = function(features, element) {
+
+  // features is the entry from the featuresMap. Guaranteed
+  // defined.
+
+  if(features.hasCopyrightSymbol) {
     element.score -= 40;
   }
-  element.score += -20 * (element.bulletCount || 0);
-  element.score += -10 * (element.pipeCount || 0);
+  element.score += -20 * (features.bulletCount || 0);
+  element.score += -10 * (features.pipeCount || 0);
 
-  var cc = element.charCount;
-  var density = element.anchorCharCount / element.charCount;
+  // features.charCount is guaranteed defined because the
+  // caller checked it before calling this function
+
+  var cc = features.charCount;
+  var density = element.anchorCharCount / cc;
   if(cc > 1000) {
     if(density > 0.35) {
       element.score += 50;
@@ -369,12 +383,34 @@ calamine.countChar = function(str, ch) {
 /**
  * Extract anchor features. Based on charCount from text features
  */
-calamine.deriveAnchorFeatures = function(anchor) {
-  anchor.anchorCharCount = anchor.charCount;
+calamine.deriveAnchorFeatures = function(features, anchor) {
+
+  // At the moment this is only updated to use the new charCount
+  // features, it still needs more revision to also use anchorCharCount
+
+  // This only gets called if there is a charCount for the anchor element
+  // so entry is guaranteed defined
+  var entry = features.get(anchor);
+  var charCount = entry.charCount || 0;
+
+  // This is temp (see next comment)
+  anchor.anchorCharCount = charCount;
+
   var doc = anchor.ownerDocument;
   var parent = anchor.parentElement;
   while(parent != doc.body) {
-    parent.anchorCharCount = (parent.anchorCharCount || 0 ) + anchor.charCount;
+    // Temporarily we are leaving anchorCharCount expando in here. Also,
+    // instead of a features we should be using a full
+    // elementFeatureMap for any type of feature, text or anchor or
+    // whatever. Will come back to that
+
+    var pEntry = features.get(parent);
+    if(pEntry) {
+      parent.anchorCharCount += charCount;
+    } else {
+      parent.anchorCharCount = charCount;
+    }
+
     parent = parent.parentElement;
   }
 };
@@ -404,7 +440,7 @@ calamine.deriveSiblingFeatures = function(element) {
  * TODO: rename parameter to textNode to better qualify its
  * parameter
  */
-calamine.deriveTextFeatures = function(node) {
+/*calamine.deriveTextFeatures = function(node) {
   var doc = node.ownerDocument;
   var parent = node.parentElement;
   var value = node.nodeValue;
@@ -423,7 +459,81 @@ calamine.deriveTextFeatures = function(node) {
     parent.charCount = (parent.charCount || 0) + charCount;
     parent = parent.parentElement;
   }
+};*/
+
+// This new implementation builds a WeakMap
+calamine.deriveTextFeatures = function(doc) {
+  var map = new WeakMap();
+  calamine.forEachNode(doc.body, NodeFilter.SHOW_TEXT, function(node) {
+    var parent = node.parentElement;
+    var entry = map.get(parent) || {};
+
+    if(!entry.hasCopyrightSymbol) {
+      // We only bother to check if the flag is not yet true for the parent
+      // TODO: check for the copyright character itself?
+      // TODO: check unicode variants?
+      if(/&copy;|&#169;|&#xA9;/i.test(node.nodeValue)) {
+        entry.hasCopyrightSymbol = true;
+      }
+    }
+
+    // TODO: this should also be looking for the character itself
+    // &#8226,•, &#x2022;
+    var bulletCount = calamine.countChar(node.nodeValue,'\u2022');
+    if(entry.bulletCount) {
+      // Add in the new count
+      entry.bulletCount += bulletCount;
+    } else if(bulletCount) {
+      // Define the new count
+      entry.bulletCount = bulletCount;
+    }
+
+    // TODO: this should also be looking at other expressions of pipes
+    var pipeCount = calamine.countChar(node.nodeValue, '|');
+    if(entry.pipeCount) {
+      entry.pipeCount += pipeCount;
+    } else if(pipeCount) {
+      entry.pipeCount = pipeCount;
+    }
+
+    var charCount = node.nodeValue.length -
+      node.nodeValue.split(/[\s\.]/g).length + 1;
+
+    if(entry.charCount) {
+      entry.charCount += charCount;
+    } else if(charCount) {
+      entry.charCount = charCount;
+    }
+
+    map.set(parent, entry);
+
+    if(!charCount) {
+      return;
+    }
+
+    // Propagate charCount up to body
+    parent = parent.parentElement;
+    while(parent && parent != doc.body) {
+      var pEntry = map.get(parent);
+      if(pEntry) {
+        if(pEntry.charCount) {
+          pEntry.charCount += charCount;
+        } else {
+          pEntry.charCount = charCount;
+        }
+
+        map.set(parent, pEntry);
+      } else {
+        map.set(parent, { charCount: charCount});
+      }
+
+      parent = parent.parentElement;
+    }
+  });
+
+  return map;
 };
+
 
 /**
  * Element policies name-to-policy map
@@ -1099,15 +1209,14 @@ calamine.SELECT_PREFORMATTED = Object.keys(calamine.ELEMENT_POLICY).filter(funct
  * Apply our 'model' to an element. We generate a score that is the
  * sum of several terms.
  */
-calamine.scoreElement = function(element) {
+calamine.scoreElement = function(featuresMap, element) {
   element.score = element.score || 0;
 
-  // TODO: now that this was moved here, avoid doing it
-  // in the calls below
   var descriptor = calamine.getDescriptor(element);
+  var features = featuresMap.get(element) || {};
 
-  if(element.hasOwnProperty('charCount') && !descriptor.leaf) {
-    calamine.applyTextScore(element);
+  if(features.charCount && !descriptor.leaf) {
+    calamine.applyTextScore(features, element);
   }
 
   calamine.applyImageScore(element);
@@ -1223,40 +1332,21 @@ calamine.transformDocument = function(doc, options) {
 
   var preformatted = calamine.collectPreformatted(doc);
   loop(doc.body, NodeFilter.SHOW_TEXT, c.trimNode.bind(this, preformatted));
+
   loop(doc.body, NodeFilter.SHOW_TEXT, c.removeNode, c.acceptIfEmpty);
   c.filterEmptyElements(doc);
-  loop(doc.body, NodeFilter.SHOW_TEXT, c.deriveTextFeatures);
-  loop(doc.body, NodeFilter.SHOW_ELEMENT, c.deriveAnchorFeatures,
-    c.acceptIfAnalyzableAnchor);
+
+  var features = calamine.deriveTextFeatures(doc);
+
+  loop(doc.body, NodeFilter.SHOW_ELEMENT,
+    c.deriveAnchorFeatures.bind(this, features),
+    c.acceptIfAnalyzableAnchor.bind(this, features));
   loop(doc.body, NodeFilter.SHOW_ELEMENT, c.deriveSiblingFeatures);
-  loop(doc.body, NodeFilter.SHOW_ELEMENT, c.scoreElement);
+  loop(doc.body, NodeFilter.SHOW_ELEMENT, c.scoreElement.bind(this, features));
   loop(doc.body, NodeFilter.SHOW_ELEMENT, c.applySiblingBias);
   if(options.FILTER_ATTRIBUTES) {
     loop(doc.body, NodeFilter.SHOW_ELEMENT, c.filterAttributes);
   }
-
-  /*
-  Idea: stick the above in a transforms array and just iterate over the array
-  Except that we cannot because of c.filterEmptyElements
-    // Ordered array of transforms, static constant
-    var transforms = [
-      {
-        expose: NodeFilter.SHOW_COMMENT | NodeFilter.SHOW_ELEMENT,
-        filter: c.acceptIfRemovable,
-        operation: c.removeNode
-      },
-      {
-        expose: NodeFilter.SHOW_ELEMENT,
-        filter: c.isTemplateLike,
-        operation: c.transformShim
-      },
-      etc
-    ];
-
-    transforms.forEach(function applyTransform(element, t) {
-      calamine.forEachNode(element, t.expose, t.operation. t.filter);
-    }.bind(this, doc.body));
-  */
 
   doc.body.score = -Infinity;
   var elements = doc.body.querySelectorAll('*');

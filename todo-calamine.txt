@@ -57,3 +57,29 @@ loop?
 
 
 go after the share subsection specifically and filter it
+
+
+
+  /*
+  Idea with transformDocument, to make it more general like a pipeline factory
+  Idea: stick the above in a transforms array and just iterate over the array
+  Except that we cannot because of c.filterEmptyElements
+    // Ordered array of transforms, static constant
+    var transforms = [
+      {
+        expose: NodeFilter.SHOW_COMMENT | NodeFilter.SHOW_ELEMENT,
+        filter: c.acceptIfRemovable,
+        operation: c.removeNode
+      },
+      {
+        expose: NodeFilter.SHOW_ELEMENT,
+        filter: c.isTemplateLike,
+        operation: c.transformShim
+      },
+      etc
+    ];
+
+    transforms.forEach(function applyTransform(element, t) {
+      calamine.forEachNode(element, t.expose, t.operation. t.filter);
+    }.bind(this, doc.body));
+  */
