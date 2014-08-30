@@ -1,11 +1,10 @@
 {
   "manifest_version": 2,
   "name": "Lucubrate",
-  "version": "620",
+  "version": "1",
   "author": "Josh Froelich",
   "homepage_url": "https://github.com/jfroelich/rss-reader",
   "description": "Reading late into the night",
-
   "browser_action": {
     "default_icon": "media/rss_icon_trans.png",
     "default_title": "Lucubrate"
@@ -31,6 +30,8 @@
       "/src/utilities.js"
     ]
   },
+
+  "minimum_chrome_version" : "36",
 
   "options_page": "options.html",
 
