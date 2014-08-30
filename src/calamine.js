@@ -15,6 +15,10 @@ var calamine = {};
  * A filter that accepts anchors that can be used as factors in scoring.
  */
 calamine.acceptIfAnalyzableAnchor = function(featuresMap, element) {
+
+  // TODO: deprecate this function, use getElementsByTagName
+  // for anchors and iterate inline.  This is one of the worst performers
+
   if(element.localName != 'a' || !element.hasAttribute('href')) {
     return NodeFilter.FILTER_REJECT;
   }
@@ -1216,83 +1220,107 @@ calamine.testSplitBreaks = function(str) {
 };
 
 
+calamine.removeBlacklistedElements = function(doc) {
+
+  // This could be improved, just quick and dirty  for now
+  // NOTE: if necessary this can be made static or even
+  // just a raw string
+
+  var blacklist = [];
+  calamine.ELEMENT_POLICY.forEach(function(value, key) {
+    if(value.blacklisted) {
+      blacklist.push(key);
+    }
+  });
+  var blacklistSelector = blacklist.join(',');
+
+  // Would this work?
+  //var selector = Array.prototype.join.call(
+  // calamine.ELEMENT_POLICY.values(), ',');
+
+  calamine.forEach(doc.body.querySelectorAll(blacklistSelector),
+    calamine.removeNode);
+};
+
+calamine.removeComments = function(doc) {
+  calamine.forEachNode(doc.body, NodeFilter.SHOW_COMMENT, calamine.removeNode);
+};
+
+// Tentatively a noop due to perf
+calamine.removeInvisibleElements = function(doc) {
+  // This is the perf culprit due to isInvisible requiring style to be
+  // calculated. Disabled for now
+
+  // NOTE: this code was originally in a filter func
+  // and needs to be refactored
+
+  //if(node.localName != 'noscript' && node.localName != 'noembed' &&
+  //  calamine.isInvisible(node)) {
+  //  return NodeFilter.FILTER_ACCEPT;
+  //}
+};
+
+calamine.removeTracerImages = function(doc) {
+  var images = doc.body.getElementsByTagName('img');
+  calamine.filter(images, calamine.isTracerImage).forEach(calamine.removeNode);
+};
+
+calamine.removeUnknownElements = function(doc) {
+  var elements = doc.body.getElementsByTagName('*');
+  var unknowns = calamine.filter(elements, function(e) {
+    var desc = calamine.ELEMENT_POLICY.get(e.localName);
+    return !desc;
+  });
+  unknowns.forEach(calamine.removeNode);
+};
+
 /**
  * Returns the best element of the document. Does some mutation
  * to the document.
  */
 calamine.transformDocument = function(doc, options) {
   var c = calamine;
-  var loop = c.forEachNode;
+  var features = new WeakMap();
   options = options || {};
 
-  loop(doc.body, NodeFilter.SHOW_COMMENT, c.removeNode);
+  c.removeComments(doc);
+  c.removeBlacklistedElements(doc);
+  c.removeUnknownElements(doc);
+  c.removeTracerImages(doc);
+  c.removeInvisibleElements(doc);
 
-  // This could be improved, just quick and dirty  for now
-  var blacklist = [];
-  c.ELEMENT_POLICY.forEach(function(value, key) {
-    if(value.blacklisted) {
-      blacklist.push(key);
-    }
-  });
-  var blacklistSelector = blacklist.join(',');
-  var blacklistedElements = doc.body.querySelectorAll(blacklistSelector);
-  c.forEach(blacklistedElements, c.removeNode);
-
-  var elements = doc.body.getElementsByTagName('*');
-  var unknowns = c.filter(elements, function(e) {
-    var desc = calamine.ELEMENT_POLICY.get(e.localName);
-    return !desc;
-  });
-  unknowns.forEach(c.removeNode);
-
-  // Strip tracers
-  c.filter(doc.body.getElementsByTagName('img'), c.isTracerImage).forEach(
-    c.removeNode);
-
-
-/*
-  // This is the perf culprit due to isInvisible requiring style to be
-  // calculated. Disabled for now
-
-  //if(node.localName != 'noscript' && node.localName != 'noembed' &&
-  //  calamine.isInvisible(node)) {
-  //  return NodeFilter.FILTER_ACCEPT;
-  //}
-*/
-
-
-  loop(doc.body, NodeFilter.SHOW_ELEMENT, c.transformShim, c.isTemplateLike);
+  c.forEachNode(doc.body, NodeFilter.SHOW_ELEMENT, c.transformShim, c.isTemplateLike);
   // c.forEach(doc.body.querySelectorAll('br,hr'), c.testSplitBreaks);
-  loop(doc.body, NodeFilter.SHOW_TEXT, c.canonicalizeSpace);
+  c.forEachNode(doc.body, NodeFilter.SHOW_TEXT, c.canonicalizeSpace);
 
   var preformatted = calamine.collectPreformatted(doc);
-  loop(doc.body, NodeFilter.SHOW_TEXT, c.trimNode.bind(this, preformatted));
+  c.forEachNode(doc.body, NodeFilter.SHOW_TEXT, c.trimNode.bind(this, preformatted));
 
-  loop(doc.body, NodeFilter.SHOW_TEXT, c.removeNode, c.acceptIfEmpty);
+  c.forEachNode(doc.body, NodeFilter.SHOW_TEXT, c.removeNode, c.acceptIfEmpty);
   c.filterEmptyElements(doc);
 
-  var features = new WeakMap();
+
 
   calamine.deriveTextFeatures(doc, features);
 
-  loop(doc.body, NodeFilter.SHOW_ELEMENT,
+  c.forEachNode(doc.body, NodeFilter.SHOW_ELEMENT,
     c.deriveAnchorFeatures.bind(this, features),
     c.acceptIfAnalyzableAnchor.bind(this, features));
-  loop(doc.body, NodeFilter.SHOW_ELEMENT, c.deriveSiblingFeatures);
-  loop(doc.body, NodeFilter.SHOW_ELEMENT, c.scoreElement.bind(this, features));
-  loop(doc.body, NodeFilter.SHOW_ELEMENT, c.applySiblingBias);
+  c.forEachNode(doc.body, NodeFilter.SHOW_ELEMENT, c.deriveSiblingFeatures);
+  c.forEachNode(doc.body, NodeFilter.SHOW_ELEMENT, c.scoreElement.bind(this, features));
+  c.forEachNode(doc.body, NodeFilter.SHOW_ELEMENT, c.applySiblingBias);
   if(options.FILTER_ATTRIBUTES) {
-    loop(doc.body, NodeFilter.SHOW_ELEMENT, c.filterAttributes);
+    c.forEachNode(doc.body, NodeFilter.SHOW_ELEMENT, c.filterAttributes);
   }
 
   doc.body.score = -Infinity;
   var elements = doc.body.querySelectorAll('*');
   var bestElement = c.reduce(elements, c.getMaxScore, doc.body);
   if(options.UNWRAP) {
-    loop(bestElement, NodeFilter.SHOW_ELEMENT, c.unwrap,
+    c.forEachNode(bestElement, NodeFilter.SHOW_ELEMENT, c.unwrap,
       c.acceptIfShouldUnwrap.bind(this, bestElement));
   }
-  loop(bestElement, NodeFilter.SHOW_ELEMENT,
+  c.forEachNode(bestElement, NodeFilter.SHOW_ELEMENT,
     c.exposeAttributes.bind(this, options, features));
   c.trimElement(bestElement);
   return bestElement;
