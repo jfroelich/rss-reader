@@ -38,12 +38,12 @@ calamine.acceptIfEmpty = function(node) {
 calamine.acceptIfRemovable = function(element) {
   var descriptor = calamine.ELEMENT_POLICY.get(element.localName);
 
-  if(!descriptor || descriptor.blacklisted || calamine.isTracerImage(element)) {
+  if(!descriptor || calamine.isTracerImage(element)) {
     return NodeFilter.FILTER_ACCEPT;
   }
 
   // This is the perf culprit due to isInvisible requiring style to be
-  // calculated. Disabled until perf is acceptable
+  // calculated. Disabled for now
 
   //if(node.localName != 'noscript' && node.localName != 'noembed' &&
   //  calamine.isInvisible(node)) {
@@ -73,7 +73,7 @@ calamine.acceptIfShouldUnwrap = function(bestElement, e) {
 /**
  * NOTE: expects defined dimensions
  */
-calamine.applyImageScore = function(element) {
+calamine.applyImageScore = function(featuresMap, features, element) {
 
   if(element.localName != 'img') {
     return;
@@ -133,46 +133,58 @@ calamine.applyImageScore = function(element) {
   var area = calamine.getImageArea(element);
 
   if(!isFinite(area)) {
-    element.imageBranch = 1;
+    features.imageBranch = 1;
+    featuresMap.set(element, features);
+
     element.score += 100;
     if(element.parentElement && element.parentElement != root) {
       element.parentElement.score = (element.parentElement.score || 0) + 100;
     }
-  } else if(area > 1E5) {
+  } else if(area > 100000) {
+    features.imageBranch = 2;
+    featuresMap.set(element, features);
 
-    // TODO: make a decision about whether to use syntax like 1E5
-
-    element.imageBranch = 2;
     element.score += 150;
     if(element.parentElement && element.parentElement != root) {
       element.parentElement.score = (element.parentElement.score || 0) + 150;
     }
   } else if(area > 50000) {
-    element.imageBranch = 3;
+    features.imageBranch = 3;
+    featuresMap.set(element, features);
+
+
     element.score += 150;
     if(element.parentElement && element.parentElement != root) {
       element.parentElement.score = (element.parentElement.score || 0) + 150;
     }
   } else if(area > 10000) {
-    element.imageBranch = 4;
+    features.imageBranch = 4;
+    featuresMap.set(element, features);
+
     element.score += 70;
     if(element.parentElement && element.parentElement != root) {
       element.parentElement.score = (element.parentElement.score || 0) + 70;
     }
   } else if(area > 3000) {
-    element.imageBranch = 5;
+    features.imageBranch = 5;
+    featuresMap.set(element, features);
+
     element.score += 30;
     if(element.parentElement && element.parentElement != root) {
       element.parentElement.score = (element.parentElement.score || 0) + 10;
     }
   } else if(area > 500) {
-    element.imageBranch = 6;
+    features.imageBranch = 6;
+    featuresMap.set(element, features);
+
     element.score += 10;
     if(element.parentElement && element.parentElement != root) {
       element.parentElement.score = (element.parentElement.score || 0) + 10;
     }
   } else {
-    element.imageBranch = 7;
+    features.imageBranch = 7;
+    featuresMap.set(element, features);
+
     element.score -= 10;
     if(element.parentElement && element.parentElement != root) {
       element.parentElement.score = (element.parentElement.score || 0) - 10;
@@ -624,8 +636,8 @@ calamine.exposeAttributes = function(options, features, element)  {
     element.setAttribute('hasCopyrightSymbol', element.hasCopyrightSymbol);
   if(options.SHOW_DOT_COUNT && element.bulletCount)
     element.setAttribute('bulletCount', element.bulletCount);
-  if(options.SHOW_IMAGE_BRANCH && element.imageBranch)
-    element.setAttribute('imageBranch', element.imageBranch);
+  if(options.SHOW_IMAGE_BRANCH && features.imageBranch)
+    element.setAttribute('imageBranch', features.imageBranch);
   if(options.SHOW_PIPE_COUNT && element.pipeCount)
     element.setAttribute('pipeCount', element.pipeCount);
   if(options.SHOW_SCORE && element.score)
@@ -1122,7 +1134,7 @@ calamine.scoreElement = function(featuresMap, element) {
     calamine.applyTextScore(features, element);
   }
 
-  calamine.applyImageScore(element);
+  calamine.applyImageScore(featuresMap, features, element);
   calamine.applyPositionScore(element);
 
   // Score based on tag name
@@ -1231,7 +1243,20 @@ calamine.transformDocument = function(doc, options) {
 
   loop(doc.body, NodeFilter.SHOW_COMMENT, c.removeNode);
 
-  // TODO: this is now the perf culprit. Separate out comments, use
+  // This could be improved, just quick and dirty  for now
+  var blacklist = [];
+  c.ELEMENT_POLICY.forEach(function(value, key) {
+    if(value.blacklisted) {
+      blacklist.push(key);
+    }
+  });
+  var blacklistSelector = blacklist.join(',');
+  var blacklistedElements = doc.body.querySelectorAll(blacklistSelector);
+  c.forEach(blacklistedElements, c.removeNode);
+
+  //var blacklist = doc.body.querySelectorAll();
+
+  // TODO: this is now the perf culprit. use
   // querySelectorAll for blacklist
   loop(doc.body, NodeFilter.SHOW_ELEMENT, c.removeNode, c.acceptIfRemovable);
 
