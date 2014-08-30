@@ -38,17 +38,12 @@ calamine.acceptIfEmpty = function(node) {
 calamine.acceptIfRemovable = function(element) {
   var descriptor = calamine.ELEMENT_POLICY.get(element.localName);
 
-  if(!descriptor) {
-    console.debug('no policy found for element %o', element);
+  if(!descriptor || descriptor.blacklisted || calamine.isTracerImage(element)) {
     return NodeFilter.FILTER_ACCEPT;
   }
 
-  if(descriptor.blacklisted || calamine.isTracerImage(element)) {
-    return NodeFilter.FILTER_ACCEPT;
-  }
-
-  // This is the perf culprit due to isInvisible
-  // required style to be calculated. Need to think of how to enable it
+  // This is the perf culprit due to isInvisible requiring style to be
+  // calculated. Disabled until perf is acceptable
 
   //if(node.localName != 'noscript' && node.localName != 'noembed' &&
   //  calamine.isInvisible(node)) {
@@ -325,42 +320,12 @@ calamine.canonicalizeSpace = function(node) {
 };
 
 /**
- * Builds a WeakSet of elements that are preformatted, including
- * descendants of preformatted elements.
- *
- * TODO: WeakSet added in Chrome 36, ensure min version in manifest.json
+ * Creates a Set of preformatted elements, including descendants.
  */
 calamine.collectPreformatted = function(doc) {
-  var set = new WeakSet();
-
-  // TODO: maybe it is simple enough here to just inline
-  // the selector string and move it out of the policy map
-
-  // TODO: is there a way to query for children of such elements
-  // instead of doing a call to getElementsByTagName and an innerloop?
-  // That would be even simpler, and I think there is. (e.g. pre, pre *)
-
-  // TODO: at some point the assumption that pre-collecting these elements
-  // is faster than repeated calls to isDescendantOf(anyPreformattedElement)
-  // needs to be tested
-
-  // TODO: does WeakSet.prototype.add work like Array.prototype.push? Could
-  // we just use add.apply(elements)? Or would it work if we used
-  // set = new WeakSet(elements) ?
-
-  var selector = 'code, pre, ruby, textarea, xmp';
-
-  var elements = doc.body.querySelectorAll(selector);
-  for(var i = 0, len = elements.length, element; i < len; i++) {
-    element = elements[i];
-    set.add(element);
-    for(var j = 0, descendants = element.getElementsByTagName('*'),
-      dlen = descendants.length; j < dlen; j++) {
-      set.add(descendants[j]);
-    }
-  }
-
-  return set;
+  return new WeakSet(Array.prototype.slice.call(doc.body.querySelectorAll(
+    'code, code *, pre, pre *, ruby, ruby *, textarea, textarea *, xmp, xmp *'
+  )));
 };
 
 /**
@@ -925,6 +890,16 @@ calamine.isInvisible = function(element) {
   // TODO: this is alarmingly slow. My best guess is that
   // element.style is lazily computed, or that opacity
   // calc is slow
+
+  // Look at how jquery implemented :hidden? Maybe it is fast?
+
+/*
+// From jquery
+// NOTE: they also check display === 'none'
+jQuery.expr.filters.hidden = function( elem ) {
+  return elem.offsetWidth <= 0 || elem.offsetHeight <= 0;
+};
+*/
 
   // TODO: element.offsetWidth < 1 || element.offsetHeight < 1; ??
   // saw that somewhere, need to read up on offset props again.
