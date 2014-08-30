@@ -33,27 +33,6 @@ calamine.acceptIfEmpty = function(node) {
 };
 
 /**
- * Parameter to createNodeIterator that accepts elements that should be removed.
- */
-calamine.acceptIfRemovable = function(element) {
-  var descriptor = calamine.ELEMENT_POLICY.get(element.localName);
-
-  if(!descriptor || calamine.isTracerImage(element)) {
-    return NodeFilter.FILTER_ACCEPT;
-  }
-
-  // This is the perf culprit due to isInvisible requiring style to be
-  // calculated. Disabled for now
-
-  //if(node.localName != 'noscript' && node.localName != 'noembed' &&
-  //  calamine.isInvisible(node)) {
-  //  return NodeFilter.FILTER_ACCEPT;
-  //}
-
-  return NodeFilter.FILTER_REJECT;
-};
-
-/**
  * Filter that accepts elements that can be unwrapped.
  */
 calamine.acceptIfShouldUnwrap = function(bestElement, e) {
@@ -964,11 +943,10 @@ calamine.isTemplateLike = function(element) {
 };
 
 /**
- * Returns true if the element appears as a tracer image.
+ * Returns true if the image appears as a tracer image.
  */
-calamine.isTracerImage = function(element) {
-  return element.localName == 'img' &&
-    (element.width == 1 || element.height == 1);
+calamine.isTracerImage = function(image) {
+  return image.width == 1 || image.height == 1;
 };
 
 /**
@@ -1125,6 +1103,12 @@ calamine.removeNode = function(node) {
  * sum of several terms.
  */
 calamine.scoreElement = function(featuresMap, element) {
+
+  // TODO: this is now the performance bottleneck
+
+  // TODO: move score into featuresMap and stop using expando
+
+
   element.score = element.score || 0;
 
   var descriptor = calamine.ELEMENT_POLICY.get(element.localName);
@@ -1254,11 +1238,28 @@ calamine.transformDocument = function(doc, options) {
   var blacklistedElements = doc.body.querySelectorAll(blacklistSelector);
   c.forEach(blacklistedElements, c.removeNode);
 
-  //var blacklist = doc.body.querySelectorAll();
+  var elements = doc.body.getElementsByTagName('*');
+  var unknowns = c.filter(elements, function(e) {
+    var desc = calamine.ELEMENT_POLICY.get(e.localName);
+    return !desc;
+  });
+  unknowns.forEach(c.removeNode);
 
-  // TODO: this is now the perf culprit. use
-  // querySelectorAll for blacklist
-  loop(doc.body, NodeFilter.SHOW_ELEMENT, c.removeNode, c.acceptIfRemovable);
+  // Strip tracers
+  c.filter(doc.body.getElementsByTagName('img'), c.isTracerImage).forEach(
+    c.removeNode);
+
+
+/*
+  // This is the perf culprit due to isInvisible requiring style to be
+  // calculated. Disabled for now
+
+  //if(node.localName != 'noscript' && node.localName != 'noembed' &&
+  //  calamine.isInvisible(node)) {
+  //  return NodeFilter.FILTER_ACCEPT;
+  //}
+*/
+
 
   loop(doc.body, NodeFilter.SHOW_ELEMENT, c.transformShim, c.isTemplateLike);
   // c.forEach(doc.body.querySelectorAll('br,hr'), c.testSplitBreaks);
