@@ -83,3 +83,10 @@ go after the share subsection specifically and filter it
       calamine.forEachNode(element, t.expose, t.operation. t.filter);
     }.bind(this, doc.body));
   */
+
+
+-----
+
+Chrome 38 added picture support
+
+- resesarch symbols, maybe it is better than WeakMap?
