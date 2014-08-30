@@ -12,26 +12,17 @@
 var calamine = {};
 
 /**
- * A filter that accepts anchors that can be used as factors
- * in scoring.
+ * A filter that accepts anchors that can be used as factors in scoring.
  */
-calamine.acceptIfAnalyzableAnchor = function(textFeatures, element) {
-  // Anchors without hrefs are considered basic inline elements that can be
-  // unwrapped. We ignore such anchors when setting anchorCharCount because
-  // the boilerplate signal is stronger for hrefs. Side menus typically use
-  // anchors for links, not for inline span effects.
-
-  var entry = textFeatures.get(element);
-  var charCount = 0;
-  if(entry && entry.hasOwnProperty('charCount')) {
-    charCount = entry.charCount;
+calamine.acceptIfAnalyzableAnchor = function(featuresMap, element) {
+  if(element.localName != 'a' || !element.hasAttribute('href')) {
+    return NodeFilter.FILTER_REJECT;
   }
-
-  // TODO: this could not be improved, just use || !entry || !entry.charCount
-  // there is no need to even have a charCount var or set it
-
-  return element.localName != 'a' || !charCount || !element.hasAttribute('href') ?
-    NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+  var entry = featuresMap.get(element);
+  if(!entry || !entry.charCount) {
+    return NodeFilter.FILTER_REJECT;
+  }
+  return NodeFilter.FILTER_ACCEPT;
 };
 
 /**
@@ -46,7 +37,13 @@ calamine.acceptIfEmpty = function(node) {
  */
 calamine.acceptIfRemovable = function(element) {
   var descriptor = calamine.ELEMENT_POLICY.get(element.localName);
-  if(!descriptor || descriptor.blacklisted || calamine.isTracerImage(element)) {
+
+  if(!descriptor) {
+    console.debug('no policy found for element %o', element);
+    return NodeFilter.FILTER_ACCEPT;
+  }
+
+  if(descriptor.blacklisted || calamine.isTracerImage(element)) {
     return NodeFilter.FILTER_ACCEPT;
   }
 
@@ -797,12 +794,6 @@ calamine.filterEmptyElements = function(doc) {
  * such as NodeList or arguments.
  */
 calamine.forEach = function(list, func) {
-  // TODO: delete if this does not cause errors
-  //if(!list) {
-  //  console.debug('forEach list is undefined');
-  //  return;
-  //}
-
   Array.prototype.forEach.call(list, func);
 };
 
@@ -812,6 +803,8 @@ calamine.forEach = function(list, func) {
  * TODO: maybe reorder parameters to make filter required and before
  * func, to make order more intuitive (natural).
  *
+ * TODO: use func.call and support thisArg
+ *
  * @param element - the root element, only nodes under the root are
  * iterated. The root element itself is not 'under' itself so it is not
  * included in the iteration.
@@ -820,9 +813,8 @@ calamine.forEach = function(list, func) {
  * @param filter - an optional filter function to pass to createNodeIterator
  */
 calamine.forEachNode = function(element, type, func, filter) {
-  var doc = element.ownerDocument,
-      node,
-      it = doc.createNodeIterator(element, type, filter);
+  var doc = element.ownerDocument, node,  it = doc.createNodeIterator(element,
+      type, filter);
   while(node = it.nextNode()) {
     func(node);
   }
@@ -1264,11 +1256,9 @@ calamine.transformDocument = function(doc, options) {
 
   loop(doc.body, NodeFilter.SHOW_COMMENT, c.removeNode);
 
-
   // TODO: this is now the perf culprit. Separate out comments, use
   // querySelectorAll for blacklist
-  loop(doc.body, NodeFilter.SHOW_ELEMENT,
-    c.removeNode, c.acceptIfRemovable);
+  loop(doc.body, NodeFilter.SHOW_ELEMENT, c.removeNode, c.acceptIfRemovable);
 
   loop(doc.body, NodeFilter.SHOW_ELEMENT, c.transformShim, c.isTemplateLike);
   // c.forEach(doc.body.querySelectorAll('br,hr'), c.testSplitBreaks);
