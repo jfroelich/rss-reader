@@ -42,11 +42,11 @@ calamine.acceptIfEmpty = function(node) {
 };
 
 /**
- * Parameter to createNodeIterator that accepts nodes that should be removed.
+ * Parameter to createNodeIterator that accepts elements that should be removed.
  */
-calamine.acceptIfRemovable = function(node) {
-  var descriptor = calamine.getDescriptor(node);
-  if(!descriptor || descriptor.blacklisted || calamine.isTracerImage(node)) {
+calamine.acceptIfRemovable = function(element) {
+  var descriptor = calamine.ELEMENT_POLICY.get(element.localName);
+  if(!descriptor || descriptor.blacklisted || calamine.isTracerImage(element)) {
     return NodeFilter.FILTER_ACCEPT;
   }
 
@@ -73,7 +73,7 @@ calamine.acceptIfShouldUnwrap = function(bestElement, e) {
     return !href || /^\s*javascript\s*:/i.test(href) ?
       NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
   }
-  var descriptor = calamine.getDescriptor(e);
+  var descriptor = calamine.ELEMENT_POLICY.get(e.localName);
   return descriptor.unwrappable ? NodeFilter.FILTER_ACCEPT :
     NodeFilter.FILTER_REJECT;
 };
@@ -501,153 +501,149 @@ calamine.deriveTextFeatures = function(doc, features) {
   });
 };
 
-
-/**
- * Element policies name-to-policy map
- */
-calamine.ELEMENT_POLICY = {
-  a: {inline: true, nameBias: -1},
-  abbr: {inline: true},
-  acronym: {inline: true},
-  address: {inline: true, nameBias: -3},
-  applet: {blacklisted: true, leaf: true},
-  area: {leaf: true},
-  article: {nameBias: 100, unwrappable: true},
-  aside: {nameBias: -200},
-  audio: {leaf: true},
-  b: {descendantBias: 1, inline: true},
-  base: {blacklisted: true, leaf: true},
-  basefont: {blacklisted: true, leaf: true},
-  bdi: {inline: true},
-  bdo: {inline: true},
-  bgsound: {blacklisted: true, leaf: true},
-  big: {unwrappable: true},
-  blink: {inline: true, unwrappable: true},
-  blockquote: {ancestorBias: 10, descendantBias: 3, nameBias: 5},
-  body: {unwrappable: true},
-  br: {leaf: true},
-  button: {blacklisted: true, nameBias: -100},
-  canvas: {leaf: true, nameBias: 3},
-  caption: {},
-  center: {unwrappable: true},
-  cite: {inline: true},
-  code: {ancestorBias: 10, descendantBias: 2, inline: true},
-  col: {leaf: true},
-  colgroup: {unwrappable: true},
-  command: {blacklisted: true, leaf: true},
-  data: {inline: true, unwrappable: true},
-  datalist: {blacklisted: true},
-  details: {unwrappable: true},
-  dialog: {blacklisted: true},
-  dir: {ancestorBias: -5, nameBias: -20},
-  dd: {nameBias: -3},
-  del: {inline: true},
-  dfn: {inline: true},
-  div: {ancestorBias: 1, nameBias: 20, unwrappable: true},
-  dl: {ancestorBias: -5, nameBias: -10},
-  dt: {nameBias: -3},
-  em: {descendantBias: 1, inline: true},
-  embed: {blacklisted: true, leaf: true},
-  fieldset: {blacklisted: true},
-  figcaption: {nameBias: 10},
-  figure: {nameBias: 10},
-  font: {inline: true, unwrappable: true},
-  footer: {nameBias: -20, unwrappable: true},
-  form: {nameBias: -20, unwrappable: true},
-  frame: {blacklisted: true, leaf: true},
-  frameset: {blacklisted: true},
-  head: {blacklisted: true},
-  header: {ancestorBias: -5, nameBias: -5, unwrappable: true},
-  help: {unwrappable: true},
-  hgroup: {unwrappable: true},
-  hr: {leaf: true},
-  html: {blacklisted: true, unwrappable: true},
-  h1: {descendantBias: 1, nameBias: -2},
-  h2: {descendantBias: 1, nameBias: -2},
-  h3: {descendantBias: 1, nameBias: -2},
-  h4: {descendantBias: 1, nameBias: -2},
-  h5: {descendantBias: 1, nameBias: -2},
-  h6: {descendantBias: 1, nameBias: -2},
-  i: {descendantBias: 1, inline: true},
-  iframe: {blacklisted: true, leaf: true},
-  ilayer: {unwrappable: true},
-  img: {leaf: true},
-  input: {blacklisted: true, leaf: true},
-  ins: {inline: true},
-  insert: {unwrappable: true},
-  isindex: {blacklisted: true},
-  label: {unwrappable: true},
-  layer: {unwrappable: true},
-  legend: {unwrappable: true},
-  li: {ancestorBias: -3, nameBias: -20},
-  link: {blacklisted: true, leaf: true},
-  kbd: {inline: true},
-  keygen: {},
-  main: {nameBias: 100, unwrappable: true},
-  mark: {inline: true},
-  marquee: {unwrappable: true},
-  map: {inline: true},
-  math: {blacklisted: true},
-  menu: {ancestorBias: -5, blacklisted: true},
-  menuitem: {ancestorBias: -5, blacklisted: true},
-  meta: {blacklisted: true, leaf: true},
-  meter: {inline: true, unwrappable: true},
-  multicol: {unwrappable: true},
-  nav: {ancestorBias: -20, nameBias: -50},
-  nobr: {unwrappable: true},
-  noembed: {unwrappable: true},
-  noframes: {blacklisted: true},
-  noscript: {unwrappable: true},
-  object: {blacklisted: true, leaf: true},
-  ol: {ancestorBias: -5, nameBias: -20},
-  optgroup: {blacklisted: true},
-  option: {blacklisted: true, leaf: true},
-  output: {blacklisted: true},
-  p: {ancestorBias: 10, descendantBias: 5, nameBias: 10},
-  param: {blacklisted: true, leaf: true},
-  plaintext: {unwrappable: true},
-  pre: {ancestorBias: 10, descendantBias: 2, nameBias: 5},
-  progress: {blacklisted: true, leaf: true},
-  q: {inline: true},
-  rect: {},
-  rp: {inline: true},
-  rt: {inline: true},
-  ruby: {ancestorBias: 5, nameBias: 5},
-  s: {},
-  samp: {inline: true},
-  script: {blacklisted: true},
-  section: {nameBias: 10, unwrappable: true},
-  select: {blacklisted: true},
-  small: {inline: true, nameBias: -1, unwrappable: true},
-  source: {leaf: true},
-  spacer: {blacklisted: true},
-  span: {descendantBias: 1, inline: true, unwrappable: true},
-  strike: {inline: true},
-  strong: {descendantBias: 1, inline: true},
-  style: {blacklisted: true},
-  sub: {descendantBias: 2, inline: true},
-  summary: {ancestorBias: 2, descendantBias: 1, nameBias: 5},
-  sup: {descendantBias: 2, inline: true},
-  svg: {leaf: true},
-  table: {ancestorBias: -2},
-  tbody: {unwrappable: true},
-  td: {nameBias: 3},
-  textarea: {blacklisted: true, leaf: true},
-  tfoot: {unwrappable:true},
-  th: {nameBias: -3},
-  thead: {unwrappable: true},
-  time: {descendantBias: 2, inline: true, nameBias: 2},
-  title: {blacklisted: true, leaf: true},
-  tr: {nameBias: 1},
-  track: {leaf:true},
-  tt: {inline: true},
-  u: {inline: true},
-  ul: {ancestorBias: -5, nameBias: -20},
-  'var': {inline: true},
-  video: {leaf: true},
-  wbr: {},
-  xmp: {blacklisted: true}
-};
+calamine.ELEMENT_POLICY = new Map([
+['a', {inline: true, nameBias: -1}],
+['abbr', {inline: true}],
+['acronym', {inline: true}],
+['address', {inline: true, nameBias: -3}],
+['applet', {blacklisted: true, leaf: true}],
+['area', {leaf: true}],
+['article', {nameBias: 100, unwrappable: true}],
+['aside', {nameBias: -200}],
+['audio', {leaf: true}],
+['b', {descendantBias: 1, inline: true}],
+['base', {blacklisted: true, leaf: true}],
+['basefont', {blacklisted: true, leaf: true}],
+['bdi', {inline: true}],
+['bdo', {inline: true}],
+['bgsound', {blacklisted: true, leaf: true}],
+['big', {unwrappable: true}],
+['blink', {inline: true, unwrappable: true}],
+['blockquote', {ancestorBias: 10, descendantBias: 3, nameBias: 5}],
+['body', {unwrappable: true}],
+['br', {leaf: true}],
+['button', {blacklisted: true, nameBias: -100}],
+['canvas', {leaf: true, nameBias: 3}],
+['caption', {}],
+['center', {unwrappable: true}],
+['cite', {inline: true}],
+['code', {ancestorBias: 10, descendantBias: 2, inline: true}],
+['col', {leaf: true}],
+['colgroup', {unwrappable: true}],
+['command', {blacklisted: true, leaf: true}],
+['data', {inline: true, unwrappable: true}],
+['datalist', {blacklisted: true}],
+['details', {unwrappable: true}],
+['dialog', {blacklisted: true}],
+['dir', {ancestorBias: -5, nameBias: -20}],
+['dd', {nameBias: -3}],
+['del', {inline: true}],
+['dfn', {inline: true}],
+['div', {ancestorBias: 1, nameBias: 20, unwrappable: true}],
+['dl', {ancestorBias: -5, nameBias: -10}],
+['dt', {nameBias: -3}],
+['em', {descendantBias: 1, inline: true}],
+['embed', {blacklisted: true, leaf: true}],
+['fieldset', {blacklisted: true}],
+['figcaption', {nameBias: 10}],
+['figure', {nameBias: 10}],
+['font', {inline: true, unwrappable: true}],
+['footer', {nameBias: -20, unwrappable: true}],
+['form', {nameBias: -20, unwrappable: true}],
+['frame', {blacklisted: true, leaf: true}],
+['frameset', {blacklisted: true}],
+['head', {blacklisted: true}],
+['header', {ancestorBias: -5, nameBias: -5, unwrappable: true}],
+['help', {unwrappable: true}],
+['hgroup', {unwrappable: true}],
+['hr', {leaf: true}],
+['html', {blacklisted: true, unwrappable: true}],
+['h1', {descendantBias: 1, nameBias: -2}],
+['h2', {descendantBias: 1, nameBias: -2}],
+['h3', {descendantBias: 1, nameBias: -2}],
+['h4', {descendantBias: 1, nameBias: -2}],
+['h5', {descendantBias: 1, nameBias: -2}],
+['h6', {descendantBias: 1, nameBias: -2}],
+['i', {descendantBias: 1, inline: true}],
+['iframe', {blacklisted: true, leaf: true}],
+['ilayer', {unwrappable: true}],
+['img', {leaf: true}],
+['input', {blacklisted: true, leaf: true}],
+['ins', {inline: true}],
+['insert', {unwrappable: true}],
+['isindex', {blacklisted: true}],
+['label', {unwrappable: true}],
+['layer', {unwrappable: true}],
+['legend', {unwrappable: true}],
+['li', {ancestorBias: -3, nameBias: -20}],
+['link', {blacklisted: true, leaf: true}],
+['kbd', {inline: true}],
+['keygen', {}],
+['main', {nameBias: 100, unwrappable: true}],
+['mark', {inline: true}],
+['marquee', {unwrappable: true}],
+['map', {inline: true}],
+['math', {blacklisted: true}],
+['menu', {ancestorBias: -5, blacklisted: true}],
+['menuitem', {ancestorBias: -5, blacklisted: true}],
+['meta', {blacklisted: true, leaf: true}],
+['meter', {inline: true, unwrappable: true}],
+['multicol', {unwrappable: true}],
+['nav', {ancestorBias: -20, nameBias: -50}],
+['nobr', {unwrappable: true}],
+['noembed', {unwrappable: true}],
+['noframes', {blacklisted: true}],
+['noscript', {unwrappable: true}],
+['object', {blacklisted: true, leaf: true}],
+['ol', {ancestorBias: -5, nameBias: -20}],
+['optgroup', {blacklisted: true}],
+['option', {blacklisted: true, leaf: true}],
+['output', {blacklisted: true}],
+['p', {ancestorBias: 10, descendantBias: 5, nameBias: 10}],
+['param', {blacklisted: true, leaf: true}],
+['plaintext', {unwrappable: true}],
+['pre', {ancestorBias: 10, descendantBias: 2, nameBias: 5}],
+['progress', {blacklisted: true, leaf: true}],
+['q', {inline: true}],
+['rect', {}],
+['rp', {inline: true}],
+['rt', {inline: true}],
+['ruby', {ancestorBias: 5, nameBias: 5}],
+['s', {}],
+['samp', {inline: true}],
+['script', {blacklisted: true}],
+['section', {nameBias: 10, unwrappable: true}],
+['select', {blacklisted: true}],
+['small', {inline: true, nameBias: -1, unwrappable: true}],
+['source', {leaf: true}],
+['spacer', {blacklisted: true}],
+['span', {descendantBias: 1, inline: true, unwrappable: true}],
+['strike', {inline: true}],
+['strong', {descendantBias: 1, inline: true}],
+['style', {blacklisted: true}],
+['sub', {descendantBias: 2, inline: true}],
+['summary', {ancestorBias: 2, descendantBias: 1, nameBias: 5}],
+['sup', {descendantBias: 2, inline: true}],
+['svg', {leaf: true}],
+['table', {ancestorBias: -2}],
+['tbody', {unwrappable: true}],
+['td', {nameBias: 3}],
+['textarea', {blacklisted: true, leaf: true}],
+['tfoot', {unwrappable:true}],
+['th', {nameBias: -3}],
+['thead', {unwrappable: true}],
+['time', {descendantBias: 2, inline: true, nameBias: 2}],
+['title', {blacklisted: true, leaf: true}],
+['tr', {nameBias: 1}],
+['track', {leaf:true}],
+['tt', {inline: true}],
+['u', {inline: true}],
+['ul', {ancestorBias: -5, nameBias: -20}],
+['var', {inline: true}],
+['video', {leaf: true}],
+['wbr', {}],
+['xmp', {blacklisted: true}]
+]);
 
 /**
  * Sets attributes of the element that reflect some of the
@@ -832,21 +828,6 @@ calamine.forEachNode = function(element, type, func, filter) {
   }
 };
 
-
-/**
- * Looks up the policy for the element according to its local name. Returns
- * undefined if no policy exists.
- */
-calamine.getDescriptor = function(element) {
-  // NOTE: element lookup is done using localName (lowercase).
-  // Using element.matches provides inconsistent behavior against
-  // namespaced names  (e.g. g:plusone, fb:like, l:script)
-  // Using element.tagName is uppercase, but includes namespace
-  // Maybe tagName is simpler?
-
-  return element && calamine.ELEMENT_POLICY[element.localName];
-};
-
 /**
  * Returns the area of an image, in pixels. If the image's dimensions are
  * undefined, then returns undefined. If the image's dimensions are
@@ -902,7 +883,7 @@ calamine.getMaxScore = function(previous, current) {
  * Returns true if the element is empty-like and therefore suitable for pruning
  */
 calamine.isEmptyLike = function(element) {
-  var descriptor = calamine.getDescriptor(element);
+  var descriptor = calamine.ELEMENT_POLICY.get(element.localName);
   return !element.firstChild && !descriptor.leaf;
 };
 
@@ -940,7 +921,7 @@ calamine.isInline = function(element) {
   // behavior? No, it looks like display is not set at this
   // point
 
-  var desc = calamine.getDescriptor(element);
+  var desc = calamine.ELEMENT_POLICY.get(element.localName)
   return desc.inline;
 };
 
@@ -1167,7 +1148,7 @@ calamine.removeNode = function(node) {
 calamine.scoreElement = function(featuresMap, element) {
   element.score = element.score || 0;
 
-  var descriptor = calamine.getDescriptor(element);
+  var descriptor = calamine.ELEMENT_POLICY.get(element.localName);
   var features = featuresMap.get(element) || {};
 
   if(features.charCount && !descriptor.leaf) {
