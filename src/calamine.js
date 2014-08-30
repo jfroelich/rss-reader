@@ -45,16 +45,14 @@ calamine.acceptIfEmpty = function(node) {
  * Parameter to createNodeIterator that accepts nodes that should be removed.
  */
 calamine.acceptIfRemovable = function(node) {
-  if(node.nodeType == Node.COMMENT_NODE) {
-    return NodeFilter.FILTER_ACCEPT;
-  }
-
   var descriptor = calamine.getDescriptor(node);
   if(!descriptor || descriptor.blacklisted || calamine.isTracerImage(node)) {
     return NodeFilter.FILTER_ACCEPT;
   }
 
-  // Testing to see if this is the perf culprit
+  // This is the perf culprit due to isInvisible
+  // required style to be calculated. Need to think of how to enable it
+
   //if(node.localName != 'noscript' && node.localName != 'noembed' &&
   //  calamine.isInvisible(node)) {
   //  return NodeFilter.FILTER_ACCEPT;
@@ -79,10 +77,6 @@ calamine.acceptIfShouldUnwrap = function(bestElement, e) {
   return descriptor.unwrappable ? NodeFilter.FILTER_ACCEPT :
     NodeFilter.FILTER_REJECT;
 };
-
-
-calamine.RE_TOKEN_SPLIT = /[\s-_]+/g;
-
 
 /**
  * NOTE: expects defined dimensions
@@ -356,7 +350,10 @@ calamine.collectPreformatted = function(doc) {
   // TODO: does WeakSet.prototype.add work like Array.prototype.push? Could
   // we just use add.apply(elements)? Or would it work if we used
   // set = new WeakSet(elements) ?
-  var elements = doc.body.querySelectorAll(calamine.SELECT_PREFORMATTED);
+
+  var selector = 'code, pre, ruby, textarea, xmp';
+
+  var elements = doc.body.querySelectorAll(selector);
   for(var i = 0, len = elements.length, element; i < len; i++) {
     element = elements[i];
     set.add(element);
@@ -432,41 +429,13 @@ calamine.deriveSiblingFeatures = function(element) {
   }
 };
 
-/**
- * Calculates and stores properties in the parent element
- * of the onde based on the text content of the node.
- * Expects a text node
- *
- * TODO: rename parameter to textNode to better qualify its
- * parameter
- */
-/*calamine.deriveTextFeatures = function(node) {
-  var doc = node.ownerDocument;
-  var parent = node.parentElement;
-  var value = node.nodeValue;
-  // TODO: check for the copyright character itself?
-  // TODO: check unicode variants?
-  parent.hasCopyrightSymbol = /&copy;|&#169;|&#xA9;/i.test(value) ? 1 : 0;
-  // TODO: this should also be looking for the character itself
-  // &#8226,•, &#x2022;
-  parent.bulletCount = calamine.countChar(value,'\u2022');
-  // TODO: this should also be looking at other expressions of pipes
-  parent.pipeCount = calamine.countChar(value,'|');
-  // NOTE: we don't care about setting the count in the node itself,
-  // just in the parent element path to body
-  var charCount = value.length - value.split(/[\s\.]/g).length + 1;
-  while(parent != doc.body) {
-    parent.charCount = (parent.charCount || 0) + charCount;
-    parent = parent.parentElement;
-  }
-};*/
-
 // This new implementation builds a WeakMap
-calamine.deriveTextFeatures = function(doc) {
-  var map = new WeakMap();
+// TODO: once the transition to using map settles
+// this should be largely refactored
+calamine.deriveTextFeatures = function(doc, features) {
   calamine.forEachNode(doc.body, NodeFilter.SHOW_TEXT, function(node) {
     var parent = node.parentElement;
-    var entry = map.get(parent) || {};
+    var entry = features.get(parent) || {};
 
     if(!entry.hasCopyrightSymbol) {
       // We only bother to check if the flag is not yet true for the parent
@@ -505,7 +474,7 @@ calamine.deriveTextFeatures = function(doc) {
       entry.charCount = charCount;
     }
 
-    map.set(parent, entry);
+    features.set(parent, entry);
 
     if(!charCount) {
       return;
@@ -514,7 +483,7 @@ calamine.deriveTextFeatures = function(doc) {
     // Propagate charCount up to body
     parent = parent.parentElement;
     while(parent && parent != doc.body) {
-      var pEntry = map.get(parent);
+      var pEntry = features.get(parent);
       if(pEntry) {
         if(pEntry.charCount) {
           pEntry.charCount += charCount;
@@ -522,16 +491,14 @@ calamine.deriveTextFeatures = function(doc) {
           pEntry.charCount = charCount;
         }
 
-        map.set(parent, pEntry);
+        features.set(parent, pEntry);
       } else {
-        map.set(parent, { charCount: charCount});
+        features.set(parent, { charCount: charCount});
       }
 
       parent = parent.parentElement;
     }
   });
-
-  return map;
 };
 
 
@@ -564,7 +531,7 @@ calamine.ELEMENT_POLICY = {
   caption: {},
   center: {unwrappable: true},
   cite: {inline: true},
-  code: {ancestorBias: 10, descendantBias: 2, inline: true, preformatted: true},
+  code: {ancestorBias: 10, descendantBias: 2, inline: true},
   col: {leaf: true},
   colgroup: {unwrappable: true},
   command: {blacklisted: true, leaf: true},
@@ -639,13 +606,13 @@ calamine.ELEMENT_POLICY = {
   p: {ancestorBias: 10, descendantBias: 5, nameBias: 10},
   param: {blacklisted: true, leaf: true},
   plaintext: {unwrappable: true},
-  pre: {ancestorBias: 10, descendantBias: 2, nameBias: 5, preformatted: true},
+  pre: {ancestorBias: 10, descendantBias: 2, nameBias: 5},
   progress: {blacklisted: true, leaf: true},
   q: {inline: true},
   rect: {},
   rp: {inline: true},
   rt: {inline: true},
-  ruby: {ancestorBias: 5, nameBias: 5, preformatted: true},
+  ruby: {ancestorBias: 5, nameBias: 5},
   s: {},
   samp: {inline: true},
   script: {blacklisted: true},
@@ -665,7 +632,7 @@ calamine.ELEMENT_POLICY = {
   table: {ancestorBias: -2},
   tbody: {unwrappable: true},
   td: {nameBias: 3},
-  textarea: {blacklisted: true, leaf: true, preformatted: true},
+  textarea: {blacklisted: true, leaf: true},
   tfoot: {unwrappable:true},
   th: {nameBias: -3},
   thead: {unwrappable: true},
@@ -679,7 +646,7 @@ calamine.ELEMENT_POLICY = {
   'var': {inline: true},
   video: {leaf: true},
   wbr: {},
-  xmp: {blacklisted: true, preformatted: true}
+  xmp: {blacklisted: true}
 };
 
 /**
@@ -688,9 +655,13 @@ calamine.ELEMENT_POLICY = {
  * element, according to whether the attribute should be
  * exposed in options
  */
-calamine.exposeAttributes = function(options, element)  {
-  if(options.SHOW_CHAR_COUNT && element.charCount)
-    element.setAttribute('charCount', element.charCount);
+calamine.exposeAttributes = function(options, features, element)  {
+  var entry = features.get(element);
+  if(!entry) {
+    return;
+  }
+  if(options.SHOW_CHAR_COUNT && entry.charCount)
+    element.setAttribute('charCount', entry.charCount);
   if(options.SHOW_COPYRIGHT_COUNT && element.hasCopyrightSymbol)
     element.setAttribute('hasCopyrightSymbol', element.hasCopyrightSymbol);
   if(options.SHOW_DOT_COUNT && element.bulletCount)
@@ -1050,122 +1021,112 @@ calamine.isTrimmableElement = function(element) {
     !element.firstChild);
 };
 
-/**
- * A dictionary of terms and biases.
- *
- * TODO: the new attribute scoring function splits
- * by - character so need to exclude it
- * TODO: reconsider overlap
- */
-calamine.LEXICON_BIAS = {
-  about: -35,
-  ad: -100,
-  ads: -50,
-  advert: -100,
-  article: 100,
-  articleheadings: -50,
-  attachment: 20,
-  author: 20,
-  blog: 20,
-  body: 50,
-  brand: -50,
-  breadcrumbs: -20,
-  button: -100,
-  byline: 20,
-  caption: 10,
-  carousel: 30,
-  column: 10,
-  combx: -20,
-  comic: 75,
-  comment: -300,
-  community: -100,
-  component: -50,
-  contact: -50,
-  content: 50,
-  contenttools: -50,
-  date: -50,
-  dcsimg: -100,
-  dropdown: -100,
-  entry: 50,
-  excerpt: 20,
-  facebook: -100,
-  fn:-30,
-  foot: -100,
-  footnote: -150,
-  google: -50,
-  head: -50,
-  hentry:150,
-  inset: -50,
-  insta: -100,
-  left: -75,
-  legende: -50,
-  license: -100,
-  link: -100,
-  logo: -50,
-  main: 50,
-  mediaarticlerelated: -50,
-  menu: -200,
-  menucontainer: -300,
-  meta: -50,
-  nav: -200,
-  navbar: -100,
-  page: 50,
-  pagetools: -50,
-  parse: -50,
-  pinnion: 50,
-  popular: -50,
-  popup: -100,
-  post: 50,
-  power: -100,
-  print: -50,
-  promo: -200,
-  reading: 100,
-  recap: -100,
-  relate: -300,
-  replies: -100,
-  reply: -50,
-  retweet: -50,
-  right: -100,
-  scroll: -50,
-  share: -200,
-  shop: -200,
-  shout: -200,
-  shoutbox: -200,
-  side: -200,
-  sig: -50,
-  social: -200,
-  socialnetworking: -250,
-  source:-50,
-  sponsor: -200,
-  story: 50,
-  storytopbar: -50,
-  strycaptiontxt: -50,
-  stryhghlght: -50,
-  strylftcntnt: -50,
-  stryspcvbx: -50,
-  subscribe: -50,
-  summary:50,
-  tag: -100,
-  tags: -100,
-  text: 20,
-  time: -30,
-  timestamp: -50,
-  title: -100,
-  tool: -200,
-  twitter: -200,
-  txt: 50,
-  utility: -50,
-  vcard: -50,
-  week: -100,
-  welcome: -50,
-  widg: -200,
-  zone: -50
-};
+calamine.LEXICON_BIAS = new Map([
+['about', -35],
+['ad', -100],
+['ads', -50],
+['advert', -100],
+['article', 100],
+['articleheadings', -50],
+['attachment', 20],
+['author', 20],
+['blog', 20],
+['body', 50],
+['brand', -50],
+['breadcrumbs', -20],
+['button', -100],
+['byline', 20],
+['caption', 10],
+['carousel', 30],
+['column', 10],
+['combx', -20],
+['comic', 75],
+['comment', -300],
+['community', -100],
+['component', -50],
+['contact', -50],
+['content', 50],
+['contenttools', -50],
+['date', -50],
+['dcsimg', -100],
+['dropdown', -100],
+['entry', 50],
+['excerpt', 20],
+['facebook', -100],
+['fn',-30],
+['foot', -100],
+['footnote', -150],
+['google', -50],
+['head', -50],
+['hentry',150],
+['inset', -50],
+['insta', -100],
+['left', -75],
+['legende', -50],
+['license', -100],
+['link', -100],
+['logo', -50],
+['main', 50],
+['mediaarticlerelated', -50],
+['menu', -200],
+['menucontainer', -300],
+['meta', -50],
+['nav', -200],
+['navbar', -100],
+['page', 50],
+['pagetools', -50],
+['parse', -50],
+['pinnion', 50],
+['popular', -50],
+['popup', -100],
+['post', 50],
+['power', -100],
+['print', -50],
+['promo', -200],
+['reading', 100],
+['recap', -100],
+['relate', -300],
+['replies', -100],
+['reply', -50],
+['retweet', -50],
+['right', -100],
+['scroll', -50],
+['share', -200],
+['shop', -200],
+['shout', -200],
+['shoutbox', -200],
+['side', -200],
+['sig', -50],
+['social', -200],
+['socialnetworking', -250],
+['source',-50],
+['sponsor', -200],
+['story', 50],
+['storytopbar', -50],
+['strycaptiontxt', -50],
+['stryhghlght', -50],
+['strylftcntnt', -50],
+['stryspcvbx', -50],
+['subscribe', -50],
+['summary',50],
+['tag', -100],
+['tags', -100],
+['text', 20],
+['time', -30],
+['timestamp', -50],
+['title', -100],
+['tool', -200],
+['twitter', -200],
+['txt', 50],
+['utility', -50],
+['vcard', -50],
+['week', -100],
+['welcome', -50],
+['widg', -200],
+['zone', -50]
+]);
 
-/**
- * Pre-calculated, singleton keys array
- */
-calamine.LEXICON_BIAS_KEYS = Object.keys(calamine.LEXICON_BIAS);
+calamine.RE_TOKEN_SPLIT = /[\s-_]+/g;
 
 /**
  * Simple decorator that accepts array-like objects
@@ -1199,11 +1160,6 @@ calamine.removeNode = function(node) {
   }
 };
 
-calamine.SELECT_PREFORMATTED = Object.keys(calamine.ELEMENT_POLICY).filter(function(e) {
-  var p = calamine.ELEMENT_POLICY[e];
-  return p && p.preformatted;
-}).join(',');
-
 /**
  * Apply our 'model' to an element. We generate a score that is the
  * sum of several terms.
@@ -1228,7 +1184,8 @@ calamine.scoreElement = function(featuresMap, element) {
   var tokens = ((element.id || '') + ' ' + (element.className || '')).trim().
     toLowerCase().split(calamine.RE_TOKEN_SPLIT);
   for(var i = 0, len = tokens.length; i < len; i++) {
-    element.score += calamine.LEXICON_BIAS[tokens[i]] || 0;
+    //element.score += calamine.LEXICON_BIAS[tokens[i]] || 0;
+    element.score += calamine.LEXICON_BIAS.get(tokens[i]) || 0;
   }
 
   // Downward bias. Affects all descendants
@@ -1323,8 +1280,15 @@ calamine.transformDocument = function(doc, options) {
   var c = calamine;
   var loop = c.forEachNode;
   options = options || {};
-  loop(doc.body, NodeFilter.SHOW_COMMENT | NodeFilter.SHOW_ELEMENT,
+
+  loop(doc.body, NodeFilter.SHOW_COMMENT, c.removeNode);
+
+
+  // TODO: this is now the perf culprit. Separate out comments, use
+  // querySelectorAll for blacklist
+  loop(doc.body, NodeFilter.SHOW_ELEMENT,
     c.removeNode, c.acceptIfRemovable);
+
   loop(doc.body, NodeFilter.SHOW_ELEMENT, c.transformShim, c.isTemplateLike);
   // c.forEach(doc.body.querySelectorAll('br,hr'), c.testSplitBreaks);
   loop(doc.body, NodeFilter.SHOW_TEXT, c.canonicalizeSpace);
@@ -1335,7 +1299,9 @@ calamine.transformDocument = function(doc, options) {
   loop(doc.body, NodeFilter.SHOW_TEXT, c.removeNode, c.acceptIfEmpty);
   c.filterEmptyElements(doc);
 
-  var features = calamine.deriveTextFeatures(doc);
+  var features = new WeakMap();
+
+  calamine.deriveTextFeatures(doc, features);
 
   loop(doc.body, NodeFilter.SHOW_ELEMENT,
     c.deriveAnchorFeatures.bind(this, features),
@@ -1355,7 +1321,7 @@ calamine.transformDocument = function(doc, options) {
       c.acceptIfShouldUnwrap.bind(this, bestElement));
   }
   loop(bestElement, NodeFilter.SHOW_ELEMENT,
-    c.exposeAttributes.bind(this, options));
+    c.exposeAttributes.bind(this, options, features));
   c.trimElement(bestElement);
   return bestElement;
 };
