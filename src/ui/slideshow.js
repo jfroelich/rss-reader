@@ -243,6 +243,7 @@ function appendSlide(entry, isFirst) {
   lucu.canonicalizeSpaces(doc);
   lucu.trimNodes(doc);
   lucu.removeEmptyNodes(doc);
+  lucu.removeEmptyElements(doc);
 
   var calamineOptions = {
     FILTER_ATTRIBUTES: true,

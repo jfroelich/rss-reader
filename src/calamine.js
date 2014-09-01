@@ -217,7 +217,6 @@ function applyAncestorBias(featuresMap, descriptor, element) {
   // TODO: for some reason, this lookup is horrible performance. This
   // seems to be the primary reason that scoreElement is slow
   // getElementsByTagName is awkwardly slow here
-
   var descendants = element.getElementsByTagName('*');
   var length = descendants.length;
   var descendant, descFeatures;
@@ -230,7 +229,6 @@ function applyAncestorBias(featuresMap, descriptor, element) {
 }
 
 function applyAttributeBias(features, element) {
-
   // Random side thought. What if I just did getElementsByClassName
   // for each LEXICON_BIAS term?
   var tokens = ((element.id || '') + ' ' + (element.className || '')).trim().
@@ -713,16 +711,6 @@ function prescore(featuresMap, element) {
  */
 function reduce(list, func, initialValue) {
   return Array.prototype.reduce.call(list, func, initialValue);
-}
-
-/**
- * Detaches the element and returns its parent
- * element (prior to detachment).
- */
-function removeAndReturnParent(element) {
-  var parentElement = element.parentElement;
-  parentElement.removeChild(element);
-  return parentElement;
 }
 
 function removeElementAttributes(doc, options) {

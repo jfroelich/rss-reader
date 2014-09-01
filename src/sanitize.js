@@ -49,6 +49,12 @@ lucu.isInline = function(element) {
   return lucu.INLINE_ELEMENTS.has(element.localName);
 };
 
+lucu.removeAndReturnParent = function(element) {
+  var parentElement = element.parentElement;
+  element.remove();
+  return parentElement;
+};
+
 lucu.removeBlacklistedElements = function(doc) {
 
   var s = ['applet', 'base', 'basefont', 'bgsound', 'button', 'command',
@@ -135,7 +141,7 @@ lucu.removeEmptyElements = function(doc) {
   // removing them and adding their parents to the stack.
 
   // Remove all the empty children and shove all the parents on the stack
-  var parents = emptyLikeElements.map(removeAndReturnParent);
+  var parents = emptyLikeElements.map(lucu.removeAndReturnParent);
   var stack = parents.filter(function isNotRoot(element) {
     if(!element) {
       return true;
@@ -225,25 +231,25 @@ lucu.removeTracerImages = function(doc) {
   });
 };
 
-lucu.removeUnknownElements = function(doc) {
-  var known = new Set(['a', 'abbr', 'acronym', 'address', 'area', 'article',
-    'aside', 'audio', 'b', 'bdi', 'bdo', 'big', 'blink', 'blockquote',
-    'body', 'br', 'canvas', 'caption', 'center', 'cite', 'code', 'col',
-    'colgroup', 'data', 'details', 'dir', 'dd', 'del', 'dfn', 'div',
-    'dl', 'dt', 'em', 'figcaption', 'figure', 'font', 'footer','form',
-    'header', 'help', 'hgroup','hr', 'h1', 'h2', 'h3', 'h4','h5', 'h6',
-    'i', 'ilayer', 'img', 'ins', 'insert', 'label', 'layer', 'legend',
-    'li', 'kbd', 'keygen', 'main', 'mark', 'marquee', 'map', 'menu',
-    'menuitem', 'meter', 'multicol', 'nav', 'nobr', 'noembed',
-    'noscript', 'ol', 'p', 'plaintext', 'pre', 'q', 'rect',
-    'rp', 'rt', 'ruby', 's', 'samp', 'section', 'small', 'source',
-    'span', 'strike', 'strong', 'sub', 'summary', 'sup', 'svg', 'table',
-    'tbody', 'td', 'tfoot', 'th', 'thead', 'time','tr', 'track', 'tt',
-    'u', 'ul', 'var', 'video', 'wbr']);
+lucu.KNOWN_ELEMENTS = new Set(['a', 'abbr', 'acronym', 'address', 'area',
+  'article', 'aside', 'audio', 'b', 'bdi', 'bdo', 'big', 'blink',
+  'blockquote', 'body', 'br', 'canvas', 'caption', 'center', 'cite',
+  'code', 'col', 'colgroup', 'data', 'details', 'dir', 'dd', 'del', 'dfn',
+  'div', 'dl', 'dt', 'em', 'figcaption', 'figure', 'font', 'footer',
+  'form', 'header', 'help', 'hgroup','hr', 'h1', 'h2', 'h3', 'h4','h5',
+  'h6', 'i', 'ilayer', 'img', 'ins', 'insert', 'label', 'layer', 'legend',
+  'li', 'kbd', 'keygen', 'main', 'mark', 'marquee', 'map', 'menu',
+  'menuitem', 'meter', 'multicol', 'nav', 'nobr', 'noembed',
+  'noscript', 'ol', 'p', 'plaintext', 'pre', 'q', 'rect',
+  'rp', 'rt', 'ruby', 's', 'samp', 'section', 'small', 'source',
+  'span', 'strike', 'strong', 'sub', 'summary', 'sup', 'svg', 'table',
+  'tbody', 'td', 'tfoot', 'th', 'thead', 'time','tr', 'track', 'tt',
+  'u', 'ul', 'var', 'video', 'wbr']);
 
+lucu.removeUnknownElements = function(doc) {
   var elements = doc.body.getElementsByTagName('*');
   Array.prototype.filter.call(elements, function(e) {
-    return !known.has(e.localName);
+    return !lucu.KNOWN_ELEMENTS.has(e.localName);
   }).forEach(function(e) {
     e.remove();
   });
