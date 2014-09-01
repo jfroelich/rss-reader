@@ -688,17 +688,6 @@ function getMaxScore(featuresMap, previous, current) {
   return previous;
 }
 
-
-/**
- * Returns true if an element is trimmable, which currently
- * is just BR and empty P
- */
-function isTrimmableElement(element) {
-  return element && element.nodeType == Node.ELEMENT_NODE &&
-    (element.localName == 'br' || (element.localName == 'p' &&
-    !element.firstChild));
-}
-
 function prescore(featuresMap, element) {
   var features = featuresMap.get(element);
   features.score = 0;
@@ -773,29 +762,10 @@ function transformDocument(doc, options) {
   // TODO: use elements, not a node iterator
   forEachNode(bestElement, NodeFilter.SHOW_ELEMENT,
     exposeAttributes.bind(this, options, features));
-  trimElement(bestElement);
   return bestElement;
 }
 
-/**
- * Removes leading and trailing white-space-like
- * child elements from the element
- */
-function trimElement(element) {
-  var node = element.firstChild;
-  var sibling;
-  while(isTrimmableElement(node)) {
-    sibling = node.nextSibling;
-    node.remove();
-    node = sibling;
-  }
-  node = element.lastChild;
-  while(isTrimmableElement(node)) {
-    sibling = node.previousSibling;
-    node.remove();
-    node = sibling;
-  }
-}
+
 
 /**
  * Removes the element but retains its children in its place

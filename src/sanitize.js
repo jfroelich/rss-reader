@@ -273,6 +273,27 @@ lucu.transformShims = function(doc) {
   });
 };
 
+lucu.isTrimmableElement = function(element) {
+  return element && element.nodeType == Node.ELEMENT_NODE &&
+    (element.localName == 'br' || (element.localName == 'p' &&
+    !element.firstChild));
+};
+
+lucu.trimElement = function(element) {
+  var node = element.firstChild;
+  var sibling;
+  while(lucu.isTrimmableElement(node)) {
+    sibling = node.nextSibling;
+    node.remove();
+    node = sibling;
+  }
+  node = element.lastChild;
+  while(lucu.isTrimmableElement(node)) {
+    sibling = node.previousSibling;
+    node.remove();
+    node = sibling;
+  }
+};
 
 lucu.trimNodes = function(doc) {
 

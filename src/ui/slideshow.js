@@ -252,6 +252,7 @@ function appendSlide(entry, isFirst) {
 
   var results = calamine.transformDocument(doc, calamineOptions);
 
+  lucu.trimElement(results);
 
   // Temp commented while debugging some element ordering issues
   //Array.prototype.forEach.call(results.childNodes,
