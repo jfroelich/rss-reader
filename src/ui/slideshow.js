@@ -235,6 +235,15 @@ function appendSlide(entry, isFirst) {
   var doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = entry.content;
 
+  lucu.removeComments(doc);
+  lucu.removeBlacklistedElements(doc);
+  lucu.removeUnknownElements(doc);
+  lucu.removeTracerImages(doc);
+  // lucu.removeInvisibleElements(doc);
+  lucu.canonicalizeSpaces(doc);
+  lucu.trimNodes(doc);
+  lucu.removeEmptyNodes(doc);
+
   var calamineOptions = {
     FILTER_ATTRIBUTES: true,
     UNWRAP: true

@@ -2,158 +2,85 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-
 /**
  * The calamine module provides functions for removing boilerplate content
  * In other words, applying lotion to soothe NLP shingles.
  */
 (function calamineWrapper(exports) {
-
 'use strict';
 
-
 var ELEMENT_POLICY = new Map([
-['a', {inline: true, nameBias: -1}],
-['abbr', {inline: true}],
-['acronym', {inline: true}],
-['address', {inline: true, nameBias: -3}],
-['applet', {blacklisted: true, leaf: true}],
-['area', {leaf: true}],
+['a', {nameBias: -1}],
+['address', {nameBias: -3}],
 ['article', {nameBias: 100, unwrappable: true}],
 ['aside', {nameBias: -200}],
-['audio', {leaf: true}],
-['b', {descendantBias: 1, inline: true}],
-['base', {blacklisted: true, leaf: true}],
-['basefont', {blacklisted: true, leaf: true}],
-['bdi', {inline: true}],
-['bdo', {inline: true}],
-['bgsound', {blacklisted: true, leaf: true}],
+['b', {descendantBias: 1}],
 ['big', {unwrappable: true}],
-['blink', {inline: true, unwrappable: true}],
+['blink', {unwrappable: true}],
 ['blockquote', {ancestorBias: 10, descendantBias: 3, nameBias: 5}],
 ['body', {unwrappable: true}],
-['br', {leaf: true}],
-['button', {blacklisted: true, nameBias: -100}],
-['canvas', {leaf: true, nameBias: 3}],
-['caption', {}],
+['canvas', {nameBias: 3}],
 ['center', {unwrappable: true}],
-['cite', {inline: true}],
-['code', {ancestorBias: 10, descendantBias: 2, inline: true}],
-['col', {leaf: true}],
+['code', {ancestorBias: 10, descendantBias: 2}],
 ['colgroup', {unwrappable: true}],
-['command', {blacklisted: true, leaf: true}],
-['data', {inline: true, unwrappable: true}],
-['datalist', {blacklisted: true}],
+['data', {unwrappable: true}],
 ['details', {unwrappable: true}],
-['dialog', {blacklisted: true}],
 ['dir', {ancestorBias: -5, nameBias: -20}],
 ['dd', {nameBias: -3}],
-['del', {inline: true}],
-['dfn', {inline: true}],
 ['div', {ancestorBias: 1, nameBias: 20, unwrappable: true}],
 ['dl', {ancestorBias: -5, nameBias: -10}],
 ['dt', {nameBias: -3}],
-['em', {descendantBias: 1, inline: true}],
-['embed', {blacklisted: true, leaf: true}],
-['fieldset', {blacklisted: true}],
+['em', {descendantBias: 1}],
 ['figcaption', {nameBias: 10}],
 ['figure', {nameBias: 10}],
-['font', {inline: true, unwrappable: true}],
+['font', {unwrappable: true}],
 ['footer', {nameBias: -20, unwrappable: true}],
 ['form', {nameBias: -20, unwrappable: true}],
-['frame', {blacklisted: true, leaf: true}],
-['frameset', {blacklisted: true}],
-['head', {blacklisted: true}],
 ['header', {ancestorBias: -5, nameBias: -5, unwrappable: true}],
 ['help', {unwrappable: true}],
 ['hgroup', {unwrappable: true}],
-['hr', {leaf: true}],
-['html', {blacklisted: true, unwrappable: true}],
 ['h1', {descendantBias: 1, nameBias: -2}],
 ['h2', {descendantBias: 1, nameBias: -2}],
 ['h3', {descendantBias: 1, nameBias: -2}],
 ['h4', {descendantBias: 1, nameBias: -2}],
 ['h5', {descendantBias: 1, nameBias: -2}],
 ['h6', {descendantBias: 1, nameBias: -2}],
-['i', {descendantBias: 1, inline: true}],
-['iframe', {blacklisted: true, leaf: true}],
+['i', {descendantBias: 1}],
 ['ilayer', {unwrappable: true}],
-['img', {leaf: true}],
-['input', {blacklisted: true, leaf: true}],
-['ins', {inline: true}],
 ['insert', {unwrappable: true}],
-['isindex', {blacklisted: true}],
 ['label', {unwrappable: true}],
 ['layer', {unwrappable: true}],
 ['legend', {unwrappable: true}],
 ['li', {ancestorBias: -3, nameBias: -20}],
-['link', {blacklisted: true, leaf: true}],
-['kbd', {inline: true}],
-['keygen', {}],
 ['main', {nameBias: 100, unwrappable: true}],
-['mark', {inline: true}],
 ['marquee', {unwrappable: true}],
-['map', {inline: true}],
-['math', {blacklisted: true}],
-['menu', {ancestorBias: -5, blacklisted: true}],
-['menuitem', {ancestorBias: -5, blacklisted: true}],
-['meta', {blacklisted: true, leaf: true}],
-['meter', {inline: true, unwrappable: true}],
+['meter', {unwrappable: true}],
 ['multicol', {unwrappable: true}],
 ['nav', {ancestorBias: -20, nameBias: -50}],
 ['nobr', {unwrappable: true}],
 ['noembed', {unwrappable: true}],
-['noframes', {blacklisted: true}],
 ['noscript', {unwrappable: true}],
-['object', {blacklisted: true, leaf: true}],
 ['ol', {ancestorBias: -5, nameBias: -20}],
-['optgroup', {blacklisted: true}],
-['option', {blacklisted: true, leaf: true}],
-['output', {blacklisted: true}],
 ['p', {ancestorBias: 10, descendantBias: 5, nameBias: 10}],
-['param', {blacklisted: true, leaf: true}],
 ['plaintext', {unwrappable: true}],
 ['pre', {ancestorBias: 10, descendantBias: 2, nameBias: 5}],
-['progress', {blacklisted: true, leaf: true}],
-['q', {inline: true}],
-['rect', {}],
-['rp', {inline: true}],
-['rt', {inline: true}],
 ['ruby', {ancestorBias: 5, nameBias: 5}],
-['s', {}],
-['samp', {inline: true}],
-['script', {blacklisted: true}],
 ['section', {nameBias: 10, unwrappable: true}],
-['select', {blacklisted: true}],
-['small', {inline: true, nameBias: -1, unwrappable: true}],
-['source', {leaf: true}],
-['spacer', {blacklisted: true}],
-['span', {descendantBias: 1, inline: true, unwrappable: true}],
-['strike', {inline: true}],
-['strong', {descendantBias: 1, inline: true}],
-['style', {blacklisted: true}],
-['sub', {descendantBias: 2, inline: true}],
+['small', {nameBias: -1, unwrappable: true}],
+['span', {descendantBias: 1, unwrappable: true}],
+['strong', {descendantBias: 1}],
+['sub', {descendantBias: 2}],
 ['summary', {ancestorBias: 2, descendantBias: 1, nameBias: 5}],
-['sup', {descendantBias: 2, inline: true}],
-['svg', {leaf: true}],
+['sup', {descendantBias: 2}],
 ['table', {ancestorBias: -2}],
 ['tbody', {unwrappable: true}],
 ['td', {nameBias: 3}],
-['textarea', {blacklisted: true, leaf: true}],
 ['tfoot', {unwrappable:true}],
 ['th', {nameBias: -3}],
 ['thead', {unwrappable: true}],
-['time', {descendantBias: 2, inline: true, nameBias: 2}],
-['title', {blacklisted: true, leaf: true}],
+['time', {descendantBias: 2, nameBias: 2}],
 ['tr', {nameBias: 1}],
-['track', {leaf:true}],
-['tt', {inline: true}],
-['u', {inline: true}],
-['ul', {ancestorBias: -5, nameBias: -20}],
-['var', {inline: true}],
-['video', {leaf: true}],
-['wbr', {}],
-['xmp', {blacklisted: true}]
+['ul', {ancestorBias: -5, nameBias: -20}]
 ]);
 
 var LEXICON_BIAS = new Map([
@@ -264,13 +191,6 @@ var LEXICON_BIAS = new Map([
 var RE_TOKEN_SPLIT = /[\s-_]+/g;
 
 /**
- * Filter that accepts empty text nodes
- */
-function acceptIfEmpty(node) {
-  return node.nodeValue ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
-}
-
-/**
  * Filter that accepts elements that can be unwrapped.
  */
 function acceptIfShouldUnwrap(bestElement, e) {
@@ -283,20 +203,19 @@ function acceptIfShouldUnwrap(bestElement, e) {
       NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
   }
   var descriptor = ELEMENT_POLICY.get(e.localName);
-  return descriptor.unwrappable ? NodeFilter.FILTER_ACCEPT :
+  return descriptor && descriptor.unwrappable ? NodeFilter.FILTER_ACCEPT :
     NodeFilter.FILTER_REJECT;
 }
 
+// Downward bias. Affects all descendants
 function applyAncestorBias(featuresMap, descriptor, element) {
-  // Downward bias. Affects all descendants
-  var bias = descriptor.ancestorBias;
+  var bias = descriptor && descriptor.ancestorBias;
   if(!bias) {
     return;
   }
 
   // TODO: for some reason, this lookup is horrible performance. This
   // seems to be the primary reason that scoreElement is slow
-
   // getElementsByTagName is awkwardly slow here
 
   var descendants = element.getElementsByTagName('*');
@@ -314,7 +233,6 @@ function applyAttributeBias(features, element) {
 
   // Random side thought. What if I just did getElementsByClassName
   // for each LEXICON_BIAS term?
-
   var tokens = ((element.id || '') + ' ' + (element.className || '')).trim().
     toLowerCase().split(RE_TOKEN_SPLIT);
   for(var i = 0, len = tokens.length; i < len; i++) {
@@ -322,9 +240,11 @@ function applyAttributeBias(features, element) {
   }
 }
 
+/**
+ * Upward bias. Affects only the immediate parent of this element.
+ */
 function applyDescendantBias(featuresMap, descriptor, element) {
-  // Upward bias. Affects only the immediate parent of this element.
-  var bias = descriptor.descendantBias;
+  var bias = descriptor && descriptor.descendantBias;
   if(!bias) {
     return;
   }
@@ -332,6 +252,10 @@ function applyDescendantBias(featuresMap, descriptor, element) {
   var parentFeatures = featuresMap.get(parent);
   parentFeatures.score += bias;
   featuresMap.set(parent, parentFeatures);
+}
+
+function applyElementBias(features, descriptor) {
+  features.score += (descriptor && descriptor.nameBias) || 0;
 }
 
 /**
@@ -462,8 +386,7 @@ function applyPositionScore(features, element) {
  * (lookahead parsing). We want something more stream-oriented.
  */
 function applySiblingBias(featuresMap, element) {
-
-  var features = featuresMap.get(element) || {};
+  var features = featuresMap.get(element);
   var siblingFeatures;
   var bias = features.score > 0 ? 5 : -5;
   var sibling = element.previousElementSibling;
@@ -501,7 +424,7 @@ function applySiblingBias(featuresMap, element) {
  */
 function applyTextScore(features, descriptor, element) {
   var cc = features.charCount;
-  if(!cc || descriptor.leaf) {
+  if(!cc || (descriptor && descriptor.leaf)) {
     return;
   }
 
@@ -547,29 +470,6 @@ function applyTextScore(features, descriptor, element) {
       features.score += 5;
     }
   }
-}
-
-/**
- * Replace variations of the space character with the ' ' character
- * in every text node's nodeValue.
- *
- * TODO: rather than mutate text I should just have smarter queries
- * that consider variations
- */
-function canonicalizeSpaces(doc) {
-  var pattern = /&;(nbsp|#(xA0|160));/g;
-  forEachNode(doc.body, NodeFilter.SHOW_TEXT, function replace(node) {
-    node.nodeValue = node.nodeValue.replace(pattern,' ');
-  });
-}
-
-/**
- * Creates a Set of preformatted elements, including descendants.
- */
-function collectPreformatted(doc) {
-  return new WeakSet(Array.prototype.slice.call(doc.body.querySelectorAll(
-    'code, code *, pre, pre *, ruby, ruby *, textarea, textarea *, xmp, xmp *'
-  )));
 }
 
 /**
@@ -716,115 +616,6 @@ function filterAttributes(element) {
 }
 
 /**
- * Removes elements that are empty, such as <p></p>,
- * from the document.
- *
- * The process is iterative. For example, given
- * <p><p></p></p>, the inner paragraph would be
- * removed, leading to a new document state of <p></p>,
- * which happens to also meet the empty criteria,
- * which is then also removed. Iteration continues
- * up to the body element (exclusive) of the document.
- */
-function filterEmptyElements(doc) {
-
-  // TODO: This needs a lot of cleanup
-
-  // Remove all empty-like elements from the document. If removing
-  // an element would change the state of the element's parent to also
-  // meet the empty-like criteria, then the parent is also removed, and
-  // so forth, up the hierarchy, but stopping before doc.body.
-
-  // TODO: there is a specific edge case not being handled
-  // where certain elements, e.g. anchors, that do not contain
-  // any child nodes, should be considered empty. And this must
-  // be recursive as well, up the tree.
-  // In the case of <ul><li><a></a></li></ul>, the result should
-  // be that the entire subtree is removed.
-  // Because this case is not currently handled, and because we
-  // remove other nodes, this leads to some funny looking junk
-  // areas of content (e.g. a list of empty bullet points)
-  // This gets trickier because the logic, in the current impl,
-  // has to be in a couple places. in isEmptyLike, an anchor without
-  // a firstChild should be considered empty. That should be handled
-  // right now but for some odd reason it is not. Then once any element
-  // is removed and we check its parent, its parent should go through
-  // the same logic, which does not seem to happen, even though
-  // the logic is plainly there to do that.
-
-  // TODO: removes should happen only once on the shallowest
-  // parent. If this were called on a live doc we would be causing
-  // several unecessary reflows. For example, in the case of
-  // <div><p></p><p></p></div>, there are 3 remove operations,
-  // when only 1 needed to occur. To do this, this needs
-  // to be fundamentally refactored. Removes should not occur
-  // on the first pass over the elements. This, btw, would remove the
-  // ugliness of using a map function with a side effet. Instead, start by
-  // identifying all of the empty leaves. Then, for each leaf, traverse
-  // upwards to find the actual element to remove. Be cautious
-  // about simply checking that parent.childElementCount == 1 to find
-  // a removable parent because it is false in the case that two
-  // or more empty-leaves share the same parent. The criteria instead is
-  // that a parent is removable if all of its children are removable.
-  // So we need to go up 1, then query all direct children. But that is
-  // kind of redundant since we already identified the children, so that
-  // still might need improvement.
-
-  var elements = doc.body.getElementsByTagName('*');
-  var emptyLikeElements = filter(elements, isEmptyLike);
-
-  // TODO: just add children that should be removed to the stack insead of
-  // removing them and adding their parents to the stack.
-
-  // Remove all the empty children and shove all the parents on the stack
-  var parents = emptyLikeElements.map(removeAndReturnParent);
-  var stack = parents.filter(function isNotRoot(element) {
-    if(!element) {
-      return true;
-    }
-
-    var doc = element.ownerDocument;
-    if(!doc) {
-      return true;
-    }
-
-    var root = doc.body;
-    if(!root) {
-      return true;
-    }
-
-    return root != element;
-  });
-
-  var parent, grandParent;
-
-  while(stack.length) {
-    parent = stack.pop();
-
-    if(parent.firstChild) {
-      // There are other nodes/elements in the parent after
-      // the child was removed (when building the stack),
-      // so do not remove the parent.
-      continue;
-    }
-
-    // Grab a reference to the grand parent before removal
-    // because after removal it is undefined
-    grandParent = parent.parentElement;
-    parent.remove();
-
-    // If there was no grand parent (how would that ever happen?)
-    // or the grand parent is the root, then do not add the new
-    // grand parent to the stack
-    if(!grandParent || grandParent == doc.body) {
-      continue;
-    }
-
-    stack.push(grandParent);
-  }
-}
-
-/**
  * Simple decorator that accepts array-like objects
  * such as NodeList or arguments.
  */
@@ -899,78 +690,6 @@ function getMaxScore(featuresMap, previous, current) {
   return previous;
 }
 
-/**
- * Returns true if the element is empty-like and therefore suitable for pruning
- */
-function isEmptyLike(element) {
-  var descriptor = ELEMENT_POLICY.get(element.localName);
-  return !element.firstChild && !descriptor.leaf;
-}
-
-/**
- * Returns true if the element is inline. This works
- * according to the element's local policy, not its style.
- * cannot use style because foreign documents do not appear to
- * have all style values computed, and in particular, the
- * display variable is sometimes not set.
- */
-function isInline(element) {
-  // Element may be undefined since the caller does not check
-  // if node.nextSibling or node.previousSibling are defined
-  // before the call. This is expected.
-  if(!element) {
-    return false;
-  }
-
-  // This condition definitely happens, not exactly
-  // sure how or why
-  // TODO: does this mean it is inline? should this
-  // be returning true?
-  if(element.nodeType != Node.ELEMENT_NODE) {
-    return false;
-  }
-
-  var desc = ELEMENT_POLICY.get(element.localName);
-  return desc.inline;
-}
-
-/**
- * Tests whether an element is invisible
- */
-function isInvisible(element) {
-
-  // TODO: this is alarmingly slow. My best guess is that
-  // element.style is lazily computed, or that opacity
-  // calc is slow
-
-  // Look at how jquery implemented :hidden? Maybe it is fast?
-
-  // exampleofhowjquerydoesit( elem ) {
-    // NOTE: they also check display === 'none'
-  //  return elem.offsetWidth <= 0 || elem.offsetHeight <= 0;
-  //};
-
-  // TODO: element.offsetWidth < 1 || element.offsetHeight < 1; ??
-  // saw that somewhere, need to read up on offset props again.
-  // Something about emulating how jquery does it?
-  // TODO: consider if(element.hidden) ?
-  var s = element.style;
-  if(s.display === 'none') {
-    return true;
-  }
-  if(s.visibility === 'hidden' || s.visibility === 'collapse') {
-    return true;
-  }
-  var opacity = parseFloat(s.opacity);
-  return opacity < 0.3;
-}
-
-/**
- * Returns true if the image appears as a tracer image.
- */
-function isTracerImage(image) {
-  return image.width == 1 || image.height == 1;
-}
 
 /**
  * Returns true if an element is trimmable, which currently
@@ -981,7 +700,6 @@ function isTrimmableElement(element) {
     (element.localName == 'br' || (element.localName == 'p' &&
     !element.firstChild));
 }
-
 
 function prescore(featuresMap, element) {
   var features = featuresMap.get(element);
@@ -1007,63 +725,21 @@ function removeAndReturnParent(element) {
   return parentElement;
 }
 
-function removeBlacklistedElements(doc) {
+function removeElementAttributes(doc, options) {
+  if(!options.FILTER_ATTRIBUTES) {
+    return;
+  }
 
-  // This could be improved, just quick and dirty  for now
-  // NOTE: if necessary this can be made static or even
-  // just a raw string
-
-  var blacklist = [];
-  ELEMENT_POLICY.forEach(function(value, key) {
-    if(value.blacklisted)
-      blacklist.push(key);
-  });
-  var blacklistSelector = blacklist.join(',');
-
-  // Would this work?
-  //var selector = Array.prototype.join.call(ELEMENT_POLICY.values(), ',');
-  forEach(doc.body.querySelectorAll(blacklistSelector), removeNode);
-}
-
-function removeComments(doc) {
-  forEachNode(doc.body, NodeFilter.SHOW_COMMENT, removeNode);
-}
-
-function removeEmptyNodes(doc) {
-  forEachNode(doc.body, NodeFilter.SHOW_TEXT, removeNode, acceptIfEmpty);
-}
-
-function removeInvisibleElements(doc) {
   var elements = doc.body.getElementsByTagName('*');
-  var invisibles = filter(elements, function(element) {
-    if(element.localName == 'noscript' || element.localName == 'noembed') {
-      return false;
-    }
-
-    return isInvisible(element);
-  });
-  forEach(invisibles, removeNode);
+  forEach(elements, filterAttributes);
 }
+
 
 /**
  * Simple helper for passing to iterators like forEach
  */
 function removeNode(node) {
   node.remove();
-}
-
-function removeTracerImages(doc) {
-  var images = doc.body.getElementsByTagName('img');
-  var tracers = filter(images, isTracerImage);
-  tracers.forEach(removeNode);
-}
-
-function removeUnknownElements(doc) {
-  var elements = doc.body.getElementsByTagName('*');
-  var unknowns = filter(elements, function(e) {
-    return !ELEMENT_POLICY.get(e.localName);
-  });
-  unknowns.forEach(removeNode);
 }
 
 /**
@@ -1077,75 +753,40 @@ function scoreElement(featuresMap, element) {
   applyTextScore(features, descriptor, element);
   applyImageScore(featuresMap, features, element);
   applyPositionScore(features, element);
-  features.score += descriptor.nameBias || 0;
+  applyElementBias(features, descriptor);
   applyAttributeBias(features, element);
   featuresMap.set(element, features);
   applyAncestorBias(featuresMap, descriptor, element);
   applyDescendantBias(featuresMap, descriptor, element);
 }
 
-function transformShims(doc) {
-  var shims = doc.body.querySelectorAll('noscript, noembed');
-  forEach(shims, transformShim);
-}
 
 /**
  * Returns the best element of the document. Does some mutation
  * to the document.
  */
 function transformDocument(doc, options) {
-  var features = new WeakMap();
+  var features = new WeakMap(), anchors, elements, bestElement;
   options = options || {};
-  removeComments(doc);
-  removeBlacklistedElements(doc);
-  removeUnknownElements(doc);
-  removeTracerImages(doc);
-  //removeInvisibleElements(doc);
-  transformShims(doc);
-  canonicalizeSpaces(doc);
-  trimNodes(doc);
-  removeEmptyNodes(doc);
-  filterEmptyElements(doc);
+
   deriveTextFeatures(doc, features);
-  var anchors = doc.body.getElementsByTagName('a');
+  anchors = doc.body.getElementsByTagName('a');
   forEach(anchors, deriveAnchorFeatures.bind(this, features));
-  var elements = doc.body.getElementsByTagName('*');
+  elements = doc.body.getElementsByTagName('*');
   forEach(elements, deriveSiblingFeatures.bind(this, features));
   forEach(elements, prescore.bind(this, features));
   forEach(elements, scoreElement.bind(this, features));
   forEach(elements, applySiblingBias.bind(this, features));
-  if(options.FILTER_ATTRIBUTES) {
-    forEach(elements, filterAttributes);
-  }
+  removeElementAttributes(doc, options);
   features.set(doc.body, {score: -Infinity});
-  var scoreComparator = getMaxScore.bind(this, features);
-  var bestElement = reduce(elements, scoreComparator, doc.body);
-  if(options.UNWRAP) {
-    forEachNode(bestElement, NodeFilter.SHOW_ELEMENT, unwrap,
-      acceptIfShouldUnwrap.bind(this, bestElement));
-  }
-  var expose = exposeAttributes.bind(this, options, features);
-  forEachNode(bestElement, NodeFilter.SHOW_ELEMENT, expose);
+  bestElement = reduce(elements, getMaxScore.bind(this, features), doc.body);
+  unwrapElements(doc, options, bestElement);
+  // TODO: expose the attributes of the best element itself
+  // TODO: use elements, not a node iterator
+  forEachNode(bestElement, NodeFilter.SHOW_ELEMENT,
+    exposeAttributes.bind(this, options, features));
   trimElement(bestElement);
   return bestElement;
-}
-
-/**
- * Unwraps or removes noscript-like elements.
- */
-function transformShim(element) {
-  // TODO: this needs to check contains to avoid
-  // processing <noscript><noscript>..</noscript></noscript>
-  if(element.childNodes.length < 3 || element.innerText.length < 100) {
-    element.remove();
-    return;
-  }
-  // TODO: is visibility a clue?
-  // Otherwise, it is probably a template that contains possibly important
-  // content (like the entire article in the case of cbsnews) so we just
-  // unwrap it. We must do something with it, because we disable the
-  // javascript that would normally expose its content on load.
-  unwrap(element);
 }
 
 /**
@@ -1167,32 +808,6 @@ function trimElement(element) {
     node = sibling;
   }
 }
-
-/**
- * Trims a node's nodeValue property. Behavior
- * varies based on whether the node is adjacent
- * to inline elements.
- */
-function trimNode(preformattedParents, node) {
-  if(preformattedParents.has(node.parentElement)) {
-    return;
-  }
-
-  if(isInline(node.previousSibling)) {
-    if(!isInline(node.nextSibling)) {
-      node.nodeValue = node.nodeValue.trimRight();
-    }
-  } else if(isInline(node.nextSibling)) {
-    node.nodeValue = node.nodeValue.trimLeft();
-  } else {
-    node.nodeValue = node.nodeValue.trim();
-  }
-};
-
-function trimNodes(doc) {
-  forEachNode(doc.body, NodeFilter.SHOW_TEXT, trimNode.bind(this,
-    collectPreformatted(doc)));
-};
 
 /**
  * Removes the element but retains its children in its place
@@ -1222,6 +837,18 @@ function unwrap(element) {
   }
 
   element.remove();
+}
+
+
+function unwrapElements(doc, options, bestElement) {
+  if(!options.UNWRAP) {
+    return;
+  }
+
+  // Using NodeIterator here makes sense because its traversal
+  // allows for mutation
+  forEachNode(bestElement, NodeFilter.SHOW_ELEMENT, unwrap,
+    acceptIfShouldUnwrap.bind(this, bestElement));
 }
 
 // Public API
