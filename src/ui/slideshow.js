@@ -244,7 +244,10 @@ function appendSlide(entry, isFirst) {
   lucu.trimNodes(doc);
   lucu.removeEmptyNodes(doc);
   lucu.removeEmptyElements(doc);
-  var results = calamine.transformDocument(doc, {UNWRAP: true});
+  var results = calamine.transformDocument(doc);
+
+  // This is bugged
+  //lucu.unwrapDescendants(results);
 
   lucu.removeDescendantAttributes(lucu.DEFAULT_ALLOWED_ATTRIBUTES , results);
   lucu.trimElement(results);

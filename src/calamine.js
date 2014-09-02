@@ -17,33 +17,23 @@
 var ELEMENT_POLICY = new Map([
 ['a', {nameBias: -1}],
 ['address', {nameBias: -3}],
-['article', {nameBias: 100, unwrappable: true}],
+['article', {nameBias: 100}],
 ['aside', {nameBias: -200}],
 ['b', {descendantBias: 1}],
-['big', {unwrappable: true}],
-['blink', {unwrappable: true}],
 ['blockquote', {ancestorBias: 10, descendantBias: 3, nameBias: 5}],
-['body', {unwrappable: true}],
 ['canvas', {nameBias: 3}],
-['center', {unwrappable: true}],
 ['code', {ancestorBias: 10, descendantBias: 2}],
-['colgroup', {unwrappable: true}],
-['data', {unwrappable: true}],
-['details', {unwrappable: true}],
 ['dir', {ancestorBias: -5, nameBias: -20}],
 ['dd', {nameBias: -3}],
-['div', {ancestorBias: 1, nameBias: 20, unwrappable: true}],
+['div', {ancestorBias: 1, nameBias: 20}],
 ['dl', {ancestorBias: -5, nameBias: -10}],
 ['dt', {nameBias: -3}],
 ['em', {descendantBias: 1}],
 ['figcaption', {nameBias: 10}],
 ['figure', {nameBias: 10}],
-['font', {unwrappable: true}],
-['footer', {nameBias: -20, unwrappable: true}],
-['form', {nameBias: -20, unwrappable: true}],
-['header', {ancestorBias: -5, nameBias: -5, unwrappable: true}],
-['help', {unwrappable: true}],
-['hgroup', {unwrappable: true}],
+['footer', {nameBias: -20}],
+['form', {nameBias: -20}],
+['header', {ancestorBias: -5, nameBias: -5}],
 ['h1', {descendantBias: 1, nameBias: -2}],
 ['h2', {descendantBias: 1, nameBias: -2}],
 ['h3', {descendantBias: 1, nameBias: -2}],
@@ -51,38 +41,23 @@ var ELEMENT_POLICY = new Map([
 ['h5', {descendantBias: 1, nameBias: -2}],
 ['h6', {descendantBias: 1, nameBias: -2}],
 ['i', {descendantBias: 1}],
-['ilayer', {unwrappable: true}],
-['insert', {unwrappable: true}],
-['label', {unwrappable: true}],
-['layer', {unwrappable: true}],
-['legend', {unwrappable: true}],
 ['li', {ancestorBias: -3, nameBias: -20}],
-['main', {nameBias: 100, unwrappable: true}],
-['marquee', {unwrappable: true}],
-['meter', {unwrappable: true}],
-['multicol', {unwrappable: true}],
+['main', {nameBias: 100}],
 ['nav', {ancestorBias: -20, nameBias: -50}],
-['nobr', {unwrappable: true}],
-['noembed', {unwrappable: true}],
-['noscript', {unwrappable: true}],
 ['ol', {ancestorBias: -5, nameBias: -20}],
 ['p', {ancestorBias: 10, descendantBias: 5, nameBias: 10}],
-['plaintext', {unwrappable: true}],
 ['pre', {ancestorBias: 10, descendantBias: 2, nameBias: 5}],
 ['ruby', {ancestorBias: 5, nameBias: 5}],
-['section', {nameBias: 10, unwrappable: true}],
-['small', {nameBias: -1, unwrappable: true}],
-['span', {descendantBias: 1, unwrappable: true}],
+['section', {nameBias: 10}],
+['small', {nameBias: -1}],
+['span', {descendantBias: 1}],
 ['strong', {descendantBias: 1}],
 ['sub', {descendantBias: 2}],
 ['summary', {ancestorBias: 2, descendantBias: 1, nameBias: 5}],
 ['sup', {descendantBias: 2}],
 ['table', {ancestorBias: -2}],
-['tbody', {unwrappable: true}],
 ['td', {nameBias: 3}],
-['tfoot', {unwrappable:true}],
 ['th', {nameBias: -3}],
-['thead', {unwrappable: true}],
 ['time', {descendantBias: 2, nameBias: 2}],
 ['tr', {nameBias: 1}],
 ['ul', {ancestorBias: -5, nameBias: -20}]
@@ -194,23 +169,6 @@ var LEXICON_BIAS = new Map([
 ]);
 
 var RE_TOKEN_SPLIT = /[\s-_]+/g;
-
-/**
- * Filter that accepts elements that can be unwrapped.
- */
-function acceptIfShouldUnwrap(bestElement, e) {
-  if(e === bestElement) {
-    return NodeFilter.FILTER_REJECT;
-  }
-  if(e.localName == 'a') {
-    var href = (e.getAttribute('href') || '').trim();
-    return !href || /^\s*javascript\s*:/i.test(href) ?
-      NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-  }
-  var descriptor = ELEMENT_POLICY.get(e.localName);
-  return descriptor && descriptor.unwrappable ? NodeFilter.FILTER_ACCEPT :
-    NodeFilter.FILTER_REJECT;
-}
 
 // Downward bias. Affects all descendants
 function applyAncestorBias(featuresMap, descriptor, element) {
@@ -598,7 +556,6 @@ function exposeAttributes(options, featuresMap, element)  {
  * TODO: maybe reorder parameters to make filter required and before
  * func, to make order more intuitive (natural).
  *
- * TODO: use func.call and support thisArg
  *
  * @param element - the root element, only nodes under the root are
  * iterated. The root element itself is not 'under' itself so it is not
@@ -696,74 +653,29 @@ function scoreElement(featuresMap, element) {
  * to the document.
  */
 function transformDocument(doc, options) {
-  var features = new WeakMap();
   options = options || {};
-  deriveTextFeatures(doc, features);
-
+  var features = new WeakMap();
   var each = Array.prototype.forEach;
   var reduce = Array.prototype.reduce;
-
   var anchors = doc.body.getElementsByTagName('a');
-  each.call(anchors, deriveAnchorFeatures.bind(this, features));
   var elements = doc.body.getElementsByTagName('*');
+
+  // TODO: Move the each.call back into here
+  deriveTextFeatures(doc, features);
+  each.call(anchors, deriveAnchorFeatures.bind(this, features));
   each.call(elements, deriveSiblingFeatures.bind(this, features));
   each.call(elements, prescore.bind(this, features));
   each.call(elements, scoreElement.bind(this, features));
   each.call(elements, applySiblingBias.bind(this, features));
-
   features.set(doc.body, {score: -Infinity});
   var bestElement = reduce.call(elements, getMaxScore.bind(this, features),
     doc.body);
 
-  // TODO: move this to sanitize
-  unwrapElements(doc, options, bestElement);
-
-  // TODO: expose the attributes of the best element itself
-  // TODO: use elements, not a node iterator
+  exposeAttributes(options, features, bestElement);
+  // TODO: use descendants of bestElement via gebtn, not a node iterator
   forEachNode(bestElement, NodeFilter.SHOW_ELEMENT,
     exposeAttributes.bind(this, options, features));
   return bestElement;
-}
-
-/**
- * Removes the element but retains its children in its place
- */
-function unwrap(element) {
-  /*
-  // TODO: test if this works instead of below
-
-  var doc = element.ownerDocument;
-  var frag = doc.createDocumentFragment();
-  var next = element.nextSibling;
-  var parent = element.parentElement;
-  element.remove();
-  while(element.firstChild) {
-    frag.appendChild(element.firstChild);
-  }
-  if(next) {
-    // TODO: arg order?
-    parent.insertBefore(next, frag);
-  } else {
-    parent.appendChild(frag);
-  }
-  */
-
-  while(element.firstChild) {
-    element.parentElement.insertBefore(element.firstChild, element);
-  }
-
-  element.remove();
-}
-
-function unwrapElements(doc, options, bestElement) {
-  if(!options.UNWRAP) {
-    return;
-  }
-
-  // Using NodeIterator here makes sense because its traversal
-  // allows for mutation
-  forEachNode(bestElement, NodeFilter.SHOW_ELEMENT, unwrap,
-    acceptIfShouldUnwrap.bind(this, bestElement));
 }
 
 // Public API

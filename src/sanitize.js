@@ -10,6 +10,16 @@ lucu.DEFAULT_ALLOWED_ATTRIBUTES = new Set(['href','src','charCount',
   'hasCopyrightSymbol','bulletCount', 'imageBranch', 'pipeCount',
   'score']);
 
+lucu.UNWRAPPABLES = new Set([
+  'article','big','blink','body','center',
+  'colgroup','data','details','div','font',
+  'footer','form','header','help','hgroup',
+  'ilayer', 'insert', 'label','layer','legend',
+  'main','marquee', 'meter', 'multicol','nobr',
+  'noembed','noscript','plaintext','section',
+  'small','span','tbody','tfoot','thead'
+]);
+
 lucu.canonicalizeSpaces = function(doc) {
 
   var pattern = /&;(nbsp|#(xA0|160));/g;
@@ -344,9 +354,65 @@ lucu.trimNodes = function(doc) {
 };
 
 lucu.unwrap = function(e) {
+
+  /*
+  // TODO: test if this works instead of below
+
+  var doc = element.ownerDocument;
+  var frag = doc.createDocumentFragment();
+  var next = element.nextSibling;
+  var parent = element.parentElement;
+  element.remove();
+  while(element.firstChild) {
+    frag.appendChild(element.firstChild);
+  }
+  if(next) {
+    // TODO: arg order?
+    parent.insertBefore(next, frag);
+  } else {
+    parent.appendChild(frag);
+  }
+  */
+
   while(e.firstChild) {
     e.parentElement.insertBefore(e.firstChild, e);
   }
 
   e.remove();
+};
+
+lucu.RE_JAVASCRIPT_PROTOCOL = /^\s*javascript\s*:/i;
+
+lucu.unwrapDescendants = function(rootElement) {
+
+  var doc = rootElement.ownerDocument;
+
+  var it = doc.createNodeIterator(rootElement, NodeFilter.SHOW_ELEMENT, function(e) {
+    // Unwrap href-less anchors and javascript anchors
+    if(e.localName == 'a') {
+      var href = (e.getAttribute('href') || '').trim();
+
+      if(!href) {
+        return NodeFilter.FILTER_ACCEPT;
+      }
+
+      if(lucu.RE_JAVASCRIPT_PROTOCOL.test(href)) {
+        return NodeFilter.FILTER_ACCEPT;
+      }
+
+      return NodeFilter.FILTER_REJECT;
+    }
+
+    var isUnwrappable = lucu.UNWRAPPABLES.has(e.localName);
+
+    console.debug('Is %o unwrappable? %s', e, isUnwrappable);
+
+    return isUnwrappable ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+  });
+
+  var node;
+
+  while(node = it.nextNode()) {
+    lucu.unwrap(node);
+  }
 };
