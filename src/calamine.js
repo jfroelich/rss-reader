@@ -204,18 +204,13 @@ var ATTRIBUTE_BIAS = new Map([
   ['zone', -50]
 ]);
 
-
 /**
  * NOTE: expects defined dimensions
  * TODO: is there some nicer way of updating the parentElement? I am not
  * entirely happy that we secretly update other elements here
  */
 function applyImageScore(featuresMap, features, image) {
-
-
   var imageParent = image.parentElement;
-
-  // Guaranteed to be in map by prescore
   var parentFeatures = featuresMap.get(imageParent);
 
   // Award those images with alt or title text as being more
@@ -335,29 +330,18 @@ function applySiblingBias(featuresMap, element) {
   var bias = features.score > 0 ? 5 : -5;
   var sibling = element.previousElementSibling;
   if(sibling) {
-    siblingFeatures = featuresMap.get(sibling);
-    siblingFeatures.score += bias;
-    featuresMap.set(sibling, siblingFeatures);
-
+    updateScore(featuresMap, sibling, bias);
     sibling = sibling.previousElementSibling;
     if(sibling) {
-      siblingFeatures = featuresMap.get(sibling);
-      siblingFeatures.score += bias;
-      featuresMap.set(sibling, siblingFeatures);
+      updateScore(featuresMap, sibling, bias);
     }
   }
-
   sibling = element.nextElementSibling;
   if(sibling) {
-    siblingFeatures = featuresMap.get(sibling);
-    siblingFeatures.score += bias;
-    featuresMap.set(sibling, siblingFeatures);
-
+    updateScore(featuresMap, sibling, bias);
     sibling = sibling.nextElementSibling;
     if(sibling) {
-      siblingFeatures = featuresMap.get(sibling);
-      siblingFeatures.score += bias;
-      featuresMap.set(sibling, siblingFeatures);
+      updateScore(featuresMap, sibling, bias);
     }
   }
 }
@@ -540,10 +524,7 @@ function getImageArea(element) {
   // TODO: use offsetWidth and offsetHeight instead?
   if(element.width && element.height) {
     var area = element.width * element.height;
-
-    // TODO: this clamping really should be done in the caller
-    // and not here.
-
+    // TODO: this clamping really should be done in the caller and not here.
     // Clamp to 800x600
     if(area > 360000) {
       area = 360000;
@@ -614,23 +595,16 @@ function scoreElement(featuresMap, element) {
   // Propagate a small bias to descendant elements
   var ancestorBias = ANCESTOR_BIAS.get(element.localName);
   if(ancestorBias) {
-    var descendants = element.getElementsByTagName('*');
-    var descendant, descFeatures;
-    for(var i = 0, len = descendants.length; i < len; i++) {
-      descendant = descendants[i];
-      descFeatures = featuresMap.get(descendant);
-      descFeatures.score += ancestorBias;
-      featuresMap.set(descendant, descFeatures);
+    for(var i = 0, descs = element.getElementsByTagName('*'),
+      len = descs.length; i < len; i++) {
+      updateScore(featuresMap, descs[i], ancestorBias);
     }
   }
 
   // Propagate a small bias to the parent element
   var descendantBias = DESCENDANT_BIAS.get(element.localName);
   if(descendantBias) {
-    var parent = element.parentElement;
-    var parentFeatures = featuresMap.get(parent);
-    parentFeatures.score += descendantBias;
-    featuresMap.set(parent, parentFeatures);
+    updateScore(featuresMap, element.parentElement, descendantBias);
   }
 }
 
@@ -670,6 +644,12 @@ function transformDocument(doc, options) {
   each.call(descendants, exposeAttributes.bind(this, options, features));
 
   return bestElement;
+}
+
+function updateScore(featuresMap, element, amount) {
+  var features = featuresMap.get(element);
+  features.score += amount;
+  featuresMap.set(element, features);
 }
 
 // Public API
