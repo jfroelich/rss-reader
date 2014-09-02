@@ -15,7 +15,6 @@
 'use strict';
 
 var RE_COPYRIGHT = /&(copy|#169|#xA9);/i;
-//var RE_WHITESPACE = /\s+/g;
 var RE_WHITESPACE = /\s/g;
 var RE_TOKEN_SPLIT = /[\s-_]+/g;
 
@@ -59,36 +58,44 @@ var TYPE_BIAS = new Map([
 ['ul', -20]
 ]);
 
-var ELEMENT_POLICY = new Map([
-['b', {descendantBias: 1}],
-['blockquote', {ancestorBias: 10, descendantBias: 3}],
-['code', {ancestorBias: 10, descendantBias: 2}],
-['dir', {ancestorBias: -5}],
-['div', {ancestorBias: 1}],
-['dl', {ancestorBias: -5}],
-['em', {descendantBias: 1}],
-['header', {ancestorBias: -5}],
-['h1', {descendantBias: 1}],
-['h2', {descendantBias: 1}],
-['h3', {descendantBias: 1}],
-['h4', {descendantBias: 1}],
-['h5', {descendantBias: 1}],
-['h6', {descendantBias: 1}],
-['i', {descendantBias: 1}],
-['li', {ancestorBias: -3}],
-['nav', {ancestorBias: -20}],
-['ol', {ancestorBias: -5}],
-['p', {ancestorBias: 10, descendantBias: 5}],
-['pre', {ancestorBias: 10, descendantBias: 2}],
-['ruby', {ancestorBias: 5}],
-['span', {descendantBias: 1}],
-['strong', {descendantBias: 1}],
-['sub', {descendantBias: 2}],
-['summary', {ancestorBias: 2, descendantBias: 1}],
-['sup', {descendantBias: 2}],
-['table', {ancestorBias: -2}],
-['time', {descendantBias: 2}],
-['ul', {ancestorBias: -5}]
+var DESCENDANT_BIAS = new Map([
+['b', 1],
+['blockquote', 3],
+['code', 2],
+['em', 1],
+['h1', 1],
+['h2', 1],
+['h3', 1],
+['h4', 1],
+['h5', 1],
+['h6', 1],
+['p', 5],
+['pre', 2],
+['span', 1],
+['strong', 1],
+['sub', 2],
+['summary', 1],
+['sup', 2],
+['time', 2]
+]);
+
+var ANCESTOR_BIAS = new Map([
+['blockquote', 10],
+['code', 10],
+['dir', -5],
+['div', 1],
+['dl', -5],
+['header', -5],
+['i', 1],
+['li', -3],
+['nav', -20],
+['ol', -5],
+['p', 10],
+['pre', 10],
+['ruby', 5],
+['summary', 2],
+['table', -2],
+['ul', -5]
 ]);
 
 var LEXICON_BIAS = new Map([
@@ -197,8 +204,8 @@ var LEXICON_BIAS = new Map([
 ]);
 
 // Downward bias. Affects all descendants
-function applyAncestorBias(featuresMap, descriptor, element) {
-  var bias = descriptor && descriptor.ancestorBias;
+function applyAncestorBias(featuresMap, element) {
+  var bias = ANCESTOR_BIAS.get(element.localName);
   if(!bias) {
     return;
   }
@@ -218,8 +225,6 @@ function applyAncestorBias(featuresMap, descriptor, element) {
 }
 
 function applyAttributeBias(features, element) {
-  // Random side thought. What if I just did getElementsByClassName
-  // for each LEXICON_BIAS term?
   var tokens = ((element.id || '') + ' ' + (element.className || '')).trim().
     toLowerCase().split(RE_TOKEN_SPLIT);
   for(var i = 0, len = tokens.length; i < len; i++) {
@@ -230,13 +235,13 @@ function applyAttributeBias(features, element) {
 /**
  * Upward bias. Affects only the immediate parent of this element.
  */
-function applyDescendantBias(featuresMap, descriptor, element) {
-  var bias = descriptor && descriptor.descendantBias;
+function applyDescendantBias(featuresMap, element) {
+  var bias = DESCENDANT_BIAS.get(element.localName);
   if(!bias) {
     return;
   }
   var parent = element.parentElement;
-  var parentFeatures = featuresMap.get(parent);
+  var parentFeatures = featuresMap.get(parent) || {};
   parentFeatures.score += bias;
   featuresMap.set(parent, parentFeatures);
 }
@@ -409,11 +414,14 @@ function applySiblingBias(featuresMap, element) {
  * Updates the element's score based on the content
  * of its text nodes.
  */
-function applyTextScore(features, descriptor, element) {
+function applyTextScore(features, element) {
   var cc = features.charCount;
-  if(!cc || (descriptor && descriptor.leaf)) {
+  if(!cc) {
     return;
   }
+
+  // NOTE: we no longer have the leaf condition
+  // check here. Is scoring leaves ok? Does it matter?
 
   if(features.hasCopyrightSymbol) {
     features.score -= 40;
@@ -421,7 +429,7 @@ function applyTextScore(features, descriptor, element) {
   features.score += -20 * (features.bulletCount || 0);
   features.score += -10 * (features.pipeCount || 0);
 
-  var density = features.anchorCharCount / cc;
+  var density = (features.anchorCharCount || 0) / cc;
   if(cc > 1000) {
     if(density > 0.35) {
       features.score += 50;
@@ -649,16 +657,15 @@ function prescore(featuresMap, element) {
  * TODO: support 'picture' element
  */
 function scoreElement(featuresMap, element) {
-  var descriptor = ELEMENT_POLICY.get(element.localName);
   var features = featuresMap.get(element);
-  applyTextScore(features, descriptor, element);
+  applyTextScore(features, element);
   applyImageScore(featuresMap, features, element);
   applyPositionScore(features, element);
   applyElementBias(features, element);
   applyAttributeBias(features, element);
   featuresMap.set(element, features);
-  applyAncestorBias(featuresMap, descriptor, element);
-  applyDescendantBias(featuresMap, descriptor, element);
+  applyAncestorBias(featuresMap, element);
+  applyDescendantBias(featuresMap, element);
 }
 
 /**
