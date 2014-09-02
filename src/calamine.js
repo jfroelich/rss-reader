@@ -230,7 +230,7 @@ function applyImageScore(featuresMap, features, image) {
   }
 
   // TODO: maybe break this out into its own function
-  if(imageParent.matches('figure')) {
+  if(imageParent.localName == 'figure') {
     var figCaptionNodeList = imageParent.getElementsByTagName('figcaption');
     if(figCaptionNodeList && figCaptionNodeList.length) {
       var firstFigCaption = figCaptionNodeList[0];
@@ -242,8 +242,16 @@ function applyImageScore(featuresMap, features, image) {
     }
   }
 
-  var area = getImageArea(image);
-  if(!isFinite(area)) {
+  var area = 0;
+  // TODO: use offsetWidth and offsetHeight instead?
+  if(image.width && image.height) {
+    area = image.width * image.height;
+    if(area > 360000) {
+      area = 360000;// clamp to 800x600
+    }
+  }
+
+  if(!area) {
     features.imageBranch = 1;
     features.score += 100;
     parentFeatures.score += 100;
@@ -476,26 +484,6 @@ function exposeAttributes(options, featuresMap, element)  {
     element.setAttribute('score', features.score.toFixed(2));
 }
 
-/**
- * Returns the area of an image, in pixels. If the image's dimensions are
- * undefined, then returns undefined. If the image's dimensions are
- * greater than 800x600, then the area is clamped.
- */
-function getImageArea(element) {
-  // TODO: use offsetWidth and offsetHeight instead?
-  if(element.width && element.height) {
-    var area = element.width * element.height;
-    // TODO: this clamping really should be done in the caller and not here.
-    // Clamp to 800x600
-    if(area > 360000) {
-      area = 360000;
-    }
-
-    return area;
-  }
-
-  return 0;
-}
 
 /**
  * Compares the scores of two elements and returns the element with the higher
@@ -506,22 +494,11 @@ function getMaxScore(featuresMap, previous, current) {
   var previousFeatures = featuresMap.get(previous);
   var currentFeatures = featuresMap.get(current);
 
-  if(!currentFeatures.hasOwnProperty('score')) {
-    return previous;
-  }
-
   if(currentFeatures.score > previousFeatures.score) {
     return current;
   }
 
   return previous;
-}
-
-function prescore(featuresMap, element) {
-  var features = {
-    score: 0
-  };
-  featuresMap.set(element, features);
 }
 
 /**
@@ -553,7 +530,6 @@ function scoreElement(featuresMap, element) {
   // Contiguity bias
   if(element.previousElementSibling) {
     var prevScore = featuresMap.get(element.previousElementSibling).score;
-    console.debug('prevScore %s', prevScore);
     features.score += prevScore > 0 ? 5 : -5;
   }
 
@@ -587,25 +563,23 @@ function transformDocument(doc, options) {
   var reduce = Array.prototype.reduce;
   var anchors = doc.body.getElementsByTagName('a');
   var elements = doc.body.getElementsByTagName('*');
-
-  // Store all elements in the features map with a score of 0
-  // This avoids having every map lookup doing a null check
-  each.call(elements, prescore.bind(this, features));
-
-  var textNode = null;
   var textIterator = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
+  var textNode = null;
+
+  each.call(elements, function initFeatureMap(e) {
+    features.set(e, {score: 0});
+  });
+
   while(textNode = textIterator.nextNode()) {
     deriveTextFeatures(features, textNode);
   }
-
   each.call(anchors, deriveAnchorFeatures.bind(this, features));
   each.call(elements, deriveSiblingFeatures.bind(this, features));
-
   each.call(elements, scoreElement.bind(this, features));
 
   features.set(doc.body, {score: -Infinity});
-  var bestElement = reduce.call(elements, getMaxScore.bind(this, features),
-    doc.body);
+  var maxScore = getMaxScore.bind(this, features);
+  var bestElement = reduce.call(elements, maxScore, doc.body);
 
   var descendants = bestElement.getElementsByTagName('*');
   exposeAttributes(options, features, bestElement);
