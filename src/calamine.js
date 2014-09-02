@@ -10,6 +10,7 @@
  * TODO: specifically target 'comments' subsection better
  * TODO: look more into shadow dom manipulation? or is that
  * the role of sanitize?
+ * TODO: support 'picture' element
  */
 (function calamineWrapper(exports) {
 'use strict';
@@ -203,51 +204,6 @@ var ATTRIBUTE_BIAS = new Map([
   ['zone', -50]
 ]);
 
-// Downward bias. Affects all descendants
-function applyAncestorBias(featuresMap, element) {
-  var bias = ANCESTOR_BIAS.get(element.localName);
-  if(!bias) {
-    return;
-  }
-
-  // TODO: why is this ridiculously slow? Would it be better
-  // to do a bottom up per descendant?
-  var descendants = element.getElementsByTagName('*');
-  var length = descendants.length;
-  var descendant, descFeatures;
-  for(var i = 0; i < length; i++) {
-    descendant = descendants[i];
-    descFeatures = featuresMap.get(descendant);
-    descFeatures.score += bias;
-    featuresMap.set(descendant, descFeatures);
-  }
-}
-
-function applyAttributeBias(features, element) {
-  var tokens = ((element.id || '') + ' ' + (element.className || '')).trim().
-    toLowerCase().split(RE_TOKEN_SPLIT);
-  for(var i = 0, len = tokens.length; i < len; i++) {
-    features.score += ATTRIBUTE_BIAS.get(tokens[i]) || 0;
-  }
-}
-
-/**
- * Upward bias. Affects only the immediate parent of this element.
- */
-function applyDescendantBias(featuresMap, element) {
-  var bias = DESCENDANT_BIAS.get(element.localName);
-  if(!bias) {
-    return;
-  }
-  var parent = element.parentElement;
-  var parentFeatures = featuresMap.get(parent) || {};
-  parentFeatures.score += bias;
-  featuresMap.set(parent, parentFeatures);
-}
-
-function applyElementBias(features, element) {
-  features.score += TYPE_BIAS.get(element.localName) || 0;
-}
 
 /**
  * NOTE: expects defined dimensions
@@ -256,9 +212,6 @@ function applyElementBias(features, element) {
  */
 function applyImageScore(featuresMap, features, image) {
 
-  if(image.localName != 'img') {
-    return;
-  }
 
   var imageParent = image.parentElement;
 
@@ -419,9 +372,6 @@ function applyTextScore(features, element) {
     return;
   }
 
-  // NOTE: we no longer have the leaf condition
-  // check here. Is scoring leaves ok? Does it matter?
-
   if(features.hasCopyrightSymbol) {
     features.score -= 40;
   }
@@ -481,7 +431,7 @@ function countChar(str, ch) {
  * Extract anchor features. Based on charCount from text features
  */
 function deriveAnchorFeatures(featuresMap, anchor) {
-  var features = featuresMap.get(anchor) || {};
+  var features = featuresMap.get(anchor);
   if(!features.charCount || !anchor.hasAttribute('href')) {
     return;
   }
@@ -489,6 +439,7 @@ function deriveAnchorFeatures(featuresMap, anchor) {
   featuresMap.set(anchor, features);
   var parent = anchor, parentFeatures;
   while(parent = parent.parentElement) {
+    // we have to use || {} because this can walk above doc.body
     parentFeatures = featuresMap.get(parent) || {};
     parentFeatures.anchorCharCount = (parentFeatures.anchorCharCount || 0) +
       features.anchorCharCount;
@@ -502,7 +453,7 @@ function deriveAnchorFeatures(featuresMap, anchor) {
  * in document order.
  */
 function deriveSiblingFeatures(featuresMap, element) {
-  var features = featuresMap.get(element) || {};
+  var features = featuresMap.get(element);
   features.siblingCount = element.parentElement.childElementCount - 1;
   features.previousSiblingCount = 0;
   if(features.siblingCount) {
@@ -511,7 +462,7 @@ function deriveSiblingFeatures(featuresMap, element) {
       // TODO: this could be improved
       // if pes exists, pesFeatures guaranteed defined when walking in
       // document order
-      var pesFeatures = featuresMap.get(pes) || {};
+      var pesFeatures = featuresMap.get(pes);
       pesFeatures.previousSiblingCount = pesFeatures.previousSiblingCount || 0;
       features.previousSiblingCount = pesFeatures.previousSiblingCount + 1;
     }
@@ -521,7 +472,7 @@ function deriveSiblingFeatures(featuresMap, element) {
 
 function deriveTextFeatures(featuresMap, node) {
   var element = node.parentElement;
-  var features = featuresMap.get(element) || {};
+  var features = featuresMap.get(element);
 
   if(!features.hasCopyrightSymbol) {
     // TODO: check for the copyright character itself?
@@ -546,6 +497,8 @@ function deriveTextFeatures(featuresMap, node) {
 
   var parent = element, parentFeatures;
   while(parent = parent.parentElement) {
+    // NOTE: because this walks above body we need || {}
+    // That should be improved
     parentFeatures = featuresMap.get(parent) || {};
     parentFeatures.charCount = parentFeatures.charCount || 0;
     parentFeatures.charCount += features.charCount;
@@ -579,28 +532,6 @@ function exposeAttributes(options, featuresMap, element)  {
 }
 
 /**
- * A simple helper to use forEach against traversal API.
- *
- * TODO: maybe reorder parameters to make filter required and before
- * func, to make order more intuitive (natural).
- *
- *
- * @param element - the root element, only nodes under the root are
- * iterated. The root element itself is not 'under' itself so it is not
- * included in the iteration.
- * @param type - a type, corresponding to NodeFilter types
- * @param func - a function to apply to each node as it is iterated
- * @param filter - an optional filter function to pass to createNodeIterator
- */
-function forEachNode(element, type, func, filter) {
-  var doc = element.ownerDocument, node,
-    it = doc.createNodeIterator(element, type, filter);
-  while(node = it.nextNode()) {
-    func(node);
-  }
-}
-
-/**
  * Returns the area of an image, in pixels. If the image's dimensions are
  * undefined, then returns undefined. If the image's dimensions are
  * greater than 800x600, then the area is clamped.
@@ -630,8 +561,8 @@ function getImageArea(element) {
  * TODO: this needs a better name. what is it doing?
  */
 function getMaxScore(featuresMap, previous, current) {
-  var previousFeatures = featuresMap.get(previous) || {};
-  var currentFeatures = featuresMap.get(current) || {};
+  var previousFeatures = featuresMap.get(previous);
+  var currentFeatures = featuresMap.get(current);
 
   if(!currentFeatures.hasOwnProperty('score')) {
     return previous;
@@ -645,26 +576,62 @@ function getMaxScore(featuresMap, previous, current) {
 }
 
 function prescore(featuresMap, element) {
-  var features = featuresMap.get(element);
-  features.score = 0;
+  var features = {
+    score: 0
+  };
   featuresMap.set(element, features);
 }
 
 /**
  * Apply our 'model' to an element. We generate a score that is the
  * sum of several terms.
- * TODO: support 'picture' element
  */
 function scoreElement(featuresMap, element) {
   var features = featuresMap.get(element);
+
   applyTextScore(features, element);
-  applyImageScore(featuresMap, features, element);
+
+  if(element.localName == 'img') {
+    applyImageScore(featuresMap, features, element);
+  }
+
   applyPositionScore(features, element);
-  applyElementBias(features, element);
-  applyAttributeBias(features, element);
+
+  // Apply a bias based on the type of element
+  features.score += TYPE_BIAS.get(element.localName) || 0;
+
+  // Apply a bias based on the text of the id or class attributes
+  var attributeText = ((element.id || '') + ' ' + (element.className || ''));
+  attributeText = attributeText.trim().toLowerCase();
+  var attributeTokens = attributeText.split(RE_TOKEN_SPLIT);
+  for(var i = 0, len = attributeTokens.length; i < len; i++) {
+    features.score += ATTRIBUTE_BIAS.get(attributeTokens[i]) || 0;
+  }
+
+  // Update the features of this element in the map
   featuresMap.set(element, features);
-  applyAncestorBias(featuresMap, element);
-  applyDescendantBias(featuresMap, element);
+
+  // Propagate a small bias to descendant elements
+  var ancestorBias = ANCESTOR_BIAS.get(element.localName);
+  if(ancestorBias) {
+    var descendants = element.getElementsByTagName('*');
+    var descendant, descFeatures;
+    for(var i = 0, len = descendants.length; i < len; i++) {
+      descendant = descendants[i];
+      descFeatures = featuresMap.get(descendant);
+      descFeatures.score += ancestorBias;
+      featuresMap.set(descendant, descFeatures);
+    }
+  }
+
+  // Propagate a small bias to the parent element
+  var descendantBias = DESCENDANT_BIAS.get(element.localName);
+  if(descendantBias) {
+    var parent = element.parentElement;
+    var parentFeatures = featuresMap.get(parent);
+    parentFeatures.score += descendantBias;
+    featuresMap.set(parent, parentFeatures);
+  }
 }
 
 /**
@@ -678,6 +645,11 @@ function transformDocument(doc, options) {
   var reduce = Array.prototype.reduce;
   var anchors = doc.body.getElementsByTagName('a');
   var elements = doc.body.getElementsByTagName('*');
+
+  // Store all elements in the features map with a score of 0
+  // This avoids having every map lookup doing a null check
+  each.call(elements, prescore.bind(this, features));
+
   var textNode = null;
   var textIterator = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
   while(textNode = textIterator.nextNode()) {
@@ -686,7 +658,7 @@ function transformDocument(doc, options) {
 
   each.call(anchors, deriveAnchorFeatures.bind(this, features));
   each.call(elements, deriveSiblingFeatures.bind(this, features));
-  each.call(elements, prescore.bind(this, features));
+
   each.call(elements, scoreElement.bind(this, features));
   each.call(elements, applySiblingBias.bind(this, features));
   features.set(doc.body, {score: -Infinity});
