@@ -308,45 +308,6 @@ function applyPositionScore(features, element) {
 }
 
 /**
- * Propagate scores to nearby siblings. Look up to 2 elements
- * away in either direction. The idea is that content generally
- * follows content, and boilerplate generally follows boilerplate.
- * Contiguous blocks should get promoted by virture of their
- * context.
- * TODO: refactor as online in order to fold into score element
- * TODO: instead of biasing the siblings based on the element,
- * bias the element itself based on its siblings. Rather, only
- * bias the element itself based on its prior sibling. That way,
- * we can bias while iterating more easily because we don't have to
- * abide the requirement that nextSibling is scored. Then it is
- * easy to incorporate this into the score function
- * and deprecate this function. In my head I am thinking of an analogy
- * to something like a YACC lexer that avoids doing peek operations
- * (lookahead parsing). We want something more stream-oriented.
- */
-function applySiblingBias(featuresMap, element) {
-  var features = featuresMap.get(element);
-  var siblingFeatures;
-  var bias = features.score > 0 ? 5 : -5;
-  var sibling = element.previousElementSibling;
-  if(sibling) {
-    updateScore(featuresMap, sibling, bias);
-    sibling = sibling.previousElementSibling;
-    if(sibling) {
-      updateScore(featuresMap, sibling, bias);
-    }
-  }
-  sibling = element.nextElementSibling;
-  if(sibling) {
-    updateScore(featuresMap, sibling, bias);
-    sibling = sibling.nextElementSibling;
-    if(sibling) {
-      updateScore(featuresMap, sibling, bias);
-    }
-  }
-}
-
-/**
  * Updates the element's score based on the content
  * of its text nodes.
  */
@@ -589,6 +550,13 @@ function scoreElement(featuresMap, element) {
     features.score += ATTRIBUTE_BIAS.get(attributeTokens[i]) || 0;
   }
 
+  // Contiguity bias
+  if(element.previousElementSibling) {
+    var prevScore = featuresMap.get(element.previousElementSibling).score;
+    console.debug('prevScore %s', prevScore);
+    features.score += prevScore > 0 ? 5 : -5;
+  }
+
   // Update the features of this element in the map
   featuresMap.set(element, features);
 
@@ -634,7 +602,7 @@ function transformDocument(doc, options) {
   each.call(elements, deriveSiblingFeatures.bind(this, features));
 
   each.call(elements, scoreElement.bind(this, features));
-  each.call(elements, applySiblingBias.bind(this, features));
+
   features.set(doc.body, {score: -Infinity});
   var bestElement = reduce.call(elements, getMaxScore.bind(this, features),
     doc.body);
