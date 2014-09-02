@@ -14,53 +14,81 @@
 (function calamineWrapper(exports) {
 'use strict';
 
+var RE_COPYRIGHT = /&(copy|#169|#xA9);/i;
+//var RE_WHITESPACE = /\s+/g;
+var RE_WHITESPACE = /\s/g;
+var RE_TOKEN_SPLIT = /[\s-_]+/g;
+
+var TYPE_BIAS = new Map([
+['a', -1],
+['address', -3],
+['article', 100],
+['aside', -200],
+['blockquote', 5],
+['canvas', 3],
+['dir', -20],
+['dd', -3],
+['div', 20],
+['dl', -10],
+['dt', -3],
+['figcaption', 10],
+['figure', 10],
+['footer', -100],
+['form', -50],
+['header', -20],
+['h1', -2],
+['h2', -2],
+['h3', -2],
+['h4', -2],
+['h5', -2],
+['h6', -2],
+['li', -20],
+['main', 100],
+['nav', -50],
+['ol', -20],
+['p', 10],
+['pre', 5],
+['ruby', 5],
+['section', 10],
+['small', -1],
+['summary', 5],
+['td', 3],
+['th', -3],
+['time', 2],
+['tr', 1],
+['ul', -20]
+]);
+
 var ELEMENT_POLICY = new Map([
-['a', {nameBias: -1}],
-['address', {nameBias: -3}],
-['article', {nameBias: 100}],
-['aside', {nameBias: -200}],
 ['b', {descendantBias: 1}],
-['blockquote', {ancestorBias: 10, descendantBias: 3, nameBias: 5}],
-['canvas', {nameBias: 3}],
+['blockquote', {ancestorBias: 10, descendantBias: 3}],
 ['code', {ancestorBias: 10, descendantBias: 2}],
-['dir', {ancestorBias: -5, nameBias: -20}],
-['dd', {nameBias: -3}],
-['div', {ancestorBias: 1, nameBias: 20}],
-['dl', {ancestorBias: -5, nameBias: -10}],
-['dt', {nameBias: -3}],
+['dir', {ancestorBias: -5}],
+['div', {ancestorBias: 1}],
+['dl', {ancestorBias: -5}],
 ['em', {descendantBias: 1}],
-['figcaption', {nameBias: 10}],
-['figure', {nameBias: 10}],
-['footer', {nameBias: -20}],
-['form', {nameBias: -20}],
-['header', {ancestorBias: -5, nameBias: -5}],
-['h1', {descendantBias: 1, nameBias: -2}],
-['h2', {descendantBias: 1, nameBias: -2}],
-['h3', {descendantBias: 1, nameBias: -2}],
-['h4', {descendantBias: 1, nameBias: -2}],
-['h5', {descendantBias: 1, nameBias: -2}],
-['h6', {descendantBias: 1, nameBias: -2}],
+['header', {ancestorBias: -5}],
+['h1', {descendantBias: 1}],
+['h2', {descendantBias: 1}],
+['h3', {descendantBias: 1}],
+['h4', {descendantBias: 1}],
+['h5', {descendantBias: 1}],
+['h6', {descendantBias: 1}],
 ['i', {descendantBias: 1}],
-['li', {ancestorBias: -3, nameBias: -20}],
-['main', {nameBias: 100}],
-['nav', {ancestorBias: -20, nameBias: -50}],
-['ol', {ancestorBias: -5, nameBias: -20}],
-['p', {ancestorBias: 10, descendantBias: 5, nameBias: 10}],
-['pre', {ancestorBias: 10, descendantBias: 2, nameBias: 5}],
-['ruby', {ancestorBias: 5, nameBias: 5}],
-['section', {nameBias: 10}],
-['small', {nameBias: -1}],
+['li', {ancestorBias: -3}],
+['nav', {ancestorBias: -20}],
+['ol', {ancestorBias: -5}],
+['p', {ancestorBias: 10, descendantBias: 5}],
+['pre', {ancestorBias: 10, descendantBias: 2}],
+['ruby', {ancestorBias: 5}],
 ['span', {descendantBias: 1}],
 ['strong', {descendantBias: 1}],
 ['sub', {descendantBias: 2}],
-['summary', {ancestorBias: 2, descendantBias: 1, nameBias: 5}],
+['summary', {ancestorBias: 2, descendantBias: 1}],
 ['sup', {descendantBias: 2}],
 ['table', {ancestorBias: -2}],
-['td', {nameBias: 3}],
-['th', {nameBias: -3}],
-['time', {descendantBias: 2, nameBias: 2}],
-['tr', {nameBias: 1}],
-['ul', {ancestorBias: -5, nameBias: -20}]
+['time', {descendantBias: 2}],
+['ul', {ancestorBias: -5}]
 ]);
 
 var LEXICON_BIAS = new Map([
@@ -168,8 +196,6 @@ var LEXICON_BIAS = new Map([
 ['zone', -50]
 ]);
 
-var RE_TOKEN_SPLIT = /[\s-_]+/g;
-
 // Downward bias. Affects all descendants
 function applyAncestorBias(featuresMap, descriptor, element) {
   var bias = descriptor && descriptor.ancestorBias;
@@ -215,8 +241,8 @@ function applyDescendantBias(featuresMap, descriptor, element) {
   featuresMap.set(parent, parentFeatures);
 }
 
-function applyElementBias(features, descriptor) {
-  features.score += (descriptor && descriptor.nameBias) || 0;
+function applyElementBias(features, element) {
+  features.score += TYPE_BIAS.get(element.localName) || 0;
 }
 
 /**
@@ -475,8 +501,9 @@ function deriveSiblingFeatures(featuresMap, element) {
   if(features.siblingCount) {
     var pes = element.previousElementSibling;
     if(pes) {
-      // TODO: this could be improved, because it is guaranteed defined
-      // since walking in document order
+      // TODO: this could be improved
+      // if pes exists, pesFeatures guaranteed defined when walking in
+      // document order
       var pesFeatures = featuresMap.get(pes) || {};
       pesFeatures.previousSiblingCount = pesFeatures.previousSiblingCount || 0;
       features.previousSiblingCount = pesFeatures.previousSiblingCount + 1;
@@ -485,44 +512,38 @@ function deriveSiblingFeatures(featuresMap, element) {
   featuresMap.set(element, features);
 }
 
-var reCopyright = /&(copy|#169|#xA9);/i;
-var reWhitespace = /\s+/g;
+function deriveTextFeatures(featuresMap, node) {
+  var element = node.parentElement;
+  var features = featuresMap.get(element) || {};
 
-function deriveTextFeatures(doc, featuresMap) {
-  forEachNode(doc.body, NodeFilter.SHOW_TEXT, function derive(node) {
-    var element = node.parentElement;
-    var features = featuresMap.get(element) || {};
+  if(!features.hasCopyrightSymbol) {
+    // TODO: check for the copyright character itself?
+    // TODO: check unicode variants?
+    features.hasCopyrightSymbol = RE_COPYRIGHT.test(node.nodeValue);
+  }
 
-    if(!features.hasCopyrightSymbol) {
-      // TODO: check for the copyright character itself?
-      // TODO: check unicode variants?
-      features.hasCopyrightSymbol = reCopyright.test(node.nodeValue);
-    }
+  // TODO: this should also be looking for the character itself
+  // &#8226,•, &#x2022;
+  features.bulletCount = features.bulletCount || 0;
+  features.bulletCount += countChar(node.nodeValue,'\u2022');
+  // TODO: this should also be looking at other expressions of pipes
+  features.pipeCount = features.pipeCount || 0;
+  features.pipeCount += countChar(node.nodeValue, '|');
+  features.charCount = features.charCount || 0;
+  features.charCount += node.nodeValue.length -
+    node.nodeValue.split(RE_WHITESPACE).length + 1;
+  featuresMap.set(element, features);
+  if(!features.charCount) {
+    return;
+  }
 
-    // TODO: this should also be looking for the character itself
-    // &#8226,•, &#x2022;
-    features.bulletCount = features.bulletCount || 0;
-    features.bulletCount += countChar(node.nodeValue,'\u2022');
-    // TODO: this should also be looking at other expressions of pipes
-    features.pipeCount = features.pipeCount || 0;
-    features.pipeCount += countChar(node.nodeValue, '|');
-    features.charCount = features.charCount || 0;
-    features.charCount += node.nodeValue.length -
-      node.nodeValue.split(reWhitespace).length + 1
-
-    featuresMap.set(element, features);
-    if(!features.charCount) {
-      return;
-    }
-
-    var parent = element, parentFeatures;
-    while(parent = parent.parentElement) {
-      parentFeatures = featuresMap.get(parent) || {};
-      parentFeatures.charCount = parentFeatures.charCount || 0;
-      parentFeatures.charCount += features.charCount;
-      featuresMap.set(parent, parentFeatures);
-    }
-  });
+  var parent = element, parentFeatures;
+  while(parent = parent.parentElement) {
+    parentFeatures = featuresMap.get(parent) || {};
+    parentFeatures.charCount = parentFeatures.charCount || 0;
+    parentFeatures.charCount += features.charCount;
+    featuresMap.set(parent, parentFeatures);
+  }
 }
 
 /**
@@ -622,14 +643,6 @@ function prescore(featuresMap, element) {
   featuresMap.set(element, features);
 }
 
-
-/**
- * Simple helper for passing to iterators like forEach
- */
-function removeNode(node) {
-  node.remove();
-}
-
 /**
  * Apply our 'model' to an element. We generate a score that is the
  * sum of several terms.
@@ -641,7 +654,7 @@ function scoreElement(featuresMap, element) {
   applyTextScore(features, descriptor, element);
   applyImageScore(featuresMap, features, element);
   applyPositionScore(features, element);
-  applyElementBias(features, descriptor);
+  applyElementBias(features, element);
   applyAttributeBias(features, element);
   featuresMap.set(element, features);
   applyAncestorBias(featuresMap, descriptor, element);
@@ -659,9 +672,7 @@ function transformDocument(doc, options) {
   var reduce = Array.prototype.reduce;
   var anchors = doc.body.getElementsByTagName('a');
   var elements = doc.body.getElementsByTagName('*');
-
-  // TODO: Move the each.call back into here
-  deriveTextFeatures(doc, features);
+  forEachNode(doc.body, NodeFilter.SHOW_TEXT, deriveTextFeatures.bind(this, features));
   each.call(anchors, deriveAnchorFeatures.bind(this, features));
   each.call(elements, deriveSiblingFeatures.bind(this, features));
   each.call(elements, prescore.bind(this, features));
