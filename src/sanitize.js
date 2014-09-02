@@ -4,6 +4,12 @@
 
 var lucu = lucu || {};
 
+// href and src for proper images and anchors. Otherwise
+// we allow some custom attributes from calamine debugging through
+lucu.DEFAULT_ALLOWED_ATTRIBUTES = new Set(['href','src','charCount',
+  'hasCopyrightSymbol','bulletCount', 'imageBranch', 'pipeCount',
+  'score']);
+
 lucu.canonicalizeSpaces = function(doc) {
 
   var pattern = /&;(nbsp|#(xA0|160));/g;
@@ -53,6 +59,23 @@ lucu.removeAndReturnParent = function(element) {
   var parentElement = element.parentElement;
   element.remove();
   return parentElement;
+};
+
+lucu.removeAttributes = function(allowedAttributes, element) {
+  var attributes = element.attributes, name, index = attributes.length;
+  while(index--) {
+    name = attributes[index].name;
+    if(!allowedAttributes.has(name)) {
+      element.removeAttribute(name);
+    }
+  }
+};
+
+lucu.removeDescendantAttributes = function(allowedAttributes, element) {
+  lucu.removeAttributes(allowedAttributes, element);
+  var elements = element.getElementsByTagName('*');
+  Array.prototype.forEach.call(elements,
+    lucu.removeAttributes.bind(this, allowedAttributes));
 };
 
 lucu.removeBlacklistedElements = function(doc) {

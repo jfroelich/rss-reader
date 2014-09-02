@@ -5,6 +5,11 @@
 /**
  * The calamine module provides functions for removing boilerplate content
  * In other words, applying lotion to soothe NLP shingles.
+ *
+ * TODO: specifically target 'share' subsection better
+ * TODO: specifically target 'comments' subsection better
+ * TODO: look more into shadow dom manipulation? or is that
+ * the role of sanitize?
  */
 (function calamineWrapper(exports) {
 'use strict';
@@ -522,9 +527,10 @@ function deriveSiblingFeatures(featuresMap, element) {
   featuresMap.set(element, features);
 }
 
+var reCopyright = /&(copy|#169|#xA9);/i;
+var reWhitespace = /\s+/g;
+
 function deriveTextFeatures(doc, featuresMap) {
-  var reCopyright = /&copy;|&#169;|&#xA9;/i;
-  var reWhitespace = /\s+/g;
   forEachNode(doc.body, NodeFilter.SHOW_TEXT, function derive(node) {
     var element = node.parentElement;
     var features = featuresMap.get(element) || {};
@@ -584,41 +590,6 @@ function exposeAttributes(options, featuresMap, element)  {
   // TODO: why toFixed? what was i thinking here?
   if(options.SHOW_SCORE && features.score)
     element.setAttribute('score', features.score.toFixed(2));
-}
-
-/**
- * Simple decorator that works with array-like objects
- * such as NodeList
- */
-function filter(list, fn) {
-  return Array.prototype.filter.call(list, fn);
-}
-
-/**
- * Removes attributes from the element unless they are not
- * removable.
- *
- * TODO: allow title? allow alt?
- * NOTE: confirmed hotspot, hence plain loop
- */
-function filterAttributes(element) {
-  var attributes = element.attributes, name;
-  var index = attributes.length;
-  while(index--) {
-    name = attributes[index].name;
-    if(name == 'src' || name == 'href') {
-      continue;
-    }
-    element.removeAttribute(name);
-  }
-}
-
-/**
- * Simple decorator that accepts array-like objects
- * such as NodeList or arguments.
- */
-function forEach(list, func) {
-  Array.prototype.forEach.call(list, func);
 }
 
 /**
@@ -694,23 +665,6 @@ function prescore(featuresMap, element) {
   featuresMap.set(element, features);
 }
 
-/**
- * Simple decorator that accepts array-like objects
- * such as NodeList
- */
-function reduce(list, func, initialValue) {
-  return Array.prototype.reduce.call(list, func, initialValue);
-}
-
-function removeElementAttributes(doc, options) {
-  if(!options.FILTER_ATTRIBUTES) {
-    return;
-  }
-
-  var elements = doc.body.getElementsByTagName('*');
-  forEach(elements, filterAttributes);
-}
-
 
 /**
  * Simple helper for passing to iterators like forEach
@@ -737,35 +691,39 @@ function scoreElement(featuresMap, element) {
   applyDescendantBias(featuresMap, descriptor, element);
 }
 
-
 /**
  * Returns the best element of the document. Does some mutation
  * to the document.
  */
 function transformDocument(doc, options) {
-  var features = new WeakMap(), anchors, elements, bestElement;
+  var features = new WeakMap();
   options = options || {};
-
   deriveTextFeatures(doc, features);
-  anchors = doc.body.getElementsByTagName('a');
-  forEach(anchors, deriveAnchorFeatures.bind(this, features));
-  elements = doc.body.getElementsByTagName('*');
-  forEach(elements, deriveSiblingFeatures.bind(this, features));
-  forEach(elements, prescore.bind(this, features));
-  forEach(elements, scoreElement.bind(this, features));
-  forEach(elements, applySiblingBias.bind(this, features));
-  removeElementAttributes(doc, options);
+
+  var each = Array.prototype.forEach;
+  var reduce = Array.prototype.reduce;
+
+  var anchors = doc.body.getElementsByTagName('a');
+  each.call(anchors, deriveAnchorFeatures.bind(this, features));
+  var elements = doc.body.getElementsByTagName('*');
+  each.call(elements, deriveSiblingFeatures.bind(this, features));
+  each.call(elements, prescore.bind(this, features));
+  each.call(elements, scoreElement.bind(this, features));
+  each.call(elements, applySiblingBias.bind(this, features));
+
   features.set(doc.body, {score: -Infinity});
-  bestElement = reduce(elements, getMaxScore.bind(this, features), doc.body);
+  var bestElement = reduce.call(elements, getMaxScore.bind(this, features),
+    doc.body);
+
+  // TODO: move this to sanitize
   unwrapElements(doc, options, bestElement);
+
   // TODO: expose the attributes of the best element itself
   // TODO: use elements, not a node iterator
   forEachNode(bestElement, NodeFilter.SHOW_ELEMENT,
     exposeAttributes.bind(this, options, features));
   return bestElement;
 }
-
-
 
 /**
  * Removes the element but retains its children in its place
@@ -796,7 +754,6 @@ function unwrap(element) {
 
   element.remove();
 }
-
 
 function unwrapElements(doc, options, bestElement) {
   if(!options.UNWRAP) {

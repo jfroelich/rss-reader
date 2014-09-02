@@ -244,19 +244,11 @@ function appendSlide(entry, isFirst) {
   lucu.trimNodes(doc);
   lucu.removeEmptyNodes(doc);
   lucu.removeEmptyElements(doc);
+  var results = calamine.transformDocument(doc, {UNWRAP: true});
 
-  var calamineOptions = {
-    FILTER_ATTRIBUTES: true,
-    UNWRAP: true
-  };
-
-  var results = calamine.transformDocument(doc, calamineOptions);
-
+  lucu.removeDescendantAttributes(lucu.DEFAULT_ALLOWED_ATTRIBUTES , results);
   lucu.trimElement(results);
 
-  // Temp commented while debugging some element ordering issues
-  //Array.prototype.forEach.call(results.childNodes,
-  //  HTMLElement.prototype.appendChild.bind(content));
   content.appendChild(results);
 
   slide.appendChild(content);
