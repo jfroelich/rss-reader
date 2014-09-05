@@ -519,10 +519,17 @@ function scoreElement(featuresMap, element) {
   // Apply a bias based on the type of the element
   features.score += TYPE_BIAS.get(localName) || 0;
 
+  // TODO: I just thought of a better way. Just make a giant
+  // single selector and use element.matches(selector)
+  // here. Pretty sure it would be faster to use the native matching
+  // But how would we know which selector matches to use the
+  // appropriate score? Or could use use a few classes of
+  // selectors each with a pre-assigned score?
+
   // Apply a bias based on the text of certain attributes
   var attrTokens = [element.getAttribute('id') || '',
     element.getAttribute('name') || '', element.getAttribute('class') || ''
-  ].join('').trim().toLowerCase().split(RE_TOKEN_SPLIT);
+  ].join(' ').trim().toLowerCase().split(RE_TOKEN_SPLIT);
   for(var i = 0, len = attrTokens.length; i < len; i++) {
     features.score += ATTRIBUTE_BIAS.get(attrTokens[i]) || 0;
   }
