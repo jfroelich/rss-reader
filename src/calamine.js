@@ -102,6 +102,9 @@ var ANCESTOR_BIAS = new Map([
 /*
 TODO: now that we do direct hashed lookup instead of a contains
 search these need to be refactored to specific words
+
+TODO: if we refactor to use selectors we could revert to using
+contains efficiently using *= css wildcard
 */
 var ATTRIBUTE_BIAS = new Map([
   ['about', -35],
@@ -221,44 +224,50 @@ var ATTRIBUTE_BIAS = new Map([
 // Empirically collected, various comment sections,
 // share sections, related articles sections that are
 // explicitly targeted for removal
-var BP_ID_CLASS_SELECTORS = [
+var AXIS_BLACKLIST = [
+  '[id*="comment"]',
+  '[id*="-ad"]',
+  '[id*="disqus"]',
+  '[id*="share"]',
+  '[id*="social"]',
+  '[class*="adv"]',
+  '[class*="addthis"]',
+  '[class*="comment"]',
+  '[class*="dsq"]',
+  '[class*="links"]',
+  '[class*="share"]',
+  '[class*="sharing"]',
+  '[class*="social"]',
+  '[class*="tool"]',
   '#a-font',
-  '#a-share-h',
   '#a-all-related',
-  '#addshare',
-  '#social-top',
-  '#social-bottom',
-  '#disqus_thread',
+  '#mobiles-buttons-wrapper',
+  '#dsq-2',
   '#storyControls',
-  '#a-comments',
   '#relartstory',
-  '#cnn_sharebar1',
-  '#comments-container',
-  '#disqus-wrapper',
   '#story-font-size',
-  '.a-share',
-  '.advert-txt',
-  '.blox-social-tools-horizontal',
-  '.comment-count-block',
-  '.dsq-postid',
-  '.shareTree',
-  '.sharetools-story',
-  '.addthis_toolbox',
-  '.cnn_strybtntools',
-  '.c_sharebar_cntr',
+  '.articleEmbeddedAdBox',
+  '.article-print-url',
+  '.banner-area',
+  '.entry-meta',
+  '.fblike',
+  '.footer',
+  '.jump',
   '.marginalia',
+  '.media-message',
   '.pin-it-button',
+  '.relatedSidebar',
+  '.resizer',
+  '.resize-nav',
+  '.servicesList',
   '.sitetitle',
-  '.share-help',
-  '.share-tools-wrapper',
-  '.social-bookmarking-module',
-  '.social-count',
-  '.social-links',
-  '.social-tools',
-  '.social-buttons',
+  '.tags-box',
+  '.text-size',
+  '.thirdPartyRecommendedContent',
   '.toplinks',
-  '.util-bar-flyout-share',
-  '.utility-bar-wrap'
+  '.utilsFloat',
+  '.utility-bar-wrap',
+  '.viral-grid'
 ].join(',');
 
 var IMAGE_DTREE = [
@@ -373,6 +382,15 @@ function applyPositionScore(featuresMap, features, element) {
 
   features.score += startBias + middleBias;
 }
+
+
+// Toying with idea of simpler score determination
+// Would just do a lookup in this
+// Or, rather than bins, it could just be more formulaic
+var TEXT_BRANCHES = [
+  {minLength: 1000, minDensity: 0.35, bias: 50},
+  {minLength: 1000, minDensity: 0.2, bias: 100}
+];
 
 /**
  * Updates the element's score based on the content
@@ -527,8 +545,12 @@ function scoreElement(featuresMap, element) {
   // selectors each with a pre-assigned score?
 
   // Apply a bias based on the text of certain attributes
-  var attrTokens = [element.getAttribute('id') || '',
-    element.getAttribute('name') || '', element.getAttribute('class') || ''
+  var attrTokens = [
+    element.getAttribute('class') || '',
+    element.getAttribute('id') || '',
+    element.getAttribute('itemprop') || '',
+    element.getAttribute('name') || '',
+    element.getAttribute('role') || ''
   ].join(' ').trim().toLowerCase().split(RE_TOKEN_SPLIT);
   for(var i = 0, len = attrTokens.length; i < len; i++) {
     features.score += ATTRIBUTE_BIAS.get(attrTokens[i]) || 0;
@@ -571,8 +593,8 @@ function transformDocument(doc, options) {
   // Just ugly-as-hell brute-force empirical filtering. This is a temporary
   // measure to deal with unwanted subsections. Since we are selecting best
   // elements and not filtering blocks this helps reduce boilerplate.
-  var idClassFilter = doc.body.querySelectorAll(BP_ID_CLASS_SELECTORS);
-  each.call(idClassFilter, function(element) {
+  var axisBlacklisted = doc.body.querySelectorAll(AXIS_BLACKLIST);
+  each.call(axisBlacklisted, function(element) {
     element && element.remove();
   });
 
