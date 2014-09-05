@@ -99,27 +99,37 @@ var ANCESTOR_BIAS = new Map([
   ['ul', -5]
 ]);
 
+/*
+TODO: now that we do direct hashed lookup instead of a contains
+search these need to be refactored to specific words
+*/
 var ATTRIBUTE_BIAS = new Map([
   ['about', -35],
   ['ad', -100],
   ['ads', -50],
-  ['advert', -100],
-  ['article', 100],
+  ['advert', -200],
+  ['artext1',100],
+  ['article', 200],
+  ['articlebody', 300],
   ['articleheadings', -50],
   ['attachment', 20],
   ['author', 20],
+  ['block', 10],
   ['blog', 20],
   ['body', 50],
+  ['bookmarking', -100],
   ['brand', -50],
   ['breadcrumbs', -20],
   ['button', -100],
   ['byline', 20],
   ['caption', 10],
   ['carousel', 30],
+  ['cmt', -100],
   ['column', 10],
   ['combx', -20],
   ['comic', 75],
   ['comment', -300],
+  ['comments', -300],
   ['community', -100],
   ['component', -50],
   ['contact', -50],
@@ -136,6 +146,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['footnote', -150],
   ['google', -50],
   ['head', -50],
+  ['heading', -50],
   ['hentry',150],
   ['inset', -50],
   ['insta', -100],
@@ -163,6 +174,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['promo', -200],
   ['reading', 100],
   ['recap', -100],
+  ['rel', -50],
   ['relate', -300],
   ['replies', -100],
   ['reply', -50],
@@ -175,11 +187,13 @@ var ATTRIBUTE_BIAS = new Map([
   ['shoutbox', -200],
   ['side', -200],
   ['sig', -50],
+  ['snippet', 50],
   ['social', -200],
   ['socialnetworking', -250],
   ['source',-50],
   ['sponsor', -200],
   ['story', 50],
+  ['storydiv',100],
   ['storytopbar', -50],
   ['strycaptiontxt', -50],
   ['stryhghlght', -50],
@@ -203,6 +217,16 @@ var ATTRIBUTE_BIAS = new Map([
   ['widg', -200],
   ['zone', -50]
 ]);
+
+
+var IMAGE_DTREE = [
+  {lower: 100000, bias: 100},
+  {lower: 50000, bias: 150},
+  {lower: 10000, bias: 150},
+  {lower: 3000, bias: 30},
+  {lower: 500, bias: 10},
+  {lower: 0, bias: -10},
+];
 
 /**
  * NOTE: expects defined dimensions
@@ -246,8 +270,10 @@ function applyImageScore(featuresMap, features, image) {
   // TODO: use offsetWidth and offsetHeight instead?
   if(image.width && image.height) {
     area = image.width * image.height;
+    // clamp to 800x600
+    // TODO: do we even care about the upper bound?
     if(area > 360000) {
-      area = 360000;// clamp to 800x600
+      area = 360000;
     }
   }
 
@@ -255,30 +281,15 @@ function applyImageScore(featuresMap, features, image) {
     features.imageBranch = 1;
     features.score += 100;
     parentFeatures.score += 100;
-  } else if(area > 100000) {
-    features.imageBranch = 2;
-    features.score += 150;
-    parentFeatures.score += 150;
-  } else if(area > 50000) {
-    features.imageBranch = 3;
-    features.score += 150;
-    parentFeatures.score += 150;
-  } else if(area > 10000) {
-    features.imageBranch = 4;
-    features.score += 70;
-    parentFeatures.score += 70;
-  } else if(area > 3000) {
-    features.imageBranch = 5;
-    features.score += 30;
-    parentFeatures.score += 30;
-  } else if(area > 500) {
-    features.imageBranch = 6;
-    features.score += 10;
-    parentFeatures.score += 10;
   } else {
-    features.imageBranch = 7;
-    features.score -= 10;
-    parentFeatures.score -= 10;
+    for(var i = 0; i < IMAGE_DTREE.length;i++) {
+      if(area > IMAGE_DTREE[i].lower) {
+        features.imageBranch = i + 2;
+        features.score += IMAGE_DTREE[i].bias;
+        parentFeatures.score += IMAGE_DTREE[i].bias;
+        break;
+      }
+    }
   }
 
   // features is updated in the map in scoreElement
@@ -292,27 +303,33 @@ function applyImageScore(featuresMap, features, image) {
  * the higher the score. The closer the middle (the mid index),
  * the higher the score.
  */
-function applyPositionScore(features, element) {
+function applyPositionScore(featuresMap, features, element) {
+
+  var siblingCount = element.parentElement.childElementCount - 1;
+
+  // Always set a  value here
+  features.previousSiblingCount = 0;
+
   // If there are no siblings, then score is not affected
-  // TODO: is this right? This is no longer based on actual
-  // distance from start but sibling count. But should it be?
-  // If there are no siblings then it could still be near
-  // start or mid. So this heuristic is messed up. If we were
-  // dealing with an actual array of blocks it would make more sense
-  // to look at block index. But this is within the hierarchy.
-  if(!features.siblingCount) {
+  if(!siblingCount) {
     return;
   }
-  var prevCount = features.previousSiblingCount || 0;
+
+  var previous = element.previousElementSibling;
+  if(previous) {
+    features.previousSiblingCount = featuresMap.get(previous).previousSiblingCount + 1;
+  }
+
   // Distance from start
-  var startRatio = prevCount / features.siblingCount;
-  features.score += 2 - 2 * startRatio;
+  var startRatio = features.previousSiblingCount / siblingCount;
+  var startBias = 5 - 5 * startRatio;
 
   // Distance from middle
-  var halfCount = features.siblingCount / 2;
-  var middleOffset = Math.abs(prevCount - halfCount);
-  var middleRatio = middleOffset / halfCount;
-  features.score += 2 - 2 * middleRatio;
+  var halfCount = siblingCount / 2;
+  var middleOffset = Math.abs(features.previousSiblingCount - halfCount);
+  var middleBias = 5 - 5 * middleOffset / halfCount;
+
+  features.score += startBias + middleBias;
 }
 
 /**
@@ -385,105 +402,43 @@ function countChar(str, ch) {
  */
 function deriveAnchorFeatures(featuresMap, anchor) {
   var features = featuresMap.get(anchor);
-  if(!features.charCount || !anchor.hasAttribute('href')) {
+  var cc = features.charCount;
+  if(!cc || !anchor.hasAttribute('href')) {
     return;
   }
-  features.anchorCharCount = features.charCount;
+  features.anchorCharCount = cc;
   featuresMap.set(anchor, features);
   var parent = anchor, parentFeatures;
   while(parent = parent.parentElement) {
-    // we have to use || {} because this can walk above doc.body
-    parentFeatures = featuresMap.get(parent) || {};
-    parentFeatures.anchorCharCount = (parentFeatures.anchorCharCount || 0) +
-      features.anchorCharCount;
+    parentFeatures = featuresMap.get(parent);
+    parentFeatures.anchorCharCount += cc;
     featuresMap.set(parent, parentFeatures);
   }
-}
-
-/**
- * Calculates and stores two sibling properties: the
- * number of siblings, and the number of preceding siblings
- * in document order.
- */
-function deriveSiblingFeatures(featuresMap, element) {
-  var features = featuresMap.get(element);
-  features.siblingCount = element.parentElement.childElementCount - 1;
-  features.previousSiblingCount = 0;
-  if(features.siblingCount) {
-    var pes = element.previousElementSibling;
-    if(pes) {
-      // TODO: this could be improved
-      // if pes exists, pesFeatures guaranteed defined when walking in
-      // document order
-      var pesFeatures = featuresMap.get(pes);
-      pesFeatures.previousSiblingCount = pesFeatures.previousSiblingCount || 0;
-      features.previousSiblingCount = pesFeatures.previousSiblingCount + 1;
-    }
-  }
-  featuresMap.set(element, features);
 }
 
 function deriveTextFeatures(featuresMap, node) {
   var element = node.parentElement;
   var features = featuresMap.get(element);
-
+  var value = node.nodeValue;
   if(!features.hasCopyrightSymbol) {
-    // TODO: check for the copyright character itself?
-    // TODO: check unicode variants?
-    features.hasCopyrightSymbol = RE_COPYRIGHT.test(node.nodeValue);
+    features.hasCopyrightSymbol = RE_COPYRIGHT.test(value);
   }
+  features.bulletCount += countChar(value,'\u2022');
+  features.pipeCount += countChar(value, '|');
 
-  // TODO: this should also be looking for the character itself
-  // &#8226,•, &#x2022;
-  features.bulletCount = features.bulletCount || 0;
-  features.bulletCount += countChar(node.nodeValue,'\u2022');
-  // TODO: this should also be looking at other expressions of pipes
-  features.pipeCount = features.pipeCount || 0;
-  features.pipeCount += countChar(node.nodeValue, '|');
-  features.charCount = features.charCount || 0;
-  features.charCount += node.nodeValue.length -
-    node.nodeValue.split(RE_WHITESPACE).length + 1;
+  // TODO: does whitespace even matter that much?
+  //features.charCount += value.length - value.split(RE_WHITESPACE).length + 1;
+  features.charCount += value.length;
   featuresMap.set(element, features);
-  if(!features.charCount) {
-    return;
-  }
-
-  var parent = element, parentFeatures;
-  while(parent = parent.parentElement) {
-    // NOTE: because this walks above body we need || {}
-    // That should be improved
-    parentFeatures = featuresMap.get(parent) || {};
-    parentFeatures.charCount = parentFeatures.charCount || 0;
-    parentFeatures.charCount += features.charCount;
-    featuresMap.set(parent, parentFeatures);
+  if(features.charCount) {
+    var parent = element, parentFeatures;
+    while(parent = parent.parentElement) {
+      parentFeatures = featuresMap.get(parent);
+      parentFeatures.charCount += features.charCount;
+      featuresMap.set(parent, parentFeatures);
+    }
   }
 }
-
-/**
- * Sets attributes of the element that reflect some of the
- * internal metrics (expando properties) stored for the
- * element, according to whether the attribute should be
- * exposed in options
- */
-function exposeAttributes(options, featuresMap, element)  {
-  var features = featuresMap.get(element);
-  if(!features)
-    return;
-  if(options.SHOW_CHAR_COUNT && features.charCount)
-    element.setAttribute('charCount', features.charCount);
-  if(options.SHOW_COPYRIGHT_COUNT && features.hasCopyrightSymbol)
-    element.setAttribute('hasCopyrightSymbol', features.hasCopyrightSymbol);
-  if(options.SHOW_DOT_COUNT && features.bulletCount)
-    element.setAttribute('bulletCount', features.bulletCount);
-  if(options.SHOW_IMAGE_BRANCH && features.imageBranch)
-    element.setAttribute('imageBranch', features.imageBranch);
-  if(options.SHOW_PIPE_COUNT && features.pipeCount)
-    element.setAttribute('pipeCount', features.pipeCount);
-  // TODO: why toFixed? what was i thinking here?
-  if(options.SHOW_SCORE && features.score)
-    element.setAttribute('score', features.score.toFixed(2));
-}
-
 
 /**
  * Compares the scores of two elements and returns the element with the higher
@@ -501,6 +456,49 @@ function getMaxScore(featuresMap, previous, current) {
   return previous;
 }
 
+function removeTargetedSections(doc) {
+  // NOTES: this function is more a temporary measure to deal with
+  // unwanted subsections. Since we are selecting best elements and
+  // not filtering blocks this helps reduce boilerplate.
+  // Just ugly-as-hell brute-force empirical filtering
+  var targetedIds = ['a-font','a-share-h','a-all-related','addshare',
+    'social-top', 'social-bottom', 'disqus_thread', 'storyControls',
+    'a-comments','relartstory','cnn_sharebar1','comments-container',
+    'disqus-wrapper','story-font-size'];
+  targetedIds.forEach(function(id) {
+    var element = doc.getElementById(id);
+    if(element) {
+      element.remove();
+    }
+  });
+
+  var repeatedIds = ['toolbar-sharing'];
+  repeatedIds.forEach(function(id) {
+    var element = doc.getElementById(id);
+    while(element) {
+      element.remove();
+      element = doc.getElementById(id);
+    }
+  });
+
+  var targetedClasses = ['a-share', 'advert-txt', 'comment-count-block',
+    'dsq-postid','shareTree', 'sharetools-story', 'addthis_toolbox',
+    'social-bookmarking-module', 'pin-it-button','cnn_strybtntools',
+    'c_sharebar_cntr','toplinks','sitetitle','share-help',
+    'social-links','social-count','marginalia','util-bar-flyout-share',
+    'utility-bar-wrap','social-tools','social-buttons',
+    'share-tools-wrapper','blox-social-tools-horizontal'];
+  var each = Array.prototype.forEach;
+  targetedClasses.forEach(function(className) {
+    var elements = doc.body.getElementsByClassName(className);
+    each.call(elements, function(element) {
+      if(element) {
+        element.remove();
+      }
+    });
+  });
+}
+
 /**
  * Apply our 'model' to an element. We generate a score that is the
  * sum of several terms.
@@ -508,18 +506,27 @@ function getMaxScore(featuresMap, previous, current) {
 function scoreElement(featuresMap, element) {
   var features = featuresMap.get(element);
 
+  // Apply a bias based on the text of the element
   applyTextScore(features, element);
 
+  // Apply a bias for images
   if(element.localName == 'img') {
     applyImageScore(featuresMap, features, element);
   }
 
-  applyPositionScore(features, element);
+  // Apply a bias based on the location of the element
+  applyPositionScore(featuresMap, features, element);
 
-  // Apply a bias based on the type of element
+  // Apply a bias based on the type of the element
   features.score += TYPE_BIAS.get(element.localName) || 0;
 
-  // Apply a bias based on the text of the id or class attributes
+  // Apply a bias based on the text of some of the attributes
+  var attributeText = [
+    element.getAttribute('id') || '',
+    element.getAttribute('name') || '',
+    element.getAttribute('class') || ''
+  ].join('').trim().toLowerCase();
+
   var attributeText = ((element.id || '') + ' ' + (element.className || ''));
   attributeText = attributeText.trim().toLowerCase();
   var attributeTokens = attributeText.split(RE_TOKEN_SPLIT);
@@ -527,7 +534,7 @@ function scoreElement(featuresMap, element) {
     features.score += ATTRIBUTE_BIAS.get(attributeTokens[i]) || 0;
   }
 
-  // Contiguity bias
+  // Contiguity bias - apply a bias based on the preceding element's score
   if(element.previousElementSibling) {
     var prevScore = featuresMap.get(element.previousElementSibling).score;
     features.score += prevScore > 0 ? 5 : -5;
@@ -559,33 +566,87 @@ function scoreElement(featuresMap, element) {
 function transformDocument(doc, options) {
   options = options || {};
   var features = new WeakMap();
-  var each = Array.prototype.forEach;
-  var reduce = Array.prototype.reduce;
-  var anchors = doc.body.getElementsByTagName('a');
-  var elements = doc.body.getElementsByTagName('*');
-  var textIterator = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
-  var textNode = null;
 
-  each.call(elements, function initFeatureMap(e) {
-    features.set(e, {score: 0});
+  features.set(doc.documentElement, {
+    score: -Infinity,
+    charCount: 0,
+    anchorCharCount: 0
   });
 
+  features.set(doc.body, {
+    score: -Infinity,
+    charCount: 0,
+    anchorCharCount: 0
+  });
+
+  removeTargetedSections(doc);
+
+
+  var elements = doc.body.getElementsByTagName('*');
+  var each = Array.prototype.forEach;
+  each.call(elements, function initFeatureMap(e) {
+    features.set(e, {
+      score: 0,
+      hasCopyrightSymbol: false,
+      pipeCount: 0,
+      bulletCount: 0,
+      charCount: 0,
+      anchorCharCount: 0,
+      previousSiblingCount: 0
+    });
+  });
+
+  var textIterator = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
+  var textNode = null;
   while(textNode = textIterator.nextNode()) {
     deriveTextFeatures(features, textNode);
   }
+
+  var anchors = doc.body.getElementsByTagName('a');
   each.call(anchors, deriveAnchorFeatures.bind(this, features));
-  each.call(elements, deriveSiblingFeatures.bind(this, features));
   each.call(elements, scoreElement.bind(this, features));
 
-  features.set(doc.body, {score: -Infinity});
+  // TODO: using reduce over the elements collection involves map
+  // lookups for all the elements per call. Because all elements are
+  // in the map, it would be better to just iterate the map's entries
+  // and find the max that way. Then we could maybe deprecate the
+  // reduce and getMaxScore methods
   var maxScore = getMaxScore.bind(this, features);
+  var reduce = Array.prototype.reduce;
   var bestElement = reduce.call(elements, maxScore, doc.body);
 
-  var descendants = bestElement.getElementsByTagName('*');
-  exposeAttributes(options, features, bestElement);
-  each.call(descendants, exposeAttributes.bind(this, options, features));
-
+  exposeAttributes(bestElement, features, options);
   return bestElement;
+}
+
+function exposeAttributes(bestElement, featuresMap, options) {
+
+  var props = [
+    {key: 'SHOW_CHAR_COUNT', value: 'charCount'},
+    {key: 'SHOW_HAS_COPYRIGHT', value: 'hasCopyrightSymbol'},
+    {key: 'SHOW_BULLET_COUNT', value: 'bulletCount'},
+    {key: 'SHOW_IMAGE_BRANCH', value: 'imageBranch'},
+    {key: 'SHOW_PIPE_COUNT', value: 'pipeCount'},
+    {key: 'SHOW_SCORE', value: 'score'},
+  ];
+
+  // Exposing attributes for debugging
+  var descendants = bestElement.getElementsByTagName('*');
+  var each = Array.prototype.forEach;
+
+  for(var i = 0, key, value, features; i < props.length;i++) {
+    key = props[i].key;
+    if(!options[key])
+      continue;
+    value = props[i].value;
+    // TODO: this is probably a bug
+    each.call(descendants, function(e) {
+      features = featuresMap.get(e);
+      if(features[value]) {
+        e.setAttribute(value, features[value]);
+      }
+    });
+  }
 }
 
 function updateScore(featuresMap, element, amount) {
