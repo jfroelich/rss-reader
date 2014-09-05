@@ -218,6 +218,48 @@ var ATTRIBUTE_BIAS = new Map([
   ['zone', -50]
 ]);
 
+// Empirically collected, various comment sections,
+// share sections, related articles sections that are
+// explicitly targeted for removal
+var BP_ID_CLASS_SELECTORS = [
+  '#a-font',
+  '#a-share-h',
+  '#a-all-related',
+  '#addshare',
+  '#social-top',
+  '#social-bottom',
+  '#disqus_thread',
+  '#storyControls',
+  '#a-comments',
+  '#relartstory',
+  '#cnn_sharebar1',
+  '#comments-container',
+  '#disqus-wrapper',
+  '#story-font-size',
+  '.a-share',
+  '.advert-txt',
+  '.blox-social-tools-horizontal',
+  '.comment-count-block',
+  '.dsq-postid',
+  '.shareTree',
+  '.sharetools-story',
+  '.addthis_toolbox',
+  '.cnn_strybtntools',
+  '.c_sharebar_cntr',
+  '.marginalia',
+  '.pin-it-button',
+  '.sitetitle',
+  '.share-help',
+  '.share-tools-wrapper',
+  '.social-bookmarking-module',
+  '.social-count',
+  '.social-links',
+  '.social-tools',
+  '.social-buttons',
+  '.toplinks',
+  '.util-bar-flyout-share',
+  '.utility-bar-wrap'
+].join(',');
 
 var IMAGE_DTREE = [
   {lower: 100000, bias: 100},
@@ -456,61 +498,18 @@ function getMaxScore(featuresMap, previous, current) {
   return previous;
 }
 
-function removeTargetedSections(doc) {
-  // NOTES: this function is more a temporary measure to deal with
-  // unwanted subsections. Since we are selecting best elements and
-  // not filtering blocks this helps reduce boilerplate.
-  // Just ugly-as-hell brute-force empirical filtering
-  var targetedIds = ['a-font','a-share-h','a-all-related','addshare',
-    'social-top', 'social-bottom', 'disqus_thread', 'storyControls',
-    'a-comments','relartstory','cnn_sharebar1','comments-container',
-    'disqus-wrapper','story-font-size'];
-  targetedIds.forEach(function(id) {
-    var element = doc.getElementById(id);
-    if(element) {
-      element.remove();
-    }
-  });
-
-  var repeatedIds = ['toolbar-sharing'];
-  repeatedIds.forEach(function(id) {
-    var element = doc.getElementById(id);
-    while(element) {
-      element.remove();
-      element = doc.getElementById(id);
-    }
-  });
-
-  var targetedClasses = ['a-share', 'advert-txt', 'comment-count-block',
-    'dsq-postid','shareTree', 'sharetools-story', 'addthis_toolbox',
-    'social-bookmarking-module', 'pin-it-button','cnn_strybtntools',
-    'c_sharebar_cntr','toplinks','sitetitle','share-help',
-    'social-links','social-count','marginalia','util-bar-flyout-share',
-    'utility-bar-wrap','social-tools','social-buttons',
-    'share-tools-wrapper','blox-social-tools-horizontal'];
-  var each = Array.prototype.forEach;
-  targetedClasses.forEach(function(className) {
-    var elements = doc.body.getElementsByClassName(className);
-    each.call(elements, function(element) {
-      if(element) {
-        element.remove();
-      }
-    });
-  });
-}
-
 /**
  * Apply our 'model' to an element. We generate a score that is the
  * sum of several terms.
  */
 function scoreElement(featuresMap, element) {
   var features = featuresMap.get(element);
-
+  var localName = element.localName;
   // Apply a bias based on the text of the element
   applyTextScore(features, element);
 
   // Apply a bias for images
-  if(element.localName == 'img') {
+  if(localName == 'img') {
     applyImageScore(featuresMap, features, element);
   }
 
@@ -518,33 +517,26 @@ function scoreElement(featuresMap, element) {
   applyPositionScore(featuresMap, features, element);
 
   // Apply a bias based on the type of the element
-  features.score += TYPE_BIAS.get(element.localName) || 0;
+  features.score += TYPE_BIAS.get(localName) || 0;
 
-  // Apply a bias based on the text of some of the attributes
-  var attributeText = [
-    element.getAttribute('id') || '',
-    element.getAttribute('name') || '',
-    element.getAttribute('class') || ''
-  ].join('').trim().toLowerCase();
-
-  var attributeText = ((element.id || '') + ' ' + (element.className || ''));
-  attributeText = attributeText.trim().toLowerCase();
-  var attributeTokens = attributeText.split(RE_TOKEN_SPLIT);
-  for(var i = 0, len = attributeTokens.length; i < len; i++) {
-    features.score += ATTRIBUTE_BIAS.get(attributeTokens[i]) || 0;
+  // Apply a bias based on the text of certain attributes
+  var attrTokens = [element.getAttribute('id') || '',
+    element.getAttribute('name') || '', element.getAttribute('class') || ''
+  ].join('').trim().toLowerCase().split(RE_TOKEN_SPLIT);
+  for(var i = 0, len = attrTokens.length; i < len; i++) {
+    features.score += ATTRIBUTE_BIAS.get(attrTokens[i]) || 0;
   }
 
   // Contiguity bias - apply a bias based on the preceding element's score
   if(element.previousElementSibling) {
     var prevScore = featuresMap.get(element.previousElementSibling).score;
-    features.score += prevScore > 0 ? 5 : -5;
+    features.score += 20 * (prevScore > 0 ? 1 : -1);
   }
 
-  // Update the features of this element in the map
   featuresMap.set(element, features);
 
-  // Propagate a small bias to descendant elements
-  var ancestorBias = ANCESTOR_BIAS.get(element.localName);
+  // Bias descendants
+  var ancestorBias = ANCESTOR_BIAS.get(localName);
   if(ancestorBias) {
     for(var i = 0, descs = element.getElementsByTagName('*'),
       len = descs.length; i < len; i++) {
@@ -552,8 +544,8 @@ function scoreElement(featuresMap, element) {
     }
   }
 
-  // Propagate a small bias to the parent element
-  var descendantBias = DESCENDANT_BIAS.get(element.localName);
+  // Bias ancestors
+  var descendantBias = DESCENDANT_BIAS.get(localName);
   if(descendantBias) {
     updateScore(featuresMap, element.parentElement, descendantBias);
   }
@@ -567,23 +559,19 @@ function transformDocument(doc, options) {
   options = options || {};
   var features = new WeakMap();
 
-  features.set(doc.documentElement, {
-    score: -Infinity,
-    charCount: 0,
-    anchorCharCount: 0
-  });
-
-  features.set(doc.body, {
-    score: -Infinity,
-    charCount: 0,
-    anchorCharCount: 0
-  });
-
-  removeTargetedSections(doc);
-
-
-  var elements = doc.body.getElementsByTagName('*');
   var each = Array.prototype.forEach;
+
+  // Just ugly-as-hell brute-force empirical filtering. This is a temporary
+  // measure to deal with unwanted subsections. Since we are selecting best
+  // elements and not filtering blocks this helps reduce boilerplate.
+  var idClassFilter = doc.body.querySelectorAll(BP_ID_CLASS_SELECTORS);
+  each.call(idClassFilter, function(element) {
+    element && element.remove();
+  });
+
+  // Initialize the features map with default values. Doing so now avoids
+  // the hundreds/thousands of checks that are done later if set lazily.
+  var elements = doc.body.getElementsByTagName('*');
   each.call(elements, function initFeatureMap(e) {
     features.set(e, {
       score: 0,
@@ -595,17 +583,27 @@ function transformDocument(doc, options) {
       previousSiblingCount: 0
     });
   });
+  features.set(doc.documentElement,
+    {score: -Infinity, charCount: 0, anchorCharCount: 0});
+  features.set(doc.body,
+    {score: -Infinity, charCount: 0, anchorCharCount: 0});
 
+  // Next, collect information about the text nodes using the parent
+  // of each node in the map
   var textIterator = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
   var textNode = null;
   while(textNode = textIterator.nextNode()) {
     deriveTextFeatures(features, textNode);
   }
 
+  // Collect anchor text information
   var anchors = doc.body.getElementsByTagName('a');
   each.call(anchors, deriveAnchorFeatures.bind(this, features));
+
+  // Score the elements
   each.call(elements, scoreElement.bind(this, features));
 
+  // Find the highest scoring element
   // TODO: using reduce over the elements collection involves map
   // lookups for all the elements per call. Because all elements are
   // in the map, it would be better to just iterate the map's entries
@@ -615,37 +613,42 @@ function transformDocument(doc, options) {
   var reduce = Array.prototype.reduce;
   var bestElement = reduce.call(elements, maxScore, doc.body);
 
+  // Optionally print out some of the metrics as attributes
+  // in the output
   exposeAttributes(bestElement, features, options);
+
+  // TODO: this is returning <body> sometimes which is unfortunate.
+  // Chrome allows for it so it is not incredibly important, but I
+  // would prefer to unwrap. However I encountered extremely strange
+  // errors with out-of-order iteration over the childNodes property
+  // when appending to a document fragment as a result.
   return bestElement;
 }
 
+var EXPOSE_PROPS = [
+  {key: 'SHOW_CHAR_COUNT', value: 'charCount'},
+  {key: 'SHOW_HAS_COPYRIGHT', value: 'hasCopyrightSymbol'},
+  {key: 'SHOW_BULLET_COUNT', value: 'bulletCount'},
+  {key: 'SHOW_IMAGE_BRANCH', value: 'imageBranch'},
+  {key: 'SHOW_PIPE_COUNT', value: 'pipeCount'},
+  {key: 'SHOW_SCORE', value: 'score'},
+];
+
+// Exposing attributes for debugging
 function exposeAttributes(bestElement, featuresMap, options) {
-
-  var props = [
-    {key: 'SHOW_CHAR_COUNT', value: 'charCount'},
-    {key: 'SHOW_HAS_COPYRIGHT', value: 'hasCopyrightSymbol'},
-    {key: 'SHOW_BULLET_COUNT', value: 'bulletCount'},
-    {key: 'SHOW_IMAGE_BRANCH', value: 'imageBranch'},
-    {key: 'SHOW_PIPE_COUNT', value: 'pipeCount'},
-    {key: 'SHOW_SCORE', value: 'score'},
-  ];
-
-  // Exposing attributes for debugging
   var descendants = bestElement.getElementsByTagName('*');
   var each = Array.prototype.forEach;
-
-  for(var i = 0, key, value, features; i < props.length;i++) {
-    key = props[i].key;
-    if(!options[key])
-      continue;
-    value = props[i].value;
-    // TODO: this is probably a bug
-    each.call(descendants, function(e) {
-      features = featuresMap.get(e);
-      if(features[value]) {
-        e.setAttribute(value, features[value]);
+  for(var i = 0, value, features, e; i < EXPOSE_PROPS.length;i++) {
+    if(options[EXPOSE_PROPS[i].key]) {
+      value = EXPOSE_PROPS[i].value;
+      for(var j = 0, len = descendants.length; j < len;j++) {
+        e = descendants[j];
+        features = featuresMap.get(e);
+        if(features[value]) {
+          e.setAttribute(value, features[value]);
+        }
       }
-    });
+    }
   }
 }
 
