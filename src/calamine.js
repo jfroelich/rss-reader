@@ -13,10 +13,6 @@
 (function calamineWrapper(exports) {
 'use strict';
 
-var RE_COPYRIGHT = /&(copy|#169|#xA9);/i;
-var RE_WHITESPACE = /\s/g;
-var RE_TOKEN_SPLIT = /[\s-_]+/g;
-
 var INTRINSIC_BIAS = new Map([
   ['a', -1],
   ['address', -3],
@@ -98,9 +94,6 @@ var ANCESTOR_BIAS = new Map([
 ]);
 
 /*
-TODO: now that we do direct hashed lookup instead of a contains
-search these need to be refactored to specific words
-
 TODO: if we refactor to use selectors we could revert to using
 contains efficiently using *= css wildcard. However, we would have
 to lose custom scores and isntead use about 3 to 6 selectors each
@@ -222,9 +215,6 @@ var ATTRIBUTE_BIAS = new Map([
   ['zone', -50]
 ]);
 
-// Empirically collected, various comment sections,
-// share sections, related articles sections that are
-// explicitly targeted for removal
 var AXIS_BLACKLIST = [
   '[id*="_ad_"]',
   '[id*="comment"]',
@@ -308,12 +298,12 @@ function applyImageScore(featuresMap, features, image) {
   if(!description) {
     description = (image.getAttribute('title') || '').trim();
   }
+
   if(description) {
     features.score += 30;
     parentFeatures.score +=  30;
   }
 
-  // TODO: maybe break this out into its own function
   if(imageParent.localName == 'figure') {
     var figCaptionNodeList = imageParent.getElementsByTagName('figcaption');
     if(figCaptionNodeList && figCaptionNodeList.length) {
@@ -342,8 +332,6 @@ function applyImageScore(featuresMap, features, image) {
     }
   }
 
-  // features is updated in the map in scoreElement
-  // but the parentElement is not so do it here
   featuresMap.set(imageParent, parentFeatures);
 }
 
@@ -354,42 +342,19 @@ function applyImageScore(featuresMap, features, image) {
  * the higher the score.
  */
 function applyPositionScore(featuresMap, features, element) {
-
   var siblingCount = element.parentElement.childElementCount - 1;
-
-  // Always set a  value here
   features.previousSiblingCount = 0;
-
-  // If there are no siblings, then score is not affected
-  if(!siblingCount) {
+  if(!siblingCount)
     return;
-  }
-
   var previous = element.previousElementSibling;
-  if(previous) {
+  if(previous)
     features.previousSiblingCount = featuresMap.get(previous).previousSiblingCount + 1;
-  }
-
-  // Distance from start
   var startRatio = features.previousSiblingCount / siblingCount;
-  var startBias = 5 - 5 * startRatio;
-
-  // Distance from middle
+  features.score += 5 - 5 * startRatio;
   var halfCount = siblingCount / 2;
   var middleOffset = Math.abs(features.previousSiblingCount - halfCount);
-  var middleBias = 5 - 5 * middleOffset / halfCount;
-
-  features.score += startBias + middleBias;
+  features.score += 5 - 5 * middleOffset / halfCount;
 }
-
-
-// Toying with idea of simpler score determination
-// Would just do a lookup in this
-// Or, rather than bins, it could just be more formulaic
-var TEXT_BRANCHES = [
-  {minLength: 1000, minDensity: 0.35, bias: 50},
-  {minLength: 1000, minDensity: 0.2, bias: 100}
-];
 
 /**
  * Updates the element's score based on the content
@@ -401,11 +366,8 @@ function applyTextScore(features, element) {
     return;
   }
 
-  if(features.hasCopyrightSymbol) {
-    features.score -= 40;
-  }
-  features.score += -20 * (features.bulletCount || 0);
-  features.score += -10 * (features.pipeCount || 0);
+  // TODO: make score a function of cc and density instead
+  // of searching classes
 
   var density = (features.anchorCharCount || 0) / cc;
   if(cc > 1000) {
@@ -446,25 +408,13 @@ function applyTextScore(features, element) {
 }
 
 /**
- * Returns the frequency of ch in str.
- * See http://jsperf.com/count-the-number-of-characters-in-a-string
- */
-function countChar(str, ch) {
-  for(var count = -1, index = 0; index != -1; count++) {
-    index = str.indexOf(ch, index+1);
-  }
-  return count;
-}
-
-/**
- * Extract anchor features. Based on charCount from text features
+ * Extract anchor features. Based on text features
  */
 function deriveAnchorFeatures(featuresMap, anchor) {
   var features = featuresMap.get(anchor);
   var cc = features.charCount;
-  if(!cc || !anchor.hasAttribute('href')) {
+  if(!cc || !anchor.hasAttribute('href'))
     return;
-  }
   features.anchorCharCount = cc;
   featuresMap.set(anchor, features);
   var parent = anchor, parentFeatures;
@@ -479,14 +429,6 @@ function deriveTextFeatures(featuresMap, node) {
   var element = node.parentElement;
   var features = featuresMap.get(element);
   var value = node.nodeValue;
-  if(!features.hasCopyrightSymbol) {
-    features.hasCopyrightSymbol = RE_COPYRIGHT.test(value);
-  }
-  features.bulletCount += countChar(value,'\u2022');
-  features.pipeCount += countChar(value, '|');
-
-  // TODO: does whitespace even matter that much?
-  //features.charCount += value.length - value.split(RE_WHITESPACE).length + 1;
   features.charCount += value.length;
   featuresMap.set(element, features);
   if(features.charCount) {
@@ -505,15 +447,11 @@ function deriveTextFeatures(featuresMap, node) {
  * TODO: this needs a better name. what is it doing?
  */
 function getMaxScore(featuresMap, previous, current) {
-  var previousFeatures = featuresMap.get(previous);
-  var currentFeatures = featuresMap.get(current);
-
-  if(currentFeatures.score > previousFeatures.score) {
-    return current;
-  }
-
-  return previous;
+  return featuresMap.get(current).score > featuresMap.get(previous).score ?
+    current : previous;
 }
+
+var RE_TOKEN_SPLIT = /[\s-_]+/g;
 
 /**
  * Apply our 'model' to an element. We generate a score that is the
@@ -522,28 +460,13 @@ function getMaxScore(featuresMap, previous, current) {
 function scoreElement(featuresMap, element) {
   var features = featuresMap.get(element);
   var localName = element.localName;
-  // Apply a bias based on the text of the element
   applyTextScore(features, element);
-
-  // Apply a bias for images
   if(localName == 'img') {
     applyImageScore(featuresMap, features, element);
   }
-
-  // Apply a bias based on the location of the element
   applyPositionScore(featuresMap, features, element);
-
-  // Apply a bias based on the type of the element
   features.score += INTRINSIC_BIAS.get(localName) || 0;
-
-  // TODO: I just thought of a better way. Just make a giant
-  // single selector and use element.matches(selector)
-  // here. Pretty sure it would be faster to use the native matching
-  // But how would we know which selector matches to use the
-  // appropriate score? Or could use use a few classes of
-  // selectors each with a pre-assigned score?
-
-  // Apply a bias based on the text of certain attributes
+  // TODO: use selectors instead
   var attrTokens = [
     element.getAttribute('class') || '',
     element.getAttribute('id') || '',
@@ -554,16 +477,11 @@ function scoreElement(featuresMap, element) {
   for(var i = 0, len = attrTokens.length; i < len; i++) {
     features.score += ATTRIBUTE_BIAS.get(attrTokens[i]) || 0;
   }
-
-  // Contiguity bias - apply a bias based on the preceding element's score
   if(element.previousElementSibling) {
     var prevScore = featuresMap.get(element.previousElementSibling).score;
     features.score += 20 * (prevScore > 0 ? 1 : -1);
   }
-
   featuresMap.set(element, features);
-
-  // Bias descendants
   var ancestorBias = ANCESTOR_BIAS.get(localName);
   if(ancestorBias) {
     for(var i = 0, descs = element.getElementsByTagName('*'),
@@ -571,8 +489,6 @@ function scoreElement(featuresMap, element) {
       updateScore(featuresMap, descs[i], ancestorBias);
     }
   }
-
-  // Bias ancestors
   var descendantBias = DESCENDANT_BIAS.get(localName);
   if(descendantBias) {
     updateScore(featuresMap, element.parentElement, descendantBias);
@@ -586,70 +502,30 @@ function scoreElement(featuresMap, element) {
 function transformDocument(doc, options) {
   options = options || {};
   var features = new WeakMap();
-
   var each = Array.prototype.forEach;
-
-  // Just ugly-as-hell brute-force empirical filtering. This is a temporary
-  // measure to deal with unwanted subsections. Since we are selecting best
-  // elements and not filtering blocks this helps reduce boilerplate.
-  var axisBlacklisted = doc.body.querySelectorAll(AXIS_BLACKLIST);
-  each.call(axisBlacklisted, function(element) {
-    element && element.remove();
-  });
-
-  // Initialize the features map with default values. Doing so now avoids
-  // the hundreds/thousands of checks that are done later if set lazily.
+  var blacklisted = doc.body.querySelectorAll(AXIS_BLACKLIST);
+  each.call(blacklisted, function (e) { e.remove(); });
   var elements = doc.body.getElementsByTagName('*');
-  each.call(elements, function initFeatureMap(e) {
-    features.set(e, {
-      score: 0,
-      hasCopyrightSymbol: false,
-      pipeCount: 0,
-      bulletCount: 0,
-      charCount: 0,
-      anchorCharCount: 0,
-      previousSiblingCount: 0
-    });
+  each.call(elements, function initFeatureMap(e) { features.set(e, {
+    score: 0, charCount: 0, anchorCharCount: 0, previousSiblingCount: 0
+  });});
+  features.set(doc.documentElement, {
+    score: -Infinity, charCount: 0, anchorCharCount: 0
   });
-  features.set(doc.documentElement,
-    {score: -Infinity, charCount: 0, anchorCharCount: 0});
-  features.set(doc.body,
-    {score: -Infinity, charCount: 0, anchorCharCount: 0});
-
-  // Next, collect information about the text nodes using the parent
-  // of each node in the map
-  var textIterator = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
-  var textNode = null;
-  while(textNode = textIterator.nextNode()) {
-    deriveTextFeatures(features, textNode);
+  features.set(doc.body, {
+    score: -Infinity, charCount: 0, anchorCharCount: 0
+  });
+  var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
+  var node = null;
+  while(node = it.nextNode()) {
+    deriveTextFeatures(features, node);
   }
-
-  // Collect anchor text information
   var anchors = doc.body.getElementsByTagName('a');
   each.call(anchors, deriveAnchorFeatures.bind(this, features));
-
-  // Score the elements
   each.call(elements, scoreElement.bind(this, features));
-
-  // Find the highest scoring element
-  // TODO: using reduce over the elements collection involves map
-  // lookups for all the elements per call. Because all elements are
-  // in the map, it would be better to just iterate the map's entries
-  // and find the max that way. Then we could maybe deprecate the
-  // reduce and getMaxScore methods
-  var maxScore = getMaxScore.bind(this, features);
-  var reduce = Array.prototype.reduce;
-  var bestElement = reduce.call(elements, maxScore, doc.body);
-
-  // Optionally print out some of the metrics as attributes
-  // in the output
+  var max = getMaxScore.bind(this, features);
+  var bestElement = Array.prototype.reduce.call(elements, max, doc.body);
   exposeAttributes(bestElement, features, options);
-
-  // TODO: this is returning <body> sometimes which is unfortunate.
-  // Chrome allows for it so it is not incredibly important, but I
-  // would prefer to unwrap. However I encountered extremely strange
-  // errors with out-of-order iteration over the childNodes property
-  // when appending to a document fragment as a result.
   return bestElement;
 }
 
