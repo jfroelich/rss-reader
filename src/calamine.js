@@ -6,8 +6,6 @@
  * The calamine module provides functions for removing boilerplate content
  * In other words, applying lotion to soothe NLP shingles.
  *
- * TODO: specifically target 'share' subsection better
- * TODO: specifically target 'comments' subsection better
  * TODO: look more into shadow dom manipulation? or is that
  * the role of sanitize?
  * TODO: support 'picture' element
@@ -19,7 +17,7 @@ var RE_COPYRIGHT = /&(copy|#169|#xA9);/i;
 var RE_WHITESPACE = /\s/g;
 var RE_TOKEN_SPLIT = /[\s-_]+/g;
 
-var TYPE_BIAS = new Map([
+var INTRINSIC_BIAS = new Map([
   ['a', -1],
   ['address', -3],
   ['article', 100],
@@ -104,7 +102,10 @@ TODO: now that we do direct hashed lookup instead of a contains
 search these need to be refactored to specific words
 
 TODO: if we refactor to use selectors we could revert to using
-contains efficiently using *= css wildcard
+contains efficiently using *= css wildcard. However, we would have
+to lose custom scores and isntead use about 3 to 6 selectors each
+with its own score, e.g. BEST +200, GOOD +100, BAD -100, WORST -200,
+where BEST is something like [id*=article][class*=article].
 */
 var ATTRIBUTE_BIAS = new Map([
   ['about', -35],
@@ -225,19 +226,28 @@ var ATTRIBUTE_BIAS = new Map([
 // share sections, related articles sections that are
 // explicitly targeted for removal
 var AXIS_BLACKLIST = [
+  '[id*="_ad_"]',
   '[id*="comment"]',
   '[id*="-ad"]',
   '[id*="disqus"]',
   '[id*="share"]',
   '[id*="social"]',
+  '[class*="-actions"]',
+  '[class*="-ad"]',
   '[class*="adv"]',
   '[class*="addthis"]',
   '[class*="comment"]',
+  '[class*="-control"]',
   '[class*="dsq"]',
+  '[class*="gallery"]',
+  '[class*="googleAds"]',
   '[class*="links"]',
+  '[class*="-nav"]',
   '[class*="share"]',
   '[class*="sharing"]',
   '[class*="social"]',
+  '[class*="taboola"]',
+  '[class*="thumb"]',
   '[class*="tool"]',
   '#a-font',
   '#a-all-related',
@@ -264,6 +274,8 @@ var AXIS_BLACKLIST = [
   '.tags-box',
   '.text-size',
   '.thirdPartyRecommendedContent',
+  '.ticker',
+  '.toolbox',
   '.toplinks',
   '.utilsFloat',
   '.utility-bar-wrap',
@@ -280,7 +292,6 @@ var IMAGE_DTREE = [
 ];
 
 /**
- * NOTE: expects defined dimensions
  * TODO: is there some nicer way of updating the parentElement? I am not
  * entirely happy that we secretly update other elements here
  */
@@ -288,9 +299,7 @@ function applyImageScore(featuresMap, features, image) {
   var imageParent = image.parentElement;
   var parentFeatures = featuresMap.get(imageParent);
 
-  // Award those images with alt or title text as being more
-  // likely to be content. Boilerplate images are less likely to
-  // have supporting text.
+  // Boilerplate images are less likely to have supporting text.
   // TODO: rather than an arbitrary amount, use keyword bias and also
   // consider a length based bias. If length based used the greater length
   // of either alt or title, do not just consider alt length, which this
@@ -301,7 +310,7 @@ function applyImageScore(featuresMap, features, image) {
   }
   if(description) {
     features.score += 30;
-    parentFeatures.score +=  10;
+    parentFeatures.score +=  30;
   }
 
   // TODO: maybe break this out into its own function
@@ -317,23 +326,13 @@ function applyImageScore(featuresMap, features, image) {
     }
   }
 
-  var area = 0;
-  // TODO: use offsetWidth and offsetHeight instead?
-  if(image.width && image.height) {
-    area = image.width * image.height;
-    // clamp to 800x600
-    // TODO: do we even care about the upper bound?
-    if(area > 360000) {
-      area = 360000;
-    }
-  }
-
-  if(!area) {
+  if(!image.height || !image.width) {
     features.imageBranch = 1;
     features.score += 100;
     parentFeatures.score += 100;
   } else {
-    for(var i = 0; i < IMAGE_DTREE.length;i++) {
+    // TODO: make bias a simple function of area, instead of searching bins
+    for(var i = 0, area = image.height * image.width; i < IMAGE_DTREE.length;i++) {
       if(area > IMAGE_DTREE[i].lower) {
         features.imageBranch = i + 2;
         features.score += IMAGE_DTREE[i].bias;
@@ -535,7 +534,7 @@ function scoreElement(featuresMap, element) {
   applyPositionScore(featuresMap, features, element);
 
   // Apply a bias based on the type of the element
-  features.score += TYPE_BIAS.get(localName) || 0;
+  features.score += INTRINSIC_BIAS.get(localName) || 0;
 
   // TODO: I just thought of a better way. Just make a giant
   // single selector and use element.matches(selector)
