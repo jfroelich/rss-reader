@@ -10,48 +10,8 @@
  * the role of sanitize?
  * TODO: support 'picture' element
  */
-(function calamineWrapper(exports) {
+(function (exports) {
 'use strict';
-
-var INTRINSIC_BIAS = new Map([
-  ['a', -1],
-  ['address', -3],
-  ['article', 100],
-  ['aside', -200],
-  ['blockquote', 5],
-  ['canvas', 3],
-  ['dir', -20],
-  ['dd', -3],
-  ['div', 20],
-  ['dl', -10],
-  ['dt', -3],
-  ['figcaption', 10],
-  ['figure', 10],
-  ['footer', -100],
-  ['form', -50],
-  ['header', -20],
-  ['h1', -2],
-  ['h2', -2],
-  ['h3', -2],
-  ['h4', -2],
-  ['h5', -2],
-  ['h6', -2],
-  ['li', -20],
-  ['main', 100],
-  ['nav', -50],
-  ['ol', -20],
-  ['p', 10],
-  ['pre', 5],
-  ['ruby', 5],
-  ['section', 10],
-  ['small', -1],
-  ['summary', 5],
-  ['td', 3],
-  ['th', -3],
-  ['time', 2],
-  ['tr', 1],
-  ['ul', -20]
-]);
 
 var DESCENDANT_BIAS = new Map([
   ['b', 1],
@@ -74,29 +34,10 @@ var DESCENDANT_BIAS = new Map([
   ['time', 2]
 ]);
 
-var ANCESTOR_BIAS = new Map([
-  ['blockquote', 10],
-  ['code', 10],
-  ['dir', -5],
-  ['div', 1],
-  ['dl', -5],
-  ['header', -5],
-  ['i', 1],
-  ['li', -3],
-  ['nav', -20],
-  ['ol', -5],
-  ['p', 10],
-  ['pre', 10],
-  ['ruby', 5],
-  ['summary', 2],
-  ['table', -2],
-  ['ul', -5]
-]);
-
 /*
 TODO: if we refactor to use selectors we could revert to using
 contains efficiently using *= css wildcard. However, we would have
-to lose custom scores and isntead use about 3 to 6 selectors each
+to lose custom scores and instead use about 3 to 6 selectors each
 with its own score, e.g. BEST +200, GOOD +100, BAD -100, WORST -200,
 where BEST is something like [id*=article][class*=article].
 */
@@ -215,61 +156,82 @@ var ATTRIBUTE_BIAS = new Map([
   ['zone', -50]
 ]);
 
-var AXIS_BLACKLIST = [
+var BLACKLIST = [
+  'aside',
   '[id*="_ad_"]',
-  '[id*="comment"]',
   '[id*="-ad"]',
+  '[id*="-buttons-"]',
+  '[id*="comment"]',
   '[id*="disqus"]',
+  '[id*="dsq"]',
+  '[id*="-font"]',
+  '[id*="gigya"]',
+  '[id*="most-watched"]',
+  '[id*="ndntabs"]',
+  '[id*="promotion"]',
+  '[id*="-related"]',
   '[id*="share"]',
+  '[id*="signup"]',
   '[id*="social"]',
+  '[id*="top_stories"]',
   '[class*="-actions"]',
   '[class*="-ad"]',
+  '[class*="AdBox"]',
+  '[class*="adbox"]',
   '[class*="adv"]',
   '[class*="addthis"]',
+  '[class*="banner-"]',
+  '[class*="best-of"]',
   '[class*="comment"]',
   '[class*="-control"]',
   '[class*="dsq"]',
   '[class*="gallery"]',
   '[class*="googleAds"]',
+  '[class*="-issues-"]',
   '[class*="links"]',
+  '[class*="livefyre"]',
+  '[class*="-meta"]',
+  '[class*="more-like-this"]',
+  '[class*="most-recent"]',
   '[class*="-nav"]',
+  '[class*="pin-it"]',
+  '[class*="-print-"]',
+  '[class*="promotion"]',
+  '[class*="relate"]',
+  '[class*="resize"]',
   '[class*="share"]',
   '[class*="sharing"]',
+  '[class*="skyscraper"]',
   '[class*="social"]',
+  '[class*="sociable"]',
+  '[class*="-subscribe"]',
   '[class*="taboola"]',
+  '[class*="-tags"]',
   '[class*="thumb"]',
+  '[class*="recommended"]',
   '[class*="tool"]',
-  '#a-font',
-  '#a-all-related',
-  '#mobiles-buttons-wrapper',
-  '#dsq-2',
+  '[class*="viral"]',
+  '[name*="adblade"]',
   '#storyControls',
   '#relartstory',
-  '#story-font-size',
-  '.articleEmbeddedAdBox',
-  '.article-print-url',
-  '.banner-area',
-  '.entry-meta',
+  '.comment-viz',
   '.fblike',
+  '.fb-root',
+  '.articleTools',
   '.footer',
   '.jump',
   '.marginalia',
   '.media-message',
-  '.pin-it-button',
-  '.relatedSidebar',
-  '.resizer',
-  '.resize-nav',
+  '#respond',
   '.servicesList',
   '.sitetitle',
   '.tags-box',
   '.text-size',
-  '.thirdPartyRecommendedContent',
+  '.textSize',
   '.ticker',
   '.toolbox',
-  '.toplinks',
   '.utilsFloat',
-  '.utility-bar-wrap',
-  '.viral-grid'
+  '.utility-bar-wrap'
 ].join(',');
 
 var IMAGE_DTREE = [
@@ -343,7 +305,6 @@ function applyImageScore(featuresMap, features, image) {
  */
 function applyPositionScore(featuresMap, features, element) {
   var siblingCount = element.parentElement.childElementCount - 1;
-  features.previousSiblingCount = 0;
   if(!siblingCount)
     return;
   var previous = element.previousElementSibling;
@@ -356,55 +317,31 @@ function applyPositionScore(featuresMap, features, element) {
   features.score += 5 - 5 * middleOffset / halfCount;
 }
 
+function applySelectorBias(doc, features, selector, bias) {
+  var elements = doc.body.querySelectorAll(selector);
+  for(var i = 0, f, element, len = elements.length; i < len; i++) {
+    element = elements[i];
+    f = features.get(element);
+    f.score += bias;
+    features.set(element, f);
+  }
+}
+
 /**
- * Updates the element's score based on the content
- * of its text nodes.
+ * Initializes the features map for all elements
  */
-function applyTextScore(features, element) {
-  var cc = features.charCount;
-  if(!cc) {
-    return;
-  }
-
-  // TODO: make score a function of cc and density instead
-  // of searching classes
-
-  var density = (features.anchorCharCount || 0) / cc;
-  if(cc > 1000) {
-    if(density > 0.35) {
-      features.score += 50;
-    } else if(density > 0.2) {
-      features.score += 100;
-    } else if (density > 0.1) {
-      features.score += 100;
-    } else if(density > 0.05) {
-      features.score += 250;
-    } else {
-      features.score += 300;
-    }
-  } else if(cc > 500) {
-    if(density > 0.35) {
-      features.score += 30;
-    } else if(density > 0.1) {
-      features.score += 180;
-    } else {
-      features.score += 220;
-    }
-  } else if(cc > 100) {
-    if(density > 0.35) {
-      features.score += -100;
-    } else {
-      features.score += 60;
-    }
-  } else {
-    if(density > 0.35) {
-      features.score -= 200;
-    } else if(isFinite(density)) {
-      features.score += 20;
-    } else {
-      features.score += 5;
-    }
-  }
+function createFeatures(doc, elements) {
+  var features = new Map();
+  Array.prototype.forEach.call(elements, function initBasicFeatures(e) {
+    features.set(e, {
+      score: 0, charCount: 0, anchorCharCount: 0, previousSiblingCount: 0
+    });
+  });
+  features.set(doc.documentElement,
+    {score: -Infinity, charCount: 0, anchorCharCount: 0});
+  features.set(doc.body,
+    {score: -Infinity, charCount: 0, anchorCharCount: 0});
+  return features;
 }
 
 /**
@@ -413,7 +350,8 @@ function applyTextScore(features, element) {
 function deriveAnchorFeatures(featuresMap, anchor) {
   var features = featuresMap.get(anchor);
   var cc = features.charCount;
-  if(!cc || !anchor.hasAttribute('href'))
+
+  if(!cc)
     return;
   features.anchorCharCount = cc;
   featuresMap.set(anchor, features);
@@ -425,108 +363,23 @@ function deriveAnchorFeatures(featuresMap, anchor) {
   }
 }
 
-function deriveTextFeatures(featuresMap, node) {
-  var element = node.parentElement;
-  var features = featuresMap.get(element);
-  var value = node.nodeValue;
-  features.charCount += value.length;
-  featuresMap.set(element, features);
-  if(features.charCount) {
-    var parent = element, parentFeatures;
-    while(parent = parent.parentElement) {
-      parentFeatures = featuresMap.get(parent);
-      parentFeatures.charCount += features.charCount;
-      featuresMap.set(parent, parentFeatures);
-    }
-  }
-}
-
-/**
- * Compares the scores of two elements and returns the element with the higher
- * score. If equal the previous element is returned.
- * TODO: this needs a better name. what is it doing?
- */
-function getMaxScore(featuresMap, previous, current) {
-  return featuresMap.get(current).score > featuresMap.get(previous).score ?
-    current : previous;
-}
-
-var RE_TOKEN_SPLIT = /[\s-_]+/g;
-
-/**
- * Apply our 'model' to an element. We generate a score that is the
- * sum of several terms.
- */
-function scoreElement(featuresMap, element) {
-  var features = featuresMap.get(element);
-  var localName = element.localName;
-  applyTextScore(features, element);
-  if(localName == 'img') {
-    applyImageScore(featuresMap, features, element);
-  }
-  applyPositionScore(featuresMap, features, element);
-  features.score += INTRINSIC_BIAS.get(localName) || 0;
-  // TODO: use selectors instead
-  var attrTokens = [
-    element.getAttribute('class') || '',
-    element.getAttribute('id') || '',
-    element.getAttribute('itemprop') || '',
-    element.getAttribute('name') || '',
-    element.getAttribute('role') || ''
-  ].join(' ').trim().toLowerCase().split(RE_TOKEN_SPLIT);
-  for(var i = 0, len = attrTokens.length; i < len; i++) {
-    features.score += ATTRIBUTE_BIAS.get(attrTokens[i]) || 0;
-  }
-  if(element.previousElementSibling) {
-    var prevScore = featuresMap.get(element.previousElementSibling).score;
-    features.score += 20 * (prevScore > 0 ? 1 : -1);
-  }
-  featuresMap.set(element, features);
-  var ancestorBias = ANCESTOR_BIAS.get(localName);
-  if(ancestorBias) {
-    for(var i = 0, descs = element.getElementsByTagName('*'),
-      len = descs.length; i < len; i++) {
-      updateScore(featuresMap, descs[i], ancestorBias);
-    }
-  }
-  var descendantBias = DESCENDANT_BIAS.get(localName);
-  if(descendantBias) {
-    updateScore(featuresMap, element.parentElement, descendantBias);
-  }
-}
-
-/**
- * Returns the best element of the document. Does some mutation
- * to the document.
- */
-function transformDocument(doc, options) {
-  options = options || {};
-  var features = new WeakMap();
-  var each = Array.prototype.forEach;
-  var blacklisted = doc.body.querySelectorAll(AXIS_BLACKLIST);
-  each.call(blacklisted, function (e) { e.remove(); });
-  var elements = doc.body.getElementsByTagName('*');
-  each.call(elements, function initFeatureMap(e) { features.set(e, {
-    score: 0, charCount: 0, anchorCharCount: 0, previousSiblingCount: 0
-  });});
-  features.set(doc.documentElement, {
-    score: -Infinity, charCount: 0, anchorCharCount: 0
-  });
-  features.set(doc.body, {
-    score: -Infinity, charCount: 0, anchorCharCount: 0
-  });
+function deriveTextFeatures(doc, featuresMap) {
   var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
-  var node = null;
+  var element, node, features, parent, pFeatures;
   while(node = it.nextNode()) {
-    deriveTextFeatures(features, node);
+    element = node.parentElement;
+    features = featuresMap.get(element);
+    features.charCount += node.nodeValue.length;
+    featuresMap.set(element, features);
+    if(features.charCount) {
+      parent = element;
+      while(parent = parent.parentElement) {
+        pFeatures = featuresMap.get(parent);
+        pFeatures.charCount += features.charCount;
+        featuresMap.set(parent, pFeatures);
+      }
+    }
   }
-  var anchors = doc.body.getElementsByTagName('a');
-  each.call(anchors, deriveAnchorFeatures.bind(this, features));
-  each.call(elements, scoreElement.bind(this, features));
-  var max = getMaxScore.bind(this, features);
-  var bestElement = Array.prototype.reduce.call(elements, max, doc.body);
-  exposeAttributes(bestElement, features, options);
-  return bestElement;
 }
 
 var EXPOSE_PROPS = [
@@ -556,10 +409,135 @@ function exposeAttributes(bestElement, featuresMap, options) {
   }
 }
 
-function updateScore(featuresMap, element, amount) {
+/**
+ * Compares the scores of two elements and returns the element with the higher
+ * score. If equal the previous element is returned.
+ * TODO: this needs a better name. what is it doing?
+ */
+function getMaxScore(featuresMap, previous, current) {
+  return featuresMap.get(current).score > featuresMap.get(previous).score ?
+    current : previous;
+}
+
+var RE_TOKEN_SPLIT = /[\s-_]+/g;
+
+function remove(n) {
+  n.remove();
+}
+
+/**
+ * Apply our 'model' to an element. We generate a score that is the
+ * sum of several terms.
+ */
+function scoreElement(featuresMap, element) {
   var features = featuresMap.get(element);
-  features.score += amount;
+  var localName = element.localName;
+
+  // TODO: make score a function of cc and density instead
+  // of searching classes
+  var cc = features.charCount;
+  if(cc) {
+    var density = (features.anchorCharCount || 0) / cc;
+    if(cc > 1000) {
+      if(density > 0.35) {
+        features.score += 50;
+      } else if(density > 0.2) {
+        features.score += 100;
+      } else if (density > 0.1) {
+        features.score += 100;
+      } else if(density > 0.05) {
+        features.score += 250;
+      } else {
+        features.score += 300;
+      }
+    } else if(cc > 500) {
+      if(density > 0.35) {
+        features.score += 30;
+      } else if(density > 0.1) {
+        features.score += 180;
+      } else {
+        features.score += 220;
+      }
+    } else if(cc > 100) {
+      if(density > 0.35) {
+        features.score += -100;
+      } else {
+        features.score += 60;
+      }
+    } else {
+      if(density > 0.35) {
+        features.score -= 200;
+      } else if(isFinite(density)) {
+        features.score += 20;
+      } else {
+        features.score += 5;
+      }
+    }
+  }
+
+  if(localName == 'img') {
+    applyImageScore(featuresMap, features, element);
+  }
+  applyPositionScore(featuresMap, features, element);
+
+  // TODO: use selectors instead?
+  var attrTokens = [
+    element.getAttribute('class') || '',
+    element.getAttribute('id') || '',
+    element.getAttribute('itemprop') || '',
+    element.getAttribute('name') || '',
+    element.getAttribute('role') || ''
+  ].join(' ').trim().toLowerCase().split(RE_TOKEN_SPLIT);
+  for(var i = 0, numTokens = attrTokens.length; i < numTokens; i++) {
+    features.score += ATTRIBUTE_BIAS.get(attrTokens[i]) || 0;
+  }
+
+  if(element.previousElementSibling) {
+    // Contiguity bias
+    var prevScore = featuresMap.get(element.previousElementSibling).score;
+    features.score += 20 * (prevScore > 0 ? 1 : -1);
+  }
+
   featuresMap.set(element, features);
+
+  // TODO: move this into transformDocument iteration over
+  // elements NodeList
+  var descendantBias = DESCENDANT_BIAS.get(localName);
+  if(descendantBias) {
+    var pFeatures = featuresMap.get(element.parentElement);
+    pFeatures.score += descendantBias;
+    featuresMap.set(element.parentElement, pFeatures);
+  }
+}
+
+/**
+ * Returns the best element of the document. Does some mutation
+ * to the document.
+ */
+function transformDocument(doc, options) {
+  options = options || {};
+  var asb = applySelectorBias;
+  Array.prototype.forEach.call(doc.body.querySelectorAll(BLACKLIST), remove);
+  var elements = doc.body.getElementsByTagName('*');
+  var features = createFeatures(doc, elements);
+  deriveTextFeatures(doc, features);
+  Array.prototype.forEach.call(doc.body.querySelectorAll('a[href]'),
+    deriveAnchorFeatures.bind(this, features));
+  asb(doc, features, 'article,main', 100);
+  asb(doc, features, 'blockquote,code,div,figcaption,figure,ilayer,layer,p,'+
+    'pre,ruby,section,summary', 10);
+  asb(doc, features, 'a,address,dd,dt,h1,h2,h3,h4,h5,h6,small,sub,sup,th', -3);
+  asb(doc, features, 'form,header,li,ol,ul', -20);
+  asb(doc, features, 'aside,footer,nav', -100);
+  asb(doc, features, 'blockquote *,code *,p *,pre *,ruby *', 10);
+  asb(doc, features, 'b *,div *,em *,i *,strong *,summary *,table *', 1);
+  asb(doc, features, 'dir *,dl *,form *,li *,ol *, ul *', -5);
+  asb(doc, features, 'header *,footer *,nav *', -50);
+  Array.prototype.forEach.call(elements, scoreElement.bind(this, features));
+  var result = Array.prototype.reduce.call(elements,
+    getMaxScore.bind(this, features), doc.body);
+  exposeAttributes(result, features, options);
+  return result;
 }
 
 // Public API
