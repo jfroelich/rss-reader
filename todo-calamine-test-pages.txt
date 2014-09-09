@@ -1,11 +1,32 @@
+Problem pages
+http://wtvr.com/2014/09/09/little-boy-smashes-his-face-into-couch-while-meeting-the-president/
+http://blogs.nvidia.com/blog/2014/09/04/nvidia-launches-patent-suits/comment-page-3/#comments
+http://www.spaceflight101.com/kosmos-2495-re-entry.html
+http://article.gmane.org/gmane.linux.file-systems.zfs.user/18418
+http://www.smh.com.au/national/man-killed-by-shark-in-byron-bay-named-as-english-expat-paul-wilcox-20140909-10ek6s.html
+http://mattwarren.org/2014/07/04/know-thy-net-object-memory-layout/
+http://dslr.dimakrasner.com/
+http://dealbook.nytimes.com/2014/09/08/hours-before-sentencing-u-s-judge-says-cohen-trades-should-count-against-martoma/
+http://myfox8.com/2014/09/08/harvest-full-moon-rises-monday-in-summer-supermoon-finale/
+http://indiancountrytodaymedianetwork.com/2014/09/08/summer-super-moon-trio-finale-brings-harvest-moons-bonanza-light-156790
+http://www.washingtontimes.com/news/2014/sep/9/record-arizona-swamp-cars-lead-to-2-deaths/
+http://www.washingtontimes.com/news/2014/sep/8/heavy-rain-snarls-morning-commute-in-phoenix-area/?utm_source=RSS_Feed&utm_medium=RSS
+http://www.washingtontimes.com/news/2014/sep/8/george-w-bush-gives-bill-clinton-grandpa-advice/
+https://github.com/buaazp/zimg
+https://github.com/erming/shout
+https://github.com/anvaka/npmgraph.an
+http://ftw.usatoday.com/2014/09/penn-state-ncaa
+http://www.bustle.com/articles/39080-bill-clinton-george-w-bush-talk-grandchildren-at-joint-bff-appearance
+http://timesofindia.indiatimes.com/world/middle-east/Iraqi-parliament-approves-partial-new-Cabinet/articleshow/42058377.cms
+http://timesofindia.indiatimes.com/world/uk/Has-Jack-the-Ripper-really-been-unmasked/articleshow/42051658.cms
+http://plan9.bell-labs.com/sys/doc/venti/venti.html
+http://fortune.com/2014/09/08/olive-garden-never-ending-pasta-pass/
 http://www.theaustralian.com.au/news/features/hamas-fatah-and-israel-add-to-the-postwar-trauma-of-gazas-children/story-e6frg6z6-1227049513355#
-
+http://health.usnews.com/health-news/articles/2014/09/08/respiratory-virus-hitting-kids-in-at-least-10-states
 https://news.ycombinator.com/item?id=8232896
-- this one is strange, because the heading points straight to the article
-
-NOTE: pages below are pre-8/27/2014 bug fixes and refactoring
 https://pragprog.com/articles/erlang
 http://www.nbcdfw.com/news/local/Four-Dead-in-Suspected-Murder-Suicide-in-Tulsa-272701701.html
 http://monica-at-mozilla.blogspot.com/2014/08/firefox-32-supports-public-key-pinning.html
 http://googleprojectzero.blogspot.com/2014/08/the-poisoned-nul-byte-2014-edition.html
 http://blog.golang.org/constants
+http://exposure.watsi.org/watsi-turns-two
