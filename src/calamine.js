@@ -13,6 +13,9 @@
 (function (exports) {
 'use strict';
 
+var forEach = Array.prototype.forEach;
+var reduce = Array.prototype.reduce;
+
 var DESCENDANT_BIAS = new Map([
   ['b', 1],
   ['blockquote', 3],
@@ -166,6 +169,7 @@ var BLACKLIST = [
   '[id*="dsq"]',
   '[id*="-font"]',
   '[id*="gigya"]',
+  '[id*="most-read"]',
   '[id*="most-watched"]',
   '[id*="ndntabs"]',
   '[id*="promotion"]',
@@ -332,7 +336,7 @@ function applySelectorBias(doc, features, selector, bias) {
  */
 function createFeatures(doc, elements) {
   var features = new Map();
-  Array.prototype.forEach.call(elements, function initBasicFeatures(e) {
+  forEach.call(elements, function initBasicFeatures(e) {
     features.set(e, {
       score: 0, charCount: 0, anchorCharCount: 0, previousSiblingCount: 0
     });
@@ -394,7 +398,6 @@ var EXPOSE_PROPS = [
 // Exposing attributes for debugging
 function exposeAttributes(bestElement, featuresMap, options) {
   var descendants = bestElement.getElementsByTagName('*');
-  var each = Array.prototype.forEach;
   for(var i = 0, value, features, e; i < EXPOSE_PROPS.length;i++) {
     if(options[EXPOSE_PROPS[i].key]) {
       value = EXPOSE_PROPS[i].value;
@@ -517,11 +520,11 @@ function scoreElement(featuresMap, element) {
 function transformDocument(doc, options) {
   options = options || {};
   var asb = applySelectorBias;
-  Array.prototype.forEach.call(doc.body.querySelectorAll(BLACKLIST), remove);
+  forEach.call(doc.body.querySelectorAll(BLACKLIST), remove);
   var elements = doc.body.getElementsByTagName('*');
   var features = createFeatures(doc, elements);
   deriveTextFeatures(doc, features);
-  Array.prototype.forEach.call(doc.body.querySelectorAll('a[href]'),
+  forEach.call(doc.body.querySelectorAll('a[href]'),
     deriveAnchorFeatures.bind(this, features));
   asb(doc, features, 'article,main', 100);
   asb(doc, features, 'blockquote,code,div,figcaption,figure,ilayer,layer,p,'+
@@ -533,8 +536,8 @@ function transformDocument(doc, options) {
   asb(doc, features, 'b *,div *,em *,i *,strong *,summary *,table *', 1);
   asb(doc, features, 'dir *,dl *,form *,li *,ol *, ul *', -5);
   asb(doc, features, 'header *,footer *,nav *', -50);
-  Array.prototype.forEach.call(elements, scoreElement.bind(this, features));
-  var result = Array.prototype.reduce.call(elements,
+  forEach.call(elements, scoreElement.bind(this, features));
+  var result = reduce.call(elements,
     getMaxScore.bind(this, features), doc.body);
   exposeAttributes(result, features, options);
   return result;
