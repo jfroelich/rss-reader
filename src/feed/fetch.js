@@ -346,8 +346,8 @@ lucu.feed.onFetchHTML = function(onComplete, onError, event) {
 lucu.feed.augmentImages = function(doc, baseURL, onComplete) {
 
   var images = doc.body.getElementsByTagName('img');
-  var baseURI = lucu.uri.parse(baseURL);
-  var resolve = lucu.feed.resolveImage.bind(null, baseURI);
+
+  var resolve = lucu.feed.resolveImage.bind(null, baseURL);
   var resolvedImages = Array.prototype.map.call(images, resolve);
   var loadableImages = resolvedImages.filter(lucu.feed.shouldUpdateImage);
 
@@ -461,11 +461,13 @@ lucu.feed.shouldUpdateImage = function(imageElement) {
 
 /**
  * Mutates an image element in place by changing its src property
- * to be a resolved url, and then returns the image element.
+ * to be an absolute url, and then returns the image element.
+ * Returns the element as is if already absolute or missing a url
+ * or the base URL is unknown.
  */
-lucu.feed.resolveImage = function(baseURI, imageElement) {
+lucu.feed.resolveImage = function(baseURL, imageElement) {
 
-  if(!baseURI) {
+  if(!baseURL) {
     return imageElement;
   }
 
@@ -479,31 +481,9 @@ lucu.feed.resolveImage = function(baseURI, imageElement) {
     return imageElement;
   }
 
-  var sourceURI = lucu.uri.parse(sourceURL);
-
-  if(!sourceURI) {
-    return imageElement;
-  }
-
-  // Avoid resolution when the url appears absolute.
-  // This also avoids resolution of data: and resource:
-  if(sourceURI.scheme) {
-    return imageElement;
-  }
-
-  // NOTE: lucu.uri.resolve is buggy
-  var resolvedURL = lucu.uri.resolve(baseURI, sourceURI);
-
-  // Is this really necessary?
-  if(resolvedURL == sourceURL) {
-    return imageElement;
-  }
-
-  // TODO: this is the side effect. Maybe I should just be returning
-  // the absolute url, and the caller can set the attribute?
-
-  imageElement.setAttribute('src', resolvedURL);
-
+  var abs = URI(sourceURL).absoluteTo(baseURL).toString();
+  //console.debug('Resolved %s as %s', sourceURL, abs);
+  imageElement.setAttribute('src', abs);
   return imageElement;
 };
 
@@ -512,12 +492,6 @@ lucu.feed.resolveAnchor = function(baseURI, anchorElement) {
   // TODO: kind of a dry violation with resolveImage. I should have a
   // generic element resolver that works for all elements with url
   // attributes
-
-
-  // TODO: perhaps this function should be redesigned so that it can be
-  // passed as a parameter to HTMLElement.prototype.setAttribute that was
-  // bound to the element. This way it is less of a side-effect style function
-  // At the same time it introduces more boilerplate into the calling context?
 
   if(!baseURI) {
     return;
