@@ -1,4 +1,8 @@
 Problem pages
+http://www.freep.com/article/20140910/ENT07/309100069/Charlie-Hunnam-Fifty-Shades-of-Grey
+http://kfor.com/2014/09/10/five-missing-south-carolina-children-found-dead-in-alabama/
+http://news.stanford.edu/news/2014/september/ant-radio-arbabian-090914.html?utm_content=bufferaae5e&utm_medium=social&utm_source=twitter.com&utm_campaign=buffer
+http://fortune.com/2014/09/09/apple-event-overshadows-bad-news-snapchat-tinder/
 http://wtvr.com/2014/09/09/little-boy-smashes-his-face-into-couch-while-meeting-the-president/
 http://blogs.nvidia.com/blog/2014/09/04/nvidia-launches-patent-suits/comment-page-3/#comments
 http://www.spaceflight101.com/kosmos-2495-re-entry.html
@@ -17,6 +21,7 @@ https://github.com/erming/shout
 https://github.com/anvaka/npmgraph.an
 http://ftw.usatoday.com/2014/09/penn-state-ncaa
 http://www.bustle.com/articles/39080-bill-clinton-george-w-bush-talk-grandchildren-at-joint-bff-appearance
+http://timesofindia.indiatimes.com/world/rest-of-world/Mystery-of-Sir-John-Franklins-doomed-mission-solved-after-160-years/articleshow/42171292.cms
 http://timesofindia.indiatimes.com/world/middle-east/Iraqi-parliament-approves-partial-new-Cabinet/articleshow/42058377.cms
 http://timesofindia.indiatimes.com/world/uk/Has-Jack-the-Ripper-really-been-unmasked/articleshow/42051658.cms
 http://plan9.bell-labs.com/sys/doc/venti/venti.html
