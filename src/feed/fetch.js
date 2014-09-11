@@ -481,9 +481,15 @@ lucu.feed.resolveImage = function(baseURL, imageElement) {
     return imageElement;
   }
 
-  var abs = URI(sourceURL).absoluteTo(baseURL).toString();
-  //console.debug('Resolved %s as %s', sourceURL, abs);
-  imageElement.setAttribute('src', abs);
+  try {
+    var abs = URI(sourceURL).absoluteTo(baseURL).toString();
+    //console.debug('Resolved %s as %s', sourceURL, abs);
+    imageElement.setAttribute('src', abs);
+  } catch(e) {
+    console.debug('Problem resolving %s with base %s', sourceURL, baseURL);
+    console.warn(e);
+  }
+
   return imageElement;
 };
 
