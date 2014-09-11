@@ -45,14 +45,14 @@ with its own score, e.g. BEST +200, GOOD +100, BAD -100, WORST -200,
 where BEST is something like [id*=article][class*=article].
 */
 var ATTRIBUTE_BIAS = new Map([
-  ['about', -35],
-  ['ad', -100],
-  ['ads', -50],
-  ['advert', -200],
-  ['artext1',100],
-  ['article', 200],
-  ['articlebody', 300],
-  ['articleheadings', -50],
+  //['about', -35],
+  //['ad', -100],
+  //['ads', -50],
+  //['advert', -200],
+  //['artext1',100],
+  //['article', 200],
+  //['articlebody', 300],
+  //['articleheadings', -50],
   ['attachment', 20],
   ['author', 20],
   ['block', 10],
@@ -248,60 +248,6 @@ var IMAGE_DTREE = [
 ];
 
 /**
- * TODO: is there some nicer way of updating the parentElement? I am not
- * entirely happy that we secretly update other elements here
- */
-function applyImageScore(featuresMap, features, image) {
-  var imageParent = image.parentElement;
-  var parentFeatures = featuresMap.get(imageParent);
-
-  // Boilerplate images are less likely to have supporting text.
-  // TODO: rather than an arbitrary amount, use keyword bias and also
-  // consider a length based bias. If length based used the greater length
-  // of either alt or title, do not just consider alt length, which this
-  // branch precludes atm.
-  var description = (image.getAttribute('alt') || '').trim();
-  if(!description) {
-    description = (image.getAttribute('title') || '').trim();
-  }
-
-  if(description) {
-    features.score += 30;
-    parentFeatures.score +=  30;
-  }
-
-  if(imageParent.localName == 'figure') {
-    var figCaptionNodeList = imageParent.getElementsByTagName('figcaption');
-    if(figCaptionNodeList && figCaptionNodeList.length) {
-      var firstFigCaption = figCaptionNodeList[0];
-      var firstFigCaptionText = (firstFigCaption.textContent || '').trim();
-      if(firstFigCaptionText.length) {
-        features.score += 30;
-        parentFeatures.score += 10;
-      }
-    }
-  }
-
-  if(!image.height || !image.width) {
-    features.imageBranch = 1;
-    features.score += 100;
-    parentFeatures.score += 100;
-  } else {
-    // TODO: make bias a simple function of area, instead of searching bins
-    for(var i = 0, area = image.height * image.width; i < IMAGE_DTREE.length;i++) {
-      if(area > IMAGE_DTREE[i].lower) {
-        features.imageBranch = i + 2;
-        features.score += IMAGE_DTREE[i].bias;
-        parentFeatures.score += IMAGE_DTREE[i].bias;
-        break;
-      }
-    }
-  }
-
-  featuresMap.set(imageParent, parentFeatures);
-}
-
-/**
  * Updates the element's score based on its index within
  * its parent. The closer to the start (the smaller the index),
  * the higher the score. The closer the middle (the mid index),
@@ -478,9 +424,6 @@ function scoreElement(featuresMap, element) {
     }
   }
 
-  if(localName == 'img') {
-    applyImageScore(featuresMap, features, element);
-  }
   applyPositionScore(featuresMap, features, element);
 
   // TODO: use selectors instead?
@@ -514,32 +457,125 @@ function scoreElement(featuresMap, element) {
 }
 
 /**
+ * TODO: is there some nicer way of updating the parentElement? I am not
+ * entirely happy that we secretly update other elements here
+ */
+function scoreImage(featuresMap, image) {
+
+  var features = featuresMap.get(image);
+  var imageParent = image.parentElement;
+  var parentFeatures = featuresMap.get(imageParent);
+
+  // Boilerplate images are less likely to have supporting text.
+  // TODO: rather than an arbitrary amount, use keyword bias and also
+  // consider a length based bias. If length based used the greater length
+  // of either alt or title, do not just consider alt length, which this
+  // branch precludes atm.
+  var description = (image.getAttribute('alt') || '').trim();
+  if(!description) {
+    description = (image.getAttribute('title') || '').trim();
+  }
+
+  if(description) {
+    features.score += 30;
+    parentFeatures.score +=  30;
+  }
+
+  if(imageParent.localName == 'figure') {
+    var figCaptionNodeList = imageParent.getElementsByTagName('figcaption');
+    if(figCaptionNodeList && figCaptionNodeList.length) {
+      var firstFigCaption = figCaptionNodeList[0];
+      var firstFigCaptionText = (firstFigCaption.textContent || '').trim();
+      if(firstFigCaptionText.length) {
+        features.score += 30;
+        parentFeatures.score += 30;
+      }
+    }
+  }
+
+  // imageBranch is for debugging
+
+  if(!image.height || !image.width) {
+    features.imageBranch = 1;
+    features.score += 100;
+    parentFeatures.score += 100;
+  } else {
+    // TODO: make bias a simple function of area, instead of searching bins
+    for(var i = 0, area = image.height * image.width; i < IMAGE_DTREE.length;i++) {
+      if(area > IMAGE_DTREE[i].lower) {
+        features.imageBranch = i + 2;
+        features.score += IMAGE_DTREE[i].bias;
+        parentFeatures.score += IMAGE_DTREE[i].bias;
+        break;
+      }
+    }
+  }
+
+  featuresMap.set(image, features);
+  featuresMap.set(imageParent, parentFeatures);
+}
+
+/**
  * Returns the best element of the document. Does some mutation
  * to the document.
  */
 function transformDocument(doc, options) {
   options = options || {};
-  var asb = applySelectorBias;
+
+  // Pre filtering. Certain elements or elements with certain attribute
+  // values are expressly ignored.
   forEach.call(doc.body.querySelectorAll(BLACKLIST), remove);
+
+  // Feature extraction in preparation for later analysis
   var elements = doc.body.getElementsByTagName('*');
   var features = createFeatures(doc, elements);
   deriveTextFeatures(doc, features);
   forEach.call(doc.body.querySelectorAll('a[href]'),
     deriveAnchorFeatures.bind(this, features));
+
+  // Intrinsic bias. The type of the element itself suggests whether its child
+  // text nodes are content/boilerplate.
+  var asb = applySelectorBias;
   asb(doc, features, 'article,main', 100);
   asb(doc, features, 'blockquote,code,div,figcaption,figure,ilayer,layer,p,'+
     'pre,ruby,section,summary', 10);
   asb(doc, features, 'a,address,dd,dt,h1,h2,h3,h4,h5,h6,small,sub,sup,th', -3);
   asb(doc, features, 'form,header,li,ol,ul', -20);
   asb(doc, features, 'aside,footer,nav', -100);
+
+  // Descendant bias. Text is more or less likely to be boilerplate if
+  // these elements are present in a text node's path (from root)
   asb(doc, features, 'blockquote *,code *,p *,pre *,ruby *', 10);
   asb(doc, features, 'b *,div *,em *,i *,strong *,summary *,table *', 1);
-  asb(doc, features, 'dir *,dl *,form *,li *,ol *, ul *', -5);
+  asb(doc, features, 'dir *,dl *,dt *,form *,li *,ol *, ul *', -5);
   asb(doc, features, 'header *,footer *,nav *', -50);
+
+  // Attribute-based bias. Element attribute values suggest whether
+  // child text is boilerplate
+  // TODO: use an array of terms, map over the array to build a
+  // selector string
+  asb(doc, features, '[id*="article"],[class*="article"]', 300);
+  asb(doc, features, '[id*="about"],[class*="about"]', -50);
+  asb(doc, features, '[id*="head"],[class*="head"]', -50);
+  asb(doc, features, '[id*="ad"],[class*="ad"]', -100);
+
+  // Scoring of images. Based of image size, alt/title text, and
+  // associated caption text. Also affects the score of each
+  // image's parent
+  var images = doc.body.getElementsByTagName('img');
+  forEach.call(images, scoreImage.bind(this, features));
+
+  // Other biases, such as position, number of characters, and ratio
+  // of anchor-text characters to non-anchor-text characters.
   forEach.call(elements, scoreElement.bind(this, features));
+
+  // Find the best element
   var result = reduce.call(elements,
     getMaxScore.bind(this, features), doc.body);
+
+  // Optionally expose some debugging information into the DOM
   exposeAttributes(result, features, options);
+
   return result;
 }
 
