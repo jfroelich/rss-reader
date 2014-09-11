@@ -44,6 +44,9 @@ lucu.FONT_FAMILIES = [
   //Based on http://mutcd.fhwa.dot.gov/pdfs/clearviewspacingia5.pdf
   'Clearly Different',
 
+  /* By John Stracke, Released under the OFL. Downloaded from his website */
+  'Essays1743',
+
   // Downloaded free font from fontpalace.com, unknown author
   'FeltTip',
 
