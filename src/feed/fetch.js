@@ -481,6 +481,12 @@ lucu.feed.resolveImage = function(baseURL, imageElement) {
     return imageElement;
   }
 
+  // Medialize URI.js absoluteTo cannot handle
+  // URNs such as data:
+  if(/^\s*data\s*:/i.test(sourceURL)) {
+    return imageElement;
+  }
+
   try {
     var abs = URI(sourceURL).absoluteTo(baseURL).toString();
     //console.debug('Resolved %s as %s', sourceURL, abs);
