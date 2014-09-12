@@ -16,6 +16,46 @@
 var forEach = Array.prototype.forEach;
 var reduce = Array.prototype.reduce;
 
+
+var INTRINSIC_BIAS = new Map([
+  ['article',100],
+  ['main',100],
+  ['blockquote',10],
+  ['code', 10],
+  ['div', 10],
+  ['figcaption', 10],
+  ['figure', 10],
+  ['ilayer', 10],
+  ['layer', 10],
+  ['p', 10],
+  ['pre', 10],
+  ['ruby', 10],
+  ['section', 10],
+  ['summary', 10],
+  ['a', -5],
+  ['address', -5],
+  ['dd', -5],
+  ['dt', -5],
+  ['h1', -5],
+  ['h2', -5],
+  ['h3', -5],
+  ['h4', -5],
+  ['h5', -5],
+  ['h6', -5],
+  ['small', -5],
+  ['sub', -5],
+  ['sup', -5],
+  ['th', -5],
+  ['form', -20],
+  ['header', -20],
+  ['li', -20],
+  ['ol', -20],
+  ['ul', -20],
+  ['aside', -100],
+  ['footer', -100],
+  ['nav', -100]
+]);
+
 var DESCENDANT_BIAS = new Map([
   ['b', 1],
   ['blockquote', 3],
@@ -45,14 +85,14 @@ with its own score, e.g. BEST +200, GOOD +100, BAD -100, WORST -200,
 where BEST is something like [id*=article][class*=article].
 */
 var ATTRIBUTE_BIAS = new Map([
-  //['about', -35],
-  //['ad', -100],
-  //['ads', -50],
-  //['advert', -200],
-  //['artext1',100],
-  //['article', 200],
-  //['articlebody', 300],
-  //['articleheadings', -50],
+  ['about', -35],
+  ['ad', -100],
+  ['ads', -50],
+  ['advert', -200],
+  ['artext1',100],
+  ['article', 200],
+  ['articlebody', 300],
+  ['articleheadings', -50],
   ['attachment', 20],
   ['author', 20],
   ['block', 10],
@@ -165,6 +205,7 @@ var BLACKLIST = [
   '[id*="-ad"]',
   '[id*="-buttons-"]',
   '[id*="comment"]',
+  '[id*="correction"]',
   '[id*="disqus"]',
   '[id*="dsq"]',
   '[id*="-font"]',
@@ -181,7 +222,8 @@ var BLACKLIST = [
   '[class*="-actions"]',
   '[class*="-ad"]',
   '[class*="AdBox"]',
-  '[class*="adbox"]',
+  '[class*="adjacent"]',
+  '[class*="also-on"]',
   '[class*="adv"]',
   '[class*="addthis"]',
   '[class*="banner-"]',
@@ -189,13 +231,14 @@ var BLACKLIST = [
   '[class*="comment"]',
   '[class*="-control"]',
   '[class*="dsq"]',
+  '[class*="fan"]',
   '[class*="gallery"]',
   '[class*="googleAds"]',
   '[class*="-issues-"]',
   '[class*="links"]',
-  '[class*="livefyre"]',
+  '[class*="fyre"]',
   '[class*="-meta"]',
-  '[class*="more-like-this"]',
+  '[class*="more-like"]',
   '[class*="most-recent"]',
   '[class*="-nav"]',
   '[class*="pin-it"]',
@@ -207,7 +250,7 @@ var BLACKLIST = [
   '[class*="sharing"]',
   '[class*="skyscraper"]',
   '[class*="social"]',
-  '[class*="sociable"]',
+  '[class*="sociab"]',
   '[class*="-subscribe"]',
   '[class*="taboola"]',
   '[class*="-tags"]',
@@ -275,6 +318,10 @@ function applySelectorBias(doc, features, selector, bias) {
     f.score += bias;
     features.set(element, f);
   }
+}
+
+function asAttributeSelector(str) {
+  return '[id*="'+str+'"],[class*="'+str+'"]';
 }
 
 /**
@@ -374,6 +421,12 @@ function remove(n) {
   n.remove();
 }
 
+
+function applyIntrinsicBias(name, features) {
+  var bias = INTRINSIC_BIAS.get(name) || 0;
+  features.score += bias;
+}
+
 /**
  * Apply our 'model' to an element. We generate a score that is the
  * sum of several terms.
@@ -381,6 +434,9 @@ function remove(n) {
 function scoreElement(featuresMap, element) {
   var features = featuresMap.get(element);
   var localName = element.localName;
+
+  // Score elements based on the element itself
+  features.score += INTRINSIC_BIAS.get(localName) || 0;
 
   // TODO: make score a function of cc and density instead
   // of searching classes
@@ -434,7 +490,8 @@ function scoreElement(featuresMap, element) {
     element.getAttribute('name') || '',
     element.getAttribute('role') || ''
   ].join(' ').trim().toLowerCase().split(RE_TOKEN_SPLIT);
-  for(var i = 0, numTokens = attrTokens.length; i < numTokens; i++) {
+  var numTokens = attrTokens.length;
+  for(var i = 0; i < numTokens; i++) {
     features.score += ATTRIBUTE_BIAS.get(attrTokens[i]) || 0;
   }
 
@@ -533,31 +590,12 @@ function transformDocument(doc, options) {
   forEach.call(doc.body.querySelectorAll('a[href]'),
     deriveAnchorFeatures.bind(this, features));
 
-  // Intrinsic bias. The type of the element itself suggests whether its child
-  // text nodes are content/boilerplate.
-  var asb = applySelectorBias;
-  asb(doc, features, 'article,main', 100);
-  asb(doc, features, 'blockquote,code,div,figcaption,figure,ilayer,layer,p,'+
-    'pre,ruby,section,summary', 10);
-  asb(doc, features, 'a,address,dd,dt,h1,h2,h3,h4,h5,h6,small,sub,sup,th', -3);
-  asb(doc, features, 'form,header,li,ol,ul', -20);
-  asb(doc, features, 'aside,footer,nav', -100);
-
+  // TODO: improve perf
   // Descendant bias. Text is more or less likely to be boilerplate if
   // these elements are present in a text node's path (from root)
-  asb(doc, features, 'blockquote *,code *,p *,pre *,ruby *', 10);
-  asb(doc, features, 'b *,div *,em *,i *,strong *,summary *,table *', 1);
-  asb(doc, features, 'dir *,dl *,dt *,form *,li *,ol *, ul *', -5);
-  asb(doc, features, 'header *,footer *,nav *', -50);
-
-  // Attribute-based bias. Element attribute values suggest whether
-  // child text is boilerplate
-  // TODO: use an array of terms, map over the array to build a
-  // selector string
-  asb(doc, features, '[id*="article"],[class*="article"]', 300);
-  asb(doc, features, '[id*="about"],[class*="about"]', -50);
-  asb(doc, features, '[id*="head"],[class*="head"]', -50);
-  asb(doc, features, '[id*="ad"],[class*="ad"]', -100);
+  applySelectorBias(doc, features, 'p *', 10);
+  applySelectorBias(doc, features, 'ol *, ul *', -5);
+  applySelectorBias(doc, features, 'header *,footer *,nav *', -50);
 
   // Scoring of images. Based of image size, alt/title text, and
   // associated caption text. Also affects the score of each
