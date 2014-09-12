@@ -1,5 +1,9 @@
 Problem pages
-
+http://www.610kvnu.com/national/78a773bffbf01e96191b68cef647522c
+http://www.thecollegefix.com/post/19242/
+http://devblogs.nvidia.com/parallelforall/drop-in-acceleration-gnu-octave/
+http://www.doublefine.com/news/comments/hack_n_slash_now_1.0_and_extra_hackable/
+http://www.politico.com/story/2014/09/rob-portman-national-republican-senatorial-committee-110856.html
 http://www.politico.com/story/2014/09/jay-carney-im-no-obama-shill-110839.html
 http://www.smh.com.au/world/oscar-pistorius-eight-key-pieces-of-evidence-20140910-1060un.html
 http://flavorwire.com/476350/u2s-songs-of-innocence-itunes-release-was-about-relevance-not-altruism
@@ -26,6 +30,7 @@ http://dslr.dimakrasner.com/
 http://dealbook.nytimes.com/2014/09/08/hours-before-sentencing-u-s-judge-says-cohen-trades-should-count-against-martoma/
 http://myfox8.com/2014/09/08/harvest-full-moon-rises-monday-in-summer-supermoon-finale/
 http://indiancountrytodaymedianetwork.com/2014/09/08/summer-super-moon-trio-finale-brings-harvest-moons-bonanza-light-156790
+http://www.washingtontimes.com/news/2014/sep/11/missouri-lawmakers-override-53m-of-budget-
 http://www.washingtontimes.com/news/2014/sep/10/former-obama-spokesman-jay-carney-hired-cnn/
 http://www.washingtontimes.com/news/2014/sep/9/record-arizona-swamp-cars-lead-to-2-deaths/
 http://www.washingtontimes.com/news/2014/sep/8/heavy-rain-snarls-morning-commute-in-phoenix-area/?utm_source=RSS_Feed&utm_medium=RSS
@@ -49,3 +54,5 @@ http://monica-at-mozilla.blogspot.com/2014/08/firefox-32-supports-public-key-pin
 http://googleprojectzero.blogspot.com/2014/08/the-poisoned-nul-byte-2014-edition.html
 http://blog.golang.org/constants
 http://exposure.watsi.org/watsi-turns-two
+http://google-opensource.blogspot.com/2014/09/causalimpact-new-open-source-package.html
+http://wikipediocracy.com/2014/08/26/why-women-have-no-time-for-wikipedia/
