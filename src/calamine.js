@@ -200,95 +200,92 @@ var ATTRIBUTE_BIAS = new Map([
 ]);
 
 var BLACKLIST = [
-  'aside',
-  '[id*="_ad_"]',
-  '[id*="-ad"]',
-  '[id*="-buttons-"]',
-  '[id*="comment"]',
-  '[id*="correction"]',
-  '[id*="disqus"]',
-  '[id*="dsq"]',
-  '[id*="-font"]',
-  '[id*="gigya"]',
-  '[id*="most-read"]',
-  '[id*="most-watched"]',
-  '[id*="ndntabs"]',
-  '[id*="promotion"]',
-  '[id*="-related"]',
-  '[id*="share"]',
-  '[id*="signup"]',
-  '[id*="social"]',
-  '[id*="top_stories"]',
   '[class*="-actions"]',
   '[class*="-ad"]',
+  '[id*="-ad"]',
+  '[id*="_ad_"]',
+  '[name*="adblade"]',
   '[class*="AdBox"]',
   '[class*="adjacent"]',
   '[class*="also-on"]',
   '[class*="adv"]',
   '[class*="addthis"]',
+  '.articleTools',
+  'aside',
   '[class*="banner-"]',
   '[class*="best-of"]',
+  '[id*="-buttons-"]',
   '[class*="comment"]',
+  '[id*="comment"]',
+  '.comment-viz',
   '[class*="-control"]',
+  '[id*="correction"]',
+  '[id*="disqus"]',
   '[class*="dsq"]',
+  '[id*="dsq"]',
   '[class*="fan"]',
+  '.fblike',
+  '.fb-root',
+  '[id*="-font"]',
+  '.footer',
+  '[class*="fyre"]',
   '[class*="gallery"]',
+  '[id*="gigya"]',
   '[class*="googleAds"]',
   '[class*="-issues-"]',
+  '.jump',
   '[class*="links"]',
-  '[class*="fyre"]',
+  '.marginalia',
+  '.media-message',
   '[class*="-meta"]',
   '[class*="more-like"]',
   '[class*="most-recent"]',
+  '[id*="most-read"]',
+  '[id*="most-watched"]',
   '[class*="-nav"]',
+  '[id*="ndntabs"]',
   '[class*="pin-it"]',
   '[class*="-print-"]',
   '[class*="promotion"]',
+  '[id*="promotion"]',
+  '[class*="recommended"]',
+  '#relartstory',
   '[class*="relate"]',
-  '[class*="resize"]',
+  '[id*="-relate"]',
+
+  // Cannot filter due to politico
+  //'[class*="resize"]',
+
+  '#respond',
+  '.servicesList',
   '[class*="share"]',
+  '[id*="share"]',
   '[class*="sharing"]',
+  '[id*="signup"]',
+  '.sitetitle',
   '[class*="skyscraper"]',
   '[class*="social"]',
+  '[id*="social"]',
   '[class*="sociab"]',
+   '#storyControls',
   '[class*="-subscribe"]',
   '[class*="taboola"]',
   '[class*="-tags"]',
-  '[class*="thumb"]',
-  '[class*="recommended"]',
-  '[class*="tool"]',
-  '[class*="viral"]',
-  '[name*="adblade"]',
-  '#storyControls',
-  '#relartstory',
-  '.comment-viz',
-  '.fblike',
-  '.fb-root',
-  '.articleTools',
-  '.footer',
-  '.jump',
-  '.marginalia',
-  '.media-message',
-  '#respond',
-  '.servicesList',
-  '.sitetitle',
   '.tags-box',
   '.text-size',
   '.textSize',
+  // Cannot use "thumb", some legitimate content has
+  // class name containing thumb (e.g. thumbail)
+  // See, e.g., also http://www.thecollegefix.com/post/19242/
+  //'[class*="thumb"]',
   '.ticker',
+  '[class*="tool"]',
   '.toolbox',
+  '[id*="top_stories"]',
+  '.utility-bar-wrap',
   '.utilsFloat',
-  '.utility-bar-wrap'
+  '[class*="viral"]'
 ].join(',');
-
-var IMAGE_DTREE = [
-  {lower: 100000, bias: 100},
-  {lower: 50000, bias: 150},
-  {lower: 10000, bias: 150},
-  {lower: 3000, bias: 30},
-  {lower: 500, bias: 10},
-  {lower: 0, bias: -10},
-];
 
 /**
  * Updates the element's score based on its index within
@@ -381,22 +378,20 @@ function deriveTextFeatures(doc, featuresMap) {
 
 var EXPOSE_PROPS = [
   {key: 'SHOW_CHAR_COUNT', value: 'charCount'},
-  {key: 'SHOW_HAS_COPYRIGHT', value: 'hasCopyrightSymbol'},
-  {key: 'SHOW_BULLET_COUNT', value: 'bulletCount'},
   {key: 'SHOW_IMAGE_BRANCH', value: 'imageBranch'},
-  {key: 'SHOW_PIPE_COUNT', value: 'pipeCount'},
-  {key: 'SHOW_SCORE', value: 'score'},
+  {key: 'SHOW_SCORE', value: 'score'}
 ];
 
 // Exposing attributes for debugging
-function exposeAttributes(bestElement, featuresMap, options) {
-  var descendants = bestElement.getElementsByTagName('*');
-  for(var i = 0, value, features, e; i < EXPOSE_PROPS.length;i++) {
+function exposeAttributes(doc, featuresMap, options) {
+
+  var elements = doc.documentElement.getElementsByTagName('*');
+  for(var i = 0, value, e, features, len = elements.length; i < EXPOSE_PROPS.length;i++) {
     if(options[EXPOSE_PROPS[i].key]) {
       value = EXPOSE_PROPS[i].value;
-      for(var j = 0, len = descendants.length; j < len;j++) {
-        e = descendants[j];
-        features = featuresMap.get(e);
+      for(var j = 0; j < len;j++) {
+        e = elements[j];
+        features = featuresMap.get(e) || {};
         if(features[value]) {
           e.setAttribute(value, features[value]);
         }
@@ -513,15 +508,53 @@ function scoreElement(featuresMap, element) {
   }
 }
 
+
+var IMAGE_DTREE = [
+  {lower: 100000, bias: 150},
+  {lower: 50000, bias: 100},
+  {lower: 10000, bias: 50},
+  {lower: 3000, bias: 30},
+  {lower: 500, bias: 10},
+  {lower: 0, bias: -10},
+];
+
 /**
  * TODO: is there some nicer way of updating the parentElement? I am not
  * entirely happy that we secretly update other elements here
+ *
+ * TODO: it turns a common pattern in missclassficiation results is here,
+ * when the input contains an element with multiple images, it sometimes
+ * erroneously gets escalated above the text score and causes the parent
+ * element (e.g. a slideshow container, a list of images), to beat out
+ * the text. Text should win. How to resolve?
+ *
+ * We have competing interests. Infographic/xkcd documents vs
+ * slide-show-container elements in normal documents. And 3rd, documents
+ * that are mixed (slides + text).
+ *
+ * Probably base on the number of sibling images? Which means we have to
+ * know that ahead of time. The problem is this visits images one at a
+ * time.
+ *
+ * Example of problematic page:
+ * http://www.doublefine.com/news/comments/hack_n_slash_now_1.0_and_extra_hackable/
+ * - picking up multiple images container
+ * http://www.politico.com/story/2014/09/rob-portman-national-republican-senatorial-committee-110856.html
+ * - giant intro image gave container super high weight that beat out text
  */
 function scoreImage(featuresMap, image) {
 
   var features = featuresMap.get(image);
   var imageParent = image.parentElement;
   var parentFeatures = featuresMap.get(imageParent);
+
+  // Quick hack attempt at resolving the above issue.
+  // TODO: eventually improve perf
+  var sibs = imageParent.getElementsByTagName('img');
+  var sibCount = sibs.length ? sibs.length - 1 : 0;
+  if(sibCount) {
+    parentFeatures.score -= 10 * sibCount;
+  }
 
   // Boilerplate images are less likely to have supporting text.
   // TODO: rather than an arbitrary amount, use keyword bias and also
@@ -539,8 +572,11 @@ function scoreImage(featuresMap, image) {
   }
 
   if(imageParent.localName == 'figure') {
+
+    // TODO: just use querySelector here and simplify
+
     var figCaptionNodeList = imageParent.getElementsByTagName('figcaption');
-    if(figCaptionNodeList && figCaptionNodeList.length) {
+    if(/*figCaptionNodeList && */figCaptionNodeList.length) {
       var firstFigCaption = figCaptionNodeList[0];
       var firstFigCaptionText = (firstFigCaption.textContent || '').trim();
       if(firstFigCaptionText.length) {
@@ -612,7 +648,7 @@ function transformDocument(doc, options) {
     getMaxScore.bind(this, features), doc.body);
 
   // Optionally expose some debugging information into the DOM
-  exposeAttributes(result, features, options);
+  exposeAttributes(doc, features, options);
 
   return result;
 }
