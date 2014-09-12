@@ -1,18 +1,11 @@
 Problem pages
-http://www.610kvnu.com/national/78a773bffbf01e96191b68cef647522c
-http://www.thecollegefix.com/post/19242/
-http://devblogs.nvidia.com/parallelforall/drop-in-acceleration-gnu-octave/
-http://www.doublefine.com/news/comments/hack_n_slash_now_1.0_and_extra_hackable/
-http://www.politico.com/story/2014/09/rob-portman-national-republican-senatorial-committee-110856.html
-http://www.politico.com/story/2014/09/jay-carney-im-no-obama-shill-110839.html
+
 http://www.smh.com.au/world/oscar-pistorius-eight-key-pieces-of-evidence-20140910-1060un.html
 http://flavorwire.com/476350/u2s-songs-of-innocence-itunes-release-was-about-relevance-not-altruism
 http://www.live5news.com/story/26491485/your-week-in-music-grab-your-free-copy-of-u2s-new-album
 http://blog.naytev.com/maximize-your-server-throughput/#psiyet:APq
 http://blogs.esa.int/rosetta/2014/09/10/rosetta-and-philae-snap-selfie-at-comet/
 http://researchmatters.asu.edu/videos/jetpack-helps-soldiers-run-faster
-http://www.politico.com/story/2014/09/fcc-net-neutrality-record-110818.html
-http://www.politico.com/story/2014/09/obama-golf-new-york-rejects-110796.html
 http://www.hollywoodreporter.com/live-feed/cnn-hires-white-house-press-731843
 http://gigaom.com/2014/09/10/internet-slowdown-day-arrives-but-some-big-companies-arent-participating/
 https://jawbone.com/blog/up24-now-lasts-14-days-single-charge/
@@ -56,3 +49,16 @@ http://blog.golang.org/constants
 http://exposure.watsi.org/watsi-turns-two
 http://google-opensource.blogspot.com/2014/09/causalimpact-new-open-source-package.html
 http://wikipediocracy.com/2014/08/26/why-women-have-no-time-for-wikipedia/
+
+
+-----------------------------
+http://www.freep.com/article/20140912/NEWS07/309120108/T-J-Lane-Ohio-school-shooter-recaptured
+This is a problematic page. Aside from crap HTML and numerous spelling errors, such as
+forgetting the 'b' in body in nearly all of the elements and attribute values, fictional
+elements that improperly use HTML5 semantics guidelines (e.g. banner), there is an unclosed tag
+<pbss:script>.  Chrome shoves siblings under it. The content is in
+one of these siblings. removeUnknownElements encounters it and removes it, as desired,
+but that results in removing the content. Chrome tolerates this when rendering the page
+somehow. I cannot think of a simple workaround that is not overly specific. This is also a
+vector due to script, so we cannot special case it easily. For now I am chucking this
+into the garbage bin of 'cannot handle'.
