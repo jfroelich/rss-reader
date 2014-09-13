@@ -16,10 +16,10 @@
 var forEach = Array.prototype.forEach;
 var reduce = Array.prototype.reduce;
 
-
 var INTRINSIC_BIAS = new Map([
-  ['article',100],
+  ['article',2000],
   ['main',100],
+  ['section', 50],
   ['blockquote',10],
   ['code', 10],
   ['div', 10],
@@ -30,7 +30,6 @@ var INTRINSIC_BIAS = new Map([
   ['p', 10],
   ['pre', 10],
   ['ruby', 10],
-  ['section', 10],
   ['summary', 10],
   ['a', -5],
   ['address', -5],
@@ -47,16 +46,23 @@ var INTRINSIC_BIAS = new Map([
   ['sup', -5],
   ['th', -5],
   ['form', -20],
-  ['header', -20],
-  ['li', -20],
-  ['ol', -20],
-  ['ul', -20],
+  ['li', -50],
+  ['ol', -50],
+  ['ul', -50],
+  ['font', -100],
   ['aside', -100],
+  ['header', -100],
   ['footer', -100],
-  ['nav', -100]
+  ['table', -100],
+  ['tbody', -100],
+  ['thead', -100],
+  ['tfoot', -100],
+  ['nav', -100],
+  ['tr', -500]
 ]);
 
 var DESCENDANT_BIAS = new Map([
+  ['a', -5],
   ['b', 1],
   ['blockquote', 3],
   ['code', 2],
@@ -67,6 +73,8 @@ var DESCENDANT_BIAS = new Map([
   ['h4', 1],
   ['h5', 1],
   ['h6', 1],
+  ['li', -5],
+  ['ol', -5],
   ['p', 5],
   ['pre', 2],
   ['span', 1],
@@ -74,16 +82,10 @@ var DESCENDANT_BIAS = new Map([
   ['sub', 2],
   ['summary', 1],
   ['sup', 2],
-  ['time', 2]
+  ['time', 2],
+  ['ul', -5]
 ]);
 
-/*
-TODO: if we refactor to use selectors we could revert to using
-contains efficiently using *= css wildcard. However, we would have
-to lose custom scores and instead use about 3 to 6 selectors each
-with its own score, e.g. BEST +200, GOOD +100, BAD -100, WORST -200,
-where BEST is something like [id*=article][class*=article].
-*/
 var ATTRIBUTE_BIAS = new Map([
   ['about', -35],
   ['ad', -100],
@@ -95,9 +97,13 @@ var ATTRIBUTE_BIAS = new Map([
   ['articleheadings', -50],
   ['attachment', 20],
   ['author', 20],
-  ['block', 10],
+
+  // Usually not the best element
+  ['block', -5],
+
   ['blog', 20],
   ['body', 50],
+  ['bodytd', 50],
   ['bookmarking', -100],
   ['brand', -50],
   ['breadcrumbs', -20],
@@ -106,29 +112,33 @@ var ATTRIBUTE_BIAS = new Map([
   ['caption', 10],
   ['carousel', 30],
   ['cmt', -100],
+  ['colophon', -100],
   ['column', 10],
   ['combx', -20],
   ['comic', 75],
-  ['comment', -300],
+  ['comment', -500],
   ['comments', -300],
   ['community', -100],
   ['component', -50],
   ['contact', -50],
-  ['content', 50],
+  ['content', 100],
   ['contenttools', -50],
   ['date', -50],
   ['dcsimg', -100],
   ['dropdown', -100],
-  ['entry', 50],
+  ['entry', 100],
   ['excerpt', 20],
   ['facebook', -100],
-  ['fn',-30],
+  ['fn', -30],
   ['foot', -100],
+  ['footer', -200],
   ['footnote', -150],
   ['google', -50],
+  ['gutter', -100],
+  ['guttered', -100],
   ['head', -50],
   ['heading', -50],
-  ['hentry',150],
+  ['hentry', 150],
   ['inset', -50],
   ['insta', -100],
   ['left', -75],
@@ -149,7 +159,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['pinnion', 50],
   ['popular', -50],
   ['popup', -100],
-  ['post', 50],
+  ['post', 100],
   ['power', -100],
   ['print', -50],
   ['promo', -200],
@@ -183,11 +193,12 @@ var ATTRIBUTE_BIAS = new Map([
   ['subscribe', -50],
   ['summary',50],
   ['tag', -100],
+  ['tagcloud', -100],
   ['tags', -100],
   ['text', 20],
   ['time', -30],
   ['timestamp', -50],
-  ['title', -100],
+  ['title', -50],
   ['tool', -200],
   ['twitter', -200],
   ['txt', 50],
@@ -196,96 +207,10 @@ var ATTRIBUTE_BIAS = new Map([
   ['week', -100],
   ['welcome', -50],
   ['widg', -200],
+  ['widget', -200],
   ['zone', -50]
 ]);
 
-var BLACKLIST = [
-  '[class*="-actions"]',
-  '[class*="-ad"]',
-  '[id*="-ad"]',
-  '[id*="_ad_"]',
-  '[name*="adblade"]',
-  '[class*="AdBox"]',
-  '[class*="adjacent"]',
-  '[class*="also-on"]',
-  '[class*="adv"]',
-  '[class*="addthis"]',
-  '.articleTools',
-  'aside',
-  '[class*="banner-"]',
-  '[class*="best-of"]',
-  '[id*="-buttons-"]',
-  '[class*="comment"]',
-  '[id*="comment"]',
-  '.comment-viz',
-  '[class*="-control"]',
-  '[id*="correction"]',
-  '[id*="disqus"]',
-  '[class*="dsq"]',
-  '[id*="dsq"]',
-  '[class*="fan"]',
-  '.fblike',
-  '.fb-root',
-  '[id*="-font"]',
-  '.footer',
-  '[class*="fyre"]',
-  '[class*="gallery"]',
-  '[id*="gigya"]',
-  '[class*="googleAds"]',
-  '[class*="-issues-"]',
-  '.jump',
-  '[class*="links"]',
-  '.marginalia',
-  '.media-message',
-  '[class*="-meta"]',
-  '[class*="more-like"]',
-  '[class*="most-recent"]',
-  '[id*="most-read"]',
-  '[id*="most-watched"]',
-  '[class*="-nav"]',
-  '[id*="ndntabs"]',
-  '[class*="pin-it"]',
-  '[class*="-print-"]',
-  '[class*="promotion"]',
-  '[id*="promotion"]',
-  '[class*="recommended"]',
-  '#relartstory',
-  '[class*="relate"]',
-  '[id*="-relate"]',
-
-  // Cannot filter due to politico
-  //'[class*="resize"]',
-
-  '#respond',
-  '.servicesList',
-  '[class*="share"]',
-  '[id*="share"]',
-  '[class*="sharing"]',
-  '[id*="signup"]',
-  '.sitetitle',
-  '[class*="skyscraper"]',
-  '[class*="social"]',
-  '[id*="social"]',
-  '[class*="sociab"]',
-   '#storyControls',
-  '[class*="-subscribe"]',
-  '[class*="taboola"]',
-  '[class*="-tags"]',
-  '.tags-box',
-  '.text-size',
-  '.textSize',
-  // Cannot use "thumb", some legitimate content has
-  // class name containing thumb (e.g. thumbail)
-  // See, e.g., also http://www.thecollegefix.com/post/19242/
-  //'[class*="thumb"]',
-  '.ticker',
-  '[class*="tool"]',
-  '.toolbox',
-  '[id*="top_stories"]',
-  '.utility-bar-wrap',
-  '.utilsFloat',
-  '[class*="viral"]'
-].join(',');
 
 /**
  * Updates the element's score based on its index within
@@ -317,10 +242,6 @@ function applySelectorBias(doc, features, selector, bias) {
   }
 }
 
-function asAttributeSelector(str) {
-  return '[id*="'+str+'"],[class*="'+str+'"]';
-}
-
 /**
  * Initializes the features map for all elements
  */
@@ -344,9 +265,9 @@ function createFeatures(doc, elements) {
 function deriveAnchorFeatures(featuresMap, anchor) {
   var features = featuresMap.get(anchor);
   var cc = features.charCount;
-
-  if(!cc)
+  if(!cc) {
     return;
+  }
   features.anchorCharCount = cc;
   featuresMap.set(anchor, features);
   var parent = anchor, parentFeatures;
@@ -416,10 +337,28 @@ function remove(n) {
   n.remove();
 }
 
+function identity(value) {
+  return value;
+}
 
-function applyIntrinsicBias(name, features) {
-  var bias = INTRINSIC_BIAS.get(name) || 0;
-  features.score += bias;
+function tokenize(str) {
+  return new Set(str.split(RE_TOKEN_SPLIT).filter(identity));
+}
+
+function updateScoreWithAttributeBias(value) {
+  // Expects this to refer to object stored in featuresMap
+  // object for document
+  this.score += ATTRIBUTE_BIAS.get(value) || 0;
+}
+
+function applyAttributeScore(features, element) {
+  tokenize([element.getAttribute('class') || '',
+    element.getAttribute('id') || '',
+    element.getAttribute('itemprop') || '',
+    element.getAttribute('name') || '',
+    element.getAttribute('role') || ''
+  ].join(' ').toLowerCase()).forEach(
+  updateScoreWithAttributeBias, features);
 }
 
 /**
@@ -477,18 +416,7 @@ function scoreElement(featuresMap, element) {
 
   applyPositionScore(featuresMap, features, element);
 
-  // TODO: use selectors instead?
-  var attrTokens = [
-    element.getAttribute('class') || '',
-    element.getAttribute('id') || '',
-    element.getAttribute('itemprop') || '',
-    element.getAttribute('name') || '',
-    element.getAttribute('role') || ''
-  ].join(' ').trim().toLowerCase().split(RE_TOKEN_SPLIT);
-  var numTokens = attrTokens.length;
-  for(var i = 0; i < numTokens; i++) {
-    features.score += ATTRIBUTE_BIAS.get(attrTokens[i]) || 0;
-  }
+  applyAttributeScore(features, element);
 
   if(element.previousElementSibling) {
     // Contiguity bias
@@ -549,11 +477,13 @@ function scoreImage(featuresMap, image) {
   var parentFeatures = featuresMap.get(imageParent);
 
   // Quick hack attempt at resolving the above issue.
-  // TODO: eventually improve perf
-  var sibs = imageParent.getElementsByTagName('img');
-  var sibCount = sibs.length ? sibs.length - 1 : 0;
-  if(sibCount) {
-    parentFeatures.score -= 10 * sibCount;
+  for(var i = 0, sibs = imageParent.childNodes, nsibs = sibs.length;
+    i < nsibs;i++) {
+    if(sibs[i] != image && sibs[i].nodeType == Node.ELEMENT_NODE &&
+      sibs[i].localName == 'img') {
+      // console.debug('subtracting due to sib');
+      parentFeatures.score -= 10;
+    }
   }
 
   // Boilerplate images are less likely to have supporting text.
@@ -589,9 +519,10 @@ function scoreImage(featuresMap, image) {
   // imageBranch is for debugging
 
   if(!image.height || !image.width) {
+    // console.debug('dimensionless image');
     features.imageBranch = 1;
-    features.score += 100;
-    parentFeatures.score += 100;
+    features.score += 50;
+    parentFeatures.score += 50;
   } else {
     // TODO: make bias a simple function of area, instead of searching bins
     for(var i = 0, area = image.height * image.width; i < IMAGE_DTREE.length;i++) {
@@ -615,9 +546,8 @@ function scoreImage(featuresMap, image) {
 function transformDocument(doc, options) {
   options = options || {};
 
-  // Pre filtering. Certain elements or elements with certain attribute
-  // values are expressly ignored.
-  forEach.call(doc.body.querySelectorAll(BLACKLIST), remove);
+  // Cannot blacklist 'aside' because Washington Times uses it as a wrapper
+  forEach.call(doc.body.querySelectorAll('nav, header, footer'), remove);
 
   // Feature extraction in preparation for later analysis
   var elements = doc.body.getElementsByTagName('*');
@@ -630,7 +560,7 @@ function transformDocument(doc, options) {
   // Descendant bias. Text is more or less likely to be boilerplate if
   // these elements are present in a text node's path (from root)
   applySelectorBias(doc, features, 'p *', 10);
-  applySelectorBias(doc, features, 'ol *, ul *', -5);
+  applySelectorBias(doc, features, 'li *,ol *,ul *', -5);
   applySelectorBias(doc, features, 'header *,footer *,nav *', -50);
 
   // Scoring of images. Based of image size, alt/title text, and
@@ -655,7 +585,7 @@ function transformDocument(doc, options) {
 
 // Public API
 exports.calamine = {
-  transformDocument: transformDocument
+  transform: transformDocument
 };
 
 }(this));
