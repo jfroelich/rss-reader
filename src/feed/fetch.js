@@ -309,9 +309,9 @@ lucu.feed.onFetchHTML = function(onComplete, onError, event) {
   // TODO: store redirects properly
   // NOTE: this uses the post-redirect url as the base url for anchors
 
-  var baseURI = lucu.uri.parse(this.responseURL);
+  //var baseURI = lucu.uri.parse(this.responseURL);
   var anchors = this.responseXML.body.querySelectorAll('a');
-  var resolveAnchor = lucu.feed.resolveAnchor.bind(this, baseURI);
+  var resolveAnchor = lucu.feed.resolveAnchor.bind(this, this.responseURL);
   lucu.forEach(anchors, resolveAnchor);
 
   // TODO: should we notify the callback of responseURL (is it
@@ -499,13 +499,13 @@ lucu.feed.resolveImage = function(baseURL, imageElement) {
   return imageElement;
 };
 
-lucu.feed.resolveAnchor = function(baseURI, anchorElement) {
+lucu.feed.resolveAnchor = function(baseURL, anchorElement) {
 
   // TODO: kind of a dry violation with resolveImage. I should have a
   // generic element resolver that works for all elements with url
   // attributes
 
-  if(!baseURI) {
+  if(!baseURL) {
     return;
   }
 
@@ -514,28 +514,14 @@ lucu.feed.resolveAnchor = function(baseURI, anchorElement) {
     return;
   }
 
-  sourceURL = sourceURL.trim();
-  if(!sourceURL) {
-    return;
+  try {
+    var resolvedURL = URI(sourceURL).absoluteTo(baseURL).toString();
+
+    // Temp while testing switch to medialize
+    // console.debug('Changing anchor url from %s to %s', sourceURL, resolvedURL);
+
+    anchorElement.setAttribute('href', resolvedURL);
+  } catch(e) {
+    console.debug(e);
   }
-
-  var sourceURI = lucu.uri.parse(sourceURL);
-
-  // Avoid resolution when the url appears absolute
-  // TODO: this condition should be a part of lucu.uri.resolve and
-  // should not be this function's responsibility.
-  if(sourceURI.scheme) {
-    return;
-  }
-
-  var resolvedURL = lucu.uri.resolve(baseURI, sourceURI);
-
-  // Is this really necessary?
-  if(resolvedURL == sourceURL) {
-    return;
-  }
-
-  // console.debug('Changing anchor url from %s to %s', sourceURL, resolvedURL);
-
-  anchorElement.setAttribute('href', resolvedURL);
 };

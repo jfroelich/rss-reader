@@ -42,17 +42,22 @@ lucu.feed.onCountAll = function(onComplete) {
 // Finds the feed corresponding to the url, without regard
 // to its scheme.
 lucu.feed.findBySchemelessURL = function(db, url, callback) {
-  var schemelessURL = lucu.uri.filterScheme(url);
+
+  // Uses medialize URI lib
+  function filterScheme(url) {
+    var uri = URI(url);
+    uri.protocol('');
+    var result = uri.toString().substring(2);
+    // console.debug(result);
+    return result;
+  }
+
+  //var schemelessURL = lucu.uri.filterScheme(url);
+
+  var schemelessURL = filterScheme(url);
   var feedStore = db.transaction('feed').objectStore('feed');
   var schemelessIndex = feedStore.index('schemeless');
-
   var request = schemelessIndex.get(schemelessURL);
-
-  // TODO: move this function out of here
-  //request.onsuccess = function() {
-  //  callback(this.result);
-  //};
-
   request.onsuccess = lucu.feed.onFindSchemeless.bind(request, callback);
 };
 

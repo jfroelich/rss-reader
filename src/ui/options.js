@@ -28,7 +28,6 @@ lucu.BACKGROUND_IMAGES = [
   '/media/thomas-zucx-noise-lines.png'
 ];
 
-
 lucu.FONT_FAMILIES = [
   'ArchivoNarrow-Regular',
   'Arial, sans-serif',
@@ -223,8 +222,6 @@ function optionsShowSection(menuItem) {
   currentSection_ = section;
 }
 
-
-
 function optionsUpdateFeedCount() {
   var count = document.getElementById('feedlist').childElementCount;
   var countElement = document.getElementById('subscription-count');
@@ -282,14 +279,12 @@ function optionsAppendFeed(feed, insertedSort) {
   }
 }
 
-
 function onEnableSubscriptionPreviewChange() {
   if(this.checked)
     localStorage.ENABLE_SUBSCRIBE_PREVIEW = '1';
   else
     delete localStorage.ENABLE_SUBSCRIBE_PREVIEW;
 }
-
 
 function showOrSkipSubscriptionPreview(url) {
 
@@ -380,12 +375,37 @@ function hideSubscriptionPreview() {
   document.getElementById('subscription-preview-entries').innerHTML = '';
 }
 
+function isValidURL(url) {
+
+  if(!url) {
+    return false;
+  }
+
+  // Use medialize
+  try {
+    var uri = URI(url);
+  } catch(e) {
+    console.debug(e);
+    return false;
+  }
+
+  if(!uri.protocol()) {
+    return false;
+  }
+
+  if(!uri.hostname()) {
+    return false;
+  }
+
+  return true;
+
+}
+
 function startSubscription(url) {
 
-  // Done with preview, ensure it is hidden.
   hideSubscriptionPreview();
 
-  if(!lucu.uri.isValid(url)) {
+  if(!isValidURL(url)) {
     return showErrorMessage('Invalid url "' + url + '".');
   }
 
@@ -500,7 +520,7 @@ function onSubscribeSubmit(event) {
     return false;
 
 
-  if(lucu.uri.isValid(query)) {
+  if(isValidURL(query)) {
     document.getElementById('discover-results-list').innerHTML = '';
     document.getElementById('discover-no-results').style.display='none';
      document.getElementById('discover-in-progress').style.display='none';

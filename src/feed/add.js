@@ -14,11 +14,21 @@ lucu.feed = lucu.feed || {};
  */
 lucu.feed.add = function(db, feed, oncomplete, onerror) {
 
+
+    // Uses medialize URI lib
+  function filterScheme(url) {
+    var uri = URI(url);
+    uri.protocol('');
+    var result = uri.toString().substring(2);
+    // console.debug(result);
+    return result;
+  }
+
   var cleanedFeed = lucu.feed.sanitize(feed);
 
   var storableFeed = {};
   storableFeed.url = feed.url;
-  storableFeed.schemeless = lucu.uri.filterScheme(storableFeed.url);
+  storableFeed.schemeless = filterScheme(storableFeed.url);
 
   // TODO: title must be somehow defined or else it wont be returned
   // when sorting by title in forAllFeeds in the options page. This is
