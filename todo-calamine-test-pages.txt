@@ -1,5 +1,8 @@
 Problem pages
 
+http://www.thestate.com/2014/09/12/3677665/mark-sanford-breaks-up-with-fiance.html?sp=/99/132/312/169/
+
+
 
 -----------------------------
 
@@ -59,7 +62,8 @@ The irony of open source, the content is inaccessible
 ------------------------------
 http://timesofindia.indiatimes.com/world/rest-of-world/Mystery-of-Sir-John-Franklins-doomed-mission-solved-after-160-years/articleshow/42171292.cms
 No idea, seems like a bug?
-
+http://timesofindia.indiatimes.com/world/europe/Putins-goal-is-to-destroy-Ukraine-recreate-USSR-Ukraine-PM/articleshow/42394807.cms
+-missed
 
 -------------
 http://plan9.bell-labs.com/sys/doc/venti/venti.html
