@@ -91,14 +91,19 @@ lucu.removeDescendantAttributes = function(allowedAttributes, element) {
 lucu.removeBlacklistedElements = function(doc) {
 
   var s = ['applet', 'base', 'basefont', 'bgsound', 'button', 'command',
-    'datalist', 'dialog', 'embed', 'fieldset', 'frame', 'frameset', 'head',
+    'datalist', 'dialog', 'embed', 'fieldset',
+
+    // http://www.miracleas.com/BAARF/
+    'frameset',
+    'head',
     'html', 'iframe', 'input', 'isindex', 'math', 'link', 'menu', 'menuitem',
-    'meta', 'noframes', 'object','optgroup', 'option', 'output', 'param',
+    'meta', 'object','optgroup', 'option', 'output', 'param',
     'progress', 'script', 'select', 'spacer', 'style', 'textarea', 'title',
     'xmp'].join(',');
 
   var elements = doc.body.querySelectorAll(s);
   for(var i = 0, len = elements.length, element; i < len; i++) {
+    // console.log('removing blist %s', elements[i].localName);
     elements[i].remove();
   }
 };
@@ -258,7 +263,7 @@ lucu.removeInvisibleElements = function(doc) {
 lucu.removeTracerImages = function(doc) {
   var images = doc.body.getElementsByTagName('img');
   Array.prototype.filter.call(images, function(e) {
-    return e.width == 1 || e.height == 1;
+    return e.width === 1 || e.height === 1;
   }).forEach(function(e) {
     e.remove();
   });
@@ -269,10 +274,11 @@ lucu.KNOWN_ELEMENTS = new Set(['a', 'abbr', 'acronym', 'address', 'area',
   'blockquote', 'body', 'br', 'canvas', 'caption', 'center', 'cite',
   'code', 'col', 'colgroup', 'data', 'details', 'dir', 'dd', 'del', 'dfn',
   'div', 'dl', 'dt', 'em', 'figcaption', 'figure', 'font', 'footer',
-  'form', 'header', 'help', 'hgroup','hr', 'h1', 'h2', 'h3', 'h4','h5',
+  'form', 'frameset','frame', 'header', 'help', 'hgroup','hr',
+  'h1', 'h2', 'h3', 'h4','h5',
   'h6', 'i', 'ilayer', 'img', 'ins', 'insert', 'label', 'layer', 'legend',
   'li', 'kbd', 'keygen', 'main', 'mark', 'marquee', 'map', 'menu',
-  'menuitem', 'meter', 'multicol', 'nav', 'nobr', 'noembed',
+  'menuitem', 'meter', 'multicol', 'nav', 'nobr', 'noembed', 'noframes',
   'noscript', 'ol', 'p', 'plaintext', 'pre', 'q', 'rect',
   'rp', 'rt', 'ruby', 's', 'samp', 'section', 'small', 'source',
   'span', 'strike', 'strong', 'sub', 'summary', 'sup', 'svg', 'table',
@@ -284,27 +290,27 @@ lucu.removeUnknownElements = function(doc) {
   Array.prototype.filter.call(elements, function(e) {
     return !lucu.KNOWN_ELEMENTS.has(e.localName);
   }).forEach(function(e) {
+    // console.debug('removing unknown %s', e);
     e.remove();
   });
 };
 
-lucu.transformShims = function(doc) {
-  var shims = doc.body.querySelectorAll('noscript, noembed');
-  Array.prototype.forEach.call(shims, function(e) {
-    // TODO: this needs to check contains to avoid
-    // processing <noscript><noscript>..</noscript></noscript>
-    if(e.childNodes.length < 3 || e.innerText.length < 100) {
-      e.remove();
-      return;
-    }
-    // TODO: is visibility a clue?
-    // Otherwise, it is probably a template that contains possibly important
-    // content (like the entire article in the case of cbsnews) so we just
-    // unwrap it. We must do something with it, because we disable the
-    // javascript that would normally expose its content on load.
-    lucu.unwrap(e);
-  });
+lucu.unwrwapNoscripts = function(doc) {
+
+  //http://fortune.com/2014/09/09/apple-event-overshadows-bad-news-snapchat-tinder/
+
+  var forEach = Array.prototype.forEach;
+  var noscripts = doc.body.getElementsByTagName('noscript');
+  forEach.call(noscripts, lucu.unwrap);
 };
+
+lucu.unwrapNoframes = function(doc) {
+  // http://www.miracleas.com/BAARF/
+  var forEach = Array.prototype.forEach;
+  var noframes = doc.body.getElementsByTagName('noframes');
+  forEach.call(noframes, function(e) {
+    console.log('unwrapping noframes'); lucu.unwrap(e); });
+}
 
 lucu.isTrimmableElement = function(element) {
   return element && element.nodeType == Node.ELEMENT_NODE &&
