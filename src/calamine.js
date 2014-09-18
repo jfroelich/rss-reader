@@ -3,24 +3,28 @@
 // that can be found in the LICENSE file
 
 /**
- * The calamine module provides functions for removing boilerplate content
- * In other words, applying lotion to soothe NLP shingles.
+ * Provides the calamine.transform(HTMLDocument) function that guesses at
+ * the content of a document. In other words, applying lotion to
+ * soothe NLP shingles.
  *
- * TODO: look more into shadow dom manipulation? or is that
- * the role of sanitize?
  * TODO: support 'picture' element
  */
 (function (exports) {
 'use strict';
 
+if(!Map || !Set) {
+  console.warn('Map/Set not supported, things will go wrong');
+}
+
+
 var forEach = Array.prototype.forEach;
 var reduce = Array.prototype.reduce;
 
 var INTRINSIC_BIAS = new Map([
-  ['article',2000],
-  ['main',100],
+  ['article', 2000],
+  ['main', 100],
   ['section', 50],
-  ['blockquote',10],
+  ['blockquote', 10],
   ['code', 10],
   ['div', 10],
   ['figcaption', 10],
@@ -247,11 +251,13 @@ function applySelectorBias(doc, features, selector, bias) {
  */
 function createFeatures(doc, elements) {
   var features = new Map();
-  forEach.call(elements, function initBasicFeatures(e) {
-    features.set(e, {
+
+  for(var i = 0, len = elements.length; i < len; i++) {
+    features.set(elements[i], {
       score: 0, charCount: 0, anchorCharCount: 0, previousSiblingCount: 0
     });
-  });
+  }
+
   features.set(doc.documentElement,
     {score: -Infinity, charCount: 0, anchorCharCount: 0});
   features.set(doc.body,
@@ -299,7 +305,6 @@ function deriveTextFeatures(doc, featuresMap) {
 
 var EXPOSE_PROPS = [
   {key: 'SHOW_CHAR_COUNT', value: 'charCount'},
-  {key: 'SHOW_IMAGE_BRANCH', value: 'imageBranch'},
   {key: 'SHOW_SCORE', value: 'score'}
 ];
 
@@ -346,12 +351,14 @@ function tokenize(str) {
 }
 
 function updateScoreWithAttributeBias(value) {
-  // Expects this to refer to object stored in featuresMap
-  // object for document
   this.score += ATTRIBUTE_BIAS.get(value) || 0;
 }
 
 function applyAttributeScore(features, element) {
+
+  // Maybe I should use element.classList to tokenize
+  // instead? But that does not split by -_
+
   tokenize([element.getAttribute('class') || '',
     element.getAttribute('id') || '',
     element.getAttribute('itemprop') || '',
@@ -414,15 +421,17 @@ function scoreElement(featuresMap, element) {
     }
   }
 
-  applyPositionScore(featuresMap, features, element);
+  // Interesting idea but maybe not important
+  // applyPositionScore(featuresMap, features, element);
 
   applyAttributeScore(features, element);
 
-  if(element.previousElementSibling) {
+  // Interesting idea but maybe not important
+  //if(element.previousElementSibling) {
     // Contiguity bias
-    var prevScore = featuresMap.get(element.previousElementSibling).score;
-    features.score += 20 * (prevScore > 0 ? 1 : -1);
-  }
+  //  var prevScore = featuresMap.get(element.previousElementSibling).score;
+  //  features.score += 20 * (prevScore > 0 ? 1 : -1);
+  //}
 
   featuresMap.set(element, features);
 
@@ -435,16 +444,6 @@ function scoreElement(featuresMap, element) {
     featuresMap.set(element.parentElement, pFeatures);
   }
 }
-
-
-var IMAGE_DTREE = [
-  {lower: 100000, bias: 150},
-  {lower: 50000, bias: 100},
-  {lower: 10000, bias: 50},
-  {lower: 3000, bias: 30},
-  {lower: 500, bias: 10},
-  {lower: 0, bias: -10},
-];
 
 /**
  * TODO: is there some nicer way of updating the parentElement? I am not
@@ -481,7 +480,6 @@ function scoreImage(featuresMap, image) {
     i < nsibs;i++) {
     if(sibs[i] != image && sibs[i].nodeType == Node.ELEMENT_NODE &&
       sibs[i].localName == 'img') {
-      // console.debug('subtracting due to sib');
       parentFeatures.score -= 10;
     }
   }
@@ -506,7 +504,7 @@ function scoreImage(featuresMap, image) {
     // TODO: just use querySelector here and simplify
 
     var figCaptionNodeList = imageParent.getElementsByTagName('figcaption');
-    if(/*figCaptionNodeList && */figCaptionNodeList.length) {
+    if(figCaptionNodeList.length) {
       var firstFigCaption = figCaptionNodeList[0];
       var firstFigCaptionText = (firstFigCaption.textContent || '').trim();
       if(firstFigCaptionText.length) {
@@ -516,25 +514,11 @@ function scoreImage(featuresMap, image) {
     }
   }
 
-  // imageBranch is for debugging
-
-  if(!image.height || !image.width) {
-    // console.debug('dimensionless image');
-    features.imageBranch = 1;
-    features.score += 50;
-    parentFeatures.score += 50;
-  } else {
-    // TODO: make bias a simple function of area, instead of searching bins
-    for(var i = 0, area = image.height * image.width; i < IMAGE_DTREE.length;i++) {
-      if(area > IMAGE_DTREE[i].lower) {
-        features.imageBranch = i + 2;
-        features.score += IMAGE_DTREE[i].bias;
-        parentFeatures.score += IMAGE_DTREE[i].bias;
-        break;
-      }
-    }
-  }
-
+  var area = image.width ? image.width * image.height : 0;
+  area = Math.min(100000, area);
+  var areaBias = 0.0015 * area;
+  features.score += areaBias;
+  parentFeatures.score += areaBias;
   featuresMap.set(image, features);
   featuresMap.set(imageParent, parentFeatures);
 }
@@ -556,12 +540,8 @@ function transformDocument(doc, options) {
   forEach.call(doc.body.querySelectorAll('a[href]'),
     deriveAnchorFeatures.bind(this, features));
 
-  // TODO: improve perf
-  // Descendant bias. Text is more or less likely to be boilerplate if
-  // these elements are present in a text node's path (from root)
-  applySelectorBias(doc, features, 'p *', 10);
-  applySelectorBias(doc, features, 'li *,ol *,ul *', -5);
-  applySelectorBias(doc, features, 'header *,footer *,nav *', -50);
+  applySelectorBias(doc, features, 'li *,ol *,ul *', -20);
+  applySelectorBias(doc, features, 'aside *, header *,footer *,nav *', -50);
 
   // Scoring of images. Based of image size, alt/title text, and
   // associated caption text. Also affects the score of each
