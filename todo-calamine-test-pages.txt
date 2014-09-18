@@ -7,73 +7,52 @@ http://www.bostonglobe.com/metro/2014/09/12/social-media-helps-photo-found-near-
 http://www.bbc.com/news/world-asia-29193653
 http://abcnews.go.com/International/wireStory/rescue-dozens-aboard-listing-filipino-ferry-25481567
 
-
-
 -----------------------------
-
 http://www.freep.com/article/20140912/NEWS07/309120108/T-J-Lane-Ohio-school-shooter-recaptured
-This is a problematic page. Aside from crap HTML and numerous spelling errors, such as
-forgetting the 'b' in body in nearly all of the elements and attribute values, fictional
-elements that improperly use HTML5 semantics guidelines (e.g. banner), there is an unclosed tag
-<pbss:script>.  Chrome shoves siblings under it. The content is in
-one of these siblings. removeUnknownElements encounters it and removes it, as desired,
-but that results in removing the content. Chrome tolerates this when rendering the page
-somehow. I cannot think of a simple workaround that is not overly specific. This is also a
-vector due to script, so we cannot special case it easily. For now I am chucking this
-into the garbage bin of 'cannot handle'.
-
-Also fails due to pbss:script issue
 http://www.freep.com/article/20140910/ENT07/309100069/Charlie-Hunnam-Fifty-Shades-of-Grey
 
+There is an unclosed tag <pbss:script>. Chrome treats all subsequent siblings as descendants.
+lucu.removeUnknownElements encounters it and removes it, as desired, which results in removing the
+content.
 -------------------------------
+The Sydney Morning Herald
+
+Example problematic URLs
 http://www.smh.com.au/world/oscar-pistorius-eight-key-pieces-of-evidence-20140910-1060un.html
+http://www.smh.com.au/national/man-killed-by-shark-in-byron-bay-named-as-english-expat-paul-wilcox-20140909-10ek6s.html
+http://www.smh.com.au/national/muslim-community-apprehension-after-raids-leads-to-snap-protest-20140918-10iupz.html
+
 Finds <esi:include src="/ugc/v2/dock.html"/>. Removes as unknown.
-This is a unary tag, but Chrome treats it as non-unary and moves all following content
+This is a unary tag (/>), but Chrome treats it as non-unary and moves all following content
 under it. Hence the entire article body is stripped of content. Not sure what I can do
 short of writing a more tolerant HTML parser that recognizes unary tags like the above.
 I could write a hack that rewrites esi:include to something else, or unwraps it.
-Maybe it is an XHTML issue? For now I am chucking this
-into the garbage bin of 'cannot handle'.
-
-Another example
-http://www.smh.com.au/national/man-killed-by-shark-in-byron-bay-named-as-english-expat-paul-wilcox-20140909-10ek6s.html
-
-
--------------------------------------
+Maybe it is an XHTML issue? For now I am chucking this into the garbage bin of 'cannot handle'.
+----------------------------------------
 http://www.berkeleyside.com/2014/09/09/uc-berkeley-prof-joshua-bloom-makes-earthquake-alert-kit-for-110/
 This works now, but hackishly. The algorithm is weak on this page.
-
-------------------------
-http://dealbook.nytimes.com/2014/09/08/hours-before-sentencing-u-s-judge-says-cohen-trades-should-count-against-martoma/
-It is finding a single paragraph instead of the article body. Change <article> intrinsic bias to 2000
-to help, but this really needs more attention.
 ----------------------------------------
-http://indiancountrytodaymedianetwork.com/2014/09/08/summer-super-moon-trio-finale-brings-harvest-moons-bonanza-light-156790
-Missed. Maybe I need to use Set of attribute tokens? The best was
-"block block-views wT1 more-politics grid-4 sidebar-more block-article-views-block-3 block-views-article-views-block-3 odd" and I think maybe due to mentioning article multiple times
-
----------------------
+http://dealbook.nytimes.com/2014/09/08/hours-before-sentencing-u-s-judge-says-cohen-trades-should-count-against-martoma/
+The algorithm is weak on this page.
+----------------------------------------
 http://www.bustle.com/articles/39080-bill-clinton-george-w-bush-talk-grandchildren-at-joint-bff-appearance
 Bustle is one of thoes obnoxious JS-required sites. Uses Ember templating. Probably going to just
 ignore them.
-
+----------------------------------------
 http://monica-at-mozilla.blogspot.com/2014/08/firefox-32-supports-public-key-pinning.html
-Another js-only site
+js-only site
 http://googleprojectzero.blogspot.com/2014/08/the-poisoned-nul-byte-2014-edition.html
 TODO: is there any way to access blogspot content?
 http://google-opensource.blogspot.com/2014/09/causalimpact-new-open-source-package.html
 The irony of open source, the content is inaccessible
-
 ------------------------------
 http://timesofindia.indiatimes.com/world/rest-of-world/Mystery-of-Sir-John-Franklins-doomed-mission-solved-after-160-years/articleshow/42171292.cms
 No idea, seems like a bug?
 http://timesofindia.indiatimes.com/world/europe/Putins-goal-is-to-destroy-Ukraine-recreate-USSR-Ukraine-PM/articleshow/42394807.cms
 -missed
-
 http://timesofindia.indiatimes.com/india/Xi-Jinping-arrives-today-China-set-to-get-bigger-role-in-infrastructure-and-water/articleshow/42675953.cms
 - nothing appeared
-
 -------------
 http://plan9.bell-labs.com/sys/doc/venti/venti.html
-The content is beneat the body. Knew about this problem beforehand. So this serves as a great example
+The content is beneath the body tag. Knew about this problem beforehand. So this serves as a great example
 of the need to support it. Maybe start with body 0 instead of -Infinity?
