@@ -16,9 +16,9 @@ if(!Map || !Set) {
   console.warn('Map/Set not supported, things will go wrong');
 }
 
-
 var forEach = Array.prototype.forEach;
 var reduce = Array.prototype.reduce;
+
 
 var INTRINSIC_BIAS = new Map([
   ['article', 2000],
@@ -446,77 +446,31 @@ function scoreElement(featuresMap, element) {
 }
 
 /**
- * TODO: is there some nicer way of updating the parentElement? I am not
- * entirely happy that we secretly update other elements here
- *
- * TODO: it turns a common pattern in missclassficiation results is here,
- * when the input contains an element with multiple images, it sometimes
- * erroneously gets escalated above the text score and causes the parent
- * element (e.g. a slideshow container, a list of images), to beat out
- * the text. Text should win. How to resolve?
- *
- * We have competing interests. Infographic/xkcd documents vs
- * slide-show-container elements in normal documents. And 3rd, documents
- * that are mixed (slides + text).
- *
- * Probably base on the number of sibling images? Which means we have to
- * know that ahead of time. The problem is this visits images one at a
- * time.
- *
- * Example of problematic page:
- * http://www.doublefine.com/news/comments/hack_n_slash_now_1.0_and_extra_hackable/
- * - picking up multiple images container
- * http://www.politico.com/story/2014/09/rob-portman-national-republican-senatorial-committee-110856.html
- * - giant intro image gave container super high weight that beat out text
+ * TODO: is there some nicer way of updating the parent?
  */
 function scoreImage(featuresMap, image) {
-
   var features = featuresMap.get(image);
   var imageParent = image.parentElement;
   var parentFeatures = featuresMap.get(imageParent);
 
-  // Quick hack attempt at resolving the above issue.
-  for(var i = 0, sibs = imageParent.childNodes, nsibs = sibs.length;
-    i < nsibs;i++) {
-    if(sibs[i] != image && sibs[i].nodeType == Node.ELEMENT_NODE &&
-      sibs[i].localName == 'img') {
-      parentFeatures.score -= 10;
-    }
-  }
+  // Penalize carousels. Each child image independently penalizes its container
+  parentFeatures.score += reduce.call(imageParent.childNodes,
+    function calculateImageSiblingPenalty(bias, node) {
+    return 'img' === node.localName && node !== image ? bias - 5 : bias;
+  }, 0);
 
-  // Boilerplate images are less likely to have supporting text.
-  // TODO: rather than an arbitrary amount, use keyword bias and also
-  // consider a length based bias. If length based used the greater length
-  // of either alt or title, do not just consider alt length, which this
-  // branch precludes atm.
-  var description = (image.getAttribute('alt') || '').trim();
-  if(!description) {
-    description = (image.getAttribute('title') || '').trim();
-  }
+  // Reard auxillary descriptions
+  var alt = image.getAttribute('alt');
+  var title = image.getAttribute('title');
+  var caption = imageParent.localName == 'figure' &&
+    imageParent.querySelector('figcaption');
+  var supportingTextBias = alt || title || caption ? 30 : 0;
+  features.score += supportingTextBias;
+  parentFeatures.score +=  supportingTextBias;
 
-  if(description) {
-    features.score += 30;
-    parentFeatures.score +=  30;
-  }
-
-  if(imageParent.localName == 'figure') {
-
-    // TODO: just use querySelector here and simplify
-
-    var figCaptionNodeList = imageParent.getElementsByTagName('figcaption');
-    if(figCaptionNodeList.length) {
-      var firstFigCaption = figCaptionNodeList[0];
-      var firstFigCaptionText = (firstFigCaption.textContent || '').trim();
-      if(firstFigCaptionText.length) {
-        features.score += 30;
-        parentFeatures.score += 30;
-      }
-    }
-  }
-
+  // Reward large images
   var area = image.width ? image.width * image.height : 0;
-  area = Math.min(100000, area);
-  var areaBias = 0.0015 * area;
+  var areaBias = 0.0015 * Math.min(100000, area);
   features.score += areaBias;
   parentFeatures.score += areaBias;
   featuresMap.set(image, features);
