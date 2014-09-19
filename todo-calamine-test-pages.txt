@@ -1,11 +1,17 @@
 Problem pages
 
+http://www.telegraph.co.uk/technology/apple/11108654/U2-and-Apple-developing-new-digital-music-format.html
+http://www.miamiherald.com/news/business/technology/article2163593.html
+http://www.miamiherald.com/news/nation-world/article2158062.html
 http://www.thestate.com/2014/09/12/3677665/mark-sanford-breaks-up-with-fiance.html?sp=/99/132/312/169/
 http://www.centredaily.com/2014/09/13/4351975/plague-of-the-gold-treasure-hunter.html?sp=/99/116/897/
-http://www.bostonglobe.com/sports/2014/09/16/roundup-angels-become-first-team-clinch-playoff-berth/1BSoFVAVXUmU9OZApBX3KJ/story.html
+http://www.bostonglobe.com/sports/2014/09/16/roundup-angels-become-first-team-clinch-playoff-
+berth/1BSoFVAVXUmU9OZApBX3KJ/story.html
+http://www.bostonglobe.com/news/world/2014/09/19/china-fines-glaxosmithkline-for-bribing-doctors/F5w77oVMyPtGWV7HkRa7HK/story.html
 http://www.bostonglobe.com/metro/2014/09/12/social-media-helps-photo-found-near-ground-zero/CxulmrZjpVssydNqL25pBO/story.html
 http://www.bbc.com/news/world-asia-29193653
 http://abcnews.go.com/International/wireStory/rescue-dozens-aboard-listing-filipino-ferry-25481567
+http://www.nj.com/yankees/index.ssf/2014/09/7_things_derek_jeters_never_done.html
 
 -----------------------------
 http://www.freep.com/article/20140912/NEWS07/309120108/T-J-Lane-Ohio-school-shooter-recaptured
@@ -45,6 +51,7 @@ http://googleprojectzero.blogspot.com/2014/08/the-poisoned-nul-byte-2014-edition
 TODO: is there any way to access blogspot content?
 http://google-opensource.blogspot.com/2014/09/causalimpact-new-open-source-package.html
 The irony of open source, the content is inaccessible
+http://google-opensource.blogspot.com/2014/09/security-for-people.html
 ------------------------------
 http://timesofindia.indiatimes.com/world/rest-of-world/Mystery-of-Sir-John-Franklins-doomed-mission-solved-after-160-years/articleshow/42171292.cms
 No idea, seems like a bug?
