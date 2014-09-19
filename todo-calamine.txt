@@ -4,6 +4,8 @@ stripping valid BRs that followed non-trimmable nodes.
 Maybe when iterating its considering siblings that were already
 removed? How could this bug out so badly?
 
+TODO: support 'picture' element
+
 * Side thought: Why mutate? Why not just expand the query to account for variations?
 This is a similar thought about element removal, unwrapping, etc. Why modify
 the original if we are returning a representation of the original?
