@@ -3,16 +3,15 @@
 // that can be found in the LICENSE file
 
 /**
- * Provides the calamine.transform(HTMLDocument) function that guesses at
- * the content of a document. In other words, applying lotion to
- * soothe NLP shingles.
- *
- * TODO: support 'picture' element
+ * Provides the calamine.transform(HTMLDocument) function that guesses at the
+ * content of a document. In other words, applying lotion to soothe NLP
+ * shingles.
  */
 (function (exports) {
 'use strict';
 
 if(!Map || !Set) {
+  // TODO: shim it for chrome < 38 without exp js features flag
   console.warn('Map/Set not supported, things will go wrong');
 }
 
@@ -102,6 +101,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['body', 50],
   ['bodytd', 50],
   ['bookmarking', -100],
+  ['bottom', -100],
   ['brand', -50],
   ['breadcrumbs', -20],
   ['button', -100],
@@ -109,6 +109,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['caption', 10],
   ['carousel', 30],
   ['cmt', -100],
+  ['cmmt', -100],
   ['colophon', -100],
   ['column', 10],
   ['combx', -20],
@@ -120,16 +121,22 @@ var ATTRIBUTE_BIAS = new Map([
   ['contact', -50],
   ['content', 100],
   ['contenttools', -50],
+  ['contributors', -50],
+  ['credit', -50],
   ['date', -50],
   ['dcsimg', -100],
   ['dropdown', -100],
+  ['email', -100],
   ['entry', 100],
   ['excerpt', 20],
   ['facebook', -100],
+  ['featured', 20],
   ['fn', -30],
   ['foot', -100],
   ['footer', -200],
   ['footnote', -150],
+  ['ftr', -100],
+  ['ftrpanel', -100],
   ['google', -50],
   ['gutter', -100],
   ['guttered', -100],
@@ -141,15 +148,23 @@ var ATTRIBUTE_BIAS = new Map([
   ['left', -75],
   ['legende', -50],
   ['license', -100],
+  ['like', -100],
   ['link', -100],
+  ['links', -100],
   ['logo', -50],
   ['main', 50],
+  ['maincolumn', 50],
+  ['masthead', -30],
   ['mediaarticlerelated', -50],
   ['menu', -200],
   ['menucontainer', -300],
   ['meta', -50],
+  ['most', -50],
   ['nav', -200],
   ['navbar', -100],
+  ['navigation', -100],
+  ['navimg', -100],
+  ['newsletter', -100],
   ['page', 50],
   ['pagetools', -50],
   ['parse', -50],
@@ -160,21 +175,30 @@ var ATTRIBUTE_BIAS = new Map([
   ['power', -100],
   ['print', -50],
   ['promo', -200],
+  ['promotions', -200],
+  ['ranked', -100],
   ['reading', 100],
   ['recap', -100],
+  ['recreading', -100],
   ['rel', -50],
   ['relate', -300],
+  ['related', -300],
+  ['relposts', -300],
   ['replies', -100],
   ['reply', -50],
   ['retweet', -50],
   ['right', -100],
+  ['rightcolumn', -100],
+  ['rightrail', -100],
   ['scroll', -50],
   ['share', -200],
+  ['sharebar', -200],
   ['shop', -200],
   ['shout', -200],
   ['shoutbox', -200],
   ['side', -200],
   ['sig', -50],
+  ['signup', -100],
   ['snippet', 50],
   ['social', -200],
   ['socialnetworking', -250],
@@ -182,21 +206,26 @@ var ATTRIBUTE_BIAS = new Map([
   ['sponsor', -200],
   ['story', 50],
   ['storydiv',100],
+  ['storynav',-100],
   ['storytopbar', -50],
+  ['storywrap', 50],
   ['strycaptiontxt', -50],
   ['stryhghlght', -50],
   ['strylftcntnt', -50],
   ['stryspcvbx', -50],
   ['subscribe', -50],
   ['summary',50],
+  ['tabs', -100],
   ['tag', -100],
   ['tagcloud', -100],
   ['tags', -100],
   ['text', 20],
+  ['this', -50],
   ['time', -30],
   ['timestamp', -50],
   ['title', -50],
   ['tool', -200],
+  ['toptabs', -200],
   ['twitter', -200],
   ['txt', 50],
   ['utility', -50],
@@ -209,57 +238,6 @@ var ATTRIBUTE_BIAS = new Map([
 ]);
 
 /**
- * Apply our 'model' to an element. We generate a score that is the
- * sum of several terms.
- * TODO: make score a function of cc and density instead
- * of searching classes
- */
-function scoreElement(featuresMap, element) {
-  var features = featuresMap.get(element);
-  var cc = features.charCount;
-  if(cc) {
-    var density = (features.anchorCharCount || 0) / cc;
-    if(cc > 1000) {
-      if(density > 0.35) {
-        features.score += 50;
-      } else if(density > 0.2) {
-        features.score += 100;
-      } else if (density > 0.1) {
-        features.score += 100;
-      } else if(density > 0.05) {
-        features.score += 250;
-      } else {
-        features.score += 300;
-      }
-    } else if(cc > 500) {
-      if(density > 0.35) {
-        features.score += 30;
-      } else if(density > 0.1) {
-        features.score += 180;
-      } else {
-        features.score += 220;
-      }
-    } else if(cc > 100) {
-      if(density > 0.35) {
-        features.score += -100;
-      } else {
-        features.score += 60;
-      }
-    } else {
-      if(density > 0.35) {
-        features.score -= 200;
-      } else if(isFinite(density)) {
-        features.score += 20;
-      } else {
-        features.score += 5;
-      }
-    }
-  }
-
-  featuresMap.set(element, features);
-}
-
-/**
  * Returns the best element of the document. Does some mutation
  * to the document.
  */
@@ -270,9 +248,7 @@ function transformDocument(doc, options) {
 
   // Pre-filter
   var removables = doc.body.querySelectorAll('nav, header, footer')
-  forEach.call(removables, function (n) {
-    n.remove();
-  });
+  forEach.call(removables, function (n) { n.remove(); });
 
   // Initialize features map
   var features = new Map();
@@ -284,28 +260,18 @@ function transformDocument(doc, options) {
   });
   var elements = doc.body.getElementsByTagName('*');
   forEach.call(elements, function initFeatures(element) {
-    features.set(element, {
-      score: 0, charCount: 0, anchorCharCount: 0, previousSiblingCount: 0
-    });
+    features.set(element, {score: 0, charCount: 0, anchorCharCount: 0});
   });
 
   // Derive text features from the bottom up
-  var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
-  var element, node, elementFeatures, parent, parentFeatures;
-  while(node = it.nextNode()) {
-    element = node.parentElement;
-    elementFeatures = features.get(element);
-    elementFeatures.charCount += node.nodeValue.length;
-    features.set(element, elementFeatures);
-    if(!elementFeatures.charCount) {
-      continue;
-    }
-    parent = element.parentElement;
-    while(parent) {
+  var textIterator = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
+  var charCount, node, parent, parentFeatures;
+  while(node = textIterator.nextNode()) {
+    for(charCount = node.nodeValue.length, parent = node.parentElement; parent;
+      parent = parent.parentElement) {
       parentFeatures = features.get(parent);
-      parentFeatures.charCount += elementFeatures.charCount;
+      parentFeatures.charCount += charCount;
       features.set(parent, parentFeatures);
-      parent = parent.parentElement;
     }
   }
 
@@ -326,6 +292,61 @@ function transformDocument(doc, options) {
       features.set(parent, parentFeatures);
       parent = parent.parentElement;
     }
+  });
+
+  // Apply text density bias. This is simply the
+  // the ratio of in-anchor-chars to normal chars. The greater
+  // the number of chars and the lower the number of in-anchor
+  // chars, the greater the positive bias. For example, a <p>
+  // with a large number of characters that does not contain
+  // any anchor text would get a very large positive bias, because
+  // it represents the target content.
+  forEach.call(elements, function applyDensityBias(element) {
+    // TODO: use a function of charCount and density instead
+    // of bins. The greater the cc count and lower the density
+    // the greater the bias.
+
+    var f = features.get(element);
+    var cc = f.charCount;
+    if(!cc) return;
+    var density = (f.anchorCharCount || 0) / cc;
+    if(cc > 1000) {
+      if(density > 0.35) {
+        f.score += 50;
+      } else if(density > 0.2) {
+        f.score += 100;
+      } else if (density > 0.1) {
+        f.score += 100;
+      } else if(density > 0.05) {
+        f.score += 250;
+      } else {
+        f.score += 300;
+      }
+    } else if(cc > 500) {
+      if(density > 0.35) {
+        f.score += 30;
+      } else if(density > 0.1) {
+        f.score += 180;
+      } else {
+        f.score += 220;
+      }
+    } else if(cc > 100) {
+      if(density > 0.35) {
+        f.score += -100;
+      } else {
+        f.score += 60;
+      }
+    } else {
+      if(density > 0.35) {
+        f.score -= 200;
+      } else if(isFinite(density)) {
+        f.score += 20;
+      } else {
+        f.score += 5;
+      }
+    }
+
+    features.set(element, f);
   });
 
   // Apply intrinsic bias (based on the type of element itself)
@@ -387,20 +408,17 @@ function transformDocument(doc, options) {
     features.set(parent, parentFeatures);
   });
 
-  // Bias elements based on attribute content
+  // Bias score based on attribute content
+  // TODO: filter numbers?
   var RE_TOKEN_SPLIT = /[\s-_]+/g;
-  var attributeNames = ['id', 'class', 'itemprop', 'name', 'role'];
+  var identity = function(value) { return value; };
   forEach.call(elements, function biasAttributes(element) {
-    var text = attributeNames.map(function getValue(name) {
-      return element.getAttribute(name);
-    }).join(' ').toLowerCase();
-    if(!text) return;
-    var tokens = text.split(RE_TOKEN_SPLIT).filter(function (value) {
-      return value;
-    });
+    var text = (element.id || '') + ' ' + (element.className || '');
+    var tokens = text.toLowerCase().split(RE_TOKEN_SPLIT).filter(identity);
     if(!tokens.length) return;
     var bias = 0;
-    (new Set(tokens)).forEach(function sumBias(token) {
+    var distinctTokens = new Set(tokens);
+    distinctTokens.forEach(function sumBias(token) {
       bias += ATTRIBUTE_BIAS.get(token) || 0;
     });
     if(!bias) return;
@@ -409,7 +427,7 @@ function transformDocument(doc, options) {
     features.set(element, elementFeatures);
   });
 
-  // Bias the parents of ccertain elements
+  // Bias the parents of certain elements
   forEach.call(elements, function biasParent(element) {
     var bias = DESCENDANT_BIAS.get(element.localName);
     if(!bias) return;
@@ -418,8 +436,6 @@ function transformDocument(doc, options) {
     parentFeatures.score += bias;
     features.set(parent, parentFeatures);
   });
-
-  forEach.call(elements, scoreElement.bind(this, features));
 
   // Expose attributes for debugging
   var docElements = doc.documentElement.getElementsByTagName('*');
@@ -441,6 +457,7 @@ function transformDocument(doc, options) {
 
 // Public API
 exports.calamine = {
+  // todo: rename public function to 'rub'?
   transform: transformDocument
 };
 
