@@ -247,50 +247,42 @@ function transformDocument(doc, options) {
   var forEach = Array.prototype.forEach;
 
   // Pre-filter
-  var removables = doc.body.querySelectorAll('nav, header, footer')
+  var removables = doc.body.querySelectorAll('nav, header, footer');
   forEach.call(removables, function (n) { n.remove(); });
 
-  // Initialize features map
-  var features = new Map();
-  features.set(doc.documentElement, {
-    score: -Infinity, charCount: 0, anchorCharCount: 0
-  });
-  features.set(doc.body, {
-    score: -Infinity, charCount: 0, anchorCharCount: 0
-  });
+  var scores = new Map();
+  scores.set(doc.documentElement, -Infinity);
+  scores.set(doc.body, -Infinity);
+  var charCounts = new Map();
+  charCounts.set(doc.documentElement, 0);
+  charCounts.set(doc.body, 0);
+  var anchorCharCounts = new Map();
+  anchorCharCounts.set(doc.documentElement, 0);
+  anchorCharCounts.set(doc.body, 0);
+
   var elements = doc.body.getElementsByTagName('*');
   forEach.call(elements, function initFeatures(element) {
-    features.set(element, {score: 0, charCount: 0, anchorCharCount: 0});
+    scores.set(element, 0);
+    charCounts.set(element, 0);
+    anchorCharCounts.set(element, 0);
   });
 
   // Derive text features from the bottom up
   var textIterator = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
-  var charCount, node, parent, parentFeatures;
+  var charCount, node;
   while(node = textIterator.nextNode()) {
-    for(charCount = node.nodeValue.length, parent = node.parentElement; parent;
-      parent = parent.parentElement) {
-      parentFeatures = features.get(parent);
-      parentFeatures.charCount += charCount;
-      features.set(parent, parentFeatures);
+    for(charCount = node.nodeValue.length, node = node.parentElement; node;
+      node = node.parentElement) {
+      charCounts.set(node, charCounts.get(node) + charCount);
     }
   }
 
   // Derive non-nominal anchor features from the bottom up
   var anchors = doc.body.querySelectorAll('a[href]');
   forEach.call(anchors, function deriveAnchorFeatures(anchor) {
-    var anchorFeatures = features.get(anchor);
-    var cc = anchorFeatures.charCount;
-    if(!cc) {
-      return;
-    }
-    anchorFeatures.anchorCharCount = cc;
-    features.set(anchor, anchorFeatures);
-    var parentFeatures, parent = anchor.parentElement;
-    while(parent) {
-      parentFeatures = features.get(parent);
-      parentFeatures.anchorCharCount += cc;
-      features.set(parent, parentFeatures);
-      parent = parent.parentElement;
+    for(var n = charCounts.get(anchor), el = n && anchor; el;
+      el = el.parentElement) {
+      anchorCharCounts.set(el, anchorCharCounts.get(el) + n);
     }
   });
 
@@ -302,70 +294,63 @@ function transformDocument(doc, options) {
   // any anchor text would get a very large positive bias, because
   // it represents the target content.
   forEach.call(elements, function applyDensityBias(element) {
-    // TODO: use a function of charCount and density instead
-    // of bins. The greater the cc count and lower the density
-    // the greater the bias.
-
-    var f = features.get(element);
-    var cc = f.charCount;
+    // TODO: use a function of charCount and density
+    var cc = charCounts.get(element);
     if(!cc) return;
-    var density = (f.anchorCharCount || 0) / cc;
+    var acc = anchorCharCounts.get(element) || 0;
+    var score = scores.get(element);
+    var density = acc / cc;
+
     if(cc > 1000) {
       if(density > 0.35) {
-        f.score += 50;
+        score += 50;
       } else if(density > 0.2) {
-        f.score += 100;
+        score += 100;
       } else if (density > 0.1) {
-        f.score += 100;
+        score += 100;
       } else if(density > 0.05) {
-        f.score += 250;
+        score += 250;
       } else {
-        f.score += 300;
+        score += 300;
       }
     } else if(cc > 500) {
       if(density > 0.35) {
-        f.score += 30;
+        score += 30;
       } else if(density > 0.1) {
-        f.score += 180;
+        score += 180;
       } else {
-        f.score += 220;
+        score += 220;
       }
     } else if(cc > 100) {
       if(density > 0.35) {
-        f.score += -100;
+        score += -100;
       } else {
-        f.score += 60;
+        score += 60;
       }
     } else {
       if(density > 0.35) {
-        f.score -= 200;
+        score -= 200;
       } else if(isFinite(density)) {
-        f.score += 20;
+        score += 20;
       } else {
-        f.score += 5;
+        score += 5;
       }
     }
 
-    features.set(element, f);
+    scores.set(element, score);
   });
 
   // Apply intrinsic bias (based on the type of element itself)
   forEach.call(elements, function applyIntrinsicBias(element) {
     var bias = INTRINSIC_BIAS.get(element.localName);
-    if(!bias) {
-      return;
-    }
-    var elementFeatures = features.get(element);
-    elementFeatures.score += bias;
-    features.set(element, elementFeatures);
+    if(!bias) return;
+    scores.set(element, scores.get(element) + bias);
   });
 
   // Penalize descendants of list elements
   var listDescendants = doc.body.querySelectorAll('li *,ol *,ul *');
   forEach.call(listDescendants, function biasLists(element) {
-    var elementFeatures = features.get(element);
-    elementFeatures.score -= 20;
-    features.set(element, elementFeatures);
+    scores.set(element, scores.get(element) - 20);
   });
 
   // Penalize descendants of navigational elements
@@ -374,38 +359,25 @@ function transformDocument(doc, options) {
   var navDescendants = doc.body.querySelectorAll(
     'aside *, header *, footer *, nav *');
   forEach.call(navDescendants, function biasNavs(element) {
-    var elementFeatures = features.get(element);
-    elementFeatures.score -= 50;
-    features.set(element, elementFeatures);
+    scores.set(element, scores.get(element) - 50);
   });
 
   // Score images and image parents
   var reduce = Array.prototype.reduce;
   var images = doc.body.getElementsByTagName('img');
   forEach.call(images, function scoreImage(image) {
-    var imageFeatures = features.get(image);
     var parent = image.parentElement;
-    var parentFeatures = features.get(parent);
-    // Penalize carousels
-    parentFeatures.score += reduce.call(parent.childNodes,
+    var carouselBias = reduce.call(parent.childNodes,
       function calculateImageSiblingPenalty(bias, node) {
       return 'img' === node.localName && node !== image ? bias - 5 : bias;
     }, 0);
-    // Reward auxillary descriptions
-    var alt = image.getAttribute('alt');
-    var title = image.getAttribute('title');
-    var caption = parent.localName == 'figure' &&
-      parent.querySelector('figcaption');
-    var supportingTextBias = alt || title || caption ? 30 : 0;
-    imageFeatures.score += supportingTextBias;
-    parentFeatures.score +=  supportingTextBias;
-    // Reward large images
+    var supportingTextBias = image.getAttribute('alt') ||
+      image.getAttribute('title') || (parent.localName == 'figure' &&
+      parent.querySelector('figcaption')) ? 30 : 0;
     var area = image.width ? image.width * image.height : 0;
     var areaBias = 0.0015 * Math.min(100000, area);
-    imageFeatures.score += areaBias;
-    parentFeatures.score += areaBias;
-    features.set(image, imageFeatures);
-    features.set(parent, parentFeatures);
+    scores.set(image, scores.get(image) + supportingTextBias + areaBias);
+    scores.set(parent, scores.get(parent) + carouselBias + supportingTextBias + areaBias);
   });
 
   // Bias score based on attribute content
@@ -422,9 +394,7 @@ function transformDocument(doc, options) {
       bias += ATTRIBUTE_BIAS.get(token) || 0;
     });
     if(!bias) return;
-    var elementFeatures = features.get(element);
-    elementFeatures.score += bias;
-    features.set(element, elementFeatures);
+    scores.set(element, scores.get(element) + bias);
   });
 
   // Bias the parents of certain elements
@@ -432,26 +402,21 @@ function transformDocument(doc, options) {
     var bias = DESCENDANT_BIAS.get(element.localName);
     if(!bias) return;
     var parent = element.parentElement;
-    var parentFeatures = features.get(parent);
-    parentFeatures.score += bias;
-    features.set(parent, parentFeatures);
+    scores.set(parent, scores.get(parent) + bias);
   });
 
   // Expose attributes for debugging
   var docElements = doc.documentElement.getElementsByTagName('*');
   forEach.call(docElements, function expose(element) {
-    var meta = features.get(element);
-    if(options.SHOW_CHAR_COUNT && meta.charCount)
-      element.setAttribute('charCount', meta.charCount);
-    if(options.SHOW_SCORE && meta.score)
-      element.setAttribute('score', meta.score);
+    var cc = options.SHOW_CHAR_COUNT && charCounts.get(element);
+    cc && element.setAttribute('cc', cc);
+    var score = options.SHOW_SCORE && scores.get(element);
+    score && element.setAttribute('score', score);
   });
 
-  // Find and return the highest scoring element, defaulting to
-  // the body element
-  return reduce.call(elements, function (previous, current) {
-    return features.get(current).score > features.get(previous).score ?
-      current : previous;
+  // Find and return the highest scoring element, defaulting to body
+  return reduce.call(elements, function compareScore(max, current) {
+    return scores.get(current) > scores.get(max) ? current : max;
   }, doc.body);
 }
 
