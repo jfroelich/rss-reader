@@ -248,7 +248,7 @@ function transformDocument(doc, options) {
 
   // Pre-filter
   var removables = doc.body.querySelectorAll('nav, header, footer');
-  forEach.call(removables, function (n) { n.remove(); });
+  forEach.call(removables, function remove(n) { n.remove(); });
 
   var scores = new Map();
   scores.set(doc.documentElement, -Infinity);
@@ -381,12 +381,13 @@ function transformDocument(doc, options) {
   });
 
   // Bias score based on attribute content
-  // TODO: filter numbers?
-  var RE_TOKEN_SPLIT = /[\s-_]+/g;
+  var RE_TOKEN_DELIMITER = /[\s\-_0-9]+/g;
+  var DELIMITING_SPACE = ' ';
   var identity = function(value) { return value; };
   forEach.call(elements, function biasAttributes(element) {
-    var text = (element.id || '') + ' ' + (element.className || '');
-    var tokens = text.toLowerCase().split(RE_TOKEN_SPLIT).filter(identity);
+    var text = (element.id || '') + DELIMITING_SPACE +
+      (element.className || '');
+    var tokens = text.toLowerCase().split(RE_TOKEN_DELIMITER).filter(identity);
     if(!tokens.length) return;
     var bias = 0;
     var distinctTokens = new Set(tokens);
