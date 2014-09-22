@@ -435,7 +435,7 @@ lucu.feed.shouldUpdateImage = function(imageElement) {
   // parsed, because it essentially represents an already loaded
   // image. However, we want to make sure we do not try to fetch
   // such images
-  if(/^\s*data:/i.test(source)) {
+  if(/^\s*data\s*:/i.test(source)) {
 
     console.debug('dimensionless data uri image: %o', imageElement);
     // NOTE: above sometimes appears for data uris. i notice it is appearing when
