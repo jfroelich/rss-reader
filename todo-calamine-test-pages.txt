@@ -1,24 +1,34 @@
 Problem pages
+http://www.esquire.com/features/ESQ1003-OCT_SINATRA_rev_
+http://dealbook.nytimes.com/2014/09/21/siemens-agrees-to-buy-dresser-rand-an-oil-services-company-for-7-6-billion/
+http://www.miamiherald.com/sports/nfl/miami-dolphins/article2198644.html
+http://www.bostonglobe.com/news/nation/2014/09/21/heirs-oil-fortune-join-divestment-drive/wRi3lAJsDN5N8kntvs6tpI/story.html
+http://www.salon.com/2014/09/21/the_colossal_dea_failure_that_prevented_a_potentially_major_medical_breakthrough/
 
 
-http://www.kansascity.com/news/government-politics/article2174379.html
-http://www.kansascity.com/sports/mlb/kansas-city-royals/article2185897.html
-http://www.kansascity.com/sports/college/article2184307.html
+-----------------------------
 http://www.foxnews.com/entertainment/2014/09/19/neeson-season-liam-films-ranked-from-worst-to-best/
-http://www.telegraph.co.uk/technology/apple/11108654/U2-and-Apple-developing-new-digital-music-format.html
-http://www.miamiherald.com/news/business/technology/article2163593.html
-http://www.miamiherald.com/news/nation-world/article2158062.html
-http://www.miamiherald.com/news/nation-world/article2174778.html
-http://www.thestate.com/2014/09/12/3677665/mark-sanford-breaks-up-with-fiance.html?sp=/99/132/312/169/
-http://www.centredaily.com/2014/09/13/4351975/plague-of-the-gold-treasure-hunter.html?sp=/99/116/897/
-http://www.bostonglobe.com/sports/2014/09/16/roundup-angels-become-first-team-clinch-playoff-
-berth/1BSoFVAVXUmU9OZApBX3KJ/story.html
-http://www.bostonglobe.com/news/world/2014/09/19/china-fines-glaxosmithkline-for-bribing-doctors/F5w77oVMyPtGWV7HkRa7HK/story.html
-http://www.bostonglobe.com/metro/2014/09/12/social-media-helps-photo-found-near-ground-zero/CxulmrZjpVssydNqL25pBO/story.html
-http://www.bostonglobe.com/business/technology/2014/09/19/first-buyer-drops-brand-new-iphone/1FSrNM6rmhI1OWTGSEaGMP/video.html
-http://www.bbc.com/news/world-asia-29193653
-http://abcnews.go.com/International/wireStory/rescue-dozens-aboard-listing-filipino-ferry-25481567
-http://www.nj.com/yankees/index.ssf/2014/09/7_things_derek_jeters_never_done.html
+- <templating:initRequestContext var="rc"/>
+- gets removed as unknown
+- unfortunately, this is really strange. chrome is treating all siblings as children. almost
+like it's a bug in chrome
+
+
+-----------------------------
+Kansas City
+http://www.kansascity.com/sports/mlb/kansas-city-royals/article2185897.html
+Uses <article> several times as references to other articles and not just
+for the main article content. Which means intrinsic bias over emphasizes
+the article element in the case of several article elements where article is not
+used exclusively to refer to the target content.
+
+A couple of things to fix this:
+- reduce the intrinsic bias of the article element
+- 3 cases: no article element, one element, n elements. normal bias in no/one, minor bias in n
+- the undesired <article> fall within axis with attributes like 'more-stories', 'headline-list',
+and '-side-', which means that attributes should probably propagate downward. maybe at an
+adjusted or proportional amount. maybe only if negative
+
 
 -----------------------------
 http://www.freep.com/article/20140912/NEWS07/309120108/T-J-Lane-Ohio-school-shooter-recaptured
@@ -46,7 +56,11 @@ http://www.berkeleyside.com/2014/09/09/uc-berkeley-prof-joshua-bloom-makes-earth
 This works now, but hackishly. The algorithm is weak on this page.
 ----------------------------------------
 http://dealbook.nytimes.com/2014/09/08/hours-before-sentencing-u-s-judge-says-cohen-trades-should-count-against-martoma/
-The algorithm is weak on this page.
+- failed
+
+http://dealbook.nytimes.com/2014/09/21/siemens-agrees-to-buy-dresser-rand-an-oil-services-company-for-7-6-billion/
+- failed
+
 ----------------------------------------
 http://www.bustle.com/articles/39080-bill-clinton-george-w-bush-talk-grandchildren-at-joint-bff-appearance
 Bustle is one of thoes obnoxious JS-required sites. Uses Ember templating. Probably going to just
