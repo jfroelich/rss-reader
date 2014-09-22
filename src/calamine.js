@@ -12,6 +12,8 @@
 
 if(!Map || !Set) {
   // TODO: shim it for chrome < 38 without exp js features flag
+  // TODO: do this in a separate shim file, not here, just use
+  // some es6 map/set shim
   console.warn('Map/Set not supported, things will go wrong');
 }
 
@@ -92,7 +94,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['advert', -200],
   ['artext1',100],
   ['article', 200],
-  ['articlebody', 300],
+  ['articlebody', 1000],
   ['articleheadings', -50],
   ['attachment', 20],
   ['author', 20],
@@ -250,94 +252,44 @@ function transformDocument(doc, options) {
   var removables = doc.body.querySelectorAll('nav, header, footer');
   forEach.call(removables, function remove(n) { n.remove(); });
 
+  // Initialize scores
   var scores = new Map();
   scores.set(doc.documentElement, -Infinity);
   scores.set(doc.body, -Infinity);
-  var charCounts = new Map();
-  charCounts.set(doc.documentElement, 0);
-  charCounts.set(doc.body, 0);
-  var anchorCharCounts = new Map();
-  anchorCharCounts.set(doc.documentElement, 0);
-  anchorCharCounts.set(doc.body, 0);
-
   var elements = doc.body.getElementsByTagName('*');
-  forEach.call(elements, function initFeatures(element) {
+  forEach.call(elements, function initScore(element) {
     scores.set(element, 0);
-    charCounts.set(element, 0);
-    anchorCharCounts.set(element, 0);
   });
 
   // Derive text features from the bottom up
-  var textIterator = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
-  var charCount, node;
-  while(node = textIterator.nextNode()) {
-    for(charCount = node.nodeValue.length, node = node.parentElement; node;
-      node = node.parentElement) {
-      charCounts.set(node, charCounts.get(node) + charCount);
+  var charCounts = new Map();
+  for(var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT),
+    node = it.nextNode(), count = 0; node; node = it.nextNode()) {
+    for(count = node.nodeValue.length, node = node.parentNode; node;
+      node = node.parentNode) {
+      charCounts.set(node, (charCounts.get(node) || 0) + count);
     }
   }
 
   // Derive non-nominal anchor features from the bottom up
+  var anchorChars = new Map();
   var anchors = doc.body.querySelectorAll('a[href]');
   forEach.call(anchors, function deriveAnchorFeatures(anchor) {
     for(var n = charCounts.get(anchor), el = n && anchor; el;
       el = el.parentElement) {
-      anchorCharCounts.set(el, anchorCharCounts.get(el) + n);
+      anchorChars.set(el, (anchorChars.get(el) || 0) + n);
     }
   });
 
-  // Apply text density bias. This is simply the
-  // the ratio of in-anchor-chars to normal chars. The greater
-  // the number of chars and the lower the number of in-anchor
-  // chars, the greater the positive bias. For example, a <p>
-  // with a large number of characters that does not contain
-  // any anchor text would get a very large positive bias, because
-  // it represents the target content.
+  // Apply anchors-to-text character ratio bias.
   forEach.call(elements, function applyDensityBias(element) {
-    // TODO: use a function of charCount and density
     var cc = charCounts.get(element);
     if(!cc) return;
-    var acc = anchorCharCounts.get(element) || 0;
-    var score = scores.get(element);
-    var density = acc / cc;
-
-    if(cc > 1000) {
-      if(density > 0.35) {
-        score += 50;
-      } else if(density > 0.2) {
-        score += 100;
-      } else if (density > 0.1) {
-        score += 100;
-      } else if(density > 0.05) {
-        score += 250;
-      } else {
-        score += 300;
-      }
-    } else if(cc > 500) {
-      if(density > 0.35) {
-        score += 30;
-      } else if(density > 0.1) {
-        score += 180;
-      } else {
-        score += 220;
-      }
-    } else if(cc > 100) {
-      if(density > 0.35) {
-        score += -100;
-      } else {
-        score += 60;
-      }
-    } else {
-      if(density > 0.35) {
-        score -= 200;
-      } else if(isFinite(density)) {
-        score += 20;
-      } else {
-        score += 5;
-      }
-    }
-
-    scores.set(element, score);
+    var acc = anchorChars.get(element) || 0;
+    var bias = 0.25 * cc - 0.6 * acc;
+    //console.debug('length %s, anchor-chars %s, bias %s', cc, acc, bias);
+    if(!bias) return;
+    scores.set(element, scores.get(element) + bias);
   });
 
   // Apply intrinsic bias (based on the type of element itself)
@@ -377,16 +329,17 @@ function transformDocument(doc, options) {
     var area = image.width ? image.width * image.height : 0;
     var areaBias = 0.0015 * Math.min(100000, area);
     scores.set(image, scores.get(image) + supportingTextBias + areaBias);
-    scores.set(parent, scores.get(parent) + carouselBias + supportingTextBias + areaBias);
+    scores.set(parent, scores.get(parent) + carouselBias +
+      supportingTextBias + areaBias);
   });
 
   // Bias score based on attribute content
   var RE_TOKEN_DELIMITER = /[\s\-_0-9]+/g;
-  var DELIMITING_SPACE = ' ';
   var identity = function(value) { return value; };
+
+  // TODO: this is still the worst performer
   forEach.call(elements, function biasAttributes(element) {
-    var text = (element.id || '') + DELIMITING_SPACE +
-      (element.className || '');
+    var text = (element.id || '') + ' ' + (element.className || '');
     var tokens = text.toLowerCase().split(RE_TOKEN_DELIMITER).filter(identity);
     if(!tokens.length) return;
     var bias = 0;
@@ -399,6 +352,7 @@ function transformDocument(doc, options) {
   });
 
   // Bias the parents of certain elements
+  // TODO: deprecate? is this material?
   forEach.call(elements, function biasParent(element) {
     var bias = DESCENDANT_BIAS.get(element.localName);
     if(!bias) return;
