@@ -2,6 +2,7 @@
 
 
 function testCalamine(url) {
+
   var each = Array.prototype.forEach;
   var r = new XMLHttpRequest();
   r.onload = onGet;
@@ -43,8 +44,8 @@ function testCalamine(url) {
     lucu.removeEmptyElements(doc);
     var results = calamine.transform(doc, {
       SHOW_CHAR_COUNT: 1,
-      SHOW_SCORE: 1,
-      IMAGE_BRANCH: 1
+      SHOW_ANCHOR_CHAR_COUNT: 1,
+      SHOW_SCORE: 1
     });
 
     // lucu.removeDescendantAttributes(lucu.DEFAULT_ALLOWED_ATTRIBUTES , doc.body);
@@ -61,20 +62,12 @@ function testCalamine(url) {
   }
 
   function setImageDimensions(img) {
-
-    if(!img.src) {
-
-      // This actually happens. See
-      // http://www.lakewyliepilot.com/2014/09/12/2586742/police-escaped-school-shooter.html?sp=/99/506/
-      // as an example. It is actually more likely give that I strip scripts that
-      // may have referenced hardcoded html <img> tags as templates
-
+    if(!img.getAttribute('src')) {
       if(++this.processed == this.count) {
         this.onComplete();
       }
       return;
     }
-
 
     if(img.width) {
       if(++this.processed == this.count) {
@@ -101,14 +94,19 @@ function testCalamine(url) {
   }
 
   function resolveImageSource(base, img) {
+
     var url = img.getAttribute('src');
+
     if(!url) return;
     if(/^\*sdata:/i.test(url)) return;
-    var abs = URI(url).absoluteTo(base).toString();
-    if(abs != url) {
-      img.setAttribute('src', abs);
-    }
 
-    //console.log('resolved %s', abs);
+    try {
+      var abs = URI(url).absoluteTo(base).toString();
+      if(abs != url) {
+        img.setAttribute('src', abs);
+      }
+    } catch(e) {
+      console.debug(e);
+    }
   }
 }
