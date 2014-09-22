@@ -10,15 +10,8 @@
 (function (exports) {
 'use strict';
 
-if(!Map || !Set) {
-  // TODO: shim it for chrome < 38 without exp js features flag
-  // TODO: do this in a separate shim file, not here, just use
-  // some es6 map/set shim
-  console.warn('Map/Set not supported, things will go wrong');
-}
-
 var INTRINSIC_BIAS = new Map([
-  ['article', 2000],
+  ['article', 1000],
   ['main', 100],
   ['section', 50],
   ['blockquote', 10],
@@ -64,27 +57,19 @@ var INTRINSIC_BIAS = new Map([
 
 var DESCENDANT_BIAS = new Map([
   ['a', -5],
-  ['b', 1],
-  ['blockquote', 3],
-  ['code', 2],
-  ['em', 1],
-  ['h1', 1],
-  ['h2', 1],
-  ['h3', 1],
-  ['h4', 1],
-  ['h5', 1],
-  ['h6', 1],
+  ['blockquote', 10],
+  ['div', -20],
+  ['h1', 10],
+  ['h2', 10],
+  ['h3', 10],
+  ['h4', 10],
+  ['h5', 10],
+  ['h6', 10],
   ['li', -5],
-  ['ol', -5],
-  ['p', 5],
-  ['pre', 2],
-  ['span', 1],
-  ['strong', 1],
-  ['sub', 2],
-  ['summary', 1],
-  ['sup', 2],
-  ['time', 2],
-  ['ul', -5]
+  ['ol', -20],
+  ['p', 15],
+  ['pre', 10],
+  ['ul', -20]
 ]);
 
 var ATTRIBUTE_BIAS = new Map([
@@ -100,7 +85,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['author', 20],
   ['block', -5],
   ['blog', 20],
-  ['body', 50],
+  ['body', 100],
   ['bodytd', 50],
   ['bookmarking', -100],
   ['bottom', -100],
@@ -118,6 +103,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['comic', 75],
   ['comment', -500],
   ['comments', -300],
+  ['commercial', -500],
   ['community', -100],
   ['component', -50],
   ['contact', -50],
@@ -140,7 +126,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['ftr', -100],
   ['ftrpanel', -100],
   ['google', -50],
-  ['gutter', -100],
+  ['gutter', -300],
   ['guttered', -100],
   ['head', -50],
   ['heading', -50],
@@ -155,8 +141,10 @@ var ATTRIBUTE_BIAS = new Map([
   ['links', -100],
   ['logo', -50],
   ['main', 50],
+  ['mainbodyarea', 100],
   ['maincolumn', 50],
   ['masthead', -30],
+  ['media', -100],
   ['mediaarticlerelated', -50],
   ['menu', -200],
   ['menucontainer', -300],
@@ -206,7 +194,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['socialnetworking', -250],
   ['source',-50],
   ['sponsor', -200],
-  ['story', 50],
+  ['story', 100],
   ['storydiv',100],
   ['storynav',-100],
   ['storytopbar', -50],
@@ -221,6 +209,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['tag', -100],
   ['tagcloud', -100],
   ['tags', -100],
+  ['teaser', -100],
   ['text', 20],
   ['this', -50],
   ['time', -30],
@@ -286,7 +275,7 @@ function transformDocument(doc, options) {
     var cc = charCounts.get(element);
     if(!cc) return;
     var acc = anchorChars.get(element) || 0;
-    var bias = 0.25 * cc - 0.6 * acc;
+    var bias = 0.25 * cc - 0.7 * acc;
     //console.debug('length %s, anchor-chars %s, bias %s', cc, acc, bias);
     if(!bias) return;
     scores.set(element, scores.get(element) + bias);
@@ -321,7 +310,7 @@ function transformDocument(doc, options) {
     var parent = image.parentElement;
     var carouselBias = reduce.call(parent.childNodes,
       function calculateImageSiblingPenalty(bias, node) {
-      return 'img' === node.localName && node !== image ? bias - 5 : bias;
+      return 'img' === node.localName && node !== image ? bias - 50 : bias;
     }, 0);
     var supportingTextBias = image.getAttribute('alt') ||
       image.getAttribute('title') || (parent.localName == 'figure' &&
@@ -339,6 +328,13 @@ function transformDocument(doc, options) {
 
   // TODO: this is still the worst performer
   forEach.call(elements, function biasAttributes(element) {
+
+    //itemtype="http://schema.org/Article"
+    //itemtype="http://schema.org/NewsArticle"
+    //itemprop="headline name"
+    //itemprop="alternativeHeadline description"
+    //role="main"
+
     var text = (element.id || '') + ' ' + (element.className || '');
     var tokens = text.toLowerCase().split(RE_TOKEN_DELIMITER).filter(identity);
     if(!tokens.length) return;
@@ -352,7 +348,6 @@ function transformDocument(doc, options) {
   });
 
   // Bias the parents of certain elements
-  // TODO: deprecate? is this material?
   forEach.call(elements, function biasParent(element) {
     var bias = DESCENDANT_BIAS.get(element.localName);
     if(!bias) return;
@@ -365,6 +360,8 @@ function transformDocument(doc, options) {
   forEach.call(docElements, function expose(element) {
     var cc = options.SHOW_CHAR_COUNT && charCounts.get(element);
     cc && element.setAttribute('cc', cc);
+    var acc = options.SHOW_ANCHOR_CHAR_COUNT && anchorChars.get(element);
+    acc && element.setAttribute('acc', acc);
     var score = options.SHOW_SCORE && scores.get(element);
     score && element.setAttribute('score', score);
   });
