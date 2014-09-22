@@ -1,10 +1,14 @@
 Problem pages
 
+
 http://www.kansascity.com/news/government-politics/article2174379.html
+http://www.kansascity.com/sports/mlb/kansas-city-royals/article2185897.html
+http://www.kansascity.com/sports/college/article2184307.html
 http://www.foxnews.com/entertainment/2014/09/19/neeson-season-liam-films-ranked-from-worst-to-best/
 http://www.telegraph.co.uk/technology/apple/11108654/U2-and-Apple-developing-new-digital-music-format.html
 http://www.miamiherald.com/news/business/technology/article2163593.html
 http://www.miamiherald.com/news/nation-world/article2158062.html
+http://www.miamiherald.com/news/nation-world/article2174778.html
 http://www.thestate.com/2014/09/12/3677665/mark-sanford-breaks-up-with-fiance.html?sp=/99/132/312/169/
 http://www.centredaily.com/2014/09/13/4351975/plague-of-the-gold-treasure-hunter.html?sp=/99/116/897/
 http://www.bostonglobe.com/sports/2014/09/16/roundup-angels-become-first-team-clinch-playoff-
@@ -62,6 +66,9 @@ http://timesofindia.indiatimes.com/world/europe/Putins-goal-is-to-destroy-Ukrain
 -missed
 http://timesofindia.indiatimes.com/india/Xi-Jinping-arrives-today-China-set-to-get-bigger-role-in-infrastructure-and-water/articleshow/42675953.cms
 - nothing appeared
+
+http://timesofindia.indiatimes.com/world/south-asia/Afghan-presidential-candidates-agree-to-share-power-sign-unity-deal/articleshow/43084102.cms
+- nothing
 -------------
 http://plan9.bell-labs.com/sys/doc/venti/venti.html
 The content is beneath the body tag. Knew about this problem beforehand. So this serves as a great example
