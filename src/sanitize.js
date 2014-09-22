@@ -263,6 +263,14 @@ lucu.removeInvisibleElements = function(doc) {
 lucu.removeTracerImages = function(doc) {
   var images = doc.body.getElementsByTagName('img');
   Array.prototype.filter.call(images, function(e) {
+
+    var width = e.getAttribute('width');
+
+    if(width === '0' || width === '0px') {
+      // Fair-n-balanced... apparently some browsers naively fetch
+      return true;
+    }
+
     return e.width === 1 || e.height === 1;
   }).forEach(function(e) {
     e.remove();
@@ -275,8 +283,8 @@ lucu.KNOWN_ELEMENTS = new Set(['a', 'abbr', 'acronym', 'address', 'area',
   'code', 'col', 'colgroup', 'data', 'details', 'dir', 'dd', 'del', 'dfn',
   'div', 'dl', 'dt', 'em', 'figcaption', 'figure', 'font', 'footer',
   'form', 'frameset','frame', 'header', 'help', 'hgroup','hr',
-  'h1', 'h2', 'h3', 'h4','h5',
-  'h6', 'i', 'ilayer', 'img', 'ins', 'insert', 'label', 'layer', 'legend',
+  'h1', 'h2', 'h3', 'h4','h5','h6',
+  'i', 'ilayer', 'img', 'ins', 'insert', 'label', 'layer', 'legend',
   'li', 'kbd', 'keygen', 'main', 'mark', 'marquee', 'map', 'menu',
   'menuitem', 'meter', 'multicol', 'nav', 'nobr', 'noembed', 'noframes',
   'noscript', 'ol', 'p', 'plaintext', 'pre', 'q', 'rect',
