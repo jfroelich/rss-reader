@@ -299,8 +299,7 @@ function transformDocument(doc, options) {
     var acc = anchorChars.get(element) || 0;
     var bias = 0.25 * cc - 0.7 * acc;
     if(!bias) return;
-
-    // Not sure if necessary but concerned about not having a cap
+    // Cap (tentantive)
     bias = Math.min(bias, 4000);
     scores.set(element, scores.get(element) + bias);
   });
@@ -308,7 +307,7 @@ function transformDocument(doc, options) {
   // Apply intrinsic bias (based on the type of element itself). Certain
   // elements, such as the <article> element, have a better chance of
   // containing content.
-  forEach.call(elements, function applyIntrinsicBias(element) {
+  forEach.call(elements, function (element) {
     var bias = INTRINSIC_BIAS.get(element.localName);
     if(!bias) return;
     scores.set(element, scores.get(element) + bias);
@@ -317,7 +316,7 @@ function transformDocument(doc, options) {
   // Penalize descendants of list elements. Lists are generally used for
   // boilerplate.
   var listDescendants = doc.body.querySelectorAll('li *,ol *,ul *');
-  forEach.call(listDescendants, function biasLists(element) {
+  forEach.call(listDescendants, function (element) {
     scores.set(element, scores.get(element) - 20);
   });
 
