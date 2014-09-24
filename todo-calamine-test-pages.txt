@@ -1,25 +1,10 @@
 Problem pages
-http://extension765.com/sdr/18-raiders
-http://national.deseretnews.com/article/2398/Americans-say-religions-influence-is-declining-2-and-they-arent-happy-about-it.html
-http://www.torontosun.com/2014/09/23/emergency-call-tapes-detail-florida-family-slaying
-http://www.huffingtonpost.com/2014/09/22/climate-march-photos-new-york-city_n_5862430.html
-http://www.enquirerherald.com/2014/09/22/3193867/shonda-rhimes-lays-claim-to-thursday.html?sp=/99/117/
-http://www.cnn.com/2014/09/22/politics/chelsea-clinton-baby-watch/
-http://www.ft.com/intl/cms/s/a2f402b4-424d-11e4-a9f4-00144feabdc0,Authorised=false.html?_i_location=http%3A%2F%2Fwww.ft.com%2Fcms%2Fs%2F0%2Fa2f402b4-424d-11e4-a9f4-00144feabdc0.html%3Fsiteedition%3Dintl&siteedition=intl&_i_referer=
-http://www.business-standard.com/article/news-ians/two-killed-in-explosions-in-china-s-xinjiang-114092200897_1.html
 http://www.esquire.com/features/ESQ1003-OCT_SINATRA_rev_
 http://dealbook.nytimes.com/2014/09/21/siemens-agrees-to-buy-dresser-rand-an-oil-services-company-for-7-6-billion/
 http://www.miamiherald.com/sports/nfl/miami-dolphins/article2198644.html
 http://www.bostonglobe.com/news/nation/2014/09/21/heirs-oil-fortune-join-divestment-drive/wRi3lAJsDN5N8kntvs6tpI/story.html
-http://a16z.com/2014/09/22/how-one-silicon-valley-exec-landed-her-first-fortune-500-board-seat/
-http://a16z.com/2014/05/30/selling-saas-products-dont-sell-themselves/
 http://www.salon.com/2014/09/21/the_colossal_dea_failure_that_prevented_a_potentially_major_medical_breakthrough/
-http://zulko.github.io/blog/2014/09/20/vector-animations-with-python/
-http://www.businessinsider.com/why-cisco-showered-three-men-with-billions-2014-9
-http://www.wired.com/2014/09/martellus-map/
-http://www.microwave-eetimes.com/en/reflections-from-smartphone-transmissions-enable-gesture-control.html?cmp_id=7&news_id=222905355
-http://www.newyorker.com/news/news-desk/climate-march-slideshow
-http://www.telegraph.co.uk/finance/newsbysector/mediatechnologyandtelecoms/11113996/Apple-sells-10m-iPhone-6-devices-in-three-days.html
+
 
 -----------------------------
 http://www.foxnews.com/entertainment/2014/09/19/neeson-season-liam-films-ranked-from-worst-to-best/
@@ -78,10 +63,8 @@ http://dealbook.nytimes.com/2014/09/21/siemens-agrees-to-buy-dresser-rand-an-oil
 
 ----------------------------------------
 http://www.bustle.com/articles/39080-bill-clinton-george-w-bush-talk-grandchildren-at-joint-bff-appearance
-http://www.bustle.com/articles/40902-bow-wow-is-engaged-to-erica-mena-they-both-have-some-pretty-flashy-engagement-bling
-
-Obnoxious "JS-required" site. Uses Ember templating. Probably going to just ignore them?
-
+Bustle is one of thoes obnoxious JS-required sites. Uses Ember templating. Probably going to just
+ignore them.
 ----------------------------------------
 http://monica-at-mozilla.blogspot.com/2014/08/firefox-32-supports-public-key-pinning.html
 js-only site
