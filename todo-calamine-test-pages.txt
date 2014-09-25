@@ -1,25 +1,109 @@
-Problem pages
-http://extension765.com/sdr/18-raiders
-http://national.deseretnews.com/article/2398/Americans-say-religions-influence-is-declining-2-and-they-arent-happy-about-it.html
-http://www.torontosun.com/2014/09/23/emergency-call-tapes-detail-florida-family-slaying
-http://www.huffingtonpost.com/2014/09/22/climate-march-photos-new-york-city_n_5862430.html
-http://www.enquirerherald.com/2014/09/22/3193867/shonda-rhimes-lays-claim-to-thursday.html?sp=/99/117/
-http://www.cnn.com/2014/09/22/politics/chelsea-clinton-baby-watch/
+Problem pages to review
+
+http://www.sltrib.com/sltrib/money/58454858-79/applications-unemployment-hiring-week.html.csp
+
+
+
+
+
+---------------------------------------------------------------------------------------
+Problem pages that have been reviewed and not fully solved
+---------------------------------------------------------------------------------------
+
+
+
+-----------------------------
+http://techdirt.feedsportal.com/c/35345/f/661541/s/3ed3dad9/sc/4/l/0M0Stechdirt0N0Carticles0C20A140A9240C180A425286320Crevealed0Ehow0Eto0Eget0Eifpi0Eto0Eissue0Ebogus0Edmca0Etakedowns0Ejust0Eabout0Eanything0Ewith0Eno0Equestions0Easked0Eno0Ereview0Bshtml/story01.htm
+
+-redirects to
+https://www.techdirt.com/articles/20140924/18042528632/revealed-how-to-get-ifpi-to-issue-bogus-dmca-takedowns-just-about-anything-with-no-questions-asked-no-review.shtml
+
+- now something is seriously wrong here. this works on calamine-test but not in slides. what could
+possibly explain the diff? maybe failed to retrieve at poll fetch time?
+- also, is there a way to skip the feedsportal redirect?
+
+-----------------------------
+https://a16z.com/2014/09/11/apples-new-phones-a-direct-move-against-premium-android/
+- sort of a redirect page. has no content, but its title a link to another blog...
+
+-----------------------------
 http://www.ft.com/intl/cms/s/a2f402b4-424d-11e4-a9f4-00144feabdc0,Authorised=false.html?_i_location=http%3A%2F%2Fwww.ft.com%2Fcms%2Fs%2F0%2Fa2f402b4-424d-11e4-a9f4-00144feabdc0.html%3Fsiteedition%3Dintl&siteedition=intl&_i_referer=
+- conditional paywall ("you have viewed your allowance of 10 articles...")
+
+-----------------------------
+http://www.huffingtonpost.com/2014/09/22/climate-march-photos-new-york-city_n_5862430.html
+- not a calamine error, this is an error in calamine test or something where an image
+was not properly resolved. maybe due to background-url property
+
+-----------------------------
+http://abcnews.go.com/US/protesters-loot-store-ferguson-fire-destroyed-michael-brown/story?id=25718679
+- itemprop="articleBody" is used for every element in the article (e.g. every p tag)
+- rethink about the bias for article body, special case it like the article intrinsic bias?
+- itemtype="http://schema.org/NewsArticle" was used in the target element
+- fixed by special casing articlebody attribue value bias
+
+-----------------------------
+http://code.iamcal.com/php/rfc822/full_regexp.txt
+??? no html
+
+-----------------------------
 http://www.business-standard.com/article/news-ians/two-killed-in-explosions-in-china-s-xinjiang-114092200897_1.html
-http://www.esquire.com/features/ESQ1003-OCT_SINATRA_rev_
-http://dealbook.nytimes.com/2014/09/21/siemens-agrees-to-buy-dresser-rand-an-oil-services-company-for-7-6-billion/
+- uses http://schema.org/Article, so supporting itemtype bias would partly solve it
+- target had score of 180
+- actual had score of 194.7
+
+the thing is, despite it being such a small amount of text, there was almost no other text on the page
+worthwhile. maybe p should have a greater effect on its ancestors?
+
+- actual contains value "article" in class attribute but otherwise has junk in it
+- reducing weight for article attribute bias would partly solve it (but cause problems everywhere else)
+- actual was within div with id "popup-box", if we propagate down attribute biases it would partly
+solve it
+
+
+-----------------------------
+
+
 http://www.miamiherald.com/sports/nfl/miami-dolphins/article2198644.html
-http://www.bostonglobe.com/news/nation/2014/09/21/heirs-oil-fortune-join-divestment-drive/wRi3lAJsDN5N8kntvs6tpI/story.html
-http://a16z.com/2014/09/22/how-one-silicon-valley-exec-landed-her-first-fortune-500-board-seat/
-http://a16z.com/2014/05/30/selling-saas-products-dont-sell-themselves/
+- completely missed the article, this is bad
+- it is because there are multiple article elements, intrinsic bias fails in this
+case
+- solved by creating special case for intrinsic bias of article elements
+
+
+-----------------------------
+Salon
 http://www.salon.com/2014/09/21/the_colossal_dea_failure_that_prevented_a_potentially_major_medical_breakthrough/
-http://zulko.github.io/blog/2014/09/20/vector-animations-with-python/
-http://www.businessinsider.com/why-cisco-showered-three-men-with-billions-2014-9
+- it identified only a subsection of the article
+- added "articlecontent" bias +1000, fixed the problem
+- however, leaving this here as a good reference example of the problems near the edge
+- at time of testing it was 4300 for nested and 4000 for full article, so the nested beat out
+full by just 300. but why is that? maybe i need to propagate the "contains p" farther up the
+domtree?
+
+-----------------------------
 http://www.wired.com/2014/09/martellus-map/
-http://www.microwave-eetimes.com/en/reflections-from-smartphone-transmissions-enable-gesture-control.html?cmp_id=7&news_id=222905355
+- the algorithm worked. what is throwing me off is chromes handling of displays when nesting
+block content in a non-block context. this page has a wrapping span element that is identified as
+the best element, and it is the best one. not sure why this was added as problem.
+
+-----------------------------
+The New Yorker
 http://www.newyorker.com/news/news-desk/climate-march-slideshow
+
+They have this slideshow component that requires more research. The imgs have a data-src attribute not
+a src attribute. They are definitely rendered somehow (background style?) when viewed in chrome but src
+property is empty and src attribute is empty.
+
+The correct section was found, it is more a problem maybe with sanitize or something
+
+
+
+-----------------------------
+The Telegraph
 http://www.telegraph.co.uk/finance/newsbysector/mediatechnologyandtelecoms/11113996/Apple-sells-10m-iPhone-6-devices-in-three-days.html
+- paywall with conditionally rendered content, no way around it
+
 
 -----------------------------
 http://www.foxnews.com/entertainment/2014/09/19/neeson-season-liam-films-ranked-from-worst-to-best/
