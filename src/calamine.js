@@ -11,11 +11,11 @@
 'use strict';
 
 var INTRINSIC_BIAS = new Map([
-  ['article', 1000],
   ['main', 100],
   ['section', 50],
   ['blockquote', 10],
   ['code', 10],
+  ['content', 200],
   ['div', 10],
   ['figcaption', 10],
   ['figure', 10],
@@ -79,7 +79,9 @@ var ATTRIBUTE_BIAS = new Map([
   ['advert', -200],
   ['artext1',100],
   ['article', 200],
-  ['articlebody', 1000],
+
+  ['articlecontent', 1000],
+  ['articlecontentbox', 200],
   ['articleheadings', -50],
   ['attachment', 20],
   ['author', 20],
@@ -197,6 +199,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['story', 100],
   ['storydiv',100],
   ['storynav',-100],
+  ['storytext', 200],
   ['storytopbar', -50],
   ['storywrap', 50],
   ['strycaptiontxt', -50],
@@ -231,20 +234,47 @@ var ATTRIBUTE_BIAS = new Map([
 var forEach = Array.prototype.forEach;
 var reduce = Array.prototype.reduce;
 var filter = Array.prototype.filter;
+var push = Array.prototype.push;
 
 var RE_TOKEN_DELIMITER = /[\s\-_0-9]+/g;
-var TARGET_ATTRIBUTES = new Set(['id','class','itemprop','role']);
 
-function identity(value) {
-  return value;
+/**
+ * Applies an attribute bias to each element's score.
+ * Written this way due to perf issues.
+ */
+function applyAttributeBias(elements, scores) {
+
+  // TODO: support itemtype attribute values like
+  // "http://schema.org/Article", "http://schema.org/NewsArticle"
+  // http://schema.org/BlogPosting
+
+
+  for(var i = 0, bias=0, element, length = elements.length,
+    tokens = new Set(); i < length; bias = 0, tokens.clear(), i++) {
+    element = elements[i];
+    appendTokens(element.getAttribute('id'), tokens);
+    appendTokens(element.getAttribute('name'), tokens);
+    appendTokens(element.getAttribute('class'), tokens);
+    appendTokens(element.getAttribute('itemprop'), tokens);
+    appendTokens(element.getAttribute('role'), tokens);
+    for(var it = tokens.values(), val = it.next().value; val;
+      val = it.next().value) {
+      bias += ATTRIBUTE_BIAS.get(val) || 0;
+    }
+    scores.set(element, scores.get(element) + bias);
+  }
 }
 
-function getAttributeValue(attribute) {
-  return attribute.value;
-}
+function appendTokens(str, set) {
+  if(!str) return;
+  str = str.trim();
+  if(!str) return;
+  str = str.toLowerCase();
 
-function isTargetAttribute(attribute) {
-  return TARGET_ATTRIBUTES.has(attribute.name) && attribute.value;
+  var tokens = str.split(RE_TOKEN_DELIMITER);
+  for(var i = 0; i < tokens.length; i++) {
+    set.add(tokens[i]);
+  }
 }
 
 /**
@@ -256,7 +286,7 @@ function transformDocument(doc, options) {
 
   // Pre-filter
   forEach.call(doc.body.querySelectorAll('nav, header, footer'),
-    function remove(n) { n.remove(); });
+    function (n) { n.remove(); });
 
   var elements = doc.body.getElementsByTagName('*');
 
@@ -266,8 +296,8 @@ function transformDocument(doc, options) {
   scores.set(doc.body, -Infinity);
   forEach.call(elements, function (e) { scores.set(e, 0); });
 
-  // Derive text features from the bottom up. Faster than repeated
-  // access of textContent property per element
+  // Count text lengths per element. The bottom up text nodes approach is
+  // faster than the top down element.textContent approach.
   var charCounts = new Map();
   for(var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT),
     node = it.nextNode(), count = 0; node; node = it.nextNode()) {
@@ -279,72 +309,71 @@ function transformDocument(doc, options) {
 
   // Derive non-nominal link-text-length from the bottom up
   var anchorChars = new Map();
-  var anchors = doc.body.querySelectorAll('a[href]');
-  forEach.call(anchors, function deriveAnchorFeatures(anchor) {
+  forEach.call(doc.body.querySelectorAll('a[href]'), function (anchor) {
     for(var n = charCounts.get(anchor), el = n && anchor; el;
       el = el.parentElement) {
       anchorChars.set(el, (anchorChars.get(el) || 0) + n);
     }
   });
 
-  // Using the above features (char count and anchor char count), apply
-  // a text features bias to each element's score. This "magical" formula
-  // is an adaptation of a simple regression using some empirical weights.
+  // Apply a bias based the number of characters and the number of characters
+  // within anchors to each element's score. This "magical" formula is an
+  // adaptation of a simple regression using some empirical weights.
   // Nodes with large amounts of text, that is not anchor text, get the most
   // positive bias. Adapted from "Boilerplate Detection using Shallow Text
   // Features" http://www.l3s.de/~kohlschuetter/boilerplate
-  forEach.call(elements, function applyTextBias(element) {
-    var cc = charCounts.get(element);
-    if(!cc) return;
-    var acc = anchorChars.get(element) || 0;
-    var bias = 0.25 * cc - 0.7 * acc;
-    if(!bias) return;
-    // Cap (tentantive)
-    bias = Math.min(bias, 4000);
-    scores.set(element, scores.get(element) + bias);
+  forEach.call(elements, function (e) {
+    var bias = Math.min(4000, 0.25 * (charCounts.get(e) || 0) - 0.7 *
+      (anchorChars.get(e) || 0));
+    scores.set(e, scores.get(e) + bias);
   });
+
+
+
+  // Special case intrinsic bias for <article> elements due to some
+  // sites (e.g. Miami Herald) using it for related articles in addition
+  // to the main article
+  var articles = doc.body.getElementsByTagName('article');
+  if(articles.length == 1) {
+    scores.set(articles[0], scores.get(articles[0]) + 1000);
+  } else {
+    // either 0 or N
+    forEach.call(articles,
+      function(e) { scores.set(e, scores.get(e) + 100); });
+  }
 
   // Apply intrinsic bias (based on the type of element itself). Certain
   // elements, such as the <article> element, have a better chance of
   // containing content.
-  forEach.call(elements, function (element) {
-    var bias = INTRINSIC_BIAS.get(element.localName);
-    if(!bias) return;
-    scores.set(element, scores.get(element) + bias);
+  forEach.call(elements, function (e) {
+    scores.set(e, scores.get(e) + (INTRINSIC_BIAS.get(e.localName) || 0));
   });
 
   // Penalize descendants of list elements. Lists are generally used for
   // boilerplate.
-  var listDescendants = doc.body.querySelectorAll('li *,ol *,ul *');
-  forEach.call(listDescendants, function (element) {
-    scores.set(element, scores.get(element) - 20);
-  });
+
+  forEach.call(doc.body.querySelectorAll('li *,ol *,ul *'),
+    function (element) { scores.set(element, scores.get(element) - 20); });
 
   // Penalize descendants of navigational elements. Due to pre-filtering this
   // is largely a no-op, but pre-filtering may be disabled in the future
-  var navDescendants = doc.body.querySelectorAll(
-    'aside *, header *, footer *, nav *');
-  forEach.call(navDescendants, function biasNavs(element) {
-    scores.set(element, scores.get(element) - 50);
-  });
+  forEach.call(doc.body.querySelectorAll('aside *, header *, footer *, nav *'),
+    function (element) { scores.set(element, scores.get(element) - 50); });
 
   // Score images and image parents
-  var images = doc.body.getElementsByTagName('img');
-  forEach.call(images, function scoreImage(image) {
+  forEach.call(doc.body.getElementsByTagName('img'),
+    function (image) {
     var parent = image.parentElement;
-
     // Avoid over-promotion of slideshow-container elements by demoting them.
     var carouselBias = reduce.call(parent.childNodes, function (bias, node) {
       return 'img' === node.localName && node !== image ? bias - 50 : bias;
     }, 0);
-
     // Give a bump to images that the author bothered to describe.
     // Many boilerplate images tend not to have alternative or accessibility
     // text, but many main-article images have supporting text.
     var descBias = image.getAttribute('alt') ||
       image.getAttribute('title') || (parent.localName == 'figure' &&
       parent.querySelector('figcaption')) ? 30 : 0;
-
     // Calculate a positive bias based on area. Larger images tend to be
     // part of the main article, particularly in the case of infographics.
     // Smaller images tend to be part of navigation and boilerplate.
@@ -355,32 +384,6 @@ function transformDocument(doc, options) {
       areaBias);
   });
 
-  // Bias score based on attribute content. For example, many authors use
-  // <div id="article">... instead of <article>.
-  // TODO: propagate something to children?
-  // This is still slow. It looks like accessing element.attributes is faster
-  // than getAttribute or direct property access. no clue why.
-  // TODO: use native loops and such in separate function, maybe use
-  // raw string processing instead of regexp, use less intermediate
-  // structures
-  forEach.call(elements, function biasAttributes(element) {
-
-    // TODO: add suppport for itemtype, for example:
-    // itemtype="http://schema.org/Article"
-    // itemtype="http://schema.org/NewsArticle"
-
-    var attributes = filter.call(element.attributes, isTargetAttribute);
-    var attributeValues = attributes.map(getAttributeValue);
-    var text = attributeValues.join(' ').toLowerCase();
-    var tokens = text.split(RE_TOKEN_DELIMITER).filter(identity);
-    var bias = 0;
-    var distinctTokens = new Set(tokens);
-    distinctTokens.forEach(function (token) {
-      bias += ATTRIBUTE_BIAS.get(token) || 0;
-    });
-    if(!bias) return;
-    scores.set(element, scores.get(element) + bias);
-  });
 
   // Bias the parents of certain elements. Unlike the downward
   // propagation, this only goes one level up. For example, reward
@@ -391,6 +394,24 @@ function transformDocument(doc, options) {
     var parent = element.parentElement;
     scores.set(parent, scores.get(parent) + bias);
   });
+
+  applyAttributeBias(elements, scores);
+
+  //  ['articlebody', 1000],
+  // Special case for articlebody attribute bias because ABC News uses it for
+  // every element
+  var articleBodies = doc.body.querySelectorAll(['id','class','name',
+    'itemprop','role'].map(function(s) { return '[id*="' + s + '"]';
+  }).join(','));
+  if(articleBodies.length == 1) {
+    //console.debug('single element with articlebody attribute value');
+    scores.set(articleBodies[0], scores.get(articleBodies[0]) + 1000);
+  } else {
+    // console.debug('0 or multiple elements with articlebody attribute value');
+    forEach.call(articleBodies,
+      function(e) { scores.set(e, scores.get(e) + 100); });
+  }
+
 
   // Expose attributes for debugging
   if(options.EXPOSE_ATTRIBUTES) {
