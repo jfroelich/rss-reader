@@ -57,7 +57,7 @@ lucu.database.onUpgradeNeeded_ = function(event) {
   // NOTE: this instanceof IDBRequest, right?
 
   var db = this.result;
-  var oldVersion = event.oldVersion;
+  var oldVersion = event.oldVersion || 0;
   var newVersion = lucu.database.VERSION;
 
   var feedStore;
