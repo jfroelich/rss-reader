@@ -514,6 +514,16 @@ lucu.feed.resolveAnchor = function(baseURL, anchorElement) {
     return;
   }
 
+  if(/^\s*javascript\s*:/i.test(sourceURL)) {
+    console.debug('cannot resolve js url');
+    return;
+  }
+
+  // TODO:
+  // could be tel:, cal:, mailto:, chrome-extension: etc...
+  // should only call it on http/https/ftp etc
+
+
   try {
     var resolvedURL = URI(sourceURL).absoluteTo(baseURL).toString();
 
@@ -522,6 +532,6 @@ lucu.feed.resolveAnchor = function(baseURL, anchorElement) {
 
     anchorElement.setAttribute('href', resolvedURL);
   } catch(e) {
-    console.debug(e);
+    console.debug('resolveAnchor exception: %s %s', sourceURL, e);
   }
 };
