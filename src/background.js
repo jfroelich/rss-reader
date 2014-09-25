@@ -119,6 +119,8 @@ lucu.background.onAlarm = function(alarm) {
   if('poll' == alarm.name) {
     chrome.permissions.contains({permissions: ['idle']},
       lucu.background.startPollingIfNotPermittedOrIdle);
+  } else if('archive' == alarm.name) {
+    lucu.background.startArchive();
   }
 };
 
@@ -131,6 +133,95 @@ lucu.background.startPollingIfNotPermittedOrIdle = function(permitted) {
   } else {
     lucu.poll.start();
   }
+};
+
+lucu.background.startArchive = function() {
+
+  lucu.database.open(function(db) {
+
+    var transaction = db.transaction('entry','readwrite');
+    var store = transaction.objectStore('entry');
+
+    var expiresMs = 30 * 24 * 60 * 60 * 1000;
+    var now = Date.now();
+
+    // We want to instead select only not-archived articles.
+    // Otherwise this just repeats itself on the first X entries.
+    // So we  pick an index that exists for articles where once
+    // archived the article would no longer appear in the index. The
+    // index on the feed id for each entry works nicely for this
+    // purpose.
+
+    var index = store.index('feed');
+
+    var request = index.openCursor();
+    var processed = 0, limit = 1000;
+    request.onsuccess = function() {
+
+      var cursor = this.result;
+      if(!cursor) return;
+      if(processed >= limit) {
+        return;
+      }
+
+      var entry = cursor.value;
+      var created = entry.created;
+      if(!created) {
+        console.debug('Unknown date created for entry %s, unable to archive', JSON.stringify(entry));
+        processed++;
+        return cursor.continue();
+      }
+
+      // If this happens something is wrong
+      if(entry.archiveDate) {
+        console.warn('Entry already archived, not re-archiving %s', JSON.stringify(entry));
+        processed++;
+        return cursor.continue();
+      }
+
+      var age = now - created;
+      var shouldArchive = age > expiresMs;
+
+      // NOTE: in an old version this used to avoid archiving unread
+      // articles. For now this is ignored.
+
+      // NOTE: this used to keep feed id so that unsubscribe
+      // would delete archived articles as well. For now I am keeping
+      // them around indefinitely. This requires some more thought.
+      if(shouldArchive) {
+        delete entry.content;
+        delete entry.feed;
+        delete entry.feedLink;
+        delete entry.feedTitle;
+        delete entry.pubdate;
+        delete entry.readDate;
+        delete entry.title;
+
+        // TODO: do we need entry.link for anything?
+
+        // keep entry.id
+        // keep entry.link
+        // keep entry.hash
+        // keep entry.created
+        // add in a new date
+        entry.archiveDate = now;
+        console.debug('Archiving entry with id %s', entry.id);
+        cursor.update(entry);
+      } else {
+        // console.debug('Article too recent to archive %s', entry.id);
+      }
+
+      processed++;
+      cursor.continue();
+    };
+
+    transaction.oncomplete = function() {
+      console.debug('Archived %s entries', processed);
+    };
+
+  });
+
+
 };
 
 lucu.background.startPollingIfIdle = function(idleState) {
@@ -163,3 +254,4 @@ chrome.browserAction.onClicked.addListener(lucu.background.onBrowserActionClick)
 // Eventually this may be customizable per feed and will
 // need to be refactored.
 chrome.alarms.create('poll', {periodInMinutes: 20});
+chrome.alarms.create('archive', {periodInMinutes: 24 * 60});
