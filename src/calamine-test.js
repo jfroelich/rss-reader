@@ -1,3 +1,11 @@
+
+document.addEventListener('DOMContentLoaded', function ondcr() {
+  document.removeEventListener('DOMContentLoaded', ondcr);
+  document.documentElement.style.fontSize = '12pt';
+  document.body.style.fontSize = '12pt';
+});
+
+
 // Testing calamine
 function testCalamine(url) {
   var each = Array.prototype.forEach;
@@ -59,7 +67,7 @@ function testCalamine(url) {
     // lucu.removeDescendantAttributes(lucu.DEFAULT_ALLOWED_ATTRIBUTES , doc.body);
     lucu.trimElement(results);
     results.setAttribute('best', 'best');
-    document.body.fontSize = '12pt';
+    results.style.border = '2px solid green';
     while(document.body.firstChild) {
       document.body.removeChild(document.body.firstChild);
     }
