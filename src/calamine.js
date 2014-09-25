@@ -328,8 +328,6 @@ function transformDocument(doc, options) {
     scores.set(e, scores.get(e) + bias);
   });
 
-
-
   // Special case intrinsic bias for <article> elements due to some
   // sites (e.g. Miami Herald) using it for related articles in addition
   // to the main article
@@ -351,7 +349,6 @@ function transformDocument(doc, options) {
 
   // Penalize descendants of list elements. Lists are generally used for
   // boilerplate.
-
   forEach.call(doc.body.querySelectorAll('li *,ol *,ul *'),
     function (element) { scores.set(element, scores.get(element) - 20); });
 
@@ -361,8 +358,7 @@ function transformDocument(doc, options) {
     function (element) { scores.set(element, scores.get(element) - 50); });
 
   // Score images and image parents
-  forEach.call(doc.body.getElementsByTagName('img'),
-    function (image) {
+  forEach.call(doc.body.getElementsByTagName('img'), function (image) {
     var parent = image.parentElement;
     // Avoid over-promotion of slideshow-container elements by demoting them.
     var carouselBias = reduce.call(parent.childNodes, function (bias, node) {
@@ -384,7 +380,6 @@ function transformDocument(doc, options) {
       areaBias);
   });
 
-
   // Bias the parents of certain elements. Unlike the downward
   // propagation, this only goes one level up. For example, reward
   // a div that contains the twenty p elements by a large amount.
@@ -397,21 +392,17 @@ function transformDocument(doc, options) {
 
   applyAttributeBias(elements, scores);
 
-  //  ['articlebody', 1000],
   // Special case for articlebody attribute bias because ABC News uses it for
-  // every element
-  var articleBodies = doc.body.querySelectorAll(['id','class','name',
-    'itemprop','role'].map(function(s) { return '[id*="' + s + '"]';
-  }).join(','));
+  // every element in the articlebody...
+  var SELECT_ARTICLE_BODY = ['id', 'class', 'name', 'itemprop', 'role'].map(
+    function(s) { return '['+s+'*="articlebody"]'; }).join(',');
+  var articleBodies = doc.body.querySelectorAll(SELECT_ARTICLE_BODY);
   if(articleBodies.length == 1) {
-    //console.debug('single element with articlebody attribute value');
     scores.set(articleBodies[0], scores.get(articleBodies[0]) + 1000);
   } else {
-    // console.debug('0 or multiple elements with articlebody attribute value');
     forEach.call(articleBodies,
       function(e) { scores.set(e, scores.get(e) + 100); });
   }
-
 
   // Expose attributes for debugging
   if(options.EXPOSE_ATTRIBUTES) {
