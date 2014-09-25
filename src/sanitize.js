@@ -280,17 +280,45 @@ lucu.removeTracerImages = function(doc) {
 lucu.KNOWN_ELEMENTS = new Set(['a', 'abbr', 'acronym', 'address', 'area',
   'article', 'aside', 'audio', 'b', 'bdi', 'bdo', 'big', 'blink',
   'blockquote', 'body', 'br', 'canvas', 'caption', 'center', 'cite',
-  'code', 'col', 'colgroup', 'data', 'details', 'dir', 'dd', 'del', 'dfn',
-  'div', 'dl', 'dt', 'em', 'figcaption', 'figure', 'font', 'footer',
+  'code', 'col', 'colgroup',
+
+  // The Andreesen Horowitz blog uses a <content> element wrapping the
+  // main section
+  //https://developer.mozilla.org/en-US/docs/Web/HTML/Element/content
+  // TODO: research this more
+  // Chrome recognizes HTMLContentElement
+  'content',
+
+  'data', 'details', 'dir', 'dd', 'del', 'dfn',
+  'div', 'dl', 'dt',
+
+  // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/element
+  // TODO: research this more
+  'element',
+
+  'em', 'figcaption', 'figure', 'font', 'footer',
   'form', 'frameset','frame', 'header', 'help', 'hgroup','hr',
   'h1', 'h2', 'h3', 'h4','h5','h6',
   'i', 'ilayer', 'img', 'ins', 'insert', 'label', 'layer', 'legend',
   'li', 'kbd', 'keygen', 'main', 'mark', 'marquee', 'map', 'menu',
   'menuitem', 'meter', 'multicol', 'nav', 'nobr', 'noembed', 'noframes',
   'noscript', 'ol', 'p', 'plaintext', 'pre', 'q', 'rect',
-  'rp', 'rt', 'ruby', 's', 'samp', 'section', 'small', 'source',
+  'rp', 'rt', 'ruby', 's', 'samp', 'section',
+
+  // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/shadow
+  // TODO: research this more
+  // Chrome recognizes HTMLShadowElement
+  'shadow',
+
+  'small', 'source',
   'span', 'strike', 'strong', 'sub', 'summary', 'sup', 'svg', 'table',
-  'tbody', 'td', 'tfoot', 'th', 'thead', 'time','tr', 'track', 'tt',
+  'tbody', 'td',
+
+  // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template
+  // TODO: research this more
+  // Chrome recognizes HTMLTemplateElement
+  'template',
+  'tfoot', 'th', 'thead', 'time','tr', 'track', 'tt',
   'u', 'ul', 'var', 'video', 'wbr']);
 
 lucu.removeUnknownElements = function(doc) {
