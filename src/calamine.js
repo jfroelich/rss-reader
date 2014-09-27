@@ -10,6 +10,9 @@
 (function (exports) {
 'use strict';
 
+/**
+ * Each element's score is biased according to its type
+ */
 var INTRINSIC_BIAS = new Map([
   ['main', 100],
   ['section', 50],
@@ -55,6 +58,10 @@ var INTRINSIC_BIAS = new Map([
   ['tr', -500]
 ]);
 
+/**
+ * Immediate parents of these elements receive a bias
+ * for containing these elements.
+ */
 var DESCENDANT_BIAS = new Map([
   ['a', -5],
   ['blockquote', 10],
@@ -72,6 +79,10 @@ var DESCENDANT_BIAS = new Map([
   ['ul', -20]
 ]);
 
+/**
+ * Each element receives a bias according to the values of its attributes, such
+ * as its id, class, name, itemtype, itemprop, and role.
+ */
 var ATTRIBUTE_BIAS = new Map([
   ['about', -35],
   ['ad', -100],
@@ -79,7 +90,6 @@ var ATTRIBUTE_BIAS = new Map([
   ['advert', -200],
   ['artext1',100],
   ['article', 200],
-
   ['articlecontent', 1000],
   ['articlecontentbox', 200],
   ['articleheadings', -50],
@@ -87,6 +97,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['author', 20],
   ['block', -5],
   ['blog', 20],
+  ['blogposting', 500],
   ['body', 100],
   ['bodytd', 50],
   ['bookmarking', -100],
@@ -156,6 +167,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['navbar', -100],
   ['navigation', -100],
   ['navimg', -100],
+  ['newsarticle', 500],
   ['newsletter', -100],
   ['page', 50],
   ['pagetools', -50],
@@ -236,18 +248,22 @@ var reduce = Array.prototype.reduce;
 var filter = Array.prototype.filter;
 var push = Array.prototype.push;
 
+/**
+ * Used to split up the value of an attribute into tokens.
+ * TODO: consider splitting by case-transition (upper2lower)
+ */
 var RE_TOKEN_DELIMITER = /[\s\-_0-9]+/g;
 
 /**
- * Applies an attribute bias to each element's score.
- * Written this way due to perf issues.
+ * Applies an attribute bias to each element's score. Due to very poor
+ * performance, this is isolated as a separate function that uses basic
+ * loops and a more declarative approach.
  */
 function applyAttributeBias(elements, scores) {
 
-  // TODO: support itemtype attribute values like
-  // "http://schema.org/Article", "http://schema.org/NewsArticle"
-  // http://schema.org/BlogPosting
-
+  // For each element, collect all its attribute values, tokenize the
+  // values, and then sum up the biases for the tokens and apply them to
+  // the element's score.
 
   for(var i = 0, bias=0, element, length = elements.length,
     tokens = new Set(); i < length; bias = 0, tokens.clear(), i++) {
@@ -257,6 +273,7 @@ function applyAttributeBias(elements, scores) {
     appendTokens(element.getAttribute('class'), tokens);
     appendTokens(element.getAttribute('itemprop'), tokens);
     appendTokens(element.getAttribute('role'), tokens);
+    appendTokens(getItemType(element), tokens);
     for(var it = tokens.values(), val = it.next().value; val;
       val = it.next().value) {
       bias += ATTRIBUTE_BIAS.get(val) || 0;
@@ -265,16 +282,38 @@ function applyAttributeBias(elements, scores) {
   }
 }
 
+// Helper function for applyAttributeBias
 function appendTokens(str, set) {
   if(!str) return;
   str = str.trim();
   if(!str) return;
-  str = str.toLowerCase();
-
-  var tokens = str.split(RE_TOKEN_DELIMITER);
+  var tokens = str.toLowerCase().split(RE_TOKEN_DELIMITER);
   for(var i = 0; i < tokens.length; i++) {
     set.add(tokens[i]);
   }
+}
+
+function getItemType(element) {
+
+  // So far the following have been witnessed in the wild
+  // http://schema.org/Article
+  // http://schema.org/NewsArticle
+  // http://schema.org/BlogPosting
+
+  // See also http://schema.org/Blog
+
+  var value = element.getAttribute('itemtype');
+  if(!value) return;
+  value = value.trim();
+  if(!value) return;
+  var lastSlashIndex = value.lastIndexOf('/');
+  if(lastSlashIndex == -1) return;
+  var path = value.substring(lastSlashIndex + 1);
+  return path;
+}
+
+function updateScore(scores, delta, element) {
+  scores.set(scores.get(element) + delta);
 }
 
 /**
@@ -296,8 +335,8 @@ function transformDocument(doc, options) {
   scores.set(doc.body, -Infinity);
   forEach.call(elements, function (e) { scores.set(e, 0); });
 
-  // Count text lengths per element. The bottom up text nodes approach is
-  // faster than the top down element.textContent approach.
+  // Count text lengths per element. The bottom up approach is faster than the
+  // top down element.textContent approach.
   var charCounts = new Map();
   for(var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT),
     node = it.nextNode(), count = 0; node; node = it.nextNode()) {
@@ -307,7 +346,8 @@ function transformDocument(doc, options) {
     }
   }
 
-  // Derive non-nominal link-text-length from the bottom up
+  // Aggregate the count of text within anchors within ancestors. Done from the
+  // bottom up in a second pass
   var anchorChars = new Map();
   forEach.call(doc.body.querySelectorAll('a[href]'), function (anchor) {
     for(var n = charCounts.get(anchor), el = n && anchor; el;
@@ -328,34 +368,30 @@ function transformDocument(doc, options) {
     scores.set(e, scores.get(e) + bias);
   });
 
-  // Special case intrinsic bias for <article> elements due to some
-  // sites (e.g. Miami Herald) using it for related articles in addition
-  // to the main article
-  var articles = doc.body.getElementsByTagName('article');
-  if(articles.length == 1) {
-    scores.set(articles[0], scores.get(articles[0]) + 1000);
-  } else {
-    // either 0 or N
-    forEach.call(articles,
-      function(e) { scores.set(e, scores.get(e) + 100); });
-  }
-
-  // Apply intrinsic bias (based on the type of element itself). Certain
-  // elements, such as the <article> element, have a better chance of
-  // containing content.
+  // Apply intrinsic bias (based on the type of element itself)
   forEach.call(elements, function (e) {
     scores.set(e, scores.get(e) + (INTRINSIC_BIAS.get(e.localName) || 0));
   });
 
-  // Penalize descendants of list elements. Lists are generally used for
-  // boilerplate.
+  // Special case for <article> element intrinsic bias that accounts for
+  // use of the article element to refer to other articles (e.g. Miami Herald)
+  var articles = doc.body.getElementsByTagName('article');
+  if(articles.length == 1) {
+    scores.set(articles[0], scores.get(articles[0]) + 1000);
+  } else {
+    forEach.call(articles, updateScore.bind(this, scores, 100));
+  }
+
+  // Penalize descendants of list elements.
   forEach.call(doc.body.querySelectorAll('li *,ol *,ul *'),
-    function (element) { scores.set(element, scores.get(element) - 20); });
+    updateScore.bind(this, scores, -20));
+    //function (e) { scores.set(e, scores.get(e) - 20); });
 
   // Penalize descendants of navigational elements. Due to pre-filtering this
   // is largely a no-op, but pre-filtering may be disabled in the future
   forEach.call(doc.body.querySelectorAll('aside *, header *, footer *, nav *'),
-    function (element) { scores.set(element, scores.get(element) - 50); });
+    updateScore.bind(this, scores, -50));
+    //function (e) { scores.set(e, scores.get(e) - 50); });
 
   // Score images and image parents
   forEach.call(doc.body.getElementsByTagName('img'), function (image) {
@@ -364,9 +400,8 @@ function transformDocument(doc, options) {
     var carouselBias = reduce.call(parent.childNodes, function (bias, node) {
       return 'img' === node.localName && node !== image ? bias - 50 : bias;
     }, 0);
-    // Give a bump to images that the author bothered to describe.
-    // Many boilerplate images tend not to have alternative or accessibility
-    // text, but many main-article images have supporting text.
+    // Bump images that the author bothered to describe. Most boilerplate
+    // images lack alternate text.
     var descBias = image.getAttribute('alt') ||
       image.getAttribute('title') || (parent.localName == 'figure' &&
       parent.querySelector('figcaption')) ? 30 : 0;
@@ -380,19 +415,17 @@ function transformDocument(doc, options) {
       areaBias);
   });
 
-  // Bias the parents of certain elements. Unlike the downward
-  // propagation, this only goes one level up. For example, reward
-  // a div that contains the twenty p elements by a large amount.
-  forEach.call(elements, function biasParent(element) {
-    var bias = DESCENDANT_BIAS.get(element.localName);
-    if(!bias) return;
+  // Bias the immediate parents of certain elements
+  forEach.call(elements, function (element) {
     var parent = element.parentElement;
-    scores.set(parent, scores.get(parent) + bias);
+    scores.set(parent, scores.get(parent) +
+      (DESCENDANT_BIAS.get(element.localName) || 0));
   });
 
+  // Apply attribute bias
   applyAttributeBias(elements, scores);
 
-  // Special case for articlebody attribute bias because ABC News uses it for
+  // Special case for "articleBody" attribute bias because ABC News uses it for
   // every element in the articlebody...
   var SELECT_ARTICLE_BODY = ['id', 'class', 'name', 'itemprop', 'role'].map(
     function(s) { return '['+s+'*="articlebody"]'; }).join(',');
@@ -401,7 +434,8 @@ function transformDocument(doc, options) {
     scores.set(articleBodies[0], scores.get(articleBodies[0]) + 1000);
   } else {
     forEach.call(articleBodies,
-      function(e) { scores.set(e, scores.get(e) + 100); });
+      updateScore.bind(this, scores, 100));
+      //function (e) { scores.set(e, scores.get(e) + 100); });
   }
 
   // Expose attributes for debugging
@@ -418,7 +452,7 @@ function transformDocument(doc, options) {
   }
 
   // Find and return the highest scoring element, defaulting to body
-  return reduce.call(elements, function compareScore(max, current) {
+  return reduce.call(elements, function (max, current) {
     return scores.get(current) > scores.get(max) ? current : max;
   }, doc.body);
 }
