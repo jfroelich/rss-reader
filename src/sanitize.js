@@ -303,6 +303,10 @@ lucu.KNOWN_ELEMENTS = new Set(['a', 'abbr', 'acronym', 'address', 'area',
   'li', 'kbd', 'keygen', 'main', 'mark', 'marquee', 'map', 'menu',
   'menuitem', 'meter', 'multicol', 'nav', 'nobr', 'noembed', 'noframes',
   'noscript', 'ol', 'p', 'plaintext', 'pre', 'q', 'rect',
+
+  // Not a real element, used by http://practicaltypography.com/
+  'root',
+
   'rp', 'rt', 'ruby', 's', 'samp', 'section',
 
   // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/shadow
@@ -318,7 +322,12 @@ lucu.KNOWN_ELEMENTS = new Set(['a', 'abbr', 'acronym', 'address', 'area',
   // TODO: research this more
   // Chrome recognizes HTMLTemplateElement
   'template',
-  'tfoot', 'th', 'thead', 'time','tr', 'track', 'tt',
+  'tfoot', 'th', 'thead', 'time',
+
+  // Not a real element, used by http://practicaltypography.com/
+  'topic',
+
+  'tr', 'track', 'tt',
   'u', 'ul', 'var', 'video', 'wbr']);
 
 lucu.removeUnknownElements = function(doc) {
