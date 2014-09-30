@@ -64,8 +64,8 @@ var INTRINSIC_BIAS = new Map([
  */
 var DESCENDANT_BIAS = new Map([
   ['a', -5],
-  ['blockquote', 10],
-  ['div', -20],
+  ['blockquote', 20],
+  ['div', -50],
   ['h1', 10],
   ['h2', 10],
   ['h3', 10],
@@ -74,7 +74,7 @@ var DESCENDANT_BIAS = new Map([
   ['h6', 10],
   ['li', -5],
   ['ol', -20],
-  ['p', 15],
+  ['p', 30],
   ['pre', 10],
   ['ul', -20]
 ]);
@@ -90,9 +90,12 @@ var ATTRIBUTE_BIAS = new Map([
   ['advert', -200],
   ['artext1',100],
   ['article', 200],
+  ['articles', 100],
   ['articlecontent', 1000],
   ['articlecontentbox', 200],
   ['articleheadings', -50],
+  ['articlesection', 200],
+  ['articlesections', 200],
   ['attachment', 20],
   ['author', 20],
   ['block', -5],
@@ -142,6 +145,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['gutter', -300],
   ['guttered', -100],
   ['head', -50],
+  ['header', -100],
   ['heading', -50],
   ['hentry', 150],
   ['inset', -50],
@@ -156,6 +160,8 @@ var ATTRIBUTE_BIAS = new Map([
   ['main', 50],
   ['mainbodyarea', 100],
   ['maincolumn', 50],
+  ['mainnav', -500],
+  ['mainnavigation', -500],
   ['masthead', -30],
   ['media', -100],
   ['mediaarticlerelated', -50],
@@ -245,8 +251,6 @@ var ATTRIBUTE_BIAS = new Map([
 
 var forEach = Array.prototype.forEach;
 var reduce = Array.prototype.reduce;
-var filter = Array.prototype.filter;
-var push = Array.prototype.push;
 
 /**
  * Used to split up the value of an attribute into tokens.
@@ -257,7 +261,7 @@ var RE_TOKEN_DELIMITER = /[\s\-_0-9]+/g;
 /**
  * Applies an attribute bias to each element's score. Due to very poor
  * performance, this is isolated as a separate function that uses basic
- * loops and a more declarative approach.
+ * loops and an imperative style.
  */
 function applyAttributeBias(elements, scores) {
 
@@ -274,6 +278,9 @@ function applyAttributeBias(elements, scores) {
     appendTokens(element.getAttribute('itemprop'), tokens);
     appendTokens(element.getAttribute('role'), tokens);
     appendTokens(getItemType(element), tokens);
+
+    // Wait a sec, why am i using .values to iterate over
+    // a set? This isn't a map
     for(var it = tokens.values(), val = it.next().value; val;
       val = it.next().value) {
       bias += ATTRIBUTE_BIAS.get(val) || 0;
@@ -293,6 +300,7 @@ function appendTokens(str, set) {
   }
 }
 
+// Helper function for applyAttributeBias
 function getItemType(element) {
 
   // So far the following have been witnessed in the wild
@@ -310,10 +318,6 @@ function getItemType(element) {
   if(lastSlashIndex == -1) return;
   var path = value.substring(lastSlashIndex + 1);
   return path;
-}
-
-function updateScore(scores, delta, element) {
-  scores.set(scores.get(element) + delta);
 }
 
 /**
@@ -340,7 +344,9 @@ function transformDocument(doc, options) {
   var charCounts = new Map();
   for(var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT),
     node = it.nextNode(), count = 0; node; node = it.nextNode()) {
-    for(count = node.nodeValue.length, node = node.parentNode; node;
+    // NOTE: prevent large amounts of whitespace from unduly biasing
+    for(count = node.nodeValue.trim().length,
+      node = count ? node.parentNode: undefined; node;
       node = node.parentNode) {
       charCounts.set(node, (charCounts.get(node) || 0) + count);
     }
@@ -350,7 +356,7 @@ function transformDocument(doc, options) {
   // bottom up in a second pass
   var anchorChars = new Map();
   forEach.call(doc.body.querySelectorAll('a[href]'), function (anchor) {
-    for(var n = charCounts.get(anchor), el = n && anchor; el;
+    for(var n = charCounts.get(anchor), el = n ? anchor : undefined; el;
       el = el.parentElement) {
       anchorChars.set(el, (anchorChars.get(el) || 0) + n);
     }
@@ -363,8 +369,11 @@ function transformDocument(doc, options) {
   // positive bias. Adapted from "Boilerplate Detection using Shallow Text
   // Features" http://www.l3s.de/~kohlschuetter/boilerplate
   forEach.call(elements, function (e) {
-    var bias = Math.min(4000, 0.25 * (charCounts.get(e) || 0) - 0.7 *
-      (anchorChars.get(e) || 0));
+    var cc = charCounts.get(e) || 0;
+    var acc = anchorChars.get(e) || 0;
+    var bias = 0.25 * cc - 0.7 * acc;
+    // console.debug(e.localName, cc, acc);
+    bias = Math.min(4000, bias);
     scores.set(e, scores.get(e) + bias);
   });
 
@@ -379,35 +388,30 @@ function transformDocument(doc, options) {
   if(articles.length == 1) {
     scores.set(articles[0], scores.get(articles[0]) + 1000);
   } else {
-    forEach.call(articles, updateScore.bind(this, scores, 100));
+    forEach.call(articles, updateScore.bind(null, scores, 100));
   }
 
   // Penalize descendants of list elements.
-  forEach.call(doc.body.querySelectorAll('li *,ol *,ul *'),
-    updateScore.bind(this, scores, -20));
-    //function (e) { scores.set(e, scores.get(e) - 20); });
+  forEach.call(doc.body.querySelectorAll('li *,ol *,ul *, dd *, dl *'),
+    updateScore.bind(null, scores, -20));
 
   // Penalize descendants of navigational elements. Due to pre-filtering this
   // is largely a no-op, but pre-filtering may be disabled in the future
   forEach.call(doc.body.querySelectorAll('aside *, header *, footer *, nav *'),
-    updateScore.bind(this, scores, -50));
-    //function (e) { scores.set(e, scores.get(e) - 50); });
+    updateScore.bind(null, scores, -50));
 
   // Score images and image parents
   forEach.call(doc.body.getElementsByTagName('img'), function (image) {
     var parent = image.parentElement;
-    // Avoid over-promotion of slideshow-container elements by demoting them.
+    // Avoid over-promotion of slideshow-container elements
     var carouselBias = reduce.call(parent.childNodes, function (bias, node) {
       return 'img' === node.localName && node !== image ? bias - 50 : bias;
     }, 0);
-    // Bump images that the author bothered to describe. Most boilerplate
-    // images lack alternate text.
+    // Bump images that the author bothered to describe
     var descBias = image.getAttribute('alt') ||
       image.getAttribute('title') || (parent.localName == 'figure' &&
       parent.querySelector('figcaption')) ? 30 : 0;
-    // Calculate a positive bias based on area. Larger images tend to be
-    // part of the main article, particularly in the case of infographics.
-    // Smaller images tend to be part of navigation and boilerplate.
+    // Proportionally promote large images
     var area = image.width ? image.width * image.height : 0;
     var areaBias = 0.0015 * Math.min(100000, area);
     scores.set(image, scores.get(image) + descBias + areaBias);
@@ -415,7 +419,7 @@ function transformDocument(doc, options) {
       areaBias);
   });
 
-  // Bias the immediate parents of certain elements
+  // Bias the parent of certain elements
   forEach.call(elements, function (element) {
     var parent = element.parentElement;
     scores.set(parent, scores.get(parent) +
@@ -433,28 +437,41 @@ function transformDocument(doc, options) {
   if(articleBodies.length == 1) {
     scores.set(articleBodies[0], scores.get(articleBodies[0]) + 1000);
   } else {
-    forEach.call(articleBodies,
-      updateScore.bind(this, scores, 100));
-      //function (e) { scores.set(e, scores.get(e) + 100); });
+    forEach.call(articleBodies, updateScore.bind(null, scores, 100));
   }
+
+
+
 
   // Expose attributes for debugging
   if(options.EXPOSE_ATTRIBUTES) {
     var docElements = doc.documentElement.getElementsByTagName('*');
-    forEach.call(docElements, function expose(element) {
-      var cc = options.SHOW_CHAR_COUNT && charCounts.get(element);
-      cc && element.setAttribute('cc', cc);
-      var acc = options.SHOW_ANCHOR_CHAR_COUNT && anchorChars.get(element);
-      acc && element.setAttribute('acc', acc);
-      var score = options.SHOW_SCORE && scores.get(element);
-      score && element.setAttribute('score', score);
-    });
+    if(options.SHOW_CHAR_COUNT) {
+      forEach.call(docElements, function (e) {
+        e.setAttribute('cc', charCounts.get(e) || 0);
+      });
+    }
+    if(options.SHOW_ANCHOR_CHAR_COUNT) {
+      forEach.call(docElements, function (e) {
+        e.setAttribute('acc', anchorChars.get(e) || 0);
+      });
+    }
+    if(options.SHOW_SCORE) {
+      forEach.call(docElements, function (e) {
+        e.setAttribute('score', scores.get(e) || 0);
+      });
+    }
   }
 
   // Find and return the highest scoring element, defaulting to body
   return reduce.call(elements, function (max, current) {
     return scores.get(current) > scores.get(max) ? current : max;
   }, doc.body);
+}
+
+// Helper for transformDocument
+function updateScore(scores, delta, element) {
+  scores.set(scores.get(element) + delta);
 }
 
 // Public API
