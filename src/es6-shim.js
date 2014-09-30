@@ -15,33 +15,90 @@ if(exports.Map) {
 
 console.warn('Shimming Map/Set. Untested functionality');
 
+// Primarily concerned with providing support, not replicating
+// all functionality or having great performance
+
 var Map = function(iterable) {
+  this.keys = [];
+  this.values = [];
+
   if(!iterable) return;
-  this.data = {};
-  iterable.forEach(function(entry) {
-    this[entry[0]] = entry[1];
-  }, this.data);
+  for(var i = 0; i < iterable.length;i++) {
+    this.set(iterable[i][0], iterable[i][1]);
+  }
 }
 
 Map.prototype.set = function(k,v) {
-  this.data[k] = v;
+  var index = this.keys.indexOf(k);
+  if(index == -1) {
+    this.keys.push(k);
+    this.values.push(v);
+  } else {
+    this.values[index] = v;
+  }
 };
 
 Map.prototype.get = function(k) {
-  return this.data[k];
+  var index = this.keys.indexOf(k);
+  if(index != -1) {
+    return this.values[index];
+  }
+  // otherwise return undefined...
 };
 
 var Set = function(iterable) {
-  if(!iterable) return;
   this.data = {};
+  if(!iterable) return;
   iterable.forEach(function(k) {
-    this[k] = 1;
+    this[k] = true;
   }, this.data);
 };
 
-Set.prototype.forEach = function(cb) {
-  Object.keys(this.data).forEach(cb);
+Set.prototype.add = function(k) {
+  this.data[k] = true;
 };
+
+Set.prototype.forEach = function(fn) {
+  Object.keys(this.data).forEach(fn);
+};
+
+Set.prototype.clear = function () {
+  var self = this;
+  this.forEach(function (k) { delete self.data[k]; });
+};
+
+Set.prototype.has = function(k) {
+  return this.data.hasOwnProperty(k);
+};
+
+Set.prototype.size = function(k) {
+  return Object.keys(this.data).length;
+}
+
+Set.prototype.values = function() {
+  return new SetIterator(this);
+};
+
+function SetIterator(set) {
+  var self = this;
+  this.set = set;
+  this.position = 0;
+
+  this.next = function() {
+    var size = self.set.size();
+    if(self.position > size) {
+      throw new Error('iterated past end of set');
+    }
+
+    if(self.position == size) {
+      return {value:undefined};
+    }
+
+    self.position++;
+    var key = Object.keys(self.set)[self.position];
+    return {value: key};
+  };
+}
 
 
 exports.Map = Map;
