@@ -1,15 +1,34 @@
 Problem pages to review
 
+
 http://www.sltrib.com/sltrib/money/58454858-79/applications-unemployment-hiring-week.html.csp
-
-
-
-
+http://practicaltypography.com/economics-year-one.html
+http://www.thenewstribune.com/2014/09/26/3399685/challenges-remain-in-missing-uva.html
+http://number-none.com/blow/john_carmack_on_inlined_code.html
+https://www.rochester.edu/newscenter/watch-rochester-cloak-uses-ordinary-lenses-to-hide-objects-across-continuous-range-of-angles-70592/
+https://recode.net/2014/09/26/harry-potter-is-fiction-but-invisibility-cloaking-devices-are-real/
+http://recode.net/2014/09/29/china-approves-iphone-6-for-sale/
+http://recode.net/2014/09/29/native-ad-startup-sharethrough-nabs-10-million-from-uks-sky-broadcasting/
+http://time.com/3442459/simpsons-who-died-krustys-dad/
+http://www.modbee.com/2014/09/29/3563980/police-many-minors-at-site-of.html
+http://www.krmg.com/news/news/local/15-people-wounded-gunfire-including-five-children/nhXhk/
+http://www.foxnews.com/leisure/2014/09/29/get-your-free-caffeiene-fix-on-national-coffee-day/
+http://www.telegraph.co.uk/news/worldnews/asia/japan/11127340/Japanese-volcano-search-becomes-recovery-operation.html
+http://www.cnn.com/2014/09/29/health/birth-control-options-teens/
+http://www.japantimes.co.jp/news/2014/09/30/national/rescue-teams-suspend-search-on-mount-ontake-as-tremors-worsen/
+http://www.theastronauts.com/2014/03/visual-revolution-vanishing-ethan-carter/
 
 ---------------------------------------------------------------------------------------
 Problem pages that have been reviewed and not fully solved
 ---------------------------------------------------------------------------------------
 
+
+---------------------------------------------------------------------------------------
+http://www.consumerreports.org/cro/news/2014/09/consumer-reports-tests-iphone-6-bendgate/index.htm
+- Consumer Reports uses large amounts of whitespace in certain sections. I was counting characters
+naively that included this. Now we trim each node value before counting. This fixes the error.
+- However, I am leaving this here as a note. I thought this issue was resolved by sanitize
+pre-trimming nodes. Apparently something is wrong with sanitize.
 
 
 -----------------------------
