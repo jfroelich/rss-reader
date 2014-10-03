@@ -1,26 +1,90 @@
 Problem pages to review
 
+http://oldcomputers.net/compucolor-8001.html
+http://blog.level3.com/open-internet/not-neutrality/
 
-http://www.sltrib.com/sltrib/money/58454858-79/applications-unemployment-hiring-week.html.csp
-http://practicaltypography.com/economics-year-one.html
-http://www.thenewstribune.com/2014/09/26/3399685/challenges-remain-in-missing-uva.html
-http://number-none.com/blow/john_carmack_on_inlined_code.html
-https://www.rochester.edu/newscenter/watch-rochester-cloak-uses-ordinary-lenses-to-hide-objects-across-continuous-range-of-angles-70592/
-https://recode.net/2014/09/26/harry-potter-is-fiction-but-invisibility-cloaking-devices-are-real/
-http://recode.net/2014/09/29/china-approves-iphone-6-for-sale/
-http://recode.net/2014/09/29/native-ad-startup-sharethrough-nabs-10-million-from-uks-sky-broadcasting/
-http://time.com/3442459/simpsons-who-died-krustys-dad/
-http://www.modbee.com/2014/09/29/3563980/police-many-minors-at-site-of.html
-http://www.krmg.com/news/news/local/15-people-wounded-gunfire-including-five-children/nhXhk/
-http://www.foxnews.com/leisure/2014/09/29/get-your-free-caffeiene-fix-on-national-coffee-day/
-http://www.telegraph.co.uk/news/worldnews/asia/japan/11127340/Japanese-volcano-search-becomes-recovery-operation.html
 http://www.cnn.com/2014/09/29/health/birth-control-options-teens/
 http://www.japantimes.co.jp/news/2014/09/30/national/rescue-teams-suspend-search-on-mount-ontake-as-tremors-worsen/
 http://www.theastronauts.com/2014/03/visual-revolution-vanishing-ethan-carter/
+https://www.virusbtn.com/virusbulletin/archive/2014/01/vb201401-SGX
+http://readwrite.com/2014/10/02/tesla-gives-us-the-d
+https://www.meteor.com/blog/2014/10/02/Apple-hot-code-push-mobile
+http://a16z.com/2014/10/02/voice-is-the-next-big-thing-in-mobile/
+http://www.thestate.com/2014/10/02/3719833/which-party-will-win-the-senate.html
+http://i100.independent.co.uk/article/separating-fact-from-fiction-in-the-hong-kong-protests-part-2--x1cECy_wSg
+http://thesprawl.org/simstim/day-technopath/
 
 ---------------------------------------------------------------------------------------
 Problem pages that have been reviewed and not fully solved
 ---------------------------------------------------------------------------------------
+http://krebsonsecurity.com/2014/10/silk-road-lawyers-poke-holes-in-fbis-story/
+- in this page, there is an element near end of <head>,
+<HTTP-EQUIV="PRAGMA" CONTENT="NO-CACHE">.
+Chrome shoves everything under this (incorrectly) then it gets removed by lucu.removeUnknownElements
+and as a result the page is blank. to fix this, I stopped removing unknown elements
+- now this has a second minor issue. the best element is generally correct but it includes
+comments
+
+---------------------------------------------------------------------------------------
+http://www.foxnews.com/leisure/2014/09/29/get-your-free-caffeiene-fix-on-national-coffee-day/
+templating:initrequestcontext
+- another custom element that i dont support
+- adding it made it work perfectly
+
+
+---------------------------------------------------------------------------------------
+http://www.krmg.com/news/news/local/15-people-wounded-gunfire-including-five-children/nhXhk/
+- it sort of worked, but it didn't exactly find the whole article (cmArticleWell), which
+is preferred
+
+---------------------------------------------------------------------------------------
+http://www.modbee.com/2014/09/29/3563980/police-many-minors-at-site-of.html
+- no idea, maybe dynamically rendered
+
+---------------------------------------------------------------------------------------
+http://recode.net/2014/10/02/finally-science-tackles-skunky-beer/
+https://recode.net/2014/09/26/harry-potter-is-fiction-but-invisibility-cloaking-devices-are-real/
+http://recode.net/2014/09/29/china-approves-iphone-6-for-sale/
+http://recode.net/2014/09/29/native-ad-startup-sharethrough-nabs-10-million-from-uks-sky-broadcasting/
+http://recode.net/2014/09/30/microsoft-says-free-windows-has-helped-woo-50-new-phone-and-tablet-makers/
+http://recode.net/2014/09/30/good-technology-raises-80-million-in-additional-financing/
+http://recode.net/2014/10/01/digital-health-startups-raised-700-million-during-third-quarter/
+http://recode.net/2014/10/01/houzz-raises-165-million-launches-online-store/
+
+- finding a piece of the article instead of the whole thing. maybe due to the large image
+- this issue appears to be common to recode pages. i find something but not the right thing.
+- suggests some attribute bias is off or im filtering something i should not
+- some re/code pages have worked, however.
+
+---------------------------------------------------------------------------------------
+https://www.rochester.edu/newscenter/watch-rochester-cloak-uses-ordinary-lenses-to-hide-objects-across-continuous-range-of-angles-70592/
+- remote page is completely empty, i guess not my fault. would be nice to see a message
+about 'no content' here instead.
+
+---------------------------------------------------------------------------------------
+http://number-none.com/blow/john_carmack_on_inlined_code.html
+- finding a piece of the content instead of all of it
+- it is because the root is body, which is -Infinity
+- not sure what to do. this should be possible. but allowing body means
+greater risk of always finding body as best
+
+---------------------------------------------------------------------------------------
+http://www.thenewstribune.com/2014/09/26/3399685/challenges-remain-in-missing-uva.html
+- unclear, not seeing the content, maybe dynamically rendered?
+- nevermind, it worked. it is like, chrome sometimes randomly fails to serve up the
+content, like the http request failed? but _some_ content was delivered, so why would
+that happen?
+
+---------------------------------------------------------------------------------------
+http://practicaltypography.com/economics-year-one.html
+- custom element "root"
+- custom element "topic"
+- i added support for these, then it worked perfectly. however, i am leaving this here
+as another indicator that I need to somehow support custom elements
+- minor xss risk of custom elements here because they could be scripts, disabled due to
+no inline but how else to allow?
+- uses 'aside' in a manner similar to blockquote. aside can be downweighted
+but it should not be filtered
 
 
 ---------------------------------------------------------------------------------------
@@ -46,6 +110,9 @@ https://a16z.com/2014/09/11/apples-new-phones-a-direct-move-against-premium-andr
 - sort of a redirect page. has no content, but its title a link to another blog...
 
 -----------------------------
+
+http://www.ft.com/cms/s/0/ea55bfd0-4982-11e4-8d68-00144feab7de.html
+
 http://www.ft.com/intl/cms/s/a2f402b4-424d-11e4-a9f4-00144feabdc0,Authorised=false.html?_i_location=http%3A%2F%2Fwww.ft.com%2Fcms%2Fs%2F0%2Fa2f402b4-424d-11e4-a9f4-00144feabdc0.html%3Fsiteedition%3Dintl&siteedition=intl&_i_referer=
 - conditional paywall ("you have viewed your allowance of 10 articles...")
 
@@ -121,6 +188,8 @@ The correct section was found, it is more a problem maybe with sanitize or somet
 -----------------------------
 The Telegraph
 http://www.telegraph.co.uk/finance/newsbysector/mediatechnologyandtelecoms/11113996/Apple-sells-10m-iPhone-6-devices-in-three-days.html
+http://www.telegraph.co.uk/news/worldnews/asia/japan/11127340/Japanese-volcano-search-becomes-recovery-operation.html
+http://www.telegraph.co.uk/news/celebritynews/11130793/George-Clooney-on-marriage-to-Amal-Alamuddin-It-feels-pretty-damn-great.html
 - paywall with conditionally rendered content, no way around it
 
 
@@ -162,6 +231,7 @@ Example problematic URLs
 http://www.smh.com.au/world/oscar-pistorius-eight-key-pieces-of-evidence-20140910-1060un.html
 http://www.smh.com.au/national/man-killed-by-shark-in-byron-bay-named-as-english-expat-paul-wilcox-20140909-10ek6s.html
 http://www.smh.com.au/national/muslim-community-apprehension-after-raids-leads-to-snap-protest-20140918-10iupz.html
+http://www.smh.com.au/federal-politics/political-news/tony-abbott-commits-australian-forces-to-iraq-20141003-10prij.html
 
 Finds <esi:include src="/ugc/v2/dock.html"/>. Removes as unknown.
 This is a unary tag (/>), but Chrome treats it as non-unary and moves all following content
