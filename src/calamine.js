@@ -212,6 +212,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['snippet', 50],
   ['social', -200],
   ['socialnetworking', -250],
+  ['socialtools', -200],
   ['source',-50],
   ['sponsor', -200],
   ['story', 100],
@@ -263,7 +264,10 @@ var RE_TOKEN_DELIMITER = /[\s\-_0-9]+/g;
  * performance, this is isolated as a separate function that uses basic
  * loops and an imperative style.
  */
-function applyAttributeBias(elements, scores) {
+function applyAttributeBias(doc, elements, scores) {
+
+  // TODO: research itemscope
+  // TODO: research opengraph semantics
 
   // For each element, collect all its attribute values, tokenize the
   // values, and then sum up the biases for the tokens and apply them to
@@ -286,6 +290,26 @@ function applyAttributeBias(elements, scores) {
       bias += ATTRIBUTE_BIAS.get(val) || 0;
     }
     scores.set(element, scores.get(element) + bias);
+  }
+
+  // Special case for "articleBody" attribute bias because ABC News uses it for
+  // every element in the articlebody...
+  // Also, because 'article' not in attribute bias, explicitly search here
+  // for itemtype article (see schema.org)
+  var articleAttributes =  ['id', 'class', 'name', 'itemprop', 'role'].map(
+    function(s) { return '['+s+'*="articlebody"]'; });
+  articleAttributes.push('[itemtype="http://schema.org/Article"]');
+
+  var SELECT_ARTICLE = articleAttributes.join(',');
+
+  //console.debug(SELECT_ARTICLE);
+
+  var articles = doc.body.querySelectorAll(SELECT_ARTICLE);
+
+  if(articles.length == 1) {
+    scores.set(articles[0], scores.get(articles[0]) + 1000);
+  } else {
+    forEach.call(articles, updateScore.bind(null, scores, 100));
   }
 }
 
@@ -336,15 +360,19 @@ function transformDocument(doc, options) {
   // Initialize scores
   var scores = new Map();
   scores.set(doc.documentElement, -Infinity);
-  scores.set(doc.body, -Infinity);
+
+  //scores.set(doc.body, -Infinity);
+  // Experimenting with initial body bias of 0
+  scores.set(doc.body, 0);
+
   forEach.call(elements, function (e) { scores.set(e, 0); });
 
   // Count text lengths per element. The bottom up approach is faster than the
   // top down element.textContent approach.
   var charCounts = new Map();
   for(var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT),
-    node = it.nextNode(), count = 0; node; node = it.nextNode()) {
-    // NOTE: prevent large amounts of whitespace from unduly biasing
+    node = it.nextNode(), count; node; node = it.nextNode()) {
+    // NOTE: trim to prevent large amounts of whitespace from undue bias
     for(count = node.nodeValue.trim().length,
       node = count ? node.parentNode: undefined; node;
       node = node.parentNode) {
@@ -372,8 +400,10 @@ function transformDocument(doc, options) {
     var cc = charCounts.get(e) || 0;
     var acc = anchorChars.get(e) || 0;
     var bias = 0.25 * cc - 0.7 * acc;
-    // console.debug(e.localName, cc, acc);
+
+    // Tentatively cap bias
     bias = Math.min(4000, bias);
+
     scores.set(e, scores.get(e) + bias);
   });
 
@@ -415,6 +445,9 @@ function transformDocument(doc, options) {
     var area = image.width ? image.width * image.height : 0;
     var areaBias = 0.0015 * Math.min(100000, area);
     scores.set(image, scores.get(image) + descBias + areaBias);
+
+    //console.debug(areaBias, descBias);
+
     scores.set(parent, scores.get(parent) + carouselBias + descBias +
       areaBias);
   });
@@ -427,21 +460,7 @@ function transformDocument(doc, options) {
   });
 
   // Apply attribute bias
-  applyAttributeBias(elements, scores);
-
-  // Special case for "articleBody" attribute bias because ABC News uses it for
-  // every element in the articlebody...
-  var SELECT_ARTICLE_BODY = ['id', 'class', 'name', 'itemprop', 'role'].map(
-    function(s) { return '['+s+'*="articlebody"]'; }).join(',');
-  var articleBodies = doc.body.querySelectorAll(SELECT_ARTICLE_BODY);
-  if(articleBodies.length == 1) {
-    scores.set(articleBodies[0], scores.get(articleBodies[0]) + 1000);
-  } else {
-    forEach.call(articleBodies, updateScore.bind(null, scores, 100));
-  }
-
-
-
+  applyAttributeBias(doc, elements, scores);
 
   // Expose attributes for debugging
   if(options.EXPOSE_ATTRIBUTES) {
