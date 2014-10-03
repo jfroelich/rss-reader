@@ -1,10 +1,9 @@
 
-document.addEventListener('DOMContentLoaded', function ondcr() {
-  document.removeEventListener('DOMContentLoaded', ondcr);
+document.addEventListener('DOMContentLoaded', function ondcl() {
+  document.removeEventListener('DOMContentLoaded', ondcl);
   document.documentElement.style.fontSize = '12pt';
   document.body.style.fontSize = '12pt';
 });
-
 
 // Testing calamine
 function testCalamine(url) {
@@ -26,13 +25,14 @@ function testCalamine(url) {
     each.call(imgs, function (img) {
       var url = img.getAttribute('src');
       if(!url) return;
-      if(/^\*sdata:/i.test(url)) return;
+      if(/^data:/i.test(url)) return;
+
       try {
         var abs = URI(url).absoluteTo(r.responseURL).toString();
         if(abs == url) return;
         img.setAttribute('src', abs);
       } catch(e) {
-        console.debug(e);
+        console.debug(url);
       }
     });
 
@@ -47,11 +47,11 @@ function testCalamine(url) {
   r.send();
 
   function onImageDimensionsSet(doc) {
+
     lucu.removeComments(doc);
     lucu.removeBlacklistedElements(doc);
-    lucu.removeUnknownElements(doc);
     lucu.removeTracerImages(doc);
-    lucu.unwrwapNoscripts(doc);
+    lucu.unwrapNoscripts(doc);
     lucu.unwrapNoframes(doc);
     lucu.canonicalizeSpaces(doc);
     lucu.trimNodes(doc);
@@ -65,6 +65,7 @@ function testCalamine(url) {
     });
 
     // lucu.removeDescendantAttributes(lucu.DEFAULT_ALLOWED_ATTRIBUTES , doc.body);
+
     lucu.trimElement(results);
     results.setAttribute('best', 'best');
     results.style.border = '2px solid green';

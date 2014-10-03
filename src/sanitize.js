@@ -90,21 +90,40 @@ lucu.removeDescendantAttributes = function(allowedAttributes, element) {
 
 lucu.removeBlacklistedElements = function(doc) {
 
-  var s = ['applet', 'base', 'basefont', 'bgsound', 'button', 'command',
+  var s = [
+    'applet', 'base', 'basefont', 'bgsound', 'button', 'command',
     'datalist', 'dialog', 'embed', 'fieldset',
-
-    // http://www.miracleas.com/BAARF/
     'frameset',
     'head',
     'html', 'iframe', 'input', 'isindex', 'math', 'link', 'menu', 'menuitem',
     'meta', 'object','optgroup', 'option', 'output', 'param',
     'progress', 'script', 'select', 'spacer', 'style', 'textarea', 'title',
-    'xmp'].join(',');
+    'xmp'
+    ].join(',');
 
   var elements = doc.body.querySelectorAll(s);
-  for(var i = 0, len = elements.length, element; i < len; i++) {
+  for(var i = 0, len = elements.length; i < len; i++) {
     // console.log('removing blist %s', elements[i].localName);
     elements[i].remove();
+  }
+
+  // Non-standard elements seen in the wild
+  var gPlusOnes = doc.body.getElementsByTagName('g:plusone');
+  for(var i = 0, len = gPlusOnes.length; i < len; i++) {
+
+    // NOTE: gebtn is live so one removal could affect others
+    // so we have to check if defined
+
+    if(gPlusOnes[i]) {
+      gPlusOnes[i].remove();
+    }
+  }
+
+  var fbComments = doc.body.getElementsByTagName('fb:comments');
+  for(var i = 0, len = fbComments.length; i < len; i++) {
+    if(fbComments[i]) {
+      fbComments[i].remove();
+    }
   }
 };
 
@@ -261,88 +280,24 @@ lucu.removeInvisibleElements = function(doc) {
 };
 
 lucu.removeTracerImages = function(doc) {
+  var filter = Array.prototype.filter;
   var images = doc.body.getElementsByTagName('img');
-  Array.prototype.filter.call(images, function(e) {
-
+  filter.call(images, function(e) {
     var width = e.getAttribute('width');
 
-    if(width === '0' || width === '0px') {
-      // Fair-n-balanced... apparently some browsers naively fetch
-      return true;
-    }
+    // The fact that an image will not be visible in the page does not prevent
+    // Chrome from trying to fetch it, which is abused as a tracking device
+    // So we also check for zero widths
+    return width === '0' || width === '0px' || e.width === 1 || e.height === 1;
 
-    return e.width === 1 || e.height === 1;
   }).forEach(function(e) {
     e.remove();
   });
 };
 
-lucu.KNOWN_ELEMENTS = new Set(['a', 'abbr', 'acronym', 'address', 'area',
-  'article', 'aside', 'audio', 'b', 'bdi', 'bdo', 'big', 'blink',
-  'blockquote', 'body', 'br', 'canvas', 'caption', 'center', 'cite',
-  'code', 'col', 'colgroup',
+lucu.unwrapNoscripts = function(doc) {
 
-  // The Andreesen Horowitz blog uses a <content> element wrapping the
-  // main section
-  //https://developer.mozilla.org/en-US/docs/Web/HTML/Element/content
-  // TODO: research this more
-  // Chrome recognizes HTMLContentElement
-  'content',
-
-  'data', 'details', 'dir', 'dd', 'del', 'dfn',
-  'div', 'dl', 'dt',
-
-  // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/element
-  // TODO: research this more
-  'element',
-
-  'em', 'figcaption', 'figure', 'font', 'footer',
-  'form', 'frameset','frame', 'header', 'help', 'hgroup','hr',
-  'h1', 'h2', 'h3', 'h4','h5','h6',
-  'i', 'ilayer', 'img', 'ins', 'insert', 'label', 'layer', 'legend',
-  'li', 'kbd', 'keygen', 'main', 'mark', 'marquee', 'map', 'menu',
-  'menuitem', 'meter', 'multicol', 'nav', 'nobr', 'noembed', 'noframes',
-  'noscript', 'ol', 'p', 'plaintext', 'pre', 'q', 'rect',
-
-  // Not a real element, used by http://practicaltypography.com/
-  'root',
-
-  'rp', 'rt', 'ruby', 's', 'samp', 'section',
-
-  // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/shadow
-  // TODO: research this more
-  // Chrome recognizes HTMLShadowElement
-  'shadow',
-
-  'small', 'source',
-  'span', 'strike', 'strong', 'sub', 'summary', 'sup', 'svg', 'table',
-  'tbody', 'td',
-
-  // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template
-  // TODO: research this more
-  // Chrome recognizes HTMLTemplateElement
-  'template',
-  'tfoot', 'th', 'thead', 'time',
-
-  // Not a real element, used by http://practicaltypography.com/
-  'topic',
-
-  'tr', 'track', 'tt',
-  'u', 'ul', 'var', 'video', 'wbr']);
-
-lucu.removeUnknownElements = function(doc) {
-  var elements = doc.body.getElementsByTagName('*');
-  Array.prototype.filter.call(elements, function(e) {
-    return !lucu.KNOWN_ELEMENTS.has(e.localName);
-  }).forEach(function(e) {
-    // console.debug('removing unknown %s', e);
-    e.remove();
-  });
-};
-
-lucu.unwrwapNoscripts = function(doc) {
-
-  //http://fortune.com/2014/09/09/apple-event-overshadows-bad-news-snapchat-tinder/
+  // http://fortune.com/2014/09/09/apple-event-overshadows-bad-news-snapchat-tinder/
 
   var forEach = Array.prototype.forEach;
   var noscripts = doc.body.getElementsByTagName('noscript');
@@ -435,6 +390,14 @@ lucu.unwrap = function(e) {
 lucu.RE_JAVASCRIPT_PROTOCOL = /^\s*javascript\s*:/i;
 
 lucu.unwrapDescendants = function(rootElement) {
+
+  // BUG: this does not work. I dont think the native traversal mechanisms
+  // can handle the particular unwrap transform. I think its because the
+  // child gets put before the parent.
+
+  // TODO: use a custom iterator that finds the next node before unwrapping
+  // and then steps to visit the next node.
+
 
   var doc = rootElement.ownerDocument;
 

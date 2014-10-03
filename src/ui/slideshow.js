@@ -237,8 +237,9 @@ function appendSlide(entry, isFirst) {
 
   lucu.removeComments(doc);
   lucu.removeBlacklistedElements(doc);
-  lucu.removeUnknownElements(doc);
   lucu.removeTracerImages(doc);
+  lucu.unwrapNoscripts(doc);
+  lucu.unwrapNoframes(doc);
   // lucu.removeInvisibleElements(doc);
   lucu.canonicalizeSpaces(doc);
   lucu.trimNodes(doc);
