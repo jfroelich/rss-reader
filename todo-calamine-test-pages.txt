@@ -2,7 +2,6 @@ Problem pages to review
 
 http://oldcomputers.net/compucolor-8001.html
 http://blog.level3.com/open-internet/not-neutrality/
-
 http://www.cnn.com/2014/09/29/health/birth-control-options-teens/
 http://www.japantimes.co.jp/news/2014/09/30/national/rescue-teams-suspend-search-on-mount-ontake-as-tremors-worsen/
 http://www.theastronauts.com/2014/03/visual-revolution-vanishing-ethan-carter/
@@ -10,9 +9,20 @@ https://www.virusbtn.com/virusbulletin/archive/2014/01/vb201401-SGX
 http://readwrite.com/2014/10/02/tesla-gives-us-the-d
 https://www.meteor.com/blog/2014/10/02/Apple-hot-code-push-mobile
 http://a16z.com/2014/10/02/voice-is-the-next-big-thing-in-mobile/
+https://a16z.com/2014/10/02/voice-is-the-next-big-thing-in-mobile/
+
 http://www.thestate.com/2014/10/02/3719833/which-party-will-win-the-senate.html
 http://i100.independent.co.uk/article/separating-fact-from-fiction-in-the-hong-kong-protests-part-2--x1cECy_wSg
 http://thesprawl.org/simstim/day-technopath/
+http://www.ptinews.com/news/5208159_Mammootty-pledges-support-to-PM-s-Swachh-Bharat-drive.html
+http://www.theaustralian.com.au/in-depth/terror/tony-abbott-gives-green-light-to-raaf-airstrikes-in-iraq/story-fnpdbcmu-1227079646252
+http://www.doctorslounge.com/index.php/news/hd/50055
+http://www.people.com/article/hillary-clinton-granddaughter-charlotte-advice
+
+
+---------------------------------------------------------------------------------------
+http://franklinta.com/2014/09/30/6dof-positional-tracking-with-the-wiimote/
+- works in test but not in slides?
 
 ---------------------------------------------------------------------------------------
 Problem pages that have been reviewed and not fully solved
