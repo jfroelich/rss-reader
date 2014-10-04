@@ -10,6 +10,7 @@ function testCalamine(url) {
   var each = Array.prototype.forEach;
   var r = new XMLHttpRequest();
   r.onload = function () {
+
     var doc = r.responseXML;
 
     if(!doc.body) {
@@ -25,6 +26,9 @@ function testCalamine(url) {
     each.call(imgs, function (img) {
       var url = img.getAttribute('src');
       if(!url) return;
+
+      // NOTE: for some unknown reason
+      // /^\s*data\s*:/i does not match but the following does
       if(/^data:/i.test(url)) return;
 
       try {
@@ -64,8 +68,6 @@ function testCalamine(url) {
       SHOW_SCORE: true
     });
 
-    // lucu.removeDescendantAttributes(lucu.DEFAULT_ALLOWED_ATTRIBUTES , doc.body);
-
     lucu.trimElement(results);
     results.setAttribute('best', 'best');
     results.style.border = '2px solid green';
@@ -83,9 +85,19 @@ function testCalamine(url) {
       return;
     }
 
-    var local = document.importNode(img, false);
-    local.onerror = console.debug;
     var self = this;
+    var local = document.importNode(img, false);
+
+    local.onerror = function(e) {
+      // console.debug('loading error %o', e);
+
+      // An image loading error should not preclude
+      // reaching onComplete
+      if(++self.processed == self.count) {
+        self.onComplete();
+      }
+    };
+
     local.onload = function() {
       img.width = local.width;
       img.height = local.height;
@@ -94,6 +106,7 @@ function testCalamine(url) {
       }
     };
 
+    // Trigger the load
     var t = local.src;
     local.src = void t;
     local.src = t;
