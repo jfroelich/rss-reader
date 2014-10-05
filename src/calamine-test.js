@@ -1,10 +1,4 @@
 
-document.addEventListener('DOMContentLoaded', function ondcl() {
-  document.removeEventListener('DOMContentLoaded', ondcl);
-  document.documentElement.style.fontSize = '12pt';
-  document.body.style.fontSize = '12pt';
-});
-
 // Testing calamine
 function testCalamine(url) {
   var each = Array.prototype.forEach;
@@ -62,7 +56,6 @@ function testCalamine(url) {
     lucu.removeEmptyNodes(doc);
     lucu.removeEmptyElements(doc);
     var results = calamine.transform(doc, {
-      EXPOSE_ATTRIBUTES: true,
       SHOW_CHAR_COUNT: true,
       SHOW_ANCHOR_CHAR_COUNT: true,
       SHOW_SCORE: true
@@ -111,4 +104,6 @@ function testCalamine(url) {
     local.src = void t;
     local.src = t;
   }
+
+  return 'Running test';
 }
