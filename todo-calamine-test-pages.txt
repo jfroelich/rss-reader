@@ -10,7 +10,7 @@ http://readwrite.com/2014/10/02/tesla-gives-us-the-d
 https://www.meteor.com/blog/2014/10/02/Apple-hot-code-push-mobile
 http://a16z.com/2014/10/02/voice-is-the-next-big-thing-in-mobile/
 https://a16z.com/2014/10/02/voice-is-the-next-big-thing-in-mobile/
-
+http://recode.net/2014/10/03/what-really-happened-to-windows-9-comic/
 http://www.thestate.com/2014/10/02/3719833/which-party-will-win-the-senate.html
 http://i100.independent.co.uk/article/separating-fact-from-fiction-in-the-hong-kong-protests-part-2--x1cECy_wSg
 http://thesprawl.org/simstim/day-technopath/
@@ -18,7 +18,35 @@ http://www.ptinews.com/news/5208159_Mammootty-pledges-support-to-PM-s-Swachh-Bha
 http://www.theaustralian.com.au/in-depth/terror/tony-abbott-gives-green-light-to-raaf-airstrikes-in-iraq/story-fnpdbcmu-1227079646252
 http://www.doctorslounge.com/index.php/news/hd/50055
 http://www.people.com/article/hillary-clinton-granddaughter-charlotte-advice
+https://www.ted.com/talks/david_christian_big_history
 
+
+---------------------------------------------------------------------------------------
+http://www.thestate.com/2014/10/05/3725890/orman-opens-up-big-lead-over-roberts.html
+- another example where the content appears in the text context and works exactly as
+desired, but does not work in slides
+
+---------------------------------------------------------------------------------------
+http://aeon.co/magazine/philosophy/tim-lott-zen-buddhism-alan-watts/
+- generally worked but missed leading image
+
+---------------------------------------------------------------------------------------
+http://www.dailyherald.com/article/20141004/sports/141009186/
+- the approach generally works, but it misses the lead image because it is is an outer box
+and this only finds the inner box. maybe because p only biases its immediate ancestor.
+
+
+---------------------------------------------------------------------------------------
+http://www.suntimes.com/sports/colleges/30274116-419/toasts-of-dixie-mississippi-state-ole-miss-pull-stunners.html
+- works in test but not in slides, unclear
+
+---------------------------------------------------------------------------------------
+http://www.washingtonpost.com/sf/national/2014/10/04/how-ebola-sped-out-of-control/
+- works perfectly in test but not in slides, unclear
+
+---------------------------------------------------------------------------------------
+http://www.technews.org/watch-texas-am-vs-mississippi-state-live-stream-ncaa-college-football-game-online-video-and-highlights/2917077/
+- works perfectly in test but not in slides?
 
 ---------------------------------------------------------------------------------------
 http://franklinta.com/2014/09/30/6dof-positional-tracking-with-the-wiimote/
@@ -60,15 +88,32 @@ http://recode.net/2014/09/30/microsoft-says-free-windows-has-helped-woo-50-new-p
 http://recode.net/2014/09/30/good-technology-raises-80-million-in-additional-financing/
 http://recode.net/2014/10/01/digital-health-startups-raised-700-million-during-third-quarter/
 http://recode.net/2014/10/01/houzz-raises-165-million-launches-online-store/
+http://recode.net/2014/10/03/microsoft-says-samsung-owes-it-6-9-million-in-contract-dispute/
+http://recode.net/2014/10/04/verizon-redbox-shut-down-netflix-killer-no-one-wanted/
 
 - finding a piece of the article instead of the whole thing. maybe due to the large image
 - this issue appears to be common to recode pages. i find something but not the right thing.
 - suggests some attribute bias is off or im filtering something i should not
 - some re/code pages have worked, however.
+- there is a clear pattern where i mistakenly identify the leading image instead of the text
+
+
+
+---------------------------------------------------------------------------------------
+http://www.betawired.com/4-year-old-boy-from-nj-died-of-ev-d68/146246/
+- failed in slides but works perfectly in test context
+
+
+---------------------------------------------------------------------------------------
+http://blogs.gentoo.org/blueness/2014/10/04/lilblue-linux-release-20140925-adventures-beyond-the-land-of-posix/
+- unclear issue, this works perfeclty in test context but not in slides
+
+http://blogs.gentoo.org/blueness/2014/10/03/sthttpd-a-very-tiny-and-very-fast-http-server-with-a-mature-codebase/
+- a repeat of above issue, this works perfectly in test but not in slides for unknown reason
 
 ---------------------------------------------------------------------------------------
 https://www.rochester.edu/newscenter/watch-rochester-cloak-uses-ordinary-lenses-to-hide-objects-across-continuous-range-of-angles-70592/
-- remote page is completely empty, i guess not my fault. would be nice to see a message
+- remote page is completely empty, i guess not my fault? would be nice to see a message
 about 'no content' here instead.
 
 ---------------------------------------------------------------------------------------
