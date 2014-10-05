@@ -314,8 +314,8 @@ lucu.unwrapNoframes = function(doc) {
 
 lucu.isTrimmableElement = function(element) {
   return element && element.nodeType == Node.ELEMENT_NODE &&
-    (element.localName == 'br' || (element.localName == 'p' &&
-    !element.firstChild));
+    (element.localName == 'br' || element.localName == 'hr' ||
+      (element.localName == 'p' && !element.firstChild));
 };
 
 lucu.trimElement = function(element) {
