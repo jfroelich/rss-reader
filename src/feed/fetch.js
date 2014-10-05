@@ -384,6 +384,7 @@ lucu.feed.updateImageElement = function(remoteImage) {
 
   // If a problem occurs just go straight to onComplete and do not load
   // the image or augment it.
+
   // TODO: wait, this is wrong. this should be doing what onload is doing
   // regarding decrementing images. Right now this causes an early exit if
   // any image in the list, before the last one, fails to load
