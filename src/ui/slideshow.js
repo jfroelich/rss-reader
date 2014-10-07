@@ -231,12 +231,15 @@ function appendSlide(entry, isFirst) {
   var content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
 
+  // TODO: this should be also rewwriting urls within the content itself
+
   // TODO: this should be using parseHTML
   var doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = entry.content;
 
   lucu.removeComments(doc);
   lucu.removeBlacklistedElements(doc);
+  lucu.removeSourcelessImages(doc);
   lucu.removeTracerImages(doc);
   lucu.unwrapNoscripts(doc);
   lucu.unwrapNoframes(doc);
@@ -247,9 +250,10 @@ function appendSlide(entry, isFirst) {
   lucu.removeEmptyElements(doc);
   var results = calamine.transform(doc);
 
+  //lucu.removeJavascriptAnchors(results);
+
   // This is bugged
   //lucu.unwrapDescendants(results);
-
   lucu.removeDescendantAttributes(lucu.DEFAULT_ALLOWED_ATTRIBUTES , results);
   lucu.trimElement(results);
 
