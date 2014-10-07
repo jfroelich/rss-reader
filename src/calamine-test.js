@@ -48,25 +48,32 @@ function testCalamine(url) {
 
     lucu.removeComments(doc);
     lucu.removeBlacklistedElements(doc);
+    lucu.removeSourcelessImages(doc);
     lucu.removeTracerImages(doc);
     lucu.unwrapNoscripts(doc);
     lucu.unwrapNoframes(doc);
+    // lucu.removeInvisibleElements(doc);
+
     lucu.canonicalizeSpaces(doc);
     lucu.trimNodes(doc);
     lucu.removeEmptyNodes(doc);
     lucu.removeEmptyElements(doc);
-    var results = calamine.transform(doc, {
+    var result = calamine.transform(doc, {
       SHOW_CHAR_COUNT: true,
       SHOW_ANCHOR_CHAR_COUNT: true,
       SHOW_SCORE: true
     });
 
-    lucu.trimElement(results);
-    results.setAttribute('best', 'best');
-    results.style.border = '2px solid green';
-    while(document.body.firstChild) {
-      document.body.removeChild(document.body.firstChild);
-    }
+    lucu.removeJavascriptAnchors(result);
+
+    // unwrap is buggy
+    //lucu.unwrapDescendants(results);
+    //lucu.removeDescendantAttributes(lucu.DEFAULT_ALLOWED_ATTRIBUTES , result);
+    lucu.trimElement(result);
+    result.setAttribute('best', 'best');
+    result.style.border = '5px solid green';
+
+    document.body.innerHTML = '';
     document.body.appendChild(doc.body);
   }
 

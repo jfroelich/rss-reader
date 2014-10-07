@@ -245,6 +245,21 @@ lucu.removeEmptyElements = function(doc) {
   }
 };
 
+lucu.removeJavascriptAnchors = function(root) {
+  var filter = Array.prototype.filter;
+  var anchors = root.querySelectorAll('a[href]');
+  var candidates = filter.call(anchors, function(anchor) {
+    return /^javascript:/i.test(anchor.getAttribute('href'));
+  });
+
+  // TODO: replace href and leave it in? or remove it?
+  // NOTE: does not handle nested anchors correctly
+  candidates.forEach(function(anchor) {
+    console.debug('removing %s', anchor.outerHTML);
+    anchor.remove();
+  });
+};
+
 lucu.removeInvisibleElements = function(doc) {
   var elements = doc.body.getElementsByTagName('*');
   var invisibles = Array.prototype.filter.call(elements, function(e) {
@@ -292,6 +307,20 @@ lucu.removeTracerImages = function(doc) {
 
   }).forEach(function(e) {
     e.remove();
+  });
+};
+
+lucu.removeSourcelessImages = function(doc) {
+  var filter = Array.prototype.filter;
+  var images = doc.body.getElementsByTagName('img');
+  var sourcelessImages = filter.call(images, function(image) {
+    var source = image.getAttribute('src');
+    return source && source.trim() ? false : true;
+  });
+
+  sourcelessImages.forEach(function(image) {
+    // console.debug('removing sourceless image %s', image.outerHTML);
+    image.remove();
   });
 };
 
