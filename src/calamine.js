@@ -6,6 +6,14 @@
  * Provides the calamine.transform(HTMLDocument) function that guesses at the
  * content of a document. In other words, applying lotion to soothe NLP
  * shingles.
+ *
+ * TODO: express everything as probability. Use a scale of 0 to 100
+ * to represent each element's likelihood of being useful content, where
+ * 100 is most likely. Every blcok gets its own probability score. Then
+ * iteratively backfrom from a threshold of something like 50%. Or instead
+ * of blocks weight the elements and use the best element approach again,
+ * where probability means the likelihood of any given element being the
+ * best element, not whether it is content or boilerplate.
  */
 (function (exports) {
 'use strict';
@@ -283,9 +291,13 @@ var BLACKLIST_SELECTORS = [
   'a.more-tab', // The Oklahoman
   'a[rel="tag"]', // // The Oklahoman
   'a.skip-to-text-link', // NYTimes
+  'aside.itemAsideInfo', // The Guardian
+  'aside#asset-related', // St. Louis Today
+  'aside#bpage_ad_bottom', // BuzzFeed
   'aside[data-panelmod-type="relatedContent"]', // LA Times
   'aside.callout', // The Atlantic
   'aside.marginalia', // NY Times
+  'aside#post_launch_success', // BuzzFeed
   'aside.related-articles', // BBC
   'aside.related-content', // // The Oklahoman
   'aside#related-content-xs', // The Miami Herald
@@ -294,23 +306,33 @@ var BLACKLIST_SELECTORS = [
   'aside#sidebar', // TechSpot
   'aside.story-right-rail', // USA Today
   'aside.tools', // The Boston Globe
+  'aside.views-tags', // BuzzFeed
   'aside.widget-area', // thedomains.com
   'div#a-all-related', // New York Daily News
+  'div.ad', // Reuters
+  'div.ad-cluster-container', // TechCrunch
   'div.ad-container', // Fox News
   'div.adAlone300', // The Daily Herald
   'div.adCentred', // The Sydney Morning Herald
   'div.adjacent-entry-pagination', // thedomains.com
   'div#addshare', // The Hindu
+  'div.admpu', // Telegraph UK
   'div.ad-unit', // TechCrunch
+  'div.addthis_toolbox', // NobelPrize.org
+  'div.artbody > div.share', // China Topix
   'div.art_tabbed_nav', // The Wall Street Journal (blog)
+  'div#article div.share', // timeslive.co.za
   'div.article_actions', // Forbes
+  'div.article_cat', // Collegian
   'div.articleComments', // Reuters
   'div#articleIconLinksContainer', // The Daily Mail
   'div.article-social', // Fortune Magazine
   'div.articleEmbeddedAdBox', // Mercury News
   'div.article-extra', // TechCrunch
+  'div.article_interaction', // Bloomberg
   'div.article-list', // // The Oklahoman
   'div#articleKeywords', // The Hindu
+  'div.articleMeta', // Tampa Bay
   'div.articleOptions', // Mercury News
   'div.article-pagination', // UT San Diego
   'div.article-print-url', // USA Today
@@ -319,42 +341,61 @@ var BLACKLIST_SELECTORS = [
   'div.article-tags', // entrepeneur.com
   'div.article-tools', // The Atlantic
   'div.articleViewerGroup', // Mercury News
+  'div.assetBuddy', // Reuters
+  'div.author_topics_holder', // The Irish Times
   'div[data-ng-controller="bestOfMSNBCController"]', // MSNBC
   'div#blq-foot', // BBC
   'div#blog-sidebar', // Comic Book Resources
+  'div.bpcolumnsContainer', // Western Journalism
+  'div#breadcrumb', // Autonews
   'div#breadcrumbs', // E-Week
+  'div.browse', // ABC News
+  // Several websites, only way to identify Autonews
+  'div.byline',
   'div.byline_links', // Bloomberg
   'div#ce-comments', // E-Week
   'div.cnn_strybtntools', // CNN
   'div.cnn_strylftcntnt', // CNN
   'div.cnn_strycntntrgt', // CNN
+  'div#commentary', // Autonews
+  'div#comment_bar', // Autonews
+  'div#commentBar', // Newsday
   'div.comment_bug', // Forbes
   'div#comment-container', // auburnpub.com
   'div#comments', // CBS News
+  'div.comments', // TechCrunch
   'div.commentCount', // Reuters
   'div.comment-count', // auburnpub.com
   'div.comment-count-block',// TechSpot
   'div.comment_count_affix', // // The Oklahoman
   'div.commentDisclaimer', // Reuters
   'div.comment-holder', // entrepeneur.com
+  'div#commenting', // Fox News
   'div#commentLink', // // The Oklahoman
   'div.comment_links', // Forbes
   'div.comments-overall', // Aeon Magazine
   'div.comment-policy-box', // thedomains.com
   'div.controls', // NY Daily News
   'div.correspondant', // CBS News
+  'div[data-module-zone="articletools_bottom"]', // The Wall Street Journal
   'div[data-ng-controller="moreLikeThisController"]', // MSNBC
   'div.dfad', // thedomains.com
+  'div.dfinder_cntr', // Hewlett Packard News
   'div#dfp-ad-mosad_1-wrapper', // The Hill
   'div#digital-editions', // The New Yorker
   'div#disqus', // ABCNews
+  'div.editors-picks', // The Wall Street Journal
+  'div.email-optin', // Quantstart
   'div#email-sign-up', // BBC
   'div.email-signup', // entrepeneur.com
+  'div.encrypted-content', // Atlantic City Press
+  'div.endslate', // WFMY News (final slide element)
   'div.entity_popular_posts', // Forbes
   'div.entity_preview', // Forbes
   'div.entity_recent_posts', // Forbes
   'div.entry-meta', // Re-code (uncertain about this one)
   'div#entry-tags', // hostilefork
+  'div.entry-tags', // Wired.com
   'div.entry-unrelated', // The New Yorker
   'div#epilogue', // hostilefork
   'div#et-sections-dropdown-list', // The Washington Post
@@ -364,26 +405,46 @@ var BLACKLIST_SELECTORS = [
   'div.followable_block', // Forbes
   'div.footer', // KMBC
   'div.gallery-sidebar-ad', // USA Today
+  'div#gkSocialAPI', // The Guardian
+  'div.googleads', // Telegraph UK
   'div.group-link-categories', // Symmetry Magazine
   'div.group-links', // Symmetry Magazine
   'div.gsharebar', // entrepeneur.com
   'div.headlines', // // The Oklahoman
+  'div.headlines-images', // ABC 7 News
+  'div.hide-for-print', // NobelPrize.org
   'div.ib-collection', // KMBC
   'div#infinite-list', // The Daily Mail
   'div.inline-sharebar', // CBS News
   'div.inline-share-tools-asset', // USA Today
   'div.inline-related-links', // Gourmet.com
+  'div.inner-related-article', // Recode
   'div#inset_groups', // Gizmodo
   'div.issues-topics', // MSNBC
   'div[itemprop="comment"]',// KMBC
+  'div#jp-relatedposts', // IT Governance USA
   'div.LayoutSocialTools', // ecdc.europa.eu
   'div.LayoutTools', // ecdc.europa.eu
   'div#leader', // hostilefork
+  'div.linearCalendarWrapper', // ABC News
+  'div.link-list-inline', // Las Vegas Sun
+  'div#livefyre-wrapper', // The Wall Street Journal
+  'div.ljcmt_full', // LiveJournal
+  'div.ljtags', // LiveJournal
   'div.load-comments', // entrepeneur.com
   'div.l-sidebar', // TechSpot
+  'div.l-story-secondary', // Boston.com
+  'div.m-article__share-buttons', // The Verge
   'div.mashsharer-box', // internetcommerce.org
+  'div.m-entry__sidebar', // The Verge
   'div.menu', // CNBC
+  'div.meta_bottom', // Collegian
+  'div#meta-related', // Entertainment Weekly
+  'div#mc_embed_signup', // stgeorgeutah.com
+  'div.m-linkset', // The Verge
   'div.middle-ads', // The Times
+  'div.mla_cite', // NobelPrize.org
+  'div.mmn-link', // ABC 7 News
   'div#most-popular', // BBC
   'div#mostPopularTab', // Reuters
   'div#most-read-news-wrapper', // The Daily Mail
@@ -392,34 +453,58 @@ var BLACKLIST_SELECTORS = [
   'div.multiplier_story', // Christian Science Monitor
   'div.nav', // KMBC (note: may be problematic)
   'div#newsletterList', // E-Week
+  'div#newsletter_signup_article', // People Magazine
+  'div.newsreel', // The Wall Street Journal
+  'div.next_on_news', // BuzzFeed
   'div#nlHeader', // E-Week
   'div.node-footer', // Drupal
   'div.node-metainfo', // The Boston Herald
+  'div.overlayPostPlay', // The Sydney Morning Herald
+  'div.page_label', // Hewlett Packard News
   'div.pb-f-page-comments', // Washington Post
+  'div.pfont', // Newsday
   'div.pl-most-popular', // entrepeneur.com
   'div.postcats', // The Wall Street Journal (blog)
+  'div.post-comments', // The Sun Times
   'div.post-meta-category', // Comic Book Resources
   'div.post-meta-share', // Comic Book Resources
   'div.post-meta-tags', // Comic Book Resources
+  'div.post-meta-taxonomy-terms', // The Sun Times
   'div#prevnext', // hostilefork
+  'div.printad', // North Jersey
+  'div.printHide', // Telegraph UK
+  'div.printstory', // North Jersey
   'div#prologue', // hostilefork
+  'div.pull-right', // The Oklahoman
   'div#reader-comments', // The Daily Mail
   'div.recirculation', // New Yorker
+  'div#registration-notice', // Atlantic City Press
+  'div#related', // The Boston Globe (note: wary of using this)
   'div.related', // CNBC (note: wary of using this one)
   'div.related-carousel', // The Daily Mail
   'div.related-block', // auburnpub.com
+  'div.related-block2', // St. Louis Today
   'div.related-column', // The Hindu
+  'div.related-items', // BBC
+  'div#related_items', // Business Week
+  'div#relatedlinks', // ABC News
+  'div.related-media', // Fox News
+  'div.relatedNews', // Tampa Bay
+  'div.related-posts-inner', // threatpost.com
   'div.relatedRail', // Reuters
   'div#related-services', // BBC
+  'div#related-tags', // St. Louis Today
   'div#relatedTopics', // Reuters
   'div.relatedTopicButtons', // Reuters
   'div#related-videos-container', // E-Online
   'div.relatedVidTitle', // E-Online
   'div.rel-block-news', // The Hindu
   'div.rel-block-sec', // The Hindu
+  'div.relposts', // TechCrunch
   'div#respond', // Stanford Law
   'div#reveal-comments', // Aeon Magazine
   'div#right-column', // The Hindu
+  'div.right_rail_cnt', // Hewlett Packard News
   'div#rn-section', // Getty
   'div#rt_contact', // CNBC
   'div#rt_featured_franchise', // CNBC
@@ -427,53 +512,83 @@ var BLACKLIST_SELECTORS = [
   'div[id^="rt_promo"]', // CNBC
   'div#rt_related_0', // CNBC
   'div.resizer', // KMBC
+  'div.save-tooltip', // auburnpub
   'div.sd-social', // Re-code
   'div#section-comments',  // The Washington Post
-  'div.share', // auburnpub.com
+  'div#section-kmt', // The Guardian
+  'div.section-puffs', // Telegraph UK
+  //'div.share', // CANNOT USE
+  'div.share > div.right', // auburnpub.com
+
   'div.shareArticles', // The Daily Mail
   'div.share-bar', // Gulf News
   'div.share-body-bottom', // BBC
+  'div.share-buttons', // Quantstart
   'div.share-count-container', // CNBC
   'div.sharedaddy', // Fortune
   'div.share-help', // BBC
   'div.shareLinks', // Reuters
   'div.sharetools-inline-article-ad', // NYTimes
   'div.shareToolsNextItem', // KMBC
+  'div.sharrre-container', // Concurring Opinions
+  'div.show-related-videos', // CBS News
+  'div.sidebar-content', // Concurring opinions
   'div.sidebar-feed', // WRAL
+  'div.simpleShare', // Newsday
   'div.sitewide-footer', // NBCNews
   'div.sitewide-header-content', // NBCNews
   'div.social', // BBC
+  'div.social-actions', // BuzzFeed
+  'div.socialbar', // Autonews
+  'div.social-bar', // The Miami Herald
+  'div.social-bookmarking-module', // Wired.com
+  'div.social-buttons', // The Verge
   'div.social-column', // TechSpot
   'div.social-count', // Fox News
-  'div.social-bar', // The Miami Herald
+  'div.social-dd', // The Wall Street Journal
   'div.social_icons', // Forbes
   'div#social-links', // Reuters
   'div.social-links-bottom', // MSNBC
   'div.social-links-top', // MSNBC
+  'div#social-share', // Priceonomics
   'div.social-share', // Bloomberg
+  'div.social-share-top', // Priceonomics
   'div.social-share-bottom', // The Hill
   'div.social-toolbar', // News OK
   'div.social-toolbar-affix', // News OK
   'div.social-tools-wrapper-bottom ', // Washington Post
+  'div.sps-twitter_module', // BBC
   'div#sticky-nav', // Christian Science Monitor
   'div.sticky-tools', // The Boston Globe
   'div#storyControls', // Politico
   'div#story-embed-column', // Christian Science Monitor
   'div#story-footer', // The Miami Herald
   'div.story_list', // Christian Science Monitor
+  'div#storyMoreOnFucntion', // Telegraph UK
+  'div.storynav', // TechCrunch
+  'div#story_right_column_ad', // dailyjournal.net
   'div.story-tags', // Fox Sports
   'div.story-taxonomy', // ABC Chicago
+  'div.storytools', // TechCrunch
+  'div#subscription-notice', // Atlantic City Press
+  'div#tabs-732a40a7-tabPane-2', // The Miami Herald (unclear)
+  'div.talklinks', // LiveJournal
   'div.taxonomy', // ABC Chicago
+  'div.t_callout', // ABC News
   'div#teaserMarketingCta', // The Times
   'div#teaser-overlay', // The Times
   'div.thirdPartyRecommendedContent', // KMBC
   'div#thumb-scroller', // E-Week
+  'div.tncms-restricted-notice', // Atlantic City Press
+  'div.toolbox', // ABC News
   'div.tools1', // The Wall Street Journal (blog)
   'div.top-index-stories', // BBC
   'div.topkicker', // entrepreneur.com
   'div.top-stories-range-module', // BBC
+  'div.top-stories05', // Telegraph UK
   'div.trb_embed_related', // LA Times
   'div.trb_panelmod_body', //  LA Times
+  'div.twipsy', // St. Louis Today
   'div.util-bar-flyout', // USA Today
   'div.utilities', // The Times
   'div#utility', // WRAL
@@ -482,8 +597,11 @@ var BLACKLIST_SELECTORS = [
   'div.utilsFloat', // KMBC
   'div.video_about_ad', // Christian Science Monitor
   'div.video_disqus', // Bloomberg
+  'div#video-share', // ABC News
   'div.view-comments', // auburnpub.com
   'div#vuukle_env', // The Hindu
+  'div#WNCol4', // Fox (subsidary myfoxny.com)
+  'div#WNStoryRelatedBox', // Fox (subsidiary myfoxal.com)
   'div.xwv-related-videos-container', // The Daily Mail
   'div#you-might-like', // The New Yorker
   'div#zergnet', // Comic Book Resources
@@ -491,6 +609,7 @@ var BLACKLIST_SELECTORS = [
   'figure.kudo', // svbtle.com blogs
   'footer', // any
   'header', // any
+  'h2.hide-for-print', // NobelPrize.org
   'h2#page_header', // CNBC
   'h3#scrollingArticlesHeader', // The Oklahoman
   'h4.taboolaHeaderRight', // KMBC
@@ -505,9 +624,12 @@ var BLACKLIST_SELECTORS = [
   'p.essay-tags', // Aeon Magazine
   'p.moreVideosTitle', // E-Online
   'p.p_top_10', // Star Telegram
+  'p.story-ad-txt', // Boston.com
   'p.storytag', // chinatopix.com
   'p.trial-promo', // Newsweek
   'section.around-bbc-module', // BBC
+  'section.bottom_shares', // BuzzFeed
+  'section.breaking_news_bar', // Bloomberg
   'section#comments', // TechSpot
   'section.comments', // ABC Chicago
   'section#follow-us', // BBC
@@ -516,22 +638,37 @@ var BLACKLIST_SELECTORS = [
   'section#more-stories-widget', // The Miami Herald
   'section#newsletter-signup', // New Yorker
   'section#promotions', // The New Yorker
+  'section#related-links', // BuzzFeed
   'section.related-products', // TechSpot
+  'section#responses', // BuzzFeed
   'section.signup-widget', // The Miami Herald
-  'span.sharetools-label', // NY Times
+  'section.story-tools-mod', // Boston.com
+  'section.suggested-links', // The Examiner
+  'section.top-video', // ABC 7 News
+  'span.sharetools-label', // NY Time
   'table.complexListingBox', // Mercury News
+  'ul.article-options', // TVNZ
   'ul#article-share-links', // The Boston Herald
+  'ul.blox-recent-list', // Atlantic City Press
   'ul.breadcrumb', // The Miami Herald
+  'ul.breaking-news-stories', // ABC 7 News
   'ul.entry-extra', // Wired Magazine
   'ul.entry_sharing', // Bloomberg
   'ul.flippy', // MSNBC
   'ul.generic_tabs', // Bloomberg
   'ul.links--inline', // Drupal
+  'ul.links-list', // BBC
+  'ul.navbar-nav', // Noctua Software Blog
+  'ul.nav-tabs', // The Miami Herald
+  'ul.newslist', // Autonews
+  'ul.pagenav', // The Guardian
   'ul.pagination', // Politico
   'ul.related-links', // The Boston Globe
+  'ul.related-posts', // Concurring Opinions
   'ul.social', // The Sydney Morning Herald
   'ul.social-bookmarking-module', // Wired Magazine
   'ul.socialByline', // The Wall Street Journal (blog)
+  'ul.socials', // independent.ie
   'ul.social-share-list', // TechCrunch
   'ul.social-tools', // The Washington Post
   'ul.tags', // BBC
