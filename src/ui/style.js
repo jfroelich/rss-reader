@@ -44,7 +44,13 @@ lucu.style.onChange = function() {
 
     var hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
     //console.debug('Setting header font size to %s', (hfs / 10).toFixed(2));
-    titleRule.style.fontSize = (hfs / 10).toFixed(2) + 'em';
+    console.debug('hfs after change is %s', hfs);
+    if(hfs) {
+      titleRule.style.fontSize = (hfs / 10).toFixed(2) + 'em';
+    } else {
+      console.warn('header font size after change not set or 0');
+    }
+
   }
 
   var contentRule = lucu.findCSSRule(sheet, 'div.entry span.entry-content');
@@ -57,7 +63,12 @@ lucu.style.onChange = function() {
 
     var bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10) || 0;
     //console.debug('Setting body font size to %s', (bfs / 10).toFixed(2));
-    contentRule.style.fontSize = (bfs / 10).toFixed(2) + 'em';
+    if(bfs) {
+      contentRule.style.fontSize = (bfs / 10).toFixed(2) + 'em';
+    } else {
+      console.warn('body font size after change not set or 0');
+    }
+
 
     contentRule.style.textAlign = (localStorage.JUSTIFY_TEXT == '1') ? 'justify' : 'left';
 
@@ -77,35 +88,49 @@ lucu.style.onLoad = function() {
   }
 
   s += 'margin-left: 0px;margin-right: 0px; margin-bottom: 0px; margin-top:0px;';
-  s += 'padding-top: 6px;';
-  s += 'padding-bottom:20px;';
 
-  var entryMargin = localStorage.ENTRY_MARGIN || '10';
-  s += 'padding-left: '+entryMargin+'px;';
-  s += 'padding-right: '+entryMargin+'px;';
+
+  var entryMargin = localStorage.ENTRY_MARGIN;
+  if(entryMargin) {
+    s += 'padding-top: ' + entryMargin + 'px;';
+    s += 'padding-bottom:'+ entryMargin + 'px;';
+    s += 'padding-left: ' + entryMargin + 'px;';
+    s += 'padding-right: ' + entryMargin + 'px;';
+  } else {
+    console.warn('onload entry margin not set');
+  }
 
   sheet.addRule('div.entry',s);
 
-  // RESET s !!!!
+  // RESET s !!
   s = '';
 
   var hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
-  s += 'font-size:' + (hfs / 10).toFixed(2) + 'em;';
+
+  if(hfs) {
+    s += 'font-size:' + (hfs / 10).toFixed(2) + 'em;';
+  } else {
+    console.warn('header font size on load not set or 0');
+  }
 
   s += 'font-family:'+ (localStorage.HEADER_FONT_FAMILY || '')  +';';
   s += 'letter-spacing: -0.03em;';
   s += 'color: rgba(50, 50, 50, 0.9);';
-  s += 'margin-bottom:12px;';
-  s += 'margin-left:0px;';
+
   s += 'text-decoration:none;';
   s += 'display:block;';
   s += 'word-wrap: break-word;';
   s += 'text-shadow: 1px 1px 2px #cccccc;';
   s += 'text-transform: capitalize;';
-  s += 'padding-top: 20px;';
-  s += 'padding-left: 0px;';
-  s += 'padding-right: 0px;';
-  s += 'padding-bottom: 4px;';
+
+  //s += 'margin-bottom:12px;';
+  //s += 'margin-left:0px;';
+  s += 'margin: 0px';
+  s += 'padding: 0px';
+  //s += 'padding-top: 20px;';
+  //s += 'padding-left: 0px;';
+  //s += 'padding-right: 0px;';
+  //s += 'padding-bottom: 4px;';
 
   sheet.addRule('div.entry a.entry-title', s);
 
@@ -123,20 +148,25 @@ lucu.style.onLoad = function() {
 
   var bodyFontFamily = localStorage.BODY_FONT_FAMILY;
   if(bodyFontFamily) {
-    s += 'font-family:' + localStorage.BODY_FONT_FAMILY + ';';
+    s += 'font-family:' + bodyFontFamily + ';';
   }
 
-  var bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
+  var bodyLineHeight = localStorage.BODY_LINE_HEIGHT;
   if(bodyLineHeight) {
-    // TODO: units?
-    s += 'line-height:' + (localStorage.BODY_LINE_HEIGHT / 10).toFixed(2) + ';';
+    bodyLineHeight = parseInt(bodyLineHeight);
+    if(bodyLineHeight) {
+      // TODO: units?
+      s += 'line-height:' + (bodyLineHeight / 10).toFixed(2) + ';';
+    } else {
+
+    }
+
   }
 
   s += 'vertical-align: text-top;';
   //s += 'letter-spacing: -0.03em;';
   //s += 'word-spacing: -0.5em;';
   s += 'display:block;';
-
 
   // BUG: https://news.ycombinator.com/item?id=8123152
   // Rendering this page it looks like very long strings were not broken
