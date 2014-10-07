@@ -1,5 +1,7 @@
 Problem pages to review
 
+
+
 http://oldcomputers.net/compucolor-8001.html
 http://blog.level3.com/open-internet/not-neutrality/
 http://www.cnn.com/2014/09/29/health/birth-control-options-teens/
@@ -19,7 +21,29 @@ http://www.theaustralian.com.au/in-depth/terror/tony-abbott-gives-green-light-to
 http://www.doctorslounge.com/index.php/news/hd/50055
 http://www.people.com/article/hillary-clinton-granddaughter-charlotte-advice
 https://www.ted.com/talks/david_christian_big_history
+http://blog.noctua-software.com/procedural-colors-for-game.html
 
+
+
+all new york times rss feeds - something is wrong with parsing
+
+---------------------------------------------------------------------------------------
+http://www.smh.com.au/it-pro/business-it/hp-split-a-uturn-in-meg-whitmans-changefilled-career-20141006-10qsk6.html
+- works in test but not in slides
+- ok, i think it is because this is from within the feed itself, because the url could not be fetched
+
+
+---------------------------------------------------------------------------------------
+http://www.ft.com/cms/s/0/1e4d4c68-4d48-11e4-bf60-00144feab7de.html
+- paywall, reached limit of monthly
+
+
+
+---------------------------------------------------------------------------------------
+http://www.bbc.co.uk/news/world-asia-29499682
+- missed target, looks like because of class weights (tokens "article", "story")
+- added div.related-items to blacklist
+- this causes it to match the text, but, it misses the leading image
 
 ---------------------------------------------------------------------------------------
 http://www.thestate.com/2014/10/05/3725890/orman-opens-up-big-lead-over-roberts.html
