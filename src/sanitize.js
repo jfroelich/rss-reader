@@ -255,7 +255,7 @@ lucu.removeJavascriptAnchors = function(root) {
   // TODO: replace href and leave it in? or remove it?
   // NOTE: does not handle nested anchors correctly
   candidates.forEach(function(anchor) {
-    console.debug('removing %s', anchor.outerHTML);
+    // console.debug('removing %s', anchor.outerHTML);
     anchor.remove();
   });
 };
