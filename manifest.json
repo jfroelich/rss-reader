@@ -1,10 +1,12 @@
 {
+  "version": "2.3",
+
   "manifest_version": 2,
   "name": "Lucubrate",
-  "version": "2.2",
 
   "author": "Joshua Froelich",
   "homepage_url": "https://github.com/jfroelich/rss-reader",
+
   "description": "Reading late into the night",
 
   "browser_action": {
