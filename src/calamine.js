@@ -30,14 +30,22 @@ var RE_TOKEN_DELIMITER = /[\s\-_0-9]+/g;
 exports.calamine = {};
 
 function detachBySelector(root, selector) {
-  // querySelector is used because (1) the code is more concise, (2) the perf
-  // delta from querySelectorAll is immaterial, and (3) this avoids the need
-  // to check doc.contains(element) per iteration, as the selector restarts
-  // from the outer ancestor.
+
+  // Performance testing suggests this is now the worst performer, or
+  // about equally as bad as attribute based scoring
+
+  // querySelector is used instead of querySelectorAll because:
+  // (1) the code is more concise,
+  // (2) the perf delta from querySelectorAll is immaterial, and
+  // (3) this avoids the need to check doc.contains(element) per iteration,
+  // as the selector restarts from the outer ancestor. Using querySelectorAll
+  // would require this extra check because descendants of detached nodes
+  // remain in the node list produced by querySelectorAll
   for(var element = root.querySelector(selector); element;
     element = root.querySelector(selector)) {
     element.remove();
   }
+
 }
 
 /**
@@ -56,8 +64,11 @@ exports.calamine.transform = function transform_(doc, options) {
   // element, after processing, but are applied before processing to reduce the
   // amount of elements considered and reduce error. Most of the selectors are
   // conservative to avoid filtering non-boilerplate
-  var detachFromRootBySelector = detachBySelector.bind(this, doc.body);
-  BLACKLIST_SELECTORS.forEach(detachFromRootBySelector);
+
+  // NOTE: this call now seems to account for about 60% of the processing time
+
+  var detachFromBodyBySelector = detachBySelector.bind(this, doc.body);
+  BLACKLIST_SELECTORS.forEach(detachFromBodyBySelector);
 
   var elements = doc.body.getElementsByTagName('*');
 
@@ -198,6 +209,16 @@ function applyAttributeBias(doc, elements, scores) {
 
   // TODO: research itemscope
   // TODO: research opengraph semantics
+  // <meta property="og:type" content="article">
+
+  // itemtype="http://schema.org/BlogPosting"
+  // itemprop="blogPost"
+  // itemprop="mainContentOfPage"
+  // itemtype="http://schema.org/WebPage"
+  // role="complementary"
+
+  // TODO: Google plus uses obfuscated attributes but
+  // it does use role="article"
 
   // TODO: itemtype has the same issues as 'article' id/class,
   // in that some articles use the itemtype repeatedly
@@ -206,21 +227,102 @@ function applyAttributeBias(doc, elements, scores) {
   // values, and then sum up the biases for the tokens and apply them to
   // the element's score.
 
-  for(var i = 0, bias=0, element, length = elements.length,
-    tokens = new Set(); i < length; bias = 0, tokens.clear(), i++) {
+  var attributeValue = null;
+  var bias = 0;
+  var element = null;
+  var length = elements.length;
+  var elementTokens = new Set();
+
+  for(var i = 0; i < length; i++) {
+
     element = elements[i];
-    appendTokens(element.getAttribute('id'), tokens);
+
+    // NOTE: this is running into Chrome profiler error
+    // "not optimized: optimized too many times"
+    /*appendTokens(element.getAttribute('id'), tokens);
     appendTokens(element.getAttribute('name'), tokens);
     appendTokens(element.getAttribute('class'), tokens);
     appendTokens(element.getAttribute('itemprop'), tokens);
     appendTokens(element.getAttribute('role'), tokens);
-    appendTokens(getItemType(element), tokens);
+    appendTokens(getItemType(element), tokens);*/
 
-    for(var it = tokens.values(), val = it.next().value; val;
+    attributeValue = element.getAttribute('id');
+    if(attributeValue) {
+      attributeValue = attributeValue.trim();
+      if(attributeValue) {
+        var attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
+        for(var j = 0; j < attributeTokens.length; j++) {
+          elementTokens.add(attributeTokens[i]);
+        }
+      }
+    }
+
+    attributeValue = element.getAttribute('name');
+    if(attributeValue) {
+      attributeValue = attributeValue.trim();
+      if(attributeValue) {
+        var attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
+        for(var j = 0; j < attributeTokens.length; j++) {
+          elementTokens.add(attributeTokens[i]);
+        }
+      }
+    }
+
+    attributeValue = element.getAttribute('class');
+    if(attributeValue) {
+      attributeValue = attributeValue.trim();
+      if(attributeValue) {
+        var attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
+        for(var j = 0; j < attributeTokens.length; j++) {
+          elementTokens.add(attributeTokens[i]);
+        }
+      }
+    }
+
+    attributeValue = element.getAttribute('itemprop');
+    if(attributeValue) {
+      attributeValue = attributeValue.trim();
+      if(attributeValue) {
+        var attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
+        for(var j = 0; j < attributeTokens.length; j++) {
+          elementTokens.add(attributeTokens[i]);
+        }
+      }
+    }
+
+    attributeValue = element.getAttribute('role');
+    if(attributeValue) {
+      attributeValue = attributeValue.trim();
+      if(attributeValue) {
+        var attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
+        for(var j = 0; j < attributeTokens.length; j++) {
+          elementTokens.add(attributeTokens[i]);
+        }
+      }
+    }
+
+    //attributeValue = getItemType(element);
+    //if(attributeValue) {
+    //  attributeValue = attributeValue.trim();
+    //  if(attributeValue) {
+    //    var attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
+    //    for(var j = 0; j < attributeTokens.length; j++) {
+    //      elementTokens.add(attributeTokens[i]);
+    //    }
+    //  }
+    //}
+
+    // Now process all the element tokens
+    for(var it = elementTokens.values(), val = it.next().value; val;
       val = it.next().value) {
       bias += ATTRIBUTE_BIAS.get(val) || 0;
     }
+
     scores.set(element, scores.get(element) + bias);
+
+    // Reset for next iteration
+    bias = 0;
+    elementTokens.clear();
   }
 
   // Pathological cases for "articleBody"
@@ -232,6 +334,7 @@ function applyAttributeBias(doc, elements, scores) {
 
   var articleAttributes =  ['id', 'class', 'name', 'itemprop', 'role'].map(
     function(s) { return '['+s+'*="articlebody"]'; });
+  articleAttributes.push('[role="article"]'); // Google Plus
   articleAttributes.push('[itemtype="http://schema.org/Article"]');
 
   var SELECT_ARTICLE = articleAttributes.join(',');
@@ -282,402 +385,6 @@ function updateScore(scores, delta, element) {
   // NOTE: assumes element always exists
   scores.set(scores.get(element) + delta);
 }
-
-// Hardcoded template-based selectors that are very likely
-// to contain boilerplate. Empirically collected.
-var BLACKLIST_SELECTORS = [
-  'a.aggregated-rel-link', // // The Oklahoman
-  'a.carousel-control', // The Miami Herald
-  'a.more-tab', // The Oklahoman
-  'a[rel="tag"]', // // The Oklahoman
-  'a.skip-to-text-link', // NYTimes
-  'aside.itemAsideInfo', // The Guardian
-  'aside#asset-related', // St. Louis Today
-  'aside#bpage_ad_bottom', // BuzzFeed
-  'aside[data-panelmod-type="relatedContent"]', // LA Times
-  'aside.callout', // The Atlantic
-  'aside.marginalia', // NY Times
-  'aside#post_launch_success', // BuzzFeed
-  'aside.related-articles', // BBC
-  'aside.related-content', // // The Oklahoman
-  'aside#related-content-xs', // The Miami Herald
-  'aside.related-side', // NY Magazine
-  'aside.right-rail-module', // Time
-  'aside#sidebar', // TechSpot
-  'aside.story-right-rail', // USA Today
-  'aside.tools', // The Boston Globe
-  'aside.views-tags', // BuzzFeed
-  'aside.widget-area', // thedomains.com
-  'div#a-all-related', // New York Daily News
-  'div.ad', // Reuters
-  'div.ad-cluster-container', // TechCrunch
-  'div.ad-container', // Fox News
-  'div.adAlone300', // The Daily Herald
-  'div.adCentred', // The Sydney Morning Herald
-  'div.adjacent-entry-pagination', // thedomains.com
-  'div#addshare', // The Hindu
-  'div.admpu', // Telegraph UK
-  'div.ad-unit', // TechCrunch
-  'div.addthis_toolbox', // NobelPrize.org
-  'div.artbody > div.share', // China Topix
-  'div.art_tabbed_nav', // The Wall Street Journal (blog)
-  'div#article div.share', // timeslive.co.za
-  'div.article_actions', // Forbes
-  'div.article_cat', // Collegian
-  'div.articleComments', // Reuters
-  'div#articleIconLinksContainer', // The Daily Mail
-  'div.article-social', // Fortune Magazine
-  'div.articleEmbeddedAdBox', // Mercury News
-  'div.article-extra', // TechCrunch
-  'div.article_interaction', // Bloomberg
-  'div.article-list', // // The Oklahoman
-  'div#articleKeywords', // The Hindu
-  'div.articleMeta', // Tampa Bay
-  'div.articleOptions', // Mercury News
-  'div.article-pagination', // UT San Diego
-  'div.article-print-url', // USA Today
-  'div.articleShareBottom', // Fox Sports
-  'div.article-side', // The Times
-  'div.article-tags', // entrepeneur.com
-  'div.article-tools', // The Atlantic
-  'div.articleViewerGroup', // Mercury News
-  'div.assetBuddy', // Reuters
-  'div.author_topics_holder', // The Irish Times
-  'div[data-ng-controller="bestOfMSNBCController"]', // MSNBC
-  'div#blq-foot', // BBC
-  'div#blog-sidebar', // Comic Book Resources
-  'div.bpcolumnsContainer', // Western Journalism
-  'div#breadcrumb', // Autonews
-  'div#breadcrumbs', // E-Week
-  'div.browse', // ABC News
-  // Several websites, only way to identify Autonews
-  'div.byline',
-  'div.byline_links', // Bloomberg
-  'div#ce-comments', // E-Week
-  'div.cnn_strybtntools', // CNN
-  'div.cnn_strylftcntnt', // CNN
-  'div.cnn_strycntntrgt', // CNN
-  'div#commentary', // Autonews
-  'div#comment_bar', // Autonews
-  'div#commentBar', // Newsday
-  'div.comment_bug', // Forbes
-  'div#comment-container', // auburnpub.com
-  'div#comments', // CBS News
-  'div.comments', // TechCrunch
-  'div.commentCount', // Reuters
-  'div.comment-count', // auburnpub.com
-  'div.comment-count-block',// TechSpot
-  'div.comment_count_affix', // // The Oklahoman
-  'div.commentDisclaimer', // Reuters
-  'div.comment-holder', // entrepeneur.com
-  'div#commenting', // Fox News
-  'div#commentLink', // // The Oklahoman
-  'div.comment_links', // Forbes
-  'div.comments-overall', // Aeon Magazine
-  'div.comment-policy-box', // thedomains.com
-  'div.controls', // NY Daily News
-  'div.correspondant', // CBS News
-  'div[data-module-zone="articletools_bottom"]', // The Wall Street Journal
-  'div[data-ng-controller="moreLikeThisController"]', // MSNBC
-  'div.dfad', // thedomains.com
-  'div.dfinder_cntr', // Hewlett Packard News
-  'div#dfp-ad-mosad_1-wrapper', // The Hill
-  'div#digital-editions', // The New Yorker
-  'div#disqus', // ABCNews
-  'div.editors-picks', // The Wall Street Journal
-  'div.email-optin', // Quantstart
-  'div#email-sign-up', // BBC
-  'div.email-signup', // entrepeneur.com
-  'div.encrypted-content', // Atlantic City Press
-  'div.endslate', // WFMY News (final slide element)
-  'div.entity_popular_posts', // Forbes
-  'div.entity_preview', // Forbes
-  'div.entity_recent_posts', // Forbes
-  'div.entry-meta', // Re-code (uncertain about this one)
-  'div#entry-tags', // hostilefork
-  'div.entry-tags', // Wired.com
-  'div.entry-unrelated', // The New Yorker
-  'div#epilogue', // hostilefork
-  'div#et-sections-dropdown-list', // The Washington Post
-  'div.pane-explore-issues-topics', // MSNBC
-  'div.feature_nav', // E-Week
-  'div#features', // BBC News
-  'div.followable_block', // Forbes
-  'div.footer', // KMBC
-  'div.gallery-sidebar-ad', // USA Today
-  'div#gkSocialAPI', // The Guardian
-  'div.googleads', // Telegraph UK
-  'div.group-link-categories', // Symmetry Magazine
-  'div.group-links', // Symmetry Magazine
-  'div.gsharebar', // entrepeneur.com
-  'div.headlines', // // The Oklahoman
-  'div.headlines-images', // ABC 7 News
-  'div.hide-for-print', // NobelPrize.org
-  'div.ib-collection', // KMBC
-  'div#infinite-list', // The Daily Mail
-  'div.inline-sharebar', // CBS News
-  'div.inline-share-tools-asset', // USA Today
-  'div.inline-related-links', // Gourmet.com
-  'div.inner-related-article', // Recode
-  'div#inset_groups', // Gizmodo
-  'div.issues-topics', // MSNBC
-  'div[itemprop="comment"]',// KMBC
-  'div#jp-relatedposts', // IT Governance USA
-  'div.LayoutSocialTools', // ecdc.europa.eu
-  'div.LayoutTools', // ecdc.europa.eu
-  'div#leader', // hostilefork
-  'div.linearCalendarWrapper', // ABC News
-  'div.link-list-inline', // Las Vegas Sun
-  'div#livefyre-wrapper', // The Wall Street Journal
-  'div.ljcmt_full', // LiveJournal
-  'div.ljtags', // LiveJournal
-  'div.load-comments', // entrepeneur.com
-  'div.l-sidebar', // TechSpot
-  'div.l-story-secondary', // Boston.com
-  'div.m-article__share-buttons', // The Verge
-  'div.mashsharer-box', // internetcommerce.org
-  'div.m-entry__sidebar', // The Verge
-  'div.menu', // CNBC
-  'div.meta_bottom', // Collegian
-  'div#meta-related', // Entertainment Weekly
-  'div#mc_embed_signup', // stgeorgeutah.com
-  'div.m-linkset', // The Verge
-  'div.middle-ads', // The Times
-  'div.mla_cite', // NobelPrize.org
-  'div.mmn-link', // ABC 7 News
-  'div#most-popular', // BBC
-  'div#mostPopularTab', // Reuters
-  'div#most-read-news-wrapper', // The Daily Mail
-  'div#mostSharedTab', // Reuters
-  'div#most-watched-videos-wrapper', // The Daily Mail
-  'div.multiplier_story', // Christian Science Monitor
-  'div.nav', // KMBC (note: may be problematic)
-  'div#newsletterList', // E-Week
-  'div#newsletter_signup_article', // People Magazine
-  'div.newsreel', // The Wall Street Journal
-  'div.next_on_news', // BuzzFeed
-  'div#nlHeader', // E-Week
-  'div.node-footer', // Drupal
-  'div.node-metainfo', // The Boston Herald
-  'div.overlayPostPlay', // The Sydney Morning Herald
-  'div.page_label', // Hewlett Packard News
-  'div.pb-f-page-comments', // Washington Post
-  'div.pfont', // Newsday
-  'div.pl-most-popular', // entrepeneur.com
-  'div.postcats', // The Wall Street Journal (blog)
-  'div.post-comments', // The Sun Times
-  'div.post-meta-category', // Comic Book Resources
-  'div.post-meta-share', // Comic Book Resources
-  'div.post-meta-tags', // Comic Book Resources
-  'div.post-meta-taxonomy-terms', // The Sun Times
-  'div#prevnext', // hostilefork
-  'div.printad', // North Jersey
-  'div.printHide', // Telegraph UK
-  'div.printstory', // North Jersey
-  'div#prologue', // hostilefork
-  'div.pull-right', // The Oklahoman
-  'div#reader-comments', // The Daily Mail
-  'div.recirculation', // New Yorker
-  'div#registration-notice', // Atlantic City Press
-  'div#related', // The Boston Globe (note: wary of using this)
-  'div.related', // CNBC (note: wary of using this one)
-  'div.related-carousel', // The Daily Mail
-  'div.related-block', // auburnpub.com
-  'div.related-block2', // St. Louis Today
-  'div.related-column', // The Hindu
-  'div.related-items', // BBC
-  'div#related_items', // Business Week
-  'div#relatedlinks', // ABC News
-  'div.related-media', // Fox News
-  'div.relatedNews', // Tampa Bay
-  'div.related-posts-inner', // threatpost.com
-  'div.relatedRail', // Reuters
-  'div#related-services', // BBC
-  'div#related-tags', // St. Louis Today
-  'div#relatedTopics', // Reuters
-  'div.relatedTopicButtons', // Reuters
-  'div#related-videos-container', // E-Online
-  'div.relatedVidTitle', // E-Online
-  'div.rel-block-news', // The Hindu
-  'div.rel-block-sec', // The Hindu
-  'div.relposts', // TechCrunch
-  'div#respond', // Stanford Law
-  'div#reveal-comments', // Aeon Magazine
-  'div#right-column', // The Hindu
-  'div.right_rail_cnt', // Hewlett Packard News
-  'div#rn-section', // Getty
-  'div#rt_contact', // CNBC
-  'div#rt_featured_franchise', // CNBC
-  'div#rt_primary_1', // CNBC
-  'div[id^="rt_promo"]', // CNBC
-  'div#rt_related_0', // CNBC
-  'div.resizer', // KMBC
-  'div.save-tooltip', // auburnpub
-  'div.sd-social', // Re-code
-  'div#section-comments',  // The Washington Post
-  'div#section-kmt', // The Guardian
-  'div.section-puffs', // Telegraph UK
-  //'div.share', // CANNOT USE
-  'div.share > div.right', // auburnpub.com
-
-  'div.shareArticles', // The Daily Mail
-  'div.share-bar', // Gulf News
-  'div.share-body-bottom', // BBC
-  'div.share-buttons', // Quantstart
-  'div.share-count-container', // CNBC
-  'div.sharedaddy', // Fortune
-  'div.share-help', // BBC
-  'div.shareLinks', // Reuters
-  'div.sharetools-inline-article-ad', // NYTimes
-  'div.shareToolsNextItem', // KMBC
-  'div.sharrre-container', // Concurring Opinions
-  'div.show-related-videos', // CBS News
-  'div.sidebar-content', // Concurring opinions
-  'div.sidebar-feed', // WRAL
-  'div.simpleShare', // Newsday
-  'div.sitewide-footer', // NBCNews
-  'div.sitewide-header-content', // NBCNews
-  'div.social', // BBC
-  'div.social-actions', // BuzzFeed
-  'div.socialbar', // Autonews
-  'div.social-bar', // The Miami Herald
-  'div.social-bookmarking-module', // Wired.com
-  'div.social-buttons', // The Verge
-  'div.social-column', // TechSpot
-  'div.social-count', // Fox News
-  'div.social-dd', // The Wall Street Journal
-  'div.social_icons', // Forbes
-  'div#social-links', // Reuters
-  'div.social-links-bottom', // MSNBC
-  'div.social-links-top', // MSNBC
-  'div#social-share', // Priceonomics
-  'div.social-share', // Bloomberg
-  'div.social-share-top', // Priceonomics
-  'div.social-share-bottom', // The Hill
-  'div.social-toolbar', // News OK
-  'div.social-toolbar-affix', // News OK
-  'div.social-tools-wrapper-bottom ', // Washington Post
-  'div.sps-twitter_module', // BBC
-  'div#sticky-nav', // Christian Science Monitor
-  'div.sticky-tools', // The Boston Globe
-  'div#storyControls', // Politico
-  'div#story-embed-column', // Christian Science Monitor
-  'div#story-footer', // The Miami Herald
-  'div.story_list', // Christian Science Monitor
-  'div#storyMoreOnFucntion', // Telegraph UK
-  'div.storynav', // TechCrunch
-  'div#story_right_column_ad', // dailyjournal.net
-  'div.story-tags', // Fox Sports
-  'div.story-taxonomy', // ABC Chicago
-  'div.storytools', // TechCrunch
-  'div#subscription-notice', // Atlantic City Press
-  'div#tabs-732a40a7-tabPane-2', // The Miami Herald (unclear)
-  'div.talklinks', // LiveJournal
-  'div.taxonomy', // ABC Chicago
-  'div.t_callout', // ABC News
-  'div#teaserMarketingCta', // The Times
-  'div#teaser-overlay', // The Times
-  'div.thirdPartyRecommendedContent', // KMBC
-  'div#thumb-scroller', // E-Week
-  'div.tncms-restricted-notice', // Atlantic City Press
-  'div.toolbox', // ABC News
-  'div.tools1', // The Wall Street Journal (blog)
-  'div.top-index-stories', // BBC
-  'div.topkicker', // entrepreneur.com
-  'div.top-stories-range-module', // BBC
-  'div.top-stories05', // Telegraph UK
-  'div.trb_embed_related', // LA Times
-  'div.trb_panelmod_body', //  LA Times
-  'div.twipsy', // St. Louis Today
-  'div.util-bar-flyout', // USA Today
-  'div.utilities', // The Times
-  'div#utility', // WRAL
-  'div.utility-bar', // USA Today
-  'div.utility-panels', // WRAL
-  'div.utilsFloat', // KMBC
-  'div.video_about_ad', // Christian Science Monitor
-  'div.video_disqus', // Bloomberg
-  'div#video-share', // ABC News
-  'div.view-comments', // auburnpub.com
-  'div#vuukle_env', // The Hindu
-  'div#WNCol4', // Fox (subsidary myfoxny.com)
-  'div#WNStoryRelatedBox', // Fox (subsidiary myfoxal.com)
-  'div.xwv-related-videos-container', // The Daily Mail
-  'div#you-might-like', // The New Yorker
-  'div#zergnet', // Comic Book Resources
-  'figure.ib-figure-ad', // KMBC
-  'figure.kudo', // svbtle.com blogs
-  'footer', // any
-  'header', // any
-  'h2.hide-for-print', // NobelPrize.org
-  'h2#page_header', // CNBC
-  'h3#scrollingArticlesHeader', // The Oklahoman
-  'h4.taboolaHeaderRight', // KMBC
-  'img#ajax_loading_img', // E-Week
-  'li#mostPopularShared_0', // Reuters
-  'li#mostPopularShared_1', // Reuters
-  'li#pagingControlsPS', // neagle
-  'li#sharetoolscontainer', // neagle
-  'ol[data-vr-zone="Around The Web"]', // The Oklahoman
-  'nav', // any
-  'p.authorFollow', // The Sydney Morning Herald
-  'p.essay-tags', // Aeon Magazine
-  'p.moreVideosTitle', // E-Online
-  'p.p_top_10', // Star Telegram
-  'p.story-ad-txt', // Boston.com
-  'p.storytag', // chinatopix.com
-  'p.trial-promo', // Newsweek
-  'section.around-bbc-module', // BBC
-  'section.bottom_shares', // BuzzFeed
-  'section.breaking_news_bar', // Bloomberg
-  'section#comments', // TechSpot
-  'section.comments', // ABC Chicago
-  'section#follow-us', // BBC
-  'section.headline-list', // The Miami Herald
-  'section.headlines-list', // ABC Chicago
-  'section#more-stories-widget', // The Miami Herald
-  'section#newsletter-signup', // New Yorker
-  'section#promotions', // The New Yorker
-  'section#related-links', // BuzzFeed
-  'section.related-products', // TechSpot
-  'section#responses', // BuzzFeed
-  'section.signup-widget', // The Miami Herald
-  'section.story-tools-mod', // Boston.com
-  'section.suggested-links', // The Examiner
-  'section.top-video', // ABC 7 News
-  'span.sharetools-label', // NY Time
-  'table.complexListingBox', // Mercury News
-  'ul.article-options', // TVNZ
-  'ul#article-share-links', // The Boston Herald
-  'ul.blox-recent-list', // Atlantic City Press
-  'ul.breadcrumb', // The Miami Herald
-  'ul.breaking-news-stories', // ABC 7 News
-  'ul.entry-extra', // Wired Magazine
-  'ul.entry_sharing', // Bloomberg
-  'ul.flippy', // MSNBC
-  'ul.generic_tabs', // Bloomberg
-  'ul.links--inline', // Drupal
-  'ul.links-list', // BBC
-  'ul.navbar-nav', // Noctua Software Blog
-  'ul.nav-tabs', // The Miami Herald
-  'ul.newslist', // Autonews
-  'ul.pagenav', // The Guardian
-  'ul.pagination', // Politico
-  'ul.related-links', // The Boston Globe
-  'ul.related-posts', // Concurring Opinions
-  'ul.social', // The Sydney Morning Herald
-  'ul.social-bookmarking-module', // Wired Magazine
-  'ul.socialByline', // The Wall Street Journal (blog)
-  'ul.socials', // independent.ie
-  'ul.social-share-list', // TechCrunch
-  'ul.social-tools', // The Washington Post
-  'ul.tags', // BBC
-  'ul.thumbs', // NY Daily News
-  'ul#toolbar-sharing', // UT San Diego
-  'ul.tools', // The Syndey Morning Herald
-  'ul#topics', // Yahoo News
-  'ul.utility-list'// WRAL
-];
 
 /**
  * An element's score is biased according to the type of the element. Certain
@@ -798,6 +505,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['commercial', -500],
   ['community', -100],
   ['component', -50],
+  ['contentpane', 200], // Google Plus
   ['contact', -50],
   ['content', 100],
   ['contenttools', -50],
@@ -857,7 +565,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['pinnion', 50],
   ['popular', -50],
   ['popup', -100],
-  ['post', 100],
+  ['post', 150],
   ['power', -100],
   ['print', -50],
   ['promo', -200],
@@ -892,6 +600,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['source',-50],
   ['sponsor', -200],
   ['story', 100],
+  ['storycontent', 500],
   ['storydiv',100],
   ['storynav',-100],
   ['storytext', 200],
@@ -925,5 +634,495 @@ var ATTRIBUTE_BIAS = new Map([
   ['widget', -200],
   ['zone', -50]
 ]);
+
+// Hardcoded template-based selectors that are very likely
+// to contain boilerplate. Empirically collected.
+var BLACKLIST_SELECTORS = [
+  'a.aggregated-rel-link', // // The Oklahoman
+  'a.carousel-control', // The Miami Herald
+  'a.more-tab', // The Oklahoman
+  'a.post_cmt1', // Times of India
+  'a[rel="tag"]', // // The Oklahoman
+  'a.skip-to-text-link', // NYTimes
+  'aside.itemAsideInfo', // The Guardian
+  'aside#asset-related', // St. Louis Today
+  'aside#bpage_ad_bottom', // BuzzFeed
+  'aside[data-panelmod-type="relatedContent"]', // LA Times
+  'aside.callout', // The Atlantic
+  'aside.entry-sidebar', // The Globe
+  'aside.marginalia', // NY Times
+  'aside.mashsb-container', // cryptocoinsnews.com
+  'aside#post_launch_success', // BuzzFeed
+  'aside.related-articles', // BBC
+  'aside.related-content', // // The Oklahoman
+  'aside#related-content-xs', // The Miami Herald
+  'aside.related-side', // NY Magazine
+  'aside.right-rail-module', // Time
+  'aside#sidebar', // TechSpot
+  'aside#sidebar-read-more', // USA Today
+  'aside.story-right-rail', // USA Today
+  'aside.tools', // The Boston Globe
+  'aside.views-tags', // BuzzFeed
+  'aside.widget-area', // thedomains.com
+  'div#a-all-related', // New York Daily News
+  'div.ad', // Reuters
+  'div.adarea', // Telegraph
+  'div.ad-cluster-container', // TechCrunch
+  'div.ad-container', // Fox News
+  'div.adAlone300', // The Daily Herald
+  'div.adCentred', // The Sydney Morning Herald
+  'div.adjacent-entry-pagination', // thedomains.com
+  'div#addshare', // The Hindu
+  'div.admpu', // Telegraph UK
+  'div.adsense', // Renew Economy
+  'div.ad-unit', // TechCrunch
+  'div.addthis_toolbox', // NobelPrize.org
+  'div[aria-label="+1 this post"]', // Google Plus
+  'div.artbody > div.share', // China Topix
+  'div.art_tabbed_nav', // The Wall Street Journal (blog)
+  'div#article div.share', // timeslive.co.za
+  'div.article_actions', // Forbes
+  'div.article_cat', // Collegian
+  'div.articleComments', // Reuters
+  'div#articleIconLinksContainer', // The Daily Mail
+  'div.article-social', // Fortune Magazine
+  'div.articleEmbeddedAdBox', // Mercury News
+  'div.article-extra', // TechCrunch
+  'div.article_interaction', // Bloomberg
+  'div.article-list', // // The Oklahoman
+  'div#articleKeywords', // The Hindu
+  'div.articleMeta', // Tampa Bay
+  'div.articleOptions', // Mercury News
+  'div#articlepagerreport', // Chron.com
+  'div.article-pagination', // UT San Diego
+  'div.article-print-url', // USA Today
+  'div.articleShareBottom', // Fox Sports
+  'div.article-side', // The Times
+  'div.article-tags', // entrepeneur.com
+  'div.articleTools', // Reuters
+  'div.article-tools', // The Atlantic
+  'div.articleViewerGroup', // Mercury News
+  'div.assetBuddy', // Reuters
+  'div.author_topics_holder', // The Irish Times
+  'div[data-ng-controller="bestOfMSNBCController"]', // MSNBC
+  'div.bio-socials', // Atomic Object
+  'div.bk-socialbox', // Latin Post
+  'div#blq-foot', // BBC
+  'div#blog-sidebar', // Comic Book Resources
+  'div#blox-breadcrumbs', // Joplin
+  'div#blox-footer', // Joplin
+  'div#blox-header', // Joplin
+  'div#blox-right-col', // Joplin
+  'di#blox-breadcrumbs', // Joplin
+  'div.bpcolumnsContainer', // Western Journalism
+  'div#breadcrumb', // Autonews
+  'div.breadcrumb_container', // NBC News
+  'div#breadcrumbs', // E-Week
+  'div.browse', // ABC News
+  'div[bucket-id="most_popular_01"]', // Telegraph/Reuters
+  'div[bucket-id="secondary_navigation_01"]', // Telegraph/Reuters
+  'div.buying-option', // Times of India
+  // Several websites, only way to identify Autonews
+  'div.byline', // Misc.
+  'div.byline_links', // Bloomberg
+  'div#ce-comments', // E-Week
+  'div.cnn_strybtntools', // CNN
+  'div.cnn_strylftcntnt', // CNN
+  'div.cnn_strycntntrgt', // CNN
+  'div#commentary', // Autonews
+  'div#comment_bar', // Autonews
+  'div#commentBar', // Newsday
+  'div.comment_bug', // Forbes
+  'div#comment-container', // auburnpub.com
+  'div#comments', // CBS News
+  'div.comments', // TechCrunch
+  'div.commentCount', // Reuters
+  'div.comment-count', // auburnpub.com
+  'div.comment-count-block',// TechSpot
+  'div.comment_count_affix', // // The Oklahoman
+  'div.commentDisclaimer', // Reuters
+  'div.comment-holder', // entrepeneur.com
+  'div#commenting', // Fox News
+  'div#commentLink', // // The Oklahoman
+  'div#comments-tabs', // Houston News
+  'div.commentThread', // kotatv
+  'div.comment-tools', // Latin post
+  'div.comment_links', // Forbes
+  'div.comments-overall', // Aeon Magazine
+  'div.comment-policy-box', // thedomains.com
+  'div.controls', // NY Daily News
+  'div.correspondant', // CBS News
+  'div[data-module-zone="articletools_bottom"]', // The Wall Street Journal
+  'div[data-ng-controller="moreLikeThisController"]', // MSNBC
+  'div.dfad', // thedomains.com
+  'div.dfinder_cntr', // Hewlett Packard News
+  'div#dfp-ad-mosad_1-wrapper', // The Hill
+  'div#digital-editions', // The New Yorker
+  'div#disqus', // ABCNews
+  'div#disqus_thread', // Renew Economy
+  'div.editors-picks', // The Wall Street Journal
+  'div.email-optin', // Quantstart
+  'div#email-sign-up', // BBC
+  'div.email-signup', // entrepeneur.com
+  'div.encrypted-content', // Atlantic City Press
+  'div.endslate', // WFMY News (final slide element)
+  'div.entity_popular_posts', // Forbes
+  'div.entity_preview', // Forbes
+  'div.entity_recent_posts', // Forbes
+  'div.entry-meta', // Re-code (uncertain about this one)
+  'div.entry-related', // The Globe
+  'div#entry-tags', // hostilefork
+  'div.entry-tags', // Wired.com
+  'div.entry-unrelated', // The New Yorker
+  'div#epilogue', // hostilefork
+  'div#et-sections-dropdown-list', // The Washington Post
+  'div.pane-explore-issues-topics', // MSNBC
+  'div.feature-btns', // USA Today (assumes video not supported)
+  'div.feature_nav', // E-Week
+  'div#features', // BBC News
+  'div.followable_block', // Forbes
+  'div.footer', // KMBC
+  'div.gallery-sidebar-ad', // USA Today
+  'div#gkSocialAPI', // The Guardian
+  'div.googleads', // Telegraph UK
+  'div.group-link-categories', // Symmetry Magazine
+  'div.group-links', // Symmetry Magazine
+  'div.gsharebar', // entrepeneur.com
+  'div.headlines', // // The Oklahoman
+  'div.headlines-images', // ABC 7 News
+  'div.hide-for-print', // NobelPrize.org
+  'div.hst-articlefooter', // Chron.com
+  'div.hst-articletools', // Chron.com
+  'div.hst-freeform', // Chron.com
+  'div.hst-headlinelist', // Chron.com
+  'div.hst-hottopics', // Chron.com
+  'div.hst-modularlist', // Chron.com
+  'div.hst-morestories', // Chron.com
+  'div.hst-simplelist', // Chron.com
+  'div.ib-collection', // KMBC
+  'div#infinite-list', // The Daily Mail
+  'div.inline-sharebar', // CBS News
+  'div.inline-share-tools-asset', // USA Today
+  'div.inline-related-links', // Gourmet.com
+  'div.inner-related-article', // Recode
+  'div#inset_groups', // Gizmodo
+  'div.interactive-sponsor', // USA Today
+  'div.issues-topics', // MSNBC
+  'div[itemprop="comment"]',// KMBC
+  'div#jp-relatedposts', // IT Governance USA
+  'div#latest-by-section', // Houston News
+  'div.LayoutSocialTools', // ecdc.europa.eu
+  'div.LayoutTools', // ecdc.europa.eu
+  'div#leader', // hostilefork
+  'div.lhs_relatednews', // NDTV
+  'div.linearCalendarWrapper', // ABC News
+  'div.link-list-inline', // Las Vegas Sun
+  'div#livefyre-wrapper', // The Wall Street Journal
+  'div.ljcmt_full', // LiveJournal
+  'div.ljtags', // LiveJournal
+  'div.load-comments', // entrepeneur.com
+  'div.l-sidebar', // TechSpot
+  'div.l-story-secondary', // Boston.com
+  'div.main_social', // Times of India
+  'div.m-article__share-buttons', // The Verge
+  'div.mashsharer-box', // internetcommerce.org
+  'div.m-entry__sidebar', // The Verge
+  'div.menu', // CNBC
+  'div.meta_bottom', // Collegian
+  'div#meta-related', // Entertainment Weekly
+  'div#mc_embed_signup', // stgeorgeutah.com
+  'div.m-linkset', // The Verge
+  'div.middle-ads', // The Times
+  'div.mla_cite', // NobelPrize.org
+  'div.mmn-link', // ABC 7 News
+  'div.more-single', // USA Today
+  'div#most-popular', // BBC
+  'div#mostPopularTab', // Reuters
+  'div#most-read-news-wrapper', // The Daily Mail
+  'div#mostSharedTab', // Reuters
+  'div#most-watched-videos-wrapper', // The Daily Mail
+  'div.mTop15', // Times of India
+  'div.multiplier_story', // Christian Science Monitor
+  'div.nav', // KMBC (note: may be problematic)
+  'div.navigation', // Renew Economy (may be problematic)
+  'div#newsletterList', // E-Week
+  'div#newsletter_signup_article', // People Magazine
+  'div.newsletterSignupBox', // NBC
+  'div.newsreel', // The Wall Street Journal
+  'div.next_on_news', // BuzzFeed
+  'div#nlHeader', // E-Week
+  'div.node-footer', // Drupal
+  'div.node-metainfo', // The Boston Herald
+  'div.overlayPostPlay', // The Sydney Morning Herald
+  'div.page_label', // Hewlett Packard News
+  'div.page-navigation', // Misc.
+  'div.pb-f-page-comments', // Washington Post
+  'div.pfont', // Newsday
+  'div.pl-most-popular', // entrepeneur.com
+  'div#popular-by-section', // Houston News
+  'div.postcats', // The Wall Street Journal (blog)
+  'div.postcommentpopupbox', // Times of India
+  'div.post-comments', // The Sun Times
+  'div.post-links', // Pro Football Talk
+  'div.post-meta-category', // Comic Book Resources
+  'div.post-meta-share', // Comic Book Resources
+  'div.post-meta-tags', // Comic Book Resources
+  'div.post-meta-taxonomy-terms', // The Sun Times
+  'div.post-share-buttons', // Blogspot
+  'div#powered_by_livefyre_new', // Entertainment Tonight
+  'div#prevnext', // hostilefork
+  'div.printad', // North Jersey
+  'div.printHide', // Telegraph UK
+  'div.printstory', // North Jersey
+  'div#prologue', // hostilefork
+  'div.promo-inner', // Chron.com
+  'div.promo-top', // Chron.com
+  'div.pull-right', // The Oklahoman
+  'div#reader-comments', // The Daily Mail
+  'div.read_more', // Times of India
+  'div.recirculation', // New Yorker
+  'div.recommended-articles-wrap', // Vice.com
+  'div#registration-notice', // Atlantic City Press
+  'div#relartstory', // Times of India
+  'div#related', // The Boston Globe (note: wary of using this)
+  'div.related', // CNBC (note: wary of using this one)
+  'div.related-carousel', // The Daily Mail
+  'div.related-block', // auburnpub.com
+  'div.related-block2', // St. Louis Today
+  'div.related-column', // The Hindu
+  'div.related-items', // BBC
+  'div#related_items', // Business Week
+  'div#relatedlinks', // ABC News
+  'div.related-media', // Fox News
+  'div.relatedNews', // Tampa Bay
+  'div.related-posts-inner', // threatpost.com
+  'div.relatedRail', // Reuters
+  'div#related-services', // BBC
+  'div#related-tags', // St. Louis Today
+  'div#relatedTopics', // Reuters
+  'div.relatedTopicButtons', // Reuters
+  'div#related-videos-container', // E-Online
+  'div.relatedVidTitle', // E-Online
+  'div.rel-block-news', // The Hindu
+  'div.rel-block-sec', // The Hindu
+  'div.relposts', // TechCrunch
+  'div#respond', // Stanford Law
+  'div#reveal-comments', // Aeon Magazine
+  'div#right-column', // The Hindu
+  'div.right_rail_cnt', // Hewlett Packard News
+  'div#rn-section', // Getty
+  'div[role="article"] div.DM', // Google Plus comments
+  'div[role="article"] div.Qg', // Google Plus comment count
+  'div[role="article"] div.QM', // Google Plus entry tags
+  'div[role="article"] div.yx', // Google Plus footer
+  'div[role="complementary"]', // USA Today
+  'div#rt_contact', // CNBC
+  'div#rt_featured_franchise', // CNBC
+  'div#rt_primary_1', // CNBC
+  'div[id^="rt_promo"]', // CNBC
+  'div#rt_related_0', // CNBC
+  'div.resizer', // KMBC
+  'div#savedata1', // Times of India
+  'div.save-tooltip', // auburnpub
+  'div.sd-social', // Re-code
+  'div#section-comments',  // The Washington Post
+  'div#section-kmt', // The Guardian
+  'div.section-puffs', // Telegraph UK
+  //'div.share', // CANNOT USE
+  'div.share > div.right', // auburnpub.com
+  'div.shareArticles', // The Daily Mail
+  'div.share-bar', // Gulf News
+  'div#sharebarx_new', // Times of India
+  'div.share-body-bottom', // BBC
+  'div.share-buttons', // Quantstart
+  'div.share-count-container', // CNBC
+  'div.sharedaddy', // Fortune
+  'div.share-help', // BBC
+  'div.shareLinks', // Reuters
+  'div.sharetools-inline-article-ad', // NYTimes
+  'div.shareToolsNextItem', // KMBC
+  'div.sharrre-container', // Concurring Opinions
+  'div.show-related-videos', // CBS News
+  'div.sidebar-content', // Concurring opinions
+  'div.sidebar-feed', // WRAL
+  'div#signIn', // Joplin
+  'div.simpleShare', // Newsday
+  'div.single-related', // USA Today
+  'div.sitewide-footer', // NBCNews
+  'div.sitewide-header-content', // NBCNews
+  'div.social', // BBC
+  'div.social-actions', // BuzzFeed
+  'div.socialbar', // Autonews
+  'div.socialBar', // Chron.com
+  'div.social-bar', // The Miami Herald
+  'div.social-bookmarking-module', // Wired.com
+  'div.social-buttons', // The Verge
+  'div.social-column', // TechSpot
+  'div.social-count', // Fox News
+  'div.social-dd', // The Wall Street Journal
+  'div.sociable', // Mint Press
+  'div.social_icons', // Forbes
+  'div#social-links', // Reuters
+  'div.social-links-bottom', // MSNBC
+  'div.social-links-top', // MSNBC
+  'div.socialNetworks', // NBC
+  'div#social-share', // Priceonomics
+  'div.social-share', // Bloomberg
+  'div.social-share-top', // Priceonomics
+  'div.social-share-bottom', // The Hill
+  'div.social-toolbar', // News OK
+  'div.social-toolbar-affix', // News OK
+  'div.social-tools-wrapper-bottom ', // Washington Post
+  'div.spantab', // Times of India
+  'div.sps-twitter_module', // BBC
+  'div#sticky-nav', // Christian Science Monitor
+  'div.sticky-tools', // The Boston Globe
+  'div.story-comment', // Latin Post
+  'div#storyControls', // Politico
+  'div#story-embed-column', // Christian Science Monitor
+  'div#story-footer', // The Miami Herald
+  'div.story_list', // Christian Science Monitor
+  'div#storyMoreOnFucntion', // Telegraph UK
+  'div.storynav', // TechCrunch
+  'div#story_right_column_ad', // dailyjournal.net
+  'div#story-share-buttons', // USA Today
+  'div.story-tags', // Fox Sports
+  'div.story-taxonomy', // ABC Chicago
+  'div.storytools', // TechCrunch
+  'div.story-tools', // Latin Post
+  'div.subscribe', // Times of India
+  'div#subscription-notice', // Atlantic City Press
+  'div#tabs-732a40a7-tabPane-2', // The Miami Herald (unclear)
+  'div.talklinks', // LiveJournal
+  'div.taxonomy', // ABC Chicago
+  'div.t_callout', // ABC News
+  'div#teaserMarketingCta', // The Times
+  'div.textSize', // CBS
+  'div#teaser-overlay', // The Times
+  'div.thirdPartyRecommendedContent', // KMBC
+  'div#thumb-scroller', // E-Week
+  'div.tncms-restricted-notice', // Atlantic City Press
+  'div.toolbox', // ABC News
+  'div.tools1', // The Wall Street Journal (blog)
+  'div.top-index-stories', // BBC
+  'div.topkicker', // entrepreneur.com
+  'div.top-stories-range-module', // BBC
+  'div.top-stories05', // Telegraph UK
+  'div.trb_embed_related', // LA Times
+  'div.trb_panelmod_body', //  LA Times
+  'div.twipsy', // St. Louis Today
+  'div.util-bar-flyout', // USA Today
+  'div.utilities', // The Times
+  'div#utility', // WRAL
+  'div.utility-bar', // USA Today
+  'div.utility-panels', // WRAL
+  'div.utils', // kotatv
+  'div.utilsFloat', // KMBC
+  'div.video_about_ad', // Christian Science Monitor
+  'div.video_disqus', // Bloomberg
+  'div#video-share', // ABC News
+  'div.view-comments', // auburnpub.com
+  'div#vuukle_env', // The Hindu
+  'div.wideheadlinelist2', // Chron.com
+  'div#WNCol4', // Fox (subsidary myfoxny.com)
+  'div#WNStoryRelatedBox', // Fox (subsidiary myfoxal.com)
+  'div.xwv-related-videos-container', // The Daily Mail
+  'div#you-might-like', // The New Yorker
+  'div#zergnet', // Comic Book Resources
+  'dl.blox-social-tools-horizontal', // Joplin
+  'dl.tags', // NY Daily News
+  'figure.ib-figure-ad', // KMBC
+  'figure.kudo', // svbtle.com blogs
+  'footer', // Misc.
+  'header', // Misc.
+  'h2.hide-for-print', // NobelPrize.org
+  'h2#page_header', // CNBC
+  'h3.more-keywords', // Joplin
+  'h3#scrollingArticlesHeader', // The Oklahoman
+  'h4.taboolaHeaderRight', // KMBC
+  'hr', // ALL
+  'img#ajax_loading_img', // E-Week
+  'li#mostPopularShared_0', // Reuters
+  'li#mostPopularShared_1', // Reuters
+  'li#pagingControlsPS', // neagle
+  'li#sharetoolscontainer', // neagle
+  'ol[data-vr-zone="Around The Web"]', // The Oklahoman
+  'ol#comment-list', // Pro Football Talk
+  'nav', // Misc.
+  'p.authorFollow', // The Sydney Morning Herald
+  'p.essay-tags', // Aeon Magazine
+  'p.moreVideosTitle', // E-Online
+  'p.p_top_10', // Star Telegram
+  'p.post-tags', // USA Today
+  'p.story-ad-txt', // Boston.com
+  'p.storytag', // chinatopix.com
+  'p.story-tags', // Latin Post
+  'p.trial-promo', // Newsweek
+  'section.around-bbc-module', // BBC
+  'section.bottom_shares', // BuzzFeed
+  'section.breaking_news_bar', // Bloomberg
+  'section#comments', // TechSpot
+  'section.comments', // ABC Chicago
+  'section#follow-us', // BBC
+  'section.headline-list', // The Miami Herald
+  'section.headlines-list', // ABC Chicago
+  'section.morestories', // Entertainment Tonight
+  'section#more-stories-widget', // The Miami Herald
+  'section#newsletter-signup', // New Yorker
+  'section#promotions', // The New Yorker
+  'section.related_links', // Bloomberg
+  'section#related-links', // BuzzFeed
+  'section.related-products', // TechSpot
+  'section#responses', // BuzzFeed
+  'section.signup-widget', // The Miami Herald
+  'section.story-tools-mod', // Boston.com
+  'section.suggested-links', // The Examiner
+  'section.tagblock', // Entertainment Tonight
+  'section.top-video', // ABC 7 News
+  'section.youmaylike', // Entertainment Tonight
+  'span.sharetools-label', // NY Time
+  'table#commentTable', // Times of India
+  'table.complexListingBox', // Mercury News
+  'ul#additionalShare', // NBC
+  'ul.article-options', // TVNZ
+  'ul#article-share-links', // The Boston Herald
+  'ul#blox-body-nav', // Houston News
+  'ul.blox-recent-list', // Atlantic City Press
+  'ul.breadcrumb', // The Miami Herald
+  'ul.breaking-news-stories', // ABC 7 News
+  'ul.bull-list', // Joplin
+  'ul.entry-extra', // Wired Magazine
+  'ul.entry_sharing', // Bloomberg
+  'ul.flippy', // MSNBC
+  'ul.generic_tabs', // Bloomberg
+  'ul.hl-list', // Chron.com
+  'ul.links--inline', // Drupal
+  'ul.links-list', // BBC
+  'ul.menu', // The New York Times
+  'ul.navbar-nav', // Noctua Software Blog
+  'ul.navigation', // USA Today
+  'ul.nav-tabs', // The Miami Herald
+  'ul.newslist', // Autonews
+  'ul.pagenav', // The Guardian
+  'ul.pagination', // Politico
+  'ul.related-links', // The Boston Globe
+  'ul.related-posts', // Concurring Opinions
+  'ul.rssi-icons', // Pacific Standard Magazine
+  'ul.sharebar', // CNet
+  'ul.social', // The Sydney Morning Herald
+  'ul.social-bookmarking-module', // Wired Magazine
+  'ul.socialByline', // The Wall Street Journal (blog)
+  'ul.social-icons', // Citylab
+  'ul.socials', // independent.ie
+  'ul.social-share-list', // TechCrunch
+  'ul.social-tools', // The Washington Post
+  'ul.story-tools-sprite', // Houston News
+  'ul.tags', // BBC
+  'ul.thumbs', // NY Daily News
+  'ul#toolbar-sharing', // UT San Diego
+  'ul.tools', // The Syndey Morning Herald
+  'ul#topics', // Yahoo News
+  'ul.utility-list'// WRAL
+];
 
 }(this));
