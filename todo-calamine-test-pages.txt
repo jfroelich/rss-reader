@@ -1,7 +1,5 @@
 Problem pages to review
-
-
-
+http://www.lohud.com/story/news/health/2014/10/08/ebola-faq/16915323/
 http://oldcomputers.net/compucolor-8001.html
 http://blog.level3.com/open-internet/not-neutrality/
 http://www.cnn.com/2014/09/29/health/birth-control-options-teens/
@@ -22,10 +20,15 @@ http://www.doctorslounge.com/index.php/news/hd/50055
 http://www.people.com/article/hillary-clinton-granddaughter-charlotte-advice
 https://www.ted.com/talks/david_christian_big_history
 http://blog.noctua-software.com/procedural-colors-for-game.html
-
-
+http://blog.garrytan.com/travel-planning-software-the-most-common-bad
+http://www.ledger-enquirer.com/2014/10/04/3338852/jones-header-lifts-new-england.html
 
 all new york times rss feeds - something is wrong with parsing
+
+
+---------------------------------------------------------------------------------------
+http://insidetv.ew.com/2014/10/09/ahs-freak-show-jessica-lange-life-on-mars/
+- only found the leader image, did not include the text
 
 ---------------------------------------------------------------------------------------
 http://www.smh.com.au/it-pro/business-it/hp-split-a-uturn-in-meg-whitmans-changefilled-career-20141006-10qsk6.html
@@ -114,6 +117,7 @@ http://recode.net/2014/10/01/digital-health-startups-raised-700-million-during-t
 http://recode.net/2014/10/01/houzz-raises-165-million-launches-online-store/
 http://recode.net/2014/10/03/microsoft-says-samsung-owes-it-6-9-million-in-contract-dispute/
 http://recode.net/2014/10/04/verizon-redbox-shut-down-netflix-killer-no-one-wanted/
+http://recode.net/2014/10/09/failarmy-video-startup-jukin-media-raises-1-million/
 
 - finding a piece of the article instead of the whole thing. maybe due to the large image
 - this issue appears to be common to recode pages. i find something but not the right thing.
