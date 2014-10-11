@@ -123,10 +123,11 @@ exports.calamine.transform = function transform_(doc, options) {
     var carouselBias = reduce.call(parent.childNodes, function (bias, node) {
       return 'img' === node.localName && node !== image ? bias - 50 : bias;
     }, 0);
+
     // Bump images that the author bothered to describe
-    var descBias = image.getAttribute('alt') ||
-      image.getAttribute('title') || (parent.localName == 'figure' &&
-      parent.querySelector('figcaption')) ? 30 : 0;
+    var descBias = image.getAttribute('alt') ||  image.getAttribute('title') ||
+      getImageCaption(image) ? 30 : 0;
+
     // Proportionally promote large images
     var area = image.width ? image.width * image.height : 0;
     var areaBias = 0.0015 * Math.min(100000, area);
@@ -172,6 +173,27 @@ exports.calamine.transform = function transform_(doc, options) {
   // Yield the final result, the element that most likely contains
   // the targeted content (less some expressly filtered boilerplate)
   return result;
+}
+
+// Returns the corresponding figcaption element for an image, if present
+function getImageCaption(image) {
+  // NOTE: use Array.prototype.find once Chrome supports it
+  var parents = getParents(image);
+  for(var i = 0, len = parents.length, parent; i < len; i++) {
+    parent = parents[i];
+    if(parent.localName == 'figure') {
+      return parent.querySelector('figcaption');
+    }
+  }
+}
+
+function getParents(element) {
+  var parents = [];
+  for(var parent = element.parentElement; parent;
+    parent = parent.parentElement) {
+    parents.push(parent);
+  }
+  return parents;
 }
 
 function detachBySelector(root, selector) {
@@ -711,6 +733,7 @@ var BLACKLIST_SELECTORS = [
   'div.article-tags', // entrepeneur.com
   'div.articleTools', // Reuters
   'div.article-tools', // The Atlantic
+  'div.article-utilities', // Sports Illustrated
   'div.articleViewerGroup', // Mercury News
   'div.assetBuddy', // Reuters
   'div.at-con', // Design & Trend
@@ -769,6 +792,7 @@ var BLACKLIST_SELECTORS = [
   'div.comment_links', // Forbes
   'div.comments-overall', // Aeon Magazine
   'div.comment-policy-box', // thedomains.com
+  'div.component-share', // Sports Illustrated
   'div.control-bar', // SF Gate
   'div.controls', // NY Daily News
   'div.correspondant', // CBS News
@@ -935,6 +959,7 @@ var BLACKLIST_SELECTORS = [
   'div.related-posts-inner', // threatpost.com
   'div.relatedRail', // Reuters
   'div#related-services', // BBC
+  'div#related-stories', // Daily News
   'div#related-tags', // St. Louis Today
   'div#relatedTopics', // Reuters
   'div.relatedTopicButtons', // Reuters
@@ -990,6 +1015,7 @@ var BLACKLIST_SELECTORS = [
   'div.sitewide-footer', // NBCNews
   'div.sitewide-header-content', // NBCNews
   'div.social', // BBC
+  'div.social-action', // Pakistan Daily
   'div.social-actions', // BuzzFeed
   'div.socialbar', // Autonews
   'div.socialBar', // Chron.com
@@ -1121,6 +1147,8 @@ var BLACKLIST_SELECTORS = [
   'section#related-links', // BuzzFeed
   'section.related-products', // TechSpot
   'section#responses', // BuzzFeed
+  'section.section-tertiary', // Sports Illustrated
+  'section.share-section', // Sports Illustrated
   'section.signup-widget', // The Miami Herald
   'section.story-tools-mod', // Boston.com
   'section.suggested-links', // The Examiner
