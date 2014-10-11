@@ -388,34 +388,13 @@ lucu.trimNodes = function(doc) {
   }
 };
 
-lucu.unwrap = function(e) {
-
-  /*
-  // TODO: test if this works instead of below
-
-  var doc = element.ownerDocument;
-  var frag = doc.createDocumentFragment();
-  var next = element.nextSibling;
-  var parent = element.parentElement;
-  element.remove();
+lucu.unwrap = function(element) {
   while(element.firstChild) {
-    frag.appendChild(element.firstChild);
-  }
-  if(next) {
-    // TODO: arg order?
-    parent.insertBefore(next, frag);
-  } else {
-    parent.appendChild(frag);
-  }
-  */
-
-  while(e.firstChild) {
-    e.parentElement.insertBefore(e.firstChild, e);
+    element.parentElement.insertBefore(element.firstChild, element);
   }
 
-  e.remove();
+  element.remove();
 };
-
 
 lucu.transformBreaks = function(doc) {
   // Temp, testing an extremely simple break rule transformation
@@ -428,10 +407,7 @@ lucu.transformBreaks = function(doc) {
 
 lucu.RE_JAVASCRIPT_PROTOCOL = /^\s*javascript\s*:/i;
 
-
-lucu.unwrapDescendants = function(rootElement) {
-
-  var SELECT_UNWRAPPABLE = [
+lucu.SELECT_UNWRAPPABLE = [
     'article','big','blink','body','center','colgroup','data','details',
     'div','font','footer','form','header','help','hgroup', 'ilayer', 'insert',
     'label','layer','legend', 'main','marquee', 'meter', 'multicol','nobr',
@@ -439,14 +415,24 @@ lucu.unwrapDescendants = function(rootElement) {
     'tfoot','thead'
   ].join(',');
 
-  var element = rootElement.querySelector(SELECT_UNWRAPPABLE);
-
-  while(element) {
-    // console.debug('unwrapping %s', element.localName);
+lucu.unwrapDescendants = function(rootElement) {
+  for(var element = rootElement.querySelector(lucu.SELECT_UNWRAPPABLE);
+    element;
+    element = rootElement.querySelector(lucu.SELECT_UNWRAPPABLE)) {
     lucu.unwrap(element);
-    element = rootElement.querySelector(SELECT_UNWRAPPABLE);
   }
 
   // TODO: Unwrap nominal anchors
+  var anchors = rootElement.getElementsByTagName('a');
+  var nominalAnchors = Array.prototype.filter.call(anchors, function(anchor) {
+    var href = anchor.getAttribute('href');
+    return href ? false : !href.trim();
+  });
 
+  if(!nominalAnchors.length) {
+    return;
+  }
+
+  console.debug('Found %s nominal anchors', nominalAnchors.length);
+  nominalAnchors.forEach(lucu.unwrap);
 };
