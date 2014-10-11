@@ -18,35 +18,7 @@
 (function (exports) {
 'use strict';
 
-var forEach = Array.prototype.forEach;
-var reduce = Array.prototype.reduce;
-
-/**
- * Used to split up the value of an attribute into tokens.
- */
-var RE_TOKEN_DELIMITER = /[\s\-_0-9]+/g;
-
-// Expose public API
 exports.calamine = {};
-
-function detachBySelector(root, selector) {
-
-  // Performance testing suggests this is now the worst performer, or
-  // about equally as bad as attribute based scoring
-
-  // querySelector is used instead of querySelectorAll because:
-  // (1) the code is more concise,
-  // (2) the perf delta from querySelectorAll is immaterial, and
-  // (3) this avoids the need to check doc.contains(element) per iteration,
-  // as the selector restarts from the outer ancestor. Using querySelectorAll
-  // would require this extra check because descendants of detached nodes
-  // remain in the node list produced by querySelectorAll
-  for(var element = root.querySelector(selector); element;
-    element = root.querySelector(selector)) {
-    element.remove();
-  }
-
-}
 
 /**
  * Returns the best element of the document. Does some mutation
@@ -57,6 +29,9 @@ exports.calamine.transform = function transform_(doc, options) {
 
   var optType = typeof options;
   options = optType == 'object' || optType == 'function' ? options : {};
+
+  var forEach = Array.prototype.forEach;
+  var reduce = Array.prototype.reduce;
 
   // Note: Ideally I would use a block-based approach that would avoid the need
   // for this step but the current best element approach effectively requires
@@ -112,8 +87,7 @@ exports.calamine.transform = function transform_(doc, options) {
     var cc = charCounts.get(e) || 0;
     var acc = anchorChars.get(e) || 0;
     var bias = 0.25 * cc - 0.7 * acc;
-    // Tentatively cap bias
-    bias = Math.min(4000, bias);
+    bias = Math.min(4000, bias);// tentative cap
     scores.set(e, scores.get(e) + bias);
   });
 
@@ -200,12 +174,43 @@ exports.calamine.transform = function transform_(doc, options) {
   return result;
 }
 
+function detachBySelector(root, selector) {
+
+  // Currently consumes approximately 50-70% of the processing time,
+  // 100% of which is the nested call to querySelector
+
+  // querySelector is used instead of querySelectorAll because:
+  // (1) the code is more concise,
+  // (2) the perf delta from querySelectorAll is immaterial, and
+  // (3) this avoids the need to check doc.contains(element) per iteration,
+  // as the selector restarts from the outer ancestor. Using querySelectorAll
+  // would require this extra check because descendants of detached nodes
+  // remain in the node list produced by querySelectorAll
+  for(var element = root.querySelector(selector); element;
+    element = root.querySelector(selector)) {
+    element.remove();
+  }
+}
+
+/**
+ * Used to split up the value of an attribute into tokens.
+ */
+var RE_TOKEN_DELIMITER = /[\s\-_0-9]+/g;
+
 /**
  * Applies an attribute bias to each element's score. Due to very poor
  * performance, this is implemented as a separate function that uses basic
  * loops and a more imperative style.
  */
 function applyAttributeBias(doc, elements, scores) {
+
+  // For each element, collect all its attribute values, tokenize the
+  // values, and then sum up the biases for the tokens and apply them to
+  // the element's score.
+
+  // Due to extremely bad performance, and a related issue with
+  // a v8 "too many optimizations" issue, this code is written
+  // for performance, hence the ugliness and DRY violations
 
   // TODO: research itemscope
   // TODO: research opengraph semantics
@@ -223,58 +228,49 @@ function applyAttributeBias(doc, elements, scores) {
   // TODO: itemtype has the same issues as 'article' id/class,
   // in that some articles use the itemtype repeatedly
 
-  // For each element, collect all its attribute values, tokenize the
-  // values, and then sum up the biases for the tokens and apply them to
-  // the element's score.
-
   var attributeValue = null;
   var bias = 0;
   var element = null;
   var length = elements.length;
   var elementTokens = new Set();
+  var attributeTokens = null;
+  var i = 0, j = 0;
+  var it = null;
+  var val = null;
 
-  for(var i = 0; i < length; i++) {
+  for(i = 0; i < length; i++) {
 
     element = elements[i];
 
-    // NOTE: this is running into Chrome profiler error
-    // "not optimized: optimized too many times"
-    /*appendTokens(element.getAttribute('id'), tokens);
-    appendTokens(element.getAttribute('name'), tokens);
-    appendTokens(element.getAttribute('class'), tokens);
-    appendTokens(element.getAttribute('itemprop'), tokens);
-    appendTokens(element.getAttribute('role'), tokens);
-    appendTokens(getItemType(element), tokens);*/
-
-    attributeValue = element.getAttribute('id');
+    attributeValue = element.id;
     if(attributeValue) {
       attributeValue = attributeValue.trim();
       if(attributeValue) {
-        var attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
-        for(var j = 0; j < attributeTokens.length; j++) {
-          elementTokens.add(attributeTokens[i]);
+        attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
+        for(j = 0; j < attributeTokens.length; j++) {
+          elementTokens.add(attributeTokens[j]);
         }
       }
     }
 
-    attributeValue = element.getAttribute('name');
+    attributeValue = element.name;
     if(attributeValue) {
       attributeValue = attributeValue.trim();
       if(attributeValue) {
-        var attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
-        for(var j = 0; j < attributeTokens.length; j++) {
-          elementTokens.add(attributeTokens[i]);
+        attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
+        for(j = 0; j < attributeTokens.length; j++) {
+          elementTokens.add(attributeTokens[j]);
         }
       }
     }
 
-    attributeValue = element.getAttribute('class');
+    attributeValue = element.className;
     if(attributeValue) {
       attributeValue = attributeValue.trim();
       if(attributeValue) {
-        var attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
-        for(var j = 0; j < attributeTokens.length; j++) {
-          elementTokens.add(attributeTokens[i]);
+        attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
+        for(j = 0; j < attributeTokens.length; j++) {
+          elementTokens.add(attributeTokens[j]);
         }
       }
     }
@@ -283,9 +279,9 @@ function applyAttributeBias(doc, elements, scores) {
     if(attributeValue) {
       attributeValue = attributeValue.trim();
       if(attributeValue) {
-        var attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
-        for(var j = 0; j < attributeTokens.length; j++) {
-          elementTokens.add(attributeTokens[i]);
+        attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
+        for(j = 0; j < attributeTokens.length; j++) {
+          elementTokens.add(attributeTokens[j]);
         }
       }
     }
@@ -294,34 +290,42 @@ function applyAttributeBias(doc, elements, scores) {
     if(attributeValue) {
       attributeValue = attributeValue.trim();
       if(attributeValue) {
-        var attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
-        for(var j = 0; j < attributeTokens.length; j++) {
-          elementTokens.add(attributeTokens[i]);
+        attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
+        for(j = 0; j < attributeTokens.length; j++) {
+          elementTokens.add(attributeTokens[j]);
         }
       }
     }
 
+    // Tentatively disabled while dealing with perf issues
     //attributeValue = getItemType(element);
     //if(attributeValue) {
     //  attributeValue = attributeValue.trim();
     //  if(attributeValue) {
     //    var attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
     //    for(var j = 0; j < attributeTokens.length; j++) {
-    //      elementTokens.add(attributeTokens[i]);
+    //      elementTokens.add(attributeTokens[j]);
     //    }
     //  }
     //}
 
-    // Now process all the element tokens
-    for(var it = elementTokens.values(), val = it.next().value; val;
-      val = it.next().value) {
+    // For each token, lookup its corresponding bias and aggregate
+    it = elementTokens.values();
+    for(val = it.next().value; val; val = it.next().value) {
       bias += ATTRIBUTE_BIAS.get(val) || 0;
     }
 
-    scores.set(element, scores.get(element) + bias);
+    if(bias) {
+      scores.set(element, scores.get(element) + bias);
 
-    // Reset for next iteration
-    bias = 0;
+      // Reset for next iteration
+      // This is within the if block as otherwise it is 0
+      bias = 0;
+    }
+
+    // Rather than create a new Set each iteration we reuse
+    // the same set object by clearing it. I assume this is
+    // faster than creating a new set object each time
     elementTokens.clear();
   }
 
@@ -342,6 +346,7 @@ function applyAttributeBias(doc, elements, scores) {
   if(articles.length == 1) {
     scores.set(articles[0], scores.get(articles[0]) + 1000);
   } else {
+    var forEach = Array.prototype.forEach;
     forEach.call(articles, updateScore.bind(null, scores, 100));
   }
 }
@@ -438,9 +443,9 @@ var INTRINSIC_BIAS = new Map([
 ]);
 
 /**
- * Immediate parents of these elements receive a bias for containing these
- * elements. For example, a <div> that contains several <p>s receives a
- * very positive bias, because that <div> is more likely to be the target
+ * Immediate parents of these elements receive a bias. For example, a <div>
+ * that contains several <p>s receives a very positive bias, because that
+ * <div> is more likely to be the target
  */
 var DESCENDANT_BIAS = new Map([
   ['a', -5],
@@ -632,6 +637,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['welcome', -50],
   ['widg', -200],
   ['widget', -200],
+  ['wnstorybody', 1000],
   ['zone', -50]
 ]);
 
@@ -640,6 +646,8 @@ var ATTRIBUTE_BIAS = new Map([
 var BLACKLIST_SELECTORS = [
   'a.aggregated-rel-link', // // The Oklahoman
   'a.carousel-control', // The Miami Herald
+  'a.dsq-brlink', // USA Today
+  'a.hdn-analytics', // SF Gate
   'a.more-tab', // The Oklahoman
   'a.post_cmt1', // Times of India
   'a[rel="tag"]', // // The Oklahoman
@@ -650,6 +658,7 @@ var BLACKLIST_SELECTORS = [
   'aside[data-panelmod-type="relatedContent"]', // LA Times
   'aside.callout', // The Atlantic
   'aside.entry-sidebar', // The Globe
+  'aside.livefyre-comments', // Vanity Fair
   'aside.marginalia', // NY Times
   'aside.mashsb-container', // cryptocoinsnews.com
   'aside#post_launch_success', // BuzzFeed
@@ -696,6 +705,7 @@ var BLACKLIST_SELECTORS = [
   'div#articlepagerreport', // Chron.com
   'div.article-pagination', // UT San Diego
   'div.article-print-url', // USA Today
+  'div.articleRelates', // Baltimore Sun
   'div.articleShareBottom', // Fox Sports
   'div.article-side', // The Times
   'div.article-tags', // entrepeneur.com
@@ -703,6 +713,10 @@ var BLACKLIST_SELECTORS = [
   'div.article-tools', // The Atlantic
   'div.articleViewerGroup', // Mercury News
   'div.assetBuddy', // Reuters
+  'div.at-con', // Design & Trend
+  'div.at-next', // Design & Trend
+  'div.at-tag', // Design & Trend
+  'div.at-tool', // Design & Trend
   'div.author_topics_holder', // The Irish Times
   'div[data-ng-controller="bestOfMSNBCController"]', // MSNBC
   'div.bio-socials', // Atomic Object
@@ -710,25 +724,28 @@ var BLACKLIST_SELECTORS = [
   'div#blq-foot', // BBC
   'div#blog-sidebar', // Comic Book Resources
   'div#blox-breadcrumbs', // Joplin
+  'div#blox-comments', // National Standard
   'div#blox-footer', // Joplin
   'div#blox-header', // Joplin
   'div#blox-right-col', // Joplin
   'di#blox-breadcrumbs', // Joplin
+  'div#bottom-rail', // Vanity Fair
   'div.bpcolumnsContainer', // Western Journalism
   'div#breadcrumb', // Autonews
   'div.breadcrumb_container', // NBC News
   'div#breadcrumbs', // E-Week
   'div.browse', // ABC News
+  'div.bt-links', // Learning and Finance
   'div[bucket-id="most_popular_01"]', // Telegraph/Reuters
   'div[bucket-id="secondary_navigation_01"]', // Telegraph/Reuters
   'div.buying-option', // Times of India
-  // Several websites, only way to identify Autonews
-  'div.byline', // Misc.
+  'div.byline', // Misc, but the only way to identify Autonews
   'div.byline_links', // Bloomberg
   'div#ce-comments', // E-Week
   'div.cnn_strybtntools', // CNN
   'div.cnn_strylftcntnt', // CNN
   'div.cnn_strycntntrgt', // CNN
+  'div.cn_reactions_comments', // Vanity Fair
   'div#commentary', // Autonews
   'div#comment_bar', // Autonews
   'div#commentBar', // Newsday
@@ -736,6 +753,7 @@ var BLACKLIST_SELECTORS = [
   'div#comment-container', // auburnpub.com
   'div#comments', // CBS News
   'div.comments', // TechCrunch
+  'div#commentblock', // Learning and Finance
   'div.commentCount', // Reuters
   'div.comment-count', // auburnpub.com
   'div.comment-count-block',// TechSpot
@@ -744,12 +762,14 @@ var BLACKLIST_SELECTORS = [
   'div.comment-holder', // entrepeneur.com
   'div#commenting', // Fox News
   'div#commentLink', // // The Oklahoman
+  'div#comment-list', // Bangkok Post
   'div#comments-tabs', // Houston News
   'div.commentThread', // kotatv
   'div.comment-tools', // Latin post
   'div.comment_links', // Forbes
   'div.comments-overall', // Aeon Magazine
   'div.comment-policy-box', // thedomains.com
+  'div.control-bar', // SF Gate
   'div.controls', // NY Daily News
   'div.correspondant', // CBS News
   'div[data-module-zone="articletools_bottom"]', // The Wall Street Journal
@@ -781,8 +801,10 @@ var BLACKLIST_SELECTORS = [
   'div.feature_nav', // E-Week
   'div#features', // BBC News
   'div.followable_block', // Forbes
+  'div.follow-us', // Fox News
   'div.footer', // KMBC
   'div.gallery-sidebar-ad', // USA Today
+  'div.gallery-overlay-outter', // SF Gate
   'div#gkSocialAPI', // The Guardian
   'div.googleads', // Telegraph UK
   'div.group-link-categories', // Symmetry Magazine
@@ -793,13 +815,22 @@ var BLACKLIST_SELECTORS = [
   'div.hide-for-print', // NobelPrize.org
   'div.hst-articlefooter', // Chron.com
   'div.hst-articletools', // Chron.com
+  'div.hst-blockstates', // Stamford Advocate (may be problematic)
+  'div.hst-featurepromo', // Seattle Pi
   'div.hst-freeform', // Chron.com
   'div.hst-headlinelist', // Chron.com
   'div.hst-hottopics', // Chron.com
   'div.hst-modularlist', // Chron.com
   'div.hst-morestories', // Chron.com
+  'div.hst-mostpopular', // Seattle Pi
+  'div.hst-newsgallery', // Stamford Advocate
+  'div.hst-othernews', // Stamford Advocate
+  'div.hst-relatedlist', // Seattle Pi
   'div.hst-simplelist', // Chron.com
+  'div.hst-siteheader', // Seattle Pi
+  'div.hst-slideshowpromo', // Seattle Pi
   'div.ib-collection', // KMBC
+  'div.icons', // Brecorder
   'div#infinite-list', // The Daily Mail
   'div.inline-sharebar', // CBS News
   'div.inline-share-tools-asset', // USA Today
@@ -815,6 +846,7 @@ var BLACKLIST_SELECTORS = [
   'div.LayoutTools', // ecdc.europa.eu
   'div#leader', // hostilefork
   'div.lhs_relatednews', // NDTV
+  'div.like-share', // Bangkok Post
   'div.linearCalendarWrapper', // ABC News
   'div.link-list-inline', // Las Vegas Sun
   'div#livefyre-wrapper', // The Wall Street Journal
@@ -823,6 +855,7 @@ var BLACKLIST_SELECTORS = [
   'div.load-comments', // entrepeneur.com
   'div.l-sidebar', // TechSpot
   'div.l-story-secondary', // Boston.com
+  'div.main > div#rail', // Fox News
   'div.main_social', // Times of India
   'div.m-article__share-buttons', // The Verge
   'div.mashsharer-box', // internetcommerce.org
@@ -853,13 +886,17 @@ var BLACKLIST_SELECTORS = [
   'div#nlHeader', // E-Week
   'div.node-footer', // Drupal
   'div.node-metainfo', // The Boston Herald
+  'div.NotifyUserBox', // Bangkok Post
+  'div.Other-stories ', // Bangkok Post
   'div.overlayPostPlay', // The Sydney Morning Herald
   'div.page_label', // Hewlett Packard News
   'div.page-navigation', // Misc.
+  'div.par-y_rail', // Vanity Fair
   'div.pb-f-page-comments', // Washington Post
   'div.pfont', // Newsday
   'div.pl-most-popular', // entrepeneur.com
   'div#popular-by-section', // Houston News
+  'div#popup', // Times of India
   'div.postcats', // The Wall Street Journal (blog)
   'div.postcommentpopupbox', // Times of India
   'div.post-comments', // The Sun Times
@@ -901,6 +938,7 @@ var BLACKLIST_SELECTORS = [
   'div#related-tags', // St. Louis Today
   'div#relatedTopics', // Reuters
   'div.relatedTopicButtons', // Reuters
+  'div.related-vertical', // The Wrap
   'div#related-videos-container', // E-Online
   'div.relatedVidTitle', // E-Online
   'div.rel-block-news', // The Hindu
@@ -943,6 +981,7 @@ var BLACKLIST_SELECTORS = [
   'div.shareToolsNextItem', // KMBC
   'div.sharrre-container', // Concurring Opinions
   'div.show-related-videos', // CBS News
+  'div.sideBar', // Bangkok Post
   'div.sidebar-content', // Concurring opinions
   'div.sidebar-feed', // WRAL
   'div#signIn', // Joplin
@@ -963,6 +1002,7 @@ var BLACKLIST_SELECTORS = [
   'div.sociable', // Mint Press
   'div.social_icons', // Forbes
   'div#social-links', // Reuters
+  'div.social-links ', // SF Gate
   'div.social-links-bottom', // MSNBC
   'div.social-links-top', // MSNBC
   'div.socialNetworks', // NBC
@@ -974,6 +1014,7 @@ var BLACKLIST_SELECTORS = [
   'div.social-toolbar-affix', // News OK
   'div.social-tools-wrapper-bottom ', // Washington Post
   'div.spantab', // Times of India
+  'div.SPOSTARBUST-Related-Posts', // RObservatory
   'div.sps-twitter_module', // BBC
   'div#sticky-nav', // Christian Science Monitor
   'div.sticky-tools', // The Boston Globe
@@ -986,6 +1027,8 @@ var BLACKLIST_SELECTORS = [
   'div.storynav', // TechCrunch
   'div#story_right_column_ad', // dailyjournal.net
   'div#story-share-buttons', // USA Today
+  'div.story-share-buttons', // USA Today
+  'div#story-share-buttons-old', // USA Today
   'div.story-tags', // Fox Sports
   'div.story-taxonomy', // ABC Chicago
   'div.storytools', // TechCrunch
@@ -1001,9 +1044,11 @@ var BLACKLIST_SELECTORS = [
   'div#teaser-overlay', // The Times
   'div.thirdPartyRecommendedContent', // KMBC
   'div#thumb-scroller', // E-Week
+  'div#tncms-region-jh-article-bottom-content', // Idaho Press
   'div.tncms-restricted-notice', // Atlantic City Press
   'div.toolbox', // ABC News
   'div.tools1', // The Wall Street Journal (blog)
+  'div.topic-category', // Bangkok Post
   'div.top-index-stories', // BBC
   'div.topkicker', // entrepreneur.com
   'div.top-stories-range-module', // BBC
@@ -1052,6 +1097,7 @@ var BLACKLIST_SELECTORS = [
   'p.authorFollow', // The Sydney Morning Herald
   'p.essay-tags', // Aeon Magazine
   'p.moreVideosTitle', // E-Online
+  'p.pagination', // Stamford Advocate
   'p.p_top_10', // Star Telegram
   'p.post-tags', // USA Today
   'p.story-ad-txt', // Boston.com
@@ -1069,6 +1115,7 @@ var BLACKLIST_SELECTORS = [
   'section.morestories', // Entertainment Tonight
   'section#more-stories-widget', // The Miami Herald
   'section#newsletter-signup', // New Yorker
+  'section.pagination_controls', // Vanity Fair
   'section#promotions', // The New Yorker
   'section.related_links', // Bloomberg
   'section#related-links', // BuzzFeed
@@ -1081,6 +1128,7 @@ var BLACKLIST_SELECTORS = [
   'section.top-video', // ABC 7 News
   'section.youmaylike', // Entertainment Tonight
   'span.sharetools-label', // NY Time
+  'table.hst-articleprinter', // Stamford Advocate
   'table#commentTable', // Times of India
   'table.complexListingBox', // Mercury News
   'ul#additionalShare', // NBC
@@ -1103,6 +1151,7 @@ var BLACKLIST_SELECTORS = [
   'ul.navigation', // USA Today
   'ul.nav-tabs', // The Miami Herald
   'ul.newslist', // Autonews
+  'ul#page-actions-bottom', // ESPN
   'ul.pagenav', // The Guardian
   'ul.pagination', // Politico
   'ul.related-links', // The Boston Globe
@@ -1116,6 +1165,7 @@ var BLACKLIST_SELECTORS = [
   'ul.socials', // independent.ie
   'ul.social-share-list', // TechCrunch
   'ul.social-tools', // The Washington Post
+  'ul#story-font-size', // Idaho Press
   'ul.story-tools-sprite', // Houston News
   'ul.tags', // BBC
   'ul.thumbs', // NY Daily News

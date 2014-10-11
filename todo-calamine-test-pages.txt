@@ -1,4 +1,5 @@
 Problem pages to review
+http://www.ft.com/cms/s/0/b684a160-5096-11e4-b73e-00144feab7de.html
 http://www.lohud.com/story/news/health/2014/10/08/ebola-faq/16915323/
 http://oldcomputers.net/compucolor-8001.html
 http://blog.level3.com/open-internet/not-neutrality/
@@ -22,8 +23,11 @@ https://www.ted.com/talks/david_christian_big_history
 http://blog.noctua-software.com/procedural-colors-for-game.html
 http://blog.garrytan.com/travel-planning-software-the-most-common-bad
 http://www.ledger-enquirer.com/2014/10/04/3338852/jones-header-lifts-new-england.html
+http://www.bradenton.com/2014/10/09/5405576/lawmakers-approve-700-million.html
 
-all new york times rss feeds - something is wrong with parsing
+---------------------------------------------------------------------------------------
+all new york times rss feeds - unclear what the issue is but nothing appears, may
+even be related to feed parsing
 
 
 ---------------------------------------------------------------------------------------

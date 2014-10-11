@@ -4,10 +4,8 @@
 
 'use strict';
 
-// TODO: think of a better name for this
-// TODO: should it be lucu.ui.style?
-
 var lucu = lucu || {};
+// TODO: think of a better name for this
 lucu.style = {};
 
 lucu.style.onChange = function() {
@@ -50,7 +48,6 @@ lucu.style.onChange = function() {
     } else {
       console.warn('header font size after change not set or 0');
     }
-
   }
 
   var contentRule = lucu.findCSSRule(sheet, 'div.entry span.entry-content');
@@ -66,9 +63,8 @@ lucu.style.onChange = function() {
     if(bfs) {
       contentRule.style.fontSize = (bfs / 10).toFixed(2) + 'em';
     } else {
-      console.warn('body font size after change not set or 0');
+      console.warn('onchange body font size not set or 0');
     }
-
 
     contentRule.style.textAlign = (localStorage.JUSTIFY_TEXT == '1') ? 'justify' : 'left';
 
@@ -87,18 +83,16 @@ lucu.style.onLoad = function() {
     s += 'background:'+ localStorage.ENTRY_BACKGROUND_COLOR+';';
   }
 
-  s += 'margin-left: 0px;margin-right: 0px; margin-bottom: 0px; margin-top:0px;';
-
+  s += 'margin: 0px;';
 
   var entryMargin = localStorage.ENTRY_MARGIN;
   if(entryMargin) {
-    s += 'padding-top: ' + entryMargin + 'px;';
-    s += 'padding-bottom:'+ entryMargin + 'px;';
-    s += 'padding-left: ' + entryMargin + 'px;';
-    s += 'padding-right: ' + entryMargin + 'px;';
+    s += 'padding: ' + entryMargin + 'px;';
   } else {
-    console.warn('onload entry margin not set');
+    console.warn('onload ENTRY_MARGIN not set');
   }
+
+  //console.debug('onLoad div.entry CSS %s', s);
 
   sheet.addRule('div.entry',s);
 
@@ -138,13 +132,17 @@ lucu.style.onLoad = function() {
   s = '';
 
   var bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10) || 0;
-  s += 'font-size:' + (bfs / 10).toFixed(2) + 'em;';
+  if(bfs) {
+    s += 'font-size:' + (bfs / 10).toFixed(2) + 'em;';
+  } else {
+    // This should fix the fresh install bug
+    console.warn('onload body font size not set or 0');
+  }
 
   var bodyTextJustify = localStorage.JUSTIFY_TEXT == '1';
   if(bodyTextJustify) {
     s += 'text-align: justify;';
   }
-
 
   var bodyFontFamily = localStorage.BODY_FONT_FAMILY;
   if(bodyFontFamily) {
@@ -160,7 +158,6 @@ lucu.style.onLoad = function() {
     } else {
 
     }
-
   }
 
   s += 'vertical-align: text-top;';

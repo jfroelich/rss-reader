@@ -253,7 +253,7 @@ function appendSlide(entry, isFirst) {
   //lucu.removeJavascriptAnchors(results);
 
   // This is bugged
-  //lucu.unwrapDescendants(results);
+  lucu.unwrapDescendants(results);
   lucu.removeDescendantAttributes(lucu.DEFAULT_ALLOWED_ATTRIBUTES , results);
   lucu.trimElement(results);
 

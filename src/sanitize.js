@@ -416,46 +416,37 @@ lucu.unwrap = function(e) {
   e.remove();
 };
 
+
+lucu.transformBreaks = function(doc) {
+  // Temp, testing an extremely simple break rule transformation
+  var br = doc.body.querySelector('br');
+  while(br) {
+    br.parentNode.replaceChild(doc.createElement('p'), br);
+    br = doc.body.querySelector('br');
+  }
+}
+
 lucu.RE_JAVASCRIPT_PROTOCOL = /^\s*javascript\s*:/i;
+
 
 lucu.unwrapDescendants = function(rootElement) {
 
-  // BUG: this does not work. I dont think the native traversal mechanisms
-  // can handle the particular unwrap transform. I think its because the
-  // child gets put before the parent.
+  var SELECT_UNWRAPPABLE = [
+    'article','big','blink','body','center','colgroup','data','details',
+    'div','font','footer','form','header','help','hgroup', 'ilayer', 'insert',
+    'label','layer','legend', 'main','marquee', 'meter', 'multicol','nobr',
+    'noembed','noscript','plaintext','section', 'small','span','tbody',
+    'tfoot','thead'
+  ].join(',');
 
-  // TODO: use a custom iterator that finds the next node before unwrapping
-  // and then steps to visit the next node.
+  var element = rootElement.querySelector(SELECT_UNWRAPPABLE);
 
-
-  var doc = rootElement.ownerDocument;
-
-  var it = doc.createNodeIterator(rootElement, NodeFilter.SHOW_ELEMENT, function(e) {
-    // Unwrap href-less anchors and javascript anchors
-    if(e.localName == 'a') {
-      var href = (e.getAttribute('href') || '').trim();
-
-      if(!href) {
-        return NodeFilter.FILTER_ACCEPT;
-      }
-
-      if(lucu.RE_JAVASCRIPT_PROTOCOL.test(href)) {
-        return NodeFilter.FILTER_ACCEPT;
-      }
-
-      return NodeFilter.FILTER_REJECT;
-    }
-
-    var isUnwrappable = lucu.UNWRAPPABLES.has(e.localName);
-
-    console.debug('Is %o unwrappable? %s', e, isUnwrappable);
-
-    return isUnwrappable ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-  });
-
-  var node;
-
-  while(node = it.nextNode()) {
-    lucu.unwrap(node);
+  while(element) {
+    // console.debug('unwrapping %s', element.localName);
+    lucu.unwrap(element);
+    element = rootElement.querySelector(SELECT_UNWRAPPABLE);
   }
+
+  // TODO: Unwrap nominal anchors
+
 };
