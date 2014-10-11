@@ -66,9 +66,9 @@ function testCalamine(url) {
 
     lucu.removeJavascriptAnchors(result);
 
-    // unwrap is buggy
-    //lucu.unwrapDescendants(results);
+    // lucu.unwrapDescendants(result);
     //lucu.removeDescendantAttributes(lucu.DEFAULT_ALLOWED_ATTRIBUTES , result);
+
     lucu.trimElement(result);
     result.setAttribute('best', 'best');
     result.style.border = '5px solid green';
