@@ -18,20 +18,35 @@
 (function (exports) {
 'use strict';
 
-exports.calamine = {};
+var forEach = Array.prototype.forEach;
+var reduce = Array.prototype.reduce;
 
-/**
- * Returns the best element of the document. Does some mutation
- * to the document.
- * TODO: rename to 'rub'?
- */
-exports.calamine.transform = function transform_(doc, options) {
+exports.calamine = {
+  /**
+   * Returns the best element of the document. Does some mutation
+   * to the document.
+   * TODO: rename to 'rub'?
+   */
+  transform: function transform_(doc, options) {
+    var optType = typeof options;
+    options = optType == 'object' || optType == 'function' ? options : {};
+    filterBoilerplateAxes(doc);
+    var elements = doc.body.getElementsByTagName('*');
+    var scores = initScores(doc, elements);
+    var charCounts = getTextLengths(doc);
+    var anchorChars = getAnchorTextLengths(doc, charCounts);
+    applyTextLengthBias(scores, elements, charCounts, anchorChars);
+    applyIntrinsicBias(doc, elements, scores);
+    applyDownwardBias(doc, scores);
+    applyUpwardBias(elements, scores);
+    applyImageBias(doc, scores);
+    applyAttributeBias(doc, elements, scores);
+    maybeExposeAttributes(doc, scores, charCounts, anchorChars, options);
+    return findBestElement(doc, elements, scores);
+  }
+};
 
-  var optType = typeof options;
-  options = optType == 'object' || optType == 'function' ? options : {};
-
-  var forEach = Array.prototype.forEach;
-  var reduce = Array.prototype.reduce;
+function filterBoilerplateAxes(doc) {
 
   // Note: Ideally I would use a block-based approach that would avoid the need
   // for this step but the current best element approach effectively requires
@@ -39,50 +54,86 @@ exports.calamine.transform = function transform_(doc, options) {
   // element, after processing, but are applied before processing to reduce the
   // amount of elements considered and reduce error. Most of the selectors are
   // conservative to avoid filtering non-boilerplate
+  // NOTE: this accounts for about 60-80% of the processing time
+  var detach = detachBySelector.bind(this, doc.body);
+  BLACKLIST_SELECTORS.forEach(detach);
+}
 
-  // NOTE: this call now seems to account for about 60% of the processing time
-
-  var detachFromBodyBySelector = detachBySelector.bind(this, doc.body);
-  BLACKLIST_SELECTORS.forEach(detachFromBodyBySelector);
-
-  var elements = doc.body.getElementsByTagName('*');
-
-  // Initialize scores
+function initScores(doc, elements) {
   var scores = new Map();
   scores.set(doc.documentElement, 0);
   scores.set(doc.body, 0);
   forEach.call(elements, function (e) { scores.set(e, 0); });
+  return scores;
+}
 
-  // Count text lengths per element. This uses an agglomerative approach in
-  // contrast to a top down approach (using element.textContent) due to
-  // performance issues
-  var charCounts = new Map();
-  for(var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT),
-    node = it.nextNode(), count; node; node = it.nextNode()) {
-    // NOTE: trim to prevent large amounts of whitespace from undue bias
-    for(count = node.nodeValue.trim().length,
-      node = count ? node.parentNode: undefined; node;
-      node = node.parentNode) {
-      charCounts.set(node, (charCounts.get(node) || 0) + count);
+/**
+ * Collects the length of each node's inner text. Returns a map of node to
+ * inner text length. Nodes without text are not not stored in the map.
+ *
+ * This uses an agglomerative approach in contrast to a top down approach
+ * (using element.textContent) because there is a substantial performance
+ * benefit and the code is still simple.
+ */
+function getTextLengths(doc) {
+  var map = new Map();
+  var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
+  var count = 0;
+  var sum = 0;
+
+  for(var node = it.nextNode(); node; node = it.nextNode()) {
+    // We have to trim as otherwise we end up counting whitespace
+    // and many authors use copious amounts of whitespace
+    count = node.nodeValue.trim().length;
+
+    // Ignore nodes without a length after trimming. This is common as
+    // "\n" text nodes are common.
+    if(!count) continue;
+
+    // Walk upwards and store the count in each ancestor. The node currently
+    // points to a text node, which itself is ignored. We only care about
+    // elements. Text nodes cannot contain other text nodes so we know
+    // that each parent here is an element.
+    for(node = node.parentNode; node; node = node.parentNode) {
+      // Get the count for the node that already exists from prior iteration
+      sum = map.get(node);
+      // Either initialize a new count or aggregate
+      map.set(node, sum ? sum + count : count);
     }
   }
 
-  // Aggregate the count of text within anchors within ancestors. Done from the
-  // bottom up in a second pass for performance
-  var anchorChars = new Map();
-  forEach.call(doc.body.querySelectorAll('a[href]'), function (anchor) {
+  return map;
+}
+
+/**
+ * Aggregate the count of text within anchors within ancestors. Done from the
+ * bottom up in a second pass for performance
+ */
+function getAnchorTextLengths(doc, charCounts) {
+
+  var map = new Map();
+  // We specifically select only non-nominal anchors
+  var anchors = doc.body.querySelectorAll('a[href]');
+
+  forEach.call(anchors, function (anchor) {
     for(var n = charCounts.get(anchor), el = n ? anchor : undefined; el;
       el = el.parentElement) {
-      anchorChars.set(el, (anchorChars.get(el) || 0) + n);
+      map.set(el, (map.get(el) || 0) + n);
     }
   });
 
-  // Apply a bias based the number of characters and the number of characters
-  // within anchors to each element's score. This "magical" formula is an
-  // adaptation of a simple regression using some empirical weights.
-  // Nodes with large amounts of text, that is not anchor text, get the most
-  // positive bias. Adapted from "Boilerplate Detection using Shallow Text
-  // Features" http://www.l3s.de/~kohlschuetter/boilerplate
+  return map;
+}
+
+/**
+ * Apply a bias based the number of characters and the number of characters
+ * within anchors to each element's score. This "magical" formula is an
+ * adaptation of a simple regression using some empirical weights.
+ * Nodes with large amounts of text, that is not anchor text, get the most
+ * positive bias. Adapted from "Boilerplate Detection using Shallow Text
+ * Features" http://www.l3s.de/~kohlschuetter/boilerplate
+ */
+function applyTextLengthBias(scores, elements, charCounts, anchorChars) {
   forEach.call(elements, function (e) {
     var cc = charCounts.get(e) || 0;
     var acc = anchorChars.get(e) || 0;
@@ -90,34 +141,58 @@ exports.calamine.transform = function transform_(doc, options) {
     bias = Math.min(4000, bias);// tentative cap
     scores.set(e, scores.get(e) + bias);
   });
+}
 
-  // Apply an intrinsic bias (based on the type of element itself)
+/**
+ * Apply an intrinsic bias (based on the type of element itself)
+ */
+function applyIntrinsicBias(doc, elements, scores) {
   forEach.call(elements, function (e) {
     scores.set(e, scores.get(e) + (INTRINSIC_BIAS.get(e.localName) || 0));
   });
 
   // Pathological case for <article> element intrinsic bias that accounts for
   // use of the article element to refer to other articles (e.g. Miami Herald)
+  // It seems like an incorrect use of the new element but we have to
+  // account for the reality of misuse here.
   var articles = doc.body.getElementsByTagName('article');
   if(articles.length == 1) {
     scores.set(articles[0], scores.get(articles[0]) + 1000);
   } else {
     forEach.call(articles, updateScore.bind(null, scores, 100));
   }
+}
 
+function applyDownwardBias(doc, scores) {
   // Penalize list descendants
-  forEach.call(doc.body.querySelectorAll('li *,ol *,ul *, dd *, dl *'),
-    updateScore.bind(null, scores, -20));
+  var listDescendants = doc.body.querySelectorAll('li *,ol *,ul *, dd *, dl *');
+  forEach.call(listDescendants, updateScore.bind(null, scores, -20));
 
   // Penalize descendants of navigational elements. Due to pre-filtering this
   // is largely a no-op, but pre-filtering may be disabled in the future.
-  // Essentially this just biases asides because header/footer/nav are
-  // in the template blacklist.
-  forEach.call(doc.body.querySelectorAll('aside *, header *, footer *, nav *'),
-    updateScore.bind(null, scores, -50));
+  // Essentially this just biases <aside> because header/footer/nav are
+  // in the blacklist.
+  var navDescendants = doc.body.querySelectorAll(
+    'aside *, header *, footer *, nav *');
+  forEach.call(navDescendants, updateScore.bind(null, scores, -50));
+}
 
-  // Score images and image parents
-  forEach.call(doc.body.getElementsByTagName('img'), function (image) {
+function applyUpwardBias(elements, scores) {
+  // Bias the parent of certain elements
+  forEach.call(elements, function (element) {
+    var parent = element.parentElement;
+    var bias = DESCENDANT_BIAS.get(element.localName);
+    if(!bias) return;
+    var currentScore = scores.get(parent);
+    scores.set(parent, currentScore + bias);
+  });
+}
+
+// Score images and image parents
+function applyImageBias(doc, scores) {
+
+  var images = doc.body.getElementsByTagName('img');
+  forEach.call(images, function (image) {
     var parent = image.parentElement;
     // Avoid over-promotion of slideshow-container elements
     var carouselBias = reduce.call(parent.childNodes, function (bias, node) {
@@ -136,43 +211,39 @@ exports.calamine.transform = function transform_(doc, options) {
     scores.set(parent, scores.get(parent) + carouselBias + descBias +
       areaBias);
   });
+}
 
-  // Bias the parent of certain elements
-  forEach.call(elements, function (element) {
-    var parent = element.parentElement;
-    var bias = DESCENDANT_BIAS.get(element.localName) || 0;
-    scores.set(parent, scores.get(parent) + bias);
-  });
+// Conditionally expose attributes for debugging
+function maybeExposeAttributes(doc, scores, charCounts, anchorChars, options) {
+  var rootElement = doc.documentElement;
+  var elements = rootElement.getElementsByTagName('*');
 
-  // Apply attribute bias
-  applyAttributeBias(doc, elements, scores);
-
-  // Conditionally expose attributes for debugging
-  var docElements = doc.documentElement.getElementsByTagName('*');
   if(options.SHOW_CHAR_COUNT) {
-    forEach.call(docElements, function (e) {
+    forEach.call(elements, function (e) {
       e.setAttribute('cc', charCounts.get(e) || 0);
     });
   }
+
   if(options.SHOW_ANCHOR_CHAR_COUNT) {
-    forEach.call(docElements, function (e) {
+    forEach.call(elements, function (e) {
       e.setAttribute('acc', anchorChars.get(e) || 0);
     });
   }
+
   if(options.SHOW_SCORE) {
-    forEach.call(docElements, function (e) {
+    forEach.call(elements, function (e) {
       e.setAttribute('score', scores.get(e) || 0);
     });
   }
+}
 
-  // Find the highest scoring element, defaulting to doc.body
-  var result = reduce.call(elements, function (max, current) {
+// Find the highest scoring element, defaulting to doc.body
+function findBestElement(doc, elements, scores) {
+
+  var DEFAULT_BEST_ELEMENT = doc.body;
+  return reduce.call(elements, function (max, current) {
     return scores.get(current) > scores.get(max) ? current : max;
-  }, doc.body);
-
-  // Yield the final result, the element that most likely contains
-  // the targeted content (less some expressly filtered boilerplate)
-  return result;
+  }, DEFAULT_BEST_ELEMENT);
 }
 
 // Returns the corresponding figcaption element for an image, if present
@@ -220,31 +291,34 @@ function detachBySelector(root, selector) {
 var RE_TOKEN_DELIMITER = /[\s\-_0-9]+/g;
 
 /**
- * Applies an attribute bias to each element's score. Due to very poor
- * performance, this is implemented as a separate function that uses basic
- * loops and a more imperative style.
+ * Applies an attribute bias to each element's score.
+ *
+ * For each element, collect some of its attribute values, tokenize the
+ * values, and then sum up the biases for the tokens and apply them to
+ * the element's score.
+ *
+ * Due to very poor performance, this uses basic loops and an imperative
+ * style. In addition, this previously encounted a strange v8 error about
+ * "too many optimizations" so calling functions within loops is avoided.
+ *
+ * TODO: research itemscope
+ * TODO: Open Graph Protocol
+ * - <meta property="og:type" content="article">
+ *
  */
 function applyAttributeBias(doc, elements, scores) {
 
-  // For each element, collect all its attribute values, tokenize the
-  // values, and then sum up the biases for the tokens and apply them to
-  // the element's score.
-
-  // Due to extremely bad performance, and a related issue with
-  // a v8 "too many optimizations" issue, this code is written
-  // for performance, hence the ugliness and DRY violations
-
-  // TODO: research itemscope
-  // TODO: research opengraph semantics
-  // <meta property="og:type" content="article">
-
+  // Notes
   // itemtype="http://schema.org/BlogPosting"
+  // itemtype="http://schema.org/WebPage"
+  //http://schema.org/TechArticle
+  //http://schema.org/ScholarlyArticle
+
   // itemprop="blogPost"
   // itemprop="mainContentOfPage"
-  // itemtype="http://schema.org/WebPage"
   // role="complementary"
 
-  // TODO: Google plus uses obfuscated attributes but
+  // TODO: Google plus obfuscates attributes but
   // it does use role="article"
 
   // TODO: itemtype has the same issues as 'article' id/class,
@@ -684,6 +758,7 @@ var BLACKLIST_SELECTORS = [
   'aside.marginalia', // NY Times
   'aside.mashsb-container', // cryptocoinsnews.com
   'aside#post_launch_success', // BuzzFeed
+  'aside.prev-next', // The Economist
   'aside.related-articles', // BBC
   'aside.related-content', // // The Oklahoman
   'aside#related-content-xs', // The Miami Herald
@@ -714,12 +789,14 @@ var BLACKLIST_SELECTORS = [
   'div#article div.share', // timeslive.co.za
   'div.article_actions', // Forbes
   'div.article_cat', // Collegian
+  'div.article_comments', // Voice of America
   'div.articleComments', // Reuters
   'div#articleIconLinksContainer', // The Daily Mail
   'div.article-social', // Fortune Magazine
   'div.articleEmbeddedAdBox', // Mercury News
   'div.article-extra', // TechCrunch
   'div.article_interaction', // Bloomberg
+  'div[data-vr-zone="You May Like"]', // Voice of America
   'div.article-list', // // The Oklahoman
   'div#articleKeywords', // The Hindu
   'div.articleMeta', // Tampa Bay
@@ -764,6 +841,8 @@ var BLACKLIST_SELECTORS = [
   'div.buying-option', // Times of India
   'div.byline', // Misc, but the only way to identify Autonews
   'div.byline_links', // Bloomberg
+  'div.card-stats', // WFPL
+  'div.category-nav', // Sparkfun
   'div#ce-comments', // E-Week
   'div.cnn_strybtntools', // CNN
   'div.cnn_strylftcntnt', // CNN
@@ -786,12 +865,14 @@ var BLACKLIST_SELECTORS = [
   'div#commenting', // Fox News
   'div#commentLink', // // The Oklahoman
   'div#comment-list', // Bangkok Post
+  'div#comment-reply-form', // Sparkfun
   'div#comments-tabs', // Houston News
   'div.commentThread', // kotatv
   'div.comment-tools', // Latin post
   'div.comment_links', // Forbes
   'div.comments-overall', // Aeon Magazine
   'div.comment-policy-box', // thedomains.com
+  'div.commentWrap', // Corcodillos
   'div.component-share', // Sports Illustrated
   'div.control-bar', // SF Gate
   'div.controls', // NY Daily News
@@ -824,9 +905,12 @@ var BLACKLIST_SELECTORS = [
   'div.feature-btns', // USA Today (assumes video not supported)
   'div.feature_nav', // E-Week
   'div#features', // BBC News
+  'div.field-name-field-tags', // WFPL
   'div.followable_block', // Forbes
   'div.follow-us', // Fox News
   'div.footer', // KMBC
+  'div#forgotPassword', // Joplin Globe
+  'div#forgotPasswordSuccess', // Joplin Globe
   'div.gallery-sidebar-ad', // USA Today
   'div.gallery-overlay-outter', // SF Gate
   'div#gkSocialAPI', // The Guardian
@@ -885,6 +969,7 @@ var BLACKLIST_SELECTORS = [
   'div.mashsharer-box', // internetcommerce.org
   'div.m-entry__sidebar', // The Verge
   'div.menu', // CNBC
+  'div#mergeAccounts', // Joplin Globe
   'div.meta_bottom', // Collegian
   'div#meta-related', // Entertainment Weekly
   'div#mc_embed_signup', // stgeorgeutah.com
@@ -911,6 +996,7 @@ var BLACKLIST_SELECTORS = [
   'div.node-footer', // Drupal
   'div.node-metainfo', // The Boston Herald
   'div.NotifyUserBox', // Bangkok Post
+  'div.npRelated', // National Post
   'div.Other-stories ', // Bangkok Post
   'div.overlayPostPlay', // The Sydney Morning Herald
   'div.page_label', // Hewlett Packard News
@@ -938,12 +1024,16 @@ var BLACKLIST_SELECTORS = [
   'div#prologue', // hostilefork
   'div.promo-inner', // Chron.com
   'div.promo-top', // Chron.com
-  'div.pull-right', // The Oklahoman
+  'div.pull-left-tablet', // NY1 (only uses "article" for related)
+
+  // 'div.pull-right', // CANNOT USE (oklahoman vs nccgroup blog)
+
   'div#reader-comments', // The Daily Mail
   'div.read_more', // Times of India
   'div.recirculation', // New Yorker
   'div.recommended-articles-wrap', // Vice.com
   'div#registration-notice', // Atlantic City Press
+  'div#registrationNewVerification', // Joplin Globe
   'div#relartstory', // Times of India
   'div#related', // The Boston Globe (note: wary of using this)
   'div.related', // CNBC (note: wary of using this one)
@@ -969,7 +1059,10 @@ var BLACKLIST_SELECTORS = [
   'div.rel-block-news', // The Hindu
   'div.rel-block-sec', // The Hindu
   'div.relposts', // TechCrunch
+  'div.resizer', // KMBC
   'div#respond', // Stanford Law
+  'div#returnTraditional', // Joplin Globe
+  'div#returnSocial', // Joplin Globe
   'div#reveal-comments', // Aeon Magazine
   'div#right-column', // The Hindu
   'div.right_rail_cnt', // Hewlett Packard News
@@ -984,7 +1077,6 @@ var BLACKLIST_SELECTORS = [
   'div#rt_primary_1', // CNBC
   'div[id^="rt_promo"]', // CNBC
   'div#rt_related_0', // CNBC
-  'div.resizer', // KMBC
   'div#savedata1', // Times of India
   'div.save-tooltip', // auburnpub
   'div.sd-social', // Re-code
@@ -1001,6 +1093,9 @@ var BLACKLIST_SELECTORS = [
   'div.share-count-container', // CNBC
   'div.sharedaddy', // Fortune
   'div.share-help', // BBC
+  'div.share_inline_header', // The Economist
+  'div.share_inline_footer', // The Economist
+  'div.share-link-inline', // Sparkfun
   'div.shareLinks', // Reuters
   'div.sharetools-inline-article-ad', // NYTimes
   'div.shareToolsNextItem', // KMBC
@@ -1032,6 +1127,7 @@ var BLACKLIST_SELECTORS = [
   'div.social-links-bottom', // MSNBC
   'div.social-links-top', // MSNBC
   'div.socialNetworks', // NBC
+  'div#socialRegistration', // Joplin Globe
   'div#social-share', // Priceonomics
   'div.social-share', // Bloomberg
   'div.social-share-top', // Priceonomics
@@ -1079,6 +1175,8 @@ var BLACKLIST_SELECTORS = [
   'div.topkicker', // entrepreneur.com
   'div.top-stories-range-module', // BBC
   'div.top-stories05', // Telegraph UK
+  'div#traditionalRegistration', // Joplin Globe
+  'div#traditionalAuthenticateMerge', // Joplin Globe
   'div.trb_embed_related', // LA Times
   'div.trb_panelmod_body', //  LA Times
   'div.twipsy', // St. Louis Today
@@ -1101,6 +1199,7 @@ var BLACKLIST_SELECTORS = [
   'div#you-might-like', // The New Yorker
   'div#zergnet', // Comic Book Resources
   'dl.blox-social-tools-horizontal', // Joplin
+  'dl.related-mod', // Fox News
   'dl.tags', // NY Daily News
   'figure.ib-figure-ad', // KMBC
   'figure.kudo', // svbtle.com blogs
@@ -1135,6 +1234,7 @@ var BLACKLIST_SELECTORS = [
   'section.breaking_news_bar', // Bloomberg
   'section#comments', // TechSpot
   'section.comments', // ABC Chicago
+  'section#comments-area', // The Economist
   'section#follow-us', // BBC
   'section.headline-list', // The Miami Herald
   'section.headlines-list', // ABC Chicago
@@ -1161,12 +1261,15 @@ var BLACKLIST_SELECTORS = [
   'table.complexListingBox', // Mercury News
   'ul#additionalShare', // NBC
   'ul.article-options', // TVNZ
+  'ul.article-share', // DNA India
   'ul#article-share-links', // The Boston Herald
   'ul#blox-body-nav', // Houston News
   'ul.blox-recent-list', // Atlantic City Press
   'ul.breadcrumb', // The Miami Herald
   'ul.breaking-news-stories', // ABC 7 News
   'ul.bull-list', // Joplin
+  'ul.comment-list', // Sparkfun
+  'ul.display-posts-listing', // Recode
   'ul.entry-extra', // Wired Magazine
   'ul.entry_sharing', // Bloomberg
   'ul.flippy', // MSNBC
@@ -1174,6 +1277,7 @@ var BLACKLIST_SELECTORS = [
   'ul.hl-list', // Chron.com
   'ul.links--inline', // Drupal
   'ul.links-list', // BBC
+  'ul.m-block__meta__links', // Tomahawk Nation
   'ul.menu', // The New York Times
   'ul.navbar-nav', // Noctua Software Blog
   'ul.navigation', // USA Today
