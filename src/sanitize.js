@@ -128,8 +128,6 @@ lucu.removeBlacklistedElements = function(doc) {
 };
 
 lucu.removeComments = function(doc) {
-//forEachNode(doc.body, NodeFilter.SHOW_COMMENT, removeNode);
-
   var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_COMMENT);
   var node;
   while(node = it.nextNode()) {
@@ -147,14 +145,13 @@ lucu.removeEmptyNodes = function(doc) {
   }
 };
 
+// Remove all empty-like elements from the document. If removing
+// an element would change the state of the element's parent to also
+// meet the empty-like criteria, then the parent is also removed, and
+// so forth, up the hierarchy, but stopping before doc.body.
 lucu.removeEmptyElements = function(doc) {
 
   // TODO: This needs a lot of cleanup
-
-  // Remove all empty-like elements from the document. If removing
-  // an element would change the state of the element's parent to also
-  // meet the empty-like criteria, then the parent is also removed, and
-  // so forth, up the hierarchy, but stopping before doc.body.
 
   // TODO: there is a specific edge case not being handled
   // where certain elements, e.g. anchors, that do not contain
@@ -166,7 +163,7 @@ lucu.removeEmptyElements = function(doc) {
   // remove other nodes, this leads to some funny looking junk
   // areas of content (e.g. a list of empty bullet points)
   // This gets trickier because the logic, in the current impl,
-  // has to be in a couple places. in isEmptyLike, an anchor without
+  // has to be in a couple places. In isEmptyLike, an anchor without
   // a firstChild should be considered empty. That should be handled
   // right now but for some odd reason it is not. Then once any element
   // is removed and we check its parent, its parent should go through
@@ -180,7 +177,7 @@ lucu.removeEmptyElements = function(doc) {
   // when only 1 needed to occur. To do this, this needs
   // to be fundamentally refactored. Removes should not occur
   // on the first pass over the elements. This, btw, would remove the
-  // ugliness of using a map function with a side effet. Instead, start by
+  // ugliness of using a map function with a side effect. Instead, start by
   // identifying all of the empty leaves. Then, for each leaf, traverse
   // upwards to find the actual element to remove. Be cautious
   // about simply checking that parent.childElementCount == 1 to find
@@ -223,8 +220,8 @@ lucu.removeEmptyElements = function(doc) {
     parent = stack.pop();
 
     if(parent.firstChild) {
-      // There are other nodes/elements in the parent after
-      // the child was removed (when building the stack),
+      // There are other nodes in the parent after
+      // the child was removed,
       // so do not remove the parent.
       continue;
     }
@@ -232,6 +229,8 @@ lucu.removeEmptyElements = function(doc) {
     // Grab a reference to the grand parent before removal
     // because after removal it is undefined
     grandParent = parent.parentElement;
+
+    // Detach
     parent.remove();
 
     // If there was no grand parent (how would that ever happen?)
@@ -426,7 +425,7 @@ lucu.unwrapDescendants = function(rootElement) {
   var anchors = rootElement.getElementsByTagName('a');
   var nominalAnchors = Array.prototype.filter.call(anchors, function(anchor) {
     var href = anchor.getAttribute('href');
-    return href ? false : !href.trim();
+    return href ? !href.trim() : false;
   });
 
   if(!nominalAnchors.length) {
