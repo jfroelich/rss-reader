@@ -25,11 +25,17 @@ exports.calamine = {
   /**
    * Returns the best element of the document. Does some mutation
    * to the document.
-   * TODO: rename to 'rub'?
+   * TODO: rename to 'rub'? relieve (e.g. toplogical relief)?
    */
   transform: function transform_(doc, options) {
+
+    // options is optional but if specified must be
+    // a type of object, or a function as it can also have props
     var optType = typeof options;
-    options = optType == 'object' || optType == 'function' ? options : {};
+    if(optType != 'object' && optType != 'function') {
+      options = {};
+    }
+
     filterBoilerplateAxes(doc);
     var elements = doc.body.getElementsByTagName('*');
     var scores = initScores(doc, elements);
@@ -48,14 +54,16 @@ exports.calamine = {
 
 function filterBoilerplateAxes(doc) {
 
-  // Note: Ideally I would use a block-based approach that would avoid the need
+  // NOTE: this accounts for about 60-80% of the processing time
+
+  // Note: Ideally, a block-based approach would avoid the need
   // for this step but the current best element approach effectively requires
   // it. These selectors target boilerplate typically found in the best
   // element, after processing, but are applied before processing to reduce the
   // amount of elements considered and reduce error. Most of the selectors are
   // conservative to avoid filtering non-boilerplate
-  // NOTE: this accounts for about 60-80% of the processing time
-  var detach = detachBySelector.bind(this, doc.body);
+
+  var detach = detachBySelector.bind(null, doc.body);
   BLACKLIST_SELECTORS.forEach(detach);
 }
 
@@ -82,12 +90,14 @@ function getTextLengths(doc) {
   var sum = 0;
 
   for(var node = it.nextNode(); node; node = it.nextNode()) {
+    // NOTE: node.nodeValue is never null for text nodes, as otherwise
+    // the text node would not exist
     // We have to trim as otherwise we end up counting whitespace
-    // and many authors use copious amounts of whitespace
+    // and many authors use copious amounts of extraneous whitespace
     count = node.nodeValue.trim().length;
 
     // Ignore nodes without a length after trimming. This is common as
-    // "\n" text nodes are common.
+    // "\n" text nodes are prevalent.
     if(!count) continue;
 
     // Walk upwards and store the count in each ancestor. The node currently
@@ -96,9 +106,8 @@ function getTextLengths(doc) {
     // that each parent here is an element.
     for(node = node.parentNode; node; node = node.parentNode) {
       // Get the count for the node that already exists from prior iteration
-      sum = map.get(node);
-      // Either initialize a new count or aggregate
-      map.set(node, sum ? sum + count : count);
+      sum = map.get(node) || 0;
+      map.set(node, sum + count);
     }
   }
 
@@ -112,13 +121,21 @@ function getTextLengths(doc) {
 function getAnchorTextLengths(doc, charCounts) {
 
   var map = new Map();
-  // We specifically select only non-nominal anchors
+
+  // We specifically select only non-nominal anchors because we only
+  // want non-nominals to affect scoring
   var anchors = doc.body.querySelectorAll('a[href]');
 
-  forEach.call(anchors, function (anchor) {
-    for(var n = charCounts.get(anchor), el = n ? anchor : undefined; el;
-      el = el.parentElement) {
-      map.set(el, (map.get(el) || 0) + n);
+  forEach.call(anchors, function aggregate(anchor) {
+    var sum = 0;
+    var count = charCounts.get(anchor);
+    // Ignore anchors without inner text (e.g. image link)
+    if(!count) return;
+
+    // Walk upward and store the count in each ancestor
+    for(var element = anchor; element; element = element.parentElement) {
+      sum = map.get(element) || 0;
+      map.set(element, sum + count);
     }
   });
 
@@ -147,14 +164,21 @@ function applyTextLengthBias(scores, elements, charCounts, anchorChars) {
  * Apply an intrinsic bias (based on the type of element itself)
  */
 function applyIntrinsicBias(doc, elements, scores) {
-  forEach.call(elements, function (e) {
-    scores.set(e, scores.get(e) + (INTRINSIC_BIAS.get(e.localName) || 0));
+
+  forEach.call(elements, function (element) {
+    var bias = INTRINSIC_BIAS.get(element.localName);
+    if(!bias) return;
+    var score = scores.get(element);
+    scores.set(element, score + bias);
   });
 
-  // Pathological case for <article> element intrinsic bias that accounts for
-  // use of the article element to refer to other articles (e.g. Miami Herald)
-  // It seems like an incorrect use of the new element but we have to
-  // account for the reality of misuse here.
+  // INTRINSIC_BIAS intentionally does not contain a bias for the
+  // article element. Some websites, such as the Miami Herald, use
+  // the article element multiple times for reasons such as a list of
+  // related articles. Therefore, we have three cases: no article element,
+  // one article element, or multiple. If one, promote greatly. If none
+  // or multiple, promote weakly.
+
   var articles = doc.body.getElementsByTagName('article');
   if(articles.length == 1) {
     scores.set(articles[0], scores.get(articles[0]) + 1000);
@@ -165,7 +189,9 @@ function applyIntrinsicBias(doc, elements, scores) {
 
 function applyDownwardBias(doc, scores) {
   // Penalize list descendants
-  var listDescendants = doc.body.querySelectorAll('li *,ol *,ul *, dd *, dl *');
+  // NOTE: ignores dt due to rare usage
+  var SELECTOR_LIST = 'li *, ol *, ul *, dd *, dl *';
+  var listDescendants = doc.body.querySelectorAll(SELECTOR_LIST);
   forEach.call(listDescendants, updateScore.bind(null, scores, -20));
 
   // Penalize descendants of navigational elements. Due to pre-filtering this
@@ -177,8 +203,9 @@ function applyDownwardBias(doc, scores) {
   forEach.call(navDescendants, updateScore.bind(null, scores, -50));
 }
 
+// Bias the parent of certain elements
 function applyUpwardBias(elements, scores) {
-  // Bias the parent of certain elements
+
   forEach.call(elements, function (element) {
     var parent = element.parentElement;
     var bias = DESCENDANT_BIAS.get(element.localName);
@@ -360,7 +387,10 @@ function applyAttributeBias(doc, elements, scores) {
       }
     }
 
-    attributeValue = element.className;
+    // NOTE: cannot use element.className because it has the
+    // potential to return SVGAnimatedString, which is an object
+    // that cannot be trimmed or lowercased or split
+    attributeValue = element.getAttribute('class');
     if(attributeValue) {
       attributeValue = attributeValue.trim();
       if(attributeValue) {
@@ -481,10 +511,18 @@ function getItemType(element) {
   return path;
 }
 
-// Helper for transformDocument
+/**
+ * Updates the score of an element by adding in delta
+ */
 function updateScore(scores, delta, element) {
-  // NOTE: assumes element always exists
-  scores.set(scores.get(element) + delta);
+
+  var score = scores.get(element);
+
+  // We know initScores set a score of 0 for
+  // every element so there is no need to check
+  // if score is undefined prior to update
+
+  scores.set(score + delta);
 }
 
 /**
