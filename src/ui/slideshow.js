@@ -137,6 +137,13 @@ function appendSlides(oncomplete, isFirst) {
  */
 function onSlideClick(event) {
 
+
+
+  if(event.which != 1) {
+    console.debug('onSlideClick event.which != 1. %o', event);
+    return false;
+  }
+
   // BUG: when clicking on an image in a link, it is still a link
   // click that should open the link in a new window...
 
@@ -248,7 +255,9 @@ function appendSlide(entry, isFirst) {
   lucu.trimNodes(doc);
   lucu.removeEmptyNodes(doc);
   lucu.removeEmptyElements(doc);
-  var results = calamine.transform(doc);
+  var results = calamine.transform(doc, {
+    FILTER_NAMED_AXES: true
+  });
   lucu.removeJavascriptAnchors(results);
   lucu.unwrapDescendants(results);
   lucu.removeDescendantAttributes(lucu.DEFAULT_ALLOWED_ATTRIBUTES , results);

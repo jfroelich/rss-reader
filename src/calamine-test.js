@@ -59,6 +59,7 @@ function testCalamine(url) {
     lucu.removeEmptyNodes(doc);
     lucu.removeEmptyElements(doc);
     var result = calamine.transform(doc, {
+      FILTER_NAMED_AXES: true,
       SHOW_CHAR_COUNT: true,
       SHOW_ANCHOR_CHAR_COUNT: true,
       SHOW_SCORE: true
