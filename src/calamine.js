@@ -36,18 +36,19 @@ exports.calamine = {
       options = {};
     }
 
-    filterBoilerplateAxes(doc);
+    if(options.FILTER_NAMED_AXES) {
+      filterBoilerplateAxes(doc);
+    }
+
     var elements = doc.body.getElementsByTagName('*');
     var scores = initScores(doc, elements);
-    var charCounts = getTextLengths(doc);
-    var anchorChars = getAnchorTextLengths(doc, charCounts);
-    applyTextLengthBias(scores, elements, charCounts, anchorChars);
+    applyTextLengthBias(doc, scores, elements, options);
     applyIntrinsicBias(doc, elements, scores);
     applyDownwardBias(doc, scores);
     applyUpwardBias(elements, scores);
     applyImageBias(doc, scores);
     applyAttributeBias(doc, elements, scores);
-    maybeExposeAttributes(doc, scores, charCounts, anchorChars, options);
+    maybeExposeAttributes(doc, scores, options);
     return findBestElement(doc, elements, scores);
   }
 };
@@ -83,7 +84,7 @@ function initScores(doc, elements) {
  * (using element.textContent) because there is a substantial performance
  * benefit and the code is still simple.
  */
-function getTextLengths(doc) {
+function collectTextNodeLengths(doc) {
   var map = new Map();
   var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
   var count = 0;
@@ -118,7 +119,7 @@ function getTextLengths(doc) {
  * Aggregate the count of text within anchors within ancestors. Done from the
  * bottom up in a second pass for performance
  */
-function getAnchorTextLengths(doc, charCounts) {
+function collectAnchorElementTextLengths(doc, charCounts) {
 
   var map = new Map();
 
@@ -150,12 +151,28 @@ function getAnchorTextLengths(doc, charCounts) {
  * positive bias. Adapted from "Boilerplate Detection using Shallow Text
  * Features" http://www.l3s.de/~kohlschuetter/boilerplate
  */
-function applyTextLengthBias(scores, elements, charCounts, anchorChars) {
+function applyTextLengthBias(doc, scores, elements, options) {
+
+  var charCounts = collectTextNodeLengths(doc);
+  var anchorChars = collectAnchorElementTextLengths(doc, charCounts);
+
   forEach.call(elements, function (e) {
     var cc = charCounts.get(e) || 0;
+
+    if(cc && options.SHOW_CHAR_COUNT) {
+      e.setAttribute('cc', cc);
+    }
+
     var acc = anchorChars.get(e) || 0;
+
+    if(acc && options.SHOW_ANCHOR_CHAR_COUNT) {
+      e.setAttribute('acc', acc);
+    }
+
     var bias = 0.25 * cc - 0.7 * acc;
-    bias = Math.min(4000, bias);// tentative cap
+
+    // Capping the maximum bias amount. Tentative.
+    bias = Math.min(4000, bias);
     scores.set(e, scores.get(e) + bias);
   });
 }
@@ -188,7 +205,7 @@ function applyIntrinsicBias(doc, elements, scores) {
 }
 
 function applyDownwardBias(doc, scores) {
-  // Penalize list descendants
+  // Penalize list and list-like descendants
   // NOTE: ignores dt due to rare usage
   var SELECTOR_LIST = 'li *, ol *, ul *, dd *, dl *';
   var listDescendants = doc.body.querySelectorAll(SELECTOR_LIST);
@@ -198,8 +215,8 @@ function applyDownwardBias(doc, scores) {
   // is largely a no-op, but pre-filtering may be disabled in the future.
   // Essentially this just biases <aside> because header/footer/nav are
   // in the blacklist.
-  var navDescendants = doc.body.querySelectorAll(
-    'aside *, header *, footer *, nav *');
+  var SELECTOR_NAV = 'aside *, header *, footer *, nav *';
+  var navDescendants = doc.body.querySelectorAll(SELECTOR_NAV);
   forEach.call(navDescendants, updateScore.bind(null, scores, -50));
 }
 
@@ -241,36 +258,40 @@ function applyImageBias(doc, scores) {
 }
 
 // Conditionally expose attributes for debugging
-function maybeExposeAttributes(doc, scores, charCounts, anchorChars, options) {
-  var rootElement = doc.documentElement;
-  var elements = rootElement.getElementsByTagName('*');
-
-  if(options.SHOW_CHAR_COUNT) {
-    forEach.call(elements, function (e) {
-      e.setAttribute('cc', charCounts.get(e) || 0);
-    });
-  }
-
-  if(options.SHOW_ANCHOR_CHAR_COUNT) {
-    forEach.call(elements, function (e) {
-      e.setAttribute('acc', anchorChars.get(e) || 0);
-    });
-  }
-
+function maybeExposeAttributes(doc, scores, options) {
+  var elements = doc.documentElement.getElementsByTagName('*');
   if(options.SHOW_SCORE) {
     forEach.call(elements, function (e) {
-      e.setAttribute('score', scores.get(e) || 0);
+      var score = scores.get(e);
+      if(score) {
+        e.setAttribute('score', score);
+      }
     });
   }
 }
 
-// Find the highest scoring element, defaulting to doc.body
+/**
+ * Find and return the highest scoring element in the document
+ */
 function findBestElement(doc, elements, scores) {
+  // The default best element is doc.body
+  var maxElement = doc.body;
+  var maxScore = scores.get(doc.body);
+  var numElements = elements.length;
+  var currentElement = null;
+  var currentScore = 0;
 
-  var DEFAULT_BEST_ELEMENT = doc.body;
-  return reduce.call(elements, function (max, current) {
-    return scores.get(current) > scores.get(max) ? current : max;
-  }, DEFAULT_BEST_ELEMENT);
+  for(var i = 0; i < numElements;i++) {
+    currentElement = elements[i];
+    currentScore = scores.get(currentElement);
+
+    if(currentScore > maxScore) {
+      maxScore = currentScore;
+      maxElement = currentElement;
+    }
+  }
+
+  return maxElement;
 }
 
 // Returns the corresponding figcaption element for an image, if present
@@ -477,20 +498,6 @@ function applyAttributeBias(doc, elements, scores) {
   }
 }
 
-// Helper function for applyAttributeBias
-function appendTokens(str, set) {
-  if(!str) return;
-  str = str.trim();
-  if(!str) return;
-
-  // TODO: consider splitting by case-transition (e.g. upper2lower)
-
-  var tokens = str.toLowerCase().split(RE_TOKEN_DELIMITER);
-  for(var i = 0; i < tokens.length; i++) {
-    set.add(tokens[i]);
-  }
-}
-
 // Helper function for applyAttributeBias that gets the
 // path component of a schema url
 function getItemType(element) {
@@ -523,6 +530,19 @@ function updateScore(scores, delta, element) {
   // if score is undefined prior to update
 
   scores.set(score + delta);
+}
+
+function findArticleTitle(doc) {
+
+  // Check head-title
+  // Check meta? Like OGP?
+  // Check H1s and such in body
+  // Promote earlier elements
+
+  // If found, try and remove trailling text
+  // like "article title | newspaper name" > "article title"
+  // so look for -,|,: and 1-3 words
+
 }
 
 /**
@@ -775,14 +795,20 @@ var ATTRIBUTE_BIAS = new Map([
   ['zone', -50]
 ]);
 
+
+// TODO: BLACKLIST_SELECTORS should be a Set to demonstrate
+// uniqueness of keys
+
 // Hardcoded template-based selectors that are very likely
 // to contain boilerplate. Empirically collected.
 var BLACKLIST_SELECTORS = [
   'a.aggregated-rel-link', // // The Oklahoman
   'a.carousel-control', // The Miami Herald
+  'a.commentLink', // Salt Lake Tribune
   'a.dsq-brlink', // USA Today
   'a.hdn-analytics', // SF Gate
   'a.more-tab', // The Oklahoman
+  'a.nextPageLink', // Salt Lake Tribune
   'a.post_cmt1', // Times of India
   'a[rel="tag"]', // // The Oklahoman
   'a.skip-to-text-link', // NYTimes
@@ -806,27 +832,30 @@ var BLACKLIST_SELECTORS = [
   'aside#sidebar-read-more', // USA Today
   'aside.story-right-rail', // USA Today
   'aside.tools', // The Boston Globe
+  'aside.vestpocket', // Forbes
   'aside.views-tags', // BuzzFeed
   'aside.widget-area', // thedomains.com
   'div#a-all-related', // New York Daily News
   'div.ad', // Reuters
+  'div.adAlone300', // The Daily Herald
   'div.adarea', // Telegraph
   'div.ad-cluster-container', // TechCrunch
   'div.ad-container', // Fox News
-  'div.adAlone300', // The Daily Herald
+  'div.addthis_toolbox', // NobelPrize.org
   'div.adCentred', // The Sydney Morning Herald
   'div.adjacent-entry-pagination', // thedomains.com
   'div#addshare', // The Hindu
   'div.admpu', // Telegraph UK
   'div.adsense', // Renew Economy
   'div.ad-unit', // TechCrunch
-  'div.addthis_toolbox', // NobelPrize.org
+  'div.advertisementPanel', // TV New Zealand
   'div[aria-label="+1 this post"]', // Google Plus
   'div.artbody > div.share', // China Topix
   'div.art_tabbed_nav', // The Wall Street Journal (blog)
   'div#article div.share', // timeslive.co.za
   'div.article_actions', // Forbes
   'div.article_cat', // Collegian
+  'div#article_comments', // Fort Worth Star Telegram
   'div.article_comments', // Voice of America
   'div.articleComments', // Reuters
   'div#articleIconLinksContainer', // The Daily Mail
@@ -845,7 +874,9 @@ var BLACKLIST_SELECTORS = [
   'div.articleRelates', // Baltimore Sun
   'div.articleShareBottom', // Fox Sports
   'div.article-side', // The Times
+  'div.articleSponsor', // Telegraph Co Uk
   'div.article-tags', // entrepeneur.com
+  'div.article-tips', // 9News
   'div.articleTools', // Reuters
   'div.article-tools', // The Atlantic
   'div.article-utilities', // Sports Illustrated
@@ -872,6 +903,7 @@ var BLACKLIST_SELECTORS = [
   'div#breadcrumb', // Autonews
   'div.breadcrumb_container', // NBC News
   'div#breadcrumbs', // E-Week
+  'div.breadcrumbs', // Scientific American
   'div.browse', // ABC News
   'div.bt-links', // Learning and Finance
   'div[bucket-id="most_popular_01"]', // Telegraph/Reuters
@@ -879,6 +911,7 @@ var BLACKLIST_SELECTORS = [
   'div.buying-option', // Times of India
   'div.byline', // Misc, but the only way to identify Autonews
   'div.byline_links', // Bloomberg
+  'div.bylineSocialButtons', // Telegraph Co Uk
   'div.card-stats', // WFPL
   'div.category-nav', // Sparkfun
   'div#ce-comments', // E-Week
@@ -910,8 +943,10 @@ var BLACKLIST_SELECTORS = [
   'div.comment_links', // Forbes
   'div.comments-overall', // Aeon Magazine
   'div.comment-policy-box', // thedomains.com
+  'div#commentPromo', // Salt Lake Tribune
   'div.commentWrap', // Corcodillos
   'div.component-share', // Sports Illustrated
+  'div.contribution-stats-box', // Knight News Challenge
   'div.control-bar', // SF Gate
   'div.controls', // NY Daily News
   'div.correspondant', // CBS News
@@ -922,7 +957,9 @@ var BLACKLIST_SELECTORS = [
   'div#dfp-ad-mosad_1-wrapper', // The Hill
   'div#digital-editions', // The New Yorker
   'div#disqus', // ABCNews
+  'div#disqusAcc', // Telegraph Co Uk
   'div#disqus_thread', // Renew Economy
+  'div.editorsChoice', // Telegraph Co Uk
   'div.editors-picks', // The Wall Street Journal
   'div.email-optin', // Quantstart
   'div#email-sign-up', // BBC
@@ -938,6 +975,7 @@ var BLACKLIST_SELECTORS = [
   'div.entry-tags', // Wired.com
   'div.entry-unrelated', // The New Yorker
   'div#epilogue', // hostilefork
+  'div.essb_links', // Beta Wired
   'div#et-sections-dropdown-list', // The Washington Post
   'div.pane-explore-issues-topics', // MSNBC
   'div.feature-btns', // USA Today (assumes video not supported)
@@ -978,6 +1016,7 @@ var BLACKLIST_SELECTORS = [
   'div.ib-collection', // KMBC
   'div.icons', // Brecorder
   'div#infinite-list', // The Daily Mail
+  'div#inlineAdCont', // Salt Lake Tribune
   'div.inline-sharebar', // CBS News
   'div.inline-share-tools-asset', // USA Today
   'div.inline-related-links', // Gourmet.com
@@ -1002,6 +1041,7 @@ var BLACKLIST_SELECTORS = [
   'div.l-sidebar', // TechSpot
   'div.l-story-secondary', // Boston.com
   'div.main > div#rail', // Fox News
+  'div#main-content > div.share', // Knight News Challenge
   'div.main_social', // Times of India
   'div.m-article__share-buttons', // The Verge
   'div.mashsharer-box', // internetcommerce.org
@@ -1016,6 +1056,7 @@ var BLACKLIST_SELECTORS = [
   'div.mla_cite', // NobelPrize.org
   'div.mmn-link', // ABC 7 News
   'div.more-single', // USA Today
+  'div.moreweb', // Uptown Magazine
   'div#most-popular', // BBC
   'div#mostPopularTab', // Reuters
   'div#most-read-news-wrapper', // The Daily Mail
@@ -1035,9 +1076,11 @@ var BLACKLIST_SELECTORS = [
   'div.node-metainfo', // The Boston Herald
   'div.NotifyUserBox', // Bangkok Post
   'div.npRelated', // National Post
+  'div.NS_projects__project_share', // Kickstarter
   'div.Other-stories ', // Bangkok Post
   'div.overlayPostPlay', // The Sydney Morning Herald
   'div.page_label', // Hewlett Packard News
+  'div#page-nav', // Uptown Magazine
   'div.page-navigation', // Misc.
   'div.par-y_rail', // Vanity Fair
   'div.pb-f-page-comments', // Washington Post
@@ -1063,13 +1106,12 @@ var BLACKLIST_SELECTORS = [
   'div.promo-inner', // Chron.com
   'div.promo-top', // Chron.com
   'div.pull-left-tablet', // NY1 (only uses "article" for related)
-
   // 'div.pull-right', // CANNOT USE (oklahoman vs nccgroup blog)
-
   'div#reader-comments', // The Daily Mail
   'div.read_more', // Times of India
   'div.recirculation', // New Yorker
   'div.recommended-articles-wrap', // Vice.com
+  'div.recommended-links', // The Appendix
   'div#registration-notice', // Atlantic City Press
   'div#registrationNewVerification', // Joplin Globe
   'div#relartstory', // Times of India
@@ -1087,6 +1129,7 @@ var BLACKLIST_SELECTORS = [
   'div.related-posts-inner', // threatpost.com
   'div.relatedRail', // Reuters
   'div#related-services', // BBC
+  'div.relatedStories', // Salt Lake Tribute
   'div#related-stories', // Daily News
   'div#related-tags', // St. Louis Today
   'div#relatedTopics', // Reuters
@@ -1138,7 +1181,9 @@ var BLACKLIST_SELECTORS = [
   'div.sharetools-inline-article-ad', // NYTimes
   'div.shareToolsNextItem', // KMBC
   'div.sharrre-container', // Concurring Opinions
+  'div.shortcode-post', // ABC7 News
   'div.show-related-videos', // CBS News
+  'div#sidebar', // The Appendix
   'div.sideBar', // Bangkok Post
   'div.sidebar-content', // Concurring opinions
   'div.sidebar-feed', // WRAL
@@ -1172,19 +1217,26 @@ var BLACKLIST_SELECTORS = [
   'div.social-share-bottom', // The Hill
   'div.social-toolbar', // News OK
   'div.social-toolbar-affix', // News OK
+  'div#socialTools', // Salt Lake Tribute
   'div.social-tools-wrapper-bottom ', // Washington Post
   'div.spantab', // Times of India
   'div.SPOSTARBUST-Related-Posts', // RObservatory
   'div.sps-twitter_module', // BBC
+  'div.stack-talent', // NBC News (author bio)
+  'div.stack-video-nojs-overlay', // NBC News
   'div#sticky-nav', // Christian Science Monitor
   'div.sticky-tools', // The Boston Globe
+  'div#story_add_ugc', // Fort Worth Star Telegram
+  'div.story-block--twitter', // 9News
   'div.story-comment', // Latin Post
+  'div#storyContinuesBelow', // Salt Lake Tribune
   'div#storyControls', // Politico
   'div#story-embed-column', // Christian Science Monitor
   'div#story-footer', // The Miami Herald
   'div.story_list', // Christian Science Monitor
   'div#storyMoreOnFucntion', // Telegraph UK
   'div.storynav', // TechCrunch
+  'div.story_pagination', // ABC News
   'div#story_right_column_ad', // dailyjournal.net
   'div#story-share-buttons', // USA Today
   'div.story-share-buttons', // USA Today
@@ -1193,6 +1245,7 @@ var BLACKLIST_SELECTORS = [
   'div.story-taxonomy', // ABC Chicago
   'div.storytools', // TechCrunch
   'div.story-tools', // Latin Post
+  'div.submit-button', // Knight News Challenge
   'div.subscribe', // Times of India
   'div#subscription-notice', // Atlantic City Press
   'div#tabs-732a40a7-tabPane-2', // The Miami Herald (unclear)
@@ -1204,6 +1257,7 @@ var BLACKLIST_SELECTORS = [
   'div#teaser-overlay', // The Times
   'div.thirdPartyRecommendedContent', // KMBC
   'div#thumb-scroller', // E-Week
+  'div.three-up-list', // The Huffington Post
   'div#tncms-region-jh-article-bottom-content', // Idaho Press
   'div.tncms-restricted-notice', // Atlantic City Press
   'div.toolbox', // ABC News
@@ -1218,6 +1272,7 @@ var BLACKLIST_SELECTORS = [
   'div.trb_embed_related', // LA Times
   'div.trb_panelmod_body', //  LA Times
   'div.twipsy', // St. Louis Today
+  'div.upshot-social', // The New York Times
   'div.util-bar-flyout', // USA Today
   'div.utilities', // The Times
   'div#utility', // WRAL
@@ -1245,6 +1300,7 @@ var BLACKLIST_SELECTORS = [
   'header', // Misc.
   'h2.hide-for-print', // NobelPrize.org
   'h2#page_header', // CNBC
+  'h3#comments-header', // Knight News Challenge
   'h3.more-keywords', // Joplin
   'h3#scrollingArticlesHeader', // The Oklahoman
   'h4.taboolaHeaderRight', // KMBC
@@ -1258,6 +1314,7 @@ var BLACKLIST_SELECTORS = [
   'ol#comment-list', // Pro Football Talk
   'nav', // Misc.
   'p.authorFollow', // The Sydney Morning Herald
+  'p.comments', // Telegraph Co Uk
   'p.essay-tags', // Aeon Magazine
   'p.moreVideosTitle', // E-Online
   'p.pagination', // Stamford Advocate
@@ -1267,7 +1324,9 @@ var BLACKLIST_SELECTORS = [
   'p.storytag', // chinatopix.com
   'p.story-tags', // Latin Post
   'p.trial-promo', // Newsweek
+  'section.also-on', // Huffington Post
   'section.around-bbc-module', // BBC
+  'section.article-author', // Ars Technica
   'section.bottom_shares', // BuzzFeed
   'section.breaking_news_bar', // Bloomberg
   'section#comments', // TechSpot
@@ -1276,6 +1335,7 @@ var BLACKLIST_SELECTORS = [
   'section#follow-us', // BBC
   'section.headline-list', // The Miami Herald
   'section.headlines-list', // ABC Chicago
+  'section#injected-newsletter', // GigaOM
   'section.morestories', // Entertainment Tonight
   'section#more-stories-widget', // The Miami Herald
   'section#newsletter-signup', // New Yorker
@@ -1291,9 +1351,11 @@ var BLACKLIST_SELECTORS = [
   'section.story-tools-mod', // Boston.com
   'section.suggested-links', // The Examiner
   'section.tagblock', // Entertainment Tonight
+  'section.three-up', // The Huffington Post
   'section.top-video', // ABC 7 News
   'section.youmaylike', // Entertainment Tonight
   'span.sharetools-label', // NY Time
+  'span.text_resizer', // Fort Worth Star Telegram
   'table.hst-articleprinter', // Stamford Advocate
   'table#commentTable', // Times of India
   'table.complexListingBox', // Mercury News
@@ -1301,17 +1363,23 @@ var BLACKLIST_SELECTORS = [
   'ul.article-options', // TVNZ
   'ul.article-share', // DNA India
   'ul#article-share-links', // The Boston Herald
+  'ul.article-tags', // 9News
+  'ul.article_tools', // The Wall Street Journal
+  'ul#associated', // TV New Zealand
   'ul#blox-body-nav', // Houston News
   'ul.blox-recent-list', // Atlantic City Press
   'ul.breadcrumb', // The Miami Herald
+  'ul.breadcrumbs', // Giga OM
   'ul.breaking-news-stories', // ABC 7 News
   'ul.bull-list', // Joplin
   'ul.comment-list', // Sparkfun
   'ul.display-posts-listing', // Recode
   'ul.entry-extra', // Wired Magazine
   'ul.entry_sharing', // Bloomberg
+  'ul#flairBar', // Scientific American
   'ul.flippy', // MSNBC
   'ul.generic_tabs', // Bloomberg
+  'ul.header-lnks', // Knight News Challenge
   'ul.hl-list', // Chron.com
   'ul.links--inline', // Drupal
   'ul.links-list', // BBC
@@ -1324,10 +1392,13 @@ var BLACKLIST_SELECTORS = [
   'ul#page-actions-bottom', // ESPN
   'ul.pagenav', // The Guardian
   'ul.pagination', // Politico
+  'ul.project-nav', // Kickstarter
   'ul.related-links', // The Boston Globe
   'ul.related-posts', // Concurring Opinions
   'ul.rssi-icons', // Pacific Standard Magazine
+  'ul.services', // The Appendix
   'ul.sharebar', // CNet
+  'ul.share-buttons', // Ars Technica
   'ul.social', // The Sydney Morning Herald
   'ul.social-bookmarking-module', // Wired Magazine
   'ul.socialByline', // The Wall Street Journal (blog)
@@ -1338,11 +1409,17 @@ var BLACKLIST_SELECTORS = [
   'ul#story-font-size', // Idaho Press
   'ul.story-tools-sprite', // Houston News
   'ul.tags', // BBC
+  'ul.tags-listing', // Colorado Independent
+  'ul.text-scale', // GigaOM
   'ul.thumbs', // NY Daily News
   'ul#toolbar-sharing', // UT San Diego
   'ul.tools', // The Syndey Morning Herald
   'ul#topics', // Yahoo News
   'ul.utility-list'// WRAL
 ];
+
+
+// Allow external manipulation
+exports.calamine.BLACKLIST_SELECTORS = BLACKLIST_SELECTORS;
 
 }(this));
