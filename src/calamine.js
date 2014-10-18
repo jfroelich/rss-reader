@@ -124,13 +124,14 @@ function collectAnchorElementTextLengths(doc, charCounts) {
   // want non-nominals to affect scoring
   var anchors = doc.body.querySelectorAll('a[href]');
 
-  forEach.call(anchors, function aggregate(anchor) {
-    var sum = 0;
+  forEach.call(anchors, function aggregateAnchorLength(anchor) {
+
     var count = charCounts.get(anchor);
     // Ignore anchors without inner text (e.g. image link)
     if(!count) return;
 
     // Walk upward and store the count in each ancestor
+    var sum = 0;
     for(var element = anchor; element; element = element.parentElement) {
       sum = map.get(element) || 0;
       map.set(element, sum + count);
@@ -174,10 +175,15 @@ function applyTextLengthBias(doc, elements, scores, options) {
     // Detection using Shallow Text Features"
     // http://www.l3s.de/~kohlschuetter/boilerplate
 
-    var bias = 0.25 * cc - 0.7 * acc;
+    var bias = (0.25 * cc) - (0.7 * acc);
 
     // Capping the maximum bias amount. Tentative.
     bias = Math.min(4000, bias);
+
+    if(bias && options.SHOW_TEXT_BIAS) {
+      element.setAttribute('tb', bias);
+    }
+
     scores.set(element, scores.get(element) + bias);
   });
 }
@@ -205,16 +211,19 @@ function applyIntrinsicBias(doc, elements, scores) {
   if(articles.length == 1) {
     scores.set(articles[0], scores.get(articles[0]) + 1000);
   } else {
-    forEach.call(articles, updateScore.bind(null, scores, 100));
+    forEach.call(articles, updateScore.bind(null, scores, 10));
   }
 }
 
 function applyDownwardBias(doc, scores) {
   // Penalize list and list-like descendants
   // NOTE: ignores dt due to rare usage
+  // NOTE: increased from -20 to -100. These descendants are never going
+  // to be the best elements, 90% of the time. I ahve seen once a doc that
+  // had its main article within an LI, but that is only a 100 hit against
   var SELECTOR_LIST = 'li *, ol *, ul *, dd *, dl *';
   var listDescendants = doc.body.querySelectorAll(SELECTOR_LIST);
-  forEach.call(listDescendants, updateScore.bind(null, scores, -20));
+  forEach.call(listDescendants, updateScore.bind(null, scores, -100));
 
   // Penalize descendants of navigational elements. Due to pre-filtering this
   // is largely a no-op, but pre-filtering may be disabled in the future.
@@ -491,17 +500,28 @@ function applyAttributeBias(doc, elements, scores) {
 
   // TODO: article_body (E-Week)
 
+  var forEach = Array.prototype.forEach;
+
+  var articleClass = doc.body.getElementsByClassName('article');
+  if(articleClass.length == 1) {
+    scores.set(articleClass[0], scores.get(articleClass[0]) + 1000);
+  } else {
+    forEach.call(articleClass, updateScore.bind(null, scores, 200));
+  }
+
+
   var articleAttributes =  ['id', 'class', 'name', 'itemprop', 'role'].map(
     function(s) { return '['+s+'*="articlebody"]'; });
   articleAttributes.push('[role="article"]'); // Google Plus
   articleAttributes.push('[itemtype="http://schema.org/Article"]');
+
 
   var SELECT_ARTICLE = articleAttributes.join(',');
   var articles = doc.body.querySelectorAll(SELECT_ARTICLE);
   if(articles.length == 1) {
     scores.set(articles[0], scores.get(articles[0]) + 1000);
   } else {
-    var forEach = Array.prototype.forEach;
+
     forEach.call(articles, updateScore.bind(null, scores, 100));
   }
 }
@@ -614,7 +634,7 @@ var INTRINSIC_BIAS = new Map([
   ['pre', 10],
   ['ruby', 10],
   ['summary', 10],
-  ['a', -5],
+  ['a', -500],
   ['address', -5],
   ['dd', -5],
   ['dt', -5],
@@ -679,7 +699,6 @@ var ATTRIBUTE_BIAS = new Map([
   ['ads', -50],
   ['advert', -200],
   ['artext1',100],
-  ['article', 200],
   ['articles', 100],
   ['articlecontent', 1000],
   ['articlecontentbox', 200],
@@ -855,8 +874,10 @@ var BLACKLIST_SELECTORS = [
   'a.aggregated-rel-link', // // The Oklahoman
   'a.carousel-control', // The Miami Herald
   'a.commentLink', // Salt Lake Tribune
+  'a.comments', // Good Magazine
   'a.dsq-brlink', // USA Today
   'a.hdn-analytics', // SF Gate
+  'a[href^="http://ad.doubleclick"]', // Medium
   'a.more-tab', // The Oklahoman
   'a.nextPageLink', // Salt Lake Tribune
   'a.post_cmt1', // Times of India
@@ -864,6 +885,8 @@ var BLACKLIST_SELECTORS = [
   'a[rel="tag"]', // // The Oklahoman
   'a.synved-social-button', // Viral Global News
   'a.skip-to-text-link', // NYTimes
+  'article div.extra', // Washington Post
+  'article ul.listing', // Good Magazine
   'aside.itemAsideInfo', // The Guardian
   'aside#asset-related', // St. Louis Today
   'aside#bpage_ad_bottom', // BuzzFeed
@@ -907,6 +930,7 @@ var BLACKLIST_SELECTORS = [
   'div.artbody > div.share', // China Topix
   'div.art_tabbed_nav', // The Wall Street Journal (blog)
   'div#article div.share', // timeslive.co.za
+  'div.article div#media', // Newsday
   'div.article_actions', // Forbes
   'div.article_cat', // Collegian
   'div#article_comments', // Fort Worth Star Telegram
@@ -1001,6 +1025,7 @@ var BLACKLIST_SELECTORS = [
   'div.commentWrap', // Corcodillos
   'div.component-share', // Sports Illustrated
   'div#content-below', // SysCon Media
+  'div.content_column2_2', // VOA News
   'div.contribution-stats-box', // Knight News Challenge
   'div.control-bar', // SF Gate
   'div.controls', // NY Daily News
@@ -1041,6 +1066,7 @@ var BLACKLIST_SELECTORS = [
   'div.followable_block', // Forbes
   'div.follow-us', // Fox News
   'div.footer', // KMBC
+  'div.footerlinks', // VOA News
   'div#forgotPassword', // Joplin Globe
   'div#forgotPasswordSuccess', // Joplin Globe
   'div.gallery-sidebar-ad', // USA Today
@@ -1050,6 +1076,7 @@ var BLACKLIST_SELECTORS = [
   'div.group-link-categories', // Symmetry Magazine
   'div.group-links', // Symmetry Magazine
   'div.gsharebar', // entrepeneur.com
+  'div.hashtags', // Good Magazine
   'div.headlines', // // The Oklahoman
   'div.headlines-images', // ABC 7 News
   'div.hide-for-print', // NobelPrize.org
@@ -1088,6 +1115,7 @@ var BLACKLIST_SELECTORS = [
   'div#leader', // hostilefork
   'div.lhs_relatednews', // NDTV
   'div.like-share', // Bangkok Post
+  'div.likeus', // Good Magazine
   'div.linearCalendarWrapper', // ABC News
   'div.link-list-inline', // Las Vegas Sun
   'div#livefyre-wrapper', // The Wall Street Journal
@@ -1309,6 +1337,7 @@ var BLACKLIST_SELECTORS = [
   'div.submit-button', // Knight News Challenge
   'div.subscribe', // Times of India
   'div#subscription-notice', // Atlantic City Press
+  'div.supplementalPostContent', // Medium.com
   'div#tabs-732a40a7-tabPane-2', // The Miami Herald (unclear)
   'div.talklinks', // LiveJournal
   'div.taxonomy', // ABC Chicago
@@ -1322,10 +1351,12 @@ var BLACKLIST_SELECTORS = [
   'div#tncms-region-jh-article-bottom-content', // Idaho Press
   'div.tncms-restricted-notice', // Atlantic City Press
   'div.toolbox', // ABC News
+  'div.tools', // ABC News (risky, might be a content-tag)
   'div.tools1', // The Wall Street Journal (blog)
   'div.topic-category', // Bangkok Post
   'div.top-index-stories', // BBC
   'div.topkicker', // entrepreneur.com
+  'div.toplinks', // VOA News
   'div.top-stories-range-module', // BBC
   'div.top-stories05', // Telegraph UK
   'div#traditionalRegistration', // Joplin Globe
@@ -1378,6 +1409,7 @@ var BLACKLIST_SELECTORS = [
   'ol#comment-list', // Pro Football Talk
   'nav', // Misc.
   'p.authorFollow', // The Sydney Morning Herald
+  'p.byline', // Newsday
   'p.category', // SysCon Media
   'p.comments', // Telegraph Co Uk
   'p.essay-tags', // Aeon Magazine
@@ -1388,6 +1420,7 @@ var BLACKLIST_SELECTORS = [
   'p.story-ad-txt', // Boston.com
   'p.storytag', // chinatopix.com
   'p.story-tags', // Latin Post
+  'p.topics', // ABC News
   'p.trial-promo', // Newsweek
   'section.also-on', // Huffington Post
   'section.around-bbc-module', // BBC
@@ -1410,6 +1443,7 @@ var BLACKLIST_SELECTORS = [
   'section#related-links', // BuzzFeed
   'section.related-products', // TechSpot
   'section#responses', // BuzzFeed
+  'section.section--last', // Medium
   'section.section-tertiary', // Sports Illustrated
   'section.share-section', // Sports Illustrated
   'section.signup-widget', // The Miami Herald
@@ -1482,6 +1516,7 @@ var BLACKLIST_SELECTORS = [
   'ul#toolbar-sharing', // UT San Diego
   'ul.tools', // The Syndey Morning Herald
   'ul#topics', // Yahoo News
+  'ul.toplinks', // VOA News
   'ul.utility-list'// WRAL
 ];
 
