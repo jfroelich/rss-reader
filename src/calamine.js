@@ -42,7 +42,7 @@ exports.calamine = {
 
     var elements = doc.body.getElementsByTagName('*');
     var scores = initScores(doc, elements);
-    applyTextLengthBias(doc, scores, elements, options);
+    applyTextLengthBias(doc, elements, scores, options);
     applyIntrinsicBias(doc, elements, scores);
     applyDownwardBias(doc, scores);
     applyUpwardBias(elements, scores);
@@ -145,35 +145,43 @@ function collectAnchorElementTextLengths(doc, charCounts) {
 
 /**
  * Apply a bias based the number of characters and the number of characters
- * within anchors to each element's score. This "magical" formula is an
- * adaptation of a simple regression using some empirical weights.
- * Nodes with large amounts of text, that is not anchor text, get the most
- * positive bias. Adapted from "Boilerplate Detection using Shallow Text
- * Features" http://www.l3s.de/~kohlschuetter/boilerplate
+ * within anchors to each element's score.
  */
-function applyTextLengthBias(doc, scores, elements, options) {
+function applyTextLengthBias(doc, elements, scores, options) {
 
   var charCounts = collectTextNodeLengths(doc);
   var anchorChars = collectAnchorElementTextLengths(doc, charCounts);
 
-  forEach.call(elements, function (e) {
-    var cc = charCounts.get(e) || 0;
+  forEach.call(elements, function handleElement(element) {
+    var cc = charCounts.get(element);
+
+    // If there is no text, there will not be any anchor text,
+    // so the bias will be 0, so exit early
+    if(!cc) {
+      return;
+    }
 
     if(cc && options.SHOW_CHAR_COUNT) {
-      e.setAttribute('cc', cc);
+      element.setAttribute('cc', cc);
     }
 
-    var acc = anchorChars.get(e) || 0;
+    var acc = anchorChars.get(element) || 0;
 
     if(acc && options.SHOW_ANCHOR_CHAR_COUNT) {
-      e.setAttribute('acc', acc);
+      element.setAttribute('acc', acc);
     }
+
+    // This "magical" formula is an adaptation of a simple regression using
+    // some empirical weights. Nodes with large amounts of text, that is not
+    // anchor text, get the most positive bias. Adapted from "Boilerplate
+    // Detection using Shallow Text Features"
+    // http://www.l3s.de/~kohlschuetter/boilerplate
 
     var bias = 0.25 * cc - 0.7 * acc;
 
     // Capping the maximum bias amount. Tentative.
     bias = Math.min(4000, bias);
-    scores.set(e, scores.get(e) + bias);
+    scores.set(element, scores.get(element) + bias);
   });
 }
 
@@ -222,7 +230,6 @@ function applyDownwardBias(doc, scores) {
 
 // Bias the parent of certain elements
 function applyUpwardBias(elements, scores) {
-
   forEach.call(elements, function (element) {
     var parent = element.parentElement;
     var bias = DESCENDANT_BIAS.get(element.localName);
@@ -234,7 +241,6 @@ function applyUpwardBias(elements, scores) {
 
 // Score images and image parents
 function applyImageBias(doc, scores) {
-
   var images = doc.body.getElementsByTagName('img');
   forEach.call(images, function (image) {
     var parent = image.parentElement;
@@ -251,7 +257,9 @@ function applyImageBias(doc, scores) {
     var area = image.width ? image.width * image.height : 0;
     var areaBias = 0.0015 * Math.min(100000, area);
 
-    scores.set(image, scores.get(image) + descBias + areaBias);
+    // TODO: I don't think i actually want/need to score the image itself
+    //scores.set(image, scores.get(image) + descBias + areaBias);
+
     scores.set(parent, scores.get(parent) + carouselBias + descBias +
       areaBias);
   });
@@ -260,14 +268,15 @@ function applyImageBias(doc, scores) {
 // Conditionally expose attributes for debugging
 function maybeExposeAttributes(doc, scores, options) {
   var elements = doc.documentElement.getElementsByTagName('*');
-  if(options.SHOW_SCORE) {
-    forEach.call(elements, function (e) {
-      var score = scores.get(e);
-      if(score) {
-        e.setAttribute('score', score);
-      }
-    });
+  if(!options.SHOW_SCORE) {
+    return;
   }
+
+  forEach.call(elements, function setScoreAttribute(element) {
+    var score = scores.get(element);
+    if(!score) return;
+    element.setAttribute('score', score);
+  });
 }
 
 /**
@@ -281,7 +290,7 @@ function findBestElement(doc, elements, scores) {
   var currentElement = null;
   var currentScore = 0;
 
-  for(var i = 0; i < numElements;i++) {
+  for(var i = 0; i < numElements; i++) {
     currentElement = elements[i];
     currentScore = scores.get(currentElement);
 
@@ -306,6 +315,9 @@ function getImageCaption(image) {
   }
 }
 
+/**
+ * Returns an array of parents in deep-to-shallow order
+ */
 function getParents(element) {
   var parents = [];
   for(var parent = element.parentElement; parent;
@@ -362,7 +374,6 @@ function applyAttributeBias(doc, elements, scores) {
   //http://schema.org/TechArticle
   //http://schema.org/ScholarlyArticle
 
-  // itemprop="blogPost"
   // itemprop="mainContentOfPage"
   // role="complementary"
 
@@ -524,12 +535,13 @@ function getItemType(element) {
 function updateScore(scores, delta, element) {
 
   var score = scores.get(element);
-
   // We know initScores set a score of 0 for
   // every element so there is no need to check
   // if score is undefined prior to update
 
-  scores.set(score + delta);
+  // NOTE: recently fixed! forgot to pass in element argument
+  // this now requires more testing
+  scores.set(element, score + delta);
 }
 
 function findArticleTitle(doc) {
@@ -642,6 +654,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['author', 20],
   ['block', -5],
   ['blog', 20],
+  ['blogpost', 500], // Seen as itemprop value
   ['blogposting', 500],
   ['body', 100],
   ['bodytd', 50],
@@ -663,6 +676,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['comments', -300],
   ['commercial', -500],
   ['community', -100],
+  ['complementary', -100], // Seen as role
   ['component', -50],
   ['contentpane', 200], // Google Plus
   ['contact', -50],
@@ -1375,6 +1389,7 @@ var BLACKLIST_SELECTORS = [
   'ul.comment-list', // Sparkfun
   'ul.display-posts-listing', // Recode
   'ul.entry-extra', // Wired Magazine
+  'ul.entry-header', // Wired Magazine
   'ul.entry_sharing', // Bloomberg
   'ul#flairBar', // Scientific American
   'ul.flippy', // MSNBC
