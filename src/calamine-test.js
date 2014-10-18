@@ -62,7 +62,8 @@ function testCalamine(url) {
       FILTER_NAMED_AXES: true,
       SHOW_CHAR_COUNT: true,
       SHOW_ANCHOR_CHAR_COUNT: true,
-      SHOW_SCORE: true
+      SHOW_SCORE: true,
+      SHOW_TEXT_BIAS: true
     });
 
     lucu.removeJavascriptAnchors(result);
