@@ -1,5 +1,6 @@
 Problem pages to review
 
+
 http://www.huffingtonpost.com/2014/10/16/body-misty-upham-found_n_6000494.html
 
 http://www.ft.com/cms/s/0/b684a160-5096-11e4-b73e-00144feab7de.html
@@ -28,9 +29,23 @@ http://blog.garrytan.com/travel-planning-software-the-most-common-bad
 http://www.ledger-enquirer.com/2014/10/04/3338852/jones-header-lifts-new-england.html
 http://www.bradenton.com/2014/10/09/5405576/lawmakers-approve-700-million.html
 
+
 ---------------------------------------------------------------------------------------
-all new york times rss feeds - unclear what the issue is but nothing appears, may
+http://www.abc.net.au/news/2014-10-19/us-led-coalition-strikes-pound-more-islamic-state-targets-in-ko/5824688
+- found a random image instead of the article
+- target: <div class="article section">
+- actual: anchor containing image with, child of li, nested within target
+- the main article contains a list. the actual was in the list. the list has a bunch of
+anchors. as a result the main article gets a HUGE anchor char count, which results in a
+very large negative text bias
+- changed around handling of class "article".
+- penalize list descendants more
+- penalize anchors intrinsic more
+
+---------------------------------------------------------------------------------------
+- all new york times rss feeds - unclear what the issue is but nothing appears, may
 even be related to feed parsing
+- works fine when tested via google news redirect
 
 
 ---------------------------------------------------------------------------------------
