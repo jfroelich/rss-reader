@@ -21,37 +21,34 @@
 var forEach = Array.prototype.forEach;
 var reduce = Array.prototype.reduce;
 
-exports.calamine = {
-  /**
-   * Returns the best element of the document. Does some mutation
-   * to the document.
-   * TODO: rename to 'rub'? relieve (e.g. toplogical relief)?
-   */
-  transform: function transform_(doc, options) {
-
-    // options is optional but if specified must be
-    // a type of object, or a function as it can also have props
-    var optType = typeof options;
-    if(optType != 'object' && optType != 'function') {
-      options = {};
-    }
-
-    if(options.FILTER_NAMED_AXES) {
-      filterBoilerplateAxes(doc);
-    }
-
-    var elements = doc.body.getElementsByTagName('*');
-    var scores = initScores(doc, elements);
-    applyTextLengthBias(doc, elements, scores, options);
-    applyIntrinsicBias(doc, elements, scores);
-    applyDownwardBias(doc, scores);
-    applyUpwardBias(elements, scores);
-    applyImageBias(doc, scores);
-    applyAttributeBias(doc, elements, scores);
-    maybeExposeAttributes(doc, scores, options);
-    return findBestElement(doc, elements, scores);
+/**
+ * Returns the best element of the document. Does some mutation
+ * to the document.
+ * TODO: rename to 'rub'? relieve (e.g. toplogical relief)?
+ */
+function transform(doc, options) {
+  // options is optional but if specified must be
+  // a type of object, or a function as it can also have props
+  var optType = typeof options;
+  if(optType != 'object' && optType != 'function') {
+    options = {};
   }
-};
+
+  if(options.FILTER_NAMED_AXES) {
+    filterBoilerplateAxes(doc);
+  }
+
+  var elements = doc.body.getElementsByTagName('*');
+  var scores = initScores(doc, elements);
+  applyTextLengthBias(doc, elements, scores, options);
+  applyIntrinsicBias(doc, elements, scores);
+  applyDownwardBias(doc, scores);
+  applyUpwardBias(elements, scores);
+  applyImageBias(doc, scores);
+  applyAttributeBias(doc, elements, scores);
+  maybeExposeAttributes(doc, scores, options);
+  return findBestElement(doc, elements, scores);
+}
 
 function filterBoilerplateAxes(doc) {
 
@@ -558,6 +555,45 @@ function findArticleTitle(doc) {
 }
 
 /**
+ * Tries to clean up the title by removing auxillary stuff
+ */
+function stripTitlePublisher(title) {
+
+  if(!title) return;
+
+  var delimiterPosition = title.lastIndexOf('-');
+  if(delimiterPosition == -1) {
+    delimiterPosition = title.lastIndexOf(':');
+  }
+
+  if(delimiterPosition == -1) {
+    return title;
+  }
+
+  var trailingText = title.substring(delimiterPosition + 1);
+
+  var terms = trailingText.split(/\s+/).filter(identity);
+
+  console.debug('%o', terms);
+
+  if(terms.length < 5) {
+    // Looks like a trailing publisher
+
+    var newTitle = title.substring(0, delimiterPosition).trim();
+    //console.debug('New title after removing publisher is %s', newTitle);
+    return newTitle;
+  } else {
+    //console.debug('could not transform title %s', title);
+  }
+
+  return title;
+}
+
+function identity(value) {
+  return value;
+}
+
+/**
  * An element's score is biased according to the type of the element. Certain
  * elements are more or less likely to contain boilerplate. The focus here
  * is not assessing whether each element contains boilerplate or not, but how
@@ -824,7 +860,9 @@ var BLACKLIST_SELECTORS = [
   'a.more-tab', // The Oklahoman
   'a.nextPageLink', // Salt Lake Tribune
   'a.post_cmt1', // Times of India
+  'a.readmore-link', // Topix
   'a[rel="tag"]', // // The Oklahoman
+  'a.synved-social-button', // Viral Global News
   'a.skip-to-text-link', // NYTimes
   'aside.itemAsideInfo', // The Guardian
   'aside#asset-related', // St. Louis Today
@@ -850,6 +888,8 @@ var BLACKLIST_SELECTORS = [
   'aside.views-tags', // BuzzFeed
   'aside.widget-area', // thedomains.com
   'div#a-all-related', // New York Daily News
+  'div.about-the-author', // SysCon Media
+  'div.actions-panel', // SysCon Media
   'div.ad', // Reuters
   'div.adAlone300', // The Daily Herald
   'div.adarea', // Telegraph
@@ -960,10 +1000,12 @@ var BLACKLIST_SELECTORS = [
   'div#commentPromo', // Salt Lake Tribune
   'div.commentWrap', // Corcodillos
   'div.component-share', // Sports Illustrated
+  'div#content-below', // SysCon Media
   'div.contribution-stats-box', // Knight News Challenge
   'div.control-bar', // SF Gate
   'div.controls', // NY Daily News
   'div.correspondant', // CBS News
+  'div.css-sharing', // Topix
   'div[data-module-zone="articletools_bottom"]', // The Wall Street Journal
   'div[data-ng-controller="moreLikeThisController"]', // MSNBC
   'div.dfad', // thedomains.com
@@ -1067,6 +1109,7 @@ var BLACKLIST_SELECTORS = [
   'div#mc_embed_signup', // stgeorgeutah.com
   'div.m-linkset', // The Verge
   'div.middle-ads', // The Times
+  'div.minipoll', // Topix
   'div.mla_cite', // NobelPrize.org
   'div.mmn-link', // ABC 7 News
   'div.more-single', // USA Today
@@ -1113,6 +1156,7 @@ var BLACKLIST_SELECTORS = [
   'div.post-share-buttons', // Blogspot
   'div#powered_by_livefyre_new', // Entertainment Tonight
   'div#prevnext', // hostilefork
+  'div.primaryContent3', // Reuters (NOTE: I dislike this one)
   'div.printad', // North Jersey
   'div.printHide', // Telegraph UK
   'div.printstory', // North Jersey
@@ -1199,6 +1243,8 @@ var BLACKLIST_SELECTORS = [
   'div.show-related-videos', // CBS News
   'div#sidebar', // The Appendix
   'div.sideBar', // Bangkok Post
+  'div#sidebar-3', // SysCon Media
+  'div#sidebar-4', // SysCon Media
   'div.sidebar-content', // Concurring opinions
   'div.sidebar-feed', // WRAL
   'div#signIn', // Joplin
@@ -1238,6 +1284,7 @@ var BLACKLIST_SELECTORS = [
   'div.sps-twitter_module', // BBC
   'div.stack-talent', // NBC News (author bio)
   'div.stack-video-nojs-overlay', // NBC News
+  'div.statements-list-container', // Topix
   'div#sticky-nav', // Christian Science Monitor
   'div.sticky-tools', // The Boston Globe
   'div#story_add_ugc', // Fort Worth Star Telegram
@@ -1303,6 +1350,9 @@ var BLACKLIST_SELECTORS = [
   'div#WNCol4', // Fox (subsidary myfoxny.com)
   'div#WNStoryRelatedBox', // Fox (subsidiary myfoxal.com)
   'div.xwv-related-videos-container', // The Daily Mail
+  'div.x-comment-menu', // Topix
+  'div.x-comments-num', // Topix
+  'div.x-comment-post-wrap', // Topix
   'div#you-might-like', // The New Yorker
   'div#zergnet', // Comic Book Resources
   'dl.blox-social-tools-horizontal', // Joplin
@@ -1328,6 +1378,7 @@ var BLACKLIST_SELECTORS = [
   'ol#comment-list', // Pro Football Talk
   'nav', // Misc.
   'p.authorFollow', // The Sydney Morning Herald
+  'p.category', // SysCon Media
   'p.comments', // Telegraph Co Uk
   'p.essay-tags', // Aeon Magazine
   'p.moreVideosTitle', // E-Online
@@ -1373,6 +1424,7 @@ var BLACKLIST_SELECTORS = [
   'table.hst-articleprinter', // Stamford Advocate
   'table#commentTable', // Times of India
   'table.complexListingBox', // Mercury News
+  'table.storyauthor', // SysCon Media
   'ul#additionalShare', // NBC
   'ul.article-options', // TVNZ
   'ul.article-share', // DNA India
@@ -1433,8 +1485,11 @@ var BLACKLIST_SELECTORS = [
   'ul.utility-list'// WRAL
 ];
 
+exports.calamine = {
+  filterAxes: BLACKLIST_SELECTORS,
+  stripTitlePublisher: stripTitlePublisher,
+  transform: transform
+};
 
-// Allow external manipulation
-exports.calamine.BLACKLIST_SELECTORS = BLACKLIST_SELECTORS;
 
 }(this));
