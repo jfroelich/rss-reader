@@ -225,7 +225,11 @@ function appendSlide(entry, isFirst) {
   title.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
     var titleText = lucu.stripTags(entry.title);
-    titleText = lucu.truncate(titleText, 200);
+
+    titleText = calamine.stripTitlePublisher(titleText);
+
+    titleText = lucu.truncate(titleText, 300);
+
     title.innerHTML = titleText;
   } else {
     title.textContent = 'Untitled';
