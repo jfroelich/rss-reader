@@ -197,6 +197,9 @@ function applyIntrinsicBias(doc, elements, scores) {
     var bias = INTRINSIC_BIAS.get(element.localName);
     if(!bias) return;
     var score = scores.get(element);
+
+    // no need to check undefined score
+
     scores.set(element, score + bias);
   });
 
@@ -578,10 +581,16 @@ function findArticleTitle(doc) {
  * Tries to clean up the title by removing auxillary stuff
  */
 function stripTitlePublisher(title) {
+  // TODO: http://blog.macminicolo.net/post/100240431773/a-look-at-the-2014-mac-mini
+  // The title ends in "user-upgradable"
+  // The solution is probably to require ' - ' instead of '-'
+
+  //http://recode.net/2014/10/20/ibm-shares-fall-on-earnings-shortfall-chip-unit-transfer/
+  //"IBM Abandons Long-Promised 2015 Profit Target" truncated as "IBM Abandons Long"
 
   if(!title) return;
 
-  var delimiterPosition = title.lastIndexOf('-');
+  var delimiterPosition = title.lastIndexOf(' - ');
   if(delimiterPosition == -1) {
     delimiterPosition = title.lastIndexOf(':');
   }
@@ -594,7 +603,7 @@ function stripTitlePublisher(title) {
 
   var terms = trailingText.split(/\s+/).filter(identity);
 
-  console.debug('%o', terms);
+  // console.debug('%o', terms);
 
   if(terms.length < 5) {
     // Looks like a trailing publisher
@@ -618,6 +627,11 @@ function identity(value) {
  * elements are more or less likely to contain boilerplate. The focus here
  * is not assessing whether each element contains boilerplate or not, but how
  * likely could the elementy type serve as the target element.
+ *
+ * TODO: if the focus is on best element I have no idea what I was thinking
+ * here. There are only maybe 5-6 likely elements and everything else
+ * is very unlikely. <div is the most likely>. I think this is just remnant
+ * of the block-based scoring approach
  */
 var INTRINSIC_BIAS = new Map([
   ['main', 100],
@@ -625,7 +639,8 @@ var INTRINSIC_BIAS = new Map([
   ['blockquote', 10],
   ['code', 10],
   ['content', 200],
-  ['div', 10],
+  //['div', 10],
+  ['div', 200],
   ['figcaption', 10],
   ['figure', 10],
   ['ilayer', 10],
@@ -878,11 +893,13 @@ var BLACKLIST_SELECTORS = [
   'a.dsq-brlink', // USA Today
   'a.hdn-analytics', // SF Gate
   'a[href^="http://ad.doubleclick"]', // Medium
+  'a[href*="socialtwist"]', // The Jewish Press
   'a.more-tab', // The Oklahoman
   'a.nextPageLink', // Salt Lake Tribune
   'a.post_cmt1', // Times of India
   'a.readmore-link', // Topix
   'a[rel="tag"]', // // The Oklahoman
+  'a.twitter-share-button', // The Jewish Press
   'a.synved-social-button', // Viral Global News
   'a.skip-to-text-link', // NYTimes
   'article div.extra', // Washington Post
@@ -894,6 +911,7 @@ var BLACKLIST_SELECTORS = [
   'aside.callout', // The Atlantic
   'aside.entry-sidebar', // The Globe
   'aside.livefyre-comments', // Vanity Fair
+  'aside.meta_extras', // Japan Times
   'aside.marginalia', // NY Times
   'aside.mashsb-container', // cryptocoinsnews.com
   'aside#post_launch_success', // BuzzFeed
@@ -965,6 +983,7 @@ var BLACKLIST_SELECTORS = [
   'div.at-tag', // Design & Trend
   'div.at-tool', // Design & Trend
   'div.author_topics_holder', // The Irish Times
+  'div.author-wrap', // Recode
   'div[data-ng-controller="bestOfMSNBCController"]', // MSNBC
   'div.bio-socials', // Atomic Object
   'div.bk-socialbox', // Latin Post
@@ -1014,6 +1033,7 @@ var BLACKLIST_SELECTORS = [
   'div#commenting', // Fox News
   'div#commentLink', // // The Oklahoman
   'div#comment-list', // Bangkok Post
+  'div#commentslist', // The Jewish Press
   'div#comment-reply-form', // Sparkfun
   'div#comments-tabs', // Houston News
   'div.commentThread', // kotatv
@@ -1050,14 +1070,17 @@ var BLACKLIST_SELECTORS = [
   'div.entity_popular_posts', // Forbes
   'div.entity_preview', // Forbes
   'div.entity_recent_posts', // Forbes
+  'div.entry-listicles', // CBS
   'div.entry-meta', // Re-code (uncertain about this one)
   'div.entry-related', // The Globe
   'div#entry-tags', // hostilefork
   'div.entry-tags', // Wired.com
+  'div.entry-toolbar', // CBS
   'div.entry-unrelated', // The New Yorker
   'div#epilogue', // hostilefork
   'div.essb_links', // Beta Wired
   'div#et-sections-dropdown-list', // The Washington Post
+  'div#external-source-links', // Daily Mail UK
   'div.pane-explore-issues-topics', // MSNBC
   'div.feature-btns', // USA Today (assumes video not supported)
   'div.feature_nav', // E-Week
@@ -1182,6 +1205,7 @@ var BLACKLIST_SELECTORS = [
   'div.post-meta-tags', // Comic Book Resources
   'div.post-meta-taxonomy-terms', // The Sun Times
   'div.post-share-buttons', // Blogspot
+  'div#post_socials', // Archeology.org
   'div#powered_by_livefyre_new', // Entertainment Tonight
   'div#prevnext', // hostilefork
   'div.primaryContent3', // Reuters (NOTE: I dislike this one)
@@ -1218,6 +1242,7 @@ var BLACKLIST_SELECTORS = [
   'div.relatedStories', // Salt Lake Tribute
   'div#related-stories', // Daily News
   'div#related-tags', // St. Louis Today
+  'div.related-tags', // CBS
   'div#relatedTopics', // Reuters
   'div.relatedTopicButtons', // Reuters
   'div.related-vertical', // The Wrap
@@ -1256,6 +1281,7 @@ var BLACKLIST_SELECTORS = [
   'div.share-bar', // Gulf News
   'div#sharebarx_new', // Times of India
   'div.share-body-bottom', // BBC
+  'div.share-btn', // Christian Times
   'div.share-buttons', // Quantstart
   'div.share-count-container', // CNBC
   'div.sharedaddy', // Fortune
@@ -1277,6 +1303,7 @@ var BLACKLIST_SELECTORS = [
   'div.sidebar-feed', // WRAL
   'div#signIn', // Joplin
   'div.simpleShare', // Newsday
+  'div.single-author', // Recode
   'div.single-related', // USA Today
   'div.sitewide-footer', // NBCNews
   'div.sitewide-header-content', // NBCNews
@@ -1392,7 +1419,9 @@ var BLACKLIST_SELECTORS = [
   'figure.ib-figure-ad', // KMBC
   'figure.kudo', // svbtle.com blogs
   'footer', // Misc.
+  'form#comment_form', // Doctors Lounge
   'header', // Misc.
+  'h1#external-links', // The Sprawl (preceds unnamed <ul>)
   'h2.hide-for-print', // NobelPrize.org
   'h2#page_header', // CNBC
   'h3#comments-header', // Knight News Challenge
@@ -1414,6 +1443,7 @@ var BLACKLIST_SELECTORS = [
   'p.comments', // Telegraph Co Uk
   'p.essay-tags', // Aeon Magazine
   'p.moreVideosTitle', // E-Online
+  'p.must-log-in', // The Jewish Press
   'p.pagination', // Stamford Advocate
   'p.p_top_10', // Star Telegram
   'p.post-tags', // USA Today
@@ -1451,6 +1481,7 @@ var BLACKLIST_SELECTORS = [
   'section.suggested-links', // The Examiner
   'section.tagblock', // Entertainment Tonight
   'section.three-up', // The Huffington Post
+  'section.topnews', // Christian Times
   'section.top-video', // ABC 7 News
   'section.youmaylike', // Entertainment Tonight
   'span.sharetools-label', // NY Time
@@ -1473,6 +1504,7 @@ var BLACKLIST_SELECTORS = [
   'ul.breaking-news-stories', // ABC 7 News
   'ul.bull-list', // Joplin
   'ul.comment-list', // Sparkfun
+  'ul#content_footer_menu', // Japan Times
   'ul.display-posts-listing', // Recode
   'ul.entry-extra', // Wired Magazine
   'ul.entry-header', // Wired Magazine
