@@ -2,22 +2,27 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+/**
+ * unmarshallFeed module. Creates a feed object from an XMLDocument. The
+ * primary function is unmarshallFeed that accepts an XMLDocument and
+ * returns a new feed object.
+ */
+(function(exports) {
 'use strict';
 
-var lucu = lucu || {};
-
-
 /**
- * Convert an XMLDocument representing a feed into a feed object.
+ * Convert an XMLDocument containing feed data into a feed object.
  *
- * Returns an error property if xmlDocument is undefined, or if xmlDocument.documentElement
- * is undefined, or if the document is not one of the supported types.
+ * Returns an error property if xmlDocument is undefined, or if
+ * xmlDocument.documentElement is undefined, or if the document is not one of
+ * the supported types.
  *
- * TODO: move this back into its own module after completing some of the other changes
- * - deprecate feed namespace
- * - change into module
+ * TODO: think of a better way to produce errors (e.g. throw exception)
+ * TODO: maybe this should produce an actual 'Feed' function object instead of a
+ * generic Javascript object
+ *
  */
-lucu.feed.createFromDocument = function(xmlDocument) {
+function unmarshallFeed(xmlDocument) {
 
   var result = {};
 
@@ -53,7 +58,7 @@ lucu.feed.createFromDocument = function(xmlDocument) {
     return result;
   }
 
-  var access = lucu.getTextOrAttribute;
+  var access = getTextOrAttribute;
 
   var feedTitleText = access(documentElement, isAtom ? ['feed > title'] : ['channel > title']);
   if(feedTitleText) {
@@ -97,16 +102,14 @@ lucu.feed.createFromDocument = function(xmlDocument) {
 
   var entrySelector = isAtom ? 'feed > entry' : isRSS ? 'channel > item' : 'item';
   var entries = documentElement.querySelectorAll(entrySelector);
-  var toEntryObject = lucu.feed.createEntryFromElement.bind(this, isAtom, isRSS);
-  result.entries = lucu.map(entries, toEntryObject);
-
+  result.entries = lucu.map(entries,
+    createEntryFromElement.bind(this, isAtom, isRSS));
   return result;
-};
+}
 
-lucu.feed.createEntryFromElement = function(isAtom, isRSS, entryElement) {
+function createEntryFromElement(isAtom, isRSS, entryElement) {
   var result = {};
-
-  var access = lucu.getTextOrAttribute;
+  var access = getTextOrAttribute;
 
   var entryTitleText = access(entryElement, ['title']);
   if(entryTitleText) {
@@ -132,16 +135,14 @@ lucu.feed.createEntryFromElement = function(isAtom, isRSS, entryElement) {
     result.pubdate = entryPubDateText;
   }
 
-  var accessAtom = lucu.feed.getTextContentForAtomEntry;
-
-  var entryContentText = isAtom ? accessAtom(entryElement) :
+  var entryContentText = isAtom ? getTextContentForAtomEntry(entryElement) :
     access(entryElement,['encoded','description','summary']);
   if(entryContentText) {
     result.content = entryContentText;
   }
 
   return result;
-};
+}
 
 /**
  * I ran into weirdness for atom feed entry content, hence the more
@@ -150,8 +151,8 @@ lucu.feed.createEntryFromElement = function(isAtom, isRSS, entryElement) {
  * I am sure a cleaner solution exists or I am missing something basic.
  * However, this at least for now gives the desired result.
  */
-lucu.feed.getTextContentForAtomEntry = function(entryElement) {
-
+function getTextContentForAtomEntry(entryElement) {
+  var forEach = Array.prototype.forEach;
   var contentElement = entryElement.querySelector('content');
   var text;
 
@@ -160,17 +161,15 @@ lucu.feed.getTextContentForAtomEntry = function(entryElement) {
     // TODO: clean this up more? On the one hand it is all a hack I want to
     // deprecate. On the other, using Array.prototype.map is more
     // appropriate than forEach + push
-
     var parts = [];
-
     // Serialize element content differently than text content
-    Array.prototype.forEach.call(contentElement.childNodes, function(atomContentNode) {
-      if(atomContentNode.nodeType == Node.ELEMENT_NODE) {
-        parts.push(atomContentNode.innerHTML);
-      } else if(atomContentNode.nodeType == Node.TEXT_NODE) {
-        parts.push(atomContentNode.textContent);
-      } else if(atomContentNode.nodeType == Node.CDATA_SECTION_NODE) {
-        parts.push(atomContentNode.textContent);
+    forEach.call(contentElement.childNodes, function(node) {
+      if(node.nodeType == Node.ELEMENT_NODE) {
+        parts.push(node.innerHTML);
+      } else if(node.nodeType == Node.TEXT_NODE) {
+        parts.push(node.textContent);
+      } else if(node.nodeType == Node.CDATA_SECTION_NODE) {
+        parts.push(node.textContent);
       }
     });
 
@@ -185,17 +184,8 @@ lucu.feed.getTextContentForAtomEntry = function(entryElement) {
   }
 
   return text;
-};
+}
 
-// Wraps element.getAttribute. Used for partial on attribute (due to arg order)
-// instead of just HTMLElement.prototype.getAttribute
-lucu.getAttribute = function(attribute, element) {
-  return element.getAttribute(attribute);
-};
-
-lucu.getTextContent = function(element) {
-  return element.textContent;
-};
 
 /**
  * Gets the textContent of a specific element or the value of a specific
@@ -219,12 +209,16 @@ lucu.getTextContent = function(element) {
  * 4) We want short circuiting. querySelectorAll walks the entire
  * document every time, which is a waste.
  */
-lucu.getTextOrAttribute = function(rootElement, selectors, attribute) {
+function getTextOrAttribute(rootElement, selectors, attribute) {
   var getter;
   if(attribute) {
-    getter = lucu.getAttribute.bind(this, attribute);
+    getter = function(element) {
+      return element.getAttribute(attribute);
+    };
   } else {
-    getter = lucu.getTextContent;
+    getter = function(element) {
+      return element.textContent;
+    };
   }
 
   // NOTE: using a raw loop because nothing in the native iteration API
@@ -240,4 +234,9 @@ lucu.getTextOrAttribute = function(rootElement, selectors, attribute) {
     if(!temp) continue;
     return temp;
   }
-};
+}
+
+exports.lucu = exports.lucu || {};
+exports.lucu.unmarshallFeed = unmarshallFeed;
+
+}(this));

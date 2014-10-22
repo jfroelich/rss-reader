@@ -337,7 +337,7 @@ lucu.feed.onFetch = function(onComplete, onError, shouldAugmentEntries,
 lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
   shouldAugmentEntries, entryTimeout) {
 
-  var feed = lucu.feed.createFromDocument(xmlDocument);
+  var feed = lucu.unmarshallFeed(xmlDocument);
 
   if(feed.ERROR_UNDEFINED_DOCUMENT || feed.ERROR_UNDEFINED_DOCUMENT_ELEMENT ||
      feed.ERROR_UNSUPPORTED_DOCUMENT_ELEMENT) {
