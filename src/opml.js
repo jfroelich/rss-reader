@@ -2,14 +2,9 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+(function(exports) {
+
 'use strict';
-
-var lucu = lucu || {};
-lucu.opml = {};
-
-lucu.feedHasURL = function(feed) {
-  return feed.url;
-}
 
 /**
  * Generates an OPML XMLDocument object. feeds should be
@@ -17,7 +12,7 @@ lucu.feedHasURL = function(feed) {
  * title, url, description, and link. url is the only required
  * property. titleElementValue is optional.
  */
-lucu.opml.createDocument = function(feeds, titleElementValue) {
+function createDocument(feeds, titleElementValue) {
 
   var opmlDocument = document.implementation.createDocument(null, null);
 
@@ -51,7 +46,9 @@ lucu.opml.createDocument = function(feeds, titleElementValue) {
     return opmlDocument;
   }
 
-  var feedsWithURLs = feeds.filter(lucu.feedHasURL);
+  var feedsWithURLs = feeds.filter(function hasURL(feed) {
+    return feed.url;
+  });
 
   if(!feedsWithURLs.length) {
     return opmlDocument;
@@ -60,22 +57,17 @@ lucu.opml.createDocument = function(feeds, titleElementValue) {
   var bodyElement = opmlDocument.createElement('body');
   elementOPML.appendChild(bodyElement);
 
-  var boundCOE = lucu.opml.createOutlineElement.bind(this, opmlDocument);
+  var createOutline = createOutlineElement.bind(this, opmlDocument);
 
-  // TODO: use something like Element.prototype.appendChild.bind
-  var boundAOTB = lucu.opml.appendOutlineToBody.bind(this, bodyElement);
-
-  feedsWithURLs.map(boundCOE).forEach(boundAOTB);
+  feedsWithURLs.map(createOutline).forEach(function (element) {
+    bodyElement.appendChild(element);
+  });
 
   return opmlDocument;
-};
+}
 
-// TODO: deprecate, use Element.prototype.appendChild
-lucu.opml.appendOutlineToBody = function(bodyElement, element) {
-  bodyElement.appendChild(element);
-};
 
-lucu.opml.createOutlineElement = function(doc, feed) {
+function createOutlineElement(doc, feed) {
   var element = doc.createElement('outline');
 
   // NOTE: this makes a major assumption about each feed's
@@ -93,11 +85,12 @@ lucu.opml.createOutlineElement = function(doc, feed) {
   if(feed.link)
     element.setAttribute('htmlUrl', feed.link);
   return element;
-};
+}
 
-lucu.opml.createOutlineObject = function(element) {
-  // Build and return a feed object with properties
-  // title, description, url, and link
+// Build and return a feed object with properties
+// title, description, url, and link
+function createOutlineObject(element) {
+
 
   var outline = {};
   var title = element.getAttribute('title') || '';
@@ -139,24 +132,32 @@ lucu.opml.createOutlineObject = function(element) {
   }
 
   return outline;
-};
+}
 
-lucu.opml.isValidOutlineElement = function(element) {
-  var type = element.getAttribute('type');
-  var url = element.getAttribute('xmlUrl') || '';
-  return /rss|rdf|feed/i.test(type) && url.trim();
-};
+/**
+ * Generates an array of outline objects from an OPML XMLDocument object.
+ */
+function createOutlines(doc) {
 
-lucu.opml.isValidDocument = function(doc) {
-  return doc && doc.documentElement && doc.documentElement.matches('opml');
-};
+  if(!doc || !doc.documentElement || !doc.documentElement.matches('opml')) {
+    return [];
+  }
 
-// Generates an array of outline objects from an OPML XMLDocument object.
-lucu.opml.createOutlines = function(doc) {
   var filter = Array.prototype.filter;
-  var isOutline = lucu.opml.isValidOutlineElement;
-  var asObject = lucu.opml.createOutlineObject;
-  var isValid = lucu.opml.isValidDocument(doc);
-  var elements = isValid ? doc.getElementsByTagName('outline') : [];
-  return filter.call(elements, isOutline).map(asObject);
+  var outlineElements = doc.getElementsByTagName('outline');
+  var validOutlines = filter.call(outlineElements, function (element) {
+    var type = element.getAttribute('type');
+    var url = element.getAttribute('xmlUrl') || '';
+    return /rss|rdf|feed/i.test(type) && url.trim();
+  });
+
+  return validOutlines.map(createOutlineObject);
+}
+
+exports.lucu = exports.lucu || {};
+exports.lucu.opml = {
+  createDocument: createDocument,
+  createOutlines: createOutlines
 };
+
+}(this));
