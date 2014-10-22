@@ -386,9 +386,6 @@ function applyAttributeBias(doc, elements, scores) {
   // itemprop="mainContentOfPage"
   // role="complementary"
 
-  // TODO: Google plus obfuscates attributes but
-  // it does use role="article"
-
   // TODO: itemtype has the same issues as 'article' id/class,
   // in that some articles use the itemtype repeatedly
 
@@ -406,7 +403,13 @@ function applyAttributeBias(doc, elements, scores) {
 
     element = elements[i];
 
-    attributeValue = element.id;
+    // NOTE: element.className may yield SVGAnimatedString which does not
+    // support string methods, so we must use getAttribute. To be consistent
+    // I just use getAttribute in each case
+
+    // NOTE: due to unclear perf issues this violates DRY
+
+    attributeValue = element.getAttribute('id');
     if(attributeValue) {
       attributeValue = attributeValue.trim();
       if(attributeValue) {
@@ -417,7 +420,7 @@ function applyAttributeBias(doc, elements, scores) {
       }
     }
 
-    attributeValue = element.name;
+    attributeValue = element.getAttribute('name');
     if(attributeValue) {
       attributeValue = attributeValue.trim();
       if(attributeValue) {
@@ -428,9 +431,6 @@ function applyAttributeBias(doc, elements, scores) {
       }
     }
 
-    // NOTE: cannot use element.className because it has the
-    // potential to return SVGAnimatedString, which is an object
-    // that cannot be trimmed or lowercased or split
     attributeValue = element.getAttribute('class');
     if(attributeValue) {
       attributeValue = attributeValue.trim();
@@ -503,28 +503,37 @@ function applyAttributeBias(doc, elements, scores) {
 
   // TODO: article_body (E-Week)
 
+  // TODO: the tests for a single 'article' element should not be
+  // exclusive. We want 'one' possible way of promoting greatly. If there
+  // is an article element, and a single div class='article' element,
+  // then only one element should get promoted? For now it is not too
+  // important.
+
   var forEach = Array.prototype.forEach;
 
   var articleClass = doc.body.getElementsByClassName('article');
   if(articleClass.length == 1) {
     scores.set(articleClass[0], scores.get(articleClass[0]) + 1000);
   } else {
+    // TODO: why promote any of these? Because maybe one of them
+    // is the actual article?
     forEach.call(articleClass, updateScore.bind(null, scores, 200));
   }
 
 
+  // NOTE: this is invariant but not in a loop so probably not an issue
   var articleAttributes =  ['id', 'class', 'name', 'itemprop', 'role'].map(
     function(s) { return '['+s+'*="articlebody"]'; });
   articleAttributes.push('[role="article"]'); // Google Plus
   articleAttributes.push('[itemtype="http://schema.org/Article"]');
-
 
   var SELECT_ARTICLE = articleAttributes.join(',');
   var articles = doc.body.querySelectorAll(SELECT_ARTICLE);
   if(articles.length == 1) {
     scores.set(articles[0], scores.get(articles[0]) + 1000);
   } else {
-
+    // TODO: why promote any of these? Because maybe one of them
+    // is the actual article?
     forEach.call(articles, updateScore.bind(null, scores, 100));
   }
 }
@@ -553,14 +562,7 @@ function getItemType(element) {
  * Updates the score of an element by adding in delta
  */
 function updateScore(scores, delta, element) {
-
   var score = scores.get(element);
-  // We know initScores set a score of 0 for
-  // every element so there is no need to check
-  // if score is undefined prior to update
-
-  // NOTE: recently fixed! forgot to pass in element argument
-  // this now requires more testing
   scores.set(element, score + delta);
 }
 
@@ -571,48 +573,35 @@ function findArticleTitle(doc) {
   // Check H1s and such in body
   // Promote earlier elements
 
-  // If found, try and remove trailling text
-  // like "article title | newspaper name" > "article title"
-  // so look for -,|,: and 1-3 words
-
+  // As an aside, in-article titles are often within or preceding the same
+  // element as the best element. If the title is outside the best element
+  // then maybe it is a sign the best element should be expanded
 }
 
 /**
- * Tries to clean up the title by removing auxillary stuff
+ * Tries to clean up a title string by removing publisher info
+ *
+ * TODO: support publisher as prefix
  */
 function stripTitlePublisher(title) {
-  // TODO: http://blog.macminicolo.net/post/100240431773/a-look-at-the-2014-mac-mini
-  // The title ends in "user-upgradable"
-  // The solution is probably to require ' - ' instead of '-'
-
-  //http://recode.net/2014/10/20/ibm-shares-fall-on-earnings-shortfall-chip-unit-transfer/
-  //"IBM Abandons Long-Promised 2015 Profit Target" truncated as "IBM Abandons Long"
 
   if(!title) return;
 
+  // The extra spaces are key to avoiding truncation of hyphenated terms
   var delimiterPosition = title.lastIndexOf(' - ');
-  if(delimiterPosition == -1) {
-    delimiterPosition = title.lastIndexOf(':');
-  }
+  if(delimiterPosition == -1)
+    delimiterPosition = title.lastIndexOf(' | ');
+  if(delimiterPosition == -1)
+    delimiterPosition = title.lastIndexOf(' : ');
 
-  if(delimiterPosition == -1) {
+  if(delimiterPosition == -1)
     return title;
-  }
 
   var trailingText = title.substring(delimiterPosition + 1);
-
   var terms = trailingText.split(/\s+/).filter(identity);
-
-  // console.debug('%o', terms);
-
   if(terms.length < 5) {
-    // Looks like a trailing publisher
-
     var newTitle = title.substring(0, delimiterPosition).trim();
-    //console.debug('New title after removing publisher is %s', newTitle);
     return newTitle;
-  } else {
-    //console.debug('could not transform title %s', title);
   }
 
   return title;
@@ -630,7 +619,7 @@ function identity(value) {
  *
  * TODO: if the focus is on best element I have no idea what I was thinking
  * here. There are only maybe 5-6 likely elements and everything else
- * is very unlikely. <div is the most likely>. I think this is just remnant
+ * is very unlikely. <div> is the most likely. I think this is just remnant
  * of the block-based scoring approach
  */
 var INTRINSIC_BIAS = new Map([
@@ -880,7 +869,7 @@ var ATTRIBUTE_BIAS = new Map([
 ]);
 
 
-// TODO: BLACKLIST_SELECTORS should be a Set to demonstrate
+// TODO: BLACKLIST_SELECTORS should be a Set to demonstrate and enforce
 // uniqueness of keys
 
 // Hardcoded template-based selectors that are very likely
@@ -996,6 +985,7 @@ var BLACKLIST_SELECTORS = [
   'div#blox-right-col', // Joplin
   'di#blox-breadcrumbs', // Joplin
   'div#bottom-rail', // Vanity Fair
+  'div.bookmarkify', // Kamens Blog
   'div.bpcolumnsContainer', // Western Journalism
   'div#breadcrumb', // Autonews
   'div.breadcrumb_container', // NBC News
@@ -1190,6 +1180,7 @@ var BLACKLIST_SELECTORS = [
   'div.page_label', // Hewlett Packard News
   'div#page-nav', // Uptown Magazine
   'div.page-navigation', // Misc.
+  'div.page-tools', // Channel News Asia
   'div.par-y_rail', // Vanity Fair
   'div.pb-f-page-comments', // Washington Post
   'div.pfont', // Newsday
@@ -1301,6 +1292,7 @@ var BLACKLIST_SELECTORS = [
   'div#sidebar-4', // SysCon Media
   'div.sidebar-content', // Concurring opinions
   'div.sidebar-feed', // WRAL
+  'div.side-news-area', // Channel News Asia
   'div#signIn', // Joplin
   'div.simpleShare', // Newsday
   'div.single-author', // Recode
@@ -1324,6 +1316,7 @@ var BLACKLIST_SELECTORS = [
   'div.social-links ', // SF Gate
   'div.social-links-bottom', // MSNBC
   'div.social-links-top', // MSNBC
+  'div.social-news-area', // Channel News Asia
   'div.socialNetworks', // NBC
   'div#socialRegistration', // Joplin Globe
   'div#social-share', // Priceonomics
@@ -1528,10 +1521,12 @@ var BLACKLIST_SELECTORS = [
   'ul.project-nav', // Kickstarter
   'ul.related-links', // The Boston Globe
   'ul.related-posts', // Concurring Opinions
+  'ul.resize-nav', // Channel News Asia
   'ul.rssi-icons', // Pacific Standard Magazine
   'ul.services', // The Appendix
   'ul.sharebar', // CNet
   'ul.share-buttons', // Ars Technica
+  'ul.side-news-list', // Channel News Asia
   'ul.social', // The Sydney Morning Herald
   'ul.social-bookmarking-module', // Wired Magazine
   'ul.socialByline', // The Wall Street Journal (blog)
