@@ -100,10 +100,11 @@ function unmarshallFeed(xmlDocument) {
     result.date = feedDateText;
   }
 
+  var map = Array.prototype.map;
   var entrySelector = isAtom ? 'feed > entry' : isRSS ? 'channel > item' : 'item';
   var entries = documentElement.querySelectorAll(entrySelector);
-  result.entries = lucu.map(entries,
-    createEntryFromElement.bind(this, isAtom, isRSS));
+  result.entries = map.call(entries, createEntryFromElement.bind(this, isAtom,
+    isRSS));
   return result;
 }
 
