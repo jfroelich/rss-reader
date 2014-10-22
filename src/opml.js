@@ -85,6 +85,9 @@ function createOutlines(doc) {
   if(!doc || !doc.documentElement || !doc.documentElement.matches('opml'))
     return [];
   var filter = Array.prototype.filter;
+
+  // TODO: shouldn't this be doc.documentElement.get...?
+
   var outlineElements = doc.getElementsByTagName('outline');
   return filter.call(outlineElements, function (element) {
     var type = element.getAttribute('type');
