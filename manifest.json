@@ -1,5 +1,5 @@
 {
-  "version": "2.3",
+  "version": "2.4",
 
   "manifest_version": 2,
   "name": "Lucubrate",
@@ -7,7 +7,7 @@
   "author": "Joshua Froelich",
   "homepage_url": "https://github.com/jfroelich/rss-reader",
 
-  "description": "Reading late into the night",
+  "description": "Reading by lamplight late into the night",
 
   "browser_action": {
     "default_icon": "/media/rss_icon_trans.png",
@@ -22,14 +22,7 @@
       "/src/background.js",
       "/src/database.js",
       "/src/entry.js",
-      "/src/feed/add.js",
-      "/src/feed/create-from-document.js",
-      "/src/feed/feed.js",
-      "/src/feed/fetch.js",
-      "/src/feed/remove.js",
-      "/src/feed/sanitize.js",
-      "/src/feed/select.js",
-      "/src/feed/update.js",
+      "/src/feed.js",
       "/src/poll.js",
       "/src/utilities.js"
     ]

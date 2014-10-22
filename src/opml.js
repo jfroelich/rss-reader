@@ -47,7 +47,7 @@ lucu.opml.createDocument = function(feeds, titleElementValue) {
     return opmlDocument;
   }
 
-  var feedsWithURLs = feeds.filter(lucu.feed.hasURL);
+  var feedsWithURLs = feeds.filter(lucu.feedHasURL);
 
   if(!feedsWithURLs.length) {
     return opmlDocument;
