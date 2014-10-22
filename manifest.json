@@ -23,6 +23,7 @@
       "/src/database.js",
       "/src/entry.js",
       "/src/feed.js",
+      "/src/unmarshall-feed.js",
       "/src/poll.js",
       "/src/utilities.js"
     ]

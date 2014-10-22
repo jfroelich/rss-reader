@@ -7,6 +7,10 @@
 var lucu = lucu || {};
 lucu.opml = {};
 
+lucu.feedHasURL = function(feed) {
+  return feed.url;
+}
+
 /**
  * Generates an OPML XMLDocument object. feeds should be
  * an array of feed objects. feed objects should have properties
