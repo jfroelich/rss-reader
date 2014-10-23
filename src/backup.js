@@ -2,83 +2,61 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+/**
+ * Module for importing and exporting feed meta data
+ */
+(function(exports) {
 'use strict';
-
-var lucu = lucu || {};
 
 // TODO: think of a better name that captures both import and export
 // TODO: this module, as a whole, needs alot of cleanup. There are a lot
 // of nested functions and the continuation passing style is obscure.
-
 // TODO: I don't need the backup namespace, deprecate it
-
-lucu.backup = {};
 
 /**
  * Calls onComplete with num feeds added, num feeds processed, and
  * array of exceptions
+ *
+ * TODO: just allow for add feed to fail on dup instead of agg?
+ * TODO: rather than agg per file, agg at the end
+ * TODO: use better name for outlinesHash, maybe use Set
  */
-lucu.backup.importOPMLFiles = function(files, onComplete) {
-
-  // TODO: move onFileLoad out of here
-
-  // TODO: decide whether to aggregate? We could just allow for add feed
-  // to fail on dup and not try to even prevent it here.
-
-  // TODO: rather than aggregate per file load, just combine into
-  // a single large array and then aggregate at the end
-  // TODO: the term hash is not really appropriate. What I want is
-  // hashmap or hashset or just some concept like distinct or aggregated
+function importOPMLFiles(files, onComplete) {
 
   if(!files || !files.length) {
-    onComplete(0, 0, []);
-    return;
+    return onComplete(0, 0, []);
   }
 
   var exceptions = [];
   var fileCounter = files.length;
-
   var outlinesHash = {};
 
-  // TODO: instead of binding loadAsText, pass in a this arg
-  // and put stuff in the thisArg
-
-  var loadText = lucu.loadAsText.bind(null, onFileLoad);
-  Array.prototype.forEach.call(files, loadText);
-
-  // TODO: move this out of here
-  function onFileLoad(event) {
-
+  Array.prototype.forEach.call(files, function (event) {
     try {
-
       var xmlDocument = lucu.parseXML(this.result);
-
     } catch(parseError) {
-
       // BUG?: exiting early means filecounter is never checked
       // leading to the continuation never being called
-
       return exceptions.push(parseError);
     }
 
     var outlines = lucu.opml.createOutlines(xmlDocument);
-
-    // TODO: move this function out of here somehow
-    // Aggregate feeds by url
     outlines.forEach(function(outline) {
       if(outline.url) {
         outlinesHash[outline.url] = outline;
       }
     });
 
-    if(--fileCounter == 0) {
-      var distinctFeeds = lucu.values(outlinesHash);
-      lucu.backup.importFeeds(distinctFeeds, exceptions, onComplete);
-    }
-  }
-};
+    fileCounter--;
 
-lucu.backup.importFeeds = function(feeds, exceptions, onComplete) {
+    if(!fileCounter) {
+      var distinctFeeds = lucu.values(outlinesHash);
+      importFeeds(distinctFeeds, exceptions, onComplete);
+    }
+  });
+}
+
+function importFeeds(feeds, exceptions, onComplete) {
   var feedsProcessed = 0;
   var feedsAdded = 0;
 
@@ -86,7 +64,6 @@ lucu.backup.importFeeds = function(feeds, exceptions, onComplete) {
     return onComplete(feedsAdded, feedsProcessed, exceptions);
   }
 
-  // TODO: this needs cleanup, externally defined functions
   lucu.database.open(function(db) {
     feeds.forEach(function(feed) {
       lucu.feed.add(db, feed, function() {
@@ -96,41 +73,40 @@ lucu.backup.importFeeds = function(feeds, exceptions, onComplete) {
     });
   });
 
-  // TODO: move this function out of here somehow
   function onFeedAdded() {
     feedsProcessed++;
 
-    if(feedsProcessed >= feeds.length) {
-
-      chrome.runtime.sendMessage({
-        type: 'importFeedsCompleted',
-        feedsAdded: feedsAdded,
-        feedsProcessed: feedsProcessed,
-        exceptions: exceptions
-      });
-
-      onComplete(feedsAdded, feedsProcessed, exceptions);
+    if(feedsProcessed < feeds.length) {
+      return;
     }
+
+    chrome.runtime.sendMessage({
+      type: 'importFeedsCompleted',
+      feedsAdded: feedsAdded,
+      feedsProcessed: feedsProcessed,
+      exceptions: exceptions
+    });
+
+    onComplete(feedsAdded, feedsProcessed, exceptions);
   }
+}
+
+// TODO: pass blob because nothing needs the intermediate string
+function exportOPMLString(onComplete) {
+  lucu.database.open(function (db) {
+    lucu.feed.getAll(db, function (feeds) {
+      var xmlDocument = lucu.opml.createDocument(feeds, 'subscriptions.xml');
+      var serializer = new XMLSerializer();
+      var str = serializer.serializeToString(xmlDocument);
+      onComplete(str);
+    });
+  });
+}
+
+exports.lucu = exports.lucu || {};
+exports.lucu.backup = {
+  importOPMLFiles: importOPMLFiles,
+  exportOPMLString: exportOPMLString
 };
 
-// TODO: this can go further and also create the blob because
-// nothing needs the intermediate string
-lucu.backup.exportOPMLString = function(onComplete) {
-
-  lucu.database.open(onConnect);
-
-  // TODO: move this function out of here
-  function onConnect(db) {
-    lucu.feed.getAll(db, lucu.backup.serializeFeedsAsOPMLString.bind(null, onComplete));
-  }
-};
-
-// TODO: think of a better name, like createOPMLStringFromFeeds
-
-lucu.backup.serializeFeedsAsOPMLString = function(onComplete, feeds) {
-  var xmlDocument = lucu.opml.createDocument(feeds, 'subscriptions.xml');
-  var serializer = new XMLSerializer();
-  var str = serializer.serializeToString(xmlDocument);
-  onComplete(str);
-};
+}(this));
