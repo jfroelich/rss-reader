@@ -9,9 +9,7 @@
 (function(exports) {
 'use strict';
 
-var VIEW_URL = chrome.extension.getURL('slides.html');
-
-var MESSAGE_MAP = {
+var MESSAGE_HANDLER_MAP = {
   entryRead: updateBadgeMessage,
   importFeedsCompleted: onImportCompleted,
   pollCompleted: onPollCompleted,
@@ -21,7 +19,7 @@ var MESSAGE_MAP = {
 
 chrome.runtime.onMessage.addListener(function (message) {
   if(!message || !message.type) return;
-  var handler = MESSAGE_MAP[message.type];
+  var handler = MESSAGE_HANDLER_MAP[message.type];
   if(!handler) return;
   handler(message);
 });
@@ -51,6 +49,9 @@ function onPollCompleted(message) {
   lucu.extension.showNotification(message.entriesAdded + ' new articles added.');
 }
 
+var VIEW_URL = chrome.extension.getURL('slides.html');
+var NEW_TAB_URL = 'chrome://newtab/';
+
 /**
  * Called when the extension's icon button is clicked in Chrome's toolbar.
  * Browser action distinguishes it from page action in case page action is
@@ -68,7 +69,7 @@ chrome.browserAction.onClicked.addListener(function () {
     if(tabs.length) {
       chrome.tabs.update(tabs[0].id, {active:true});
     } else {
-      chrome.tabs.query({url: 'chrome://newtab/'}, function (tabs) {
+      chrome.tabs.query({url: NEW_TAB_URL}, function (tabs) {
         if(tabs.length) {
           // Replace the new tab
           chrome.tabs.update(tabs[0].id, {active:true, url: VIEW_URL});
@@ -79,6 +80,40 @@ chrome.browserAction.onClicked.addListener(function () {
     }
   });
 });
+
+// TODO: is there a way to avoid this being called every time
+// the background page is loaded or reloaded, enabled/disabled?
+chrome.runtime.onInstalled.addListener(function () {
+  // This also triggers database creation
+  lucu.extension.updateBadge();
+});
+
+chrome.alarms.onAlarm.addListener(function (alarm) {
+  if('poll' == alarm.name) {
+    startPoll();
+  } else if('archive' == alarm.name) {
+    startArchive();
+  }
+});
+
+// TODO: customizable per feed?
+chrome.alarms.create('poll', {periodInMinutes: 20});
+chrome.alarms.create('archive', {periodInMinutes: 24 * 60});
+
+function startPoll() {
+  chrome.permissions.contains({permissions: ['idle']}, function (permitted) {
+    if(permitted) {
+      var INACTIVITY_INTERVAL = 60 * 5;
+      chrome.idle.queryState(INACTIVITY_INTERVAL, function (idleState) {
+        if(idleState == 'locked' || idleState == 'idle') {
+          lucu.poll.start();
+        }
+      });
+    } else {
+      lucu.poll.start();
+    }
+  });
+}
 
 function startArchive() {
   lucu.database.open(function(db) {
@@ -156,35 +191,5 @@ function startArchive() {
     };
   });
 }
-
-// TODO: is there a way to avoid this being called every time
-// the background page is loaded or reloaded, enabled/disabled?
-chrome.runtime.onInstalled.addListener(function () {
-  // This also triggers database creation
-  lucu.extension.updateBadge();
-});
-
-chrome.alarms.onAlarm.addListener(function (alarm) {
-  if('poll' == alarm.name) {
-    chrome.permissions.contains({permissions: ['idle']}, function (permitted) {
-      if(permitted) {
-        var INACTIVITY_INTERVAL = 60 * 5;
-        chrome.idle.queryState(INACTIVITY_INTERVAL, function (idleState) {
-          if(idleState == 'locked' || idleState == 'idle') {
-            lucu.poll.start();
-          }
-        });
-      } else {
-        lucu.poll.start();
-      }
-    });
-  } else if('archive' == alarm.name) {
-    startArchive();
-  }
-});
-
-// TODO: customizable per feed?
-chrome.alarms.create('poll', {periodInMinutes: 20});
-chrome.alarms.create('archive', {periodInMinutes: 24 * 60});
 
 }(this));
