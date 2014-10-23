@@ -3,7 +3,7 @@
 // that can be found in the LICENSE file
 
 /**
- * unmarshallFeed module. Creates a feed object from an XMLDocument. The
+ * deserializeFeed module. Creates a feed object from an XMLDocument. The
  * primary function is unmarshallFeed that accepts an XMLDocument and
  * returns a new feed object.
  */
@@ -22,7 +22,7 @@
  * generic Javascript object
  *
  */
-function unmarshallFeed(xmlDocument) {
+function deserializeFeed(xmlDocument) {
 
   var result = {};
 
@@ -238,6 +238,6 @@ function getTextOrAttribute(rootElement, selectors, attribute) {
 }
 
 exports.lucu = exports.lucu || {};
-exports.lucu.unmarshallFeed = unmarshallFeed;
+exports.lucu.deserializeFeed = deserializeFeed;
 
 }(this));
