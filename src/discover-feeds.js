@@ -2,70 +2,65 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-'use strict';
-
 var lucu = lucu || {};
-lucu.feed = lucu.feed || {};
 
-// TODO: decide if this really belongs in the feed namespace.
-
-// TODO: move queryGoogleFeeds into discover. There is no point to decorating
-// a single function at the current time, and this is not really 'planning ahead'
-// in the right manner.
-
-
-// Fetches an array of search results and passes them to onComplete.
-lucu.feed.discover = function(query, onComplete, onError, timeout) {
-  return lucu.feed.queryGoogleFeeds_(query, timeout, onComplete, onError);
-};
+/**
+ * Discover module for searching for feeds
+ *
+ */
+(function(exports) {
+'use strict';
 
 /**
  * Use Google's find feed service to find feed URLs corresponding to a
  * google search query.
  *
- * @param params {object} an object containing props:
- * - query {string} the text query to send to google, assumed defined
- * - onComplete {function} the callback function to pass query and
- * entries, an array of entry objects from the Google JSON result
- * - onError {function} the fallback function in case of an error
- * - timeout {integer} optional timeout before giving up, ms
+ * TODO: document the props of a result object
  */
-lucu.feed.queryGoogleFeeds_ = function(query, timeout, onComplete, onError) {
+function queryGoogleFeeds(query, timeout, onComplete, onError) {
 
-  query = (query || '').trim();
-  onError = onError || lucu.noop;
+  if(!query) {
+    return onComplete('',[]);
+  }
+
+  query = query.trim();
+
+  if(!query) {
+    return onComplete('',[]);
+  }
+
+  onError = onError || function noop() {};
 
   var request = new XMLHttpRequest();
   request.timeout = timeout;
   request.onerror = onError;
   request.ontimeout = onError;
   request.onabort = onError;
-  request.onload = lucu.feed.onGoogleResultsReceived_.bind(request, onComplete);
-
-  var baseURL = 'https://ajax.googleapis.com/ajax/services/feed/find';
-  var apiVersion = '1.0';
-  var requestURL = baseURL + '?v=' + apiVersion + '&q=' +
-    encodeURIComponent(query);
-
-  request.open('GET', requestURL, true);
+  request.onload = function () {
+    var data = this.response.responseData;
+    data.entries = data.entries || [];
+    data.query = data.query || '';
+    var entries = data.entries.map(sanitize);
+    onComplete(data.query, entries);
+  };
+  request.open('GET', getURL(query), true);
   request.responseType = 'json';
   request.send();
-};
+}
 
-lucu.feed.onGoogleResultsReceived_ = function(onComplete) {
-  // Expects this instanceof XMLHttpRequest
-  var data = this.response.responseData;
-  data.entries = data.entries || [];
-  data.query = data.query || '';
-  var sanitize = lucu.feed.sanitizeGoogleResultEntry_;
-  var entries = data.entries.map(sanitize);
-  onComplete(data.query, entries);
-};
+function getURL(query) {
+  return 'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=' +
+    encodeURIComponent(query);
+}
 
-lucu.feed.sanitizeGoogleResultEntry_ = function(entry) {
-  // TODO: this should be creating a modified clone, not mutating
-  // in place as a side effect.
-
-  entry.contentSnippet = lucu.stripBRs(entry.contentSnippet);
+// Strip <br> elements from snippet
+function sanitize(entry) {
+  var snippet = entry.contentSnippet;
+  if(!snippet) return entry;
+  entry.contentSnippet = snippet.replace(/<br>/gi,'');
   return entry;
-};
+}
+
+exports.queryGoogleFeeds = queryGoogleFeeds;
+
+}(lucu));
