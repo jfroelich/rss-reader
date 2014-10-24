@@ -92,10 +92,20 @@ function collectTextNodeLengths(doc) {
     // the text node would not exist
     // We have to trim as otherwise we end up counting whitespace
     // and many authors use copious amounts of extraneous whitespace
+
+    // NOTE: for whatever reason when run in conjunction with trimNodes
+    // in sanitize, the values are sometimes not trimmed, which is why
+    // calamine also does this. However, there is a second caveat, that
+    // this does not intelligently considered alternate whitespace
+    // expressions like &nbsp; that muck of space. However, given the
+    // above two issues, the performance is not horrible, and CRLF is
+    // is more likely to be used in raw HTML formatting and it is the
+    // CRLF that is prevalent. Excessive use of &nbsp; is rare.
+
     count = node.nodeValue.trim().length;
 
     // Ignore nodes without a length after trimming. This is common as
-    // "\n" text nodes are prevalent.
+    // CRLF text nodes are prevalent.
     if(!count) continue;
 
     // Walk upwards and store the count in each ancestor. The node currently
@@ -1423,10 +1433,12 @@ var BLACKLIST_SELECTORS = [
   'h4.taboolaHeaderRight', // KMBC
   'hr', // ALL
   'img#ajax_loading_img', // E-Week
+  'li.comments', // Smashing Magazine
   'li#mostPopularShared_0', // Reuters
   'li#mostPopularShared_1', // Reuters
   'li#pagingControlsPS', // neagle
   'li#sharetoolscontainer', // neagle
+  'li.tags', // Smashing Magazine
   'ol[data-vr-zone="Around The Web"]', // The Oklahoman
   'ol#comment-list', // Pro Football Talk
   'nav', // Misc.
@@ -1445,6 +1457,7 @@ var BLACKLIST_SELECTORS = [
   'p.story-tags', // Latin Post
   'p.topics', // ABC News
   'p.trial-promo', // Newsweek
+  'p#whoisviewing', // Eev blog
   'section.also-on', // Huffington Post
   'section.around-bbc-module', // BBC
   'section.article-author', // Ars Technica
