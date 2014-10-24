@@ -4,154 +4,92 @@
 
 var lucu = lucu || {};
 
-// href and src for proper images and anchors. Otherwise
-// we allow some custom attributes from calamine debugging through
-lucu.DEFAULT_ALLOWED_ATTRIBUTES = new Set(['href','src','charCount',
-  'hasCopyrightSymbol','bulletCount', 'imageBranch', 'pipeCount',
-  'score']);
+(function(exports) {
+'use strict';
 
-lucu.UNWRAPPABLES = new Set([
-  'article','big','blink','body','center',
-  'colgroup','data','details','div','font',
-  'footer','form','header','help','hgroup',
-  'ilayer', 'insert', 'label','layer','legend',
-  'main','marquee', 'meter', 'multicol','nobr',
-  'noembed','noscript','plaintext','section',
-  'small','span','tbody','tfoot','thead'
-]);
+var filter = Array.prototype.filter;
+var forEach = Array.prototype.forEach;
+var slice = Array.prototype.slice;
 
-lucu.canonicalizeSpaces = function(doc) {
+/**
+ * Inner utility function for removing elements. I wanted to
+ * be able to pass Element.prototype.remove but could not get it
+ * to work.
+ */
+function remove(element) {
+  element.remove();
+}
 
-  var pattern = /&;(nbsp|#(xA0|160));/g;
+/**
+ * Rudimentary replacement of alternative forms of whitespace with normal
+ * space character. This is helpful when trimming or getting text length
+ * less whitespace.
+ */
+function canonicalizeSpaces(doc) {
   var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
-  var node;
-  while(node = it.nextNode()) {
-    node.nodeValue = node.nodeValue.replace(pattern,' ');
+  var node = it.nextNode();
+  while(node) {
+    node.nodeValue = node.nodeValue.replace(/&nbsp;/ig, ' ');
+    node.nodeValue = node.nodeValue.replace(/&#xA0;/ig, ' ');
+    node.nodeValue = node.nodeValue.replace(/&#160;/g, ' ');
+    node = it.nextNode();
   }
-};
+}
 
-lucu.isEmptyLike = function(element) {
+var SELECTOR_LEAF_LIKE = ['area', 'audio', 'br', 'canvas', 'col',
+  'hr', 'img', 'source', 'svg', 'track', 'video'].join(',');
 
+/**
+ * Returns true if an element is 'empty'
+ */
+function isEmptyLike(element) {
+  // An element is not empty if it has one or more child nodes
   if(element.firstChild) {
     return false;
   }
 
-  return !element.matches(['area', 'audio', 'br', 'canvas', 'col',
-    'hr', 'img', 'source', 'svg', 'track', 'video'].join(','));
-};
+  // Certain elements that do have child nodes are still considered empty
+  return !element.matches(SELECTOR_LEAF_LIKE);
+}
 
-lucu.INLINE_ELEMENTS = new Set(['a','abbr', 'acronym', 'address',
+/**
+ * Elements which default to display:inline or inline-block
+ * NOTE: <div> is treated as an exception and not considered inline
+ */
+var INLINE_ELEMENTS = new Set(['a','abbr', 'acronym', 'address',
   'b', 'bdi', 'bdo', 'blink','cite', 'code', 'data', 'del',
   'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 'map',
   'meter', 'q', 'rp', 'rt', 'samp', 'small', 'span', 'strike',
-  'strong', 'sub', 'sup', 'time', 'tt', 'u', 'var']);
+  'strong', 'sub', 'sup', 'time', 'tt', 'u', 'var'
+]);
 
-lucu.isInline = function(element) {
+function isInline(element) {
   // Element may be undefined since the caller does not check
   // if node.nextSibling or node.previousSibling are defined
-  // before the call. This is expected.
+  // before the call.
+  // TODO: maybe this is responsibility of caller
   if(!element) {
     return false;
   }
 
-  // This condition definitely happens, not exactly
-  // sure how or why
-  // TODO: does this mean it is inline? should this
-  // be returning true?
+  // This condition definitely happens, not exactly sure how or why
+  // TODO: does this mean it is inline? should this be returning true?
   if(element.nodeType != Node.ELEMENT_NODE) {
     return false;
   }
 
-  return lucu.INLINE_ELEMENTS.has(element.localName);
-};
+  return INLINE_ELEMENTS.has(element.localName);
+}
 
-lucu.removeAndReturnParent = function(element) {
-  var parentElement = element.parentElement;
-  element.remove();
-  return parentElement;
-};
-
-lucu.removeAttributes = function(allowedAttributes, element) {
-  var attributes = element.attributes, name, index = attributes.length;
-  while(index--) {
-    name = attributes[index].name;
-    if(!allowedAttributes.has(name)) {
-      element.removeAttribute(name);
-    }
-  }
-};
-
-lucu.removeDescendantAttributes = function(allowedAttributes, element) {
-  lucu.removeAttributes(allowedAttributes, element);
-  var elements = element.getElementsByTagName('*');
-  Array.prototype.forEach.call(elements,
-    lucu.removeAttributes.bind(this, allowedAttributes));
-};
-
-lucu.removeBlacklistedElements = function(doc) {
-
-  var s = [
-    'applet', 'base', 'basefont', 'bgsound', 'button', 'command',
-    'datalist', 'dialog', 'embed', 'fieldset',
-    'frameset',
-    'head',
-    'html', 'iframe', 'input', 'isindex', 'math', 'link', 'menu', 'menuitem',
-    'meta', 'object','optgroup', 'option', 'output', 'param',
-    'progress', 'script', 'select', 'spacer', 'style', 'textarea', 'title',
-    'xmp'
-    ].join(',');
-
-  var elements = doc.body.querySelectorAll(s);
-  for(var i = 0, len = elements.length; i < len; i++) {
-    // console.log('removing blist %s', elements[i].localName);
-    elements[i].remove();
-  }
-
-  // Non-standard elements seen in the wild
-  var gPlusOnes = doc.body.getElementsByTagName('g:plusone');
-  for(var i = 0, len = gPlusOnes.length; i < len; i++) {
-
-    // NOTE: gebtn is live so one removal could affect others
-    // so we have to check if defined
-
-    if(gPlusOnes[i]) {
-      gPlusOnes[i].remove();
-    }
-  }
-
-  var fbComments = doc.body.getElementsByTagName('fb:comments');
-  for(var i = 0, len = fbComments.length; i < len; i++) {
-    if(fbComments[i]) {
-      fbComments[i].remove();
-    }
-  }
-};
-
-lucu.removeComments = function(doc) {
-  var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_COMMENT);
-  var node;
-  while(node = it.nextNode()) {
-    node.remove();
-  }
-};
-
-lucu.removeEmptyNodes = function(doc) {
-  var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
-  var node;
-  while(node = it.nextNode()) {
-    if(!node.nodeValue) {
-      node.remove();
-    }
-  }
-};
-
-// Remove all empty-like elements from the document. If removing
-// an element would change the state of the element's parent to also
-// meet the empty-like criteria, then the parent is also removed, and
-// so forth, up the hierarchy, but stopping before doc.body.
-lucu.removeEmptyElements = function(doc) {
-
-  // TODO: This needs a lot of cleanup
+/**
+ * Remove all empty-like elements from the document. If removing
+ * an element would change the state of the element's parent to also
+ * meet the empty-like criteria, then the parent is also removed, and
+ * so forth, up the hierarchy, but stopping before doc.body.
+ *
+ * TODO: This needs a lot of cleanup
+ */
+function removeEmptyElements(doc) {
 
   // TODO: there is a specific edge case not being handled
   // where certain elements, e.g. anchors, that do not contain
@@ -187,16 +125,19 @@ lucu.removeEmptyElements = function(doc) {
   // So we need to go up 1, then query all direct children. But that is
   // kind of redundant since we already identified the children, so that
   // still might need improvement.
-
   var elements = doc.body.getElementsByTagName('*');
-  var emptyLikeElements = Array.prototype.filter.call(elements, lucu.isEmptyLike);
-
+  var emptyLikeElements = filter.call(elements, isEmptyLike);
   // TODO: just add children that should be removed to the stack insead of
   // removing them and adding their parents to the stack.
-
   // Remove all the empty children and shove all the parents on the stack
-  var parents = emptyLikeElements.map(lucu.removeAndReturnParent);
-  var stack = parents.filter(function isNotRoot(element) {
+  var parents = emptyLikeElements.map(function (element) {
+    var parentElement = element.parentElement;
+    element.remove();
+    return parentElement;
+  });
+
+  // Avoid removing the body element
+  var stack = parents.filter(function (element) {
     if(!element) {
       return true;
     }
@@ -242,131 +183,264 @@ lucu.removeEmptyElements = function(doc) {
 
     stack.push(grandParent);
   }
-};
-
-lucu.removeJavascriptAnchors = function(root) {
-  var filter = Array.prototype.filter;
-  var anchors = root.querySelectorAll('a[href]');
-  var candidates = filter.call(anchors, function(anchor) {
-    return /^javascript:/i.test(anchor.getAttribute('href'));
-  });
-
-  // TODO: replace href and leave it in? or remove it?
-  // NOTE: does not handle nested anchors correctly
-  candidates.forEach(function(anchor) {
-    // console.debug('removing %s', anchor.outerHTML);
-    anchor.remove();
-  });
-};
-
-lucu.removeInvisibleElements = function(doc) {
-  var elements = doc.body.getElementsByTagName('*');
-  var invisibles = Array.prototype.filter.call(elements, function(e) {
-    if(e.localName == 'noscript' || e.localName == 'noembed') {
-      return false;
-    }
-
-    // TODO: this is alarmingly slow. My best guess is that
-    // element.style is lazily computed, or that opacity
-    // calc is slow
-    // Look at how jquery implemented :hidden? Maybe it is fast?
-    // exampleofhowjquerydoesit( elem ) {
-      // NOTE: they also check display === 'none'
-    //  return elem.offsetWidth <= 0 || elem.offsetHeight <= 0;
-    //};
-    // TODO: element.offsetWidth < 1 || element.offsetHeight < 1; ??
-    // saw that somewhere, need to read up on offset props again.
-    // Something about emulating how jquery does it?
-    // TODO: consider if(element.hidden) ?
-    var s = e.style;
-    if(s.display === 'none') {
-      return true;
-    }
-    if(s.visibility === 'hidden' || s.visibility === 'collapse') {
-      return true;
-    }
-    var opacity = parseFloat(s.opacity);
-    return opacity < 0.3;
-  });
-  invisibles.forEach(function(e) {
-    e.remove();
-  });
-};
-
-lucu.removeTracerImages = function(doc) {
-  var filter = Array.prototype.filter;
-  var images = doc.body.getElementsByTagName('img');
-  filter.call(images, function(e) {
-    var width = e.getAttribute('width');
-
-    // The fact that an image will not be visible in the page does not prevent
-    // Chrome from trying to fetch it, which is abused as a tracking device
-    // So we also check for zero widths
-    return width === '0' || width === '0px' || e.width === 1 || e.height === 1;
-
-  }).forEach(function(e) {
-    e.remove();
-  });
-};
-
-lucu.removeSourcelessImages = function(doc) {
-  var filter = Array.prototype.filter;
-  var images = doc.body.getElementsByTagName('img');
-  var sourcelessImages = filter.call(images, function(image) {
-    var source = image.getAttribute('src');
-    return source && source.trim() ? false : true;
-  });
-
-  sourcelessImages.forEach(function(image) {
-    // console.debug('removing sourceless image %s', image.outerHTML);
-    image.remove();
-  });
-};
-
-lucu.unwrapNoscripts = function(doc) {
-
-  // http://fortune.com/2014/09/09/apple-event-overshadows-bad-news-snapchat-tinder/
-
-  var forEach = Array.prototype.forEach;
-  var noscripts = doc.body.getElementsByTagName('noscript');
-  forEach.call(noscripts, lucu.unwrap);
-};
-
-lucu.unwrapNoframes = function(doc) {
-  // http://www.miracleas.com/BAARF/
-  var forEach = Array.prototype.forEach;
-  var noframes = doc.body.getElementsByTagName('noframes');
-  forEach.call(noframes, function(e) {
-    console.log('unwrapping noframes'); lucu.unwrap(e); });
 }
 
-lucu.isTrimmableElement = function(element) {
-  return element && element.nodeType == Node.ELEMENT_NODE &&
-    (element.localName == 'br' || element.localName == 'hr' ||
-      (element.localName == 'p' && !element.firstChild));
-};
+/**
+ * Technically a node without a node value should be deleted. Here
+ * trim node function may set node value to '', so the node still exists,
+ * but I now want to remove it. So this iterates over the text nodes
+ * and removes those.
+ */
+function removeEmptyNodes(doc) {
+  var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
+  var node;
+  while(node = it.nextNode()) {
+    if(!node.nodeValue) {
+      node.remove();
+    }
+  }
+}
 
-lucu.trimElement = function(element) {
+/**
+ * Removes all attributes from an element except those in the given Set of
+ * allowed attributes
+ */
+function removeAttributes(allowedAttributes, element) {
+  var attributes = element.attributes;
+  var name;
+  var index = attributes.length;
+
+  // We iterate in reverse due to issues with mutation during iteration.
+  // attributes is a live node collection whose indices are updated every
+  // time an attribute is changed.
+  while(index--) {
+    name = attributes[index].name;
+    if(!allowedAttributes.has(name)) {
+      element.removeAttribute(name);
+    }
+  }
+}
+
+var DEFAULT_ALLOWED_ATTRIBUTES = new Set(['href','src']);
+
+function removeDescendantAttributes(allowedAttributes, element) {
+  removeAttributes(allowedAttributes, element);
+  var descendants = element.getElementsByTagName('*');
+  forEach.call(descendants, removeAttributes.bind(this, allowedAttributes));
+}
+
+var SELECTOR_BLACKLIST = [
+  'applet', 'base', 'basefont', 'bgsound', 'button', 'command',
+  'datalist', 'dialog', 'embed', 'fieldset', 'frameset', 'head',
+  'html', 'iframe', 'input', 'isindex', 'math', 'link', 'menu', 'menuitem',
+  'meta', 'object','optgroup', 'option', 'output', 'param', 'progress',
+  'script', 'select', 'spacer', 'style', 'textarea', 'title', 'xmp'
+].join(',');
+
+/**
+ * Removes all elements in the black list
+ *
+ * TODO: avoid removing elements that have already been detached
+ */
+function removeBlacklistedElements(doc) {
+  var elements = doc.body.querySelectorAll(SELECTOR_BLACKLIST);
+
+  // TODO: revert to forEach.call?
+  for(var i = 0, len = elements.length; i < len; i++) {
+    elements[i].remove();
+  }
+
+  // Non-standard elements seen in the wild. These cannot be passed
+  // as selectors to querySelectorAll
+  var gPlusOnes = doc.body.getElementsByTagName('g:plusone');
+  for(var i = 0, len = gPlusOnes.length; i < len; i++) {
+    // NOTE: gebtn is live so one removal could affect others
+    // so we have to check if defined
+    if(gPlusOnes[i]) {
+      gPlusOnes[i].remove();
+    }
+  }
+
+  var fbComments = doc.body.getElementsByTagName('fb:comments');
+  for(var i = 0, len = fbComments.length; i < len; i++) {
+    if(fbComments[i]) {
+      fbComments[i].remove();
+    }
+  }
+}
+
+/**
+ * Remove all comment nodes
+ */
+function removeComments(doc) {
+  var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_COMMENT);
+  var node;
+  while(node = it.nextNode()) {
+    node.remove();
+  }
+}
+
+/**
+ * Removes script anchors
+ * TODO: replace href and leave it in? or remove it?
+ * NOTE: does not handle nested anchors correctly, because remove could lead
+ * to later removal of children of detached ancestors
+ */
+function removeJavascriptAnchors(root) {
+  var anchors = root.querySelectorAll('a[href]');
+  var scriptAnchors = filter.call(anchors, isScriptAnchor);
+  scriptAnchors.forEach(remove);
+}
+
+/**
+ * Returns whether the anchor's href looks like it contains inline script.
+ */
+function isScriptAnchor(anchor) {
+  var href = anchor.getAttribute('href');
+  // TODO: allow for whitespace   /^\s*javascript\s*:/i
+  return /^javascript:/i.test(href);
+}
+
+/**
+ * Returns whether an element is invisible
+ */
+function isInvisible(element) {
+
+  // noscript and noembed are exceptions to the general rules. We always
+  // consider them visible regardless of other features.
+  if(element.localName == 'noscript' || element.localName == 'noembed') {
+    return false;
+  }
+
+  // TODO: this is alarmingly slow. My best guess is that
+  // element.style is lazily computed, or that opacity
+  // calc is slow
+  // Look at how jquery implemented :hidden? Maybe it is fast?
+  // exampleofhowjquerydoesit( elem ) {
+    // NOTE: they also check display === 'none'
+  //  return elem.offsetWidth <= 0 || elem.offsetHeight <= 0;
+  //};
+
+  // TODO: element.offsetWidth < 1 || element.offsetHeight < 1; ??
+  // saw that somewhere, need to read up on offset props again.
+  // The thing is, are offsetWidth and offsetHeight properties set
+  // when parsing via the set innerHTML trick for foreign, inert
+  // html documents?
+
+  var style = element.style;
+  if(style.display === 'none') {
+    return true;
+  }
+  if(style.visibility === 'hidden' || style.visibility === 'collapse') {
+    return true;
+  }
+
+  var opacity = parseFloat(style.opacity);
+  // We don't actually require it be 0, just too transparent to see
+  return opacity < 0.3;
+}
+
+function removeInvisibleElements(doc) {
+  var elements = doc.body.getElementsByTagName('*');
+  var invisibles = filter.call(elements, isInvisible);
+  invisibles.forEach(remove);
+}
+
+function isTracerImage(image) {
+  var width = image.getAttribute('width');
+
+  // Rather than inspect the source url against a blacklist of known
+  // tracking domains, we use the simpler tactic of targeting
+  // the common signature of tracer images, a 1x1 image.
+
+  // The fact that an image will not be visible in the page does not prevent
+  // Chrome from trying to fetch it, which is abused as a tracking device
+  // So we also check for zero widths
+  return width === '0' || width === '0px' || image.width === 0
+    image.width === 1 || image.height === 1;
+}
+
+function removeTracerImages(doc) {
+  var images = doc.body.getElementsByTagName('img');
+  filter.call(images, isTracerImage).forEach(remove);
+}
+
+function isSourcelessImage(image) {
+  // Access by attribute, not by property, since the browser substitutes
+  // in the base url if accessing by property.
+
+  var source = image.getAttribute('src');
+  return !(source && source.trim());
+}
+
+/**
+ * Remove all images that do not have a src attribute
+ */
+function removeSourcelessImages(doc) {
+  var images = doc.body.getElementsByTagName('img');
+  var sourcelessImages = filter.call(images, isSourcelessImage);
+  sourcelessImages.forEach(remove);
+}
+
+/**
+ * Unwraps noscript elements
+ * Testing example:
+ * http://fortune.com/2014/09/09/apple-event-overshadows-bad-news-snapchat-tinder/
+ */
+function unwrapNoscripts(doc) {
+
+  var noscripts = doc.body.getElementsByTagName('noscript');
+  forEach.call(noscripts, unwrap);
+}
+
+/**
+ * Unwrap all noframes elements.
+ * See http://www.miracleas.com/BAARF/ as testing example.
+ */
+function unwrapNoframes(doc) {
+
+  var noframes = doc.body.getElementsByTagName('noframes');
+  forEach.call(noframes, unwrap);
+}
+
+function isTrimmableElement(element) {
+  var name;
+  if(!element) return false;
+  if(element.nodeType != Node.ELEMENT_NODE) return false;
+  name = element.localName;
+  if(name == 'br') return true;
+  if(name == 'hr') return true;
+  if(name == 'p' && !element.firstChild) return true;
+  return false;
+}
+
+function trimElement(element) {
   var node = element.firstChild;
   var sibling;
-  while(lucu.isTrimmableElement(node)) {
+  while(isTrimmableElement(node)) {
     sibling = node.nextSibling;
     node.remove();
     node = sibling;
   }
   node = element.lastChild;
-  while(lucu.isTrimmableElement(node)) {
+  while(isTrimmableElement(node)) {
     sibling = node.previousSibling;
     node.remove();
     node = sibling;
   }
-};
+}
 
-lucu.trimNodes = function(doc) {
+function trimNodes(doc) {
 
-  var elements = doc.body.querySelectorAll('code, code *, pre, pre *,'+
-    ' ruby, ruby *, textarea, textarea *, xmp, xmp *');
-  var preformatted = new WeakSet(Array.prototype.slice.call(elements));
+  // Descendants of these elements are sensitive to whitespace
+  var WS_IMP_DESC = 'code, code *, pre, pre *, ruby, ruby *, textarea,' +
+    ' textarea *, xmp, xmp *';
+
+  var elements = doc.body.querySelectorAll(WS_IMP_DESC);
+
+  // TODO: why is this using WeakSet???
+
+  var preformatted = new WeakSet(slice.call(elements));
 
   var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
   var node;
@@ -375,28 +449,50 @@ lucu.trimNodes = function(doc) {
       continue;
     }
 
-    if(lucu.isInline(node.previousSibling)) {
-      if(!lucu.isInline(node.nextSibling)) {
+    if(isInline(node.previousSibling)) {
+      if(!isInline(node.nextSibling)) {
         node.nodeValue = node.nodeValue.trimRight();
       }
-    } else if(lucu.isInline(node.nextSibling)) {
+    } else if(isInline(node.nextSibling)) {
       node.nodeValue = node.nodeValue.trimLeft();
     } else {
       node.nodeValue = node.nodeValue.trim();
     }
   }
-};
+}
 
-lucu.unwrap = function(element) {
-  while(element.firstChild) {
-    element.parentElement.insertBefore(element.firstChild, element);
+/**
+ * A function that should be a part of the DOM itself but unfortunately is not.
+ * This replaces the element with its children.
+ *
+ * This is not optimized to be called on a live document. This causes a reflow
+ * per move.
+ */
+function unwrap(element) {
+  // Cache parent lookup
+  var parent = element.parentElement;
+
+  // Avoid issues with documentElement or detached elements
+  if(!parent) {
+    return;
   }
 
-  element.remove();
-};
+  // Move each child of the element to the position preceding the element in
+  // the parent's node list, maintaining child order.
+  while(element.firstChild) {
+    parent.insertBefore(element.firstChild, element);
+  }
 
-lucu.transformBreaks = function(doc) {
-  // Temp, testing an extremely simple break rule transformation
+  // Now the element is empty so detach it
+  element.remove();
+}
+
+/**
+ * Extremely simple <br>2<p> transformation. This does not quite work
+ * like I prefer but it sort of does the job. It turns out to be really
+ * complicated to make it work
+ */
+function transformBreaks(doc) {
   var br = doc.body.querySelector('br');
   while(br) {
     br.parentNode.replaceChild(doc.createElement('p'), br);
@@ -404,9 +500,18 @@ lucu.transformBreaks = function(doc) {
   }
 }
 
-lucu.RE_JAVASCRIPT_PROTOCOL = /^\s*javascript\s*:/i;
+/**
+ * Unwraps certain descendant elements of the root element
+ */
+function unwrapDescendants(rootElement) {
 
-lucu.SELECT_UNWRAPPABLE = [
+  // NOTE: this performs extremely poorly when dealing with a large
+  // number of elements. For example, it took ~20 secs on
+  // https://www.omniref.com/ruby/2.2.0.preview1/symbols/Object
+  // It is the querySelector call
+  // So, tentatively, we are using an upper bound of 3000 iterations
+
+  var unwrappables = [
     'article','big','blink','body','center','colgroup','data','details',
     'div','font','footer','form','header','help','hgroup', 'ilayer', 'insert',
     'label','layer','legend', 'main','marquee', 'meter', 'multicol','nobr',
@@ -414,24 +519,64 @@ lucu.SELECT_UNWRAPPABLE = [
     'tfoot','thead'
   ].join(',');
 
-lucu.unwrapDescendants = function(rootElement) {
-  for(var element = rootElement.querySelector(lucu.SELECT_UNWRAPPABLE);
-    element;
-    element = rootElement.querySelector(lucu.SELECT_UNWRAPPABLE)) {
-    lucu.unwrap(element);
+  // We use querySelector and do one at element at a time in order to avoid
+  // unwrapping elements that, as a result of a previous iteration, now exist
+  // in a detached axis. The alternative would be to check whether the root
+  // element still contains each element before unwrapping it.
+
+  var element = rootElement.querySelector(unwrappables);
+  var numIterations = 0;
+  while(element && (numIterations < 3000)) {
+    unwrap(element);
+    element = rootElement.querySelector(unwrappables);
+    numIterations++;
   }
 
-  // TODO: Unwrap nominal anchors
+  if(numIterations == 3000) {
+    console.warn('Did not fully unwrap descendants, 3000+ iterations');
+  }
+
+  // We do a second pass for the special situation of anchors that do
+  // not have an href value.
+
+  // TODO: what about if they have 'name' attribute?
+  // TODO: maybe this should be a separate function?
+
   var anchors = rootElement.getElementsByTagName('a');
-  var nominalAnchors = Array.prototype.filter.call(anchors, function(anchor) {
+  var nominalAnchors = filter.call(anchors, function(anchor) {
     var href = anchor.getAttribute('href');
-    return href ? !href.trim() : false;
+
+    if(href) {
+      if(href.trim()) {
+        return false;
+      } else {
+        return true;
+       }
+    } else {
+      return true;
+    }
+
   });
 
-  if(!nominalAnchors.length) {
-    return;
-  }
+  nominalAnchors.forEach(unwrap);
+}
 
-  console.debug('Found %s nominal anchors', nominalAnchors.length);
-  nominalAnchors.forEach(lucu.unwrap);
-};
+exports.DEFAULT_ALLOWED_ATTRIBUTES = DEFAULT_ALLOWED_ATTRIBUTES;
+exports.canonicalizeSpaces = canonicalizeSpaces;
+exports.removeDescendantAttributes = removeDescendantAttributes;
+exports.removeBlacklistedElements = removeBlacklistedElements;
+exports.removeComments = removeComments;
+exports.removeEmptyNodes = removeEmptyNodes;
+exports.removeEmptyElements = removeEmptyElements;
+exports.removeJavascriptAnchors = removeJavascriptAnchors;
+exports.removeInvisibleElements = removeInvisibleElements;
+exports.removeTracerImages = removeTracerImages;
+exports.removeSourcelessImages = removeSourcelessImages;
+exports.unwrapNoscripts = unwrapNoscripts;
+exports.unwrapNoframes = unwrapNoframes;
+exports.trimElement = trimElement;
+exports.trimNodes = trimNodes;
+exports.transformBreaks = transformBreaks;
+exports.unwrapDescendants = unwrapDescendants;
+
+}(lucu));
