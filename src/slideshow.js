@@ -263,7 +263,9 @@ function appendSlide(entry, isFirst) {
     FILTER_NAMED_AXES: true
   });
   lucu.removeJavascriptAnchors(results);
-  lucu.unwrapDescendants(results);
+
+  // lucu.unwrapDescendants(results);
+
   lucu.removeDescendantAttributes(lucu.DEFAULT_ALLOWED_ATTRIBUTES , results);
   lucu.trimElement(results);
 
