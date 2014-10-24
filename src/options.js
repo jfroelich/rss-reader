@@ -484,7 +484,6 @@ function populateFeedDetailsSection(feedId) {
   });
 }
 
-
 function onPostPreviewSubscribeClick(event) {
   var url = event.currentTarget.value;
   hideSubscriptionPreview();
@@ -494,32 +493,23 @@ function onPostPreviewSubscribeClick(event) {
 function onFeedListItemClick(event) {
   var feedId = parseInt(event.currentTarget.getAttribute('feed'));
   populateFeedDetailsSection(feedId);
-
   // TODO: These calls should really be in an async callback
   // passed to populateFeedDetailsSection
   optionsShowSection(document.getElementById('mi-feed-details'));
   window.scrollTo(0,0);
 }
 
-
 function onSubscribeSubmit(event) {
   event.preventDefault();// Prevent normal form submission event
-
   var query = (document.getElementById('subscribe-discover-query').value || '').trim();
-
   if(!query)
     return false;
-
   if(document.getElementById('discover-in-progress').style.display == 'block')
     return false;
-
   // TODO: Suppress resubmits if last query was a search and the
   // query did not change
-
   if(isSubscriptionMonitorDisplayed())
     return false;
-
-
   if(isValidURL(query)) {
     document.getElementById('discover-results-list').innerHTML = '';
     document.getElementById('discover-no-results').style.display='none';
@@ -530,14 +520,11 @@ function onSubscribeSubmit(event) {
     document.getElementById('discover-results-list').innerHTML = '';
     document.getElementById('discover-no-results').style.display='none';
     document.getElementById('discover-in-progress').style.display='block';
-
-    lucu.feed.discover(query, onDiscoverFeedsComplete, onDiscoverFeedsError,
-      5000);
-
+    lucu.queryGoogleFeeds(query, 5000, onDiscoverFeedsComplete,
+      onDiscoverFeedsError);
   }
   return false;
 }
-
 
 function discoverSubscribeClick(event) {
   var button = event.target;
@@ -613,7 +600,7 @@ function onDiscoverFeedsComplete(query, results) {
     // query. So we want to get rid of only certain tags, not all
     // tags.
     var snippetSpan = document.createElement('span');
-    snippetSpan.innerHTML = lucu.truncate(lucu.stripBRs(result.contentSnippet), 400);
+    snippetSpan.innerHTML = lucu.truncate(result.contentSnippet, 400);
     item.appendChild(snippetSpan);
 
     var span = document.createElement('span');
