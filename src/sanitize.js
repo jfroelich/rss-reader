@@ -348,16 +348,21 @@ function removeInvisibleElements(doc) {
 
 function isTracerImage(image) {
   var width = image.getAttribute('width');
+  var height = image.getAttribute('height');
 
   // Rather than inspect the source url against a blacklist of known
   // tracking domains, we use the simpler tactic of targeting
   // the common signature of tracer images, a 1x1 image.
 
+  // We actually also remove any 1xN or Nx1 images because they are generally
+  // not helpful (e.g. virtual borders, hrs)
+
   // The fact that an image will not be visible in the page does not prevent
   // Chrome from trying to fetch it, which is abused as a tracking device
   // So we also check for zero widths
-  return width === '0' || width === '0px' || image.width === 0
-    image.width === 1 || image.height === 1;
+  return width === '0' || width === '0px' || width === '1' ||
+    height === '1px' || height === '1' || image.width === 0 ||
+    image.width === 1 || image.height === 0 || image.height === 1;
 }
 
 function removeTracerImages(doc) {
