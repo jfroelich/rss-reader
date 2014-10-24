@@ -84,42 +84,51 @@ function initScores(doc, elements) {
 function collectTextNodeLengths(doc) {
   var map = new Map();
   var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
-  var count = 0;
-  var sum = 0;
+  var textLength = 0;
+  var totalTextLength = 0;
 
   for(var node = it.nextNode(); node; node = it.nextNode()) {
-    // NOTE: node.nodeValue is never null for text nodes, as otherwise
-    // the text node would not exist
-    // We have to trim as otherwise we end up counting whitespace
-    // and many authors use copious amounts of extraneous whitespace
+    textLength = getAdjustedTextNodeLength(node);
 
-    // NOTE: for whatever reason when run in conjunction with trimNodes
-    // in sanitize, the values are sometimes not trimmed, which is why
-    // calamine also does this. However, there is a second caveat, that
-    // this does not intelligently considered alternate whitespace
-    // expressions like &nbsp; that muck of space. However, given the
-    // above two issues, the performance is not horrible, and CRLF is
-    // is more likely to be used in raw HTML formatting and it is the
-    // CRLF that is prevalent. Excessive use of &nbsp; is rare.
-
-    count = node.nodeValue.trim().length;
-
-    // Ignore nodes without a length after trimming. This is common as
-    // CRLF text nodes are prevalent.
-    if(!count) continue;
+    // Ignore nodes without a length after trimming. This is common
+    if(!textLength) continue;
 
     // Walk upwards and store the count in each ancestor. The node currently
     // points to a text node, which itself is ignored. We only care about
     // elements. Text nodes cannot contain other text nodes so we know
     // that each parent here is an element.
     for(node = node.parentNode; node; node = node.parentNode) {
-      // Get the count for the node that already exists from prior iteration
-      sum = map.get(node) || 0;
-      map.set(node, sum + count);
+      totalTextLength = map.get(node) || 0;
+      map.set(node, totalTextLength + textLength);
     }
   }
 
   return map;
+}
+
+function getAdjustedTextNodeLength(node) {
+  // node.nodeValue is never null for text nodes, as otherwise
+  // the node would not exist, so there is no need to check
+  // if undefined
+  var value = node.nodeValue;
+
+  // NOTE: for whatever reason when run in conjunction with trimNodes
+  // in sanitize, the values are sometimes not trimmed, which is why
+  // calamine also does this. However, there is a second caveat, that
+  // this does not intelligently considered alternate whitespace
+  // expressions like &nbsp; that muck of space. However, given the
+  // above two issues, the performance is not horrible, and CRLF is
+  // is more likely to be used in raw HTML formatting and it is the
+  // CRLF that is prevalent. Excessive use of &nbsp; is rare.
+
+  // Testing, tentative, dealing with the above issue.
+  value = value.replace(/&nbsp;/ig, ' ');
+
+  // Many authors use copious amounts of extraneous whitespace. We want to
+  // avoid including this in the measure.
+  value = value.trim();
+
+  return value.length;
 }
 
 /**
@@ -162,39 +171,34 @@ function applyTextLengthBias(doc, elements, scores, options) {
 
   forEach.call(elements, function handleElement(element) {
     var cc = charCounts.get(element);
-
     // If there is no text, there will not be any anchor text,
     // so the bias will be 0, so exit early
-    if(!cc) {
-      return;
-    }
-
-    if(cc && options.SHOW_CHAR_COUNT) {
-      element.setAttribute('cc', cc);
-    }
-
+    if(!cc) return;
     var acc = anchorChars.get(element) || 0;
 
-    if(acc && options.SHOW_ANCHOR_CHAR_COUNT) {
-      element.setAttribute('acc', acc);
-    }
-
-    // This "magical" formula is an adaptation of a simple regression using
-    // some empirical weights. Nodes with large amounts of text, that is not
-    // anchor text, get the most positive bias. Adapted from "Boilerplate
-    // Detection using Shallow Text Features"
+    // Nodes with large amounts of text, that is not anchor text, get the most
+    // positive bias.
+    // Adapted from "Boilerplate Detection using Shallow Text Features"
     // http://www.l3s.de/~kohlschuetter/boilerplate
-
     var bias = (0.25 * cc) - (0.7 * acc);
 
     // Capping the maximum bias amount. Tentative.
     bias = Math.min(4000, bias);
 
+    scores.set(element, scores.get(element) + bias);
+
+    // Debugging via exposed attribute markup
+    if(cc && options.SHOW_CHAR_COUNT) {
+      element.setAttribute('cc', cc);
+    }
+
+    if(acc && options.SHOW_ANCHOR_CHAR_COUNT) {
+      element.setAttribute('acc', acc);
+    }
+
     if(bias && options.SHOW_TEXT_BIAS) {
       element.setAttribute('tb', bias);
     }
-
-    scores.set(element, scores.get(element) + bias);
   });
 }
 
@@ -249,12 +253,32 @@ function applyDownwardBias(doc, scores) {
 
 // Bias the parent of certain elements
 function applyUpwardBias(elements, scores) {
+
+  // NOTE: http://www.thestate.com/2014/10/24/3765557/udalls-effort-to-woo-women-voters.html
+  // Because we only bias immediate parent, the typical case is that a child div that is
+  // not the target div gets the highest score.
+  // But if we go up to far we end up matching too much and may as well just consider the body
+  // element to be the best element.
+  // This doesnt actually solve it because the negatives also propagate and the target does
+  // not become actual in the above test url
+  // Maybe the leading image needs to propagate to parent also?
+
   forEach.call(elements, function (element) {
-    var parent = element.parentElement;
     var bias = DESCENDANT_BIAS.get(element.localName);
     if(!bias) return;
-    var currentScore = scores.get(parent);
-    scores.set(parent, currentScore + bias);
+
+    // All elements have parents here, no need to check undefined
+    var parent = element.parentElement;
+    // All elements have a defined score, no need to check undefined
+    var parentScore = scores.get(parent);
+    scores.set(parent, parentScore + bias);
+
+    // Testing
+    //var grandParent = parent.parentElement;
+    //var grandParentScore = scores.get(grandParent);
+    //var gpBias = bias * 0.8;
+    //console.log('Increasing grand parent bias by %s', gpBias);
+    //scores.set(grandParent, grandParentScore + gpBias);
   });
 }
 
@@ -519,7 +543,7 @@ function applyAttributeBias(doc, elements, scores) {
   // then only one element should get promoted? For now it is not too
   // important.
 
-  var forEach = Array.prototype.forEach;
+  //var forEach = Array.prototype.forEach;
 
   var articleClass = doc.body.getElementsByClassName('article');
   if(articleClass.length == 1) {
@@ -747,9 +771,9 @@ var ATTRIBUTE_BIAS = new Map([
   ['community', -100],
   ['complementary', -100], // Seen as role
   ['component', -50],
-  ['contentpane', 200], // Google Plus
   ['contact', -50],
   ['content', 100],
+  ['contentpane', 200], // Google Plus
   ['contenttools', -50],
   ['contributors', -50],
   ['credit', -50],
@@ -773,7 +797,8 @@ var ATTRIBUTE_BIAS = new Map([
   ['head', -50],
   ['header', -100],
   ['heading', -50],
-  ['hentry', 150],
+  ['hentry', 150], // Common wordpress class
+  ['hnews', 200], // Common wordpress class
   ['inset', -50],
   ['insta', -100],
   ['left', -75],
@@ -893,6 +918,7 @@ var BLACKLIST_SELECTORS = [
   'a.hdn-analytics', // SF Gate
   'a[href^="http://ad.doubleclick"]', // Medium
   'a[href*="socialtwist"]', // The Jewish Press
+  'a.meta-comments', // Windows Central
   'a.more-tab', // The Oklahoman
   'a.nextPageLink', // Salt Lake Tribune
   'a.post_cmt1', // Times of India
@@ -920,6 +946,7 @@ var BLACKLIST_SELECTORS = [
   'aside#related-content-xs', // The Miami Herald
   'aside.related-side', // NY Magazine
   'aside.right-rail-module', // Time
+  'aside#secondary-rail', // Dispatch.com
   'aside#sidebar', // TechSpot
   'aside#sidebar-read-more', // USA Today
   'aside.story-right-rail', // USA Today
@@ -949,6 +976,7 @@ var BLACKLIST_SELECTORS = [
   'div#article div.share', // timeslive.co.za
   'div.article div#media', // Newsday
   'div.article_actions', // Forbes
+  'div.article-actions', // Ottawa Citizen
   'div.article_cat', // Collegian
   'div#article_comments', // Fort Worth Star Telegram
   'div.article_comments', // Voice of America
@@ -957,6 +985,8 @@ var BLACKLIST_SELECTORS = [
   'div.article-social', // Fortune Magazine
   'div.articleEmbeddedAdBox', // Mercury News
   'div.article-extra', // TechCrunch
+  'div.article-footer', // Windows Central
+  'div.article_footer', // Bloomberg
   'div.article_interaction', // Bloomberg
   'div[data-vr-zone="You May Like"]', // Voice of America
   'div.article-list', // // The Oklahoman
@@ -969,6 +999,8 @@ var BLACKLIST_SELECTORS = [
   'div.articleRelates', // Baltimore Sun
   'div.articleShareBottom', // Fox Sports
   'div.article-side', // The Times
+  'div.article_social', // Bloomberg
+  'div.article-social-actions', // Windows Central
   'div.articleSponsor', // Telegraph Co Uk
   'div.article-tags', // entrepeneur.com
   'div.article-tips', // 9News
@@ -985,6 +1017,7 @@ var BLACKLIST_SELECTORS = [
   'div.author-wrap', // Recode
   'div[data-ng-controller="bestOfMSNBCController"]', // MSNBC
   'div.bio-socials', // Atomic Object
+  'div.bizPagination', // Bizjournal
   'div.bk-socialbox', // Latin Post
   'div#blq-foot', // BBC
   'div#blog-sidebar', // Comic Book Resources
@@ -1009,6 +1042,7 @@ var BLACKLIST_SELECTORS = [
   'div.byline', // Misc, but the only way to identify Autonews
   'div.byline_links', // Bloomberg
   'div.bylineSocialButtons', // Telegraph Co Uk
+  'div.byline-wrap', // The Wall Street Journal
   'div.card-stats', // WFPL
   'div.category-nav', // Sparkfun
   'div#ce-comments', // E-Week
@@ -1060,6 +1094,7 @@ var BLACKLIST_SELECTORS = [
   'div#disqus', // ABCNews
   'div#disqusAcc', // Telegraph Co Uk
   'div#disqus_thread', // Renew Economy
+  'div.dmg-sharing', // Dispatch.com
   'div.editorsChoice', // Telegraph Co Uk
   'div.editors-picks', // The Wall Street Journal
   'div.email-optin', // Quantstart
@@ -1089,6 +1124,7 @@ var BLACKLIST_SELECTORS = [
   'div.followable_block', // Forbes
   'div.follow-us', // Fox News
   'div.footer', // KMBC
+  'div#footer', // Newsday
   'div.footerlinks', // VOA News
   'div#forgotPassword', // Joplin Globe
   'div#forgotPasswordSuccess', // Joplin Globe
@@ -1150,6 +1186,7 @@ var BLACKLIST_SELECTORS = [
   'div.main > div#rail', // Fox News
   'div#main-content > div.share', // Knight News Challenge
   'div.main_social', // Times of India
+  'div#main div#secondary', // Newsday
   'div.m-article__share-buttons', // The Verge
   'div.mashsharer-box', // internetcommerce.org
   'div.m-entry__sidebar', // The Verge
@@ -1163,6 +1200,8 @@ var BLACKLIST_SELECTORS = [
   'div.minipoll', // Topix
   'div.mla_cite', // NobelPrize.org
   'div.mmn-link', // ABC 7 News
+  'div.module__biz-pulse', // Bizjournal
+  'div.mod-video-playlist', // ESPN
   'div.more-single', // USA Today
   'div.moreweb', // Uptown Magazine
   'div#most-popular', // BBC
@@ -1201,6 +1240,7 @@ var BLACKLIST_SELECTORS = [
   'div.postcommentpopupbox', // Times of India
   'div.post-comments', // The Sun Times
   'div.post-links', // Pro Football Talk
+  'div.postmeta', // Windows Central
   'div.post-meta-category', // Comic Book Resources
   'div.post-meta-share', // Comic Book Resources
   'div.post-meta-tags', // Comic Book Resources
@@ -1232,6 +1272,7 @@ var BLACKLIST_SELECTORS = [
   'div.related-block', // auburnpub.com
   'div.related-block2', // St. Louis Today
   'div.related-column', // The Hindu
+  'div.related_content', // Bizjournal
   'div.related-items', // BBC
   'div#related_items', // Business Week
   'div#relatedlinks', // ABC News
@@ -1281,6 +1322,7 @@ var BLACKLIST_SELECTORS = [
   'div.shareArticles', // The Daily Mail
   'div.share-bar', // Gulf News
   'div#sharebarx_new', // Times of India
+  'div#share-block-bottom', // Dispatch.com
   'div.share-body-bottom', // BBC
   'div.share-btn', // Christian Times
   'div.share-buttons', // Quantstart
@@ -1342,6 +1384,7 @@ var BLACKLIST_SELECTORS = [
   'div.sps-twitter_module', // BBC
   'div.stack-talent', // NBC News (author bio)
   'div.stack-video-nojs-overlay', // NBC News
+  'div.staff_info', // Bizjournals
   'div.statements-list-container', // Topix
   'div#sticky-nav', // Christian Science Monitor
   'div.sticky-tools', // The Boston Globe
@@ -1408,6 +1451,7 @@ var BLACKLIST_SELECTORS = [
   'div.view-comments', // auburnpub.com
   'div#vuukle_env', // The Hindu
   'div.wideheadlinelist2', // Chron.com
+  'div.windows-phone-links', // Windows Central
   'div#WNCol4', // Fox (subsidary myfoxny.com)
   'div#WNStoryRelatedBox', // Fox (subsidiary myfoxal.com)
   'div.xwv-related-videos-container', // The Daily Mail
@@ -1463,6 +1507,7 @@ var BLACKLIST_SELECTORS = [
   'section.article-author', // Ars Technica
   'section.bottom_shares', // BuzzFeed
   'section.breaking_news_bar', // Bloomberg
+  'section#comment-module', // Dispatch.com
   'section#comments', // TechSpot
   'section.comments', // ABC Chicago
   'section#comments-area', // The Economist
@@ -1497,6 +1542,7 @@ var BLACKLIST_SELECTORS = [
   'table.complexListingBox', // Mercury News
   'table.storyauthor', // SysCon Media
   'ul#additionalShare', // NBC
+  'ul.articleList', // The Wall Street Journal
   'ul.article-options', // TVNZ
   'ul.article-share', // DNA India
   'ul#article-share-links', // The Boston Herald
@@ -1507,8 +1553,10 @@ var BLACKLIST_SELECTORS = [
   'ul.blox-recent-list', // Atlantic City Press
   'ul.breadcrumb', // The Miami Herald
   'ul.breadcrumbs', // Giga OM
+  'ul#bread-crumbs', // Dispatch.com
   'ul.breaking-news-stories', // ABC 7 News
   'ul.bull-list', // Joplin
+  'ul.cats', // Windows Central
   'ul.comment-list', // Sparkfun
   'ul#content_footer_menu', // Japan Times
   'ul.display-posts-listing', // Recode
@@ -1524,6 +1572,7 @@ var BLACKLIST_SELECTORS = [
   'ul.links-list', // BBC
   'ul.m-block__meta__links', // Tomahawk Nation
   'ul.menu', // The New York Times
+  'ul.mod-page-actions', // ESPN
   'ul.navbar-nav', // Noctua Software Blog
   'ul.navigation', // USA Today
   'ul.nav-tabs', // The Miami Herald
@@ -1533,6 +1582,7 @@ var BLACKLIST_SELECTORS = [
   'ul.pagination', // Politico
   'ul.project-nav', // Kickstarter
   'ul.related-links', // The Boston Globe
+  'ul.related_links', // Ottawa Citizen
   'ul.related-posts', // Concurring Opinions
   'ul.resize-nav', // Channel News Asia
   'ul.rssi-icons', // Pacific Standard Magazine
