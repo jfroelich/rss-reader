@@ -5,7 +5,6 @@
 var lucu = lucu || {};
 
 (function(exports) {
-
 'use strict';
 
 /**
@@ -354,13 +353,6 @@ exports.stripTags = function(string, replacement) {
 
   var nodeValues = textNodes.map(getNodeValue);
   return nodeValues.join(replacement);
-};
-
-/**
- * Naive <br> removal
- */
-exports.stripBRs = function(string) {
-  return string && string.replace(/<br>/gi,'');
 };
 
 /**
