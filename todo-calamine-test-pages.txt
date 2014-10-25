@@ -1,7 +1,9 @@
 Problem pages to review
 
 
-http://www.aceshowbiz.com/news/view/00076419.html
+http://uncovercalifornia.com/content/22147-gunman-suspected-carrying-out-attacks-arrested
+
+
 
 
 https://www.ted.com/talks/david_christian_big_history
@@ -10,6 +12,19 @@ http://blog.garrytan.com/travel-planning-software-the-most-common-bad
 http://www.ledger-enquirer.com/2014/10/04/3338852/jones-header-lifts-new-england.html
 http://www.bradenton.com/2014/10/09/5405576/lawmakers-approve-700-million.html
 
+
+---------------------------------------------------------------------------------------
+http://uncovercalifornia.com/content/22147-gunman-suspected-carrying-out-attacks-arrested
+- actual was only element with 'article'
+- fixed by removing 'span.printfriendly-node'
+
+- better would be to restrict class='article' to just div/article
+
+---------------------------------------------------------------------------------------
+http://www.aceshowbiz.com/news/view/00076419.html
+- no longer an issue
+- but I dont like how i solved it
+- without attribute weighting this finds the wrong stuff
 
 ---------------------------------------------------------------------------------------
 http://www.people.com/article/hillary-clinton-granddaughter-charlotte-advice
