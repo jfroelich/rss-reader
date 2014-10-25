@@ -25,7 +25,8 @@
       "/src/feed.js",
       "/src/deserialize-feed.js",
       "/src/poll.js",
-      "/src/utilities.js"
+      "/src/string-utilities.js",
+      "/src/xml.js"
     ]
   },
 

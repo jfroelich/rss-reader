@@ -68,6 +68,30 @@ lucu.FONT_FAMILIES = [
   'Roboto Regular'
 ];
 
+function fade(element, duration, delay, callback) {
+
+  if(element.style.display == 'none') {
+    element.style.display = '';
+    element.style.opacity = '0';
+  }
+
+  if(!element.style.opacity)
+    element.style.opacity = element.style.display == 'none' ? '0' : '1';
+
+  if(callback)
+    element.addEventListener('webkitTransitionEnd', ended);
+
+  // property duration function delay
+  element.style.transition = 'opacity '+duration+'s ease '+delay+'s';
+  element.style.opacity = element.style.opacity == '1' ? '0' : '1';
+
+  function ended(event) {
+    this.removeEventListener('webkitTransitionEnd', ended);
+    callback(element);
+  }
+}
+
+
 function onOptionsPageMessage(message) {
   if('displaySettingsChanged' == message.type) {
     lucu.style.onChange();
@@ -132,7 +156,7 @@ function showErrorMessage(message, fadeIn) {
     container.style.opacity = '0';
     document.body.appendChild(container);
 
-    lucu.fade(container, 1, 0);
+    fade(container, 1, 0);
 
   } else {
     container.style.display = '';
@@ -177,14 +201,15 @@ function hideSubsciptionMonitor(onComplete, fadeOut) {
   var container = document.getElementById('options_subscription_monitor');
 
   // NOTE: possible bug here, should be checking arguments.length
-  onComplete = onComplete || lucu.noop;
+  var noop = function(){};
+  onComplete = onComplete || noop;
 
   if(!container) {
     return onComplete();
   }
 
   if(fadeOut) {
-    lucu.fade(container, 2, 1, removeAndComplete);
+    fade(container, 2, 1, removeAndComplete);
   } else {
     removeAndComplete();
   }
@@ -783,7 +808,8 @@ function initNavigation() {
   menuItem.style.display = localStorage.EMBED_POLICY == 'ask' ? 'block' : 'none';
 
   var menuItems = document.querySelectorAll('#navigation-menu li');
-  lucu.forEach(menuItems, setNavigationOnClick);
+  var forEach = Array.prototype.forEach;
+  forEach.call(menuItems, setNavigationOnClick);
 }
 
 function setNavigationOnClick(menuItem) {

@@ -184,7 +184,17 @@ lucu.entry.asStorable = function(feed, remoteEntry) {
     output.title = remoteEntry.title;
   }
 
-  var publicationDate = lucu.parseDate(remoteEntry.pubdate);
+  var parseDate = function(str) {
+    if(!str) return;
+    var date = new Date(str);
+    if(Object.prototype.toString.call(date) != '[object Date]')
+      return;
+    if(!isFinite(date))
+      return;
+    return date;
+  };
+
+  var publicationDate = parseDate(remoteEntry.pubdate);
   if(publicationDate) {
     output.pubdate = publicationDate.getTime();
   }
@@ -203,6 +213,8 @@ lucu.entry.asStorable = function(feed, remoteEntry) {
 
   return output;
 };
+
+
 
 /**
  * Insert an entry into the database. Async. Calls
@@ -316,11 +328,13 @@ lucu.entry.removeByFeed = function(tx, feedId, oncomplete) {
  * Returns undefined if there was no suitable seed to input to
  * the hashCode function.
  */
-lucu.entry.generateHash = function(remoteEntry) {
-  var seed = remoteEntry.link || remoteEntry.title || remoteEntry.content;
-  if(seed) {
-    return lucu.generateHash(seed.split(''));
-  }
+lucu.entry.generateHash = function(entry) {
+  var seed = entry.link || entry.title || entry.content || '';
+  return seed.split('').reduce(function (accum, value) {
+    var firstCharCode = value.charCodeAt(0);
+    var sum = accum * 31 + firstCharCode;
+    return sum % 4294967296;
+  }, 0);
 };
 
 /**

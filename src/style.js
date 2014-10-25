@@ -12,6 +12,35 @@ var lucu = lucu || {};
 // onload/onchange
 
 
+
+/**
+ * Returns a URL string pointing to the fav icon for a url. If url is
+ * undefined/empty, the locally stored default fav icon url is returned
+ * instead.
+ *
+ * NOTE: chrome://favicons/url only works for urls present in
+ * history, so it is useless.
+ * TODO: this should be using a callback, to allow for more seamless
+ * transition to async service call.
+ * TODO: support offline. right now this returns a remote url which
+ * then causes images to not load later if offline.
+ * TODO: this is should be refactored to look more like a wrapper call
+ * to a service from which urls are fetched.
+ * TODO: does it matter whether we use http or https?
+ * TODO: does fetching involve CORS issues or need to change manifest
+ * or similar issues? If I ever want to stop using all_urls, the
+ * URLs used here would maybe need to be explicit in manifest?
+ *
+ * @param url {String} the url of a webpage for which to find the
+ * corresponding fav icon.
+ * @return {String} the url of the favicon
+ */
+lucu.getFavIconURL = function(url) {
+  return url ?
+    'http://www.google.com/s2/favicons?domain_url=' + encodeURIComponent(url) :
+    '/media/rss_icon_trans.gif';
+};
+
 lucu.style = {};
 
 lucu.style.onChange = function() {
@@ -19,7 +48,7 @@ lucu.style.onChange = function() {
   // Assume a sheet is always available
   var sheet = document.styleSheets[0];
 
-  var entryRule = lucu.findCSSRule(sheet,'div.entry');
+  var entryRule = findCSSRule(sheet,'div.entry');
   if(entryRule) {
     if(localStorage.BACKGROUND_IMAGE) {
       entryRule.style.backgroundColor = '';
@@ -38,7 +67,7 @@ lucu.style.onChange = function() {
     entryRule.style.paddingRight = entryMargin + 'px';
   }
 
-  var titleRule = lucu.findCSSRule(sheet,'div.entry a.entry-title');
+  var titleRule = findCSSRule(sheet,'div.entry a.entry-title');
   if(titleRule) {
 
     // Workaround chrome bug
@@ -56,7 +85,7 @@ lucu.style.onChange = function() {
     }
   }
 
-  var contentRule = lucu.findCSSRule(sheet, 'div.entry span.entry-content');
+  var contentRule = findCSSRule(sheet, 'div.entry span.entry-content');
   if(contentRule) {
 
     // Workaround chrome bug
@@ -198,12 +227,25 @@ lucu.style.onLoad = function() {
   }
 
   sheet.addRule('div.entry span.entry-content', s);
-
-
-  // Make images align
-  // Reset s
-  //s = '';
-  //s += 'display: block; margin-left: auto; margin-right: auto;';
-  //sheet.addRule('div.entry span.entry-content img', s);
-
 };
+
+//Finds first matching CSS rule by selectorText query.
+function findCSSRule(sheet, selectorText) {
+
+  if(!sheet) {
+    return;
+  }
+
+  var rules = sheet.cssRules;
+
+  // TODO: use a partial instead of an outer scope ref
+
+  var matches = Array.prototype.filter.call(rules, function(rule) {
+    return rule.selectorText == selectorText;
+  });
+
+  // TODO: is the length check even necessary?
+  if(matches.length) {
+    return matches[0];
+  }
+}

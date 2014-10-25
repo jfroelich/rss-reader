@@ -262,8 +262,9 @@ lucu.feed.fetch = function(params) {
   // distinct entries to fetch. Something like that at least
 
   var url = (params.url || '').trim();
-  var oncomplete = params.oncomplete || lucu.noop;
-  var onerror = params.onerror || lucu.noop;
+  var noop = function(){};
+  var oncomplete = params.oncomplete || noop;
+  var onerror = params.onerror || noop;
   var timeout = params.timeout;
   var augmentEntries = params.augmentEntries;
   var entryTimeout = params.entryTimeout;
@@ -300,9 +301,19 @@ lucu.feed.onFetch = function(onComplete, onError, shouldAugmentEntries,
 
   // Expects this instanceof XMLHttpRequest
 
-  var mime = lucu.getMimeType(this) || '';
 
-  if(lucu.isMimeFeed(mime)) {
+  var getMimeType = function(request) {
+    return request && request.getResponseHeader('Content-Type');
+  };
+
+  var isMimeFeed = function(contentType) {
+    return /(application|text)\/(atom|rdf|rss)?\+?xml/i.test(contentType);
+  };
+
+  var mime = getMimeType(this) || '';
+
+
+  if(isMimeFeed(mime)) {
     if(!this.responseXML || !this.responseXML.documentElement) {
       return onError({type: 'invalid-xml', target: this});
     }
@@ -465,10 +476,18 @@ lucu.feed.onFetchHTML = function(onComplete, onError, event) {
 
   // Expects this instanceof XMLHttpRequest
 
-  var mime = lucu.getMimeType(this);
+  var getMimeType = function(request) {
+    return request && request.getResponseHeader('Content-Type');
+  };
+
+  var mime = getMimeType(this);
+
+  var isTextHTML = function(contentType) {
+    return /text\/html/i.test(contentType);
+  };
 
   // TODO: use overrideMimeType instead of this content type check?
-  if(!lucu.isTextHTML(mime)) {
+  if(!isTextHTML(mime)) {
     return onError({type: 'invalid-content-type', target: this, contentType: mime});
   }
 
@@ -498,7 +517,9 @@ lucu.feed.onFetchHTML = function(onComplete, onError, event) {
   //var baseURI = lucu.uri.parse(this.responseURL);
   var anchors = this.responseXML.body.querySelectorAll('a');
   var resolveAnchor = lucu.feed.resolveAnchor.bind(this, this.responseURL);
-  lucu.forEach(anchors, resolveAnchor);
+
+  var forEach = Array.prototype.forEach;
+  forEach.call(anchors, resolveAnchor);
 
   // TODO: should we notify the callback of responseURL (is it
   // the url after redirects or is it the same url passed in?). i think
@@ -630,11 +651,8 @@ lucu.feed.shouldUpdateImage = function(imageElement) {
     // read in the width/height property and set the attributes?
     // but wait, we never even reach reach is width is set. so width isnt
     // set for a data uri somehow. how in the hell does that happen?
-    // is it because the element remains inert (according to how parseHTML works)?
-
     // Is it even possible to send a GET request to a data uri? Does that
     // even make sense?
-
     // NOTE: i wonder if data-uri images have naturalWidth set but not
     // width? We could set the dimensions for this case?
 

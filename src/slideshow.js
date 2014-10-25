@@ -26,6 +26,16 @@ function viewDispatchMessage(message) {
 
 chrome.runtime.onMessage.addListener(viewDispatchMessage);
 
+function formatDate(date, sep) {
+  if(!date)
+    return '';
+  var parts = [];
+  parts.push(date.getMonth() + 1);
+  parts.push(date.getDate());
+  parts.push(date.getFullYear());
+  return parts.join(sep || '');
+}
+
 function maybeAppendMoreSlides() {
 
   var unreadCount = countUnreadSlides();
@@ -242,9 +252,6 @@ function appendSlide(entry, isFirst) {
   var content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
 
-  // TODO: this should be also rewwriting urls within the content itself
-
-  // TODO: this should be using parseHTML
   var doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = entry.content;
 
@@ -263,14 +270,11 @@ function appendSlide(entry, isFirst) {
     FILTER_NAMED_AXES: true
   });
   lucu.removeJavascriptAnchors(results);
-
-  // lucu.unwrapDescendants(results);
-
+  lucu.unwrapDescendants(results);
   lucu.removeDescendantAttributes(lucu.DEFAULT_ALLOWED_ATTRIBUTES , results);
   lucu.trimElement(results);
 
   content.appendChild(results);
-
   slide.appendChild(content);
 
   var source = document.createElement('span');
@@ -286,7 +290,7 @@ function appendSlide(entry, isFirst) {
   var feedTitle = document.createElement('span');
   feedTitle.setAttribute('title',entry.feedLink);
   var entryPubDate = entry.pubdate ?
-    ' on ' + lucu.formatDate(new Date(entry.pubdate)) : '';
+    ' on ' + formatDate(new Date(entry.pubdate)) : '';
   feedTitle.textContent = (entry.feedTitle || 'Unknown feed') + ' by ' +
     (entry.author || 'Unknown author') + entryPubDate;
   source.appendChild(feedTitle);

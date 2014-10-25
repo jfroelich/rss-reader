@@ -50,10 +50,35 @@ function importOPMLFiles(files, onComplete) {
     fileCounter--;
 
     if(!fileCounter) {
-      var distinctFeeds = lucu.values(outlinesHash);
+      var distinctFeeds = arrayValues(outlinesHash);
       importFeeds(distinctFeeds, exceptions, onComplete);
     }
   });
+}
+
+
+/**
+ * Private helper function for the values function
+ * Looks up the value of the property in the object. There does
+ * not appear to be a native way of undoing the syntactic sugar
+ * so this function is necessary.
+ */
+function arrayValueAt(object, key) {
+  return object[key];
+}
+
+function arrayValues(object) {
+  return Object.keys(object).filter(
+    Object.prototype.hasOwnProperty.bind(object)).map(
+    arrayValueAt.bind(null, object));
+}
+
+// TODO: is this even in use anymore? the above function iterates over
+// files, is that right?
+function loadAsText (onFileLoad, file) {
+  var reader = new FileReader();
+  reader.onload = onFileLoad;
+  reader.readAsText(file);
 }
 
 function importFeeds(feeds, exceptions, onComplete) {
