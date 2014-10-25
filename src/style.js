@@ -6,6 +6,12 @@
 
 var lucu = lucu || {};
 // TODO: think of a better name for this
+// TODO: use iife
+// TODO: maybe use just one function for both load/change, figure that out
+// I think I just create 3 empty rules in the css file, then modify them every
+// onload/onchange
+
+
 lucu.style = {};
 
 lucu.style.onChange = function() {
@@ -70,6 +76,17 @@ lucu.style.onChange = function() {
 
     var bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
     contentRule.style.lineHeight = (bodyLineHeight / 10).toFixed(2);
+
+    // column count
+    //COLUMN_COUNT
+
+    var columnCount = localStorage.COLUMN_COUNT;
+    var VALID_COUNTS = { '1': true, '2': true, '3': true };
+    if(!(columnCount in VALID_COUNTS)) {
+      columnCount = '1';
+    }
+
+    contentRule.style.webkitColumnCount = parseInt(columnCount);
   }
 };
 
@@ -110,21 +127,13 @@ lucu.style.onLoad = function() {
   s += 'font-family:'+ (localStorage.HEADER_FONT_FAMILY || '')  +';';
   s += 'letter-spacing: -0.03em;';
   s += 'color: rgba(50, 50, 50, 0.9);';
-
   s += 'text-decoration:none;';
   s += 'display:block;';
   s += 'word-wrap: break-word;';
   s += 'text-shadow: 1px 1px 2px #cccccc;';
   s += 'text-transform: capitalize;';
-
-  //s += 'margin-bottom:12px;';
-  //s += 'margin-left:0px;';
   s += 'margin: 0px';
   s += 'padding: 0px';
-  //s += 'padding-top: 20px;';
-  //s += 'padding-left: 0px;';
-  //s += 'padding-right: 0px;';
-  //s += 'padding-bottom: 4px;';
 
   sheet.addRule('div.entry a.entry-title', s);
 
@@ -181,9 +190,20 @@ lucu.style.onLoad = function() {
   s += 'margin: 0px;';
 
   // TODO: use this if columns enabled (use 1(none), 2, 3 as options).
-  // s += '-webkit-column-count: 2;';
-  // s += '-webkit-column-gap: 30px;';
-  // s += '-webkit-column-rule:1px outset #cccccc;';
+  var columnCount = localStorage.COLUMN_COUNT;
+  if(columnCount == '2' || columnCount == '3') {
+    s += '-webkit-column-count: ' + columnCount + ';';
+    s += '-webkit-column-gap: 30px;';
+    s += '-webkit-column-rule: 1px outset #AAAAAA;';
+  }
 
   sheet.addRule('div.entry span.entry-content', s);
+
+
+  // Make images align
+  // Reset s
+  //s = '';
+  //s += 'display: block; margin-left: auto; margin-right: auto;';
+  //sheet.addRule('div.entry span.entry-content img', s);
+
 };
