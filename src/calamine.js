@@ -825,7 +825,9 @@ var ATTRIBUTE_BIAS = new Map([
   ['navigation', -100],
   ['navimg', -100],
   ['newsarticle', 500],
+  ['newscontent', 500],
   ['newsletter', -100],
+  ['next', -300],
   ['page', 50],
   ['pagetools', -50],
   ['parse', -50],
@@ -834,6 +836,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['popup', -100],
   ['post', 150],
   ['power', -100],
+  ['prev', -300],
   ['print', -50],
   ['promo', -200],
   ['promotions', -200],
@@ -890,6 +893,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['timestamp', -50],
   ['title', -50],
   ['tool', -200],
+  ['topheader', -300],
   ['toptabs', -200],
   ['twitter', -200],
   ['txt', 50],
@@ -924,6 +928,7 @@ var BLACKLIST_SELECTORS = [
   'a.post_cmt1', // Times of India
   'a.readmore-link', // Topix
   'a[rel="tag"]', // // The Oklahoman
+  'a.twitter-follow-button', // Ha'Aretz
   'a.twitter-share-button', // The Jewish Press
   'a.synved-social-button', // Viral Global News
   'a.skip-to-text-link', // NYTimes
@@ -997,6 +1002,7 @@ var BLACKLIST_SELECTORS = [
   'div.article-pagination', // UT San Diego
   'div.article-print-url', // USA Today
   'div.articleRelates', // Baltimore Sun
+  'div.articleServices', // Ha'Aretz
   'div.articleShareBottom', // Fox Sports
   'div.article-side', // The Times
   'div.article_social', // Bloomberg
@@ -1069,6 +1075,7 @@ var BLACKLIST_SELECTORS = [
   'div#comment-list', // Bangkok Post
   'div#commentslist', // The Jewish Press
   'div#comment-reply-form', // Sparkfun
+  'div#comment_sign', // Ace Showbiz
   'div#comments-tabs', // Houston News
   'div.commentThread', // kotatv
   'div.comment-tools', // Latin post
@@ -1116,7 +1123,7 @@ var BLACKLIST_SELECTORS = [
   'div.essb_links', // Beta Wired
   'div#et-sections-dropdown-list', // The Washington Post
   'div#external-source-links', // Daily Mail UK
-  'div.pane-explore-issues-topics', // MSNBC
+  'div.fblike', // Ha'Aretz
   'div.feature-btns', // USA Today (assumes video not supported)
   'div.feature_nav', // E-Week
   'div#features', // BBC News
@@ -1200,6 +1207,7 @@ var BLACKLIST_SELECTORS = [
   'div.minipoll', // Topix
   'div.mla_cite', // NobelPrize.org
   'div.mmn-link', // ABC 7 News
+  'div.mobile-button', // Ha'Aretz
   'div.module__biz-pulse', // Bizjournal
   'div.mod-video-playlist', // ESPN
   'div.more-single', // USA Today
@@ -1218,6 +1226,7 @@ var BLACKLIST_SELECTORS = [
   'div.newsletterSignupBox', // NBC
   'div.newsreel', // The Wall Street Journal
   'div.next_on_news', // BuzzFeed
+  'div#next_post', // Ace Showbiz
   'div#nlHeader', // E-Week
   'div.node-footer', // Drupal
   'div.node-metainfo', // The Boston Herald
@@ -1230,6 +1239,7 @@ var BLACKLIST_SELECTORS = [
   'div#page-nav', // Uptown Magazine
   'div.page-navigation', // Misc.
   'div.page-tools', // Channel News Asia
+  'div.pane-explore-issues-topics', // MSNBC
   'div.par-y_rail', // Vanity Fair
   'div.pb-f-page-comments', // Washington Post
   'div.pfont', // Newsday
@@ -1247,10 +1257,15 @@ var BLACKLIST_SELECTORS = [
   'div.post-meta-taxonomy-terms', // The Sun Times
   'div.post-share-buttons', // Blogspot
   'div#post_socials', // Archeology.org
+  'div.posts', // Ha'Aretz
+  'div.posts-stories', // Ha'Aretz
+  'div.post-tags', // Teleread
   'div#powered_by_livefyre_new', // Entertainment Tonight
   'div#prevnext', // hostilefork
+  'div#prev_post', // Ace Showbiz
   'div.primaryContent3', // Reuters (NOTE: I dislike this one)
   'div.printad', // North Jersey
+  'div#print-button', // Teleread
   'div.printHide', // Telegraph UK
   'div.printstory', // North Jersey
   'div#prologue', // hostilefork
@@ -1318,6 +1333,7 @@ var BLACKLIST_SELECTORS = [
   'div#section-kmt', // The Guardian
   'div.section-puffs', // Telegraph UK
   //'div.share', // CANNOT USE
+  'div#share', // Teleread
   'div.share > div.right', // auburnpub.com
   'div.shareArticles', // The Daily Mail
   'div.share-bar', // Gulf News
@@ -1325,7 +1341,10 @@ var BLACKLIST_SELECTORS = [
   'div#share-block-bottom', // Dispatch.com
   'div.share-body-bottom', // BBC
   'div.share-btn', // Christian Times
+  'div#share-bottom', // Teleread
   'div.share-buttons', // Quantstart
+  'div#shareComments', // Teleread (also, gigya)
+  'div#shareComments-bottom', // Teleread
   'div.share-count-container', // CNBC
   'div.sharedaddy', // Fortune
   'div.share-help', // BBC
@@ -1382,6 +1401,7 @@ var BLACKLIST_SELECTORS = [
   'div.spantab', // Times of India
   'div.SPOSTARBUST-Related-Posts', // RObservatory
   'div.sps-twitter_module', // BBC
+  'div.ssba', // Funker (social share button actions?)
   'div.stack-talent', // NBC News (author bio)
   'div.stack-video-nojs-overlay', // NBC News
   'div.staff_info', // Bizjournals
@@ -1473,6 +1493,7 @@ var BLACKLIST_SELECTORS = [
   'h2#page_header', // CNBC
   'h3#comments-header', // Knight News Challenge
   'h3.more-keywords', // Joplin
+  'h3.related_title', // Teleread
   'h3#scrollingArticlesHeader', // The Oklahoman
   'h4.taboolaHeaderRight', // KMBC
   'hr', // ALL
@@ -1512,6 +1533,7 @@ var BLACKLIST_SELECTORS = [
   'section.comments', // ABC Chicago
   'section#comments-area', // The Economist
   'section#follow-us', // BBC
+  'section.headband', // Bloomberg
   'section.headline-list', // The Miami Herald
   'section.headlines-list', // ABC Chicago
   'section#injected-newsletter', // GigaOM
@@ -1535,7 +1557,9 @@ var BLACKLIST_SELECTORS = [
   'section.topnews', // Christian Times
   'section.top-video', // ABC 7 News
   'section.youmaylike', // Entertainment Tonight
+  'span.comment-count-generated', // Teleread
   'span.sharetools-label', // NY Time
+  'span.moreon-tt', // Teleread
   'span.text_resizer', // Fort Worth Star Telegram
   'table.hst-articleprinter', // Stamford Advocate
   'table#commentTable', // Times of India
