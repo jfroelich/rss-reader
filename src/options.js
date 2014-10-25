@@ -718,6 +718,14 @@ function onBodyFontChange(event) {
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
 }
 
+function onColumnCountChange(event) {
+  if(event.target.value)
+    localStorage.COLUMN_COUNT = event.target.value;
+  else
+    delete localStorage.COLUMN_COUNT;
+  chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
+}
+
 function onBodyFontSizeChange(event) {
   localStorage.BODY_FONT_SIZE = parseInt(event.target.value) || 1;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
@@ -897,7 +905,7 @@ function initDisplaySettingsSection() {
     document.getElementById('select_header_font').appendChild(option);
   });
 
-  lucu.FONT_FAMILIES.forEach(function(fontFamily) {
+  lucu.FONT_FAMILIES.forEach(function (fontFamily) {
     option = document.createElement('option');
     option.value = fontFamily;
     option.selected = fontFamily == localStorage.BODY_FONT_FAMILY;
@@ -905,8 +913,22 @@ function initDisplaySettingsSection() {
     document.getElementById('select_body_font').appendChild(option);
   });
 
+
   document.getElementById('select_header_font').onchange = onHeaderFontChange;
   document.getElementById('select_body_font').onchange = onBodyFontChange;
+
+
+  [1,2,3].forEach(function (columnCount) {
+    option = document.createElement('option');
+    option.value = columnCount;
+    option.selected = columnCount == localStorage.COLUMN_COUNT;
+    option.textContent = columnCount;
+    document.getElementById('column-count').appendChild(option);
+  });
+
+  document.getElementById('column-count').onchange = onColumnCountChange;
+
+
 
   var inputChangedTimer, inputChangedDelay = 400;
 
