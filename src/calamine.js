@@ -1357,6 +1357,7 @@ var BLACKLIST_SELECTORS = [
   'div.sharrre-container', // Concurring Opinions
   'div.shortcode-post', // ABC7 News
   'div.show-related-videos', // CBS News
+  'div.sidebar', // Belfast Telegraph
   'div#sidebar', // The Appendix
   'div.sideBar', // Bangkok Post
   'div#sidebar-3', // SysCon Media
@@ -1560,6 +1561,7 @@ var BLACKLIST_SELECTORS = [
   'span.comment-count-generated', // Teleread
   'span.sharetools-label', // NY Time
   'span.moreon-tt', // Teleread
+  'span.printfriendly-node', // Uncover California
   'span.text_resizer', // Fort Worth Star Telegram
   'table.hst-articleprinter', // Stamford Advocate
   'table#commentTable', // Times of India
