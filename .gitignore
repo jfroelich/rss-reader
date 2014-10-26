@@ -2,6 +2,7 @@
 # My own local files
 #################
 notes.txt
+*.txt
 
 #################
 ## Eclipse
