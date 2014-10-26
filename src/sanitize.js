@@ -138,21 +138,7 @@ function removeEmptyElements(doc) {
 
   // Avoid removing the body element
   var stack = parents.filter(function (element) {
-    if(!element) {
-      return true;
-    }
-
-    var doc = element.ownerDocument;
-    if(!doc) {
-      return true;
-    }
-
-    var root = doc.body;
-    if(!root) {
-      return true;
-    }
-
-    return root != element;
+    return element != doc.body;
   });
 
   var parent, grandParent;

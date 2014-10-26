@@ -273,6 +273,7 @@ function appendSlide(entry, isFirst) {
   lucu.unwrapDescendants(results);
   lucu.removeDescendantAttributes(lucu.DEFAULT_ALLOWED_ATTRIBUTES , results);
   lucu.trimElement(results);
+  lucu.removeEmptyElements(doc);
 
   content.appendChild(results);
   slide.appendChild(content);
