@@ -10,11 +10,11 @@
 'use strict';
 
 var MESSAGE_HANDLER_MAP = {
-  entryRead: updateBadgeMessage,
+  entryRead: updateBadge,
   importFeedsCompleted: onImportCompleted,
   pollCompleted: onPollCompleted,
   subscribe: onSubscribe,
-  unsubscribe: updateBadgeMessage
+  unsubscribe: updateBadge
 };
 
 chrome.runtime.onMessage.addListener(function (message) {
@@ -24,8 +24,23 @@ chrome.runtime.onMessage.addListener(function (message) {
   handler(message);
 });
 
-function updateBadgeMessage(message) {
-  lucu.extension.updateBadge();
+/**
+ * Sets the badge text to a count of unread entries, which
+ * may be the value of 0.
+ */
+function updateBadge() {
+  lucu.database.open(function(db) {
+    var transactionEntry = db.transaction('entry');
+    var storeEntry = transactionEntry.objectStore('entry');
+    var indexUnread = storeEntry.index('unread');
+    var requestCount = indexUnread.count();
+    requestCount.onsuccess = function() {
+      // For the moment this intentionally does not set an upper bound
+      // (if count > 999 then '999+' else count.tostring)
+      var count = this.result || 0;
+      chrome.browserAction.setBadgeText({text: count.toString()});
+    };
+  });
 }
 
 function onImportCompleted(message) {
@@ -33,20 +48,20 @@ function onImportCompleted(message) {
   notification += (message.feedsProcessed || 0) + ' feeds imported with ';
   notification += message.exceptions ? message.exceptions.length : 0;
   notification += ' error(s).';
-  lucu.extension.showNotification(notification);
+  showNotification(notification);
 }
 
 function onSubscribe(message) {
-  lucu.extension.updateBadge();
+  updateBadge();
   if(!message.feed) return;
   var title = message.feed.title || message.feed.url || 'Untitled';
-  lucu.extension.showNotification('Subscribed to ' + title);
+  showNotification('Subscribed to ' + title);
 }
 
 function onPollCompleted(message) {
-  lucu.extension.updateBadge();
+  updateBadge();
   if(!message.entriesAdded) return;
-  lucu.extension.showNotification(message.entriesAdded + ' new articles added.');
+  showNotification(message.entriesAdded + ' new articles added.');
 }
 
 var VIEW_URL = chrome.extension.getURL('slides.html');
@@ -85,7 +100,7 @@ chrome.browserAction.onClicked.addListener(function () {
 // the background page is loaded or reloaded, enabled/disabled?
 chrome.runtime.onInstalled.addListener(function () {
   // This also triggers database creation
-  lucu.extension.updateBadge();
+  updateBadge();
 });
 
 chrome.alarms.onAlarm.addListener(function (alarm) {
@@ -140,7 +155,8 @@ function startArchive() {
       var entry = cursor.value;
       var created = entry.created;
       if(!created) {
-        console.debug('Unknown date created for entry %s, unable to archive', JSON.stringify(entry));
+        console.debug('Unknown date created for entry %s, unable to archive',
+          JSON.stringify(entry));
         processed++;
         return cursor.continue();
       }
@@ -186,9 +202,26 @@ function startArchive() {
       cursor.continue();
     };
 
-    transaction.oncomplete = function() {
+    transaction.oncomplete = function () {
       console.debug('Archived %s entries', processed);
     };
+  });
+}
+
+function showNotification(message) {
+  chrome.permissions.contains({permissions: ['notifications']},
+    function (permitted) {
+      if(!permitted)
+        return;
+      var noteId = 'lucubrate';
+      var cb = function(){};
+      var title = chrome.runtime.getManifest().name || 'Untitled';
+      var note = {};
+      note.type = 'basic';
+      note.title = title;
+      note.iconUrl = '/media/rss_icon_trans.gif';
+      note.message = message;
+      chrome.notifications.create(noteId, note, cb);
   });
 }
 

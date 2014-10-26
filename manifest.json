@@ -18,7 +18,6 @@
     "persistent": false,
     "scripts": [
       "/lib/medialize/URI.js",
-      "/src/extension.js",
       "/src/background.js",
       "/src/database.js",
       "/src/entry.js",

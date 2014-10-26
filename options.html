@@ -10,7 +10,6 @@
 <script type="text/javascript" src="/src/database.js"></script>
 <script type="text/javascript" src="/src/discover-feeds.js"></script>
 <script type="text/javascript" src="/src/entry.js"></script>
-<script type="text/javascript" src="/src/extension.js"></script>
 <script type="text/javascript" src="/src/feed.js"></script>
 <script type="text/javascript" src="/src/deserialize-feed.js"></script>
 <script type="text/javascript" src="/src/opml.js"></script>
@@ -297,42 +296,34 @@
 		<td><input type="range" id="entry-margin" min="5" max="300" step="1"></td>
 	</tr>
 	<tr>
-		<td class="option-text">Background image:</td>
-		<td><select id="entry-background-image"></select></td>
+		<td class="option-text">Background:</td>
+		<td valign="top">
+			<select id="entry-background-image"></select>
+			<input type="color" id="entry-background-color" placeholder="#ffffff">
+		</td>
 	</tr>
 	<tr>
-		<td class="option-text">Background color:</td>
-		<td><input type="color" id="entry-background-color" placeholder="#ffffff"></td>
+		<td class="option-text">Header:</td>
+		<td>
+			<select id="select_header_font" style="margin-top:0px;padding-top:0px"></select>
+			<input type="range" id="header-font-size" min="1" max="50" step="1">
+		</td>
 	</tr>
 	<tr>
-		<td class="option-text">Header Font:</td>
-		<td><select id="select_header_font"></select></td>
+		<td class="option-text">Text:</td>
+		<td>
+			<select id="select_body_font"></select>
+			<input type="range" id="body-font-size" min="1" max="50" step="1">
+			<input type="checkbox" id="justify-text" style="width:20px;"> Justify
+		</td>
 	</tr>
 	<tr>
-		<td class="option-text">Header Font Size:</td>
-		<td><input type="range" id="header-font-size" min="1" max="50" step="1"></td>
-	</tr>
-	<tr>
-		<td class="option-text">Body Font:</td>
-		<td><select id="select_body_font"></select></td>
-	</tr>
-	<tr>
-		<td class="option-text">Body Font Size:</td>
-		<td><input type="range" id="body-font-size" min="1" max="50" step="1"></td>
-	</tr>
-	<tr>
-		<td class="option-text">Body Line Height:</td>
+		<td class="option-text">Line Height:</td>
 		<td><input type="range" id="body-line-height" min="0" max="50" step="1"></td>
 	</tr>
 	<tr>
-		<td class="option-text">Number of Columns:</td>
+		<td class="option-text">Columns:</td>
 		<td><select id="column-count"></select></td>
-	</tr>
-	<tr>
-		<td class="option-text">
-		<input type="checkbox" id="justify-text" style="width:20px;">
-		Justify text
-		</td>
 	</tr>
 	</table>
 </div>
