@@ -21,7 +21,7 @@ lucu.poll.start = function() {
     return;
   }
 
-  if(!navigator.onLine) {
+  if(window && window.navigator && !window.navigator.onLine) {
     console.debug('Cannot poll while offline');
     return;
   }
@@ -129,5 +129,6 @@ lucu.poll.updateFeed = function(localFeed, remoteFeed, onComplete, db) {
 };
 
 lucu.poll.unlock = function() {
-  delete localStorage.POLL_ACTIVE;
+  //delete localStorage.POLL_ACTIVE;
+  lucu.poll.active = false;
 };
