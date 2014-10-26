@@ -137,7 +137,6 @@ lucu.rewriteURL = function(string) {
   return string;
 };
 
-
 /**
  * Create an object that is ready for storage in
  * the entries object store in indexedDB.
