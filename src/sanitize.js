@@ -423,15 +423,10 @@ function trimElement(element) {
 
 function trimNodes(doc) {
 
-  // Descendants of these elements are sensitive to whitespace
-  var WS_IMP_DESC = 'code, code *, pre, pre *, ruby, ruby *, textarea,' +
+  var WHITESPACE_SENSITIVE = 'code, code *, pre, pre *, ruby, ruby *, textarea,' +
     ' textarea *, xmp, xmp *';
-
-  var elements = doc.body.querySelectorAll(WS_IMP_DESC);
-
-  // TODO: why is this using WeakSet???
-
-  var preformatted = new WeakSet(slice.call(elements));
+  var elements = doc.body.querySelectorAll(WHITESPACE_SENSITIVE);
+  var preformatted = new Set(slice.call(elements));
 
   var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
   var node;

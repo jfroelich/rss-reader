@@ -170,13 +170,10 @@ function startArchive() {
 
       var age = now - created;
       var shouldArchive = age > expiresMs;
-
       // NOTE: in an old version this used to avoid archiving unread
       // articles. For now this is ignored.
-
       // NOTE: this used to keep feed id so that unsubscribe
-      // would delete archived articles as well. For now I am keeping
-      // them around indefinitely. This requires some more thought.
+      // would delete archived articles as well
       if(shouldArchive) {
         delete entry.content;
         delete entry.feed;
@@ -185,17 +182,9 @@ function startArchive() {
         delete entry.pubdate;
         delete entry.readDate;
         delete entry.title;
-
-        // keep entry.id
-        // keep entry.link
-        // keep entry.hash
-        // keep entry.created
-        // add in a new date
         entry.archiveDate = now;
-        console.debug('Archiving entry with id %s', entry.id);
+        // console.debug('Archiving %s', entry.id);
         cursor.update(entry);
-      } else {
-        // console.debug('Article too recent to archive %s', entry.id);
       }
 
       processed++;
@@ -211,17 +200,13 @@ function startArchive() {
 function showNotification(message) {
   chrome.permissions.contains({permissions: ['notifications']},
     function (permitted) {
-      if(!permitted)
-        return;
-      var noteId = 'lucubrate';
-      var cb = function(){};
-      var title = chrome.runtime.getManifest().name || 'Untitled';
-      var note = {};
-      note.type = 'basic';
-      note.title = title;
-      note.iconUrl = '/media/rss_icon_trans.gif';
-      note.message = message;
-      chrome.notifications.create(noteId, note, cb);
+      if(!permitted) return;
+      chrome.notifications.create('lucubrate', {
+        type: 'basic',
+        title: chrome.runtime.getManifest().name,
+        iconUrl: '/media/rss_icon_trans.gif',
+        message: message
+      }, function(){});
   });
 }
 
