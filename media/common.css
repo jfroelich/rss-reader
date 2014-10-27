@@ -14,12 +14,12 @@ div.entry img {
   max-width:100%;
 }
 
-div.entry p {
+/*div.entry p {
   margin-top: 0px;
   margin-bottom: 0px;
   padding-top: 2px;
   padding-bottom: 2px;
-}
+}*/
 
 div.entry span.entry-content img {
   display: block;
