@@ -3,69 +3,65 @@
 // that can be found in the LICENSE file
 
 /**
- * Loaded exclusively in the extension's background page. Does not
- * export any functions
+ * Background page module
  */
 (function(exports) {
 'use strict';
 
-var MESSAGE_HANDLER_MAP = {
-  entryRead: updateBadge,
-  importFeedsCompleted: onImportCompleted,
-  pollCompleted: onPollCompleted,
-  subscribe: onSubscribe,
-  unsubscribe: updateBadge
-};
-
+/**
+ * Handle messages send to the background page
+ */
 chrome.runtime.onMessage.addListener(function (message) {
-  if(!message || !message.type) return;
-  var handler = MESSAGE_HANDLER_MAP[message.type];
-  if(!handler) return;
-  handler(message);
+
+  if(!message) {
+    console.error('Received undefined message');
+    return;
+  }
+
+  switch(message.type) {
+    case 'entryRead':
+      updateBadge();
+      break;
+    case 'importFeedsCompleted':
+      var notification = (message.feedsAdded || 0) + ' of ';
+      notification += (message.feedsProcessed || 0) + ' feeds imported with ';
+      notification += message.exceptions ? message.exceptions.length : 0;
+      notification += ' error(s).';
+      showNotification(notification);
+      break;
+    case 'pollCompleted':
+      updateBadge();
+      if(!message.entriesAdded) return;
+      showNotification(message.entriesAdded + ' new articles added.');
+      break;
+    case 'subscribe':
+      updateBadge();
+      if(!message.feed) return;
+      var title = message.feed.title || message.feed.url || 'Untitled';
+      showNotification('Subscribed to ' + title);
+      break;
+    case 'unsubscribe':
+      updateBadge();
+      break;
+    default:
+      console.warn('Unhandled message %o', message);
+      break;
+  };
 });
 
 /**
- * Sets the badge text to a count of unread entries, which
- * may be the value of 0.
+ * Sets the badge text to a count of unread entries
  */
 function updateBadge() {
   lucu.database.open(function(db) {
-    var transactionEntry = db.transaction('entry');
-    var storeEntry = transactionEntry.objectStore('entry');
-    var indexUnread = storeEntry.index('unread');
-    var requestCount = indexUnread.count();
-    requestCount.onsuccess = function() {
-      // For the moment this intentionally does not set an upper bound
-      // (if count > 999 then '999+' else count.tostring)
+    var index = db.transaction('entry').objectStore('entry').index('unread');
+    index.count().onsuccess = function() {
+      // TODO: (if count > 999 then '999+' else count.tostring)
       var count = this.result || 0;
       chrome.browserAction.setBadgeText({text: count.toString()});
     };
   });
 }
-
-function onImportCompleted(message) {
-  var notification = (message.feedsAdded || 0) + ' of ';
-  notification += (message.feedsProcessed || 0) + ' feeds imported with ';
-  notification += message.exceptions ? message.exceptions.length : 0;
-  notification += ' error(s).';
-  showNotification(notification);
-}
-
-function onSubscribe(message) {
-  updateBadge();
-  if(!message.feed) return;
-  var title = message.feed.title || message.feed.url || 'Untitled';
-  showNotification('Subscribed to ' + title);
-}
-
-function onPollCompleted(message) {
-  updateBadge();
-  if(!message.entriesAdded) return;
-  showNotification(message.entriesAdded + ' new articles added.');
-}
-
-var VIEW_URL = chrome.extension.getURL('slides.html');
-var NEW_TAB_URL = 'chrome://newtab/';
 
 /**
  * Called when the extension's icon button is clicked in Chrome's toolbar.
@@ -80,30 +76,39 @@ var NEW_TAB_URL = 'chrome://newtab/';
  * NOTE: the calls to chrome.tabs here do not require the tabs permission
  */
 chrome.browserAction.onClicked.addListener(function () {
-  chrome.tabs.query({'url': VIEW_URL}, function (tabs) {
+  var VIEW_URL = chrome.extension.getURL('slides.html');
+  var NEW_TAB_URL = 'chrome://newtab/';
+  var query = chrome.tabs.query;
+  var update = chrome.tabs.update;
+  var create = chrome.tabs.create;
+
+  query({'url': VIEW_URL}, function (tabs) {
     if(tabs.length) {
-      chrome.tabs.update(tabs[0].id, {active:true});
-    } else {
-      chrome.tabs.query({url: NEW_TAB_URL}, function (tabs) {
-        if(tabs.length) {
-          // Replace the new tab
-          chrome.tabs.update(tabs[0].id, {active:true, url: VIEW_URL});
-        } else {
-          chrome.tabs.create({url: VIEW_URL});
-        }
-      });
+      // Switch to an existing tab
+      update(tabs[0].id, {active:true});
+      return;
     }
+
+    query({url: NEW_TAB_URL}, function (tabs) {
+      if(tabs.length) {
+        // Switch to and replace the New Tab tab
+        update(tabs[0].id, {active:true, url: VIEW_URL});
+        return;
+      }
+      // Create and switch to a new tab
+      create({url: VIEW_URL});
+    });
   });
 });
 
 // TODO: is there a way to avoid this being called every time
 // the background page is loaded or reloaded, enabled/disabled?
-chrome.runtime.onInstalled.addListener(function () {
+chrome.runtime.onInstalled.addListener(function onInstall() {
   // This also triggers database creation
   updateBadge();
 });
 
-chrome.alarms.onAlarm.addListener(function (alarm) {
+chrome.alarms.onAlarm.addListener(function onAlarm(alarm) {
   if('poll' == alarm.name) {
     startPoll();
   } else if('archive' == alarm.name) {
@@ -115,21 +120,36 @@ chrome.alarms.onAlarm.addListener(function (alarm) {
 chrome.alarms.create('poll', {periodInMinutes: 20});
 chrome.alarms.create('archive', {periodInMinutes: 24 * 60});
 
+/**
+ * Starts polling
+ */
 function startPoll() {
   chrome.permissions.contains({permissions: ['idle']}, function (permitted) {
-    if(permitted) {
-      var INACTIVITY_INTERVAL = 60 * 5;
-      chrome.idle.queryState(INACTIVITY_INTERVAL, function (idleState) {
-        if(idleState == 'locked' || idleState == 'idle') {
-          lucu.poll.start();
-        }
-      });
-    } else {
+
+    // If we cannot check idle state just start
+    if(!permitted) {
       lucu.poll.start();
+      return;
     }
+
+    // Check idle state and only poll if idle (or locked screen)
+    var INACTIVITY_INTERVAL = 60 * 5;
+    chrome.idle.queryState(INACTIVITY_INTERVAL, function (idleState) {
+      if(idleState == 'locked' || idleState == 'idle') {
+        lucu.poll.start();
+      }
+    });
+
   });
 }
 
+/**
+ * Iterate over entries in storage and archive certain entries
+ * if conditions are met.
+ *
+ * TODO: this function really belongs somewhere else, in the same
+ * sense that lucu.poll is a separate module
+ */
 function startArchive() {
   lucu.database.open(function(db) {
     var transaction = db.transaction('entry','readwrite');
