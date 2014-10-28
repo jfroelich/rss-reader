@@ -1,0 +1,736 @@
+a.aggregated-rel-link { display: none;} /*  The Oklahoman */
+a.carousel-control { display: none;} /*  The Miami Herald*/
+a.commentLink { display: none;} /*  Salt Lake Tribune*/
+a.comments { display: none;} /*  Good Magazine*/
+a.dsq-brlink { display: none;} /*  USA Today*/
+a.hdn-analytics { display: none;} /*  SF Gate*/
+a[href^="http://ad.doubleclick"] { display: none;} /*  Medium*/
+a[href*="socialtwist"] { display: none;} /*  The Jewish Press*/
+a.meta-comments { display: none;} /*  Windows Central*/
+a.more-tab { display: none;} /*  The Oklahoman*/
+a.nextPageLink { display: none;} /*  Salt Lake Tribune*/
+a.post_cmt1 { display: none;} /*  Times of India*/
+a.readmore-link { display: none;} /*  Topix*/
+a[rel="tag"] { display: none;} /*  // The Oklahoman*/
+a.twitter-follow-button { display: none;} /*  HaAretz*/
+a.twitter-share-button { display: none;} /*  The Jewish Press*/
+a.synved-social-button { display: none;} /*  Viral Global News*/
+a.skip-to-text-link { display: none;} /*  NYTimes*/
+article div.extra { display: none;} /*  Washington Post*/
+article ul.listing { display: none;} /*  Good Magazine*/
+aside.itemAsideInfo { display: none;} /*  The Guardian*/
+aside#asset-related { display: none;} /*  St. Louis Today*/
+aside#bpage_ad_bottom { display: none;} /*  BuzzFeed*/
+aside[data-panelmod-type="relatedContent"] { display: none;} /*  LA Times*/
+aside.callout { display: none;} /*  The Atlantic*/
+aside.entry-sidebar { display: none;} /*  The Globe*/
+aside.livefyre-comments { display: none;} /*  Vanity Fair*/
+aside.meta_extras { display: none;} /*  Japan Times*/
+aside.marginalia { display: none;} /*  NY Times*/
+aside.mashsb-container { display: none;} /*  cryptocoinsnews.com*/
+aside#post_launch_success { display: none;} /*  BuzzFeed*/
+aside.prev-next { display: none;} /*  The Economist*/
+aside.related-articles { display: none;} /*  BBC*/
+aside.related-content { display: none;} /*  // The Oklahoman*/
+aside#related-content-xs { display: none;} /*  The Miami Herald*/
+aside.related-side { display: none;} /*  NY Magazine*/
+aside.right-rail-module { display: none;} /*  Time*/
+aside#secondary-rail { display: none;} /*  Dispatch.com*/
+aside#sidebar { display: none;} /*  TechSpot*/
+aside#sidebar-read-more { display: none;} /*  USA Today*/
+aside#story-related-topics { display: none;} /*  AV Web*/
+aside.story-right-rail { display: none;} /*  USA Today*/
+aside.tools { display: none;} /*  The Boston Globe */
+aside.vestpocket { display: none;} /*  Forbes
+aside.views-tags { display: none;} /*  BuzzFeed
+aside.widget-area { display: none;} /*  thedomains.com
+div#a-all-related { display: none;} /*  New York Daily News
+div.about-the-author { display: none;} /*  SysCon Media
+div.actions-panel { display: none;} /*  SysCon Media
+div.ad { display: none;} /*  Reuters
+div.adAlone300 { display: none;} /*  The Daily Herald
+div.adarea { display: none;} /*  Telegraph
+div.ad-cluster-container { display: none;} /*  TechCrunch
+div.ad-container { display: none;} /*  Fox News
+div.addthis_toolbox { display: none;} /*  NobelPrize.org
+div.adCentred { display: none;} /*  The Sydney Morning Herald
+div.adjacent-entry-pagination { display: none;} /*  thedomains.com
+div#addshare { display: none;} /*  The Hindu
+div.admpu { display: none;} /*  Telegraph UK
+div.adsense { display: none;} /*  Renew Economy
+div.ad-unit { display: none;} /*  TechCrunch
+div.advertisementPanel { display: none;} /*  TV New Zealand
+div.am-ctrls { display: none;} /*  Investors.com
+div[aria-label="+1 this post"] { display: none;} /*  Google Plus
+div.artbody > div.share { display: none;} /*  China Topix
+div.art_tabbed_nav { display: none;} /*  The Wall Street Journal (blog)
+div#article div.share { display: none;} /*  timeslive.co.za
+div.article div#media { display: none;} /*  Newsday
+div.article_actions { display: none;} /*  Forbes
+div.article-actions { display: none;} /*  Ottawa Citizen
+div.article_cat { display: none;} /*  Collegian
+div#article_comments { display: none;} /*  Fort Worth Star Telegram
+div.article_comments { display: none;} /*  Voice of America
+div.articleComments { display: none;} /*  Reuters
+div#articleIconLinksContainer { display: none;} /*  The Daily Mail
+div.article-social { display: none;} /*  Fortune Magazine
+div.articleEmbeddedAdBox { display: none;} /*  Mercury News
+div.article-extra { display: none;} /*  TechCrunch
+div.article-footer { display: none;} /*  Windows Central
+div.article_footer { display: none;} /*  Bloomberg
+div.article_interaction { display: none;} /*  Bloomberg
+div[data-vr-zone="You May Like"] { display: none;} /*  Voice of America
+div.article-list { display: none;} /*  // The Oklahoman
+div#articleKeywords { display: none;} /*  The Hindu
+div.articleMeta { display: none;} /*  Tampa Bay
+div.articleOptions { display: none;} /*  Mercury News
+div#articlepagerreport { display: none;} /*  Chron.com
+div.article-pagination { display: none;} /*  UT San Diego
+div.article-print-url { display: none;} /*  USA Today
+div.articleRelates { display: none;} /*  Baltimore Sun
+div.articleServices { display: none;} /*  HaAretz
+div.articleShareBottom { display: none;} /*  Fox Sports
+div.article-side { display: none;} /*  The Times
+div.article_social { display: none;} /*  Bloomberg
+div.article-social-actions { display: none;} /*  Windows Central
+div.articleSponsor { display: none;} /*  Telegraph Co Uk
+div.article-tags { display: none;} /*  entrepeneur.com
+div.article-tips { display: none;} /*  9News
+div.articleTools { display: none;} /*  Reuters
+div.article-tools { display: none;} /*  The Atlantic
+div.article-utilities { display: none;} /*  Sports Illustrated
+div.articleViewerGroup { display: none;} /*  Mercury News
+div.artOtherNews { display: none;} /*  Investors.com
+div.assetBuddy { display: none;} /*  Reuters
+div.at-con { display: none;} /*  Design & Trend
+div.at-next { display: none;} /*  Design & Trend
+div.at-tag { display: none;} /*  Design & Trend
+div.at-tool { display: none;} /*  Design & Trend
+div.author_topics_holder { display: none;} /*  The Irish Times
+div.author-wrap { display: none;} /*  Recode
+div[data-ng-controller="bestOfMSNBCController"] { display: none;} /*  MSNBC
+div.bio-socials { display: none;} /*  Atomic Object
+div.bizPagination { display: none;} /*  Bizjournal
+div.bk-socialbox { display: none;} /*  Latin Post
+div#blq-foot { display: none;} /*  BBC
+div#blog-sidebar { display: none;} /*  Comic Book Resources
+div#blox-breadcrumbs { display: none;} /*  Joplin
+div#blox-comments { display: none;} /*  National Standard
+div#blox-footer { display: none;} /*  Joplin
+div#blox-header { display: none;} /*  Joplin
+div#blox-right-col { display: none;} /*  Joplin
+di#blox-breadcrumbs { display: none;} /*  Joplin
+div#bottom-rail { display: none;} /*  Vanity Fair
+div.bookmarkify { display: none;} /*  Kamens Blog
+div.bpcolumnsContainer { display: none;} /*  Western Journalism
+div#breadcrumb { display: none;} /*  Autonews
+div.breadcrumb_container { display: none;} /*  NBC News
+div#breadcrumbs { display: none;} /*  E-Week
+div.breadcrumbs { display: none;} /*  Scientific American
+div.browse { display: none;} /*  ABC News
+div.bt-links { display: none;} /*  Learning and Finance
+div[bucket-id="most_popular_01"] { display: none;} /*  Telegraph/Reuters
+div[bucket-id="secondary_navigation_01"] { display: none;} /*  Telegraph/Reuters
+div.buying-option { display: none;} /*  Times of India
+div.byline { display: none;} /*  Misc, but the only way to identify Autonews
+div.byline_links { display: none;} /*  Bloomberg
+div.bylineSocialButtons { display: none;} /*  Telegraph Co Uk
+div.byline-wrap { display: none;} /*  The Wall Street Journal
+div.card-stats { display: none;} /*  WFPL
+div.category-nav { display: none;} /*  Sparkfun
+div#ce-comments { display: none;} /*  E-Week
+div.cnn_strybtntools { display: none;} /*  CNN
+div.cnn_strylftcntnt { display: none;} /*  CNN
+div.cnn_strycntntrgt { display: none;} /*  CNN
+div.cn_reactions_comments { display: none;} /*  Vanity Fair
+div#commentary { display: none;} /*  Autonews
+div#comment_bar { display: none;} /*  Autonews
+div#commentBar { display: none;} /*  Newsday
+div.comment_bug { display: none;} /*  Forbes
+div#comment-container { display: none;} /*  auburnpub.com
+div#comments { display: none;} /*  CBS News
+div.comments { display: none;} /*  TechCrunch
+div#commentblock { display: none;} /*  Learning and Finance
+div.commentCount { display: none;} /*  Reuters
+div.comment-count { display: none;} /*  auburnpub.com
+div.comment-count-block,// TechSpot
+div.comment_count_affix { display: none;} /*  // The Oklahoman
+div.commentDisclaimer { display: none;} /*  Reuters
+div.comment-holder { display: none;} /*  entrepeneur.com
+div#commenting { display: none;} /*  Fox News
+div#commentLink { display: none;} /*  // The Oklahoman
+div#comment-list { display: none;} /*  Bangkok Post
+div#commentslist { display: none;} /*  The Jewish Press
+div#comment-reply-form { display: none;} /*  Sparkfun
+div#comment_sign { display: none;} /*  Ace Showbiz
+div#comments-tabs { display: none;} /*  Houston News
+div.commentThread { display: none;} /*  kotatv
+div.comment-tools { display: none;} /*  Latin post
+div.comment_links { display: none;} /*  Forbes
+div.comments-overall { display: none;} /*  Aeon Magazine
+div.comment-policy-box { display: none;} /*  thedomains.com
+div#commentPromo { display: none;} /*  Salt Lake Tribune
+div.commentWrap { display: none;} /*  Corcodillos
+div.component-share { display: none;} /*  Sports Illustrated
+div#content-below { display: none;} /*  SysCon Media
+div.content_column2_2 { display: none;} /*  VOA News
+div.content-tools { display: none;} /*  Time Magazine
+div.contribution-stats-box { display: none;} /*  Knight News Challenge
+div.control-bar { display: none;} /*  SF Gate
+div.controls { display: none;} /*  NY Daily News
+div.correspondant { display: none;} /*  CBS News
+div.css-sharing { display: none;} /*  Topix
+div[data-module-zone="articletools_bottom"] { display: none;} /*  The Wall Street Journal
+div[data-ng-controller="moreLikeThisController"] { display: none;} /*  MSNBC
+div.dfad { display: none;} /*  thedomains.com
+div.dfinder_cntr { display: none;} /*  Hewlett Packard News
+div#dfp-ad-mosad_1-wrapper { display: none;} /*  The Hill
+div#digital-editions { display: none;} /*  The New Yorker
+div#disqus { display: none;} /*  ABCNews
+div#disqusAcc { display: none;} /*  Telegraph Co Uk
+div#disqus_thread { display: none;} /*  Renew Economy
+div.dmg-sharing { display: none;} /*  Dispatch.com
+div.editorsChoice { display: none;} /*  Telegraph Co Uk
+div.editors-picks { display: none;} /*  The Wall Street Journal
+div.email-optin { display: none;} /*  Quantstart
+div#email-sign-up { display: none;} /*  BBC
+div.email-signup { display: none;} /*  entrepeneur.com
+div.encrypted-content { display: none;} /*  Atlantic City Press
+div.endslate { display: none;} /*  WFMY News (final slide element)
+div.entity_popular_posts { display: none;} /*  Forbes
+div.entity_preview { display: none;} /*  Forbes
+div.entity_recent_posts { display: none;} /*  Forbes
+div.entry-listicles { display: none;} /*  CBS
+div.entry-meta { display: none;} /*  Re-code (uncertain about this one)
+div.entry-related { display: none;} /*  The Globe
+div#entry-tags { display: none;} /*  hostilefork
+div.entry-tags { display: none;} /*  Wired.com
+div.entry-toolbar { display: none;} /*  CBS
+div.entry-unrelated { display: none;} /*  The New Yorker
+div#epilogue { display: none;} /*  hostilefork
+div.essb_links { display: none;} /*  Beta Wired
+div#et-sections-dropdown-list { display: none;} /*  The Washington Post
+div#external-source-links { display: none;} /*  Daily Mail UK
+div.fblike { display: none;} /*  HaAretz
+div.feature-btns { display: none;} /*  USA Today (assumes video not supported)
+div.feature_nav { display: none;} /*  E-Week
+div#features { display: none;} /*  BBC News
+div.field-name-field-tags { display: none;} /*  WFPL
+div.first-tier-social-tools { display: none;} /*  Time Magazine
+div.followable_block { display: none;} /*  Forbes
+div.follow-us { display: none;} /*  Fox News
+div.footer { display: none;} /*  KMBC
+div#footer { display: none;} /*  Newsday
+div.footerlinks { display: none;} /*  VOA News
+div#forgotPassword { display: none;} /*  Joplin Globe
+div#forgotPasswordSuccess { display: none;} /*  Joplin Globe
+div.gallery-sidebar-ad { display: none;} /*  USA Today
+div.gallery-overlay-outter { display: none;} /*  SF Gate
+div#gkSocialAPI { display: none;} /*  The Guardian
+div.googleads { display: none;} /*  Telegraph UK
+div.group-link-categories { display: none;} /*  Symmetry Magazine
+div.group-links { display: none;} /*  Symmetry Magazine
+div.gsharebar { display: none;} /*  entrepeneur.com
+div.hashtags { display: none;} /*  Good Magazine
+div.headlines { display: none;} /*  // The Oklahoman
+div.headlines-images { display: none;} /*  ABC 7 News
+div.hide-for-print { display: none;} /*  NobelPrize.org
+div.hst-articlefooter { display: none;} /*  Chron.com
+div.hst-articletools { display: none;} /*  Chron.com
+div.hst-blockstates { display: none;} /*  Stamford Advocate (may be problematic)
+div.hst-featurepromo { display: none;} /*  Seattle Pi
+div.hst-freeform { display: none;} /*  Chron.com
+div.hst-headlinelist { display: none;} /*  Chron.com
+div.hst-hottopics { display: none;} /*  Chron.com
+div.hst-modularlist { display: none;} /*  Chron.com
+div.hst-morestories { display: none;} /*  Chron.com
+div.hst-mostpopular { display: none;} /*  Seattle Pi
+div.hst-newsgallery { display: none;} /*  Stamford Advocate
+div.hst-othernews { display: none;} /*  Stamford Advocate
+div.hst-relatedlist { display: none;} /*  Seattle Pi
+div.hst-simplelist { display: none;} /*  Chron.com
+div.hst-siteheader { display: none;} /*  Seattle Pi
+div.hst-slideshowpromo { display: none;} /*  Seattle Pi
+div.ib-collection { display: none;} /*  KMBC
+div.icons { display: none;} /*  Brecorder
+div#infinite-list { display: none;} /*  The Daily Mail
+div#inlineAdCont { display: none;} /*  Salt Lake Tribune
+div.inline-sharebar { display: none;} /*  CBS News
+div.inline-share-tools-asset { display: none;} /*  USA Today
+div.inline-related-links { display: none;} /*  Gourmet.com
+div.inner-related-article { display: none;} /*  Recode
+div#inset_groups { display: none;} /*  Gizmodo
+div.interactive-sponsor { display: none;} /*  USA Today
+div.issues-topics { display: none;} /*  MSNBC
+div[itemprop="comment"],// KMBC
+div#jp-relatedposts { display: none;} /*  IT Governance USA
+div#latest-by-section { display: none;} /*  Houston News
+div.LayoutSocialTools { display: none;} /*  ecdc.europa.eu
+div.LayoutTools { display: none;} /*  ecdc.europa.eu
+div#leader { display: none;} /*  hostilefork
+div.lhs_relatednews { display: none;} /*  NDTV
+div.like-share { display: none;} /*  Bangkok Post
+div.likeus { display: none;} /*  Good Magazine
+div.linearCalendarWrapper { display: none;} /*  ABC News
+div.link-list-inline { display: none;} /*  Las Vegas Sun
+div#livefyre-wrapper { display: none;} /*  The Wall Street Journal
+div.ljcmt_full { display: none;} /*  LiveJournal
+div.ljtags { display: none;} /*  LiveJournal
+div.load-comments { display: none;} /*  entrepeneur.com
+div.l-sidebar { display: none;} /*  TechSpot
+div.l-story-secondary { display: none;} /*  Boston.com
+div.main > div#rail { display: none;} /*  Fox News
+div#main-content > div.share { display: none;} /*  Knight News Challenge
+div.main_social { display: none;} /*  Times of India
+div#main div#secondary { display: none;} /*  Newsday
+div.m-article__share-buttons { display: none;} /*  The Verge
+div.mashsharer-box { display: none;} /*  internetcommerce.org
+div.m-entry__sidebar { display: none;} /*  The Verge
+div.menu { display: none;} /*  CNBC
+div#mergeAccounts { display: none;} /*  Joplin Globe
+div.meta_bottom { display: none;} /*  Collegian
+div#meta-related { display: none;} /*  Entertainment Weekly
+div#mc_embed_signup { display: none;} /*  stgeorgeutah.com
+div.m-linkset { display: none;} /*  The Verge
+div.middle-ads { display: none;} /*  The Times
+div.minipoll { display: none;} /*  Topix
+div.mla_cite { display: none;} /*  NobelPrize.org
+div.mmn-link { display: none;} /*  ABC 7 News
+div.mobile-button { display: none;} /*  HaAretz
+div.modComments { display: none;} /*  Investors.com
+div.module__biz-pulse { display: none;} /*  Bizjournal
+div.mod-video-playlist { display: none;} /*  ESPN
+div.more-single { display: none;} /*  USA Today
+div.moreweb { display: none;} /*  Uptown Magazine
+div#most-popular { display: none;} /*  BBC
+div#mostPopularTab { display: none;} /*  Reuters
+div#most-read-news-wrapper { display: none;} /*  The Daily Mail
+div#mostSharedTab { display: none;} /*  Reuters
+div#most-watched-videos-wrapper { display: none;} /*  The Daily Mail
+div.mTop15 { display: none;} /*  Times of India
+div.multiplier_story { display: none;} /*  Christian Science Monitor
+div.nav { display: none;} /*  KMBC (note: may be problematic)
+div.navigation { display: none;} /*  Renew Economy (may be problematic)
+div#newsletterList { display: none;} /*  E-Week
+div#newsletter_signup_article { display: none;} /*  People Magazine
+div.newsletterSignupBox { display: none;} /*  NBC
+div.newsreel { display: none;} /*  The Wall Street Journal
+div.next_on_news { display: none;} /*  BuzzFeed
+div#next_post { display: none;} /*  Ace Showbiz
+div#nlHeader { display: none;} /*  E-Week
+div.node-footer { display: none;} /*  Drupal
+div.node-metainfo { display: none;} /*  The Boston Herald
+div.NotifyUserBox { display: none;} /*  Bangkok Post
+div.npRelated { display: none;} /*  National Post
+div.NS_projects__project_share { display: none;} /*  Kickstarter
+div.Other-stories  { display: none;} /*  Bangkok Post
+div.overlayPostPlay { display: none;} /*  The Sydney Morning Herald
+div.page_label { display: none;} /*  Hewlett Packard News
+div#page-nav { display: none;} /*  Uptown Magazine
+div.page-navigation { display: none;} /*  Misc.
+div.page-tools { display: none;} /*  Channel News Asia
+div.pagination { display: none;} /*  Investors.com
+div.pane-explore-issues-topics { display: none;} /*  MSNBC
+div.par-y_rail { display: none;} /*  Vanity Fair
+div.pb-f-page-comments { display: none;} /*  Washington Post
+div.pfont { display: none;} /*  Newsday
+div.pl-most-popular { display: none;} /*  entrepeneur.com
+div#popular-by-section { display: none;} /*  Houston News
+div#popup { display: none;} /*  Times of India
+div.postcats { display: none;} /*  The Wall Street Journal (blog)
+div.postcommentpopupbox { display: none;} /*  Times of India
+div.post-comments { display: none;} /*  The Sun Times
+div.post-links { display: none;} /*  Pro Football Talk
+div.postmeta { display: none;} /*  Windows Central
+div.post-meta-category { display: none;} /*  Comic Book Resources
+div.post-meta-share { display: none;} /*  Comic Book Resources
+div.post-meta-tags { display: none;} /*  Comic Book Resources
+div.post-meta-taxonomy-terms { display: none;} /*  The Sun Times
+div.post-share-buttons { display: none;} /*  Blogspot
+div#post_socials { display: none;} /*  Archeology.org
+// div.posts { display: none;} /*  (CANNOT USE - wordpress copyblogger theme)
+div.posts-stories { display: none;} /*  HaAretz
+div.post-tags { display: none;} /*  Teleread
+div#powered_by_livefyre_new { display: none;} /*  Entertainment Tonight
+div#prevnext { display: none;} /*  hostilefork
+div#prev_post { display: none;} /*  Ace Showbiz
+div.primaryContent3 { display: none;} /*  Reuters (NOTE: I dislike this one)
+div.printad { display: none;} /*  North Jersey
+div#print-button { display: none;} /*  Teleread
+div.printHide { display: none;} /*  Telegraph UK
+div.printstory { display: none;} /*  North Jersey
+div#prologue { display: none;} /*  hostilefork
+div.promo-inner { display: none;} /*  Chron.com
+div.promo-top { display: none;} /*  Chron.com
+div.pull-left-tablet { display: none;} /*  NY1 (only uses "article" for related)
+// div.pull-right { display: none;} /*  CANNOT USE (oklahoman vs nccgroup blog)
+div#reader-comments { display: none;} /*  The Daily Mail
+div.read_more { display: none;} /*  Times of India
+div.recirculation { display: none;} /*  New Yorker
+div.recommended-articles-wrap { display: none;} /*  Vice.com
+div.recommended-links { display: none;} /*  The Appendix
+div#registration-notice { display: none;} /*  Atlantic City Press
+div#registrationNewVerification { display: none;} /*  Joplin Globe
+div#relartstory { display: none;} /*  Times of India
+div#related { display: none;} /*  The Boston Globe (note: wary of using this)
+div.related { display: none;} /*  CNBC (note: wary of using this one)
+div.related-carousel { display: none;} /*  The Daily Mail
+div.related-block { display: none;} /*  auburnpub.com
+div.related-block2 { display: none;} /*  St. Louis Today
+div.related-column { display: none;} /*  The Hindu
+div.related_content { display: none;} /*  Bizjournal
+div.related-items { display: none;} /*  BBC
+div#related_items { display: none;} /*  Business Week
+div#relatedlinks { display: none;} /*  ABC News
+div.related-media { display: none;} /*  Fox News
+div.relatedNews { display: none;} /*  Tampa Bay
+div.related-posts-inner { display: none;} /*  threatpost.com
+div.relatedRail { display: none;} /*  Reuters
+div#related-services { display: none;} /*  BBC
+div.relatedStories { display: none;} /*  Salt Lake Tribute
+div#related-stories { display: none;} /*  Daily News
+div#related-tags { display: none;} /*  St. Louis Today
+div.related-tags { display: none;} /*  CBS
+div#relatedTopics { display: none;} /*  Reuters
+div.relatedTopicButtons { display: none;} /*  Reuters
+div.related-vertical { display: none;} /*  The Wrap
+div#related-videos-container { display: none;} /*  E-Online
+div.relatedVidTitle { display: none;} /*  E-Online
+div.rel-block-news { display: none;} /*  The Hindu
+div.rel-block-sec { display: none;} /*  The Hindu
+div.relposts { display: none;} /*  TechCrunch
+div.resizer { display: none;} /*  KMBC
+div#respond { display: none;} /*  Stanford Law
+div#returnTraditional { display: none;} /*  Joplin Globe
+div#returnSocial { display: none;} /*  Joplin Globe
+div#reveal-comments { display: none;} /*  Aeon Magazine
+div#right-column { display: none;} /*  The Hindu
+div.right_rail_cnt { display: none;} /*  Hewlett Packard News
+div#rn-section { display: none;} /*  Getty
+div[role="article"] div.DM { display: none;} /*  Google Plus comments
+div[role="article"] div.Qg { display: none;} /*  Google Plus comment count
+div[role="article"] div.QM { display: none;} /*  Google Plus entry tags
+div[role="article"] div.yx { display: none;} /*  Google Plus footer
+div[role="complementary"] { display: none;} /*  USA Today
+div.rtCol { display: none;} /*  Time Magazine
+div#rt_contact { display: none;} /*  CNBC
+div#rt_featured_franchise { display: none;} /*  CNBC
+div#rt_primary_1 { display: none;} /*  CNBC
+div[id^="rt_promo"] { display: none;} /*  CNBC
+div#rt_related_0 { display: none;} /*  CNBC
+div#savedata1 { display: none;} /*  Times of India
+div.save-tooltip { display: none;} /*  auburnpub
+div.sd-social { display: none;} /*  Re-code
+div.second-tier-social-tools { display: none;} /*  Time Magazine
+div#section-comments,  // The Washington Post
+div#section-kmt { display: none;} /*  The Guardian
+div.section-puffs { display: none;} /*  Telegraph UK
+//div.share { display: none;} /*  CANNOT USE
+div#share { display: none;} /*  Teleread
+div.share > div.right { display: none;} /*  auburnpub.com
+div.shareArticles { display: none;} /*  The Daily Mail
+div.share-bar { display: none;} /*  Gulf News
+div#sharebarx_new { display: none;} /*  Times of India
+div#share-block-bottom { display: none;} /*  Dispatch.com
+div.share-body-bottom { display: none;} /*  BBC
+div.share-btn { display: none;} /*  Christian Times
+div#share-bottom { display: none;} /*  Teleread
+div.share-buttons { display: none;} /*  Quantstart
+div#shareComments { display: none;} /*  Teleread (also, gigya)
+div#shareComments-bottom { display: none;} /*  Teleread
+div.share-count-container { display: none;} /*  CNBC
+div.sharedaddy { display: none;} /*  Fortune
+div.share-help { display: none;} /*  BBC
+div.share_inline_header { display: none;} /*  The Economist
+div.share_inline_footer { display: none;} /*  The Economist
+div.share-link-inline { display: none;} /*  Sparkfun
+div.shareLinks { display: none;} /*  Reuters
+div.sharetools-inline-article-ad { display: none;} /*  NYTimes
+div.shareToolsNextItem { display: none;} /*  KMBC
+div.sharrre-container { display: none;} /*  Concurring Opinions
+div.shortcode-post { display: none;} /*  ABC7 News
+div.show-related-videos { display: none;} /*  CBS News
+div.sidebar { display: none;} /*  Belfast Telegraph
+div#sidebar { display: none;} /*  The Appendix
+div.sideBar { display: none;} /*  Bangkok Post
+div#sidebar-3 { display: none;} /*  SysCon Media
+div#sidebar-4 { display: none;} /*  SysCon Media
+div.sidebar-content { display: none;} /*  Concurring opinions
+div.sidebar-feed { display: none;} /*  WRAL
+div.side-news-area { display: none;} /*  Channel News Asia
+div#signIn { display: none;} /*  Joplin
+div.simpleShare { display: none;} /*  Newsday
+div.single-author { display: none;} /*  Recode
+div.single-related { display: none;} /*  USA Today
+div.sitewide-footer { display: none;} /*  NBCNews
+div.sitewide-header-content { display: none;} /*  NBCNews
+div.social { display: none;} /*  BBC
+div.social-action { display: none;} /*  Pakistan Daily
+div.social-actions { display: none;} /*  BuzzFeed
+div.socialbar { display: none;} /*  Autonews
+div.socialBar { display: none;} /*  Chron.com
+div.social-bar { display: none;} /*  The Miami Herald
+div.social-bookmarking-module { display: none;} /*  Wired.com
+div.social-buttons { display: none;} /*  The Verge
+div.social-column { display: none;} /*  TechSpot
+div.social-count { display: none;} /*  Fox News
+div.social-dd { display: none;} /*  The Wall Street Journal
+div.sociable { display: none;} /*  Mint Press
+div.social_icons { display: none;} /*  Forbes
+div#social-links { display: none;} /*  Reuters
+div.social-links  { display: none;} /*  SF Gate
+div.social-links-bottom { display: none;} /*  MSNBC
+div.social-links-top { display: none;} /*  MSNBC
+div.social-news-area { display: none;} /*  Channel News Asia
+div.socialNetworks { display: none;} /*  NBC
+div#socialRegistration { display: none;} /*  Joplin Globe
+div#social-share { display: none;} /*  Priceonomics
+div.social-share { display: none;} /*  Bloomberg
+div.social-share-top { display: none;} /*  Priceonomics
+div.social-share-bottom { display: none;} /*  The Hill
+div.social-toolbar { display: none;} /*  News OK
+div.social-toolbar-affix { display: none;} /*  News OK
+div#socialTools { display: none;} /*  Salt Lake Tribute
+div.social-tools-wrapper-bottom  { display: none;} /*  Washington Post
+div.spantab { display: none;} /*  Times of India
+div.SPOSTARBUST-Related-Posts { display: none;} /*  RObservatory
+div.sps-twitter_module { display: none;} /*  BBC
+div.ssba { display: none;} /*  Funker (social share button actions?)
+div.stack-talent { display: none;} /*  NBC News (author bio)
+div.stack-video-nojs-overlay { display: none;} /*  NBC News
+div.staff_info { display: none;} /*  Bizjournals
+div.statements-list-container { display: none;} /*  Topix
+div#sticky-nav { display: none;} /*  Christian Science Monitor
+div.sticky-tools { display: none;} /*  The Boston Globe
+div#story_add_ugc { display: none;} /*  Fort Worth Star Telegram
+div.story-block--twitter { display: none;} /*  9News
+div.story-comment { display: none;} /*  Latin Post
+div#storyContinuesBelow { display: none;} /*  Salt Lake Tribune
+div#storyControls { display: none;} /*  Politico
+div#story-embed-column { display: none;} /*  Christian Science Monitor
+div#story-footer { display: none;} /*  The Miami Herald
+div.story_list { display: none;} /*  Christian Science Monitor
+div#storyMoreOnFucntion { display: none;} /*  Telegraph UK
+div.storynav { display: none;} /*  TechCrunch
+div.story_pagination { display: none;} /*  ABC News
+div#story_right_column_ad { display: none;} /*  dailyjournal.net
+div#story-share-buttons { display: none;} /*  USA Today
+div.story-share-buttons { display: none;} /*  USA Today
+div#story-share-buttons-old { display: none;} /*  USA Today
+div#story-shoulder { display: none;} /*  AV Web
+div.story-tags { display: none;} /*  Fox Sports
+div.story-taxonomy { display: none;} /*  ABC Chicago
+div.storytools { display: none;} /*  TechCrunch
+div.story-tools { display: none;} /*  Latin Post
+div.submit-button { display: none;} /*  Knight News Challenge
+div.subscribe { display: none;} /*  Times of India
+div#subscription-notice { display: none;} /*  Atlantic City Press
+div.supplementalPostContent { display: none;} /*  Medium.com
+div#tabs-732a40a7-tabPane-2 { display: none;} /*  The Miami Herald (unclear)
+div.talklinks { display: none;} /*  LiveJournal
+div.taxonomy { display: none;} /*  ABC Chicago
+div.t_callout { display: none;} /*  ABC News
+div#teaserMarketingCta { display: none;} /*  The Times
+div.textSize { display: none;} /*  CBS
+div#teaser-overlay { display: none;} /*  The Times
+div.thirdPartyRecommendedContent { display: none;} /*  KMBC
+div#thumb-scroller { display: none;} /*  E-Week
+div.three-up-list { display: none;} /*  The Huffington Post
+div#tncms-region-jh-article-bottom-content { display: none;} /*  Idaho Press
+div.tncms-restricted-notice { display: none;} /*  Atlantic City Press
+div.toolbox { display: none;} /*  ABC News
+div.tools { display: none;} /*  ABC News (risky, might be a content-tag)
+div.tools1 { display: none;} /*  The Wall Street Journal (blog)
+div.topic-category { display: none;} /*  Bangkok Post
+div.top-index-stories { display: none;} /*  BBC
+div.topkicker { display: none;} /*  entrepreneur.com
+div.toplinks { display: none;} /*  VOA News
+div.top-stories-range-module { display: none;} /*  BBC
+div.top-stories05 { display: none;} /*  Telegraph UK
+div#traditionalRegistration { display: none;} /*  Joplin Globe
+div#traditionalAuthenticateMerge { display: none;} /*  Joplin Globe
+div.trb_embed_related { display: none;} /*  LA Times
+div.trb_panelmod_body { display: none;} /*   LA Times
+div.twipsy { display: none;} /*  St. Louis Today
+div.upshot-social { display: none;} /*  The New York Times
+div.util-bar-flyout { display: none;} /*  USA Today
+div.utilities { display: none;} /*  The Times
+div#utility { display: none;} /*  WRAL
+div.utility-bar { display: none;} /*  USA Today
+div.utility-panels { display: none;} /*  WRAL
+div.utils { display: none;} /*  kotatv
+div.utilsFloat { display: none;} /*  KMBC
+div.video_about_ad { display: none;} /*  Christian Science Monitor
+div.video_disqus { display: none;} /*  Bloomberg
+div#video-share { display: none;} /*  ABC News
+div.view-comments { display: none;} /*  auburnpub.com
+div#vuukle_env { display: none;} /*  The Hindu
+div.wideheadlinelist2 { display: none;} /*  Chron.com
+div.windows-phone-links { display: none;} /*  Windows Central
+div#WNCol4 { display: none;} /*  Fox (subsidary myfoxny.com)
+div#WNStoryRelatedBox { display: none;} /*  Fox (subsidiary myfoxal.com)
+div.xwv-related-videos-container { display: none;} /*  The Daily Mail
+div.x-comment-menu { display: none;} /*  Topix
+div.x-comments-num { display: none;} /*  Topix
+div.x-comment-post-wrap { display: none;} /*  Topix
+div#you-might-like { display: none;} /*  The New Yorker
+div#zergnet { display: none;} /*  Comic Book Resources
+dl.blox-social-tools-horizontal { display: none;} /*  Joplin
+dl.related-mod { display: none;} /*  Fox News
+dl.tags { display: none;} /*  NY Daily News
+figure.ib-figure-ad { display: none;} /*  KMBC
+figure.kudo { display: none;} /*  svbtle.com blogs
+footer { display: none;} /*  Misc.
+form#comment_form { display: none;} /*  Doctors Lounge
+header { display: none;} /*  Misc.
+h1#external-links { display: none;} /*  The Sprawl (preceds unnamed <ul>)
+h2.hide-for-print { display: none;} /*  NobelPrize.org
+h2#page_header { display: none;} /*  CNBC
+h3#comments-header { display: none;} /*  Knight News Challenge
+h3.more-keywords { display: none;} /*  Joplin
+h3.related_title { display: none;} /*  Teleread
+h3#scrollingArticlesHeader { display: none;} /*  The Oklahoman
+h4.taboolaHeaderRight { display: none;} /*  KMBC
+hr { display: none;} /*  ALL
+img#ajax_loading_img { display: none;} /*  E-Week
+li.comments { display: none;} /*  Smashing Magazine
+li#mostPopularShared_0 { display: none;} /*  Reuters
+li#mostPopularShared_1 { display: none;} /*  Reuters
+li#pagingControlsPS { display: none;} /*  neagle
+li#sharetoolscontainer { display: none;} /*  neagle
+li.tags { display: none;} /*  Smashing Magazine
+ol[data-vr-zone="Around The Web"] { display: none;} /*  The Oklahoman
+ol#comment-list { display: none;} /*  Pro Football Talk
+nav { display: none;} /*  Misc.
+p.authorFollow { display: none;} /*  The Sydney Morning Herald
+p.byline { display: none;} /*  Newsday
+p.category { display: none;} /*  SysCon Media
+p.comments { display: none;} /*  Telegraph Co Uk
+p.essay-tags { display: none;} /*  Aeon Magazine
+p.moreVideosTitle { display: none;} /*  E-Online
+p.must-log-in { display: none;} /*  The Jewish Press
+p.pagination { display: none;} /*  Stamford Advocate
+p.p_top_10 { display: none;} /*  Star Telegram
+p.post-tags { display: none;} /*  USA Today
+p.story-ad-txt { display: none;} /*  Boston.com
+p.storytag { display: none;} /*  chinatopix.com
+p.story-tags { display: none;} /*  Latin Post
+p.topics { display: none;} /*  ABC News
+p.trial-promo { display: none;} /*  Newsweek
+p#whoisviewing { display: none;} /*  Eev blog
+section.also-on { display: none;} /*  Huffington Post
+section.around-bbc-module { display: none;} /*  BBC
+section.article-author { display: none;} /*  Ars Technica
+section.bottom_shares { display: none;} /*  BuzzFeed
+section.breaking_news_bar { display: none;} /*  Bloomberg
+section#comment-module { display: none;} /*  Dispatch.com
+section#comments { display: none;} /*  TechSpot
+section.comments { display: none;} /*  ABC Chicago
+section#comments-area { display: none;} /*  The Economist
+section#follow-us { display: none;} /*  BBC
+section.headband { display: none;} /*  Bloomberg
+section.headline-list { display: none;} /*  The Miami Herald
+section.headlines-list { display: none;} /*  ABC Chicago
+section#injected-newsletter { display: none;} /*  GigaOM
+section.morestories { display: none;} /*  Entertainment Tonight
+section#more-stories-widget { display: none;} /*  The Miami Herald
+section#newsletter-signup { display: none;} /*  New Yorker
+section.pagination_controls { display: none;} /*  Vanity Fair
+section#promotions { display: none;} /*  The New Yorker
+section.related_links { display: none;} /*  Bloomberg
+section#related-links { display: none;} /*  BuzzFeed
+section.related-products { display: none;} /*  TechSpot
+section#responses { display: none;} /*  BuzzFeed
+section.section--last { display: none;} /*  Medium
+section.section-tertiary { display: none;} /*  Sports Illustrated
+section.share-section { display: none;} /*  Sports Illustrated
+section.signup-widget { display: none;} /*  The Miami Herald
+section.story-tools-mod { display: none;} /*  Boston.com
+section.suggested-links { display: none;} /*  The Examiner
+section.tagblock { display: none;} /*  Entertainment Tonight
+section.three-up { display: none;} /*  The Huffington Post
+section.topnews { display: none;} /*  Christian Times
+section.top-video { display: none;} /*  ABC 7 News
+section.youmaylike { display: none;} /*  Entertainment Tonight
+span.comment-count-generated { display: none;} /*  Teleread
+span[itemprop="inLanguage"] { display: none;} /*  Investors.com
+span.sharetools-label { display: none;} /*  NY Time
+span.moreon-tt { display: none;} /*  Teleread
+span.printfriendly-node { display: none;} /*  Uncover California
+span.text_resizer { display: none;} /*  Fort Worth Star Telegram
+table.hst-articleprinter { display: none;} /*  Stamford Advocate
+table#commentTable { display: none;} /*  Times of India
+table.complexListingBox { display: none;} /*  Mercury News
+table.storyauthor { display: none;} /*  SysCon Media
+ul#additionalShare { display: none;} /*  NBC
+ul.articleList { display: none;} /*  The Wall Street Journal
+ul.article-options { display: none;} /*  TVNZ
+ul.article-share { display: none;} /*  DNA India
+ul#article-share-links { display: none;} /*  The Boston Herald
+ul.article-tags { display: none;} /*  9News
+ul.article_tools { display: none;} /*  The Wall Street Journal
+ul#associated { display: none;} /*  TV New Zealand
+ul#blox-body-nav { display: none;} /*  Houston News
+ul.blox-recent-list { display: none;} /*  Atlantic City Press
+ul.breadcrumb { display: none;} /*  The Miami Herald
+ul.breadcrumbs { display: none;} /*  Giga OM
+ul#bread-crumbs { display: none;} /*  Dispatch.com
+ul.breaking-news-stories { display: none;} /*  ABC 7 News
+ul.bull-list { display: none;} /*  Joplin
+ul.cats { display: none;} /*  Windows Central
+ul.comment-list { display: none;} /*  Sparkfun
+ul#content_footer_menu { display: none;} /*  Japan Times
+ul.display-posts-listing { display: none;} /*  Recode
+ul.entry-extra { display: none;} /*  Wired Magazine
+ul.entry-header { display: none;} /*  Wired Magazine
+ul.entry_sharing { display: none;} /*  Bloomberg
+ul#flairBar { display: none;} /*  Scientific American
+ul.flippy { display: none;} /*  MSNBC
+ul.generic_tabs { display: none;} /*  Bloomberg
+ul.header-lnks { display: none;} /*  Knight News Challenge
+ul.hl-list { display: none;} /*  Chron.com
+ul.links--inline { display: none;} /*  Drupal
+ul.links-list { display: none;} /*  BBC
+ul.m-block__meta__links { display: none;} /*  Tomahawk Nation
+ul.menu { display: none;} /*  The New York Times
+ul.mod-page-actions { display: none;} /*  ESPN
+ul.navbar-nav { display: none;} /*  Noctua Software Blog
+ul.navigation { display: none;} /*  USA Today
+ul.nav-tabs { display: none;} /*  The Miami Herald
+ul.newslist { display: none;} /*  Autonews
+ul#page-actions-bottom { display: none;} /*  ESPN
+ul.pageBoxes { display: none;} /*  Investors.com
+ul.pagenav { display: none;} /*  The Guardian
+ul.pagination { display: none;} /*  Politico
+ul.pagination-story { display: none;} /*  Time
+ul.project-nav { display: none;} /*  Kickstarter
+ul.related-links { display: none;} /*  The Boston Globe
+ul.related_links { display: none;} /*  Ottawa Citizen
+ul.related-posts { display: none;} /*  Concurring Opinions
+ul.resize-nav { display: none;} /*  Channel News Asia
+ul.rssi-icons { display: none;} /*  Pacific Standard Magazine
+ul.services { display: none;} /*  The Appendix
+ul.sharebar { display: none;} /*  CNet
+ul.share-buttons { display: none;} /*  Ars Technica
+ul.side-news-list { display: none;} /*  Channel News Asia
+ul.social { display: none;} /*  The Sydney Morning Herald
+ul.social-bookmarking-module { display: none;} /*  Wired Magazine
+ul.socialByline { display: none;} /*  The Wall Street Journal (blog)
+ul.social-icons { display: none;} /*  Citylab
+ul.socials { display: none;} /*  independent.ie
+ul.social-share-list { display: none;} /*  TechCrunch
+ul.social-tools { display: none;} /*  The Washington Post
+ul#story-font-size { display: none;} /*  Idaho Press
+ul#story-social { display: none;} /*  AV Web
+ul#story-tools { display: none;} /*  AV Web
+ul.story-tools-sprite { display: none;} /*  Houston News
+ul.tags { display: none;} /*  BBC
+ul.tags-listing { display: none;} /*  Colorado Independent
+ul.text-scale { display: none;} /*  GigaOM
+ul.thumbs { display: none;} /*  NY Daily News
+ul#toolbar-sharing { display: none;} /*  UT San Diego
+ul.tools { display: none;} /*  The Syndey Morning Herald
+ul#topics { display: none;} /*  Yahoo News
+ul.toplinks { display: none;} /*  VOA News
+ul.top-menu { display: none;} /*  Investors.com
+ul.utility-list// WRAL
