@@ -113,10 +113,6 @@ lucu.entry.hasHash = function(entry) {
   return !!entry.hash;
 };
 
-lucu.entry.hasLink = function(entry) {
-  return !!entry.link;
-};
-
 lucu.entry.rewriteLink = function(entry) {
   entry.link = lucu.rewriteURL(entry.link);
 };
