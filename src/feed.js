@@ -347,13 +347,11 @@ lucu.feed.onFetch = function(onComplete, onError, shouldAugmentEntries,
 
 lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
   shouldAugmentEntries, entryTimeout) {
-
-  var feed = lucu.deserializeFeed(xmlDocument);
-
-  if(feed.ERROR_UNDEFINED_DOCUMENT || feed.ERROR_UNDEFINED_DOCUMENT_ELEMENT ||
-     feed.ERROR_UNSUPPORTED_DOCUMENT_ELEMENT) {
-
-    return onError({type: 'invalid-xml'});
+  var feed;
+  try {
+    feed = deserializeFeed(xmlDocument);
+  } catch(deserializationError) {
+    return onError({type: 'invalid-xml', details: deserializationError});
   }
 
   if(!feed.entries.length) {
@@ -361,8 +359,9 @@ lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
   }
 
   var entries = feed.entries || [];
-
-  var fetchableEntries = entries.filter(lucu.entry.hasLink);
+  var fetchableEntries = entries.filter(function (entry) {
+    return entry.link;
+  });
 
   var numEntriesToProcess = fetchableEntries.length;
   if(numEntriesToProcess == 0) {
@@ -370,7 +369,6 @@ lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
   }
 
   fetchableEntries.forEach(lucu.entry.rewriteLink);
-
 
   // TODO: this is around the critical break in the data flow
   // where augmenting entries (and images and so forth) should
