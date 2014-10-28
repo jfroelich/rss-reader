@@ -1,19 +1,15 @@
 {
-  "version": "2.4",
-
+  "version": "2.5",
   "manifest_version": 2,
+  "minimum_chrome_version" : "36",
   "name": "Lucubrate",
-
   "author": "Joshua Froelich",
   "homepage_url": "https://github.com/jfroelich/rss-reader",
-
   "description": "Reading by lamplight late into the night",
-
   "browser_action": {
     "default_icon": "/media/rss_icon_trans.png",
     "default_title": "Lucubrate"
   },
-
   "background": {
     "persistent": false,
     "scripts": [
@@ -28,24 +24,18 @@
       "/src/xml.js"
     ]
   },
-
-  "minimum_chrome_version" : "36",
-
   "options_page": "options.html",
-
   "permissions": [
     "alarms",
     "http://*/*",
     "https://*/*",
     "unlimitedStorage"
   ],
-
   "optional_permissions": [
     "background",
     "idle",
     "notifications"
   ],
-
   "content_security_policy":
     "script-src 'self'; object-src 'self' https://vimeo.com https://www.youtube.com https://www.ustream.tv; frame-src http: https:"
 }
