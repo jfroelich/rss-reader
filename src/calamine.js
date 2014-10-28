@@ -35,7 +35,26 @@ function transform(doc, options) {
   }
 
   if(options.FILTER_NAMED_AXES) {
-    filterBoilerplateAxes(doc);
+    BLACKLIST_SELECTORS.forEach(function detachSelector(selector) {
+      // NOTE: this accounts for most of the processing time
+      // Note: Ideally, a block-based approach would avoid the need
+      // for this step but the current best element approach effectively requires
+      // it. These selectors target boilerplate typically found in the best
+      // element, after processing, but are applied before processing to reduce the
+      // amount of elements considered and reduce error. Most of the selectors are
+      // conservative to avoid filtering non-boilerplate
+      // Currently consumes approximately 50-70% of the processing time,
+      // 100% of which is the nested call to querySelector
+
+      // querySelector is used instead of querySelectorAll this avoids the need
+      // to check doc.contains(element) per iteration
+      var root = doc.body;
+      var element = root.querySelector(selector);
+      while(element) {
+        element.remove();
+        element = root.querySelector(selector);
+      }
+    });
   }
 
   var elements = doc.body.getElementsByTagName('*');
@@ -48,21 +67,6 @@ function transform(doc, options) {
   applyAttributeBias(doc, elements, scores);
   maybeExposeAttributes(doc, scores, options);
   return findBestElement(doc, elements, scores);
-}
-
-function filterBoilerplateAxes(doc) {
-
-  // NOTE: this accounts for about 60-80% of the processing time
-
-  // Note: Ideally, a block-based approach would avoid the need
-  // for this step but the current best element approach effectively requires
-  // it. These selectors target boilerplate typically found in the best
-  // element, after processing, but are applied before processing to reduce the
-  // amount of elements considered and reduce error. Most of the selectors are
-  // conservative to avoid filtering non-boilerplate
-
-  var detach = detachBySelector.bind(null, doc.body);
-  BLACKLIST_SELECTORS.forEach(detach);
 }
 
 function initScores(doc, elements) {
@@ -370,23 +374,6 @@ function getParents(element) {
   return parents;
 }
 
-function detachBySelector(root, selector) {
-
-  // Currently consumes approximately 50-70% of the processing time,
-  // 100% of which is the nested call to querySelector
-
-  // querySelector is used instead of querySelectorAll because:
-  // (1) the code is more concise,
-  // (2) the perf delta from querySelectorAll is immaterial, and
-  // (3) this avoids the need to check doc.contains(element) per iteration,
-  // as the selector restarts from the outer ancestor. Using querySelectorAll
-  // would require this extra check because descendants of detached nodes
-  // remain in the node list produced by querySelectorAll
-  for(var element = root.querySelector(selector); element;
-    element = root.querySelector(selector)) {
-    element.remove();
-  }
-}
 
 /**
  * Used to split up the value of an attribute into tokens.
