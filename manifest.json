@@ -16,7 +16,7 @@
       "/lib/medialize/URI.js",
       "/src/background.js",
       "/src/database.js",
-      "/src/entry.js",
+      "/src/rewrite.js",
       "/src/feed.js",
       "/src/fetch-feed.js",
       "/src/fetch-html.js",
