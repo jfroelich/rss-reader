@@ -967,6 +967,7 @@ var BLACKLIST_SELECTORS = [
   'div[aria-label="+1 this post"]', // Google Plus
   'div.artbody > div.share', // China Topix
   'div.art_tabbed_nav', // The Wall Street Journal (blog)
+  'div.articleAutoFooter', // NECN
   'div#article div.share', // timeslive.co.za
   'div.article div#media', // Newsday
   'div.article_actions', // Forbes
@@ -1042,6 +1043,7 @@ var BLACKLIST_SELECTORS = [
   'div.card-stats', // WFPL
   'div.category-nav', // Sparkfun
   'div#ce-comments', // E-Week
+  'div.cmtLinks', // India Times
   'div.cnn_strybtntools', // CNN
   'div.cnn_strylftcntnt', // CNN
   'div.cnn_strycntntrgt', // CNN
@@ -1267,6 +1269,7 @@ var BLACKLIST_SELECTORS = [
   'div.promo-top', // Chron.com
   'div.pull-left-tablet', // NY1 (only uses "article" for related)
   // 'div.pull-right', // CANNOT USE (oklahoman vs nccgroup blog)
+  'div.raltedTopics', // India Times
   'div#reader-comments', // The Daily Mail
   'div.read_more', // Times of India
   'div.recirculation', // New Yorker
@@ -1350,6 +1353,7 @@ var BLACKLIST_SELECTORS = [
   'div.shareLinks', // Reuters
   'div.sharetools-inline-article-ad', // NYTimes
   'div.shareToolsNextItem', // KMBC
+  'div.sharingBox', // India Times
   'div.sharrre-container', // Concurring Opinions
   'div.shortcode-post', // ABC7 News
   'div.show-related-videos', // CBS News
@@ -1568,6 +1572,7 @@ var BLACKLIST_SELECTORS = [
   'ul#additionalShare', // NBC
   'ul.articleList', // The Wall Street Journal
   'ul.article-options', // TVNZ
+  'ul.article-related-wrap', // Jerusalem Post
   'ul.article-share', // DNA India
   'ul#article-share-links', // The Boston Herald
   'ul.article-tags', // 9News
