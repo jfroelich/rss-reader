@@ -2,28 +2,21 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: Use iife
-
-'use strict';
-
 var lucu = lucu || {};
-
-lucu.feed = lucu.feed || {};
-
 
 /**
  * Fetches the XML for a feed from a URL, then parses it into
  * a javascript object, and passes this along to a callback. If an error
  * occurs along the way, calls an error callback instead. Async.
  *
- * For each entry, if augmentEntries is true, and if the entry has
+ * For each entry, if fetchFullArticles is true, and if the entry has
  * a link, this also sends subsequent http requests to get the full html
  * of the link and uses that instead of the entry.content property that
  * was provided from within the xml feed.
  *
- * TODO: onerror could be passed an XMLHttpRequest event containing an error,
+ * TODO: onError could be passed an XMLHttpRequest event containing an error,
  * an exception, a string, or a custom object. I need to standardize the
- * error object that is passed to onerror. I also think it really does
+ * error object that is passed to onError. I also think it really does
  * need error codes because identifying each error by string key is making
  * it difficult to respond to different errors differently.
  * TODO: this should not also do the xml to feed conversion? The coupling is
@@ -47,22 +40,26 @@ lucu.feed = lucu.feed || {};
  * - onerror - a callback to call in case of an error, that is called instead
  * of oncomplete
  * - timeout - optional timeout before giving up on feed
- * - augmentEntries - if true, fetches full content of entry.link and
+ * - fetchFullArticles - if true, fetches full content of entry.link and
  * uses that instead of the feed content
  * - entryTimeout - optional timeout before giving up on fetching webpage for entry
  */
-lucu.feed.fetch = function(params) {
+lucu.fetchFeed = function(params) {
+  'use strict';
 
-  // NOTE: augmentEntries has to exist as a paramter because
-  // we we want to augment in a poll update context but do not
+  var RE_FEED_TYPE = /(application|text)\/(atom|rdf|rss)?\+?xml/i;
+  var RE_HTML_TYPE = /text\/html|plain/i;
+
+  // NOTE: fetchFullArticles has to exist as a parameter because
+  // we want to augment in a poll update context but do not
   // want to augment in a subscribe preview context.
 
-  // NOTE: now that I think about it, the reason augmentEntries exists
+  // NOTE: now that I think about it, the reason fetchFullArticles exists
   // is because fetch.js is doing two things instead of one thing. I should
   // never haved mixed together the augmentEntry code with the fetch code.
-  // The caller can easily just pass the result of fetch to augmentEntries
+  // The caller can easily just pass the result of fetch to fetchFullArticles
   // using two function calls. Calling only fetch is the equivalent of
-  // passing in augmentEntries:false.
+  // passing in fetchFullArticles:false.
   // As a result of the above change, it should cut this file size in half
   // and move all the augment code into its own file.
   // It would move the entryTimeout function out of here as well.
@@ -76,10 +73,10 @@ lucu.feed.fetch = function(params) {
 
   var url = (params.url || '').trim();
   var noop = function(){};
-  var oncomplete = params.oncomplete || noop;
-  var onerror = params.onerror || noop;
+  var onComplete = params.oncomplete || noop;
+  var onError = params.onerror || noop;
   var timeout = params.timeout;
-  var augmentEntries = params.augmentEntries;
+  var fetchFullArticles = params.fetchFullArticles;
   var entryTimeout = params.entryTimeout;
 
   // For some unexpected reason this function is sometimes
@@ -87,147 +84,112 @@ lucu.feed.fetch = function(params) {
   // and exit early. This avoids a bunch of net::ERR_NETWORK_IO_SUSPENDED
   // error messages produced by request.send.
   // request.send() does not appear to throw a catchable exception.
-
   // NOTE: still getting this error. It is like onLine is not returning
   // false when offline.
-
   // NOTE: should this be the caller's responsibility? It seems kind of
   // strange to be able to call a 'fetch' operation while offline
-
-  if(!navigator.onLine) {
-    return onerror({type: 'offline', url: url});
+  if(navigator && !navigator.onLine) {
+    return onError({type: 'offline', url: url});
   }
-
-  // TODO: use new fetchHTML
 
   var request = new XMLHttpRequest();
   request.timeout = timeout;
-  request.onerror = onerror;
-  request.ontimeout = onerror;
-  request.onabort = onerror;
-  request.onload = lucu.feed.onFetch.bind(request, oncomplete,
-    onerror, augmentEntries, entryTimeout);
-  request.open('GET', url, true);
-  request.send();
-};
+  request.onerror = onError;
+  request.ontimeout = onError;
+  request.onabort = onError;
+  request.onload = function() {
+    var mime = this.getResponseHeader('Content-Type');
+    var xmlDocument = null;
 
-lucu.feed.onFetch = function(onComplete, onError, shouldAugmentEntries,
-  entryTimeout) {
-
-  var getMimeType = function(request) {
-    return request && request.getResponseHeader('Content-Type');
-  };
-
-  var isMimeFeed = function(contentType) {
-    return /(application|text)\/(atom|rdf|rss)?\+?xml/i.test(contentType);
-  };
-
-  var mime = getMimeType(this) || '';
-
-
-  if(isMimeFeed(mime)) {
-    if(!this.responseXML || !this.responseXML.documentElement) {
-      return onError({type: 'invalid-xml', target: this});
-    }
-
-    return lucu.feed.convertFromXML(this.responseXML, onComplete, onError,
-      shouldAugmentEntries, entryTimeout);
-  }
-
-  lucu.isTextHTMLOrPlain = function(s) {
-    return /text\/html|plain/i.test(s);
-  };
-
-  if(lucu.isTextHTMLOrPlain(mime)) {
-
-    try {
-      var xmlDocument = lucu.parseXML(this.responseText);
-    } catch(e) {
-      return onError(e);
+    if(RE_FEED_TYPE.test(mime)) {
+      xmlDocument = this.responseXML;
+    } else if(RE_HTML_TYPE.test(mime)) {
+      // Fallback
+      try {
+        xmlDocument = lucu.parseXML(this.responseText);
+      } catch(e) {
+        return onError(e);
+      }
+    } else {
+      return onError({type:'invalid-content-type', target: this});
     }
 
     if(!xmlDocument || !xmlDocument.documentElement) {
       return onError({type: 'invalid-xml', target: this});
     }
 
-    return lucu.feed.convertFromXML(xmlDocument, onComplete, onError,
-      shouldAugmentEntries, entryTimeout);
-  }
+    try {
+      var feed = lucu.deserializeFeed(xmlDocument);
+    } catch(e) {
+      return onError({type: 'invalid-xml', target: this, details: e});
+    }
 
-  return onError({type: 'invalid-content-type', target: this});
-};
+    var entries = feed.entries || [];
 
-lucu.feed.convertFromXML = function(xmlDocument, onComplete, onError,
-  shouldAugmentEntries, entryTimeout) {
-  var feed;
-  try {
-    feed = deserializeFeed(xmlDocument);
-  } catch(deserializationError) {
-    return onError({type: 'invalid-xml', details: deserializationError});
-  }
+    if(!entries.length) {
+      return onComplete(feed);
+    }
 
-  if(!feed.entries.length) {
-    return onComplete(feed);
-  }
-
-  var entries = feed.entries || [];
-  var fetchableEntries = entries.filter(function (entry) {
-    return entry.link;
-  });
-
-  var numEntriesToProcess = fetchableEntries.length;
-  if(numEntriesToProcess == 0) {
-    return onComplete(feed);
-  }
-
-  fetchableEntries.forEach(lucu.entry.rewriteLink);
-
-  // TODO: this is around the critical break in the data flow
-  // where augmenting entries (and images and so forth) should
-  // occur in a separate module
-
-  if(!shouldAugmentEntries) {
-    return onComplete(feed);
-  }
-
-  var dispatchIfComplete = function() {
-    numEntriesToProcess--;
-    if(numEntriesToProcess) return;
-    onComplete(feed);
-  };
-
-  // TODO: this lookup check should be per feed, not across all feeds,
-  // otherwise if two feeds link to the same article, only the first gets
-  // augmented. need to use something like findEntryByFeedIdAndLinkURL
-  // that uses a composite index
-
-  // TODO: technically I should be opening a conn per lookup because
-  // there is no guarantee db conn remains open on long http request
-
-  var onFetchHTML = function (entry, doc, responseURL) {
-    lucu.fetchImageDimensions(doc, function() {
-      var html = doc.body.innerHTML;
-
-      if(html) {
-        entry.content = html;
-      } else {
-        entry.content = 'Unable to download content for this article';
-      }
-
-      dispatchIfComplete();
+    var fetchableEntries = entries.filter(function (entry) {
+      return entry.link;
     });
-  };
 
-  lucu.database.open(function(db) {
+    var numEntriesToProcess = fetchableEntries.length;
+    if(!numEntriesToProcess) {
+      return onComplete(feed);
+    }
+
     fetchableEntries.forEach(function(entry) {
-      lucu.entry.findByLink(db, entry.link, function(exists) {
-        if(exists) {
-          dispatchIfComplete();
-          return;
+      entry.link = lucu.rewriteURL(entry.link);
+    });
+
+    if(!fetchFullArticles) {
+      return onComplete(feed);
+    }
+
+    function dispatchIfComplete() {
+      numEntriesToProcess--;
+      if(numEntriesToProcess) return;
+      onComplete(feed);
+    }
+
+    // TODO: this lookup check should be per feed, not across all feeds,
+    // otherwise if two feeds link to the same article, only the first gets
+    // augmented. need to use something like findEntryByFeedIdAndLinkURL
+    // that uses a composite index
+
+    // TODO: technically I should be opening a conn per lookup because
+    // there is no guarantee db conn remains open on long http request
+
+    function onFetchHTML(entry, doc, responseURL) {
+      lucu.fetchImageDimensions(doc, function() {
+        var html = doc.body.innerHTML;
+
+        if(html) {
+          entry.content = html;
+        } else {
+          entry.content = 'Unable to download content for this article';
         }
-        lucu.fetchHTML(entry.link, entryTimeout,
-          onFetchHTML.bind(null, entry), dispatchIfComplete);
+
+        dispatchIfComplete();
+      });
+    }
+
+    lucu.database.open(function(db) {
+      fetchableEntries.forEach(function(entry) {
+        lucu.entry.findByLink(db, entry.link, function(exists) {
+          if(exists) {
+            dispatchIfComplete();
+            return;
+          }
+          lucu.fetchHTML(entry.link, entryTimeout,
+            onFetchHTML.bind(null, entry), dispatchIfComplete);
+        });
       });
     });
-  });
+
+  };
+
+  request.open('GET', url, true);
+  request.send();
 };
