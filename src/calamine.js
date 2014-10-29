@@ -923,6 +923,7 @@ var BLACKLIST_SELECTORS = [
   'article ul.listing', // Good Magazine
   'aside.itemAsideInfo', // The Guardian
   'aside#asset-related', // St. Louis Today
+  'aside.bg-related', // The Boston Globe
   'aside#bpage_ad_bottom', // BuzzFeed
   'aside[data-panelmod-type="relatedContent"]', // LA Times
   'aside.callout', // The Atlantic
@@ -1017,6 +1018,9 @@ var BLACKLIST_SELECTORS = [
   'div.bizPagination', // Bizjournal
   'div.bk-socialbox', // Latin Post
   'div#blq-foot', // BBC
+  'div#block-disqus-disqus_comments', // Foreign Affairs
+  'div#block-fa-cfrlatest', // Foreign Affairs
+  'div#block-fa-related', // Foreign Affairs
   'div#blog-sidebar', // Comic Book Resources
   'div#blox-breadcrumbs', // Joplin
   'div#blox-comments', // National Standard
@@ -1156,6 +1160,7 @@ var BLACKLIST_SELECTORS = [
   'div.hst-simplelist', // Chron.com
   'div.hst-siteheader', // Seattle Pi
   'div.hst-slideshowpromo', // Seattle Pi
+  'div.htzTeaser', // Ha'Aretz
   'div.ib-collection', // KMBC
   'div.icons', // Brecorder
   'div#infinite-list', // The Daily Mail
@@ -1257,6 +1262,8 @@ var BLACKLIST_SELECTORS = [
   'div.posts-stories', // Ha'Aretz
   'div.post-tags', // Teleread
   'div#powered_by_livefyre_new', // Entertainment Tonight
+  'div.premium-box', // Foreign Affairs
+  'div#premium-box-locked', // Foreign Affairs
   'div#prevnext', // hostilefork
   'div#prev_post', // Ace Showbiz
   'div.primaryContent3', // Reuters (NOTE: I dislike this one)
@@ -1509,6 +1516,7 @@ var BLACKLIST_SELECTORS = [
   'ol[data-vr-zone="Around The Web"]', // The Oklahoman
   'ol#comment-list', // Pro Football Talk
   'nav', // Misc.
+  'p.article-more', // The Boston Globe
   'p.authorFollow', // The Sydney Morning Herald
   'p.byline', // Newsday
   'p.category', // SysCon Media
