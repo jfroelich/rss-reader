@@ -110,7 +110,7 @@ chrome.runtime.onInstalled.addListener(function onInstall() {
 
 chrome.alarms.onAlarm.addListener(function onAlarm(alarm) {
   if('poll' == alarm.name) {
-    startPoll();
+    pollFeeds();
   } else if('archive' == alarm.name) {
     startArchive();
   }
@@ -123,12 +123,12 @@ chrome.alarms.create('archive', {periodInMinutes: 24 * 60});
 /**
  * Starts polling
  */
-function startPoll() {
+function pollFeeds() {
   chrome.permissions.contains({permissions: ['idle']}, function (permitted) {
 
     // If we cannot check idle state just start
     if(!permitted) {
-      lucu.poll.start();
+      lucu.pollFeeds();
       return;
     }
 
@@ -136,7 +136,7 @@ function startPoll() {
     var INACTIVITY_INTERVAL = 60 * 5;
     chrome.idle.queryState(INACTIVITY_INTERVAL, function (idleState) {
       if(idleState == 'locked' || idleState == 'idle') {
-        lucu.poll.start();
+        lucu.pollFeeds();
       }
     });
 
