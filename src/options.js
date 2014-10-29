@@ -386,12 +386,12 @@ function showOrSkipSubscriptionPreview(url) {
 
   // TODO: check if already subscribed before preview?
 
-  lucu.feed.fetch({
+  lucu.fetchFeed({
     url: url,
     oncomplete: onFetchSuccess,
     onerror: onerror,
     timeout: timeout,
-    augmentEntries: false
+    fetchFullArticles: false
   });
 }
 
@@ -451,13 +451,13 @@ function startSubscription(url) {
         return lucu.feed.add(db, {url: url}, onSubscriptionSuccessful, console.debug);
       }
 
-      lucu.feed.fetch({
+      lucu.fetchFeed({
         url: url,
         oncomplete: onFetchComplete,
         onerror: onFetchError,
         timeout: 10 * 1000,
         entryTimeout: 20 * 1000,
-        augmentEntries: true
+        fetchFullArticles: true
       });
     });
   });
