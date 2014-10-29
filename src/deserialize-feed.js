@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+var lucu = lucu || {};
+
 /**
  * Convert an XMLDocument containing feed data into an object
  *
@@ -13,7 +15,7 @@
  * TODO: maybe this should produce an actual 'Feed' function object instead of a
  * generic Javascript object
  */
-function deserializeFeed(xmlDocument) {
+lucu.deserializeFeed = function (xmlDocument) {
   'use strict';
 
   var map = Array.prototype.map;
@@ -153,4 +155,4 @@ function deserializeFeed(xmlDocument) {
     return result;
   });
   return result;
-}
+};
