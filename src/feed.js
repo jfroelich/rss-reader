@@ -346,7 +346,9 @@ lucu.entry.mergeAll = function(db, feed, entries, oncomplete) {
   // Filter hashless entries. This also results in filtering
   // out entries that do not contain the required properties
   // for storage (either a link, a title, or content).
-  storableEntries = storableEntries.filter(lucu.entry.hasHash);
+  storableEntries = storableEntries.filter(function (entry) {
+    return entry.hash;
+  });
 
   // Update entriesProcessed to reflect that we preprocessed some of
   // the entries when filtering
@@ -383,13 +385,6 @@ lucu.entry.mergeAll = function(db, feed, entries, oncomplete) {
       oncomplete(feed, entries.length, entriesAdded);
     }
   }
-};
-
-// TODO: use something like
-// Object.prototype.hasOwnProperty.bind(entry,'hash');
-// instead, and then deprecate
-lucu.entry.hasHash = function(entry) {
-  return !!entry.hash;
 };
 
 /**
@@ -468,8 +463,6 @@ lucu.entry.asStorable = function(feed, remoteEntry) {
   return output;
 };
 
-
-
 /**
  * Insert an entry into the database. Async. Calls
  * oncomplete when finished. Calls onerror if
@@ -486,13 +479,10 @@ lucu.entry.add = function(db, storableEntry, oncomplete, onerror) {
 
 lucu.entry.markAsRead = function(db, entryId, onComplete) {
 
-  // TODO: intead of get/put, use openCursor and cursor.update
-
+  // TODO: intead of get/put, use openCursor and cursor.update?
   var tx = db.transaction('entry','readwrite');
   tx.oncomplete = onComplete;
   var entryStore = tx.objectStore('entry');
-
-  // TODO: move this function out of here
 
   entryStore.get(entryId).onsuccess = function() {
     var entry = this.result;
@@ -505,7 +495,6 @@ lucu.entry.markAsRead = function(db, entryId, onComplete) {
     chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
   };
 };
-
 
 /**
  * Removes all entries from the entry store with the given
@@ -544,7 +533,6 @@ lucu.entry.markAsRead = function(db, entryId, onComplete) {
  * entry store in this way makes enforcing this order nonsensical.
  */
 lucu.entry.removeByFeed = function(tx, feedId, oncomplete) {
-
   var count = 0;
   var entryStore = tx.objectStore('entry');
   var feedIndex = entryStore.index('feed');
@@ -555,11 +543,7 @@ lucu.entry.removeByFeed = function(tx, feedId, oncomplete) {
   // IBDKeyRange, and (3) uses cursor.delete instead of a subsequent call
   // to store.delete.
 
-
-
   var requestKeyCursor = feedIndex.openKeyCursor(feedId);
-
-  // TODO: move the function out of here
   requestKeyCursor.onsuccess = function() {
     var keyCursor = this.result;
     if(keyCursor) {
