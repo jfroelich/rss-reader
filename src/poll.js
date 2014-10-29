@@ -112,8 +112,8 @@ lucu.poll.fetchAndUpdateFeed = function(localFeed, oncomplete, onerror) {
   // from feed properties, not hardcoded
   args.timeout = 20 * 1000;
   args.entryTimeout = 20 * 1000;
-  args.augmentEntries = true;
-  lucu.feed.fetch(args);
+  args.fetchFullArticles = true;
+  lucu.fetchFeed(args);
 };
 
 lucu.poll.onFetchFeed = function(localFeed, onComplete, remoteFeed) {
