@@ -45,6 +45,22 @@ lucu.style = {};
 
 lucu.style.onChange = function() {
 
+  var filter = Array.prototype.filter;
+
+  function findCSSRule(sheet, selectorText) {
+    // TODO: use Array.prototype.find? or reduce?
+    // if we want just the first rule then this is dumb
+    var rules = sheet ? sheet.cssRules : [];
+    var matches = filter.call(rules, function(rule) {
+      return rule.selectorText == selectorText;
+    });
+
+    if(matches.length) {
+      return matches[0];
+    }
+  }
+
+
   // Assume a sheet is always available
   var sheet = document.styleSheets[0];
 
@@ -228,24 +244,3 @@ lucu.style.onLoad = function() {
 
   sheet.addRule('div.entry span.entry-content', s);
 };
-
-//Finds first matching CSS rule by selectorText query.
-function findCSSRule(sheet, selectorText) {
-
-  if(!sheet) {
-    return;
-  }
-
-  var rules = sheet.cssRules;
-
-  // TODO: use a partial instead of an outer scope ref
-
-  var matches = Array.prototype.filter.call(rules, function(rule) {
-    return rule.selectorText == selectorText;
-  });
-
-  // TODO: is the length check even necessary?
-  if(matches.length) {
-    return matches[0];
-  }
-}
