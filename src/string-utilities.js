@@ -43,9 +43,13 @@ exports.stripControls = function(string) {
  * Returns a string that has been shortened
  */
 exports.truncate = function(str, position, extension) {
-  return str && (str.length > position) ?
-    str.substr(0,position) + (extension || '...') :
-    str;
+  var DEFAULT_EXTENSION = '\u2026'; // ...
+  if(!str) return;
+  if(str.length > position)
+    return str.substr(0, position) + (extension || DEFAULT_EXTENSION);
+  return str;
 };
+
+exports.elide = exports.truncate;
 
 }(lucu));
