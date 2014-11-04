@@ -14,6 +14,10 @@
  * of blocks weight the elements and use the best element approach again,
  * where probability means the likelihood of any given element being the
  * best element, not whether it is content or boilerplate.
+ *
+ * TODO: try a form of visitor pattern instead of querySelector, benchmark
+ * TODO: try querySelectorAll+contains instead of querySelector loop
+ * TODO: maybe use a single bias function and just extract features prior to that
  */
 (function (exports) {
 'use strict';
@@ -24,15 +28,12 @@ var reduce = Array.prototype.reduce;
 /**
  * Returns the best element of the document. Does some mutation
  * to the document.
- * TODO: rename to 'rub'? relieve (e.g. toplogical relief)?
+ *
+ * TODO: rename to 'rub'? relieve (e.g. toplogical relief)? is
+ * transform really the right term here? Too generic?
  */
 function transform(doc, options) {
-  // options is optional but if specified must be
-  // a type of object, or a function as it can also have props
-  var optType = typeof options;
-  if(optType != 'object' && optType != 'function') {
-    options = {};
-  }
+  options = options || {};
 
   if(options.FILTER_NAMED_AXES) {
     BLACKLIST_SELECTORS.forEach(function detachSelector(selector) {
@@ -51,6 +52,7 @@ function transform(doc, options) {
       var root = doc.body;
       var element = root.querySelector(selector);
       while(element) {
+        //console.log('filtering %s %s', selector, element.outerHTML);
         element.remove();
         element = root.querySelector(selector);
       }
@@ -59,13 +61,13 @@ function transform(doc, options) {
 
   var elements = doc.body.getElementsByTagName('*');
   var scores = initScores(doc, elements);
-  applyTextLengthBias(doc, elements, scores, options);
+  applyTextLengthBias(doc, elements, scores, options.ANNOTATE);
   applyIntrinsicBias(doc, elements, scores);
   applyDownwardBias(doc, scores);
   applyUpwardBias(elements, scores);
   applyImageBias(doc, scores);
   applyAttributeBias(doc, elements, scores);
-  maybeExposeAttributes(doc, scores, options);
+  maybeExposeAttributes(doc, scores, options.ANNOTATE);
   return findBestElement(doc, elements, scores);
 }
 
@@ -73,66 +75,22 @@ function initScores(doc, elements) {
   var scores = new Map();
   scores.set(doc.documentElement, 0);
   scores.set(doc.body, 0);
-  forEach.call(elements, function (e) { scores.set(e, 0); });
+  forEach.call(elements, function (element) { scores.set(element, 0); });
   return scores;
 }
 
-/**
- * Collects the length of each node's inner text. Returns a map of node to
- * inner text length. Nodes without text are not not stored in the map.
- *
- * This uses an agglomerative approach in contrast to a top down approach
- * (using element.textContent) because there is a substantial performance
- * benefit and the code is still simple.
- */
 function collectTextNodeLengths(doc) {
-  var map = new Map();
+  var lengths = new Map(), length = 0, node = null;
   var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
-  var textLength = 0;
-  var totalTextLength = 0;
-
-  for(var node = it.nextNode(); node; node = it.nextNode()) {
-    textLength = getAdjustedTextNodeLength(node);
-
-    // Ignore nodes without a length after trimming. This is common
-    if(!textLength) continue;
-
-    // Walk upwards and store the count in each ancestor. The node currently
-    // points to a text node, which itself is ignored. We only care about
-    // elements. Text nodes cannot contain other text nodes so we know
-    // that each parent here is an element.
-    for(node = node.parentNode; node; node = node.parentNode) {
-      totalTextLength = map.get(node) || 0;
-      map.set(node, totalTextLength + textLength);
+  while(node = it.nextNode()) {
+    length = node.nodeValue.trim().length;
+    if(!length) continue;
+    while(node = node.parentNode) {
+      lengths.set(node, (lengths.get(node) || 0) + length);
     }
   }
 
-  return map;
-}
-
-function getAdjustedTextNodeLength(node) {
-  // node.nodeValue is never null for text nodes, as otherwise
-  // the node would not exist, so there is no need to check
-  // if undefined
-  var value = node.nodeValue;
-
-  // NOTE: for whatever reason when run in conjunction with trimNodes
-  // in sanitize, the values are sometimes not trimmed, which is why
-  // calamine also does this. However, there is a second caveat, that
-  // this does not intelligently considered alternate whitespace
-  // expressions like &nbsp; that muck of space. However, given the
-  // above two issues, the performance is not horrible, and CRLF is
-  // is more likely to be used in raw HTML formatting and it is the
-  // CRLF that is prevalent. Excessive use of &nbsp; is rare.
-
-  // Testing, tentative, dealing with the above issue.
-  value = value.replace(/&nbsp;/ig, ' ');
-
-  // Many authors use copious amounts of extraneous whitespace. We want to
-  // avoid including this in the measure.
-  value = value.trim();
-
-  return value.length;
+  return lengths;
 }
 
 /**
@@ -168,7 +126,7 @@ function collectAnchorElementTextLengths(doc, charCounts) {
  * Apply a bias based the number of characters and the number of characters
  * within anchors to each element's score.
  */
-function applyTextLengthBias(doc, elements, scores, options) {
+function applyTextLengthBias(doc, elements, scores, annotate) {
 
   var charCounts = collectTextNodeLengths(doc);
   var anchorChars = collectAnchorElementTextLengths(doc, charCounts);
@@ -180,8 +138,6 @@ function applyTextLengthBias(doc, elements, scores, options) {
     if(!cc) return;
     var acc = anchorChars.get(element) || 0;
 
-    // Nodes with large amounts of text, that is not anchor text, get the most
-    // positive bias.
     // Adapted from "Boilerplate Detection using Shallow Text Features"
     // http://www.l3s.de/~kohlschuetter/boilerplate
     var bias = (0.25 * cc) - (0.7 * acc);
@@ -191,17 +147,10 @@ function applyTextLengthBias(doc, elements, scores, options) {
 
     scores.set(element, scores.get(element) + bias);
 
-    // Debugging via exposed attribute markup
-    if(cc && options.SHOW_CHAR_COUNT) {
-      element.setAttribute('cc', cc);
-    }
-
-    if(acc && options.SHOW_ANCHOR_CHAR_COUNT) {
-      element.setAttribute('acc', acc);
-    }
-
-    if(bias && options.SHOW_TEXT_BIAS) {
-      element.setAttribute('tb', bias);
+    if(annotate) {
+      if(cc) element.dataset.cc = cc;
+      if(acc) element.dataset.acc = acc;
+      if(bias) element.dataset.tb = bias.toFixed(2);
     }
   });
 }
@@ -313,26 +262,19 @@ function applyImageBias(doc, scores) {
 }
 
 // Conditionally expose attributes for debugging
-function maybeExposeAttributes(doc, scores, options) {
-  var elements = doc.documentElement.getElementsByTagName('*');
-  if(!options.SHOW_SCORE) {
-    return;
-  }
+function maybeExposeAttributes(doc, scores, annotate) {
+  if(!annotate) return;
 
-  forEach.call(elements, function setScoreAttribute(element) {
+  forEach.call(doc.documentElement.getElementsByTagName('*'), function (element) {
     var score = scores.get(element);
     if(!score) return;
-    element.setAttribute('score', score);
+    element.dataset.score = score.toFixed(2);
   });
 }
 
-/**
- * Find and return the highest scoring element in the document
- */
 function findBestElement(doc, elements, scores) {
-  // The default best element is doc.body
   var maxElement = doc.body;
-  var maxScore = scores.get(doc.body);
+  var maxScore = scores.get(maxElement);
   var numElements = elements.length;
   var currentElement = null;
   var currentScore = 0;
@@ -350,35 +292,34 @@ function findBestElement(doc, elements, scores) {
   return maxElement;
 }
 
-// Returns the corresponding figcaption element for an image, if present
-function getImageCaption(image) {
-  // NOTE: use Array.prototype.find once Chrome supports it
-  var parents = getParents(image);
-  for(var i = 0, len = parents.length, parent; i < len; i++) {
-    parent = parents[i];
-    if(parent.localName == 'figure') {
-      return parent.querySelector('figcaption');
-    }
+function arrayFind(array, predicate) {
+  for(var i = 0, length = array.length, value; i < length; i++) {
+    if(predicate(array[i]))
+      return array[i];
   }
 }
 
-/**
- * Returns an array of parents in deep-to-shallow order
- */
-function getParents(element) {
-  var parents = [];
-  for(var parent = element.parentElement; parent;
-    parent = parent.parentElement) {
+function isFigure(element) {
+  return element.localName == 'figure';
+}
+
+function getImageCaption(image) {
+  var parents = getAncestors(image);
+  var figure = arrayFind(parents, isFigure);
+  if(figure) {
+    return figure.querySelector('figcaption');
+  }
+}
+
+function getAncestors(element) {
+  // walks upward
+  var parents = [], parent = element.parentElement;
+  while(parent) {
     parents.push(parent);
+    parent = parent.parentElement;
   }
   return parents;
 }
-
-
-/**
- * Used to split up the value of an attribute into tokens.
- */
-var RE_TOKEN_DELIMITER = /[\s\-_0-9]+/g;
 
 /**
  * Applies an attribute bias to each element's score.
@@ -394,9 +335,10 @@ var RE_TOKEN_DELIMITER = /[\s\-_0-9]+/g;
  * TODO: research itemscope
  * TODO: Open Graph Protocol
  * - <meta property="og:type" content="article">
- *
  */
 function applyAttributeBias(doc, elements, scores) {
+
+  var RE_TOKEN_DELIMITER = /[\s\-_0-9]+/g;
 
   // Notes
   // itemtype="http://schema.org/BlogPosting"
@@ -424,12 +366,6 @@ function applyAttributeBias(doc, elements, scores) {
 
     element = elements[i];
 
-    // NOTE: element.className may yield SVGAnimatedString which does not
-    // support string methods, so we must use getAttribute. To be consistent
-    // I just use getAttribute in each case
-
-    // NOTE: due to unclear perf issues this violates DRY
-
     attributeValue = element.getAttribute('id');
     if(attributeValue) {
       attributeValue = attributeValue.trim();
@@ -451,6 +387,10 @@ function applyAttributeBias(doc, elements, scores) {
         }
       }
     }
+
+    // element.className yields SVGAnimatedString instead of DOMString for SVG
+    // elements. SVGAnimatedString does not have methods. Using getAttribute
+    // avoids this.
 
     attributeValue = element.getAttribute('class');
     if(attributeValue) {
@@ -505,15 +445,9 @@ function applyAttributeBias(doc, elements, scores) {
 
     if(bias) {
       scores.set(element, scores.get(element) + bias);
-
-      // Reset for next iteration
-      // This is within the if block as otherwise it is 0
       bias = 0;
     }
 
-    // Rather than create a new Set each iteration we reuse
-    // the same set object by clearing it. I assume this is
-    // faster than creating a new set object each time
     elementTokens.clear();
   }
 
@@ -895,11 +829,15 @@ var ATTRIBUTE_BIAS = new Map([
 ]);
 
 
-// TODO: BLACKLIST_SELECTORS should be a Set to demonstrate and enforce
-// uniqueness of keys
+/**
+ * Hardcoded template-based selectors that are very likely to contain
+ * boilerplate. Empirically collected.
+ * TODO: BLACKLIST_SELECTORS should be a Set to demonstrate and enforce
+ * uniqueness of keys
+ * NOTE: cannot use 'div.share' because of Concurring Opinions
+ * Therefore, cannot use 'article div.share', // Vanity Fair
+ */
 
-// Hardcoded template-based selectors that are very likely
-// to contain boilerplate. Empirically collected.
 var BLACKLIST_SELECTORS = [
   'a.aggregated-rel-link', // // The Oklahoman
   'a.carousel-control', // The Miami Herald
@@ -956,6 +894,7 @@ var BLACKLIST_SELECTORS = [
   'div.adarea', // Telegraph
   'div.ad-cluster-container', // TechCrunch
   'div.ad-container', // Fox News
+  'div.additional-stories', // Vanity Fair
   'div.addthis_toolbox', // NobelPrize.org
   'div.adCentred', // The Sydney Morning Herald
   'div.adjacent-entry-pagination', // thedomains.com
@@ -1088,6 +1027,7 @@ var BLACKLIST_SELECTORS = [
   'div.control-bar', // SF Gate
   'div.controls', // NY Daily News
   'div.correspondant', // CBS News
+  'div.cqFeature', // Vanity Fair
   'div.css-sharing', // Topix
   'div[data-module-zone="articletools_bottom"]', // The Wall Street Journal
   'div[data-ng-controller="moreLikeThisController"]', // MSNBC
@@ -1174,7 +1114,9 @@ var BLACKLIST_SELECTORS = [
   'div.issues-topics', // MSNBC
   'div[itemprop="comment"]',// KMBC
   'div#jp-relatedposts', // IT Governance USA
+  'div.j_social_set', // MSNBC (embedded share links)
   'div#latest-by-section', // Houston News
+  'div.latest-stories', // Vanity Fair
   'div.LayoutSocialTools', // ecdc.europa.eu
   'div.LayoutTools', // ecdc.europa.eu
   'div#leader', // hostilefork
@@ -1213,6 +1155,7 @@ var BLACKLIST_SELECTORS = [
   'div.more-single', // USA Today
   'div.moreweb', // Uptown Magazine
   'div#most-popular', // BBC
+  'div.most-popular', // Vanity Fair
   'div#mostPopularTab', // Reuters
   'div#most-read-news-wrapper', // The Daily Mail
   'div#mostSharedTab', // Reuters
@@ -1294,9 +1237,11 @@ var BLACKLIST_SELECTORS = [
   'div.related_content', // Bizjournal
   'div.related-items', // BBC
   'div#related_items', // Business Week
+  'div.related_items', // NY Books
   'div#relatedlinks', // ABC News
   'div.related-media', // Fox News
   'div.relatedNews', // Tampa Bay
+  'div.related-posts', // Buzzcarl
   'div.related-posts-inner', // threatpost.com
   'div.relatedRail', // Reuters
   'div#related-services', // BBC
@@ -1338,7 +1283,6 @@ var BLACKLIST_SELECTORS = [
   'div#section-comments',  // The Washington Post
   'div#section-kmt', // The Guardian
   'div.section-puffs', // Telegraph UK
-  //'div.share', // CANNOT USE
   'div#share', // Teleread
   'div.share > div.right', // auburnpub.com
   'div.shareArticles', // The Daily Mail
@@ -1356,6 +1300,7 @@ var BLACKLIST_SELECTORS = [
   'div.share-help', // BBC
   'div.share_inline_header', // The Economist
   'div.share_inline_footer', // The Economist
+  'div.share-items', // Vanity Fair
   'div.share-link-inline', // Sparkfun
   'div.shareLinks', // Reuters
   'div.sharetools-inline-article-ad', // NYTimes
@@ -1378,6 +1323,7 @@ var BLACKLIST_SELECTORS = [
   'div.single-related', // USA Today
   'div.sitewide-footer', // NBCNews
   'div.sitewide-header-content', // NBCNews
+  'div.slideshow-controls', // Vanity Fair
   'div.social', // BBC
   'div.social-action', // Pakistan Daily
   'div.social-actions', // BuzzFeed
@@ -1450,6 +1396,7 @@ var BLACKLIST_SELECTORS = [
   'div.thirdPartyRecommendedContent', // KMBC
   'div#thumb-scroller', // E-Week
   'div.three-up-list', // The Huffington Post
+  'div#tmg-related-links', // Telegraph Co
   'div#tncms-region-jh-article-bottom-content', // Idaho Press
   'div.tncms-restricted-notice', // Atlantic City Press
   'div.toolbox', // ABC News
@@ -1483,6 +1430,7 @@ var BLACKLIST_SELECTORS = [
   'div.windows-phone-links', // Windows Central
   'div#WNCol4', // Fox (subsidary myfoxny.com)
   'div#WNStoryRelatedBox', // Fox (subsidiary myfoxal.com)
+  'div.wp_rp_wrap', // BuzzCarl (wordpress related post)
   'div.xwv-related-videos-container', // The Daily Mail
   'div.x-comment-menu', // Topix
   'div.x-comments-num', // Topix
@@ -1490,6 +1438,7 @@ var BLACKLIST_SELECTORS = [
   'div#you-might-like', // The New Yorker
   'div#zergnet', // Comic Book Resources
   'dl.blox-social-tools-horizontal', // Joplin
+  'dl.keywords', // Vanity Fair
   'dl.related-mod', // Fox News
   'dl.tags', // NY Daily News
   'figure.ib-figure-ad', // KMBC
