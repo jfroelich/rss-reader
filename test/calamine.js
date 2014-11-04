@@ -53,23 +53,19 @@ function testCalamine(url) {
     lucu.unwrapNoscripts(doc);
     lucu.unwrapNoframes(doc);
     // lucu.removeInvisibleElements(doc);
-
     lucu.canonicalizeSpaces(doc);
     lucu.trimNodes(doc);
     lucu.removeEmptyNodes(doc);
     lucu.removeEmptyElements(doc);
     var result = calamine.transform(doc, {
       FILTER_NAMED_AXES: true,
-      SHOW_CHAR_COUNT: true,
-      SHOW_ANCHOR_CHAR_COUNT: true,
-      SHOW_SCORE: true,
-      SHOW_TEXT_BIAS: true
+      ANNOTATE: true
     });
 
     lucu.removeJavascriptAnchors(result);
 
     // lucu.unwrapDescendants(result);
-    //lucu.removeDescendantAttributes(lucu.DEFAULT_ALLOWED_ATTRIBUTES , result);
+    // lucu.removeDescendantAttributes(lucu.DEFAULT_ALLOWED_ATTRIBUTES , result);
 
     lucu.trimElement(result);
     result.setAttribute('best', 'best');
