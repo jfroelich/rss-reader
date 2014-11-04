@@ -267,7 +267,8 @@ function appendSlide(entry, isFirst) {
   lucu.removeEmptyNodes(doc);
   lucu.removeEmptyElements(doc);
   var results = calamine.transform(doc, {
-    FILTER_NAMED_AXES: true
+    FILTER_NAMED_AXES: true,
+    ANNOTATE: false
   });
   lucu.removeJavascriptAnchors(results);
   lucu.unwrapDescendants(results);
