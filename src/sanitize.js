@@ -215,41 +215,56 @@ function removeDescendantAttributes(allowedAttributes, element) {
   forEach.call(descendants, removeAttributes.bind(this, allowedAttributes));
 }
 
-var SELECTOR_BLACKLIST = [
+
+// TODO: this should be a Set
+var BLACKLISTED_ELEMENTS = [
+
+  // Removing head first avoids the need to remove several other tags
+  'head',
+
   'applet', 'base', 'basefont', 'bgsound', 'button', 'command',
-  'datalist', 'dialog', 'embed', 'fieldset', 'frameset', 'head',
-  'html', 'iframe', 'input', 'isindex', 'math', 'link', 'menu', 'menuitem',
-  'meta', 'object','optgroup', 'option', 'output', 'param', 'progress',
-  'script', 'select', 'spacer', 'style', 'textarea', 'title', 'xmp'
-].join(',');
+  'datalist', 'dialog', 'embed', 'fieldset', 'frameset',
+  'html', 'iframe', 'input', 'isindex', 'math', 'link', 'menu',
+  'menuitem',
+  'meta', 'object','optgroup',  'output', 'param', 'progress',
+  'script', 'spacer', 'style', 'textarea', 'title', 'xmp',
+
+  // Remove after 'select' to reduce operations
+  'select',
+  'option'
+];
 
 /**
  * Removes all elements in the black list
- *
- * TODO: avoid removing elements that have already been detached
  */
 function removeBlacklistedElements(doc) {
-  var elements = doc.body.querySelectorAll(SELECTOR_BLACKLIST);
+  var root = doc.body;
 
-  // TODO: revert to forEach.call?
-  for(var i = 0, len = elements.length; i < len; i++) {
-    elements[i].remove();
-  }
+  BLACKLISTED_ELEMENTS.forEach(function(name) {
+    var element = root.querySelector(name);
+    while(element) {
+      // console.log('removing %o', element);
+      element.remove();
+      element = root.querySelector(name);
+    }
+  });
 
   // Non-standard elements seen in the wild. These cannot be passed
   // as selectors to querySelectorAll
-  var gPlusOnes = doc.body.getElementsByTagName('g:plusone');
+  var gPlusOnes = root.getElementsByTagName('g:plusone');
   for(var i = 0, len = gPlusOnes.length; i < len; i++) {
     // NOTE: gebtn is live so one removal could affect others
     // so we have to check if defined
+    // TODO: check if not detached
     if(gPlusOnes[i]) {
       gPlusOnes[i].remove();
     }
   }
 
-  var fbComments = doc.body.getElementsByTagName('fb:comments');
+  var fbComments = root.getElementsByTagName('fb:comments');
   for(var i = 0, len = fbComments.length; i < len; i++) {
     if(fbComments[i]) {
+      // TODO: check if not detached
       fbComments[i].remove();
     }
   }
