@@ -18,62 +18,58 @@
  * string argument.
  */
 function createDocument(feeds, titleElementValue) {
-  var opmlDocument = document.implementation.createDocument(null, null);
-  var elementOPML = opmlDocument.createElement('opml');
+  var doc = document.implementation.createDocument(null, null);
+  var elementOPML = doc.createElement('opml');
   elementOPML.setAttribute('version', '2.0');
-  opmlDocument.appendChild(elementOPML);
-  var head = opmlDocument.createElement('head');
+  doc.appendChild(elementOPML);
+  var head = doc.createElement('head');
   elementOPML.appendChild(head);
-  var title = opmlDocument.createElement('title');
+  var title = doc.createElement('title');
   title.textContent = titleElementValue || 'subscriptions.xml';
   head.appendChild(title);
-  var dateNow = new Date();
-  var rfc822DateString = dateNow.toUTCString();
-  var dateCreated = opmlDocument.createElement('dateCreated');
-  dateCreated.textContent = rfc822DateString;
+  var nowString = (new Date()).toUTCString();
+  var dateCreated = doc.createElement('dateCreated');
+  dateCreated.textContent = nowString;
   head.appendChild(dateCreated);
-  var dateModified = opmlDocument.createElement('dateModified');
-  dateModified.textContent = rfc822DateString;
+  var dateModified = doc.createElement('dateModified');
+  dateModified.textContent = nowString;
   head.appendChild(dateModified);
-  var elementDocs = opmlDocument.createElement('docs');
+  var elementDocs = doc.createElement('docs');
   elementDocs.textContent = 'http://dev.opml.org/spec2.html';
   head.appendChild(elementDocs);
-  if(!feeds)
-    return opmlDocument;
+  if(!feeds) return doc;
   var exportableFeeds = feeds.filter(function isExportable(feed) {
     return feed.url;
   });
-  if(!exportableFeeds.length)
-    return opmlDocument;
-
-  var bodyElement = opmlDocument.createElement('body');
+  if(!exportableFeeds.length) return doc;
+  var bodyElement = doc.createElement('body');
   elementOPML.appendChild(bodyElement);
 
   var outlineElements = exportableFeeds.map(function (feed) {
-    var element = opmlDocument.createElement('outline');
+    var outline = doc.createElement('outline');
     // The app does not track the original format because it is not persisted
     // when the feed is first obtained. Therefore, we provide a default type
     // "rss", which could be wrong. However, I assume most other feed parsers
     // determine the format of an XML feed file from the XML document element
     // and not from here, so I don't think it causes too much of an issue. So
     // I am just noting how this is not 100% correct.
-    element.setAttribute('type', 'rss');
+    outline.setAttribute('type', 'rss');
     var title = feed.title || feed.url;
-    element.setAttribute('text', title);
-    element.setAttribute('title', title);
-    element.setAttribute('xmlUrl', feed.url);
+    outline.setAttribute('text', title);
+    outline.setAttribute('title', title);
+    outline.setAttribute('xmlUrl', feed.url);
     if(feed.description)
-      element.setAttribute('description', feed.description);
+      outline.setAttribute('description', feed.description);
     if(feed.link)
-      element.setAttribute('htmlUrl', feed.link);
-    return element;
+      outline.setAttribute('htmlUrl', feed.link);
+    return outline;
   });
 
   outlineElements.forEach(function (element) {
     bodyElement.appendChild(element);
   });
 
-  return opmlDocument;
+  return doc;
 }
 
 /**
