@@ -94,37 +94,25 @@ function collectTextNodeLengths(doc) {
 }
 
 /**
- * Aggregate the count of text within anchors within ancestors. Done from the
- * bottom up in a second pass for performance
+ * Aggregate the count of text within non-nominal anchors within ancestors.
  */
 function collectAnchorElementTextLengths(doc, charCounts) {
-
-  var map = new Map();
-
-  // We specifically select only non-nominal anchors because we only
-  // want non-nominals to affect scoring
   var anchors = doc.body.querySelectorAll('a[href]');
-
-  forEach.call(anchors, function aggregateAnchorLength(anchor) {
-
+  return reduce.call(anchors, function (map, anchor) {
     var count = charCounts.get(anchor);
-    // Ignore anchors without inner text (e.g. image link)
-    if(!count) return;
-
-    // Walk upward and store the count in each ancestor
-    var sum = 0;
-    for(var element = anchor; element; element = element.parentElement) {
-      sum = map.get(element) || 0;
-      map.set(element, sum + count);
-    }
-  });
-
-  return map;
+    return count ? [anchor].concat(getAncestors(anchor)).reduce(function(map,
+      element) {
+      return map.set(element, (map.get(element) || 0) + count);
+    }, map) : map;
+  }, new Map());
 }
 
 /**
  * Apply a bias based the number of characters and the number of characters
  * within anchors to each element's score.
+ *
+ * Adapted from "Boilerplate Detection using Shallow Text Features"
+ * http://www.l3s.de/~kohlschuetter/boilerplate
  */
 function applyTextLengthBias(doc, elements, scores, annotate) {
 
@@ -133,24 +121,17 @@ function applyTextLengthBias(doc, elements, scores, annotate) {
 
   forEach.call(elements, function handleElement(element) {
     var cc = charCounts.get(element);
-    // If there is no text, there will not be any anchor text,
-    // so the bias will be 0, so exit early
     if(!cc) return;
     var acc = anchorChars.get(element) || 0;
-
-    // Adapted from "Boilerplate Detection using Shallow Text Features"
-    // http://www.l3s.de/~kohlschuetter/boilerplate
     var bias = (0.25 * cc) - (0.7 * acc);
-
-    // Capping the maximum bias amount. Tentative.
+    // Tentative
     bias = Math.min(4000, bias);
-
     scores.set(element, scores.get(element) + bias);
 
     if(annotate) {
-      if(cc) element.dataset.cc = cc;
+      element.dataset.cc = cc;
       if(acc) element.dataset.acc = acc;
-      if(bias) element.dataset.tb = bias.toFixed(2);
+      element.dataset.tb = bias.toFixed(2);
     }
   });
 }
@@ -159,15 +140,10 @@ function applyTextLengthBias(doc, elements, scores, annotate) {
  * Apply an intrinsic bias (based on the type of element itself)
  */
 function applyIntrinsicBias(doc, elements, scores) {
-
   forEach.call(elements, function (element) {
     var bias = INTRINSIC_BIAS.get(element.localName);
     if(!bias) return;
-    var score = scores.get(element);
-
-    // no need to check undefined score
-
-    scores.set(element, score + bias);
+    scores.set(element, scores.get(element) + bias);
   });
 
   // INTRINSIC_BIAS intentionally does not contain a bias for the
@@ -176,6 +152,10 @@ function applyIntrinsicBias(doc, elements, scores) {
   // related articles. Therefore, we have three cases: no article element,
   // one article element, or multiple. If one, promote greatly. If none
   // or multiple, promote weakly.
+
+  // TODO: promoting weakly in path case is pointless when i dont
+  // care about individual scores, only the best element score.
+  // Maybe this should just be the length==1 case.
 
   var articles = doc.body.getElementsByTagName('article');
   if(articles.length == 1) {
@@ -324,132 +304,43 @@ function getAncestors(element) {
 /**
  * Applies an attribute bias to each element's score.
  *
- * For each element, collect some of its attribute values, tokenize the
- * values, and then sum up the biases for the tokens and apply them to
- * the element's score.
- *
- * Due to very poor performance, this uses basic loops and an imperative
- * style. In addition, this previously encounted a strange v8 error about
- * "too many optimizations" so calling functions within loops is avoided.
- *
- * TODO: research itemscope
- * TODO: Open Graph Protocol
- * - <meta property="og:type" content="article">
+ * TODO: maybe only score attributes of certain elements. There are
+ * some elements where scoring is not that important.
+ * TODO: itemscope
+ * TODO: split on case-transition (lower2upper,upper2lower)
+ * TODO: itemtype has the same issues as 'article' id/class
  */
 function applyAttributeBias(doc, elements, scores) {
 
-  var RE_TOKEN_DELIMITER = /[\s\-_0-9]+/g;
-
-  // Notes
-  // itemtype="http://schema.org/BlogPosting"
-  // itemtype="http://schema.org/WebPage"
-  //http://schema.org/TechArticle
-  //http://schema.org/ScholarlyArticle
-
-  // itemprop="mainContentOfPage"
-  // role="complementary"
-
-  // TODO: itemtype has the same issues as 'article' id/class,
-  // in that some articles use the itemtype repeatedly
-
-  var attributeValue = null;
-  var bias = 0;
-  var element = null;
-  var length = elements.length;
-  var elementTokens = new Set();
-  var attributeTokens = null;
-  var i = 0, j = 0;
-  var it = null;
-  var val = null;
-
-  for(i = 0; i < length; i++) {
-
-    element = elements[i];
-
-    attributeValue = element.getAttribute('id');
-    if(attributeValue) {
-      attributeValue = attributeValue.trim();
-      if(attributeValue) {
-        attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
-        for(j = 0; j < attributeTokens.length; j++) {
-          elementTokens.add(attributeTokens[j]);
-        }
+  forEach.call(elements, function handleElement(element) {
+    var tokenSet = new Set();
+    var names = ['id', 'name', 'class', 'itemprop', 'itemtype', 'role'];
+    names.forEach(function handleAttribute(name) {
+      var value = null;
+      if(name == 'itemtype') {
+        value = getItemTypePath(element);
+      } else {
+        value = element.getAttribute(name);
       }
+
+      if(!value) return;
+      var delimiterPattern = /[\s\-_0-9]+/g;
+      var tokens = value.toLowerCase().split(delimiterPattern);
+      tokens.forEach(function addToken(token) {
+        tokenSet.add(token);
+      });
+    });
+
+    var tokenIterator = tokenSet.values();
+    var bias = 0;
+    for(var value = tokenIterator.next().value; value;
+      value = tokenIterator.next().value) {
+      bias += ATTRIBUTE_BIAS.get(value) || 0;
     }
-
-    attributeValue = element.getAttribute('name');
-    if(attributeValue) {
-      attributeValue = attributeValue.trim();
-      if(attributeValue) {
-        attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
-        for(j = 0; j < attributeTokens.length; j++) {
-          elementTokens.add(attributeTokens[j]);
-        }
-      }
-    }
-
-    // element.className yields SVGAnimatedString instead of DOMString for SVG
-    // elements. SVGAnimatedString does not have methods. Using getAttribute
-    // avoids this.
-
-    attributeValue = element.getAttribute('class');
-    if(attributeValue) {
-      attributeValue = attributeValue.trim();
-      if(attributeValue) {
-        attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
-        for(j = 0; j < attributeTokens.length; j++) {
-          elementTokens.add(attributeTokens[j]);
-        }
-      }
-    }
-
-    attributeValue = element.getAttribute('itemprop');
-    if(attributeValue) {
-      attributeValue = attributeValue.trim();
-      if(attributeValue) {
-        attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
-        for(j = 0; j < attributeTokens.length; j++) {
-          elementTokens.add(attributeTokens[j]);
-        }
-      }
-    }
-
-    attributeValue = element.getAttribute('role');
-    if(attributeValue) {
-      attributeValue = attributeValue.trim();
-      if(attributeValue) {
-        attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
-        for(j = 0; j < attributeTokens.length; j++) {
-          elementTokens.add(attributeTokens[j]);
-        }
-      }
-    }
-
-    // Tentatively disabled while dealing with perf issues
-    //attributeValue = getItemType(element);
-    //if(attributeValue) {
-    //  attributeValue = attributeValue.trim();
-    //  if(attributeValue) {
-    //    var attributeTokens = attributeValue.toLowerCase().split(RE_TOKEN_DELIMITER);
-    //    for(var j = 0; j < attributeTokens.length; j++) {
-    //      elementTokens.add(attributeTokens[j]);
-    //    }
-    //  }
-    //}
-
-    // For each token, lookup its corresponding bias and aggregate
-    it = elementTokens.values();
-    for(val = it.next().value; val; val = it.next().value) {
-      bias += ATTRIBUTE_BIAS.get(val) || 0;
-    }
-
     if(bias) {
       scores.set(element, scores.get(element) + bias);
-      bias = 0;
     }
-
-    elementTokens.clear();
-  }
+  });
 
   // Pathological cases for "articleBody"
   // See, e.g., ABC News, Comic Book Resources
@@ -463,9 +354,6 @@ function applyAttributeBias(doc, elements, scores) {
   // is an article element, and a single div class='article' element,
   // then only one element should get promoted? For now it is not too
   // important.
-
-  //var forEach = Array.prototype.forEach;
-
   var articleClass = doc.body.getElementsByClassName('article');
   if(articleClass.length == 1) {
     scores.set(articleClass[0], scores.get(articleClass[0]) + 1000);
@@ -474,7 +362,6 @@ function applyAttributeBias(doc, elements, scores) {
     // is the actual article?
     forEach.call(articleClass, updateScore.bind(null, scores, 200));
   }
-
 
   // NOTE: this is invariant but not in a loop so probably not an issue
   var articleAttributes =  ['id', 'class', 'name', 'itemprop', 'role'].map(
@@ -493,15 +380,16 @@ function applyAttributeBias(doc, elements, scores) {
   }
 }
 
-// Helper function for applyAttributeBias that gets the
-// path component of a schema url
-function getItemType(element) {
+// Returns the path part of itemtype attribute values
+function getItemTypePath(element) {
 
-  // So far the following have been witnessed in the wild
   // http://schema.org/Article
   // http://schema.org/NewsArticle
   // http://schema.org/BlogPosting
   // http://schema.org/Blog
+  // http://schema.org/WebPage
+  // http://schema.org/TechArticle
+  // http://schema.org/ScholarlyArticle
 
   var value = element.getAttribute('itemtype');
   if(!value) return;
@@ -1029,6 +917,7 @@ var BLACKLIST_SELECTORS = [
   'div.correspondant', // CBS News
   'div.cqFeature', // Vanity Fair
   'div.css-sharing', // Topix
+  'div#ctl00_ContentPlaceHolder1_UC_UserComment1_updatePanelComments', // Ahram
   'div[data-module-zone="articletools_bottom"]', // The Wall Street Journal
   'div[data-ng-controller="moreLikeThisController"]', // MSNBC
   'div.dfad', // thedomains.com
@@ -1103,6 +992,7 @@ var BLACKLIST_SELECTORS = [
   'div.htzTeaser', // Ha'Aretz
   'div.ib-collection', // KMBC
   'div.icons', // Brecorder
+  'div.icons_inner', // Ahram
   'div#infinite-list', // The Daily Mail
   'div#inlineAdCont', // Salt Lake Tribune
   'div.inline-sharebar', // CBS News
@@ -1230,6 +1120,7 @@ var BLACKLIST_SELECTORS = [
   'div#relartstory', // Times of India
   'div#related', // The Boston Globe (note: wary of using this)
   'div.related', // CNBC (note: wary of using this one)
+  'div.related_articles', // Ahram
   'div.related-carousel', // The Daily Mail
   'div.related-block', // auburnpub.com
   'div.related-block2', // St. Louis Today
@@ -1438,6 +1329,7 @@ var BLACKLIST_SELECTORS = [
   'div#you-might-like', // The New Yorker
   'div#zergnet', // Comic Book Resources
   'dl.blox-social-tools-horizontal', // Joplin
+  'dl#comments', // CJR
   'dl.keywords', // Vanity Fair
   'dl.related-mod', // Fox News
   'dl.tags', // NY Daily News
@@ -1445,8 +1337,10 @@ var BLACKLIST_SELECTORS = [
   'figure.kudo', // svbtle.com blogs
   'footer', // Misc.
   'form#comment_form', // Doctors Lounge
+  'form.comments-form', // CJR
   'header', // Misc.
   'h1#external-links', // The Sprawl (preceds unnamed <ul>)
+  'h2#comments', // WordPress lemire-theme
   'h2.hide-for-print', // NobelPrize.org
   'h2#page_header', // CNBC
   'h3#comments-header', // Knight News Challenge
@@ -1464,6 +1358,7 @@ var BLACKLIST_SELECTORS = [
   'li.tags', // Smashing Magazine
   'ol[data-vr-zone="Around The Web"]', // The Oklahoman
   'ol#comment-list', // Pro Football Talk
+  'ol#commentlist', // WordPress lemire-theme
   'nav', // Misc.
   'p.article-more', // The Boston Globe
   'p.authorFollow', // The Sydney Morning Herald
@@ -1577,6 +1472,7 @@ var BLACKLIST_SELECTORS = [
   'ul.services', // The Appendix
   'ul.sharebar', // CNet
   'ul.share-buttons', // Ars Technica
+  'ul.share_top', // CJR
   'ul.side-news-list', // Channel News Asia
   'ul.social', // The Sydney Morning Herald
   'ul.social-bookmarking-module', // Wired Magazine
