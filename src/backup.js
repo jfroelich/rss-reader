@@ -17,6 +17,7 @@
  * Calls onComplete with num feeds added, num feeds processed, and
  * array of exceptions
  *
+ * TODO: this needs testing, is it still reading in files?
  * TODO: just allow for add feed to fail on dup instead of agg?
  * TODO: rather than agg per file, agg at the end
  * TODO: use better name for outlinesHash, maybe use Set
