@@ -33,6 +33,8 @@ var lucu = lucu || {};
  * TODO: entryTimeout should maybe be deprecated? Where should it really
  * be coming from?
  *
+ * TODO: rather than call onerror, throw exception?
+ *
  * @param params {object} an object literal that should contain props:
  * - url the remote url of the feed to fetch
  * - oncomplete - a callback to call when the feed is fetched, that is passed
@@ -118,6 +120,9 @@ lucu.fetchFeed = function(params) {
       return onError({type: 'invalid-xml', target: this});
     }
 
+    // TODO: why catch the exception here? Shouldn't this
+    // just allow the exception to bubble through?
+
     try {
       var feed = lucu.deserializeFeed(xmlDocument);
     } catch(e) {
@@ -158,8 +163,11 @@ lucu.fetchFeed = function(params) {
     // augmented. need to use something like findEntryByFeedIdAndLinkURL
     // that uses a composite index
 
-    // TODO: technically I should be opening a conn per lookup because
+    // TODO: I should be opening a conn per lookup because
     // there is no guarantee db conn remains open on long http request
+
+    // TODO: the logic for whether to update feels like it should not
+    // involve db query, or at least, somehow it is out of place
 
     function onFetchHTML(entry, doc, responseURL) {
       lucu.fetchImageDimensions(doc, function() {
