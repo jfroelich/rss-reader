@@ -5,34 +5,31 @@
 var lucu = lucu || {};
 
 /**
- * Convert an XMLDocument containing feed data into an object
+ * Convert an XML document containing feed data into an object
  *
- * Returns an error property if xmlDocument is undefined, or if
- * xmlDocument.documentElement is undefined, or if the document is not one of
- * the supported types.
- *
- * TODO: throw exceptions instead of returning error code
- * TODO: maybe this should produce an actual 'Feed' function object instead of a
- * generic Javascript object
+ * TODO: somehow cleanup the ifs while not violating DRY
  */
-lucu.deserializeFeed = function (xmlDocument) {
+lucu.deserializeFeed = function (document) {
   'use strict';
 
   var map = Array.prototype.map;
-  var getHTMLOrText = function (node) {
+
+  function getHTMLOrText(node) {
     return node.nodeType == Node.ELEMENT_NODE ?
       node.innerHTML : node.textContent;
-  };
-  var getTextContent = function (element) {
-    return element.textContent;
-  };
-  var getAtomText = function (entryElement) {
-    var contentElement = entryElement.querySelector('content');
-    var nodes = contentElement ? contentElement.childNodes : [];
-    return map.call(nodes, getHTMLOrText).join('').trim();
-  };
+  }
 
-  var getText = function (rootElement, selectors, attribute) {
+  function getTextContent(element) {
+    return element.textContent;
+  }
+
+  function getAtomText(entry) {
+    var content = entry.querySelector('content');
+    var nodes = content ? content.childNodes : [];
+    return map.call(nodes, getHTMLOrText).join('').trim();
+  }
+
+  function getText(rootElement, selectors, attribute) {
     var getter;
     if(attribute) {
       getter = function(element) {
@@ -51,60 +48,50 @@ lucu.deserializeFeed = function (xmlDocument) {
       if(!temp) continue;
       return temp;
     }
-  };
+  }
 
-  var result = {};
-
-  if(!xmlDocument) {
+  // TODO: is this check caller's responsibility?
+  if(!document) {
     throw new TypeError('Undefined document');
   }
 
-  var documentElement = xmlDocument.documentElement;
-
-  if(!documentElement) {
+  var root = document.documentElement;
+  if(!root) {
     throw new TypeError('Undefined document element');
   }
 
-  var isRSS = documentElement.matches('rss');
-  var isAtom = documentElement.matches('feed');
-  var isRDF = documentElement.matches('rdf');
+  var isRSS = root.matches('rss');
+  var isAtom = root.matches('feed');
+  var isRDF = root.matches('rdf');
 
   if(!isRSS && !isAtom && !isRDF) {
-    throw new TypeError('Invalid document element ' +
-      documentElement.localName);
+    throw new TypeError('Unsupported document element ' + root.localName);
   }
 
-  var feedTitleText = getText(documentElement, isAtom ? ['feed > title'] :
-    ['channel > title']);
-  if(feedTitleText) {
-    result.title = feedTitleText;
-  }
+  var result = {};
 
-  var feedDescriptionText = getText(documentElement,
-    isAtom ? ['feed > subtitle'] : ['channel > description']);
-  if(feedDescriptionText) {
-    result.description = feedDescriptionText;
-  }
+  var title = getText(root, isAtom ? ['feed > title'] : ['channel > title']);
+  if(title) result.title = title;
 
-  var feedLinkSelectors, feedLinkText;
+  var description = getText(root, isAtom ? ['feed > subtitle'] :
+    ['channel > description']);
+  if(description) result.description = description;
+
+  var feedLinkSelectors, link;
   if(isAtom) {
     feedLinkSelectors = ['feed > link[rel="alternate"]',
       'feed > link[rel="self"]', 'feed > link'];
-    feedLinkText = getText(documentElement, feedLinkSelectors, 'href');
-    if(feedLinkText) {
-      result.link = feedLinkText;
-    }
+    link = getText(root, feedLinkSelectors, 'href');
+    if(link) result.link = link;
   } else {
     // Prefer the textContent of a link element that does not have an href
-    feedLinkText = getText(documentElement, ['channel > link:not([href])']);
-    if(feedLinkText) {
-      result.link = feedLinkText;
+    link = getText(root, ['channel > link:not([href])']);
+    if(link) {
+      result.link = link;
     } else {
       // Fall back to href attribute value for any link
-      feedLinkText = getText(documentElement, ['channel > link'], 'href');
-      if(feedLinkText) {
-        result.link = feedLinkText;
-      }
+      link = getText(root, ['channel > link'], 'href');
+      if(link) result.link = link;
     }
   }
 
@@ -112,46 +99,29 @@ lucu.deserializeFeed = function (xmlDocument) {
   var feedDateSelectors = isAtom ? ['feed > updated'] :
     (isRSS ? ['channel > pubdate', 'channel > lastBuildDate',
       'channel > date'] : ['channel > date']);
-  var feedDateText = getText(documentElement, feedDateSelectors);
-  if(feedDateText) {
-    result.date = feedDateText;
-  }
+  var date = getText(root, feedDateSelectors);
+  if(date) result.date = date;
 
   var entrySelector = isAtom ? 'feed > entry' : isRSS ?
     'channel > item' : 'item';
-  var entries = documentElement.querySelectorAll(entrySelector);
-  result.entries = map.call(entries, function (entryElement) {
+  var entries = root.querySelectorAll(entrySelector);
+  result.entries = map.call(entries, function (entry) {
     var result = {};
-    var entryTitleText = getText(entryElement, ['title']);
-    if(entryTitleText) {
-      result.title = entryTitleText;
-    }
-
-    var entryLinkText = isAtom ?  getText(entryElement,
-      ['link[rel="alternate"]','link[rel="self"]','link[href]'], 'href') :
-      getText(entryElement, ['origLink','link']);
-    if(entryLinkText) {
-      result.link = entryLinkText;
-    }
-
-    var entryAuthorText = getText(entryElement,
-      isAtom ? ['author name'] : ['creator','publisher']);
-    if(entryAuthorText) {
-      result.author = entryAuthorText;
-    }
-
-    var entryPubDateText = getText(entryElement,
-      isAtom ? ['published','updated'] : (isRSS ? ['pubDate'] : ['date']));
-    if(entryPubDateText) {
-      result.pubdate = entryPubDateText;
-    }
-
-    var entryContentText = isAtom ? getAtomText(entryElement) :
-      getText(entryElement,['encoded','description','summary']);
-    if(entryContentText) {
-      result.content = entryContentText;
-    }
-
+    var title = getText(entry, ['title']);
+    if(title) result.title = title;
+    var link = isAtom ?  getText(entry,
+      ['link[rel="alternate"]', 'link[rel="self"]', 'link[href]'], 'href') :
+      getText(entry, ['origLink','link']);
+    if(link) result.link = link;
+    var author = getText(entry, isAtom ? ['author name'] :
+      ['creator', 'publisher']);
+    if(author) result.author = author;
+    var pubDate = getText(entry, isAtom ? ['published', 'updated'] :
+      (isRSS ? ['pubDate'] : ['date']));
+    if(pubDate) result.pubdate = pubDate;
+    var content = isAtom ? getAtomText(entry) :
+      getText(entry, ['encoded', 'description', 'summary']);
+    if(content) result.content = content;
     return result;
   });
   return result;
