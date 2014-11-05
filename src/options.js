@@ -385,6 +385,7 @@ function showOrSkipSubscriptionPreview(url) {
   };
 
   // TODO: check if already subscribed before preview?
+  // TODO: catch exceptions?
 
   lucu.fetchFeed({
     url: url,
