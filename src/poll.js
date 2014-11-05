@@ -40,6 +40,8 @@ lucu.pollFeeds = function() {
           });
         }
 
+        // catch exception??
+
         lucu.fetchFeed({
           url: localFeed.url,
           oncomplete: onFetch,
