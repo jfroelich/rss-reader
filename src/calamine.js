@@ -66,7 +66,7 @@ function transform(doc, options) {
   applyDownwardBias(doc, scores);
   applyUpwardBias(elements, scores);
   applyImageBias(doc, scores);
-  applyAttributeBias(doc, elements, scores);
+  applyAttributeBias(doc, scores);
   maybeExposeAttributes(doc, scores, options.ANNOTATE);
   return findBestElement(doc, elements, scores);
 }
@@ -233,9 +233,6 @@ function applyImageBias(doc, scores) {
     var area = image.width ? image.width * image.height : 0;
     var areaBias = 0.0015 * Math.min(100000, area);
 
-    // TODO: I don't think i actually want/need to score the image itself
-    //scores.set(image, scores.get(image) + descBias + areaBias);
-
     scores.set(parent, scores.get(parent) + carouselBias + descBias +
       areaBias);
   });
@@ -291,64 +288,67 @@ function getImageCaption(image) {
   }
 }
 
+// Walks upward
 function getAncestors(element) {
-  // walks upward
-  var parents = [], parent = element.parentElement;
-  while(parent) {
+  var parents = [], parent = element;
+  while(parent = parent.parentElement) {
     parents.push(parent);
-    parent = parent.parentElement;
   }
   return parents;
 }
 
 /**
+ * Splits attribute value into tokens
+ * TODO: split on case-transition (lower2upper,upper2lower)
+ */
+function tokenize(string) {
+  var tokens = string.toLowerCase().split(/[\s\-_0-9]+/g).filter(identity);
+  var set = new Set(tokens);
+  return setToArray(set);
+}
+
+function identity(value) {
+  return value;
+}
+
+function setToArray(set) {
+  var array = [];
+  set.forEach(function(v) {
+    array.push(v);
+  });
+  return array;
+}
+
+var SCORABLE_ATTRIBUTES = ['id', 'name', 'class', 'itemprop', 'itemtype', 'role'];
+
+function getAttributeBias(element) {
+  var values = SCORABLE_ATTRIBUTES.map(function asValue(name) {
+    return name == 'itemtype' ? getItemTypePath(element) :
+      element.getAttribute(name);
+  }).filter(identity);
+  var tokens = tokenize(values.join(' '));
+  return tokens.reduce(function add(sum, value) {
+    return sum + ATTRIBUTE_BIAS.get(value) || 0;
+  }, 0);
+}
+
+var SCORABLE_SELECTOR = 'a, aside, div, dl, figure, h1, h2, h3, h4,'+
+  ' ol, p, section, span, ul';
+
+/**
  * Applies an attribute bias to each element's score.
  *
- * TODO: maybe only score attributes of certain elements. There are
- * some elements where scoring is not that important.
  * TODO: itemscope
- * TODO: split on case-transition (lower2upper,upper2lower)
- * TODO: itemtype has the same issues as 'article' id/class
+ * TODO: itemtype 'article' id/class issue
  */
-function applyAttributeBias(doc, elements, scores) {
-
-  forEach.call(elements, function handleElement(element) {
-    var tokenSet = new Set();
-    var names = ['id', 'name', 'class', 'itemprop', 'itemtype', 'role'];
-    names.forEach(function handleAttribute(name) {
-      var value = null;
-      if(name == 'itemtype') {
-        value = getItemTypePath(element);
-      } else {
-        value = element.getAttribute(name);
-      }
-
-      if(!value) return;
-      var delimiterPattern = /[\s\-_0-9]+/g;
-      var tokens = value.toLowerCase().split(delimiterPattern);
-      tokens.forEach(function addToken(token) {
-        tokenSet.add(token);
-      });
-    });
-
-    var tokenIterator = tokenSet.values();
-    var bias = 0;
-    for(var value = tokenIterator.next().value; value;
-      value = tokenIterator.next().value) {
-      bias += ATTRIBUTE_BIAS.get(value) || 0;
-    }
-    if(bias) {
-      scores.set(element, scores.get(element) + bias);
-    }
+function applyAttributeBias(doc, scores) {
+  var elements = doc.body.querySelectorAll(SCORABLE_SELECTOR);
+  forEach.call(elements, function (element) {
+    scores.set(element, scores.get(element) + getAttributeBias(element));
   });
 
-  // Pathological cases for "articleBody"
-  // See, e.g., ABC News, Comic Book Resources
-  // Also, because 'article' not in attribute bias, explicitly search here
-  // for itemtype article (see schema.org)
-
+  // Pathological cases
   // TODO: article_body (E-Week)
-
   // TODO: the tests for a single 'article' element should not be
   // exclusive. We want 'one' possible way of promoting greatly. If there
   // is an article element, and a single div class='article' element,
@@ -382,7 +382,6 @@ function applyAttributeBias(doc, elements, scores) {
 
 // Returns the path part of itemtype attribute values
 function getItemTypePath(element) {
-
   // http://schema.org/Article
   // http://schema.org/NewsArticle
   // http://schema.org/BlogPosting
@@ -471,7 +470,6 @@ var INTRINSIC_BIAS = new Map([
   ['blockquote', 10],
   ['code', 10],
   ['content', 200],
-  //['div', 10],
   ['div', 200],
   ['figcaption', 10],
   ['figure', 10],
@@ -606,7 +604,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['head', -50],
   ['header', -100],
   ['heading', -50],
-  ['hentry', 150], // Common wordpress class
+  ['hentry', 150], // Common wordpress class, and microformat
   ['hnews', 200], // Common wordpress class
   ['inset', -50],
   ['insta', -100],
@@ -1247,6 +1245,7 @@ var BLACKLIST_SELECTORS = [
   'div.SPOSTARBUST-Related-Posts', // RObservatory
   'div.sps-twitter_module', // BBC
   'div.ssba', // Funker (social share button actions?)
+  'div#ssba', // Clizbeats
   'div.stack-talent', // NBC News (author bio)
   'div.stack-video-nojs-overlay', // NBC News
   'div.staff_info', // Bizjournals
@@ -1502,6 +1501,5 @@ exports.calamine = {
   stripTitlePublisher: stripTitlePublisher,
   transform: transform
 };
-
 
 }(this));
