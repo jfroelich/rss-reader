@@ -16,40 +16,40 @@ var lucu = lucu || {};
  *
  * TODO: avoid pinging tracker images?
  */
-lucu.fetchImageDimensions = function(document, onComplete) {
+lucu.fetchImageDimensions = function(hostDocument, document, onComplete) {
   'use strict';
+
   var images = document.body.getElementsByTagName('img');
   var filter = Array.prototype.filter;
   var RE_DATA_URN = /^\s*data\s*:/i;
+
   var fetchables = filter.call(images, function (image) {
     var src = (image.getAttribute('src') || '').trim();
     return src && !image.getAttribute('width') && !image.width &&
       !RE_DATA_URN.test(src);
   });
-  var counter = fetchables.length;
-  var maybeCallback = function() {
-    if(counter) return;
-    onComplete();
-  };
-  var onerror = function() {
-    counter--;
-    maybeCallback();
-  };
 
-  // Ensure continuation in case of 0 fetchable images
-  maybeCallback();
+  var counter = fetchables.length;
+  // Ensure continuation in case of no images
+  if(!counter) return onComplete();
 
   fetchables.forEach(function (image) {
-    var proxy = window.document.importNode(image, false);
-    proxy.onerror = onerror;
+    var proxy = hostDocument.importNode(image, false);
+    proxy.onerror = function() {
+      counter--;
+      if(!counter) onComplete();
+
+    };
     proxy.onload = function () {
       image.width = proxy.width;
       image.height = proxy.height;
       counter--;
-      maybeCallback();
+      if(!counter) onComplete();
     };
+
+    // Hack to trigger request
     var temp = proxy.src;
     proxy.src = void temp;
-    proxy.src = temp; // triggers fetch
+    proxy.src = temp;
   });
 };

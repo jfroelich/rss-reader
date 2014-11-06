@@ -178,7 +178,9 @@ lucu.fetchFeed = function(params) {
     // involve db query, or at least, somehow it is out of place
 
     function onFetchHTML(entry, doc, responseURL) {
-      lucu.fetchImageDimensions(doc, function() {
+      // TODO: externalize host document somehow
+      var hostDocument = window.document;
+      lucu.fetchImageDimensions(hostDocument, doc, function() {
         var html = doc.body.innerHTML;
 
         if(html) {
