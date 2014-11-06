@@ -3,30 +3,21 @@
 // that can be found in the LICENSE file
 
 /**
- * OPML module that provides methods for marshalling to and unmarshalling
- * from OPML documents.
- *
- * TODO: explicit dependence on lucu.stripControls and lucu.stripTags
- */
-(function(exports) {
-'use strict';
-
-/**
- * Generates an OPML XMLDocument object. Feeds should be an array of feed
+ * Returns an OPML XMLDocument object. Feeds should be an array of feed
  * objects. Feed objects should have properties title, url, description, and
- * link. Url is the only required property. TitleElementValue is optional
- * string argument.
+ * link. Url is the only required property.
  */
-function createDocument(feeds, titleElementValue) {
+lucu.createOPMLDocument = function(feeds, title) {
+  'use strict';
   var doc = document.implementation.createDocument(null, null);
-  var elementOPML = doc.createElement('opml');
-  elementOPML.setAttribute('version', '2.0');
-  doc.appendChild(elementOPML);
+  var opml = doc.createElement('opml');
+  opml.setAttribute('version', '2.0');
+  doc.appendChild(opml);
   var head = doc.createElement('head');
-  elementOPML.appendChild(head);
-  var title = doc.createElement('title');
-  title.textContent = titleElementValue || 'subscriptions.xml';
-  head.appendChild(title);
+  opml.appendChild(head);
+  var titleElement = doc.createElement('title');
+  titleElement.textContent = title || 'subscriptions.xml';
+  head.appendChild(titleElement);
   var nowString = (new Date()).toUTCString();
   var dateCreated = doc.createElement('dateCreated');
   dateCreated.textContent = nowString;
@@ -34,25 +25,20 @@ function createDocument(feeds, titleElementValue) {
   var dateModified = doc.createElement('dateModified');
   dateModified.textContent = nowString;
   head.appendChild(dateModified);
-  var elementDocs = doc.createElement('docs');
-  elementDocs.textContent = 'http://dev.opml.org/spec2.html';
-  head.appendChild(elementDocs);
+  var docs = doc.createElement('docs');
+  docs.textContent = 'http://dev.opml.org/spec2.html';
+  head.appendChild(docs);
   if(!feeds) return doc;
-  var exportableFeeds = feeds.filter(function isExportable(feed) {
+  var exportables = feeds.filter(function (feed) {
     return feed.url;
   });
-  if(!exportableFeeds.length) return doc;
-  var bodyElement = doc.createElement('body');
-  elementOPML.appendChild(bodyElement);
+  if(!exportables.length) return doc;
+  var body = doc.createElement('body');
+  opml.appendChild(body);
 
-  var outlineElements = exportableFeeds.map(function (feed) {
+  var outlines = exportables.map(function (feed) {
     var outline = doc.createElement('outline');
-    // The app does not track the original format because it is not persisted
-    // when the feed is first obtained. Therefore, we provide a default type
-    // "rss", which could be wrong. However, I assume most other feed parsers
-    // determine the format of an XML feed file from the XML document element
-    // and not from here, so I don't think it causes too much of an issue. So
-    // I am just noting how this is not 100% correct.
+    // We do not know the original format, so default to rss
     outline.setAttribute('type', 'rss');
     var title = feed.title || feed.url;
     outline.setAttribute('text', title);
@@ -65,25 +51,25 @@ function createDocument(feeds, titleElementValue) {
     return outline;
   });
 
-  outlineElements.forEach(function (element) {
-    bodyElement.appendChild(element);
+  outlines.forEach(function (element) {
+    body.appendChild(element);
   });
 
   return doc;
-}
+};
+
 
 /**
  * Generates an array of outline objects from an OPML XMLDocument object.
  *
+ * TODO: explicit dependence on lucu.stripControls and lucu.stripTags?
  * TODO: guard against duplicates?
  */
-function createOutlines(doc) {
+lucu.createOPMLOutlines = function(doc) {
   if(!doc || !doc.documentElement || !doc.documentElement.matches('opml'))
     return [];
   var filter = Array.prototype.filter;
-
   // TODO: shouldn't this be doc.documentElement.get...?
-
   var outlineElements = doc.getElementsByTagName('outline');
   return filter.call(outlineElements, function (element) {
     var type = element.getAttribute('type');
@@ -118,12 +104,4 @@ function createOutlines(doc) {
       outline.link = link;
     return outline;
   });
-}
-
-exports.lucu = exports.lucu || {};
-exports.lucu.opml = {
-  createDocument: createDocument,
-  createOutlines: createOutlines
 };
-
-}(this));
