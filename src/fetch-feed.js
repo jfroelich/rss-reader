@@ -5,6 +5,11 @@
 var lucu = lucu || {};
 
 /**
+ * TODO: this needs refactoring. deserializeFeed should be separate.
+ * fetchFullArticles should not be a parameter and should not occur
+ * here
+ *
+ *
  * Fetches the XML for a feed from a URL, then parses it into
  * a javascript object, and passes this along to a callback. If an error
  * occurs along the way, calls an error callback instead. Async.
@@ -28,8 +33,8 @@ var lucu = lucu || {};
  * TODO: is an approach that uses overrideMimeType better than
  * checking content type? will it just cause the native parsing errors I
  * was trying to avoid?
- * TODO: responseURL contains the redirected URL. Need to update the url
- * when that happens. Maybe I need to be storing both urls in the db.
+ * TODO: request.responseURL contains the redirected URL. Need to update the url
+ * when that happens. Maybe I need to be storing both urls in the db?
  * TODO: entryTimeout should maybe be deprecated? Where should it really
  * be coming from?
  *
@@ -122,6 +127,9 @@ lucu.fetchFeed = function(params) {
 
     // TODO: why catch the exception here? Shouldn't this
     // just allow the exception to bubble through?
+
+    // TODO: should this not be deserializing the feed? isn't that
+    // bad coupling?
 
     try {
       var feed = lucu.deserializeFeed(xmlDocument);
