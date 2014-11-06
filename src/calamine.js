@@ -312,6 +312,13 @@ function identity(value) {
 }
 
 function setToArray(set) {
+
+  // Chrome does not support Array.from
+  // The Moz polyfill example does something I don't
+  // understand, something baout
+  // var obj = Object(set);
+  // then iterate over ks and vs
+
   var array = [];
   set.forEach(function(v) {
     array.push(v);

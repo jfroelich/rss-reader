@@ -4,6 +4,9 @@
 
 var lucu = lucu || {};
 
+
+// TODO: this really does not need an IIFE, this can just be a simple function
+
 /**
  * Discover module for searching for feeds
  *
