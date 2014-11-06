@@ -25,7 +25,7 @@ lucu.pollFeeds = function() {
   var feedCounter = 0;
   var totalEntriesProcessed = 0;
 
-  lucu.database.open(function(db) {
+  lucu.openDatabase(function(db) {
     lucu.feed.getAll(db, function (feeds) {
       feedCounter = feeds.length;
       if(feedCounter === 0) {
@@ -35,7 +35,7 @@ lucu.pollFeeds = function() {
       feeds.forEach(function(localFeed) {
         function onFetch(remoteFeed) {
           remoteFeed.fetched = Date.now();
-          lucu.database.open(function(db) {
+          lucu.openDatabase(function(db) {
             lucu.feed.update(db, localFeed, remoteFeed, onFeedProcessed);
           });
         }

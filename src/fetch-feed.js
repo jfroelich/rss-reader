@@ -191,7 +191,7 @@ lucu.fetchFeed = function(params) {
       });
     }
 
-    lucu.database.open(function(db) {
+    lucu.openDatabase(function(db) {
       fetchableEntries.forEach(function(entry) {
         lucu.entry.findByLink(db, entry.link, function(exists) {
           if(exists) {

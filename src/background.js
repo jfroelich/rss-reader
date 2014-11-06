@@ -53,7 +53,7 @@ chrome.runtime.onMessage.addListener(function (message) {
  * Sets the badge text to a count of unread entries
  */
 function updateBadge() {
-  lucu.database.open(function(db) {
+  lucu.openDatabase(function(db) {
     var index = db.transaction('entry').objectStore('entry').index('unread');
     index.count().onsuccess = function() {
       // TODO: (if count > 999 then '999+' else count.tostring)
@@ -151,7 +151,7 @@ function pollFeeds() {
  * sense that lucu.poll is a separate module
  */
 function startArchive() {
-  lucu.database.open(function(db) {
+  lucu.openDatabase(function(db) {
     var transaction = db.transaction('entry','readwrite');
     var store = transaction.objectStore('entry');
     var expiresMs = 30 * 24 * 60 * 60 * 1000;

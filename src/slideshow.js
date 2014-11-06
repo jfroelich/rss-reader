@@ -85,7 +85,7 @@ function markSlideRead(slideElement) {
   if(slideElement.hasAttribute('read'))
     return;
   var updateElement = HTMLElement.prototype.setAttribute.bind(slideElement,'read','');
-  lucu.database.open(function(db) {
+  lucu.openDatabase(function(db) {
     var entryId = parseInt(slideElement.getAttribute('entry'));
     lucu.entry.markAsRead(db, entryId, updateElement);
   });
@@ -101,7 +101,7 @@ function appendSlides(oncomplete, isFirst) {
   var offset = countUnreadSlides();
   var notAdvanced = true;
 
-  lucu.database.open(function(db) {
+  lucu.openDatabase(function(db) {
     var tx = db.transaction('entry');
     tx.oncomplete = oncomplete;
     tx.objectStore('entry').index('unread').openCursor().onsuccess = renderEntry;

@@ -438,7 +438,7 @@ function startSubscription(url) {
   showSubscriptionMonitor();
   updateSubscriptionMonitor('Subscribing...');
 
-  lucu.database.open(function(db) {
+  lucu.openDatabase(function(db) {
     lucu.feed.findBySchemelessURL(db, url, function(existingFeed) {
 
       if(existingFeed) {
@@ -467,7 +467,7 @@ function startSubscription(url) {
     remoteFeed.url = url;
     remoteFeed.fetched = Date.now();
 
-    lucu.database.open(function(db) {
+    lucu.openDatabase(function(db) {
       lucu.feed.add(db, remoteFeed, onSubscriptionSuccessful, console.debug);
     });
   }
@@ -495,7 +495,7 @@ function startSubscription(url) {
 }
 
 function populateFeedDetailsSection(feedId) {
-  lucu.database.open(function(db) {
+  lucu.openDatabase(function(db) {
     db.transaction('feed').objectStore('feed').get(feedId).onsuccess = function(event) {
       var feed = event.target.result;
       document.getElementById('details-title').textContent = feed.title || 'Untitled';
@@ -644,7 +644,7 @@ function onDiscoverFeedsError(errorMessage) {
 
 function onUnsubscribeButtonClicked(event) {
   var feedId = parseInt(event.target.value);
-  lucu.database.open(function(db) {
+  lucu.openDatabase(function(db) {
     lucu.feed.removeById(db, feedId, function() {
       console.info('Unsubscribed from %s', feedId);
       optionsShowSection(document.getElementById('mi-subscriptions'));
@@ -854,8 +854,7 @@ function initSubscriptionsSection() {
   document.getElementById('button-import-opml').onclick = onImportOPMLClick;
 
   var feedCount = 0;
-  lucu.database.open(function(db) {
-
+  lucu.openDatabase(function(db) {
     lucu.feed.forEach(db, function(feed) {
       feedCount++;
       optionsAppendFeed(feed);
