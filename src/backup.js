@@ -31,8 +31,9 @@ function importOPMLFiles(files, onComplete) {
   var exceptions = [];
   var fileCounter = files.length;
   var outlinesHash = {};
+  var forEach = Array.prototype.forEach;
 
-  Array.prototype.forEach.call(files, function (event) {
+  forEach.call(files, function (event) {
     try {
       var xmlDocument = lucu.parseXML(this.result);
     } catch(parseError) {
@@ -41,7 +42,7 @@ function importOPMLFiles(files, onComplete) {
       return exceptions.push(parseError);
     }
 
-    var outlines = lucu.opml.createOutlines(xmlDocument);
+    var outlines = lucu.createOPMLOutlines(xmlDocument);
     outlines.forEach(function(outline) {
       if(outline.url) {
         outlinesHash[outline.url] = outline;
@@ -118,7 +119,7 @@ function importFeeds(feeds, exceptions, onComplete) {
 function exportOPMLString(onComplete) {
   lucu.database.open(function (db) {
     lucu.feed.getAll(db, function (feeds) {
-      var xmlDocument = lucu.opml.createDocument(feeds, 'subscriptions.xml');
+      var xmlDocument = lucu.createOPMLDocument(feeds, 'subscriptions.xml');
       var serializer = new XMLSerializer();
       var str = serializer.serializeToString(xmlDocument);
       onComplete(str);
