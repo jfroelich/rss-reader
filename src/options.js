@@ -659,34 +659,6 @@ function onEnableURLRewritingChange(event) {
     delete localStorage.URL_REWRITING_ENABLED;
 }
 
-function onImportOPMLClick(event) {
-  var uploader = document.createElement('input');
-  uploader.setAttribute('type', 'file');
-  uploader.style.display='none';
-  uploader.onchange = onFileInputChanged;
-  document.body.appendChild(uploader);
-  uploader.click();
-}
-
-// TODO: can onFileInputChanged remove the input element
-// or do we need to wait until the file was read in the callback?
-function onFileInputChanged(event) {
-
-  // TODO: catch numerical error codes in onFileReaderLoad
-  // instead of English sentence strings?
-
-  if(!event.target.files || !event.target.files.length) return;
-  // TODO: start import progress monitor
-
-  // TODO: move the nested function out of here
-  lucu.backup.importOPMLFiles(event.target.files,
-    function(feedsImported, totalFeedsAttempted, exceptions) {
-      event.target.removeEventListener('change', onFileInputChanged);
-      document.body.removeChild(event.target);
-      onFeedsImported(feedsImported, totalFeedsAttempted, exceptions);
-  });
-}
-
 // TODO: onFeedsImported needs to notify the user of a successful
 // import. In the UI and maybe in a notification. Maybe also combine
 // with the immediate visual feedback (like a simple progress monitor
@@ -695,22 +667,43 @@ function onFileInputChanged(event) {
 // TODO: notify the user if there was an error parsing the OPML
 // TODO: the user needs immediate visual feedback that we are importing
 // the OPML file.
-function onFeedsImported(feedsImported, totalFeedsAttempted, exceptions) {
-  if(exceptions && exceptions.length) {
-    console.debug('Encountered exceptions when importing: %o', exceptions);
+// TODO: notify the user
+// TODO: switch to a section on complete?
+function onImportOPMLClick(event) {
+  var uploader = document.createElement('input');
+  uploader.setAttribute('type', 'file');
+  uploader.style.display = 'none';
+
+  function onImport(imported, attempted, exceptions) {
+    uploader.remove();
+
+    if(exceptions && exceptions.length) {
+      console.debug('Encountered exceptions when importing: %o', exceptions);
+    }
+
+    console.info('Completed import');
   }
 
-  // TODO: stop the import progress monitor
-  // TODO: notify the user
-  // switch to section
-  console.info('Completed import of feeds');
+  uploader.onchange = function onChange(event) {
+    uploader.removeEventListener('change', onChange);
+
+    if(!uploader.files || !uploader.files.length) {
+      return onImport(0,0,[]);
+    }
+
+    lucu.importOPMLFiles(uploader.files, onImport);
+  };
+
+  document.body.appendChild(uploader);
+  uploader.click();
 }
+
 
 function onExportOPMLClick(event) {
 
   // TODO: move the nested function out of here
 
-  lucu.backup.exportOPMLString(function(xmlString) {
+  lucu.exportOPMLString(function(xmlString) {
     var blob = new Blob([xmlString], {type:'application/xml'});
     var anchor = document.createElement('a');
     anchor.href = URL.createObjectURL(blob);
