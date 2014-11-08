@@ -5,9 +5,18 @@
 var lucu = lucu || {};
 
 /**
- * TODO: this needs refactoring. deserializeFeed should be separate.
- * fetchFullArticles should not be a parameter and should not occur
- * here
+ * TODO: fetchFullArticles should not be a parameter and should not occur
+ * here. Use the new lucu.augmentEntryContent function.
+ * TODO: lucu.augmentEntryContent no longer avoids fetching the html
+ * for entries that already exist in the database. So now we need
+ * another separate function that filters out entries from the feed
+ * that already exist.
+ * TODO: entryTimeout is now a parameter to augmentEntryContent
+ * so it does not need to be here
+ * TODO: note that lucu.augmentEntryContent operates off the array
+ * of entries, not the original feed
+ * TODO: pass responseURL back to onComplete so that caller can
+ * react to redirects?
  *
  *
  * Fetches the XML for a feed from a URL, then parses it into
@@ -128,14 +137,23 @@ lucu.fetchFeed = function(params) {
     // TODO: why catch the exception here? Shouldn't this
     // just allow the exception to bubble through?
 
-    // TODO: should this not be deserializing the feed? isn't that
-    // bad coupling?
-
     try {
       var feed = lucu.deserializeFeed(xmlDocument);
     } catch(e) {
       return onError({type: 'invalid-xml', target: this, details: e});
     }
+
+    // TODO: if we require entries to have links in order to store them,
+    // should we explicitly filter out entries without links here?
+    // not filter into fetchable, filter as in remove from the feed as if
+    // they did ont exist? Or is that coupling in logic that is not innate?
+
+    // really, we should always rewrite, or never rewrite, or store both
+    // original and post-rewrite in separate props.
+
+    // if we _always_ rewrite then coupling is fine. maybe do not
+    // even need separate rewrite module
+
 
     var entries = feed.entries || [];
 
@@ -193,7 +211,25 @@ lucu.fetchFeed = function(params) {
       });
     }
 
-    lucu.openDatabase(function(db) {
+/*
+    lucu.filterExistingEntries(fetchableEntries, function(newEntries) {
+      var entryCounter = newEntries.length;
+
+      // Exit early when there are no new entries
+      if(!entryCounter) {
+
+      }
+
+
+      newEntries.forEach(function(entry) {
+
+        // entryCounter--;
+      });
+    });
+*/
+
+    lucu.openDatabase(function (event) {
+      var db = event.target.result;
       fetchableEntries.forEach(function(entry) {
         lucu.entry.findByLink(db, entry.link, function(exists) {
           if(exists) {
