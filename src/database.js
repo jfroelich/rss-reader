@@ -11,9 +11,12 @@ lucu.upgradeDatabase = function(event) {
   'use strict';
   // TODO: ideally we would never store both schemeless and url, we would just
   // store scheme and schemeless props as parts of a url property.
-  // TODO: every single branch below needs to bring the old version all the way
+
+  // NOTE: every single branch below needs to bring the old version all the way
   // to the current version. This is because the user could be affected by an
-  // upgrade that bumps them several versions at once. Make less DRY.
+  // upgrade that bumps them several versions at once.
+
+  // TODO: Make less DRY.
 
   var db = this.result;
   var oldVersion = event.oldVersion || 0;
