@@ -18,6 +18,7 @@
       "/src/database.js",
       "/src/rewrite.js",
       "/src/feed.js",
+      "/src/filter-existing-entries.js",
       "/src/fetch-feed.js",
       "/src/fetch-html.js",
       "/src/fetch-image-dimensions.js",
