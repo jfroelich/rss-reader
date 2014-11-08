@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: break apart into separate shims, like map-shim.js and set-shim.js
+
 // Andy's chromebook does not support Map/Set in 36. Enabling experimental
 // sort of works but map/set do not support constructor args. This is a quick
 // dirty fix.
