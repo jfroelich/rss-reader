@@ -53,15 +53,22 @@ chrome.runtime.onMessage.addListener(function (message) {
  * Sets the badge text to a count of unread entries
  */
 function updateBadge() {
-  lucu.openDatabase(function (event) {
+  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  request.onerror = console.error;
+  request.onblocked = console.error;
+  // Because this is the first call to open
+  request.onupgradeneeded = lucu.upgradeDatabase;
+  request.onsuccess = function (event) {
     var db = event.target.result;
     var index = db.transaction('entry').objectStore('entry').index('unread');
-    index.count().onsuccess = function() {
-      // TODO: (if count > 999 then '999+' else count.tostring)
-      var count = this.result || 0;
-      chrome.browserAction.setBadgeText({text: count.toString()});
-    };
-  });
+    index.count().onsuccess = setBadgeText;
+  };
+
+  function setBadgeText() {
+    // TODO: (if count > 999 then '999+' else count.tostring)
+    var count = this.result || 0;
+    chrome.browserAction.setBadgeText({text: count.toString()});
+  }
 }
 
 /**
@@ -152,7 +159,10 @@ function pollFeeds() {
  * sense that lucu.poll is a separate module
  */
 function startArchive() {
-  lucu.openDatabase(function (event) {
+  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  request.onerror = console.error;
+  request.onblocked = console.error;
+  request.onsuccess = function (event) {
     var db = event.target.result;
     var transaction = db.transaction('entry','readwrite');
     var store = transaction.objectStore('entry');
@@ -216,7 +226,7 @@ function startArchive() {
     transaction.oncomplete = function () {
       console.debug('Archived %s entries', processed);
     };
-  });
+  };
 }
 
 function showNotification(message) {

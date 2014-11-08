@@ -47,7 +47,12 @@ lucu.filterExistingEntries = function(entries, callback) {
     return callback(output);
   }
 
-  lucu.openDatabase(function onConnect(event) {
+  // TODO: onerror/blocked, ensure callback still called?
+
+  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  request.onerror = console.error;
+  request.onblocked = console.error;
+  request.onsuccess = function (event) {
     var db = event.target.result;
     entries.forEach(function checkEntry(entry) {
       lucu.entry.findByLink(db, entry.link, function onFind(exists) {
@@ -56,5 +61,5 @@ lucu.filterExistingEntries = function(entries, callback) {
         if(!numEntries) callback(output);
       });
     });
-  });
+  };
 };

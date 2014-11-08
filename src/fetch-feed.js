@@ -228,7 +228,12 @@ lucu.fetchFeed = function(params) {
     });
 */
 
-    lucu.openDatabase(function (event) {
+    // TODO: react to connection error/blocked
+
+    var openRequest = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+    openRequest.onerror = console.error;
+    openRequest.onblocked = console.error;
+    openRequest.onsuccess = function (event) {
       var db = event.target.result;
       fetchableEntries.forEach(function(entry) {
         lucu.entry.findByLink(db, entry.link, function(exists) {
@@ -240,7 +245,7 @@ lucu.fetchFeed = function(params) {
             onFetchHTML.bind(null, entry), dispatchIfComplete);
         });
       });
-    });
+    };
 
   };
 

@@ -433,9 +433,13 @@ function startSubscription(url) {
   showSubscriptionMonitor();
   updateSubscriptionMonitor('Subscribing...');
 
-  lucu.openDatabase(function (event) {
-    var db = event.target.result;
+  // TODO: react to onerror/onblocked
 
+  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  request.onerror = console.error;
+  request.onblocked = console.error;
+  request.onsuccess = function (event) {
+    var db = event.target.result;
     lucu.feed.findBySchemelessURL(db, url, function(existingFeed) {
 
       if(existingFeed) {
@@ -458,16 +462,21 @@ function startSubscription(url) {
         fetchFullArticles: true
       });
     });
-  });
+  };
 
   function onFetchComplete(remoteFeed) {
     remoteFeed.url = url;
     remoteFeed.fetched = Date.now();
 
-    lucu.openDatabase(function (event) {
+    // TODO: react to onerror/onblocked
+
+    var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+    request.onerror = console.error;
+    request.onblocked = console.error;
+    request.onsuccess = function (event) {
       var db = event.target.result;
       lucu.feed.add(db, remoteFeed, onSubscriptionSuccessful, console.debug);
-    });
+    };
   }
 
   function onFetchError(error) {
@@ -493,11 +502,21 @@ function startSubscription(url) {
 }
 
 function populateFeedDetailsSection(feedId) {
-  lucu.openDatabase(function (event) {
+
+  // TODO: react to onerror/onblocked
+
+  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  request.onerror = console.error;
+  request.onblocked = console.error;
+  request.onsuccess = function (event) {
     var db = event.target.result;
-    db.transaction('feed').objectStore('feed').get(feedId).onsuccess = function(event) {
+
+    db.transaction('feed').objectStore('feed').get(feedId).onsuccess =
+      function(event) {
+
       var feed = event.target.result;
-      document.getElementById('details-title').textContent = feed.title || 'Untitled';
+      document.getElementById('details-title').textContent = feed.title ||
+        'Untitled';
       document.getElementById('details-favicon').setAttribute('src',
         lucu.getFavIconURL(feed.url));
       document.getElementById('details-feed-description').textContent =
@@ -506,7 +525,7 @@ function populateFeedDetailsSection(feedId) {
       document.getElementById('details-feed-link').textContent = feed.link;
       document.getElementById('details-unsubscribe').value = feed.id;
     };
-  });
+  };
 }
 
 function onPostPreviewSubscribeClick(event) {
@@ -643,13 +662,19 @@ function onDiscoverFeedsError(errorMessage) {
 
 function onUnsubscribeButtonClicked(event) {
   var feedId = parseInt(event.target.value);
-  lucu.openDatabase(function (event) {
+
+  // TODO: react to onerror/onblocked
+
+  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  request.onerror = console.error;
+  request.onblocked = console.error;
+  request.onsuccess = function (event) {
     var db = event.target.result;
     lucu.feed.removeById(db, feedId, function() {
       console.info('Unsubscribed from %s', feedId);
       optionsShowSection(document.getElementById('mi-subscriptions'));
     });
-  });
+  };
 }
 
 function onEnableURLRewritingChange(event) {
@@ -852,7 +877,12 @@ function initSubscriptionsSection() {
   document.getElementById('button-import-opml').onclick = onImportOPMLClick;
 
   var feedCount = 0;
-  lucu.openDatabase(function (event) {
+
+  // todo: react to onerror/onblocked
+  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  request.onerror = console.error;
+  request.onblocked = console.error;
+  request.onsuccess = function (event) {
     var db = event.target.result;
     lucu.feed.forEach(db, function(feed) {
       feedCount++;
@@ -867,7 +897,7 @@ function initSubscriptionsSection() {
         document.getElementById('feedlist').style.display = 'block';
       }
     }, true);
-  });
+  };
 }
 
 function initFeedDetailsSection() {

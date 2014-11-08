@@ -25,7 +25,11 @@ lucu.pollFeeds = function() {
   var feedCounter = 0;
   var totalEntriesProcessed = 0;
 
-  lucu.openDatabase(function (event) {
+  // todo: react to onerror/onblocked
+  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  request.onerror = console.error;
+  request.onblocked = console.error;
+  request.onsuccess = function (event) {
     var db = event.target.result;
     lucu.feed.getAll(db, function (feeds) {
       feedCounter = feeds.length;
@@ -36,10 +40,18 @@ lucu.pollFeeds = function() {
       feeds.forEach(function(localFeed) {
         function onFetch(remoteFeed) {
           remoteFeed.fetched = Date.now();
-          lucu.openDatabase(function (event) {
+
+          // Reconnect and redefine the variables locally here because
+          // the database connection could be lost because fetch can
+          // take an indefinite amount of time
+
+          var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+          request.onerror = console.error;
+          request.onblocked = console.error;
+          request.onsuccess = function (event) {
             var db = event.target.result;
             lucu.feed.update(db, localFeed, remoteFeed, onFeedProcessed);
-          });
+          };
         }
 
         // catch exception??
@@ -54,7 +66,7 @@ lucu.pollFeeds = function() {
         });
       });
     });
-  });
+  };
 
   function onFeedProcessed(processedFeed, entriesProcessed, entriesAdded) {
     totalEntriesProcessed += entriesProcessed || 0;

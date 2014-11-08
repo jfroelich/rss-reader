@@ -58,7 +58,12 @@ lucu.importOPMLFiles = function(files, onComplete) {
 
       var feedsAdded = 0, feedsProcessed = 0;
 
-      lucu.openDatabase(function (event) {
+      // TODO: react to onerror/onblocked
+
+      var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+      request.onerror = console.error;
+      request.onblocked = console.error;
+      request.onsuccess = function (event) {
         var db = event.target.result;
         feeds.forEach(function(feed) {
           lucu.feed.add(db, feed, function () {
@@ -66,7 +71,7 @@ lucu.importOPMLFiles = function(files, onComplete) {
             onFeedProcessed();
           }, onFeedProcessed);
         });
-      });
+      };
 
       function onFeedProcessed() {
         feedsProcessed++;
@@ -90,7 +95,13 @@ lucu.importOPMLFiles = function(files, onComplete) {
 // TODO: pass blob because nothing needs the intermediate string
 lucu.exportOPMLString = function(onComplete) {
   'use strict';
-  lucu.openDatabase(function (event) {
+
+  // TODO: react on error/blocked
+
+  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  request.onerror = console.error;
+  request.onblocked = console.error;
+  request.onsuccess = function (event) {
     var db = event.target.result;
     lucu.feed.getAll(db, function (feeds) {
       var xmlDocument = lucu.createOPMLDocument(feeds, 'subscriptions.xml');
@@ -98,5 +109,5 @@ lucu.exportOPMLString = function(onComplete) {
       var str = serializer.serializeToString(xmlDocument);
       onComplete(str);
     });
-  });
+  };
 };
