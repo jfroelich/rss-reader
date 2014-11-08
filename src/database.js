@@ -6,7 +6,19 @@ var lucu = lucu || {};
 
 /**
  * Opens a connection to indexedDB, attaches the common error handlers and the
- * upgrade callback, and then passes the open connection to the callback
+ * upgrade callback, and sets the callback as the callback for the request
+ * success event.
+ *
+ * TODO: deprecate the onsuccess function. Just use the callback itself. Expect
+ * callers to use this.request or have a var db = event.target.request; statement
+ * at the top of the callback.
+ * TODO: eventually, this just needs to share the name, version, and upgradeNeeded
+ * callback, and the openDatabase function itself should be deprecated. I no longer
+ * think there is much of a benefit to introducing the additional layer of
+ * indirection. Not every call to indexedDB.open needs an associated onupgradeneeded
+ * callback. And every call needs to think more about issues with error handling.
+ * Error handling may be different everywhere. And furthermore I need to better
+ * understand the error bubbling mechanic that is part of idb.
  */
 lucu.openDatabase = function(callback) {
   'use strict';
@@ -15,9 +27,10 @@ lucu.openDatabase = function(callback) {
 
   var request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
 
-  request.onsuccess = function() {
-    callback(this.result);
-  };
+  //request.onsuccess = function() {
+  //  callback(this.result);
+  //};
+  request.onsuccess = callback;
 
   request.onerror = console.error;
   request.onblocked = console.error;

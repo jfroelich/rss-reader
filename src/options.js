@@ -2,6 +2,10 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: implement history? mimic chrome. would need search ability
+// TODO: use IIFE to avoid global scope issues
+// TODO: reintroduce $ function for getElementById
+
 'use strict';
 
 var lucu = lucu || {};
@@ -33,26 +37,18 @@ lucu.FONT_FAMILIES = [
   'Arial, sans-serif',
   'Calibri',
   'Calibri Light',
-
   'Cambria',
-
   'CartoGothicStd',
-
   //http://jaydorsey.com/free-traffic-font/
   //Clearly Different is released under the SIL Open Font License (OFL) 1.1.
   //Based on http://mutcd.fhwa.dot.gov/pdfs/clearviewspacingia5.pdf
   'Clearly Different',
-
   /* By John Stracke, Released under the OFL. Downloaded from his website */
   'Essays1743',
-
   // Downloaded free font from fontpalace.com, unknown author
   'FeltTip',
-
   'Georgia',
-
   'Montserrat',
-
   'MS Sans Serif',
   'News Cycle, sans-serif',
   'Noto Sans',
@@ -90,7 +86,6 @@ function fade(element, duration, delay, callback) {
     callback(element);
   }
 }
-
 
 function onOptionsPageMessage(message) {
   if('displaySettingsChanged' == message.type) {
@@ -438,7 +433,9 @@ function startSubscription(url) {
   showSubscriptionMonitor();
   updateSubscriptionMonitor('Subscribing...');
 
-  lucu.openDatabase(function(db) {
+  lucu.openDatabase(function (event) {
+    var db = event.target.result;
+
     lucu.feed.findBySchemelessURL(db, url, function(existingFeed) {
 
       if(existingFeed) {
@@ -467,7 +464,8 @@ function startSubscription(url) {
     remoteFeed.url = url;
     remoteFeed.fetched = Date.now();
 
-    lucu.openDatabase(function(db) {
+    lucu.openDatabase(function (event) {
+      var db = event.target.result;
       lucu.feed.add(db, remoteFeed, onSubscriptionSuccessful, console.debug);
     });
   }
@@ -495,7 +493,8 @@ function startSubscription(url) {
 }
 
 function populateFeedDetailsSection(feedId) {
-  lucu.openDatabase(function(db) {
+  lucu.openDatabase(function (event) {
+    var db = event.target.result;
     db.transaction('feed').objectStore('feed').get(feedId).onsuccess = function(event) {
       var feed = event.target.result;
       document.getElementById('details-title').textContent = feed.title || 'Untitled';
@@ -644,7 +643,8 @@ function onDiscoverFeedsError(errorMessage) {
 
 function onUnsubscribeButtonClicked(event) {
   var feedId = parseInt(event.target.value);
-  lucu.openDatabase(function(db) {
+  lucu.openDatabase(function (event) {
+    var db = event.target.result;
     lucu.feed.removeById(db, feedId, function() {
       console.info('Unsubscribed from %s', feedId);
       optionsShowSection(document.getElementById('mi-subscriptions'));
@@ -700,8 +700,6 @@ function onImportOPMLClick(event) {
 
 
 function onExportOPMLClick(event) {
-
-  // TODO: move the nested function out of here
 
   lucu.exportOPMLString(function(xmlString) {
     var blob = new Blob([xmlString], {type:'application/xml'});
@@ -854,7 +852,8 @@ function initSubscriptionsSection() {
   document.getElementById('button-import-opml').onclick = onImportOPMLClick;
 
   var feedCount = 0;
-  lucu.openDatabase(function(db) {
+  lucu.openDatabase(function (event) {
+    var db = event.target.result;
     lucu.feed.forEach(db, function(feed) {
       feedCount++;
       optionsAppendFeed(feed);

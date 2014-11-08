@@ -58,7 +58,8 @@ lucu.importOPMLFiles = function(files, onComplete) {
 
       var feedsAdded = 0, feedsProcessed = 0;
 
-      lucu.openDatabase(function(db) {
+      lucu.openDatabase(function (event) {
+        var db = event.target.result;
         feeds.forEach(function(feed) {
           lucu.feed.add(db, feed, function () {
             feedsAdded++;
@@ -89,7 +90,8 @@ lucu.importOPMLFiles = function(files, onComplete) {
 // TODO: pass blob because nothing needs the intermediate string
 lucu.exportOPMLString = function(onComplete) {
   'use strict';
-  lucu.openDatabase(function (db) {
+  lucu.openDatabase(function (event) {
+    var db = event.target.result;
     lucu.feed.getAll(db, function (feeds) {
       var xmlDocument = lucu.createOPMLDocument(feeds, 'subscriptions.xml');
       var serializer = new XMLSerializer();
