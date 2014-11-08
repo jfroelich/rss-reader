@@ -737,6 +737,7 @@ var BLACKLIST_SELECTORS = [
   'a.commentLink', // Salt Lake Tribune
   'a.comments', // Good Magazine
   'a.dsq-brlink', // USA Today
+  'a.enlargebtn', // NPR
   'a.hdn-analytics', // SF Gate
   'a[href^="http://ad.doubleclick"]', // Medium
   'a[href*="socialtwist"]', // The Jewish Press
@@ -771,6 +772,7 @@ var BLACKLIST_SELECTORS = [
   'aside.related-side', // NY Magazine
   'aside.right-rail-module', // Time
   'aside#secondary-rail', // Dispatch.com
+  'aside.see-also', // The Root
   'aside#sidebar', // TechSpot
   'aside#sidebar-read-more', // USA Today
   'aside#story-related-topics', // AV Web
@@ -779,6 +781,7 @@ var BLACKLIST_SELECTORS = [
   'aside.vestpocket', // Forbes
   'aside.views-tags', // BuzzFeed
   'aside.widget-area', // thedomains.com
+  'b.toggle-caption', // NPR
   'div#a-all-related', // New York Daily News
   'div.about-the-author', // SysCon Media
   'div.actions-panel', // SysCon Media
@@ -802,12 +805,15 @@ var BLACKLIST_SELECTORS = [
   'div.art_tabbed_nav', // The Wall Street Journal (blog)
   'div.articleAutoFooter', // NECN
   'div#article div.share', // timeslive.co.za
+  'div.article div.short-url', // Politico
+  'div.article div.tags', // Politico
   'div.article div#media', // Newsday
   'div.article_actions', // Forbes
   'div.article-actions', // Ottawa Citizen
   'div.article_cat', // Collegian
   'div#article_comments', // Fort Worth Star Telegram
   'div.article_comments', // Voice of America
+  'div.article-comments', // Times of India
   'div.articleComments', // Reuters
   'div#articleIconLinksContainer', // The Daily Mail
   'div.article-social', // Fortune Magazine
@@ -923,6 +929,7 @@ var BLACKLIST_SELECTORS = [
   'div.cqFeature', // Vanity Fair
   'div.css-sharing', // Topix
   'div#ctl00_ContentPlaceHolder1_UC_UserComment1_updatePanelComments', // Ahram
+  'div#dailydot-socialbar', // Daily Dot
   'div[data-module-zone="articletools_bottom"]', // The Wall Street Journal
   'div[data-ng-controller="moreLikeThisController"]', // MSNBC
   'div.dfad', // thedomains.com
@@ -954,6 +961,7 @@ var BLACKLIST_SELECTORS = [
   'div.essb_links', // Beta Wired
   'div#et-sections-dropdown-list', // The Washington Post
   'div#external-source-links', // Daily Mail UK
+  'div.extra-services', // ARXIV
   'div.fblike', // Ha'Aretz
   'div.feature-btns', // USA Today (assumes video not supported)
   'div.feature_nav', // E-Week
@@ -961,6 +969,7 @@ var BLACKLIST_SELECTORS = [
   'div.field-name-field-tags', // WFPL
   'div.first-tier-social-tools', // Time Magazine
   'div.followable_block', // Forbes
+  'div.follow-authors', // Politico
   'div.follow-us', // Fox News
   'div.footer', // KMBC
   'div#footer', // Newsday
@@ -1005,6 +1014,7 @@ var BLACKLIST_SELECTORS = [
   'div.inline-related-links', // Gourmet.com
   'div.inner-related-article', // Recode
   'div#inset_groups', // Gizmodo
+  'div.insettwocolumn', // NPR
   'div.interactive-sponsor', // USA Today
   'div.issues-topics', // MSNBC
   'div[itemprop="comment"]',// KMBC
@@ -1102,6 +1112,7 @@ var BLACKLIST_SELECTORS = [
   'div#powered_by_livefyre_new', // Entertainment Tonight
   'div.premium-box', // Foreign Affairs
   'div#premium-box-locked', // Foreign Affairs
+  'div[previewtitle="Related NPR Stories"]', // NPR
   'div#prevnext', // hostilefork
   'div#prev_post', // Ace Showbiz
   'div.primaryContent3', // Reuters (NOTE: I dislike this one)
@@ -1120,6 +1131,8 @@ var BLACKLIST_SELECTORS = [
   'div.recirculation', // New Yorker
   'div.recommended-articles-wrap', // Vice.com
   'div.recommended-links', // The Appendix
+  'div.region-content-embed', // The Hill
+  'div.region-content-inside', // The Hill
   'div#registration-notice', // Atlantic City Press
   'div#registrationNewVerification', // Joplin Globe
   'div#relartstory', // Times of India
@@ -1140,6 +1153,7 @@ var BLACKLIST_SELECTORS = [
   'div.related-posts', // Buzzcarl
   'div.related-posts-inner', // threatpost.com
   'div.relatedRail', // Reuters
+  'div.relateds', // CS Monitor
   'div#related-services', // BBC
   'div.relatedStories', // Salt Lake Tribute
   'div#related-stories', // Daily News
@@ -1251,6 +1265,7 @@ var BLACKLIST_SELECTORS = [
   'div.spantab', // Times of India
   'div.SPOSTARBUST-Related-Posts', // RObservatory
   'div.sps-twitter_module', // BBC
+  'div.srch_box', // Times of India
   'div.ssba', // Funker (social share button actions?)
   'div#ssba', // Clizbeats
   'div.stack-talent', // NBC News (author bio)
@@ -1277,6 +1292,7 @@ var BLACKLIST_SELECTORS = [
   'div#story-shoulder', // AV Web
   'div.story-tags', // Fox Sports
   'div.story-taxonomy', // ABC Chicago
+  'div.story-toolbar', // Politico
   'div.storytools', // TechCrunch
   'div.story-tools', // Latin Post
   'div.submit-button', // Knight News Challenge
