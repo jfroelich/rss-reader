@@ -20,6 +20,10 @@ var lucu = lucu || {};
  * TODO: if pdf content type then maybe we embed iframe with src
  * to PDF? also, we should not even be trying to fetch pdfs? is this
  * just a feature of fetchHTML or does it belong here?
+ *
+ *
+ * TODO: I think this should actually be a function that applies to
+ * one entry at a time instead because it is async
  */
 lucu.augmentEntryContent = function(entries, timeout, onComplete) {
   'use strict';
