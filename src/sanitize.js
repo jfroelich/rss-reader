@@ -512,12 +512,15 @@ function unwrapDescendants(rootElement) {
   // It is the querySelector call
   // So, tentatively, we are using an upper bound of 3000 iterations
 
+  // Added 'tt' (teletype) element. It is obsolete but I prefer such articles
+  // not to be rendered in fixed-width font.
+
   var unwrappables = [
     'article','big','blink','body','center','colgroup','data','details',
     'div','font','footer','form','header','help','hgroup', 'ilayer', 'insert',
     'label','layer','legend', 'main','marquee', 'meter', 'multicol','nobr',
     'noembed','noscript','plaintext','section', 'small','span','tbody',
-    'tfoot','thead'
+    'tfoot','thead', 'tt'
   ].join(',');
 
   // We use querySelector and do one at element at a time in order to avoid
