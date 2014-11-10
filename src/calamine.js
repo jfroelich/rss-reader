@@ -14,7 +14,6 @@
  * of blocks weight the elements and use the best element approach again,
  * where probability means the likelihood of any given element being the
  * best element, not whether it is content or boilerplate.
- *
  * TODO: try a form of visitor pattern instead of querySelector, benchmark
  * TODO: try querySelectorAll+contains instead of querySelector loop
  * TODO: maybe use a single bias function and just extract features prior to that
@@ -26,18 +25,17 @@ var forEach = Array.prototype.forEach;
 var reduce = Array.prototype.reduce;
 
 /**
- * Returns the best element of the document. Does some mutation
- * to the document.
+ * Returns the best element of the document. Does some mutation to the
+ * document.
  *
- * TODO: rename to 'rub'? relieve (e.g. toplogical relief)? is
- * transform really the right term here? Too generic?
+ * TODO: rename to 'rub'? relieve (e.g. toplogical relief)? Is transform too
+ * generic?
  */
 function transform(doc, options) {
   options = options || {};
 
   if(options.FILTER_NAMED_AXES) {
     BLACKLIST_SELECTORS.forEach(function detachSelector(selector) {
-      // NOTE: this accounts for most of the processing time
       // Note: Ideally, a block-based approach would avoid the need
       // for this step but the current best element approach effectively requires
       // it. These selectors target boilerplate typically found in the best
@@ -52,7 +50,6 @@ function transform(doc, options) {
       var root = doc.body;
       var element = root.querySelector(selector);
       while(element) {
-        //console.log('filtering %s %s', selector, element.outerHTML);
         element.remove();
         element = root.querySelector(selector);
       }
@@ -62,10 +59,10 @@ function transform(doc, options) {
   var elements = doc.body.getElementsByTagName('*');
   var scores = initScores(doc, elements);
   applyTextLengthBias(doc, elements, scores, options.ANNOTATE);
-  applyIntrinsicBias(doc, elements, scores);
-  applyDownwardBias(doc, scores);
-  applyUpwardBias(elements, scores);
-  applyImageBias(doc, scores);
+  applyIntrinsicBias(doc, elements, scores, options.ANNOTATE);
+  applyDownwardBias(doc, scores, options.ANNOTATE);
+  applyUpwardBias(elements, scores, options.ANNOTATE);
+  applyImageBias(doc, scores, options.ANNOTATE);
   applyAttributeBias(doc, scores);
   maybeExposeAttributes(doc, scores, options.ANNOTATE);
   return findBestElement(doc, elements, scores);
@@ -129,9 +126,9 @@ function applyTextLengthBias(doc, elements, scores, annotate) {
     scores.set(element, scores.get(element) + bias);
 
     if(annotate) {
-      element.dataset.cc = cc;
-      if(acc) element.dataset.acc = acc;
-      element.dataset.tb = bias.toFixed(2);
+      element.dataset.textChars = cc;
+      if(acc) element.dataset.anchorChars = acc;
+      element.dataset.textBias = bias.toFixed(2);
     }
   });
 }
@@ -139,53 +136,54 @@ function applyTextLengthBias(doc, elements, scores, annotate) {
 /**
  * Apply an intrinsic bias (based on the type of element itself)
  */
-function applyIntrinsicBias(doc, elements, scores) {
+function applyIntrinsicBias(doc, elements, scores, annotate) {
   forEach.call(elements, function (element) {
     var bias = INTRINSIC_BIAS.get(element.localName);
     if(!bias) return;
     scores.set(element, scores.get(element) + bias);
+    if(annotate) element.dataset.intrinsicBias = bias;
   });
 
-  // INTRINSIC_BIAS intentionally does not contain a bias for the
-  // article element. Some websites, such as the Miami Herald, use
-  // the article element multiple times for reasons such as a list of
-  // related articles. Therefore, we have three cases: no article element,
-  // one article element, or multiple. If one, promote greatly. If none
-  // or multiple, promote weakly.
-
-  // TODO: promoting weakly in path case is pointless when i dont
-  // care about individual scores, only the best element score.
-  // Maybe this should just be the length==1 case.
-
+  // Pathological case for article element
   var articles = doc.body.getElementsByTagName('article');
   if(articles.length == 1) {
-    scores.set(articles[0], scores.get(articles[0]) + 1000);
+    var article = articles[0];
+    if(annotate) article.dataset.intrinsicBias = 1000;
+    scores.set(article, scores.get(article) + 1000);
   } else {
-    forEach.call(articles, updateScore.bind(null, scores, 10));
+    // There are either 0 or multiple article elements. Since divs get
+    // +200 intrinsic, we have to give the article elements a competitive
+    // baseline, so inflate them all here. Otherwise child divs of the main
+    // article sometimes mistakenly beat out the actual article element.
+    // NOTE: we could simply shove article back into INTRINSIC BIAS map
+    forEach.call(articles, function(article) {
+      if(annotate) article.dataset.intrinsicBias = 200;
+      scores.set(article, scores.get(article) + 200);
+    });
   }
 }
 
-function applyDownwardBias(doc, scores) {
+function applyDownwardBias(doc, scores, annotate) {
   // Penalize list and list-like descendants
-  // NOTE: ignores dt due to rare usage
-  // NOTE: increased from -20 to -100. These descendants are never going
-  // to be the best elements, 90% of the time. I ahve seen once a doc that
-  // had its main article within an LI, but that is only a 100 hit against
-  var SELECTOR_LIST = 'li *, ol *, ul *, dd *, dl *';
+  var SELECTOR_LIST = 'li *, ol *, ul *, dd *, dl *, dt *';
   var listDescendants = doc.body.querySelectorAll(SELECTOR_LIST);
-  forEach.call(listDescendants, updateScore.bind(null, scores, -100));
 
-  // Penalize descendants of navigational elements. Due to pre-filtering this
-  // is largely a no-op, but pre-filtering may be disabled in the future.
-  // Essentially this just biases <aside> because header/footer/nav are
-  // in the blacklist.
+  forEach.call(listDescendants, function (element) {
+    if(annotate) element.dataset.inListPenaltyBias = -100;
+    scores.set(element, scores.get(element) - 100);
+  });
+
+  // Penalize descendants of navigational elements
   var SELECTOR_NAV = 'aside *, header *, footer *, nav *';
   var navDescendants = doc.body.querySelectorAll(SELECTOR_NAV);
-  forEach.call(navDescendants, updateScore.bind(null, scores, -50));
+  forEach.call(navDescendants, function (element) {
+    if(annotate) element.dataset.inNavPenaltyBias = -50;
+    scores.set(element, scores.get(element) - 50);
+  });
 }
 
 // Bias the parent of certain elements
-function applyUpwardBias(elements, scores) {
+function applyUpwardBias(elements, scores, annotate) {
 
   // NOTE: http://www.thestate.com/2014/10/24/3765557/udalls-effort-to-woo-women-voters.html
   // Because we only bias immediate parent, the typical case is that a child div that is
@@ -204,6 +202,11 @@ function applyUpwardBias(elements, scores) {
     var parent = element.parentElement;
     // All elements have a defined score, no need to check undefined
     var parentScore = scores.get(parent);
+
+    if(annotate) {
+      element.dataset.descendantBias = bias;
+    }
+
     scores.set(parent, parentScore + bias);
 
     // Testing
@@ -216,7 +219,7 @@ function applyUpwardBias(elements, scores) {
 }
 
 // Score images and image parents
-function applyImageBias(doc, scores) {
+function applyImageBias(doc, scores, annotate) {
   var images = doc.body.getElementsByTagName('img');
   forEach.call(images, function (image) {
     var parent = image.parentElement;
@@ -224,17 +227,18 @@ function applyImageBias(doc, scores) {
     var carouselBias = reduce.call(parent.childNodes, function (bias, node) {
       return 'img' === node.localName && node !== image ? bias - 50 : bias;
     }, 0);
-
-    // Bump images that the author bothered to describe
+    // TODO: this should probably also check data-alt and data-title as many
+    // sites use this alternate syntax
     var descBias = image.getAttribute('alt') ||  image.getAttribute('title') ||
       getImageCaption(image) ? 30 : 0;
-
-    // Proportionally promote large images
     var area = image.width ? image.width * image.height : 0;
     var areaBias = 0.0015 * Math.min(100000, area);
-
-    scores.set(parent, scores.get(parent) + carouselBias + descBias +
-      areaBias);
+    var imageBias = carouselBias + descBias + areaBias;
+    if(!imageBias) return;
+    if(annotate) {
+      parent.dataset.imageBias = imageBias;
+    }
+    scores.set(parent, scores.get(parent) + imageBias);
   });
 }
 
@@ -281,6 +285,10 @@ function isFigure(element) {
 }
 
 function getImageCaption(image) {
+  // NOTE: figcaption may contain other elements, not
+  // just text. So this just checks for whether there is
+  // a figcaption element, not whether it has any content
+
   var parents = getAncestors(image);
   var figure = arrayFind(parents, isFigure);
   if(figure) {
@@ -364,13 +372,8 @@ function applyAttributeBias(doc, scores) {
   var articleClass = doc.body.getElementsByClassName('article');
   if(articleClass.length == 1) {
     scores.set(articleClass[0], scores.get(articleClass[0]) + 1000);
-  } else {
-    // TODO: why promote any of these? Because maybe one of them
-    // is the actual article?
-    forEach.call(articleClass, updateScore.bind(null, scores, 200));
   }
 
-  // NOTE: this is invariant but not in a loop so probably not an issue
   var articleAttributes =  ['id', 'class', 'name', 'itemprop', 'role'].map(
     function(s) { return '['+s+'*="articlebody"]'; });
   articleAttributes.push('[role="article"]'); // Google Plus
@@ -525,6 +528,7 @@ var DESCENDANT_BIAS = new Map([
   ['a', -5],
   ['blockquote', 20],
   ['div', -50],
+  ['figure', 20],
   ['h1', 10],
   ['h2', 10],
   ['h3', 10],
@@ -742,6 +746,7 @@ var BLACKLIST_SELECTORS = [
   'a[href^="http://ad.doubleclick"]', // Medium
   'a[href*="socialtwist"]', // The Jewish Press
   'a.meta-comments', // Windows Central
+  'a.modal-trigger', // NY Post
   'a.more-tab', // The Oklahoman
   'a.nextPageLink', // Salt Lake Tribune
   'a.post_cmt1', // Times of India
@@ -804,6 +809,7 @@ var BLACKLIST_SELECTORS = [
   'div.artbody > div.share', // China Topix
   'div.art_tabbed_nav', // The Wall Street Journal (blog)
   'div.articleAutoFooter', // NECN
+  'div.article div.columnsplitter', // CTV News
   'div#article div.share', // timeslive.co.za
   'div.article div.short-url', // Politico
   'div.article div.tags', // Politico
@@ -838,6 +844,7 @@ var BLACKLIST_SELECTORS = [
   'div.article-social-actions', // Windows Central
   'div.articleSponsor', // Telegraph Co Uk
   'div.article-tags', // entrepeneur.com
+  'div.article-text div.fullArticle', // Intl Business Times UK
   'div.article-tips', // 9News
   'div.articleTools', // Reuters
   'div.article-tools', // The Atlantic
@@ -849,8 +856,10 @@ var BLACKLIST_SELECTORS = [
   'div.at-next', // Design & Trend
   'div.at-tag', // Design & Trend
   'div.at-tool', // Design & Trend
+  'div#author-byline', // NY Post
   'div.author_topics_holder', // The Irish Times
   'div.author-wrap', // Recode
+  'div.author-info', // Streetwise
   'div[data-ng-controller="bestOfMSNBCController"]', // MSNBC
   'div.bio-socials', // Atomic Object
   'div.bizPagination', // Bizjournal
@@ -941,6 +950,7 @@ var BLACKLIST_SELECTORS = [
   'div#disqus_thread', // Renew Economy
   'div.dmg-sharing', // Dispatch.com
   'div.editorsChoice', // Telegraph Co Uk
+  'div.editorsPick', // India Times
   'div.editors-picks', // The Wall Street Journal
   'div.email-optin', // Quantstart
   'div#email-sign-up', // BBC
@@ -1057,6 +1067,7 @@ var BLACKLIST_SELECTORS = [
   'div.modComments', // Investors.com
   'div.module__biz-pulse', // Bizjournal
   'div.mod-video-playlist', // ESPN
+  'div#more-on', // NY Post
   'div.more-single', // USA Today
   'div.moreweb', // Uptown Magazine
   'div#most-popular', // BBC
@@ -1092,6 +1103,7 @@ var BLACKLIST_SELECTORS = [
   'div.par-y_rail', // Vanity Fair
   'div.pb-f-page-comments', // Washington Post
   'div.pfont', // Newsday
+  'div.pin-it-btn-wrapper', // US Prison Culture
   'div.pl-most-popular', // entrepeneur.com
   'div#popular-by-section', // Houston News
   'div#popup', // Times of India
@@ -1105,6 +1117,7 @@ var BLACKLIST_SELECTORS = [
   'div.post-meta-tags', // Comic Book Resources
   'div.post-meta-taxonomy-terms', // The Sun Times
   'div.post-share-buttons', // Blogspot
+  'div.post-social-iteration-wrapper', // Streetwise
   'div#post_socials', // Archeology.org
   // 'div.posts', // (CANNOT USE - wordpress copyblogger theme)
   'div.posts-stories', // Ha'Aretz
@@ -1197,6 +1210,7 @@ var BLACKLIST_SELECTORS = [
   'div.share > div.right', // auburnpub.com
   'div.shareArticles', // The Daily Mail
   'div.share-bar', // Gulf News
+  'div.sharebar', // NY Post
   'div#sharebarx_new', // Times of India
   'div#share-block-bottom', // Dispatch.com
   'div.share-body-bottom', // BBC
@@ -1234,6 +1248,7 @@ var BLACKLIST_SELECTORS = [
   'div.sitewide-footer', // NBCNews
   'div.sitewide-header-content', // NBCNews
   'div.slideshow-controls', // Vanity Fair
+  'div.small-rotator', // CTV News
   'div.social', // BBC
   'div.social-action', // Pakistan Daily
   'div.social-actions', // BuzzFeed
@@ -1286,6 +1301,7 @@ var BLACKLIST_SELECTORS = [
   'div.storynav', // TechCrunch
   'div.story_pagination', // ABC News
   'div#story_right_column_ad', // dailyjournal.net
+  'div.StoryShareBottom', // CTV News
   'div#story-share-buttons', // USA Today
   'div.story-share-buttons', // USA Today
   'div#story-share-buttons-old', // USA Today
@@ -1300,6 +1316,7 @@ var BLACKLIST_SELECTORS = [
   'div#subscription-notice', // Atlantic City Press
   'div.supplementalPostContent', // Medium.com
   'div#tabs-732a40a7-tabPane-2', // The Miami Herald (unclear)
+  'div.tag-list', // NY Post (iffy on this one)
   'div.talklinks', // LiveJournal
   'div.taxonomy', // ABC Chicago
   'div.t_callout', // ABC News
@@ -1387,12 +1404,14 @@ var BLACKLIST_SELECTORS = [
   'p.byline', // Newsday
   'p.category', // SysCon Media
   'p.comments', // Telegraph Co Uk
+  'p.copy-rights-text', // Jerusalem Post
   'p.essay-tags', // Aeon Magazine
   'p.moreVideosTitle', // E-Online
   'p.must-log-in', // The Jewish Press
   'p.pagination', // Stamford Advocate
   'p.p_top_10', // Star Telegram
   'p.post-tags', // USA Today
+  'p.section-tag', // NY Post
   'p.story-ad-txt', // Boston.com
   'p.storytag', // chinatopix.com
   'p.story-tags', // Latin Post
