@@ -14,35 +14,11 @@ lucu.deserializeFeed = function (document) {
 
   var map = Array.prototype.map;
 
-  function getHTMLOrText(node) {
-    return node.nodeType == Node.ELEMENT_NODE ?
-      node.innerHTML : node.textContent;
-  }
-
-  function getTextContent(element) {
-    return element.textContent;
-  }
-
-  function getAtomText(entry) {
-    var content = entry.querySelector('content');
-    var nodes = content ? content.childNodes : [];
-    return map.call(nodes, getHTMLOrText).join('').trim();
-  }
-
   function getText(rootElement, selectors, attribute) {
-    var getter;
-    if(attribute) {
-      getter = function(element) {
-        return element.getAttribute(attribute);
-      };
-    } else {
-      getter = getTextContent;
-    }
-
     for(var i = 0, temp; i < selectors.length; i++) {
       temp = rootElement.querySelector(selectors[i]);
       if(!temp) continue;
-      temp = getter(temp);
+      temp = attribute ? temp.getAttribute(attribute) : temp.textContent;
       if(!temp) continue;
       temp = temp.trim();
       if(!temp) continue;
@@ -50,15 +26,33 @@ lucu.deserializeFeed = function (document) {
     }
   }
 
-  // TODO: is this check caller's responsibility?
-  if(!document) {
-    throw new TypeError('Undefined document');
-  }
-
   var root = document.documentElement;
   if(!root) {
     throw new TypeError('Undefined document element');
   }
+
+/*
+  var schemas = new Map();
+  schemas.set('rss', {
+    get title: function() { return getText(root, ['channel > title']); }
+  });
+  schemas.set('feed', {
+    get title: function() { return getText(root, ['feed > title']); }
+  });
+  schemas.set('rdf', {
+    get title: function() { return getText(root, ['channel > title']); }
+  });
+
+  var rootName = root ? root.localName : '';
+  var schema = schemas.get(rootName);
+  if(!schema) {
+    throw new TypeError('Unsupported format "' + rootName + '"');
+  }
+
+  var title = schema.title;
+  if(title) result.title = title;
+
+*/
 
   var isRSS = root.matches('rss');
   var isAtom = root.matches('feed');
@@ -119,8 +113,31 @@ lucu.deserializeFeed = function (document) {
     var pubDate = getText(entry, isAtom ? ['published', 'updated'] :
       (isRSS ? ['pubDate'] : ['date']));
     if(pubDate) result.pubdate = pubDate;
-    var content = isAtom ? getAtomText(entry) :
-      getText(entry, ['encoded', 'description', 'summary']);
+
+    function getAtomText(entry) {
+      var content = entry.querySelector('content');
+      var nodes = content ? content.childNodes : [];
+      return map.call(nodes, function (node) {
+        return node.nodeType == Node.ELEMENT_NODE ?
+          node.innerHTML : node.textContent;
+      }).join('').trim();
+    }
+
+    var content = null;
+    if(isAtom) {
+      // For some atom feeds it picks up the CDATA content as
+      // xml, so we need to work around it.
+      content = entry.querySelector('content');
+      var nodes = content ? content.childNodes : [];
+      content = map.call(nodes, function (node) {
+        // NOTE: why not just use node.nodeValue for text nodes?
+        return node.nodeType == Node.ELEMENT_NODE ?
+          node.innerHTML : node.textContent;
+      }).join('').trim();
+    } else {
+      content = getText(entry, ['encoded', 'description', 'summary']);
+    }
+
     if(content) result.content = content;
     return result;
   });
