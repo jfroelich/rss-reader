@@ -28,40 +28,12 @@ var lucu = lucu || {};
 lucu.augmentEntryContent = function(entries, timeout, onComplete) {
   'use strict';
 
-  // Exit early and ensure continuation if no entries
-  if(!entries.length) {
-    return onComplete();
-  }
-
   // TODO: should the caller be responsible for filtering entries without
   // links? Is link the entry GUID now? Will it be in the future?
-
-  // Ignore entries that are missing links
-  var fetchables = entries.filter(function (entry) {
-    return entry.link;
-  });
-
-  // Create a counter that will be used later to keep track of
-  // the progress of updating the entries.
-  var numEntries = fetchables.length;
-
-  // Exit early and ensure continuation if no fetchable entries
-  if(!numEntries) {
-    return onComplete();
-  }
 
   // TODO: does link rewriting belong here? Is it really integral to
   // this particular function at this particular time? Clearly it has
   // to happen prior to this being called.
-
-  // Preprocess entry link values by rewriting
-  // links. This also updates the link property of
-  // each entry as a side effect. The link property may also be
-  // further updated later after fetching and using the
-  // post-redirect-url.
-  fetchables.forEach(function (entry) {
-    entry.link = lucu.rewriteURL(entry.link);
-  });
 
   // NOTE: this no longer checks whether an entry already exists
   // in the database. This just blindly fetches the html for
@@ -88,61 +60,44 @@ lucu.augmentEntryContent = function(entries, timeout, onComplete) {
   // explicit parameter dependency.
   var hostDocument = window.document;
 
+  lucu.asyncForEach(entries.filter(function (entry) {
+    return entry.link;
+  }).map(function (entry) {
+    entry.link = lucu.rewriteURL(entry.link);
+    return entry;
+  }), function(entry, callback) {
 
-  fetchables.forEach(function (entry) {
-    lucu.fetchHTML(entry.link, timeout, onFetchSuccess, onFetchError);
+    // TODO: set entry.link to responseURL??? Need to think about
+    // whether and where this should happen. This also changes the result
+    // of the exists-in-db call. In some sense, exists-in-db would have
+    // to happen before?  Or maybe we just set redirectURL as a separate
+    // property? We use the original url as id still? Still seems wrong.
+    // It sseems like the entries array should be preprocessed each and
+    // every time. Because two input links after redirect could point to
+    // same url. So the entry-merge algorithm needs alot of thought. It
+    // is not inherent to this function, but for the fact that resolving
+    // redirects requires an HTTP request, and if not done around this
+    // time, requires redundant HTTP requests.
 
-    function onFetchSuccess(document, responseURL) {
+    // if we rewrite then we cannot tell if exists pre/post fetch
+    // or something like that. so really we just want redirect url
+    // for purposes of resolving stuff and augmenting images.
 
-      // TODO: set entry.link to responseURL??? Need to think about
-      // whether and where this should happen. This also changes the result
-      // of the exists-in-db call. In some sense, exists-in-db would have
-      // to happen before?  Or maybe we just set redirectURL as a separate
-      // property? We use the original url as id still? Still seems wrong.
-      // It sseems like the entries array should be preprocessed each and
-      // every time. Because two input links after redirect could point to
-      // same url. So the entry-merge algorithm needs alot of thought. It
-      // is not inherent to this function, but for the fact that resolving
-      // redirects requires an HTTP request, and if not done around this
-      // time, requires redundant HTTP requests.
+    // we also want redirect url for detecting dups though. like if two
+    // feeds (or even the same feed) include entries that both post-redirect
+    //resolve to the same url then its a duplicate entry
+    lucu.fetchHTML(entry.link, timeout, function (document, responseURL) {
+      lucu.fetchImageDimensions(hostDocument, document, function () {
+        entry.content = document.body.innerHTML ||
+          'Unable to download the full text of this article';
+        callback();
+      });
 
-      // if we rewrite then we cannot tell if exists pre/post fetch
-      // or something like that. so really we just want redirect url
-      // for purposes of resolving stuff and augmenting images.
-
-      // we also want redirect url for detecting dups though. like if two
-      // feeds (or even the same feed) include entries that both post-redirect
-      //resolve to the same url then its a duplicate entry
-
-      lucu.fetchImageDimensions(hostDocument, document, onDimensionsSet);
-
-      function onDimensionsSet() {
-        var html = document.body.innerHTML;
-
-        if(html) {
-          entry.content = html;
-        } else {
-
-          // TODO: maybe only set this if content is empty? So allow the
-          // original content to continue to exist? But how do we
-          // differentiate between original and augmented content then?
-          entry.content = 'Unable to download content for this article';
-        }
-
-        numEntries--;
-        if(numEntries) return;
-        onComplete();
-      }
-    }
-
-    function onFetchError(error) {
+    }, function (error) {
       // TODO: set the entry content here to an error message?
       // tentative debugging log message
       console.dir(error);
-
-      numEntries--;
-      if(numEntries) return; // not done yet
-      onComplete(); // done
-    }
-  });
+      callback();
+    });
+  }, onComplete);
 };
