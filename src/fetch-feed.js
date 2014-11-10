@@ -5,6 +5,8 @@
 var lucu = lucu || {};
 
 /**
+ * TODO: use overrideMimeType and simply allow the native mechanism
+ * to trigger invalid content type errors
  * TODO: fetchFullArticles should not be a parameter and should not occur
  * here. Use the new lucu.augmentEntryContent function.
  * TODO: lucu.augmentEntryContent no longer avoids fetching the html
@@ -63,46 +65,25 @@ var lucu = lucu || {};
 lucu.fetchFeed = function(params) {
   'use strict';
 
-  var RE_FEED_TYPE = /(application|text)\/(atom|rdf|rss)?\+?xml/i;
-  var RE_HTML_TYPE = /text\/html|plain/i;
+  // TODO: once I move out the augment code, change params back to explicit
+  // arguments
 
-  // NOTE: fetchFullArticles has to exist as a parameter because
-  // we want to augment in a poll update context but do not
-  // want to augment in a subscribe preview context.
-
-  // NOTE: now that I think about it, the reason fetchFullArticles exists
-  // is because fetch.js is doing two things instead of one thing. I should
-  // never haved mixed together the augmentEntry code with the fetch code.
-  // The caller can easily just pass the result of fetch to fetchFullArticles
-  // using two function calls. Calling only fetch is the equivalent of
-  // passing in fetchFullArticles:false.
-  // As a result of the above change, it should cut this file size in half
-  // and move all the augment code into its own file.
-  // It would move the entryTimeout function out of here as well.
-  // It would make the number of arguments small enough to go back to using
-  // basic explicit arguments
-
-  // A part of the above involves the 'url exists' check. I really don't
-  // like how this queries the storage.  Id rather have the caller do
-  // some kind of array.filter(async method) that passes in just those
-  // distinct entries to fetch. Something like that at least
+  // NOTE: fetchFullArticles exists because fetch is doing two things instead
+  // of one. I should never haved mixed together the augmentEntry code with
+  // the fetch code. The caller can easily just pass the result of fetch to
+  // fetchFullArticles using two function calls.
 
   var url = (params.url || '').trim();
   var noop = function(){};
   var onComplete = params.oncomplete || noop;
   var onError = params.onerror || noop;
   var timeout = params.timeout;
+
+  // TODO: deprecate these once moved out of here
   var fetchFullArticles = params.fetchFullArticles;
   var entryTimeout = params.entryTimeout;
 
-  // For some unexpected reason this function is sometimes
-  // called when offline so we need to check for that here
-  // and exit early. This avoids a bunch of net::ERR_NETWORK_IO_SUSPENDED
-  // error messages produced by request.send.
-  // request.send() does not appear to throw a catchable exception.
-  // NOTE: still getting this error. It is like onLine is not returning
-  // false when offline.
-  // NOTE: should this be the caller's responsibility? It seems kind of
+  // TODO: should this be the caller's responsibility? It seems kind of
   // strange to be able to call a 'fetch' operation while offline
   if(navigator && !navigator.onLine) {
     return onError({type: 'offline', url: url});
@@ -116,6 +97,9 @@ lucu.fetchFeed = function(params) {
   request.onload = function() {
     var mime = this.getResponseHeader('Content-Type');
     var xmlDocument = null;
+
+    var RE_FEED_TYPE = /(application|text)\/(atom|rdf|rss)?\+?xml/i;
+    var RE_HTML_TYPE = /text\/html|plain/i;
 
     if(RE_FEED_TYPE.test(mime)) {
       xmlDocument = this.responseXML;
