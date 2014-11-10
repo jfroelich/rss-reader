@@ -5,51 +5,62 @@
 var lucu = lucu || {};
 
 /**
- * For each image in the given html document, this inspects whether
- * dimensions are set for the image, and if not, fetches the dimensions
- * and sets the width and height attributes of the image. This expects
- * that the image src urls are already resolved.
+ * Fetches and sets dimensions of image elements lacking dimensions.
+ * Does not try to avoid repeated requests.
  *
- * This assumes images are cached on request so it does not try to avoid
- * repeating requests to the same image when that image is used multiple
- * times in the document.
- *
- * TODO: avoid pinging tracker images?
+ * TODO: support HTML5 picture elements
+ * TODO: support HTML5 srcset
  */
 lucu.fetchImageDimensions = function(hostDocument, document, onComplete) {
   'use strict';
-
-  var images = document.body.getElementsByTagName('img');
   var filter = Array.prototype.filter;
-  var RE_DATA_URN = /^\s*data\s*:/i;
+  var images = document.body.getElementsByTagName('img');
+  lucu.asyncForEach(filter.call(images, function isFetchable(image) {
 
-  var fetchables = filter.call(images, function (image) {
+    // TODO: it is possible that an image does not have a src but
+    // has a srcset attribute, or both, or neither.
+
     var src = (image.getAttribute('src') || '').trim();
     return src && !image.getAttribute('width') && !image.width &&
-      !RE_DATA_URN.test(src);
-  });
+      !/^\s*data\s*:/i.test(src);
+  }), function fetch(image, callback) {
+    var proxy = null;
 
-  var counter = fetchables.length;
-  // Ensure continuation in case of no images
-  if(!counter) return onComplete();
+    // NOTE: uncertain about the use of try catch here, but it looks like
+    // importNode can throw. I believe it throws because this is the critical
+    // transition from an inert document context to a live document context.
+    // Not sure if the exceptions are catchable or the console errors are
+    // automatic (similar to uncatchable XMLHttpRequest.send exceptions).
+    // However, hopefully these are catchable, and if so, we want to ensure
+    // continutation.
 
-  fetchables.forEach(function (image) {
-    var proxy = hostDocument.importNode(image, false);
-    proxy.onerror = function() {
-      counter--;
-      if(!counter) onComplete();
+    try {
+      var deep = false;
+      proxy = hostDocument.importNode(image, deep);
+    } catch(e) {
 
-    };
-    proxy.onload = function () {
+      // See http://time.com/3575719/ebola-kaci-hickox-maine/
+      // <img src="http://timedotcom.files.wordpress.com/2014/11/kaci-hickox-
+      // ebola.jpg?w=1100" itemprop="image" alt="Kaci Hickox Ebola Nurse"
+      // srcset="http://timedotcom.files.wordpress.com/2014/11/kaci-hickox-
+      // ebola.jpg?w=1100 800w, http://timedotcom.files.wordpress.com/2014/11/
+      // kaci-hickox-ebola.jpg?w=1100 800w 2x" data-loaded="true">
+      // Error: Failed parsing 'srcset' attribute value since it has multiple 'x'
+      // descriptors or a mix of 'x' and 'w'/'h' descriptors.
+      // Error: Dropped srcset candidate http://timedotcom.files.wordpress.com/
+      // 2014/11/kaci-hickox-ebola.jpg?w=1100
+      console.warn('importNode exception: %s, %o', image.outerHTML, e);
+      return callback();
+    }
+
+    proxy.onerror = callback;
+    proxy.onload = function() {
       image.width = proxy.width;
       image.height = proxy.height;
-      counter--;
-      if(!counter) onComplete();
+      callback();
     };
-
-    // Hack to trigger request
     var temp = proxy.src;
     proxy.src = void temp;
     proxy.src = temp;
-  });
+  }, onComplete);
 };
