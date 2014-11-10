@@ -38,7 +38,7 @@ lucu.createOPMLDocument = function(feeds, title) {
   var body = doc.createElement('body');
   opml.appendChild(body);
 
-  var outlines = exportables.map(function (feed) {
+  exportables.map(function (feed) {
     var outline = doc.createElement('outline');
     // We do not know the original format, so default to rss
     outline.setAttribute('type', 'rss');
@@ -51,9 +51,7 @@ lucu.createOPMLDocument = function(feeds, title) {
     if(feed.link)
       outline.setAttribute('htmlUrl', feed.link);
     return outline;
-  });
-
-  outlines.forEach(function (element) {
+  }).forEach(function (element) {
     body.appendChild(element);
   });
 
@@ -68,6 +66,7 @@ lucu.createOPMLDocument = function(feeds, title) {
  * TODO: guard against duplicates?
  */
 lucu.createOPMLOutlines = function(doc) {
+  'use strict';
   if(!doc || !doc.documentElement || !doc.documentElement.matches('opml'))
     return [];
   var filter = Array.prototype.filter;
@@ -86,24 +85,20 @@ lucu.createOPMLOutlines = function(doc) {
       title = title.trim();
     }
     title = lucu.stripControls(title);
-    if(title)
-      outline.title = title;
+    if(title) outline.title = title;
     var description = element.getAttribute('description');
     description = lucu.stripControls(description);
     description = lucu.stripTags(description);
     description = description.trim();
-    if(description)
-      outline.description = description;
+    if(description) outline.description = description;
     var url = element.getAttribute('xmlUrl') || '';
     url = lucu.stripControls(url);
     url = url.trim();
-    if(url)
-      outline.url = url;
+    if(url) outline.url = url;
     var link = element.getAttribute('htmlUrl') || '';
     link = lucu.stripControls(link);
     link = link.trim();
-    if(link)
-      outline.link = link;
+    if(link) outline.link = link;
     return outline;
   });
 };
