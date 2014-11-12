@@ -14,8 +14,7 @@
  * of blocks weight the elements and use the best element approach again,
  * where probability means the likelihood of any given element being the
  * best element, not whether it is content or boilerplate.
- * TODO: try a form of visitor pattern instead of querySelector, benchmark
- * TODO: try querySelectorAll+contains instead of querySelector loop
+ *
  * TODO: maybe use a single bias function and just extract features prior to that
  */
 (function (exports) {
@@ -27,15 +26,13 @@ var reduce = Array.prototype.reduce;
 /**
  * Returns the best element of the document. Does some mutation to the
  * document.
- *
- * TODO: rename to 'rub'? relieve (e.g. toplogical relief)? Is transform too
- * generic?
  */
 function transform(doc, options) {
   options = options || {};
 
   if(options.FILTER_NAMED_AXES) {
     BLACKLIST_SELECTORS.forEach(function detachSelector(selector) {
+
       // Note: Ideally, a block-based approach would avoid the need
       // for this step but the current best element approach effectively requires
       // it. These selectors target boilerplate typically found in the best
@@ -44,6 +41,8 @@ function transform(doc, options) {
       // conservative to avoid filtering non-boilerplate
       // Currently consumes approximately 50-70% of the processing time,
       // 100% of which is the nested call to querySelector
+      // TODO: try a form of visitor pattern instead of querySelector, benchmark
+      // TODO: try querySelectorAll+contains instead of querySelector loop
 
       // querySelector is used instead of querySelectorAll this avoids the need
       // to check doc.contains(element) per iteration
@@ -193,22 +192,13 @@ function applyUpwardBias(elements, scores, annotate) {
   // This doesnt actually solve it because the negatives also propagate and the target does
   // not become actual in the above test url
   // Maybe the leading image needs to propagate to parent also?
-
   forEach.call(elements, function (element) {
     var bias = DESCENDANT_BIAS.get(element.localName);
     if(!bias) return;
-
-    // All elements have parents here, no need to check undefined
     var parent = element.parentElement;
-    // All elements have a defined score, no need to check undefined
-    var parentScore = scores.get(parent);
-
-    if(annotate) {
-      element.dataset.descendantBias = bias;
-    }
-
-    scores.set(parent, parentScore + bias);
-
+    // note the subtlety here, we are annotating parent, not element
+    if(annotate) parent.dataset.descendantBias = bias;
+    scores.set(parent, scores.get(parent) + bias);
     // Testing
     //var grandParent = parent.parentElement;
     //var grandParentScore = scores.get(grandParent);
@@ -288,7 +278,6 @@ function getImageCaption(image) {
   // NOTE: figcaption may contain other elements, not
   // just text. So this just checks for whether there is
   // a figcaption element, not whether it has any content
-
   var parents = getAncestors(image);
   var figure = arrayFind(parents, isFigure);
   if(figure) {
@@ -347,9 +336,6 @@ function getAttributeBias(element) {
   }, 0);
 }
 
-var SCORABLE_SELECTOR = 'a, aside, div, dl, figure, h1, h2, h3, h4,'+
-  ' ol, p, section, span, ul';
-
 /**
  * Applies an attribute bias to each element's score.
  *
@@ -357,6 +343,8 @@ var SCORABLE_SELECTOR = 'a, aside, div, dl, figure, h1, h2, h3, h4,'+
  * TODO: itemtype 'article' id/class issue
  */
 function applyAttributeBias(doc, scores) {
+  var SCORABLE_SELECTOR = 'a, aside, div, dl, figure, h1, h2, h3, h4,'+
+    ' ol, p, section, span, ul';
   var elements = doc.body.querySelectorAll(SCORABLE_SELECTOR);
   forEach.call(elements, function (element) {
     scores.set(element, scores.get(element) + getAttributeBias(element));
@@ -399,7 +387,6 @@ function getItemTypePath(element) {
   // http://schema.org/WebPage
   // http://schema.org/TechArticle
   // http://schema.org/ScholarlyArticle
-
   var value = element.getAttribute('itemtype');
   if(!value) return;
   value = value.trim();
@@ -438,24 +425,20 @@ function findArticleTitle(doc) {
 function stripTitlePublisher(title) {
 
   if(!title) return;
-
   // The extra spaces are key to avoiding truncation of hyphenated terms
   var delimiterPosition = title.lastIndexOf(' - ');
   if(delimiterPosition == -1)
     delimiterPosition = title.lastIndexOf(' | ');
   if(delimiterPosition == -1)
     delimiterPosition = title.lastIndexOf(' : ');
-
   if(delimiterPosition == -1)
     return title;
-
   var trailingText = title.substring(delimiterPosition + 1);
   var terms = trailingText.split(/\s+/).filter(identity);
   if(terms.length < 5) {
     var newTitle = title.substring(0, delimiterPosition).trim();
     return newTitle;
   }
-
   return title;
 }
 
@@ -725,16 +708,13 @@ var ATTRIBUTE_BIAS = new Map([
   ['zone', -50]
 ]);
 
-
 /**
  * Hardcoded template-based selectors that are very likely to contain
  * boilerplate. Empirically collected.
  * TODO: BLACKLIST_SELECTORS should be a Set to demonstrate and enforce
  * uniqueness of keys
- * NOTE: cannot use 'div.share' because of Concurring Opinions
- * Therefore, cannot use 'article div.share', // Vanity Fair
+ * NOTE: cannot use 'div.share'
  */
-
 var BLACKLIST_SELECTORS = [
   'a.aggregated-rel-link', // // The Oklahoman
   'a.carousel-control', // The Miami Herald
@@ -904,8 +884,6 @@ var BLACKLIST_SELECTORS = [
   'div#commentBar', // Newsday
   'div.comment_bug', // Forbes
   'div#comment-container', // auburnpub.com
-  'div#comments', // CBS News
-  'div.comments', // TechCrunch
   'div#commentblock', // Learning and Finance
   'div.commentCount', // Reuters
   'div.comment-count', // auburnpub.com
@@ -916,8 +894,11 @@ var BLACKLIST_SELECTORS = [
   'div#commenting', // Fox News
   'div#commentLink', // // The Oklahoman
   'div#comment-list', // Bangkok Post
-  'div#commentslist', // The Jewish Press
   'div#comment-reply-form', // Sparkfun
+  'div#comments', // CBS News
+  'div.comments', // TechCrunch
+  'div.comments-box', // Freakonomics
+  'div#commentslist', // The Jewish Press
   'div#comment_sign', // Ace Showbiz
   'div#comments-tabs', // Houston News
   'div.commentThread', // kotatv
@@ -1116,6 +1097,7 @@ var BLACKLIST_SELECTORS = [
   'div.post-meta-share', // Comic Book Resources
   'div.post-meta-tags', // Comic Book Resources
   'div.post-meta-taxonomy-terms', // The Sun Times
+  'div.postnav', // Freakonomics
   'div.post-share-buttons', // Blogspot
   'div.post-social-iteration-wrapper', // Streetwise
   'div#post_socials', // Archeology.org
@@ -1243,6 +1225,7 @@ var BLACKLIST_SELECTORS = [
   'div.side-news-area', // Channel News Asia
   'div#signIn', // Joplin
   'div.simpleShare', // Newsday
+  'div#simple_socialmedia', // Freakonomics
   'div.single-author', // Recode
   'div.single-related', // USA Today
   'div.sitewide-footer', // NBCNews
@@ -1365,6 +1348,7 @@ var BLACKLIST_SELECTORS = [
   'div.x-comment-menu', // Topix
   'div.x-comments-num', // Topix
   'div.x-comment-post-wrap', // Topix
+  'div.yarpp-related', // Spoon-Tamago
   'div#you-might-like', // The New Yorker
   'div#zergnet', // Comic Book Resources
   'dl.blox-social-tools-horizontal', // Joplin
@@ -1515,8 +1499,11 @@ var BLACKLIST_SELECTORS = [
   'ul.share-buttons', // Ars Technica
   'ul.share_top', // CJR
   'ul.side-news-list', // Channel News Asia
+  'ul.singleshare', // freakonomics
+  'ul#social', // rickeyre blog
   'ul.social', // The Sydney Morning Herald
   'ul.social-bookmarking-module', // Wired Magazine
+  'ul.social-buttons', // Spoon-Tamago
   'ul.socialByline', // The Wall Street Journal (blog)
   'ul.social-icons', // Citylab
   'ul.socials', // independent.ie
