@@ -75,11 +75,30 @@ lucu.resolveElements = function(document, baseURL) {
       if(/^\s*data\s*:/i.test(url)) return;
     }
 
+    // How am I seeing this?
+    // resolve error javascript:void(); Error: URNs do not have any generally
+    // defined hierarchical components
+    // TODO: I guess that I should check the other bailouts regardless of
+    // attribute?
+
+    // TODO: really, what I should be doing is use URI to parse and check if
+    // absolute, and if so, get the protocol and check if http/https, and if
+    // it has a protocol that is not, bail, otherwise resolve if no protocol
+    // This would coincidentally resolve the issue with 'javascript' and other
+    // spelling errors, and resolve the issue that my bailouts list is
+    // not exhaustive (nor can it really ever be so)
+
+    // What about this:
+    // resolve error javscript:void(0) Error: URNs do not have any generally defined hierarchical components
+    // I suppose there is nothing I can do about misspells?
+
     try {
       var resolved = URI(url).absoluteTo(baseURL).toString();
       element.setAttribute(attribute, resolved);
     } catch(e) {
       console.debug('resolve error %s %s', url, e);
+
+
     }
   });
 };
