@@ -438,6 +438,13 @@ function trimElement(element) {
 
 function trimNodes(doc) {
 
+  // TODO: there is a problem here with SVGAnimatedStrings and I am
+  // not clear exactly what that is but I occassionally see some
+  // strange log messages. This might also be related to the perf
+  // issues. I am guessing it occurs when accessing node.nodeValue
+  // perhaps for an SVG element, because of some strange thing about
+  // SVG elements not being considered elements.
+
   var WHITESPACE_SENSITIVE = 'code, code *, pre, pre *, ruby, ruby *, textarea,' +
     ' textarea *, xmp, xmp *';
   var elements = doc.body.querySelectorAll(WHITESPACE_SENSITIVE);
@@ -565,6 +572,42 @@ function unwrapDescendants(rootElement) {
   nominalAnchors.forEach(unwrap);
 }
 
+function transformSingleItemLists(rootElement) {
+  // Unwrap single item lists. For now just ul
+  var uLists = rootElement.getElementsByTagName('ul');
+
+  forEach.call(uLists, function(list) {
+    // Avoid mutation while iterating issues
+    if(!list) return;
+
+    var reduce = Array.prototype.reduce;
+
+    // Count the immediate list item children
+    var itemCount = reduce.call(list.childNodes, function(count, node) {
+      return count + (node.nodeType == Node.ELEMENT_NODE &&
+        node.localName == 'li' ? 1 : 0);
+    }, 0);
+
+    if(itemCount == 1) {
+      var parent = list.parentElement;
+      var item = list.querySelector('li');
+      var nextSibling = list.nextSibling;
+
+      if(nextSibling) {
+        while(item.firstChild) {
+          parent.insertBefore(item.firstChild, nextSibling);
+        }
+      } else {
+        while(item.firstChild) {
+          parent.appendChild(item.firstChild);
+        }
+      }
+
+      list.remove();
+    }
+  });
+}
+
 exports.DEFAULT_ALLOWED_ATTRIBUTES = DEFAULT_ALLOWED_ATTRIBUTES;
 exports.canonicalizeSpaces = canonicalizeSpaces;
 exports.removeDescendantAttributes = removeDescendantAttributes;
@@ -582,5 +625,6 @@ exports.trimElement = trimElement;
 exports.trimNodes = trimNodes;
 exports.transformBreaks = transformBreaks;
 exports.unwrapDescendants = unwrapDescendants;
+exports.transformSingleItemLists = transformSingleItemLists;
 
 }(lucu));

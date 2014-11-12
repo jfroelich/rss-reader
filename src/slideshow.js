@@ -287,6 +287,7 @@ function appendSlide(entry, isFirst) {
   lucu.removeDescendantAttributes(lucu.DEFAULT_ALLOWED_ATTRIBUTES , results);
   lucu.trimElement(results);
   lucu.removeEmptyElements(doc);
+  lucu.transformSingleItemLists(results);
 
   content.appendChild(results);
   slide.appendChild(content);
