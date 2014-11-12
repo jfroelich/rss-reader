@@ -180,19 +180,22 @@ lucu.fetchFeed = function(params) {
     // involve db query, or at least, somehow it is out of place
 
     function onFetchHTML(entry, doc, responseURL) {
+
+      lucu.resolveElements(doc, responseURL);
+
       // TODO: externalize host document somehow
       var hostDocument = window.document;
-      lucu.fetchImageDimensions(hostDocument, doc, function() {
+
+      var images = doc.body.getElementsByTagName('img');
+      lucu.asyncForEach(images,
+        lucu.fetchImageDimensions.bind(this, hostDocument),
+        function() {
         var html = doc.body.innerHTML;
-
-        if(html) {
-          entry.content = html;
-        } else {
-          entry.content = 'Unable to download content for this article';
-        }
-
+        entry.content = html ? html :
+          'Unable to download content for this article';
         dispatchIfComplete();
       });
+
     }
 
 /*
@@ -213,6 +216,7 @@ lucu.fetchFeed = function(params) {
 */
 
     // TODO: react to connection error/blocked
+    // TODO: use asyncForEach
 
     var openRequest = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
     openRequest.onerror = console.error;

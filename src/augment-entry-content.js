@@ -87,7 +87,13 @@ lucu.augmentEntryContent = function(entries, timeout, onComplete) {
     // feeds (or even the same feed) include entries that both post-redirect
     //resolve to the same url then its a duplicate entry
     lucu.fetchHTML(entry.link, timeout, function (document, responseURL) {
-      lucu.fetchImageDimensions(hostDocument, document, function () {
+
+      lucu.resolveElements(document, responseURL);
+
+      var images = document.body.getElementsByTagName('img');
+      lucu.asyncForEach(images,
+        lucu.fetchImageDimensions.bind(this, hostDocument),
+        function () {
         entry.content = document.body.innerHTML ||
           'Unable to download the full text of this article';
         callback();
@@ -95,7 +101,6 @@ lucu.augmentEntryContent = function(entries, timeout, onComplete) {
 
     }, function (error) {
       // TODO: set the entry content here to an error message?
-      // tentative debugging log message
       console.dir(error);
       callback();
     });
