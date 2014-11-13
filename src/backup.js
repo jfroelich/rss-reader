@@ -20,6 +20,9 @@ lucu.importOPMLFiles = function(files, onComplete) {
   var exceptions = [];
   var fileCounter = files.length;
 
+
+  // TODO: use async.* here
+
   // TODO: use a Map instead
 
   var outlinesHash = {};

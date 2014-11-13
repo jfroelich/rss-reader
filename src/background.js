@@ -157,6 +157,8 @@ function pollFeeds() {
  *
  * TODO: this function really belongs somewhere else, in the same
  * sense that lucu.poll is a separate module
+ *
+ * TODO: use caolan async.each or similar here.
  */
 function startArchive() {
   var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
