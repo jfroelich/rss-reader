@@ -65,7 +65,9 @@ lucu.resolveElements = function(document, baseURL) {
     url = url.trim();
     if(!url) return;
 
-    if(attribute == 'href') {
+    // NOTE: witnessed <form action="mailto:..">
+
+    if(attribute == 'href' || attribute == 'action') {
       if(url.charAt(0) == '#') return;
       if(/^\s*javascript\s*:/i.test(url)) return;
       if(/^\s*tel\s*:/i.test(url)) return;
@@ -73,6 +75,10 @@ lucu.resolveElements = function(document, baseURL) {
       if(/^\s*ftp\s*:/i.test(url)) return;
     } else if(attribute == 'src') {
       if(/^\s*data\s*:/i.test(url)) return;
+
+      // <iframe src="javascript:...">
+      if(/^\s*javascript\s*:/i.test(url)) return;
+
     }
 
     // How am I seeing this?
@@ -93,7 +99,7 @@ lucu.resolveElements = function(document, baseURL) {
       var resolved = URI(url).absoluteTo(baseURL).toString();
       element.setAttribute(attribute, resolved);
     } catch(e) {
-      console.debug('resolve error %s %s', url, e);
+      console.debug('resolve error %s %s', element.outerHTML, e);
     }
   });
 };
