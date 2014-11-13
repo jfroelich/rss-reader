@@ -13,17 +13,15 @@
   "background": {
     "persistent": false,
     "scripts": [
+      "/lib/async.js",
       "/lib/medialize/URI.js",
-      "/src/async.js",
       "/src/background.js",
       "/src/database.js",
       "/src/rewrite.js",
       "/src/feed.js",
-      "/src/filter-existing-entries.js",
       "/src/fetch-feed.js",
       "/src/resolve-elements.js",
       "/src/fetch-html.js",
-      "/src/fetch-image-dimensions.js",
       "/src/deserialize-feed.js",
       "/src/poll.js",
       "/src/string-utilities.js",
