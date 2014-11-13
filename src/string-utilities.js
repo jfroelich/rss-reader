@@ -2,6 +2,9 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: I dont think there is a need to use an IIFE here.
+
+
 var lucu = lucu || {};
 
 /**
