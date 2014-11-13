@@ -737,6 +737,7 @@ var BLACKLIST_SELECTORS = [
   'a.synved-social-button', // Viral Global News
   'a.skip-to-text-link', // NYTimes
   'article div.extra', // Washington Post
+  'article > div.tags', // NPR
   'article ul.listing', // Good Magazine
   'aside.itemAsideInfo', // The Guardian
   'aside#asset-related', // St. Louis Today
@@ -745,6 +746,8 @@ var BLACKLIST_SELECTORS = [
   'aside[data-panelmod-type="relatedContent"]', // LA Times
   'aside.callout', // The Atlantic
   'aside.entry-sidebar', // The Globe
+  'aside.global-magazine-recent', // Politico
+  'aside.global-popular', // Politico
   'aside.livefyre-comments', // Vanity Fair
   'aside.meta_extras', // Japan Times
   'aside.marginalia', // NY Times
@@ -762,6 +765,7 @@ var BLACKLIST_SELECTORS = [
   'aside#sidebar-read-more', // USA Today
   'aside#story-related-topics', // AV Web
   'aside.story-right-rail', // USA Today
+  'aside.story-supplement', // Politico
   'aside.tools', // The Boston Globe
   'aside.vestpocket', // Forbes
   'aside.views-tags', // BuzzFeed
@@ -886,6 +890,7 @@ var BLACKLIST_SELECTORS = [
   'div.comment_bug', // Forbes
   'div#comment-container', // auburnpub.com
   'div#commentblock', // Learning and Finance
+  'div#commentBlock', // NPR
   'div.commentCount', // Reuters
   'div.comment-count', // auburnpub.com
   'div.comment-count-block',// TechSpot
@@ -1087,6 +1092,7 @@ var BLACKLIST_SELECTORS = [
   'div.pfont', // Newsday
   'div.pin-it-btn-wrapper', // US Prison Culture
   'div.pl-most-popular', // entrepeneur.com
+  'div.pnnavwrap', // NPR (previous/next article links wrapper)
   'div#popular-by-section', // Houston News
   'div#popup', // Times of India
   'div.postcats', // The Wall Street Journal (blog)
@@ -1296,6 +1302,7 @@ var BLACKLIST_SELECTORS = [
   'div.storytools', // TechCrunch
   'div.story-tools', // Latin Post
   'div.submit-button', // Knight News Challenge
+  'div.subnav-tools-wrap', // NPR
   'div.subscribe', // Times of India
   'div#subscription-notice', // Atlantic City Press
   'div.supplementalPostContent', // Medium.com
@@ -1425,6 +1432,7 @@ var BLACKLIST_SELECTORS = [
   'section.related_links', // Bloomberg
   'section#related-links', // BuzzFeed
   'section.related-products', // TechSpot
+  'section#relatedstories', // NPR
   'section#responses', // BuzzFeed
   'section.section--last', // Medium
   'section.section-tertiary', // Sports Illustrated
