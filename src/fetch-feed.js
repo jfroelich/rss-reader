@@ -6,7 +6,10 @@ var lucu = lucu || {};
 
 /**
  * TODO: use overrideMimeType and simply allow the native mechanism
- * to trigger invalid content type errors
+ * to trigger invalid content type errors. Unlike fetching html I think
+ * i do want to use it here because we deserialize immediately and
+ * deserializing will catch any errors.
+ *
  * TODO: fetchFullArticles should not be a parameter and should not occur
  * here. Use the new lucu.augmentEntryContent function.
  * TODO: lucu.augmentEntryContent no longer avoids fetching the html
@@ -138,14 +141,6 @@ lucu.fetchFeed = function(params) {
       return onComplete(feed);
     }
 
-    // TODO: if we require entries to have links in order to store them,
-    // should we explicitly filter out entries without links here?
-    // not filter into fetchable, filter as in remove from the feed as if
-    // they did ont exist? Or is that coupling in logic that is not innate?
-    // really, we should always rewrite, or never rewrite, or store both
-    // original and post-rewrite in separate props.
-    // if we _always_ rewrite then coupling is fine. maybe do not
-    // even need separate rewrite module
     // TODO: use async.series - connect -> filter -> fetch -> complete
     // TODO: move the augment stuff completely out of the fetch-feed
     // function and into its thing and then deprecate entryTimeout
@@ -164,6 +159,7 @@ lucu.fetchFeed = function(params) {
     // to options that shows basic stats regarding requests. Treat it
     // more like a search engine background, where this is the crawler
     // component.
+    // TODO: restrict on metered: http://w3c.github.io/netinfo/
     // TODO: set entry.link to responseURL??? Need to think about
     // whether and where this should happen. This also changes the result
     // of the exists-in-db call. In some sense, exists-in-db would have
@@ -181,16 +177,17 @@ lucu.fetchFeed = function(params) {
     // we also want redirect url for detecting dups though. like if two
     // feeds (or even the same feed) include entries that both post-redirect
     //resolve to the same url then its a duplicate entry
-
-    // TODO: do not use window explicitly here
-    var hostDocument = window.document;
     var conn = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
     conn.onerror = onDatabaseError;
     conn.onblocked = onDatabaseError;
     conn.onsuccess = function onDatabaseOpen() {
       var transaction = this.result.transaction('entry');
       async.reject(feed.entries, findEntryByLink.bind(this, transaction),
-        onExistingEntriesFiltered);
+        function (entries) {
+        async.forEach(entries, updateEntryContent, function () {
+          onComplete(feed);
+        });
+      });
     };
   };
 
@@ -201,6 +198,9 @@ lucu.fetchFeed = function(params) {
     console.warn(error);
     onComplete(feed);
   }
+
+  // TODO: do not use window explicitly here
+  var hostDocument = window.document;
 
   // document is the proxy used to load the image
   function fetchImageDimensions(image, callback) {
@@ -234,10 +234,6 @@ lucu.fetchFeed = function(params) {
     };
   }
 
-  function onExistingEntriesFiltered(entries) {
-    async.forEach(entries, updateEntryContent, onNewEntriesFetched);
-  }
-
   // Fetch the html at entry.link and use it to replace entry.content
   // TODO: consider embedding iframe content?
   // TODO: consider sandboxing iframes?
@@ -247,59 +243,35 @@ lucu.fetchFeed = function(params) {
     // TODO: inline fetchHTML here since this is the only place that uses it
     // and it does not do anything special
 
-/*
-  var request = new XMLHttpRequest();
-  request.timeout = timeout;
-  request.ontimeout = onError;
-  request.onerror = function(event) {
-    console.debug('fetch error');
-    console.dir(event);
-    onError(event);
-  };
-  request.onabort = onError;
-  request.onload = function() {
-    var document = this.responseXML;
-
-    // TODO: do i need this guard?
-    if(!document) {
-      console.debug('%s yielded undefined document', this.responseURL);
-      onError({type: 'invalid-document', target: this});
-      return;
+    function onFetchError(error) {
+      console.warn(error);
+      // Do NOT pass error to callback, that halts async.forEach
+      callback();
     }
 
-    if(!document.body) {
-      console.debug('%s yielded undefined body element', this.responseURL);
-      onError({type: 'invalid-document', target: this});
-      return;
-    }
-
-    // TODO: is there some attribute of document that can be set
-    // to baseURL instead of passing it as a separate value?
-    onComplete(document, this.responseURL);
-  };
-
-  request.open('GET', url, true);
-  request.responseType = 'document';
-  request.send();
-*/
-
-
-    lucu.fetchHTML(entry.link, entryTimeout, function (document, responseURL) {
-      lucu.resolveElements(document, responseURL);
+    var request = new XMLHttpRequest();
+    // TODO: do a better job of initializing this
+    request.timeout = entryTimeout;
+    request.ontimeout = onFetchError;
+    request.onerror = onFetchError;
+    request.onabort = onFetchError;
+    request.onload = function () {
+      var document = this.responseXML;
+      if(!document || !document.body) {
+        console.debug('undefined document or document element %s', this.responseURL);
+        return callback();
+      }
+      lucu.resolveElements(document, this.responseURL);
       var images = document.body.getElementsByTagName('img');
+
       async.forEach(images, fetchImageDimensions, function () {
         entry.content = document.body.innerHTML ||
           'Unable to download content for this article';
         callback();
       });
-    }, function (error) {
-        console.debug('fetch error %s %o', entry.link, error);
-        callback();
-    });
+    };
+    request.open('GET', entry.link, true);
+    request.responseType = 'document';
+    request.send();
   }
-
-  function onNewEntriesFetched() {
-    onComplete(feed);
-  }
-
 };
