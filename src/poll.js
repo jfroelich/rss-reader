@@ -25,7 +25,10 @@ lucu.pollFeeds = function() {
   var feedCounter = 0;
   var totalEntriesProcessed = 0;
 
-  // todo: react to onerror/onblocked
+  // todo: react to onerror/onblocked indexedDB errors
+
+  // TODO: stop using getAll. Switch to async.*
+
   var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
   request.onerror = console.error;
   request.onblocked = console.error;
