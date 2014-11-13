@@ -828,6 +828,7 @@ var BLACKLIST_SELECTORS = [
   'div.article-tips', // 9News
   'div.articleTools', // Reuters
   'div.article-tools', // The Atlantic
+  'div.article-tools-horizontal', // Wharton Knowledge Blog
   'div.article-utilities', // Sports Illustrated
   'div.articleViewerGroup', // Mercury News
   'div.artOtherNews', // Investors.com
