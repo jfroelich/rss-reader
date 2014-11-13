@@ -118,125 +118,188 @@ lucu.fetchFeed = function(params) {
       return onError({type: 'invalid-xml', target: this});
     }
 
-    // TODO: why catch the exception here? Shouldn't this
-    // just allow the exception to bubble through?
-
+    // TODO: should this bubble?
     try {
       var feed = lucu.deserializeFeed(xmlDocument);
     } catch(e) {
       return onError({type: 'invalid-xml', target: this, details: e});
     }
 
-    // TODO: if we require entries to have links in order to store them,
-    // should we explicitly filter out entries without links here?
-    // not filter into fetchable, filter as in remove from the feed as if
-    // they did ont exist? Or is that coupling in logic that is not innate?
-
-    // really, we should always rewrite, or never rewrite, or store both
-    // original and post-rewrite in separate props.
-
-    // if we _always_ rewrite then coupling is fine. maybe do not
-    // even need separate rewrite module
-
-
-    var entries = feed.entries || [];
-
-    if(!entries.length) {
-      return onComplete(feed);
-    }
-
-    var fetchableEntries = entries.filter(function (entry) {
+    feed.entries = feed.entries.filter(function hasLink(entry) {
       return entry.link;
     });
 
-    var numEntriesToProcess = fetchableEntries.length;
-    if(!numEntriesToProcess) {
-      return onComplete(feed);
-    }
-
-    fetchableEntries.forEach(function(entry) {
+    feed.entries = feed.entries.map(function rewriteEntryLink(entry) {
       entry.link = lucu.rewriteURL(entry.link);
+      return entry;
     });
 
     if(!fetchFullArticles) {
       return onComplete(feed);
     }
 
-    function dispatchIfComplete() {
-      numEntriesToProcess--;
-      if(numEntriesToProcess) return;
-      onComplete(feed);
-    }
+    // TODO: if we require entries to have links in order to store them,
+    // should we explicitly filter out entries without links here?
+    // not filter into fetchable, filter as in remove from the feed as if
+    // they did ont exist? Or is that coupling in logic that is not innate?
+    // really, we should always rewrite, or never rewrite, or store both
+    // original and post-rewrite in separate props.
+    // if we _always_ rewrite then coupling is fine. maybe do not
+    // even need separate rewrite module
+    // TODO: use async.series - connect -> filter -> fetch -> complete
+    // TODO: move the augment stuff completely out of the fetch-feed
+    // function and into its thing and then deprecate entryTimeout
+    // and shouldAugmentEntries parameter
+    // TODO: if pdf content type then maybe we embed iframe with src
+    // to PDF? also, we should not even be trying to fetch pdfs? is this
+    // just a feature of fetchHTML or does it belong here?
+    // TODO: once this is working, think about a more long term
+    // strategy that uses an object store to maintain a request queue
+    // for feeds, images, and pages, and spreads out the requests. Also
+    // join requests to similar to domain for keep-alive perf. Also
+    // support max-retries for each request. Also support de-activate
+    // ability that toggles off feed-active flag to be able to stop
+    // requesting non-existing feeds after N failures. Also add UI to
+    // options to see feed-active-flag status. Maybe also add a devUI
+    // to options that shows basic stats regarding requests. Treat it
+    // more like a search engine background, where this is the crawler
+    // component.
+    // TODO: set entry.link to responseURL??? Need to think about
+    // whether and where this should happen. This also changes the result
+    // of the exists-in-db call. In some sense, exists-in-db would have
+    // to happen before?  Or maybe we just set redirectURL as a separate
+    // property? We use the original url as id still? Still seems wrong.
+    // It sseems like the entries array should be preprocessed each and
+    // every time. Because two input links after redirect could point to
+    // same url. So the entry-merge algorithm needs alot of thought. It
+    // is not inherent to this function, but for the fact that resolving
+    // redirects requires an HTTP request, and if not done around this
+    // time, requires redundant HTTP requests.
+    // if we rewrite then we cannot tell if exists pre/post fetch
+    // or something like that. so really we just want redirect url
+    // for purposes of resolving stuff and augmenting images.
+    // we also want redirect url for detecting dups though. like if two
+    // feeds (or even the same feed) include entries that both post-redirect
+    //resolve to the same url then its a duplicate entry
 
-    // TODO: this lookup check should be per feed, not across all feeds,
-    // otherwise if two feeds link to the same article, only the first gets
-    // augmented. need to use something like findEntryByFeedIdAndLinkURL
-    // that uses a composite index
-
-    // TODO: I should be opening a conn per lookup because
-    // there is no guarantee db conn remains open on long http request
-
-    // TODO: the logic for whether to update feels like it should not
-    // involve db query, or at least, somehow it is out of place
-
-    function onFetchHTML(entry, doc, responseURL) {
-
-      lucu.resolveElements(doc, responseURL);
-
-      // TODO: externalize host document somehow
-      var hostDocument = window.document;
-
-      var images = doc.body.getElementsByTagName('img');
-      lucu.asyncForEach(images,
-        lucu.fetchImageDimensions.bind(this, hostDocument),
-        function() {
-        var html = doc.body.innerHTML;
-        entry.content = html ? html :
-          'Unable to download content for this article';
-        dispatchIfComplete();
-      });
-
-    }
-
-/*
-    lucu.filterExistingEntries(fetchableEntries, function(newEntries) {
-      var entryCounter = newEntries.length;
-
-      // Exit early when there are no new entries
-      if(!entryCounter) {
-
-      }
-
-
-      newEntries.forEach(function(entry) {
-
-        // entryCounter--;
-      });
-    });
-*/
-
-    // TODO: react to connection error/blocked
-    // TODO: use asyncForEach
-
-    var openRequest = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
-    openRequest.onerror = console.error;
-    openRequest.onblocked = console.error;
-    openRequest.onsuccess = function (event) {
-      var db = event.target.result;
-      fetchableEntries.forEach(function(entry) {
-        lucu.entry.findByLink(db, entry.link, function(exists) {
-          if(exists) {
-            dispatchIfComplete();
-            return;
-          }
-          lucu.fetchHTML(entry.link, entryTimeout,
-            onFetchHTML.bind(null, entry), dispatchIfComplete);
-        });
-      });
+    // TODO: do not use window explicitly here
+    var hostDocument = window.document;
+    var conn = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+    conn.onerror = onDatabaseError;
+    conn.onblocked = onDatabaseError;
+    conn.onsuccess = function onDatabaseOpen() {
+      var transaction = this.result.transaction('entry');
+      async.reject(feed.entries, findEntryByLink.bind(this, transaction),
+        onExistingEntriesFiltered);
     };
-
   };
 
   request.open('GET', url, true);
   request.send();
+
+  function onDatabaseError(error) {
+    console.warn(error);
+    onComplete(feed);
+  }
+
+  // document is the proxy used to load the image
+  function fetchImageDimensions(image, callback) {
+    var src = (image.getAttribute('src') || '').trim();
+    var width = (image.getAttribute('width') || '').trim();
+    if(!src || width || image.width ||
+      width === '0' || /^0\s*px/i.test(width) ||
+      /^data\s*:/i.test(src)) {
+      return callback();
+    }
+
+    var document = hostDocument || image.ownerDocument;
+    var proxy = document.createElement('img');
+    proxy.onerror = callback;
+    proxy.onload = function(event) {
+      image.width = proxy.width;
+      image.height = proxy.height;
+      callback();
+    };
+    proxy.src = src;
+  }
+
+  // TODO: this lookup check should be per feed, not across all feeds?
+  // Otherwise if two feeds link to the same article, only the first gets
+  // augmented. need to use something like findEntryByFeedIdAndLinkURL
+  // that uses a composite index
+  function findEntryByLink(transaction, entry, callback) {
+    var linkIndex = transaction.objectStore('entry').index('link');
+    linkIndex.get(entry.link).onsuccess = function onSuccess() {
+      callback(this.result);
+    };
+  }
+
+  function onExistingEntriesFiltered(entries) {
+    async.forEach(entries, updateEntryContent, onNewEntriesFetched);
+  }
+
+  // Fetch the html at entry.link and use it to replace entry.content
+  // TODO: consider embedding iframe content?
+  // TODO: consider sandboxing iframes?
+  // TODO: html compression? like enforce boolean attributes? see kangax lib
+  // TODO: scrubbing/html-tidy (e.g. remove images without src attribute?)
+  function updateEntryContent(entry, callback) {
+    // TODO: inline fetchHTML here since this is the only place that uses it
+    // and it does not do anything special
+
+/*
+  var request = new XMLHttpRequest();
+  request.timeout = timeout;
+  request.ontimeout = onError;
+  request.onerror = function(event) {
+    console.debug('fetch error');
+    console.dir(event);
+    onError(event);
+  };
+  request.onabort = onError;
+  request.onload = function() {
+    var document = this.responseXML;
+
+    // TODO: do i need this guard?
+    if(!document) {
+      console.debug('%s yielded undefined document', this.responseURL);
+      onError({type: 'invalid-document', target: this});
+      return;
+    }
+
+    if(!document.body) {
+      console.debug('%s yielded undefined body element', this.responseURL);
+      onError({type: 'invalid-document', target: this});
+      return;
+    }
+
+    // TODO: is there some attribute of document that can be set
+    // to baseURL instead of passing it as a separate value?
+    onComplete(document, this.responseURL);
+  };
+
+  request.open('GET', url, true);
+  request.responseType = 'document';
+  request.send();
+*/
+
+
+    lucu.fetchHTML(entry.link, entryTimeout, function (document, responseURL) {
+      lucu.resolveElements(document, responseURL);
+      var images = document.body.getElementsByTagName('img');
+      async.forEach(images, fetchImageDimensions, function () {
+        entry.content = document.body.innerHTML ||
+          'Unable to download content for this article';
+        callback();
+      });
+    }, function (error) {
+        console.debug('fetch error %s %o', entry.link, error);
+        callback();
+    });
+  }
+
+  function onNewEntriesFetched() {
+    onComplete(feed);
+  }
+
 };
