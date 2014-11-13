@@ -65,6 +65,8 @@ lucu.feed.add = function(db, feed, oncomplete, onerror) {
   var feedStore = addFeedTransaction.objectStore('feed');
   var addFeedRequest = feedStore.add(storableFeed);
   addFeedRequest.onerror = onerror;
+
+  // TODO: just inline this function again
   addFeedRequest.onsuccess = lucu.feed.onAddSuccess.bind(addFeedRequest,
     db, storableFeed, feed.entries, oncomplete);
 };
@@ -121,11 +123,6 @@ lucu.feed.update = function(db, localFeed, remoteFeed, oncomplete) {
   var feedStore = putFeedTransaction.objectStore('feed');
   var putFeedRequest = feedStore.put(localFeed);
   putFeedRequest.onerror = console.debug;
-
-  // TODO: move this out
-  //putFeedRequest.onsuccess = function() {
-  //  lucu.entry.mergeAll(db, localFeed, remoteFeed.entries, oncomplete);
-  //}
 
   var merge = lucu.entry.mergeAll.bind(this, db, localFeed,
     remoteFeed.entries, oncomplete);
@@ -360,6 +357,8 @@ lucu.entry.mergeAll = function(db, feed, entries, oncomplete) {
     return oncomplete(feed, entries.length, entriesAdded);
   }
 
+  // TODO: use async.each here
+
   // TODO: to make this bindable and partial, storableEntry has to be
   // specified as the last argument
   storableEntries.forEach(function(storableEntry) {
@@ -574,20 +573,3 @@ lucu.entry.generateHash = function(entry) {
     return sum % 4294967296;
   }, 0);
 };
-
-/**
- * Finds the first entry that contains the given url in its
- * link property and then passes to this callback. Otherwise
- * undefined is passed to the callback.
- *
- * This is used when fetching full text of articles to avoid
- * refetching.
- */
-lucu.entry.findByLink = function(db, link, callback) {
-  var entryStore = db.transaction('entry').objectStore('entry');
-  var linkIndex = entryStore.index('link');
-  linkIndex.get(link).onsuccess = function() {
-    callback(this.result);
-  };
-};
-
