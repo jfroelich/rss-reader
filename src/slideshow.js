@@ -51,7 +51,7 @@ function maybeAppendMoreSlides() {
   // itself instead of getting the parent container and
   // checking its children.
   var isFirst = !document.getElementById('slideshow-container').firstChild;
-  appendSlides(hideNoUnreadArticlesSlide,isFirst);
+  appendSlides(hideNoUnreadArticlesSlide, isFirst);
 }
 
 function viewOnUnsubscribeMessage(message) {
@@ -119,6 +119,8 @@ function appendSlides(oncomplete, isFirst) {
       renderEntry;
   };
 
+  // TODO: consider using async.each with limit
+
   function renderEntry() {
     var cursor = this.result;
 
@@ -158,8 +160,6 @@ function appendSlides(oncomplete, isFirst) {
  * is where the listener is attached.
  */
 function onSlideClick(event) {
-
-
 
   if(event.which != 1) {
     console.debug('onSlideClick event.which != 1. %o', event);
@@ -441,7 +441,7 @@ function onKeyDown(event) {
  * whereas the interval timer is to track the interval and stop it when
  * finished
  *
- * TODO: break apart into functions
+ * TODO: break apart into functions? use async.*? just cleanup in general
  *
  * @param element {Element} the element to scroll
  * @param delta {int} the amount of pixels by which to scroll per increment
