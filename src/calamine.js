@@ -879,6 +879,7 @@ var BLACKLIST_SELECTORS = [
   'div.card-stats', // WFPL
   'div.category-nav', // Sparkfun
   'div#ce-comments', // E-Week
+  'div#CM-notification-unit', // The New Yorker (paywall notice)
   'div.cmtLinks', // India Times
   'div.cnn_strybtntools', // CNN
   'div.cnn_strylftcntnt', // CNN
@@ -1190,6 +1191,7 @@ var BLACKLIST_SELECTORS = [
   'div#rt_related_0', // CNBC
   'div#savedata1', // Times of India
   'div.save-tooltip', // auburnpub
+  'div.sc_shareTools', // ABC News
   'div.sd-social', // Re-code
   'div.second-tier-social-tools', // Time Magazine
   'div#section-comments',  // The Washington Post
@@ -1413,6 +1415,7 @@ var BLACKLIST_SELECTORS = [
   'section.also-on', // Huffington Post
   'section.around-bbc-module', // BBC
   'section.article-author', // Ars Technica
+  'section.article-contributors', // The New Yorker
   'section.bottom_shares', // BuzzFeed
   'section.breaking_news_bar', // Bloomberg
   'section#comment-module', // Dispatch.com
