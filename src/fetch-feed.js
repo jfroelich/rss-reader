@@ -137,19 +137,19 @@ lucu.fetchFeed = function(params) {
       return entry;
     });
 
+    // TODO: remove duplicate entries?
+
+    // TODO: move the augment stuff completely out of the fetch-feed
+    // function and into its thing and then deprecate entryTimeout
+    // and shouldAugmentEntries parameter
+
     if(!fetchFullArticles) {
       return onComplete(feed);
     }
 
-    // TODO: use async.series - connect -> filter -> fetch -> complete
-    // TODO: move the augment stuff completely out of the fetch-feed
-    // function and into its thing and then deprecate entryTimeout
-    // and shouldAugmentEntries parameter
-    // TODO: if pdf content type then maybe we embed iframe with src
-    // to PDF? also, we should not even be trying to fetch pdfs? is this
-    // just a feature of fetchHTML or does it belong here?
-    // TODO: once this is working, think about a more long term
-    // strategy that uses an object store to maintain a request queue
+    // TODO: use async.waterfall?
+
+    // TODO: use an object store to maintain a request queue
     // for feeds, images, and pages, and spreads out the requests. Also
     // join requests to similar to domain for keep-alive perf. Also
     // support max-retries for each request. Also support de-activate
@@ -176,7 +176,7 @@ lucu.fetchFeed = function(params) {
     // for purposes of resolving stuff and augmenting images.
     // we also want redirect url for detecting dups though. like if two
     // feeds (or even the same feed) include entries that both post-redirect
-    //resolve to the same url then its a duplicate entry
+    // resolve to the same url then its a duplicate entry
     var conn = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
     conn.onerror = onDatabaseError;
     conn.onblocked = onDatabaseError;
@@ -199,7 +199,8 @@ lucu.fetchFeed = function(params) {
     onComplete(feed);
   }
 
-  // TODO: do not use window explicitly here
+  // TODO: do not use window explicitly here. Depends on how
+  // the deprecation of shouldAugmentEntries goes
   var hostDocument = window.document;
 
   // document is the proxy used to load the image
@@ -223,10 +224,6 @@ lucu.fetchFeed = function(params) {
     proxy.src = src;
   }
 
-  // TODO: this lookup check should be per feed, not across all feeds?
-  // Otherwise if two feeds link to the same article, only the first gets
-  // augmented. need to use something like findEntryByFeedIdAndLinkURL
-  // that uses a composite index
   function findEntryByLink(transaction, entry, callback) {
     var linkIndex = transaction.objectStore('entry').index('link');
     linkIndex.get(entry.link).onsuccess = function onSuccess() {
@@ -239,9 +236,10 @@ lucu.fetchFeed = function(params) {
   // TODO: consider sandboxing iframes?
   // TODO: html compression? like enforce boolean attributes? see kangax lib
   // TODO: scrubbing/html-tidy (e.g. remove images without src attribute?)
+  // TODO: if pdf content type then maybe we embed iframe with src
+  // to PDF? also, we should not even be trying to fetch pdfs? is this
+  // just a feature of fetchHTML or does it belong here?
   function updateEntryContent(entry, callback) {
-    // TODO: inline fetchHTML here since this is the only place that uses it
-    // and it does not do anything special
 
     function onFetchError(error) {
       console.warn(error);
