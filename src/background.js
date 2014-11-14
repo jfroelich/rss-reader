@@ -118,7 +118,7 @@ chrome.runtime.onInstalled.addListener(function onInstall() {
 
 chrome.alarms.onAlarm.addListener(function onAlarm(alarm) {
   if('poll' == alarm.name) {
-    pollFeeds();
+    lucu.pollFeeds(navigator);
   } else if('archive' == alarm.name) {
     startArchive();
   }
@@ -127,29 +127,6 @@ chrome.alarms.onAlarm.addListener(function onAlarm(alarm) {
 // TODO: customizable per feed?
 chrome.alarms.create('poll', {periodInMinutes: 20});
 chrome.alarms.create('archive', {periodInMinutes: 24 * 60});
-
-/**
- * Starts polling
- */
-function pollFeeds() {
-  chrome.permissions.contains({permissions: ['idle']}, function (permitted) {
-
-    // If we cannot check idle state just start
-    if(!permitted) {
-      lucu.pollFeeds();
-      return;
-    }
-
-    // Check idle state and only poll if idle (or locked screen)
-    var INACTIVITY_INTERVAL = 60 * 5;
-    chrome.idle.queryState(INACTIVITY_INTERVAL, function (idleState) {
-      if(idleState == 'locked' || idleState == 'idle') {
-        lucu.pollFeeds();
-      }
-    });
-
-  });
-}
 
 /**
  * Iterate over entries in storage and archive certain entries
