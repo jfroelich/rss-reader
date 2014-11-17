@@ -13,32 +13,7 @@ lucu.pollFeeds = function(navigator) {
     openIndexedDB,
     selectAllFeeds,
     updateAllFeeds
-  ], function (error, feeds) {
-
-    if(error) {
-      console.log('A polling error occurred');
-      console.dir(error);
-      return;
-    }
-
-    console.debug('Polling completed');
-    localStorage.LAST_POLL_DATE_MS = String(Date.now());
-    chrome.runtime.sendMessage({
-      type: 'pollCompleted',
-      feedsProcessed: feeds ? feeds.length : 0,
-      entriesAdded: 0,
-      entriesProcessed: 0
-    });
-  });
-
-  function isOnline(callback) {
-    if(navigator && !navigator.onLine) {
-      //var offlineError = new Error();
-      return callback('offline');
-    }
-
-    callback();
-  }
+  ], onWaterfallComplete);
 
   function canCheckIdlePermission(callback) {
     chrome.permissions.contains({permissions: ['idle']}, function(permitted) {
@@ -66,6 +41,15 @@ lucu.pollFeeds = function(navigator) {
         callback('polling error, not currently idle or locked');
       }
     });
+  }
+
+  function isOnline(callback) {
+    if(navigator && !navigator.onLine) {
+      //var offlineError = new Error();
+      return callback('offline');
+    }
+
+    callback();
   }
 
   function openIndexedDB(callback) {
@@ -123,5 +107,21 @@ lucu.pollFeeds = function(navigator) {
     });
   }
 
+  function onWaterfallComplete(error, feeds) {
 
+    if(error) {
+      console.log('A polling error occurred');
+      console.dir(error);
+      return;
+    }
+
+    console.debug('Polling completed');
+    localStorage.LAST_POLL_DATE_MS = String(Date.now());
+    chrome.runtime.sendMessage({
+      type: 'pollCompleted',
+      feedsProcessed: feeds ? feeds.length : 0,
+      entriesAdded: 0,
+      entriesProcessed: 0
+    });
+  }
 };

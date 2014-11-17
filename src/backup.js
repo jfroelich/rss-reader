@@ -4,113 +4,133 @@
 
 var lucu = lucu || {};
 
-/**
- * Calls onComplete with num feeds added, num feeds processed, and
- * array of exceptions
- *
- * TODO: just allow for add feed to fail on dup instead of agg?
- * TODO: rather than agg per file, agg at the end?
- */
+// TODO: test
+
 lucu.importOPMLFiles = function(files, onComplete) {
   'use strict';
-  if(!files || !files.length) {
-    return onComplete(0, 0, []);
+
+  async.waterfall([load,merge,connect,store], waterfallCompleted);
+
+  // Reads in the contents of an OPML file as text,
+  // parses the text into an xml document, extracts
+  // an array of outline objects from the document,
+  // and then passes the array to the callback. Async
+  function loadFile(file, callback) {
+    var reader = new FileReader();
+    reader.readAsText(file);
+    reader.onload = function (event) {
+      var text = event.target.result;
+      var xml = null;
+      try {
+        xml = lucu.parseXML(text);
+      } catch(e) {
+        return callback(null, []);
+      }
+
+      var outlines = lucu.createOPMLOutlines(xml);
+      callback(null, outlines);
+    };
+    reader.onerror = function (event) {
+      callback(null, []);
+    };
   }
 
-  var exceptions = [];
-  var fileCounter = files.length;
+  function load(callback) {
+    // accesses 'files' from outer scope
+    async.map(files, loadFile, function (error, results) {
+      callback(null, results);
+    });
+  }
 
-
-  // TODO: use async.* here
-
-  // TODO: use a Map instead
-
-  var outlinesHash = {};
-  var forEach = Array.prototype.forEach;
-
-  forEach.call(files, function (file) {
-    var reader = new FileReader();
-    reader.onload = function(event) {
-      try {
-        var xmlDocument = lucu.parseXML(this.result);
-      } catch(parseError) {
-        exceptions.push(parseError);
-      }
-
-      if(xmlDocument) {
-        var outlines = lucu.createOPMLOutlines(xmlDocument);
-        outlines.forEach(function(outline) {
-          if(outline.url) {
-            outlinesHash[outline.url] = outline;
-          }
-        });
-      }
-
-      fileCounter--;
-      if(fileCounter) return;
-
-      var feeds = Object.keys(outlinesHash).filter(function(key) {
-        return outlinesHash.hasOwnProperty(key);
-      }).map(function(key) {
-        return outlinesHash[key];
+  // Merges the outlines arrays into a single array.
+  // Removes duplicates in the process. Sync.
+  function merge(outlineArrays, callback) {
+    var outlines = [];
+    var seen = new Set();
+    outlineArrays.forEach(function(outlineArray) {
+      outlineArray.foreach(function(outline) {
+        if(seen.has(outline.url)) return;
+        seen.add(outline.url);
+        outlines.push(outline);
       });
+    });
 
-      if(!feeds.length) {
-        return onComplete(0, 0, exceptions);
-      }
+    callback(null, outlines);
+  }
 
-      var feedsAdded = 0, feedsProcessed = 0;
-
-      // TODO: react to onerror/onblocked
-
-      var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
-      request.onerror = console.error;
-      request.onblocked = console.error;
-      request.onsuccess = function (event) {
-        var db = event.target.result;
-        feeds.forEach(function(feed) {
-          lucu.feed.add(db, feed, function () {
-            feedsAdded++;
-            onFeedProcessed();
-          }, onFeedProcessed);
-        });
-      };
-
-      function onFeedProcessed() {
-        feedsProcessed++;
-        if(feedsProcessed < feeds.length) return;
-
-        chrome.runtime.sendMessage({
-          type: 'importFeedsCompleted',
-          feedsAdded: feedsAdded,
-          feedsProcessed: feedsProcessed,
-          exceptions: exceptions
-        });
-
-        onComplete(feedsAdded, feedsProcessed, exceptions);
-      }
+  // Connects to indexedDB, async
+  function connect(outlines, callback) {
+    var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+    // NOTE: causes event object to be passed as error argument
+    request.onerror = callback;
+    request.onblocked = callback;
+    request.onsuccess = function(event) {
+      callback(null, event.target.result, outlines);
     };
+  }
 
-    reader.readAsText(file);
-  });
+  // Stores the outlines in indexedDB, async
+  function store(db, outlines, callback) {
+    async.forEach(outlines, function(outline, callback) {
+      lucu.feed.add(db, outline, function() {
+        callback();
+      }, function() {
+        callback();
+      });
+    }, function() {
+      callback();
+    });
+  }
+
+  function waterfallCompleted() {
+    console.debug('Finished importing feeds');
+    chrome.runtime.sendMessage({
+      type: 'importFeedsCompleted'
+    });
+    onComplete();
+  }
 };
 
-// TODO: pass blob because nothing needs the intermediate string
+// TODO: test
+// TODO: pass blob because nothing needs the intermediate string, then rename
 lucu.exportOPMLString = function(onComplete) {
   'use strict';
 
-  // TODO: react on error/blocked
+  async.waterfall([connect, getFeeds, serialize], waterfallCompleted);
 
-  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
-  request.onerror = console.error;
-  request.onblocked = console.error;
-  request.onsuccess = function (event) {
-    var db = event.target.result;
-    lucu.feed.getAll(db, function (feeds) {
-      var xmlDocument = lucu.createOPMLDocument(feeds, 'subscriptions.xml');
-      var serializer = new XMLSerializer();
-      var str = serializer.serializeToString(xmlDocument);
-      onComplete(str);
-    });
-  };
+  function connect(callback) {
+    var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+    request.onerror = callback;
+    request.onblocked = callback;
+    request.onsuccess = function(event) {
+      callback(null, event.target.result);
+    };
+  }
+
+  function getFeeds(db, callback) {
+    var tx = db.transaction('feed');
+    var store = tx.objectStore('feed');
+    var request = store.openCursor();
+    var feeds = [];
+    tx.onComplete = function() {
+      callback(null, feeds);
+    };
+    request.onsuccess = function(event) {
+      var cursor = event.target.result;
+      if(!cursor) return;
+      feeds.push(cursor.value);
+      cursor.continue();
+    };
+  }
+
+  function serialize(feeds, callback) {
+    var document = lucu.createOPMLDocument(feeds, 'subscriptions.xml');
+    var xs = new XMLSerializer();
+    var opml = xs.serializeToString(document);
+    callback(null, opml);
+  }
+
+  function waterfallCompleted(error, opmlString) {
+    onComplete(opmlString);
+  }
 };
