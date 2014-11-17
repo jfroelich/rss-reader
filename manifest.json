@@ -16,6 +16,8 @@
       "/lib/async.js",
       "/lib/medialize/URI.js",
       "/src/background.js",
+      "/src/map-shim.js",
+      "/src/set-shim.js",
       "/src/database.js",
       "/src/rewrite.js",
       "/src/feed.js",
