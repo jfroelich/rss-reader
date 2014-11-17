@@ -716,7 +716,8 @@ var ATTRIBUTE_BIAS = new Map([
  * NOTE: cannot use 'div.share'
  */
 var BLACKLIST_SELECTORS = [
-  'a.aggregated-rel-link', // // The Oklahoman
+  'a.aggregated-rel-link', // The Oklahoman
+  'a.bylineCommentCount', // Pasadena Star News
   'a.carousel-control', // The Miami Herald
   'a.commentLink', // Salt Lake Tribune
   'a.comments', // Good Magazine
@@ -739,6 +740,7 @@ var BLACKLIST_SELECTORS = [
   'article div.extra', // Washington Post
   'article > div.tags', // NPR
   'article ul.listing', // Good Magazine
+  'aside.author-blocks', // ProPublica
   'aside.itemAsideInfo', // The Guardian
   'aside#asset-related', // St. Louis Today
   'aside.bg-related', // The Boston Globe
@@ -746,12 +748,16 @@ var BLACKLIST_SELECTORS = [
   'aside[data-panelmod-type="relatedContent"]', // LA Times
   'aside.callout', // The Atlantic
   'aside.entry-sidebar', // The Globe
+  'aside#fbookulous-flyer', // ProPublica
   'aside.global-magazine-recent', // Politico
   'aside.global-popular', // Politico
+  'aside.like-this', // ProPublica
   'aside.livefyre-comments', // Vanity Fair
   'aside.meta_extras', // Japan Times
   'aside.marginalia', // NY Times
   'aside.mashsb-container', // cryptocoinsnews.com
+  'aside.module-2013-follow', // ProPublica
+  'aside.module-tabbed-2011', // ProPublica
   'aside#post_launch_success', // BuzzFeed
   'aside.prev-next', // The Economist
   'aside.related-articles', // BBC
@@ -763,6 +769,8 @@ var BLACKLIST_SELECTORS = [
   'aside.see-also', // The Root
   'aside#sidebar', // TechSpot
   'aside#sidebar-read-more', // USA Today
+  'aside.slickshare', // ProPublica
+  'aside.social-stack', // ProPublica
   'aside#story-related-topics', // AV Web
   'aside.story-right-rail', // USA Today
   'aside.story-supplement', // Politico
@@ -846,6 +854,7 @@ var BLACKLIST_SELECTORS = [
   'div.author-wrap', // Recode
   'div.author-info', // Streetwise
   'div[data-ng-controller="bestOfMSNBCController"]', // MSNBC
+  'div.big_story_tools_bottom_container', // Alternet
   'div.bio-socials', // Atomic Object
   'div.bizPagination', // Bizjournal
   'div.bk-socialbox', // Latin Post
@@ -860,8 +869,9 @@ var BLACKLIST_SELECTORS = [
   'div#blox-header', // Joplin
   'div#blox-right-col', // Joplin
   'di#blox-breadcrumbs', // Joplin
-  'div#bottom-rail', // Vanity Fair
   'div.bookmarkify', // Kamens Blog
+  'div#bottom-rail', // Vanity Fair
+  'div.bottom_subscribe', // Alternet
   'div.bpcolumnsContainer', // Western Journalism
   'div#breadcrumb', // Autonews
   'div.breadcrumb_container', // NBC News
@@ -929,6 +939,7 @@ var BLACKLIST_SELECTORS = [
   'div#dailydot-socialbar', // Daily Dot
   'div[data-module-zone="articletools_bottom"]', // The Wall Street Journal
   'div[data-ng-controller="moreLikeThisController"]', // MSNBC
+  'div.deep-side-opinion', // The Australian
   'div.dfad', // thedomains.com
   'div.dfinder_cntr', // Hewlett Packard News
   'div#dfp-ad-mosad_1-wrapper', // The Hill
@@ -974,6 +985,7 @@ var BLACKLIST_SELECTORS = [
   'div.footerlinks', // VOA News
   'div#forgotPassword', // Joplin Globe
   'div#forgotPasswordSuccess', // Joplin Globe
+  'div.further-reading', // ProPublica
   'div.gallery-sidebar-ad', // USA Today
   'div.gallery-overlay-outter', // SF Gate
   'div#gkSocialAPI', // The Guardian
@@ -1041,7 +1053,9 @@ var BLACKLIST_SELECTORS = [
   'div.m-article__share-buttons', // The Verge
   'div.mashsharer-box', // internetcommerce.org
   'div.m-entry__sidebar', // The Verge
-  'div.menu', // CNBC
+
+  //'div.menu', // CNBC (CANNOT USE)
+
   'div#mergeAccounts', // Joplin Globe
   'div.meta_bottom', // Collegian
   'div#meta-related', // Entertainment Weekly
@@ -1087,6 +1101,7 @@ var BLACKLIST_SELECTORS = [
   'div.page-navigation', // Misc.
   'div.page-tools', // Channel News Asia
   'div.pagination', // Investors.com
+  'div.paging_options', // Alternet
   'div.pane-explore-issues-topics', // MSNBC
   'div.par-y_rail', // Vanity Fair
   'div.pb-f-page-comments', // Washington Post
@@ -1096,6 +1111,7 @@ var BLACKLIST_SELECTORS = [
   'div.pnnavwrap', // NPR (previous/next article links wrapper)
   'div#popular-by-section', // Houston News
   'div#popup', // Times of India
+  'div.post-actions', // WorldNetDaily
   'div.postcats', // The Wall Street Journal (blog)
   'div.postcommentpopupbox', // Times of India
   'div.post-comments', // The Sun Times
@@ -1284,10 +1300,14 @@ var BLACKLIST_SELECTORS = [
   'div#story_add_ugc', // Fort Worth Star Telegram
   'div.story-block--twitter', // 9News
   'div.story-comment', // Latin Post
+  'div.story_comments', // Alternet
   'div#storyContinuesBelow', // Salt Lake Tribune
   'div#storyControls', // Politico
   'div#story-embed-column', // Christian Science Monitor
+  'div.story-extras', // The Australian
   'div#story-footer', // The Miami Herald
+  'div.story-footer', // The Australian
+  'div.story-header-tools', // The Australian
   'div.story_list', // Christian Science Monitor
   'div#storyMoreOnFucntion', // Telegraph UK
   'div.storynav', // TechCrunch
@@ -1303,6 +1323,7 @@ var BLACKLIST_SELECTORS = [
   'div.story-toolbar', // Politico
   'div.storytools', // TechCrunch
   'div.story-tools', // Latin Post
+  'div.story_tools_bottom', // Alternet
   'div.submit-button', // Knight News Challenge
   'div.subnav-tools-wrap', // NPR
   'div.subscribe', // Times of India
@@ -1314,6 +1335,7 @@ var BLACKLIST_SELECTORS = [
   'div.taxonomy', // ABC Chicago
   'div.t_callout', // ABC News
   'div#teaserMarketingCta', // The Times
+  'div.text-m-in-news', // The Australian
   'div.textSize', // CBS
   'div#teaser-overlay', // The Times
   'div.thirdPartyRecommendedContent', // KMBC
@@ -1400,6 +1422,7 @@ var BLACKLIST_SELECTORS = [
   'p.comments', // Telegraph Co Uk
   'p.copy-rights-text', // Jerusalem Post
   'p.essay-tags', // Aeon Magazine
+  'p.meta', // http://michael.otacoo.com/
   'p.moreVideosTitle', // E-Online
   'p.must-log-in', // The Jewish Press
   'p.pagination', // Stamford Advocate
