@@ -2,57 +2,39 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: I dont think there is a need to use an IIFE here.
-
-
 var lucu = lucu || {};
 
-/**
- * String utilities
- */
-(function(exports) {
-'use strict';
-
-/**
- * Scrubs html from a string by parsing into HTML and then
- * back into text without element tags.
- */
-exports.stripTags = function(string, replacement) {
+// Scrubs tags
+lucu.stripTags = function(string, replacement) {
+  'use strict';
   if(!string) return;
   var doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = string;
   if(!replacement) return doc.body.textContent;
   var iterator = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
-  var textNode;
-  var textNodes = [];
-  while(textNode = iterator.nextNode()) {
-    textNodes.push(textNode);
+  var node, values = [];
+  while(node = iterator.nextNode()) {
+    values.push(node.nodeValue);
   }
-  var nodeValues = textNodes.map(function (node) {
-    return node.nodeValue;
-  });
-  return nodeValues.join(replacement);
+  return values.join(replacement);
 };
 
-/**
- * Returns a string without control-like characters
- * NOTE: this only affects certain control chars, not all
- */
-exports.stripControls = function(string) {
-  return string && string.replace(/[\t\r\n]/g,'');
+// Scrubs html from a string
+lucu.stripControls = function(string) {
+  'use strict';
+  // TODO: research the proper pattern
+  // var p = /[^\x20-\x7E]+/g;
+  var p = /[\t\r\n]/g;
+  return string && string.replace(p,'');
 };
 
-/**
- * Returns a string that has been shortened
- */
-exports.truncate = function(str, position, extension) {
-  var DEFAULT_EXTENSION = '\u2026'; // ...
+// Shorten a string if its too long
+lucu.truncate = function(str, position, extension) {
+  'use strict';
+
+  // \u2026 == ellipsis
   if(!str) return;
   if(str.length > position)
-    return str.substr(0, position) + (extension || DEFAULT_EXTENSION);
+    return str.substr(0, position) + (extension || '\u2026');
   return str;
 };
-
-exports.elide = exports.truncate;
-
-}(lucu));
