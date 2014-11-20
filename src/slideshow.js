@@ -10,14 +10,15 @@
 
 var currentSlide = null;
 
-var VIEW_MESSAGE_HANDLER_MAP = {
-  displaySettingsChanged: lucu.style.onChange,
-  pollCompleted: maybeAppendMoreSlides,
-  subscribe: maybeAppendMoreSlides,
-  unsubscribe: viewOnUnsubscribeMessage
-};
-
 function viewDispatchMessage(message) {
+
+  var VIEW_MESSAGE_HANDLER_MAP = {
+    displaySettingsChanged: lucu.style.onChange,
+    pollCompleted: maybeAppendMoreSlides,
+    subscribe: maybeAppendMoreSlides,
+    unsubscribe: viewOnUnsubscribeMessage
+  };
+
   var handler = VIEW_MESSAGE_HANDLER_MAP[message.type];
   if(handler) {
     handler(message);
@@ -60,9 +61,7 @@ function viewOnUnsubscribeMessage(message) {
   var removedCurrentSlide = Array.prototype.reduce.call(
     slidesForFeed, function(removedCurrent, slide) {
     // TODO: verify removing all listeners
-    //slide.removeEventListener('click', onSlideClick);
-    //slide.remove();
-    removeSlideElement(slideElement);
+    removeSlideElement(slide);
     return removedCurrent || (slide == currentSlide);
   }, false);
 
@@ -79,29 +78,42 @@ function removeSlideElement(slideElement) {
   slideElement.remove();
 }
 
-function markSlideRead(slideElement) {
-  if(!slideElement)
-    return;
-  if(slideElement.hasAttribute('read'))
-    return;
-  var updateElement = HTMLElement.prototype.setAttribute.bind(slideElement,'read','');
+function markSlideRead(slide) {
 
-  // TODO: react to onerror/onblocked
+  var entryId = parseInt(slide.getAttribute('entry'));
+
+  // Guard against attempts to re-mark. This can happen for many reasons
+  if(slide.hasAttribute('read')) {
+    return;
+  }
+
+  slide.setAttribute('read', '');
 
   var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
   request.onerror = console.error;
   request.onblocked = console.error;
   request.onsuccess = function (event) {
     var db = event.target.result;
-    var entryId = parseInt(slideElement.getAttribute('entry'));
-    lucu.entry.markAsRead(db, entryId, updateElement);
+    var tx = db.transaction('entry', 'readwrite');
+    var store = tx.objectStore('entry');
+    // TODO: use the implied range syntax instead?
+    var range = IDBKeyRange.only(entryId);
+    var markReadRequest = store.openCursor(range);
+    markReadRequest.onsuccess = function () {
+      var cursor = this.result;
+      if(!cursor) return;
+      var entry = cursor.value;
+      if(!entry) return;
+      if(!entry.hasOwnProperty('unread')) return;
+      delete entry.unread;
+      entry.readDate = Date.now();
+      cursor.update(entry);
+      chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
+    };
   };
 }
 
 function appendSlides(oncomplete, isFirst) {
-
-  // TODO: encapsulate most of this in a forEachEntry
-  // function in entry.js?
 
   var counter = 0;
   var limit = 3;
@@ -385,8 +397,6 @@ var keyDownTimer;
 function onKeyDown(event) {
   //event.target is body
   //event.currentTarget is window
-
-  // TODO: this does not belong here
   var KEY = {
     SPACE: 32,
     PAGE_UP: 33,

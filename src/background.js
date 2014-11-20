@@ -20,6 +20,7 @@ chrome.runtime.onMessage.addListener(function (message) {
 
   switch(message.type) {
     case 'entryRead':
+      console.debug('Received message that entry %s was marked as read', message.entry.id);
       updateBadge();
       break;
     case 'importFeedsCompleted':
@@ -53,6 +54,7 @@ chrome.runtime.onMessage.addListener(function (message) {
  * Sets the badge text to a count of unread entries
  */
 function updateBadge() {
+
   var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
   request.onerror = console.error;
   request.onblocked = console.error;

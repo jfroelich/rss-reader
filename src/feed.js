@@ -476,25 +476,6 @@ lucu.entry.add = function(db, storableEntry, oncomplete, onerror) {
   addRequest.onerror = onerror;
 };
 
-lucu.entry.markAsRead = function(db, entryId, onComplete) {
-
-  // TODO: intead of get/put, use openCursor and cursor.update?
-  var tx = db.transaction('entry','readwrite');
-  tx.oncomplete = onComplete;
-  var entryStore = tx.objectStore('entry');
-
-  entryStore.get(entryId).onsuccess = function() {
-    var entry = this.result;
-    if(!entry)
-      return;
-
-    delete entry.unread;
-    entry.readDate = Date.now();
-    entryStore.put(entry);
-    chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
-  };
-};
-
 /**
  * Removes all entries from the entry store with the given
  * feedId and then calls oncomplete. Passes a count of the
