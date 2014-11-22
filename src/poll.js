@@ -103,7 +103,7 @@ lucu.pollFeeds = function(navigator) {
 
       params.oncomplete = function (remoteFeed) {
         remoteFeed.fetched = Date.now();
-        lucu.updateFeed(db, feed, remoteFeed, onUpdateCompleted);
+        updateFeed(db, feed, remoteFeed, onUpdateCompleted);
       };
 
       params.onerror = function () {
@@ -114,6 +114,36 @@ lucu.pollFeeds = function(navigator) {
     }, function() {
       callback(null, feeds);
     });
+  }
+
+
+  // TODO: maybe inline this above
+  // TODO: the caller needs to set remoteFeed.fetched
+  // TODO: the caller should pass in last modified
+  // date of the remote xml file so we can avoid pointless updates
+  // TODO: this should not be changing the date updated unless something
+  // actually changed. However, we do want to indicate that the feed was
+  // checked
+  function updateFeed(db, localFeed, remoteFeed, oncomplete) {
+    var clean = lucu.sanitizeFeed(remoteFeed);
+    if(clean.title) localFeed.title = clean.title;
+    if(clean.description) localFeed.description = clean.description;
+    if(clean.link) localFeed.link = clean.link;
+    if(clean.date) localFeed.date = clean.date;
+    localFeed.fetched = remoteFeed.fetched;
+    localFeed.updated = Date.now();
+    var tx = db.transaction('feed','readwrite');
+    var store = tx.objectStore('feed');
+    var request = store.put(localFeed);
+    request.onerror = console.debug;
+    //request.onsuccess = lucu.mergeEntries.bind(this, db, localFeed,
+    //  remoteFeed.entries, oncomplete);
+
+    request.onsuccess = function() {
+      async.forEach(remoteFeed.entries,
+        lucu.mergeEntry.bind(null, db, localFeed), oncomplete);
+    };
+
   }
 
   function onWaterfallComplete(error, feeds) {
@@ -133,49 +163,4 @@ lucu.pollFeeds = function(navigator) {
       entriesProcessed: 0
     });
   }
-};
-
-
-/**
- * Replaces the local feed object with the updated properties of remoteFeed,
- * then merges in any new entries present in the remoteFeed, and then calls
- * oncomplete.
- *
- * TODO: move this into the function above. This also means we eventually want
- * to clarify this function's dependencies.
- * TODO: the caller needs to set remoteFeed.fetched
- * TODO: the caller should pass in last modified
- * date of the remote xml file so we can avoid pointless updates
- * TODO: this should not be changing the date updated unless something actually
- * changed. However, we do want to indicate that the feed was checked
- */
-lucu.updateFeed = function(db, localFeed, remoteFeed, oncomplete) {
-
-  var cleanedFeed = lucu.sanitizeFeed(remoteFeed);
-
-  if(cleanedFeed.title) {
-    localFeed.title = cleanedFeed.title;
-  }
-
-  if(cleanedFeed.description) {
-    localFeed.description = cleanedFeed.description;
-  }
-
-  if(cleanedFeed.link) {
-    localFeed.link = cleanedFeed.link;
-  }
-
-  if(cleanedFeed.date) {
-    localFeed.date = cleanedFeed.date;
-  }
-
-  localFeed.fetched = remoteFeed.fetched;
-  localFeed.updated = Date.now();
-
-  var putFeedTransaction = db.transaction('feed','readwrite');
-  var feedStore = putFeedTransaction.objectStore('feed');
-  var putFeedRequest = feedStore.put(localFeed);
-  putFeedRequest.onerror = console.debug;
-  putFeedRequest.onsuccess = lucu.mergeEntries.bind(this, db, localFeed,
-    remoteFeed.entries, oncomplete);
 };
