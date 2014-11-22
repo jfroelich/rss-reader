@@ -17,11 +17,13 @@
  * NOTE: cannot use 'div.share'
  */
 var BLACKLIST_SELECTORS = [
+  'a.advertise-with-us', // The Daily Voice
   'a.aggregated-rel-link', // The Oklahoman
   'a.bylineCommentCount', // Pasadena Star News
   'a.carousel-control', // The Miami Herald
   'a.commentLink', // Salt Lake Tribune
   'a.comments', // Good Magazine
+  'a.detail-newsletter-trigger', // The Daily Voice
   'a.dsq-brlink', // USA Today
   'a.enlargebtn', // NPR
   'a.hdn-analytics', // SF Gate
@@ -36,6 +38,7 @@ var BLACKLIST_SELECTORS = [
   'a[rel="tag"]', // // The Oklahoman
   'a.twitter-follow-button', // Ha'Aretz
   'a.twitter-share-button', // The Jewish Press
+  'a.twitter-timeline', // Newsday
   'a.synved-social-button', // Viral Global News
   'a.skip-to-text-link', // NYTimes
   'article div.extra', // Washington Post
@@ -259,6 +262,7 @@ var BLACKLIST_SELECTORS = [
   'div.email-optin', // Quantstart
   'div#email-sign-up', // BBC
   'div.email-signup', // entrepeneur.com
+  'div.embedded-hyper', // BBC
   'div.encrypted-content', // Atlantic City Press
   'div.endslate', // WFMY News (final slide element)
   'div.entity_popular_posts', // Forbes
@@ -381,6 +385,7 @@ var BLACKLIST_SELECTORS = [
   'div.moreweb', // Uptown Magazine
   'div#most-popular', // BBC
   'div.most-popular', // Vanity Fair
+  'div.mostPopular', // Newsday
   'div#mostPopularTab', // Reuters
   'div#most-read-news-wrapper', // The Daily Mail
   'div#mostSharedTab', // Reuters
@@ -477,6 +482,7 @@ var BLACKLIST_SELECTORS = [
   'div#relatedlinks', // ABC News
   'div.related-links-container', // Business Insider
   'div.related-media', // Fox News
+  'div.relatedModule', // Newsday
   'div.relatedNews', // Tampa Bay
   'div.related-posts', // Buzzcarl
   'div.related-posts-inner', // threatpost.com
@@ -782,6 +788,7 @@ var BLACKLIST_SELECTORS = [
   'section.top-video', // ABC 7 News
   'section.youmaylike', // Entertainment Tonight
   'span.comment-count-generated', // Teleread
+  'span.fb-recommend-btn', // The Daily Voice
   'span[itemprop="inLanguage"]', // Investors.com
   'span.sharetools-label', // NY Time
   'span.moreon-tt', // Teleread
@@ -845,8 +852,10 @@ var BLACKLIST_SELECTORS = [
   'ul.sharebar', // CNet
   'ul.share-buttons', // Ars Technica
   'ul.share_top', // CJR
+  'ul.sharing-tool', // The Daily Voice
   'ul.side-news-list', // Channel News Asia
-  'ul.singleshare', // freakonomics
+  'ul.singleshare', // Freakonomics
+  'ul.sns-buttons', // The Daily Voice
   'ul#social', // rickeyre blog
   'ul.social', // The Sydney Morning Herald
   'ul.social-bookmarking-module', // Wired Magazine
