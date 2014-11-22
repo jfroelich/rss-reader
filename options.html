@@ -69,125 +69,11 @@
 			<input type="checkbox" id="rewriting-enable"> Enable URL rewriting
 		</td>
 	</tr>
-
 	<tr>
 		<td colspan="2" class="option-text">
 			<input type="checkbox" id="enable-idle-check"> Only check for updates when my computer is idle
 		</td>
 	</tr>
-
-	<!--
-	<tr>
-		<td colspan="2">
-			<h2 style="margin-top:30px">Settings below are not yet implemented</h2>
-		</td>
-	</tr>
-
-	<tr>
-		<td>Mark feeds inactive after:</td>
-		<td width="80%">
-			<select>
-			<option>20 days without updates</option>
-			<option>30 days without updates</option>
-			<option>2 months without updates</option>
-			</select>
-		</td>
-	</tr>
-	<tr>
-		<td>Embedded content policy:</td>
-		<td>
-			<select>
-			<option>Always show embedded content</option>
-			<option>Show a link to open embedded content in a new tab</option>
-			<option>Ask before showing embedded content</option>
-			</select>
-		</td>
-	</tr>
-	<tr>
-		<td colspan="2">
-			The most recent check for updates was 5 minutes ago...
-		</td>
-	</tr>
-	<tr>
-		<td colspan="2">
-			<input type="checkbox"> Disable checking for updates
-		</td>
-	</tr>
-
-
-	<tr>
-		<td>Give up checking a feed after:</td>
-		<td>
-			<select>
-				<option>500 milliseconds</option>
-				<option>1 second</option>
-				<option>5 seconds</option>
-				<option>10 seconds</option>
-				<option>20 seconds</option>
-				<option>30 seconds</option>
-			</select>
-		</td>
-	</tr>
-	<tr>
-		<td>Check for updates every:</td>
-		<td>
-			<select>
-				<option>1 minute</option>
-				<option>5 minutes</option>
-				<option>10 minutes</option>
-				<option>20 minutes</option>
-				<option>30 minutes</option>
-				<option>1 hour</option>
-				<option>5 hours</option>
-				<option>20 hours</option>
-			</select>
-		</td>
-	</tr>
-	<tr>
-		<td colspan="2">
-			<button>Check now</button>
-		</td>
-	</tr>
-	<tr>
-		<td colspan="2">
-			<p class="option-text"><input type="checkbox" id="enable-prefetch"> After a substantial area of an
-			article is visible on the screen for a few moments, ask Google Chrome to preload the original
-			article in the background, so that if I decide to view the full article, it opens more quickly.</p>
-		</td>
-	</tr>
-	<tr>
-		<td colspan="2">
-			<p class="option-text"><input type="checkbox"> Try to augment shorter articles</p>
-		</td>
-	</tr>
-	<tr>
-		<td colspan="2">
-			<p class="option-text"><input type="checkbox"> Try to summarize longer articles</p>
-		</td>
-	</tr>
-	<tr>
-		<td colspan="2">
-			<p class="option-text"><input type="checkbox"> Enlarge and emphasize body text when appropriate</p>
-		</td>
-	</tr>
-	<tr>
-		<td colspan="2">
-			<p class="option-text"><input type="checkbox"> Try to layout text in columns where appropriate</p>
-		</td>
-	</tr>
-	<tr>
-		<td class="option-text">Append this many articles in the background:</td>
-		<td>
-			<select>
-			<option>10</option>
-			<option>20</option>
-			<option>50</option>
-			</select>
-		</td>
-	</tr>
-
-	-->
-
 	</table>
 </div>
 
@@ -200,7 +86,6 @@
 	<tr>
 		<td colspan="2">
 		<button id="details-unsubscribe">Unsubscribe</button>
-
 		</td>
 	</tr>
 	<tr>
@@ -215,59 +100,20 @@
 		<td>Website:</td>
 		<td id="details-feed-link"></td>
 	</tr>
-<!--
-	<tr>
-		<td>Status:</td>
-		<td>Active (in inactive show inactive and button to reactivate)</td>
-	</tr>
-	<tr>
-		<td>Last checked:</td>
-		<td>Unknown date (unknown time ago)</td>
-	</tr>
-	<tr>
-		<td>Last updated:</td>
-		<td>Unknown date (unknown time ago) (this is time a new entry was last added, not just when we checked)</td>
-	</tr>
-	<tr>
-		<td>Give up trying to update after:</td>
-		<td><select>
-		<option>Use the default setting</option>
-		<option>500 milliseconds</option>
-		<option>1 second</option>
-		<option>5 seconds</option>
-		<option>10 seconds</option>
-		<option>20 seconds</option>
-		<option>30 seconds</option>
-		</select></td>
-	</tr>
-	<tr>
-		<td>Check for updates every:</td>
-		<td><select>
-		<option>Use the default setting</option>
-		<option>1 minute</option>
-		<option>5 minutes</option>
-		<option>10 minutes</option>
-		<option>20 minutes</option>
-		<option>30 minutes</option>
-		<option>1 hour</option>
-		<option>5 hours</option>
-		<option>20 hours</option>
-		</select>
-		<button>Check for updates now</button>
-		</td>
-	</tr>
--->
 	</table>
 </div>
 
 <div id="section-add-subscription" class="options_section">
 	<h1>Add a subscription</h1>
 	<form id="subscription-form">
-		<input type="search" id="subscribe-discover-query" placeholder="e.g http://example.com/feed.rss or &quot;grumpy cats&quot;" required>
+		<input type="search" id="subscribe-discover-query"
+			placeholder="e.g. http://example.com/feed.rss or &quot;grumpy cats&quot;"
+			required>
 		<input type="submit" value="GO">
 	</form>
 	<ul id="discover-results-list"></ul>
-	<p id="discover-no-results" class="option-text">No results matched your query.</p>
+	<p id="discover-no-results" class="option-text">No results matched your
+	query.</p>
 	<p id="discover-in-progress" class="option-text">
 	<progress style="width:200px">Searching</progress>
 	</p>
@@ -288,11 +134,12 @@
 		<a href="#" class="entry-title">Lorem ipsum dolor sit amet,
 		consectetur adipiscing elit.</a>
 		<span class="entry-content">Lorem ipsum dolor sit amet, consectetur
-		adipiscing elit. Aliquam ipsum ante, tempor et velit vel, iaculis molestie odio. Donec eget urna
-		sit amet leo lacinia blandit. Mauris sit amet orci hendrerit turpis ornare adipiscing id et leo.
-		Mauris at lacus nibh. Mauris eu eros metus. Integer massa tellus, vulputate ut eros eu, luctus
-		viverra ligula. Nunc suscipit arcu in felis congue lobortis. Nulla posuere ut libero eu ultrices.
-		Fusce molestie quam quis congue tempus.</span>
+		adipiscing elit. Aliquam ipsum ante, tempor et velit vel, iaculis molestie
+		odio. Donec eget urna	sit amet leo lacinia blandit. Mauris sit amet orci
+		hendrerit turpis ornare adipiscing id et leo.	Mauris at lacus nibh. Mauris
+		eu eros metus. Integer massa tellus, vulputate ut eros eu, luctus	viverra
+		ligula. Nunc suscipit arcu in felis congue lobortis. Nulla posuere ut libero
+		 eu ultrices.	Fusce molestie quam quis congue tempus.</span>
 		</div>
 	</div>
 	<table id="options_table">
@@ -304,11 +151,11 @@
 		<td class="option-text">Background:</td>
 		<td valign="top">
 			<select id="entry-background-image"></select>
-			<input type="color" id="entry-background-color" placeholder="#ffffff">
+			<input type="color" id="entry-background-color" value="white">
 		</td>
 	</tr>
 	<tr>
-		<td class="option-text">Header:</td>
+		<td class="option-text">Headings:</td>
 		<td>
 			<select id="select_header_font" style="margin-top:0px;padding-top:0px"></select>
 			<input type="range" id="header-font-size" min="1" max="50" step="1">
@@ -323,7 +170,7 @@
 		</td>
 	</tr>
 	<tr>
-		<td class="option-text">Line Height:</td>
+		<td class="option-text">Line height:</td>
 		<td><input type="range" id="body-line-height" min="0" max="50" step="1"></td>
 	</tr>
 	<tr>
