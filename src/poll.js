@@ -4,6 +4,15 @@
 
 var lucu = lucu || {};
 
+/**
+ * Polls feeds
+ *
+ * TODO: backoff if last poll did not find updated content?
+ * TODO: backoff should be per feed
+ * TODO: de-activation of feeds with 404s
+ * TODO: de-activation of too much time elapsed since feed had new articles
+ * TODO: only poll if feed is active
+ */
 lucu.pollFeeds = function(navigator) {
 
   async.waterfall([
@@ -94,7 +103,7 @@ lucu.pollFeeds = function(navigator) {
 
       params.oncomplete = function (remoteFeed) {
         remoteFeed.fetched = Date.now();
-        lucu.feed.update(db, feed, remoteFeed, onUpdateCompleted);
+        lucu.updateFeed(db, feed, remoteFeed, onUpdateCompleted);
       };
 
       params.onerror = function () {
@@ -124,4 +133,49 @@ lucu.pollFeeds = function(navigator) {
       entriesProcessed: 0
     });
   }
+};
+
+
+/**
+ * Replaces the local feed object with the updated properties of remoteFeed,
+ * then merges in any new entries present in the remoteFeed, and then calls
+ * oncomplete.
+ *
+ * TODO: move this into the function above. This also means we eventually want
+ * to clarify this function's dependencies.
+ * TODO: the caller needs to set remoteFeed.fetched
+ * TODO: the caller should pass in last modified
+ * date of the remote xml file so we can avoid pointless updates
+ * TODO: this should not be changing the date updated unless something actually
+ * changed. However, we do want to indicate that the feed was checked
+ */
+lucu.updateFeed = function(db, localFeed, remoteFeed, oncomplete) {
+
+  var cleanedFeed = lucu.sanitizeFeed(remoteFeed);
+
+  if(cleanedFeed.title) {
+    localFeed.title = cleanedFeed.title;
+  }
+
+  if(cleanedFeed.description) {
+    localFeed.description = cleanedFeed.description;
+  }
+
+  if(cleanedFeed.link) {
+    localFeed.link = cleanedFeed.link;
+  }
+
+  if(cleanedFeed.date) {
+    localFeed.date = cleanedFeed.date;
+  }
+
+  localFeed.fetched = remoteFeed.fetched;
+  localFeed.updated = Date.now();
+
+  var putFeedTransaction = db.transaction('feed','readwrite');
+  var feedStore = putFeedTransaction.objectStore('feed');
+  var putFeedRequest = feedStore.put(localFeed);
+  putFeedRequest.onerror = console.debug;
+  putFeedRequest.onsuccess = lucu.mergeEntries.bind(this, db, localFeed,
+    remoteFeed.entries, oncomplete);
 };

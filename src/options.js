@@ -423,6 +423,7 @@ function isValidURL(url) {
 }
 
 function startSubscription(url) {
+  // Use async.js here
 
   hideSubscriptionPreview();
 
@@ -434,23 +435,28 @@ function startSubscription(url) {
   updateSubscriptionMonitor('Subscribing...');
 
   // TODO: react to onerror/onblocked
-
   var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
   request.onerror = console.error;
   request.onblocked = console.error;
   request.onsuccess = function (event) {
     var db = event.target.result;
-    lucu.feed.findBySchemelessURL(db, url, function(existingFeed) {
-
+    var store = db.transaction('feed').objectStore('feed');
+    var index = store.index('schemeless');
+    var uri = new URI(url);
+    uri.protocol('');
+    var schemeless = uri.toString().substring(2);
+    var findRequest = index.get(schemeless);
+    findRequest.onsuccess = function() {
+      var existingFeed = this.result;
       if(existingFeed) {
         return hideSubsciptionMonitor(function() {
-          showErrorMessage('You are already subscribed to "' + url + '".');
+          showErrorMessage('Already subscribed to ' + url + '.');
         });
       }
 
       if(!navigator.onLine) {
         // Subscribe while offline
-        return lucu.feed.add(db, {url: url}, onSubscriptionSuccessful, console.debug);
+        return lucu.addFeed(db, {url: url}, onSubscriptionSuccessful, console.debug);
       }
 
       lucu.fetchFeed({
@@ -467,15 +473,13 @@ function startSubscription(url) {
   function onFetchComplete(remoteFeed) {
     remoteFeed.url = url;
     remoteFeed.fetched = Date.now();
-
     // TODO: react to onerror/onblocked
-
     var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
     request.onerror = console.error;
     request.onblocked = console.error;
     request.onsuccess = function (event) {
       var db = event.target.result;
-      lucu.feed.add(db, remoteFeed, onSubscriptionSuccessful, console.debug);
+      lucu.addFeed(db, remoteFeed, onSubscriptionSuccessful, console.debug);
     };
   }
 
@@ -662,18 +666,32 @@ function onDiscoverFeedsError(errorMessage) {
 
 function onUnsubscribeButtonClicked(event) {
   var feedId = parseInt(event.target.value);
-
-  // TODO: react to onerror/onblocked
-
+  var sectionMenu = document.getElementById('mi-subscriptions');
   var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
-  request.onerror = console.error;
-  request.onblocked = console.error;
+  request.onerror = request.onblocked = function(event) {
+    console.log('Failed to unsubscribe from feed');
+    console.error(event);
+    optionsShowSection(sectionMenu);
+  };
+
   request.onsuccess = function (event) {
     var db = event.target.result;
-    lucu.feed.removeById(db, feedId, function() {
+    var tx = db.transaction(['entry','feed'],'readwrite');
+    var feedStore = tx.objectStore('feed');
+    var entryStore = tx.objectStore('entry');
+    var feedIndex = entryStore.index('feed');
+    var entryRequest = feedIndex.openKeyCursor(feedId);
+    feedStore.delete(feedId);
+    entryRequest.onsuccess = function() {
+      var cursor = this.result;
+      if(!cursor) return;
+      entryStore.delete(cursor.primaryKey);
+      cursor.continue();
+    };
+    tx.oncomplete = function() {
       console.info('Unsubscribed from %s', feedId);
-      optionsShowSection(document.getElementById('mi-subscriptions'));
-    });
+      optionsShowSection(sectionMenu);
+    };
   };
 }
 
@@ -872,6 +890,19 @@ function initGeneralSettingsSection() {
 }
 
 function initSubscriptionsSection() {
+  // TODO: inline and simplify this
+  function forEachFeed(db, handleFeed, onComplete, sortByTitle) {
+    var tx = db.transaction('feed');
+    tx.oncomplete = onComplete;
+    var store = tx.objectStore('feed');
+    if(sortByTitle) store = store.index('title');
+    store.openCursor().onsuccess = function() {
+      var cursor = this.result;
+      if(!cursor) return;
+      handleFeed(cursor.value);
+      cursor.continue();
+    };
+  }
 
   document.getElementById('button-export-opml').onclick = onExportOPMLClick;
   document.getElementById('button-import-opml').onclick = onImportOPMLClick;
@@ -884,7 +915,7 @@ function initSubscriptionsSection() {
   request.onblocked = console.error;
   request.onsuccess = function (event) {
     var db = event.target.result;
-    lucu.feed.forEach(db, function(feed) {
+    forEachFeed(db, function(feed) {
       feedCount++;
       optionsAppendFeed(feed);
       optionsUpdateFeedCount();

@@ -72,7 +72,7 @@ lucu.importOPMLFiles = function(files, onComplete) {
   // Stores the outlines in indexedDB, async
   function store(db, outlines, callback) {
     async.forEach(outlines, function(outline, callback) {
-      lucu.feed.add(db, outline, function() {
+      lucu.addFeed(db, outline, function() {
         callback();
       }, function() {
         callback();
