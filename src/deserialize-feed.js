@@ -31,29 +31,6 @@ lucu.deserializeFeed = function (document) {
     throw new TypeError('Undefined document element');
   }
 
-/*
-  var schemas = new Map();
-  schemas.set('rss', {
-    get title: function() { return getText(root, ['channel > title']); }
-  });
-  schemas.set('feed', {
-    get title: function() { return getText(root, ['feed > title']); }
-  });
-  schemas.set('rdf', {
-    get title: function() { return getText(root, ['channel > title']); }
-  });
-
-  var rootName = root ? root.localName : '';
-  var schema = schemas.get(rootName);
-  if(!schema) {
-    throw new TypeError('Unsupported format "' + rootName + '"');
-  }
-
-  var title = schema.title;
-  if(title) result.title = title;
-
-*/
-
   var isRSS = root.matches('rss');
   var isAtom = root.matches('feed');
   var isRDF = root.matches('rdf');
