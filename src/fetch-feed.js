@@ -98,21 +98,28 @@ lucu.fetchFeed = function(params) {
   request.ontimeout = onError;
   request.onabort = onError;
   request.onload = function() {
-    var mime = this.getResponseHeader('Content-Type');
-    var xmlDocument = null;
-
     var RE_FEED_TYPE = /(application|text)\/(atom|rdf|rss)?\+?xml/i;
     var RE_HTML_TYPE = /text\/html|plain/i;
+    var mime = this.getResponseHeader('Content-Type');
+    var xmlDocument = null;
 
     if(RE_FEED_TYPE.test(mime)) {
       xmlDocument = this.responseXML;
     } else if(RE_HTML_TYPE.test(mime)) {
+      // TODO: if we use overrideMimeType then the native utility
+      // should properly fail for us?
       // Fallback
-      try {
-        xmlDocument = lucu.parseXML(this.responseText);
-      } catch(e) {
+      var parser = new DOMParser();
+      xmlDocument = parser.parseFromString(this.responseText,
+        'application/xml');
+      if(!xmlDocument || !xmlDocument.documentElement) {
         return onError(e);
       }
+      var parserError = xmlDocument.querySelector('parsererror');
+      if(parserError) {
+        return onError(parserError.textContent);
+      }
+
     } else {
       return onError({type:'invalid-content-type', target: this});
     }
