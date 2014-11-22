@@ -215,6 +215,7 @@ var BLACKLIST_SELECTORS = [
   'div#commenting', // Fox News
   'div#commentLink', // // The Oklahoman
   'div#comment-list', // Bangkok Post
+  'div.CommentBox', // LWN
   'div#comment-reply-form', // Sparkfun
   'div#comments', // CBS News
   'div.comments', // TechCrunch
@@ -474,6 +475,7 @@ var BLACKLIST_SELECTORS = [
   'div#related_items', // Business Week
   'div.related_items', // NY Books
   'div#relatedlinks', // ABC News
+  'div.related-links-container', // Business Insider
   'div.related-media', // Fox News
   'div.relatedNews', // Tampa Bay
   'div.related-posts', // Buzzcarl
@@ -533,6 +535,7 @@ var BLACKLIST_SELECTORS = [
   'div.share-buttons', // Quantstart
   'div#shareComments', // Teleread (also, gigya)
   'div#shareComments-bottom', // Teleread
+  'div.share-container', // Business Insider
   'div.share-count-container', // CNBC
   'div.sharedaddy', // Fortune
   'div.share-help', // BBC
@@ -788,6 +791,7 @@ var BLACKLIST_SELECTORS = [
   'table#commentTable', // Times of India
   'table.complexListingBox', // Mercury News
   'table.storyauthor', // SysCon Media
+  'table.TopNavigation', // LWN
   'ul#additionalShare', // NBC
   'ul.articleList', // The Wall Street Journal
   'ul.article-options', // TVNZ
