@@ -348,7 +348,7 @@ function showOrSkipSubscriptionPreview(url) {
 
   var timeout = 10 * 1000;
 
-  var onFetchSuccess = function(result) {
+  function onFetchSuccess(result) {
     // Stop the indeterminate progress bar.
     document.getElementById('subscription-preview-load-progress').style.display = 'none';
 
@@ -377,10 +377,9 @@ function showOrSkipSubscriptionPreview(url) {
       item.appendChild(content);
       document.getElementById('subscription-preview-entries').appendChild(item);
     }
-  };
+  }
 
   // TODO: check if already subscribed before preview?
-  // TODO: catch exceptions?
 
   lucu.fetchFeed({
     url: url,
