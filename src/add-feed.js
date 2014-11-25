@@ -4,6 +4,8 @@
 
 var lucu = lucu || {};
 
+// TODO: ensure no future pubdates?
+
 // TODO: use the async's approach to error handling. Only use
 // one callback. The first argument should be the error object.
 lucu.addFeed = function(db, feed, onComplete, onerror) {
