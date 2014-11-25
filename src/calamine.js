@@ -701,7 +701,6 @@ var ATTRIBUTE_BIAS = new Map([
 ]);
 
 exports.calamine = {
-  filterAxes: BLACKLIST_SELECTORS,
   stripTitlePublisher: stripTitlePublisher,
   transform: transform
 };
