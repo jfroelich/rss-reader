@@ -84,35 +84,24 @@ lucu.pollFeeds = function(navigator) {
 
   function updateAllFeeds(db, feeds, callback) {
     async.forEach(feeds, function update(feed, callback) {
-      function onUpdateCompleted() {
+      lucu.fetchFeed(feed.url, function(remoteFeed) {
+        lucu.augmentEntries(remoteFeed, function() {
+          remoteFeed.fetched = Date.now();
+          updateFeed(db, feed, remoteFeed, function() {
+            callback();
+          });
+        });
+      }, function () {
         callback();
-      }
-
-      var params = {};
-      params.url = feed.url;
-      params.timeout = 20 * 1000;
-      params.entryTimeout = 20 * 1000;
-      params.fetchFullArticles = true;
-
-      params.oncomplete = function (remoteFeed) {
-        remoteFeed.fetched = Date.now();
-        updateFeed(db, feed, remoteFeed, onUpdateCompleted);
-      };
-
-      params.onerror = function () {
-        callback();
-      };
-
-      lucu.fetchFeed(params);
+      }, 10 * 1000);
     }, function() {
       callback(null, feeds);
     });
   }
 
   // TODO: maybe inline this above
-  // TODO: the caller needs to set remoteFeed.fetched
-  // TODO: the caller should pass in last modified
-  // date of the remote xml file so we can avoid pointless updates
+  // TODO: the caller should pass in last modified date of the remote xml file
+  // so we can avoid pointless updates?
   // TODO: this should not be changing the date updated unless something
   // actually changed. However, we do want to indicate that the feed was
   // checked

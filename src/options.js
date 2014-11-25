@@ -350,24 +350,28 @@ function showOrSkipSubscriptionPreview(url) {
 
   function onFetchSuccess(result) {
     // Stop the indeterminate progress bar.
-    document.getElementById('subscription-preview-load-progress').style.display = 'none';
+    document.getElementById(
+      'subscription-preview-load-progress').style.display = 'none';
 
     // Show the title
     //document.getElementById('subscription-preview-title').style.display = 'block';
-    document.getElementById('subscription-preview-title').textContent = result.title || 'Untitled';
+    document.getElementById('subscription-preview-title').textContent =
+      result.title || 'Untitled';
 
     // Update the value of the continue button so its click handler
     // can get the vvalue for subscription
-    document.getElementById('subscription-preview-continue').value = result.url;
+    document.getElementById(
+      'subscription-preview-continue').value = result.url;
 
     // result.title and  result.entries
     if(!result.entries || !result.entries.length) {
       var item = document.createElement('li');
       item.textContent = 'No entries found to preview';
-      document.getElementById('subscription-preview-entries').appendChild(item);
+      document.getElementById(
+        'subscription-preview-entries').appendChild(item);
     }
 
-    // Show up to 5 (inclusive) entries.
+    // Show up to 5 entries.
     for(var i = 0, len = Math.min(5,result.entries.length); i < len;i++) {
       var entry = result.entries[i];
       var item = document.createElement('li');
@@ -375,19 +379,13 @@ function showOrSkipSubscriptionPreview(url) {
       var content = document.createElement('span');
       content.innerHTML = lucu.stripTags(entry.content);
       item.appendChild(content);
-      document.getElementById('subscription-preview-entries').appendChild(item);
+      document.getElementById(
+        'subscription-preview-entries').appendChild(item);
     }
   }
 
   // TODO: check if already subscribed before preview?
-
-  lucu.fetchFeed({
-    url: url,
-    oncomplete: onFetchSuccess,
-    onerror: onerror,
-    timeout: timeout,
-    fetchFullArticles: false
-  });
+  lucu.fetchFeed(url, onFetchSuccess, onerror, timeout);
 }
 
 function hideSubscriptionPreview() {
@@ -454,32 +452,30 @@ function startSubscription(url) {
       }
 
       if(!navigator.onLine) {
-        // Subscribe while offline
         return lucu.addFeed(db, {url: url}, onSubscriptionSuccessful, console.debug);
       }
 
-      lucu.fetchFeed({
-        url: url,
-        oncomplete: onFetchComplete,
-        onerror: onFetchError,
-        timeout: 10 * 1000,
-        entryTimeout: 20 * 1000,
-        fetchFullArticles: true
-      });
-    });
+      lucu.fetchFeed(url, onFetchComplete, onFetchError, 10 * 1000);
+    };
   };
 
   function onFetchComplete(remoteFeed) {
-    remoteFeed.url = url;
-    remoteFeed.fetched = Date.now();
-    // TODO: react to onerror/onblocked
-    var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
-    request.onerror = console.error;
-    request.onblocked = console.error;
-    request.onsuccess = function (event) {
-      var db = event.target.result;
-      lucu.addFeed(db, remoteFeed, onSubscriptionSuccessful, console.debug);
-    };
+    // TODO: subscribing takes too long. Do not augment
+    // when subscribing. Just inform the user that articles
+    // will be fetched when next poll occurs
+    // Augment
+    lucu.augmentEntries(remoteFeed, function() {
+      remoteFeed.url = url;
+      remoteFeed.fetched = Date.now();
+      // TODO: react to db onerror/onblocked
+      var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+      request.onerror = console.error;
+      request.onblocked = console.error;
+      request.onsuccess = function (event) {
+        var db = event.target.result;
+        lucu.addFeed(db, remoteFeed, onSubscriptionSuccessful, console.debug);
+      };
+    });
   }
 
   function onFetchError(error) {

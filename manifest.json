@@ -23,6 +23,7 @@
       "/src/sanitize-feed.js",
       "/src/merge-entry.js",
       "/src/add-feed.js",
+      "/src/augment-entries.js",
       "/src/fetch-feed.js",
       "/src/resolve-elements.js",
       "/src/deserialize-feed.js",
