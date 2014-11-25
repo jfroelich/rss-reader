@@ -25,7 +25,6 @@ lucu.resolveElements = function(document, baseURL) {
     base.remove();
   });
 
-
   var hrefAttributes = ['a','area','link'];
   var srcAttributes = ['audio', 'embed', 'iframe', 'img', 'script',
     'source', 'track', 'video'];
@@ -61,11 +60,6 @@ lucu.resolveElements = function(document, baseURL) {
     // resolving URNs (e.g. data/ftp/etc) and avoids
     // spelling errors
     if(attribute == 'href' || attribute == 'action') {
-
-      // Oops. This is obviously a relative path. This should
-      // not be returning
-      //if(url.charAt(0) == '#') return;
-
       if(/^\s*javascript\s*:/i.test(url)) return;
       if(/^\s*tel\s*:/i.test(url)) return;
       if(/^\s*mailto\s*:/i.test(url)) return;
