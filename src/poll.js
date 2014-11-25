@@ -38,7 +38,6 @@ lucu.pollFeeds = function(navigator) {
       return callback();
     }
 
-    // We can check idle status
     var INACTIVITY_INTERVAL = 60 * 5;
     chrome.idle.queryState(INACTIVITY_INTERVAL, function (idleState) {
       if(idleState == 'locked' || idleState == 'idle') {
@@ -54,7 +53,6 @@ lucu.pollFeeds = function(navigator) {
 
   function isOnline(callback) {
     if(navigator && !navigator.onLine) {
-      //var offlineError = new Error();
       return callback('offline');
     }
 
@@ -71,11 +69,6 @@ lucu.pollFeeds = function(navigator) {
   }
 
   function selectAllFeeds(db, callback) {
-
-    // NOTE: by building an array here, we don't wait on fetches to complete
-    // before advancing the cursor. This avoids the transaction closing
-    // prematurely.
-
     var feeds = [];
     var store = db.transaction('feed').objectStore('feed');
     store.openCursor().onsuccess = function (event) {
@@ -91,7 +84,7 @@ lucu.pollFeeds = function(navigator) {
 
   function updateAllFeeds(db, feeds, callback) {
     async.forEach(feeds, function update(feed, callback) {
-      function onUpdateCompleted(updatedFeed, entriesProcessed, entriesAdded) {
+      function onUpdateCompleted() {
         callback();
       }
 
@@ -116,7 +109,6 @@ lucu.pollFeeds = function(navigator) {
     });
   }
 
-
   // TODO: maybe inline this above
   // TODO: the caller needs to set remoteFeed.fetched
   // TODO: the caller should pass in last modified
@@ -136,18 +128,13 @@ lucu.pollFeeds = function(navigator) {
     var store = tx.objectStore('feed');
     var request = store.put(localFeed);
     request.onerror = console.debug;
-    //request.onsuccess = lucu.mergeEntries.bind(this, db, localFeed,
-    //  remoteFeed.entries, oncomplete);
-
+    var mergeEntry = lucu.mergeEntry.bind(null, db, localFeed);
     request.onsuccess = function() {
-      async.forEach(remoteFeed.entries,
-        lucu.mergeEntry.bind(null, db, localFeed), oncomplete);
+      async.forEach(remoteFeed.entries, mergeEntry, oncomplete);
     };
-
   }
 
   function onWaterfallComplete(error, feeds) {
-
     if(error) {
       console.log('A polling error occurred');
       console.dir(error);
