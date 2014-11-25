@@ -17,11 +17,15 @@ lucu.resolveElements = function(document, baseURL) {
 
   var forEach = Array.prototype.forEach;
 
-  // Strip base tags
+  // Strip base tags from the document (includes <head>)
+  // NOTE: this technically could lead to invalid urls, I think, if the base
+  // is not equivalent to the url of the document. However, for now, it is
+  // better to avoid the whole app misbehaving on load of any document
+  // with a base tag.
   var baseElements = document.documentElement.getElementsByTagName('base');
   forEach.call(baseElements, function(base) {
     if(!base) return;
-    console.debug('removing %s', base.outerHTML);
+    // console.debug('removing %s', base.outerHTML);
     base.remove();
   });
 
@@ -58,7 +62,10 @@ lucu.resolveElements = function(document, baseURL) {
     // TODO: use URI.js to parse the relative and get the
     // protocol. Only resolve if no protocol. This avoids
     // resolving URNs (e.g. data/ftp/etc) and avoids
-    // spelling errors
+    // spelling errors and avoids the need to do these
+    // checks
+    // NOTE: these checks are unnecessary, all they
+    // do is avoid the exception thrown when calling absoluteTo
     if(attribute == 'href' || attribute == 'action') {
       if(/^\s*javascript\s*:/i.test(url)) return;
       if(/^\s*tel\s*:/i.test(url)) return;
