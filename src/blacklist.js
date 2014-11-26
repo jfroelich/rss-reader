@@ -42,6 +42,7 @@ var BLACKLIST_SELECTORS = [
   'a.synved-social-button', // Viral Global News
   'a.skip-to-text-link', // NYTimes
   'article div.extra', // Washington Post
+  'article div.share', // Vanity Fair
   'article > div.tags', // NPR
   'article ul.listing', // Good Magazine
   'aside.author-blocks', // ProPublica
@@ -230,6 +231,7 @@ var BLACKLIST_SELECTORS = [
   'div.comment-tools', // Latin post
   'div.comment_links', // Forbes
   'div.comments-overall', // Aeon Magazine
+  'div#commentpolicy', // PBS
   'div.comment-policy-box', // thedomains.com
   'div#commentPromo', // Salt Lake Tribune
   'div.commentWrap', // Corcodillos
@@ -400,6 +402,7 @@ var BLACKLIST_SELECTORS = [
   'div.newsreel', // The Wall Street Journal
   'div.next_on_news', // BuzzFeed
   'div#next_post', // Ace Showbiz
+  'div.nhlinkbox', // PBS
   'div#nlHeader', // E-Week
   'div.node-footer', // Drupal
   'div.node-metainfo', // The Boston Herald
@@ -441,6 +444,7 @@ var BLACKLIST_SELECTORS = [
   'div.posts-stories', // Ha'Aretz
   'div.post-tags', // Teleread
   'div.post-tools-wrapper', // Gawker
+  'div.post-wrap-side-share', // PBS
   'div#powered_by_livefyre_new', // Entertainment Tonight
   'div.premium-box', // Foreign Affairs
   'div#premium-box-locked', // Foreign Affairs
