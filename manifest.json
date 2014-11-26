@@ -27,6 +27,7 @@
       "/src/fetch-feed.js",
       "/src/resolve-elements.js",
       "/src/deserialize-feed.js",
+      "/src/archive-feeds.js",
       "/src/poll-feeds.js",
       "/src/string-utilities.js"
     ]
