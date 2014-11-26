@@ -5,23 +5,17 @@
 var lucu = lucu || {};
 
 /**
- * Returns a rewritten url, or the original url if no rewriting rules were applicable.
- *
- * Currently this only works for Google News urls
+ * Returns a rewritten url, or the original url if no rewriting rules were
+ * applicable.
  */
-lucu.rewriteURL = function(string) {
-
+lucu.rewriteURL = function(url) {
   'use strict';
-
   var RE_GOOGLE_NEWS = /^https?:\/\/news.google.com\/news\/url\?.*url=(.*)/i;
-  // NOTES: if exec does not match it returns undefined/null. If it does match
-  // and there is a sub capture, it returns [0] as the full text and [1] as
-  // the text of the first sub capture.
-  var matches = RE_GOOGLE_NEWS.exec(string);
+  var matches = RE_GOOGLE_NEWS.exec(url);
   if(matches && matches.length === 2 && matches[1]) {
     var newURL = decodeURIComponent(matches[1]);
     return newURL;
   }
 
-  return string;
+  return url;
 };
