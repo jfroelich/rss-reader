@@ -83,7 +83,7 @@ lucu.pollFeeds = function(navigator) {
   }
 
   function updateAllFeeds(db, feeds, callback) {
-    async.forEach(feeds, function update(feed, callback) {
+    async.forEach(feeds, function(feed, callback) {
       lucu.fetchFeed(feed.url, function(remoteFeed) {
         lucu.augmentEntries(remoteFeed, function() {
           remoteFeed.fetched = Date.now();
@@ -99,7 +99,6 @@ lucu.pollFeeds = function(navigator) {
     });
   }
 
-  // TODO: maybe inline this above
   // TODO: the caller should pass in last modified date of the remote xml file
   // so we can avoid pointless updates?
   // TODO: this should not be changing the date updated unless something
