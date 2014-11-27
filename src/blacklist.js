@@ -611,6 +611,7 @@ var BLACKLIST_SELECTORS = [
   'div.srch_box', // Times of India
   'div.ssba', // Funker (social share button actions?)
   'div#ssba', // Clizbeats
+  'div.ssb-share', // 365Solutions
   'div.stack-talent', // NBC News (author bio)
   'div.stack-video-nojs-overlay', // NBC News
   'div.staff_info', // Bizjournals
