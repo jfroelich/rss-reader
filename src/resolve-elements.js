@@ -41,7 +41,7 @@ lucu.resolveElements = function(document, baseURL) {
   ]);
 
   // TODO: build this from the map, do not specify redundantly
-  var resolvables = document.documentElement.querySelectorAll(
+  var resolvables = document.querySelectorAll(
     'a, area, audio, blockquote, embed, iframe, form, img, link, '+
     'object, script, source, track, video');
   forEach.call(resolvables, function resolve(element) {
