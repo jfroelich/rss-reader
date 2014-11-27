@@ -14,7 +14,7 @@
     "persistent": false,
     "scripts": [
       "/lib/async.js",
-      "/lib/medialize/URI.js",
+      "/lib/URI.js",
       "/src/background.js",
       "/src/map-shim.js",
       "/src/set-shim.js",
