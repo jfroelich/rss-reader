@@ -54,7 +54,7 @@ function transform(doc, options) {
   applyDownwardBias(doc, scores, options.ANNOTATE);
   applyUpwardBias(elements, scores, options.ANNOTATE);
   applyImageBias(doc, scores, options.ANNOTATE);
-  applyAttributeBias(doc, scores);
+  applyAttributeBias(doc, scores, options.ANNOTATE);
   maybeExposeAttributes(doc, scores, options.ANNOTATE);
   return findBestElement(doc, elements, scores);
 }
@@ -217,9 +217,7 @@ function applyImageBias(doc, scores, annotate) {
     var areaBias = 0.0015 * Math.min(100000, area);
     var imageBias = carouselBias + descBias + areaBias;
     if(!imageBias) return;
-    if(annotate) {
-      parent.dataset.imageBias = imageBias;
-    }
+    if(annotate) parent.dataset.imageBias = imageBias;
     scores.set(parent, scores.get(parent) + imageBias);
   });
 }
@@ -227,7 +225,6 @@ function applyImageBias(doc, scores, annotate) {
 // Conditionally expose attributes for debugging
 function maybeExposeAttributes(doc, scores, annotate) {
   if(!annotate) return;
-
   forEach.call(doc.documentElement.getElementsByTagName('*'), function (element) {
     var score = scores.get(element);
     if(!score) return;
@@ -334,11 +331,13 @@ function getAttributeBias(element) {
  * TODO: itemscope
  * TODO: itemtype 'article' id/class issue
  */
-function applyAttributeBias(doc, scores) {
+function applyAttributeBias(doc, scores, annotate) {
   var SCORABLE_SELECTOR = 'a, aside, div, dl, figure, h1, h2, h3, h4,'+
     ' ol, p, section, span, ul';
   var elements = doc.body.querySelectorAll(SCORABLE_SELECTOR);
   forEach.call(elements, function (element) {
+    var bias = getAttributeBias(element);
+    if(annotate) element.dataset.attributeBias = bias;
     scores.set(element, scores.get(element) + getAttributeBias(element));
   });
 
@@ -351,8 +350,27 @@ function applyAttributeBias(doc, scores) {
   // important.
   var articleClass = doc.body.getElementsByClassName('article');
   if(articleClass.length == 1) {
+    if(annotate) {
+      articleClass[0].dataset.attributeBias =
+        parseInt(articleClass[0].dataset.attributeBias || '0') + 1000;
+    }
     scores.set(articleClass[0], scores.get(articleClass[0]) + 1000);
   }
+
+  var articleTextClass = doc.body.getElementsByClassName('articleText');
+  if(articleTextClass.length == 1) {
+    if(annotate) {
+      var oldBias = articleTextClass[0].dataset.attributeBias || '0';
+      articleTextClass[0].dataset.attributeBias =
+        parseInt(oldBias) + 1000;
+    }
+
+    scores.set(articleTextClass[0], scores.get(articleTextClass[0]) + 1000);
+  }
+
+  // TODO: articleText?
+  //articleText
+  // itemprop="articleBody"
 
   var articleAttributes =  ['id', 'class', 'name', 'itemprop', 'role'].map(
     function(s) { return '['+s+'*="articlebody"]'; });
