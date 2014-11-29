@@ -5,118 +5,119 @@
 var lucu = lucu || {};
 
 /**
- * Convert an XML document containing feed data into an object
- *
- * TODO: somehow cleanup the ifs while not violating DRY
+ * Deserializes an xml document representing a feed into a feed object
+ * TODO: some concerns regarding how querySelector probes all descendants.
+ * Could this find the wrong fields? Should we be restricting to immediate?
  */
-lucu.deserializeFeed = function (document) {
+lucu.deserializeFeed = function(document) {
   'use strict';
+  var e = document.documentElement;
+  if(!e) throw new TypeError('Undefined document element');
+  if(e.matches('feed')) return lucu.deserializeAtomFeed(e);
+  if(e.matches('rss, rdf')) return lucu.deserializeRSSFeed(e);
+  throw new TypeError('Unsupported document element ' + e.localName);
+};
 
+lucu.selectTrimmedTextContent = function(parent, selector) {
+  'use strict';
+  var element = parent.querySelector(selector);
+  if(!element) return;
+  var text = element.textContent;
+  if(!text) return;
+  return text.trim();
+};
+
+lucu.deserializeAtomFeed = function(root) {
+  'use strict';
   var map = Array.prototype.map;
-
-  function getText(rootElement, selectors, attribute) {
-    for(var i = 0, temp; i < selectors.length; i++) {
-      temp = rootElement.querySelector(selectors[i]);
-      if(!temp) continue;
-      temp = attribute ? temp.getAttribute(attribute) : temp.textContent;
-      if(!temp) continue;
-      temp = temp.trim();
-      if(!temp) continue;
-      return temp;
-    }
-  }
-
-  var root = document.documentElement;
-  if(!root) {
-    throw new TypeError('Undefined document element');
-  }
-
-  var isRSS = root.matches('rss');
-  var isAtom = root.matches('feed');
-  var isRDF = root.matches('rdf');
-
-  if(!isRSS && !isAtom && !isRDF) {
-    throw new TypeError('Unsupported document element ' + root.localName);
-  }
-
+  var getText = lucu.selectTrimmedTextContent;
   var result = {};
+  var feed = root;
+  result.title = getText(feed, 'title');
+  result.description = getText(feed, 'subtitle');
+  result.date = getText(feed, 'updated');
+  var link = feed.querySelector('link[rel="alternate"]');
+  if(!link) link = feed.querySelector('link[rel="self"]');
+  if(!link) link = feed.querySelector('link[href]');
+  if(link) link = link.getAttribute('href');
+  if(link) result.link = link.trim();
+  var entries = feed.querySelectorAll('entry');
+  result.entries = map.call(entries, lucu.deserializeAtomEntry);
+  return result;
+};
 
-  var title = getText(root, isAtom ? ['feed > title'] : ['channel > title']);
-  if(title) result.title = title;
+lucu.deserializeAtomEntry = function(entry) {
+  'use strict';
+  var getText = lucu.selectTrimmedTextContent;
+  var result = {};
+  result.title = getText(entry, 'title');
+  result.author = lucu.stripTags(getText(entry, 'author name'), ' ');
+  var link = entry.querySelector('link[rel="alternate"]') ||
+    entry.querySelector('link[rel="self"]') ||
+    entry.querySelector('link[href]');
+  if(link) link = link.getAttribute('href');
+  if(link) result.link = link.trim();
+  var date = entry.querySelector('published') ||
+    entry.querySelector('updated');
+  if(date) date = date.textContent;
+  if(date) result.pubdate = date.trim();
+  // Special handling for atom entry content. For some reason this works
+  // where normal content.textContent does not. I think the issue pertains to
+  // whether content contains CDATA.
+  var content = entry.querySelector('content');
+  var nodes = content ? content.childNodes : [];
+  var map = Array.prototype.map;
+  result.content = map.call(nodes, function(node) {
+    return node.nodeType == Node.ELEMENT_NODE ?
+      node.innerHTML : node.textContent;
+  }).join('').trim();
+  return result;
+};
 
-  var description = getText(root, isAtom ? ['feed > subtitle'] :
-    ['channel > description']);
-  if(description) result.description = description;
-
-  var feedLinkSelectors, link;
-  if(isAtom) {
-    feedLinkSelectors = ['feed > link[rel="alternate"]',
-      'feed > link[rel="self"]', 'feed > link'];
-    link = getText(root, feedLinkSelectors, 'href');
-    if(link) result.link = link;
-  } else {
-    // Prefer the textContent of a link element that does not have an href
-    link = getText(root, ['channel > link:not([href])']);
-    if(link) {
-      result.link = link;
-    } else {
-      // Fall back to href attribute value for any link
-      link = getText(root, ['channel > link'], 'href');
-      if(link) result.link = link;
-    }
-  }
-
-  // Set feed date (pubdate or similar, for entire feed)
-  var feedDateSelectors = isAtom ? ['feed > updated'] :
-    (isRSS ? ['channel > pubdate', 'channel > lastBuildDate',
-      'channel > date'] : ['channel > date']);
-  var date = getText(root, feedDateSelectors);
-  if(date) result.date = date;
-
-  var entrySelector = isAtom ? 'feed > entry' : isRSS ?
-    'channel > item' : 'item';
-  var entries = root.querySelectorAll(entrySelector);
-  result.entries = map.call(entries, function (entry) {
-    var result = {};
-    var title = getText(entry, ['title']);
-    if(title) result.title = title;
-    var link = isAtom ?  getText(entry,
-      ['link[rel="alternate"]', 'link[rel="self"]', 'link[href]'], 'href') :
-      getText(entry, ['origLink','link']);
-    if(link) result.link = link;
-    var author = getText(entry, isAtom ? ['author name'] :
-      ['creator', 'publisher']);
-    if(author) result.author = author;
-    var pubDate = getText(entry, isAtom ? ['published', 'updated'] :
-      (isRSS ? ['pubDate'] : ['date']));
-    if(pubDate) result.pubdate = pubDate;
-
-    function getAtomText(entry) {
-      var content = entry.querySelector('content');
-      var nodes = content ? content.childNodes : [];
-      return map.call(nodes, function (node) {
-        return node.nodeType == Node.ELEMENT_NODE ?
-          node.innerHTML : node.textContent;
-      }).join('').trim();
-    }
-
-    var content = null;
-    if(isAtom) {
-      // For some atom feeds it picks up the CDATA content as
-      // xml, so we need to work around it.
-      content = entry.querySelector('content');
-      var nodes = content ? content.childNodes : [];
-      content = map.call(nodes, function (node) {
-        // NOTE: why not just use node.nodeValue for text nodes?
-        return node.nodeType == Node.ELEMENT_NODE ?
-          node.innerHTML : node.textContent;
-      }).join('').trim();
-    } else {
-      content = getText(entry, ['encoded', 'description', 'summary']);
-    }
-
-    if(content) result.content = content;
+lucu.deserializeRSSFeed = function(root) {
+  'use strict';
+  var isRDF = root.matches('rdf');
+  var getText = lucu.selectTrimmedTextContent;
+  var result = {};
+  var channel = root.querySelector('channel');
+  if(!channel) {
+    console.warn('No channel found!? %o', root);
+    // our contract warrants entries is defined
+    result.entries = [];
     return result;
-  });
+  }
+  result.title = getText(channel, 'title');
+  result.description = getText(channel, 'description');
+  var link = getText(channel, 'link:not([href])')
+  if(!link) {
+    link = channel.querySelector('link');
+    if(link) link = link.getAttribute('href');
+    if(link) link = link.trim();
+  }
+  if(link) result.link = link;
+  var date = getText(channel, 'pubdate') || getText(channel, 'lastBuildDate') ||
+    getText(channel, 'date');
+  if(date) result.date = date;
+  var entriesParent = isRDF ? root : channel;
+  var entries = entriesParent.querySelectorAll('item');
+  var map = Array.prototype.map;
+  result.entries = map.call(entries, lucu.deserializeRSSEntry);
+  return result;
+};
+
+lucu.deserializeRSSEntry = function(entry) {
+  'use strict';
+  var getText = lucu.selectTrimmedTextContent;
+  var result = {};
+  result.title = getText(entry, 'title');
+  var link = getText(entry, 'origLink') || getText(entry, 'link');
+  if(link) result.link = link;
+  var author = getText(entry, 'creator') || getText(entry, 'publisher');
+  if(author) result.author = lucu.stripTags(author, ' ');
+  var date = getText(entry, 'pubDate') || getText(entry, 'date');
+  if(date) result.pubdate = date;
+  var content = getText(entry, 'encoded') || getText(entry, 'description') ||
+    getText(entry, 'summary');
+  if(content) result.content = content;
   return result;
 };
