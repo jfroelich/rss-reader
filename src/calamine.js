@@ -639,6 +639,7 @@ var ATTRIBUTE_BIAS = new Map([
   ['newscontent', 500],
   ['newsletter', -100],
   ['next', -300],
+  ['nfarticle', 500],
   ['page', 50],
   ['pagetools', -50],
   ['parse', -50],
