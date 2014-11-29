@@ -15,6 +15,7 @@
  * TODO: BLACKLIST_SELECTORS should be a Set to demonstrate and enforce
  * uniqueness of keys
  * NOTE: cannot use 'div.share'
+ * NOTE: cannot use 'article div.share' (Vanity Fair vs Concurring Opinions)
  */
 var BLACKLIST_SELECTORS = [
   'a.advertise-with-us', // The Daily Voice
@@ -42,7 +43,6 @@ var BLACKLIST_SELECTORS = [
   'a.synved-social-button', // Viral Global News
   'a.skip-to-text-link', // NYTimes
   'article div.extra', // Washington Post
-  'article div.share', // Vanity Fair
   'article > div.tags', // NPR
   'article ul.listing', // Good Magazine
   'aside.author-blocks', // ProPublica
@@ -56,6 +56,7 @@ var BLACKLIST_SELECTORS = [
   'aside#fbookulous-flyer', // ProPublica
   'aside.global-magazine-recent', // Politico
   'aside.global-popular', // Politico
+  'aside.karma', // Swissinfo.ch
   'aside.like-this', // ProPublica
   'aside.livefyre-comments', // Vanity Fair
   'aside.meta_extras', // Japan Times
@@ -166,6 +167,7 @@ var BLACKLIST_SELECTORS = [
   'div.bio-socials', // Atomic Object
   'div.bizPagination', // Bizjournal
   'div.bk-socialbox', // Latin Post
+  'div.bk-relart', // Latin Post
   'div#blq-foot', // BBC
   'div#block-disqus-disqus_comments', // Foreign Affairs
   'div#block-fa-cfrlatest', // Foreign Affairs
@@ -243,6 +245,7 @@ var BLACKLIST_SELECTORS = [
   'div.control-bar', // SF Gate
   'div.controls', // NY Daily News
   'div.correspondant', // CBS News
+  'div.correspondent-byline', // BBC Co Uk
   'div.cqFeature', // Vanity Fair
   'div.css-sharing', // Topix
   'div#ctl00_ContentPlaceHolder1_UC_UserComment1_updatePanelComments', // Ahram
@@ -256,6 +259,7 @@ var BLACKLIST_SELECTORS = [
   'div#digital-editions', // The New Yorker
   'div#disqus', // ABCNews
   'div#disqusAcc', // Telegraph Co Uk
+  'div#disqus_comments_section', // Herald Scotland
   'div#disqus_thread', // Renew Economy
   'div.dmg-sharing', // Dispatch.com
   'div.editorsChoice', // Telegraph Co Uk
@@ -308,6 +312,7 @@ var BLACKLIST_SELECTORS = [
   'div.headlines', // // The Oklahoman
   'div.headlines-images', // ABC 7 News
   'div.hide-for-print', // NobelPrize.org
+  'div#hsa_container', // Star Advertiser
   'div.hst-articlefooter', // Chron.com
   'div.hst-articletools', // Chron.com
   'div.hst-blockstates', // Stamford Advocate (may be problematic)
@@ -336,6 +341,7 @@ var BLACKLIST_SELECTORS = [
   'div.inner-related-article', // Recode
   'div#inset_groups', // Gizmodo
   'div.insettwocolumn', // NPR
+  'div.insideStoryAd', // Star Advertiser
   'div.interactive-sponsor', // USA Today
   'div.issues-topics', // MSNBC
   'div[itemprop="comment"]',// KMBC
@@ -460,6 +466,7 @@ var BLACKLIST_SELECTORS = [
   'div.promo-inner', // Chron.com
   'div.promo-top', // Chron.com
   'div.pull-left-tablet', // NY1 (only uses "article" for related)
+  'div#pw-comments-container', // Star Advertiser
   // 'div.pull-right', // CANNOT USE (oklahoman vs nccgroup blog)
   'div.raltedTopics', // India Times
   'div#reader-comments', // The Daily Mail
@@ -526,6 +533,7 @@ var BLACKLIST_SELECTORS = [
   'div#rt_related_0', // CNBC
   'div#savedata1', // Times of India
   'div.save-tooltip', // auburnpub
+  'div#sb_2010_story_tools', // Star Advertiser
   'div.sc_shareTools', // ABC News
   'div.sd-social', // Re-code
   'div.second-tier-social-tools', // Time Magazine
@@ -750,6 +758,7 @@ var BLACKLIST_SELECTORS = [
   'p.p_top_10', // Star Telegram
   'p.post-tags', // USA Today
   'p.section-tag', // NY Post
+  'p.sm_icon_subscribe', // The Week
   'p.story-ad-txt', // Boston.com
   'p.storytag', // chinatopix.com
   'p.story-tags', // Latin Post
@@ -772,6 +781,7 @@ var BLACKLIST_SELECTORS = [
   'section.headlines-list', // ABC Chicago
   'section#injected-newsletter', // GigaOM
   'section.morestories', // Entertainment Tonight
+  'section#more_stories', // NBC Nebraska
   'section#more-stories-widget', // The Miami Herald
   'section#newsletter-signup', // New Yorker
   'section.pagination_controls', // Vanity Fair
@@ -798,6 +808,7 @@ var BLACKLIST_SELECTORS = [
   'span.sharetools-label', // NY Time
   'span.moreon-tt', // Teleread
   'span.printfriendly-node', // Uncover California
+  'span.story-date', // BBC Co Uk
   'span.text_resizer', // Fort Worth Star Telegram
   'table.hst-articleprinter', // Stamford Advocate
   'table#commentTable', // Times of India
@@ -809,6 +820,7 @@ var BLACKLIST_SELECTORS = [
   'ul.article-options', // TVNZ
   'ul.article-related-wrap', // Jerusalem Post
   'ul.article-share', // DNA India
+  'ul.article-share-bar', // Herald Scotland
   'ul#article-share-links', // The Boston Herald
   'ul.article-tags', // 9News
   'ul.article_tools', // The Wall Street Journal
