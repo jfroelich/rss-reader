@@ -104,6 +104,15 @@ function collectAnchorElementTextLengths(doc, charCounts) {
  */
 function applyTextLengthBias(doc, elements, scores, annotate) {
 
+  // This is performing horribly for several pages. See, e.g.,
+  // http://www.local12.com/template/inews_wire/wires.national/351894d8-www.local12.com.shtml
+  // The children propagate all the way up. So the main container element has
+  // a ton of links causing this to generate a very negative bias
+  // I think the solution is to propagate link text to only block-level
+  // containers (e.g. div, section, ol, ul, aside).
+  // That way divs of nav links that happen to be contained within the main
+  // container div end up not negatively influencing the main
+
   var charCounts = collectTextNodeLengths(doc);
   var anchorChars = collectAnchorElementTextLengths(doc, charCounts);
 
@@ -189,7 +198,11 @@ function applyUpwardBias(elements, scores, annotate) {
     if(!bias) return;
     var parent = element.parentElement;
     // note the subtlety here, we are annotating parent, not element
-    if(annotate) parent.dataset.descendantBias = bias;
+    if(annotate) {
+      var prevBias = parent.dataset.descendantBias || '0';
+
+      parent.dataset.descendantBias = parseInt(prevBias) + bias;
+    }
     scores.set(parent, scores.get(parent) + bias);
     // Testing
     //var grandParent = parent.parentElement;
@@ -341,51 +354,24 @@ function applyAttributeBias(doc, scores, annotate) {
     scores.set(element, scores.get(element) + getAttributeBias(element));
   });
 
-  // Pathological cases
-  // TODO: article_body (E-Week)
-  // TODO: the tests for a single 'article' element should not be
-  // exclusive. We want 'one' possible way of promoting greatly. If there
-  // is an article element, and a single div class='article' element,
-  // then only one element should get promoted? For now it is not too
-  // important.
-  var articleClass = doc.body.getElementsByClassName('article');
-  if(articleClass.length == 1) {
-    if(annotate) {
-      articleClass[0].dataset.attributeBias =
-        parseInt(articleClass[0].dataset.attributeBias || '0') + 1000;
-    }
-    scores.set(articleClass[0], scores.get(articleClass[0]) + 1000);
-  }
+  // Pathological cases. The code violates DRY but that is merely because
+  // it is experimental.
+  // TODO: article_body (E-Week) ?
+  // TODO: itemprop="articleBody" ?
+  // TODO: [role="article"] ? (Google Plus)
+  // TODO: [itemtype="http://schema.org/Article"] ??
+  applySingleClassBias(doc, scores, 'article', 1000, annotate);
+  applySingleClassBias(doc, scores, 'articleText', 1000, annotate);
+  applySingleClassBias(doc, scores, 'articleBody', 1000, annotate);
+}
 
-  var articleTextClass = doc.body.getElementsByClassName('articleText');
-  if(articleTextClass.length == 1) {
-    if(annotate) {
-      var oldBias = articleTextClass[0].dataset.attributeBias || '0';
-      articleTextClass[0].dataset.attributeBias =
-        parseInt(oldBias) + 1000;
-    }
-
-    scores.set(articleTextClass[0], scores.get(articleTextClass[0]) + 1000);
-  }
-
-  // TODO: articleText?
-  //articleText
-  // itemprop="articleBody"
-
-  var articleAttributes =  ['id', 'class', 'name', 'itemprop', 'role'].map(
-    function(s) { return '['+s+'*="articlebody"]'; });
-  articleAttributes.push('[role="article"]'); // Google Plus
-  articleAttributes.push('[itemtype="http://schema.org/Article"]');
-
-  var SELECT_ARTICLE = articleAttributes.join(',');
-  var articles = doc.body.querySelectorAll(SELECT_ARTICLE);
-  if(articles.length == 1) {
-    scores.set(articles[0], scores.get(articles[0]) + 1000);
-  } else {
-    // TODO: why promote any of these? Because maybe one of them
-    // is the actual article?
-    forEach.call(articles, updateScore.bind(null, scores, 100));
-  }
+function applySingleClassBias(doc, scores, className, bias, annotate) {
+  var elements = doc.body.getElementsByClassName(className);
+  if(elements.length != 1) return;
+  var e = elements[0];
+  if(annotate)
+    e.dataset.attributeBias = parseInt(e.dataset.attributeBias || '0') + bias;
+  scores.set(e, scores.get(e) + bias);
 }
 
 // Returns the path part of itemtype attribute values
@@ -530,7 +516,7 @@ var DESCENDANT_BIAS = new Map([
   ['h6', 10],
   ['li', -5],
   ['ol', -20],
-  ['p', 30],
+  ['p', 100],
   ['pre', 10],
   ['ul', -20]
 ]);
