@@ -36,9 +36,8 @@ lucu.deserializeAtomFeed = function(root) {
   result.title = getText(feed, 'title');
   result.description = getText(feed, 'subtitle');
   result.date = getText(feed, 'updated');
-  var link = feed.querySelector('link[rel="alternate"]');
-  if(!link) link = feed.querySelector('link[rel="self"]');
-  if(!link) link = feed.querySelector('link[href]');
+  var link = feed.querySelector('link[rel="alternate"]') ||
+    feed.querySelector('link[rel="self"]') || feed.querySelector('link[href]');
   if(link) link = link.getAttribute('href');
   if(link) result.link = link.trim();
   var entries = feed.querySelectorAll('entry');
