@@ -230,6 +230,7 @@ var BLACKLIST_SELECTORS = [
   'div#comment_sign', // Ace Showbiz
   'div#comments-tabs', // Houston News
   'div.commentThread', // kotatv
+  'div#comment_toggle', // Charlotte Observer
   'div.comment-tools', // Latin post
   'div.comment_links', // Forbes
   'div.comments-overall', // Aeon Magazine
@@ -308,10 +309,12 @@ var BLACKLIST_SELECTORS = [
   'div.group-link-categories', // Symmetry Magazine
   'div.group-links', // Symmetry Magazine
   'div.gsharebar', // entrepeneur.com
+  'div#guidelines-wrap', // Charlotte Observer
   'div.hashtags', // Good Magazine
   'div.headlines', // // The Oklahoman
   'div.headlines-images', // ABC 7 News
   'div.hide-for-print', // NobelPrize.org
+  'div.horiz_con', // ABC22NOW
   'div#hsa_container', // Star Advertiser
   'div.hst-articlefooter', // Chron.com
   'div.hst-articletools', // Chron.com
@@ -415,6 +418,7 @@ var BLACKLIST_SELECTORS = [
   'div.NotifyUserBox', // Bangkok Post
   'div.npRelated', // National Post
   'div.NS_projects__project_share', // Kickstarter
+  'div.oembed-asset', // USA Today
   'div.Other-stories ', // Bangkok Post
   'div.overlayPostPlay', // The Sydney Morning Herald
   'div.page_label', // Hewlett Packard News
@@ -491,6 +495,7 @@ var BLACKLIST_SELECTORS = [
   'div#related_items', // Business Week
   'div.related_items', // NY Books
   'div#relatedlinks', // ABC News
+  'div.related-links', // Boston.com
   'div.related-links-container', // Business Insider
   'div.related-media', // Fox News
   'div.relatedModule', // Newsday
@@ -571,6 +576,8 @@ var BLACKLIST_SELECTORS = [
   'div.sidebar', // Belfast Telegraph
   'div#sidebar', // The Appendix
   'div.sideBar', // Bangkok Post
+  'div.sidebar1', // local12
+  'div.sidebar2', // local12
   'div#sidebar-3', // SysCon Media
   'div#sidebar-4', // SysCon Media
   'div.sidebar-content', // Concurring opinions
@@ -653,6 +660,7 @@ var BLACKLIST_SELECTORS = [
   'div.storytools', // TechCrunch
   'div.story-tools', // Latin Post
   'div.story_tools_bottom', // Alternet
+  'div.story-tools-wrap', // Charlotte Observer
   'div.submit-button', // Knight News Challenge
   'div.subnav-tools-wrap', // NPR
   'div.subscribe', // Times of India
@@ -764,6 +772,7 @@ var BLACKLIST_SELECTORS = [
   'p.story-tags', // Latin Post
   'p.topics', // ABC News
   'p.trial-promo', // Newsweek
+  'p.subscribe_miles', // Charlotte Observer
   'p#whoisviewing', // Eev blog
   'section.also-on', // Huffington Post
   'section.around-bbc-module', // BBC
