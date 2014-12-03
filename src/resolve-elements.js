@@ -4,6 +4,24 @@
 
 var lucu = lucu || {};
 
+lucu.ELEMENT_URL_ATTRIBUTES = new Map([
+  ['a', 'href'],
+  ['area', 'href'],
+  ['audio', 'src'],
+  ['blockquote', 'cite'],
+  ['embed', 'src'],
+  ['iframe', 'src'],
+  ['form', 'action'],
+  ['img', 'src'],
+  ['link', 'href'],
+  ['object', 'data'],
+  ['script', 'src'],
+  ['source', 'src'],
+  ['track', 'src'],
+  ['video', 'src']
+]);
+
+
 /**
  * TODO: support img srcset
  * TODO: support style.backgroundImage?
@@ -23,41 +41,20 @@ lucu.resolveElements = function(document, baseURL) {
     base.remove();
   });
 
-  var name2attribute = new Map([
-    ['a', 'href'],
-    ['area', 'href'],
-    ['audio', 'src'],
-    ['blockquote', 'cite'],
-    ['embed', 'src'],
-    ['iframe', 'src'],
-    ['form', 'action'],
-    ['img', 'src'],
-    ['link', 'href'],
-    ['object', 'data'],
-    ['script', 'src'],
-    ['source', 'src'],
-    ['track', 'src'],
-    ['video', 'src']
-  ]);
+  var attributes = lucu.ELEMENT_URL_ATTRIBUTES;
 
   // TODO: build this from the map, do not specify redundantly
   var resolvables = document.querySelectorAll(
     'a, area, audio, blockquote, embed, iframe, form, img, link, '+
     'object, script, source, track, video');
   forEach.call(resolvables, function resolve(element) {
-    var name = element.localName;
-    var attribute = name2attribute.get(name);
-    if(!attribute) return;
-    var url = element.getAttribute(attribute);
-    if(!url) return;
-    url = url.trim();
+    var attribute = attributes.get(element.localName);
+    var url = (element.getAttribute(attribute) || '').trim();
     if(!url) return;
     try {
       var uri = new URI(url);
-      // Suppress some medialize exceptions
       if(uri.protocol()) return;
       var resolved = uri.absoluteTo(baseURL).toString();
-      // console.debug('resolved %s as %s', url, resolved);
       element.setAttribute(attribute, resolved);
     } catch(e) {
       console.debug('%s %s', e, url);
