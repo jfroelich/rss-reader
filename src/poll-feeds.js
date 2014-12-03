@@ -15,48 +15,56 @@ var lucu = lucu || {};
  */
 lucu.pollFeeds = function(navigator) {
 
-  async.waterfall([
-    canCheckIdlePermission,
-    canPollIfIdle,
-    isOnline,
-    openIndexedDB,
-    selectAllFeeds,
-    updateAllFeeds
-  ], onWaterfallComplete);
-
-  function canCheckIdlePermission(callback) {
-    chrome.permissions.contains({permissions: ['idle']}, function(permitted) {
-      callback(null, permitted);
-    });
+  if(navigator && navigator.hasOwnProperty('onLine') &&
+    !navigator.onLine) {
+    return;
   }
 
-  function canPollIfIdle(canCheckIdle, callback) {
-    // If we do not have permission to check idle status,
-    // then simply continue with polling by not passing along
-    // an error.
-    if(!canCheckIdle) {
-      return callback();
+  async.waterfall([
+    canPollIfIdle,
+    openIndexedDB,
+    lucu.selectAllFeeds,
+    updateAllFeeds
+  ], function (error, feeds) {
+    console.debug('Polling completed');
+
+    if(error) {
+      console.dir(error);
+      return;
     }
 
-    var INACTIVITY_INTERVAL = 60 * 5;
-    chrome.idle.queryState(INACTIVITY_INTERVAL, function (idleState) {
+    localStorage.LAST_POLL_DATE_MS = String(Date.now());
+    chrome.runtime.sendMessage({
+      type: 'pollCompleted',
+      feedsProcessed: feeds ? feeds.length : 0,
+      entriesAdded: 0,
+      entriesProcessed: 0
+    });
+  });
+
+  function canPollIfIdle(callback) {
+    chrome.permissions.contains({permissions: ['idle']}, function(permitted) {
+
+      // If we do not have permission to check idle status then
+      // just continue with polling
+      if(!permitted) {
+        return callback();
+      }
+
+      var INACTIVITY_INTERVAL = 60 * 5;
+      chrome.idle.queryState(INACTIVITY_INTERVAL, pollIfIdle);
+    });
+
+    function pollIfIdle(idleState) {
       if(idleState == 'locked' || idleState == 'idle') {
         // Continue with polling by not passing an error
         callback();
       } else {
         // Pass back an error parameter that will cause the waterfall
         // to jump to end
-        callback('polling error, not currently idle or locked');
+        callback('state is ' + idleState);
       }
-    });
-  }
-
-  function isOnline(callback) {
-    if(navigator && !navigator.onLine) {
-      return callback('offline');
     }
-
-    callback();
   }
 
   function openIndexedDB(callback) {
@@ -68,26 +76,27 @@ lucu.pollFeeds = function(navigator) {
     };
   }
 
-  function selectAllFeeds(db, callback) {
-    var feeds = [];
-    var store = db.transaction('feed').objectStore('feed');
-    store.openCursor().onsuccess = function (event) {
-      var cursor = event.target.result;
-      if(cursor) {
-        feeds.push(cursor.value);
-        cursor.continue();
-      } else {
-        callback(null, db, feeds);
-      }
-    };
-  }
-
   function updateAllFeeds(db, feeds, callback) {
     async.forEach(feeds, function(feed, callback) {
       lucu.fetchFeed(feed.url, function(remoteFeed) {
+
+        // Filter duplicate entries
+        var seenEntries = new Set();
+        remoteFeed.entries = remoteFeed.entries.filter(function(entry) {
+          if(seenEntries.has(entry.link)) {
+            console.debug('Filtering duplicate entry %o', entry);
+            return false;
+          }
+          seenEntries.add(entry.link);
+          return true;
+        });
+
+        // Side note: why am i updating the feed after updating
+        // entries? Why not before? Why not separately or in parallel
+
         lucu.augmentEntries(remoteFeed, function() {
           remoteFeed.fetched = Date.now();
-          updateFeed(db, feed, remoteFeed, function() {
+          lucu.updateFeed(db, feed, remoteFeed, function() {
             callback();
           });
         });
@@ -99,43 +108,42 @@ lucu.pollFeeds = function(navigator) {
     });
   }
 
-  // TODO: the caller should pass in last modified date of the remote xml file
-  // so we can avoid pointless updates?
-  // TODO: this should not be changing the date updated unless something
-  // actually changed. However, we do want to indicate that the feed was
-  // checked
-  function updateFeed(db, localFeed, remoteFeed, oncomplete) {
-    var clean = lucu.sanitizeFeed(remoteFeed);
-    if(clean.title) localFeed.title = clean.title;
-    if(clean.description) localFeed.description = clean.description;
-    if(clean.link) localFeed.link = clean.link;
-    if(clean.date) localFeed.date = clean.date;
-    localFeed.fetched = remoteFeed.fetched;
-    localFeed.updated = Date.now();
-    var tx = db.transaction('feed','readwrite');
-    var store = tx.objectStore('feed');
-    var request = store.put(localFeed);
-    request.onerror = console.debug;
-    var mergeEntry = lucu.mergeEntry.bind(null, db, localFeed);
-    request.onsuccess = function() {
-      async.forEach(remoteFeed.entries, mergeEntry, oncomplete);
-    };
-  }
 
-  function onWaterfallComplete(error, feeds) {
-    if(error) {
-      console.log('A polling error occurred');
-      console.dir(error);
-      return;
+};
+
+// TODO: the caller should pass in last modified date of the remote xml file
+// so we can avoid pointless updates?
+// TODO: this should not be changing the date updated unless something
+// actually changed. However, we do want to indicate that the feed was
+// checked
+lucu.updateFeed = function(db, localFeed, remoteFeed, oncomplete) {
+  var clean = lucu.sanitizeFeed(remoteFeed);
+  if(clean.title) localFeed.title = clean.title;
+  if(clean.description) localFeed.description = clean.description;
+  if(clean.link) localFeed.link = clean.link;
+  if(clean.date) localFeed.date = clean.date;
+  localFeed.fetched = remoteFeed.fetched;
+  localFeed.updated = Date.now();
+  var tx = db.transaction('feed','readwrite');
+  var store = tx.objectStore('feed');
+  var request = store.put(localFeed);
+  request.onerror = console.debug;
+  var mergeEntry = lucu.mergeEntry.bind(null, db, localFeed);
+  request.onsuccess = function() {
+    async.forEach(remoteFeed.entries, mergeEntry, oncomplete);
+  };
+};
+
+lucu.selectAllFeeds = function(db, callback) {
+  var feeds = [];
+  var store = db.transaction('feed').objectStore('feed');
+  store.openCursor().onsuccess = function(event) {
+    var cursor = event.target.result;
+    if(cursor) {
+      feeds.push(cursor.value);
+      cursor.continue();
+    } else {
+      callback(null, db, feeds);
     }
-
-    console.debug('Polling completed');
-    localStorage.LAST_POLL_DATE_MS = String(Date.now());
-    chrome.runtime.sendMessage({
-      type: 'pollCompleted',
-      feedsProcessed: feeds ? feeds.length : 0,
-      entriesAdded: 0,
-      entriesProcessed: 0
-    });
-  }
+  };
 };
