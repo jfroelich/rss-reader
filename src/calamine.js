@@ -351,7 +351,7 @@ function applyAttributeBias(doc, scores, annotate) {
   forEach.call(elements, function (element) {
     var bias = getAttributeBias(element);
     if(annotate) element.dataset.attributeBias = bias;
-    scores.set(element, scores.get(element) + getAttributeBias(element));
+    scores.set(element, scores.get(element) + bias);
   });
 
   // Pathological cases. The code violates DRY but that is merely because
