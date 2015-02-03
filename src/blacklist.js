@@ -1,4 +1,4 @@
-// Copyright 2014 Josh Froelich. All rights reserved.
+﻿// Copyright 2014 Josh Froelich. All rights reserved.
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
@@ -56,6 +56,9 @@ var BLACKLIST_SELECTORS = [
   'aside#fbookulous-flyer', // ProPublica
   'aside.global-magazine-recent', // Politico
   'aside.global-popular', // Politico
+
+  'aside.inset-section',// Techcrunch
+
   'aside.karma', // Swissinfo.ch
   'aside.like-this', // ProPublica
   'aside.livefyre-comments', // Vanity Fair
@@ -389,6 +392,10 @@ var BLACKLIST_SELECTORS = [
   'div.mmn-link', // ABC 7 News
   'div.mobile-button', // Ha'Aretz
   'div.modComments', // Investors.com
+
+  // The Week Left side
+  'div#module-recirculation-speedreads',
+
   'div.module__biz-pulse', // Bizjournal
   'div.mod-video-playlist', // ESPN
   'div#more-on', // NY Post
