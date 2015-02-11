@@ -40,6 +40,11 @@ chrome.runtime.onMessage.addListener(function (message) {
     case 'unsubscribe':
       updateBadge();
       break;
+    case 'displaySettingsChanged':
+      // The background page gets notified of this message but does not
+      // care. We handle the message case here to avoid spamming
+      // the unhandled warning message in the log
+      break;
     default:
       console.warn('Unhandled message %o', message);
       break;
