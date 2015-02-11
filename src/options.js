@@ -93,6 +93,12 @@ function onOptionsPageMessage(message) {
   } else if('pollCompleted' == message.type) {
     // noop
   } else if('subscribe' == message.type) {
+
+    if(!message.feed) {
+      console.error('message type=subscribe is missing required feed property');
+      return;
+    }
+
     optionsAppendFeed(message.feed, true);
     optionsUpdateFeedCount();
   } else if('unsubscribe' == message.type) {
@@ -258,6 +264,13 @@ function optionsUpdateFeedCount() {
 }
 
 function optionsAppendFeed(feed, insertedSort) {
+
+  if(!feed) {
+    console.error('feed undefined in optionsAppendFeed');
+    return;
+  }
+
+
   var item = document.createElement('li');
   item.setAttribute('sort-key', feed.title);
 
@@ -473,7 +486,9 @@ function startSubscription(url) {
       request.onblocked = console.error;
       request.onsuccess = function (event) {
         var db = event.target.result;
-        lucu.addFeed(db, remoteFeed, onSubscriptionSuccessful, console.debug);
+        lucu.addFeed(db, remoteFeed, function() {
+          onSubscriptionSuccessful(remoteFeed, 0, 0);
+        }, console.debug);
       };
     });
   }
@@ -490,6 +505,10 @@ function startSubscription(url) {
     hideSubsciptionMonitor(function() {
       optionsShowSection(document.getElementById('mi-subscriptions'));
     }, true);
+
+    if(!addedFeed) {
+       console.error('addedFeed is undefined in onSubscriptionSuccessful');
+    }
 
     chrome.runtime.sendMessage({
       type: 'subscribe',
