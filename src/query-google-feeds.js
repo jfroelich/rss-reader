@@ -17,6 +17,7 @@ lucu.queryGoogleFeeds = function(query, timeout, callback, fallback) {
 
   var base = 'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
   var url = base + encodeURIComponent(query);
+  var sanitize = lucu.sanitizeGoogleSnippet;
 
   var request = new XMLHttpRequest();
   request.timeout = timeout;
@@ -27,16 +28,20 @@ lucu.queryGoogleFeeds = function(query, timeout, callback, fallback) {
     var data = this.response.responseData;
     data.entries = data.entries || [];
     data.query = data.query || '';
-    var entries = data.entries.map(function (entry) {
-      // Strip <br> elements from snippet
-      var snippet = entry.contentSnippet;
-      if(!snippet) return entry;
-      entry.contentSnippet = snippet.replace(/<br>/gi,'');
-      return entry;
-    });
+    var entries = data.entries.map(sanitize);
     callback(data.query, entries);
   };
   request.open('GET', url, true);
   request.responseType = 'json';
   request.send();
+};
+
+// Modifies the given input entry (and also returns it)
+lucu.sanitizeGoogleSnippet = function(entry) {
+  'use strict';
+  var snippet = entry.contentSnippet;
+  if(snippet) {
+    entry.contentSnippet = snippet.replace(/<br>/gi,'');
+  }
+  return entry;
 };
