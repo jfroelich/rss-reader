@@ -19,6 +19,7 @@
       "/src/database.js",
       "/src/rewrite.js",
       "/src/feeds.js",
+      "/src/polling.js",
       "/src/resolve-elements.js",
       "/src/deserialize-feed.js",
       "/src/string-utilities.js"
