@@ -171,8 +171,6 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
   };
 };
 
-
-
 // TODO: the caller should pass in last modified date of the remote xml file
 // so we can avoid pointless updates?
 // TODO: this should not be changing the date updated unless something
