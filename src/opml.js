@@ -38,24 +38,32 @@ lucu.createOPMLDocument = function(feeds, title) {
   var body = doc.createElement('body');
   opml.appendChild(body);
 
-  exportables.map(function (feed) {
-    var outline = doc.createElement('outline');
-    // We do not know the original format, so default to rss
-    outline.setAttribute('type', 'rss');
-    var title = feed.title || feed.url;
-    outline.setAttribute('text', title);
-    outline.setAttribute('title', title);
-    outline.setAttribute('xmlUrl', feed.url);
-    if(feed.description)
-      outline.setAttribute('description', feed.description);
-    if(feed.link)
-      outline.setAttribute('htmlUrl', feed.link);
-    return outline;
-  }).forEach(function (element) {
+  var createOutline = lucu.createOutlineElement.bind(doc);
+
+  var appendOutlineElement = function(element) {
     body.appendChild(element);
-  });
+  };
+
+  exportables.map(createOutline).forEach(appendOutlineElement);
 
   return doc;
+};
+
+lucu.createOutlineElement = function(document, feed) {
+  var outline = document.createElement('outline');
+  
+  // We do not know the original format, so default to rss
+  outline.setAttribute('type', 'rss');
+  
+  var title = feed.title || feed.url;
+  outline.setAttribute('text', title);
+  outline.setAttribute('title', title);
+  outline.setAttribute('xmlUrl', feed.url);
+  if(feed.description)
+    outline.setAttribute('description', feed.description);
+  if(feed.link)
+    outline.setAttribute('htmlUrl', feed.link);
+  return outline;  
 };
 
 

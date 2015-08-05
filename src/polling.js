@@ -67,7 +67,7 @@ lucu.pollOpenIndexedDB = function(callback) {
   var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
   request.onerror = callback;
   request.onblocked = callback;
-  request.onsuccess = function onSuccess(event) {
+  request.onsuccess = function(event) {
     callback(null, event.target.result);
   };
 };

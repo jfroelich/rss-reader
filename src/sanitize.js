@@ -193,7 +193,7 @@ function removeEmptyNodes(doc) {
  */
 function removeAttributes(allowedAttributes, element) {
   var attributes = element.attributes;
-  var name;
+  var name = '';
   var index = attributes.length;
 
   // We iterate in reverse due to issues with mutation during iteration.
