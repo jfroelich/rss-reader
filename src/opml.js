@@ -66,7 +66,6 @@ lucu.createOutlineElement = function(document, feed) {
   return outline;  
 };
 
-
 /**
  * Generates an array of outline objects from an OPML XMLDocument object.
  *
@@ -75,128 +74,159 @@ lucu.createOutlineElement = function(document, feed) {
  */
 lucu.createOPMLOutlines = function(doc) {
   'use strict';
-  if(!doc || !doc.documentElement || !doc.documentElement.matches('opml'))
+  
+  if(!doc || !doc.documentElement || !doc.documentElement.matches('opml')) {
     return [];
+  }
+  
   var filter = Array.prototype.filter;
-  // TODO: shouldn't this be doc.documentElement.get...?
+  
+  // TODO: doc.documentElement.get...?
   var outlineElements = doc.getElementsByTagName('outline');
-  return filter.call(outlineElements, function (element) {
-    var type = element.getAttribute('type');
-    var url = element.getAttribute('xmlUrl') || '';
-    return /rss|rdf|feed/i.test(type) && url.trim();
-  }).map(function (element) {
-    var outline = {};
-    var title = element.getAttribute('title') || '';
+  var validElements = filter.call(outlineElements, lucu.outlineElementIsValid);
+  return validElements.map(lucu.createOutlineFromElement);
+};
+
+lucu.outlineElementIsValid = function(element) {
+  var type = element.getAttribute('type');
+  var url = element.getAttribute('xmlUrl') || '';
+  return /rss|rdf|feed/i.test(type) && url.trim();  
+};
+
+lucu.createOutlineFromElement = function(element) {
+  var outline = {};
+  var title = element.getAttribute('title') || '';
+  title = title.trim();
+  if(!title) {
+    title = element.getAttribute('text') || '';
     title = title.trim();
-    if(!title) {
-      title = element.getAttribute('text') || '';
-      title = title.trim();
-    }
-    title = lucu.stripControls(title);
-    if(title) outline.title = title;
-    var description = element.getAttribute('description');
-    description = lucu.stripControls(description);
-    description = lucu.stripTags(description);
-    description = description.trim();
-    if(description) outline.description = description;
-    var url = element.getAttribute('xmlUrl') || '';
-    url = lucu.stripControls(url);
-    url = url.trim();
-    if(url) outline.url = url;
-    var link = element.getAttribute('htmlUrl') || '';
-    link = lucu.stripControls(link);
-    link = link.trim();
-    if(link) outline.link = link;
-    return outline;
-  });
+  }
+
+  title = lucu.stripControls(title);
+  if(title) outline.title = title;
+
+  var description = element.getAttribute('description');
+  description = lucu.stripControls(description);
+  description = lucu.stripTags(description);
+  description = description.trim();
+  if(description) outline.description = description;
+
+  var url = element.getAttribute('xmlUrl') || '';
+  url = lucu.stripControls(url);
+  url = url.trim();
+  if(url) outline.url = url;
+
+  var link = element.getAttribute('htmlUrl') || '';
+  link = lucu.stripControls(link);
+  link = link.trim();
+  if(link) outline.link = link;
+
+  return outline;
 };
 
 // TODO: test
 lucu.importOPMLFiles = function(files, onComplete) {
   'use strict';
-  async.waterfall([load,merge,connect,store], waterfallCompleted);
 
-  // Reads in the contents of an OPML file as text,
-  // parses the text into an xml document, extracts
-  // an array of outline objects from the document,
-  // and then passes the array to the callback. Async
-  function loadFile(file, callback) {
-    var reader = new FileReader();
-    reader.readAsText(file);
-    reader.onload = function (event) {
-      var text = event.target.result;
-      var parser = new DOMParser();
-      var xml = parser.parseFromString(text, 'application/xml');
-      if(!xml || !xml.documentElement) {
-        return callback(null, []);
-      }
-      var parserError = xml.querySelector('parsererror');
-      if(parserError) {
-        return callback(null, []);
-      }
+  var waterfallFunctions = [
+    lucu.importOPMLFiles.bind(files),
+    lucu.mergeOutlines,
+    lucu.importOPMLConnect,
+    lucu.storeOutlines
+  ];
 
-      var outlines = lucu.createOPMLOutlines(xml);
-      callback(null, outlines);
-    };
-    reader.onerror = function (event) {
-      callback(null, []);
-    };
+  async.waterfall(waterfallFunctions, 
+    lucu.importOPMLWaterfallOnComplete.bind(onComplete));
+};
+
+lucu.importOPMLWaterfallOnComplete = function(onComplete) {
+  console.debug('Finished importing feeds');
+
+  var message = {
+    type: 'importFeedsCompleted'
+  };
+
+  chrome.runtime.sendMessage(message);
+  onComplete();
+};
+
+lucu.importOPMLFiles = function(files, callback) {
+  
+  function onMapComplete(error, results) {
+    callback(null, results);
   }
 
-  function load(callback) {
-    // accesses 'files' from outer scope
-    async.map(files, loadFile, function (error, results) {
-      callback(null, results);
-    });
-  }
+  async.map(files, lucu.loadFile, onMapComplete);
+};
 
-  // Merges the outlines arrays into a single array.
-  // Removes duplicates in the process. Sync.
-  function merge(outlineArrays, callback) {
-    var outlines = [];
-    var seen = new Set();
-    outlineArrays.forEach(function(outlineArray) {
-      outlineArray.foreach(function(outline) {
-        if(seen.has(outline.url)) return;
-        seen.add(outline.url);
-        outlines.push(outline);
-      });
-    });
+// Reads in the contents of an OPML file as text,
+// parses the text into an xml document, extracts
+// an array of outline objects from the document,
+// and then passes the array to the callback. Async
+lucu.loadFile = function(file, callback) {
+  var reader = new FileReader();
+  reader.readAsText(file);
+  reader.onload = function (event) {
+    var text = event.target.result;
+    var parser = new DOMParser();
+    var xml = parser.parseFromString(text, 'application/xml');
+    if(!xml || !xml.documentElement) {
+      return callback(null, []);
+    }
+    var parserError = xml.querySelector('parsererror');
+    if(parserError) {
+      return callback(null, []);
+    }
 
+    var outlines = lucu.createOPMLOutlines(xml);
     callback(null, outlines);
+  };
+  reader.onerror = function (event) {
+    callback(null, []);
+  };
+};
+
+// Merges the outlines arrays into a single array.
+// Removes duplicates in the process. Sync.
+lucu.mergeOutlines = function(outlineArrays, callback) {
+  var outlines = [];
+  var seen = new Set();
+
+  function mergeOutlineArray(outlineArray) {
+    outlineArray.foreach(mergeOutline);
   }
 
-  // Connects to indexedDB, async
-  function connect(outlines, callback) {
-    var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
-    // NOTE: causes event object to be passed as error argument
-    request.onerror = callback;
-    request.onblocked = callback;
-    request.onsuccess = function(event) {
-      callback(null, event.target.result, outlines);
-    };
+  function mergeOutline(outline) {
+    if(seen.has(outline.url)) return;
+    seen.add(outline.url);
+    outlines.push(outline);
   }
 
-  // Stores the outlines in indexedDB, async
-  function store(db, outlines, callback) {
-    async.forEach(outlines, function(outline, callback) {
-      lucu.addFeed(db, outline, function() {
-        callback();
-      }, function() {
-        callback();
-      });
+  outlineArrays.forEach(mergeOutlineArray);
+  callback(null, outlines);
+};
+
+lucu.importOPMLConnect = function(outlines, callback) {
+  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  // NOTE: causes event object to be passed as error argument
+  request.onerror = callback;
+  request.onblocked = callback;
+  request.onsuccess = function(event) {
+    callback(null, event.target.result, outlines);
+  };
+};
+
+// Stores the outlines in indexedDB, async
+lucu.storeOutlines = function(db, outlines, callback) {
+  async.forEach(outlines, function(outline, callback) {
+    lucu.addFeed(db, outline, function() {
+      callback();
     }, function() {
       callback();
     });
-  }
-
-  function waterfallCompleted() {
-    console.debug('Finished importing feeds');
-    chrome.runtime.sendMessage({
-      type: 'importFeedsCompleted'
-    });
-    onComplete();
-  }
+  }, function() {
+    callback();
+  });
 };
 
 // TODO: test
