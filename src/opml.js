@@ -38,7 +38,9 @@ lucu.createOPMLDocument = function(feeds, title) {
   var body = doc.createElement('body');
   opml.appendChild(body);
 
-  var createOutline = lucu.createOutlineElement.bind(doc);
+  // TODO: test, pretty sure the null is the context, the doc
+  // is the partial first arg
+  var createOutline = lucu.createOutlineElement.bind(null, doc);
 
   var appendOutlineElement = function(element) {
     body.appendChild(element);
@@ -129,7 +131,7 @@ lucu.importOPMLFiles = function(files, onComplete) {
   'use strict';
 
   var waterfallFunctions = [
-    lucu.importOPMLFiles.bind(files),
+    lucu.importOPMLFilesArray.bind(null, files),
     lucu.mergeOutlines,
     lucu.importOPMLConnect,
     lucu.storeOutlines
@@ -150,7 +152,7 @@ lucu.importOPMLWaterfallOnComplete = function(onComplete) {
   onComplete();
 };
 
-lucu.importOPMLFiles = function(files, callback) {
+lucu.importOPMLFilesArray = function(files, callback) {
   
   function onMapComplete(error, results) {
     callback(null, results);
@@ -234,41 +236,55 @@ lucu.storeOutlines = function(db, outlines, callback) {
 lucu.exportOPMLString = function(onComplete) {
   'use strict';
 
-  async.waterfall([connect, getFeeds, serialize], waterfallCompleted);
+  var functions = [
+    lucu.exportOPMLConnect,
+    lucu.exportOPMLGetFeeds,
+    lucu.exportOPMLSerialize
+  ];
 
-  function connect(callback) {
-    var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
-    request.onerror = callback;
-    request.onblocked = callback;
-    request.onsuccess = function(event) {
-      callback(null, event.target.result);
-    };
-  }
+  // TODO: test, null is 'this' and onComplete is the implied first arg
+  var completed = lucu.exportOPMLCompleted.bind(null, onComplete);
 
-  function getFeeds(db, callback) {
-    var tx = db.transaction('feed');
-    var store = tx.objectStore('feed');
-    var request = store.openCursor();
-    var feeds = [];
-    tx.onComplete = function() {
-      callback(null, feeds);
-    };
-    request.onsuccess = function(event) {
-      var cursor = event.target.result;
-      if(!cursor) return;
-      feeds.push(cursor.value);
-      cursor.continue();
-    };
-  }
+  async.waterfall(functions, completed);
+};
 
-  function serialize(feeds, callback) {
-    var document = lucu.createOPMLDocument(feeds, 'subscriptions.xml');
-    var xs = new XMLSerializer();
-    var opml = xs.serializeToString(document);
-    callback(null, opml);
-  }
+// TODO: this can probably be a shared function in database.js
+lucu.exportOPMLConnect = function(callback) {
+  'use strict';
+  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  request.onerror = callback;
+  request.onblocked = callback;
+  request.onsuccess = function(event) {
+    callback(null, event.target.result);
+  };
+};
 
-  function waterfallCompleted(error, opmlString) {
-    onComplete(opmlString);
-  }
+lucu.exportOPMLGetFeeds = function(db, callback) {
+  'use strict';
+  var tx = db.transaction('feed');
+  var store = tx.objectStore('feed');
+  var request = store.openCursor();
+  var feeds = [];
+  tx.onComplete = function() {
+    callback(null, feeds);
+  };
+  request.onsuccess = function(event) {
+    var cursor = event.target.result;
+    if(!cursor) return;
+    feeds.push(cursor.value);
+    cursor.continue();
+  };
+};
+
+lucu.exportOPMLCompleted = function(onComplete, error, opmlString) {
+  'use strict';
+  onComplete(opmlString);
+};
+
+lucu.exportOPMLSerialize = function(feeds, callback) {
+  'use strict';
+  var document = lucu.createOPMLDocument(feeds, 'subscriptions.xml');
+  var xs = new XMLSerializer();
+  var opml = xs.serializeToString(document);
+  callback(null, opml);
 };
