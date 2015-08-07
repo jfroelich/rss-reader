@@ -4,12 +4,15 @@
 
 var lucu = lucu || {};
 
+// Second level namespace for opml related features
+lucu.opml = {};
+
 /**
  * Returns an OPML XMLDocument object. Feeds should be an array of feed
  * objects. Feed objects should have properties title, url, description, and
  * link. Url is the only required property.
  */
-lucu.createOPMLDocument = function(feeds, title) {
+lucu.opml.createDocument = function(feeds, title) {
   'use strict';
   var doc = document.implementation.createDocument(null, null);
   var opml = doc.createElement('opml');
@@ -51,7 +54,7 @@ lucu.createOPMLDocument = function(feeds, title) {
   return doc;
 };
 
-lucu.createOutlineElement = function(document, feed) {
+lucu.opml.createOutlineElement = function(document, feed) {
   var outline = document.createElement('outline');
   
   // We do not know the original format, so default to rss
@@ -74,28 +77,35 @@ lucu.createOutlineElement = function(document, feed) {
  * TODO: explicit dependence on lucu.stripControls and lucu.stripTags?
  * TODO: guard against duplicates?
  */
-lucu.createOPMLOutlines = function(doc) {
+lucu.opml.createOutlines = function(document) {
   'use strict';
+
+  var filter = Array.prototype.filter;
+  var isValid = lucu.opml.outlineElementIsValid;
+  var createOutline = lucu.opml.createOutlineFromElement;
   
-  if(!doc || !doc.documentElement || !doc.documentElement.matches('opml')) {
+  if(!lucu.opml.isOPMLDocument(document)) {
     return [];
   }
-  
-  var filter = Array.prototype.filter;
-  
-  // TODO: doc.documentElement.get...?
-  var outlineElements = doc.getElementsByTagName('outline');
-  var validElements = filter.call(outlineElements, lucu.outlineElementIsValid);
-  return validElements.map(lucu.createOutlineFromElement);
+
+  // TODO: document.documentElement.get...?
+  var outlineElements = document.getElementsByTagName('outline');
+  var validElements = filter.call(outlineElements, isValid);
+  return validElements.map(createOutline);
 };
 
-lucu.outlineElementIsValid = function(element) {
+lucu.opml.isOPMLDocument = function(document) {
+  return document && document.documentElement && 
+    document.documentElement.matches('opml');
+};
+
+lucu.opml.outlineElementIsValid = function(element) {
   var type = element.getAttribute('type');
   var url = element.getAttribute('xmlUrl') || '';
   return /rss|rdf|feed/i.test(type) && url.trim();  
 };
 
-lucu.createOutlineFromElement = function(element) {
+lucu.opml.createOutlineFromElement = function(element) {
   var outline = {};
   var title = element.getAttribute('title') || '';
   title = title.trim();
@@ -127,21 +137,21 @@ lucu.createOutlineFromElement = function(element) {
 };
 
 // TODO: test
-lucu.importOPMLFiles = function(files, onComplete) {
+lucu.opml.importFiles = function(files, onComplete) {
   'use strict';
 
-  var waterfallFunctions = [
-    lucu.importOPMLFilesArray.bind(null, files),
-    lucu.mergeOutlines,
-    lucu.importOPMLConnect,
-    lucu.storeOutlines
+  var waterfall = [
+    lucu.opml.importFilesArray.bind(null, files),
+    lucu.opml.mergeOutlines,
+    lucu.opml.importConnect,
+    lucu.opml.storeOutlines
   ];
 
-  async.waterfall(waterfallFunctions, 
-    lucu.importOPMLWaterfallOnComplete.bind(onComplete));
+  async.waterfall(waterfall, 
+    lucu.opml.importCompleted.bind(onComplete));
 };
 
-lucu.importOPMLWaterfallOnComplete = function(onComplete) {
+lucu.opml.importCompleted = function(onComplete) {
   console.debug('Finished importing feeds');
 
   var message = {
@@ -152,20 +162,20 @@ lucu.importOPMLWaterfallOnComplete = function(onComplete) {
   onComplete();
 };
 
-lucu.importOPMLFilesArray = function(files, callback) {
+lucu.opml.importFilesArray = function(files, callback) {
   
   function onMapComplete(error, results) {
     callback(null, results);
   }
 
-  async.map(files, lucu.loadFile, onMapComplete);
+  async.map(files, lucu.opml.loadFile, onMapComplete);
 };
 
 // Reads in the contents of an OPML file as text,
 // parses the text into an xml document, extracts
 // an array of outline objects from the document,
 // and then passes the array to the callback. Async
-lucu.loadFile = function(file, callback) {
+lucu.opml.loadFile = function(file, callback) {
   var reader = new FileReader();
   reader.readAsText(file);
   reader.onload = function (event) {
@@ -180,7 +190,7 @@ lucu.loadFile = function(file, callback) {
       return callback(null, []);
     }
 
-    var outlines = lucu.createOPMLOutlines(xml);
+    var outlines = lucu.opml.createOutlines(xml);
     callback(null, outlines);
   };
   reader.onerror = function (event) {
@@ -190,7 +200,7 @@ lucu.loadFile = function(file, callback) {
 
 // Merges the outlines arrays into a single array.
 // Removes duplicates in the process. Sync.
-lucu.mergeOutlines = function(outlineArrays, callback) {
+lucu.opml.mergeOutlines = function(outlineArrays, callback) {
   var outlines = [];
   var seen = new Set();
 
@@ -208,7 +218,7 @@ lucu.mergeOutlines = function(outlineArrays, callback) {
   callback(null, outlines);
 };
 
-lucu.importOPMLConnect = function(outlines, callback) {
+lucu.opml.importConnect = function(outlines, callback) {
   var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
   // NOTE: causes event object to be passed as error argument
   request.onerror = callback;
@@ -218,8 +228,7 @@ lucu.importOPMLConnect = function(outlines, callback) {
   };
 };
 
-// Stores the outlines in indexedDB, async
-lucu.storeOutlines = function(db, outlines, callback) {
+lucu.opml.storeOutlines = function(db, outlines, callback) {
   async.forEach(outlines, function(outline, callback) {
     lucu.addFeed(db, outline, function() {
       callback();
@@ -233,23 +242,23 @@ lucu.storeOutlines = function(db, outlines, callback) {
 
 // TODO: test
 // TODO: pass blob because nothing needs the intermediate string, then rename
-lucu.exportOPMLString = function(onComplete) {
+lucu.opml.exportString = function(onComplete) {
   'use strict';
 
-  var functions = [
-    lucu.exportOPMLConnect,
-    lucu.exportOPMLGetFeeds,
-    lucu.exportOPMLSerialize
+  var waterfall = [
+    lucu.opml.exportConnect,
+    lucu.opml.exportGetFeeds,
+    lucu.opml.exportSerialize
   ];
 
   // TODO: test, null is 'this' and onComplete is the implied first arg
-  var completed = lucu.exportOPMLCompleted.bind(null, onComplete);
+  var completed = lucu.opml.exportCompleted.bind(null, onComplete);
 
-  async.waterfall(functions, completed);
+  async.waterfall(waterfall, completed);
 };
 
 // TODO: this can probably be a shared function in database.js
-lucu.exportOPMLConnect = function(callback) {
+lucu.opml.exportConnect = function(callback) {
   'use strict';
   var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
   request.onerror = callback;
@@ -259,7 +268,7 @@ lucu.exportOPMLConnect = function(callback) {
   };
 };
 
-lucu.exportOPMLGetFeeds = function(db, callback) {
+lucu.opml.exportGetFeeds = function(db, callback) {
   'use strict';
   var tx = db.transaction('feed');
   var store = tx.objectStore('feed');
@@ -276,14 +285,14 @@ lucu.exportOPMLGetFeeds = function(db, callback) {
   };
 };
 
-lucu.exportOPMLCompleted = function(onComplete, error, opmlString) {
+lucu.opml.exportCompleted = function(onComplete, error, opmlString) {
   'use strict';
   onComplete(opmlString);
 };
 
-lucu.exportOPMLSerialize = function(feeds, callback) {
+lucu.opml.exportSerialize = function(feeds, callback) {
   'use strict';
-  var document = lucu.createOPMLDocument(feeds, 'subscriptions.xml');
+  var document = lucu.opml.createDocument(feeds, 'subscriptions.xml');
   var xs = new XMLSerializer();
   var opml = xs.serializeToString(document);
   callback(null, opml);

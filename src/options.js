@@ -748,7 +748,7 @@ function onImportOPMLClick(event) {
       return onImport(0,0,[]);
     }
 
-    lucu.importOPMLFiles(uploader.files, onImport);
+    lucu.opml.importFiles(uploader.files, onImport);
   };
 
   document.body.appendChild(uploader);
@@ -758,7 +758,7 @@ function onImportOPMLClick(event) {
 
 function onExportOPMLClick(event) {
 
-  lucu.exportOPMLString(function(xmlString) {
+  lucu.opml.exportString(function(xmlString) {
     var blob = new Blob([xmlString], {type:'application/xml'});
     var anchor = document.createElement('a');
     anchor.href = URL.createObjectURL(blob);
