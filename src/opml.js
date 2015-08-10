@@ -43,7 +43,7 @@ lucu.opml.createDocument = function(feeds, title) {
 
   // TODO: test, pretty sure the null is the context, the doc
   // is the partial first arg
-  var createOutline = lucu.createOutlineElement.bind(null, doc);
+  var createOutline = lucu.opml.createOutlineElement.bind(null, doc);
 
   var appendOutlineElement = function(element) {
     body.appendChild(element);
@@ -240,9 +240,7 @@ lucu.opml.storeOutlines = function(db, outlines, callback) {
   });
 };
 
-// TODO: test
-// TODO: pass blob because nothing needs the intermediate string, then rename
-lucu.opml.exportString = function(onComplete) {
+lucu.opml.exportBlob = function(onComplete) {
   'use strict';
 
   var waterfall = [
@@ -274,7 +272,7 @@ lucu.opml.exportGetFeeds = function(db, callback) {
   var store = tx.objectStore('feed');
   var request = store.openCursor();
   var feeds = [];
-  tx.onComplete = function() {
+  tx.oncomplete = function() {
     callback(null, feeds);
   };
   request.onsuccess = function(event) {
@@ -287,7 +285,8 @@ lucu.opml.exportGetFeeds = function(db, callback) {
 
 lucu.opml.exportCompleted = function(onComplete, error, opmlString) {
   'use strict';
-  onComplete(opmlString);
+  var blob = new Blob([opmlString], {type:'application/xml'});
+  onComplete(blob);
 };
 
 lucu.opml.exportSerialize = function(feeds, callback) {
@@ -295,5 +294,6 @@ lucu.opml.exportSerialize = function(feeds, callback) {
   var document = lucu.opml.createDocument(feeds, 'subscriptions.xml');
   var xs = new XMLSerializer();
   var opml = xs.serializeToString(document);
+
   callback(null, opml);
 };

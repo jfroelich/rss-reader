@@ -757,18 +757,20 @@ function onImportOPMLClick(event) {
 
 
 function onExportOPMLClick(event) {
+  lucu.opml.exportBlob(exportOPMLOnComplete);
+}
 
-  lucu.opml.exportString(function(xmlString) {
-    var blob = new Blob([xmlString], {type:'application/xml'});
-    var anchor = document.createElement('a');
-    anchor.href = URL.createObjectURL(blob);
-    anchor.setAttribute('download', 'subscriptions.xml');
-    anchor.style.display = 'none';
-    document.body.appendChild(anchor);
-    anchor.click();
-    URL.revokeObjectURL(blob);
-    document.body.removeChild(anchor);
-  });
+function exportOPMLOnComplete(blob) {
+  var anchor = document.createElement('a');
+  anchor.href = URL.createObjectURL(blob);
+  anchor.setAttribute('download', 'subscriptions.xml');
+  anchor.style.display = 'none';
+  document.body.appendChild(anchor);
+  // Trigger the download
+  anchor.click();
+  // Cleanup
+  URL.revokeObjectURL(blob);
+  document.body.removeChild(anchor); 
 }
 
 function onHeaderFontChange(event){
