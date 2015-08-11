@@ -18,7 +18,10 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
 
   // TODO: just use entry.link as key, maybe there is no need
   // to create a hash property?
-  storable.hash = lucu.hashEntry(entry);
+  // TODO: if we require link, then maybe there is no need to 
+  // try and use title or content
+  var seed = entry.link || entry.title || entry.content;
+  storable.hash = lucu.hashing.generate(seed);
 
   if(!storable.hash) {
     return callback();
@@ -41,6 +44,9 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
   var tx = db.transaction('entry', 'readwrite');
   var store = tx.objectStore('entry');
   var request = store.add(storable);
+
+  // We do not want to pass parameters to the callback so we 
+  // have to wrap here
   request.onsuccess = function() {
     callback();
   };
@@ -51,11 +57,4 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
 
 lucu.isValidDate = function(date) {
   return date && date.toString() === '[object Date]' && isFinite(date);
-};
-
-lucu.hashEntry = function(entry) {
-  // TODO: if we require link, then maybe there is no need to 
-  // try and use title or content
-  var seed = entry.link || entry.title || entry.content;
-  return lucu.hashing.generate(seed);
 };
