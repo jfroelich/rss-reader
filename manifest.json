@@ -1,11 +1,11 @@
 {
-  "version": "2.6",
+  "version": "2.8",
   "manifest_version": 2,
   "minimum_chrome_version" : "36",
   "name": "Lucubrate",
   "author": "Joshua Froelich",
   "homepage_url": "https://github.com/jfroelich/rss-reader",
-  "description": "Reading by lamplight late into the night",
+  "description": "Reading by artificial light late into the night",
   "browser_action": {
     "default_icon": "/media/rss_icon_trans.png",
     "default_title": "Lucubrate"
@@ -15,8 +15,12 @@
     "scripts": [
       "/lib/async.js",
       "/lib/URI.js",
+      "/src/archive.js",
+      "/src/badge.js",
       "/src/background.js",
       "/src/database.js",
+      "/src/install.js",
+      "/src/notifications.js",
       "/src/rewrite.js",
       "/src/feeds.js",
       "/src/polling.js",

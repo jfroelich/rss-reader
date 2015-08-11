@@ -4,32 +4,34 @@
 
 var lucu = lucu || {};
 
-/**
- * Polls feeds
- *
+/*
  * TODO: split this up into individual functions in the lucu
  * namespace so that it is easier to read and manage
+ * TODO: use lucu.poll namespace
  *
  * TODO: backoff if last poll did not find updated content?
  * TODO: backoff should be per feed
  * TODO: de-activation of feeds with 404s
  * TODO: de-activation of too much time elapsed since feed had new articles
  * TODO: only poll if feed is active
- */
+*/
+
+// Polls feeds
+// TODO: is requiring navigator as a parameter here stupid?
 lucu.pollFeeds = function(navigator) {
 
   if(lucu.isOffline(navigator)) {
   	return;
   }
 
-  var functions = [
+  var waterfall = [
     lucu.canPollIfIdle,
     lucu.pollOpenIndexedDB,
     lucu.selectAllFeeds,
     lucu.pollUpdateAllFeeds
   ];
 
-  async.waterfall(functions, lucu.pollWaterfallComplete);
+  async.waterfall(waterfall, lucu.pollWaterfallComplete);
 };
 
 lucu.isOffline = function(navigator) {
@@ -77,13 +79,13 @@ lucu.POLL_INACTIVITY_INTERVAL = 60 * 5;
 
 lucu.canPollIfIdle = function(callback) {
   chrome.permissions.contains({permissions: ['idle']}, function(permitted) {
-	// If we do not have permission to check idle status then
-	// just continue with polling
-	if(!permitted) {
-	  return callback();
-	}
+  	// If we do not have permission to check idle status then
+  	// just continue with polling
+  	if(!permitted) {
+  	  return callback();
+  	}
 
-	chrome.idle.queryState(lucu.POLL_INACTIVITY_INTERVAL, checkIdle);
+  	chrome.idle.queryState(lucu.POLL_INACTIVITY_INTERVAL, checkIdle);
   });
 
   function checkIdle(idleState) {
@@ -130,3 +132,15 @@ lucu.pollUpdateAllFeeds = function(db, feeds, callback) {
     callback(null, feeds);
   });
 };
+
+// TODO: support customizable poll timing per feed
+
+lucu.pollOnAlarm = function(alarm) {
+  if(alarm.name == 'poll') {
+    lucu.pollFeeds(window.navigator);
+  }
+};
+
+lucu.POLL_SCHEDULE = {periodInMinutes: 20};
+chrome.alarms.onAlarm.addListener(lucu.pollOnAlarm);
+chrome.alarms.create('poll', lucu.POLL_SCHEDULE);
