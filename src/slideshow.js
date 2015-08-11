@@ -275,27 +275,27 @@ function appendSlide(entry, isFirst) {
   var doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = entry.content;
 
-  lucu.removeComments(doc);
-  lucu.removeBlacklistedElements(doc);
-  lucu.removeSourcelessImages(doc);
-  lucu.removeTracerImages(doc);
-  lucu.unwrapNoscripts(doc);
-  lucu.unwrapNoframes(doc);
-  // lucu.removeInvisibleElements(doc);
-  lucu.canonicalizeSpaces(doc);
-  lucu.trimNodes(doc);
-  lucu.removeEmptyNodes(doc);
-  lucu.removeEmptyElements(doc);
+  lucu.sanitize.removeComments(doc);
+  lucu.sanitize.removeBlacklistedElements(doc);
+  lucu.sanitize.removeSourcelessImages(doc);
+  lucu.sanitize.removeTracerImages(doc);
+  lucu.sanitize.unwrapNoscripts(doc);
+  lucu.sanitize.unwrapNoframes(doc);
+  // lucu.sanitize.removeInvisibleElements(doc);
+  lucu.sanitize.canonicalizeSpaces(doc);
+  lucu.sanitize.trimNodes(doc);
+  lucu.sanitize.removeEmptyNodes(doc);
+  lucu.sanitize.removeEmptyElements(doc);
   var results = calamine.transform(doc, {
     FILTER_NAMED_AXES: true,
     ANNOTATE: false
   });
-  lucu.removeJavascriptAnchors(results);
-  lucu.unwrapDescendants(results);
-  lucu.removeDescendantAttributes(lucu.DEFAULT_ALLOWED_ATTRIBUTES , results);
-  lucu.trimElement(results);
-  lucu.removeEmptyElements(doc);
-  lucu.transformSingleItemLists(results);
+  lucu.sanitize.removeJavascriptAnchors(results);
+  lucu.sanitize.unwrapDescendants(results);
+  lucu.sanitize.removeDescendantAttributes(lucu.sanitize.DEFAULT_ALLOWED_ATTRIBUTES , results);
+  lucu.sanitize.trimElement(results);
+  lucu.sanitize.removeEmptyElements(doc);
+  lucu.sanitize.transformSingleItemLists(results);
 
   content.appendChild(results);
   slide.appendChild(content);

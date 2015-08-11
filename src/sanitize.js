@@ -4,29 +4,23 @@
 
 var lucu = lucu || {};
 
-(function(exports) {
-'use strict';
-
-var filter = Array.prototype.filter;
-var forEach = Array.prototype.forEach;
-var slice = Array.prototype.slice;
+// DOM sanitize funtions
+lucu.sanitize = {};
 
 /**
- * Inner utility function for removing elements. I wanted to
- * be able to pass Element.prototype.remove but could not get it
- * to work.
+ * Utility function for declarative style calls
  */
-function remove(element) {
+lucu.sanitize.remove = function(element) {
   element.remove();
-}
+};
 
 /**
  * Rudimentary replacement of alternative forms of whitespace with normal
  * space character. This is helpful when trimming or getting text length
  * less whitespace.
  */
-function canonicalizeSpaces(doc) {
-  var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
+lucu.sanitize.canonicalizeSpaces = function(document) {
+  var it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
   var node = it.nextNode();
   while(node) {
     node.nodeValue = node.nodeValue.replace(/&nbsp;/ig, ' ');
@@ -34,52 +28,25 @@ function canonicalizeSpaces(doc) {
     node.nodeValue = node.nodeValue.replace(/&#160;/g, ' ');
     node = it.nextNode();
   }
-}
+};
 
-var SELECTOR_LEAF_LIKE = ['area', 'audio', 'br', 'canvas', 'col',
+lucu.sanitize.SELECTOR_LEAF_LIKE = ['area', 'audio', 'br', 'canvas', 'col',
   'hr', 'img', 'source', 'svg', 'track', 'video'].join(',');
 
 /**
- * Returns true if an element is 'empty'
+ * Returns true if an element is empty. An element is empty 
+ * when the element does not contain any child nodes, or when
+ * the element is flagged as a leaf element.
  */
-function isEmptyLike(element) {
+lucu.sanitize.isEmptyLike = function(element) {
   // An element is not empty if it has one or more child nodes
   if(element.firstChild) {
     return false;
   }
 
   // Certain elements that do have child nodes are still considered empty
-  return !element.matches(SELECTOR_LEAF_LIKE);
-}
-
-/**
- * Elements which default to display:inline or inline-block
- * NOTE: <div> is treated as an exception and not considered inline
- */
-var INLINE_ELEMENTS = new Set(['a','abbr', 'acronym', 'address',
-  'b', 'bdi', 'bdo', 'blink','cite', 'code', 'data', 'del',
-  'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 'map',
-  'meter', 'q', 'rp', 'rt', 'samp', 'small', 'span', 'strike',
-  'strong', 'sub', 'sup', 'time', 'tt', 'u', 'var'
-]);
-
-function isInline(element) {
-  // Element may be undefined since the caller does not check
-  // if node.nextSibling or node.previousSibling are defined
-  // before the call.
-  // TODO: maybe this is responsibility of caller
-  if(!element) {
-    return false;
-  }
-
-  // This condition definitely happens, not exactly sure how or why
-  // TODO: does this mean it is inline? should this be returning true?
-  if(element.nodeType != Node.ELEMENT_NODE) {
-    return false;
-  }
-
-  return INLINE_ELEMENTS.has(element.localName);
-}
+  return !element.matches(lucu.sanitize.SELECTOR_LEAF_LIKE);
+};
 
 /**
  * Remove all empty-like elements from the document. If removing
@@ -89,7 +56,9 @@ function isInline(element) {
  *
  * TODO: This needs a lot of cleanup
  */
-function removeEmptyElements(doc) {
+lucu.sanitize.removeEmptyElements = function(document) {
+  'use strict';
+  var filter = Array.prototype.filter;
 
   // TODO: there is a specific edge case not being handled
   // where certain elements, e.g. anchors, that do not contain
@@ -125,11 +94,15 @@ function removeEmptyElements(doc) {
   // So we need to go up 1, then query all direct children. But that is
   // kind of redundant since we already identified the children, so that
   // still might need improvement.
-  var elements = doc.body.getElementsByTagName('*');
-  var emptyLikeElements = filter.call(elements, isEmptyLike);
+  var elements = document.body.getElementsByTagName('*');
+  var emptyLikeElements = filter.call(elements, lucu.sanitize.isEmptyLike);
+  
   // TODO: just add children that should be removed to the stack insead of
   // removing them and adding their parents to the stack.
   // Remove all the empty children and shove all the parents on the stack
+  
+  // TODO: separate this out as an separate function
+
   var parents = emptyLikeElements.map(function (element) {
     var parentElement = element.parentElement;
     element.remove();
@@ -137,9 +110,10 @@ function removeEmptyElements(doc) {
   });
 
   // Avoid removing the body element
-  var stack = parents.filter(function (element) {
-    return element != doc.body;
-  });
+
+
+  var stack = parents.filter(
+    lucu.sanitize.isNotBodyElement.bind(null, document));
 
   var parent, grandParent;
 
@@ -163,35 +137,41 @@ function removeEmptyElements(doc) {
     // If there was no grand parent (how would that ever happen?)
     // or the grand parent is the root, then do not add the new
     // grand parent to the stack
-    if(!grandParent || grandParent == doc.body) {
+    if(!grandParent || grandParent == document.body) {
       continue;
     }
 
     stack.push(grandParent);
   }
-}
+};
+
+lucu.sanitize.isNotBodyElement = function(document, element) {
+  return document.body && document.body != element;
+};
 
 /**
- * Technically a node without a node value should be deleted. Here
+ * Technically a node without a node value should be deleted. The trim
  * trim node function may set node value to '', so the node still exists,
  * but I now want to remove it. So this iterates over the text nodes
  * and removes those.
+ *
+ * TODO: rename to removeEmptyTextNodes for clarity
  */
-function removeEmptyNodes(doc) {
-  var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
+lucu.sanitize.removeEmptyNodes = function(document) {
+  var it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
   var node;
   while(node = it.nextNode()) {
     if(!node.nodeValue) {
       node.remove();
     }
   }
-}
+};
 
 /**
  * Removes all attributes from an element except those in the given Set of
  * allowed attributes
  */
-function removeAttributes(allowedAttributes, element) {
+lucu.sanitize.removeAttributes = function(allowedAttributes, element) {
   var attributes = element.attributes;
   var name = '';
   var index = attributes.length;
@@ -205,19 +185,21 @@ function removeAttributes(allowedAttributes, element) {
       element.removeAttribute(name);
     }
   }
-}
+};
 
-var DEFAULT_ALLOWED_ATTRIBUTES = new Set(['href','src']);
+lucu.sanitize.DEFAULT_ALLOWED_ATTRIBUTES = new Set(['href','src']);
 
-function removeDescendantAttributes(allowedAttributes, element) {
-  removeAttributes(allowedAttributes, element);
+lucu.sanitize.removeDescendantAttributes = function(allowedAttributes, element) {
+  var ra = lucu.sanitize.removeAttributes;
+  var forEach = Array.prototype.forEach;
+
+  ra(allowedAttributes, element);
   var descendants = element.getElementsByTagName('*');
-  forEach.call(descendants, removeAttributes.bind(this, allowedAttributes));
-}
-
+  forEach.call(descendants, ra.bind(null, allowedAttributes));
+};
 
 // TODO: this should be a Set
-var BLACKLISTED_ELEMENTS = [
+lucu.sanitize.BLACKLISTED_ELEMENTS = [
 
   // Removing head first avoids the need to remove several other tags
   'head',
@@ -234,13 +216,17 @@ var BLACKLISTED_ELEMENTS = [
   'option'
 ];
 
+
+
+
 /**
  * Removes all elements in the black list
  */
-function removeBlacklistedElements(doc) {
-  var root = doc.body;
+lucu.sanitize.removeBlacklistedElements = function(document) {
+  var root = document.body;
 
-  BLACKLISTED_ELEMENTS.forEach(function(name) {
+  // TODO: separate this function out as a separate function
+  lucu.sanitize.BLACKLISTED_ELEMENTS.forEach(function(name) {
     var element = root.querySelector(name);
     while(element) {
       // console.log('removing %o', element);
@@ -250,12 +236,15 @@ function removeBlacklistedElements(doc) {
   });
 
   // Non-standard elements seen in the wild. These cannot be passed
-  // as selectors to querySelectorAll
+  // as selectors to querySelectorAll so we have to iterate separately
+  // TODO: write an outer loop that iterates over the set of exceptional
+  // elements to make this less dry
+
   var gPlusOnes = root.getElementsByTagName('g:plusone');
   for(var i = 0, len = gPlusOnes.length; i < len; i++) {
     // NOTE: gebtn is live so one removal could affect others
     // so we have to check if defined
-    // TODO: check if not detached
+    // TODO: check if not detached (using root.contains?)
     if(gPlusOnes[i]) {
       gPlusOnes[i].remove();
     }
@@ -268,18 +257,21 @@ function removeBlacklistedElements(doc) {
       fbComments[i].remove();
     }
   }
-}
+};
 
 /**
  * Remove all comment nodes
  */
-function removeComments(doc) {
-  var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_COMMENT);
+lucu.sanitize.removeComments = function(document) {
+  var it = document.createNodeIterator(document.body, NodeFilter.SHOW_COMMENT);
   var node;
   while(node = it.nextNode()) {
     node.remove();
   }
-}
+};
+
+
+
 
 /**
  * Removes script anchors
@@ -287,27 +279,29 @@ function removeComments(doc) {
  * NOTE: does not handle nested anchors correctly, because remove could lead
  * to later removal of children of detached ancestors
  */
-function removeJavascriptAnchors(root) {
+lucu.sanitize.removeJavascriptAnchors = function(root) {
+  var filter = Array.prototype.filter;
+  var isScript = lucu.sanitize.isScriptAnchor;
   var anchors = root.querySelectorAll('a[href]');
-  var scriptAnchors = filter.call(anchors, isScriptAnchor);
-  scriptAnchors.forEach(remove);
-}
+  var scriptAnchors = filter.call(anchors, isScript);
+  scriptAnchors.forEach(lucu.sanitize.remove);
+};
 
 /**
  * Returns whether the anchor's href looks like it contains inline script.
+ * TODO: allow for whitespace   /^\s*javascript\s*:/i
  */
-function isScriptAnchor(anchor) {
+lucu.sanitize.isScriptAnchor = function(anchor) {
   var href = anchor.getAttribute('href');
-  // TODO: allow for whitespace   /^\s*javascript\s*:/i
   return /^javascript:/i.test(href);
-}
+};
 
 /**
  * Returns whether an element is invisible
  */
-function isInvisible(element) {
+lucu.sanitize.isInvisible = function(element) {
 
-  // noscript and noembed are exceptions to the general rules. We always
+  // noscript and noembed are exceptions. We always
   // consider them visible regardless of other features.
   if(element.localName == 'noscript' || element.localName == 'noembed') {
     return false;
@@ -332,22 +326,26 @@ function isInvisible(element) {
   if(style.display === 'none') {
     return true;
   }
+
   if(style.visibility === 'hidden' || style.visibility === 'collapse') {
     return true;
   }
 
   var opacity = parseFloat(style.opacity);
-  // We don't actually require it be 0, just too transparent to see
+  
+  // We don't actually require opacity be 0 to be considered invisible, 
+  // just so low that the element is too transparent to be visible
   return opacity < 0.3;
-}
+};
 
-function removeInvisibleElements(doc) {
-  var elements = doc.body.getElementsByTagName('*');
-  var invisibles = filter.call(elements, isInvisible);
-  invisibles.forEach(remove);
-}
+lucu.sanitize.removeInvisibleElements = function(document) {
+  var filter = Array.prototype.filter;
+  var elements = document.body.getElementsByTagName('*');
+  var invisibles = filter.call(elements, lucu.sanitize.isInvisible);
+  invisibles.forEach(lucu.sanitize.remove);
+};
 
-function isTracerImage(image) {
+lucu.sanitize.isTracerImage = function(image) {
   var width = image.getAttribute('width');
   var height = image.getAttribute('height');
 
@@ -364,110 +362,59 @@ function isTracerImage(image) {
   return width === '0' || width === '0px' || width === '1' ||
     height === '1px' || height === '1' || image.width === 0 ||
     image.width === 1 || image.height === 0 || image.height === 1;
-}
+};
 
-function removeTracerImages(doc) {
-  var images = doc.body.getElementsByTagName('img');
-  filter.call(images, isTracerImage).forEach(remove);
-}
+lucu.sanitize.removeTracerImages = function(document) {
+  var filter = Array.prototype.filter;
+  var isTracer = lucu.sanitize.isTracerImage;
+  var remove = lucu.sanitize.remove;
+  var images = document.body.getElementsByTagName('img');
+  filter.call(images, isTracer).forEach(remove);
+};
 
-function isSourcelessImage(image) {
+lucu.sanitize.isSourcelessImage = function(image) {
   // Access by attribute, not by property, since the browser substitutes
   // in the base url if accessing by property.
 
   var source = image.getAttribute('src');
-  return !(source && source.trim());
-}
+  return !source || !source.trim();
+};
 
 /**
  * Remove all images that do not have a src attribute
  */
-function removeSourcelessImages(doc) {
-  var images = doc.body.getElementsByTagName('img');
-  var sourcelessImages = filter.call(images, isSourcelessImage);
-  sourcelessImages.forEach(remove);
-}
+lucu.sanitize.removeSourcelessImages = function(document) {
+  var filter = Array.prototype.filter;
+  var images = document.body.getElementsByTagName('img');
+  var isSourceless = lucu.sanitize.isSourcelessImage;
+  var sourcelessImages = filter.call(images, isSourceless);
+  sourcelessImages.forEach(lucu.sanitize.remove);
+};
 
 /**
  * Unwraps noscript elements
  * Testing example:
  * http://fortune.com/2014/09/09/apple-event-overshadows-bad-news-snapchat-tinder/
  */
-function unwrapNoscripts(doc) {
-
-  var noscripts = doc.body.getElementsByTagName('noscript');
+lucu.sanitize.unwrapNoscripts = function(document) {
+  var forEach = Array.prototype.forEach;
+  var unwrap = lucu.sanitize.unwrap;
+  var noscripts = document.body.getElementsByTagName('noscript');
   forEach.call(noscripts, unwrap);
-}
+};
 
 /**
  * Unwrap all noframes elements.
  * See http://www.miracleas.com/BAARF/ as testing example.
  */
-function unwrapNoframes(doc) {
-
-  var noframes = doc.body.getElementsByTagName('noframes');
+lucu.sanitize.unwrapNoframes = function(document) {
+  var forEach = Array.prototype.forEach;
+  var unwrap = lucu.sanitize.unwrap;
+  var noframes = document.body.getElementsByTagName('noframes');
   forEach.call(noframes, unwrap);
-}
+};
 
-function isTrimmableElement(element) {
-  var name;
-  if(!element) return false;
-  if(element.nodeType != Node.ELEMENT_NODE) return false;
-  name = element.localName;
-  if(name == 'br') return true;
-  if(name == 'hr') return true;
-  if(name == 'p' && !element.firstChild) return true;
-  return false;
-}
 
-function trimElement(element) {
-  var node = element.firstChild;
-  var sibling;
-  while(isTrimmableElement(node)) {
-    sibling = node.nextSibling;
-    node.remove();
-    node = sibling;
-  }
-  node = element.lastChild;
-  while(isTrimmableElement(node)) {
-    sibling = node.previousSibling;
-    node.remove();
-    node = sibling;
-  }
-}
-
-function trimNodes(doc) {
-
-  // TODO: there is a problem here with SVGAnimatedStrings and I am
-  // not clear exactly what that is but I occassionally see some
-  // strange log messages. This might also be related to the perf
-  // issues. I am guessing it occurs when accessing node.nodeValue
-  // perhaps for an SVG element, because of some strange thing about
-  // SVG elements not being considered elements.
-
-  var WHITESPACE_SENSITIVE = 'code, code *, pre, pre *, ruby, ruby *, textarea,' +
-    ' textarea *, xmp, xmp *';
-  var elements = doc.body.querySelectorAll(WHITESPACE_SENSITIVE);
-  var preformatted = new Set(slice.call(elements));
-
-  var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
-  var node;
-  while(node = it.nextNode()) {
-    if(preformatted.has(node.parentElement)) {
-      continue;
-    }
-
-    if(isInline(node.previousSibling)) {
-      if(!isInline(node.nextSibling)) {
-        node.nodeValue = node.nodeValue.trimRight();
-      }
-    } else if(isInline(node.nextSibling)) {
-      node.nodeValue = node.nodeValue.trimLeft();
-    } else {
-      node.nodeValue = node.nodeValue.trim();
-    }
-  }
-}
 
 /**
  * A function that should be a part of the DOM itself but unfortunately is not.
@@ -476,7 +423,7 @@ function trimNodes(doc) {
  * This is not optimized to be called on a live document. This causes a reflow
  * per move.
  */
-function unwrap(element) {
+lucu.sanitize.unwrap = function(element) {
   // Cache parent lookup
   var parent = element.parentElement;
 
@@ -493,25 +440,40 @@ function unwrap(element) {
 
   // Now the element is empty so detach it
   element.remove();
-}
+};
 
 /**
  * Extremely simple <br>2<p> transformation. This does not quite work
  * like I prefer but it sort of does the job. It turns out to be really
  * complicated to make it work
  */
-function transformBreaks(doc) {
-  var br = doc.body.querySelector('br');
+lucu.sanitize.transformBreaks = function(document) {
+  var br = document.body.querySelector('br');
   while(br) {
-    br.parentNode.replaceChild(doc.createElement('p'), br);
-    br = doc.body.querySelector('br');
+    br.parentNode.replaceChild(document.createElement('p'), br);
+    br = document.body.querySelector('br');
   }
 }
+
+// Added 'tt' (teletype) element. It is obsolete but I prefer such articles
+// not to be rendered in fixed-width font.
+lucu.sanitize.UNWRAPPABLE_ELEMENTS = [
+  'article','big','blink','body','center','colgroup','data','details',
+  'div','font','footer','form','header','help','hgroup', 'ilayer', 'insert',
+  'label','layer','legend', 'main','marquee', 'meter', 'multicol','nobr',
+  'noembed','noscript','plaintext','section', 'small','span','tbody',
+  'tfoot','thead', 'tt'
+].join(',');
 
 /**
  * Unwraps certain descendant elements of the root element
  */
-function unwrapDescendants(rootElement) {
+lucu.sanitize.unwrapDescendants = function(rootElement) {
+
+  'use strict';
+
+  var filter = Array.prototype.filter;
+  var unwrap = lucu.sanitize.unwrap;
 
   // NOTE: this performs extremely poorly when dealing with a large
   // number of elements. For example, it took ~20 secs on
@@ -519,16 +481,7 @@ function unwrapDescendants(rootElement) {
   // It is the querySelector call
   // So, tentatively, we are using an upper bound of 3000 iterations
 
-  // Added 'tt' (teletype) element. It is obsolete but I prefer such articles
-  // not to be rendered in fixed-width font.
-
-  var unwrappables = [
-    'article','big','blink','body','center','colgroup','data','details',
-    'div','font','footer','form','header','help','hgroup', 'ilayer', 'insert',
-    'label','layer','legend', 'main','marquee', 'meter', 'multicol','nobr',
-    'noembed','noscript','plaintext','section', 'small','span','tbody',
-    'tfoot','thead', 'tt'
-  ].join(',');
+  var unwrappables = lucu.sanitize.UNWRAPPABLE_ELEMENTS;
 
   // We use querySelector and do one at element at a time in order to avoid
   // unwrapping elements that, as a result of a previous iteration, now exist
@@ -569,13 +522,17 @@ function unwrapDescendants(rootElement) {
 
   });
 
-  nominalAnchors.forEach(unwrap);
-}
+  nominalAnchors.forEach(lucu.sanitize.unwrap);
+};
 
-function transformSingleItemLists(rootElement) {
-  // Unwrap single item lists. For now just ul
+// Unwrap single item lists. For now just ul
+lucu.sanitize.transformSingleItemLists = function(rootElement) {
+  'use strict';
+  var forEach = Array.prototype.forEach;
+  
   var uLists = rootElement.getElementsByTagName('ul');
 
+  // TODO: separate out as helper function
   forEach.call(uLists, function(list) {
     // Avoid mutation while iterating issues
     if(!list) return;
@@ -583,6 +540,7 @@ function transformSingleItemLists(rootElement) {
     var reduce = Array.prototype.reduce;
 
     // Count the immediate list item children
+    // TODO: separate out as a helper function
     var itemCount = reduce.call(list.childNodes, function(count, node) {
       return count + (node.nodeType == Node.ELEMENT_NODE &&
         node.localName == 'li' ? 1 : 0);
@@ -606,25 +564,4 @@ function transformSingleItemLists(rootElement) {
       list.remove();
     }
   });
-}
-
-exports.DEFAULT_ALLOWED_ATTRIBUTES = DEFAULT_ALLOWED_ATTRIBUTES;
-exports.canonicalizeSpaces = canonicalizeSpaces;
-exports.removeDescendantAttributes = removeDescendantAttributes;
-exports.removeBlacklistedElements = removeBlacklistedElements;
-exports.removeComments = removeComments;
-exports.removeEmptyNodes = removeEmptyNodes;
-exports.removeEmptyElements = removeEmptyElements;
-exports.removeJavascriptAnchors = removeJavascriptAnchors;
-exports.removeInvisibleElements = removeInvisibleElements;
-exports.removeTracerImages = removeTracerImages;
-exports.removeSourcelessImages = removeSourcelessImages;
-exports.unwrapNoscripts = unwrapNoscripts;
-exports.unwrapNoframes = unwrapNoframes;
-exports.trimElement = trimElement;
-exports.trimNodes = trimNodes;
-exports.transformBreaks = transformBreaks;
-exports.unwrapDescendants = unwrapDescendants;
-exports.transformSingleItemLists = transformSingleItemLists;
-
-}(lucu));
+};
