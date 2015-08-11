@@ -4,65 +4,6 @@
 
 var lucu = lucu || {};
 
-/**
- * Fetches the XML for a feed, parses it into a javascript object, and passes
- * this along to a callback. If an error occurs along the way, calls the onerror
- * callback instead.
- *
- * TODO: standardize the error object passed to onerror
- * TODO: somehow store responseURL? intelligently react to redirects
- * TODO: remove duplicate entries?
- * TODO: make online check caller's responsibility?
- * TODO: change to use single callback, async.forEach style
- * TODO: should filtering and rewriting take place somewhere else?
- */
-lucu.fetchFeed = function(url, onComplete, onError, timeout) {
-  'use strict';
-
-  onError = onError || function (event) {
-    console.dir(event);
-  };
-
-  if(navigator && !navigator.onLine) {
-    return onError({type: 'offline', url: url});
-  }
-
-  var request = new XMLHttpRequest();
-  request.timeout = timeout;
-  request.onerror = function(event) {
-    console.debug('fetch feed error');
-    console.dir(event);
-    onError(event);
-  };
-  request.ontimeout = onError;
-  request.onabort = onError;
-  request.onload = function () {
-    var document = this.responseXML;
-    if(!document || !document.documentElement) {
-      return onError({type: 'invalid-xml', target: this});
-    }
-
-    try {
-      var feed = lucu.deserializeFeed(document);
-    } catch(e) {
-      return onError({type: 'invalid-xml', target: this, details: e});
-    }
-
-    feed.entries = feed.entries.filter(function (entry) {
-      return entry.link;
-    }).map(function (entry) {
-      entry.link = lucu.rewriteURL(entry.link);
-      return entry;
-    });
-
-    onComplete(feed);
-  };
-
-  request.open('GET', url, true);
-  request.overrideMimeType('application/xml');
-  request.send();
-};
-
 // TODO: ensure no future pubdates?
 // TODO: use the async's approach to error handling. Only use
 // one callback. The first argument should be the error object.
@@ -82,18 +23,40 @@ lucu.addFeed = function(db, feed, onComplete, onerror) {
   if(feed.fetched) storable.fetched = feed.fetched;
   storable.created = Date.now();
   var entries = feed.entries;
-  var addEntry = lucu.mergeEntry.bind(null, db, storable);
+  var mergeEntry = lucu.mergeEntry.bind(null, db, storable);
   var tx = db.transaction('feed','readwrite');
   var store = tx.objectStore('feed');
   var request = store.add(storable);
   request.onsuccess = function() {
     storable.id = this.result;
-    async.forEach(entries, addEntry, onComplete);
+    async.forEach(entries, mergeEntry, onComplete);
   };
   // Triggers onerror when schemeless already exists
   request.onerror = onerror;
 };
 
+// TODO: the caller should pass in last modified date of the remote xml file
+// so we can avoid pointless updates?
+// TODO: this should not be changing the date updated unless something
+// actually changed. However, we do want to indicate that the feed was
+// checked
+lucu.updateFeed = function(db, localFeed, remoteFeed, oncomplete) {
+  var clean = lucu.sanitizeFeed(remoteFeed);
+  if(clean.title) localFeed.title = clean.title;
+  if(clean.description) localFeed.description = clean.description;
+  if(clean.link) localFeed.link = clean.link;
+  if(clean.date) localFeed.date = clean.date;
+  localFeed.fetched = remoteFeed.fetched;
+  localFeed.updated = Date.now();
+  var tx = db.transaction('feed','readwrite');
+  var store = tx.objectStore('feed');
+  var request = store.put(localFeed);
+  request.onerror = console.debug;
+  var mergeEntry = lucu.mergeEntry.bind(null, db, localFeed);
+  request.onsuccess = function() {
+    async.forEach(remoteFeed.entries, mergeEntry, oncomplete);
+  };
+};
 
 /**
  * Returns a sanitized copy of dirtyFeed.
@@ -122,74 +85,3 @@ lucu.sanitizeFeed = function(feed) {
   return output;
 };
 
-
-// TODO: intended to be used with async.forEach which halts
-// if any call passes an error argument to the callback. Therefore
-// this has to not pass anything. But I would prefer this passed
-// back an error in event of an error.
-
-lucu.mergeEntry = function(db, feed, entry, callback) {
-  'use strict';
-
-  var storable = {};
-  if(feed.link) storable.feedLink = feed.link;
-  if(feed.title) storable.feedTitle = feed.title;
-  storable.feed = feed.id;
-
-  // TODO: just use entry.link as key
-  var seed = entry.link || entry.title || entry.content || '';
-  storable.hash = seed.split('').reduce(function (sum, string) {
-    return (sum * 31 + string.charCodeAt(0)) % 4294967296;
-  }, 0);
-
-  if(!storable.hash) {
-    return callback();
-  }
-
-  storable.unread = 1;
-  if(entry.author) storable.author = entry.author;
-  if(entry.link) storable.link = entry.link;
-  if(entry.title) storable.title = entry.title;
-  if(entry.pubdate) {
-    var date = new Date(entry.pubdate);
-    if(date && date.toString() == '[object Date]' && isFinite(date)) {
-      storable.pubdate = date.getTime();
-    }
-  }
-  if(!storable.pubdate && feed.date) storable.pubdate = feed.date;
-  storable.created = Date.now();
-  if(entry.content) storable.content = entry.content;
-
-  var tx = db.transaction('entry', 'readwrite');
-  var store = tx.objectStore('entry');
-  var request = store.add(storable);
-  request.onsuccess = function() {
-    callback();
-  };
-  request.onerror = function() {
-    callback();
-  };
-};
-
-// TODO: the caller should pass in last modified date of the remote xml file
-// so we can avoid pointless updates?
-// TODO: this should not be changing the date updated unless something
-// actually changed. However, we do want to indicate that the feed was
-// checked
-lucu.updateFeed = function(db, localFeed, remoteFeed, oncomplete) {
-  var clean = lucu.sanitizeFeed(remoteFeed);
-  if(clean.title) localFeed.title = clean.title;
-  if(clean.description) localFeed.description = clean.description;
-  if(clean.link) localFeed.link = clean.link;
-  if(clean.date) localFeed.date = clean.date;
-  localFeed.fetched = remoteFeed.fetched;
-  localFeed.updated = Date.now();
-  var tx = db.transaction('feed','readwrite');
-  var store = tx.objectStore('feed');
-  var request = store.put(localFeed);
-  request.onerror = console.debug;
-  var mergeEntry = lucu.mergeEntry.bind(null, db, localFeed);
-  request.onsuccess = function() {
-    async.forEach(remoteFeed.entries, mergeEntry, oncomplete);
-  };
-};
