@@ -476,7 +476,7 @@ function startSubscription(url) {
     // TODO: subscribing takes too long. Do not augment
     // when subscribing. Just inform the user that articles
     // will be fetched when next poll occurs
-    // Augment
+
     lucu.augmentEntries(remoteFeed, function() {
       remoteFeed.url = url;
       remoteFeed.fetched = Date.now();

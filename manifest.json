@@ -16,6 +16,7 @@
       "/lib/async.js",
       "/lib/URI.js",
       "/src/archive.js",
+      "/src/augment.js",
       "/src/badge.js",
       "/src/background.js",
       "/src/database.js",
