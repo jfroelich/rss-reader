@@ -309,7 +309,7 @@ lucu.updateEntryContent = function(entry, callback) {
     lucu.resolveElements(document, this.responseURL);
 
     var images = document.body.getElementsByTagName('img');
-    async.forEach(images, lucu.fetchImageDimensions, function () {
+    async.forEach(images, lucu.images.fetchDimensions, function () {
       entry.content = document.body.innerHTML ||
         'Unable to download content for this article';
       callback();
@@ -320,42 +320,3 @@ lucu.updateEntryContent = function(entry, callback) {
   request.send();
 };
 
-/**
- * Ensures that the width and height attributes of an image are set. If the
- * dimensions are set, the callback is called immediately. If not set, the
- * image is fetched and then the dimensions are set.
- *
- * TODO: is this file the proper location for this function?
- */
-lucu.fetchImageDimensions = function(image, callback) {
-  'use strict';
-
-  var src = (image.getAttribute('src') || '').trim();
-  var width = (image.getAttribute('width') || '').trim();
-  if(!src || width || image.width ||
-    width === '0' || /^0\s*px/i.test(width) ||
-    /^data\s*:/i.test(src)) {
-    return callback();
-  }
-
-  // We load the image within a separate document context because
-  // the element may currently be contained within an inert document
-  // context (such as the document created by an XMLHttpRequest or when
-  // using document.implementation.createDocument)
-  // TODO: think of a better way to specify the proxy. I should not be
-  // relying on window explicitly here.
-  var document = window.document;
-  var proxy = document.createElement('img');
-
-  proxy.onerror = function(event) {
-    console.debug('Failed to fetch %s %o', src, proxy);
-    callback();
-  };
-
-  proxy.onload = function(event) {
-    image.width = proxy.width;
-    image.height = proxy.height;
-    callback();
-  };
-  proxy.src = src;
-};

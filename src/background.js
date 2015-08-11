@@ -17,7 +17,7 @@ var lucu = lucu || {};
 lucu.background = {};
 
 // Handle messages send to the background page
-lucu.background.onMessage = function (message) {
+lucu.background.onMessage = function(message) {
   'use strict';
 
   switch(message.type) {

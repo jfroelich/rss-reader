@@ -19,6 +19,7 @@
       "/src/badge.js",
       "/src/background.js",
       "/src/database.js",
+      "/src/images.js",
       "/src/install.js",
       "/src/notifications.js",
       "/src/rewrite.js",

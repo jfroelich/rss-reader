@@ -8,7 +8,7 @@ var lucu = lucu || {};
  * TODO: split this up into individual functions in the lucu
  * namespace so that it is easier to read and manage
  * TODO: use lucu.poll namespace
- *
+ * TODO: support customizable poll timing per feed
  * TODO: backoff if last poll did not find updated content?
  * TODO: backoff should be per feed
  * TODO: de-activation of feeds with 404s
@@ -18,9 +18,9 @@ var lucu = lucu || {};
 
 // Polls feeds
 // TODO: is requiring navigator as a parameter here stupid?
-lucu.pollFeeds = function(navigator) {
+lucu.pollFeeds = function() {
 
-  if(lucu.isOffline(navigator)) {
+  if(lucu.isOffline()) {
   	return;
   }
 
@@ -34,11 +34,9 @@ lucu.pollFeeds = function(navigator) {
   async.waterfall(waterfall, lucu.pollWaterfallComplete);
 };
 
-lucu.isOffline = function(navigator) {
-  if(navigator && navigator.hasOwnProperty('onLine') &&
-    !navigator.onLine) {
-    return true;
-  }
+lucu.isOffline = function() {
+  var nav = window && window.navigator;
+  return nav && nav.hasOwnProperty('onLine') && !nav.onLine;
 };
 
 lucu.pollWaterfallComplete = function(error, feeds) {
@@ -133,11 +131,10 @@ lucu.pollUpdateAllFeeds = function(db, feeds, callback) {
   });
 };
 
-// TODO: support customizable poll timing per feed
 
 lucu.pollOnAlarm = function(alarm) {
   if(alarm.name == 'poll') {
-    lucu.pollFeeds(window.navigator);
+    lucu.pollFeeds();
   }
 };
 

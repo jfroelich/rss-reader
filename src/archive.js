@@ -3,7 +3,6 @@
 // that can be found in the LICENSE file
 
 // TODO: use async lib
-// TODO: use namespace
 // TODO: break apart into smaller functions
 // TODO: this feature needs more thought put into it, this is 
 // currently in a temporary semi-working state
@@ -96,9 +95,5 @@ lucu.archive.onAlarm = function(alarm) {
 };
 
 lucu.archive.SCHEDULE = {periodInMinutes: 24 * 60};
-
 chrome.alarms.onAlarm.addListener(lucu.archive.onAlarm);
-
 chrome.alarms.create('archive', lucu.archive.SCHEDULE);
-
-
