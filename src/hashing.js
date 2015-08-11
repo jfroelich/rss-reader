@@ -19,6 +19,6 @@ lucu.hashing.generate = function(seed) {
   return chars.reduce(lucu.hashing.update, 0);
 };
 
-lucu.hasing.update = function(sum, string) {
+lucu.hashing.update = function(sum, string) {
   return (sum * 31 + string.charCodeAt(0)) % 4294967296;
 };
