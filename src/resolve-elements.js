@@ -34,7 +34,11 @@ lucu.resolver.RESOLVABLES_QUERY = 'a, area, audio, blockquote, embed, ' +
  * NOTE: not supporting applet
  * NOTE: iframe.srcdoc?
  * NOTE: ignores param values with URIs
- * NOTE: stripping the base tag could lead to invalid urls
+ * NOTE: could stripping the base tag could lead to invalid urls??? Should
+ * the base tag, if present, be considered when resolving elements?
+ * Also note that there could be multiple base tags, the logic for handling
+ * it properly is all laid out in some RFC standard somewhere, and is probably
+ * present in Webkit source.
  */
 lucu.resolver.resolveDocument = function(document, baseURL) {
   'use strict';
@@ -52,6 +56,11 @@ lucu.resolver.resolveDocument = function(document, baseURL) {
 // Helper for resolveDocument
 // Depends on the URI lib. Modifies the element in place.
 lucu.resolver.resolveElement = function(element) {
+
+  // NOTE: this only modifies the first attribute found. if 
+  // an element has multiple URL attributes, only the first
+  // is changed.
+
   var name = element.localName;
   var attribute = lucu.resolver.ATTRIBUTES.get(name);
 
