@@ -30,7 +30,7 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
   if(entry.title) storable.title = entry.title;
   if(entry.pubdate) {
     var date = new Date(entry.pubdate);
-    if(date && date.toString() == '[object Date]' && isFinite(date)) {
+    if(lucu.isValidDate(date)) {
       storable.pubdate = date.getTime();
     }
   }
@@ -49,11 +49,13 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
   };
 };
 
+lucu.isValidDate = function(date) {
+  return date && date.toString() === '[object Date]' && isFinite(date);
+};
+
 lucu.hashEntry = function(entry) {
   // TODO: if we require link, then maybe there is no need to 
   // try and use title or content
-  // TODO: if there is no link,title,content, then why not just return
-  // early? why create an empty string and reduce it?
-  var seed = entry.link || entry.title || entry.content || '';
+  var seed = entry.link || entry.title || entry.content;
   return lucu.hashing.generate(seed);
 };
