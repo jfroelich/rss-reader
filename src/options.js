@@ -445,7 +445,7 @@ function startSubscription(url) {
   updateSubscriptionMonitor('Subscribing...');
 
   // TODO: react to onerror/onblocked
-  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
   request.onerror = console.error;
   request.onblocked = console.error;
   request.onsuccess = function (event) {
@@ -481,7 +481,7 @@ function startSubscription(url) {
       remoteFeed.url = url;
       remoteFeed.fetched = Date.now();
       // TODO: react to db onerror/onblocked
-      var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+      var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
       request.onerror = console.error;
       request.onblocked = console.error;
       request.onsuccess = function (event) {
@@ -523,7 +523,7 @@ function populateFeedDetailsSection(feedId) {
 
   // TODO: react to onerror/onblocked
 
-  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
   request.onerror = console.error;
   request.onblocked = console.error;
   request.onsuccess = function (event) {
@@ -681,7 +681,7 @@ function onDiscoverFeedsError(errorMessage) {
 function onUnsubscribeButtonClicked(event) {
   var feedId = parseInt(event.target.value);
   var sectionMenu = document.getElementById('mi-subscriptions');
-  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
   request.onerror = request.onblocked = function(event) {
     console.log('Failed to unsubscribe from feed');
     console.error(event);
@@ -926,7 +926,7 @@ function initSubscriptionsSection() {
   var feedCount = 0;
 
   // todo: react to onerror/onblocked
-  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
   request.onerror = console.error;
   request.onblocked = console.error;
   request.onsuccess = function (event) {

@@ -219,7 +219,7 @@ lucu.opml.mergeOutlines = function(outlineArrays, callback) {
 };
 
 lucu.opml.importConnect = function(outlines, callback) {
-  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
   // NOTE: causes event object to be passed as error argument
   request.onerror = callback;
   request.onblocked = callback;
@@ -258,7 +258,7 @@ lucu.opml.exportBlob = function(onComplete) {
 // TODO: this can probably be a shared function in database.js
 lucu.opml.exportConnect = function(callback) {
   'use strict';
-  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
   request.onerror = callback;
   request.onblocked = callback;
   request.onsuccess = function(event) {

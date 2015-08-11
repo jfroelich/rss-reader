@@ -2,14 +2,16 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: use 'db' namespace
-
 var lucu = lucu || {};
+lucu.db = {};
 
-lucu.DB_NAME = 'reader';
-lucu.DB_VERSION = 10;
+// TODO: use 'lucubrate' as the database name
+// TODO: maybe use entry.link as primary key for entries
 
-lucu.upgradeDatabase = function(event) {
+lucu.db.NAME = 'reader';
+lucu.db.VERSION = 10;
+
+lucu.db.upgrade = function(event) {
   'use strict';
   // TODO: ideally we would never store both schemeless and url, we would just
   // store scheme and schemeless props as parts of a url property.

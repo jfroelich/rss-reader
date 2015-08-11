@@ -22,7 +22,7 @@ var lucu = lucu || {};
 lucu.augmentEntries = function(feed, callback) {
   'use strict';
 
-  var conn = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  var conn = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
   conn.onerror = function () {
     console.warn(error);
     callback(feed);

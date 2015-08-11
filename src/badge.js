@@ -8,14 +8,14 @@ lucu.badge = {};
 
 // Sets the badge text to a count of unread entries
 lucu.badge.update = function() {
-  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
   request.onerror = console.error;
   request.onblocked = console.error;
 
   // Extra bind here since this is temporarily also used to 
   // trigger database creation on install
   // TODO: remove this once we clean up the install code
-  request.onupgradeneeded = lucu.upgradeDatabase;
+  request.onupgradeneeded = lucu.db.upgrade;
   
   request.onsuccess = function (event) {
     var db = event.target.result;

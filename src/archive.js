@@ -18,7 +18,7 @@ lucu.archive = {};
 lucu.archive.archiveFeeds = function() {
   'use strict';
 
-  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
   request.onerror = console.error;
   request.onblocked = console.error;
   request.onsuccess = function (event) {

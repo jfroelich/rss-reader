@@ -64,7 +64,7 @@ lucu.pollWaterfallComplete = function(error, feeds) {
 // TODO: this should probably be a common function 
 // from database.js
 lucu.pollOpenIndexedDB = function(callback) {
-  var request = indexedDB.open(lucu.DB_NAME, lucu.DB_VERSION);
+  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
   request.onerror = callback;
   request.onblocked = callback;
   request.onsuccess = function(event) {
