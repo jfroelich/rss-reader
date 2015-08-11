@@ -50,12 +50,15 @@ lucu.resolver.resolveDocument = function(document, baseURL) {
 
   // Resolve all resolvable elements
   var elements = document.querySelectorAll(lucu.resolver.RESOLVABLES_QUERY);
-  forEach.call(elements, lucu.resolver.resolveElement);
+
+  var resolveElement = lucu.resolver.resolveElement.bind(null, baseURL);
+
+  forEach.call(elements, resolveElement);
 };
 
 // Helper for resolveDocument
 // Depends on the URI lib. Modifies the element in place.
-lucu.resolver.resolveElement = function(element) {
+lucu.resolver.resolveElement = function(baseURL, element) {
 
   // NOTE: this only modifies the first attribute found. if 
   // an element has multiple URL attributes, only the first
@@ -63,7 +66,6 @@ lucu.resolver.resolveElement = function(element) {
 
   var name = element.localName;
   var attribute = lucu.resolver.ATTRIBUTES.get(name);
-
   var url = (element.getAttribute(attribute) || '').trim();
   
   if(!url) {
