@@ -283,7 +283,7 @@ function appendSlide(entry, isFirst) {
   lucu.sanitize.unwrapNoframes(doc);
   // lucu.sanitize.removeInvisibleElements(doc);
   lucu.sanitize.canonicalizeSpaces(doc);
-  lucu.sanitize.trimNodes(doc);
+  lucu.trim.trimNodes(doc);
   lucu.sanitize.removeEmptyNodes(doc);
   lucu.sanitize.removeEmptyElements(doc);
   var results = calamine.transform(doc, {
@@ -293,7 +293,7 @@ function appendSlide(entry, isFirst) {
   lucu.sanitize.removeJavascriptAnchors(results);
   lucu.sanitize.unwrapDescendants(results);
   lucu.sanitize.removeDescendantAttributes(lucu.sanitize.DEFAULT_ALLOWED_ATTRIBUTES , results);
-  lucu.sanitize.trimElement(results);
+  lucu.trim.trimElement(results);
   lucu.sanitize.removeEmptyElements(doc);
   lucu.sanitize.transformSingleItemLists(results);
 
