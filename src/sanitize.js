@@ -216,9 +216,6 @@ lucu.sanitize.BLACKLISTED_ELEMENTS = [
   'option'
 ];
 
-
-
-
 /**
  * Removes all elements in the black list
  */
@@ -269,9 +266,6 @@ lucu.sanitize.removeComments = function(document) {
     node.remove();
   }
 };
-
-
-
 
 /**
  * Removes script anchors
@@ -413,8 +407,6 @@ lucu.sanitize.unwrapNoframes = function(document) {
   var noframes = document.body.getElementsByTagName('noframes');
   forEach.call(noframes, unwrap);
 };
-
-
 
 /**
  * A function that should be a part of the DOM itself but unfortunately is not.
