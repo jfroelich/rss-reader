@@ -20,6 +20,7 @@
       "/src/badge.js",
       "/src/background.js",
       "/src/database.js",
+      "/src/date.js",
       "/src/fetch-feed.js",
       "/src/hashing.js",
       "/src/images.js",

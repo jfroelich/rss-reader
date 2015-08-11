@@ -19,7 +19,7 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
   if(feed.title) {
   	storable.feedTitle = feed.title;
   }
-  
+
   storable.feed = feed.id;
 
   // TODO: just use entry.link as key, maybe there is no need
@@ -40,7 +40,7 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
   if(entry.title) storable.title = entry.title;
   if(entry.pubdate) {
     var date = new Date(entry.pubdate);
-    if(lucu.isValidDate(date)) {
+    if(lucu.date.isValid(date)) {
       storable.pubdate = date.getTime();
     }
   }
@@ -66,9 +66,4 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
   request.onerror = function() {
     callback();
   };
-};
-
-// TODO: move to separate file, decouple
-lucu.isValidDate = function(date) {
-  return date && date.toString() === '[object Date]' && isFinite(date);
 };
