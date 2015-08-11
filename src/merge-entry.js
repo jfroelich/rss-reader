@@ -12,8 +12,14 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
   'use strict';
 
   var storable = {};
-  if(feed.link) storable.feedLink = feed.link;
-  if(feed.title) storable.feedTitle = feed.title;
+  if(feed.link) {
+  	storable.feedLink = feed.link;
+  }
+
+  if(feed.title) {
+  	storable.feedTitle = feed.title;
+  }
+  
   storable.feed = feed.id;
 
   // TODO: just use entry.link as key, maybe there is no need
@@ -24,7 +30,8 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
   storable.hash = lucu.hashing.generate(seed);
 
   if(!storable.hash) {
-    return callback();
+  	callback();
+    return;
   }
 
   storable.unread = 1;
@@ -37,9 +44,15 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
       storable.pubdate = date.getTime();
     }
   }
-  if(!storable.pubdate && feed.date) storable.pubdate = feed.date;
+
+  if(!storable.pubdate && feed.date) {
+  	storable.pubdate = feed.date;
+  }
+
   storable.created = Date.now();
-  if(entry.content) storable.content = entry.content;
+  if(entry.content) {
+  	storable.content = entry.content;
+  }
 
   var tx = db.transaction('entry', 'readwrite');
   var store = tx.objectStore('entry');
@@ -55,6 +68,7 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
   };
 };
 
+// TODO: move to separate file, decouple
 lucu.isValidDate = function(date) {
   return date && date.toString() === '[object Date]' && isFinite(date);
 };
