@@ -12,21 +12,21 @@ var lucu = lucu || {};
 lucu.sanitizeFeed = function(inputFeed) {
   'use strict';
 
-  var ss = lucu.sanitizeFeedString;
+  var sfs = lucu.sanitizeFeedString;
 
   var outputFeed = {};
 
-  var title = ss(inputFeed.title);
+  var title = sfs(inputFeed.title);
   if(title) {
   	outputFeed.title = title;
   }
 
-  var description = ss(inputFeed.description);
+  var description = sfs(inputFeed.description);
   if(description) {
   	outputFeed.description = description;
   }
   
-  var link = ss(inputFeed.link);
+  var link = sfs(inputFeed.link);
   if(link) {
   	outputFeed.link = link;
   }

@@ -4,7 +4,9 @@
 
 var lucu = lucu || {};
 
-lucu.ELEMENT_URL_ATTRIBUTES = new Map([
+lucu.resolver = {};
+
+lucu.resolver.ATTRIBUTES = new Map([
   ['a', 'href'],
   ['area', 'href'],
   ['audio', 'src'],
@@ -21,6 +23,9 @@ lucu.ELEMENT_URL_ATTRIBUTES = new Map([
   ['video', 'src']
 ]);
 
+// TODO: build this from the map, this is an extremely obvious DRY violation
+lucu.resolver.RESOLVABLES_QUERY = 'a, area, audio, blockquote, embed, ' + 
+  'iframe, form, img, link, object, script, source, track, video';
 
 /**
  * TODO: support img srcset
@@ -31,33 +36,58 @@ lucu.ELEMENT_URL_ATTRIBUTES = new Map([
  * NOTE: ignores param values with URIs
  * NOTE: stripping the base tag could lead to invalid urls
  */
-lucu.resolveElements = function(document, baseURL) {
+lucu.resolver.resolveDocument = function(document, baseURL) {
   'use strict';
   var forEach = Array.prototype.forEach;
 
-  var baseElements = document.getElementsByTagName('base');
-  forEach.call(baseElements, function(base) {
-    if(!base) return;
-    base.remove();
-  });
+  // Remove all <BASE> elements
+  var bases = document.getElementsByTagName('base');
+  forEach.call(bases, lucu.resolver.removeElement);
 
-  var attributes = lucu.ELEMENT_URL_ATTRIBUTES;
+  // Resolve all resolvable elements
+  var elements = document.querySelectorAll(lucu.resolver.RESOLVABLES_QUERY);
+  forEach.call(elements, lucu.resolver.resolveElement);
+};
 
-  // TODO: build this from the map, do not specify redundantly
-  var resolvables = document.querySelectorAll(
-    'a, area, audio, blockquote, embed, iframe, form, img, link, '+
-    'object, script, source, track, video');
-  forEach.call(resolvables, function resolve(element) {
-    var attribute = attributes.get(element.localName);
-    var url = (element.getAttribute(attribute) || '').trim();
-    if(!url) return;
-    try {
-      var uri = new URI(url);
-      if(uri.protocol()) return;
-      var resolved = uri.absoluteTo(baseURL).toString();
-      element.setAttribute(attribute, resolved);
-    } catch(e) {
-      console.debug('%s %s', e, url);
+// Helper for resolveDocument
+// Depends on the URI lib. Modifies the element in place.
+lucu.resolver.resolveElement = function(element) {
+  var name = element.localName;
+  var attribute = lucu.resolver.ATTRIBUTES.get(name);
+
+  var url = (element.getAttribute(attribute) || '').trim();
+  
+  if(!url) {
+    return;
+  }
+
+  try {
+    var uri = new URI(url);
+    
+    // Don't try and resolve absolute URLs
+    if(uri.protocol()) {
+      return;
     }
-  });
+
+    var resolved = uri.absoluteTo(baseURL).toString();
+
+    // Overwrite the attribute's value
+    element.setAttribute(attribute, resolved);
+
+  } catch(e) {
+    console.debug('resolveElement error: %s %s', e, url);
+  }
+};
+
+lucu.resolver.removeElement = function(element) {
+  // Check if element non-null as iteration during
+  // removal can sometimes cause an issue? Although
+  // thight might be overly cautious
+
+  // TODO: this is really a generic DOM function that 
+  // probably belongs in some type of general dom 
+  // utilities lib
+  if(element) {
+    element.remove();
+  }
 };

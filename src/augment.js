@@ -103,7 +103,7 @@ lucu.updateEntryContent = function(entry, callback) {
       return callback();
     }
 
-    lucu.resolveElements(document, this.responseURL);
+    lucu.resolver.resolveDocument(document, this.responseURL);
 
     var images = document.body.getElementsByTagName('img');
     async.forEach(images, lucu.images.fetchDimensions, function () {
