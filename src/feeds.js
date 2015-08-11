@@ -194,21 +194,6 @@ lucu.updateFeed = function(db, localFeed, remoteFeed, oncomplete) {
   };
 };
 
-lucu.selectAllFeeds = function(db, callback) {
-  var feeds = [];
-  var store = db.transaction('feed').objectStore('feed');
-  store.openCursor().onsuccess = function(event) {
-    var cursor = event.target.result;
-    if(cursor) {
-      feeds.push(cursor.value);
-      cursor.continue();
-    } else {
-      callback(null, db, feeds);
-    }
-  };
-};
-
-
 /**
  * Iterates over a feed's entries and replaces the html content property
  * of each entry with its full html according to its link. Forwards the
@@ -319,4 +304,3 @@ lucu.updateEntryContent = function(entry, callback) {
   request.responseType = 'document';
   request.send();
 };
-

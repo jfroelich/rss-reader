@@ -27,7 +27,7 @@ lucu.pollFeeds = function() {
   var waterfall = [
     lucu.canPollIfIdle,
     lucu.pollOpenIndexedDB,
-    lucu.selectAllFeeds,
+    lucu.pollSelectAllFeeds,
     lucu.pollUpdateAllFeeds
   ];
 
@@ -96,6 +96,21 @@ lucu.canPollIfIdle = function(callback) {
 	  callback('poll error, idle state is ' + idleState);
 	}
   }
+};
+
+
+lucu.pollSelectAllFeeds = function(db, callback) {
+  var feeds = [];
+  var store = db.transaction('feed').objectStore('feed');
+  store.openCursor().onsuccess = function(event) {
+    var cursor = event.target.result;
+    if(cursor) {
+      feeds.push(cursor.value);
+      cursor.continue();
+    } else {
+      callback(null, db, feeds);
+    }
+  };
 };
 
 // TODO: break this apart into separate functions more
