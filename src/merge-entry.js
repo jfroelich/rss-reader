@@ -16,11 +16,9 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
   if(feed.title) storable.feedTitle = feed.title;
   storable.feed = feed.id;
 
-  // TODO: just use entry.link as key
-  var seed = entry.link || entry.title || entry.content || '';
-  storable.hash = seed.split('').reduce(function (sum, string) {
-    return (sum * 31 + string.charCodeAt(0)) % 4294967296;
-  }, 0);
+  // TODO: just use entry.link as key, maybe there is no need
+  // to create a hash property?
+  storable.hash = lucu.hashEntry(entry);
 
   if(!storable.hash) {
     return callback();
@@ -49,4 +47,13 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
   request.onerror = function() {
     callback();
   };
+};
+
+lucu.hashEntry = function(entry) {
+  // TODO: if we require link, then maybe there is no need to 
+  // try and use title or content
+  // TODO: if there is no link,title,content, then why not just return
+  // early? why create an empty string and reduce it?
+  var seed = entry.link || entry.title || entry.content || '';
+  return lucu.hashing.generate(seed);
 };
