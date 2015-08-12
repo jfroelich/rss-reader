@@ -4,6 +4,8 @@
 
 var lucu = lucu || {};
 
+lucu.poll = {};
+
 /*
  * TODO: split this up into individual functions in the lucu
  * namespace so that it is easier to read and manage
@@ -18,28 +20,28 @@ var lucu = lucu || {};
 
 // Polls feeds
 // TODO: is requiring navigator as a parameter here stupid?
-lucu.pollFeeds = function() {
+lucu.poll.start = function() {
 
-  if(lucu.isOffline()) {
+  if(lucu.poll.isOffline()) {
   	return;
   }
 
   var waterfall = [
-    lucu.canPollIfIdle,
-    lucu.pollOpenIndexedDB,
-    lucu.pollSelectAllFeeds,
-    lucu.pollUpdateAllFeeds
+    lucu.poll.checkIdle,
+    lucu.poll.connect,
+    lucu.poll.selectFeeds,
+    lucu.poll.updateFeeds
   ];
 
-  async.waterfall(waterfall, lucu.pollWaterfallComplete);
+  async.waterfall(waterfall, lucu.poll.onComplete);
 };
 
-lucu.isOffline = function() {
+lucu.poll.isOffline = function() {
   var nav = window && window.navigator;
   return nav && nav.hasOwnProperty('onLine') && !nav.onLine;
 };
 
-lucu.pollWaterfallComplete = function(error, feeds) {
+lucu.poll.onComplete = function(error, feeds) {
   console.debug('Polling completed');
 
   if(error) {
@@ -49,21 +51,21 @@ lucu.pollWaterfallComplete = function(error, feeds) {
 
   localStorage.LAST_POLL_DATE_MS = String(Date.now());
 
-  var msg = {
+  var message = {
     type: 'pollCompleted',
     feedsProcessed: feeds ? feeds.length : 0,
     entriesAdded: 0,
     entriesProcessed: 0
   };
 
-  chrome.runtime.sendMessage(msg);
+  chrome.runtime.sendMessage(message);
 };
 
 // Simple helper to grab a db connection that is designed
 // to work with async.js
 // TODO: this should probably be a common function 
 // from database.js
-lucu.pollOpenIndexedDB = function(callback) {
+lucu.poll.connect = function(callback) {
   var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
   request.onerror = callback;
   request.onblocked = callback;
@@ -73,9 +75,9 @@ lucu.pollOpenIndexedDB = function(callback) {
 };
 
 // Idle if greater than or equal to this many seconds
-lucu.POLL_INACTIVITY_INTERVAL = 60 * 5;
+lucu.poll.INACTIVITY_INTERVAL = 60 * 5;
 
-lucu.canPollIfIdle = function(callback) {
+lucu.poll.checkIdle = function(callback) {
   chrome.permissions.contains({permissions: ['idle']}, function(permitted) {
   	// If we do not have permission to check idle status then
   	// just continue with polling
@@ -83,23 +85,22 @@ lucu.canPollIfIdle = function(callback) {
   	  return callback();
   	}
 
-  	chrome.idle.queryState(lucu.POLL_INACTIVITY_INTERVAL, checkIdle);
+  	chrome.idle.queryState(lucu.poll.INACTIVITY_INTERVAL, checkIdle);
   });
 
   function checkIdle(idleState) {
-	if(idleState == 'locked' || idleState == 'idle') {
-	  // Continue with polling by not passing an error
-	  callback();
-	} else {
-	  // Pass back an error parameter that will cause the waterfall
-	  // to jump to end
-	  callback('poll error, idle state is ' + idleState);
-	}
+  	if(idleState == 'locked' || idleState == 'idle') {
+  	  // Continue with polling by not passing an error
+  	  callback();
+  	} else {
+  	  // Pass back an error parameter that will cause the waterfall
+  	  // to jump to end
+  	  callback('poll error, idle state is ' + idleState);
+  	}
   }
 };
 
-
-lucu.pollSelectAllFeeds = function(db, callback) {
+lucu.poll.selectFeeds = function(db, callback) {
   var feeds = [];
   var store = db.transaction('feed').objectStore('feed');
   store.openCursor().onsuccess = function(event) {
@@ -114,7 +115,7 @@ lucu.pollSelectAllFeeds = function(db, callback) {
 };
 
 // TODO: break this apart into separate functions more
-lucu.pollUpdateAllFeeds = function(db, feeds, callback) {
+lucu.poll.updateFeeds = function(db, feeds, callback) {
   async.forEach(feeds, function(feed, callback) {
     lucu.fetchFeed(feed.url, function(remoteFeed) {
 
@@ -146,13 +147,12 @@ lucu.pollUpdateAllFeeds = function(db, feeds, callback) {
   });
 };
 
-
-lucu.pollOnAlarm = function(alarm) {
+lucu.poll.onAlarm = function(alarm) {
   if(alarm.name == 'poll') {
-    lucu.pollFeeds();
+    lucu.poll.start();
   }
 };
 
-lucu.POLL_SCHEDULE = {periodInMinutes: 20};
-chrome.alarms.onAlarm.addListener(lucu.pollOnAlarm);
-chrome.alarms.create('poll', lucu.POLL_SCHEDULE);
+lucu.poll.SCHEDULE = {periodInMinutes: 20};
+chrome.alarms.onAlarm.addListener(lucu.poll.onAlarm);
+chrome.alarms.create('poll', lucu.poll.SCHEDULE);
