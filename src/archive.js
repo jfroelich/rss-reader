@@ -2,98 +2,148 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: use async lib
-// TODO: break apart into smaller functions
-// TODO: this feature needs more thought put into it, this is 
-// currently in a temporary semi-working state
-
 var lucu = lucu || {};
 
+// Archive entries lib. Archiving involves periodically compressing
+// old entries to reduce storage used.
+// TODO: this feature needs more thought put into it, this is 
+// currently in a temporary semi-working state
+// TODO: test, this has not been tested
 lucu.archive = {};
 
-/**
- * Iterate over entries in storage and archive certain entries
- * if conditions are met.
- */
-lucu.archive.archiveFeeds = function() {
-  'use strict';
+lucu.archive.start = function() {
+  var waterfall = [
+    lucu.archive.connect,
+    lucu.archive.selectEntries
+  ];
 
+  async.waterfall(waterfall, lucu.archive.onComplete);
+};
+
+// TODO: this should be a call to a database function
+lucu.archive.connect = function(callback) {
   var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
-  request.onerror = console.error;
-  request.onblocked = console.error;
-  request.onsuccess = function (event) {
-    var db = event.target.result;
-    var transaction = db.transaction('entry','readwrite');
-    var store = transaction.objectStore('entry');
-    var expiresMs = 30 * 24 * 60 * 60 * 1000;
-    var now = Date.now();
-    // We want to instead select only not-archived articles.
-    // Otherwise this just repeats itself on the first X entries.
-    // So we  pick an index that exists for articles where once
-    // archived the article would no longer appear in the index. The
-    // index on the feed id for each entry works nicely for this
-    // purpose.
-    var index = store.index('feed');
-    var request = index.openCursor();
-    var processed = 0, limit = 1000;
-    request.onsuccess = function() {
-      var cursor = this.result;
-      if(!cursor) return;
-      if(processed >= limit) {
-        return;
-      }
-
-      var entry = cursor.value;
-      var created = entry.created;
-      if(!created) {
-        console.debug('Unknown date created for entry %s, unable to archive',
-          JSON.stringify(entry));
-        processed++;
-        return cursor.continue();
-      }
-
-      // If this happens something is wrong
-      if(entry.archiveDate) {
-        console.warn('Entry already archived, not re-archiving %s', JSON.stringify(entry));
-        processed++;
-        return cursor.continue();
-      }
-
-      var age = now - created;
-      var shouldArchive = age > expiresMs;
-      // NOTE: in an old version this used to avoid archiving unread
-      // articles. For now this is ignored.
-      // NOTE: this used to keep feed id so that unsubscribe
-      // would delete archived articles as well
-      if(shouldArchive) {
-        delete entry.content;
-        delete entry.feed;
-        delete entry.feedLink;
-        delete entry.feedTitle;
-        delete entry.pubdate;
-        delete entry.readDate;
-        delete entry.title;
-        entry.archiveDate = now;
-
-        cursor.update(entry);
-      }
-
-      processed++;
-      cursor.continue();
-    };
-
-    transaction.oncomplete = function () {
-      console.debug('Archived %s entries', processed);
-    };
+  request.onerror = callback;
+  request.onblocked = callback;
+  request.onsuccess = function(event) {
+    callback(null, event.target.result);
   };
 };
 
+lucu.archive.selectEntries = function(db, callback) {
+
+  // We want to select only not-archived articles.
+  // Otherwise this just repeats itself on the first X entries.
+  // So we pick an index that exists for articles where once
+  // archived the article would no longer appear in the index. The
+  // index on the feed id for each entry works nicely for this
+  // purpose.
+
+  var tx = db.transaction('entry', 'readwrite');
+  var store = tx.objectStore('entry');
+  var index = store.index('feed');
+  var request = index.openCursor();
+
+  // Journal is an object shared across function calls, like a 
+  // memoized object, so that each iteration over an entry and 
+  // update its properties. Basically we use an object wrapping
+  // a primitive so multiple functions can update the same
+  // primitive by ref instead of by val, because it doesn't work
+  // by val because prim vals are copied into function calls and
+  // become independent
+  var journal = {
+    processed: 0
+  };
+
+  request.onsuccess = lucu.archive.handleEntry.bind(request, journal);
+  tx.oncomplete = callback.bind(null, journal);
+};
+
+lucu.archive.ENTRY_LIMIT = 1000;
+
+lucu.archive.handleEntry = function(journal, event) {
+  var cursor = event.target.result;
+  
+  // This eventually causes the transaction to complete
+  if(!cursor) {
+    return;
+  }
+
+  var entry = cursor.value;
+  var created = entry.created;
+
+  // Allow for partially corrupted storage
+  if(!created) {
+    console.debug('Unknown date created for entry %s', JSON.stringify(entry));
+    journal.processed++;
+    cursor.continue();
+    return;
+  }
+
+  if(entry.archiveDate) {
+    console.warn('Not re-archiving entry %s', JSON.stringify(entry));
+    journal.processed++;
+    cursor.continue();
+    return;
+  }
+
+  // TODO: use the same date across each call?
+  var now = Date.now();
+  var age = now - created;
+
+  // TODO: use an external constant?
+  var expiresMs = 30 * 24 * 60 * 60 * 1000;
+  var shouldArchive = age > expiresMs;
+
+  // NOTE: in an old version this used to avoid archiving unread
+  // articles. For now this is ignored (??)
+  
+  // NOTE: this used to keep feed id so that unsubscribe
+  // would delete archived articles as well. Now this keeps those
+  // articles
+  // This can lead to orphans though, so this probably needs more
+  // work. Maybe we store a new property like "oldFeedId" or something
+  // and change unsubscribe to delete entries matching feed id or 
+  // old feed id
+
+  // TODO: regarding consistency, what happens when we archive an
+  // article that is currently loaded in view, if that is 
+  // possible? This requires some more thought. Are there even any
+  // negative side effects? Does the mark-as-read feature still work?
+
+  if(shouldArchive) {
+    delete entry.content;
+    delete entry.feed;
+    delete entry.feedLink;
+    delete entry.feedTitle;
+    delete entry.pubdate;
+    delete entry.readDate;
+    delete entry.title;
+    entry.archiveDate = now;
+    cursor.update(entry);
+  }
+
+  journal.processed++;
+  
+  if(journal.processed > lucu.archive.ENTRY_LIMIT) {
+    return;
+  }
+
+  cursor.continue();
+};
+
+lucu.archive.onComplete = function(journal) {
+  console.debug('Archived %s entries', journal.processed);
+};
+
+lucu.archive.ALARM_NAME = 'archive';
+
 lucu.archive.onAlarm = function(alarm) {
-  if(alarm.name == 'archive') {
-    lucu.archive.archiveFeeds();
+  if(alarm.name == lucu.archive.ALARM_NAME) {
+    lucu.archive.start();
   }
 };
 
-lucu.archive.SCHEDULE = {periodInMinutes: 24 * 60};
+lucu.archive.ALARM_SCHEDULE = {periodInMinutes: 24 * 60};
 chrome.alarms.onAlarm.addListener(lucu.archive.onAlarm);
-chrome.alarms.create('archive', lucu.archive.SCHEDULE);
+chrome.alarms.create(lucu.archive.ALARM_NAME, lucu.archive.ALARM_SCHEDULE);
