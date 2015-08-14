@@ -36,17 +36,24 @@ lucu.images.fetchDimensions = function(image, callback) {
   var document = window.document;
   var proxy = document.createElement('img');
 
-  proxy.onerror = function(event) {
-    console.debug('Failed to fetch %s %o', src, proxy);
-    callback();
-  };
+  proxy.onerror = lucu.images.fetchDimensionsOnError.bind(
+    proxy, src, callback);
 
-  proxy.onload = function(event) {
-    image.width = proxy.width;
-    image.height = proxy.height;
-    callback();
-  };
+  proxy.onload = lucu.images.fetchDimensionsOnLoad.bind(
+    proxy, image, callback);
   proxy.src = src;
+};
+
+lucu.images.fetchDimensionsOnLoad = function(image, callback, event) {
+  var proxy = event.target;
+  image.width = proxy.width;
+  image.height = proxy.height;
+  callback();
+};
+
+lucu.images.fetchDimensionsOnError = function(src, callback, event) {
+  console.debug('Failed to fetch %s %o', src, event.target);
+  callback();  
 };
 
 lucu.images.isDataURI = function(imageSource) {
