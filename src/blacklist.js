@@ -143,6 +143,7 @@ var BLACKLIST_SELECTORS = [
   'div.articleServices', // Ha'Aretz
   'div.articleShareBottom', // Fox Sports
   'div.article-side', // The Times
+  'div.article_share', // NBC News
   'div.article_social', // Bloomberg
   'div.article-social-actions', // Windows Central
   'div.articleSponsor', // Telegraph Co Uk
@@ -895,6 +896,7 @@ var BLACKLIST_SELECTORS = [
   'ul.social-buttons', // Spoon-Tamago
   'ul.socialByline', // The Wall Street Journal (blog)
   'ul.social-icons', // Citylab
+  'ul.social-list', // NBC News
   'ul.socials', // independent.ie
   'ul.social-share-list', // TechCrunch
   'ul.social-tools', // The Washington Post
