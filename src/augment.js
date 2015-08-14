@@ -17,7 +17,6 @@ lucu.augment = {};
  * simply forwards the feed to the callback.
  */
 lucu.augment.start = function(feed, callback) {
-  console.debug('Augmenting %s entries', feed.entries.length);
   var waterfall = [
     lucu.augment.connect,
     lucu.augment.filterExisting.bind(null, feed.entries),
@@ -42,7 +41,6 @@ lucu.augment.onConnect = function(callback, event) {
 // only those entries not already in the database and then pass 
 // along this array
 lucu.augment.filterExisting = function(entries, db, callback) {
-  // console.debug('Augment - filtering %s entries', entries.length);
   var tx = db.transaction('entry');
   var findByLink = lucu.augment.findEntryByLink.bind(this, tx);
   var onComplete = lucu.augment.onFilteredExisting.bind(null, callback);
@@ -50,7 +48,6 @@ lucu.augment.filterExisting = function(entries, db, callback) {
 };
 
 lucu.augment.onFilteredExisting = function(callback, entries) {
-  console.debug('Augment, after filter there are %s entries remaining', entries.length);
   callback(null, entries);
 };
 
@@ -69,10 +66,12 @@ lucu.augment.onFindEntry = function(callback, event) {
 };
 
 lucu.augment.updateEntries = function(entries, callback) {
-  // console.debug('Augment updateEntries %s entries', entries.length);
-  async.forEach(entries, lucu.updateEntryContent, function () {
-    callback();
-  });
+  var onComplete = lucu.augment.onUpdatedEntries.bind(null, callback);
+  async.forEach(entries, lucu.augment.updateEntryContent, onComplete);
+};
+
+lucu.augment.onUpdatedEntries = function(callback) {
+  callback();
 };
 
 lucu.augment.FETCH_TIMEOUT = 20 * 1000;
@@ -81,37 +80,59 @@ lucu.augment.updateEntryContent = function(entry, callback) {
   'use strict';
 
   console.debug('Augmenting entry %s', entry.link);
-
-  function onFetchError(error) {
-    console.warn(error);
-    callback();
-  }
-
   var request = new XMLHttpRequest();
   request.timeout = lucu.augment.FETCH_TIMEOUT;
-  request.ontimeout = onFetchError;
-  request.onerror = onFetchError;
-  request.onabort = onFetchError;
-  request.onload = function () {
-    var document = this.responseXML;
-    if(!document || !document.body) {
-      console.debug('Cannot augment %s', this.responseURL);
-      callback();
-      return;
-    }
-
-    lucu.resolver.resolveDocument(document, this.responseURL);
-
-    var images = document.body.getElementsByTagName('img');
-    async.forEach(images, lucu.images.fetchDimensions, function () {
-      entry.content = document.body.innerHTML ||
-        'Unable to download content for this article';
-      callback();
-    });
-  };
+  var onError = lucu.augment.onFetchDocumentError.bind(request, callback);
+  request.ontimeout = onError;
+  request.onerror = onError;
+  request.onabort = onError;
+  request.onload = lucu.augment.onFetchDocument.bind(request, entry, callback);
   request.open('GET', entry.link, true);
   request.responseType = 'document';
   request.send();  
+};
+
+lucu.augment.onFetchDocumentError = function(callback, errorEvent) {
+  console.warn(errorEvent);
+  callback();
+};
+
+lucu.augment.onFetchDocument = function(entry, callback, event) {
+  console.debug('lucu.augment.onFetchDocument %s', entry.link);
+  var request = event.target;
+  var document = request.responseXML;
+  
+  if(!document || !document.body) {
+    console.debug('Cannot augment %s', request.responseURL);
+    callback();
+    return;
+  }
+
+  // Resolve all the links in the document
+  lucu.resolver.resolveDocument(document, request.responseURL);
+
+  // Try and set the dimensions for all the images in the document
+  var images = document.body.getElementsByTagName('img');
+  var onImagesUpdated = lucu.augment.onImagesUpdated.bind(null, entry, 
+    document, callback);
+  async.forEach(images, lucu.images.fetchDimensions, onImagesUpdated);  
+};
+
+lucu.augment.onImagesUpdated = function(entry, document, callback) {
+  // We know document and document.body are defined, we checked before
+
+  console.debug('lucu.augment.onImagesUpdated %s', entry.link);
+
+  var content = document.body.innerHTML;
+  
+  if(content) {
+    // Replace the original content with the full content
+    entry.content = content;
+  } else {
+    entry.content = 'Unable to download content for this article';
+  }
+
+  callback();
 };
 
 lucu.augment.onComplete = function(feed, callback) {
