@@ -66,11 +66,14 @@ lucu.deserializeAtomEntry = function(entry) {
   var content = entry.querySelector('content');
   var nodes = content ? content.childNodes : [];
   var map = Array.prototype.map;
-  result.content = map.call(nodes, function(node) {
-    return node.nodeType == Node.ELEMENT_NODE ?
-      node.innerHTML : node.textContent;
-  }).join('').trim();
+  result.content = map.call(nodes, 
+    lucu.getAtomNodeTextContent).join('').trim();
   return result;
+};
+
+lucu.getAtomNodeTextContent = function(node) {
+  return node.nodeType == Node.ELEMENT_NODE ?
+    node.innerHTML : node.textContent;
 };
 
 lucu.deserializeRSSFeed = function(root) {
@@ -94,7 +97,8 @@ lucu.deserializeRSSFeed = function(root) {
     if(link) link = link.trim();
   }
   if(link) result.link = link;
-  var date = getText(channel, 'pubdate') || getText(channel, 'lastBuildDate') ||
+  var date = getText(channel, 'pubdate') || 
+    getText(channel, 'lastBuildDate') ||
     getText(channel, 'date');
   if(date) result.date = date;
   var entriesParent = isRDF ? root : channel;
