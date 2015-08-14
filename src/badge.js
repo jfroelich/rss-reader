@@ -16,15 +16,17 @@ lucu.badge.update = function() {
   // trigger database creation on install
   // TODO: remove this once we clean up the install code
   request.onupgradeneeded = lucu.db.upgrade;
-  
-  request.onsuccess = function (event) {
-    var db = event.target.result;
-    var tx = db.transaction('entry');
-    var store = tx.objectStore('entry');
-    var index = store.index('unread');
-    var countRequest = index.count();
-    countRequest.onsuccess = lucu.badge.setText;
-  };
+
+  request.onsuccess = lucu.badge.onConnect;
+};
+
+lucu.badge.onConnect = function(event) {
+  var db = event.target.result;
+  var tx = db.transaction('entry');
+  var store = tx.objectStore('entry');
+  var index = store.index('unread');
+  var countRequest = index.count();
+  countRequest.onsuccess = lucu.badge.setText;
 };
 
 lucu.badge.setText = function(event) {
