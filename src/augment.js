@@ -76,6 +76,27 @@ lucu.augment.onUpdatedEntries = function(callback) {
 
 lucu.augment.FETCH_TIMEOUT = 20 * 1000;
 
+/**
+ * Fetch the html at entry.link and use it to replace entry.content
+ *
+ * TODO: I'd prefer this function pass back any errors to the callback. This
+ * would require the caller that wants to not break from async.forEach early
+ * wrap the call.
+ * TODO: I'd prefer this properly pass back errors to the callback and instead
+ * require the caller to wrap this call in order to ignore such errors and
+ * continue iteration if they want to use this function within the context of
+ * async.forEach
+ * TODO: consider embedding iframe content?
+ * TODO: consider sandboxing iframes?
+ * TODO: should entry timeout be a parameter? I want it somehow to be
+ * declared external to this function
+ * TODO: html compression? like enforce boolean attributes? see kangax lib
+ * TODO: scrubbing/html-tidy (e.g. remove images without src attribute?)
+ * TODO: if pdf content type then maybe we embed iframe with src
+ * to PDF? also, we should not even be trying to fetch pdfs? is this
+ * just a feature of fetchHTML or does it belong here?
+ * TODO: do something with responseURL?
+ */
 lucu.augment.updateEntryContent = function(entry, callback) {
   'use strict';
 
@@ -103,7 +124,8 @@ lucu.augment.onFetchDocument = function(entry, callback, event) {
   var document = request.responseXML;
   
   if(!document || !document.body) {
-    console.debug('Cannot augment %s', request.responseURL);
+    console.debug('lucu.augment.onFetchDocument cannot augment %s', 
+      request.responseURL);
     callback();
     return;
   }
