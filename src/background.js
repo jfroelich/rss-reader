@@ -22,7 +22,6 @@ lucu.background.onMessage = function(message) {
 
   switch(message.type) {
     case 'entryRead':
-      lucu.background.onEntryReadMessage(message);
       break;
     case 'importFeedsCompleted':
       lucu.background.onImportFeedsCompleted(message);
@@ -37,7 +36,6 @@ lucu.background.onMessage = function(message) {
       lucu.background.onUnsubscribeMessage(message);
       break;
     case 'displaySettingsChanged':
-      lucu.background.onDisplaySettingsChangedMessage(message);
       break;
     default:
       console.warn('Unhandled message %o', message);
@@ -45,12 +43,6 @@ lucu.background.onMessage = function(message) {
   };
 };
 
-lucu.background.onEntryReadMessage = function(message) {
-  // console.debug(
-  // 'Received message that entry %s was marked as read',
-  //   message.entry.id);
-  lucu.badge.update();
-};
 
 lucu.background.onImportFeedsCompleted = function(message) {
   var notification = (message.feedsAdded || 0) + ' of ';
@@ -77,11 +69,7 @@ lucu.background.onUnsubscribeMessage = function(message) {
   lucu.badge.update();
 };
 
-lucu.background.onDisplaySettingsChangedMessage = function(message) {
-  // The background page gets notified of this message but does not
-  // care. We handle the message case here to avoid spamming
-  // the unhandled warning message in the log
-};
+
 
 // Binds the message listener on background page load
 // TODO: maybe see if there is a way for this to happen 

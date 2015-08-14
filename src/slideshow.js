@@ -104,6 +104,10 @@ function markSlideRead(slide) {
       delete entry.unread;
       entry.readDate = Date.now();
       cursor.update(entry);
+
+      // Update the badge
+      lucu.badge.update();
+
       chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
     };
   };
