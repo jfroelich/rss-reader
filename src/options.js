@@ -477,7 +477,8 @@ function startSubscription(url) {
     // when subscribing. Just inform the user that articles
     // will be fetched when next poll occurs
 
-    lucu.augmentEntries(remoteFeed, function() {
+    //lucu.augmentEntries(remoteFeed, function() {
+    lucu.augment.start(remoteFeed, function() {
       remoteFeed.url = url;
       remoteFeed.fetched = Date.now();
       // TODO: react to db onerror/onblocked

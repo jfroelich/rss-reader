@@ -4,7 +4,8 @@
 
 var lucu = lucu || {};
 
-// TODO: use augment ns
+// Feed augmentation lib
+lucu.augment = {};
 
 /**
  * Iterates over a feed's entries and replaces the html content property
@@ -14,77 +15,72 @@ var lucu = lucu || {};
  * Entries that already exist within the local database are ignored.
  * If a database error occurs then no augmentation takes place and this
  * simply forwards the feed to the callback.
- *
- * TODO: change callback args so that conn.error can be set to callback?
- * TODO: use async.waterfall
- * TODO: use a common openDatabase function?
  */
-lucu.augmentEntries = function(feed, callback) {
-  'use strict';
-
-  var conn = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
-  conn.onerror = function () {
-    console.warn(error);
-    callback(feed);
-  };
-  conn.onblocked = function () {
-    console.warn(error);
-    callback(feed);
-  };
-  conn.onsuccess = function () {
-    var db = this.result;
-    var tx = db.transaction('entry');
-    async.reject(feed.entries, lucu.findEntryByLink.bind(this, tx),
-      updateEntries);
-  };
-
-  function updateEntries(entries) {
-    async.forEach(entries, lucu.updateEntryContent, function () {
-      callback(feed);
-    });
-  }
+lucu.augment.start = function(feed, callback) {
+  console.debug('Augmenting %s entries', feed.entries.length);
+  var waterfall = [
+    lucu.augment.connect,
+    lucu.augment.filterExisting.bind(null, feed.entries),
+    lucu.augment.updateEntries
+  ];
+  async.waterfall(waterfall, 
+    lucu.augment.onComplete.bind(null, feed, callback));
 };
 
-/**
- * Searches for an entry by its link url property. Passes either the
- * matching entry object or undefined to the callback.
- * TODO: relocate this function?
- */
-lucu.findEntryByLink = function(transaction, entry, callback) {
+lucu.augment.connect = function(callback) {
+  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  request.onerror = callback;
+  request.onblocked = callback;
+  request.onsuccess = lucu.augment.onConnect.bind(request, callback);
+};
+
+lucu.augment.onConnect = function(callback, event) {
+  callback(null, event.target.result);
+};
+
+// Asynchronously iterate over the entries to produce an array of 
+// only those entries not already in the database and then pass 
+// along this array
+lucu.augment.filterExisting = function(entries, db, callback) {
+  // console.debug('Augment - filtering %s entries', entries.length);
+  var tx = db.transaction('entry');
+  var findByLink = lucu.augment.findEntryByLink.bind(this, tx);
+  var onComplete = lucu.augment.onFilteredExisting.bind(null, callback);
+  async.reject(entries, findByLink, onComplete);
+};
+
+lucu.augment.onFilteredExisting = function(callback, entries) {
+  console.debug('Augment, after filter there are %s entries remaining', entries.length);
+  callback(null, entries);
+};
+
+lucu.augment.findEntryByLink = function(transaction, entry, callback) {
   'use strict';
   var store = transaction.objectStore('entry');
   var index = store.index('link');
   var url = entry.link;
-  index.get(url).onsuccess = function() {
-    callback(this.result);
-  };
+  // console.debug('Augment - findEntryByLink %s', url);
+  var request = index.get(url);
+  request.onsuccess = lucu.augment.onFindEntry.bind(request, callback);
 };
 
-/**
- * Fetch the html at entry.link and use it to replace entry.content
- *
- * TODO: I'd prefer this function pass back any errors to the callback. This
- * would require the caller that wants to not break from async.forEach early
- * wrap the call.
- * TODO: consider embedding iframe content?
- * TODO: consider sandboxing iframes?
- * TODO: should entry timeout be a parameter? I want it somehow to be
- * declared external to this function
- * TODO: html compression? like enforce boolean attributes? see kangax lib
- * TODO: scrubbing/html-tidy (e.g. remove images without src attribute?)
- * TODO: if pdf content type then maybe we embed iframe with src
- * to PDF? also, we should not even be trying to fetch pdfs? is this
- * just a feature of fetchHTML or does it belong here?
- * TODO: do something with responseURL?
- * TODO: I'd prefer this properly pass back errors to the callback and instead
- * require the caller to wrap this call in order to ignore such errors and
- * continue iteration if they want to use this function within the context of
- * async.forEach
- */
-lucu.updateEntryContent = function(entry, callback) {
+lucu.augment.onFindEntry = function(callback, event) {
+  callback(event.target.result);
+};
+
+lucu.augment.updateEntries = function(entries, callback) {
+  // console.debug('Augment updateEntries %s entries', entries.length);
+  async.forEach(entries, lucu.updateEntryContent, function () {
+    callback();
+  });
+};
+
+lucu.augment.FETCH_TIMEOUT = 20 * 1000;
+
+lucu.augment.updateEntryContent = function(entry, callback) {
   'use strict';
 
-  var entryTimeout = 20 * 1000;
+  console.debug('Augmenting entry %s', entry.link);
 
   function onFetchError(error) {
     console.warn(error);
@@ -92,7 +88,7 @@ lucu.updateEntryContent = function(entry, callback) {
   }
 
   var request = new XMLHttpRequest();
-  request.timeout = entryTimeout;
+  request.timeout = lucu.augment.FETCH_TIMEOUT;
   request.ontimeout = onFetchError;
   request.onerror = onFetchError;
   request.onabort = onFetchError;
@@ -100,7 +96,8 @@ lucu.updateEntryContent = function(entry, callback) {
     var document = this.responseXML;
     if(!document || !document.body) {
       console.debug('Cannot augment %s', this.responseURL);
-      return callback();
+      callback();
+      return;
     }
 
     lucu.resolver.resolveDocument(document, this.responseURL);
@@ -114,5 +111,9 @@ lucu.updateEntryContent = function(entry, callback) {
   };
   request.open('GET', entry.link, true);
   request.responseType = 'document';
-  request.send();
+  request.send();  
+};
+
+lucu.augment.onComplete = function(feed, callback) {
+  callback(feed);
 };

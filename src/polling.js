@@ -157,7 +157,10 @@ lucu.poll.onFetchFeed = function(db, feed, callback, remoteFeed) {
   var onAugmentComplete = lucu.poll.onAugmentComplete.bind(null, 
     db, feed, remoteFeed, callback);
   remoteFeed.fetched = Date.now();
-  lucu.augmentEntries(remoteFeed, onAugmentComplete);
+  
+  // Commented out while testing new augment code
+  //lucu.augmentEntries(remoteFeed, onAugmentComplete);
+  lucu.augment.start(remoteFeed, onAugmentComplete);
 };
 
 lucu.poll.isDistinctFeedEntry = function(seenEntries, entry) {
