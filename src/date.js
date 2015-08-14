@@ -10,3 +10,13 @@ lucu.date = {};
 lucu.date.isValid = function(date) {
   return date && date.toString() === '[object Date]' && isFinite(date);
 };
+
+lucu.date.format = function(date, sep) {
+  if(!date)
+    return '';
+  var parts = [];
+  parts.push(date.getMonth() + 1);
+  parts.push(date.getDate());
+  parts.push(date.getFullYear());
+  return parts.join(sep || '');
+};

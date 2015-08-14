@@ -6,60 +6,85 @@
 
 var lucu = lucu || {};
 // TODO: think of a better name for this
-// TODO: use iife
 // TODO: maybe use just one function for both load/change, figure that out
 // I think I just create 3 empty rules in the css file, then modify them every
 // onload/onchange
 
+lucu.style = {};
+
+lucu.BACKGROUND_IMAGES = [
+  '/media/bgfons-paper_texture318.jpg',
+  '/media/CCXXXXXXI_by_aqueous.jpg',
+  '/media/paper-backgrounds-vintage-white.jpg',
+  '/media/pickering-texturetastic-gray.png',
+  '/media/reusage-recycled-paper-white-first.png',
+  '/media/subtle-patterns-beige-paper.png',
+  '/media/subtle-patterns-cream-paper.png',
+  '/media/subtle-patterns-exclusive-paper.png',
+  '/media/subtle-patterns-groove-paper.png',
+  '/media/subtle-patterns-handmade-paper.png',
+  '/media/subtle-patterns-paper-1.png',
+  '/media/subtle-patterns-paper-2.png',
+  '/media/subtle-patterns-paper.png',
+  '/media/subtle-patterns-rice-paper-2.png',
+  '/media/subtle-patterns-rice-paper-3.png',
+  '/media/subtle-patterns-soft-wallpaper.png',
+  '/media/subtle-patterns-white-wall.png',
+  '/media/subtle-patterns-witewall-3.png',
+  '/media/thomas-zucx-noise-lines.png'
+];
+
+lucu.FONT_FAMILIES = [
+  'ArchivoNarrow-Regular',
+  'Arial, sans-serif',
+  'Calibri',
+  'Calibri Light',
+  'Cambria',
+  'CartoGothicStd',
+  //http://jaydorsey.com/free-traffic-font/
+  //Clearly Different is released under the SIL Open Font License (OFL) 1.1.
+  //Based on http://mutcd.fhwa.dot.gov/pdfs/clearviewspacingia5.pdf
+  'Clearly Different',
+  /* By John Stracke, Released under the OFL. Downloaded from his website */
+  'Essays1743',
+  // Downloaded free font from fontpalace.com, unknown author
+  'FeltTip',
+  'Georgia',
+  'Montserrat',
+  'MS Sans Serif',
+  'News Cycle, sans-serif',
+  'Noto Sans',
+  'Open Sans Regular',
+  'PathwayGothicOne',
+  'PlayfairDisplaySC',
+  'Raleway, sans-serif',
+  // http://www.google.com/design/spec/resources/roboto-font.html
+  'Roboto Regular'
+];
 
 
-/**
- * Returns a URL string pointing to the fav icon for a url. If url is
- * undefined/empty, the locally stored default fav icon url is returned
- * instead.
- *
- * NOTE: chrome://favicons/url only works for urls present in
- * history, so it is useless.
- * TODO: this should be using a callback, to allow for more seamless
- * transition to async service call.
- * TODO: support offline. right now this returns a remote url which
- * then causes images to not load later if offline.
- * TODO: this is should be refactored to look more like a wrapper call
- * to a service from which urls are fetched.
- * TODO: does it matter whether we use http or https?
- * TODO: does fetching involve CORS issues or need to change manifest
- * or similar issues? If I ever want to stop using all_urls, the
- * URLs used here would maybe need to be explicit in manifest?
- *
- * @param url {String} the url of a webpage for which to find the
- * corresponding fav icon.
- * @return {String} the url of the favicon
- */
-lucu.getFavIconURL = function(url) {
-  return url ?
-    'http://www.google.com/s2/favicons?domain_url=' + encodeURIComponent(url) :
-    '/media/rss_icon_trans.gif';
+lucu.style.findCSSRule = function(sheet, selectorText) {
+  var filter = Array.prototype.filter;
+  // TODO: use Array.prototype.find? or reduce?
+  // if we want just the first rule then this is dumb
+  var rules = sheet ? sheet.cssRules : [];
+  var matches = filter.call(rules, 
+    lucu.style.findCSSRuleFilter.bind(null, selectorText));
+
+  if(matches.length) {
+    return matches[0];
+  }
 };
 
-lucu.style = {};
+lucu.style.findCSSRuleFilter = function(text, rule) {
+  return rule.selectorText = text;
+};
 
 lucu.style.onChange = function() {
 
   var filter = Array.prototype.filter;
 
-  function findCSSRule(sheet, selectorText) {
-    // TODO: use Array.prototype.find? or reduce?
-    // if we want just the first rule then this is dumb
-    var rules = sheet ? sheet.cssRules : [];
-    var matches = filter.call(rules, function(rule) {
-      return rule.selectorText == selectorText;
-    });
-
-    if(matches.length) {
-      return matches[0];
-    }
-  }
-
+  var findCSSRule = lucu.style.findCSSRule;
 
   // Assume a sheet is always available
   var sheet = document.styleSheets[0];

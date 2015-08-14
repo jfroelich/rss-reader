@@ -10,82 +10,7 @@
 
 var lucu = lucu || {};
 
-lucu.BACKGROUND_IMAGES = [
-  '/media/bgfons-paper_texture318.jpg',
-  '/media/CCXXXXXXI_by_aqueous.jpg',
-  '/media/paper-backgrounds-vintage-white.jpg',
-  '/media/pickering-texturetastic-gray.png',
-  '/media/reusage-recycled-paper-white-first.png',
-  '/media/subtle-patterns-beige-paper.png',
-  '/media/subtle-patterns-cream-paper.png',
-  '/media/subtle-patterns-exclusive-paper.png',
-  '/media/subtle-patterns-groove-paper.png',
-  '/media/subtle-patterns-handmade-paper.png',
-  '/media/subtle-patterns-paper-1.png',
-  '/media/subtle-patterns-paper-2.png',
-  '/media/subtle-patterns-paper.png',
-  '/media/subtle-patterns-rice-paper-2.png',
-  '/media/subtle-patterns-rice-paper-3.png',
-  '/media/subtle-patterns-soft-wallpaper.png',
-  '/media/subtle-patterns-white-wall.png',
-  '/media/subtle-patterns-witewall-3.png',
-  '/media/thomas-zucx-noise-lines.png'
-];
 
-lucu.FONT_FAMILIES = [
-  'ArchivoNarrow-Regular',
-  'Arial, sans-serif',
-  'Calibri',
-  'Calibri Light',
-  'Cambria',
-  'CartoGothicStd',
-  //http://jaydorsey.com/free-traffic-font/
-  //Clearly Different is released under the SIL Open Font License (OFL) 1.1.
-  //Based on http://mutcd.fhwa.dot.gov/pdfs/clearviewspacingia5.pdf
-  'Clearly Different',
-  /* By John Stracke, Released under the OFL. Downloaded from his website */
-  'Essays1743',
-  // Downloaded free font from fontpalace.com, unknown author
-  'FeltTip',
-  'Georgia',
-  'Montserrat',
-  'MS Sans Serif',
-  'News Cycle, sans-serif',
-  'Noto Sans',
-  'Open Sans Regular',
-
-  'PathwayGothicOne',
-
-  'PlayfairDisplaySC',
-
-  'Raleway, sans-serif',
-
-  // http://www.google.com/design/spec/resources/roboto-font.html
-  'Roboto Regular'
-];
-
-function fade(element, duration, delay, callback) {
-
-  if(element.style.display == 'none') {
-    element.style.display = '';
-    element.style.opacity = '0';
-  }
-
-  if(!element.style.opacity)
-    element.style.opacity = element.style.display == 'none' ? '0' : '1';
-
-  if(callback)
-    element.addEventListener('webkitTransitionEnd', ended);
-
-  // property duration function delay
-  element.style.transition = 'opacity '+duration+'s ease '+delay+'s';
-  element.style.opacity = element.style.opacity == '1' ? '0' : '1';
-
-  function ended(event) {
-    this.removeEventListener('webkitTransitionEnd', ended);
-    callback(element);
-  }
-}
 
 function onOptionsPageMessage(message) {
   if('displaySettingsChanged' == message.type) {
@@ -157,7 +82,7 @@ function showErrorMessage(message, fadeIn) {
     container.style.opacity = '0';
     document.body.appendChild(container);
 
-    fade(container, 1, 0);
+    lucu.effects.fade(container, 1, 0);
 
   } else {
     container.style.display = '';
@@ -210,7 +135,7 @@ function hideSubsciptionMonitor(onComplete, fadeOut) {
   }
 
   if(fadeOut) {
-    fade(container, 2, 1, removeAndComplete);
+    lucu.effects.fade(container, 2, 1, removeAndComplete);
   } else {
     removeAndComplete();
   }

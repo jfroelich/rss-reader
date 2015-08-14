@@ -2,8 +2,6 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-'use strict';
-
 var currentSlide = null;
 
 function viewDispatchMessage(message) {
@@ -22,16 +20,6 @@ function viewDispatchMessage(message) {
 }
 
 chrome.runtime.onMessage.addListener(viewDispatchMessage);
-
-function formatDate(date, sep) {
-  if(!date)
-    return '';
-  var parts = [];
-  parts.push(date.getMonth() + 1);
-  parts.push(date.getDate());
-  parts.push(date.getFullYear());
-  return parts.join(sep || '');
-}
 
 function maybeAppendMoreSlides() {
 
@@ -317,7 +305,7 @@ function appendSlide(entry, isFirst) {
   var feedTitle = document.createElement('span');
   feedTitle.setAttribute('title',entry.feedLink);
   var entryPubDate = entry.pubdate ?
-    ' on ' + formatDate(new Date(entry.pubdate)) : '';
+    ' on ' + lucu.date.format(new Date(entry.pubdate)) : '';
   feedTitle.textContent = (entry.feedTitle || 'Unknown feed') + ' by ' +
     (entry.author || 'Unknown author') + entryPubDate;
   source.appendChild(feedTitle);
@@ -391,110 +379,6 @@ function maybeShowNoUnreadArticlesSlide() {
 function hideNoUnreadArticlesSlide() {
   console.warn('not implemented');
 }
-
-var keyDownTimer;
-
-function onKeyDown(event) {
-  //event.target is body
-  //event.currentTarget is window
-  var KEY = {
-    SPACE: 32,
-    PAGE_UP: 33,
-    PAGE_DOWN: 34,
-    LEFT: 37,
-    UP: 38,
-    RIGHT: 39,
-    DOWN: 40,
-    N: 78,
-    P: 80
-  };
-
-  var key = event.keyCode;
-
-  if(key == KEY.SPACE || key == KEY.DOWN || key == KEY.PAGE_DOWN ||
-      key == KEY.UP || key == KEY.PAGE_UP) {
-    event.preventDefault();
-  }
-
-  // TODO: lot of DRY violation here. I should use a {} map
-  // to deltas and make one call to animatedScrollTo instead
-
-  if(currentSlide) {
-    if(key == KEY.DOWN) {
-      animatedScrollTo(currentSlide, 50, currentSlide.scrollTop + 200)
-      return;
-    } else if(key == KEY.PAGE_DOWN) {
-      animatedScrollTo(currentSlide, 100, currentSlide.scrollTop + 800);
-      return;
-    } else if(key == KEY.UP) {
-      animatedScrollTo(currentSlide, -50, currentSlide.scrollTop - 200);
-      return;
-    } else if(key == KEY.PAGE_UP) {
-      animatedScrollTo(currentSlide, -100, currentSlide.scrollTop - 800);
-      return;
-    }
-  }
-
-  if(key == KEY.SPACE || key == KEY.RIGHT || key == KEY.N) {
-    clearTimeout(keyDownTimer);
-    keyDownTimer = setTimeout(showNextSlide, 50);
-  } else if(key == KEY.LEFT || key == KEY.P) {
-    clearTimeout(keyDownTimer);
-    keyDownTimer = setTimeout(showPreviousSlide, 50);
-  }
-}
-
-/**
- * Periodically scroll from the current position to a new position
- *
- * NOTE: the start timer is basically to debounce calls to this function
- * whereas the interval timer is to track the interval and stop it when
- * finished
- *
- * TODO: break apart into functions? use async.*? just cleanup in general
- *
- * @param element {Element} the element to scroll
- * @param delta {int} the amount of pixels by which to scroll per increment
- * @param targetY {int} the desired vertical end position
- */
-function animatedScrollTo(element, delta, targetY) {
-  var scrollYStartTimer;
-  var scrollYIntervalTimer;
-  var amountToScroll = 0;
-  var amountScrolled = 0;
-
-  return function() {
-    clearTimeout(scrollYStartTimer);
-    clearInterval(scrollYIntervalTimer);
-    scrollYStartTimer = setTimeout(start,5);
-  }();
-
-  function start() {
-    amountToScroll = Math.abs(targetY - element.scrollTop);
-    amountScrolled = 0;
-
-    if(amountToScroll == 0) {
-      return;
-    }
-
-    scrollYIntervalTimer = setInterval(scrollToY,20);
-  }
-
-  function scrollToY() {
-    var currentY = element.scrollTop;
-    element.scrollTop += delta;
-    amountScrolled += Math.abs(delta);
-
-    // If there was no change or we scrolled too far, then we are done.
-    if(currentY == element.scrollTop || amountScrolled >= amountToScroll) {
-      clearInterval(scrollYIntervalTimer);
-    }
-  }
-}
-
-// TODO: instead of binding this to window, bind to each slide? that way
-// we don't have to use the currentSlide hack?
-window.addEventListener('keydown', onKeyDown, false);
 
 function initSlideShow(event) {
   document.removeEventListener('DOMContentLoaded', initSlideShow);
