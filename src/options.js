@@ -398,7 +398,7 @@ function showOrSkipSubscriptionPreview(url) {
   }
 
   // TODO: check if already subscribed before preview?
-  lucu.fetchFeed(url, onFetchSuccess, onerror, timeout);
+  lucu.fetch.fetchFeed(url, onFetchSuccess, onerror, timeout);
 }
 
 function hideSubscriptionPreview() {
@@ -468,7 +468,7 @@ function startSubscription(url) {
         return lucu.addFeed(db, {url: url}, onSubscriptionSuccessful, console.debug);
       }
 
-      lucu.fetchFeed(url, onFetchComplete, onFetchError, 10 * 1000);
+      lucu.fetch.fetchFeed(url, onFetchComplete, onFetchError, 10 * 1000);
     };
   };
 

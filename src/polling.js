@@ -152,7 +152,7 @@ lucu.poll.updateFeed = function(db, feed, callback) {
   var onFetch = lucu.poll.onFetchFeed.bind(null, db, feed, callback);
   var onError = lucu.poll.onFetchError.bind(null, callback);
   var timeout = 10 * 1000; // in millis
-  lucu.fetchFeed(feed.url, onFetch, onError, timeout);
+  lucu.fetch.fetchFeed(feed.url, onFetch, onError, timeout);
 };
 
 lucu.poll.onFetchError = function(callback) {
