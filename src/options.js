@@ -511,12 +511,26 @@ function startSubscription(url) {
        console.error('addedFeed is undefined in onSubscriptionSuccessful');
     }
 
+    // Notify other apps of a successful subscription???
+    // What needs this? Ok, only another section on the options 
+    // page needs this. Maybe this should be calling a callback
+    // to update that section, or this should just be updating that
+    // other section, and we should not be sending a message at all
     chrome.runtime.sendMessage({
       type: 'subscribe',
       feed: addedFeed,
       entriesProcessed: entriesProcessed || 0,
       entriesAdded: entriesAdded || 0
     });
+
+    // Update the badge unread count to include any new articles grabbed as 
+    // a result of the subscription
+    lucu.badge.update();
+
+    // Show a notification of the subscription
+    var title = addedFeed.title || addedFeed.url || 'Untitled';
+    lucu.notifications.show('Subscribed to ' + title);
+
   }
 }
 
@@ -705,6 +719,15 @@ function onUnsubscribeButtonClicked(event) {
     };
     tx.oncomplete = function() {
       console.info('Unsubscribed from %s', feedId);
+
+      // TODO: send out a message notifying other modules/views
+      // of the unsubscribe
+
+      // Update the badge in case any unread articles belonged to 
+      // the unsubscribed feed
+      lucu.badge.update();
+
+      // Update the options view
       optionsShowSection(sectionMenu);
     };
   };

@@ -51,6 +51,8 @@ lucu.poll.onComplete = function(error, feeds) {
 
   localStorage.LAST_POLL_DATE_MS = String(Date.now());
 
+  // Notify other modules that the poll completed. For example, the slides
+  // view may want to pre-load some of the newly available articles
   var message = {
     type: 'pollCompleted',
     feedsProcessed: feeds ? feeds.length : 0,
@@ -59,6 +61,15 @@ lucu.poll.onComplete = function(error, feeds) {
   };
 
   chrome.runtime.sendMessage(message);
+
+  // Update the app badge to reflect that there may be new unread articles
+  // TODO: only call this if entriesAdded is not 0
+  lucu.badge.update();
+  
+  // Display a notification
+  // TODO: only call this if entriesAdded is not 0, and also show the number
+  // of articles added in the message
+  lucu.notifications.show('Updated articles');
 };
 
 // Simple helper to grab a db connection that is designed

@@ -154,11 +154,24 @@ lucu.opml.importFiles = function(files, onComplete) {
 lucu.opml.importCompleted = function(onComplete) {
   console.debug('Finished importing feeds');
 
+  /*
   var message = {
     type: 'importFeedsCompleted'
   };
 
   chrome.runtime.sendMessage(message);
+  */
+
+  // Send out a notification
+  //var notification = (message.feedsAdded || 0) + ' of ';
+  //notification += (message.feedsProcessed || 0) + ' feeds imported with ';
+  //notification += message.exceptions ? message.exceptions.length : 0;
+  //notification += ' error(s).';
+  
+  var notificationText = 'Successfully imported OPML file';
+
+  lucu.notifications.show(notificationText);  
+
   onComplete();
 };
 
