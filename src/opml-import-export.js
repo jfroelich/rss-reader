@@ -23,36 +23,20 @@ lucu.opml.importFiles = function(files, onComplete) {
 };
 
 lucu.opml.importCompleted = function(onComplete) {
-  console.debug('Finished importing feeds');
-
-  /*
-  var message = {
-    type: 'importFeedsCompleted'
-  };
-
-  chrome.runtime.sendMessage(message);
-  */
-
-  // Send out a notification
-  //var notification = (message.feedsAdded || 0) + ' of ';
-  //notification += (message.feedsProcessed || 0) + ' feeds imported with ';
-  //notification += message.exceptions ? message.exceptions.length : 0;
-  //notification += ' error(s).';
-  
+  console.debug('Finished importing feeds from OPML');
   var notificationText = 'Successfully imported OPML file';
-
   lucu.notifications.show(notificationText);  
 
   onComplete();
 };
 
 lucu.opml.importFilesArray = function(files, callback) {
-  
-  function onMapComplete(error, results) {
-    callback(null, results);
-  }
+  var onFilesLoaded = lucu.opml.onFilesLoaded.bind(null, callback);
+  async.map(files, lucu.opml.loadFile, onFilesLoaded);
+};
 
-  async.map(files, lucu.opml.loadFile, onMapComplete);
+lucu.opml.onFilesLoaded = function(callback, error, results) {
+  callback(null, results);
 };
 
 // Reads in the contents of an OPML file as text,
@@ -61,25 +45,37 @@ lucu.opml.importFilesArray = function(files, callback) {
 // and then passes the array to the callback. Async
 lucu.opml.loadFile = function(file, callback) {
   var reader = new FileReader();
+  reader.onload = lucu.opml.onFileLoad.bind(reader, callback);
+  reader.onerror = lucu.opml.onFileLoadError.bind(reader, callback);
   reader.readAsText(file);
-  reader.onload = function (event) {
-    var text = event.target.result;
-    var parser = new DOMParser();
-    var xml = parser.parseFromString(text, 'application/xml');
-    if(!xml || !xml.documentElement) {
-      return callback(null, []);
-    }
-    var parserError = xml.querySelector('parsererror');
-    if(parserError) {
-      return callback(null, []);
-    }
+};
 
-    var outlines = lucu.opml.createOutlines(xml);
-    callback(null, outlines);
-  };
-  reader.onerror = function (event) {
+lucu.opml.OPML_MIME_TYPE = 'application/xml';
+
+lucu.opml.onFileLoad = function(callback, event) {
+  'use strict';
+  var fileReader = event.target;
+  var text = fileReader.result;
+  var xmlParser = new DOMParser();
+  var xml = xmlParser.parseFromString(text, lucu.opml.OPML_MIME_TYPE);
+
+  if(!xml || !xml.documentElement) {
     callback(null, []);
-  };
+    return;
+  }
+
+  var parserError = xml.querySelector('parsererror');
+  if(parserError) {
+    callback(null, []);
+    return;
+  }
+
+  var outlines = lucu.opml.createOutlines(xml);
+  callback(null, outlines);
+};
+
+lucu.opml.onFileLoadError = function(callback, event) {
+  callback(null, []);
 };
 
 // Merges the outlines arrays into a single array.
@@ -113,12 +109,18 @@ lucu.opml.importConnect = function(outlines, callback) {
 };
 
 lucu.opml.storeOutlines = function(db, outlines, callback) {
-  async.forEach(outlines, function(outline, callback) {
-    lucu.addFeed(db, outline, function() {
-      callback();
-    }, function() {
-      callback();
-    });
+  var storeOutline = lucu.opml.storeOutline.bind(null, db);
+  var onComplete = lucu.opml.onStoreOutlinesComplete.bind(null, callback);
+  async.forEach(outlines, storeOutline, onComplete);
+};
+
+lucu.opml.onStoreOutlinesComplete = function(callback) {
+  callback();
+};
+
+lucu.opml.storeOutline = function(db, outline, callback) {
+  lucu.addFeed(db, outline, function() {
+    callback();
   }, function() {
     callback();
   });
