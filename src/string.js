@@ -28,20 +28,23 @@ lucu.string.RE_CONTROL = /[\t\r\n]/g;
 // Scrubs html from a string
 lucu.string.stripControls = function(string) {
   'use strict';
-  
+
   if(string) {
     return string.replace(lucu.string.RE_CONTROL,'');
   }
 };
 
+lucu.string.ELLIPSIS = '\u2026';
+
 // Shorten a string if its too long
 lucu.string.truncate = function(string, position, extension) {
   'use strict';
 
-  // \u2026 == ellipsis
-  if(!string) return;
-  if(string.length > position)
-    return string.substr(0, position) + (extension || '\u2026');
+  extension = extension || lucu.string.ELLIPSIS;
+
+  if(string && string.length > position) {
+    return string.substr(0, position) + extension;
+  }
   return string;
 };
 
