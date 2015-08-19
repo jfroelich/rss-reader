@@ -31,12 +31,20 @@ lucu.string.stripControls = function(string) {
 };
 
 // Shorten a string if its too long
-lucu.string.truncate = function(str, position, extension) {
+lucu.string.truncate = function(string, position, extension) {
   'use strict';
 
   // \u2026 == ellipsis
-  if(!str) return;
-  if(str.length > position)
-    return str.substr(0, position) + (extension || '\u2026');
-  return str;
+  if(!string) return;
+  if(string.length > position)
+    return string.substr(0, position) + (extension || '\u2026');
+  return string;
 };
+
+lucu.string.condenseWhitespace = function(string) {
+  'use strict';
+  if(string) {
+    return string.replace(/\s+/,' ');
+  }
+};
+

@@ -51,9 +51,7 @@ lucu.sanitizeFeedString = function(string) {
   	string = lucu.string.stripControls(string);
   }
 
-  if(string) {
-  	string = string.replace(/\s+/,' ');
-  }
+  string = lucu.string.condenseWhitespace(string);
   
   if(string) {
   	string = string.trim();
