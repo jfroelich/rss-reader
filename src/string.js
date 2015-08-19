@@ -4,6 +4,7 @@
 
 var lucu = lucu || {};
 
+// String related utility functions
 lucu.string = {};
 
 // Scrubs tags
@@ -54,4 +55,3 @@ lucu.string.condenseWhitespace = function(string) {
     return string.replace(/\s+/,' ');
   }
 };
-
