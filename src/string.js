@@ -21,13 +21,17 @@ lucu.string.stripTags = function(string, replacement) {
   return values.join(replacement);
 };
 
+// TODO: research the proper pattern
+// /[^\x20-\x7E]+/g;
+lucu.string.RE_CONTROL = /[\t\r\n]/g;
+
 // Scrubs html from a string
 lucu.string.stripControls = function(string) {
   'use strict';
-  // TODO: research the proper pattern
-  // var p = /[^\x20-\x7E]+/g;
-  var p = /[\t\r\n]/g;
-  return string && string.replace(p,'');
+  
+  if(string) {
+    return string.replace(lucu.string.RE_CONTROL,'');
+  }
 };
 
 // Shorten a string if its too long
