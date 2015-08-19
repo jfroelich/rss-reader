@@ -45,10 +45,10 @@ lucu.sanitizeFeedString = function(string) {
   	return;
   }
 
-  string = lucu.stripTags(string);
+  string = lucu.string.stripTags(string);
 
   if(string) {
-  	string = lucu.stripControls(string);
+  	string = lucu.string.stripControls(string);
   }
 
   if(string) {

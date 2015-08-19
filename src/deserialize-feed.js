@@ -50,7 +50,7 @@ lucu.deserializeAtomEntry = function(entry) {
   var getText = lucu.selectTrimmedTextContent;
   var result = {};
   result.title = getText(entry, 'title');
-  result.author = lucu.stripTags(getText(entry, 'author name'), ' ');
+  result.author = lucu.string.stripTags(getText(entry, 'author name'), ' ');
   var link = entry.querySelector('link[rel="alternate"]') ||
     entry.querySelector('link[rel="self"]') ||
     entry.querySelector('link[href]');
@@ -116,7 +116,7 @@ lucu.deserializeRSSEntry = function(entry) {
   var link = getText(entry, 'origLink') || getText(entry, 'link');
   if(link) result.link = link;
   var author = getText(entry, 'creator') || getText(entry, 'publisher');
-  if(author) result.author = lucu.stripTags(author, ' ');
+  if(author) result.author = lucu.string.stripTags(author, ' ');
   var date = getText(entry, 'pubDate') || getText(entry, 'date');
   if(date) result.pubdate = date;
   var content = getText(entry, 'encoded') || getText(entry, 'description') ||

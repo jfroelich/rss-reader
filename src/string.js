@@ -4,8 +4,10 @@
 
 var lucu = lucu || {};
 
+lucu.string = {};
+
 // Scrubs tags
-lucu.stripTags = function(string, replacement) {
+lucu.string.stripTags = function(string, replacement) {
   'use strict';
   if(!string) return;
   var doc = document.implementation.createHTMLDocument();
@@ -20,7 +22,7 @@ lucu.stripTags = function(string, replacement) {
 };
 
 // Scrubs html from a string
-lucu.stripControls = function(string) {
+lucu.string.stripControls = function(string) {
   'use strict';
   // TODO: research the proper pattern
   // var p = /[^\x20-\x7E]+/g;
@@ -29,7 +31,7 @@ lucu.stripControls = function(string) {
 };
 
 // Shorten a string if its too long
-lucu.truncate = function(str, position, extension) {
+lucu.string.truncate = function(str, position, extension) {
   'use strict';
 
   // \u2026 == ellipsis
