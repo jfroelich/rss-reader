@@ -7,6 +7,21 @@ var lucu = lucu || {};
 // Feed augmentation lib
 lucu.augment = {};
 
+
+// TODO: the problem with the current approach is that it operates on 
+// arrays which needlessly block later async calls. All the document
+// fetching happens after all the exists-checks happen and only then
+// the image checking happens. Instead, each article should be processed
+// simultaneously. So operating on arrays was a mistake. The first input
+// should be an array, but then each item in the array should go through
+// all 3 steps at once, concurrent with potentially every other item in
+// the array
+// Then there is the separate question of whether tasks outside the scope
+// of augment also need to be able to handled as concurrent per entry
+// instead of waiting for these steps to complete. And for that matter
+// the prior steps occuring during polling/subscribing
+
+
 /**
  * Iterates over a feed's entries and replaces the html content property
  * of each entry with its full html according to its link. Forwards the
