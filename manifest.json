@@ -33,7 +33,7 @@
       "/src/resolve-elements.js",
       "/src/sanitize-feed.js",
       "/src/deserialize-feed.js",
-      "/src/string-utilities.js"
+      "/src/string.js"
     ]
   },
   "options_page": "options.html",
