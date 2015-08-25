@@ -34,24 +34,23 @@ lucu.opml.createDocument = function(feeds, title) {
   docs.textContent = 'http://dev.opml.org/spec2.html';
   head.appendChild(docs);
   if(!feeds) return doc;
-  var exportables = feeds.filter(function (feed) {
-    return feed.url;
-  });
+  var exportables = feeds.filter(lucu.opml.hasURL);
   if(!exportables.length) return doc;
   var body = doc.createElement('body');
   opml.appendChild(body);
 
-  // TODO: test, pretty sure the null is the context, the doc
-  // is the partial first arg
   var createOutline = lucu.opml.createOutlineElement.bind(null, doc);
-
-  var appendOutlineElement = function(element) {
-    body.appendChild(element);
-  };
-
-  exportables.map(createOutline).forEach(appendOutlineElement);
-
+  var appendOutline = lucu.opml.appendElement.bind(body, body);
+  exportables.map(createOutline).forEach(appendOutline);
   return doc;
+};
+
+lucu.opml.hasURL = function(feed) {
+  return feed.url;
+};
+
+lucu.opml.appendElement = function(body, element) {
+  body.appendChild(element);
 };
 
 lucu.opml.createOutlineElement = function(document, feed) {
@@ -89,7 +88,6 @@ lucu.opml.createOutlines = function(document) {
     return [];
   }
 
-  // TODO: document.documentElement.get...?
   var outlineElements = document.getElementsByTagName('outline');
   var validElements = filter.call(outlineElements, isValid);
   return validElements.map(createOutline);

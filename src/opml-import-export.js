@@ -18,8 +18,7 @@ lucu.opml.importFiles = function(files, onComplete) {
     lucu.opml.storeOutlines
   ];
 
-  async.waterfall(waterfall, 
-    lucu.opml.importCompleted.bind(onComplete));
+  async.waterfall(waterfall, lucu.opml.importCompleted.bind(onComplete));
 };
 
 lucu.opml.importCompleted = function(onComplete) {
@@ -161,12 +160,15 @@ lucu.opml.exportGetFeeds = function(db, callback) {
   tx.oncomplete = function() {
     callback(null, feeds);
   };
-  request.onsuccess = function(event) {
-    var cursor = event.target.result;
-    if(!cursor) return;
-    feeds.push(cursor.value);
-    cursor.continue();
-  };
+  var onsuccess = lucu.opml.exportGetFeedsOnSuccess.bind(request, feeds);
+  request.onsuccess = onsuccess;
+};
+
+lucu.opml.exportGetFeedsOnSuccess = function(feeds, event) {
+  var cursor = event.target.result;
+  if(!cursor) return;
+  feeds.push(cursor.value);
+  cursor.continue();
 };
 
 lucu.opml.exportCompleted = function(onComplete, error, opmlString) {
@@ -180,6 +182,5 @@ lucu.opml.exportSerialize = function(feeds, callback) {
   var document = lucu.opml.createDocument(feeds, 'subscriptions.xml');
   var xs = new XMLSerializer();
   var opml = xs.serializeToString(document);
-
   callback(null, opml);
 };
