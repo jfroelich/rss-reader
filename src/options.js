@@ -206,7 +206,7 @@ function optionsAppendFeed(feed, insertedSort) {
   item.setAttribute('title', lucu.string.stripTags(feed.description) || '');
   item.onclick = onFeedListItemClick;
   var favIconElement = document.createElement('img');
-  favIconElement.src = lucu.getFavIconURL(feed.link);
+  favIconElement.src = lucu.favicon.getURL(feed.link);
   if(feed.title) favIconElement.title = feed.title;
   item.appendChild(favIconElement);
 
@@ -476,7 +476,7 @@ function populateFeedDetailsSection(feedId) {
       document.getElementById('details-title').textContent = feed.title ||
         'Untitled';
       document.getElementById('details-favicon').setAttribute('src',
-        lucu.getFavIconURL(feed.url));
+        lucu.favicon.getURL(feed.url));
       document.getElementById('details-feed-description').textContent =
         lucu.string.stripTags(feed.description) || 'No description';
       document.getElementById('details-feed-url').textContent = feed.url;
@@ -586,7 +586,7 @@ function onDiscoverFeedsComplete(query, results) {
     item.appendChild(button);
 
     var image = document.createElement('img');
-    image.setAttribute('src', lucu.getFavIconURL(result.url));
+    image.setAttribute('src', lucu.favicon.getURL(result.url));
     image.title = result.link;
     item.appendChild(image);
 

@@ -4,6 +4,8 @@
 
 var lucu = lucu || {};
 
+lucu.favicon = {};
+
 /**
  * Returns a URL string pointing to the fav icon for a url. If url is
  * undefined/empty, the locally stored default fav icon url is returned
@@ -26,8 +28,10 @@ var lucu = lucu || {};
  * corresponding fav icon.
  * @return {String} the url of the favicon
  */
-lucu.getFavIconURL = function(url) {
+lucu.favicon.getURL = function(url) {
   return url ?
     'http://www.google.com/s2/favicons?domain_url=' + encodeURIComponent(url) :
-    '/media/rss_icon_trans.gif';
+    lucu.favicon.DEFAULT_URL;
 };
+
+lucu.favicon.DEFAULT_URL  = '/media/rss_icon_trans.gif';
