@@ -280,8 +280,12 @@ function appendSlide(entry, isFirst) {
   lucu.sanitize.removeEmptyElements(doc);
   var results = calamine.transform(doc, {
     FILTER_NAMED_AXES: true,
+    
+    /*BLACKLIST: BLACKLIST_SELECTORS,*/
+
     ANNOTATE: false
   });
+
   lucu.sanitize.removeJavascriptAnchors(results);
   lucu.sanitize.unwrapDescendants(results);
   lucu.sanitize.removeDescendantAttributes(lucu.sanitize.DEFAULT_ALLOWED_ATTRIBUTES , results);
