@@ -8,7 +8,11 @@ var lucu = lucu || {};
 // old entries to reduce storage used.
 // TODO: this feature needs more thought put into it, this is 
 // currently in a temporary semi-working state
-// TODO: test, this has not been tested
+
+// TODO: maybe archive should just use a separate object store of just 
+// urls. Then check for new should have to do 2 look ups, but 
+// the un-archived object store will be much more compact?
+
 lucu.archive = {};
 
 lucu.archive.start = function() {

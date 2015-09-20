@@ -22,21 +22,21 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
 
   storable.feed = feed.id;
 
-  // TODO: just use entry.link as key, maybe there is no need
-  // to create a hash property?
-  // TODO: if we require link, then maybe there is no need to 
-  // try and use title or content
-  var seed = entry.link || entry.title || entry.content;
-  storable.hash = lucu.hashing.generate(seed);
 
-  if(!storable.hash) {
-  	callback();
+  // NOTE: temporary note, this has not been tested, part of transition
+  // to no-hash entries using link as primary
+  // TODO: is this check even necessary? Maybe this never happens?
+  if(!entry.link) {
+    console.warn('Not storing entry without link: %o', entry);
+    callback();
     return;
   }
 
+  storable.link = entry.link;
+
   storable.unread = 1;
   if(entry.author) storable.author = entry.author;
-  if(entry.link) storable.link = entry.link;
+
   if(entry.title) storable.title = entry.title;
   if(entry.pubdate) {
     var date = new Date(entry.pubdate);

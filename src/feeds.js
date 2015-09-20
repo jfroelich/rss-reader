@@ -18,7 +18,7 @@ lucu.addFeed = function(db, feed, onComplete, onerror) {
   // NOTE: title must be defined or subscriptions list sorting fails
   storable.title = clean.title || '';
   if(clean.description) storable.description = clean.description;
-  if(clean.link) storable.link =  clean.link;
+  if(clean.link) storable.link = clean.link;
   if(clean.date) storable.date = clean.date;
   if(feed.fetched) storable.fetched = feed.fetched;
   storable.created = Date.now();

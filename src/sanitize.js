@@ -4,6 +4,9 @@
 
 var lucu = lucu || {};
 
+// TODO: rename to something like sanitize-dom.js for less conflation
+// with sanitize-feed.js
+
 // DOM sanitize funtions
 lucu.sanitize = {};
 

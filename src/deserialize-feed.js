@@ -8,14 +8,32 @@ var lucu = lucu || {};
  * Deserializes an xml document representing a feed into a feed object
  * TODO: some concerns regarding how querySelector probes all descendants.
  * Could this find the wrong fields? Should we be restricting to immediate?
+ *
+ * TODO: hash was deprecated, all entries must have links now to survive,
+ * which means the filtering of linkless entries has to happen somewhere, 
+ * so maybe it happens here?
+ *
+ * TODO: support Apple iTunes format
+ * TODO: support embedded media format (??)
  */
 lucu.deserializeFeed = function(document) {
   'use strict';
-  var e = document.documentElement;
-  if(!e) throw new TypeError('Undefined document element');
-  if(e.matches('feed')) return lucu.deserializeAtomFeed(e);
-  if(e.matches('rss, rdf')) return lucu.deserializeRSSFeed(e);
-  throw new TypeError('Unsupported document element ' + e.localName);
+  
+  var rootElement = document.documentElement;
+  if(!rootElement) {
+    throw new TypeError('Undefined document element');
+  }
+  
+  if(rootElement.matches('feed')) {
+    return lucu.deserializeAtomFeed(rootElement);
+  }
+  
+  if(rootElement.matches('rss, rdf')) {
+    return lucu.deserializeRSSFeed(rootElement);
+  }
+
+  throw new TypeError('lucu.deserializeFeed: Unsupported document element ' + 
+    rootElement.localName);
 };
 
 lucu.selectTrimmedTextContent = function(parent, selector) {
@@ -29,19 +47,35 @@ lucu.selectTrimmedTextContent = function(parent, selector) {
 
 lucu.deserializeAtomFeed = function(root) {
   'use strict';
-  var map = Array.prototype.map;
+
   var getText = lucu.selectTrimmedTextContent;
   var result = {};
-  var feed = root;
-  result.title = getText(feed, 'title');
-  result.description = getText(feed, 'subtitle');
-  result.date = getText(feed, 'updated');
-  var link = feed.querySelector('link[rel="alternate"]') ||
-    feed.querySelector('link[rel="self"]') || feed.querySelector('link[href]');
+
+  var title = getText(root, 'title');
+  if(title) {
+    result.title = title;  
+  }
+
+  var description = getText(root, 'subtitle');
+  if(description) {
+    result.description = description;
+  }
+
+  var updated = getText(root, 'updated');
+  if(updated) {
+    result.date = updated;
+  }
+
+  var link = root.querySelector('link[rel="alternate"]');
+  link = link || root.querySelector('link[rel="self"]');
+  link = link || root.querySelector('link[href]');
+  
   if(link) link = link.getAttribute('href');
   if(link) result.link = link.trim();
-  var entries = feed.querySelectorAll('entry');
-  result.entries = map.call(entries, lucu.deserializeAtomEntry);
+
+  var entries = root.querySelectorAll('entry');
+  result.entries = Array.prototype.map.call(entries, lucu.deserializeAtomEntry);
+
   return result;
 };
 
@@ -49,6 +83,9 @@ lucu.deserializeAtomEntry = function(entry) {
   'use strict';
   var getText = lucu.selectTrimmedTextContent;
   var result = {};
+
+  // TODO: only define properties if truthy
+
   result.title = getText(entry, 'title');
   result.author = lucu.string.stripTags(getText(entry, 'author name'), ' ');
   var link = entry.querySelector('link[rel="alternate"]') ||
@@ -60,13 +97,13 @@ lucu.deserializeAtomEntry = function(entry) {
     entry.querySelector('updated');
   if(date) date = date.textContent;
   if(date) result.pubdate = date.trim();
+
   // Special handling for atom entry content. For some reason this works
   // where normal content.textContent does not. I think the issue pertains to
-  // whether content contains CDATA.
+  // whether content is CDATA.
   var content = entry.querySelector('content');
   var nodes = content ? content.childNodes : [];
-  var map = Array.prototype.map;
-  result.content = map.call(nodes, 
+  result.content = Array.prototype.map.call(nodes, 
     lucu.getAtomNodeTextContent).join('').trim();
   return result;
 };
@@ -84,7 +121,6 @@ lucu.deserializeRSSFeed = function(root) {
   var channel = root.querySelector('channel');
   if(!channel) {
     console.warn('No channel found!? %o', root);
-    // our contract warrants entries is defined
     result.entries = [];
     return result;
   }

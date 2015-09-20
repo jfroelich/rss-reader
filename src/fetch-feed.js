@@ -17,6 +17,8 @@ lucu.fetch = {};
  * TODO: make online check caller's responsibility?
  * TODO: change to use single callback, async.forEach style
  * TODO: should filtering and rewriting take place somewhere else?
+ *
+ * TODO: maybe onError parameter should be required
  */
 lucu.fetch.fetchFeed = function(url, onComplete, onError, timeout) {
   'use strict';
@@ -58,9 +60,11 @@ lucu.fetch.onRequestLoad = function(callback, fallback, event) {
     return;
   }
 
-  feed.entries = feed.entries.filter(
-    lucu.fetch.entryHasLink).map(
-    lucu.fetch.rewriteEntryLink);
+  // Remove any entries without links as those cannot be stored
+  feed.entries = feed.entries.filter(lucu.fetch.entryHasLink);
+
+  // Rewrite the links of entries before passing along
+  feed.entries = feed.entries.map(lucu.fetch.rewriteEntryLink);
 
   callback(feed);
 };

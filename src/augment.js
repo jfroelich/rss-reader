@@ -134,7 +134,8 @@ lucu.augment.onFetchDocumentError = function(callback, errorEvent) {
 };
 
 lucu.augment.onFetchDocument = function(entry, callback, event) {
-  console.debug('lucu.augment.onFetchDocument %s', entry.link);
+  //console.debug('lucu.augment.onFetchDocument %s', entry.link);
+  
   var request = event.target;
   var document = request.responseXML;
   
@@ -158,7 +159,7 @@ lucu.augment.onFetchDocument = function(entry, callback, event) {
 lucu.augment.onImagesUpdated = function(entry, document, callback) {
   // We know document and document.body are defined, we checked before
 
-  console.debug('lucu.augment.onImagesUpdated %s', entry.link);
+  // console.debug('lucu.augment.onImagesUpdated %s', entry.link);
 
   var content = document.body.innerHTML;
   

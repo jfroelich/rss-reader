@@ -22,7 +22,6 @@
       "/src/database.js",
       "/src/date.js",
       "/src/fetch-feed.js",
-      "/src/hashing.js",
       "/src/images.js",
       "/src/install.js",
       "/src/merge-entry.js",

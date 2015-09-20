@@ -160,6 +160,13 @@ lucu.poll.onFetchError = function(callback) {
 };
 
 lucu.poll.onFetchFeed = function(db, feed, callback, remoteFeed) {
+
+  // TODO: filter entries without links? Or does this take place 
+  // somewhere else?
+  remoteFeed.entries = remoteFeed.entries.filter(function(entry) {
+    return entry.link;
+  });
+
   // Filter duplicate entries from the set of just fetched entries
   var seenEntries = new Set();
   var isDistinct = lucu.poll.isDistinctFeedEntry.bind(null, seenEntries);

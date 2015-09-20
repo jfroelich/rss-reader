@@ -3,13 +3,20 @@
 // that can be found in the LICENSE file
 
 var lucu = lucu || {};
+
+// TODO: maybe deprecate the feeds object store. Store the 
+// other info redundantly. The list of feeds on the options page
+// can use an index and a nextUnique flag to cursor? But what about
+// the plans for custom feed settings like custom polling? That will
+// just make it difficult
+
+
 lucu.db = {};
 
 // TODO: use 'lucubrate' as the database name
-// TODO: maybe use entry.link as primary key for entries
 
 lucu.db.NAME = 'reader';
-lucu.db.VERSION = 10;
+lucu.db.VERSION = 11;
 
 lucu.db.upgrade = function(event) {
   'use strict';
@@ -22,46 +29,62 @@ lucu.db.upgrade = function(event) {
 
   var db = this.result;
   var oldVersion = event.oldVersion || 0;
-  var feeds, entries;
-  var transaction = this.transaction;
 
-  console.info('Upgrading database from %s', oldVersion);
+  console.info('Upgrading database from version %s', oldVersion);
 
-  if(oldVersion) {
-    feeds = transaction.objectStore('feed');
-    entries = transaction.objectStore('entry');
-  }
+  var feeds = this.transaction.objectStore('feed');
+  var entries = this.transaction.objectStore('entry');
 
-  if(oldVersion == 0) {
+  if(oldVersion === 0) {
     feeds = db.createObjectStore('feed', {keyPath:'id', autoIncrement: true});
     feeds.createIndex('schemeless','schemeless', {unique: true});
     feeds.createIndex('title','title');
     entries = db.createObjectStore('entry', {keyPath:'id', autoIncrement: true});
     entries.createIndex('unread','unread');
     entries.createIndex('feed','feed');
-    entries.createIndex('link','link');
-    entries.createIndex('hash','hash', {unique: true});
-  } else if(oldVersion == 6) {
+    entries.createIndex('link','link', {unique: true});
+    // entries.createIndex('hash','hash', {unique: true});
+  } else if(oldVersion === 6) {
     feeds.createIndex('title','title');
     feeds.deleteIndex('url');
     feeds.createIndex('schemeless','schemeless', {unique: true});
-    entries.createIndex('link','link');
+    entries.deleteIndex('link');
+    entries.createIndex('link','link', {unique: true});
     entries.deleteIndex('hash');
-    entries.createIndex('hash','hash', {unique: true});
-  } else if(oldVersion == 7) {
+    //entries.createIndex('hash','hash', {unique: true});
+  } else if(oldVersion === 7) {
     feeds.deleteIndex('url');
     feeds.createIndex('schemeless','schemeless', {unique: true});
-    entries.createIndex('link','link');
+    entries.deleteIndex('link');
+    entries.createIndex('link','link', {unique: true});
     entries.deleteIndex('hash');
-    entries.createIndex('hash','hash', {unique: true});
-  } else if(oldVersion == 8) {
-    entries.createIndex('link','link');
+    //entries.createIndex('hash','hash', {unique: true});
+  } else if(oldVersion === 8) {
+    feeds.deleteIndex('url');
+    entries.deleteIndex('link');
+    entries.createIndex('link','link', {unique: true});
     entries.deleteIndex('hash');
-    entries.createIndex('hash','hash', {unique: true});
-  } else if(oldVersion == 9) {
+    //entries.createIndex('hash','hash', {unique: true});
+  } else if(oldVersion === 9) {
+    feeds.deleteIndex('url');
     entries.deleteIndex('hash');
-    entries.createIndex('hash','hash', {unique: true});
+    // entries.createIndex('hash','hash', {unique: true});
+  } else if(oldVersion === 10) {
+    feeds.deleteIndex('url');
+
+    // Deprecating hash, entry link is now primary key
+    entries.deleteIndex('hash');
+
+    // Because link is now primary, impose a new unique
+    // requirement
+    entries.deleteIndex('link');
+    entries.createIndex('link','link', {unique: true});
+
+    // TODO: once we transition to link and it is working again,
+    // consider deprecating id and using link as the table's key
+
   } else {
-    console.error('Upgrade from %s unhandled', oldVersion);
+    console.error('Database upgrade error, no upgrade transform '+
+      'handler for version %s', oldVersion);
   }
 };

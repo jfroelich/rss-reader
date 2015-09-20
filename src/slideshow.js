@@ -27,8 +27,9 @@ function maybeAppendMoreSlides() {
 
   // There are still some unread slides loaded, so do not bother
   // appending
-  if(unreadCount)
+  if(unreadCount) {
     return;
+  }
 
   // TODO: we do not actually need a count here, just a check
   // of whether firstElementChild is defined.
@@ -41,7 +42,8 @@ function maybeAppendMoreSlides() {
 
 function viewOnUnsubscribeMessage(message) {
 
-  var slidesForFeed = document.querySelectorAll('div[feed="'+ message.feed +'"]');
+  var slidesForFeed = document.querySelectorAll(
+    'div[feed="'+ message.feed +'"]');
   var removedCurrentSlide = Array.prototype.reduce.call(
     slidesForFeed, function(removedCurrent, slide) {
     // TODO: verify removing all listeners
@@ -51,7 +53,8 @@ function viewOnUnsubscribeMessage(message) {
 
   if(removedCurrentSlide) {
     // TODO: implement
-    console.warn('Removed current slide as a result of unsubscribing but did not update UI');
+    console.warn('Removed current slide as a result of unsubscribing but did'+
+      ' not update UI');
   }
 
   maybeShowNoUnreadArticlesSlide();
@@ -72,6 +75,8 @@ function markSlideRead(slide) {
   }
 
   slide.setAttribute('read', '');
+
+  // TODO: move this out of UI code
 
   var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
   request.onerror = console.error;
@@ -196,7 +201,8 @@ function onSlideClick(event) {
   event.preventDefault();
 
   // Apparently opening a link in a new tab is now a complicated thing to do
-  // when using plain javascript. So we are going to cheat here
+  // when using plain javascript. So we are going to cheat here due to issues
+  // with window.open
   chrome.tabs.create({
     active: true,
     url: event.target.getAttribute('href')
@@ -223,6 +229,8 @@ function onSlideClick(event) {
  *
  * TODO: looking into other performance tuning. See
  * https://developers.google.com/speed/articles/javascript-dom
+ *
+ * TODO: use <article> instead of div
  */
 function appendSlide(entry, isFirst) {
 
@@ -259,7 +267,7 @@ function appendSlide(entry, isFirst) {
 
   slide.appendChild(title);
 
-  // TODO: use section instead of span
+  // TODO: use section instead of span?
 
   var content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
@@ -377,11 +385,11 @@ function maybeShowNoUnreadArticlesSlide() {
     return;
   }
 
-  console.warn('not implemented');
+  console.warn('maybeShowNoUnreadArticlesSlide not implemented');
 }
 
 function hideNoUnreadArticlesSlide() {
-  console.warn('not implemented');
+  console.warn('hideNoUnreadArticlesSlide not implemented');
 }
 
 function initSlideShow(event) {

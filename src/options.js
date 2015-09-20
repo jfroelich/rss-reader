@@ -3,14 +3,14 @@
 // that can be found in the LICENSE file
 
 // TODO: implement history? mimic chrome. would need search ability
-// TODO: use IIFE to avoid global scope issues
 // TODO: reintroduce $ function for getElementById
+
+// TODO: use a namespace object and get rid of 'options' prefix
+// in function names
 
 'use strict';
 
 var lucu = lucu || {};
-
-
 
 function onOptionsPageMessage(message) {
   if('displaySettingsChanged' == message.type) {
@@ -61,7 +61,6 @@ function hideErrorMessage() {
     dismissButton.removeEventListener('click', hideErrorMessage);
   container.remove();
 }
-
 
 function showErrorMessage(message, fadeIn) {
   hideErrorMessage();
@@ -246,6 +245,8 @@ function onEnableSubscriptionPreviewChange() {
 
 function showOrSkipSubscriptionPreview(url) {
 
+  // TODO: do not augment during preview, it takes too long
+
   console.debug('showOrSkipSubscriptionPreview %s',url);
   hideSubscriptionPreview();
 
@@ -331,6 +332,7 @@ function hideSubscriptionPreview() {
   document.getElementById('subscription-preview-entries').innerHTML = '';
 }
 
+// TODO: move this into a separate file
 function isValidURL(url) {
 
   if(!url) {
@@ -358,7 +360,7 @@ function isValidURL(url) {
 }
 
 function startSubscription(url) {
-  // Use async.js here
+  // TODO: Use async.js here
 
   hideSubscriptionPreview();
 
@@ -389,6 +391,7 @@ function startSubscription(url) {
         });
       }
 
+      // TODO: use connectivity.js lib
       if(!navigator.onLine) {
         return lucu.addFeed(db, {url: url}, onSubscriptionSuccessful, console.debug);
       }
@@ -462,6 +465,8 @@ function startSubscription(url) {
 function populateFeedDetailsSection(feedId) {
 
   // TODO: react to onerror/onblocked
+
+  // TODO: show num entries, num unread/red, etc
 
   var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
   request.onerror = console.error;
@@ -550,6 +555,12 @@ function onDiscoverFeedsComplete(query, results) {
 
   // Need to filter as for some reason the discover feeds
   // service sometimes returns results that do not have a url
+
+  // TODO: maybe this filtering should be a part of the query-google-feeds lib
+
+  // TODO: maybe there is no point in abstracting around discover, there is 
+  // pretty much a google query and nothing else
+
   var displayableResults = results.filter(function(result) {
     return result.url;
   });
@@ -601,6 +612,10 @@ function onDiscoverFeedsComplete(query, results) {
     // Google provides pre-emphasized text that corresponds to the
     // query. So we want to get rid of only certain tags, not all
     // tags.
+
+    // TODO: truncate parameter should probably instead be a parameter
+    // to the query-google-feeds lib, in order to reduce caller responsibility
+
     var snippetSpan = document.createElement('span');
     snippetSpan.innerHTML = lucu.string.truncate(result.contentSnippet, 400);
     item.appendChild(snippetSpan);
@@ -628,6 +643,9 @@ function onUnsubscribeButtonClicked(event) {
     optionsShowSection(sectionMenu);
   };
 
+  // TODO: should probably be making a call to a function in some
+  // other lib, and not include all this low level code in UI code
+
   request.onsuccess = function (event) {
     var db = event.target.result;
     var tx = db.transaction(['entry','feed'],'readwrite');
@@ -646,7 +664,7 @@ function onUnsubscribeButtonClicked(event) {
       console.info('Unsubscribed from %s', feedId);
 
       // TODO: send out a message notifying other modules/views
-      // of the unsubscribe
+      // of the unsubscribe ?
 
       // Update the badge in case any unread articles belonged to 
       // the unsubscribed feed
