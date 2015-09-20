@@ -83,3 +83,18 @@ lucu.db.upgrade = function(event) {
       'handler for version %s', oldVersion);
   }
 };
+
+lucu.db.clearEntries = function() {
+  var openRequest = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  openRequest.onerror = console.debug;
+  openRequest.onsuccess = function(event) {
+    var database = event.target.result;
+    var transaction = database.transaction('entry', 'readwrite');
+    var entryStore = transaction.objectStore('entry');
+    var clearRequest = entryStore.clear();
+    clearRequest.onerror = console.debug;
+    clearRequest.onsuccess = function() {
+      console.debug('Cleared entry object store');
+    };
+  };
+};
