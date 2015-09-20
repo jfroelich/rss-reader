@@ -190,6 +190,10 @@ lucu.poll.isDistinctFeedEntry = function(seenEntries, entry) {
 
 lucu.poll.onAugmentComplete = function(db, feed, remoteFeed, callback) {
 
+  // TODO: if we do end up updating the feed, what about the functional
+  // dependencies such as the feedTitle and feedLink properties set for 
+  // entries already in the database?
+
   // TODO: should check last modified date of the remote xml file
   // so we can avoid pointless updates?
   // TODO: this should not be changing the date updated unless something
@@ -227,7 +231,6 @@ lucu.poll.onAugmentComplete = function(db, feed, remoteFeed, callback) {
   var feedStore = transaction.objectStore('feed');
   var putFeedRequest = feedStore.put(feed);
   putFeedRequest.onerror = console.debug;
-
   putFeedRequest.onsuccess = function() {
     // Now merge in any new entries from the remote feed
     // NOTE: i don't think it matters whether we pass feed or 

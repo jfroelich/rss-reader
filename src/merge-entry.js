@@ -49,24 +49,39 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
   	storable.content = entry.content;
   }
 
-  var tx = db.transaction('entry', 'readwrite');
-  var store = tx.objectStore('entry');
+  // Now insert the entry if an entry with the same link does
+  // not already exist. Technically this should implicitly fail
+  // because of the unique flag on the link index of the entry 
+  // object store. However, something isn't working correctly,
+  // so instead this explicitly checks for the link
 
-  // TEMPORARY
-  console.debug('Storing entry %s', storable.link);
-  // TEMPORARY
+  // NOTE: we have to wrap callback to avoid passing parameters
+  // to it (like event) due to how async lib works
 
-  // TODO: use put instead of add?
-  var request = store.add(storable);
+  var transaction = db.transaction('entry', 'readwrite');
+  var entryStore = transaction.objectStore('entry');
 
-  // NOTE: async.forEach halts if any call passes an error argument 
-  // to the callback. Therefore
-  // this has to not pass anything. But I would prefer this passed
-  // back an error in event of an error.
-  request.onsuccess = function() {
-    callback();
+  var linkIndex = entryStore.index('link');
+
+  var getByLinkRequest = linkIndex.get(storable.link);
+  getByLinkRequest.onerror = function() {
+
+    var addEntryRequest = entryStore.add(storable);
+
+    addEntryRequest.onsuccess = function() {
+      console.debug('Added entry %s', storable.link);
+      callback();
+    };
+
+    addEntryRequest.onerror = function() {
+      //console.debug('Add entry failure for %s', storable.link);
+      callback();
+    };
+
   };
-  request.onerror = function() {
+
+  getByLinkRequest.onsuccess = function() {
+    // console.debug('entry.link %s already exists, not adding', storable.link);
     callback();
   };
 };

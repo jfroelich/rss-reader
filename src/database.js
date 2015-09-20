@@ -62,6 +62,8 @@ lucu.db.upgrade = function(event) {
     feeds.deleteIndex('url');
     entries.deleteIndex('hash');
     // entries.createIndex('hash','hash', {unique: true});
+    entries.deleteIndex('link');
+    entries.createIndex('link','link', {unique: true});
   } else if(oldVersion === 10) {
     feeds.deleteIndex('url');
 
