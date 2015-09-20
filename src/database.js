@@ -4,13 +4,6 @@
 
 var lucu = lucu || {};
 
-// TODO: maybe deprecate the feeds object store. Store the 
-// other info redundantly. The list of feeds on the options page
-// can use an index and a nextUnique flag to cursor? But what about
-// the plans for custom feed settings like custom polling? That will
-// just make it difficult
-
-
 lucu.db = {};
 
 // TODO: use 'lucubrate' as the database name

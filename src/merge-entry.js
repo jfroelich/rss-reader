@@ -4,10 +4,6 @@
 
 var lucu = lucu || {};
 
-// TODO: intended to be used with async.forEach which halts
-// if any call passes an error argument to the callback. Therefore
-// this has to not pass anything. But I would prefer this passed
-// back an error in event of an error.
 lucu.mergeEntry = function(db, feed, entry, callback) {
   'use strict';
 
@@ -21,7 +17,6 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
   }
 
   storable.feed = feed.id;
-
 
   // NOTE: temporary note, this has not been tested, part of transition
   // to no-hash entries using link as primary
@@ -56,10 +51,18 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
 
   var tx = db.transaction('entry', 'readwrite');
   var store = tx.objectStore('entry');
+
+  // TEMPORARY
+  console.debug('Storing entry %s', storable.link);
+  // TEMPORARY
+
+  // TODO: use put instead of add?
   var request = store.add(storable);
 
-  // We do not want to pass parameters to the callback so we 
-  // have to wrap here
+  // NOTE: async.forEach halts if any call passes an error argument 
+  // to the callback. Therefore
+  // this has to not pass anything. But I would prefer this passed
+  // back an error in event of an error.
   request.onsuccess = function() {
     callback();
   };
