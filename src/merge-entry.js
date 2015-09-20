@@ -65,26 +65,26 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
 
   var getByLinkRequest = linkIndex.get(storable.link);
   getByLinkRequest.onerror = function() {
-    console.debug('getByLinkRequest error for %s', storable.link);
+    // console.debug('getByLinkRequest error for %s', storable.link);
     callback();
   };
 
   getByLinkRequest.onsuccess = function(event) {
     var oldEntry = event.target.result;
     if(oldEntry) {
-      console.debug('entry.link %s already exists, not adding', storable.link);
+      // console.debug('entry.link %s already exists, not adding', storable.link);
       callback();
       return;
     }
 
     var addEntryRequest = entryStore.add(storable);
     addEntryRequest.onsuccess = function() {
-      console.debug('Added entry %s', storable.link);
+      // console.debug('Added entry %s', storable.link);
       callback();
     };
 
     addEntryRequest.onerror = function() {
-      console.debug('Add entry failure for %s', storable.link);
+      // console.debug('Add entry failure for %s', storable.link);
       callback();
     };
   };
