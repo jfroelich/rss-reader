@@ -13,84 +13,81 @@ lucu.db = {};
 // TODO: use 'lucubrate' as the database name
 
 lucu.db.NAME = 'reader';
-lucu.db.VERSION = 13;
+lucu.db.VERSION = 15;
 
 lucu.db.upgrade = function(event) {
   'use strict';
 
-  // NOTE: every single branch below needs to bring the old version all the way
-  // to the current version. This is because the user could be affected by an
-  // upgrade that bumps them several versions at once.
-  // TODO: Make less DRY.
+  var oldVersion = event.oldVersion;
+  console.debug('Upgrading database from version %s', oldVersion);
 
-  var db = this.result;
-  var oldVersion = event.oldVersion || 0;
+  var database = event.target.result;
+  var feedStore = null;
+  var entryStore = null;
 
-  console.debug('Database upgrade event: %o', event);
-
-  console.info('Upgrading database from old version %s', oldVersion);
-
-  var feeds = this.transaction.objectStore('feed');
-  var entries = this.transaction.objectStore('entry');
-
-  if(oldVersion === 0) {
-    feeds = db.createObjectStore('feed', {keyPath:'id', autoIncrement: true});
-    feeds.createIndex('schemeless','schemeless', {unique: true});
-    feeds.createIndex('title','title');
-    entries = db.createObjectStore('entry', {keyPath:'id', autoIncrement: true});
-    entries.createIndex('unread','unread');
-    entries.createIndex('feed','feed');
-    entries.createIndex('link','link', {unique: true});
-    // entries.createIndex('hash','hash', {unique: true});
-  } else if(oldVersion === 6) {
-    feeds.createIndex('title','title');
-    feeds.deleteIndex('url');
-    feeds.createIndex('schemeless','schemeless', {unique: true});
-    entries.deleteIndex('link');
-    entries.createIndex('link','link', {unique: true});
-    entries.deleteIndex('hash');
-    //entries.createIndex('hash','hash', {unique: true});
-  } else if(oldVersion === 7) {
-    feeds.deleteIndex('url');
-    feeds.createIndex('schemeless','schemeless', {unique: true});
-    entries.deleteIndex('link');
-    entries.createIndex('link','link', {unique: true});
-    entries.deleteIndex('hash');
-    //entries.createIndex('hash','hash', {unique: true});
-  } else if(oldVersion === 8) {
-    feeds.deleteIndex('url');
-    entries.deleteIndex('link');
-    entries.createIndex('link','link', {unique: true});
-    entries.deleteIndex('hash');
-    //entries.createIndex('hash','hash', {unique: true});
-  } else if(oldVersion === 9) {
-    feeds.deleteIndex('url');
-    entries.deleteIndex('hash');
-    // entries.createIndex('hash','hash', {unique: true});
-    entries.deleteIndex('link');
-    entries.createIndex('link','link', {unique: true});
-  } else if(oldVersion === 10) {
-    feeds.deleteIndex('url');
-
-    // Deprecating hash, entry link is now primary key
-    entries.deleteIndex('hash');
-
-    // Because link is now primary, impose a new unique
-    // requirement
-    entries.deleteIndex('link');
-    entries.createIndex('link','link', {unique: true});
-
-    // TODO: once we transition to link and it is working again,
-    // consider deprecating id and using link as the table's key
-  } else if(oldVersion === 11) {
-    console.debug('Deleting hash index in transition from database version 11 to 12');
-    // For some reason this was not deleted in the 10-11 transition
-    entries.deleteIndex('hash');
-  } else if(oldVersion === 12) {
-    console.debug('no op transition from 12 to 13');
+  if(database.objectStoreNames.contains('feed')) {
+    feedStore = this.transaction.objectStore('feed');
   } else {
-    console.error('Database upgrade error, no upgrade transform '+
-      'handler for version %s', oldVersion);
+    feedStore = database.createObjectStore('feed', {
+      keyPath: 'id',
+      autoIncrement: true
+    });
+  }
+
+  if(database.objectStoreNames.contains('entry')) {
+    entryStore = this.transaction.objectStore('entry');
+  } else {
+    entryStore = database.createObjectStore('entry', {
+      keyPath: 'id',
+      autoIncrement: true
+    });
+  }
+
+  var feedIndices = feedStore.indexNames;
+  var entryIndices = entryStore.indexNames;
+
+  if(!feedIndices.contains('schemeless')) {
+    feedStore.createIndex('schemeless', 'schemeless', {unique: true});
+  }
+
+  if(!feedIndices.contains('title')) {
+    feedStore.createIndex('title', 'title');
+  }
+
+  if(!entryIndices.contains('unread')) {
+    entryStore.createIndex('unread', 'unread');
+  }
+
+  if(!entryIndices.contains('feed')) {
+    entryStore.createIndex('feed', 'feed');
+  }
+
+  if(!entryIndices.contains('link')) {
+    console.debug('Database upgrade - creating entry.link index');
+    entryStore.createIndex('link', 'link', {unique: true});
+  } else {
+    // The link index should be unique. This was changed around version 11.
+    // TODO: what happens if duplicates exist in the database at the time this
+    // runs? Did not appear to generate an error. I suppose it only applies to 
+    // future add/put calls and does not retroactively enforce the constraint.
+    var entryLinkIndex = entryStore.index('link');
+    if(!entryLinkIndex.unique) {
+      console.debug('Database upgrade - adding unique constraint to entry.link index');
+      entryStore.deleteIndex('link');
+      entryStore.createIndex('link', 'link', {unique: true});
+    }
+  }
+
+  // Feed url index was deprecated
+  if(feedIndices.contains('url')) {
+    console.debug('Database upgrade - deleting feed.url index');
+    feedStore.deleteIndex('url');
+  }
+
+  // Hash was deprecated, as we now refer to entries uniquely by link
+  if(entryIndices.contains('hash')) {
+    console.debug('Database upgrade - deleting entry.hash index');
+    entryStore.deleteIndex('hash');
   }
 };
 
