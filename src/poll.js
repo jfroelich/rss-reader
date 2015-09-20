@@ -189,10 +189,6 @@ lucu.poll.isDistinctFeedEntry = function(seenEntries, entry) {
 };
 
 lucu.poll.onAugmentComplete = function(db, feed, remoteFeed, callback) {
-  //lucu.updateFeed(db, feed, remoteFeed, function() {
-  //  callback();
-  //});
-
 
   // TODO: should check last modified date of the remote xml file
   // so we can avoid pointless updates?
@@ -232,17 +228,19 @@ lucu.poll.onAugmentComplete = function(db, feed, remoteFeed, callback) {
   var putFeedRequest = feedStore.put(feed);
   putFeedRequest.onerror = console.debug;
 
-  // Now merge in any new entries from the remote feed
-  var mergeEntry = lucu.mergeEntry.bind(null, db, feed);
-  var entries = remoteFeed.entries;
-
-  // We have to wrap so that we call callback without parameters
-  // due to async lib behavior
-  function onMergeEntriesComplete() {
-    callback();
-  }
-
   putFeedRequest.onsuccess = function() {
+    // Now merge in any new entries from the remote feed
+    // NOTE: i don't think it matters whether we pass feed or 
+    // remoteFeed or cleanedRemoteFeed to mergeEntry
+    var mergeEntry = lucu.mergeEntry.bind(null, db, feed);
+    var entries = remoteFeed.entries;
+
+    // We have to wrap so that we call callback without parameters
+    // due to async lib behavior
+    function onMergeEntriesComplete() {
+      callback();
+    }
+    
     async.forEach(entries, mergeEntry, onMergeEntriesComplete);
   };
 };
