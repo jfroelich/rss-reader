@@ -6,15 +6,18 @@ var lucu = lucu || {};
 
 lucu.db = {};
 
+// TODO: ideally we would never store both schemeless and url, we would just
+// store scheme and schemeless props as parts of a url property.
+// TODO: current bug where hash index is not being deleted
+
 // TODO: use 'lucubrate' as the database name
 
 lucu.db.NAME = 'reader';
-lucu.db.VERSION = 11;
+lucu.db.VERSION = 13;
 
 lucu.db.upgrade = function(event) {
   'use strict';
-  // TODO: ideally we would never store both schemeless and url, we would just
-  // store scheme and schemeless props as parts of a url property.
+
   // NOTE: every single branch below needs to bring the old version all the way
   // to the current version. This is because the user could be affected by an
   // upgrade that bumps them several versions at once.
@@ -23,7 +26,9 @@ lucu.db.upgrade = function(event) {
   var db = this.result;
   var oldVersion = event.oldVersion || 0;
 
-  console.info('Upgrading database from version %s', oldVersion);
+  console.debug('Database upgrade event: %o', event);
+
+  console.info('Upgrading database from old version %s', oldVersion);
 
   var feeds = this.transaction.objectStore('feed');
   var entries = this.transaction.objectStore('entry');
@@ -77,7 +82,12 @@ lucu.db.upgrade = function(event) {
 
     // TODO: once we transition to link and it is working again,
     // consider deprecating id and using link as the table's key
-
+  } else if(oldVersion === 11) {
+    console.debug('Deleting hash index in transition from database version 11 to 12');
+    // For some reason this was not deleted in the 10-11 transition
+    entries.deleteIndex('hash');
+  } else if(oldVersion === 12) {
+    console.debug('no op transition from 12 to 13');
   } else {
     console.error('Database upgrade error, no upgrade transform '+
       'handler for version %s', oldVersion);

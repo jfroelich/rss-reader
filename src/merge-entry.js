@@ -4,6 +4,22 @@
 
 var lucu = lucu || {};
 
+
+// TODO: some entry link URLs from feeds are pre-chain-of-redirect-resolition, 
+// and are technically duplicates because each redirects to the same URL at the 
+// end of the redirect chain. Therefore we should be storing the terminal link,
+// not the source link. Or maybe we should be storing both. That way a lookup
+// will detect the article already exists and we store fewer dups
+// I think that fetching does use responseURL, but we end up not using response
+// URL at some point later in processing. Basically, the responseURL has to be
+// detected at the point of augment, and we want to rewrite at that point
+// So this note is here but technically this note belongs to several issues in
+// the holistic view of the update process. Maybe it does not belong to subscribe
+// and only to poll because maybe only poll should be downloading and augmenting
+// entries, and subscribe should just add the feed and not add any entries because
+// subscribe should be near instant. So subscribe should store the feed and then
+// enqueue a one-feed poll update.
+
 lucu.mergeEntry = function(db, feed, entry, callback) {
   'use strict';
 

@@ -8,6 +8,7 @@ lucu.badge = {};
 
 // Sets the badge text to a count of unread entries
 lucu.badge.update = function() {
+  console.debug('Updating badge');
   var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
   request.onerror = console.error;
   request.onblocked = console.error;
