@@ -52,7 +52,7 @@ lucu.images.fetchDimensionsOnLoad = function(image, callback, event) {
 };
 
 lucu.images.fetchDimensionsOnError = function(src, callback, event) {
-  console.debug('Failed to fetch %s %o', src, event.target);
+  // console.debug('Failed to fetch %s %o', src, event.target);
   callback();  
 };
 

@@ -115,7 +115,8 @@ lucu.augment.FETCH_TIMEOUT = 20 * 1000;
 lucu.augment.updateEntryContent = function(entry, callback) {
   'use strict';
 
-  console.debug('lucu.augment.updateEntryContent %s', entry.link);
+  // console.debug('lucu.augment.updateEntryContent %s', entry.link);
+  
   var request = new XMLHttpRequest();
   request.timeout = lucu.augment.FETCH_TIMEOUT;
   var onError = lucu.augment.onFetchDocumentError.bind(request, callback);
@@ -140,8 +141,8 @@ lucu.augment.onFetchDocument = function(entry, callback, event) {
   var document = request.responseXML;
   
   if(!document || !document.body) {
-    console.debug('lucu.augment.onFetchDocument cannot augment %s', 
-      request.responseURL);
+    //console.debug('lucu.augment.onFetchDocument cannot augment %s', 
+    //  request.responseURL);
     callback();
     return;
   }
