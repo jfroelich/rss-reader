@@ -161,8 +161,7 @@ lucu.poll.onFetchError = function(callback) {
 
 lucu.poll.onFetchFeed = function(db, feed, callback, remoteFeed) {
 
-  // TODO: filter entries without links? Or does this take place 
-  // somewhere else?
+  // TODO: should this occur here? is this redundant?
   remoteFeed.entries = remoteFeed.entries.filter(function(entry) {
     return entry.link;
   });
@@ -190,9 +189,62 @@ lucu.poll.isDistinctFeedEntry = function(seenEntries, entry) {
 };
 
 lucu.poll.onAugmentComplete = function(db, feed, remoteFeed, callback) {
-  lucu.updateFeed(db, feed, remoteFeed, function() {
+  //lucu.updateFeed(db, feed, remoteFeed, function() {
+  //  callback();
+  //});
+
+
+  // TODO: should check last modified date of the remote xml file
+  // so we can avoid pointless updates?
+  // TODO: this should not be changing the date updated unless something
+  // actually changed. However, we do want to indicate that the feed was
+  // checked
+  var cleanedRemoteFeed = lucu.sanitizeFeed(remoteFeed);
+
+  // We plan to update the local feed object. Overwrite its properties with
+  // new properties from the remote feed
+
+  if(cleanedRemoteFeed.title) {
+    feed.title = cleanedRemoteFeed.title;
+  }
+
+  if(cleanedRemoteFeed.description) {
+    feed.description = cleanedRemoteFeed.description;
+  }
+
+  if(cleanedRemoteFeed.link) {
+    feed.link = cleanedRemoteFeed.link;
+  }
+
+  if(cleanedRemoteFeed.date) {
+    feed.date = cleanedRemoteFeed.date;
+  }
+
+  // Transfer the fetch date
+  feed.fetched = remoteFeed.fetched;
+
+  // Set the date updated
+  feed.updated = Date.now();
+
+  // Overwrite the old local feed object with the modified local feed object
+  var transaction = db.transaction('feed', 'readwrite');
+  var feedStore = transaction.objectStore('feed');
+  var putFeedRequest = feedStore.put(feed);
+  putFeedRequest.onerror = console.debug;
+
+  // Now merge in any new entries from the remote feed
+  var mergeEntry = lucu.mergeEntry.bind(null, db, feed);
+  var entries = remoteFeed.entries;
+
+  // We have to wrap so that we call callback without parameters
+  // due to async lib behavior
+  function onMergeEntriesComplete() {
     callback();
-  });
+  }
+
+  putFeedRequest.onsuccess = function() {
+    async.forEach(entries, mergeEntry, onMergeEntriesComplete);
+  };
 };
 
 lucu.poll.onAlarm = function(alarm) {
