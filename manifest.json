@@ -15,6 +15,7 @@
     "scripts": [
       "/lib/async.js",
       "/lib/URI.js",
+      "/src/add-feed.js",
       "/src/archive.js",
       "/src/augment.js",
       "/src/badge.js",
@@ -27,7 +28,6 @@
       "/src/merge-entry.js",
       "/src/notifications.js",
       "/src/rewrite.js",
-      "/src/feeds.js",
       "/src/poll.js",
       "/src/resolve-elements.js",
       "/src/sanitize-feed.js",
