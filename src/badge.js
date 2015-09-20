@@ -32,10 +32,9 @@ lucu.badge.onConnect = function(event) {
 lucu.badge.setText = function(event) {
   var count = event.target.result || 0;
 
-  // TODO: review whether badge supports 4 digit label
-  // as maybe the test should be 9999
-  var badgeText = count > 999 ? {text: '999+'} : 
-    {text: count.toString()};
+  // NOTE: Chrome supports at least 4 digits in badge text,
+  // not sure what happens after 9999
+  var badgeText = {text: count.toString()};
 
   chrome.browserAction.setBadgeText(badgeText);
 };
