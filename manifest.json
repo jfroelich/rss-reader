@@ -28,7 +28,7 @@
       "/src/notifications.js",
       "/src/rewrite.js",
       "/src/feeds.js",
-      "/src/polling.js",
+      "/src/poll.js",
       "/src/resolve-elements.js",
       "/src/sanitize-feed.js",
       "/src/deserialize-feed.js",
