@@ -55,7 +55,6 @@ lucu.db.upgrade = function(event) {
 
   // Feed url index was deprecated
   if(feedIndices.contains('url')) {
-    console.debug('Database upgrade - deleting feed.url index');
     feedStore.deleteIndex('url');
   }
 
@@ -70,13 +69,8 @@ lucu.db.upgrade = function(event) {
   if(!entryIndices.contains('link')) {
     entryStore.createIndex('link', 'link', {unique: true});
   } else {
-    // The link index should be unique. This was changed around version 11.
-    // TODO: what happens if duplicates exist in the database at the time this
-    // runs? Did not appear to generate an error. I suppose it only applies to 
-    // future add/put calls and does not retroactively enforce the constraint.
     var entryLinkIndex = entryStore.index('link');
     if(!entryLinkIndex.unique) {
-      console.debug('Database upgrade - adding unique constraint to entry.link index');
       entryStore.deleteIndex('link');
       entryStore.createIndex('link', 'link', {unique: true});
     }
@@ -84,7 +78,6 @@ lucu.db.upgrade = function(event) {
 
   // Hash was deprecated, as we now refer to entries uniquely by link
   if(entryIndices.contains('hash')) {
-    console.debug('Database upgrade - deleting entry.hash index');
     entryStore.deleteIndex('hash');
   }
 };
