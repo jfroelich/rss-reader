@@ -22,8 +22,9 @@ lucu.db.upgrade = function(event) {
   var database = event.target.result;
   var feedStore = null;
   var entryStore = null;
+  var stores = database.objectStoreNames;
 
-  if(database.objectStoreNames.contains('feed')) {
+  if(stores.contains('feed')) {
     feedStore = this.transaction.objectStore('feed');
   } else {
     feedStore = database.createObjectStore('feed', {
@@ -32,7 +33,7 @@ lucu.db.upgrade = function(event) {
     });
   }
 
-  if(database.objectStoreNames.contains('entry')) {
+  if(stores.contains('entry')) {
     entryStore = this.transaction.objectStore('entry');
   } else {
     entryStore = database.createObjectStore('entry', {
@@ -50,6 +51,12 @@ lucu.db.upgrade = function(event) {
 
   if(!feedIndices.contains('title')) {
     feedStore.createIndex('title', 'title');
+  }
+
+  // Feed url index was deprecated
+  if(feedIndices.contains('url')) {
+    console.debug('Database upgrade - deleting feed.url index');
+    feedStore.deleteIndex('url');
   }
 
   if(!entryIndices.contains('unread')) {
@@ -73,12 +80,6 @@ lucu.db.upgrade = function(event) {
       entryStore.deleteIndex('link');
       entryStore.createIndex('link', 'link', {unique: true});
     }
-  }
-
-  // Feed url index was deprecated
-  if(feedIndices.contains('url')) {
-    console.debug('Database upgrade - deleting feed.url index');
-    feedStore.deleteIndex('url');
   }
 
   // Hash was deprecated, as we now refer to entries uniquely by link

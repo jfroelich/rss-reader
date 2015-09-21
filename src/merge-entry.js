@@ -23,7 +23,15 @@ var lucu = lucu || {};
 lucu.mergeEntry = function(db, feed, entry, callback) {
   'use strict';
 
+  // TODO: is this check even necessary? Maybe this never happens?
+  if(!entry.link) {
+    console.warn('Not storing entry without link: %o', entry);
+    callback();
+    return;
+  }
+
   var storable = {};
+  
   if(feed.link) {
   	storable.feedLink = feed.link;
   }
@@ -33,22 +41,17 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
   }
 
   storable.feed = feed.id;
+  storable.link = entry.link;
+  storable.unread = 1;
 
-  // NOTE: temporary note, this has not been tested, part of transition
-  // to no-hash entries using link as primary
-  // TODO: is this check even necessary? Maybe this never happens?
-  if(!entry.link) {
-    console.warn('Not storing entry without link: %o', entry);
-    callback();
-    return;
+  if(entry.author) {
+    storable.author = entry.author;
   }
 
-  storable.link = entry.link;
+  if(entry.title) {
+    storable.title = entry.title;
+  }
 
-  storable.unread = 1;
-  if(entry.author) storable.author = entry.author;
-
-  if(entry.title) storable.title = entry.title;
   if(entry.pubdate) {
     var date = new Date(entry.pubdate);
     if(lucu.date.isValid(date)) {
@@ -61,6 +64,7 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
   }
 
   storable.created = Date.now();
+
   if(entry.content) {
   	storable.content = entry.content;
   }
