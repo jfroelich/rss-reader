@@ -8,8 +8,6 @@ lucu.db = {};
 
 // TODO: ideally we would never store both schemeless and url, we would just
 // store scheme and schemeless props as parts of a url property.
-// TODO: current bug where hash index is not being deleted
-
 // TODO: use 'lucubrate' as the database name
 
 lucu.db.NAME = 'reader';
@@ -63,7 +61,6 @@ lucu.db.upgrade = function(event) {
   }
 
   if(!entryIndices.contains('link')) {
-    console.debug('Database upgrade - creating entry.link index');
     entryStore.createIndex('link', 'link', {unique: true});
   } else {
     // The link index should be unique. This was changed around version 11.

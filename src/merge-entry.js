@@ -5,7 +5,7 @@
 var lucu = lucu || {};
 
 
-// TODO: some entry link URLs from feeds are pre-chain-of-redirect-resolition, 
+// TODO: some entry link URLs from feeds are pre-chain-of-redirect-resolution, 
 // and are technically duplicates because each redirects to the same URL at the 
 // end of the redirect chain. Therefore we should be storing the terminal link,
 // not the source link. Or maybe we should be storing both. That way a lookup
@@ -65,43 +65,15 @@ lucu.mergeEntry = function(db, feed, entry, callback) {
   	storable.content = entry.content;
   }
 
-  // Now insert the entry if an entry with the same link does
-  // not already exist. Technically this should implicitly fail
-  // because of the unique flag on the link index of the entry 
-  // object store. However, something isn't working correctly,
-  // so instead this explicitly checks for the link
-
-  // NOTE: we have to wrap callback to avoid passing parameters
-  // to it (like event) due to how async lib works
-
+  // Now insert the entry. Due to the unique flag on the entry.link index,
+  // the transaction expectedly fails if the entry already exists.
   var transaction = db.transaction('entry', 'readwrite');
   var entryStore = transaction.objectStore('entry');
-
-  var linkIndex = entryStore.index('link');
-
-  var getByLinkRequest = linkIndex.get(storable.link);
-  getByLinkRequest.onerror = function() {
-    // console.debug('getByLinkRequest error for %s', storable.link);
+  var addEntryRequest = entryStore.add(storable);
+  addEntryRequest.onsuccess = function() {
     callback();
   };
-
-  getByLinkRequest.onsuccess = function(event) {
-    var oldEntry = event.target.result;
-    if(oldEntry) {
-      // console.debug('entry.link %s already exists, not adding', storable.link);
-      callback();
-      return;
-    }
-
-    var addEntryRequest = entryStore.add(storable);
-    addEntryRequest.onsuccess = function() {
-      // console.debug('Added entry %s', storable.link);
-      callback();
-    };
-
-    addEntryRequest.onerror = function() {
-      // console.debug('Add entry failure for %s', storable.link);
-      callback();
-    };
+  addEntryRequest.onerror = function() {
+    callback();
   };
 };
