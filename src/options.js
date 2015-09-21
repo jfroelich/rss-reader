@@ -8,11 +8,13 @@
 // TODO: use a namespace object and get rid of 'options' prefix
 // in function names
 
-'use strict';
+
 
 var lucu = lucu || {};
 
 function onOptionsPageMessage(message) {
+  'use strict';
+
   if('displaySettingsChanged' == message.type) {
     lucu.style.onChange();
   } else if('pollCompleted' == message.type) {
@@ -54,6 +56,7 @@ function onOptionsPageMessage(message) {
 chrome.runtime.onMessage.addListener(onOptionsPageMessage);
 
 function hideErrorMessage() {
+  'use strict';
   var container = document.getElementById('options_error_message');
   if(!container) return;
   var dismissButton = document.getElementById('options_dismiss_error_button');
@@ -63,6 +66,7 @@ function hideErrorMessage() {
 }
 
 function showErrorMessage(message, fadeIn) {
+  'use strict';
   hideErrorMessage();
 
   var elMessage = document.createElement('span');
@@ -93,6 +97,7 @@ function showErrorMessage(message, fadeIn) {
 // TODO: instead of removing and re-adding, reset and reuse
 
 function showSubscriptionMonitor() {
+  'use strict';
   resetSubscriptionMonitor();
   var container = document.createElement('div');
   container.setAttribute('id', 'options_subscription_monitor');
@@ -105,16 +110,19 @@ function showSubscriptionMonitor() {
 }
 
 function isSubscriptionMonitorDisplayed() {
+  'use strict';
   var subMonitor = document.getElementById('options_subscription_monitor');
   return subMonitor && subMonitor.style.display == 'block';
 }
 
 function resetSubscriptionMonitor() {
+  'use strict';
   var element = document.getElementById('options_subscription_monitor');
   element && element.remove();
 }
 
 function updateSubscriptionMonitor(message) {
+  'use strict';
   var container = document.getElementById('options_subscription_monitor');
   if(!container) return;
   var paragraph = document.createElement('p');
@@ -123,6 +131,7 @@ function updateSubscriptionMonitor(message) {
 }
 
 function hideSubsciptionMonitor(onComplete, fadeOut) {
+  'use strict';
   var container = document.getElementById('options_subscription_monitor');
 
   // NOTE: possible bug here, should be checking arguments.length
@@ -149,6 +158,7 @@ var currentMenuItem_;
 var currentSection_;
 
 function optionsShowSection(menuItem) {
+  'use strict';
   if(!menuItem || currentMenuItem_ == menuItem) {
     return;
   }
@@ -173,6 +183,7 @@ function optionsShowSection(menuItem) {
 }
 
 function optionsUpdateFeedCount() {
+  'use strict';
   var count = document.getElementById('feedlist').childElementCount;
   var countElement = document.getElementById('subscription-count');
 
@@ -188,7 +199,7 @@ function optionsUpdateFeedCount() {
 }
 
 function optionsAppendFeed(feed, insertedSort) {
-
+  'use strict';
   if(!feed) {
     console.error('feed undefined in optionsAppendFeed');
     return;
@@ -237,6 +248,7 @@ function optionsAppendFeed(feed, insertedSort) {
 }
 
 function onEnableSubscriptionPreviewChange() {
+  'use strict';
   if(this.checked)
     localStorage.ENABLE_SUBSCRIBE_PREVIEW = '1';
   else
@@ -244,7 +256,7 @@ function onEnableSubscriptionPreviewChange() {
 }
 
 function showOrSkipSubscriptionPreview(url) {
-
+  'use strict';
   // TODO: do not augment during preview, it takes too long
 
   console.debug('showOrSkipSubscriptionPreview %s',url);
@@ -328,11 +340,13 @@ function showOrSkipSubscriptionPreview(url) {
 }
 
 function hideSubscriptionPreview() {
+  'use strict';
   document.getElementById('subscription-preview').style.display = 'none';
   document.getElementById('subscription-preview-entries').innerHTML = '';
 }
 
 function startSubscription(url) {
+  'use strict';
   // TODO: Use async.js here
 
   hideSubscriptionPreview();
@@ -436,7 +450,7 @@ function startSubscription(url) {
 }
 
 function populateFeedDetailsSection(feedId) {
-
+  'use strict';
   // TODO: react to onerror/onblocked
 
   // TODO: show num entries, num unread/red, etc
@@ -465,12 +479,14 @@ function populateFeedDetailsSection(feedId) {
 }
 
 function onPostPreviewSubscribeClick(event) {
+  'use strict';
   var url = event.currentTarget.value;
   hideSubscriptionPreview();
   startSubscription(url);
 }
 
 function onFeedListItemClick(event) {
+  'use strict';
   var feedId = parseInt(event.currentTarget.getAttribute('feed'));
   populateFeedDetailsSection(feedId);
   // TODO: These calls should really be in an async callback
@@ -480,6 +496,7 @@ function onFeedListItemClick(event) {
 }
 
 function onSubscribeSubmit(event) {
+  'use strict';
   event.preventDefault();// Prevent normal form submission event
   var query = (document.getElementById('subscribe-discover-query').value || '').trim();
   if(!query)
@@ -507,6 +524,7 @@ function onSubscribeSubmit(event) {
 }
 
 function discoverSubscribeClick(event) {
+  'use strict';
   var button = event.target;
   var url = button.value;
   if(!url)
@@ -523,6 +541,7 @@ function discoverSubscribeClick(event) {
 }
 
 function onDiscoverFeedsComplete(query, results) {
+  'use strict';
   var resultsList = document.getElementById('discover-results-list');
   document.getElementById('discover-in-progress').style.display='none';
 
@@ -601,12 +620,14 @@ function onDiscoverFeedsComplete(query, results) {
 }
 
 function onDiscoverFeedsError(errorMessage) {
+  'use strict';
   document.getElementById('discover-in-progress').style.display='none';
   console.debug('discover feeds error %o',errorMessage);
   showErrorMessage('An error occurred when searching for feeds. Details: ' + errorMessage);
 }
 
 function onUnsubscribeButtonClicked(event) {
+  'use strict';
   var feedId = parseInt(event.target.value);
   var sectionMenu = document.getElementById('mi-subscriptions');
   var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
@@ -650,6 +671,7 @@ function onUnsubscribeButtonClicked(event) {
 }
 
 function onEnableURLRewritingChange(event) {
+  'use strict';
   if(event.target.checked)
     localStorage.URL_REWRITING_ENABLED = '1';
   else
@@ -667,6 +689,7 @@ function onEnableURLRewritingChange(event) {
 // TODO: notify the user
 // TODO: switch to a section on complete?
 function onImportOPMLClick(event) {
+  'use strict';
   var uploader = document.createElement('input');
   uploader.setAttribute('type', 'file');
   uploader.style.display = 'none';
@@ -697,10 +720,12 @@ function onImportOPMLClick(event) {
 
 
 function onExportOPMLClick(event) {
+  'use strict';
   lucu.opml.exportBlob(exportOPMLOnComplete);
 }
 
 function exportOPMLOnComplete(blob) {
+  'use strict';
   var anchor = document.createElement('a');
   anchor.href = URL.createObjectURL(blob);
   anchor.setAttribute('download', 'subscriptions.xml');
@@ -714,6 +739,7 @@ function exportOPMLOnComplete(blob) {
 }
 
 function onHeaderFontChange(event){
+  'use strict';
   if(event.target.value)
     localStorage.HEADER_FONT_FAMILY = event.target.value;
   else
@@ -722,11 +748,13 @@ function onHeaderFontChange(event){
 }
 
 function onHeaderFontSizeChange(event) {
+  'use strict';
   localStorage.HEADER_FONT_SIZE = parseInt(event.target.value) || 1;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
 }
 
 function onBodyFontChange(event) {
+  'use strict';
   if(event.target.value)
     localStorage.BODY_FONT_FAMILY = event.target.value;
   else
@@ -735,6 +763,7 @@ function onBodyFontChange(event) {
 }
 
 function onColumnCountChange(event) {
+  'use strict';
   if(event.target.value)
     localStorage.COLUMN_COUNT = event.target.value;
   else
@@ -743,21 +772,25 @@ function onColumnCountChange(event) {
 }
 
 function onBodyFontSizeChange(event) {
+  'use strict';
   localStorage.BODY_FONT_SIZE = parseInt(event.target.value) || 1;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
 }
 
 function onBodyLineHeightChange(event) {
+  'use strict';
   localStorage.BODY_LINE_HEIGHT = event.target.value || '10';
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
 }
 
 function onEntryMarginChange(event) {
+  'use strict';
   localStorage.ENTRY_MARGIN = parseInt(event.target.value) || 10;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
 }
 
 function onBackgroundImageChange(event) {
+  'use strict';
   if(event.target.value)
     localStorage.BACKGROUND_IMAGE = event.target.value;
   else
@@ -766,6 +799,7 @@ function onBackgroundImageChange(event) {
 }
 
 function onJustifyChange(event) {
+  'use strict';
   if(event.target.checked)
     localStorage.JUSTIFY_TEXT = '1';
   else
@@ -774,6 +808,7 @@ function onJustifyChange(event) {
 }
 
 function onEnableNotificationsChange(event) {
+  'use strict';
   if(event.target.checked)
     chrome.permissions.request({permissions:['notifications']}, function(granted) {});
   else
@@ -781,6 +816,7 @@ function onEnableNotificationsChange(event) {
 }
 
 function onEnableBackgroundChange(event) {
+  'use strict';
   if(event.target.checked)
     chrome.permissions.request({permissions:['background']}, function(granted) {});
   else
@@ -788,6 +824,7 @@ function onEnableBackgroundChange(event) {
 }
 
 function onEnableIdleCheckChange(event) {
+  'use strict';
   if(event.target.checked)
     chrome.permissions.request({permissions:['idle']}, function(granted){});
   else
@@ -795,6 +832,7 @@ function onEnableIdleCheckChange(event) {
 }
 
 function initNavigation() {
+  'use strict';
   var menuItem = document.getElementById('mi-embeds');
   menuItem.style.display = localStorage.EMBED_POLICY == 'ask' ? 'block' : 'none';
 
@@ -804,18 +842,19 @@ function initNavigation() {
 }
 
 function setNavigationOnClick(menuItem) {
+  'use strict';
   menuItem.onclick = onNavigationClick;
 }
 
 function onNavigationClick(event) {
+  'use strict';
   // Use currentTarget instead of event.target as some of the menu items have a
   // nested element that is the event.target
   optionsShowSection(event.currentTarget);
 }
 
-
 function initGeneralSettingsSection() {
-
+  'use strict';
   document.getElementById('enable-notifications').onclick =
     onEnableNotificationsChange;
 
@@ -846,6 +885,7 @@ function initGeneralSettingsSection() {
 }
 
 function initSubscriptionsSection() {
+  'use strict';
   // TODO: inline and simplify this
   function forEachFeed(db, handleFeed, onComplete, sortByTitle) {
     var tx = db.transaction('feed');
@@ -888,11 +928,13 @@ function initSubscriptionsSection() {
 }
 
 function initFeedDetailsSection() {
+  'use strict';
   var unsubscribeButton = document.getElementById('details-unsubscribe');
   unsubscribeButton.onclick = onUnsubscribeButtonClicked;
 }
 
 function initSubscribeDiscoverSection() {
+  'use strict';
   document.getElementById('subscription-form').onsubmit = onSubscribeSubmit;
 
   var previewContinueButton = document.getElementById('subscription-preview-continue');
@@ -900,7 +942,7 @@ function initSubscribeDiscoverSection() {
 }
 
 function initDisplaySettingsSection() {
-
+  'use strict';
   // Apply the dynamic CSS on load to set the article preview
   // area within the display settings section
   lucu.style.onLoad();
@@ -992,6 +1034,7 @@ function initDisplaySettingsSection() {
 }
 
 function initAboutSection() {
+  'use strict';
   var manifest = chrome.runtime.getManifest();
 
   var label = document.getElementById('extension-name');
@@ -1007,6 +1050,7 @@ function initAboutSection() {
 }
 
 function initOptionsPage(event) {
+  'use strict';
   document.removeEventListener('DOMContentLoaded', initOptionsPage);
 
   initNavigation();
