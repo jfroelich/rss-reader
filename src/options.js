@@ -332,39 +332,12 @@ function hideSubscriptionPreview() {
   document.getElementById('subscription-preview-entries').innerHTML = '';
 }
 
-// TODO: move this into a separate file
-function isValidURL(url) {
-
-  if(!url) {
-    return false;
-  }
-
-  // Use medialize
-  try {
-    var uri = URI(url);
-  } catch(e) {
-    console.debug(e);
-    return false;
-  }
-
-  if(!uri.protocol()) {
-    return false;
-  }
-
-  if(!uri.hostname()) {
-    return false;
-  }
-
-  return true;
-
-}
-
 function startSubscription(url) {
   // TODO: Use async.js here
 
   hideSubscriptionPreview();
 
-  if(!isValidURL(url)) {
+  if(!lucu.url.isValid(url)) {
     return showErrorMessage('Invalid url "' + url + '".');
   }
 
@@ -517,7 +490,7 @@ function onSubscribeSubmit(event) {
   // query did not change
   if(isSubscriptionMonitorDisplayed())
     return false;
-  if(isValidURL(query)) {
+  if(lucu.url.isValid(query)) {
     document.getElementById('discover-results-list').innerHTML = '';
     document.getElementById('discover-no-results').style.display='none';
      document.getElementById('discover-in-progress').style.display='none';
