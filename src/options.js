@@ -327,13 +327,11 @@ function startSubscription(url) {
   updateSubscriptionMonitor('Subscribing...');
 
   // TODO: react to onerror/onblocked
-  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
-  var request = lucu.db.connect();
-  request.onerror = console.error;
-  request.onblocked = console.error;
-  request.onsuccess = function (event) {
-    var db = event.target.result;
-    var store = db.transaction('feed').objectStore('feed');
+
+  lucu.database.connect(onConnect, console.error);
+
+  function onConnect(database) {
+    var store = database.transaction('feed').objectStore('feed');
     var index = store.index('schemeless');
     var uri = new URI(url);
     uri.protocol('');
@@ -349,7 +347,8 @@ function startSubscription(url) {
 
       // TODO: use connectivity.js lib
       if(!navigator.onLine) {
-        return lucu.addFeed(db, {url: url}, onSubscriptionSuccessful, console.debug);
+        return lucu.addFeed(database, {url: url}, onSubscriptionSuccessful, 
+          console.debug);
       }
 
       lucu.fetch.fetchFeed(url, onFetchComplete, onFetchError, 10 * 1000);
@@ -366,16 +365,14 @@ function startSubscription(url) {
       remoteFeed.url = url;
       remoteFeed.fetched = Date.now();
       // TODO: react to db onerror/onblocked
-      //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
-      var request = lucu.db.connect();
-      request.onerror = console.error;
-      request.onblocked = console.error;
-      request.onsuccess = function (event) {
-        var db = event.target.result;
-        lucu.addFeed(db, remoteFeed, function() {
+      
+      function onConnect(database) {
+        lucu.addFeed(database, remoteFeed, function() {
           onSubscriptionSuccessful(remoteFeed, 0, 0);
         }, console.debug);
-      };
+      }
+
+      lucu.database.connect(onConnect, console.error);
     });
   }
 
@@ -417,16 +414,13 @@ function populateFeedDetailsSection(feedId) {
 
   // TODO: show num entries, num unread/red, etc
 
-  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
-  var request = lucu.db.connect();
-  request.onerror = console.error;
-  request.onblocked = console.error;
-  request.onsuccess = function (event) {
-    var db = event.target.result;
+  lucu.database.connect(onConnect, console.error);
 
-    db.transaction('feed').objectStore('feed').get(feedId).onsuccess =
-      function(event) {
-
+  function onConnect(database) {
+    var transaction = database.transaction('feed');
+    var feedStore = transaction.objectStore('feed');
+    var feedRequest = feedStore.get(feedId);
+    feedRequest.onsuccess = function(event) {
       var feed = event.target.result;
       document.getElementById('details-title').textContent = feed.title ||
         'Untitled';
@@ -842,7 +836,7 @@ function initGeneralSettingsSection() {
 
 function initSubscriptionsSection() {
   'use strict';
-  // TODO: inline and simplify this
+
   function forEachFeed(db, handleFeed, onComplete, sortByTitle) {
     var tx = db.transaction('feed');
     tx.oncomplete = onComplete;
@@ -862,13 +856,11 @@ function initSubscriptionsSection() {
   var feedCount = 0;
 
   // todo: react to onerror/onblocked
-  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
-  var request = lucu.db.connect();
-  request.onerror = console.error;
-  request.onblocked = console.error;
-  request.onsuccess = function (event) {
-    var db = event.target.result;
-    forEachFeed(db, function(feed) {
+  lucu.database.connect(onConnect, console.error);
+
+  function onConnect(database) {
+
+    forEachFeed(database, function(feed) {
       feedCount++;
       optionsAppendFeed(feed);
       optionsUpdateFeedCount();

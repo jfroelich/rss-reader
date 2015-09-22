@@ -10,11 +10,13 @@ lucu.install = {};
 // review the API
 
 lucu.install.onInstall = function(event) {
-  
-  var connection = lucu.db.connect();
+  function noop() {}
+  lucu.database.connect(noop, console.error);
 
   // maybe install should also set the badge text to '?'
   //lucu.badge.update();
+
+  // TODO: set localStorage defaults
 };
 
 // TODO: is there a way to avoid this being called every time

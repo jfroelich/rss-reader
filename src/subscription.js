@@ -9,18 +9,16 @@ lucu.subscription = {};
 lucu.subscription.unsubscribe = function(feedId, callback, fallback) {
   'use strict';
 
-  var connection = lucu.db.connect();
-  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
-  connection.onerror = fallback;
-  connection.onblocked = fallback;
-  connection.onsuccess = lucu.subscription.onUnsubscribeConnect.bind(
-  	null, feedId, callback, fallback);
+  var onConnect = lucu.subscription.onUnsubscribeConnect.bind(
+    null, feedId, callback, fallback);
+
+  lucu.database.connect(onConnect, fallback);
 };
 
 // Deletes the feed and its entries
-lucu.subscription.onUnsubscribeConnect = function(feedId, callback, fallback, event) {
+lucu.subscription.onUnsubscribeConnect = function(feedId, callback, fallback, database) {
   'use strict';
-  var database = event.target.result;
+
   var transaction = database.transaction(['entry','feed'], 'readwrite');
 
   transaction.oncomplete = lucu.subscription.onUnsubscribeComplete.bind(

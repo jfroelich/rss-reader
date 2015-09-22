@@ -24,15 +24,18 @@ lucu.archive.start = function() {
   async.waterfall(waterfall, lucu.archive.onComplete);
 };
 
-// TODO: this should be a call to a database function
+// TODO: this should be refactored so we don't have to wrap and 
+// can use async API more directly
 lucu.archive.connect = function(callback) {
-  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
-  var request = lucu.db.connect();
-  request.onerror = callback;
-  request.onblocked = callback;
-  request.onsuccess = function(event) {
-    callback(null, event.target.result);
-  };
+
+  // We wrap because the first arg when used with async is an error
+  // arg that halts the waterfall
+  var onConnect = lucu.archive.onConnect.bind(null, callback);
+  lucu.database.connect(onConnect, callback);
+};
+
+lucu.archive.onConnect = function(callback, database) {
+  callback(null, database);
 };
 
 lucu.archive.selectEntries = function(db, callback) {

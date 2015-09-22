@@ -77,13 +77,12 @@ lucu.poll.onComplete = function(error, feeds) {
 // TODO: this should probably be a common function 
 // from database.js
 lucu.poll.connect = function(callback) {
-  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
-  var request = lucu.db.connect();
-  request.onerror = callback;
-  request.onblocked = callback;
-  request.onsuccess = function(event) {
-    callback(null, event.target.result);
-  };
+
+  function onConnect(database) {
+    callback(null, database);
+  }
+
+  lucu.database.connect(onConnect, callback);
 };
 
 lucu.poll.checkIdle = function(callback) {
@@ -116,19 +115,19 @@ lucu.poll.isIdle = function(callback, idleState) {
   }
 };
 
-lucu.poll.selectFeeds = function(db, callback) {
+lucu.poll.selectFeeds = function(database, callback) {
   var feeds = [];
-  var tx = db.transaction('feed');
+  var tx = database.transaction('feed');
   var store = tx.objectStore('feed');
   tx.oncomplete = lucu.poll.onSelectFeedsCompleted.bind(null, callback, 
-    db, feeds);
+    database, feeds);
   var request = store.openCursor();
   request.onsuccess = lucu.poll.onSelectFeed.bind(null, feeds);
 };
 
 // selectFeeds helper
-lucu.poll.onSelectFeedsCompleted = function(callback, db, feeds, event) {
-  callback(null, db, feeds);
+lucu.poll.onSelectFeedsCompleted = function(callback, database, feeds, event) {
+  callback(null, database, feeds);
 };
 
 // selectFeeds helper

@@ -4,34 +4,47 @@
 
 var lucu = lucu || {};
 
-lucu.db = {};
+lucu.database = {};
 
 // TODO: ideally we would never store both schemeless and url, we would just
 // store scheme and schemeless props as parts of a url property.
 // TODO: use 'lucubrate' as the database name
 
-lucu.db.NAME = 'reader';
-lucu.db.VERSION = 15;
+lucu.database.NAME = 'reader';
+lucu.database.VERSION = 15;
 
-lucu.db.connect = function() {
-  var openRequest = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
-  openRequest.onupgradeneeded = lucu.db.upgrade;
+lucu.database.connect = function(callback, fallback) {
+  var openRequest = indexedDB.open(lucu.database.NAME, lucu.database.VERSION);
+  openRequest.onupgradeneeded = lucu.database.upgrade;
+  openRequest.onsuccess = lucu.database.onConnect.bind(null, callback);
+  openRequest.onerror = fallback;
+  openRequest.onblocked = fallback;
+
+  // This is superfluous, but allows the caller to override or set
+  // the request properties from the calling context
   return openRequest;
 };
 
-lucu.db.upgrade = function(event) {
+// TODO: if we pass null as the first argument to callback, I think this
+// can be directly used with async API more easily.
+lucu.database.onConnect = function(callback, event) {
+  callback(event.target.result);
+};
+
+lucu.database.upgrade = function(event) {
   'use strict';
 
   var oldVersion = event.oldVersion;
   console.debug('Upgrading database from version %s', oldVersion);
 
-  var database = event.target.result;
+  var request = event.target;
+  var database = request.result;
   var feedStore = null;
   var entryStore = null;
   var stores = database.objectStoreNames;
 
   if(stores.contains('feed')) {
-    feedStore = this.transaction.objectStore('feed');
+    feedStore = request.transaction.objectStore('feed');
   } else {
     feedStore = database.createObjectStore('feed', {
       keyPath: 'id',
@@ -40,7 +53,7 @@ lucu.db.upgrade = function(event) {
   }
 
   if(stores.contains('entry')) {
-    entryStore = this.transaction.objectStore('entry');
+    entryStore = request.transaction.objectStore('entry');
   } else {
     entryStore = database.createObjectStore('entry', {
       keyPath: 'id',
@@ -88,17 +101,16 @@ lucu.db.upgrade = function(event) {
   }
 };
 
-lucu.db.clearEntries = function() {
-  var openRequest = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
-  openRequest.onerror = console.debug;
-  openRequest.onsuccess = function(event) {
-    var database = event.target.result;
-    var transaction = database.transaction('entry', 'readwrite');
-    var entryStore = transaction.objectStore('entry');
-    var clearRequest = entryStore.clear();
-    clearRequest.onerror = console.debug;
-    clearRequest.onsuccess = function() {
-      console.debug('Cleared entry object store');
-    };
+lucu.database.clearEntries = function() {
+  lucu.database.connect(lucu.database.onClearEntriesConnect, console.error);
+};
+
+lucu.database.onClearEntriesConnect = function(database) {
+  var transaction = database.transaction('entry', 'readwrite');
+  var entryStore = transaction.objectStore('entry');
+  var clearRequest = entryStore.clear();
+  clearRequest.onerror = console.debug;
+  clearRequest.onsuccess = function(event) {
+    console.debug('Cleared entry object store');
   };
 };

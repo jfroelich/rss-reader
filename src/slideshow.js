@@ -77,14 +77,11 @@ function markSlideRead(slide) {
   slide.setAttribute('read', '');
 
   // TODO: move this out of UI code
+  // TODO: react to database error
+  lucu.database.connect(onConnect, console.error);
 
-  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
-  var request = lucu.db.connect();
-  request.onerror = console.error;
-  request.onblocked = console.error;
-  request.onsuccess = function (event) {
-    var db = event.target.result;
-    var tx = db.transaction('entry', 'readwrite');
+  function onConnect(database) {
+    var tx = database.transaction('entry', 'readwrite');
     var store = tx.objectStore('entry');
     // TODO: use the implied range syntax instead?
     var range = IDBKeyRange.only(entryId);
@@ -114,13 +111,11 @@ function appendSlides(oncomplete, isFirst) {
   var offset = countUnreadSlides();
   var notAdvanced = true;
 
-  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
-  var request = lucu.db.connect();
-  request.onerror = console.error;
-  request.onblocked = console.error;
-  request.onsuccess = function (event) {
-    var db = event.target.result;
-    var tx = db.transaction('entry');
+
+  lucu.database.connect(onConnect, console.error);
+
+  function onConnect(database) {
+    var tx = database.transaction('entry');
     tx.oncomplete = oncomplete;
     tx.objectStore('entry').index('unread').openCursor().onsuccess =
       renderEntry;

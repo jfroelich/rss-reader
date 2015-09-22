@@ -9,35 +9,20 @@ lucu.badge = {};
 // Sets the badge text to a count of unread entries
 lucu.badge.update = function() {
   // console.debug('Updating badge');
-  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
-  var request = lucu.db.connect();
-  request.onerror = console.error;
-  request.onblocked = console.error;
-
-  // Extra bind here since this is temporarily also used to 
-  // trigger database creation on install
-  // TODO: remove this once we clean up the install code
-  // request.onupgradeneeded = lucu.db.upgrade;
-
-  request.onsuccess = lucu.badge.onConnect;
+  lucu.database.connect(lucu.badge.onConnect, console.error);
 };
 
-lucu.badge.onConnect = function(event) {
-  var db = event.target.result;
-  var tx = db.transaction('entry');
-  var store = tx.objectStore('entry');
-  var index = store.index('unread');
-  var countRequest = index.count();
+lucu.badge.onConnect = function(database) {
+  var transaction = database.transaction('entry');
+  var entryStore = transaction.objectStore('entry');
+  var unreadIndex = entryStore.index('unread');
+  var countRequest = unreadIndex.count();
   countRequest.onsuccess = lucu.badge.setText;
 };
 
 lucu.badge.setText = function(event) {
   var count = event.target.result || 0;
-
-  // NOTE: Chrome supports at least 4 digits in badge text,
-  // not sure what happens after 9999
   var badgeText = {text: count.toString()};
-
   chrome.browserAction.setBadgeText(badgeText);
 };
 

@@ -98,15 +98,17 @@ lucu.opml.mergeOutlines = function(outlineArrays, callback) {
 };
 
 lucu.opml.importConnect = function(outlines, callback) {
-  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
-  var request = lucu.db.connect();
 
-  // NOTE: causes event object to be passed as error argument
-  request.onerror = callback;
-  request.onblocked = callback;
-  request.onsuccess = function(event) {
-    callback(null, event.target.result, outlines);
-  };
+  function onConnect(database) {
+    callback(null, database, outlines);
+  }
+
+  // NOTE: by using callback here as fallback, the event object passed by 
+  // indexedDB due to an error or block event becomes the first
+  // parameter, which signals to async that an error occurred
+  // which halts the waterfall
+
+  lucu.database.connect(onConnect, callback);
 };
 
 lucu.opml.storeOutlines = function(db, outlines, callback) {
@@ -142,15 +144,15 @@ lucu.opml.exportBlob = function(onComplete) {
   async.waterfall(waterfall, completed);
 };
 
-// TODO: this can probably be a shared function in database.js
+// TODO: this should be refactored a bit more
 lucu.opml.exportConnect = function(callback) {
   'use strict';
-  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
-  request.onerror = callback;
-  request.onblocked = callback;
-  request.onsuccess = function(event) {
-    callback(null, event.target.result);
-  };
+  
+  function onConnect(database) {
+    callback(null, database);
+  }
+
+  lucu.database.connect(onConnect, callback);
 };
 
 lucu.opml.exportGetFeeds = function(db, callback) {

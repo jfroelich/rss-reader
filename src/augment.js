@@ -42,22 +42,21 @@ lucu.augment.start = function(feed, callback) {
 };
 
 lucu.augment.connect = function(callback) {
-  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
-  var request = lucu.db.connect();
-  request.onerror = callback;
-  request.onblocked = callback;
-  request.onsuccess = lucu.augment.onConnect.bind(request, callback);
+
+  // Wrap due to async lib error argument coming first
+  var onConnect = lucu.augment.onConnect.bind(null, callback);
+  lucu.database.connect(onConnect, callback);
 };
 
-lucu.augment.onConnect = function(callback, event) {
-  callback(null, event.target.result);
+lucu.augment.onConnect = function(callback, database) {
+  callback(null, database);
 };
 
 // Asynchronously iterate over the entries to produce an array of 
 // only those entries not already in the database and then pass 
 // along this array
-lucu.augment.filterExisting = function(entries, db, callback) {
-  var tx = db.transaction('entry');
+lucu.augment.filterExisting = function(entries, database, callback) {
+  var tx = database.transaction('entry');
   var findByLink = lucu.augment.findEntryByLink.bind(this, tx);
   var onComplete = lucu.augment.onFilteredExisting.bind(null, callback);
   async.reject(entries, findByLink, onComplete);
