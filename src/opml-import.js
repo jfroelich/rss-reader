@@ -9,8 +9,7 @@ lucu.opml = lucu.opml || {};
 
 lucu.opml.OPML_MIME_TYPE = 'application/xml';
 
-// TODO: rename to be more general
-lucu.opml.importFiles = function(files, onComplete) {
+lucu.opml.import = function(files, onComplete) {
   'use strict';
 
   var waterfall = [

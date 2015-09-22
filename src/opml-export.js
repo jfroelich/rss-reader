@@ -7,7 +7,10 @@ var lucu = lucu || {};
 // Second level namespace for opml related features
 lucu.opml = lucu.opml || {};
 
-lucu.opml.exportBlob = function(onComplete) {
+/**
+ * Creates a BLOB object and passes it to onComplete
+ */
+lucu.opml.export = function(onComplete) {
   'use strict';
 
   var waterfall = [
@@ -16,13 +19,10 @@ lucu.opml.exportBlob = function(onComplete) {
     lucu.opml.exportSerialize
   ];
 
-  // TODO: test, null is 'this' and onComplete is the implied first arg
   var completed = lucu.opml.exportCompleted.bind(null, onComplete);
-
   async.waterfall(waterfall, completed);
 };
 
-// TODO: this should be refactored a bit more
 lucu.opml.exportConnect = function(callback) {
   'use strict';
 
@@ -49,22 +49,24 @@ lucu.opml.exportGetFeeds = function(database, callback) {
 };
 
 lucu.opml.exportGetFeedsOnSuccess = function(feeds, event) {
+  'use strict';
   var cursor = event.target.result;
   if(!cursor) return;
   feeds.push(cursor.value);
   cursor.continue();
 };
 
-lucu.opml.exportCompleted = function(onComplete, error, opmlString) {
-  'use strict';
-  var blob = new Blob([opmlString], {type:'application/xml'});
-  onComplete(blob);
-};
-
+// TODO: the default file name should be a parameter
 lucu.opml.exportSerialize = function(feeds, callback) {
   'use strict';
   var document = lucu.opml.createDocument(feeds, 'subscriptions.xml');
   var xs = new XMLSerializer();
   var opml = xs.serializeToString(document);
   callback(null, opml);
+};
+
+lucu.opml.exportCompleted = function(callback, error, opmlString) {
+  'use strict';
+  var blob = new Blob([opmlString], {type:'application/xml'});
+  callback(blob);
 };

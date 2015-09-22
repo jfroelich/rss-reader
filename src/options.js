@@ -661,17 +661,16 @@ function onImportOPMLClick(event) {
       return onImport(0,0,[]);
     }
 
-    lucu.opml.importFiles(uploader.files, onImport);
+    lucu.opml.import(uploader.files, onImport);
   };
 
   document.body.appendChild(uploader);
   uploader.click();
 }
 
-
 function onExportOPMLClick(event) {
   'use strict';
-  lucu.opml.exportBlob(exportOPMLOnComplete);
+  lucu.opml.export(exportOPMLOnComplete);
 }
 
 function exportOPMLOnComplete(blob) {
@@ -683,9 +682,10 @@ function exportOPMLOnComplete(blob) {
   document.body.appendChild(anchor);
   // Trigger the download
   anchor.click();
+
   // Cleanup
   URL.revokeObjectURL(blob);
-  document.body.removeChild(anchor); 
+  anchor.remove();
 }
 
 function onHeaderFontChange(event){
