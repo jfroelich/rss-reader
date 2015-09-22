@@ -12,7 +12,7 @@ lucu.badge.update = function() {
   lucu.database.connect(lucu.badge.onConnect, console.error);
 };
 
-lucu.badge.onConnect = function(database) {
+lucu.badge.onConnect = function(error, database) {
   var transaction = database.transaction('entry');
   var entryStore = transaction.objectStore('entry');
   var unreadIndex = entryStore.index('unread');

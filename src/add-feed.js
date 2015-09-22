@@ -7,6 +7,9 @@ var lucu = lucu || {};
 // TODO: this file only contains add feed funciton, just rename file or 
 // move this function to the area that uses it
 
+// TODO: use lucu.subscription, and rename it to lucu.subscription.subscribe
+
+
 // TODO: ensure no future pubdates?
 // TODO: use the async's approach to error handling. Only use
 // one callback. The first argument should be the error object.

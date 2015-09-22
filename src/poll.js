@@ -72,17 +72,14 @@ lucu.poll.onComplete = function(error, feeds) {
   lucu.notifications.show('Updated articles');
 };
 
-// Simple helper to grab a db connection that is designed
-// to work with async.js
-// TODO: this should probably be a common function 
-// from database.js
+// TODO: maybe rename to be clearer?
 lucu.poll.connect = function(callback) {
-
-  function onConnect(database) {
-    callback(null, database);
-  }
-
+  var onConnect = lucu.poll.onConnect.bind(null, callback);
   lucu.database.connect(onConnect, callback);
+};
+
+lucu.poll.onConnect = function(callback, error, database) {
+  callback(null, database);
 };
 
 lucu.poll.checkIdle = function(callback) {

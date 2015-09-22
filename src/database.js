@@ -13,6 +13,10 @@ lucu.database = {};
 lucu.database.NAME = 'reader';
 lucu.database.VERSION = 15;
 
+/**
+ * Calls callback with two arguments, error and database. Error is 
+ * always null. database is an instance of IDBDatabase.
+ */
 lucu.database.connect = function(callback, fallback) {
   var openRequest = indexedDB.open(lucu.database.NAME, lucu.database.VERSION);
   openRequest.onupgradeneeded = lucu.database.upgrade;
@@ -28,7 +32,10 @@ lucu.database.connect = function(callback, fallback) {
 // TODO: if we pass null as the first argument to callback, I think this
 // can be directly used with async API more easily.
 lucu.database.onConnect = function(callback, event) {
-  callback(event.target.result);
+
+  // In order to work cleanly with async.waterfall, we pass back null
+  // as the first argument.
+  callback(null, event.target.result);
 };
 
 lucu.database.upgrade = function(event) {
@@ -105,7 +112,7 @@ lucu.database.clearEntries = function() {
   lucu.database.connect(lucu.database.onClearEntriesConnect, console.error);
 };
 
-lucu.database.onClearEntriesConnect = function(database) {
+lucu.database.onClearEntriesConnect = function(error, database) {
   var transaction = database.transaction('entry', 'readwrite');
   var entryStore = transaction.objectStore('entry');
   var clearRequest = entryStore.clear();

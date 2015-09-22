@@ -42,14 +42,7 @@ lucu.augment.start = function(feed, callback) {
 };
 
 lucu.augment.connect = function(callback) {
-
-  // Wrap due to async lib error argument coming first
-  var onConnect = lucu.augment.onConnect.bind(null, callback);
-  lucu.database.connect(onConnect, callback);
-};
-
-lucu.augment.onConnect = function(callback, database) {
-  callback(null, database);
+  lucu.database.connect(callback, callback);
 };
 
 // Asynchronously iterate over the entries to produce an array of 

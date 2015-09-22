@@ -7,7 +7,9 @@ var lucu = lucu || {};
 // Second level namespace for opml related features
 lucu.opml = lucu.opml || {};
 
-// TODO: test
+// TODO: break apart import-export into two files
+
+
 lucu.opml.importFiles = function(files, onComplete) {
   'use strict';
 
@@ -98,21 +100,16 @@ lucu.opml.mergeOutlines = function(outlineArrays, callback) {
 };
 
 lucu.opml.importConnect = function(outlines, callback) {
-
-  function onConnect(database) {
-    callback(null, database, outlines);
-  }
-
-  // NOTE: by using callback here as fallback, the event object passed by 
-  // indexedDB due to an error or block event becomes the first
-  // parameter, which signals to async that an error occurred
-  // which halts the waterfall
-
+  var onConnect = lucu.opml.importOnConnect.bind(null, outlines, callback);
   lucu.database.connect(onConnect, callback);
 };
 
-lucu.opml.storeOutlines = function(db, outlines, callback) {
-  var storeOutline = lucu.opml.storeOutline.bind(null, db);
+lucu.opml.importOnConnect = function(outlines, callback, error, database) {
+  callback(null, database, outlines);
+};
+
+lucu.opml.storeOutlines = function(database, outlines, callback) {
+  var storeOutline = lucu.opml.storeOutline.bind(null, database);
   var onComplete = lucu.opml.onStoreOutlinesComplete.bind(null, callback);
   async.forEach(outlines, storeOutline, onComplete);
 };
@@ -121,8 +118,8 @@ lucu.opml.onStoreOutlinesComplete = function(callback) {
   callback();
 };
 
-lucu.opml.storeOutline = function(db, outline, callback) {
-  lucu.addFeed(db, outline, function() {
+lucu.opml.storeOutline = function(database, outline, callback) {
+  lucu.addFeed(database, outline, function() {
     callback();
   }, function() {
     callback();
@@ -147,21 +144,23 @@ lucu.opml.exportBlob = function(onComplete) {
 // TODO: this should be refactored a bit more
 lucu.opml.exportConnect = function(callback) {
   'use strict';
-  
-  function onConnect(database) {
-    callback(null, database);
-  }
 
+  var onConnect = lucu.opml.exportOnConnect.bind(null, callback);
   lucu.database.connect(onConnect, callback);
 };
 
-lucu.opml.exportGetFeeds = function(db, callback) {
+lucu.opml.exportOnConnect = function(callback, error, database) {
   'use strict';
-  var tx = db.transaction('feed');
-  var store = tx.objectStore('feed');
+  callback(null, database);
+};
+
+lucu.opml.exportGetFeeds = function(database, callback) {
+  'use strict';
+  var transaction = database.transaction('feed');
+  var store = transaction.objectStore('feed');
   var request = store.openCursor();
   var feeds = [];
-  tx.oncomplete = function() {
+  transaction.oncomplete = function() {
     callback(null, feeds);
   };
   var onsuccess = lucu.opml.exportGetFeedsOnSuccess.bind(request, feeds);

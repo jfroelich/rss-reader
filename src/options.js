@@ -330,7 +330,7 @@ function startSubscription(url) {
 
   lucu.database.connect(onConnect, console.error);
 
-  function onConnect(database) {
+  function onConnect(error, database) {
     var store = database.transaction('feed').objectStore('feed');
     var index = store.index('schemeless');
     var uri = new URI(url);
@@ -366,7 +366,7 @@ function startSubscription(url) {
       remoteFeed.fetched = Date.now();
       // TODO: react to db onerror/onblocked
       
-      function onConnect(database) {
+      function onConnect(error, database) {
         lucu.addFeed(database, remoteFeed, function() {
           onSubscriptionSuccessful(remoteFeed, 0, 0);
         }, console.debug);
@@ -416,7 +416,7 @@ function populateFeedDetailsSection(feedId) {
 
   lucu.database.connect(onConnect, console.error);
 
-  function onConnect(database) {
+  function onConnect(error, database) {
     var transaction = database.transaction('feed');
     var feedStore = transaction.objectStore('feed');
     var feedRequest = feedStore.get(feedId);
@@ -858,7 +858,7 @@ function initSubscriptionsSection() {
   // todo: react to onerror/onblocked
   lucu.database.connect(onConnect, console.error);
 
-  function onConnect(database) {
+  function onConnect(error, database) {
 
     forEachFeed(database, function(feed) {
       feedCount++;

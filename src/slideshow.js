@@ -93,15 +93,16 @@ function appendSlides(oncomplete, isFirst) {
   var offset = countUnreadSlides();
   var notAdvanced = true;
 
+  function onConnect(error, database) {
+    var transaction = database.transaction('entry');
+    transaction.oncomplete = oncomplete;
+    var entryStore = transaction.objectStore('entry');
+    var unreadIndex = entryStore.index('unread');
+    var request = unreadIndex.openCursor();
+    request.onsuccess = renderEntry;
+  }
 
   lucu.database.connect(onConnect, console.error);
-
-  function onConnect(database) {
-    var tx = database.transaction('entry');
-    tx.oncomplete = oncomplete;
-    tx.objectStore('entry').index('unread').openCursor().onsuccess =
-      renderEntry;
-  };
 
   // TODO: consider using async.each with limit
 

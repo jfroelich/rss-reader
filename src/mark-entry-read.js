@@ -7,13 +7,14 @@ var lucu = lucu || {};
 lucu.entry = lucu.entry || {};
 
 lucu.entry.markRead = function(entryId, callback, fallback) {
+  'use strict';
   // console.log('Marking %s as read', entryId);
   var onConnect = lucu.entry.onMarkReadConnect.bind(null, entryId, callback);
   lucu.database.connect(onConnect, fallback);
 };
 
-lucu.entry.onMarkReadConnect = function(entryId, callback, database) {
-  
+lucu.entry.onMarkReadConnect = function(entryId, callback, error, database) {
+  'use strict';
   var transaction = database.transaction('entry', 'readwrite');
   transaction.oncomplete = callback;
   var entryStore = transaction.objectStore('entry');
@@ -22,6 +23,7 @@ lucu.entry.onMarkReadConnect = function(entryId, callback, database) {
 };
 
 lucu.entry.markReadUpdateEntry = function(event) {
+  'use strict';
   var cursor = event.target.result;
   if(!cursor) return;
 
