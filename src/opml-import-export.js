@@ -98,7 +98,9 @@ lucu.opml.mergeOutlines = function(outlineArrays, callback) {
 };
 
 lucu.opml.importConnect = function(outlines, callback) {
-  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  var request = lucu.db.connect();
+
   // NOTE: causes event object to be passed as error argument
   request.onerror = callback;
   request.onblocked = callback;

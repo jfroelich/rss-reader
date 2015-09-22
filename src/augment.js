@@ -42,7 +42,8 @@ lucu.augment.start = function(feed, callback) {
 };
 
 lucu.augment.connect = function(callback) {
-  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  var request = lucu.db.connect();
   request.onerror = callback;
   request.onblocked = callback;
   request.onsuccess = lucu.augment.onConnect.bind(request, callback);

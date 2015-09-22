@@ -78,7 +78,8 @@ function markSlideRead(slide) {
 
   // TODO: move this out of UI code
 
-  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  var request = lucu.db.connect();
   request.onerror = console.error;
   request.onblocked = console.error;
   request.onsuccess = function (event) {
@@ -113,7 +114,8 @@ function appendSlides(oncomplete, isFirst) {
   var offset = countUnreadSlides();
   var notAdvanced = true;
 
-  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  var request = lucu.db.connect();
   request.onerror = console.error;
   request.onblocked = console.error;
   request.onsuccess = function (event) {

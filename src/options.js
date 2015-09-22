@@ -327,7 +327,8 @@ function startSubscription(url) {
   updateSubscriptionMonitor('Subscribing...');
 
   // TODO: react to onerror/onblocked
-  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  var request = lucu.db.connect();
   request.onerror = console.error;
   request.onblocked = console.error;
   request.onsuccess = function (event) {
@@ -365,7 +366,8 @@ function startSubscription(url) {
       remoteFeed.url = url;
       remoteFeed.fetched = Date.now();
       // TODO: react to db onerror/onblocked
-      var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+      //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+      var request = lucu.db.connect();
       request.onerror = console.error;
       request.onblocked = console.error;
       request.onsuccess = function (event) {
@@ -415,7 +417,8 @@ function populateFeedDetailsSection(feedId) {
 
   // TODO: show num entries, num unread/red, etc
 
-  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  var request = lucu.db.connect();
   request.onerror = console.error;
   request.onblocked = console.error;
   request.onsuccess = function (event) {
@@ -859,7 +862,8 @@ function initSubscriptionsSection() {
   var feedCount = 0;
 
   // todo: react to onerror/onblocked
-  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  var request = lucu.db.connect();
   request.onerror = console.error;
   request.onblocked = console.error;
   request.onsuccess = function (event) {

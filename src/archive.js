@@ -26,7 +26,8 @@ lucu.archive.start = function() {
 
 // TODO: this should be a call to a database function
 lucu.archive.connect = function(callback) {
-  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  var request = lucu.db.connect();
   request.onerror = callback;
   request.onblocked = callback;
   request.onsuccess = function(event) {

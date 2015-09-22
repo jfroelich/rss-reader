@@ -77,7 +77,8 @@ lucu.poll.onComplete = function(error, feeds) {
 // TODO: this should probably be a common function 
 // from database.js
 lucu.poll.connect = function(callback) {
-  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  var request = lucu.db.connect();
   request.onerror = callback;
   request.onblocked = callback;
   request.onsuccess = function(event) {
