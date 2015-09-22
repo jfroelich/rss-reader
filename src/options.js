@@ -8,52 +8,20 @@
 // TODO: use a namespace object and get rid of 'options' prefix
 // in function names
 
-
-
 var lucu = lucu || {};
 
-function onOptionsPageMessage(message) {
+lucu.options = {};
+
+lucu.options.onMessage = function(message) {
   'use strict';
 
   if('displaySettingsChanged' == message.type) {
     lucu.style.onChange();
-  } else if('pollCompleted' == message.type) {
-    // noop
-  } else if('subscribe' == message.type) {
-
-    if(!message.feed) {
-      console.error('message type=subscribe is missing required feed property');
-      return;
-    }
-
-    optionsAppendFeed(message.feed, true);
-    optionsUpdateFeedCount();
-  } else if('unsubscribe' == message.type) {
-
-    var item = document.querySelector('feedlist li[feed="'+message.feed+'"]')
-    if(item) {
-      item.removeEventListener('click', onFeedListItemClick);
-      item.remove();
-    }
-
-    if(document.getElementById('feedlist').childElementCount == 0) {
-      document.getElementById('feedlist').style.display = 'none';
-      document.getElementById('nosubscriptions').style.display = 'block';
-    }
-
-    optionsUpdateFeedCount();
-    optionsShowSection(document.getElementById('mi-subscriptions'));
-  } else if('entryRead' == message.type) {
-
-    // If we ever start showing unread counts per feed
-    // this would need to update the unread count
-
-  } else {
-    console.warn('Unknown message type %s', message.type);
   }
-}
+};
 
-chrome.runtime.onMessage.addListener(onOptionsPageMessage);
+chrome.runtime.onMessage.addListener(lucu.options.onMessage);
+
 
 function hideErrorMessage() {
   'use strict';
@@ -417,35 +385,27 @@ function startSubscription(url) {
   }
 
   function onSubscriptionSuccessful(addedFeed, entriesProcessed, entriesAdded) {
+
+    optionsAppendFeed(addedFeed, true);
+    optionsUpdateFeedCount();
+
     updateSubscriptionMonitor('Subscribed to ' + url);
+ 
     hideSubsciptionMonitor(function() {
       optionsShowSection(document.getElementById('mi-subscriptions'));
     }, true);
 
-    if(!addedFeed) {
-       console.error('addedFeed is undefined in onSubscriptionSuccessful');
-    }
-
-    // Notify other apps of a successful subscription???
-    // What needs this? Ok, only another section on the options 
-    // page needs this. Maybe this should be calling a callback
-    // to update that section, or this should just be updating that
-    // other section, and we should not be sending a message at all
-    chrome.runtime.sendMessage({
-      type: 'subscribe',
-      feed: addedFeed,
-      entriesProcessed: entriesProcessed || 0,
-      entriesAdded: entriesAdded || 0
-    });
-
     // Update the badge unread count to include any new articles grabbed as 
-    // a result of the subscription
+    // a result of the subscription?
+    // TODO: if subscription just adds feed and does not download articles, 
+    // there is no need for this
     lucu.badge.update();
 
     // Show a notification of the subscription
+    // TODO: is it addedFeed.url or addedFeed.link??
+    // TODO: title or url will always be defined right? No need for Untitled?
     var title = addedFeed.title || addedFeed.url || 'Untitled';
     lucu.notifications.show('Subscribed to ' + title);
-
   }
 }
 
@@ -629,45 +589,43 @@ function onDiscoverFeedsError(errorMessage) {
 function onUnsubscribeButtonClicked(event) {
   'use strict';
   var feedId = parseInt(event.target.value);
-  var sectionMenu = document.getElementById('mi-subscriptions');
-  var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
-  request.onerror = request.onblocked = function(event) {
-    console.log('Failed to unsubscribe from feed');
-    console.error(event);
+  var $ = document.getElementById;
+  var sectionMenu = $('mi-subscriptions');
+
+  function onUnsubscribeError(event) {
+    // TODO: show an error?
+    console.dir(event);
     optionsShowSection(sectionMenu);
-  };
+  }
 
-  // TODO: should probably be making a call to a function in some
-  // other lib, and not include all this low level code in UI code
+  function onUnsubscribeSuccess(event) {
+    console.dir(event);
+    // TODO: send out a message notifying other views
+    // of the unsubscribe. That way the slides view can
+    // remove any articles
 
-  request.onsuccess = function (event) {
-    var db = event.target.result;
-    var tx = db.transaction(['entry','feed'],'readwrite');
-    var feedStore = tx.objectStore('feed');
-    var entryStore = tx.objectStore('entry');
-    var feedIndex = entryStore.index('feed');
-    var entryRequest = feedIndex.openKeyCursor(feedId);
-    feedStore.delete(feedId);
-    entryRequest.onsuccess = function() {
-      var cursor = this.result;
-      if(!cursor) return;
-      entryStore.delete(cursor.primaryKey);
-      cursor.continue();
-    };
-    tx.oncomplete = function() {
-      console.info('Unsubscribed from %s', feedId);
+    var item = document.querySelector('feedlist li[feed="'+message.feed+'"]')
+    if(item) {
+      item.removeEventListener('click', onFeedListItemClick);
+      item.remove();
+    }
 
-      // TODO: send out a message notifying other modules/views
-      // of the unsubscribe ?
+    optionsUpdateFeedCount();
 
-      // Update the badge in case any unread articles belonged to 
-      // the unsubscribed feed
-      lucu.badge.update();
+    if($('feedlist').childElementCount == 0) {
+      $('feedlist').style.display = 'none';
+      $('nosubscriptions').style.display = 'block';
+    }
 
-      // Update the options view
-      optionsShowSection(sectionMenu);
-    };
-  };
+    // Update the badge in case any unread articles belonged to 
+    // the unsubscribed feed
+    lucu.badge.update();
+
+    // Update the options view
+    optionsShowSection(sectionMenu);
+  }
+
+  lucu.subscription.unsubscribe(feedId, onUnsubscribeSuccess, onUnsubscribeSuccess);
 }
 
 function onEnableURLRewritingChange(event) {
