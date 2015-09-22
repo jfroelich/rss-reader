@@ -13,6 +13,12 @@ lucu.db = {};
 lucu.db.NAME = 'reader';
 lucu.db.VERSION = 15;
 
+lucu.db.connect = function() {
+  var openRequest = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
+  openRequest.onupgradeneeded = lucu.db.upgrade;
+  return openRequest;
+};
+
 lucu.db.upgrade = function(event) {
   'use strict';
 
