@@ -67,41 +67,23 @@ function removeSlideElement(slideElement) {
 
 function markSlideRead(slide) {
 
-  var entryId = parseInt(slide.getAttribute('entry'));
-
   // Guard against attempts to re-mark. This can happen for many reasons
   if(slide.hasAttribute('read')) {
     return;
   }
 
+  // Mark the UI regardless of the result
   slide.setAttribute('read', '');
 
-  // TODO: move this out of UI code
-  // TODO: react to database error
-  lucu.database.connect(onConnect, console.error);
+  var entryAttribute = slide.getAttribute('entry');
+  var entryId = parseInt(entryAttribute);
 
-  function onConnect(database) {
-    var tx = database.transaction('entry', 'readwrite');
-    var store = tx.objectStore('entry');
-    // TODO: use the implied range syntax instead?
-    var range = IDBKeyRange.only(entryId);
-    var markReadRequest = store.openCursor(range);
-    markReadRequest.onsuccess = function () {
-      var cursor = this.result;
-      if(!cursor) return;
-      var entry = cursor.value;
-      if(!entry) return;
-      if(!entry.hasOwnProperty('unread')) return;
-      delete entry.unread;
-      entry.readDate = Date.now();
-      cursor.update(entry);
+  function onMarkedReadError(event) {
+    // TODO: react to database error?
+    console.error(event);
+  }
 
-      // Update the badge
-      lucu.badge.update();
-
-      chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
-    };
-  };
+  lucu.entry.markRead(entryId, null, onMarkedReadError);
 }
 
 function appendSlides(oncomplete, isFirst) {
