@@ -240,6 +240,8 @@ lucu.poll.onAugmentComplete = function(db, feed, remoteFeed, callback) {
     function onMergeEntriesComplete() {
       callback();
     }
+
+    // NOTE: this is in parallel, right?
     
     async.forEach(entries, mergeEntry, onMergeEntriesComplete);
   };

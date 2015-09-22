@@ -40,5 +40,3 @@ lucu.addFeed = function(db, feed, onComplete, onerror) {
   // Triggers onerror when schemeless already exists
   request.onerror = onerror;
 };
-
-

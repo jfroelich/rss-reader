@@ -22,7 +22,7 @@ lucu.entry = lucu.entry || {};
 // subscribe should be near instant. So subscribe should store the feed and then
 // enqueue a one-feed poll update.
 
-lucu.entry.merge = function(db, feed, entry, callback) {
+lucu.entry.merge = function(database, feed, entry, callback) {
   'use strict';
 
   // TODO: is this check even necessary? Maybe this never happens?
@@ -73,17 +73,22 @@ lucu.entry.merge = function(db, feed, entry, callback) {
 
   // Now insert the entry. Due to the unique flag on the entry.link index,
   // the transaction expectedly fails if the entry already exists.
-  var transaction = db.transaction('entry', 'readwrite');
+  var transaction = database.transaction('entry', 'readwrite');
   var entryStore = transaction.objectStore('entry');
   var addEntryRequest = entryStore.add(storable);
-  addEntryRequest.onsuccess = function() {
-    callback();
-  };
-  addEntryRequest.onerror = function() {
-    callback();
-  };
+
+  // Due to async.waterfall, we have to wrap callback to prevent it from
+  // receiving an event parameter that async.waterfall would treat as 
+  // an error argument.
+  var onAddEntry = lucu.entry.onAddEntry.bind(addEntryRequest, callback);
+  addEntryRequest.onsuccess = onAddEntry;
+  addEntryRequest.onerror = onAddEntry;
 };
 
+lucu.entry.onAddEntry = function(callback, event) {
+  'use strict';
+  callback();
+};
 
 lucu.entry.markRead = function(entryId, callback, fallback) {
   'use strict';
@@ -123,6 +128,10 @@ lucu.entry.markReadUpdateEntry = function(event) {
   cursor.update(entry);
 
   // console.debug('Marked %o as read', entry);
+
+  // TODO: maybe instead of doing this here, we notify some type 
+  // of 'app' observer that handles all of this? That decouples
+  // the code a bit?
 
   // Update the unread count
   lucu.badge.update();
