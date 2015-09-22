@@ -6,7 +6,7 @@ var lucu = lucu || {};
 
 lucu.url = {};
 
-luru.url.isValid = function(url) {
+lucu.url.isValid = function(url) {
 
   if(!url) {
     return false;

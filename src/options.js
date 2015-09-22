@@ -594,15 +594,10 @@ function onUnsubscribeButtonClicked(event) {
 
   function onUnsubscribeError(event) {
     // TODO: show an error?
-    console.dir(event);
     optionsShowSection(sectionMenu);
   }
 
   function onUnsubscribeSuccess(event) {
-    console.dir(event);
-    // TODO: send out a message notifying other views
-    // of the unsubscribe. That way the slides view can
-    // remove any articles
 
     var item = document.querySelector('feedlist li[feed="'+message.feed+'"]')
     if(item) {

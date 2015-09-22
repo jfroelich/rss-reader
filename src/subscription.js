@@ -9,11 +9,11 @@ lucu.subscription = {};
 lucu.subscription.unsubscribe = function(feedId, callback, fallback) {
   'use strict';
 
-  var conn = lucu.db.connect();
+  var connection = lucu.db.connect();
   //var request = indexedDB.open(lucu.db.NAME, lucu.db.VERSION);
-  conn.onerror = fallback;
-  conn.onblocked = fallback;
-  conn.onsuccess = lucu.subscription.onUnsubscribeConnect.bind(
+  connection.onerror = fallback;
+  connection.onblocked = fallback;
+  connection.onsuccess = lucu.subscription.onUnsubscribeConnect.bind(
   	null, feedId, callback, fallback);
 };
 
@@ -22,12 +22,16 @@ lucu.subscription.onUnsubscribeConnect = function(feedId, callback, fallback, ev
   'use strict';
   var database = event.target.result;
   var transaction = database.transaction(['entry','feed'], 'readwrite');
-  var feedStore = transaction.objectStore('feed');
-  transaction.onerror = fallback;
-  transaction.oncomplete = callback;
 
+  transaction.oncomplete = lucu.subscription.onUnsubscribeComplete.bind(
+  	transaction, feedId, callback);
+  transaction.onerror = fallback;
+
+  // Delete the feed
+  var feedStore = transaction.objectStore('feed');
   feedStore.delete(feedId);
 
+  // Delete the feed's entries
   var entryStore = transaction.objectStore('entry');
   var feedIndex = entryStore.index('feed');
   var entryRequest = feedIndex.openCursor(feedId);
@@ -40,4 +44,15 @@ lucu.subscription.unsubscribeEntry = function(event) {
   if(!cursor) return;
   cursor.delete();
   cursor.continue();
+};
+
+lucu.subscription.onUnsubscribeComplete = function(feedId, callback, event) {
+  'use strict';
+  // console.log('Unsubscribed from %s', feedId);
+
+  // TODO: send out a message notifying other views
+  // of the unsubscribe. That way the slides view can
+  // remove any articles.
+
+  callback(event);
 };
