@@ -4,6 +4,7 @@
 
 var lucu = lucu || {};
 
+lucu.entry = lucu.entry || {};
 
 // TODO: some entry link URLs from feeds are pre-chain-of-redirect-resolution, 
 // and are technically duplicates because each redirects to the same URL at the 
@@ -20,7 +21,7 @@ var lucu = lucu || {};
 // subscribe should be near instant. So subscribe should store the feed and then
 // enqueue a one-feed poll update.
 
-lucu.mergeEntry = function(db, feed, entry, callback) {
+lucu.entry.merge = function(db, feed, entry, callback) {
   'use strict';
 
   // TODO: is this check even necessary? Maybe this never happens?

@@ -235,7 +235,7 @@ lucu.poll.onAugmentComplete = function(db, feed, remoteFeed, callback) {
     // Now merge in any new entries from the remote feed
     // NOTE: i don't think it matters whether we pass feed or 
     // remoteFeed or cleanedRemoteFeed to mergeEntry
-    var mergeEntry = lucu.mergeEntry.bind(null, db, feed);
+    var mergeEntry = lucu.entry.merge.bind(null, db, feed);
     var entries = remoteFeed.entries;
 
     // We have to wrap so that we call callback without parameters
