@@ -49,13 +49,16 @@ lucu.augment.connect = function(callback) {
 // only those entries not already in the database and then pass 
 // along this array
 lucu.augment.filterExisting = function(entries, database, callback) {
-  var tx = database.transaction('entry');
-  var findByLink = lucu.augment.findEntryByLink.bind(this, tx);
+  'use strict';
+  var transaction = database.transaction('entry');
+  var findByLink = lucu.augment.findEntryByLink.bind(null, transaction);
   var onComplete = lucu.augment.onFilteredExisting.bind(null, callback);
   async.reject(entries, findByLink, onComplete);
 };
 
 lucu.augment.onFilteredExisting = function(callback, entries) {
+  'use strict';
+  // console.debug('Filtered existing');
   callback(null, entries);
 };
 

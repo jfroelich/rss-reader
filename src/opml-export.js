@@ -41,11 +41,16 @@ lucu.opml.exportGetFeeds = function(database, callback) {
   var store = transaction.objectStore('feed');
   var request = store.openCursor();
   var feeds = [];
-  transaction.oncomplete = function() {
-    callback(null, feeds);
-  };
+  var onTransactionComplete = lucu.opml.exportGetFeedsTransactionComplete.bind(
+    transaction, callback, feeds);
+  transaction.oncomplete = onTransactionComplete;
   var onsuccess = lucu.opml.exportGetFeedsOnSuccess.bind(request, feeds);
   request.onsuccess = onsuccess;
+};
+
+lucu.opml.exportGetFeedsTransactionComplete = function(callback, feeds, event) {
+  'use strict';
+  callback(null, feeds);
 };
 
 lucu.opml.exportGetFeedsOnSuccess = function(feeds, event) {
