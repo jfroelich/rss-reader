@@ -404,7 +404,6 @@ lucu.sanitize.unwrapNoframes = function(document) {
   forEach.call(noframes, unwrap);
 };
 
-
 /**
  * Extremely simple <br>2<p> transformation. This does not quite work
  * like I prefer but it sort of does the job. It turns out to be really
