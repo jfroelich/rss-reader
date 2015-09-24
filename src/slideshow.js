@@ -255,6 +255,9 @@ function appendSlide(entry, isFirst) {
   var doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = entry.content;
 
+  var results = lucu.sanitize.sanitizeDocument(doc);
+
+/*
   lucu.sanitize.removeComments(doc);
   lucu.sanitize.removeBlacklistedElements(doc);
   lucu.sanitize.removeSourcelessImages(doc);
@@ -266,11 +269,10 @@ function appendSlide(entry, isFirst) {
   lucu.trim.trimNodes(doc);
   lucu.sanitize.removeEmptyNodes(doc);
   lucu.sanitize.removeEmptyElements(doc);
+
+
   var results = calamine.transform(doc, {
     FILTER_NAMED_AXES: true,
-    
-    /*BLACKLIST: BLACKLIST_SELECTORS,*/
-
     ANNOTATE: false
   });
 
@@ -280,6 +282,7 @@ function appendSlide(entry, isFirst) {
   lucu.trim.trimElement(results);
   lucu.sanitize.removeEmptyElements(doc);
   lucu.sanitize.transformSingleItemLists(results);
+*/
 
   content.appendChild(results);
   slide.appendChild(content);

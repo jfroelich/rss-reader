@@ -4,11 +4,48 @@
 
 var lucu = lucu || {};
 
-// TODO: rename to something like sanitize-dom.js for less conflation
-// with sanitize-feed.js
-
 // DOM sanitize funtions
 lucu.sanitize = {};
+
+/**
+ * Sanitizes a document, applying most of the other functions in this lib
+ */
+lucu.sanitize.sanitizeDocument = function(document) {
+
+  var ls = lucu.sanitize;
+
+  ls.removeComments(document);
+  ls.removeBlacklistedElements(document);
+  ls.removeSourcelessImages(document);
+  ls.removeTracerImages(document);
+  ls.unwrapNoscripts(document);
+  ls.unwrapNoframes(document);
+
+  // Temp disabled during development
+  // ls.removeInvisibleElements(document);
+
+  ls.canonicalizeSpaces(document);
+  lucu.trim.trimNodes(document);
+  ls.removeEmptyNodes(document);
+  ls.removeEmptyElements(document);
+
+  var results = calamine.transform(document, {
+    FILTER_NAMED_AXES: true,
+    ANNOTATE: false
+  });
+
+  ls.removeJavascriptAnchors(results);
+  ls.unwrapDescendants(results);
+
+  ls.removeDescendantAttributes(ls.DEFAULT_ALLOWED_ATTRIBUTES, results);
+
+  lucu.trim.trimDocument(results);
+  ls.removeEmptyElements(results);
+  ls.transformSingleItemLists(results);
+
+  return results;
+};
+
 
 /**
  * Rudimentary replacement of alternative forms of whitespace with normal
@@ -54,6 +91,16 @@ lucu.sanitize.isEmptyLike = function(element) {
  */
 lucu.sanitize.removeEmptyElements = function(document) {
   'use strict';
+
+  if(!document || !document.body) {
+    
+    // something is buggy here
+    //console.warn('invalid document for removeEmptyElements, %o', document);
+    
+    return;
+  }
+
+
   var filter = Array.prototype.filter;
 
   // TODO: there is a specific edge case not being handled
@@ -168,7 +215,18 @@ lucu.sanitize.removeEmptyNodes = function(document) {
  * allowed attributes
  */
 lucu.sanitize.removeAttributes = function(allowedAttributes, element) {
+
+  if(!element) {
+    return;
+  }
+
   var attributes = element.attributes;
+
+  if(!attributes) {
+    console.debug('element.attributes did not return a collection, %o', element);
+    return;
+  }
+
   var name = '';
   var index = attributes.length;
 

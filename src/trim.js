@@ -8,6 +8,14 @@ var lucu = lucu || {};
 lucu.trim = {};
 
 /**
+ * Tries to remove whitespace-like elements from the start and end of the 
+ * document
+ */
+lucu.trim.trimDocument = function(document) {
+  lucu.trim.trimElement(document);
+};
+
+/**
  * Elements which default to display:inline or inline-block
  * NOTE: <div> is treated as an exception and not considered inline
  */

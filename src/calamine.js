@@ -28,6 +28,12 @@ var reduce = Array.prototype.reduce;
  * document.
  */
 function transform(doc, options) {
+
+  if(!doc || !doc.body) {
+    console.warn('invalid document');
+    return doc;
+  }
+
   options = options || {};
 
   var blacklist = exports.BLACKLIST_SELECTORS || [];
