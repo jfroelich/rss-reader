@@ -46,7 +46,7 @@ lucu.resolver.resolveDocument = function(document, baseURL) {
 
   // Remove all <BASE> elements
   var bases = document.getElementsByTagName('base');
-  forEach.call(bases, lucu.resolver.removeElement);
+  forEach.call(bases, lucu.dom.remove);
 
   // Resolve all resolvable elements
   var elements = document.querySelectorAll(lucu.resolver.RESOLVABLES_QUERY);
@@ -87,18 +87,5 @@ lucu.resolver.resolveElement = function(baseURL, element) {
 
   } catch(e) {
     console.debug('resolveElement error: %s %s', e, url);
-  }
-};
-
-lucu.resolver.removeElement = function(element) {
-  // Check if element non-null as iteration during
-  // removal can sometimes cause an issue? Although
-  // thight might be overly cautious
-
-  // TODO: this is really a generic DOM function that 
-  // probably belongs in some type of general dom 
-  // utilities lib
-  if(element) {
-    element.remove();
   }
 };

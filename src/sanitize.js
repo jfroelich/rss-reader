@@ -11,13 +11,6 @@ var lucu = lucu || {};
 lucu.sanitize = {};
 
 /**
- * Utility function for declarative style calls
- */
-lucu.sanitize.remove = function(element) {
-  element.remove();
-};
-
-/**
  * Rudimentary replacement of alternative forms of whitespace with normal
  * space character. This is helpful when trimming or getting text length
  * less whitespace.
@@ -281,7 +274,7 @@ lucu.sanitize.removeJavascriptAnchors = function(root) {
   var isScript = lucu.sanitize.isScriptAnchor;
   var anchors = root.querySelectorAll('a[href]');
   var scriptAnchors = filter.call(anchors, isScript);
-  scriptAnchors.forEach(lucu.sanitize.remove);
+  scriptAnchors.forEach(lucu.dom.remove);
 };
 
 /**
@@ -339,7 +332,7 @@ lucu.sanitize.removeInvisibleElements = function(document) {
   var filter = Array.prototype.filter;
   var elements = document.body.getElementsByTagName('*');
   var invisibles = filter.call(elements, lucu.sanitize.isInvisible);
-  invisibles.forEach(lucu.sanitize.remove);
+  invisibles.forEach(lucu.dom.remove);
 };
 
 lucu.sanitize.isTracerImage = function(image) {
@@ -364,7 +357,7 @@ lucu.sanitize.isTracerImage = function(image) {
 lucu.sanitize.removeTracerImages = function(document) {
   var filter = Array.prototype.filter;
   var isTracer = lucu.sanitize.isTracerImage;
-  var remove = lucu.sanitize.remove;
+  var remove = lucu.dom.remove;
   var images = document.body.getElementsByTagName('img');
   filter.call(images, isTracer).forEach(remove);
 };
@@ -385,7 +378,7 @@ lucu.sanitize.removeSourcelessImages = function(document) {
   var images = document.body.getElementsByTagName('img');
   var isSourceless = lucu.sanitize.isSourcelessImage;
   var sourcelessImages = filter.call(images, isSourceless);
-  sourcelessImages.forEach(lucu.sanitize.remove);
+  sourcelessImages.forEach(lucu.dom.remove);
 };
 
 /**
@@ -395,7 +388,7 @@ lucu.sanitize.removeSourcelessImages = function(document) {
  */
 lucu.sanitize.unwrapNoscripts = function(document) {
   var forEach = Array.prototype.forEach;
-  var unwrap = lucu.sanitize.unwrap;
+  var unwrap = lucu.dom.unwrap;
   var noscripts = document.body.getElementsByTagName('noscript');
   forEach.call(noscripts, unwrap);
 };
@@ -406,36 +399,11 @@ lucu.sanitize.unwrapNoscripts = function(document) {
  */
 lucu.sanitize.unwrapNoframes = function(document) {
   var forEach = Array.prototype.forEach;
-  var unwrap = lucu.sanitize.unwrap;
+  var unwrap = lucu.dom.unwrap;
   var noframes = document.body.getElementsByTagName('noframes');
   forEach.call(noframes, unwrap);
 };
 
-/**
- * A function that should be a part of the DOM itself but unfortunately is not.
- * This replaces the element with its children.
- *
- * This is not optimized to be called on a live document. This causes a reflow
- * per move.
- */
-lucu.sanitize.unwrap = function(element) {
-  // Cache parent lookup
-  var parent = element.parentElement;
-
-  // Avoid issues with documentElement or detached elements
-  if(!parent) {
-    return;
-  }
-
-  // Move each child of the element to the position preceding the element in
-  // the parent's node list, maintaining child order.
-  while(element.firstChild) {
-    parent.insertBefore(element.firstChild, element);
-  }
-
-  // Now the element is empty so detach it
-  element.remove();
-};
 
 /**
  * Extremely simple <br>2<p> transformation. This does not quite work
@@ -468,7 +436,7 @@ lucu.sanitize.unwrapDescendants = function(rootElement) {
   'use strict';
 
   var filter = Array.prototype.filter;
-  var unwrap = lucu.sanitize.unwrap;
+  var unwrap = lucu.dom.unwrap;
 
   // NOTE: this performs extremely poorly when dealing with a large
   // number of elements. For example, it took ~20 secs on
@@ -517,7 +485,7 @@ lucu.sanitize.unwrapDescendants = function(rootElement) {
 
   });
 
-  nominalAnchors.forEach(lucu.sanitize.unwrap);
+  nominalAnchors.forEach(lucu.dom.unwrap);
 };
 
 // Unwrap single item lists. For now just ul

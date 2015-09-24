@@ -22,6 +22,7 @@
       "/src/connectivity.js",
       "/src/database.js",
       "/src/date.js",
+      "/src/dom.js",
       "/src/entry.js",
       "/src/fetch-feed.js",
       "/src/images.js",
