@@ -29,7 +29,7 @@
       "/src/notifications.js",
       "/src/rewrite.js",
       "/src/poll.js",
-      "/src/resolve-elements.js",
+      "/src/resolve-document.js",
       "/src/sanitize-feed.js",
       "/src/deserialize-feed.js",
       "/src/string.js"
