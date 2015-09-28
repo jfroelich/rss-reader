@@ -81,6 +81,9 @@ lucu.style.findCSSRuleFilter = function(text, rule) {
 };
 
 lucu.style.onChange = function() {
+  'use strict';
+
+  console.debug('updating style');
 
   var filter = Array.prototype.filter;
 
@@ -120,7 +123,9 @@ lucu.style.onChange = function() {
     //console.debug('Setting header font size to %s', (hfs / 10).toFixed(2));
     console.debug('hfs after change is %s', hfs);
     if(hfs) {
-      titleRule.style.fontSize = (hfs / 10).toFixed(2) + 'em';
+      var hfsString = (hfs / 10).toFixed(2) + 'em';
+      console.debug('Setting header font size to %s', hfsString);
+      titleRule.style.fontSize = hfsString;
     } else {
       console.warn('header font size after change not set or 0');
     }

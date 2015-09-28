@@ -42,17 +42,18 @@ lucu.badge.NEW_TAB_URL = 'chrome://newtab/';
  * NOTE: the calls to chrome.tabs here do not require the tabs permission
  */
 lucu.badge.onClick = function(event) {
+  console.debug('Clicked badge');
   var query = {'url': lucu.badge.VIEW_URL};
   chrome.tabs.query(query, lucu.badge.onQueryView);
 };
 
 // Binds on background page load
 // TODO: bind once on install?
-chrome.browserAction.onClicked.addListener(lucu.badge.onClick);
 
 // onBadgeClick helper
 lucu.badge.onQueryView = function(tabs) {
   if(tabs.length) {
+    console.debug('Switching to existing tab');
     // Switch to an existing tab
     chrome.tabs.update(tabs[0].id, {active: true});
     return;
@@ -65,12 +66,14 @@ lucu.badge.onQueryView = function(tabs) {
 // onBadgeClick helper
 lucu.badge.onQueryNewTab = function(tabs) {
   if(tabs.length) {
+    console.debug('Replacing New Tab');
     // Switch to and replace the New Tab tab
     chrome.tabs.update(tabs[0].id, 
       {active:true, url: lucu.badge.VIEW_URL});
     return;
   }
 
+  console.debug('Opening a new tab');
   // Create and switch to a new tab
   chrome.tabs.create({url: lucu.badge.VIEW_URL});
 };

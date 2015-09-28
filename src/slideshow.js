@@ -67,7 +67,7 @@ function removeSlideElement(slideElement) {
 
 function markSlideRead(slide) {
 
-  // Guard against attempts to re-mark. This can happen for many reasons
+  // Guard against attempts to re-mark.
   if(slide.hasAttribute('read')) {
     return;
   }
@@ -254,36 +254,7 @@ function appendSlide(entry, isFirst) {
 
   var doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = entry.content;
-
   var results = lucu.sanitize.sanitizeDocument(doc);
-
-/*
-  lucu.sanitize.removeComments(doc);
-  lucu.sanitize.removeBlacklistedElements(doc);
-  lucu.sanitize.removeSourcelessImages(doc);
-  lucu.sanitize.removeTracerImages(doc);
-  lucu.sanitize.unwrapNoscripts(doc);
-  lucu.sanitize.unwrapNoframes(doc);
-  // lucu.sanitize.removeInvisibleElements(doc);
-  lucu.sanitize.canonicalizeSpaces(doc);
-  lucu.trim.trimNodes(doc);
-  lucu.sanitize.removeEmptyNodes(doc);
-  lucu.sanitize.removeEmptyElements(doc);
-
-
-  var results = calamine.transform(doc, {
-    FILTER_NAMED_AXES: true,
-    ANNOTATE: false
-  });
-
-  lucu.sanitize.removeJavascriptAnchors(results);
-  lucu.sanitize.unwrapDescendants(results);
-  lucu.sanitize.removeDescendantAttributes(lucu.sanitize.DEFAULT_ALLOWED_ATTRIBUTES , results);
-  lucu.trim.trimElement(results);
-  lucu.sanitize.removeEmptyElements(doc);
-  lucu.sanitize.transformSingleItemLists(results);
-*/
-
   content.appendChild(results);
   slide.appendChild(content);
 
