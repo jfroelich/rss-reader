@@ -8,6 +8,9 @@
 // TODO: use a namespace object and get rid of 'options' prefix
 // in function names
 
+// TODO: move out non UI functionality into libs
+
+
 var lucu = lucu || {};
 
 lucu.options = {};
@@ -274,7 +277,7 @@ function showOrSkipSubscriptionPreview(url) {
     // result.title and  result.entries
     if(!result.entries || !result.entries.length) {
       var item = document.createElement('li');
-      item.textContent = 'No entries found to preview';
+      item.textContent = 'No previewable entries';
       document.getElementById(
         'subscription-preview-entries').appendChild(item);
     }
@@ -315,34 +318,33 @@ function startSubscription(url) {
   showSubscriptionMonitor();
   updateSubscriptionMonitor('Subscribing...');
 
-  // TODO: react to onerror/onblocked
+  lucu.feed.findByURL(url, function(existingFeed) {
+    if(existingFeed) {
+      hideSubsciptionMonitor(function() {
+        showErrorMessage('Already subscribed to ' + url + '.');
+      });
+      return;
+    }
 
-  lucu.database.connect(onConnect, console.error);
-
-  function onConnect(error, database) {
-    var store = database.transaction('feed').objectStore('feed');
-    var index = store.index('schemeless');
-    var uri = new URI(url);
-    uri.protocol('');
-    var schemeless = uri.toString().substring(2);
-    var findRequest = index.get(schemeless);
-    findRequest.onsuccess = function() {
-      var existingFeed = this.result;
-      if(existingFeed) {
-        return hideSubsciptionMonitor(function() {
-          showErrorMessage('Already subscribed to ' + url + '.');
-        });
-      }
-
-      // TODO: use connectivity.js lib
-      if(!navigator.onLine) {
-        return lucu.addFeed(database, {url: url}, onSubscriptionSuccessful, 
+    // TODO: it would be nice to share the database instance here
+    // across these calls
+    // If we are not online, immediately add the feed. Otherwise,
+    // grab the feed's information and then add it
+    // TODO: use connectivity
+    if(!navigator.onLine) {
+      lucu.database.connect(function(error, database) {
+        lucu.addFeed(database, 
+          {url: url}, 
+          onSubscriptionSuccessful, 
           console.debug);
-      }
+      }, console.error);
+      return;    
+    }
 
-      lucu.fetch.fetchFeed(url, onFetchComplete, onFetchError, 10 * 1000);
-    };
-  };
+    // We are online, and the feed does not already exist. Fetch it
+
+    lucu.fetch.fetchFeed(url, onFetchComplete, onFetchError, 10 * 1000);
+  });
 
   function onFetchComplete(remoteFeed) {
     // TODO: subscribing takes too long. Do not augment

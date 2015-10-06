@@ -17,8 +17,8 @@ lucu.fetch = {};
  * TODO: make online check caller's responsibility?
  * TODO: change to use single callback, async.forEach style
  * TODO: should filtering and rewriting take place somewhere else?
- *
  * TODO: maybe onError parameter should be required
+ * TODO: maybe this should be a FeedRequest class?
  */
 lucu.fetch.fetchFeed = function(url, onComplete, onError, timeout) {
   'use strict';
