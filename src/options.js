@@ -762,10 +762,8 @@ function initNavigation() {
   'use strict';
   var menuItem = document.getElementById('mi-embeds');
   menuItem.style.display = localStorage.EMBED_POLICY == 'ask' ? 'block' : 'none';
-
   var menuItems = document.querySelectorAll('#navigation-menu li');
-  var forEach = Array.prototype.forEach;
-  forEach.call(menuItems, setNavigationOnClick);
+  Array.prototype.forEach.call(menuItems, setNavigationOnClick);
 }
 
 function setNavigationOnClick(menuItem) {
@@ -782,33 +780,29 @@ function onNavigationClick(event) {
 
 function initGeneralSettingsSection() {
   'use strict';
-  document.getElementById('enable-notifications').onclick =
-    onEnableNotificationsChange;
+  var $ = document.getElementById;
+  $('enable-notifications').onclick = onEnableNotificationsChange;
 
   chrome.permissions.contains({permissions: ['notifications']}, function(permitted) {
-    document.getElementById('enable-notifications').checked = permitted;
+    $('enable-notifications').checked = permitted;
   });
 
-  document.getElementById('enable-background').onclick = onEnableBackgroundChange;
+  $('enable-background').onclick = onEnableBackgroundChange;
 
   chrome.permissions.contains({permissions:['background']}, function(permitted) {
-    document.getElementById('enable-background').checked = permitted;
+    $('enable-background').checked = permitted;
   });
 
-  document.getElementById('enable-idle-check').onclick = onEnableIdleCheckChange;
+  $('enable-idle-check').onclick = onEnableIdleCheckChange;
 
   chrome.permissions.contains({permissions:['idle']}, function(permitted) {
-    document.getElementById('enable-idle-check').checked = permitted;
+    $('enable-idle-check').checked = permitted;
   });
 
-  document.getElementById('enable-subscription-preview').checked =
-    !!localStorage.ENABLE_SUBSCRIBE_PREVIEW;
-
-  document.getElementById('enable-subscription-preview').onchange =
-    onEnableSubscriptionPreviewChange;
-
-  document.getElementById('rewriting-enable').checked = !!localStorage.URL_REWRITING_ENABLED;
-  document.getElementById('rewriting-enable').onchange = onEnableURLRewritingChange;
+  $('enable-subscription-preview').checked = !!localStorage.ENABLE_SUBSCRIBE_PREVIEW;
+  $('enable-subscription-preview').onchange = onEnableSubscriptionPreviewChange;
+  $('rewriting-enable').checked = !!localStorage.URL_REWRITING_ENABLED;
+  $('rewriting-enable').onchange = onEnableURLRewritingChange;
 }
 
 function initSubscriptionsSection() {
@@ -850,6 +844,9 @@ function initSubscribeDiscoverSection() {
 
 function initDisplaySettingsSection() {
   'use strict';
+
+  var $ = document.getElementById;
+
   // Apply the dynamic CSS on load to set the article preview
   // area within the display settings section
   lucu.style.onLoad();
@@ -858,7 +855,7 @@ function initDisplaySettingsSection() {
   var option = document.createElement('option');
   option.value = '';
   option.textContent = 'Use background color';
-  document.getElementById('entry-background-image').appendChild(option);
+  $('entry-background-image').appendChild(option);
 
   lucu.BACKGROUND_IMAGES.forEach(function(path) {
     option = document.createElement('option');
@@ -868,25 +865,25 @@ function initDisplaySettingsSection() {
     //option.textContent = path;
 
     option.selected = localStorage.BACKGROUND_IMAGE == path;
-    document.getElementById('entry-background-image').appendChild(option);
+    $('entry-background-image').appendChild(option);
   });
 
-  document.getElementById('entry-background-image').onchange = onBackgroundImageChange;
+  $('entry-background-image').onchange = onBackgroundImageChange;
 
   option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
-  document.getElementById('select_header_font').appendChild(option);
+  $('select_header_font').appendChild(option);
 
   option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
-  document.getElementById('select_body_font').appendChild(option);
+  $('select_body_font').appendChild(option);
 
   lucu.FONT_FAMILIES.forEach(function(fontFamily) {
     option = document.createElement('option');
     option.value = fontFamily;
     option.selected = fontFamily == localStorage.HEADER_FONT_FAMILY;
     option.textContent = fontFamily;
-    document.getElementById('select_header_font').appendChild(option);
+    $('select_header_font').appendChild(option);
   });
 
   lucu.FONT_FAMILIES.forEach(function (fontFamily) {
@@ -894,12 +891,12 @@ function initDisplaySettingsSection() {
     option.value = fontFamily;
     option.selected = fontFamily == localStorage.BODY_FONT_FAMILY;
     option.textContent = fontFamily;
-    document.getElementById('select_body_font').appendChild(option);
+    $('select_body_font').appendChild(option);
   });
 
 
-  document.getElementById('select_header_font').onchange = onHeaderFontChange;
-  document.getElementById('select_body_font').onchange = onBodyFontChange;
+  $('select_header_font').onchange = onHeaderFontChange;
+  $('select_body_font').onchange = onBodyFontChange;
 
 
   [1,2,3].forEach(function (columnCount) {
@@ -907,17 +904,15 @@ function initDisplaySettingsSection() {
     option.value = columnCount;
     option.selected = columnCount == localStorage.COLUMN_COUNT;
     option.textContent = columnCount;
-    document.getElementById('column-count').appendChild(option);
+    $('column-count').appendChild(option);
   });
 
-  document.getElementById('column-count').onchange = onColumnCountChange;
-
-
+  $('column-count').onchange = onColumnCountChange;
 
   var inputChangedTimer, inputChangedDelay = 400;
 
-  document.getElementById('entry-background-color').value = localStorage.ENTRY_BACKGROUND_COLOR || '';
-  document.getElementById('entry-background-color').oninput = function() {
+  $('entry-background-color').value = localStorage.ENTRY_BACKGROUND_COLOR || '';
+  $('entry-background-color').oninput = function() {
     if(event.target.value)
       localStorage.ENTRY_BACKGROUND_COLOR = event.target.value;
     else
@@ -925,35 +920,31 @@ function initDisplaySettingsSection() {
     chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
   };
 
-  document.getElementById('entry-margin').value = parseInt(localStorage.ENTRY_MARGIN) || '10';
-  document.getElementById('entry-margin').onchange = onEntryMarginChange;
+  $('entry-margin').value = parseInt(localStorage.ENTRY_MARGIN) || '10';
+  $('entry-margin').onchange = onEntryMarginChange;
 
-  document.getElementById('header-font-size').value = parseInt(localStorage.HEADER_FONT_SIZE) || '1';
-  document.getElementById('header-font-size').onchange = onHeaderFontSizeChange;
-  document.getElementById('body-font-size').value = parseInt(localStorage.BODY_FONT_SIZE) || '1';
-  document.getElementById('body-font-size').onchange = onBodyFontSizeChange;
-  document.getElementById('justify-text').checked = (localStorage.JUSTIFY_TEXT == '1') ? true : false;
-  document.getElementById('justify-text').onchange = onJustifyChange;
+  $('header-font-size').value = parseInt(localStorage.HEADER_FONT_SIZE) || '1';
+  $('header-font-size').onchange = onHeaderFontSizeChange;
+  $('body-font-size').value = parseInt(localStorage.BODY_FONT_SIZE) || '1';
+  $('body-font-size').onchange = onBodyFontSizeChange;
+  $('justify-text').checked = (localStorage.JUSTIFY_TEXT == '1') ? true : false;
+  $('justify-text').onchange = onJustifyChange;
 
   var bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
-  document.getElementById('body-line-height').value = (bodyLineHeight / 10).toFixed(2);
-  document.getElementById('body-line-height').oninput = onBodyLineHeightChange;
+  $('body-line-height').value = (bodyLineHeight / 10).toFixed(2);
+  $('body-line-height').oninput = onBodyLineHeightChange;
 }
 
 function initAboutSection() {
   'use strict';
+  var $ = document.getElementById;
   var manifest = chrome.runtime.getManifest();
 
-  var label = document.getElementById('extension-name');
-  label.textContent = manifest.name || '';
-  label = document.getElementById('extension-version');
-  label.textContent = manifest.version || '';
-  label = document.getElementById('extension-author');
-  label.textContent = manifest.author || '';
-  label = document.getElementById('extension-description');
-  label.textContent = manifest.description || '';
-  label = document.getElementById('extension-homepage');
-  label.textContent = manifest.homepage_url || '';
+  $('extension-name').textContent = manifest.name || '';
+  $('extension-version').textContent = manifest.version || '';
+  $('extension-author').textContent = manifest.author || '';
+  $('extension-description').textContent = manifest.description || '';
+  $('extension-homepage').textContent = manifest.homepage_url || '';
 }
 
 function initOptionsPage(event) {
