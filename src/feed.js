@@ -56,3 +56,34 @@ lucu.feed.findByIdOnSuccess = function(callback, event) {
   var feed = event.target.result;
   callback(feed);
 };
+
+lucu.feed.forEach = function(callback, onComplete, sortByTitle) {
+  'use strict';
+  var onConnect = lucu.feed.forEachOnConnect.bind(null, callback, onComplete, 
+    sortByTitle);
+  lucu.database.onConnect(onConnect, console.error);
+};
+
+lucu.feed.forEachOnConnect = function(callback, onComplete, sortByTitle, error, 
+  database) {
+  'use strict';
+  var transaction = database.transaction('feed');
+  transaction.oncomplete = onComplete;
+  var store = transaction.objectStore('feed');
+
+  if(sortByTitle) {
+    store = store.index('title');
+  }
+
+  var request = store.openCursor();
+  request.onsuccess = lucu.feed.forEachOnSuccess.bind(request, callback);
+};
+
+lucu.feed.forEachOnSuccess = function(callback, event) {
+  'use strict';
+  var cursor = event.target.result;
+  if(!cursor) return;
+  var feed = cursor.value;
+  callback(feed);
+  cursor.continue();
+};

@@ -813,44 +813,26 @@ function initGeneralSettingsSection() {
 
 function initSubscriptionsSection() {
   'use strict';
-
-  function forEachFeed(db, handleFeed, onComplete, sortByTitle) {
-    var tx = db.transaction('feed');
-    tx.oncomplete = onComplete;
-    var store = tx.objectStore('feed');
-    if(sortByTitle) store = store.index('title');
-    store.openCursor().onsuccess = function() {
-      var cursor = this.result;
-      if(!cursor) return;
-      handleFeed(cursor.value);
-      cursor.continue();
-    };
-  }
-
-  document.getElementById('button-export-opml').onclick = onExportOPMLClick;
-  document.getElementById('button-import-opml').onclick = onImportOPMLClick;
+  var $ = document.getElementById;
+  $('button-export-opml').onclick = onExportOPMLClick;
+  $('button-import-opml').onclick = onImportOPMLClick;
 
   var feedCount = 0;
+  var sortByTitle = true;
 
-  // todo: react to onerror/onblocked
-  lucu.database.connect(onConnect, console.error);
-
-  function onConnect(error, database) {
-
-    forEachFeed(database, function(feed) {
-      feedCount++;
-      optionsAppendFeed(feed);
-      optionsUpdateFeedCount();
-    }, function() {
-      if(feedCount == 0) {
-        document.getElementById('nosubscriptions').style.display = 'block';
-        document.getElementById('feedlist').style.display = 'none';
-      } else {
-        document.getElementById('nosubscriptions').style.display = 'none';
-        document.getElementById('feedlist').style.display = 'block';
-      }
-    }, true);
-  };
+  lucu.feed.forEach(function(feed){
+    feedCount++;
+    optionsAppendFeed(feed);
+    optionsUpdateFeedCount();
+  }, function(){
+    if(feedCount == 0) {
+      $('nosubscriptions').style.display = 'block';
+      $('feedlist').style.display = 'none';
+    } else {
+      $('nosubscriptions').style.display = 'none';
+      $('feedlist').style.display = 'block';
+    }
+  }, sortByTitle);
 }
 
 function initFeedDetailsSection() {
@@ -862,7 +844,6 @@ function initFeedDetailsSection() {
 function initSubscribeDiscoverSection() {
   'use strict';
   document.getElementById('subscription-form').onsubmit = onSubscribeSubmit;
-
   var previewContinueButton = document.getElementById('subscription-preview-continue');
   previewContinueButton.onclick = onPostPreviewSubscribeClick;
 }
