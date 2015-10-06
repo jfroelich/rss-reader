@@ -53,6 +53,10 @@ lucu.subscription.onUnsubscribeComplete = function(feedId, callback, event) {
   'use strict';
   // console.log('Unsubscribed from %s', feedId);
 
+  // Update the badge in case any unread articles belonged to 
+  // the unsubscribed feed
+  lucu.badge.update();
+
   // TODO: send out a message notifying other views
   // of the unsubscribe. That way the slides view can
   // remove any articles.

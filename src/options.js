@@ -330,13 +330,12 @@ function startSubscription(url) {
     // across these calls
     // If we are not online, immediately add the feed. Otherwise,
     // grab the feed's information and then add it
-    // TODO: use connectivity
-    if(!navigator.onLine) {
+    if(lucu.isOffline()) {
       lucu.database.connect(function(error, database) {
         lucu.addFeed(database, 
           {url: url}, 
           onSubscriptionSuccessful, 
-          console.debug);
+          console.error);
       }, console.error);
       return;    
     }
@@ -402,28 +401,19 @@ function startSubscription(url) {
 function populateFeedDetailsSection(feedId) {
   'use strict';
   // TODO: react to onerror/onblocked
-
   // TODO: show num entries, num unread/red, etc
 
-  lucu.database.connect(onConnect, console.error);
-
-  function onConnect(error, database) {
-    var transaction = database.transaction('feed');
-    var feedStore = transaction.objectStore('feed');
-    var feedRequest = feedStore.get(feedId);
-    feedRequest.onsuccess = function(event) {
-      var feed = event.target.result;
-      document.getElementById('details-title').textContent = feed.title ||
-        'Untitled';
-      document.getElementById('details-favicon').setAttribute('src',
-        lucu.favicon.getURL(feed.url));
-      document.getElementById('details-feed-description').textContent =
-        lucu.string.stripTags(feed.description) || 'No description';
-      document.getElementById('details-feed-url').textContent = feed.url;
-      document.getElementById('details-feed-link').textContent = feed.link;
-      document.getElementById('details-unsubscribe').value = feed.id;
-    };
-  };
+  lucu.feed.findById(feedId, function(feed) {
+    var $ = document.getElementById;
+    $('details-title').textContent = feed.title || 'Untitled';
+    var favIconURL = lucu.favicon.getURL(feed.url);
+    $('details-favicon').setAttribute('src', favIconURL);
+    $('details-feed-description').textContent =
+      lucu.string.stripTags(feed.description) || 'No description';
+    $('details-feed-url').textContent = feed.url;
+    $('details-feed-link').textContent = feed.link;
+    $('details-unsubscribe').value = feed.id;
+  }, console.error);
 }
 
 function onPostPreviewSubscribeClick(event) {
@@ -599,10 +589,6 @@ function onUnsubscribeButtonClicked(event) {
       $('feedlist').style.display = 'none';
       $('nosubscriptions').style.display = 'block';
     }
-
-    // Update the badge in case any unread articles belonged to 
-    // the unsubscribed feed
-    lucu.badge.update();
 
     // Update the options view
     optionsShowSection(sectionMenu);

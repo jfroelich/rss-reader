@@ -35,30 +35,24 @@ lucu.feed.findByURLOnSuccess = function(callback, event) {
   callback(feed);
 };
 
+// Get a feed object by its id
+lucu.feed.findById = function(id, callback, fallback) {
+  'use strict';
+  var onConnect = lucu.feed.findByIdOnConnect.bind(null, id, callback);
+  lucu.database.connect(onConnect, fallback);
+};
 
-/*
-  function onConnect(error, database) {
-    var store = database.transaction('feed').objectStore('feed');
-    var index = store.index('schemeless');
-    var uri = new URI(url);
-    uri.protocol('');
-    var schemeless = uri.toString().substring(2);
-    var findRequest = index.get(schemeless);
-    findRequest.onsuccess = function() {
-      var existingFeed = this.result;
-      if(existingFeed) {
-        return hideSubsciptionMonitor(function() {
-          showErrorMessage('Already subscribed to ' + url + '.');
-        });
-      }
+lucu.feed.findByIdOnConnect = function(id, callback, error, database) {
+  'use strict';
 
-      // TODO: use connectivity.js lib
-      if(!navigator.onLine) {
-        return lucu.addFeed(database, {url: url}, onSubscriptionSuccessful, 
-          console.debug);
-      }
+  var transaction = database.transaction('feed');
+  var store = transaction.objectStore('feed');
+  var request = store.get(id);
+  request.onsuccess = lucu.feed.findByIdOnSuccess.bind(request, callback);
+};
 
-      lucu.fetch.fetchFeed(url, onFetchComplete, onFetchError, 10 * 1000);
-    };
-  };
-*/
+lucu.feed.findByIdOnSuccess = function(callback, event) {
+  'use strict';
+  var feed = event.target.result;
+  callback(feed);
+};
