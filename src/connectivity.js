@@ -7,6 +7,9 @@ var lucu = lucu || {};
 // TODO: rename to net.js, use lucu.net ns
 
 lucu.isOffline = function() {
-  var nav = window && window.navigator;
+  'use strict';
+
+  //var nav = window && window.navigator;
+  var nav = navigator;
   return nav && nav.hasOwnProperty('onLine') && !nav.onLine;
 };

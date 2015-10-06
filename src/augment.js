@@ -7,7 +7,6 @@ var lucu = lucu || {};
 // Feed augmentation lib
 lucu.augment = {};
 
-
 // TODO: the problem with the current approach is that it operates on 
 // arrays which needlessly block later async calls. All the document
 // fetching happens after all the exists-checks happen and only then
@@ -32,6 +31,8 @@ lucu.augment = {};
  * simply forwards the feed to the callback.
  */
 lucu.augment.start = function(feed, callback) {
+  'use strict';
+
   var waterfall = [
     lucu.augment.connect,
     lucu.augment.filterExisting.bind(null, feed.entries),
@@ -42,6 +43,8 @@ lucu.augment.start = function(feed, callback) {
 };
 
 lucu.augment.connect = function(callback) {
+  'use strict';
+
   lucu.database.connect(callback, callback);
 };
 
@@ -58,7 +61,6 @@ lucu.augment.filterExisting = function(entries, database, callback) {
 
 lucu.augment.onFilteredExisting = function(callback, entries) {
   'use strict';
-  // console.debug('Filtered existing');
   callback(null, entries);
 };
 
@@ -73,15 +75,18 @@ lucu.augment.findEntryByLink = function(transaction, entry, callback) {
 };
 
 lucu.augment.onFindEntry = function(callback, event) {
+  'use strict';
   callback(event.target.result);
 };
 
 lucu.augment.updateEntries = function(entries, callback) {
+  'use strict';
   var onComplete = lucu.augment.onUpdatedEntries.bind(null, callback);
   async.forEach(entries, lucu.augment.updateEntryContent, onComplete);
 };
 
 lucu.augment.onUpdatedEntries = function(callback) {
+  'use strict';
   callback();
 };
 
@@ -110,8 +115,6 @@ lucu.augment.FETCH_TIMEOUT = 20 * 1000;
  */
 lucu.augment.updateEntryContent = function(entry, callback) {
   'use strict';
-
-  // console.debug('lucu.augment.updateEntryContent %s', entry.link);
   
   var request = new XMLHttpRequest();
   request.timeout = lucu.augment.FETCH_TIMEOUT;
@@ -126,19 +129,19 @@ lucu.augment.updateEntryContent = function(entry, callback) {
 };
 
 lucu.augment.onFetchDocumentError = function(callback, errorEvent) {
+  'use strict';
   console.warn(errorEvent);
   callback();
 };
 
 lucu.augment.onFetchDocument = function(entry, callback, event) {
-  //console.debug('lucu.augment.onFetchDocument %s', entry.link);
+  'use strict';
   
   var request = event.target;
   var document = request.responseXML;
   
   if(!document || !document.body) {
-    //console.debug('lucu.augment.onFetchDocument cannot augment %s', 
-    //  request.responseURL);
+
     callback();
     return;
   }

@@ -18,31 +18,25 @@ lucu.database.VERSION = 15;
  * always null. database is an instance of IDBDatabase.
  */
 lucu.database.connect = function(callback, fallback) {
+  'use strict';
   var openRequest = indexedDB.open(lucu.database.NAME, lucu.database.VERSION);
   openRequest.onupgradeneeded = lucu.database.upgrade;
   openRequest.onsuccess = lucu.database.onConnect.bind(null, callback);
   openRequest.onerror = fallback;
   openRequest.onblocked = fallback;
-
-  // This is superfluous, but allows the caller to override or set
-  // the request properties from the calling context
   return openRequest;
 };
 
-// TODO: if we pass null as the first argument to callback, I think this
-// can be directly used with async API more easily.
 lucu.database.onConnect = function(callback, event) {
-
-  // In order to work cleanly with async.waterfall, we pass back null
-  // as the first argument.
+  'use strict';
+  // Pass back null for simple async.waterfall integration
   callback(null, event.target.result);
 };
 
 lucu.database.upgrade = function(event) {
   'use strict';
 
-  var oldVersion = event.oldVersion;
-  console.debug('Upgrading database from version %s', oldVersion);
+  console.debug('Upgrading database from version %s', event.oldVersion);
 
   var request = event.target;
   var database = request.result;
@@ -95,6 +89,7 @@ lucu.database.upgrade = function(event) {
   if(!entryIndices.contains('link')) {
     entryStore.createIndex('link', 'link', {unique: true});
   } else {
+    // Ensure the link index has a unique flag
     var entryLinkIndex = entryStore.index('link');
     if(!entryLinkIndex.unique) {
       entryStore.deleteIndex('link');
@@ -102,17 +97,19 @@ lucu.database.upgrade = function(event) {
     }
   }
 
-  // Hash was deprecated, as we now refer to entries uniquely by link
+  // Hash was deprecated
   if(entryIndices.contains('hash')) {
     entryStore.deleteIndex('hash');
   }
 };
 
 lucu.database.clearEntries = function() {
+  'use strict';
   lucu.database.connect(lucu.database.onClearEntriesConnect, console.error);
 };
 
 lucu.database.onClearEntriesConnect = function(error, database) {
+  'use strict';
   var transaction = database.transaction('entry', 'readwrite');
   var entryStore = transaction.objectStore('entry');
   var clearRequest = entryStore.clear();

@@ -7,7 +7,7 @@ var currentSlide = null;
 function viewDispatchMessage(message) {
 
   var VIEW_MESSAGE_HANDLER_MAP = {
-    displaySettingsChanged: lucu.style.onChange,
+    // displaySettingsChanged: lucu.style.onChange,
     pollCompleted: maybeAppendMoreSlides,
     subscribe: maybeAppendMoreSlides,
     unsubscribe: viewOnUnsubscribeMessage

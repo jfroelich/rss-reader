@@ -6,6 +6,12 @@ var lucu = lucu || {};
 
 lucu.entry = lucu.entry || {};
 
+// TODO: create an Entry data object, store entry objects instead of generic
+// object literals in indexedDB. Attach appropriate methods to the general
+// object. This should lead to much cleaner looking and organized code.
+// In doing so, review the structured clone algorithm that indexedDB uses
+// to ensure that add/get works as expected.
+
 
 // TODO: some entry link URLs from feeds are pre-chain-of-redirect-resolution, 
 // and are technically duplicates because each redirects to the same URL at the 
@@ -118,7 +124,6 @@ lucu.entry.markReadUpdateEntry = function(event) {
 
   // Suppress attempts to mark an entry as read if it is already read
   if(!entry.hasOwnProperty('unread')) {
-  	// console.debug('Entry is already marked as read, suppressing');
   	return;
   }
 
@@ -127,7 +132,6 @@ lucu.entry.markReadUpdateEntry = function(event) {
   entry.readDate = Date.now();
   cursor.update(entry);
 
-  // console.debug('Marked %o as read', entry);
 
   // TODO: maybe instead of doing this here, we notify some type 
   // of 'app' observer that handles all of this? That decouples

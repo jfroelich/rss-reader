@@ -5,12 +5,22 @@
 'use strict';
 
 var lucu = lucu || {};
-// TODO: think of a better name for this
+
 // TODO: maybe use just one function for both load/change, figure that out
-// I think I just create 3 empty rules in the css file, then modify them every
-// onload/onchange
 
 lucu.style = {};
+
+lucu.style.onMessage = function(message) {
+  if(message && message.type === 'displaySettingsChanged') {
+    lucu.style.onChange();
+  }
+};
+
+chrome.runtime.onMessage.addListener(lucu.style.onMessage);
+
+// todo: add style ns, remove media prefix as it is DRY
+// use BACKGROUND_PATH_BASE
+lucu.style.BACKGROUND_PATH_BASE = '/media/';
 
 lucu.BACKGROUND_IMAGES = [
   '/media/bgfons-paper_texture318.jpg',
@@ -80,10 +90,11 @@ lucu.style.findCSSRuleFilter = function(text, rule) {
   return rule.selectorText = text;
 };
 
+
 lucu.style.onChange = function() {
   'use strict';
 
-  console.debug('updating style');
+  console.debug('lucu.style.onChange called');
 
   var filter = Array.prototype.filter;
 
@@ -111,8 +122,15 @@ lucu.style.onChange = function() {
     entryRule.style.paddingRight = entryMargin + 'px';
   }
 
+  // New bug, changing any style does not update styles 
+  // in real time as expected. For some reason this used to work
+  // but now does not work. If the page is refreshed the style
+  // is correct.
+
   var titleRule = findCSSRule(sheet,'div.entry a.entry-title');
   if(titleRule) {
+
+    console.log('Found title rule');
 
     // Workaround chrome bug
     titleRule.style.background = '';
@@ -120,15 +138,18 @@ lucu.style.onChange = function() {
     titleRule.style.fontFamily = localStorage.HEADER_FONT_FAMILY;
 
     var hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
-    //console.debug('Setting header font size to %s', (hfs / 10).toFixed(2));
     console.debug('hfs after change is %s', hfs);
+
     if(hfs) {
       var hfsString = (hfs / 10).toFixed(2) + 'em';
       console.debug('Setting header font size to %s', hfsString);
       titleRule.style.fontSize = hfsString;
+      console.debug('Header font size is now %s', titleRule.style.fontSize);
     } else {
       console.warn('header font size after change not set or 0');
     }
+  } else {
+    console.log('Title rule not found');
   }
 
   var contentRule = findCSSRule(sheet, 'div.entry span.entry-content');
@@ -164,6 +185,8 @@ lucu.style.onChange = function() {
     contentRule.style.webkitColumnCount = parseInt(columnCount);
   }
 };
+
+
 
 lucu.style.onLoad = function() {
   var sheet = document.styleSheets[0];

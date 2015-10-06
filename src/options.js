@@ -12,17 +12,6 @@ var lucu = lucu || {};
 
 lucu.options = {};
 
-lucu.options.onMessage = function(message) {
-  'use strict';
-
-  if('displaySettingsChanged' == message.type) {
-    lucu.style.onChange();
-  }
-};
-
-chrome.runtime.onMessage.addListener(lucu.options.onMessage);
-
-
 function hideErrorMessage() {
   'use strict';
   var container = document.getElementById('options_error_message');

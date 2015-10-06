@@ -8,11 +8,13 @@ lucu.badge = {};
 
 // Sets the badge text to a count of unread entries
 lucu.badge.update = function() {
+  'use strict';
   // console.debug('Updating badge');
   lucu.database.connect(lucu.badge.onConnect, console.error);
 };
 
 lucu.badge.onConnect = function(error, database) {
+  'use strict';
   var transaction = database.transaction('entry');
   var entryStore = transaction.objectStore('entry');
   var unreadIndex = entryStore.index('unread');
@@ -21,6 +23,7 @@ lucu.badge.onConnect = function(error, database) {
 };
 
 lucu.badge.setText = function(event) {
+  'use strict';
   var count = event.target.result || 0;
   var badgeText = {text: count.toString()};
   chrome.browserAction.setBadgeText(badgeText);
@@ -42,18 +45,17 @@ lucu.badge.NEW_TAB_URL = 'chrome://newtab/';
  * NOTE: the calls to chrome.tabs here do not require the tabs permission
  */
 lucu.badge.onClick = function(event) {
-  console.debug('Clicked badge');
+  'use strict';
+  // console.debug('Clicked badge');
   var query = {'url': lucu.badge.VIEW_URL};
   chrome.tabs.query(query, lucu.badge.onQueryView);
 };
 
-// Binds on background page load
-// TODO: bind once on install?
-
 // onBadgeClick helper
 lucu.badge.onQueryView = function(tabs) {
+  'use strict';
   if(tabs.length) {
-    console.debug('Switching to existing tab');
+    // console.debug('Switching to existing tab');
     // Switch to an existing tab
     chrome.tabs.update(tabs[0].id, {active: true});
     return;
@@ -65,15 +67,16 @@ lucu.badge.onQueryView = function(tabs) {
 
 // onBadgeClick helper
 lucu.badge.onQueryNewTab = function(tabs) {
+  'use strict';
   if(tabs.length) {
-    console.debug('Replacing New Tab');
+    // console.debug('Replacing New Tab');
     // Switch to and replace the New Tab tab
     chrome.tabs.update(tabs[0].id, 
       {active:true, url: lucu.badge.VIEW_URL});
     return;
   }
 
-  console.debug('Opening a new tab');
+  // console.debug('Opening a new tab');
   // Create and switch to a new tab
   chrome.tabs.create({url: lucu.badge.VIEW_URL});
 };

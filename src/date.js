@@ -8,10 +8,13 @@ lucu.date = {};
 
 // Found this somewhere I think on stackoverflow
 lucu.date.isValid = function(date) {
+  'use strict';
   return date && date.toString() === '[object Date]' && isFinite(date);
 };
 
 lucu.date.format = function(date, sep) {
+  'use strict';
+ 
   if(!date)
     return '';
   var parts = [];

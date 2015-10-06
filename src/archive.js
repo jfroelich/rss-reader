@@ -16,6 +16,7 @@ var lucu = lucu || {};
 lucu.archive = {};
 
 lucu.archive.start = function() {
+  'use strict';
   var waterfall = [
     lucu.archive.connect,
     lucu.archive.selectEntries
@@ -26,10 +27,12 @@ lucu.archive.start = function() {
 
 
 lucu.archive.connect = function(callback) {
+  'use strict';
   lucu.database.connect(callback, callback);
 };
 
-lucu.archive.selectEntries = function(db, callback) {
+lucu.archive.selectEntries = function(database, callback) {
+  'use strict';
 
   // We want to select only not-archived articles.
   // Otherwise this just repeats itself on the first X entries.
@@ -38,8 +41,8 @@ lucu.archive.selectEntries = function(db, callback) {
   // index on the feed id for each entry works nicely for this
   // purpose.
 
-  var tx = db.transaction('entry', 'readwrite');
-  var store = tx.objectStore('entry');
+  var transaction = database.transaction('entry', 'readwrite');
+  var store = transaction.objectStore('entry');
   var index = store.index('feed');
   var request = index.openCursor();
 
@@ -61,6 +64,8 @@ lucu.archive.selectEntries = function(db, callback) {
 lucu.archive.ENTRY_LIMIT = 1000;
 
 lucu.archive.handleEntry = function(journal, event) {
+  'use strict';
+
   var cursor = event.target.result;
   
   // This eventually causes the transaction to complete
@@ -132,6 +137,7 @@ lucu.archive.handleEntry = function(journal, event) {
 };
 
 lucu.archive.onComplete = function(journal) {
+  'use strict';
   console.debug('Archived %s entries', journal.processed);
 };
 
