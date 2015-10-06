@@ -10,6 +10,7 @@ var lucu = lucu || {};
 lucu.notifications = {};
 
 lucu.notifications.show = function(message) {
+  'use strict';
   var permissionQuery = {permissions: ['notifications']};
   var sip = lucu.notifications.showIfPermitted.bind(null, message);
   chrome.permissions.contains(permissionQuery, sip);
@@ -20,6 +21,8 @@ lucu.notifications.DEFAULT_ICON = '/media/rss_icon_trans.gif';
 
 // helper for show
 lucu.notifications.showIfPermitted = function(message, permitted) {
+  'use strict';
+
   if(!permitted) return;
 
   // For now we are just using a very simple default
@@ -34,8 +37,8 @@ lucu.notifications.showIfPermitted = function(message, permitted) {
     message: message
   };
 
-  var notificationAppTitle = 'lucubrate';
+  var appTitle = 'lucubrate';
   var callback = function(){};
 
-  chrome.notifications.create(notificationAppTitle, notification, callback);
+  chrome.notifications.create(appTitle, notification, callback);
 };

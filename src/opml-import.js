@@ -23,7 +23,7 @@ lucu.opml.import = function(files, onComplete) {
 };
 
 lucu.opml.importCompleted = function(onComplete) {
-  console.debug('Finished importing feeds from OPML');
+  // console.debug('Finished importing feeds from OPML');
   var notificationText = 'Successfully imported OPML file';
   lucu.notifications.show(notificationText);  
 
@@ -50,7 +50,6 @@ lucu.opml.loadFile = function(file, callback) {
   reader.readAsText(file);
 };
 
-
 lucu.opml.onFileLoad = function(callback, event) {
   'use strict';
   var fileReader = event.target;
@@ -74,12 +73,14 @@ lucu.opml.onFileLoad = function(callback, event) {
 };
 
 lucu.opml.onFileLoadError = function(callback, event) {
+  'use strict';
   callback(null, []);
 };
 
 // Merges the outlines arrays into a single array.
 // Removes duplicates in the process. Sync.
 lucu.opml.mergeOutlines = function(outlineArrays, callback) {
+  'use strict';
   var outlines = [];
   var seen = new Set();
 
@@ -98,25 +99,32 @@ lucu.opml.mergeOutlines = function(outlineArrays, callback) {
 };
 
 lucu.opml.importConnect = function(outlines, callback) {
+  'use strict';
   var onConnect = lucu.opml.importOnConnect.bind(null, outlines, callback);
   lucu.database.connect(onConnect, callback);
 };
 
 lucu.opml.importOnConnect = function(outlines, callback, error, database) {
+  'use strict';
   callback(null, database, outlines);
 };
 
 lucu.opml.storeOutlines = function(database, outlines, callback) {
+  'use strict';
   var storeOutline = lucu.opml.storeOutline.bind(null, database);
   var onComplete = lucu.opml.onStoreOutlinesComplete.bind(null, callback);
   async.forEach(outlines, storeOutline, onComplete);
 };
 
 lucu.opml.onStoreOutlinesComplete = function(callback) {
+  'use strict';
   callback();
 };
 
+// TODO: clean this up a bit more
 lucu.opml.storeOutline = function(database, outline, callback) {
+  'use strict';
+
   lucu.addFeed(database, outline, function() {
     callback();
   }, function() {

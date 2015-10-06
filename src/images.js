@@ -8,9 +8,9 @@ var lucu = lucu || {};
 lucu.images = {};
 
 /**
- * Ensures that the width and height attributes of an image are set. If the
- * dimensions are set, the callback is called immediately. If not set, the
- * image is fetched and then the dimensions are set.
+ * Ensures that the width and height attributes of an image element are set. 
+ * If the dimensions are set, the callback is called immediately. If not set, 
+ * the image is fetched and then the dimensions are set.
  *
  * Designed to work with the async lib
  */
@@ -33,14 +33,15 @@ lucu.images.fetchDimensions = function(image, callback) {
   // TODO: think of a better way to specify the proxy. I should not be
   // relying on window explicitly here.
 
+  // TODO: this should be able to work in other environments, so we 
+  // cannot use window
+
   var document = window.document;
   var proxy = document.createElement('img');
-
-  proxy.onerror = lucu.images.fetchDimensionsOnError.bind(
-    proxy, src, callback);
-
   proxy.onload = lucu.images.fetchDimensionsOnLoad.bind(
     proxy, image, callback);
+  proxy.onerror = lucu.images.fetchDimensionsOnError.bind(
+    proxy, src, callback);
   proxy.src = src;
 };
 
@@ -56,6 +57,7 @@ lucu.images.fetchDimensionsOnError = function(src, callback, event) {
   callback();  
 };
 
+// TODO: support leading whitespace?
 lucu.images.isDataURI = function(imageSource) {
   return /^data\s*:/i.test(imageSource);
 };
