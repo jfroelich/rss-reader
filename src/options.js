@@ -343,7 +343,7 @@ function startSubscription(url) {
     // We are online, and the feed does not already exist. Fetch it
 
     lucu.fetch.fetchFeed(url, onFetchComplete, onFetchError, 10 * 1000);
-  });
+  }, console.error);
 
   function onFetchComplete(remoteFeed) {
     // TODO: subscribing takes too long. Do not augment
@@ -826,7 +826,7 @@ function initSubscriptionsSection() {
       $('nosubscriptions').style.display = 'none';
       $('feedlist').style.display = 'block';
     }
-  }, sortByTitle);
+  }, sortByTitle, console.error);
 }
 
 function initFeedDetailsSection() {
