@@ -12,7 +12,7 @@ var lucu = lucu || {};
 // TODO: ensure no future pubdates?
 // TODO: use the async's approach to error handling. Only use
 // one callback. The first argument should be the error object.
-lucu.addFeed = function(db, feed, onComplete, onerror) {
+lucu.addFeed = function(database, feed, onComplete, onerror) {
   'use strict';
 
   var storable = {};
@@ -25,27 +25,40 @@ lucu.addFeed = function(db, feed, onComplete, onerror) {
   
   // NOTE: title must be defined or subscriptions list sorting fails
   storable.title = clean.title || '';
-  if(clean.description)
+  
+  if(clean.description) {
     storable.description = clean.description;
-  if(clean.link)
+  }
+  
+  if(clean.link) {
     storable.link = clean.link;
-  if(clean.date)
+  }
+
+  if(clean.date) {
     storable.date = clean.date;
-  if(feed.fetched)
+  }
+
+  if(feed.fetched) {
     storable.fetched = feed.fetched;
+  }
   
   storable.created = Date.now();
-  var entries = feed.entries;
-  var mergeEntry = lucu.entry.merge.bind(null, db, storable);
-  var tx = db.transaction('feed','readwrite');
-  var store = tx.objectStore('feed');
-  var request = store.add(storable);
 
-  // TODO: externalize, use bind
-  request.onsuccess = function() {
-    storable.id = this.result;
-    async.forEach(entries, mergeEntry, onComplete);
-  };
+  var transaction = database.transaction('feed', 'readwrite');
+  var store = transaction.objectStore('feed');
+  var request = store.add(storable);
+  
   // Triggers onerror when schemeless already exists
   request.onerror = onerror;
+
+  var onsuccess = lucu.addFeedOnSuccess.bind(request, database, storable, 
+    feed.entries, onComplete);
+  request.onsuccess = onsuccess;
+};
+
+lucu.addFeedOnSuccess = function(database, feed, entries, onComplete, event) {
+  'use strict';
+  feed.id = event.target.result;
+  var merge = lucu.entry.merge.bind(null, database, feed);
+  async.forEach(entries, merge, onComplete);
 };
