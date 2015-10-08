@@ -61,7 +61,7 @@ lucu.feed.forEach = function(callback, onComplete, sortByTitle) {
   'use strict';
   var onConnect = lucu.feed.forEachOnConnect.bind(null, callback, onComplete, 
     sortByTitle);
-  lucu.database.onConnect(onConnect, console.error);
+  lucu.database.connect(onConnect, console.error);
 };
 
 lucu.feed.forEachOnConnect = function(callback, onComplete, sortByTitle, error, 
