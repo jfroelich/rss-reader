@@ -135,8 +135,8 @@ lucu.poll.onSelectFeed = function(feeds, event) {
   cursor.continue();
 };
 
-lucu.poll.updateFeeds = function(db, feeds, callback) {
-  var update = lucu.poll.updateFeed.bind(null, db);
+lucu.poll.updateFeeds = function(database, feeds, callback) {
+  var update = lucu.poll.updateFeed.bind(null, database);
   var onComplete = lucu.poll.onUpdateFeedsComplete.bind(null, callback, feeds);
   async.forEach(feeds, update, onComplete);
 };
@@ -145,8 +145,8 @@ lucu.poll.onUpdateFeedsComplete = function(callback, feeds) {
   callback(null, feeds);
 };
 
-lucu.poll.updateFeed = function(db, feed, callback) {
-  var onFetch = lucu.poll.onFetchFeed.bind(null, db, feed, callback);
+lucu.poll.updateFeed = function(database, feed, callback) {
+  var onFetch = lucu.poll.onFetchFeed.bind(null, database, feed, callback);
   var onError = lucu.poll.onFetchError.bind(null, callback);
   var timeout = 10 * 1000; // in millis
   lucu.fetch.fetchFeed(feed.url, onFetch, onError, timeout);
@@ -156,7 +156,7 @@ lucu.poll.onFetchError = function(callback) {
   callback();
 };
 
-lucu.poll.onFetchFeed = function(db, feed, callback, remoteFeed) {
+lucu.poll.onFetchFeed = function(database, feed, callback, remoteFeed) {
 
   // TODO: should this occur here? is this redundant?
   remoteFeed.entries = remoteFeed.entries.filter(function(entry) {
@@ -169,7 +169,7 @@ lucu.poll.onFetchFeed = function(db, feed, callback, remoteFeed) {
   remoteFeed.entries = remoteFeed.entries.filter(isDistinct);
 
   var onAugmentComplete = lucu.poll.onAugmentComplete.bind(null, 
-    db, feed, remoteFeed, callback);
+    database, feed, remoteFeed, callback);
   remoteFeed.fetched = Date.now();
   lucu.augment.start(remoteFeed, onAugmentComplete);
 };
@@ -185,7 +185,7 @@ lucu.poll.isDistinctFeedEntry = function(seenEntries, entry) {
   return true;  
 };
 
-lucu.poll.onAugmentComplete = function(db, feed, remoteFeed, callback) {
+lucu.poll.onAugmentComplete = function(database, feed, remoteFeed, callback) {
 
   // TODO: if we do end up updating the feed, what about the functional
   // dependencies such as the feedTitle and feedLink properties set for 
@@ -224,7 +224,7 @@ lucu.poll.onAugmentComplete = function(db, feed, remoteFeed, callback) {
   feed.updated = Date.now();
 
   // Overwrite the old local feed object with the modified local feed object
-  var transaction = db.transaction('feed', 'readwrite');
+  var transaction = database.transaction('feed', 'readwrite');
   var feedStore = transaction.objectStore('feed');
   var putFeedRequest = feedStore.put(feed);
   putFeedRequest.onerror = console.debug;
@@ -232,7 +232,7 @@ lucu.poll.onAugmentComplete = function(db, feed, remoteFeed, callback) {
     // Now merge in any new entries from the remote feed
     // NOTE: i don't think it matters whether we pass feed or 
     // remoteFeed or cleanedRemoteFeed to mergeEntry
-    var mergeEntry = lucu.entry.merge.bind(null, db, feed);
+    var mergeEntry = lucu.entry.merge.bind(null, database, feed);
     var entries = remoteFeed.entries;
 
     // We have to wrap so that we call callback without parameters
