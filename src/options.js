@@ -3,7 +3,7 @@
 // that can be found in the LICENSE file
 
 // TODO: implement history? mimic chrome. would need search ability
-// TODO: reintroduce $ function for getElementById
+// TODO: reintroduce document.getElementById function for getElementById
 
 // TODO: use a namespace object and get rid of 'options' prefix
 // in function names
@@ -17,9 +17,9 @@ lucu.options = {};
 
 function hideErrorMessage() {
   'use strict';
-  var container = document.getElementById('options_error_message');
+  const container = document.getElementById('options_error_message');
   if(!container) return;
-  var dismissButton = document.getElementById('options_dismiss_error_button');
+  const dismissButton = document.getElementById('options_dismiss_error_button');
   if(dismissButton)
     dismissButton.removeEventListener('click', hideErrorMessage);
   container.remove();
@@ -29,14 +29,14 @@ function showErrorMessage(message, fadeIn) {
   'use strict';
   hideErrorMessage();
 
-  var elMessage = document.createElement('span');
+  const elMessage = document.createElement('span');
   elMessage.textContent = message;
-  var dismissButton = document.createElement('button');
+  const dismissButton = document.createElement('button');
   dismissButton.setAttribute('id','options_dismiss_error_button');
   dismissButton.textContent = 'Dismiss';
   dismissButton.onclick = hideErrorMessage;
 
-  var container = document.createElement('div');
+  const container = document.createElement('div');
   container.setAttribute('id','options_error_message');
   container.appendChild(elMessage);
   container.appendChild(dismissButton);
@@ -59,43 +59,43 @@ function showErrorMessage(message, fadeIn) {
 function showSubscriptionMonitor() {
   'use strict';
   resetSubscriptionMonitor();
-  var container = document.createElement('div');
+  const container = document.createElement('div');
   container.setAttribute('id', 'options_subscription_monitor');
   container.style.opacity = '1';
   document.body.appendChild(container);
 
-  var progress = document.createElement('progress');
+  const progress = document.createElement('progress');
   progress.textContent = 'working...';
   container.appendChild(progress);
 }
 
 function isSubscriptionMonitorDisplayed() {
   'use strict';
-  var subMonitor = document.getElementById('options_subscription_monitor');
+  const subMonitor = document.getElementById('options_subscription_monitor');
   return subMonitor && subMonitor.style.display == 'block';
 }
 
 function resetSubscriptionMonitor() {
   'use strict';
-  var element = document.getElementById('options_subscription_monitor');
+  const element = document.getElementById('options_subscription_monitor');
   element && element.remove();
 }
 
 function updateSubscriptionMonitor(message) {
   'use strict';
-  var container = document.getElementById('options_subscription_monitor');
+  const container = document.getElementById('options_subscription_monitor');
   if(!container) return;
-  var paragraph = document.createElement('p');
+  const paragraph = document.createElement('p');
   paragraph.textContent = message;
   container.appendChild(paragraph);
 }
 
 function hideSubsciptionMonitor(onComplete, fadeOut) {
   'use strict';
-  var container = document.getElementById('options_subscription_monitor');
+  const container = document.getElementById('options_subscription_monitor');
 
   // NOTE: possible bug here, should be checking arguments.length
-  var noop = function(){};
+  const noop = function(){};
   onComplete = onComplete || noop;
 
   if(!container) {
@@ -129,7 +129,7 @@ function optionsShowSection(menuItem) {
   if(currentSection_)
     currentSection_.style.display = 'none';
 
-  var section = document.getElementById(menuItem.getAttribute('section'));
+  const section = document.getElementById(menuItem.getAttribute('section'));
 
   if(section) {
     section.style.display = 'block';
@@ -144,8 +144,8 @@ function optionsShowSection(menuItem) {
 
 function optionsUpdateFeedCount() {
   'use strict';
-  var count = document.getElementById('feedlist').childElementCount;
-  var countElement = document.getElementById('subscription-count');
+  const count = document.getElementById('feedlist').childElementCount;
+  const countElement = document.getElementById('subscription-count');
 
   if(count) {
     if(count > 1000) {
@@ -166,7 +166,7 @@ function optionsAppendFeed(feed, insertedSort) {
   }
 
 
-  var item = document.createElement('li');
+  const item = document.createElement('li');
   item.setAttribute('sort-key', feed.title);
 
   // TODO: stop using custom feed attribute?
@@ -180,14 +180,14 @@ function optionsAppendFeed(feed, insertedSort) {
   if(feed.title) favIconElement.title = feed.title;
   item.appendChild(favIconElement);
 
-  var title = document.createElement('span');
+  const title = document.createElement('span');
   title.textContent = lucu.string.truncate(feed.title,300) || 'Untitled';
   item.appendChild(title);
 
-  var feedListElement = document.getElementById('feedlist');
+  const feedListElement = document.getElementById('feedlist');
 
   if(insertedSort) {
-    var currentItems = feedListElement.childNodes;
+    const currentItems = feedListElement.childNodes;
     var added = false;
 
     for(var i = 0, len = currentItems.length; i < len; i++) {
@@ -228,6 +228,7 @@ function showOrSkipSubscriptionPreview(url) {
     return;
   }
 
+  // TODO: use connectivity.js
   if(!navigator.onLine) {
     console.debug('cannot preview while offline, skipping preview');
     startSubscription(url);
@@ -240,7 +241,7 @@ function showOrSkipSubscriptionPreview(url) {
   document.getElementById('subscription-preview-load-progress').style.display = 'block';
 
   // invalid url or parse error or exists
-  var onerror = function(error) {
+  const onerror = function(error) {
 
     // NOTE: use console.debug, not error, because this is not an error in the code
     // but an error fetching. reserve calls to console.error when encountering
@@ -257,7 +258,7 @@ function showOrSkipSubscriptionPreview(url) {
     showErrorMessage('Unable to fetch ' + url);
   };
 
-  var timeout = 10 * 1000;
+  const timeout = 10 * 1000;
 
   function onFetchSuccess(result) {
     // Stop the indeterminate progress bar.
@@ -404,28 +405,27 @@ function populateFeedDetailsSection(feedId) {
   // TODO: show num entries, num unread/red, etc
 
   lucu.feed.findById(feedId, function(feed) {
-    var $ = document.getElementById;
-    $('details-title').textContent = feed.title || 'Untitled';
-    var favIconURL = lucu.favicon.getURL(feed.url);
-    $('details-favicon').setAttribute('src', favIconURL);
-    $('details-feed-description').textContent =
+    document.getElementById('details-title').textContent = feed.title || 'Untitled';
+    const favIconURL = lucu.favicon.getURL(feed.url);
+    document.getElementById('details-favicon').setAttribute('src', favIconURL);
+    document.getElementById('details-feed-description').textContent =
       lucu.string.stripTags(feed.description) || 'No description';
-    $('details-feed-url').textContent = feed.url;
-    $('details-feed-link').textContent = feed.link;
-    $('details-unsubscribe').value = feed.id;
+    document.getElementById('details-feed-url').textContent = feed.url;
+    document.getElementById('details-feed-link').textContent = feed.link;
+    document.getElementById('details-unsubscribe').value = feed.id;
   }, console.error);
 }
 
 function onPostPreviewSubscribeClick(event) {
   'use strict';
-  var url = event.currentTarget.value;
+  const url = event.currentTarget.value;
   hideSubscriptionPreview();
   startSubscription(url);
 }
 
 function onFeedListItemClick(event) {
   'use strict';
-  var feedId = parseInt(event.currentTarget.getAttribute('feed'));
+  const feedId = parseInt(event.currentTarget.getAttribute('feed'));
   populateFeedDetailsSection(feedId);
   // TODO: These calls should really be in an async callback
   // passed to populateFeedDetailsSection
@@ -436,7 +436,7 @@ function onFeedListItemClick(event) {
 function onSubscribeSubmit(event) {
   'use strict';
   event.preventDefault();// Prevent normal form submission event
-  var query = (document.getElementById('subscribe-discover-query').value || '').trim();
+  const query = (document.getElementById('subscribe-discover-query').value || '').trim();
   if(!query)
     return false;
   if(document.getElementById('discover-in-progress').style.display == 'block')
@@ -463,15 +463,15 @@ function onSubscribeSubmit(event) {
 
 function discoverSubscribeClick(event) {
   'use strict';
-  var button = event.target;
-  var url = button.value;
+  const button = event.target;
+  const url = button.value;
   if(!url)
     return;
 
   // TODO: Ignore future clicks if error was displayed?
 
   // Ignore future clicks while subscription in progress
-  var subMonitor = document.getElementById('options_subscription_monitor');
+  const subMonitor = document.getElementById('options_subscription_monitor');
   if(subMonitor && subMonitor.style.display == 'block')
     return;
 
@@ -480,7 +480,7 @@ function discoverSubscribeClick(event) {
 
 function onDiscoverFeedsComplete(query, results) {
   'use strict';
-  var resultsList = document.getElementById('discover-results-list');
+  const resultsList = document.getElementById('discover-results-list');
   document.getElementById('discover-in-progress').style.display='none';
 
   // Need to filter as for some reason the discover feeds
@@ -491,7 +491,7 @@ function onDiscoverFeedsComplete(query, results) {
   // TODO: maybe there is no point in abstracting around discover, there is 
   // pretty much a google query and nothing else
 
-  var displayableResults = results.filter(function(result) {
+  const displayableResults = results.filter(function(result) {
     return result.url;
   });
 
@@ -508,7 +508,7 @@ function onDiscoverFeedsComplete(query, results) {
     resultsList.style.display = 'block';
   }
 
-  var listItem = document.createElement('li');
+  const listItem = document.createElement('li');
   listItem.textContent = 'Found ' + displayableResults.length + ' results.';
   resultsList.appendChild(listItem);
 
@@ -516,22 +516,22 @@ function onDiscoverFeedsComplete(query, results) {
   // Just use displayableResults.forEach ...?
 
   Array.prototype.forEach.call(displayableResults, function(result) {
-    var item = document.createElement('li');
+    const item = document.createElement('li');
     resultsList.appendChild(item);
 
-    var button = document.createElement('button');
+    const button = document.createElement('button');
     button.value = result.url;
     button.title = result.url;
     button.textContent = 'Subscribe';
     button.onclick = discoverSubscribeClick;
     item.appendChild(button);
 
-    var image = document.createElement('img');
+    const image = document.createElement('img');
     image.setAttribute('src', lucu.favicon.getURL(result.url));
     image.title = result.link;
     item.appendChild(image);
 
-    var a = document.createElement('a');
+    const a = document.createElement('a');
     a.setAttribute('href', result.link);
     a.setAttribute('target', '_blank');
     a.title = lucu.string.stripTags(result.title);
@@ -546,11 +546,11 @@ function onDiscoverFeedsComplete(query, results) {
     // TODO: truncate parameter should probably instead be a parameter
     // to the query-google-feeds lib, in order to reduce caller responsibility
 
-    var snippetSpan = document.createElement('span');
+    const snippetSpan = document.createElement('span');
     snippetSpan.innerHTML = lucu.string.truncate(result.contentSnippet, 400);
     item.appendChild(snippetSpan);
 
-    var span = document.createElement('span');
+    const span = document.createElement('span');
     span.setAttribute('class','discover-search-result-url');
     span.textContent = result.url;
     item.appendChild(span);
@@ -566,9 +566,8 @@ function onDiscoverFeedsError(errorMessage) {
 
 function onUnsubscribeButtonClicked(event) {
   'use strict';
-  var feedId = parseInt(event.target.value);
-  var $ = document.getElementById;
-  var sectionMenu = $('mi-subscriptions');
+  const feedId = parseInt(event.target.value);
+  const sectionMenu = document.getElementById('mi-subscriptions');
 
   function onUnsubscribeError(event) {
     // TODO: show an error?
@@ -577,7 +576,7 @@ function onUnsubscribeButtonClicked(event) {
 
   function onUnsubscribeSuccess(event) {
 
-    var item = document.querySelector('feedlist li[feed="'+message.feed+'"]')
+    const item = document.querySelector('feedlist li[feed="'+message.feed+'"]')
     if(item) {
       item.removeEventListener('click', onFeedListItemClick);
       item.remove();
@@ -585,9 +584,9 @@ function onUnsubscribeButtonClicked(event) {
 
     optionsUpdateFeedCount();
 
-    if($('feedlist').childElementCount == 0) {
-      $('feedlist').style.display = 'none';
-      $('nosubscriptions').style.display = 'block';
+    if(document.getElementById('feedlist').childElementCount == 0) {
+      document.getElementById('feedlist').style.display = 'none';
+      document.getElementById('nosubscriptions').style.display = 'block';
     }
 
     // Update the options view
@@ -617,7 +616,7 @@ function onEnableURLRewritingChange(event) {
 // TODO: switch to a section on complete?
 function onImportOPMLClick(event) {
   'use strict';
-  var uploader = document.createElement('input');
+  const uploader = document.createElement('input');
   uploader.setAttribute('type', 'file');
   uploader.style.display = 'none';
 
@@ -652,7 +651,7 @@ function onExportOPMLClick(event) {
 
 function exportOPMLOnComplete(blob) {
   'use strict';
-  var anchor = document.createElement('a');
+  const anchor = document.createElement('a');
   anchor.href = URL.createObjectURL(blob);
   anchor.setAttribute('download', 'subscriptions.xml');
   anchor.style.display = 'none';
@@ -760,9 +759,9 @@ function onEnableIdleCheckChange(event) {
 
 function initNavigation() {
   'use strict';
-  var menuItem = document.getElementById('mi-embeds');
+  const menuItem = document.getElementById('mi-embeds');
   menuItem.style.display = localStorage.EMBED_POLICY == 'ask' ? 'block' : 'none';
-  var menuItems = document.querySelectorAll('#navigation-menu li');
+  const menuItems = document.querySelectorAll('#navigation-menu li');
   Array.prototype.forEach.call(menuItems, setNavigationOnClick);
 }
 
@@ -780,39 +779,41 @@ function onNavigationClick(event) {
 
 function initGeneralSettingsSection() {
   'use strict';
-  var $ = document.getElementById;
-  $('enable-notifications').onclick = onEnableNotificationsChange;
 
-  chrome.permissions.contains({permissions: ['notifications']}, function(permitted) {
-    $('enable-notifications').checked = permitted;
+  document.getElementById('enable-notifications').onclick = 
+    onEnableNotificationsChange;
+
+  chrome.permissions.contains({permissions: ['notifications']}, 
+    function(permitted) {
+    document.getElementById('enable-notifications').checked = permitted;
   });
 
-  $('enable-background').onclick = onEnableBackgroundChange;
+  document.getElementById('enable-background').onclick = onEnableBackgroundChange;
 
-  chrome.permissions.contains({permissions:['background']}, function(permitted) {
-    $('enable-background').checked = permitted;
+  chrome.permissions.contains({permissions:['background']}, 
+    function(permitted) {
+    document.getElementById('enable-background').checked = permitted;
   });
 
-  $('enable-idle-check').onclick = onEnableIdleCheckChange;
+  document.getElementById('enable-idle-check').onclick = onEnableIdleCheckChange;
 
   chrome.permissions.contains({permissions:['idle']}, function(permitted) {
-    $('enable-idle-check').checked = permitted;
+    document.getElementById('enable-idle-check').checked = permitted;
   });
 
-  $('enable-subscription-preview').checked = !!localStorage.ENABLE_SUBSCRIBE_PREVIEW;
-  $('enable-subscription-preview').onchange = onEnableSubscriptionPreviewChange;
-  $('rewriting-enable').checked = !!localStorage.URL_REWRITING_ENABLED;
-  $('rewriting-enable').onchange = onEnableURLRewritingChange;
+  document.getElementById('enable-subscription-preview').checked = !!localStorage.ENABLE_SUBSCRIBE_PREVIEW;
+  document.getElementById('enable-subscription-preview').onchange = onEnableSubscriptionPreviewChange;
+  document.getElementById('rewriting-enable').checked = !!localStorage.URL_REWRITING_ENABLED;
+  document.getElementById('rewriting-enable').onchange = onEnableURLRewritingChange;
 }
 
 function initSubscriptionsSection() {
   'use strict';
-  var $ = document.getElementById;
-  $('button-export-opml').onclick = onExportOPMLClick;
-  $('button-import-opml').onclick = onImportOPMLClick;
+  document.getElementById('button-export-opml').onclick = onExportOPMLClick;
+  document.getElementById('button-import-opml').onclick = onImportOPMLClick;
 
   var feedCount = 0;
-  var sortByTitle = true;
+  const sortByTitle = true;
 
   lucu.feed.forEach(function(feed){
     feedCount++;
@@ -820,32 +821,32 @@ function initSubscriptionsSection() {
     optionsUpdateFeedCount();
   }, function(){
     if(feedCount == 0) {
-      $('nosubscriptions').style.display = 'block';
-      $('feedlist').style.display = 'none';
+      document.getElementById('nosubscriptions').style.display = 'block';
+      document.getElementById('feedlist').style.display = 'none';
     } else {
-      $('nosubscriptions').style.display = 'none';
-      $('feedlist').style.display = 'block';
+      document.getElementById('nosubscriptions').style.display = 'none';
+      document.getElementById('feedlist').style.display = 'block';
     }
   }, sortByTitle, console.error);
 }
 
 function initFeedDetailsSection() {
   'use strict';
-  var unsubscribeButton = document.getElementById('details-unsubscribe');
+  const unsubscribeButton = document.getElementById('details-unsubscribe');
   unsubscribeButton.onclick = onUnsubscribeButtonClicked;
 }
 
 function initSubscribeDiscoverSection() {
   'use strict';
   document.getElementById('subscription-form').onsubmit = onSubscribeSubmit;
-  var previewContinueButton = document.getElementById('subscription-preview-continue');
+  const previewContinueButton = 
+    document.getElementById('subscription-preview-continue');
   previewContinueButton.onclick = onPostPreviewSubscribeClick;
 }
 
 function initDisplaySettingsSection() {
   'use strict';
 
-  var $ = document.getElementById;
 
   // Apply the dynamic CSS on load to set the article preview
   // area within the display settings section
@@ -855,7 +856,7 @@ function initDisplaySettingsSection() {
   var option = document.createElement('option');
   option.value = '';
   option.textContent = 'Use background color';
-  $('entry-background-image').appendChild(option);
+  document.getElementById('entry-background-image').appendChild(option);
 
   lucu.BACKGROUND_IMAGES.forEach(function(path) {
     option = document.createElement('option');
@@ -865,25 +866,25 @@ function initDisplaySettingsSection() {
     //option.textContent = path;
 
     option.selected = localStorage.BACKGROUND_IMAGE == path;
-    $('entry-background-image').appendChild(option);
+    document.getElementById('entry-background-image').appendChild(option);
   });
 
-  $('entry-background-image').onchange = onBackgroundImageChange;
+  document.getElementById('entry-background-image').onchange = onBackgroundImageChange;
 
   option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
-  $('select_header_font').appendChild(option);
+  document.getElementById('select_header_font').appendChild(option);
 
   option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
-  $('select_body_font').appendChild(option);
+  document.getElementById('select_body_font').appendChild(option);
 
   lucu.FONT_FAMILIES.forEach(function(fontFamily) {
     option = document.createElement('option');
     option.value = fontFamily;
     option.selected = fontFamily == localStorage.HEADER_FONT_FAMILY;
     option.textContent = fontFamily;
-    $('select_header_font').appendChild(option);
+    document.getElementById('select_header_font').appendChild(option);
   });
 
   lucu.FONT_FAMILIES.forEach(function (fontFamily) {
@@ -891,12 +892,12 @@ function initDisplaySettingsSection() {
     option.value = fontFamily;
     option.selected = fontFamily == localStorage.BODY_FONT_FAMILY;
     option.textContent = fontFamily;
-    $('select_body_font').appendChild(option);
+    document.getElementById('select_body_font').appendChild(option);
   });
 
 
-  $('select_header_font').onchange = onHeaderFontChange;
-  $('select_body_font').onchange = onBodyFontChange;
+  document.getElementById('select_header_font').onchange = onHeaderFontChange;
+  document.getElementById('select_body_font').onchange = onBodyFontChange;
 
 
   [1,2,3].forEach(function (columnCount) {
@@ -904,15 +905,15 @@ function initDisplaySettingsSection() {
     option.value = columnCount;
     option.selected = columnCount == localStorage.COLUMN_COUNT;
     option.textContent = columnCount;
-    $('column-count').appendChild(option);
+    document.getElementById('column-count').appendChild(option);
   });
 
-  $('column-count').onchange = onColumnCountChange;
+  document.getElementById('column-count').onchange = onColumnCountChange;
 
   var inputChangedTimer, inputChangedDelay = 400;
 
-  $('entry-background-color').value = localStorage.ENTRY_BACKGROUND_COLOR || '';
-  $('entry-background-color').oninput = function() {
+  document.getElementById('entry-background-color').value = localStorage.ENTRY_BACKGROUND_COLOR || '';
+  document.getElementById('entry-background-color').oninput = function() {
     if(event.target.value)
       localStorage.ENTRY_BACKGROUND_COLOR = event.target.value;
     else
@@ -920,31 +921,30 @@ function initDisplaySettingsSection() {
     chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
   };
 
-  $('entry-margin').value = parseInt(localStorage.ENTRY_MARGIN) || '10';
-  $('entry-margin').onchange = onEntryMarginChange;
+  document.getElementById('entry-margin').value = parseInt(localStorage.ENTRY_MARGIN) || '10';
+  document.getElementById('entry-margin').onchange = onEntryMarginChange;
 
-  $('header-font-size').value = parseInt(localStorage.HEADER_FONT_SIZE) || '1';
-  $('header-font-size').onchange = onHeaderFontSizeChange;
-  $('body-font-size').value = parseInt(localStorage.BODY_FONT_SIZE) || '1';
-  $('body-font-size').onchange = onBodyFontSizeChange;
-  $('justify-text').checked = (localStorage.JUSTIFY_TEXT == '1') ? true : false;
-  $('justify-text').onchange = onJustifyChange;
+  document.getElementById('header-font-size').value = parseInt(localStorage.HEADER_FONT_SIZE) || '1';
+  document.getElementById('header-font-size').onchange = onHeaderFontSizeChange;
+  document.getElementById('body-font-size').value = parseInt(localStorage.BODY_FONT_SIZE) || '1';
+  document.getElementById('body-font-size').onchange = onBodyFontSizeChange;
+  document.getElementById('justify-text').checked = (localStorage.JUSTIFY_TEXT == '1') ? true : false;
+  document.getElementById('justify-text').onchange = onJustifyChange;
 
-  var bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
-  $('body-line-height').value = (bodyLineHeight / 10).toFixed(2);
-  $('body-line-height').oninput = onBodyLineHeightChange;
+  const bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
+  document.getElementById('body-line-height').value = (bodyLineHeight / 10).toFixed(2);
+  document.getElementById('body-line-height').oninput = onBodyLineHeightChange;
 }
 
 function initAboutSection() {
   'use strict';
-  var $ = document.getElementById;
-  var manifest = chrome.runtime.getManifest();
+  const manifest = chrome.runtime.getManifest();
 
-  $('extension-name').textContent = manifest.name || '';
-  $('extension-version').textContent = manifest.version || '';
-  $('extension-author').textContent = manifest.author || '';
-  $('extension-description').textContent = manifest.description || '';
-  $('extension-homepage').textContent = manifest.homepage_url || '';
+  document.getElementById('extension-name').textContent = manifest.name || '';
+  document.getElementById('extension-version').textContent = manifest.version || '';
+  document.getElementById('extension-author').textContent = manifest.author || '';
+  document.getElementById('extension-description').textContent = manifest.description || '';
+  document.getElementById('extension-homepage').textContent = manifest.homepage_url || '';
 }
 
 function initOptionsPage(event) {

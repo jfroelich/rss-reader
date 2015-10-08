@@ -5,15 +5,15 @@
 var currentSlide = null;
 
 function viewDispatchMessage(message) {
-
-  var VIEW_MESSAGE_HANDLER_MAP = {
+  'use strict';
+  const VIEW_MESSAGE_HANDLER_MAP = {
     // displaySettingsChanged: lucu.style.onChange,
     pollCompleted: maybeAppendMoreSlides,
     subscribe: maybeAppendMoreSlides,
     unsubscribe: viewOnUnsubscribeMessage
   };
 
-  var handler = VIEW_MESSAGE_HANDLER_MAP[message.type];
+  const handler = VIEW_MESSAGE_HANDLER_MAP[message.type];
   if(handler) {
     handler(message);
   }
@@ -22,8 +22,8 @@ function viewDispatchMessage(message) {
 chrome.runtime.onMessage.addListener(viewDispatchMessage);
 
 function maybeAppendMoreSlides() {
-
-  var unreadCount = countUnreadSlides();
+  'use strict';
+  const unreadCount = countUnreadSlides();
 
   // There are still some unread slides loaded, so do not bother
   // appending
@@ -36,15 +36,16 @@ function maybeAppendMoreSlides() {
   // TODO: we can use querySelector to get the first slide
   // itself instead of getting the parent container and
   // checking its children.
-  var isFirst = !document.getElementById('slideshow-container').firstChild;
+  const isFirst = !document.getElementById('slideshow-container').firstChild;
   appendSlides(hideNoUnreadArticlesSlide, isFirst);
 }
 
 function viewOnUnsubscribeMessage(message) {
+  'use strict';
 
-  var slidesForFeed = document.querySelectorAll(
+  const slidesForFeed = document.querySelectorAll(
     'div[feed="'+ message.feed +'"]');
-  var removedCurrentSlide = Array.prototype.reduce.call(
+  const removedCurrentSlide = Array.prototype.reduce.call(
     slidesForFeed, function(removedCurrent, slide) {
     // TODO: verify removing all listeners
     removeSlideElement(slide);
@@ -61,12 +62,13 @@ function viewOnUnsubscribeMessage(message) {
 }
 
 function removeSlideElement(slideElement) {
+  'use strict';
   slideElement.removeEventListener('click', onSlideClick);
   slideElement.remove();
 }
 
 function markSlideRead(slide) {
-
+  'use strict';
   // Guard against attempts to re-mark.
   if(slide.hasAttribute('read')) {
     return;
@@ -75,30 +77,26 @@ function markSlideRead(slide) {
   // Mark the UI regardless of the result
   slide.setAttribute('read', '');
 
-  var entryAttribute = slide.getAttribute('entry');
-  var entryId = parseInt(entryAttribute);
+  const entryAttribute = slide.getAttribute('entry');
+  const entryId = parseInt(entryAttribute);
 
-  function onMarkedReadError(event) {
-    // TODO: react to database error?
-    console.error(event);
-  }
-
-  lucu.entry.markRead(entryId, null, onMarkedReadError);
+  // TODO: react to database error?
+  lucu.entry.markRead(entryId, null, console.error);
 }
 
 function appendSlides(oncomplete, isFirst) {
-
+  'use strict';
   var counter = 0;
-  var limit = 3;
-  var offset = countUnreadSlides();
+  const limit = 3;
+  const offset = countUnreadSlides();
   var notAdvanced = true;
 
   function onConnect(error, database) {
-    var transaction = database.transaction('entry');
+    const transaction = database.transaction('entry');
     transaction.oncomplete = oncomplete;
-    var entryStore = transaction.objectStore('entry');
-    var unreadIndex = entryStore.index('unread');
-    var request = unreadIndex.openCursor();
+    const entryStore = transaction.objectStore('entry');
+    const unreadIndex = entryStore.index('unread');
+    const request = unreadIndex.openCursor();
     request.onsuccess = renderEntry;
   }
 
@@ -107,7 +105,7 @@ function appendSlides(oncomplete, isFirst) {
   // TODO: consider using async.each with limit
 
   function renderEntry() {
-    var cursor = this.result;
+    const cursor = this.result;
 
     if(cursor) {
       if(notAdvanced && offset) {
@@ -145,7 +143,7 @@ function appendSlides(oncomplete, isFirst) {
  * is where the listener is attached.
  */
 function onSlideClick(event) {
-
+  'use strict';
   if(event.which != 1) {
     console.debug('onSlideClick event.which != 1. %o', event);
     return false;
@@ -213,8 +211,8 @@ function onSlideClick(event) {
  * TODO: use <article> instead of div
  */
 function appendSlide(entry, isFirst) {
-
-  var slide = document.createElement('div');
+  'use strict';
+  const slide = document.createElement('div');
   slide.setAttribute('entry', entry.id);
   slide.setAttribute('feed', entry.feed);
   slide.setAttribute('class','entry');
@@ -228,18 +226,15 @@ function appendSlide(entry, isFirst) {
   slide.style.bottom = 0;
   slide.style.transition = 'left 0.5s ease-in 0s, right 0.5s ease-in';
 
-  var title = document.createElement('a');
+  const title = document.createElement('a');
   title.setAttribute('href', entry.link);
   title.setAttribute('class', 'entry-title');
   title.setAttribute('target','_blank');
   title.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
     var titleText = lucu.string.stripTags(entry.title);
-
     titleText = calamine.stripTitlePublisher(titleText);
-
     titleText = lucu.string.truncate(titleText, 300);
-
     title.innerHTML = titleText;
   } else {
     title.textContent = 'Untitled';
@@ -249,28 +244,28 @@ function appendSlide(entry, isFirst) {
 
   // TODO: use section instead of span?
 
-  var content = document.createElement('span');
+  const content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
 
-  var doc = document.implementation.createHTMLDocument();
+  const doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = entry.content;
-  var results = lucu.sanitize.sanitizeDocument(doc);
+  const results = lucu.sanitize.sanitizeDocument(doc);
   content.appendChild(results);
   slide.appendChild(content);
 
-  var source = document.createElement('span');
+  const source = document.createElement('span');
   source.setAttribute('class','entrysource');
   slide.appendChild(source);
 
-  var favIcon = document.createElement('img');
+  const favIcon = document.createElement('img');
   favIcon.setAttribute('src', lucu.favicon.getURL(entry.feedLink || entry.baseURI));
   favIcon.setAttribute('width', '16');
   favIcon.setAttribute('height', '16');
   source.appendChild(favIcon);
 
-  var feedTitle = document.createElement('span');
+  const feedTitle = document.createElement('span');
   feedTitle.setAttribute('title',entry.feedLink);
-  var entryPubDate = entry.pubdate ?
+  const entryPubDate = entry.pubdate ?
     ' on ' + lucu.date.format(new Date(entry.pubdate)) : '';
   feedTitle.textContent = (entry.feedTitle || 'Unknown feed') + ' by ' +
     (entry.author || 'Unknown author') + entryPubDate;
@@ -280,12 +275,12 @@ function appendSlide(entry, isFirst) {
 }
 
 function showNextSlide() {
-
+  'use strict';
   if(countUnreadSlides() < 2) {
     appendSlides(function() {
 
         // TODO: this is still producing UI latency
-        var c = document.getElementById('slideshow-container');
+        const c = document.getElementById('slideshow-container');
         while(c.childElementCount > 30 && c.firstChild != currentSlide) {
           removeSlideElement(c.firstChild);
         }
@@ -298,7 +293,7 @@ function showNextSlide() {
   }
 
   function showNext() {
-    var current = currentSlide;
+    const current = currentSlide;
     if(current.nextSibling) {
       current.style.left = '-100%';
       current.style.right = '100%';
@@ -313,7 +308,8 @@ function showNextSlide() {
 }
 
 function showPreviousSlide() {
-  var current = currentSlide;
+  'use strict';
+  const current = currentSlide;
   if(current.previousSibling) {
     current.style.left = '100%';
     current.style.right = '-100%';
@@ -324,17 +320,19 @@ function showPreviousSlide() {
 }
 
 function isEntryElementUnread(entryElement) {
+  'use strict';
   return !entryElement.hasAttribute('read');
 }
 
 function countUnreadSlides() {
-  var slides = document.body.querySelectorAll('div[entry]:not([read])');
+  'use strict';
+  const slides = document.body.querySelectorAll('div[entry]:not([read])');
   return slides ? slides.length : 0;
 }
 
 function maybeShowNoUnreadArticlesSlide() {
-  var numUnread = countUnreadSlides();
-
+  'use strict';
+  const numUnread = countUnreadSlides();
   if(numUnread) {
     return;
   }

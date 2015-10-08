@@ -11,8 +11,8 @@ lucu.notifications = {};
 
 lucu.notifications.show = function(message) {
   'use strict';
-  var permissionQuery = {permissions: ['notifications']};
-  var sip = lucu.notifications.showIfPermitted.bind(null, message);
+  const permissionQuery = {permissions: ['notifications']};
+  const sip = lucu.notifications.showIfPermitted.bind(null, message);
   chrome.permissions.contains(permissionQuery, sip);
 };
 
@@ -30,15 +30,15 @@ lucu.notifications.showIfPermitted = function(message, permitted) {
   // for example by enabling clickable notifications
   // that do things like 
 
-  var notification = {
+  const notification = {
     type: 'basic',
     title: lucu.notifications.DEFAULT_TITLE,
     iconUrl: lucu.notifications.DEFAULT_ICON,
     message: message
   };
 
-  var appTitle = 'lucubrate';
-  var callback = function(){};
+  const appTitle = 'lucubrate';
+  const callback = function(){};
 
   chrome.notifications.create(appTitle, notification, callback);
 };

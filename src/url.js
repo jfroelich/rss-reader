@@ -7,16 +7,21 @@ var lucu = lucu || {};
 lucu.url = {};
 
 lucu.url.isValid = function(url) {
-
+  'use strict';
   if(!url) {
     return false;
   }
 
   // Use medialize
+  var uri = '';
   try {
-    var uri = URI(url);
+    uri = URI(url);
   } catch(e) {
     console.debug(e);
+    return false;
+  }
+
+  if(!uri) {
     return false;
   }
 
@@ -33,8 +38,9 @@ lucu.url.isValid = function(url) {
 
 // NOTE: requires URI.js
 lucu.url.getSchemeless = function(url) {
-  var uri = new URI(url);
+  'use strict';
+  const uri = new URI(url);
   uri.protocol('');
-  var schemeless = uri.toString().substring(2);
+  const schemeless = uri.toString().substring(2);
   return schemeless;
 };

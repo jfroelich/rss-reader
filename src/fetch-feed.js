@@ -30,7 +30,7 @@ lucu.fetch.fetchFeed = function(url, onComplete, onError, timeout) {
     return;
   }
 
-  var request = new XMLHttpRequest();
+  const request = new XMLHttpRequest();
   request.timeout = timeout;
   request.onerror = lucu.fetch.onRequestError.bind(request, onError);
   request.ontimeout = onError;
@@ -42,9 +42,9 @@ lucu.fetch.fetchFeed = function(url, onComplete, onError, timeout) {
 };
 
 lucu.fetch.onRequestLoad = function(callback, fallback, event) {
-  var document = event.target.responseXML;
+  'use strict';
+  const document = event.target.responseXML;
   var error;
-  var feed;
 
   if(!document || !document.documentElement) {
     error = {type: 'invalid-xml', target: this};
@@ -53,7 +53,7 @@ lucu.fetch.onRequestLoad = function(callback, fallback, event) {
   }
 
   try {
-    feed = lucu.deserializeFeed(document);
+    const feed = lucu.deserializeFeed(document);
   } catch(e) {
     error = {type: 'invalid-xml', target: this, details: e};
     fallback(error);
@@ -70,20 +70,24 @@ lucu.fetch.onRequestLoad = function(callback, fallback, event) {
 };
 
 lucu.fetch.entryHasLink = function(entry) {
+  'use strict';
   return entry.link;
 };
 
 lucu.fetch.rewriteEntryLink = function(entry) {
+  'use strict';
   entry.link = lucu.rewriteURL(entry.link);
   return entry;
 };
 
 lucu.fetch.onRequestError = function(callback, event) {
+  'use strict';
   console.debug('fetch feed error');
   console.dir(event);
   callback(event);  
 };
 
 lucu.fetch.onFetchErrorDefault = function(errorEvent) {
+  'use strict';
   console.dir(errorEvent);
 };

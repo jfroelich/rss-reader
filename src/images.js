@@ -17,8 +17,8 @@ lucu.images = {};
 lucu.images.fetchDimensions = function(image, callback) {
   'use strict';
 
-  var src = (image.getAttribute('src') || '').trim();
-  var width = (image.getAttribute('width') || '').trim();
+  const src = (image.getAttribute('src') || '').trim();
+  const width = (image.getAttribute('width') || '').trim();
   if(!src || width || image.width ||
     width === '0' || /^0\s*px/i.test(width) ||
     lucu.images.isDataURI(src)) {
@@ -36,8 +36,8 @@ lucu.images.fetchDimensions = function(image, callback) {
   // TODO: this should be able to work in other environments, so we 
   // cannot use window
 
-  var document = window.document;
-  var proxy = document.createElement('img');
+  const document = window.document;
+  const proxy = document.createElement('img');
   proxy.onload = lucu.images.fetchDimensionsOnLoad.bind(
     proxy, image, callback);
   proxy.onerror = lucu.images.fetchDimensionsOnError.bind(
@@ -46,7 +46,7 @@ lucu.images.fetchDimensions = function(image, callback) {
 };
 
 lucu.images.fetchDimensionsOnLoad = function(image, callback, event) {
-  var proxy = event.target;
+  const proxy = event.target;
   image.width = proxy.width;
   image.height = proxy.height;
   callback();

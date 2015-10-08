@@ -13,10 +13,10 @@ lucu.queryGoogleFeeds = function(query, timeout, callback, fallback) {
   query = (query || '').trim();
   if(!query) return callback('',[]);
   fallback = fallback || function () {};
-  var onload = lucu.handleGoogleFeedsResponse;
-  var base = 'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
-  var url = base + encodeURIComponent(query);
-  var request = new XMLHttpRequest();
+  const onload = lucu.handleGoogleFeedsResponse;
+  const base = 'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
+  const url = base + encodeURIComponent(query);
+  const request = new XMLHttpRequest();
   request.timeout = timeout;
   request.onerror = fallback;
   request.ontimeout = fallback;
@@ -31,15 +31,15 @@ lucu.queryGoogleFeeds = function(query, timeout, callback, fallback) {
 // Expects 'this' to be bound to the XMLHttpRequest
 lucu.handleGoogleFeedsResponse = function(callback) {
   'use strict';
-  var data = this.response.responseData;
-  var entries = (data.entries || '').map(lucu.sanitizeGoogleSnippet);
+  const data = this.response.responseData;
+  const entries = (data.entries || '').map(lucu.sanitizeGoogleSnippet);
   callback(data.query || '', entries);
 };
 
 // Modifies the given input entry (and also returns it)
 lucu.sanitizeGoogleSnippet = function(entry) {
   'use strict';
-  var snippet = entry.contentSnippet;
+  const snippet = entry.contentSnippet;
   if(snippet) {
     entry.contentSnippet = snippet.replace(/<br>/gi,'');
   }

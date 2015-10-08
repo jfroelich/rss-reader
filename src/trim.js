@@ -12,6 +12,7 @@ lucu.trim = {};
  * document
  */
 lucu.trim.trimDocument = function(document) {
+  'use strict';
   lucu.trim.trimElement(document);
 };
 
@@ -60,7 +61,7 @@ lucu.trim.isTrimmableElement = function(element) {
 lucu.trim.trimElement = function(element) {
   'use strict';
   var sibling;
-  var trimmable = lucu.trim.isTrimmableElement;
+  const trimmable = lucu.trim.isTrimmableElement;
 
   var node = element.firstChild;
   while(trimmable(node)) {
@@ -89,16 +90,17 @@ lucu.trim.WHITESPACE_SENSITIVE_ELEMENTS = 'code, code *, pre, pre *, ' +
 lucu.trim.trimNodes = function(document) {
   'use strict';
 
-  var slice = Array.prototype.slice;
+  const slice = Array.prototype.slice;
 
 
-  var elements = document.body.querySelectorAll(
+  const elements = document.body.querySelectorAll(
     lucu.trim.WHITESPACE_SENSITIVE_ELEMENTS);
-  var preformatted = new Set(slice.call(elements));
-  var isInline = lucu.trim.isInline;
-  var it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
+  const preformatted = new Set(slice.call(elements));
+  const isInline = lucu.trim.isInline;
+  const iterator = document.createNodeIterator(document.body, 
+    NodeFilter.SHOW_TEXT);
   var node;
-  while(node = it.nextNode()) {
+  while(node = iterator.nextNode()) {
     if(preformatted.has(node.parentElement)) {
       continue;
     }

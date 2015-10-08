@@ -42,45 +42,43 @@ lucu.resolver.RESOLVABLES_QUERY = 'a, area, audio, blockquote, embed, ' +
  */
 lucu.resolver.resolveDocument = function(document, baseURL) {
   'use strict';
-  var forEach = Array.prototype.forEach;
+  const forEach = Array.prototype.forEach;
 
   // Remove all <BASE> elements
-  var bases = document.getElementsByTagName('base');
+  const bases = document.getElementsByTagName('base');
   forEach.call(bases, lucu.dom.remove);
 
   // Resolve all resolvable elements
-  var elements = document.querySelectorAll(lucu.resolver.RESOLVABLES_QUERY);
-
-  var resolveElement = lucu.resolver.resolveElement.bind(null, baseURL);
-
+  const elements = document.querySelectorAll(lucu.resolver.RESOLVABLES_QUERY);
+  const resolveElement = lucu.resolver.resolveElement.bind(null, baseURL);
   forEach.call(elements, resolveElement);
 };
 
 // Helper for resolveDocument
 // Depends on the URI lib. Modifies the element in place.
 lucu.resolver.resolveElement = function(baseURL, element) {
-
+  'use strict';
   // NOTE: this only modifies the first attribute found. if 
   // an element has multiple URL attributes, only the first
   // is changed.
 
-  var name = element.localName;
-  var attribute = lucu.resolver.ATTRIBUTES.get(name);
-  var url = (element.getAttribute(attribute) || '').trim();
+  const name = element.localName;
+  const attribute = lucu.resolver.ATTRIBUTES.get(name);
+  const url = (element.getAttribute(attribute) || '').trim();
   
   if(!url) {
     return;
   }
 
   try {
-    var uri = new URI(url);
+    const uri = new URI(url);
     
     // Don't try and resolve absolute URLs
     if(uri.protocol()) {
       return;
     }
 
-    var resolved = uri.absoluteTo(baseURL).toString();
+    const resolved = uri.absoluteTo(baseURL).toString();
 
     // Overwrite the attribute's value
     element.setAttribute(attribute, resolved);

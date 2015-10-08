@@ -61,7 +61,7 @@ lucu.entry.merge = function(database, feed, entry, callback) {
   }
 
   if(entry.pubdate) {
-    var date = new Date(entry.pubdate);
+    const date = new Date(entry.pubdate);
     if(lucu.date.isValid(date)) {
       storable.pubdate = date.getTime();
     }
@@ -79,14 +79,14 @@ lucu.entry.merge = function(database, feed, entry, callback) {
 
   // Now insert the entry. Due to the unique flag on the entry.link index,
   // the transaction expectedly fails if the entry already exists.
-  var transaction = database.transaction('entry', 'readwrite');
-  var entryStore = transaction.objectStore('entry');
-  var addEntryRequest = entryStore.add(storable);
+  const transaction = database.transaction('entry', 'readwrite');
+  const entryStore = transaction.objectStore('entry');
+  const addEntryRequest = entryStore.add(storable);
 
   // Due to async.waterfall, we have to wrap callback to prevent it from
   // receiving an event parameter that async.waterfall would treat as 
   // an error argument.
-  var onAddEntry = lucu.entry.onAddEntry.bind(addEntryRequest, callback);
+  const onAddEntry = lucu.entry.onAddEntry.bind(addEntryRequest, callback);
   addEntryRequest.onsuccess = onAddEntry;
   addEntryRequest.onerror = onAddEntry;
 };
@@ -99,27 +99,27 @@ lucu.entry.onAddEntry = function(callback, event) {
 lucu.entry.markRead = function(entryId, callback, fallback) {
   'use strict';
   // console.log('Marking %s as read', entryId);
-  var onConnect = lucu.entry.onMarkReadConnect.bind(null, entryId, callback);
+  const onConnect = lucu.entry.onMarkReadConnect.bind(null, entryId, callback);
   lucu.database.connect(onConnect, fallback);
 };
 
 lucu.entry.onMarkReadConnect = function(entryId, callback, error, database) {
   'use strict';
-  var transaction = database.transaction('entry', 'readwrite');
+  const transaction = database.transaction('entry', 'readwrite');
   transaction.oncomplete = callback;
-  var entryStore = transaction.objectStore('entry');
-  var markReadRequest = entryStore.openCursor(entryId);
+  const entryStore = transaction.objectStore('entry');
+  const markReadRequest = entryStore.openCursor(entryId);
   markReadRequest.onsuccess = lucu.entry.markReadUpdateEntry;
 };
 
 lucu.entry.markReadUpdateEntry = function(event) {
   'use strict';
-  var cursor = event.target.result;
+  const cursor = event.target.result;
   if(!cursor) return;
 
   // Get the entry at the cursor. It may be possible that the entry somehow
   // no longer exists, so escape early when that is the case.
-  var entry = cursor.value;
+  const entry = cursor.value;
   if(!entry) return;
 
   // Suppress attempts to mark an entry as read if it is already read

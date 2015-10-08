@@ -12,7 +12,7 @@ lucu.sanitize = {};
  */
 lucu.sanitize.sanitizeDocument = function(document) {
 
-  var ls = lucu.sanitize;
+  const ls = lucu.sanitize;
 
   ls.removeComments(document);
   ls.removeBlacklistedElements(document);
@@ -29,7 +29,7 @@ lucu.sanitize.sanitizeDocument = function(document) {
   ls.removeEmptyNodes(document);
   ls.removeEmptyElements(document);
 
-  var results = calamine.transform(document, {
+  const results = calamine.transform(document, {
     FILTER_NAMED_AXES: true,
     ANNOTATE: false
   });
@@ -53,7 +53,8 @@ lucu.sanitize.sanitizeDocument = function(document) {
  * less whitespace.
  */
 lucu.sanitize.canonicalizeSpaces = function(document) {
-  var it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
+  'use strict';
+  const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
   var node = it.nextNode();
   while(node) {
     node.nodeValue = node.nodeValue.replace(/&nbsp;/ig, ' ');
@@ -72,6 +73,7 @@ lucu.sanitize.SELECTOR_LEAF_LIKE = ['area', 'audio', 'br', 'canvas', 'col',
  * the element is flagged as a leaf element.
  */
 lucu.sanitize.isEmptyLike = function(element) {
+  'use strict';
   // An element is not empty if it has one or more child nodes
   if(element.firstChild) {
     return false;
@@ -101,7 +103,7 @@ lucu.sanitize.removeEmptyElements = function(document) {
   }
 
 
-  var filter = Array.prototype.filter;
+  const filter = Array.prototype.filter;
 
   // TODO: there is a specific edge case not being handled
   // where certain elements, e.g. anchors, that do not contain
@@ -137,8 +139,8 @@ lucu.sanitize.removeEmptyElements = function(document) {
   // So we need to go up 1, then query all direct children. But that is
   // kind of redundant since we already identified the children, so that
   // still might need improvement.
-  var elements = document.body.getElementsByTagName('*');
-  var emptyLikeElements = filter.call(elements, lucu.sanitize.isEmptyLike);
+  const elements = document.body.getElementsByTagName('*');
+  const emptyLikeElements = filter.call(elements, lucu.sanitize.isEmptyLike);
   
   // TODO: just add children that should be removed to the stack insead of
   // removing them and adding their parents to the stack.
@@ -146,8 +148,8 @@ lucu.sanitize.removeEmptyElements = function(document) {
   
   // TODO: separate this out as an separate function
 
-  var parents = emptyLikeElements.map(function (element) {
-    var parentElement = element.parentElement;
+  const parents = emptyLikeElements.map(function (element) {
+    const parentElement = element.parentElement;
     element.remove();
     return parentElement;
   });
@@ -155,7 +157,7 @@ lucu.sanitize.removeEmptyElements = function(document) {
   // Avoid removing the body element
 
 
-  var stack = parents.filter(
+  const stack = parents.filter(
     lucu.sanitize.isNotBodyElement.bind(null, document));
 
   var parent, grandParent;
@@ -189,6 +191,7 @@ lucu.sanitize.removeEmptyElements = function(document) {
 };
 
 lucu.sanitize.isNotBodyElement = function(document, element) {
+  'use strict';
   return document.body && document.body != element;
 };
 
@@ -201,9 +204,11 @@ lucu.sanitize.isNotBodyElement = function(document, element) {
  * TODO: rename to removeEmptyTextNodes for clarity
  */
 lucu.sanitize.removeEmptyNodes = function(document) {
-  var it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
-  var node;
-  while(node = it.nextNode()) {
+  'use strict';
+  const iterator = document.createNodeIterator(document.body, 
+    NodeFilter.SHOW_TEXT);
+  var node = document.body;
+  while(node = iterator.nextNode()) {
     if(!node.nodeValue) {
       node.remove();
     }
@@ -215,12 +220,12 @@ lucu.sanitize.removeEmptyNodes = function(document) {
  * allowed attributes
  */
 lucu.sanitize.removeAttributes = function(allowedAttributes, element) {
-
+  'use strict';
   if(!element) {
     return;
   }
 
-  var attributes = element.attributes;
+  const attributes = element.attributes;
 
   if(!attributes) {
     console.debug('element.attributes did not return a collection, %o', element);
@@ -243,12 +248,14 @@ lucu.sanitize.removeAttributes = function(allowedAttributes, element) {
 
 lucu.sanitize.DEFAULT_ALLOWED_ATTRIBUTES = new Set(['href','src']);
 
-lucu.sanitize.removeDescendantAttributes = function(allowedAttributes, element) {
-  var ra = lucu.sanitize.removeAttributes;
-  var forEach = Array.prototype.forEach;
+lucu.sanitize.removeDescendantAttributes = function(allowedAttributes, 
+  element) {
+  'use strict';
+  const ra = lucu.sanitize.removeAttributes;
+  const forEach = Array.prototype.forEach;
 
   ra(allowedAttributes, element);
-  var descendants = element.getElementsByTagName('*');
+  const descendants = element.getElementsByTagName('*');
   forEach.call(descendants, ra.bind(null, allowedAttributes));
 };
 
@@ -274,7 +281,7 @@ lucu.sanitize.BLACKLISTED_ELEMENTS = [
  * Removes all elements in the black list
  */
 lucu.sanitize.removeBlacklistedElements = function(document) {
-  var root = document.body;
+  const root = document.body;
 
   // TODO: separate this function out as a separate function
   lucu.sanitize.BLACKLISTED_ELEMENTS.forEach(function(name) {
@@ -291,8 +298,9 @@ lucu.sanitize.removeBlacklistedElements = function(document) {
   // TODO: write an outer loop that iterates over the set of exceptional
   // elements to make this less dry
 
-  var gPlusOnes = root.getElementsByTagName('g:plusone');
-  for(var i = 0, len = gPlusOnes.length; i < len; i++) {
+  const gPlusOnes = root.getElementsByTagName('g:plusone');
+  var i = 0;
+  for(i = 0, len = gPlusOnes.length; i < len; i++) {
     // NOTE: gebtn is live so one removal could affect others
     // so we have to check if defined
     // TODO: check if not detached (using root.contains?)
@@ -301,8 +309,8 @@ lucu.sanitize.removeBlacklistedElements = function(document) {
     }
   }
 
-  var fbComments = root.getElementsByTagName('fb:comments');
-  for(var i = 0, len = fbComments.length; i < len; i++) {
+  const fbComments = root.getElementsByTagName('fb:comments');
+  for(i = 0, len = fbComments.length; i < len; i++) {
     if(fbComments[i]) {
       // TODO: check if not detached
       fbComments[i].remove();
@@ -314,9 +322,11 @@ lucu.sanitize.removeBlacklistedElements = function(document) {
  * Remove all comment nodes
  */
 lucu.sanitize.removeComments = function(document) {
-  var it = document.createNodeIterator(document.body, NodeFilter.SHOW_COMMENT);
-  var node;
-  while(node = it.nextNode()) {
+  'use strict';
+  const iterator = document.createNodeIterator(document.body, 
+    NodeFilter.SHOW_COMMENT);
+  var node = document.body;
+  while(node = iterator.nextNode()) {
     node.remove();
   }
 };
@@ -328,19 +338,21 @@ lucu.sanitize.removeComments = function(document) {
  * to later removal of children of detached ancestors
  */
 lucu.sanitize.removeJavascriptAnchors = function(root) {
-  var filter = Array.prototype.filter;
-  var isScript = lucu.sanitize.isScriptAnchor;
-  var anchors = root.querySelectorAll('a[href]');
-  var scriptAnchors = filter.call(anchors, isScript);
+  'use strict';
+  const filter = Array.prototype.filter;
+  const isScript = lucu.sanitize.isScriptAnchor;
+  const anchors = root.querySelectorAll('a[href]');
+  const scriptAnchors = filter.call(anchors, isScript);
   scriptAnchors.forEach(lucu.dom.remove);
 };
 
 /**
  * Returns whether the anchor's href looks like it contains inline script.
- * TODO: allow for whitespace   /^\s*javascript\s*:/i
+ * TODO: allow for whitespace? /^\s*javascript\s*:/i
  */
 lucu.sanitize.isScriptAnchor = function(anchor) {
-  var href = anchor.getAttribute('href');
+  'use strict';
+  const href = anchor.getAttribute('href');
   return /^javascript:/i.test(href);
 };
 
@@ -348,7 +360,7 @@ lucu.sanitize.isScriptAnchor = function(anchor) {
  * Returns whether an element is invisible
  */
 lucu.sanitize.isInvisible = function(element) {
-
+  'use strict';
   // noscript and noembed are exceptions. We always
   // consider them visible regardless of other features.
   if(element.localName == 'noscript' || element.localName == 'noembed') {
@@ -370,7 +382,7 @@ lucu.sanitize.isInvisible = function(element) {
   // when parsing via the set innerHTML trick for foreign, inert
   // html documents?
 
-  var style = element.style;
+  const style = element.style;
   if(style.display === 'none') {
     return true;
   }
@@ -379,7 +391,7 @@ lucu.sanitize.isInvisible = function(element) {
     return true;
   }
 
-  var opacity = parseFloat(style.opacity);
+  const opacity = parseFloat(style.opacity);
   
   // We don't actually require opacity be 0 to be considered invisible, 
   // just so low that the element is too transparent to be visible
@@ -387,15 +399,17 @@ lucu.sanitize.isInvisible = function(element) {
 };
 
 lucu.sanitize.removeInvisibleElements = function(document) {
-  var filter = Array.prototype.filter;
-  var elements = document.body.getElementsByTagName('*');
-  var invisibles = filter.call(elements, lucu.sanitize.isInvisible);
+  'use strict';
+  const filter = Array.prototype.filter;
+  const elements = document.body.getElementsByTagName('*');
+  const invisibles = filter.call(elements, lucu.sanitize.isInvisible);
   invisibles.forEach(lucu.dom.remove);
 };
 
 lucu.sanitize.isTracerImage = function(image) {
-  var width = image.getAttribute('width');
-  var height = image.getAttribute('height');
+  'use strict';
+  const width = image.getAttribute('width');
+  const height = image.getAttribute('height');
 
   // Rather than inspect the source url against a blacklist of known
   // tracking domains, we use the simpler tactic of targeting
@@ -413,18 +427,19 @@ lucu.sanitize.isTracerImage = function(image) {
 };
 
 lucu.sanitize.removeTracerImages = function(document) {
-  var filter = Array.prototype.filter;
-  var isTracer = lucu.sanitize.isTracerImage;
-  var remove = lucu.dom.remove;
-  var images = document.body.getElementsByTagName('img');
+  'use strict';
+  const filter = Array.prototype.filter;
+  const isTracer = lucu.sanitize.isTracerImage;
+  const remove = lucu.dom.remove;
+  const images = document.body.getElementsByTagName('img');
   filter.call(images, isTracer).forEach(remove);
 };
 
 lucu.sanitize.isSourcelessImage = function(image) {
+  'use strict';
   // Access by attribute, not by property, since the browser substitutes
   // in the base url if accessing by property.
-
-  var source = image.getAttribute('src');
+  const source = image.getAttribute('src');
   return !source || !source.trim();
 };
 
@@ -432,10 +447,11 @@ lucu.sanitize.isSourcelessImage = function(image) {
  * Remove all images that do not have a src attribute
  */
 lucu.sanitize.removeSourcelessImages = function(document) {
-  var filter = Array.prototype.filter;
-  var images = document.body.getElementsByTagName('img');
-  var isSourceless = lucu.sanitize.isSourcelessImage;
-  var sourcelessImages = filter.call(images, isSourceless);
+  'use strict';
+  const filter = Array.prototype.filter;
+  const images = document.body.getElementsByTagName('img');
+  const isSourceless = lucu.sanitize.isSourcelessImage;
+  const sourcelessImages = filter.call(images, isSourceless);
   sourcelessImages.forEach(lucu.dom.remove);
 };
 
@@ -445,9 +461,10 @@ lucu.sanitize.removeSourcelessImages = function(document) {
  * http://fortune.com/2014/09/09/apple-event-overshadows-bad-news-snapchat-tinder/
  */
 lucu.sanitize.unwrapNoscripts = function(document) {
-  var forEach = Array.prototype.forEach;
-  var unwrap = lucu.dom.unwrap;
-  var noscripts = document.body.getElementsByTagName('noscript');
+  'use strict';
+  const forEach = Array.prototype.forEach;
+  const unwrap = lucu.dom.unwrap;
+  const noscripts = document.body.getElementsByTagName('noscript');
   forEach.call(noscripts, unwrap);
 };
 
@@ -456,9 +473,10 @@ lucu.sanitize.unwrapNoscripts = function(document) {
  * See http://www.miracleas.com/BAARF/ as testing example.
  */
 lucu.sanitize.unwrapNoframes = function(document) {
-  var forEach = Array.prototype.forEach;
-  var unwrap = lucu.dom.unwrap;
-  var noframes = document.body.getElementsByTagName('noframes');
+  'use strict';
+  const forEach = Array.prototype.forEach;
+  const unwrap = lucu.dom.unwrap;
+  const noframes = document.body.getElementsByTagName('noframes');
   forEach.call(noframes, unwrap);
 };
 
@@ -468,6 +486,7 @@ lucu.sanitize.unwrapNoframes = function(document) {
  * complicated to make it work
  */
 lucu.sanitize.transformBreaks = function(document) {
+  'use strict';
   var br = document.body.querySelector('br');
   while(br) {
     br.parentNode.replaceChild(document.createElement('p'), br);
@@ -489,11 +508,10 @@ lucu.sanitize.UNWRAPPABLE_ELEMENTS = [
  * Unwraps certain descendant elements of the root element
  */
 lucu.sanitize.unwrapDescendants = function(rootElement) {
-
   'use strict';
 
-  var filter = Array.prototype.filter;
-  var unwrap = lucu.dom.unwrap;
+  const filter = Array.prototype.filter;
+  const unwrap = lucu.dom.unwrap;
 
   // NOTE: this performs extremely poorly when dealing with a large
   // number of elements. For example, it took ~20 secs on
@@ -501,7 +519,7 @@ lucu.sanitize.unwrapDescendants = function(rootElement) {
   // It is the querySelector call
   // So, tentatively, we are using an upper bound of 3000 iterations
 
-  var unwrappables = lucu.sanitize.UNWRAPPABLE_ELEMENTS;
+  const unwrappables = lucu.sanitize.UNWRAPPABLE_ELEMENTS;
 
   // We use querySelector and do one at element at a time in order to avoid
   // unwrapping elements that, as a result of a previous iteration, now exist
@@ -526,9 +544,11 @@ lucu.sanitize.unwrapDescendants = function(rootElement) {
   // TODO: what about if they have 'name' attribute?
   // TODO: maybe this should be a separate function?
 
-  var anchors = rootElement.getElementsByTagName('a');
-  var nominalAnchors = filter.call(anchors, function(anchor) {
-    var href = anchor.getAttribute('href');
+  const anchors = rootElement.getElementsByTagName('a');
+
+  // TODO: use a separate function
+  const nominalAnchors = filter.call(anchors, function(anchor) {
+    const href = anchor.getAttribute('href');
 
     if(href) {
       if(href.trim()) {
@@ -548,28 +568,27 @@ lucu.sanitize.unwrapDescendants = function(rootElement) {
 // Unwrap single item lists. For now just ul
 lucu.sanitize.transformSingleItemLists = function(rootElement) {
   'use strict';
-  var forEach = Array.prototype.forEach;
-  
-  var uLists = rootElement.getElementsByTagName('ul');
+  const forEach = Array.prototype.forEach;
+  const uLists = rootElement.getElementsByTagName('ul');
 
   // TODO: separate out as helper function
   forEach.call(uLists, function(list) {
     // Avoid mutation while iterating issues
     if(!list) return;
 
-    var reduce = Array.prototype.reduce;
+    const reduce = Array.prototype.reduce;
 
     // Count the immediate list item children
     // TODO: separate out as a helper function
-    var itemCount = reduce.call(list.childNodes, function(count, node) {
+    const itemCount = reduce.call(list.childNodes, function(count, node) {
       return count + (node.nodeType == Node.ELEMENT_NODE &&
         node.localName == 'li' ? 1 : 0);
     }, 0);
 
     if(itemCount == 1) {
-      var parent = list.parentElement;
-      var item = list.querySelector('li');
-      var nextSibling = list.nextSibling;
+      const parent = list.parentElement;
+      const item = list.querySelector('li');
+      const nextSibling = list.nextSibling;
 
       if(nextSibling) {
         while(item.firstChild) {

@@ -8,8 +8,6 @@ var lucu = lucu || {};
 
 lucu.isOffline = function() {
   'use strict';
-
-  //var nav = window && window.navigator;
-  var nav = navigator;
-  return nav && nav.hasOwnProperty('onLine') && !nav.onLine;
+  return navigator && navigator.hasOwnProperty('onLine') && 
+  	!navigator.onLine;
 };

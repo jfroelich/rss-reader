@@ -17,7 +17,7 @@
  * NOTE: cannot use 'div.share'
  * NOTE: cannot use 'article div.share' (Vanity Fair vs Concurring Opinions)
  */
-var BLACKLIST_SELECTORS = [
+const BLACKLIST_SELECTORS = [
   'a.advertise-with-us', // The Daily Voice
   'a.aggregated-rel-link', // The Oklahoman
   'a.bylineCommentCount', // Pasadena Star News

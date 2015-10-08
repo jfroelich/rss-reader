@@ -14,52 +14,55 @@ lucu.opml = lucu.opml || {};
  */
 lucu.opml.createDocument = function(feeds, title) {
   'use strict';
-  var doc = document.implementation.createDocument(null, null);
-  var opml = doc.createElement('opml');
+  const doc = document.implementation.createDocument(null, null);
+  const opml = doc.createElement('opml');
   opml.setAttribute('version', '2.0');
   doc.appendChild(opml);
-  var head = doc.createElement('head');
+  const head = doc.createElement('head');
   opml.appendChild(head);
-  var titleElement = doc.createElement('title');
+  const titleElement = doc.createElement('title');
   titleElement.textContent = title || 'subscriptions.xml';
   head.appendChild(titleElement);
-  var nowString = (new Date()).toUTCString();
-  var dateCreated = doc.createElement('dateCreated');
+  const nowString = (new Date()).toUTCString();
+  const dateCreated = doc.createElement('dateCreated');
   dateCreated.textContent = nowString;
   head.appendChild(dateCreated);
-  var dateModified = doc.createElement('dateModified');
+  const dateModified = doc.createElement('dateModified');
   dateModified.textContent = nowString;
   head.appendChild(dateModified);
-  var docs = doc.createElement('docs');
+  const docs = doc.createElement('docs');
   docs.textContent = 'http://dev.opml.org/spec2.html';
   head.appendChild(docs);
   if(!feeds) return doc;
-  var exportables = feeds.filter(lucu.opml.hasURL);
+  const exportables = feeds.filter(lucu.opml.hasURL);
   if(!exportables.length) return doc;
-  var body = doc.createElement('body');
+  const body = doc.createElement('body');
   opml.appendChild(body);
 
-  var createOutline = lucu.opml.createOutlineElement.bind(null, doc);
-  var appendOutline = lucu.opml.appendElement.bind(body, body);
+  const createOutline = lucu.opml.createOutlineElement.bind(null, doc);
+  const appendOutline = lucu.opml.appendElement.bind(body, body);
   exportables.map(createOutline).forEach(appendOutline);
   return doc;
 };
 
 lucu.opml.hasURL = function(feed) {
+  'use strict';
   return feed.url;
 };
 
 lucu.opml.appendElement = function(body, element) {
+  'use strict';
   body.appendChild(element);
 };
 
 lucu.opml.createOutlineElement = function(document, feed) {
-  var outline = document.createElement('outline');
+  'use strict';
+  const outline = document.createElement('outline');
   
   // We do not know the original format, so default to rss
   outline.setAttribute('type', 'rss');
   
-  var title = feed.title || feed.url;
+  const title = feed.title || feed.url;
   outline.setAttribute('text', title);
   outline.setAttribute('title', title);
   outline.setAttribute('xmlUrl', feed.url);
@@ -80,32 +83,35 @@ lucu.opml.createOutlineElement = function(document, feed) {
 lucu.opml.createOutlines = function(document) {
   'use strict';
 
-  var filter = Array.prototype.filter;
-  var isValid = lucu.opml.outlineElementIsValid;
-  var createOutline = lucu.opml.createOutlineFromElement;
+  const filter = Array.prototype.filter;
+  const isValid = lucu.opml.outlineElementIsValid;
+  const createOutline = lucu.opml.createOutlineFromElement;
   
   if(!lucu.opml.isOPMLDocument(document)) {
     return [];
   }
 
-  var outlineElements = document.getElementsByTagName('outline');
-  var validElements = filter.call(outlineElements, isValid);
+  const outlineElements = document.getElementsByTagName('outline');
+  const validElements = filter.call(outlineElements, isValid);
   return validElements.map(createOutline);
 };
 
 lucu.opml.isOPMLDocument = function(document) {
+  'use strict';
   return document && document.documentElement && 
     document.documentElement.matches('opml');
 };
 
 lucu.opml.outlineElementIsValid = function(element) {
-  var type = element.getAttribute('type');
-  var url = element.getAttribute('xmlUrl') || '';
+  'use strict';
+  const type = element.getAttribute('type');
+  const url = element.getAttribute('xmlUrl') || '';
   return /rss|rdf|feed/i.test(type) && url.trim();  
 };
 
 lucu.opml.createOutlineFromElement = function(element) {
-  var outline = {};
+  'use strict';
+  const outline = {};
   var title = element.getAttribute('title') || '';
   title = title.trim();
   if(!title) {

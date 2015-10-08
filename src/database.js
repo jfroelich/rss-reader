@@ -19,12 +19,12 @@ lucu.database.VERSION = 15;
  */
 lucu.database.connect = function(callback, fallback) {
   'use strict';
-  var openRequest = indexedDB.open(lucu.database.NAME, lucu.database.VERSION);
-  openRequest.onupgradeneeded = lucu.database.upgrade;
-  openRequest.onsuccess = lucu.database.onConnect.bind(null, callback);
-  openRequest.onerror = fallback;
-  openRequest.onblocked = fallback;
-  return openRequest;
+  const request = indexedDB.open(lucu.database.NAME, lucu.database.VERSION);
+  request.onupgradeneeded = lucu.database.upgrade;
+  request.onsuccess = lucu.database.onConnect.bind(null, callback);
+  request.onerror = fallback;
+  request.onblocked = fallback;
+  return request;
 };
 
 lucu.database.onConnect = function(callback, event) {
@@ -38,11 +38,11 @@ lucu.database.upgrade = function(event) {
 
   console.debug('Upgrading database from version %s', event.oldVersion);
 
-  var request = event.target;
-  var database = request.result;
+  const request = event.target;
+  const database = request.result;
   var feedStore = null;
   var entryStore = null;
-  var stores = database.objectStoreNames;
+  const stores = database.objectStoreNames;
 
   if(stores.contains('feed')) {
     feedStore = request.transaction.objectStore('feed');
@@ -62,8 +62,8 @@ lucu.database.upgrade = function(event) {
     });
   }
 
-  var feedIndices = feedStore.indexNames;
-  var entryIndices = entryStore.indexNames;
+  const feedIndices = feedStore.indexNames;
+  const entryIndices = entryStore.indexNames;
 
   if(!feedIndices.contains('schemeless')) {
     feedStore.createIndex('schemeless', 'schemeless', {unique: true});
@@ -90,7 +90,7 @@ lucu.database.upgrade = function(event) {
     entryStore.createIndex('link', 'link', {unique: true});
   } else {
     // Ensure the link index has a unique flag
-    var entryLinkIndex = entryStore.index('link');
+    const entryLinkIndex = entryStore.index('link');
     if(!entryLinkIndex.unique) {
       entryStore.deleteIndex('link');
       entryStore.createIndex('link', 'link', {unique: true});
@@ -110,9 +110,9 @@ lucu.database.clearEntries = function() {
 
 lucu.database.onClearEntriesConnect = function(error, database) {
   'use strict';
-  var transaction = database.transaction('entry', 'readwrite');
-  var entryStore = transaction.objectStore('entry');
-  var clearRequest = entryStore.clear();
+  const transaction = database.transaction('entry', 'readwrite');
+  const entryStore = transaction.objectStore('entry');
+  const clearRequest = entryStore.clear();
   clearRequest.onerror = console.debug;
   clearRequest.onsuccess = function(event) {
     console.debug('Cleared entry object store');

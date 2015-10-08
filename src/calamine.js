@@ -20,8 +20,8 @@
 (function (exports) {
 'use strict';
 
-var forEach = Array.prototype.forEach;
-var reduce = Array.prototype.reduce;
+const forEach = Array.prototype.forEach;
+const reduce = Array.prototype.reduce;
 
 /**
  * Returns the best element of the document. Does some mutation to the
@@ -36,7 +36,7 @@ function transform(doc, options) {
 
   options = options || {};
 
-  var blacklist = exports.BLACKLIST_SELECTORS || [];
+  const blacklist = exports.BLACKLIST_SELECTORS || [];
 
   if(options.FILTER_NAMED_AXES) {
     blacklist.forEach(function detachSelector(selector) {
@@ -44,7 +44,7 @@ function transform(doc, options) {
       // 100% of which is the nested call to querySelector
       // TODO: try a form of visitor pattern instead of querySelector, benchmark
       // TODO: try querySelectorAll+contains instead of querySelector loop
-      var root = doc.body;
+      const root = doc.body;
       var element = root.querySelector(selector);
       while(element) {
         element.remove();
@@ -53,8 +53,8 @@ function transform(doc, options) {
     });
   }
 
-  var elements = doc.body.getElementsByTagName('*');
-  var scores = initScores(doc, elements);
+  const elements = doc.body.getElementsByTagName('*');
+  const scores = initScores(doc, elements);
   applyTextLengthBias(doc, elements, scores, options.ANNOTATE);
   applyIntrinsicBias(doc, elements, scores, options.ANNOTATE);
   applyDownwardBias(doc, scores, options.ANNOTATE);
@@ -74,8 +74,11 @@ function initScores(doc, elements) {
 }
 
 function collectTextNodeLengths(doc) {
-  var lengths = new Map(), length = 0, node = null;
-  var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
+
+  const lengths = new Map();
+  var length = 0;
+  const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
+  var node = null;
   while(node = it.nextNode()) {
     length = node.nodeValue.trim().length;
     if(!length) continue;
@@ -91,9 +94,9 @@ function collectTextNodeLengths(doc) {
  * Aggregate the count of text within non-nominal anchors within ancestors.
  */
 function collectAnchorElementTextLengths(doc, charCounts) {
-  var anchors = doc.body.querySelectorAll('a[href]');
+  const anchors = doc.body.querySelectorAll('a[href]');
   return reduce.call(anchors, function (map, anchor) {
-    var count = charCounts.get(anchor);
+    const count = charCounts.get(anchor);
     return count ? [anchor].concat(getAncestors(anchor)).reduce(function(map,
       element) {
       return map.set(element, (map.get(element) || 0) + count);
@@ -119,13 +122,13 @@ function applyTextLengthBias(doc, elements, scores, annotate) {
   // That way divs of nav links that happen to be contained within the main
   // container div end up not negatively influencing the main
 
-  var charCounts = collectTextNodeLengths(doc);
-  var anchorChars = collectAnchorElementTextLengths(doc, charCounts);
+  const charCounts = collectTextNodeLengths(doc);
+  const anchorChars = collectAnchorElementTextLengths(doc, charCounts);
 
   forEach.call(elements, function handleElement(element) {
-    var cc = charCounts.get(element);
+    const cc = charCounts.get(element);
     if(!cc) return;
-    var acc = anchorChars.get(element) || 0;
+    const acc = anchorChars.get(element) || 0;
     var bias = (0.25 * cc) - (0.7 * acc);
     // Tentative
     bias = Math.min(4000, bias);
@@ -144,16 +147,16 @@ function applyTextLengthBias(doc, elements, scores, annotate) {
  */
 function applyIntrinsicBias(doc, elements, scores, annotate) {
   forEach.call(elements, function (element) {
-    var bias = INTRINSIC_BIAS.get(element.localName);
+    const bias = INTRINSIC_BIAS.get(element.localName);
     if(!bias) return;
     scores.set(element, scores.get(element) + bias);
     if(annotate) element.dataset.intrinsicBias = bias;
   });
 
   // Pathological case for article element
-  var articles = doc.body.getElementsByTagName('article');
+  const articles = doc.body.getElementsByTagName('article');
   if(articles.length == 1) {
-    var article = articles[0];
+    const article = articles[0];
     if(annotate) article.dataset.intrinsicBias = 1000;
     scores.set(article, scores.get(article) + 1000);
   } else {
@@ -171,8 +174,8 @@ function applyIntrinsicBias(doc, elements, scores, annotate) {
 
 function applyDownwardBias(doc, scores, annotate) {
   // Penalize list and list-like descendants
-  var SELECTOR_LIST = 'li *, ol *, ul *, dd *, dl *, dt *';
-  var listDescendants = doc.body.querySelectorAll(SELECTOR_LIST);
+  const SELECTOR_LIST = 'li *, ol *, ul *, dd *, dl *, dt *';
+  const listDescendants = doc.body.querySelectorAll(SELECTOR_LIST);
 
   forEach.call(listDescendants, function (element) {
     if(annotate) element.dataset.inListPenaltyBias = -100;
@@ -180,8 +183,8 @@ function applyDownwardBias(doc, scores, annotate) {
   });
 
   // Penalize descendants of navigational elements
-  var SELECTOR_NAV = 'aside *, header *, footer *, nav *';
-  var navDescendants = doc.body.querySelectorAll(SELECTOR_NAV);
+  const SELECTOR_NAV = 'aside *, header *, footer *, nav *';
+  const navDescendants = doc.body.querySelectorAll(SELECTOR_NAV);
   forEach.call(navDescendants, function (element) {
     if(annotate) element.dataset.inNavPenaltyBias = -50;
     scores.set(element, scores.get(element) - 50);
@@ -200,9 +203,9 @@ function applyUpwardBias(elements, scores, annotate) {
   // not become actual in the above test url
   // Maybe the leading image needs to propagate to parent also?
   forEach.call(elements, function (element) {
-    var bias = DESCENDANT_BIAS.get(element.localName);
+    const bias = DESCENDANT_BIAS.get(element.localName);
     if(!bias) return;
-    var parent = element.parentElement;
+    const parent = element.parentElement;
     // note the subtlety here, we are annotating parent, not element
     if(annotate) {
       var prevBias = parent.dataset.descendantBias || '0';
@@ -221,20 +224,20 @@ function applyUpwardBias(elements, scores, annotate) {
 
 // Score images and image parents
 function applyImageBias(doc, scores, annotate) {
-  var images = doc.body.getElementsByTagName('img');
+  const images = doc.body.getElementsByTagName('img');
   forEach.call(images, function (image) {
-    var parent = image.parentElement;
+    const parent = image.parentElement;
     // Avoid over-promotion of slideshow-container elements
-    var carouselBias = reduce.call(parent.childNodes, function (bias, node) {
+    const carouselBias = reduce.call(parent.childNodes, function (bias, node) {
       return 'img' === node.localName && node !== image ? bias - 50 : bias;
     }, 0);
     // TODO: this should probably also check data-alt and data-title as many
     // sites use this alternate syntax
-    var descBias = image.getAttribute('alt') ||  image.getAttribute('title') ||
+    const descBias = image.getAttribute('alt') ||  image.getAttribute('title') ||
       getImageCaption(image) ? 30 : 0;
-    var area = image.width ? image.width * image.height : 0;
-    var areaBias = 0.0015 * Math.min(100000, area);
-    var imageBias = carouselBias + descBias + areaBias;
+    const area = image.width ? image.width * image.height : 0;
+    const areaBias = 0.0015 * Math.min(100000, area);
+    const imageBias = carouselBias + descBias + areaBias;
     if(!imageBias) return;
     if(annotate) parent.dataset.imageBias = imageBias;
     scores.set(parent, scores.get(parent) + imageBias);
@@ -245,7 +248,7 @@ function applyImageBias(doc, scores, annotate) {
 function maybeExposeAttributes(doc, scores, annotate) {
   if(!annotate) return;
   forEach.call(doc.documentElement.getElementsByTagName('*'), function (element) {
-    var score = scores.get(element);
+    const score = scores.get(element);
     if(!score) return;
     element.dataset.score = score.toFixed(2);
   });
@@ -254,7 +257,7 @@ function maybeExposeAttributes(doc, scores, annotate) {
 function findBestElement(doc, elements, scores) {
   var maxElement = doc.body;
   var maxScore = scores.get(maxElement);
-  var numElements = elements.length;
+  const numElements = elements.length;
   var currentElement = null;
   var currentScore = 0;
 
@@ -286,8 +289,8 @@ function getImageCaption(image) {
   // NOTE: figcaption may contain other elements, not
   // just text. So this just checks for whether there is
   // a figcaption element, not whether it has any content
-  var parents = getAncestors(image);
-  var figure = arrayFind(parents, isFigure);
+  const parents = getAncestors(image);
+  const figure = arrayFind(parents, isFigure);
   if(figure) {
     return figure.querySelector('figcaption');
   }
@@ -295,7 +298,8 @@ function getImageCaption(image) {
 
 // Walks upward
 function getAncestors(element) {
-  var parents = [], parent = element;
+  const parents = [];
+  var parent = element;
   while(parent = parent.parentElement) {
     parents.push(parent);
   }
@@ -307,8 +311,8 @@ function getAncestors(element) {
  * TODO: split on case-transition (lower2upper,upper2lower)
  */
 function tokenize(string) {
-  var tokens = string.toLowerCase().split(/[\s\-_0-9]+/g).filter(identity);
-  var set = new Set(tokens);
+  const tokens = string.toLowerCase().split(/[\s\-_0-9]+/g).filter(identity);
+  const set = new Set(tokens);
   return setToArray(set);
 }
 
@@ -324,21 +328,21 @@ function setToArray(set) {
   // var obj = Object(set);
   // then iterate over ks and vs
 
-  var array = [];
+  const array = [];
   set.forEach(function(v) {
     array.push(v);
   });
   return array;
 }
 
-var SCORABLE_ATTRIBUTES = ['id', 'name', 'class', 'itemprop', 'itemtype', 'role'];
+const SCORABLE_ATTRIBUTES = ['id', 'name', 'class', 'itemprop', 'itemtype', 'role'];
 
 function getAttributeBias(element) {
-  var values = SCORABLE_ATTRIBUTES.map(function asValue(name) {
+  const values = SCORABLE_ATTRIBUTES.map(function asValue(name) {
     return name == 'itemtype' ? getItemTypePath(element) :
       element.getAttribute(name);
   }).filter(identity);
-  var tokens = tokenize(values.join(' '));
+  const tokens = tokenize(values.join(' '));
   return tokens.reduce(function add(sum, value) {
     return sum + ATTRIBUTE_BIAS.get(value) || 0;
   }, 0);
@@ -351,11 +355,11 @@ function getAttributeBias(element) {
  * TODO: itemtype 'article' id/class issue
  */
 function applyAttributeBias(doc, scores, annotate) {
-  var SCORABLE_SELECTOR = 'a, aside, div, dl, figure, h1, h2, h3, h4,'+
+  const SCORABLE_SELECTOR = 'a, aside, div, dl, figure, h1, h2, h3, h4,'+
     ' ol, p, section, span, ul';
-  var elements = doc.body.querySelectorAll(SCORABLE_SELECTOR);
+  const elements = doc.body.querySelectorAll(SCORABLE_SELECTOR);
   forEach.call(elements, function (element) {
-    var bias = getAttributeBias(element);
+    const bias = getAttributeBias(element);
     if(annotate) element.dataset.attributeBias = bias;
     scores.set(element, scores.get(element) + bias);
   });
@@ -372,9 +376,9 @@ function applyAttributeBias(doc, scores, annotate) {
 }
 
 function applySingleClassBias(doc, scores, className, bias, annotate) {
-  var elements = doc.body.getElementsByClassName(className);
+  const elements = doc.body.getElementsByClassName(className);
   if(elements.length != 1) return;
-  var e = elements[0];
+  const e = elements[0];
   if(annotate)
     e.dataset.attributeBias = parseInt(e.dataset.attributeBias || '0') + bias;
   scores.set(e, scores.get(e) + bias);
@@ -393,9 +397,9 @@ function getItemTypePath(element) {
   if(!value) return;
   value = value.trim();
   if(!value) return;
-  var lastSlashIndex = value.lastIndexOf('/');
+  const lastSlashIndex = value.lastIndexOf('/');
   if(lastSlashIndex == -1) return;
-  var path = value.substring(lastSlashIndex + 1);
+  const path = value.substring(lastSlashIndex + 1);
   return path;
 }
 
@@ -403,7 +407,7 @@ function getItemTypePath(element) {
  * Updates the score of an element by adding in delta
  */
 function updateScore(scores, delta, element) {
-  var score = scores.get(element);
+  const score = scores.get(element);
   scores.set(element, score + delta);
 }
 
@@ -435,10 +439,10 @@ function stripTitlePublisher(title) {
     delimiterPosition = title.lastIndexOf(' : ');
   if(delimiterPosition == -1)
     return title;
-  var trailingText = title.substring(delimiterPosition + 1);
-  var terms = trailingText.split(/\s+/).filter(identity);
+  const trailingText = title.substring(delimiterPosition + 1);
+  const terms = trailingText.split(/\s+/).filter(identity);
   if(terms.length < 5) {
-    var newTitle = title.substring(0, delimiterPosition).trim();
+    const newTitle = title.substring(0, delimiterPosition).trim();
     return newTitle;
   }
   return title;
@@ -459,7 +463,7 @@ function identity(value) {
  * is very unlikely. <div> is the most likely. I think this is just remnant
  * of the block-based scoring approach
  */
-var INTRINSIC_BIAS = new Map([
+const INTRINSIC_BIAS = new Map([
   ['main', 100],
   ['section', 50],
   ['blockquote', 10],
@@ -509,7 +513,7 @@ var INTRINSIC_BIAS = new Map([
  * that contains several <p>s receives a very positive bias, because that
  * <div> is more likely to be the target
  */
-var DESCENDANT_BIAS = new Map([
+const DESCENDANT_BIAS = new Map([
   ['a', -5],
   ['blockquote', 20],
   ['div', -50],
@@ -534,7 +538,7 @@ var DESCENDANT_BIAS = new Map([
  * are written to match up to the tokens generated by splitting using
  * RE_TOKEN_DELIMITER.
  */
-var ATTRIBUTE_BIAS = new Map([
+const ATTRIBUTE_BIAS = new Map([
   ['about', -35],
   ['ad', -100],
   ['ads', -50],

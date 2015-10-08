@@ -33,7 +33,7 @@ lucu.augment = {};
 lucu.augment.start = function(feed, callback) {
   'use strict';
 
-  var waterfall = [
+  const waterfall = [
     lucu.augment.connect,
     lucu.augment.filterExisting.bind(null, feed.entries),
     lucu.augment.updateEntries
@@ -42,9 +42,9 @@ lucu.augment.start = function(feed, callback) {
     lucu.augment.onComplete.bind(null, feed, callback));
 };
 
+// TODO: deprecate, use the new lucu.database.connect function?
 lucu.augment.connect = function(callback) {
   'use strict';
-
   lucu.database.connect(callback, callback);
 };
 
@@ -53,9 +53,9 @@ lucu.augment.connect = function(callback) {
 // along this array
 lucu.augment.filterExisting = function(entries, database, callback) {
   'use strict';
-  var transaction = database.transaction('entry');
-  var findByLink = lucu.augment.findEntryByLink.bind(null, transaction);
-  var onComplete = lucu.augment.onFilteredExisting.bind(null, callback);
+  const transaction = database.transaction('entry');
+  const findByLink = lucu.augment.findEntryByLink.bind(null, transaction);
+  const onComplete = lucu.augment.onFilteredExisting.bind(null, callback);
   async.reject(entries, findByLink, onComplete);
 };
 
@@ -66,11 +66,11 @@ lucu.augment.onFilteredExisting = function(callback, entries) {
 
 lucu.augment.findEntryByLink = function(transaction, entry, callback) {
   'use strict';
-  var store = transaction.objectStore('entry');
-  var index = store.index('link');
-  var url = entry.link;
+  const store = transaction.objectStore('entry');
+  const index = store.index('link');
+  const url = entry.link;
   // console.debug('Augment - findEntryByLink %s', url);
-  var request = index.get(url);
+  const request = index.get(url);
   request.onsuccess = lucu.augment.onFindEntry.bind(request, callback);
 };
 
@@ -116,9 +116,9 @@ lucu.augment.FETCH_TIMEOUT = 20 * 1000;
 lucu.augment.updateEntryContent = function(entry, callback) {
   'use strict';
   
-  var request = new XMLHttpRequest();
+  const request = new XMLHttpRequest();
   request.timeout = lucu.augment.FETCH_TIMEOUT;
-  var onError = lucu.augment.onFetchDocumentError.bind(request, callback);
+  const onError = lucu.augment.onFetchDocumentError.bind(request, callback);
   request.ontimeout = onError;
   request.onerror = onError;
   request.onabort = onError;
@@ -137,8 +137,8 @@ lucu.augment.onFetchDocumentError = function(callback, errorEvent) {
 lucu.augment.onFetchDocument = function(entry, callback, event) {
   'use strict';
   
-  var request = event.target;
-  var document = request.responseXML;
+  const request = event.target;
+  const document = request.responseXML;
   
   if(!document || !document.body) {
 
@@ -150,8 +150,8 @@ lucu.augment.onFetchDocument = function(entry, callback, event) {
   lucu.resolver.resolveDocument(document, request.responseURL);
 
   // Try and set the dimensions for all the images in the document
-  var images = document.body.getElementsByTagName('img');
-  var onImagesUpdated = lucu.augment.onImagesUpdated.bind(null, entry, 
+  const images = document.body.getElementsByTagName('img');
+  const onImagesUpdated = lucu.augment.onImagesUpdated.bind(null, entry, 
     document, callback);
   async.forEach(images, lucu.images.fetchDimensions, onImagesUpdated);  
 };
@@ -161,7 +161,7 @@ lucu.augment.onImagesUpdated = function(entry, document, callback) {
 
   // console.debug('lucu.augment.onImagesUpdated %s', entry.link);
 
-  var content = document.body.innerHTML;
+  const content = document.body.innerHTML;
   
   if(content) {
     // Replace the original content with the full content

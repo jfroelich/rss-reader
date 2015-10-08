@@ -23,8 +23,6 @@ lucu.install.onInstall = function(event) {
 // the background page is loaded, reloaded, enabled, or disabled?
 chrome.runtime.onInstalled.addListener(lucu.install.onInstall);
 
-
-
 // Include only in background. This also means that badge.js must be 
 // included in manifest before? Which means js files must be loaded 
 // in order?
@@ -35,4 +33,3 @@ chrome.runtime.onInstalled.addListener(lucu.install.onInstall);
 
 // Binds on background page load
 chrome.browserAction.onClicked.addListener(lucu.badge.onClick);
-

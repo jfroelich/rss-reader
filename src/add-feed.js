@@ -15,11 +15,11 @@ var lucu = lucu || {};
 lucu.addFeed = function(database, feed, onComplete, onerror) {
   'use strict';
 
-  var storable = {};
+  const storable = {};
   storable.url = feed.url;
   storable.schemeless = lucu.url.getSchemeless(storable.url);
 
-  var clean = lucu.sanitizeFeed(feed);
+  const clean = lucu.sanitizeFeed(feed);
   
   // NOTE: title must be defined or subscriptions list sorting fails
   storable.title = clean.title || '';
@@ -42,14 +42,14 @@ lucu.addFeed = function(database, feed, onComplete, onerror) {
   
   storable.created = Date.now();
 
-  var transaction = database.transaction('feed', 'readwrite');
-  var store = transaction.objectStore('feed');
-  var request = store.add(storable);
+  const transaction = database.transaction('feed', 'readwrite');
+  const store = transaction.objectStore('feed');
+  const request = store.add(storable);
   
   // Triggers onerror when schemeless already exists
   request.onerror = onerror;
 
-  var onsuccess = lucu.addFeedOnSuccess.bind(request, database, storable, 
+  const onsuccess = lucu.addFeedOnSuccess.bind(request, database, storable, 
     feed.entries, onComplete);
   request.onsuccess = onsuccess;
 };
@@ -57,6 +57,6 @@ lucu.addFeed = function(database, feed, onComplete, onerror) {
 lucu.addFeedOnSuccess = function(database, feed, entries, onComplete, event) {
   'use strict';
   feed.id = event.target.result;
-  var merge = lucu.entry.merge.bind(null, database, feed);
+  const merge = lucu.entry.merge.bind(null, database, feed);
   async.forEach(entries, merge, onComplete);
 };

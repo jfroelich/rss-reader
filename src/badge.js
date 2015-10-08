@@ -15,17 +15,17 @@ lucu.badge.update = function() {
 
 lucu.badge.onConnect = function(error, database) {
   'use strict';
-  var transaction = database.transaction('entry');
-  var entryStore = transaction.objectStore('entry');
-  var unreadIndex = entryStore.index('unread');
-  var countRequest = unreadIndex.count();
+  const transaction = database.transaction('entry');
+  const entryStore = transaction.objectStore('entry');
+  const unreadIndex = entryStore.index('unread');
+  const countRequest = unreadIndex.count();
   countRequest.onsuccess = lucu.badge.setText;
 };
 
 lucu.badge.setText = function(event) {
   'use strict';
-  var count = event.target.result || 0;
-  var badgeText = {text: count.toString()};
+  const count = event.target.result || 0;
+  const badgeText = {text: count.toString()};
   chrome.browserAction.setBadgeText(badgeText);
 };
 
@@ -47,7 +47,7 @@ lucu.badge.NEW_TAB_URL = 'chrome://newtab/';
 lucu.badge.onClick = function(event) {
   'use strict';
   // console.debug('Clicked badge');
-  var query = {'url': lucu.badge.VIEW_URL};
+  const query = {'url': lucu.badge.VIEW_URL};
   chrome.tabs.query(query, lucu.badge.onQueryView);
 };
 
@@ -61,7 +61,7 @@ lucu.badge.onQueryView = function(tabs) {
     return;
   }
 
-  var query = {url: lucu.badge.NEW_TAB_URL};
+  const query = {url: lucu.badge.NEW_TAB_URL};
   chrome.tabs.query(query, lucu.badge.onQueryNewTab);
 };
 

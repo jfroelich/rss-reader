@@ -31,7 +31,7 @@ lucu.poll.start = function() {
   	return;
   }
 
-  var waterfall = [
+  const waterfall = [
     lucu.poll.checkIdle,
     lucu.poll.connect,
     lucu.poll.selectFeeds,
@@ -53,7 +53,7 @@ lucu.poll.onComplete = function(error, feeds) {
 
   // Notify other modules that the poll completed. For example, the slides
   // view may want to pre-load some of the newly available articles
-  var message = {
+  const message = {
     type: 'pollCompleted',
     feedsProcessed: feeds ? feeds.length : 0,
     entriesAdded: 0,
@@ -74,21 +74,26 @@ lucu.poll.onComplete = function(error, feeds) {
 
 // TODO: maybe rename to be clearer?
 lucu.poll.connect = function(callback) {
-  var onConnect = lucu.poll.onConnect.bind(null, callback);
+  'use strict';
+  const onConnect = lucu.poll.onConnect.bind(null, callback);
   lucu.database.connect(onConnect, callback);
 };
 
+// TODO: deprecate, use async.waterfall
 lucu.poll.onConnect = function(callback, error, database) {
+  'use strict';
   callback(null, database);
 };
 
 lucu.poll.checkIdle = function(callback) {
+  'use strict';
   var isPermitted = lucu.poll.onCheckIdlePermission.bind(null, callback);
   chrome.permissions.contains({permissions: ['idle']}, isPermitted);
 };
 
 // checkIdle helper
 lucu.poll.onCheckIdlePermission = function(callback, permitted) {
+  'use strict';
   // If we do not have permission to check idle status then
   // just continue with polling
   if(!permitted) {
@@ -96,12 +101,13 @@ lucu.poll.onCheckIdlePermission = function(callback, permitted) {
     return;
   }
 
-  var isIdle = lucu.poll.isIdle.bind(null, callback);
+  const isIdle = lucu.poll.isIdle.bind(null, callback);
   chrome.idle.queryState(lucu.poll.INACTIVITY_INTERVAL, isIdle);
 };
 
 // checkIdle helper
 lucu.poll.isIdle = function(callback, idleState) {
+  'use strict';
   if(idleState == 'locked' || idleState == 'idle') {
     // Continue with polling by not passing an error
     callback();
@@ -113,69 +119,77 @@ lucu.poll.isIdle = function(callback, idleState) {
 };
 
 lucu.poll.selectFeeds = function(database, callback) {
-  var feeds = [];
-  var tx = database.transaction('feed');
-  var store = tx.objectStore('feed');
-  tx.oncomplete = lucu.poll.onSelectFeedsCompleted.bind(null, callback, 
-    database, feeds);
-  var request = store.openCursor();
+  'use strict';
+  const feeds = [];
+  const transaction = database.transaction('feed');
+  const store = transaction.objectStore('feed');
+  transaction.oncomplete = lucu.poll.onSelectFeedsCompleted.bind(null, 
+    callback, database, feeds);
+  const request = store.openCursor();
   request.onsuccess = lucu.poll.onSelectFeed.bind(null, feeds);
 };
 
 // selectFeeds helper
 lucu.poll.onSelectFeedsCompleted = function(callback, database, feeds, event) {
+  'use strict';
   callback(null, database, feeds);
 };
 
 // selectFeeds helper
 lucu.poll.onSelectFeed = function(feeds, event) {
-  var cursor = event.target.result;
+  'use strict';
+  const cursor = event.target.result;
   if(!cursor) return;
   feeds.push(cursor.value);
   cursor.continue();
 };
 
 lucu.poll.updateFeeds = function(database, feeds, callback) {
-  var update = lucu.poll.updateFeed.bind(null, database);
-  var onComplete = lucu.poll.onUpdateFeedsComplete.bind(null, callback, feeds);
+  'use strict';
+  const update = lucu.poll.updateFeed.bind(null, database);
+  const onComplete = lucu.poll.onUpdateFeedsComplete.bind(null, callback, 
+    feeds);
   async.forEach(feeds, update, onComplete);
 };
 
 lucu.poll.onUpdateFeedsComplete = function(callback, feeds) {
+  'use strict';
   callback(null, feeds);
 };
 
 lucu.poll.updateFeed = function(database, feed, callback) {
-  var onFetch = lucu.poll.onFetchFeed.bind(null, database, feed, callback);
-  var onError = lucu.poll.onFetchError.bind(null, callback);
-  var timeout = 10 * 1000; // in millis
+  'use strict';
+  const onFetch = lucu.poll.onFetchFeed.bind(null, database, feed, callback);
+  const onError = lucu.poll.onFetchError.bind(null, callback);
+  const timeout = 10 * 1000; // in millis
   lucu.fetch.fetchFeed(feed.url, onFetch, onError, timeout);
 };
 
 lucu.poll.onFetchError = function(callback) {
+  'use strict';
   callback();
 };
 
 lucu.poll.onFetchFeed = function(database, feed, callback, remoteFeed) {
-
+  'use strict';
   // TODO: should this occur here? is this redundant?
   remoteFeed.entries = remoteFeed.entries.filter(function(entry) {
     return entry.link;
   });
 
   // Filter duplicate entries from the set of just fetched entries
-  var seenEntries = new Set();
-  var isDistinct = lucu.poll.isDistinctFeedEntry.bind(null, seenEntries);
+  const seenEntries = new Set();
+  const isDistinct = lucu.poll.isDistinctFeedEntry.bind(null, seenEntries);
   remoteFeed.entries = remoteFeed.entries.filter(isDistinct);
 
-  var onAugmentComplete = lucu.poll.onAugmentComplete.bind(null, 
+  const onAugmentComplete = lucu.poll.onAugmentComplete.bind(null, 
     database, feed, remoteFeed, callback);
   remoteFeed.fetched = Date.now();
   lucu.augment.start(remoteFeed, onAugmentComplete);
 };
 
 lucu.poll.isDistinctFeedEntry = function(seenEntries, entry) {
-  
+  'use strict';
   if(seenEntries.has(entry.link)) {
     console.debug('Filtering duplicate entry %o', entry);
     return false;
@@ -186,7 +200,7 @@ lucu.poll.isDistinctFeedEntry = function(seenEntries, entry) {
 };
 
 lucu.poll.onAugmentComplete = function(database, feed, remoteFeed, callback) {
-
+  'use strict';
   // TODO: if we do end up updating the feed, what about the functional
   // dependencies such as the feedTitle and feedLink properties set for 
   // entries already in the database?
@@ -196,7 +210,7 @@ lucu.poll.onAugmentComplete = function(database, feed, remoteFeed, callback) {
   // TODO: this should not be changing the date updated unless something
   // actually changed. However, we do want to indicate that the feed was
   // checked
-  var cleanedRemoteFeed = lucu.sanitizeFeed(remoteFeed);
+  const cleanedRemoteFeed = lucu.sanitizeFeed(remoteFeed);
 
   // We plan to update the local feed object. Overwrite its properties with
   // new properties from the remote feed
@@ -223,17 +237,23 @@ lucu.poll.onAugmentComplete = function(database, feed, remoteFeed, callback) {
   // Set the date updated
   feed.updated = Date.now();
 
+  // TODO: there is a lot of similarity to addFeed here. and IDBObjectStore.put
+  // can work like IDBObjectStore.add. I think the two should be merged into 
+  // the same function
+
   // Overwrite the old local feed object with the modified local feed object
-  var transaction = database.transaction('feed', 'readwrite');
-  var feedStore = transaction.objectStore('feed');
-  var putFeedRequest = feedStore.put(feed);
+  const transaction = database.transaction('feed', 'readwrite');
+  const feedStore = transaction.objectStore('feed');
+  const putFeedRequest = feedStore.put(feed);
   putFeedRequest.onerror = console.debug;
+
+  // TODO: move this into separate function
   putFeedRequest.onsuccess = function() {
     // Now merge in any new entries from the remote feed
     // NOTE: i don't think it matters whether we pass feed or 
     // remoteFeed or cleanedRemoteFeed to mergeEntry
-    var mergeEntry = lucu.entry.merge.bind(null, database, feed);
-    var entries = remoteFeed.entries;
+    const mergeEntry = lucu.entry.merge.bind(null, database, feed);
+    const entries = remoteFeed.entries;
 
     // We have to wrap so that we call callback without parameters
     // due to async lib behavior
@@ -241,13 +261,13 @@ lucu.poll.onAugmentComplete = function(database, feed, remoteFeed, callback) {
       callback();
     }
 
-    // NOTE: this is in parallel, right?
-    
+    // TODO: this is in parallel, right?
     async.forEach(entries, mergeEntry, onMergeEntriesComplete);
   };
 };
 
 lucu.poll.onAlarm = function(alarm) {
+  'use strict';
   if(alarm.name == 'poll') {
     lucu.poll.start();
   }

@@ -30,8 +30,8 @@ lucu.slideUI.onKeyDown = function(event) {
   //event.target is body
   //event.currentTarget is window
 
-  var key = event.keyCode;
-  var km = lucu.slideUI.KEY_MAP;
+  const key = event.keyCode;
+  const km = lucu.slideUI.KEY_MAP;
 
   if(key == km.SPACE || key == km.DOWN || key == km.PAGE_DOWN ||
       key == km.UP || key == km.PAGE_UP) {

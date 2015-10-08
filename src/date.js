@@ -17,7 +17,7 @@ lucu.date.format = function(date, sep) {
  
   if(!date)
     return '';
-  var parts = [];
+  const parts = [];
   parts.push(date.getMonth() + 1);
   parts.push(date.getDate());
   parts.push(date.getFullYear());

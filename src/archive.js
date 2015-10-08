@@ -17,7 +17,7 @@ lucu.archive = {};
 
 lucu.archive.start = function() {
   'use strict';
-  var waterfall = [
+  const waterfall = [
     lucu.archive.connect,
     lucu.archive.selectEntries
   ];
@@ -41,10 +41,10 @@ lucu.archive.selectEntries = function(database, callback) {
   // index on the feed id for each entry works nicely for this
   // purpose.
 
-  var transaction = database.transaction('entry', 'readwrite');
-  var store = transaction.objectStore('entry');
-  var index = store.index('feed');
-  var request = index.openCursor();
+  const transaction = database.transaction('entry', 'readwrite');
+  const store = transaction.objectStore('entry');
+  const index = store.index('feed');
+  const request = index.openCursor();
 
   // Journal is an object shared across function calls, like a 
   // memoized object, so that each iteration over an entry and 
@@ -53,12 +53,12 @@ lucu.archive.selectEntries = function(database, callback) {
   // primitive by ref instead of by val, because it doesn't work
   // by val because prim vals are copied into function calls and
   // become independent
-  var journal = {
+  const journal = {
     processed: 0
   };
 
   request.onsuccess = lucu.archive.handleEntry.bind(request, journal);
-  tx.oncomplete = callback.bind(null, journal);
+  transaction.oncomplete = callback.bind(null, journal);
 };
 
 lucu.archive.ENTRY_LIMIT = 1000;
@@ -66,15 +66,15 @@ lucu.archive.ENTRY_LIMIT = 1000;
 lucu.archive.handleEntry = function(journal, event) {
   'use strict';
 
-  var cursor = event.target.result;
+  const cursor = event.target.result;
   
   // This eventually causes the transaction to complete
   if(!cursor) {
     return;
   }
 
-  var entry = cursor.value;
-  var created = entry.created;
+  const entry = cursor.value;
+  const created = entry.created;
 
   // Allow for partially corrupted storage
   if(!created) {
@@ -92,12 +92,12 @@ lucu.archive.handleEntry = function(journal, event) {
   }
 
   // TODO: use the same date across each call?
-  var now = Date.now();
-  var age = now - created;
+  const now = Date.now();
+  const age = now - created;
 
   // TODO: use an external constant?
-  var expiresMs = 30 * 24 * 60 * 60 * 1000;
-  var shouldArchive = age > expiresMs;
+  const expiresMs = 30 * 24 * 60 * 60 * 1000;
+  const shouldArchive = age > expiresMs;
 
   // NOTE: in an old version this used to avoid archiving unread
   // articles. For now this is ignored (??)

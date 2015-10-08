@@ -11,11 +11,13 @@ lucu.string = {};
 lucu.string.stripTags = function(string, replacement) {
   'use strict';
   if(!string) return;
-  var doc = document.implementation.createHTMLDocument();
+  // TODO: rename doc to document?
+  const doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = string;
   if(!replacement) return doc.body.textContent;
-  var iterator = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
-  var node, values = [];
+  const iterator = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
+  var node = doc.body;
+  const values = [];
   while(node = iterator.nextNode()) {
     values.push(node.nodeValue);
   }

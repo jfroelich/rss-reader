@@ -12,7 +12,7 @@ lucu.subscription.unsubscribe = function(feedId, callback, fallback) {
   // TODO: maybe fallback is unnecessary, i think setting onerror in 
   // IDBOpenRequest propagates the handler to all requests
 
-  var onConnect = lucu.subscription.onUnsubscribeConnect.bind(
+  const onConnect = lucu.subscription.onUnsubscribeConnect.bind(
     null, feedId, callback, fallback);
 
   lucu.database.connect(onConnect, fallback);
@@ -21,29 +21,28 @@ lucu.subscription.unsubscribe = function(feedId, callback, fallback) {
 // Deletes the feed and its entries
 lucu.subscription.onUnsubscribeConnect = function(feedId, callback, fallback, 
   error, database) {
-
   'use strict';
 
-  var transaction = database.transaction(['entry','feed'], 'readwrite');
+  const transaction = database.transaction(['entry','feed'], 'readwrite');
 
   transaction.oncomplete = lucu.subscription.onUnsubscribeComplete.bind(
   	transaction, feedId, callback);
   transaction.onerror = fallback;
 
   // Delete the feed
-  var feedStore = transaction.objectStore('feed');
+  const feedStore = transaction.objectStore('feed');
   feedStore.delete(feedId);
 
   // Delete the feed's entries
-  var entryStore = transaction.objectStore('entry');
-  var feedIndex = entryStore.index('feed');
-  var entryRequest = feedIndex.openCursor(feedId);
+  const entryStore = transaction.objectStore('entry');
+  const feedIndex = entryStore.index('feed');
+  const entryRequest = feedIndex.openCursor(feedId);
   entryRequest.onsuccess = lucu.subscription.unsubscribeEntry;
 };
 
 lucu.subscription.unsubscribeEntry = function(event) {
   'use strict';
-  var cursor = event.target.result;
+  const cursor = event.target.result;
   if(!cursor) return;
   cursor.delete();
   cursor.continue();

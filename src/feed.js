@@ -10,75 +10,75 @@ lucu.feed = lucu.feed || {};
 
 lucu.feed.findByURL = function(url, callback, fallback) {
   'use strict';
-  var onConnect = lucu.feed.findByURLOnConnect.bind(null, url, callback);
+  const onConnect = lucu.feed.findByURLOnConnect.bind(null, url, callback);
   lucu.database.connect(onConnect, fallback);
 };
 
 lucu.feed.findByURLOnConnect = function(url, callback, error, database) {
   'use strict';
-  var transaction = database.transaction('feed');
-  var feeds = transaction.objectStore('feed');
-  var urls = feeds.index('schemeless');
-  var schemelessURL = lucu.url.getSchemeless(url);
-  var request = urls.get(schemelessURL);
+  const transaction = database.transaction('feed');
+  const feeds = transaction.objectStore('feed');
+  const urls = feeds.index('schemeless');
+  const schemelessURL = lucu.url.getSchemeless(url);
+  const request = urls.get(schemelessURL);
   request.onsuccess = lucu.feed.findByURLOnSuccess.bind(request, callback);
 };
 
 lucu.feed.findByURLOnSuccess = function(callback, event) {
   'use strict';
-  var feed = event.target.result;
+  const feed = event.target.result;
   callback(feed);
 };
 
 // Get a feed object by its id
 lucu.feed.findById = function(id, callback, fallback) {
   'use strict';
-  var onConnect = lucu.feed.findByIdOnConnect.bind(null, id, callback);
+  const onConnect = lucu.feed.findByIdOnConnect.bind(null, id, callback);
   lucu.database.connect(onConnect, fallback);
 };
 
 lucu.feed.findByIdOnConnect = function(id, callback, error, database) {
   'use strict';
 
-  var transaction = database.transaction('feed');
-  var store = transaction.objectStore('feed');
-  var request = store.get(id);
+  const transaction = database.transaction('feed');
+  const feeds = transaction.objectStore('feed');
+  const request = feeds.get(id);
   request.onsuccess = lucu.feed.findByIdOnSuccess.bind(request, callback);
 };
 
 lucu.feed.findByIdOnSuccess = function(callback, event) {
   'use strict';
-  var feed = event.target.result;
+  const feed = event.target.result;
   callback(feed);
 };
 
 lucu.feed.forEach = function(callback, onComplete, sortByTitle, fallback) {
   'use strict';
-  var onConnect = lucu.feed.forEachOnConnect.bind(null, callback, onComplete, 
-    sortByTitle);
+  const onConnect = lucu.feed.forEachOnConnect.bind(null, callback, 
+    onComplete, sortByTitle);
   lucu.database.connect(onConnect, fallback);
 };
 
 lucu.feed.forEachOnConnect = function(callback, onComplete, sortByTitle, error, 
   database) {
   'use strict';
-  var transaction = database.transaction('feed');
+  const transaction = database.transaction('feed');
   transaction.oncomplete = onComplete;
-  var store = transaction.objectStore('feed');
-
+  
+  var feeds = transaction.objectStore('feed');
   if(sortByTitle) {
-    store = store.index('title');
+    feeds = feeds.index('title');
   }
 
-  var request = store.openCursor();
+  const request = feeds.openCursor();
   request.onsuccess = lucu.feed.forEachOnSuccess.bind(request, callback);
 };
 
 lucu.feed.forEachOnSuccess = function(callback, event) {
   'use strict';
-  var cursor = event.target.result;
+  const cursor = event.target.result;
   if(!cursor) return;
-  var feed = cursor.value;
+  const feed = cursor.value;
   callback(feed);
   cursor.continue();
 };

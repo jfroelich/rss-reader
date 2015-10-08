@@ -12,7 +12,7 @@ lucu.opml.OPML_MIME_TYPE = 'application/xml';
 lucu.opml.import = function(files, onComplete) {
   'use strict';
 
-  var waterfall = [
+  const waterfall = [
     lucu.opml.importFilesArray.bind(null, files),
     lucu.opml.mergeOutlines,
     lucu.opml.importConnect,
@@ -24,14 +24,14 @@ lucu.opml.import = function(files, onComplete) {
 
 lucu.opml.importCompleted = function(onComplete) {
   // console.debug('Finished importing feeds from OPML');
-  var notificationText = 'Successfully imported OPML file';
+  const notificationText = 'Successfully imported OPML file';
   lucu.notifications.show(notificationText);  
 
   onComplete();
 };
 
 lucu.opml.importFilesArray = function(files, callback) {
-  var onFilesLoaded = lucu.opml.onFilesLoaded.bind(null, callback);
+  const onFilesLoaded = lucu.opml.onFilesLoaded.bind(null, callback);
   async.map(files, lucu.opml.loadFile, onFilesLoaded);
 };
 
@@ -44,7 +44,7 @@ lucu.opml.onFilesLoaded = function(callback, error, results) {
 // an array of outline objects from the document,
 // and then passes the array to the callback. Async
 lucu.opml.loadFile = function(file, callback) {
-  var reader = new FileReader();
+  const reader = new FileReader();
   reader.onload = lucu.opml.onFileLoad.bind(reader, callback);
   reader.onerror = lucu.opml.onFileLoadError.bind(reader, callback);
   reader.readAsText(file);
@@ -52,23 +52,23 @@ lucu.opml.loadFile = function(file, callback) {
 
 lucu.opml.onFileLoad = function(callback, event) {
   'use strict';
-  var fileReader = event.target;
-  var text = fileReader.result;
-  var xmlParser = new DOMParser();
-  var xml = xmlParser.parseFromString(text, lucu.opml.OPML_MIME_TYPE);
+  const fileReader = event.target;
+  const text = fileReader.result;
+  const xmlParser = new DOMParser();
+  const xml = xmlParser.parseFromString(text, lucu.opml.OPML_MIME_TYPE);
 
   if(!xml || !xml.documentElement) {
     callback(null, []);
     return;
   }
 
-  var parserError = xml.querySelector('parsererror');
+  const parserError = xml.querySelector('parsererror');
   if(parserError) {
     callback(null, []);
     return;
   }
 
-  var outlines = lucu.opml.createOutlines(xml);
+  const outlines = lucu.opml.createOutlines(xml);
   callback(null, outlines);
 };
 
@@ -81,8 +81,8 @@ lucu.opml.onFileLoadError = function(callback, event) {
 // Removes duplicates in the process. Sync.
 lucu.opml.mergeOutlines = function(outlineArrays, callback) {
   'use strict';
-  var outlines = [];
-  var seen = new Set();
+  const outlines = [];
+  const seen = new Set();
 
   function mergeOutlineArray(outlineArray) {
     outlineArray.foreach(mergeOutline);
@@ -98,9 +98,10 @@ lucu.opml.mergeOutlines = function(outlineArrays, callback) {
   callback(null, outlines);
 };
 
+// TODO: use async.waterfall to deprecate importOnConnect?
 lucu.opml.importConnect = function(outlines, callback) {
   'use strict';
-  var onConnect = lucu.opml.importOnConnect.bind(null, outlines, callback);
+  const onConnect = lucu.opml.importOnConnect.bind(null, outlines, callback);
   lucu.database.connect(onConnect, callback);
 };
 
@@ -111,8 +112,8 @@ lucu.opml.importOnConnect = function(outlines, callback, error, database) {
 
 lucu.opml.storeOutlines = function(database, outlines, callback) {
   'use strict';
-  var storeOutline = lucu.opml.storeOutline.bind(null, database);
-  var onComplete = lucu.opml.onStoreOutlinesComplete.bind(null, callback);
+  const storeOutline = lucu.opml.storeOutline.bind(null, database);
+  const onComplete = lucu.opml.onStoreOutlinesComplete.bind(null, callback);
   async.forEach(outlines, storeOutline, onComplete);
 };
 

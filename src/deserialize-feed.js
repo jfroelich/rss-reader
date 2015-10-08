@@ -19,7 +19,7 @@ var lucu = lucu || {};
 lucu.deserializeFeed = function(document) {
   'use strict';
   
-  var rootElement = document.documentElement;
+  const rootElement = document.documentElement;
   if(!rootElement) {
     throw new TypeError('Undefined document element');
   }
@@ -38,9 +38,9 @@ lucu.deserializeFeed = function(document) {
 
 lucu.selectTrimmedTextContent = function(parent, selector) {
   'use strict';
-  var element = parent.querySelector(selector);
+  const element = parent.querySelector(selector);
   if(!element) return;
-  var text = element.textContent;
+  const text = element.textContent;
   if(!text) return;
   return text.trim();
 };
@@ -48,20 +48,20 @@ lucu.selectTrimmedTextContent = function(parent, selector) {
 lucu.deserializeAtomFeed = function(root) {
   'use strict';
 
-  var getText = lucu.selectTrimmedTextContent;
-  var result = {};
+  const getText = lucu.selectTrimmedTextContent;
+  const result = {};
 
-  var title = getText(root, 'title');
+  const title = getText(root, 'title');
   if(title) {
     result.title = title;  
   }
 
-  var description = getText(root, 'subtitle');
+  const description = getText(root, 'subtitle');
   if(description) {
     result.description = description;
   }
 
-  var updated = getText(root, 'updated');
+  const updated = getText(root, 'updated');
   if(updated) {
     result.date = updated;
   }
@@ -70,10 +70,15 @@ lucu.deserializeAtomFeed = function(root) {
   link = link || root.querySelector('link[rel="self"]');
   link = link || root.querySelector('link[href]');
   
-  if(link) link = link.getAttribute('href');
-  if(link) result.link = link.trim();
+  if(link) {
+    link = link.getAttribute('href');
+  }
+  
+  if(link) {
+    result.link = link.trim();
+  }
 
-  var entries = root.querySelectorAll('entry');
+  const entries = root.querySelectorAll('entry');
   result.entries = Array.prototype.map.call(entries, lucu.deserializeAtomEntry);
 
   return result;
@@ -81,8 +86,8 @@ lucu.deserializeAtomFeed = function(root) {
 
 lucu.deserializeAtomEntry = function(entry) {
   'use strict';
-  var getText = lucu.selectTrimmedTextContent;
-  var result = {};
+  const getText = lucu.selectTrimmedTextContent;
+  const result = {};
 
   // TODO: only define properties if truthy
 
@@ -101,8 +106,8 @@ lucu.deserializeAtomEntry = function(entry) {
   // Special handling for atom entry content. For some reason this works
   // where normal content.textContent does not. I think the issue pertains to
   // whether content is CDATA.
-  var content = entry.querySelector('content');
-  var nodes = content ? content.childNodes : [];
+  const content = entry.querySelector('content');
+  const nodes = content ? content.childNodes : [];
   result.content = Array.prototype.map.call(nodes, 
     lucu.getAtomNodeTextContent).join('').trim();
   return result;
@@ -115,10 +120,10 @@ lucu.getAtomNodeTextContent = function(node) {
 
 lucu.deserializeRSSFeed = function(root) {
   'use strict';
-  var isRDF = root.matches('rdf');
-  var getText = lucu.selectTrimmedTextContent;
-  var result = {};
-  var channel = root.querySelector('channel');
+  const isRDF = root.matches('rdf');
+  const getText = lucu.selectTrimmedTextContent;
+  const result = {};
+  const channel = root.querySelector('channel');
   if(!channel) {
     console.warn('No channel found!? %o', root);
     result.entries = [];
@@ -133,29 +138,29 @@ lucu.deserializeRSSFeed = function(root) {
     if(link) link = link.trim();
   }
   if(link) result.link = link;
-  var date = getText(channel, 'pubdate') || 
+  const date = getText(channel, 'pubdate') || 
     getText(channel, 'lastBuildDate') ||
     getText(channel, 'date');
   if(date) result.date = date;
-  var entriesParent = isRDF ? root : channel;
-  var entries = entriesParent.querySelectorAll('item');
-  var map = Array.prototype.map;
+  const entriesParent = isRDF ? root : channel;
+  const entries = entriesParent.querySelectorAll('item');
+  const map = Array.prototype.map;
   result.entries = map.call(entries, lucu.deserializeRSSEntry);
   return result;
 };
 
 lucu.deserializeRSSEntry = function(entry) {
   'use strict';
-  var getText = lucu.selectTrimmedTextContent;
-  var result = {};
+  const getText = lucu.selectTrimmedTextContent;
+  const result = {};
   result.title = getText(entry, 'title');
-  var link = getText(entry, 'origLink') || getText(entry, 'link');
+  const link = getText(entry, 'origLink') || getText(entry, 'link');
   if(link) result.link = link;
-  var author = getText(entry, 'creator') || getText(entry, 'publisher');
+  const author = getText(entry, 'creator') || getText(entry, 'publisher');
   if(author) result.author = lucu.string.stripTags(author, ' ');
-  var date = getText(entry, 'pubDate') || getText(entry, 'date');
+  const date = getText(entry, 'pubDate') || getText(entry, 'date');
   if(date) result.pubdate = date;
-  var content = getText(entry, 'encoded') || getText(entry, 'description') ||
+  const content = getText(entry, 'encoded') || getText(entry, 'description') ||
     getText(entry, 'summary');
   if(content) result.content = content;
   return result;

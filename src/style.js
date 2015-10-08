@@ -11,6 +11,7 @@ var lucu = lucu || {};
 lucu.style = {};
 
 lucu.style.onMessage = function(message) {
+  'use strict';
   if(message && message.type === 'displaySettingsChanged') {
     lucu.style.onChange();
   }
@@ -74,11 +75,12 @@ lucu.FONT_FAMILIES = [
 
 
 lucu.style.findCSSRule = function(sheet, selectorText) {
-  var filter = Array.prototype.filter;
+  'use strict';
+  const filter = Array.prototype.filter;
   // TODO: use Array.prototype.find? or reduce?
   // if we want just the first rule then this is dumb
-  var rules = sheet ? sheet.cssRules : [];
-  var matches = filter.call(rules, 
+  const rules = sheet ? sheet.cssRules : [];
+  const matches = filter.call(rules, 
     lucu.style.findCSSRuleFilter.bind(null, selectorText));
 
   if(matches.length) {
@@ -87,6 +89,7 @@ lucu.style.findCSSRule = function(sheet, selectorText) {
 };
 
 lucu.style.findCSSRuleFilter = function(text, rule) {
+  'use strict';
   return rule.selectorText = text;
 };
 
@@ -96,14 +99,14 @@ lucu.style.onChange = function() {
 
   console.debug('lucu.style.onChange called');
 
-  var filter = Array.prototype.filter;
+  const filter = Array.prototype.filter;
 
-  var findCSSRule = lucu.style.findCSSRule;
+  const findCSSRule = lucu.style.findCSSRule;
 
   // Assume a sheet is always available
-  var sheet = document.styleSheets[0];
+  const sheet = document.styleSheets[0];
 
-  var entryRule = findCSSRule(sheet,'div.entry');
+  const entryRule = findCSSRule(sheet,'div.entry');
   if(entryRule) {
     if(localStorage.BACKGROUND_IMAGE) {
       entryRule.style.backgroundColor = '';
@@ -116,7 +119,7 @@ lucu.style.onChange = function() {
       entryRule.style.backgroundImage = '';
     }
 
-    var entryMargin = localStorage.ENTRY_MARGIN || '10';
+    const entryMargin = localStorage.ENTRY_MARGIN || '10';
     // console.log('Setting padding left right to %spx', entryMargin);
     entryRule.style.paddingLeft = entryMargin + 'px';
     entryRule.style.paddingRight = entryMargin + 'px';
@@ -127,21 +130,21 @@ lucu.style.onChange = function() {
   // but now does not work. If the page is refreshed the style
   // is correct.
 
-  var titleRule = findCSSRule(sheet,'div.entry a.entry-title');
+  const titleRule = findCSSRule(sheet,'div.entry a.entry-title');
   if(titleRule) {
 
-    console.log('Found title rule');
+    // console.log('Found title rule');
 
     // Workaround chrome bug
     titleRule.style.background = '';
 
     titleRule.style.fontFamily = localStorage.HEADER_FONT_FAMILY;
 
-    var hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
+    const hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
     console.debug('hfs after change is %s', hfs);
 
     if(hfs) {
-      var hfsString = (hfs / 10).toFixed(2) + 'em';
+      const hfsString = (hfs / 10).toFixed(2) + 'em';
       console.debug('Setting header font size to %s', hfsString);
       titleRule.style.fontSize = hfsString;
       console.debug('Header font size is now %s', titleRule.style.fontSize);
@@ -152,7 +155,7 @@ lucu.style.onChange = function() {
     console.log('Title rule not found');
   }
 
-  var contentRule = findCSSRule(sheet, 'div.entry span.entry-content');
+  const contentRule = findCSSRule(sheet, 'div.entry span.entry-content');
   if(contentRule) {
 
     // Workaround chrome bug
@@ -160,7 +163,7 @@ lucu.style.onChange = function() {
 
     contentRule.style.fontFamily = localStorage.BODY_FONT_FAMILY || 'initial';
 
-    var bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10) || 0;
+    const bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10) || 0;
     //console.debug('Setting body font size to %s', (bfs / 10).toFixed(2));
     if(bfs) {
       contentRule.style.fontSize = (bfs / 10).toFixed(2) + 'em';
@@ -170,14 +173,14 @@ lucu.style.onChange = function() {
 
     contentRule.style.textAlign = (localStorage.JUSTIFY_TEXT == '1') ? 'justify' : 'left';
 
-    var bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
+    const bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
     contentRule.style.lineHeight = (bodyLineHeight / 10).toFixed(2);
 
     // column count
     //COLUMN_COUNT
 
-    var columnCount = localStorage.COLUMN_COUNT;
-    var VALID_COUNTS = { '1': true, '2': true, '3': true };
+    const columnCount = localStorage.COLUMN_COUNT;
+    const VALID_COUNTS = { '1': true, '2': true, '3': true };
     if(!(columnCount in VALID_COUNTS)) {
       columnCount = '1';
     }
@@ -186,10 +189,9 @@ lucu.style.onChange = function() {
   }
 };
 
-
-
 lucu.style.onLoad = function() {
-  var sheet = document.styleSheets[0];
+  'use strict';
+  const sheet = document.styleSheets[0];
 
   var s = '';
   if(localStorage.BACKGROUND_IMAGE) {
@@ -200,7 +202,7 @@ lucu.style.onLoad = function() {
 
   s += 'margin: 0px;';
 
-  var entryMargin = localStorage.ENTRY_MARGIN;
+  const entryMargin = localStorage.ENTRY_MARGIN;
   if(entryMargin) {
     s += 'padding: ' + entryMargin + 'px;';
   } else {
@@ -214,7 +216,7 @@ lucu.style.onLoad = function() {
   // RESET s !!
   s = '';
 
-  var hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
+  const hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
 
   if(hfs) {
     s += 'font-size:' + (hfs / 10).toFixed(2) + 'em;';
@@ -238,7 +240,7 @@ lucu.style.onLoad = function() {
   // Reset s !!
   s = '';
 
-  var bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10) || 0;
+  const bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10) || 0;
   if(bfs) {
     s += 'font-size:' + (bfs / 10).toFixed(2) + 'em;';
   } else {
@@ -246,12 +248,12 @@ lucu.style.onLoad = function() {
     console.warn('onload body font size not set or 0');
   }
 
-  var bodyTextJustify = localStorage.JUSTIFY_TEXT == '1';
+  const bodyTextJustify = localStorage.JUSTIFY_TEXT == '1';
   if(bodyTextJustify) {
     s += 'text-align: justify;';
   }
 
-  var bodyFontFamily = localStorage.BODY_FONT_FAMILY;
+  const bodyFontFamily = localStorage.BODY_FONT_FAMILY;
   if(bodyFontFamily) {
     s += 'font-family:' + bodyFontFamily + ';';
   }
@@ -288,7 +290,7 @@ lucu.style.onLoad = function() {
   s += 'margin: 0px;';
 
   // TODO: use this if columns enabled (use 1(none), 2, 3 as options).
-  var columnCount = localStorage.COLUMN_COUNT;
+  const columnCount = localStorage.COLUMN_COUNT;
   if(columnCount == '2' || columnCount == '3') {
     s += '-webkit-column-count: ' + columnCount + ';';
     s += '-webkit-column-gap: 30px;';

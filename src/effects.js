@@ -70,7 +70,7 @@ lucu.effects.scrollTo = function(element, delta, targetY) {
   }
 
   function scrollToY() {
-    var currentY = element.scrollTop;
+    const currentY = element.scrollTop;
     element.scrollTop += delta;
     amountScrolled += Math.abs(delta);
 

@@ -21,7 +21,7 @@ lucu.dom.remove = function(element) {
  */
 lucu.dom.unwrap = function(element) {
 
-  var parent = element.parentElement;
+  const parent = element.parentElement;
 
   // Avoid issues with documentElement or detached elements
   if(!parent) {
