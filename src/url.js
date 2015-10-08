@@ -30,3 +30,11 @@ lucu.url.isValid = function(url) {
 
   return true;
 };
+
+// NOTE: requires URI.js
+lucu.url.getSchemeless = function(url) {
+  var uri = new URI(url);
+  uri.protocol('');
+  var schemeless = uri.toString().substring(2);
+  return schemeless;
+};

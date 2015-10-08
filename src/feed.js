@@ -7,7 +7,7 @@ var lucu = lucu || {};
 lucu.feed = lucu.feed || {};
 
 // Finds a feed by url, ignoring scheme
-// NOTE: requires URI.js
+
 lucu.feed.findByURL = function(url, callback, fallback) {
   'use strict';
   var onConnect = lucu.feed.findByURLOnConnect.bind(null, url, callback);
@@ -16,16 +16,11 @@ lucu.feed.findByURL = function(url, callback, fallback) {
 
 lucu.feed.findByURLOnConnect = function(url, callback, error, database) {
   'use strict';
-
   var transaction = database.transaction('feed');
   var feeds = transaction.objectStore('feed');
-  var index = feeds.index('schemeless');
-
-  var uri = new URI(url);
-  uri.protocol('');
-  var schemeless = uri.toString().substring(2);
-
-  var request = index.get(schemeless);
+  var urls = feeds.index('schemeless');
+  var schemelessURL = lucu.url.getSchemeless(url);
+  var request = urls.get(schemelessURL);
   request.onsuccess = lucu.feed.findByURLOnSuccess.bind(request, callback);
 };
 
