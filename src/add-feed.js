@@ -17,10 +17,8 @@ lucu.addFeed = function(database, feed, onComplete, onerror) {
 
   var storable = {};
   storable.url = feed.url;
-  var schemeless = new URI(storable.url);
-  schemeless.protocol('');
-  storable.schemeless = schemeless.toString().substring(2);
-  
+  storable.schemeless = lucu.url.getSchemeless(storable.url);
+
   var clean = lucu.sanitizeFeed(feed);
   
   // NOTE: title must be defined or subscriptions list sorting fails
