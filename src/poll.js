@@ -72,19 +72,6 @@ lucu.poll.onComplete = function(error, feeds) {
   lucu.notifications.show('Updated articles');
 };
 
-// TODO: maybe rename to be clearer?
-lucu.poll.connect = function(callback) {
-  'use strict';
-  const onConnect = lucu.poll.onConnect.bind(null, callback);
-  lucu.database.connect(onConnect, callback);
-};
-
-// TODO: deprecate, use async.waterfall
-lucu.poll.onConnect = function(callback, error, database) {
-  'use strict';
-  callback(null, database);
-};
-
 lucu.poll.checkIdle = function(callback) {
   'use strict';
   var isPermitted = lucu.poll.onCheckIdlePermission.bind(null, callback);
@@ -116,6 +103,19 @@ lucu.poll.isIdle = function(callback, idleState) {
     // to jump to end
     callback('poll error, idle state is ' + idleState);
   }
+};
+
+// TODO: maybe rename to be clearer?
+lucu.poll.connect = function(callback) {
+  'use strict';
+  const onConnect = lucu.poll.onConnect.bind(null, callback);
+  lucu.database.connect(onConnect, callback);
+};
+
+// TODO: deprecate, use async.waterfall
+lucu.poll.onConnect = function(callback, error, database) {
+  'use strict';
+  callback(null, database);
 };
 
 lucu.poll.selectFeeds = function(database, callback) {
