@@ -52,21 +52,25 @@ lucu.fetch.onRequestLoad = function(callback, fallback, event) {
     return;
   }
 
+
   try {
     const feed = lucu.deserializeFeed(document);
+    
+    // NOTE: feed is const and therefore block scoped, therefore
+    // the remaining statements must occur within the try block
+
+    // Remove any entries without links as those cannot be stored
+    feed.entries = feed.entries.filter(lucu.fetch.entryHasLink);
+    // Rewrite the links of entries before passing along
+    feed.entries = feed.entries.map(lucu.fetch.rewriteEntryLink);
+    callback(feed);
   } catch(e) {
     error = {type: 'invalid-xml', target: this, details: e};
     fallback(error);
     return;
   }
 
-  // Remove any entries without links as those cannot be stored
-  feed.entries = feed.entries.filter(lucu.fetch.entryHasLink);
-
-  // Rewrite the links of entries before passing along
-  feed.entries = feed.entries.map(lucu.fetch.rewriteEntryLink);
-
-  callback(feed);
+  
 };
 
 lucu.fetch.entryHasLink = function(entry) {
