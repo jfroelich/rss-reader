@@ -4,14 +4,16 @@
 
 var lucu = lucu || {};
 
-// TODO: use a second level object for namespace, maybe
-// something like lucu.gfa (google feeds API)
+// Google Feed Service lib
+lucu.gfs = {};
+
+lucu.gfs.BASE_URL = 'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
 
 /**
  * Sends a search query to Google and passes an array of results to the 
  * callback. Calls the fallback instead if an error occurs
  */
-lucu.queryGoogleFeeds = function(query, timeout, callback, fallback) {
+lucu.gfs.query = function(query, timeout, callback, fallback) {
   'use strict';
   
   query = (query || '').trim();
@@ -20,25 +22,20 @@ lucu.queryGoogleFeeds = function(query, timeout, callback, fallback) {
     return;
   }
 
-  // NOTE: disabled temporarily, I don't think there is a need to ensure
-  // it is defined, it is ok to set request props to undefined
-  //function noop() {}
-  //fallback = fallback || noop;
-  
-  const base = 'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
-  const url = base + encodeURIComponent(query);
   const request = new XMLHttpRequest();
   request.timeout = timeout;
   request.onerror = fallback;
   request.ontimeout = fallback;
   request.onabort = fallback;
-  request.onload = lucu.handleGoogleFeedsResponse.bind(request, callback);
+  request.onload = lucu.gfs.onload.bind(request, callback);
+
+  const url = lucu.gfs.BASE_URL + encodeURIComponent(query);
   request.open('GET', url, true);
   request.responseType = 'json';
   request.send();
 };
 
-lucu.handleGoogleFeedsResponse = function(callback, event) {
+lucu.gfs.onload = function(callback, event) {
   'use strict';
 
   const request = event.target;
@@ -48,13 +45,13 @@ lucu.handleGoogleFeedsResponse = function(callback, event) {
   const entries = data.entries || [];
 
   // Preprocess entries
-  entries.forEach(lucu.sanitizeGoogleSnippet);
+  entries.forEach(lucu.gfs.sanitizeSnippet);
 
   callback(query, entries);
 };
 
 // Modifies entry.contentSnippet
-lucu.sanitizeGoogleSnippet = function(entry) {
+lucu.gfs.sanitizeSnippet = function(entry) {
   'use strict';
 
   // TODO: set in external context?

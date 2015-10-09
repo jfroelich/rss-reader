@@ -455,7 +455,7 @@ function onSubscribeSubmit(event) {
     document.getElementById('discover-results-list').innerHTML = '';
     document.getElementById('discover-no-results').style.display='none';
     document.getElementById('discover-in-progress').style.display='block';
-    lucu.queryGoogleFeeds(query, 5000, onDiscoverFeedsComplete,
+    lucu.gfs.query(query, 5000, onDiscoverFeedsComplete,
       onDiscoverFeedsError);
   }
   return false;
