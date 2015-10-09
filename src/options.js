@@ -435,16 +435,27 @@ function onFeedListItemClick(event) {
 
 function onSubscribeSubmit(event) {
   'use strict';
+  
   event.preventDefault();// Prevent normal form submission event
-  const query = (document.getElementById('subscribe-discover-query').value || '').trim();
-  if(!query)
+  
+  var query = document.getElementById('subscribe-discover-query').value;
+  query = query || '';
+  query = query.trim();
+  if(!query) {
     return false;
-  if(document.getElementById('discover-in-progress').style.display == 'block')
-    return false;
+  }
+
   // TODO: Suppress resubmits if last query was a search and the
   // query did not change
-  if(isSubscriptionMonitorDisplayed())
+
+  if(document.getElementById('discover-in-progress').style.display == 'block') {
     return false;
+  }
+
+  if(isSubscriptionMonitorDisplayed()) {
+    return false;
+  }
+
   if(lucu.url.isValid(query)) {
     document.getElementById('discover-results-list').innerHTML = '';
     document.getElementById('discover-no-results').style.display='none';
@@ -455,9 +466,14 @@ function onSubscribeSubmit(event) {
     document.getElementById('discover-results-list').innerHTML = '';
     document.getElementById('discover-no-results').style.display='none';
     document.getElementById('discover-in-progress').style.display='block';
-    lucu.gfs.query(query, 5000, onDiscoverFeedsComplete,
-      onDiscoverFeedsError);
+
+    const request = new GoogleFeedsRequest();
+    request.timeout = 5000;
+    request.onload = onDiscoverFeedsComplete;
+    request.onerror = onDiscoverFeedsError;
+    request.send(query);
   }
+
   return false;
 }
 
@@ -480,22 +496,11 @@ function discoverSubscribeClick(event) {
 
 function onDiscoverFeedsComplete(query, results) {
   'use strict';
+
   const resultsList = document.getElementById('discover-results-list');
   document.getElementById('discover-in-progress').style.display='none';
 
-  // Need to filter as for some reason the discover feeds
-  // service sometimes returns results that do not have a url
-
-  // TODO: maybe this filtering should be a part of the query-google-feeds lib
-
-  // TODO: maybe there is no point in abstracting around discover, there is 
-  // pretty much a google query and nothing else
-
-  const displayableResults = results.filter(function(result) {
-    return result.url;
-  });
-
-  if(displayableResults.length < 1) {
+  if(results.length < 1) {
     resultsList.style.display = 'none';
     document.getElementById('discover-no-results').style.display = 'block';
     return;
@@ -509,13 +514,10 @@ function onDiscoverFeedsComplete(query, results) {
   }
 
   const listItem = document.createElement('li');
-  listItem.textContent = 'Found ' + displayableResults.length + ' results.';
+  listItem.textContent = 'Found ' + results.length + ' results.';
   resultsList.appendChild(listItem);
 
-  // TODO: displayableResults is an array, right? Why am I using forEach.call?
-  // Just use displayableResults.forEach ...?
-
-  Array.prototype.forEach.call(displayableResults, function(result) {
+  results.forEach(function(result) {
     const item = document.createElement('li');
     resultsList.appendChild(item);
 
@@ -534,20 +536,12 @@ function onDiscoverFeedsComplete(query, results) {
     const a = document.createElement('a');
     a.setAttribute('href', result.link);
     a.setAttribute('target', '_blank');
-    a.title = lucu.string.stripTags(result.title);
-    a.innerHTML = lucu.string.truncate(result.title, 70);
+    a.title = result.title;
+    a.innerHTML = result.title;
     item.appendChild(a);
 
-    // The snippet contains HTML, not text. It does this because
-    // Google provides pre-emphasized text that corresponds to the
-    // query. So we want to get rid of only certain tags, not all
-    // tags.
-
-    // TODO: truncate parameter should probably instead be a parameter
-    // to the query-google-feeds lib, in order to reduce caller responsibility
-
     const snippetSpan = document.createElement('span');
-    snippetSpan.innerHTML = lucu.string.truncate(result.contentSnippet, 400);
+    snippetSpan.innerHTML = result.contentSnippet;
     item.appendChild(snippetSpan);
 
     const span = document.createElement('span');
