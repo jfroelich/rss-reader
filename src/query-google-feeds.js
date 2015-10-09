@@ -4,16 +4,27 @@
 
 var lucu = lucu || {};
 
+// TODO: use a second level object for namespace, maybe
+// something like lucu.gfa (google feeds API)
+
 /**
  * Sends a search query to Google and passes an array of results to the 
  * callback. Calls the fallback instead if an error occurs
  */
 lucu.queryGoogleFeeds = function(query, timeout, callback, fallback) {
   'use strict';
+  
   query = (query || '').trim();
-  if(!query) return callback('',[]);
-  fallback = fallback || function () {};
-  const onload = lucu.handleGoogleFeedsResponse;
+  if(!query) {
+    callback('',[]);
+    return;
+  }
+
+  // NOTE: disabled temporarily, I don't think there is a need to ensure
+  // it is defined, it is ok to set request props to undefined
+  //function noop() {}
+  //fallback = fallback || noop;
+  
   const base = 'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
   const url = base + encodeURIComponent(query);
   const request = new XMLHttpRequest();
@@ -21,27 +32,38 @@ lucu.queryGoogleFeeds = function(query, timeout, callback, fallback) {
   request.onerror = fallback;
   request.ontimeout = fallback;
   request.onabort = fallback;
-  request.onload = onload.bind(request, callback);
+  request.onload = lucu.handleGoogleFeedsResponse.bind(request, callback);
   request.open('GET', url, true);
   request.responseType = 'json';
   request.send();
 };
 
-// Handles the response to a Google Feeds query
-// Expects 'this' to be bound to the XMLHttpRequest
-lucu.handleGoogleFeedsResponse = function(callback) {
+lucu.handleGoogleFeedsResponse = function(callback, event) {
   'use strict';
-  const data = this.response.responseData;
-  const entries = (data.entries || '').map(lucu.sanitizeGoogleSnippet);
-  callback(data.query || '', entries);
+
+  const request = event.target;
+  const response = request.response;
+  const data = response.responseData;
+  const query = data.query || '';
+  const entries = data.entries || [];
+
+  // Preprocess entries
+  entries.forEach(lucu.sanitizeGoogleSnippet);
+
+  callback(query, entries);
 };
 
-// Modifies the given input entry (and also returns it)
+// Modifies entry.contentSnippet
 lucu.sanitizeGoogleSnippet = function(entry) {
   'use strict';
-  const snippet = entry.contentSnippet;
-  if(snippet) {
-    entry.contentSnippet = snippet.replace(/<br>/gi,'');
+
+  // TODO: set in external context?
+  const BREAK_RULE = /<br>/gi;
+
+  if(entry && entry.contentSnippet) {
+    entry.contentSnippet = entry.contentSnippet.replace(BREAK_RULE, '');
   }
+
+  // Superfluous but harmless
   return entry;
 };
