@@ -61,12 +61,12 @@ lucu.opml.exportGetFeedsOnSuccess = function(feeds, event) {
   cursor.continue();
 };
 
-// TODO: the default file name should be a parameter
+// TODO: the file name should be a parameter
 lucu.opml.exportSerialize = function(feeds, callback) {
   'use strict';
   const document = lucu.opml.createDocument(feeds, 'subscriptions.xml');
-  const xs = new XMLSerializer();
-  const opml = xs.serializeToString(document);
+  const writer = new XMLSerializer();
+  const opml = writer.serializeToString(document);
   callback(null, opml);
 };
 

@@ -7,6 +7,7 @@ var lucu = lucu || {};
 // Second level namespace for opml related features
 lucu.opml = lucu.opml || {};
 
+// TODO: move this into OPML.js
 lucu.opml.OPML_MIME_TYPE = 'application/xml';
 
 lucu.opml.import = function(files, onComplete) {
@@ -23,6 +24,7 @@ lucu.opml.import = function(files, onComplete) {
 };
 
 lucu.opml.importCompleted = function(onComplete) {
+  'use strict';
   // console.debug('Finished importing feeds from OPML');
   const notificationText = 'Successfully imported OPML file';
   lucu.notifications.show(notificationText);  
@@ -31,11 +33,13 @@ lucu.opml.importCompleted = function(onComplete) {
 };
 
 lucu.opml.importFilesArray = function(files, callback) {
+  'use strict';
   const onFilesLoaded = lucu.opml.onFilesLoaded.bind(null, callback);
   async.map(files, lucu.opml.loadFile, onFilesLoaded);
 };
 
 lucu.opml.onFilesLoaded = function(callback, error, results) {
+  'use strict';
   callback(null, results);
 };
 
@@ -44,6 +48,7 @@ lucu.opml.onFilesLoaded = function(callback, error, results) {
 // an array of outline objects from the document,
 // and then passes the array to the callback. Async
 lucu.opml.loadFile = function(file, callback) {
+  'use strict';
   const reader = new FileReader();
   reader.onload = lucu.opml.onFileLoad.bind(reader, callback);
   reader.onerror = lucu.opml.onFileLoadError.bind(reader, callback);
@@ -122,10 +127,11 @@ lucu.opml.onStoreOutlinesComplete = function(callback) {
   callback();
 };
 
-// TODO: clean this up a bit more
+
 lucu.opml.storeOutline = function(database, outline, callback) {
   'use strict';
 
+  // TODO: clean this up a bit more
   lucu.addFeed(database, outline, function() {
     callback();
   }, function() {

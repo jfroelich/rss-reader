@@ -15,27 +15,36 @@ lucu.opml = lucu.opml || {};
 lucu.opml.createDocument = function(feeds, title) {
   'use strict';
   const doc = document.implementation.createDocument(null, null);
+
   const opml = doc.createElement('opml');
   opml.setAttribute('version', '2.0');
   doc.appendChild(opml);
+
   const head = doc.createElement('head');
   opml.appendChild(head);
+
   const titleElement = doc.createElement('title');
   titleElement.textContent = title || 'subscriptions.xml';
   head.appendChild(titleElement);
+
   const nowString = (new Date()).toUTCString();
   const dateCreated = doc.createElement('dateCreated');
   dateCreated.textContent = nowString;
   head.appendChild(dateCreated);
+
   const dateModified = doc.createElement('dateModified');
   dateModified.textContent = nowString;
   head.appendChild(dateModified);
+
   const docs = doc.createElement('docs');
   docs.textContent = 'http://dev.opml.org/spec2.html';
   head.appendChild(docs);
+
   if(!feeds) return doc;
+
   const exportables = feeds.filter(lucu.opml.hasURL);
   if(!exportables.length) return doc;
+
   const body = doc.createElement('body');
   opml.appendChild(body);
 
@@ -83,17 +92,14 @@ lucu.opml.createOutlineElement = function(document, feed) {
 lucu.opml.createOutlines = function(document) {
   'use strict';
 
-  const filter = Array.prototype.filter;
-  const isValid = lucu.opml.outlineElementIsValid;
-  const createOutline = lucu.opml.createOutlineFromElement;
-  
   if(!lucu.opml.isOPMLDocument(document)) {
     return [];
   }
 
-  const outlineElements = document.getElementsByTagName('outline');
-  const validElements = filter.call(outlineElements, isValid);
-  return validElements.map(createOutline);
+  const outlines = document.getElementsByTagName('outline');
+  const valids = Array.prototype.filter.call(outlines, 
+    lucu.opml.outlineElementIsValid);
+  return valids.map(lucu.opml.createOutlineFromElement);
 };
 
 lucu.opml.isOPMLDocument = function(document) {
@@ -106,12 +112,18 @@ lucu.opml.outlineElementIsValid = function(element) {
   'use strict';
   const type = element.getAttribute('type');
   const url = element.getAttribute('xmlUrl') || '';
+  // TODO: use an external constant for the pattern?
   return /rss|rdf|feed/i.test(type) && url.trim();  
 };
 
 lucu.opml.createOutlineFromElement = function(element) {
   'use strict';
+
+  // TODO: instead of making a simple object, use
+  // a formal Outline function object?
+
   const outline = {};
+
   var title = element.getAttribute('title') || '';
   title = title.trim();
   if(!title) {
