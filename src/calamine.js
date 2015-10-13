@@ -69,18 +69,19 @@ function initScores(doc, elements) {
   var scores = new Map();
   scores.set(doc.documentElement, 0);
   scores.set(doc.body, 0);
+  
   forEach.call(elements, function (element) { scores.set(element, 0); });
+  
   return scores;
 }
 
 function collectTextNodeLengths(doc) {
 
   const lengths = new Map();
-  var length = 0;
   const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
-  var node = null;
+  let node = null;
   while(node = it.nextNode()) {
-    length = node.nodeValue.trim().length;
+    let length = node.nodeValue.trim().length;
     if(!length) continue;
     while(node = node.parentNode) {
       lengths.set(node, (lengths.get(node) || 0) + length);
@@ -125,7 +126,7 @@ function applyTextLengthBias(doc, elements, scores, annotate) {
   const charCounts = collectTextNodeLengths(doc);
   const anchorChars = collectAnchorElementTextLengths(doc, charCounts);
 
-  forEach.call(elements, function handleElement(element) {
+  forEach.call(elements, function (element) {
     const cc = charCounts.get(element);
     if(!cc) return;
     const acc = anchorChars.get(element) || 0;
@@ -140,6 +141,8 @@ function applyTextLengthBias(doc, elements, scores, annotate) {
       element.dataset.textBias = bias.toFixed(2);
     }
   });
+
+
 }
 
 /**

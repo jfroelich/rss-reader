@@ -11,7 +11,7 @@ lucu.sanitize = {};
  * Sanitizes a document, applying most of the other functions in this lib
  */
 lucu.sanitize.sanitizeDocument = function(document) {
-
+  'use strict';
   const ls = lucu.sanitize;
 
   ls.removeComments(document);
@@ -252,11 +252,10 @@ lucu.sanitize.removeDescendantAttributes = function(allowedAttributes,
   element) {
   'use strict';
   const ra = lucu.sanitize.removeAttributes;
-  const forEach = Array.prototype.forEach;
-
   ra(allowedAttributes, element);
   const descendants = element.getElementsByTagName('*');
-  forEach.call(descendants, ra.bind(null, allowedAttributes));
+  Array.prototype.forEach.call(descendants, ra.bind(null, 
+    allowedAttributes));
 };
 
 // TODO: this should be a Set
@@ -277,30 +276,34 @@ lucu.sanitize.BLACKLISTED_ELEMENTS = [
   'option'
 ];
 
+lucu.sanitize.removeByName = function(document, name) {
+  'use strict';
+  const root = document.body;
+  let element = root.querySelector(name);
+  while(element) {
+    // console.log('removing %o', element);
+    element.remove();
+    element = root.querySelector(name);
+  }
+};
+
 /**
  * Removes all elements in the black list
  */
 lucu.sanitize.removeBlacklistedElements = function(document) {
-  const root = document.body;
+  'use strict';
 
-  // TODO: separate this function out as a separate function
-  lucu.sanitize.BLACKLISTED_ELEMENTS.forEach(function(name) {
-    var element = root.querySelector(name);
-    while(element) {
-      // console.log('removing %o', element);
-      element.remove();
-      element = root.querySelector(name);
-    }
-  });
+  const removeWithName = lucu.sanitize.removeByName.bind(null, 
+    document);
+  lucu.sanitize.BLACKLISTED_ELEMENTS.forEach(removeWithName);
 
   // Non-standard elements seen in the wild. These cannot be passed
   // as selectors to querySelectorAll so we have to iterate separately
   // TODO: write an outer loop that iterates over the set of exceptional
   // elements to make this less dry
-
+  const root = document.body;
   const gPlusOnes = root.getElementsByTagName('g:plusone');
-  var i = 0;
-  for(i = 0, len = gPlusOnes.length; i < len; i++) {
+  for(let i = 0, len = gPlusOnes.length; i < len; i++) {
     // NOTE: gebtn is live so one removal could affect others
     // so we have to check if defined
     // TODO: check if not detached (using root.contains?)
@@ -310,7 +313,7 @@ lucu.sanitize.removeBlacklistedElements = function(document) {
   }
 
   const fbComments = root.getElementsByTagName('fb:comments');
-  for(i = 0, len = fbComments.length; i < len; i++) {
+  for(let i = 0, len = fbComments.length; i < len; i++) {
     if(fbComments[i]) {
       // TODO: check if not detached
       fbComments[i].remove();
@@ -325,9 +328,10 @@ lucu.sanitize.removeComments = function(document) {
   'use strict';
   const iterator = document.createNodeIterator(document.body, 
     NodeFilter.SHOW_COMMENT);
-  var node = document.body;
-  while(node = iterator.nextNode()) {
+  let node = iterator.nextNode();
+  while(node) {
     node.remove();
+    node = iterator.nextNode();
   }
 };
 
@@ -400,10 +404,18 @@ lucu.sanitize.isInvisible = function(element) {
 
 lucu.sanitize.removeInvisibleElements = function(document) {
   'use strict';
-  const filter = Array.prototype.filter;
+  //const filter = Array.prototype.filter;
   const elements = document.body.getElementsByTagName('*');
-  const invisibles = filter.call(elements, lucu.sanitize.isInvisible);
-  invisibles.forEach(lucu.dom.remove);
+  //const invisibles = filter.call(elements, lucu.sanitize.isInvisible);
+  //invisibles.forEach(lucu.dom.remove);
+
+  // Testing for...of
+  for(let element of elements) {
+    if(lucu.sanitize.isInvisible(element)) {
+      element.remove();
+    }
+  }
+
 };
 
 lucu.sanitize.isTracerImage = function(image) {
@@ -474,10 +486,8 @@ lucu.sanitize.unwrapNoscripts = function(document) {
  */
 lucu.sanitize.unwrapNoframes = function(document) {
   'use strict';
-  const forEach = Array.prototype.forEach;
-  const unwrap = lucu.dom.unwrap;
   const noframes = document.body.getElementsByTagName('noframes');
-  forEach.call(noframes, unwrap);
+  Array.prototype.forEach.call(noframes, lucu.dom.unwrap);
 };
 
 /**
@@ -563,6 +573,7 @@ lucu.sanitize.unwrapDescendants = function(rootElement) {
   });
 
   nominalAnchors.forEach(lucu.dom.unwrap);
+
 };
 
 // Unwrap single item lists. For now just ul

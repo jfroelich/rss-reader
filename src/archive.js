@@ -12,11 +12,14 @@ var lucu = lucu || {};
 // TODO: maybe archive should just use a separate object store of just 
 // urls. Then check for new should have to do 2 look ups, but 
 // the un-archived object store will be much more compact?
+// A vertical partition?
 
 lucu.archive = {};
 
 lucu.archive.start = function() {
   'use strict';
+  console.debug('Archiving entries');
+
   const waterfall = [
     lucu.archive.connect,
     lucu.archive.selectEntries

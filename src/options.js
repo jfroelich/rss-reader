@@ -342,29 +342,18 @@ function startSubscription(url) {
     }
 
     // We are online, and the feed does not already exist. Fetch it
-
     lucu.fetch.fetchFeed(url, onFetchComplete, onFetchError, 10 * 1000);
+
   }, console.error);
 
   function onFetchComplete(remoteFeed) {
-    // TODO: subscribing takes too long. Do not augment
-    // when subscribing. Just inform the user that articles
-    // will be fetched when next poll occurs
+    function onConnect(error, database) {
+      lucu.addFeed(database, remoteFeed, function() {
+        onSubscriptionSuccessful(remoteFeed, 0, 0);
+      }, console.debug);
+    }
 
-    //lucu.augmentEntries(remoteFeed, function() {
-    lucu.augment.start(remoteFeed, function() {
-      remoteFeed.url = url;
-      remoteFeed.fetched = Date.now();
-      // TODO: react to db onerror/onblocked
-      
-      function onConnect(error, database) {
-        lucu.addFeed(database, remoteFeed, function() {
-          onSubscriptionSuccessful(remoteFeed, 0, 0);
-        }, console.debug);
-      }
-
-      lucu.database.connect(onConnect, console.error);
-    });
+    lucu.database.connect(onConnect, onFetchError);
   }
 
   function onFetchError(error) {
@@ -375,26 +364,15 @@ function startSubscription(url) {
   }
 
   function onSubscriptionSuccessful(addedFeed, entriesProcessed, entriesAdded) {
-
     optionsAppendFeed(addedFeed, true);
     optionsUpdateFeedCount();
-
     updateSubscriptionMonitor('Subscribed to ' + url);
- 
     hideSubsciptionMonitor(function() {
       optionsShowSection(document.getElementById('mi-subscriptions'));
     }, true);
 
-    // Update the badge unread count to include any new articles grabbed as 
-    // a result of the subscription?
-    // TODO: if subscription just adds feed and does not download articles, 
-    // there is no need for this
-    lucu.badge.update();
-
-    // Show a notification of the subscription
-    // TODO: is it addedFeed.url or addedFeed.link??
-    // TODO: title or url will always be defined right? No need for Untitled?
-    var title = addedFeed.title || addedFeed.url || 'Untitled';
+    // Show a notification
+    var title = addedFeed.title || 'Untitled';
     lucu.notifications.show('Subscribed to ' + title);
   }
 }

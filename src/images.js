@@ -7,6 +7,10 @@ var lucu = lucu || {};
 // The image module for image related functions
 lucu.images = {};
 
+// TODO: rename to lucu.image?
+// TODO: add an updateDocument function that sets dimensions for 
+// all images
+
 /**
  * Ensures that the width and height attributes of an image element are set. 
  * If the dimensions are set, the callback is called immediately. If not set, 
