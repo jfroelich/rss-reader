@@ -7,7 +7,6 @@ var lucu = lucu || {};
 lucu.feed = lucu.feed || {};
 
 // Finds a feed by url, ignoring scheme
-
 lucu.feed.findByURL = function(url, callback, fallback) {
   'use strict';
   const onConnect = lucu.feed.findByURLOnConnect.bind(null, url, callback);
@@ -52,6 +51,7 @@ lucu.feed.findByIdOnSuccess = function(callback, event) {
   callback(feed);
 };
 
+// Iterates over each feed in the database
 lucu.feed.forEach = function(callback, onComplete, sortByTitle, fallback) {
   'use strict';
   const onConnect = lucu.feed.forEachOnConnect.bind(null, callback, 

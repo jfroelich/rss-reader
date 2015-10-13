@@ -35,13 +35,13 @@ lucu.fetch.fetchFeed = function(url, onComplete, onError, timeout) {
   request.onerror = lucu.fetch.onRequestError.bind(request, onError);
   request.ontimeout = onError;
   request.onabort = onError;
-  request.onload = lucu.fetch.onRequestLoad.bind(request, onComplete, onError);
+  request.onload = lucu.fetch.onRequestLoad.bind(request, url, onComplete, onError);
   request.open('GET', url, true);
   request.overrideMimeType('application/xml');
   request.send();
 };
 
-lucu.fetch.onRequestLoad = function(callback, fallback, event) {
+lucu.fetch.onRequestLoad = function(url, callback, fallback, event) {
   'use strict';
   const document = event.target.responseXML;
   var error;
@@ -56,6 +56,14 @@ lucu.fetch.onRequestLoad = function(callback, fallback, event) {
   try {
     const feed = lucu.deserializeFeed(document);
     
+    // Set the url property
+    // TODO: update dependencies regarding setting it here
+    feed.url = url;
+
+    // Add the date fetched here
+    // TODO: update dependencies regarding fetched property
+    feed.fetched = Date.now();
+
     // NOTE: feed is const and therefore block scoped, therefore
     // the remaining statements must occur within the try block
 

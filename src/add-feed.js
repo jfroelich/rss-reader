@@ -7,6 +7,8 @@ var lucu = lucu || {};
 // TODO: this file only contains add feed function, rename file or 
 // move this function to the area that uses it
 
+// TODO: merge addFeed with updateFeed
+
 // TODO: use lucu.subscription, and rename it to lucu.subscription.subscribe
 
 // TODO: ensure no future pubdates?
@@ -56,7 +58,18 @@ lucu.addFeed = function(database, feed, onComplete, onerror) {
 
 lucu.addFeedOnSuccess = function(database, feed, entries, onComplete, event) {
   'use strict';
-  feed.id = event.target.result;
-  const merge = lucu.entry.merge.bind(null, database, feed);
-  async.forEach(entries, merge, onComplete);
+  
+  // NOTE: this lib is no longer responsible for merging entries when adding 
+  // a feed. In the subscription context, we do not want to merge entries because
+  // that takes too long. Therefore, this function is temporarily a NOOP. 
+  // TODO: delete the function?
+
+  // Because it is a noop, it still has to call onComplete. It calls onComplete
+  // without an arg in case it is used with async.waterfall.
+  onComplete();
+
+  // Old code below
+  //feed.id = event.target.result;
+  //const merge = lucu.entry.merge.bind(null, database, feed);
+  //async.forEach(entries, merge, onComplete);
 };

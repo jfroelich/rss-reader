@@ -4,7 +4,7 @@
 
 var lucu = lucu || {};
 
-// Polling lib (for periodically updating feeds)
+// Polling lib for periodically updating feeds
 lucu.poll = {};
 
 // Idle if greater than or equal to this many seconds
@@ -41,36 +41,6 @@ lucu.poll.start = function() {
   async.waterfall(waterfall, lucu.poll.onComplete);
 };
 
-lucu.poll.onComplete = function(error, feeds) {
-  console.debug('Polling completed');
-
-  if(error) {
-    console.dir(error);
-    return;
-  }
-
-  localStorage.LAST_POLL_DATE_MS = String(Date.now());
-
-  // Notify other modules that the poll completed. For example, the slides
-  // view may want to pre-load some of the newly available articles
-  const message = {
-    type: 'pollCompleted',
-    feedsProcessed: feeds ? feeds.length : 0,
-    entriesAdded: 0,
-    entriesProcessed: 0
-  };
-
-  chrome.runtime.sendMessage(message);
-
-  // Update the app badge to reflect that there may be new unread articles
-  // TODO: only call this if entriesAdded is not 0
-  lucu.badge.update();
-  
-  // Display a notification
-  // TODO: only call this if entriesAdded is not 0, and also show the number
-  // of articles added in the message
-  lucu.notifications.show('Updated articles');
-};
 
 lucu.poll.checkIdle = function(callback) {
   'use strict';
@@ -182,10 +152,45 @@ lucu.poll.onFetchFeed = function(database, feed, callback, remoteFeed) {
   const isDistinct = lucu.poll.isDistinctFeedEntry.bind(null, seenEntries);
   remoteFeed.entries = remoteFeed.entries.filter(isDistinct);
 
-  const onAugmentComplete = lucu.poll.onAugmentComplete.bind(null, 
-    database, feed, remoteFeed, callback);
-  remoteFeed.fetched = Date.now();
-  lucu.augment.start(remoteFeed, onAugmentComplete);
+
+  // Iterate over the fetched entries and remove those that already exist 
+  // in the database. The fetched entries are attached to remoteFeed.
+
+  // TODO: once this is working, we should no longer do a second iteration.
+  // We should do both the filtering and the augment in the same iteration.
+  // Basically the if exists check either calls the callback immediately 
+  // or also does the augment and then calls the callback
+
+  // but first, test
+
+  const transaction = database.transaction('entry');
+  const findByLink = lucu.poll.findEntryByLink.bind(null, transaction);
+
+  function onFilteredExisting() {
+    const onAugmentComplete = lucu.poll.onAugmentComplete.bind(null, 
+      database, feed, remoteFeed, callback);
+    lucu.augment.start(remoteFeed, onAugmentComplete);
+  }
+
+  async.reject(remoteFeed.entries, findByLink, onFilteredExisting);
+};
+
+lucu.poll.findEntryByLink = function(transaction, entry, callback) {
+  'use strict';
+
+  console.debug('Checking if entry with link %s exists', entry.link);
+  const store = transaction.objectStore('entry');
+  const index = store.index('link');
+  const link = entry.link;
+  const request = index.get(link);
+  request.onsuccess = lucu.poll.onFindEntry.bind(request, callback);
+};
+
+lucu.poll.onFindEntry = function(callback, event) {
+  'use strict';
+  // If entry is undefined, it is because there was no match
+  const entry = event.target.result;
+  callback(entry);
 };
 
 lucu.poll.isDistinctFeedEntry = function(seenEntries, entry) {
@@ -264,6 +269,38 @@ lucu.poll.onAugmentComplete = function(database, feed, remoteFeed, callback) {
     // TODO: this is in parallel, right?
     async.forEach(entries, mergeEntry, onMergeEntriesComplete);
   };
+};
+
+
+lucu.poll.onComplete = function(error, feeds) {
+  console.debug('Polling completed');
+
+  if(error) {
+    console.dir(error);
+    return;
+  }
+
+  localStorage.LAST_POLL_DATE_MS = String(Date.now());
+
+  // Notify other modules that the poll completed. For example, the slides
+  // view may want to pre-load some of the newly available articles
+  const message = {
+    type: 'pollCompleted',
+    feedsProcessed: feeds ? feeds.length : 0,
+    entriesAdded: 0,
+    entriesProcessed: 0
+  };
+
+  chrome.runtime.sendMessage(message);
+
+  // Update the app badge to reflect that there may be new unread articles
+  // TODO: only call this if entriesAdded is not 0
+  lucu.badge.update();
+  
+  // Display a notification
+  // TODO: only call this if entriesAdded is not 0, and also show the number
+  // of articles added in the message
+  lucu.notifications.show('Updated articles');
 };
 
 lucu.poll.onAlarm = function(alarm) {

@@ -7,87 +7,25 @@ var lucu = lucu || {};
 // Feed augmentation lib
 lucu.augment = {};
 
-// TODO: the problem with the current approach is that it operates on 
-// arrays which needlessly block later async calls. All the document
-// fetching happens after all the exists-checks happen and only then
-// the image checking happens. Instead, each article should be processed
-// simultaneously. So operating on arrays was a mistake. The first input
-// should be an array, but then each item in the array should go through
-// all 3 steps at once, concurrent with potentially every other item in
-// the array
-// Then there is the separate question of whether tasks outside the scope
-// of augment also need to be able to handled as concurrent per entry
-// instead of waiting for these steps to complete. And for that matter
-// the prior steps occuring during polling/subscribing
+// TODO: each entry should be processed simultaneously. This should not 
+// be responsible for iterating over the entries
 
+// TODO: this should probably be renamed if it isn't doing any 
+// iteration. In fact the start function should probably just 
+// be deleted and should make direct calls to updateEntryContent
+// (which should also be renamed)
 
 /**
  * Iterates over a feed's entries and replaces the html content property
  * of each entry with its full html according to its link. Forwards the
  * input feed to the callback.
- *
- * Entries that already exist within the local database are ignored.
- * If a database error occurs then no augmentation takes place and this
- * simply forwards the feed to the callback.
  */
 lucu.augment.start = function(feed, callback) {
   'use strict';
 
-  const waterfall = [
-    lucu.augment.connect,
-    lucu.augment.filterExisting.bind(null, feed.entries),
-    lucu.augment.updateEntries
-  ];
-  async.waterfall(waterfall, 
-    lucu.augment.onComplete.bind(null, feed, callback));
-};
-
-// TODO: deprecate, use the new lucu.database.connect function?
-lucu.augment.connect = function(callback) {
-  'use strict';
-  lucu.database.connect(callback, callback);
-};
-
-// Asynchronously iterate over the entries to produce an array of 
-// only those entries not already in the database and then pass 
-// along this array
-lucu.augment.filterExisting = function(entries, database, callback) {
-  'use strict';
-  const transaction = database.transaction('entry');
-  const findByLink = lucu.augment.findEntryByLink.bind(null, transaction);
-  const onComplete = lucu.augment.onFilteredExisting.bind(null, callback);
-  async.reject(entries, findByLink, onComplete);
-};
-
-lucu.augment.onFilteredExisting = function(callback, entries) {
-  'use strict';
-  callback(null, entries);
-};
-
-lucu.augment.findEntryByLink = function(transaction, entry, callback) {
-  'use strict';
-  const store = transaction.objectStore('entry');
-  const index = store.index('link');
-  const url = entry.link;
-  // console.debug('Augment - findEntryByLink %s', url);
-  const request = index.get(url);
-  request.onsuccess = lucu.augment.onFindEntry.bind(request, callback);
-};
-
-lucu.augment.onFindEntry = function(callback, event) {
-  'use strict';
-  callback(event.target.result);
-};
-
-lucu.augment.updateEntries = function(entries, callback) {
-  'use strict';
-  var onComplete = lucu.augment.onUpdatedEntries.bind(null, callback);
-  async.forEach(entries, lucu.augment.updateEntryContent, onComplete);
-};
-
-lucu.augment.onUpdatedEntries = function(callback) {
-  'use strict';
-  callback();
+  async.forEach(feed.entries, lucu.augment.updateEntryContent, function() {
+    callback();
+  });
 };
 
 lucu.augment.FETCH_TIMEOUT = 20 * 1000;
@@ -174,5 +112,8 @@ lucu.augment.onImagesUpdated = function(entry, document, callback) {
 };
 
 lucu.augment.onComplete = function(feed, callback) {
+
+  // TODO: why am I passing feed here? I don't think this is consistent and 
+  // cannot remember if the caller expects it.
   callback(feed);
 };
