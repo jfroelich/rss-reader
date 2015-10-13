@@ -7,27 +7,6 @@ var lucu = lucu || {};
 // Feed augmentation lib
 lucu.augment = {};
 
-// TODO: each entry should be processed simultaneously. This should not 
-// be responsible for iterating over the entries
-
-// TODO: this should probably be renamed if it isn't doing any 
-// iteration. In fact the start function should probably just 
-// be deleted and should make direct calls to updateEntryContent
-// (which should also be renamed)
-
-/**
- * Iterates over a feed's entries and replaces the html content property
- * of each entry with its full html according to its link. Forwards the
- * input feed to the callback.
- */
-lucu.augment.start = function(feed, callback) {
-  'use strict';
-
-  async.forEach(feed.entries, lucu.augment.updateEntryContent, function() {
-    callback();
-  });
-};
-
 lucu.augment.FETCH_TIMEOUT = 20 * 1000;
 
 /**
@@ -109,11 +88,4 @@ lucu.augment.onImagesUpdated = function(entry, document, callback) {
   }
 
   callback();
-};
-
-lucu.augment.onComplete = function(feed, callback) {
-
-  // TODO: why am I passing feed here? I don't think this is consistent and 
-  // cannot remember if the caller expects it.
-  callback(feed);
 };

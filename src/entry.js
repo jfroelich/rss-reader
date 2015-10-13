@@ -144,3 +144,9 @@ lucu.entry.markReadUpdateEntry = function(event) {
   // TODO: is anything listening to this? maybe deprecate?
   chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
 };
+
+// Returns a truthy value if the entry has a link property with a value
+lucu.entry.hasLink = function(entry) {
+  'use strict';
+  return entry.link;
+};

@@ -142,133 +142,119 @@ lucu.poll.onFetchError = function(callback) {
 
 lucu.poll.onFetchFeed = function(database, feed, callback, remoteFeed) {
   'use strict';
-  // TODO: should this occur here? is this redundant?
-  remoteFeed.entries = remoteFeed.entries.filter(function(entry) {
-    return entry.link;
-  });
-
-  // Filter duplicate entries from the set of just fetched entries
-  const seenEntries = new Set();
-  const isDistinct = lucu.poll.isDistinctFeedEntry.bind(null, seenEntries);
-  remoteFeed.entries = remoteFeed.entries.filter(isDistinct);
-
-
-  // Iterate over the fetched entries and remove those that already exist 
-  // in the database. The fetched entries are attached to remoteFeed.
-
-  // TODO: once this is working, we should no longer do a second iteration.
-  // We should do both the filtering and the augment in the same iteration.
-  // Basically the if exists check either calls the callback immediately 
-  // or also does the augment and then calls the callback
-
-  // but first, test
-
-  const transaction = database.transaction('entry');
-  const findByLink = lucu.poll.findEntryByLink.bind(null, transaction);
-
-  function onFilteredExisting() {
-    const onAugmentComplete = lucu.poll.onAugmentComplete.bind(null, 
-      database, feed, remoteFeed, callback);
-    lucu.augment.start(remoteFeed, onAugmentComplete);
-  }
-
-  async.reject(remoteFeed.entries, findByLink, onFilteredExisting);
-};
-
-lucu.poll.findEntryByLink = function(transaction, entry, callback) {
-  'use strict';
-
-  console.debug('Checking if entry with link %s exists', entry.link);
-  const store = transaction.objectStore('entry');
-  const index = store.index('link');
-  const link = entry.link;
-  const request = index.get(link);
-  request.onsuccess = lucu.poll.onFindEntry.bind(request, callback);
-};
-
-lucu.poll.onFindEntry = function(callback, event) {
-  'use strict';
-  // If entry is undefined, it is because there was no match
-  const entry = event.target.result;
-  callback(entry);
-};
-
-lucu.poll.isDistinctFeedEntry = function(seenEntries, entry) {
-  'use strict';
-  if(seenEntries.has(entry.link)) {
-    console.debug('Filtering duplicate entry %o', entry);
-    return false;
-  }
-
-  seenEntries.add(entry.link);
-  return true;  
-};
-
-lucu.poll.onAugmentComplete = function(database, feed, remoteFeed, callback) {
-  'use strict';
-  // TODO: if we do end up updating the feed, what about the functional
-  // dependencies such as the feedTitle and feedLink properties set for 
-  // entries already in the database?
 
   // TODO: should check last modified date of the remote xml file
   // so we can avoid pointless updates?
-  // TODO: this should not be changing the date updated unless something
-  // actually changed. However, we do want to indicate that the feed was
-  // checked
-  const cleanedRemoteFeed = lucu.sanitizeFeed(remoteFeed);
 
-  // We plan to update the local feed object. Overwrite its properties with
-  // new properties from the remote feed
-
-  if(cleanedRemoteFeed.title) {
-    feed.title = cleanedRemoteFeed.title;
-  }
-
-  if(cleanedRemoteFeed.description) {
-    feed.description = cleanedRemoteFeed.description;
-  }
-
-  if(cleanedRemoteFeed.link) {
-    feed.link = cleanedRemoteFeed.link;
-  }
-
-  if(cleanedRemoteFeed.date) {
-    feed.date = cleanedRemoteFeed.date;
-  }
-
-  // Transfer the fetch date
-  feed.fetched = remoteFeed.fetched;
-
-  // Set the date updated
-  feed.updated = Date.now();
+  // Update the locally stored feed with new properties from the remote feed
 
   // TODO: there is a lot of similarity to addFeed here. and IDBObjectStore.put
   // can work like IDBObjectStore.add. I think the two should be merged into 
   // the same function
 
-  // Overwrite the old local feed object with the modified local feed object
+  const cleanFeed = lucu.sanitizeFeed(remoteFeed);
+
+  if(cleanFeed.title) {
+    feed.title = cleanFeed.title;
+  }
+
+  if(cleanFeed.description) {
+    feed.description = cleanFeed.description;
+  }
+
+  if(cleanFeed.link) {
+    feed.link = cleanFeed.link;
+  }
+
+  if(cleanFeed.date) {
+    feed.date = cleanFeed.date;
+  }
+
+  feed.fetched = remoteFeed.fetched;
+
+  // TODO: this should not be changing the date updated unless something
+  // actually changed
+  feed.updated = Date.now();
+
   const transaction = database.transaction('feed', 'readwrite');
   const feedStore = transaction.objectStore('feed');
   const putFeedRequest = feedStore.put(feed);
-  putFeedRequest.onerror = console.debug;
 
-  // TODO: move this into separate function
-  putFeedRequest.onsuccess = function() {
-    // Now merge in any new entries from the remote feed
-    // NOTE: i don't think it matters whether we pass feed or 
-    // remoteFeed or cleanedRemoteFeed to mergeEntry
-    const mergeEntry = lucu.entry.merge.bind(null, database, feed);
-    const entries = remoteFeed.entries;
-
-    // We have to wrap so that we call callback without parameters
-    // due to async lib behavior
-    function onMergeEntriesComplete() {
-      callback();
-    }
-
-    // TODO: this is in parallel, right?
-    async.forEach(entries, mergeEntry, onMergeEntriesComplete);
+  // TODO: move this into separate function?
+  putFeedRequest.onerror = function(event) {
+    console.debug(event);
+    callback();
   };
+
+  putFeedRequest.onsuccess = lucu.poll.onPutFeed.bind(putFeedRequest, 
+    database, feed, remoteFeed.entries, callback);
+
+};
+
+lucu.poll.onPutFeed = function(database, feed, entries, callback, event) {
+  'use strict';
+
+  // Now that the feed was updated, process the entries
+
+  // Remove any entries without links
+  // TODO: should this occur here or somewhere earlier? is this redundant?
+  // Do we ever fetch a feed and not do this?
+  entries = entries.filter(lucu.entry.hasLink);
+
+  // Consolidate duplicate entries. Doing this now, synchronously, reduces
+  // the number of indexedDB calls.
+  const seenEntries = new Set();
+  const isDistinct = lucu.poll.isDistinctFeedEntry.bind(null, seenEntries);
+  entries = entries.filter(isDistinct);
+
+  // Process the entries
+  const findByLink = lucu.poll.findEntryByLink.bind(null, database, feed);
+  async.forEach(entries, findByLink, callback);
+};
+
+lucu.poll.findEntryByLink = function(database, feed, entry, callback) {
+  'use strict';
+  const transaction = database.transaction('entry');
+  const entryStore = transaction.objectStore('entry');
+  const linkIndex = entryStore.index('link');
+  const request = linkIndex.get(entry.link);
+  request.onsuccess = lucu.poll.onFindEntry.bind(request, database, feed, 
+    entry, callback);
+  request.onerror = lucu.poll.onFindEntryError.bind(request, callback);
+};
+
+lucu.poll.onFindEntryError = function(callback, event) {
+  'use strict';
+  console.debug(event);
+  callback();
+};
+
+lucu.poll.onFindEntry = function(database, feed, entry, callback, event) {
+  'use strict';
+  
+  const onUpdate = lucu.poll.onEntryContentUpdated.bind(null, database, 
+    feed, entry, callback);
+  
+  if(event.target.result) {
+    callback();
+  } else {
+    lucu.augment.updateEntryContent(entry, onUpdate);
+  }
+};
+
+lucu.poll.onEntryContentUpdated = function(database, feed, entry, callback) {
+  'use strict';
+  lucu.entry.merge(database, feed, entry, callback);
+};
+
+lucu.poll.isDistinctFeedEntry = function(seenEntries, entry) {
+  'use strict';
+  if(seenEntries.has(entry.link)) {
+    return false;
+  }
+
+  seenEntries.add(entry.link);
+  return true;  
 };
 
 
