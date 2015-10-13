@@ -143,55 +143,12 @@ lucu.poll.onFetchError = function(callback) {
 lucu.poll.onFetchFeed = function(database, feed, callback, remoteFeed) {
   'use strict';
 
-  // TODO: should check last modified date of the remote xml file
-  // so we can avoid pointless updates?
-
-  // Update the locally stored feed with new properties from the remote feed
-
-  // TODO: there is a lot of similarity to addFeed here. and IDBObjectStore.put
-  // can work like IDBObjectStore.add. I think the two should be merged into 
-  // the same function
-
-  const cleanFeed = lucu.sanitizeFeed(remoteFeed);
-
-  if(cleanFeed.title) {
-    feed.title = cleanFeed.title;
-  }
-
-  if(cleanFeed.description) {
-    feed.description = cleanFeed.description;
-  }
-
-  if(cleanFeed.link) {
-    feed.link = cleanFeed.link;
-  }
-
-  if(cleanFeed.date) {
-    feed.date = cleanFeed.date;
-  }
-
-  feed.fetched = remoteFeed.fetched;
-
-  // TODO: this should not be changing the date updated unless something
-  // actually changed
-  feed.updated = Date.now();
-
-  const transaction = database.transaction('feed', 'readwrite');
-  const feedStore = transaction.objectStore('feed');
-  const putFeedRequest = feedStore.put(feed);
-
-  // TODO: move this into separate function?
-  putFeedRequest.onerror = function(event) {
-    console.debug(event);
-    callback();
-  };
-
-  putFeedRequest.onsuccess = lucu.poll.onPutFeed.bind(putFeedRequest, 
-    database, feed, remoteFeed.entries, callback);
-
+  lucu.feed.put(database, feed, remoteFeed, function() {
+    lucu.poll.onPutFeed(database, feed, remoteFeed.entries, callback);
+  });
 };
 
-lucu.poll.onPutFeed = function(database, feed, entries, callback, event) {
+lucu.poll.onPutFeed = function(database, feed, entries, callback) {
   'use strict';
 
   // Now that the feed was updated, process the entries

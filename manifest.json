@@ -1,5 +1,5 @@
 {
-  "version": "33",
+  "version": "80",
   "manifest_version": 2,
   "minimum_chrome_version" : "36",
   "name": "Lucubrate",
@@ -15,7 +15,6 @@
     "scripts": [
       "/lib/async.js",
       "/lib/URI.js",
-      "/src/add-feed.js",
       "/src/archive.js",
       "/src/augment.js",
       "/src/badge.js",
@@ -31,7 +30,6 @@
       "/src/rewrite.js",
       "/src/poll.js",
       "/src/resolve-document.js",
-      "/src/sanitize-feed.js",
       "/src/deserialize-feed.js",
       "/src/string.js"
     ]

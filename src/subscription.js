@@ -6,6 +6,9 @@ var lucu = lucu || {};
 
 lucu.subscription = {};
 
+// TODO; deprecate partially, create removeFeed and removeEntryByFeed functions
+// in feed.js and entry.js
+
 lucu.subscription.unsubscribe = function(feedId, callback, fallback) {
   'use strict';
 

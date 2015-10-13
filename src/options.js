@@ -333,10 +333,7 @@ function startSubscription(url) {
     // grab the feed's information and then add it
     if(lucu.isOffline()) {
       lucu.database.connect(function(error, database) {
-        lucu.addFeed(database, 
-          {url: url}, 
-          onSubscriptionSuccessful, 
-          console.error);
+        lucu.feed.put(database, null, {url: url}, onSubscriptionSuccessful);
       }, console.error);
       return;    
     }
@@ -348,9 +345,9 @@ function startSubscription(url) {
 
   function onFetchComplete(remoteFeed) {
     function onConnect(error, database) {
-      lucu.addFeed(database, remoteFeed, function() {
+      lucu.feed.put(database, null, remoteFeed, function() {
         onSubscriptionSuccessful(remoteFeed, 0, 0);
-      }, console.debug);
+      });
     }
 
     lucu.database.connect(onConnect, onFetchError);

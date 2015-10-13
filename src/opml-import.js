@@ -127,14 +127,7 @@ lucu.opml.onStoreOutlinesComplete = function(callback) {
   callback();
 };
 
-
 lucu.opml.storeOutline = function(database, outline, callback) {
   'use strict';
-
-  // TODO: clean this up a bit more
-  lucu.addFeed(database, outline, function() {
-    callback();
-  }, function() {
-    callback();
-  });
+  lucu.feed.put(database, null, outline, callback);
 };
