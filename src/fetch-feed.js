@@ -61,35 +61,43 @@ lucu.fetch.onRequestLoad = function(url, callback, fallback, event) {
     feed.url = url;
 
     // Add the date fetched here
-    // TODO: update dependencies regarding fetched property
     feed.fetched = Date.now();
 
     // NOTE: feed is const and therefore block scoped, therefore
     // the remaining statements must occur within the try block
 
     // Remove any entries without links as those cannot be stored
-    feed.entries = feed.entries.filter(lucu.fetch.entryHasLink);
+    feed.entries = feed.entries.filter(lucu.entry.hasLink);
     // Rewrite the links of entries before passing along
     feed.entries = feed.entries.map(lucu.fetch.rewriteEntryLink);
+
+    // Remove duplicate entries
+    const seenEntries = new Set();
+    const isDistinct = lucu.fetch.isDistinctFeedEntry.bind(null, seenEntries);
+    feed.entries = feed.entries.filter(isDistinct);
+
     callback(feed);
   } catch(e) {
     error = {type: 'invalid-xml', target: this, details: e};
     fallback(error);
     return;
-  }
-
-  
-};
-
-lucu.fetch.entryHasLink = function(entry) {
-  'use strict';
-  return entry.link;
+  }  
 };
 
 lucu.fetch.rewriteEntryLink = function(entry) {
   'use strict';
   entry.link = lucu.rewriteURL(entry.link);
   return entry;
+};
+
+lucu.fetch.isDistinctFeedEntry = function(seenEntries, entry) {
+  'use strict';
+  if(seenEntries.has(entry.link)) {
+    return false;
+  }
+
+  seenEntries.add(entry.link);
+  return true;  
 };
 
 lucu.fetch.onRequestError = function(callback, event) {

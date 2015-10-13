@@ -23,6 +23,7 @@
       "/src/date.js",
       "/src/dom.js",
       "/src/entry.js",
+      "/src/feed.js",
       "/src/fetch-feed.js",
       "/src/images.js",
       "/src/install.js",

@@ -105,7 +105,6 @@ lucu.poll.onSelectFeedsCompleted = function(callback, database, feeds, event) {
   callback(null, database, feeds);
 };
 
-// selectFeeds helper
 lucu.poll.onSelectFeed = function(feeds, event) {
   'use strict';
   const cursor = event.target.result;
@@ -116,18 +115,17 @@ lucu.poll.onSelectFeed = function(feeds, event) {
 
 lucu.poll.updateFeeds = function(database, feeds, callback) {
   'use strict';
-  const update = lucu.poll.updateFeed.bind(null, database);
-  const onComplete = lucu.poll.onUpdateFeedsComplete.bind(null, callback, 
-    feeds);
-  async.forEach(feeds, update, onComplete);
+
+  async.forEach(feeds, lucu.poll.fetchFeed.bind(null, database), 
+    lucu.poll.onFetchFeedsComplete.bind(null, callback, feeds));
 };
 
-lucu.poll.onUpdateFeedsComplete = function(callback, feeds) {
+lucu.poll.onFetchFeedsComplete = function(callback, feeds) {
   'use strict';
   callback(null, feeds);
 };
 
-lucu.poll.updateFeed = function(database, feed, callback) {
+lucu.poll.fetchFeed = function(database, feed, callback) {
   'use strict';
   const onFetch = lucu.poll.onFetchFeed.bind(null, database, feed, callback);
   const onError = lucu.poll.onFetchError.bind(null, callback);
@@ -143,30 +141,17 @@ lucu.poll.onFetchError = function(callback) {
 lucu.poll.onFetchFeed = function(database, feed, callback, remoteFeed) {
   'use strict';
 
-  lucu.feed.put(database, feed, remoteFeed, function() {
-    lucu.poll.onPutFeed(database, feed, remoteFeed.entries, callback);
-  });
+  const onPut = lucu.poll.onPutFeed.bind(null, database, feed, 
+    remoteFeed, callback);
+
+  lucu.feed.put(database, feed, remoteFeed, onPut);
 };
 
-lucu.poll.onPutFeed = function(database, feed, entries, callback) {
+lucu.poll.onPutFeed = function(database, feed, remoteFeed, callback, 
+  event) {
   'use strict';
-
-  // Now that the feed was updated, process the entries
-
-  // Remove any entries without links
-  // TODO: should this occur here or somewhere earlier? is this redundant?
-  // Do we ever fetch a feed and not do this?
-  entries = entries.filter(lucu.entry.hasLink);
-
-  // Consolidate duplicate entries. Doing this now, synchronously, reduces
-  // the number of indexedDB calls.
-  const seenEntries = new Set();
-  const isDistinct = lucu.poll.isDistinctFeedEntry.bind(null, seenEntries);
-  entries = entries.filter(isDistinct);
-
-  // Process the entries
-  const findByLink = lucu.poll.findEntryByLink.bind(null, database, feed);
-  async.forEach(entries, findByLink, callback);
+  async.forEach(remoteFeed.entries, lucu.poll.findEntryByLink.bind(null, 
+    database, feed), callback);
 };
 
 lucu.poll.findEntryByLink = function(database, feed, entry, callback) {
@@ -189,13 +174,12 @@ lucu.poll.onFindEntryError = function(callback, event) {
 lucu.poll.onFindEntry = function(database, feed, entry, callback, event) {
   'use strict';
   
-  const onUpdate = lucu.poll.onEntryContentUpdated.bind(null, database, 
-    feed, entry, callback);
-  
   if(event.target.result) {
     callback();
   } else {
-    lucu.augment.updateEntryContent(entry, onUpdate);
+    lucu.augment.updateEntryContent(entry, 
+      lucu.poll.onEntryContentUpdated.bind(null, database, feed, entry, 
+        callback));
   }
 };
 
@@ -203,17 +187,6 @@ lucu.poll.onEntryContentUpdated = function(database, feed, entry, callback) {
   'use strict';
   lucu.entry.merge(database, feed, entry, callback);
 };
-
-lucu.poll.isDistinctFeedEntry = function(seenEntries, entry) {
-  'use strict';
-  if(seenEntries.has(entry.link)) {
-    return false;
-  }
-
-  seenEntries.add(entry.link);
-  return true;  
-};
-
 
 lucu.poll.onComplete = function(error, feeds) {
   console.debug('Polling completed');

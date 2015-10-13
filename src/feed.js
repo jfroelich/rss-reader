@@ -83,8 +83,13 @@ lucu.feed.forEachOnSuccess = function(callback, event) {
   cursor.continue();
 };
 
-
-// TODO: update lucu.poll to use this once update is done
+/**
+ * @param database an open database connection
+ * @param original the original feed loaded from the database, optional
+ * @param feed the feed to insert or the feed with properties to overwrite
+ * the original
+ * @param callback the function to call when finished (no args)
+ */
 lucu.feed.put = function(database, original, feed, callback) {
   'use strict';
 
@@ -108,6 +113,7 @@ lucu.feed.put = function(database, original, feed, callback) {
   const storable = {};
 
   // Copy over the earlier id
+  // NOTE: for some reason, poll was not doing this?
   if(original) {
     storable.id = original.id;
   }
@@ -149,15 +155,16 @@ lucu.feed.put = function(database, original, feed, callback) {
   }
 
   const transaction = database.transaction('feed', 'readwrite');
-  const feedStore = transaction.objectStore('feed');
-  const request = feedStore.put(storable);
+  const store = transaction.objectStore('feed');
+  const request = store.put(storable);
 
   request.onsuccess = function(event) {
-    let newId = event.target.result; // just as a note
     callback();
   };
 
-  request.onerror = function() {
+  request.onerror = function(event) {
+    console.debug('Error updating feed %s', feed.url);
+    console.dir(event);
     callback();
   };
 };

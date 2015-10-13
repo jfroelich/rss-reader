@@ -108,6 +108,10 @@ lucu.entry.onMarkReadConnect = function(entryId, callback, error, database) {
   const transaction = database.transaction('entry', 'readwrite');
   transaction.oncomplete = callback;
   const entryStore = transaction.objectStore('entry');
+
+  // NOTE: we use a cursor here instead of entryStore.get so that
+  // we can use cursor.update
+
   const markReadRequest = entryStore.openCursor(entryId);
   markReadRequest.onsuccess = lucu.entry.markReadUpdateEntry;
 };
