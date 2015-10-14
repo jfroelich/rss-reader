@@ -6,111 +6,69 @@ var lucu = lucu || {};
 
 lucu.feed = lucu.feed || {};
 
-// Finds a feed by url, ignoring scheme
+// Find a feed by url, ignoring protocol
 lucu.feed.findByURL = function(url, callback, fallback) {
   'use strict';
-  const onConnect = lucu.feed.findByURLOnConnect.bind(null, url, callback);
-  lucu.database.connect(onConnect, fallback);
+  lucu.database.connect(function(error, database) {
+    const transaction = database.transaction('feed');
+    const urls = transaction.objectStore('feed').index('schemeless');
+    const request = urls.get(lucu.url.getSchemeless(url));
+    request.onsuccess = function(event) {
+      callback(event.target.result);
+    };
+  }, fallback);
 };
 
-lucu.feed.findByURLOnConnect = function(url, callback, error, database) {
-  'use strict';
-  const transaction = database.transaction('feed');
-  const feeds = transaction.objectStore('feed');
-  const urls = feeds.index('schemeless');
-  const schemelessURL = lucu.url.getSchemeless(url);
-  const request = urls.get(schemelessURL);
-  request.onsuccess = lucu.feed.findByURLOnSuccess.bind(request, callback);
-};
-
-lucu.feed.findByURLOnSuccess = function(callback, event) {
-  'use strict';
-  const feed = event.target.result;
-  callback(feed);
-};
-
-// Get a feed object by its id
+// Find a feed by id
 lucu.feed.findById = function(id, callback, fallback) {
   'use strict';
-  const onConnect = lucu.feed.findByIdOnConnect.bind(null, id, callback);
-  lucu.database.connect(onConnect, fallback);
-};
-
-lucu.feed.findByIdOnConnect = function(id, callback, error, database) {
-  'use strict';
-
-  const transaction = database.transaction('feed');
-  const feeds = transaction.objectStore('feed');
-  const request = feeds.get(id);
-  request.onsuccess = lucu.feed.findByIdOnSuccess.bind(request, callback);
-};
-
-lucu.feed.findByIdOnSuccess = function(callback, event) {
-  'use strict';
-  const feed = event.target.result;
-  callback(feed);
+  lucu.database.connect(function(error, database) {
+    const feeds = database.transaction('feed').objectStore('feed');
+    const request = feeds.get(id);
+    request.onsuccess = function(event) {
+      callback(event.target.result);
+    };
+  }, fallback);
 };
 
 // Iterates over each feed in the database
 lucu.feed.forEach = function(callback, onComplete, sortByTitle, fallback) {
   'use strict';
-  const onConnect = lucu.feed.forEachOnConnect.bind(null, callback, 
-    onComplete, sortByTitle);
-  lucu.database.connect(onConnect, fallback);
-};
-
-lucu.feed.forEachOnConnect = function(callback, onComplete, sortByTitle, error, 
-  database) {
-  'use strict';
-  const transaction = database.transaction('feed');
-  transaction.oncomplete = onComplete;
+  lucu.database.connect(function(error, database) {
+    const transaction = database.transaction('feed');
+    transaction.oncomplete = onComplete;
   
-  var feeds = transaction.objectStore('feed');
-  if(sortByTitle) {
-    feeds = feeds.index('title');
-  }
+    let feeds = transaction.objectStore('feed');
+    if(sortByTitle) {
+      feeds = feeds.index('title');
+    }
 
-  const request = feeds.openCursor();
-  request.onsuccess = lucu.feed.forEachOnSuccess.bind(request, callback);
+    const request = feeds.openCursor();
+    request.onsuccess = function(event) {
+      const cursor = event.target.result;
+      if(!cursor) return;
+      callback(cursor.value);
+      cursor.continue();
+    };
+  }, fallback);
 };
-
-lucu.feed.forEachOnSuccess = function(callback, event) {
-  'use strict';
-  const cursor = event.target.result;
-  if(!cursor) return;
-  const feed = cursor.value;
-  callback(feed);
-  cursor.continue();
-};
-
 
 lucu.feed.selectFeeds = function(database, callback) {
   'use strict';
-
   const feeds = [];
   const transaction = database.transaction('feed');
   const store = transaction.objectStore('feed');
-  transaction.oncomplete = lucu.feed.onSelectFeedsComplete.bind(
-    transaction, feeds, callback);
+  transaction.oncomplete = function(event) {
+    callback(feeds);
+  };
   const request = store.openCursor();
-  request.onsuccess = lucu.feed.onSelectFeed.bind(null, feeds);
+  request.onsuccess = function(event) {
+    const cursor = event.target.result;
+    if(!cursor) return;
+    feeds.push(cursor.value);
+    cursor.continue();
+  };
 };
-
-lucu.feed.onSelectFeed = function(feeds, event) {
-  'use strict';
-
-  const cursor = event.target.result;
-  if(!cursor) return;
-  feeds.push(cursor.value);
-  cursor.continue();
-};
-
-lucu.feed.onSelectFeedsComplete = function(feeds, callback, event) {
-  'use strict';
-  callback(feeds);
-};
-
-
 
 /**
  * @param database an open database connection
