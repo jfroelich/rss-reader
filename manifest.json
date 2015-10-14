@@ -25,6 +25,7 @@
       "/src/entry.js",
       "/src/feed.js",
       "/src/fetch-feed.js",
+      "/src/idle.js",
       "/src/images.js",
       "/src/install.js",
       "/src/notifications.js",
