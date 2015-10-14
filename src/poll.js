@@ -5,14 +5,6 @@
 var lucu = lucu || {};
 
 // Polling lib for periodically updating feeds
-lucu.poll = {};
-
-// Idle if greater than or equal to this many seconds
-lucu.poll.INACTIVITY_INTERVAL = 60 * 5;
-
-// Amount of minutes between polls
-lucu.poll.SCHEDULE = {periodInMinutes: 20};
-
 /**
  * TODO: support customizable poll timing per feed
  * TODO: backoff if last poll did not find updated content?
@@ -23,6 +15,7 @@ lucu.poll.SCHEDULE = {periodInMinutes: 20};
  * Side note: why am i updating the feed after updating
  * entries? Why not before? Why not separately or in parallel
  */
+lucu.poll = {};
 
 // Start the polling sequence
 lucu.poll.start = function() {
@@ -35,43 +28,23 @@ lucu.poll.start = function() {
     lucu.poll.checkIdle,
     lucu.poll.connect,
     lucu.poll.selectFeeds,
-    lucu.poll.updateFeeds
+    lucu.poll.fetchFeeds
   ];
 
   async.waterfall(waterfall, lucu.poll.onComplete);
 };
 
-
 lucu.poll.checkIdle = function(callback) {
   'use strict';
-  var isPermitted = lucu.poll.onCheckIdlePermission.bind(null, callback);
-  chrome.permissions.contains({permissions: ['idle']}, isPermitted);
+  lucu.idle.queryState(lucu.poll.onCheckIdle.bind(null, callback));
 };
 
-// checkIdle helper
-lucu.poll.onCheckIdlePermission = function(callback, permitted) {
+lucu.poll.onCheckIdle = function(callback, state) {
   'use strict';
-  // If we do not have permission to check idle status then
-  // just continue with polling
-  if(!permitted) {
-    callback();
-    return;
-  }
-
-  const isIdle = lucu.poll.isIdle.bind(null, callback);
-  chrome.idle.queryState(lucu.poll.INACTIVITY_INTERVAL, isIdle);
-};
-
-// checkIdle helper
-lucu.poll.isIdle = function(callback, idleState) {
-  'use strict';
-  if(idleState == 'locked' || idleState == 'idle') {
-    // Continue with polling by not passing an error
+  if(!state || state === 'locked' || state === 'idle') {
     callback();
   } else {
-    // Pass back an error parameter that will cause the waterfall
-    // to jump to end
-    callback('poll error, idle state is ' + idleState);
+    callback('Polling cancelled as not idle');
   }
 };
 
@@ -82,7 +55,6 @@ lucu.poll.connect = function(callback) {
   lucu.database.connect(onConnect, callback);
 };
 
-// TODO: deprecate, use async.waterfall
 lucu.poll.onConnect = function(callback, error, database) {
   'use strict';
   callback(null, database);
@@ -90,30 +62,16 @@ lucu.poll.onConnect = function(callback, error, database) {
 
 lucu.poll.selectFeeds = function(database, callback) {
   'use strict';
-  const feeds = [];
-  const transaction = database.transaction('feed');
-  const store = transaction.objectStore('feed');
-  transaction.oncomplete = lucu.poll.onSelectFeedsCompleted.bind(null, 
-    callback, database, feeds);
-  const request = store.openCursor();
-  request.onsuccess = lucu.poll.onSelectFeed.bind(null, feeds);
+  lucu.feed.selectFeeds(database, lucu.poll.onSelectFeeds.bind(null,
+    database, callback));
 };
 
-// selectFeeds helper
-lucu.poll.onSelectFeedsCompleted = function(callback, database, feeds, event) {
+lucu.poll.onSelectFeeds = function(database, callback, feeds) {
   'use strict';
   callback(null, database, feeds);
 };
 
-lucu.poll.onSelectFeed = function(feeds, event) {
-  'use strict';
-  const cursor = event.target.result;
-  if(!cursor) return;
-  feeds.push(cursor.value);
-  cursor.continue();
-};
-
-lucu.poll.updateFeeds = function(database, feeds, callback) {
+lucu.poll.fetchFeeds = function(database, feeds, callback) {
   'use strict';
 
   async.forEach(feeds, lucu.poll.fetchFeed.bind(null, database), 
@@ -140,11 +98,8 @@ lucu.poll.onFetchError = function(callback) {
 
 lucu.poll.onFetchFeed = function(database, feed, callback, remoteFeed) {
   'use strict';
-
-  const onPut = lucu.poll.onPutFeed.bind(null, database, feed, 
-    remoteFeed, callback);
-
-  lucu.feed.put(database, feed, remoteFeed, onPut);
+  lucu.feed.put(database, feed, remoteFeed, lucu.poll.onPutFeed.bind(
+    null, database, feed, remoteFeed, callback));
 };
 
 lucu.poll.onPutFeed = function(database, feed, remoteFeed, callback, 
@@ -153,6 +108,8 @@ lucu.poll.onPutFeed = function(database, feed, remoteFeed, callback,
   async.forEach(remoteFeed.entries, lucu.poll.findEntryByLink.bind(null, 
     database, feed), callback);
 };
+
+// TODO: create and use lucu.entry.findByLink instead
 
 lucu.poll.findEntryByLink = function(database, feed, entry, callback) {
   'use strict';
@@ -225,6 +182,10 @@ lucu.poll.onAlarm = function(alarm) {
     lucu.poll.start();
   }
 };
+
+// Amount of minutes between polls
+lucu.poll.SCHEDULE = {periodInMinutes: 20};
+
 
 chrome.alarms.onAlarm.addListener(lucu.poll.onAlarm);
 chrome.alarms.create('poll', lucu.poll.SCHEDULE);

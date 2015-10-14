@@ -83,6 +83,35 @@ lucu.feed.forEachOnSuccess = function(callback, event) {
   cursor.continue();
 };
 
+
+lucu.feed.selectFeeds = function(database, callback) {
+  'use strict';
+
+  const feeds = [];
+  const transaction = database.transaction('feed');
+  const store = transaction.objectStore('feed');
+  transaction.oncomplete = lucu.feed.onSelectFeedsComplete.bind(
+    transaction, feeds, callback);
+  const request = store.openCursor();
+  request.onsuccess = lucu.feed.onSelectFeed.bind(null, feeds);
+};
+
+lucu.feed.onSelectFeed = function(feeds, event) {
+  'use strict';
+
+  const cursor = event.target.result;
+  if(!cursor) return;
+  feeds.push(cursor.value);
+  cursor.continue();
+};
+
+lucu.feed.onSelectFeedsComplete = function(feeds, callback, event) {
+  'use strict';
+  callback(feeds);
+};
+
+
+
 /**
  * @param database an open database connection
  * @param original the original feed loaded from the database, optional
