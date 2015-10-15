@@ -154,3 +154,69 @@ lucu.entry.hasLink = function(entry) {
   'use strict';
   return entry.link;
 };
+
+/**
+ * Fetch the html at entry.link and use it to replace entry.content
+ *
+ * TODO: I'd prefer this function pass back any errors to the callback. This
+ * would require the caller that wants to not break from async.forEach early
+ * wrap the call.
+ * TODO: I'd prefer this properly pass back errors to the callback and instead
+ * require the caller to wrap this call in order to ignore such errors and
+ * continue iteration if they want to use this function within the context of
+ * async.forEach
+ * TODO: consider embedding iframe content?
+ * TODO: consider sandboxing iframes?
+ * TODO: should entry timeout be a parameter? I want it somehow to be
+ * declared external to this function
+ * TODO: html compression? like enforce boolean attributes? see kangax lib
+ * TODO: scrubbing/html-tidy (e.g. remove images without src attribute?)
+ * TODO: if pdf content type then maybe we embed iframe with src
+ * to PDF? also, we should not even be trying to fetch pdfs? is this
+ * just a feature of fetchHTML or does it belong here?
+ * TODO: do something with responseURL?
+ */
+lucu.entry.augment = function(entry, callback) {
+  'use strict';
+  
+  const request = new XMLHttpRequest();
+  request.timeout = 20 * 1000;
+  const onError = function(event) {
+    console.warn(event);
+    callback();
+  };
+  request.ontimeout = onError;
+  request.onerror = onError;
+  request.onabort = onError;
+  
+  request.onload = function(event) {
+    const request = event.target;
+    const document = request.responseXML;
+
+    if(!document || !document.body) {
+      callback();
+      return;
+    }
+
+    // Resolve all the links in the document
+    lucu.resolver.resolveDocument(document, request.responseURL);
+
+    // Try and set the dimensions for all the images in the document
+    const images = document.body.getElementsByTagName('img');
+
+    async.forEach(images, lucu.images.fetchDimensions, function() {
+      const content = document.body.innerHTML;
+      if(content) {
+        entry.content = content;
+      } else {
+        entry.content = 'Unable to download content for this article';
+      }
+
+      callback();
+    });
+  };
+
+  request.open('GET', entry.link, true);
+  request.responseType = 'document';
+  request.send();  
+};

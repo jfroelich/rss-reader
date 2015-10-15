@@ -24,6 +24,8 @@ lucu.poll.start = function() {
   	return;
   }
 
+  // TODO: i am thinking waterfall should be deprecated
+
   const waterfall = [
     lucu.poll.checkIdle,
     lucu.poll.connect,
@@ -134,7 +136,7 @@ lucu.poll.onFindEntry = function(database, feed, entry, callback, event) {
   if(event.target.result) {
     callback();
   } else {
-    lucu.augment.updateEntryContent(entry, 
+    lucu.entry.augment(entry, 
       lucu.poll.onEntryContentUpdated.bind(null, database, feed, entry, 
         callback));
   }
