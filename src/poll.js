@@ -144,7 +144,7 @@ lucu.poll.onFindEntry = function(database, feed, entry, callback, event) {
 
 lucu.poll.onEntryContentUpdated = function(database, feed, entry, callback) {
   'use strict';
-  lucu.entry.merge(database, feed, entry, callback);
+  lucu.entry.put(database, feed, entry, callback);
 };
 
 lucu.poll.onComplete = function(error, feeds) {

@@ -27,7 +27,7 @@ lucu.entry = lucu.entry || {};
 // entries, and subscribe should just add the feed and not add any entries because
 // subscribe should be near instant. So subscribe should store the feed and then
 // enqueue a one-feed poll update.
-lucu.entry.merge = function(database, feed, entry, callback) {
+lucu.entry.put = function(database, feed, entry, callback) {
   'use strict';
 
   // TODO: is this check even necessary? Maybe this never happens?
@@ -79,15 +79,13 @@ lucu.entry.merge = function(database, feed, entry, callback) {
   // Now insert the entry. Due to the unique flag on the entry.link index,
   // the transaction expectedly fails if the entry already exists.
   const transaction = database.transaction('entry', 'readwrite');
-  const entryStore = transaction.objectStore('entry');
-  const addEntryRequest = entryStore.add(storable);
-
-  // Due to async.waterfall, we have to wrap callback to prevent it from
+  // Due to async.waterfall, we have to wrap to prevent it from
   // receiving an event parameter that async.waterfall would treat as 
   // an error argument.
-  const onAddEntry = lucu.entry.onAddEntry.bind(addEntryRequest, callback);
-  addEntryRequest.onsuccess = function() { callback(); };
-  addEntryRequest.onerror = function() { callback(); };
+  // What about binding a partial? But that rebinds which could cause issues?
+  // transaction.oncomplete = callback.bind(transaction, null);
+  transaction.oncomplete = function() { callback(); };
+  transaction.objectStore('entry').add(storable);
 };
 
 // TODO: instead of connecting, this should accept a db arg
@@ -166,12 +164,9 @@ lucu.entry.augment = function(entry, callback) {
       return;
     }
 
-    // Resolve all the links in the document
     lucu.resolver.resolveDocument(document, request.responseURL);
 
-    // Try and set the dimensions for all the images in the document
     const images = document.body.getElementsByTagName('img');
-
     async.forEach(images, lucu.images.fetchDimensions, function() {
       const content = document.body.innerHTML;
       if(content) {
@@ -179,7 +174,6 @@ lucu.entry.augment = function(entry, callback) {
       } else {
         entry.content = 'Unable to download content for this article';
       }
-
       callback();
     });
   };
