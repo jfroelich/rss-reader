@@ -96,57 +96,38 @@ lucu.entry.onAddEntry = function(callback, event) {
   callback();
 };
 
-lucu.entry.markRead = function(entryId, callback, fallback) {
+lucu.entry.markRead = function(id, callback, fallback) {
   'use strict';
-  // console.log('Marking %s as read', entryId);
-  const onConnect = lucu.entry.onMarkReadConnect.bind(null, entryId, callback);
+  // console.log('Marking %s as read', id);
   lucu.database.connect(onConnect, fallback);
-};
 
-lucu.entry.onMarkReadConnect = function(entryId, callback, error, database) {
-  'use strict';
-  const transaction = database.transaction('entry', 'readwrite');
-  transaction.oncomplete = callback;
-  const entryStore = transaction.objectStore('entry');
+  function onConnect(error, database) {
+    const transaction = database.transaction('entry', 'readwrite');
+    transaction.oncomplete = callback;
+    const entries = transaction.objectStore('entry');
 
-  // NOTE: we use a cursor here instead of entryStore.get so that
-  // we can use cursor.update
+    // NOTE: we use a cursor here instead of entryStore.get so that
+    // we can use cursor.update
 
-  const markReadRequest = entryStore.openCursor(entryId);
-  markReadRequest.onsuccess = lucu.entry.markReadUpdateEntry;
-};
-
-lucu.entry.markReadUpdateEntry = function(event) {
-  'use strict';
-  const cursor = event.target.result;
-  if(!cursor) return;
-
-  // Get the entry at the cursor. It may be possible that the entry somehow
-  // no longer exists, so escape early when that is the case.
-  const entry = cursor.value;
-  if(!entry) return;
-
-  // Suppress attempts to mark an entry as read if it is already read
-  if(!entry.hasOwnProperty('unread')) {
-  	return;
+    const request = entries.openCursor(id);
+    request.onsuccess = updateEntry;
   }
 
-  // Modify the entry
-  delete entry.unread;
-  entry.readDate = Date.now();
-  cursor.update(entry);
-
-
-  // TODO: maybe instead of doing this here, we notify some type 
-  // of 'app' observer that handles all of this? That decouples
-  // the code a bit?
-
-  // Update the unread count
-  lucu.badge.update();
-
-  // Notify observers that the entry was read
-  // TODO: is anything listening to this? maybe deprecate?
-  chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
+  function updateEntry(event) {
+    const cursor = event.target.result;
+    if(!cursor) return;
+    const entry = cursor.value;
+    if(!entry) return;
+    if(!entry.hasOwnProperty('unread')) {
+      return;
+    }
+    delete entry.unread;
+    entry.readDate = Date.now();
+    cursor.update(entry);
+    lucu.badge.update();
+    // TODO: is anything listening to this? maybe deprecate?
+    chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
+  }
 };
 
 // Returns a truthy value if the entry has a link property with a value
