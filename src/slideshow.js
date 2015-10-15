@@ -81,7 +81,10 @@ function markSlideRead(slide) {
   const entryId = parseInt(entryAttribute);
 
   // TODO: react to database error?
-  lucu.entry.markRead(entryId, null, console.error);
+
+  lucu.database.connect(function(error, database) {
+    lucu.entry.markRead(database, entryId);
+  }, console.error);
 }
 
 function appendSlides(oncomplete, isFirst) {

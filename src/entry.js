@@ -27,7 +27,6 @@ lucu.entry = lucu.entry || {};
 // entries, and subscribe should just add the feed and not add any entries because
 // subscribe should be near instant. So subscribe should store the feed and then
 // enqueue a one-feed poll update.
-
 lucu.entry.merge = function(database, feed, entry, callback) {
   'use strict';
 
@@ -87,33 +86,22 @@ lucu.entry.merge = function(database, feed, entry, callback) {
   // receiving an event parameter that async.waterfall would treat as 
   // an error argument.
   const onAddEntry = lucu.entry.onAddEntry.bind(addEntryRequest, callback);
-  addEntryRequest.onsuccess = onAddEntry;
-  addEntryRequest.onerror = onAddEntry;
+  addEntryRequest.onsuccess = function() { callback(); };
+  addEntryRequest.onerror = function() { callback(); };
 };
 
-lucu.entry.onAddEntry = function(callback, event) {
-  'use strict';
-  callback();
-};
-
-lucu.entry.markRead = function(id, callback, fallback) {
+// TODO: instead of connecting, this should accept a db arg
+// to be more consistent, and require the caller to create the 
+// connection
+lucu.entry.markRead = function(database, id) {
   'use strict';
   // console.log('Marking %s as read', id);
-  lucu.database.connect(onConnect, fallback);
 
-  function onConnect(error, database) {
-    const transaction = database.transaction('entry', 'readwrite');
-    transaction.oncomplete = callback;
-    const entries = transaction.objectStore('entry');
-
-    // NOTE: we use a cursor here instead of entryStore.get so that
-    // we can use cursor.update
-
-    const request = entries.openCursor(id);
-    request.onsuccess = updateEntry;
-  }
-
-  function updateEntry(event) {
+  const transaction = database.transaction('entry', 'readwrite');
+  transaction.oncomplete = callback;
+  const entries = transaction.objectStore('entry');
+  const request = entries.openCursor(id);
+  request.onsuccess = function(event) {
     const cursor = event.target.result;
     if(!cursor) return;
     const entry = cursor.value;
@@ -125,9 +113,8 @@ lucu.entry.markRead = function(id, callback, fallback) {
     entry.readDate = Date.now();
     cursor.update(entry);
     lucu.badge.update();
-    // TODO: is anything listening to this? maybe deprecate?
-    chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
-  }
+    //chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
+  };
 };
 
 // Returns a truthy value if the entry has a link property with a value
