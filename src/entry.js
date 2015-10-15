@@ -96,7 +96,7 @@ lucu.entry.markRead = function(database, id) {
   // console.log('Marking %s as read', id);
 
   const transaction = database.transaction('entry', 'readwrite');
-  transaction.oncomplete = callback;
+  //transaction.oncomplete = callback;
   const entries = transaction.objectStore('entry');
   const request = entries.openCursor(id);
   request.onsuccess = function(event) {
@@ -121,20 +121,24 @@ lucu.entry.hasLink = function(entry) {
   return entry.link;
 };
 
+// Searches for entry.link in the link index
+lucu.entry.findByLink = function(database, entry, callback) {
+  'use strict';
+  const transaction = database.transaction('entry');
+  const entries = transaction.objectStore('entry');
+  const links = entries.index('link');
+  const request = links.get(entry.link);
+  request.onsuccess = callback;
+};
+
 /**
  * Fetch the html at entry.link and use it to replace entry.content
  *
  * TODO: I'd prefer this function pass back any errors to the callback. This
  * would require the caller that wants to not break from async.forEach early
  * wrap the call.
- * TODO: I'd prefer this properly pass back errors to the callback and instead
- * require the caller to wrap this call in order to ignore such errors and
- * continue iteration if they want to use this function within the context of
- * async.forEach
- * TODO: consider embedding iframe content?
- * TODO: consider sandboxing iframes?
- * TODO: should entry timeout be a parameter? I want it somehow to be
- * declared external to this function
+ * TODO: consider embedding/sandboxing iframes?
+ * TODO: should timeout be a parameter?
  * TODO: html compression? like enforce boolean attributes? see kangax lib
  * TODO: scrubbing/html-tidy (e.g. remove images without src attribute?)
  * TODO: if pdf content type then maybe we embed iframe with src

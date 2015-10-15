@@ -38,70 +38,55 @@ lucu.poll.start = function() {
 
 lucu.poll.checkIdle = function(callback) {
   'use strict';
-  lucu.idle.queryState(lucu.poll.onCheckIdle.bind(null, callback));
-};
+  lucu.idle.queryState(onCheck);
 
-lucu.poll.onCheckIdle = function(callback, state) {
-  'use strict';
-  if(!state || state === 'locked' || state === 'idle') {
-    callback();
-  } else {
-    callback('Polling cancelled as not idle');
+  function onCheck(state) {
+    if(!state || state === 'locked' || state === 'idle') {
+      callback();
+    } else {
+      callback('Polling cancelled as not idle');
+    }
   }
 };
 
-// TODO: maybe rename to be clearer?
 lucu.poll.connect = function(callback) {
   'use strict';
-  const onConnect = lucu.poll.onConnect.bind(null, callback);
-  lucu.database.connect(onConnect, callback);
-};
-
-lucu.poll.onConnect = function(callback, error, database) {
-  'use strict';
-  callback(null, database);
+  lucu.database.connect(function(error, database) {
+    callback(null, database);
+  }, callback);
 };
 
 lucu.poll.selectFeeds = function(database, callback) {
   'use strict';
-  lucu.feed.selectFeeds(database, lucu.poll.onSelectFeeds.bind(null,
-    database, callback));
-};
+  lucu.feed.selectFeeds(database, onSelect);
 
-lucu.poll.onSelectFeeds = function(database, callback, feeds) {
-  'use strict';
-  callback(null, database, feeds);
+  function onSelect(feeds) {
+    callback(null, database, feeds);
+  }
 };
 
 lucu.poll.fetchFeeds = function(database, feeds, callback) {
   'use strict';
-
-  async.forEach(feeds, lucu.poll.fetchFeed.bind(null, database), 
-    lucu.poll.onFetchFeedsComplete.bind(null, callback, feeds));
-};
-
-lucu.poll.onFetchFeedsComplete = function(callback, feeds) {
-  'use strict';
-  callback(null, feeds);
+  async.forEach(feeds, lucu.poll.fetchFeed.bind(null, database), onComplete);
+  function onComplete() {
+    callback(null, feeds);
+  }
 };
 
 lucu.poll.fetchFeed = function(database, feed, callback) {
   'use strict';
-  const onFetch = lucu.poll.onFetchFeed.bind(null, database, feed, callback);
-  const onError = lucu.poll.onFetchError.bind(null, callback);
+  
+  function onFetch(remoteFeed) {
+    lucu.feed.put(database, feed, remoteFeed, lucu.poll.onPutFeed.bind(
+      null, database, feed, remoteFeed, callback));
+  }
+
+  function onError(event) {
+    callback();
+  }
+  
   const timeout = 10 * 1000; // in millis
   lucu.fetch.fetchFeed(feed.url, onFetch, onError, timeout);
-};
-
-lucu.poll.onFetchError = function(callback) {
-  'use strict';
-  callback();
-};
-
-lucu.poll.onFetchFeed = function(database, feed, callback, remoteFeed) {
-  'use strict';
-  lucu.feed.put(database, feed, remoteFeed, lucu.poll.onPutFeed.bind(
-    null, database, feed, remoteFeed, callback));
 };
 
 lucu.poll.onPutFeed = function(database, feed, remoteFeed, callback, 
@@ -111,40 +96,22 @@ lucu.poll.onPutFeed = function(database, feed, remoteFeed, callback,
     database, feed), callback);
 };
 
-// TODO: create and use lucu.entry.findByLink instead
-
 lucu.poll.findEntryByLink = function(database, feed, entry, callback) {
   'use strict';
-  const transaction = database.transaction('entry');
-  const entryStore = transaction.objectStore('entry');
-  const linkIndex = entryStore.index('link');
-  const request = linkIndex.get(entry.link);
-  request.onsuccess = lucu.poll.onFindEntry.bind(request, database, feed, 
-    entry, callback);
-  request.onerror = lucu.poll.onFindEntryError.bind(request, callback);
-};
 
-lucu.poll.onFindEntryError = function(callback, event) {
-  'use strict';
-  console.debug(event);
-  callback();
-};
+  lucu.entry.findByLink(database, entry, onFind);
 
-lucu.poll.onFindEntry = function(database, feed, entry, callback, event) {
-  'use strict';
-  
-  if(event.target.result) {
-    callback();
-  } else {
-    lucu.entry.augment(entry, 
-      lucu.poll.onEntryContentUpdated.bind(null, database, feed, entry, 
-        callback));
+  function onFind(event) {
+    if(event.target.result) {
+      callback();
+    } else {
+      lucu.entry.augment(entry, onAugment);
+    }
   }
-};
 
-lucu.poll.onEntryContentUpdated = function(database, feed, entry, callback) {
-  'use strict';
-  lucu.entry.put(database, feed, entry, callback);
+  function onAugment() {
+    lucu.entry.put(database, feed, entry, callback);
+  }
 };
 
 lucu.poll.onComplete = function(error, feeds) {
