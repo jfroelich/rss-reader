@@ -11,34 +11,25 @@ lucu.notifications = {};
 
 lucu.notifications.show = function(message) {
   'use strict';
-  const permissionQuery = {permissions: ['notifications']};
-  const sip = lucu.notifications.showIfPermitted.bind(null, message);
-  chrome.permissions.contains(permissionQuery, sip);
-};
 
-lucu.notifications.DEFAULT_TITLE = chrome.runtime.getManifest().name;
-lucu.notifications.DEFAULT_ICON = '/media/rss_icon_trans.gif';
+  const DEFAULT_TITLE = chrome.runtime.getManifest().name;
+  const DEFAULT_ICON = '/media/rss_icon_trans.gif';
+  chrome.permissions.contains({permissions: ['notifications']}, 
+    hasPermission);
 
-// helper for show
-lucu.notifications.showIfPermitted = function(message, permitted) {
-  'use strict';
+  function hasPermission(permitted) {
+    if(!permitted) return;
 
-  if(!permitted) return;
+    const notification = {
+      type: 'basic',
+      title: DEFAULT_TITLE,
+      iconUrl: DEFAULT_ICON,
+      message: message
+    };
 
-  // For now we are just using a very simple default
-  // notification. This could be improved in the future
-  // for example by enabling clickable notifications
-  // that do things like 
+    const appTitle = 'lucubrate';
+    const callback = function(){};
 
-  const notification = {
-    type: 'basic',
-    title: lucu.notifications.DEFAULT_TITLE,
-    iconUrl: lucu.notifications.DEFAULT_ICON,
-    message: message
-  };
-
-  const appTitle = 'lucubrate';
-  const callback = function(){};
-
-  chrome.notifications.create(appTitle, notification, callback);
+    chrome.notifications.create(appTitle, notification, callback);
+  }
 };

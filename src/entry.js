@@ -175,7 +175,7 @@ lucu.entry.augment = function(entry, callback) {
       return;
     }
 
-    lucu.resolver.resolveDocument(document, request.responseURL);
+    lucu.url.resolveDocument(document, request.responseURL);
 
     const images = document.body.getElementsByTagName('img');
     async.forEach(images, lucu.images.fetchDimensions, function() {

@@ -46,7 +46,6 @@ lucu.sanitize.sanitizeDocument = function(document) {
   return results;
 };
 
-
 /**
  * Rudimentary replacement of alternative forms of whitespace with normal
  * space character. This is helpful when trimming or getting text length
@@ -102,7 +101,6 @@ lucu.sanitize.removeEmptyElements = function(document) {
     return;
   }
 
-
   const filter = Array.prototype.filter;
 
   // TODO: there is a specific edge case not being handled
@@ -145,8 +143,6 @@ lucu.sanitize.removeEmptyElements = function(document) {
   // TODO: just add children that should be removed to the stack insead of
   // removing them and adding their parents to the stack.
   // Remove all the empty children and shove all the parents on the stack
-  
-  // TODO: separate this out as an separate function
 
   const parents = emptyLikeElements.map(function (element) {
     const parentElement = element.parentElement;
@@ -155,8 +151,6 @@ lucu.sanitize.removeEmptyElements = function(document) {
   });
 
   // Avoid removing the body element
-
-
   const stack = parents.filter(
     lucu.sanitize.isNotBodyElement.bind(null, document));
 
@@ -226,7 +220,6 @@ lucu.sanitize.removeAttributes = function(allowedAttributes, element) {
   }
 
   const attributes = element.attributes;
-
   if(!attributes) {
     console.debug('element.attributes did not return a collection, %o', element);
     return;
@@ -260,17 +253,14 @@ lucu.sanitize.removeDescendantAttributes = function(allowedAttributes,
 
 // TODO: this should be a Set
 lucu.sanitize.BLACKLISTED_ELEMENTS = [
-
   // Removing head first avoids the need to remove several other tags
   'head',
-
   'applet', 'base', 'basefont', 'bgsound', 'button', 'command',
   'datalist', 'dialog', 'embed', 'fieldset', 'frameset',
   'html', 'iframe', 'input', 'isindex', 'math', 'link', 'menu',
   'menuitem',
   'meta', 'object','optgroup',  'output', 'param', 'progress',
   'script', 'spacer', 'style', 'textarea', 'title', 'xmp',
-
   // Remove after 'select' to reduce operations
   'select',
   'option'
@@ -573,7 +563,6 @@ lucu.sanitize.unwrapDescendants = function(rootElement) {
   });
 
   nominalAnchors.forEach(lucu.dom.unwrap);
-
 };
 
 // Unwrap single item lists. For now just ul

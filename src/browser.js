@@ -4,6 +4,33 @@
 
 var lucu = lucu || {};
 
+// TODO: use lucu.browser ns
+
+lucu.idle = {};
+
+// TODO: inactivity interval should maybe be a parameter or some
+// external setting
+
+// Idle if greater than or equal to this many seconds
+lucu.idle.INACTIVITY_INTERVAL = 60 * 5;
+
+// Gets the idle state, which is undefined when lacking permission
+// See chrome.idle.queryState for more info.
+lucu.idle.queryState = function(callback) {
+  'use strict';
+  chrome.permissions.contains({permissions: ['idle']}, onCheck);
+
+  function onCheck(permitted) {
+	if(!permitted) {
+	  callback();
+	  return;
+	}
+
+	chrome.idle.queryState(lucu.idle.INACTIVITY_INTERVAL, callback);
+  }
+};
+
+
 lucu.badge = {};
 
 // Sets the badge text to a count of unread entries
@@ -63,3 +90,12 @@ lucu.badge.onClick = function(event) {
     chrome.tabs.create({url: VIEW_URL});
   }
 };
+
+// TODO: rename, use ns
+
+lucu.isOffline = function() {
+  'use strict';
+  return navigator && navigator.hasOwnProperty('onLine') && 
+  	!navigator.onLine;
+};
+

@@ -77,7 +77,7 @@ lucu.fetch.onRequestLoad = function(url, callback, fallback, event) {
     feed.entries = feed.entries.filter(lucu.entry.hasLink);
     // Rewrite the links of entries before passing along
     feed.entries.forEach(function(entry) {
-      entry.link = lucu.rewriteURL(entry.link);
+      entry.link = lucu.url.rewrite(entry.link);
     });
 
     // Remove duplicate entries
