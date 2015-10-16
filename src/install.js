@@ -10,8 +10,11 @@ lucu.install = {};
 // review the API
 
 lucu.install.onInstall = function(event) {
-  function noop() {}
-  lucu.database.connect(noop, console.error);
+  'use strict';
+  
+  lucu.database.connect(onConnect, console.error);
+
+  function onConnect() {}
 
   // maybe install should also set the badge text to '?'
   //lucu.badge.update();

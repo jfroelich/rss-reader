@@ -9,14 +9,18 @@ lucu.feed = lucu.feed || {};
 // Find a feed by url, ignoring protocol
 lucu.feed.findByURL = function(url, callback, fallback) {
   'use strict';
-  lucu.database.connect(function(error, database) {
+  lucu.database.connect(onConnect, fallback);
+
+  function onConnect(error, database) {
     const transaction = database.transaction('feed');
     const urls = transaction.objectStore('feed').index('schemeless');
     const request = urls.get(lucu.url.getSchemeless(url));
-    request.onsuccess = function(event) {
-      callback(event.target.result);
-    };
-  }, fallback);
+    request.onsuccess = onGetURL;
+  }
+
+  function onGetURL(event) {
+    callback(event.target.result);
+  }
 };
 
 // Find a feed by id

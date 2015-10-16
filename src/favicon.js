@@ -29,9 +29,12 @@ lucu.favicon = {};
  * @return {String} the url of the favicon
  */
 lucu.favicon.getURL = function(url) {
-  return url ?
-    'http://www.google.com/s2/favicons?domain_url=' + encodeURIComponent(url) :
-    lucu.favicon.DEFAULT_URL;
-};
+  'use strict';
 
-lucu.favicon.DEFAULT_URL  = '/media/rss_icon_trans.gif';
+  if(!url) {
+  	return '/media/rss_icon_trans.gif';
+  }
+
+  return 'http://www.google.com/s2/favicons?domain_url=' + 
+  	encodeURIComponent(url);
+};

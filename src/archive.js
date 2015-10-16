@@ -19,22 +19,10 @@ lucu.archive = {};
 lucu.archive.start = function() {
   'use strict';
   console.debug('Archiving entries');
-
-  const waterfall = [
-    lucu.archive.connect,
-    lucu.archive.selectEntries
-  ];
-
-  async.waterfall(waterfall, lucu.archive.onComplete);
+  lucu.database.connect(lucu.archive.selectEntries, lucu.archive.onComplete);
 };
 
-
-lucu.archive.connect = function(callback) {
-  'use strict';
-  lucu.database.connect(callback, callback);
-};
-
-lucu.archive.selectEntries = function(database, callback) {
+lucu.archive.selectEntries = function(error, database) {
   'use strict';
 
   // We want to select only not-archived articles.
@@ -61,7 +49,7 @@ lucu.archive.selectEntries = function(database, callback) {
   };
 
   request.onsuccess = lucu.archive.handleEntry.bind(request, journal);
-  transaction.oncomplete = callback.bind(null, journal);
+  transaction.oncomplete = lucu.archive.onComplete.bind(null, journal);
 };
 
 lucu.archive.ENTRY_LIMIT = 1000;
@@ -70,8 +58,6 @@ lucu.archive.handleEntry = function(journal, event) {
   'use strict';
 
   const cursor = event.target.result;
-  
-  // This eventually causes the transaction to complete
   if(!cursor) {
     return;
   }
@@ -79,7 +65,6 @@ lucu.archive.handleEntry = function(journal, event) {
   const entry = cursor.value;
   const created = entry.created;
 
-  // Allow for partially corrupted storage
   if(!created) {
     console.debug('Unknown date created for entry %s', JSON.stringify(entry));
     journal.processed++;
@@ -88,7 +73,7 @@ lucu.archive.handleEntry = function(journal, event) {
   }
 
   if(entry.archiveDate) {
-    console.warn('Not re-archiving entry %s', JSON.stringify(entry));
+    // console.warn('Not re-archiving entry %s', JSON.stringify(entry));
     journal.processed++;
     cursor.continue();
     return;

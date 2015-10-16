@@ -23,7 +23,13 @@ lucu.fetch = {};
 lucu.fetch.fetchFeed = function(url, onComplete, onError, timeout) {
   'use strict';
 
-  onError = onError || lucu.fetch.onFetchErrorDefault;
+  onError = onError || defaultOnError;
+
+  function defaultOnError(event) {
+    console.debug(event);
+    onError(event);
+  }
+
 
   if(lucu.isOffline()) {
     onError({type: 'offline', url: url});
@@ -32,10 +38,15 @@ lucu.fetch.fetchFeed = function(url, onComplete, onError, timeout) {
 
   const request = new XMLHttpRequest();
   request.timeout = timeout;
-  request.onerror = lucu.fetch.onRequestError.bind(request, onError);
+  request.onerror = function(event) {
+    console.debug('fetch feed error');
+    console.dir(event);
+    onError(event);
+  };
   request.ontimeout = onError;
   request.onabort = onError;
-  request.onload = lucu.fetch.onRequestLoad.bind(request, url, onComplete, onError);
+  request.onload = lucu.fetch.onRequestLoad.bind(request, url, onComplete, 
+    onError);
   request.open('GET', url, true);
   request.overrideMimeType('application/xml');
   request.send();
@@ -52,15 +63,11 @@ lucu.fetch.onRequestLoad = function(url, callback, fallback, event) {
     return;
   }
 
-
   try {
-    const feed = lucu.deserializeFeed(document);
+    const feed = lucu.feed.deserialize(document);
     
-    // Set the url property
-    // TODO: update dependencies regarding setting it here
     feed.url = url;
 
-    // Add the date fetched here
     feed.fetched = Date.now();
 
     // NOTE: feed is const and therefore block scoped, therefore
@@ -69,12 +76,20 @@ lucu.fetch.onRequestLoad = function(url, callback, fallback, event) {
     // Remove any entries without links as those cannot be stored
     feed.entries = feed.entries.filter(lucu.entry.hasLink);
     // Rewrite the links of entries before passing along
-    feed.entries = feed.entries.map(lucu.fetch.rewriteEntryLink);
+    feed.entries.forEach(function(entry) {
+      entry.link = lucu.rewriteURL(entry.link);
+    });
 
     // Remove duplicate entries
-    const seenEntries = new Set();
-    const isDistinct = lucu.fetch.isDistinctFeedEntry.bind(null, seenEntries);
-    feed.entries = feed.entries.filter(isDistinct);
+    const seen = new Set();
+    feed.entries = feed.entries.filter(function(entry) {
+      if(seen.has(entry.link)) {
+        return false;
+      }
+
+      seen.add(entry.link);
+      return true;
+    });
 
     callback(feed);
   } catch(e) {
@@ -82,32 +97,4 @@ lucu.fetch.onRequestLoad = function(url, callback, fallback, event) {
     fallback(error);
     return;
   }  
-};
-
-lucu.fetch.rewriteEntryLink = function(entry) {
-  'use strict';
-  entry.link = lucu.rewriteURL(entry.link);
-  return entry;
-};
-
-lucu.fetch.isDistinctFeedEntry = function(seenEntries, entry) {
-  'use strict';
-  if(seenEntries.has(entry.link)) {
-    return false;
-  }
-
-  seenEntries.add(entry.link);
-  return true;  
-};
-
-lucu.fetch.onRequestError = function(callback, event) {
-  'use strict';
-  console.debug('fetch feed error');
-  console.dir(event);
-  callback(event);  
-};
-
-lucu.fetch.onFetchErrorDefault = function(errorEvent) {
-  'use strict';
-  console.dir(errorEvent);
 };

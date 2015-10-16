@@ -42,23 +42,18 @@ lucu.images.fetchDimensions = function(image, callback) {
 
   const document = window.document;
   const proxy = document.createElement('img');
-  proxy.onload = lucu.images.fetchDimensionsOnLoad.bind(
-    proxy, image, callback);
-  proxy.onerror = lucu.images.fetchDimensionsOnError.bind(
-    proxy, src, callback);
+  proxy.onload = function(event) {
+    const proxy = event.target;
+    image.width = proxy.width;
+    image.height = proxy.height;
+    callback();
+  };
+  
+  proxy.onerror = function(event) {
+    // console.debug('Failed to fetch %s %o', src, event.target);
+    callback();
+  };
   proxy.src = src;
-};
-
-lucu.images.fetchDimensionsOnLoad = function(image, callback, event) {
-  const proxy = event.target;
-  image.width = proxy.width;
-  image.height = proxy.height;
-  callback();
-};
-
-lucu.images.fetchDimensionsOnError = function(src, callback, event) {
-  // console.debug('Failed to fetch %s %o', src, event.target);
-  callback();  
 };
 
 // TODO: support leading whitespace?

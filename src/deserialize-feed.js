@@ -4,6 +4,8 @@
 
 var lucu = lucu || {};
 
+lucu.feed = lucu.feed || {};
+
 /**
  * Deserializes an xml document representing a feed into a feed object
  * TODO: some concerns regarding how querySelector probes all descendants.
@@ -16,7 +18,7 @@ var lucu = lucu || {};
  * TODO: support Apple iTunes format
  * TODO: support embedded media format (??)
  */
-lucu.deserializeFeed = function(document) {
+lucu.feed.deserialize = function(document) {
   'use strict';
   
   const rootElement = document.documentElement;
@@ -25,30 +27,36 @@ lucu.deserializeFeed = function(document) {
   }
   
   if(rootElement.matches('feed')) {
-    return lucu.deserializeAtomFeed(rootElement);
+    return lucu.feed.deserializeAtomFeed(rootElement);
   }
   
   if(rootElement.matches('rss, rdf')) {
-    return lucu.deserializeRSSFeed(rootElement);
+    return lucu.feed.deserializeRSSFeed(rootElement);
   }
 
-  throw new TypeError('lucu.deserializeFeed: Unsupported document element ' + 
-    rootElement.localName);
+  throw new TypeError('Unsupported document element ' + rootElement.localName);
 };
 
-lucu.selectTrimmedTextContent = function(parent, selector) {
+lucu.feed.selectTrimmedTextContent = function(parent, selector) {
   'use strict';
+  
   const element = parent.querySelector(selector);
-  if(!element) return;
+  if(!element) {
+    return;
+  }
+  
   const text = element.textContent;
-  if(!text) return;
+  if(!text) {
+    return;
+  }
+
   return text.trim();
 };
 
-lucu.deserializeAtomFeed = function(root) {
+lucu.feed.deserializeAtomFeed = function(root) {
   'use strict';
 
-  const getText = lucu.selectTrimmedTextContent;
+  const getText = lucu.feed.selectTrimmedTextContent;
   const result = {};
 
   const title = getText(root, 'title');
@@ -79,29 +87,38 @@ lucu.deserializeAtomFeed = function(root) {
   }
 
   const entries = root.querySelectorAll('entry');
-  result.entries = Array.prototype.map.call(entries, lucu.deserializeAtomEntry);
+  result.entries = Array.prototype.map.call(entries, 
+    lucu.feed.deserializeAtomEntry);
 
   return result;
 };
 
-lucu.deserializeAtomEntry = function(entry) {
+lucu.feed.deserializeAtomEntry = function(entry) {
   'use strict';
-  const getText = lucu.selectTrimmedTextContent;
+  const getText = lucu.feed.selectTrimmedTextContent;
   const result = {};
 
   // TODO: only define properties if truthy
 
   result.title = getText(entry, 'title');
   result.author = lucu.string.stripTags(getText(entry, 'author name'), ' ');
-  var link = entry.querySelector('link[rel="alternate"]') ||
-    entry.querySelector('link[rel="self"]') ||
-    entry.querySelector('link[href]');
-  if(link) link = link.getAttribute('href');
-  if(link) result.link = link.trim();
-  var date = entry.querySelector('published') ||
-    entry.querySelector('updated');
-  if(date) date = date.textContent;
-  if(date) result.pubdate = date.trim();
+  var link = entry.querySelector('link[rel="alternate"]');
+  link = link || entry.querySelector('link[rel="self"]');
+  link = link || entry.querySelector('link[href]');
+  if(link) {
+    link = link.getAttribute('href');
+  }
+  if(link) {
+    result.link = link.trim();
+  }
+  var date = entry.querySelector('published');
+  date = date || entry.querySelector('updated');
+  if(date) {
+    date = date.textContent;
+  }
+  if(date) {
+    result.pubdate = date.trim();
+  }
 
   // Special handling for atom entry content. For some reason this works
   // where normal content.textContent does not. I think the issue pertains to
@@ -109,19 +126,19 @@ lucu.deserializeAtomEntry = function(entry) {
   const content = entry.querySelector('content');
   const nodes = content ? content.childNodes : [];
   result.content = Array.prototype.map.call(nodes, 
-    lucu.getAtomNodeTextContent).join('').trim();
+    lucu.feed.getAtomNodeTextContent).join('').trim();
   return result;
 };
 
-lucu.getAtomNodeTextContent = function(node) {
+lucu.feed.getAtomNodeTextContent = function(node) {
   return node.nodeType == Node.ELEMENT_NODE ?
     node.innerHTML : node.textContent;
 };
 
-lucu.deserializeRSSFeed = function(root) {
+lucu.feed.deserializeRSSFeed = function(root) {
   'use strict';
   const isRDF = root.matches('rdf');
-  const getText = lucu.selectTrimmedTextContent;
+  const getText = lucu.feed.selectTrimmedTextContent;
   const result = {};
   const channel = root.querySelector('channel');
   if(!channel) {
@@ -141,27 +158,43 @@ lucu.deserializeRSSFeed = function(root) {
   const date = getText(channel, 'pubdate') || 
     getText(channel, 'lastBuildDate') ||
     getText(channel, 'date');
-  if(date) result.date = date;
+  if(date) {
+    result.date = date;
+  }
   const entriesParent = isRDF ? root : channel;
   const entries = entriesParent.querySelectorAll('item');
-  const map = Array.prototype.map;
-  result.entries = map.call(entries, lucu.deserializeRSSEntry);
+  result.entries = Array.prototype.map.call(entries, 
+    lucu.feed.deserializeRSSEntry);
   return result;
 };
 
-lucu.deserializeRSSEntry = function(entry) {
+lucu.feed.deserializeRSSEntry = function(entry) {
   'use strict';
-  const getText = lucu.selectTrimmedTextContent;
+  const getText = lucu.feed.selectTrimmedTextContent;
   const result = {};
   result.title = getText(entry, 'title');
+  
   const link = getText(entry, 'origLink') || getText(entry, 'link');
-  if(link) result.link = link;
+  if(link) {
+    result.link = link;
+  }
+  
   const author = getText(entry, 'creator') || getText(entry, 'publisher');
-  if(author) result.author = lucu.string.stripTags(author, ' ');
+  if(author) {
+    result.author = lucu.string.stripTags(author, ' ');
+  }
+  
   const date = getText(entry, 'pubDate') || getText(entry, 'date');
-  if(date) result.pubdate = date;
-  const content = getText(entry, 'encoded') || getText(entry, 'description') ||
+  if(date) {
+    result.pubdate = date;
+  }
+  
+  const content = getText(entry, 'encoded') || 
+    getText(entry, 'description') ||
     getText(entry, 'summary');
-  if(content) result.content = content;
+  if(content) {
+    result.content = content;
+  }
+  
   return result;
 };

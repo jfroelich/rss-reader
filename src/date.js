@@ -15,8 +15,9 @@ lucu.date.isValid = function(date) {
 lucu.date.format = function(date, sep) {
   'use strict';
  
-  if(!date)
+  if(!date) {
     return '';
+  }
   const parts = [];
   parts.push(date.getMonth() + 1);
   parts.push(date.getDate());

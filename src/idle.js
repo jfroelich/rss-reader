@@ -16,17 +16,14 @@ lucu.idle.INACTIVITY_INTERVAL = 60 * 5;
 // See chrome.idle.queryState for more info.
 lucu.idle.queryState = function(callback) {
   'use strict';
-  chrome.permissions.contains({permissions: ['idle']}, 
-  	lucu.idle.onCheckPermission.bind(null, callback));
-};
+  chrome.permissions.contains({permissions: ['idle']}, onCheck);
 
-lucu.idle.onCheckPermission = function(callback, permitted) {
-  'use strict';
+  function onCheck(permitted) {
+	if(!permitted) {
+	  callback();
+	  return;
+	}
 
-  if(!permitted) {
-  	callback();
-  	return;
+	chrome.idle.queryState(lucu.idle.INACTIVITY_INTERVAL, callback);
   }
-
-  chrome.idle.queryState(lucu.idle.INACTIVITY_INTERVAL, callback);
 };

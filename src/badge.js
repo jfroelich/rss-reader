@@ -10,29 +10,22 @@ lucu.badge = {};
 lucu.badge.update = function() {
   'use strict';
   // console.debug('Updating badge');
-  lucu.database.connect(lucu.badge.onConnect, console.error);
+  lucu.database.connect(onConnect, console.error);
+
+  function onConnect(error, database) {
+    const transaction = database.transaction('entry');
+    const entries = transaction.objectStore('entry');
+    const unread = entries.index('unread');
+    const request = unread.count();
+    request.onsuccess = setText;
+  }
+
+  function setText(event) {
+    const count = event.target.result || 0;
+    const badgeText = {text: count.toString()};
+    chrome.browserAction.setBadgeText(badgeText);
+  }
 };
-
-lucu.badge.onConnect = function(error, database) {
-  'use strict';
-  const transaction = database.transaction('entry');
-  const entryStore = transaction.objectStore('entry');
-  const unreadIndex = entryStore.index('unread');
-  const countRequest = unreadIndex.count();
-  countRequest.onsuccess = lucu.badge.setText;
-};
-
-lucu.badge.setText = function(event) {
-  'use strict';
-  const count = event.target.result || 0;
-  const badgeText = {text: count.toString()};
-  chrome.browserAction.setBadgeText(badgeText);
-};
-
-lucu.badge.VIEW_URL = chrome.extension.getURL('slides.html');
-
-// TODO: is the trailing slash necessary?
-lucu.badge.NEW_TAB_URL = 'chrome://newtab/';
 
 /**
  * Called when the extension's icon button is clicked in browser's toolbar.
@@ -47,36 +40,26 @@ lucu.badge.NEW_TAB_URL = 'chrome://newtab/';
 lucu.badge.onClick = function(event) {
   'use strict';
   // console.debug('Clicked badge');
-  const query = {'url': lucu.badge.VIEW_URL};
-  chrome.tabs.query(query, lucu.badge.onQueryView);
-};
+  const VIEW_URL = chrome.extension.getURL('slides.html');
+  // TODO: is the trailing slash necessary?
+  const NEW_TAB_URL = 'chrome://newtab/';
+  chrome.tabs.query({'url': VIEW_URL}, onQueryView);
 
-// onBadgeClick helper
-lucu.badge.onQueryView = function(tabs) {
-  'use strict';
-  if(tabs.length) {
-    // console.debug('Switching to existing tab');
-    // Switch to an existing tab
-    chrome.tabs.update(tabs[0].id, {active: true});
-    return;
+  function onQueryView(tabs) {
+    if(tabs.length) {
+      chrome.tabs.update(tabs[0].id, {active: true});
+      return;
+    }
+
+    chrome.tabs.query({url: NEW_TAB_URL}, onQueryNewTab);
   }
 
-  const query = {url: lucu.badge.NEW_TAB_URL};
-  chrome.tabs.query(query, lucu.badge.onQueryNewTab);
-};
+  function onQueryNewTab(tabs) {
+    if(tabs.length) {
+      chrome.tabs.update(tabs[0].id, {active:true, url: VIEW_URL});
+      return;
+    }
 
-// onBadgeClick helper
-lucu.badge.onQueryNewTab = function(tabs) {
-  'use strict';
-  if(tabs.length) {
-    // console.debug('Replacing New Tab');
-    // Switch to and replace the New Tab tab
-    chrome.tabs.update(tabs[0].id, 
-      {active:true, url: lucu.badge.VIEW_URL});
-    return;
+    chrome.tabs.create({url: VIEW_URL});
   }
-
-  // console.debug('Opening a new tab');
-  // Create and switch to a new tab
-  chrome.tabs.create({url: lucu.badge.VIEW_URL});
 };

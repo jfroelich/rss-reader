@@ -101,12 +101,19 @@ lucu.entry.markRead = function(database, id) {
   const request = entries.openCursor(id);
   request.onsuccess = function(event) {
     const cursor = event.target.result;
-    if(!cursor) return;
+    if(!cursor) {
+      return;
+    }
+    
     const entry = cursor.value;
-    if(!entry) return;
+    if(!entry) {
+      return;
+    }
+    
     if(!entry.hasOwnProperty('unread')) {
       return;
     }
+    
     delete entry.unread;
     entry.readDate = Date.now();
     cursor.update(entry);

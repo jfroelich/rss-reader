@@ -21,16 +21,12 @@ lucu.database.connect = function(callback, fallback) {
   'use strict';
   const request = indexedDB.open(lucu.database.NAME, lucu.database.VERSION);
   request.onupgradeneeded = lucu.database.upgrade;
-  request.onsuccess = lucu.database.onConnect.bind(null, callback);
+  request.onsuccess = function(event) {
+    callback(null, event.target.result);
+  };
   request.onerror = fallback;
   request.onblocked = fallback;
   return request;
-};
-
-lucu.database.onConnect = function(callback, event) {
-  'use strict';
-  // Pass back null for simple async.waterfall integration
-  callback(null, event.target.result);
 };
 
 lucu.database.upgrade = function(event) {
@@ -105,16 +101,17 @@ lucu.database.upgrade = function(event) {
 
 lucu.database.clearEntries = function() {
   'use strict';
-  lucu.database.connect(lucu.database.onClearEntriesConnect, console.error);
-};
+  lucu.database.connect(onConnect, console.error);
 
-lucu.database.onClearEntriesConnect = function(error, database) {
-  'use strict';
-  const transaction = database.transaction('entry', 'readwrite');
-  const entryStore = transaction.objectStore('entry');
-  const clearRequest = entryStore.clear();
-  clearRequest.onerror = console.debug;
-  clearRequest.onsuccess = function(event) {
+  function onConnect(error, database) {
+    const transaction = database.transaction('entry', 'readwrite');
+    const entries = transaction.objectStore('entry');
+    const clearRequest = entries.clear();
+    clearRequest.onerror = console.debug;
+    clearRequest.onsuccess = onSuccess;
+  }
+
+  function onSuccess(event) {
     console.debug('Cleared entry object store');
-  };
+  }
 };

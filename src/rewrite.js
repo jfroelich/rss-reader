@@ -4,6 +4,8 @@
 
 var lucu = lucu || {};
 
+// TODO: maybe move to url.js and rename to lucu.url.rewrite
+
 /**
  * Returns a rewritten url, or the original url if no rewriting rules were
  * applicable.
