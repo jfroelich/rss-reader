@@ -176,7 +176,7 @@ function optionsAppendFeed(feed, insertedSort) {
   item.setAttribute('title', lucu.string.stripTags(feed.description) || '');
   item.onclick = onFeedListItemClick;
   var favIconElement = document.createElement('img');
-  favIconElement.src = lucu.favicon.getURL(feed.link);
+  favIconElement.src = lucu.url.getFavIcon(feed.link);
   if(feed.title) favIconElement.title = feed.title;
   item.appendChild(favIconElement);
 
@@ -297,7 +297,7 @@ function showOrSkipSubscriptionPreview(url) {
   }
 
   // TODO: check if already subscribed before preview?
-  lucu.fetch.fetchFeed(url, onFetchSuccess, onerror, timeout);
+  lucu.feed.fetch(url, onFetchSuccess, onerror, timeout);
 }
 
 function hideSubscriptionPreview() {
@@ -331,7 +331,7 @@ function startSubscription(url) {
     // across these calls
     // If we are not online, immediately add the feed. Otherwise,
     // grab the feed's information and then add it
-    if(lucu.isOffline()) {
+    if(lucu.browser.isOffline()) {
       lucu.database.connect(function(error, database) {
         lucu.feed.put(database, null, {url: url}, onSubscriptionSuccessful);
       }, console.error);
@@ -339,7 +339,7 @@ function startSubscription(url) {
     }
 
     // We are online, and the feed does not already exist. Fetch it
-    lucu.fetch.fetchFeed(url, onFetchComplete, onFetchError, 10 * 1000);
+    lucu.feed.fetch(url, onFetchComplete, onFetchError, 10 * 1000);
 
   }, console.error);
 
@@ -381,7 +381,7 @@ function populateFeedDetailsSection(feedId) {
 
   lucu.feed.findById(feedId, function(feed) {
     document.getElementById('details-title').textContent = feed.title || 'Untitled';
-    const favIconURL = lucu.favicon.getURL(feed.url);
+    const favIconURL = lucu.url.getFavIcon(feed.url);
     document.getElementById('details-favicon').setAttribute('src', favIconURL);
     document.getElementById('details-feed-description').textContent =
       lucu.string.stripTags(feed.description) || 'No description';
@@ -504,7 +504,7 @@ function onDiscoverFeedsComplete(query, results) {
     item.appendChild(button);
 
     const image = document.createElement('img');
-    image.setAttribute('src', lucu.favicon.getURL(result.url));
+    image.setAttribute('src', lucu.url.getFavIcon(result.url));
     image.title = result.link;
     item.appendChild(image);
 
@@ -536,14 +536,22 @@ function onDiscoverFeedsError(errorMessage) {
 function onUnsubscribeButtonClicked(event) {
   'use strict';
   const feedId = parseInt(event.target.value);
-  const sectionMenu = document.getElementById('mi-subscriptions');
 
-  function onUnsubscribeError(event) {
-    // TODO: show an error?
-    optionsShowSection(sectionMenu);
-  }
+  lucu.database.connect(function(error, database) {
+    lucu.feed.unsubscribe(database, feedId, onUnsubscribeSuccess);
+  }, onUnsubscribeSuccess);
 
   function onUnsubscribeSuccess(event) {
+
+    const sectionMenu = document.getElementById('mi-subscriptions');
+
+    // Update the badge in case any unread articles belonged to 
+    // the unsubscribed feed
+    lucu.browser.updateBadge();
+
+    // TODO: send out a message notifying other views
+    // of the unsubscribe. That way the slides view can
+    // remove any articles.
 
     const item = document.querySelector('feedlist li[feed="'+message.feed+'"]')
     if(item) {
@@ -561,8 +569,6 @@ function onUnsubscribeButtonClicked(event) {
     // Update the options view
     optionsShowSection(sectionMenu);
   }
-
-  lucu.subscription.unsubscribe(feedId, onUnsubscribeSuccess, onUnsubscribeSuccess);
 }
 
 function onEnableURLRewritingChange(event) {

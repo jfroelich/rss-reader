@@ -98,20 +98,3 @@ lucu.database.upgrade = function(event) {
     entryStore.deleteIndex('hash');
   }
 };
-
-lucu.database.clearEntries = function() {
-  'use strict';
-  lucu.database.connect(onConnect, console.error);
-
-  function onConnect(error, database) {
-    const transaction = database.transaction('entry', 'readwrite');
-    const entries = transaction.objectStore('entry');
-    const clearRequest = entries.clear();
-    clearRequest.onerror = console.debug;
-    clearRequest.onsuccess = onSuccess;
-  }
-
-  function onSuccess(event) {
-    console.debug('Cleared entry object store');
-  }
-};

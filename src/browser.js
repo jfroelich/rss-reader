@@ -4,39 +4,25 @@
 
 var lucu = lucu || {};
 
-// TODO: use lucu.browser ns
+lucu.browser = {};
 
-lucu.idle = {};
-
-// TODO: inactivity interval should maybe be a parameter or some
-// external setting
-
-// Idle if greater than or equal to this many seconds
-lucu.idle.INACTIVITY_INTERVAL = 60 * 5;
-
-// Gets the idle state, which is undefined when lacking permission
-// See chrome.idle.queryState for more info.
-lucu.idle.queryState = function(callback) {
+lucu.browser.queryIdleState = function(interval, callback) {
   'use strict';
+
   chrome.permissions.contains({permissions: ['idle']}, onCheck);
 
   function onCheck(permitted) {
-	if(!permitted) {
-	  callback();
-	  return;
-	}
+  	if(!permitted) {
+  	  callback();
+  	  return;
+  	}
 
-	chrome.idle.queryState(lucu.idle.INACTIVITY_INTERVAL, callback);
+  	chrome.idle.queryState(interval, callback);
   }
 };
 
-
-lucu.badge = {};
-
-// Sets the badge text to a count of unread entries
-lucu.badge.update = function() {
+lucu.browser.updateBadge = function() {
   'use strict';
-  // console.debug('Updating badge');
   lucu.database.connect(onConnect, console.error);
 
   function onConnect(error, database) {
@@ -64,7 +50,7 @@ lucu.badge.update = function() {
  * enabled before querying for the new tab.
  * NOTE: the calls to chrome.tabs here do not require the tabs permission
  */
-lucu.badge.onClick = function(event) {
+lucu.browser.onBadgeClick = function(event) {
   'use strict';
   // console.debug('Clicked badge');
   const VIEW_URL = chrome.extension.getURL('slides.html');
@@ -91,11 +77,8 @@ lucu.badge.onClick = function(event) {
   }
 };
 
-// TODO: rename, use ns
-
-lucu.isOffline = function() {
+lucu.browser.isOffline = function() {
   'use strict';
   return navigator && navigator.hasOwnProperty('onLine') && 
   	!navigator.onLine;
 };
-

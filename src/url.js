@@ -139,10 +139,6 @@ lucu.url.resolveElement = function(baseURL, element) {
   }
 };
 
-// todo: deprecate, use lucu.url
-
-lucu.favicon = {};
-
 /**
  * Returns a URL string pointing to the fav icon for a url. If url is
  * undefined/empty, the locally stored default fav icon url is returned
@@ -165,7 +161,7 @@ lucu.favicon = {};
  * corresponding fav icon.
  * @return {String} the url of the favicon
  */
-lucu.favicon.getURL = function(url) {
+lucu.url.getFavIcon = function(url) {
   'use strict';
 
   if(!url) {
@@ -175,4 +171,3 @@ lucu.favicon.getURL = function(url) {
   return 'http://www.google.com/s2/favicons?domain_url=' + 
     encodeURIComponent(url);
 };
-

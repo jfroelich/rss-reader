@@ -22,13 +22,13 @@
       "/src/dom.js",
       "/src/entry.js",
       "/src/feed.js",
-      "/src/fetch-feed.js",
       "/src/images.js",
       "/src/install.js",
       "/src/notifications.js",
       "/src/poll.js",
       "/src/deserialize-feed.js",
-      "/src/string.js"
+      "/src/string.js",
+      "/src/url.js"
     ]
   },
   "options_page": "options.html",

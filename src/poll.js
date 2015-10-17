@@ -18,11 +18,14 @@ lucu.poll = {};
 // Start the polling sequence
 lucu.poll.start = function() {
   'use strict';
-  if(lucu.isOffline()) {
+  if(lucu.browser.isOffline()) {
   	return;
   }
 
-  lucu.idle.queryState(function(state) {
+  // Idle if greater than or equal to this many seconds
+  const IDLE_PERIOD = 60 * 5;
+
+  lucu.browser.queryIdleState(IDLE_PERIOD, function(state) {
     if(!state || state === 'locked' || state === 'idle') {
       lucu.database.connect(lucu.poll.selectFeeds, lucu.poll.onComplete);
     } else {
@@ -55,7 +58,7 @@ lucu.poll.fetchFeed = function(database, feed, callback) {
   }
   
   const timeout = 10 * 1000; // in millis
-  lucu.fetch.fetchFeed(feed.url, onFetch, onError, timeout);
+  lucu.feed.fetch(feed.url, onFetch, onError, timeout);
 };
 
 lucu.poll.onPutFeed = function(database, feed, remoteFeed, callback, 
@@ -92,7 +95,7 @@ lucu.poll.onComplete = function() {
   };
 
   chrome.runtime.sendMessage(message);
-  lucu.badge.update();
+  lucu.browser.updateBadge();
   lucu.notifications.show('Updated articles');
 };
 

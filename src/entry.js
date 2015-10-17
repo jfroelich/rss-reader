@@ -117,7 +117,7 @@ lucu.entry.markRead = function(database, id) {
     delete entry.unread;
     entry.readDate = Date.now();
     cursor.update(entry);
-    lucu.badge.update();
+    lucu.browser.updateBadge();
     //chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
   };
 };
@@ -136,6 +136,22 @@ lucu.entry.findByLink = function(database, entry, callback) {
   const links = entries.index('link');
   const request = links.get(entry.link);
   request.onsuccess = callback;
+};
+
+lucu.entry.removeByFeed = function(database, id, callback) {
+  'use strict';
+  const transaction = database.transaction('entry', 'readwrite');
+  transaction.oncomplete = callback;
+  const store = store.objectStore('entry');
+  const index = store.index('feed');
+  const request = index.openCursor(feedId);
+  request.onsuccess = function(event) {
+    const cursor = event.target.result;
+    if(cursor) {
+      cursor.delete();
+      cursor.continue();
+    }
+  };
 };
 
 /**
@@ -192,4 +208,20 @@ lucu.entry.augment = function(entry, callback) {
   request.open('GET', entry.link, true);
   request.responseType = 'document';
   request.send();  
+};
+
+lucu.entry.clearEntries = function() {
+  'use strict';
+  lucu.database.connect(onConnect, console.error);
+  function onConnect(error, database) {
+    const transaction = database.transaction('entry', 'readwrite');
+    const entries = transaction.objectStore('entry');
+    const clearRequest = entries.clear();
+    clearRequest.onerror = console.debug;
+    clearRequest.onsuccess = onSuccess;
+  }
+
+  function onSuccess(event) {
+    console.debug('Cleared entry object store');
+  }
 };
