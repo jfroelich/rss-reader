@@ -52,9 +52,7 @@ lucu.feed.fetch = function(url, onComplete, onError, timeout) {
       feed.url = url;
       feed.fetched = Date.now();
       feed.entries = feed.entries.filter(lucu.entry.hasLink);
-      feed.entries.forEach(function(entry) {
-        entry.link = lucu.url.rewrite(entry.link);
-      });
+      feed.entries.forEach(lucu.entry.rewriteLink);
 
       const seen = new Set();
       feed.entries = feed.entries.filter(function(entry) {

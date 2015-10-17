@@ -128,6 +128,11 @@ lucu.entry.hasLink = function(entry) {
   return entry.link;
 };
 
+lucu.entry.rewriteLink = function(entry) {
+  'use strict';
+  entry.link = lucu.url.rewrite(entry.link);
+};
+
 // Searches for entry.link in the link index
 lucu.entry.findByLink = function(database, entry, callback) {
   'use strict';
