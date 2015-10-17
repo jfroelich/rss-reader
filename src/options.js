@@ -240,27 +240,19 @@ function showOrSkipSubscriptionPreview(url) {
   // Start an indeterminate progress bar.
   document.getElementById('subscription-preview-load-progress').style.display = 'block';
 
-  // invalid url or parse error or exists
-  const onerror = function(error) {
-
-    // NOTE: use console.debug, not error, because this is not an error in the code
-    // but an error fetching. reserve calls to console.error when encountering
-    // something like a TypeError.
-
-    console.debug('error fetching %o for preview', error);
-
-    // If an error occurs hide the preview elements.
-    hideSubscriptionPreview();
-
-    // TODO: inspect error props and show a better error message.
-    // There could be parsing errors, HTTP status !200 errors,
-    // unhandled content type errors, invalid xml errors, etc.
-    showErrorMessage('Unable to fetch ' + url);
-  };
-
   const timeout = 10 * 1000;
 
-  function onFetchSuccess(result) {
+  // TODO: check if already subscribed before preview?
+  lucu.feed.fetch(url, timeout, onFetch);
+
+  function onFetch(event, result) {
+    if(event) {
+      console.dir(event);
+      hideSubscriptionPreview();
+      showErrorMessage('Unable to fetch' + url);
+      return;
+    }
+
     // Stop the indeterminate progress bar.
     document.getElementById(
       'subscription-preview-load-progress').style.display = 'none';
@@ -296,8 +288,6 @@ function showOrSkipSubscriptionPreview(url) {
     }
   }
 
-  // TODO: check if already subscribed before preview?
-  lucu.feed.fetch(url, onFetchSuccess, onerror, timeout);
 }
 
 function hideSubscriptionPreview() {
@@ -313,7 +303,8 @@ function startSubscription(url) {
   hideSubscriptionPreview();
 
   if(!lucu.url.isValid(url)) {
-    return showErrorMessage('Invalid url "' + url + '".');
+    showErrorMessage('Invalid url "' + url + '".');
+    return;
   }
 
   showSubscriptionMonitor();
@@ -327,8 +318,6 @@ function startSubscription(url) {
       return;
     }
 
-    // TODO: it would be nice to share the database instance here
-    // across these calls
     // If we are not online, immediately add the feed. Otherwise,
     // grab the feed's information and then add it
     if(lucu.browser.isOffline()) {
@@ -338,25 +327,29 @@ function startSubscription(url) {
       return;    
     }
 
-    // We are online, and the feed does not already exist. Fetch it
-    lucu.feed.fetch(url, onFetchComplete, onFetchError, 10 * 1000);
-
+    lucu.feed.fetch(url, 10 * 1000, onFetch);
   }, console.error);
 
-  function onFetchComplete(remoteFeed) {
+  function onFetch(event, remoteFeed) {
+
+    if(event) {
+      console.dir(event);
+      hideSubsciptionMonitor(function() {
+        showErrorMessage('An error occurred while trying to subscribe to ' + url);
+      });
+      return;
+    }
+
     function onConnect(error, database) {
       lucu.feed.put(database, null, remoteFeed, function() {
         onSubscriptionSuccessful(remoteFeed, 0, 0);
       });
     }
 
-    lucu.database.connect(onConnect, onFetchError);
-  }
-
-  function onFetchError(error) {
-    console.debug('fetch error %o', error);
-    hideSubsciptionMonitor(function() {
-      showErrorMessage('An error occurred while trying to subscribe to ' + url);
+    lucu.database.connect(onConnect, function() {
+      hideSubsciptionMonitor(function() {
+        showErrorMessage('An error occurred while trying to subscribe to ' + url);
+      });
     });
   }
 
@@ -369,7 +362,7 @@ function startSubscription(url) {
     }, true);
 
     // Show a notification
-    var title = addedFeed.title || 'Untitled';
+    var title = addedFeed.title || addedFeed.url;
     lucu.notifications.show('Subscribed to ' + title);
   }
 }

@@ -47,18 +47,22 @@ lucu.poll.fetchFeeds = function(database, feeds) {
 
 lucu.poll.fetchFeed = function(database, feed, callback) {
   'use strict';
-  
-  function onFetch(remoteFeed) {
+
+  const timeout = 10 * 1000;
+  lucu.feed.fetch(feed.url, timeout, onFetch);
+
+  function onFetch(event, remoteFeed) {
+
+    if(event) {
+      console.dir(event);
+      callback();
+      return;
+    }
+
     lucu.feed.put(database, feed, remoteFeed, lucu.poll.onPutFeed.bind(
       null, database, feed, remoteFeed, callback));
   }
 
-  function onError(event) {
-    callback();
-  }
-  
-  const timeout = 10 * 1000; // in millis
-  lucu.feed.fetch(feed.url, onFetch, onError, timeout);
 };
 
 lucu.poll.onPutFeed = function(database, feed, remoteFeed, callback, 

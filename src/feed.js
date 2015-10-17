@@ -8,42 +8,23 @@ lucu.feed = lucu.feed || {};
 
 /**
  * Fetches the XML for a feed, parses it into a javascript object, and passes
- * this along to a callback. If an error occurs along the way, calls the onerror
- * callback instead.
+ * this along to a callback. The callback's first arg is an error object 
+ * that is undefined if no error occurred.
  *
- * TODO: standardize the error object passed to onerror
  * TODO: somehow store responseURL? intelligently react to redirects
- * TODO: make online check caller's responsibility?
- * TODO: change to use single callback, async.forEach style?
  */
-lucu.feed.fetch = function(url, onComplete, onError, timeout) {
+lucu.feed.fetch = function(url, timeout, callback) {
   'use strict';
-
-  onError = onError || defaultOnError;
-
-  function defaultOnError(event) {
-    console.debug(event);
-    onError(event);
-  }
-
-  if(lucu.browser.isOffline()) {
-    onError({type: 'offline', url: url});
-    return;
-  }
 
   const request = new XMLHttpRequest();
   request.timeout = timeout;
-  request.onerror = function(event) {
-    console.dir(event);
-    onError(event);
-  };
-  request.ontimeout = onError;
-  request.onabort = onError;
+  request.onerror = callback;
+  request.ontimeout = callback;
+  request.onabort = callback;
   request.onload = function(event) {
-
     const document = event.target.responseXML;
     if(!document || !document.documentElement) {
-      onError({type: 'invalid-xml', target: this});
+      callback(event);
       return;
     }
 
@@ -64,10 +45,9 @@ lucu.feed.fetch = function(url, onComplete, onError, timeout) {
         return true;
       });
 
-      onComplete(feed);
+      callback(null, feed);
     } catch(e) {
-      onError({type: 'invalid-xml', target: this, details: e});
-      return;
+      callback(e);
     }    
   };
   request.open('GET', url, true);
