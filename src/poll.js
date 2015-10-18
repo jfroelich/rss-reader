@@ -2,123 +2,101 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-/*
-TODO: customizable update schedules per feed
-TODO: backoff per feed if poll did not find updated content
-TODO: de-activation of feeds with 404s
-TODO: de-activation of too much time elapsed since feed had new articles
-TODO: only poll if feed is active
-*/
-
-var lucu = lucu || {};
 
 // Polling lib for periodically updating feeds
-lucu.poll = {};
+// TODO: customizable update schedules per feed
+// TODO: backoff per feed if poll did not find updated content
+// TODO: de-activation of feeds with 404s
+// TODO: de-activation of too much time elapsed since feed had new articles
+// TODO: only poll if feed is active
 
-// Start the polling sequence
-lucu.poll.start = function() {
+chrome.alarms.onAlarm.addListener(function(alarm) {
   'use strict';
-  if(lucu.browser.isOffline()) {
-  	return;
+  if(alarm.name == 'poll') {
+    pollFeeds();
   }
+});
 
-  // Idle if greater than or equal to this many seconds
-  const IDLE_PERIOD = 60 * 5;
+chrome.alarms.create('poll', {periodInMinutes: 20});
 
-  lucu.browser.queryIdleState(IDLE_PERIOD, function(state) {
-    if(!state || state === 'locked' || state === 'idle') {
-      database.connect(lucu.poll.selectFeeds);
-    } else {
-      lucu.poll.onComplete();
-    }
-  });
-};
-
-lucu.poll.selectFeeds = function(error, connection) {
+function pollFeeds() {
   'use strict';
 
-  if(error) {
-    console.debug(error);
-    lucu.poll.onComplete(error);
+  if(lucu.browser.isOffline()) {
     return;
   }
 
-  lucu.feed.selectFeeds(connection, onSelect);
+  const IDLE_PERIOD = 60 * 5; // seconds
 
-  function onSelect(feeds) {
-    async.forEach(feeds, lucu.poll.fetchFeed.bind(null, connection), 
-      lucu.poll.onComplete);
-  }
-};
+  lucu.browser.queryIdleState(IDLE_PERIOD, function(state) {
+    if(!state || state === 'locked' || state === 'idle') {
+      database.connect(selectFeeds);
+    } else {
+      onComplete();
+    }
+  });
 
-lucu.poll.fetchFeed = function(connection, feed, callback) {
-  'use strict';
-
-  const timeout = 10 * 1000;
-  lucu.feed.fetch(feed.url, timeout, onFetch);
-
-  function onFetch(event, remoteFeed) {
-
-    if(event) {
-      console.dir(event);
-      callback();
+  function selectFeeds(error, connection) {
+    if(error) {
+      console.debug(error);
+      onComplete();
       return;
     }
 
-    lucu.feed.put(connection, feed, remoteFeed, lucu.poll.onPutFeed.bind(
-      null, connection, feed, remoteFeed, callback));
+    lucu.feed.selectFeeds(connection, onSelectFeeds.bind(null, connection));
   }
 
-  // TODO: use onPut here instead of bind above
+  function onSelectFeeds(connection, feeds) {
+    async.forEach(feeds, fetchFeed.bind(null, connection), 
+      onComplete);
+  }
 
-};
+  function fetchFeed(connection, feed, callback) {
+    const timeout = 10 * 1000;
+    lucu.feed.fetch(feed.url, timeout, onFetch);
 
-lucu.poll.onPutFeed = function(connection, feed, remoteFeed, callback, 
-  event) {
-  'use strict';
-  async.forEach(remoteFeed.entries, lucu.poll.findEntryByLink.bind(null, 
-    connection, feed), callback);
-};
+    function onFetch(event, remoteFeed) {
+      if(event) {
+        console.dir(event);
+        callback();
+        return;
+      }
 
-lucu.poll.findEntryByLink = function(connection, feed, entry, callback) {
-  'use strict';
+      lucu.feed.put(connection, feed, remoteFeed, 
+        onPutFeed.bind(null, remoteFeed));
+    }
 
-  lucu.entry.findByLink(connection, entry, onFind);
-
-  function onFind(event) {
-    if(event.target.result) {
-      callback();
-    } else {
-      lucu.entry.augment(entry, onAugment);
+    function onPutFeed(event) {
+      async.forEach(remoteFeed.entries, 
+        findEntryByLink.bind(null, connection, feed), callback);
     }
   }
 
-  function onAugment() {
-    lucu.entry.put(connection, feed, entry, callback);
+  function findEntryByLink(connection, feed, entry, callback) {
+    lucu.entry.findByLink(connection, entry, onFind);
+
+    function onFind(event) {
+      if(event.target.result) {
+        callback();
+      } else {
+        lucu.entry.augment(entry, onAugment);
+      }
+    }
+
+    function onAugment() {
+      lucu.entry.put(connection, feed, entry, callback);
+    }
   }
-};
 
-lucu.poll.onComplete = function() {
-  'use strict';
-  console.debug('Polling completed');
-  localStorage.LAST_POLL_DATE_MS = String(Date.now());
-  const message = {
-    type: 'pollCompleted'
-  };
+  function onComplete() {
+    console.debug('Polling completed');
+    localStorage.LAST_POLL_DATE_MS = String(Date.now());
+    const message = {
+      type: 'pollCompleted'
+    };
 
-  chrome.runtime.sendMessage(message);
-  lucu.browser.updateBadge();
-  lucu.notifications.show('Updated articles');
-};
-
-lucu.poll.onAlarm = function(alarm) {
-  'use strict';
-  if(alarm.name == 'poll') {
-    lucu.poll.start();
+    chrome.runtime.sendMessage(message);
+    lucu.browser.updateBadge();
+    lucu.notifications.show('Updated articles');
   }
-};
-
-// Amount of minutes between polls
-lucu.poll.SCHEDULE = {periodInMinutes: 20};
-chrome.alarms.onAlarm.addListener(lucu.poll.onAlarm);
-chrome.alarms.create('poll', lucu.poll.SCHEDULE);
+}
