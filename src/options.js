@@ -321,14 +321,21 @@ function startSubscription(url) {
     // If we are not online, immediately add the feed. Otherwise,
     // grab the feed's information and then add it
     if(lucu.browser.isOffline()) {
-      lucu.database.connect(function(error, database) {
-        lucu.feed.put(database, null, {url: url}, onSubscriptionSuccessful);
-      }, console.error);
+      database.connect(function(error, connection) {
+
+        if(error) {
+          // how to react??
+          console.debug(error);
+          return;
+        }
+
+        lucu.feed.put(connection, null, {url: url}, onSubscriptionSuccessful);
+      });
       return;    
     }
 
     lucu.feed.fetch(url, 10 * 1000, onFetch);
-  }, console.error);
+  });
 
   function onFetch(event, remoteFeed) {
 
@@ -340,17 +347,22 @@ function startSubscription(url) {
       return;
     }
 
-    function onConnect(error, database) {
-      lucu.feed.put(database, null, remoteFeed, function() {
+    function onConnect(error, connection) {
+
+      if(error) {
+        console.debug(error);
+        hideSubsciptionMonitor(function() {
+          showErrorMessage('An error occurred while trying to subscribe to ' + url);
+        });
+        return;
+      }
+
+      lucu.feed.put(connection, null, remoteFeed, function() {
         onSubscriptionSuccessful(remoteFeed, 0, 0);
       });
     }
 
-    lucu.database.connect(onConnect, function() {
-      hideSubsciptionMonitor(function() {
-        showErrorMessage('An error occurred while trying to subscribe to ' + url);
-      });
-    });
+    database.connect(onConnect);
   }
 
   function onSubscriptionSuccessful(addedFeed, entriesProcessed, entriesAdded) {
@@ -369,10 +381,17 @@ function startSubscription(url) {
 
 function populateFeedDetailsSection(feedId) {
   'use strict';
-  // TODO: react to onerror/onblocked
   // TODO: show num entries, num unread/red, etc
 
   lucu.feed.findById(feedId, function(feed) {
+
+    if(!feed) {
+      // TODO: react to a connect error and the 
+      // feed-not-found error
+      console.error('feed not found');
+      return;
+    }
+
     document.getElementById('details-title').textContent = feed.title || 'Untitled';
     const favIconURL = lucu.url.getFavIcon(feed.url);
     document.getElementById('details-favicon').setAttribute('src', favIconURL);
@@ -381,7 +400,7 @@ function populateFeedDetailsSection(feedId) {
     document.getElementById('details-feed-url').textContent = feed.url;
     document.getElementById('details-feed-link').textContent = feed.link;
     document.getElementById('details-unsubscribe').value = feed.id;
-  }, console.error);
+  });
 }
 
 function onPostPreviewSubscribeClick(event) {
@@ -530,9 +549,16 @@ function onUnsubscribeButtonClicked(event) {
   'use strict';
   const feedId = parseInt(event.target.value);
 
-  lucu.database.connect(function(error, database) {
-    lucu.feed.unsubscribe(database, feedId, onUnsubscribeSuccess);
-  }, onUnsubscribeSuccess);
+  database.connect(function(error, connection) {
+
+    if(error) {
+      console.debug(error);
+      onUnsubscribeSuccess(error);
+      return;
+    }
+
+    lucu.feed.unsubscribe(connection, feedId, onUnsubscribeSuccess);
+  });
 
   function onUnsubscribeSuccess(event) {
 
@@ -795,7 +821,7 @@ function initSubscriptionsSection() {
       document.getElementById('nosubscriptions').style.display = 'none';
       document.getElementById('feedlist').style.display = 'block';
     }
-  }, sortByTitle, console.error);
+  }, sortByTitle);
 }
 
 function initFeedDetailsSection() {

@@ -56,39 +56,60 @@ lucu.feed.fetch = function(url, timeout, callback) {
 };
 
 // Find a feed by url, ignoring protocol
-lucu.feed.findByURL = function(url, callback, fallback) {
+lucu.feed.findByURL = function(url, callback) {
   'use strict';
-  lucu.database.connect(onConnect, fallback);
+  database.connect(find);
 
-  function onConnect(error, database) {
-    const transaction = database.transaction('feed');
+  function find(error, connection) {
+
+    if(error) {
+      callback();
+      return;
+    }
+
+    const transaction = connection.transaction('feed');
     const urls = transaction.objectStore('feed').index('schemeless');
     const request = urls.get(lucu.url.getSchemeless(url));
-    request.onsuccess = onGetURL;
+    request.onsuccess = onFind;
   }
 
-  function onGetURL(event) {
+  function onFind(event) {
     callback(event.target.result);
   }
 };
 
 // Find a feed by id
-lucu.feed.findById = function(id, callback, fallback) {
+// TODO: caller should pass in connection
+lucu.feed.findById = function(id, callback) {
   'use strict';
-  lucu.database.connect(function(error, database) {
-    const feeds = database.transaction('feed').objectStore('feed');
+  connect(function(error, connection) {
+    if(error) {
+      callback();
+      return;
+    }
+    const feeds = connection.transaction('feed').objectStore('feed');
     const request = feeds.get(id);
     request.onsuccess = function(event) {
       callback(event.target.result);
     };
-  }, fallback);
+  });
 };
 
 // Iterates over each feed in the database
-lucu.feed.forEach = function(callback, onComplete, sortByTitle, fallback) {
+// TODO: caller should pass in connection
+// TODO: callback should be the name of onComplete, rename args
+// TODO: callback should be last arg
+lucu.feed.forEach = function(callback, onComplete, sortByTitle) {
   'use strict';
-  lucu.database.connect(function(error, database) {
-    const transaction = database.transaction('feed');
+  database.connect(function(error, connection) {
+
+    if(error) {
+      console.debug(error);
+      onComplete(error);
+      return;
+    }
+
+    const transaction = connection.transaction('feed');
     transaction.oncomplete = onComplete;
   
     let feeds = transaction.objectStore('feed');
@@ -97,19 +118,21 @@ lucu.feed.forEach = function(callback, onComplete, sortByTitle, fallback) {
     }
 
     const request = feeds.openCursor();
-    request.onsuccess = function(event) {
-      const cursor = event.target.result;
-      if(!cursor) return;
-      callback(cursor.value);
-      cursor.continue();
-    };
-  }, fallback);
+    request.onsuccess = onNextFeed;
+  });
+
+  function onNextFeed(event) {
+    const cursor = event.target.result;
+    if(!cursor) return;
+    callback(cursor.value);
+    cursor.continue();
+  }
 };
 
-lucu.feed.selectFeeds = function(database, callback) {
+lucu.feed.selectFeeds = function(connection, callback) {
   'use strict';
   const feeds = [];
-  const transaction = database.transaction('feed');
+  const transaction = connection.transaction('feed');
   const store = transaction.objectStore('feed');
   transaction.oncomplete = function(event) {
     callback(feeds);
@@ -124,13 +147,13 @@ lucu.feed.selectFeeds = function(database, callback) {
 };
 
 /**
- * @param database an open database connection
+ * @param connection an open database connection
  * @param original the original feed loaded from the database, optional
  * @param feed the feed to insert or the feed with properties to overwrite
  * the original
  * @param callback the function to call when finished (no args)
  */
-lucu.feed.put = function(database, original, feed, callback) {
+lucu.feed.put = function(connection, original, feed, callback) {
   'use strict';
 
   // TODO: check last modified date of the remote xml file to avoid 
@@ -194,7 +217,7 @@ lucu.feed.put = function(database, original, feed, callback) {
     storable.created = Date.now();
   }
 
-  const transaction = database.transaction('feed', 'readwrite');
+  const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.put(storable);
 
@@ -233,17 +256,17 @@ lucu.feed.sanitizeString = function(string) {
   return string;
 };
 
-lucu.feed.remove = function(database, id, callback) {
+lucu.feed.remove = function(connection, id, callback) {
   'use strict';
-  const transaction = database.transaction('feed', 'readwrite');
+  const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.delete(id);
   request.onsuccess = callback;
 };
 
-lucu.feed.unsubscribe = function(database, id, callback) {
+lucu.feed.unsubscribe = function(connection, id, callback) {
   'use strict';
-  lucu.feed.remove(database, id, function(event) {
-    lucu.entry.removeByFeed(database, id, callback);
+  lucu.feed.remove(connection, id, function(event) {
+    lucu.entry.removeByFeed(connection, id, callback);
   });
 };

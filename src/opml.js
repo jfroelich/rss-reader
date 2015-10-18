@@ -254,18 +254,21 @@ lucu.opml.mergeOutlines = function(outlineArrays, callback) {
 // TODO: use async.waterfall to deprecate importOnConnect?
 lucu.opml.importConnect = function(outlines, callback) {
   'use strict';
-  const onConnect = lucu.opml.importOnConnect.bind(null, outlines, callback);
-  lucu.database.connect(onConnect, callback);
+
+  database.connect(function(error, connection) {
+    if(error) {
+      console.debug(error);
+      callback(error);
+      return;
+    }
+
+    callback(null, connection, outlines); 
+  });
 };
 
-lucu.opml.importOnConnect = function(outlines, callback, error, database) {
+lucu.opml.storeOutlines = function(connection, outlines, callback) {
   'use strict';
-  callback(null, database, outlines);
-};
-
-lucu.opml.storeOutlines = function(database, outlines, callback) {
-  'use strict';
-  const storeOutline = lucu.opml.storeOutline.bind(null, database);
+  const storeOutline = lucu.opml.storeOutline.bind(null, connection);
   const onComplete = lucu.opml.onStoreOutlinesComplete.bind(null, callback);
   async.forEach(outlines, storeOutline, onComplete);
 };
@@ -275,9 +278,9 @@ lucu.opml.onStoreOutlinesComplete = function(callback) {
   callback();
 };
 
-lucu.opml.storeOutline = function(database, outline, callback) {
+lucu.opml.storeOutline = function(connection, outline, callback) {
   'use strict';
-  lucu.feed.put(database, null, outline, callback);
+  lucu.feed.put(connection, null, outline, callback);
 };
 
 ////////////////////////////////////////////////////////////
@@ -288,6 +291,8 @@ lucu.opml.storeOutline = function(database, outline, callback) {
  */
 lucu.opml.export = function(onComplete) {
   'use strict';
+
+  // TODO: deprecate waterfall
 
   const waterfall = [
     lucu.opml.exportConnect,
@@ -302,18 +307,19 @@ lucu.opml.export = function(onComplete) {
 lucu.opml.exportConnect = function(callback) {
   'use strict';
 
-  const onConnect = lucu.opml.exportOnConnect.bind(null, callback);
-  lucu.database.connect(onConnect, callback);
+  database.connect(function(error, connection){
+    if(error) {
+      console.debug(error);
+      callback(error);
+    } else {
+      callback(null, connection);
+    }
+  });
 };
 
-lucu.opml.exportOnConnect = function(callback, error, database) {
+lucu.opml.exportGetFeeds = function(connection, callback) {
   'use strict';
-  callback(null, database);
-};
-
-lucu.opml.exportGetFeeds = function(database, callback) {
-  'use strict';
-  const transaction = database.transaction('feed');
+  const transaction = connection.transaction('feed');
   const store = transaction.objectStore('feed');
   const request = store.openCursor();
   const feeds = [];
@@ -351,4 +357,3 @@ lucu.opml.exportCompleted = function(callback, error, opmlString) {
   const blob = new Blob([opmlString], {type:'application/xml'});
   callback(blob);
 };
-

@@ -23,10 +23,16 @@ lucu.browser.queryIdleState = function(interval, callback) {
 
 lucu.browser.updateBadge = function() {
   'use strict';
-  lucu.database.connect(onConnect, console.error);
+  database.connect(onConnect);
 
-  function onConnect(error, database) {
-    const transaction = database.transaction('entry');
+  function onConnect(error, connection) {
+
+    if(error) {
+      console.debug(error);
+      return;
+    }
+
+    const transaction = connection.transaction('entry');
     const entries = transaction.objectStore('entry');
     const unread = entries.index('unread');
     const request = unread.count();

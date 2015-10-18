@@ -27,7 +27,7 @@ lucu.entry = lucu.entry || {};
 // entries, and subscribe should just add the feed and not add any entries because
 // subscribe should be near instant. So subscribe should store the feed and then
 // enqueue a one-feed poll update.
-lucu.entry.put = function(database, feed, entry, callback) {
+lucu.entry.put = function(connection, feed, entry, callback) {
   'use strict';
 
   // TODO: is this check even necessary? Maybe this never happens?
@@ -78,24 +78,17 @@ lucu.entry.put = function(database, feed, entry, callback) {
 
   // Now insert the entry. Due to the unique flag on the entry.link index,
   // the transaction expectedly fails if the entry already exists.
-  const transaction = database.transaction('entry', 'readwrite');
-  // Due to async.waterfall, we have to wrap to prevent it from
-  // receiving an event parameter that async.waterfall would treat as 
-  // an error argument.
-  // What about binding a partial? But that rebinds which could cause issues?
-  // transaction.oncomplete = callback.bind(transaction, null);
+  const transaction = connection.transaction('entry', 'readwrite');
   transaction.oncomplete = function() { callback(); };
   transaction.objectStore('entry').add(storable);
 };
 
-// TODO: instead of connecting, this should accept a db arg
-// to be more consistent, and require the caller to create the 
-// connection
-lucu.entry.markRead = function(database, id) {
+// TODO: provide a callback?
+lucu.entry.markRead = function(connection, id) {
   'use strict';
   // console.log('Marking %s as read', id);
 
-  const transaction = database.transaction('entry', 'readwrite');
+  const transaction = connection.transaction('entry', 'readwrite');
   //transaction.oncomplete = callback;
   const entries = transaction.objectStore('entry');
   const request = entries.openCursor(id);
@@ -134,18 +127,18 @@ lucu.entry.rewriteLink = function(entry) {
 };
 
 // Searches for entry.link in the link index
-lucu.entry.findByLink = function(database, entry, callback) {
+lucu.entry.findByLink = function(connection, entry, callback) {
   'use strict';
-  const transaction = database.transaction('entry');
+  const transaction = connection.transaction('entry');
   const entries = transaction.objectStore('entry');
   const links = entries.index('link');
   const request = links.get(entry.link);
   request.onsuccess = callback;
 };
 
-lucu.entry.removeByFeed = function(database, id, callback) {
+lucu.entry.removeByFeed = function(connection, id, callback) {
   'use strict';
-  const transaction = database.transaction('entry', 'readwrite');
+  const transaction = connection.transaction('entry', 'readwrite');
   transaction.oncomplete = callback;
   const store = store.objectStore('entry');
   const index = store.index('feed');
@@ -217,9 +210,15 @@ lucu.entry.augment = function(entry, callback) {
 
 lucu.entry.clearEntries = function() {
   'use strict';
-  lucu.database.connect(onConnect, console.error);
-  function onConnect(error, database) {
-    const transaction = database.transaction('entry', 'readwrite');
+  database.connect(onConnect);
+  function onConnect(error, connection) {
+
+    if(error) {
+      console.debug(error);
+      return;
+    }
+
+    const transaction = connection.transaction('entry', 'readwrite');
     const entries = transaction.objectStore('entry');
     const clearRequest = entries.clear();
     clearRequest.onerror = console.debug;

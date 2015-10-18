@@ -69,22 +69,23 @@ function removeSlideElement(slideElement) {
 
 function markSlideRead(slide) {
   'use strict';
-  // Guard against attempts to re-mark.
   if(slide.hasAttribute('read')) {
     return;
   }
 
-  // Mark the UI regardless of the result
   slide.setAttribute('read', '');
-
   const entryAttribute = slide.getAttribute('entry');
-  const entryId = parseInt(entryAttribute);
 
-  // TODO: react to database error?
+  database.connect(function(error, connection) {
+    if(error) {
+      // TODO: react to database error?
+      console.debug(error);
+      return;
+    }
 
-  lucu.database.connect(function(error, database) {
-    lucu.entry.markRead(database, entryId);
-  }, console.error);
+    const entryId = parseInt(entryAttribute);
+    lucu.entry.markRead(connection, entryId);
+  });
 }
 
 function appendSlides(oncomplete, isFirst) {
@@ -94,8 +95,15 @@ function appendSlides(oncomplete, isFirst) {
   const offset = countUnreadSlides();
   var notAdvanced = true;
 
-  function onConnect(error, database) {
-    const transaction = database.transaction('entry');
+  function onConnect(error, connection) {
+
+    if(error) {
+      // TODO: react?
+      console.debug(error);
+      return;
+    }
+
+    const transaction = connection.transaction('entry');
     transaction.oncomplete = oncomplete;
     const entryStore = transaction.objectStore('entry');
     const unreadIndex = entryStore.index('unread');
@@ -103,7 +111,7 @@ function appendSlides(oncomplete, isFirst) {
     request.onsuccess = renderEntry;
   }
 
-  lucu.database.connect(onConnect, console.error);
+  database.connect(onConnect);
 
   // TODO: consider using async.each with limit
 

@@ -2,34 +2,31 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-var lucu = lucu || {};
-
-lucu.database = {};
-
+// Database lib
 // TODO: ideally we would never store both schemeless and url, we would just
 // store scheme and schemeless props as parts of a url property.
 // TODO: use 'lucubrate' as the database name
-
-lucu.database.NAME = 'reader';
-lucu.database.VERSION = 15;
+const database = {};
+database.NAME = 'reader';
+database.VERSION = 15;
 
 /**
  * Calls callback with two arguments, error and database. Error is 
  * always null. database is an instance of IDBDatabase.
  */
-lucu.database.connect = function(callback, fallback) {
+database.connect = function(callback) {
   'use strict';
-  const request = indexedDB.open(lucu.database.NAME, lucu.database.VERSION);
-  request.onupgradeneeded = lucu.database.upgrade;
+  const request = indexedDB.open(database.NAME, database.VERSION);
+  request.onupgradeneeded = database.upgrade;
   request.onsuccess = function(event) {
     callback(null, event.target.result);
   };
-  request.onerror = fallback;
-  request.onblocked = fallback;
+  request.onerror = callback;
+  request.onblocked = callback;
   return request;
 };
 
-lucu.database.upgrade = function(event) {
+database.upgrade = function(event) {
   'use strict';
 
   console.debug('Upgrading database from version %s', event.oldVersion);
@@ -93,7 +90,6 @@ lucu.database.upgrade = function(event) {
     }
   }
 
-  // Hash was deprecated
   if(entryIndices.contains('hash')) {
     entryStore.deleteIndex('hash');
   }

@@ -29,9 +29,15 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
 function archiveEntries() {
   'use strict';
   console.log('Starting archival process');
-  lucu.database.connect(function(error, database) {
-    archiveIterateEntries(database);
-  }, archiveOnComplete.bind(null, null));
+  database.connect(function(error, connection) {
+
+    if(error) {
+      console.debug(error);
+      return;
+    }
+
+    archiveIterateEntries(connection);
+  });
 }
 
 function archiveOnComplete(tracker, event) {
@@ -39,7 +45,7 @@ function archiveOnComplete(tracker, event) {
   console.log('Archived %s entries', tracker.processed);
 }
 
-function archiveIterateEntries(database) {
+function archiveIterateEntries(connection) {
   'use strict';
 
   const tracker = {
@@ -47,12 +53,8 @@ function archiveIterateEntries(database) {
   };
 
   const ENTRY_LIMIT = 1000;
-
-
-
-  const transaction = database.transaction('entry', 'readwrite');
+  const transaction = connection.transaction('entry', 'readwrite');
   transaction.oncomplete = archiveOnComplete.bind(transaction, tracker);
-
   const store = transaction.objectStore('entry');
 
   // We want to select only not-archived articles.
