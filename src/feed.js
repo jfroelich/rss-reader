@@ -6,16 +6,10 @@ var lucu = lucu || {};
 
 lucu.feed = lucu.feed || {};
 
-/**
- * Fetches the XML for a feed, parses it into a javascript object, and passes
- * this along to a callback. The callback's first arg is an error object 
- * that is undefined if no error occurred.
- *
- * TODO: somehow store responseURL? intelligently react to redirects
- */
-lucu.feed.fetch = function(url, timeout, callback) {
+// TODO: somehow store responseURL? 
+// TODO: intelligently react to redirects
+function fetchFeed(url, timeout, callback) {
   'use strict';
-
   const request = new XMLHttpRequest();
   request.timeout = timeout;
   request.onerror = callback;
@@ -53,106 +47,51 @@ lucu.feed.fetch = function(url, timeout, callback) {
   request.open('GET', url, true);
   request.overrideMimeType('application/xml');
   request.send();
-};
+}
 
 // Find a feed by url, ignoring protocol
-lucu.feed.findByURL = function(url, callback) {
+function findFeedByURL(connection, url, callback) {
   'use strict';
-  openDatabaseConnection(find);
-
-  function find(error, connection) {
-
-    if(error) {
-      callback();
-      return;
-    }
-
-    const transaction = connection.transaction('feed');
-    const urls = transaction.objectStore('feed').index('schemeless');
-    const request = urls.get(lucu.url.getSchemeless(url));
-    request.onsuccess = onFind;
-  }
-
-  function onFind(event) {
+  const transaction = connection.transaction('feed');
+  const urls = transaction.objectStore('feed').index('schemeless');
+  const request = urls.get(lucu.url.getSchemeless(url));
+  request.onsuccess = function(event) {
     callback(event.target.result);
-  }
-};
+  };
+}
 
 // Find a feed by id
-// TODO: caller should pass in connection
-lucu.feed.findById = function(id, callback) {
+function findFeedById(connection, id, callback) {
   'use strict';
-  connect(function(error, connection) {
-    if(error) {
-      callback();
-      return;
-    }
-    const feeds = connection.transaction('feed').objectStore('feed');
-    const request = feeds.get(id);
-    request.onsuccess = function(event) {
-      callback(event.target.result);
-    };
-  });
-};
-
-// Iterates over each feed in the database
-// TODO: caller should pass in connection
-// TODO: callback should be the name of onComplete, rename args
-// TODO: callback should be last arg
-lucu.feed.forEach = function(callback, onComplete, sortByTitle) {
-  'use strict';
-  openDatabaseConnection(function(error, connection) {
-
-    if(error) {
-      console.debug(error);
-      onComplete(error);
-      return;
-    }
-
-    const transaction = connection.transaction('feed');
-    transaction.oncomplete = onComplete;
-  
-    let feeds = transaction.objectStore('feed');
-    if(sortByTitle) {
-      feeds = feeds.index('title');
-    }
-
-    const request = feeds.openCursor();
-    request.onsuccess = onNextFeed;
-  });
-
-  function onNextFeed(event) {
-    const cursor = event.target.result;
-    if(!cursor) return;
-    callback(cursor.value);
-    cursor.continue();
-  }
-};
-
-lucu.feed.selectFeeds = function(connection, callback) {
-  'use strict';
-  const feeds = [];
   const transaction = connection.transaction('feed');
-  const store = transaction.objectStore('feed');
-  transaction.oncomplete = function(event) {
-    callback(feeds);
+  const feeds = transaction.objectStore('feed');
+  const request = feeds.get(id);
+  request.onsuccess = function(event) {
+    callback(event.target.result);
   };
-  const request = store.openCursor();
+}
+
+// Iterates over stored feeds
+function forEachFeed(connection, handleFeed, sortByTitle, callback) {
+  'use strict';
+
+  const transaction = connection.transaction('feed');
+  transaction.oncomplete = callback;
+
+  let feeds = transaction.objectStore('feed');
+  if(sortByTitle) {
+    feeds = feeds.index('title');
+  }
+
+  const request = feeds.openCursor();
   request.onsuccess = function(event) {
     const cursor = event.target.result;
     if(!cursor) return;
-    feeds.push(cursor.value);
+    handleFeed(cursor.value);
     cursor.continue();
   };
-};
+}
 
-/**
- * @param connection an open database connection
- * @param original the original feed loaded from the database, optional
- * @param feed the feed to insert or the feed with properties to overwrite
- * the original
- * @param callback the function to call when finished (no args)
- */
 lucu.feed.put = function(connection, original, feed, callback) {
   'use strict';
 
@@ -206,7 +145,9 @@ lucu.feed.put = function(connection, original, feed, callback) {
     storable.date = feed.date;
   }
 
-  storable.fetched = feed.fetched;
+  if(feed.fetched) {
+    storable.fetched = feed.fetched;
+  }
 
   if(original) {
     // TODO: this should not be changing the date updated unless something
@@ -226,7 +167,7 @@ lucu.feed.put = function(connection, original, feed, callback) {
   };
 
   request.onerror = function(event) {
-    console.debug('Error updating feed %s', feed.url);
+    console.debug('Error putting feed %s', JSON.stringify(feed));
     console.dir(event);
     callback();
   };

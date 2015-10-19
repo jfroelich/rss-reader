@@ -30,35 +30,30 @@ function pollFeeds() {
 
   lucu.browser.queryIdleState(IDLE_PERIOD, function(state) {
     if(!state || state === 'locked' || state === 'idle') {
-      openDatabaseConnection(selectFeeds);
+      openDatabaseConnection(iterateFeeds);
     } else {
       onComplete();
     }
   });
 
-  function selectFeeds(error, connection) {
+  function iterateFeeds(error, connection) {
     if(error) {
       console.debug(error);
       onComplete();
       return;
     }
 
-    lucu.feed.selectFeeds(connection, onSelectFeeds.bind(null, connection));
+    forEachFeed(connection, pollFetchFeed.bind(null, connection), 
+      false, onComplete);
   }
 
-  function onSelectFeeds(connection, feeds) {
-    async.forEach(feeds, fetchFeed.bind(null, connection), 
-      onComplete);
-  }
-
-  function fetchFeed(connection, feed, callback) {
+  function pollFetchFeed(connection, feed) {
     const timeout = 10 * 1000;
-    lucu.feed.fetch(feed.url, timeout, onFetch);
+    fetchFeed(feed.url, timeout, onFetch);
 
     function onFetch(event, remoteFeed) {
       if(event) {
         console.dir(event);
-        callback();
         return;
       }
 
@@ -68,7 +63,8 @@ function pollFeeds() {
 
     function onPutFeed(remoteFeed, event) {
       async.forEach(remoteFeed.entries, 
-        findEntryByLink.bind(null, connection, feed), callback);
+        findEntryByLink.bind(null, connection, feed), 
+        function(){});
     }
   }
 
@@ -94,7 +90,6 @@ function pollFeeds() {
     const message = {
       type: 'pollCompleted'
     };
-
     chrome.runtime.sendMessage(message);
     lucu.browser.updateBadge();
     lucu.notifications.show('Updated articles');

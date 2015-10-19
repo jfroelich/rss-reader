@@ -12,7 +12,6 @@ lucu.entry = lucu.entry || {};
 // In doing so, review the structured clone algorithm that indexedDB uses
 // to ensure that add/get works as expected.
 
-
 // TODO: some entry link URLs from feeds are pre-chain-of-redirect-resolution, 
 // and are technically duplicates because each redirects to the same URL at the 
 // end of the redirect chain. Therefore we should be storing the terminal link,

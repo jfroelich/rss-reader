@@ -243,7 +243,7 @@ function showOrSkipSubscriptionPreview(url) {
   const timeout = 10 * 1000;
 
   // TODO: check if already subscribed before preview?
-  lucu.feed.fetch(url, timeout, onFetch);
+  fetchFeed(url, timeout, onFetch);
 
   function onFetch(event, result) {
     if(event) {
@@ -287,7 +287,6 @@ function showOrSkipSubscriptionPreview(url) {
         'subscription-preview-entries').appendChild(item);
     }
   }
-
 }
 
 function hideSubscriptionPreview() {
@@ -298,7 +297,6 @@ function hideSubscriptionPreview() {
 
 function startSubscription(url) {
   'use strict';
-  // TODO: Use async.js here
 
   hideSubscriptionPreview();
 
@@ -310,7 +308,20 @@ function startSubscription(url) {
   showSubscriptionMonitor();
   updateSubscriptionMonitor('Subscribing...');
 
-  lucu.feed.findByURL(url, function(existingFeed) {
+  openDatabaseConnection(function(error, connection) {
+    if(error) {
+      console.debug(error);
+      hideSubsciptionMonitor(function() {
+        showErrorMessage('An error occurred while trying to subscribe to ' + 
+          url);
+      });
+      return;
+    }
+
+    findFeedByURL(connection, url, onFindByURL.bind(null, connection));
+  });
+
+  function onFindByURL(connection, existingFeed) {
     if(existingFeed) {
       hideSubsciptionMonitor(function() {
         showErrorMessage('Already subscribed to ' + url + '.');
@@ -318,27 +329,14 @@ function startSubscription(url) {
       return;
     }
 
-    // If we are not online, immediately add the feed. Otherwise,
-    // grab the feed's information and then add it
     if(lucu.browser.isOffline()) {
-      openDatabaseConnection(function(error, connection) {
-
-        if(error) {
-          // how to react??
-          console.debug(error);
-          return;
-        }
-
-        lucu.feed.put(connection, null, {url: url}, onSubscriptionSuccessful);
-      });
-      return;    
+      lucu.feed.put(connection, null, {url: url}, onSubscribe);
+    } else {
+      fetchFeed(url, 10 * 1000, onFetch.bind(null, connection));        
     }
+  }
 
-    lucu.feed.fetch(url, 10 * 1000, onFetch);
-  });
-
-  function onFetch(event, remoteFeed) {
-
+  function onFetch(connection, event, remoteFeed) {
     if(event) {
       console.dir(event);
       hideSubsciptionMonitor(function() {
@@ -347,25 +345,12 @@ function startSubscription(url) {
       return;
     }
 
-    function onConnect(error, connection) {
-
-      if(error) {
-        console.debug(error);
-        hideSubsciptionMonitor(function() {
-          showErrorMessage('An error occurred while trying to subscribe to ' + url);
-        });
-        return;
-      }
-
-      lucu.feed.put(connection, null, remoteFeed, function() {
-        onSubscriptionSuccessful(remoteFeed, 0, 0);
-      });
-    }
-
-    openDatabaseConnection(onConnect);
+    lucu.feed.put(connection, null, remoteFeed, function() {
+      onSubscribe(remoteFeed, 0, 0);
+    });
   }
 
-  function onSubscriptionSuccessful(addedFeed, entriesProcessed, entriesAdded) {
+  function onSubscribe(addedFeed, entriesProcessed, entriesAdded) {
     optionsAppendFeed(addedFeed, true);
     optionsUpdateFeedCount();
     updateSubscriptionMonitor('Subscribed to ' + url);
@@ -379,28 +364,35 @@ function startSubscription(url) {
   }
 }
 
+// TODO: show num entries, num unread/red, etc
 function populateFeedDetailsSection(feedId) {
   'use strict';
-  // TODO: show num entries, num unread/red, etc
 
-  lucu.feed.findById(feedId, function(feed) {
+  openDatabaseConnection(function(error, database) {
 
-    if(!feed) {
-      // TODO: react to a connect error and the 
-      // feed-not-found error
-      console.error('feed not found');
+    if(error) {
+      // TODO: react
+      console.debug(error);
       return;
     }
 
-    document.getElementById('details-title').textContent = feed.title || 'Untitled';
-    const favIconURL = lucu.url.getFavIcon(feed.url);
-    document.getElementById('details-favicon').setAttribute('src', favIconURL);
-    document.getElementById('details-feed-description').textContent =
-      lucu.string.stripTags(feed.description) || 'No description';
-    document.getElementById('details-feed-url').textContent = feed.url;
-    document.getElementById('details-feed-link').textContent = feed.link;
-    document.getElementById('details-unsubscribe').value = feed.id;
-  });
+    findFeedById(connection, feedId, function(feed) {
+      if(!feed) {
+        // TODO: react 
+        console.error('feed not found');
+        return;
+      }
+
+      document.getElementById('details-title').textContent = feed.title || 'Untitled';
+      const favIconURL = lucu.url.getFavIcon(feed.url);
+      document.getElementById('details-favicon').setAttribute('src', favIconURL);
+      document.getElementById('details-feed-description').textContent =
+        lucu.string.stripTags(feed.description) || 'No description';
+      document.getElementById('details-feed-url').textContent = feed.url;
+      document.getElementById('details-feed-link').textContent = feed.link;
+      document.getElementById('details-unsubscribe').value = feed.id;
+    });
+  }); 
 }
 
 function onPostPreviewSubscribeClick(event) {
@@ -806,14 +798,25 @@ function initSubscriptionsSection() {
   document.getElementById('button-export-opml').onclick = onExportOPMLClick;
   document.getElementById('button-import-opml').onclick = onImportOPMLClick;
 
-  var feedCount = 0;
-  const sortByTitle = true;
+  let feedCount = 0;
 
-  lucu.feed.forEach(function(feed){
+  openDatabaseConnection(function(error, database) {
+    if(error) {
+      // TODO: react
+      console.debug(error);
+      return;
+    }
+
+    forEachFeed(connection, handleFeed, true, onComplete);
+  });
+
+  function handleFeed(feed) {
     feedCount++;
     optionsAppendFeed(feed);
     optionsUpdateFeedCount();
-  }, function(){
+  }
+
+  function onComplete() {
     if(feedCount == 0) {
       document.getElementById('nosubscriptions').style.display = 'block';
       document.getElementById('feedlist').style.display = 'none';
@@ -821,7 +824,7 @@ function initSubscriptionsSection() {
       document.getElementById('nosubscriptions').style.display = 'none';
       document.getElementById('feedlist').style.display = 'block';
     }
-  }, sortByTitle);
+  }
 }
 
 function initFeedDetailsSection() {
