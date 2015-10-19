@@ -79,7 +79,9 @@ lucu.entry.put = function(connection, feed, entry, callback) {
   // Now insert the entry. Due to the unique flag on the entry.link index,
   // the transaction expectedly fails if the entry already exists.
   const transaction = connection.transaction('entry', 'readwrite');
-  transaction.oncomplete = function() { callback(); };
+  transaction.oncomplete = function() { 
+    callback(); 
+  };
   transaction.objectStore('entry').add(storable);
 };
 
@@ -208,24 +210,13 @@ lucu.entry.augment = function(entry, callback) {
   request.send();  
 };
 
-lucu.entry.clearEntries = function() {
+lucu.entry.clearEntries = function(connection) {
   'use strict';
-  openDatabaseConnection(onConnect);
-  function onConnect(error, connection) {
-
-    if(error) {
-      console.debug(error);
-      return;
-    }
-
-    const transaction = connection.transaction('entry', 'readwrite');
-    const entries = transaction.objectStore('entry');
-    const clearRequest = entries.clear();
-    clearRequest.onerror = console.debug;
-    clearRequest.onsuccess = onSuccess;
-  }
-
-  function onSuccess(event) {
+  const transaction = connection.transaction('entry', 'readwrite');
+  const entries = transaction.objectStore('entry');
+  const request = entries.clear();
+  request.onerror = console.debug;
+  request.onsuccess = function(event) {
     console.debug('Cleared entry object store');
-  }
+  };
 };
