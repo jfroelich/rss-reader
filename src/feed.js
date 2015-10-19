@@ -58,7 +58,7 @@ lucu.feed.fetch = function(url, timeout, callback) {
 // Find a feed by url, ignoring protocol
 lucu.feed.findByURL = function(url, callback) {
   'use strict';
-  database.connect(find);
+  openDatabaseConnection(find);
 
   function find(error, connection) {
 
@@ -101,7 +101,7 @@ lucu.feed.findById = function(id, callback) {
 // TODO: callback should be last arg
 lucu.feed.forEach = function(callback, onComplete, sortByTitle) {
   'use strict';
-  database.connect(function(error, connection) {
+  openDatabaseConnection(function(error, connection) {
 
     if(error) {
       console.debug(error);

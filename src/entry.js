@@ -210,7 +210,7 @@ lucu.entry.augment = function(entry, callback) {
 
 lucu.entry.clearEntries = function() {
   'use strict';
-  database.connect(onConnect);
+  openDatabaseConnection(onConnect);
   function onConnect(error, connection) {
 
     if(error) {

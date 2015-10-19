@@ -23,7 +23,7 @@ lucu.browser.queryIdleState = function(interval, callback) {
 
 lucu.browser.updateBadge = function() {
   'use strict';
-  database.connect(onConnect);
+  openDatabaseConnection(onConnect);
 
   function onConnect(error, connection) {
 

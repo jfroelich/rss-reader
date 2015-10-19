@@ -30,7 +30,7 @@ function pollFeeds() {
 
   lucu.browser.queryIdleState(IDLE_PERIOD, function(state) {
     if(!state || state === 'locked' || state === 'idle') {
-      database.connect(selectFeeds);
+      openDatabaseConnection(selectFeeds);
     } else {
       onComplete();
     }

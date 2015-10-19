@@ -12,7 +12,7 @@ lucu.install = {};
 lucu.install.onInstall = function(event) {
   'use strict';
   
-  database.connect(onConnect);
+  openDatabaseConnection(onConnect);
 
   function onConnect(error, connection) {
   	// NOOP

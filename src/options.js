@@ -321,7 +321,7 @@ function startSubscription(url) {
     // If we are not online, immediately add the feed. Otherwise,
     // grab the feed's information and then add it
     if(lucu.browser.isOffline()) {
-      database.connect(function(error, connection) {
+      openDatabaseConnection(function(error, connection) {
 
         if(error) {
           // how to react??
@@ -362,7 +362,7 @@ function startSubscription(url) {
       });
     }
 
-    database.connect(onConnect);
+    openDatabaseConnection(onConnect);
   }
 
   function onSubscriptionSuccessful(addedFeed, entriesProcessed, entriesAdded) {
@@ -549,7 +549,7 @@ function onUnsubscribeButtonClicked(event) {
   'use strict';
   const feedId = parseInt(event.target.value);
 
-  database.connect(function(error, connection) {
+  openDatabaseConnection(function(error, connection) {
 
     if(error) {
       console.debug(error);

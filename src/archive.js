@@ -29,7 +29,7 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
 function archiveEntries() {
   'use strict';
   console.log('Starting archival process');
-  database.connect(function(error, connection) {
+  openDatabaseConnection(function(error, connection) {
 
     if(error) {
       console.debug(error);

@@ -76,7 +76,7 @@ function markSlideRead(slide) {
   slide.setAttribute('read', '');
   const entryAttribute = slide.getAttribute('entry');
 
-  database.connect(function(error, connection) {
+  openDatabaseConnection(function(error, connection) {
     if(error) {
       // TODO: react to database error?
       console.debug(error);
@@ -95,7 +95,7 @@ function appendSlides(oncomplete, isFirst) {
   const offset = countUnreadSlides();
   var notAdvanced = true;
 
-  function onConnect(error, connection) {
+  openDatabaseConnection(function(error, connection) {
 
     if(error) {
       // TODO: react?
@@ -109,9 +109,7 @@ function appendSlides(oncomplete, isFirst) {
     const unreadIndex = entryStore.index('unread');
     const request = unreadIndex.openCursor();
     request.onsuccess = renderEntry;
-  }
-
-  database.connect(onConnect);
+  });
 
   // TODO: consider using async.each with limit
 
@@ -155,8 +153,8 @@ function appendSlides(oncomplete, isFirst) {
  */
 function onSlideClick(event) {
   'use strict';
+
   if(event.which != 1) {
-    console.debug('onSlideClick event.which != 1. %o', event);
     return false;
   }
 
@@ -189,15 +187,11 @@ function onSlideClick(event) {
   // Prevent the normal link click behavior
   event.preventDefault();
 
-  // Apparently opening a link in a new tab is now a complicated thing to do
-  // when using plain javascript. So we are going to cheat here due to issues
-  // with window.open
   chrome.tabs.create({
     active: true,
     url: event.target.getAttribute('href')
   });
 
-  // Prevent the normal link click behavior
   return false;
 }
 

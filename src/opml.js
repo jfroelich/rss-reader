@@ -255,7 +255,7 @@ lucu.opml.mergeOutlines = function(outlineArrays, callback) {
 lucu.opml.importConnect = function(outlines, callback) {
   'use strict';
 
-  database.connect(function(error, connection) {
+  openDatabaseConnection(function(error, connection) {
     if(error) {
       console.debug(error);
       callback(error);
@@ -306,8 +306,7 @@ lucu.opml.export = function(onComplete) {
 
 lucu.opml.exportConnect = function(callback) {
   'use strict';
-
-  database.connect(function(error, connection){
+  openDatabaseConnection(function(error, connection){
     if(error) {
       console.debug(error);
       callback(error);
