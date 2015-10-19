@@ -175,7 +175,7 @@ lucu.opml.importCompleted = function(onComplete) {
   'use strict';
   // console.debug('Finished importing feeds from OPML');
   const notificationText = 'Successfully imported OPML file';
-  lucu.notifications.show(notificationText);  
+  showNotification(notificationText);  
 
   onComplete();
 };
@@ -280,7 +280,7 @@ lucu.opml.onStoreOutlinesComplete = function(callback) {
 
 lucu.opml.storeOutline = function(connection, outline, callback) {
   'use strict';
-  lucu.feed.put(connection, null, outline, callback);
+  putFeed(connection, null, outline, callback);
 };
 
 ////////////////////////////////////////////////////////////

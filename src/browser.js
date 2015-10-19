@@ -2,11 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-var lucu = lucu || {};
-
-lucu.browser = {};
-
-lucu.browser.queryIdleState = function(interval, callback) {
+function queryIdleState(interval, callback) {
   'use strict';
 
   chrome.permissions.contains({permissions: ['idle']}, onCheck);
@@ -19,9 +15,9 @@ lucu.browser.queryIdleState = function(interval, callback) {
 
   	chrome.idle.queryState(interval, callback);
   }
-};
+}
 
-lucu.browser.updateBadge = function() {
+function updateBadge() {
   'use strict';
   openDatabaseConnection(onConnect);
 
@@ -44,7 +40,7 @@ lucu.browser.updateBadge = function() {
     const badgeText = {text: count.toString()};
     chrome.browserAction.setBadgeText(badgeText);
   }
-};
+}
 
 /**
  * Called when the extension's icon button is clicked in browser's toolbar.
@@ -56,7 +52,7 @@ lucu.browser.updateBadge = function() {
  * enabled before querying for the new tab.
  * NOTE: the calls to chrome.tabs here do not require the tabs permission
  */
-lucu.browser.onBadgeClick = function(event) {
+function onBadgeClick(event) {
   'use strict';
   // console.debug('Clicked badge');
   const VIEW_URL = chrome.extension.getURL('slides.html');
@@ -81,10 +77,33 @@ lucu.browser.onBadgeClick = function(event) {
 
     chrome.tabs.create({url: VIEW_URL});
   }
-};
+}
 
-lucu.browser.isOffline = function() {
+function isOffline() {
   'use strict';
   return navigator && navigator.hasOwnProperty('onLine') && 
   	!navigator.onLine;
-};
+}
+
+function showNotification(message) {
+  'use strict';
+
+  chrome.permissions.contains({permissions: ['notifications']}, 
+    hasPermission);
+
+  function hasPermission(permitted) {
+    if(!permitted) return;
+
+    const notification = {
+      type: 'basic',
+      title: chrome.runtime.getManifest().name,
+      iconUrl: '/media/rss_icon_trans.gif',
+      message: message
+    };
+
+    const appTitle = 'lucubrate';
+    const callback = function(){};
+
+    chrome.notifications.create(appTitle, notification, callback);
+  }
+}

@@ -329,8 +329,8 @@ function startSubscription(url) {
       return;
     }
 
-    if(lucu.browser.isOffline()) {
-      lucu.feed.put(connection, null, {url: url}, onSubscribe);
+    if(isOffline()) {
+      putFeed(connection, null, {url: url}, onSubscribe);
     } else {
       fetchFeed(url, 10 * 1000, onFetch.bind(null, connection));        
     }
@@ -345,7 +345,7 @@ function startSubscription(url) {
       return;
     }
 
-    lucu.feed.put(connection, null, remoteFeed, function() {
+    putFeed(connection, null, remoteFeed, function() {
       onSubscribe(remoteFeed, 0, 0);
     });
   }
@@ -360,7 +360,7 @@ function startSubscription(url) {
 
     // Show a notification
     var title = addedFeed.title || addedFeed.url;
-    lucu.notifications.show('Subscribed to ' + title);
+    showNotification('Subscribed to ' + title);
   }
 }
 
@@ -545,20 +545,20 @@ function onUnsubscribeButtonClicked(event) {
 
     if(error) {
       console.debug(error);
-      onUnsubscribeSuccess(error);
+      onComplete(error);
       return;
     }
 
-    lucu.feed.unsubscribe(connection, feedId, onUnsubscribeSuccess);
+    unsubscribe(connection, feedId, onComplete);
   });
 
-  function onUnsubscribeSuccess(event) {
+  function onComplete(event) {
 
     const sectionMenu = document.getElementById('mi-subscriptions');
 
     // Update the badge in case any unread articles belonged to 
     // the unsubscribed feed
-    lucu.browser.updateBadge();
+    updateBadge();
 
     // TODO: send out a message notifying other views
     // of the unsubscribe. That way the slides view can

@@ -84,4 +84,4 @@ function openDatabaseConnection(callback) {
   request.onerror = callback;
   request.onblocked = callback;
   return request;
-};
+}

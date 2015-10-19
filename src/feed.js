@@ -2,10 +2,6 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-var lucu = lucu || {};
-
-lucu.feed = lucu.feed || {};
-
 // TODO: somehow store responseURL? 
 // TODO: intelligently react to redirects
 function fetchFeed(url, timeout, callback) {
@@ -26,8 +22,8 @@ function fetchFeed(url, timeout, callback) {
       const feed = lucu.feed.deserialize(document);
       feed.url = url;
       feed.fetched = Date.now();
-      feed.entries = feed.entries.filter(lucu.entry.hasLink);
-      feed.entries.forEach(lucu.entry.rewriteLink);
+      feed.entries = feed.entries.filter(entryHasLink);
+      feed.entries.forEach(rewriteEntryLink);
 
       const seen = new Set();
       feed.entries = feed.entries.filter(function(entry) {
@@ -92,30 +88,16 @@ function forEachFeed(connection, handleFeed, sortByTitle, callback) {
   };
 }
 
-lucu.feed.put = function(connection, original, feed, callback) {
+// TODO: check last modified date of the remote xml file to avoid 
+// pointless updates?
+// TODO: ensure the date is not beyond the current date?
+// TODO: stop requiring title (fix the options page issue)
+// TODO: maybe not modify date updated if not dirty
+function putFeed(connection, original, feed, callback) {
   'use strict';
 
-  // TODO: check last modified date of the remote xml file to avoid 
-  // pointless updates?
-
-  // Sanitize new properties
-  if(feed.title) {
-    feed.title = lucu.feed.sanitizeString(feed.title);
-  }
-
-  if(feed.description) {
-    feed.description = lucu.feed.sanitizeString(feed.description);
-  }
-
-  if(feed.link) {
-    feed.link  = lucu.feed.sanitizeString(feed.link);
-  }
-
-  // Create a storable representation of the feed
   const storable = {};
 
-  // Copy over the earlier id
-  // NOTE: for some reason, poll was not doing this?
   if(original) {
     storable.id = original.id;
   }
@@ -128,19 +110,19 @@ lucu.feed.put = function(connection, original, feed, callback) {
     storable.schemeless = lucu.url.getSchemeless(storable.url);
   }
 
-  // Title is required for now (due to issue with displaying feeds
-  // on the options page feed list)
-  storable.title = feed.title || '';
+  const title = sanitizeFeedValue(feed.title);
+  storable.title = title || '';
 
-  if(feed.description) {
-    storable.description = storable.description;
+  const description = sanitizeFeedValue(feed.description);
+  if(description) {
+    storable.description = description;
   }
 
-  if(feed.link) {
-    storable.link = feed.link;
+  const link = sanitizeFeedValue(feed.link);
+  if(link) {
+    storable.link = link;
   }
 
-  // TODO: ensure the date is not beyond the current date?
   if(feed.date) {
     storable.date = feed.date;
   }
@@ -150,8 +132,6 @@ lucu.feed.put = function(connection, original, feed, callback) {
   }
 
   if(original) {
-    // TODO: this should not be changing the date updated unless something
-    // actually changed ?
     storable.updated = Date.now();
     storable.created = original.created;
   } else {
@@ -161,53 +141,47 @@ lucu.feed.put = function(connection, original, feed, callback) {
   const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.put(storable);
-
   request.onsuccess = function(event) {
     callback();
   };
-
   request.onerror = function(event) {
-    console.debug('Error putting feed %s', JSON.stringify(feed));
+    console.debug('Error putting feed %s', JSON.stringify(storable));
     console.dir(event);
     callback();
   };
-};
+}
 
-lucu.feed.sanitizeString = function(string) {
+// TODO: sanitize html entities?
+function sanitizeFeedValue(value) {
   'use strict';
-
-  // TODO: html entities?
-
-  if(!string) {
+  if(!value) {
     return;
   }
 
-  string = lucu.string.stripTags(string);
-
-  if(string) {
-    string = lucu.string.stripControls(string);
+  value = lucu.string.stripTags(value);
+  if(value) {
+    value = lucu.string.stripControls(value);
   }
 
-  string = lucu.string.condenseWhitespace(string);
-  
-  if(string) {
-    string = string.trim();
+  value = lucu.string.condenseWhitespace(value);
+  if(value) {
+    value = value.trim();
   }
   
-  return string;
-};
+  return value;
+}
 
-lucu.feed.remove = function(connection, id, callback) {
+function removeFeed(connection, id, callback) {
   'use strict';
   const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.delete(id);
   request.onsuccess = callback;
-};
+}
 
-lucu.feed.unsubscribe = function(connection, id, callback) {
+function unsubscribe(connection, id, callback) {
   'use strict';
-  lucu.feed.remove(connection, id, function(event) {
-    lucu.entry.removeByFeed(connection, id, callback);
+  removeFeed(connection, id, function(event) {
+    removeEntriesByFeed(connection, id, callback);
   });
-};
+}

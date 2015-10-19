@@ -22,13 +22,13 @@ chrome.alarms.create('poll', {periodInMinutes: 20});
 function pollFeeds() {
   'use strict';
 
-  if(lucu.browser.isOffline()) {
+  if(isOffline()) {
     return;
   }
 
   const IDLE_PERIOD = 60 * 5; // seconds
 
-  lucu.browser.queryIdleState(IDLE_PERIOD, function(state) {
+  queryIdleState(IDLE_PERIOD, function(state) {
     if(!state || state === 'locked' || state === 'idle') {
       openDatabaseConnection(iterateFeeds);
     } else {
@@ -57,30 +57,30 @@ function pollFeeds() {
         return;
       }
 
-      lucu.feed.put(connection, feed, remoteFeed, 
+      putFeed(connection, feed, remoteFeed, 
         onPutFeed.bind(null, remoteFeed));
     }
 
     function onPutFeed(remoteFeed, event) {
       async.forEach(remoteFeed.entries, 
-        findEntryByLink.bind(null, connection, feed), 
+        pollFindEntryByLink.bind(null, connection, feed), 
         function(){});
     }
   }
 
-  function findEntryByLink(connection, feed, entry, callback) {
-    lucu.entry.findByLink(connection, entry, onFind);
-
-    function onFind(event) {
+  function pollFindEntryByLink(connection, feed, entry, callback) {
+    
+    findEntryByLink(connection, entry, function(event) {
       if(event.target.result) {
         callback();
       } else {
-        lucu.entry.augment(entry, onAugment);
+        const timeout = 20 * 1000;
+        augmentEntryContent(entry, timeout, onAugment);
       }
-    }
+    });
 
-    function onAugment() {
-      lucu.entry.put(connection, feed, entry, callback);
+    function onAugment(errorEvent) {
+      putEntry(connection, feed, entry, callback);
     }
   }
 
@@ -91,7 +91,7 @@ function pollFeeds() {
       type: 'pollCompleted'
     };
     chrome.runtime.sendMessage(message);
-    lucu.browser.updateBadge();
-    lucu.notifications.show('Updated articles');
+    updateBadge();
+    showNotification('Updated articles');
   }
 }

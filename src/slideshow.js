@@ -84,7 +84,7 @@ function markSlideRead(slide) {
     }
 
     const entryId = parseInt(entryAttribute);
-    lucu.entry.markRead(connection, entryId);
+    markEntryRead(connection, entryId);
   });
 }
 
@@ -271,7 +271,7 @@ function appendSlide(entry, isFirst) {
   const feedTitle = document.createElement('span');
   feedTitle.setAttribute('title',entry.feedLink);
   const entryPubDate = entry.pubdate ?
-    ' on ' + lucu.date.format(new Date(entry.pubdate)) : '';
+    ' on ' + formatDate(new Date(entry.pubdate)) : '';
   feedTitle.textContent = (entry.feedTitle || 'Unknown feed') + ' by ' +
     (entry.author || 'Unknown author') + entryPubDate;
   source.appendChild(feedTitle);

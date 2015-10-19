@@ -19,7 +19,7 @@ lucu.install.onInstall = function(event) {
   }
 
   // maybe install should also set the badge text to '?'
-  //lucu.browser.updateBadge();
+  //updateBadge();
 
   // TODO: set localStorage defaults
 };
@@ -37,4 +37,4 @@ chrome.runtime.onInstalled.addListener(lucu.install.onInstall);
 // registered
 
 // Binds on background page load
-chrome.browserAction.onClicked.addListener(lucu.browser.onBadgeClick);
+chrome.browserAction.onClicked.addListener(onBadgeClick);

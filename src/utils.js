@@ -1,6 +1,55 @@
-// Copyright 2014 Josh Froelich. All rights reserved.
+// Copyright 2015 Josh Froelich. All rights reserved.
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
+
+// Detatches an element from the dom
+function removeElement(element) {
+  'use strict';
+  element.remove();
+}
+
+// Replaces the element with its children
+// NOTE: This is not optimized to be called on a live document. This causes a 
+// reflow per move.
+function unwrapElement(element) {
+  'use strict';
+  const parent = element.parentElement;
+
+  // Avoid issues with documentElement or detached elements
+  if(!parent) {
+    return;
+  }
+
+  // Move each child of the element to the position preceding the element in
+  // the parent's node list, maintaining child order.
+  while(element.firstChild) {
+    parent.insertBefore(element.firstChild, element);
+  }
+
+  // Now the element is empty so detach it
+  element.remove();
+}
+
+
+// Found this somewhere I think on stackoverflow
+function isValidDate(date) {
+  'use strict';
+  return date && date.toString() === '[object Date]' && isFinite(date);
+}
+
+function formatDate(date, sep) {
+  'use strict';
+ 
+  if(!date) {
+    return '';
+  }
+  const parts = [];
+  parts.push(date.getMonth() + 1);
+  parts.push(date.getDate());
+  parts.push(date.getFullYear());
+  return parts.join(sep || '');
+}
+
 
 var lucu = lucu || {};
 

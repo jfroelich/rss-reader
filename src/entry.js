@@ -2,10 +2,6 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-var lucu = lucu || {};
-
-lucu.entry = lucu.entry || {};
-
 // TODO: create an Entry data object, store entry objects instead of generic
 // object literals in indexedDB. Attach appropriate methods to the general
 // object. This should lead to much cleaner looking and organized code.
@@ -26,7 +22,7 @@ lucu.entry = lucu.entry || {};
 // entries, and subscribe should just add the feed and not add any entries because
 // subscribe should be near instant. So subscribe should store the feed and then
 // enqueue a one-feed poll update.
-lucu.entry.put = function(connection, feed, entry, callback) {
+function putEntry(connection, feed, entry, callback) {
   'use strict';
 
   // TODO: is this check even necessary? Maybe this never happens?
@@ -60,7 +56,7 @@ lucu.entry.put = function(connection, feed, entry, callback) {
 
   if(entry.pubdate) {
     const date = new Date(entry.pubdate);
-    if(lucu.date.isValid(date)) {
+    if(isValidDate(date)) {
       storable.pubdate = date.getTime();
     }
   }
@@ -82,15 +78,13 @@ lucu.entry.put = function(connection, feed, entry, callback) {
     callback(); 
   };
   transaction.objectStore('entry').add(storable);
-};
+}
 
-// TODO: provide a callback?
-lucu.entry.markRead = function(connection, id) {
+function markEntryRead(connection, id) {
   'use strict';
   // console.log('Marking %s as read', id);
 
   const transaction = connection.transaction('entry', 'readwrite');
-  //transaction.oncomplete = callback;
   const entries = transaction.objectStore('entry');
   const request = entries.openCursor(id);
   request.onsuccess = function(event) {
@@ -111,33 +105,33 @@ lucu.entry.markRead = function(connection, id) {
     delete entry.unread;
     entry.readDate = Date.now();
     cursor.update(entry);
-    lucu.browser.updateBadge();
+    updateBadge();
     //chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
   };
-};
+}
 
 // Returns a truthy value if the entry has a link property with a value
-lucu.entry.hasLink = function(entry) {
+function entryHasLink(entry) {
   'use strict';
   return entry.link;
-};
+}
 
-lucu.entry.rewriteLink = function(entry) {
+function rewriteEntryLink(entry) {
   'use strict';
   entry.link = lucu.url.rewrite(entry.link);
-};
+}
 
 // Searches for entry.link in the link index
-lucu.entry.findByLink = function(connection, entry, callback) {
+function findEntryByLink(connection, entry, callback) {
   'use strict';
   const transaction = connection.transaction('entry');
   const entries = transaction.objectStore('entry');
   const links = entries.index('link');
   const request = links.get(entry.link);
   request.onsuccess = callback;
-};
+}
 
-lucu.entry.removeByFeed = function(connection, id, callback) {
+function removeEntriesByFeed(connection, id, callback) {
   'use strict';
   const transaction = connection.transaction('entry', 'readwrite');
   transaction.oncomplete = callback;
@@ -151,7 +145,7 @@ lucu.entry.removeByFeed = function(connection, id, callback) {
       cursor.continue();
     }
   };
-};
+}
 
 /**
  * Fetch the html at entry.link and use it to replace entry.content
@@ -168,32 +162,28 @@ lucu.entry.removeByFeed = function(connection, id, callback) {
  * just a feature of fetchHTML or does it belong here?
  * TODO: do something with responseURL?
  */
-lucu.entry.augment = function(entry, callback) {
+function augmentEntryContent(entry, timeout, callback) {
   'use strict';
   
   const request = new XMLHttpRequest();
-  request.timeout = 20 * 1000;
-  const onError = function(event) {
-    console.warn(event);
-    callback();
-  };
-  request.ontimeout = onError;
-  request.onerror = onError;
-  request.onabort = onError;
+  request.timeout = timeout;
+  request.ontimeout = callback;
+  request.onerror = callback;
+  request.onabort = callback;
   
   request.onload = function(event) {
     const request = event.target;
     const document = request.responseXML;
 
     if(!document || !document.body) {
-      callback();
+      callback(new Error('No document'));
       return;
     }
 
     lucu.url.resolveDocument(document, request.responseURL);
 
     const images = document.body.getElementsByTagName('img');
-    async.forEach(images, lucu.images.fetchDimensions, function() {
+    async.forEach(images, fetchImageDimensions, function() {
       const content = document.body.innerHTML;
       if(content) {
         entry.content = content;
@@ -207,9 +197,54 @@ lucu.entry.augment = function(entry, callback) {
   request.open('GET', entry.link, true);
   request.responseType = 'document';
   request.send();  
-};
+}
 
-lucu.entry.clearEntries = function(connection) {
+/**
+ * Ensures that the width and height attributes of an image element are set. 
+ * If the dimensions are set, the callback is called immediately. If not set, 
+ * the image is fetched and then the dimensions are set.
+ *
+ * Helper for augmentEntryContent
+ */
+function fetchImageDimensions(image, callback) {
+  'use strict';
+
+  const src = (image.getAttribute('src') || '').trim();
+  const width = (image.getAttribute('width') || '').trim();
+  if(!src || width || image.width ||
+    width === '0' || /^0\s*px/i.test(width) ||
+    lucu.url.isDataURI(src)) {
+    return callback();
+  }
+
+  // We load the image within a separate document context because
+  // the element may currently be contained within an inert document
+  // context (such as the document created by an XMLHttpRequest or when
+  // using document.implementation.createDocument)
+  
+  // TODO: think of a better way to specify the proxy. I should not be
+  // relying on window explicitly here.
+
+  // TODO: this should be able to work in other environments, so we 
+  // cannot use window
+
+  const document = window.document;
+  const proxy = document.createElement('img');
+  proxy.onload = function(event) {
+    const proxy = event.target;
+    image.width = proxy.width;
+    image.height = proxy.height;
+    callback();
+  };
+  
+  proxy.onerror = function(event) {
+    // console.debug('Failed to fetch %s %o', src, event.target);
+    callback();
+  };
+  proxy.src = src;
+}
+
+function clearEntries(connection) {
   'use strict';
   const transaction = connection.transaction('entry', 'readwrite');
   const entries = transaction.objectStore('entry');
@@ -218,4 +253,4 @@ lucu.entry.clearEntries = function(connection) {
   request.onsuccess = function(event) {
     console.debug('Cleared entry object store');
   };
-};
+}

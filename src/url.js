@@ -44,6 +44,11 @@ lucu.url.getSchemeless = function(url) {
   return schemeless;
 };
 
+// TODO: support leading whitespace?
+lucu.url.isDataURI = function(url) {
+  return /^data\s*:/i.test(url);
+};
+
 /**
  * Returns a rewritten url, or the original url if no rewriting rules were
  * applicable.
@@ -94,7 +99,7 @@ lucu.url.resolveDocument = function(document, baseURL) {
   'use strict';
 
   const bases = document.getElementsByTagName('base');
-  Array.prototype.forEach.call(bases, lucu.dom.remove);
+  Array.prototype.forEach.call(bases, removeElement);
 
   // TODO: build this from the map, this is an extremely obvious DRY violation
   const RESOLVABLES_QUERY = 'a, area, audio, blockquote, embed, ' + 

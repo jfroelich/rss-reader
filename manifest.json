@@ -18,17 +18,13 @@
       "/src/archive.js",
       "/src/browser.js",
       "/src/database.js",
-      "/src/date.js",
-      "/src/dom.js",
       "/src/entry.js",
       "/src/feed.js",
-      "/src/images.js",
       "/src/install.js",
-      "/src/notifications.js",
       "/src/poll.js",
       "/src/deserialize-feed.js",
-      "/src/string.js",
-      "/src/url.js"
+      "/src/url.js",
+      "/src/utils.js"
     ]
   },
   "options_page": "options.html",

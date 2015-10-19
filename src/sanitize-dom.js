@@ -337,7 +337,7 @@ lucu.sanitize.removeJavascriptAnchors = function(root) {
   const isScript = lucu.sanitize.isScriptAnchor;
   const anchors = root.querySelectorAll('a[href]');
   const scriptAnchors = filter.call(anchors, isScript);
-  scriptAnchors.forEach(lucu.dom.remove);
+  scriptAnchors.forEach(removeElement);
 };
 
 /**
@@ -397,7 +397,7 @@ lucu.sanitize.removeInvisibleElements = function(document) {
   //const filter = Array.prototype.filter;
   const elements = document.body.getElementsByTagName('*');
   //const invisibles = filter.call(elements, lucu.sanitize.isInvisible);
-  //invisibles.forEach(lucu.dom.remove);
+  //invisibles.forEach(removeElement);
 
   // Testing for...of
   for(let element of elements) {
@@ -432,9 +432,8 @@ lucu.sanitize.removeTracerImages = function(document) {
   'use strict';
   const filter = Array.prototype.filter;
   const isTracer = lucu.sanitize.isTracerImage;
-  const remove = lucu.dom.remove;
   const images = document.body.getElementsByTagName('img');
-  filter.call(images, isTracer).forEach(remove);
+  filter.call(images, isTracer).forEach(removeElement);
 };
 
 lucu.sanitize.isSourcelessImage = function(image) {
@@ -454,7 +453,7 @@ lucu.sanitize.removeSourcelessImages = function(document) {
   const images = document.body.getElementsByTagName('img');
   const isSourceless = lucu.sanitize.isSourcelessImage;
   const sourcelessImages = filter.call(images, isSourceless);
-  sourcelessImages.forEach(lucu.dom.remove);
+  sourcelessImages.forEach(removeElement);
 };
 
 /**
@@ -465,9 +464,8 @@ lucu.sanitize.removeSourcelessImages = function(document) {
 lucu.sanitize.unwrapNoscripts = function(document) {
   'use strict';
   const forEach = Array.prototype.forEach;
-  const unwrap = lucu.dom.unwrap;
   const noscripts = document.body.getElementsByTagName('noscript');
-  forEach.call(noscripts, unwrap);
+  forEach.call(noscripts, unwrapElement);
 };
 
 /**
@@ -477,7 +475,7 @@ lucu.sanitize.unwrapNoscripts = function(document) {
 lucu.sanitize.unwrapNoframes = function(document) {
   'use strict';
   const noframes = document.body.getElementsByTagName('noframes');
-  Array.prototype.forEach.call(noframes, lucu.dom.unwrap);
+  Array.prototype.forEach.call(noframes, unwrapElement);
 };
 
 /**
@@ -511,7 +509,6 @@ lucu.sanitize.unwrapDescendants = function(rootElement) {
   'use strict';
 
   const filter = Array.prototype.filter;
-  const unwrap = lucu.dom.unwrap;
 
   // NOTE: this performs extremely poorly when dealing with a large
   // number of elements. For example, it took ~20 secs on
@@ -529,7 +526,7 @@ lucu.sanitize.unwrapDescendants = function(rootElement) {
   var element = rootElement.querySelector(unwrappables);
   var numIterations = 0;
   while(element && (numIterations < 3000)) {
-    unwrap(element);
+    unwrapElement(element);
     element = rootElement.querySelector(unwrappables);
     numIterations++;
   }
@@ -562,7 +559,7 @@ lucu.sanitize.unwrapDescendants = function(rootElement) {
 
   });
 
-  nominalAnchors.forEach(lucu.dom.unwrap);
+  nominalAnchors.forEach(unwrapElement);
 };
 
 // Unwrap single item lists. For now just ul
