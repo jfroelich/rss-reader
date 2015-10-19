@@ -66,7 +66,7 @@ function pollFeeds() {
         onPutFeed.bind(null, remoteFeed));
     }
 
-    function onPutFeed(event) {
+    function onPutFeed(remoteFeed, event) {
       async.forEach(remoteFeed.entries, 
         findEntryByLink.bind(null, connection, feed), callback);
     }
