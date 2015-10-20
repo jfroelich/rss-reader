@@ -118,7 +118,7 @@ function entryHasLink(entry) {
 
 function rewriteEntryLink(entry) {
   'use strict';
-  entry.link = lucu.url.rewrite(entry.link);
+  entry.link = rewriteURL(entry.link);
 }
 
 // Searches for entry.link in the link index
@@ -180,7 +180,7 @@ function augmentEntryContent(entry, timeout, callback) {
       return;
     }
 
-    lucu.url.resolveDocument(document, request.responseURL);
+    resolveURLs(document, request.responseURL);
 
     const images = document.body.getElementsByTagName('img');
     async.forEach(images, fetchImageDimensions, function() {
@@ -213,7 +213,7 @@ function fetchImageDimensions(image, callback) {
   const width = (image.getAttribute('width') || '').trim();
   if(!src || width || image.width ||
     width === '0' || /^0\s*px/i.test(width) ||
-    lucu.url.isDataURI(src)) {
+    isDataURI(src)) {
     return callback();
   }
 

@@ -176,7 +176,7 @@ function optionsAppendFeed(feed, insertedSort) {
   item.setAttribute('title', lucu.string.stripTags(feed.description) || '');
   item.onclick = onFeedListItemClick;
   var favIconElement = document.createElement('img');
-  favIconElement.src = lucu.url.getFavIcon(feed.link);
+  favIconElement.src = getFavIconURL(feed.link);
   if(feed.title) favIconElement.title = feed.title;
   item.appendChild(favIconElement);
 
@@ -300,7 +300,7 @@ function startSubscription(url) {
 
   hideSubscriptionPreview();
 
-  if(!lucu.url.isValid(url)) {
+  if(!isValidURL(url)) {
     showErrorMessage('Invalid url "' + url + '".');
     return;
   }
@@ -384,7 +384,7 @@ function populateFeedDetailsSection(feedId) {
       }
 
       document.getElementById('details-title').textContent = feed.title || 'Untitled';
-      const favIconURL = lucu.url.getFavIcon(feed.url);
+      const favIconURL = getFavIconURL(feed.url);
       document.getElementById('details-favicon').setAttribute('src', favIconURL);
       document.getElementById('details-feed-description').textContent =
         lucu.string.stripTags(feed.description) || 'No description';
@@ -435,7 +435,7 @@ function onSubscribeSubmit(event) {
     return false;
   }
 
-  if(lucu.url.isValid(query)) {
+  if(isValidURL(query)) {
     document.getElementById('discover-results-list').innerHTML = '';
     document.getElementById('discover-no-results').style.display='none';
      document.getElementById('discover-in-progress').style.display='none';
@@ -508,7 +508,7 @@ function onDiscoverFeedsComplete(query, results) {
     item.appendChild(button);
 
     const image = document.createElement('img');
-    image.setAttribute('src', lucu.url.getFavIcon(result.url));
+    image.setAttribute('src', getFavIconURL(result.url));
     image.title = result.link;
     item.appendChild(image);
 

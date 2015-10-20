@@ -50,7 +50,7 @@ function findFeedByURL(connection, url, callback) {
   'use strict';
   const transaction = connection.transaction('feed');
   const urls = transaction.objectStore('feed').index('schemeless');
-  const request = urls.get(lucu.url.getSchemeless(url));
+  const request = urls.get(getSchemelessURL(url));
   request.onsuccess = function(event) {
     callback(event.target.result);
   };
@@ -107,7 +107,7 @@ function putFeed(connection, original, feed, callback) {
   if(original) {
     storable.schemeless = original.schemeless;
   } else {
-    storable.schemeless = lucu.url.getSchemeless(storable.url);
+    storable.schemeless = getSchemelessURL(storable.url);
   }
 
   const title = sanitizeFeedValue(feed.title);

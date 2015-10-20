@@ -2,11 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-var lucu = lucu || {};
-
-lucu.url = {};
-
-lucu.url.isValid = function(url) {
+function isValidURL(url) {
   'use strict';
   if(!url) {
     return false;
@@ -33,27 +29,23 @@ lucu.url.isValid = function(url) {
   }
 
   return true;
-};
+}
 
-// NOTE: requires URI.js
-lucu.url.getSchemeless = function(url) {
+function getSchemelessURL(url) {
   'use strict';
   const uri = new URI(url);
   uri.protocol('');
   const schemeless = uri.toString().substring(2);
   return schemeless;
-};
+}
 
 // TODO: support leading whitespace?
-lucu.url.isDataURI = function(url) {
+function isDataURI(url) {
+  'use strict';
   return /^data\s*:/i.test(url);
-};
+}
 
-/**
- * Returns a rewritten url, or the original url if no rewriting rules were
- * applicable.
- */
-lucu.url.rewrite = function(url) {
+function rewriteURL(url) {
   'use strict';
   const RE_GOOGLE_NEWS = /^https?:\/\/news.google.com\/news\/url\?.*url=(.*)/i;
   const matches = RE_GOOGLE_NEWS.exec(url);
@@ -63,9 +55,9 @@ lucu.url.rewrite = function(url) {
   }
 
   return url;
-};
+}
 
-lucu.url.RESOLVABLE_ATTRIBUTES = new Map([
+const RESOLVABLE_ATTRIBUTES = new Map([
   ['a', 'href'],
   ['area', 'href'],
   ['audio', 'src'],
@@ -95,31 +87,31 @@ lucu.url.RESOLVABLE_ATTRIBUTES = new Map([
  * it properly is all laid out in some RFC standard somewhere, and is probably
  * present in Webkit source.
  */
-lucu.url.resolveDocument = function(document, baseURL) {
+function resolveURLs(document, baseURL) {
   'use strict';
 
   const bases = document.getElementsByTagName('base');
   Array.prototype.forEach.call(bases, removeElement);
 
-  // TODO: build this from the map, this is an extremely obvious DRY violation
+  // TODO: build this from the map
   const RESOLVABLES_QUERY = 'a, area, audio, blockquote, embed, ' + 
     'iframe, form, img, link, object, script, source, track, video';
 
   const elements = document.querySelectorAll(RESOLVABLES_QUERY);
   Array.prototype.forEach.call(elements, 
-    lucu.url.resolveElement.bind(null, baseURL));
-};
+    resolveElementURL.bind(null, baseURL));
+}
 
 // Helper for resolveDocument
 // Depends on the URI lib. Modifies the element in place.
 // NOTE: this only modifies the first attribute found. if 
 // an element has multiple URL attributes, only the first
 // is changed.
-lucu.url.resolveElement = function(baseURL, element) {
+function resolveElementURL(baseURL, element) {
   'use strict';
 
   const name = element.localName;
-  const attribute = lucu.url.RESOLVABLE_ATTRIBUTES.get(name);
+  const attribute = RESOLVABLE_ATTRIBUTES.get(name);
   const url = (element.getAttribute(attribute) || '').trim();
   
   if(!url) {
@@ -129,7 +121,6 @@ lucu.url.resolveElement = function(baseURL, element) {
   try {
     const uri = new URI(url);
     
-    // Don't try and resolve absolute URLs
     if(uri.protocol()) {
       return;
     }
@@ -142,7 +133,7 @@ lucu.url.resolveElement = function(baseURL, element) {
   } catch(e) {
     console.debug('resolveElement error: %s %s', e, url);
   }
-};
+}
 
 /**
  * Returns a URL string pointing to the fav icon for a url. If url is
@@ -166,7 +157,7 @@ lucu.url.resolveElement = function(baseURL, element) {
  * corresponding fav icon.
  * @return {String} the url of the favicon
  */
-lucu.url.getFavIcon = function(url) {
+function getFavIconURL(url) {
   'use strict';
 
   if(!url) {
@@ -175,4 +166,4 @@ lucu.url.getFavIcon = function(url) {
 
   return 'http://www.google.com/s2/favicons?domain_url=' + 
     encodeURIComponent(url);
-};
+}
