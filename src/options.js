@@ -173,7 +173,7 @@ function optionsAppendFeed(feed, insertedSort) {
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
   item.setAttribute('feed',feed.id);
-  item.setAttribute('title', lucu.string.stripTags(feed.description) || '');
+  item.setAttribute('title', stripTags(feed.description) || '');
   item.onclick = onFeedListItemClick;
   var favIconElement = document.createElement('img');
   favIconElement.src = getFavIconURL(feed.link);
@@ -279,9 +279,9 @@ function showOrSkipSubscriptionPreview(url) {
     for(var i = 0, len = Math.min(5,result.entries.length); i < len;i++) {
       var entry = result.entries[i];
       var item = document.createElement('li');
-      item.innerHTML = lucu.string.stripTags(entry.title);
+      item.innerHTML = stripTags(entry.title);
       var content = document.createElement('span');
-      content.innerHTML = lucu.string.stripTags(entry.content);
+      content.innerHTML = stripTags(entry.content);
       item.appendChild(content);
       document.getElementById(
         'subscription-preview-entries').appendChild(item);
@@ -387,7 +387,7 @@ function populateFeedDetailsSection(feedId) {
       const favIconURL = getFavIconURL(feed.url);
       document.getElementById('details-favicon').setAttribute('src', favIconURL);
       document.getElementById('details-feed-description').textContent =
-        lucu.string.stripTags(feed.description) || 'No description';
+        stripTags(feed.description) || 'No description';
       document.getElementById('details-feed-url').textContent = feed.url;
       document.getElementById('details-feed-link').textContent = feed.link;
       document.getElementById('details-unsubscribe').value = feed.id;

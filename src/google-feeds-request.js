@@ -63,8 +63,8 @@ GoogleFeedsRequest.sanitizeEntry = function(entry) {
   }
 
   if(entry.title) {
-    entry.title = lucu.string.stripTags(entry.title);
-    entry.title = lucu.string.truncate(entry.title, 100);
+    entry.title = stripTags(entry.title);
+    entry.title = truncate(entry.title, 100);
   }
 
   if(entry.contentSnippet) {
@@ -77,7 +77,7 @@ GoogleFeedsRequest.sanitizeEntry = function(entry) {
     // this function should be defined on the prototype
     // NOTE: this can lead to display bugs because the arbitrary cut off 
     // can cut tags in half
-    entry.contentSnippet = lucu.string.truncate(entry.contentSnippet, 400);
+    entry.contentSnippet = truncate(entry.contentSnippet, 400);
   }
 
   return entry;

@@ -158,12 +158,12 @@ function sanitizeFeedValue(value) {
     return;
   }
 
-  value = lucu.string.stripTags(value);
+  value = stripTags(value);
   if(value) {
-    value = lucu.string.stripControls(value);
+    value = stripControlCharacters(value);
   }
 
-  value = lucu.string.condenseWhitespace(value);
+  value = condenseWhitespace(value);
   if(value) {
     value = value.trim();
   }

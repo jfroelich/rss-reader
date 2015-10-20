@@ -101,7 +101,7 @@ lucu.feed.deserializeAtomEntry = function(entry) {
   // TODO: only define properties if truthy
 
   result.title = getText(entry, 'title');
-  result.author = lucu.string.stripTags(getText(entry, 'author name'), ' ');
+  result.author = stripTags(getText(entry, 'author name'), ' ');
   var link = entry.querySelector('link[rel="alternate"]');
   link = link || entry.querySelector('link[rel="self"]');
   link = link || entry.querySelector('link[href]');
@@ -181,7 +181,7 @@ lucu.feed.deserializeRSSEntry = function(entry) {
   
   const author = getText(entry, 'creator') || getText(entry, 'publisher');
   if(author) {
-    result.author = lucu.string.stripTags(author, ' ');
+    result.author = stripTags(author, ' ');
   }
   
   const date = getText(entry, 'pubDate') || getText(entry, 'date');

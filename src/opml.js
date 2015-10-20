@@ -85,8 +85,7 @@ lucu.opml.createOutlineElement = function(document, feed) {
 /**
  * Generates an array of outline objects from an OPML XMLDocument object.
  *
- * TODO: explicit dependence on lucu.string.stripControls and 
- * lucu.string.stripTags?
+ * TODO: explicit dependence on stripControlCharacters and stripTags?
  * TODO: guard against duplicates?
  */
 lucu.opml.createOutlines = function(document) {
@@ -135,18 +134,18 @@ lucu.opml.createOutlineFromElement = function(element) {
   if(title) outline.title = title;
 
   var description = element.getAttribute('description');
-  description = lucu.string.stripControls(description);
-  description = lucu.string.stripTags(description);
+  description = stripControlCharacters(description);
+  description = stripTags(description);
   description = description.trim();
   if(description) outline.description = description;
 
   var url = element.getAttribute('xmlUrl') || '';
-  url = lucu.string.stripControls(url);
+  url = stripControlCharacters(url);
   url = url.trim();
   if(url) outline.url = url;
 
   var link = element.getAttribute('htmlUrl') || '';
-  link = lucu.string.stripControls(link);
+  link = stripControlCharacters(link);
   link = link.trim();
   if(link) outline.link = link;
 

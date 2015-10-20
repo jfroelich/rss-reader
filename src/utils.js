@@ -30,10 +30,9 @@ function unwrapElement(element) {
   element.remove();
 }
 
-
-// Found this somewhere I think on stackoverflow
 function isValidDate(date) {
   'use strict';
+  // Found this somewhere I think on stackoverflow
   return date && date.toString() === '[object Date]' && isFinite(date);
 }
 
@@ -50,14 +49,7 @@ function formatDate(date, sep) {
   return parts.join(sep || '');
 }
 
-
-var lucu = lucu || {};
-
-// String related utility functions
-lucu.string = {};
-
-// Scrubs tags
-lucu.string.stripTags = function(string, replacement) {
+function stripTags(string, replacement) {
   'use strict';
   if(!string) return;
   // TODO: rename doc to document?
@@ -71,38 +63,32 @@ lucu.string.stripTags = function(string, replacement) {
     values.push(node.nodeValue);
   }
   return values.join(replacement);
-};
+}
 
-// TODO: research the proper pattern
-// /[^\x20-\x7E]+/g;
-lucu.string.RE_CONTROL = /[\t\r\n]/g;
-
-// Scrubs html from a string
-lucu.string.stripControls = function(string) {
+function stripControlCharacters(string) {
   'use strict';
-
+  // TODO: research the proper pattern
+  // /[^\x20-\x7E]+/g;
+  const RE_CONTROL_CHARACTER = /[\t\r\n]/g;
   if(string) {
-    return string.replace(lucu.string.RE_CONTROL,'');
+    return string.replace(RE_CONTROL_CHARACTER,'');
   }
-};
+}
 
-lucu.string.ELLIPSIS = '\u2026';
-
-// Shorten a string if its too long
-lucu.string.truncate = function(string, position, extension) {
+function truncate(string, position, extension) {
   'use strict';
-
-  extension = extension || lucu.string.ELLIPSIS;
+  const ELLIPSIS = '\u2026';
+  extension = extension || ELLIPSIS;
 
   if(string && string.length > position) {
     return string.substr(0, position) + extension;
   }
   return string;
-};
+}
 
-lucu.string.condenseWhitespace = function(string) {
+function condenseWhitespace(string) {
   'use strict';
   if(string) {
     return string.replace(/\s+/,' ');
   }
-};
+}
