@@ -121,7 +121,6 @@ function rewriteEntryLink(entry) {
   entry.link = rewriteURL(entry.link);
 }
 
-// Searches for entry.link in the link index
 function findEntryByLink(connection, entry, callback) {
   'use strict';
   const transaction = connection.transaction('entry');

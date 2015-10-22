@@ -19,7 +19,7 @@ function fetchFeed(url, timeout, callback) {
     }
 
     try {
-      const feed = lucu.feed.deserialize(document);
+      const feed = deserializeFeed(document);
       feed.url = url;
       feed.fetched = Date.now();
       feed.entries = feed.entries.filter(entryHasLink);
@@ -45,7 +45,6 @@ function fetchFeed(url, timeout, callback) {
   request.send();
 }
 
-// Find a feed by url, ignoring protocol
 function findFeedByURL(connection, url, callback) {
   'use strict';
   const transaction = connection.transaction('feed');
@@ -56,7 +55,6 @@ function findFeedByURL(connection, url, callback) {
   };
 }
 
-// Find a feed by id
 function findFeedById(connection, id, callback) {
   'use strict';
   const transaction = connection.transaction('feed');
@@ -67,7 +65,6 @@ function findFeedById(connection, id, callback) {
   };
 }
 
-// Iterates over stored feeds
 function forEachFeed(connection, handleFeed, sortByTitle, callback) {
   'use strict';
 
