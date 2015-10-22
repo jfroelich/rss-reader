@@ -238,7 +238,6 @@ function fetchImageDimensions(image, callback) {
   };
   
   proxy.onerror = function(event) {
-    // console.debug('Failed to fetch %s %o', src, event.target);
     callback();
   };
   proxy.src = src;

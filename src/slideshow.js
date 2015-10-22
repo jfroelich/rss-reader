@@ -254,7 +254,7 @@ function appendSlide(entry, isFirst) {
 
   const doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = entry.content;
-  const results = lucu.sanitize.sanitizeDocument(doc);
+  const results = sanitizeDocument(doc);
   content.appendChild(results);
   slide.appendChild(content);
 

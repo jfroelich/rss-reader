@@ -88,6 +88,10 @@ function isOffline() {
 function showNotification(message) {
   'use strict';
 
+  // TODO: maybe we don't need the permission check at all?
+  // what happens if we just call notifications.create without
+  // permission? A basic exception? A no-op?
+
   chrome.permissions.contains({permissions: ['notifications']}, 
     hasPermission);
 

@@ -125,4 +125,3 @@ function archiveEntries() {
     }
   }
 }
-
