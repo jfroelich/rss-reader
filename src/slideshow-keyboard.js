@@ -39,20 +39,20 @@ lucu.slideUI.onKeyDown = function(event) {
   }
 
   // TODO: lot of DRY violation here. I should use a {} map
-  // to deltas and make one call to lucu.effects.scrollTo instead
+  // to deltas and make one call to scrollTo instead
 
   if(currentSlide) {
     if(key == km.DOWN) {
-      lucu.effects.scrollTo(currentSlide, 50, currentSlide.scrollTop + 200)
+      scrollElementTo(currentSlide, 50, currentSlide.scrollTop + 200)
       return;
     } else if(key == km.PAGE_DOWN) {
-      lucu.effects.scrollTo(currentSlide, 100, currentSlide.scrollTop + 800);
+      scrollElementTo(currentSlide, 100, currentSlide.scrollTop + 800);
       return;
     } else if(key == km.UP) {
-      lucu.effects.scrollTo(currentSlide, -50, currentSlide.scrollTop - 200);
+      scrollElementTo(currentSlide, -50, currentSlide.scrollTop - 200);
       return;
     } else if(key == km.PAGE_UP) {
-      lucu.effects.scrollTo(currentSlide, -100, currentSlide.scrollTop - 800);
+      scrollElementTo(currentSlide, -100, currentSlide.scrollTop - 800);
       return;
     }
   }

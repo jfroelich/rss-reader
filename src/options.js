@@ -45,7 +45,7 @@ function showErrorMessage(message, fadeIn) {
     container.style.opacity = '0';
     document.body.appendChild(container);
 
-    lucu.effects.fade(container, 1, 0);
+    fadeElement(container, 1, 0);
 
   } else {
     container.style.display = '';
@@ -103,7 +103,7 @@ function hideSubsciptionMonitor(onComplete, fadeOut) {
   }
 
   if(fadeOut) {
-    lucu.effects.fade(container, 2, 1, removeAndComplete);
+    fadeElement(container, 2, 1, removeAndComplete);
   } else {
     removeAndComplete();
   }
