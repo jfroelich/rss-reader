@@ -24,8 +24,15 @@ function unwrapElement(element) {
     parent.insertBefore(element.firstChild, element);
   }
 
-  // Now the element is empty so detach it
   element.remove();
+}
+
+function findCSSRule(sheet, selectorText) {
+  'use strict';
+  // Note: Array.prototype.find requires Chrome 45+
+  return Array.prototype.find.call(sheet.cssRules, function(rule) {
+    return rule.selectorText === selectorText;
+  });
 }
 
 function fadeElement(element, duration, delay, callback) {
