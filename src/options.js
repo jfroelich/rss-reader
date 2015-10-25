@@ -437,11 +437,7 @@ function onSubscribeSubmit(event) {
     document.getElementById('discover-no-results').style.display='none';
     document.getElementById('discover-in-progress').style.display='block';
 
-    const request = new GoogleFeedsRequest();
-    request.timeout = 5000;
-    request.onload = onDiscoverFeedsComplete;
-    request.onerror = onDiscoverFeedsError;
-    request.send(query);
+    searchGoogleFeeds(query, 5000, onDiscoverFeedsComplete);
   }
 
   return false;
@@ -464,8 +460,16 @@ function discoverSubscribeClick(event) {
   showOrSkipSubscriptionPreview(url);
 }
 
-function onDiscoverFeedsComplete(query, results) {
+function onDiscoverFeedsComplete(errorEvent, query, results) {
   'use strict';
+
+  if(errorEvent) {
+    document.getElementById('discover-in-progress').style.display = 'none';
+    console.debug('discover feeds error %o', errorEvent);
+    showErrorMessage('An error occurred when searching for feeds. Details: ' + 
+      errorEvent);
+    return;
+  }
 
   const resultsList = document.getElementById('discover-results-list');
   document.getElementById('discover-in-progress').style.display='none';
@@ -519,13 +523,6 @@ function onDiscoverFeedsComplete(query, results) {
     span.textContent = result.url;
     item.appendChild(span);
   });
-}
-
-function onDiscoverFeedsError(errorMessage) {
-  'use strict';
-  document.getElementById('discover-in-progress').style.display='none';
-  console.debug('discover feeds error %o',errorMessage);
-  showErrorMessage('An error occurred when searching for feeds. Details: ' + errorMessage);
 }
 
 function onUnsubscribeButtonClicked(event) {

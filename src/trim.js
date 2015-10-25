@@ -64,6 +64,10 @@ function trimNodes(document) {
     // text nodes in a row is a browser parsing error in 
     // dom generation
 
+    // My current guess is that the error arises from not re-normalizing
+    // nodes after modifying the dom (not calling node.normalize)
+    // which leads to the possibility of adjacent text nodes
+
     if(isInlineElement(node.previousSibling)) {
       if(!isInlineElement(node.nextSibling)) {
         node.nodeValue = node.nodeValue.trimRight();

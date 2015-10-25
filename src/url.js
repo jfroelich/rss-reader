@@ -39,10 +39,9 @@ function getSchemelessURL(url) {
   return schemeless;
 }
 
-// TODO: support leading whitespace?
 function isDataURI(url) {
   'use strict';
-  return /^data\s*:/i.test(url);
+  return /^\s*data\s*:/i.test(url);
 }
 
 function rewriteURL(url) {
