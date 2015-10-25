@@ -172,7 +172,7 @@ function optionsAppendFeed(feed, insertedSort) {
   item.appendChild(favIconElement);
 
   const title = document.createElement('span');
-  title.textContent = lucu.string.truncate(feed.title,300) || 'Untitled';
+  title.textContent = truncate(feed.title,300) || 'Untitled';
   item.appendChild(title);
 
   const feedListElement = document.getElementById('feedlist');
@@ -791,7 +791,7 @@ function initSubscriptionsSection() {
 
   let feedCount = 0;
 
-  openDatabaseConnection(function(error, database) {
+  openDatabaseConnection(function(error, connection) {
     if(error) {
       // TODO: react
       console.debug(error);
