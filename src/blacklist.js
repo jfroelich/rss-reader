@@ -30,6 +30,7 @@ const BLACKLIST_SELECTORS = [
   'a.hdn-analytics', // SF Gate
   'a[href^="http://ad.doubleclick"]', // Medium
   'a[href*="socialtwist"]', // The Jewish Press
+  'a.image-component__pinterest', // Huffington Post
   'a.meta-comments', // Windows Central
   'a.modal-trigger', // NY Post
   'a.more-tab', // The Oklahoman
@@ -230,6 +231,7 @@ const BLACKLIST_SELECTORS = [
   'div#comments', // CBS News
   'div.comments', // TechCrunch
   'div.comments-box', // Freakonomics
+  'div.comments-component', // Huffington Post
   'div#commentslist', // The Jewish Press
   'div#comment_sign', // Ace Showbiz
   'div#comments-tabs', // Houston News
@@ -291,15 +293,19 @@ const BLACKLIST_SELECTORS = [
   'div#et-sections-dropdown-list', // The Washington Post
   'div#external-source-links', // Daily Mail UK
   'div.extra-services', // ARXIV
+  'div.fb-content', // The Week
   'div.fblike', // Ha'Aretz
   'div.feature-btns', // USA Today (assumes video not supported)
   'div.feature_nav', // E-Week
   'div#features', // BBC News
   'div.field-name-field-tags', // WFPL
   'div.first-tier-social-tools', // Time Magazine
+  'div.floating-share-component', // Huffington Post
   'div.followable_block', // Forbes
   'div.follow-authors', // Politico
   'div.follow-us', // Fox News
+  'div.follow-us-component', // Huffington Post
+  'div.follow-us-below-entry-component', // Huffington Post
   'div.footer', // KMBC
   'div#footer', // Newsday
   'div.footerlinks', // VOA News
@@ -337,6 +343,8 @@ const BLACKLIST_SELECTORS = [
   'div.hst-siteheader', // Seattle Pi
   'div.hst-slideshowpromo', // Seattle Pi
   'div.htzTeaser', // Ha'Aretz
+  'div.huffpost-adspot', // Huffington Post
+  'div.huffpost-recirc', // Huffington Post
   'div.ib-collection', // KMBC
   'div.icons', // Brecorder
   'div.icons_inner', // Ahram
@@ -839,6 +847,7 @@ const BLACKLIST_SELECTORS = [
   'ul.article-share', // DNA India
   'ul.article-share-bar', // Herald Scotland
   'ul#article-share-links', // The Boston Herald
+  'ul.article-social', // NBC News
   'ul.article-tags', // 9News
   'ul.article_tools', // The Wall Street Journal
   'ul#associated', // TV New Zealand
