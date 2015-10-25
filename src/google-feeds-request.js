@@ -2,6 +2,9 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: the class was an experiment, but now I think it is dumb
+// just use one large function
+
 /**
  * Sends a request to the Google Feeds API to find feeds relevant
  * to a given query. Basically decorates an XMLHttpRequest.

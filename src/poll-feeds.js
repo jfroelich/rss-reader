@@ -2,22 +2,11 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-
-// Polling lib for periodically updating feeds
 // TODO: customizable update schedules per feed
 // TODO: backoff per feed if poll did not find updated content
 // TODO: de-activation of feeds with 404s
 // TODO: de-activation of too much time elapsed since feed had new articles
 // TODO: only poll if feed is active
-
-chrome.alarms.onAlarm.addListener(function(alarm) {
-  'use strict';
-  if(alarm.name == 'poll') {
-    pollFeeds();
-  }
-});
-
-chrome.alarms.create('poll', {periodInMinutes: 20});
 
 function pollFeeds() {
   'use strict';

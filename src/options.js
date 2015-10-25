@@ -4,16 +4,7 @@
 
 // TODO: implement history? mimic chrome. would need search ability
 // TODO: reintroduce document.getElementById function for getElementById
-
-// TODO: use a namespace object and get rid of 'options' prefix
-// in function names
-
 // TODO: move out non UI functionality into libs
-
-
-var lucu = lucu || {};
-
-lucu.options = {};
 
 function hideErrorMessage() {
   'use strict';

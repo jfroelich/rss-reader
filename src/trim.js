@@ -7,34 +7,6 @@ function trimDocument(document) {
   trimElement(document);
 }
 
-function isInlineElement(element) {
-  'use strict';
-
-  // NOTE: div is an exception
-  const INLINE_ELEMENTS = new Set(['a','abbr', 'acronym', 'address',
-    'b', 'bdi', 'bdo', 'blink','cite', 'code', 'data', 'del',
-    'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 'map',
-    'meter', 'q', 'rp', 'rt', 'samp', 'small', 'span', 'strike',
-    'strong', 'sub', 'sup', 'time', 'tt', 'u', 'var'
-  ]);
-
-  // Element may be undefined since the caller does not check
-  // if node.nextSibling or node.previousSibling are defined
-  // before the call.
-  // TODO: maybe this is responsibility of caller
-  if(!element) {
-    return false;
-  }
-
-  // This condition definitely happens, not exactly sure how or why
-  // TODO: does this mean it is inline? should this be returning true?
-  if(element.nodeType != Node.ELEMENT_NODE) {
-    return false;
-  }
-
-  return INLINE_ELEMENTS.has(element.localName);
-}
-
 function isTrimmableElement(element) {
   'use strict';
   var name;
@@ -82,6 +54,16 @@ function trimNodes(document) {
       continue;
     }
 
+    // TODO: i think the bug regarding removing too many spaces
+    // may be occurring here, where we do not consider 
+    // consecutive text nodes?
+
+    // Because we unwrap certain inline elements like <em>, 
+    // which would cause consecutive text nodes to occur and 
+    // not be merged? Because technically, observing two 
+    // text nodes in a row is a browser parsing error in 
+    // dom generation
+
     if(isInlineElement(node.previousSibling)) {
       if(!isInlineElement(node.nextSibling)) {
         node.nodeValue = node.nodeValue.trimRight();
@@ -92,4 +74,32 @@ function trimNodes(document) {
       node.nodeValue = node.nodeValue.trim();
     }
   }
+}
+
+function isInlineElement(element) {
+  'use strict';
+
+  // NOTE: div is an exception
+  const INLINE_ELEMENTS = new Set(['a','abbr', 'acronym', 'address',
+    'b', 'bdi', 'bdo', 'blink','cite', 'code', 'data', 'del',
+    'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 'map',
+    'meter', 'q', 'rp', 'rt', 'samp', 'small', 'span', 'strike',
+    'strong', 'sub', 'sup', 'time', 'tt', 'u', 'var'
+  ]);
+
+  // Element may be undefined since the caller does not check
+  // if node.nextSibling or node.previousSibling are defined
+  // before the call.
+  // TODO: maybe this is responsibility of caller
+  if(!element) {
+    return false;
+  }
+
+  // This condition definitely happens, not exactly sure how or why
+  // TODO: does this mean it is inline? should this be returning true?
+  if(element.nodeType != Node.ELEMENT_NODE) {
+    return false;
+  }
+
+  return INLINE_ELEMENTS.has(element.localName);
 }

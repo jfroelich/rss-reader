@@ -2,6 +2,10 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: because none of these functions are exported, and this
+// uses globals, an IIFE seems appropriate. Also, would only 
+// need to write use strict once.
+
 var currentSlide = null;
 
 function viewDispatchMessage(message) {
@@ -90,13 +94,12 @@ function markSlideRead(slide) {
 
 function appendSlides(oncomplete, isFirst) {
   'use strict';
-  var counter = 0;
+  let counter = 0;
   const limit = 3;
   const offset = countUnreadSlides();
-  var notAdvanced = true;
+  let notAdvanced = true;
 
   openDatabaseConnection(function(error, connection) {
-
     if(error) {
       // TODO: react?
       console.debug(error);
@@ -237,7 +240,7 @@ function appendSlide(entry, isFirst) {
   title.setAttribute('target','_blank');
   title.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
-    var titleText = stripTags(entry.title);
+    let titleText = stripTags(entry.title);
     titleText = calamine.stripTitlePublisher(titleText);
     titleText = truncate(titleText, 300);
     title.innerHTML = titleText;
@@ -346,8 +349,68 @@ function maybeShowNoUnreadArticlesSlide() {
 }
 
 function hideNoUnreadArticlesSlide() {
+  'use strict';
   console.warn('hideNoUnreadArticlesSlide not implemented');
 }
+
+// NOTE: GLOBAL
+var keyDownTimer;
+// TODO: instead of binding this to window, bind to each slide? that way
+// we don't have to use the currentSlide hack?
+function onKeyDown(event) {
+  'use strict';
+  //event.target is body
+  //event.currentTarget is window
+
+  const KEY_MAP = {
+    SPACE: 32,
+    PAGE_UP: 33,
+    PAGE_DOWN: 34,
+    LEFT: 37,
+    UP: 38,
+    RIGHT: 39,
+    DOWN: 40,
+    N: 78,
+    P: 80
+  };
+
+  const key = event.keyCode;
+  const km = KEY_MAP;
+
+  if(key == km.SPACE || key == km.DOWN || key == km.PAGE_DOWN ||
+      key == km.UP || key == km.PAGE_UP) {
+    event.preventDefault();
+  }
+
+  // TODO: lot of DRY violation here. I should use a {} map
+  // to deltas and make one call to scrollTo instead
+
+  if(currentSlide) {
+    if(key == km.DOWN) {
+      scrollElementTo(currentSlide, 50, currentSlide.scrollTop + 200)
+      return;
+    } else if(key == km.PAGE_DOWN) {
+      scrollElementTo(currentSlide, 100, currentSlide.scrollTop + 800);
+      return;
+    } else if(key == km.UP) {
+      scrollElementTo(currentSlide, -50, currentSlide.scrollTop - 200);
+      return;
+    } else if(key == km.PAGE_UP) {
+      scrollElementTo(currentSlide, -100, currentSlide.scrollTop - 800);
+      return;
+    }
+  }
+
+  if(key == km.SPACE || key == km.RIGHT || key == km.N) {
+    clearTimeout(keyDownTimer);
+    keyDownTimer = setTimeout(showNextSlide, 50);
+  } else if(key == km.LEFT || key == km.P) {
+    clearTimeout(keyDownTimer);
+    keyDownTimer = setTimeout(showPreviousSlide, 50);
+  }
+}
+
+window.addEventListener('keydown', onKeyDown, false);
 
 function initSlideShow(event) {
   document.removeEventListener('DOMContentLoaded', initSlideShow);

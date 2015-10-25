@@ -2,6 +2,9 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: deprecate the opml namespace and wrap up into a small number of large
+// general functions with nested helpers
+
 var lucu = lucu || {};
 
 // Second level namespace for opml related features

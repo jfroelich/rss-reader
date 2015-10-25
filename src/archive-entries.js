@@ -14,17 +14,7 @@
 // article that is currently loaded in view, if that is 
 // possible? This requires some more thought. Are there even any
 // negative side effects? Does the mark-as-read feature still work?
-
-const ARCHIVE_ALARM_SCHEDULE = {
-  periodInMinutes: 24 * 60
-};
-
-chrome.alarms.create('archive', ARCHIVE_ALARM_SCHEDULE);
-chrome.alarms.onAlarm.addListener(function(alarm) {
-  if(alarm.name === 'archive') {
-    archiveEntries();
-  }
-});
+// TODO: rename to archive-entries.js
 
 function archiveEntries() {
   'use strict';

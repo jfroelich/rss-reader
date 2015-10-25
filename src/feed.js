@@ -176,6 +176,7 @@ function removeFeed(connection, id, callback) {
   request.onsuccess = callback;
 }
 
+// TODO: maybe deprecate or integrate into removeFeed?
 function unsubscribe(connection, id, callback) {
   'use strict';
   removeFeed(connection, id, function(event) {

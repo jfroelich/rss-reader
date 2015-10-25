@@ -118,12 +118,12 @@ function stripTags(string, replacement) {
   if(!string) {
     return;
   }
-  const document = document.implementation.createHTMLDocument();
-  document.body.innerHTML = string;
+  const doc = document.implementation.createHTMLDocument();
+  doc.body.innerHTML = string;
   if(!replacement) {
-    return document.body.textContent;
+    return doc.body.textContent;
   }
-  const iterator = document.createNodeIterator(document.body, 
+  const iterator = doc.createNodeIterator(doc.body, 
     NodeFilter.SHOW_TEXT);
   let node = iterator.nextNode();
   const values = [];

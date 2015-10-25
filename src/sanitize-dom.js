@@ -13,7 +13,7 @@ function sanitizeDocument(document) {
   unwrapNoframes(document);
 
   // Temp disabled during development
-  // ls.removeInvisibleElements(document);
+  // removeInvisibleElements(document);
 
   canonicalizeSpaces(document);
   trimNodes(document);
@@ -27,9 +27,7 @@ function sanitizeDocument(document) {
 
   removeJavascriptAnchors(results);
   unwrapDescendants(results);
-
   removeDescendantAttributes(results);
-
   trimDocument(results);
   removeLeafElements(results);
   transformSingleItemLists(results);
