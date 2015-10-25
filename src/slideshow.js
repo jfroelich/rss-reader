@@ -11,7 +11,7 @@ var currentSlide = null;
 function viewDispatchMessage(message) {
   'use strict';
   const VIEW_MESSAGE_HANDLER_MAP = {
-    // displaySettingsChanged: lucu.style.onChange,
+    // displaySettingsChanged: updateEntryStyles,
     pollCompleted: maybeAppendMoreSlides,
     subscribe: maybeAppendMoreSlides,
     unsubscribe: viewOnUnsubscribeMessage
@@ -414,7 +414,7 @@ window.addEventListener('keydown', onKeyDown, false);
 
 function initSlideShow(event) {
   document.removeEventListener('DOMContentLoaded', initSlideShow);
-  lucu.style.onLoad();
+  loadEntryStyles();
   appendSlides(maybeShowNoUnreadArticlesSlide, true);
 }
 

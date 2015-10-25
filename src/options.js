@@ -838,7 +838,7 @@ function initDisplaySettingsSection() {
 
   // Apply the dynamic CSS on load to set the article preview
   // area within the display settings section
-  lucu.style.onLoad();
+  loadEntryStyles();
 
 
   var option = document.createElement('option');
@@ -846,7 +846,7 @@ function initDisplaySettingsSection() {
   option.textContent = 'Use background color';
   document.getElementById('entry-background-image').appendChild(option);
 
-  lucu.BACKGROUND_IMAGES.forEach(function(path) {
+  BACKGROUND_IMAGES.forEach(function(path) {
     option = document.createElement('option');
     option.value = path;
 
@@ -867,7 +867,7 @@ function initDisplaySettingsSection() {
   option.textContent = 'Use Chrome font settings';
   document.getElementById('select_body_font').appendChild(option);
 
-  lucu.FONT_FAMILIES.forEach(function(fontFamily) {
+  FONT_FAMILIES.forEach(function(fontFamily) {
     option = document.createElement('option');
     option.value = fontFamily;
     option.selected = fontFamily == localStorage.HEADER_FONT_FAMILY;
@@ -875,7 +875,7 @@ function initDisplaySettingsSection() {
     document.getElementById('select_header_font').appendChild(option);
   });
 
-  lucu.FONT_FAMILIES.forEach(function (fontFamily) {
+  FONT_FAMILIES.forEach(function (fontFamily) {
     option = document.createElement('option');
     option.value = fontFamily;
     option.selected = fontFamily == localStorage.BODY_FONT_FAMILY;

@@ -2,28 +2,18 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-'use strict';
-
-var lucu = lucu || {};
-
-// TODO: maybe use just one function for both load/change, figure that out
-
-lucu.style = {};
-
-lucu.style.onMessage = function(message) {
+chrome.runtime.onMessage.addListener(function(message) {
   'use strict';
   if(message && message.type === 'displaySettingsChanged') {
-    lucu.style.onChange();
+    updateEntryStyles();
   }
-};
+});
 
-chrome.runtime.onMessage.addListener(lucu.style.onMessage);
+// todo: this is not yet in use, but the idea is to  remove media prefix
+// as it is DRY
+const BACKGROUND_PATH_BASE = '/media/';
 
-// todo: add style ns, remove media prefix as it is DRY
-// use BACKGROUND_PATH_BASE
-lucu.style.BACKGROUND_PATH_BASE = '/media/';
-
-lucu.BACKGROUND_IMAGES = [
+const BACKGROUND_IMAGES = [
   '/media/bgfons-paper_texture318.jpg',
   '/media/CCXXXXXXI_by_aqueous.jpg',
   '/media/paper-backgrounds-vintage-white.jpg',
@@ -45,7 +35,7 @@ lucu.BACKGROUND_IMAGES = [
   '/media/thomas-zucx-noise-lines.png'
 ];
 
-lucu.FONT_FAMILIES = [
+const FONT_FAMILIES = [
   'ArchivoNarrow-Regular',
   'Arial, sans-serif',
   'Calibri',
@@ -73,44 +63,19 @@ lucu.FONT_FAMILIES = [
   'Roboto Regular'
 ];
 
-
-lucu.style.findCSSRule = function(sheet, selectorText) {
-  'use strict';
-  const filter = Array.prototype.filter;
-  // TODO: use Array.prototype.find? or reduce?
-  // if we want just the first rule then this is dumb
-  const rules = sheet ? sheet.cssRules : [];
-  const matches = filter.call(rules, 
-    lucu.style.findCSSRuleFilter.bind(null, selectorText));
-
-  if(matches.length) {
-    return matches[0];
-  }
-};
-
-lucu.style.findCSSRuleFilter = function(text, rule) {
-  'use strict';
-  return rule.selectorText = text;
-};
-
-
-lucu.style.onChange = function() {
+// TODO: maybe use just one function for both load/change, figure that out
+function updateEntryStyles() {
   'use strict';
 
-  console.debug('lucu.style.onChange called');
-
-  const filter = Array.prototype.filter;
-
-  const findCSSRule = lucu.style.findCSSRule;
-
-  // Assume a sheet is always available
+  // Hack, assume a sheet is always available
   const sheet = document.styleSheets[0];
 
-  const entryRule = findCSSRule(sheet,'div.entry');
+  const entryRule = findCSSRule(sheet, 'div.entry');
   if(entryRule) {
     if(localStorage.BACKGROUND_IMAGE) {
       entryRule.style.backgroundColor = '';
-      entryRule.style.backgroundImage = 'url(' + localStorage.BACKGROUND_IMAGE + ')';
+      entryRule.style.backgroundImage = 'url(' + 
+        localStorage.BACKGROUND_IMAGE + ')';
     } else if(localStorage.ENTRY_BACKGROUND_COLOR) {
       entryRule.style.backgroundColor = localStorage.ENTRY_BACKGROUND_COLOR;
       entryRule.style.backgroundImage = '';
@@ -120,65 +85,36 @@ lucu.style.onChange = function() {
     }
 
     const entryMargin = localStorage.ENTRY_MARGIN || '10';
-    // console.log('Setting padding left right to %spx', entryMargin);
     entryRule.style.paddingLeft = entryMargin + 'px';
     entryRule.style.paddingRight = entryMargin + 'px';
   }
 
-  // New bug, changing any style does not update styles 
-  // in real time as expected. For some reason this used to work
-  // but now does not work. If the page is refreshed the style
-  // is correct.
-
   const titleRule = findCSSRule(sheet,'div.entry a.entry-title');
   if(titleRule) {
-
-    // console.log('Found title rule');
-
-    // Workaround chrome bug
     titleRule.style.background = '';
-
     titleRule.style.fontFamily = localStorage.HEADER_FONT_FAMILY;
-
     const hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
-    console.debug('hfs after change is %s', hfs);
-
     if(hfs) {
       const hfsString = (hfs / 10).toFixed(2) + 'em';
-      console.debug('Setting header font size to %s', hfsString);
       titleRule.style.fontSize = hfsString;
-      console.debug('Header font size is now %s', titleRule.style.fontSize);
-    } else {
-      console.warn('header font size after change not set or 0');
-    }
-  } else {
-    console.log('Title rule not found');
+    } 
   }
 
   const contentRule = findCSSRule(sheet, 'div.entry span.entry-content');
   if(contentRule) {
-
-    // Workaround chrome bug
     contentRule.style.background = '';
-
     contentRule.style.fontFamily = localStorage.BODY_FONT_FAMILY || 'initial';
 
     const bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10) || 0;
-    //console.debug('Setting body font size to %s', (bfs / 10).toFixed(2));
     if(bfs) {
       contentRule.style.fontSize = (bfs / 10).toFixed(2) + 'em';
-    } else {
-      console.warn('onchange body font size not set or 0');
     }
 
-    contentRule.style.textAlign = (localStorage.JUSTIFY_TEXT == '1') ? 'justify' : 'left';
+    contentRule.style.textAlign = (localStorage.JUSTIFY_TEXT == '1') ? 
+      'justify' : 'left';
 
     const bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
     contentRule.style.lineHeight = (bodyLineHeight / 10).toFixed(2);
-
-    // column count
-    //COLUMN_COUNT
-
     const columnCount = localStorage.COLUMN_COUNT;
     const VALID_COUNTS = { '1': true, '2': true, '3': true };
     if(!(columnCount in VALID_COUNTS)) {
@@ -187,13 +123,12 @@ lucu.style.onChange = function() {
 
     contentRule.style.webkitColumnCount = parseInt(columnCount);
   }
-};
+}
 
-lucu.style.onLoad = function() {
+function loadEntryStyles() {
   'use strict';
   const sheet = document.styleSheets[0];
-
-  var s = '';
+  let s = '';
   if(localStorage.BACKGROUND_IMAGE) {
     s += 'background: url('+ localStorage.BACKGROUND_IMAGE  +');';
   } else if(localStorage.ENTRY_BACKGROUND_COLOR) {
@@ -205,23 +140,13 @@ lucu.style.onLoad = function() {
   const entryMargin = localStorage.ENTRY_MARGIN;
   if(entryMargin) {
     s += 'padding: ' + entryMargin + 'px;';
-  } else {
-    console.warn('onload ENTRY_MARGIN not set');
   }
 
-  //console.debug('onLoad div.entry CSS %s', s);
-
   sheet.addRule('div.entry',s);
-
-  // RESET s !!
   s = '';
-
   const hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
-
   if(hfs) {
     s += 'font-size:' + (hfs / 10).toFixed(2) + 'em;';
-  } else {
-    console.warn('header font size on load not set or 0');
   }
 
   s += 'font-family:'+ (localStorage.HEADER_FONT_FAMILY || '')  +';';
@@ -236,16 +161,10 @@ lucu.style.onLoad = function() {
   s += 'padding: 0px';
 
   sheet.addRule('div.entry a.entry-title', s);
-
-  // Reset s !!
   s = '';
-
   const bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10) || 0;
   if(bfs) {
     s += 'font-size:' + (bfs / 10).toFixed(2) + 'em;';
-  } else {
-    // This should fix the fresh install bug
-    console.warn('onload body font size not set or 0');
   }
 
   const bodyTextJustify = localStorage.JUSTIFY_TEXT == '1';
@@ -258,14 +177,12 @@ lucu.style.onLoad = function() {
     s += 'font-family:' + bodyFontFamily + ';';
   }
 
-  var bodyLineHeight = localStorage.BODY_LINE_HEIGHT;
+  let bodyLineHeight = localStorage.BODY_LINE_HEIGHT;
   if(bodyLineHeight) {
     bodyLineHeight = parseInt(bodyLineHeight);
     if(bodyLineHeight) {
       // TODO: units?
       s += 'line-height:' + (bodyLineHeight / 10).toFixed(2) + ';';
-    } else {
-
     }
   }
 
@@ -273,22 +190,12 @@ lucu.style.onLoad = function() {
   //s += 'letter-spacing: -0.03em;';
   //s += 'word-spacing: -0.5em;';
   s += 'display:block;';
-
-  // BUG: https://news.ycombinator.com/item?id=8123152
-  // Rendering this page it looks like very long strings were not broken
-  // so right margin was not present and due to overflow-x:none a bunch
-  // of content just disappeared off the right side. Need to force wrap.
-  // I forget exactly how I did that, look at the 'pre' style rule?
-
   s += 'word-wrap: break-word;';
-
   s += 'padding-top: 20px;';
   s += 'padding-right: 0px;';
   s += 'padding-left: 0px;';
   s += 'padding-bottom: 20px;';
-
   s += 'margin: 0px;';
-
   // TODO: use this if columns enabled (use 1(none), 2, 3 as options).
   const columnCount = localStorage.COLUMN_COUNT;
   if(columnCount == '2' || columnCount == '3') {
@@ -298,4 +205,4 @@ lucu.style.onLoad = function() {
   }
 
   sheet.addRule('div.entry span.entry-content', s);
-};
+}
