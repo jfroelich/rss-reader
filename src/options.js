@@ -611,7 +611,7 @@ function onImportOPMLClick(event) {
       return onImport(0,0,[]);
     }
 
-    lucu.opml.import(uploader.files, onImport);
+    importOPML(uploader.files, onImport);
   };
 
   document.body.appendChild(uploader);
@@ -620,22 +620,23 @@ function onImportOPMLClick(event) {
 
 function onExportOPMLClick(event) {
   'use strict';
-  lucu.opml.export(exportOPMLOnComplete);
-}
+  const fileName = 'subscriptions.xml';
+  exportOPML(fileName, function(error, blob) {
+    if(error) {
+      // TODO: show an error message
+      console.debug(error);
+      return;
+    }
 
-function exportOPMLOnComplete(blob) {
-  'use strict';
-  const anchor = document.createElement('a');
-  anchor.href = URL.createObjectURL(blob);
-  anchor.setAttribute('download', 'subscriptions.xml');
-  anchor.style.display = 'none';
-  document.body.appendChild(anchor);
-  // Trigger the download
-  anchor.click();
-
-  // Cleanup
-  URL.revokeObjectURL(blob);
-  anchor.remove();
+    const anchor = document.createElement('a');
+    anchor.href = URL.createObjectURL(blob);
+    anchor.setAttribute('download', fileName);
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    URL.revokeObjectURL(blob);
+    anchor.remove();
+  });
 }
 
 function onHeaderFontChange(event){
