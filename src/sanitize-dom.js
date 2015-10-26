@@ -28,7 +28,7 @@ function sanitizeDocument(document) {
   removeJavascriptAnchors(results);
   unwrapDescendants(results);
   removeDescendantAttributes(results);
-  trimDocument(results);
+  trimElement(results);
   removeLeafElements(results);
   transformSingleItemLists(results);
 
@@ -401,17 +401,11 @@ function transformSingleItemLists(rootElement) {
   });
 }
 
-function trimDocument(document) {
-  'use strict';
-  trimElement(document);
-}
-
 function isTrimmableElement(element) {
   'use strict';
-  var name;
   if(!element) return false;
   if(element.nodeType != Node.ELEMENT_NODE) return false;
-  name = element.localName;
+  let name = element.localName;
   if(name == 'br') return true;
   if(name == 'hr') return true;
   if(name == 'p' && !element.firstChild) return true;
@@ -440,49 +434,11 @@ function trimElement(element) {
 function trimNodes(document) {
   'use strict';
 
-  const WHITESPACE_SENSITIVE_ELEMENTS = 'code, code *, pre, pre *, ' + 
+  const WHITESPACE_SENSITIVE = 'code, code *, pre, pre *, ' + 
     'ruby, ruby *, textarea, textarea *, xmp, xmp *';
-  const elements = document.body.querySelectorAll(
-    WHITESPACE_SENSITIVE_ELEMENTS);
+  const elements = document.body.querySelectorAll(WHITESPACE_SENSITIVE);
   const preformatted = new Set(Array.prototype.slice.call(elements));
-  const iterator = document.createNodeIterator(document.body, 
-    NodeFilter.SHOW_TEXT);
-  let node;
-  while(node = iterator.nextNode()) {
-    if(preformatted.has(node.parentElement)) {
-      continue;
-    }
 
-    // TODO: i think the bug regarding removing too many spaces
-    // may be occurring here, where we do not consider 
-    // consecutive text nodes?
-
-    // Because we unwrap certain inline elements like <em>, 
-    // which would cause consecutive text nodes to occur and 
-    // not be merged? Because technically, observing two 
-    // text nodes in a row is a browser parsing error in 
-    // dom generation
-
-    // My current guess is that the error arises from not re-normalizing
-    // nodes after modifying the dom (not calling node.normalize)
-    // which leads to the possibility of adjacent text nodes
-
-    if(isInlineElement(node.previousSibling)) {
-      if(!isInlineElement(node.nextSibling)) {
-        node.nodeValue = node.nodeValue.trimRight();
-      }
-    } else if(isInlineElement(node.nextSibling)) {
-      node.nodeValue = node.nodeValue.trimLeft();
-    } else {
-      node.nodeValue = node.nodeValue.trim();
-    }
-  }
-}
-
-function isInlineElement(element) {
-  'use strict';
-
-  // NOTE: div is an exception
   const INLINE_ELEMENTS = new Set(['a','abbr', 'acronym', 'address',
     'b', 'bdi', 'bdo', 'blink','cite', 'code', 'data', 'del',
     'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 'map',
@@ -490,19 +446,97 @@ function isInlineElement(element) {
     'strong', 'sub', 'sup', 'time', 'tt', 'u', 'var'
   ]);
 
-  // Element may be undefined since the caller does not check
-  // if node.nextSibling or node.previousSibling are defined
-  // before the call.
-  // TODO: maybe this is responsibility of caller
-  if(!element) {
-    return false;
+  function isElement(node) {
+    return node.nodeType == Node.ELEMENT_NODE;
   }
 
-  // This condition definitely happens, not exactly sure how or why
-  // TODO: does this mean it is inline? should this be returning true?
-  if(element.nodeType != Node.ELEMENT_NODE) {
-    return false;
+  function isInline(node) {
+    return INLINE_ELEMENTS.has(node.localName);
   }
 
-  return INLINE_ELEMENTS.has(element.localName);
+  const iterator = document.createNodeIterator(document.body, 
+    NodeFilter.SHOW_TEXT);
+  let node;
+  while(node = iterator.nextNode()) {
+    // Do nothing to nodes that are descendants of whitespace
+    // sensitive elements
+    if(preformatted.has(node.parentElement)) {
+      continue;
+    }
+
+    // DOM mutation can result in denormalized nodes (adjacent text nodes),
+    // hence the deeper tree here
+
+    if(node.previousSibling) {
+      if(isElement(node.previousSibling)) {
+        if(isInline(node.previousSibling)) {
+          if(node.nextSibling) {
+            if(isElement(node.nextSibling)) {
+              if(isInline(node.nextSibling)) {
+                // The node is located in between two inline
+                // elements. Do not trim.
+              } else {
+                // The node follows an inline element, and precedes an
+                // element that is not inline. Trim its right side only.
+                node.nodeValue = node.nodeValue.trimRight();
+              }
+            } else {
+              // The node follows an inline element and precedes 
+              // a text node. Do not trim.
+            }
+          } else {
+            // The node follows an inline element and does not 
+            // precede another node. Trim its right side only.
+            node.nodeValue = node.nodeValue.trimRight();
+          }
+        } else {
+          // The node follows another element that is not inline, and
+          // has no following node. Trim both sides.
+          node.nodeValue = node.nodeValue.trim();
+        }
+      } else {
+        // The node follows another node that is not an element. 
+        if(node.nextSibling) {
+          if(isElement(node.nextSibling)) {
+            if(isInline(node.nextSibling)) {
+              // The node follows another node that is not an element,
+              // and precedes an inline element. Do not trim.
+            } else {
+              // The node follows another node that is not an element, 
+              // and precedes an element that is not inline. Trim 
+              // its right side only.
+              node.nodeValue = node.nodeValue.trimRight();
+            }
+          } else {
+            // The node follows another node that is not an element,
+            // and precedes a node that is not an element. Do not trim.
+          }
+        } else {
+          // The node follows another node that is not an element,
+          // and has no next sibling. Trim its right side only
+          node.nodeValue = node.nodeValue.trimRight();
+        }
+      }
+    } else if(node.nextSibling) {
+      // The node has no previous sibling, but has a subsequent node or element
+      if(isElement(node.nextSibling)) {
+        if(isInline(node.nextSibling)) {
+          // The node has no previous sibling, and precedes an inline 
+          // element. Trim its left side only.
+          node.nodeValue = node.nodeValue.trimLeft();
+        } else {
+          // The node has no previous sibling, and precedes an 
+          // element that is not inline. Trim both sides.
+          node.nodeValue = node.nodeValue.trim();
+        }
+      } else {
+        // The node has no previous sibling, and its subsequent node is 
+        // not an element. Trim its left side only.
+        node.nodeValue = node.nodeValue.trimLeft();
+      }
+    } else {
+      // The node has no previous sibling or next sibling. Trim both sides
+      node.nodeValue = node.nodeValue.trim();
+    }
+  }
 }
