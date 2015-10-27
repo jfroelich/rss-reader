@@ -22,9 +22,12 @@ function fetchFeed(url, timeout, callback) {
       const feed = deserializeFeed(document);
       feed.url = url;
       feed.fetched = Date.now();
-      feed.entries = feed.entries.filter(entryHasLink);
-      feed.entries.forEach(rewriteEntryLink);
-
+      feed.entries = feed.entries.filter(function(entry) {
+        return entry.link;
+      });
+      feed.entries.forEach(function(entry) {
+        entry.link = rewriteURL(entry.link);
+      });
       const seen = new Set();
       feed.entries = feed.entries.filter(function(entry) {
         if(seen.has(entry.link)) {
@@ -34,7 +37,6 @@ function fetchFeed(url, timeout, callback) {
         seen.add(entry.link);
         return true;
       });
-
       callback(null, feed);
     } catch(e) {
       callback(e);
@@ -151,21 +153,13 @@ function putFeed(connection, original, feed, callback) {
 // TODO: sanitize html entities?
 function sanitizeFeedValue(value) {
   'use strict';
-  if(!value) {
-    return;
-  }
-
-  value = stripTags(value);
   if(value) {
+    value = stripTags(value);
     value = stripControlCharacters(value);
-  }
-
-  value = condenseWhitespace(value);
-  if(value) {
+    value = value.replace(/\s+/, ' ');
     value = value.trim();
+    return value;
   }
-  
-  return value;
 }
 
 function removeFeed(connection, id, callback) {

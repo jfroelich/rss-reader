@@ -3,14 +3,16 @@
 // that can be found in the LICENSE file
 
 // TODO: implement history? mimic chrome. would need search ability
-// TODO: reintroduce document.getElementById function for getElementById
-// TODO: move out non UI functionality into libs
+
+function $$(name) {
+  return document.getElementById(name);
+}
 
 function hideErrorMessage() {
   'use strict';
-  const container = document.getElementById('options_error_message');
+  const container = $$('options_error_message');
   if(!container) return;
-  const dismissButton = document.getElementById('options_dismiss_error_button');
+  const dismissButton = $$('options_dismiss_error_button');
   if(dismissButton)
     dismissButton.removeEventListener('click', hideErrorMessage);
   container.remove();
@@ -19,25 +21,20 @@ function hideErrorMessage() {
 function showErrorMessage(message, fadeIn) {
   'use strict';
   hideErrorMessage();
-
   const elMessage = document.createElement('span');
   elMessage.textContent = message;
   const dismissButton = document.createElement('button');
   dismissButton.setAttribute('id','options_dismiss_error_button');
   dismissButton.textContent = 'Dismiss';
   dismissButton.onclick = hideErrorMessage;
-
   const container = document.createElement('div');
   container.setAttribute('id','options_error_message');
   container.appendChild(elMessage);
   container.appendChild(dismissButton);
-
   if(fadeIn) {
     container.style.opacity = '0';
     document.body.appendChild(container);
-
     fadeElement(container, 1, 0);
-
   } else {
     container.style.display = '';
     container.style.opacity = '1';
@@ -46,7 +43,6 @@ function showErrorMessage(message, fadeIn) {
 }
 
 // TODO: instead of removing and re-adding, reset and reuse
-
 function showSubscriptionMonitor() {
   'use strict';
   resetSubscriptionMonitor();
@@ -54,27 +50,20 @@ function showSubscriptionMonitor() {
   container.setAttribute('id', 'options_subscription_monitor');
   container.style.opacity = '1';
   document.body.appendChild(container);
-
   const progress = document.createElement('progress');
   progress.textContent = 'working...';
   container.appendChild(progress);
 }
 
-function isSubscriptionMonitorDisplayed() {
-  'use strict';
-  const subMonitor = document.getElementById('options_subscription_monitor');
-  return subMonitor && subMonitor.style.display == 'block';
-}
-
 function resetSubscriptionMonitor() {
   'use strict';
-  const element = document.getElementById('options_subscription_monitor');
+  const element = $$('options_subscription_monitor');
   element && element.remove();
 }
 
 function updateSubscriptionMonitor(message) {
   'use strict';
-  const container = document.getElementById('options_subscription_monitor');
+  const container = $$('options_subscription_monitor');
   if(!container) return;
   const paragraph = document.createElement('p');
   paragraph.textContent = message;
@@ -83,8 +72,7 @@ function updateSubscriptionMonitor(message) {
 
 function hideSubsciptionMonitor(onComplete, fadeOut) {
   'use strict';
-  const container = document.getElementById('options_subscription_monitor');
-
+  const container = $$('options_subscription_monitor');
   // NOTE: possible bug here, should be checking arguments.length
   const noop = function(){};
   onComplete = onComplete || noop;
@@ -120,14 +108,11 @@ function optionsShowSection(menuItem) {
   if(currentSection_)
     currentSection_.style.display = 'none';
 
-  const section = document.getElementById(menuItem.getAttribute('section'));
+  const section = $$(menuItem.getAttribute('section'));
 
   if(section) {
     section.style.display = 'block';
   } else {
-    // If this happens then there is a bug in the UI
-    // so this is an actual error
-    console.error('Could not locate section for %s', menuItem);
   }
   currentMenuItem_ = menuItem;
   currentSection_ = section;
@@ -135,9 +120,8 @@ function optionsShowSection(menuItem) {
 
 function optionsUpdateFeedCount() {
   'use strict';
-  const count = document.getElementById('feedlist').childElementCount;
-  const countElement = document.getElementById('subscription-count');
-
+  const count = $$('feedlist').childElementCount;
+  const countElement = $$('subscription-count');
   if(count) {
     if(count > 1000) {
       countElement.textContent = ' (999+)';
@@ -155,7 +139,6 @@ function optionsAppendFeed(feed, insertedSort) {
     console.error('feed undefined in optionsAppendFeed');
     return;
   }
-
 
   const item = document.createElement('li');
   item.setAttribute('sort-key', feed.title);
@@ -175,7 +158,7 @@ function optionsAppendFeed(feed, insertedSort) {
   title.textContent = truncate(feed.title,300) || 'Untitled';
   item.appendChild(title);
 
-  const feedListElement = document.getElementById('feedlist');
+  const feedListElement = $$('feedlist');
 
   if(insertedSort) {
     const currentItems = feedListElement.childNodes;
@@ -208,31 +191,20 @@ function onEnableSubscriptionPreviewChange() {
 
 function showOrSkipSubscriptionPreview(url) {
   'use strict';
-  // TODO: do not augment during preview, it takes too long
-
-  console.debug('showOrSkipSubscriptionPreview %s',url);
   hideSubscriptionPreview();
-
   if(!localStorage.ENABLE_SUBSCRIBE_PREVIEW) {
-    console.debug('subscription preview not enabled, skipping preview');
     startSubscription(url);
     return;
   }
 
-  // TODO: use connectivity.js
   if(!navigator.onLine) {
-    console.debug('cannot preview while offline, skipping preview');
     startSubscription(url);
     return;
   }
 
-  // Show the preview area
-  document.getElementById('subscription-preview').style.display = 'block';
-  // Start an indeterminate progress bar.
-  document.getElementById('subscription-preview-load-progress').style.display = 'block';
-
+  $$('subscription-preview').style.display = 'block';
+  $$('subscription-preview-load-progress').style.display = 'block';
   const timeout = 10 * 1000;
-
   // TODO: check if already subscribed before preview?
   fetchFeed(url, timeout, onFetch);
 
@@ -244,29 +216,17 @@ function showOrSkipSubscriptionPreview(url) {
       return;
     }
 
-    // Stop the indeterminate progress bar.
-    document.getElementById(
-      'subscription-preview-load-progress').style.display = 'none';
-
-    // Show the title
-    //document.getElementById('subscription-preview-title').style.display = 'block';
-    document.getElementById('subscription-preview-title').textContent =
+    $$('subscription-preview-load-progress').style.display = 'none';
+    //$$('subscription-preview-title').style.display = 'block';
+    $$('subscription-preview-title').textContent =
       result.title || 'Untitled';
-
-    // Update the value of the continue button so its click handler
-    // can get the vvalue for subscription
-    document.getElementById(
-      'subscription-preview-continue').value = result.url;
-
-    // result.title and  result.entries
+    $$('subscription-preview-continue').value = result.url;
     if(!result.entries || !result.entries.length) {
       var item = document.createElement('li');
       item.textContent = 'No previewable entries';
-      document.getElementById(
-        'subscription-preview-entries').appendChild(item);
+      $$('subscription-preview-entries').appendChild(item);
     }
 
-    // Show up to 5 entries.
     for(var i = 0, len = Math.min(5,result.entries.length); i < len;i++) {
       var entry = result.entries[i];
       var item = document.createElement('li');
@@ -274,16 +234,15 @@ function showOrSkipSubscriptionPreview(url) {
       var content = document.createElement('span');
       content.innerHTML = stripTags(entry.content);
       item.appendChild(content);
-      document.getElementById(
-        'subscription-preview-entries').appendChild(item);
+      $$('subscription-preview-entries').appendChild(item);
     }
   }
 }
 
 function hideSubscriptionPreview() {
   'use strict';
-  document.getElementById('subscription-preview').style.display = 'none';
-  document.getElementById('subscription-preview-entries').innerHTML = '';
+  $$('subscription-preview').style.display = 'none';
+  $$('subscription-preview-entries').innerHTML = '';
 }
 
 function startSubscription(url) {
@@ -320,7 +279,7 @@ function startSubscription(url) {
       return;
     }
 
-    if(isOffline()) {
+    if(!window.navigator.onLine) {
       putFeed(connection, null, {url: url}, onSubscribe);
     } else {
       fetchFeed(url, 10 * 1000, onFetch.bind(null, connection));        
@@ -346,7 +305,7 @@ function startSubscription(url) {
     optionsUpdateFeedCount();
     updateSubscriptionMonitor('Subscribed to ' + url);
     hideSubsciptionMonitor(function() {
-      optionsShowSection(document.getElementById('mi-subscriptions'));
+      optionsShowSection($$('mi-subscriptions'));
     }, true);
 
     // Show a notification
@@ -356,41 +315,28 @@ function startSubscription(url) {
 }
 
 // TODO: show num entries, num unread/red, etc
+// TODO: react to connection error, find error
 function populateFeedDetailsSection(feedId) {
   'use strict';
-
-  openDatabaseConnection(function(error, database) {
-
+  openDatabaseConnection(function(error, connection) {
     if(error) {
-      // TODO: react
-      console.debug(error);
       return;
     }
 
     findFeedById(connection, feedId, function(feed) {
       if(!feed) {
-        // TODO: react 
-        console.error('feed not found');
         return;
       }
 
-      document.getElementById('details-title').textContent = feed.title || 'Untitled';
-      const favIconURL = getFavIconURL(feed.url);
-      document.getElementById('details-favicon').setAttribute('src', favIconURL);
-      document.getElementById('details-feed-description').textContent =
+      $$('details-title').textContent = feed.title || 'Untitled';
+      $$('details-favicon').setAttribute('src', getFavIconURL(feed.url));
+      $$('details-feed-description').textContent =
         stripTags(feed.description) || 'No description';
-      document.getElementById('details-feed-url').textContent = feed.url;
-      document.getElementById('details-feed-link').textContent = feed.link;
-      document.getElementById('details-unsubscribe').value = feed.id;
+      $$('details-feed-url').textContent = feed.url;
+      $$('details-feed-link').textContent = feed.link;
+      $$('details-unsubscribe').value = feed.id;
     });
   }); 
-}
-
-function onPostPreviewSubscribeClick(event) {
-  'use strict';
-  const url = event.currentTarget.value;
-  hideSubscriptionPreview();
-  startSubscription(url);
 }
 
 function onFeedListItemClick(event) {
@@ -399,7 +345,7 @@ function onFeedListItemClick(event) {
   populateFeedDetailsSection(feedId);
   // TODO: These calls should really be in an async callback
   // passed to populateFeedDetailsSection
-  optionsShowSection(document.getElementById('mi-feed-details'));
+  optionsShowSection($$('mi-feed-details'));
   window.scrollTo(0,0);
 }
 
@@ -408,7 +354,7 @@ function onSubscribeSubmit(event) {
   
   event.preventDefault();// Prevent normal form submission event
   
-  var query = document.getElementById('subscribe-discover-query').value;
+  var query = $$('subscribe-discover-query').value;
   query = query || '';
   query = query.trim();
   if(!query) {
@@ -418,25 +364,25 @@ function onSubscribeSubmit(event) {
   // TODO: Suppress resubmits if last query was a search and the
   // query did not change
 
-  if(document.getElementById('discover-in-progress').style.display == 'block') {
+  if($$('discover-in-progress').style.display == 'block') {
     return false;
   }
 
-  if(isSubscriptionMonitorDisplayed()) {
+  const subMonitor = $$('options_subscription_monitor');
+  if(subMonitor && subMonitor.style.display == 'block') {
     return false;
   }
 
   if(isValidURL(query)) {
-    document.getElementById('discover-results-list').innerHTML = '';
-    document.getElementById('discover-no-results').style.display='none';
-     document.getElementById('discover-in-progress').style.display='none';
-    document.getElementById('subscribe-discover-query').value = '';
+    $$('discover-results-list').innerHTML = '';
+    $$('discover-no-results').style.display = 'none';
+    $$('discover-in-progress').style.display = 'none';
+    $$('subscribe-discover-query').value = '';
     showOrSkipSubscriptionPreview(query);
   } else {
-    document.getElementById('discover-results-list').innerHTML = '';
-    document.getElementById('discover-no-results').style.display='none';
-    document.getElementById('discover-in-progress').style.display='block';
-
+    $$('discover-results-list').innerHTML = '';
+    $$('discover-no-results').style.display = 'none';
+    $$('discover-in-progress').style.display = 'block';
     searchGoogleFeeds(query, 5000, onDiscoverFeedsComplete);
   }
 
@@ -449,75 +395,63 @@ function discoverSubscribeClick(event) {
   const url = button.value;
   if(!url)
     return;
-
   // TODO: Ignore future clicks if error was displayed?
-
   // Ignore future clicks while subscription in progress
-  const subMonitor = document.getElementById('options_subscription_monitor');
+  const subMonitor = $$('options_subscription_monitor');
   if(subMonitor && subMonitor.style.display == 'block')
     return;
-
   showOrSkipSubscriptionPreview(url);
 }
 
 function onDiscoverFeedsComplete(errorEvent, query, results) {
   'use strict';
-
   if(errorEvent) {
-    document.getElementById('discover-in-progress').style.display = 'none';
+    $$('discover-in-progress').style.display = 'none';
     console.debug('discover feeds error %o', errorEvent);
     showErrorMessage('An error occurred when searching for feeds. Details: ' + 
       errorEvent);
     return;
   }
 
-  const resultsList = document.getElementById('discover-results-list');
-  document.getElementById('discover-in-progress').style.display='none';
-
+  const resultsList = $$('discover-results-list');
+  $$('discover-in-progress').style.display='none';
   if(results.length < 1) {
     resultsList.style.display = 'none';
-    document.getElementById('discover-no-results').style.display = 'block';
+    $$('discover-no-results').style.display = 'block';
     return;
   }
-
   if(resultsList.style.display == 'block') {
     resultsList.innerHTML = '';
   } else {
-    document.getElementById('discover-no-results').style.display='none';
+    $$('discover-no-results').style.display='none';
     resultsList.style.display = 'block';
   }
 
   const listItem = document.createElement('li');
   listItem.textContent = 'Found ' + results.length + ' results.';
   resultsList.appendChild(listItem);
-
   results.forEach(function(result) {
     const item = document.createElement('li');
     resultsList.appendChild(item);
-
     const button = document.createElement('button');
     button.value = result.url;
     button.title = result.url;
     button.textContent = 'Subscribe';
     button.onclick = discoverSubscribeClick;
     item.appendChild(button);
-
     const image = document.createElement('img');
     image.setAttribute('src', getFavIconURL(result.url));
     image.title = result.link;
     item.appendChild(image);
-
     const a = document.createElement('a');
     a.setAttribute('href', result.link);
     a.setAttribute('target', '_blank');
     a.title = result.title;
     a.innerHTML = result.title;
     item.appendChild(a);
-
     const snippetSpan = document.createElement('span');
     snippetSpan.innerHTML = result.contentSnippet;
     item.appendChild(snippetSpan);
-
     const span = document.createElement('span');
     span.setAttribute('class','discover-search-result-url');
     span.textContent = result.url;
@@ -542,7 +476,7 @@ function onUnsubscribeButtonClicked(event) {
 
   function onComplete(event) {
 
-    const sectionMenu = document.getElementById('mi-subscriptions');
+    const sectionMenu = $$('mi-subscriptions');
 
     // Update the badge in case any unread articles belonged to 
     // the unsubscribed feed
@@ -560,9 +494,9 @@ function onUnsubscribeButtonClicked(event) {
 
     optionsUpdateFeedCount();
 
-    if(document.getElementById('feedlist').childElementCount == 0) {
-      document.getElementById('feedlist').style.display = 'none';
-      document.getElementById('nosubscriptions').style.display = 'block';
+    if($$('feedlist').childElementCount == 0) {
+      $$('feedlist').style.display = 'none';
+      $$('nosubscriptions').style.display = 'block';
     }
 
     // Update the options view
@@ -734,7 +668,7 @@ function onEnableIdleCheckChange(event) {
 
 function initNavigation() {
   'use strict';
-  const menuItem = document.getElementById('mi-embeds');
+  const menuItem = $$('mi-embeds');
   menuItem.style.display = localStorage.EMBED_POLICY == 'ask' ? 'block' : 'none';
   const menuItems = document.querySelectorAll('#navigation-menu li');
   Array.prototype.forEach.call(menuItems, setNavigationOnClick);
@@ -755,37 +689,36 @@ function onNavigationClick(event) {
 function initGeneralSettingsSection() {
   'use strict';
 
-  document.getElementById('enable-notifications').onclick = 
-    onEnableNotificationsChange;
+  $$('enable-notifications').onclick = onEnableNotificationsChange;
 
   chrome.permissions.contains({permissions: ['notifications']}, 
     function(permitted) {
-    document.getElementById('enable-notifications').checked = permitted;
+    $$('enable-notifications').checked = permitted;
   });
 
-  document.getElementById('enable-background').onclick = onEnableBackgroundChange;
+  $$('enable-background').onclick = onEnableBackgroundChange;
 
   chrome.permissions.contains({permissions:['background']}, 
     function(permitted) {
-    document.getElementById('enable-background').checked = permitted;
+    $$('enable-background').checked = permitted;
   });
 
-  document.getElementById('enable-idle-check').onclick = onEnableIdleCheckChange;
+  $$('enable-idle-check').onclick = onEnableIdleCheckChange;
 
   chrome.permissions.contains({permissions:['idle']}, function(permitted) {
-    document.getElementById('enable-idle-check').checked = permitted;
+    $$('enable-idle-check').checked = permitted;
   });
 
-  document.getElementById('enable-subscription-preview').checked = !!localStorage.ENABLE_SUBSCRIBE_PREVIEW;
-  document.getElementById('enable-subscription-preview').onchange = onEnableSubscriptionPreviewChange;
-  document.getElementById('rewriting-enable').checked = !!localStorage.URL_REWRITING_ENABLED;
-  document.getElementById('rewriting-enable').onchange = onEnableURLRewritingChange;
+  $$('enable-subscription-preview').checked = !!localStorage.ENABLE_SUBSCRIBE_PREVIEW;
+  $$('enable-subscription-preview').onchange = onEnableSubscriptionPreviewChange;
+  $$('rewriting-enable').checked = !!localStorage.URL_REWRITING_ENABLED;
+  $$('rewriting-enable').onchange = onEnableURLRewritingChange;
 }
 
 function initSubscriptionsSection() {
   'use strict';
-  document.getElementById('button-export-opml').onclick = onExportOPMLClick;
-  document.getElementById('button-import-opml').onclick = onImportOPMLClick;
+  $$('button-export-opml').onclick = onExportOPMLClick;
+  $$('button-import-opml').onclick = onImportOPMLClick;
 
   let feedCount = 0;
 
@@ -807,42 +740,38 @@ function initSubscriptionsSection() {
 
   function onComplete() {
     if(feedCount == 0) {
-      document.getElementById('nosubscriptions').style.display = 'block';
-      document.getElementById('feedlist').style.display = 'none';
+      $$('nosubscriptions').style.display = 'block';
+      $$('feedlist').style.display = 'none';
     } else {
-      document.getElementById('nosubscriptions').style.display = 'none';
-      document.getElementById('feedlist').style.display = 'block';
+      $$('nosubscriptions').style.display = 'none';
+      $$('feedlist').style.display = 'block';
     }
   }
 }
 
 function initFeedDetailsSection() {
   'use strict';
-  const unsubscribeButton = document.getElementById('details-unsubscribe');
+  const unsubscribeButton = $$('details-unsubscribe');
   unsubscribeButton.onclick = onUnsubscribeButtonClicked;
 }
 
 function initSubscribeDiscoverSection() {
   'use strict';
-  document.getElementById('subscription-form').onsubmit = onSubscribeSubmit;
-  const previewContinueButton = 
-    document.getElementById('subscription-preview-continue');
-  previewContinueButton.onclick = onPostPreviewSubscribeClick;
+  $$('subscription-form').onsubmit = onSubscribeSubmit;
+  $$('subscription-preview-continue').onclick = function(event) {
+    const url = event.currentTarget.value;
+    hideSubscriptionPreview();
+    startSubscription(url);
+  };
 }
 
 function initDisplaySettingsSection() {
   'use strict';
-
-
-  // Apply the dynamic CSS on load to set the article preview
-  // area within the display settings section
   loadEntryStyles();
-
-
-  var option = document.createElement('option');
+  let option = document.createElement('option');
   option.value = '';
   option.textContent = 'Use background color';
-  document.getElementById('entry-background-image').appendChild(option);
+  $$('entry-background-image').appendChild(option);
 
   BACKGROUND_IMAGES.forEach(function(path) {
     option = document.createElement('option');
@@ -852,54 +781,51 @@ function initDisplaySettingsSection() {
     //option.textContent = path;
 
     option.selected = localStorage.BACKGROUND_IMAGE == path;
-    document.getElementById('entry-background-image').appendChild(option);
+    $$('entry-background-image').appendChild(option);
   });
 
-  document.getElementById('entry-background-image').onchange = onBackgroundImageChange;
+  $$('entry-background-image').onchange = onBackgroundImageChange;
 
   option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
-  document.getElementById('select_header_font').appendChild(option);
+  $$('select_header_font').appendChild(option);
 
   option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
-  document.getElementById('select_body_font').appendChild(option);
+  $$('select_body_font').appendChild(option);
 
   FONT_FAMILIES.forEach(function(fontFamily) {
     option = document.createElement('option');
     option.value = fontFamily;
     option.selected = fontFamily == localStorage.HEADER_FONT_FAMILY;
     option.textContent = fontFamily;
-    document.getElementById('select_header_font').appendChild(option);
+    $$('select_header_font').appendChild(option);
   });
-
   FONT_FAMILIES.forEach(function (fontFamily) {
     option = document.createElement('option');
     option.value = fontFamily;
     option.selected = fontFamily == localStorage.BODY_FONT_FAMILY;
     option.textContent = fontFamily;
-    document.getElementById('select_body_font').appendChild(option);
+    $$('select_body_font').appendChild(option);
   });
 
-
-  document.getElementById('select_header_font').onchange = onHeaderFontChange;
-  document.getElementById('select_body_font').onchange = onBodyFontChange;
-
+  $$('select_header_font').onchange = onHeaderFontChange;
+  $$('select_body_font').onchange = onBodyFontChange;
 
   [1,2,3].forEach(function (columnCount) {
     option = document.createElement('option');
     option.value = columnCount;
     option.selected = columnCount == localStorage.COLUMN_COUNT;
     option.textContent = columnCount;
-    document.getElementById('column-count').appendChild(option);
+    $$('column-count').appendChild(option);
   });
 
-  document.getElementById('column-count').onchange = onColumnCountChange;
+  $$('column-count').onchange = onColumnCountChange;
 
   var inputChangedTimer, inputChangedDelay = 400;
 
-  document.getElementById('entry-background-color').value = localStorage.ENTRY_BACKGROUND_COLOR || '';
-  document.getElementById('entry-background-color').oninput = function() {
+  $$('entry-background-color').value = localStorage.ENTRY_BACKGROUND_COLOR || '';
+  $$('entry-background-color').oninput = function() {
     if(event.target.value)
       localStorage.ENTRY_BACKGROUND_COLOR = event.target.value;
     else
@@ -907,41 +833,34 @@ function initDisplaySettingsSection() {
     chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
   };
 
-  document.getElementById('entry-margin').value = parseInt(localStorage.ENTRY_MARGIN) || '10';
-  document.getElementById('entry-margin').onchange = onEntryMarginChange;
-
-  document.getElementById('header-font-size').value = parseInt(localStorage.HEADER_FONT_SIZE) || '1';
-  document.getElementById('header-font-size').onchange = onHeaderFontSizeChange;
-  document.getElementById('body-font-size').value = parseInt(localStorage.BODY_FONT_SIZE) || '1';
-  document.getElementById('body-font-size').onchange = onBodyFontSizeChange;
-  document.getElementById('justify-text').checked = (localStorage.JUSTIFY_TEXT == '1') ? true : false;
-  document.getElementById('justify-text').onchange = onJustifyChange;
-
+  $$('entry-margin').value = parseInt(localStorage.ENTRY_MARGIN) || '10';
+  $$('entry-margin').onchange = onEntryMarginChange;
+  $$('header-font-size').value = parseInt(localStorage.HEADER_FONT_SIZE) || '1';
+  $$('header-font-size').onchange = onHeaderFontSizeChange;
+  $$('body-font-size').value = parseInt(localStorage.BODY_FONT_SIZE) || '1';
+  $$('body-font-size').onchange = onBodyFontSizeChange;
+  $$('justify-text').checked = (localStorage.JUSTIFY_TEXT == '1') ? true : false;
+  $$('justify-text').onchange = onJustifyChange;
   const bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
-  document.getElementById('body-line-height').value = (bodyLineHeight / 10).toFixed(2);
-  document.getElementById('body-line-height').oninput = onBodyLineHeightChange;
+  $$('body-line-height').value = (bodyLineHeight / 10).toFixed(2);
+  $$('body-line-height').oninput = onBodyLineHeightChange;
 }
 
 function initAboutSection() {
   'use strict';
   const manifest = chrome.runtime.getManifest();
-
-  document.getElementById('extension-name').textContent = manifest.name || '';
-  document.getElementById('extension-version').textContent = manifest.version || '';
-  document.getElementById('extension-author').textContent = manifest.author || '';
-  document.getElementById('extension-description').textContent = manifest.description || '';
-  document.getElementById('extension-homepage').textContent = manifest.homepage_url || '';
+  $$('extension-name').textContent = manifest.name || '';
+  $$('extension-version').textContent = manifest.version || '';
+  $$('extension-author').textContent = manifest.author || '';
+  $$('extension-description').textContent = manifest.description || '';
+  $$('extension-homepage').textContent = manifest.homepage_url || '';
 }
 
 function initOptionsPage(event) {
   'use strict';
   document.removeEventListener('DOMContentLoaded', initOptionsPage);
-
   initNavigation();
-
-  // Show the default section immediately
-  optionsShowSection(document.getElementById('mi-subscriptions'));
-
+  optionsShowSection($$('mi-subscriptions'));
   initGeneralSettingsSection();
   initSubscriptionsSection();
   initFeedDetailsSection();

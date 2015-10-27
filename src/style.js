@@ -63,6 +63,14 @@ const FONT_FAMILIES = [
   'Roboto Regular'
 ];
 
+function findCSSRule(sheet, selectorText) {
+  'use strict';
+  // Note: Array.prototype.find requires Chrome 45+
+  return Array.prototype.find.call(sheet.cssRules, function(rule) {
+    return rule.selectorText === selectorText;
+  });
+}
+
 // TODO: maybe use just one function for both load/change, figure that out
 function updateEntryStyles() {
   'use strict';

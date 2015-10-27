@@ -10,13 +10,10 @@
 
 function pollFeeds() {
   'use strict';
-
-  if(isOffline()) {
+  if(!window.navigator.onLine) {
     return;
   }
-
-  const IDLE_PERIOD = 60 * 5; // seconds
-
+  const IDLE_PERIOD = 60 * 5; // in seconds
   queryIdleState(IDLE_PERIOD, function(state) {
     if(!state || state === 'locked' || state === 'idle') {
       openDatabaseConnection(iterateFeeds);
@@ -58,7 +55,6 @@ function pollFeeds() {
   }
 
   function pollFindEntryByLink(connection, feed, entry, callback) {
-    
     findEntryByLink(connection, entry, function(event) {
       if(event.target.result) {
         callback();
@@ -76,10 +72,8 @@ function pollFeeds() {
   function onComplete() {
     console.debug('Polling completed');
     localStorage.LAST_POLL_DATE_MS = String(Date.now());
-    const message = {
-      type: 'pollCompleted'
-    };
-    chrome.runtime.sendMessage(message);
+    // const message = {type: 'pollCompleted'};
+    // chrome.runtime.sendMessage(message);
     updateBadge();
     showNotification('Updated articles');
   }

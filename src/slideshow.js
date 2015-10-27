@@ -114,8 +114,6 @@ function appendSlides(oncomplete, isFirst) {
     request.onsuccess = renderEntry;
   });
 
-  // TODO: consider using async.each with limit
-
   function renderEntry() {
     const cursor = this.result;
 

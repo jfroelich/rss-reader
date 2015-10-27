@@ -2,36 +2,54 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Detatches an element from the dom
-function removeElement(element) {
+
+function queryIdleState(interval, callback) {
   'use strict';
-  element.remove();
+  chrome.permissions.contains({permissions: ['idle']}, function(permitted) {
+    if(!permitted) {
+      callback();
+      return;
+    }
+    chrome.idle.queryState(interval, callback);
+  });
 }
 
-// NOTE: not optimized for live documents
-function unwrapElement(element) {
+function updateBadge() {
   'use strict';
-  const parent = element.parentElement;
+  openDatabaseConnection(function(error, connection) {
+    if(error) {
+      console.debug(error);
+      return;
+    }
+    const transaction = connection.transaction('entry');
+    const entries = transaction.objectStore('entry');
+    const unread = entries.index('unread');
+    const request = unread.count();
+    request.onsuccess = setText;
+  });
 
-  // Avoid issues with documentElement or detached elements
-  if(!parent) {
-    return;
+  function setText(event) {
+    const count = event.target.result || 0;
+    const badgeText = {text: count.toString()};
+    chrome.browserAction.setBadgeText(badgeText);
   }
-
-  // Move each child of the element to the position preceding the element in
-  // the parent's node list, maintaining child order.
-  while(element.firstChild) {
-    parent.insertBefore(element.firstChild, element);
-  }
-
-  element.remove();
 }
 
-function findCSSRule(sheet, selectorText) {
+// TODO: maybe we don't need the permission check at all?
+// what happens if we just call notifications.create without
+// permission? A basic exception? A no-op?
+function showNotification(message) {
   'use strict';
-  // Note: Array.prototype.find requires Chrome 45+
-  return Array.prototype.find.call(sheet.cssRules, function(rule) {
-    return rule.selectorText === selectorText;
+  chrome.permissions.contains({permissions: ['notifications']}, 
+    function(permitted) {
+    if(!permitted) return;
+    const notification = {
+      type: 'basic',
+      title: chrome.runtime.getManifest().name,
+      iconUrl: '/media/rss_icon_trans.gif',
+      message: message
+    };
+    chrome.notifications.create('lucubrate', notification, function(){});
   });
 }
 
@@ -141,10 +159,10 @@ function stripTags(string, replacement) {
   return values.join(replacement);
 }
 
+// TODO: research the proper pattern
+// /[^\x20-\x7E]+/g;
 function stripControlCharacters(string) {
   'use strict';
-  // TODO: research the proper pattern
-  // /[^\x20-\x7E]+/g;
   const RE_CONTROL_CHARACTER = /[\t\r\n]/g;
   if(string) {
     return string.replace(RE_CONTROL_CHARACTER,'');
@@ -160,11 +178,4 @@ function truncate(string, position, extension) {
     return string.substr(0, position) + extension;
   }
   return string;
-}
-
-function condenseWhitespace(string) {
-  'use strict';
-  if(string) {
-    return string.replace(/\s+/,' ');
-  }
 }

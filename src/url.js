@@ -7,36 +7,19 @@ function isValidURL(url) {
   if(!url) {
     return false;
   }
-
-  var uri = null;
   try {
-    uri = URI(url);
+    let uri = URI(url);
+    return uri && uri.protocol() && uri.hostname();
   } catch(e) {
-    console.debug(e);
     return false;
   }
-
-  if(!uri) {
-    return false;
-  }
-
-  if(!uri.protocol()) {
-    return false;
-  }
-
-  if(!uri.hostname()) {
-    return false;
-  }
-
-  return true;
 }
 
 function getSchemelessURL(url) {
   'use strict';
   const uri = new URI(url);
   uri.protocol('');
-  const schemeless = uri.toString().substring(2);
-  return schemeless;
+  return uri.toString().substring(2);
 }
 
 function isDataURI(url) {
@@ -49,10 +32,8 @@ function rewriteURL(url) {
   const RE_GOOGLE_NEWS = /^https?:\/\/news.google.com\/news\/url\?.*url=(.*)/i;
   const matches = RE_GOOGLE_NEWS.exec(url);
   if(matches && matches.length === 2 && matches[1]) {
-    const newURL = decodeURIComponent(matches[1]);
-    return newURL;
+    return decodeURIComponent(matches[1]);
   }
-
   return url;
 }
 
@@ -71,9 +52,10 @@ function rewriteURL(url) {
  */
 function resolveURLs(document, baseURL) {
   'use strict';
-
   const bases = document.getElementsByTagName('base');
-  Array.prototype.forEach.call(bases, removeElement);
+  Array.prototype.forEach.call(bases, function(element) {
+    element.remove();
+  });
 
   const RESOLVABLE_ATTRIBUTES = new Map([
     ['a', 'href'],
@@ -112,7 +94,6 @@ function resolveURLs(document, baseURL) {
       const resolved = uri.absoluteTo(baseURL).toString();
       element.setAttribute(attribute, resolved);
     } catch(e) {
-      // console.debug('resolve error: %s %s', e, url);
     }
   });
 }
@@ -122,7 +103,6 @@ function getFavIconURL(url) {
   if(!url) {
     return '/media/rss_icon_trans.gif';
   }
-
   return 'http://www.google.com/s2/favicons?domain_url=' + 
     encodeURIComponent(url);
 }

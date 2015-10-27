@@ -27,7 +27,7 @@ function sanitizeDocument(document) {
 
   removeJavascriptAnchors(results);
   unwrapDescendants(results);
-  removeDescendantAttributes(results);
+  removeAttributes(results);
   trimElement(results);
   removeLeafElements(results);
   transformSingleItemLists(results);
@@ -47,20 +47,6 @@ function canonicalizeSpaces(document) {
     node = iterator.nextNode();
   }
 }
-
-function isLeafElement(element) {
-  'use strict';
-
-  const EXCEPTIONS = ['area', 'audio', 'br', 'canvas', 'col',
-    'hr', 'img', 'source', 'svg', 'track', 'video'].join(',');
-
-  if(element.firstChild) {
-    return false;
-  }
-
-  return !element.matches(EXCEPTIONS);
-}
-
 
 function removeLeafElements(document) {
   'use strict';
@@ -108,8 +94,12 @@ function removeLeafElements(document) {
   // removing them and adding their parents to the stack.
   // Remove all the empty children and shove all the parents on the stack
 
+  const LEAF_EXCEPTIONS = ['area', 'audio', 'br', 'canvas', 'col',
+    'hr', 'img', 'source', 'svg', 'track', 'video'].join(',');
   const elements = document.body.getElementsByTagName('*');
-  const leaves = Array.prototype.filter.call(elements, isLeafElement);
+  const leaves = Array.prototype.filter.call(elements, function(element) {
+    return !element.firstChild && !element.matches(LEAF_EXCEPTIONS);
+  });
   const parents = leaves.map(function(element) {
     const parent = element.parentElement;
     element.remove();
@@ -160,30 +150,24 @@ function removeEmptyNodes(document) {
   }
 }
 
-function removeDescendantAttributes(element) {
-  'use strict';
-  removeAttributes(element);
-  const descendants = element.getElementsByTagName('*');
-  Array.prototype.forEach.call(descendants, removeAttributes);
-}
-
 function removeAttributes(element) {
   'use strict';
+  processElement(element);
+  const descendants = element.getElementsByTagName('*');
+  Array.prototype.forEach.call(descendants, processElement);
 
-  if(!element) {
-    return;
-  }
+  function processElement(element) {
+    const attributes = element.attributes;
+    if(!attributes) {
+      return;
+    }
 
-  const attributes = element.attributes;
-  if(!attributes) {
-    return;
-  }
-
-  let index = attributes.length;
-  while(index--) {
-    let name = attributes[index].name;
-    if(name !== 'href' && name !== 'src') {
-      element.removeAttribute(name);
+    let index = attributes.length;
+    while(index--) {
+      let name = attributes[index].name;
+      if(name !== 'href' && name !== 'src') {
+        element.removeAttribute(name);
+      }
     }
   }
 }
@@ -244,7 +228,9 @@ function removeJavascriptAnchors(root) {
   const scriptAnchors = Array.prototype.filter.call(anchors, function(anchor) {
     return /^\s*javascript\s*:/i.test(anchor.getAttribute('href'));
   });
-  scriptAnchors.forEach(removeElement);
+  scriptAnchors.forEach(function(element) {
+    element.remove();
+  });
 }
 
 function removeInvisibleElements(document) {
@@ -285,7 +271,9 @@ function removeInvisibleElements(document) {
     // just so low that the element is too transparent to be visible
     return opacity < 0.3;
   });
-  invisibles.forEach(removeElement);
+  invisibles.forEach(function(element) {
+    element.remove();
+  });
 }
 
 function removeTracerImages(document) {
@@ -298,7 +286,9 @@ function removeTracerImages(document) {
       height === '1px' || height === '1' || image.width === 0 ||
       image.width === 1 || image.height === 0 || image.height === 1;
   });
-  tracers.forEach(removeElement);
+  tracers.forEach(function(element) {
+    element.remove();
+  });
 }
 
 function removeSourcelessImages(document) {
@@ -308,7 +298,28 @@ function removeSourcelessImages(document) {
     const source = image.getAttribute('src');
     return !source || !source.trim();
   });
-  sourceless.forEach(removeElement);
+  sourceless.forEach(function(element) {
+    element.remove();
+  });
+}
+
+// NOTE: not optimized for live documents
+function unwrapElement(element) {
+  'use strict';
+  const parent = element.parentElement;
+
+  // Avoid issues with documentElement or detached elements
+  if(!parent) {
+    return;
+  }
+
+  // Move each child of the element to the position preceding the element in
+  // the parent's node list, maintaining child order.
+  while(element.firstChild) {
+    parent.insertBefore(element.firstChild, element);
+  }
+
+  element.remove();
 }
 
 function unwrapNoscripts(document) {
@@ -414,9 +425,8 @@ function isTrimmableElement(element) {
 
 function trimElement(element) {
   'use strict';
-  var sibling;
-
-  var node = element.firstChild;
+  let sibling = element;
+  let node = element.firstChild;
   while(isTrimmableElement(node)) {
     sibling = node.nextSibling;
     node.remove();

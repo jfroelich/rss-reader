@@ -24,55 +24,35 @@
 // enqueue a one-feed poll update.
 function putEntry(connection, feed, entry, callback) {
   'use strict';
-
-  // TODO: is this check even necessary? Maybe this never happens?
-  if(!entry.link) {
-    console.warn('Not storing entry without link: %o', entry);
-    callback();
-    return;
-  }
-
-  var storable = {};
-  
+  const storable = {};
   if(feed.link) {
   	storable.feedLink = feed.link;
   }
-
   if(feed.title) {
   	storable.feedTitle = feed.title;
   }
-
   storable.feed = feed.id;
   storable.link = entry.link;
   storable.unread = 1;
-
   if(entry.author) {
     storable.author = entry.author;
   }
-
   if(entry.title) {
     storable.title = entry.title;
   }
-
   if(entry.pubdate) {
     const date = new Date(entry.pubdate);
     if(isValidDate(date)) {
       storable.pubdate = date.getTime();
     }
   }
-
   if(!storable.pubdate && feed.date) {
   	storable.pubdate = feed.date;
   }
-
   storable.created = Date.now();
-
   if(entry.content) {
   	storable.content = entry.content;
   }
-
-  // Now insert the entry. Due to the unique flag on the entry.link index,
-  // the transaction expectedly fails if the entry already exists.
   const transaction = connection.transaction('entry', 'readwrite');
   transaction.oncomplete = function() { 
     callback(); 
@@ -82,26 +62,18 @@ function putEntry(connection, feed, entry, callback) {
 
 function markEntryRead(connection, id) {
   'use strict';
-  // console.log('Marking %s as read', id);
-
   const transaction = connection.transaction('entry', 'readwrite');
-  const entries = transaction.objectStore('entry');
-  const request = entries.openCursor(id);
+  const store = transaction.objectStore('entry');
+  const request = store.openCursor(id);
   request.onsuccess = function(event) {
     const cursor = event.target.result;
     if(!cursor) {
       return;
     }
-    
     const entry = cursor.value;
-    if(!entry) {
+    if(!entry || !entry.hasOwnProperty('unread')) {
       return;
     }
-    
-    if(!entry.hasOwnProperty('unread')) {
-      return;
-    }
-    
     delete entry.unread;
     entry.readDate = Date.now();
     cursor.update(entry);
@@ -110,15 +82,21 @@ function markEntryRead(connection, id) {
   };
 }
 
-// Returns a truthy value if the entry has a link property with a value
-function entryHasLink(entry) {
+// TODO: this needs to also consider advanced and offset stuff
+function forEachUnreadEntry(connection, handleEntry, callback) {
   'use strict';
-  return entry.link;
-}
-
-function rewriteEntryLink(entry) {
-  'use strict';
-  entry.link = rewriteURL(entry.link);
+  const transaction = connection.transaction('entry');
+  transaction.oncomplete = callback;
+  const store = transaction.objectStore('entry');
+  const index = store.index('unread');
+  const request = index.openCursor();
+  request.onsuccess = function(event) {
+    const cursor = event.target.result;
+    if(cursor) {
+      handleEntry(cursor.value);
+      cursor.continue();
+    }
+  };
 }
 
 function findEntryByLink(connection, entry, callback) {
@@ -163,17 +141,14 @@ function removeEntriesByFeed(connection, id, callback) {
  */
 function augmentEntryContent(entry, timeout, callback) {
   'use strict';
-  
   const request = new XMLHttpRequest();
   request.timeout = timeout;
   request.ontimeout = callback;
   request.onerror = callback;
   request.onabort = callback;
-  
   request.onload = function(event) {
     const request = event.target;
     const document = request.responseXML;
-
     if(!document || !document.body) {
       callback(new Error('No document'));
       return;
@@ -198,34 +173,16 @@ function augmentEntryContent(entry, timeout, callback) {
   request.send();  
 }
 
-/**
- * Ensures that the width and height attributes of an image element are set. 
- * If the dimensions are set, the callback is called immediately. If not set, 
- * the image is fetched and then the dimensions are set.
- *
- * Helper for augmentEntryContent
- */
+// TODO: think of a better way to specify the proxy. I should not be
+// relying on window explicitly here.
 function fetchImageDimensions(image, callback) {
   'use strict';
-
   const src = (image.getAttribute('src') || '').trim();
   const width = (image.getAttribute('width') || '').trim();
-  if(!src || width || image.width ||
-    width === '0' || /^0\s*px/i.test(width) ||
-    isDataURI(src)) {
+  if(!src || width || image.width || width === '0' || 
+    /^0\s*px/i.test(width) || isDataURI(src)) {
     return callback();
   }
-
-  // We load the image within a separate document context because
-  // the element may currently be contained within an inert document
-  // context (such as the document created by an XMLHttpRequest or when
-  // using document.implementation.createDocument)
-  
-  // TODO: think of a better way to specify the proxy. I should not be
-  // relying on window explicitly here.
-
-  // TODO: this should be able to work in other environments, so we 
-  // cannot use window
 
   const document = window.document;
   const proxy = document.createElement('img');

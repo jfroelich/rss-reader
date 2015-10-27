@@ -91,9 +91,7 @@ function deserializeFeed(document) {
       result.pubdate = date.trim();
     }
 
-    // Special handling for atom entry content. For some reason this works
-    // where normal content.textContent does not. I think the issue pertains 
-    // to whether content is CDATA.
+    // Special handling for some strange issue
     const content = entry.querySelector('content');
     const nodes = content ? content.childNodes : [];
     result.content = Array.prototype.map.call(nodes, 

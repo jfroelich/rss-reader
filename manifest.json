@@ -17,7 +17,6 @@
       "/lib/URI.js",
       "/src/archive-entries.js",
       "/src/background.js",
-      "/src/browser.js",
       "/src/database.js",
       "/src/deserialize-feed.js",
       "/src/entry.js",
