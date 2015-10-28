@@ -78,3 +78,15 @@ function pollFeeds() {
     showNotification('Updated articles');
   }
 }
+
+function queryIdleState(interval, callback) {
+  'use strict';
+  chrome.permissions.contains({permissions: ['idle']}, function(permitted) {
+    if(!permitted) {
+      callback();
+      return;
+    }
+    chrome.idle.queryState(interval, callback);
+  });
+}
+

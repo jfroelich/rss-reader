@@ -13,8 +13,7 @@
   "background": {
     "persistent": false,
     "scripts": [
-      "/lib/async.js",
-      "/lib/URI.js",
+      "/src/async.js",
       "/src/archive-entries.js",
       "/src/background.js",
       "/src/database.js",
@@ -23,6 +22,7 @@
       "/src/feed.js",
       "/src/poll-feeds.js",
       "/src/url.js",
+      "/src/URI.js",
       "/src/utils.js"
     ]
   },

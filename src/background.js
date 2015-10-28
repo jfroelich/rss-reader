@@ -50,5 +50,3 @@ chrome.browserAction.onClicked.addListener(function(event) {
     chrome.tabs.create({url: VIEW_URL});
   }
 });
-
-

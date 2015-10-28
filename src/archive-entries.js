@@ -34,7 +34,6 @@ function archiveEntries() {
   });
 
   function onComplete(event) {
-    'use strict';
     console.log('Archived %s entries', tracker.processed);
   }
 
