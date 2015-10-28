@@ -255,8 +255,9 @@ function appendSlide(entry, isFirst) {
 
   const doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = entry.content;
-  const results = sanitizeDocument(doc);
-  content.appendChild(results);
+  sanitizeDocument(doc);
+
+  content.appendChild(doc.documentElement);
   slide.appendChild(content);
 
   const source = document.createElement('span');

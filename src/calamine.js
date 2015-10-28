@@ -16,6 +16,8 @@
  * best element, not whether it is content or boilerplate.
  *
  * TODO: maybe use a single bias function and just extract features prior to that
+ *
+ * TODO: use a single function called applyCalamine, deprecate the IIFE
  */
 (function (exports) {
 'use strict';
@@ -27,11 +29,13 @@ const reduce = Array.prototype.reduce;
  * Returns the best element of the document. Does some mutation to the
  * document.
  */
-function transform(doc, options) {
+function transform(document, options) {
 
-  if(!doc || !doc.body) {
+  // TODO: rename doc to document
+
+  if(!document || !document.body) {
     console.warn('invalid document');
-    return doc;
+    return;
   }
 
   options = options || {};
@@ -39,44 +43,56 @@ function transform(doc, options) {
   const blacklist = exports.BLACKLIST_SELECTORS || [];
 
   if(options.FILTER_NAMED_AXES) {
-    blacklist.forEach(function detachSelector(selector) {
+    blacklist.forEach(function (selector) {
       // Currently consumes approximately 50-70% of the processing time,
       // 100% of which is the nested call to querySelector
       // TODO: try a form of visitor pattern instead of querySelector, benchmark
       // TODO: try querySelectorAll+contains instead of querySelector loop
-      const root = doc.body;
-      var element = root.querySelector(selector);
+      var element = document.querySelector(selector);
       while(element) {
         element.remove();
-        element = root.querySelector(selector);
+        element = document.querySelector(selector);
       }
     });
   }
 
-  const elements = doc.body.getElementsByTagName('*');
-  const scores = initScores(doc, elements);
-  applyTextLengthBias(doc, elements, scores, options.ANNOTATE);
-  applyIntrinsicBias(doc, elements, scores, options.ANNOTATE);
-  applyDownwardBias(doc, scores, options.ANNOTATE);
+  const elements = document.getElementsByTagName('*');
+  const scores = initScores(document, elements);
+  applyTextLengthBias(document, elements, scores, options.ANNOTATE);
+  applyIntrinsicBias(document, elements, scores, options.ANNOTATE);
+  applyDownwardBias(document, scores, options.ANNOTATE);
   applyUpwardBias(elements, scores, options.ANNOTATE);
-  applyImageBias(doc, scores, options.ANNOTATE);
-  applyAttributeBias(doc, scores, options.ANNOTATE);
-  maybeExposeAttributes(doc, scores, options.ANNOTATE);
-  return findBestElement(doc, elements, scores);
+  applyImageBias(document, scores, options.ANNOTATE);
+  applyAttributeBias(document, scores, options.ANNOTATE);
+  maybeExposeAttributes(document, scores, options.ANNOTATE);
+
+  // TODO: use Node.compareDocumentPosition for better performance
+  const bestElement = findBestElement(document, elements, scores);
+  const allElements = document.getElementsByTagName('*');
+  forEach.call(allElements, function(element) {
+    if(element === document.documentElement || 
+      element === document.body || 
+      element === bestElement) {
+      return;
+    }
+
+    if(!bestElement.contains(element) && !element.contains(bestElement)) {
+      element.remove();
+    }
+  });
 }
 
-function initScores(doc, elements) {
-  var scores = new Map();
-  scores.set(doc.documentElement, 0);
-  scores.set(doc.body, 0);
-  
-  forEach.call(elements, function (element) { scores.set(element, 0); });
-  
+function initScores(document, elements) {
+  const scores = new Map();
+  scores.set(document.documentElement, 0);
+  scores.set(document.body, 0);
+  forEach.call(elements, function(element) { 
+    scores.set(element, 0);
+  });
   return scores;
 }
 
 function collectTextNodeLengths(doc) {
-
   const lengths = new Map();
   const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
   let node = null;
@@ -277,29 +293,20 @@ function findBestElement(doc, elements, scores) {
   return maxElement;
 }
 
-function arrayFind(array, predicate) {
-  for(var i = 0, length = array.length, value; i < length; i++) {
-    if(predicate(array[i]))
-      return array[i];
-  }
-}
-
-function isFigure(element) {
-  return element.localName == 'figure';
-}
-
+// NOTE: figcaption may contain other elements, not
+// just text. So this just checks for whether there is
+// a figcaption element, not whether it has any content
 function getImageCaption(image) {
-  // NOTE: figcaption may contain other elements, not
-  // just text. So this just checks for whether there is
-  // a figcaption element, not whether it has any content
-  const parents = getAncestors(image);
-  const figure = arrayFind(parents, isFigure);
+  const parents = getAncestors(image);  
+  const figure = parents.find(function(element){
+    return element.localName === 'figure';
+  });
   if(figure) {
     return figure.querySelector('figcaption');
   }
 }
 
-// Walks upward
+// NOTE: walks upward
 function getAncestors(element) {
   const parents = [];
   var parent = element;

@@ -12,50 +12,52 @@ function sanitizeDocument(document) {
     element.remove();
   }
 
-  // Strip comments
+  // Remove comments
   const commentIterator = document.createNodeIterator(
-    document.body, NodeFilter.SHOW_COMMENT);
+    document, NodeFilter.SHOW_COMMENT);
   let node = commentIterator.nextNode();
   while(node) {
     node.remove();
     node = commentIterator.nextNode();
   }
 
-  // Strip blacklisted elements
+  // Remove blacklisted elements
   const BLACKLISTED_ELEMENTS = [
     'head', 'applet', 'base', 'basefont', 'bgsound', 'button', 'command',
     'datalist', 'dialog', 'embed', 'fieldset', 'frameset',
-    'html', 'iframe', 'input', 'isindex', 'math', 'link', 'menu',
+    'iframe', 'input', 'isindex', 'math', 'link', 'menu',
     'menuitem', 'meta', 'object','optgroup',  'output', 'param', 'progress',
     'script', 'spacer', 'style', 'textarea', 'title', 'xmp',
     'select', 'option'
   ];
 
   BLACKLISTED_ELEMENTS.forEach(function(name) {
-    let element = document.body.querySelector(name);
+    let element = document.querySelector(name);
     while(element) {
       element.remove();
-      element = document.body.querySelector(name);
+      element = document.querySelector(name);
     }
   });
 
-  // Strip blacklisted elements that cannot be used as selectors
-  const gPlusOnes = document.body.getElementsByTagName('g:plusone');
-  forEach.call(gPlusOnes, remove);
+  // Remove blacklisted elements that cannot be used as selectors
+  // TODO: is there a way to specify these as selectors?
+  forEach.call(document.getElementsByTagName('g:plusone'), remove);
+  forEach.call(document.getElementsByTagName('fb:comments'), remove);
 
-  const fbComments = document.body.getElementsByTagName('fb:comments');
-  forEach.call(fbComments, remove);
+  // Remove javascript anchors
+  filter.call(document.querySelectorAll('a[href]'), function(anchor) {
+    return /^\s*javascript\s*:/i.test(anchor.getAttribute('href'));
+  }).forEach(remove);
 
   // Remove sourceless images
-  let images = document.body.getElementsByTagName('img');
-  filter.call(images, function(image) {
+  filter.call(document.getElementsByTagName('img'), function(image) {
     const source = image.getAttribute('src');
     return !source || !source.trim();
   }).forEach(remove);
 
   // Remove tracer-like images
-  images = document.body.getElementsByTagName('img');
-  filter.call(images, function(image) {
+  // TODO: merge with remove sourceless step
+  filter.call(document.getElementsByTagName('img'), function(image) {
     const width = image.getAttribute('width');
     const height = image.getAttribute('height');
     return width === '0' || width === '0px' || width === '1' ||
@@ -63,13 +65,11 @@ function sanitizeDocument(document) {
       image.width === 1 || image.height === 0 || image.height === 1;
   }).forEach(remove);
 
-  // Unwrap noscript elements
-  const noscripts = document.body.getElementsByTagName('noscript');
-  forEach.call(noscripts, unwrapElement);
-
-  // Unwrap noframe elements
-  const noframes = document.body.getElementsByTagName('noframes');
-  forEach.call(noframes, unwrapElement);
+  // Unwrap noscript and noframes elements
+  // TODO: use querySelectorAll and look for both noscript and noframes 
+  // in a single pass
+  forEach.call(document.getElementsByTagName('noscript'), unwrapElement);
+  forEach.call(document.getElementsByTagName('noframes'), unwrapElement);
 
   /*
   // Remove hidden elements
@@ -92,6 +92,7 @@ function sanitizeDocument(document) {
   */
 
   // Canonicalize spaces
+  // TODO: change the regexps into a single one that is union of the three
   let textNodeIterator = document.createNodeIterator(
     document.body, NodeFilter.SHOW_TEXT);
   node = textNodeIterator.nextNode();
@@ -114,7 +115,7 @@ function sanitizeDocument(document) {
 
   trimTextNodes(document);
 
-  // Remove empty text nodes after trimming
+  // Remove empty text nodes after transforming and trimming
   textNodeIterator = document.createNodeIterator(
     document.body, NodeFilter.SHOW_TEXT);
   node = textNodeIterator.nextNode();
@@ -125,18 +126,11 @@ function sanitizeDocument(document) {
     node = textNodeIterator.nextNode();
   }
 
-  removeLeaves(document);
-
-  // Strip shingles
-  const results = calamine.transform(document, {
+  // Remove shingles
+  calamine.transform(document, {
     FILTER_NAMED_AXES: true,
     ANNOTATE: false
   });
-
-  // Strip javascript anchors
-  filter.call(results.querySelectorAll('a[href]'), function(anchor) {
-    return /^\s*javascript\s*:/i.test(anchor.getAttribute('href'));
-  }).forEach(remove);
 
   // Unwrap various inline elements
   const UNWRAPPABLE_ELEMENTS = [
@@ -148,16 +142,16 @@ function sanitizeDocument(document) {
     'thead', 'tt'
   ].join(',');
 
-  let element = results.querySelector(UNWRAPPABLE_ELEMENTS);
+  let element = document.querySelector(UNWRAPPABLE_ELEMENTS);
   let numIterations = 0;
   while(element && (numIterations < 3000)) {
     unwrapElement(element);
-    element = results.querySelector(UNWRAPPABLE_ELEMENTS);
+    element = document.querySelector(UNWRAPPABLE_ELEMENTS);
     numIterations++;
   }
 
   // Unwrap nominal anchors
-  filter.call(results.getElementsByTagName('a'), function(anchor) {
+  filter.call(document.getElementsByTagName('a'), function(anchor) {
     const href = anchor.getAttribute('href');
     return !href || !href.trim();
   }).forEach(unwrapElement);
@@ -177,13 +171,12 @@ function sanitizeDocument(document) {
       }
     }
   }
-  removeAttributes(results);
-  forEach.call(results.getElementsByTagName('*'), removeAttributes);
 
-  trimElement(results);
-  removeLeaves(results);
-  transformSingleItemLists(results);
-  return results;
+  removeAttributes(document);
+  forEach.call(document.getElementsByTagName('*'), removeAttributes);
+  removeLeaves(document);
+  transformSingleItemLists(document);
+  trimElement(document);
 }
 
 function removeLeaves(document) {
@@ -328,7 +321,6 @@ function trimElement(element) {
   'use strict';
 
   function isTrimmableElement(element) {
-    'use strict';
     if(!element) return false;
     if(element.nodeType != Node.ELEMENT_NODE) return false;
     let name = element.localName;
