@@ -44,11 +44,6 @@ function sanitizeDocument(document) {
   forEach.call(document.getElementsByTagName('g:plusone'), remove);
   forEach.call(document.getElementsByTagName('fb:comments'), remove);
 
-  // Remove javascript anchors
-  filter.call(document.querySelectorAll('a[href]'), function(anchor) {
-    return /^\s*javascript\s*:/i.test(anchor.getAttribute('href'));
-  }).forEach(remove);
-
   // Remove sourceless images
   filter.call(document.getElementsByTagName('img'), function(image) {
     const source = image.getAttribute('src');
@@ -127,10 +122,12 @@ function sanitizeDocument(document) {
   }
 
   // Remove shingles
-  calamine.transform(document, {
-    FILTER_NAMED_AXES: true,
-    ANNOTATE: false
-  });
+  applyCalamine(document, {FILTER_NAMED_AXES: true});
+
+  // Remove javascript anchors (after applyCalamine)
+  filter.call(document.querySelectorAll('a[href]'), function(anchor) {
+    return /^\s*javascript\s*:/i.test(anchor.getAttribute('href'));
+  }).forEach(remove);
 
   // Unwrap various inline elements
   const UNWRAPPABLE_ELEMENTS = [

@@ -239,7 +239,7 @@ function appendSlide(entry, isFirst) {
   title.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
     let titleText = stripTags(entry.title);
-    titleText = calamine.stripTitlePublisher(titleText);
+    titleText = stripTitlePublisher(titleText);
     titleText = truncate(titleText, 300);
     title.innerHTML = titleText;
   } else {
@@ -279,6 +279,29 @@ function appendSlide(entry, isFirst) {
   source.appendChild(feedTitle);
 
   document.getElementById('slideshow-container').appendChild(slide);
+}
+
+// TODO: support publisher as prefix
+function stripTitlePublisher(title) {
+  'use strict';
+  if(!title) return;
+  // The extra spaces are key to avoiding truncation of hyphenated terms
+  var delimiterPosition = title.lastIndexOf(' - ');
+  if(delimiterPosition == -1)
+    delimiterPosition = title.lastIndexOf(' | ');
+  if(delimiterPosition == -1)
+    delimiterPosition = title.lastIndexOf(' : ');
+  if(delimiterPosition == -1)
+    return title;
+  const trailingText = title.substring(delimiterPosition + 1);
+  const terms = trailingText.split(/\s+/).filter(function(v) {
+    return v;
+  });
+  if(terms.length < 5) {
+    const newTitle = title.substring(0, delimiterPosition).trim();
+    return newTitle;
+  }
+  return title;
 }
 
 function formatDate(date, sep) {

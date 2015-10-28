@@ -39,7 +39,7 @@ function pollFeeds() {
 
     function onFetch(event, remoteFeed) {
       if(event) {
-        console.dir(event);
+        // console.dir(event);
         return;
       }
 
