@@ -191,7 +191,7 @@ function applyCalamine(document, options) {
   for(let iterator = document.createNodeIterator(document, 
     NodeFilter.SHOW_TEXT), node = iterator.nextNode(); node;
     node = iterator.nextNode()) {
-    node.nodeValue = node.nodeValue.replace(/s/g, ' ');
+    node.nodeValue = node.nodeValue.replace(/\s/g, ' ');
   }
 
   /*
