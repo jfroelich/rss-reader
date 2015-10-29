@@ -4,25 +4,9 @@
 
 // TODO: some concerns regarding how querySelector probes all descendants.
 // Could this find the wrong fields? Should we be restricting to immediate?
-// TODO: hash was deprecated, all entries must have links now to survive,
-// which means the filtering of linkless entries has to happen somewhere, 
-// so maybe it happens here?
 // TODO: support Apple iTunes format, embedded media format (??)
 function deserializeFeed(document) {
   'use strict';
-  
-  const root = document.documentElement;
-  if(!root) {
-    throw new TypeError('Undefined document element');
-  }
-  
-  if(root.matches('feed')) {
-    return deserializeAtomFeed();
-  } else if(root.matches('rss, rdf')) {
-    return deserializeRSSFeed();
-  } else {
-    throw new TypeError('Unsupported document element ' + root.localName);
-  }
 
   function getText(parent, selector) {
     const element = parent.querySelector(selector);
@@ -34,132 +18,142 @@ function deserializeFeed(document) {
     }
   }
 
-  function deserializeAtomFeed() {
-    const result = {};
-    const title = getText(root, 'title');
-    if(title) {
-      result.title = title;  
-    }
-    const description = getText(root, 'subtitle');
-    if(description) {
-      result.description = description;
-    }
-    const updated = getText(root, 'updated');
-    if(updated) {
-      result.date = updated;
-    }
-    var link = root.querySelector('link[rel="alternate"]');
-    link = link || root.querySelector('link[rel="self"]');
-    link = link || root.querySelector('link[href]');
+  const root = document.documentElement;
+  if(!root) {
+    throw new TypeError('Undefined document element');
+  }
+
+  if(!root.matches('feed, rss, rdf')) {
+    throw new TypeError('Unsupported document element: ' + root.localName);
+  }
+
+  const isAtom = root.matches('feed');
+  const isRDF = root.matches('rdf');
+
+  if(!isAtom && !root.querySelector('channel')) {
+    return {
+      entries: []
+    };
+  }
+
+  const channel = isAtom ? root : root.querySelector('channel');
+
+  const feed = {};
+  const title = getText(channel, 'title');
+  if(title) {
+    feed.title = title;
+  }
+
+  const description = getText(channel, isAtom ? 'subtitle' : 'description');
+  if(description) {
+    feed.description = desecription;
+  }
+
+  const dateUpdated = isAtom ? getText(channel, 'updated') : 
+    (getText(channel, 'pubdate') || getText(channel, 'lastBuildDate') ||
+    getText(channel, 'date'));
+  if(dateUpdated) {
+    feed.date = dateUpdated;
+  }
+
+  let link = '';
+  if(isAtom) {
+    link = channel.querySelector('link[rel="alternate"]') || 
+      channel.querySelector('link[rel="self"]') ||
+      channel.querySelector('link[href]');
     if(link) {
       link = link.getAttribute('href');
     }
-    if(link) {
-      result.link = link.trim();
+  } else {
+    link = getText(channel, 'link:not([href])');
+    if(!link) {
+      link = channel.querySelector('link');
+      if(link) {
+        link = link.getAttribute('href');
+      }
     }
-    const entries = root.querySelectorAll('entry');
-    result.entries = Array.prototype.map.call(entries, 
-      deserializeAtomEntry);
-    return result;
+  }
+  if(link) {
+    link = link.trim();
+  }
+  if(link) {
+    feed.link = link;
   }
 
-  function deserializeAtomEntry(entry) {
+  let entries = [];
+  if(isAtom) {
+    entries = root.querySelectorAll('entry');
+  } else if(isRDF) {
+    entries = root.querySelectorAll('item');
+  } else {
+    entries = channel.querySelectorAll('item');
+  }
+
+  const map = Array.prototype.map;
+
+  feed.entries = map.call(entries, function(entry) {
     const result = {};
-    let title = getText(entry, 'title');
+    const title = getText(entry, 'title');
     if(title) {
       result.title = title;
     }
-    let author = stripTags(getText(entry, 'author name'), ' ');
-    if(author) {
-      result.author = author;
-    }
-    let link = entry.querySelector('link[rel="alternate"]');
-    link = link || entry.querySelector('link[rel="self"]');
-    link = link || entry.querySelector('link[href]');
-    if(link) {
-      link = link.getAttribute('href');
-    }
-    if(link) {
-      result.link = link.trim();
-    }
-    let date = entry.querySelector('published');
-    date = date || entry.querySelector('updated');
-    if(date) {
-      date = date.textContent;
-    }
-    if(date) {
-      result.pubdate = date.trim();
-    }
 
-    // Special handling for some strange issue
-    const content = entry.querySelector('content');
-    const nodes = content ? content.childNodes : [];
-    result.content = Array.prototype.map.call(nodes, 
-      getAtomNodeTextContent).join('').trim();
-    return result;
-  }
-
-  function getAtomNodeTextContent(node) {
-    return node.nodeType == Node.ELEMENT_NODE ?
-      node.innerHTML : node.textContent;
-  }
-
-  function deserializeRSSFeed() {
-    const isRDF = root.matches('rdf');
-    const result = {};
-    const channel = root.querySelector('channel');
-    if(!channel) {
-      result.entries = [];
-      return result;
-    }
-    result.title = getText(channel, 'title');
-    result.description = getText(channel, 'description');
-    let link = getText(channel, 'link:not([href])')
-    if(!link) {
-      link = channel.querySelector('link');
-      if(link) link = link.getAttribute('href');
-      if(link) link = link.trim();
-    }
-    if(link) result.link = link;
-    const date = getText(channel, 'pubdate') || 
-      getText(channel, 'lastBuildDate') ||
-      getText(channel, 'date');
-    if(date) {
-      result.date = date;
-    }
-    const entriesParent = isRDF ? root : channel;
-    const entries = entriesParent.querySelectorAll('item');
-    result.entries = Array.prototype.map.call(entries, 
-      deserializeRSSEntry);
-    return result;
-  }
-
-  function deserializeRSSEntry(entry) {
-    const result = {};
-    result.title = getText(entry, 'title');
-    
-    const link = getText(entry, 'origLink') || getText(entry, 'link');
-    if(link) {
-      result.link = link;
-    }
-    
-    const author = getText(entry, 'creator') || getText(entry, 'publisher');
+    const author = isAtom ? getText(entry, 'author name') : 
+      (getText(entry, 'creator') || getText(entry, 'publisher'));
     if(author) {
       result.author = stripTags(author, ' ');
     }
-    
-    const date = getText(entry, 'pubDate') || getText(entry, 'date');
+
+    let link = '';
+    if(isAtom) {
+      link = entry.querySelector('link[rel="alternate"]') || 
+        entry.querySelector('link[rel="self"]') ||
+        entry.querySelector('link[href]');
+      if(link) {
+        link = link.getAttribute('href');
+      }
+    } else {
+      link = getText(entry, 'origLink') || getText(entry, 'link');
+    }
+    if(link) {
+      link = link.trim();
+    }
+    if(link) {
+      result.link = link;
+    }
+
+    let date = '';
+    if(isAtom) {
+      date = entry.querySelector('published') || entry.querySelector('updated');
+      if(date) {
+        date = date.textContent;
+      }
+    } else {
+      date = getText(entry, 'pubDate') || getText(entry, 'date');
+    }
+    if(date) {
+      date = date.trim();
+    }
     if(date) {
       result.pubdate = date;
     }
-    
-    const content = getText(entry, 'encoded') || 
-      getText(entry, 'description') ||
-      getText(entry, 'summary');
-    if(content) {
+
+    if(isAtom) {
+      // Special handling for some strange issue
+      const content = entry.querySelector('content');
+      const nodes = content ? content.childNodes : [];
+      result.content = map.call(nodes, function(node) {
+        return node.nodeType === Node.ELEMENT_NODE ?
+          node.innerHTML : node.textContent;
+      }).join('').trim();
+    } else {
+      const content = getText(entry, 'encoded') || 
+        getText(entry, 'description') || getText(entry, 'summary');
       result.content = content;
     }
-    
+
     return result;
-  }
+  });
+
+  return feed;
 }
