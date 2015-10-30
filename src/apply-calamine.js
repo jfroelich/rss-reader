@@ -778,6 +778,7 @@ function removeLeaves(document) {
   }
 }
 
+// TODO: move this into the main function
 function transformSingleItemLists(rootElement) {
   'use strict';
   const lists = rootElement.getElementsByTagName('ul');
@@ -809,6 +810,7 @@ function transformSingleItemLists(rootElement) {
   });
 }
 
+// TODO: move this into the main function
 function trimElement(element) {
   'use strict';
 
@@ -838,6 +840,7 @@ function trimElement(element) {
   }
 }
 
+// TODO: move this into main function
 function trimTextNodes(document) {
   'use strict';
 

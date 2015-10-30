@@ -4,6 +4,7 @@
 
 function updateBadge() {
   'use strict';
+  console.debug('Updating badge');
   openDatabaseConnection(function(error, connection) {
     if(error) {
       console.debug(error);

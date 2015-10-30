@@ -30,16 +30,17 @@ function pollFeeds() {
     }
 
     forEachFeed(connection, pollFetchFeed.bind(null, connection), 
-      false, onComplete);
+      false, onFeedsUpdated);
   }
 
   function pollFetchFeed(connection, feed) {
+    // console.debug('Fetching %s', feed.url);
     const timeout = 10 * 1000;
     fetchFeed(feed.url, timeout, onFetch);
 
     function onFetch(event, remoteFeed) {
       if(event) {
-        // console.dir(event);
+        console.dir(event);
         return;
       }
 
@@ -49,8 +50,30 @@ function pollFeeds() {
 
     function onPutFeed(remoteFeed, event) {
       async.forEach(remoteFeed.entries, 
-        pollFindEntryByLink.bind(null, connection, feed), 
-        function(){});
+        pollFindEntryByLink.bind(null, connection, feed), onEntriesUpdated);
+    }
+  }
+
+  let allFeedsProcessed = false;
+  let calledOnComplete = false;
+
+  function onFeedsUpdated() {
+    console.debug('All feeds processed');
+    allFeedsProcessed = true;
+  }
+
+  function onEntriesUpdated() {
+    // This still does not work quite right but it is closer. The problem 
+    // is I have no easy way to be notified when all async operations 
+    // have completed because they are independent
+    if(allFeedsProcessed) {
+      if(!calledOnComplete) {
+        calledOnComplete = true;
+        onComplete();        
+      }
+
+    } else {
+      console.debug('More feeds to process');
     }
   }
 

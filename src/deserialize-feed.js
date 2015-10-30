@@ -46,7 +46,7 @@ function deserializeFeed(document) {
 
   const description = getText(channel, isAtom ? 'subtitle' : 'description');
   if(description) {
-    feed.description = desecription;
+    feed.description = description;
   }
 
   const dateUpdated = isAtom ? getText(channel, 'updated') : 
@@ -149,7 +149,9 @@ function deserializeFeed(document) {
     } else {
       const content = getText(entry, 'encoded') || 
         getText(entry, 'description') || getText(entry, 'summary');
-      result.content = content;
+      if(content) {
+        result.content = content;
+      }
     }
 
     return result;

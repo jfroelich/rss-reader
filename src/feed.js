@@ -94,15 +94,11 @@ function forEachFeed(connection, handleFeed, sortByTitle, callback) {
 // TODO: maybe not modify date updated if not dirty
 function putFeed(connection, original, feed, callback) {
   'use strict';
-
   const storable = {};
-
   if(original) {
     storable.id = original.id;
   }
-
   storable.url = feed.url;
-
   if(original) {
     storable.schemeless = original.schemeless;
   } else {
@@ -137,6 +133,7 @@ function putFeed(connection, original, feed, callback) {
     storable.created = Date.now();
   }
 
+  // TODO: just use transaction.oncomplete ?
   const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.put(storable);
