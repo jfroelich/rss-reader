@@ -82,7 +82,7 @@ function applyCalamine(document, options) {
 
   function getAttributeBias(element) {
     const values = SCORABLE_ATTRIBUTES.map(function(name) {
-      return name == 'itemtype' ? getItemTypePath(element) :
+      return name === 'itemtype' ? getItemTypePath(element) :
         element.getAttribute(name);
     }).filter(identity);
     const tokens = tokenize(values.join(' '));
@@ -171,7 +171,7 @@ function applyCalamine(document, options) {
   // TODO: element.offsetWidth < 1 || element.offsetHeight < 1; ??
   const elements = document.body.getElementsByTagName('*');
   const invisibles = filter.call(elements, function(element) {
-    if(element.localName == 'noscript' || element.localName == 'noembed') {
+    if(element.localName === 'noscript' || element.localName === 'noembed') {
       return false;
     }
     const style = element.style;
@@ -767,8 +767,8 @@ function removeLeaves(document) {
     // If there was no grand parent (how would that ever happen?)
     // or the grand parent is the root, then do not add the new
     // grand parent to the stack
-    if(!grandParent || grandParent == document.body || 
-      grandParent == document.documentElement) {
+    if(!grandParent || grandParent === document.body || 
+      grandParent === document.documentElement) {
       continue;
     }
 
@@ -784,11 +784,11 @@ function transformSingleItemLists(rootElement) {
     if(!list) return;
     const reduce = Array.prototype.reduce;
     const itemCount = reduce.call(list.childNodes, function(count, node) {
-      return count + (node.nodeType == Node.ELEMENT_NODE &&
+      return count + (node.nodeType === Node.ELEMENT_NODE &&
         node.localName == 'li' ? 1 : 0);
     }, 0);
 
-    if(itemCount == 1) {
+    if(itemCount === 1) {
       const parent = list.parentElement;
       const item = list.querySelector('li');
       const nextSibling = list.nextSibling;
@@ -814,11 +814,11 @@ function trimElement(element) {
 
   function isTrimmableElement(element) {
     if(!element) return false;
-    if(element.nodeType != Node.ELEMENT_NODE) return false;
+    if(element.nodeType !== Node.ELEMENT_NODE) return false;
     let name = element.localName;
-    if(name == 'br') return true;
-    if(name == 'hr') return true;
-    if(name == 'p' && !element.firstChild) return true;
+    if(name === 'br') return true;
+    if(name === 'hr') return true;
+    if(name === 'p' && !element.firstChild) return true;
     return false;
   }
 
@@ -855,7 +855,7 @@ function trimTextNodes(document) {
   ]);
 
   function isElement(node) {
-    return node.nodeType == Node.ELEMENT_NODE;
+    return node.nodeType === Node.ELEMENT_NODE;
   }
 
   function isInline(node) {
@@ -912,4 +912,3 @@ function trimTextNodes(document) {
     }
   }
 }
-

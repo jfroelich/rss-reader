@@ -47,7 +47,7 @@ function viewOnUnsubscribeMessage(message) {
     slidesForFeed, function(removedCurrent, slide) {
     // TODO: verify removing all listeners
     removeSlideElement(slide);
-    return removedCurrent || (slide == currentSlide);
+    return removedCurrent || (slide === currentSlide);
   }, false);
 
   if(removedCurrentSlide) {
@@ -121,7 +121,7 @@ function appendSlides(oncomplete, isFirst) {
       } else {
         appendSlide(cursor.value, isFirst);
 
-        if(isFirst && counter == 0) {
+        if(isFirst && counter === 0) {
 
           // TODO: could just directly query for the slide
           // using querySelector, which would match first slide
@@ -150,7 +150,7 @@ function appendSlides(oncomplete, isFirst) {
  * is where the listener is attached.
  */
 function onSlideClick(event) {
-  if(event.which != 1) {
+  if(event.which !== 1) {
     return false;
   }
 
@@ -274,19 +274,19 @@ function appendSlide(entry, isFirst) {
 function stripTitlePublisher(title) {
   if(!title) return;
   // The extra spaces are key to avoiding truncation of hyphenated terms
-  var delimiterPosition = title.lastIndexOf(' - ');
-  if(delimiterPosition == -1)
-    delimiterPosition = title.lastIndexOf(' | ');
-  if(delimiterPosition == -1)
-    delimiterPosition = title.lastIndexOf(' : ');
-  if(delimiterPosition == -1)
+  var index = title.lastIndexOf(' - ');
+  if(index === -1)
+    index = title.lastIndexOf(' | ');
+  if(index === -1)
+    index = title.lastIndexOf(' : ');
+  if(index === -1)
     return title;
-  const trailingText = title.substring(delimiterPosition + 1);
+  const trailingText = title.substring(index + 1);
   const terms = trailingText.split(/\s+/).filter(function(v) {
     return v;
   });
   if(terms.length < 5) {
-    const newTitle = title.substring(0, delimiterPosition).trim();
+    const newTitle = title.substring(0, index).trim();
     return newTitle;
   }
   return title;
@@ -387,31 +387,31 @@ function onKeyDown(event) {
   const key = event.keyCode;
   const km = KEY_MAP;
 
-  if(key == km.SPACE || key == km.DOWN || key == km.PAGE_DOWN ||
-      key == km.UP || key == km.PAGE_UP) {
+  if(key === km.SPACE || key === km.DOWN || key === km.PAGE_DOWN ||
+      key === km.UP || key === km.PAGE_UP) {
     event.preventDefault();
   }
 
   if(currentSlide) {
-    if(key == km.DOWN) {
+    if(key === km.DOWN) {
       scrollElementTo(currentSlide, 50, currentSlide.scrollTop + 200)
       return;
-    } else if(key == km.PAGE_DOWN) {
+    } else if(key === km.PAGE_DOWN) {
       scrollElementTo(currentSlide, 100, currentSlide.scrollTop + 800);
       return;
-    } else if(key == km.UP) {
+    } else if(key === km.UP) {
       scrollElementTo(currentSlide, -50, currentSlide.scrollTop - 200);
       return;
-    } else if(key == km.PAGE_UP) {
+    } else if(key === km.PAGE_UP) {
       scrollElementTo(currentSlide, -100, currentSlide.scrollTop - 800);
       return;
     }
   }
 
-  if(key == km.SPACE || key == km.RIGHT || key == km.N) {
+  if(key === km.SPACE || key === km.RIGHT || key === km.N) {
     clearTimeout(keyDownTimer);
     keyDownTimer = setTimeout(showNextSlide, 50);
-  } else if(key == km.LEFT || key == km.P) {
+  } else if(key === km.LEFT || key === km.P) {
     clearTimeout(keyDownTimer);
     keyDownTimer = setTimeout(showPreviousSlide, 50);
   }
@@ -443,7 +443,7 @@ function scrollElementTo(element, delta, targetY) {
     amountToScroll = Math.abs(targetY - element.scrollTop);
     amountScrolled = 0;
 
-    if(amountToScroll == 0) {
+    if(amountToScroll === 0) {
       return;
     }
 
@@ -456,7 +456,7 @@ function scrollElementTo(element, delta, targetY) {
     amountScrolled += Math.abs(delta);
 
     // If there was no change or we scrolled too far, then we are done.
-    if(currentY == element.scrollTop || amountScrolled >= amountToScroll) {
+    if(currentY === element.scrollTop || amountScrolled >= amountToScroll) {
       clearInterval(scrollYIntervalTimer);
     }
   }

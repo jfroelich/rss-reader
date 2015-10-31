@@ -47,13 +47,13 @@ function showNotification(message) {
 
 function fadeElement(element, duration, delay, callback) {
   'use strict';
-  if(element.style.display == 'none') {
+  if(element.style.display === 'none') {
     element.style.display = '';
     element.style.opacity = '0';
   }
 
   if(!element.style.opacity) {
-    element.style.opacity = element.style.display == 'none' ? '0' : '1';
+    element.style.opacity = element.style.display === 'none' ? '0' : '1';
   }
 
   if(callback) {
@@ -65,7 +65,7 @@ function fadeElement(element, duration, delay, callback) {
 
   // property duration function delay
   element.style.transition = 'opacity '+duration+'s ease '+delay+'s';
-  element.style.opacity = element.style.opacity == '1' ? '0' : '1';
+  element.style.opacity = element.style.opacity === '1' ? '0' : '1';
 }
 
 function isValidDate(date) {

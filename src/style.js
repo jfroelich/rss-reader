@@ -118,7 +118,7 @@ function updateEntryStyles() {
       contentRule.style.fontSize = (bfs / 10).toFixed(2) + 'em';
     }
 
-    contentRule.style.textAlign = (localStorage.JUSTIFY_TEXT == '1') ? 
+    contentRule.style.textAlign = (localStorage.JUSTIFY_TEXT === '1') ? 
       'justify' : 'left';
 
     const bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
@@ -175,7 +175,7 @@ function loadEntryStyles() {
     s += 'font-size:' + (bfs / 10).toFixed(2) + 'em;';
   }
 
-  const bodyTextJustify = localStorage.JUSTIFY_TEXT == '1';
+  const bodyTextJustify = localStorage.JUSTIFY_TEXT === '1';
   if(bodyTextJustify) {
     s += 'text-align: justify;';
   }
@@ -206,7 +206,7 @@ function loadEntryStyles() {
   s += 'margin: 0px;';
   // TODO: use this if columns enabled (use 1(none), 2, 3 as options).
   const columnCount = localStorage.COLUMN_COUNT;
-  if(columnCount == '2' || columnCount == '3') {
+  if(columnCount === '2' || columnCount === '3') {
     s += '-webkit-column-count: ' + columnCount + ';';
     s += '-webkit-column-gap: 30px;';
     s += '-webkit-column-rule: 1px outset #AAAAAA;';

@@ -29,14 +29,18 @@ function openDatabaseConnection(callback) {
         autoIncrement: true
       });
     }
+
     const feedIndices = feedStore.indexNames;
     const entryIndices = entryStore.indexNames;
+
     if(!feedIndices.contains('schemeless')) {
       feedStore.createIndex('schemeless', 'schemeless', {unique: true});
     }
+
     if(!feedIndices.contains('title')) {
       feedStore.createIndex('title', 'title');
     }
+
     if(feedIndices.contains('url')) {
       feedStore.deleteIndex('url');
     }

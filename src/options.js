@@ -146,7 +146,7 @@ function optionsAppendFeed(feed, insertedSort) {
   // TODO: stop using custom feed attribute?
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
-  item.setAttribute('feed',feed.id);
+  item.setAttribute('feed', feed.id);
   item.setAttribute('title', stripTags(feed.description) || '');
   item.onclick = onFeedListItemClick;
   var favIconElement = document.createElement('img');
@@ -166,7 +166,7 @@ function optionsAppendFeed(feed, insertedSort) {
 
     for(var i = 0, len = currentItems.length; i < len; i++) {
       var currentKey = currentItems[i].getAttribute('sort-key');
-      if(indexedDB.cmp(feed.title || '', currentKey || '') == -1) {
+      if(indexedDB.cmp(feed.title || '', currentKey || '') === -1) {
         added = true;
         feedListElement.insertBefore(item, currentItems[i]);
         break;
@@ -415,16 +415,16 @@ function onDiscoverFeedsComplete(errorEvent, query, results) {
   }
 
   const resultsList = $$('discover-results-list');
-  $$('discover-in-progress').style.display='none';
+  $$('discover-in-progress').style.display = 'none';
   if(results.length < 1) {
     resultsList.style.display = 'none';
     $$('discover-no-results').style.display = 'block';
     return;
   }
-  if(resultsList.style.display == 'block') {
+  if(resultsList.style.display === 'block') {
     resultsList.innerHTML = '';
   } else {
-    $$('discover-no-results').style.display='none';
+    $$('discover-no-results').style.display = 'none';
     resultsList.style.display = 'block';
   }
 
@@ -466,7 +466,6 @@ function onUnsubscribeButtonClicked(event) {
   openDatabaseConnection(function(event) {
     if(event.type !== 'success') {
       console.debug(event);
-      onComplete(event);
       return;
     }
 
@@ -493,7 +492,7 @@ function onUnsubscribeButtonClicked(event) {
 
       optionsUpdateFeedCount();
 
-      if($$('feedlist').childElementCount == 0) {
+      if($$('feedlist').childElementCount === 0) {
         $$('feedlist').style.display = 'none';
         $$('nosubscriptions').style.display = 'block';
       }
@@ -501,11 +500,6 @@ function onUnsubscribeButtonClicked(event) {
       // Update the options view
       optionsShowSection(sectionMenu);
     });
-  }
-
-  function onComplete(event) {
-
-
   }
 }
 
@@ -650,31 +644,31 @@ function onJustifyChange(event) {
 function onEnableNotificationsChange(event) {
   'use strict';
   if(event.target.checked)
-    chrome.permissions.request({permissions:['notifications']}, function(granted) {});
+    chrome.permissions.request({permissions:['notifications']}, function() {});
   else
-    chrome.permissions.remove({permissions:['notifications']}, function(removed) {});
+    chrome.permissions.remove({permissions:['notifications']}, function() {});
 }
 
 function onEnableBackgroundChange(event) {
   'use strict';
   if(event.target.checked)
-    chrome.permissions.request({permissions:['background']}, function(granted) {});
+    chrome.permissions.request({permissions:['background']}, function() {});
   else
-    chrome.permissions.remove({permissions:['background']}, function(removed) {});
+    chrome.permissions.remove({permissions:['background']}, function() {});
 }
 
 function onEnableIdleCheckChange(event) {
   'use strict';
   if(event.target.checked)
-    chrome.permissions.request({permissions:['idle']}, function(granted){});
+    chrome.permissions.request({permissions:['idle']}, function(){});
   else
-    chrome.permissions.remove({permissions:['idle']}, function(removed){});
+    chrome.permissions.remove({permissions:['idle']}, function(){});
 }
 
 function initNavigation() {
   'use strict';
   const menuItem = $$('mi-embeds');
-  menuItem.style.display = localStorage.EMBED_POLICY == 'ask' ? 'block' : 'none';
+  menuItem.style.display = localStorage.EMBED_POLICY === 'ask' ? 'block' : 'none';
   const menuItems = document.querySelectorAll('#navigation-menu li');
   Array.prototype.forEach.call(menuItems, setNavigationOnClick);
 }
@@ -744,7 +738,7 @@ function initSubscriptionsSection() {
   }
 
   function onComplete() {
-    if(feedCount == 0) {
+    if(feedCount === 0) {
       $$('nosubscriptions').style.display = 'block';
       $$('feedlist').style.display = 'none';
     } else {
@@ -781,10 +775,7 @@ function initDisplaySettingsSection() {
   BACKGROUND_IMAGES.forEach(function(path) {
     option = document.createElement('option');
     option.value = path;
-
     option.textContent = path.substring('/media/'.length);
-    //option.textContent = path;
-
     option.selected = localStorage.BACKGROUND_IMAGE == path;
     $$('entry-background-image').appendChild(option);
   });
