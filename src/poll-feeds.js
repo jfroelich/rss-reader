@@ -10,17 +10,32 @@
 
 function pollFeeds() {
   'use strict';
+  
+  console.debug('Polling feeds');
+
   if(!window.navigator.onLine) {
+    console.debug('Polling canceled, not online');
     return;
   }
-  const IDLE_PERIOD = 60 * 5; // in seconds
-  queryIdleState(IDLE_PERIOD, function(state) {
+
+  chrome.permissions.contains({permissions: ['idle']}, function(permitted) {
+    if(!permitted) {
+      console.debug('Unable to check idle state, continuing polling');
+      openDatabaseConnection(iterateFeeds);
+      return;
+    }
+    const IDLE_PERIOD = 60 * 5; // 5 minutes
+    chrome.idle.queryState(IDLE_PERIOD, onQueryIdleState);
+  });
+
+  function onQueryIdleState(state) {
     if(!state || state === 'locked' || state === 'idle') {
       openDatabaseConnection(iterateFeeds);
     } else {
+      console.debug('Polling canceled as not idle');
       onComplete();
     }
-  });
+  }
 
   function iterateFeeds(error, connection) {
     if(error) {
@@ -29,16 +44,24 @@ function pollFeeds() {
       return;
     }
 
+    // TODO: I need to use some async.* function that can trigger
+    // a final callback once each feed has been processed
+    // Kind of like async.until?
+    // Or basically I may need to write forEachFeed to work like
+    // async.forEach. Instead of binding its callback to 
+    // transaction.oncomplete, I need to wait for all the callbacks
+    // to callback
+
     forEachFeed(connection, pollFetchFeed.bind(null, connection), 
-      false, onFeedsUpdated);
+      false, onComplete);
   }
 
   function pollFetchFeed(connection, feed) {
-    // console.debug('Fetching %s', feed.url);
     const timeout = 10 * 1000;
     fetchFeed(feed.url, timeout, onFetch);
 
     function onFetch(event, remoteFeed) {
+      console.debug('Fetched %s', feed.url);
       if(event) {
         console.dir(event);
         return;
@@ -50,34 +73,24 @@ function pollFeeds() {
 
     function onPutFeed(remoteFeed, event) {
       async.forEach(remoteFeed.entries, 
-        pollFindEntryByLink.bind(null, connection, feed), onEntriesUpdated);
+        pollFindEntryByLink.bind(null, connection, feed), 
+        onEntriesUpdated);
     }
   }
 
-  let allFeedsProcessed = false;
-  let calledOnComplete = false;
-
-  function onFeedsUpdated() {
-    console.debug('All feeds processed');
-    allFeedsProcessed = true;
-  }
-
+  // The issue is that this gets called per feed. I want to only call it 
+  // when _everything_ is finished. We cannot do it with forEachFeed 
+  // above because that fires off independent async calls and finishes
+  // before waiting for them to complete, which it kind of has to because
+  // we do not know the number of feeds in advance and I don't want to count
+  // or preload all into an array.
+  // Temporarily just update the badge for each feed processed
   function onEntriesUpdated() {
-    // This still does not work quite right but it is closer. The problem 
-    // is I have no easy way to be notified when all async operations 
-    // have completed because they are independent
-    if(allFeedsProcessed) {
-      if(!calledOnComplete) {
-        calledOnComplete = true;
-        onComplete();        
-      }
-
-    } else {
-      console.debug('More feeds to process');
-    }
+    updateBadge();
   }
 
   function pollFindEntryByLink(connection, feed, entry, callback) {
+    console.debug('Processing entry %s', entry.link);
     findEntryByLink(connection, entry, function(event) {
       if(event.target.result) {
         callback();
@@ -88,28 +101,18 @@ function pollFeeds() {
     });
 
     function onAugment(errorEvent) {
+
       putEntry(connection, feed, entry, callback);
     }
   }
 
+  // NOTE: due to above issues, this gets called when finished with 
+  // iterating feeds, BUT prior to finishing entry processing
   function onComplete() {
     console.debug('Polling completed');
     localStorage.LAST_POLL_DATE_MS = String(Date.now());
     // const message = {type: 'pollCompleted'};
     // chrome.runtime.sendMessage(message);
-    updateBadge();
     showNotification('Updated articles');
   }
 }
-
-function queryIdleState(interval, callback) {
-  'use strict';
-  chrome.permissions.contains({permissions: ['idle']}, function(permitted) {
-    if(!permitted) {
-      callback();
-      return;
-    }
-    chrome.idle.queryState(interval, callback);
-  });
-}
-

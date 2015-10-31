@@ -2,13 +2,9 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: this feature needs more thought put into it, this is 
-// currently in a temporary semi-working state
-// TODO: is it possible to archive an article loaded in the view?
-// TODO: avoid archiving unread articles?
-// TODO: stop using feed index, we plan to keep feed to stop 
-// generating orphans. Think of another way to select entries
-// that are not already archived
+// TODO: react to the possibility of archiving entries currently loaded 
+// in the view
+
 function archiveEntries() {
   'use strict';
 
@@ -25,11 +21,19 @@ function archiveEntries() {
       console.debug(error);
       return;
     }
+
+    // TODO: we want to load all articles that are 
+    // (1) read, (2) not archived, (3) old enough that they should be archived
+    // We can actually ignore #3 for now, so we just need to satisfy 1 and 2
+    // Which can be done by a compound index I think
+    // So we need an archived boolean-like property
+
     const transaction = connection.transaction('entry', 'readwrite');
     transaction.oncomplete = onComplete;
     const store = transaction.objectStore('entry');
-    const index = store.index('feed');
-    const request = index.openCursor();
+    const index = store.index('archiveState-readState');
+    const range = IDBKeyRange.only([ENTRY_UNARCHIVED, ENTRY_READ]);
+    const request = index.openCursor(range);
     request.onsuccess = onEntry;
   });
 
@@ -47,25 +51,24 @@ function archiveEntries() {
 
     const entry = cursor.value;
 
-    if(entry.archiveDate) {
-      cursor.continue();
-      return;
-    }
-
     const now = Date.now();
     const age = now - entry.created;
     if(age > EXPIRES_AFTER_MS) {
       delete entry.content;
-      delete entry.feed;
       delete entry.feedLink;
       delete entry.feedTitle;
       delete entry.pubdate;
       delete entry.readDate;
       delete entry.title;
+      entry.readState = ENTRY_READ; // superfluous, but ensure it
+      entry.archiveState = ENTRY_ARCHIVED;
       entry.archiveDate = now;
       cursor.update(entry);
     }
-    
+
+    // TODO: Notify any listeners (views) that the entry is archived. For example,
+    // so that slides.html can update?
+
     if(tracker.processed <= ENTRY_LIMIT) {
       cursor.continue();
     }

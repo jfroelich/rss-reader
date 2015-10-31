@@ -6,7 +6,7 @@
 // TODO: use 'lucubrate' as the database name
 function openDatabaseConnection(callback) {
   'use strict';
-  const request = indexedDB.open('reader', 15);
+  const request = indexedDB.open('reader', 17);
   request.onupgradeneeded = function(event) {
     console.debug('Upgrading database from version %s', event.oldVersion);
     const request = event.target;
@@ -40,12 +40,31 @@ function openDatabaseConnection(callback) {
     if(feedIndices.contains('url')) {
       feedStore.deleteIndex('url');
     }
-    if(!entryIndices.contains('unread')) {
-      entryStore.createIndex('unread', 'unread');
+
+    // TODO: rename to readState or something like that
+    // TODO: we want to use read/unread, so non-membership is 
+    // now an issue. So we actually want to always store a value
+    // That changes how loading unread entries works as well
+    
+    // Deprecated
+    if(entryIndices.contains('unread')) {
+      entryStore.deleteIndex('unread');
     }
+
+    // For example, used to count the number of unread entries
+    if(!entryIndices.contains('readState')) {
+      entryStore.createIndex('readState', 'readState');
+    }
+
     if(!entryIndices.contains('feed')) {
       entryStore.createIndex('feed', 'feed');
     }
+
+    if(!entryIndices.contains('archiveState-readState')) {
+      entryStore.createIndex('archiveState-readState', 
+        ['archiveState', 'readState']);
+    }
+
     if(!entryIndices.contains('link')) {
       entryStore.createIndex('link', 'link', {unique: true});
     } else {

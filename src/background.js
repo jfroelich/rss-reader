@@ -50,3 +50,10 @@ chrome.browserAction.onClicked.addListener(function(event) {
     chrome.tabs.create({url: VIEW_URL});
   }
 });
+
+function connectAndClearEntries() {
+  'use strict';
+  openDatabaseConnection(function(error, connection) {
+    clearEntries(connection);
+  });
+}

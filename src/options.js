@@ -462,9 +462,7 @@ function onDiscoverFeedsComplete(errorEvent, query, results) {
 function onUnsubscribeButtonClicked(event) {
   'use strict';
   const feedId = parseInt(event.target.value);
-
   openDatabaseConnection(function(error, connection) {
-
     if(error) {
       console.debug(error);
       onComplete(error);

@@ -10,10 +10,12 @@ function updateBadge() {
       console.debug(error);
       return;
     }
+    
     const transaction = connection.transaction('entry');
-    const entries = transaction.objectStore('entry');
-    const unread = entries.index('unread');
-    const request = unread.count();
+    const store = transaction.objectStore('entry');
+    const index = store.index('readState');
+    const range = IDBKeyRange.only(ENTRY_UNREAD);
+    const request = index.count(range);
     request.onsuccess = setText;
   });
 

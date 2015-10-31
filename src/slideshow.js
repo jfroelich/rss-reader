@@ -8,22 +8,17 @@
 
 var currentSlide = null;
 
-function viewDispatchMessage(message) {
+chrome.runtime.onMessage.addListener(function(message) {
   'use strict';
-  const VIEW_MESSAGE_HANDLER_MAP = {
-    // displaySettingsChanged: updateEntryStyles,
-    pollCompleted: maybeAppendMoreSlides,
-    subscribe: maybeAppendMoreSlides,
-    unsubscribe: viewOnUnsubscribeMessage
-  };
-
-  const handler = VIEW_MESSAGE_HANDLER_MAP[message.type];
-  if(handler) {
-    handler(message);
+  const type = message.type;
+  if(type === 'pollCompleted') {
+    maybeAppendMoreSlides();
+  } else if(type === 'subscribe') {
+    maybeAppendMoreSlides();
+  } else if(type === 'unsubscribe') {
+    viewOnUnsubscribeMessage();
   }
-}
-
-chrome.runtime.onMessage.addListener(viewDispatchMessage);
+});
 
 function maybeAppendMoreSlides() {
   'use strict';
@@ -109,8 +104,14 @@ function appendSlides(oncomplete, isFirst) {
     const transaction = connection.transaction('entry');
     transaction.oncomplete = oncomplete;
     const entryStore = transaction.objectStore('entry');
-    const unreadIndex = entryStore.index('unread');
-    const request = unreadIndex.openCursor();
+
+    // Load all articles that are unread and unarchived
+    // TODO: this has to be sorted, but I think I will do that 
+    // in the next major revision
+
+    const index = entryStore.index('archiveState-readState');
+    const range = IDBKeyRange.only([ENTRY_UNARCHIVED, ENTRY_UNREAD]);
+    const request = index.openCursor(range);
     request.onsuccess = renderEntry;
   });
 
@@ -210,14 +211,10 @@ function onSlideClick(event) {
  * fetched in the future. It also emphasizes that scrubbing
  * must be tuned to be fast enough not to cause lag while
  * blocking, because this is synchronous.
- *
- * TODO: looking into other performance tuning. See
- * https://developers.google.com/speed/articles/javascript-dom
- *
- * TODO: use <article> instead of div
  */
 function appendSlide(entry, isFirst) {
   'use strict';
+  // TODO: use <article> instead of div
   const slide = document.createElement('div');
   slide.setAttribute('entry', entry.id);
   slide.setAttribute('feed', entry.feed);
@@ -248,8 +245,7 @@ function appendSlide(entry, isFirst) {
 
   slide.appendChild(title);
 
-  // TODO: use section instead of span?
-
+  // TODO: use section instead of span
   const content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
 

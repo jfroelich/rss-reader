@@ -2,6 +2,11 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+const ENTRY_UNREAD = 0;
+const ENTRY_READ = 1;
+const ENTRY_UNARCHIVED = 0;
+const ENTRY_ARCHIVED = 1;
+
 // TODO: create an Entry data object, store entry objects instead of generic
 // object literals in indexedDB. Attach appropriate methods to the general
 // object. This should lead to much cleaner looking and organized code.
@@ -22,24 +27,60 @@
 // entries, and subscribe should just add the feed and not add any entries because
 // subscribe should be near instant. So subscribe should store the feed and then
 // enqueue a one-feed poll update.
+
+// TODO: feed should not be a parameter here. the cascading of feed property to 
+// entry properties should occur externally.
+
 function putEntry(connection, feed, entry, callback) {
   'use strict';
+  
+  console.debug('Putting entry %s', entry.link);
+
   const storable = {};
-  if(feed.link) {
-  	storable.feedLink = feed.link;
+  
+  if(entry.hasOwnProperty('feedLink')) {
+    storable.feedLink = entry.feedLink;
+  } else {
+    if(feed.link) {
+      storable.feedLink = feed.link;
+    }
   }
-  if(feed.title) {
-  	storable.feedTitle = feed.title;
+
+  if(entry.hasOwnProperty('feedTitle')) {
+    storable.feedTitle = entry.feedTitle;
+  } else {
+    if(feed.title) {
+      storable.feedTitle = feed.title;
+    }
   }
-  storable.feed = feed.id;
-  storable.link = entry.link;
-  storable.unread = 1;
+
+  if(entry.hasOwnProperty('feed')) {
+    storable.feed = entry.feed;
+  } else {
+    storable.feed = feed.id;
+  }
+
+  if(entry.link) {
+    storable.link = entry.link;
+  }
+
+  if(entry.hasOwnProperty('readState')) {
+    storable.readState = entry.readState;
+  } else {
+    storable.readState = ENTRY_UNREAD;
+  }
+
+  if(entry.hasOwnProperty('readDate')) {
+    storable.readDate = entry.readDate;
+  }
+
   if(entry.author) {
     storable.author = entry.author;
   }
   if(entry.title) {
     storable.title = entry.title;
   }
+
   if(entry.pubdate) {
     const date = new Date(entry.pubdate);
     if(isValidDate(date)) {
@@ -49,10 +90,25 @@ function putEntry(connection, feed, entry, callback) {
   if(!storable.pubdate && feed.date) {
   	storable.pubdate = feed.date;
   }
-  storable.created = Date.now();
+  
+  if(entry.hasOwnProperty('created')) {
+    storable.created = entry.created;
+  } else {
+    storable.created = Date.now();
+  }
+
   if(entry.content) {
   	storable.content = entry.content;
   }
+
+  if(entry.hasOwnProperty('archiveState')) {
+    storable.archiveState = entry.archiveState;
+  } else {
+    // Ensure that archiveState has a default value so that 
+    // index picks up entries
+    storable.archiveState = ENTRY_UNARCHIVED;
+  }
+
   const transaction = connection.transaction('entry', 'readwrite');
   transaction.oncomplete = function() { 
     callback(); 
@@ -62,6 +118,7 @@ function putEntry(connection, feed, entry, callback) {
 
 function markEntryRead(connection, id) {
   'use strict';
+  console.debug('Marking entry %s as read', id);
   const transaction = connection.transaction('entry', 'readwrite');
   const store = transaction.objectStore('entry');
   const request = store.openCursor(id);
@@ -71,31 +128,23 @@ function markEntryRead(connection, id) {
       return;
     }
     const entry = cursor.value;
-    if(!entry || !entry.hasOwnProperty('unread')) {
+    if(!entry) {
       return;
     }
-    delete entry.unread;
+
+    // Do not re-mark read entries
+    if(entry.readState === ENTRY_READ) {
+      return;
+    }
+
+    // Update the entry
+    entry.readState = ENTRY_READ;
     entry.readDate = Date.now();
     cursor.update(entry);
-    updateBadge();
-    //chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
-  };
-}
 
-// TODO: this needs to also consider advanced and offset stuff
-function forEachUnreadEntry(connection, handleEntry, callback) {
-  'use strict';
-  const transaction = connection.transaction('entry');
-  transaction.oncomplete = callback;
-  const store = transaction.objectStore('entry');
-  const index = store.index('unread');
-  const request = index.openCursor();
-  request.onsuccess = function(event) {
-    const cursor = event.target.result;
-    if(cursor) {
-      handleEntry(cursor.value);
-      cursor.continue();
-    }
+    // Notify observers and app state
+    updateBadge();
+    chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
   };
 }
 
@@ -114,7 +163,7 @@ function removeEntriesByFeed(connection, id, callback) {
   transaction.oncomplete = callback;
   const store = store.objectStore('entry');
   const index = store.index('feed');
-  const request = index.openCursor(feedId);
+  const request = index.openCursor(id);
   request.onsuccess = function(event) {
     const cursor = event.target.result;
     if(cursor) {
@@ -175,6 +224,7 @@ function augmentEntryContent(entry, timeout, callback) {
 
 // TODO: think of a better way to specify the proxy. I should not be
 // relying on window explicitly here.
+// TODO: if this is only a helper function, move it into its sole context
 function fetchImageDimensions(image, callback) {
   'use strict';
   const src = (image.getAttribute('src') || '').trim();

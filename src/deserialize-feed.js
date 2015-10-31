@@ -2,9 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: some concerns regarding how querySelector probes all descendants.
-// Could this find the wrong fields? Should we be restricting to immediate?
 // TODO: support Apple iTunes format, embedded media format (??)
+// TODO: store original format
 function deserializeFeed(document) {
   'use strict';
 
