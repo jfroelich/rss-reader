@@ -1,8 +1,6 @@
-// Copyright 2014 Josh Froelich. All rights reserved.
+// Copyright 2015 Josh Froelich. All rights reserved.
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
-
-
 
 // TODO: express everything as probability. Use a scale of 0 to 100
 // to represent each element's likelihood of being useful content, where

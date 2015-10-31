@@ -1,4 +1,4 @@
-// Copyright 2014 Josh Froelich. All rights reserved.
+// Copyright 2015 Josh Froelich. All rights reserved.
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
@@ -29,10 +29,6 @@ function archiveEntries() {
     const request = index.openCursor(range);
     request.onsuccess = archiveNextEntry;
   });
-
-  function onComplete(event) {
-    console.log('Archived %s entries', tracker.processed);
-  }
 
   function archiveNextEntry(event) {
     const cursor = event.target.result;
@@ -68,5 +64,9 @@ function archiveEntries() {
     if(tracker.processed <= ENTRY_LIMIT) {
       cursor.continue();
     }
+  }
+
+  function onComplete(event) {
+    console.log('Archived %s entries', tracker.processed);
   }
 }

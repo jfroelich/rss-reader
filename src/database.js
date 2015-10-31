@@ -1,11 +1,9 @@
-// Copyright 2014 Josh Froelich. All rights reserved.
+// Copyright 2015 Josh Froelich. All rights reserved.
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
 // TODO: just store scheme and schemeless props as parts of a url property.
 // TODO: use 'lucubrate' as the database name
-// TODO: rather than pass both event and connection to the callback,
-// just pass back event and have the caller check if event.type != 'success'
 function openDatabaseConnection(callback) {
   'use strict';
   const request = indexedDB.open('reader', 17);
@@ -43,11 +41,6 @@ function openDatabaseConnection(callback) {
       feedStore.deleteIndex('url');
     }
 
-    // TODO: rename to readState or something like that
-    // TODO: we want to use read/unread, so non-membership is 
-    // now an issue. So we actually want to always store a value
-    // That changes how loading unread entries works as well
-    
     // Deprecated
     if(entryIndices.contains('unread')) {
       entryStore.deleteIndex('unread');
