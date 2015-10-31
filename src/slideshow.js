@@ -2,14 +2,12 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: because none of these functions are exported, and this
-// uses globals, an IIFE seems appropriate. Also, would only 
-// need to write use strict once.
+(function() {
+  'use strict';
 
 var currentSlide = null;
 
 chrome.runtime.onMessage.addListener(function(message) {
-  'use strict';
   const type = message.type;
   if(type === 'pollCompleted') {
     maybeAppendMoreSlides();
@@ -17,11 +15,14 @@ chrome.runtime.onMessage.addListener(function(message) {
     maybeAppendMoreSlides();
   } else if(type === 'unsubscribe') {
     viewOnUnsubscribeMessage();
+  } else if(type === 'archivedEntry') {
+    // TODO: react to the archiving an entry that is read 
+    // and still loaded into the view
+    // message.entry is the archived entry
   }
 });
 
 function maybeAppendMoreSlides() {
-  'use strict';
   const unreadCount = countUnreadSlides();
 
   // There are still some unread slides loaded, so do not bother
@@ -40,8 +41,6 @@ function maybeAppendMoreSlides() {
 }
 
 function viewOnUnsubscribeMessage(message) {
-  'use strict';
-
   const slidesForFeed = document.querySelectorAll(
     'div[feed="'+ message.feed +'"]');
   const removedCurrentSlide = Array.prototype.reduce.call(
@@ -61,13 +60,11 @@ function viewOnUnsubscribeMessage(message) {
 }
 
 function removeSlideElement(slideElement) {
-  'use strict';
   slideElement.removeEventListener('click', onSlideClick);
   slideElement.remove();
 }
 
 function markSlideRead(slide) {
-  'use strict';
   if(slide.hasAttribute('read')) {
     return;
   }
@@ -88,7 +85,6 @@ function markSlideRead(slide) {
 }
 
 function appendSlides(oncomplete, isFirst) {
-  'use strict';
   let counter = 0;
   const limit = 3;
   const offset = countUnreadSlides();
@@ -154,8 +150,6 @@ function appendSlides(oncomplete, isFirst) {
  * is where the listener is attached.
  */
 function onSlideClick(event) {
-  'use strict';
-
   if(event.which != 1) {
     return false;
   }
@@ -213,7 +207,6 @@ function onSlideClick(event) {
  * blocking, because this is synchronous.
  */
 function appendSlide(entry, isFirst) {
-  'use strict';
   // TODO: use <article> instead of div
   const slide = document.createElement('div');
   slide.setAttribute('entry', entry.id);
@@ -279,7 +272,6 @@ function appendSlide(entry, isFirst) {
 
 // TODO: support publisher as prefix
 function stripTitlePublisher(title) {
-  'use strict';
   if(!title) return;
   // The extra spaces are key to avoiding truncation of hyphenated terms
   var delimiterPosition = title.lastIndexOf(' - ');
@@ -301,7 +293,6 @@ function stripTitlePublisher(title) {
 }
 
 function formatDate(date, sep) {
-  'use strict';
   if(!date) {
     return '';
   }
@@ -313,18 +304,15 @@ function formatDate(date, sep) {
 }
 
 function showNextSlide() {
-  'use strict';
   if(countUnreadSlides() < 2) {
     appendSlides(function() {
+      const c = document.getElementById('slideshow-container');
+      while(c.childElementCount > 30 && c.firstChild != currentSlide) {
+        removeSlideElement(c.firstChild);
+      }
 
-        // TODO: this is still producing UI latency
-        const c = document.getElementById('slideshow-container');
-        while(c.childElementCount > 30 && c.firstChild != currentSlide) {
-          removeSlideElement(c.firstChild);
-        }
-
-        showNext();
-        maybeShowNoUnreadArticlesSlide();
+      showNext();
+      maybeShowNoUnreadArticlesSlide();
     }, false);
   } else {
     showNext();
@@ -346,7 +334,6 @@ function showNextSlide() {
 }
 
 function showPreviousSlide() {
-  'use strict';
   const current = currentSlide;
   if(current.previousSibling) {
     current.style.left = '100%';
@@ -358,18 +345,15 @@ function showPreviousSlide() {
 }
 
 function isEntryElementUnread(entryElement) {
-  'use strict';
   return !entryElement.hasAttribute('read');
 }
 
 function countUnreadSlides() {
-  'use strict';
   const slides = document.body.querySelectorAll('div[entry]:not([read])');
   return slides ? slides.length : 0;
 }
 
 function maybeShowNoUnreadArticlesSlide() {
-  'use strict';
   const numUnread = countUnreadSlides();
   if(numUnread) {
     return;
@@ -379,31 +363,27 @@ function maybeShowNoUnreadArticlesSlide() {
 }
 
 function hideNoUnreadArticlesSlide() {
-  'use strict';
   console.warn('hideNoUnreadArticlesSlide not implemented');
 }
 
-// NOTE: GLOBAL
 var keyDownTimer;
 // TODO: instead of binding this to window, bind to each slide? that way
 // we don't have to use the currentSlide hack?
+const KEY_MAP = {
+  SPACE: 32,
+  PAGE_UP: 33,
+  PAGE_DOWN: 34,
+  LEFT: 37,
+  UP: 38,
+  RIGHT: 39,
+  DOWN: 40,
+  N: 78,
+  P: 80
+};
+
 function onKeyDown(event) {
-  'use strict';
   //event.target is body
   //event.currentTarget is window
-
-  const KEY_MAP = {
-    SPACE: 32,
-    PAGE_UP: 33,
-    PAGE_DOWN: 34,
-    LEFT: 37,
-    UP: 38,
-    RIGHT: 39,
-    DOWN: 40,
-    N: 78,
-    P: 80
-  };
-
   const key = event.keyCode;
   const km = KEY_MAP;
 
@@ -411,9 +391,6 @@ function onKeyDown(event) {
       key == km.UP || key == km.PAGE_UP) {
     event.preventDefault();
   }
-
-  // TODO: lot of DRY violation here. I should use a {} map
-  // to deltas and make one call to scrollTo instead
 
   if(currentSlide) {
     if(key == km.DOWN) {
@@ -442,7 +419,6 @@ function onKeyDown(event) {
 
 window.addEventListener('keydown', onKeyDown, false);
 
-
 /**
  * NOTE: the start timer is basically to debounce calls to this function
  * whereas the interval timer is to track the interval and stop it when
@@ -452,7 +428,6 @@ window.addEventListener('keydown', onKeyDown, false);
  * @param targetY {int} the desired vertical end position
  */
 function scrollElementTo(element, delta, targetY) {
-  'use strict';
   var scrollYStartTimer;
   var scrollYIntervalTimer;
   var amountToScroll = 0;
@@ -494,3 +469,5 @@ function initSlideShow(event) {
 }
 
 document.addEventListener('DOMContentLoaded', initSlideShow);
+
+}()); // end IIFE

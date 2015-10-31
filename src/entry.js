@@ -143,9 +143,19 @@ function markEntryRead(connection, id) {
     cursor.update(entry);
 
     // Notify observers and app state
-    updateBadge();
+    updateBadge(connection);
     chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
   };
+}
+
+function countUnreadEntries(connection, callback) {
+  'use strict';
+  const transaction = connection.transaction('entry');
+  const store = transaction.objectStore('entry');
+  const index = store.index('readState');
+  const range = IDBKeyRange.only(ENTRY_UNREAD);
+  const request = index.count(range);
+  request.onsuccess = callback;
 }
 
 function findEntryByLink(connection, entry, callback) {
@@ -251,11 +261,22 @@ function fetchImageDimensions(image, callback) {
 
 function clearEntries(connection) {
   'use strict';
-  const transaction = connection.transaction('entry', 'readwrite');
-  const entries = transaction.objectStore('entry');
-  const request = entries.clear();
-  request.onerror = console.debug;
-  request.onsuccess = function(event) {
-    console.debug('Cleared entry object store');
-  };
+
+  if(!connection) {
+    openDatabaseConnection(function(event) {
+      runClear(event.target.result);
+    });
+  } else {
+    runClear(connection);
+  }
+
+  function runClear(connection) {
+    const transaction = connection.transaction('entry', 'readwrite');
+    const entries = transaction.objectStore('entry');
+    const request = entries.clear();
+    request.onerror = console.debug;
+    request.onsuccess = function(event) {
+      console.debug('Cleared entry object store');
+    };
+  }
 }

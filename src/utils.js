@@ -2,27 +2,28 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-function updateBadge() {
+function updateBadge(connection) {
   'use strict';
   console.debug('Updating badge');
-  openDatabaseConnection(function(event) {
-    if(event.type !== 'success') {
-      console.debug(event);
-      return;
-    }
-    const connection = event.target.result;
-    const transaction = connection.transaction('entry');
-    const store = transaction.objectStore('entry');
-    const index = store.index('readState');
-    const range = IDBKeyRange.only(ENTRY_UNREAD);
-    const request = index.count(range);
-    request.onsuccess = setText;
-  });
+
+  if(connection) {
+    countUnreadEntries(connection, setText);
+  } else {
+    openDatabaseConnection(function(event) {
+      if(event.type !== 'success') {
+        console.debug(event);
+        chrome.browserAction.setBadgeText({text: '?'});
+        return;
+      }
+      countUnreadEntries(event.target.result, setText);
+    });
+  }
 
   function setText(event) {
     const count = event.target.result;
-    const badgeText = {text: count.toString()};
-    chrome.browserAction.setBadgeText(badgeText);
+    chrome.browserAction.setBadgeText({
+      text: count.toString()
+    });
   }
 }
 

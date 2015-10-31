@@ -470,36 +470,42 @@ function onUnsubscribeButtonClicked(event) {
       return;
     }
 
-    unsubscribe(event.target.result, feedId, onComplete);
+    doUnsubscribe(event.target.result, feedId);
   });
+
+  function doUnsubscribe(connection, feedId) {
+    unsubscribe(function(event) {
+      const sectionMenu = $$('mi-subscriptions');
+
+      // Update the badge in case any unread articles belonged to 
+      // the unsubscribed feed
+      updateBadge(connection);
+
+      // TODO: send out a message notifying other views
+      // of the unsubscribe. That way the slides view can
+      // remove any articles.
+
+      const item = document.querySelector('feedlist li[feed="'+message.feed+'"]')
+      if(item) {
+        item.removeEventListener('click', onFeedListItemClick);
+        item.remove();
+      }
+
+      optionsUpdateFeedCount();
+
+      if($$('feedlist').childElementCount == 0) {
+        $$('feedlist').style.display = 'none';
+        $$('nosubscriptions').style.display = 'block';
+      }
+
+      // Update the options view
+      optionsShowSection(sectionMenu);
+    });
+  }
 
   function onComplete(event) {
 
-    const sectionMenu = $$('mi-subscriptions');
 
-    // Update the badge in case any unread articles belonged to 
-    // the unsubscribed feed
-    updateBadge();
-
-    // TODO: send out a message notifying other views
-    // of the unsubscribe. That way the slides view can
-    // remove any articles.
-
-    const item = document.querySelector('feedlist li[feed="'+message.feed+'"]')
-    if(item) {
-      item.removeEventListener('click', onFeedListItemClick);
-      item.remove();
-    }
-
-    optionsUpdateFeedCount();
-
-    if($$('feedlist').childElementCount == 0) {
-      $$('feedlist').style.display = 'none';
-      $$('nosubscriptions').style.display = 'block';
-    }
-
-    // Update the options view
-    optionsShowSection(sectionMenu);
   }
 }
 

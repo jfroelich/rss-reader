@@ -2,8 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: react to the possibility of archiving entries currently loaded 
-// in the view
+// TODO: do we need a limit on the number of entries archived per 
+// run? Maybe that is stupid
 
 function archiveEntries() {
   'use strict';
@@ -27,22 +27,24 @@ function archiveEntries() {
     const index = store.index('archiveState-readState');
     const range = IDBKeyRange.only([ENTRY_UNARCHIVED, ENTRY_READ]);
     const request = index.openCursor(range);
-    request.onsuccess = onEntry;
+    request.onsuccess = archiveNextEntry;
   });
 
   function onComplete(event) {
     console.log('Archived %s entries', tracker.processed);
   }
 
-  function onEntry(event) {
+  function archiveNextEntry(event) {
     const cursor = event.target.result;
     if(!cursor) {
       return;
     }
 
     tracker.processed++;
-
     const entry = cursor.value;
+
+    // We leave intact entry.id, entry.feed, entry.link, update
+    // archiveState, and create archiveDate
 
     const now = Date.now();
     const age = now - entry.created;
@@ -52,15 +54,16 @@ function archiveEntries() {
       delete entry.feedTitle;
       delete entry.pubdate;
       delete entry.readDate;
+      delete entry.created;
+      delete entry.updated;
       delete entry.title;
-      entry.readState = ENTRY_READ; // superfluous, but ensure it
+      delete entry.author;
       entry.archiveState = ENTRY_ARCHIVED;
       entry.archiveDate = now;
       cursor.update(entry);
     }
 
-    // TODO: Notify any listeners (views) that the entry is archived. For example,
-    // so that slides.html can update?
+    chrome.runtime.sendMessage({type: 'archivedEntry', entry: entry});
 
     if(tracker.processed <= ENTRY_LIMIT) {
       cursor.continue();

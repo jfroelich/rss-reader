@@ -69,7 +69,7 @@ function pollFeeds() {
     function onPutFeed(remoteFeed, event) {
       async.forEach(remoteFeed.entries, 
         pollFindEntryByLink.bind(null, connection, feed), 
-        onEntriesUpdated);
+        onEntriesUpdated.bind(null, connection));
     }
   }
 
@@ -80,8 +80,8 @@ function pollFeeds() {
   // we do not know the number of feeds in advance and I don't want to count
   // or preload all into an array.
   // Temporarily just update the badge for each feed processed
-  function onEntriesUpdated() {
-    updateBadge();
+  function onEntriesUpdated(connection) {
+    updateBadge(connection);
   }
 
   function pollFindEntryByLink(connection, feed, entry, callback) {
