@@ -75,15 +75,15 @@ function markSlideRead(slide) {
   slide.setAttribute('read', '');
   const entryAttribute = slide.getAttribute('entry');
 
-  openDatabaseConnection(function(error, connection) {
-    if(error) {
+  openDatabaseConnection(function(event) {
+    if(event.type !== 'success') {
       // TODO: react to database error?
-      console.debug(error);
+      console.debug(event);
       return;
     }
 
     const entryId = parseInt(entryAttribute);
-    markEntryRead(connection, entryId);
+    markEntryRead(event.target.result, entryId);
   });
 }
 
@@ -94,13 +94,13 @@ function appendSlides(oncomplete, isFirst) {
   const offset = countUnreadSlides();
   let notAdvanced = true;
 
-  openDatabaseConnection(function(error, connection) {
-    if(error) {
+  openDatabaseConnection(function(event) {
+    if(event.type !== 'success') {
       // TODO: react?
-      console.debug(error);
+      console.debug(event);
       return;
     }
-
+    const connection = event.target.result;
     const transaction = connection.transaction('entry');
     transaction.oncomplete = oncomplete;
     const entryStore = transaction.objectStore('entry');

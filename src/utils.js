@@ -5,12 +5,12 @@
 function updateBadge() {
   'use strict';
   console.debug('Updating badge');
-  openDatabaseConnection(function(error, connection) {
-    if(error) {
-      console.debug(error);
+  openDatabaseConnection(function(event) {
+    if(event.type !== 'success') {
+      console.debug(event);
       return;
     }
-    
+    const connection = event.target.result;
     const transaction = connection.transaction('entry');
     const store = transaction.objectStore('entry');
     const index = store.index('readState');
@@ -20,7 +20,7 @@ function updateBadge() {
   });
 
   function setText(event) {
-    const count = event.target.result || 0;
+    const count = event.target.result;
     const badgeText = {text: count.toString()};
     chrome.browserAction.setBadgeText(badgeText);
   }

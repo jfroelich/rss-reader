@@ -20,7 +20,6 @@ function pollFeeds() {
 
   chrome.permissions.contains({permissions: ['idle']}, function(permitted) {
     if(!permitted) {
-      console.debug('Unable to check idle state, continuing polling');
       openDatabaseConnection(iterateFeeds);
       return;
     }
@@ -29,7 +28,7 @@ function pollFeeds() {
   });
 
   function onQueryIdleState(state) {
-    if(!state || state === 'locked' || state === 'idle') {
+    if(state === 'locked' || state === 'idle') {
       openDatabaseConnection(iterateFeeds);
     } else {
       console.debug('Polling canceled as not idle');
@@ -37,9 +36,9 @@ function pollFeeds() {
     }
   }
 
-  function iterateFeeds(error, connection) {
-    if(error) {
-      console.debug(error);
+  function iterateFeeds(event) {
+    if(event.type !== 'success') {
+      console.debug(event);
       onComplete();
       return;
     }
@@ -51,25 +50,21 @@ function pollFeeds() {
     // async.forEach. Instead of binding its callback to 
     // transaction.oncomplete, I need to wait for all the callbacks
     // to callback
-
-    forEachFeed(connection, pollFetchFeed.bind(null, connection), 
+    forEachFeed(event.target.result, pollFetchFeed.bind(null, connection), 
       false, onComplete);
   }
 
   function pollFetchFeed(connection, feed) {
     const timeout = 10 * 1000;
-    fetchFeed(feed.url, timeout, onFetch);
-
-    function onFetch(event, remoteFeed) {
+    fetchFeed(feed.url, timeout, function(event, remoteFeed) {
       console.debug('Fetched %s', feed.url);
       if(event) {
         console.dir(event);
         return;
       }
-
       putFeed(connection, feed, remoteFeed, 
         onPutFeed.bind(null, remoteFeed));
-    }
+    });
 
     function onPutFeed(remoteFeed, event) {
       async.forEach(remoteFeed.entries, 
@@ -101,7 +96,6 @@ function pollFeeds() {
     });
 
     function onAugment(errorEvent) {
-
       putEntry(connection, feed, entry, callback);
     }
   }

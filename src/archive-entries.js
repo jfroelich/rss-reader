@@ -13,21 +13,14 @@ function archiveEntries() {
   };
 
   const EXPIRES_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
-
   const ENTRY_LIMIT = 1000;
 
-  openDatabaseConnection(function(error, connection) {
-    if(error) {
-      console.debug(error);
+  openDatabaseConnection(function(event) {
+    if(event.type !== 'success') {
+      console.debug('Archive aborted due to connection error %o', event);
       return;
     }
-
-    // TODO: we want to load all articles that are 
-    // (1) read, (2) not archived, (3) old enough that they should be archived
-    // We can actually ignore #3 for now, so we just need to satisfy 1 and 2
-    // Which can be done by a compound index I think
-    // So we need an archived boolean-like property
-
+    const connection = event.target.result;
     const transaction = connection.transaction('entry', 'readwrite');
     transaction.oncomplete = onComplete;
     const store = transaction.objectStore('entry');

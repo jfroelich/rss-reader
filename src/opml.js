@@ -90,14 +90,14 @@ function importOPML(files, callback) {
       });
     });
 
-    openDatabaseConnection(function(error, connection) {
-      if(error) {
-        console.debug(error);
-        onImportComplete(error);
+    openDatabaseConnection(function(event) {
+      if(event.type !== 'success') {
+        console.debug(event);
+        onImportComplete(event);
         return;
       }
 
-      storeOutlines(connection, outlines);
+      storeOutlines(event.target.result, outlines);
     });
   }
 
@@ -118,13 +118,13 @@ function importOPML(files, callback) {
 function exportOPML(title, callback) {
   'use strict';
   const feeds = [];
-  openDatabaseConnection(function(error, connection){
-    if(error) {
-      callback(error);
+  openDatabaseConnection(function(event){
+    if(event.type !== 'success') {
+      callback(event);
       return;
     }
 
-    forEachFeed(connection, processFeed, false, onFeedsEnumerated);
+    forEachFeed(event.target.result, processFeed, false, onFeedsEnumerated);
   });
 
   function processFeed(feed) {

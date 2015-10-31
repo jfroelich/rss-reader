@@ -258,17 +258,18 @@ function startSubscription(url) {
   showSubscriptionMonitor();
   updateSubscriptionMonitor('Subscribing...');
 
-  openDatabaseConnection(function(error, connection) {
-    if(error) {
-      console.debug(error);
+  openDatabaseConnection(function(event) {
+    if(event.type !== 'success') {
+      console.debug(event);
       hideSubsciptionMonitor(function() {
-        showErrorMessage('An error occurred while trying to subscribe to ' + 
-          url);
+        showErrorMessage(
+          'An error occurred while trying to subscribe to ' + url);
       });
       return;
     }
 
-    findFeedByURL(connection, url, onFindByURL.bind(null, connection));
+    findFeedByURL(event.target.result, url, 
+      onFindByURL.bind(null, connection));
   });
 
   function onFindByURL(connection, existingFeed) {
@@ -318,12 +319,12 @@ function startSubscription(url) {
 // TODO: react to connection error, find error
 function populateFeedDetailsSection(feedId) {
   'use strict';
-  openDatabaseConnection(function(error, connection) {
-    if(error) {
+  openDatabaseConnection(function(event) {
+    if(event.type !== 'success') {
       return;
     }
 
-    findFeedById(connection, feedId, function(feed) {
+    findFeedById(event.target.result, feedId, function(feed) {
       if(!feed) {
         return;
       }
@@ -462,14 +463,14 @@ function onDiscoverFeedsComplete(errorEvent, query, results) {
 function onUnsubscribeButtonClicked(event) {
   'use strict';
   const feedId = parseInt(event.target.value);
-  openDatabaseConnection(function(error, connection) {
-    if(error) {
-      console.debug(error);
-      onComplete(error);
+  openDatabaseConnection(function(event) {
+    if(event.type !== 'success') {
+      console.debug(event);
+      onComplete(event);
       return;
     }
 
-    unsubscribe(connection, feedId, onComplete);
+    unsubscribe(event.target.result, feedId, onComplete);
   });
 
   function onComplete(event) {
@@ -720,14 +721,14 @@ function initSubscriptionsSection() {
 
   let feedCount = 0;
 
-  openDatabaseConnection(function(error, connection) {
-    if(error) {
+  openDatabaseConnection(function(event) {
+    if(event.type !== 'success') {
       // TODO: react
-      console.debug(error);
+      console.debug(event);
       return;
     }
 
-    forEachFeed(connection, handleFeed, true, onComplete);
+    forEachFeed(event.target.result, handleFeed, true, onComplete);
   });
 
   function handleFeed(feed) {

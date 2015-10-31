@@ -18,7 +18,9 @@ chrome.alarms.create('poll', {periodInMinutes: 20});
 // TODO: set localStorage defaults
 chrome.runtime.onInstalled.addListener(function(event) {
   'use strict';  
-  openDatabaseConnection(function() {});
+  openDatabaseConnection(function(event) {
+    // NOOP
+  });
 });
 
 // TODO: whether to reuse the newtab page should possibly be a setting that
@@ -53,7 +55,9 @@ chrome.browserAction.onClicked.addListener(function(event) {
 
 function connectAndClearEntries() {
   'use strict';
-  openDatabaseConnection(function(error, connection) {
-    clearEntries(connection);
+  openDatabaseConnection(function(event) {
+    if(event.type === 'success') {
+      clearEntries(event.target.result);
+    }
   });
 }

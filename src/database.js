@@ -4,6 +4,8 @@
 
 // TODO: just store scheme and schemeless props as parts of a url property.
 // TODO: use 'lucubrate' as the database name
+// TODO: rather than pass both event and connection to the callback,
+// just pass back event and have the caller check if event.type != 'success'
 function openDatabaseConnection(callback) {
   'use strict';
   const request = indexedDB.open('reader', 17);
@@ -79,9 +81,7 @@ function openDatabaseConnection(callback) {
     }
   };
 
-  request.onsuccess = function(event) {
-    callback(null, event.target.result);
-  };
+  request.onsuccess = callback;
   request.onerror = callback;
   request.onblocked = callback;
   return request;
