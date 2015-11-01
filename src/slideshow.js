@@ -244,8 +244,7 @@ function appendSlide(entry, isFirst) {
 
   const doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = entry.content;
-  applyCalamine(doc);
-
+  applyCalamine(doc, false);
   content.appendChild(doc.documentElement);
   slide.appendChild(content);
 

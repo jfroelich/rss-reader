@@ -12,7 +12,7 @@
 // TODO: maybe use a single bias function and just extract features prior to that
 // TODO: use a single function called applyCalamine, deprecate the IIFE
 
-function applyCalamine(document, options) {
+function applyCalamine(document, annotate) {
   'use strict';
 
   const forEach = Array.prototype.forEach;
@@ -33,10 +33,17 @@ function applyCalamine(document, options) {
     return parents;
   }
 
+  function iterateNodes(root, nodeFilter, callback) {
+    for(let iterator = root.createNodeIterator(root, nodeFilter), 
+      node = iterator.nextNode(); node; node = iterator.nextNode()) {
+      callback(node);
+    }
+  }
+
   function findCaption(image) {
     const parents = getAncestors(image);  
     const figure = parents.find(function(element){
-      return element.localName === 'figure';
+      return element.matches('figure');
     });
     if(figure) {
       return figure.querySelector('figcaption');
@@ -54,64 +61,52 @@ function applyCalamine(document, options) {
     return unique(tokens.filter(identity));
   }
 
-  const SCORABLE_ATTRIBUTES = ['id', 'name', 'class', 'itemprop', 
-    'itemtype', 'role'];
-
   function getItemTypePath(element) {
-    // http://schema.org/Article
-    // http://schema.org/NewsArticle
-    // http://schema.org/BlogPosting
-    // http://schema.org/Blog
-    // http://schema.org/WebPage
-    // http://schema.org/TechArticle
-    // http://schema.org/ScholarlyArticle
-    let value = element.getAttribute('itemtype');
-    if(!value) return;
-    value = value.trim();
-    if(!value) return;
-    const index = value.lastIndexOf('/');
-    if(index === -1) return;
-    const path = value.substring(index + 1);
-    return path;
+    let value = element.getAttribute('itemtype') || '';
+    if(value) {
+      value = value.trim();
+      if(value) {
+        const index = value.lastIndexOf('/');
+        if(index > 0) {
+          return value.substring(index + 1);
+        }
+      }
+    }
   }
 
   function getAttributeBias(element) {
-    const values = SCORABLE_ATTRIBUTES.map(function(name) {
-      return name === 'itemtype' ? getItemTypePath(element) :
-        element.getAttribute(name);
-    }).filter(identity);
+    const values = [
+      element.getAttribute('id'),
+      element.getAttribute('name'),
+      element.getAttribute('class'),
+      element.getAttribute('itemprop'),
+      getItemTypePath(element)
+    ].filter(identity);
     const tokens = tokenize(values.join(' '));
     return tokens.reduce(function(sum, value) {
-      return sum + ATTRIBUTE_BIAS.get(value) || 0;
+      return sum + (ATTRIBUTE_BIAS.get(value) || 0);
     }, 0);
   }
 
   function applySingleClassBias(className, bias) {
     const elements = document.getElementsByClassName(className);
-    if(elements.length !== 1) return;
-    const e = elements[0];
-    if(options.ANNOTATE) {
-      e.dataset.attributeBias = parseInt(e.dataset.attributeBias || '0') + bias;
+    if(elements.length === 1) {
+      scores.set(elements[0], scores.get(elements[0]) + bias);
+      if(annotate) {
+        elements[0].dataset.attributeBias = scores.get(elements[0]);
+      }
     }
-    scores.set(e, scores.get(e) + bias);
   }
 
   // NOTE: not optimized for live documents
   function unwrap(element) {
-    'use strict';
     const parent = element.parentElement;
-
-    // Avoid issues with documentElement or detached elements
     if(!parent) {
       return;
     }
-
-    // Move each child of the element to the position preceding the element in
-    // the parent's node list, maintaining child order.
     while(element.firstChild) {
       parent.insertBefore(element.firstChild, element);
     }
-
     element.remove();
   }
 
@@ -120,14 +115,16 @@ function applyCalamine(document, options) {
     return;
   }
 
-  options = options || {};
-
   // Remove comments
+/*
   for(let iterator = document.createNodeIterator(
     document, NodeFilter.SHOW_COMMENT), node = iterator.nextNode(); node;
     node = iterator.nextNode()) {
     node.remove();
   }
+*/
+  iterateNodes(document, NodeFilter.SHOW_COMMENT, remove);
+
 
   // Remove blacklisted elements
   const BLACKLISTED_ELEMENTS = [
@@ -163,7 +160,7 @@ function applyCalamine(document, options) {
   /*
   // Remove hidden elements
   // TODO: enable once the performance issues are resolved
-  // TODO: element.offsetWidth < 1 || element.offsetHeight < 1; ??
+  // TODO: element.offsetWidth < 1 || element.offsetHeight < 1; ?
   const elements = document.body.getElementsByTagName('*');
   const invisibles = filter.call(elements, function(element) {
     if(element.localName === 'noscript' || element.localName === 'noembed') {
@@ -181,11 +178,16 @@ function applyCalamine(document, options) {
   */
 
   // Normalize whitespace
+/*
   for(let iterator = document.createNodeIterator(document, 
     NodeFilter.SHOW_TEXT), node = iterator.nextNode(); node;
     node = iterator.nextNode()) {
     node.nodeValue = node.nodeValue.replace(/\s/g, ' ');
   }
+*/
+  iterateNodes(document, NodeFilter.SHOW_TEXT, function(node) {
+    node.nodeValue = node.nodeValue.replace(/\s/g, ' ');
+  });
 
   /*
   // Transform break rule elements into paragraphs
@@ -200,13 +202,18 @@ function applyCalamine(document, options) {
   trimTextNodes(document);
 
   // Remove empty text nodes
-  for(let iterator = document.createNodeIterator(document, 
+  /*for(let iterator = document.createNodeIterator(document, 
     NodeFilter.SHOW_TEXT), node = iterator.nextNode(); node; 
     node = iterator.nextNode()) {
     if(!node.nodeValue) {
       node.remove();
     }
-  }
+  }*/
+  iterateNodes(document, NodeFilter.SHOW_TEXT, function(node) {
+    if(!node.nodeValue) {
+      node.remove();
+    }
+  });
 
   const elements = document.getElementsByTagName('*');
 
@@ -219,23 +226,19 @@ function applyCalamine(document, options) {
   });
 
   // Collect text node lengths
-  // TODO: use for loop
   const textLengths = new Map();
-  const textNodeIterator = document.createNodeIterator(document, 
-    NodeFilter.SHOW_TEXT);
-  let textNode = textNodeIterator.nextNode();
-  while(textNode) {
-    let length = textNode.nodeValue.length;
-    if(length) {
-      textNode = textNode.parentNode;
-      while(textNode) {
-        textLengths.set(textNode, (textLengths.get(textNode) || 0) + length);
-        textNode = textNode.parentNode;
+  iterateNodes(document, NodeFilter.SHOW_TEXT, function(node) {
+    while(node) {
+      const length = node.nodeValue.length;
+      if(length) {
+        node = node.parentNode;
+        while(node) {
+          textLengths.set(node, (textLengths.get(node) || 0) + length);
+          node = node.parentNode;
+        }
       }
     }
-
-    textNode = textNodeIterator.nextNode();
-  }
+  });
 
   // Collect anchor text length
   const anchors = document.querySelectorAll('a[href]');
@@ -266,7 +269,7 @@ function applyCalamine(document, options) {
     let bias = (0.25 * textLength) - (0.7 * anchorTextLength);
     bias = Math.min(4000, bias);// tentative cap
     scores.set(element, scores.get(element) + bias);
-    if(options.ANNOTATE) {
+    if(annotate) {
       element.dataset.textChars = textLength;
       if(anchorTextLength) {
         element.dataset.anchorChars = anchorTextLength;
@@ -327,7 +330,7 @@ function applyCalamine(document, options) {
   forEach.call(elements, function(element) {
     const bias = INTRINSIC_BIAS.get(element.localName);
     if(bias) {
-      if(options.ANNOTATE) {
+      if(annotate) {
         element.dataset.intrinsicBias = bias;
       }
       scores.set(element, scores.get(element) + bias);
@@ -337,30 +340,30 @@ function applyCalamine(document, options) {
   // Pathological case for applying intrinsic bias to single article
   const articles = document.getElementsByTagName('article');
   if(articles.length === 1) {
-    if(options.ANNOTATE) {
-      articles[0].dataset.intrinsicBias = 1000;
-    }
     scores.set(articles[0], scores.get(articles[0]) + 1000);
+    if(annotate) {
+      articles[0].dataset.intrinsicBias = scores.get(articles[0]);
+    }
   }
 
   // Penalize list descendants
   const listDescendants = document.querySelectorAll(
     'li *, ol *, ul *, dd *, dl *, dt *');
   forEach.call(listDescendants, function(element) {
-    if(options.ANNOTATE) {
+    scores.set(element, scores.get(element) - 100);
+    if(annotate) {
       element.dataset.inListPenaltyBias = -100;
     }
-    scores.set(element, scores.get(element) - 100);
   });
 
   // Penalize descendants of navigational elements
   const navDescendants = document.querySelectorAll(
     'aside *, header *, footer *, nav *');
   forEach.call(navDescendants, function(element) {
-    if(options.ANNOTATE) {
+    scores.set(element, scores.get(element) - 50);
+    if(annotate) {
       element.dataset.inNavPenaltyBias = -50;
     }
-    scores.set(element, scores.get(element) - 50);
   });
 
   // Bias the parents of certain elements
@@ -386,7 +389,7 @@ function applyCalamine(document, options) {
     const bias = DESCENDANT_BIAS.get(element.localName);
     if(!bias) return;
     const parent = element.parentElement;
-    if(options.ANNOTATE) {
+    if(annotate) {
       let prevParentBias = parent.dataset.descendantBias || '0';
       parent.dataset.descendantBias = parseInt(prevParentBias) + bias;
     }
@@ -407,7 +410,7 @@ function applyCalamine(document, options) {
     const areaBias = 0.0015 * Math.min(100000, area);
     const imageBias = carouselBias + descBias + areaBias;
     if(!imageBias) return;
-    if(options.ANNOTATE) parent.dataset.imageBias = imageBias;
+    if(annotate) parent.dataset.imageBias = imageBias;
     scores.set(parent, scores.get(parent) + imageBias);
   });
 
@@ -595,7 +598,9 @@ function applyCalamine(document, options) {
     ' dl, figure, h1, h2, h3, h4, ol, p, section, span, ul');
   forEach.call(elementsWithAttributes, function(element) {
     const bias = getAttributeBias(element);
-    if(options.ANNOTATE) element.dataset.attributeBias = bias;
+    if(annotate) {
+      element.dataset.attributeBias = bias;
+    }
     scores.set(element, scores.get(element) + bias);
   });
 
@@ -604,16 +609,26 @@ function applyCalamine(document, options) {
   // TODO: itemprop="articleBody" ?
   // TODO: [role="article"] ? (Google Plus)
   // TODO: [itemtype="http://schema.org/Article"] ??
+
+  // TODO: interesting itemtype values
+  // http://schema.org/Article
+  // http://schema.org/NewsArticle
+  // http://schema.org/BlogPosting
+  // http://schema.org/Blog
+  // http://schema.org/WebPage
+  // http://schema.org/TechArticle
+  // http://schema.org/ScholarlyArticle
   applySingleClassBias('article', 1000);
   applySingleClassBias('articleText', 1000);
   applySingleClassBias('articleBody', 1000);
 
   // Annotate element scores
-  if(options.ANNOTATE) {
-    forEach.call(doc.getElementsByTagName('*'), function(element) {
+  if(annotate) {
+    forEach.call(elements, function(element) {
       const score = scores.get(element);
-      if(!score) return;
-      element.dataset.score = score.toFixed(2);
+      if(score) {
+        element.dataset.score = score.toFixed(2);
+      }
     });    
   }
 
@@ -621,7 +636,7 @@ function applyCalamine(document, options) {
   let bestElement = document.body;
   let bestElementScore = scores.get(bestElement);
   forEach.call(elements, function(element) {
-    let score = scores.get(element);
+    const score = scores.get(element);
     if(score > bestElementScore) {
       bestElement = element;
       bestElementScore = score;
@@ -629,12 +644,13 @@ function applyCalamine(document, options) {
   });
 
   // Remove all elements that do not intersect with the best element
+  // TODO: use Node.compareDocumentPosition for better performance
   forEach.call(elements, function(element) {
     if(element === document.documentElement || element === document.body ||
       element === bestElement) {
       return;
     }
-    // TODO: use Node.compareDocumentPosition for better performance
+
     if(!bestElement.contains(element) && !element.contains(bestElement)) {
       element.remove();
     }
