@@ -86,7 +86,7 @@ function pollFeeds() {
   }
 
   function pollFindEntryByLink(connection, feed, entry, callback) {
-    console.debug('Processing entry %s', entry.link);
+    // console.debug('Processing entry %s', entry.link);
     findEntryByLink(connection, entry, function(event) {
       if(event.target.result) {
         callback();

@@ -23,7 +23,6 @@ function applyCalamine(document, options) {
     element.remove();
   }
 
-  // NOTE: walks upward
   function getAncestors(element) {
     const parents = [];
     var parent = element;
@@ -48,15 +47,11 @@ function applyCalamine(document, options) {
   }
 
   // TODO: split on case-transition (lower2upper,upper2lower)
-  // TODO: Array.from?
   function tokenize(value) {
-    const tokens = value.toLowerCase().split(/[\s\-_0-9]+/g).filter(identity);
-    const set = new Set(tokens);
-    const result = [];
-    set.forEach(function(v) {
-      result.push(v);
-    });
-    return result;
+    const tokens = value.toLowerCase().split(/[\s\-_0-9]+/g);
+    const validTokens = tokens.filter(identity);
+    const distinctTokens = new Set(validTokens);
+    return Array.from(distinctTokens);
   }
 
   const SCORABLE_ATTRIBUTES = ['id', 'name', 'class', 'itemprop', 
@@ -93,7 +88,7 @@ function applyCalamine(document, options) {
 
   function applySingleClassBias(className, bias) {
     const elements = document.getElementsByClassName(className);
-    if(elements.length != 1) return;
+    if(elements.length !== 1) return;
     const e = elements[0];
     if(options.ANNOTATE) {
       e.dataset.attributeBias = parseInt(e.dataset.attributeBias || '0') + bias;
