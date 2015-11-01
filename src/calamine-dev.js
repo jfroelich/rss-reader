@@ -556,17 +556,7 @@ calamine.tokenize = function(string) {
   // NOTE: split can produce empty strings, hence the check for
   // whether token is defined
   const inputTokens = string.toLowerCase().split(/[\s\-_0-9]+/g);
-  const distinctTokens = new Set();
-  const outputTokens = [];
-  const numInputTokens = inputTokens.length;
-  for(let i = 0, token = null; i < numInputTokens; i++) {
-    token = inputTokens[i];
-    if(token && !distinctTokens.has(token)) {
-      distinctTokens.add(token);
-      outputTokens.push(token);
-    }
-  }
-  return outputTokens;
+  return [...new Set(inputTokens)];
 };
 
 /**

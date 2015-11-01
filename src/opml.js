@@ -80,6 +80,8 @@ function importOPML(files, callback) {
   }
 
   function onFilesLoaded(error, outlineArrays) {
+    // TODO: use the new ... operator to simplify this,
+    // or maybe just create a Set object
     const outlines = [];
     const seen = new Set();
     outlineArrays.forEach(function(outlineArray) {

@@ -115,3 +115,11 @@ function truncate(string, position, extension) {
   }
   return string;
 }
+
+function unique(array) {
+  // See http://stackoverflow.com/questions/9229645
+  // Creating the set removes the duplicate values 
+  // Then we use the spread operator to populate an array
+  // from the set (we could also use the new Array.from)
+  return [...new Set(array)];
+}

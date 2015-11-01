@@ -25,14 +25,15 @@ function applyCalamine(document, options) {
 
   function getAncestors(element) {
     const parents = [];
-    var parent = element;
-    while(parent = parent.parentElement) {
+    let parent = element.parentElement;
+    while(parent) {
       parents.push(parent);
+      parent = parent.parentElement;
     }
     return parents;
   }
 
-  function getImageCaption(image) {
+  function findCaption(image) {
     const parents = getAncestors(image);  
     const figure = parents.find(function(element){
       return element.localName === 'figure';
@@ -47,11 +48,10 @@ function applyCalamine(document, options) {
   }
 
   // TODO: split on case-transition (lower2upper,upper2lower)
+  // and do not lower case the value prior to the split, do it after
   function tokenize(value) {
     const tokens = value.toLowerCase().split(/[\s\-_0-9]+/g);
-    const validTokens = tokens.filter(identity);
-    const distinctTokens = new Set(validTokens);
-    return Array.from(distinctTokens);
+    return unique(tokens.filter(identity));
   }
 
   const SCORABLE_ATTRIBUTES = ['id', 'name', 'class', 'itemprop', 
@@ -65,13 +65,13 @@ function applyCalamine(document, options) {
     // http://schema.org/WebPage
     // http://schema.org/TechArticle
     // http://schema.org/ScholarlyArticle
-    var value = element.getAttribute('itemtype');
+    let value = element.getAttribute('itemtype');
     if(!value) return;
     value = value.trim();
     if(!value) return;
-    const lastSlashIndex = value.lastIndexOf('/');
-    if(lastSlashIndex == -1) return;
-    const path = value.substring(lastSlashIndex + 1);
+    const index = value.lastIndexOf('/');
+    if(index === -1) return;
+    const path = value.substring(index + 1);
     return path;
   }
 
@@ -240,11 +240,17 @@ function applyCalamine(document, options) {
   // Collect anchor text length
   const anchors = document.querySelectorAll('a[href]');
   const anchorLengths = reduce.call(anchors, function (map, anchor) {
-    const count = textLengths.get(anchor);
-    return count ? [anchor].concat(getAncestors(anchor)).reduce(function(map,
-      element) {
-      return map.set(element, (map.get(element) || 0) + count);
-    }, map) : map;
+    const length = textLengths.get(anchor);
+    const ancestors = getAncestors(anchor);
+
+    if(length) {
+      return [anchor].concat(ancestors).reduce(function(map, element) {
+        return map.set(element, (map.get(element) || 0) + length);
+      }, map);
+    } else {
+      return map;
+    }
+
   }, new Map());
 
   // Apply text bias
@@ -396,7 +402,7 @@ function applyCalamine(document, options) {
     // TODO: this should probably also check data-alt and data-title as many
     // sites use this alternate syntax
     const descBias = image.getAttribute('alt') ||  image.getAttribute('title') ||
-      getImageCaption(image) ? 30 : 0;
+      findCaption(image) ? 30 : 0;
     const area = image.width ? image.width * image.height : 0;
     const areaBias = 0.0015 * Math.min(100000, area);
     const imageBias = carouselBias + descBias + areaBias;
@@ -840,6 +846,9 @@ function trimTextNodes(document) {
   const WHITESPACE_SENSITIVE = 'code, code *, pre, pre *, ' + 
     'ruby, ruby *, textarea, textarea *, xmp, xmp *';
   const elements = document.body.querySelectorAll(WHITESPACE_SENSITIVE);
+
+  // TODO: rather than use slice, can we just pass in elements, or 
+  // use the ... operator?
   const preformatted = new Set(Array.prototype.slice.call(elements));
 
   const INLINE_ELEMENTS = new Set(['a','abbr', 'acronym', 'address',

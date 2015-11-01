@@ -28,15 +28,7 @@ function fetchFeed(url, timeout, callback) {
       feed.entries.forEach(function(entry) {
         entry.link = rewriteURL(entry.link);
       });
-      const seen = new Set();
-      feed.entries = feed.entries.filter(function(entry) {
-        if(seen.has(entry.link)) {
-          return false;
-        }
-
-        seen.add(entry.link);
-        return true;
-      });
+      feed.entries = unique(feed.entries);
       callback(null, feed);
     } catch(e) {
       callback(e);
