@@ -50,7 +50,8 @@ function pollFeeds() {
     // async.forEach. Instead of binding its callback to 
     // transaction.oncomplete, I need to wait for all the callbacks
     // to callback
-    forEachFeed(event.target.result, pollFetchFeed.bind(null, connection), 
+    const connection = event.target.result;
+    forEachFeed(connection, pollFetchFeed.bind(null, connection), 
       false, onComplete);
   }
 
