@@ -12,8 +12,6 @@
 /**
  * Hardcoded template-based selectors that are very likely to contain
  * boilerplate. Empirically collected.
- * TODO: BLACKLIST_SELECTORS should be a Set to demonstrate and enforce
- * uniqueness of keys
  * NOTE: cannot use 'div.share'
  * NOTE: cannot use 'article div.share' (Vanity Fair vs Concurring Opinions)
  */
@@ -155,6 +153,7 @@ const BLACKLIST_SELECTORS = [
   'div.article-utilities', // Sports Illustrated
   'div.articleViewerGroup', // Mercury News
   'div.artOtherNews', // Investors.com
+  'div.aside-related-articles', // Techcrunch
   'div.assetBuddy', // Reuters
   'div.at-con', // Design & Trend
   'div.at-next', // Design & Trend

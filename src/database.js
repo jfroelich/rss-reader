@@ -2,10 +2,11 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // TODO: just store scheme and schemeless props as parts of a url property.
 // TODO: use 'lucubrate' as the database name
 function openDatabaseConnection(callback) {
-  'use strict';
   const request = indexedDB.open('reader', 17);
   request.onupgradeneeded = function(event) {
     console.debug('Upgrading database from version %s', event.oldVersion);

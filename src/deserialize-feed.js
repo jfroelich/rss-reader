@@ -2,10 +2,11 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // TODO: support Apple iTunes format, embedded media format (??)
 // TODO: store original format
 function deserializeFeed(document) {
-  'use strict';
 
   function getText(parent, selector) {
     const element = parent.querySelector(selector);
@@ -29,6 +30,7 @@ function deserializeFeed(document) {
   const isAtom = root.matches('feed');
   const isRDF = root.matches('rdf');
 
+  // throw exception here?
   if(!isAtom && !root.querySelector('channel')) {
     return {
       entries: []

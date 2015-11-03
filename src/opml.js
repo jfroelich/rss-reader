@@ -2,9 +2,9 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-function importOPML(files, callback) {
-  'use strict';
+'use strict';
 
+function importOPML(files, callback) {
   async.map(files, loadFile, onFilesLoaded);
 
   function loadFile(file, callback) {
@@ -118,7 +118,6 @@ function importOPML(files, callback) {
 }
 
 function exportOPML(title, callback) {
-  'use strict';
   const feeds = [];
   openDatabaseConnection(function(event){
     if(event.type !== 'success') {

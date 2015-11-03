@@ -2,8 +2,9 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 chrome.runtime.onMessage.addListener(function(message) {
-  'use strict';
   if(message && message.type === 'displaySettingsChanged') {
     updateEntryStyles();
   }
@@ -63,19 +64,16 @@ const FONT_FAMILIES = [
   'Roboto Regular'
 ];
 
+// Note: Array.prototype.find requires Chrome 45+
 function findCSSRule(sheet, selectorText) {
-  'use strict';
-  // Note: Array.prototype.find requires Chrome 45+
   return Array.prototype.find.call(sheet.cssRules, function(rule) {
     return rule.selectorText === selectorText;
   });
 }
 
-// TODO: maybe use just one function for both load/change, figure that out
+// TODO: maybe use just one function for both load/change
 function updateEntryStyles() {
-  'use strict';
-
-  // Hack, assume a sheet is always available
+  // Assume a sheet is always available
   const sheet = document.styleSheets[0];
 
   const entryRule = findCSSRule(sheet, 'div.entry');
@@ -134,7 +132,6 @@ function updateEntryStyles() {
 }
 
 function loadEntryStyles() {
-  'use strict';
   const sheet = document.styleSheets[0];
   let s = '';
   if(localStorage.BACKGROUND_IMAGE) {

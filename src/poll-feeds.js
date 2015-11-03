@@ -8,23 +8,23 @@
 // TODO: de-activation of too much time elapsed since feed had new articles
 // TODO: only poll if feed is active
 
+'use strict';
+
 function pollFeeds() {
-  'use strict';
-  
   console.debug('Polling feeds');
 
   if(!window.navigator.onLine) {
-    console.debug('Polling canceled, not online');
+    console.debug('Polling canceled as not online');
     return;
   }
 
   chrome.permissions.contains({permissions: ['idle']}, function(permitted) {
-    if(!permitted) {
-      openDatabaseConnection(iterateFeeds);
-      return;
-    }
     const IDLE_PERIOD = 60 * 5; // 5 minutes
-    chrome.idle.queryState(IDLE_PERIOD, onQueryIdleState);
+    if(permitted) {
+      chrome.idle.queryState(IDLE_PERIOD, onQueryIdleState);
+    } else {
+      openDatabaseConnection(iterateFeeds);
+    }
   });
 
   function onQueryIdleState(state) {
@@ -36,35 +36,34 @@ function pollFeeds() {
     }
   }
 
+  // TODO: I need to use some async.* function that can trigger
+  // a final callback once each feed has been processed
+  // Kind of like async.until?
+  // Or basically I may need to write forEachFeed to work like
+  // async.forEach. Instead of binding its callback to 
+  // transaction.oncomplete, I need to wait for all the callbacks
+  // to callback
   function iterateFeeds(event) {
-    if(event.type !== 'success') {
+    if(event.type === 'success') {
+      const connection = event.target.result;
+      forEachFeed(connection, pollFetchFeed.bind(null, connection), 
+        false, onComplete);
+    } else {
       console.debug(event);
-      onComplete();
-      return;
+      onComplete();      
     }
-
-    // TODO: I need to use some async.* function that can trigger
-    // a final callback once each feed has been processed
-    // Kind of like async.until?
-    // Or basically I may need to write forEachFeed to work like
-    // async.forEach. Instead of binding its callback to 
-    // transaction.oncomplete, I need to wait for all the callbacks
-    // to callback
-    const connection = event.target.result;
-    forEachFeed(connection, pollFetchFeed.bind(null, connection), 
-      false, onComplete);
   }
 
   function pollFetchFeed(connection, feed) {
     const timeout = 10 * 1000;
     fetchFeed(feed.url, timeout, function(event, remoteFeed) {
-      console.debug('Fetched %s', feed.url);
+      // console.debug('Fetched %s', feed.url);
       if(event) {
         console.dir(event);
-        return;
+      } else {
+        putFeed(connection, feed, remoteFeed, 
+          onPutFeed.bind(null, remoteFeed));        
       }
-      putFeed(connection, feed, remoteFeed, 
-        onPutFeed.bind(null, remoteFeed));
     });
 
     function onPutFeed(remoteFeed, event) {

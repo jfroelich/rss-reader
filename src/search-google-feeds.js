@@ -2,8 +2,9 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 function searchGoogleFeeds(query, timeout, callback) {
-  'use strict';
   const request = new XMLHttpRequest();
   request.timeout = timeout;
   request.onerror = callback;

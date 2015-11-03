@@ -2,10 +2,11 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // TODO: somehow store responseURL? 
 // TODO: intelligently react to redirects
 function fetchFeed(url, timeout, callback) {
-  'use strict';
   const request = new XMLHttpRequest();
   request.timeout = timeout;
   request.onerror = callback;
@@ -30,8 +31,8 @@ function fetchFeed(url, timeout, callback) {
       });
       feed.entries = unique(feed.entries);
       callback(null, feed);
-    } catch(e) {
-      callback(e);
+    } catch(exception) {
+      callback(exception);
     }    
   };
   request.open('GET', url, true);
@@ -40,7 +41,6 @@ function fetchFeed(url, timeout, callback) {
 }
 
 function findFeedByURL(connection, url, callback) {
-  'use strict';
   const transaction = connection.transaction('feed');
   const urls = transaction.objectStore('feed').index('schemeless');
   const request = urls.get(getSchemelessURL(url));
@@ -50,7 +50,6 @@ function findFeedByURL(connection, url, callback) {
 }
 
 function findFeedById(connection, id, callback) {
-  'use strict';
   const transaction = connection.transaction('feed');
   const feeds = transaction.objectStore('feed');
   const request = feeds.get(id);
@@ -60,8 +59,6 @@ function findFeedById(connection, id, callback) {
 }
 
 function forEachFeed(connection, handleFeed, sortByTitle, callback) {
-  'use strict';
-
   const transaction = connection.transaction('feed');
   transaction.oncomplete = callback;
 
@@ -85,7 +82,6 @@ function forEachFeed(connection, handleFeed, sortByTitle, callback) {
 // TODO: stop requiring title (fix the options page issue)
 // TODO: maybe not modify date updated if not dirty
 function putFeed(connection, original, feed, callback) {
-  'use strict';
   const storable = {};
   if(original) {
     storable.id = original.id;
@@ -141,7 +137,6 @@ function putFeed(connection, original, feed, callback) {
 
 // TODO: sanitize html entities?
 function sanitizeFeedValue(value) {
-  'use strict';
   if(value) {
     value = stripTags(value);
     value = stripControlCharacters(value);
@@ -152,7 +147,6 @@ function sanitizeFeedValue(value) {
 }
 
 function removeFeed(connection, id, callback) {
-  'use strict';
   const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.delete(id);
@@ -161,7 +155,6 @@ function removeFeed(connection, id, callback) {
 
 // TODO: deprecate
 function unsubscribe(connection, id, callback) {
-  'use strict';
   removeFeed(connection, id, function(event) {
     removeEntriesByFeed(connection, id, callback);
   });

@@ -2,20 +2,20 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-function updateBadge(connection) {
-  'use strict';
-  console.debug('Updating badge');
+'use strict';
 
+function updateBadge(connection) {
+  // console.debug('Updating badge');
   if(connection) {
     countUnreadEntries(connection, setText);
   } else {
     openDatabaseConnection(function(event) {
-      if(event.type !== 'success') {
+      if(event.type === 'success') {
+        countUnreadEntries(event.target.result, setText);
+      } else {
         console.debug(event);
         chrome.browserAction.setBadgeText({text: '?'});
-        return;
       }
-      countUnreadEntries(event.target.result, setText);
     });
   }
 
@@ -31,7 +31,6 @@ function updateBadge(connection) {
 // what happens if we just call notifications.create without
 // permission? A basic exception? A no-op?
 function showNotification(message) {
-  'use strict';
   chrome.permissions.contains({permissions: ['notifications']}, 
     function(permitted) {
     if(!permitted) return;
@@ -46,7 +45,6 @@ function showNotification(message) {
 }
 
 function fadeElement(element, duration, delay, callback) {
-  'use strict';
   if(element.style.display === 'none') {
     element.style.display = '';
     element.style.opacity = '0';
@@ -68,14 +66,12 @@ function fadeElement(element, duration, delay, callback) {
   element.style.opacity = element.style.opacity === '1' ? '0' : '1';
 }
 
+// Adapted from http://stackoverflow.com/questions/1353684
 function isValidDate(date) {
-  'use strict';
-  // TODO: document source (stackoverflow?)
   return date && date.toString() === '[object Date]' && isFinite(date);
 }
 
 function stripTags(string, replacement) {
-  'use strict';
   if(!string) {
     return;
   }
@@ -98,7 +94,6 @@ function stripTags(string, replacement) {
 // TODO: research the proper pattern
 // /[^\x20-\x7E]+/g;
 function stripControlCharacters(string) {
-  'use strict';
   const RE_CONTROL_CHARACTER = /[\t\r\n]/g;
   if(string) {
     return string.replace(RE_CONTROL_CHARACTER,'');
@@ -106,7 +101,6 @@ function stripControlCharacters(string) {
 }
 
 function truncate(string, position, extension) {
-  'use strict';
   const ELLIPSIS = '\u2026';
   extension = extension || ELLIPSIS;
 
@@ -116,10 +110,7 @@ function truncate(string, position, extension) {
   return string;
 }
 
+// Adapted from http://stackoverflow.com/questions/9229645
 function unique(array) {
-  // See http://stackoverflow.com/questions/9229645
-  // Creating the set removes the duplicate values 
-  // Then we use the spread operator to populate an array
-  // from the set (we could also use the new Array.from)
   return [...new Set(array)];
 }

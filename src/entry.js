@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 const ENTRY_UNREAD = 0;
 const ENTRY_READ = 1;
 const ENTRY_UNARCHIVED = 0;
@@ -32,9 +34,7 @@ const ENTRY_ARCHIVED = 1;
 // entry properties should occur externally.
 
 function putEntry(connection, feed, entry, callback) {
-  'use strict';
-  
-  console.debug('Putting entry %s', entry.link);
+  // console.debug('Putting entry %s', entry.link);
 
   const storable = {};
   
@@ -117,7 +117,6 @@ function putEntry(connection, feed, entry, callback) {
 }
 
 function markEntryRead(connection, id) {
-  'use strict';
   console.debug('Marking entry %s as read', id);
   const transaction = connection.transaction('entry', 'readwrite');
   const store = transaction.objectStore('entry');
@@ -127,29 +126,25 @@ function markEntryRead(connection, id) {
     if(!cursor) {
       return;
     }
+
     const entry = cursor.value;
     if(!entry) {
       return;
     }
 
-    // Do not re-mark read entries
     if(entry.readState === ENTRY_READ) {
       return;
     }
 
-    // Update the entry
     entry.readState = ENTRY_READ;
     entry.readDate = Date.now();
     cursor.update(entry);
-
-    // Notify observers and app state
     updateBadge(connection);
     chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
   };
 }
 
 function countUnreadEntries(connection, callback) {
-  'use strict';
   const transaction = connection.transaction('entry');
   const store = transaction.objectStore('entry');
   const index = store.index('readState');
@@ -159,7 +154,6 @@ function countUnreadEntries(connection, callback) {
 }
 
 function findEntryByLink(connection, entry, callback) {
-  'use strict';
   const transaction = connection.transaction('entry');
   const entries = transaction.objectStore('entry');
   const links = entries.index('link');
@@ -168,7 +162,6 @@ function findEntryByLink(connection, entry, callback) {
 }
 
 function removeEntriesByFeed(connection, id, callback) {
-  'use strict';
   const transaction = connection.transaction('entry', 'readwrite');
   transaction.oncomplete = callback;
   const store = store.objectStore('entry');
@@ -184,8 +177,6 @@ function removeEntriesByFeed(connection, id, callback) {
 }
 
 /**
- * Fetch the html at entry.link and use it to replace entry.content
- *
  * TODO: I'd prefer this function pass back any errors to the callback. This
  * would require the caller that wants to not break from async.forEach early
  * wrap the call.
@@ -199,7 +190,6 @@ function removeEntriesByFeed(connection, id, callback) {
  * TODO: do something with responseURL?
  */
 function augmentEntryContent(entry, timeout, callback) {
-  'use strict';
   const request = new XMLHttpRequest();
   request.timeout = timeout;
   request.ontimeout = callback;
@@ -236,7 +226,6 @@ function augmentEntryContent(entry, timeout, callback) {
 // relying on window explicitly here.
 // TODO: if this is only a helper function, move it into its sole context
 function fetchImageDimensions(image, callback) {
-  'use strict';
   const src = (image.getAttribute('src') || '').trim();
   const width = (image.getAttribute('width') || '').trim();
   if(!src || width || image.width || width === '0' || 
@@ -260,23 +249,19 @@ function fetchImageDimensions(image, callback) {
 }
 
 function clearEntries(connection) {
-  'use strict';
-
-  if(!connection) {
-    openDatabaseConnection(function(event) {
-      runClear(event.target.result);
-    });
+  if(connection) {
+    _clearEntries(connection);
   } else {
-    runClear(connection);
+    openDatabaseConnection(function(event) {
+      _clearEntries(event.target.result);
+    });
   }
 
-  function runClear(connection) {
+  function _clearEntries(connection) {
     const transaction = connection.transaction('entry', 'readwrite');
-    const entries = transaction.objectStore('entry');
-    const request = entries.clear();
-    request.onerror = console.debug;
-    request.onsuccess = function(event) {
+    transaction.oncomplete = function(event) {
       console.debug('Cleared entry object store');
     };
+    transaction.objectStore('entry').clear();
   }
 }

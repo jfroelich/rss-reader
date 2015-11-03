@@ -2,12 +2,12 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // TODO: do we need a limit on the number of entries archived per 
 // run? Maybe that is stupid
 
 function archiveEntries() {
-  'use strict';
-
   const tracker = {
     processed: 0
   };
@@ -16,18 +16,18 @@ function archiveEntries() {
   const ENTRY_LIMIT = 1000;
 
   openDatabaseConnection(function(event) {
-    if(event.type !== 'success') {
+    if(event.type === 'success') {
+      const connection = event.target.result;
+      const transaction = connection.transaction('entry', 'readwrite');
+      transaction.oncomplete = onComplete;
+      const store = transaction.objectStore('entry');
+      const index = store.index('archiveState-readState');
+      const range = IDBKeyRange.only([ENTRY_UNARCHIVED, ENTRY_READ]);
+      const request = index.openCursor(range);
+      request.onsuccess = archiveNextEntry;
+    } else {
       console.debug('Archive aborted due to connection error %o', event);
-      return;
     }
-    const connection = event.target.result;
-    const transaction = connection.transaction('entry', 'readwrite');
-    transaction.oncomplete = onComplete;
-    const store = transaction.objectStore('entry');
-    const index = store.index('archiveState-readState');
-    const range = IDBKeyRange.only([ENTRY_UNARCHIVED, ENTRY_READ]);
-    const request = index.openCursor(range);
-    request.onsuccess = archiveNextEntry;
   });
 
   function archiveNextEntry(event) {

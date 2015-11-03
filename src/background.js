@@ -2,8 +2,9 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 chrome.alarms.onAlarm.addListener(function(alarm) {
-  'use strict';
   if(alarm.name === 'archive') {
     archiveEntries();
   } else if(alarm.name === 'poll') {
@@ -16,8 +17,7 @@ chrome.alarms.create('poll', {periodInMinutes: 20});
 
 // TODO: maybe set the badge text to '?'
 // TODO: set localStorage defaults
-chrome.runtime.onInstalled.addListener(function(event) {
-  'use strict';  
+chrome.runtime.onInstalled.addListener(function(event) {  
   openDatabaseConnection(function(event) {
     // NOOP
   });
@@ -28,7 +28,6 @@ chrome.runtime.onInstalled.addListener(function(event) {
 // enabled before querying for the new tab.
 // NOTE: the calls to chrome.tabs here do not require the tabs permission
 chrome.browserAction.onClicked.addListener(function(event) {
-  'use strict';
   const VIEW_URL = chrome.extension.getURL('slides.html');
   // TODO: is the trailing slash necessary?
   const NEW_TAB_URL = 'chrome://newtab/';
@@ -37,18 +36,16 @@ chrome.browserAction.onClicked.addListener(function(event) {
   function onQueryView(tabs) {
     if(tabs.length) {
       chrome.tabs.update(tabs[0].id, {active: true});
-      return;
+    } else {
+      chrome.tabs.query({url: NEW_TAB_URL}, onQueryNewTab);
     }
-
-    chrome.tabs.query({url: NEW_TAB_URL}, onQueryNewTab);
   }
 
   function onQueryNewTab(tabs) {
     if(tabs.length) {
       chrome.tabs.update(tabs[0].id, {active:true, url: VIEW_URL});
-      return;
+    } else {
+      chrome.tabs.create({url: VIEW_URL});
     }
-
-    chrome.tabs.create({url: VIEW_URL});
   }
 });

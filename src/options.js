@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // TODO: implement history? mimic chrome. would need search ability
 
 function $$(name) {
@@ -9,7 +11,6 @@ function $$(name) {
 }
 
 function hideErrorMessage() {
-  'use strict';
   const container = $$('options_error_message');
   if(!container) return;
   const dismissButton = $$('options_dismiss_error_button');
@@ -19,7 +20,6 @@ function hideErrorMessage() {
 }
 
 function showErrorMessage(message, fadeIn) {
-  'use strict';
   hideErrorMessage();
   const elMessage = document.createElement('span');
   elMessage.textContent = message;
@@ -44,7 +44,6 @@ function showErrorMessage(message, fadeIn) {
 
 // TODO: instead of removing and re-adding, reset and reuse
 function showSubscriptionMonitor() {
-  'use strict';
   resetSubscriptionMonitor();
   const container = document.createElement('div');
   container.setAttribute('id', 'options_subscription_monitor');
@@ -56,13 +55,11 @@ function showSubscriptionMonitor() {
 }
 
 function resetSubscriptionMonitor() {
-  'use strict';
   const element = $$('options_subscription_monitor');
   element && element.remove();
 }
 
 function updateSubscriptionMonitor(message) {
-  'use strict';
   const container = $$('options_subscription_monitor');
   if(!container) return;
   const paragraph = document.createElement('p');
@@ -71,7 +68,6 @@ function updateSubscriptionMonitor(message) {
 }
 
 function hideSubsciptionMonitor(onComplete, fadeOut) {
-  'use strict';
   const container = $$('options_subscription_monitor');
   // NOTE: possible bug here, should be checking arguments.length
   const noop = function(){};
@@ -97,7 +93,6 @@ var currentMenuItem_;
 var currentSection_;
 
 function optionsShowSection(menuItem) {
-  'use strict';
   if(!menuItem || currentMenuItem_ == menuItem) {
     return;
   }
@@ -119,7 +114,6 @@ function optionsShowSection(menuItem) {
 }
 
 function optionsUpdateFeedCount() {
-  'use strict';
   const count = $$('feedlist').childElementCount;
   const countElement = $$('subscription-count');
   if(count) {
@@ -134,7 +128,6 @@ function optionsUpdateFeedCount() {
 }
 
 function optionsAppendFeed(feed, insertedSort) {
-  'use strict';
   if(!feed) {
     console.error('feed undefined in optionsAppendFeed');
     return;
@@ -182,7 +175,6 @@ function optionsAppendFeed(feed, insertedSort) {
 }
 
 function onEnableSubscriptionPreviewChange() {
-  'use strict';
   if(this.checked)
     localStorage.ENABLE_SUBSCRIBE_PREVIEW = '1';
   else
@@ -190,7 +182,6 @@ function onEnableSubscriptionPreviewChange() {
 }
 
 function showOrSkipSubscriptionPreview(url) {
-  'use strict';
   hideSubscriptionPreview();
   if(!localStorage.ENABLE_SUBSCRIBE_PREVIEW) {
     startSubscription(url);
@@ -240,14 +231,11 @@ function showOrSkipSubscriptionPreview(url) {
 }
 
 function hideSubscriptionPreview() {
-  'use strict';
   $$('subscription-preview').style.display = 'none';
   $$('subscription-preview-entries').innerHTML = '';
 }
 
 function startSubscription(url) {
-  'use strict';
-
   hideSubscriptionPreview();
 
   if(!isValidURL(url)) {
@@ -318,7 +306,6 @@ function startSubscription(url) {
 // TODO: show num entries, num unread/red, etc
 // TODO: react to connection error, find error
 function populateFeedDetailsSection(feedId) {
-  'use strict';
   openDatabaseConnection(function(event) {
     if(event.type !== 'success') {
       return;
@@ -341,7 +328,6 @@ function populateFeedDetailsSection(feedId) {
 }
 
 function onFeedListItemClick(event) {
-  'use strict';
   const feedId = parseInt(event.currentTarget.getAttribute('feed'));
   populateFeedDetailsSection(feedId);
   // TODO: These calls should really be in an async callback
@@ -351,7 +337,6 @@ function onFeedListItemClick(event) {
 }
 
 function onSubscribeSubmit(event) {
-  'use strict';
   
   event.preventDefault();// Prevent normal form submission event
   
@@ -391,7 +376,6 @@ function onSubscribeSubmit(event) {
 }
 
 function discoverSubscribeClick(event) {
-  'use strict';
   const button = event.target;
   const url = button.value;
   if(!url)
@@ -405,7 +389,6 @@ function discoverSubscribeClick(event) {
 }
 
 function onDiscoverFeedsComplete(errorEvent, query, results) {
-  'use strict';
   if(errorEvent) {
     $$('discover-in-progress').style.display = 'none';
     console.debug('discover feeds error %o', errorEvent);
@@ -461,7 +444,6 @@ function onDiscoverFeedsComplete(errorEvent, query, results) {
 }
 
 function onUnsubscribeButtonClicked(event) {
-  'use strict';
   const feedId = parseInt(event.target.value);
   openDatabaseConnection(function(event) {
     if(event.type !== 'success') {
@@ -504,7 +486,6 @@ function onUnsubscribeButtonClicked(event) {
 }
 
 function onEnableURLRewritingChange(event) {
-  'use strict';
   if(event.target.checked)
     localStorage.URL_REWRITING_ENABLED = '1';
   else
@@ -522,7 +503,6 @@ function onEnableURLRewritingChange(event) {
 // TODO: notify the user
 // TODO: switch to a section on complete?
 function onImportOPMLClick(event) {
-  'use strict';
   const uploader = document.createElement('input');
   uploader.setAttribute('type', 'file');
   uploader.style.display = 'none';
@@ -552,7 +532,6 @@ function onImportOPMLClick(event) {
 }
 
 function onExportOPMLClick(event) {
-  'use strict';
   const fileName = 'subscriptions.xml';
   exportOPML(fileName, function(error, blob) {
     if(error) {
@@ -573,7 +552,6 @@ function onExportOPMLClick(event) {
 }
 
 function onHeaderFontChange(event){
-  'use strict';
   if(event.target.value)
     localStorage.HEADER_FONT_FAMILY = event.target.value;
   else
@@ -582,13 +560,11 @@ function onHeaderFontChange(event){
 }
 
 function onHeaderFontSizeChange(event) {
-  'use strict';
   localStorage.HEADER_FONT_SIZE = parseInt(event.target.value) || 1;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
 }
 
 function onBodyFontChange(event) {
-  'use strict';
   if(event.target.value)
     localStorage.BODY_FONT_FAMILY = event.target.value;
   else
@@ -597,7 +573,6 @@ function onBodyFontChange(event) {
 }
 
 function onColumnCountChange(event) {
-  'use strict';
   if(event.target.value)
     localStorage.COLUMN_COUNT = event.target.value;
   else
@@ -606,25 +581,21 @@ function onColumnCountChange(event) {
 }
 
 function onBodyFontSizeChange(event) {
-  'use strict';
   localStorage.BODY_FONT_SIZE = parseInt(event.target.value) || 1;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
 }
 
 function onBodyLineHeightChange(event) {
-  'use strict';
   localStorage.BODY_LINE_HEIGHT = event.target.value || '10';
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
 }
 
 function onEntryMarginChange(event) {
-  'use strict';
   localStorage.ENTRY_MARGIN = parseInt(event.target.value) || 10;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
 }
 
 function onBackgroundImageChange(event) {
-  'use strict';
   if(event.target.value)
     localStorage.BACKGROUND_IMAGE = event.target.value;
   else
@@ -633,7 +604,6 @@ function onBackgroundImageChange(event) {
 }
 
 function onJustifyChange(event) {
-  'use strict';
   if(event.target.checked)
     localStorage.JUSTIFY_TEXT = '1';
   else
@@ -642,7 +612,6 @@ function onJustifyChange(event) {
 }
 
 function onEnableNotificationsChange(event) {
-  'use strict';
   if(event.target.checked)
     chrome.permissions.request({permissions:['notifications']}, function() {});
   else
@@ -650,7 +619,6 @@ function onEnableNotificationsChange(event) {
 }
 
 function onEnableBackgroundChange(event) {
-  'use strict';
   if(event.target.checked)
     chrome.permissions.request({permissions:['background']}, function() {});
   else
@@ -658,7 +626,6 @@ function onEnableBackgroundChange(event) {
 }
 
 function onEnableIdleCheckChange(event) {
-  'use strict';
   if(event.target.checked)
     chrome.permissions.request({permissions:['idle']}, function(){});
   else
@@ -666,7 +633,6 @@ function onEnableIdleCheckChange(event) {
 }
 
 function initNavigation() {
-  'use strict';
   const menuItem = $$('mi-embeds');
   menuItem.style.display = localStorage.EMBED_POLICY === 'ask' ? 'block' : 'none';
   const menuItems = document.querySelectorAll('#navigation-menu li');
@@ -674,20 +640,16 @@ function initNavigation() {
 }
 
 function setNavigationOnClick(menuItem) {
-  'use strict';
   menuItem.onclick = onNavigationClick;
 }
 
 function onNavigationClick(event) {
-  'use strict';
   // Use currentTarget instead of event.target as some of the menu items have a
   // nested element that is the event.target
   optionsShowSection(event.currentTarget);
 }
 
 function initGeneralSettingsSection() {
-  'use strict';
-
   $$('enable-notifications').onclick = onEnableNotificationsChange;
 
   chrome.permissions.contains({permissions: ['notifications']}, 
@@ -715,7 +677,6 @@ function initGeneralSettingsSection() {
 }
 
 function initSubscriptionsSection() {
-  'use strict';
   $$('button-export-opml').onclick = onExportOPMLClick;
   $$('button-import-opml').onclick = onImportOPMLClick;
 
@@ -749,13 +710,11 @@ function initSubscriptionsSection() {
 }
 
 function initFeedDetailsSection() {
-  'use strict';
   const unsubscribeButton = $$('details-unsubscribe');
   unsubscribeButton.onclick = onUnsubscribeButtonClicked;
 }
 
 function initSubscribeDiscoverSection() {
-  'use strict';
   $$('subscription-form').onsubmit = onSubscribeSubmit;
   $$('subscription-preview-continue').onclick = function(event) {
     const url = event.currentTarget.value;
@@ -765,7 +724,6 @@ function initSubscribeDiscoverSection() {
 }
 
 function initDisplaySettingsSection() {
-  'use strict';
   loadEntryStyles();
   let option = document.createElement('option');
   option.value = '';
@@ -843,7 +801,6 @@ function initDisplaySettingsSection() {
 }
 
 function initAboutSection() {
-  'use strict';
   const manifest = chrome.runtime.getManifest();
   $$('extension-name').textContent = manifest.name || '';
   $$('extension-version').textContent = manifest.version || '';
@@ -853,7 +810,6 @@ function initAboutSection() {
 }
 
 function initOptionsPage(event) {
-  'use strict';
   document.removeEventListener('DOMContentLoaded', initOptionsPage);
   initNavigation();
   optionsShowSection($$('mi-subscriptions'));

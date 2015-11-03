@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // TODO: express everything as probability. Use a scale of 0 to 100
 // to represent each element's likelihood of being useful content, where
 // 100 is most likely. Every blcok gets its own probability score. Then
@@ -13,7 +15,7 @@
 // TODO: use a single function called applyCalamine, deprecate the IIFE
 
 function applyCalamine(document, annotate) {
-  'use strict';
+  
 
   const forEach = Array.prototype.forEach;
   const reduce = Array.prototype.reduce;
@@ -40,74 +42,24 @@ function applyCalamine(document, annotate) {
     }
   }
 
-  function findCaption(image) {
-    const parents = getAncestors(image);  
-    const figure = parents.find(function(element){
-      return element.matches('figure');
-    });
-    if(figure) {
-      return figure.querySelector('figcaption');
-    }
+  function iterateElements(selector, callback) {
+    const elements = document.querySelectorAll(selector);
+    forEach.call(elements, callback);
   }
 
   function identity(value) {
     return value;
   }
 
-  // TODO: split on case-transition (lower2upper,upper2lower)
-  // and do not lower case the value prior to the split, do it after
-  function tokenize(value) {
-    const tokens = value.toLowerCase().split(/[\s\-_0-9]+/g);
-    return unique(tokens.filter(identity));
-  }
-
-  function getItemTypePath(element) {
-    let value = element.getAttribute('itemtype') || '';
-    if(value) {
-      value = value.trim();
-      if(value) {
-        const index = value.lastIndexOf('/');
-        if(index > 0) {
-          return value.substring(index + 1);
-        }
-      }
-    }
-  }
-
-  function getAttributeBias(element) {
-    const values = [
-      element.getAttribute('id'),
-      element.getAttribute('name'),
-      element.getAttribute('class'),
-      element.getAttribute('itemprop'),
-      getItemTypePath(element)
-    ].filter(identity);
-    const tokens = tokenize(values.join(' '));
-    return tokens.reduce(function(sum, value) {
-      return sum + (ATTRIBUTE_BIAS.get(value) || 0);
-    }, 0);
-  }
-
-  function applySingleClassBias(className, bias) {
-    const elements = document.getElementsByClassName(className);
-    if(elements.length === 1) {
-      scores.set(elements[0], scores.get(elements[0]) + bias);
-      if(annotate) {
-        elements[0].dataset.attributeBias = scores.get(elements[0]);
-      }
-    }
-  }
-
   // NOTE: not optimized for live documents
   function unwrap(element) {
     const parent = element.parentElement;
-    if(!parent) {
-      return;
+    if(parent) {
+      while(element.firstChild) {
+        parent.insertBefore(element.firstChild, element);
+      }
+      element.remove();
     }
-    while(element.firstChild) {
-      parent.insertBefore(element.firstChild, element);
-    }
-    element.remove();
   }
 
   if(!document) {
@@ -115,33 +67,23 @@ function applyCalamine(document, annotate) {
     return;
   }
 
-  // Remove comments
-/*
-  for(let iterator = document.createNodeIterator(
-    document, NodeFilter.SHOW_COMMENT), node = iterator.nextNode(); node;
-    node = iterator.nextNode()) {
-    node.remove();
-  }
-*/
   iterateNodes(document, NodeFilter.SHOW_COMMENT, remove);
 
-
-  // Remove blacklisted elements
   const BLACKLISTED_ELEMENTS = [
     'head', 'applet', 'base', 'basefont', 'bgsound', 'button', 'command',
-    'datalist', 'dialog', 'embed', 'fieldset', 'frameset',
-    'iframe', 'input', 'isindex', 'math', 'link', 'menu',
-    'menuitem', 'meta', 'object','optgroup',  'output', 'param', 'progress',
-    'script', 'spacer', 'style', 'textarea', 'title', 'xmp',
-    'select', 'option',
-    'g\\:plusone', 'fb\\:comments'
+    'datalist', 'dialog', 'embed', 'fieldset', 'frameset', 'iframe', 'input', 
+    'isindex', 'math', 'link', 'menu', 'menuitem', 'meta', 'object', 
+    'optgroup',  'output', 'param', 'progress', 'script', 'spacer', 'style', 
+    'textarea', 'title', 'xmp', 'select', 'option', 'g\\:plusone',
+    'fb\\:comments'
   ].join(',');
-  forEach.call(document.querySelectorAll(BLACKLISTED_ELEMENTS), remove);
+  iterateElements(BLACKLISTED_ELEMENTS, remove);
 
-  // Remove elements matching blacklisted selectors
-  BLACKLIST_SELECTORS.forEach(function(selector) {
+  /*BLACKLIST_SELECTORS.forEach(function(selector) {
     forEach.call(document.querySelectorAll(selector), remove);
-  });
+  });*/
+  BLACKLIST_SELECTORS.forEach(selector => 
+    forEach.call(document.querySelectorAll(selector), remove));
 
   // Remove sourceless images and tracer images
   filter.call(document.getElementsByTagName('img'), function(image) {
@@ -155,8 +97,7 @@ function applyCalamine(document, annotate) {
   }).forEach(remove);
 
   // Unwrap noscript and noframes elements
-  forEach.call(document.querySelectorAll('noscript, noframes'), unwrap);
-
+  iterateElements('noscript, noframes', unwrap);
   /*
   // Remove hidden elements
   // TODO: enable once the performance issues are resolved
@@ -178,16 +119,8 @@ function applyCalamine(document, annotate) {
   */
 
   // Normalize whitespace
-/*
-  for(let iterator = document.createNodeIterator(document, 
-    NodeFilter.SHOW_TEXT), node = iterator.nextNode(); node;
-    node = iterator.nextNode()) {
-    node.nodeValue = node.nodeValue.replace(/\s/g, ' ');
-  }
-*/
-  iterateNodes(document, NodeFilter.SHOW_TEXT, function(node) {
-    node.nodeValue = node.nodeValue.replace(/\s/g, ' ');
-  });
+  iterateNodes(document, NodeFilter.SHOW_TEXT, 
+    node => node.nodeValue = node.nodeValue.replace(/\s/g, ' '));
 
   /*
   // Transform break rule elements into paragraphs
@@ -200,15 +133,6 @@ function applyCalamine(document, annotate) {
   */
 
   trimTextNodes(document);
-
-  // Remove empty text nodes
-  /*for(let iterator = document.createNodeIterator(document, 
-    NodeFilter.SHOW_TEXT), node = iterator.nextNode(); node; 
-    node = iterator.nextNode()) {
-    if(!node.nodeValue) {
-      node.remove();
-    }
-  }*/
   iterateNodes(document, NodeFilter.SHOW_TEXT, function(node) {
     if(!node.nodeValue) {
       node.remove();
@@ -216,16 +140,9 @@ function applyCalamine(document, annotate) {
   });
 
   const elements = document.getElementsByTagName('*');
-
-  // Init element scores
   const scores = new Map();
-  scores.set(document.documentElement, 0);
-  scores.set(document.body, 0);
-  forEach.call(elements, function(element) { 
-    scores.set(element, 0);
-  });
+  forEach.call(elements, element => scores.set(element, 0));
 
-  // Collect text node lengths
   const textLengths = new Map();
   iterateNodes(document, NodeFilter.SHOW_TEXT, function(node) {
     while(node) {
@@ -245,7 +162,6 @@ function applyCalamine(document, annotate) {
   const anchorLengths = reduce.call(anchors, function (map, anchor) {
     const length = textLengths.get(anchor);
     const ancestors = getAncestors(anchor);
-
     if(length) {
       return [anchor].concat(ancestors).reduce(function(map, element) {
         return map.set(element, (map.get(element) || 0) + length);
@@ -255,6 +171,14 @@ function applyCalamine(document, annotate) {
     }
 
   }, new Map());
+
+  function setDatasetProperty(element, propertyName, value) {
+    element.dataset[propertyName] = value;
+  }
+
+  function noop() {}
+
+  const setAnnotation = annotate ? setDatasetProperty : noop;
 
   // Apply text bias
   // Adapted from "Boilerplate Detection using Shallow Text Features"
@@ -269,13 +193,9 @@ function applyCalamine(document, annotate) {
     let bias = (0.25 * textLength) - (0.7 * anchorTextLength);
     bias = Math.min(4000, bias);// tentative cap
     scores.set(element, scores.get(element) + bias);
-    if(annotate) {
-      element.dataset.textChars = textLength;
-      if(anchorTextLength) {
-        element.dataset.anchorChars = anchorTextLength;
-      }
-      element.dataset.textBias = bias.toFixed(2);
-    }
+    setAnnotation(element, 'textLength', textLength);
+    setAnnotation(element, 'anchorLength', anchorTextLength);
+    setAnnotation(element, 'textBias', bias.toFixed(2));
   });
 
   // Apply an empirical intrinsic bias (based on the element type)
@@ -330,9 +250,7 @@ function applyCalamine(document, annotate) {
   forEach.call(elements, function(element) {
     const bias = INTRINSIC_BIAS.get(element.localName);
     if(bias) {
-      if(annotate) {
-        element.dataset.intrinsicBias = bias;
-      }
+      setAnnotation(element, 'intrinsicBias', bias);
       scores.set(element, scores.get(element) + bias);
     }
   });
@@ -341,29 +259,22 @@ function applyCalamine(document, annotate) {
   const articles = document.getElementsByTagName('article');
   if(articles.length === 1) {
     scores.set(articles[0], scores.get(articles[0]) + 1000);
-    if(annotate) {
-      articles[0].dataset.intrinsicBias = scores.get(articles[0]);
-    }
+    setAnnotation(articles[0], 'intrinsicBias', 1000);
   }
 
   // Penalize list descendants
-  const listDescendants = document.querySelectorAll(
-    'li *, ol *, ul *, dd *, dl *, dt *');
-  forEach.call(listDescendants, function(element) {
+  iterateElements('li *, ol *, ul *, dd *, dl *, dt *', function(element) {
     scores.set(element, scores.get(element) - 100);
-    if(annotate) {
-      element.dataset.inListPenaltyBias = -100;
-    }
+    // TODO: this is bugged, not accumulating bias from other ancestors
+    // that match
+    setAnnotation(element, 'listItemBias', -100);
   });
 
   // Penalize descendants of navigational elements
-  const navDescendants = document.querySelectorAll(
-    'aside *, header *, footer *, nav *');
-  forEach.call(navDescendants, function(element) {
+  iterateElements('aside *, header *, footer *, nav *', function(element) {
     scores.set(element, scores.get(element) - 50);
-    if(annotate) {
-      element.dataset.inNavPenaltyBias = -50;
-    }
+    setAnnotation(element, 'navigationItemBias', 
+      parseInt(element.dataset.navigationItemBias || '0') - 50);
   });
 
   // Bias the parents of certain elements
@@ -387,31 +298,68 @@ function applyCalamine(document, annotate) {
 
   forEach.call(elements, function(element) {
     const bias = DESCENDANT_BIAS.get(element.localName);
-    if(!bias) return;
-    const parent = element.parentElement;
-    if(annotate) {
-      let prevParentBias = parent.dataset.descendantBias || '0';
-      parent.dataset.descendantBias = parseInt(prevParentBias) + bias;
+    if(bias) {
+      const parent = element.parentElement;
+      setAnnotation(parent, 'descendantBias', parseInt(
+        parent.dataset.descendantBias || '0') + bias);
+      scores.set(parent, scores.get(parent) + bias);      
     }
-    scores.set(parent, scores.get(parent) + bias);
   });
 
-  // Bias image containers
-  forEach.call(document.getElementsByTagName('img'), function(image) {
+  function findCaption(image) {
+    const parents = getAncestors(image);  
+    const figure = parents.find(function(element){
+      return element.matches('figure');
+    });
+    if(figure) {
+      return figure.querySelector('figcaption');
+    }
+  }
+
+  function getImageDimensionBias(image) {
+    let bias = 0;
+    if(image.width && image.height) {
+      const area = image.width * image.height;
+      bias = 0.0015 * Math.min(100000, area);
+    }
+    return bias;
+  }
+
+  // TODO: check data-alt and data-title?
+  function getImageDescriptionBias(image) {
+    if(image.getAttribute('alt') || image.getAttribute('title') || 
+      findCaption(image)) {
+      return 30;
+    }
+    return 0;
+  }
+
+  function getCarouselBias(image) {
     const parent = image.parentElement;
-    const carouselBias = reduce.call(parent.childNodes, function (bias, node) {
-      return 'img' === node.localName && node !== image ? bias - 50 : bias;
+    if(!parent) {
+      return 0;
+    }
+    return reduce.call(parent.childNodes, function(bias, node) {
+      if(node !== image && node.localName === 'img') {
+        return bias - 50;
+      } else {
+        return bias;
+      }
     }, 0);
-    // TODO: this should probably also check data-alt and data-title as many
-    // sites use this alternate syntax
-    const descBias = image.getAttribute('alt') ||  image.getAttribute('title') ||
-      findCaption(image) ? 30 : 0;
-    const area = image.width ? image.width * image.height : 0;
-    const areaBias = 0.0015 * Math.min(100000, area);
+  }
+
+  // Bias image containers
+  //forEach.call(document.getElementsByTagName('img'), function(image) {
+  iterateElements('img', function(image) {
+    const parent = image.parentElement;
+    const carouselBias = getCarouselBias(image);
+    const descBias = getImageDescriptionBias(image);
+    const areaBias = getImageDimensionBias(image);
     const imageBias = carouselBias + descBias + areaBias;
-    if(!imageBias) return;
-    if(annotate) parent.dataset.imageBias = imageBias;
-    scores.set(parent, scores.get(parent) + imageBias);
+    if(imageBias) {
+      setAnnotation(parent, 'imageBias', imageBias);
+      scores.set(parent, scores.get(parent) + imageBias);      
+    }
   });
 
   const ATTRIBUTE_BIAS = new Map([
@@ -591,36 +539,75 @@ function applyCalamine(document, annotate) {
     ['zone', -50]
   ]);
 
+  // TODO: split on case-transition (lower2upper,upper2lower)
+  // and do not lower case the value prior to the split, do it after
+  function tokenize(value) {
+    const tokens = value.toLowerCase().split(/[\s\-_0-9]+/g);
+    return unique(tokens.filter(identity));
+  }
+
+  function getAttributeBias(element) {
+    const values = [
+      element.getAttribute('id'),
+      element.getAttribute('name'),
+      element.getAttribute('class'),
+      element.getAttribute('itemprop')
+    ].filter(identity);
+    const tokens = tokenize(values.join(' '));
+    return tokens.reduce(function(sum, value) {
+      return sum + (ATTRIBUTE_BIAS.get(value) || 0);
+    }, 0);
+  }
+
   // Bias certain elements based on their attributes
-  // TODO: itemscope
-  // TODO: itemtype 'article' id/class issue
-  const elementsWithAttributes = document.querySelectorAll('a, aside, div,' +
+  // TODO: itemscope?
+  // TODO: itemprop="articleBody"?
+  // TODO: [role="article"]?
+  /*const elementsWithAttributes = document.querySelectorAll('a, aside, div,' +
     ' dl, figure, h1, h2, h3, h4, ol, p, section, span, ul');
   forEach.call(elementsWithAttributes, function(element) {
     const bias = getAttributeBias(element);
-    if(annotate) {
-      element.dataset.attributeBias = bias;
-    }
+    setAnnotation(element, 'attributeBias', bias);
+    scores.set(element, scores.get(element) + bias);
+  });*/
+  iterateElements('a, aside, div, dl, figure, h1, h2, h3, h4, ol,' + 
+    ' p, section, span, ul', function(element) {
+    const bias = getAttributeBias(element);
+    setAnnotation(element, 'attributeBias', bias);
     scores.set(element, scores.get(element) + bias);
   });
 
-  // Pathological cases
-  // TODO: article_body (E-Week) ?
-  // TODO: itemprop="articleBody" ?
-  // TODO: [role="article"] ? (Google Plus)
-  // TODO: [itemtype="http://schema.org/Article"] ??
+  function applySingleClassBias(className, bias) {
+    const elements = document.getElementsByClassName(className);
+    if(elements.length === 1) {
+      scores.set(elements[0], scores.get(elements[0]) + bias);
+      setAnnotation(elements[0], 'attributeBias', bias);
+    }
+  }
 
-  // TODO: interesting itemtype values
-  // http://schema.org/Article
-  // http://schema.org/NewsArticle
-  // http://schema.org/BlogPosting
-  // http://schema.org/Blog
-  // http://schema.org/WebPage
-  // http://schema.org/TechArticle
-  // http://schema.org/ScholarlyArticle
   applySingleClassBias('article', 1000);
   applySingleClassBias('articleText', 1000);
   applySingleClassBias('articleBody', 1000);
+
+  // Item types
+  const ITEMTYPE_SCHEMAS = [
+    'http://schema.org/Article',
+    'http://schema.org/Blog',
+    'http://schema.org/BlogPost',
+    'http://schema.org/BlogPosting',
+    'http://schema.org/NewsArticle',
+    'http://schema.org/ScholarlyArticle',
+    'http://schema.org/TechArticle',
+    'http://schema.org/WebPage'
+  ];
+  ITEMTYPE_SCHEMAS.forEach(function(schema) {
+    const elements = document.querySelectorAll('[itemtype="' + schema + '"]');
+    if(elements.length === 1) {
+      scores.set(elements[0], scores.get(elements[0]) + 500);
+      setAnnotation(elements[0], 'itemTypeBias', 500);
+    }
+  });
+
 
   // Annotate element scores
   if(annotate) {
@@ -656,11 +643,13 @@ function applyCalamine(document, annotate) {
     }
   });
 
-  // Remove javascript anchors
-  // TODO: can this be performed earlier?
+  // Transform javascript anchors into nominal anchors
   filter.call(document.querySelectorAll('a[href]'), function(anchor) {
-    return /^\s*javascript\s*:/i.test(anchor.getAttribute('href'));
-  }).forEach(remove);
+    const href = anchor.getAttribute('href');
+    return /^\s*javascript\s*:/i.test(href);
+  }).forEach(function(anchor) {
+    anchor.removeAttribute('href');
+  });
 
   // Unwrap various inline elements
   const UNWRAPPABLE_ELEMENTS = [
@@ -686,6 +675,10 @@ function applyCalamine(document, annotate) {
 
   // Strip attributes from all elements
   function removeAttributes(element) {
+    if(!element) {
+      return;
+    }
+
     const attributes = element.attributes;
     if(!attributes) {
       return;
@@ -701,10 +694,66 @@ function applyCalamine(document, annotate) {
   }
 
   removeAttributes(document);
-  forEach.call(document.getElementsByTagName('*'), removeAttributes);
+  forEach.call(elements, removeAttributes);
   removeLeaves(document);
-  transformSingleItemLists(document);
-  trimElement(document);
+
+  // Replace lists with one item with the item's content
+  //const lists = document.getElementsByTagName('ul');
+  //forEach.call(lists, function(list) {
+  iterateElements('ul', function(list) {
+    const itemCount = reduce.call(list.childNodes, function(count, node) {
+      return count + (node.localName == 'li' ? 1 : 0);
+    }, 0);
+
+    if(itemCount === 1) {
+      console.debug('Transforming single item list %s', 
+        list.parentElement.innerHTML);
+      const parent = list.parentElement;
+      const item = list.querySelector('li');
+      const nextSibling = list.nextSibling;
+
+      if(nextSibling) {
+        while(item.firstChild) {
+          parent.insertBefore(item.firstChild, nextSibling);
+        }
+      } else {
+        while(item.firstChild) {
+          parent.appendChild(item.firstChild);
+        }
+      }
+
+      list.remove();
+    }
+  });
+
+  function isTrimmableElement(element) {
+    if(!element) return false;
+    if(element.nodeType !== Node.ELEMENT_NODE) return false;
+    let name = element.localName;
+    if(name === 'br') return true;
+    if(name === 'hr') return true;
+    if(name === 'p' && !element.firstChild) return true;
+    return false;
+  }
+
+  { // start trim block
+    let sibling = document;
+    let node = document.firstChild;
+    while(isTrimmableElement(node)) {
+      sibling = node.nextSibling;
+      console.debug('Trimming %s from front of document', node);
+      node.remove();
+      node = sibling;
+    }
+
+    node = document.lastChild;
+    while(isTrimmableElement(node)) {
+      sibling = node.previousSibling;
+      console.debug('Trimming %s from end of document', node);
+      node.remove();
+      node = sibling;
+    }
+  } // end trim block
 }
 
 function removeLeaves(document) {
@@ -790,68 +839,6 @@ function removeLeaves(document) {
     }
 
     stack.push(grandParent);
-  }
-}
-
-// TODO: move this into the main function
-function transformSingleItemLists(rootElement) {
-  'use strict';
-  const lists = rootElement.getElementsByTagName('ul');
-  Array.prototype.forEach.call(lists, function(list) {
-    if(!list) return;
-    const reduce = Array.prototype.reduce;
-    const itemCount = reduce.call(list.childNodes, function(count, node) {
-      return count + (node.nodeType === Node.ELEMENT_NODE &&
-        node.localName == 'li' ? 1 : 0);
-    }, 0);
-
-    if(itemCount === 1) {
-      const parent = list.parentElement;
-      const item = list.querySelector('li');
-      const nextSibling = list.nextSibling;
-
-      if(nextSibling) {
-        while(item.firstChild) {
-          parent.insertBefore(item.firstChild, nextSibling);
-        }
-      } else {
-        while(item.firstChild) {
-          parent.appendChild(item.firstChild);
-        }
-      }
-
-      list.remove();
-    }
-  });
-}
-
-// TODO: move this into the main function
-function trimElement(element) {
-  'use strict';
-
-  function isTrimmableElement(element) {
-    if(!element) return false;
-    if(element.nodeType !== Node.ELEMENT_NODE) return false;
-    let name = element.localName;
-    if(name === 'br') return true;
-    if(name === 'hr') return true;
-    if(name === 'p' && !element.firstChild) return true;
-    return false;
-  }
-
-  let sibling = element;
-  let node = element.firstChild;
-  while(isTrimmableElement(node)) {
-    sibling = node.nextSibling;
-    node.remove();
-    node = sibling;
-  }
-
-  node = element.lastChild;
-  while(isTrimmableElement(node)) {
-    sibling = node.previousSibling;
-    node.remove();
-    node = sibling;
   }
 }
 
