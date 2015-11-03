@@ -310,7 +310,7 @@ function clearEntries(connection) {
   if(connection) {
     _clearEntries(connection);
   } else {
-    openDatabaseConnection(function(event) {
+    Database.open(function(event) {
       _clearEntries(event.target.result);
     });
   }

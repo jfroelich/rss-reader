@@ -92,7 +92,7 @@ function importOPML(files, callback) {
       });
     });
 
-    openDatabaseConnection(function(event) {
+    Database.open(function(event) {
       if(event.type !== 'success') {
         console.debug(event);
         onImportComplete(event);
@@ -119,7 +119,7 @@ function importOPML(files, callback) {
 
 function exportOPML(title, callback) {
   const feeds = [];
-  openDatabaseConnection(function(event){
+  Database.open(function(event){
     if(event.type !== 'success') {
       callback(event);
       return;

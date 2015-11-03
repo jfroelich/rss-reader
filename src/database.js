@@ -5,15 +5,25 @@
 'use strict';
 
 // TODO: just store scheme and schemeless props as parts of a url property.
+// TODO: store urls as URL objects?
 // TODO: use 'lucubrate' as the database name
-function openDatabaseConnection(callback) {
-  const request = indexedDB.open('reader', 17);
-  request.onupgradeneeded = function(event) {
+class Database {
+
+  static open(callback) {
+    const request = indexedDB.open('reader', 17);
+    request.onupgradeneeded = this._upgrade;
+    request.onsuccess = callback;
+    request.onerror = callback;
+    request.onblocked = callback;
+  }
+
+  static _upgrade(event) {
     console.debug('Upgrading database from version %s', event.oldVersion);
     const request = event.target;
     const connection = request.result;
     let feedStore = null, entryStore = null;
     const stores = connection.objectStoreNames;
+
     if(stores.contains('feed')) {
       feedStore = request.transaction.objectStore('feed');
     } else {
@@ -22,6 +32,7 @@ function openDatabaseConnection(callback) {
         autoIncrement: true
       });
     }
+
     if(stores.contains('entry')) {
       entryStore = request.transaction.objectStore('entry');
     } else {
@@ -74,13 +85,9 @@ function openDatabaseConnection(callback) {
         entryStore.createIndex('link', 'link', {unique: true});
       }
     }
+
     if(entryIndices.contains('hash')) {
       entryStore.deleteIndex('hash');
     }
-  };
-
-  request.onsuccess = callback;
-  request.onerror = callback;
-  request.onblocked = callback;
-  return request;
+  }
 }

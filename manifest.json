@@ -1,7 +1,7 @@
 {
   "version": "80",
   "manifest_version": 2,
-  "minimum_chrome_version" : "36",
+  "minimum_chrome_version" : "46",
   "name": "Lucubrate",
   "author": "Joshua Froelich",
   "homepage_url": "https://github.com/jfroelich/rss-reader",

@@ -10,7 +10,7 @@ class Badge {
     if(connection) {
       countUnreadEntries(connection, this._setText);
     } else {
-      openDatabaseConnection(function(event) {
+      Database.open(function(event) {
         if(event.type === 'success') {
           countUnreadEntries(event.target.result, this._setText);
         } else {

@@ -15,7 +15,7 @@ function archiveEntries() {
   const EXPIRES_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
   const ENTRY_LIMIT = 1000;
 
-  openDatabaseConnection(function(event) {
+  Database.open(function(event) {
     if(event.type === 'success') {
       const connection = event.target.result;
       const transaction = connection.transaction('entry', 'readwrite');

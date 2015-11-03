@@ -18,7 +18,7 @@ chrome.alarms.create('poll', {periodInMinutes: 20});
 // TODO: maybe set the badge text to '?'
 // TODO: set localStorage defaults
 chrome.runtime.onInstalled.addListener(function(event) {  
-  openDatabaseConnection(function(event) {
+  Database.open(function(event) {
     // NOOP
   });
 });

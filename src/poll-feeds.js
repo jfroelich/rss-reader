@@ -23,13 +23,13 @@ function pollFeeds() {
     if(permitted) {
       chrome.idle.queryState(IDLE_PERIOD, onQueryIdleState);
     } else {
-      openDatabaseConnection(iterateFeeds);
+      Database.open(iterateFeeds);
     }
   });
 
   function onQueryIdleState(state) {
     if(state === 'locked' || state === 'idle') {
-      openDatabaseConnection(iterateFeeds);
+      Database.open(iterateFeeds);
     } else {
       console.debug('Polling canceled as not idle');
       onComplete();

@@ -246,7 +246,7 @@ function startSubscription(url) {
   showSubscriptionMonitor();
   updateSubscriptionMonitor('Subscribing...');
 
-  openDatabaseConnection(function(event) {
+  Database.open(function(event) {
     if(event.type !== 'success') {
       console.debug(event);
       hideSubsciptionMonitor(function() {
@@ -306,7 +306,7 @@ function startSubscription(url) {
 // TODO: show num entries, num unread/red, etc
 // TODO: react to connection error, find error
 function populateFeedDetailsSection(feedId) {
-  openDatabaseConnection(function(event) {
+  Database.open(function(event) {
     if(event.type !== 'success') {
       return;
     }
@@ -445,7 +445,7 @@ function onDiscoverFeedsComplete(errorEvent, query, results) {
 
 function onUnsubscribeButtonClicked(event) {
   const feedId = parseInt(event.target.value);
-  openDatabaseConnection(function(event) {
+  Database.open(function(event) {
     if(event.type !== 'success') {
       console.debug(event);
       return;
@@ -682,7 +682,7 @@ function initSubscriptionsSection() {
 
   let feedCount = 0;
 
-  openDatabaseConnection(function(event) {
+  Database.open(function(event) {
     if(event.type !== 'success') {
       // TODO: react
       console.debug(event);

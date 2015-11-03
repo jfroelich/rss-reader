@@ -5,7 +5,6 @@
 'use strict';
 
 // TODO: research whether new URL features are now supported
-// TODO: rename file to url-utils.js
 
 class URLUtils {
 
