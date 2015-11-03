@@ -102,7 +102,7 @@ function deserializeFeed(document) {
     const author = isAtom ? getText(entry, 'author name') : 
       (getText(entry, 'creator') || getText(entry, 'publisher'));
     if(author) {
-      result.author = stripTags(author, ' ');
+      result.author = StringUtils.removeTags(author, ' ');
     }
 
     let link = '';

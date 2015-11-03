@@ -19,12 +19,13 @@ function searchGoogleFeeds(query, timeout, callback) {
     });
     entries.forEach(function(entry) {
       if(entry.title) {
-        entry.title = stripTags(entry.title);
-        entry.title = truncate(entry.title, 100);
+        entry.title = StringUtils.removeTags(entry.title);
+        entry.title = StringUtils.truncate(entry.title, 100);
       }
       if(entry.contentSnippet) {
         entry.contentSnippet = entry.contentSnippet.replace(/<br>/gi, '');
-        entry.contentSnippet = truncate(entry.contentSnippet, 400);
+        entry.contentSnippet = StringUtils.truncate(
+          entry.contentSnippet, 400);
       }
     });
     callback(null, responseQuery, entries);

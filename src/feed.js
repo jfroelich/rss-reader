@@ -27,9 +27,9 @@ function fetchFeed(url, timeout, callback) {
         return entry.link;
       });
       feed.entries.forEach(function(entry) {
-        entry.link = rewriteURL(entry.link);
+        entry.link = URLUtils.rewrite(entry.link);
       });
-      feed.entries = unique(feed.entries);
+      feed.entries = ArrayUtils.unique(feed.entries);
       callback(null, feed);
     } catch(exception) {
       callback(exception);
@@ -43,7 +43,7 @@ function fetchFeed(url, timeout, callback) {
 function findFeedByURL(connection, url, callback) {
   const transaction = connection.transaction('feed');
   const urls = transaction.objectStore('feed').index('schemeless');
-  const request = urls.get(getSchemelessURL(url));
+  const request = urls.get(URLUtils.getSchemeless(url));
   request.onsuccess = function(event) {
     callback(event.target.result);
   };
@@ -90,7 +90,7 @@ function putFeed(connection, original, feed, callback) {
   if(original) {
     storable.schemeless = original.schemeless;
   } else {
-    storable.schemeless = getSchemelessURL(storable.url);
+    storable.schemeless = URLUtils.getSchemeless(storable.url);
   }
 
   const title = sanitizeFeedValue(feed.title);
@@ -138,8 +138,8 @@ function putFeed(connection, original, feed, callback) {
 // TODO: sanitize html entities?
 function sanitizeFeedValue(value) {
   if(value) {
-    value = stripTags(value);
-    value = stripControlCharacters(value);
+    value = StringUtils.removeTags(value);
+    value = StringUtils.stripControlCharacters(value);
     value = value.replace(/\s+/, ' ');
     value = value.trim();
     return value;

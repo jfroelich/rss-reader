@@ -140,7 +140,7 @@ function optionsAppendFeed(feed, insertedSort) {
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
   item.setAttribute('feed', feed.id);
-  item.setAttribute('title', stripTags(feed.description) || '');
+  item.setAttribute('title', StringUtils.removeTags(feed.description) || '');
   item.onclick = onFeedListItemClick;
   var favIconElement = document.createElement('img');
   favIconElement.src = getFavIconURL(feed.link);
@@ -148,7 +148,7 @@ function optionsAppendFeed(feed, insertedSort) {
   item.appendChild(favIconElement);
 
   const title = document.createElement('span');
-  title.textContent = truncate(feed.title,300) || 'Untitled';
+  title.textContent = StringUtils.truncate(feed.title,300) || 'Untitled';
   item.appendChild(title);
 
   const feedListElement = $$('feedlist');
@@ -221,9 +221,9 @@ function showOrSkipSubscriptionPreview(url) {
     for(var i = 0, len = Math.min(5,result.entries.length); i < len;i++) {
       var entry = result.entries[i];
       var item = document.createElement('li');
-      item.innerHTML = stripTags(entry.title);
+      item.innerHTML = StringUtils.removeTags(entry.title);
       var content = document.createElement('span');
-      content.innerHTML = stripTags(entry.content);
+      content.innerHTML = StringUtils.removeTags(entry.content);
       item.appendChild(content);
       $$('subscription-preview-entries').appendChild(item);
     }
@@ -238,7 +238,7 @@ function hideSubscriptionPreview() {
 function startSubscription(url) {
   hideSubscriptionPreview();
 
-  if(!isValidURL(url)) {
+  if(!URLUtils.isValid(url)) {
     showErrorMessage('Invalid url "' + url + '".');
     return;
   }
@@ -299,7 +299,7 @@ function startSubscription(url) {
 
     // Show a notification
     var title = addedFeed.title || addedFeed.url;
-    showNotification('Subscribed to ' + title);
+    Notification.show('Subscribed to ' + title);
   }
 }
 
@@ -319,7 +319,7 @@ function populateFeedDetailsSection(feedId) {
       $$('details-title').textContent = feed.title || 'Untitled';
       $$('details-favicon').setAttribute('src', getFavIconURL(feed.url));
       $$('details-feed-description').textContent =
-        stripTags(feed.description) || 'No description';
+        StringUtils.removeTags(feed.description) || 'No description';
       $$('details-feed-url').textContent = feed.url;
       $$('details-feed-link').textContent = feed.link;
       $$('details-unsubscribe').value = feed.id;
@@ -359,7 +359,7 @@ function onSubscribeSubmit(event) {
     return false;
   }
 
-  if(isValidURL(query)) {
+  if(URLUtils.isValid(query)) {
     $$('discover-results-list').innerHTML = '';
     $$('discover-no-results').style.display = 'none';
     $$('discover-in-progress').style.display = 'none';
@@ -460,7 +460,7 @@ function onUnsubscribeButtonClicked(event) {
 
       // Update the badge in case any unread articles belonged to 
       // the unsubscribed feed
-      updateBadge(connection);
+      Badge.update(connection);
 
       // TODO: send out a message notifying other views
       // of the unsubscribe. That way the slides view can

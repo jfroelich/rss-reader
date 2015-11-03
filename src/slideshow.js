@@ -4,7 +4,7 @@
 
 'use strict';
 
-(function() {
+{ // BEGIN UNNAMED NAMESPACE
 
 var currentSlide = null;
 
@@ -229,9 +229,9 @@ function appendSlide(entry, isFirst) {
   title.setAttribute('target','_blank');
   title.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
-    let titleText = stripTags(entry.title);
+    let titleText = StringUtils.removeTags(entry.title);
     titleText = stripTitlePublisher(titleText);
-    titleText = truncate(titleText, 300);
+    titleText = StringUtils.truncate(titleText, 300);
     title.innerHTML = titleText;
   } else {
     title.textContent = 'Untitled';
@@ -470,4 +470,4 @@ function initSlideShow(event) {
 
 document.addEventListener('DOMContentLoaded', initSlideShow);
 
-}()); // end IIFE
+} // END UNNAMED NAMESPACE

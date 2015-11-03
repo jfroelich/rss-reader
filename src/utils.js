@@ -4,22 +4,24 @@
 
 'use strict';
 
-function updateBadge(connection) {
-  // console.debug('Updating badge');
-  if(connection) {
-    countUnreadEntries(connection, setText);
-  } else {
-    openDatabaseConnection(function(event) {
-      if(event.type === 'success') {
-        countUnreadEntries(event.target.result, setText);
-      } else {
-        console.debug(event);
-        chrome.browserAction.setBadgeText({text: '?'});
-      }
-    });
+class Badge {
+  static update(connection) {
+    // console.debug('Updating badge');
+    if(connection) {
+      countUnreadEntries(connection, this._setText);
+    } else {
+      openDatabaseConnection(function(event) {
+        if(event.type === 'success') {
+          countUnreadEntries(event.target.result, this._setText);
+        } else {
+          console.debug(event);
+          chrome.browserAction.setBadgeText({text: '?'});
+        }
+      });
+    }
   }
 
-  function setText(event) {
+  static _setText(event) {
     const count = event.target.result;
     chrome.browserAction.setBadgeText({
       text: count.toString()
@@ -27,21 +29,87 @@ function updateBadge(connection) {
   }
 }
 
-// TODO: maybe we don't need the permission check at all?
-// what happens if we just call notifications.create without
-// permission? A basic exception? A no-op?
-function showNotification(message) {
-  chrome.permissions.contains({permissions: ['notifications']}, 
-    function(permitted) {
-    if(!permitted) return;
-    const notification = {
-      type: 'basic',
-      title: chrome.runtime.getManifest().name,
-      iconUrl: '/media/rss_icon_trans.gif',
-      message: message
-    };
-    chrome.notifications.create('lucubrate', notification, function(){});
-  });
+class Notification {
+
+  // TODO: maybe we don't need the permission check at all?
+  // what happens if we just call notifications.create without
+  // permission? A basic exception? A no-op?
+  static show(message) {
+    chrome.permissions.contains(
+      {permissions: ['notifications']}, function(permitted) {
+      if(permitted) {
+        const notification = {
+          type: 'basic',
+          title: chrome.runtime.getManifest().name,
+          iconUrl: '/media/rss_icon_trans.gif',
+          message: message
+        };
+        chrome.notifications.create('lucubrate', notification, function(){});
+      }
+   });
+  }
+}
+
+class DateUtils {
+  // Adapted from http://stackoverflow.com/questions/1353684
+  static isValid(date) {
+    return date && date.toString() === '[object Date]' && isFinite(date);
+  }
+}
+
+class StringUtils {
+  static removeTags(string, replacement) {
+    if(string) {
+      const doc = document.implementation.createHTMLDocument();
+      doc.body.innerHTML = string;
+      if(!replacement) {
+        return doc.body.textContent;
+      }
+      const iterator = doc.createNodeIterator(
+        doc.body, NodeFilter.SHOW_TEXT);
+      let node = iterator.nextNode();
+      const values = [];
+      while(node) {
+        values.push(node.nodeValue);
+        node = iterator.nextNode();
+      }
+      return values.join(replacement);
+    }
+  }
+
+  // TODO: research the proper pattern
+  // /[^\x20-\x7E]+/g;
+  static stripControlCharacters(string) {
+    const RE_CONTROL_CHARACTER = /[\t\r\n]/g;
+    if(string) {
+      return string.replace(RE_CONTROL_CHARACTER,'');
+    }
+  }
+
+  static truncate(string, position, extension) {
+    if(string && string.length > position) {
+      const ELLIPSIS = '\u2026';
+      extension = extension || ELLIPSIS;
+      return string.substr(0, position) + extension;
+    }
+    return string;
+  }
+}
+
+class ArrayUtils {
+  // Adapted from http://stackoverflow.com/questions/9229645
+  static unique(array) {
+    return [...new Set(array)];
+  }
+}
+
+function getFavIconURL(url) {
+  if(url) {
+    return 'http://www.google.com/s2/favicons?domain_url=' + 
+      encodeURIComponent(url);
+  } else {
+    return '/media/rss_icon_trans.gif';
+  }
 }
 
 function fadeElement(element, duration, delay, callback) {
@@ -66,51 +134,3 @@ function fadeElement(element, duration, delay, callback) {
   element.style.opacity = element.style.opacity === '1' ? '0' : '1';
 }
 
-// Adapted from http://stackoverflow.com/questions/1353684
-function isValidDate(date) {
-  return date && date.toString() === '[object Date]' && isFinite(date);
-}
-
-function stripTags(string, replacement) {
-  if(!string) {
-    return;
-  }
-  const doc = document.implementation.createHTMLDocument();
-  doc.body.innerHTML = string;
-  if(!replacement) {
-    return doc.body.textContent;
-  }
-  const iterator = doc.createNodeIterator(doc.body, 
-    NodeFilter.SHOW_TEXT);
-  let node = iterator.nextNode();
-  const values = [];
-  while(node) {
-    values.push(node.nodeValue);
-    node = iterator.nextNode();
-  }
-  return values.join(replacement);
-}
-
-// TODO: research the proper pattern
-// /[^\x20-\x7E]+/g;
-function stripControlCharacters(string) {
-  const RE_CONTROL_CHARACTER = /[\t\r\n]/g;
-  if(string) {
-    return string.replace(RE_CONTROL_CHARACTER,'');
-  }
-}
-
-function truncate(string, position, extension) {
-  const ELLIPSIS = '\u2026';
-  extension = extension || ELLIPSIS;
-
-  if(string && string.length > position) {
-    return string.substr(0, position) + extension;
-  }
-  return string;
-}
-
-// Adapted from http://stackoverflow.com/questions/9229645
-function unique(array) {
-  return [...new Set(array)];
-}

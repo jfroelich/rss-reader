@@ -543,7 +543,7 @@ function applyCalamine(document, annotate) {
   // and do not lower case the value prior to the split, do it after
   function tokenize(value) {
     const tokens = value.toLowerCase().split(/[\s\-_0-9]+/g);
-    return unique(tokens.filter(identity));
+    return ArrayUtils.unique(tokens.filter(identity));
   }
 
   function getAttributeBias(element) {

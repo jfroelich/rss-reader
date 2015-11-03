@@ -38,25 +38,25 @@ function importOPML(files, callback) {
       title = title.trim();
     }
 
-    title = stripControlCharacters(title);
+    title = StringUtils.stripControlCharacters(title);
     if(title) {
       outline.title = title;
     }
     let description = element.getAttribute('description');
-    description = stripControlCharacters(description);
-    description = stripTags(description);
+    description = StringUtils.stripControlCharacters(description);
+    description = StringUtils.stripTags(description);
     description = description.trim();
     if(description) {
       outline.description = description;
     }
     let url = element.getAttribute('xmlUrl') || '';
-    url = stripControlCharacters(url);
+    url = StringUtils.stripControlCharacters(url);
     url = url.trim();
     if(url) {
       outline.url = url;
     }
     let link = element.getAttribute('htmlUrl') || '';
-    link = stripControlCharacters(link);
+    link = StringUtils.stripControlCharacters(link);
     link = link.trim();
     if(link) {
       outline.link = link;
@@ -111,8 +111,8 @@ function importOPML(files, callback) {
 
   function onImportComplete(error) {
     // console.debug('Finished importing feeds');
-    const notification = 'Completed importing file(s)';
-    showNotification(notification);  
+    const message = 'Completed importing file(s)';
+    Notification.show(message);  
     callback();
   }
 }

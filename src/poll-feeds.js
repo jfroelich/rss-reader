@@ -81,7 +81,7 @@ function pollFeeds() {
   // or preload all into an array.
   // Temporarily just update the badge for each feed processed
   function onEntriesUpdated(connection) {
-    updateBadge(connection);
+    Badge.update(connection);
   }
 
   function pollFindEntryByLink(connection, feed, entry, callback) {
@@ -107,6 +107,6 @@ function pollFeeds() {
     localStorage.LAST_POLL_DATE_MS = String(Date.now());
     // const message = {type: 'pollCompleted'};
     // chrome.runtime.sendMessage(message);
-    showNotification('Updated articles');
+    Notification.show('Updated articles');
   }
 }
