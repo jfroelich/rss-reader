@@ -4,9 +4,9 @@
 
 'use strict';
 
-{ // BEGIN UNNAMED NAMESPACE
+{ // BEGIN UNNAMED SCOPE
 
-var currentSlide = null;
+let currentSlide = null;
 
 chrome.runtime.onMessage.addListener(function(message) {
   const type = message.type;
@@ -245,7 +245,7 @@ function appendSlide(entry, isFirst) {
 
   const doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = entry.content;
-  applyCalamine(doc, false);
+  Calamine.transform(doc, false);
   content.appendChild(doc.documentElement);
   slide.appendChild(content);
 
@@ -274,7 +274,7 @@ function appendSlide(entry, isFirst) {
 function stripTitlePublisher(title) {
   if(!title) return;
   // The extra spaces are key to avoiding truncation of hyphenated terms
-  var index = title.lastIndexOf(' - ');
+  let index = title.lastIndexOf(' - ');
   if(index === -1)
     index = title.lastIndexOf(' | ');
   if(index === -1)
@@ -366,7 +366,7 @@ function hideNoUnreadArticlesSlide() {
   console.warn('hideNoUnreadArticlesSlide not implemented');
 }
 
-var keyDownTimer;
+let keyDownTimer;
 // TODO: instead of binding this to window, bind to each slide? that way
 // we don't have to use the currentSlide hack?
 const KEY_MAP = {
@@ -428,10 +428,10 @@ window.addEventListener('keydown', onKeyDown, false);
  * @param targetY {int} the desired vertical end position
  */
 function scrollElementTo(element, delta, targetY) {
-  var scrollYStartTimer;
-  var scrollYIntervalTimer;
-  var amountToScroll = 0;
-  var amountScrolled = 0;
+  let scrollYStartTimer;
+  let scrollYIntervalTimer;
+  let amountToScroll = 0;
+  let amountScrolled = 0;
 
   return function() {
     clearTimeout(scrollYStartTimer);
@@ -470,4 +470,4 @@ function initSlideShow(event) {
 
 document.addEventListener('DOMContentLoaded', initSlideShow);
 
-} // END UNNAMED NAMESPACE
+} // END UNNAMED SCOPE

@@ -117,7 +117,7 @@ function putEntry(connection, feed, entry, callback) {
 }
 
 function markEntryRead(connection, id) {
-  console.debug('Marking entry %s as read', id);
+  // console.debug('Marking entry %s as read', id);
   const transaction = connection.transaction('entry', 'readwrite');
   const store = transaction.objectStore('entry');
   const request = store.openCursor(id);

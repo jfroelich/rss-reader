@@ -4,8 +4,6 @@
 
 'use strict';
 
-// TODO: research whether new URL features are now supported
-
 class URLUtils {
 
   static isValid(url) {
