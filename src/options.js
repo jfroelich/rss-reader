@@ -197,7 +197,7 @@ function showOrSkipSubscriptionPreview(url) {
   $$('subscription-preview-load-progress').style.display = 'block';
   const timeout = 10 * 1000;
   // TODO: check if already subscribed before preview?
-  fetchFeed(url, timeout, onFetch);
+  Feed.fetch(url, timeout, onFetch);
 
   function onFetch(event, result) {
     if(event) {
@@ -256,12 +256,12 @@ function startSubscription(url) {
       return;
     }
 
-    findFeedByURL(event.target.result, url, 
+    Feed.findByURL(event.target.result, url, 
       onFindByURL.bind(null, connection));
   });
 
-  function onFindByURL(connection, existingFeed) {
-    if(existingFeed) {
+  function onFindByURL(connection, event) {
+    if(event.target.result) {
       hideSubsciptionMonitor(function() {
         showErrorMessage('Already subscribed to ' + url + '.');
       });
@@ -269,9 +269,9 @@ function startSubscription(url) {
     }
 
     if(!window.navigator.onLine) {
-      putFeed(connection, null, {url: url}, onSubscribe);
+      Feed.put(connection, null, {url: url}, onSubscribe);
     } else {
-      fetchFeed(url, 10 * 1000, onFetch.bind(null, connection));        
+      Feed.fetch(url, 10 * 1000, onFetch.bind(null, connection));        
     }
   }
 
@@ -284,7 +284,7 @@ function startSubscription(url) {
       return;
     }
 
-    putFeed(connection, null, remoteFeed, function() {
+    Feed.put(connection, null, remoteFeed, function() {
       onSubscribe(remoteFeed, 0, 0);
     });
   }
@@ -311,7 +311,8 @@ function populateFeedDetailsSection(feedId) {
       return;
     }
 
-    findFeedById(event.target.result, feedId, function(feed) {
+    Feed.findById(event.target.result, feedId, function(event) {
+      const feed = event.target.result;
       if(!feed) {
         return;
       }
@@ -455,7 +456,7 @@ function onUnsubscribeButtonClicked(event) {
   });
 
   function doUnsubscribe(connection, feedId) {
-    unsubscribe(function(event) {
+    Feed.unsubscribe(function(event) {
       const sectionMenu = $$('mi-subscriptions');
 
       // Update the badge in case any unread articles belonged to 
@@ -689,7 +690,7 @@ function initSubscriptionsSection() {
       return;
     }
 
-    forEachFeed(event.target.result, handleFeed, true, onComplete);
+    Feed.forEach(event.target.result, handleFeed, true, onComplete);
   });
 
   function handleFeed(feed) {

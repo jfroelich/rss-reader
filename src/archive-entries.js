@@ -22,7 +22,7 @@ function archiveEntries() {
       transaction.oncomplete = onComplete;
       const store = transaction.objectStore('entry');
       const index = store.index('archiveState-readState');
-      const range = IDBKeyRange.only([ENTRY_UNARCHIVED, ENTRY_READ]);
+      const range = IDBKeyRange.only([Entry.UNARCHIVED, Entry.READ]);
       const request = index.openCursor(range);
       request.onsuccess = archiveNextEntry;
     } else {
@@ -54,7 +54,7 @@ function archiveEntries() {
       delete entry.updated;
       delete entry.title;
       delete entry.author;
-      entry.archiveState = ENTRY_ARCHIVED;
+      entry.archiveState = Entry.ARCHIVED;
       entry.archiveDate = now;
       cursor.update(entry);
     }

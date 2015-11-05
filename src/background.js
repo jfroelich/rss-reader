@@ -8,7 +8,7 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
   if(alarm.name === 'archive') {
     archiveEntries();
   } else if(alarm.name === 'poll') {
-  	pollFeeds();
+  	Poll.start();
   }
 });
 

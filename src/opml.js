@@ -105,7 +105,7 @@ function importOPML(files, callback) {
 
   function storeOutlines(connection, outlines) {
     async.forEach(outlines, function(outline, callback) {
-      putFeed(connection, null, outline, callback);
+      Feed.put(connection, null, outline, callback);
     }, onImportComplete);
   }
 
@@ -125,7 +125,7 @@ function exportOPML(title, callback) {
       return;
     }
 
-    forEachFeed(event.target.result, processFeed, false, onFeedsEnumerated);
+    Feed.forEach(event.target.result, processFeed, false, onFeedsEnumerated);
   });
 
   function processFeed(feed) {

@@ -15,12 +15,12 @@
     "scripts": [
       "/src/async.js",
       "/src/archive-entries.js",
+      "/src/augment.js",
       "/src/background.js",
       "/src/database.js",
-      "/src/deserialize-feed.js",
       "/src/entry.js",
       "/src/feed.js",
-      "/src/poll-feeds.js",
+      "/src/poll.js",
       "/src/url-utils.js",
       "/src/URI.js",
       "/src/utils.js"

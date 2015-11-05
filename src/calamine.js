@@ -39,8 +39,8 @@ class Calamine {
     const filter = Array.prototype.filter;
     const forEach = Array.prototype.forEach;
     const reduce = Array.prototype.reduce;
-    const forEachNode = this.iterateNodes;
-    const forEachElement = this.iterateElements;
+    const forEachNode = Calamine.iterateNodes;
+    const forEachElement = Calamine.iterateElements;
     const setAnnotation = annotate ? this.setDatasetProperty : this.noop;
 
     if(!document) {
@@ -49,13 +49,9 @@ class Calamine {
     }
 
     forEachNode(document, NodeFilter.SHOW_COMMENT, this.remove);
-    
-    // TODO: merge elements selector into blacklist selectors and do 
-    // both in one iteration
-    forEachElement(document, CALAMINE_BLACKLISTED_ELEMENTS_SELECTOR, 
-      this.remove);
-    CALAMINE_BLACKLIST_SELECTORS.forEach(
-      selector => this.iterateElements(document, selector, this.remove));
+
+    Calamine.BLACKLIST_SELECTORS.forEach(
+      selector => forEachElement(document, selector, this.remove));
     filter.call(document.getElementsByTagName('img'), 
       this.isTracer).forEach(this.remove);
     forEachElement(document, 'noscript, noframes', this.unwrap);
@@ -107,7 +103,7 @@ class Calamine {
     const anchors = document.querySelectorAll('a[href]');
     const anchorLengths = reduce.call(anchors, function (map, anchor) {
       const length = textLengths.get(anchor);
-      const ancestors = this.getAncestors(anchor);
+      const ancestors = Calamine.getAncestors(anchor);
       if(length) {
         return [anchor].concat(ancestors).reduce(function(map, element) {
           return map.set(element, (map.get(element) || 0) + length);
@@ -116,8 +112,7 @@ class Calamine {
         return map;
       }
 
-    }.bind(this), new Map());
-
+    }, new Map());
 
     // Apply text bias
     forEach.call(elements, function(element) {
@@ -134,7 +129,7 @@ class Calamine {
 
     // Apply intrinsic bias
     forEach.call(elements, function(element) {
-      const bias = CALAMINE_INTRINSIC_BIAS.get(element.localName);
+      const bias = Calamine.INTRINSIC_BIAS.get(element.localName);
       if(bias) {
         setAnnotation(element, 'intrinsicBias', bias);
         scores.set(element, scores.get(element) + bias);
@@ -167,7 +162,7 @@ class Calamine {
 
     // Bias the parents of certain elements
     forEach.call(elements, function(element) {
-      const bias = CALAMINE_DESCENDANT_BIAS.get(element.localName);
+      const bias = Calamine.DESCENDANT_BIAS.get(element.localName);
       if(bias) {
         const parent = element.parentElement;
         setAnnotation(parent, 'descendantBias', parseInt(
@@ -179,15 +174,14 @@ class Calamine {
     // Bias image containers
     forEachElement(document, 'img', function(image) {
       const parent = image.parentElement;
-      const imageBias = this.getCarouselBias(image) + 
-        this.getImageDescriptionBias(image) + 
-        this.getImageDimensionBias(image);
-      if(imageBias) {
-        setAnnotation(parent, 'imageBias', imageBias);
-        scores.set(parent, scores.get(parent) + imageBias);      
+      const bias = Calamine.getCarouselBias(image) + 
+        Calamine.getImageDescriptionBias(image) + 
+        Calamine.getImageDimensionBias(image);
+      if(bias) {
+        setAnnotation(parent, 'imageBias', bias);
+        scores.set(parent, scores.get(parent) + bias);      
       }
-    }.bind(this));
-
+    });
 
     // Bias certain elements based on their attributes
     // TODO: itemscope?
@@ -221,7 +215,7 @@ class Calamine {
     applySingleClassBias('articleBody', 1000);
 
     // Item types
-    CALAMINE_ITEM_TYPES.forEach(function(schema) {
+    Calamine.ITEM_TYPES.forEach(function(schema) {
       const elements = document.querySelectorAll('[itemtype="' + schema + '"]');
       if(elements.length === 1) {
         scores.set(elements[0], scores.get(elements[0]) + 500);
@@ -266,9 +260,9 @@ class Calamine {
     });
 
     // Unwrap unwrappable elements
-    for(let element = document.querySelector(CALAMINE_UNWRAPPABLE_ELEMENTS),
+    for(let element = document.querySelector(Calamine.UNWRAPPABLE_ELEMENTS),
       iterations = 0; element && (iterations < 3000); 
-      element = document.querySelector(CALAMINE_UNWRAPPABLE_ELEMENTS), 
+      element = document.querySelector(Calamine.UNWRAPPABLE_ELEMENTS), 
       iterations++) {
       this.unwrap(element);
     }
@@ -423,7 +417,7 @@ class Calamine {
     ].filter(this.identity);
     const tokens = this.tokenize(values.join(' '));
     return tokens.reduce(function(sum, value) {
-      return sum + (CALAMINE_ATTRIBUTE_BIAS.get(value) || 0);
+      return sum + (Calamine.ATTRIBUTE_BIAS.get(value) || 0);
     }, 0);
   }
 
@@ -496,7 +490,7 @@ class Calamine {
   }
 
   static isInlineElement(element) {
-    return CALAMINE_INLINE_ELEMENTS.has(element.localName);
+    return Calamine.INLINE_ELEMENTS.has(element.localName);
   }
 
   static setDatasetProperty(element, propertyName, value) {
@@ -507,7 +501,7 @@ class Calamine {
 
   static trimTextNodes(document) {
     const elements = document.querySelectorAll(
-      CALAMINE_WHITESPACE_SENSITIVE_ELEMENTS);
+      Calamine.WHITESPACE_SENSITIVE_ELEMENTS);
     // TODO: improve
     const preformatted = new Set(Array.prototype.slice.call(elements));
 
@@ -650,7 +644,7 @@ class Calamine {
   }
 }
 
-const CALAMINE_INTRINSIC_BIAS = new Map([
+Calamine.INTRINSIC_BIAS = new Map([
   ['article', 200],
   ['main', 100],
   ['section', 50],
@@ -696,7 +690,7 @@ const CALAMINE_INTRINSIC_BIAS = new Map([
   ['tr', -500]
 ]);
 
-const CALAMINE_DESCENDANT_BIAS = new Map([
+Calamine.DESCENDANT_BIAS = new Map([
   ['a', -5],
   ['blockquote', 20],
   ['div', -50],
@@ -714,7 +708,7 @@ const CALAMINE_DESCENDANT_BIAS = new Map([
   ['ul', -20]
 ]);
 
-const CALAMINE_ATTRIBUTE_BIAS = new Map([
+Calamine.ATTRIBUTE_BIAS = new Map([
   ['about', -35],
   ['ad', -100],
   ['ads', -50],
@@ -891,7 +885,7 @@ const CALAMINE_ATTRIBUTE_BIAS = new Map([
   ['zone', -50]
 ]);
 
-const CALAMINE_ITEM_TYPES = [
+Calamine.ITEM_TYPES = [
   'http://schema.org/Article',
   'http://schema.org/Blog',
   'http://schema.org/BlogPost',
@@ -902,26 +896,17 @@ const CALAMINE_ITEM_TYPES = [
   'http://schema.org/WebPage'
 ];
 
-const CALAMINE_BLACKLISTED_ELEMENTS_SELECTOR = [
-  'head', 'applet', 'base', 'basefont', 'bgsound', 'button', 'command',
-  'datalist', 'dialog', 'embed', 'fieldset', 'frameset', 'iframe', 'input', 
-  'isindex', 'math', 'link', 'menu', 'menuitem', 'meta', 'object', 
-  'optgroup',  'output', 'param', 'progress', 'script', 'spacer', 'style', 
-  'textarea', 'title', 'xmp', 'select', 'option', 'g\\:plusone',
-  'fb\\:comments'
-].join(',');
-
-const CALAMINE_INLINE_ELEMENTS = new Set(['a','abbr', 'acronym', 'address',
+Calamine.INLINE_ELEMENTS = new Set(['a','abbr', 'acronym', 'address',
   'b', 'bdi', 'bdo', 'blink','cite', 'code', 'data', 'del',
   'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 'map',
   'meter', 'q', 'rp', 'rt', 'samp', 'small', 'span', 'strike',
   'strong', 'sub', 'sup', 'time', 'tt', 'u', 'var'
 ]);
 
-const CALAMINE_WHITESPACE_SENSITIVE_ELEMENTS = 'code, code *, pre, pre *, ' + 
+Calamine.WHITESPACE_SENSITIVE_ELEMENTS = 'code, code *, pre, pre *, ' + 
   'ruby, ruby *, textarea, textarea *, xmp, xmp *';
 
-const CALAMINE_UNWRAPPABLE_ELEMENTS = [
+Calamine.UNWRAPPABLE_ELEMENTS = [
   'article', 'big', 'blink', 'body', 'center', 'colgroup', 'data', 
   'details', 'div', 'font', 'footer', 'form', 'header', 'help',
   'hgroup', 'ilayer', 'insert', 'label', 'layer', 'legend', 'main',
@@ -932,7 +917,10 @@ const CALAMINE_UNWRAPPABLE_ELEMENTS = [
 
 // NOTE: cannot use 'div.share'
 // NOTE: cannot use 'article div.share' (Vanity Fair vs Concurring Opinions)
-const CALAMINE_BLACKLIST_SELECTORS = [
+// NOTE: cannot use 'div.posts', (wordpress copyblogger theme)
+// NOTE: cannot use 'div.menu', // CNBC
+
+Calamine.BLACKLIST_SELECTORS = [
   'a.advertise-with-us', // The Daily Voice
   'a.aggregated-rel-link', // The Oklahoman
   'a.bylineCommentCount', // Pasadena Star News
@@ -958,6 +946,7 @@ const CALAMINE_BLACKLIST_SELECTORS = [
   'a.twitter-timeline', // Newsday
   'a.synved-social-button', // Viral Global News
   'a.skip-to-text-link', // NYTimes
+  'applet',
   'article div.extra', // Washington Post
   'article > div.tags', // NPR
   'article ul.listing', // Good Magazine
@@ -1003,6 +992,14 @@ const CALAMINE_BLACKLIST_SELECTORS = [
   'aside.views-tags', // BuzzFeed
   'aside.widget-area', // thedomains.com
   'b.toggle-caption', // NPR
+  'base',
+  'basefont',
+  'bgsound',
+  'button',
+  'command',
+  'fb\\:comments',
+  'datalist',
+  'dialog',
   'div#a-all-related', // New York Daily News
   'div.about-the-author', // SysCon Media
   'div.actions-panel', // SysCon Media
@@ -1299,9 +1296,6 @@ const CALAMINE_BLACKLIST_SELECTORS = [
   'div.m-article__share-buttons', // The Verge
   'div.mashsharer-box', // internetcommerce.org
   'div.m-entry__sidebar', // The Verge
-
-  //'div.menu', // CNBC (CANNOT USE)
-
   'div#mergeAccounts', // Joplin Globe
   'div.meta_bottom', // Collegian
   'div#metabox', // Global Dispatch
@@ -1380,7 +1374,6 @@ const CALAMINE_BLACKLIST_SELECTORS = [
   'div.post-share-buttons', // Blogspot
   'div.post-social-iteration-wrapper', // Streetwise
   'div#post_socials', // Archeology.org
-  // 'div.posts', // (CANNOT USE - wordpress copyblogger theme)
   'div.posts-stories', // Ha'Aretz
   'div.post-tags', // Teleread
   'div.post-tools-wrapper', // Gawker
@@ -1655,12 +1648,16 @@ const CALAMINE_BLACKLIST_SELECTORS = [
   'dl.keywords', // Vanity Fair
   'dl.related-mod', // Fox News
   'dl.tags', // NY Daily News
+  'embed',
+  'fieldset',
   'figure.ib-figure-ad', // KMBC
   'figure.kudo', // svbtle.com blogs
-  'footer', // Misc.
+  'footer',
   'form#comment_form', // Doctors Lounge
   'form.comments-form', // CJR
-  'header', // Misc.
+  'frameset',
+  'head',
+  'header',
   'h1#external-links', // The Sprawl (preceds unnamed <ul>)
   'h2#comments', // WordPress lemire-theme
   'h2.hide-for-print', // NobelPrize.org
@@ -1670,18 +1667,30 @@ const CALAMINE_BLACKLIST_SELECTORS = [
   'h3.related_title', // Teleread
   'h3#scrollingArticlesHeader', // The Oklahoman
   'h4.taboolaHeaderRight', // KMBC
-  'hr', // ALL
+  'hr',
+  'iframe',
   'img#ajax_loading_img', // E-Week
+  'input',
+  'isindex',
   'li.comments', // Smashing Magazine
   'li#mostPopularShared_0', // Reuters
   'li#mostPopularShared_1', // Reuters
   'li#pagingControlsPS', // neagle
   'li#sharetoolscontainer', // neagle
   'li.tags', // Smashing Magazine
+  'link',
+  'math',
+  'menu',
+  'menuitem',
+  'meta',
+  'nav',
+  'object', 
+  'output',
+  'option',
+  'optgroup',
   'ol[data-vr-zone="Around The Web"]', // The Oklahoman
   'ol#comment-list', // Pro Football Talk
   'ol#commentlist', // WordPress lemire-theme
-  'nav', // Misc.
   'p.article-more', // The Boston Globe
   'p.authorFollow', // The Sydney Morning Herald
   'p.byline', // Newsday
@@ -1704,6 +1713,10 @@ const CALAMINE_BLACKLIST_SELECTORS = [
   'p.trial-promo', // Newsweek
   'p.subscribe_miles', // Charlotte Observer
   'p#whoisviewing', // Eev blog
+  'param',
+  'g\\:plusone',
+  'progress',
+  'script',
   'section.also-on', // Huffington Post
   'section.around-bbc-module', // BBC
   'section.article-author', // Ars Technica
@@ -1741,6 +1754,8 @@ const CALAMINE_BLACKLIST_SELECTORS = [
   'section.topnews', // Christian Times
   'section.top-video', // ABC 7 News
   'section.youmaylike', // Entertainment Tonight
+  'select',
+  'spacer',
   'span.comment-count-generated', // Teleread
   'span.fb-recommend-btn', // The Daily Voice
   'span[itemprop="inLanguage"]', // Investors.com
@@ -1749,11 +1764,14 @@ const CALAMINE_BLACKLIST_SELECTORS = [
   'span.printfriendly-node', // Uncover California
   'span.story-date', // BBC Co Uk
   'span.text_resizer', // Fort Worth Star Telegram
+  'style', 
   'table.hst-articleprinter', // Stamford Advocate
   'table#commentTable', // Times of India
   'table.complexListingBox', // Mercury News
   'table.storyauthor', // SysCon Media
   'table.TopNavigation', // LWN
+  'textarea',
+  'title',
   'ul#additionalShare', // NBC
   'ul.articleList', // The Wall Street Journal
   'ul.article-options', // TVNZ
@@ -1836,5 +1854,6 @@ const CALAMINE_BLACKLIST_SELECTORS = [
   'ul#topics', // Yahoo News
   'ul.toplinks', // VOA News
   'ul.top-menu', // Investors.com
-  'ul.utility-list'// WRAL
+  'ul.utility-list', // WRAL
+  'xmp'
 ];
