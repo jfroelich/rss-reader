@@ -16,7 +16,6 @@ class Entry {
   // entry properties should occur externally.
   static put(connection, feed, entry, callback) {
     // console.debug('Putting entry %s', entry.link);
-
     const storable = {};
     
     if(entry.hasOwnProperty('feedLink')) {

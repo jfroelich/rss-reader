@@ -254,7 +254,7 @@ function appendSlide(entry, isFirst) {
   slide.appendChild(source);
 
   const favIcon = document.createElement('img');
-  favIcon.setAttribute('src', getFavIconURL(entry.feedLink || entry.baseURI));
+  favIcon.setAttribute('src', FavIcon.getURL(entry.feedLink || entry.baseURI));
   favIcon.setAttribute('width', '16');
   favIcon.setAttribute('height', '16');
   source.appendChild(favIcon);

@@ -21,7 +21,6 @@
       "/src/entry.js",
       "/src/feed.js",
       "/src/poll.js",
-      "/src/url-utils.js",
       "/src/URI.js",
       "/src/utils.js"
     ]

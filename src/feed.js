@@ -77,7 +77,6 @@ class Feed {
     };
   }
 
-
   // TODO: check last modified date of the remote xml file to avoid 
   // pointless updates?
   // TODO: ensure the date is not beyond the current date?

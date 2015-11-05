@@ -187,14 +187,6 @@ class Calamine {
     // TODO: itemscope?
     // TODO: itemprop="articleBody"?
     // TODO: [role="article"]?
-    /*const elementsWithAttributes = document.querySelectorAll('a, aside, div,' +
-      ' dl, figure, h1, h2, h3, h4, ol, p, section, span, ul');
-    forEach.call(elementsWithAttributes, function(element) {
-      const bias = getAttributeBias(element);
-      setAnnotation(element, 'attributeBias', bias);
-      scores.set(element, scores.get(element) + bias);
-    });*/
-
     forEachElement(document, 'a, aside, div, dl, figure, h1, h2, h3, h4, ol,' + 
       ' p, section, span, ul', function(element) {
       const bias = this.getAttributeBias(element);
@@ -216,7 +208,8 @@ class Calamine {
 
     // Item types
     Calamine.ITEM_TYPES.forEach(function(schema) {
-      const elements = document.querySelectorAll('[itemtype="' + schema + '"]');
+      const elements = document.querySelectorAll('[itemtype="' + 
+        schema + '"]');
       if(elements.length === 1) {
         scores.set(elements[0], scores.get(elements[0]) + 500);
         setAnnotation(elements[0], 'itemTypeBias', 500);
@@ -307,7 +300,6 @@ class Calamine {
       }
     });
 
-
     { // start trim block
       let sibling = document.documentElement;
       let node = bestElement.firstChild;
@@ -380,7 +372,7 @@ class Calamine {
   // TODO: check data-alt and data-title?
   static getImageDescriptionBias(image) {
     if(image.getAttribute('alt') || image.getAttribute('title') || 
-      this.findCaption(image)) {
+      Calamine.findCaption(image)) {
       return 30;
     }
     return 0;
@@ -405,7 +397,7 @@ class Calamine {
   // and do not lower case the value prior to the split, do it after
   static tokenize(value) {
     const tokens = value.toLowerCase().split(/[\s\-_0-9]+/g);
-    return ArrayUtils.unique(tokens.filter(this.identity));
+    return ArrayUtils.unique(tokens.filter(Calamine.identity));
   }
 
   static getAttributeBias(element) {
@@ -414,8 +406,8 @@ class Calamine {
       element.getAttribute('name'),
       element.getAttribute('class'),
       element.getAttribute('itemprop')
-    ].filter(this.identity);
-    const tokens = this.tokenize(values.join(' '));
+    ].filter(Calamine.identity);
+    const tokens = Calamine.tokenize(values.join(' '));
     return tokens.reduce(function(sum, value) {
       return sum + (Calamine.ATTRIBUTE_BIAS.get(value) || 0);
     }, 0);

@@ -110,7 +110,7 @@ class Poll {
         callback();
       } else {
         const timeout = 20 * 1000;
-        augmentEntryContent(entry, timeout, onAugment);
+        Augment.augmentEntry(entry, timeout, onAugment);
       }
     });
 

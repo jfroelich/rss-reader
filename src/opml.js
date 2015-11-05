@@ -4,44 +4,104 @@
 
 'use strict';
 
-function importOPML(files, callback) {
-  async.map(files, loadFile, onFilesLoaded);
+class OPML {
 
-  function loadFile(file, callback) {
-    const reader = new FileReader();
-    reader.onload = onFileLoad.bind(reader, callback);
-    reader.onerror = function(event) {
-      callback(null, []);
-    };
-    reader.readAsText(file);
+  static parseXML(string) {
+    const parser = new DOMParser();
+    const document = parser.parseFromString(string, OPML.MIME_TYPE);
+    return document;
   }
 
-  function isValidOPMLDocument(document) {
+  static importFiles(files, callback) {
+    async.map(files, loadFile, onFilesLoaded);
+
+    function loadFile(file, callback) {
+      const reader = new FileReader();
+      reader.onload = onFileLoad.bind(reader, callback);
+      reader.onerror = function(event) {
+        callback(null, []);
+      };
+      reader.readAsText(file);
+    }
+
+    function onFileLoad(callback, event) {
+      const reader = event.target;
+      const text = reader.result;
+      const document = OPML.parseXML(text);
+      if(!OPML.isValidDocument(document)) {
+        callback(null, []);
+        return;
+      }
+      const elements = document.getElementsByTagName('outline');
+      const outlines = Array.prototype.filter.call(elements, 
+        OPML.isValidOutline).map(OPML.createOutline);
+      callback(null, outlines);
+    }
+
+    function onFilesLoaded(error, outlineArrays) {
+      // TODO: use the new ... operator to simplify this,
+      // or maybe just create a Set object
+      const outlines = [];
+      const seen = new Set();
+      outlineArrays.forEach(function(outlineArray) {
+        outlineArray.foreach(function(outline) {
+          if(seen.has(outline.url)) return;
+          seen.add(outline.url);
+          outlines.push(outline);
+        });
+      });
+
+      Database.open(function(event) {
+        if(event.type !== 'success') {
+          console.debug(event);
+          onImportComplete(event);
+          return;
+        }
+
+        storeOutlines(event.target.result, outlines);
+      });
+    }
+
+    function storeOutlines(connection, outlines) {
+      async.forEach(outlines, function(outline, callback) {
+        Feed.put(connection, null, outline, callback);
+      }, onImportComplete);
+    }
+
+    function onImportComplete(error) {
+      const message = 'Imported OPML file(s)';
+      Notification.show(message);  
+      callback();
+    }
+  }
+
+  static isValidDocument(document) {
     return document && document.documentElement && 
       document.documentElement.matches('opml') &&
       !document.querySelector('parsererror');
   }
 
-  const TYPE_PATTERN = /rss|rdf|feed/i;
-  function isValidOutlineElement(element) {
+  static isValidOutline(element) {
+    const TYPE_PATTERN = /rss|rdf|feed/i;
     const type = element.getAttribute('type');
     const url = element.getAttribute('xmlUrl') || '';
     return TYPE_PATTERN.test(type) && url.trim();
   }
 
-  function createOutlineFromElement(element) {
+  static createOutline(element) {
     const outline = {};
+
     let title = element.getAttribute('title') || '';
     title = title.trim();
     if(!title) {
       title = element.getAttribute('text') || '';
       title = title.trim();
     }
-
     title = StringUtils.stripControlCharacters(title);
     if(title) {
       outline.title = title;
     }
+
     let description = element.getAttribute('description');
     description = StringUtils.stripControlCharacters(description);
     description = StringUtils.stripTags(description);
@@ -49,12 +109,14 @@ function importOPML(files, callback) {
     if(description) {
       outline.description = description;
     }
+
     let url = element.getAttribute('xmlUrl') || '';
     url = StringUtils.stripControlCharacters(url);
     url = url.trim();
     if(url) {
       outline.url = url;
     }
+
     let link = element.getAttribute('htmlUrl') || '';
     link = StringUtils.stripControlCharacters(link);
     link = link.trim();
@@ -64,121 +126,31 @@ function importOPML(files, callback) {
     return outline;
   }
 
-  function onFileLoad(callback, event) {
-    const reader = event.target;
-    const text = reader.result;
-    const xmlParser = new DOMParser();
-    const xml = xmlParser.parseFromString(text, 'application/xml');
-    if(!isValidOPMLDocument(xml)) {
-      callback(null, []);
-      return;
-    }
-    const elements = xml.getElementsByTagName('outline');
-    const outlines = Array.prototype.filter.call(elements, 
-      isValidOutlineElement).map(createOutlineFromElement);
-    callback(null, outlines);
-  }
-
-  function onFilesLoaded(error, outlineArrays) {
-    // TODO: use the new ... operator to simplify this,
-    // or maybe just create a Set object
-    const outlines = [];
-    const seen = new Set();
-    outlineArrays.forEach(function(outlineArray) {
-      outlineArray.foreach(function(outline) {
-        if(seen.has(outline.url)) return;
-        seen.add(outline.url);
-        outlines.push(outline);
-      });
-    });
-
-    Database.open(function(event) {
+  static exportFile(title, callback) {
+    const feeds = [];
+    Database.open(function(event){
       if(event.type !== 'success') {
-        console.debug(event);
-        onImportComplete(event);
+        callback(event);
         return;
       }
 
-      storeOutlines(event.target.result, outlines);
+      Feed.forEach(event.target.result, processFeed, false, onFeedsEnumerated);
     });
-  }
 
-  function storeOutlines(connection, outlines) {
-    async.forEach(outlines, function(outline, callback) {
-      Feed.put(connection, null, outline, callback);
-    }, onImportComplete);
-  }
-
-  function onImportComplete(error) {
-    // console.debug('Finished importing feeds');
-    const message = 'Completed importing file(s)';
-    Notification.show(message);  
-    callback();
-  }
-}
-
-function exportOPML(title, callback) {
-  const feeds = [];
-  Database.open(function(event){
-    if(event.type !== 'success') {
-      callback(event);
-      return;
+    function processFeed(feed) {
+      feeds.push(feed);
     }
 
-    Feed.forEach(event.target.result, processFeed, false, onFeedsEnumerated);
-  });
-
-  function processFeed(feed) {
-    feeds.push(feed);
-  }
-
-  function onFeedsEnumerated() {
-    const document = createOPMLDocument(feeds, title);
-    const writer = new XMLSerializer();
-    const opml = writer.serializeToString(document);
-    const blob = new Blob([opml], {type: 'application/xml'});
-    callback(null, blob);
-  }
-
-  function createOPMLDocument(feeds, title) {
-    const doc = document.implementation.createDocument(null, null);
-    const opml = doc.createElement('opml');
-    opml.setAttribute('version', '2.0');
-    doc.appendChild(opml);
-    const head = doc.createElement('head');
-    opml.appendChild(head);
-    const titleElement = doc.createElement('title');
-    titleElement.textContent = title;
-    head.appendChild(titleElement);
-    const nowString = (new Date()).toUTCString();
-    const dateCreated = doc.createElement('dateCreated');
-    dateCreated.textContent = nowString;
-    head.appendChild(dateCreated);
-    const dateModified = doc.createElement('dateModified');
-    dateModified.textContent = nowString;
-    head.appendChild(dateModified);
-    const docs = doc.createElement('docs');
-    docs.textContent = 'http://dev.opml.org/spec2.html';
-    head.appendChild(docs);
-    if(!feeds) {
-      return doc;
+    function onFeedsEnumerated() {
+      const document = OPML.createDocument(feeds, title);
+      const writer = new XMLSerializer();
+      const opml = writer.serializeToString(document);
+      const blob = new Blob([opml], {type: OPML.MIME_TYPE});
+      callback(null, blob);
     }
-    const exportables = feeds.filter(function(feed) {
-      return feed.url;
-    });
-    if(!exportables.length) {
-      return doc;
-    }
-    const body = doc.createElement('body');
-    opml.appendChild(body);
-    const outlines = exportables.map(createOutline.bind(null, doc));
-    outlines.forEach(function(outline) {
-      body.appendChild(outline);
-    });
-    return doc;
   }
 
-  function createOutline(document, feed) {
+  function createOutlineElement(document, feed) {
     const outline = document.createElement('outline');
     // We do not know the original format, so default to rss
     outline.setAttribute('type', 'rss');
@@ -195,4 +167,45 @@ function exportOPML(title, callback) {
     }
     return outline;
   }
+
+  static createDocument(feeds, title) {
+    const document = document.implementation.createDocument(null, null);
+    const opml = document.createElement('opml');
+    opml.setAttribute('version', '2.0');
+    document.appendChild(opml);
+    const head = document.createElement('head');
+    opml.appendChild(head);
+    const titleElement = document.createElement('title');
+    titleElement.textContent = title;
+    head.appendChild(titleElement);
+    const nowString = (new Date()).toUTCString();
+    const dateCreated = document.createElement('dateCreated');
+    dateCreated.textContent = nowString;
+    head.appendChild(dateCreated);
+    const dateModified = document.createElement('dateModified');
+    dateModified.textContent = nowString;
+    head.appendChild(dateModified);
+    const docs = document.createElement('docs');
+    docs.textContent = 'http://dev.opml.org/spec2.html';
+    head.appendChild(docs);
+    if(!feeds) {
+      return document;
+    }
+    const exportables = feeds.filter(function(feed) {
+      return feed.url;
+    });
+    if(!exportables.length) {
+      return document;
+    }
+    const body = document.createElement('body');
+    opml.appendChild(body);
+    const outlines = exportables.map(
+      OPML.createOutlineElement.bind(null, document));
+    outlines.forEach(function(outline) {
+      body.appendChild(outline);
+    });
+    return document;
+  }
 }
+
+OPML.MIME_TYPE = 'application/xml';

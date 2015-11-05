@@ -103,12 +103,49 @@ class ArrayUtils {
   }
 }
 
-function getFavIconURL(url) {
-  if(url) {
-    return 'http://www.google.com/s2/favicons?domain_url=' + 
-      encodeURIComponent(url);
-  } else {
-    return '/media/rss_icon_trans.gif';
+
+class URLUtils {
+
+  static isValid(url) {
+    try {
+      let uri = URI(url);
+      return uri && uri.protocol() && uri.hostname();
+    } catch(e) {
+
+    }
+
+    return false;
+  }
+
+  static getSchemeless(url) {
+    const uri = new URI(url);
+    uri.protocol('');
+    return uri.toString().substring(2);
+  }
+
+  static isDataURI(url) {
+    return /^\s*data\s*:/i.test(url);
+  }
+
+  static rewrite(url) {
+    const GOOGLE_NEWS = 
+      /^https?:\/\/news.google.com\/news\/url\?.*url=(.*)/i;
+    const matches = GOOGLE_NEWS.exec(url);
+    if(matches && matches.length === 2 && matches[1]) {
+      return decodeURIComponent(matches[1]);
+    }
+    return url;
+  }
+}
+
+class FavIcon {
+  static getURL(url) {
+    if(url) {
+      return 'http://www.google.com/s2/favicons?domain_url=' + 
+        encodeURIComponent(url);
+    } else {
+      return '/media/rss_icon_trans.gif';
+    }
   }
 }
 
@@ -133,4 +170,3 @@ function fadeElement(element, duration, delay, callback) {
   element.style.transition = 'opacity '+duration+'s ease '+delay+'s';
   element.style.opacity = element.style.opacity === '1' ? '0' : '1';
 }
-
