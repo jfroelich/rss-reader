@@ -14,13 +14,10 @@
     "persistent": false,
     "scripts": [
       "/src/async.js",
-      "/src/archive-entries.js",
-      "/src/augment.js",
       "/src/background.js",
       "/src/database.js",
       "/src/entry.js",
       "/src/feed.js",
-      "/src/poll.js",
       "/src/URI.js",
       "/src/utils.js"
     ]
