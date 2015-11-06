@@ -150,7 +150,7 @@ class OPML {
     }
   }
 
-  function createOutlineElement(document, feed) {
+  static createOutlineElement(document, feed) {
     const outline = document.createElement('outline');
     // We do not know the original format, so default to rss
     outline.setAttribute('type', 'rss');
