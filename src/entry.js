@@ -4,6 +4,9 @@
 
 'use strict';
 
+// TODO: this class is essentially entry storage functions. Perhaps it would 
+// be more appropriate to name the class EntryStore or something like that
+
 // TODO: create an Entry data object, store entry objects instead of generic
 // object literals in indexedDB. Attach appropriate methods to the general
 // object. This should lead to much cleaner looking and organized code.

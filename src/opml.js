@@ -43,13 +43,19 @@ class OPML {
       // or maybe just create a Set object
       const outlines = [];
       const seen = new Set();
+
+      //const outlineMap = new Map();
+
       outlineArrays.forEach(function(outlineArray) {
         outlineArray.foreach(function(outline) {
           if(seen.has(outline.url)) return;
           seen.add(outline.url);
           outlines.push(outline);
+          //outlineMap.set(outline.url, outline);
         });
       });
+
+      //const outlines = [...outlineMap.values()];
 
       Database.open(function(event) {
         if(event.type !== 'success') {
