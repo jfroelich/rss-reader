@@ -21,7 +21,31 @@ class Feed {
   }
 
   static _onFetch(url, callback, event) {
-    const document = event.target.responseXML;
+    let document = event.target.responseXML;
+
+    if(!document) {
+      // responseXML is null when there was an xml parse error
+      // such as invalid UTF-8 characters
+      // error on line 1010 at column 25: Input is not proper UTF-8, 
+      // indicate encoding ! Bytes: 0x07 0x50 0x72 0x65
+
+      try {
+        let parser = new DOMParser();
+        const malformedXMLString = event.target.responseText;
+        const encoded = utf8.encode(malformedXMLString);
+        let xmlDocument = parser.parseFromString(encoded, 'application/xml');
+        let error = xmlDocument.querySelector('parsererror');
+        if(error) {
+          console.debug('%s contains an encoding error: %s', url, error.textContent);
+          error.remove();
+        }
+        document = xmlDocument;
+      } catch(exception) {
+        callback(event);
+        return;
+      }
+    }
+
     if(!document || !document.documentElement) {
       callback(event);
       return;
