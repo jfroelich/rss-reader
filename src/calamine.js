@@ -4,7 +4,6 @@
 
 'use strict';
 
-
 // TODO: express everything as probability? Use a scale of 0 to 100
 // to represent each element's likelihood of being useful content, where
 // 100 is most likely. Every blcok gets its own probability score. Then
@@ -13,7 +12,7 @@
 // where probability means the likelihood of any given element being the
 // best element, not whether it is content or boilerplate.
 
-// TODO: when the main container has several links, the text bias  is very 
+// TODO: when the main container has several links, the text bias is very 
 // negative. Maybe propagate link text to only block level containers,
 // or proportionally decrease the negative bias based on depth
 
@@ -45,24 +44,20 @@ class Calamine {
       Calamine.remove);
     // Unwrap noscript and noframes
     document.querySelectorAll('noscript, noframes', Calamine.unwrap);
-
-    // TODO: enable once the performance issues are resolved
-    // document.getElementsByTagName('*').filter(Calamine.isHidden).forEach(
-    //  Calamine.remove);
+    // Remove hidden elements
+    document.getElementsByTagName('*').filter(Calamine.isHidden).forEach(
+      Calamine.remove);
 
     // Canonicalize whitespace
     document.forEachNode(NodeFilter.SHOW_TEXT,
       Calamine.canonicalizeWhitespace);
 
-    /*
     // Transform break rule elements into paragraphs
     // TODO: improve this
-    let br = document.querySelector('br');
-    while(br) {
-      br.parentNode.replaceChild(document.createElement('p'), br);
-      br = document.querySelector('br');
-    }
-    */
+    document.getElementsByTagName('br').forEach(function(element) {
+      const p = document.createElement('p');
+      element.parentNode.replaceChild(p, element);
+    });
 
     Calamine.trimTextNodes(document);
 
@@ -76,22 +71,8 @@ class Calamine {
     const scores = new Map();
     elements.forEach(element => scores.set(element, 0));
 
-
-    // Collect node text lengths. This is done from the bottom up 
-    // for better performance
-    const textLengths = new Map();
-    document.forEachNode(NodeFilter.SHOW_TEXT, function(node) {
-      while(node) {
-        const length = node.nodeValue.length;
-        if(length) {
-          node = node.parentNode;
-          while(node) {
-            textLengths.set(node, (textLengths.get(node) || 0) + length);
-            node = node.parentNode;
-          }
-        }
-      }
-    });
+    // Collect node text lengths
+    const textLengths = Calamine.deriveTextLengths(document);
 
     // Collect non-nominal anchor text lengths
     const anchors = document.querySelectorAll('a[href]');
@@ -176,7 +157,8 @@ class Calamine {
     // TODO: itemscope?
     // TODO: itemprop="articleBody"?
     // TODO: [role="article"]?
-    const biasedElementsWithAttributesSelector = 'a, aside, div, dl, figure, h1, h2, h3, h4,' +
+    const biasedElementsWithAttributesSelector = 
+      'a, aside, div, dl, figure, h1, h2, h3, h4,' +
       ' ol, p, section, span, ul';
     document.querySelectorAll(
       biasedElementsWithAttributesSelector).forEach(function(element) {
@@ -289,6 +271,23 @@ class Calamine {
 
   static canonicalizeWhitespace(node) {
     node.nodeValue = node.nodeValue.replace(/\s/g, ' ');
+  }
+
+  static deriveTextLengths(document) {
+    const map = new Map();
+    document.forEachNode(NodeFilter.SHOW_TEXT, function(node) {
+      while(node) {
+        const length = node.nodeValue.length;
+        if(length) {
+          node = node.parentNode;
+          while(node) {
+            map.set(node, (map.get(node) || 0) + length);
+            node = node.parentNode;
+          }
+        }
+      }
+    });
+    return map;
   }
 
   static isJavascriptAnchor(anchor) {
@@ -607,7 +606,7 @@ class Calamine {
     const LEAF_EXCEPTIONS = ['area', 'audio', 'br', 'canvas', 'col',
       'hr', 'img', 'source', 'svg', 'track', 'video'].join(',');
     const elements = document.getElementsByTagName('*');
-    const leaves = Array.prototype.filter.call(elements, function(element) {
+    const leaves = elements.filter(function(element) {
       return !element.firstChild && !element.matches(LEAF_EXCEPTIONS);
     });
     const parents = leaves.map(function(element) {
@@ -616,6 +615,7 @@ class Calamine {
       return parent;
     });
     const stack = parents.filter(function(document, element) {
+      // TODO: why test for document.body per iteration?
       return document.body && document.body != element;
     });
 
@@ -1314,10 +1314,7 @@ Calamine.BLACKLIST_SELECTORS = [
   'div.mmn-link', // ABC 7 News
   'div.mobile-button', // Ha'Aretz
   'div.modComments', // Investors.com
-
-  // The Week Left side
-  'div#module-recirculation-speedreads',
-
+  'div#module-recirculation-speedreads',// The Week Left side
   'div.module__biz-pulse', // Bizjournal
   'div.mod-video-playlist', // ESPN
   'div#more-on', // NY Post
