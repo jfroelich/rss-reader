@@ -4,6 +4,8 @@
 
 'use strict';
 
+// TODO: merge all into single Utils class
+
 class Badge {
   static update(connection) {
     // console.debug('Updating badge');

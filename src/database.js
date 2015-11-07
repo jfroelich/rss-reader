@@ -11,7 +11,7 @@ class Database {
 
   static open(callback) {
     const request = indexedDB.open('reader', 17);
-    request.onupgradeneeded = this._upgrade;
+    request.onupgradeneeded = Database._upgrade;
     request.onsuccess = callback;
     request.onerror = callback;
     request.onblocked = callback;

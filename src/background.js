@@ -122,6 +122,7 @@ class Background {
     Feed.fetch(feed.url, timeout, function(event, remoteFeed) {
       // console.debug('Fetched %s', feed.url);
       if(event) {
+        console.log('Error fetching %s', feed.url);
         console.dir(event);
       } else {
         Feed.put(connection, feed, remoteFeed, 

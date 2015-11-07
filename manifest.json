@@ -19,6 +19,7 @@
       "/src/entry.js",
       "/src/feed.js",
       "/src/URI.js",
+      "/src/utf8.js",
       "/src/utils.js"
     ]
   },

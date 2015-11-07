@@ -10,8 +10,20 @@ class HTMLDocumentWrapper {
     this.document = document;
   }
 
+  get body() {
+  	return this.document.body;
+  }
+
+  get documentElement() {
+  	return this.document.documentElement;
+  }
+
   static wrap(document) {
   	return new HTMLDocumentWrapper(document);
+  }
+
+  appendChild(node) {
+    this.document.appendChild(node);
   }
 
   createElement(name) {
@@ -39,25 +51,25 @@ class HTMLDocumentWrapper {
   }
 
   forEachNode(nodeFilter, callback) {
-  	const iterator = this.document.createNodeIterator(
-  	  this.document.documentElement, nodeFilter);
+  	const root = this.document.documentElement;
+  	const iterator = this.document.createNodeIterator(root, nodeFilter);
   	for(let node = iterator.nextNode(); node; node = iterator.nextNode()) {
   	  callback(node);
   	}
-  }
-
-  get body() {
-  	return this.document.body;
-  }
-
-  get documentElement() {
-  	return this.document.documentElement;
   }
 }
 
 class NodeListWrapper {
   constructor(list) {
   	this.list = list;
+  }
+
+  get internal() {
+    return this.list;
+  }
+
+  get length() {
+    return this.list.length;
   }
 
   filter(callback) {
@@ -70,13 +82,5 @@ class NodeListWrapper {
 
   reduce(callback, initialValue) {
   	return Array.prototype.reduce.call(this.list, callback, initialValue);
-  }
-
-  get internal() {
-  	return this.list;
-  }
-
-  get length() {
-  	return this.list.length;
   }
 }
