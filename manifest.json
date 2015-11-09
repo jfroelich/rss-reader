@@ -17,7 +17,7 @@
       "/src/background.js",
       "/src/database.js",
       "/src/entry.js",
-      "/src/feed.js",
+      "/src/feed-store.js",
       "/src/feed-request.js",
       "/src/URI.js",
       "/src/utf8.js",

@@ -70,7 +70,7 @@ class OPML {
 
     function storeOutlines(connection, outlines) {
       async.forEach(outlines, function(outline, callback) {
-        Feed.put(connection, null, outline, callback);
+        FeedStore.put(connection, null, outline, callback);
       }, onImportComplete);
     }
 
@@ -140,7 +140,8 @@ class OPML {
         return;
       }
 
-      Feed.forEach(event.target.result, processFeed, false, onFeedsEnumerated);
+      FeedStore.forEach(event.target.result, processFeed, false, 
+        onFeedsEnumerated);
     });
 
     function processFeed(feed) {

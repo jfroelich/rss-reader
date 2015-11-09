@@ -50,10 +50,15 @@ class FeedRequest {
         entry.link = URLUtils.rewrite(entry.link);
       });
 
+      // TODO: this should be unique by entry link, not just a general
+      // unique entry object
       feed.entries = ArrayUtils.unique(feed.entries);
-      
+
       callback(null, feed);
     } catch(exception) {
+      // TODO: the type of error passed back as first argument 
+      // should be consistent. Mimic an event object here instead
+      // of an exception
       callback(exception);
     } 
   }

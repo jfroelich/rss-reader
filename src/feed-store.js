@@ -4,7 +4,7 @@
 
 'use strict';
 
-class Feed {
+class FeedStore {
 
   static findByURL(connection, url, callback) {
     const transaction = connection.transaction('feed');
@@ -55,15 +55,15 @@ class Feed {
       storable.schemeless = URLUtils.getSchemeless(storable.url);
     }
 
-    const title = Feed.sanitizeValue(feed.title);
+    const title = FeedStore.sanitizeValue(feed.title);
     storable.title = title || '';
 
-    const description = Feed.sanitizeValue(feed.description);
+    const description = FeedStore.sanitizeValue(feed.description);
     if(description) {
       storable.description = description;
     }
 
-    const link = Feed.sanitizeValue(feed.link);
+    const link = FeedStore.sanitizeValue(feed.link);
     if(link) {
       storable.link = link;
     }
@@ -97,6 +97,7 @@ class Feed {
     };
   }
 
+  // TODO: add _ prefix
   // TODO: sanitize html entities?
   static sanitizeValue(value) {
     if(value) {
@@ -117,7 +118,7 @@ class Feed {
 
   // TODO: deprecate
   static unsubscribe(connection, id, callback) {
-    Feed.remove(connection, id, function(event) {
+    FeedStore.remove(connection, id, function(event) {
       Entry.removeByFeed(connection, id, callback);
     });
   }

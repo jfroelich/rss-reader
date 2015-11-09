@@ -126,8 +126,10 @@ class Calamine {
     const navSelector = 'aside *, header *, footer *, nav *';
     document.querySelectorAll(navSelector).forEach(function(element) {
       scores.set(element, scores.get(element) - 50);
-      setAnnotation(element, 'navigationItemBias', 
-        parseInt(element.dataset.navigationItemBias || '0') - 50);
+      if(element.dataset) {
+        setAnnotation(element, 'navigationItemBias', 
+          parseInt(element.dataset.navigationItemBias || '0') - 50);
+      }
     });
 
     // Bias the parents of certain elements

@@ -109,8 +109,8 @@ class Background {
   static pollIterateFeeds(event) {
     if(event.type === 'success') {
       const connection = event.target.result;
-      Feed.forEach(connection, Background.pollFetchFeed.bind(null, connection), 
-        false, Background.onPollComplete);
+      FeedStore.forEach(connection, Background.pollFetchFeed.bind(null, 
+        connection), false, Background.onPollComplete);
     } else {
       console.debug(event);
       Background.onPollComplete();      
@@ -125,7 +125,7 @@ class Background {
         console.log('Error fetching %s', feed.url);
         console.dir(event);
       } else {
-        Feed.put(connection, feed, remoteFeed, 
+        FeedStore.put(connection, feed, remoteFeed, 
           onPut.bind(null, remoteFeed));        
       }
     });

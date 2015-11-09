@@ -256,7 +256,9 @@ function startSubscription(url) {
       return;
     }
 
-    Feed.findByURL(event.target.result, url, 
+    const connection = event.target.result;
+
+    FeedStore.findByURL(connection, url, 
       onFindByURL.bind(null, connection));
   });
 
@@ -269,7 +271,7 @@ function startSubscription(url) {
     }
 
     if(!window.navigator.onLine) {
-      Feed.put(connection, null, {url: url}, onSubscribe);
+      FeedStore.put(connection, null, {url: url}, onSubscribe);
     } else {
       FeedRequest.fetch(url, 10 * 1000, onFetch.bind(null, connection));        
     }
@@ -284,7 +286,7 @@ function startSubscription(url) {
       return;
     }
 
-    Feed.put(connection, null, remoteFeed, function() {
+    FeedStore.put(connection, null, remoteFeed, function() {
       onSubscribe(remoteFeed, 0, 0);
     });
   }
@@ -311,7 +313,7 @@ function populateFeedDetailsSection(feedId) {
       return;
     }
 
-    Feed.findById(event.target.result, feedId, function(event) {
+    FeedStore.findById(event.target.result, feedId, function(event) {
       const feed = event.target.result;
       if(!feed) {
         return;
@@ -370,7 +372,7 @@ function onSubscribeSubmit(event) {
     $$('discover-results-list').innerHTML = '';
     $$('discover-no-results').style.display = 'none';
     $$('discover-in-progress').style.display = 'block';
-    searchGoogleFeeds(query, 5000, onDiscoverFeedsComplete);
+    GoogleFeeds.findFeed(query, 5000, onDiscoverFeedsComplete);
   }
 
   return false;
@@ -456,7 +458,7 @@ function onUnsubscribeButtonClicked(event) {
   });
 
   function doUnsubscribe(connection, feedId) {
-    Feed.unsubscribe(function(event) {
+    FeedStore.unsubscribe(function(event) {
       const sectionMenu = $$('mi-subscriptions');
 
       // Update the badge in case any unread articles belonged to 
@@ -690,7 +692,7 @@ function initSubscriptionsSection() {
       return;
     }
 
-    Feed.forEach(event.target.result, handleFeed, true, onComplete);
+    FeedStore.forEach(event.target.result, handleFeed, true, onComplete);
   });
 
   function handleFeed(feed) {
