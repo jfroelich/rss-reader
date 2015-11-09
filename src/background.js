@@ -119,7 +119,7 @@ class Background {
 
   static pollFetchFeed(connection, feed) {
     const timeout = 10 * 1000;
-    Feed.fetch(feed.url, timeout, function(event, remoteFeed) {
+    FeedRequest.fetch(feed.url, timeout, function(event, remoteFeed) {
       // console.debug('Fetched %s', feed.url);
       if(event) {
         console.log('Error fetching %s', feed.url);

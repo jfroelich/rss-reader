@@ -23,7 +23,7 @@ function searchGoogleFeeds(query, timeout, callback) {
         entry.title = StringUtils.truncate(entry.title, 100);
       }
       if(entry.contentSnippet) {
-        entry.contentSnippet = entry.contentSnippet.replace(/<br>/gi, '');
+        entry.contentSnippet = entry.contentSnippet.replace(/<\s*br\s*>/gi, '');
         entry.contentSnippet = StringUtils.truncate(
           entry.contentSnippet, 400);
       }

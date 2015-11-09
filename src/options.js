@@ -197,7 +197,7 @@ function showOrSkipSubscriptionPreview(url) {
   $$('subscription-preview-load-progress').style.display = 'block';
   const timeout = 10 * 1000;
   // TODO: check if already subscribed before preview?
-  Feed.fetch(url, timeout, onFetch);
+  FeedRequest.fetch(url, timeout, onFetch);
 
   function onFetch(event, result) {
     if(event) {
@@ -271,7 +271,7 @@ function startSubscription(url) {
     if(!window.navigator.onLine) {
       Feed.put(connection, null, {url: url}, onSubscribe);
     } else {
-      Feed.fetch(url, 10 * 1000, onFetch.bind(null, connection));        
+      FeedRequest.fetch(url, 10 * 1000, onFetch.bind(null, connection));        
     }
   }
 

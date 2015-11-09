@@ -1322,6 +1322,7 @@ Calamine.BLACKLIST_SELECTORS = [
   'div.moreweb', // Uptown Magazine
   'div#most-popular', // BBC
   'div.most-popular', // Vanity Fair
+  'div.most-popular-container', // The Atlantic
   'div.mostPopular', // Newsday
   'div#mostPopularTab', // Reuters
   'div#most-read-news-wrapper', // The Daily Mail
@@ -1392,6 +1393,7 @@ Calamine.BLACKLIST_SELECTORS = [
   'div.printHide', // Telegraph UK
   'div.printstory', // North Jersey
   'div#prologue', // hostilefork
+  'div#promo-expanding-region', // The Atlantic
   'div.promo-inner', // Chron.com
   'div.promo-top', // Chron.com
   'div.pull-left-tablet', // NY1 (only uses "article" for related)
@@ -1498,6 +1500,7 @@ Calamine.BLACKLIST_SELECTORS = [
   'div.sharrre-container', // Concurring Opinions
   'div.shortcode-post', // ABC7 News
   'div.show-related-videos', // CBS News
+  'div.show-share', // The Atlantic
   'div.sidebar', // Belfast Telegraph
   'div#sidebar', // The Appendix
   'div.sideBar', // Bangkok Post
