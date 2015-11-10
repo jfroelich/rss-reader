@@ -159,8 +159,26 @@ class Background {
       }
     });
 
+    // Propagate certain feed properties into the entry so that the 
+    // view does not need to query the feed store when iterating 
+    // entries. Also set the foreign key
+    function denormalize(feed, entry) {
+      // Set the foreign key
+      entry.feed = feed.id;
+
+      // Set up some functional dependencies
+      entry.feedLink = feed.link;
+      entry.feedTitle = feed.title;
+
+      // Use the feed's date for undated entries
+      if(!entry.pubdate && feed.date) {
+        entry.pubdate = feed.date;
+      }
+    }
+
     function onAugment(errorEvent) {
-      EntryStore.put(connection, feed, entry, callback);
+      denormalize(feed, entry);
+      EntryStore.put(connection, entry, callback);
     }
   }
 

@@ -4,42 +4,22 @@
 
 'use strict';
 
-// TODO: rename to EntryStore, entry-store.js
-
-// TODO: create an Entry data object, store entry objects instead of generic
-// object literals in indexedDB. Attach appropriate methods to the general
-// object. This should lead to much cleaner looking and organized code.
-// In doing so, review the structured clone algorithm that indexedDB uses
-// to ensure that add/get works as expected.
-
 class EntryStore {
 
-  // TODO: feed should not be a parameter here. the cascading of feed property to 
-  // entry properties should occur externally.
-  static put(connection, feed, entry, callback) {
+  static put(connection, entry, callback) {
     // console.debug('Putting entry %s', entry.link);
     const storable = {};
     
     if(entry.hasOwnProperty('feedLink')) {
       storable.feedLink = entry.feedLink;
-    } else {
-      if(feed.link) {
-        storable.feedLink = feed.link;
-      }
     }
 
     if(entry.hasOwnProperty('feedTitle')) {
       storable.feedTitle = entry.feedTitle;
-    } else {
-      if(feed.title) {
-        storable.feedTitle = feed.title;
-      }
     }
 
     if(entry.hasOwnProperty('feed')) {
       storable.feed = entry.feed;
-    } else {
-      storable.feed = feed.id;
     }
 
     if(entry.link) {
@@ -59,18 +39,19 @@ class EntryStore {
     if(entry.author) {
       storable.author = entry.author;
     }
+
     if(entry.title) {
       storable.title = entry.title;
     }
 
+    // TODO: make sure pubdate has a consistent value. I am using
+    // date.getTime here, but I am not sure I am using the same
+    // or similar every where else. Like in poll denormalize
     if(entry.pubdate) {
       const date = new Date(entry.pubdate);
       if(DateUtils.isValid(date)) {
         storable.pubdate = date.getTime();
       }
-    }
-    if(!storable.pubdate && feed.date) {
-      storable.pubdate = feed.date;
     }
     
     if(entry.hasOwnProperty('created')) {
@@ -86,8 +67,6 @@ class EntryStore {
     if(entry.hasOwnProperty('archiveState')) {
       storable.archiveState = entry.archiveState;
     } else {
-      // Ensure that archiveState has a default value so that 
-      // index picks up entries
       storable.archiveState = EntryStore.UNARCHIVED;
     }
 
