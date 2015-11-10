@@ -10,11 +10,11 @@ class Badge {
   static update(connection) {
     // console.debug('Updating badge');
     if(connection) {
-      Entry.countUnread(connection, this._setText);
+      EntryStore.countUnread(connection, Badge._setText);
     } else {
       Database.open(function(event) {
         if(event.type === 'success') {
-          Entry.countUnread(event.target.result, this._setText);
+          EntryStore.countUnread(event.target.result, Badge._setText);
         } else {
           console.debug(event);
           chrome.browserAction.setBadgeText({text: '?'});

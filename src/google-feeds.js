@@ -31,6 +31,7 @@ class GoogleFeeds {
 
     // Remove duplicates. This works but it is pretty ugly
     // at the moment. Think of a cleaner way.
+    // TODO: maybe we can pass back a map instead of an array
     const distinctEntriesMap = new Map();
     entries.forEach(function(entry) {
       distinctEntriesMap.set(entry.url, entry);

@@ -6,6 +6,8 @@
 
 class OPML {
 
+  // TODO: move this into utils, a similar func is also now used
+  // by FeedRequest
   static parseXML(string) {
     const parser = new DOMParser();
     const document = parser.parseFromString(string, OPML.MIME_TYPE);

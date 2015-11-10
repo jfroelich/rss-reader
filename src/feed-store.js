@@ -119,7 +119,7 @@ class FeedStore {
   // TODO: deprecate
   static unsubscribe(connection, id, callback) {
     FeedStore.remove(connection, id, function(event) {
-      Entry.removeByFeed(connection, id, callback);
+      EntryStore.removeByFeed(connection, id, callback);
     });
   }
 }

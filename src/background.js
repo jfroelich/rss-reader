@@ -150,7 +150,7 @@ class Background {
 
   static pollFindEntryByLink(connection, feed, entry, callback) {
     // console.debug('Processing entry %s', entry.link);
-    Entry.findByLink(connection, entry, function(event) {
+    EntryStore.findByLink(connection, entry, function(event) {
       if(event.target.result) {
         callback();
       } else {
@@ -160,7 +160,7 @@ class Background {
     });
 
     function onAugment(errorEvent) {
-      Entry.put(connection, feed, entry, callback);
+      EntryStore.put(connection, feed, entry, callback);
     }
   }
 
@@ -304,7 +304,8 @@ class Background {
         transaction, stats);
       const store = transaction.objectStore('entry');
       const index = store.index('archiveState-readState');
-      const range = IDBKeyRange.only([Entry.UNARCHIVED, Entry.READ]);
+      const range = IDBKeyRange.only([EntryStore.UNARCHIVED, 
+        EntryStore.READ]);
       const request = index.openCursor(range);
       request.onsuccess = Background.archiveNextEntry.bind(request, stats);
     } else {
@@ -334,7 +335,7 @@ class Background {
       delete entry.updated;
       delete entry.title;
       delete entry.author;
-      entry.archiveState = Entry.ARCHIVED;
+      entry.archiveState = EntryStore.ARCHIVED;
       entry.archiveDate = now;
       cursor.update(entry);
     }

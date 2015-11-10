@@ -81,7 +81,7 @@ function markSlideRead(slide) {
     }
 
     const entryId = parseInt(entryAttribute);
-    Entry.markRead(event.target.result, entryId);
+    EntryStore.markRead(event.target.result, entryId);
   });
 }
 
@@ -107,7 +107,8 @@ function appendSlides(oncomplete, isFirst) {
     // in the next major revision
 
     const index = entryStore.index('archiveState-readState');
-    const range = IDBKeyRange.only([Entry.UNARCHIVED, Entry.UNREAD]);
+    const range = IDBKeyRange.only([EntryStore.UNARCHIVED, 
+      EntryStore.UNREAD]);
     const request = index.openCursor(range);
     request.onsuccess = renderEntry;
   });

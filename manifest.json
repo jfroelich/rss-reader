@@ -16,7 +16,7 @@
       "/src/async.js",
       "/src/background.js",
       "/src/database.js",
-      "/src/entry.js",
+      "/src/entry-store.js",
       "/src/feed-store.js",
       "/src/feed-request.js",
       "/src/URI.js",

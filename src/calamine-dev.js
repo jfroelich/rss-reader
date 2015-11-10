@@ -2,10 +2,9 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// NOTE: Currently under major refactoring
-// let, const
-// up/down bias
-// find best element
+// TODO: delete this after integrating fast-path 
+// and restricted-element-candidates ideas into 
+// main impl
 
 const calamine = {};
 

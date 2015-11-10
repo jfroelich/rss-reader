@@ -4,6 +4,8 @@
 
 'use strict';
 
+// TODO: invent a better name, e.g. WHTMLDocument ?
+
 class HTMLDocumentWrapper {
 
   constructor(document) {
