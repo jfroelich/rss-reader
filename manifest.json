@@ -19,6 +19,8 @@
       "/src/entry-store.js",
       "/src/feed-store.js",
       "/src/feed-request.js",
+      "/src/html-document-wrapper.js",
+      "/src/poll.js",
       "/src/URI.js",
       "/src/utf8.js",
       "/src/utils.js"

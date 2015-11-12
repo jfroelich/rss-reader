@@ -154,6 +154,66 @@ class EntryStore {
     };
     transaction.objectStore('entry').clear();
   }
+
+  static archiveEntries() {
+    const stats = {
+      processed: 0
+    };
+
+    Database.open(function(event) {
+      if(event.type === 'success') {
+        const connection = event.target.result;
+        const transaction = connection.transaction('entry', 'readwrite');
+        transaction.oncomplete = EntryStore._onArchiveComplete.bind(
+          transaction, stats);
+        const store = transaction.objectStore('entry');
+        const index = store.index('archiveState-readState');
+        const range = IDBKeyRange.only([EntryStore.UNARCHIVED, 
+          EntryStore.READ]);
+        const request = index.openCursor(range);
+        request.onsuccess = EntryStore._archiveNextEntry.bind(request, stats);
+      } else {
+        console.debug('Archive aborted due to connection error %o', event);
+      }
+    });
+  }
+
+  static _archiveNextEntry(stats, event) {
+    const EXPIRES_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
+    const cursor = event.target.result;
+    if(!cursor)
+      return;
+    stats.processed++;
+    const entry = cursor.value;
+    const now = Date.now();
+    const age = now - entry.created;
+    if(age > EXPIRES_AFTER_MS) {
+      stats.archived++;
+      
+      // Leave intact entry.id, entry.feed, entry.link
+      // Update archiveState and create archiveDate
+      delete entry.content;
+      delete entry.feedLink;
+      delete entry.feedTitle;
+      delete entry.pubdate;
+      delete entry.readDate;
+      delete entry.created;
+      delete entry.updated;
+      delete entry.title;
+      delete entry.author;
+      entry.archiveState = EntryStore.ARCHIVED;
+      entry.archiveDate = now;
+      cursor.update(entry);
+      chrome.runtime.sendMessage({type: 'archivedEntry', entry: entry});
+    }
+    
+    cursor.continue();
+  }
+
+  static _onArchiveComplete(stats, event) {
+    console.log('Archive processed %s entries, archived %s', stats.processed, 
+      stats.archived);
+  }
 }
 
 EntryStore.UNREAD = 0;

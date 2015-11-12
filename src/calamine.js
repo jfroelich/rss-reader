@@ -305,7 +305,7 @@ class Calamine {
   }
 
   static unwrapList(list) {
-    console.debug('Transforming single item list %s', 
+    console.debug('Unwrapping list %s', 
       list.parentElement.innerHTML);
     const parent = list.parentElement;
     const item = list.querySelector('li');
@@ -618,7 +618,12 @@ class Calamine {
     });
     const stack = parents.filter(function(document, element) {
       // TODO: why test for document.body per iteration?
-      return document.body && document.body != element;
+
+      // TODO: somehow observed an undefined document, need to look
+      // into how that could possibly happen
+      if(document) {
+        return document.body && document.body != element;        
+      }
     });
 
     let parent, grandParent;
@@ -1296,6 +1301,7 @@ Calamine.BLACKLIST_SELECTORS = [
   'div.load-comments', // entrepeneur.com
   'div.l-sidebar', // TechSpot
   'div.l-story-secondary', // Boston.com
+  'div.k-g-share', // bbc.co.uk
   'div.main > div#rail', // Fox News
   'div#main-content > div.share', // Knight News Challenge
   'div.main_social', // Times of India

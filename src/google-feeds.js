@@ -9,13 +9,15 @@
 class GoogleFeeds {
 
   static findFeed(query, timeout, callback) {
+    const BASE_URL = 
+      'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
     const request = new XMLHttpRequest();
     request.timeout = timeout;
     request.onerror = callback;
     request.ontimeout = callback;
     request.onabort = callback;
     request.onload = GoogleFeeds._findFeedOnload.bind(request, callback);
-    const url = GoogleFeeds.BASE_FIND_URL + encodeURIComponent(query);
+    const url = BASE_URL + encodeURIComponent(query);
     request.open('GET', url, true);
     request.responseType = 'json';
     request.send();
@@ -46,7 +48,6 @@ class GoogleFeeds {
   }
 
   static _sanitizeEntry(entry) {
-
     const removeTags = StringUtils.removeTags;
     const truncate = StringUtils.truncate;
     const replaceBreaks = GoogleFeeds._replaceBreakRuleElements;
@@ -66,6 +67,3 @@ class GoogleFeeds {
     return value.replace(/<\s*br\s*>/gi, '');
   }
 }
-
-GoogleFeeds.BASE_FIND_URL = 'https://ajax.googleapis.com/ajax/services/' +
-  'feed/find?v=1.0&q=';

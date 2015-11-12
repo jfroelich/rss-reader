@@ -247,7 +247,9 @@ function appendSlide(entry, isFirst) {
   const doc = document.implementation.createHTMLDocument();
   doc.body.innerHTML = entry.content;
   Calamine.transform(doc, false);
-  content.appendChild(doc.documentElement);
+  if(doc && doc.documentElement) {
+    content.appendChild(doc.documentElement);
+  }
   slide.appendChild(content);
 
   const source = document.createElement('span');
