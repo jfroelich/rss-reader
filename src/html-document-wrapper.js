@@ -5,6 +5,7 @@
 'use strict';
 
 // TODO: invent a better name, e.g. WHTMLDocument ?
+// TODO: learn why I have having issues extending HTMLDocument
 
 class HTMLDocumentWrapper {
 
@@ -60,6 +61,10 @@ class HTMLDocumentWrapper {
   	}
   }
 }
+
+// Private helper for document wrapper
+// NOTE: also applies to HTMLCollection, not just NodeList
+// TODO: extend NodeList?
 
 class NodeListWrapper {
   constructor(list) {

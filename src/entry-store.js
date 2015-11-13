@@ -100,7 +100,7 @@ class EntryStore {
       entry.readState = EntryStore.READ;
       entry.readDate = Date.now();
       cursor.update(entry);
-      Badge.update(connection);
+      BrowserActionUtils.update(connection);
       chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
     };
   }

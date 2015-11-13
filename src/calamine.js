@@ -1868,5 +1868,6 @@ Calamine.BLACKLIST_SELECTORS = [
   'ul.toplinks', // VOA News
   'ul.top-menu', // Investors.com
   'ul.utility-list', // WRAL
+  'video',
   'xmp'
 ];

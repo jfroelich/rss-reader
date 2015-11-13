@@ -463,7 +463,7 @@ function onUnsubscribeButtonClicked(event) {
 
       // Update the badge in case any unread articles belonged to 
       // the unsubscribed feed
-      Badge.update(connection);
+      BrowserActionUtils.update(connection);
 
       // TODO: send out a message notifying other views
       // of the unsubscribe. That way the slides view can
