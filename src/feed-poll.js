@@ -128,7 +128,7 @@ class FeedPoll {
       callback();
     } else {
       const timeout = 20 * 1000;
-      EntryUtils.augment(entry, timeout, onAugment);
+      EntryUtils.augmentContent(entry, timeout, onAugment);
     }
 
     function onAugment(errorEvent) {

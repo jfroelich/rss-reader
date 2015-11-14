@@ -505,10 +505,24 @@ function onEnableURLRewritingChange(event) {
 // the OPML file.
 // TODO: notify the user
 // TODO: switch to a section on complete?
+// TODO: the parameters to onImport are virtual, right now 
+// importFiles does not pass back errors nor track stats
 function onImportOPMLClick(event) {
   const uploader = document.createElement('input');
   uploader.setAttribute('type', 'file');
   uploader.style.display = 'none';
+  uploader.onchange = function onChange(event) {
+    uploader.removeEventListener('change', onChange);
+
+    if(!uploader.files || !uploader.files.length) {
+      return onImport(0, 0, []);
+    }
+
+    OPMLUtils.importFiles(uploader.files, onImport);
+  };
+
+  document.body.appendChild(uploader);
+  uploader.click();
 
   function onImport(imported, attempted, exceptions) {
     uploader.remove();
@@ -519,33 +533,21 @@ function onImportOPMLClick(event) {
 
     console.info('Completed import');
   }
-
-  uploader.onchange = function onChange(event) {
-    uploader.removeEventListener('change', onChange);
-
-    if(!uploader.files || !uploader.files.length) {
-      return onImport(0,0,[]);
-    }
-
-    OPML.importFiles(uploader.files, onImport);
-  };
-
-  document.body.appendChild(uploader);
-  uploader.click();
 }
 
 function onExportOPMLClick(event) {
-  const fileName = 'subscriptions.xml';
-  OPML.exportFile(fileName, function(error, blob) {
+  const title = 'subscriptions.xml';
+  OPMLUtils.createDocument(title, function(error, doc) {
     if(error) {
       // TODO: show an error message
       console.debug(error);
       return;
     }
 
+    const blob = doc.toBlob();
     const anchor = document.createElement('a');
     anchor.href = URL.createObjectURL(blob);
-    anchor.setAttribute('download', fileName);
+    anchor.setAttribute('download', title);
     anchor.style.display = 'none';
     document.body.appendChild(anchor);
     anchor.click();

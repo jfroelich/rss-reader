@@ -50,9 +50,7 @@ class FeedRequest {
         entry.link = URLUtils.rewrite(entry.link);
       });
 
-      // TODO: this should be unique by entry link, not just a general
-      // unique entry object
-      feed.entries = ArrayUtils.unique(feed.entries);
+      feed.entries = EntryUtils.getUniqueEntries(feed.entries);
 
       callback(null, feed);
     } catch(exception) {

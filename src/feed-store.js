@@ -91,8 +91,12 @@ class FeedStore {
       callback();
     };
     request.onerror = function(event) {
-      console.debug('Error putting feed %s', JSON.stringify(storable));
-      console.dir(event);
+      console.debug('Error putting feed %s', storable.url);
+      if(event.target && event.target.error) {
+        console.debug(event.target.error.message);
+      } else {
+        console.dir(event);
+      }
       callback();
     };
   }

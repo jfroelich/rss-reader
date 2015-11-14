@@ -53,8 +53,6 @@ class DocumentUtils {
   	// TODO: only select elements that have the attributes,
   	// e.g. script[src]
 
-  	// TODO: is there a cleaner way of generating the selector string?
-  	// Maybe [...attributeNames.keys()]
   	let keys = [];
   	attributeNamesMap.forEach(function(value, key) {
   	  keys.push(key + '[' + value +']');
@@ -75,5 +73,15 @@ class DocumentUtils {
 
       }
     });
+  }
+
+  // Asynchronously attempts to set the width and height for 
+  // all image elements
+  // @param hostDocument a live document capable of fetching images
+  static setImageDimensions(hostDocument, document, callback) {
+    const images = document.getElementsByTagName('img');
+    const fetchDimensions = ImageUtils.fetchDimensions.bind(null,
+      hostDocument);
+    async.forEach(images, fetchDimensions, callback);
   }
 }

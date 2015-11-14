@@ -6,6 +6,21 @@
 
 class EntryUtils {
 
+  // Given an array of unique entries, returns a new array of 
+  // unique entries (compared by entry.link)
+  // NOTE: consider just returning distinct.values (Iterator/Iterable)
+
+  static getUniqueEntries(entries) {
+    const distinct = new Map(entries.map(function(entry){
+      return [entry.link, entry];
+    }));
+
+    // Leaving this here as a reminder that this also works
+    // instead of using the spread operator
+    //return Array.from(distinct.values());
+    return [...distinct.values()];
+  }
+
   // Replaces the content property of an entry with the full text of its 
   // corresponding link url
   // TODO: I'd prefer this function pass back any errors to the callback. This
@@ -18,7 +33,7 @@ class EntryUtils {
   // to PDF? also, we should not even be trying to fetch pdfs? is this
   // just a feature of fetchHTML or does it belong here?
   // TODO: do something with responseURL?
-  static augment(entry, timeout, callback) {
+  static augmentContent(entry, timeout, callback) {
     const request = new XMLHttpRequest();
     request.timeout = timeout;
     request.ontimeout = callback;
@@ -42,18 +57,18 @@ class EntryUtils {
 
     DocumentUtils.resolveURLs(document, baseURL);
 
-    // TODO: create an ImageUtils function for this
+    // TODO: define hostDocument elsewhere
     const hostDocument = window.document;
-    const images = document.getElementsByTagName('img');
-    const fetchDimensions = ImageUtils.fetchDimensions.bind(null, 
-      hostDocument);
-    async.forEach(images, fetchDimensions, function() {
-      // TODO: should we be using documentElement?
-      const content = document.body.innerHTML;
-      if(content) {
-        entry.content = content;
-      }
-      callback();
-    });
+    DocumentUtils.setImageDimensions(hostDocument, document, 
+      EntryUtils.onImageDimensionsSet.bind(null, entry, document, callback));
+  }
+
+  static onImageDimensionsSet(entry, document, callback) {
+    // TODO: should we be using documentElement?
+    const content = document.body.innerHTML;
+    if(content) {
+      entry.content = content;
+    }
+    callback();
   }
 }
