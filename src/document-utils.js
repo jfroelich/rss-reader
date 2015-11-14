@@ -5,81 +5,92 @@
 'use strict';
 
 // Document utility functions
-class DocumentUtils {
+const DocumentUtils = {};
 
-  // Private helper
-  static _remove(element) {
-  	element.remove();
-  }
+{ // BEGIN LEXICAL SCOPE
 
-  // Resolves all appropriate URLs in the document and removes 
-  // any base tag elements
-  // TODO: support img srcset
-  // TODO: support style.backgroundImage?
-  // TODO: the new template tag?
-  // NOTE: not supporting applet
-  // NOTE: iframe.srcdoc?
-  // NOTE: ignores param values with URIs
-  // NOTE: could stripping the base tag could lead to invalid urls??? 
-  // Should the base tag, if present, be considered when resolving elements?
-  // Also note that there could be multiple base tags, the logic for 
-  // handling it properly is all laid out in some RFC standard somewhere, 
-  // and is probably present in Webkit source.
-  static resolveURLs(document, baseURL) {
+const ATTRIBUTE_MAP = new Map([
+  ['a', 'href'],
+  ['area', 'href'],
+  ['audio', 'src'],
+  ['blockquote', 'cite'],
+  ['embed', 'src'],
+  ['iframe', 'src'],
+  ['form', 'action'],
+  ['img', 'src'],
+  ['link', 'href'],
+  ['object', 'data'],
+  ['script', 'src'],
+  ['source', 'src'],
+  ['track', 'src'],
+  ['video', 'src']
+]);
 
-  	const wrapped = HTMLDocumentWrapper.wrap(document);
+// Statically create the RESOLVE_SELECTOR value from 
+// the attribute map
+let keys = [];
+ATTRIBUTE_MAP.forEach(function(value, key) {
+  keys.push(key + '[' + value +']');
+});
+const RESOLVE_SELECTOR = keys.join(',');
 
-  	// Remove base elements
-  	const bases = wrapped.getElementsByTagName('base');
-    bases.forEach(DocumentUtils._remove);
+// Resolves all appropriate URLs in the document and removes 
+// any base tag elements
+// TODO: support img srcset
+// TODO: support style.backgroundImage?
+// TODO: the new template tag?
+// NOTE: not supporting applet
+// NOTE: iframe.srcdoc?
+// NOTE: ignores param values with URIs
+// NOTE: could stripping the base tag could lead to invalid urls??? 
+// Should the base tag, if present, be considered when resolving elements?
+// Also note that there could be multiple base tags, the logic for 
+// handling it properly is all laid out in some RFC standard somewhere, 
+// and is probably present in Webkit source.
+function resolveURLs(document, baseURL) {
 
-  	const attributeNamesMap = new Map([
-  	  ['a', 'href'],
-  	  ['area', 'href'],
-  	  ['audio', 'src'],
-  	  ['blockquote', 'cite'],
-  	  ['embed', 'src'],
-  	  ['iframe', 'src'],
-  	  ['form', 'action'],
-  	  ['img', 'src'],
-  	  ['link', 'href'],
-  	  ['object', 'data'],
-  	  ['script', 'src'],
-  	  ['source', 'src'],
-  	  ['track', 'src'],
-  	  ['video', 'src']
-  	]);
+	const wrapped = HTMLDocumentWrapper.wrap(document);
 
-  	// TODO: only select elements that have the attributes,
-  	// e.g. script[src]
+	// Remove base elements
+	const bases = wrapped.getElementsByTagName('base');
+  bases.forEach(remove);
 
-  	let keys = [];
-  	attributeNamesMap.forEach(function(value, key) {
-  	  keys.push(key + '[' + value +']');
-  	});
+  // Resolve the attribute values for various elements
+  const resolvables = wrapped.querySelectorAll(RESOLVE_SELECTOR);
+  resolvables.forEach(resolveElement);
+}
 
-    const selector = keys.join(',');
-    const resolvables = wrapped.querySelectorAll(selector);
-    resolvables.forEach(function(element) {
-      const name = attributeNamesMap.get(element.localName);
-      const url = element.getAttribute(name).trim();
-      try {
-        const uri = new URI(url);
-        if(!uri.protocol()) {
-          const resolved = uri.absoluteTo(baseURL).toString();
-          element.setAttribute(name, resolved);
-        }
-      } catch(e) {
+function resolveElement(element) {
+  const attributeName = ATTRIBUTE_MAP.get(element.localName);
 
-      }
-    });
-  }
-
-  // Asynchronously attempts to set the width and height for 
-  // all image elements
-  // @param hostDocument a live document capable of fetching images
-  static setImageDimensions(document, callback) {
-    const images = document.getElementsByTagName('img');
-    async.forEach(images, ImageUtils.fetchDimensions, callback);
+  // NOTE: we know attribute is defined because the selector
+  // included the condition (e.g. element[attribute])
+  const url = element.getAttribute(attributeName).trim();
+  try {
+    const uri = new URI(url);
+    if(!uri.protocol()) {
+      const resolved = uri.absoluteTo(baseURL).toString();
+      element.setAttribute(attributeName, resolved);
+    }
+  } catch(e) {
+    // Ignore url errors
   }
 }
+
+// Private helper for resolveURLs
+function remove(element) {
+  element.remove();
+}
+
+// Asynchronously attempts to set the width and height for 
+// all image elements
+function setImageDimensions(document, callback) {
+  const images = document.getElementsByTagName('img');
+  async.forEach(images, ImageUtils.fetchDimensions, callback);
+}
+
+// Export globals
+DocumentUtils.resolveURLs = resolveURLs;
+DocumentUtils.setImageDimensions = setImageDimensions;
+
+} // END LEXICAL SCOPE
