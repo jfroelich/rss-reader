@@ -8,16 +8,13 @@ class EntryUtils {
 
   // Given an array of unique entries, returns a new array of 
   // unique entries (compared by entry.link)
-  // NOTE: consider just returning distinct.values (Iterator/Iterable)
-
+  // NOTE: consider just returning Iterable
   static getUniqueEntries(entries) {
-    const distinct = new Map(entries.map(function(entry){
+    const distinct = new Map(entries.map(function(entry) {
       return [entry.link, entry];
     }));
 
-    // Leaving this here as a reminder that this also works
-    // instead of using the spread operator
-    //return Array.from(distinct.values());
+    // NOTE that Array.from(distinct.values()) also works
     return [...distinct.values()];
   }
 
@@ -54,12 +51,8 @@ class EntryUtils {
     }
 
     const baseURL = request.responseURL;
-
     DocumentUtils.resolveURLs(document, baseURL);
-
-    // TODO: define hostDocument elsewhere
-    const hostDocument = window.document;
-    DocumentUtils.setImageDimensions(hostDocument, document, 
+    DocumentUtils.setImageDimensions(document, 
       EntryUtils.onImageDimensionsSet.bind(null, entry, document, callback));
   }
 

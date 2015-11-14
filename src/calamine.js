@@ -2,6 +2,9 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: get rid of ES6 class, refactor to look like google-feeds.js
+
+
 'use strict';
 
 // TODO: express everything as probability? Use a scale of 0 to 100

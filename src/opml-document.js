@@ -4,6 +4,7 @@
 
 'use strict';
 
+// An in-memory OPMLDocument object
 // TODO: maybe extend Document? Research how to extend native/host/builtin
 class OPMLDocument {
 

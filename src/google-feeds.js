@@ -4,66 +4,66 @@
 
 'use strict';
 
-// Service that provides a method for finding feeds with a search query
-// TODO: remove entries with identical urls from the results
-class GoogleFeeds {
+const GoogleFeeds = {};
 
-  static findFeed(query, timeout, callback) {
-    const BASE_URL = 
-      'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
-    const request = new XMLHttpRequest();
-    request.timeout = timeout;
-    request.onerror = callback;
-    request.ontimeout = callback;
-    request.onabort = callback;
-    request.onload = GoogleFeeds._findFeedOnload.bind(request, callback);
-    const url = BASE_URL + encodeURIComponent(query);
-    request.open('GET', url, true);
-    request.responseType = 'json';
-    request.send();
+{ // BEGIN LEXICAL SCOPE
+
+const BASE_URL = 
+  'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
+
+function findFeed(query, timeout, callback) {
+  const request = new XMLHttpRequest();
+  request.timeout = timeout;
+  request.onerror = callback;
+  request.ontimeout = callback;
+  request.onabort = callback;
+  request.onload = findFeedOnload.bind(request, callback);
+  const url = BASE_URL + encodeURIComponent(query);
+  request.open('GET', url, true);
+  request.responseType = 'json';
+  request.send();
+}
+
+function findFeedOnload(callback, event) {
+  const data = event.target.response.responseData;
+  const query = data.query || '';
+  let entries = data.entries || [];
+
+  // Remove entries without a url
+  entries = entries.filter(function(entry) {
+    return entry.url;
+  });
+
+  // Remove duplicates
+  entries = [...new Map(entries.map(function(entry) {
+    return [entry.url, entry];
+  })).values()];
+
+  // Sanitize and continue
+  entries.forEach(sanitizeEntry);
+  callback(null, query, entries);
+}
+
+function sanitizeEntry(entry) {
+  const removeTags = StringUtils.removeTags;
+  const truncate = StringUtils.truncate;
+
+  if(entry.title) {
+    entry.title = removeTags(entry.title);
+    entry.title = truncate(entry.title, 100);
   }
 
-  static _findFeedOnload(callback, event) {
-    const data = event.target.response.responseData;
-    const query = data.query || '';
-    let entries = data.entries || [];
-    entries = entries.filter(function(entry) {
-      return entry.url;
-    });
-
-    // Remove duplicates. This works but it is pretty ugly
-    // at the moment. Think of a cleaner way.
-    // TODO: maybe we can pass back a map instead of an array
-    const distinctEntriesMap = new Map();
-    entries.forEach(function(entry) {
-      distinctEntriesMap.set(entry.url, entry);
-    });
-    const distinctEntries = [];
-    distinctEntriesMap.forEach(function(entryValue, urlKey) {
-      distinctEntries.push(entryValue);
-    });
-
-    distinctEntries.forEach(GoogleFeeds._sanitizeEntry);
-    callback(null, query, distinctEntries);
-  }
-
-  static _sanitizeEntry(entry) {
-    const removeTags = StringUtils.removeTags;
-    const truncate = StringUtils.truncate;
-    const replaceBreaks = GoogleFeeds._replaceBreakRuleElements;
-
-    if(entry.title) {
-      entry.title = removeTags(entry.title);
-      entry.title = truncate(entry.title, 100);
-    }
-
-    if(entry.contentSnippet) {
-      entry.contentSnippet = replaceBreaks(entry.contentSnippet);
-      entry.contentSnippet = truncate(entry.contentSnippet, 400);
-    }
-  }
-
-  static _replaceBreakRuleElements(value) {
-    return value.replace(/<\s*br\s*>/gi, '');
+  if(entry.contentSnippet) {
+    entry.contentSnippet = replaceBreaks(entry.contentSnippet);
+    entry.contentSnippet = truncate(entry.contentSnippet, 400);
   }
 }
+
+function replaceBreaks(value) {
+  return value.replace(/<\s*br\s*>/gi, '');
+}
+
+// Export into the global scope
+GoogleFeeds.findFeed = findFeed;
+
+} // END LEXICAL SCOPE

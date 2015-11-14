@@ -78,10 +78,8 @@ class DocumentUtils {
   // Asynchronously attempts to set the width and height for 
   // all image elements
   // @param hostDocument a live document capable of fetching images
-  static setImageDimensions(hostDocument, document, callback) {
+  static setImageDimensions(document, callback) {
     const images = document.getElementsByTagName('img');
-    const fetchDimensions = ImageUtils.fetchDimensions.bind(null,
-      hostDocument);
-    async.forEach(images, fetchDimensions, callback);
+    async.forEach(images, ImageUtils.fetchDimensions, callback);
   }
 }

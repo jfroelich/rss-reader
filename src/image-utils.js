@@ -2,7 +2,13 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: refactor to use block scope instead of class like google-feeds.js
+
 'use strict';
+
+// TODO: rather than pass in the host document, 
+// create a method called createProxy
+// remove the document parameter from detch dimensions
 
 // Image element utilities
 class ImageUtils {
@@ -10,7 +16,7 @@ class ImageUtils {
   // Sets an image's dimensions and then calls the callback
   // (without arguments).
   // @param document a live document capable of loading images
-  static fetchDimensions(document, image, callback) {
+  static fetchDimensions(image, callback) {
     
     let sourceURL = image.getAttribute('src') || '';
     sourceURL = sourceURL.trim();
@@ -43,15 +49,18 @@ class ImageUtils {
     // To get the image's dimensions, we recreate the image
     // locally and ask the browser to fetch it, and then 
     // transfer the retrieved properties to the image
+    const proxy = ImageUtils._createProxyImage();
+    proxy.onload = ImageUtils._onProxyLoad.bind(proxy, callback, image);
+    proxy.onerror = ImageUtils._onProxyError.bind(proxy, callback);
+    proxy.src = sourceURL;
+  }
 
-    const proxyImage = document.createElement('img');
-    proxyImage.onload = ImageUtils._onProxyLoad.bind(
-      proxyImage, callback, image);
-    proxyImage.onerror = ImageUtils._onProxyError.bind(
-      proxyImage, callback);
-
-    // Trigger the fetch
-    proxyImage.src = sourceURL;
+  // Returns a new image element created within the document that
+  // includes image-utils.js
+  static _createProxyImage() {
+    // Use the implied global (e.g. instead of window.global), 
+    // this way we support non-window containers
+    return document.createElement('img');
   }
 
   // fetchDimensions helper

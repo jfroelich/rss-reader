@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: refactor like google-feeds.js
+
 'use strict';
 
 class OPMLUtils {
@@ -101,7 +103,6 @@ class OPMLUtils {
 
       // NOTE: ES6 instance methods of classes appear to stored on the 
       // prototype, similar to traditional function objects
-
       FeedStore.forEach(event.target.result, 
         OPMLDocument.prototype.appendFeed.bind(document), 
         false, function() {
