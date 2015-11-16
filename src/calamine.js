@@ -2,9 +2,6 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: get rid of ES6 class, refactor to look like google-feeds.js
-
-
 'use strict';
 
 // TODO: express everything as probability? Use a scale of 0 to 100
@@ -28,638 +25,640 @@
 // TODO: re intrinsic bias, there are only maybe 5-6 likely elements and 
 // everything else is very unlikely. <div> is the most likely.
 
-class Calamine {
+const Calamine = {};
 
-  static transform(doc, annotate) {
+{ // BEGIN LEXICAL SCOPE
 
-    const document = HTMLDocumentWrapper.wrap(doc);
-    const setAnnotation = annotate ? Calamine.setDatasetProperty : 
-      Calamine.noop;
+// Modifies the input document by removing boilerplate text. Also 
+// tidies and compresses markup.
+function transform(doc, annotate) {
 
-    // Remove comments
-    document.forEachNode(NodeFilter.SHOW_COMMENT, Calamine.remove);
-    // Remove blacklisted elements matching selectors
-    Calamine.BLACKLIST_SELECTORS.forEach(function(selector) {
-      document.querySelectorAll(selector).forEach(Calamine.remove);
-    });
-    // Remove tracer images
-    document.getElementsByTagName('img').filter(Calamine.isTracer).forEach(
-      Calamine.remove);
-    // Unwrap noscript and noframes
-    document.querySelectorAll('noscript, noframes', Calamine.unwrap);
-    // Remove hidden elements
-    document.getElementsByTagName('*').filter(Calamine.isHidden).forEach(
-      Calamine.remove);
+  const document = HTMLDocumentWrapper.wrap(doc);
+  const setAnnotation = annotate ? setDatasetProperty : noop;
 
-    // Canonicalize whitespace
-    document.forEachNode(NodeFilter.SHOW_TEXT,
-      Calamine.canonicalizeWhitespace);
+  // Remove comments
+  document.forEachNode(NodeFilter.SHOW_COMMENT, remove);
+  // Remove blacklisted elements matching selectors
+  BLACKLIST_SELECTORS.forEach(function(selector) {
+    document.querySelectorAll(selector).forEach(remove);
+  });
+  // Remove tracer images
+  document.getElementsByTagName('img').filter(isTracer).forEach(remove);
+  // Unwrap noscript and noframes
+  document.querySelectorAll('noscript, noframes', unwrap);
+  // Remove hidden elements
+  document.getElementsByTagName('*').filter(isHidden).forEach(remove);
 
-    // Transform break rule elements into paragraphs
-    // TODO: improve this
-    document.getElementsByTagName('br').forEach(function(element) {
-      const p = document.createElement('p');
-      element.parentNode.replaceChild(p, element);
-    });
+  // Canonicalize whitespace
+  document.forEachNode(NodeFilter.SHOW_TEXT, canonicalizeWhitespace);
 
-    Calamine.trimTextNodes(document);
+  // Transform break rule elements into paragraphs
+  // TODO: improve this
+  document.getElementsByTagName('br').forEach(function(element) {
+    const p = document.createElement('p');
+    element.parentNode.replaceChild(p, element);
+  });
 
-    document.forEachNode(NodeFilter.SHOW_TEXT, function(node) {
-      if(!node.nodeValue) {
-        node.remove();
-      }
-    });
+  trimTextNodes(document);
 
-    const elements = document.getElementsByTagName('*');
-    const scores = new Map();
-    elements.forEach(element => scores.set(element, 0));
-
-    // Collect node text lengths
-    const textLengths = Calamine.deriveTextLengths(document);
-
-    // Collect non-nominal anchor text lengths
-    const anchors = document.querySelectorAll('a[href]');
-    const anchorLengths = anchors.reduce(function (map, anchor) {
-      const length = textLengths.get(anchor);
-      const ancestors = Calamine.getAncestors(anchor);
-      if(length) {
-        return [anchor].concat(ancestors).reduce(function(map, element) {
-          return map.set(element, (map.get(element) || 0) + length);
-        }, map);
-      } else {
-        return map;
-      }
-    }, new Map());
-
-    // Apply text bias to each element
-    elements.forEach(function(element) {
-      const bias = Calamine.getTextBias(element, textLengths, 
-        anchorLengths);
-      if(bias) {
-        scores.set(element, scores.get(element) + bias);
-        setAnnotation(element, 'textBias', bias.toFixed(2));
-      }
-    });
-
-    // Apply intrinsic bias to each element
-    elements.forEach(function(element) {
-      const bias = Calamine.INTRINSIC_BIAS.get(element.localName);
-      if(bias) {
-        setAnnotation(element, 'intrinsicBias', bias);
-        scores.set(element, scores.get(element) + bias);
-      }
-    });
-
-    // Pathological case for single articles
-    const articles = document.getElementsByTagName('article');
-    if(articles.length === 1) {
-      scores.set(articles[0], scores.get(articles[0]) + 1000);
-      setAnnotation(articles[0], 'intrinsicBias', 1000);
+  document.forEachNode(NodeFilter.SHOW_TEXT, function(node) {
+    if(!node.nodeValue) {
+      node.remove();
     }
+  });
 
-    // Penalize list descendants
-    // TODO: this is bugged, not accumulating bias from other ancestors
-    const listSelector = 'li *, ol *, ul *, dd *, dl *, dt *';
-    document.querySelectorAll(listSelector).forEach(function(element) {
-      scores.set(element, scores.get(element) - 100);
-      setAnnotation(element, 'listItemBias', -100);
-    });
+  const elements = document.getElementsByTagName('*');
+  const scores = new Map();
+  elements.forEach(element => scores.set(element, 0));
 
-    // Penalize descendants of navigational elements
-    const navSelector = 'aside *, header *, footer *, nav *';
-    document.querySelectorAll(navSelector).forEach(function(element) {
-      scores.set(element, scores.get(element) - 50);
-      if(element.dataset) {
-        setAnnotation(element, 'navigationItemBias', 
-          parseInt(element.dataset.navigationItemBias || '0') - 50);
-      }
-    });
+  // Collect node text lengths
+  const textLengths = deriveTextLengths(document);
 
-    // Bias the parents of certain elements
-    elements.forEach(function(element) {
-      const bias = Calamine.DESCENDANT_BIAS.get(element.localName);
-      if(bias) {
-        const parent = element.parentElement;
-        setAnnotation(parent, 'descendantBias', parseInt(
-          parent.dataset.descendantBias || '0') + bias);
-        scores.set(parent, scores.get(parent) + bias);      
-      }
-    });
+  // Collect non-nominal anchor text lengths
+  const anchors = document.querySelectorAll('a[href]');
+  const anchorLengths = anchors.reduce(function (map, anchor) {
+    const length = textLengths.get(anchor);
+    const ancestors = getAncestors(anchor);
+    if(length) {
+      return [anchor].concat(ancestors).reduce(function(map, element) {
+        return map.set(element, (map.get(element) || 0) + length);
+      }, map);
+    } else {
+      return map;
+    }
+  }, new Map());
 
-    // Bias image containers
-    document.querySelectorAll('img').forEach(function(image) {
-      const parent = image.parentElement;
-      const bias = Calamine.getCarouselBias(image) + 
-        Calamine.getImageDescriptionBias(image) + 
-        Calamine.getImageDimensionBias(image);
-      if(bias) {
-        setAnnotation(parent, 'imageBias', bias);
-        scores.set(parent, scores.get(parent) + bias);      
-      }
-    });
-
-    // Bias certain elements based on their attributes
-    // TODO: itemscope?
-    // TODO: itemprop="articleBody"?
-    // TODO: [role="article"]?
-    const biasedElementsWithAttributesSelector = 
-      'a, aside, div, dl, figure, h1, h2, h3, h4,' +
-      ' ol, p, section, span, ul';
-    document.querySelectorAll(
-      biasedElementsWithAttributesSelector).forEach(function(element) {
-      const bias = Calamine.getAttributeBias(element);
-      setAnnotation(element, 'attributeBias', bias);
+  // Apply text bias to each element
+  elements.forEach(function(element) {
+    const bias = getTextBias(element, textLengths, 
+      anchorLengths);
+    if(bias) {
       scores.set(element, scores.get(element) + bias);
-    });
-
-    function applySingleClassBias(className, bias) {
-      const elements = document.getElementsByClassName(className);
-      if(elements.length === 1) {
-        scores.set(elements[0], scores.get(elements[0]) + bias);
-        setAnnotation(elements[0], 'attributeBias', bias);
-      }
+      setAnnotation(element, 'textBias', bias.toFixed(2));
     }
+  });
 
-    applySingleClassBias('article', 1000);
-    applySingleClassBias('articleText', 1000);
-    applySingleClassBias('articleBody', 1000);
-
-    // Item types
-    Calamine.ITEM_TYPES.forEach(function(schema) {
-      const elements = document.querySelectorAll('[itemtype="' + 
-        schema + '"]');
-      if(elements.length === 1) {
-        scores.set(elements[0], scores.get(elements[0]) + 500);
-        setAnnotation(elements[0], 'itemTypeBias', 500);
-      }
-    });
-
-    // Annotate element scores
-    if(annotate) {
-      elements.forEach(function(element) {
-        const score = scores.get(element);
-        if(score) {
-          element.dataset.score = score.toFixed(2);
-        }
-      });    
+  // Apply intrinsic bias to each element
+  elements.forEach(function(element) {
+    const bias = INTRINSIC_BIAS.get(element.localName);
+    if(bias) {
+      setAnnotation(element, 'intrinsicBias', bias);
+      scores.set(element, scores.get(element) + bias);
     }
+  });
 
-    // Find the best element
-    let bestElement = document.body;
-    let bestElementScore = scores.get(bestElement);
+  // Pathological case for single articles
+  const articles = document.getElementsByTagName('article');
+  if(articles.length === 1) {
+    scores.set(articles[0], scores.get(articles[0]) + 1000);
+    setAnnotation(articles[0], 'intrinsicBias', 1000);
+  }
+
+  // Penalize list descendants
+  // TODO: this is bugged, not accumulating bias from other ancestors
+  const listSelector = 'li *, ol *, ul *, dd *, dl *, dt *';
+  document.querySelectorAll(listSelector).forEach(function(element) {
+    scores.set(element, scores.get(element) - 100);
+    setAnnotation(element, 'listItemBias', -100);
+  });
+
+  // Penalize descendants of navigational elements
+  const navSelector = 'aside *, header *, footer *, nav *';
+  document.querySelectorAll(navSelector).forEach(function(element) {
+    scores.set(element, scores.get(element) - 50);
+    if(element.dataset) {
+      setAnnotation(element, 'navigationItemBias', 
+        parseInt(element.dataset.navigationItemBias || '0') - 50);
+    }
+  });
+
+  // Bias the parents of certain elements
+  elements.forEach(function(element) {
+    const bias = DESCENDANT_BIAS.get(element.localName);
+    if(bias) {
+      const parent = element.parentElement;
+      setAnnotation(parent, 'descendantBias', parseInt(
+        parent.dataset.descendantBias || '0') + bias);
+      scores.set(parent, scores.get(parent) + bias);      
+    }
+  });
+
+  // Bias image containers
+  document.querySelectorAll('img').forEach(function(image) {
+    const parent = image.parentElement;
+    const bias = getCarouselBias(image) + 
+      getImageDescriptionBias(image) + 
+      getImageDimensionBias(image);
+    if(bias) {
+      setAnnotation(parent, 'imageBias', bias);
+      scores.set(parent, scores.get(parent) + bias);      
+    }
+  });
+
+  // Bias certain elements based on their attributes
+  // TODO: itemscope?
+  // TODO: itemprop="articleBody"?
+  // TODO: [role="article"]?
+  const biasedElementsWithAttributesSelector = 
+    'a, aside, div, dl, figure, h1, h2, h3, h4,' +
+    ' ol, p, section, span, ul';
+  document.querySelectorAll(
+    biasedElementsWithAttributesSelector).forEach(function(element) {
+    const bias = getAttributeBias(element);
+    setAnnotation(element, 'attributeBias', bias);
+    scores.set(element, scores.get(element) + bias);
+  });
+
+  function applySingleClassBias(className, bias) {
+    const elements = document.getElementsByClassName(className);
+    if(elements.length === 1) {
+      scores.set(elements[0], scores.get(elements[0]) + bias);
+      setAnnotation(elements[0], 'attributeBias', bias);
+    }
+  }
+
+  applySingleClassBias('article', 1000);
+  applySingleClassBias('articleText', 1000);
+  applySingleClassBias('articleBody', 1000);
+
+  // Item types
+  ITEM_TYPES.forEach(function(schema) {
+    const elements = document.querySelectorAll('[itemtype="' + 
+      schema + '"]');
+    if(elements.length === 1) {
+      scores.set(elements[0], scores.get(elements[0]) + 500);
+      setAnnotation(elements[0], 'itemTypeBias', 500);
+    }
+  });
+
+  // Annotate element scores
+  if(annotate) {
     elements.forEach(function(element) {
       const score = scores.get(element);
-      if(score > bestElementScore) {
-        bestElement = element;
-        bestElementScore = score;
+      if(score) {
+        element.dataset.score = score.toFixed(2);
       }
-    });
+    });    
+  }
 
-    // Remove non-intersecting elements
-    // TODO: use Node.compareDocumentPosition
-    elements.filter(function(element) {
-      return element !== bestElement && 
-        !bestElement.contains(element) && 
-        !element.contains(bestElement);
-    }).forEach(Calamine.remove);
+  // Find the best element
+  let bestElement = document.body;
+  let bestElementScore = scores.get(bestElement);
+  elements.forEach(function(element) {
+    const score = scores.get(element);
+    if(score > bestElementScore) {
+      bestElement = element;
+      bestElementScore = score;
+    }
+  });
 
-    // Transform javascript anchors into nominal anchors
-    document.querySelectorAll('a[href]').filter(
-      Calamine.isJavascriptAnchor).forEach(function(anchor) {
-      anchor.removeAttribute('href');
-    });
+  // Remove non-intersecting elements
+  // TODO: use Node.compareDocumentPosition
+  elements.filter(function(element) {
+    return element !== bestElement && 
+      !bestElement.contains(element) && 
+      !element.contains(bestElement);
+  }).forEach(remove);
 
-    // Unwrap nominal anchors
-    document.querySelectorAll('a:not([href])').forEach(Calamine.unwrap);
+  // Transform javascript anchors into nominal anchors
+  document.querySelectorAll('a[href]').filter(
+    isJavascriptAnchor).forEach(function(anchor) {
+    anchor.removeAttribute('href');
+  });
 
-    // Unwrap unwrappable elements
-    // TODO: experiment with querySelectorAll?
-    for(let element = document.querySelector(Calamine.UNWRAPPABLE_ELEMENTS),
-      iterations = 0; element && (iterations < 3000); 
-      element = document.querySelector(Calamine.UNWRAPPABLE_ELEMENTS), 
-      iterations++) {
-      Calamine.unwrap(element);
+  // Unwrap nominal anchors
+  document.querySelectorAll('a:not([href])').forEach(unwrap);
+
+  // Unwrap unwrappable elements
+  // TODO: experiment with querySelectorAll?
+  for(let element = document.querySelector(UNWRAPPABLE_ELEMENTS),
+    iterations = 0; element && (iterations < 3000); 
+    element = document.querySelector(UNWRAPPABLE_ELEMENTS), 
+    iterations++) {
+    unwrap(element);
+  }
+
+  // Remove attributes
+  removeAttributes(document);
+  elements.forEach(removeAttributes);
+  removeLeaves(document);
+
+  // Replace lists with one item with the item's content
+  document.getElementsByTagName('ul').forEach(function(list) {
+    const itemCount = getListItemCount(list);
+    if(itemCount === 1) {
+      unwrapList(list);
+    }
+  });
+
+  { // start trim block
+    let sibling = bestElement;
+    let node = bestElement.firstChild;
+    while(isTrimmableElement(node)) {
+      sibling = node.nextSibling;
+      console.debug('Trimming %o from front of bestElement', node);
+      node.remove();
+      node = sibling;
     }
 
-    // Remove attributes
-    Calamine.removeAttributes(document);
-    elements.forEach(Calamine.removeAttributes);
-    Calamine.removeLeaves(document);
+    node = bestElement.lastChild;
+    while(isTrimmableElement(node)) {
+      sibling = node.previousSibling;
+      console.debug('Trimming %o from end of bestElement', node);
+      node.remove();
+      node = sibling;
+    }
+  } // end trim block
+} // END transform function
 
-    // Replace lists with one item with the item's content
-    document.getElementsByTagName('ul').forEach(function(list) {
-      const itemCount = Calamine.getListItemCount(list);
-      if(itemCount === 1) {
-        Calamine.unwrapList(list);
-      }
-    });
+// Export transform function
+Calamine.transform = transform;
 
-    { // start trim block
-      let sibling = bestElement;
-      let node = bestElement.firstChild;
-      while(Calamine.isTrimmableElement(node)) {
-        sibling = node.nextSibling;
-        console.debug('Trimming %o from front of bestElement', node);
-        node.remove();
-        node = sibling;
-      }
+function canonicalizeWhitespace(node) {
+  node.nodeValue = node.nodeValue.replace(/\s/g, ' ');
+}
 
-      node = bestElement.lastChild;
-      while(Calamine.isTrimmableElement(node)) {
-        sibling = node.previousSibling;
-        console.debug('Trimming %o from end of bestElement', node);
-        node.remove();
-        node = sibling;
-      }
-    } // end trim block
-  }
-
-  static canonicalizeWhitespace(node) {
-    node.nodeValue = node.nodeValue.replace(/\s/g, ' ');
-  }
-
-  static deriveTextLengths(document) {
-    const map = new Map();
-    document.forEachNode(NodeFilter.SHOW_TEXT, function(node) {
-      while(node) {
-        const length = node.nodeValue.length;
-        if(length) {
+function deriveTextLengths(document) {
+  const map = new Map();
+  document.forEachNode(NodeFilter.SHOW_TEXT, function(node) {
+    while(node) {
+      const length = node.nodeValue.length;
+      if(length) {
+        node = node.parentNode;
+        while(node) {
+          map.set(node, (map.get(node) || 0) + length);
           node = node.parentNode;
-          while(node) {
-            map.set(node, (map.get(node) || 0) + length);
-            node = node.parentNode;
-          }
         }
       }
-    });
-    return map;
+    }
+  });
+  return map;
+}
+
+function isJavascriptAnchor(anchor) {
+  const href = anchor.getAttribute('href');
+  return /^\s*javascript\s*:/i.test(href);
+}
+
+function getListItemCount(list) {
+  const reduce = Array.prototype.reduce;
+  return reduce.call(list.childNodes, function(count, node) {
+    return count + (node.localName === 'li' ? 1 : 0);
+  }, 0);
+}
+
+function unwrapList(list) {
+  console.debug('Unwrapping list %s', 
+    list.parentElement.innerHTML);
+  const parent = list.parentElement;
+  const item = list.querySelector('li');
+  const nextSibling = list.nextSibling;
+
+  if(nextSibling) {
+    // Move the item's children to before the list's 
+    // next sibling
+    while(item.firstChild) {
+      parent.insertBefore(item.firstChild, nextSibling);
+    }
+  } else {
+    // The list is the last node in its container, so append
+    // the item's children to the container
+    while(item.firstChild) {
+      parent.appendChild(item.firstChild);
+    }
   }
 
-  static isJavascriptAnchor(anchor) {
-    const href = anchor.getAttribute('href');
-    return /^\s*javascript\s*:/i.test(href);
-  }
+  list.remove();
+}
 
-  static getListItemCount(list) {
-    const reduce = Array.prototype.reduce;
-    return reduce.call(list.childNodes, function(count, node) {
-      return count + (node.localName === 'li' ? 1 : 0);
-    }, 0);
-  }
+function isTrimmableElement(element) {
+  if(!element) return false;
+  if(element.nodeType !== Node.ELEMENT_NODE) return false;
+  let name = element.localName;
+  if(name === 'br') return true;
+  if(name === 'hr') return true;
+  if(name === 'p' && !element.firstChild) return true;
+  return false;
+}
 
-  static unwrapList(list) {
-    console.debug('Unwrapping list %s', 
-      list.parentElement.innerHTML);
-    const parent = list.parentElement;
-    const item = list.querySelector('li');
-    const nextSibling = list.nextSibling;
-
-    if(nextSibling) {
-      // Move the item's children to before the list's 
-      // next sibling
-      while(item.firstChild) {
-        parent.insertBefore(item.firstChild, nextSibling);
-      }
-    } else {
-      // The list is the last node in its container, so append
-      // the item's children to the container
-      while(item.firstChild) {
-        parent.appendChild(item.firstChild);
+function removeAttributes(element) {
+  if(element) {
+    const attributes = element.attributes;
+    if(attributes) {
+      let index = attributes.length;
+      while(index--) {
+        let name = attributes[index].name;
+        if(name !== 'href' && name !== 'src') {
+          element.removeAttribute(name);
+        }
       }
     }
-
-    list.remove();
   }
+}
 
-  static isTrimmableElement(element) {
-    if(!element) return false;
-    if(element.nodeType !== Node.ELEMENT_NODE) return false;
-    let name = element.localName;
-    if(name === 'br') return true;
-    if(name === 'hr') return true;
-    if(name === 'p' && !element.firstChild) return true;
+// TODO: element.offsetWidth < 1 || element.offsetHeight < 1; ?
+function isHidden(element) {
+  if(element.localName === 'noscript' || element.localName === 'noembed') {
     return false;
   }
+  const style = element.style;
+  if(style.display === 'none' || style.visibility === 'hidden' || 
+    style.visibility === 'collapse') {
+    return true;
+  }
+  const opacity = parseFloat(style.opacity);
+  return opacity < 0.3;
+}
 
-  static removeAttributes(element) {
-    if(element) {
-      const attributes = element.attributes;
-      if(attributes) {
-        let index = attributes.length;
-        while(index--) {
-          let name = attributes[index].name;
-          if(name !== 'href' && name !== 'src') {
-            element.removeAttribute(name);
-          }
-        }
-      }
-    }
+// Adapted from "Boilerplate Detection using Shallow Text Features". 
+// See http://www.l3s.de/~kohlschuetter/boilerplate
+// For better performance, we use character counts instead of word
+// counts after normalizing whitespace.
+function getTextBias(element, textLengths, anchorLengths) {
+  const textLength = textLengths.get(element);
+  let bias = 0;
+  if(textLength) {
+    const anchorLength = anchorLengths.get(element) || 0;
+    bias = (0.25 * textLength) - (0.7 * anchorLength);
+    // Tentative cap
+    bias = Math.min(4000, bias);      
   }
 
-  // TODO: element.offsetWidth < 1 || element.offsetHeight < 1; ?
-  static isHidden(element) {
-    if(element.localName === 'noscript' || element.localName === 'noembed') {
-      return false;
-    }
-    const style = element.style;
-    if(style.display === 'none' || style.visibility === 'hidden' || 
-      style.visibility === 'collapse') {
-      return true;
-    }
-    const opacity = parseFloat(style.opacity);
-    return opacity < 0.3;
+  return bias;
+}
+
+function getImageDimensionBias(image) {
+  let bias = 0;
+  if(image.width && image.height) {
+    const area = image.width * image.height;
+    bias = 0.0015 * Math.min(100000, area);
   }
+  return bias;
+}
 
-  // Adapted from "Boilerplate Detection using Shallow Text Features". 
-  // See http://www.l3s.de/~kohlschuetter/boilerplate
-  // For better performance, we use character counts instead of word
-  // counts after normalizing whitespace.
-  static getTextBias(element, textLengths, anchorLengths) {
-    const textLength = textLengths.get(element);
-    let bias = 0;
-    if(textLength) {
-      const anchorLength = anchorLengths.get(element) || 0;
-      bias = (0.25 * textLength) - (0.7 * anchorLength);
-      // Tentative cap
-      bias = Math.min(4000, bias);      
-    }
-
-    return bias;
+// TODO: check data-alt and data-title?
+function getImageDescriptionBias(image) {
+  if(image.getAttribute('alt') || image.getAttribute('title') || 
+    findCaption(image)) {
+    return 30;
   }
+  return 0;
+}
 
-  static getImageDimensionBias(image) {
-    let bias = 0;
-    if(image.width && image.height) {
-      const area = image.width * image.height;
-      bias = 0.0015 * Math.min(100000, area);
-    }
-    return bias;
-  }
-
-  // TODO: check data-alt and data-title?
-  static getImageDescriptionBias(image) {
-    if(image.getAttribute('alt') || image.getAttribute('title') || 
-      Calamine.findCaption(image)) {
-      return 30;
-    }
+function getCarouselBias(image) {
+  const reduce = Array.prototype.reduce;
+  const parent = image.parentElement;
+  if(!parent) {
     return 0;
   }
-
-  static getCarouselBias(image) {
-    const reduce = Array.prototype.reduce;
-    const parent = image.parentElement;
-    if(!parent) {
-      return 0;
+  return reduce.call(parent.childNodes, function(bias, node) {
+    if(node !== image && node.localName === 'img') {
+      return bias - 50;
+    } else {
+      return bias;
     }
-    return reduce.call(parent.childNodes, function(bias, node) {
-      if(node !== image && node.localName === 'img') {
-        return bias - 50;
-      } else {
-        return bias;
-      }
-    }, 0);
-  }
+  }, 0);
+}
 
-  // TODO: split on case-transition (lower2upper,upper2lower)
-  // and do not lower case the value prior to the split, do it after
-  static tokenize(value) {
-    const tokens = value.toLowerCase().split(/[\s\-_0-9]+/g);
-    return ArrayUtils.unique(tokens.filter(Calamine.identity));
-  }
+// TODO: split on case-transition (lower2upper,upper2lower)
+// and do not lower case the value prior to the split, do it after
+function tokenize(value) {
+  const tokens = value.toLowerCase().split(/[\s\-_0-9]+/g);
+  return ArrayUtils.unique(tokens.filter(identity));
+}
 
-  static getAttributeBias(element) {
-    const values = [
-      element.getAttribute('id'),
-      element.getAttribute('name'),
-      element.getAttribute('class'),
-      element.getAttribute('itemprop')
-    ].filter(Calamine.identity);
-    const tokens = Calamine.tokenize(values.join(' '));
-    return tokens.reduce(function(sum, value) {
-      return sum + (Calamine.ATTRIBUTE_BIAS.get(value) || 0);
-    }, 0);
-  }
+function getAttributeBias(element) {
+  const values = [
+    element.getAttribute('id'),
+    element.getAttribute('name'),
+    element.getAttribute('class'),
+    element.getAttribute('itemprop')
+  ].filter(identity);
+  const tokens = tokenize(values.join(' '));
+  return tokens.reduce(function(sum, value) {
+    return sum + (ATTRIBUTE_BIAS.get(value) || 0);
+  }, 0);
+}
 
-  // Return true if image missing source or tracer-like
-  // TODO: cleanup redundant conditions, research how Chrome sets properties
-  // from attributes, and the data type of those properties (string or int?)
-  static isTracer(image) {
-    const source = image.getAttribute('src');
-    const width = image.getAttribute('width');
-    const height = image.getAttribute('height');
-    return !source || !source.trim() || 
-      width === '0' || width === '0px' || width === '1' ||
-      height === '1px' || height === '1' || 
-      image.width === 0 || image.width === 1 || 
-      image.height === 0 || image.height === 1;
-  }
+// Return true if image missing source or tracer-like
+// TODO: cleanup redundant conditions, research how Chrome sets properties
+// from attributes, and the data type of those properties (string or int?)
+function isTracer(image) {
+  const source = image.getAttribute('src');
+  const width = image.getAttribute('width');
+  const height = image.getAttribute('height');
+  return !source || !source.trim() || 
+    width === '0' || width === '0px' || width === '1' ||
+    height === '1px' || height === '1' || 
+    image.width === 0 || image.width === 1 || 
+    image.height === 0 || image.height === 1;
+}
 
-  // NOTE: not optimized for live documents
-  static unwrap(element) {
-    const parent = element.parentElement;
-    if(parent) {
-      while(element.firstChild) {
-        parent.insertBefore(element.firstChild, element);
-      }
-      element.remove();
+// NOTE: not optimized for live documents
+function unwrap(element) {
+  const parent = element.parentElement;
+  if(parent) {
+    while(element.firstChild) {
+      parent.insertBefore(element.firstChild, element);
     }
-  }
-
-  static remove(element) {
     element.remove();
   }
+}
 
-  static findCaption(image) {
-    const parents = this.getAncestors(image);  
-    const figure = parents.find(e => {
-      return e.matches('figure')
-    });
-    if(figure)
-      return figure.querySelector('figcaption');
+function remove(element) {
+  element.remove();
+}
+
+function findCaption(image) {
+  const parents = getAncestors(image);  
+  const figure = parents.find(e => {
+    return e.matches('figure')
+  });
+  if(figure)
+    return figure.querySelector('figcaption');
+}
+
+function getAncestors(element) {
+  const parents = [];
+  let parent = element.parentElement;
+  while(parent) {
+    parents.push(parent);
+    parent = parent.parentElement;
   }
+  return parents;
+}
 
-  static getAncestors(element) {
-    const parents = [];
-    let parent = element.parentElement;
-    while(parent) {
-      parents.push(parent);
-      parent = parent.parentElement;
+function identity(value) {
+  return value;
+}
+
+function isElement(node) {
+  return node.nodeType === Node.ELEMENT_NODE;
+}
+
+function isInlineElement(element) {
+  return INLINE_ELEMENTS.has(element.localName);
+}
+
+function setDatasetProperty(element, propertyName, value) {
+  element.dataset[propertyName] = value;
+}
+
+function noop() {}
+
+function trimTextNodes(document) {
+  const elements = document.querySelectorAll(
+    WHITESPACE_SENSITIVE_ELEMENTS);
+
+  // TODO: improve
+  const preformatted = new Set(
+    Array.prototype.slice.call(elements.internal));
+
+  const iterator = document.createNodeIterator(document.documentElement, 
+    NodeFilter.SHOW_TEXT);
+  let node = document.documentElement;
+
+  // todo: set node separatey instead in while loop condition for better style
+  while(node = iterator.nextNode()) {
+    if(preformatted.has(node.parentElement)) {
+      continue;
     }
-    return parents;
-  }
 
-  static identity(value) {
-    return value;
-  }
-
-  static isElement(node) {
-    return node.nodeType === Node.ELEMENT_NODE;
-  }
-
-  static isInlineElement(element) {
-    return Calamine.INLINE_ELEMENTS.has(element.localName);
-  }
-
-  static setDatasetProperty(element, propertyName, value) {
-    element.dataset[propertyName] = value;
-  }
-
-  static noop() {}
-
-  static trimTextNodes(document) {
-    const elements = document.querySelectorAll(
-      Calamine.WHITESPACE_SENSITIVE_ELEMENTS);
-
-    // TODO: improve
-    const preformatted = new Set(
-      Array.prototype.slice.call(elements.internal));
-
-    const iterator = document.createNodeIterator(document.documentElement, 
-      NodeFilter.SHOW_TEXT);
-    let node = document.documentElement;
-
-    // todo: set node separatey instead in while loop condition for better style
-    while(node = iterator.nextNode()) {
-      if(preformatted.has(node.parentElement)) {
-        continue;
-      }
-
-      if(node.previousSibling) {
-        if(this.isElement(node.previousSibling)) {
-          if(this.isInlineElement(node.previousSibling)) {
-            if(node.nextSibling) {
-              if(this.isElement(node.nextSibling)) {
-                if(!this.isInlineElement(node.nextSibling)) {
-                  node.nodeValue = node.nodeValue.trimRight();
-                }
-              }
-            } else {
-              node.nodeValue = node.nodeValue.trimRight();
-            }
-          } else {
-           node.nodeValue = node.nodeValue.trim();
-          }
-        } else {
-         if(node.nextSibling) {
-            if(this.isElement(node.nextSibling)) {
-              if(this.isInlineElement(node.nextSibling)) {
-              } else {
-               node.nodeValue = node.nodeValue.trimRight();
+    if(node.previousSibling) {
+      if(isElement(node.previousSibling)) {
+        if(isInlineElement(node.previousSibling)) {
+          if(node.nextSibling) {
+            if(isElement(node.nextSibling)) {
+              if(!isInlineElement(node.nextSibling)) {
+                node.nodeValue = node.nodeValue.trimRight();
               }
             }
           } else {
             node.nodeValue = node.nodeValue.trimRight();
           }
-        }
-      } else if(node.nextSibling) {
-       if(this.isElement(node.nextSibling)) {
-          if(this.isInlineElement(node.nextSibling)) {
-            node.nodeValue = node.nodeValue.trimLeft();
-          } else {
-            node.nodeValue = node.nodeValue.trim();
-          }
         } else {
-          node.nodeValue = node.nodeValue.trimLeft();
+         node.nodeValue = node.nodeValue.trim();
         }
       } else {
-        node.nodeValue = node.nodeValue.trim();
+       if(node.nextSibling) {
+          if(isElement(node.nextSibling)) {
+            if(isInlineElement(node.nextSibling)) {
+            } else {
+             node.nodeValue = node.nodeValue.trimRight();
+            }
+          }
+        } else {
+          node.nodeValue = node.nodeValue.trimRight();
+        }
       }
-    }
-  }
-
-  static removeLeaves(document) {
-
-    // TODO: there is a specific edge case not being handled
-    // where certain elements, e.g. anchors, that do not contain
-    // any child nodes, should be considered empty. And this must
-    // be recursive as well, up the tree.
-    // In the case of <ul><li><a></a></li></ul>, the result should
-    // be that the entire subtree is removed.
-    // Because this case is not currently handled, and because we
-    // remove other nodes, this leads to some funny looking junk
-    // areas of content (e.g. a list of empty bullet points)
-    // This gets trickier because the logic, in the current impl,
-    // has to be in a couple places. In isLeafElement, an anchor without
-    // a firstChild should be considered empty. That should be handled
-    // right now but for some odd reason it is not. Then once any element
-    // is removed and we check its parent, its parent should go through
-    // the same logic, which does not seem to happen, even though
-    // the logic is plainly there to do that.
-
-    // TODO: removes should happen only once on the shallowest
-    // parent. If this were called on a live doc we would be causing
-    // several unecessary reflows. For example, in the case of
-    // <div><p></p><p></p></div>, there are 3 remove operations,
-    // when only 1 needed to occur. To do this, this needs
-    // to be fundamentally refactored. Removes should not occur
-    // on the first pass over the elements. This, btw, would remove the
-    // ugliness of using a map function with a side effect. Instead, start by
-    // identifying all of the empty leaves. Then, for each leaf, traverse
-    // upwards to find the actual element to remove. Be cautious
-    // about simply checking that parent.childElementCount == 1 to find
-    // a removable parent because it is false in the case that two
-    // or more empty-leaves share the same parent. The criteria instead is
-    // that a parent is removable if all of its children are removable.
-    // So we need to go up 1, then query all direct children. But that is
-    // kind of redundant since we already identified the children, so that
-    // still might need improvement.
-
-    // TODO: just add children that should be removed to the stack insead of
-    // removing them and adding their parents to the stack.
-    // Remove all the empty children and shove all the parents on the stack
-
-    const LEAF_EXCEPTIONS = ['area', 'audio', 'br', 'canvas', 'col',
-      'hr', 'img', 'source', 'svg', 'track', 'video'].join(',');
-    const elements = document.getElementsByTagName('*');
-    const leaves = elements.filter(function(element) {
-      return !element.firstChild && !element.matches(LEAF_EXCEPTIONS);
-    });
-    const parents = leaves.map(function(element) {
-      const parent = element.parentElement;
-      element.remove();
-      return parent;
-    });
-    const stack = parents.filter(function(document, element) {
-      // TODO: why test for document.body per iteration?
-
-      // TODO: somehow observed an undefined document, need to look
-      // into how that could possibly happen
-      if(document) {
-        return document.body && document.body != element;        
+    } else if(node.nextSibling) {
+     if(isElement(node.nextSibling)) {
+        if(isInlineElement(node.nextSibling)) {
+          node.nodeValue = node.nodeValue.trimLeft();
+        } else {
+          node.nodeValue = node.nodeValue.trim();
+        }
+      } else {
+        node.nodeValue = node.nodeValue.trimLeft();
       }
-    });
-
-    let parent, grandParent;
-
-    while(stack.length) {
-      parent = stack.pop();
-
-      if(parent.firstChild) {
-        // There are other nodes in the parent after the child was removed,
-        // so do not remove the parent.
-        continue;
-      }
-
-      // Grab a reference to the grand parent before removal
-      // because after removal it is undefined
-      grandParent = parent.parentElement;
-
-      parent.remove();
-
-      // If there was no grand parent (how would that ever happen?)
-      // or the grand parent is the root, then do not add the new
-      // grand parent to the stack
-      if(!grandParent || grandParent === document.body || 
-        grandParent === document.documentElement) {
-        continue;
-      }
-
-      stack.push(grandParent);
+    } else {
+      node.nodeValue = node.nodeValue.trim();
     }
   }
 }
 
-Calamine.INTRINSIC_BIAS = new Map([
+function removeLeaves(document) {
+
+  // TODO: there is a specific edge case not being handled
+  // where certain elements, e.g. anchors, that do not contain
+  // any child nodes, should be considered empty. And this must
+  // be recursive as well, up the tree.
+  // In the case of <ul><li><a></a></li></ul>, the result should
+  // be that the entire subtree is removed.
+  // Because this case is not currently handled, and because we
+  // remove other nodes, this leads to some funny looking junk
+  // areas of content (e.g. a list of empty bullet points)
+  // This gets trickier because the logic, in the current impl,
+  // has to be in a couple places. In isLeafElement, an anchor without
+  // a firstChild should be considered empty. That should be handled
+  // right now but for some odd reason it is not. Then once any element
+  // is removed and we check its parent, its parent should go through
+  // the same logic, which does not seem to happen, even though
+  // the logic is plainly there to do that.
+
+  // TODO: removes should happen only once on the shallowest
+  // parent. If this were called on a live doc we would be causing
+  // several unecessary reflows. For example, in the case of
+  // <div><p></p><p></p></div>, there are 3 remove operations,
+  // when only 1 needed to occur. To do this, this needs
+  // to be fundamentally refactored. Removes should not occur
+  // on the first pass over the elements. This, btw, would remove the
+  // ugliness of using a map function with a side effect. Instead, start by
+  // identifying all of the empty leaves. Then, for each leaf, traverse
+  // upwards to find the actual element to remove. Be cautious
+  // about simply checking that parent.childElementCount == 1 to find
+  // a removable parent because it is false in the case that two
+  // or more empty-leaves share the same parent. The criteria instead is
+  // that a parent is removable if all of its children are removable.
+  // So we need to go up 1, then query all direct children. But that is
+  // kind of redundant since we already identified the children, so that
+  // still might need improvement.
+
+  // TODO: just add children that should be removed to the stack insead of
+  // removing them and adding their parents to the stack.
+  // Remove all the empty children and shove all the parents on the stack
+
+  const LEAF_EXCEPTIONS = ['area', 'audio', 'br', 'canvas', 'col',
+    'hr', 'img', 'source', 'svg', 'track', 'video'].join(',');
+  const elements = document.getElementsByTagName('*');
+  const leaves = elements.filter(function(element) {
+    return !element.firstChild && !element.matches(LEAF_EXCEPTIONS);
+  });
+  const parents = leaves.map(function(element) {
+    const parent = element.parentElement;
+    element.remove();
+    return parent;
+  });
+  const stack = parents.filter(function(document, element) {
+    // TODO: why test for document.body per iteration?
+
+    // TODO: somehow observed an undefined document, need to look
+    // into how that could possibly happen
+    if(document) {
+      return document.body && document.body != element;        
+    }
+  });
+
+  let parent, grandParent;
+
+  while(stack.length) {
+    parent = stack.pop();
+
+    if(parent.firstChild) {
+      // There are other nodes in the parent after the child was removed,
+      // so do not remove the parent.
+      continue;
+    }
+
+    // Grab a reference to the grand parent before removal
+    // because after removal it is undefined
+    grandParent = parent.parentElement;
+
+    parent.remove();
+
+    // If there was no grand parent (how would that ever happen?)
+    // or the grand parent is the root, then do not add the new
+    // grand parent to the stack
+    if(!grandParent || grandParent === document.body || 
+      grandParent === document.documentElement) {
+      continue;
+    }
+
+    stack.push(grandParent);
+  }
+}
+
+const INTRINSIC_BIAS = new Map([
   ['article', 200],
   ['main', 100],
   ['section', 50],
@@ -705,7 +704,7 @@ Calamine.INTRINSIC_BIAS = new Map([
   ['tr', -500]
 ]);
 
-Calamine.DESCENDANT_BIAS = new Map([
+const DESCENDANT_BIAS = new Map([
   ['a', -5],
   ['blockquote', 20],
   ['div', -50],
@@ -723,7 +722,7 @@ Calamine.DESCENDANT_BIAS = new Map([
   ['ul', -20]
 ]);
 
-Calamine.ATTRIBUTE_BIAS = new Map([
+const ATTRIBUTE_BIAS = new Map([
   ['about', -35],
   ['ad', -100],
   ['ads', -50],
@@ -900,7 +899,7 @@ Calamine.ATTRIBUTE_BIAS = new Map([
   ['zone', -50]
 ]);
 
-Calamine.ITEM_TYPES = [
+const ITEM_TYPES = [
   'http://schema.org/Article',
   'http://schema.org/Blog',
   'http://schema.org/BlogPost',
@@ -911,17 +910,17 @@ Calamine.ITEM_TYPES = [
   'http://schema.org/WebPage'
 ];
 
-Calamine.INLINE_ELEMENTS = new Set(['a','abbr', 'acronym', 'address',
+const INLINE_ELEMENTS = new Set(['a','abbr', 'acronym', 'address',
   'b', 'bdi', 'bdo', 'blink','cite', 'code', 'data', 'del',
   'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 'map',
   'meter', 'q', 'rp', 'rt', 'samp', 'small', 'span', 'strike',
   'strong', 'sub', 'sup', 'time', 'tt', 'u', 'var'
 ]);
 
-Calamine.WHITESPACE_SENSITIVE_ELEMENTS = 'code, code *, pre, pre *, ' + 
+const WHITESPACE_SENSITIVE_ELEMENTS = 'code, code *, pre, pre *, ' + 
   'ruby, ruby *, textarea, textarea *, xmp, xmp *';
 
-Calamine.UNWRAPPABLE_ELEMENTS = [
+const UNWRAPPABLE_ELEMENTS = [
   'article', 'big', 'blink', 'body', 'center', 'colgroup', 'data', 
   'details', 'div', 'font', 'footer', 'form', 'header', 'help',
   'hgroup', 'ilayer', 'insert', 'label', 'layer', 'legend', 'main',
@@ -935,7 +934,7 @@ Calamine.UNWRAPPABLE_ELEMENTS = [
 // NOTE: cannot use 'div.posts', (wordpress copyblogger theme)
 // NOTE: cannot use 'div.menu', // CNBC
 
-Calamine.BLACKLIST_SELECTORS = [
+const BLACKLIST_SELECTORS = [
   'a.advertise-with-us', // The Daily Voice
   'a.aggregated-rel-link', // The Oklahoman
   'a.bylineCommentCount', // Pasadena Star News
@@ -1874,3 +1873,5 @@ Calamine.BLACKLIST_SELECTORS = [
   'video',
   'xmp'
 ];
+
+} // END LEXICAL SCOPE

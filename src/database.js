@@ -6,88 +6,97 @@
 
 // TODO: just store scheme and schemeless props as parts of a url property.
 // TODO: store urls as URL objects?
-// TODO: use 'lucubrate' as the database name
-class Database {
+const Database = {};
 
-  static open(callback) {
-    const request = indexedDB.open('reader', 17);
-    request.onupgradeneeded = Database._upgrade;
-    request.onsuccess = callback;
-    request.onerror = callback;
-    request.onblocked = callback;
+{ // BEGIN LEXICAL SCOPE
+
+// TODO: use 'lucubrate' as the database name
+const NAME = 'reader';
+const VERSION = 17;
+
+function open(callback) {
+  const request = indexedDB.open(NAME, VERSION);
+  request.onupgradeneeded = upgrade;
+  request.onsuccess = callback;
+  request.onerror = callback;
+  request.onblocked = callback;
+}
+
+// Export
+Database.open = open;
+
+function upgrade(event) {
+  console.debug('Upgrading database from version %s', event.oldVersion);
+  const request = event.target;
+  const connection = request.result;
+  let feedStore = null, entryStore = null;
+  const stores = connection.objectStoreNames;
+
+  if(stores.contains('feed')) {
+    feedStore = request.transaction.objectStore('feed');
+  } else {
+    feedStore = connection.createObjectStore('feed', {
+      keyPath: 'id',
+      autoIncrement: true
+    });
   }
 
-  static _upgrade(event) {
-    console.debug('Upgrading database from version %s', event.oldVersion);
-    const request = event.target;
-    const connection = request.result;
-    let feedStore = null, entryStore = null;
-    const stores = connection.objectStoreNames;
+  if(stores.contains('entry')) {
+    entryStore = request.transaction.objectStore('entry');
+  } else {
+    entryStore = connection.createObjectStore('entry', {
+      keyPath: 'id',
+      autoIncrement: true
+    });
+  }
 
-    if(stores.contains('feed')) {
-      feedStore = request.transaction.objectStore('feed');
-    } else {
-      feedStore = connection.createObjectStore('feed', {
-        keyPath: 'id',
-        autoIncrement: true
-      });
-    }
+  const feedIndices = feedStore.indexNames;
+  const entryIndices = entryStore.indexNames;
 
-    if(stores.contains('entry')) {
-      entryStore = request.transaction.objectStore('entry');
-    } else {
-      entryStore = connection.createObjectStore('entry', {
-        keyPath: 'id',
-        autoIncrement: true
-      });
-    }
+  if(!feedIndices.contains('schemeless')) {
+    feedStore.createIndex('schemeless', 'schemeless', {unique: true});
+  }
 
-    const feedIndices = feedStore.indexNames;
-    const entryIndices = entryStore.indexNames;
+  if(!feedIndices.contains('title')) {
+    feedStore.createIndex('title', 'title');
+  }
 
-    if(!feedIndices.contains('schemeless')) {
-      feedStore.createIndex('schemeless', 'schemeless', {unique: true});
-    }
+  if(feedIndices.contains('url')) {
+    feedStore.deleteIndex('url');
+  }
 
-    if(!feedIndices.contains('title')) {
-      feedStore.createIndex('title', 'title');
-    }
+  // Deprecated
+  if(entryIndices.contains('unread')) {
+    entryStore.deleteIndex('unread');
+  }
 
-    if(feedIndices.contains('url')) {
-      feedStore.deleteIndex('url');
-    }
+  // For example, used to count the number of unread entries
+  if(!entryIndices.contains('readState')) {
+    entryStore.createIndex('readState', 'readState');
+  }
 
-    // Deprecated
-    if(entryIndices.contains('unread')) {
-      entryStore.deleteIndex('unread');
-    }
+  if(!entryIndices.contains('feed')) {
+    entryStore.createIndex('feed', 'feed');
+  }
 
-    // For example, used to count the number of unread entries
-    if(!entryIndices.contains('readState')) {
-      entryStore.createIndex('readState', 'readState');
-    }
+  if(!entryIndices.contains('archiveState-readState')) {
+    entryStore.createIndex('archiveState-readState', 
+      ['archiveState', 'readState']);
+  }
 
-    if(!entryIndices.contains('feed')) {
-      entryStore.createIndex('feed', 'feed');
-    }
-
-    if(!entryIndices.contains('archiveState-readState')) {
-      entryStore.createIndex('archiveState-readState', 
-        ['archiveState', 'readState']);
-    }
-
-    if(!entryIndices.contains('link')) {
+  if(!entryIndices.contains('link')) {
+    entryStore.createIndex('link', 'link', {unique: true});
+  } else {
+    const entryLinkIndex = entryStore.index('link');
+    if(!entryLinkIndex.unique) {
+      entryStore.deleteIndex('link');
       entryStore.createIndex('link', 'link', {unique: true});
-    } else {
-      const entryLinkIndex = entryStore.index('link');
-      if(!entryLinkIndex.unique) {
-        entryStore.deleteIndex('link');
-        entryStore.createIndex('link', 'link', {unique: true});
-      }
     }
+  }
 
-    if(entryIndices.contains('hash')) {
-      entryStore.deleteIndex('hash');
-    }
+  if(entryIndices.contains('hash')) {
+    entryStore.deleteIndex('hash');
   }
 }
+
+} // END LEXICAL SCOPE
