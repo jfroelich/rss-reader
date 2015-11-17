@@ -29,6 +29,8 @@ const Calamine = {};
 
 { // BEGIN LEXICAL SCOPE
 
+const reduce = Array.prototype.reduce;
+
 // Modifies the input document by removing boilerplate text. Also 
 // tidies and compresses markup.
 function transform(doc, annotate) {
@@ -301,15 +303,13 @@ function isJavascriptAnchor(anchor) {
 }
 
 function getListItemCount(list) {
-  const reduce = Array.prototype.reduce;
   return reduce.call(list.childNodes, function(count, node) {
     return count + (node.localName === 'li' ? 1 : 0);
   }, 0);
 }
 
 function unwrapList(list) {
-  console.debug('Unwrapping list %s', 
-    list.parentElement.innerHTML);
+  //console.debug('Unwrapping list %s', list.parentElement.innerHTML);
   const parent = list.parentElement;
   const item = list.querySelector('li');
   const nextSibling = list.nextSibling;
@@ -373,7 +373,7 @@ function isHidden(element) {
 // Adapted from "Boilerplate Detection using Shallow Text Features". 
 // See http://www.l3s.de/~kohlschuetter/boilerplate
 // For better performance, we use character counts instead of word
-// counts after normalizing whitespace.
+// counts.
 function getTextBias(element, textLengths, anchorLengths) {
   const textLength = textLengths.get(element);
   let bias = 0;
@@ -406,7 +406,6 @@ function getImageDescriptionBias(image) {
 }
 
 function getCarouselBias(image) {
-  const reduce = Array.prototype.reduce;
   const parent = image.parentElement;
   if(!parent) {
     return 0;
@@ -567,6 +566,9 @@ function trimTextNodes(document) {
   }
 }
 
+const LEAF_EXCEPTIONS = ['area', 'audio', 'br', 'canvas', 'col',
+  'hr', 'img', 'source', 'svg', 'track', 'video'].join(',');
+
 function removeLeaves(document) {
 
   // TODO: there is a specific edge case not being handled
@@ -608,8 +610,6 @@ function removeLeaves(document) {
   // removing them and adding their parents to the stack.
   // Remove all the empty children and shove all the parents on the stack
 
-  const LEAF_EXCEPTIONS = ['area', 'audio', 'br', 'canvas', 'col',
-    'hr', 'img', 'source', 'svg', 'track', 'video'].join(',');
   const elements = document.getElementsByTagName('*');
   const leaves = elements.filter(function(element) {
     return !element.firstChild && !element.matches(LEAF_EXCEPTIONS);

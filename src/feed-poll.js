@@ -26,141 +26,143 @@
 // subscribe should be near instant. So subscribe should store the feed and then
 // enqueue a one-feed poll update.
 
-class FeedPoll {
+const FeedPoll = {};
 
- static start() {
-    console.debug('Polling feeds');
+{ // BEGIN LEXICAL SCOPE
 
-    // TODO: remove use of global here?
-    if(!window.navigator.onLine) {
-      console.debug('Polling canceled as offline');
-      return;
-    }
+function start() {
+  console.debug('Polling feeds');
 
-    chrome.permissions.contains({permissions: ['idle']}, 
-      FeedPoll._onCheckIdlePermission);
+  if(!navigator.onLine) {
+    console.debug('Polling canceled as offline');
+    return;
   }
 
-  static _onCheckIdlePermission(permitted) {
-    const IDLE_PERIOD = 60 * 5; // 5 minutes
-    if(permitted) {
-      chrome.idle.queryState(IDLE_PERIOD, 
-        FeedPoll._onQueryIdleState);
-    } else {
-      Database.open(FeedPoll._iterateFeeds);
-    }
-  }
+  chrome.permissions.contains({permissions: ['idle']}, 
+    onCheckIdlePermission);
+}
 
-  static _onQueryIdleState(state) {
-    if(state === 'locked' || state === 'idle') {
-      Database.open(FeedPoll._iterateFeeds);
-    } else {
-      console.debug('Polling canceled as not idle');
-      FeedPoll.onComplete();
-    }
-  }
+FeedPoll.start = start;
 
-  // TODO: I need to use some async.* function that can trigger
-  // a final callback once each feed has been processed
-  // Kind of like async.until?
-  // Or basically I may need to write Feed.forEach to work like
-  // async.forEach. Instead of binding its callback to 
-  // transaction.oncomplete, I need to wait for all the callbacks
-  // to callback
-  static _iterateFeeds(connectionEvent) {
-    if(connectionEvent.type === 'success') {
-      const connection = connectionEvent.target.result;
-      FeedStore.forEach(connection, FeedPoll._fetchFeed.bind(null, 
-        connection), false, FeedPoll.onComplete);
-    } else {
-      console.debug(connectionEvent);
-      FeedPoll.onComplete();      
-    }
-  }
-
-  static _fetchFeed(connection, feed) {
-    // console.debug('Fetching %s', feed.url);
-    const timeout = 10 * 1000;
-    FeedRequest.fetch(feed.url, timeout, 
-      FeedPoll._onFetchFeed.bind(null, connection, feed));
-  }
-
-  static _onFetchFeed(connection, feed, event, remoteFeed) {
-    // console.debug('Fetched %s', feed.url);
-    if(event) {
-      console.dir(event);
-    } else {
-      // TODO: if we are cleaning up the properties in FeedStore.put,
-      // are we properly cascading those properties to the entries?
-      FeedStore.put(connection, feed, remoteFeed, 
-        FeedPoll._onPutFeed.bind(null, connection, 
-          feed, remoteFeed));        
-    }
-  }
-
-  static _onPutFeed(connection, feed, remoteFeed, event) {
-    async.forEach(remoteFeed.entries, 
-      FeedPoll._findEntryByLink.bind(null, connection, feed), 
-      FeedPoll._onEntriesUpdated.bind(null, connection));
-  }
-
-  // The issue is that this gets called per feed. I want to only call it 
-  // when _everything_ is finished. We cannot do it with Feed.forEach 
-  // above because that fires off independent async calls and finishes
-  // before waiting for them to complete, which it kind of has to because
-  // we do not know the number of feeds in advance and I don't want to count
-  // or preload all into an array.
-  // Temporarily just update the badge for each feed processed
-  static _onEntriesUpdated(connection) {
-    BrowserActionUtils.update(connection);
-  }
-
-  static _findEntryByLink(connection, feed, entry, callback) {
-    // console.debug('Processing entry %s', entry.link);
-    EntryStore.findByLink(connection, entry, 
-      FeedPoll._onFindEntry.bind(null, connection, feed, 
-        entry, callback));
-  }
-
-  static _onFindEntry(connection, feed, entry, callback, event) {
-    const localEntry = event.target.result;
-    if(localEntry) {
-      callback();
-    } else {
-      const timeout = 20 * 1000;
-      EntryUtils.augmentContent(entry, timeout, onAugment);
-    }
-
-    function onAugment(errorEvent) {
-      FeedPoll._cascadeFeedProperties(feed, entry);
-      EntryStore.put(connection, entry, callback);
-    }
-  }
-
-  // Propagate certain feed properties into the entry so that the 
-  // view does not need to query the feed store when iterating 
-  // entries. Set the foreign key
-  static _cascadeFeedProperties(feed, entry) {
-    // Set the foreign key
-    entry.feed = feed.id;
-
-    // Set up some functional dependencies
-    entry.feedLink = feed.link;
-    entry.feedTitle = feed.title;
-
-    // Use the feed's date for undated entries
-    if(!entry.pubdate && feed.date) {
-      entry.pubdate = feed.date;
-    }
-  }
-
-  // NOTE: due to above issues, this gets called when finished with 
-  // iterating feeds, BUT prior to finishing entry processing
-  static onComplete() {
-    console.debug('Polling completed');
-    localStorage.LAST_POLL_DATE_MS = String(Date.now());
-    // const message = {type: 'pollCompleted'};
-    // chrome.runtime.sendMessage(message);
-    Notification.show('Updated articles');
+const IDLE_PERIOD = 60 * 5; // 5 minutes
+function onCheckIdlePermission(permitted) {
+  if(permitted) {
+    chrome.idle.queryState(IDLE_PERIOD, 
+      onQueryIdleState);
+  } else {
+    Database.open(iterateFeeds);
   }
 }
+
+function onQueryIdleState(state) {
+  if(state === 'locked' || state === 'idle') {
+    Database.open(iterateFeeds);
+  } else {
+    console.debug('Polling canceled as not idle');
+    onComplete();
+  }
+}
+
+// TODO: I need to use some async.* function that can trigger
+// a final callback once each feed has been processed
+// Kind of like async.until?
+// Or basically I may need to write Feed.forEach to work like
+// async.forEach. Instead of binding its callback to 
+// transaction.oncomplete, I need to wait for all the callbacks
+// to callback
+function iterateFeeds(event) {
+  if(event.type === 'success') {
+    const connection = event.target.result;
+    FeedStore.forEach(connection, fetchFeed.bind(null, 
+      connection), false, onComplete);
+  } else {
+    console.debug(event);
+    onComplete();      
+  }
+}
+
+function fetchFeed(connection, feed) {
+  // console.debug('Fetching %s', feed.url);
+  const timeout = 10 * 1000;
+  FeedRequest.fetch(feed.url, timeout, 
+    onFetchFeed.bind(null, connection, feed));
+}
+
+function onFetchFeed(connection, feed, event, remoteFeed) {
+  // console.debug('Fetched %s', feed.url);
+  if(event) {
+    console.dir(event);
+  } else {
+    // TODO: if we are cleaning up the properties in FeedStore.put,
+    // are we properly cascading those properties to the entries?
+    FeedStore.put(connection, feed, remoteFeed, 
+      onPutFeed.bind(null, connection, feed, remoteFeed));        
+  }
+}
+
+function onPutFeed(connection, feed, remoteFeed, event) {
+  async.forEach(remoteFeed.entries, 
+    findEntryByLink.bind(null, connection, feed), 
+    onEntriesUpdated.bind(null, connection));
+}
+
+// The issue is that this gets called per feed. I want to only call it 
+// when _everything_ is finished. We cannot do it with Feed.forEach 
+// above because that fires off independent async calls and finishes
+// before waiting for them to complete, which it kind of has to because
+// we do not know the number of feeds in advance and I don't want to count
+// or preload all into an array.
+// Temporarily just update the badge for each feed processed
+function onEntriesUpdated(connection) {
+  BrowserActionUtils.update(connection);
+}
+
+function findEntryByLink(connection, feed, entry, callback) {
+  // console.debug('Processing entry %s', entry.link);
+  EntryStore.findByLink(connection, entry, 
+    onFindEntry.bind(null, connection, feed, entry, callback));
+}
+
+function onFindEntry(connection, feed, entry, callback, event) {
+  const localEntry = event.target.result;
+  if(localEntry) {
+    callback();
+  } else {
+    const timeout = 20 * 1000;
+    EntryUtils.augmentContent(entry, timeout, onAugment);
+  }
+
+  function onAugment(event) {
+    cascadeFeedProperties(feed, entry);
+    EntryStore.put(connection, entry, callback);
+  }
+}
+
+// Propagate certain feed properties into the entry so that the 
+// view does not need to query the feed store when iterating 
+// entries. Set the foreign key
+function cascadeFeedProperties(feed, entry) {
+  // Set the foreign key
+  entry.feed = feed.id;
+
+  // Set up some functional dependencies
+  entry.feedLink = feed.link;
+  entry.feedTitle = feed.title;
+
+  // Use the feed's date for undated entries
+  if(!entry.pubdate && feed.date) {
+    entry.pubdate = feed.date;
+  }
+}
+
+// NOTE: due to above issues, this gets called when finished with 
+// iterating feeds, BUT prior to finishing entry processing
+function onComplete() {
+  console.log('Polling completed');
+  localStorage.LAST_POLL_DATE_MS = String(Date.now());
+  // const message = {type: 'pollCompleted'};
+  // chrome.runtime.sendMessage(message);
+  Notification.show('Updated articles');
+}
+
+} // END LEXICAL SCOPE

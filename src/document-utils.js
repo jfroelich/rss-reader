@@ -60,10 +60,15 @@ function resolveURLs(document, baseURL) {
   resolvables.forEach(resolveElement);
 }
 
+// Export global
+DocumentUtils.resolveURLs = resolveURLs;
+
+// Resolves one of the URL containing attributes for a given 
+// element
 function resolveElement(element) {
   const attributeName = ATTRIBUTE_MAP.get(element.localName);
 
-  // NOTE: we know attribute is defined because the selector
+  // We know attribute is defined because the selector
   // included the condition (e.g. element[attribute])
   const url = element.getAttribute(attributeName).trim();
   try {
@@ -89,8 +94,7 @@ function setImageDimensions(document, callback) {
   async.forEach(images, ImageUtils.fetchDimensions, callback);
 }
 
-// Export globals
-DocumentUtils.resolveURLs = resolveURLs;
+// Export global
 DocumentUtils.setImageDimensions = setImageDimensions;
 
 } // END LEXICAL SCOPE

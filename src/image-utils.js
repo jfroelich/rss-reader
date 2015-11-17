@@ -5,7 +5,6 @@
 'use strict';
 
 // Image element utilities
-
 const ImageUtils = {};
 
 { // BEGIN LEXICAL SCOPE

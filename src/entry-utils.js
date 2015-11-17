@@ -43,6 +43,7 @@ function augmentContent(entry, timeout, callback) {
   request.send();  
 }
 
+// Private helper for augmentContent
 function onAugmentLoad(entry, callback, event) {
   const request = event.target;
   const document = request.responseXML;
@@ -57,6 +58,7 @@ function onAugmentLoad(entry, callback, event) {
     onImageDimensionsSet.bind(null, entry, document, callback));
 }
 
+// Private helper for onAugmentLoad
 // TODO: should we be using documentElement?
 function onImageDimensionsSet(entry, document, callback) {
   const content = document.body.innerHTML;

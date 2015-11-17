@@ -6,6 +6,8 @@
 
 // TODO: implement history? mimic chrome. would need search ability
 
+{ // BEGIN LEXICAL SCOPE
+
 function $$(name) {
   return document.getElementById(name);
 }
@@ -92,7 +94,7 @@ function hideSubsciptionMonitor(onComplete, fadeOut) {
 var currentMenuItem_;
 var currentSection_;
 
-function optionsShowSection(menuItem) {
+function showSection(menuItem) {
   if(!menuItem || currentMenuItem_ == menuItem) {
     return;
   }
@@ -113,7 +115,7 @@ function optionsShowSection(menuItem) {
   currentSection_ = section;
 }
 
-function optionsUpdateFeedCount() {
+function updateFeedCount() {
   const count = $$('feedlist').childElementCount;
   const countElement = $$('subscription-count');
   if(count) {
@@ -127,9 +129,9 @@ function optionsUpdateFeedCount() {
   }
 }
 
-function optionsAppendFeed(feed, insertedSort) {
+function appendFeed(feed, insertedSort) {
   if(!feed) {
-    console.error('feed undefined in optionsAppendFeed');
+    console.error('feed undefined in appendFeed');
     return;
   }
 
@@ -292,11 +294,11 @@ function startSubscription(url) {
   }
 
   function onSubscribe(addedFeed, entriesProcessed, entriesAdded) {
-    optionsAppendFeed(addedFeed, true);
-    optionsUpdateFeedCount();
+    appendFeed(addedFeed, true);
+    updateFeedCount();
     updateSubscriptionMonitor('Subscribed to ' + url);
     hideSubsciptionMonitor(function() {
-      optionsShowSection($$('mi-subscriptions'));
+      showSection($$('mi-subscriptions'));
     }, true);
 
     // Show a notification
@@ -335,7 +337,7 @@ function onFeedListItemClick(event) {
   populateFeedDetailsSection(feedId);
   // TODO: These calls should really be in an async callback
   // passed to populateFeedDetailsSection
-  optionsShowSection($$('mi-feed-details'));
+  showSection($$('mi-feed-details'));
   window.scrollTo(0,0);
 }
 
@@ -475,7 +477,7 @@ function onUnsubscribeButtonClicked(event) {
         item.remove();
       }
 
-      optionsUpdateFeedCount();
+      updateFeedCount();
 
       if($$('feedlist').childElementCount === 0) {
         $$('feedlist').style.display = 'none';
@@ -483,7 +485,7 @@ function onUnsubscribeButtonClicked(event) {
       }
 
       // Update the options view
-      optionsShowSection(sectionMenu);
+      showSection(sectionMenu);
     });
   }
 }
@@ -651,7 +653,7 @@ function setNavigationOnClick(menuItem) {
 function onNavigationClick(event) {
   // Use currentTarget instead of event.target as some of the menu items have a
   // nested element that is the event.target
-  optionsShowSection(event.currentTarget);
+  showSection(event.currentTarget);
 }
 
 function initGeneralSettingsSection() {
@@ -699,8 +701,8 @@ function initSubscriptionsSection() {
 
   function handleFeed(feed) {
     feedCount++;
-    optionsAppendFeed(feed);
-    optionsUpdateFeedCount();
+    appendFeed(feed);
+    updateFeedCount();
   }
 
   function onComplete() {
@@ -756,14 +758,14 @@ function initDisplaySettingsSection() {
   FONT_FAMILIES.forEach(function(fontFamily) {
     option = document.createElement('option');
     option.value = fontFamily;
-    option.selected = fontFamily == localStorage.HEADER_FONT_FAMILY;
+    option.selected = fontFamily === localStorage.HEADER_FONT_FAMILY;
     option.textContent = fontFamily;
     $$('select_header_font').appendChild(option);
   });
   FONT_FAMILIES.forEach(function (fontFamily) {
     option = document.createElement('option');
     option.value = fontFamily;
-    option.selected = fontFamily == localStorage.BODY_FONT_FAMILY;
+    option.selected = fontFamily === localStorage.BODY_FONT_FAMILY;
     option.textContent = fontFamily;
     $$('select_body_font').appendChild(option);
   });
@@ -774,7 +776,7 @@ function initDisplaySettingsSection() {
   [1,2,3].forEach(function (columnCount) {
     option = document.createElement('option');
     option.value = columnCount;
-    option.selected = columnCount == localStorage.COLUMN_COUNT;
+    option.selected = columnCount === localStorage.COLUMN_COUNT;
     option.textContent = columnCount;
     $$('column-count').appendChild(option);
   });
@@ -817,7 +819,7 @@ function initAboutSection() {
 function initOptionsPage(event) {
   document.removeEventListener('DOMContentLoaded', initOptionsPage);
   initNavigation();
-  optionsShowSection($$('mi-subscriptions'));
+  showSection($$('mi-subscriptions'));
   initGeneralSettingsSection();
   initSubscriptionsSection();
   initFeedDetailsSection();
@@ -827,3 +829,6 @@ function initOptionsPage(event) {
 }
 
 document.addEventListener('DOMContentLoaded', initOptionsPage);
+
+} // END LEXICAL SCOPE
+
