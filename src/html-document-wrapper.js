@@ -4,13 +4,18 @@
 
 'use strict';
 
-// TODO: invent a better name, e.g. WHTMLDocument ?
-// TODO: learn why I have having issues extending HTMLDocument
-
+// Decorates a Document object in order to provide simple
+// declarative methods, similar to jQuery
+// TODO: maybe use a better name such as WHTMLDocument
+// TODO: research extending HTMLDocument
 class HTMLDocumentWrapper {
 
   constructor(document) {
     this.document = document;
+  }
+
+  static wrap(document) {
+    return new HTMLDocumentWrapper(document);
   }
 
   get body() {
@@ -19,10 +24,6 @@ class HTMLDocumentWrapper {
 
   get documentElement() {
   	return this.document.documentElement;
-  }
-
-  static wrap(document) {
-  	return new HTMLDocumentWrapper(document);
   }
 
   appendChild(node) {
@@ -65,7 +66,6 @@ class HTMLDocumentWrapper {
 // Private helper for document wrapper
 // NOTE: also applies to HTMLCollection, not just NodeList
 // TODO: extend NodeList?
-
 class NodeListWrapper {
   constructor(list) {
   	this.list = list;

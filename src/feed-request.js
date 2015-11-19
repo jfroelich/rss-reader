@@ -6,7 +6,7 @@
 
 const FeedRequest = {};
 
-{ // BEGIN LEXICAL SCOPE
+{ // BEGIN ANONYMOUS NAMESPACE
 
 const map = Array.prototype.map;
 
@@ -93,35 +93,62 @@ function retryMalformedResponse(response) {
 	}
 }
 
+class FeedRequestError extends Error {
+  // TODO: use ES6 rest syntax? Chrome keeps whining
+  constructor() {
+    super(...arguments);
+  }
+}
+
+function selectChild(parent, selector) {
+  return parent.childNodes.find(function(node) {
+    return node.matches(name);
+  });
+}
+
+function selectChildren(parent, name) {
+  return parent.childNodes.filter(function(node) {
+    return node.matches(name);
+  });
+}
+
+
 // Generates a feed object based on the xml
-// TODO: support Apple iTunes format, embedded media format (??)
-// TODO: store original format as a property
 // TODO: querySelector is not depth-sensitive. Maybe increase 
 // the strictness to searching immediate node children
-// TODO: use FeedRequestError extends Error
 function deserialize(document) {
+
+  const documentElement = document.documentElement;
+  validateDocumentElement(documentElement);
+
+  const isAtom = documentElement.matches('feed');
+  const isRDF = documentElement.matches('rdf');
+
+  // <channel> is required for feeds and rdf
+  if(!isAtom && !document.querySelector(
+    documentElement.localName + ' > channel')) {
+    throw new FeedRequestError('Missing required channel element');
+  }
+
+  const channel = isAtom ? documentElement : 
+    //documentElement.querySelector('channel');
+    document.querySelector(documentElement.localName + ' > channel');
+
+  const feed = {};
+
+  // TODO: make sure the type values conform to the OPML standard
+  // Record the feed's original format as a type property to increase
+  // compliance with the OPML standard
+  if(isAtom) {
+    feed.type = 'feed';
+  } else if(isRDF) {
+    feed.type = 'rdf';
+  } else {
+    feed.type = 'rss';
+  }
 
   const getText = getElementText;
 
-  const root = document.documentElement;
-  if(!root) {
-    throw new TypeError('Undefined document element');
-  }
-
-  if(!root.matches('feed, rss, rdf')) {
-    throw new TypeError('Unsupported document element: ' + root.localName);
-  }
-
-  const isAtom = root.matches('feed');
-  const isRDF = root.matches('rdf');
-
-  if(!isAtom && !root.querySelector('channel')) {
-    throw new TypeError('Missing required channel element');
-  }
-
-  const channel = isAtom ? root : root.querySelector('channel');
-
-  const feed = {};
   const title = getText(channel, 'title');
   if(title) {
     feed.title = title;
@@ -165,14 +192,13 @@ function deserialize(document) {
 
   let entries = [];
   if(isAtom) {
-    entries = root.querySelectorAll('entry');
+    entries = documentElement.querySelectorAll('entry');
   } else if(isRDF) {
-    entries = root.querySelectorAll('item');
+    entries = documentElement.querySelectorAll('item');
   } else {
     entries = channel.querySelectorAll('item');
   }
 
-  // TODO: write a separate function
   feed.entries = map.call(entries, deserializeEntry.bind(null, isAtom));
 
   return feed;
@@ -181,6 +207,18 @@ function deserialize(document) {
 // Export a global. This is not really used by anything currently 
 // in the app but it is available as a standalone feature
 FeedRequest.deserialize = deserialize;
+
+function validateDocumentElement(element) {
+  if(!element) {
+    throw new FeedRequestError('Undefined document element');
+  }
+
+  if(!element.matches('feed, rss, rdf')) {
+    throw new FeedRequestError('Unsupported document element: ' + 
+      element.localName);
+  }
+}
+
 
 // Private helper for deserialize, deserializes an item
 function deserializeEntry(isAtom, entry) {
@@ -247,6 +285,17 @@ function deserializeEntry(isAtom, entry) {
     }
   }
 
+  // NOTE: under dev, untested
+  const enclosure = entry.querySelector('enclosure');
+  if(enclosure) {
+    console.debug('Encountered enclosure: %o', enclosure);
+    result.enclosure = {
+      url: enclosure.getAttribute('url'),
+      length: enclosure.getAttribute('length'),
+      type: enclosure.getAttribute('type')
+    };
+  }
+
   return result;
 }
 
@@ -263,4 +312,4 @@ function getElementText(parent, selector) {
   }
 }
 
-} // END LEXICAL SCOPE
+} // END ANONYMOUS NAMESPACE

@@ -6,26 +6,31 @@
 
 const BrowserActionUtils = {};
 
-{ // BEGIN LEXICAL SCOPE
+{ // BEGIN ANONYMOUS NAMESPACE
 
-function update(connection) {
+// Updates the unread count of the extension's badge
+// @param connection optional, an indexedDB database connection
+BrowserActionUtils.update = function(connection) {
   // console.debug('Updating badge');
   if(connection) {
     EntryStore.countUnread(connection, setText);
   } else {
-    Database.open(function(event) {
-      if(event.type === 'success') {
-        EntryStore.countUnread(event.target.result, 
-          setText);
-      } else {
-        console.debug(event);
-        chrome.browserAction.setBadgeText({text: '?'});
-      }
-    });
+    Database.open(updateOnConnect);
+  }
+};
+
+// Private helper for update
+function updateOnConnect(event) {
+  if(event.type === 'success') {
+    EntryStore.countUnread(event.target.result, setText);
+  } else {
+    // indexedDB connection error
+    console.debug(event);
+    chrome.browserAction.setBadgeText({text: '?'});
   }
 }
 
-// helper for update
+// Sets the badge text. Private helper for update
 function setText(event) {
   const count = event.target.result;
   chrome.browserAction.setBadgeText({
@@ -33,7 +38,4 @@ function setText(event) {
   });
 }
 
-// Export
-BrowserActionUtils.update = update;
-
-} // END LEXICAL SCOPE
+} // END ANONYMOUS NAMESPACE

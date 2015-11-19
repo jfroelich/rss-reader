@@ -4,6 +4,8 @@
 
 'use strict';
 
+// The Calamine lib provides the transform function that modifies 
+// the contents of a Document instance.
 // TODO: express everything as probability? Use a scale of 0 to 100
 // to represent each element's likelihood of being useful content, where
 // 100 is most likely. Every blcok gets its own probability score. Then
@@ -11,36 +13,32 @@
 // of blocks weight the elements and use the best element approach again,
 // where probability means the likelihood of any given element being the
 // best element, not whether it is content or boilerplate.
-
 // TODO: when the main container has several links, the text bias is very 
 // negative. Maybe propagate link text to only block level containers,
 // or proportionally decrease the negative bias based on depth
-
 // Note: Ideally, a block-based approach would avoid the need for the blacklisted
 // elements removal step but the current best element approach effectively requires
 // it. These selectors target boilerplate typically found in the best
 // element, after processing, but are applied before processing to reduce the
 // amount of elements considered and reduce error.
-
 // TODO: re intrinsic bias, there are only maybe 5-6 likely elements and 
 // everything else is very unlikely. <div> is the most likely.
-
 const Calamine = {};
 
-{ // BEGIN LEXICAL SCOPE
+{ // BEGIN ANONYMOUS NAMESPACE
 
 const reduce = Array.prototype.reduce;
 
 // Modifies the input document by removing boilerplate text. Also 
 // tidies and compresses markup.
-function transform(doc, annotate) {
+Calamine.transform = function(doc, annotate) {
 
   const document = HTMLDocumentWrapper.wrap(doc);
   const setAnnotation = annotate ? setDatasetProperty : noop;
 
   // Remove comments
   document.forEachNode(NodeFilter.SHOW_COMMENT, remove);
-  // Remove blacklisted elements matching selectors
+  // Remove blacklisted elements
   BLACKLIST_SELECTORS.forEach(function(selector) {
     document.querySelectorAll(selector).forEach(remove);
   });
@@ -54,12 +52,9 @@ function transform(doc, annotate) {
   // Canonicalize whitespace
   document.forEachNode(NodeFilter.SHOW_TEXT, canonicalizeWhitespace);
 
-  // Transform break rule elements into paragraphs
-  // TODO: improve this
-  document.getElementsByTagName('br').forEach(function(element) {
-    const p = document.createElement('p');
-    element.parentNode.replaceChild(p, element);
-  });
+  // Transform break rule elements
+  document.getElementsByTagName('br').forEach(
+    transformBR.bind(null, document));
 
   trimTextNodes(document);
 
@@ -231,8 +226,7 @@ function transform(doc, annotate) {
   // Unwrap nominal anchors
   document.querySelectorAll('a:not([href])').forEach(unwrap);
 
-  // Unwrap unwrappable elements
-  // TODO: experiment with querySelectorAll?
+  // Unwrap certain elements
   for(let element = document.querySelector(UNWRAPPABLE_ELEMENTS),
     iterations = 0; element && (iterations < 3000); 
     element = document.querySelector(UNWRAPPABLE_ELEMENTS), 
@@ -240,7 +234,7 @@ function transform(doc, annotate) {
     unwrap(element);
   }
 
-  // Remove attributes
+  // Remove attributes from elements
   removeAttributes(document);
   elements.forEach(removeAttributes);
   removeLeaves(document);
@@ -253,12 +247,13 @@ function transform(doc, annotate) {
     }
   });
 
+  // Trim various elements and nodes
   { // start trim block
     let sibling = bestElement;
     let node = bestElement.firstChild;
     while(isTrimmableElement(node)) {
       sibling = node.nextSibling;
-      console.debug('Trimming %o from front of bestElement', node);
+      console.debug('Trimming %o from front', node);
       node.remove();
       node = sibling;
     }
@@ -266,15 +261,65 @@ function transform(doc, annotate) {
     node = bestElement.lastChild;
     while(isTrimmableElement(node)) {
       sibling = node.previousSibling;
-      console.debug('Trimming %o from end of bestElement', node);
+      console.debug('Trimming %o from end', node);
       node.remove();
       node = sibling;
     }
   } // end trim block
-} // END transform function
+};
 
-// Export transform function
-Calamine.transform = transform;
+// This could use a lot of improvement and is just a 
+// quick hack for now.
+function transformBR(document, element) {
+  const p = document.createElement('p');
+  element.parentNode.replaceChild(p, element);
+}
+
+const INTRINSIC_BIAS = new Map([
+  ['article', 200],
+  ['main', 100],
+  ['section', 50],
+  ['blockquote', 10],
+  ['code', 10],
+  ['content', 200],
+  ['div', 200],
+  ['figcaption', 10],
+  ['figure', 10],
+  ['ilayer', 10],
+  ['layer', 10],
+  ['p', 10],
+  ['pre', 10],
+  ['ruby', 10],
+  ['summary', 10],
+  ['a', -500],
+  ['address', -5],
+  ['dd', -5],
+  ['dt', -5],
+  ['h1', -5],
+  ['h2', -5],
+  ['h3', -5],
+  ['h4', -5],
+  ['h5', -5],
+  ['h6', -5],
+  ['small', -5],
+  ['sub', -5],
+  ['sup', -5],
+  ['th', -5],
+  ['form', -20],
+  ['li', -50],
+  ['ol', -50],
+  ['ul', -50],
+  ['font', -100],
+  ['aside', -100],
+  ['header', -100],
+  ['footer', -100],
+  ['table', -100],
+  ['tbody', -100],
+  ['thead', -100],
+  ['tfoot', -100],
+  ['nav', -100],
+  ['tr', -500]
+]);
 
 function canonicalizeWhitespace(node) {
   node.nodeValue = node.nodeValue.replace(/\s/g, ' ');
@@ -569,46 +614,45 @@ function trimTextNodes(document) {
 const LEAF_EXCEPTIONS = ['area', 'audio', 'br', 'canvas', 'col',
   'hr', 'img', 'source', 'svg', 'track', 'video'].join(',');
 
+// TODO: there is a specific edge case not being handled
+// where certain elements, e.g. anchors, that do not contain
+// any child nodes, should be considered empty. And this must
+// be recursive as well, up the tree.
+// In the case of <ul><li><a></a></li></ul>, the result should
+// be that the entire subtree is removed.
+// Because this case is not currently handled, and because we
+// remove other nodes, this leads to some funny looking junk
+// areas of content (e.g. a list of empty bullet points)
+// This gets trickier because the logic, in the current impl,
+// has to be in a couple places. In isLeafElement, an anchor without
+// a firstChild should be considered empty. That should be handled
+// right now but for some odd reason it is not. Then once any element
+// is removed and we check its parent, its parent should go through
+// the same logic, which does not seem to happen, even though
+// the logic is plainly there to do that.
+
+// TODO: removes should happen only once on the shallowest
+// parent. If this were called on a live doc we would be causing
+// several unecessary reflows. For example, in the case of
+// <div><p></p><p></p></div>, there are 3 remove operations,
+// when only 1 needed to occur. To do this, this needs
+// to be fundamentally refactored. Removes should not occur
+// on the first pass over the elements. This, btw, would remove the
+// ugliness of using a map function with a side effect. Instead, start by
+// identifying all of the empty leaves. Then, for each leaf, traverse
+// upwards to find the actual element to remove. Be cautious
+// about simply checking that parent.childElementCount == 1 to find
+// a removable parent because it is false in the case that two
+// or more empty-leaves share the same parent. The criteria instead is
+// that a parent is removable if all of its children are removable.
+// So we need to go up 1, then query all direct children. But that is
+// kind of redundant since we already identified the children, so that
+// still might need improvement.
+
+// TODO: just add children that should be removed to the stack insead of
+// removing them and adding their parents to the stack.
+// Remove all the empty children and shove all the parents on the stack
 function removeLeaves(document) {
-
-  // TODO: there is a specific edge case not being handled
-  // where certain elements, e.g. anchors, that do not contain
-  // any child nodes, should be considered empty. And this must
-  // be recursive as well, up the tree.
-  // In the case of <ul><li><a></a></li></ul>, the result should
-  // be that the entire subtree is removed.
-  // Because this case is not currently handled, and because we
-  // remove other nodes, this leads to some funny looking junk
-  // areas of content (e.g. a list of empty bullet points)
-  // This gets trickier because the logic, in the current impl,
-  // has to be in a couple places. In isLeafElement, an anchor without
-  // a firstChild should be considered empty. That should be handled
-  // right now but for some odd reason it is not. Then once any element
-  // is removed and we check its parent, its parent should go through
-  // the same logic, which does not seem to happen, even though
-  // the logic is plainly there to do that.
-
-  // TODO: removes should happen only once on the shallowest
-  // parent. If this were called on a live doc we would be causing
-  // several unecessary reflows. For example, in the case of
-  // <div><p></p><p></p></div>, there are 3 remove operations,
-  // when only 1 needed to occur. To do this, this needs
-  // to be fundamentally refactored. Removes should not occur
-  // on the first pass over the elements. This, btw, would remove the
-  // ugliness of using a map function with a side effect. Instead, start by
-  // identifying all of the empty leaves. Then, for each leaf, traverse
-  // upwards to find the actual element to remove. Be cautious
-  // about simply checking that parent.childElementCount == 1 to find
-  // a removable parent because it is false in the case that two
-  // or more empty-leaves share the same parent. The criteria instead is
-  // that a parent is removable if all of its children are removable.
-  // So we need to go up 1, then query all direct children. But that is
-  // kind of redundant since we already identified the children, so that
-  // still might need improvement.
-
-  // TODO: just add children that should be removed to the stack insead of
-  // removing them and adding their parents to the stack.
-  // Remove all the empty children and shove all the parents on the stack
 
   const elements = document.getElementsByTagName('*');
   const leaves = elements.filter(function(element) {
@@ -621,7 +665,6 @@ function removeLeaves(document) {
   });
   const stack = parents.filter(function(document, element) {
     // TODO: why test for document.body per iteration?
-
     // TODO: somehow observed an undefined document, need to look
     // into how that could possibly happen
     if(document) {
@@ -657,52 +700,6 @@ function removeLeaves(document) {
     stack.push(grandParent);
   }
 }
-
-const INTRINSIC_BIAS = new Map([
-  ['article', 200],
-  ['main', 100],
-  ['section', 50],
-  ['blockquote', 10],
-  ['code', 10],
-  ['content', 200],
-  ['div', 200],
-  ['figcaption', 10],
-  ['figure', 10],
-  ['ilayer', 10],
-  ['layer', 10],
-  ['p', 10],
-  ['pre', 10],
-  ['ruby', 10],
-  ['summary', 10],
-  ['a', -500],
-  ['address', -5],
-  ['dd', -5],
-  ['dt', -5],
-  ['h1', -5],
-  ['h2', -5],
-  ['h3', -5],
-  ['h4', -5],
-  ['h5', -5],
-  ['h6', -5],
-  ['small', -5],
-  ['sub', -5],
-  ['sup', -5],
-  ['th', -5],
-  ['form', -20],
-  ['li', -50],
-  ['ol', -50],
-  ['ul', -50],
-  ['font', -100],
-  ['aside', -100],
-  ['header', -100],
-  ['footer', -100],
-  ['table', -100],
-  ['tbody', -100],
-  ['thead', -100],
-  ['tfoot', -100],
-  ['nav', -100],
-  ['tr', -500]
-]);
 
 const DESCENDANT_BIAS = new Map([
   ['a', -5],
@@ -1874,4 +1871,4 @@ const BLACKLIST_SELECTORS = [
   'xmp'
 ];
 
-} // END LEXICAL SCOPE
+} // END ANONYMOUS NAMESPACE

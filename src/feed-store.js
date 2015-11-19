@@ -6,36 +6,44 @@
 
 const FeedStore = {};
 
-{ // BEGIN LEXICAL SCOPE
+{ // BEGIN ANONYMOUS NAMESPACE
 
+// Queries the database for a feed with the given url
 function findByURL(connection, url, callback) {
   const transaction = connection.transaction('feed');
-  const urls = transaction.objectStore('feed').index('schemeless');
-  const request = urls.get(URLUtils.getSchemeless(url));
+  const store = transaction.objectStore('feed');
+  const index = store.index('schemeless');
+  const schemeless = URLUtils.getSchemeless(url);
+  const request = urls.get(schemeless);
   request.onsuccess = callback;
 }
 
 FeedStore.findByURL = findByURL;
 
+// Queries the database for a feed with the given id
 function findById(connection, id, callback) {
   const transaction = connection.transaction('feed');
-  const feeds = transaction.objectStore('feed');
-  const request = feeds.get(id);
+  const store = transaction.objectStore('feed');
+  const request = store.get(id);
   request.onsuccess = callback;
 }
 
 FeedStore.findById = findById;
 
+// Iterates over each feed in the database, calling handleFeed. 
+// Calls callback when iteration completes. Note that due to the 
+// async nature of this function, it is possible for callback to 
+// be called prior to every handleFeed call completing.
 function forEach(connection, handleFeed, sortByTitle, callback) {
   const transaction = connection.transaction('feed');
   transaction.oncomplete = callback;
 
-  let feeds = transaction.objectStore('feed');
+  let store = transaction.objectStore('feed');
   if(sortByTitle) {
-    feeds = feeds.index('title');
+    store = store.index('title');
   }
 
-  const request = feeds.openCursor();
+  const request = store.openCursor();
   request.onsuccess = function(event) {
     const cursor = event.target.result;
     if(cursor) {
@@ -47,16 +55,31 @@ function forEach(connection, handleFeed, sortByTitle, callback) {
 
 FeedStore.forEach = forEach;
 
+// Adds/updates the feed in the database.
+// @param original the feed as it was loaded from the database prior
+// to update. Optional. If specified, certain properties from the original
+// are maintained in the updated feed object.
+// @param feed the object containing new feed properties
 // TODO: check last modified date of the remote xml file to avoid 
 // pointless updates?
 // TODO: ensure the date is not beyond the current date?
 // TODO: maybe not modify date updated if not dirty
 function put(connection, original, feed, callback) {
+  
   const storable = {};
+  
+  // Maintain the same id if doing an update
   if(original) {
     storable.id = original.id;
   }
+  
   storable.url = feed.url;
+
+  // Record the type property (the feed's original format)
+  if(feed.hasOwnProperty('type')) {
+    storable.type = feed.type;
+  }
+
   if(original) {
     storable.schemeless = original.schemeless;
   } else {
@@ -91,27 +114,24 @@ function put(connection, original, feed, callback) {
     storable.created = Date.now();
   }
 
-  // TODO: just use transaction.oncomplete ?
   const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.put(storable);
-  request.onsuccess = function(event) {
-    callback();
-  };
-  request.onerror = function(event) {
-    console.debug('Error putting feed %s', storable.url);
-    if(event.target && event.target.error) {
-      console.debug(event.target.error.message);
-    } else {
+
+  transaction.oncomplete = function(event) {
+    // Temporary, just log any errors
+    if(event.target.error) {
+      console.debug('Error putting feed %s', storable.url);
       console.dir(event);
     }
+
     callback();
   };
 }
 
 FeedStore.put = put;
 
-// Private helper for put
+// Private helper for put, cleans up a string value
 // TODO: sanitize html entities?
 function sanitizeValue(value) {
   if(value) {
@@ -123,6 +143,7 @@ function sanitizeValue(value) {
   }
 }
 
+// Removes the corresponding feed from the database
 function remove(connection, id, callback) {
   const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
@@ -132,7 +153,9 @@ function remove(connection, id, callback) {
 
 FeedStore.remove = remove;
 
-// TODO: deprecate
+// Removes the corresponding feed from the database along
+// with any corresponding entries
+// TODO: deprecate or move into some other lib
 function unsubscribe(connection, id, callback) {
   remove(connection, id, function(event) {
     EntryStore.removeByFeed(connection, id, callback);
@@ -141,4 +164,4 @@ function unsubscribe(connection, id, callback) {
 
 FeedStore.unsubscribe = unsubscribe;
 
-} // END LEXICAL SCOPE
+} // END ANONYMOUS NAMESPACE

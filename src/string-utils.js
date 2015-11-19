@@ -6,10 +6,10 @@
 
 const StringUtils = {};
 
-{ // BEGIN LEXICAL SCOPE
+{ // BEGIN ANONYMOUS NAMESPACE
 
 // Removes HTML elements from a string
-function removeTags(string, replacement) {
+StringUtils.removeTags = function(string, replacement) {
 
   if(!string)
     return;
@@ -30,9 +30,7 @@ function removeTags(string, replacement) {
     node = iterator.nextNode();
   }
   return values.join(replacement);
-}
-
-StringUtils.removeTags = removeTags;
+};
 
 // Private helper for removeTags
 function createHTMLDocument() {
@@ -44,27 +42,23 @@ function createHTMLDocument() {
 const RE_CONTROL_CHARACTER = /[\t\r\n]/g;
 
 // TODO: rename to removeControlCharacters
-function stripControlCharacters(string) {
+StringUtils.stripControlCharacters = function(string) {
   if(string) {
     return string.replace(RE_CONTROL_CHARACTER,'');
   }
-}
-
-StringUtils.stripControlCharacters = stripControlCharacters;
+};
 
 const ELLIPSIS = '\u2026';
 
 // Truncates a string at the given position, and then appends
 // the extension string. An ellipsis is appended if an 
 // extension was not specified.
-function truncate(string, position, extension) {
+StringUtils.truncate = function(string, position, extension) {
   if(string && string.length > position) {
     extension = extension || ELLIPSIS;
     return string.substr(0, position) + extension;
   }
   return string;
-}
+};
 
-StringUtils.truncate = truncate;
-
-} // END LEXICAL SCOPE
+} // END ANONYMOUS NAMESPACE

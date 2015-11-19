@@ -28,7 +28,7 @@
 
 const FeedPoll = {};
 
-{ // BEGIN LEXICAL SCOPE
+{ // BEGIN ANONYMOUS NAMESPACE
 
 function start() {
   console.debug('Polling feeds');
@@ -165,4 +165,4 @@ function onComplete() {
   Notification.show('Updated articles');
 }
 
-} // END LEXICAL SCOPE
+} // END ANONYMOUS NAMESPACE

@@ -7,7 +7,7 @@
 // Utility functions for OPML features
 const OPMLUtils = {};
 
-{ // BEGIN LEXICAL SCOPE
+{ // BEGIN ANONYMOUS NAMESPACE
 
 // Imports an array of files representing OPML documents
 // (from the file browser window). Calls callback when 
@@ -16,7 +16,7 @@ const OPMLUtils = {};
 // TODO: I do not like how I am importing all of the files
 // and then importing all of the feeds. I can import one at a
 // time instead
-function importFiles(files, callback) {
+OPMLUtils.importFiles = function(files, callback) {
   async.map(files, loadFile, onFilesLoaded);
 
   function loadFile(file, callback) {
@@ -87,18 +87,17 @@ function importFiles(files, callback) {
     Notification.show(message);  
     callback();
   }
-}
+};
 
-OPMLUtils.importFiles = importFiles;
 
 // Generates an OPMLDocument representing all feeds in the database
 // and passes it to the callback as the second argument. If an error
 // occurs, the first argument is set and represents the error object.
-function createDocument(title, callback) {
+OPMLUtils.createDocument = function(title, callback) {
   const document = new OPMLDocument();
   document.setTitle(title);
   Database.open(createDocumentOnConnect.bind(null, document, callback));
-}
+};
 
 function createDocumentOnConnect(document, callback, event) {
   if(event.type !== 'success') {
@@ -116,6 +115,4 @@ function createDocumentOnFeedsIterated(document, callback) {
   callback(null, document);
 }
 
-OPMLUtils.createDocument = createDocument;
-
-} // END LEXICAL SCOPE
+} // END ANONYMOUS NAMESPACE

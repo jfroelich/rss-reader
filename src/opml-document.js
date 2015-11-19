@@ -209,17 +209,17 @@ class OPMLDocument {
 
   // Appends a feed object to the document as an outline element
   // NOTE: does not verify whether the feed has a link
-  // TODO: update dateModified as a side effect
+  // TODO: update dateModified as a side effect?
   appendFeed(feed) {
 
     const outline = this.createElement('outline');
 
     // TODO: validate type?
     if(feed.type) {
-      outline.setAttribute('type', feed.title);
+      outline.setAttribute('type', feed.type);
     } else {
-      // Set a default type. Note that for now we are not storing 
-      // feed.type so this always is set to rss.
+      // Set a default type
+      // TODO: is this appropriate?
       outline.setAttribute('type', 'rss');
     }
 

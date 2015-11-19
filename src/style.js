@@ -4,6 +4,10 @@
 
 'use strict';
 
+// Style lib. Contains functions and global constants for 
+// updating the display of articles
+// TODO: maybe use just one function for both load/change
+
 chrome.runtime.onMessage.addListener(function(message) {
   if(message && message.type === 'displaySettingsChanged') {
     updateEntryStyles();
@@ -71,7 +75,6 @@ function findCSSRule(sheet, selectorText) {
   });
 }
 
-// TODO: maybe use just one function for both load/change
 function updateEntryStyles() {
   // Assume a sheet is always available
   const sheet = document.styleSheets[0];

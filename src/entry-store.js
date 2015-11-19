@@ -6,7 +6,7 @@
 
 const EntryStore = {};
 
-{ // BEGIN LEXICAL SCOPE
+{ // BEGIN ANONYMOUS NAMESPACE
 
 EntryStore.UNREAD = 0;
 EntryStore.READ = 1;
@@ -258,4 +258,4 @@ function onArchiveComplete(stats, event) {
     stats.archived);
 }
 
-} // END LEXICAL SCOPE
+} // END ANONYMOUS NAMESPACE

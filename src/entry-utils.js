@@ -6,7 +6,7 @@
 
 const EntryUtils = {};
 
-{ // BEGIN LEXICAL SCOPE
+{ // BEGIN ANONYMOUS NAMESPACE
 
 // Given an array of unique entries, returns a new array of 
 // unique entries (compared by entry.link)
@@ -72,4 +72,4 @@ function onImageDimensionsSet(entry, document, callback) {
 EntryUtils.getUniqueEntries = getUniqueEntries;
 EntryUtils.augmentContent = augmentContent;
 
-} // END LEXICAL SCOPE
+} // END ANONYMOUS NAMESPACE

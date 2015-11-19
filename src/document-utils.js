@@ -7,8 +7,9 @@
 // Document utility functions
 const DocumentUtils = {};
 
-{ // BEGIN LEXICAL SCOPE
+{ // BEGIN ANONYMOUS NAMESPACE
 
+// A map of element names to attributes that contain urls
 const ATTRIBUTE_MAP = new Map([
   ['a', 'href'],
   ['area', 'href'],
@@ -26,8 +27,7 @@ const ATTRIBUTE_MAP = new Map([
   ['video', 'src']
 ]);
 
-// Statically create the RESOLVE_SELECTOR value from 
-// the attribute map
+// Statically create RESOLVE_SELECTOR from the map
 let keys = [];
 ATTRIBUTE_MAP.forEach(function(value, key) {
   keys.push(key + '[' + value +']');
@@ -47,7 +47,7 @@ const RESOLVE_SELECTOR = keys.join(',');
 // Also note that there could be multiple base tags, the logic for 
 // handling it properly is all laid out in some RFC standard somewhere, 
 // and is probably present in Webkit source.
-function resolveURLs(document, baseURL) {
+DocumentUtils.resolveURLs = function(document, baseURL) {
 
 	const wrapped = HTMLDocumentWrapper.wrap(document);
 
@@ -57,15 +57,12 @@ function resolveURLs(document, baseURL) {
 
   // Resolve the attribute values for various elements
   const resolvables = wrapped.querySelectorAll(RESOLVE_SELECTOR);
-  resolvables.forEach(resolveElement);
-}
-
-// Export global
-DocumentUtils.resolveURLs = resolveURLs;
+  resolvables.forEach(resolveElement.bind(this, baseURL));
+};
 
 // Resolves one of the URL containing attributes for a given 
-// element
-function resolveElement(element) {
+// element. Private helper for resolveURLs
+function resolveElement(baseURL, element) {
   const attributeName = ATTRIBUTE_MAP.get(element.localName);
 
   // We know attribute is defined because the selector
@@ -89,12 +86,9 @@ function remove(element) {
 
 // Asynchronously attempts to set the width and height for 
 // all image elements
-function setImageDimensions(document, callback) {
+DocumentUtils.setImageDimensions = function(document, callback) {
   const images = document.getElementsByTagName('img');
   async.forEach(images, ImageUtils.fetchDimensions, callback);
-}
+};
 
-// Export global
-DocumentUtils.setImageDimensions = setImageDimensions;
-
-} // END LEXICAL SCOPE
+} // END ANONYMOUS NAMESPACE

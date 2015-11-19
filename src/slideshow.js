@@ -4,7 +4,7 @@
 
 'use strict';
 
-{ // BEGIN UNNAMED LOCAL LEXICAL SCOPE
+{ // BEGIN ANONYMOUS NAMESPACE
 
 let currentSlide = null;
 
@@ -473,4 +473,4 @@ function initSlideShow(event) {
 
 document.addEventListener('DOMContentLoaded', initSlideShow);
 
-} // END UNNAMED LOCAL LEXICAL SCOPE
+} // END ANONYMOUS NAMESPACE

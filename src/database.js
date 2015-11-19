@@ -4,29 +4,32 @@
 
 'use strict';
 
+// indexedDB lib
 // TODO: just store scheme and schemeless props as parts of a url property.
 // TODO: store urls as URL objects?
 const Database = {};
 
-{ // BEGIN LEXICAL SCOPE
+{ // BEGIN ANONYMOUS NAMESPACE
 
 // TODO: use 'lucubrate' as the database name
 const NAME = 'reader';
 const VERSION = 17;
 
-function open(callback) {
+// Connects to indexedDB and passes the resulting event
+// to the callback
+Database.open = function(callback) {
   const request = indexedDB.open(NAME, VERSION);
   request.onupgradeneeded = upgrade;
   request.onsuccess = callback;
   request.onerror = callback;
   request.onblocked = callback;
-}
+};
 
-// Export
-Database.open = open;
-
+// Private helper for open that upgrades the database to the current
+// version
 function upgrade(event) {
-  console.debug('Upgrading database from version %s', event.oldVersion);
+  console.log('Upgrading database from version %s to %s', 
+    event.oldVersion, VERSION);
   const request = event.target;
   const connection = request.result;
   let feedStore = null, entryStore = null;
@@ -99,4 +102,4 @@ function upgrade(event) {
   }
 }
 
-} // END LEXICAL SCOPE
+} // END ANONYMOUS NAMESPACE

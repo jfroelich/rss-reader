@@ -6,7 +6,7 @@
 
 // TODO: implement history? mimic chrome. would need search ability
 
-{ // BEGIN LEXICAL SCOPE
+{ // BEGIN ANONYMOUS NAMESPACE
 
 function $$(name) {
   return document.getElementById(name);
@@ -830,5 +830,4 @@ function initOptionsPage(event) {
 
 document.addEventListener('DOMContentLoaded', initOptionsPage);
 
-} // END LEXICAL SCOPE
-
+} // END ANONYMOUS NAMESPACE

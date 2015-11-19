@@ -7,11 +7,11 @@
 // Image element utilities
 const ImageUtils = {};
 
-{ // BEGIN LEXICAL SCOPE
+{ // BEGIN ANONYMOUS NAMESPACE
 
 // Sets an image's dimensions and then calls the callback
 // (without arguments).
-function fetchDimensions(image, callback) {
+ImageUtils.fetchDimensions = function(image, callback) {
   
   let sourceURL = image.getAttribute('src') || '';
   sourceURL = sourceURL.trim();
@@ -28,6 +28,9 @@ function fetchDimensions(image, callback) {
   // document (e.g. created by XMLHttpRequest?)
   // TODO: isDataURI is only ever called from here, maybe 
   // the function belongs here?
+  // Are the width and height properties automatically set
+  // for a data URI within an inert document context? If so,
+  // then we do not need to fetch.
   if(URLUtils.isDataURI(sourceURL)) {
     callback();
     return;
@@ -52,7 +55,7 @@ function fetchDimensions(image, callback) {
   proxy.onload = onProxyLoad.bind(proxy, callback, image);
   proxy.onerror = onProxyError.bind(proxy, callback);
   proxy.src = sourceURL;
-}
+};
 
 // fetchDimensions helper
 function onProxyLoad(callback, image, event) {
@@ -68,15 +71,12 @@ function onProxyError(callback, event) {
 }
 
 // Returns truthy when the image has a non-zero width
+// TODO: there is probably some cleanup that needs to happen
+// here regarding redundancy of conditions
 function hasWidth(image) {
-  // TODO: there is probably some cleanup that needs to happen
-  // here regarding redundancy of conditions
   const width = (image.getAttribute('width') || '').trim();
   return width && image.width && width !== '0' && 
     !/^0\s*px/i.test(width);
 }
 
-// Export
-ImageUtils.fetchDimensions = fetchDimensions;
-
-} // END LEXICAL SCOPE
+} // END ANONYMOUS NAMESPACE
