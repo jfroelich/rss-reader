@@ -6,6 +6,12 @@
 
 // The Calamine lib provides the transform function that modifies 
 // the contents of a Document instance.
+
+// TODO: rewrite the internals of transform to make calls out to 
+// new private functions, which serves an organizing purpose, but 
+// also so that I can restart the process of profiling and identifying
+// hot spots
+
 // TODO: express everything as probability? Use a scale of 0 to 100
 // to represent each element's likelihood of being useful content, where
 // 100 is most likely. Every blcok gets its own probability score. Then
@@ -21,8 +27,16 @@
 // it. These selectors target boilerplate typically found in the best
 // element, after processing, but are applied before processing to reduce the
 // amount of elements considered and reduce error.
+
 // TODO: re intrinsic bias, there are only maybe 5-6 likely elements and 
 // everything else is very unlikely. <div> is the most likely.
+
+// TODO: pruning blacklisted elements early appears to be too resource 
+// intensive. Perhaps it would be better to leave them in until the 
+// best element has been found, and then prune the best element. Or, 
+// rather than prune, just mark various dom-subtrees as excluded 
+// and somehow ignore them when scoring, and then prune after
+
 const Calamine = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
@@ -36,195 +50,41 @@ Calamine.transform = function(doc, annotate) {
   const document = HTMLDocumentWrapper.wrap(doc);
   const setAnnotation = annotate ? setDatasetProperty : noop;
 
-  // Remove comments
-  document.forEachNode(NodeFilter.SHOW_COMMENT, remove);
-  // Remove blacklisted elements
-  BLACKLIST_SELECTORS.forEach(function(selector) {
-    document.querySelectorAll(selector).forEach(remove);
-  });
-  // Remove tracer images
-  document.getElementsByTagName('img').filter(isTracer).forEach(remove);
-  // Unwrap noscript and noframes
-  document.querySelectorAll('noscript, noframes', unwrap);
-  // Remove hidden elements
-  document.getElementsByTagName('*').filter(isHidden).forEach(remove);
+  removeComments(document.internal);
+  removeBlacklistedElements(document.internal);
+  removeTracerImages(document.internal);
+  unwrapFallbackElements(document.internal);
+  removeHiddenElements(document.internal);
+  transformBreakRuleElements(document.internal);
+  transformWhitespace(document.internal);
+  trimTextNodes(document.internal);
+  removeEmptyTextNodes(document.internal);
 
-  // Canonicalize whitespace
-  document.forEachNode(NodeFilter.SHOW_TEXT, canonicalizeWhitespace);
-
-  // Transform break rule elements
-  document.getElementsByTagName('br').forEach(
-    transformBR.bind(null, document));
-
-  trimTextNodes(document);
-
-  document.forEachNode(NodeFilter.SHOW_TEXT, function(node) {
-    if(!node.nodeValue) {
-      node.remove();
-    }
-  });
+  // TODO: do not re-use elements. create initializeScores
+  // function that returns the scores map, require all later
+  // code to re-generate its own elements collection
 
   const elements = document.getElementsByTagName('*');
   const scores = new Map();
   elements.forEach(element => scores.set(element, 0));
 
-  // Collect node text lengths
-  const textLengths = deriveTextLengths(document);
+  applyTextBias(document.internal, scores, setAnnotation);
+  applyIntrinsicBias(document.internal, scores, setAnnotation);
+  applyDownwardBias(document.internal, scores, setAnnotation);
+  applyUpwardBias(document.internal, scores, setAnnotation);
+  applyImageContainerBias(document.internal, scores, setAnnotation);
+  applyAttributeBias(document.internal, scores, setAnnotation);
+  annotateScores(document.internal, scores, annotate);
 
-  // Collect non-nominal anchor text lengths
-  const anchors = document.querySelectorAll('a[href]');
-  const anchorLengths = anchors.reduce(function (map, anchor) {
-    const length = textLengths.get(anchor);
-    const ancestors = getAncestors(anchor);
-    if(length) {
-      return [anchor].concat(ancestors).reduce(function(map, element) {
-        return map.set(element, (map.get(element) || 0) + length);
-      }, map);
-    } else {
-      return map;
-    }
-  }, new Map());
+  const bestElement = findBestElement(document.internal, scores);
 
-  // Apply text bias to each element
-  elements.forEach(function(element) {
-    const bias = getTextBias(element, textLengths, 
-      anchorLengths);
-    if(bias) {
-      scores.set(element, scores.get(element) + bias);
-      setAnnotation(element, 'textBias', bias.toFixed(2));
-    }
-  });
+  removeNonIntersectingElements(document.internal, bestElement);
+  transformJavascriptAnchors(document.internal);
+  unwrapNominalAnchors(document.internal);
 
-  // Apply intrinsic bias to each element
-  elements.forEach(function(element) {
-    const bias = INTRINSIC_BIAS.get(element.localName);
-    if(bias) {
-      setAnnotation(element, 'intrinsicBias', bias);
-      scores.set(element, scores.get(element) + bias);
-    }
-  });
 
-  // Pathological case for single articles
-  const articles = document.getElementsByTagName('article');
-  if(articles.length === 1) {
-    scores.set(articles[0], scores.get(articles[0]) + 1000);
-    setAnnotation(articles[0], 'intrinsicBias', 1000);
-  }
+  // NOTE: stopped here with refactoring, towards separate functions
 
-  // Penalize list descendants
-  // TODO: this is bugged, not accumulating bias from other ancestors
-  const listSelector = 'li *, ol *, ul *, dd *, dl *, dt *';
-  document.querySelectorAll(listSelector).forEach(function(element) {
-    scores.set(element, scores.get(element) - 100);
-    setAnnotation(element, 'listItemBias', -100);
-  });
-
-  // Penalize descendants of navigational elements
-  const navSelector = 'aside *, header *, footer *, nav *';
-  document.querySelectorAll(navSelector).forEach(function(element) {
-    scores.set(element, scores.get(element) - 50);
-    if(element.dataset) {
-      setAnnotation(element, 'navigationItemBias', 
-        parseInt(element.dataset.navigationItemBias || '0') - 50);
-    }
-  });
-
-  // Bias the parents of certain elements
-  elements.forEach(function(element) {
-    const bias = DESCENDANT_BIAS.get(element.localName);
-    if(bias) {
-      const parent = element.parentElement;
-      setAnnotation(parent, 'descendantBias', parseInt(
-        parent.dataset.descendantBias || '0') + bias);
-      scores.set(parent, scores.get(parent) + bias);      
-    }
-  });
-
-  // Bias image containers
-  document.querySelectorAll('img').forEach(function(image) {
-    const parent = image.parentElement;
-    const bias = getCarouselBias(image) + 
-      getImageDescriptionBias(image) + 
-      getImageDimensionBias(image);
-    if(bias) {
-      setAnnotation(parent, 'imageBias', bias);
-      scores.set(parent, scores.get(parent) + bias);      
-    }
-  });
-
-  // Bias certain elements based on their attributes
-  // TODO: itemscope?
-  // TODO: itemprop="articleBody"?
-  // TODO: [role="article"]?
-  const biasedElementsWithAttributesSelector = 
-    'a, aside, div, dl, figure, h1, h2, h3, h4,' +
-    ' ol, p, section, span, ul';
-  document.querySelectorAll(
-    biasedElementsWithAttributesSelector).forEach(function(element) {
-    const bias = getAttributeBias(element);
-    setAnnotation(element, 'attributeBias', bias);
-    scores.set(element, scores.get(element) + bias);
-  });
-
-  function applySingleClassBias(className, bias) {
-    const elements = document.getElementsByClassName(className);
-    if(elements.length === 1) {
-      scores.set(elements[0], scores.get(elements[0]) + bias);
-      setAnnotation(elements[0], 'attributeBias', bias);
-    }
-  }
-
-  applySingleClassBias('article', 1000);
-  applySingleClassBias('articleText', 1000);
-  applySingleClassBias('articleBody', 1000);
-
-  // Item types
-  ITEM_TYPES.forEach(function(schema) {
-    const elements = document.querySelectorAll('[itemtype="' + 
-      schema + '"]');
-    if(elements.length === 1) {
-      scores.set(elements[0], scores.get(elements[0]) + 500);
-      setAnnotation(elements[0], 'itemTypeBias', 500);
-    }
-  });
-
-  // Annotate element scores
-  if(annotate) {
-    elements.forEach(function(element) {
-      const score = scores.get(element);
-      if(score) {
-        element.dataset.score = score.toFixed(2);
-      }
-    });    
-  }
-
-  // Find the best element
-  let bestElement = document.body;
-  let bestElementScore = scores.get(bestElement);
-  elements.forEach(function(element) {
-    const score = scores.get(element);
-    if(score > bestElementScore) {
-      bestElement = element;
-      bestElementScore = score;
-    }
-  });
-
-  // Remove non-intersecting elements
-  // TODO: use Node.compareDocumentPosition
-  elements.filter(function(element) {
-    return element !== bestElement && 
-      !bestElement.contains(element) && 
-      !element.contains(bestElement);
-  }).forEach(remove);
-
-  // Transform javascript anchors into nominal anchors
-  document.querySelectorAll('a[href]').filter(
-    isJavascriptAnchor).forEach(function(anchor) {
-    anchor.removeAttribute('href');
-  });
-
-  // Unwrap nominal anchors
-  document.querySelectorAll('a:not([href])').forEach(unwrap);
 
   // Unwrap certain elements
   for(let element = document.querySelector(UNWRAPPABLE_ELEMENTS),
@@ -268,11 +128,258 @@ Calamine.transform = function(doc, annotate) {
   } // end trim block
 };
 
-// This could use a lot of improvement and is just a 
-// quick hack for now.
-function transformBR(document, element) {
-  const p = document.createElement('p');
-  element.parentNode.replaceChild(p, element);
+// Removes comment nodes
+// TODO: maybe take another look at the whole conditional comments 
+// mess of Internet Explorer and consider some more nuanced removal
+function removeComments(document) {
+  const it = document.createNodeIterator(document.documentElement,
+    NodeFilter.SHOW_COMMENT);
+  let comment = it.nextNode();
+  while(comment) {
+    comment.remove();
+    comment = it.nextNode();
+  }
+}
+
+// Removes images that do not have a source url or that appear to be tracers. 
+// A tracer image is a tracking technique where some websites embed a small, 
+// hidden image into a document and then track the requests for that image 
+// using a traditional web request log analytics tool. This function considers
+// width and height independently, resulting in removal of images that appear
+// like horizontal rule elements or vertical bars, which is also desired.
+function removeTracerImages(document) {
+  const images = document.querySelectorAll('img');
+  const length = images.length;
+  for(let i = 0; i < length; i++) {
+    const image = images[i];
+    const source = (image.src || '').trim();
+    if(!source || image.width < 2 || image.height < 2) {
+      image.remove();
+    }
+  }
+}
+
+// Removes fallback elements such as noscript and noframes. noframes is 
+// no longer supported in HTML5 but we still want to be able to process 
+// such pages. We unwrap instead of remove because some websites use a 
+// content-loading trick to render a document which involves a script
+// 'revealing' the inner contents of a noscript element.
+// TODO: maybe there is a better way to special case this because right 
+// now it occassionally causes a very unwanted side effect where content
+// that was supposed to be normally hidden becomes visible.
+// TODO: we should also consider weighting children against becoming 
+// the best element, or weighting children as more likely to be 
+// boilerplate (more/less likely to be content).
+function unwrapFallbackElements(document) {
+  const elements = document.querySelectorAll('noscript, noframes');
+  for(let i = 0, len = elements.length; i < len; i++) {
+    unwrap(elements[i]);
+  }
+}
+
+// These elements are never considered hidden, even if they meet 
+// other conditions
+const HIDDEN_ELEMENT_EXCEPTIONS = new Set([
+  'noscript',
+  'noembed'
+]);
+
+// This uses a NodeIterator for selection and traversal because I 
+// want to avoid visiting detached subtrees.
+// This does not test against offsetWidth/Height because the 
+// properties do not appear to be initialized within inert documents
+function removeHiddenElements(document) {
+  const it = document.createNodeIterator(
+    document.documentElement, NodeFilter.SHOW_ELEMENT);
+  let element = it.nextNode();
+  while(element) {
+    if(!HIDDEN_ELEMENT_EXCEPTIONS.has(element.localName)) {
+      const style = element.style;
+      const opacity = parseFloat(style.opacity);
+      if(style.display === 'none' || 
+        style.visibility === 'hidden' || 
+        style.visibility === 'collapse' || 
+        opacity < 0.3) {
+        element.remove();
+      }
+    }
+
+    element = it.nextNode();
+  }
+}
+
+// TODO: improve this. br is allowed in inline elements
+// and this is shoving non-inline p into inline sometimes
+// so we need to be able to break the inline context in 
+// half somehow
+function transformBreakRuleElements(document) {
+  const elements = document.querySelectorAll('br');
+  const length = elements.length;
+  for(let i = 0; i < length; i++) {
+    const element = elements[i];
+    const parent = element.parentElement;
+    const p = document.createElement('p');
+    parent.replaceChild(p, element);
+  }
+}
+
+// TODO: i think this is causing a problem with removing important 
+// whitespace in whitespace sensitive elements, so this needs to 
+// be refactored. Or maybe, rather than modifying or changing 
+// the whitespace, we modify the is-empty and the length functions
+// to account for alternate whitespace representations and just 
+// do not perform this step. That will reduce the number of dom
+// mutation operations and probably speed up the transform, because
+// dom mutation appears to be the hotspot
+function transformWhitespace(document) {
+  const it = document.createNodeIterator(document.documentElement,
+    NodeFilter.SHOW_TEXT);
+  let node = it.nextNode();
+  while(node) {
+    node.nodeValue = node.nodeValue.replace(/\s/g, ' ');
+    node = it.nextNode();
+  }
+}
+
+const WHITESPACE_SENSITIVE_SELECTOR = 'code, code *, pre, pre *, ' + 
+  'ruby, ruby *, textarea, textarea *, xmp, xmp *';
+
+function trimTextNodes(document) {
+  const elements = document.querySelectorAll(
+    WHITESPACE_SENSITIVE_SELECTOR);
+  const preformatted = new Set(Array.from(elements));
+  const iterator = document.createNodeIterator(document.documentElement, 
+    NodeFilter.SHOW_TEXT);
+  let node = iterator.nextNode();
+
+  while(node) {
+    if(preformatted.has(node.parentElement)) {
+      node = iterator.nextNode();
+      continue;
+    }
+
+    if(node.previousSibling) {
+      if(isElement(node.previousSibling)) {
+        if(isInlineElement(node.previousSibling)) {
+          if(node.nextSibling) {
+            if(isElement(node.nextSibling)) {
+              if(!isInlineElement(node.nextSibling)) {
+                node.nodeValue = node.nodeValue.trimRight();
+              }
+            }
+          } else {
+            node.nodeValue = node.nodeValue.trimRight();
+          }
+        } else {
+         node.nodeValue = node.nodeValue.trim();
+        }
+      } else {
+       if(node.nextSibling) {
+          if(isElement(node.nextSibling)) {
+            if(isInlineElement(node.nextSibling)) {
+            } else {
+             node.nodeValue = node.nodeValue.trimRight();
+            }
+          }
+        } else {
+          node.nodeValue = node.nodeValue.trimRight();
+        }
+      }
+    } else if(node.nextSibling) {
+     if(isElement(node.nextSibling)) {
+        if(isInlineElement(node.nextSibling)) {
+          node.nodeValue = node.nodeValue.trimLeft();
+        } else {
+          node.nodeValue = node.nodeValue.trim();
+        }
+      } else {
+        node.nodeValue = node.nodeValue.trimLeft();
+      }
+    } else {
+      node.nodeValue = node.nodeValue.trim();
+    }
+
+    node = iterator.nextNode();
+  }
+}
+
+// TODO: do this inline with trim instead of doing this in 
+// a second iteration
+function removeEmptyTextNodes(document) {
+  const it = document.createNodeIterator(document.documentElement,
+    NodeFilter.SHOW_TEXT);
+  let node = it.nextNode();
+  while(node) {
+    if(!node.nodeValue) {
+      node.remove();
+    }
+    node = it.nextNode();
+  }
+}
+
+// Calculates and records the text bias for elements. The text bias
+// metric is adapted from the algorithm described in the paper 
+// "Boilerplate Detection using Shallow Text Features". See 
+// See http://www.l3s.de/~kohlschuetter/boilerplate. For better 
+// performance, this substitutes character count for word count.
+function applyTextBias(document, scores, setAnnotation) {
+
+  // Generate a map between document elements and a count 
+  // of characters within the element. This is tuned to work
+  // from the bottom up rather than the top down.
+  const textLengths = new Map();
+  const it = document.createNodeIterator(document.documentElement,
+    NodeFilter.SHOW_TEXT);
+  let node = it.nextNode();
+  while(node) {
+    const length = node.nodeValue.length;
+    if(length) {
+      let element = node.parentElement;
+      while(element) {
+        const previousLength = (textLengths.get(element) || 0);
+        textLengths.set(element, previousLength + length);
+        element = element.parentElement;
+      }
+    }
+
+    node = it.nextNode();
+  }
+
+  // Generate a map between document elements and a count of 
+  // the characters contained within anchor elements present 
+  // anywhere within the elements
+  const anchors = document.querySelectorAll('a[href]');
+  const anchorLengths = new Map();
+  const numAnchors = anchors.length;
+  for(let i = 0; i < numAnchors; i++) {
+    const anchor = anchors[i];
+    const length = textLengths.get(anchor);
+    if(!length) continue;
+    anchorLengths.set(anchor, (anchorLengths.get(anchor) || 0) + length);
+
+    let ancestor = anchor.parentElement;
+    while(ancestor) {
+      const previousLength = (anchorLengths.get(ancestor) || 0);
+      anchorLengths.set(ancestor, previousLength + length);
+      ancestor = ancestor.parentElement;
+    }
+  }
+
+  const elements = document.getElementsByTagName('*');
+  const numElements = elements.length;
+  for(let i = 0; i < numElements; i++) {
+    const element = elements[i];
+    const length = textLengths.get(element);
+    if(!length) continue;
+    const anchorLength = anchorLengths.get(element) || 0;
+
+    let bias = (0.25 * length) - (0.7 * anchorLength);
+    // Tentatively cap the bias (empirical)
+    bias = Math.min(4000, bias);
+    if(!bias) continue;
+    scores.set(element, scores.get(element) + bias);
+    setAnnotation(element, 'textBias', bias.toFixed(2));
+  }
 }
 
 const INTRINSIC_BIAS = new Map([
@@ -321,30 +428,372 @@ const INTRINSIC_BIAS = new Map([
   ['tr', -500]
 ]);
 
-function canonicalizeWhitespace(node) {
-  node.nodeValue = node.nodeValue.replace(/\s/g, ' ');
+function applyIntrinsicBias(document, scores, setAnnotation) {
+
+  // Because we are not mutating the document, using a live
+  // node list (returned by getElementsByTagName) makes the 
+  // most sense since there is very little overhead in 
+  // performing the query multiple times.
+
+  const elements = document.getElementsByTagName('*');
+  const numElements = elements.length;
+  for(let i = 0; i < numElements; i++) {
+    const element = elements[i];
+    if(!element) {
+      console.debug('Undefined element? %s', i);
+      continue;
+    }
+    const bias = INTRINSIC_BIAS.get(element.localName);
+    if(!bias) continue;
+    setAnnotation(element, 'intrinsicBias', bias);
+    scores.set(element, scores.get(element) + bias);
+  }
+
+  // Pathological case for single article
+  const articles = document.getElementsByTagName('article');
+  if(articles.length === 1) {
+    const article = articles[0];
+    scores.set(article, scores.get(article) + 1000);
+    setAnnotation(article, 'intrinsicBias', 1000);
+  }
 }
 
-function deriveTextLengths(document) {
-  const map = new Map();
-  document.forEachNode(NodeFilter.SHOW_TEXT, function(node) {
-    while(node) {
-      const length = node.nodeValue.length;
-      if(length) {
-        node = node.parentNode;
-        while(node) {
-          map.set(node, (map.get(node) || 0) + length);
-          node = node.parentNode;
-        }
+function applyDownwardBias(document, scores, setAnnotation) {
+
+  // Penalize list descendants. Even though we are not mutating, 
+  // it seems faster to use querySelectorAll here than using 
+  // NodeIterator or getElementsByTagName because we want to include
+  // all descendants.
+  // TODO: this is buggy, not accumulating bias in annotation
+  const LIST_SELECTOR = 'li *, ol *, ul *, dd *, dl *, dt *';
+  const listDescendants = document.querySelectorAll(LIST_SELECTOR);
+  const numLists = listDescendants.length;
+  for(let i = 0; i < numLists; i++) {
+    const listDescendant = listDescendants[i];
+    scores.set(listDescendant, scores.get(listDescendant) - 100);
+    setAnnotation(listDescendant, 'listDescendantBias', -100);
+  }
+
+  // TODO: is it silly to bias such elements if they are 
+  // blacklisted?
+
+  // Penalize descendants of navigational elements
+  const NAV_SELECTOR = 'aside *, header *, footer *, nav *';
+  const navDescendants = document.querySelectorAll(NAV_SELECTOR);
+  const numNavs = navDescendants.length;
+  for(let i = 0; i < numNavs; i++) {
+    const navDescendant = navDescendants[i];
+    scores.set(navDescendant, scores.get(navDescendant) - 50);
+
+    // NOTE: this test here is in place due to an unexplained issue with
+    // dataset not being defined? Figure out why. Is it because it is 
+    // lazily defined on the first data property being added, and we 
+    // encounter elements without other data properties yet defined?
+    // TODO: and what if it isn't defined? Are we failing to set the 
+    // annotation in that case? Is that a bug?
+    if(navDescendant.dataset) {
+      setAnnotation(navDescendant, 'navDescendantBias', 
+        parseInt(navDescendant.dataset.navDescendantBias || '0') - 50);
+    }
+  }
+}
+
+// Elements are biased for being parents of these elements
+// NOTE: the anchor bias is partially redundant with the text bias
+// but also accounts for non-text links (e.g. menu of images)
+const UPWARD_BIAS = new Map([
+  ['a', -5],
+  ['blockquote', 20],
+  ['div', -50],
+  ['figure', 20],
+  ['h1', 10],
+  ['h2', 10],
+  ['h3', 10],
+  ['h4', 10],
+  ['h5', 10],
+  ['h6', 10],
+  ['li', -5],
+  ['ol', -20],
+  ['p', 100],
+  ['pre', 10],
+  ['ul', -20]
+]);
+
+// Bias the parents of certain elements
+function applyUpwardBias(document, scores, setAnnotation) {
+  const elements = document.getElementsByTagName('*');
+  const numElements = elements.length;
+  for(let i = 0; i < numElements; i++) {
+    const element = elements[i];
+    const bias = UPWARD_BIAS.get(element.localName);
+    if(!bias) continue;
+    const parent = element.parentElement;
+    scores.set(parent, scores.get(parent) + bias);
+    setAnnotation(parent, 'upwardBias', parseInt(
+      parent.dataset.upwardBias || '0') + bias);
+  }
+}
+
+// Bias image containers
+function applyImageContainerBias(document, scores, setAnnotation) {
+  // We are not mutating, so gebtn is more appropriate than qsa
+  const images = document.getElementsByTagName('img');
+  const numImages = images.length;
+  for(let i = 0; i < numImages; i++) {
+    const image = images[i];
+    const parent = image.parentElement;
+
+    // Ignore images without a parent
+    if(!parent) {
+      console.debug('Encountered orphan image %o', image);
+      continue;
+    }
+
+    let bias = 0.0;
+
+    // Dimension bias
+    if(image.width && image.height) {
+      const area = image.width * image.height;
+      bias = 0.0015 * Math.min(100000, area);
+    }
+
+    // Description bias
+    // TODO: check data-alt and data-title?
+    if(image.getAttribute('alt')) {
+      bias += 20.0;
+    }
+
+    if(image.getAttribute('title')) {
+      bias += 30.0;
+    }
+
+    const caption = findCaption(image);
+    if(caption) {
+      bias += 50.0;
+    }
+
+    // Carousel bias
+    const children = parent.childNodes;
+    const numChildren = children.length;
+    for(let j = 0; j < numChildren; j++) {
+      const node = children[j];
+      if(node !== image && node.localName === 'img') {
+        bias = bias - 50.0;
       }
     }
-  });
-  return map;
+
+    if(bias) {
+      setAnnotation(parent, 'imageBias', bias);
+      scores.set(parent, scores.get(parent) + bias);      
+    }
+  }
 }
 
-function isJavascriptAnchor(anchor) {
-  const href = anchor.getAttribute('href');
-  return /^\s*javascript\s*:/i.test(href);
+const ITEM_TYPES = [
+  'http://schema.org/Article',
+  'http://schema.org/Blog',
+  'http://schema.org/BlogPost',
+  'http://schema.org/BlogPosting',
+  'http://schema.org/NewsArticle',
+  'http://schema.org/ScholarlyArticle',
+  'http://schema.org/TechArticle',
+  'http://schema.org/WebPage'
+];
+
+// Bias certain elements based on attribute values
+// TODO: itemscope?
+// TODO: itemprop="articleBody"?
+// TODO: [role="article"]?
+function applyAttributeBias(document, scores, setAnnotation) {
+
+  // TODO: the call to getAttributeBias appears to be a
+  // hotspot. Needs tuning
+
+  const selector = 'a, aside, div, dl, figure, h1, h2, h3, h4,' +
+    ' ol, p, section, span, ul';
+  const elements = document.querySelectorAll(selector);
+  const numElements = elements.length;
+  for(let i = 0; i < numElements; i++) {
+    const element = elements[i];
+    const bias = getAttributeBias(element);
+    setAnnotation(element, 'attributeBias', bias);
+    scores.set(element, scores.get(element) + bias);
+  }
+
+  // Pathological case for class="article"
+  const articleClassElements = document.getElementsByClassName('article');
+  if(articleClassElements.length === 1) {
+    const element = articleClassElements[0];
+    scores.set(element, scores.get(element) + 1000);
+    if(element.dataset && element.dataset.attributeBias) {
+      setAnnotation(element, 'attributeBias',
+        (parseFloat(element.dataset.attributeBias) || 0) + 1000);
+    } else {
+      setAnnotation(element, 'attributeBias', 1000);
+    }
+  }
+  
+  // Pathological case for class="articleText"
+  const articleTextClassElements = document.getElementsByClassName(
+    'articleText');
+  if(articleTextClassElements.length === 1) {
+    const element = articleTextClassElements[0];
+    scores.set(element, scores.get(element) + 1000);
+    if(element.dataset && element.dataset.attributeBias) {
+      setAnnotation(element, 'attributeBias',
+        (parseFloat(element.dataset.attributeBias) || 0) + 1000);
+    } else {
+      setAnnotation(element, 'attributeBias', 1000);
+    }
+  }
+
+  // Pathological case for class="articleBody"
+  const articleBodyClassElements = document.getElementsByClassName(
+    'articleBody');
+  if(articleBodyClassElements.length === 1) {
+    const element = articleBodyClassElements[0];
+    scores.set(element, scores.get(element) + 1000);
+    if(element.dataset && element.dataset.attributeBias) {
+      setAnnotation(element, 'attributeBias',
+        (parseFloat(element.dataset.attributeBias) || 0) + 1000);
+    } else {
+      setAnnotation(element, 'attributeBias', 1000);
+    }
+  }
+
+  // Item types
+  ITEM_TYPES.forEach(function applyItemTypeBias(schema) {
+    const elements = document.querySelectorAll('[itemtype="' + 
+      schema + '"]');
+    if(elements.length === 1) {
+      scores.set(elements[0], scores.get(elements[0]) + 500);
+      setAnnotation(elements[0], 'itemTypeBias', 500);
+    }
+  });
+}
+
+function getAttributeBias(element) {
+  const values = [];
+  const id = element.getAttribute('id');
+  if(id) values.push(id);
+  const name = element.getAttribute('name');
+  if(name) values.push(name);
+  const className = element.getAttribute('class');
+  if(className) values.push(className);
+  const itemprop = element.getAttribute('itemprop');
+  if(itemprop) values.push(itemprop);
+ 
+  const allValues = values.join(' ');
+  const normalizedValues = allValues.toLowerCase();
+
+  // TODO: split on case-transition (lower2upper,upper2lower)
+  // and do not lower case the value prior to the split, do it after
+  const tokens = normalizedValues.split(/[\s\-_0-9]+/g);
+
+  // NOTE: Spread operator is causing deopt
+  //const distinctTokens = [...new Set(tokens.filter(identity))];
+
+  let bias = 0;
+  const seenTokens = new Set();
+  const numTokens = tokens.length;
+  let token = '';
+  let tokenBias = 0;
+  for(let i = 0; i < numTokens; i++) {
+    token = tokens[i];
+    if(token) {
+      if(!seenTokens.has(token)) {
+        seenTokens.add(token);
+        tokenBias = ATTRIBUTE_BIAS.get(token) || 0;
+        bias = bias + tokenBias;
+      }
+    }
+  }
+
+  return bias;
+}
+
+function annotateScores(document, scores, annotate) {
+
+  if(!annotate) return;
+
+  // TODO: this should just iterate over the scores map entries
+  const elements = document.getElementsByTagName('*');
+  const numElements = elements.length;
+  for(let i = 0; i < numElements; i++) {
+    const element = elements[i];
+    const score = scores.get(element);
+    if(score) {
+      element.dataset.score = score.toFixed(2);
+    }
+  }
+}
+
+function findBestElement(document, scores) {
+
+  let bestElement = document.body;
+  let bestScore = scores.get(bestElement);
+
+  // TODO: this should just iterate over scores map
+
+  const elements = document.getElementsByTagName('*');
+  const numElements = elements.length;
+  for(let i = 0; i < numElements; i++) {
+    const element = elements[i];
+    const score = scores.get(element) || 0;
+    if(score > bestScore) {
+      bestElement = element;
+      bestScore = score;
+    }
+  }
+
+  return bestElement;
+}
+
+function removeNonIntersectingElements(document, bestElement) {
+
+  const it = document.createNodeIterator(document.documentElement,
+    NodeIterator.SHOW_ELEMENT);
+  let element = it.nextNode();
+  while(element) {
+
+    // TODO: use Node.compareDocumentPosition instead of 
+    // three conditions
+    if(element !== bestElement &&
+      !bestElement.contains(element) &&
+      !element.contains(bestElement)) {
+      element.remove();
+    }
+
+    element = it.nextNode();
+  }
+}
+
+// Transform javascript anchors into nominal anchors
+function transformJavascriptAnchors(document) {
+  const anchors = document.querySelectorAll('a[href]');
+  const numAnchors = anchors.length;
+  for(let i = 0; i < numAnchors; i++) {
+    const anchor = anchors[i];
+    const href = anchor.getAttribute('href');
+    if(/^\s*javascript\s*:/i.test(href)) {
+      console.debug('Removing href %s', href);
+      anchor.removeAttribute('href');
+    }
+  }
+}
+
+function unwrapNominalAnchors(document) {
+  // Unwrap nominal anchors
+//  document.querySelectorAll('a:not([href])').forEach(unwrap);
+
+  const anchors = document.querySelectorAll('a');
+  const numAnchors = anchors.length;
+  for(let i = 0; i < numAnchors; i++) {
+    const anchor = anchors[i];
+    if(!anchor.hasAttribute('href')) {
+      unwrap(anchor);
+    }
+  }
 }
 
 function getListItemCount(list) {
@@ -401,102 +850,8 @@ function removeAttributes(element) {
   }
 }
 
-// TODO: element.offsetWidth < 1 || element.offsetHeight < 1; ?
-function isHidden(element) {
-  if(element.localName === 'noscript' || element.localName === 'noembed') {
-    return false;
-  }
-  const style = element.style;
-  if(style.display === 'none' || style.visibility === 'hidden' || 
-    style.visibility === 'collapse') {
-    return true;
-  }
-  const opacity = parseFloat(style.opacity);
-  return opacity < 0.3;
-}
 
-// Adapted from "Boilerplate Detection using Shallow Text Features". 
-// See http://www.l3s.de/~kohlschuetter/boilerplate
-// For better performance, we use character counts instead of word
-// counts.
-function getTextBias(element, textLengths, anchorLengths) {
-  const textLength = textLengths.get(element);
-  let bias = 0;
-  if(textLength) {
-    const anchorLength = anchorLengths.get(element) || 0;
-    bias = (0.25 * textLength) - (0.7 * anchorLength);
-    // Tentative cap
-    bias = Math.min(4000, bias);      
-  }
 
-  return bias;
-}
-
-function getImageDimensionBias(image) {
-  let bias = 0;
-  if(image.width && image.height) {
-    const area = image.width * image.height;
-    bias = 0.0015 * Math.min(100000, area);
-  }
-  return bias;
-}
-
-// TODO: check data-alt and data-title?
-function getImageDescriptionBias(image) {
-  if(image.getAttribute('alt') || image.getAttribute('title') || 
-    findCaption(image)) {
-    return 30;
-  }
-  return 0;
-}
-
-function getCarouselBias(image) {
-  const parent = image.parentElement;
-  if(!parent) {
-    return 0;
-  }
-  return reduce.call(parent.childNodes, function(bias, node) {
-    if(node !== image && node.localName === 'img') {
-      return bias - 50;
-    } else {
-      return bias;
-    }
-  }, 0);
-}
-
-// TODO: split on case-transition (lower2upper,upper2lower)
-// and do not lower case the value prior to the split, do it after
-function tokenize(value) {
-  const tokens = value.toLowerCase().split(/[\s\-_0-9]+/g);
-  return ArrayUtils.unique(tokens.filter(identity));
-}
-
-function getAttributeBias(element) {
-  const values = [
-    element.getAttribute('id'),
-    element.getAttribute('name'),
-    element.getAttribute('class'),
-    element.getAttribute('itemprop')
-  ].filter(identity);
-  const tokens = tokenize(values.join(' '));
-  return tokens.reduce(function(sum, value) {
-    return sum + (ATTRIBUTE_BIAS.get(value) || 0);
-  }, 0);
-}
-
-// Return true if image missing source or tracer-like
-// TODO: cleanup redundant conditions, research how Chrome sets properties
-// from attributes, and the data type of those properties (string or int?)
-function isTracer(image) {
-  const source = image.getAttribute('src');
-  const width = image.getAttribute('width');
-  const height = image.getAttribute('height');
-  return !source || !source.trim() || 
-    width === '0' || width === '0px' || width === '1' ||
-    height === '1px' || height === '1' || 
-    image.width === 0 || image.width === 1 || 
-    image.height === 0 || image.height === 1;
-}
 
 // NOTE: not optimized for live documents
 function unwrap(element) {
@@ -550,66 +905,6 @@ function setDatasetProperty(element, propertyName, value) {
 
 function noop() {}
 
-function trimTextNodes(document) {
-  const elements = document.querySelectorAll(
-    WHITESPACE_SENSITIVE_ELEMENTS);
-
-  // TODO: improve
-  const preformatted = new Set(
-    Array.prototype.slice.call(elements.internal));
-
-  const iterator = document.createNodeIterator(document.documentElement, 
-    NodeFilter.SHOW_TEXT);
-  let node = document.documentElement;
-
-  // todo: set node separatey instead in while loop condition for better style
-  while(node = iterator.nextNode()) {
-    if(preformatted.has(node.parentElement)) {
-      continue;
-    }
-
-    if(node.previousSibling) {
-      if(isElement(node.previousSibling)) {
-        if(isInlineElement(node.previousSibling)) {
-          if(node.nextSibling) {
-            if(isElement(node.nextSibling)) {
-              if(!isInlineElement(node.nextSibling)) {
-                node.nodeValue = node.nodeValue.trimRight();
-              }
-            }
-          } else {
-            node.nodeValue = node.nodeValue.trimRight();
-          }
-        } else {
-         node.nodeValue = node.nodeValue.trim();
-        }
-      } else {
-       if(node.nextSibling) {
-          if(isElement(node.nextSibling)) {
-            if(isInlineElement(node.nextSibling)) {
-            } else {
-             node.nodeValue = node.nodeValue.trimRight();
-            }
-          }
-        } else {
-          node.nodeValue = node.nodeValue.trimRight();
-        }
-      }
-    } else if(node.nextSibling) {
-     if(isElement(node.nextSibling)) {
-        if(isInlineElement(node.nextSibling)) {
-          node.nodeValue = node.nodeValue.trimLeft();
-        } else {
-          node.nodeValue = node.nodeValue.trim();
-        }
-      } else {
-        node.nodeValue = node.nodeValue.trimLeft();
-      }
-    } else {
-      node.nodeValue = node.nodeValue.trim();
-    }
-  }
-}
 
 const LEAF_EXCEPTIONS = ['area', 'audio', 'br', 'canvas', 'col',
   'hr', 'img', 'source', 'svg', 'track', 'video'].join(',');
@@ -701,23 +996,7 @@ function removeLeaves(document) {
   }
 }
 
-const DESCENDANT_BIAS = new Map([
-  ['a', -5],
-  ['blockquote', 20],
-  ['div', -50],
-  ['figure', 20],
-  ['h1', 10],
-  ['h2', 10],
-  ['h3', 10],
-  ['h4', 10],
-  ['h5', 10],
-  ['h6', 10],
-  ['li', -5],
-  ['ol', -20],
-  ['p', 100],
-  ['pre', 10],
-  ['ul', -20]
-]);
+
 
 const ATTRIBUTE_BIAS = new Map([
   ['about', -35],
@@ -896,16 +1175,6 @@ const ATTRIBUTE_BIAS = new Map([
   ['zone', -50]
 ]);
 
-const ITEM_TYPES = [
-  'http://schema.org/Article',
-  'http://schema.org/Blog',
-  'http://schema.org/BlogPost',
-  'http://schema.org/BlogPosting',
-  'http://schema.org/NewsArticle',
-  'http://schema.org/ScholarlyArticle',
-  'http://schema.org/TechArticle',
-  'http://schema.org/WebPage'
-];
 
 const INLINE_ELEMENTS = new Set(['a','abbr', 'acronym', 'address',
   'b', 'bdi', 'bdo', 'blink','cite', 'code', 'data', 'del',
@@ -913,9 +1182,6 @@ const INLINE_ELEMENTS = new Set(['a','abbr', 'acronym', 'address',
   'meter', 'q', 'rp', 'rt', 'samp', 'small', 'span', 'strike',
   'strong', 'sub', 'sup', 'time', 'tt', 'u', 'var'
 ]);
-
-const WHITESPACE_SENSITIVE_ELEMENTS = 'code, code *, pre, pre *, ' + 
-  'ruby, ruby *, textarea, textarea *, xmp, xmp *';
 
 const UNWRAPPABLE_ELEMENTS = [
   'article', 'big', 'blink', 'body', 'center', 'colgroup', 'data', 
@@ -928,8 +1194,9 @@ const UNWRAPPABLE_ELEMENTS = [
 
 // NOTE: cannot use 'div.share'
 // NOTE: cannot use 'article div.share' (Vanity Fair vs Concurring Opinions)
-// NOTE: cannot use 'div.posts', (wordpress copyblogger theme)
-// NOTE: cannot use 'div.menu', // CNBC
+// NOTE: cannot use 'div.posts' (wordpress copyblogger theme)
+// NOTE: cannot use 'div.menu' // CNBC
+// NOTE: cannot use 'div.pull-right' (oklahoman vs nccgroup blog)
 
 const BLACKLIST_SELECTORS = [
   'a.advertise-with-us', // The Daily Voice
@@ -952,12 +1219,12 @@ const BLACKLIST_SELECTORS = [
   'a.post_cmt1', // Times of India
   'a.readmore-link', // Topix
   'a[rel="tag"]', // // The Oklahoman
+  'a.sm-link', // hanselman.com (social media link)
   'a.twitter-follow-button', // Ha'Aretz
   'a.twitter-share-button', // The Jewish Press
   'a.twitter-timeline', // Newsday
   'a.synved-social-button', // Viral Global News
   'a.skip-to-text-link', // NYTimes
-  'applet',
   'article div.extra', // Washington Post
   'article > div.tags', // NPR
   'article ul.listing', // Good Magazine
@@ -1003,14 +1270,7 @@ const BLACKLIST_SELECTORS = [
   'aside.views-tags', // BuzzFeed
   'aside.widget-area', // thedomains.com
   'b.toggle-caption', // NPR
-  'base',
-  'basefont',
-  'bgsound',
-  'button',
-  'command',
   'fb\\:comments',
-  'datalist',
-  'dialog',
   'div#a-all-related', // New York Daily News
   'div.about-the-author', // SysCon Media
   'div.actions-panel', // SysCon Media
@@ -1023,9 +1283,12 @@ const BLACKLIST_SELECTORS = [
   'div.addthis_toolbox', // NobelPrize.org
   'div.addtoany_share_save_container', // Global Dispatch
   'div.adCentred', // The Sydney Morning Herald
+  'div.ad-item', // hanselman.com
   'div.adjacent-entry-pagination', // thedomains.com
   'div#addshare', // The Hindu
+  'div.ad-marketplace-horizontal', // popularmechanics.com
   'div.admpu', // Telegraph UK
+  'div.ads-box', // hanselman.com
   'div.adsense', // Renew Economy
   'div.ad-unit', // TechCrunch
   'div.advertisementPanel', // TV New Zealand
@@ -1191,6 +1454,7 @@ const BLACKLIST_SELECTORS = [
   'div#disqus_comments_section', // Herald Scotland
   'div#disqus_thread', // Renew Economy
   'div.dmg-sharing', // Dispatch.com
+  'div.edit-link', // theweek.com
   'div.editorsChoice', // Telegraph Co Uk
   'div.editorsPick', // India Times
   'div.editors-picks', // The Wall Street Journal
@@ -1282,6 +1546,8 @@ const BLACKLIST_SELECTORS = [
   'div.interactive-sponsor', // USA Today
   'div.issues-topics', // MSNBC
   'div[itemprop="comment"]',// KMBC
+  'div.item-footer', // hanselman.com
+  'div.item-prevnext', // hanselman.com
   'div#jp-relatedposts', // IT Governance USA
   'div.j_social_set', // MSNBC (embedded share links)
   'div#latest-by-section', // Houston News
@@ -1405,7 +1671,6 @@ const BLACKLIST_SELECTORS = [
   'div.promo-top', // Chron.com
   'div.pull-left-tablet', // NY1 (only uses "article" for related)
   'div#pw-comments-container', // Star Advertiser
-  // 'div.pull-right', // CANNOT USE (oklahoman vs nccgroup blog)
   'div.raltedTopics', // India Times
   'div#reader-comments', // The Daily Mail
   'div.read_more', // Times of India
@@ -1501,6 +1766,8 @@ const BLACKLIST_SELECTORS = [
   'div.share-items', // Vanity Fair
   'div.share-link-inline', // Sparkfun
   'div.shareLinks', // Reuters
+  'div.share-module', // popularmechanics.com
+  'div.share-module--count', // popularmechanics.com
   'div.sharetools-inline-article-ad', // NYTimes
   'div.shareToolsNextItem', // KMBC
   'div.sharingBox', // India Times
@@ -1660,16 +1927,10 @@ const BLACKLIST_SELECTORS = [
   'dl.keywords', // Vanity Fair
   'dl.related-mod', // Fox News
   'dl.tags', // NY Daily News
-  'embed',
-  'fieldset',
   'figure.ib-figure-ad', // KMBC
   'figure.kudo', // svbtle.com blogs
-  'footer',
   'form#comment_form', // Doctors Lounge
   'form.comments-form', // CJR
-  'frameset',
-  'head',
-  'header',
   'h1#external-links', // The Sprawl (preceds unnamed <ul>)
   'h2#comments', // WordPress lemire-theme
   'h2.hide-for-print', // NobelPrize.org
@@ -1679,27 +1940,13 @@ const BLACKLIST_SELECTORS = [
   'h3.related_title', // Teleread
   'h3#scrollingArticlesHeader', // The Oklahoman
   'h4.taboolaHeaderRight', // KMBC
-  'hr',
-  'iframe',
   'img#ajax_loading_img', // E-Week
-  'input',
-  'isindex',
   'li.comments', // Smashing Magazine
   'li#mostPopularShared_0', // Reuters
   'li#mostPopularShared_1', // Reuters
   'li#pagingControlsPS', // neagle
   'li#sharetoolscontainer', // neagle
   'li.tags', // Smashing Magazine
-  'link',
-  'math',
-  'menu',
-  'menuitem',
-  'meta',
-  'nav',
-  'object', 
-  'output',
-  'option',
-  'optgroup',
   'ol[data-vr-zone="Around The Web"]', // The Oklahoman
   'ol#comment-list', // Pro Football Talk
   'ol#commentlist', // WordPress lemire-theme
@@ -1725,10 +1972,7 @@ const BLACKLIST_SELECTORS = [
   'p.trial-promo', // Newsweek
   'p.subscribe_miles', // Charlotte Observer
   'p#whoisviewing', // Eev blog
-  'param',
   'g\\:plusone',
-  'progress',
-  'script',
   'section.also-on', // Huffington Post
   'section.around-bbc-module', // BBC
   'section.article-author', // Ars Technica
@@ -1766,8 +2010,6 @@ const BLACKLIST_SELECTORS = [
   'section.topnews', // Christian Times
   'section.top-video', // ABC 7 News
   'section.youmaylike', // Entertainment Tonight
-  'select',
-  'spacer',
   'span.comment-count-generated', // Teleread
   'span.fb-recommend-btn', // The Daily Voice
   'span[itemprop="inLanguage"]', // Investors.com
@@ -1776,14 +2018,11 @@ const BLACKLIST_SELECTORS = [
   'span.printfriendly-node', // Uncover California
   'span.story-date', // BBC Co Uk
   'span.text_resizer', // Fort Worth Star Telegram
-  'style', 
   'table.hst-articleprinter', // Stamford Advocate
   'table#commentTable', // Times of India
   'table.complexListingBox', // Mercury News
   'table.storyauthor', // SysCon Media
   'table.TopNavigation', // LWN
-  'textarea',
-  'title',
   'ul#additionalShare', // NBC
   'ul.articleList', // The Wall Street Journal
   'ul.article-options', // TVNZ
@@ -1866,9 +2105,75 @@ const BLACKLIST_SELECTORS = [
   'ul#topics', // Yahoo News
   'ul.toplinks', // VOA News
   'ul.top-menu', // Investors.com
-  'ul.utility-list', // WRAL
+  'ul.utility-list' // WRAL
+];
+
+const JOINED_BLACKLIST_SELECTORS = BLACKLIST_SELECTORS.join(',');
+
+// Elements that are explicitly blacklisted. This is kept in a 
+// separate shorter list for faster lookup and to reduce the 
+// call to matches in the removeBlacklistedElements function
+const BLACKLIST_LOCAL_NAMES = new Set([
+  'applet',
+  'base',
+  'basefont',
+  'bgsound',
+  'button',
+  'command',
+  'datalist',
+  'dialog',
+  'embed',
+  'fieldset',
+  'footer',
+  'frameset',
+  'head',
+  'header',
+  'hr',
+  'iframe',
+  'input',
+  'isindex',
+  'link',
+  'math',
+  'menu',
+  'menuitem',
+  'meta',
+  'nav',
+  'object', 
+  'output',
+  'option',
+  'optgroup',
+  'param',
+  'progress',
+  'script',
+  'select',
+  'spacer',
+  'style',
+  'textarea',
+  'title',
   'video',
   'xmp'
-];
+]);
+
+// Remove blacklisted elements. Private helper for transform.
+// Performance tuned.
+// This uses NodeIterator because of how the traversal intelligently
+// avoids visiting detached subtrees, which leads to fewer mutations
+// The counter issue is that this results in a greater number 
+// of calls to Element.prototype.matches. To reduce the number of 
+// calls to matches, we store a separate simpler set of element 
+// names and just do set.has for those before calling matches.
+function removeBlacklistedElements(document) {
+  const iterator = document.createNodeIterator(
+    document.documentElement, NodeFilter.SHOW_ELEMENT);
+  let element = iterator.nextNode();
+  while(element) {
+    if(BLACKLIST_LOCAL_NAMES.has(element.localName)) {
+      element.remove();
+    } else if(element.matches(JOINED_BLACKLIST_SELECTORS)) {
+      element.remove();
+    }
+    element = iterator.nextNode();
+  }
+}
 
 } // END ANONYMOUS NAMESPACE
