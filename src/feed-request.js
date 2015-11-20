@@ -12,7 +12,7 @@ const map = Array.prototype.map;
 
 // TODO: somehow use responseURL? 
 // TODO: intelligently react to redirects
-function fetch(url, timeout, callback) {
+FeedRequest.fetch = function(url, timeout, callback) {
   const request = new XMLHttpRequest();
   request.timeout = timeout;
   request.onerror = callback;
@@ -23,8 +23,6 @@ function fetch(url, timeout, callback) {
   request.overrideMimeType('application/xml');
   request.send();
 }
-
-FeedRequest.fetch = fetch;
 
 function onFetch(url, callback, event) {
   let document = event.target.responseXML;
@@ -111,7 +109,6 @@ function selectChildren(parent, name) {
     return node.matches(name);
   });
 }
-
 
 // Generates a feed object based on the xml
 // TODO: querySelector is not depth-sensitive. Maybe increase 
@@ -204,9 +201,8 @@ function deserialize(document) {
   return feed;
 }
 
-// Export a global. This is not really used by anything currently 
-// in the app but it is available as a standalone feature
-FeedRequest.deserialize = deserialize;
+// Export deserialize for testing.
+FeedRequest._deserialize = deserialize;
 
 function validateDocumentElement(element) {
   if(!element) {
@@ -218,7 +214,6 @@ function validateDocumentElement(element) {
       element.localName);
   }
 }
-
 
 // Private helper for deserialize, deserializes an item
 function deserializeEntry(isAtom, entry) {
@@ -301,7 +296,6 @@ function deserializeEntry(isAtom, entry) {
 
 // Returns the text content of the first element matching the 
 // selector within the parent, or undefined
-// Private helper for deserialize
 function getElementText(parent, selector) {
   const element = parent.querySelector(selector);
   if(element) {

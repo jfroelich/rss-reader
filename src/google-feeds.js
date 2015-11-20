@@ -30,7 +30,6 @@ GoogleFeeds.findFeed = function(query, timeout, callback) {
 
 // Cleans up the search results and passes them along
 // to the callback
-// Private helper for findFeed
 function findFeedOnload(callback, event) {
   const data = event.target.response.responseData;
   const query = data.query || '';
@@ -47,14 +46,10 @@ function findFeedOnload(callback, event) {
   callback(null, query, entries);
 }
 
-// Returns the url property value of an entry
-// Private helper for onload
 function getEntryURL(entry) {
   return entry.url;
 }
 
-// Cleans up some properties of an entry object
-// Private helper for onload
 function sanitizeEntry(entry) {
   if(entry.title) {
     entry.title = StringUtils.removeTags(entry.title);
@@ -72,10 +67,8 @@ function sanitizeEntry(entry) {
   }
 }
 
-// Removes <br> elements from a string
-// Private helper for sanitize.
-function replaceBreaks(value) {
-  return value.replace(/<\s*br\s*>/gi, ' ');
+function replaceBreaks(string) {
+  return string.replace(/<\s*br\s*>/gi, ' ');
 }
 
 } // END ANONYMOUS NAMESPACE

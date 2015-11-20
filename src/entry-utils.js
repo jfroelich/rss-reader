@@ -12,12 +12,12 @@ const EntryUtils = {};
 // unique entries (compared by entry.link)
 // NOTE: consider just returning Iterable
 // NOTE that Array.from(distinct.values()) also works
-function getUniqueEntries(entries) {
+EntryUtils.getUniqueEntries = function(entries) {
   const distinct = new Map(entries.map(function(entry) {
     return [entry.link, entry];
   }));
   return [...distinct.values()];
-}
+};
 
 // Replaces the content property of an entry with the full text of its 
 // corresponding link url
@@ -31,7 +31,7 @@ function getUniqueEntries(entries) {
 // to PDF? also, we should not even be trying to fetch pdfs? is this
 // just a feature of fetchHTML or does it belong here?
 // TODO: do something with responseURL?
-function augmentContent(entry, timeout, callback) {
+EntryUtils.augmentContent = function(entry, timeout, callback) {
   const request = new XMLHttpRequest();
   request.timeout = timeout;
   request.ontimeout = callback;
@@ -41,7 +41,7 @@ function augmentContent(entry, timeout, callback) {
   request.open('GET', entry.link, true);
   request.responseType = 'document';
   request.send();  
-}
+};
 
 // Private helper for augmentContent
 function onAugmentLoad(entry, callback, event) {
@@ -67,9 +67,5 @@ function onImageDimensionsSet(entry, document, callback) {
   }
   callback();
 }
-
-// Export
-EntryUtils.getUniqueEntries = getUniqueEntries;
-EntryUtils.augmentContent = augmentContent;
 
 } // END ANONYMOUS NAMESPACE

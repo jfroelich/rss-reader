@@ -460,7 +460,7 @@ function onUnsubscribeButtonClicked(event) {
   });
 
   function doUnsubscribe(connection, feedId) {
-    FeedStore.unsubscribe(function(event) {
+    FeedStore.unsubscribe(connection, feedId, function(event) {
       const sectionMenu = $$('mi-subscriptions');
 
       // Update the badge in case any unread articles belonged to 
@@ -471,7 +471,7 @@ function onUnsubscribeButtonClicked(event) {
       // of the unsubscribe. That way the slides view can
       // remove any articles.
 
-      const item = document.querySelector('feedlist li[feed="'+message.feed+'"]')
+      const item = document.querySelector('feedlist li[feed="'+feedId+'"]')
       if(item) {
         item.removeEventListener('click', onFeedListItemClick);
         item.remove();

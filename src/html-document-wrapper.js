@@ -18,6 +18,10 @@ class HTMLDocumentWrapper {
     return new HTMLDocumentWrapper(document);
   }
 
+  get internal() {
+    return this.document;
+  }
+
   get body() {
   	return this.document.body;
   }

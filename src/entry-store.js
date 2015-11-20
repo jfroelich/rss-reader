@@ -14,7 +14,7 @@ EntryStore.UNARCHIVED = 0;
 EntryStore.ARCHIVED = 1;
 
 // Adds or updates the entry within the database
-function put(connection, entry, callback) {
+EntryStore.put = function(connection, entry, callback) {
   // console.debug('Putting entry %s', entry.link);
   const storable = {};
 
@@ -87,20 +87,16 @@ function put(connection, entry, callback) {
     callback(); 
   };
   transaction.objectStore('entry').put(storable);
-}
-
-EntryStore.put = put;
+};
 
 // Updates the read state of the corresponding entry in the database
-function markRead(connection, id) {
+EntryStore.markRead = function(connection, id) {
   // console.debug('Marking entry %s as read', id);
   const transaction = connection.transaction('entry', 'readwrite');
   const store = transaction.objectStore('entry');
   const request = store.openCursor(id);
   request.onsuccess = markReadOnOpenCursor;
-}
-
-EntryStore.markRead = markRead;
+};
 
 // Private helper for markRead
 function markReadOnOpenCursor(event) {
@@ -130,31 +126,27 @@ function markReadOnOpenCursor(event) {
   chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
 }
 
-function countUnread(connection, callback) {
+EntryStore.countUnread = function(connection, callback) {
   const transaction = connection.transaction('entry');
   const store = transaction.objectStore('entry');
   const index = store.index('readState');
   const range = IDBKeyRange.only(EntryStore.UNREAD);
   const request = index.count(range);
   request.onsuccess = callback;
-}
+};
 
-EntryStore.countUnread = countUnread;
-
-function findByLink(connection, entry, callback) {
+EntryStore.findByLink = function(connection, entry, callback) {
   const transaction = connection.transaction('entry');
   const entries = transaction.objectStore('entry');
   const links = entries.index('link');
   const request = links.get(entry.link);
   request.onsuccess = callback;
-}
+};
 
-EntryStore.findByLink = findByLink;
-
-function removeByFeed(connection, id, callback) {
+EntryStore.removeByFeed = function(connection, id, callback) {
   const transaction = connection.transaction('entry', 'readwrite');
   transaction.oncomplete = callback;
-  const store = store.objectStore('entry');
+  const store = transaction.objectStore('entry');
   const index = store.index('feed');
   const request = index.openCursor(id);
   request.onsuccess = function(event) {
@@ -164,11 +156,9 @@ function removeByFeed(connection, id, callback) {
       cursor.continue();
     }
   };
-}
+};
 
-EntryStore.removeByFeed = removeByFeed;
-
-function clear(connection) {
+EntryStore.clear = function(connection) {
   if(connection) {
     _clear(connection);
   } else {
@@ -176,9 +166,7 @@ function clear(connection) {
       _clear(event.target.result);
     });
   }
-}
-
-EntryStore.clear = clear;
+};
 
 // Private helper for clear
 function _clear(connection) {
@@ -189,11 +177,9 @@ function _clear(connection) {
   transaction.objectStore('entry').clear();
 }
 
-function archiveEntries() {
+EntryStore.archiveEntries = function() {
   Database.open(archiveOnConnect);
-}
-
-EntryStore.archiveEntries = archiveEntries;
+};
 
 // Private helper for archiveEntries
 function archiveOnConnect(event) {

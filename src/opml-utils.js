@@ -89,7 +89,6 @@ OPMLUtils.importFiles = function(files, callback) {
   }
 };
 
-
 // Generates an OPMLDocument representing all feeds in the database
 // and passes it to the callback as the second argument. If an error
 // occurs, the first argument is set and represents the error object.
@@ -105,12 +104,14 @@ function createDocumentOnConnect(document, callback, event) {
     return;
   }
 
+  // Load and append each feed to the document
   FeedStore.forEach(event.target.result, 
     OPMLDocument.prototype.appendFeed.bind(document), 
     false, 
     createDocumentOnFeedsIterated.bind(null, document, callback));
 }
 
+// Pass the document along to the callback
 function createDocumentOnFeedsIterated(document, callback) {
   callback(null, document);
 }

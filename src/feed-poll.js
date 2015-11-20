@@ -30,7 +30,7 @@ const FeedPoll = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-function start() {
+FeedPoll.start = function() {
   console.debug('Polling feeds');
 
   if(!navigator.onLine) {
@@ -40,9 +40,7 @@ function start() {
 
   chrome.permissions.contains({permissions: ['idle']}, 
     onCheckIdlePermission);
-}
-
-FeedPoll.start = start;
+};
 
 const IDLE_PERIOD = 60 * 5; // 5 minutes
 function onCheckIdlePermission(permitted) {

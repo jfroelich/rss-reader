@@ -39,7 +39,7 @@ ImageUtils.fetchDimensions = function(image, callback) {
   // If the image already has dimensions, do not re-fetch
   // TODO: what about height? Will Calamine's area function
   // in getImageBias fail unexpectedly?
-  if(hasWidth(image)) {
+  if(image.width > 0) {
     callback();
     return;
   }
@@ -57,7 +57,6 @@ ImageUtils.fetchDimensions = function(image, callback) {
   proxy.src = sourceURL;
 };
 
-// fetchDimensions helper
 function onProxyLoad(callback, image, event) {
 	const proxy = event.target;
 	image.width = proxy.width;
@@ -65,18 +64,8 @@ function onProxyLoad(callback, image, event) {
 	callback();
 }
 
-// fetchDimensions helper
 function onProxyError(callback, event) {
 	callback();
-}
-
-// Returns truthy when the image has a non-zero width
-// TODO: there is probably some cleanup that needs to happen
-// here regarding redundancy of conditions
-function hasWidth(image) {
-  const width = (image.getAttribute('width') || '').trim();
-  return width && image.width && width !== '0' && 
-    !/^0\s*px/i.test(width);
 }
 
 } // END ANONYMOUS NAMESPACE
