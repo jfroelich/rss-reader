@@ -8,13 +8,12 @@ const TrimDocument = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-
 TrimDocument.transform = function(document, rest) {
   
   const root = document.body;
 
   if(!root) {
-  	console.debug('document.body is undefined');
+  	// console.debug('document.body is undefined');
   	return;
   }
 
@@ -35,7 +34,6 @@ TrimDocument.transform = function(document, rest) {
     node = sibling;
   }
 };
-
 
 function isTrimmableElement(element) {
   if(!element) return false;

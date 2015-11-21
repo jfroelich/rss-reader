@@ -22,7 +22,7 @@ function transformJavascriptAnchors(document) {
     const anchor = anchors[i];
     const href = anchor.getAttribute('href');
     if(/^\s*javascript\s*:/i.test(href)) {
-      console.debug('Removing href %s', href);
+      //console.debug('Removing href %s', href);
       anchor.removeAttribute('href');
     }
   }
@@ -47,6 +47,7 @@ const UNWRAPPABLE_ELEMENTS = [
   'article', 'big', 'blink', 'center', 'colgroup', 'data', 
   'details', 'div', 'font', 'footer', 'form', 'header', 'help',
   'hgroup', 'ilayer', 'insert', 'label', 'layer', 'legend', 'main',
+  'mark',
   'marquee', 'meter', 'multicol', 'nobr', 'noembed', 'noscript',
   'plaintext', 'section', 'small', 'span', 'tbody', 'tfoot', 
   'thead', 'tt'

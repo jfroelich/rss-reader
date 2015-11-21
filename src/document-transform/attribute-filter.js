@@ -13,13 +13,10 @@ const AttributeFilter = {};
 // of hardcoded exception for href/src?
 
 AttributeFilter.transform = function(document, rest) {
-  removeAttributes(document);
-
-  // gebtn is appropriate, we are only modifying attributes
-  // not insert/remove elements etc
+  removeAttributes(document.documentElement);
 
   const elements = document.getElementsByTagName('*');
-  const numElements = 0;
+  const numElements = elements.length;
   for(let i = 0; i < numElements; i++) {
     removeAttributes(elements[i]);
   }
@@ -28,16 +25,15 @@ AttributeFilter.transform = function(document, rest) {
 // todo: why check if element defined here?
 
 function removeAttributes(element) {
-  if(element) {
-    const attributes = element.attributes;
-    if(attributes) {
-      let index = attributes.length;
-      while(index--) {
-        let name = attributes[index].name;
-        if(name !== 'href' && name !== 'src') {
-          element.removeAttribute(name);
-        }
-      }
+
+  const attributes = element.attributes;
+  if(!attributes) return;
+
+  let index = attributes.length;
+  while(index--) {
+    let name = attributes[index].name;
+    if(name !== 'href' && name !== 'src') {
+      element.removeAttribute(name);
     }
   }
 }
