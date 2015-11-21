@@ -244,11 +244,22 @@ function appendSlide(entry, isFirst) {
   const content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
 
+  // todo: create a dom-utils createDocument function and
+  // use it here instead
   const doc = document.implementation.createHTMLDocument();
+
+  // TODO: is doc.body leading to extra wrapping of doc.body?
+  // should this be setting doc.documentElement.innerHTML instead?
   doc.body.innerHTML = entry.content;
-  Calamine.transform(doc, false);
-  if(doc && doc.documentElement) {
-    content.appendChild(doc.documentElement);
+
+  PreviewTransform.transform(doc, {
+    annotate: false
+  });
+
+  if(doc && doc.documentElement && doc.body) {
+    content.innerHTML = doc.body.innerHTML;
+  } else {
+    console.warn('Cannot append document without body: %o', doc);
   }
   slide.appendChild(content);
 

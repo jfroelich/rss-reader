@@ -283,7 +283,7 @@ function deserializeEntry(isAtom, entry) {
   // NOTE: under dev, untested
   const enclosure = entry.querySelector('enclosure');
   if(enclosure) {
-    console.debug('Encountered enclosure: %o', enclosure);
+    // console.debug('Encountered enclosure: %o', enclosure);
     result.enclosure = {
       url: enclosure.getAttribute('url'),
       length: enclosure.getAttribute('length'),

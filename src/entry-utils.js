@@ -52,8 +52,10 @@ function onAugmentLoad(entry, callback, event) {
     return;
   }
 
-  const baseURL = request.responseURL;
-  DocumentUtils.resolveURLs(document, baseURL);
+  ResolveURLsTransform.transform(document, {
+    baseURL: request.responseURL
+  });
+
   DocumentUtils.setImageDimensions(document, 
     onImageDimensionsSet.bind(null, entry, document, callback));
 }

@@ -13,6 +13,7 @@
   "background": {
     "persistent": false,
     "scripts": [
+      "/src/document-transform/resolve-urls-transform.js",
       "/src/async.js",
       "/src/browser-action-utils.js",
       "/src/background.js",

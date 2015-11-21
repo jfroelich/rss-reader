@@ -17,90 +17,13 @@ const DocumentUtils = {};
 // Maybe what we do is scan all attributes for values that look like 
 // urls and try and resolve them?
 // http://stackoverflow.com/questions/1500260
+// todo; this lazyloader could be a doc tranform
 
 
-{ // BEGIN ANONYMOUS NAMESPACE
-
-// A map of element names to attributes that contain urls
-const ATTRIBUTE_MAP = new Map([
-  ['a', 'href'],
-  ['area', 'href'],
-  ['audio', 'src'],
-  ['blockquote', 'cite'],
-  ['embed', 'src'],
-  ['iframe', 'src'],
-  ['form', 'action'],
-  ['img', 'src'],
-  ['link', 'href'],
-  ['object', 'data'],
-  ['script', 'src'],
-  ['source', 'src'],
-  ['track', 'src'],
-  ['video', 'src']
-]);
-
-// Statically create RESOLVE_SELECTOR from the map
-let keys = [];
-ATTRIBUTE_MAP.forEach(function(value, key) {
-  keys.push(key + '[' + value +']');
-});
-const RESOLVE_SELECTOR = keys.join(',');
-
-// Resolves all appropriate URLs in the document and removes 
-// any base tag elements
-// TODO: support img srcset
-// TODO: support style.backgroundImage?
-// TODO: the new template tag?
-// NOTE: not supporting applet
-// NOTE: iframe.srcdoc?
-// NOTE: ignores param values with URIs
-// NOTE: could stripping the base tag could lead to invalid urls??? 
-// Should the base tag, if present, be considered when resolving elements?
-// Also note that there could be multiple base tags, the logic for 
-// handling it properly is all laid out in some RFC standard somewhere, 
-// and is probably present in Webkit source.
-DocumentUtils.resolveURLs = function(document, baseURL) {
-
-	const wrapped = HTMLDocumentWrapper.wrap(document);
-
-	// Remove base elements
-	const bases = wrapped.getElementsByTagName('base');
-  bases.forEach(remove);
-
-  // Resolve the attribute values for various elements
-  const resolvables = wrapped.querySelectorAll(RESOLVE_SELECTOR);
-  resolvables.forEach(resolveElement.bind(this, baseURL));
-};
-
-// Resolves one of the URL containing attributes for a given 
-// element. Private helper for resolveURLs
-function resolveElement(baseURL, element) {
-  const attributeName = ATTRIBUTE_MAP.get(element.localName);
-
-  // We know attribute is defined because the selector
-  // included the condition (e.g. element[attribute])
-  const url = element.getAttribute(attributeName).trim();
-  try {
-    const uri = new URI(url);
-    if(!uri.protocol()) {
-      const resolved = uri.absoluteTo(baseURL).toString();
-      element.setAttribute(attributeName, resolved);
-    }
-  } catch(e) {
-    // Ignore url errors
-  }
-}
-
-// Private helper for resolveURLs
-function remove(element) {
-  element.remove();
-}
-
+// todo; this should be its own transform
 // Asynchronously attempts to set the width and height for 
 // all image elements
 DocumentUtils.setImageDimensions = function(document, callback) {
   const images = document.getElementsByTagName('img');
   async.forEach(images, ImageUtils.fetchDimensions, callback);
 };
-
-} // END ANONYMOUS NAMESPACE
