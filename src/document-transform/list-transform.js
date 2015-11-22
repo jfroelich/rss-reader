@@ -8,37 +8,35 @@ const ListTransform = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-
 ListTransform.transform = function(document, rest) {
 
-  // TODO: because we are removing lists, this should be 
-  // using NodeIterator or querySelectorAll
-
-  // Replace lists with one item with the item's content
-  // For now this just focuses on unordered lists
-  const lists = document.getElementsByTagName('ul');
-  const numLists = lists.length;
-  for(let i = 0; i < numLists; i++) {
-  	const list = lists[i];
-  	
-  	// because we are using gebtn and mutating during iteration,
-  	// check if element at index is still defined
-  	if(!list) {
-  	  continue;
-  	}
-
-  	const itemCount = getListItemCount(list);
-  	if(itemCount === 1) {
-  	  unwrapList(list);
-  	}
+  const it = document.createNodeIterator(document.documentElement,
+    NodeIterator.SHOW_ELEMENT, acceptListSingleton);
+  let list = it.nextNode();
+  while(list) {
+    unwrapList(list);
+    list = it.nextNode();
   }
 };
 
-function getListItemCount(list) {
-  const reduce = Array.prototype.reduce;
-  return reduce.call(list.childNodes, function(count, node) {
-    return count + (node.localName === 'li' ? 1 : 0);
-  }, 0);
+function acceptListSingleton(node) {
+  if(node.localName !== 'ul')
+    return NodeFilter.FILTER_REJECT;
+
+  let count = 0;
+  let numChildren = node.childNodes.length;
+  for(let i = 0; i < numChildren; i++) {
+    if(node.childNodes[i].localName === 'li') {
+      count++;
+    }
+  }
+
+  if(count === 1) {
+    return NodeFilter.FILTER_ACCEPT;
+  }
+
+  return NodeFilter.FILTER_REJECT;
+
 }
 
 function unwrapList(list) {

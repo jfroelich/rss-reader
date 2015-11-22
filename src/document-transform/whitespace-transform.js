@@ -29,7 +29,7 @@ function replaceBreakRuleElements(document) {
   }
 }
 
-// TODO: i think this is causing a problem with removing important 
+// TODO: this is causing a problem with removing important 
 // whitespace in whitespace sensitive elements, so this needs to 
 // be refactored. Or maybe, rather than modifying or changing 
 // the whitespace, we modify the is-empty and the length functions
@@ -42,6 +42,9 @@ function normalizeWhitespace(document) {
     NodeFilter.SHOW_TEXT);
   let node = it.nextNode();
   while(node) {
+    node.nodeValue = node.nodeValue.replace(/&nbsp;/g, ' ');
+
+    // todo; only match non-newline whitespace
     node.nodeValue = node.nodeValue.replace(/\s/g, ' ');
     node = it.nextNode();
   }
@@ -70,15 +73,18 @@ function trimTextNodes(document) {
     WHITESPACE_SENSITIVE_SELECTOR);
   const preformatted = new Set(Array.from(elements));
   const iterator = document.createNodeIterator(document.documentElement, 
-    NodeFilter.SHOW_TEXT);
-  let node = iterator.nextNode();
+    NodeFilter.SHOW_TEXT, function(node) {
 
-  while(node) {
+    // Reject nodes present within preformatted hierarchies
     if(preformatted.has(node.parentElement)) {
-      node = iterator.nextNode();
-      continue;
+      return NodeFilter.FILTER_REJECT;
     }
+    return NodeFilter.FILTER_ACCEPT;
 
+  });
+
+  let node = iterator.nextNode();
+  while(node) {
     if(node.previousSibling) {
       if(isElement(node.previousSibling)) {
         if(isInlineElement(node.previousSibling)) {

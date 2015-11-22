@@ -8,8 +8,6 @@ const LeafFilter = {};
 
 {
 
-
-
 // TODO: there is a specific edge case not being handled
 // where certain elements, e.g. anchors, that do not contain
 // any child nodes, should be considered empty. And this must
@@ -48,7 +46,6 @@ const LeafFilter = {};
 // TODO: just add children that should be removed to the stack insead of
 // removing them and adding their parents to the stack.
 // Remove all the empty children and shove all the parents on the stack
-
 
 // rename to selector
 const LEAF_EXCEPTIONS = ['area', 'audio', 'br', 'canvas', 'col',
@@ -109,10 +106,6 @@ LeafFilter.transform = function(document, rest) {
 
     stack.push(grandParent);
   }
-
 };
-
-
-
 
 }

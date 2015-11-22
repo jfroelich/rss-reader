@@ -20,7 +20,6 @@ PreviewTransform.transform = function(document) {
     Calamine,
     CommentFilter,
     TrackingFilter,
-    FallbackElementsHandler,
     HiddenElementFilter,
     WhitespaceTransform,
     InlineElementFilter,

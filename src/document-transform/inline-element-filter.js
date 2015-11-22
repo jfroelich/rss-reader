@@ -8,58 +8,90 @@ const InlineElementFilter = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-InlineElementFilter.transform = function(document, rest) {
-
-  transformJavascriptAnchors(document);
-  unwrapNominalAnchors(document);
-  unwrapInlineElements(document);
+InlineElementFilter.transform = function(document) {
+  
+  const it = document.createNodeIterator(
+    document.documentElement,
+    NodeFilter.SHOW_ELEMENT, 
+    isInline);
+  
+  let element = it.nextNode();
+  while(element) {
+    DOMUtils.unwrap(element);
+    element = it.nextNode();
+  }
 };
 
-function transformJavascriptAnchors(document) {
-  const anchors = document.querySelectorAll('a[href]');
-  const numAnchors = anchors.length;
-  for(let i = 0; i < numAnchors; i++) {
-    const anchor = anchors[i];
-    const href = anchor.getAttribute('href');
-    if(/^\s*javascript\s*:/i.test(href)) {
-      //console.debug('Removing href %s', href);
-      anchor.removeAttribute('href');
-    }
-  }
-}
+// NOTE: This does not contain ALL inline elements, just those we 
+// want to unwrap.
 
-function unwrapNominalAnchors(document) {
-
-  const anchors = document.querySelectorAll('a');
-  const numAnchors = anchors.length;
-  for(let i = 0; i < numAnchors; i++) {
-    const anchor = anchors[i];
-    if(!anchor.hasAttribute('href')) {
-      DOMUtils.unwrap(anchor);
-    }
-  }
-}
-
-// NOTE: we do not unwrap elements outside of body, so we 
-// intentionally do not include head/body as unwrappable
-
-const UNWRAPPABLE_ELEMENTS = [
-  'article', 'big', 'blink', 'center', 'colgroup', 'data', 
-  'details', 'div', 'font', 'footer', 'form', 'header', 'help',
-  'hgroup', 'ilayer', 'insert', 'label', 'layer', 'legend', 'main',
+const INLINE_ELEMENTS = new Set([
+  'article',
+  'big',
+  'blink',
+  'center',
+  'colgroup',
+  'data', 
+  'details',
+  'div',
+  'font',
+  'footer',
+  'form',
+  'header',
+  'help',
+  'hgroup',
+  'ilayer',
+  'insert',
+  'label',
+  'layer',
+  'legend',
+  'main',
   'mark',
-  'marquee', 'meter', 'multicol', 'nobr', 'noembed', 'noscript',
-  'plaintext', 'section', 'small', 'span', 'tbody', 'tfoot', 
-  'thead', 'tt'
-].join(',');
+  'marquee',
+  'meter',
+  'multicol',
+  'nobr',
+  'noembed',
+  'plaintext',
+  'section',
+  'small',
+  'span',
+  'tbody',
+  'tfoot', 
+  'thead',
+  'tt'
+]);
 
-function unwrapInlineElements(document) {
-  for(let element = document.querySelector(UNWRAPPABLE_ELEMENTS),
-    iterations = 0; element && (iterations < 3000); 
-    element = document.querySelector(UNWRAPPABLE_ELEMENTS), 
-    iterations++) {
-    DOMUtils.unwrap(element);
+function isInline(node) {
+  const name = node.localName;
+  if(INLINE_ELEMENTS.has(name)) {
+    return NodeFilter.FILTER_ACCEPT;
   }
+
+  if(name === 'noscript' || name === 'noframes') {
+
+    // Due to content-loading tricks, noscript requires special handling
+    // e.g. nbcnews.com
+    // This requires some additional refinement. For now we just unwrap.
+    // This obviously leads to sometimes dup content or strange looking
+    // internal content
+    return NodeFilter.FILTER_ACCEPT;
+  }
+
+  // Conditionally unwrap anchors
+  if(name === 'a') {
+    let href = node.getAttribute('href');
+    href = (href || '').trim();
+    if(!href) {
+      return NodeFilter.FILTER_ACCEPT;
+    }
+
+    if(/^\s*javascript\s*:/i.test(href)) {
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  }
+
+  return NodeFilter.FILTER_REJECT;
 }
 
 } // END ANONYMOUS NAMESPACE

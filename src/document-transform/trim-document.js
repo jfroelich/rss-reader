@@ -21,7 +21,7 @@ TrimDocument.transform = function(document, rest) {
   let node = root.firstChild;
   while(isTrimmableElement(node)) {
     sibling = node.nextSibling;
-    console.debug('Trimming %o from front', node);
+    // console.debug('Trimming %o from front', node);
     node.remove();
     node = sibling;
   }
@@ -29,7 +29,7 @@ TrimDocument.transform = function(document, rest) {
   node = root.lastChild;
   while(isTrimmableElement(node)) {
     sibling = node.previousSibling;
-    console.debug('Trimming %o from end', node);
+    // console.debug('Trimming %o from end', node);
     node.remove();
     node = sibling;
   }

@@ -10,36 +10,63 @@ const BlacklistFilter = {};
 
 // Remove blacklisted elements.
 
-
-// To reduce the number of 
-// calls to matches, we store a separate simpler set of element 
-// names and just do set.has for those before calling matches.
-
+// TODO: this is a major hotspot that needs perf tuning
 BlacklistFilter.transform = function(document, rest) {
 
-  // This uses NodeIterator because of how the traversal intelligently
-  // avoids visiting detached subtrees, which leads to fewer mutations
-  // The counter issue is that this results in a greater number 
-  // of calls to Element.prototype.matches. 
-
-
   const iterator = document.createNodeIterator(
-    document.documentElement, NodeFilter.SHOW_ELEMENT);
+    document.documentElement, 
+    NodeFilter.SHOW_ELEMENT, 
+    isBlacklisted);
   let element = iterator.nextNode();
   while(element) {
-    if(BLACKLIST_LOCAL_NAMES.has(element.localName)) {
-      element.remove();
-    } else if(isBlacklistedAnchorClass(element)) {
-      element.remove();
-    } else if(isBlacklistedDivClass(element)) {
-      element.remove();
-    } else if(element.matches(JOINED_BLACKLIST_SELECTORS)) {
-      element.remove();
-    }
+    element.remove();
     element = iterator.nextNode();
   }
 };
 
+function isBlacklisted(node) {
+  if(BLACKLIST_LOCAL_NAMES.has(node.localName)) {
+    return NodeFilter.FILTER_ACCEPT;
+  } else if(isBlacklistedAnchorClass(node)) {
+    return NodeFilter.FILTER_ACCEPT;
+  } else if(isBlacklistedDivClass(node)) {
+    return NodeFilter.FILTER_ACCEPT;
+  } else if(node.matches(JOINED_BLACKLIST_SELECTORS)) {
+    return NodeFilter.FILTER_ACCEPT;
+  }
+
+  return NodeFilter.FILTER_REJECT;
+}
+
+function isBlacklistedAnchorClass(element) {
+  if(element.localName === 'a') {
+    const classList = element.classList;
+    const numClasses = BLACKLIST_ANCHOR_CLASSES.length;
+    for(let i = 0; i < numClasses; i++) {
+      const className = BLACKLIST_ANCHOR_CLASSES[i];
+      if(classList.contains(className)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function isBlacklistedDivClass(element) {
+  if(element.localName === 'div') {
+    const classList = element.classList;
+    const numClasses = BLACKLIST_DIV_CLASSES.length;
+    for(let i = 0; i < numClasses; i++) {
+      const className = BLACKLIST_DIV_CLASSES[i];
+      if(classList.contains(className)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
 
 // Elements that are explicitly blacklisted. This is kept in a 
 // separate shorter list for faster lookup and to reduce the 
@@ -110,21 +137,6 @@ const BLACKLIST_ANCHOR_CLASSES = [
   'synved-social-button', // Viral Global News
   'skip-to-text-link' // NYTimes
 ];
-
-function isBlacklistedAnchorClass(element) {
-  if(element.localName === 'a') {
-    const classList = element.classList;
-    const numClasses = BLACKLIST_ANCHOR_CLASSES.length;
-    for(let i = 0; i < numClasses; i++) {
-      const className = BLACKLIST_ANCHOR_CLASSES[i];
-      if(classList.contains(className)) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
 
 // This array is under dev. Remove div. prefix, implement
 // isBlacklistedDivClass, add into transform, move rest of 
@@ -596,23 +608,6 @@ const BLACKLIST_DIV_CLASSES = [
   'yarpp-related' // Spoon-Tamago
 ];
 
-function isBlacklistedDivClass(element) {
-  if(element.localName === 'div') {
-    const classList = element.classList;
-    const numClasses = BLACKLIST_DIV_CLASSES.length;
-    for(let i = 0; i < numClasses; i++) {
-      const className = BLACKLIST_DIV_CLASSES[i];
-      if(classList.contains(className)) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-
-
 // NOTE: cannot use 'div.share'
 // NOTE: cannot use 'article div.share' (Vanity Fair vs Concurring Opinions)
 // NOTE: cannot use 'div.posts' (wordpress copyblogger theme)
@@ -754,7 +749,6 @@ const BLACKLIST_SELECTORS = [
   'div#leader', // hostilefork
   'div#livefyre-wrapper', // The Wall Street Journal
   'div.main > div#rail', // Fox News
-
   'div#main-content > div.share', // Knight News Challenge
   'div#main div#secondary', // Newsday
   'div#mergeAccounts', // Joplin Globe
@@ -863,11 +857,9 @@ const BLACKLIST_SELECTORS = [
   'div#you-might-like', // The New Yorker
   'div#zergnet', // Comic Book Resources
   'dl.blox-social-tools-horizontal', // Joplin
-
   'dl.keywords', // Vanity Fair
   'dl.related-mod', // Fox News
   'dl.tags', // NY Daily News
-
   'dl#comments', // CJR
   'figure.ib-figure-ad', // KMBC
   'figure.kudo', // svbtle.com blogs
@@ -1051,6 +1043,5 @@ const BLACKLIST_SELECTORS = [
 ];
 
 const JOINED_BLACKLIST_SELECTORS = BLACKLIST_SELECTORS.join(',');
-
 
 } // END ANONYMOUS NAMESPACE

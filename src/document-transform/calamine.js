@@ -34,50 +34,119 @@ function setDatasetProperty(element, propertyName, value) {
   element.dataset[propertyName] = value;
 }
 
-// Modifies the input document by removing boilerplate
+// Filters boilerplate content
 Calamine.transform = function(document, rest) {
 
   const annotate = rest && rest.annotate;
   const setAnnotation = annotate ? setDatasetProperty : NOOP;
-  const scores = initScores(document);
-  applyTextBias(document, scores, setAnnotation);
-  applyIntrinsicBias(document, scores, setAnnotation);
-  applyDownwardBias(document, scores, setAnnotation);
-  applyUpwardBias(document, scores, setAnnotation);
-  applyImageContainerBias(document, scores, setAnnotation);
-  applyAttributeBias(document, scores, setAnnotation);
-  annotateScores(document, scores, annotate);
-  removeNonIntersectingElements(document, scores);
-};
 
-function initScores(document) {
-  const elements = document.getElementsByTagName('*');
+  // Init scores. We fill 0 to avoid having to check if score 
+  // is set each time we change it.
   const scores = new Map();
+  const elements = document.getElementsByTagName('*');
   const numElements = elements.length;
   for(let i = 0; i < numElements; i++) {
     const element = elements[i];
     scores.set(element, 0);
   }
 
-  return scores;
+  applyTextBias(document, scores, setAnnotation);
+  applyIntrinsicBias(document, scores, setAnnotation);
+  applyDownwardBias(document, scores, setAnnotation);
+  applyUpwardBias(document, scores, setAnnotation);
+  applyImageContainerBias(document, scores, setAnnotation);
+  applyAttributeBias(document, scores, setAnnotation);
+
+  // Annotate element scores
+  if(annotate) {
+    for(let entry of scores) {
+      entry[0].dataset.score = entry[1].toFixed(2);
+    }
+  }
+
+  // Find the highest scoring element
+  let bestElement = document.body;
+  let bestScore = scores.get(bestElement);
+  for(let entry of scores) {
+    if(entry[1] > bestScore) {
+      bestElement = entry[0];
+      bestScore = entry[1];
+    }
+  }
+
+  // Remove non-intersecting elements
+  const it = document.createNodeIterator(
+    document.documentElement,
+    NodeIterator.SHOW_ELEMENT, 
+    rejectIntersects.bind(this, bestElement));
+  let element = it.nextNode();
+  while(element) {
+    element.remove();
+    element = it.nextNode();
+  }
+};
+
+// Rejects elements that intersect with the best element
+// TODO: use Node.compareDocumentPosition
+function rejectIntersects(bestElement, node) {
+  if(node === bestElement || bestElement.contains(node) ||
+    node.contains(bestElement)) {
+    return NodeFilter.FILTER_REJECT;
+  }
+  return NodeFilter.FILTER_ACCEPT;
 }
 
+// Returns a representation of a text node's length
 function getTextLength(node) {
+  return node.nodeValue.replace(/\s|&nbsp;/g, '').length;
+}
 
-  // NOTE: we no longer assume that whitespace was prepared for 
-  // analysis, so we need to get a metric that generally 
-  // ignores whitespace.
-  // TODO: what about entities like &nbsp;?
-  //return node.nodeValue.length;
+// Generate a map between document elements and a count 
+// of characters within the element. This is tuned to work
+// from the bottom up rather than the top down.
+function deriveTextLength(document) {
+  const map = new Map();
+  const it = document.createNodeIterator(
+    document.documentElement,
+    NodeFilter.SHOW_TEXT);
+  let node = it.nextNode();
+  while(node) {
+    const length = getTextLength(node);
+    if(length) {
+      let element = node.parentElement;
+      while(element) {
+        let previousLength = (map.get(element) || 0);
+        map.set(element, previousLength + length);
+        element = element.parentElement;
+      }
+    }
 
-  // TODO: is there a way to optimize this even more?
-  // maybe .replace is faster than .match.length?
+    node = it.nextNode();
+  }
+  return map;
+}
 
-  // Profiling shows this is the largest hotspot
-  // in Calamine.transform
+// Generate a map between document elements and a count of 
+// the characters contained within anchor elements present 
+// anywhere within the elements
+function deriveAnchorLength(document, textLengths) {
+  const anchors = document.querySelectorAll('a[href]');
+  const map = new Map();
+  const numAnchors = anchors.length;
+  for(let i = 0; i < numAnchors; i++) {
+    const anchor = anchors[i];
+    const length = textLengths.get(anchor);
+    if(!length) continue;
+    map.set(anchor, (map.get(anchor) || 0) + length);
 
-  const matches = node.nodeValue.match(/\S/g);
-  return matches ? matches.length : 0;
+    let ancestor = anchor.parentElement;
+    while(ancestor) {
+      const previousLength = (map.get(ancestor) || 0);
+      map.set(ancestor, previousLength + length);
+      ancestor = ancestor.parentElement;
+    }
+  }
+  return map;
 }
 
 // Calculates and records the text bias for elements. The text bias
@@ -86,46 +155,8 @@ function getTextLength(node) {
 // See http://www.l3s.de/~kohlschuetter/boilerplate.
 function applyTextBias(document, scores, setAnnotation) {
 
-  // Generate a map between document elements and a count 
-  // of characters within the element. This is tuned to work
-  // from the bottom up rather than the top down.
-  const textLengths = new Map();
-  const it = document.createNodeIterator(document.documentElement,
-    NodeFilter.SHOW_TEXT);
-  let node = it.nextNode();
-  while(node) {
-    const length = getTextLength(node);
-    if(length) {
-      let element = node.parentElement;
-      while(element) {
-        const previousLength = (textLengths.get(element) || 0);
-        textLengths.set(element, previousLength + length);
-        element = element.parentElement;
-      }
-    }
-
-    node = it.nextNode();
-  }
-
-  // Generate a map between document elements and a count of 
-  // the characters contained within anchor elements present 
-  // anywhere within the elements
-  const anchors = document.querySelectorAll('a[href]');
-  const anchorLengths = new Map();
-  const numAnchors = anchors.length;
-  for(let i = 0; i < numAnchors; i++) {
-    const anchor = anchors[i];
-    const length = textLengths.get(anchor);
-    if(!length) continue;
-    anchorLengths.set(anchor, (anchorLengths.get(anchor) || 0) + length);
-
-    let ancestor = anchor.parentElement;
-    while(ancestor) {
-      const previousLength = (anchorLengths.get(ancestor) || 0);
-      anchorLengths.set(ancestor, previousLength + length);
-      ancestor = ancestor.parentElement;
-    }
-  }
+  const textLengths = deriveTextLength(document);
+  const anchorLengths = deriveAnchorLength(document, textLengths);
 
   const elements = document.getElementsByTagName('*');
   const numElements = elements.length;
@@ -352,14 +383,14 @@ function applyImageContainerBias(document, scores, setAnnotation) {
 }
 
 const ITEM_TYPES = [
-  'http://schema.org/Article',
-  'http://schema.org/Blog',
-  'http://schema.org/BlogPost',
-  'http://schema.org/BlogPosting',
-  'http://schema.org/NewsArticle',
-  'http://schema.org/ScholarlyArticle',
-  'http://schema.org/TechArticle',
-  'http://schema.org/WebPage'
+  'Article',
+  'Blog',
+  'BlogPost',
+  'BlogPosting',
+  'NewsArticle',
+  'ScholarlyArticle',
+  'TechArticle',
+  'WebPage'
 ];
 
 // Bias certain elements based on attribute values
@@ -421,9 +452,9 @@ function applyAttributeBias(document, scores, setAnnotation) {
   }
 
   // Item types
-  ITEM_TYPES.forEach(function applyItemTypeBias(schema) {
+  ITEM_TYPES.forEach(function(schema) {
     const elements = document.querySelectorAll('[itemtype="' + 
-      schema + '"]');
+      'http://schema.org/' + schema + '"]');
     if(elements.length === 1) {
       scores.set(elements[0], scores.get(elements[0]) + 500);
       setAnnotation(elements[0], 'itemTypeBias', 500);
@@ -645,66 +676,6 @@ function getAttributeBias(element) {
   }
 
   return bias;
-}
-
-function annotateScores(document, scores, annotate) {
-
-  if(!annotate) return;
-
-  // TODO: this should just iterate over the scores map
-  // instead of all elements
-  const elements = document.getElementsByTagName('*');
-  const numElements = elements.length;
-  for(let i = 0; i < numElements; i++) {
-    const element = elements[i];
-    const score = scores.get(element);
-    if(score) {
-      element.dataset.score = score.toFixed(2);
-    }
-  }
-}
-
-function removeNonIntersectingElements(document, scores) {
-  const bestElement = findBestElement(document, scores);
-
-  const it = document.createNodeIterator(document.documentElement,
-    NodeIterator.SHOW_ELEMENT);
-  let element = it.nextNode();
-  while(element) {
-
-    // TODO: use Node.compareDocumentPosition instead of 
-    // three conditions
-    if(element !== bestElement &&
-      !bestElement.contains(element) &&
-      !element.contains(bestElement)) {
-      element.remove();
-    }
-
-    element = it.nextNode();
-  }
-}
-
-// TODO: maybe deprecate and just move into prologue 
-// of removeNonIntersectingElements
-function findBestElement(document, scores) {
-
-  let bestElement = document.body;
-  let bestScore = scores.get(bestElement);
-
-  // TODO: this should just iterate over scores map?
-
-  const elements = document.getElementsByTagName('*');
-  const numElements = elements.length;
-  for(let i = 0; i < numElements; i++) {
-    const element = elements[i];
-    const score = scores.get(element) || 0;
-    if(score > bestScore) {
-      bestElement = element;
-      bestScore = score;
-    }
-  }
-
-  return bestElement;
 }
 
 } // END ANONYMOUS NAMESPACE

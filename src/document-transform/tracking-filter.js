@@ -15,9 +15,8 @@ const TrackingFilter = {};
 
 // NOTE: this assumes that images without explicit dimensions were pre-analyzed
 // by DocumentUtils.setImageDimensions
-// NOTE: rest args is ignored here, just complies with the transform function
 
-TrackingFilter.transform = function(document, rest) {
+TrackingFilter.transform = function(document) {
   const images = document.querySelectorAll('img');
   const length = images.length;
   for(let i = 0; i < length; i++) {
