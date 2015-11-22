@@ -8,7 +8,7 @@ const AttributeFilter = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-// todo; have rest accept a set of allowed, refactor
+// TODO: have rest accept a set of allowed, refactor
 // removeAttributes to check the parameter set insetad
 // of hardcoded exception for href/src?
 
@@ -21,8 +21,6 @@ AttributeFilter.transform = function(document, rest) {
     removeAttributes(elements[i]);
   }
 };
-
-// todo: why check if element defined here?
 
 function removeAttributes(element) {
 
