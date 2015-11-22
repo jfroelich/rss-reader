@@ -35,7 +35,7 @@ function unwrapNominalAnchors(document) {
   for(let i = 0; i < numAnchors; i++) {
     const anchor = anchors[i];
     if(!anchor.hasAttribute('href')) {
-      Calamine.unwrap(anchor);
+      DOMUtils.unwrap(anchor);
     }
   }
 }
@@ -58,7 +58,7 @@ function unwrapInlineElements(document) {
     iterations = 0; element && (iterations < 3000); 
     element = document.querySelector(UNWRAPPABLE_ELEMENTS), 
     iterations++) {
-    Calamine.unwrap(element);
+    DOMUtils.unwrap(element);
   }
 }
 

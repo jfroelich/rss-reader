@@ -61,9 +61,11 @@ function onAugmentLoad(entry, callback, event) {
 }
 
 // Private helper for onAugmentLoad
-// TODO: should we be using documentElement?
+// NOTE: this was previously setting body, which resulted in stripping 
+// of doc element and head. We do not want that. Store the full document
+// as the content
 function onImageDimensionsSet(entry, document, callback) {
-  const content = document.body.innerHTML;
+  const content = document.documentElement.innerHTML;
   if(content) {
     entry.content = content;
   }

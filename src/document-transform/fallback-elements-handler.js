@@ -27,6 +27,6 @@ const FallbackElementsHandler = {};
 FallbackElementsHandler.transform = function(document, rest) {
   const elements = document.querySelectorAll('noscript, noframes');
   for(let i = 0, len = elements.length; i < len; i++) {
-    Calamine.unwrap(elements[i]);
+    DOMUtils.unwrap(elements[i]);
   }
 };

@@ -9,14 +9,9 @@ const WhitespaceTransform = {};
 { // BEGIN ANONYMOUS NAMESPACE
 
 WhitespaceTransform.transform = function(document, rest) {
-
-
   replaceBreakRuleElements(document);
   normalizeWhitespace(document);
   trimTextNodes(document);
-  removeEmptyTextNodes(document);
-
-
 };
 
 // TODO: improve this. br is allowed in inline elements
@@ -33,7 +28,6 @@ function replaceBreakRuleElements(document) {
     parent.replaceChild(p, element);
   }
 }
-
 
 // TODO: i think this is causing a problem with removing important 
 // whitespace in whitespace sensitive elements, so this needs to 
@@ -53,8 +47,6 @@ function normalizeWhitespace(document) {
   }
 }
 
-
-
 function isElement(node) {
   return node.nodeType === Node.ELEMENT_NODE;
 }
@@ -69,7 +61,6 @@ const INLINE_ELEMENTS = new Set(['a','abbr', 'acronym', 'address',
 function isInlineElement(element) {
   return INLINE_ELEMENTS.has(element.localName);
 }
-
 
 const WHITESPACE_SENSITIVE_SELECTOR = 'code, code *, pre, pre *, ' + 
   'ruby, ruby *, textarea, textarea *, xmp, xmp *';
@@ -129,23 +120,12 @@ function trimTextNodes(document) {
       node.nodeValue = node.nodeValue.trim();
     }
 
-    node = iterator.nextNode();
-  }
-}
-
-// TODO: do this inline with trim instead of doing this in 
-// a second iteration
-function removeEmptyTextNodes(document) {
-  const it = document.createNodeIterator(document.documentElement,
-    NodeFilter.SHOW_TEXT);
-  let node = it.nextNode();
-  while(node) {
     if(!node.nodeValue) {
       node.remove();
     }
-    node = it.nextNode();
+
+    node = iterator.nextNode();
   }
 }
-
 
 } // END ANONYMOUS NAMESPACE

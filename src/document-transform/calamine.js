@@ -9,7 +9,7 @@
 
 // TODO: express everything as probability? Use a scale of 0 to 100
 // to represent each element's likelihood of being useful content, where
-// 100 is most likely. Every blcok gets its own probability score. Then
+// 100 is most likely. Every block gets its own probability score. Then
 // iteratively backfrom from a threshold of something like 50%. Or instead
 // of blocks weight the elements and use the best element approach again,
 // where probability means the likelihood of any given element being the
@@ -17,29 +17,28 @@
 // TODO: when the main container has several links, the text bias is very 
 // negative. Maybe propagate link text to only block level containers,
 // or proportionally decrease the negative bias based on depth
-// Note: Ideally, a block-based approach would avoid the need for the blacklisted
-// elements removal step but the current best element approach effectively requires
-// it. These selectors target boilerplate typically found in the best
-// element, after processing, but are applied before processing to reduce the
-// amount of elements considered and reduce error.
+// A block-based approach would avoid the need for the blacklisted
+// elements removal step
 
 // TODO: re intrinsic bias, there are only maybe 5-6 likely elements and 
 // everything else is very unlikely. <div> is the most likely.
-
-// TODO: pruning blacklisted elements early appears to be too resource 
-// intensive. Perhaps it would be better to leave them in until the 
-// best element has been found, and then prune the best element. Or, 
-// rather than prune, just mark various dom-subtrees as excluded 
-// and somehow ignore them when scoring, and then prune after
 
 const Calamine = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-// Modifies the input document by removing boilerplate text. Also 
-// tidies and compresses markup.
+const NOOP = function() {};
+
+// Helper for setAnnotation
+function setDatasetProperty(element, propertyName, value) {
+  element.dataset[propertyName] = value;
+}
+
+// Modifies the input document by removing boilerplate
 Calamine.transform = function(document, rest) {
-  const setAnnotation = rest.annotate ? setDatasetProperty : noop;
+
+  const annotate = rest && rest.annotate;
+  const setAnnotation = annotate ? setDatasetProperty : NOOP;
   const scores = initScores(document);
   applyTextBias(document, scores, setAnnotation);
   applyIntrinsicBias(document, scores, setAnnotation);
@@ -47,7 +46,7 @@ Calamine.transform = function(document, rest) {
   applyUpwardBias(document, scores, setAnnotation);
   applyImageContainerBias(document, scores, setAnnotation);
   applyAttributeBias(document, scores, setAnnotation);
-  annotateScores(document, scores, rest.annotate);
+  annotateScores(document, scores, annotate);
   removeNonIntersectingElements(document, scores);
 };
 
@@ -63,11 +62,28 @@ function initScores(document) {
   return scores;
 }
 
+function getTextLength(node) {
+
+  // NOTE: we no longer assume that whitespace was prepared for 
+  // analysis, so we need to get a metric that generally 
+  // ignores whitespace.
+  // TODO: what about entities like &nbsp;?
+  //return node.nodeValue.length;
+
+  // TODO: is there a way to optimize this even more?
+  // maybe .replace is faster than .match.length?
+
+  // Profiling shows this is the largest hotspot
+  // in Calamine.transform
+
+  const matches = node.nodeValue.match(/\S/g);
+  return matches ? matches.length : 0;
+}
+
 // Calculates and records the text bias for elements. The text bias
 // metric is adapted from the algorithm described in the paper 
 // "Boilerplate Detection using Shallow Text Features". See 
-// See http://www.l3s.de/~kohlschuetter/boilerplate. For better 
-// performance, this substitutes character count for word count.
+// See http://www.l3s.de/~kohlschuetter/boilerplate.
 function applyTextBias(document, scores, setAnnotation) {
 
   // Generate a map between document elements and a count 
@@ -78,7 +94,7 @@ function applyTextBias(document, scores, setAnnotation) {
     NodeFilter.SHOW_TEXT);
   let node = it.nextNode();
   while(node) {
-    const length = node.nodeValue.length;
+    const length = getTextLength(node);
     if(length) {
       let element = node.parentElement;
       while(element) {
@@ -313,7 +329,7 @@ function applyImageContainerBias(document, scores, setAnnotation) {
       bias += 30.0;
     }
 
-    const caption = findCaption(image);
+    const caption = DOMUtils.findCaption(image);
     if(caption) {
       bias += 50.0;
     }
@@ -351,9 +367,6 @@ const ITEM_TYPES = [
 // TODO: itemprop="articleBody"?
 // TODO: [role="article"]?
 function applyAttributeBias(document, scores, setAnnotation) {
-
-  // TODO: the call to getAttributeBias appears to be a
-  // hotspot. Needs tuning
 
   const selector = 'a, aside, div, dl, figure, h1, h2, h3, h4,' +
     ' ol, p, section, span, ul';
@@ -417,154 +430,6 @@ function applyAttributeBias(document, scores, setAnnotation) {
     }
   });
 }
-
-function getAttributeBias(element) {
-  const values = [];
-  const id = element.getAttribute('id');
-  if(id) values.push(id);
-  const name = element.getAttribute('name');
-  if(name) values.push(name);
-  const className = element.getAttribute('class');
-  if(className) values.push(className);
-  const itemprop = element.getAttribute('itemprop');
-  if(itemprop) values.push(itemprop);
- 
-  const allValues = values.join(' ');
-  const normalizedValues = allValues.toLowerCase();
-
-  // TODO: split on case-transition (lower2upper,upper2lower)
-  // and do not lower case the value prior to the split, do it after
-  const tokens = normalizedValues.split(/[\s\-_0-9]+/g);
-
-  // NOTE: Spread operator is causing deopt
-  //const distinctTokens = [...new Set(tokens.filter(identity))];
-
-  let bias = 0;
-  const seenTokens = new Set();
-  const numTokens = tokens.length;
-  let token = '';
-  let tokenBias = 0;
-  for(let i = 0; i < numTokens; i++) {
-    token = tokens[i];
-    if(token) {
-      if(!seenTokens.has(token)) {
-        seenTokens.add(token);
-        tokenBias = ATTRIBUTE_BIAS.get(token) || 0;
-        bias = bias + tokenBias;
-      }
-    }
-  }
-
-  return bias;
-}
-
-function annotateScores(document, scores, annotate) {
-
-  if(!annotate) return;
-
-  // TODO: this should just iterate over the scores map entries
-  const elements = document.getElementsByTagName('*');
-  const numElements = elements.length;
-  for(let i = 0; i < numElements; i++) {
-    const element = elements[i];
-    const score = scores.get(element);
-    if(score) {
-      element.dataset.score = score.toFixed(2);
-    }
-  }
-}
-
-function removeNonIntersectingElements(document, scores) {
-  const bestElement = findBestElement(document, scores);
-
-  const it = document.createNodeIterator(document.documentElement,
-    NodeIterator.SHOW_ELEMENT);
-  let element = it.nextNode();
-  while(element) {
-
-    // TODO: use Node.compareDocumentPosition instead of 
-    // three conditions
-    if(element !== bestElement &&
-      !bestElement.contains(element) &&
-      !element.contains(bestElement)) {
-      element.remove();
-    }
-
-    element = it.nextNode();
-  }
-}
-
-function findBestElement(document, scores) {
-
-  let bestElement = document.body;
-  let bestScore = scores.get(bestElement);
-
-  // TODO: this should just iterate over scores map?
-
-  const elements = document.getElementsByTagName('*');
-  const numElements = elements.length;
-  for(let i = 0; i < numElements; i++) {
-    const element = elements[i];
-    const score = scores.get(element) || 0;
-    if(score > bestScore) {
-      bestElement = element;
-      bestScore = score;
-    }
-  }
-
-  return bestElement;
-}
-
-// todo: move to dom-utils.js
-// NOTE: not optimized for live documents
-function unwrap(element) {
-  const parent = element.parentElement;
-  if(parent) {
-    while(element.firstChild) {
-      parent.insertBefore(element.firstChild, element);
-    }
-    element.remove();
-  }
-}
-
-// Export so other modules can use
-Calamine.unwrap = unwrap;
-
-// todo: move to dom utils
-function remove(element) {
-  element.remove();
-}
-
-// todo: move to dom utils
-function findCaption(image) {
-  const parents = getAncestors(image);  
-  const figure = parents.find(e => {
-    return e.matches('figure')
-  });
-  if(figure)
-    return figure.querySelector('figcaption');
-}
-
-// todo: move to dom utils
-function getAncestors(element) {
-  const parents = [];
-  let parent = element.parentElement;
-  while(parent) {
-    parents.push(parent);
-    parent = parent.parentElement;
-  }
-  return parents;
-}
-
-function identity(value) {
-  return value;
-}
-
-function setDatasetProperty(element, propertyName, value) {
-  element.dataset[propertyName] = value;
-}
-
-function noop() {}
 
 const ATTRIBUTE_BIAS = new Map([
   ['about', -35],
@@ -742,5 +607,104 @@ const ATTRIBUTE_BIAS = new Map([
   ['wnstorybody', 1000],
   ['zone', -50]
 ]);
+
+// TODO: the call to getAttributeBias appears to be a
+// hotspot. Still needs a bit of tuning
+function getAttributeBias(element) {
+  const values = [];
+  const id = element.getAttribute('id');
+  if(id) values.push(id);
+  const name = element.getAttribute('name');
+  if(name) values.push(name);
+  const className = element.getAttribute('class');
+  if(className) values.push(className);
+  const itemprop = element.getAttribute('itemprop');
+  if(itemprop) values.push(itemprop);
+ 
+  const allValues = values.join(' ');
+  const normalizedValues = allValues.toLowerCase();
+
+  // TODO: split on case-transition (lower2upper,upper2lower)
+  // and do not lower case the value prior to the split, do it after
+  const tokens = normalizedValues.split(/[\s\-_0-9]+/g);
+
+  let bias = 0;
+  const seenTokens = new Set();
+  const numTokens = tokens.length;
+  let token = '';
+  let tokenBias = 0;
+  for(let i = 0; i < numTokens; i++) {
+    token = tokens[i];
+    if(token) {
+      if(!seenTokens.has(token)) {
+        seenTokens.add(token);
+        tokenBias = ATTRIBUTE_BIAS.get(token) || 0;
+        bias = bias + tokenBias;
+      }
+    }
+  }
+
+  return bias;
+}
+
+function annotateScores(document, scores, annotate) {
+
+  if(!annotate) return;
+
+  // TODO: this should just iterate over the scores map
+  // instead of all elements
+  const elements = document.getElementsByTagName('*');
+  const numElements = elements.length;
+  for(let i = 0; i < numElements; i++) {
+    const element = elements[i];
+    const score = scores.get(element);
+    if(score) {
+      element.dataset.score = score.toFixed(2);
+    }
+  }
+}
+
+function removeNonIntersectingElements(document, scores) {
+  const bestElement = findBestElement(document, scores);
+
+  const it = document.createNodeIterator(document.documentElement,
+    NodeIterator.SHOW_ELEMENT);
+  let element = it.nextNode();
+  while(element) {
+
+    // TODO: use Node.compareDocumentPosition instead of 
+    // three conditions
+    if(element !== bestElement &&
+      !bestElement.contains(element) &&
+      !element.contains(bestElement)) {
+      element.remove();
+    }
+
+    element = it.nextNode();
+  }
+}
+
+// TODO: maybe deprecate and just move into prologue 
+// of removeNonIntersectingElements
+function findBestElement(document, scores) {
+
+  let bestElement = document.body;
+  let bestScore = scores.get(bestElement);
+
+  // TODO: this should just iterate over scores map?
+
+  const elements = document.getElementsByTagName('*');
+  const numElements = elements.length;
+  for(let i = 0; i < numElements; i++) {
+    const element = elements[i];
+    const score = scores.get(element) || 0;
+    if(score > bestScore) {
+      bestElement = element;
+      bestScore = score;
+    }
+  }
+
+  return bestElement;
+}
 
 } // END ANONYMOUS NAMESPACE

@@ -15,7 +15,7 @@ chrome.runtime.onMessage.addListener(function(message) {
   } else if(type === 'subscribe') {
     maybeAppendMoreSlides();
   } else if(type === 'unsubscribe') {
-    viewOnUnsubscribeMessage();
+    onUnsubscribeMessage();
   } else if(type === 'archivedEntry') {
     // TODO: react to the archiving an entry that is read 
     // and still loaded into the view
@@ -41,7 +41,7 @@ function maybeAppendMoreSlides() {
   appendSlides(hideNoUnreadArticlesSlide, isFirst);
 }
 
-function viewOnUnsubscribeMessage(message) {
+function onUnsubscribeMessage(message) {
   const slidesForFeed = document.querySelectorAll(
     'div[feed="'+ message.feed +'"]');
   const removedCurrentSlide = Array.prototype.reduce.call(
@@ -243,23 +243,14 @@ function appendSlide(entry, isFirst) {
   // TODO: use section instead of span
   const content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
-
-  // todo: create a dom-utils createDocument function and
-  // use it here instead
-  const doc = document.implementation.createHTMLDocument();
-
-  // TODO: is doc.body leading to extra wrapping of doc.body?
-  // should this be setting doc.documentElement.innerHTML instead?
-  doc.body.innerHTML = entry.content;
-
-  PreviewTransform.transform(doc, {
-    annotate: false
-  });
-
-  if(doc && doc.documentElement && doc.body) {
-    content.innerHTML = doc.body.innerHTML;
-  } else {
-    console.warn('Cannot append document without body: %o', doc);
+  const doc = DOMUtils.parseHTML(entry.content);
+  PreviewTransform.transform(doc);
+  if(doc.documentElement) {
+    if(doc.body) {
+      content.innerHTML = doc.body.innerHTML;
+    } else {
+      content.innerHTML = doc.documentElement.innerHTML;
+    }
   }
   slide.appendChild(content);
 
@@ -268,7 +259,9 @@ function appendSlide(entry, isFirst) {
   slide.appendChild(source);
 
   const favIcon = document.createElement('img');
-  favIcon.setAttribute('src', FavIcon.getURL(entry.feedLink || entry.baseURI));
+  // TODO: where am i getting baseURI from? I don't even think that exists
+  const iconSource = FavIcon.getURL(entry.feedLink || entry.baseURI);
+  favIcon.setAttribute('src', iconSource);
   favIcon.setAttribute('width', '16');
   favIcon.setAttribute('height', '16');
   source.appendChild(favIcon);

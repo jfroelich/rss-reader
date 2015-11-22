@@ -6,7 +6,7 @@
 
 const AttributeFilter = {};
 
-{ // BEGIN ANONYMOUS NAMESPAEC
+{ // BEGIN ANONYMOUS NAMESPACE
 
 // todo; have rest accept a set of allowed, refactor
 // removeAttributes to check the parameter set insetad
