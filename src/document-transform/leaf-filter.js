@@ -2,15 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// NOTE: Chrome is currently reporting "Unsupported phi-use of const variable"
-// when profiling, and I have no idea why. Trying to track down.
-// This continues to happen when there are NO const variables declared here.
-// It has something to do with the use of the 'let'. Removing all uses 
-// of let resolved the issue.
-// ok, maybe it is just use of let/const within loop?? try testing with
-// greater use of let until it starts happening again
-// no that is still not quite right, doing it within the first loop works 
-// fine
+'use strict';
 
 // TODO: there is a specific edge case not being handled
 // where certain elements, e.g. anchors, that do not contain
@@ -51,7 +43,7 @@
 // removing them and adding their parents to the stack.
 // Remove all the empty children and shove all the parents on the stack
 
-'use strict';
+
 
 const LeafFilter$LEAF_SELECTOR = [
   'area',
@@ -67,54 +59,38 @@ const LeafFilter$LEAF_SELECTOR = [
   'video'
 ].join(',');
 
+// if parents is let or const declared array, 
+// chrome deopts (Unsupported phi use const variable)
+//https://v8.googlecode.com/svn/trunk/src/hydrogen.cc
+// It has something to do with arrays?
+
 function LeafFilter$Transform(document) {
 
-  const parents = [];
-
   const selector = LeafFilter$LEAF_SELECTOR;
-
   const elements = document.getElementsByTagName('*');
-  const leaves = [];
   const numElements = elements.length;
-  for(let i = 0; i < numElements; i++) {
-  	let element = elements[i];
+
+  const leaves = new Set();
+
+  for(let i = 0, element = null; i < numElements; i++) {
+  	element = elements[i];
     if(!element.firstChild && !element.matches(selector)) {
-      leaves.push(element);
+      leaves.add(element);
     }
   }
 
-  // ok, if parents is let or const declared on the next line, 
-  // this causes  chrome to deopt (Unsupported use of phi const variable)
-  // Why is that?
-  // if i move it up above as the first line, no error
-  // do i need to explicitly hoist?
-  // does it have to do with declaring a let anywhere before a const?
-
-  // ok, getting stranger. if i move it up, it works. but now 
-  // if numLeaves is const or let, then i get the deopt
-  // maybe it just related to const arrays? nope
-  // also, no problem if leaf is const below
-
-  var numLeaves = leaves.length;
-  for(let i = 0; i < numLeaves; i++) {
-    const leaf = leaves[i];
-    parents.push(leaf.parentElement);
+  const body = document.body;
+  const stack = [];
+  const parents = new Set();
+  for(let leaf of leaves) {
+    if(body !== leaf.parentElement) {
+      stack.push(leaf.parentElement);
+    }
     leaf.remove();
   }
 
-  var body = document.body;
-
-  var stack = [];
-  var numParents = parents.length;
-  for(let i = 0, aParent = null; i < numParents; i++) {
-    aParent = parents[i];
-    if(aParent !== document.body) {
-      stack.push(aParent);
-    }
-  }
-
-  var parent = null;
-  var grandParent = null;
+  let parent = null;
+  let grandParent = null;
 
   while(stack.length) {
     parent = stack.pop();
