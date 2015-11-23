@@ -23,8 +23,7 @@ const Calamine = {};
 { // BEGIN ANONYMOUS NAMESPACE
 
 // Filters boilerplate content
-Calamine.transform = function Calamine$Transform(document, rest) {
-  const annotate = rest && rest.annotate;
+Calamine.transform = function Calamine$Transform(document, annotate) {
   const scores = initScores(document);
   applyTextBias(document, scores, annotate);
   applyIntrinsicBias(document, scores, annotate);
@@ -122,23 +121,29 @@ function deriveTextLength(document) {
 // Generate a map between document elements and a count of 
 // the characters contained within anchor elements present 
 // anywhere within the elements
+// NOTE: chrome is giving a de-opt warning here, so testing with var
+
 function deriveAnchorLength(document, textLengths) {
-  const anchors = document.querySelectorAll('a[href]');
-  const map = new Map();
-  const numAnchors = anchors.length;
+  var anchors = document.querySelectorAll('a[href]');
+  var map = new Map();
+  var numAnchors = anchors.length;
 
   // NOTE: Chrome is whining about unsupported phi use of const variable
   // and it may be due to declaring consts in loops
+  var anchor = null;
+  var ancestor = null;
+  var previousLength = 0;
+  var length = 0;
 
-  for(let i = 0; i < numAnchors; i++) {
-    let anchor = anchors[i];
-    let length = textLengths.get(anchor);
+  for(var i = 0; i < numAnchors; i++) {
+    anchor = anchors[i];
+    length = textLengths.get(anchor);
     if(!length) continue;
     map.set(anchor, (map.get(anchor) || 0) + length);
 
-    let ancestor = anchor.parentElement;
+    ancestor = anchor.parentElement;
     while(ancestor) {
-      let previousLength = (map.get(ancestor) || 0);
+      previousLength = (map.get(ancestor) || 0);
       map.set(ancestor, previousLength + length);
       ancestor = ancestor.parentElement;
     }
@@ -152,18 +157,26 @@ function deriveAnchorLength(document, textLengths) {
 // See http://www.l3s.de/~kohlschuetter/boilerplate.
 function applyTextBias(document, scores, annotate) {
 
-  const textLengths = deriveTextLength(document);
-  const anchorLengths = deriveAnchorLength(document, textLengths);
+  // const/let is causing de-opts, so using var
 
-  const elements = document.getElementsByTagName('*');
-  const numElements = elements.length;
+  var textLengths = deriveTextLength(document);
+  var anchorLengths = deriveAnchorLength(document, textLengths);
+
+  var elements = document.getElementsByTagName('*');
+  var numElements = elements.length;
+
+  var element = null;
+  var length = 0;
+  var bias = 0.0;
+  var anchorLength = 0;
+
   for(let i = 0; i < numElements; i++) {
-    const element = elements[i];
-    const length = textLengths.get(element);
+    element = elements[i];
+    length = textLengths.get(element);
     if(!length) continue;
-    const anchorLength = anchorLengths.get(element) || 0;
+    anchorLength = anchorLengths.get(element) || 0;
 
-    let bias = (0.25 * length) - (0.7 * anchorLength);
+    bias = (0.25 * length) - (0.7 * anchorLength);
     // Tentatively cap the bias (empirical)
     bias = Math.min(4000, bias);
     if(!bias) continue;
@@ -222,11 +235,18 @@ const INTRINSIC_BIAS = new Map([
 ]);
 
 function applyIntrinsicBias(document, scores, annotate) {
-  const elements = document.getElementsByTagName('*');
-  const numElements = elements.length;
+  
+  // chrome is warning about de-opts, using var
+
+  var elements = document.getElementsByTagName('*');
+  var numElements = elements.length;
+  
+  var element = null;
+  var bias = 0.0;
+
   for(let i = 0; i < numElements; i++) {
-    const element = elements[i];
-    const bias = INTRINSIC_BIAS.get(element.localName);
+    element = elements[i];
+    bias = INTRINSIC_BIAS.get(element.localName);
     if(bias) {
       scores.set(element, scores.get(element) + bias);
       if(annotate) {
@@ -236,9 +256,10 @@ function applyIntrinsicBias(document, scores, annotate) {
   }
 
   // Pathological case for single article
-  const articles = document.getElementsByTagName('article');
+  var articles = document.getElementsByTagName('article');
+  var article = null;
   if(articles.length === 1) {
-    const article = articles[0];
+    article = articles[0];
     scores.set(article, scores.get(article) + 1000);
     if(annotate) {
       // todo: does this need to pay attention to other
@@ -307,16 +328,25 @@ const UPWARD_BIAS = new Map([
 
 // Bias the parents of certain elements
 function applyUpwardBias(document, scores, annotate) {
-  const elements = document.getElementsByTagName('*');
-  const numElements = elements.length;
+  
+  // chrome warning unsupported phi use of const variable
+  // so using var
+
+  var elements = document.getElementsByTagName('*');
+  var numElements = elements.length;
+  var element = null;
+  var bias = 0.0;
+  var parent = null;
+  var previousBias = 0.0;
+
   for(let i = 0; i < numElements; i++) {
-    const element = elements[i];
-    const bias = UPWARD_BIAS.get(element.localName);
+    element = elements[i];
+    bias = UPWARD_BIAS.get(element.localName);
     if(!bias) continue;
-    const parent = element.parentElement;
+    parent = element.parentElement;
     scores.set(parent, scores.get(parent) + bias);
     if(annotate) {
-      const previousBias = parseFloat(parent.dataset.upwardBias) || 0.0;
+      previousBias = parseFloat(parent.dataset.upwardBias) || 0.0;
       parent.dataset.upwardBias = previousBias + bias;
     }
   }
@@ -396,65 +426,69 @@ const ITEM_TYPES = [
 // TODO: [role="article"]?
 function applyAttributeBias(document, scores, annotate) {
 
-  const selector = 'a, aside, div, dl, figure, h1, h2, h3, h4,' +
+  // chrome is warning about unsupported phi use of const variable
+  // so using var
+
+  var selector = 'a, aside, div, dl, figure, h1, h2, h3, h4,' +
     ' ol, p, section, span, ul';
-  const elements = document.querySelectorAll(selector);
-  const numElements = elements.length;
+  var elements = document.querySelectorAll(selector);
+  var numElements = elements.length;
+  var element = null;
+  var bias = 0.0;
+
   for(let i = 0; i < numElements; i++) {
-    const element = elements[i];
-    const bias = getAttributeBias(element);
-
+    element = elements[i];
+    bias = getAttributeBias(element);
     scores.set(element, scores.get(element) + bias);
-
     if(annotate) {
       element.dataset.attributeBias = bias;
     }
   }
 
   // Pathological case for class="article"
-  const articleClassElements = document.getElementsByClassName('article');
+  var articleClassElements = document.getElementsByClassName('article');
+  var currentBias = 0.0;
   if(articleClassElements.length === 1) {
-    const element = articleClassElements[0];
+    element = articleClassElements[0];
     scores.set(element, scores.get(element) + 1000);
-
     if(annotate) {
-      const currentBias = parseFloat(element.dataset.attributeBias) || 0.0;
+      currentBias = parseFloat(element.dataset.attributeBias) || 0.0;
       element.dataset.attributeBias = currentBias + 1000;
     }
   }
   
   // Pathological case for class="articleText"
-  const articleTextClassElements = document.getElementsByClassName(
+  var articleTextClassElements = document.getElementsByClassName(
     'articleText');
   if(articleTextClassElements.length === 1) {
-    const element = articleTextClassElements[0];
+    element = articleTextClassElements[0];
     scores.set(element, scores.get(element) + 1000);
 
     if(annotate) {
-      const currentBias = parseFloat(element.dataset.attributeBias) || 0.0;
+      currentBias = parseFloat(element.dataset.attributeBias) || 0.0;
       element.dataset.attributeBias = currentBias + 1000;
     }
   }
 
   // Pathological case for class="articleBody"
-  const articleBodyClassElements = document.getElementsByClassName(
+  var articleBodyClassElements = document.getElementsByClassName(
     'articleBody');
   if(articleBodyClassElements.length === 1) {
-    const element = articleBodyClassElements[0];
+    element = articleBodyClassElements[0];
     scores.set(element, scores.get(element) + 1000);
 
     if(annotate) {
-      const currentBias = parseFloat(element.dataset.attributeBias) || 0.0;
+      currentBias = parseFloat(element.dataset.attributeBias) || 0.0;
       element.dataset.attributeBias = currentBias + 1000;
     }
   }
 
   // Item types
   ITEM_TYPES.forEach(function processItemType(schema) {
-    const selector = '[itemtype="' + 'http://schema.org/' + schema + '"]';
-    const elements = document.querySelectorAll(selector);
+    var selector = '[itemtype="' + 'http://schema.org/' + schema + '"]';
+    var elements = document.querySelectorAll(selector);
     if(elements.length !== 1) return;
-    const element = elements[0];
+    var element = elements[0];
     scores.set(element, scores.get(element) + 500);
     if(annotate) {
       element.dataset.itemTypeBias = 500;

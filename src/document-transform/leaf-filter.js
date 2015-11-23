@@ -43,8 +43,6 @@
 // removing them and adding their parents to the stack.
 // Remove all the empty children and shove all the parents on the stack
 
-
-
 const LeafFilter$LEAF_SELECTOR = [
   'area',
   'audio',
@@ -59,16 +57,16 @@ const LeafFilter$LEAF_SELECTOR = [
   'video'
 ].join(',');
 
-// if parents is let or const declared array, 
-// chrome deopts (Unsupported phi use const variable)
-//https://v8.googlecode.com/svn/trunk/src/hydrogen.cc
-// It has something to do with arrays?
-
 function LeafFilter$Transform(document) {
 
   const selector = LeafFilter$LEAF_SELECTOR;
   const elements = document.getElementsByTagName('*');
   const numElements = elements.length;
+
+  // if leaves is let or const declared array, 
+  // chrome sometimes deopts with reason 
+  // Unsupported phi use const variable
+  // https://v8.googlecode.com/svn/trunk/src/hydrogen.cc
 
   const leaves = new Set();
 
@@ -81,7 +79,7 @@ function LeafFilter$Transform(document) {
 
   const body = document.body;
   const stack = [];
-  const parents = new Set();
+
   for(let leaf of leaves) {
     if(body !== leaf.parentElement) {
       stack.push(leaf.parentElement);

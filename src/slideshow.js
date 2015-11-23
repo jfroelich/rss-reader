@@ -244,11 +244,7 @@ function appendSlide(entry, isFirst) {
   const content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
   
-  // temporary, not using const in case it is causing issues
-  //const doc = DOMUtils.parseHTML(entry.content);
-  let doc = DOMUtils.parseHTML(entry.content);
-
-  //PreviewTransform.transform(doc);
+  const doc = DOMUtils.parseHTML(entry.content);
   PreviewTransform$Transform(doc);
 
   if(doc.documentElement) {

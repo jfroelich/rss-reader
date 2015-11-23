@@ -13,13 +13,20 @@ function PreviewTransform$Transform(document) {
   'use strict';
 
   BlacklistFilter.transform(document);
-  Calamine.transform(document);
+  Calamine.transform(document, false);
   CommentFilter.transform(document);
   TrackingFilter.transform(document);
   HiddenElementFilter.transform(document);
   WhitespaceTransform.transform(document);
   InlineElementFilter.transform(document);
-  AttributeFilter.transform(document);
+  
+  const retainableAttributes = new Set([
+    'href',
+    'src'
+  ]);
+
+  filterAttributes(document, retainableAttributes);
+
   LeafFilter$Transform(document);
   ListTransform.transform(document);
   TrimDocument.transform(document);

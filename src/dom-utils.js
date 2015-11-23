@@ -9,10 +9,7 @@ const DOMUtils = {};
 // Parses the html string and returns an HTMLDocument instance
 // NOTE: is practically equivalent to using DOMParser
 DOMUtils.parseHTML = function(html) {
-  
-  // temporarily not using const in case it is causing issues
-  //const doc = document.implementation.createHTMLDocument();
-  let doc = document.implementation.createHTMLDocument();
+  const doc = document.implementation.createHTMLDocument();
   doc.documentElement.innerHTML = html;
   return doc;
 };
