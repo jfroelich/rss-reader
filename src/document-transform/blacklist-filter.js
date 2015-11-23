@@ -9,7 +9,7 @@ const BlacklistFilter = {};
 { // BEGIN ANONYMOUS NAMESPACE
 
 // Remove blacklisted elements.
-BlacklistFilter.transform = function(document) {
+function BlackListFilter$Transform(document) {
   removeElementsByName(document);
   removeElementsById(document, 'div', DIV_IDS);
   removeElementsById(document, 'ul', LIST_IDS);
@@ -27,6 +27,8 @@ BlacklistFilter.transform = function(document) {
   // Isolated for perf testing
   removeRest(document);
 };
+
+BlacklistFilter.transform = BlackListFilter$Transform;
 
 // While the filter as a whole now performs better, this is now
 // the second hottest spot. nextNode delegates call to isBlacklisted
@@ -67,7 +69,7 @@ function removeElementsById(document, tagName, ids) {
 }
 
 const CLASS_SPLITTER = ' ';
-// todo: experiment with element.classList
+// todo: experiment with element.classList.contains
 function removeElementsByClass(document, tagName, classSet) {
   const elements = document.getElementsByTagName(tagName);
   const numElements = elements.length;
@@ -85,7 +87,6 @@ function removeElementsByClass(document, tagName, classSet) {
     }
   }
 }
-
 
 function isBlacklisted(node) {
 

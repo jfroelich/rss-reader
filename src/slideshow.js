@@ -243,8 +243,14 @@ function appendSlide(entry, isFirst) {
   // TODO: use section instead of span
   const content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
-  const doc = DOMUtils.parseHTML(entry.content);
-  PreviewTransform.transform(doc);
+  
+  // temporary, not using const in case it is causing issues
+  //const doc = DOMUtils.parseHTML(entry.content);
+  let doc = DOMUtils.parseHTML(entry.content);
+
+  //PreviewTransform.transform(doc);
+  PreviewTransform$Transform(doc);
+
   if(doc.documentElement) {
     if(doc.body) {
       content.innerHTML = doc.body.innerHTML;

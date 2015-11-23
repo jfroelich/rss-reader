@@ -12,7 +12,7 @@ const AttributeFilter = {};
 // removeAttributes to check the parameter set insetad
 // of hardcoded exception for href/src?
 
-AttributeFilter.transform = function(document, rest) {
+function AttributeFilter$Transform(document, rest) {
   removeAttributes(document.documentElement);
 
   const elements = document.getElementsByTagName('*');
@@ -21,6 +21,9 @@ AttributeFilter.transform = function(document, rest) {
     removeAttributes(elements[i]);
   }
 };
+
+// Export
+AttributeFilter.transform = AttributeFilter$Transform;
 
 function removeAttributes(element) {
 

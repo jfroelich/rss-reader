@@ -6,11 +6,10 @@
 
 const CommentFilter = {};
 
-// Note that the rest parameter is ignored
+// TODO: maybe just move this into another transform given its simplicity
 // TODO: maybe take another look at the whole conditional comments 
 // mess of Internet Explorer and consider some more nuanced removal
-CommentFilter.transform = function(document, rest) {
-
+CommentFilter.transform = function CommentFilter$Transform(document) {
   const it = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_COMMENT);
   let comment = it.nextNode();

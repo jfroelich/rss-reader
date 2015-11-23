@@ -2,11 +2,15 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-'use strict';
-
-const LeafFilter = {};
-
-{
+// NOTE: Chrome is currently reporting "Unsupported phi-use of const variable"
+// when profiling, and I have no idea why. Trying to track down.
+// This continues to happen when there are NO const variables declared here.
+// It has something to do with the use of the 'let'. Removing all uses 
+// of let resolved the issue.
+// ok, maybe it is just use of let/const within loop?? try testing with
+// greater use of let until it starts happening again
+// no that is still not quite right, doing it within the first loop works 
+// fine
 
 // TODO: there is a specific edge case not being handled
 // where certain elements, e.g. anchors, that do not contain
@@ -47,39 +51,70 @@ const LeafFilter = {};
 // removing them and adding their parents to the stack.
 // Remove all the empty children and shove all the parents on the stack
 
-// rename to selector
-const LEAF_EXCEPTIONS = ['area', 'audio', 'br', 'canvas', 'col',
-  'hr', 'img', 'source', 'svg', 'track', 'video'].join(',');
+'use strict';
 
+const LeafFilter$LEAF_SELECTOR = [
+  'area',
+  'audio',
+  'br',
+  'canvas',
+  'col',
+  'hr',
+  'img',
+  'source',
+  'svg',
+  'track',
+  'video'
+].join(',');
 
-LeafFilter.transform = function(document, rest) {
+function LeafFilter$Transform(document) {
+
+  const parents = [];
+
+  const selector = LeafFilter$LEAF_SELECTOR;
 
   const elements = document.getElementsByTagName('*');
-  
   const leaves = [];
   const numElements = elements.length;
   for(let i = 0; i < numElements; i++) {
-  	const element = elements[i];
-    if(!element.firstChild && !element.matches(LEAF_EXCEPTIONS)) {
+  	let element = elements[i];
+    if(!element.firstChild && !element.matches(selector)) {
       leaves.push(element);
     }
   }
 
-  const parents = leaves.map(function(element) {
-    const parent = element.parentElement;
-    element.remove();
-    return parent;
-  });
-  const stack = parents.filter(function(document, element) {
-    // TODO: why test for document.body per iteration?
-    // TODO: somehow observed an undefined document, need to look
-    // into how that could possibly happen
-    if(document) {
-      return document.body && document.body != element;        
-    }
-  });
+  // ok, if parents is let or const declared on the next line, 
+  // this causes  chrome to deopt (Unsupported use of phi const variable)
+  // Why is that?
+  // if i move it up above as the first line, no error
+  // do i need to explicitly hoist?
+  // does it have to do with declaring a let anywhere before a const?
 
-  let parent, grandParent;
+  // ok, getting stranger. if i move it up, it works. but now 
+  // if numLeaves is const or let, then i get the deopt
+  // maybe it just related to const arrays? nope
+  // also, no problem if leaf is const below
+
+  var numLeaves = leaves.length;
+  for(let i = 0; i < numLeaves; i++) {
+    const leaf = leaves[i];
+    parents.push(leaf.parentElement);
+    leaf.remove();
+  }
+
+  var body = document.body;
+
+  var stack = [];
+  var numParents = parents.length;
+  for(let i = 0, aParent = null; i < numParents; i++) {
+    aParent = parents[i];
+    if(aParent !== document.body) {
+      stack.push(aParent);
+    }
+  }
+
+  var parent = null;
+  var grandParent = null;
 
   while(stack.length) {
     parent = stack.pop();
@@ -106,6 +141,4 @@ LeafFilter.transform = function(document, rest) {
 
     stack.push(grandParent);
   }
-};
-
 }

@@ -8,7 +8,9 @@ const WhitespaceTransform = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-WhitespaceTransform.transform = function(document, rest) {
+// TODO: replace consecutive spaces with single space
+
+WhitespaceTransform.transform = function WhitespaceTransform$Transform(document) {
   replaceBreakRuleElements(document);
   normalizeWhitespace(document);
   trimTextNodes(document);
@@ -29,23 +31,14 @@ function replaceBreakRuleElements(document) {
   }
 }
 
-// TODO: this is causing a problem with removing important 
-// whitespace in whitespace sensitive elements, so this needs to 
-// be refactored. Or maybe, rather than modifying or changing 
-// the whitespace, we modify the is-empty and the length functions
-// to account for alternate whitespace representations and just 
-// do not perform this step. That will reduce the number of dom
-// mutation operations and probably speed up the transform, because
-// dom mutation appears to be the hotspot
+// TODO: what other whitespace transformations do we care about?
+
 function normalizeWhitespace(document) {
   const it = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_TEXT);
   let node = it.nextNode();
   while(node) {
     node.nodeValue = node.nodeValue.replace(/&nbsp;/g, ' ');
-
-    // todo; only match non-newline whitespace
-    node.nodeValue = node.nodeValue.replace(/\s/g, ' ');
     node = it.nextNode();
   }
 }
@@ -66,22 +59,26 @@ function isInlineElement(element) {
 }
 
 const WHITESPACE_SENSITIVE_SELECTOR = 'code, code *, pre, pre *, ' + 
-  'ruby, ruby *, textarea, textarea *, xmp, xmp *';
+  'ruby, ruby *, xmp, xmp *';
+
+function rejectPreformatted(set, node) {
+  return set.has(node.parentElement) ? 
+    NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+}
 
 function trimTextNodes(document) {
+  // To avoid trimming nodes present within whitespace sensitive
+  // elements, such as <pre>, we search for all such elements and 
+  // elements within those elements, create a set of distinct 
+  // elements, and use this to check if a given text node's parent
+  // element falls within that set. Alternatively, we could walk 
+  // up the dom each time, but this feels more performant.
+
   const elements = document.querySelectorAll(
     WHITESPACE_SENSITIVE_SELECTOR);
   const preformatted = new Set(Array.from(elements));
   const iterator = document.createNodeIterator(document.documentElement, 
-    NodeFilter.SHOW_TEXT, function(node) {
-
-    // Reject nodes present within preformatted hierarchies
-    if(preformatted.has(node.parentElement)) {
-      return NodeFilter.FILTER_REJECT;
-    }
-    return NodeFilter.FILTER_ACCEPT;
-
-  });
+    NodeFilter.SHOW_TEXT, rejectPreformatted.bind(this, preformatted));
 
   let node = iterator.nextNode();
   while(node) {

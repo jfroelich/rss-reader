@@ -8,12 +8,12 @@ const InlineElementFilter = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-InlineElementFilter.transform = function(document) {
+InlineElementFilter.transform = function InlineElementFilter$Transform(document) {
   
   const it = document.createNodeIterator(
     document.documentElement,
     NodeFilter.SHOW_ELEMENT, 
-    isInline);
+    acceptInline);
   
   let element = it.nextNode();
   while(element) {
@@ -62,7 +62,7 @@ const INLINE_ELEMENTS = new Set([
   'tt'
 ]);
 
-function isInline(node) {
+function acceptInline(node) {
   const name = node.localName;
   if(INLINE_ELEMENTS.has(name)) {
     return NodeFilter.FILTER_ACCEPT;

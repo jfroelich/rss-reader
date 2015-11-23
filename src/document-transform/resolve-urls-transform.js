@@ -50,7 +50,7 @@ const RESOLVE_SELECTOR = keys.join(',');
 // handling it properly is all laid out in some RFC standard somewhere, 
 // and is probably present in Webkit source.
 
-ResolveURLsTransform.transform = function(document, rest) {
+ResolveURLsTransform.transform = function ResolveURLsTransform$Transform(document, rest) {
 
   // Remove base elements
   const bases = document.getElementsByTagName('base');

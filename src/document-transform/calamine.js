@@ -4,56 +4,41 @@
 
 'use strict';
 
-// The Calamine lib provides the transform function that modifies 
-// the contents of a Document instance.
+// Calamine filters boilerplate shingles from a document
 
-// TODO: express everything as probability? Use a scale of 0 to 100
-// to represent each element's likelihood of being useful content, where
-// 100 is most likely. Every block gets its own probability score. Then
-// iteratively backfrom from a threshold of something like 50%. Or instead
-// of blocks weight the elements and use the best element approach again,
-// where probability means the likelihood of any given element being the
-// best element, not whether it is content or boilerplate.
-// TODO: when the main container has several links, the text bias is very 
-// negative. Maybe propagate link text to only block level containers,
-// or proportionally decrease the negative bias based on depth
-// A block-based approach would avoid the need for the blacklisted
-// elements removal step
-
+// TODO: bring in ideas from calamine-dev and then delete calamine-dev.js
 // TODO: re intrinsic bias, there are only maybe 5-6 likely elements and 
 // everything else is very unlikely. <div> is the most likely.
 
-// TODO: deprecate setAnnotation, it is causing unnecessary calcs
+// TODO: maybe deprecate scores prefill with 0
+// TODO: reconsider single pass approach
+// TODO: consider using multiple maps for the various scores and 
+// only integrating in the find best element final step
+// consistently use floats insteads of ints for scores/biases
+// instead of storing in element.dataset, just use several maps,
+// and then calc net score at end
 
 const Calamine = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-const NOOP = function() {};
-
-// Helper for setAnnotation
-function setDatasetProperty(element, propertyName, value) {
-  element.dataset[propertyName] = value;
-}
-
 // Filters boilerplate content
-Calamine.transform = function(document, rest) {
+Calamine.transform = function Calamine$Transform(document, rest) {
   const annotate = rest && rest.annotate;
-  const setAnnotation = annotate ? setDatasetProperty : NOOP;
   const scores = initScores(document);
-  applyTextBias(document, scores, setAnnotation);
-  applyIntrinsicBias(document, scores, setAnnotation);
-  applyDownwardBias(document, scores, setAnnotation);
-  applyUpwardBias(document, scores, setAnnotation);
-  applyImageContainerBias(document, scores, setAnnotation);
-  applyAttributeBias(document, scores, setAnnotation);
+  applyTextBias(document, scores, annotate);
+  applyIntrinsicBias(document, scores, annotate);
+  applyDownwardBias(document, scores, annotate);
+  applyUpwardBias(document, scores, annotate);
+  applyImageContainerBias(document, scores, annotate);
+  applyAttributeBias(document, scores, annotate);
   annotateScores(annotate);
   const bestElement = findBestElement(document, scores);
   removeNonIntersectingElements(document, bestElement);
 };
 
 function initScores(document) {
-  // Init scores. We fill 0 to avoid having to check if score 
+  // We fill 0 to avoid having to check if score 
   // is set each time we change it.
   const scores = new Map();
   const elements = document.getElementsByTagName('*');
@@ -65,8 +50,6 @@ function initScores(document) {
 }
 
 function annotateScores(scores, annotate) {
-
-  // Annotate element scores
   if(annotate) {
     for(let entry of scores) {
       entry[0].dataset.score = entry[1].toFixed(2);
@@ -75,7 +58,6 @@ function annotateScores(scores, annotate) {
 }
 
 function findBestElement(document, scores) {
-  // Find the highest scoring element
   let bestElement = document.body;
   let bestScore = scores.get(bestElement);
   for(let entry of scores) {
@@ -88,7 +70,6 @@ function findBestElement(document, scores) {
 }
 
 function removeNonIntersectingElements(document, bestElement) {
-  // Remove non-intersecting elements
   const it = document.createNodeIterator(
     document.documentElement,
     NodeIterator.SHOW_ELEMENT, 
@@ -103,11 +84,9 @@ function removeNonIntersectingElements(document, bestElement) {
 // Rejects elements that intersect with the best element
 // TODO: use Node.compareDocumentPosition
 function rejectIntersects(bestElement, node) {
-  if(node === bestElement || bestElement.contains(node) ||
-    node.contains(bestElement)) {
-    return NodeFilter.FILTER_REJECT;
-  }
-  return NodeFilter.FILTER_ACCEPT;
+  return node === bestElement || bestElement.contains(node) ||
+    node.contains(bestElement) ? NodeFilter.FILTER_REJECT : 
+    NodeFilter.FILTER_ACCEPT;
 }
 
 const RE_WHITESPACE = /\s|&nbsp;/g;
@@ -147,15 +126,19 @@ function deriveAnchorLength(document, textLengths) {
   const anchors = document.querySelectorAll('a[href]');
   const map = new Map();
   const numAnchors = anchors.length;
+
+  // NOTE: Chrome is whining about unsupported phi use of const variable
+  // and it may be due to declaring consts in loops
+
   for(let i = 0; i < numAnchors; i++) {
-    const anchor = anchors[i];
-    const length = textLengths.get(anchor);
+    let anchor = anchors[i];
+    let length = textLengths.get(anchor);
     if(!length) continue;
     map.set(anchor, (map.get(anchor) || 0) + length);
 
     let ancestor = anchor.parentElement;
     while(ancestor) {
-      const previousLength = (map.get(ancestor) || 0);
+      let previousLength = (map.get(ancestor) || 0);
       map.set(ancestor, previousLength + length);
       ancestor = ancestor.parentElement;
     }
@@ -167,7 +150,7 @@ function deriveAnchorLength(document, textLengths) {
 // metric is adapted from the algorithm described in the paper 
 // "Boilerplate Detection using Shallow Text Features". See 
 // See http://www.l3s.de/~kohlschuetter/boilerplate.
-function applyTextBias(document, scores, setAnnotation) {
+function applyTextBias(document, scores, annotate) {
 
   const textLengths = deriveTextLength(document);
   const anchorLengths = deriveAnchorLength(document, textLengths);
@@ -185,7 +168,10 @@ function applyTextBias(document, scores, setAnnotation) {
     bias = Math.min(4000, bias);
     if(!bias) continue;
     scores.set(element, scores.get(element) + bias);
-    setAnnotation(element, 'textBias', bias.toFixed(2));
+  
+    if(annotate) {
+      element.dataset.textBias = bias.toFixed(2);
+    }
   }
 }
 
@@ -235,25 +221,18 @@ const INTRINSIC_BIAS = new Map([
   ['tr', -500]
 ]);
 
-function applyIntrinsicBias(document, scores, setAnnotation) {
-
-  // Because we are not mutating the document, using a live
-  // node list (returned by getElementsByTagName) makes the 
-  // most sense since there is very little overhead in 
-  // performing the query multiple times.
-
+function applyIntrinsicBias(document, scores, annotate) {
   const elements = document.getElementsByTagName('*');
   const numElements = elements.length;
   for(let i = 0; i < numElements; i++) {
     const element = elements[i];
-    if(!element) {
-      console.debug('Undefined element? %s', i);
-      continue;
-    }
     const bias = INTRINSIC_BIAS.get(element.localName);
-    if(!bias) continue;
-    setAnnotation(element, 'intrinsicBias', bias);
-    scores.set(element, scores.get(element) + bias);
+    if(bias) {
+      scores.set(element, scores.get(element) + bias);
+      if(annotate) {
+        element.dataset.intrinsicBias = bias;
+      }
+    }
   }
 
   // Pathological case for single article
@@ -261,11 +240,15 @@ function applyIntrinsicBias(document, scores, setAnnotation) {
   if(articles.length === 1) {
     const article = articles[0];
     scores.set(article, scores.get(article) + 1000);
-    setAnnotation(article, 'intrinsicBias', 1000);
+    if(annotate) {
+      // todo: does this need to pay attention to other
+      // setting of intrinsicBias, or is it indepedent?
+      element.dataset.intrinsicBias = 1000;
+    }
   }
 }
 
-function applyDownwardBias(document, scores, setAnnotation) {
+function applyDownwardBias(document, scores, annotate) {
 
   // Penalize list descendants. Even though we are not mutating, 
   // it seems faster to use querySelectorAll here than using 
@@ -278,11 +261,12 @@ function applyDownwardBias(document, scores, setAnnotation) {
   for(let i = 0; i < numLists; i++) {
     const listDescendant = listDescendants[i];
     scores.set(listDescendant, scores.get(listDescendant) - 100);
-    setAnnotation(listDescendant, 'listDescendantBias', -100);
-  }
+    if(annotate) {
+      // TODO: this needs to account for other bias
+      listDescendant.dataset.listDescendantBias = -100;
+    }
 
-  // TODO: is it silly to bias such elements if they are 
-  // blacklisted?
+  }
 
   // Penalize descendants of navigational elements
   const NAV_SELECTOR = 'aside *, header *, footer *, nav *';
@@ -292,15 +276,10 @@ function applyDownwardBias(document, scores, setAnnotation) {
     const navDescendant = navDescendants[i];
     scores.set(navDescendant, scores.get(navDescendant) - 50);
 
-    // NOTE: this test here is in place due to an unexplained issue with
-    // dataset not being defined? Figure out why. Is it because it is 
-    // lazily defined on the first data property being added, and we 
-    // encounter elements without other data properties yet defined?
-    // TODO: and what if it isn't defined? Are we failing to set the 
-    // annotation in that case? Is that a bug?
-    if(navDescendant.dataset) {
-      setAnnotation(navDescendant, 'navDescendantBias', 
-        parseInt(navDescendant.dataset.navDescendantBias || '0') - 50);
+    if(annotate) {
+      const currentBias = 
+        parseFloat(navDescendant.dataset.navDescendantBias) || 0.0;
+      navDescendant.dataset.navDescendantBias = currentBias - 50;
     }
   }
 }
@@ -327,7 +306,7 @@ const UPWARD_BIAS = new Map([
 ]);
 
 // Bias the parents of certain elements
-function applyUpwardBias(document, scores, setAnnotation) {
+function applyUpwardBias(document, scores, annotate) {
   const elements = document.getElementsByTagName('*');
   const numElements = elements.length;
   for(let i = 0; i < numElements; i++) {
@@ -336,13 +315,15 @@ function applyUpwardBias(document, scores, setAnnotation) {
     if(!bias) continue;
     const parent = element.parentElement;
     scores.set(parent, scores.get(parent) + bias);
-    setAnnotation(parent, 'upwardBias', parseInt(
-      parent.dataset.upwardBias || '0') + bias);
+    if(annotate) {
+      const previousBias = parseFloat(parent.dataset.upwardBias) || 0.0;
+      parent.dataset.upwardBias = previousBias + bias;
+    }
   }
 }
 
 // Bias image containers
-function applyImageContainerBias(document, scores, setAnnotation) {
+function applyImageContainerBias(document, scores, annotate) {
   // We are not mutating, so gebtn is more appropriate than qsa
   const images = document.getElementsByTagName('img');
   const numImages = images.length;
@@ -390,8 +371,10 @@ function applyImageContainerBias(document, scores, setAnnotation) {
     }
 
     if(bias) {
-      setAnnotation(parent, 'imageBias', bias);
       scores.set(parent, scores.get(parent) + bias);      
+      if(annotate) {
+        parent.dataset.imageBias = bias;
+      }
     }
   }
 }
@@ -411,7 +394,7 @@ const ITEM_TYPES = [
 // TODO: itemscope?
 // TODO: itemprop="articleBody"?
 // TODO: [role="article"]?
-function applyAttributeBias(document, scores, setAnnotation) {
+function applyAttributeBias(document, scores, annotate) {
 
   const selector = 'a, aside, div, dl, figure, h1, h2, h3, h4,' +
     ' ol, p, section, span, ul';
@@ -420,8 +403,12 @@ function applyAttributeBias(document, scores, setAnnotation) {
   for(let i = 0; i < numElements; i++) {
     const element = elements[i];
     const bias = getAttributeBias(element);
-    setAnnotation(element, 'attributeBias', bias);
+
     scores.set(element, scores.get(element) + bias);
+
+    if(annotate) {
+      element.dataset.attributeBias = bias;
+    }
   }
 
   // Pathological case for class="article"
@@ -429,11 +416,10 @@ function applyAttributeBias(document, scores, setAnnotation) {
   if(articleClassElements.length === 1) {
     const element = articleClassElements[0];
     scores.set(element, scores.get(element) + 1000);
-    if(element.dataset && element.dataset.attributeBias) {
-      setAnnotation(element, 'attributeBias',
-        (parseFloat(element.dataset.attributeBias) || 0) + 1000);
-    } else {
-      setAnnotation(element, 'attributeBias', 1000);
+
+    if(annotate) {
+      const currentBias = parseFloat(element.dataset.attributeBias) || 0.0;
+      element.dataset.attributeBias = currentBias + 1000;
     }
   }
   
@@ -443,11 +429,10 @@ function applyAttributeBias(document, scores, setAnnotation) {
   if(articleTextClassElements.length === 1) {
     const element = articleTextClassElements[0];
     scores.set(element, scores.get(element) + 1000);
-    if(element.dataset && element.dataset.attributeBias) {
-      setAnnotation(element, 'attributeBias',
-        (parseFloat(element.dataset.attributeBias) || 0) + 1000);
-    } else {
-      setAnnotation(element, 'attributeBias', 1000);
+
+    if(annotate) {
+      const currentBias = parseFloat(element.dataset.attributeBias) || 0.0;
+      element.dataset.attributeBias = currentBias + 1000;
     }
   }
 
@@ -457,21 +442,22 @@ function applyAttributeBias(document, scores, setAnnotation) {
   if(articleBodyClassElements.length === 1) {
     const element = articleBodyClassElements[0];
     scores.set(element, scores.get(element) + 1000);
-    if(element.dataset && element.dataset.attributeBias) {
-      setAnnotation(element, 'attributeBias',
-        (parseFloat(element.dataset.attributeBias) || 0) + 1000);
-    } else {
-      setAnnotation(element, 'attributeBias', 1000);
+
+    if(annotate) {
+      const currentBias = parseFloat(element.dataset.attributeBias) || 0.0;
+      element.dataset.attributeBias = currentBias + 1000;
     }
   }
 
   // Item types
-  ITEM_TYPES.forEach(function(schema) {
-    const elements = document.querySelectorAll('[itemtype="' + 
-      'http://schema.org/' + schema + '"]');
-    if(elements.length === 1) {
-      scores.set(elements[0], scores.get(elements[0]) + 500);
-      setAnnotation(elements[0], 'itemTypeBias', 500);
+  ITEM_TYPES.forEach(function processItemType(schema) {
+    const selector = '[itemtype="' + 'http://schema.org/' + schema + '"]';
+    const elements = document.querySelectorAll(selector);
+    if(elements.length !== 1) return;
+    const element = elements[0];
+    scores.set(element, scores.get(element) + 500);
+    if(annotate) {
+      element.dataset.itemTypeBias = 500;
     }
   });
 }

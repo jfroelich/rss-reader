@@ -16,7 +16,9 @@ const TrackingFilter = {};
 // NOTE: this assumes that images without explicit dimensions were pre-analyzed
 // by DocumentUtils.setImageDimensions
 
-TrackingFilter.transform = function(document) {
+{ // BEGIN ANONYMOUS NAMESPACE
+
+TrackingFilter.transform = function TrackingFilter$Transform(document) {
   const images = document.querySelectorAll('img');
   const length = images.length;
   for(let i = 0; i < length; i++) {
@@ -27,3 +29,5 @@ TrackingFilter.transform = function(document) {
     }
   }
 };
+
+} // END ANONYMOUS NAMESPACE

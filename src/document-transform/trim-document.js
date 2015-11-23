@@ -8,7 +8,7 @@ const TrimDocument = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-TrimDocument.transform = function(document, rest) {
+TrimDocument.transform = function TrimDocument$Transform(document, rest) {
   
   const root = document.body;
 
@@ -19,7 +19,7 @@ TrimDocument.transform = function(document, rest) {
 
   let sibling = root;
   let node = root.firstChild;
-  while(isTrimmableElement(node)) {
+  while(isTrimmable(node)) {
     sibling = node.nextSibling;
     // console.debug('Trimming %o from front', node);
     node.remove();
@@ -27,7 +27,7 @@ TrimDocument.transform = function(document, rest) {
   }
 
   node = root.lastChild;
-  while(isTrimmableElement(node)) {
+  while(isTrimmable(node)) {
     sibling = node.previousSibling;
     // console.debug('Trimming %o from end', node);
     node.remove();
@@ -35,7 +35,7 @@ TrimDocument.transform = function(document, rest) {
   }
 };
 
-function isTrimmableElement(element) {
+function isTrimmable(element) {
   if(!element) return false;
   if(element.nodeType !== Node.ELEMENT_NODE) return false;
   let name = element.localName;

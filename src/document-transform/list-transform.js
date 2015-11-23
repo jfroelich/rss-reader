@@ -8,7 +8,7 @@ const ListTransform = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-ListTransform.transform = function(document, rest) {
+ListTransform.transform = function ListTransform$Transform(document, rest) {
 
   const it = document.createNodeIterator(document.documentElement,
     NodeIterator.SHOW_ELEMENT, acceptListSingleton);
