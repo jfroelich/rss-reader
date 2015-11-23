@@ -23,6 +23,8 @@
 // TODO: re intrinsic bias, there are only maybe 5-6 likely elements and 
 // everything else is very unlikely. <div> is the most likely.
 
+// TODO: deprecate setAnnotation, it is causing unnecessary calcs
+
 const Calamine = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
@@ -36,26 +38,33 @@ function setDatasetProperty(element, propertyName, value) {
 
 // Filters boilerplate content
 Calamine.transform = function(document, rest) {
-
   const annotate = rest && rest.annotate;
   const setAnnotation = annotate ? setDatasetProperty : NOOP;
-
-  // Init scores. We fill 0 to avoid having to check if score 
-  // is set each time we change it.
-  const scores = new Map();
-  const elements = document.getElementsByTagName('*');
-  const numElements = elements.length;
-  for(let i = 0; i < numElements; i++) {
-    const element = elements[i];
-    scores.set(element, 0);
-  }
-
+  const scores = initScores(document);
   applyTextBias(document, scores, setAnnotation);
   applyIntrinsicBias(document, scores, setAnnotation);
   applyDownwardBias(document, scores, setAnnotation);
   applyUpwardBias(document, scores, setAnnotation);
   applyImageContainerBias(document, scores, setAnnotation);
   applyAttributeBias(document, scores, setAnnotation);
+  annotateScores(annotate);
+  const bestElement = findBestElement(document, scores);
+  removeNonIntersectingElements(document, bestElement);
+};
+
+function initScores(document) {
+  // Init scores. We fill 0 to avoid having to check if score 
+  // is set each time we change it.
+  const scores = new Map();
+  const elements = document.getElementsByTagName('*');
+  const numElements = elements.length;
+  for(let i = 0; i < numElements; i++) {
+    scores.set(elements[i], 0);
+  }
+  return scores;
+}
+
+function annotateScores(scores, annotate) {
 
   // Annotate element scores
   if(annotate) {
@@ -63,7 +72,9 @@ Calamine.transform = function(document, rest) {
       entry[0].dataset.score = entry[1].toFixed(2);
     }
   }
+}
 
+function findBestElement(document, scores) {
   // Find the highest scoring element
   let bestElement = document.body;
   let bestScore = scores.get(bestElement);
@@ -73,7 +84,10 @@ Calamine.transform = function(document, rest) {
       bestScore = entry[1];
     }
   }
+  return bestElement;
+}
 
+function removeNonIntersectingElements(document, bestElement) {
   // Remove non-intersecting elements
   const it = document.createNodeIterator(
     document.documentElement,
@@ -84,7 +98,7 @@ Calamine.transform = function(document, rest) {
     element.remove();
     element = it.nextNode();
   }
-};
+}
 
 // Rejects elements that intersect with the best element
 // TODO: use Node.compareDocumentPosition
@@ -96,26 +110,25 @@ function rejectIntersects(bestElement, node) {
   return NodeFilter.FILTER_ACCEPT;
 }
 
-// Returns a representation of a text node's length
-function getTextLength(node) {
-  return node.nodeValue.replace(/\s|&nbsp;/g, '').length;
-}
+const RE_WHITESPACE = /\s|&nbsp;/g;
 
 // Generate a map between document elements and a count 
 // of characters within the element. This is tuned to work
 // from the bottom up rather than the top down.
 function deriveTextLength(document) {
   const map = new Map();
+
   const it = document.createNodeIterator(
     document.documentElement,
     NodeFilter.SHOW_TEXT);
   let node = it.nextNode();
   while(node) {
-    const length = getTextLength(node);
+    const length = node.nodeValue.replace(RE_WHITESPACE, '').length;
+
     if(length) {
       let element = node.parentElement;
       while(element) {
-        let previousLength = (map.get(element) || 0);
+        const previousLength = map.get(element) || 0;
         map.set(element, previousLength + length);
         element = element.parentElement;
       }
@@ -123,6 +136,7 @@ function deriveTextLength(document) {
 
     node = it.nextNode();
   }
+
   return map;
 }
 
@@ -639,6 +653,8 @@ const ATTRIBUTE_BIAS = new Map([
   ['zone', -50]
 ]);
 
+const ATTRIBUTE_SPLIT = /[\s\-_0-9]+/g;
+
 // TODO: the call to getAttributeBias appears to be a
 // hotspot. Still needs a bit of tuning
 function getAttributeBias(element) {
@@ -657,7 +673,7 @@ function getAttributeBias(element) {
 
   // TODO: split on case-transition (lower2upper,upper2lower)
   // and do not lower case the value prior to the split, do it after
-  const tokens = normalizedValues.split(/[\s\-_0-9]+/g);
+  const tokens = normalizedValues.split(ATTRIBUTE_SPLIT);
 
   let bias = 0;
   const seenTokens = new Set();
