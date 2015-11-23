@@ -12,7 +12,7 @@ FeedStore.findByURL = function(connection, url, callback) {
   const store = transaction.objectStore('feed');
   const index = store.index('schemeless');
   const schemeless = URLUtils.getSchemeless(url);
-  const request = urls.get(schemeless);
+  const request = index.get(schemeless);
   request.onsuccess = callback;
 };
 
