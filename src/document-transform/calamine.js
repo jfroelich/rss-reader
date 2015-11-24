@@ -24,6 +24,12 @@ const Calamine = {};
 
 // Filters boilerplate content
 Calamine.transform = function Calamine$Transform(document, annotate) {
+
+  if(!document.querySelector('body')) {
+    console.warn('no document body %o', document.documentElement);
+    return;
+  }
+
   const scores = initScores(document);
   applyTextBias(document, scores, annotate);
   applyIntrinsicBias(document, scores, annotate);

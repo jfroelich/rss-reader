@@ -12,11 +12,13 @@
 function PreviewTransform$Transform(document) {
   'use strict';
 
+  transformFrames(document);
+
   BlacklistFilter.transform(document);
   Calamine.transform(document, false);
   CommentFilter.transform(document);
-  TrackingFilter.transform(document);
   HiddenElementFilter.transform(document);
+  TrackingFilter.transform(document);
   WhitespaceTransform.transform(document);
   InlineElementFilter.transform(document);
   

@@ -68,7 +68,7 @@ function acceptInline(node) {
     return NodeFilter.FILTER_ACCEPT;
   }
 
-  if(name === 'noscript' || name === 'noframes') {
+  if(name === 'noscript') {
 
     // Due to content-loading tricks, noscript requires special handling
     // e.g. nbcnews.com
