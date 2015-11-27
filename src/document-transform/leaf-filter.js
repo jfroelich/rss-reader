@@ -60,7 +60,7 @@ const LeafFilter$LEAF_SELECTOR = [
 function LeafFilter$Transform(document) {
 
   const selector = LeafFilter$LEAF_SELECTOR;
-  const elements = document.getElementsByTagName('*');
+  const elements = document.documentElement.getElementsByTagName('*');
   const numElements = elements.length;
 
   // if leaves is let or const declared array, 
@@ -78,10 +78,13 @@ function LeafFilter$Transform(document) {
   }
 
   const body = document.body;
+  const documentElement = document.documentElement;
   const stack = [];
 
+  var leafParent = null;
   for(let leaf of leaves) {
-    if(body !== leaf.parentElement) {
+    leafParent = leaf.parentElement;
+    if(leafParent !== body && leafParent !== documentElement) {
       stack.push(leaf.parentElement);
     }
     leaf.remove();
@@ -108,8 +111,8 @@ function LeafFilter$Transform(document) {
     // If there was no grand parent (how would that ever happen?)
     // or the grand parent is the root, then do not add the new
     // grand parent to the stack
-    if(!grandParent || grandParent === document.body || 
-      grandParent === document.documentElement) {
+    if(!grandParent || grandParent === body || 
+      grandParent === documentElement) {
       continue;
     }
 

@@ -10,6 +10,11 @@ const ListTransform = {};
 
 ListTransform.transform = function ListTransform$Transform(document, rest) {
 
+  if(!document || !document.documentElement) {
+    console.debug('Undefined document or documentElement %o', document);
+    return;
+  }
+
   const it = document.createNodeIterator(document.documentElement,
     NodeIterator.SHOW_ELEMENT, acceptListSingleton);
   let list = it.nextNode();

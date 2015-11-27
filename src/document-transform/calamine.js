@@ -18,6 +18,11 @@
 // instead of storing in element.dataset, just use several maps,
 // and then calc net score at end
 
+// Rather than remove attributes and elements, create a new document
+// or subtree and just copy text and anchors/images and recreate 
+// a limited view of the original. maybe this results in fewer
+// dom ops
+
 const Calamine = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
@@ -681,40 +686,65 @@ const ATTRIBUTE_BIAS = new Map([
 
 const ATTRIBUTE_SPLIT = /[\s\-_0-9]+/g;
 
+// TODO: perf test tokenize1 against tokenize2
+
+function tokenize1(string) {
+  return new Set(string.toLowerCase().split(ATTRIBUTE_SPLIT));
+}
+
+function tokenize2(string) {
+  //var lower = string.toLowerCase();
+  var tokens = new Set();
+  var token = [];
+  var joined = null;
+
+  for(var c of string) {
+    if(c === ' ' || c === '-' || c === '_' || (c >= '0' && c <= '9')) {
+      if(token.length) {
+        joined = token.join('');
+        if(joined) {
+          tokens.add(joined);
+          token = [];
+        }
+      }
+    } else if(c >= 'A' && c <= 'Z') {
+      // Rather than lowercase the entire string, which is locale
+      // sensitive, we hardcode change the English subset here
+      token.push(String.fromCharCode(c.charCodeAt(0) + 32));
+    } else {
+      token.push(c);
+    }
+  }
+
+  // add the final token
+  if(token.length) {
+    joined = token.join('');
+    if(joined) {
+      tokens.add(joined);
+    }
+  }
+
+  return tokens;
+}
+
 // TODO: the call to getAttributeBias appears to be a
 // hotspot. Still needs a bit of tuning
+// TODO: split on case-transition (lower2upper,upper2lower)
+// and do not lower case the value prior to the split, do it after
+// I am getting unexplainable results when using const/let
+
 function getAttributeBias(element) {
-  const values = [];
-  const id = element.getAttribute('id');
-  if(id) values.push(id);
-  const name = element.getAttribute('name');
-  if(name) values.push(name);
-  const className = element.getAttribute('class');
-  if(className) values.push(className);
-  const itemprop = element.getAttribute('itemprop');
-  if(itemprop) values.push(itemprop);
- 
-  const allValues = values.join(' ');
-  const normalizedValues = allValues.toLowerCase();
-
-  // TODO: split on case-transition (lower2upper,upper2lower)
-  // and do not lower case the value prior to the split, do it after
-  const tokens = normalizedValues.split(ATTRIBUTE_SPLIT);
-
-  let bias = 0;
-  const seenTokens = new Set();
-  const numTokens = tokens.length;
-  let token = '';
-  let tokenBias = 0;
-  for(let i = 0; i < numTokens; i++) {
-    token = tokens[i];
-    if(token) {
-      if(!seenTokens.has(token)) {
-        seenTokens.add(token);
-        tokenBias = ATTRIBUTE_BIAS.get(token) || 0;
-        bias = bias + tokenBias;
-      }
-    }
+  var value = (element.id || '') + 
+    (element.name || '') +
+    (element.className || '') +
+    (element.getAttribute('itemprop') || '');
+  var bias = 0;
+  //var tokens = tokenize1(value);
+  var tokens = tokenize2(value);
+  for(var token of tokens) {
+    //if(token) {
+      bias += (ATTRIBUTE_BIAS.get(token) || 0);
+    //}
   }
 
   return bias;
