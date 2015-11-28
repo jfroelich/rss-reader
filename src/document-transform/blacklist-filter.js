@@ -12,7 +12,11 @@ this.filterBlacklistedElements = function filterBlacklistedElements(document) {
   removeElementsById(document, 'div', DIV_IDS);
   removeElementsById(document, 'ul', LIST_IDS);
   removeElementsById(document, 'aside', ASIDE_IDS);
+  
+  // BUG: didn't remove section#comments, even though it is in 
+  // the list!
   removeElementsById(document, 'section', SECTION_IDS);
+
   removeElementsByClass(document, 'div', DIV_CLASSES);
   removeElementsByClass(document, 'a', ANCHOR_CLASSES);
   removeElementsByClass(document, 'ul', LIST_CLASSES);
@@ -55,13 +59,14 @@ function removeElementsByName(document) {
   }
 }
 
-
 // note: assumes no dup ids
 function removeElementsById(document, tagName, ids) {
   const numIds = ids.length;
-  for(let i = 0; i < numIds.length; i++) {
-    const id = ids[i];
-    const element = document.getElementById(id);
+  let id = null;
+  let element = null;
+  for(let i = 0; i < numIds; i++) {
+    id = ids[i];
+    element = document.getElementById(id);
     if(element && element.localName === tagName) {
       element.remove();
     }
@@ -961,8 +966,8 @@ const P_CLASSES = new Set([
 ]);
 
 const SECTION_IDS = [
+  'comments', // TechSpot, concurringopinions
   'comment-module', // Dispatch.com
-  'comments', // TechSpot
   'comments-area', // The Economist
   'follow-us', // BBC
   'injected-newsletter', // GigaOM
