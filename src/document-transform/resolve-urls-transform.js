@@ -5,16 +5,14 @@
 'use strict';
 
 // TODO: rename, remove -transform suffix
+// TODO: just expose a single public function
 
 const ResolveURLsTransform = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-
 // See also https://github.com/kangax/html-minifier/blob/gh-pages/src/htmlminifier.js
-
 // TODO: we should probably just make sure such tags are completely removed?
-
 
 // A map of element names to attributes that contain urls
 const ATTRIBUTE_MAP = new Map([
@@ -59,15 +57,12 @@ const RESOLVE_SELECTOR = keys.join(',');
 // and is probably present in Webkit source.
 
 ResolveURLsTransform.transform = function _transform(document, rest) {
-
-
   // Remove base elements
   const bases = document.getElementsByTagName('base');
   const numBases = bases.length;
   for(let i = 0; i < numBases; i++) {
   	bases[i].remove();
   }
-
 
   const baseURL = rest.baseURL;
 

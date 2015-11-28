@@ -12,11 +12,7 @@ this.filterBlacklistedElements = function filterBlacklistedElements(document) {
   removeElementsById(document, 'div', DIV_IDS);
   removeElementsById(document, 'ul', LIST_IDS);
   removeElementsById(document, 'aside', ASIDE_IDS);
-  
-  // BUG: didn't remove section#comments, even though it is in 
-  // the list!
   removeElementsById(document, 'section', SECTION_IDS);
-
   removeElementsByClass(document, 'div', DIV_CLASSES);
   removeElementsByClass(document, 'a', ANCHOR_CLASSES);
   removeElementsByClass(document, 'ul', LIST_CLASSES);
@@ -52,7 +48,7 @@ function removeElementsByName(document) {
     NodeFilter.SHOW_ELEMENT);
   let element = it.nextNode();
   while(element) {
-    if(ELEMENT_NAMES_SET.has(element.localName)) {
+    if(ELEMENT_NAMES.has(element.localName)) {
       element.remove();
     }
     element = it.nextNode();
@@ -62,11 +58,9 @@ function removeElementsByName(document) {
 // note: assumes no dup ids
 function removeElementsById(document, tagName, ids) {
   const numIds = ids.length;
-  let id = null;
   let element = null;
   for(let i = 0; i < numIds; i++) {
-    id = ids[i];
-    element = document.getElementById(id);
+    element = document.getElementById(ids[i]);
     if(element && element.localName === tagName) {
       element.remove();
     }
@@ -93,10 +87,8 @@ function removeElementsByClass(document, tagName, classSet) {
   }
 }
 
-
-
 // Elements that are explicitly blacklisted
-const ELEMENT_NAMES = [
+const ELEMENT_NAMES = new Set([
   'applet',
   'base',
   'basefont',
@@ -135,10 +127,7 @@ const ELEMENT_NAMES = [
   'title',
   'video',
   'xmp'
-];
-
-const ELEMENT_NAMES_SET = new Set(ELEMENT_NAMES);
-
+]);
 
 const ANCHOR_CLASSES = new Set([
   'advertise-with-us', // The Daily Voice

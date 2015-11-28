@@ -111,13 +111,16 @@ function deriveTextLength(document) {
     document.documentElement,
     NodeFilter.SHOW_TEXT);
   let node = it.nextNode();
+  let length = 0;
+  let element = null;
+  let previousLength = 0;
   while(node) {
-    const length = node.nodeValue.replace(RE_WHITESPACE, '').length;
+    length = node.nodeValue.replace(RE_WHITESPACE, '').length;
 
     if(length) {
-      let element = node.parentElement;
+      element = node.parentElement;
       while(element) {
-        const previousLength = map.get(element) || 0;
+        previousLength = map.get(element) || 0;
         map.set(element, previousLength + length);
         element = element.parentElement;
       }
@@ -744,8 +747,7 @@ function getAttributeBias(element) {
     (element.className || '') +
     (element.getAttribute('itemprop') || '');
   var bias = 0;
-  //var tokens = tokenize1(value);
-  var tokens = tokenize2(value);
+  var tokens = tokenize1(value);
   for(var token of tokens) {
     bias += ATTRIBUTE_BIAS.get(token) || 0;
   }

@@ -9,7 +9,11 @@
 // because it fits into original goal of boilerplate classification and 
 // removal (instead of just identifying a best element)
 
-function previewTransform(document) {
+{ // BEGIN ANONYMOUS NAMESPACE
+
+// Applies a series of transformations to a document in preparation
+// for displaying the document in a view. Defined in global scope
+this.previewTransform = function _previewTransform(document) {
   'use strict';
 
   transformFrameElements(document);
@@ -35,7 +39,7 @@ function previewTransform(document) {
   LeafFilter$Transform(document);
   ListTransform.transform(document);
   trimDocument(document);
-}
+};
 
 // Inspects a document for the presence of a frameset and lack of a body 
 // element, and then removes the frameset and generates a body consisting 
@@ -99,34 +103,33 @@ function filterHiddenElements(document, exceptions, minOpacity) {
 
   minOpacity = minOpacity || 0.0;
 
-  function acceptHidden(node) {
+  // Using NodeIterator avoids visiting detached subtrees
+  const iterator = document.createNodeIterator(
+    document.documentElement, NodeFilter.SHOW_ELEMENT);
+  let element = iterator.nextNode();
+  let style = null;
+  let opacity = 0.0;
+  while(element) {
 
-    if(exceptions.has(node.localName)) {
-      return NodeFilter.FILTER_REJECT;
+    if(exceptions.has(element.localName)) {
+      element = iterator.nextNode();
+      continue;
     }
 
     // This does not test against offsetWidth/Height because the 
     // properties do not appear to be initialized within inert documents
     // TODO: maybe try getting and using computed style?
+    style = element.style;
+    // NOTE: may result NaN, NaN <= minOpacity is false
+    opacity = parseFloat(style.opacity);
 
-    const style = node.style;
-    // console.debug('Opacity: %s', style.opacity);
-    const opacity = parseFloat(style.opacity);
-    if(style.display === 'none' || style.visibility === 'hidden' || 
-      style.visibility === 'collapse' || opacity <= minOpacity) {
-      return NodeFilter.FILTER_ACCEPT;
+    if(style.display === 'none' || 
+      style.visibility === 'hidden' || 
+      style.visibility === 'collapse' || 
+      opacity <= minOpacity) {
+      element.remove();
     }
 
-    return NodeFilter.FILTER_REJECT;
-  }
-
-  // Using NodeIterator avoids visiting detached subtrees
-  const iterator = document.createNodeIterator(
-    document.documentElement, NodeFilter.SHOW_ELEMENT, acceptHidden);
-  let element = iterator.nextNode();
-  while(element) {
-    // console.debug('Removing %s', element.outerHTML);
-    element.remove();
     element = iterator.nextNode();
   }
 }
@@ -184,47 +187,57 @@ function normalizeWhitespace(document) {
   }
 }
 
+function isElement(node) {
+  'use strict';
+  return node.nodeType === Node.ELEMENT_NODE;
+}
+
+const INLINE_ELEMENTS = new Set(['a','abbr', 'acronym', 'address',
+  'b', 'bdi', 'bdo', 'blink','cite', 'code', 'data', 'del',
+  'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 'map',
+  'meter', 'q', 'rp', 'rt', 'samp', 'small', 'span', 'strike',
+  'strong', 'sub', 'sup', 'time', 'tt', 'u', 'var'
+]);
+
+function isInlineElement(element) {
+  'use strict';
+  return INLINE_ELEMENTS.has(element.localName);
+}
+
+const WHITESPACE_SENSITIVE_SELECTOR = 'code, code *, pre, pre *, ' + 
+  'ruby, ruby *, xmp, xmp *';
+
 function trimTextNodes(document) {
   'use strict';
-
-  function isElement(node) {
-    return node.nodeType === Node.ELEMENT_NODE;
-  }
-
-  const INLINE_ELEMENTS = new Set(['a','abbr', 'acronym', 'address',
-    'b', 'bdi', 'bdo', 'blink','cite', 'code', 'data', 'del',
-    'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 'map',
-    'meter', 'q', 'rp', 'rt', 'samp', 'small', 'span', 'strike',
-    'strong', 'sub', 'sup', 'time', 'tt', 'u', 'var'
-  ]);
-
-  function isInlineElement(element) {
-    return INLINE_ELEMENTS.has(element.localName);
-  }
-
-  const WHITESPACE_SENSITIVE_SELECTOR = 'code, code *, pre, pre *, ' + 
-    'ruby, ruby *, xmp, xmp *';
-
-  function rejectPreformatted(set, node) {
-    return set.has(node.parentElement) ? 
-      NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
-  }
 
   // To avoid trimming nodes present within whitespace sensitive
   // elements, such as <pre>, we search for all such elements and 
   // elements within those elements, create a set of distinct 
   // elements, and use this to check if a given text node's parent
   // element falls within that set. Alternatively, we could walk 
-  // up the dom each time, but this feels more performant.
+  // up the dom each time, and check whether any parent is whitespace
+  // sensitive, but this feels more performant.
+
+  // NOTE: we do not use a filter function for createNodeIterator
+  // due to performance issues
 
   const elements = document.querySelectorAll(
     WHITESPACE_SENSITIVE_SELECTOR);
   const preformatted = new Set(Array.from(elements));
-  const iterator = document.createNodeIterator(document.documentElement, 
-    NodeFilter.SHOW_TEXT, rejectPreformatted.bind(this, preformatted));
+  const iterator = document.createNodeIterator(
+    document.documentElement, 
+    NodeFilter.SHOW_TEXT);
 
   let node = iterator.nextNode();
   while(node) {
+
+    // Skip over nodes that are descendants of 
+    // whitespace sensitive elements
+    if(preformatted.has(node.parentElement)) {
+      node = iterator.nextNode();
+      continue;
+    }
+
     if(node.previousSibling) {
       if(isElement(node.previousSibling)) {
         if(isInlineElement(node.previousSibling)) {
@@ -302,52 +315,56 @@ function transformScriptAnchors(document) {
   }
 }
 
+// NOTE: This does not contain ALL inline elements, just those we 
+// want to unwrap. This is different than the set of inline 
+// elements defined for the purpose of trimming text nodes.
+const UNWRAPPABLE_ELEMENTS = new Set([
+  'article',
+  'big',
+  'blink',
+  'center',
+  'colgroup',
+  'data', 
+  'details',
+  'div',
+  'font',
+  'footer',
+  'form',
+  'header',
+  'help',
+  'hgroup',
+  'ilayer',
+  'insert',
+  'label',
+  'layer',
+  'legend',
+  'main',
+  'mark',
+  'marquee',
+  'meter',
+  'multicol',
+  'nobr',
+  'noembed',
+  'plaintext',
+  'section',
+  'small',
+  'span',
+  'tbody',
+  'tfoot', 
+  'thead',
+  'tt'
+]);
+
+const UNWRAPPABLE_SELECTOR = Array.from(UNWRAPPABLE_ELEMENTS).join(',');
+
+// anchors are handled separately
+// fallback elements (e.g. noscript) are handled separately
 function unwrapInlineElements(document) {
   'use strict';
-  // NOTE: NodeIterator does not react properly to unwrap
-  // NOTE: This does not contain ALL inline elements, just those we 
-  // want to unwrap.
-  // anchors are handled separately
-  // fallback elements (e.g. noscript) are handled separately
-  const INLINE_ELEMENTS = new Set([
-    'article',
-    'big',
-    'blink',
-    'center',
-    'colgroup',
-    'data', 
-    'details',
-    'div',
-    'font',
-    'footer',
-    'form',
-    'header',
-    'help',
-    'hgroup',
-    'ilayer',
-    'insert',
-    'label',
-    'layer',
-    'legend',
-    'main',
-    'mark',
-    'marquee',
-    'meter',
-    'multicol',
-    'nobr',
-    'noembed',
-    'plaintext',
-    'section',
-    'small',
-    'span',
-    'tbody',
-    'tfoot', 
-    'thead',
-    'tt'
-  ]);
-
-  const selector = Array.from(INLINE_ELEMENTS).join(',');
-  const elements = document.querySelectorAll(selector);
+  // NOTE: using querySelectorAll because testing revealed that 
+  // NodeIterator cannot update its reference node appropriately
+  // as a result of the unwrap.
+  const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
   const numElements = elements.length;
   let element = null;
   for(let i = 0; i < numElements; i++) {
@@ -357,18 +374,19 @@ function unwrapInlineElements(document) {
   }
 }
 
+function isTrimmable(element) {
+  'use strict';
+  if(!element) return false;
+  if(element.nodeType !== Node.ELEMENT_NODE) return false;
+  let name = element.localName;
+  if(name === 'br') return true;
+  if(name === 'hr') return true;
+  if(name === 'p' && !element.firstChild) return true;
+  return false;
+}
+
 function trimDocument(document) {
   'use strict';
-
-  function isTrimmable(element) {
-    if(!element) return false;
-    if(element.nodeType !== Node.ELEMENT_NODE) return false;
-    let name = element.localName;
-    if(name === 'br') return true;
-    if(name === 'hr') return true;
-    if(name === 'p' && !element.firstChild) return true;
-    return false;
-  }
 
   const root = document.body;
 
@@ -391,3 +409,5 @@ function trimDocument(document) {
     node = sibling;
   }
 }
+
+} // END ANONYMOUS NAMESPACE

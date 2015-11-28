@@ -16,7 +16,7 @@
 
 // TODO: think of a better name
 // TODO: compare to domdistiller's technique
-// TODO: compare to that one old lib I forgot the name of
+// TODO: compare to readability's technique
 
 function mergeMultiplePageDocument(document, callback) {
   'use strict';
