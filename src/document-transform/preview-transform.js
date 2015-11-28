@@ -9,13 +9,12 @@
 // because it fits into original goal of boilerplate classification and 
 // removal (instead of just identifying a best element)
 
-function PreviewTransform$Transform(document) {
+function previewTransform(document) {
   'use strict';
 
   transformFrameElements(document);
   transformNoscripts(document);
-
-  BlacklistFilter.transform(document);
+  filterBlacklistedElements(document);
   Calamine.transform(document, false);
   filterComments(document);
 
@@ -358,8 +357,7 @@ function unwrapInlineElements(document) {
   }
 }
 
-function trimDocument(document, rest) {
-
+function trimDocument(document) {
   'use strict';
 
   function isTrimmable(element) {
@@ -375,7 +373,6 @@ function trimDocument(document, rest) {
   const root = document.body;
 
   if(!root) {
-    // console.debug('document.body is undefined');
     return;
   }
 
@@ -383,7 +380,6 @@ function trimDocument(document, rest) {
   let node = root.firstChild;
   while(isTrimmable(node)) {
     sibling = node.nextSibling;
-    // console.debug('Trimming %o from front', node);
     node.remove();
     node = sibling;
   }
@@ -391,9 +387,7 @@ function trimDocument(document, rest) {
   node = root.lastChild;
   while(isTrimmable(node)) {
     sibling = node.previousSibling;
-    // console.debug('Trimming %o from end', node);
     node.remove();
     node = sibling;
   }
 }
-

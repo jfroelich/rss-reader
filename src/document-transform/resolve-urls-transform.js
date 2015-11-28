@@ -11,30 +11,38 @@ const ResolveURLsTransform = {};
 { // BEGIN ANONYMOUS NAMESPACE
 
 
+// See also https://github.com/kangax/html-minifier/blob/gh-pages/src/htmlminifier.js
+
+// TODO: we should probably just make sure such tags are completely removed?
+
+
 // A map of element names to attributes that contain urls
 const ATTRIBUTE_MAP = new Map([
   ['a', 'href'],
   ['area', 'href'],
   ['audio', 'src'],
   ['blockquote', 'cite'],
+  ['del', 'cite'],
   ['embed', 'src'],
   ['iframe', 'src'],
   ['form', 'action'],
   ['img', 'src'],
+  ['ins', 'cite'],
   ['link', 'href'],
   ['object', 'data'],
+  ['q', 'cite'],
   ['script', 'src'],
   ['source', 'src'],
   ['track', 'src'],
   ['video', 'src']
 ]);
 
-// Statically create RESOLVE_SELECTOR from the map
 let keys = [];
 ATTRIBUTE_MAP.forEach(function(value, key) {
   keys.push(key + '[' + value +']');
 });
 const RESOLVE_SELECTOR = keys.join(',');
+
 
 // Resolves all appropriate URLs in the document and removes 
 // any base tag elements
@@ -50,7 +58,8 @@ const RESOLVE_SELECTOR = keys.join(',');
 // handling it properly is all laid out in some RFC standard somewhere, 
 // and is probably present in Webkit source.
 
-ResolveURLsTransform.transform = function ResolveURLsTransform$Transform(document, rest) {
+ResolveURLsTransform.transform = function _transform(document, rest) {
+
 
   // Remove base elements
   const bases = document.getElementsByTagName('base');

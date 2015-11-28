@@ -733,6 +733,11 @@ function tokenize2(string) {
 // and do not lower case the value prior to the split, do it after
 // I am getting unexplainable results when using const/let
 
+// NOTE: accessing properties appears to be faster than accessing
+// attributes
+
+// maybe microdata (itemprop and such) should be done in a separate pass
+
 function getAttributeBias(element) {
   var value = (element.id || '') + 
     (element.name || '') +
@@ -742,9 +747,7 @@ function getAttributeBias(element) {
   //var tokens = tokenize1(value);
   var tokens = tokenize2(value);
   for(var token of tokens) {
-    //if(token) {
-      bias += (ATTRIBUTE_BIAS.get(token) || 0);
-    //}
+    bias += ATTRIBUTE_BIAS.get(token) || 0;
   }
 
   return bias;

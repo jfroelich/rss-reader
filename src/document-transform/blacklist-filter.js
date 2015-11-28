@@ -4,12 +4,10 @@
 
 'use strict';
 
-const BlacklistFilter = {};
-
 { // BEGIN ANONYMOUS NAMESPACE
 
-// Remove blacklisted elements.
-function BlackListFilter$Transform(document) {
+// Remove blacklisted elements. Define in global scope
+this.filterBlacklistedElements = function filterBlacklistedElements(document) {
   removeElementsByName(document);
   removeElementsById(document, 'div', DIV_IDS);
   removeElementsById(document, 'ul', LIST_IDS);
@@ -28,33 +26,35 @@ function BlackListFilter$Transform(document) {
   removeRest(document);
 };
 
-BlacklistFilter.transform = BlackListFilter$Transform;
-
-// While the filter as a whole now performs better, this is now
-// the second hottest spot. nextNode delegates call to isBlacklisted
-// which delegates to matches which takes A LOT of time.
 function removeRest(document) {
   const iterator = document.createNodeIterator(
     document.documentElement, 
-    NodeFilter.SHOW_ELEMENT, 
-    isBlacklisted);
+    NodeFilter.SHOW_ELEMENT);
   let element = iterator.nextNode();
   while(element) {
-    element.remove();
+    if(element.matches(JOINED_BLACKLIST_SELECTORS)) {
+      element.remove();
+    }
     element = iterator.nextNode();
   }
 }
 
+// Note: using a nodeiterator yields much better performance
+// than a nodelist here (perf tested). Also, using an express
+// in loop condition appears to yield better performance than
+// passing a filter function to createNodeIterator.
 function removeElementsByName(document) {
-  const length = ELEMENT_NAMES.length;
-  for(let i = 0; i < length; i++) {
-    const elements = document.getElementsByTagName(ELEMENT_NAMES[i]);
-    const numElements = elements.length;
-    for(let j = numElements - 1; j  > -1; j--) {
-      elements[j].remove();
+  const it = document.createNodeIterator(document.documentElement,
+    NodeFilter.SHOW_ELEMENT);
+  let element = it.nextNode();
+  while(element) {
+    if(ELEMENT_NAMES_SET.has(element.localName)) {
+      element.remove();
     }
+    element = it.nextNode();
   }
 }
+
 
 // note: assumes no dup ids
 function removeElementsById(document, tagName, ids) {
@@ -88,14 +88,7 @@ function removeElementsByClass(document, tagName, classSet) {
   }
 }
 
-function isBlacklisted(node) {
 
-  if(node.matches(JOINED_BLACKLIST_SELECTORS)) {
-    return NodeFilter.FILTER_ACCEPT;
-  }
-
-  return NodeFilter.FILTER_REJECT;
-}
 
 // Elements that are explicitly blacklisted
 const ELEMENT_NAMES = [
@@ -138,6 +131,9 @@ const ELEMENT_NAMES = [
   'video',
   'xmp'
 ];
+
+const ELEMENT_NAMES_SET = new Set(ELEMENT_NAMES);
+
 
 const ANCHOR_CLASSES = new Set([
   'advertise-with-us', // The Daily Voice

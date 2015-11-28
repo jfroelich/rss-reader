@@ -8,10 +8,8 @@
 const DocumentUtils = {};
 
 // todo: create a setImageDimensions document transform,
-// use rest.callback to pass in the callback
 // then delete document-utils.js
 // update callers, html includes
-
 // when doing that, i can consider moving image utils
 // stuff into this, and deprecating image utils as well
 
