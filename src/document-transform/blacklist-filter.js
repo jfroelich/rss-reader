@@ -26,6 +26,8 @@ this.filterBlacklistedElements = function filterBlacklistedElements(document) {
   removeRest(document);
 };
 
+// NOTE: this appears to be the slowest part of the transform
+// It is specifically the call to matches
 function removeRest(document) {
   const iterator = document.createNodeIterator(
     document.documentElement, 
