@@ -44,78 +44,78 @@
 // Remove all the empty children and shove all the parents on the stack
 
 const LeafFilter$LEAF_SELECTOR = [
-  'area',
-  'audio',
-  'br',
-  'canvas',
-  'col',
-  'hr',
-  'img',
-  'source',
-  'svg',
-  'track',
-  'video'
+	'area',
+	'audio',
+	'br',
+	'canvas',
+	'col',
+	'hr',
+	'img',
+	'source',
+	'svg',
+	'track',
+	'video'
 ].join(',');
 
 function LeafFilter$Transform(document) {
 
-  const selector = LeafFilter$LEAF_SELECTOR;
-  const elements = document.documentElement.getElementsByTagName('*');
-  const numElements = elements.length;
+	const selector = LeafFilter$LEAF_SELECTOR;
+	const elements = document.documentElement.getElementsByTagName('*');
+	const numElements = elements.length;
 
-  // if leaves is let or const declared array, 
-  // chrome sometimes deopts with reason 
-  // Unsupported phi use const variable
-  // https://v8.googlecode.com/svn/trunk/src/hydrogen.cc
+	// if leaves is let or const declared array,
+	// chrome sometimes deopts with reason
+	// Unsupported phi use const variable
+	// https://v8.googlecode.com/svn/trunk/src/hydrogen.cc
 
-  const leaves = new Set();
+	const leaves = new Set();
 
-  for(let i = 0, element = null; i < numElements; i++) {
-  	element = elements[i];
-    if(!element.firstChild && !element.matches(selector)) {
-      leaves.add(element);
-    }
-  }
+	for(let i = 0, element = null; i < numElements; i++) {
+		element = elements[i];
+		if(!element.firstChild && !element.matches(selector)) {
+			leaves.add(element);
+		}
+	}
 
-  const body = document.body;
-  const documentElement = document.documentElement;
-  const stack = [];
+	const body = document.body;
+	const documentElement = document.documentElement;
+	const stack = [];
 
-  var leafParent = null;
-  for(let leaf of leaves) {
-    leafParent = leaf.parentElement;
-    if(leafParent !== body && leafParent !== documentElement) {
-      stack.push(leaf.parentElement);
-    }
-    leaf.remove();
-  }
+	var leafParent = null;
+	for(let leaf of leaves) {
+		leafParent = leaf.parentElement;
+		if(leafParent !== body && leafParent !== documentElement) {
+			stack.push(leaf.parentElement);
+		}
+		leaf.remove();
+	}
 
-  let parent = null;
-  let grandParent = null;
+	let parent = null;
+	let grandParent = null;
 
-  while(stack.length) {
-    parent = stack.pop();
+	while(stack.length) {
+		parent = stack.pop();
 
-    if(parent.firstChild) {
-      // There are other nodes in the parent after the child was removed,
-      // so do not remove the parent.
-      continue;
-    }
+		if(parent.firstChild) {
+			// There are other nodes in the parent after the child was removed,
+			// so do not remove the parent.
+			continue;
+		}
 
-    // Grab a reference to the grand parent before removal
-    // because after removal it is undefined
-    grandParent = parent.parentElement;
+		// Grab a reference to the grand parent before removal
+		// because after removal it is undefined
+		grandParent = parent.parentElement;
 
-    parent.remove();
+		parent.remove();
 
-    // If there was no grand parent (how would that ever happen?)
-    // or the grand parent is the root, then do not add the new
-    // grand parent to the stack
-    if(!grandParent || grandParent === body || 
-      grandParent === documentElement) {
-      continue;
-    }
+		// If there was no grand parent (how would that ever happen?)
+		// or the grand parent is the root, then do not add the new
+		// grand parent to the stack
+		if(!grandParent || grandParent === body ||
+			grandParent === documentElement) {
+			continue;
+		}
 
-    stack.push(grandParent);
-  }
+		stack.push(grandParent);
+	}
 }

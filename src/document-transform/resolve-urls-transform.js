@@ -12,32 +12,32 @@
 
 // A map of element names to attributes that contain urls
 const ATTRIBUTE_MAP = new Map([
-  ['a', 'href'],
-  ['area', 'href'],
-  ['audio', 'src'],
-  ['blockquote', 'cite'],
-  ['del', 'cite'],
-  ['embed', 'src'],
-  ['iframe', 'src'],
-  ['form', 'action'],
-  ['img', 'src'],
-  ['ins', 'cite'],
-  ['link', 'href'],
-  ['object', 'data'],
-  ['q', 'cite'],
-  ['script', 'src'],
-  ['source', 'src'],
-  ['track', 'src'],
-  ['video', 'src']
+	['a', 'href'],
+	['area', 'href'],
+	['audio', 'src'],
+	['blockquote', 'cite'],
+	['del', 'cite'],
+	['embed', 'src'],
+	['iframe', 'src'],
+	['form', 'action'],
+	['img', 'src'],
+	['ins', 'cite'],
+	['link', 'href'],
+	['object', 'data'],
+	['q', 'cite'],
+	['script', 'src'],
+	['source', 'src'],
+	['track', 'src'],
+	['video', 'src']
 ]);
 
 let keys = [];
 ATTRIBUTE_MAP.forEach(function(value, key) {
-  keys.push(key + '[' + value +']');
+	keys.push(key + '[' + value +']');
 });
 const RESOLVE_SELECTOR = keys.join(',');
 
-// Resolves all appropriate URLs in the document and removes 
+// Resolves all appropriate URLs in the document and removes
 // any base tag elements
 // TODO: support img srcset
 // TODO: support style.backgroundImage?
@@ -45,45 +45,45 @@ const RESOLVE_SELECTOR = keys.join(',');
 // NOTE: not supporting applet
 // NOTE: iframe.srcdoc?
 // NOTE: ignores param values with URIs
-// NOTE: could stripping the base tag could lead to invalid urls??? 
+// NOTE: could stripping the base tag could lead to invalid urls???
 // Should the base tag, if present, be considered when resolving elements?
-// Also note that there could be multiple base tags, the logic for 
-// handling it properly is all laid out in some RFC standard somewhere, 
+// Also note that there could be multiple base tags, the logic for
+// handling it properly is all laid out in some RFC standard somewhere,
 // and is probably present in Webkit source.
 
 this.resolveDocumentURLs = function(document, baseURL) {
-  // Remove base elements
-  const bases = document.getElementsByTagName('base');
-  const numBases = bases.length;
-  for(let i = 0; i < numBases; i++) {
-  	bases[i].remove();
-  }
+	// Remove base elements
+	const bases = document.getElementsByTagName('base');
+	const numBases = bases.length;
+	for(let i = 0; i < numBases; i++) {
+		bases[i].remove();
+	}
 
-  // Resolve the attribute values for various elements
-  const resolvables = document.querySelectorAll(RESOLVE_SELECTOR);
-  const numResolvables = resolvables.length;
-  for(let i = 0; i < numResolvables; i++) {
-  	resolveElement(baseURL, resolvables[i]);
-  }
+	// Resolve the attribute values for various elements
+	const resolvables = document.querySelectorAll(RESOLVE_SELECTOR);
+	const numResolvables = resolvables.length;
+	for(let i = 0; i < numResolvables; i++) {
+		resolveElement(baseURL, resolvables[i]);
+	}
 };
 
-// Resolves one of the URL containing attributes for a given 
+// Resolves one of the URL containing attributes for a given
 // element. Private helper for resolveURLs
 function resolveElement(baseURL, element) {
-  const attributeName = ATTRIBUTE_MAP.get(element.localName);
+	const attributeName = ATTRIBUTE_MAP.get(element.localName);
 
-  // We know attribute is defined because the selector
-  // included the condition (e.g. element[attribute])
-  const url = element.getAttribute(attributeName).trim();
-  try {
-    const uri = new URI(url);
-    if(!uri.protocol()) {
-      const resolved = uri.absoluteTo(baseURL).toString();
-      element.setAttribute(attributeName, resolved);
-    }
-  } catch(e) {
-    // Ignore url errors
-  }
+	// We know attribute is defined because the selector
+	// included the condition (e.g. element[attribute])
+	const url = element.getAttribute(attributeName).trim();
+	try {
+		const uri = new URI(url);
+		if(!uri.protocol()) {
+			const resolved = uri.absoluteTo(baseURL).toString();
+			element.setAttribute(attributeName, resolved);
+		}
+	} catch(e) {
+		// Ignore url errors
+	}
 }
 
 } // END ANONYMOUS NAMESPACE

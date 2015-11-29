@@ -11,31 +11,31 @@ const BrowserActionUtils = {};
 // Updates the unread count of the extension's badge
 // @param connection optional, an indexedDB database connection
 BrowserActionUtils.update = function(connection) {
-  // console.debug('Updating badge');
-  if(connection) {
-    EntryStore.countUnread(connection, setText);
-  } else {
-    Database.open(updateOnConnect);
-  }
+	// console.debug('Updating badge');
+	if(connection) {
+		EntryStore.countUnread(connection, setText);
+	} else {
+		Database.open(updateOnConnect);
+	}
 };
 
 // Private helper for update
 function updateOnConnect(event) {
-  if(event.type === 'success') {
-    EntryStore.countUnread(event.target.result, setText);
-  } else {
-    // indexedDB connection error
-    console.debug(event);
-    chrome.browserAction.setBadgeText({text: '?'});
-  }
+	if(event.type === 'success') {
+		EntryStore.countUnread(event.target.result, setText);
+	} else {
+		// indexedDB connection error
+		console.debug(event);
+		chrome.browserAction.setBadgeText({text: '?'});
+	}
 }
 
 // Sets the badge text. Private helper for update
 function setText(event) {
-  const count = event.target.result;
-  chrome.browserAction.setBadgeText({
-    text: count.toString()
-  });
+	const count = event.target.result;
+	chrome.browserAction.setBadgeText({
+		text: count.toString()
+	});
 }
 
 } // END ANONYMOUS NAMESPACE
