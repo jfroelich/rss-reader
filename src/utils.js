@@ -4,6 +4,9 @@
 
 'use strict';
 
+// TODO: just use a utils namespace and group everything
+// into it? or just a bunch of global functions
+
 class Notification {
 
   // TODO: maybe we don't need the permission check at all?

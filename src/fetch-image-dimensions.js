@@ -7,7 +7,7 @@
 { // BEGIN ANONYMOUS NAMESPACE
 
 // Asynchronously attempts to set the width and height for 
-// all image elements. Calls callback with no important args when complete
+// all image elements. Calls callback when complete
 this.fetchImageDimensions = function _fetchImageDimensions(document, callback) {
   const images = document.getElementsByTagName('img');
   async.forEach(images, _fetch, callback);
