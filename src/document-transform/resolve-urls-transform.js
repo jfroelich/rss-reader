@@ -4,14 +4,10 @@
 
 'use strict';
 
-// TODO: rename, remove -transform suffix
-// TODO: just expose a single public function
-
-const ResolveURLsTransform = {};
-
 { // BEGIN ANONYMOUS NAMESPACE
 
-// See also https://github.com/kangax/html-minifier/blob/gh-pages/src/htmlminifier.js
+// See also https://github.com/kangax/html-minifier/blob/
+// gh-pages/src/htmlminifier.js
 // TODO: we should probably just make sure such tags are completely removed?
 
 // A map of element names to attributes that contain urls
@@ -41,7 +37,6 @@ ATTRIBUTE_MAP.forEach(function(value, key) {
 });
 const RESOLVE_SELECTOR = keys.join(',');
 
-
 // Resolves all appropriate URLs in the document and removes 
 // any base tag elements
 // TODO: support img srcset
@@ -56,15 +51,13 @@ const RESOLVE_SELECTOR = keys.join(',');
 // handling it properly is all laid out in some RFC standard somewhere, 
 // and is probably present in Webkit source.
 
-ResolveURLsTransform.transform = function _transform(document, rest) {
+this.resolveDocumentURLs = function(document, baseURL) {
   // Remove base elements
   const bases = document.getElementsByTagName('base');
   const numBases = bases.length;
   for(let i = 0; i < numBases; i++) {
   	bases[i].remove();
   }
-
-  const baseURL = rest.baseURL;
 
   // Resolve the attribute values for various elements
   const resolvables = document.querySelectorAll(RESOLVE_SELECTOR);
