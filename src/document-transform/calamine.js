@@ -4,34 +4,13 @@
 
 'use strict';
 
-// Calamine filters boilerplate shingles from a document
-
-// TODO: bring in ideas from calamine-dev and then delete calamine-dev.js
-// TODO: re intrinsic bias, there are only maybe 5-6 likely elements and 
-// everything else is very unlikely. <div> is the most likely.
-
-// TODO: maybe deprecate scores prefill with 0
-// TODO: reconsider single pass approach
-// TODO: consider using multiple maps for the various scores and 
-// only integrating in the find best element final step
-// consistently use floats insteads of ints for scores/biases
-// instead of storing in element.dataset, just use several maps,
-// and then calc net score at end
-
-// Rather than remove attributes and elements, create a new document
-// or subtree and just copy text and anchors/images and recreate 
-// a limited view of the original. maybe this results in fewer
-// dom ops
-
-const Calamine = {};
-
 { // BEGIN ANONYMOUS NAMESPACE
 
 // Filters boilerplate content
-Calamine.transform = function Calamine$Transform(document, annotate) {
+this.applyCalamine = function _applyCalamine(document, annotate) {
 
+  // Require a body that is not a frameset
   if(!document.querySelector('body')) {
-    console.warn('no document body %o', document.documentElement);
     return;
   }
 
@@ -41,35 +20,50 @@ Calamine.transform = function Calamine$Transform(document, annotate) {
   applyDownwardBias(document, scores, annotate);
   applyUpwardBias(document, scores, annotate);
   applyImageContainerBias(document, scores, annotate);
-  applyAttributeBias(document, scores, annotate);
+  
+  applyCalamineAttributeScore(document, scores, annotate);
+
+  // Pathological attribute scoring cases
+  applySingleClassBias(document, scores, annotate, 'article', 1000);
+  applySingleClassBias(document, scores, annotate, 'articleText', 1000);
+  applySingleClassBias(document, scores, annotate, 'articleBody', 1000);
+
+  // Microdata attribute scoring
+  MD_SCHEMAS.forEach(applySchemaBias.bind(null, 
+    document, scores, annotate));
+
+  prune(document, scores);
   annotateScores(annotate);
-  const bestElement = findBestElement(document, scores);
-  removeNonIntersectingElements(document, bestElement);
 };
 
 function initScores(document) {
-  // We fill 0 to avoid having to check if score 
+  // We fill zeros to avoid having to check if score 
   // is set each time we change it.
+  // We prefill 0.0 to give Chrome a value-type hint
   const scores = new Map();
   const elements = document.getElementsByTagName('*');
   const numElements = elements.length;
   for(let i = 0; i < numElements; i++) {
-    scores.set(elements[i], 0);
+    scores.set(elements[i], 0.0);
   }
   return scores;
 }
 
 function annotateScores(scores, annotate) {
-  if(annotate) {
-    for(let entry of scores) {
-      entry[0].dataset.score = entry[1].toFixed(2);
-    }
+  if(!annotate) return;
+
+  // TODO: use destructuring when Chrome supports
+  for(let entry of scores) {
+    entry[0].dataset.score = entry[1].toFixed(2);
   }
 }
 
 function findBestElement(document, scores) {
   let bestElement = document.body;
   let bestScore = scores.get(bestElement);
+
+  // TODO: use destructuring if supported
+  // for(let [element, score] of scores) {
   for(let entry of scores) {
     if(entry[1] > bestScore) {
       bestElement = entry[0];
@@ -79,27 +73,37 @@ function findBestElement(document, scores) {
   return bestElement;
 }
 
-function removeNonIntersectingElements(document, bestElement) {
+// Removes elements not intersecting with the best element
+function prune(document, scores) {
+
+  const bestElement = findBestElement(document, scores);
+
+  // Do not use a filter function for createNodeIterator due 
+  // to performance issues
+  // TODO: use Node.compareDocumentPosition if performance is better
+
   const it = document.createNodeIterator(
     document.documentElement,
-    NodeIterator.SHOW_ELEMENT, 
-    rejectIntersects.bind(this, bestElement));
+    NodeIterator.SHOW_ELEMENT);
   let element = it.nextNode();
   while(element) {
-    element.remove();
+
+    if(element !== bestElement && 
+      !bestElement.contains(element) &&
+      !element.contains(bestElement)) {
+      element.remove();
+    }
+
     element = it.nextNode();
   }
 }
 
-// Rejects elements that intersect with the best element
-// TODO: use Node.compareDocumentPosition
-function rejectIntersects(bestElement, node) {
-  return node === bestElement || bestElement.contains(node) ||
-    node.contains(bestElement) ? NodeFilter.FILTER_REJECT : 
-    NodeFilter.FILTER_ACCEPT;
-}
-
 const RE_WHITESPACE = /\s|&nbsp;/g;
+
+// TODO: need to improve the performance here
+function getNodeTextLength(node) {
+  return node.nodeValue.replace(RE_WHITESPACE, '').length;
+}
 
 // Generate a map between document elements and a count 
 // of characters within the element. This is tuned to work
@@ -115,7 +119,7 @@ function deriveTextLength(document) {
   let element = null;
   let previousLength = 0;
   while(node) {
-    length = node.nodeValue.replace(RE_WHITESPACE, '').length;
+    length = getNodeTextLength(node);
 
     if(length) {
       element = node.parentElement;
@@ -192,7 +196,7 @@ function applyTextBias(document, scores, annotate) {
 
     bias = (0.25 * length) - (0.7 * anchorLength);
     // Tentatively cap the bias (empirical)
-    bias = Math.min(4000, bias);
+    bias = Math.min(4000.0, bias);
     if(!bias) continue;
     scores.set(element, scores.get(element) + bias);
   
@@ -293,8 +297,13 @@ function applyDownwardBias(document, scores, annotate) {
   const LIST_SELECTOR = 'li *, ol *, ul *, dd *, dl *, dt *';
   const listDescendants = document.querySelectorAll(LIST_SELECTOR);
   const numLists = listDescendants.length;
+
+  // init as an element to give chrome a type hint
+  // init outside the loop due to strange let/const in loop decl behavior
+  let listDescendant = document.documentElement;
+
   for(let i = 0; i < numLists; i++) {
-    const listDescendant = listDescendants[i];
+    listDescendant = listDescendants[i];
     scores.set(listDescendant, scores.get(listDescendant) - 100);
     if(annotate) {
       // TODO: this needs to account for other bias
@@ -307,13 +316,15 @@ function applyDownwardBias(document, scores, annotate) {
   const NAV_SELECTOR = 'aside *, header *, footer *, nav *';
   const navDescendants = document.querySelectorAll(NAV_SELECTOR);
   const numNavs = navDescendants.length;
+  let navDescendant = document.documentElement;
+  let currentBias = 0;
   for(let i = 0; i < numNavs; i++) {
-    const navDescendant = navDescendants[i];
+    navDescendant = navDescendants[i];
     scores.set(navDescendant, scores.get(navDescendant) - 50);
 
     if(annotate) {
-      const currentBias = 
-        parseFloat(navDescendant.dataset.navDescendantBias) || 0.0;
+      currentBias = parseFloat(
+        navDescendant.dataset.navDescendantBias) || 0.0;
       navDescendant.dataset.navDescendantBias = currentBias - 50;
     }
   }
@@ -371,9 +382,17 @@ function applyImageContainerBias(document, scores, annotate) {
   // We are not mutating, so gebtn is more appropriate than qsa
   const images = document.getElementsByTagName('img');
   const numImages = images.length;
+  let image = null;
+  let parent = null;
+  let area = 0;
+  let caption = null;
+  let children = null;
+  let numChildren = 0;
+  let node = null;
+
   for(let i = 0; i < numImages; i++) {
-    const image = images[i];
-    const parent = image.parentElement;
+    image = images[i];
+    parent = image.parentElement;
 
     // Ignore images without a parent
     if(!parent) {
@@ -385,7 +404,7 @@ function applyImageContainerBias(document, scores, annotate) {
 
     // Dimension bias
     if(image.width && image.height) {
-      const area = image.width * image.height;
+      area = image.width * image.height;
       bias = 0.0015 * Math.min(100000, area);
     }
 
@@ -399,16 +418,16 @@ function applyImageContainerBias(document, scores, annotate) {
       bias += 30.0;
     }
 
-    const caption = DOMUtils.findCaption(image);
+    caption = DOMUtils.findCaption(image);
     if(caption) {
       bias += 50.0;
     }
 
     // Carousel bias
-    const children = parent.childNodes;
-    const numChildren = children.length;
+    children = parent.childNodes;
+    numChildren = children.length;
     for(let j = 0; j < numChildren; j++) {
-      const node = children[j];
+      node = children[j];
       if(node !== image && node.localName === 'img') {
         bias = bias - 50.0;
       }
@@ -423,7 +442,20 @@ function applyImageContainerBias(document, scores, annotate) {
   }
 }
 
-const ITEM_TYPES = [
+
+function applySingleClassBias(document, scores, annotate, className, bias) {
+  const elements = document.getElementsByClassName(className);
+  if(elements.length !== 1) return;
+
+  const element = elements[0];
+  scores.set(element, scores.get(element) + bias);
+  if(annotate) {
+    let previousBias = parseFloat(element.dataset.attributeBias) || 0.0;
+    element.dataset.attributeBias = previousBias + bias;
+  }
+}
+
+const MD_SCHEMAS = [
   'Article',
   'Blog',
   'BlogPost',
@@ -434,325 +466,16 @@ const ITEM_TYPES = [
   'WebPage'
 ];
 
-// Bias certain elements based on attribute values
-// TODO: itemscope?
-// TODO: itemprop="articleBody"?
-// TODO: [role="article"]?
-function applyAttributeBias(document, scores, annotate) {
+function applySchemaBias(document, scores, annotate, schema) {
 
-  // chrome is warning about unsupported phi use of const variable
-  // so using var
-
-  var selector = 'a, aside, div, dl, figure, h1, h2, h3, h4,' +
-    ' ol, p, section, span, ul';
-  var elements = document.querySelectorAll(selector);
-  var numElements = elements.length;
-  var element = null;
-  var bias = 0.0;
-
-  for(let i = 0; i < numElements; i++) {
-    element = elements[i];
-    bias = getAttributeBias(element);
-    scores.set(element, scores.get(element) + bias);
-    if(annotate) {
-      element.dataset.attributeBias = bias;
-    }
+  const selector = '[itemtype="http://schema.org/' + schema + '"]';
+  const elements = document.querySelectorAll(selector);
+  if(elements.length !== 1) return;
+  const element = elements[0];
+  scores.set(element, scores.get(element) + 500);
+  if(annotate) {
+    element.dataset.itemTypeBias = 500;
   }
-
-  // Pathological case for class="article"
-  var articleClassElements = document.getElementsByClassName('article');
-  var currentBias = 0.0;
-  if(articleClassElements.length === 1) {
-    element = articleClassElements[0];
-    scores.set(element, scores.get(element) + 1000);
-    if(annotate) {
-      currentBias = parseFloat(element.dataset.attributeBias) || 0.0;
-      element.dataset.attributeBias = currentBias + 1000;
-    }
-  }
-  
-  // Pathological case for class="articleText"
-  var articleTextClassElements = document.getElementsByClassName(
-    'articleText');
-  if(articleTextClassElements.length === 1) {
-    element = articleTextClassElements[0];
-    scores.set(element, scores.get(element) + 1000);
-
-    if(annotate) {
-      currentBias = parseFloat(element.dataset.attributeBias) || 0.0;
-      element.dataset.attributeBias = currentBias + 1000;
-    }
-  }
-
-  // Pathological case for class="articleBody"
-  var articleBodyClassElements = document.getElementsByClassName(
-    'articleBody');
-  if(articleBodyClassElements.length === 1) {
-    element = articleBodyClassElements[0];
-    scores.set(element, scores.get(element) + 1000);
-
-    if(annotate) {
-      currentBias = parseFloat(element.dataset.attributeBias) || 0.0;
-      element.dataset.attributeBias = currentBias + 1000;
-    }
-  }
-
-  // Item types
-  ITEM_TYPES.forEach(function processItemType(schema) {
-    var selector = '[itemtype="' + 'http://schema.org/' + schema + '"]';
-    var elements = document.querySelectorAll(selector);
-    if(elements.length !== 1) return;
-    var element = elements[0];
-    scores.set(element, scores.get(element) + 500);
-    if(annotate) {
-      element.dataset.itemTypeBias = 500;
-    }
-  });
-}
-
-const ATTRIBUTE_BIAS = new Map([
-  ['about', -35],
-  ['ad', -100],
-  ['ads', -50],
-  ['advert', -200],
-  ['artext1',100],
-  ['articles', 100],
-  ['articlecontent', 1000],
-  ['articlecontentbox', 200],
-  ['articleheadings', -50],
-  ['articlesection', 200],
-  ['articlesections', 200],
-  ['attachment', 20],
-  ['author', 20],
-  ['block', -5],
-  ['blog', 20],
-  ['blogpost', 500], // Seen as itemprop value
-  ['blogposting', 500],
-  ['body', 100],
-  ['bodytd', 50],
-  ['bookmarking', -100],
-  ['bottom', -100],
-  ['brand', -50],
-  ['breadcrumbs', -20],
-  ['button', -100],
-  ['byline', 20],
-  ['caption', 10],
-  ['carousel', 30],
-  ['cmt', -100],
-  ['cmmt', -100],
-  ['colophon', -100],
-  ['column', 10],
-  ['combx', -20],
-  ['comic', 75],
-  ['comment', -500],
-  ['comments', -300],
-  ['commercial', -500],
-  ['community', -100],
-  ['complementary', -100], // Seen as role
-  ['component', -50],
-  ['contact', -50],
-  ['content', 100],
-  ['contentpane', 200], // Google Plus
-  ['contenttools', -50],
-  ['contributors', -50],
-  ['credit', -50],
-  ['date', -50],
-  ['dcsimg', -100],
-  ['dropdown', -100],
-  ['email', -100],
-  ['entry', 100],
-  ['excerpt', 20],
-  ['facebook', -100],
-  ['featured', 20],
-  ['fn', -30],
-  ['foot', -100],
-  ['footer', -200],
-  ['footnote', -150],
-  ['ftr', -100],
-  ['ftrpanel', -100],
-  ['google', -50],
-  ['gutter', -300],
-  ['guttered', -100],
-  ['head', -50],
-  ['header', -100],
-  ['heading', -50],
-  ['hentry', 150],
-  ['hnews', 200],
-  ['inset', -50],
-  ['insta', -100],
-  ['left', -75],
-  ['legende', -50],
-  ['license', -100],
-  ['like', -100],
-  ['link', -100],
-  ['links', -100],
-  ['logo', -50],
-  ['main', 50],
-  ['mainbodyarea', 100],
-  ['maincolumn', 50],
-  ['mainnav', -500],
-  ['mainnavigation', -500],
-  ['masthead', -30],
-  ['media', -100],
-  ['mediaarticlerelated', -50],
-  ['menu', -200],
-  ['menucontainer', -300],
-  ['meta', -50],
-  ['most', -50],
-  ['nav', -200],
-  ['navbar', -100],
-  ['navigation', -100],
-  ['navimg', -100],
-  ['newsarticle', 500],
-  ['newscontent', 500],
-  ['newsletter', -100],
-  ['next', -300],
-  ['nfarticle', 500],
-  ['page', 50],
-  ['pagetools', -50],
-  ['parse', -50],
-  ['pinnion', 50],
-  ['popular', -50],
-  ['popup', -100],
-  ['post', 150],
-  ['power', -100],
-  ['prev', -300],
-  ['print', -50],
-  ['promo', -200],
-  ['promotions', -200],
-  ['ranked', -100],
-  ['reading', 100],
-  ['recap', -100],
-  ['recreading', -100],
-  ['rel', -50],
-  ['relate', -300],
-  ['related', -300],
-  ['relposts', -300],
-  ['replies', -100],
-  ['reply', -50],
-  ['retweet', -50],
-  ['right', -100],
-  ['rightcolumn', -100],
-  ['rightrail', -100],
-  ['scroll', -50],
-  ['share', -200],
-  ['sharebar', -200],
-  ['shop', -200],
-  ['shout', -200],
-  ['shoutbox', -200],
-  ['side', -200],
-  ['sig', -50],
-  ['signup', -100],
-  ['snippet', 50],
-  ['social', -200],
-  ['socialnetworking', -250],
-  ['socialtools', -200],
-  ['source',-50],
-  ['sponsor', -200],
-  ['story', 100],
-  ['storycontent', 500],
-  ['storydiv',100],
-  ['storynav',-100],
-  ['storytext', 200],
-  ['storytopbar', -50],
-  ['storywrap', 50],
-  ['strycaptiontxt', -50],
-  ['stryhghlght', -50],
-  ['strylftcntnt', -50],
-  ['stryspcvbx', -50],
-  ['subscribe', -50],
-  ['summary',50],
-  ['tabs', -100],
-  ['tag', -100],
-  ['tagcloud', -100],
-  ['tags', -100],
-  ['teaser', -100],
-  ['text', 20],
-  ['this', -50],
-  ['time', -30],
-  ['timestamp', -50],
-  ['title', -50],
-  ['tool', -200],
-  ['topheader', -300],
-  ['toptabs', -200],
-  ['twitter', -200],
-  ['txt', 50],
-  ['utility', -50],
-  ['vcard', -50],
-  ['week', -100],
-  ['welcome', -50],
-  ['widg', -200],
-  ['widget', -200],
-  ['wnstorybody', 1000],
-  ['zone', -50]
-]);
-
-const ATTRIBUTE_SPLIT = /[\s\-_0-9]+/g;
-
-// TODO: perf test tokenize1 against tokenize2
-
-function tokenize1(string) {
-  return new Set(string.toLowerCase().split(ATTRIBUTE_SPLIT));
-}
-
-function tokenize2(string) {
-  //var lower = string.toLowerCase();
-  var tokens = new Set();
-  var token = [];
-  var joined = null;
-
-  for(var c of string) {
-    if(c === ' ' || c === '-' || c === '_' || (c >= '0' && c <= '9')) {
-      if(token.length) {
-        joined = token.join('');
-        if(joined) {
-          tokens.add(joined);
-          token = [];
-        }
-      }
-    } else if(c >= 'A' && c <= 'Z') {
-      // Rather than lowercase the entire string, which is locale
-      // sensitive, we hardcode change the English subset here
-      token.push(String.fromCharCode(c.charCodeAt(0) + 32));
-    } else {
-      token.push(c);
-    }
-  }
-
-  // add the final token
-  if(token.length) {
-    joined = token.join('');
-    if(joined) {
-      tokens.add(joined);
-    }
-  }
-
-  return tokens;
-}
-
-// TODO: the call to getAttributeBias appears to be a
-// hotspot. Still needs a bit of tuning
-// TODO: split on case-transition (lower2upper,upper2lower)
-// and do not lower case the value prior to the split, do it after
-// I am getting unexplainable results when using const/let
-
-// NOTE: accessing properties appears to be faster than accessing
-// attributes
-
-// maybe microdata (itemprop and such) should be done in a separate pass
-
-function getAttributeBias(element) {
-  var value = (element.id || '') + 
-    (element.name || '') +
-    (element.className || '') +
-    (element.getAttribute('itemprop') || '');
-  var bias = 0;
-  var tokens = tokenize1(value);
-  for(var token of tokens) {
-    bias += ATTRIBUTE_BIAS.get(token) || 0;
-  }
-
-  return bias;
 }
 
 } // END ANONYMOUS NAMESPACE

@@ -19,14 +19,13 @@ this.previewTransform = function _previewTransform(document) {
   transformFrameElements(document);
   transformNoscripts(document);
   filterBlacklistedElements(document);
-  Calamine.transform(document, false);
+  applyCalamine(document, false);
   filterComments(document);
 
   const hiddenExceptions = new Set(['noembed']);
   filterHiddenElements(document, hiddenExceptions, 0.3);
 
   filterTracerImages(document);
-
   replaceBreakRuleElements(document);
   normalizeWhitespace(document);
   trimTextNodes(document);
@@ -37,7 +36,7 @@ this.previewTransform = function _previewTransform(document) {
   filterAttributes(document, retainableAttributes);
 
   LeafFilter$Transform(document);
-  ListTransform.transform(document);
+  unwrapSingletonLists(document);
   trimDocument(document);
 };
 
@@ -153,7 +152,6 @@ function filterTracerImages(document) {
     source = (image.getAttribute('src') || '').trim();
 
     if(!source || (image.width < 2) || (image.height < 2)) {
-      // console.debug('Removing tracer %s', image.outerHTML);
       image.remove();
     }
   }
@@ -369,20 +367,94 @@ function unwrapInlineElements(document) {
   let element = null;
   for(let i = 0; i < numElements; i++) {
     element = elements[i];
-    // console.debug('Unwrapping %o', element);
     DOMUtils.unwrap(element);
   }
 }
 
-function isTrimmable(element) {
+// Removes attributes from all elements in the document
+// except for those named in the optional retainableSet
+function filterAttributes(document, retainableSet) {
   'use strict';
-  if(!element) return false;
-  if(element.nodeType !== Node.ELEMENT_NODE) return false;
-  let name = element.localName;
-  if(name === 'br') return true;
-  if(name === 'hr') return true;
-  if(name === 'p' && !element.firstChild) return true;
-  return false;
+  const elements = document.getElementsByTagName('*');
+  const numElements = elements.length;
+  let attributes = null;
+  let name = '';
+  let element = null;
+  for(let i = 0, j = 0; i < numElements; i++) {
+    element = elements[i];
+    attributes = element.attributes;
+    j = attributes ? attributes.length : 0;
+    while(j--) {
+      name = attributes[j].name;
+      if(!retainableSet.has(name)) {
+        element.removeAttribute(name);
+      }
+    }
+  }
+}
+
+function unwrapSingletonLists(document) {
+  'use strict';
+
+  if(!document || !document.documentElement) {
+    return;
+  }
+
+  // TODO: deprecate acceptListSingleton, there is a performance drop
+  // when using a function filter parameter to createNodeIterator
+
+  const it = document.createNodeIterator(document.documentElement,
+    NodeIterator.SHOW_ELEMENT, acceptListSingleton);
+  let list = it.nextNode();
+  while(list) {
+    unwrapList(list);
+    list = it.nextNode();
+  }
+};
+
+function acceptListSingleton(node) {
+  'use strict';
+
+  if(node.localName !== 'ul')
+    return NodeFilter.FILTER_REJECT;
+
+  let count = 0;
+  let numChildren = node.childNodes.length;
+  for(let i = 0; i < numChildren; i++) {
+    if(node.childNodes[i].localName === 'li') {
+      count++;
+    }
+  }
+
+  if(count === 1) {
+    return NodeFilter.FILTER_ACCEPT;
+  }
+
+  return NodeFilter.FILTER_REJECT;
+
+}
+
+function unwrapList(list) {
+  'use strict';
+  const parent = list.parentElement;
+  const item = list.querySelector('li');
+  const nextSibling = list.nextSibling;
+
+  if(nextSibling) {
+    // Move the item's children to before the list's 
+    // next sibling
+    while(item.firstChild) {
+      parent.insertBefore(item.firstChild, nextSibling);
+    }
+  } else {
+    // The list is the last node in its container, so append
+    // the item's children to the container
+    while(item.firstChild) {
+      parent.appendChild(item.firstChild);
+    }
+  }
+
+  list.remove();
 }
 
 function trimDocument(document) {
@@ -408,6 +480,17 @@ function trimDocument(document) {
     node.remove();
     node = sibling;
   }
+}
+
+function isTrimmable(element) {
+  'use strict';
+  if(!element) return false;
+  if(element.nodeType !== Node.ELEMENT_NODE) return false;
+  let name = element.localName;
+  if(name === 'br') return true;
+  if(name === 'hr') return true;
+  if(name === 'p' && !element.firstChild) return true;
+  return false;
 }
 
 } // END ANONYMOUS NAMESPACE
