@@ -4,15 +4,21 @@
 
 'use strict';
 
-// Image element utilities
-const ImageUtils = {};
-
 { // BEGIN ANONYMOUS NAMESPACE
+
+// Asynchronously attempts to set the width and height for 
+// all image elements. Calls callback with no important args when complete
+this.fetchImageDimensions = function _fetchImageDimensions(document, callback) {
+  const images = document.getElementsByTagName('img');
+  async.forEach(images, _fetch, callback);
+};
 
 // Sets an image's dimensions and then calls the callback
 // (without arguments).
-ImageUtils.fetchDimensions = function(image, callback) {
-  
+function _fetch(image, callback) {
+
+  // We use the attribute, not the property, to avoid any 
+  // changes by the user agent to the value
   let sourceURL = image.getAttribute('src') || '';
   sourceURL = sourceURL.trim();
 
@@ -31,14 +37,12 @@ ImageUtils.fetchDimensions = function(image, callback) {
   // Are the width and height properties automatically set
   // for a data URI within an inert document context? If so,
   // then we do not need to fetch.
-  if(URLUtils.isDataURI(sourceURL)) {
+  if(/^\s*data\s*:/i.test(sourceURL)) {
     callback();
     return;
   }
 
   // If the image already has dimensions, do not re-fetch
-  // TODO: what about height? Will Calamine's area function
-  // in getImageBias fail unexpectedly?
   if(image.width > 0) {
     callback();
     return;
@@ -49,8 +53,7 @@ ImageUtils.fetchDimensions = function(image, callback) {
   // transfer the retrieved properties to the image. This 
   // avoids the issue that setting the src property on the 
   // image has no effect if the image comes from an 
-  // inert document (e.g. one fetched by XMLHttpRequest 
-  // or created by document.implementation)
+  // inert document
   const proxy = document.createElement('img');
   proxy.onload = onProxyLoad.bind(proxy, callback, image);
   proxy.onerror = onProxyError.bind(proxy, callback);

@@ -10,7 +10,7 @@ const EntryUtils = {};
 
 // Given an array of unique entries, returns a new array of 
 // unique entries (compared by entry.link)
-// NOTE: consider just returning Iterable
+// NOTE: consider just returning Iterable or deprecating this
 // NOTE that Array.from(distinct.values()) also works
 EntryUtils.getUniqueEntries = function(entries) {
   const distinct = new Map(entries.map(function(entry) {
@@ -52,19 +52,17 @@ function onAugmentLoad(entry, callback, event) {
     return;
   }
 
-  ResolveURLsTransform.transform(document, {
-    baseURL: request.responseURL
-  });
-
-  DocumentUtils.setImageDimensions(document, 
-    onImageDimensionsSet.bind(null, entry, document, callback));
+  resolveDocumentURLs(document, request.responseURL);
+  fetchImageDimensions(document, 
+    _setEntryContent.bind(null, entry, document, callback));
 }
 
 // Private helper for onAugmentLoad
-// NOTE: this was previously setting body, which resulted in stripping 
-// of doc element and head. We do not want that. Store the full document
-// as the content
-function onImageDimensionsSet(entry, document, callback) {
+function _setEntryContent(entry, document, callback) {
+  // Note: we know document and documentElement are defined because
+  // we check prior to calling
+  // Note: there is no such thing as document.innerHTML, so we 
+  // use documentElement
   const content = document.documentElement.innerHTML;
   if(content) {
     entry.content = content;

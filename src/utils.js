@@ -58,10 +58,6 @@ class URLUtils {
     return uri.toString().substring(2);
   }
 
-  static isDataURI(url) {
-    return /^\s*data\s*:/i.test(url);
-  }
-
   static rewrite(url) {
     const GOOGLE_NEWS = 
       /^https?:\/\/news.google.com\/news\/url\?.*url=(.*)/i;
