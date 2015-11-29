@@ -5,6 +5,9 @@
 'use strict';
 
 // Utility functions for OPML features
+// TODO: rename to OPMLIO, opml-io.js
+// TODO: drop the named object, just export two global functions
+
 const OPMLUtils = {};
 
 { // BEGIN ANONYMOUS NAMESPACE

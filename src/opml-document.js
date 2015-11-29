@@ -10,6 +10,7 @@ class OPMLDocument {
 
   // Returns a new OPMLDocument by parsing the given string as XML
   // Throws an exception if various errors occur
+  // TODO: this function probably does not belong here
   static parse(string) {
     const parser = new DOMParser();
     const MIME_TYPE = 'application/xml';
