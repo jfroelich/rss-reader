@@ -11,8 +11,6 @@
 // content is individually boilerplate.
 
 // TODO: improve performance, this is one of the slowest parts
-// of applyCalamine
-
 // TODO: itemscope?
 // TODO: itemprop="articleBody"?
 // TODO: [role="article"]?
@@ -39,7 +37,7 @@
 // which strategy to use? Or do I want to pick one strategy and
 // stick to it?
 
-function applyCalamineAttributeScore(document, scores, annotate) {
+function modelAttributeBias(document, scores, annotate) {
 
 	var CALAMINE$ATTRIBUTE_BIAS = new Map([
 		['about', -35],
@@ -341,5 +339,53 @@ function applyCalamineAttributeScore(document, scores, annotate) {
 
 		return tokens;
 	}
+
+
+
+	function applySingleClassBias(document, scores, annotate, className, bias) {
+		const elements = document.getElementsByClassName(className);
+		if(elements.length !== 1) return;
+
+		const element = elements[0];
+		scores.set(element, scores.get(element) + bias);
+		if(annotate) {
+			let previousBias = parseFloat(element.dataset.attributeBias) || 0.0;
+			element.dataset.attributeBias = previousBias + bias;
+		}
+	}
+
+	// Pathological attribute scoring cases
+	applySingleClassBias(document, scores, annotate, 'article', 1000);
+	applySingleClassBias(document, scores, annotate, 'articleText', 1000);
+	applySingleClassBias(document, scores, annotate, 'articleBody', 1000);
+
+
+	const MD_SCHEMAS = [
+		'Article',
+		'Blog',
+		'BlogPost',
+		'BlogPosting',
+		'NewsArticle',
+		'ScholarlyArticle',
+		'TechArticle',
+		'WebPage'
+	];
+
+	function applySchemaBias(document, scores, annotate, schema) {
+
+		const selector = '[itemtype="http://schema.org/' + schema + '"]';
+		const elements = document.querySelectorAll(selector);
+		if(elements.length !== 1) return;
+		const element = elements[0];
+		scores.set(element, scores.get(element) + 500);
+		if(annotate) {
+			element.dataset.itemTypeBias = 500;
+		}
+	}
+
+	// Microdata attribute scoring
+	MD_SCHEMAS.forEach(applySchemaBias.bind(null,
+		document, scores, annotate));
+
 
 } // END FUNCTION

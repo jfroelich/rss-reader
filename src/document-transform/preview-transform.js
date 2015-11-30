@@ -9,8 +9,11 @@
 // because it fits into original goal of boilerplate classification and
 // removal (instead of just identifying a best element)
 
-// NOTE: const variables in block scope are leaked if not in strict mode,
-// therefore, we must use a global strict mode
+// Then it is also a question of where the wiring should take place. It is
+// only the slideshow context where this particular composition of transforms
+// occurs, so maybe this shouldn't be doing the wiring itself, and instead
+// just be a file that contains a host of transforms, and the actual composition
+// should occur in the view code.
 
 'use strict';
 
@@ -20,25 +23,28 @@ const filter = Array.prototype.filter;
 
 // TODO: use dependency injection in previewTransform
 
+// TODO: maybe this particular function shouldn't be accepting
+// args for DI, because it is serving a wiring purpose itself
+// and not adding anything special to it. Or rather, we should
+// have a general transform-series function, and then turn this
+// function into a default-setup-style function that creates
+// the default series currently in use.
+
 // Applies a series of transformations to a document in preparation
 // for displaying the document in a view. Defined in global scope
-this.previewTransform = function _previewTransform(
-	applyCalamineFunction,
-	filterLeaves,
-	document) {
+function previewTransform(document) {
 
 	transformFrameElements(document);
 	transformNoscripts(document);
 	filterBlacklistedElements(document);
 
-	// TODO: applyCalamineFunction depends on applyCalamineAttributeScore,
-	// but do i specify that here, or do I also require specifying it
-	// as a dependency to this function?
-
-	applyCalamineFunction(applyCalamineAttributeScore, document, false);
+	const models = getDefaultCalamineModels();
+	applyCalamine(models, false, document);
 
 	filterComments(document);
 
+	// TODO: document should be the last argument so that we can support
+	// a partial
 	const hiddenExceptions = new Set(['noembed']);
 	filterHiddenElements(document, hiddenExceptions, 0.3);
 
@@ -49,13 +55,18 @@ this.previewTransform = function _previewTransform(
 	transformScriptAnchors(document);
 	unwrapInlineElements(document);
 
+	// TODO: document should be the last argument so that we can support
+	// a partial
 	const retainableAttributes = new Set(['href', 'src']);
 	filterAttributes(document, retainableAttributes);
 
-	filterLeaves(document);
+	LeafFilter$Transform(document);
 	unwrapSingletonLists(document);
 	trimDocument(document);
-};
+}
+
+// Export
+this.previewTransform = previewTransform;
 
 // Inspects a document for the presence of a frameset and lack of a body
 // element, and then removes the frameset and generates a body consisting
