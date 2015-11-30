@@ -4,29 +4,68 @@
 
 'use strict';
 
-// TODO: just use a utils namespace and group everything
-// into it? or just a bunch of global functions
+{ // BEGIN ANONYMOUS NAMESPACE
 
-class Notification {
+// TODO: thinking more about dependency injection, would it be better
+// to do something like pass EntryStore and database to updateBadge
+// such that they can be mocked in testing? Something like that? Then
+// maybe we want a utility that simplifies this, or want to wrap it
+// up in a special object, or some type of function factory
 
-	// TODO: maybe we don't need the permission check at all?
-	// what happens if we just call notifications.create without
-	// permission? A basic exception? A no-op?
-	static show(message) {
-		chrome.permissions.contains(
-			{permissions: ['notifications']}, function(permitted) {
-			if(permitted) {
-				const notification = {
-					type: 'basic',
-					title: chrome.runtime.getManifest().name,
-					iconUrl: '/media/rss_icon_trans.gif',
-					message: message
-				};
-				chrome.notifications.create('lucubrate', notification, function(){});
-			}
-	 });
+// Updates the unread count of the extension's badge
+// @param database {Database} required, dependency
+// @param entryStore {EntryStore} required, dependency
+// @param connection {IDBDatabase} optional, an open indexedDB connection
+this.updateBadge = function(database, entryStore, connection) {
+	if(connection) {
+		entryStore.countUnread(connection, setBadgeText);
+	} else {
+		database.open(updateOnConnect.bind(null, entryStore));
+	}
+};
+
+// Private helper for updateBadge
+function updateOnConnect(entryStore, event) {
+	if(event.type === 'success') {
+		entryStore.countUnread(event.target.result, setBadgeText);
+	} else {
+		// indexedDB connection error
+		console.debug(event);
+		chrome.browserAction.setBadgeText({text: '?'});
 	}
 }
+
+// Sets the badge text. Private helper for updateBadge
+function setBadgeText(event) {
+	const count = event.target.result;
+	chrome.browserAction.setBadgeText({
+		text: count.toString()
+	});
+}
+
+// TODO: maybe we don't need the permission check at all?
+// what happens if we just call notifications.create without
+// permission? A basic exception? A no-op?
+this.showNotification = function(message) {
+	chrome.permissions.contains(
+		{permissions: ['notifications']},
+		showNotificationIfPermitted.bind(null, message));
+};
+
+function showNotificationIfPermitted(message, permitted) {
+	if(!permitted) return;
+	const notification = {
+		type: 'basic',
+		title: chrome.runtime.getManifest().name,
+		iconUrl: '/media/rss_icon_trans.gif',
+		message: message
+	};
+	chrome.notifications.create('lucubrate', notification, function(){});
+}
+
+
+} // END ANONYMOUS NAMESPACE
+
 
 class DateUtils {
 	// Adapted from http://stackoverflow.com/questions/1353684

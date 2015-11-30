@@ -41,19 +41,18 @@ const RESOLVE_SELECTOR = keys.join(',');
 // any base tag elements
 // TODO: support img srcset
 // TODO: support style.backgroundImage?
-// TODO: the new template tag?
 // NOTE: not supporting applet
 // NOTE: iframe.srcdoc?
 // NOTE: ignores param values with URIs
-// NOTE: could stripping the base tag could lead to invalid urls???
-// Should the base tag, if present, be considered when resolving elements?
-// Also note that there could be multiple base tags, the logic for
-// handling it properly is all laid out in some RFC standard somewhere,
-// and is probably present in Webkit source.
 
 this.resolveDocumentURLs = function(document, baseURL) {
 	// Remove base elements
-	const bases = document.getElementsByTagName('base');
+	// NOTE: could stripping the base tag could lead to invalid urls???
+	// Should the base tag, if present, be considered when resolving elements?
+	// Also note that there could be multiple base tags, the logic for
+	// handling it properly is all laid out in some RFC standard somewhere,
+	// and is probably present in Webkit source.
+	const bases = document.querySelectorAll('base');
 	const numBases = bases.length;
 	for(let i = 0; i < numBases; i++) {
 		bases[i].remove();

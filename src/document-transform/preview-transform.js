@@ -9,17 +9,34 @@
 // because it fits into original goal of boilerplate classification and
 // removal (instead of just identifying a best element)
 
+// NOTE: const variables in block scope are leaked if not in strict mode,
+// therefore, we must use a global strict mode
+
+'use strict';
+
 { // BEGIN ANONYMOUS NAMESPACE
+
+const filter = Array.prototype.filter;
+
+// TODO: use dependency injection in previewTransform
 
 // Applies a series of transformations to a document in preparation
 // for displaying the document in a view. Defined in global scope
-this.previewTransform = function _previewTransform(document) {
-	'use strict';
+this.previewTransform = function _previewTransform(
+	applyCalamineFunction,
+	filterLeaves,
+	document) {
 
 	transformFrameElements(document);
 	transformNoscripts(document);
 	filterBlacklistedElements(document);
-	applyCalamine(document, false);
+
+	// TODO: applyCalamineFunction depends on applyCalamineAttributeScore,
+	// but do i specify that here, or do I also require specifying it
+	// as a dependency to this function?
+
+	applyCalamineFunction(applyCalamineAttributeScore, document, false);
+
 	filterComments(document);
 
 	const hiddenExceptions = new Set(['noembed']);
@@ -35,7 +52,7 @@ this.previewTransform = function _previewTransform(document) {
 	const retainableAttributes = new Set(['href', 'src']);
 	filterAttributes(document, retainableAttributes);
 
-	LeafFilter$Transform(document);
+	filterLeaves(document);
 	unwrapSingletonLists(document);
 	trimDocument(document);
 };
@@ -44,7 +61,6 @@ this.previewTransform = function _previewTransform(document) {
 // element, and then removes the frameset and generates a body consisting
 // of either noframes content or an error message.
 function transformFrameElements(document) {
-	'use strict';
 
 	let body = document.querySelector('body');
 	const frameset = document.querySelector('frameset');
@@ -64,25 +80,27 @@ function transformFrameElements(document) {
 
 // Due to content-loading tricks, noscript requires special handling
 // e.g. nbcnews.com
-// This requires some additional refinement. For now we just unwrap.
-// This obviously leads to sometimes dup content or strange looking
-// internal content
+
 function transformNoscripts(document) {
-	'use strict';
 	const noscripts = document.querySelectorAll('noscript');
 	const numNoscripts = noscripts.length;
 	let noscript = null;
 	for(let i = 0; i < numNoscripts; i++) {
 		noscript = noscripts[i];
 		// console.debug('Unwrapping noscript %s', noscript.outerHTML);
-		DOMUtils.unwrap(noscript);
+		//DOMUtils.unwrap(noscript);
+
+		// The default behavior is now to remove
+		// NOTE: because we are using a static node list generated
+		// by querySelectorAll, noscript is guaranteed defined even
+		// though we are doing mutation during iteration
+		noscript.remove();
 	}
 }
 
 // Removes all comments
 // TODO: process IE conditional comments?
 function filterComments(document) {
-	'use strict';
 	const it = document.createNodeIterator(document.documentElement,
 		NodeFilter.SHOW_COMMENT);
 	let comment = it.nextNode();
@@ -98,7 +116,6 @@ function filterComments(document) {
 // @param minOpacity {float} elements with a lesser opacity are considered
 // hidden
 function filterHiddenElements(document, exceptions, minOpacity) {
-	'use strict';
 
 	minOpacity = minOpacity || 0.0;
 
@@ -108,29 +125,29 @@ function filterHiddenElements(document, exceptions, minOpacity) {
 	let element = iterator.nextNode();
 	let style = null;
 	let opacity = 0.0;
+	const isHidden = isHiddenElement.bind(null, exceptions, minOpacity);
 	while(element) {
-
-		if(exceptions.has(element.localName)) {
-			element = iterator.nextNode();
-			continue;
-		}
-
-		// This does not test against offsetWidth/Height because the
-		// properties do not appear to be initialized within inert documents
-		// TODO: maybe try getting and using computed style?
-		style = element.style;
-		// NOTE: may result NaN, NaN <= minOpacity is false
-		opacity = parseFloat(style.opacity);
-
-		if(style.display === 'none' ||
-			style.visibility === 'hidden' ||
-			style.visibility === 'collapse' ||
-			opacity <= minOpacity) {
+		if(isHidden(element)) {
 			element.remove();
 		}
-
 		element = iterator.nextNode();
 	}
+}
+
+// This does not test against offsetWidth/Height because the
+// properties do not appear to be initialized within inert documents
+// TODO: maybe try getting and using computed style?
+function isHiddenElement(exceptions, minOpacity, element) {
+	if(exceptions.has(element.localName)) {
+		return false;
+	}
+
+	const style = element.style;
+	const opacity = parseFloat(style.opacity) || 1.0;
+	return style.display === 'none' ||
+		style.visibility === 'hidden' ||
+		style.visibility === 'collapse' ||
+		opacity <= minOpacity;
 }
 
 // Removes images that do not have a source url or that appear to be tracers.
@@ -142,27 +159,28 @@ function filterHiddenElements(document, exceptions, minOpacity) {
 // NOTE: this assumes that images without explicit dimensions were pre-analyzed
 // by DocumentUtils.setImageDimensions
 function filterTracerImages(document) {
-	'use strict';
 	const images = document.querySelectorAll('img');
-	const length = images.length;
+	const imagesLength = images.length;
 	let image = null;
-	let source = null;
-	for(let i = 0; i < length; i++) {
+	for(let i = 0; i < imagesLength; i++) {
 		image = images[i];
-		source = (image.getAttribute('src') || '').trim();
-
-		if(!source || (image.width < 2) || (image.height < 2)) {
+		if(isTracerImage(image)) {
 			image.remove();
 		}
 	}
 }
+
+function isTracerImage(image) {
+	const source = (image.getAttribute('src') || '').trim();
+	return !source || (image.width < 2) || (image.height < 2);
+}
+
 
 // TODO: improve this. br is allowed in inline elements
 // and this is shoving non-inline p into inline sometimes
 // so we need to be able to break the inline context in
 // half somehow
 function replaceBreakRuleElements(document) {
-	'use strict';
 	const elements = document.querySelectorAll('br');
 	const length = elements.length;
 	for(let i = 0; i < length; i++) {
@@ -173,20 +191,21 @@ function replaceBreakRuleElements(document) {
 	}
 }
 
+const RE_NON_BREAKING_SPACE = /&nbsp;/g;
+
 // TODO: what other whitespace transformations do we care about?
 function normalizeWhitespace(document) {
-	'use strict';
+
 	const it = document.createNodeIterator(document.documentElement,
 		NodeFilter.SHOW_TEXT);
 	let node = it.nextNode();
 	while(node) {
-		node.nodeValue = node.nodeValue.replace(/&nbsp;/g, ' ');
+		node.nodeValue = node.nodeValue.replace(RE_NON_BREAKING_SPACE, ' ');
 		node = it.nextNode();
 	}
 }
 
 function isElement(node) {
-	'use strict';
 	return node.nodeType === Node.ELEMENT_NODE;
 }
 
@@ -198,7 +217,6 @@ const INLINE_ELEMENTS = new Set(['a','abbr', 'acronym', 'address',
 ]);
 
 function isInlineElement(element) {
-	'use strict';
 	return INLINE_ELEMENTS.has(element.localName);
 }
 
@@ -206,7 +224,6 @@ const WHITESPACE_SENSITIVE_SELECTOR = 'code, code *, pre, pre *, ' +
 	'ruby, ruby *, xmp, xmp *';
 
 function trimTextNodes(document) {
-	'use strict';
 
 	// To avoid trimming nodes present within whitespace sensitive
 	// elements, such as <pre>, we search for all such elements and
@@ -285,6 +302,8 @@ function trimTextNodes(document) {
 	}
 }
 
+const RE_JAVASCRIPT_PROTOCOL = /^\s*javascript\s*:/i;
+
 function transformScriptAnchors(document) {
 	'use strict';
 	const anchors = document.querySelectorAll('a');
@@ -298,8 +317,7 @@ function transformScriptAnchors(document) {
 
 		// If it is a script anchor, set href to empty
 		// so that the anchor will be unwrapped
-		if(/^\s*javascript\s*:/i.test(href)) {
-			// console.debug('Javascript anchor %o', anchor);
+		if(RE_JAVASCRIPT_PROTOCOL.test(href)) {
 			href = null;
 		}
 
@@ -358,23 +376,20 @@ const UNWRAPPABLE_SELECTOR = Array.from(UNWRAPPABLE_ELEMENTS).join(',');
 // anchors are handled separately
 // fallback elements (e.g. noscript) are handled separately
 function unwrapInlineElements(document) {
-	'use strict';
 	// NOTE: using querySelectorAll because testing revealed that
 	// NodeIterator cannot update its reference node appropriately
 	// as a result of the unwrap.
 	const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
 	const numElements = elements.length;
-	let element = null;
 	for(let i = 0; i < numElements; i++) {
-		element = elements[i];
-		DOMUtils.unwrap(element);
+		DOMUtils.unwrap(elements[i]);
 	}
 }
 
 // Removes attributes from all elements in the document
 // except for those named in the optional retainableSet
 function filterAttributes(document, retainableSet) {
-	'use strict';
+
 	const elements = document.getElementsByTagName('*');
 	const numElements = elements.length;
 	let attributes = null;
@@ -394,48 +409,38 @@ function filterAttributes(document, retainableSet) {
 }
 
 function unwrapSingletonLists(document) {
-	'use strict';
 
-	if(!document || !document.documentElement) {
+	if(!document || !document.documentElement || !document.body) {
 		return;
 	}
 
-	// TODO: deprecate acceptListSingleton, there is a performance drop
-	// when using a function filter parameter to createNodeIterator
+	const it = document.createNodeIterator(document.body,
+		NodeIterator.SHOW_ELEMENT);
+	let element = it.nextNode();
 
-	const it = document.createNodeIterator(document.documentElement,
-		NodeIterator.SHOW_ELEMENT, acceptListSingleton);
-	let list = it.nextNode();
-	while(list) {
-		unwrapList(list);
-		list = it.nextNode();
+	while(element) {
+    if(isList(element) && countListItems(element) === 1) {
+      unwrapSingleItemList(element);
+    }
+
+		element = it.nextNode();
 	}
-};
-
-function acceptListSingleton(node) {
-	'use strict';
-
-	if(node.localName !== 'ul')
-		return NodeFilter.FILTER_REJECT;
-
-	let count = 0;
-	let numChildren = node.childNodes.length;
-	for(let i = 0; i < numChildren; i++) {
-		if(node.childNodes[i].localName === 'li') {
-			count++;
-		}
-	}
-
-	if(count === 1) {
-		return NodeFilter.FILTER_ACCEPT;
-	}
-
-	return NodeFilter.FILTER_REJECT;
-
 }
 
-function unwrapList(list) {
-	'use strict';
+function isList(element) {
+  return element.localName === 'ul';
+}
+
+function isListItem(element) {
+  return element.localName === 'li';
+}
+
+function countListItems(element) {
+  return filter.call(element.childNodes, isListItem).length;
+}
+
+function unwrapSingleItemList(list) {
+	console.debug('Unwrapping %s', list.outerHTML);
 	const parent = list.parentElement;
 	const item = list.querySelector('li');
 	const nextSibling = list.nextSibling;
@@ -454,12 +459,12 @@ function unwrapList(list) {
 		}
 	}
 
+	console.debug('Parent after unwrap: %s', parent.innerHTML);
+
 	list.remove();
 }
 
 function trimDocument(document) {
-	'use strict';
-
 	const root = document.body;
 
 	if(!root) {
@@ -483,7 +488,6 @@ function trimDocument(document) {
 }
 
 function isTrimmable(element) {
-	'use strict';
 	if(!element) return false;
 	if(element.nodeType !== Node.ELEMENT_NODE) return false;
 	let name = element.localName;

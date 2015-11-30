@@ -6,16 +6,20 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
+const filter = Array.prototype.filter;
+
 // Asynchronously attempts to set the width and height for
 // all image elements. Calls callback when complete
-this.fetchImageDimensions = function _fetchImageDimensions(document, callback) {
+function fetchImages(document, callback) {
 	const images = document.getElementsByTagName('img');
-	async.forEach(images, _fetch, callback);
-};
+	const fetchables = filter.call(images, _shouldFetch);
+	async.forEach(fetchables, _fetch, callback);
+}
 
-// Sets an image's dimensions and then calls the callback
-// (without arguments).
-function _fetch(image, callback) {
+this.fetchImageDimensions = fetchImages;
+
+// Returns true if the image should be fetched
+function _shouldFetch(image) {
 
 	// We use the attribute, not the property, to avoid any
 	// changes by the user agent to the value
@@ -24,8 +28,7 @@ function _fetch(image, callback) {
 
 	// Can't do anything about a sourceless image
 	if(!sourceURL) {
-		callback();
-		return;
+		return false;
 	}
 
 	// Can't do anything about an embedded image aside
@@ -38,15 +41,20 @@ function _fetch(image, callback) {
 	// for a data URI within an inert document context? If so,
 	// then we do not need to fetch.
 	if(/^\s*data\s*:/i.test(sourceURL)) {
-		callback();
-		return;
+		return false;
 	}
 
 	// If the image already has dimensions, do not re-fetch
 	if(image.width > 0) {
-		callback();
-		return;
+		return false;
 	}
+
+	return true;
+}
+
+// Sets an image's dimensions and then calls the callback
+// (without arguments).
+function _fetch(image, callback) {
 
 	// To get the image's dimensions, we recreate the image
 	// locally and ask the browser to fetch it, and then
@@ -54,19 +62,23 @@ function _fetch(image, callback) {
 	// avoids the issue that setting the src property on the
 	// image has no effect if the image comes from an
 	// inert document
+	const url = image.getAttribute('src');
 	const proxy = document.createElement('img');
 	proxy.onload = onProxyLoad.bind(proxy, callback, image);
 	proxy.onerror = onProxyError.bind(proxy, callback);
-	proxy.src = sourceURL;
+	proxy.src = url;
 };
 
 function onProxyLoad(callback, image, event) {
 	const proxy = event.target;
 	image.width = proxy.width;
 	image.height = proxy.height;
+	// Call with no args to indicate async.forEach should continue
 	callback();
 }
 
+// We wrap the callback so that we can pass it no args in order to prevent
+// async.forEach from stopping prematurely when a load error occurs
 function onProxyError(callback, event) {
 	callback();
 }

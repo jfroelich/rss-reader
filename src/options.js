@@ -303,7 +303,7 @@ function startSubscription(url) {
 
 		// Show a notification
 		var title = addedFeed.title || addedFeed.url;
-		Notification.show('Subscribed to ' + title);
+		showNotification('Subscribed to ' + title);
 	}
 }
 
@@ -449,44 +449,53 @@ function onDiscoverFeedsComplete(errorEvent, query, results) {
 }
 
 function onUnsubscribeButtonClicked(event) {
-	const feedId = parseInt(event.target.value);
-	Database.open(function(event) {
+	const buttonValue = event.target.value;
+	const feedId = parseInt(buttonValue);
+
+	if(!feedId) {
+		console.debug('Invalid feed id: %s', buttonValue);
+		return;
+	}
+
+	Database.open(onOpenDatabase);
+
+	function onOpenDatabase(event) {
 		if(event.type !== 'success') {
 			console.debug(event);
 			return;
 		}
 
-		doUnsubscribe(event.target.result, feedId);
-	});
+		const connection = event.target.result;
+		FeedStore.unsubscribe(connection, feedId,
+			onUnsubscribe.bind(null, connection));
+	}
 
-	function doUnsubscribe(connection, feedId) {
-		FeedStore.unsubscribe(connection, feedId, function(event) {
-			const sectionMenu = $$('mi-subscriptions');
+	function onUnsubscribe(event) {
+		const sectionMenu = $$('mi-subscriptions');
 
-			// Update the badge in case any unread articles belonged to
-			// the unsubscribed feed
-			BrowserActionUtils.update(connection);
+		// Update the badge in case any unread articles belonged to
+		// the unsubscribed feed
+		updateBadge(Database, EntryStore, connection);
 
-			// TODO: send out a message notifying other views
-			// of the unsubscribe. That way the slides view can
-			// remove any articles.
+		// TODO: send out a message notifying other views
+		// of the unsubscribe. That way the slides view can
+		// remove any articles.
 
-			const item = document.querySelector('feedlist li[feed="'+feedId+'"]')
-			if(item) {
-				item.removeEventListener('click', onFeedListItemClick);
-				item.remove();
-			}
+		const item = document.querySelector('feedlist li[feed="' + feedId + '"]');
+		if(item) {
+			item.removeEventListener('click', onFeedListItemClick);
+			item.remove();
+		}
 
-			updateFeedCount();
+		updateFeedCount();
 
-			if($$('feedlist').childElementCount === 0) {
-				$$('feedlist').style.display = 'none';
-				$$('nosubscriptions').style.display = 'block';
-			}
+		if($$('feedlist').childElementCount === 0) {
+			$$('feedlist').style.display = 'none';
+			$$('nosubscriptions').style.display = 'block';
+		}
 
-			// Update the options view
-			showSection(sectionMenu);
-		});
+		// Update the options view
+		showSection(sectionMenu);
 	}
 }
 

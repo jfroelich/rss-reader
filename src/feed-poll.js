@@ -9,6 +9,8 @@
 // TODO: de-activation of feeds with 404s
 // TODO: de-activation of too much time elapsed since feed had new articles
 // TODO: only poll if feed is active
+// TODO: store de-activated reason code
+// TODO: store de-activated date
 // TODO: pass along a stats histogram object that trackers poll stats
 
 // TODO: some entry link URLs from feeds are pre-chain-of-redirect-resolution,
@@ -26,11 +28,29 @@
 // subscribe should be near instant. So subscribe should store the feed and then
 // enqueue a one-feed poll update.
 
-const FeedPoll = {};
+// TODO: i need to figure out how to bypass feedproxy.google.com and rewrite
+// the url properly, because it is screwing up everything. not to mention it
+// is tracking clicks.
+
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-FeedPoll.start = function() {
+
+// TODO: navigator should be a dependency injection so it can be mocked?
+// TODO: Database should be a dependency injection
+// TODO: FeedStore should be a dependency injection
+// TODO: FeedRequest should be a dependency injection
+// TODO: EntryUtils should be a dependency injection
+// TODO: showNotification should be a dependency injection
+// TODO: async should be a dependncy injection? Maybe? Or maybe I should
+// just completely get rid of this and roll my own like before, because
+// I am not sure it is adding that much simplicity, and as noted, I
+// am having trouble tracking when all requests are complete (see later)
+// TODO: due to the large number of dependencies, make I should make
+// it an object where the state is the dependencies? Maybe it would
+// reduce the number of parameters passed around in continuations
+
+function _start() {
 	console.debug('Polling feeds');
 
 	if(!navigator.onLine) {
@@ -38,9 +58,15 @@ FeedPoll.start = function() {
 		return;
 	}
 
+	// TODO: use the new, more global, navigator.permission check instead of
+	// the extension API
+
 	chrome.permissions.contains({permissions: ['idle']},
 		onCheckIdlePermission);
-};
+}
+
+// Export global
+this.pollFeeds = _start;
 
 const IDLE_PERIOD = 60 * 5; // 5 minutes
 function onCheckIdlePermission(permitted) {
@@ -112,7 +138,7 @@ function onPutFeed(connection, feed, remoteFeed, event) {
 // or preload all into an array.
 // Temporarily just update the badge for each feed processed
 function onEntriesUpdated(connection) {
-	BrowserActionUtils.update(connection);
+	updateBadge(Database, EntryStore, connection);
 }
 
 function findEntryByLink(connection, feed, entry, callback) {
@@ -160,7 +186,7 @@ function onComplete() {
 	localStorage.LAST_POLL_DATE_MS = String(Date.now());
 	// const message = {type: 'pollCompleted'};
 	// chrome.runtime.sendMessage(message);
-	Notification.show('Updated articles');
+	showNotification('Updated articles');
 }
 
 } // END ANONYMOUS NAMESPACE

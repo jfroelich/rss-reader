@@ -1,5 +1,5 @@
 {
-  "version": "90",
+  "version": "100",
   "manifest_version": 2,
   "minimum_chrome_version" : "46",
   "name": "Lucubrate",
@@ -13,9 +13,9 @@
   "background": {
     "persistent": false,
     "scripts": [
-      "/src/document-transform/resolve-urls-transform.js",
+      "/src/document-transform/fetch-image-dimensions.js",
+      "/src/document-transform/resolve-document-urls.js",
       "/src/async.js",
-      "/src/browser-action-utils.js",
       "/src/background.js",
       "/src/database.js",
       "/src/entry-store.js",
@@ -23,7 +23,6 @@
       "/src/feed-poll.js",
       "/src/feed-request.js",
       "/src/feed-store.js",
-      "/src/fetch-image-dimensions.js",
       "/src/html-document-wrapper.js",
       "/src/string-utils.js",
       "/src/URI.js",

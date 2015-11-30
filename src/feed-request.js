@@ -4,6 +4,11 @@
 
 'use strict';
 
+// TODO: explicit dependency on URLUtils
+// TODO: explicit dependency on EntryUtils (or I should just deprecate
+// EntryUtils and implement the unique function locally)
+// TODO: explicit dependency on StringUtils
+
 const FeedRequest = {};
 
 { // BEGIN ANONYMOUS NAMESPACE

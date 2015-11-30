@@ -8,6 +8,8 @@
 // updating the display of articles
 // TODO: maybe use just one function for both load/change
 
+// TODO: use an anonymous namespace
+
 chrome.runtime.onMessage.addListener(function(message) {
 	if(message && message.type === 'displaySettingsChanged') {
 		updateEntryStyles();

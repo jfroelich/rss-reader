@@ -7,7 +7,7 @@
 { // BEGIN ANONYMOUS NAMESPACE
 
 // Remove blacklisted elements. Define in global scope
-this.filterBlacklistedElements = function filterBlacklistedElements(document) {
+function _filterBlacklistedElements(document) {
 	removeElementsByName(document);
 	removeElementsById(document, 'div', DIV_IDS);
 	removeElementsById(document, 'ul', LIST_IDS);
@@ -24,7 +24,10 @@ this.filterBlacklistedElements = function filterBlacklistedElements(document) {
 
 	// Isolated for perf testing
 	removeRest(document);
-};
+}
+
+// Export global
+this.filterBlacklistedElements = _filterBlacklistedElements;
 
 // NOTE: this appears to be the slowest part of the transform
 // It is specifically the call to matches

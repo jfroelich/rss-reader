@@ -7,7 +7,7 @@
 { // BEGIN ANONYMOUS NAMESPACE
 
 // Filters boilerplate content
-this.applyCalamine = function _applyCalamine(document, annotate) {
+this.applyCalamine = function _applyCalamine(scoreAttributes, document, annotate) {
 
 	// Require a body that is not a frameset
 	if(!document.querySelector('body')) {
@@ -15,13 +15,20 @@ this.applyCalamine = function _applyCalamine(document, annotate) {
 	}
 
 	const scores = initScores(document);
+
+	// TODO: create an external lib that does this,
+	// and then specify this as an injected dependency
 	applyTextBias(document, scores, annotate);
+
 	applyIntrinsicBias(document, scores, annotate);
 	applyDownwardBias(document, scores, annotate);
 	applyUpwardBias(document, scores, annotate);
+
+	// TODO: create an external lib (ImageScorer) that does this,
+	// and then specify this as an injected dependency
 	applyImageContainerBias(document, scores, annotate);
 
-	applyCalamineAttributeScore(document, scores, annotate);
+	scoreAttributes(document, scores, annotate);
 
 	// Pathological attribute scoring cases
 	applySingleClassBias(document, scores, annotate, 'article', 1000);

@@ -5,6 +5,7 @@
 'use strict';
 
 // Lib for using the Google Feeds API
+// TODO: explicit dependency on StringUtils
 const GoogleFeeds = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
@@ -38,12 +39,14 @@ function findFeedOnload(callback, event) {
 	entries = entries.filter(getEntryURL);
 
 	// Remove duplicates
-	entries = [...new Map(entries.map(function(entry) {
-		return [entry.url, entry];
-	})).values()];
+	entries = [...new Map(entries.map(expandEntry)).values()];
 
 	entries.forEach(sanitizeEntry);
 	callback(null, query, entries);
+}
+
+function expandEntry(entry) {
+	return [entry.url, entry];
 }
 
 function getEntryURL(entry) {

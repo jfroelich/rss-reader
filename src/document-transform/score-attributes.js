@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// 'use strict';
+'use strict';
 
 // This is a component module of Calamine that weights the content of
 // document elements according to the values of each element's
@@ -31,12 +31,15 @@
 
 // NOTE: cannot yet use for..of because Chrome whines about de-opts
 // NOTE: cannot yet use const/let because Chrome whines about
-// Unsupported phi use of const variable and Unsupported compount let
+// Unsupported phi use of const variable and Unsupported compound let
 // statement
 
-function applyCalamineAttributeScore(document, scores, annotate) {
+// TODO: make tokenize a parameter to this function, and specify
+// the two strategies externally, and allow the caller to choose
+// which strategy to use? Or do I want to pick one strategy and
+// stick to it?
 
-	'use strict';
+function applyCalamineAttributeScore(document, scores, annotate) {
 
 	var CALAMINE$ATTRIBUTE_BIAS = new Map([
 		['about', -35],

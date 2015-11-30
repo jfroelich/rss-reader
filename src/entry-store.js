@@ -14,6 +14,8 @@ EntryStore.UNARCHIVED = 0;
 EntryStore.ARCHIVED = 1;
 
 // Adds or updates the entry within the database
+// TODO: inject dependency on DateUtils instead of hardcoding it
+
 EntryStore.put = function(connection, entry, callback) {
 	// console.debug('Putting entry %s', entry.link);
 	const storable = {};
@@ -90,6 +92,8 @@ EntryStore.put = function(connection, entry, callback) {
 };
 
 // Updates the read state of the corresponding entry in the database
+// TODO: inject dependency on updateBadge instead of hard coding it
+// within markReadOnOpenCursor
 EntryStore.markRead = function(connection, id) {
 	// console.debug('Marking entry %s as read', id);
 	const transaction = connection.transaction('entry', 'readwrite');
@@ -120,8 +124,9 @@ function markReadOnOpenCursor(event) {
 	entry.readDate = Date.now();
 	cursor.update(entry);
 
+	// Retrieve the connection from within the current transaction
 	const connection = event.target.transaction.db;
-	BrowserActionUtils.update(connection);
+	updateBadge(Database, EntryStore, connection);
 
 	chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
 }
@@ -158,6 +163,7 @@ EntryStore.removeByFeed = function(connection, id, callback) {
 	};
 };
 
+// TODO: specify Database as a dependency injection
 EntryStore.clear = function(connection) {
 	if(connection) {
 		_clear(connection);
@@ -177,6 +183,9 @@ function _clear(connection) {
 	transaction.objectStore('entry').clear();
 }
 
+// TODO: specify Database as a dependency injection
+// TODO: I should probably move archiveEntries into its own file
+// again, and then specify EntryStore as a dependency and inject it
 EntryStore.archiveEntries = function() {
 	Database.open(archiveOnConnect);
 };

@@ -8,6 +8,9 @@
 // TODO: rename to OPMLIO, opml-io.js
 // TODO: drop the named object, just export two global functions
 
+// TODO: explicit dependencies on OPMLDocument, Database, async,
+// showNotification, FeedStore
+
 const OPMLUtils = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
@@ -87,7 +90,7 @@ OPMLUtils.importFiles = function(files, callback) {
 
 	function onImportComplete(error) {
 		const message = 'Imported OPML file(s)';
-		Notification.show(message);
+		showNotification(message);
 		callback();
 	}
 };

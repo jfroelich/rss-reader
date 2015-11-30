@@ -8,6 +8,11 @@
 // declarative methods, similar to jQuery
 // TODO: maybe use a better name such as WHTMLDocument
 // TODO: research extending HTMLDocument
+
+// TODO: this was a neat idea, but i don't think i will be
+// using it any longer and it should be deprecated once all dependencies
+// are removed. I believe only OPMLDocument now relies on this
+
 class HTMLDocumentWrapper {
 
 	constructor(document) {

@@ -6,6 +6,9 @@
 
 // An in-memory OPMLDocument object
 // TODO: maybe extend Document? Research how to extend native/host/builtin
+
+// TODO: explicit dependency on StringUtils
+// TODO: explicit dependency on HTMLDocumentWrapper, or remove the dependency
 class OPMLDocument {
 
 	// Returns a new OPMLDocument by parsing the given string as XML
@@ -15,6 +18,9 @@ class OPMLDocument {
 		const parser = new DOMParser();
 		const MIME_TYPE = 'application/xml';
 		const document = parser.parseFromString(string, MIME_TYPE);
+
+		// TODO: should I be throwing something more specific,
+		// like a DOMException ?
 
 		if(!document) {
 			throw new Error('Invalid document');

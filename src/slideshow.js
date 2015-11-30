@@ -245,7 +245,7 @@ function appendSlide(entry, isFirst) {
 	content.setAttribute('class', 'entry-content');
 
 	const doc = DOMUtils.parseHTML(entry.content);
-	previewTransform(doc);
+	previewTransform(applyCalamine, LeafFilter$Transform, doc);
 
 	if(doc.documentElement) {
 		if(doc.body) {

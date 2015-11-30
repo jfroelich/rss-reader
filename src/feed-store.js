@@ -7,6 +7,7 @@
 const FeedStore = {};
 
 // Queries the database for a feed with the given url
+// TODO: explicit dependency on URLUtils.getSchemeless
 FeedStore.findByURL = function(connection, url, callback) {
 	const transaction = connection.transaction('feed');
 	const store = transaction.objectStore('feed');
@@ -58,6 +59,7 @@ FeedStore.remove = function(connection, id, callback) {
 // Removes the corresponding feed from the database along
 // with any corresponding entries
 // TODO: deprecate or move into some other lib
+// TODO: explicit dependency on EntryStore
 FeedStore.unsubscribe = function(connection, id, callback) {
 	FeedStore.remove(connection, id, function(event) {
 		EntryStore.removeByFeed(connection, id, callback);
