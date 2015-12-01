@@ -35,7 +35,7 @@ function modelHierarchicalBias(document, scores, annotate) {
     'li *, ol *, ul *, dd *, dl *, dt *'),
     penalizeListDescendant.bind(null, scores, annotate));
   forEach.call(document.querySelectorAll(
-    'aside *, header *, footer *, nav *'),
+    'aside *, header *, footer *, nav *, menu *, menuitem, *'),
     penalizeNavDescendant.bind(null, scores, annotate));
 
   // TODO: would it be faster to query each element individually
@@ -56,10 +56,10 @@ function penalizeListDescendant(scores, annotate, element) {
 }
 
 function penalizeNavDescendant(scores, annotate, element) {
-  scores.set(element, scores.get(element) - 50.0);
+  scores.set(element, scores.get(element) - 500.0);
   if(annotate) {
     const currentBias = parseFloat(element.dataset.navDescendantBias) || 0;
-    element.dataset.navDescendantBias = currentBias - 50;
+    element.dataset.navDescendantBias = currentBias - 500;
   }
 }
 

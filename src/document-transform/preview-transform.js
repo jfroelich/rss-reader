@@ -26,15 +26,90 @@ const filter = Array.prototype.filter;
 // Applies a series of transformations to a document in preparation
 // for displaying the document in a view.
 function previewTransform(document) {
+	filterFrameElements(document);
+	filterScriptElements(document);
+	filterEmbeddedElements(document);
 
-	transformFrameElements(document);
-	transformNoscripts(document);
-	filterBlacklistedElements(document);
+	// The following are misc. elements
+	// TODO: review where these go
+	removeElementsByName(document, 'datalist');
+	removeElementsByName(document, 'dialog');
+	removeElementsByName(document, 'fieldset');
+	removeElementsByName(document, 'isindex');
+	removeElementsByName(document, 'math');
+	removeElementsByName(document, 'output');
+	removeElementsByName(document, 'optgroup');
+	removeElementsByName(document, 'progress');
+	removeElementsByName(document, 'spacer');
+	removeElementsByName(document, 'xmp');
+
+	filterMetaElements(document);
+	filterStyleElements(document);
+	filterFormElements(document);
 
 	// TODO: document should be the last argument so that we can support
-	// a partial
+	// a partial?
 	const hiddenExceptions = new Set(['noembed']);
 	filterHiddenElements(document, hiddenExceptions, 0.3);
+	replaceBreakRuleElements(document);
+	filterBoilerplate(document);
+	filterComments(document);
+	filterTracerImages(document);
+	normalizeWhitespace(document);
+	trimTextNodes(document);
+	transformScriptAnchors(document);
+	unwrapInlineElements(document);
+
+	// TODO: document should be the last argument so that we can support
+	// a partial?
+	const retainableAttributes = new Set(['href', 'src']);
+	filterAttributes(document, retainableAttributes);
+
+	filterLeaves(document);
+	unwrapSingletonLists(document);
+	trimDocument(document);
+}
+
+// Export
+this.previewTransform = previewTransform;
+
+// Handles frame, noframes, frameset, and iframe elements
+function filterFrameElements(document) {
+
+	// TODO: this may need to be a more general transform that is async
+	// and automatically identifies and returns the frame that most likely
+	// contains the desired content.
+
+	// Look for the presence of a frameset and lack of a body
+	// element, and then remove the frameset and generate a body consisting
+	// of either noframes content or an error message.
+	let body = document.querySelector('body');
+	const frameset = document.querySelector('frameset');
+	if(!body && frameset) {
+		const noframes = frameset.querySelector('noframes');
+		body = document.createElement('body');
+		if(noframes) {
+			body.innerHTML = noframes.innerHTML;
+		} else {
+			body.textContent = 'Unable to display document due to frames.';
+		}
+
+		document.documentElement.appendChild(body);
+		frameset.remove();
+		return;
+	}
+
+	// If we're still here, make sure these elements are no longer present
+	removeElementsByName(document, 'frameset');
+	removeElementsByName(document, 'frame');
+
+	// TODO: eventually i want to do special handling of
+	// iframes, for now, iframes are not supported.
+	removeElementsByName(document, 'iframe');
+}
+
+// Filters boilerplate from the document
+function filterBoilerplate(document) {
 
 	// TODO: models was probably a bad name, these are more like
 	// feature extractors or something
@@ -52,33 +127,8 @@ function previewTransform(document) {
 	];
 
 	const isContent = createCalamineClassifier(models, false, document);
-	filterBoilerplate(document, isContent);
 
-	filterComments(document);
-
-	filterTracerImages(document);
-	replaceBreakRuleElements(document);
-	normalizeWhitespace(document);
-	trimTextNodes(document);
-	transformScriptAnchors(document);
-	unwrapInlineElements(document);
-
-	// TODO: document should be the last argument so that we can support
-	// a partial
-	const retainableAttributes = new Set(['href', 'src']);
-	filterAttributes(document, retainableAttributes);
-
-	LeafFilter$Transform(document);
-	unwrapSingletonLists(document);
-	trimDocument(document);
-}
-
-// Export
-this.previewTransform = previewTransform;
-
-// Remove elements using the classifier.
-function filterBoilerplate(document, isContent) {
-	// Using a node iterator avoids visiting detached subtrees
+	// NOTE: using a node iterator avoids visiting detached subtrees
 	const elementIterator = document.createNodeIterator(
 		document.documentElement,
 		NodeFilter.SHOW_ELEMENT);
@@ -92,53 +142,66 @@ function filterBoilerplate(document, isContent) {
 	}
 }
 
+function filterMetaElements(document) {
 
-// Inspects a document for the presence of a frameset and lack of a body
-// element, and then removes the frameset and generates a body consisting
-// of either noframes content or an error message.
-function transformFrameElements(document) {
+	// <base> is filtered by resolve-document-urls
+	// <link> and such is handled by filterStyleElements
+	// <script> and such is handled separately
 
-	let body = document.querySelector('body');
-	const frameset = document.querySelector('frameset');
-	if(!body && frameset) {
-		const noframes = frameset.querySelector('noframes');
-		body = document.createElement('body');
-		if(noframes) {
-			body.innerHTML = noframes.innerHTML;
-		} else {
-			body.textContent = 'Unable to display document due to frames.';
-		}
+	removeElementsByName(document, 'head');
 
-		document.documentElement.appendChild(body);
-		frameset.remove();
-	}
-
-	// These comments were moved from blacklist-filter into
-	// here for further consideration
-	// frameset is handled earlier in previewTransform
-	// TODO: this is a bit of clunky dependency interaction that
-	// requires some more thought. Basically, this filter shouldn't
-	// be responsible for removing frameset because that leads to
-	// empty output. But we want to make sure that something else
-	// is eventually removing such things, because we never want
-	// to allow frames to load in this manner
-	// removeElementsByName(document, 'frameset');
-	// NOTE: for some reason, I was previously not considering the
-	// frame tag as blacklisted. I have no idea why. Including it
-	// here in a comment as a reminder.
-	// removeElementsByName(document, 'frame');
-	// I think, ultimately, that this should not be responsible.
-	// The framehandling should all be done by a specialized
-	// transform. That transform may even be async and require
-	// a callback, and maybe I introduce logic like trying to
-	// auto-identify the most likely main-content frame and
-	// using its contents as the body.
+	// Remove these elements if located outside of head in malformed html
+	removeElementsByName(document, 'meta');
+	removeElementsByName(document, 'title');
 }
 
-// Due to content-loading tricks, noscript requires special handling
-// e.g. nbcnews.com
+function filterStyleElements(document) {
+	// We use custom styling, so remove all CSS. Inline style
+	// handled by filterAttributes
+	removeElementsByName(document, 'style');
+	removeElementsByName(document, 'link');
+	removeElementsByName(document, 'basefont');
 
-function transformNoscripts(document) {
+	// Unwrap style elements that may contain content
+	const fontElements = document.querySelectorAll(
+		'big, blink, font, plaintext, small, tt');
+	for(let i = 0, len = fontElements.length; i < len; i++) {
+		DOMUtils.unwrap(fontElements[i]);
+	}
+}
+
+function filterFormElements(document) {
+	// form unwrap also belongs there
+	removeElementsByName(document, 'select');
+	removeElementsByName(document, 'option');
+	removeElementsByName(document, 'textarea');
+	removeElementsByName(document, 'input');
+	removeElementsByName(document, 'button');
+	removeElementsByName(document, 'command');
+
+	// Certain elements need to be unwrapped instead of removed,
+	// because they may contain valuable content. Notably, many html authors
+	// use a technique where they wrap content in a form tag.
+	const formElements = document.querySelectorAll('form, label');
+	for(let i = 0, len = formElements.length; i < len; i++) {
+		DOMUtils.unwrap(formElements[i]);
+	}
+}
+
+function filterScriptElements(document) {
+
+	// NOTE: misc event handler attributes are handled by
+	// filterAttributes
+
+	// Remove all script tags
+	removeElementsByName(document, 'script');
+
+
+	// TODO: move javascript anchor handling into here
+
+	// Due to content-loading tricks, noscript requires special handling
+	// e.g. nbcnews.com
+
 	const noscripts = document.querySelectorAll('noscript');
 	const numNoscripts = noscripts.length;
 	let noscript = null;
@@ -153,6 +216,26 @@ function transformNoscripts(document) {
 		// though we are doing mutation during iteration
 		noscript.remove();
 	}
+}
+
+function filterEmbeddedElements(document) {
+
+	// TODO: move the handling of 'noembed' into here
+
+	// Remove various components
+	// TODO: is object embedded in embed or is embed embedded in object?
+	removeElementsByName(document, 'applet');
+	removeElementsByName(document, 'object');
+	removeElementsByName(document, 'embed');
+	removeElementsByName(document, 'param');
+
+	// NOTE: i eventually want to support basic video embedding but
+	// for now it is blacklisted. There should probably be some special
+	// handler for the video element (or more generally, a media element)
+	// including audio
+	removeElementsByName(document, 'video');
+	removeElementsByName(document, 'audio');
+	removeElementsByName(document, 'bgsound');
 }
 
 // Removes all comments
@@ -393,22 +476,17 @@ function transformScriptAnchors(document) {
 // elements defined for the purpose of trimming text nodes.
 const UNWRAPPABLE_ELEMENTS = new Set([
 	'article',
-	'big',
-	'blink',
 	'center',
 	'colgroup',
 	'data',
 	'details',
 	'div',
-	'font',
 	'footer',
-	'form',
 	'header',
 	'help',
 	'hgroup',
 	'ilayer',
 	'insert',
-	'label',
 	'layer',
 	'legend',
 	'main',
@@ -418,14 +496,11 @@ const UNWRAPPABLE_ELEMENTS = new Set([
 	'multicol',
 	'nobr',
 	'noembed',
-	'plaintext',
 	'section',
-	'small',
 	'span',
 	'tbody',
 	'tfoot',
 	'thead',
-	'tt'
 ]);
 
 const UNWRAPPABLE_SELECTOR = Array.from(UNWRAPPABLE_ELEMENTS).join(',');

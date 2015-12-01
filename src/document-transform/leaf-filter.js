@@ -57,7 +57,7 @@ const LeafFilter$LEAF_SELECTOR = [
 	'video'
 ].join(',');
 
-function LeafFilter$Transform(document) {
+function filterLeaves(document) {
 
 	const selector = LeafFilter$LEAF_SELECTOR;
 	const elements = document.documentElement.getElementsByTagName('*');
