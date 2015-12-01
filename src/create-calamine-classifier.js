@@ -832,6 +832,7 @@ const DIV_CLASSES = [
 	'follow-us-component', // Huffington Post
 	'follow-us-below-entry-component', // Huffington Post
 	'footer', // KMBC
+	'fsb-social-bar', // pyimagesearch.com
 	'gh-header-actions', // Github
 	'gh-header-meta', // Github
 	'googleads', // Telegraph UK
@@ -949,6 +950,7 @@ const DIV_CLASSES = [
 	'post-comments', // The Sun Times
 	'post-links', // Pro Football Talk
 	'postmeta', // Windows Central
+	'post-meta', // pyimagesearch.com
 	'post-meta-category', // Comic Book Resources
 	'post-meta-share', // Comic Book Resources
 	'post-meta-tags', // Comic Book Resources
@@ -1264,6 +1266,7 @@ const LIST_CLASSES = [
 const ASIDE_IDS = new Set([
 	'asset-related', // St. Louis Today
 	'bpage_ad_bottom', // BuzzFeed
+	'connect', // pyimagesearch.com
 	'fbookulous-flyer', // ProPublica
 	'post_launch_success', // BuzzFeed
 	'related-content-xs', // The Miami Herald

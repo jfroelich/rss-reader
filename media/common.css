@@ -21,6 +21,25 @@ div.entry img {
   padding-bottom: 2px;
 }*/
 
+/*
+This is required to get long words without spaces to break when
+within a table cell
+http://stackoverflow.com/questions/1258416
+http://stackoverflow.com/questions/1057574
+*/
+div.entry span.entry-content td {
+  vertical-align: top;
+  white-space: normal;
+  /* We have to change from break-word to break-all to get
+  it to work here */
+  word-break: break-all;
+
+  /*
+  TODO: the secondary problem is that the width of the cells
+  is a bit awkward
+  */
+}
+
 div.entry span.entry-content img {
   display: block;
   margin-left: auto;
@@ -37,11 +56,6 @@ div.entry span.entry-content img {
 /*
 div.entry span.entry-content table {
   table-layout: fixed;
-}
-
-div.entry span.entry-content td {
-  word-wrap: break-word;
-  white-space: normal;
 }
 */
 

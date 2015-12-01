@@ -203,12 +203,13 @@ function loadEntryStyles() {
 
 	s += 'word-wrap: break-word;';
 
-	// This is required to get long words without spaces to break when
-	// within a table cell
-	// http://stackoverflow.com/questions/1258416
-	// http://stackoverflow.com/questions/1057574
-	s += 'white-space: normal;';
-	s += 'word-break: break-all;';
+
+	// s += 'white-space: normal;';
+
+	// Actually this screws it up, now it is breaking everything instead of
+	// wrapping, so only apply it to td
+	// s += 'word-break: break-all;';
+
 
 	s += 'padding-top: 20px;';
 	s += 'padding-right: 0px;';
