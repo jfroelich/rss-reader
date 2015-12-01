@@ -6,26 +6,36 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-// Filters boilerplate content. Internally, this applies a series of modeling
-// functions that assign a weight to elements representing whether the element
-// is probably the root element of the content area of an HTMLDocument, then
-// finds the most probable root. Once we found the root, we also look for
-// explict features of elements within the root that indicate content or
-// boilerplate.
-
+// Filters boilerplate content. Internally, this starts by extracting various
+// features of elements, such as how much content an element contains outside of
+// links in comparison to content within links, or where the element is
+// located in the DOM. The features assign a weight to each element representing
+// how likely the element is the root element under which most of the document's
+// valuable content is located. Then a particular root element is chosen. A
+// classifier function is returned that analyzes a given element (assumed to
+// be from the same document), looking at whether the element falls within
+// the root element and does not have other indications of boilerplate.
 // @param models {Array} an array of modeling functions
 // @param document {HTMLDocument} the document to analyze
 // @param annotate {boolean} whether to annotate elements with derived info
 // @return {Function} a function that accepts an element and returns true
 // if the element is content or false if the element is boilerplate
-function createCalamineClassifier(models, annotate, document) {
+function createCalamineClassifier(extractors, annotate, document) {
 
-	// Require a body that is not a frameset
+	// Require a body that is not a frameset, falling back to a fully-permissive
+	// dummy classifier
 	if(!document.querySelector('body')) {
 		return isAlwaysContentElement;
 	}
 
-	// Prefill scores
+	// Start by looking for an obvious indicator of the root element before
+	// any real analysis is done, and if found, exit early
+	let bestElement = findFastBestElement(document);
+	if(bestElement) {
+		return isContentElement.bind(this, bestElement);
+	}
+
+	// Prefill scores map used by various feature extractors
 	const scores = new Map();
 	// TODO: use for..of once NodeList is iterable
 	Array.prototype.forEach.call(document.getElementsByTagName('*'),
@@ -33,11 +43,12 @@ function createCalamineClassifier(models, annotate, document) {
 		scores.set(element, 0.0);
 	});
 
-	// Apply the models
-	for(let applyModel of models) {
-		applyModel(document, scores, annotate);
+	// Extract various features in succession
+	for(let extractFeatures of extractors) {
+		extractFeatures(document, scores, annotate);
 	}
 
+	// Optionally record the extracted features within the document itself
 	// TODO: use destructuring when supported
 	if(annotate) {
 		for(let entry of scores) {
@@ -45,11 +56,9 @@ function createCalamineClassifier(models, annotate, document) {
 		}
 	}
 
-	// Reduce the scores map to the highest scoring element. The highest
-	// scoring element is basically a node to which all connected nodes in the
-	// graph (directly or indirectly) are considered content.
+	// Find the highest scoring element
 	// TODO: use destructuring when supported
-	let bestElement = document.body;
+
 	let bestScore = scores.get(bestElement);
 	for(let entry of scores) {
 		if(entry[1] > bestScore) {
@@ -58,26 +67,58 @@ function createCalamineClassifier(models, annotate, document) {
 		}
 	}
 
-	// Return a partial, closing over bestElement
+	// Return a classifier function
 	return isContentElement.bind(this, bestElement);
 }
 
+// Export global
 this.createCalamineClassifier = createCalamineClassifier;
 
-// A dummy classifier
+const KNOWN_CONTENT_SIGNATURES = [
+  'article', // HTML5 semantic content
+  '.hentry', // WordPress, microformats.org
+  '.entry-content', // microformats.org
+  '#article',
+  '.articleText',
+  '.articleBody',
+  '#articleBody',
+  '.article_body',
+  '.articleContent',
+  '.full-article',
+	'.repository-content',
+  '[itemprop="articleBody"]',
+  '[role="article"]',
+  '[itemtype="http://schema.org/Article"]',
+  '[itemtype="http://schema.org/NewsArticle"]',
+  '[itemtype="http://schema.org/BlogPosting"]',
+  '[itemtype="http://schema.org/Blog"]',
+  '[itemtype="http://schema.org/WebPage"]',
+  '[itemtype="http://schema.org/TechArticle"]',
+  '[itemtype="http://schema.org/ScholarlyArticle"]',
+  '#WNStoryBody' // TypePad blog articles
+];
+
+const NUM_SIGNATURES = KNOWN_CONTENT_SIGNATURES.length;
+
+// Looks for obvious best elements based on known content signatures
+function findFastBestElement(document) {
+	let elements = null;
+	for(let i = 0; i < NUM_SIGNATURES; i++) {
+		elements = document.body.querySelectorAll(KNOWN_CONTENT_SIGNATURES[i]);
+		if(elements.length === 1) {
+			return elements[0];
+		}
+	}
+}
+
+// A dummy classifier that treats every element as content
 function isAlwaysContentElement(element) {
 	return true;
 }
 
-// The 'model' returned by createCalamineClassifier
-// TODO: before returning true, this should also check for explicit
-// element ids and classes that indicate boilerplate.
-// Which means we have to refine the blacklist-filter more, then
-// return here.
-// TODO: research Node.compareDocumentPosition
-
+// The function returned by createCalamineClassifier
+// TODO: look into using Node.compareDocumentPosition instead of contains
 function isContentElement(bestElement, element) {
-
 	return element === bestElement ||
 		element.contains(bestElement) ||
 		(bestElement.contains(element) &&
@@ -88,12 +129,13 @@ function isArticleElement(element) {
 	return element.localName === 'article';
 }
 
-// TODO: i will eventually clean this up and improve it, for now i am
-// focused on transfering the functionality from blacklist-filter into here
+// TODO: eventually improve the logic here, it is pretty ugly. Maybe we
+// need to do some type of earlier feature extraction, and then just
+// query against that. If we have extractors return a separate map instead
+// of updating the common net score map, we could just pass in the one
+// appropriate map here and check against it.
 // TODO: use for..of {Set} once Chrome stops deopting
 // TODO: use const/let once Chrome stops deopting
-// NOTE: this is all extremely ugly, the point is to just get something that
-// works ok at first, and then refine it by using an algorithmic approach
 function isBoilerplateElement(element) {
 	var localName = element.localName;
 
@@ -618,6 +660,8 @@ const DIV_IDS = new Set([
 	'utility', // WRAL
 	'video-share', // ABC News
 	'vuukle_env', // The Hindu
+	'wiki-rightbar', // Github
+	'wiki-footer', // Github
 	'WNCol4', // Fox (subsidary myfoxny.com)
 	'WNStoryRelatedBox', // Fox (subsidiary myfoxal.com)
 	'you-might-like', // The New Yorker
@@ -783,6 +827,8 @@ const DIV_CLASSES = [
 	'follow-us-component', // Huffington Post
 	'follow-us-below-entry-component', // Huffington Post
 	'footer', // KMBC
+	'gh-header-actions', // Github
+	'gh-header-meta', // Github
 	'googleads', // Telegraph UK
 	'group-link-categories', // Symmetry Magazine
 	'group-links', // Symmetry Magazine
@@ -918,6 +964,7 @@ const DIV_CLASSES = [
 	'promo-top', // Chron.com
 	'pull-left-tablet', // NY1 (only uses "article" for related)
 	'raltedTopics', // India Times
+	'readability-sidebar', // Github
 	'read_more', // Times of India
 	'recirculation', // New Yorker
 	'recommended-articles-wrap', // Vice.com

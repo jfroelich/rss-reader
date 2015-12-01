@@ -193,10 +193,8 @@ function filterBoilerplate(document) {
 
 	const isContent = createCalamineClassifier(models, false, document);
 
-	// NOTE: using a node iterator avoids visiting detached subtrees
 	const elementIterator = document.createNodeIterator(
-		document.documentElement,
-		NodeFilter.SHOW_ELEMENT);
+		document.body, NodeFilter.SHOW_ELEMENT);
 	let element = elementIterator.nextNode();
 	while(element) {
 		if(!isContent(element)) {
@@ -617,7 +615,7 @@ function countListItems(element) {
 }
 
 function unwrapSingleItemList(list) {
-	console.debug('Unwrapping %s', list.outerHTML);
+	// console.debug('Unwrapping %s', list.outerHTML);
 	const parent = list.parentElement;
 	const item = list.querySelector('li');
 	const nextSibling = list.nextSibling;
@@ -636,7 +634,7 @@ function unwrapSingleItemList(list) {
 		}
 	}
 
-	console.debug('Parent after unwrap: %s', parent.innerHTML);
+	// console.debug('Parent after unwrap: %s', parent.innerHTML);
 
 	list.remove();
 }
