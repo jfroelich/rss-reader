@@ -194,7 +194,7 @@ function filterBoilerplate(document) {
 	const isContent = createCalamineClassifier(models, false, document);
 
 	const elementIterator = document.createNodeIterator(
-		document.body, NodeFilter.SHOW_ELEMENT);
+		document.documentElement, NodeFilter.SHOW_ELEMENT);
 	let element = elementIterator.nextNode();
 	while(element) {
 		if(!isContent(element)) {

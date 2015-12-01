@@ -58,7 +58,9 @@ function createCalamineClassifier(extractors, annotate, document) {
 
 	// Find the highest scoring element
 	// TODO: use destructuring when supported
-
+	// Default to body, and also ensure bestElement is initially defined
+	// in the following loop (otherwise, it is never defined)
+	bestElement = document.body;
 	let bestScore = scores.get(bestElement);
 	for(let entry of scores) {
 		if(entry[1] > bestScore) {
