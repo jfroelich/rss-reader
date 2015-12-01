@@ -90,19 +90,20 @@ function isArticleElement(element) {
 
 // TODO: i will eventually clean this up and improve it, for now i am
 // focused on transfering the functionality from blacklist-filter into here
-// TODO: use for..of {Set} once Chrome stops deopt whining
+// TODO: use for..of {Set} once Chrome stops deopting
+// TODO: use const/let once Chrome stops deopting
 // NOTE: this is all extremely ugly, the point is to just get something that
 // works ok at first, and then refine it by using an algorithmic approach
 function isBoilerplateElement(element) {
-	let localName = element.localName;
+	var localName = element.localName;
 
 	if(localName === 'div') {
 		if(element.id && DIV_IDS.has(element.id)) {
 			return true;
 		}
 
-		let classList = element.classList;
-		for(let i = 0, len = DIV_CLASSES.length; i < len; i++) {
+		var classList = element.classList;
+		for(var i = 0, len = DIV_CLASSES.length; i < len; i++) {
 			if(classList.contains(DIV_CLASSES[i])) {
 				return true;
 			}
@@ -110,7 +111,7 @@ function isBoilerplateElement(element) {
 
 		// 'article div.extra' Washington Post
 		if(classList.contains('extra')) {
-			let ancestors = DOMUtils.getAncestors(element);
+			var ancestors = DOMUtils.getAncestors(element);
 			if(ancestors.find(isArticleElement)) {
 
 				return true;
@@ -120,12 +121,12 @@ function isBoilerplateElement(element) {
 		// 'article > div.tags' NPR
 		// 'div.article div.tags' Politico
 		if(classList.contains('tags')) {
-			let parent = element.parentElement;
+			var parent = element.parentElement;
 			if(parent && parent.localName === 'article') {
 				return true;
 			}
 
-			let ancestors = DOMUtils.getAncestors(element);
+			var ancestors = DOMUtils.getAncestors(element);
 			if(ancestors.find(function(element) {
 				return element.matches('div.article');
 				})) {
@@ -139,12 +140,12 @@ function isBoilerplateElement(element) {
 		// NOTE: cannot use 'article div.share'
 		// (Vanity Fair vs Concurring Opinions)
 		if(classList.contains('share')) {
-			let parent = element.parentElement;
+			var parent = element.parentElement;
 			if(parent && parent.matches('div.artbody, div#main-content')) {
 				return true;
 			}
 
-			let ancestors = DOMUtils.getAncestors(element);
+			var ancestors = DOMUtils.getAncestors(element);
 			if(ancestors.find(function(element) {
 				return element.matches('div#article');
 				})) {
@@ -154,7 +155,7 @@ function isBoilerplateElement(element) {
 
 		// 'div.article div.columnsplitter' CTV News
 		if(classList.contains('columnsplitter')) {
-			let ancestors = DOMUtils.getAncestors(element);
+			var ancestors = DOMUtils.getAncestors(element);
 			if(ancestors.find(function(element) {
 				return element.matches('div.article');
 				})) {
@@ -164,7 +165,7 @@ function isBoilerplateElement(element) {
 
 		// 'div.article div.short-url' Politico
 		if(classList.contains('short-url')) {
-			let ancestors = DOMUtils.getAncestors(element);
+			var ancestors = DOMUtils.getAncestors(element);
 			if(ancestors.find(function(element) {
 				return element.matches('div.article');
 				})) {
@@ -174,7 +175,7 @@ function isBoilerplateElement(element) {
 
 		// 'div.article div#media' Newsday
 		if(element.id === 'media') {
-			let ancestors = DOMUtils.getAncestors(element);
+			var ancestors = DOMUtils.getAncestors(element);
 			if(ancestors.find(function(element) {
 				return element.matches('div.article');
 				})) {
@@ -184,7 +185,7 @@ function isBoilerplateElement(element) {
 
 		// 'div.article-text div.fullArticle' Intl Business Times UK
 		if(classList.contains('fullArticle')) {
-			let ancestors = DOMUtils.getAncestors(element);
+			var ancestors = DOMUtils.getAncestors(element);
 			if(ancestors.find(function(element) {
 				return element.matches('div.article-text');
 				})) {
@@ -194,7 +195,7 @@ function isBoilerplateElement(element) {
 
 		// 'div.share > div.right' auburnpub.com
 		if(classList.contains('right')) {
-			let parent = element.parentElement;
+			var parent = element.parentElement;
 			if(parent && parent.matches('div.share')) {
 				return true;
 			}
@@ -202,7 +203,7 @@ function isBoilerplateElement(element) {
 
 		// 'div.main > div#rail' Fox News
 		if(element.id === 'rail') {
-			let parent = element.parentElement;
+			var parent = element.parentElement;
 			if(parent && parent.matches('div.main')) {
 				return true;
 			}
@@ -210,7 +211,7 @@ function isBoilerplateElement(element) {
 
 		// 'div#main div#secondary' Newsday
 		if(element.id === 'secondary') {
-			let parent = element.parentElement;
+			var parent = element.parentElement;
 			if(parent && parent.matches('div#main')) {
 				return true;
 			}
@@ -222,7 +223,7 @@ function isBoilerplateElement(element) {
 		// 'div[role="article"] div.yx' Google Plus footer
 		if(classList.contains('DM') || classList.contains('Qg') ||
 			classList.contains('QM') || classList.contains('yx')) {
-			let ancestors = DOMUtils.getAncestors(element);
+			var ancestors = DOMUtils.getAncestors(element);
 			if(ancestors.find(function(element) {
 				return element.matches('div[role="article"]');
 				})) {
@@ -231,7 +232,7 @@ function isBoilerplateElement(element) {
 		}
 
 		// 'div[aria-label="+1 this post"]' Google Plus
-		let ariaLabel = element.getAttribute('aria-label');
+		var ariaLabel = element.getAttribute('aria-label');
 		if(ariaLabel === '+1 this post') {
 			return true;
 		}
@@ -253,7 +254,7 @@ function isBoilerplateElement(element) {
 
 		// 'div[bucket-id="most_popular_01"]' Telegraph/Reuters
 		// 'div[bucket-id="secondary_navigation_01"]' Telegraph/Reuters
-		let bucketId = element.getAttribute('bucket-id');
+		var bucketId = element.getAttribute('bucket-id');
 		if(bucketId === 'most_popular_01' ||
 			bucketId === 'secondary_navigation_01') {
 			return true;
@@ -277,8 +278,8 @@ function isBoilerplateElement(element) {
 		if(LIST_IDS.has(element.id)) {
 			return true;
 		}
-		let classList = element.classList;
-		for(let i = 0, len = LIST_CLASSES.length; i < len; i++) {
+		var classList = element.classList;
+		for(var i = 0, len = LIST_CLASSES.length; i < len; i++) {
 			if(classList.contains(LIST_CLASSES[i])) {
 				return true;
 			}
@@ -286,22 +287,22 @@ function isBoilerplateElement(element) {
 
 		// 'article ul.listing' Good Magazine
 		if(classList.contains('listing')) {
-			let ancestors = DOMUtils.getAncestors(element);
+			var ancestors = DOMUtils.getAncestors(element);
 			if(ancestors.find(isArticleElement)) {
 				return true;
 			}
 		}
 
 	} else if(localName === 'a') {
-		let classList = element.classList;
-		for(let i = 0, len = ANCHOR_CLASSES.length; i < len; i++) {
+		var classList = element.classList;
+		for(var i = 0, len = ANCHOR_CLASSES.length; i < len; i++) {
 			if(classList.contains(ANCHOR_CLASSES[i])) {
 				return true;
 			}
 		}
 
 		// Special anchor cases
-		let href = element.getAttribute('href');
+		var href = element.getAttribute('href');
 		if(href) {
 			if(href.startsWith('http://ad.')) {
 				return true;// medium.com
@@ -310,15 +311,15 @@ function isBoilerplateElement(element) {
 			}
 		}
 
-		let rel = element.getAttribute('rel');
+		var rel = element.getAttribute('rel');
 		if(rel === 'tag') {
 			// The Oklahoman
 			return true;
 		}
 
 	} else if(localName === 'p') {
-		let classList = element.classList;
-		for(let i = 0, len = P_CLASSES.length; i < len; i++) {
+		var classList = element.classList;
+		for(var i = 0, len = P_CLASSES.length; i < len; i++) {
 			if(classList.contains(P_CLASSES[i])) {
 				return true;
 			}
@@ -334,8 +335,8 @@ function isBoilerplateElement(element) {
 			return true;
 		}
 
-		let classList = element.classList;
-		for(let i = 0, len = ASIDE_CLASSES.length; i < len; i++) {
+		var classList = element.classList;
+		for(var i = 0, len = ASIDE_CLASSES.length; i < len; i++) {
 			if(classList.contains(ASIDE_CLASSES[i])) {
 				return true;
 			}
@@ -351,22 +352,22 @@ function isBoilerplateElement(element) {
 			return true;
 		}
 
-		let classList = element.classList;
-		for(let i = 0, len = SECTION_CLASSES.length; i < len; i++) {
+		var classList = element.classList;
+		for(var i = 0, len = SECTION_CLASSES.length; i < len; i++) {
 			if(classList.contains(SECTION_CLASSES[i])) {
 				return true;
 			}
 		}
 	} else if(localName === 'span') {
-		let classList = element.classList;
-		for(let i = 0, len = SPAN_CLASSES.length; i < len; i++) {
+		var classList = element.classList;
+		for(var i = 0, len = SPAN_CLASSES.length; i < len; i++) {
 			if(classList.contains(SPAN_CLASSES[i])) {
 				return true;
 			}
 		}
 	} else if(localName === 'table') {
-		let classList = element.classList;
-		for(let i = 0, len = TABLE_CLASSES.length; i < len; i++) {
+		var classList = element.classList;
+		for(var i = 0, len = TABLE_CLASSES.length; i < len; i++) {
 			if(classList.contains(TABLE_CLASSES[i])) {
 				return true;
 			}
@@ -385,7 +386,7 @@ function isBoilerplateElement(element) {
 		return true;
 	} else if(localName === 'b') {
 		// 'b.toggle-caption' NPR
-		let classList = element.classList;
+		var classList = element.classList;
 		if(classList.contains('toggle-caption')) {
 			return true;
 		}
@@ -400,7 +401,7 @@ function isBoilerplateElement(element) {
 		//'dl#comments' CJR
 		if(element.id === 'comments')
 			return true;
-		let classList = element.classList;
+		var classList = element.classList;
 		//'dl.blox-social-tools-horizontal' Joplin
 		if(classList.contains('blox-social-tools-horizontal'))
 			return true;
@@ -417,7 +418,7 @@ function isBoilerplateElement(element) {
 		//'figure#opinion-newsletter-promo' nytimes.com
 		if(element.id === 'opinion-newsletter-promo')
 			return true;
-		let classList = element.classList;
+		var classList = element.classList;
 		//'figure.ib-figure-ad' KMBC
 		if(classList.contains('ib-figure-ad'))
 			return true;
@@ -426,8 +427,13 @@ function isBoilerplateElement(element) {
 			return true;
 	}
 
+	if(localName === 'fb:comments') {
+		return true;
+	} else if(localName === 'g:plusone') {
+		return true;
+	}
+
 /*
-'fb\\:comments',
 'form#comment_form', // Doctors Lounge
 'form.comments-form', // CJR
 'h1#external-links', // The Sprawl (preceds unnamed <ul>)
@@ -443,7 +449,6 @@ function isBoilerplateElement(element) {
 'ol[data-vr-zone="Around The Web"]', // The Oklahoman
 'ol#comment-list', // Pro Football Talk
 'ol#commentlist', // WordPress lemire-theme
-'g\\:plusone',
 'span[itemprop="inLanguage"]', // Investors.com
 'table#commentTable' // Times of India
 */
