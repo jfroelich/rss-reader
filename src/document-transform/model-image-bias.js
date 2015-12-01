@@ -9,7 +9,9 @@
 // Bias image containers
 function modelImageBias(document, scores, annotate) {
 
-  // We are not mutating, so gebtn is more appropriate than qsa
+	// http://jsperf.com/document-images-vs-getelementsbytagname-img/6
+	// It looks like accessing document.images is slightly faster
+
 	const images = document.body.getElementsByTagName('img');
 	const numImages = images.length;
 	let image = null;
@@ -24,9 +26,7 @@ function modelImageBias(document, scores, annotate) {
 		image = images[i];
 		parent = image.parentElement;
 
-		// Ignore images without a parent
 		if(!parent) {
-			console.debug('Encountered orphan image %o', image);
 			continue;
 		}
 

@@ -6,57 +6,7 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-function modelHierarchicalBias(document, scores, annotate) {
-
-  applyDownwardBias(document, scores, annotate);
-  applyUpwardBias(document, scores, annotate);
-}
-
-this.modelHierarchicalBias = modelHierarchicalBias;
-
-
-function applyDownwardBias(document, scores, annotate) {
-
-	// Penalize list descendants. Even though we are not mutating,
-	// it seems faster to use querySelectorAll here than using
-	// NodeIterator or getElementsByTagName because we want to include
-	// all descendants.
-	// TODO: this is buggy, not accumulating bias in annotation
-	const LIST_SELECTOR = 'li *, ol *, ul *, dd *, dl *, dt *';
-	const listDescendants = document.querySelectorAll(LIST_SELECTOR);
-	const numLists = listDescendants.length;
-
-	// init as an element to give chrome a type hint
-	// init outside the loop due to strange let/const in loop decl behavior
-	let listDescendant = document.documentElement;
-
-	for(let i = 0; i < numLists; i++) {
-		listDescendant = listDescendants[i];
-		scores.set(listDescendant, scores.get(listDescendant) - 100);
-		if(annotate) {
-			// TODO: this needs to account for other bias
-			listDescendant.dataset.listDescendantBias = -100;
-		}
-
-	}
-
-	// Penalize descendants of navigational elements
-	const NAV_SELECTOR = 'aside *, header *, footer *, nav *';
-	const navDescendants = document.querySelectorAll(NAV_SELECTOR);
-	const numNavs = navDescendants.length;
-	let navDescendant = document.documentElement;
-	let currentBias = 0;
-	for(let i = 0; i < numNavs; i++) {
-		navDescendant = navDescendants[i];
-		scores.set(navDescendant, scores.get(navDescendant) - 50);
-
-		if(annotate) {
-			currentBias = parseFloat(
-				navDescendant.dataset.navDescendantBias) || 0.0;
-			navDescendant.dataset.navDescendantBias = currentBias - 50;
-		}
-	}
-}
+const forEach = Array.prototype.forEach;
 
 // Elements are biased for being parents of these elements
 // NOTE: the anchor bias is partially redundant with the text bias
@@ -79,30 +29,49 @@ const UPWARD_BIAS = new Map([
 	['ul', -20]
 ]);
 
-// Bias the parents of certain elements
-function applyUpwardBias(document, scores, annotate) {
+function modelHierarchicalBias(document, scores, annotate) {
+  // TODO: use for..of once Chrome supports NodeList iteration
+  forEach.call(document.querySelectorAll(
+    'li *, ol *, ul *, dd *, dl *, dt *'),
+    penalizeListDescendant.bind(null, scores, annotate));
+  forEach.call(document.querySelectorAll(
+    'aside *, header *, footer *, nav *'),
+    penalizeNavDescendant.bind(null, scores, annotate));
 
-	// chrome warning unsupported phi use of const variable
-	// so using var
+  // TODO: would it be faster to query each element individually
+  // rather than all elements (and a map lookup per element)
+  forEach.call(document.getElementsByTagName('*'),
+    biasParent.bind(null, scores, annotate));
+}
 
-	var elements = document.getElementsByTagName('*');
-	var numElements = elements.length;
-	var element = null;
-	var bias = 0.0;
-	var parent = null;
-	var previousBias = 0.0;
+this.modelHierarchicalBias = modelHierarchicalBias;
 
-	for(let i = 0; i < numElements; i++) {
-		element = elements[i];
-		bias = UPWARD_BIAS.get(element.localName);
-		if(!bias) continue;
-		parent = element.parentElement;
-		scores.set(parent, scores.get(parent) + bias);
-		if(annotate) {
-			previousBias = parseFloat(parent.dataset.upwardBias) || 0.0;
-			parent.dataset.upwardBias = previousBias + bias;
-		}
-	}
+function penalizeListDescendant(scores, annotate, element) {
+  scores.set(element, scores.get(element) - 100.0);
+  if(annotate) {
+    // BUG: this needs to account for other bias
+    const currentBias = parseFloat(element.dataset.listDescendantBias) || 0;
+    element.dataset.listDescendantBias = -100;
+  }
+}
+
+function penalizeNavDescendant(scores, annotate, element) {
+  scores.set(element, scores.get(element) - 50.0);
+  if(annotate) {
+    const currentBias = parseFloat(element.dataset.navDescendantBias) || 0;
+    element.dataset.navDescendantBias = currentBias - 50;
+  }
+}
+
+function biasParent(scores, annotate, element) {
+  const bias = UPWARD_BIAS.get(element.localName);
+  if(!bias) return;
+  const parent = element.parentElement;
+  scores.set(parent, scores.get(parent) + bias);
+  if(annotate) {
+    const previousBias = parseFloat(parent.dataset.upwardBias) || 0;
+    parent.dataset.upwardBias = previousBias + bias;
+  }
 }
 
 } // END ANONYMOUS NAMESPACE

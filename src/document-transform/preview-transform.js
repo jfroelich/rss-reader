@@ -9,7 +9,8 @@
 // because it fits into original goal of boilerplate classification and
 // removal (instead of just identifying a best element)
 
-// Then it is also a question of where the wiring should take place. It is
+
+// TODO: Regarding dep injection, where should the wiring take place? It is
 // only the slideshow context where this particular composition of transforms
 // occurs, so maybe this shouldn't be doing the wiring itself, and instead
 // just be a file that contains a host of transforms, and the actual composition
@@ -31,8 +32,10 @@ const filter = Array.prototype.filter;
 // the default series currently in use.
 
 // Applies a series of transformations to a document in preparation
-// for displaying the document in a view. Defined in global scope
+// for displaying the document in a view.
 function previewTransform(document) {
+
+	// TODO: invisible elements should be removed prior to calamine
 
 	transformFrameElements(document);
 	transformNoscripts(document);
@@ -87,6 +90,27 @@ function transformFrameElements(document) {
 		document.documentElement.appendChild(body);
 		frameset.remove();
 	}
+
+	// These comments were moved from blacklist-filter into
+	// here for further consideration
+	// frameset is handled earlier in previewTransform
+	// TODO: this is a bit of clunky dependency interaction that
+	// requires some more thought. Basically, this filter shouldn't
+	// be responsible for removing frameset because that leads to
+	// empty output. But we want to make sure that something else
+	// is eventually removing such things, because we never want
+	// to allow frames to load in this manner
+	// removeElementsByName(document, 'frameset');
+	// NOTE: for some reason, I was previously not considering the
+	// frame tag as blacklisted. I have no idea why. Including it
+	// here in a comment as a reminder.
+	// removeElementsByName(document, 'frame');
+	// I think, ultimately, that this should not be responsible.
+	// The framehandling should all be done by a specialized
+	// transform. That transform may even be async and require
+	// a callback, and maybe I introduce logic like trying to
+	// auto-identify the most likely main-content frame and
+	// using its contents as the body.
 }
 
 // Due to content-loading tricks, noscript requires special handling

@@ -50,17 +50,28 @@ function modelTextBias(document, scores, annotate) {
 // Export global
 this.modelTextBias = modelTextBias;
 
-
 const RE_WHITESPACE = /\s|&nbsp;/g;
 
-// TODO: need to improve the performance here
 function getNodeTextLength(node) {
-	return node.nodeValue.replace(RE_WHITESPACE, '').length;
+	const value = node.nodeValue;
+
+	// Turns out that testing for the most frequent text nodes provides a
+	// noticeable perf improvement :)
+	if(value === '\n' || value === '\n\t' || value === '\n\t\t') {
+		return 0;
+	} else {
+		// TODO: note where i got this from on stackoverflow
+		return value.replace(RE_WHITESPACE, '').length;
+	}
 }
 
 // Generate a map between document elements and a count
 // of characters within the element. This is tuned to work
 // from the bottom up rather than the top down.
+
+// TODO: this is now the slowest part of calamine
+// and also in general the slowest transform
+
 function deriveTextLength(document) {
 	const map = new Map();
 

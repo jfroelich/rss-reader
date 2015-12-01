@@ -6,13 +6,115 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-// Remove blacklisted elements. Define in global scope
-function _filterBlacklistedElements(document) {
-	removeElementsByName(document);
+// Remove blacklisted elements.
+// NOTE: I initially tried a whitelist approach but ran into
+// a host of problems, primarily that I would erronerously remove
+// important content in custom elements.
+
+function filterBlacklistedElements(document) {
+
+	// We remove tags in an approximate top down order, and in
+	// a most likely occurrence order, in an effort to reduce the
+	// number of tags visited and the number of dom operations.
+
+	removeElementsByName(document, 'head');
+
+	// These elements are most likely found in head most of the time,
+	// assuming the document is well-formed, so most of these should
+	// be quick.
+
+	// Script is a massive and object security risk
+	// NOTE: inline script is handled separately. Maybe I should
+	// make a script transform that does both this remove and
+	// also the handling of inline script (like javascript: anchors)
+	removeElementsByName(document, 'script');
+
+	// We use custom styling, so remove all CSS. Inline styles and
+	// similar things are handled separately. Technically the style
+	// is not blacklisted, so maybe something else should be responsible
+	// for this. Again, a bit strange coupling.
+	// TODO: maybe what should happen is removeElementsByName should
+	// be a global, i should make a separate transform that massages
+	// document style, and move these calls into that transform?
+	// NOTE: the font tag is unwrapped instead of removed to avoid
+	// removing content. That is handled separately (see previewTransform).
+	// The coupling is a bit awkward.
+	// I should maybe make a styleTransform, move the font unwrap
+	// and these remove calls into it, and call it before calling
+	// applyCalamine
+	removeElementsByName(document, 'style');
+	removeElementsByName(document, 'link');
+	removeElementsByName(document, 'basefont');
+
+
+	removeElementsByName(document, 'meta');
+	removeElementsByName(document, 'base');
+	removeElementsByName(document, 'title');
+
+	// Removing large chunks of more general sectional elements
+	// This also removes alot of boilerplate, which works in
+	// conjunction with applyCalamine. Again, this is a strange
+	// coupling. Maybe calamine should be responsible for removing
+	// these elements, because they are not a security risk
+	// I think it is basically a misalignment. I aggregated all
+	// these removals by the type of operation (remove/unwrap), instead of
+	// aggregating by purpose (e.g. security vs. boilerplate)
+	removeElementsByName(document, 'header');
+	removeElementsByName(document, 'footer');
+	removeElementsByName(document, 'nav');
+	removeElementsByName(document, 'menu');
+	removeElementsByName(document, 'menuitem');
+
+	// TODO: eventually i want to do special handling of
+	// iframes, this should probably be handled by some
+	// more general document transform. for now, iframes
+	// are not supported.
+	removeElementsByName(document, 'iframe');
+
+	// Remove various components
+	// TODO: is object embedded in embed or is embed embedded in object?
+	removeElementsByName(document, 'applet');
+	removeElementsByName(document, 'object');
+	removeElementsByName(document, 'embed');
+	removeElementsByName(document, 'param');
+
+	// NOTE: i eventually want to support basic video embedding but
+	// for now it is blacklisted. There should probably be some special
+	// handler for the video element (or more generally, a media element)
+	// including audio
+	removeElementsByName(document, 'video');
+	removeElementsByName(document, 'audio');
+
+	removeElementsByName(document, 'select');
+	removeElementsByName(document, 'option');
+	removeElementsByName(document, 'textarea');
+
+	// The following are misc. elements
+	// TODO: maybe improve order here?
+	// NOTE: i am ignoring mathml for now
+	removeElementsByName(document, 'bgsound');
+	removeElementsByName(document, 'button');
+	removeElementsByName(document, 'command');
+	removeElementsByName(document, 'datalist');
+	removeElementsByName(document, 'dialog');
+	removeElementsByName(document, 'fieldset');
+	removeElementsByName(document, 'hr');
+	removeElementsByName(document, 'input');
+	removeElementsByName(document, 'isindex');
+	removeElementsByName(document, 'math');
+	removeElementsByName(document, 'output');
+	removeElementsByName(document, 'optgroup');
+	removeElementsByName(document, 'progress');
+	removeElementsByName(document, 'spacer');
+	removeElementsByName(document, 'xmp');
+
+	// Remove by id
 	removeElementsById(document, 'div', DIV_IDS);
 	removeElementsById(document, 'ul', LIST_IDS);
 	removeElementsById(document, 'aside', ASIDE_IDS);
 	removeElementsById(document, 'section', SECTION_IDS);
+
+	// Remove by class
 	removeElementsByClass(document, 'div', DIV_CLASSES);
 	removeElementsByClass(document, 'a', ANCHOR_CLASSES);
 	removeElementsByClass(document, 'ul', LIST_CLASSES);
@@ -27,10 +129,18 @@ function _filterBlacklistedElements(document) {
 }
 
 // Export global
-this.filterBlacklistedElements = _filterBlacklistedElements;
+this.filterBlacklistedElements = filterBlacklistedElements;
 
-// NOTE: this appears to be the slowest part of the transform
-// It is specifically the call to matches
+
+// Removes all occurrences of the named element from the document
+function removeElementsByName(document, tagName) {
+	const elements = document.getElementsByTagName(tagName);
+	for(let i = elements.length - 1; i > -1; i--) {
+		elements[i].remove();
+	}
+}
+
+// TODO: improve perf, it is specifically the call to matches
 function removeRest(document) {
 	const iterator = document.createNodeIterator(document.documentElement,
 		NodeFilter.SHOW_ELEMENT);
@@ -40,22 +150,6 @@ function removeRest(document) {
 			element.remove();
 		}
 		element = iterator.nextNode();
-	}
-}
-
-// Note: using a nodeiterator yields much better performance
-// than a nodelist here (perf tested). Also, using an express
-// in loop condition appears to yield better performance than
-// passing a filter function to createNodeIterator.
-function removeElementsByName(document) {
-	const it = document.createNodeIterator(document.documentElement,
-		NodeFilter.SHOW_ELEMENT);
-	let element = it.nextNode();
-	while(element) {
-		if(ELEMENT_NAMES.has(element.localName)) {
-			element.remove();
-		}
-		element = it.nextNode();
 	}
 }
 
@@ -72,16 +166,25 @@ function removeElementsById(document, tagName, ids) {
 }
 
 // todo: experiment with element.classList.contains
+// TODO: maybe individual querySelectorAll queries
+// with tagName.className will be faster?
+// this is now slower than removeElementsByName
 function removeElementsByClass(document, tagName, classSet) {
 	const elements = document.getElementsByTagName(tagName);
-	const numElements = elements.length;
-	for(let i = numElements - 1; i > -1; i--) {
-		const element = elements[i];
-		const className = element.className || '';
-		const classList = className.split(' ');
-		const numClasses = classList.length;
-		for(let j = 0; j < numClasses; j++) {
-			const classValue = classList[j];
+	let element = null;
+	let className = null;
+	let classList = null;
+	let numClasses = 0;
+	let j = 0;
+	let classValue = null;
+
+	for(let i = elements.length - 1; i > -1; i--) {
+		element = elements[i];
+		className = element.className || '';
+		classList = className.split(' ');
+		numClasses = classList.length;
+		for(j = 0; j < numClasses; j++) {
+			classValue = classList[j];
 			if(classValue && classSet.has(classValue)) {
 				element.remove();
 				break;
@@ -89,48 +192,6 @@ function removeElementsByClass(document, tagName, classSet) {
 		}
 	}
 }
-
-// Elements that are explicitly blacklisted
-const ELEMENT_NAMES = new Set([
-	'applet',
-	'base',
-	'basefont',
-	'bgsound',
-	'button',
-	'command',
-	'datalist',
-	'dialog',
-	'embed',
-	'fieldset',
-	'footer',
-	'frameset',
-	'head',
-	'header',
-	'hr',
-	'iframe',
-	'input',
-	'isindex',
-	'link',
-	'math',
-	'menu',
-	'menuitem',
-	'meta',
-	'nav',
-	'object',
-	'output',
-	'option',
-	'optgroup',
-	'param',
-	'progress',
-	'script',
-	'select',
-	'spacer',
-	'style',
-	'textarea',
-	'title',
-	'video',
-	'xmp'
-]);
 
 const ANCHOR_CLASSES = new Set([
 	'advertise-with-us', // The Daily Voice
