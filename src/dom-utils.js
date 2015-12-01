@@ -47,3 +47,13 @@ DOMUtils.getAncestors = function(element) {
 	}
 	return parents;
 };
+
+// Removes all occurrences of the named element from the document
+// TODO: look more into document.contains and whether we can avoid removing
+// elements within removed subtrees, and whether the performance is increased
+DOMUtils.removeElementsByName = function(document, tagName) {
+	const elements = document.getElementsByTagName(tagName);
+	for(let i = elements.length - 1; i > -1; i--) {
+		elements[i].remove();
+	}
+};

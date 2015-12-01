@@ -26,26 +26,26 @@ const filter = Array.prototype.filter;
 // Applies a series of transformations to a document in preparation
 // for displaying the document in a view.
 function previewTransform(document) {
+	filterComments(document);
 	filterFrameElements(document);
 	filterScriptElements(document);
 	filterEmbeddedElements(document);
 
 	// The following are misc. elements
 	// TODO: review where these go
-	removeElementsByName(document, 'datalist');
-	removeElementsByName(document, 'dialog');
-	removeElementsByName(document, 'fieldset');
-	removeElementsByName(document, 'isindex');
-	removeElementsByName(document, 'math');
-	removeElementsByName(document, 'output');
-	removeElementsByName(document, 'optgroup');
-	removeElementsByName(document, 'progress');
-	removeElementsByName(document, 'spacer');
-	removeElementsByName(document, 'xmp');
+	DOMUtils.removeElementsByName(document, 'datalist');
+	DOMUtils.removeElementsByName(document, 'dialog');
+	DOMUtils.removeElementsByName(document, 'fieldset');
+	DOMUtils.removeElementsByName(document, 'isindex');
+	DOMUtils.removeElementsByName(document, 'math');
+	DOMUtils.removeElementsByName(document, 'output');
+	DOMUtils.removeElementsByName(document, 'optgroup');
+	DOMUtils.removeElementsByName(document, 'progress');
+	DOMUtils.removeElementsByName(document, 'spacer');
+	DOMUtils.removeElementsByName(document, 'xmp');
 
 	filterMetaElements(document);
 	filterStyleElements(document);
-	filterFormElements(document);
 
 	// TODO: document should be the last argument so that we can support
 	// a partial?
@@ -53,21 +53,36 @@ function previewTransform(document) {
 	filterHiddenElements(document, hiddenExceptions, 0.3);
 	replaceBreakRuleElements(document);
 	filterBoilerplate(document);
-	filterComments(document);
+
+	// Must come after boilerplate because that analyzes form data
+	filterFormElements(document);
 	filterTracerImages(document);
 	normalizeWhitespace(document);
 	trimTextNodes(document);
-	transformScriptAnchors(document);
+	//transformScriptAnchors(document);
 	unwrapInlineElements(document);
 
-	// TODO: document should be the last argument so that we can support
-	// a partial?
-	const retainableAttributes = new Set(['href', 'src']);
-	filterAttributes(document, retainableAttributes);
+	// TODO: the filtering of leaves, list singletons, and trimming probably
+	// all has to occur together, because each removal op modifies the conditions
+	// for later ops (and previous ops). Basically, instead of doing any removal,
+	// we want to analyze every element, and tag it is prunable, and then go
+	// as far up in the hierarchy as we can, aggregating prunables that share
+	// comment ancestors (where no non-prunables also share the same ancestor),
+	// and only then do we remove prunables in a top down fashion
+	// When analyzing each element, we have to go through several special
+	// conditions, such as whether we are at the start of the document or at the
+	// end (well, within the expanding regions from either side).
 
 	filterLeaves(document);
 	unwrapSingletonLists(document);
 	trimDocument(document);
+
+	// side note, this is the final step, because it isn't removing elements
+	// or nodes, just element attributes
+	// TODO: document should be the last argument so that we can support
+	// a partial?
+	const retainableAttributes = new Set(['href', 'src']);
+	filterAttributes(document, retainableAttributes);
 }
 
 // Export
@@ -100,12 +115,62 @@ function filterFrameElements(document) {
 	}
 
 	// If we're still here, make sure these elements are no longer present
-	removeElementsByName(document, 'frameset');
-	removeElementsByName(document, 'frame');
+	DOMUtils.removeElementsByName(document, 'frameset');
+	DOMUtils.removeElementsByName(document, 'frame');
 
 	// TODO: eventually i want to do special handling of
 	// iframes, for now, iframes are not supported.
-	removeElementsByName(document, 'iframe');
+	DOMUtils.removeElementsByName(document, 'iframe');
+}
+
+
+function filterScriptElements(document) {
+
+	// NOTE: misc event handler attributes are handled by
+	// filterAttributes
+
+	// Remove all script tags
+	DOMUtils.removeElementsByName(document, 'script');
+
+
+	// TODO: move javascript anchor handling into here
+
+	// Due to content-loading tricks, noscript requires special handling
+	// e.g. nbcnews.com
+
+	const noscripts = document.querySelectorAll('noscript');
+	const numNoscripts = noscripts.length;
+	let noscript = null;
+	for(let i = 0; i < numNoscripts; i++) {
+		noscript = noscripts[i];
+		// console.debug('Unwrapping noscript %s', noscript.outerHTML);
+		//DOMUtils.unwrap(noscript);
+
+		// The default behavior is now to remove
+		// NOTE: because we are using a static node list generated
+		// by querySelectorAll, noscript is guaranteed defined even
+		// though we are doing mutation during iteration
+		noscript.remove();
+	}
+
+	// Modify anchors that use javascript
+	const RE_JAVASCRIPT_PROTOCOL = /^\s*javascript\s*:/i;
+
+	const anchors = document.body.querySelectorAll('a[href]');
+	const numAnchors = anchors.length;
+	let href = null;
+	let anchor = null;
+	for(let i = 0; i < numAnchors; i++) {
+		anchor = anchors[i];
+		href = anchor.getAttribute('href');
+		if(RE_JAVASCRIPT_PROTOCOL.test(href)) {
+			// console.log('Modifying javascript anchor %s', anchor.outerHTML);
+
+			// We do not remove the attribute, because we want use it as criteria
+			// when analyzing boilerplate. So we just set its value to empty.
+			anchor.setAttribute('href', '');
+		}
+	}
 }
 
 // Filters boilerplate from the document
@@ -148,19 +213,19 @@ function filterMetaElements(document) {
 	// <link> and such is handled by filterStyleElements
 	// <script> and such is handled separately
 
-	removeElementsByName(document, 'head');
+	DOMUtils.removeElementsByName(document, 'head');
 
 	// Remove these elements if located outside of head in malformed html
-	removeElementsByName(document, 'meta');
-	removeElementsByName(document, 'title');
+	DOMUtils.removeElementsByName(document, 'meta');
+	DOMUtils.removeElementsByName(document, 'title');
 }
 
 function filterStyleElements(document) {
 	// We use custom styling, so remove all CSS. Inline style
 	// handled by filterAttributes
-	removeElementsByName(document, 'style');
-	removeElementsByName(document, 'link');
-	removeElementsByName(document, 'basefont');
+	DOMUtils.removeElementsByName(document, 'style');
+	DOMUtils.removeElementsByName(document, 'link');
+	DOMUtils.removeElementsByName(document, 'basefont');
 
 	// Unwrap style elements that may contain content
 	const fontElements = document.querySelectorAll(
@@ -172,12 +237,12 @@ function filterStyleElements(document) {
 
 function filterFormElements(document) {
 	// form unwrap also belongs there
-	removeElementsByName(document, 'select');
-	removeElementsByName(document, 'option');
-	removeElementsByName(document, 'textarea');
-	removeElementsByName(document, 'input');
-	removeElementsByName(document, 'button');
-	removeElementsByName(document, 'command');
+	DOMUtils.removeElementsByName(document, 'select');
+	DOMUtils.removeElementsByName(document, 'option');
+	DOMUtils.removeElementsByName(document, 'textarea');
+	DOMUtils.removeElementsByName(document, 'input');
+	DOMUtils.removeElementsByName(document, 'button');
+	DOMUtils.removeElementsByName(document, 'command');
 
 	// Certain elements need to be unwrapped instead of removed,
 	// because they may contain valuable content. Notably, many html authors
@@ -188,54 +253,24 @@ function filterFormElements(document) {
 	}
 }
 
-function filterScriptElements(document) {
-
-	// NOTE: misc event handler attributes are handled by
-	// filterAttributes
-
-	// Remove all script tags
-	removeElementsByName(document, 'script');
-
-
-	// TODO: move javascript anchor handling into here
-
-	// Due to content-loading tricks, noscript requires special handling
-	// e.g. nbcnews.com
-
-	const noscripts = document.querySelectorAll('noscript');
-	const numNoscripts = noscripts.length;
-	let noscript = null;
-	for(let i = 0; i < numNoscripts; i++) {
-		noscript = noscripts[i];
-		// console.debug('Unwrapping noscript %s', noscript.outerHTML);
-		//DOMUtils.unwrap(noscript);
-
-		// The default behavior is now to remove
-		// NOTE: because we are using a static node list generated
-		// by querySelectorAll, noscript is guaranteed defined even
-		// though we are doing mutation during iteration
-		noscript.remove();
-	}
-}
-
 function filterEmbeddedElements(document) {
 
 	// TODO: move the handling of 'noembed' into here
 
 	// Remove various components
 	// TODO: is object embedded in embed or is embed embedded in object?
-	removeElementsByName(document, 'applet');
-	removeElementsByName(document, 'object');
-	removeElementsByName(document, 'embed');
-	removeElementsByName(document, 'param');
+	DOMUtils.removeElementsByName(document, 'applet');
+	DOMUtils.removeElementsByName(document, 'object');
+	DOMUtils.removeElementsByName(document, 'embed');
+	DOMUtils.removeElementsByName(document, 'param');
 
 	// NOTE: i eventually want to support basic video embedding but
 	// for now it is blacklisted. There should probably be some special
 	// handler for the video element (or more generally, a media element)
 	// including audio
-	removeElementsByName(document, 'video');
-	removeElementsByName(document, 'audio');
-	removeElementsByName(document, 'bgsound');
+	DOMUtils.removeElementsByName(document, 'video');
+	DOMUtils.removeElementsByName(document, 'audio');
+	DOMUtils.removeElementsByName(document, 'bgsound');
 }
 
 // Removes all comments
@@ -442,38 +477,11 @@ function trimTextNodes(document) {
 	}
 }
 
-const RE_JAVASCRIPT_PROTOCOL = /^\s*javascript\s*:/i;
-
-function transformScriptAnchors(document) {
-	'use strict';
-	const anchors = document.querySelectorAll('a');
-	const numAnchors = anchors.length;
-	let anchor = null;
-	let href = null;
-	for(let i = 0; i < numAnchors; i++) {
-		anchor = anchors[i];
-		href = anchor.getAttribute('href');
-		href = (href || '').trim();
-
-		// If it is a script anchor, set href to empty
-		// so that the anchor will be unwrapped
-		if(RE_JAVASCRIPT_PROTOCOL.test(href)) {
-			href = null;
-		}
-
-		// We do not care about other methods of scripting
-		// like onclick attribute, those attributes are removed
-
-		if(!href) {
-			//console.debug('Unwrapping anchor %o', anchor);
-			DOMUtils.unwrap(anchor);
-		}
-	}
-}
-
 // NOTE: This does not contain ALL inline elements, just those we
 // want to unwrap. This is different than the set of inline
 // elements defined for the purpose of trimming text nodes.
+// TODO: some of these would maybe be better handled in other more
+// specialized handlers
 const UNWRAPPABLE_ELEMENTS = new Set([
 	'article',
 	'center',
@@ -505,9 +513,46 @@ const UNWRAPPABLE_ELEMENTS = new Set([
 
 const UNWRAPPABLE_SELECTOR = Array.from(UNWRAPPABLE_ELEMENTS).join(',');
 
-// anchors are handled separately
+
 // fallback elements (e.g. noscript) are handled separately
 function unwrapInlineElements(document) {
+
+	// Special handling for anchors
+	// NOTE: this intentionally breaks in-page anchors
+	// (e.g. name="x" and href="#x")
+	// TODO: what we could do maybe is not unwrap if has name attribute, and
+	// then leave in the anchor
+	const anchors = document.body.querySelectorAll('a');
+	const numAnchors = anchors.length;
+	let anchor = null;
+	let href = null;
+	for(let i = 0; i < numAnchors; i++) {
+		anchor = anchors[i];
+		if(anchor.hasAttribute('href')) {
+			href = anchor.getAttribute('href');
+			href = href || '';
+			href = href.trim();
+			if(!href) {
+				// The anchor had an href, but without a value, so treat it
+				// as nominal, and therefore unwrap
+				DOMUtils.unwrap(anchor);
+			} else {
+				if(href.startsWith('#')) {
+					// It is an in-page anchor that will no longer work, if,
+					// for example, we unwrapped its counterpart
+					// Side note: this is actually dumb, because resolve-document-urls
+					// makes all anchors absolute, so this condition is never triggered
+					// so the test actually needs to be checking against the document's
+					// own url, which isn't available to this function at the moment
+					DOMUtils.unwrap(anchor);
+				}
+			}
+		} else {
+			// It is a nominal anchor, unwrap
+			DOMUtils.unwrap(anchor);
+		}
+	}
+
 	// NOTE: using querySelectorAll because testing revealed that
 	// NodeIterator cannot update its reference node appropriately
 	// as a result of the unwrap.
