@@ -99,6 +99,7 @@ function getDefaultCalamineModels() {
 		modelIntrinsicBias,
 		modelHierarchicalBias,
 		modelImageBias,
-		modelAttributeBias
+		modelAttributeBias,
+		modelMicrodataBias
 	];
 }

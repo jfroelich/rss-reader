@@ -4,16 +4,7 @@
 
 'use strict';
 
-// This is a component of Calamine that weights the content of
-// document elements according to attribute values.
-
-// TODO: i basically need a separate model for analyzing microdata
-// TODO: itemscope?
-// TODO: itemprop="articleBody"?
-// TODO: [role="article"]?
-// TODO: the call to getAttribute('itemprop') was slow, i removed it
-// from here, so i need to return and try to look at how to analyze it again
-// later.
+// Analyzes element attribute values, excluding microdata.
 
 { // BEGIN ANONYMOUS NAMESPACE
 
@@ -33,7 +24,6 @@ const ATTRIBUTE_BIAS = new Map([
 	['author', 20],
 	['block', -5],
 	['blog', 20],
-	['blogpost', 500], // Seen as itemprop value
 	['blogposting', 500],
 	['body', 100],
 	['bodytd', 50],
@@ -56,11 +46,10 @@ const ATTRIBUTE_BIAS = new Map([
 	['comments', -300],
 	['commercial', -500],
 	['community', -100],
-	['complementary', -100], // Seen as role
 	['component', -50],
 	['contact', -50],
 	['content', 100],
-	['contentpane', 200], // Google Plus
+	['contentpane', 200],
 	['contenttools', -50],
 	['contributors', -50],
 	['credit', -50],
@@ -195,35 +184,17 @@ const ATTRIBUTE_BIAS = new Map([
 	['zone', -50]
 ]);
 
-// Microdata schemas
-const MD_SCHEMAS = [
-	'Article',
-	'Blog',
-	'BlogPost',
-	'BlogPosting',
-	'NewsArticle',
-	'ScholarlyArticle',
-	'TechArticle',
-	'WebPage'
-];
-
 function modelAttributeBias(document, scores, annotate) {
-
-	var elements = document.querySelectorAll(
+	const elements = document.querySelectorAll(
 		'aside, div, section, span');
 	Array.prototype.forEach.call(elements,
-		deriveElementAttributeBias.bind(null, scores, annotate));
+		applyElementAttributeBias.bind(null, scores, annotate));
 
 	// Pathological attribute scoring cases
 	applySingleClassBias(document, scores, annotate, 'article', 1000);
 	applySingleClassBias(document, scores, annotate, 'articleText', 1000);
 	applySingleClassBias(document, scores, annotate, 'articleBody', 1000);
-
-	// Microdata attribute scoring
-	MD_SCHEMAS.forEach(applySchemaBias.bind(null,
-		document, scores, annotate));
-
-} // END FUNCTION
+}
 
 // Export into global scope
 this.modelAttributeBias = modelAttributeBias;
@@ -232,7 +203,7 @@ this.modelAttributeBias = modelAttributeBias;
 // TODO: split on case-transition (lower2upper,upper2lower)
 const ATTRIBUTE_SPLIT = /[\s\-_0-9]+/g;
 
-function deriveElementAttributeBias(scores, annotate, element) {
+function applyElementAttributeBias(scores, annotate, element) {
 	const values = [element.id, element.name, element.className].join(' ');
 	if(values.length < 3) return;
 	const tokens = new Set(values.toLowerCase().split(ATTRIBUTE_SPLIT));
@@ -256,17 +227,6 @@ function applySingleClassBias(document, scores, annotate, className, bias) {
 	if(annotate) {
 		let previousBias = parseFloat(element.dataset.attributeBias) || 0.0;
 		element.dataset.attributeBias = previousBias + bias;
-	}
-}
-
-function applySchemaBias(document, scores, annotate, schema) {
-	const selector = '[itemtype="http://schema.org/' + schema + '"]';
-	const elements = document.querySelectorAll(selector);
-	if(elements.length !== 1) return;
-	const element = elements[0];
-	scores.set(element, scores.get(element) + 500);
-	if(annotate) {
-		element.dataset.itemTypeBias = 500;
 	}
 }
 
