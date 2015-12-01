@@ -24,7 +24,6 @@ const MD_SCHEMAS = [
 	'WebPage'
 ];
 
-
 function modelMicrodataBias(document, scores, annotate) {
 
 	MD_SCHEMAS.forEach(applySchemaBias.bind(null,

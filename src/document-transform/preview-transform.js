@@ -8,7 +8,8 @@
 // or maybe Calamine should be modified to include the blacklist filtering
 // because it fits into original goal of boilerplate classification and
 // removal (instead of just identifying a best element)
-
+// neither actually, we do some filtering in blacklist, and we modify calamine
+// do classify certain elements (after finding bestelement) as boilerplate.
 
 // TODO: Regarding dep injection, where should the wiring take place? It is
 // only the slideshow context where this particular composition of transforms
@@ -22,34 +23,38 @@
 
 const filter = Array.prototype.filter;
 
-// TODO: use dependency injection in previewTransform
-
-// TODO: maybe this particular function shouldn't be accepting
-// args for DI, because it is serving a wiring purpose itself
-// and not adding anything special to it. Or rather, we should
-// have a general transform-series function, and then turn this
-// function into a default-setup-style function that creates
-// the default series currently in use.
-
 // Applies a series of transformations to a document in preparation
 // for displaying the document in a view.
 function previewTransform(document) {
-
-	// TODO: invisible elements should be removed prior to calamine
 
 	transformFrameElements(document);
 	transformNoscripts(document);
 	filterBlacklistedElements(document);
 
-	const models = getDefaultCalamineModels();
-	applyCalamine(models, false, document);
-
-	filterComments(document);
-
 	// TODO: document should be the last argument so that we can support
 	// a partial
 	const hiddenExceptions = new Set(['noembed']);
 	filterHiddenElements(document, hiddenExceptions, 0.3);
+
+	// TODO: models was probably a bad name, these are more like
+	// feature extractors or something
+	// TODO: the extractors should probably be generating separate
+	// score maps instead of combining everything into the main
+	// score map. that should not happen until scoring occurs later.
+
+	const models = [
+		modelTextBias,
+		modelIntrinsicBias,
+		modelHierarchicalBias,
+		modelImageBias,
+		modelAttributeBias,
+		modelMicrodataBias
+	];
+
+	const isContent = createCalamineClassifier(models, false, document);
+	filterBoilerplate(document, isContent);
+
+	filterComments(document);
 
 	filterTracerImages(document);
 	replaceBreakRuleElements(document);
@@ -70,6 +75,23 @@ function previewTransform(document) {
 
 // Export
 this.previewTransform = previewTransform;
+
+// Remove elements using the classifier.
+function filterBoilerplate(document, isContent) {
+	// Using a node iterator avoids visiting detached subtrees
+	const elementIterator = document.createNodeIterator(
+		document.documentElement,
+		NodeFilter.SHOW_ELEMENT);
+	let element = elementIterator.nextNode();
+	while(element) {
+		if(!isContent(element)) {
+			element.remove();
+		}
+
+		element = elementIterator.nextNode();
+	}
+}
+
 
 // Inspects a document for the presence of a frameset and lack of a body
 // element, and then removes the frameset and generates a body consisting

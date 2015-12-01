@@ -6,6 +6,9 @@
 
 // Analyzes element attribute values, excluding microdata.
 
+// TODO: some of the tokens in the map are probably single id or
+// singe class clases that do not belong in the map, like articleContent
+
 { // BEGIN ANONYMOUS NAMESPACE
 
 const ATTRIBUTE_BIAS = new Map([
@@ -189,8 +192,6 @@ function modelAttributeBias(document, scores, annotate) {
 		'aside, div, section, span');
 	Array.prototype.forEach.call(elements,
 		applyElementAttributeBias.bind(null, scores, annotate));
-
-	// Pathological attribute scoring cases
 	applySingleClassBias(document, scores, annotate, 'article', 1000);
 	applySingleClassBias(document, scores, annotate, 'articleText', 1000);
 	applySingleClassBias(document, scores, annotate, 'articleBody', 1000);
@@ -208,9 +209,8 @@ function applyElementAttributeBias(scores, annotate, element) {
 	if(values.length < 3) return;
 	const tokens = new Set(values.toLowerCase().split(ATTRIBUTE_SPLIT));
 	let bias = 0;
-	const table = ATTRIBUTE_BIAS;
 	for(let token of tokens) {
-		bias += table.get(token) || 0;
+		bias += ATTRIBUTE_BIAS.get(token) || 0;
 	}
 	if(!bias) return;
 	scores.set(element, scores.get(element) + bias);
@@ -221,7 +221,6 @@ function applyElementAttributeBias(scores, annotate, element) {
 function applySingleClassBias(document, scores, annotate, className, bias) {
 	const elements = document.getElementsByClassName(className);
 	if(elements.length !== 1) return;
-
 	const element = elements[0];
 	scores.set(element, scores.get(element) + bias);
 	if(annotate) {
