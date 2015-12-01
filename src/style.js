@@ -199,8 +199,17 @@ function loadEntryStyles() {
 	s += 'vertical-align: text-top;';
 	//s += 'letter-spacing: -0.03em;';
 	//s += 'word-spacing: -0.5em;';
-	s += 'display:block;';
+	s += 'display: block;';
+
 	s += 'word-wrap: break-word;';
+
+	// This is required to get long words without spaces to break when
+	// within a table cell
+	// http://stackoverflow.com/questions/1258416
+	// http://stackoverflow.com/questions/1057574
+	s += 'white-space: normal;';
+	s += 'word-break: break-all;';
+
 	s += 'padding-top: 20px;';
 	s += 'padding-right: 0px;';
 	s += 'padding-left: 0px;';

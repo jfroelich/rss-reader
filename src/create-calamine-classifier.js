@@ -507,6 +507,7 @@ const DIV_IDS = new Set([
 	'articleIconLinksContainer', // The Daily Mail
 	'articleKeywords', // The Hindu
 	'articlepagerreport', // Chron.com
+	'article_share_print', // lareviewofbooks.org
 	'authorarea', // Global Dispatch
 	'author-byline', // NY Post
 	'blq-foot', // BBC
@@ -598,6 +599,7 @@ const DIV_IDS = new Set([
 	'promo-expanding-region', // The Atlantic
 	'pw-comments-container', // Star Advertiser
 	'reader-comments', // The Daily Mail
+	'recommended_section', // lareviewofbooks.org
 	'registration-notice', // Atlantic City Press
 	'registrationNewVerification', // Joplin Globe
 	'relartstory', // Times of India
@@ -760,6 +762,7 @@ const DIV_CLASSES = [
 	'byline-wrap', // The Wall Street Journal
 	'card-stats', // WFPL
 	'category-nav', // Sparkfun
+	'cb-post-meta', // neurosciencenews.com
 	'cmtLinks', // India Times
 	'cnn_strybtntools', // CNN
 	'cnn_strylftcntnt', // CNN

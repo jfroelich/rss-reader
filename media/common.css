@@ -10,8 +10,8 @@ div.entry a {
 }
 
 div.entry img {
-  border:1px solid #777777;
-  max-width:100%;
+  border: 1px solid #777777;
+  max-width: 100%;
 }
 
 /*div.entry p {
@@ -33,6 +33,17 @@ div.entry span.entry-content img {
   /* Messing around with giving images a 3d effect */
   box-shadow: 0 8px 6px -6px #222222;
 }
+
+/*
+div.entry span.entry-content table {
+  table-layout: fixed;
+}
+
+div.entry span.entry-content td {
+  word-wrap: break-word;
+  white-space: normal;
+}
+*/
 
 /*
 While debugging sanitizer, columns are not being used in
