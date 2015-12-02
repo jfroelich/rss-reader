@@ -9,6 +9,15 @@
 // TODO: some of the tokens in the map are probably single id or
 // singe class clases that do not belong in the map, like articleContent
 
+// TODO: the single class matchers and such are no longer correct to use
+// given that we use the fast path in the main calamine func
+
+// TODO: this should be called an exetractor and return a map or something
+// that contains the extracted features, rather than modifying score
+
+// TODO: this isn't a document transform, calamine is no longer a document
+// transform, so this belongs in a separate location
+
 { // BEGIN ANONYMOUS NAMESPACE
 
 const ATTRIBUTE_BIAS = new Map([

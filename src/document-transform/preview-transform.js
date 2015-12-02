@@ -108,12 +108,27 @@ function filterFrameElements(document) {
 	}
 
 	// If we're still here, make sure these elements are no longer present
-	DOMUtils.removeElementsByName(document, 'frameset');
-	DOMUtils.removeElementsByName(document, 'frame');
-
+	//DOMUtils.removeElementsByName(document, 'frameset');
+	//DOMUtils.removeElementsByName(document, 'frame');
 	// TODO: eventually i want to do special handling of
 	// iframes, for now, iframes are not supported.
-	DOMUtils.removeElementsByName(document, 'iframe');
+	//DOMUtils.removeElementsByName(document, 'iframe');
+
+	// adoptNode does not work on these elements, so hardcode the removal.
+	const framesets = document.querySelectorAll('frameset');
+	for(let i = 0, len = framesets.length; i < len; i++) {
+		framesets[i].remove();
+	}
+
+	const frames = document.querySelectorAll('frame');
+	for(let i = 0, len = frames.length; i < len; i++) {
+		frames[i].remove();
+	}
+
+	const iframes = document.querySelectorAll('iframe');
+	for(let i = 0, len = iframes.length; i < len; i++) {
+		iframes[i].remove();
+	}
 }
 
 function filterScriptElements(document) {
@@ -125,34 +140,21 @@ function filterScriptElements(document) {
 	// DOMUtils.removeElementsByName(document, 'script');
 	// Apparently we cannot use adoptNode on script
 	const scripts = document.querySelectorAll('script');
-	const numScripts = scripts.length;
-	for(let i = 0; i < numScripts; i++) {
+	for(let i = 0, len = scripts.length; i < len; i++) {
 		scripts[i].remove();
 	}
 
 	// Due to content-loading tricks, noscript requires special handling
 	// e.g. nbcnews.com
 	const noscripts = document.querySelectorAll('noscript');
-	const numNoscripts = noscripts.length;
-	let noscript = null;
-	for(let i = 0; i < numNoscripts; i++) {
-		noscript = noscripts[i];
-		// console.debug('Unwrapping noscript %s', noscript.outerHTML);
-		//DOMUtils.unwrap(noscript);
-
-		// The default behavior is now to remove
-		// NOTE: because we are using a static node list generated
-		// by querySelectorAll, noscript is guaranteed defined even
-		// though we are doing mutation during iteration
-		noscript.remove();
+	for(let i = 0, len = noscripts.length; i < len; i++) {
+		noscripts[i].remove();
 	}
 
 	// Disable anchors that use javascript protocol. Keep the href attribute
 	// around for analytical purposes.
-	const anchors = document.body.querySelectorAll('a[href]');
-	const numAnchors = anchors.length;
-	let anchor = null;
-	for(let i = 0; i < numAnchors; i++) {
+	const anchors = document.querySelectorAll('a[href]');
+	for(let i = 0, len = anchors.length, anchor; i < len; i++) {
 		anchor = anchors[i];
 		if(anchor.protocol === 'javascript:') {
 			anchor.setAttribute('href', '');
@@ -165,45 +167,64 @@ function filterMetaElements(document) {
 	// <base> is filtered by resolve-document-urls
 	// <link> and such is handled by filterStyleElements
 	// <script> and such is handled separately
-	DOMUtils.removeElementsByName(document, 'head');
+
 	// Remove these elements if located outside of head in malformed html
-	DOMUtils.removeElementsByName(document, 'meta');
-	DOMUtils.removeElementsByName(document, 'title');
-}
 
-function filterStyleElements(document) {
-	// We use custom styling, so remove all CSS. Inline style
-	// handled by filterAttributes
-	DOMUtils.removeElementsByName(document, 'style');
-	DOMUtils.removeElementsByName(document, 'link');
-	DOMUtils.removeElementsByName(document, 'basefont');
+	//DOMUtils.removeElementsByName(document, 'head');
+	//DOMUtils.removeElementsByName(document, 'meta');
+	//DOMUtils.removeElementsByName(document, 'title');
 
-	// Unwrap style elements that may contain content
-	const fontElements = document.querySelectorAll(
-		'big, blink, font, plaintext, small, tt');
-	for(let i = 0, len = fontElements.length; i < len; i++) {
-		DOMUtils.unwrap(fontElements[i]);
+	const heads = document.querySelectorAll('head');
+	for(let i = 0, len = heads.length; i < len; i++) {
+		heads[i].remove();
+	}
+
+	const metas = document.querySelectorAll('meta');
+	for(let i = 0, len = metas.length; i < len; i++) {
+		metas[i].remove();
+	}
+
+	const titles = document.querySelectorAll('title');
+	for(let i = 0, len = titles.length; i < len; i++) {
+		titles[i].remove();
 	}
 }
 
+function filterStyleElements(document) {
+	// Inline style handled by filterAttributes
+	//DOMUtils.removeElementsByName(document, 'style');
+	//DOMUtils.removeElementsByName(document, 'link');
+	//DOMUtils.removeElementsByName(document, 'basefont');
+
+	const styles = document.querySelectorAll('style, link, basefont');
+	for(let i = 0, len = styles.length; i < len; i++) {
+		styles[i].remove();
+	}
+
+	const elements = document.querySelectorAll(
+		'big, blink, font, plaintext, small, tt');
+	for(let i = 0, len = elements.length; i < len; i++) {
+		DOMUtils.unwrap(elements[i]);
+	}
+}
+
+function getStyle(element) {
+	return element.style;
+}
 
 // Removes hidden elements
 function filterHiddenElements(document) {
-	const garbage = document.implementation.createHTMLDocument();
-	const elements = document.body.querySelectorAll('*');
-	const numElements = elements.length;
-	let element = null;
-	let style = null;
-	for(let i = 0; i < numElements; i++) {
-		element = elements[i];
-		if(element.ownerDocument === document) {
-			style = element.style;
-			if(style.display === 'none' ||
-				style.visibility === 'hidden' ||
-				style.opacity === '0.0') {
-				garbage.adoptNode(element);
-			}
-		}
+	// Due to performance issues we sacrifice accuracy for speed here. There
+	// is not much of a drawback to leaving hidden elements in the output anyway.
+	const elements = document.querySelectorAll(
+		'[style*="display:none"],' +
+		'[style*="display: none"],' +
+		'[style*="visibility:hidden"],' +
+		'[style*="visibility: hidden"],' +
+		'[style*="opacity:0.0"],' +
+		'[style*="opacity: 0.0"]');
+	for(let i = 0, len = elements.length, element; i < len; i++) {
+		elements[i].remove();
 	}
 }
 
@@ -236,6 +257,9 @@ function filterBoilerplate(document) {
 		if(element.ownerDocument === document) {
 			if(!isContent(element)) {
 				garbage.adoptNode(element);
+
+				// Quick hack to fix issue with unadoptables
+				element.remove();
 			}
 		}
 	}
@@ -256,8 +280,11 @@ function filterFormElements(document) {
 	}
 
 
-	DOMUtils.moveElementsByName(document, garbage, 'option');
-
+	//DOMUtils.moveElementsByName(document, garbage, 'option');
+	const options = document.querySelectorAll('option');
+	for(let i = 0, len = options.length; i < len; i++) {
+		options[i].remove();
+	}
 
 	// TODO: this is somehow still not happening
 	// Something strange is happening here, I am removing a text area
@@ -267,19 +294,34 @@ function filterFormElements(document) {
 	// error case:
 	//http://www.pyimagesearch.com/2015/11/30/
 	// detecting-machine-readable-zones-in-passport-images/
-	const textAreaElements = document.querySelectorAll('textarea');
+	const textareas = document.querySelectorAll('textarea');
 	let textArea = null;
-	for(let i = 0, len = textAreaElements.length; i < len; i++) {
-		textArea = textAreaElements[i];
+	for(let i = 0, len = textareas.length; i < len; i++) {
+		textArea = textareas[i];
 		textArea.textContext = '';
 		// console.debug('Removing %s', textArea.outerHTML);
 		textArea.remove();
 	}
 
 
-	DOMUtils.removeElementsByName(document, 'input');
-	DOMUtils.removeElementsByName(document, 'button');
-	DOMUtils.removeElementsByName(document, 'command');
+	//DOMUtils.removeElementsByName(document, 'input');
+	const inputs = document.querySelectorAll('input');
+	for(let i = 0, len = inputs.length; i < len; i++) {
+		inputs[i].remove();
+	}
+
+	//DOMUtils.removeElementsByName(document, 'button');
+	// adoptNode does not work with button
+	const buttons = document.querySelectorAll('button');
+	for(let i = 0, len = buttons.length; i < len; i++) {
+		buttons[i].remove();
+	}
+
+	//DOMUtils.removeElementsByName(document, 'command');
+	const commands = document.querySelectorAll('command');
+	for(let i = 0, len = commands.length; i < len; i++) {
+		commands[i].remove();
+	}
 
 	// Certain elements need to be unwrapped instead of removed,
 	// because they may contain valuable content. Notably, many html authors
@@ -296,18 +338,18 @@ function filterEmbeddedElements(document) {
 
 	// Remove various components
 	// TODO: is object embedded in embed or is embed embedded in object?
-	DOMUtils.removeElementsByName(document, 'applet');
-	DOMUtils.removeElementsByName(document, 'object');
-	DOMUtils.removeElementsByName(document, 'embed');
-	DOMUtils.removeElementsByName(document, 'param');
+	DOMUtils.removeElementsBySelector(document, 'applet');
+	DOMUtils.removeElementsBySelector(document, 'object');
+	DOMUtils.removeElementsBySelector(document, 'embed');
+	DOMUtils.removeElementsBySelector(document, 'param');
 
 	// NOTE: i eventually want to support basic video embedding but
 	// for now it is blacklisted. There should probably be some special
 	// handler for the video element (or more generally, a media element)
 	// including audio
-	DOMUtils.removeElementsByName(document, 'video');
-	DOMUtils.removeElementsByName(document, 'audio');
-	DOMUtils.removeElementsByName(document, 'bgsound');
+	DOMUtils.removeElementsBySelector(document, 'video');
+	DOMUtils.removeElementsBySelector(document, 'audio');
+	DOMUtils.removeElementsBySelector(document, 'bgsound');
 }
 
 // Removes all comments
@@ -364,16 +406,25 @@ function replaceBreakRuleElements(document) {
 	}
 }
 
-const RE_NON_BREAKING_SPACE = /&nbsp;/g;
-
-// TODO: what other whitespace transformations do we care about?
 function normalizeWhitespace(document) {
-
 	const it = document.createNodeIterator(document.documentElement,
 		NodeFilter.SHOW_TEXT);
 	let node = it.nextNode();
+	let value = null;
 	while(node) {
-		node.nodeValue = node.nodeValue.replace(RE_NON_BREAKING_SPACE, ' ');
+		value = node.nodeValue;
+
+		// Skip over a common whitespace nodes
+		if(value === '\n' ||
+			value === '\n\t' ||
+			value === '\n\t\t') {
+			node = it.nextNode();
+			continue;
+		}
+
+		// Normalize non-breaking space entity
+		node.nodeValue = value.replace(/&nbsp;/g, ' ');
+
 		node = it.nextNode();
 	}
 }

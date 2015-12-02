@@ -30,9 +30,11 @@ function createCalamineClassifier(extractors, annotate, document) {
 
 	// Start by looking for an obvious indicator of the root element before
 	// any real analysis is done, and if found, exit early
-	let bestElement = findFastBestElement(document);
+	let bestElement = fastFindBestElement(document);
+	let flagged = null;
 	if(bestElement) {
-		return isContentElement.bind(this, bestElement);
+		flagged = classifyBoilerplate(bestElement);
+		return isContentElement.bind(this, bestElement, flagged);
 	}
 
 	// Prefill scores map used by various feature extractors
@@ -58,8 +60,6 @@ function createCalamineClassifier(extractors, annotate, document) {
 
 	// Find the highest scoring element
 	// TODO: use destructuring when supported
-	// Default to body, and also ensure bestElement is initially defined
-	// in the following loop (otherwise, it is never defined)
 	bestElement = document.body;
 	let bestScore = scores.get(bestElement);
 	for(let entry of scores) {
@@ -69,14 +69,16 @@ function createCalamineClassifier(extractors, annotate, document) {
 		}
 	}
 
+	// Classify the elements within the bestElement
+	flagged = classifyBoilerplate(bestElement);
 	// Return a classifier function
-	return isContentElement.bind(this, bestElement);
+	return isContentElement.bind(this, bestElement, flagged);
 }
 
 // Export global
 this.createCalamineClassifier = createCalamineClassifier;
 
-const KNOWN_CONTENT_SIGNATURES = [
+const ROOT_SIGNATURES = [
   'article', // HTML5 semantic content
   '.hentry', // WordPress, microformats.org
   '.entry-content', // microformats.org
@@ -100,13 +102,13 @@ const KNOWN_CONTENT_SIGNATURES = [
   '#WNStoryBody' // TypePad blog articles
 ];
 
-const NUM_SIGNATURES = KNOWN_CONTENT_SIGNATURES.length;
+const NUM_SIGNATURES = ROOT_SIGNATURES.length;
 
 // Looks for obvious best elements based on known content signatures
-function findFastBestElement(document) {
+function fastFindBestElement(document) {
 	let elements = null;
 	for(let i = 0; i < NUM_SIGNATURES; i++) {
-		elements = document.body.querySelectorAll(KNOWN_CONTENT_SIGNATURES[i]);
+		elements = document.body.querySelectorAll(ROOT_SIGNATURES[i]);
 		if(elements.length === 1) {
 			return elements[0];
 		}
@@ -120,15 +122,48 @@ function isAlwaysContentElement(element) {
 
 // The function returned by createCalamineClassifier
 // TODO: look into using Node.compareDocumentPosition instead of contains
-function isContentElement(bestElement, element) {
+function isContentElement(bestElement, flagged, element) {
 	return element === bestElement ||
 		element.contains(bestElement) ||
 		(bestElement.contains(element) &&
-			!isBoilerplateElement(element));
+			!flagged.has(element));
 }
 
 function isArticleElement(element) {
 	return element.localName === 'article';
+}
+
+// Returns a set containing all elements within the root element
+// classified as boilerplate. Note that an element is also considered
+// boilerplate if it is a descendant of a boilerplate element.
+// TODO: is this a proper place to use a WeakSet?
+// TODO: consider in-document title as boilerplate if external title is known
+function classifyBoilerplate(rootElement) {
+	const flagged = new WeakSet();
+	const elements = rootElement.getElementsByTagName('*');
+	let subElements = null;
+	let numSubs = 0;
+	let j = 0;
+
+	for(let i = 0, len = elements.length, element; i < len; i++) {
+		element = elements[i];
+
+		// If it is a sub element added from a previous iteration, skip
+		if(flagged.has(element)) {
+			continue;
+		}
+
+		if(isBoilerplateElement(element)) {
+			flagged.add(element);
+
+			// Flag all sub elements so we can later skip them in the outer loop
+			subElements = element.getElementsByTagName('*');
+			for(j = 0, numSubs = subElements.length; j < numSubs; j++) {
+				flagged.add(subElements[j]);
+			}
+		}
+	}
+	return flagged;
 }
 
 // TODO: eventually improve the logic here, it is pretty ugly. Maybe we

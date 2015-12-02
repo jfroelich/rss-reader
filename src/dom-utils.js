@@ -50,8 +50,18 @@ DOMUtils.getAncestors = function(element) {
 
 // Removes all occurrences of the named element from the document
 DOMUtils.removeElementsByName = function(document, tagName) {
-	var garbage = document.implementation.createHTMLDocument();
-	DOMUtils.moveElementsByName(document, garbage, tagName);
+	// NOTE: this ONLY works in reverse. Iterating forward is completely borked
+	const elements = document.getElementsByTagName(tagName);
+	for(let i = elements.length - 1; i > -1; i--) {
+		elements[i].remove();
+	}
+};
+
+DOMUtils.removeElementsBySelector = function(document, selector) {
+	const elements = document.querySelectorAll(selector);
+	for(let i = 0, len = elements.length; i < len; i++) {
+		elements[i].remove();
+	}
 };
 
 DOMUtils.moveElementsByName = function(sourceDocument, destinationDocument,
