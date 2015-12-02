@@ -24,13 +24,13 @@ const MD_SCHEMAS = [
 	'WebPage'
 ];
 
-function modelMicrodataBias(document, scores, annotate) {
+function analyzeMicrodata(document, scores, annotate) {
 
 	MD_SCHEMAS.forEach(applySchemaBias.bind(null,
 		document, scores, annotate));
 }
 
-this.modelMicrodataBias = modelMicrodataBias;
+this.analyzeMicrodata = analyzeMicrodata;
 
 function applySchemaBias(document, scores, annotate, schema) {
 	const selector = '[itemtype="http://schema.org/' + schema + '"]';

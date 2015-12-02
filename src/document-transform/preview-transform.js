@@ -2,21 +2,6 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: apply the blacklist filter after calamine instead of before
-// maybe the blacklist filter should only flag elements instead
-// of doing dom modification at first, and then do deferred manipulation?
-// or maybe Calamine should be modified to include the blacklist filtering
-// because it fits into original goal of boilerplate classification and
-// removal (instead of just identifying a best element)
-// neither actually, we do some filtering in blacklist, and we modify calamine
-// do classify certain elements (after finding bestelement) as boilerplate.
-
-// TODO: Regarding dep injection, where should the wiring take place? It is
-// only the slideshow context where this particular composition of transforms
-// occurs, so maybe this shouldn't be doing the wiring itself, and instead
-// just be a file that contains a host of transforms, and the actual composition
-// should occur in the view code.
-
 'use strict';
 
 { // BEGIN ANONYMOUS NAMESPACE
@@ -53,8 +38,6 @@ function previewTransform(document) {
 
 	// Must come after boilerplate because that analyzes form data
 	filterFormElements(document);
-
-
 	filterTracerImages(document);
 	normalizeWhitespace(document);
 	trimTextNodes(document);
@@ -107,14 +90,8 @@ function filterFrameElements(document) {
 		return;
 	}
 
-	// If we're still here, make sure these elements are no longer present
-	//DOMUtils.removeElementsByName(document, 'frameset');
-	//DOMUtils.removeElementsByName(document, 'frame');
-	// TODO: eventually i want to do special handling of
-	// iframes, for now, iframes are not supported.
-	//DOMUtils.removeElementsByName(document, 'iframe');
+	// TODO: special handling of iframes
 
-	// adoptNode does not work on these elements, so hardcode the removal.
 	const framesets = document.querySelectorAll('frameset');
 	for(let i = 0, len = framesets.length; i < len; i++) {
 		framesets[i].remove();
@@ -214,15 +191,16 @@ function getStyle(element) {
 
 // Removes hidden elements
 function filterHiddenElements(document) {
-	// Due to performance issues we sacrifice accuracy for speed here. There
-	// is not much of a drawback to leaving hidden elements in the output anyway.
+	// NOTE: sacrificed accuracy for better performance
+	// NOTE: this only applies to inline styles, not computed style
 	const elements = document.querySelectorAll(
 		'[style*="display:none"],' +
 		'[style*="display: none"],' +
 		'[style*="visibility:hidden"],' +
 		'[style*="visibility: hidden"],' +
 		'[style*="opacity:0.0"],' +
-		'[style*="opacity: 0.0"]');
+		'[style*="opacity: 0.0"],' +
+		'[style*="opacity:0;"]');
 	for(let i = 0, len = elements.length, element; i < len; i++) {
 		elements[i].remove();
 	}
@@ -230,24 +208,7 @@ function filterHiddenElements(document) {
 
 // Filters boilerplate from the document
 function filterBoilerplate(document) {
-
-	// TODO: models was probably a bad name, these are more like
-	// feature extractors or something
-	// TODO: the extractors should probably be generating separate
-	// score maps instead of combining everything into the main
-	// score map. that should not happen until scoring occurs later.
-
-	const models = [
-		modelTextBias,
-		modelIntrinsicBias,
-		modelHierarchicalBias,
-		modelImageBias,
-		modelAttributeBias,
-		modelMicrodataBias
-	];
-
-	const isContent = createCalamineClassifier(models, false, document);
-
+	var isContent = createCalamineClassifier(false, document);
 	var garbage = document.implementation.createHTMLDocument();
 	var elements = document.querySelectorAll('*');
 	var numElements = elements.length;
@@ -259,12 +220,12 @@ function filterBoilerplate(document) {
 				garbage.adoptNode(element);
 
 				// Quick hack to fix issue with unadoptables
+				// TODO: check if this is still needed
 				element.remove();
 			}
 		}
 	}
 }
-
 
 function filterFormElements(document) {
 

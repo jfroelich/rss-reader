@@ -20,6 +20,47 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
+function analyzeAttributes(document, scores, annotate) {
+	const elements = document.querySelectorAll(
+		'aside, div, section, span');
+	Array.prototype.forEach.call(elements,
+		applyElementAttributeBias.bind(null, scores, annotate));
+	applySingleClassBias(document, scores, annotate, 'article', 1000);
+	applySingleClassBias(document, scores, annotate, 'articleText', 1000);
+	applySingleClassBias(document, scores, annotate, 'articleBody', 1000);
+}
+
+this.analyzeAttributes = analyzeAttributes;
+
+// Looks for delimiting characters
+// TODO: split on case-transition (lower2upper,upper2lower)
+const ATTRIBUTE_SPLIT = /[\s\-_0-9]+/g;
+
+function applyElementAttributeBias(scores, annotate, element) {
+	const values = [element.id, element.name, element.className].join(' ');
+	if(values.length < 3) return;
+	const tokens = new Set(values.toLowerCase().split(ATTRIBUTE_SPLIT));
+	let bias = 0;
+	for(let token of tokens) {
+		bias += ATTRIBUTE_BIAS.get(token) || 0;
+	}
+	if(!bias) return;
+	scores.set(element, scores.get(element) + bias);
+	if(annotate)
+		element.dataset.attributeBias = bias.toString();
+}
+
+function applySingleClassBias(document, scores, annotate, className, bias) {
+	const elements = document.getElementsByClassName(className);
+	if(elements.length !== 1) return;
+	const element = elements[0];
+	scores.set(element, scores.get(element) + bias);
+	if(annotate) {
+		let previousBias = parseFloat(element.dataset.attributeBias) || 0.0;
+		element.dataset.attributeBias = previousBias + bias;
+	}
+}
+
 const ATTRIBUTE_BIAS = new Map([
 	['about', -35],
 	['ad', -100],
@@ -195,47 +236,5 @@ const ATTRIBUTE_BIAS = new Map([
 	['wnstorybody', 1000],
 	['zone', -50]
 ]);
-
-function modelAttributeBias(document, scores, annotate) {
-	const elements = document.querySelectorAll(
-		'aside, div, section, span');
-	Array.prototype.forEach.call(elements,
-		applyElementAttributeBias.bind(null, scores, annotate));
-	applySingleClassBias(document, scores, annotate, 'article', 1000);
-	applySingleClassBias(document, scores, annotate, 'articleText', 1000);
-	applySingleClassBias(document, scores, annotate, 'articleBody', 1000);
-}
-
-// Export into global scope
-this.modelAttributeBias = modelAttributeBias;
-
-// Looks for delimiting characters
-// TODO: split on case-transition (lower2upper,upper2lower)
-const ATTRIBUTE_SPLIT = /[\s\-_0-9]+/g;
-
-function applyElementAttributeBias(scores, annotate, element) {
-	const values = [element.id, element.name, element.className].join(' ');
-	if(values.length < 3) return;
-	const tokens = new Set(values.toLowerCase().split(ATTRIBUTE_SPLIT));
-	let bias = 0;
-	for(let token of tokens) {
-		bias += ATTRIBUTE_BIAS.get(token) || 0;
-	}
-	if(!bias) return;
-	scores.set(element, scores.get(element) + bias);
-	if(annotate)
-		element.dataset.attributeBias = bias.toString();
-}
-
-function applySingleClassBias(document, scores, annotate, className, bias) {
-	const elements = document.getElementsByClassName(className);
-	if(elements.length !== 1) return;
-	const element = elements[0];
-	scores.set(element, scores.get(element) + bias);
-	if(annotate) {
-		let previousBias = parseFloat(element.dataset.attributeBias) || 0.0;
-		element.dataset.attributeBias = previousBias + bias;
-	}
-}
 
 } // END ANONYMOUS NAMESPACE

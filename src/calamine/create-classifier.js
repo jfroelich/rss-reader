@@ -6,30 +6,13 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-// Filters boilerplate content. Internally, this starts by extracting various
-// features of elements, such as how much content an element contains outside of
-// links in comparison to content within links, or where the element is
-// located in the DOM. The features assign a weight to each element representing
-// how likely the element is the root element under which most of the document's
-// valuable content is located. Then a particular root element is chosen. A
-// classifier function is returned that analyzes a given element (assumed to
-// be from the same document), looking at whether the element falls within
-// the root element and does not have other indications of boilerplate.
-// @param models {Array} an array of modeling functions
-// @param document {HTMLDocument} the document to analyze
-// @param annotate {boolean} whether to annotate elements with derived info
-// @return {Function} a function that accepts an element and returns true
-// if the element is content or false if the element is boilerplate
-function createCalamineClassifier(extractors, annotate, document) {
+// Creates a boilerplate filtering function
+function createCalamineClassifier(annotate, document) {
 
-	// Require a body that is not a frameset, falling back to a fully-permissive
-	// dummy classifier
 	if(!document.querySelector('body')) {
 		return isAlwaysContentElement;
 	}
 
-	// Start by looking for an obvious indicator of the root element before
-	// any real analysis is done, and if found, exit early
 	let bestElement = fastFindBestElement(document);
 	let flagged = null;
 	if(bestElement) {
@@ -45,9 +28,23 @@ function createCalamineClassifier(extractors, annotate, document) {
 		scores.set(element, 0.0);
 	});
 
-	// Extract various features in succession
-	for(let extractFeatures of extractors) {
-		extractFeatures(document, scores, annotate);
+	// side note: annotate not passed into analyze, so need
+	// to annotate separately
+	//	element.dataset.textBias = bias.toFixed(2);
+
+	const textScores = analyzeText(document);
+	analyzeTypes(document, scores, annotate);
+	analyzeTopology(document, scores, annotate);
+	analyzeImages(document, scores, annotate);
+	analyzeAttributes(document, scores, annotate);
+	analyzeMicrodata(document, scores, annotate);
+
+	// Integrate the scores
+	for(let entry of textScores) {
+		var textElement = entry[0];
+		var textScore = entry[1];
+		var currentTotalScore = scores.get(textElement);
+		scores.set(textElement, currentTotalScore + textScore);
 	}
 
 	// Optionally record the extracted features within the document itself
@@ -79,9 +76,9 @@ function createCalamineClassifier(extractors, annotate, document) {
 this.createCalamineClassifier = createCalamineClassifier;
 
 const ROOT_SIGNATURES = [
-  'article', // HTML5 semantic content
-  '.hentry', // WordPress, microformats.org
-  '.entry-content', // microformats.org
+  'article',
+  '.hentry',
+  '.entry-content',
   '#article',
   '.articleText',
   '.articleBody',
@@ -99,7 +96,7 @@ const ROOT_SIGNATURES = [
   '[itemtype="http://schema.org/WebPage"]',
   '[itemtype="http://schema.org/TechArticle"]',
   '[itemtype="http://schema.org/ScholarlyArticle"]',
-  '#WNStoryBody' // TypePad blog articles
+  '#WNStoryBody'
 ];
 
 const NUM_SIGNATURES = ROOT_SIGNATURES.length;
@@ -823,6 +820,7 @@ const DIV_CLASSES = [
 	'articleOptions', // Mercury News
 	'article-pagination', // UT San Diego
 	'article-print-url', // USA Today
+	'article-refers', // theawl.com
 	'articleRelates', // Baltimore Sun
 	'articleServices', // Ha'Aretz
 	'articleShareBottom', // Fox Sports
@@ -948,6 +946,7 @@ const DIV_CLASSES = [
 	'group-link-categories', // Symmetry Magazine
 	'group-links', // Symmetry Magazine
 	'gsharebar', // entrepeneur.com
+	'footer__body', // theawl.com
 	'footerlinks', // VOA News
 	'further-reading', // ProPublica
 	'gallery-sidebar-ad', // USA Today
@@ -1130,6 +1129,7 @@ const DIV_CLASSES = [
 	'share-body-bottom', // BBC
 	'share-btn', // Christian Times
 	'share-buttons', // Quantstart
+	'share-butts', // theawl.com
 	'share-container', // Business Insider
 	'share-count-container', // CNBC
 	'sharedaddy', // Fortune

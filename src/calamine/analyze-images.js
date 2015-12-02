@@ -7,12 +7,9 @@
 { // BEGIN ANONYMOUS NAMESPACE
 
 // Bias image containers
-function modelImageBias(document, scores, annotate) {
+function analyzeImages(document, scores, annotate) {
 
-	// http://jsperf.com/document-images-vs-getelementsbytagname-img/6
-	// It looks like accessing document.images is slightly faster
-
-	const images = document.body.getElementsByTagName('img');
+	const images = document.getElementsByTagName('img');
 	const numImages = images.length;
 	let image = null;
 	let parent = null;
@@ -72,7 +69,6 @@ function modelImageBias(document, scores, annotate) {
 	}
 }
 
-this.modelImageBias = modelImageBias;
-
+this.analyzeImages = analyzeImages;
 
 } // END ANONYMOUS NAMESPACE

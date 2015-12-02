@@ -29,7 +29,7 @@ const UPWARD_BIAS = new Map([
 	['ul', -20]
 ]);
 
-function modelHierarchicalBias(document, scores, annotate) {
+function analyzeTopology(document, scores, annotate) {
   // TODO: use for..of once Chrome supports NodeList iteration
   forEach.call(document.querySelectorAll(
     'li *, ol *, ul *, dd *, dl *, dt *'),
@@ -44,7 +44,7 @@ function modelHierarchicalBias(document, scores, annotate) {
     biasParent.bind(null, scores, annotate));
 }
 
-this.modelHierarchicalBias = modelHierarchicalBias;
+this.analyzeTopology = analyzeTopology;
 
 function penalizeListDescendant(scores, annotate, element) {
   scores.set(element, scores.get(element) - 100.0);

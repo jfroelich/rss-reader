@@ -6,49 +6,36 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-// Calculates and records the text bias for elements. The text bias
-// metric is adapted from the algorithm described in the paper
-// "Boilerplate Detection using Shallow Text Features". See
+// Calculates and records the text bias for elements. The text bias metric is
+// adapted from the paper "Boilerplate Detection using Shallow Text Features".
 // See http://www.l3s.de/~kohlschuetter/boilerplate.
 
 // NOTE: const/let is causing de-opts, so using var
 
-function modelTextBias(document, scores, annotate) {
-
+function analyzeText(document) {
+	var scores = new Map();
 	var textLengths = deriveTextLength(document);
 	var anchorLengths = deriveAnchorLength(document, textLengths);
-
 	var elements = document.getElementsByTagName('*');
-	var numElements = elements.length;
-
-	var element = null;
-	var length = 0;
-	var bias = 0.0;
-	var anchorLength = 0;
-
-  // TODO: revert to using forEach for this, I do not think there
-  // is a significant performance hit
-
-	for(let i = 0; i < numElements; i++) {
-		element = elements[i];
-		length = textLengths.get(element);
-		if(!length) continue;
-		anchorLength = anchorLengths.get(element) || 0;
-
-		bias = (0.25 * length) - (0.7 * anchorLength);
-		// Tentatively cap the bias (empirical)
-		bias = Math.min(4000.0, bias);
-		if(!bias) continue;
-		scores.set(element, scores.get(element) + bias);
-
-		if(annotate) {
-			element.dataset.textBias = bias.toFixed(2);
-		}
-	}
+	var forEach = Array.prototype.forEach;
+	var derive = deriveTextScore.bind(this, scores, textLengths, anchorLengths);
+	forEach.call(elements, derive);
+	return scores;
 }
 
 // Export global
-this.modelTextBias = modelTextBias;
+this.analyzeText = analyzeText;
+
+function deriveTextScore(scores, textLengths, anchorLengths, element) {
+	var length = textLengths.get(element);
+	if(!length) return;
+	var anchorLength = anchorLengths.get(element) || 0;
+	var weight = (0.25 * length) - (0.7 * anchorLength);
+	// Cap the score (??)
+	weight = Math.min(4000.0, weight);
+	if(!weight) return;
+	scores.set(element, (scores.get(element) || 0.0) + weight);
+}
 
 const RE_WHITESPACE = /\s|&nbsp;/g;
 

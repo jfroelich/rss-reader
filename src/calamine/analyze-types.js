@@ -4,10 +4,15 @@
 
 'use strict';
 
+// NOTE: chrome is warning about de-opts, using var
+// TODO: this should be refactored to focus on just finding the best
+// body element. Some of its logic can be moved into the boilerplate
+// classifier
+
+
 { // BEGIN ANONYMOUS NAMESPACE
 
-// NOTE: chrome is warning about de-opts, using var
-function modelIntrinsicBias(document, scores, annotate) {
+function analyzeTypes(document, scores, annotate) {
 	var elements = document.getElementsByTagName('*');
 	var numElements = elements.length;
 
@@ -42,7 +47,7 @@ function modelIntrinsicBias(document, scores, annotate) {
 	}
 }
 
-this.modelIntrinsicBias = modelIntrinsicBias;
+this.analyzeTypes = analyzeTypes;
 
 const INTRINSIC_BIAS = new Map([
 	['article', 200],
