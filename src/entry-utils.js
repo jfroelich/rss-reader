@@ -4,12 +4,17 @@
 
 'use strict';
 
+// TODO: i need a separate function for just fetching web pages, this
+// should just be calling that. in fact this lib should generally be
+// deprecated
+
 const EntryUtils = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
 
 // Given an array of unique entries, returns a new array of
 // unique entries (compared by entry.link)
+// TODO: roll this into the caller code and deprecate
 // NOTE: consider just returning Iterable or deprecating this
 // NOTE that Array.from(distinct.values()) also works
 EntryUtils.getUniqueEntries = function(entries) {
@@ -19,6 +24,10 @@ EntryUtils.getUniqueEntries = function(entries) {
 	return [...distinct.values()];
 };
 
+
+// TODO: this should delegate most of its processing to a separate lib
+// that fetches any web page and does page processing. all this does is
+// wrap that and customize it to augmenting an entry's content.
 // Replaces the content property of an entry with the full text of its
 // corresponding link url
 // TODO: I'd prefer this function pass back any errors to the callback. This

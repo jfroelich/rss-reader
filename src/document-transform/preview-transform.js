@@ -33,33 +33,31 @@ function previewTransform(document) {
 
 	// The following are misc. elements
 	// TODO: review where these go
-	DOMUtils.removeElementsByName(document, 'datalist');
-	DOMUtils.removeElementsByName(document, 'dialog');
-	DOMUtils.removeElementsByName(document, 'fieldset');
-	DOMUtils.removeElementsByName(document, 'isindex');
-	DOMUtils.removeElementsByName(document, 'math');
-	DOMUtils.removeElementsByName(document, 'output');
-	DOMUtils.removeElementsByName(document, 'optgroup');
-	DOMUtils.removeElementsByName(document, 'progress');
-	DOMUtils.removeElementsByName(document, 'spacer');
-	DOMUtils.removeElementsByName(document, 'xmp');
+	var garbage = document.implementation.createHTMLDocument();
+	DOMUtils.moveElementsByName(document, garbage, 'datalist');
+	DOMUtils.moveElementsByName(document, garbage, 'dialog');
+	DOMUtils.moveElementsByName(document, garbage, 'fieldset');
+	DOMUtils.moveElementsByName(document, garbage, 'isindex');
+	DOMUtils.moveElementsByName(document, garbage, 'math');
+	DOMUtils.moveElementsByName(document, garbage, 'output');
+	DOMUtils.moveElementsByName(document, garbage, 'optgroup');
+	DOMUtils.moveElementsByName(document, garbage, 'progress');
+	DOMUtils.moveElementsByName(document, garbage, 'spacer');
+	DOMUtils.moveElementsByName(document, garbage, 'xmp');
 
 	filterMetaElements(document);
 	filterStyleElements(document);
-
-	// TODO: document should be the last argument so that we can support
-	// a partial?
-	const hiddenExceptions = new Set(['noembed']);
-	filterHiddenElements(document, hiddenExceptions, 0.3);
+	filterHiddenElements(document);
 	replaceBreakRuleElements(document);
 	filterBoilerplate(document);
 
 	// Must come after boilerplate because that analyzes form data
 	filterFormElements(document);
+
+
 	filterTracerImages(document);
 	normalizeWhitespace(document);
 	trimTextNodes(document);
-	//transformScriptAnchors(document);
 	unwrapInlineElements(document);
 
 	// TODO: the filtering of leaves, list singletons, and trimming probably
@@ -77,12 +75,7 @@ function previewTransform(document) {
 	unwrapSingletonLists(document);
 	trimDocument(document);
 
-	// side note, this is the final step, because it isn't removing elements
-	// or nodes, just element attributes
-	// TODO: document should be the last argument so that we can support
-	// a partial?
-	const retainableAttributes = new Set(['href', 'src']);
-	filterAttributes(document, retainableAttributes);
+	filterAttributes(document);
 }
 
 // Export
@@ -123,21 +116,22 @@ function filterFrameElements(document) {
 	DOMUtils.removeElementsByName(document, 'iframe');
 }
 
-
 function filterScriptElements(document) {
 
-	// NOTE: misc event handler attributes are handled by
-	// filterAttributes
+	// NOTE: misc event handler attributes for all elements are handled by
+	// filterAttributes, which uses a whitelist approach
 
 	// Remove all script tags
-	DOMUtils.removeElementsByName(document, 'script');
-
-
-	// TODO: move javascript anchor handling into here
+	// DOMUtils.removeElementsByName(document, 'script');
+	// Apparently we cannot use adoptNode on script
+	const scripts = document.querySelectorAll('script');
+	const numScripts = scripts.length;
+	for(let i = 0; i < numScripts; i++) {
+		scripts[i].remove();
+	}
 
 	// Due to content-loading tricks, noscript requires special handling
 	// e.g. nbcnews.com
-
 	const noscripts = document.querySelectorAll('noscript');
 	const numNoscripts = noscripts.length;
 	let noscript = null;
@@ -153,22 +147,62 @@ function filterScriptElements(document) {
 		noscript.remove();
 	}
 
-	// Modify anchors that use javascript
-	const RE_JAVASCRIPT_PROTOCOL = /^\s*javascript\s*:/i;
-
+	// Disable anchors that use javascript protocol. Keep the href attribute
+	// around for analytical purposes.
 	const anchors = document.body.querySelectorAll('a[href]');
 	const numAnchors = anchors.length;
-	let href = null;
 	let anchor = null;
 	for(let i = 0; i < numAnchors; i++) {
 		anchor = anchors[i];
-		href = anchor.getAttribute('href');
-		if(RE_JAVASCRIPT_PROTOCOL.test(href)) {
-			// console.log('Modifying javascript anchor %s', anchor.outerHTML);
-
-			// We do not remove the attribute, because we want use it as criteria
-			// when analyzing boilerplate. So we just set its value to empty.
+		if(anchor.protocol === 'javascript:') {
 			anchor.setAttribute('href', '');
+		}
+	}
+}
+
+function filterMetaElements(document) {
+
+	// <base> is filtered by resolve-document-urls
+	// <link> and such is handled by filterStyleElements
+	// <script> and such is handled separately
+	DOMUtils.removeElementsByName(document, 'head');
+	// Remove these elements if located outside of head in malformed html
+	DOMUtils.removeElementsByName(document, 'meta');
+	DOMUtils.removeElementsByName(document, 'title');
+}
+
+function filterStyleElements(document) {
+	// We use custom styling, so remove all CSS. Inline style
+	// handled by filterAttributes
+	DOMUtils.removeElementsByName(document, 'style');
+	DOMUtils.removeElementsByName(document, 'link');
+	DOMUtils.removeElementsByName(document, 'basefont');
+
+	// Unwrap style elements that may contain content
+	const fontElements = document.querySelectorAll(
+		'big, blink, font, plaintext, small, tt');
+	for(let i = 0, len = fontElements.length; i < len; i++) {
+		DOMUtils.unwrap(fontElements[i]);
+	}
+}
+
+
+// Removes hidden elements
+function filterHiddenElements(document) {
+	const garbage = document.implementation.createHTMLDocument();
+	const elements = document.body.querySelectorAll('*');
+	const numElements = elements.length;
+	let element = null;
+	let style = null;
+	for(let i = 0; i < numElements; i++) {
+		element = elements[i];
+		if(element.ownerDocument === document) {
+			style = element.style;
+			if(style.display === 'none' ||
+				style.visibility === 'hidden' ||
+				style.opacity === '0.0') {
+				garbage.adoptNode(element);
+			}
 		}
 	}
 }
@@ -193,51 +227,56 @@ function filterBoilerplate(document) {
 
 	const isContent = createCalamineClassifier(models, false, document);
 
-	const elementIterator = document.createNodeIterator(
-		document.documentElement, NodeFilter.SHOW_ELEMENT);
-	let element = elementIterator.nextNode();
-	while(element) {
-		if(!isContent(element)) {
-			element.remove();
+	var garbage = document.implementation.createHTMLDocument();
+	var elements = document.querySelectorAll('*');
+	var numElements = elements.length;
+	var element = null;
+	for(var i = 0; i < numElements; i++) {
+		element = elements[i];
+		if(element.ownerDocument === document) {
+			if(!isContent(element)) {
+				garbage.adoptNode(element);
+			}
 		}
-
-		element = elementIterator.nextNode();
 	}
 }
 
-function filterMetaElements(document) {
-
-	// <base> is filtered by resolve-document-urls
-	// <link> and such is handled by filterStyleElements
-	// <script> and such is handled separately
-
-	DOMUtils.removeElementsByName(document, 'head');
-
-	// Remove these elements if located outside of head in malformed html
-	DOMUtils.removeElementsByName(document, 'meta');
-	DOMUtils.removeElementsByName(document, 'title');
-}
-
-function filterStyleElements(document) {
-	// We use custom styling, so remove all CSS. Inline style
-	// handled by filterAttributes
-	DOMUtils.removeElementsByName(document, 'style');
-	DOMUtils.removeElementsByName(document, 'link');
-	DOMUtils.removeElementsByName(document, 'basefont');
-
-	// Unwrap style elements that may contain content
-	const fontElements = document.querySelectorAll(
-		'big, blink, font, plaintext, small, tt');
-	for(let i = 0, len = fontElements.length; i < len; i++) {
-		DOMUtils.unwrap(fontElements[i]);
-	}
-}
 
 function filterFormElements(document) {
-	// form unwrap also belongs there
-	DOMUtils.removeElementsByName(document, 'select');
-	DOMUtils.removeElementsByName(document, 'option');
-	DOMUtils.removeElementsByName(document, 'textarea');
+
+	var garbage = document.implementation.createHTMLDocument();
+
+	// TODO: adoptNode does not work on select, no idea why, so
+	// use element.remove
+	// DOMUtils.moveElementsByName(document, garbage, 'select');
+	const selects = document.querySelectorAll('select');
+	const numSelects = selects.length;
+	for(let i = 0; i < numSelects; i++) {
+		selects[i].remove();
+	}
+
+
+	DOMUtils.moveElementsByName(document, garbage, 'option');
+
+
+	// TODO: this is somehow still not happening
+	// Something strange is happening here, I am removing a text area
+	// but its contents remain?
+	//DOMUtils.removeElementsByName(document, 'textarea');
+
+	// error case:
+	//http://www.pyimagesearch.com/2015/11/30/
+	// detecting-machine-readable-zones-in-passport-images/
+	const textAreaElements = document.querySelectorAll('textarea');
+	let textArea = null;
+	for(let i = 0, len = textAreaElements.length; i < len; i++) {
+		textArea = textAreaElements[i];
+		textArea.textContext = '';
+		// console.debug('Removing %s', textArea.outerHTML);
+		textArea.remove();
+	}
+
+
 	DOMUtils.removeElementsByName(document, 'input');
 	DOMUtils.removeElementsByName(document, 'button');
 	DOMUtils.removeElementsByName(document, 'command');
@@ -283,45 +322,6 @@ function filterComments(document) {
 	}
 }
 
-// Removes hidden elements
-// @param exceptions {Set} a set of string names of elements never considered
-// hidden
-// @param minOpacity {float} elements with a lesser opacity are considered
-// hidden
-function filterHiddenElements(document, exceptions, minOpacity) {
-
-	minOpacity = minOpacity || 0.0;
-
-	// Using NodeIterator avoids visiting detached subtrees
-	const iterator = document.createNodeIterator(
-		document.documentElement, NodeFilter.SHOW_ELEMENT);
-	let element = iterator.nextNode();
-	let style = null;
-	let opacity = 0.0;
-	const isHidden = isHiddenElement.bind(null, exceptions, minOpacity);
-	while(element) {
-		if(isHidden(element)) {
-			element.remove();
-		}
-		element = iterator.nextNode();
-	}
-}
-
-// This does not test against offsetWidth/Height because the
-// properties do not appear to be initialized within inert documents
-// TODO: maybe try getting and using computed style?
-function isHiddenElement(exceptions, minOpacity, element) {
-	if(exceptions.has(element.localName)) {
-		return false;
-	}
-
-	const style = element.style;
-	const opacity = parseFloat(style.opacity) || 1.0;
-	return style.display === 'none' ||
-		style.visibility === 'hidden' ||
-		style.visibility === 'collapse' ||
-		opacity <= minOpacity;
-}
 
 // Removes images that do not have a source url or that appear to be tracers.
 // A tracer image is a tracking technique where some websites embed a small,
@@ -394,7 +394,7 @@ function isInlineElement(element) {
 }
 
 const WHITESPACE_SENSITIVE_SELECTOR = 'code, code *, pre, pre *, ' +
-	'ruby, ruby *, xmp, xmp *';
+	'ruby, ruby *, textarea, textarea *, xmp, xmp *';
 
 function trimTextNodes(document) {
 
@@ -520,7 +520,7 @@ function unwrapInlineElements(document) {
 	// (e.g. name="x" and href="#x")
 	// TODO: what we could do maybe is not unwrap if has name attribute, and
 	// then leave in the anchor
-	const anchors = document.body.querySelectorAll('a');
+	const anchors = document.querySelectorAll('a');
 	const numAnchors = anchors.length;
 	let anchor = null;
 	let href = null;
@@ -562,8 +562,8 @@ function unwrapInlineElements(document) {
 }
 
 // Removes attributes from all elements in the document
-// except for those named in the optional retainableSet
-function filterAttributes(document, retainableSet) {
+function filterAttributes(document) {
+	const retainableSet = new Set(['href', 'src']);
 
 	const elements = document.getElementsByTagName('*');
 	const numElements = elements.length;

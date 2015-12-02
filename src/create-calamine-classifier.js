@@ -409,6 +409,12 @@ function isBoilerplateElement(element) {
 				return true;
 			}
 		}
+
+		// 'span[itemprop="inLanguage"]' Investors.com
+		if(element.getAttribute('itemprop') === 'inLanguage') {
+			return true;
+		}
+
 	} else if(localName === 'table') {
 		var classList = element.classList;
 		for(var i = 0, len = TABLE_CLASSES.length; i < len; i++) {
@@ -416,6 +422,12 @@ function isBoilerplateElement(element) {
 				return true;
 			}
 		}
+
+		//'table#commentTable' // Times of India
+		if(element.id === 'commentTable') {
+			return true;
+		}
+
 	} else if(localName === 'header') {
 		return true;
 	} else if(localName === 'footer') {
@@ -439,8 +451,18 @@ function isBoilerplateElement(element) {
 		// 'li#mostPopularShared_1' Reuters
 		// 'li#pagingControlsPS' neagle
 		// 'li#sharetoolscontainer' neagle
+		let id = element.id;
+		if(id === 'mostPopularShared_0' || id === 'mostPopularShared_1' ||
+			id === 'pagingControlsPS' || id === 'sharetoolscontainer') {
+			return true;
+		}
+
 		// 'li.comments' Smashing Magazine
 		// 'li.tags' Smashing Magazine
+		var classList = element.classList;
+		if(classList.contains('comments') || classList.contains('tags')) {
+			return true;
+		}
 	} else if(localName === 'dl') {
 		//'dl#comments' CJR
 		if(element.id === 'comments')
@@ -469,33 +491,79 @@ function isBoilerplateElement(element) {
 		//'figure.kudo' svbtle.com blogs
 		if(classList.contains('kudo'))
 			return true;
-	}
+	} else if(localName === 'form') {
+		//'form#comment_form' Doctors Lounge
+		if(element.id === 'comment_form') {
+			return true;
+		}
+		// 'form.comments-form' CJR
+		if(element.classList.contains('comments-form')) {
+			return true;
+		}
+	} else if(localName === 'h1') {
+		//'h1#external-links', // The Sprawl (preceds unnamed <ul>)
 
-	if(localName === 'fb:comments') {
+		if(element.id === 'external-links') {
+			return true;
+		}
+	} else if(localName === 'h2') {
+		// 'h2#comments', // WordPress lemire-theme
+		// 'h2#page_header', // CNBC
+		if(element.id === 'comments' || element.id === 'page_header') {
+			return true;
+		}
+		//'h2.hide-for-print', // NobelPrize.org
+		if(element.classList.contains('hide-for-print')) {
+			return true;
+		}
+	} else if(localName === 'h3') {
+		//'h3#comments-header', // Knight News Challenge
+		//'h3.more-keywords', // Joplin
+		//'h3.related_title', // Teleread
+		//'h3#scrollingArticlesHeader', // The Oklahoman
+		if(element.id === 'comments-header' ||
+			element.id === 'scrollingArticlesHeader') {
+			return true;
+		}
+
+		var classList = element.classList;
+		if(classList.contains('more-keywords') ||
+			classList.contains('related_title')) {
+			return true;
+		}
+	} else if(localName === 'h4') {
+		//'h4.taboolaHeaderRight', // KMBC
+		if(element.classList.contains('taboolaHeaderRight')) {
+			return true;
+		}
+	} else if(localName === 'img') {
+		// 'img#ajax_loading_img', // E-Week
+		if(element.id === 'ajax_loading_img') {
+			return true;
+		}
+
+		// github
+		if(element.getAttribute('alt') === 'Build Status') {
+			return true;
+		}
+
+	} else if(localName === 'ol') {
+		//'ol#comment-list', // Pro Football Talk
+		//'ol#commentlist', // WordPress lemire-theme
+		//'ol[data-vr-zone="Around The Web"]', // The Oklahoman
+		if(element.id === 'comment-list' || element.id === 'commentlist') {
+			return true;
+		}
+
+		if(element.dataset && element.dataset.vrZone === 'Around The Web') {
+			return true;
+		}
+
+	} else if(localName === 'fb:comments') {
 		return true;
 	} else if(localName === 'g:plusone') {
 		return true;
 	}
-
-/*
-'form#comment_form', // Doctors Lounge
-'form.comments-form', // CJR
-'h1#external-links', // The Sprawl (preceds unnamed <ul>)
-'h2#comments', // WordPress lemire-theme
-'h2.hide-for-print', // NobelPrize.org
-'h2#page_header', // CNBC
-'h3#comments-header', // Knight News Challenge
-'h3.more-keywords', // Joplin
-'h3.related_title', // Teleread
-'h3#scrollingArticlesHeader', // The Oklahoman
-'h4.taboolaHeaderRight', // KMBC
-'img#ajax_loading_img', // E-Week
-'ol[data-vr-zone="Around The Web"]', // The Oklahoman
-'ol#comment-list', // Pro Football Talk
-'ol#commentlist', // WordPress lemire-theme
-'span[itemprop="inLanguage"]', // Investors.com
-'table#commentTable' // Times of India
-*/
 
 	return false;
 }
@@ -563,6 +631,7 @@ const DIV_IDS = new Set([
 	'forgotPasswordSuccess', // Joplin Globe
 	'gkSocialAPI', // The Guardian
 	'guidelines-wrap', // Charlotte Observer
+	'header', // theweek.com
 	'hsa_container', // Star Advertiser
 	'infinite-list', // The Daily Mail
 	'inlineAdCont', // Salt Lake Tribune
@@ -636,6 +705,7 @@ const DIV_IDS = new Set([
 	'sidebar-4', // SysCon Media
 	'signIn', // Joplin
 	'simple_socialmedia', // Freakonomics
+	'sliding-menu', // theweek.com
 	'social-links', // Reuters
 	'socialRegistration', // Joplin Globe
 	'social-share', // Priceonomics
@@ -740,14 +810,17 @@ const DIV_CLASSES = [
 	'at-next', // Design & Trend
 	'at-tag', // Design & Trend
 	'at-tool', // Design & Trend
+	'author', // theweek.com
 	'author_topics_holder', // The Irish Times
 	'author-wrap', // Recode
 	'author-info', // Streetwise
+	'article-subtype', // theweek.com
 	'big_story_tools_bottom_container', // Alternet
 	'bio-socials', // Atomic Object
 	'bizPagination', // Bizjournal
 	'bk-socialbox', // Latin Post
 	'bk-relart', // Latin Post
+	'body-ad-1', // theweek.com
 	'bookmarkify', // Kamens Blog
 	'bottom_subscribe', // Alternet
 	'bpcolumnsContainer', // Western Journalism
@@ -819,6 +892,7 @@ const DIV_CLASSES = [
 	'entry-toolbar', // CBS
 	'entry-unrelated', // The New Yorker
 	'essb_links', // Beta Wired
+	'et_pb_subscribe', // unseenart.org
 	'fb-content', // The Week
 	'fblike', // Ha'Aretz
 	'feature-btns', // USA Today (assumes video not supported)
@@ -919,10 +993,12 @@ const DIV_CLASSES = [
 	'mTop15', // Times of India
 	'multiplier_story', // Christian Science Monitor
 	'nav', // KMBC (note: may be problematic)
+	'navbar', // queue.acm.org
 	'navigation', // Renew Economy (may be problematic)
 	'newsletterSignupBox', // NBC
 	'newsreel', // The Wall Street Journal
 	'next_on_news', // BuzzFeed
+	'nextpost', // winteriscoming.net
 	'nhlinkbox', // PBS
 	'node-footer', // Drupal
 	'node-metainfo', // The Boston Herald
@@ -948,6 +1024,7 @@ const DIV_CLASSES = [
 	'postcats', // The Wall Street Journal (blog)
 	'postcommentpopupbox', // Times of India
 	'post-comments', // The Sun Times
+	'post-footer', // *.blogspot.com
 	'post-links', // Pro Football Talk
 	'postmeta', // Windows Central
 	'post-meta', // pyimagesearch.com
@@ -1076,6 +1153,7 @@ const DIV_CLASSES = [
 	'social-tools-wrapper-bottom', // Washington Post
 	'spantab', // Times of India
 	'SPOSTARBUST-Related-Posts', // RObservatory
+	'sp-slug', // theweek.com
 	'sps-twitter_module', // BBC
 	'srch_box', // Times of India
 	'ssba', // Funker (social share button actions?)
@@ -1106,6 +1184,7 @@ const DIV_CLASSES = [
 	'submit-button', // Knight News Challenge
 	'subnav-tools-wrap', // NPR
 	'subscribe', // Times of India
+	'subscribe-unit-mobile', // theweek.com
 	'supplementalPostContent', // Medium.com
 	'tag-list', // NY Post (iffy on this one)
 	'talklinks', // LiveJournal
@@ -1119,6 +1198,7 @@ const DIV_CLASSES = [
 	'toolbox', // ABC News
 	'tools', // ABC News (risky, might be a content-tag)
 	'tools1', // The Wall Street Journal (blog)
+	'top-header', // winteriscoming.net
 	'topic-category', // Bangkok Post
 	'top-index-stories', // BBC
 	'topkicker', // entrepreneur.com
@@ -1127,6 +1207,7 @@ const DIV_CLASSES = [
 	'top-stories05', // Telegraph UK
 	'trb_embed_related', // LA Times
 	'trb_panelmod_body', //	LA Times
+	'trb_ar_cr', // chicagotribune.com
 	'twipsy', // St. Louis Today
 	'upshot-social', // The New York Times
 	'util-bar-flyout', // USA Today
@@ -1135,6 +1216,7 @@ const DIV_CLASSES = [
 	'utility-panels', // WRAL
 	'utils', // kotatv
 	'utilsFloat', // KMBC
+	'vce-related-box', // winteriscoming.net
 	'video_about_ad', // Christian Science Monitor
 	'video_disqus', // Bloomberg
 	'view-comments', // auburnpub.com
@@ -1260,6 +1342,7 @@ const LIST_CLASSES = [
 	'tools', // The Syndey Morning Herald
 	'toplinks', // VOA News
 	'top-menu', // Investors.com
+	'trb_ar_rt', // chicagotribune.com
 	'utility-list' // WRAL
 ];
 
@@ -1281,6 +1364,8 @@ const ASIDE_CLASSES = [
 	'itemAsideInfo', // The Guardian
 	'bg-related', // The Boston Globe
 	'callout', // The Atlantic
+	'comments', // newhumanist.org.uk
+	'control-widget', // newhumanist.org.uk
 	'entry-sidebar', // The Globe
 	'global-magazine-recent', // Politico
 	'global-popular', // Politico

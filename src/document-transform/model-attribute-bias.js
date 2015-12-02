@@ -114,7 +114,7 @@ const ATTRIBUTE_BIAS = new Map([
 	['pinnion', 50],
 	['popular', -50],
 	['popup', -100],
-	['post', 150],
+	['post', 300],
 	['power', -100],
 	['prev', -300],
 	['print', -50],
