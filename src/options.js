@@ -394,6 +394,13 @@ function discoverSubscribeClick(event) {
 }
 
 function onDiscoverFeedsComplete(errorEvent, query, results) {
+
+	if(!query || !results) {
+		if(!errorEvent) {
+			errorEvent = 'No results';
+		}
+	}
+
 	if(errorEvent) {
 		$$('discover-in-progress').style.display = 'none';
 		console.debug('discover feeds error %o', errorEvent);

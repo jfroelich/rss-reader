@@ -32,7 +32,16 @@ GoogleFeeds.findFeed = function(query, timeout, callback) {
 // Cleans up the search results and passes them along
 // to the callback
 function findFeedOnload(callback, event) {
-	const data = event.target.response.responseData;
+	const request = event.target;
+	const response = request.response;
+	const data = response.responseData;
+
+	if(!data) {
+		console.debug(response.responseDetails);
+		callback(response.responseDetails, null, null);
+		return;
+	}
+
 	const query = data.query || '';
 	let entries = data.entries || [];
 
