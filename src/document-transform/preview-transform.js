@@ -12,28 +12,23 @@ const filter = Array.prototype.filter;
 // for displaying the document in a view.
 function previewTransform(document) {
 	filterComments(document);
-	filterFrameElements(document);
-	filterScriptElements(document);
-	filterEmbeddedElements(document);
+	filterFrames(document);
+	filterScripts(document);
+	filterEmbeds(document);
 
-	// The following are misc. elements
-	// TODO: review where these go
-	var garbage = document.implementation.createHTMLDocument();
-	DOMUtils.moveElementsByName(document, garbage, 'datalist');
-	DOMUtils.moveElementsByName(document, garbage, 'dialog');
-	DOMUtils.moveElementsByName(document, garbage, 'fieldset');
-	DOMUtils.moveElementsByName(document, garbage, 'isindex');
-	DOMUtils.moveElementsByName(document, garbage, 'math');
-	DOMUtils.moveElementsByName(document, garbage, 'output');
-	DOMUtils.moveElementsByName(document, garbage, 'optgroup');
-	DOMUtils.moveElementsByName(document, garbage, 'progress');
-	DOMUtils.moveElementsByName(document, garbage, 'spacer');
-	DOMUtils.moveElementsByName(document, garbage, 'xmp');
+	// Remove misc. elements
+	DOMUtils.moveElementsBySelector(document, null,
+		'datalist, dialog, fieldset, isindex, math, output, optgroup, progress,' +
+		'spacer, xmp');
 
 	filterMetaElements(document);
 	filterStyleElements(document);
 	filterHiddenElements(document);
-	replaceBreakRuleElements(document);
+
+	// Disabled
+	// e.g. see http://paulgraham.com/procrastination.html
+	// filterBreaks(document);
+
 	filterBoilerplate(document);
 
 	// Must come after boilerplate because that analyzes form data
@@ -41,21 +36,13 @@ function previewTransform(document) {
 	filterTracerImages(document);
 	normalizeWhitespace(document);
 	trimTextNodes(document);
+
+	// TODO: filtering leaves, singletons, and trimming probably
+	// all has to occur together
 	unwrapInlineElements(document);
-
-	// TODO: the filtering of leaves, list singletons, and trimming probably
-	// all has to occur together, because each removal op modifies the conditions
-	// for later ops (and previous ops). Basically, instead of doing any removal,
-	// we want to analyze every element, and tag it is prunable, and then go
-	// as far up in the hierarchy as we can, aggregating prunables that share
-	// comment ancestors (where no non-prunables also share the same ancestor),
-	// and only then do we remove prunables in a top down fashion
-	// When analyzing each element, we have to go through several special
-	// conditions, such as whether we are at the start of the document or at the
-	// end (well, within the expanding regions from either side).
-
 	filterLeaves(document);
 	unwrapSingletonLists(document);
+	unwrapSingletonTables(document);
 	trimDocument(document);
 
 	filterAttributes(document);
@@ -65,7 +52,7 @@ function previewTransform(document) {
 this.previewTransform = previewTransform;
 
 // Handles frame, noframes, frameset, and iframe elements
-function filterFrameElements(document) {
+function filterFrames(document) {
 
 	// TODO: this may need to be a more general transform that is async
 	// and automatically identifies and returns the frame that most likely
@@ -91,45 +78,23 @@ function filterFrameElements(document) {
 	}
 
 	// TODO: special handling of iframes
-
-	const framesets = document.querySelectorAll('frameset');
-	for(let i = 0, len = framesets.length; i < len; i++) {
-		framesets[i].remove();
-	}
-
-	const frames = document.querySelectorAll('frame');
-	for(let i = 0, len = frames.length; i < len; i++) {
-		frames[i].remove();
-	}
-
-	const iframes = document.querySelectorAll('iframe');
-	for(let i = 0, len = iframes.length; i < len; i++) {
-		iframes[i].remove();
-	}
+	DOMUtils.removeElementsBySelector(document, 'frameset, frame, iframe');
 }
 
-function filterScriptElements(document) {
+function filterScripts(document) {
 
 	// NOTE: misc event handler attributes for all elements are handled by
 	// filterAttributes, which uses a whitelist approach
 
 	// Remove all script tags
-	// DOMUtils.removeElementsByName(document, 'script');
-	// Apparently we cannot use adoptNode on script
-	const scripts = document.querySelectorAll('script');
-	for(let i = 0, len = scripts.length; i < len; i++) {
-		scripts[i].remove();
-	}
+	DOMUtils.removeElementsBySelector(document, 'script');
 
 	// Due to content-loading tricks, noscript requires special handling
-	// e.g. nbcnews.com
-	const noscripts = document.querySelectorAll('noscript');
-	for(let i = 0, len = noscripts.length; i < len; i++) {
-		noscripts[i].remove();
-	}
+	// e.g. nbcnews.com. For now, just remove.
+	DOMUtils.removeElementsBySelector(document, 'noscript');
 
-	// Disable anchors that use javascript protocol. Keep the href attribute
-	// around for analytical purposes.
+	// Disable anchors that use javascript protocol. Keep the href
+	// around for analysis.
 	const anchors = document.querySelectorAll('a[href]');
 	for(let i = 0, len = anchors.length, anchor; i < len; i++) {
 		anchor = anchors[i];
@@ -140,53 +105,20 @@ function filterScriptElements(document) {
 }
 
 function filterMetaElements(document) {
-
 	// <base> is filtered by resolve-document-urls
 	// <link> and such is handled by filterStyleElements
 	// <script> and such is handled separately
-
-	// Remove these elements if located outside of head in malformed html
-
-	//DOMUtils.removeElementsByName(document, 'head');
-	//DOMUtils.removeElementsByName(document, 'meta');
-	//DOMUtils.removeElementsByName(document, 'title');
-
-	const heads = document.querySelectorAll('head');
-	for(let i = 0, len = heads.length; i < len; i++) {
-		heads[i].remove();
-	}
-
-	const metas = document.querySelectorAll('meta');
-	for(let i = 0, len = metas.length; i < len; i++) {
-		metas[i].remove();
-	}
-
-	const titles = document.querySelectorAll('title');
-	for(let i = 0, len = titles.length; i < len; i++) {
-		titles[i].remove();
-	}
+	DOMUtils.moveElementsBySelector(document, null, 'head, meta, title');
 }
 
 function filterStyleElements(document) {
 	// Inline style handled by filterAttributes
-	//DOMUtils.removeElementsByName(document, 'style');
-	//DOMUtils.removeElementsByName(document, 'link');
-	//DOMUtils.removeElementsByName(document, 'basefont');
-
-	const styles = document.querySelectorAll('style, link, basefont');
-	for(let i = 0, len = styles.length; i < len; i++) {
-		styles[i].remove();
-	}
-
+	DOMUtils.removeElementsBySelector(document, 'style, link, basefont');
 	const elements = document.querySelectorAll(
 		'big, blink, font, plaintext, small, tt');
 	for(let i = 0, len = elements.length; i < len; i++) {
 		DOMUtils.unwrap(elements[i]);
 	}
-}
-
-function getStyle(element) {
-	return element.style;
 }
 
 // Removes hidden elements
@@ -228,89 +160,21 @@ function filterBoilerplate(document) {
 }
 
 function filterFormElements(document) {
-
-	var garbage = document.implementation.createHTMLDocument();
-
-	// TODO: adoptNode does not work on select, no idea why, so
-	// use element.remove
-	// DOMUtils.moveElementsByName(document, garbage, 'select');
-	const selects = document.querySelectorAll('select');
-	const numSelects = selects.length;
-	for(let i = 0; i < numSelects; i++) {
-		selects[i].remove();
-	}
-
-
-	//DOMUtils.moveElementsByName(document, garbage, 'option');
-	const options = document.querySelectorAll('option');
-	for(let i = 0, len = options.length; i < len; i++) {
-		options[i].remove();
-	}
-
-	// TODO: this is somehow still not happening
-	// Something strange is happening here, I am removing a text area
-	// but its contents remain?
-	//DOMUtils.removeElementsByName(document, 'textarea');
-
-	// error case:
-	//http://www.pyimagesearch.com/2015/11/30/
-	// detecting-machine-readable-zones-in-passport-images/
-	const textareas = document.querySelectorAll('textarea');
-	let textArea = null;
-	for(let i = 0, len = textareas.length; i < len; i++) {
-		textArea = textareas[i];
-		textArea.textContext = '';
-		// console.debug('Removing %s', textArea.outerHTML);
-		textArea.remove();
-	}
-
-
-	//DOMUtils.removeElementsByName(document, 'input');
-	const inputs = document.querySelectorAll('input');
-	for(let i = 0, len = inputs.length; i < len; i++) {
-		inputs[i].remove();
-	}
-
-	//DOMUtils.removeElementsByName(document, 'button');
-	// adoptNode does not work with button
-	const buttons = document.querySelectorAll('button');
-	for(let i = 0, len = buttons.length; i < len; i++) {
-		buttons[i].remove();
-	}
-
-	//DOMUtils.removeElementsByName(document, 'command');
-	const commands = document.querySelectorAll('command');
-	for(let i = 0, len = commands.length; i < len; i++) {
-		commands[i].remove();
-	}
-
-	// Certain elements need to be unwrapped instead of removed,
-	// because they may contain valuable content. Notably, many html authors
-	// use a technique where they wrap content in a form tag.
-	const formElements = document.querySelectorAll('form, label');
-	for(let i = 0, len = formElements.length; i < len; i++) {
-		DOMUtils.unwrap(formElements[i]);
+	DOMUtils.moveElementsBySelector(document, null,
+		'select, option, textarea, input, button, command');
+	const forms = document.querySelectorAll('form, label');
+	for(let i = 0, len = forms; i < len; i++) {
+		DOMUtils.unwrap(forms[i]);
 	}
 }
 
-function filterEmbeddedElements(document) {
-
+function filterEmbeds(document) {
 	// TODO: move the handling of 'noembed' into here
-
-	// Remove various components
-	// TODO: is object embedded in embed or is embed embedded in object?
-	DOMUtils.removeElementsBySelector(document, 'applet');
-	DOMUtils.removeElementsBySelector(document, 'object');
-	DOMUtils.removeElementsBySelector(document, 'embed');
-	DOMUtils.removeElementsBySelector(document, 'param');
-
 	// NOTE: i eventually want to support basic video embedding but
-	// for now it is blacklisted. There should probably be some special
-	// handler for the video element (or more generally, a media element)
-	// including audio
-	DOMUtils.removeElementsBySelector(document, 'video');
-	DOMUtils.removeElementsBySelector(document, 'audio');
-	DOMUtils.removeElementsBySelector(document, 'bgsound');
+	// for now it is blacklisted.
+	// Remove various components
+	DOMUtils.moveElementsBySelector(document, null,
+		'applet, object, embed, param, video, audio, bgsound');
 }
 
 // Removes all comments
@@ -324,7 +188,6 @@ function filterComments(document) {
 		comment = it.nextNode();
 	}
 }
-
 
 // Removes images that do not have a source url or that appear to be tracers.
 // A tracer image is a tracking technique where some websites embed a small,
@@ -351,12 +214,11 @@ function isTracerImage(image) {
 	return !source || (image.width < 2) || (image.height < 2);
 }
 
-
 // TODO: improve this. br is allowed in inline elements
 // and this is shoving non-inline p into inline sometimes
 // so we need to be able to break the inline context in
 // half somehow
-function replaceBreakRuleElements(document) {
+function filterBreaks(document) {
 	const elements = document.querySelectorAll('br');
 	const length = elements.length;
 	for(let i = 0; i < length; i++) {
@@ -387,103 +249,6 @@ function normalizeWhitespace(document) {
 		node.nodeValue = value.replace(/&nbsp;/g, ' ');
 
 		node = it.nextNode();
-	}
-}
-
-function isElement(node) {
-	return node.nodeType === Node.ELEMENT_NODE;
-}
-
-const INLINE_ELEMENTS = new Set(['a','abbr', 'acronym', 'address',
-	'b', 'bdi', 'bdo', 'blink','cite', 'code', 'data', 'del',
-	'dfn', 'em', 'font', 'i', 'ins', 'kbd', 'mark', 'map',
-	'meter', 'q', 'rp', 'rt', 'samp', 'small', 'span', 'strike',
-	'strong', 'sub', 'sup', 'time', 'tt', 'u', 'var'
-]);
-
-function isInlineElement(element) {
-	return INLINE_ELEMENTS.has(element.localName);
-}
-
-const WHITESPACE_SENSITIVE_SELECTOR = 'code, code *, pre, pre *, ' +
-	'ruby, ruby *, textarea, textarea *, xmp, xmp *';
-
-function trimTextNodes(document) {
-
-	// To avoid trimming nodes present within whitespace sensitive
-	// elements, such as <pre>, we search for all such elements and
-	// elements within those elements, create a set of distinct
-	// elements, and use this to check if a given text node's parent
-	// element falls within that set. Alternatively, we could walk
-	// up the dom each time, and check whether any parent is whitespace
-	// sensitive, but this feels more performant.
-
-	// NOTE: we do not use a filter function for createNodeIterator
-	// due to performance issues
-
-	const elements = document.querySelectorAll(
-		WHITESPACE_SENSITIVE_SELECTOR);
-	const preformatted = new Set(Array.from(elements));
-	const iterator = document.createNodeIterator(
-		document.documentElement,
-		NodeFilter.SHOW_TEXT);
-
-	let node = iterator.nextNode();
-	while(node) {
-
-		// Skip over nodes that are descendants of
-		// whitespace sensitive elements
-		if(preformatted.has(node.parentElement)) {
-			node = iterator.nextNode();
-			continue;
-		}
-
-		if(node.previousSibling) {
-			if(isElement(node.previousSibling)) {
-				if(isInlineElement(node.previousSibling)) {
-					if(node.nextSibling) {
-						if(isElement(node.nextSibling)) {
-							if(!isInlineElement(node.nextSibling)) {
-								node.nodeValue = node.nodeValue.trimRight();
-							}
-						}
-					} else {
-						node.nodeValue = node.nodeValue.trimRight();
-					}
-				} else {
-				 node.nodeValue = node.nodeValue.trim();
-				}
-			} else {
-			 if(node.nextSibling) {
-					if(isElement(node.nextSibling)) {
-						if(isInlineElement(node.nextSibling)) {
-						} else {
-						 node.nodeValue = node.nodeValue.trimRight();
-						}
-					}
-				} else {
-					node.nodeValue = node.nodeValue.trimRight();
-				}
-			}
-		} else if(node.nextSibling) {
-		 if(isElement(node.nextSibling)) {
-				if(isInlineElement(node.nextSibling)) {
-					node.nodeValue = node.nodeValue.trimLeft();
-				} else {
-					node.nodeValue = node.nodeValue.trim();
-				}
-			} else {
-				node.nodeValue = node.nodeValue.trimLeft();
-			}
-		} else {
-			node.nodeValue = node.nodeValue.trim();
-		}
-
-		if(!node.nodeValue) {
-			node.remove();
-		}
-
-		node = iterator.nextNode();
 	}
 }
 
@@ -522,7 +287,6 @@ const UNWRAPPABLE_ELEMENTS = new Set([
 ]);
 
 const UNWRAPPABLE_SELECTOR = Array.from(UNWRAPPABLE_ELEMENTS).join(',');
-
 
 // fallback elements (e.g. noscript) are handled separately
 function unwrapInlineElements(document) {
@@ -573,10 +337,9 @@ function unwrapInlineElements(document) {
 	}
 }
 
-// Removes attributes from all elements in the document
+// Removes attributes from elements in the document, except for href/src
 function filterAttributes(document) {
 	const retainableSet = new Set(['href', 'src']);
-
 	const elements = document.getElementsByTagName('*');
 	const numElements = elements.length;
 	let attributes = null;
@@ -649,6 +412,55 @@ function unwrapSingleItemList(list) {
 	// console.debug('Parent after unwrap: %s', parent.innerHTML);
 
 	list.remove();
+}
+
+function unwrapSingletonTables(document) {
+
+	// TODO: it may be important to consider the unwrap parent. for example,
+	// what if this is unwrapping the content into another element that
+	// should not contain it, like as an immediate child of <table> or
+	// something like that.
+
+	const tables = document.querySelectorAll('table');
+	for(let i = 0, len = tables.length, table, cell; i < len; i++) {
+		table = tables[i];
+		cell = getTableSingleCell(table);
+		if(cell) {
+			unwrapSingletonTable(table, cell);
+		}
+	}
+}
+
+function getTableSingleCell(table) {
+	const numRows = table.rows.length;
+	if(numRows === 1) {
+		const numCells = table.rows[0].cells.length;
+		if(numCells === 1) {
+			return table.rows[0].cells[0];
+		}
+	}
+}
+
+function unwrapSingletonTable(table, cell) {
+	// console.debug('Unwrapping table ', table);
+	const parent = table.parentElement;
+	if(!parent) {
+		// console.debug('could not unwrap table, missing parent ', table);
+		return;
+	}
+
+	const nextSibling = table.nextSibling;
+	if(nextSibling) {
+		while(cell.firstChild) {
+			parent.insertBefore(cell.firstChild, nextSibling);
+		}
+	} else {
+		while(cell.firstChild) {
+			parent.appendChild(cell.firstChild);
+		}
+	}
+
+	table.remove();
 }
 
 function trimDocument(document) {

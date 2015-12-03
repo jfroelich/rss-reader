@@ -8,43 +8,23 @@
 // TODO: this should be refactored to focus on just finding the best
 // body element. Some of its logic can be moved into the boilerplate
 // classifier
-
+// TODO: this should only be analyzing body (best element) candidates
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-function analyzeTypes(document, scores, annotate) {
+function analyzeTypes(document) {
+	var typeScores = new Map();
 	var elements = document.getElementsByTagName('*');
-	var numElements = elements.length;
-
-	var element = null;
-	var bias = 0.0;
-
-  // TODO: test perf by reverting to basic forEach.call here, there
-  // may not be a materal perf detriment
-
-	for(let i = 0; i < numElements; i++) {
+	for(let i = 0, len = elements.length, bias = 0, element = null;
+		i < len; i++) {
 		element = elements[i];
 		bias = INTRINSIC_BIAS.get(element.localName);
 		if(bias) {
-			scores.set(element, scores.get(element) + bias);
-			if(annotate) {
-				element.dataset.intrinsicBias = bias;
-			}
+			typeScores.set(element, bias);
 		}
 	}
 
-	// Pathological case for single article
-	var articles = document.getElementsByTagName('article');
-	var article = null;
-	if(articles.length === 1) {
-		article = articles[0];
-		scores.set(article, scores.get(article) + 1000);
-		if(annotate) {
-			// todo: does this need to pay attention to other
-			// setting of intrinsicBias, or is it indepedent?
-			element.dataset.intrinsicBias = 1000;
-		}
-	}
+	return typeScores;
 }
 
 this.analyzeTypes = analyzeTypes;

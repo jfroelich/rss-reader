@@ -9,18 +9,21 @@
 // Creates a boilerplate filtering function
 function createCalamineClassifier(annotate, document) {
 
+	// TODO: use for..of destructuring when supported
+
 	if(!document.querySelector('body')) {
 		return isAlwaysContentElement;
 	}
 
-	let bestElement = fastFindBestElement(document);
+	let bodyElement = fastFindBodyElement(document);
 	let flagged = null;
-	if(bestElement) {
-		flagged = classifyBoilerplate(bestElement);
-		return isContentElement.bind(this, bestElement, flagged);
+	if(bodyElement) {
+		flagged = classifyBoilerplate(bodyElement);
+		return isContentElement.bind(this, bodyElement, flagged);
 	}
 
 	// Prefill scores map used by various feature extractors
+	// TODO: deprecate once i switched over to returning maps below
 	const scores = new Map();
 	// TODO: use for..of once NodeList is iterable
 	Array.prototype.forEach.call(document.getElementsByTagName('*'),
@@ -28,54 +31,63 @@ function createCalamineClassifier(annotate, document) {
 		scores.set(element, 0.0);
 	});
 
-	// side note: annotate not passed into analyze, so need
-	// to annotate separately
-	//	element.dataset.textBias = bias.toFixed(2);
-
 	const textScores = analyzeText(document);
-	analyzeTypes(document, scores, annotate);
-	analyzeTopology(document, scores, annotate);
+	const typeScores = analyzeTypes(document, scores, annotate);
+	const topologyScores = analyzeTopology(document, scores, annotate);
 	analyzeImages(document, scores, annotate);
 	analyzeAttributes(document, scores, annotate);
 	analyzeMicrodata(document, scores, annotate);
 
 	// Integrate the scores
 	for(let entry of textScores) {
-		var textElement = entry[0];
-		var textScore = entry[1];
-		var currentTotalScore = scores.get(textElement);
-		scores.set(textElement, currentTotalScore + textScore);
+		scores.set(entry[0], (scores.get(entry[0]) || 0) + entry[1]);
 	}
 
-	// Optionally record the extracted features within the document itself
-	// TODO: use destructuring when supported
+	for(let entry of typeScores) {
+		scores.set(entry[0], (scores.get(entry[0]) || 0) + entry[1]);
+	}
+
+	for(let entry of topologyScores) {
+		scores.set(entry[0], (scores.get(entry[0]) || 0) + entry[1]);
+	}
+
 	if(annotate) {
+		for(let entry of textScores) {
+			entry[0].dataset.textBias = entry[1].toFixed(2);
+		}
+
+		for(let entry of typeScores) {
+			entry[0].dataset.intrinsicBias = entry[1];
+		}
+
+		for(let entry of topologyScores) {
+			entry[0].dataset.topologyScore = entry[1];
+		}
+
 		for(let entry of scores) {
 			entry[0].dataset.score = entry[1].toFixed(2);
 		}
 	}
 
-	// Find the highest scoring element
-	// TODO: use destructuring when supported
-	bestElement = document.body;
-	let bestScore = scores.get(bestElement);
+	// Set bodyElement to element with highest score, defaulting
+	// to document.body.
+	bodyElement = document.body;
+	let bestScore = scores.get(bodyElement);
 	for(let entry of scores) {
 		if(entry[1] > bestScore) {
-			bestElement = entry[0];
+			bodyElement = entry[0];
 			bestScore = entry[1];
 		}
 	}
 
-	// Classify the elements within the bestElement
-	flagged = classifyBoilerplate(bestElement);
-	// Return a classifier function
-	return isContentElement.bind(this, bestElement, flagged);
+	flagged = classifyBoilerplate(bodyElement);
+	return isContentElement.bind(this, bodyElement, flagged);
 }
 
 // Export global
 this.createCalamineClassifier = createCalamineClassifier;
 
-const ROOT_SIGNATURES = [
+const BODY_SIGNATURES = [
   'article',
   '.hentry',
   '.entry-content',
@@ -99,13 +111,13 @@ const ROOT_SIGNATURES = [
   '#WNStoryBody'
 ];
 
-const NUM_SIGNATURES = ROOT_SIGNATURES.length;
+const NUM_SIGNATURES = BODY_SIGNATURES.length;
 
 // Looks for obvious best elements based on known content signatures
-function fastFindBestElement(document) {
+function fastFindBodyElement(document) {
 	let elements = null;
 	for(let i = 0; i < NUM_SIGNATURES; i++) {
-		elements = document.body.querySelectorAll(ROOT_SIGNATURES[i]);
+		elements = document.body.querySelectorAll(BODY_SIGNATURES[i]);
 		if(elements.length === 1) {
 			return elements[0];
 		}
@@ -119,10 +131,10 @@ function isAlwaysContentElement(element) {
 
 // The function returned by createCalamineClassifier
 // TODO: look into using Node.compareDocumentPosition instead of contains
-function isContentElement(bestElement, flagged, element) {
-	return element === bestElement ||
-		element.contains(bestElement) ||
-		(bestElement.contains(element) &&
+function isContentElement(bodyElement, flagged, element) {
+	return element === bodyElement ||
+		element.contains(bodyElement) ||
+		(bodyElement.contains(element) &&
 			!flagged.has(element));
 }
 
@@ -909,6 +921,7 @@ const DIV_CLASSES = [
 	'editorsChoice', // Telegraph Co Uk
 	'editorsPick', // India Times
 	'editors-picks', // The Wall Street Journal
+	'el__leafmedia', // cnn.com
 	'email-optin', // Quantstart
 	'email-signup', // entrepeneur.com
 	'embedded-hyper', // BBC
@@ -1216,6 +1229,7 @@ const DIV_CLASSES = [
 	'story-tools', // Latin Post
 	'story_tools_bottom', // Alternet
 	'story-tools-wrap', // Charlotte Observer
+	'submeta', // theguardian.com
 	'submit-button', // Knight News Challenge
 	'subnav-tools-wrap', // NPR
 	'subscribe', // Times of India

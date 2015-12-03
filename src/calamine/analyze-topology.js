@@ -6,11 +6,41 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-const forEach = Array.prototype.forEach;
+// TODO: use for..of once Chrome supports NodeList iteration
+function analyzeTopology(document) {
+	const scores = new Map();
+	let elements = document.querySelectorAll(
+		'li *, ol *, ul *, dd *, dl *, dt *');
+	for(let i = 0, len = elements.length, element; i < len; i++) {
+		element = elements[i];
+		scores.set(element, (scores.get(element) || 0.0) - 100.0);
+	}
 
-// Elements are biased for being parents of these elements
-// NOTE: the anchor bias is partially redundant with the text bias
-// but also accounts for non-text links (e.g. menu of images)
+	elements = document.querySelectorAll(
+    'aside *, header *, footer *, nav *, menu *, menuitem, *');
+	for(let i = 0, len = elements.length, element; i < len; i++) {
+		element = elements[i];
+		scores.set(element, (scores.get(element) || 0.0) - 500.0);
+	}
+
+	let upBias = 0;
+	for(let entry of UPWARD_BIAS) {
+		elements = document.getElementsByTagName(entry[0]);
+		upBias = entry[1];
+		for(let i = 0, len = elements.length, element, parent; i < len; i++) {
+			element = elements[i];
+			parent = element.parentElement;
+			if(parent) {
+				scores.set(element, (scores.get(element) || 0.0) + upBias);
+			}
+		}
+	}
+
+	return scores;
+}
+
+this.analyzeTopology = analyzeTopology;
+
 const UPWARD_BIAS = new Map([
 	['a', -5],
 	['blockquote', 20],
@@ -28,50 +58,5 @@ const UPWARD_BIAS = new Map([
 	['pre', 10],
 	['ul', -20]
 ]);
-
-function analyzeTopology(document, scores, annotate) {
-  // TODO: use for..of once Chrome supports NodeList iteration
-  forEach.call(document.querySelectorAll(
-    'li *, ol *, ul *, dd *, dl *, dt *'),
-    penalizeListDescendant.bind(null, scores, annotate));
-  forEach.call(document.querySelectorAll(
-    'aside *, header *, footer *, nav *, menu *, menuitem, *'),
-    penalizeNavDescendant.bind(null, scores, annotate));
-
-  // TODO: would it be faster to query each element individually
-  // rather than all elements (and a map lookup per element)
-  forEach.call(document.getElementsByTagName('*'),
-    biasParent.bind(null, scores, annotate));
-}
-
-this.analyzeTopology = analyzeTopology;
-
-function penalizeListDescendant(scores, annotate, element) {
-  scores.set(element, scores.get(element) - 100.0);
-  if(annotate) {
-    // BUG: this needs to account for other bias
-    const currentBias = parseFloat(element.dataset.listDescendantBias) || 0;
-    element.dataset.listDescendantBias = -100;
-  }
-}
-
-function penalizeNavDescendant(scores, annotate, element) {
-  scores.set(element, scores.get(element) - 500.0);
-  if(annotate) {
-    const currentBias = parseFloat(element.dataset.navDescendantBias) || 0;
-    element.dataset.navDescendantBias = currentBias - 500;
-  }
-}
-
-function biasParent(scores, annotate, element) {
-  const bias = UPWARD_BIAS.get(element.localName);
-  if(!bias) return;
-  const parent = element.parentElement;
-  scores.set(parent, scores.get(parent) + bias);
-  if(annotate) {
-    const previousBias = parseFloat(parent.dataset.upwardBias) || 0;
-    parent.dataset.upwardBias = previousBias + bias;
-  }
-}
 
 } // END ANONYMOUS NAMESPACE
