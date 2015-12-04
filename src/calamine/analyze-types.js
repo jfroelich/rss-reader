@@ -10,6 +10,12 @@
 // classifier
 // TODO: this should only be analyzing body (best element) candidates
 
+// TODO: rather than traversing all elements, this could use repeated
+// queries to find only only those elements in the map
+
+// TODO: this should have two analyses, one for finding body, one
+// for classifying boilerplate.
+
 { // BEGIN ANONYMOUS NAMESPACE
 
 function analyzeTypes(document) {

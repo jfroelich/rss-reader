@@ -39,7 +39,7 @@ function previewTransform(document) {
 
 	// TODO: filtering leaves, singletons, and trimming probably
 	// all has to occur together
-	unwrapInlineElements(document);
+	filterInlineElements(document);
 	filterLeaves(document);
 	unwrapSingletonLists(document);
 	unwrapSingletonTables(document);
@@ -252,91 +252,6 @@ function normalizeWhitespace(document) {
 	}
 }
 
-// NOTE: This does not contain ALL inline elements, just those we
-// want to unwrap. This is different than the set of inline
-// elements defined for the purpose of trimming text nodes.
-// TODO: some of these would maybe be better handled in other more
-// specialized handlers
-const UNWRAPPABLE_ELEMENTS = new Set([
-	'article',
-	'center',
-	'colgroup',
-	'data',
-	'details',
-	'div',
-	'footer',
-	'header',
-	'help',
-	'hgroup',
-	'ilayer',
-	'insert',
-	'layer',
-	'legend',
-	'main',
-	'mark',
-	'marquee',
-	'meter',
-	'multicol',
-	'nobr',
-	'noembed',
-	'section',
-	'span',
-	'tbody',
-	'tfoot',
-	'thead',
-]);
-
-const UNWRAPPABLE_SELECTOR = Array.from(UNWRAPPABLE_ELEMENTS).join(',');
-
-// fallback elements (e.g. noscript) are handled separately
-function unwrapInlineElements(document) {
-
-	// Special handling for anchors
-	// NOTE: this intentionally breaks in-page anchors
-	// (e.g. name="x" and href="#x")
-	// TODO: what we could do maybe is not unwrap if has name attribute, and
-	// then leave in the anchor
-	const anchors = document.querySelectorAll('a');
-	const numAnchors = anchors.length;
-	let anchor = null;
-	let href = null;
-	for(let i = 0; i < numAnchors; i++) {
-		anchor = anchors[i];
-		if(anchor.hasAttribute('href')) {
-			href = anchor.getAttribute('href');
-			href = href || '';
-			href = href.trim();
-			if(!href) {
-				// The anchor had an href, but without a value, so treat it
-				// as nominal, and therefore unwrap
-				DOMUtils.unwrap(anchor);
-			} else {
-				if(href.startsWith('#')) {
-					// It is an in-page anchor that will no longer work, if,
-					// for example, we unwrapped its counterpart
-					// Side note: this is actually dumb, because resolve-document-urls
-					// makes all anchors absolute, so this condition is never triggered
-					// so the test actually needs to be checking against the document's
-					// own url, which isn't available to this function at the moment
-					DOMUtils.unwrap(anchor);
-				}
-			}
-		} else {
-			// It is a nominal anchor, unwrap
-			DOMUtils.unwrap(anchor);
-		}
-	}
-
-	// NOTE: using querySelectorAll because testing revealed that
-	// NodeIterator cannot update its reference node appropriately
-	// as a result of the unwrap.
-	const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
-	const numElements = elements.length;
-	for(let i = 0; i < numElements; i++) {
-		DOMUtils.unwrap(elements[i]);
-	}
-}
-
 // Removes attributes from elements in the document, except for href/src
 function filterAttributes(document) {
 	const retainableSet = new Set(['href', 'src']);
@@ -356,111 +271,6 @@ function filterAttributes(document) {
 			}
 		}
 	}
-}
-
-function unwrapSingletonLists(document) {
-
-	if(!document || !document.documentElement || !document.body) {
-		return;
-	}
-
-	const it = document.createNodeIterator(document.body,
-		NodeIterator.SHOW_ELEMENT);
-	let element = it.nextNode();
-
-	while(element) {
-    if(isList(element) && countListItems(element) === 1) {
-      unwrapSingleItemList(element);
-    }
-
-		element = it.nextNode();
-	}
-}
-
-function isList(element) {
-  return element.localName === 'ul';
-}
-
-function isListItem(element) {
-  return element.localName === 'li';
-}
-
-function countListItems(element) {
-  return filter.call(element.childNodes, isListItem).length;
-}
-
-function unwrapSingleItemList(list) {
-	// console.debug('Unwrapping %s', list.outerHTML);
-	const parent = list.parentElement;
-	const item = list.querySelector('li');
-	const nextSibling = list.nextSibling;
-
-	if(nextSibling) {
-		// Move the item's children to before the list's
-		// next sibling
-		while(item.firstChild) {
-			parent.insertBefore(item.firstChild, nextSibling);
-		}
-	} else {
-		// The list is the last node in its container, so append
-		// the item's children to the container
-		while(item.firstChild) {
-			parent.appendChild(item.firstChild);
-		}
-	}
-
-	// console.debug('Parent after unwrap: %s', parent.innerHTML);
-
-	list.remove();
-}
-
-function unwrapSingletonTables(document) {
-
-	// TODO: it may be important to consider the unwrap parent. for example,
-	// what if this is unwrapping the content into another element that
-	// should not contain it, like as an immediate child of <table> or
-	// something like that.
-
-	const tables = document.querySelectorAll('table');
-	for(let i = 0, len = tables.length, table, cell; i < len; i++) {
-		table = tables[i];
-		cell = getTableSingleCell(table);
-		if(cell) {
-			unwrapSingletonTable(table, cell);
-		}
-	}
-}
-
-function getTableSingleCell(table) {
-	const numRows = table.rows.length;
-	if(numRows === 1) {
-		const numCells = table.rows[0].cells.length;
-		if(numCells === 1) {
-			return table.rows[0].cells[0];
-		}
-	}
-}
-
-function unwrapSingletonTable(table, cell) {
-	// console.debug('Unwrapping table ', table);
-	const parent = table.parentElement;
-	if(!parent) {
-		// console.debug('could not unwrap table, missing parent ', table);
-		return;
-	}
-
-	const nextSibling = table.nextSibling;
-	if(nextSibling) {
-		while(cell.firstChild) {
-			parent.insertBefore(cell.firstChild, nextSibling);
-		}
-	} else {
-		while(cell.firstChild) {
-			parent.appendChild(cell.firstChild);
-		}
-	}
-
-	table.remove();
 }
 
 function trimDocument(document) {

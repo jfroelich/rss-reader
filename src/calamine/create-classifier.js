@@ -11,6 +11,11 @@ function createCalamineClassifier(annotate, document) {
 
 	// TODO: use for..of destructuring when supported
 
+	// TODO: split into two functions, one to find body,
+	// and one to do second pass to class bp
+	// TODO: refactor all extractors for body to just look for
+	// best body, not to analyze bp, and move
+
 	if(!document.querySelector('body')) {
 		return isAlwaysContentElement;
 	}
@@ -25,11 +30,10 @@ function createCalamineClassifier(annotate, document) {
 	// Prefill scores map used by various feature extractors
 	// TODO: deprecate once i switched over to returning maps below
 	const scores = new Map();
-	// TODO: use for..of once NodeList is iterable
-	Array.prototype.forEach.call(document.getElementsByTagName('*'),
-		function setInitialElementScore(element) {
-		scores.set(element, 0.0);
-	});
+	for(let i = 0, elements = document.getElementsByTagName('*'),
+		len = elements.length; i < len; i++) {
+		scores.set(elements[i], 0.0);
+	}
 
 	const textScores = analyzeText(document);
 	const typeScores = analyzeTypes(document, scores, annotate);
@@ -142,6 +146,7 @@ function isArticleElement(element) {
 	return element.localName === 'article';
 }
 
+// TODO: move into separate file
 // Returns a set containing all elements within the root element
 // classified as boilerplate. Note that an element is also considered
 // boilerplate if it is a descendant of a boilerplate element.
@@ -394,6 +399,8 @@ function isBoilerplateElement(element) {
 		if(href) {
 			if(href.startsWith('http://ad.')) {
 				return true;// medium.com
+			} else if(href.startsWith('http://www.addtoany.com')) {
+				return true; // addtoany embed
 			} else if(href.includes('socialtwist')) {
 				return true;// The Jewish Press
 			}
@@ -536,8 +543,9 @@ function isBoilerplateElement(element) {
 		if(classList.contains('kudo'))
 			return true;
 	} else if(localName === 'form') {
-		//'form#comment_form' Doctors Lounge
-		if(element.id === 'comment_form') {
+		// 'form#comment_form' Doctors Lounge
+		// 'form#commentform' blogs.law.harvard.edu
+		if(element.id === 'comment_form' || element.id === 'commentform') {
 			return true;
 		}
 		// 'form.comments-form' CJR
@@ -669,6 +677,7 @@ const DIV_IDS = new Set([
 	'epilogue', // hostilefork
 	'et-sections-dropdown-list', // The Washington Post
 	'external-source-links', // Daily Mail UK
+	'fauxfooter', // blogs.law.harvard.edu
 	'features', // BBC News
 	'footer', // Newsday
 	'forgotPassword', // Joplin Globe
@@ -747,9 +756,11 @@ const DIV_IDS = new Set([
 	'sidebar', // The Appendix
 	'sidebar-3', // SysCon Media
 	'sidebar-4', // SysCon Media
+	'sidebar-left', // broadinstitute.org
 	'signIn', // Joplin
 	'simple_socialmedia', // Freakonomics
 	'sliding-menu', // theweek.com
+	'social_btns', // theregister.co.uk
 	'social-links', // Reuters
 	'socialRegistration', // Joplin Globe
 	'social-share', // Priceonomics
@@ -771,6 +782,7 @@ const DIV_IDS = new Set([
 	'teaserMarketingCta', // The Times
 	'teaser-overlay', // The Times
 	'thumb-scroller', // E-Week
+	'tips_or_corrections', // theregister.co.uk
 	'tmg-related-links', // Telegraph Co
 	'tncms-region-jh-article-bottom-content', // Idaho Press
 	'traditionalRegistration', // Joplin Globe
@@ -791,7 +803,9 @@ const DIV_IDS = new Set([
 // NOTE: cannot use 'div.menu' // CNBC
 // NOTE: cannot use 'div.pull-right' (oklahoman vs nccgroup blog)
 const DIV_CLASSES = [
+	'about-blog', // broadinstitute.org
 	'about-the-author', // SysCon Media
+	'abridgedhomepage', // slate.com
 	'actions-panel', // SysCon Media
 	'ad', // Reuters
 	'adAlone300', // The Daily Herald
@@ -816,6 +830,7 @@ const DIV_CLASSES = [
 	'articleAutoFooter', // NECN
 	'article_actions', // Forbes
 	'article-actions', // Ottawa Citizen
+	'article-author-info', // fusion.net
 	'article_cat', // Collegian
 	'article_comments', // Voice of America
 	'article-comments', // Times of India
@@ -835,6 +850,7 @@ const DIV_CLASSES = [
 	'article-refers', // theawl.com
 	'articleRelates', // Baltimore Sun
 	'articleServices', // Ha'Aretz
+	'article-share', // fusion.net
 	'articleShareBottom', // Fox Sports
 	'article-side', // The Times
 	'article_share', // NBC News
@@ -856,6 +872,7 @@ const DIV_CLASSES = [
 	'at-tag', // Design & Trend
 	'at-tool', // Design & Trend
 	'author', // theweek.com
+	'author-date-and-terms', // theanthill.org
 	'author_topics_holder', // The Irish Times
 	'author-wrap', // Recode
 	'author-info', // Streetwise
@@ -869,6 +886,7 @@ const DIV_CLASSES = [
 	'bookmarkify', // Kamens Blog
 	'bottom_subscribe', // Alternet
 	'bpcolumnsContainer', // Western Journalism
+	'breadcrumb', // broadinstitute.org
 	'breadcrumbs', // Scientific American
 	'breadcrumb_container', // NBC News
 	'browse', // ABC News
@@ -897,6 +915,7 @@ const DIV_CLASSES = [
 	'comments', // TechCrunch
 	'comments-box', // Freakonomics
 	'comments-component', // Huffington Post
+	'comment-share', // broadinstitute.org
 	'commentThread', // kotatv
 	'comment-tools', // Latin post
 	'comment_links', // Forbes
@@ -909,6 +928,7 @@ const DIV_CLASSES = [
 	'contribution-stats-box', // Knight News Challenge
 	'control-bar', // SF Gate
 	'controls', // NY Daily News
+	'controls_aside', // bitcodin.com
 	'correspondant', // CBS News
 	'correspondent-byline', // BBC Co Uk
 	'cqFeature', // Vanity Fair
@@ -934,6 +954,7 @@ const DIV_CLASSES = [
 	'entry-meta', // Re-code (uncertain about this one)
 	'entry-related', // The Globe
 	'extra-services', // ARXIV
+	'entry-social', // www.quantamagazine.org
 	'entry-tags', // Wired.com
 	'entry-toolbar', // CBS
 	'entry-unrelated', // The New Yorker
@@ -1010,6 +1031,7 @@ const DIV_CLASSES = [
 	'likeus', // Good Magazine
 	'linearCalendarWrapper', // ABC News
 	'link-list-inline', // Las Vegas Sun
+	'list-pages-box', // hintjens.com/
 	'ljcmt_full', // LiveJournal
 	'ljtags', // LiveJournal
 	'load-comments', // entrepeneur.com
@@ -1019,6 +1041,7 @@ const DIV_CLASSES = [
 	'main_social', // Times of India
 	'marginal-tools', // scpr.org
 	'm-article__share-buttons', // The Verge
+	'm-chorus-social__fixed', // The Verge
 	'mashsharer-box', // internetcommerce.org
 	'm-entry__sidebar', // The Verge
 	'meta_bottom', // Collegian
@@ -1068,6 +1091,8 @@ const DIV_CLASSES = [
 	'pl-most-popular', // entrepeneur.com
 	'pnnavwrap', // NPR (previous/next article links wrapper)
 	'post-actions', // WorldNetDaily
+	'post-attributes', // blogs.msdn.com
+	'post-author', // blogs.msdn.com
 	'postcats', // The Wall Street Journal (blog)
 	'postcommentpopupbox', // Times of India
 	'post-comments', // The Sun Times
@@ -1080,6 +1105,7 @@ const DIV_CLASSES = [
 	'post-meta-tags', // Comic Book Resources
 	'post-meta-taxonomy-terms', // The Sun Times
 	'postnav', // Freakonomics
+	'post-rating', // blogs.msdn.com
 	'post-share-buttons', // Blogspot
 	'post-social-iteration-wrapper', // Streetwise
 	'posts-stories', // Ha'Aretz
@@ -1097,6 +1123,8 @@ const DIV_CLASSES = [
 	'raltedTopics', // India Times
 	'readability-sidebar', // Github
 	'read_more', // Times of India
+	'readoffline-embed', // www.quantamagazine.org
+	'recirc-link-dump', // fusion.net
 	'recirculation', // New Yorker
 	'recommended-articles-wrap', // Vice.com
 	'recommended-links', // The Appendix
@@ -1129,6 +1157,7 @@ const DIV_CLASSES = [
 	'rel-block-sec', // The Hindu
 	'relposts', // TechCrunch
 	'resizer', // KMBC
+	'right-rail', // fusion.net
 	'right_rail_cnt', // Hewlett Packard News
 	'rtCol', // Time Magazine
 	'save-tooltip', // auburnpub
@@ -1136,6 +1165,7 @@ const DIV_CLASSES = [
 	'sd-social', // Re-code
 	'second-tier-social-tools', // Time Magazine
 	'section-puffs', // Telegraph UK
+	'service-links', // ew.com
 	'shareArticles', // The Daily Mail
 	'share-bar', // Gulf News
 	'sharebar', // NY Post
@@ -1206,6 +1236,7 @@ const DIV_CLASSES = [
 	'srch_box', // Times of India
 	'ssba', // Funker (social share button actions?)
 	'ssb-share', // 365Solutions
+	'ssbp-container', // bitcodin.com
 	'stack-talent', // NBC News (author bio)
 	'stack-video-nojs-overlay', // NBC News
 	'staff_info', // Bizjournals
@@ -1235,6 +1266,7 @@ const DIV_CLASSES = [
 	'subscribe', // Times of India
 	'subscribe-unit-mobile', // theweek.com
 	'supplementalPostContent', // Medium.com
+	'tag-type', // fusion.net
 	'tag-list', // NY Post (iffy on this one)
 	'talklinks', // LiveJournal
 	'taxonomy', // ABC Chicago
@@ -1269,6 +1301,8 @@ const DIV_CLASSES = [
 	'video_about_ad', // Christian Science Monitor
 	'video_disqus', // Bloomberg
 	'view-comments', // auburnpub.com
+	'w-blogpost-meta', // bitcodin.com
+	'w-tags', // bitcodin.com
 	'wideheadlinelist2', // Chron.com
 	'windows-phone-links', // Windows Central
 	'wp_rp_wrap', // BuzzCarl (wordpress related post)
@@ -1465,7 +1499,8 @@ const P_CLASSES = [
 	'story-tags', // Latin Post
 	'topics', // ABC News
 	'trial-promo', // Newsweek
-	'subscribe_miles' // Charlotte Observer
+	'subscribe_miles',  // Charlotte Observer
+	'wptl' // theregister.co.uk
 ];
 
 const SECTION_IDS = new Set([
@@ -1494,14 +1529,17 @@ const SECTION_CLASSES = [
 	'headband', // Bloomberg
 	'headline-list', // The Miami Herald
 	'headlines-list', // ABC Chicago
+	'inline-share-tools-module', // freep.com
 	'morestories', // Entertainment Tonight
 	'pagination_controls', // Vanity Fair
 	'related_links', // Bloomberg
 	'related-products', // TechSpot
+	'related-content-wrapper', // ew.com
 	'section--last', // Medium
 	'section-tertiary', // Sports Illustrated
 	'share-section', // Sports Illustrated
 	'signup-widget', // The Miami Herald
+	'story-byline-module', // freep.com
 	'story-tools-mod', // Boston.com
 	'suggested-links', // The Examiner
 	'tagblock', // Entertainment Tonight
@@ -1516,6 +1554,7 @@ const SPAN_CLASSES = [
 	'span.fb-recommend-btn', // The Daily Voice
 	'sharetools-label', // NY Time
 	'moreon-tt', // Teleread
+	'printuser', // hintjens.com
 	'printfriendly-node', // Uncover California
 	'story-date', // BBC Co Uk
 	'text_resizer' // Fort Worth Star Telegram
