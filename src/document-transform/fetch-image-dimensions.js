@@ -6,6 +6,10 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
+
+// TODO: this also serves to check if an image's src is correct. consider
+// removing 404 images or replacing them with an error message.
+
 const filter = Array.prototype.filter;
 
 // Asynchronously attempts to set the width and height for

@@ -6,13 +6,26 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
+// Unwraps various inline elements in a document. Given that style information
+// and other information is removed, several elements in the document may
+// no longer serve a formatting purpose, so we want to remove them but
+// keep the child elements. Because the topology serves as a feature in
+// boilerplate extraction, this should only be done after analyzing the content
+// for boilerplate.
+function filterInlineElements(document) {
+	transformAnchors(document);
+	unwrapInlines(document);
+}
+
+this.filterInlineElements = filterInlineElements;
 
 // NOTE: This does not contain ALL inline elements, just those we
 // want to unwrap. This is different than the set of inline
 // elements defined for the purpose of trimming text nodes.
 // TODO: some of these would maybe be better handled in other more
 // specialized handlers
-const UNWRAPPABLE_ELEMENTS = new Set([
+// noscript and noembed are handled by other transforms
+const UNWRAPPABLE_ELEMENTS = [
 	'article',
 	'center',
 	'colgroup',
@@ -39,18 +52,24 @@ const UNWRAPPABLE_ELEMENTS = new Set([
 	'tbody',
 	'tfoot',
 	'thead',
-]);
+];
 
-const UNWRAPPABLE_SELECTOR = Array.from(UNWRAPPABLE_ELEMENTS).join(',');
+const UNWRAPPABLE_SELECTOR = UNWRAPPABLE_ELEMENTS.join(',');
 
-// fallback elements (e.g. noscript) are handled separately
-function filterInlineElements(document) {
+function unwrapInlines(document) {
+	const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
+	const numElements = elements.length;
+	for(let i = 0; i < numElements; i++) {
+		DOMUtils.unwrap(elements[i]);
+	}
+}
 
-	// Special handling for anchors
-	// NOTE: this intentionally breaks in-page anchors
-	// (e.g. name="x" and href="#x")
-	// TODO: what we could do maybe is not unwrap if has name attribute, and
-	// then leave in the anchor
+// Special handling for anchors
+// NOTE: this intentionally breaks in-page anchors
+// (e.g. name="x" and href="#x")
+// TODO: what we could do maybe is not unwrap if has name attribute, and
+// then leave in the anchor
+function transformAnchors(document) {
 	const anchors = document.querySelectorAll('a');
 	const numAnchors = anchors.length;
 	let anchor = null;
@@ -81,17 +100,6 @@ function filterInlineElements(document) {
 			DOMUtils.unwrap(anchor);
 		}
 	}
-
-	// NOTE: using querySelectorAll because testing revealed that
-	// NodeIterator cannot update its reference node appropriately
-	// as a result of the unwrap.
-	const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
-	const numElements = elements.length;
-	for(let i = 0; i < numElements; i++) {
-		DOMUtils.unwrap(elements[i]);
-	}
 }
-
-this.filterInlineElements = filterInlineElements;
 
 } // END ANONYMOUS NAMESPACE

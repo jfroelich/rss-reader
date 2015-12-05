@@ -2,7 +2,9 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-'use strict';
+// NOTE: this is incredibly sloppy code that barely works, but it is
+// a bit intricate, so I am leaving it this way for now, but it
+// requires substantial improvement.
 
 // TODO: there is a specific edge case not being handled
 // where certain elements, e.g. anchors, that do not contain
@@ -43,23 +45,26 @@
 // removing them and adding their parents to the stack.
 // Remove all the empty children and shove all the parents on the stack
 
-const LeafFilter$LEAF_SELECTOR = [
-	'area',
-	'audio',
-	'br',
-	'canvas',
-	'col',
-	'hr',
-	'img',
-	'source',
-	'svg',
-	'track',
-	'video'
-].join(',');
+// TODO: filtering leaves, singletons, and trimming probably
+// all has to occur together?
 
-function filterLeaves(document) {
+function filterLeafElements(document) {
+	'use strict';
 
-	const selector = LeafFilter$LEAF_SELECTOR;
+	const selector = [
+		'area',
+		'audio',
+		'br',
+		'canvas',
+		'col',
+		'hr',
+		'img',
+		'source',
+		'svg',
+		'track',
+		'video'
+	].join(',');
+
 	const elements = document.documentElement.getElementsByTagName('*');
 	const numElements = elements.length;
 

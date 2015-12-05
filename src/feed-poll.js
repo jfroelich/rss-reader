@@ -32,6 +32,8 @@
 // the url properly, because it is screwing up everything. not to mention it
 // is tracking clicks.
 
+// TODO: maybe have an option to exclude PDFs
+
 
 { // BEGIN ANONYMOUS NAMESPACE
 
