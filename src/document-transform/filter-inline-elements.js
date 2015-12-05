@@ -52,6 +52,16 @@ const UNWRAPPABLE_ELEMENTS = [
 	'tbody',
 	'tfoot',
 	'thead',
+
+	'form',
+	'label',
+
+	'big',
+	'blink',
+	'font',
+	'plaintext',
+	'small',
+	'tt'
 ];
 
 const UNWRAPPABLE_SELECTOR = UNWRAPPABLE_ELEMENTS.join(',');

@@ -55,6 +55,7 @@ function createCalamineClassifier(annotate, document) {
 		scores.set(entry[0], (scores.get(entry[0]) || 0) + entry[1]);
 	}
 
+	// Optionally annotate the scores
 	if(annotate) {
 		for(let entry of textScores) {
 			entry[0].dataset.textBias = entry[1].toFixed(2);
@@ -134,7 +135,7 @@ function isAlwaysContentElement(element) {
 }
 
 // The function returned by createCalamineClassifier
-// TODO: look into using Node.compareDocumentPosition instead of contains
+// TODO: research using Node.compareDocumentPosition instead of contains
 function isContentElement(bodyElement, flagged, element) {
 	return element === bodyElement ||
 		element.contains(bodyElement) ||

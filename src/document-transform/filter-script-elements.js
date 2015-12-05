@@ -4,10 +4,11 @@
 
 // NOTE: misc event handler attributes for all elements are handled by
 // filterAttributes, which uses a whitelist approach
-// Due to content-loading tricks, noscript requires special handling
+
+// NOTE: Due to content-loading tricks, noscript requires special handling
 // e.g. nbcnews.com. I was originally unwrapping noscripts but it was
 // leading to lots of garbage content. For now I am just removing until
-// I give this more though.
+// I give this more thought.
 
 function filterScriptElements(document) {
   'use strict';
