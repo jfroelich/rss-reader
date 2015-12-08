@@ -7,6 +7,22 @@
 function filterBoilerplate(document) {
   'use strict';
 
+/*
+  // results would be an object that stores derived features
+  const results = calamine.analyze(document);
+
+  // the caller can optionally call annotate, which marks up the
+  // document with properties from the results
+  results.annotate();
+
+  // instead of this function doing anything we give the results object
+  // knowledge of how to prune a document, and call prune
+  // note: prune does not accept document as an arg, it only works on
+  // the document used for analysis. so calamine.analyze, when creating
+  // the results object, sets document as a private property.
+  results.prune();
+*/
+
 	const isContent = createCalamineClassifier(false, document);
 	const garbage = document.implementation.createHTMLDocument();
 	const elements = document.querySelectorAll('*');
