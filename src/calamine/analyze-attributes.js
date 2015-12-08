@@ -237,8 +237,6 @@ const ATTRIBUTE_BIAS = new Map([
 	['zone', -50]
 ]);
 
-
-
 // TODO: move into separate file
 // Returns a set containing all elements within the root element
 // classified as boilerplate. Note that an element is also considered
@@ -435,6 +433,9 @@ function isBoilerplateElement(element) {
 			if(element.dataset.ngController === 'moreLikeThisController')
 				return true;
 			if(element.dataset.moduleZone === 'articletools_bottom')
+				return true;
+			// scientificamerican.com
+			if(element.dataset.blogNextPrevious)
 				return true;
 		}
 
@@ -635,6 +636,9 @@ function isBoilerplateElement(element) {
 		//'figure.kudo' svbtle.com blogs
 		if(classList.contains('kudo'))
 			return true;
+		// scientificamerican.com
+		if(classList.contains('aside-banner'))
+			return true;
 	} else if(localName === 'form') {
 		// 'form#comment_form' Doctors Lounge
 		// 'form#commentform' blogs.law.harvard.edu
@@ -767,6 +771,7 @@ const DIV_IDS = new Set([
 	'ctl00_ContentPlaceHolder1_UC_UserComment1_updatePanelComments', // Ahram
 	'dailydot-socialbar', // Daily Dot
 	'dfp-ad-mosad_1-wrapper', // The Hill
+	'dfp-right-article', // scientificamerican.com
 	'digital-editions', // The New Yorker
 	'disqus', // ABCNews
 	'disqusAcc', // Telegraph Co Uk
@@ -862,6 +867,7 @@ const DIV_IDS = new Set([
 	'sidebar-left', // broadinstitute.org
 	'signIn', // Joplin
 	'simple_socialmedia', // Freakonomics
+	'site-header', // scientificamerican.com
 	'sliding-menu', // theweek.com
 	'social_btns', // theregister.co.uk
 	'social-links', // Reuters
@@ -945,9 +951,11 @@ const DIV_CLASSES = [
 	'article-extra', // TechCrunch
 	'article-footer', // Windows Central
 	'article_footer', // Bloomberg
+	'article-header__inner', // scientificamerican.com
 	'article_interaction', // Bloomberg
 	'article-list', // // The Oklahoman
 	'articleMeta', // Tampa Bay
+	'article-next', // scientificamerican.com
 	'articleOptions', // Mercury News
 	'article-pagination', // UT San Diego
 	'article-print-url', // USA Today
@@ -1170,6 +1178,7 @@ const DIV_CLASSES = [
 	'nav', // KMBC (note: may be problematic)
 	'navbar', // queue.acm.org
 	'navigation', // Renew Economy (may be problematic)
+	'news-col', // phys.org
 	'newsletterSignupBox', // NBC
 	'newsreel', // The Wall Street Journal
 	'next_on_news', // BuzzFeed
@@ -1292,6 +1301,7 @@ const DIV_CLASSES = [
 	'share-module--count', // popularmechanics.com
 	'sharetools-inline-article-ad', // NYTimes
 	'shareToolsNextItem', // KMBC
+	'share-tooltip', // scientificamerican.com
 	'sharingBox', // India Times
 	'sharrre-container', // Concurring Opinions
 	'shortcode-post', // ABC7 News
@@ -1474,6 +1484,7 @@ const LIST_CLASSES = [
 	'blox-recent-list', // Atlantic City Press
 	'breadcrumb', // The Miami Herald
 	'breadcrumbs', // Giga OM
+	'bread-crumbs', // phys.org
 	'breaking-news-stories', // ABC 7 News
 	'bull-list', // Joplin
 	'cats', // Windows Central
@@ -1502,6 +1513,7 @@ const LIST_CLASSES = [
 	'project-nav', // Kickstarter
 	'related-links', // The Boston Globe
 	'related_links', // Ottawa Citizen
+	'related_post', // nextplatform.com
 	'related-posts', // Concurring Opinions
 	'resize-nav', // Channel News Asia
 	'rssi-icons', // Pacific Standard Magazine
@@ -1574,11 +1586,13 @@ const ASIDE_CLASSES = [
 	'related-side', // NY Magazine
 	'right-rail-module', // Time
 	'see-also', // The Root
+	'sidebar', // phys.org
 	'slickshare', // ProPublica
 	'social-stack', // ProPublica
 	'story-right-rail', // USA Today
 	'story-supplement', // Politico
 	'tools', // The Boston Globe
+	'tout_subscribe', // scientificamerican.com
 	'vestpocket', // Forbes
 	'views-tags', // BuzzFeed
 	'widget-area' // thedomains.com
@@ -1593,6 +1607,7 @@ const P_CLASSES = [
 	'copy-rights-text', // Jerusalem Post
 	'essay-tags', // Aeon Magazine
 	'meta', // http://michael.otacoo.com/
+	'meta_tags', // nextplatform.com
 	'moreVideosTitle', // E-Online
 	'must-log-in', // The Jewish Press
 	'pagination', // Stamford Advocate
@@ -1621,16 +1636,21 @@ const SECTION_IDS = new Set([
 	'promotions', // The New Yorker
 	'related-links', // BuzzFeed
 	'relatedstories', // NPR
-	'responses' // BuzzFeed
+	'responses', // BuzzFeed
+	'slick-social' // phys.org
 ]);
 
 const SECTION_CLASSES = [
+	'add-comment', // phys.org
 	'also-on', // Huffington Post
 	'around-bbc-module', // BBC
 	'article-author', // Ars Technica
 	'article-contributors', // The New Yorker
+	'article-rightslink', // scientificamerican.com
+	'blog-disclaimer', // scientificamerican.com
 	'bottom_shares', // BuzzFeed
 	'breaking_news_bar', // Bloomberg
+	'com-holder', // phys.org
 	'comments', // ABC Chicago
 	'headband', // Bloomberg
 	'headline-list', // The Miami Herald
