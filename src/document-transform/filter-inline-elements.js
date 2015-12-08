@@ -52,10 +52,8 @@ const UNWRAPPABLE_ELEMENTS = [
 	'tbody',
 	'tfoot',
 	'thead',
-
 	'form',
 	'label',
-
 	'big',
 	'blink',
 	'font',
