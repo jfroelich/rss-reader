@@ -36,14 +36,14 @@ function unwrapSingletonLists(document) {
   let children = null;
   for(let i = 0, len = elements.length, list; i < len; i++) {
     list = elements[i];
-    children = getListItems(list);
-    if(children.length === 1) {
-      unwrapListItem(children[0]);
-    }
-
-    //if(countListItems(list) === 1) {
-    //  unwrapSingleItemList(list);
+    //children = getListItems(list);
+    //if(children.length === 1) {
+    //  unwrapListItem(children[0]);
     //}
+
+    if(countListItems(list) === 1) {
+      unwrapSingleItemList(list);
+    }
   }
 }
 
