@@ -21,8 +21,10 @@ DOMUtils.parseHTML = function(html) {
 DOMUtils.unwrap = function(element) {
 	const parent = element.parentElement;
 	if(parent) {
-		while(element.firstChild) {
-			parent.insertBefore(element.firstChild, element);
+		let first = element.firstChild;
+		while(first) {
+			parent.insertBefore(first, element);
+			first = element.firstChild;
 		}
 		element.remove();
 	}
@@ -31,11 +33,14 @@ DOMUtils.unwrap = function(element) {
 // Finds the associated caption for an image element
 DOMUtils.findCaption = function(image) {
 	const parents = DOMUtils.getAncestors(image);
-	const figure = parents.find(function(parent) {
-		return parent.localName === 'figure';
-	});
+	const figure = parents.find(DOMUtils.isFigureElement);
 	if(figure)
 		return figure.querySelector('figcaption');
+};
+
+DOMUtils.isFigureElement = function(element) {
+	// return element instanceof HTMLFigureElement
+	return element.localName === 'figure';
 };
 
 // Returns an array of ancestor elements for the given element
@@ -50,6 +55,10 @@ DOMUtils.getAncestors = function(element) {
 	return parents;
 };
 
+// Finds all elements with the given tagName and removes them,
+// in reverse document order. This will remove elements that do not need to
+// be removed because an ancestor of them will be removed in a later iteration,
+// but this is not currently avoidable.
 DOMUtils.removeElementsByName = function(document, tagName) {
 	// NOTE: this ONLY works in reverse
 	const elements = document.getElementsByTagName(tagName);
