@@ -19,16 +19,16 @@
 
 function filterTracerElements(document) {
   'use strict';
-	const images = document.querySelectorAll('img');
-	const imagesLength = images.length;
+  const images = document.querySelectorAll('img');
+  const imagesLength = images.length;
   let source = null;
-	for(let i = 0, image; i < imagesLength; i++) {
-		image = images[i];
+  for(let i = 0, image; i < imagesLength; i++) {
+    image = images[i];
     source = (image.getAttribute('src') || '').trim();
     if(!source) {
       image.remove();
     } else if(image.width < 2 || image.height < 2) {
       image.remove();
     }
-	}
+  }
 }

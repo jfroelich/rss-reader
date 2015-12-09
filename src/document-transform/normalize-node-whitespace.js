@@ -6,33 +6,33 @@
 function normalizeNodeWhitespace(document) {
   'use strict';
 
-	const it = document.createNodeIterator(document.documentElement,
-		NodeFilter.SHOW_TEXT);
-	let node = it.nextNode();
-	let value = null;
-	while(node) {
-		value = node.nodeValue;
+  const it = document.createNodeIterator(document.documentElement,
+    NodeFilter.SHOW_TEXT);
+  let node = it.nextNode();
+  let value = null;
+  while(node) {
+    value = node.nodeValue;
 
-		// Skip over some common whitespace nodes to reduce the
-		// number of regexp calls. This turns out to be a substantial
+    // Skip over some common whitespace nodes to reduce the
+    // number of regexp calls. This turns out to be a substantial
     // performance improvement.
     // TODO: use a table lookup?
-		if(value === '\n' ||
-			value === '\n\t' ||
-			value === '\n\t\t') {
-			node = it.nextNode();
-			continue;
-		}
+    if(value === '\n' ||
+      value === '\n\t' ||
+      value === '\n\t\t') {
+      node = it.nextNode();
+      continue;
+    }
 
-		// Normalize non-breaking space entity
-		value = value.replace(/&nbsp;/g, ' ');
+    // Normalize non-breaking space entity
+    value = value.replace(/&nbsp;/g, ' ');
 
-		// Condense consecutive whitespace
-		// TODO: test
-		//value = value.replace(/[ ]{2,}/g, ' ');
+    // Condense consecutive whitespace
+    // TODO: test
+    //value = value.replace(/[ ]{2,}/g, ' ');
 
-		node.nodeValue = value;
+    node.nodeValue = value;
 
-		node = it.nextNode();
-	}
+    node = it.nextNode();
+  }
 }

@@ -112,62 +112,62 @@ function unwrapListItem(listItem) {
 
 // assumes the list item count > 0
 function unwrapSingleItemList(list) {
-	const parent = list.parentElement;
-	const item = getFirstListItem(list);
-	const nextSibling = list.nextSibling;
-	if(nextSibling) {
-		while(item.firstChild) {
-			parent.insertBefore(item.firstChild, nextSibling);
-		}
-	} else {
-		while(item.firstChild) {
-			parent.appendChild(item.firstChild);
-		}
-	}
+  const parent = list.parentElement;
+  const item = getFirstListItem(list);
+  const nextSibling = list.nextSibling;
+  if(nextSibling) {
+    while(item.firstChild) {
+      parent.insertBefore(item.firstChild, nextSibling);
+    }
+  } else {
+    while(item.firstChild) {
+      parent.appendChild(item.firstChild);
+    }
+  }
 
-	list.remove();
+  list.remove();
 }
 
 function unwrapSingletonTables(document) {
   if(!document.body) {
     return;
   }
-	const tables = document.body.querySelectorAll('table');
-	for(let i = 0, len = tables.length, table, cell; i < len; i++) {
-		table = tables[i];
-		cell = getTableSingleCell(table);
-		if(cell) {
-			unwrapSingletonTable(table, cell);
-		}
-	}
+  const tables = document.body.querySelectorAll('table');
+  for(let i = 0, len = tables.length, table, cell; i < len; i++) {
+    table = tables[i];
+    cell = getTableSingleCell(table);
+    if(cell) {
+      unwrapSingletonTable(table, cell);
+    }
+  }
 }
 
 this.unwrapSingletonTables = unwrapSingletonTables;
 
 function getTableSingleCell(table) {
-	const numRows = table.rows.length;
-	if(numRows === 1) {
-		const numCells = table.rows[0].cells.length;
-		if(numCells === 1) {
-			return table.rows[0].cells[0];
-		}
-	}
+  const numRows = table.rows.length;
+  if(numRows === 1) {
+    const numCells = table.rows[0].cells.length;
+    if(numCells === 1) {
+      return table.rows[0].cells[0];
+    }
+  }
 }
 
 function unwrapSingletonTable(table, cell) {
-	const parent = table.parentElement;
-	const nextSibling = table.nextSibling;
-	if(nextSibling) {
-		while(cell.firstChild) {
-			parent.insertBefore(cell.firstChild, nextSibling);
-		}
-	} else {
-		while(cell.firstChild) {
-			parent.appendChild(cell.firstChild);
-		}
-	}
+  const parent = table.parentElement;
+  const nextSibling = table.nextSibling;
+  if(nextSibling) {
+    while(cell.firstChild) {
+      parent.insertBefore(cell.firstChild, nextSibling);
+    }
+  } else {
+    while(cell.firstChild) {
+      parent.appendChild(cell.firstChild);
+    }
+  }
 
-	table.remove();
+  table.remove();
 }
 
 } // END ANONYMOUS NAMESPACE

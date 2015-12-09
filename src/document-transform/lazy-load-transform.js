@@ -30,7 +30,7 @@ const LazyLoadTransform = {};
 { // BEGIN ANONYMOUS NAMESPACE
 
 this.transformLazyLoadElements = function _transform(document) {
-	throw new Error('Not implemented');
+  throw new Error('Not implemented');
 };
 
 } // END ANONYMOUS NAMESPACE

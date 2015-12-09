@@ -14,30 +14,30 @@
 function filterFrameElements(document) {
   'use strict';
 
-	// Look for the presence of a frameset and lack of a body
-	// element, and then remove the frameset and generate a body
+  // Look for the presence of a frameset and lack of a body
+  // element, and then remove the frameset and generate a body
   // consisting of either noframes content or an error message.
 
   // TODO: the replacement text should eventually be localized
 
   // TODO: what if noframes contains an iframe?
 
-	let body = document.querySelector('body');
-	const frameset = document.querySelector('frameset');
-	if(!body && frameset) {
-		const noframes = frameset.querySelector('noframes');
-		body = document.createElement('body');
-		if(noframes) {
-			body.innerHTML = noframes.innerHTML;
-		} else {
-			body.textContent = 'Unable to display document due to frames.';
-		}
+  let body = document.querySelector('body');
+  const frameset = document.querySelector('frameset');
+  if(!body && frameset) {
+    const noframes = frameset.querySelector('noframes');
+    body = document.createElement('body');
+    if(noframes) {
+      body.innerHTML = noframes.innerHTML;
+    } else {
+      body.textContent = 'Unable to display document due to frames.';
+    }
 
-		document.documentElement.appendChild(body);
-		frameset.remove();
-		return;
-	}
+    document.documentElement.appendChild(body);
+    frameset.remove();
+    return;
+  }
 
 
-	DOMUtils.removeElementsBySelector(document, 'frameset, frame, iframe');
+  DOMUtils.removeElementsBySelector(document, 'frameset, frame, iframe');
 }

@@ -11,12 +11,12 @@
 function filterBreakruleElements(document) {
   'use strict';
 
-	const elements = document.querySelectorAll('br');
-	const length = elements.length;
-	for(let i = 0; i < length; i++) {
-		const element = elements[i];
-		const parent = element.parentElement;
-		const p = document.createElement('p');
-		parent.replaceChild(p, element);
-	}
+  const elements = document.querySelectorAll('br');
+  const length = elements.length;
+  for(let i = 0; i < length; i++) {
+    const element = elements[i];
+    const parent = element.parentElement;
+    const p = document.createElement('p');
+    parent.replaceChild(p, element);
+  }
 }

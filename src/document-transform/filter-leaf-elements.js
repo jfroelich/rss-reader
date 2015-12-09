@@ -8,27 +8,27 @@
 
 // These element names are never considered leaves
 const exceptions = new Set([
-	'area',
-	'audio',
-	'br',
-	'canvas',
-	'col',
-	'hr',
-	'iframe',
-	'img',
-	'source',
-	'svg',
-	'track',
-	'video'
+  'area',
+  'audio',
+  'br',
+  'canvas',
+  'col',
+  'hr',
+  'iframe',
+  'img',
+  'source',
+  'svg',
+  'track',
+  'video'
 ]);
 
 // Elements containing only these text node values are still leaves
 const trivialTexts = new Set([
-	'',
-	'\n',
-	'\n\t',
-	'\n\t\t',
-	'\n\t\t\t'
+  '',
+  '\n',
+  '\n\t',
+  '\n\t\t',
+  '\n\t\t\t'
 ]);
 
 // Prunes leaf elements from the document. Leaf elements are those
@@ -55,59 +55,59 @@ const trivialTexts = new Set([
 // library.
 
 function filterLeafElements(document) {
-	const leaves = new Set();
+  const leaves = new Set();
 
-	visit(leaves,
-		document.body,
-		document.documentElement);
+  visit(leaves,
+    document.body,
+    document.documentElement);
 
-	for(let leaf of leaves) {
-		// console.debug('Leaf: ', leaf.outerHTML);
-		leaf.remove();
-	}
+  for(let leaf of leaves) {
+    // console.debug('Leaf: ', leaf.outerHTML);
+    leaf.remove();
+  }
 }
 
 this.filterLeafElements = filterLeafElements;
 
 function visit(leaves, bodyElement, element) {
-	const childNodes = element.childNodes;
-	const childNodeCount = childNodes.length;
-	for(let i = 0, cursor; i < childNodeCount; i++) {
-		cursor = childNodes[i];
-		if(cursor.nodeType === Node.ELEMENT_NODE) {
-			if(isLeaf(bodyElement, cursor)) {
-				leaves.add(cursor);
-			} else {
-				visit(leaves, bodyElement, cursor);
-			}
-		}
-	}
+  const childNodes = element.childNodes;
+  const childNodeCount = childNodes.length;
+  for(let i = 0, cursor; i < childNodeCount; i++) {
+    cursor = childNodes[i];
+    if(cursor.nodeType === Node.ELEMENT_NODE) {
+      if(isLeaf(bodyElement, cursor)) {
+        leaves.add(cursor);
+      } else {
+        visit(leaves, bodyElement, cursor);
+      }
+    }
+  }
 }
 
 function isLeaf(bodyElement, element) {
-	if(element === bodyElement)
-		return false;
-	if(exceptions.has(element.localName))
-		return false;
+  if(element === bodyElement)
+    return false;
+  if(exceptions.has(element.localName))
+    return false;
 
-	const childNodes = element.childNodes;
-	const childCount = childNodes.length;
-	for(let i = 0, child; i < childCount; i++) {
-		child = childNodes[i];
-		if(child.nodeType === Node.TEXT_NODE) {
-			if(!trivialTexts.has(child.nodeValue)) {
-				return false;
-			}
-		} else if(child.nodeType === Node.ELEMENT_NODE) {
-			if(!isLeaf(bodyElement, child)) {
-				return false;
-			}
-		} else {
-			return false;
-		}
-	}
+  const childNodes = element.childNodes;
+  const childCount = childNodes.length;
+  for(let i = 0, child; i < childCount; i++) {
+    child = childNodes[i];
+    if(child.nodeType === Node.TEXT_NODE) {
+      if(!trivialTexts.has(child.nodeValue)) {
+        return false;
+      }
+    } else if(child.nodeType === Node.ELEMENT_NODE) {
+      if(!isLeaf(bodyElement, child)) {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
 
-	return true;
+  return true;
 }
 
 } // END ANONYMOUS NAMESPACE

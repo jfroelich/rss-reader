@@ -23,12 +23,12 @@ function filterBoilerplate(document) {
   results.prune();
 */
 
-	const isContent = createCalamineClassifier(false, document);
-	const garbage = document.implementation.createHTMLDocument();
-	const elements = document.querySelectorAll('*');
-	const length = elements.length;
-	for(let i = 0, element; i < length; i++) {
-		element = elements[i];
+  const isContent = createCalamineClassifier(false, document);
+  const garbage = document.implementation.createHTMLDocument();
+  const elements = document.querySelectorAll('*');
+  const length = elements.length;
+  for(let i = 0, element; i < length; i++) {
+    element = elements[i];
 
     // Check that the element is still located within the current document.
     // A previous iteration of this loop may have indirectly moved the element
@@ -36,15 +36,15 @@ function filterBoilerplate(document) {
     // are visiting nodes in top down order (using the in-document-order nature
     // of querySelectorAll).
 
-		if(element.ownerDocument === document) {
+    if(element.ownerDocument === document) {
 
       // If the element is still a part of the document, check whether the
       // element is content or boilerplate. If it is not content, then
       // remove the element from the document (by moving it).
 
       if(!isContent(element)) {
-				garbage.adoptNode(element);
-			}
-		}
-	}
+        garbage.adoptNode(element);
+      }
+    }
+  }
 }

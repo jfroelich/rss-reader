@@ -13,17 +13,17 @@
 function filterScriptElements(document) {
   'use strict';
 
-	DOMUtils.removeElementsBySelector(document, 'script, noscript');
+  DOMUtils.removeElementsBySelector(document, 'script, noscript');
 
-	// Disable anchors that use javascript protocol. Keep the href
-	// around for boilerplate analysis. Note this selects only
+  // Disable anchors that use javascript protocol. Keep the href
+  // around for boilerplate analysis. Note this selects only
   // anchors with a href attribute to reduce the number of anchors
   // iterated.
-	const anchors = document.querySelectorAll('a[href]');
-	for(let i = 0, len = anchors.length, anchor; i < len; i++) {
-		anchor = anchors[i];
-		if(anchor.protocol === 'javascript:') {
-			anchor.setAttribute('href', '');
-		}
-	}
+  const anchors = document.querySelectorAll('a[href]');
+  for(let i = 0, len = anchors.length, anchor; i < len; i++) {
+    anchor = anchors[i];
+    if(anchor.protocol === 'javascript:') {
+      anchor.setAttribute('href', '');
+    }
+  }
 }

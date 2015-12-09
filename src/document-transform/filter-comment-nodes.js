@@ -6,12 +6,12 @@
 // TODO: process IE conditional comments?
 function filterCommentNodes(document) {
   'use strict';
-	const iterator = document.createNodeIterator(
+  const iterator = document.createNodeIterator(
     document.documentElement,
-		NodeFilter.SHOW_COMMENT);
-	let comment = iterator.nextNode();
-	while(comment) {
-		comment.remove();
-		comment = iterator.nextNode();
-	}
+    NodeFilter.SHOW_COMMENT);
+  let comment = iterator.nextNode();
+  while(comment) {
+    comment.remove();
+    comment = iterator.nextNode();
+  }
 }

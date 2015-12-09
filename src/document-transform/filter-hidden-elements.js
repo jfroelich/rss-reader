@@ -21,12 +21,12 @@ function filterHiddenElements(document) {
 
   const substrings = [
     'display:none',
-		'display: none',
-		'visibility:hidden',
-		'visibility: hidden',
-		'opacity:0.0',
-		'opacity: 0.0',
-		'opacity:0'
+    'display: none',
+    'visibility:hidden',
+    'visibility: hidden',
+    'opacity:0.0',
+    'opacity: 0.0',
+    'opacity:0'
   ];
 
   const selector = substrings.map(function wrapSubstring(string) {

@@ -8,26 +8,26 @@
 
 // Removes trimmable elements from the start and end of the document
 function trimDocumentElements(document) {
-	const root = document.body;
+  const root = document.body;
 
-	if(!root) {
-		return;
-	}
+  if(!root) {
+    return;
+  }
 
-	let sibling = root;
-	let node = root.firstChild;
-	while(isTrimmable(node)) {
-		sibling = node.nextSibling;
-		node.remove();
-		node = sibling;
-	}
+  let sibling = root;
+  let node = root.firstChild;
+  while(isTrimmable(node)) {
+    sibling = node.nextSibling;
+    node.remove();
+    node = sibling;
+  }
 
-	node = root.lastChild;
-	while(isTrimmable(node)) {
-		sibling = node.previousSibling;
-		node.remove();
-		node = sibling;
-	}
+  node = root.lastChild;
+  while(isTrimmable(node)) {
+    sibling = node.previousSibling;
+    node.remove();
+    node = sibling;
+  }
 }
 
 this.trimDocumentElements = trimDocumentElements;
@@ -40,13 +40,13 @@ this.trimDocumentElements = trimDocumentElements;
 const ELEMENT_NODE = Node.ELEMENT_NODE;
 
 function isTrimmable(element) {
-	if(!element) return false;
-	if(element.nodeType !== ELEMENT_NODE) return false;
-	let name = element.localName;
-	if(name === 'br') return true;
-	if(name === 'hr') return true;
-	if(name === 'p' && !element.firstChild) return true;
-	return false;
+  if(!element) return false;
+  if(element.nodeType !== ELEMENT_NODE) return false;
+  let name = element.localName;
+  if(name === 'br') return true;
+  if(name === 'hr') return true;
+  if(name === 'p' && !element.firstChild) return true;
+  return false;
 }
 
 } // END ANONYMOUS NAMESPACE

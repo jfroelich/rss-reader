@@ -19,6 +19,6 @@
 // TODO: compare to readability's technique
 
 function mergeMultiplePageDocument(document, callback) {
-	'use strict';
+  'use strict';
 
 }
