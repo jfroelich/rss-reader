@@ -6,15 +6,17 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
+// TODO: use for..of destructuring when supported
+// TODO: refactor all extractors for body to just look for
+// best body, not to analyze bp, and move
+// return a results object, and make an annotate method that does
+// the annotation (store sets as props of the results object),
+// and remove the annotate parameter to this function
+// TODO: split into two functions, one to find body,
+// and one to do second pass to class bp
+
 // Creates a boilerplate filtering function
-function createCalamineClassifier(annotate, document) {
-
-  // TODO: use for..of destructuring when supported
-
-  // TODO: split into two functions, one to find body,
-  // and one to do second pass to class bp
-  // TODO: refactor all extractors for body to just look for
-  // best body, not to analyze bp, and move
+function createClassifier(annotate, document) {
 
   if(!document.querySelector('body')) {
     return isAlwaysContentElement;
@@ -27,32 +29,49 @@ function createCalamineClassifier(annotate, document) {
     return isContentElement.bind(this, bodyElement, flagged);
   }
 
-  // Prefill scores map used by various feature extractors
-  // TODO: deprecate once i switched over to returning maps below
-  const scores = new Map();
-  for(let i = 0, elements = document.getElementsByTagName('*'),
-    len = elements.length; i < len; i++) {
-    scores.set(elements[i], 0.0);
-  }
-
   const textScores = analyzeText(document);
-  const typeScores = analyzeTypes(document, scores, annotate);
-  const topologyScores = analyzeTopology(document, scores, annotate);
-  analyzeImages(document, scores, annotate);
-  analyzeAttributes(document, scores, annotate);
-  analyzeMicrodata(document, scores, annotate);
+  const typeScores = analyzeTypes(document);
+  const topologyScores = analyzeTopology(document);
+  const imageParentScores = analyzeImages(document);
+  const attributeScores = analyzeAttributes(document);
+  const microdataScores = analyzeMicrodata(document);
 
-  // Integrate the scores
+  // Integrate the scores into a single map
+  const scores = new Map();
+
   for(let entry of textScores) {
-    scores.set(entry[0], (scores.get(entry[0]) || 0) + entry[1]);
+    scores.set(entry[0], (scores.get(entry[0]) || 0.0) + entry[1]);
   }
 
   for(let entry of typeScores) {
-    scores.set(entry[0], (scores.get(entry[0]) || 0) + entry[1]);
+    scores.set(entry[0], (scores.get(entry[0]) || 0.0) + entry[1]);
   }
 
   for(let entry of topologyScores) {
-    scores.set(entry[0], (scores.get(entry[0]) || 0) + entry[1]);
+    scores.set(entry[0], (scores.get(entry[0]) || 0.0) + entry[1]);
+  }
+
+  for(let entry of imageParentScores) {
+    scores.set(entry[0], (scores.get(entry[0]) || 0.0) + entry[1]);
+  }
+
+  for(let entry of attributeScores) {
+    scores.set(entry[0], (scores.get(entry[0]) || 0.0) + entry[1]);
+  }
+
+  for(let entry of microdataScores) {
+    scores.set(entry[0], (scores.get(entry[0]) || 0.0) + entry[1]);
+  }
+
+  // Set bodyElement to element with highest score, defaulting
+  // to document.body.
+  bodyElement = document.body;
+  let bestScore = scores.get(bodyElement);
+  for(let entry of scores) {
+    if(entry[1] > bestScore) {
+      bodyElement = entry[0];
+      bestScore = entry[1];
+    }
   }
 
   // Optionally annotate the scores
@@ -69,19 +88,20 @@ function createCalamineClassifier(annotate, document) {
       entry[0].dataset.topologyScore = entry[1];
     }
 
+    for(let entry of imageParentScores) {
+      entry[0].dataset.imageScore = entry[1].toFixed(2);
+    }
+
+    for(let entry of attributeScores) {
+      entry[0].dataset.attributeScore = entry[1].toFixed(2);
+    }
+
+    for(let entry of microdataScores) {
+      entry[0].dataset.microdataScore = entry[1].toFixed(2);
+    }
+
     for(let entry of scores) {
       entry[0].dataset.score = entry[1].toFixed(2);
-    }
-  }
-
-  // Set bodyElement to element with highest score, defaulting
-  // to document.body.
-  bodyElement = document.body;
-  let bestScore = scores.get(bodyElement);
-  for(let entry of scores) {
-    if(entry[1] > bestScore) {
-      bodyElement = entry[0];
-      bestScore = entry[1];
     }
   }
 
@@ -90,13 +110,14 @@ function createCalamineClassifier(annotate, document) {
 }
 
 // Export global
-this.createCalamineClassifier = createCalamineClassifier;
+this.createClassifier = createClassifier;
 
 const BODY_SIGNATURES = [
   'article',
   '.hentry',
   '.entry-content',
   '#article',
+  '.article',
   '.articleText',
   '.articleBody',
   '#articleBody',
@@ -113,7 +134,10 @@ const BODY_SIGNATURES = [
   '[itemtype="http://schema.org/WebPage"]',
   '[itemtype="http://schema.org/TechArticle"]',
   '[itemtype="http://schema.org/ScholarlyArticle"]',
-  '#WNStoryBody'
+  '#WNStoryBody',
+
+  // todo: verify this one
+  '.WNStoryBody'
 ];
 
 const NUM_SIGNATURES = BODY_SIGNATURES.length;

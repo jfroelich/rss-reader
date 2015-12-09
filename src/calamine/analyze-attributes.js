@@ -4,71 +4,53 @@
 
 'use strict';
 
-// Analyzes element attribute values, excluding microdata.
-
-// TODO: some of the tokens in the map are probably single id or
-// singe class clases that do not belong in the map, like articleContent
-
-// TODO: the single class matchers and such are no longer correct to use
-// given that we use the fast path in the main calamine func
-
-// TODO: this should be called an exetractor and return a map or something
-// that contains the extracted features, rather than modifying score
-
-// TODO: this isn't a document transform, calamine is no longer a document
-// transform, so this belongs in a separate location
-
 { // BEGIN ANONYMOUS NAMESPACE
 
-function analyzeAttributes(document, scores, annotate) {
+// Looks for delimiting characters of attribute values
+// TODO: split on case-transition (lower2upper,upper2lower)
+const ATTRIBUTE_SPLIT = /[\s\-_0-9]+/g;
+
+// Analyzes element attribute values, excluding microdata.
+function analyzeAttributes(document) {
+  const scores = new Map();
   const elements = document.querySelectorAll(
     'aside, div, section, span');
-  Array.prototype.forEach.call(elements,
-    applyElementAttributeBias.bind(null, scores, annotate));
-  applySingleClassBias(document, scores, annotate, 'article', 1000);
-  applySingleClassBias(document, scores, annotate, 'articleText', 1000);
-  applySingleClassBias(document, scores, annotate, 'articleBody', 1000);
+  const numElements = elements.length;
+  const tokenSet = new Set();
+  for(let i = 0, element, values, tokenArray, bias, token; i < numElements;
+    i++) {
+
+    element = elements[i];
+    values = [element.id, element.name, element.className].join(' ');
+    if(values.length > 2) {
+      bias = 0.0;
+      tokenArray = values.toLowerCase().split(ATTRIBUTE_SPLIT);
+      tokenSet.clear();
+      for(token of tokenArray) {
+        tokenSet.add(token);
+      }
+      for(token of tokenSet) {
+        bias += ATTRIBUTE_BIAS.get(token) || 0.0;
+      }
+
+      if(bias) {
+        scores.set(element, (scores.get(element) || 0.0) + bias);
+      }
+    }
+  }
+
+  return scores;
 }
 
 this.analyzeAttributes = analyzeAttributes;
 
-// Looks for delimiting characters
-// TODO: split on case-transition (lower2upper,upper2lower)
-const ATTRIBUTE_SPLIT = /[\s\-_0-9]+/g;
-
-function applyElementAttributeBias(scores, annotate, element) {
-  const values = [element.id, element.name, element.className].join(' ');
-  if(values.length < 3) return;
-  const tokens = new Set(values.toLowerCase().split(ATTRIBUTE_SPLIT));
-  let bias = 0;
-  for(let token of tokens) {
-    bias += ATTRIBUTE_BIAS.get(token) || 0;
-  }
-  if(!bias) return;
-  scores.set(element, scores.get(element) + bias);
-  if(annotate)
-    element.dataset.attributeBias = bias.toString();
-}
-
-function applySingleClassBias(document, scores, annotate, className, bias) {
-  const elements = document.getElementsByClassName(className);
-  if(elements.length !== 1) return;
-  const element = elements[0];
-  scores.set(element, scores.get(element) + bias);
-  if(annotate) {
-    let previousBias = parseFloat(element.dataset.attributeBias) || 0.0;
-    element.dataset.attributeBias = previousBias + bias;
-  }
-}
-
-  const ATTRIBUTE_BIAS = new Map([
+const ATTRIBUTE_BIAS = new Map([
   ['about', -35],
   ['ad', -100],
   ['ads', -50],
   ['advert', -200],
   ['artext1',100],
   ['articles', 100],
-  ['articlecontent', 1000],
   ['articlecontentbox', 200],
   ['articleheadings', -50],
   ['articlesection', 200],
@@ -77,7 +59,6 @@ function applySingleClassBias(document, scores, annotate, className, bias) {
   ['author', 20],
   ['block', -5],
   ['blog', 20],
-  ['blogposting', 500],
   ['body', 100],
   ['bodytd', 50],
   ['bookmarking', -100],
@@ -233,7 +214,6 @@ function applySingleClassBias(document, scores, annotate, className, bias) {
   ['welcome', -50],
   ['widg', -200],
   ['widget', -200],
-  ['wnstorybody', 1000],
   ['zone', -50]
 ]);
 

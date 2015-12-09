@@ -6,8 +6,12 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
+// TODO: rename to analyzeImageParents
+
 // Bias image containers
-function analyzeImages(document, scores, annotate) {
+function analyzeImages(document) {
+
+  const scores = new Map();
 
   const images = document.getElementsByTagName('img');
   const numImages = images.length;
@@ -18,6 +22,8 @@ function analyzeImages(document, scores, annotate) {
   let children = null;
   let numChildren = 0;
   let node = null;
+  let bias = 0.0;
+  let j = 0;
 
   for(let i = 0; i < numImages; i++) {
     image = images[i];
@@ -27,12 +33,12 @@ function analyzeImages(document, scores, annotate) {
       continue;
     }
 
-    let bias = 0.0;
+    bias = 0.0;
 
     // Dimension bias
     if(image.width && image.height) {
       area = image.width * image.height;
-      bias = 0.0015 * Math.min(100000, area);
+      bias += 0.0015 * Math.min(100000, area);
     }
 
     // Description bias
@@ -53,7 +59,7 @@ function analyzeImages(document, scores, annotate) {
     // Carousel bias
     children = parent.childNodes;
     numChildren = children.length;
-    for(let j = 0; j < numChildren; j++) {
+    for(j = 0; j < numChildren; j++) {
       node = children[j];
       if(node !== image && node.localName === 'img') {
         bias = bias - 50.0;
@@ -61,12 +67,11 @@ function analyzeImages(document, scores, annotate) {
     }
 
     if(bias) {
-      scores.set(parent, scores.get(parent) + bias);
-      if(annotate) {
-        parent.dataset.imageBias = bias;
-      }
+      scores.set(parent, (scores.get(parent) || 0.0) + bias);
     }
   }
+
+  return scores;
 }
 
 this.analyzeImages = analyzeImages;

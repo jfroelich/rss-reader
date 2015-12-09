@@ -48,6 +48,8 @@ function getNodeTextLength(node) {
     return 0;
   } else {
     // TODO: note where i got this from on stackoverflow
+    // TODO: we probably only care about consecutive space in the middle
+    // and trimming?
     return value.replace(RE_WHITESPACE, '').length;
   }
 }
@@ -55,10 +57,6 @@ function getNodeTextLength(node) {
 // Generate a map between document elements and a count
 // of characters within the element. This is tuned to work
 // from the bottom up rather than the top down.
-
-// TODO: this is now the slowest part of calamine
-// and also in general the slowest transform
-
 function deriveTextLength(document) {
   const map = new Map();
 
@@ -71,7 +69,6 @@ function deriveTextLength(document) {
   let previousLength = 0;
   while(node) {
     length = getNodeTextLength(node);
-
     if(length) {
       element = node.parentElement;
       while(element) {

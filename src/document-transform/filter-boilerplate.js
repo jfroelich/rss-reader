@@ -23,7 +23,7 @@ function filterBoilerplate(document) {
   results.prune();
 */
 
-  const isContent = createCalamineClassifier(false, document);
+  const isContent = createClassifier(false, document);
   const garbage = document.implementation.createHTMLDocument();
   const elements = document.querySelectorAll('*');
   const length = elements.length;

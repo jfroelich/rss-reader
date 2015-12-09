@@ -4,6 +4,12 @@
 
 'use strict';
 
+// TODO: schemas can probably be treated as fast paths
+// and so we don't need this separate lib for that purpose.
+// Instead, we want this separate lib for the other microdata
+// attributes. and furthermore, we probably just want to
+// roll this into the analyzeAttributes lib
+
 // TODO: itemscope?
 // TODO: itemprop="articleBody"?
 // TODO: [role="article"]?
@@ -13,7 +19,7 @@
 { // BEGIN ANONYMOUS NAMESPACE
 
 // Microdata schemas
-const MD_SCHEMAS = [
+const SCHEMAS = new Set([
   'Article',
   'Blog',
   'BlogPost',
@@ -22,25 +28,26 @@ const MD_SCHEMAS = [
   'ScholarlyArticle',
   'TechArticle',
   'WebPage'
-];
+]);
 
-function analyzeMicrodata(document, scores, annotate) {
+function analyzeMicrodata(document) {
+  const scores = new Map();
+  let selector = null,
+    elements = null,
+    element = null;
 
-  MD_SCHEMAS.forEach(applySchemaBias.bind(null,
-    document, scores, annotate));
+  for(let schema of SCHEMAS) {
+    selector = '[itemtype="http://schema.org/' + schema + '"]';
+    elements = document.querySelectorAll(selector);
+    if(elements.length === 1) {
+      element = elements[0];
+      scores.set(element, (scores.get(element) || 0.0) + 500.0);
+    }
+  }
+
+  return scores;
 }
 
 this.analyzeMicrodata = analyzeMicrodata;
-
-function applySchemaBias(document, scores, annotate, schema) {
-  const selector = '[itemtype="http://schema.org/' + schema + '"]';
-  const elements = document.querySelectorAll(selector);
-  if(elements.length !== 1) return;
-  const element = elements[0];
-  scores.set(element, scores.get(element) + 500);
-  if(annotate) {
-    element.dataset.itemTypeBias = 500;
-  }
-}
 
 } // END ANONYMOUS NAMESPACE

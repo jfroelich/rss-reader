@@ -19,18 +19,18 @@
 { // BEGIN ANONYMOUS NAMESPACE
 
 function analyzeTypes(document) {
-  var typeScores = new Map();
+  var scores = new Map();
   var elements = document.getElementsByTagName('*');
   for(let i = 0, len = elements.length, bias = 0, element = null;
     i < len; i++) {
     element = elements[i];
     bias = INTRINSIC_BIAS.get(element.localName);
     if(bias) {
-      typeScores.set(element, bias);
+      scores.set(element, bias);
     }
   }
 
-  return typeScores;
+  return scores;
 }
 
 this.analyzeTypes = analyzeTypes;
