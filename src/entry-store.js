@@ -17,240 +17,240 @@ EntryStore.ARCHIVED = 1;
 // TODO: inject dependency on DateUtils instead of hardcoding it
 
 EntryStore.put = function(connection, entry, callback) {
-	// console.debug('Putting entry %s', entry.link);
-	const storable = {};
+  // console.debug('Putting entry %s', entry.link);
+  const storable = {};
 
-	if(entry.id) {
-		storable.id = entry.id;
-	}
+  if(entry.id) {
+    storable.id = entry.id;
+  }
 
-	if(entry.hasOwnProperty('feedLink')) {
-		storable.feedLink = entry.feedLink;
-	}
+  if(entry.hasOwnProperty('feedLink')) {
+    storable.feedLink = entry.feedLink;
+  }
 
-	if(entry.hasOwnProperty('feedTitle')) {
-		storable.feedTitle = entry.feedTitle;
-	}
+  if(entry.hasOwnProperty('feedTitle')) {
+    storable.feedTitle = entry.feedTitle;
+  }
 
-	if(entry.hasOwnProperty('feed')) {
-		storable.feed = entry.feed;
-	}
+  if(entry.hasOwnProperty('feed')) {
+    storable.feed = entry.feed;
+  }
 
-	if(entry.link) {
-		storable.link = entry.link;
-	}
+  if(entry.link) {
+    storable.link = entry.link;
+  }
 
-	if(entry.hasOwnProperty('readState')) {
-		storable.readState = entry.readState;
-	} else {
-		storable.readState = EntryStore.UNREAD;
-	}
+  if(entry.hasOwnProperty('readState')) {
+    storable.readState = entry.readState;
+  } else {
+    storable.readState = EntryStore.UNREAD;
+  }
 
-	if(entry.hasOwnProperty('readDate')) {
-		storable.readDate = entry.readDate;
-	}
+  if(entry.hasOwnProperty('readDate')) {
+    storable.readDate = entry.readDate;
+  }
 
-	if(entry.author) {
-		storable.author = entry.author;
-	}
+  if(entry.author) {
+    storable.author = entry.author;
+  }
 
-	if(entry.title) {
-		storable.title = entry.title;
-	}
+  if(entry.title) {
+    storable.title = entry.title;
+  }
 
-	// TODO: make sure pubdate has a consistent value. I am using
-	// date.getTime here, but I am not sure I am using the same
-	// or similar every where else. Like in poll denormalize
-	if(entry.pubdate) {
-		const date = new Date(entry.pubdate);
-		if(DateUtils.isValid(date)) {
-			storable.pubdate = date.getTime();
-		}
-	}
+  // TODO: make sure pubdate has a consistent value. I am using
+  // date.getTime here, but I am not sure I am using the same
+  // or similar every where else. Like in poll denormalize
+  if(entry.pubdate) {
+    const date = new Date(entry.pubdate);
+    if(DateUtils.isValid(date)) {
+      storable.pubdate = date.getTime();
+    }
+  }
 
-	if(entry.hasOwnProperty('created')) {
-		storable.created = entry.created;
-	} else {
-		storable.created = Date.now();
-	}
+  if(entry.hasOwnProperty('created')) {
+    storable.created = entry.created;
+  } else {
+    storable.created = Date.now();
+  }
 
-	if(entry.content) {
-		storable.content = entry.content;
-	}
+  if(entry.content) {
+    storable.content = entry.content;
+  }
 
-	if(entry.hasOwnProperty('archiveState')) {
-		storable.archiveState = entry.archiveState;
-	} else {
-		storable.archiveState = EntryStore.UNARCHIVED;
-	}
+  if(entry.hasOwnProperty('archiveState')) {
+    storable.archiveState = entry.archiveState;
+  } else {
+    storable.archiveState = EntryStore.UNARCHIVED;
+  }
 
-	const transaction = connection.transaction('entry', 'readwrite');
-	transaction.oncomplete = function() {
-		callback();
-	};
-	transaction.objectStore('entry').put(storable);
+  const transaction = connection.transaction('entry', 'readwrite');
+  transaction.oncomplete = function() {
+    callback();
+  };
+  transaction.objectStore('entry').put(storable);
 };
 
 // Updates the read state of the corresponding entry in the database
 // TODO: inject dependency on updateBadge instead of hard coding it
 // within markReadOnOpenCursor
 EntryStore.markRead = function(connection, id) {
-	// console.debug('Marking entry %s as read', id);
-	const transaction = connection.transaction('entry', 'readwrite');
-	const store = transaction.objectStore('entry');
-	const request = store.openCursor(id);
-	request.onsuccess = markReadOnOpenCursor;
+  // console.debug('Marking entry %s as read', id);
+  const transaction = connection.transaction('entry', 'readwrite');
+  const store = transaction.objectStore('entry');
+  const request = store.openCursor(id);
+  request.onsuccess = markReadOnOpenCursor;
 };
 
 // Private helper for markRead
 function markReadOnOpenCursor(event) {
 
-	const cursor = event.target.result;
-	if(!cursor) {
-		return;
-	}
+  const cursor = event.target.result;
+  if(!cursor) {
+    return;
+  }
 
-	const entry = cursor.value;
-	if(!entry) {
-		return;
-	}
+  const entry = cursor.value;
+  if(!entry) {
+    return;
+  }
 
-	if(entry.readState === EntryStore.READ) {
-		return;
-	}
+  if(entry.readState === EntryStore.READ) {
+    return;
+  }
 
-	// TODO: update date-updated as well
-	entry.readState = EntryStore.READ;
-	entry.readDate = Date.now();
-	cursor.update(entry);
+  // TODO: update date-updated as well
+  entry.readState = EntryStore.READ;
+  entry.readDate = Date.now();
+  cursor.update(entry);
 
-	// Retrieve the connection from within the current transaction
-	const connection = event.target.transaction.db;
-	updateBadge(Database, EntryStore, connection);
+  // Retrieve the connection from within the current transaction
+  const connection = event.target.transaction.db;
+  updateBadge(Database, EntryStore, connection);
 
-	chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
+  chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
 }
 
 EntryStore.countUnread = function(connection, callback) {
-	const transaction = connection.transaction('entry');
-	const store = transaction.objectStore('entry');
-	const index = store.index('readState');
-	const range = IDBKeyRange.only(EntryStore.UNREAD);
-	const request = index.count(range);
-	request.onsuccess = callback;
+  const transaction = connection.transaction('entry');
+  const store = transaction.objectStore('entry');
+  const index = store.index('readState');
+  const range = IDBKeyRange.only(EntryStore.UNREAD);
+  const request = index.count(range);
+  request.onsuccess = callback;
 };
 
 EntryStore.findByLink = function(connection, entry, callback) {
-	const transaction = connection.transaction('entry');
-	const entries = transaction.objectStore('entry');
-	const links = entries.index('link');
-	const request = links.get(entry.link);
-	request.onsuccess = callback;
+  const transaction = connection.transaction('entry');
+  const entries = transaction.objectStore('entry');
+  const links = entries.index('link');
+  const request = links.get(entry.link);
+  request.onsuccess = callback;
 };
 
 EntryStore.removeByFeed = function(connection, id, callback) {
-	const transaction = connection.transaction('entry', 'readwrite');
-	transaction.oncomplete = callback;
-	const store = transaction.objectStore('entry');
-	const index = store.index('feed');
-	const request = index.openCursor(id);
-	request.onsuccess = function(event) {
-		const cursor = event.target.result;
-		if(cursor) {
-			cursor.delete();
-			cursor.continue();
-		}
-	};
+  const transaction = connection.transaction('entry', 'readwrite');
+  transaction.oncomplete = callback;
+  const store = transaction.objectStore('entry');
+  const index = store.index('feed');
+  const request = index.openCursor(id);
+  request.onsuccess = function(event) {
+    const cursor = event.target.result;
+    if(cursor) {
+      cursor.delete();
+      cursor.continue();
+    }
+  };
 };
 
 // TODO: specify Database as a dependency injection
 EntryStore.clear = function(connection) {
-	if(connection) {
-		_clear(connection);
-	} else {
-		Database.open(function(event) {
-			_clear(event.target.result);
-		});
-	}
+  if(connection) {
+    _clear(connection);
+  } else {
+    Database.open(function(event) {
+      _clear(event.target.result);
+    });
+  }
 };
 
 // Private helper for clear
 function _clear(connection) {
-	const transaction = connection.transaction('entry', 'readwrite');
-	transaction.oncomplete = function(event) {
-		console.debug('Cleared entry object store');
-	};
-	transaction.objectStore('entry').clear();
+  const transaction = connection.transaction('entry', 'readwrite');
+  transaction.oncomplete = function(event) {
+    console.debug('Cleared entry object store');
+  };
+  transaction.objectStore('entry').clear();
 }
 
 // TODO: specify Database as a dependency injection
 // TODO: I should probably move archiveEntries into its own file
 // again, and then specify EntryStore as a dependency and inject it
 EntryStore.archiveEntries = function() {
-	Database.open(archiveOnConnect);
+  Database.open(archiveOnConnect);
 };
 
 // Private helper for archiveEntries
 function archiveOnConnect(event) {
 
-	const stats = {
-		processed: 0
-	};
+  const stats = {
+    processed: 0
+  };
 
-	if(event.type === 'success') {
-		const connection = event.target.result;
-		const transaction = connection.transaction('entry', 'readwrite');
-		transaction.oncomplete = onArchiveComplete.bind(
-			transaction, stats);
-		const store = transaction.objectStore('entry');
-		const index = store.index('archiveState-readState');
-		const range = IDBKeyRange.only([EntryStore.UNARCHIVED,
-			EntryStore.READ]);
-		const request = index.openCursor(range);
-		request.onsuccess = archiveNextEntry.bind(request, stats);
-	} else {
-		console.debug('Archive aborted due to connection error %o', event);
-	}
+  if(event.type === 'success') {
+    const connection = event.target.result;
+    const transaction = connection.transaction('entry', 'readwrite');
+    transaction.oncomplete = onArchiveComplete.bind(
+      transaction, stats);
+    const store = transaction.objectStore('entry');
+    const index = store.index('archiveState-readState');
+    const range = IDBKeyRange.only([EntryStore.UNARCHIVED,
+      EntryStore.READ]);
+    const request = index.openCursor(range);
+    request.onsuccess = archiveNextEntry.bind(request, stats);
+  } else {
+    console.debug('Archive aborted due to connection error %o', event);
+  }
 }
 
 const ARCHIVE_EXPIRES_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
 
 // Private helper for archiveEntries
 function archiveNextEntry(stats, event) {
-	const cursor = event.target.result;
-	if(!cursor)
-		return;
-	stats.processed++;
-	const entry = cursor.value;
-	const now = Date.now();
-	const age = now - entry.created;
-	if(age > ARCHIVE_EXPIRES_AFTER_MS) {
-		stats.archived++;
+  const cursor = event.target.result;
+  if(!cursor)
+    return;
+  stats.processed++;
+  const entry = cursor.value;
+  const now = Date.now();
+  const age = now - entry.created;
+  if(age > ARCHIVE_EXPIRES_AFTER_MS) {
+    stats.archived++;
 
-		// Leave intact entry.id, entry.feed, entry.link
-		// Update archiveState and create archiveDate
-		delete entry.content;
-		delete entry.feedLink;
-		delete entry.feedTitle;
-		delete entry.pubdate;
-		delete entry.readDate;
-		delete entry.created;
-		delete entry.updated;
-		delete entry.title;
-		delete entry.author;
-		entry.archiveState = EntryStore.ARCHIVED;
-		entry.archiveDate = now;
-		cursor.update(entry);
-		chrome.runtime.sendMessage({type: 'archivedEntry', entry: entry});
-	}
+    // Leave intact entry.id, entry.feed, entry.link
+    // Update archiveState and create archiveDate
+    delete entry.content;
+    delete entry.feedLink;
+    delete entry.feedTitle;
+    delete entry.pubdate;
+    delete entry.readDate;
+    delete entry.created;
+    delete entry.updated;
+    delete entry.title;
+    delete entry.author;
+    entry.archiveState = EntryStore.ARCHIVED;
+    entry.archiveDate = now;
+    cursor.update(entry);
+    chrome.runtime.sendMessage({type: 'archivedEntry', entry: entry});
+  }
 
-	cursor.continue();
+  cursor.continue();
 }
 
 // Private helper for archiveEntries
 function onArchiveComplete(stats, event) {
-	console.log('Archive processed %s entries, archived %s', stats.processed,
-		stats.archived);
+  console.log('Archive processed %s entries, archived %s', stats.processed,
+    stats.archived);
 }
 
 } // END ANONYMOUS NAMESPACE

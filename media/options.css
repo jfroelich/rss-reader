@@ -1,66 +1,66 @@
 html {
-	margin: 0px;
-	padding: 0px;
+  margin: 0px;
+  padding: 0px;
 }
 
 body {
-	margin:0px;
-	padding:0px;
+  margin:0px;
+  padding:0px;
 }
 
 #f-it {
-	position: absolute;
-	width: 100%;
-	border-spacing: 0px;
-	height: 100%;
+  position: absolute;
+  width: 100%;
+  border-spacing: 0px;
+  height: 100%;
 }
 
 #section-layout-container {
-	vertical-align: top;
-	padding-left: 6px;
-	border-left: 2px solid #efefef;
-	padding-right: 10px;
+  vertical-align: top;
+  padding-left: 6px;
+  border-left: 2px solid #efefef;
+  padding-right: 10px;
 }
 
 .options_section {
-	margin-top: 0px;
-	margin-left: 1px;
-	padding-top: 10px;
-	padding-left: 0px;
+  margin-top: 0px;
+  margin-left: 1px;
+  padding-top: 10px;
+  padding-left: 0px;
 }
 
 form {
-	padding: 0px;
-	margin: 0px;
+  padding: 0px;
+  margin: 0px;
 }
 
 .option-text {
-	font-family: 'Segoe UI', Tahoma, sans-serif;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
 }
 
 h1 {
-	color: rgb(48, 57, 66);
-	margin-top: 0px;
-	font-weight: 400;
-	font-family: 'Segoe UI', Tahoma, sans-serif;
-	padding-bottom: 8px;
-	border-bottom: 1px solid #cccccc;
+  color: rgb(48, 57, 66);
+  margin-top: 0px;
+  font-weight: 400;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #cccccc;
 }
 
 h2 {
-	color: rgb(48, 57, 66);
-	margin-top: 0px;
-	font-weight: 400;
-	font-family: 'Segoe UI', Tahoma, sans-serif;
-	padding-bottom: 8px;
-	border-bottom: 1px solid #cccccc;
+  color: rgb(48, 57, 66);
+  margin-top: 0px;
+  font-weight: 400;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #cccccc;
 }
 
 /***************************** DISPLAY SETTINGS **********************************/
 
 
 #section-display-settings {
-	display:none;
+  display:none;
 }
 
 #display-preview {
@@ -74,80 +74,80 @@ h2 {
 }
 
 #options_table tr td {
-	user-select:none;
-	-webkit-user-select: none;
+  user-select:none;
+  -webkit-user-select: none;
 }
 
 
 #options_table tr td {
-	padding-left:0px;
-	padding-right:30px;
-	padding-top:0px;
-	padding-bottom:10px;
+  padding-left:0px;
+  padding-right:30px;
+  padding-top:0px;
+  padding-bottom:10px;
 }
 
 
 #options_table input {
-	width:225px;
+  width:225px;
 }
 
 #options_table select {
-	margin-left: 0px;
+  margin-left: 0px;
 }
 
 /***************************** NAVIGATION **********************************/
 
 td#nav-cell-container {
   font-size: 130%;
-	width:180px;
-	margin:0px;
-	padding:0px;
-	border:0px;
-	vertical-align:top;
-	border-right:2px solid #bbbbbb;
+  width:180px;
+  margin:0px;
+  padding:0px;
+  border:0px;
+  vertical-align:top;
+  border-right:2px solid #bbbbbb;
 }
 
 ul#navigation-menu {
-	list-style-type:none;
-	font-family: 'Segoe UI', Tahoma, sans-serif;
-	color: rgb(48, 57, 66);
-	margin-top:0px;
-	margin-right:0px;
-	margin-bottom:0px;
-	padding-top:10px;
-	padding-left:0px;
-	padding-bottom:10px;
-	padding-right:0px;
+  list-style-type:none;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  color: rgb(48, 57, 66);
+  margin-top:0px;
+  margin-right:0px;
+  margin-bottom:0px;
+  padding-top:10px;
+  padding-left:0px;
+  padding-bottom:10px;
+  padding-right:0px;
 }
 
 
 ul#navigation-menu li {
-	-webkit-border-start: 6px solid transparent;
-	-webkit-padding-start: 10px;
-	-webkit-user-select: none;
-	cursor: pointer;
-	line-height: 2em;
+  -webkit-border-start: 6px solid transparent;
+  -webkit-padding-start: 10px;
+  -webkit-user-select: none;
+  cursor: pointer;
+  line-height: 2em;
 }
 
 ul#navigation-menu li.navigation-item-selected {
-	-webkit-border-start-color: blue;
-	cursor: default;
-	pointer-events: none;
+  -webkit-border-start-color: blue;
+  cursor: default;
+  pointer-events: none;
 }
 
 /***************************** SUBSCRIBE-DISCOVER **********************************/
 
 
 #section-add-subscription {
-	display:none;
+  display:none;
 }
 
 #subscribe-discover-query {
-	width:500px;
+  width:500px;
 }
 
 #subscription-preview {
-	display:none;
+  display:none;
 }
 
 #subscription-preview-load-progress {
@@ -164,48 +164,48 @@ ul#navigation-menu li.navigation-item-selected {
 }
 
 #subscription-preview-continue {
-	margin-right:10px;
+  margin-right:10px;
 }
 
 #subscription-preview-entries {
-	font-family: 'Segoe UI', Tahoma, sans-serif;
-	list-style-type:none;
-	margin-left:0px;
-	padding-left:2px;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  list-style-type:none;
+  margin-left:0px;
+  padding-left:2px;
 
 }
 #subscription-preview-entries li {
-	padding-top:2px;
-	padding-bottom:2px;
-	border-bottom:1px dotted #efefef;
+  padding-top:2px;
+  padding-bottom:2px;
+  border-bottom:1px dotted #efefef;
 }
 
 #discover-no-results {
-	display:none;
-	font-family: 'Segoe UI', Tahoma, sans-serif;
+  display:none;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
 }
 
 #discover-in-progress {
-	display:none;
-	font-family: 'Segoe UI', Tahoma, sans-serif;
+  display:none;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
 }
 
 #discover-results-list {
-	display:none;
-	list-style-type:none;
-	padding-left:0px;
-	margin-top:0px;
+  display:none;
+  list-style-type:none;
+  padding-left:0px;
+  margin-top:0px;
 }
 
 #discover-results-list li {
-	display:block;
-	font-family: 'Segoe UI', Tahoma, sans-serif;
-	margin-bottom:0px;
-	padding-left:0px;
-	padding-top:10px;
-	padding-bottom:10px;
-	padding-right:0px;
-	border-bottom: 1px dotted #cccccc;
+  display:block;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  margin-bottom:0px;
+  padding-left:0px;
+  padding-top:10px;
+  padding-bottom:10px;
+  padding-right:0px;
+  border-bottom: 1px dotted #cccccc;
 
   /* Otherwise any search result can screw up the size*/
   word-wrap: break-word;
@@ -218,18 +218,18 @@ ul#navigation-menu li.navigation-item-selected {
 }
 
 #discover-results-list li button {
-	margin-right:6px;
+  margin-right:6px;
 }
 
 #discover-results-list li img {
-	margin-right:6px;
-	/* The favIcon service sometimes sends back non-16x16 images. Force the scale */
-	max-width:16px;
+  margin-right:6px;
+  /* The favIcon service sometimes sends back non-16x16 images. Force the scale */
+  max-width:16px;
 }
 
 #discover-results-list li span.discover-search-result-url {
-	color: #41BD00;
-	margin-left: 10px;
+  color: #41BD00;
+  margin-left: 10px;
 }
 
 /***************************** GENERAL SETTINGS **********************************/
@@ -256,38 +256,38 @@ ul#navigation-menu li.navigation-item-selected {
 }
 
 #feedlist {
-	font-family: 'Segoe UI', Tahoma, sans-serif;
-	font-size:94%;
-	list-style-type:none;
-	padding-left:0px;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  font-size:94%;
+  list-style-type:none;
+  padding-left:0px;
 }
 
 #feedlist li {
-	cursor: pointer;
-	padding-left:5px;
-	padding-top:5px;
-	padding-bottom:5px;
-	padding-right:8px;
-	border-bottom: 1px solid #cccccc;
-	-webkit-user-select: none;
+  cursor: pointer;
+  padding-left:5px;
+  padding-top:5px;
+  padding-bottom:5px;
+  padding-right:8px;
+  border-bottom: 1px solid #cccccc;
+  -webkit-user-select: none;
 }
 
 #feedlist li:hover {
-	background-color: rgb(50, 80, 184);
-	color:#efefef;
+  background-color: rgb(50, 80, 184);
+  color:#efefef;
 }
 
 #feedlist li a {
-	margin-right: 10px;
+  margin-right: 10px;
 }
 
 #feedlist li img {
-	 max-width:26px;
-	 margin-right: 8px;
+   max-width:26px;
+   margin-right: 8px;
 }
 
 #nosubscriptions {
-	display: none;
+  display: none;
 }
 
 /***************************** FEED DETAILS **********************************/
@@ -315,13 +315,13 @@ ul#navigation-menu li.navigation-item-selected {
 /***************************** HELP **********************************/
 
 #divhelp {
-	display:none;
+  display:none;
 }
 
 /***************************** ABOUT **********************************/
 
 #divabout {
-	display:none;
+  display:none;
 }
 
 

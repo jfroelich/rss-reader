@@ -29,6 +29,8 @@ FeedStore.findById = function(connection, id, callback) {
 // Calls callback when iteration completes. Note that due to the
 // async nature of this function, it is possible for callback to
 // be called prior to every handleFeed call completing.
+// TODO: the new indexedDB getAll function suggests I should just use
+// an array instead
 FeedStore.forEach = function(connection, handleFeed, sortByTitle, callback) {
 	const transaction = connection.transaction('feed');
 	transaction.oncomplete = callback;

@@ -53,18 +53,18 @@
 // reduce the number of parameters passed around in continuations
 
 function _start() {
-	console.debug('Polling feeds');
+  console.debug('Polling feeds');
 
-	if(!navigator.onLine) {
-		console.debug('Polling canceled as offline');
-		return;
-	}
+  if(!navigator.onLine) {
+    console.debug('Polling canceled as offline');
+    return;
+  }
 
-	// TODO: use the new, more global, navigator.permission check instead of
-	// the extension API
+  // TODO: use the new, more global, navigator.permission check instead of
+  // the extension API
 
-	chrome.permissions.contains({permissions: ['idle']},
-		onCheckIdlePermission);
+  chrome.permissions.contains({permissions: ['idle']},
+    onCheckIdlePermission);
 }
 
 // Export global
@@ -72,21 +72,21 @@ this.pollFeeds = _start;
 
 const IDLE_PERIOD = 60 * 5; // 5 minutes
 function onCheckIdlePermission(permitted) {
-	if(permitted) {
-		chrome.idle.queryState(IDLE_PERIOD,
-			onQueryIdleState);
-	} else {
-		Database.open(iterateFeeds);
-	}
+  if(permitted) {
+    chrome.idle.queryState(IDLE_PERIOD,
+      onQueryIdleState);
+  } else {
+    Database.open(iterateFeeds);
+  }
 }
 
 function onQueryIdleState(state) {
-	if(state === 'locked' || state === 'idle') {
-		Database.open(iterateFeeds);
-	} else {
-		console.debug('Polling canceled as not idle');
-		onComplete();
-	}
+  if(state === 'locked' || state === 'idle') {
+    Database.open(iterateFeeds);
+  } else {
+    console.debug('Polling canceled as not idle');
+    onComplete();
+  }
 }
 
 // TODO: I need to use some async.* function that can trigger
@@ -97,39 +97,39 @@ function onQueryIdleState(state) {
 // transaction.oncomplete, I need to wait for all the callbacks
 // to callback
 function iterateFeeds(event) {
-	if(event.type === 'success') {
-		const connection = event.target.result;
-		FeedStore.forEach(connection, fetchFeed.bind(null,
-			connection), false, onComplete);
-	} else {
-		console.debug(event);
-		onComplete();
-	}
+  if(event.type === 'success') {
+    const connection = event.target.result;
+    FeedStore.forEach(connection, fetchFeed.bind(null,
+      connection), false, onComplete);
+  } else {
+    console.debug(event);
+    onComplete();
+  }
 }
 
 function fetchFeed(connection, feed) {
-	// console.debug('Fetching %s', feed.url);
-	const timeout = 10 * 1000;
-	FeedRequest.fetch(feed.url, timeout,
-		onFetchFeed.bind(null, connection, feed));
+  // console.debug('Fetching %s', feed.url);
+  const timeout = 10 * 1000;
+  FeedRequest.fetch(feed.url, timeout,
+    onFetchFeed.bind(null, connection, feed));
 }
 
 function onFetchFeed(connection, feed, event, remoteFeed) {
-	// console.debug('Fetched %s', feed.url);
-	if(event) {
-		console.dir(event);
-	} else {
-		// TODO: if we are cleaning up the properties in FeedStore.put,
-		// are we properly cascading those properties to the entries?
-		FeedStore.put(connection, feed, remoteFeed,
-			onPutFeed.bind(null, connection, feed, remoteFeed));
-	}
+  // console.debug('Fetched %s', feed.url);
+  if(event) {
+    console.dir(event);
+  } else {
+    // TODO: if we are cleaning up the properties in FeedStore.put,
+    // are we properly cascading those properties to the entries?
+    FeedStore.put(connection, feed, remoteFeed,
+      onPutFeed.bind(null, connection, feed, remoteFeed));
+  }
 }
 
 function onPutFeed(connection, feed, remoteFeed, event) {
-	async.forEach(remoteFeed.entries,
-		findEntryByLink.bind(null, connection, feed),
-		onEntriesUpdated.bind(null, connection));
+  async.forEach(remoteFeed.entries,
+    findEntryByLink.bind(null, connection, feed),
+    onEntriesUpdated.bind(null, connection));
 }
 
 // The issue is that this gets called per feed. I want to only call it
@@ -140,55 +140,55 @@ function onPutFeed(connection, feed, remoteFeed, event) {
 // or preload all into an array.
 // Temporarily just update the badge for each feed processed
 function onEntriesUpdated(connection) {
-	updateBadge(Database, EntryStore, connection);
+  updateBadge(Database, EntryStore, connection);
 }
 
 function findEntryByLink(connection, feed, entry, callback) {
-	// console.debug('Processing entry %s', entry.link);
-	EntryStore.findByLink(connection, entry,
-		onFindEntry.bind(null, connection, feed, entry, callback));
+  // console.debug('Processing entry %s', entry.link);
+  EntryStore.findByLink(connection, entry,
+    onFindEntry.bind(null, connection, feed, entry, callback));
 }
 
 function onFindEntry(connection, feed, entry, callback, event) {
-	const localEntry = event.target.result;
-	if(localEntry) {
-		callback();
-	} else {
-		const timeout = 20 * 1000;
-		EntryUtils.augmentContent(entry, timeout, onAugment);
-	}
+  const localEntry = event.target.result;
+  if(localEntry) {
+    callback();
+  } else {
+    const timeout = 20 * 1000;
+    EntryUtils.augmentContent(entry, timeout, onAugment);
+  }
 
-	function onAugment(event) {
-		cascadeFeedProperties(feed, entry);
-		EntryStore.put(connection, entry, callback);
-	}
+  function onAugment(event) {
+    cascadeFeedProperties(feed, entry);
+    EntryStore.put(connection, entry, callback);
+  }
 }
 
 // Propagate certain feed properties into the entry so that the
 // view does not need to query the feed store when iterating
 // entries. Set the foreign key
 function cascadeFeedProperties(feed, entry) {
-	// Set the foreign key
-	entry.feed = feed.id;
+  // Set the foreign key
+  entry.feed = feed.id;
 
-	// Set up some functional dependencies
-	entry.feedLink = feed.link;
-	entry.feedTitle = feed.title;
+  // Set up some functional dependencies
+  entry.feedLink = feed.link;
+  entry.feedTitle = feed.title;
 
-	// Use the feed's date for undated entries
-	if(!entry.pubdate && feed.date) {
-		entry.pubdate = feed.date;
-	}
+  // Use the feed's date for undated entries
+  if(!entry.pubdate && feed.date) {
+    entry.pubdate = feed.date;
+  }
 }
 
 // NOTE: due to above issues, this gets called when finished with
 // iterating feeds, BUT prior to finishing entry processing
 function onComplete() {
-	console.log('Polling completed');
-	localStorage.LAST_POLL_DATE_MS = String(Date.now());
-	// const message = {type: 'pollCompleted'};
-	// chrome.runtime.sendMessage(message);
-	showNotification('Updated articles');
+  console.log('Polling completed');
+  localStorage.LAST_POLL_DATE_MS = String(Date.now());
+  // const message = {type: 'pollCompleted'};
+  // chrome.runtime.sendMessage(message);
+  showNotification('Updated articles');
 }
 
 } // END ANONYMOUS NAMESPACE
