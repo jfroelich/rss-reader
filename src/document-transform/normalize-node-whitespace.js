@@ -3,36 +3,29 @@
 // that can be found in the LICENSE file
 
 // NOTE: this should not be confused with Node.prototype.normalize
+
+// TODO: condense consecutive whitespace?
+// TODO: this would have to only occur in non-whitespace sensitive context
+//value = value.replace(/[ ]{2,}/g, ' ');
+
 function normalizeNodeWhitespace(document) {
   'use strict';
 
-  const it = document.createNodeIterator(document.documentElement,
+  const TRIVIAL_VALUES = new Set([
+    '\n', '\n\t', '\n\t\t'
+  ]);
+
+  const NBSP_PATTERN = /&nbsp;/g;
+
+  const iterator = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_TEXT);
-  let node = it.nextNode();
-  let value = null;
+  let node = iterator.nextNode();
   while(node) {
-    value = node.nodeValue;
-
-    // Skip over some common whitespace nodes to reduce the
-    // number of regexp calls. This turns out to be a substantial
-    // performance improvement.
-    // TODO: use a table lookup?
-    if(value === '\n' ||
-      value === '\n\t' ||
-      value === '\n\t\t') {
-      node = it.nextNode();
-      continue;
+    let value = node.nodeValue;
+    if(!TRIVIAL_VALUES.has(value)) {
+      value = value.replace(NBSP_PATTERN, ' ');
+      node.nodeValue = value;
     }
-
-    // Normalize non-breaking space entity
-    value = value.replace(/&nbsp;/g, ' ');
-
-    // Condense consecutive whitespace
-    // TODO: test
-    //value = value.replace(/[ ]{2,}/g, ' ');
-
-    node.nodeValue = value;
-
-    node = it.nextNode();
+    node = iterator.nextNode();
   }
 }
