@@ -23,11 +23,7 @@ chrome.runtime.onMessage.addListener(function(message) {
   }
 });
 
-// Applies a series of transformations to a document. This serves the purposes
-// of security, styling, storage, and utility. It provides security by removing
-// scripting elements. It provides styling by removing virtually all formatting
-// so that custom styling. It provides storage by compressing whitespace and
-// removing extraneous elements. It provides utility by removing boilerplate.
+// Applies a series of transformations to a document.
 function previewTransform(document) {
   // TODO: properly handle noembed
   // NOTE: support audio/video
@@ -41,8 +37,8 @@ function previewTransform(document) {
   filterBoilerplate(document);
   filterTracerElements(document);
   normalizeNodeWhitespace(document);
-  trimTextNodes(document);
   filterInlineElements(document);
+  trimTextNodes(document);
   filterLeafElements(document);
   unwrapSingletonLists(document);
   unwrapSingletonTables(document);
