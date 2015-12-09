@@ -2,41 +2,52 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Removes hidden elements from a document.
-function filterHiddenElements(document) {
-  'use strict';
+'use strict';
 
-  // NOTE: this originally iterated over all elements and tested against
-  // each element's style property. Performance analysis showed this was
-  // very slow. So we sacrifice accuracy to move most of the traveral
-  // operations to a native querySelectorAll call. The selectors here do
-  // not match ALL hidden elements. I think this is ok. First, we
-  // are only looking at inline styles and not considering the other
-  // relevant CSS, so we are already simplifying the problem and allowing
-  // for hidden elements. Second, hidden elements do not show up in the
-  // output. This is really only a component of compression, which isn't
-  // the primary purpose of the overall application. It may have some
-  // impact on boilerplate analysis, but I haven't given that too much
-  // consideration.
+{ // BEGIN ANONYMOUS NAMESPACE
 
-  const substrings = [
-    'display:none',
-    'display: none',
-    'visibility:hidden',
-    'visibility: hidden',
-    'opacity:0.0',
-    'opacity: 0.0',
-    'opacity:0'
-  ];
+// Dependencies
+// NOTE: due to this, dom-utils must be included prior to this file, so
+// maybe this is a bad idea
+const removeElementsBySelector = DOMUtils.removeElementsBySelector;
 
-  const selector = substrings.map(function wrapSubstring(string) {
-    return '[style*="' + string + '"]';
-  }).join(',');
+const HIDDEN_FACTORS = [
+  'display:none',
+  'display: none',
+  'visibility:hidden',
+  'visibility: hidden',
+  'opacity:0.0',
+  'opacity: 0.0',
+  'opacity:0'
+];
 
-  // NOTE: we could consider using moveElementsBySelector here, but
-  // I don't think there is much of a benefit, because HTML authors rarely
-  // nest inline-styled hidden elements within other inline-styled hidden
-  // elements. It would probably be worse.
-
-  DOMUtils.removeElementsBySelector(document, selector);
+function makeSelectorCondition(string) {
+  return '[style*="' + string + '"]';
 }
+
+const HIDDEN_SELECTOR = HIDDEN_FACTORS.map(makeSelectorCondition).join(',');
+
+// Removes hidden elements from a document.
+// NOTE: this originally iterated over all elements and tested against
+// each element's style property. Performance analysis showed this was
+// very slow. So we sacrifice accuracy to move most of the traveral
+// operations to a native querySelectorAll call. The selectors here do
+// not match ALL hidden elements. First, we
+// are only looking at inline styles and not considering the other
+// relevant CSS, so we are already simplifying the problem and allowing
+// for hidden elements. Second, hidden elements do not show up in the
+// output.
+//
+// This is really only a component of compression, which isn't
+// the primary purpose of the overall application.
+//
+// It may have some impact on boilerplate analysis, but I haven't given that
+// too much consideration.
+function filterHiddenElements(document) {
+  removeElementsBySelector(document, HIDDEN_SELECTOR);
+}
+
+// Exports
+this.filterHiddenElements = filterHiddenElements;
+
+} // END ANONYMOUS NAMESPACE

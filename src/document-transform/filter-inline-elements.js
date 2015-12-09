@@ -6,6 +6,9 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
+// Dependencies
+const unwrap = DOMUtils.unwrap;
+
 // Unwraps various inline elements in a document. Given that style information
 // and other information is removed, several elements in the document may
 // no longer serve a formatting purpose, so we want to remove them but
@@ -68,7 +71,7 @@ function unwrapInlines(document) {
   const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
   const numElements = elements.length;
   for(let i = 0; i < numElements; i++) {
-    DOMUtils.unwrap(elements[i]);
+    unwrap(elements[i]);
   }
 }
 
@@ -91,7 +94,7 @@ function transformAnchors(document) {
       if(!href) {
         // The anchor had an href, but without a value, so treat it
         // as nominal, and therefore unwrap
-        DOMUtils.unwrap(anchor);
+        unwrap(anchor);
       } else {
         if(href.startsWith('#')) {
           // It is an in-page anchor that will no longer work, if,
@@ -100,12 +103,12 @@ function transformAnchors(document) {
           // makes all anchors absolute, so this condition is never triggered
           // so the test actually needs to be checking against the document's
           // own url, which isn't available to this function at the moment
-          DOMUtils.unwrap(anchor);
+          unwrap(anchor);
         }
       }
     } else {
       // It is a nominal anchor, unwrap
-      DOMUtils.unwrap(anchor);
+      unwrap(anchor);
     }
   }
 }
