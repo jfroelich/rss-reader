@@ -8,6 +8,8 @@
 
 // Carefully trims a document's text nodes, with special handling for
 // nodes near inline elements and whitespace sensitive elements such as <pre>
+// TODO: this is still causing an issue where there is no space adjacent
+// to an inline element, e.g. a<em>b</em> is rendered as ab
 function trimTextNodes(document) {
 
   const sensitives = getSensitiveSet(document);
@@ -34,7 +36,7 @@ function trimTextNodes(document) {
             node.nodeValue = node.nodeValue.trimRight();
           }
         } else {
-         node.nodeValue = node.nodeValue.trim();
+          node.nodeValue = node.nodeValue.trim();
         }
       } else {
        if(node.nextSibling) {
@@ -59,7 +61,15 @@ function trimTextNodes(document) {
         node.nodeValue = node.nodeValue.trimLeft();
       }
     } else {
-      node.nodeValue = node.nodeValue.trim();
+      // In this branch, we have a text node that has no siblings, which is
+      // generally a text node within an inline element.
+      // It feels like we want to full trim here, but we actually do not want
+      // to trim, because it causes a funky display error where text following
+      // an inline element's text is immediately adjacent to the inline
+      // text. Not full-trimming here leaves trailing whitespace in the inline
+      // element, which avoids the issue. I suppose, alternatively, we could
+      // introduce a single space after the element, but that seems strange.
+      node.nodeValue = node.nodeValue.trimLeft();
     }
 
     if(!node.nodeValue) {
@@ -72,10 +82,27 @@ function trimTextNodes(document) {
 
 this.trimTextNodes = trimTextNodes;
 
+// These elements are whitespace sensitive
+const SENSITIVE_ELEMENTS = [
+  'code',
+  'code *',
+  'pre',
+  'pre *',
+  'ruby',
+  'ruby *',
+  'textarea',
+  'textarea *',
+  'xmp',
+  'xmp *'
+];
+
+const SENSITIVE_ELEMENTS_SELECTOR = SENSITIVE_ELEMENTS.join(',');
+
 // Return a set of elements that are whitespace sensitive
 function getSensitiveSet(document) {
-  return new Set(Array.from(document.querySelectorAll('code, code *, ' +
-    'pre, pre *, ruby, ruby *, textarea, textarea *, xmp, xmp *')));
+  const elements = document.querySelectorAll(
+    SENSITIVE_ELEMENTS_SELECTOR);
+  return new Set(Array.from(elements));
 }
 
 const INLINE_ELEMENTS = new Set([
