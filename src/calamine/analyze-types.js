@@ -4,7 +4,6 @@
 
 'use strict';
 
-// NOTE: chrome is warning about de-opts, using var
 // TODO: this should be refactored to focus on just finding the best
 // body element. Some of its logic can be moved into the boilerplate
 // classifier
@@ -19,10 +18,11 @@
 { // BEGIN ANONYMOUS NAMESPACE
 
 function analyzeTypes(document) {
-  var scores = new Map();
-  var elements = document.getElementsByTagName('*');
-  for(let i = 0, len = elements.length, bias = 0, element = null;
-    i < len; i++) {
+  const scores = new Map();
+  const elements = document.getElementsByTagName('*');
+  for(let i = 0, len = elements.length, bias = 0, element = null; i < len;
+    i++) {
+
     element = elements[i];
     bias = INTRINSIC_BIAS.get(element.localName);
     if(bias) {

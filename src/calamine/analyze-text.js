@@ -10,8 +10,6 @@
 // adapted from the paper "Boilerplate Detection using Shallow Text Features".
 // See http://www.l3s.de/~kohlschuetter/boilerplate.
 
-// NOTE: const/let is causing de-opts, so using var
-
 function analyzeText(document, textLengths, anchorLengths) {
   const scores = new Map();
 
@@ -28,10 +26,10 @@ function analyzeText(document, textLengths, anchorLengths) {
 this.analyzeText = analyzeText;
 
 function deriveTextScore(scores, textLengths, anchorLengths, element) {
-  var length = textLengths.get(element);
+  const length = textLengths.get(element);
   if(!length) return;
-  var anchorLength = anchorLengths.get(element) || 0;
-  var weight = (0.25 * length) - (0.7 * anchorLength);
+  const anchorLength = anchorLengths.get(element) || 0;
+  let weight = (0.25 * length) - (0.7 * anchorLength);
   // Cap the score (??)
   weight = Math.min(4000.0, weight);
   if(!weight) return;
@@ -90,20 +88,16 @@ this.deriveTextLength = deriveTextLength;
 // Generate a map between document elements and a count of
 // the characters contained within anchor elements present
 // anywhere within the elements
-// NOTE: chrome is giving a de-opt warning here, so testing with var
-// NOTE: Chrome is whining about unsupported phi use of const variable
-// and it may be due to declaring consts in loops
+
 
 function deriveAnchorLength(document, textLengths) {
-  var anchors = document.querySelectorAll('a[href]');
-  var map = new Map();
-  var numAnchors = anchors.length;
-  var anchor = null;
-  var ancestor = null;
-  var previousLength = 0;
-  var length = 0;
+  const map = new Map();
+  const anchors = document.querySelectorAll('a[href]');
+  const numAnchors = anchors.length;
 
-  for(var i = 0; i < numAnchors; i++) {
+  for(let i = 0, length, previousLength, anchor, ancestor; i < numAnchors;
+    i++) {
+
     anchor = anchors[i];
     length = textLengths.get(anchor);
     if(!length) continue;
