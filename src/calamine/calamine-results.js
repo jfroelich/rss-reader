@@ -16,7 +16,6 @@ function CalamineResults() {
   this.attributeScores = null;
   this.microdataScores = null;
   this.scores = null;
-
   this.boilerplateElements = null;
 }
 
@@ -45,10 +44,6 @@ CalamineResults.prototype.updateElementScores = function() {
   }
 
   for(let e of this.attributeScores) {
-    scores.set(e[0], (scores.get(e[0]) || 0.0) + e[1]);
-  }
-
-  for(let e of this.microdataScores) {
     scores.set(e[0], (scores.get(e[0]) || 0.0) + e[1]);
   }
 };
@@ -80,10 +75,6 @@ CalamineResults.prototype.annotate = function() {
 
   for(let entry of this.attributeScores) {
     entry[0].dataset.attributeScore = entry[1].toFixed(2);
-  }
-
-  for(let entry of this.microdataScores) {
-    entry[0].dataset.microdataScore = entry[1].toFixed(2);
   }
 
   for(let entry of this.scores) {
