@@ -10,6 +10,11 @@
 // TODO: split on case-transition (lower2upper,upper2lower)
 const ATTRIBUTE_SPLIT = /[\s\-_0-9]+/g;
 
+// TODO: itemscope/itemprop/role
+// TODO: itemprop="articleBody"?
+// TODO: [role="article"]?
+// 'complementary' negative role
+
 // Analyzes element attribute values, excluding microdata.
 function analyzeAttributes(document) {
   const scores = new Map();
@@ -259,14 +264,14 @@ function classifyBoilerplate(rootElement) {
 // TODO: use for..of {Set} once Chrome stops deopting
 // TODO: use const/let once Chrome stops deopting
 function isBoilerplateElement(element) {
-  var localName = element.localName;
+  const localName = element.localName;
 
   if(localName === 'div') {
     if(element.id && DIV_IDS.has(element.id)) {
       return true;
     }
 
-    var classList = element.classList;
+    const classList = element.classList;
     for(var i = 0, len = DIV_CLASSES.length; i < len; i++) {
       if(classList.contains(DIV_CLASSES[i])) {
         return true;
@@ -275,7 +280,7 @@ function isBoilerplateElement(element) {
 
     // 'article div.extra' Washington Post
     if(classList.contains('extra')) {
-      var ancestors = DOMUtils.getAncestors(element);
+      let ancestors = DOMUtils.getAncestors(element);
       if(ancestors.find(isArticleElement)) {
         return true;
       }
@@ -284,12 +289,12 @@ function isBoilerplateElement(element) {
     // 'article > div.tags' NPR
     // 'div.article div.tags' Politico
     if(classList.contains('tags')) {
-      var parent = element.parentElement;
+      let parent = element.parentElement;
       if(parent && parent.localName === 'article') {
         return true;
       }
 
-      var ancestors = DOMUtils.getAncestors(element);
+      let ancestors = DOMUtils.getAncestors(element);
       if(ancestors.find(function(element) {
         return element.matches('div.article');
         })) {
@@ -303,12 +308,12 @@ function isBoilerplateElement(element) {
     // NOTE: cannot use 'article div.share'
     // (Vanity Fair vs Concurring Opinions)
     if(classList.contains('share')) {
-      var parent = element.parentElement;
+      const parent = element.parentElement;
       if(parent && parent.matches('div.artbody, div#main-content')) {
         return true;
       }
 
-      var ancestors = DOMUtils.getAncestors(element);
+      let ancestors = DOMUtils.getAncestors(element);
       if(ancestors.find(function(element) {
         return element.matches('div#article');
         })) {
@@ -1337,6 +1342,7 @@ const DIV_CLASSES = [
   'ssba', // Funker (social share button actions?)
   'ssb-share', // 365Solutions
   'ssbp-container', // bitcodin.com
+  'sswpds-social-wrap', // howtheduck.com
   'stack-talent', // NBC News (author bio)
   'stack-video-nojs-overlay', // NBC News
   'staff_info', // Bizjournals

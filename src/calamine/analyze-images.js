@@ -6,7 +6,7 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-// TODO: rename to analyzeImageParents
+// TODO: rename to extractImageParentBias
 
 // Bias image containers
 function analyzeImages(document) {
