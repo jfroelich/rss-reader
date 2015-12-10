@@ -608,6 +608,9 @@ function isBoilerplateElement(element) {
     //'figure#opinion-newsletter-promo' nytimes.com
     if(element.id === 'opinion-newsletter-promo')
       return true;
+    // nytimes.com
+    if(element.id === 'breaking-news-email-promo')
+      return true;
     var classList = element.classList;
     //'figure.ib-figure-ad' KMBC
     if(classList.contains('ib-figure-ad'))
@@ -1148,6 +1151,7 @@ const DIV_CLASSES = [
   'modComments', // Investors.com
   'module__biz-pulse', // Bizjournal
   'mod-video-playlist', // ESPN
+  'more-insights-item', // informationweek.com
   'more-single', // USA Today
   'moreweb', // Uptown Magazine
   'most-popular', // Vanity Fair

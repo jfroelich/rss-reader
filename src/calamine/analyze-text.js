@@ -12,13 +12,14 @@
 
 // NOTE: const/let is causing de-opts, so using var
 
-function analyzeText(document) {
-  var scores = new Map();
-  var textLengths = deriveTextLength(document);
-  var anchorLengths = deriveAnchorLength(document, textLengths);
-  var elements = document.getElementsByTagName('*');
-  var forEach = Array.prototype.forEach;
-  var derive = deriveTextScore.bind(this, scores, textLengths, anchorLengths);
+function analyzeText(document, textLengths, anchorLengths) {
+  const scores = new Map();
+
+  const elements = document.getElementsByTagName('*');
+  const forEach = Array.prototype.forEach;
+
+  // todo: inline this?
+  const derive = deriveTextScore.bind(this, scores, textLengths, anchorLengths);
   forEach.call(elements, derive);
   return scores;
 }
@@ -84,6 +85,8 @@ function deriveTextLength(document) {
   return map;
 }
 
+this.deriveTextLength = deriveTextLength;
+
 // Generate a map between document elements and a count of
 // the characters contained within anchor elements present
 // anywhere within the elements
@@ -115,5 +118,7 @@ function deriveAnchorLength(document, textLengths) {
   }
   return map;
 }
+
+this.deriveAnchorLength = deriveAnchorLength;
 
 } // END ANONYMOUS NAMESPACE

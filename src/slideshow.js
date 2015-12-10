@@ -34,7 +34,11 @@ function previewTransform(document) {
   filterBlacklistedElements(document);
   filterHiddenElements(document);
   // filterBreakruleElements(document);
-  filterBoilerplate(document);
+
+  // Filter boilerplate using Calamine
+  const calamineResults = analyzeDocument(document);
+  calamineResults.prune();
+
   filterTracerElements(document);
   normalizeNodeWhitespace(document);
   filterInlineElements(document);
