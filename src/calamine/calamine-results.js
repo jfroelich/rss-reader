@@ -14,8 +14,7 @@ function CalamineResults() {
   this.topologyScores = null;
   this.imageParentScores = null;
   this.attributeScores = null;
-  this.microdataScores = null;
-  this.scores = null;
+  this.bodyScores = null;
   this.boilerplateElements = null;
 }
 
@@ -24,8 +23,8 @@ function CalamineResults() {
 CalamineResults.prototype.updateElementScores = function() {
   'use strict';
 
-  this.scores = new Map();
-  const scores = this.scores;
+  this.bodyScores = new Map();
+  const scores = this.bodyScores;
 
   for(let e of this.textScores) {
     scores.set(e[0], (scores.get(e[0]) || 0.0) + e[1]);
@@ -77,8 +76,8 @@ CalamineResults.prototype.annotate = function() {
     entry[0].dataset.attributeScore = entry[1].toFixed(2);
   }
 
-  for(let entry of this.scores) {
-    entry[0].dataset.score = entry[1].toFixed(2);
+  for(let entry of this.bodyScores) {
+    entry[0].dataset.bodyScore = entry[1].toFixed(2);
   }
 };
 

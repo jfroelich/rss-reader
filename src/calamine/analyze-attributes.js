@@ -814,6 +814,7 @@ const DIV_IDS = new Set([
   'prologue', // hostilefork
   'promo-expanding-region', // The Atlantic
   'pw-comments-container', // Star Advertiser
+  'rail-share-bar', // computerweekly.com
   'reader-comments', // The Daily Mail
   'recommended_section', // lareviewofbooks.org
   'registration-notice', // Atlantic City Press
@@ -1061,6 +1062,7 @@ const DIV_CLASSES = [
   'essb_links', // Beta Wired
   'et_pb_subscribe', // unseenart.org
   'event-related-articles', // techcrunch.com
+  'extra-info', // computerweekly.com
   'fb-content', // The Week
   'fblike', // Ha'Aretz
   'feature-btns', // USA Today (assumes video not supported)
@@ -1175,6 +1177,7 @@ const DIV_CLASSES = [
   'nhlinkbox', // PBS
   'node-footer', // Drupal
   'node-metainfo', // The Boston Herald
+  'notification-box', // atavist.com
   'NotifyUserBox', // Bangkok Post
   'npRelated', // National Post
   'NS_projects__project_share', // Kickstarter
@@ -1221,6 +1224,7 @@ const DIV_CLASSES = [
   'printad', // North Jersey
   'printHide', // Telegraph UK
   'printstory', // North Jersey
+  'pro-features-wrapper', // computerweekly.com
   'promo-inner', // Chron.com
   'promo-top', // Chron.com
   'pull-left-tablet', // NY1 (only uses "article" for related)
@@ -1273,6 +1277,7 @@ const DIV_CLASSES = [
   'shareArticles', // The Daily Mail
   'share-bar', // Gulf News
   'sharebar', // NY Post
+  'sharebarWrapper', // cnet.com
   'share-body-bottom', // BBC
   'share-btn', // Christian Times
   'share-buttons', // Quantstart
@@ -1501,6 +1506,7 @@ const LIST_CLASSES = [
   'pagenav', // The Guardian
   'pagination', // Politico
   'pagination-story', // Time
+  'pro-features', // computerweekly.com
   'project-nav', // Kickstarter
   'related-links', // The Boston Globe
   'related_links', // Ottawa Citizen
@@ -1573,8 +1579,10 @@ const ASIDE_CLASSES = [
   'prev-next', // The Economist
   'referenced-wide', // Gawker
   'related-articles', // BBC
+  'related-bar', // computerweekly.com
   'related-content', // // The Oklahoman
   'related-side', // NY Magazine
+  'resources-bar', // computerweekly.com
   'right-rail-module', // Time
   'see-also', // The Root
   'sidebar', // phys.org
@@ -1609,6 +1617,7 @@ const P_CLASSES = [
   'story-ad-txt', // Boston.com
   'storytag', // chinatopix.com
   'story-tags', // Latin Post
+  'subscribe-cta', // atavist.com
   'topics', // ABC News
   'trial-promo', // Newsweek
   'subscribe_miles',  // Charlotte Observer
@@ -1619,6 +1628,7 @@ const SECTION_IDS = new Set([
   'comments', // TechSpot, concurringopinions
   'comment-module', // Dispatch.com
   'comments-area', // The Economist
+  'dig-deeper', // computerweekly.com
   'follow-us', // BBC
   'injected-newsletter', // GigaOM
   'more_stories', // NBC Nebraska
@@ -1635,6 +1645,7 @@ const SECTION_CLASSES = [
   'add-comment', // phys.org
   'also-on', // Huffington Post
   'around-bbc-module', // BBC
+  'asset-nav-bar-module', // usatoday.com
   'article-author', // Ars Technica
   'article-contributors', // The New Yorker
   'article-rightslink', // scientificamerican.com

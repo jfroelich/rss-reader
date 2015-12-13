@@ -104,3 +104,10 @@ DOMUtils.moveElementsBySelector = function(source, destination, selector) {
     }
   }
 };
+
+// Create a custom iterator wrapper around NodeList because
+// I do not want to modify NodeList.prototype and Chrome does not yet
+// support iterable node lists
+DOMUtils.createNodeListIterator = function(nodeList) {
+
+};

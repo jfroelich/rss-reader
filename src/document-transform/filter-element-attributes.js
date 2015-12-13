@@ -16,12 +16,20 @@ const RETAIN_ATTRIBUTE_NAMES = new Set([
 
 // Removes attributes from elements in the document, except for href/src
 function filterElementAttributes(document) {
+
   const elements = document.getElementsByTagName('*');
   let attributes = null;
   let name = '';
   let element = null;
   for(let i = 0, j = 0, len = elements.length; i < len; i++) {
     element = elements[i];
+
+    // Skip SVG
+    // TODO: but what about onclick and such? this would be a security hole
+    if(element.localName === 'svg' || element.localName === 'path') {
+      continue;
+    }
+
     attributes = element.attributes;
 
     // NOTE: attributes is a live NodeList, so we iterate in reverse to

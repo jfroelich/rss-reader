@@ -16,6 +16,7 @@ const exceptions = new Set([
   'hr',
   'iframe',
   'img',
+  'path', // an SVG component
   'source',
   'svg',
   'track',

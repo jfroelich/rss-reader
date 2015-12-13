@@ -68,6 +68,16 @@ const UNWRAPPABLE_ELEMENTS = [
 const UNWRAPPABLE_SELECTOR = UNWRAPPABLE_ELEMENTS.join(',');
 
 function unwrapInlines(document) {
+
+  // TODO: this is doing some wasted operations in the case of nested
+  // inline elements. For example, for <div><div>content</div><div>,
+  // content should be hoisted all the way outside of the div in a single
+  // move. Right now it unwraps both inner and outer, doing the move twice. So
+  // instead of finding the parent in unwrap, we would want to walk up the
+  // ancestor tree to the first non-unwrappable (stopping before document.body).
+  // I think this means we cannot use DOMUtils.unwrap, because that
+  // hardcodes the move destination as element.parentElement
+
   const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
   const numElements = elements.length;
   for(let i = 0; i < numElements; i++) {

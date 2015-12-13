@@ -1,17 +1,9 @@
-<!DOCTYPE html>
 <html>
 <head>
-<title>Lucubrate</title>
-<link rel="shortcut icon" href="/media/rss_icon_trans.gif" />
-<link rel="stylesheet" href="/media/common.css"/>
-<link rel="stylesheet" href="/media/slideshow.css"/>
-
+<title>Test calamine</title>
+<script src="/src/async.js"></script>
+<script src="/src/URI.js"></script>
 <script src="/src/dom-utils.js"></script>
-
-<script src="/src/calamine/calamine-results.js"></script>
-<script src="/src/calamine/analyze-document.js"></script>
-<script src="/src/calamine/analyze-attributes.js"></script>
-
 <script src="/src/document-transform/filter-blacklisted-elements.js"></script>
 <script src="/src/document-transform/filter-breakrule-elements.js"></script>
 <script src="/src/document-transform/filter-comment-nodes.js"></script>
@@ -27,15 +19,21 @@
 <script src="/src/document-transform/trim-text-nodes.js"></script>
 <script src="/src/document-transform/trim-document-elements.js"></script>
 
-<script src="/src/async.js"></script>
-<script src="/src/database.js"></script>
-<script src="/src/entry-store.js"></script>
-<script src="/src/html-document-wrapper.js"></script>
-<script src="/src/slideshow.js"></script>
-<script src="/src/string-utils.js"></script>
-<script src="/src/style.js"></script>
-<script src="/src/URI.js"></script>
-<script src="/src/utils.js"></script>
+<script src="/src/document-transform/resolve-document-urls.js"></script>
+<script src="/src/document-transform/fetch-image-dimensions.js"></script>
+
+<script src="/src/calamine/calamine.js"></script>
+<script src="/src/test-calamine.js"></script>
+
+<style type="text/css">
+
+[data-predicted-body="true"] {
+  border: 2px solid green;
+  padding: 20px;
+}
+</style>
+
 </head>
-<body><div id="slideshow-container"></div></body>
+<body>
+</body>
 </html>
