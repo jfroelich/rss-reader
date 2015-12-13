@@ -36,7 +36,6 @@ function onprep(document) {
 
   const calamine = new Calamine();
   calamine.analyze(document);
-  // calamine.prune();
   calamine.annotate();
 
   window.document.body.innerHTML = document.body ?

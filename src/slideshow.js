@@ -36,8 +36,9 @@ function previewTransform(document) {
   // filterBreakruleElements(document);
 
   // Filter boilerplate using Calamine
-  const calamineResults = analyzeDocument(document);
-  calamineResults.prune();
+  const calamine = new Calamine();
+  calamine.analyze(document);
+  calamine.prune();
 
   filterTracerElements(document);
   normalizeNodeWhitespace(document);

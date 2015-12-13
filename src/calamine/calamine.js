@@ -12,7 +12,6 @@
 function Calamine() {
   this.document = null;
   this.body = null;
-
   this.textLengths = null;
   this.anchorLengths = null;
   this.bodyTextScores = null;
@@ -20,12 +19,9 @@ function Calamine() {
   this.bodyNavDescendantScores = null;
   this.bodyAncestorScores = null;
   this.bodyImageContainerScores = null;
+  this.bodyAttributeScores = null;
   this.bodyScores = null;
-
-  // TODO: this.bodyAttributeScores
-
-  // TODO: this.boilerplateScores (for elements in this.body)
-  // if >=0, its content, otherwise its boilerplate
+  this.boilerplateElements = null;
 }
 
 // Export global
@@ -53,10 +49,8 @@ Calamine.prototype.analyze = function(document) {
   // Do a quick search for a body matching a known signature
   let signatureBody = fastFindBodyElement.call(this);
   if(signatureBody) {
-    console.debug('found fast signature body, skipping body analysis');
     this.body = signatureBody;
-  }
-  else {
+  } else {
     // Extract features indicative of the body
     deriveTextLength.call(this);
     deriveAnchorLength.call(this);
@@ -72,9 +66,7 @@ Calamine.prototype.analyze = function(document) {
     deriveBodyNavDescendantScores.call(this);
     deriveBodyAncestorScores.call(this);
     deriveBodyImageContainerScores.call(this);
-
-    // TODO: deriveBodyAttributeScores
-
+    deriveBodyAttributeScores.call(this);
     deriveBodyScores.call(this);
 
     // Set this.body to the body candidate with the highest body score
@@ -99,7 +91,47 @@ Calamine.prototype.analyze = function(document) {
 
   // old code to integrate
   //results.boilerplateElements = classifyBoilerplate(results.bodyElement);
+  classifyInBodyContent.call(this);
+};
 
+// Removes boilerplate content
+// TODO: use Node.compareDocumentPosition
+Calamine.prototype.prune = function() {
+
+  if(!this.body) {
+    return;
+  }
+
+  const garbage = this.document.implementation.createHTMLDocument();
+  const elements = this.document.querySelectorAll('*');
+  const numElements = elements.length;
+  for(let i = 0, element; i < numElements; i++) {
+    element = elements[i];
+
+    if(element.ownerDocument !== this.document) {
+      continue;
+    }
+
+    if(element === this.body) {
+      continue;
+    }
+
+    if(element.contains(this.body)) {
+      continue;
+    }
+
+    if(this.body.contains(element)) {
+
+      if(this.boilerplateElements.has(element)) {
+        garbage.adoptNode(element);
+      } else {
+        // Keep it
+      }
+
+    } else {
+      garbage.adoptNode(element);
+    }
+  }
 };
 
 Calamine.prototype.annotate = function() {
@@ -146,6 +178,12 @@ Calamine.prototype.annotate = function() {
     }
   }
 
+  if(this.bodyAttributeScores) {
+    for(let entry of this.bodyAttributeScores) {
+      entry[0].dataset.bodyAttributeScore = entry[1];
+    }
+  }
+
   if(this.bodyScores) {
     for(let entry of this.bodyScores) {
       entry[0].dataset.bodyScore = entry[1];
@@ -154,6 +192,12 @@ Calamine.prototype.annotate = function() {
 
   // Annotate the chosen body as the prediction
   this.body.dataset.predictedBody = 'true';
+
+  if(this.boilerplateElements) {
+    for(let element of this.boilerplateElements) {
+      element.dataset.boilerplate = 'true';
+    }
+  }
 };
 
 const BODY_SIGNATURES = [
@@ -161,7 +205,6 @@ const BODY_SIGNATURES = [
   '.hentry',
   '.entry-content',
   '#article',
-  '.article',
   '.articleText',
   '.articleBody',
   '#articleBody',
@@ -171,17 +214,14 @@ const BODY_SIGNATURES = [
   '.repository-content',
   '[itemprop="articleBody"]',
   '[role="article"]',
-  '[itemtype="http://schema.org/Article"]',
-  '[itemtype="http://schema.org/BlogPosting"]',
-  '[itemtype="http://schema.org/Blog"]',
-  '[itemtype="http://schema.org/NewsArticle"]',
-  '[itemtype="http://schema.org/TechArticle"]',
-  '[itemtype="http://schema.org/ScholarlyArticle"]',
-  '[itemtype="http://schema.org/WebPage"]',
-  '#WNStoryBody',
-
-  // todo: verify
-  '.WNStoryBody'
+  'div[itemtype="http://schema.org/Article"]',
+  'div[itemtype="http://schema.org/BlogPosting"]',
+  'div[itemtype="http://schema.org/Blog"]',
+  'div[itemtype="http://schema.org/NewsArticle"]',
+  'div[itemtype="http://schema.org/TechArticle"]',
+  'div[itemtype="http://schema.org/ScholarlyArticle"]',
+  'div[itemtype="http://schema.org/WebPage"]',
+  '#WNStoryBody'
 ];
 
 const NUM_SIGNATURES = BODY_SIGNATURES.length;
@@ -442,6 +482,8 @@ function imageParentIsBodyCandidate(element) {
 // seems like the typical case that the masthead image gets excluded because
 // another nested div containing most of the text content gets picked as the
 // body.
+// TODO: this should at least be finding the first ancestor that is a body
+// candidate, not just the immediate parent
 // TODO: actually not sure this works, need to test more
 function deriveBodyImageContainerScores() {
   this.bodyImageContainerScores = new Map();
@@ -455,6 +497,7 @@ function deriveBodyImageContainerScores() {
   let children = null;
   let numChildren = 0;
   let j = 0;
+  let node = null;
   for(let i = 0, image; i < numImages; i++) {
     image = images[i];
     imageParent = image.parentElement;
@@ -476,7 +519,6 @@ function deriveBodyImageContainerScores() {
       bias += 0.0015 * Math.min(100000, area);
     }
 
-    // Description bias
     // TODO: check data-alt and data-title?
     if(image.getAttribute('alt')) {
       bias += 20.0;
@@ -504,6 +546,95 @@ function deriveBodyImageContainerScores() {
     if(bias) {
       this.bodyImageContainerScores.set(imageParent,
         (this.bodyImageContainerScores.get(imageParent) || 0.0) + bias);
+    }
+  }
+}
+
+// Looks for delimiting characters of attribute values
+// TODO: split on case-transition (lower2upper,upper2lower)
+const ATTRIBUTE_SPLIT = /[\s\-_0-9]+/g;
+
+function getElementAttributeTokens(element) {
+
+  const values = [
+    element.id,
+    element.name,
+    element.className
+  ].join(' ');
+
+  const tokenSet = new Set();
+  if(values.length > 2) {
+    const tokenArray = values.toLowerCase().split(ATTRIBUTE_SPLIT);
+    for(let token of tokenArray) {
+      tokenSet.add(token);
+    }
+  }
+
+  return tokenSet;
+
+}
+
+const BODY_ATTRIBUTE_BIAS = new Map([
+  ['ad', -500.0],
+  ['ads', -500.0],
+  ['advert', -500.0],
+  ['article', 500.0],
+  ['body', 500.0],
+  ['comment', -500.0],
+  ['content', 500.0],
+  ['contentpane', 500.0],
+  ['gutter', -300.0],
+  ['left', -50.0],
+  ['main', 500.0],
+  ['meta', -50.0],
+  ['nav', -200.0],
+  ['navbar', -200.0],
+  ['newsarticle', 500.0],
+  ['page', 200.0],
+  ['post', 300.0],
+  ['promo', -100.0],
+  ['rail', -300.0],
+  ['rel', -50.0],
+  ['relate', -500.0],
+  ['related', -500.0],
+  ['right', -50.0],
+  ['social', -200.0],
+  ['story', 100.0],
+  ['storytxt', 500.0],
+  ['tool', -200.0],
+  ['tools', -200.0],
+  ['widget', -200.0],
+  ['zone', -50.0]
+]);
+
+function getBodyAttributeTokenSetBias(tokens) {
+  let bias = 0.0;
+  let total = 0.0;
+  for(let token of tokens) {
+    bias = BODY_ATTRIBUTE_BIAS.get(token);
+    if(bias) {
+      total += bias;
+    }
+  }
+
+  return total;
+
+}
+
+function deriveBodyAttributeScores() {
+
+  this.bodyAttributeScores = new Map();
+
+  const elements = selectBodyCandidates(this.document);
+  const numElements = elements.length;
+  let tokens = null;
+  let bias = 0.0;
+  for(let i = 0, element; i < numElements; i++) {
+    element = elements[i];
+    tokens = getElementAttributeTokens(element);
+    bias = getBodyAttributeTokenSetBias(tokens);
+    if(bias) {
+      this.bodyAttributeScores.set(element, bias);
     }
   }
 }
@@ -537,6 +668,19 @@ function deriveBodyScores() {
     this.bodyScores.set(entry[0],
       (this.bodyScores.get(entry[0]) || 0.0) + entry[1]);
   }
+
+  for(let entry of this.bodyAttributeScores) {
+    this.bodyScores.set(entry[0],
+      (this.bodyScores.get(entry[0]) || 0.0) + entry[1]);
+  }
+}
+
+function classifyInBodyContent() {
+  this.boilerplateElements = new Set();
+
+  // TODO: examine the elements in this.body, and determine whether they
+  // are boilerplate.
+
 }
 
 } // END ANONYMOUS NAMESPACE
