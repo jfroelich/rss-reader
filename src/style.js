@@ -7,8 +7,8 @@
 // Style lib. Contains functions and global constants for
 // updating the display of articles
 // TODO: maybe use just one function for both load/change
-
 // TODO: use an anonymous namespace
+// TODO: review why i chose to implement it this way and take notes this time
 
 chrome.runtime.onMessage.addListener(function(message) {
   if(message && message.type === 'displaySettingsChanged') {

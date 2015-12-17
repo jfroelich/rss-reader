@@ -4,6 +4,13 @@
 
 'use strict';
 
+
+// TODO: consistently use a prefix like remove, don't switch between remove
+// and strip and filter and so forth
+// TODO: if these functions are truly not related, I am not sure why I decided
+// to group them together. Perhaps they should be split apart into separate
+// files
+
 const StringUtils = {};
 
 { // BEGIN ANONYMOUS NAMESPACE

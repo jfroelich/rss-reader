@@ -5,8 +5,8 @@
 'use strict';
 
 // TODO: i need a separate function for just fetching web pages, this
-// should just be calling that. in fact this lib should generally be
-// deprecated
+// should just be calling that. in fact this file should generally be
+// deprecated. i should maybe name it something like fetch-html.js
 
 const EntryUtils = {};
 

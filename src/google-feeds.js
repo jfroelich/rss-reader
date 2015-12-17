@@ -2,6 +2,9 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: the google feeds api is now fully deprecated. remove the ability to
+// search by query from the options UI and delete this
+
 'use strict';
 
 // Lib for using the Google Feeds API

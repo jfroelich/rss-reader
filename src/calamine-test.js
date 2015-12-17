@@ -1,3 +1,7 @@
+
+// todo: rename to calamine-test.js
+// todo: look into using a custom devtools panel like domdistiller
+
 'use strict';
 
 {

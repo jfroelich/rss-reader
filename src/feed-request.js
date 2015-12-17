@@ -4,6 +4,10 @@
 
 'use strict';
 
+// TODO: in hindsight, the deserialize functionality should be in a separate
+// file just related to its purpose, even though this is the only context
+// that accesses it.
+
 // TODO: explicit dependency on URLUtils
 // TODO: explicit dependency on EntryUtils (or I should just deprecate
 // EntryUtils and implement the unique function locally)

@@ -6,6 +6,8 @@
 
 const DOMUtils = {};
 
+// TODO: i think this should probably be its own file and a simple
+// global parseHTML function
 // Parses the html string and returns an HTMLDocument instance
 // NOTE: is practically equivalent to using DOMParser
 DOMUtils.parseHTML = function(html) {

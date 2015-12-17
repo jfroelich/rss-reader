@@ -11,6 +11,9 @@
 // TODO: explicit dependencies on OPMLDocument, Database, async,
 // showNotification, FeedStore
 
+// TODO: the two functions are somewhat related, but i think they may
+// as well be in separate files named after each function
+
 const OPMLUtils = {};
 
 { // BEGIN ANONYMOUS NAMESPACE

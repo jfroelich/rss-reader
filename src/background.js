@@ -7,6 +7,9 @@
 // Background lib, only loaded by background page. Registers
 // extension listeners
 
+// TODO: move the onclick listener into its own file and add a note
+// about including it in the background page only
+
 // Generate alarms
 chrome.alarms.create('archive', {periodInMinutes: 24 * 60});
 chrome.alarms.create('poll', {periodInMinutes: 20});

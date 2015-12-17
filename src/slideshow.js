@@ -457,6 +457,14 @@ function onKeyDown(event) {
 // this === window
 this.addEventListener('keydown', onKeyDown, false);
 
+
+// TODO: move scrollElementTo back into its own file
+// TODO: this should probably use an even more qualified name like
+// scrollElementToY, given that it does not handle horizontal movement
+// Or maybe name it verticalScrollElement
+// Or write a general scrollElementTo that supports both x and y, then
+// just use 0 for x.
+
 /**
  * NOTE: the start timer is basically to debounce calls to this function
  * whereas the interval timer is to track the interval and stop it when

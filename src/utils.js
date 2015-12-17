@@ -4,6 +4,10 @@
 
 'use strict';
 
+// TODO: i think it was better having these separate functions in separate
+// files representing separate modules, this is just mixing unrelated stuff
+// together. Even the smaller grouped functions may not belong together.
+
 { // BEGIN ANONYMOUS NAMESPACE
 
 // TODO: thinking more about dependency injection, would it be better

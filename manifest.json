@@ -1,5 +1,5 @@
 {
-  "version": "100",
+  "version": "110",
   "manifest_version": 2,
   "minimum_chrome_version" : "47",
   "name": "Lucubrate",
@@ -13,8 +13,8 @@
   "background": {
     "persistent": false,
     "scripts": [
-      "/src/document-transform/fetch-image-dimensions.js",
-      "/src/document-transform/resolve-document-urls.js",
+      "/src/fetch-image-dimensions.js",
+      "/src/resolve-document-urls.js",
       "/src/async.js",
       "/src/background.js",
       "/src/database.js",

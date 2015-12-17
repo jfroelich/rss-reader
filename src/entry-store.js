@@ -184,8 +184,7 @@ function _clear(connection) {
 }
 
 // TODO: specify Database as a dependency injection
-// TODO: I should probably move archiveEntries into its own file
-// again, and then specify EntryStore as a dependency and inject it
+// TODO: I should probably move archiveEntries into its own file again
 EntryStore.archiveEntries = function() {
   Database.open(archiveOnConnect);
 };

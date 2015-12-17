@@ -26,6 +26,10 @@ function filterElementAttributes(document) {
 
     // Skip SVG
     // TODO: but what about onclick and such? this would be a security hole
+    // TODO: leaving in SVG turns out to cause some funky display issues,
+    // so this requires more thought. For example, I observed an article where
+    // the SVG element was permanently floating in higher layer over the
+    // article's actual text, making the article unreadable.
     if(element.localName === 'svg' || element.localName === 'path') {
       continue;
     }
