@@ -3,7 +3,8 @@
 // that can be found in the LICENSE file
 
 // TODO: the google feeds api is now fully deprecated. remove the ability to
-// search by query from the options UI and delete this
+// search by query from the options UI and delete this?
+// NOTE: actually, hold on, this still occassionally works
 
 'use strict';
 

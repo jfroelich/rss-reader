@@ -7,12 +7,12 @@
 const FeedStore = {};
 
 // Queries the database for a feed with the given url
-// TODO: explicit dependency on URLUtils.getSchemeless
+// TODO: explicit dependency on getSchemelessURL
 FeedStore.findByURL = function(connection, url, callback) {
 	const transaction = connection.transaction('feed');
 	const store = transaction.objectStore('feed');
 	const index = store.index('schemeless');
-	const schemeless = URLUtils.getSchemeless(url);
+	const schemeless = getSchemelessURL(url);
 	const request = index.get(schemeless);
 	request.onsuccess = callback;
 };
@@ -98,7 +98,7 @@ FeedStore.put = function(connection, original, feed, callback) {
 	if(original) {
 		storable.schemeless = original.schemeless;
 	} else {
-		storable.schemeless = URLUtils.getSchemeless(storable.url);
+		storable.schemeless = getSchemelessURL(storable.url);
 	}
 
 	const title = sanitizeValue(feed.title);

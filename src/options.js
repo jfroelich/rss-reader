@@ -364,7 +364,7 @@ function onSubscribeSubmit(event) {
     return false;
   }
 
-  if(URLUtils.isValid(query)) {
+  if(isValidURL(query)) {
     $$('discover-results-list').innerHTML = '';
     $$('discover-no-results').style.display = 'none';
     $$('discover-in-progress').style.display = 'none';

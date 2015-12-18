@@ -13,8 +13,6 @@
   "background": {
     "persistent": false,
     "scripts": [
-      "/src/fetch-image-dimensions.js",
-      "/src/resolve-document-urls.js",
       "/src/async.js",
       "/src/background.js",
       "/src/database.js",
@@ -23,11 +21,17 @@
       "/src/feed-poll.js",
       "/src/feed-request.js",
       "/src/feed-store.js",
+      "/src/fetch-image-dimensions.js",
+      "/src/get-schemeless-url.js",
       "/src/html-document-wrapper.js",
+      "/src/is-valid-date.js",
+      "/src/resolve-document-urls.js",
+      "/src/rewrite-url.js",
+      "/src/show-notification.js",
       "/src/string-utils.js",
+      "/src/update-badge.js",
       "/src/URI.js",
-      "/src/utf8.js",
-      "/src/utils.js"
+      "/src/utf8.js"
     ]
   },
   "options_page": "options.html",

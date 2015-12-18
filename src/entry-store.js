@@ -63,7 +63,7 @@ EntryStore.put = function(connection, entry, callback) {
   // or similar every where else. Like in poll denormalize
   if(entry.pubdate) {
     const date = new Date(entry.pubdate);
-    if(DateUtils.isValid(date)) {
+    if(isValidDate(date)) {
       storable.pubdate = date.getTime();
     }
   }

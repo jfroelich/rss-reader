@@ -60,7 +60,7 @@ function onFetch(url, callback, event) {
     });
 
     feed.entries.forEach(function(entry) {
-      entry.link = URLUtils.rewrite(entry.link);
+      entry.link = rewriteURL(entry.link);
     });
 
     feed.entries = EntryUtils.getUniqueEntries(feed.entries);
