@@ -9,20 +9,20 @@ const FeedStore = {};
 // Queries the database for a feed with the given url
 // TODO: explicit dependency on getSchemelessURL
 FeedStore.findByURL = function(connection, url, callback) {
-	const transaction = connection.transaction('feed');
-	const store = transaction.objectStore('feed');
-	const index = store.index('schemeless');
-	const schemeless = getSchemelessURL(url);
-	const request = index.get(schemeless);
-	request.onsuccess = callback;
+  const transaction = connection.transaction('feed');
+  const store = transaction.objectStore('feed');
+  const index = store.index('schemeless');
+  const schemeless = getSchemelessURL(url);
+  const request = index.get(schemeless);
+  request.onsuccess = callback;
 };
 
 // Queries the database for a feed with the given id
 FeedStore.findById = function(connection, id, callback) {
-	const transaction = connection.transaction('feed');
-	const store = transaction.objectStore('feed');
-	const request = store.get(id);
-	request.onsuccess = callback;
+  const transaction = connection.transaction('feed');
+  const store = transaction.objectStore('feed');
+  const request = store.get(id);
+  request.onsuccess = callback;
 };
 
 // Iterates over each feed in the database, calling handleFeed.
@@ -32,30 +32,30 @@ FeedStore.findById = function(connection, id, callback) {
 // TODO: the new indexedDB getAll function suggests I should just use
 // an array instead
 FeedStore.forEach = function(connection, handleFeed, sortByTitle, callback) {
-	const transaction = connection.transaction('feed');
-	transaction.oncomplete = callback;
+  const transaction = connection.transaction('feed');
+  transaction.oncomplete = callback;
 
-	let store = transaction.objectStore('feed');
-	if(sortByTitle) {
-		store = store.index('title');
-	}
+  let store = transaction.objectStore('feed');
+  if(sortByTitle) {
+    store = store.index('title');
+  }
 
-	const request = store.openCursor();
-	request.onsuccess = function(event) {
-		const cursor = event.target.result;
-		if(cursor) {
-			handleFeed(cursor.value);
-			cursor.continue();
-		}
-	};
+  const request = store.openCursor();
+  request.onsuccess = function(event) {
+    const cursor = event.target.result;
+    if(cursor) {
+      handleFeed(cursor.value);
+      cursor.continue();
+    }
+  };
 };
 
 // Removes the corresponding feed from the database
 FeedStore.remove = function(connection, id, callback) {
-	const transaction = connection.transaction('feed', 'readwrite');
-	const store = transaction.objectStore('feed');
-	const request = store.delete(id);
-	request.onsuccess = callback;
+  const transaction = connection.transaction('feed', 'readwrite');
+  const store = transaction.objectStore('feed');
+  const request = store.delete(id);
+  request.onsuccess = callback;
 };
 
 // Removes the corresponding feed from the database along
@@ -63,9 +63,9 @@ FeedStore.remove = function(connection, id, callback) {
 // TODO: deprecate or move into some other lib
 // TODO: explicit dependency on EntryStore
 FeedStore.unsubscribe = function(connection, id, callback) {
-	FeedStore.remove(connection, id, function(event) {
-		EntryStore.removeByFeed(connection, id, callback);
-	});
+  FeedStore.remove(connection, id, function(event) {
+    EntryStore.removeByFeed(connection, id, callback);
+  });
 };
 
 { // BEGIN ANONYMOUS NAMESPACE
@@ -81,80 +81,80 @@ FeedStore.unsubscribe = function(connection, id, callback) {
 // TODO: maybe not modify date updated if not dirty
 FeedStore.put = function(connection, original, feed, callback) {
 
-	const storable = {};
+  const storable = {};
 
-	// Maintain the same id if doing an update
-	if(original) {
-		storable.id = original.id;
-	}
+  // Maintain the same id if doing an update
+  if(original) {
+    storable.id = original.id;
+  }
 
-	storable.url = feed.url;
+  storable.url = feed.url;
 
-	// Record the type property (the feed's original format)
-	if(feed.hasOwnProperty('type')) {
-		storable.type = feed.type;
-	}
+  // Record the type property (the feed's original format)
+  if(feed.hasOwnProperty('type')) {
+    storable.type = feed.type;
+  }
 
-	if(original) {
-		storable.schemeless = original.schemeless;
-	} else {
-		storable.schemeless = getSchemelessURL(storable.url);
-	}
+  if(original) {
+    storable.schemeless = original.schemeless;
+  } else {
+    storable.schemeless = getSchemelessURL(storable.url);
+  }
 
-	const title = sanitizeValue(feed.title);
-	storable.title = title || '';
+  const title = sanitizeValue(feed.title);
+  storable.title = title || '';
 
-	const description = sanitizeValue(feed.description);
-	if(description) {
-		storable.description = description;
-	}
+  const description = sanitizeValue(feed.description);
+  if(description) {
+    storable.description = description;
+  }
 
-	const link = sanitizeValue(feed.link);
-	if(link) {
-		storable.link = link;
-	}
+  const link = sanitizeValue(feed.link);
+  if(link) {
+    storable.link = link;
+  }
 
-	if(feed.date) {
-		storable.date = feed.date;
-	}
+  if(feed.date) {
+    storable.date = feed.date;
+  }
 
-	if(feed.fetched) {
-		storable.fetched = feed.fetched;
-	}
+  if(feed.fetched) {
+    storable.fetched = feed.fetched;
+  }
 
-	if(original) {
-		storable.updated = Date.now();
-		storable.created = original.created;
-	} else {
-		storable.created = Date.now();
-	}
+  if(original) {
+    storable.updated = Date.now();
+    storable.created = original.created;
+  } else {
+    storable.created = Date.now();
+  }
 
-	const transaction = connection.transaction('feed', 'readwrite');
-	const store = transaction.objectStore('feed');
-	const request = store.put(storable);
-	transaction.oncomplete = onPutFeed.bind(transaction, callback);
+  const transaction = connection.transaction('feed', 'readwrite');
+  const store = transaction.objectStore('feed');
+  const request = store.put(storable);
+  transaction.oncomplete = onPutFeed.bind(transaction, callback);
 };
 
 function onPutFeed(callback, event) {
-	// Temporary, just log any errors
-	if(event.target.error) {
-		console.debug('Error putting feed %s', storable.url);
-		console.dir(event);
-	}
+  // Temporary, just log any errors
+  if(event.target.error) {
+    console.debug('Error putting feed %s', storable.url);
+    console.dir(event);
+  }
 
-	callback();
+  callback();
 }
 
 // Clean up a string value
 // TODO: sanitize html entities?
 function sanitizeValue(value) {
-	if(value) {
-		value = StringUtils.removeTags(value);
-		value = StringUtils.stripControlCharacters(value);
-		value = value.replace(/\s+/, ' ');
-		value = value.trim();
-		return value;
-	}
+  if(value) {
+    value = StringUtils.removeTags(value);
+    value = StringUtils.stripControlCharacters(value);
+    value = value.replace(/\s+/, ' ');
+    value = value.trim();
+    return value;
+  }
 }
 
 } // END ANONYMOUS NAMESPACE

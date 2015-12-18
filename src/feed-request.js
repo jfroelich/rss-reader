@@ -63,7 +63,7 @@ function onFetch(url, callback, event) {
       entry.link = rewriteURL(entry.link);
     });
 
-    feed.entries = EntryUtils.getUniqueEntries(feed.entries);
+    feed.entries = getUniqueEntries(feed.entries);
 
     callback(null, feed);
   } catch(exception) {
@@ -72,6 +72,16 @@ function onFetch(url, callback, event) {
     // of an exception
     callback(exception);
   }
+}
+
+// Given an array of unique entries, returns a new array of
+// unique entries (compared by entry.link)
+// TODO: return a set/map
+function getUniqueEntries(entries) {
+  const distinct = new Map(entries.map(function(entry) {
+    return [entry.link, entry];
+  }));
+  return [...distinct.values()];
 }
 
 // Private helper for fetch

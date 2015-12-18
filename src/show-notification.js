@@ -12,19 +12,23 @@
 this.showNotification = function(message) {
   chrome.permissions.contains(
     {permissions: ['notifications']},
-    showNotificationIfPermitted.bind(null, message));
+    showNotificationIfPermitted.bind(this, message));
 };
 
 function showNotificationIfPermitted(message, permitted) {
-  if(!permitted) return;
+
+  if(!permitted) {
+    return;
+  }
+
   const notification = {
     type: 'basic',
     title: chrome.runtime.getManifest().name,
     iconUrl: '/media/rss_icon_trans.gif',
     message: message
   };
+
   chrome.notifications.create('lucubrate', notification, function(){});
 }
-
 
 } // END ANONYMOUS NAMESPACE

@@ -2,10 +2,6 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: move this and all other transforms into parent src folder, i don't
-// think the extra nesting is needed, these are general and independent
-// functions
-
 'use strict';
 
 { // BEGIN ANONYMOUS NAMESPACE

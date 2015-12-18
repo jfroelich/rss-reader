@@ -272,7 +272,7 @@ function appendSlide(entry, isFirst) {
   const content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
 
-  const doc = DOMUtils.parseHTML(entry.content);
+  const doc = parseHTML(entry.content);
   previewTransform(doc);
 
   if(doc.documentElement) {
@@ -290,7 +290,7 @@ function appendSlide(entry, isFirst) {
 
   const favIcon = document.createElement('img');
   // TODO: where am i getting baseURI from? I don't even think that exists
-  const iconSource = FavIcon.getURL(entry.feedLink || entry.baseURI);
+  const iconSource = getFaviconURL(entry.feedLink || entry.baseURI);
   favIcon.setAttribute('src', iconSource);
   favIcon.setAttribute('width', '16');
   favIcon.setAttribute('height', '16');

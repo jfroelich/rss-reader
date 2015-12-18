@@ -2,21 +2,12 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: some of these functions have nothing to do with each other and may be
+// better implemented as separate functions in separate files.
+
 'use strict';
 
 const DOMUtils = {};
-
-// TODO: i think this should probably be its own file and a simple
-// global parseHTML function
-// Parses the html string and returns an HTMLDocument instance
-// NOTE: is practically equivalent to using DOMParser
-DOMUtils.parseHTML = function(html) {
-  const doc = document.implementation.createHTMLDocument();
-  // NOTE: doc does not have an innerHTML property, we have
-  // to use documentElement
-  doc.documentElement.innerHTML = html;
-  return doc;
-};
 
 // Replaces an element with its children in the element's document
 // NOTE: not optimized for live documents
@@ -47,6 +38,7 @@ DOMUtils.isFigureElement = function(element) {
 
 // Returns an array of ancestor elements for the given element
 // up to and including the documentElement, in bottom up order
+// TODO: this should operate on node, not element
 DOMUtils.getAncestors = function(element) {
   const parents = [];
   let parent = element.parentElement;

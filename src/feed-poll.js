@@ -13,6 +13,21 @@
 // TODO: store de-activated date
 // TODO: pass along a stats histogram object that trackers poll stats
 
+
+// TODO: navigator should be a dependency injection so it can be mocked?
+// TODO: Database should be a dependency injection
+// TODO: FeedStore should be a dependency injection
+// TODO: FeedRequest should be a dependency injection
+// TODO: EntryUtils should be a dependency injection
+// TODO: showNotification should be a dependency injection
+// TODO: async should be a dependncy injection? Maybe? Or maybe I should
+// just completely get rid of this and roll my own like before, because
+// I am not sure it is adding that much simplicity, and as noted, I
+// am having trouble tracking when all requests are complete (see later)
+// TODO: due to the large number of dependencies, make I should make
+// it an object where the state is the dependencies? Maybe it would
+// reduce the number of parameters passed around in continuations
+
 // TODO: some entry link URLs from feeds are pre-chain-of-redirect-resolution,
 // and are technically duplicates because each redirects to the same URL at the
 // end of the redirect chain. Therefore we should be storing the terminal link,
@@ -32,25 +47,10 @@
 // the url properly, because it is screwing up everything. not to mention it
 // is tracking clicks.
 
-// TODO: maybe have an option to exclude PDFs
-
+// TODO: maybe have an option to exclude PDFs or embed PDFs as iframes or
+// something like that
 
 { // BEGIN ANONYMOUS NAMESPACE
-
-
-// TODO: navigator should be a dependency injection so it can be mocked?
-// TODO: Database should be a dependency injection
-// TODO: FeedStore should be a dependency injection
-// TODO: FeedRequest should be a dependency injection
-// TODO: EntryUtils should be a dependency injection
-// TODO: showNotification should be a dependency injection
-// TODO: async should be a dependncy injection? Maybe? Or maybe I should
-// just completely get rid of this and roll my own like before, because
-// I am not sure it is adding that much simplicity, and as noted, I
-// am having trouble tracking when all requests are complete (see later)
-// TODO: due to the large number of dependencies, make I should make
-// it an object where the state is the dependencies? Maybe it would
-// reduce the number of parameters passed around in continuations
 
 function _start() {
   console.debug('Polling feeds');
@@ -155,7 +155,7 @@ function onFindEntry(connection, feed, entry, callback, event) {
     callback();
   } else {
     const timeout = 20 * 1000;
-    EntryUtils.augmentContent(entry, timeout, onAugment);
+    augmentEntryContent(entry, timeout, onAugment);
   }
 
   function onAugment(event) {

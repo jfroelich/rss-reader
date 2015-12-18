@@ -145,7 +145,7 @@ function appendFeed(feed, insertedSort) {
   item.setAttribute('title', StringUtils.removeTags(feed.description) || '');
   item.onclick = onFeedListItemClick;
   var favIconElement = document.createElement('img');
-  favIconElement.src = FavIcon.getURL(feed.link);
+  favIconElement.src = getFaviconURL(feed.link);
   if(feed.title) favIconElement.title = feed.title;
   item.appendChild(favIconElement);
 
@@ -322,7 +322,7 @@ function populateFeedDetailsSection(feedId) {
       }
 
       $$('details-title').textContent = feed.title || 'Untitled';
-      $$('details-favicon').setAttribute('src', FavIcon.getURL(feed.url));
+      $$('details-favicon').setAttribute('src', getFaviconURL(feed.url));
       $$('details-feed-description').textContent =
         StringUtils.removeTags(feed.description) || 'No description';
       $$('details-feed-url').textContent = feed.url;
@@ -436,7 +436,7 @@ function onDiscoverFeedsComplete(errorEvent, query, results) {
     button.onclick = discoverSubscribeClick;
     item.appendChild(button);
     const image = document.createElement('img');
-    image.setAttribute('src', FavIcon.getURL(result.url));
+    image.setAttribute('src', getFaviconURL(result.url));
     image.title = result.link;
     item.appendChild(image);
     const a = document.createElement('a');

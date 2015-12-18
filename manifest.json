@@ -13,14 +13,16 @@
   "background": {
     "persistent": false,
     "scripts": [
+      "/src/archive-entries.js",
       "/src/async.js",
+      "/src/augment-entry-content.js",
       "/src/background.js",
       "/src/database.js",
       "/src/entry-store.js",
-      "/src/entry-utils.js",
       "/src/feed-poll.js",
       "/src/feed-request.js",
       "/src/feed-store.js",
+      "/src/fetch-html.js",
       "/src/fetch-image-dimensions.js",
       "/src/get-schemeless-url.js",
       "/src/html-document-wrapper.js",

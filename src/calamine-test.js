@@ -7,25 +7,18 @@
 {
 
 this.test = function(url) {
-  const request = new XMLHttpRequest();
-  request.onerror = console.error;
-  request.ontimeout = console.error;
-  request.onabort = console.error;
-  request.onload = onload;
-  request.open('GET', url, true);
-  request.responseType = 'document';
-  request.send();
+
+  fetchHTML(url, undefined, onload);
 };
 
-function onload(event) {
-  const request = event.target;
-  const document = request.responseXML;
-  if(!document || !document.documentElement) {
-    console.error('Invalid document');
+function onload(error, document, responseURL) {
+
+  if(error) {
+    console.debug(error);
     return;
   }
 
-  resolveDocumentURLs(document, request.responseURL);
+  resolveDocumentURLs(document, responseURL);
   fetchImageDimensions(document, function() {
     onprep(document);
   });

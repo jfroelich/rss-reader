@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: avoid the use of a nested function
+
 function fadeElement(element, duration, delay, callback) {
   'use strict';
 
