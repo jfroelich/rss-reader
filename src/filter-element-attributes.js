@@ -32,10 +32,13 @@ function filterElementAttributes(document) {
 
     attributes = element.attributes;
 
-    // NOTE: attributes is a live NodeList, so we iterate in reverse to
-    // avoid issues with mutation while iterating.
-    j = attributes ? attributes.length : 0;
-    while(j--) {
+    if(!attributes) {
+      continue;
+    }
+
+    // NOTE: we iterate in reverse to avoid issues with mutating a live
+    // NodeList while iterating
+    for(j = attributes.length - 1; j > -1; j--) {
       name = attributes[j].name;
       if(!RETAIN_ATTRIBUTE_NAMES.has(name)) {
         element.removeAttribute(name);
