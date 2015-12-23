@@ -12,20 +12,18 @@
 // more abstractly as an Iterable then there is even less of a need for this
 // function. For example, for..of works on any iterable.
 
+// NOTE: as a reminder, the spread operator also can work
+// as a way of converting a set to an array, but Array.from feels clearer
+// return [...new Set(array)];
+
+// There are multiple ways of doing this operation. For now, I assume that
+// passing the array to the Set constructor is probably more performant
+// because the work is done all in native code, but I have never
+// verified how this works.
+
 // This was adapted from http://stackoverflow.com/questions/9229645
 function uniqueArray(array) {
   'use strict';
-
-  // Leaving this comment here as a reminder. The spread operator also can work
-  // as a way of converting a set to an array. However, I feel like using
-  // Array.from is clearer than the spread operator.
-  // return [...new Set(array)];
-
-  // There are multiple ways of doing this operation. For now, I assume that
-  // passing the array to the Set constructor is probably more performant
-  // because the work is done all in native code, but I have never
-  // verified how this works.
-
   const set = new Set(array);
   return Array.from(set);
 }
