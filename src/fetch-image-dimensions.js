@@ -9,6 +9,7 @@
 
 // TODO: this also serves to check if an image's src is correct. consider
 // removing 404 images or replacing them with an error message.
+// so maybe this has to be a more general process-images document-transform?
 
 const filter = Array.prototype.filter;
 
