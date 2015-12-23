@@ -8,7 +8,9 @@
 // extension listeners
 
 // TODO: move the onclick listener into its own file and add a note
-// about including it in the background page only
+// about including it in the background page only.
+// Rather, move the function into a separate file, and just do the
+// binding here?
 
 // Generate alarms
 chrome.alarms.create('archive', {periodInMinutes: 24 * 60});
@@ -17,7 +19,7 @@ chrome.alarms.create('poll', {periodInMinutes: 20});
 // General alarm onwakeup dispatcher
 chrome.alarms.onAlarm.addListener(function(alarm) {
   if(alarm.name === 'archive') {
-    EntryStore.archiveEntries();
+    archiveEntries();
   } else if(alarm.name === 'poll') {
     pollFeeds();
   }

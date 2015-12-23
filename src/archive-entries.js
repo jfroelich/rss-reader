@@ -4,26 +4,28 @@
 
 'use strict';
 
-{
+{ // BEGIN ANONYMOUS NAMESPACE
 
-// TODO: specify Database as a dependency injection
+// TODO: specify Database as a dependency?
 // TODO: specify EntryStore as a dependency?
 
-this.archiveEntries = function() {
-  Database.open(archiveOnConnect);
-};
+function archiveEntries() {
+  Database.open(onConnect);
+}
 
-function archiveOnConnect(event) {
+this.archiveEntries = archiveEntries;
+
+function onConnect(event) {
 
   const stats = {
-    processed: 0
+    processed: 0,
+    archived: 0
   };
 
   if(event.type === 'success') {
     const connection = event.target.result;
     const transaction = connection.transaction('entry', 'readwrite');
-    transaction.oncomplete = onArchiveComplete.bind(
-      transaction, stats);
+    transaction.oncomplete = onComplete.bind(transaction, stats);
     const store = transaction.objectStore('entry');
     const index = store.index('archiveState-readState');
     const range = IDBKeyRange.only([EntryStore.UNARCHIVED,
@@ -69,10 +71,11 @@ function archiveNextEntry(stats, event) {
   cursor.continue();
 }
 
-// Private helper for archiveEntries
-function onArchiveComplete(stats, event) {
-  console.log('Archive processed %s entries, archived %s', stats.processed,
+function onComplete(stats, event) {
+  console.log(
+    'The archive service processed %s entries and archived %s entries',
+    stats.processed,
     stats.archived);
 }
 
-}
+} // END ANONYMOUS NAMESPACE
