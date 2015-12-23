@@ -55,13 +55,6 @@ Calamine.prototype.analyze = function(document) {
     deriveTextLength.call(this);
     deriveAnchorLength.call(this);
     deriveBodyTextScores.call(this);
-
-    // NOTE: we are only analying body candidates, the types are roughly
-    // all treated equally, so unlike prior version, we are not affecting body
-    // score with an element type score. when it comes to analyzing individual
-    // blocks within the chosen body, there i may want to do a type score.
-    // delete this comment once i implement the block scoring.
-
     deriveBodyListDescendantScores.call(this);
     deriveBodyNavDescendantScores.call(this);
     deriveBodyAncestorScores.call(this);
@@ -97,6 +90,11 @@ Calamine.prototype.analyze = function(document) {
 // Removes boilerplate content
 // TODO: use Node.compareDocumentPosition
 Calamine.prototype.prune = function() {
+
+  // TODO: review why i was having problems with using local
+  // constants
+  // const body = this.body;
+  // const document = this.document;
 
   if(!this.body) {
     return;
@@ -287,6 +285,8 @@ function deriveAnchorLength() {
   // NOTE: this double counts in the case of malformed HTML containing nested
   // anchors. for now this case is ignored.
 
+  // TODO: cache the lookup to this.textLengths outside of the loop
+
   this.anchorLengths = new Map();
   const anchors = this.document.querySelectorAll('a[href]');
   const numAnchors = anchors.length;
@@ -345,6 +345,9 @@ function deriveBodyTextScores() {
       (this.bodyTextScores.get(element) || 0.0) + weight);
   }
 }
+
+// TODO: this should be re-aligned, use some type of general utility function
+// like hasAncestor
 
 function isBodyCandidateListDescendant(element) {
   let ancestor = element.parentElement;
@@ -681,6 +684,13 @@ function classifyInBodyContent() {
   // TODO: examine the elements in this.body, and determine whether they
   // are boilerplate.
 
+  // NOTE: element type score?
+
+  // NOTE: i am thinking of targeting specific boilerplate signatures:
+  // - lists of links, menu items, related posts, read more
+  // - social tools
+  // - comment sections
+  // - embedded advertisements
 }
 
 } // END ANONYMOUS NAMESPACE
