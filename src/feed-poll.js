@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: rename file to poll-feeds.js
+
 'use strict';
 
 // TODO: customizable update schedules per feed
@@ -99,7 +101,7 @@ function onQueryIdleState(state) {
 function iterateFeeds(event) {
   if(event.type === 'success') {
     const connection = event.target.result;
-    FeedStore.forEach(connection, fetchFeed.bind(null,
+    FeedStore.forEach(connection, pollFetchFeed.bind(null,
       connection), false, onComplete);
   } else {
     console.debug(event);
@@ -107,10 +109,9 @@ function iterateFeeds(event) {
   }
 }
 
-function fetchFeed(connection, feed) {
-  // console.debug('Fetching %s', feed.url);
+function pollFetchFeed(connection, feed) {
   const timeout = 10 * 1000;
-  FeedRequest.fetch(feed.url, timeout,
+  fetchFeed(feed.url, timeout,
     onFetchFeed.bind(null, connection, feed));
 }
 
@@ -182,7 +183,7 @@ function cascadeFeedProperties(feed, entry) {
 }
 
 // NOTE: due to above issues, this gets called when finished with
-// iterating feeds, BUT prior to finishing entry processing
+// iterating feeds, but BEFORE finishing processing
 function onComplete() {
   console.log('Polling completed');
   localStorage.LAST_POLL_DATE_MS = String(Date.now());
