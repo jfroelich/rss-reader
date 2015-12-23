@@ -4,8 +4,6 @@
 
 'use strict';
 
-// TODO: implement history? mimic chrome. would need search ability
-
 { // BEGIN ANONYMOUS NAMESPACE
 
 function $$(name) {
@@ -199,7 +197,7 @@ function showOrSkipSubscriptionPreview(url) {
   $$('subscription-preview-load-progress').style.display = 'block';
   const timeout = 10 * 1000;
   // TODO: check if already subscribed before preview?
-  FeedRequest.fetch(url, timeout, onFetch);
+  fetchFeed(url, timeout, onFetch);
 
   function onFetch(event, result) {
     if(event) {
@@ -275,7 +273,7 @@ function startSubscription(url) {
     if(!window.navigator.onLine) {
       FeedStore.put(connection, null, {url: url}, onSubscribe);
     } else {
-      FeedRequest.fetch(url, 10 * 1000, onFetch.bind(null, connection));
+      fetchFeed(url, 10 * 1000, onFetch.bind(null, connection));
     }
   }
 
@@ -374,7 +372,7 @@ function onSubscribeSubmit(event) {
     $$('discover-results-list').innerHTML = '';
     $$('discover-no-results').style.display = 'none';
     $$('discover-in-progress').style.display = 'block';
-    GoogleFeeds.findFeed(query, 5000, onDiscoverFeedsComplete);
+    searchGoogleFeeds(query, 5000, onDiscoverFeedsComplete);
   }
 
   return false;

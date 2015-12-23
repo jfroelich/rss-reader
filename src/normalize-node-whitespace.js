@@ -2,12 +2,11 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Normalizes the values of all text nodes in a document
 // NOTE: this should not be confused with Node.prototype.normalize
-
 // TODO: condense consecutive whitespace?
 // TODO: this would have to only occur in non-whitespace sensitive context
 //value = value.replace(/[ ]{2,}/g, ' ');
-
 function normalizeNodeWhitespace(document) {
   'use strict';
 

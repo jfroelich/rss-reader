@@ -45,7 +45,7 @@ const RESOLVE_SELECTOR = keys.join(',');
 // NOTE: iframe.srcdoc?
 // NOTE: ignores param values with URIs
 
-this.resolveDocumentURLs = function(document, baseURL) {
+function resolveDocumentURLs(document, baseURL) {
   // Remove base elements
   // NOTE: could stripping the base tag could lead to invalid urls???
   // Should the base tag, if present, be considered when resolving elements?
@@ -64,7 +64,9 @@ this.resolveDocumentURLs = function(document, baseURL) {
   for(let i = 0; i < numResolvables; i++) {
     resolveElement(baseURL, resolvables[i]);
   }
-};
+}
+
+this.resolveDocumentURLs = resolveDocumentURLs;
 
 // Resolves one of the URL containing attributes for a given
 // element. Private helper for resolveURLs

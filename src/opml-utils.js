@@ -2,6 +2,10 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: split into two functions and two files
+// TODO: create import-opml.js, importOPML function
+// TODO: create export-opml.js, exportOPML function
+
 'use strict';
 
 // Utility functions for OPML features

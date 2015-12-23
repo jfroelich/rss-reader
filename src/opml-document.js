@@ -2,11 +2,13 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: create parse-xml.js, parseXML function, remove OPMLDocument.parse
+// TODO: remove reliance on HTMLDocumentWrapper, deprecate HTMLDocumentWrapper
+
 'use strict';
 
 // An in-memory OPMLDocument object
 // TODO: maybe extend Document? Research how to extend native/host/builtin
-
 // TODO: explicit dependency on StringUtils
 // TODO: explicit dependency on HTMLDocumentWrapper, or remove the dependency
 class OPMLDocument {

@@ -23,6 +23,9 @@ for lazy loaded images
 TODO: therefore, lazy load also has to happen prior to resolving
 document urls so that lazy-load urls are also fixed
 
+
+TODO: if this only applies to images, rename the file and function to be clearer
+
 */
 
 const LazyLoadTransform = {};

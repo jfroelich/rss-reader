@@ -2,24 +2,29 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-'use strict';
-
-{
-
 // TODO: thinking more about dependency injection, would it be better
 // to do something like pass EntryStore and database to updateBadge
 // such that they can be mocked in testing? Something like that? Then
 // maybe we want a utility that simplifies this, or want to wrap it
 // up in a special object, or some type of function factory
+// NOTE: i am not sure i like how i did the DI here, right now it is just
+// an experiment to see how the surface API feels. Maybe it would be better
+// to try the bind route
+
+'use strict';
+
+{
 
 // Updates the unread count of the extension's badge
-this.updateBadge = function(database, entryStore, connection) {
+function updateBadge(database, entryStore, connection) {
   if(connection) {
     entryStore.countUnread(connection, setBadgeText);
   } else {
     database.open(updateOnConnect.bind(null, entryStore));
   }
-};
+}
+
+this.updateBadge = updateBadge;
 
 // Private helper for updateBadge
 function updateOnConnect(entryStore, event) {

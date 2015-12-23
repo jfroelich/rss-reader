@@ -16,6 +16,8 @@
 // NOTE: this also removes any image without a source. this isn't exactly
 // related to the purpose of this function. Maybe it doesn't belong here?
 
+// TODO: move the sourceless check into a separate transformation function,
+// it is awkward to include it here
 
 function filterTracerElements(document) {
   'use strict';

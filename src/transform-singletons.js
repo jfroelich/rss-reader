@@ -2,6 +2,11 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: transforming lists and tables are two separate functions that have
+// relatively little to do with each other. While they each perform a similar
+// type of function, they are not actually related. Therefore, this file
+// should be split into two files.
+
 'use strict';
 
 { // BEGIN ANONYMOUS NAMESPACE
