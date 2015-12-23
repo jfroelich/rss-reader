@@ -2,137 +2,17 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: querySelector is not depth-sensitive. Maybe increase
+// the strictness to searching immediate node children
+
 'use strict';
-
-// TODO: in hindsight, the deserialize functionality should be in a separate
-// file just related to its purpose, even though this is the only context
-// that accesses it.
-
-// TODO: explicit dependency on URLUtils
-// TODO: explicit dependency on EntryUtils (or I should just deprecate
-// EntryUtils and implement the unique function locally)
-// TODO: explicit dependency on StringUtils
-
-const FeedRequest = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
 
 const map = Array.prototype.map;
 
-// TODO: somehow use responseURL?
-// TODO: intelligently react to redirects
-FeedRequest.fetch = function(url, timeout, callback) {
-  const request = new XMLHttpRequest();
-  request.timeout = timeout;
-  request.onerror = callback;
-  request.ontimeout = callback;
-  request.onabort = callback;
-  request.onload = onFetch.bind(request, url, callback);
-  request.open('GET', url, true);
-  request.overrideMimeType('application/xml');
-  request.send();
-}
-
-function onFetch(url, callback, event) {
-  let document = event.target.responseXML;
-
-  if(!document) {
-    document = retryMalformedResponse(event.target);
-  }
-
-  if(!document || !document.documentElement) {
-    callback(event);
-    return;
-  }
-
-  try {
-    const feed = deserialize(document);
-    feed.url = url;
-    feed.fetched = Date.now();
-
-    // TODO: maybe this post-processing is outside the scope
-    // of requesting a feed? Maybe these should be the caller's
-    // responsibility? Also, it seems like overly tight
-    // coupling.
-
-    feed.entries = feed.entries.filter(function(entry) {
-      return entry.link;
-    });
-
-    feed.entries.forEach(function(entry) {
-      entry.link = rewriteURL(entry.link);
-    });
-
-    feed.entries = getUniqueEntries(feed.entries);
-
-    callback(null, feed);
-  } catch(exception) {
-    // TODO: the type of error passed back as first argument
-    // should be consistent. Mimic an event object here instead
-    // of an exception
-    callback(exception);
-  }
-}
-
-// Given an array of unique entries, returns a new array of
-// unique entries (compared by entry.link)
-// TODO: return a set/map
-function getUniqueEntries(entries) {
-  const distinct = new Map(entries.map(function(entry) {
-    return [entry.link, entry];
-  }));
-  return [...distinct.values()];
-}
-
-// Private helper for fetch
-// responseXML is null when there was an xml parse error
-// such as invalid UTF-8 characters. For example:
-// error on line 1010 at column 25: Input is not proper UTF-8,
-// indicate encoding ! Bytes: 0x07 0x50 0x72 0x65
-// So, access the raw text and try and re-encode and re-parse it
-function retryMalformedResponse(response) {
-
-  try {
-    const encoded = utf8.encode(response.responseText);
-    const parser = new DOMParser();
-    const document = parser.parseFromString(encoded, 'application/xml');
-
-    // XML parsing exceptions are not thrown, they are embedded
-    // as nodes within the result. Behavior varies by browser.
-    const error = document.querySelector('parsererror');
-    if(error) {
-      error.remove();
-    }
-
-    return document;
-  } catch(exception) {
-
-  }
-}
-
-class FeedRequestError extends Error {
-  // TODO: use ES6 rest syntax? Chrome keeps whining
-  constructor() {
-    super(...arguments);
-  }
-}
-
-function selectChild(parent, selector) {
-  return parent.childNodes.find(function(node) {
-    return node.matches(name);
-  });
-}
-
-function selectChildren(parent, name) {
-  return parent.childNodes.filter(function(node) {
-    return node.matches(name);
-  });
-}
-
-// Generates a feed object based on the xml
-// TODO: querySelector is not depth-sensitive. Maybe increase
-// the strictness to searching immediate node children
-function deserialize(document) {
+// Derives a feed object from an xml document
+function deserializeFeed(document) {
 
   const documentElement = document.documentElement;
   validateDocumentElement(documentElement);
@@ -147,14 +27,16 @@ function deserialize(document) {
   }
 
   const channel = isAtom ? documentElement :
-    //documentElement.querySelector('channel');
     document.querySelector(documentElement.localName + ' > channel');
 
   const feed = {};
 
-  // TODO: make sure the type values conform to the OPML standard
+  // Ensure the type values conform to the OPML standard
   // Record the feed's original format as a type property to increase
   // compliance with the OPML standard
+  // TODO: in order for this to matter, feed loading and updating and so
+  // forth needs to maintain the type property, which i don't think is
+  // currently implemented
   if(isAtom) {
     feed.type = 'feed';
   } else if(isRDF) {
@@ -220,8 +102,8 @@ function deserialize(document) {
   return feed;
 }
 
-// Export deserialize for testing.
-FeedRequest._deserialize = deserialize;
+this.deserializeFeed = deserializeFeed;
+
 
 function validateDocumentElement(element) {
   if(!element) {
@@ -233,6 +115,7 @@ function validateDocumentElement(element) {
       element.localName);
   }
 }
+
 
 // Private helper for deserialize, deserializes an item
 function deserializeEntry(isAtom, entry) {
@@ -323,6 +206,30 @@ function getElementText(parent, selector) {
       return text.trim();
     }
   }
+}
+
+// TODO: the FeedRequest object was deprecated. This should be renamed to
+// something simpler, like FeedParseError
+class FeedRequestError extends Error {
+  // TODO: use ES6 rest syntax? Chrome keeps whining
+  constructor() {
+    super(...arguments);
+  }
+}
+
+// The following functions are not currently in use, toying with the idea
+// of using something other than querySelector to get at immediate children
+
+function selectChild(parent, selector) {
+  return parent.childNodes.find(function(node) {
+    return node.matches(name);
+  });
+}
+
+function selectChildren(parent, name) {
+  return parent.childNodes.filter(function(node) {
+    return node.matches(name);
+  });
 }
 
 } // END ANONYMOUS NAMESPACE
