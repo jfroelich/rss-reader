@@ -2,11 +2,17 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-'use strict';
-
 // indexedDB lib
 // TODO: just store scheme and schemeless props as parts of a url property.
 // TODO: store urls as URL objects?
+
+// TODO: rather than use a namespace object, this could simply be two
+// global functions, openDatabase and upgradeDatabase, in two files?
+// Or, it could just be one global function because nothing will ever call
+// upgradeDatabase directly
+
+'use strict';
+
 const Database = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
