@@ -6,11 +6,6 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-// Dependencies
-// NOTE: due to this, dom-utils must be included prior to this file, so
-// maybe this is a bad idea
-const removeElementsBySelector = DOMUtils.removeElementsBySelector;
-
 const HIDDEN_FACTORS = [
   'display:none',
   'display: none',
@@ -44,6 +39,7 @@ const HIDDEN_SELECTOR = HIDDEN_FACTORS.map(makeSelectorCondition).join(',');
 // It may have some impact on boilerplate analysis, but I haven't given that
 // too much consideration.
 function filterHiddenElements(document) {
+  const removeElementsBySelector = DOMUtils.removeElementsBySelector;
   removeElementsBySelector(document, HIDDEN_SELECTOR);
 }
 
