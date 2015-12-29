@@ -25,6 +25,7 @@
       "/src/fetch-feed.js",
       "/src/fetch-html.js",
       "/src/fetch-image-dimensions.js",
+      "/src/filter-control-characters.js",
       "/src/get-schemeless-url.js",
       "/src/html-document-wrapper.js",
       "/src/is-valid-date.js",

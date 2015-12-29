@@ -4,27 +4,9 @@
 
 'use strict';
 
-
-// TODO: consistently use a prefix like remove, don't switch between remove
-// and strip and filter and so forth
-// TODO: if these functions are truly not related, I am not sure why I decided
-// to group them together. Perhaps they should be split apart into separate
-// files
-
 const StringUtils = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
-
-// TODO: research the proper pattern
-// /[^\x20-\x7E]+/g;
-const RE_CONTROL_CHARACTER = /[\t\r\n]/g;
-
-// TODO: rename to removeControlCharacters
-StringUtils.stripControlCharacters = function(string) {
-  if(string) {
-    return string.replace(RE_CONTROL_CHARACTER,'');
-  }
-};
 
 const ELLIPSIS = '\u2026';
 

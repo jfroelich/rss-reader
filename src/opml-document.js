@@ -67,14 +67,14 @@ class OPMLDocument {
       title = element.getAttribute('text') || '';
       title = title.trim();
     }
-    title = StringUtils.stripControlCharacters(title);
+    title = filterControlCharacters(title);
     if(title) {
       outline.title = title;
     }
 
     let description = element.getAttribute('description');
     if(description) {
-      description = StringUtils.stripControlCharacters(description);
+      description = filterControlCharacters(description);
     }
     if(description) {
       description = replaceHTML(description);
@@ -87,14 +87,14 @@ class OPMLDocument {
     }
 
     let url = element.getAttribute('xmlUrl') || '';
-    url = StringUtils.stripControlCharacters(url);
+    url = filterControlCharacters(url);
     url = url.trim();
     if(url) {
       outline.url = url;
     }
 
     let link = element.getAttribute('htmlUrl') || '';
-    link = StringUtils.stripControlCharacters(link);
+    link = filterControlCharacters(link);
     link = link.trim();
     if(link) {
       outline.link = link;

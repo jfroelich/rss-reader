@@ -150,7 +150,7 @@ function onPutFeed(callback, event) {
 function sanitizeValue(value) {
   if(value) {
     value = replaceHTML(value);
-    value = StringUtils.stripControlCharacters(value);
+    value = filterControlCharacters(value);
     value = value.replace(/\s+/, ' ');
     value = value.trim();
     return value;
