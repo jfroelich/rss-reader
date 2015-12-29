@@ -531,7 +531,7 @@ function deriveBodyImageContainerScores() {
       bias += 30.0;
     }
 
-    caption = DOMUtils.findCaption(image);
+    caption = findImageCaption(image);
     if(caption) {
       bias += 100.0;
     }

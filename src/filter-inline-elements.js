@@ -6,9 +6,6 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-// Dependencies
-const unwrap = DOMUtils.unwrap;
-
 // Unwraps various inline elements in a document. Given that style information
 // and other information is removed, several elements in the document may
 // no longer serve a formatting purpose, so we want to remove them but
@@ -75,13 +72,13 @@ function unwrapInlines(document) {
   // move. Right now it unwraps both inner and outer, doing the move twice. So
   // instead of finding the parent in unwrap, we would want to walk up the
   // ancestor tree to the first non-unwrappable (stopping before document.body).
-  // I think this means we cannot use DOMUtils.unwrap, because that
+  // I think this means we cannot use unwrapElement, because that
   // hardcodes the move destination as element.parentElement
 
   const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
   const numElements = elements.length;
   for(let i = 0; i < numElements; i++) {
-    unwrap(elements[i]);
+    unwrapElement(elements[i]);
   }
 }
 
@@ -104,7 +101,7 @@ function transformAnchors(document) {
       if(!href) {
         // The anchor had an href, but without a value, so treat it
         // as nominal, and therefore unwrap
-        unwrap(anchor);
+        unwrapElement(anchor);
       } else {
         if(href.startsWith('#')) {
           // It is an in-page anchor that will no longer work, if,
@@ -113,12 +110,12 @@ function transformAnchors(document) {
           // makes all anchors absolute, so this condition is never triggered
           // so the test actually needs to be checking against the document's
           // own url, which isn't available to this function at the moment
-          unwrap(anchor);
+          unwrapElement(anchor);
         }
       }
     } else {
       // It is a nominal anchor, unwrap
-      unwrap(anchor);
+      unwrapElement(anchor);
     }
   }
 }

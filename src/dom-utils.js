@@ -9,46 +9,6 @@
 
 const DOMUtils = {};
 
-// Replaces an element with its children in the element's document
-// NOTE: not optimized for live documents
-DOMUtils.unwrap = function(element) {
-  const parent = element.parentElement;
-  if(parent) {
-    let first = element.firstChild;
-    while(first) {
-     parent.insertBefore(first, element);
-     first = element.firstChild;
-    }
-    element.remove();
-  }
-};
-
-// Finds the associated caption for an image element
-DOMUtils.findCaption = function(image) {
-  const parents = DOMUtils.getAncestors(image);
-  const figure = parents.find(DOMUtils.isFigureElement);
-  if(figure)
-    return figure.querySelector('figcaption');
-};
-
-DOMUtils.isFigureElement = function(element) {
-  // return element instanceof HTMLFigureElement;
-  return element.localName === 'figure';
-};
-
-// Returns an array of ancestor elements for the given element
-// up to and including the documentElement, in bottom up order
-// TODO: this should operate on node, not element
-DOMUtils.getAncestors = function(element) {
-  const parents = [];
-  let parent = element.parentElement;
-  while(parent) {
-    parents.push(parent);
-    parent = parent.parentElement;
-  }
-  return parents;
-};
-
 // Finds all elements with the given tagName and removes them,
 // in reverse document order. This will remove elements that do not need to
 // be removed because an ancestor of them will be removed in a later iteration,
@@ -73,7 +33,6 @@ DOMUtils.removeElementsByName = function(document, tagName) {
 // is whether the set of remove operations is slower than the time it takes
 // to traverse. I assume traversal is faster, but not fast enough to merit it.
 // TODO: use for..of once Chrome supports NodeList iterators
-
 DOMUtils.removeElementsBySelector = function(document, selector) {
   const elements = document.querySelectorAll(selector);
   const length = elements.length;
@@ -103,5 +62,5 @@ DOMUtils.moveElementsBySelector = function(source, destination, selector) {
 // I do not want to modify NodeList.prototype and Chrome does not yet
 // support iterable node lists
 DOMUtils.createNodeListIterator = function(nodeList) {
-
+  throw new Error('Not implemented');
 };
