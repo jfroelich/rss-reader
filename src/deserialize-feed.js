@@ -5,11 +5,12 @@
 // TODO: querySelector is not depth-sensitive. Maybe increase
 // the strictness to searching immediate node children
 
+// TODO: rather than return a basic javascript object, perhaps a Map
+// would be more appropriate?
+
 'use strict';
 
 { // BEGIN ANONYMOUS NAMESPACE
-
-const map = Array.prototype.map;
 
 // Derives a feed object from an xml document
 function deserializeFeed(document) {
@@ -97,6 +98,8 @@ function deserializeFeed(document) {
     entries = channel.querySelectorAll('item');
   }
 
+  const map = Array.prototype.map;
+
   feed.entries = map.call(entries, deserializeEntry.bind(null, isAtom));
 
   return feed;
@@ -170,6 +173,8 @@ function deserializeEntry(isAtom, entry) {
     // Special handling for some strange issue
     const content = entry.querySelector('content');
     const nodes = content ? content.childNodes : [];
+    const map = Array.prototype.map;
+    // TODO: separate out this nested function
     result.content = map.call(nodes, function(node) {
       return node.nodeType === Node.ELEMENT_NODE ?
         node.innerHTML : node.textContent;

@@ -3,6 +3,9 @@
 // that can be found in the LICENSE file
 
 // TODO: handle redirects better, e.g. somehow use responseURL?
+// TODO: the post-processing where i clean up entries should not be done here,
+// it should be the caller's responsibility, it is not intrinsic to this
+// function's purpose
 
 'use strict';
 
@@ -46,13 +49,6 @@ function onFetch(url, callback, event) {
     feed.url = url;
     feed.fetched = Date.now();
 
-    // TODO: maybe this post-processing is outside the scope
-    // of requesting a feed? Maybe these should be the caller's
-    // responsibility? Also, it seems like overly tight
-    // coupling.
-    // In other words, should this functionality be required of
-    // every feed request? Is it not intrinsic to its functionality?
-
     feed.entries = feed.entries.filter(entryHasLink);
     feed.entries.forEach(rewriteEntryLink);
     feed.entries = getUniqueEntries(feed.entries);
@@ -84,6 +80,9 @@ function getUniqueEntries(entries) {
   return [...distinct.values()];
 }
 
+// TODO: this doesn't seem to actually fix or do anything. Re-parsing still
+// causes the same error. It seems like all this does is remove the parsererror
+// element. So this needs some more attention.
 // responseXML is null when there was an xml parse error
 // such as invalid UTF-8 characters. For example:
 // "error on line 1010 at column 25: Input is not proper UTF-8,
