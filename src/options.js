@@ -148,7 +148,7 @@ function appendFeed(feed, insertedSort) {
   item.appendChild(favIconElement);
 
   const title = document.createElement('span');
-  title.textContent = StringUtils.truncate(feed.title,300) || 'Untitled';
+  title.textContent = truncateString(feed.title,300) || 'Untitled';
   item.appendChild(title);
 
   const feedListElement = $$('feedlist');

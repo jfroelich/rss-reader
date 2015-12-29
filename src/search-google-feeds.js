@@ -76,7 +76,7 @@ function getEntryURL(entry) {
 function sanitizeEntry(entry) {
   if(entry.title) {
     entry.title = replaceHTML(entry.title);
-    entry.title = StringUtils.truncate(entry.title, 100);
+    entry.title = truncateString(entry.title, 100);
   }
 
   if(entry.contentSnippet) {
@@ -85,8 +85,7 @@ function sanitizeEntry(entry) {
     // and could lead to truncating in the middle of a tag, or
     // leave unclosed tags in the result. Think about how to
     // prevent these two issues.
-    entry.contentSnippet = StringUtils.truncate(
-      entry.contentSnippet, 400);
+    entry.contentSnippet = truncateString(entry.contentSnippet, 400);
   }
 }
 

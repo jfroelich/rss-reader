@@ -260,7 +260,7 @@ function appendSlide(entry, isFirst) {
   if(entry.title) {
     let titleText = replaceHTML(entry.title);
     titleText = stripTitlePublisher(titleText);
-    titleText = StringUtils.truncate(titleText, 300);
+    titleText = truncateString(titleText, 300);
     title.innerHTML = titleText;
   } else {
     title.textContent = 'Untitled';
