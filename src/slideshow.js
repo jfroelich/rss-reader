@@ -40,6 +40,7 @@ function previewTransform(document) {
   calamine.analyze(document);
   calamine.prune();
 
+  filterSourcelessImages(document);
   filterTracerElements(document);
   normalizeNodeWhitespace(document);
   filterInlineElements(document);

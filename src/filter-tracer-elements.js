@@ -13,23 +13,14 @@
 // by setImageDimensions. If there is a simple way to check if an image's
 // dimensions are not set, maybe this disambiguates what image.width=0 means.
 
-// NOTE: this also removes any image without a source. this isn't exactly
-// related to the purpose of this function. Maybe it doesn't belong here?
-
-// TODO: move the sourceless check into a separate transformation function,
-// it is awkward to include it here
-
 function filterTracerElements(document) {
   'use strict';
   const images = document.querySelectorAll('img');
   const imagesLength = images.length;
-  let source = null;
+
   for(let i = 0, image; i < imagesLength; i++) {
     image = images[i];
-    source = (image.getAttribute('src') || '').trim();
-    if(!source) {
-      image.remove();
-    } else if(image.width < 2 || image.height < 2) {
+    if(image.width < 2 || image.height < 2) {
       image.remove();
     }
   }
