@@ -90,7 +90,7 @@ function getUniqueEntries(entries) {
 // indicate encoding ! Bytes: 0x07 0x50 0x72 0x65"
 // So, access the raw text and try and re-encode and re-parse it
 // TODO: should this defer to an external parseXML function instead?
-
+// NOTE: requires utf8.js
 function retryMalformedResponse(response) {
 
   try {

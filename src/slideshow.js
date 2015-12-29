@@ -258,7 +258,7 @@ function appendSlide(entry, isFirst) {
   title.setAttribute('target','_blank');
   title.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
-    let titleText = StringUtils.removeTags(entry.title);
+    let titleText = replaceHTML(entry.title);
     titleText = stripTitlePublisher(titleText);
     titleText = StringUtils.truncate(titleText, 300);
     title.innerHTML = titleText;

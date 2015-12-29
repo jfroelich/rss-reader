@@ -140,7 +140,7 @@ function appendFeed(feed, insertedSort) {
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
   item.setAttribute('feed', feed.id);
-  item.setAttribute('title', StringUtils.removeTags(feed.description) || '');
+  item.setAttribute('title', replaceHTML(feed.description) || '');
   item.onclick = onFeedListItemClick;
   var favIconElement = document.createElement('img');
   favIconElement.src = getFaviconURL(feed.link);
@@ -221,9 +221,9 @@ function showOrSkipSubscriptionPreview(url) {
     for(var i = 0, len = Math.min(5,result.entries.length); i < len;i++) {
       var entry = result.entries[i];
       var item = document.createElement('li');
-      item.innerHTML = StringUtils.removeTags(entry.title);
+      item.innerHTML = replaceHTML(entry.title);
       var content = document.createElement('span');
-      content.innerHTML = StringUtils.removeTags(entry.content);
+      content.innerHTML = replaceHTML(entry.content);
       item.appendChild(content);
       $$('subscription-preview-entries').appendChild(item);
     }
@@ -322,7 +322,7 @@ function populateFeedDetailsSection(feedId) {
       $$('details-title').textContent = feed.title || 'Untitled';
       $$('details-favicon').setAttribute('src', getFaviconURL(feed.url));
       $$('details-feed-description').textContent =
-        StringUtils.removeTags(feed.description) || 'No description';
+        replaceHTML(feed.description) || 'No description';
       $$('details-feed-url').textContent = feed.url;
       $$('details-feed-link').textContent = feed.link;
       $$('details-unsubscribe').value = feed.id;

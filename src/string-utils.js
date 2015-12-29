@@ -15,35 +15,6 @@ const StringUtils = {};
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-// Removes HTML elements from a string
-StringUtils.removeTags = function(string, replacement) {
-
-  if(!string)
-    return;
-
-  const document = createHTMLDocument();
-  document.body.innerHTML = string;
-
-  if(!replacement) {
-    return document.body.textContent;
-  }
-
-  const values = [];
-  const iterator = document.createNodeIterator(
-    document.body, NodeFilter.SHOW_TEXT);
-  let node = iterator.nextNode();
-  while(node) {
-    values.push(node.nodeValue);
-    node = iterator.nextNode();
-  }
-  return values.join(replacement);
-};
-
-// Private helper for removeTags
-function createHTMLDocument() {
-  return document.implementation.createHTMLDocument();
-}
-
 // TODO: research the proper pattern
 // /[^\x20-\x7E]+/g;
 const RE_CONTROL_CHARACTER = /[\t\r\n]/g;

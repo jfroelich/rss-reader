@@ -75,7 +75,7 @@ function getEntryURL(entry) {
 
 function sanitizeEntry(entry) {
   if(entry.title) {
-    entry.title = StringUtils.removeTags(entry.title);
+    entry.title = replaceHTML(entry.title);
     entry.title = StringUtils.truncate(entry.title, 100);
   }
 

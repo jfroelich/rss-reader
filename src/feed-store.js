@@ -149,7 +149,7 @@ function onPutFeed(callback, event) {
 // TODO: sanitize html entities?
 function sanitizeValue(value) {
   if(value) {
-    value = StringUtils.removeTags(value);
+    value = replaceHTML(value);
     value = StringUtils.stripControlCharacters(value);
     value = value.replace(/\s+/, ' ');
     value = value.trim();

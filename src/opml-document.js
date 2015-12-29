@@ -77,7 +77,7 @@ class OPMLDocument {
       description = StringUtils.stripControlCharacters(description);
     }
     if(description) {
-      description = StringUtils.removeTags(description);
+      description = replaceHTML(description);
     }
     if(description) {
       description = description.trim();

@@ -28,6 +28,8 @@
       "/src/get-schemeless-url.js",
       "/src/html-document-wrapper.js",
       "/src/is-valid-date.js",
+      "/src/parse-html.js",
+      "/src/replace-html.js",
       "/src/resolve-document-urls.js",
       "/src/rewrite-url.js",
       "/src/show-notification.js",

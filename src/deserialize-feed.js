@@ -129,7 +129,7 @@ function deserializeEntry(isAtom, entry) {
   const author = isAtom ? getText(entry, 'author name') :
     (getText(entry, 'creator') || getText(entry, 'publisher'));
   if(author) {
-    result.author = StringUtils.removeTags(author, ' ');
+    result.author = replaceHTML(author, ' ');
   }
 
   let link = '';
@@ -217,7 +217,7 @@ class FeedRequestError extends Error {
   }
 }
 
-// The following functions are not currently in use, toying with the idea
+// NOTE: The following functions are not currently in use, toying with the idea
 // of using something other than querySelector to get at immediate children
 
 function selectChild(parent, selector) {
