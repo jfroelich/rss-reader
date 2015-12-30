@@ -23,35 +23,6 @@ chrome.runtime.onMessage.addListener(function(message) {
   }
 });
 
-// Applies a series of transformations to a document.
-function previewTransform(document) {
-  // TODO: properly handle noembed
-  // NOTE: support audio/video
-
-  filterCommentNodes(document);
-  filterFrameElements(document);
-  filterScriptElements(document);
-  filterBlacklistedElements(document);
-  filterHiddenElements(document);
-  // filterBreakruleElements(document);
-
-  // Filter boilerplate using Calamine
-  const calamine = new Calamine();
-  calamine.analyze(document);
-  calamine.prune();
-
-  filterSourcelessImages(document);
-  filterTracerElements(document);
-  normalizeNodeWhitespace(document);
-  filterInlineElements(document);
-  trimTextNodes(document);
-  filterLeafElements(document);
-  unwrapSingletonLists(document);
-  unwrapSingletonTables(document);
-  trimDocumentElements(document);
-  filterElementAttributes(document);
-}
-
 function maybeAppendMoreSlides() {
   const unreadCount = countUnreadSlides();
 
@@ -274,7 +245,7 @@ function appendSlide(entry, isFirst) {
   content.setAttribute('class', 'entry-content');
 
   const doc = parseHTML(entry.content);
-  previewTransform(doc);
+  prepareDocumentForView(doc);
 
   if(doc.documentElement) {
     if(doc.body) {
