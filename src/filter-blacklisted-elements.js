@@ -40,5 +40,5 @@ function filterBlacklistedElements(document) {
   ];
 
   const blacklistSelector = blacklist.join(',');
-  DOMUtils.moveElementsBySelector(document, null, blacklistSelector);
+  moveElementsBySelector(document, null, blacklistSelector);
 }

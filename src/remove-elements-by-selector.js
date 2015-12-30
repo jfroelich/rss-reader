@@ -4,8 +4,7 @@
 
 // Finds all elements matching the selector and removes them,
 // in forward document order. In contrast to moveElementsBySelector, this
-// will recursively remove elements that are descendants of elements already
-// removed.
+// removes elements that are descendants of elements already removed.
 // NOTE: i tried to find a way to avoid visiting detached subtrees, but
 // document.contains still returns true for a removed element. The only way
 // seems to be to traverse upwards and checking if documentElement is still at
