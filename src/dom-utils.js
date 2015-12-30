@@ -9,18 +9,6 @@
 
 const DOMUtils = {};
 
-// Finds all elements with the given tagName and removes them,
-// in reverse document order. This will remove elements that do not need to
-// be removed because an ancestor of them will be removed in a later iteration,
-// but this is not currently avoidable.
-DOMUtils.removeElementsByName = function(document, tagName) {
-  // NOTE: this ONLY works in reverse
-  const elements = document.getElementsByTagName(tagName);
-  for(let i = elements.length - 1; i > -1; i--) {
-    elements[i].remove();
-  }
-};
-
 // Finds all elements matching the selector and removes them,
 // in forward document order. In contrast to moveElementsBySelector, this
 // will recursively remove elements that are descendants of elements already
