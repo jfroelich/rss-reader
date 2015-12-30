@@ -2,10 +2,11 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: avoid the use of a nested function
+'use strict';
+
+{
 
 function fadeElement(element, duration, delay, callback) {
-  'use strict';
 
   const style = element.style;
 
@@ -19,13 +20,20 @@ function fadeElement(element, duration, delay, callback) {
   }
 
   if(callback) {
-    element.addEventListener('webkitTransitionEnd', function fadeEnd(event) {
-      event.target.removeEventListener('webkitTransitionEnd', fadeEnd);
-      callback(element);
-    });
+    const fadeEndCallback = fadeEnd.bind(element, callback, element);
+    element.addEventListener('webkitTransitionEnd', fadeEndCallback);
   }
 
   // property duration function delay
   style.transition = 'opacity ' + duration + 's ease ' + delay + 's';
   style.opacity = style.opacity === '1' ? '0' : '1';
+}
+
+this.fadeElement = fadeElement;
+
+function fadeEnd(callback, element, event) {
+  event.target.removeEventListener('webkitTransitionEnd', fadeEnd);
+  callback(element);
+}
+
 }
