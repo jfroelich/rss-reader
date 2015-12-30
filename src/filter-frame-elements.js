@@ -11,6 +11,10 @@
 // TODO: i think i want to make the reliance on DOMUtils explicit, using
 // some form of dependency injection
 
+// TODO: iframes are frame-like, but in the end, i think iframe filtering
+// or handling should be done in its own transformational function, and not
+// mixed-in here.
+
 function filterFrameElements(document) {
   'use strict';
 
@@ -39,5 +43,5 @@ function filterFrameElements(document) {
   }
 
 
-  DOMUtils.removeElementsBySelector(document, 'frameset, frame, iframe');
+  removeElementsBySelector(document, 'frameset, frame, iframe');
 }

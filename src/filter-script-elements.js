@@ -10,10 +10,13 @@
 // leading to lots of garbage content. For now I am just removing until
 // I give this more thought.
 
+// TODO: the function name is problematic because it does not express the
+// anchor handling behavior well. Should probably split up the functionality.
+
 function filterScriptElements(document) {
   'use strict';
 
-  DOMUtils.removeElementsBySelector(document, 'script, noscript');
+  removeElementsBySelector(document, 'script, noscript');
 
   // Disable anchors that use javascript protocol. Keep the href
   // around for boilerplate analysis. Note this selects only
