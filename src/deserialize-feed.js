@@ -24,7 +24,7 @@ function deserializeFeed(document) {
   // <channel> is required for feeds and rdf
   if(!isAtom && !document.querySelector(
     documentElement.localName + ' > channel')) {
-    throw new FeedRequestError('Missing required channel element');
+    throw new DeserializeError('Missing required channel element');
   }
 
   const channel = isAtom ? documentElement :
@@ -107,14 +107,13 @@ function deserializeFeed(document) {
 
 this.deserializeFeed = deserializeFeed;
 
-
 function validateDocumentElement(element) {
   if(!element) {
-    throw new FeedRequestError('Undefined document element');
+    throw new DeserializeError('Undefined document element');
   }
 
   if(!element.matches('feed, rss, rdf')) {
-    throw new FeedRequestError('Unsupported document element: ' +
+    throw new DeserializeError('Unsupported document element: ' +
       element.localName);
   }
 }
@@ -213,9 +212,7 @@ function getElementText(parent, selector) {
   }
 }
 
-// TODO: the FeedRequest object was deprecated. This should be renamed to
-// something simpler, like FeedParseError
-class FeedRequestError extends Error {
+class DeserializeError extends Error {
   // TODO: use ES6 rest syntax? Chrome keeps whining
   constructor() {
     super(...arguments);
