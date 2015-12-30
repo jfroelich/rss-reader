@@ -557,6 +557,10 @@ function deriveBodyImageContainerScores() {
 // TODO: split on case-transition (lower2upper,upper2lower)
 const ATTRIBUTE_SPLIT = /[\s\-_0-9]+/g;
 
+
+// TODO: the use of the prefix 'get' is not quite accurate, because it implies
+// we are just returning a property, whereas this is actually doing substantial
+// calculation. Think of a better name. Or maybe it's fine.
 function getElementAttributeTokens(element) {
 
   const values = [
