@@ -231,7 +231,7 @@ function appendSlide(entry, isFirst) {
   title.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
     let titleText = replaceHTML(entry.title);
-    titleText = stripTitlePublisher(titleText);
+    titleText = filterArticleTitle(titleText);
     titleText = truncateString(titleText, 300);
     title.innerHTML = titleText;
   } else {
@@ -279,27 +279,6 @@ function appendSlide(entry, isFirst) {
   document.getElementById('slideshow-container').appendChild(slide);
 }
 
-// TODO: support publisher as prefix
-function stripTitlePublisher(title) {
-  if(!title) return;
-  // The extra spaces are key to avoiding truncation of hyphenated terms
-  let index = title.lastIndexOf(' - ');
-  if(index === -1)
-    index = title.lastIndexOf(' | ');
-  if(index === -1)
-    index = title.lastIndexOf(' : ');
-  if(index === -1)
-    return title;
-  const trailingText = title.substring(index + 1);
-  const terms = trailingText.split(/\s+/).filter(function(v) {
-    return v;
-  });
-  if(terms.length < 5) {
-    const newTitle = title.substring(0, index).trim();
-    return newTitle;
-  }
-  return title;
-}
 
 function formatDate(date, sep) {
   if(!date) {
