@@ -280,16 +280,6 @@ function appendSlide(entry, isFirst) {
 }
 
 
-function formatDate(date, sep) {
-  if(!date) {
-    return '';
-  }
-  const parts = [];
-  parts.push(date.getMonth() + 1);
-  parts.push(date.getDate());
-  parts.push(date.getFullYear());
-  return parts.join(sep || '');
-}
 
 function showNextSlide() {
   if(countUnreadSlides() < 2) {
