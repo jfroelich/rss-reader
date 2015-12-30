@@ -30,16 +30,16 @@
 
 function filterArticleTitle(title) {
 
-  // While I would prefer to fail fast, checking here helps reduce caller
-  // boilerplate. We're changing the definition of the function by doing
+  // While I would prefer to fail fast, checking definedness here helps reduce
+  // caller boilerplate. We're changing the definition of the function by doing
   // this by stating that we tolerate nulls. We still fail in other cases
   // such as when using the wrong variable type but that is expected behavior.
   if(!title) {
     return;
   }
 
-  // The extra spaces in the queries below are key to avoiding truncation
-  // of hyphenated terms
+  // The extra spaces in the queries below are important to avoiding matching
+  // "most" hyphenated terms, which leads to undesirable behavior.
 
   let index = title.lastIndexOf(' - ');
 
@@ -70,6 +70,10 @@ function filterArticleTitle(title) {
 this.filterArticleTitle = filterArticleTitle;
 
 // Split the string into an array of words
+// NOTE: I wonder if these functions are sufficiently material to elevate into
+// the global scope as general purpose functions. For example, there is some
+// similarity to the tokenize function used by calamine to break apart
+// element attribute values.
 function tokenize(string) {
 
   // A quick and dirty RegExp suffices here. I am not truly concerned about
