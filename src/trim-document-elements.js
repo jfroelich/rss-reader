@@ -3,13 +3,13 @@
 // that can be found in the LICENSE file
 
 // TODO: i think trimDocument may be a better name than trimDocumentElements,
-// because we are not trimming elements
+// because we are not trimming individual elements, we are trying to trim
+// the document, as if it were a string
 
-// TODO: i wonder if isTrimmable should be defined externally and be
+// NOTE: i wonder if isTrimmable should be defined externally and be
 // something similar to 'isLeaf' function that is used to prune
 // empty elements anywhere in the document. If so, maybe this file
 // should be merged with that file.
-
 
 'use strict';
 

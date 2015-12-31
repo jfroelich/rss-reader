@@ -10,6 +10,11 @@
 // nodes near inline elements and whitespace sensitive elements such as <pre>
 // TODO: this is still causing an issue where there is no space adjacent
 // to an inline element, e.g. a<em>b</em> is rendered as ab
+
+// TODO: i am still observing trim errors in the output that I attribute to
+// this function, so something is still wrong with it, requires testing
+// of specific cases
+
 function trimTextNodes(document) {
 
   const sensitives = getSensitiveSet(document);

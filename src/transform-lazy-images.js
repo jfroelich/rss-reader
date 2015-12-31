@@ -28,8 +28,8 @@ function transformImageElement(image) {
   // Or we could look for all url-like attributes?
   // http://stackoverflow.com/questions/1500260
 
-  // TODO: should I not be removing attributes? Maybe the only thing we care
-  // about is ensuring that src is set
+  // TODO: I am very sloppily just adding rules here as I find them. There is
+  // probably overlap and stuff is a bit off.
 
   // Case 1: <img lazy-state="queue" load-src="url">
   if(image.hasAttribute('lazy-state') &&
@@ -52,6 +52,28 @@ function transformImageElement(image) {
     console.debug('Transforming lazily-loaded image ', image.outerHTML);
     image.setAttribute('src', image.dataset.src);
     return;
+  }
+
+  // Case 4: <img data-src="url">
+  if(image.hasAttribute('data-src') && !image.hasAttribute('src')) {
+    console.debug('Transforming lazily-loaded image ', image.outerHTML);
+    image.setAttribute('src', image.getAttribute('src'));
+    return;
+  }
+
+  // Responsive design conflicts with the approach this takes, but oh well
+  // Case 5: <img class="lazy" data-original-desktop="url"
+  // data-original-tablet="url" data-original-mobile="url">
+  if(image.classList.contains('lazy') && image.dataset.originalDesktop) {
+    console.debug('Transforming lazily-loaded image ', image.outerHTML);
+    image.setAttribute('src', image.getAttribute('data-original-desktop'));
+    return;
+  }
+
+  //<img data-baseurl="url">
+  if(!image.hasAttribute('src') && image.hasAttribute('data-baseurl')) {
+    console.debug('Transforming lazily-loaded image ', image.outerHTML);
+    image.setAttribute('src', image.getAttribute('data-baseurl'));
   }
 }
 
