@@ -2,8 +2,6 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: rename file to poll-feeds.js
-
 'use strict';
 
 // TODO: customizable update schedules per feed
@@ -54,7 +52,7 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-function _start() {
+function pollFeeds() {
   console.debug('Polling feeds');
 
   if(!navigator.onLine) {
@@ -70,7 +68,7 @@ function _start() {
 }
 
 // Export global
-this.pollFeeds = _start;
+this.pollFeeds = pollFeeds;
 
 const IDLE_PERIOD = 60 * 5; // 5 minutes
 function onCheckIdlePermission(permitted) {
