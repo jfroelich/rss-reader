@@ -12,12 +12,16 @@
 // Rather, move the function into a separate file, and just do the
 // binding here?
 
+// TODO: I really do not like using the generic name background.js here. I
+// would like to think about organizing this file's statements and functions
+// into separate purposes, and storing the purposes separately.
+
 // Generate alarms
 chrome.alarms.create('archive', {periodInMinutes: 24 * 60});
 chrome.alarms.create('poll', {periodInMinutes: 20});
 
 // General alarm onwakeup dispatcher
-chrome.alarms.onAlarm.addListener(function(alarm) {
+chrome.alarms.onAlarm.addListener(function onChromeAlarm(alarm) {
   if(alarm.name === 'archive') {
     archiveEntries();
   } else if(alarm.name === 'poll') {
@@ -28,7 +32,7 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
 // Called when the extension is installed
 // TODO: maybe set the badge text to '0'
 // TODO: set localStorage defaults
-chrome.runtime.onInstalled.addListener(function(event) {
+chrome.runtime.onInstalled.addListener(function onRuntimeInstalled(event) {
   console.log('Installing ...');
   Database.open(function(event) {
     // NOOP
@@ -43,7 +47,8 @@ chrome.runtime.onInstalled.addListener(function(event) {
 // enabled before querying for the new tab.
 // NOTE: the calls to chrome.tabs here do not require the tabs permission
 // TODO: is the trailing slash necessary for new tab?
-chrome.browserAction.onClicked.addListener(function(event) {
+chrome.browserAction.onClicked.addListener(
+  function onBrowserActionClicked(event) {
   const viewURL = chrome.extension.getURL('slides.html');
   const newTabURL = 'chrome://newtab/';
   chrome.tabs.query({'url': viewURL}, function(tabs) {
