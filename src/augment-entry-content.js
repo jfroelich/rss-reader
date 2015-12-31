@@ -35,7 +35,7 @@
 // media formats?
 // TODO: do something with responseURL? should augmentEntryContent also
 // be in charge of updating the entry to replace its url if it isn't
-// the same? 
+// the same?
 function augmentEntryContent(entry, timeout, callback) {
   fetchHTML(entry.link, timeout,
     onFetchHTML.bind(null, entry, callback));
@@ -56,6 +56,11 @@ function onFetchHTML(entry, callback, error, document, responseURL) {
       entry.link,
       responseURL);
   }
+
+  // Before calling resolveDocumentURLs, we try and do some minor scrubbing
+  // of the document. For example, we try and fix the attributes of image
+  // elements where some type of lazy-loading technique is occurring.
+  transformLazyImages(document);
 
   resolveDocumentURLs(document, responseURL);
   fetchImageDimensions(document,

@@ -31,6 +31,8 @@ function filterSourcelessImages(document) {
     image = images[i];
     source = (image.getAttribute('src') || '').trim();
     if(!source) {
+      // TODO: eventually delete this logging. For now it helps as a way to
+      // spot new lazily-loaded images
       console.debug('Removing sourceless image [%s]', image.outerHTML);
       image.remove();
     }

@@ -34,6 +34,7 @@
       "/src/resolve-document-urls.js",
       "/src/rewrite-url.js",
       "/src/show-notification.js",
+      "/src/transform-lazy-images.js",
       "/src/update-badge.js",
       "/src/URI.js",
       "/src/utf8.js"
