@@ -3,13 +3,8 @@
 // that can be found in the LICENSE file
 
 // indexedDB lib
-// TODO: just store scheme and schemeless props as parts of a url property.
-// TODO: store urls as URL objects?
 
-// TODO: rather than use a namespace object, this could simply be two
-// global functions, openDatabase and upgradeDatabase, in two files?
-// Or, it could just be one global function because nothing will ever call
-// upgradeDatabase directly
+// TODO: use two global functions in two files
 
 'use strict';
 
@@ -33,6 +28,9 @@ Database.open = function(callback) {
 
 // Private helper for open that upgrades the database to the current
 // version
+// TODO: just store scheme and schemeless props as parts of a url property.
+// TODO: store urls as URL objects?
+
 function upgrade(event) {
   console.log('Upgrading database from version %s to %s',
     event.oldVersion, VERSION);
