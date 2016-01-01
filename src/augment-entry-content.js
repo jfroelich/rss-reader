@@ -121,6 +121,9 @@ function onFetchHTML(entry, callback, error, document, responseURL) {
     // If found, the article already exists, but it didn't pass the first check
     // earlier ... so ... ? That means what? I think this is the route? Need
     // to finish this thought but lost focus.
+    //  --- how did post-redirect-url get set in the first place
+    //  --- we can assume a original url's redirect is never changed to point to
+    //      a diff post-redirect url
     // If not found, then store the new article (and include both pre and post
     // properties)
   }

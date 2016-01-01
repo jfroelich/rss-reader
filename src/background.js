@@ -34,7 +34,7 @@ chrome.alarms.onAlarm.addListener(function onChromeAlarm(alarm) {
 // TODO: set localStorage defaults
 chrome.runtime.onInstalled.addListener(function onRuntimeInstalled(event) {
   console.log('Installing ...');
-  Database.open(function(event) {
+  openIndexedDB(function(event) {
     // NOOP
   });
 });

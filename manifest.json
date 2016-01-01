@@ -17,7 +17,6 @@
       "/src/async.js",
       "/src/augment-entry-content.js",
       "/src/background.js",
-      "/src/database.js",
       "/src/deserialize-feed.js",
       "/src/entry-store.js",
       "/src/feed-store.js",
@@ -28,6 +27,7 @@
       "/src/get-schemeless-url.js",
       "/src/html-document-wrapper.js",
       "/src/is-valid-date.js",
+      "/src/open-indexeddb.js",
       "/src/parse-html.js",
       "/src/poll-feeds.js",
       "/src/replace-html.js",
@@ -36,6 +36,7 @@
       "/src/show-notification.js",
       "/src/transform-lazy-images.js",
       "/src/update-badge.js",
+      "/src/upgrade-indexeddb.js",
       "/src/URI.js",
       "/src/utf8.js"
     ]

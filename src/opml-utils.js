@@ -78,7 +78,7 @@ OPMLUtils.importFiles = function(files, callback) {
       return;
     }
 
-    Database.open(function(event) {
+    openIndexedDB(function(event) {
       if(event.type !== 'success') {
         console.debug(event);
         onImportComplete(event);
@@ -108,7 +108,7 @@ OPMLUtils.importFiles = function(files, callback) {
 OPMLUtils.createDocument = function(title, callback) {
   const document = new OPMLDocument();
   document.setTitle(title);
-  Database.open(createDocumentOnConnect.bind(null, document, callback));
+  openIndexedDB(createDocumentOnConnect.bind(null, document, callback));
 };
 
 function createDocumentOnConnect(document, callback, event) {

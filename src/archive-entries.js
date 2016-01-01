@@ -10,7 +10,7 @@
 // TODO: specify EntryStore as a dependency?
 
 function archiveEntries() {
-  Database.open(onConnect);
+  openIndexedDB(onConnect);
 }
 
 this.archiveEntries = archiveEntries;

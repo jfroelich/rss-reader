@@ -2,38 +2,18 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// indexedDB lib
-
-// TODO: use two global functions in two files
-
-'use strict';
-
-const Database = {};
-
-{ // BEGIN ANONYMOUS NAMESPACE
-
-// TODO: use 'lucubrate' as the database name
-const NAME = 'reader';
-const VERSION = 17;
-
-// Connects to indexedDB and passes the resulting event
-// to the callback
-Database.open = function(callback) {
-  const request = indexedDB.open(NAME, VERSION);
-  request.onupgradeneeded = upgrade;
-  request.onsuccess = callback;
-  request.onerror = callback;
-  request.onblocked = callback;
-};
-
-// Private helper for open that upgrades the database to the current
-// version
-// TODO: just store scheme and schemeless props as parts of a url property.
+// onupgradeneeded listener to use when opening indexeddb
+// TODO: just store scheme and schemeless props as parts of a url object
+// property? remember that indexeddb can access deeper props using '.' in
+// keypaths, right?
 // TODO: store urls as URL objects?
+// TODO: maybe we can make the coupling between this and open more loose, and
+// use named parameters to this function, and use a wrapper function inside
+// openIndexedDB
+function upgradeIndexedDB(event) {
+  'use strict';
+  console.log('Upgrading database from version %s', event.oldVersion);
 
-function upgrade(event) {
-  console.log('Upgrading database from version %s to %s',
-    event.oldVersion, VERSION);
   const request = event.target;
   const connection = request.result;
   let feedStore = null, entryStore = null;
@@ -105,5 +85,3 @@ function upgrade(event) {
     entryStore.deleteIndex('hash');
   }
 }
-
-} // END ANONYMOUS NAMESPACE

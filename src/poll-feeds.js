@@ -76,13 +76,13 @@ function onCheckIdlePermission(permitted) {
     chrome.idle.queryState(IDLE_PERIOD,
       onQueryIdleState);
   } else {
-    Database.open(iterateFeeds);
+    openIndexedDB(iterateFeeds);
   }
 }
 
 function onQueryIdleState(state) {
   if(state === 'locked' || state === 'idle') {
-    Database.open(iterateFeeds);
+    openIndexedDB(iterateFeeds);
   } else {
     console.debug('Polling canceled as not idle');
     onComplete();

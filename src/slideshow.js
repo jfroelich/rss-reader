@@ -73,7 +73,7 @@ function markSlideRead(slide) {
   slide.setAttribute('read', '');
   const entryAttribute = slide.getAttribute('entry');
 
-  Database.open(function(event) {
+  openIndexedDB(function(event) {
     if(event.type !== 'success') {
       // TODO: react to database error?
       console.debug(event);
@@ -91,7 +91,7 @@ function appendSlides(oncomplete, isFirst) {
   const offset = countUnreadSlides();
   let notAdvanced = true;
 
-  Database.open(function(event) {
+  openIndexedDB(function(event) {
     if(event.type !== 'success') {
       // TODO: react?
       console.debug(event);

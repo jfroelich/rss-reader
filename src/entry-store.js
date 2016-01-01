@@ -168,7 +168,7 @@ EntryStore.clear = function(connection) {
   if(connection) {
     _clear(connection);
   } else {
-    Database.open(function(event) {
+    openIndexedDB(function(event) {
       _clear(event.target.result);
     });
   }
