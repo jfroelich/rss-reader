@@ -139,7 +139,7 @@ function onPutFeed(connection, feed, remoteFeed, event) {
 // or preload all into an array.
 // Temporarily just update the badge for each feed processed
 function onEntriesUpdated(connection) {
-  updateBadge(Database, EntryStore, connection);
+  updateBadge(EntryStore, connection);
 }
 
 function findEntryByLink(connection, feed, entry, callback) {

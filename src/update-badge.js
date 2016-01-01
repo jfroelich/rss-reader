@@ -16,11 +16,11 @@
 {
 
 // Updates the unread count of the extension's badge
-function updateBadge(database, entryStore, connection) {
+function updateBadge(entryStore, connection) {
   if(connection) {
     entryStore.countUnread(connection, setBadgeText);
   } else {
-    database.open(updateOnConnect.bind(null, entryStore));
+    openIndexedDB(updateOnConnect.bind(null, entryStore));
   }
 }
 

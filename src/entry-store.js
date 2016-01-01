@@ -126,7 +126,7 @@ function markReadOnOpenCursor(event) {
 
   // Retrieve the connection from within the current transaction
   const connection = event.target.transaction.db;
-  updateBadge(Database, EntryStore, connection);
+  updateBadge(EntryStore, connection);
 
   chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
 }
