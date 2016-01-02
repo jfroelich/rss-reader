@@ -16,7 +16,6 @@
       "/src/archive-entries.js",
       "/src/async.js",
       "/src/augment-entry-content.js",
-      "/src/background.js",
       "/src/deserialize-feed.js",
       "/src/entry-store.js",
       "/src/feed-store.js",
@@ -27,6 +26,8 @@
       "/src/get-schemeless-url.js",
       "/src/html-document-wrapper.js",
       "/src/is-valid-date.js",
+      "/src/on-browser-action-clicked.js",
+      "/src/on-runtime-installed.js",
       "/src/open-indexeddb.js",
       "/src/parse-html.js",
       "/src/poll-feeds.js",
@@ -38,7 +39,10 @@
       "/src/update-badge.js",
       "/src/upgrade-indexeddb.js",
       "/src/URI.js",
-      "/src/utf8.js"
+      "/src/utf8.js",
+
+
+      "/src/on-chrome-alarm.js"
     ]
   },
   "options_page": "options.html",
