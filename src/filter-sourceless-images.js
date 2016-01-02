@@ -17,6 +17,8 @@
 // nodes? Another type of scrubbing transform. Probably more general, that works
 // with other similar elements
 
+// TODO: responsive design allows for srcset, maybe also allow it
+
 function filterSourcelessImages(document) {
   'use strict';
 

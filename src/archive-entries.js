@@ -6,7 +6,6 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-// TODO: specify Database as a dependency?
 // TODO: specify EntryStore as a dependency?
 
 function archiveEntries() {

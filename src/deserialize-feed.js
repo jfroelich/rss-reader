@@ -118,7 +118,6 @@ function validateDocumentElement(element) {
   }
 }
 
-
 // Private helper for deserialize, deserializes an item
 function deserializeEntry(isAtom, entry) {
   const getText = getElementText;

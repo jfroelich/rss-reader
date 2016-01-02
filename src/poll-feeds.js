@@ -12,8 +12,6 @@
 // TODO: store de-activated reason code
 // TODO: store de-activated date
 // TODO: pass along a stats histogram object that trackers poll stats
-
-
 // TODO: navigator should be a dependency injection so it can be mocked?
 // TODO: Database should be a dependency injection
 // TODO: FeedStore should be a dependency injection

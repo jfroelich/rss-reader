@@ -13,5 +13,7 @@ function isValidURL(url) {
 
   }
 
+  // TODO: we could fallback to default return undefined;
+  // by not returning anything?
   return false;
 }

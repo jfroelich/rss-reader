@@ -5,16 +5,15 @@
 'use strict';
 
 const EntryStore = {};
-
-{ // BEGIN ANONYMOUS NAMESPACE
-
 EntryStore.UNREAD = 0;
 EntryStore.READ = 1;
 EntryStore.UNARCHIVED = 0;
 EntryStore.ARCHIVED = 1;
 
+{ // BEGIN ANONYMOUS NAMESPACE
+
 // Adds or updates the entry within the database
-// TODO: inject dependency on DateUtils instead of hardcoding it
+// TODO: inject dependency on isValidDate instead of hardcoding it?
 
 EntryStore.put = function(connection, entry, callback) {
   // console.debug('Putting entry %s', entry.link);
@@ -85,6 +84,10 @@ EntryStore.put = function(connection, entry, callback) {
   }
 
   const transaction = connection.transaction('entry', 'readwrite');
+
+  // TODO: i really just don't like the fact I have to wrap the function
+  // here, so think about this would have to be changed to not do that
+
   transaction.oncomplete = function() {
     callback();
   };
@@ -127,6 +130,33 @@ function markReadOnOpenCursor(event) {
   // Retrieve the connection from within the current transaction
   const connection = event.target.transaction.db;
   updateBadge(EntryStore, connection);
+
+
+/*
+
+// Thinking about something like this, a domain specific type.
+// But, is it overly specific? Do we want a more general object,
+// like SimpleMessage(type, value)?
+// Or, do want to avoid using type, because the caller should be
+// using instanceof?
+// Or, should it be fully polymorphic, there is no type, there is just
+// some message behavior that the caller uses somehow? but then where is the
+// behavior defined?
+
+function EntryReadMessage(entry) {
+  this.type = 'entryRead';
+  this.entry = entry;
+}
+
+EntryReadMessage.prototype = {
+  get entry() {
+    return this.entry;
+  }
+};
+
+const entryReadMessage = new EntryReadMessage(entry);
+chrome.runtime.sendMessage(entryReadMessage);
+*/
 
   chrome.runtime.sendMessage({type: 'entryRead', entry: entry});
 }

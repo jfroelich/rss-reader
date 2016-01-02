@@ -6,6 +6,9 @@
 // passes the resulting event to the callback
 // NOTE: cannot use openDatabase, that is a keyword reserved due to the old
 // websql functionality
+// TODO: this function is not really named correctly. This does not just open
+// any instance of indexedDB, it only opens our particular usage. A more
+// appropriate name would reflect that. Something like openReaderStorage
 function openIndexedDB(callback) {
   'use strict';
 
