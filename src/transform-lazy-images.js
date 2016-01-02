@@ -80,6 +80,22 @@ function transformImageElement(image) {
     image.setAttribute('src', image.getAttribute('data-baseurl'));
     return;
   }
+
+  //<img data-lazy="" alt="">
+  if(!image.hasAttribute('src') && image.hasAttribute('data-lazy')) {
+    image.setAttribute('src', image.getAttribute('data-lazy'));
+    return;
+  }
+
+  // <img data-img-src="" width="316" height="421">
+  if(!image.hasAttribute('src') && image.hasAttribute('data-img-src')) {
+    image.setAttribute('src', image.getAttribute('data-img-src'));
+    return;
+  }
+
+  // Hmm, not quite sure about what to do with responsive design
+  //<img itemprop="image" srcset="url, url 2x">
+
 }
 
 } // END FILE SCOPE
