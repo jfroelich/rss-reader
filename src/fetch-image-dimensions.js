@@ -6,22 +6,36 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
+// TODO: 'fetchImage' should probably be its own function in a separate file
+// that this function requires as a dependency. then, this should be renamed
+// to set-image-dimensions. in fetchImage, I can also point out the
+// different technique used instead of XMLHttpRequest, and justify why that
+// is done that way
 
 // TODO: this also serves to check if an image's src is correct. consider
 // removing 404 images or replacing them with an error message.
 // so maybe this has to be a more general process-images document-transform?
+// The idea is that we only want to touch images once.
+
+// TODO: this needs to consider srcset, which makes it much more tricky,
+// because there could be multiple dimensions to consider, and also, because
+// filterSourcelessImages delegates responsive design loading mechanics to
+// the browser. The current design makes this nearly impossible, e.g.
+// shouldFetch doesn't even make sense
+
+// TODO: decouple async, roll my own
 
 const filter = Array.prototype.filter;
 
 // Asynchronously attempts to set the width and height for
 // all image elements. Calls callback when complete
-function fetchImages(document, callback) {
+function fetchImageDimensions(document, callback) {
   const images = document.getElementsByTagName('img');
   const fetchables = filter.call(images, _shouldFetch);
   async.forEach(fetchables, _fetch, callback);
 }
 
-this.fetchImageDimensions = fetchImages;
+this.fetchImageDimensions = fetchImageDimensions;
 
 // Returns true if the image should be fetched
 function _shouldFetch(image) {
@@ -40,8 +54,6 @@ function _shouldFetch(image) {
   // from relying on its attributes or properties
   // TODO: or can we? Does it matter if it an inert
   // document (e.g. created by XMLHttpRequest?)
-  // TODO: isDataURI is only ever called from here, maybe
-  // the function belongs here?
   // Are the width and height properties automatically set
   // for a data URI within an inert document context? If so,
   // then we do not need to fetch.
