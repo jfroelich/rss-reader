@@ -23,6 +23,8 @@ function makeSelectorCondition(string) {
 const HIDDEN_SELECTOR = HIDDEN_FACTORS.map(makeSelectorCondition).join(',');
 
 // Removes hidden elements from a document.
+// Requires: removeElementsBySelector
+//
 // NOTE: this originally iterated over all elements and tested against
 // each element's style property. Performance analysis showed this was
 // very slow. So we sacrifice accuracy to move most of the traveral
@@ -32,10 +34,8 @@ const HIDDEN_SELECTOR = HIDDEN_FACTORS.map(makeSelectorCondition).join(',');
 // relevant CSS, so we are already simplifying the problem and allowing
 // for hidden elements. Second, hidden elements do not show up in the
 // output.
-//
 // This is really only a component of compression, which isn't
 // the primary purpose of the overall application.
-//
 // It may have some impact on boilerplate analysis, but I haven't given that
 // too much consideration.
 function filterHiddenElements(document) {

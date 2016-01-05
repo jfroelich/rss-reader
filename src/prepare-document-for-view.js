@@ -29,6 +29,7 @@ function prepareDocumentForView(document) {
   filterSourcelessImages(document);
   filterTracerElements(document);
   normalizeNodeWhitespace(document);
+  filterNominalAnchors(document);
   filterInlineElements(document);
   trimTextNodes(document);
   filterLeafElements(document);
