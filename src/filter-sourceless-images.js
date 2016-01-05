@@ -2,40 +2,28 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Removes images without a source
-// TODO: think more about the interaction with lazy-load-transform.js, where
-// image elements typically do not have a src attribute, but do have a data-src
-// attribute. Essentially, this should be always be called _after_ that
-// transform so this basically handles failure cases for that transform or
-// actual sourceless image elements.
-// TODO: look further into why I occassionally witness images without a src
-// attribute. Why would someone ever do this? I think one reason might be
-// that the src is set dynamically via script. I suppose I cannot support that
-// case because scripting is not permitted. What are some other cases?
-
-// NOTE: what about a transform that ensures image elements have no child
-// nodes? Another type of scrubbing transform. Probably more general, that works
-// with other similar elements
-
-// TODO: responsive design allows for srcset, maybe also allow it
-
+// Removes images without a source. This should only be called after
+// transformLazyImages because that function may derive a source property for
+// an otherwise sourceless image.
 function filterSourcelessImages(document) {
   'use strict';
 
-  // NOTE: we use querySelectorAll because we are iterating forward
-  // NOTE: we do not use img:not([src]) or !image.hasAttribute('src') because
-  // those fail to consider the care where an image src attribute is present
-  // but does not contain any non whitespace characters
+  // NOTE: we use querySelectorAll because we are mutating while iterating
+  // forward
+  // NOTE: using hasAttribute allows for whitespace-only values, but I do not
+  // think this is too important
+  // NOTE: access by attribute, not by property, because the browser may
+  // supply a base url prefix or something like that to the property
+  // TODO: use for..of once Chrome supports iterable NodeLists
+  // TODO: eventually stop logging. For now it helps as a way to
+  // identify new lazily-loaded images
 
   const images = document.querySelectorAll('img');
   const numImages = images.length;
-  for(let i = 0, image, source; i < numImages; i++) {
+  for(let i = 0, image; i < numImages; i++) {
     image = images[i];
-    source = (image.getAttribute('src') || '').trim();
-    if(!source) {
-      // TODO: eventually delete this logging. For now it helps as a way to
-      // spot new lazily-loaded images
-      console.debug('Removing sourceless image [%s]', image.outerHTML);
+    if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
+      console.debug('Removing sourceless image: %s', image.outerHTML);
       image.remove();
     }
   }
