@@ -30,6 +30,7 @@
       "/src/on-runtime-installed.js",
       "/src/open-indexeddb.js",
       "/src/parse-html.js",
+      "/src/parse-srcset.js",
       "/src/poll-feeds.js",
       "/src/replace-html.js",
       "/src/resolve-document-urls.js",
