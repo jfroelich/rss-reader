@@ -39,15 +39,15 @@ this.transformLazyImages = transformLazyImages;
 // format, or has a ? indicating some type of cgi-generated image. it would
 // fail sometimes but work most of the time. the result would be that we
 // make fewer mistakes to creating requests to invalid urls
+// NOTES: the common theme seems to be using a dataset property
+// and missing a source (except in case 3 so far), so maybe we unify the
+// rules? how general/specific do we want the transform? only observed cases?
+// TODO: i would like to make this easily extendable without writing code,
+// what is a good way to do that? use an array of rules?
+
 function transformImageElement(image) {
 
   // Case 1: <img lazy-state="queue" load-src="url">
-  if(image.hasAttribute('lazy-state') &&
-    image.getAttribute('lazy-state') === 'queue') {
-    image.setAttribute('src', image.getAttribute('load-src'));
-    return;
-  }
-
   // Case 2: <img load-src="url">
   if(!image.hasAttribute('src') && image.hasAttribute('load-src')) {
     image.setAttribute('src', image.getAttribute('load-src'));
@@ -55,46 +55,55 @@ function transformImageElement(image) {
   }
 
   // Case 3: <img src="blankurl" class="lazy-image" data-src="url">
-  if(image.dataset && image.dataset.src &&
+  if(image.hasAttribute('data-src') &&
     image.classList.contains('lazy-image')) {
-    image.setAttribute('src', image.dataset.src);
+    image.setAttribute('src', image.getAttribute('data-src'));
     return;
   }
 
   // Case 4: <img data-src="url">
-  if(image.hasAttribute('data-src') && !image.hasAttribute('src')) {
-    image.setAttribute('src', image.getAttribute('src'));
+  // TODO: integrate with case 3?
+  if(!image.hasAttribute('src') && image.hasAttribute('data-src')) {
+    image.setAttribute('src', image.getAttribute('data-src'));
     return;
   }
 
   // Responsive design conflicts with the approach this takes, but oh well
   // Case 5: <img class="lazy" data-original-desktop="url"
   // data-original-tablet="url" data-original-mobile="url">
-  if(image.classList.contains('lazy') && image.dataset.originalDesktop) {
+  if(!image.hasAttribute('src') &&
+    image.hasAttribute('data-original-desktop')) {
     image.setAttribute('src', image.getAttribute('data-original-desktop'));
     return;
   }
 
-  //<img data-baseurl="url">
+  // Case 6: <img data-baseurl="url">
   if(!image.hasAttribute('src') && image.hasAttribute('data-baseurl')) {
     image.setAttribute('src', image.getAttribute('data-baseurl'));
     return;
   }
 
-  //<img data-lazy="" alt="">
+  // Case 7: <img data-lazy="url">
   if(!image.hasAttribute('src') && image.hasAttribute('data-lazy')) {
     image.setAttribute('src', image.getAttribute('data-lazy'));
     return;
   }
 
-  // <img data-img-src="" width="316" height="421">
+  // Case 8: <img data-img-src="url">
   if(!image.hasAttribute('src') && image.hasAttribute('data-img-src')) {
     image.setAttribute('src', image.getAttribute('data-img-src'));
     return;
   }
 
-  // Hmm, not quite sure about what to do with responsive design
-  //<img itemprop="image" srcset="url, url 2x">
+  // Case 9: <img data-original="url">
+  if(!image.hasAttribute('src') && image.hasAttribute('data-original')) {
+    image.setAttribute('src', image.getAttribute('data-original'));
+    return;
+  }
+
+  // <img srcset="url, url 2x">
+  // I am leaving this case here as a note. We do not handle this case. We
+  // pass it along to the browser to decide.
 
 }
 
