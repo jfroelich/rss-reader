@@ -551,6 +551,8 @@ function onImportOPMLClick(event) {
   }
 }
 
+// todo: this should delegate its functionality to an external
+// function like triggerFileDownload(hostDocument, title, contentBlob);
 function onExportOPMLClick(event) {
   const title = 'subscriptions.xml';
   OPMLUtils.createDocument(title, function(error, doc) {
@@ -562,12 +564,14 @@ function onExportOPMLClick(event) {
 
     const blob = doc.toBlob();
     const anchor = document.createElement('a');
-    anchor.href = URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
+    anchor.href = url;
     anchor.setAttribute('download', title);
     anchor.style.display = 'none';
     document.body.appendChild(anchor);
     anchor.click();
-    URL.revokeObjectURL(blob);
+    // revoke the object url, not the blob! (bug fix)
+    URL.revokeObjectURL(url);
     anchor.remove();
   });
 }
