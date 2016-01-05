@@ -2,11 +2,10 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-
-// TODO: improve this. br is allowed in inline elements
-// and this is shoving non-inline p into inline sometimes
-// so we need to be able to break the inline context in
-// half somehow
+// Replaces <br> elements within a document with <p>
+// TODO: this function needs some substantial improvement. there are several
+// problems with its current approach, such as what happens when inserting
+// a paragraph element within an inline element.
 // error case: http://paulgraham.com/procrastination.html
 function filterBreakruleElements(document) {
   'use strict';

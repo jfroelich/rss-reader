@@ -12,9 +12,22 @@
 // keep the child elements. Because the topology serves as a feature in
 // boilerplate extraction, this should only be done after analyzing the content
 // for boilerplate.
+
+// TODO: this is doing some wasted operations in the case of nested
+// inline elements. For example, for <div><div>content</div><div>,
+// content should be hoisted all the way outside of the div in a single
+// move. Right now it unwraps both inner and outer, doing the move twice. So
+// instead of finding the parent in unwrap, we would want to walk up the
+// ancestor tree to the first non-unwrappable (stopping before document.body).
+// I think this means we cannot use unwrapElement, because that
+// hardcodes the move destination as element.parentElement
+
 function filterInlineElements(document) {
-  transformAnchors(document);
-  unwrapInlines(document);
+  const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
+  const numElements = elements.length;
+  for(let i = 0; i < numElements; i++) {
+    unwrapElement(elements[i]);
+  }
 }
 
 this.filterInlineElements = filterInlineElements;
@@ -63,61 +76,5 @@ const UNWRAPPABLE_ELEMENTS = [
 ];
 
 const UNWRAPPABLE_SELECTOR = UNWRAPPABLE_ELEMENTS.join(',');
-
-function unwrapInlines(document) {
-
-  // TODO: this is doing some wasted operations in the case of nested
-  // inline elements. For example, for <div><div>content</div><div>,
-  // content should be hoisted all the way outside of the div in a single
-  // move. Right now it unwraps both inner and outer, doing the move twice. So
-  // instead of finding the parent in unwrap, we would want to walk up the
-  // ancestor tree to the first non-unwrappable (stopping before document.body).
-  // I think this means we cannot use unwrapElement, because that
-  // hardcodes the move destination as element.parentElement
-
-  const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
-  const numElements = elements.length;
-  for(let i = 0; i < numElements; i++) {
-    unwrapElement(elements[i]);
-  }
-}
-
-// Special handling for anchors
-// NOTE: this intentionally breaks in-page anchors
-// (e.g. name="x" and href="#x")
-// TODO: what we could do maybe is not unwrap if has name attribute, and
-// then leave in the anchor
-function transformAnchors(document) {
-  const anchors = document.querySelectorAll('a');
-  const numAnchors = anchors.length;
-  let anchor = null;
-  let href = null;
-  for(let i = 0; i < numAnchors; i++) {
-    anchor = anchors[i];
-    if(anchor.hasAttribute('href')) {
-      href = anchor.getAttribute('href');
-      href = href || '';
-      href = href.trim();
-      if(!href) {
-        // The anchor had an href, but without a value, so treat it
-        // as nominal, and therefore unwrap
-        unwrapElement(anchor);
-      } else {
-        if(href.startsWith('#')) {
-          // It is an in-page anchor that will no longer work, if,
-          // for example, we unwrapped its counterpart
-          // Side note: this is actually dumb, because resolve-document-urls
-          // makes all anchors absolute, so this condition is never triggered
-          // so the test actually needs to be checking against the document's
-          // own url, which isn't available to this function at the moment
-          unwrapElement(anchor);
-        }
-      }
-    } else {
-      // It is a nominal anchor, unwrap
-      unwrapElement(anchor);
-    }
-  }
-}
 
 } // END ANONYMOUS NAMESPACE

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: explicit dependence on domutils?
+// Dependency: moveElementsBySelector
 
 function filterBlacklistedElements(document) {
   'use strict';

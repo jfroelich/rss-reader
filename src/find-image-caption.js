@@ -20,6 +20,8 @@ function findImageCaption(image) {
 this.findImageCaption = findImageCaption;
 
 function isFigureElement(element) {
+  // TODO: look into the canonical way of doing this.
+  // e.g. is it more standard to use tagName?
   // return element instanceof HTMLFigureElement;
   return element.localName === 'figure';
 }

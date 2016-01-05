@@ -12,7 +12,7 @@
 // TODO: rename to OPMLIO, opml-io.js
 // TODO: drop the named object, just export two global functions
 
-// TODO: explicit dependencies on OPMLDocument, Database, async,
+// TODO: explicit dependencies on OPMLDocument, openIndexedDB, async,
 // showNotification, FeedStore
 
 // TODO: the two functions are somewhat related, but i think they may

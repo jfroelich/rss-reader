@@ -186,6 +186,7 @@ function deserializeEntry(isAtom, entry) {
   }
 
   // NOTE: under dev, untested
+  // an enclosure is once per item
   const enclosure = entry.querySelector('enclosure');
   if(enclosure) {
     // console.debug('Encountered enclosure: %o', enclosure);
@@ -201,6 +202,7 @@ function deserializeEntry(isAtom, entry) {
 
 // Returns the text content of the first element matching the
 // selector within the parent, or undefined
+// This function maybe belongs in its own file given how reusable it is
 function getElementText(parent, selector) {
   const element = parent.querySelector(selector);
   if(element) {
@@ -211,6 +213,8 @@ function getElementText(parent, selector) {
   }
 }
 
+// TODO: it's dumb to extend if we are not mixing in any functionality
+// so deprecate this
 class DeserializeError extends Error {
   // TODO: use ES6 rest syntax? Chrome keeps whining
   constructor() {

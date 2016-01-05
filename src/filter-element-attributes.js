@@ -3,8 +3,11 @@
 // that can be found in the LICENSE file
 
 // TODO: responsive design allows images to have a srcset, maybe permit
+// TODO: only allow the retainable attributes on the proper elements that can
+// have them, instead of on any element (e.g. only images can have a src
+// attribute)
 
-// Removes attributes from elements in the document, except for href/src
+// Removes attributes from elements in the document
 function filterElementAttributes(document) {
   'use strict';
 
@@ -12,6 +15,8 @@ function filterElementAttributes(document) {
     'alt',
     'href',
     'src',
+    // New HTML responsive design in images
+    'srcset',
     'title'
   ]);
 
@@ -28,6 +33,7 @@ function filterElementAttributes(document) {
     // so this requires more thought. For example, I observed an article where
     // the SVG element was permanently floating in higher layer over the
     // article's actual text, making the article unreadable.
+    // TODO: maybe svg and path should just be blacklisted
     if(element.localName === 'svg' || element.localName === 'path') {
       continue;
     }

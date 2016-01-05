@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Returns the favicon url for a given url, or a default image if url is
+// undefined
 function getFaviconURL(url) {
   'use strict';
 

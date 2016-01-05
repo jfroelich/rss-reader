@@ -2,7 +2,13 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: handle redirects better, e.g. somehow use responseURL?
+// TODO: maybe this should use a more qualified name like fetchFeedDocument?
+// or rather, maybe I should have fetchXMLDocument, and this function requires
+// that function as a dependency. then this function becomes really just a
+// simple composition of fetch and deserialize
+
+// TODO: handle redirects better, e.g. somehow use responseURL? maybe this
+// should also pass back responseURL so that the caller can use it?
 // TODO: the post-processing where i clean up entries should not be done here,
 // it should be the caller's responsibility, it is not intrinsic to this
 // function's purpose
@@ -19,6 +25,9 @@ function fetchFeed(url, timeout, callback) {
   request.onabort = callback;
   request.onload = onFetch.bind(request, url, callback);
   request.open('GET', url, true);
+
+  // TODO: why am i doing this again? wouldn't it be better to
+  // set responseType to document or something to that effect?
   request.overrideMimeType('application/xml');
   request.send();
 }
@@ -26,6 +35,9 @@ function fetchFeed(url, timeout, callback) {
 this.fetchFeed = fetchFeed;
 
 function onFetch(url, callback, event) {
+
+  // TODO: unify the exit points of this function and just do a single
+  // callback at the end of the function.
 
   const request = event.target;
 
@@ -36,6 +48,8 @@ function onFetch(url, callback, event) {
   }
 
   if(!document || !document.documentElement) {
+    // TODO: this should callback something more explicit, like a
+    // fake event that sets event.error.type or something
     callback(event);
     return;
   }

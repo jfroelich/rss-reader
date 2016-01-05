@@ -4,6 +4,9 @@
 
 // Truncates a string at the given position, and then appends the extension
 // string. An ellipsis is appended if an extension was not specified.
+// TODO: how does one simply truncate without appending? The test below
+// returns false for empty string so i could not use that. maybe something like
+// typeof extension === 'string'?
 function truncateString(string, position, extension) {
   'use strict';
 

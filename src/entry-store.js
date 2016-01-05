@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: break apart into individual function files
+
 'use strict';
 
 const EntryStore = {};
@@ -130,7 +132,6 @@ function markReadOnOpenCursor(event) {
   // Retrieve the connection from within the current transaction
   const connection = event.target.transaction.db;
   updateBadge(EntryStore, connection);
-
 
 /*
 

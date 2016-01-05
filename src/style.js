@@ -20,6 +20,7 @@ chrome.runtime.onMessage.addListener(function(message) {
 // as it is DRY
 const BACKGROUND_PATH_BASE = '/media/';
 
+// TODO: use a set
 const BACKGROUND_IMAGES = [
   '/media/bgfons-paper_texture318.jpg',
   '/media/CCXXXXXXI_by_aqueous.jpg',
@@ -42,6 +43,7 @@ const BACKGROUND_IMAGES = [
   '/media/thomas-zucx-noise-lines.png'
 ];
 
+// TODO: use a set
 const FONT_FAMILIES = [
   'ArchivoNarrow-Regular',
   'Arial, sans-serif',
@@ -70,6 +72,7 @@ const FONT_FAMILIES = [
   'Roboto Regular'
 ];
 
+// TODO: elevate this into its own file
 // Note: Array.prototype.find requires Chrome 45+
 function findCSSRule(sheet, selectorText) {
   return Array.prototype.find.call(sheet.cssRules, function(rule) {

@@ -14,6 +14,7 @@ function archiveEntries() {
 
 this.archiveEntries = archiveEntries;
 
+// todo: use a more qualified name here
 function onConnect(event) {
 
   const stats = {
@@ -46,6 +47,8 @@ function archiveNextEntry(stats, event) {
   stats.processed++;
   const entry = cursor.value;
   const now = Date.now();
+
+  // todo: use a more qualified name
   const age = now - entry.created;
   if(age > EXPIRES_AFTER_MS) {
     stats.archived++;
@@ -70,6 +73,7 @@ function archiveNextEntry(stats, event) {
   cursor.continue();
 }
 
+// TODO: qualify the name more
 function onComplete(stats, event) {
   console.log(
     'The archive service processed %s entries and archived %s entries',
