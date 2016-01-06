@@ -2,6 +2,9 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: this only deals with images, no need to be more abstract, rename
+// to filterTracerImages
+
 // Removes images that do not have a source url or that appear to be tracers.
 // A tracer image is a tracking technique where some websites embed a small,
 // hidden image into a document and then track the requests for that image

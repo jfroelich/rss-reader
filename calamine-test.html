@@ -2,40 +2,27 @@
 <head>
 <title>Test calamine</title>
 
-<!--
-TODO: I am only doing pre-calamine document transforms, I do not think I need
-to include all the other transforms that occur after calamine processing.
--->
+<script src="/lib/async.js"></script>
+<script src="/lib/URI.js"></script>
+<script src="/src/calamine/calamine.js"></script>
+<script src="/src/calamine/calamine-test.js"></script>
+<script src="/src/document-transform/fetch-image-dimensions.js"></script>
+<script src="/src/document-transform/filter-blacklisted-elements.js"></script>
+<script src="/src/document-transform/filter-comment-nodes.js"></script>
+<script src="/src/document-transform/filter-frame-elements.js"></script>
+<script src="/src/document-transform/filter-hidden-elements.js"></script>
+<script src="/src/document-transform/filter-script-elements.js"></script>
+<script src="/src/document-transform/normalize-node-whitespace.js"></script>
+<script src="/src/document-transform/resolve-document-urls.js"></script>
+<script src="/src/dom/find-image-caption.js"></script>
+<script src="/src/dom/get-node-ancestors.js"></script>
+<script src="/src/dom/move-elements-by-selector.js"></script>
+<script src="/src/dom/remove-elements-by-selector.js"></script>
+<script src="/src/dom/unwrap-element.js"></script>
+<script src="/src/html/parse-html.js"></script>
+<script src="/src/html/replace-html.js"></script>
+<script src="/src/polling/fetch-html.js"></script>
 
-<script src="/src/async.js"></script>
-<script src="/src/calamine.js"></script>
-<script src="/src/calamine-test.js"></script>
-<script src="/src/dom-utils.js"></script>
-<script src="/src/fetch-html.js"></script>
-<script src="/src/fetch-image-dimensions.js"></script>
-<script src="/src/find-image-caption.js"></script>
-<script src="/src/filter-blacklisted-elements.js"></script>
-<script src="/src/filter-breakrule-elements.js"></script>
-<script src="/src/filter-comment-nodes.js"></script>
-<script src="/src/filter-element-attributes.js"></script>
-<script src="/src/filter-frame-elements.js"></script>
-<script src="/src/filter-hidden-elements.js"></script>
-<script src="/src/filter-inline-elements.js"></script>
-<script src="/src/filter-leaf-elements.js"></script>
-<script src="/src/filter-tracer-elements.js"></script>
-<script src="/src/filter-script-elements.js"></script>
-<script src="/src/get-node-ancestors.js"></script>
-<script src="/src/move-elements-by-selector.js"></script>
-<script src="/src/normalize-node-whitespace.js"></script>
-<script src="/src/parse-html.js"></script>
-<script src="/src/remove-elements-by-selector.js"></script>
-<script src="/src/replace-html.js"></script>
-<script src="/src/resolve-document-urls.js"></script>
-<script src="/src/transform-singletons.js"></script>
-<script src="/src/trim-text-nodes.js"></script>
-<script src="/src/trim-document-elements.js"></script>
-<script src="/src/unwrap-element.js"></script>
-<script src="/src/URI.js"></script>
 <style type="text/css">
 [data-predicted-body="true"] {
   border: 2px solid green;

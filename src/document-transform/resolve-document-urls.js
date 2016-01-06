@@ -128,7 +128,7 @@ function resolveImageSrcSet(baseURL, image) {
   // https://github.com/albell/parse-srcset/blob/master/tests/unit/ps.js
 
   // parseSrcset returns Array [{url: _, d: _, w: _, h:_}, ...]
-  const descriptors = parseSrcset(srcSetString);
+  let descriptors = parseSrcset(srcSetString);
   descriptors = descriptors || [];
   const numDescriptors = descriptors.length;
   let url = null;
@@ -136,7 +136,13 @@ function resolveImageSrcSet(baseURL, image) {
   for(let i = 0, descriptor; i < numDescriptors; i++) {
     descriptor = descriptors[i];
     resolved = resolveURL(descriptor.url);
-    if(resolved !== descriptor.url) {
+
+    if(!resolved) {
+      console.debug('resolved was undefined after resolveURL(%s)',
+        descriptor.url);
+    }
+
+    if(resolved && resolved !== descriptor.url) {
       console.debug('Resolved %s to %s', descriptor.url, resolved);
       descriptor.url = resolved;
     }
@@ -145,7 +151,7 @@ function resolveImageSrcSet(baseURL, image) {
   // Reserialize
   const resolvedDescriptors = [];
   let newString = null;
-  for(let i = 0; i < numDescriptors; i++) {
+  for(let i = 0, descriptor; i < numDescriptors; i++) {
     descriptor = descriptors[i];
     newString = descriptor.url;
 
@@ -159,8 +165,8 @@ function resolveImageSrcSet(baseURL, image) {
   const newSrcSet = resolvedDescriptors.join(',');
 
   // Update the element
-  console.debug('Changing srcset %s to %s', srcSet, newSrcSet);
-  image.setAttribute('srcset', newSrcSetValue);
+  console.debug('Changing srcset %s to %s', srcSetString, newSrcSet);
+  image.setAttribute('srcset', newSrcSet);
 }
 
 // TODO: elevate into global scope as a utility function in its own file
