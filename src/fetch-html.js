@@ -6,12 +6,9 @@
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-// TODO: maybe this should use more qualified and explict name like
-// fetchHTMLDocument
-
-// Fetches an HTML document (async) and passes the callback an error, the
-// document object, and the response url string. The error argument is falsy
-// when no error occurred.
+// Asynchronously fetches an HTML document and passes the callback an error,
+// the document object, and the response url string. The error argument is
+// falsy when no error occurred.
 function fetchHTML(url, timeout, callback) {
   const request = new XMLHttpRequest();
   request.timeout = timeout;

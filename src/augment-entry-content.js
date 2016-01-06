@@ -51,7 +51,8 @@ function onFetchHTML(entry, callback, error, document, responseURL) {
   // Temporary, testing responseURL ideas
 
   // Observed cases:
-  // Response URL changed from http://priceonomics.tumblr.com/post/136338670161 to
+  // Response URL changed from http://priceonomics.tumblr.com/post/136338670161
+  // to
   // http://priceonomics.tumblr.com/post/136338670161/the-rise-of-the-bomb-dog
 
   if(responseURL !== entry.link) {
