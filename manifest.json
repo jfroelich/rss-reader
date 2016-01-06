@@ -13,8 +13,11 @@
   "background": {
     "persistent": false,
     "scripts": [
+      "/lib/async.js",
+      "/lib/parse-srcset.js",
+      "/lib/URI.js",
+      "/lib/utf8.js",
       "/src/archive-entries.js",
-      "/src/async.js",
       "/src/augment-entry-content.js",
       "/src/deserialize-feed.js",
       "/src/entry-store.js",
@@ -30,7 +33,6 @@
       "/src/on-runtime-installed.js",
       "/src/open-indexeddb.js",
       "/src/parse-html.js",
-      "/src/parse-srcset.js",
       "/src/poll-feeds.js",
       "/src/replace-html.js",
       "/src/resolve-document-urls.js",
@@ -39,9 +41,6 @@
       "/src/transform-lazy-images.js",
       "/src/update-badge.js",
       "/src/upgrade-indexeddb.js",
-      "/src/URI.js",
-      "/src/utf8.js",
-
 
       "/src/on-chrome-alarm.js"
     ]
