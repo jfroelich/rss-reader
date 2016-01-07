@@ -2,8 +2,6 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: explicit dependency on StringUtils
-
 'use strict';
 
 { // BEGIN ANONYMOUS NAMESPACE
@@ -73,6 +71,8 @@ function getEntryURL(entry) {
   return entry.url;
 }
 
+// Requires: replaceHTML
+// Requires: truncateString
 function sanitizeEntry(entry) {
   if(entry.title) {
     entry.title = replaceHTML(entry.title);
