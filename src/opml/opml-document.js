@@ -2,7 +2,6 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: create parse-xml.js, parseXML function, remove OPMLDocument.parse
 // TODO: remove reliance on HTMLDocumentWrapper, deprecate HTMLDocumentWrapper
 
 'use strict';
@@ -12,41 +11,6 @@
 // TODO: explicit dependency on StringUtils
 // TODO: explicit dependency on HTMLDocumentWrapper, or remove the dependency
 class OPMLDocument {
-
-  // Returns a new OPMLDocument by parsing the given string as XML
-  // Throws an exception if various errors occur
-  // TODO: this function probably does not belong here
-  static parse(string) {
-    const parser = new DOMParser();
-    const MIME_TYPE = 'application/xml';
-    const document = parser.parseFromString(string, MIME_TYPE);
-
-    // TODO: should I be throwing something more specific,
-    // like a DOMException ?
-
-    if(!document) {
-      throw new Error('Invalid document');
-    }
-
-    if(!document.documentElement) {
-      throw new Error('Invalid document: No document element');
-    }
-
-    if(!document.documentElement.matches('opml')) {
-      throw new Error('Invalid document element: ' +
-        document.documentElement.localName);
-    }
-
-    // NOTE: parsing errors are actually embedded within the
-    // document itself instead of being thrown. Search for the error
-    // and throw it
-    const parsererror = document.querySelector('parsererror');
-    if(parsererror) {
-      throw new Error(parsererror.textContent);
-    }
-
-    return new OPMLDocument(document);
-  }
 
   // Returns true if the element appears to be a minimally valid
   // outline element
@@ -114,7 +78,7 @@ class OPMLDocument {
       this.document = document;
     } else {
       const create = this.createElement;
-      this.document = this._createDocument();
+      this.document = OPMLDocument._createDocument();
       const documentElement = create('opml');
       documentElement.setAttribute('version', '2.0');
       this.document.appendChild(documentElement);
@@ -169,6 +133,10 @@ class OPMLDocument {
   }
 
   createElement(name) {
+    if(!this) {
+      console.debug('this undefined');
+      return;
+    }
     return this.document.createElement(name);
   }
 

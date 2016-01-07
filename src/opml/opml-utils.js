@@ -29,6 +29,7 @@ const OPMLUtils = {};
 // TODO: I do not like how I am importing all of the files
 // and then importing all of the feeds. I can import one at a
 // time instead
+// Requires: parseOPML
 OPMLUtils.importFiles = function(files, callback) {
   async.map(files, loadFile, onFilesLoaded);
 
@@ -49,7 +50,7 @@ OPMLUtils.importFiles = function(files, callback) {
     let document = null;
     let feeds = [];
     try {
-      document = OPMLDocument.parse(text);
+      document = parseOPML(text);
       feeds = document.getFeeds();
     } catch(exception) {
       console.debug(exception);
