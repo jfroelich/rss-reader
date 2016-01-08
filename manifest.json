@@ -40,6 +40,7 @@
       "/src/storage/open-indexeddb.js",
       "/src/storage/upgrade-indexeddb.js",
       "/src/url/get-schemeless-url.js",
+      "/src/url/resolve-url.js",
       "/src/url/rewrite-url.js",
 
       "/src/extension/on-chrome-alarm.js"
