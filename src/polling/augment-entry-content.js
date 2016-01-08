@@ -55,6 +55,10 @@ function onFetchHTML(entry, callback, error, document, responseURL) {
   // to
   // http://priceonomics.tumblr.com/post/136338670161/the-rise-of-the-bomb-dog
 
+  // TODO: i have observed that sometimes the url changes simply because
+  // the trailing #hash was removed from the url, in which it is not
+  // really a redirect, so think about the appropriate behavior
+
   if(responseURL !== entry.link) {
     console.debug('Response URL changed from %s to %s',
       entry.link,
