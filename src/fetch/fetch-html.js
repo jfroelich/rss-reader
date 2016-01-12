@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: can I unify onFetchHTML and onFetchError, and have the single
+// TODO: unify onFetchHTML and onFetchError, and have the single
 // function check something like event.type to determine whether it is
 // an error callback or a success callback?
 // TODO: is onerror a catch-all event that still is triggered when an abort
