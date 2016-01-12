@@ -22,11 +22,11 @@ function parseXML(string) {
   // NOTE: parsing errors are actually embedded within the
   // document itself instead of being thrown. Search for the error
   // and throw it
-  const parsererror = document.querySelector('parsererror');
-  if(parsererror) {
+  const parserError = document.querySelector('parsererror');
+  if(parserError) {
     // NOTE: the error message will include html-like content, not just
     // raw text
-    throw new Error(parsererror.textContent);
+    throw new Error(parserError.textContent);
   }
 
   return document;

@@ -77,7 +77,10 @@ function onFetchImage(image, callback, event) {
     image.width = fetchedImage.width;
     image.height = fetchedImage.height;
   } else {
-    console.debug('fetchImage error %o', event);
+    // Here, event.type === 'error' usually, but there is not
+    // much else in terms of useful information
+    // It does serve as a hint that the url is invalid however
+    // (even though it could be valid but temporarily unreachable)
   }
 
   // Use no args to indicate to async.forEach that it should continue

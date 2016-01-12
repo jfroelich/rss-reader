@@ -29,6 +29,7 @@
       "/src/fetch/fetch-feed.js",
       "/src/fetch/fetch-html.js",
       "/src/fetch/fetch-image.js",
+      "/src/fetch/fetch-xml.js",
       "/src/html/replace-html.js",
       "/src/html/parse-html.js",
       "/src/lang/filter-control-characters.js",
