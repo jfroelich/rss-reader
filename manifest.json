@@ -26,6 +26,7 @@
       "/src/extension/on-runtime-installed.js",
       "/src/extension/show-notification.js",
       "/src/extension/update-badge.js",
+      "/src/fetch/fetch-image.js",
       "/src/html/replace-html.js",
       "/src/html/parse-html.js",
       "/src/lang/filter-control-characters.js",
