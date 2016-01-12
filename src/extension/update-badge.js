@@ -2,33 +2,37 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Requires: openIndexedDB
+// Requires: countUnreadEntries
+
 'use strict';
 
 {
 
 // Updates the unread count of the extension's badge
-// TODO: deprecate the entryStore parameter, hardlink the dependency
-function updateBadge(entryStore, connection) {
+function updateBadge(connection) {
   if(connection) {
-    entryStore.countUnread(connection, setBadgeText);
+    countUnreadEntries(connection, setBadgeText);
   } else {
-    openIndexedDB(updateOnConnect.bind(null, entryStore));
+    openIndexedDB(updateOnConnect);
   }
 }
 
 this.updateBadge = updateBadge;
 
-function updateOnConnect(entryStore, event) {
+function updateOnConnect(event) {
   if(event.type === 'success') {
-    entryStore.countUnread(event.target.result, setBadgeText);
+    const connection = event.target.result;
+    countUnreadEntries(connection, setBadgeText);
   } else {
+    // Connection error
     console.debug(event);
     chrome.browserAction.setBadgeText({text: '?'});
   }
 }
 
 function setBadgeText(event) {
-  const count = event.target.result;
+  const count = event.target.result || '?';
   chrome.browserAction.setBadgeText({
     text: count.toString()
   });

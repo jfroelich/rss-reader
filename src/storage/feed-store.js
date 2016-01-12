@@ -60,11 +60,10 @@ FeedStore.remove = function(connection, id, callback) {
 
 // Removes the corresponding feed from the database along
 // with any corresponding entries
-// TODO: deprecate or move into some other lib
-// TODO: explicit dependency on EntryStore
+// Requires: removeEntriesByFeed
 FeedStore.unsubscribe = function(connection, id, callback) {
-  FeedStore.remove(connection, id, function(event) {
-    EntryStore.removeByFeed(connection, id, callback);
+  FeedStore.remove(connection, id, function onRemoveFeed(event) {
+    removeEntriesByFeed(connection, id, callback);
   });
 };
 

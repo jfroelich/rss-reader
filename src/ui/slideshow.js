@@ -81,7 +81,8 @@ function markSlideRead(slide) {
     }
 
     const entryId = parseInt(entryAttribute);
-    EntryStore.markRead(event.target.result, entryId);
+    const connection = event.target.result;
+    markEntryAsRead(connection, entryId);
   });
 }
 

@@ -125,7 +125,7 @@ function onFetchFeed(connection, feed, event, remoteFeed) {
 
 function onPutFeed(connection, feed, remoteFeed, event) {
   async.forEach(remoteFeed.entries,
-    findEntryByLink.bind(null, connection, feed),
+    pollFindEntryByLink.bind(null, connection, feed),
     onEntriesUpdated.bind(null, connection));
 }
 
@@ -137,12 +137,12 @@ function onPutFeed(connection, feed, remoteFeed, event) {
 // or preload all into an array.
 // Temporarily just update the badge for each feed processed
 function onEntriesUpdated(connection) {
-  updateBadge(EntryStore, connection);
+  updateBadge(connection);
 }
 
-function findEntryByLink(connection, feed, entry, callback) {
+function pollFindEntryByLink(connection, feed, entry, callback) {
   // console.debug('Processing entry %s', entry.link);
-  EntryStore.findByLink(connection, entry,
+  findEntryByLink(connection, entry.link,
     onFindEntry.bind(null, connection, feed, entry, callback));
 }
 
@@ -157,7 +157,7 @@ function onFindEntry(connection, feed, entry, callback, event) {
 
   function onAugment(event) {
     cascadeFeedProperties(feed, entry);
-    EntryStore.put(connection, entry, callback);
+    storeEntry(connection, entry, callback);
   }
 }
 
