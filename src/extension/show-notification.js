@@ -2,13 +2,14 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: maybe we don't need the permission check at all?
+// what happens if we just call notifications.create without
+// permission? A basic exception? A no-op?
+
 'use strict';
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-// TODO: maybe we don't need the permission check at all?
-// what happens if we just call notifications.create without
-// permission? A basic exception? A no-op?
 function showNotification(message) {
   chrome.permissions.contains(
     {permissions: ['notifications']},
