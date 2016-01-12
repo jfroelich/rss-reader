@@ -4,9 +4,15 @@
 
 // TODO: querySelector is not depth-sensitive. Maybe increase
 // the strictness to searching immediate node children
-
 // TODO: rather than return a basic javascript object, perhaps a Map
-// would be more appropriate?
+// would be more appropriate? Or an actual Feed function object? Again, this
+// ties into the need to understand the indexedDB structured cloning algorithm
+// in more detail and how it handles serialization of function objects
+// TODO: maybe this should be renamed to parseFeed, even though it is not
+// dealing with a string, the name may still apply? Or maybe I borrow
+// terminology from DOMParser?
+// TODO: it's dumb to extend Error if we are not mixing in any functionality
+// so deprecate DeserializeError
 
 'use strict';
 
@@ -213,8 +219,7 @@ function getElementText(parent, selector) {
   }
 }
 
-// TODO: it's dumb to extend if we are not mixing in any functionality
-// so deprecate this
+
 class DeserializeError extends Error {
   // TODO: use ES6 rest syntax? Chrome keeps whining
   constructor() {

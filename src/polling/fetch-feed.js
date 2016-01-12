@@ -2,16 +2,14 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: maybe this should use a more qualified name like fetchFeedDocument?
-// or rather, maybe I should have fetchXMLDocument, and this function requires
+// TODO: maybe I should have fetchXML, and this function requires
 // that function as a dependency. then this function becomes really just a
-// simple composition of fetch and deserialize
-
+// simple composition of fetchXML and deserializeFeed
 // TODO: handle redirects better, e.g. somehow use responseURL? maybe this
 // should also pass back responseURL so that the caller can use it?
 // TODO: the post-processing where i clean up entries should not be done here,
 // it should be the caller's responsibility, it is not intrinsic to this
-// function's purpose
+// function's purpose, improper separation of concerns
 
 'use strict';
 

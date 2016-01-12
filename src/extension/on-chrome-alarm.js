@@ -4,16 +4,20 @@
 
 // TODO: maybe rename this to something like chrome-alarms.js
 
+// TODO: this references a function that may not exist yet so it does not
+// work, eg. if poll-feeds.js is included in manifest.json after this file, so
+// i need to allow for that to happen. Right now I am being sloppy and just
+// including this file at the end of manifest.json's list of js includes
+
+// TODO: due to the include issue, this should be reverted so that order of
+// file includes in manifest.json is not important
+
 'use strict';
 
 { // BEGIN FILE SCOPE
 
 const alarms = new Map();
 
-// TODO: this references a function that may not exist yet so it does not
-// work, eg. if poll-feeds.js is included in manifest.json after this file, so
-// i need to allow for that to happen. Right now I am being sloppy and just
-// including this file at the end of manifest.json's list of js includes
 
 alarms.set('archive', {
   schedule: {periodInMinutes: 24 * 60},
@@ -31,6 +35,9 @@ function onChromeAlarm(alarm) {
     console.error('Received unknown alarm name [%s]', alarm.name);
     return;
   }
+
+  // Temp for debugging
+  console.debug('Received alarm wakeup for %s', alarm.name);
 
   // Execute the corresponding function
   details.target();
