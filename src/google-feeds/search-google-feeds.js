@@ -2,6 +2,18 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Requires: replace-breakrules-in-string.js
+// Requires: replaceHTML
+// Requires: truncateString
+
+// NOTE: Google formally deprecated this service. Around December 1st, 2015, I
+// first noticed that the queries stopped working. However, I have witnessed
+// the service occassionally work thereafter.
+// TODO: the truncation of html in a result's content snippet is arbitrary with
+// respect to tags and could lead to truncating in the middle of a tag, or
+// leave unclosed tags in the result. Think about how to
+// prevent these issues.
+
 'use strict';
 
 { // BEGIN ANONYMOUS NAMESPACE
@@ -19,9 +31,6 @@ const BASE_URL =
 // basic js object containing the string properties url, link, title, and
 // contentSnippet. The title and content snippet may contain basic HTML such as
 // <b></b> around terms that were present in the query.
-// NOTE: Google formally deprecated this service. Around December 1st, 2015, I
-// first noticed that the queries stopped working. However, I have witnessed
-// the service occassionally work thereafter.
 function searchGoogleFeeds(query, timeout, callback) {
   const request = new XMLHttpRequest();
   request.timeout = timeout;
@@ -57,7 +66,7 @@ function findFeedOnload(callback, event) {
   entries = entries.filter(getEntryURL);
 
   // Remove duplicates
-  entries = [...new Map(entries.map(expandEntry)).values()];
+  entries = Array.from(new Map(entries.map(expandEntry)).values());
 
   entries.forEach(sanitizeEntry);
   callback(null, query, entries);
@@ -71,8 +80,6 @@ function getEntryURL(entry) {
   return entry.url;
 }
 
-// Requires: replaceHTML
-// Requires: truncateString
 function sanitizeEntry(entry) {
   if(entry.title) {
     entry.title = replaceHTML(entry.title);
@@ -80,17 +87,9 @@ function sanitizeEntry(entry) {
   }
 
   if(entry.contentSnippet) {
-    entry.contentSnippet = replaceBreaks(entry.contentSnippet);
-    // TODO: the truncation is arbitrary with respect to tags
-    // and could lead to truncating in the middle of a tag, or
-    // leave unclosed tags in the result. Think about how to
-    // prevent these two issues.
+    entry.contentSnippet = replaceBreakrulesInString(entry.contentSnippet);
     entry.contentSnippet = truncateString(entry.contentSnippet, 400);
   }
-}
-
-function replaceBreaks(string) {
-  return string.replace(/<\s*br\s*>/gi, ' ');
 }
 
 } // END ANONYMOUS NAMESPACE
