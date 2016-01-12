@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Requires: fetch/fetch-image.js
+
 // TODO: this also serves to check if an image's src is correct. consider
 // removing 404 images or replacing them with an error message.
 // so maybe this has to be a more general process-images document-transform?
@@ -10,7 +12,7 @@
 // because there could be multiple dimensions to consider, and also, because
 // filterSourcelessImages delegates responsive design loading mechanics to
 // the browser. The current design makes this nearly impossible, e.g.
-// shouldFetch doesn't even make sense
+// shouldFetchImage doesn't even make sense
 // TODO: decouple async to allow for passing parameters to callback
 
 'use strict';
@@ -49,6 +51,8 @@ function shouldFetchImage(image) {
   // Are the width and height properties automatically set
   // for a data URI within an inert document context? If so,
   // then we do not need to fetch.
+  // TODO: can we test against url.protocol instead of using
+  // a regex? or is there something like isObjectURL?
   if(/^\s*data\s*:/i.test(sourceURL)) {
     return false;
   }
@@ -73,11 +77,10 @@ function onFetchImage(image, callback, event) {
     image.width = fetchedImage.width;
     image.height = fetchedImage.height;
   } else {
-    // There was an error fetching the image
     console.debug('fetchImage error %o', event);
   }
 
-  // Use no args so as to work with async.forEach
+  // Use no args to indicate to async.forEach that it should continue
   callback();
 }
 
