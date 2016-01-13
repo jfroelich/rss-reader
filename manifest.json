@@ -23,6 +23,7 @@
       "/src/document-transform/transform-lazy-images.js",
       "/src/dom/html-document-wrapper.js",
       "/src/extension/on-browser-action-clicked.js",
+      "/src/extension/on-chrome-alarm.js",
       "/src/extension/on-runtime-installed.js",
       "/src/extension/show-notification.js",
       "/src/extension/update-badge.js",
@@ -47,9 +48,7 @@
       "/src/storage/upgrade-indexeddb.js",
       "/src/url/get-schemeless-url.js",
       "/src/url/resolve-url.js",
-      "/src/url/rewrite-url.js",
-
-      "/src/extension/on-chrome-alarm.js"
+      "/src/url/rewrite-url.js"
     ]
   },
   "options_page": "options.html",
