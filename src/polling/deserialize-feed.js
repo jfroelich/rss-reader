@@ -13,6 +13,7 @@
 // terminology from DOMParser?
 // TODO: it's dumb to extend Error if we are not mixing in any functionality
 // so deprecate DeserializeError
+// TODO: relocate this file, it really is not intrinsic to polling
 
 'use strict';
 

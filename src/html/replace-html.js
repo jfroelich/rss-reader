@@ -12,7 +12,7 @@ function replaceHTML(string, replacement) {
   }
 
   // NOTE: Rather than use some type of custom lexical analysis, I think it
-  // makes more sense to use the heavier but safer and more accurate method of 
+  // makes more sense to use the heavier but safer and more accurate method of
   // parseHTML (which uses the innerHTML gimmick).
 
   const document = parseHTML(string);
@@ -24,6 +24,9 @@ function replaceHTML(string, replacement) {
   }
 
   // Grab all the text nodes and then join them together
+  // TODO: there should probably be a separate function that gets
+  // all the values of all the text nodes as an array, and this should
+  // use that
   const values = [];
   const iterator = document.createNodeIterator(root, NodeFilter.SHOW_TEXT);
   let node = iterator.nextNode();

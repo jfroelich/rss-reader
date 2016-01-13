@@ -12,9 +12,6 @@
 
 // Decorates a Document object in order to provide simple
 // declarative methods, similar to jQuery
-// TODO: maybe use a better name such as WHTMLDocument
-// TODO: research extending HTMLDocument
-
 
 class HTMLDocumentWrapper {
 

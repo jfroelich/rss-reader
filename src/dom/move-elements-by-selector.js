@@ -32,9 +32,6 @@ function moveElementsBySelector(source, destination, selector) {
 
   for(let i = 0, element; i < length; i++) {
     element = elements[i];
-    // Only move elements that still reside in the source document. This
-    // is easily and efficiently accomplished by checking the ownerDocument
-    // property.
     if(element.ownerDocument === source) {
       destination.adoptNode(element);
     }
