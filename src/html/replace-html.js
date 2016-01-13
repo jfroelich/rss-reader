@@ -2,37 +2,47 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Replaces html elements within a string
-// Dependency: parseHTML from parse-html.js
-function replaceHTML(string, replacement) {
-  'use strict';
+// Requires: /html/parse-html.js
 
-  if(!string) {
-    return string;
+'use strict';
+
+{ // BEGIN FILE SCOPE
+
+// Returns a new string where html elements were replaced with the replacement
+// string. The replacement is optional.
+
+function replaceHTML(inputString, replacement) {
+  let outputString = null;
+  if(inputString) {
+    const document = parseHTML(inputString);
+    if(replacement) {
+      const nodes = selectTextNodes(document);
+      const values = nodes.map(getNodeValue);
+      outputString = values.join(replacement);
+    } else {
+      outputString = document.documentElement.textContent;
+    }
   }
 
-  // NOTE: Rather than use some type of custom lexical analysis, I think it
-  // makes more sense to use the heavier but safer and more accurate method of
-  // parseHTML (which uses the innerHTML gimmick).
+  return outputString;
+}
 
-  const document = parseHTML(string);
-  const root = document.documentElement;
+this.replaceHTML = replaceHTML;
 
-  // If there is no replacement specified, then use a much faster method
-  if(!replacement) {
-    return root.textContent;
-  }
-
-  // Grab all the text nodes and then join them together
-  // TODO: there should probably be a separate function that gets
-  // all the values of all the text nodes as an array, and this should
-  // use that
-  const values = [];
-  const iterator = document.createNodeIterator(root, NodeFilter.SHOW_TEXT);
+function selectTextNodes(document) {
+  const nodes = [];
+  const iterator = document.createNodeIterator(document.documentElement,
+    NodeFilter.SHOW_TEXT);
   let node = iterator.nextNode();
   while(node) {
-    values.push(node.nodeValue);
+    nodes.push(node);
     node = iterator.nextNode();
   }
-  return values.join(replacement);
+  return nodes;
 }
+
+function getNodeValue(node) {
+  return node.nodeValue;
+}
+
+} // END FILE SCOPE
