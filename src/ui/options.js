@@ -562,35 +562,40 @@ function onImportOPMLClick(event) {
 
 // todo: this should delegate its functionality to an external
 // function like triggerFileDownload(hostDocument, title, contentBlob);
-// TODO: show a visual error message in event of an export error
 
 function onExportOPMLClick(event) {
-  const title = 'Subscriptions';
+  const documentTitle = 'Subscriptions';
+  exportOPML(documentTitle, onExportOPML);
+}
+
+// TODO: show a visual error message in event of an export error
+function onExportOPML(error, doc) {
+
+  if(error) {
+    console.debug(error);
+    return;
+  }
+
+  const writer = new XMLSerializer();
+  const serializedString = writer.serializeToString(doc);
+  const blobFormat = {type: 'application/xml'};
+  const blob = new Blob([serializedString], blobFormat);
+  const objectURL = URL.createObjectURL(blob);
+
+  const anchor = document.createElement('a');
+  anchor.href = objectURL;
   const fileName = 'subscriptions.xml';
+  anchor.setAttribute('download', fileName);
+  anchor.style.display = 'none';
+  document.body.appendChild(anchor);
+  anchor.click();
 
-  exportOPML(title, function(error, doc) {
-    if(error) {
-      console.debug(error);
-      return;
-    }
+  // Cleanup
+  URL.revokeObjectURL(objectURL);
+  anchor.remove();
 
-    const blob = createOPMLBlob(doc);
-    const objectURL = URL.createObjectURL(blob);
-
-    const anchor = document.createElement('a');
-    anchor.href = objectURL;
-    anchor.setAttribute('download', fileName);
-    anchor.style.display = 'none';
-    document.body.appendChild(anchor);
-    anchor.click();
-
-    // Cleanup
-    URL.revokeObjectURL(objectURL);
-    anchor.remove();
-
-    console.debug('Completed exporting %s feeds to %s',
-      doc.querySelectorAll('outline').length, title);
-  });
+  console.debug('Completed exporting %s feeds to opml file %s',
+    doc.querySelectorAll('outline').length, fileName);
 }
 
 function onHeaderFontChange(event){
