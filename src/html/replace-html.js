@@ -10,7 +10,6 @@
 
 // Returns a new string where html elements were replaced with the replacement
 // string. The replacement is optional.
-
 function replaceHTML(inputString, replacement) {
   let outputString = null;
   if(inputString) {
