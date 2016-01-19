@@ -2,11 +2,11 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Requires: /storage/open-indexeddb.js
+
 'use strict';
 
 { // BEGIN ANONYMOUS NAMESPACE
-
-// TODO: specify EntryStore as a dependency?
 
 function archiveEntries() {
   openIndexedDB(onConnect);

@@ -7,6 +7,10 @@
 // type of function, they are not actually related. Therefore, this file
 // should be split into two files.
 
+// TODO: the table transform should also consider a single-column table
+// as transformable, not just a single-celled table. In the case of a single
+// column table, just insert paragraph elements between cells.
+
 'use strict';
 
 { // BEGIN ANONYMOUS NAMESPACE
