@@ -5,13 +5,6 @@
 // Requires: /storage/get-all-feeds.js
 // Requires: /storage/open-indexeddb.js
 
-// TODO: update dependencies
-// TODO: delete opml-utils.js
-// TODO: deprecate opml-document.js
-
-// TODO: the database connection setup is probably the responsibility
-// of the caller, not here, this should just accept a feeds array?
-
 'use strict';
 
 { // BEGIN FILE SCOPE
@@ -31,16 +24,11 @@ function onOpenIndexedDB(document, callback, event) {
     const connection = event.target.result;
     getAllFeeds(connection, appendFeeds.bind(null, document, callback));
   } else {
-    // Connection failure
     callback(event, document);
   }
 }
 
 function appendFeeds(document, callback, feeds) {
-  //const feeds = event.target.result;
-
-
-
   for(let feed of feeds) {
     appendFeedToDocument(document, feed);
   }
@@ -81,8 +69,6 @@ function appendFeedToDocument(document, feed) {
   bodyElement.appendChild(outlineElement);
 }
 
-
-
 function createOPMLDocument(title) {
 
   const doc = document.implementation.createDocument(null, null);
@@ -115,25 +101,5 @@ function createOPMLDocument(title) {
 
   return doc;
 }
-
-// TODO: these two functions probably belong in a separate file
-// or require some more thought. i am not sure they even belong here,
-// perhaps they are helper functions of the caller code, generating
-// a blob really has nothing to do with generating an opml document
-// also, these two functions could be merged into one
-function serializeOPMLDocument(document) {
-  const writer = new XMLSerializer();
-  const string = writer.serializeToString(document);
-  return string;
-}
-
-function createOPMLBlob(document) {
-  const string = serializeOPMLDocument(document);
-  const blobFormat = {type: 'application/xml'};
-  const blob = new Blob([string], blobFormat);
-  return blob;
-}
-
-this.createOPMLBlob = createOPMLBlob;
 
 } // END FILE SCOPE
