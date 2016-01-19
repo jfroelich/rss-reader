@@ -519,10 +519,8 @@ function onEnableURLRewritingChange(event) {
 // TODO: notify the user if there was an error parsing the OPML
 // TODO: the user needs immediate visual feedback that we are importing
 // the OPML file.
-// TODO: notify the user
-// TODO: switch to a section on complete?
-// TODO: the parameters to onImport are virtual, right now
-// importFiles does not pass back errors nor track stats
+// TODO: notify the user of successful import
+// TODO: switch to a different section of the options ui on complete?
 function onImportOPMLClick(event) {
   const uploader = document.createElement('input');
   uploader.setAttribute('type', 'file');
@@ -531,48 +529,67 @@ function onImportOPMLClick(event) {
     uploader.removeEventListener('change', onChange);
 
     if(!uploader.files || !uploader.files.length) {
-      return onImport(0, 0, []);
+      onImport();
+      return;
     }
 
-    OPMLUtils.importFiles(uploader.files, onImport);
+    importOPML(uploader.files, onImport);
   };
 
   document.body.appendChild(uploader);
   uploader.click();
 
-  function onImport(imported, attempted, exceptions) {
+  function onImport(tracker) {
     uploader.remove();
 
-    if(exceptions && exceptions.length) {
-      console.debug('Encountered exceptions when importing: %o', exceptions);
+    if(!tracker) {
+      console.debug('OPML import error, undefined stats tracker');
+      return;
     }
 
-    console.info('Completed import');
+    const errors = tracker.errors;
+
+    if(errors && errors.length) {
+      console.debug('Encountered exceptions when importing: %o', errors);
+    }
+
+    // TODO: showNotification because opml import no longer does this itself
+
+    console.info('Completed opml import, imported %s of %s files',
+      tracker.filesImported, tracker.numFiles);
   }
 }
 
 // todo: this should delegate its functionality to an external
 // function like triggerFileDownload(hostDocument, title, contentBlob);
+// TODO: show a visual error message in event of an export error
+
 function onExportOPMLClick(event) {
-  const title = 'subscriptions.xml';
-  OPMLUtils.createDocument(title, function(error, doc) {
+  const title = 'Subscriptions';
+  const fileName = 'subscriptions.xml';
+
+  exportOPML(title, function(error, doc) {
     if(error) {
-      // TODO: show an error message
       console.debug(error);
       return;
     }
 
-    const blob = doc.toBlob();
+    const blob = createOPMLBlob(doc);
+    const objectURL = URL.createObjectURL(blob);
+
     const anchor = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    anchor.href = url;
-    anchor.setAttribute('download', title);
+    anchor.href = objectURL;
+    anchor.setAttribute('download', fileName);
     anchor.style.display = 'none';
     document.body.appendChild(anchor);
     anchor.click();
-    // revoke the object url, not the blob! (bug fix)
-    URL.revokeObjectURL(url);
+
+    // Cleanup
+    URL.revokeObjectURL(objectURL);
     anchor.remove();
+
+    console.debug('Completed exporting %s feeds to %s',
+      doc.querySelectorAll('outline').length, title);
   });
 }
 
