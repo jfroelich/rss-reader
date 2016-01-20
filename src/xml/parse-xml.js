@@ -8,8 +8,8 @@ function parseXML(string) {
   'use strict';
 
   const parser = new DOMParser();
-  const mimeType = 'application/xml';
-  const document = parser.parseFromString(string, mimeType);
+  const MIME_TYPE_XML = 'application/xml';
+  const document = parser.parseFromString(string, MIME_TYPE_XML);
 
   if(!document) {
     throw new Error('Undefined document');
