@@ -3,9 +3,12 @@
 // that can be found in the LICENSE file
 
 // Unwraps anchors that are not links to other pages
-// Requires: unwrapElement
+// Requires: /dom/dom-module.js
+
 function filterNominalAnchors(document) {
   'use strict';
+
+  const unwrapElement = DOMModule.prototype.unwrapElement;
 
   // NOTE: we use querySelectorAll as opposed to getElementsByTagName
   // because we are possibly mutating the NodeList while iterating

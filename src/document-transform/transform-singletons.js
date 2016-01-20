@@ -34,7 +34,6 @@ const filter = Array.prototype.filter;
 // TODO: i don't like the check for document.body in this call, it smells,
 // think about whose responsibility it is
 
-
 function unwrapSingletonLists(document) {
 
   if(!document.body) {

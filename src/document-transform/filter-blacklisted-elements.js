@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Dependency: moveElementsBySelector
+// Requires: /dom/dom-module.js
 
 function filterBlacklistedElements(document) {
   'use strict';
@@ -40,5 +40,7 @@ function filterBlacklistedElements(document) {
   ];
 
   const blacklistSelector = blacklist.join(',');
+
+  const moveElementsBySelector = DOMModule.prototype.moveElementsBySelector;
   moveElementsBySelector(document, null, blacklistSelector);
 }

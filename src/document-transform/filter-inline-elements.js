@@ -23,6 +23,7 @@
 // hardcodes the move destination as element.parentElement
 
 function filterInlineElements(document) {
+  const unwrapElement = DOMModule.prototype.unwrapElement;
   const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
   const numElements = elements.length;
   for(let i = 0; i < numElements; i++) {

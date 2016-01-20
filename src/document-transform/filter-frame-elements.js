@@ -17,6 +17,7 @@
 
 function filterFrameElements(document) {
   'use strict';
+  const removeElementsBySelector = DOMModule.prototype.removeElementsBySelector;
 
   // Look for the presence of a frameset and lack of a body
   // element, and then remove the frameset and generate a body
@@ -41,7 +42,6 @@ function filterFrameElements(document) {
     frameset.remove();
     return;
   }
-
 
   removeElementsBySelector(document, 'frameset, frame, iframe');
 }

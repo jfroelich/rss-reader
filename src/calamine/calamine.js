@@ -491,6 +491,8 @@ function imageParentIsBodyCandidate(element) {
 function deriveBodyImageContainerScores() {
   this.bodyImageContainerScores = new Map();
 
+  const findImageCaption = DOMModule.prototype.findImageCaption;
+
   const images = this.document.getElementsByTagName('img');
   const numImages = images.length;
   let imageParent = null;

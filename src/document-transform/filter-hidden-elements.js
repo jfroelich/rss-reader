@@ -23,7 +23,7 @@ function makeSelectorCondition(string) {
 const HIDDEN_SELECTOR = HIDDEN_FACTORS.map(makeSelectorCondition).join(',');
 
 // Removes hidden elements from a document.
-// Requires: removeElementsBySelector
+// Requires: /dom/dom-module.js
 //
 // NOTE: this originally iterated over all elements and tested against
 // each element's style property. Performance analysis showed this was
@@ -39,6 +39,7 @@ const HIDDEN_SELECTOR = HIDDEN_FACTORS.map(makeSelectorCondition).join(',');
 // It may have some impact on boilerplate analysis, but I haven't given that
 // too much consideration.
 function filterHiddenElements(document) {
+  const removeElementsBySelector = DOMModule.prototype.removeElementsBySelector;
   removeElementsBySelector(document, HIDDEN_SELECTOR);
 }
 

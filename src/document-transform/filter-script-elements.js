@@ -15,7 +15,7 @@
 
 function filterScriptElements(document) {
   'use strict';
-
+  const removeElementsBySelector = DOMModule.prototype.removeElementsBySelector;
   removeElementsBySelector(document, 'script, noscript');
 
   // Disable anchors that use javascript protocol. Keep the href

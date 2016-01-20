@@ -101,6 +101,12 @@ function transformImageElement(image) {
     return;
   }
 
+  // Case 10: <img data-adaptive-img="">
+  if(!image.hasAttribute('src') && image.hasAttribute('data-adaptive-img')) {
+    image.setAttribute('src', image.getAttribute('data-adaptive-img'));
+    return;
+  }
+
   // <img srcset="url, url 2x">
   // I am leaving this case here as a note. We do not handle this case. We
   // pass it along to the browser to decide.
