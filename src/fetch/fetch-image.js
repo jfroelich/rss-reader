@@ -4,6 +4,9 @@
 
 // TODO: look into the implied timeout that is used
 
+// TODO: look for status code 301/302 and pass such info to the callback
+// so that, for example, the caller can filter 302s
+
 'use strict';
 
 { // BEGIN FILE SCOPE
