@@ -489,6 +489,7 @@ function imageParentIsBodyCandidate(element) {
 // candidate, not just the immediate parent
 // TODO: actually not sure this works, need to test more
 function deriveBodyImageContainerScores() {
+
   this.bodyImageContainerScores = new Map();
 
   const findImageCaption = DOMModule.prototype.findImageCaption;

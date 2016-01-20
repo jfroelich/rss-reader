@@ -52,8 +52,11 @@ DOMModule.prototype.getNodeAncestors = function(node) {
   let parentElement = node.parentElement;
   while(parentElement) {
     ancestors.push(parentElement);
-    parentElement = parent.parentElement;
+    parentElement = parentElement.parentElement;
   }
+
+  console.debug(ancestors);
+
   return ancestors;
 };
 
