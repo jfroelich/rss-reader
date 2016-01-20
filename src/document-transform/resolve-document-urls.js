@@ -143,7 +143,7 @@ function resolveImageSrcSet(baseURL, image) {
     }
 
     if(resolvedURL && resolvedURL !== descriptor.url) {
-      console.debug('Resolved %s to %s', descriptor.url, resolvedURL);
+      // console.debug('Resolved %s to %s', descriptor.url, resolvedURL);
       descriptor.url = resolvedURL;
     }
   }
