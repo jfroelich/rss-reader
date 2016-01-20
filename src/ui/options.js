@@ -564,24 +564,27 @@ function onImportOPMLClick(event) {
 // function like triggerFileDownload(hostDocument, title, contentBlob);
 
 function onExportOPMLClick(event) {
-  const documentTitle = 'Subscriptions';
-  exportOPML(documentTitle, onExportOPML);
+  openIndexedDB(onExportOPMLClickOnOpenIndexedDB);
 }
 
-// TODO: show a visual error message in event of an export error
-function onExportOPML(error, doc) {
-
-  if(error) {
-    console.debug(error);
-    return;
+function onExportOPMLClickOnOpenIndexedDB(event) {
+  if(event.type === 'success') {
+    const connection = event.target.result;
+    getAllFeeds(connection, onExportOPMLClickOnGetAllFeeds);
+  } else {
+    // TODO: visually report the error
+    console.debug('Failed to connect to database when exporting opml');
   }
+}
 
+function onExportOPMLClickOnGetAllFeeds(feeds) {
+  const title = 'Subscriptions';
+  const doc = createOPMLDocument(title, feeds);
   const writer = new XMLSerializer();
   const serializedString = writer.serializeToString(doc);
   const blobFormat = {type: 'application/xml'};
   const blob = new Blob([serializedString], blobFormat);
   const objectURL = URL.createObjectURL(blob);
-
   const anchor = document.createElement('a');
   anchor.href = objectURL;
   const fileName = 'subscriptions.xml';
@@ -589,11 +592,8 @@ function onExportOPML(error, doc) {
   anchor.style.display = 'none';
   document.body.appendChild(anchor);
   anchor.click();
-
-  // Cleanup
   URL.revokeObjectURL(objectURL);
   anchor.remove();
-
   console.debug('Completed exporting %s feeds to opml file %s',
     doc.querySelectorAll('outline').length, fileName);
 }
