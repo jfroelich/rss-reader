@@ -2,8 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Requires: /feed/parse-feed.js
 // Requires: /fetch/fetch-xml.js
-// Requires: /polling/deserialize-feed.js
 
 // TODO: the post-processing where i clean up entries should not be done here,
 // it should be the caller's responsibility, it is not intrinsic to this
@@ -40,7 +40,7 @@ function onFetchFeed(url, callback, errorEvent, document, responseURL) {
 
   let feed = null;
   try {
-    feed = deserializeFeed(document);
+    feed = parseFeed(document);
   } catch(exception) {
     callback(exception, null, responseURL);
     return;

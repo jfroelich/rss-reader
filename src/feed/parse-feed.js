@@ -2,25 +2,12 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: querySelector is not depth-sensitive. Maybe increase
-// the strictness to searching immediate node children
-// TODO: rather than return a basic javascript object, perhaps a Map
-// would be more appropriate? Or an actual Feed function object? Again, this
-// ties into the need to understand the indexedDB structured cloning algorithm
-// in more detail and how it handles serialization of function objects
-// TODO: maybe this should be renamed to parseFeed, even though it is not
-// dealing with a string, the name may still apply? Or maybe I borrow
-// terminology from DOMParser?
-// TODO: it's dumb to extend Error if we are not mixing in any functionality
-// so deprecate DeserializeError
-// TODO: relocate this file, it really is not intrinsic to polling
-
 'use strict';
 
 { // BEGIN ANONYMOUS NAMESPACE
 
-// Derives a feed object from an xml document
-function deserializeFeed(document) {
+// Generates a feed object from a document
+function parseFeed(document) {
 
   const documentElement = document.documentElement;
   validateDocumentElement(documentElement);
@@ -31,7 +18,7 @@ function deserializeFeed(document) {
   // <channel> is required for feeds and rdf
   if(!isAtom && !document.querySelector(
     documentElement.localName + ' > channel')) {
-    throw new DeserializeError('Missing required channel element');
+    throw new Error('Missing required channel element');
   }
 
   const channel = isAtom ? documentElement :
@@ -107,26 +94,25 @@ function deserializeFeed(document) {
 
   const map = Array.prototype.map;
 
-  feed.entries = map.call(entries, deserializeEntry.bind(null, isAtom));
+  feed.entries = map.call(entries, parseEntry.bind(null, isAtom));
 
   return feed;
 }
 
-this.deserializeFeed = deserializeFeed;
+this.parseFeed = parseFeed;
 
 function validateDocumentElement(element) {
   if(!element) {
-    throw new DeserializeError('Undefined document element');
+    throw new Error('Undefined document element');
   }
 
   if(!element.matches('feed, rss, rdf')) {
-    throw new DeserializeError('Unsupported document element: ' +
+    throw new Error('Unsupported document element: ' +
       element.localName);
   }
 }
 
-// Private helper for deserialize, deserializes an item
-function deserializeEntry(isAtom, entry) {
+function parseEntry(isAtom, entry) {
   const getText = getElementText;
   const result = {};
   const title = getText(entry, 'title');
@@ -175,7 +161,7 @@ function deserializeEntry(isAtom, entry) {
   }
 
   if(isAtom) {
-    // Special handling for some strange issue
+    // Special handling for some strange issue (CDATA-related?)
     const content = entry.querySelector('content');
     const nodes = content ? content.childNodes : [];
     const map = Array.prototype.map;
@@ -192,7 +178,6 @@ function deserializeEntry(isAtom, entry) {
     }
   }
 
-  // NOTE: under dev, untested
   // an enclosure is once per item
   const enclosure = entry.querySelector('enclosure');
   if(enclosure) {
@@ -209,7 +194,6 @@ function deserializeEntry(isAtom, entry) {
 
 // Returns the text content of the first element matching the
 // selector within the parent, or undefined
-// This function maybe belongs in its own file given how reusable it is
 function getElementText(parent, selector) {
   const element = parent.querySelector(selector);
   if(element) {
@@ -218,29 +202,6 @@ function getElementText(parent, selector) {
       return text.trim();
     }
   }
-}
-
-
-class DeserializeError extends Error {
-  // TODO: use ES6 rest syntax? Chrome keeps whining
-  constructor() {
-    super(...arguments);
-  }
-}
-
-// NOTE: The following functions are not currently in use, toying with the idea
-// of using something other than querySelector to get at immediate children
-
-function selectChild(parent, selector) {
-  return parent.childNodes.find(function(node) {
-    return node.matches(name);
-  });
-}
-
-function selectChildren(parent, name) {
-  return parent.childNodes.filter(function(node) {
-    return node.matches(name);
-  });
 }
 
 } // END ANONYMOUS NAMESPACE
