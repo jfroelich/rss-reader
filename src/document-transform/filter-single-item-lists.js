@@ -2,20 +2,12 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: transforming lists and tables are two separate functions that have
-// relatively little to do with each other. While they each perform a similar
-// type of function, they are not actually related. Therefore, this file
-// should be split into two files.
-
-// TODO: the table transform should also consider a single-column table
-// as transformable, not just a single-celled table. In the case of a single
-// column table, just insert paragraph elements between cells.
+// TODO: this contains some experimental code I don't think I ended up
+// using, it should be deleted
 
 'use strict';
 
 { // BEGIN ANONYMOUS NAMESPACE
-
-const filter = Array.prototype.filter;
 
 // TODO: it may be important to consider the unwrap parent. for example,
 // what if this is unwrapping the content into another element that
@@ -24,17 +16,19 @@ const filter = Array.prototype.filter;
 
 // TODO: focusing on orthogonality, or factoring of features, i think
 // that unwrapList and unwrapTable should probably all be merged into
-// the general unwrap element function, somehow.
-// to do this for list, i think i want to pass in the LI, and have
+// the general unwrap element function, somehow? Or maybe not, look at
+// what I did in filter-single-column-tables regarding moveOperation.
+// In order to do this for list, i think i want to pass in the LI, and have
 // unwrap find the parent. similarly, for table, i want to pass in the
 // the cell, and have unwrap find the container table.
 // notably this has the side benefit of avoiding some of the work
 // i do below, of re-finding the target child in each of the unwrappers
 
 // TODO: i don't like the check for document.body in this call, it smells,
-// think about whose responsibility it is
+// think about whose responsibility it is, or maybe do not use document.body
+// anyhwere (use querySelectorAll on document)
 
-function unwrapSingletonLists(document) {
+function filterSingleItemLists(document) {
 
   if(!document.body) {
     return;
@@ -55,13 +49,16 @@ function unwrapSingletonLists(document) {
   }
 }
 
-this.unwrapSingletonLists = unwrapSingletonLists;
+this.filterSingleItemLists = filterSingleItemLists;
 
 function getListItems(list) {
+  const filter = Array.prototype.filter;
   return filter.call(list.childNodes, isListItem);
 }
 
-
+// Is this a DOM op that belongs in the dom module? same for other
+// similar functions here? how do i clearly define where such functions belong?
+// maybe the dom module is too general?
 function isListItem(node) {
   // TODO: childNodes returns nodes, make sure this is the proper test
   return node.localName === 'li';
@@ -70,6 +67,7 @@ function isListItem(node) {
 function countListItems(list) {
   // TODO: this is generating an intermediate array, that just
   // feels wrong, so use an imperative loop instead
+  const filter = Array.prototype.filter;
   return filter.call(list.childNodes, isListItem).length;
 }
 
@@ -99,7 +97,6 @@ function getListItemListParent(listItem) {
 // list, not just the list item. this is now semantically misleading.
 function unwrapListItem(listItem) {
   const list = getListItemListParent(listItem);
-
 
   let parent = null, nextSibling = null;
 
@@ -136,46 +133,5 @@ function unwrapSingleItemList(list) {
   list.remove();
 }
 
-function unwrapSingletonTables(document) {
-  if(!document.body) {
-    return;
-  }
-  const tables = document.body.querySelectorAll('table');
-  for(let i = 0, len = tables.length, table, cell; i < len; i++) {
-    table = tables[i];
-    cell = getTableSingleCell(table);
-    if(cell) {
-      unwrapSingletonTable(table, cell);
-    }
-  }
-}
-
-this.unwrapSingletonTables = unwrapSingletonTables;
-
-function getTableSingleCell(table) {
-  const numRows = table.rows.length;
-  if(numRows === 1) {
-    const numCells = table.rows[0].cells.length;
-    if(numCells === 1) {
-      return table.rows[0].cells[0];
-    }
-  }
-}
-
-function unwrapSingletonTable(table, cell) {
-  const parent = table.parentElement;
-  const nextSibling = table.nextSibling;
-  if(nextSibling) {
-    while(cell.firstChild) {
-      parent.insertBefore(cell.firstChild, nextSibling);
-    }
-  } else {
-    while(cell.firstChild) {
-      parent.appendChild(cell.firstChild);
-    }
-  }
-
-  table.remove();
-}
 
 } // END ANONYMOUS NAMESPACE

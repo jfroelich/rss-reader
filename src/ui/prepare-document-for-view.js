@@ -8,11 +8,11 @@
 // function will probably look very similar to this one. In fact it may be
 // the same function. However, I an naming this 'for-view' because I want to be
 // clear that I am unclear about how it will turn out currently.
+// TODO: properly handle noembed
+// TODO: support audio/video
 
 function prepareDocumentForView(document) {
   'use strict';
-  // TODO: properly handle noembed
-  // NOTE: support audio/video
 
   filterCommentNodes(document);
   filterFrameElements(document);
@@ -34,7 +34,8 @@ function prepareDocumentForView(document) {
   trimTextNodes(document);
   filterLeafElements(document);
   unwrapSingletonLists(document);
-  unwrapSingletonTables(document);
+  filterSingleCellTables(document);
+  filterSingleColumnTables(document);
   trimDocumentElements(document);
   filterElementAttributes(document);
 }
