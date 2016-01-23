@@ -33,7 +33,7 @@ function prepareDocumentForView(document) {
   filterInlineElements(document);
   trimTextNodes(document);
   filterLeafElements(document);
-  unwrapSingletonLists(document);
+  filterSingleItemLists(document);
   filterSingleCellTables(document);
   filterSingleColumnTables(document);
   trimDocumentElements(document);
