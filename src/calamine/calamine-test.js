@@ -30,6 +30,8 @@ function onprep(document) {
   DOMFilter.filterCommentNodes(document);
   DOMFilter.filterFrameElements(document);
   DOMFilter.filterScriptElements(document);
+  DOMFilter.filterNoScriptElements(document);
+  DOMFilter.filterJavascriptAnchors(document);
   DOMFilter.filterBlacklistedElements(document);
   DOMFilter.filterHiddenElements(document);
 

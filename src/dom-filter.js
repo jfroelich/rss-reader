@@ -5,12 +5,64 @@
 // Requires: /dom/dom-module.js
 
 // TODO: merge dom-module into this
-// TODO: use an IIFE to avoid global strict mode
+// TODO: use an IIFE to avoid global strict mode? Or move use strict into
+// every function
 
 'use strict';
 
 const DOMFilter = {};
 
+// Create a custom iterator wrapper around NodeList because
+// I do not want to modify NodeList.prototype and Chrome does not yet
+// support iterable node lists. So this is a placeholder function to remind me
+// of this idea of how to allow all my other iterating functions that work
+// with nodelists to use for..of.
+DOMFilter.createNodeListIterator = function(nodeList) {
+  throw new Error('Not implemented');
+};
+
+// Returns true if the element is a figure element
+// TODO: look into the canonical way of doing this. For example, is it more
+// standard to use tagName, or instanceof like in the case of
+// element instanceof HTMLFigureElement?
+DOMFilter.isFigureElement = function(element) {
+  return element.localName === 'figure';
+};
+
+
+// Finds the associated caption for an image element
+// TODO: optimize? For example, maybe I should just be searching ancestors
+// and returning the first matching ancestor, instead of storing all ancestors
+// in an array. Maybe I need a findAncestor function? However, this involves
+// not using the native Array.prototype.find function, so I am not sure.
+// TODO: rename to selectImageCaption or selectCaption as only images
+// have captions? or can other elements have captions, like tables?
+// TODO: maybe move this into calamine if that is the only context for it
+DOMFilter.findImageCaption = function(image) {
+  const isFigureElement = DOMFilter.isFigureElement;
+  const getNodeAncestors = DOMFilter.getNodeAncestors;
+  const ancestors = getNodeAncestors(image);
+  const figure = ancestors.find(isFigureElement);
+  let caption = null;
+  if(figure) {
+    caption = figure.querySelector('figcaption');
+  }
+  return caption;
+};
+
+// Returns an array of ancestor elements for the given node up to and including
+// the documentElement, in bottom up order
+DOMFilter.getNodeAncestors = function(node) {
+  const ancestors = [];
+  let parentElement = node.parentElement;
+  while(parentElement) {
+    ancestors.push(parentElement);
+    parentElement = parentElement.parentElement;
+  }
+  return ancestors;
+};
+
+// Removes all comment nodes from the document
 DOMFilter.filterCommentNodes = function(document) {
   const iterator = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_COMMENT);
@@ -58,9 +110,7 @@ DOMFilter.filterBlacklistedElements = function(document) {
   ];
 
   const blacklistSelector = blacklist.join(',');
-
-  const moveElementsBySelector = DOMModule.prototype.moveElementsBySelector;
-  moveElementsBySelector(document, null, blacklistSelector);
+  DOMFilter.moveElementsBySelector(document, null, blacklistSelector);
 };
 
 // Replaces <br> elements within a document with <p>
@@ -145,7 +195,6 @@ DOMFilter.filterElementAttributes = function(document) {
 // TODO: the replacement text should be localized
 // TODO: what if noframes contains an iframe or other frames?
 DOMFilter.filterFrameElements = function(document) {
-  const removeElementsBySelector = DOMModule.prototype.removeElementsBySelector;
   let body = document.querySelector('body');
   const frameset = document.querySelector('frameset');
   if(!body && frameset) {
@@ -162,7 +211,7 @@ DOMFilter.filterFrameElements = function(document) {
     return;
   }
 
-  removeElementsBySelector(document, 'frameset, frame, iframe');
+  DOMFilter.removeElementsBySelector(document, 'frameset, frame, iframe');
 };
 
 DOMFilter.HIDDEN_ELEMENTS_SELECTOR = [
@@ -190,8 +239,8 @@ DOMFilter.HIDDEN_ELEMENTS_SELECTOR = [
 // It may have some impact on boilerplate analysis, but I haven't given that
 // too much consideration.
 DOMFilter.filterHiddenElements = function(document) {
-  const removeElementsBySelector = DOMModule.prototype.removeElementsBySelector;
-  removeElementsBySelector(document, DOMFilter.HIDDEN_ELEMENTS_SELECTOR);
+  DOMFilter.removeElementsBySelector(document,
+    DOMFilter.HIDDEN_ELEMENTS_SELECTOR);
 };
 
 // A set of names of inline elements that can be safely unwrapped
@@ -253,7 +302,7 @@ DOMFilter.INLINE_ELEMENTS_SELECTOR = Array.from(new Set([
 // I think this means we cannot use unwrapElement, because that
 // hardcodes the move destination as element.parentElement
 DOMFilter.filterInlineElements = function(document) {
-  const unwrapElement = DOMModule.prototype.unwrapElement;
+  const unwrapElement = DOMFilter.unwrapElement;
   const elements = document.querySelectorAll(
     DOMFilter.INLINE_ELEMENTS_SELECTOR);
   const numElements = elements.length;
@@ -376,60 +425,48 @@ DOMFilter._filterLeafElementsIsLeaf = function(bodyElement, element) {
 // Unwraps anchors that are not links to other pages
 // Requires: /dom/dom-module.js
 DOMFilter.filterNominalAnchors = function(document) {
-  const unwrapElement = DOMModule.prototype.unwrapElement;
-
-  // NOTE: we use querySelectorAll as opposed to getElementsByTagName
-  // because we are possibly mutating the NodeList while iterating
-  // forward
   const anchors = document.querySelectorAll('a');
-  // Cache the length for performance
   const numAnchors = anchors.length;
   for(let i = 0, anchor, href; i < numAnchors; i++) {
     anchor = anchors[i];
-    // Avoid modifying named anchors to maintain intra-page links
-    // The hasAttribute test is sufficient here because authors rarely bother
-    // to set the name attribute unless it is meaningful
     if(!anchor.hasAttribute('name')) {
-      // Use getAttribute instead of the property to get the raw value
-      // without any browser changes
-      // Do not use hasAttribute because it returns true for whitespace
-      // only attribute values
       href = anchor.getAttribute('href') || '';
       href = href.trim();
       if(!href) {
-        unwrapElement(anchor);
+        DOMFilter.unwrapElement(anchor);
       }
     }
   }
 };
 
+DOMFilter.filterScriptElements = function(document) {
+  DOMFilter.removeElementsBySelector(document, 'script');
+};
 
-// NOTE: misc event handler attributes for all elements are handled by
-// filterElementAttributes, which uses a whitelist approach
 // NOTE: Due to content-loading tricks, noscript requires special handling
 // e.g. nbcnews.com. I was originally unwrapping noscripts but it was
 // leading to lots of garbage content. For now I am just removing until
 // I give this more thought.
-// TODO: the function name is problematic because it does not express the
-// anchor handling behavior well. Should probably split up the functionality.
-DOMFilter.filterScriptElements = function(document) {
-  'use strict';
-  const removeElementsBySelector = DOMModule.prototype.removeElementsBySelector;
-  removeElementsBySelector(document, 'script, noscript');
+DOMFilter.filterNoScriptElements = function(document) {
+  DOMFilter.removeElementsBySelector(document, 'noscript');
+};
 
-  // Disable anchors that use javascript protocol. Keep the href
-  // around for boilerplate analysis. Note this selects only
-  // anchors with a href attribute to reduce the number of anchors
-  // iterated.
+// Disable anchors that use javascript protocol. Keep the href
+// around for boilerplate analysis, and because I am not quite sure I want
+// remove content beneath such anchors.
+// NOTE: rather than use a regex, we can take advantage of the accurate
+// parsing of the browser (and mirror its behavior for that matter) by
+// just accessing the protocol property.
+DOMFilter.filterJavascriptAnchors = function(document) {
   const anchors = document.querySelectorAll('a[href]');
-  for(let i = 0, len = anchors.length, anchor; i < len; i++) {
+  const numAnchors = anchors.length;
+  for(let i = 0, anchors; i < numAnchors; i++) {
     anchor = anchors[i];
     if(anchor.protocol === 'javascript:') {
       anchor.setAttribute('href', '');
     }
   }
 };
-
 
 DOMFilter.filterSingleCellTables = function(document) {
 
@@ -708,6 +745,77 @@ DOMFilter.filterTracerElements = function(document) {
 };
 
 
+
+// Moves elements matching the selector query from the source document into
+// the destination document. This function iterates over elements in the node
+// list generated as a result of querySelectorAll. Once an element is moved,
+// its children are implicitly also moved. If a child also matches the selector
+// query, it is not moved again.
+// This function works similarly to removeElementsBySelector, but potentially
+// performs fewer dom manipulations because of how it avoids manipulating
+// child elements of moved elements. In theory, this can lead to better
+// performance. This also achieves better technical accuracy, because the fact
+// that removed/moved child elements remain in the node list even after a parent
+// was removed/moved, is undesirable behavior. Unfortunately, I cannot think of
+// a way to accomplish the desired behavior using the native API provided.
+// If destination is undefined, then a dummy document is supplied, which is
+// discarded when the function completes, which results in the elements being
+// simply removed from the source document.
+// TODO: use for..of once Chrome supports NodeList iterators
+// @param source {Document}
+// @param destination {Document}
+// @param selector {String}
+// @returns void
+DOMFilter.moveElementsBySelector = function(source, destination, selector) {
+  const elements = source.querySelectorAll(selector);
+  const numElements = elements.length;
+
+  // TODO: do not mutate arguments (as a convention), and to avoid a possible
+  // de-opt
+  destination = destination || document.implementation.createHTMLDocument();
+
+  for(let i = 0, element; i < numElements; i++) {
+    element = elements[i];
+    if(element.ownerDocument === source) {
+      destination.adoptNode(element);
+    }
+  }
+};
+
+// Finds all elements with the given tagName and removes them,
+// in reverse document order. This will remove elements that do not need to
+// be removed because an ancestor of them will be removed in a later iteration.
+// NOTE: this ONLY works in reverse. getElementsByTagName returns a LIVE
+// NodeList/HTMLCollection. Removing elements from the list while iterating
+// screws up all later index access when iterating forward. To avoid this,
+// use a non-live list such as the one returned by querySelectorAll.
+DOMFilter.removeElementsByName = function(document, tagName) {
+  const elements = document.getElementsByTagName(tagName);
+  const numElements = elements.length;
+  for(let i = numElements - 1; i > -1; i--) {
+    elements[i].remove();
+  }
+};
+
+// Finds all elements matching the selector and removes them,
+// in forward document order. In contrast to moveElementsBySelector, this
+// removes elements that are descendants of elements already removed.
+// NOTE: i tried to find a way to avoid visiting detached subtrees, but
+// document.contains still returns true for a removed element. The only way
+// seems to be to traverse upwards and checking if documentElement is still at
+// the top of the ancestors chain. That is obviously too inefficient, and
+// probably less efficient than just visiting descendants. The real tradeoff
+// is whether the set of remove operations is slower than the time it takes
+// to traverse. I assume traversal is faster, but not fast enough to merit it.
+// TODO: use for..of once Chrome supports NodeList iterators
+DOMFilter.removeElementsBySelector = function(document, selector) {
+  const elements = document.querySelectorAll(selector);
+  const numElements = elements.length;
+  for(let i = 0; i < numElements; i++) {
+    elements[i].remove();
+  }
+};
+
 // Normalizes the values of all text nodes in a document
 // NOTE: this should not be confused with Node.prototype.normalize
 // TODO: condense consecutive whitespace?
@@ -916,4 +1024,25 @@ DOMFilter.isInlineElement = function(element) {
 
 DOMFilter.isElement = function(node) {
   return node.nodeType === Node.ELEMENT_NODE;
+};
+
+// Replaces an element with its child nodes
+// TODO: not optimized for live documents, redesign so that this uses fewer
+// dom operations, maybe use a DocumentFragment
+// TODO: do additional research into whether there is some native method that
+// provides sufficiently similar functionality.
+// TODO: should I be removing parentless elements anyway? move element.remove
+// outside of the if block?
+// TODO: i recently noticed jQuery provides some kind of unwrap function,
+// look into it more and compare it to this
+DOMFilter.unwrapElement = function(element) {
+  const parent = element.parentElement;
+  if(parent) {
+    let firstNode = element.firstChild;
+    while(firstNode) {
+      parent.insertBefore(firstNode, element);
+      firstNode = element.firstChild;
+    }
+    element.remove();
+  }
 };

@@ -492,7 +492,7 @@ function deriveBodyImageContainerScores() {
 
   this.bodyImageContainerScores = new Map();
 
-  const findImageCaption = DOMModule.prototype.findImageCaption;
+  const findImageCaption = DOMFilter.findImageCaption;
 
   const images = this.document.getElementsByTagName('img');
   const numImages = images.length;
