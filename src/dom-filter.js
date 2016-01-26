@@ -460,7 +460,7 @@ DOMFilter.filterNoScriptElements = function(document) {
 DOMFilter.filterJavascriptAnchors = function(document) {
   const anchors = document.querySelectorAll('a[href]');
   const numAnchors = anchors.length;
-  for(let i = 0, anchors; i < numAnchors; i++) {
+  for(let i = 0, anchor; i < numAnchors; i++) {
     anchor = anchors[i];
     if(anchor.protocol === 'javascript:') {
       anchor.setAttribute('href', '');
