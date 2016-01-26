@@ -27,11 +27,11 @@ function onload(error, document, responseURL) {
 }
 
 function onprep(document) {
-  filterCommentNodes(document);
-  filterFrameElements(document);
-  filterScriptElements(document);
-  filterBlacklistedElements(document);
-  filterHiddenElements(document);
+  DOMFilter.filterCommentNodes(document);
+  DOMFilter.filterFrameElements(document);
+  DOMFilter.filterScriptElements(document);
+  DOMFilter.filterBlacklistedElements(document);
+  DOMFilter.filterHiddenElements(document);
 
   const calamine = new Calamine();
   calamine.analyze(document);

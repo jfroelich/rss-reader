@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Requires: /document-transform/dom-filter.js
+
 // Applies a series of transformations to a document in preparation for
 // appending it to the UI.
 // NOTE: eventually i will want something that can do pre-storage cleanup. That
@@ -14,28 +16,28 @@
 function prepareDocumentForView(document) {
   'use strict';
 
-  filterCommentNodes(document);
-  filterFrameElements(document);
-  filterScriptElements(document);
-  filterBlacklistedElements(document);
-  filterHiddenElements(document);
-  // filterBreakruleElements(document);
+  DOMFilter.filterCommentNodes(document);
+  DOMFilter.filterFrameElements(document);
+  DOMFilter.filterScriptElements(document);
+  DOMFilter.filterBlacklistedElements(document);
+  DOMFilter.filterHiddenElements(document);
+  // DOMFilter.filterBreakruleElements(document);
 
   // Filter boilerplate using Calamine
   const calamine = new Calamine();
   calamine.analyze(document);
   calamine.prune();
 
-  filterSourcelessImages(document);
-  filterTracerElements(document);
-  normalizeNodeWhitespace(document);
-  filterNominalAnchors(document);
-  filterInlineElements(document);
-  trimTextNodes(document);
-  filterLeafElements(document);
-  filterSingleItemLists(document);
-  filterSingleCellTables(document);
-  filterSingleColumnTables(document);
-  trimDocumentElements(document);
-  filterElementAttributes(document);
+  DOMFilter.filterSourcelessImages(document);
+  DOMFilter.filterTracerElements(document);
+  DOMFilter.normalizeNodeWhitespace(document);
+  DOMFilter.filterNominalAnchors(document);
+  DOMFilter.filterInlineElements(document);
+  DOMFilter.trimTextNodes(document);
+  DOMFilter.filterLeafElements(document);
+  DOMFilter.filterSingleItemLists(document);
+  DOMFilter.filterSingleCellTables(document);
+  DOMFilter.filterSingleColumnTables(document);
+  DOMFilter.trimDocument(document);
+  DOMFilter.filterElementAttributes(document);
 }

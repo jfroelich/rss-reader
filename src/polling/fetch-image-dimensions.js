@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Requires: fetch/fetch-image.js
+// Requires: /fetch/fetch-image.js
 
 // TODO: this also serves to check if an image's src is correct. consider
 // removing 404 images or replacing them with an error message.

@@ -2,9 +2,9 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Requires: parse-srcset.js
-// Requires: URI.js
-// Requires: parse-url.js
+// Requires: /lib/parse-srcset.js
+// Requires: /lib/URI.js
+// Requires: /url/parse-url.js
 
 // TODO: fully support img srcset
 // TODO: support style.backgroundImage?

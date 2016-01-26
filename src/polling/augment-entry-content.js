@@ -34,6 +34,9 @@
 // to PDF? also, we should not even be trying to fetch pdfs or similar non-html
 // media formats?
 
+// TODO: in hindsight, this function is just an arbitary composition of several
+// steps that take place in the polling context, and maybe it shouldn't exist
+
 function augmentEntryContent(entry, timeout, callback) {
   fetchHTML(entry.link, timeout,
     onFetchHTML.bind(null, entry, callback));
