@@ -9,32 +9,35 @@
 
 const DOMFilter = {};
 
-// Creates an iterator object for a node list so that it can be traversed using
-// for..of, because NodeList currently does not support that syntax. This is
-// merely a placeholder for that idea.
-DOMFilter.createNodeListIterator = function(nodeList) {
-  throw new Error('Not implemented');
+// Allows for..of over NodeIterators
+DOMFilter.makeIterableNodeIterator = function(iterator) {
+  iterator[Symbol.iterator] = function() {
+    return {
+      next: function() {
+        const node = iterator.nextNode();
+        return { value: node, done: !node };
+      }
+    };
+  };
 };
 
+// Returns whether the element has the given lowercase name
 DOMFilter.elementHasName = function(name, element) {
   return element.localName === name;
 };
 
-// No longer in use, will delete eventually
-//DOMFilter.isFigureElement = DOMFilter.elementHasName.bind(null, 'figure');
-
 // Finds the associated caption for an image
-// NOTE: Requires Element.prototype.closest
 DOMFilter.findImageCaption = function(image) {
   const figure = image.closest('figure');
   return figure ? figure.querySelector('figcaption') : null;
 };
 
+// Removes all comment nodes from the document
 DOMFilter.filterCommentNodes = function(document) {
   const iterator = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_COMMENT);
-  for(let comment = iterator.nextNode(); comment;
-    comment = iterator.nextNode()) {
+  DOMFilter.makeIterableNodeIterator(iterator);
+  for(let comment of iterator) {
     comment.remove();
   }
 };
@@ -86,45 +89,39 @@ DOMFilter.filterBlacklistedElements = function(document) {
 // a paragraph element within an inline element.
 // error case: http://paulgraham.com/procrastination.html
 DOMFilter.filterBreakruleElements = function(document) {
-  const elements = document.querySelectorAll('br');
-  const numElements = elements.length;
-  for(let i = 0, element, parent, p; i < numElements; i++) {
-    element = elements[i];
-    parent = element.parentElement;
-    p = document.createElement('p');
-    parent.replaceChild(p, element);
+  const breakRuleElements = document.querySelectorAll('br');
+  breakRuleElements[Symbol.iterator] = Array.prototype[Symbol.iterator];
+  for(let breakRuleElement of breakRuleElements) {
+    let parent = breakRuleElement.parentElement;
+    let paragraph = document.createElement('p');
+    parent.replaceChild(paragraph, breakRuleElement);
   }
 };
 
 // Removes certain attributes from all elements in the document
 DOMFilter.filterAttributes = function(document) {
   const elements = document.getElementsByTagName('*');
-  const numElements = elements.length;
-  for(let i = 0; i < numElements; i++) {
-    DOMFilter.filterElementAttributes(elements[i]);
+  elements[Symbol.iterator] = Array.prototype[Symbol.iterator];
+  for(let element of elements) {
+    DOMFilter.filterElementAttributes(element);
   }
 };
 
 // Removes certain attributes from an element
+// TODO: not filtering attributes from SVG creates a security hole because it
+// allows for onclick and such to pass through the filter.
+// TODO: not filtering SVG creates display issues because the SVGs are not
+// sized well
 DOMFilter.filterElementAttributes = function(element) {
 
   const elementName = element.localName;
 
-  // Skip SVG
-  // TODO: but what about onclick and such? this would be a security hole
-  // TODO: leaving in SVG turns out to cause some funky display issues,
-  // so this requires more thought. For example, I observed an article where
-  // the SVG element was permanently floating in higher layer over the
-  // article's actual text, making the article unreadable.
-  // TODO: maybe svg and path should just be blacklisted
-  // TODO: also, the size is way off this way, because the element isn't
-  // bounded to its container
   if(elementName === 'svg' || elementName === 'path') {
     return;
   }
 
-  // NOTE: we iterate in reverse to avoid issues with mutating a live
-  // NodeList while iterating
+  // Iterate in reverse to avoid issues with mutating a live NodeList during
+  // iteration
   const attributes = element.attributes || [];
   for(let j = attributes.length - 1, attributeName; j > -1; j--) {
     attributeName = attributes[j].name;
@@ -226,7 +223,7 @@ DOMFilter.filterHiddenElements = function(document) {
     DOMFilter.HIDDEN_ELEMENTS_SELECTOR);
 };
 
-// A set of names of inline elements that can be safely unwrapped
+// A set of names of inline elements that can be unwrapped
 // NOTE: This does not contain ALL inline elements, just those we
 // want to unwrap. This is different than the set of inline
 // elements defined for the purpose of trimming text nodes.
@@ -273,9 +270,7 @@ DOMFilter.INLINE_ELEMENTS_SELECTOR = Array.from(new Set([
 // Unwraps various inline elements in a document. Given that style information
 // and other information is removed, several elements in the document may
 // no longer serve a formatting purpose, so we want to remove them but
-// keep the child elements. Because the topology serves as a feature in
-// boilerplate extraction, this should only be done after analyzing the content
-// for boilerplate.
+// keep the child elements.
 // TODO: this is doing some wasted operations in the case of nested
 // inline elements. For example, for <div><div>content</div><div>,
 // content should be hoisted all the way outside of the div in a single
@@ -287,13 +282,14 @@ DOMFilter.INLINE_ELEMENTS_SELECTOR = Array.from(new Set([
 // TODO: when unwrapping an inline element, I need to insert a space following
 // the contents of the element (e.g. createTextNode(' ')), to avoid things like
 // <div><span>text</span>text</div> becoming texttext
+// TODO: in cases like <blockquote><p>text</p></blockquote>, the p can be
+// unwrapped
 DOMFilter.filterInlineElements = function(document) {
-  const unwrapElement = DOMFilter.unwrapElement;
   const elements = document.querySelectorAll(
     DOMFilter.INLINE_ELEMENTS_SELECTOR);
-  const numElements = elements.length;
-  for(let i = 0; i < numElements; i++) {
-    unwrapElement(elements[i]);
+  elements[Symbol.iterator] = Array.prototype[Symbol.iterator];
+  for(let element of elements) {
+    DOMFilter.unwrapElement(element);
   }
 };
 
@@ -347,7 +343,7 @@ DOMFilter.TRIVIAL_TEXT_NODE_VALUES = new Set([
 // a funciton that abstracts the gathering
 DOMFilter.filterLeafElements = function(document) {
   const leafSet = new Set();
-  DOMFilter._filterLeafElementsVisit(leafSet, document.body,
+  DOMFilter.collectLeavesRecursively(leafSet, document.body,
     document.documentElement);
   for(let leaf of leafSet) {
     leaf.remove();
@@ -356,25 +352,24 @@ DOMFilter.filterLeafElements = function(document) {
 
 // Recursively traverses and finds leaf elements and adds them to leaves
 // TODO: i would like to do this without recursion for better perf
-DOMFilter._filterLeafElementsVisit = function(leaves, bodyElement, element) {
+DOMFilter.collectLeavesRecursively = function(leaves, bodyElement, element) {
   const childNodes = element.childNodes;
   const numChildNodes = childNodes.length;
   for(let i = 0, cursor; i < numChildNodes; i++) {
     cursor = childNodes[i];
     if(DOMFilter.isElement(cursor)) {
-      if(DOMFilter._filterLeafElementsIsLeaf(bodyElement, cursor)) {
+      if(DOMFilter.isLeafElement(bodyElement, cursor)) {
         leaves.add(cursor);
       } else {
-        DOMFilter._filterLeafElementsVisit(leaves, bodyElement, cursor);
+        DOMFilter.collectLeavesRecursively(leaves, bodyElement, cursor);
       }
     }
   }
 };
 
 // Returns true if the given element is a leaf
-// TODO: i don't like that bodyElement is a parameter
-// TODO: i think this function could just be named isLeaf?
-DOMFilter._filterLeafElementsIsLeaf = function(bodyElement, element) {
+// TODO: remove the bodyElement parameter
+DOMFilter.isLeafElement = function(bodyElement, element) {
   if(element === bodyElement) {
     return false;
   }
@@ -384,15 +379,15 @@ DOMFilter._filterLeafElementsIsLeaf = function(bodyElement, element) {
   }
 
   const childNodes = element.childNodes;
-  const numChildNodes = childNodes.length;
-  for(let i = 0, child; i < numChildNodes; i++) {
-    child = childNodes[i];
-    if(child.nodeType === Node.TEXT_NODE) {
-      if(!DOMFilter.TRIVIAL_TEXT_NODE_VALUES.has(child.nodeValue)) {
+
+  childNodes[Symbol.iterator] = Array.prototype[Symbol.iterator];
+  for(let childNode of childNodes) {
+    if(childNode.nodeType === Node.TEXT_NODE) {
+      if(!DOMFilter.TRIVIAL_TEXT_NODE_VALUES.has(childNode.nodeValue)) {
         return false;
       }
-    } else if(DOMFilter.isElement(child)) {
-      if(!DOMFilter._filterLeafElementsIsLeaf(bodyElement, child)) {
+    } else if(DOMFilter.isElement(childNode)) {
+      if(!DOMFilter.isLeafElement(bodyElement, childNode)) {
         return false;
       }
     } else {
@@ -406,11 +401,10 @@ DOMFilter._filterLeafElementsIsLeaf = function(bodyElement, element) {
 // Unwraps anchors that are not links to other pages
 DOMFilter.filterNominalAnchors = function(document) {
   const anchors = document.querySelectorAll('a');
-  const numAnchors = anchors.length;
-  for(let i = 0, anchor, href; i < numAnchors; i++) {
-    anchor = anchors[i];
+  anchors[Symbol.iterator] = Array.prototype[Symbol.iterator];
+  for(let anchor of anchors) {
     if(!anchor.hasAttribute('name')) {
-      href = anchor.getAttribute('href') || '';
+      let href = anchor.getAttribute('href') || '';
       href = href.trim();
       if(!href) {
         DOMFilter.unwrapElement(anchor);
@@ -430,25 +424,28 @@ DOMFilter.filterScriptElements = function(document) {
 // NOTE: Due to content-loading tricks, noscript requires special handling
 // e.g. nbcnews.com. I was originally unwrapping noscripts but it was
 // leading to lots of garbage content. For now I am just removing until
-// I give this more thought.
+// I give this more thought. There is also something I don't quite understand
+// with a practice of using encoded html as the text content.
 DOMFilter.filterNoScriptElements = function(document) {
   DOMFilter.removeElementsBySelector(document, 'noscript');
 };
 
 // Disable anchors that use javascript protocol. Keep the href
 // around for boilerplate analysis, and because I am not quite sure I want
-// remove content beneath such anchors.
+// remove content beneath such anchors. If I just unwrap, this leads to lots
+// of junk words like 'click me' in the text that are not links. If I remove,
+// I risk removing informative content.
 DOMFilter.filterJavascriptAnchors = function(document) {
   const anchors = document.querySelectorAll('a[href]');
-  const numAnchors = anchors.length;
-  for(let i = 0, anchor; i < numAnchors; i++) {
-    anchor = anchors[i];
+  anchors[Symbol.iterator] = Array.prototype[Symbol.iterator];
+  for(let anchor of anchors) {
     if(DOMFilter.isJavascriptAnchor(anchor)) {
       anchor.setAttribute('href', '');
     }
   }
 };
 
+// Returns whether the anchor is a javascript anchor
 // NOTE: rather than use a regex, we can take advantage of the accurate
 // parsing of the browser (and mirror its behavior for that matter) by
 // just accessing the protocol property.
@@ -456,18 +453,13 @@ DOMFilter.isJavascriptAnchor = function(anchor) {
   return anchor.protocol === 'javascript:';
 };
 
+// Unwraps tables that consist of a single cell, which generally indicates
+// a formatting purpose
 DOMFilter.filterSingleCellTables = function(document) {
-
-  // NOTE: this check is a guard left over from an old approach and
-  // may no longer be necessary
-  if(!document.body) {
-    return;
-  }
-
-  const tables = document.body.querySelectorAll('table');
-  for(let i = 0, len = tables.length, table, cell; i < len; i++) {
-    table = tables[i];
-    cell = DOMFilter.getTableSingleCell(table);
+  const tables = document.querySelectorAll('table');
+  tables[Symbol.iterator] = Array.prototype[Symbol.iterator];
+  for(let table of tables) {
+    let cell = DOMFilter.getTableSingleCell(table);
     if(cell) {
       DOMFilter.unwrapSingleCellTable(table, cell);
     }
@@ -475,7 +467,9 @@ DOMFilter.filterSingleCellTables = function(document) {
 };
 
 // Returns the single cell of a table iff it is a single cell table,
-// which means it has only 1 row and 1 column
+// which means it has only 1 row and 1 column. This is implemented to return
+// the element instead of a boolean so that subsequent code does not need to
+// find the cell again.
 DOMFilter.getTableSingleCell = function(table) {
   const rows = table.rows;
   let cell = null;
@@ -491,6 +485,7 @@ DOMFilter.getTableSingleCell = function(table) {
 
 // Replaces a table in the dom with the child nodes of its single cell
 // TODO: does HTMLTDElement have a pointer to its container table?
+// TODO: detach before unwrap to reduce dom ops (see unwrapElement)
 DOMFilter.unwrapSingleCellTable = function(table, cell) {
   const parent = table.parentElement;
   const nextSibling = table.nextSibling;
@@ -508,11 +503,11 @@ DOMFilter.unwrapSingleCellTable = function(table, cell) {
   table.remove();
 };
 
+// Transforms single column tables into paragraph separated row content
 DOMFilter.filterSingleColumnTables = function(document) {
   const tables = document.querySelectorAll('table');
-  const numTables = tables.length;
-  for(let i = 0, table; i < numTables; i++) {
-    table = tables[i];
+  tables[Symbol.iterator] = Array.prototype[Symbol.iterator];
+  for(let table of tables) {
     if(DOMFilter.isSingleColumnTable(table)) {
       DOMFilter.transformSingleColumnTable(table);
     }
@@ -532,6 +527,12 @@ DOMFilter.isSingleColumnTable = function(table) {
   }
 
   return isSingleColumn;
+};
+
+// Returns an iterator that yields the cells of a table, in top down
+// then left right order
+DOMFilter.createTableCellIterator = function(table) {
+  // TODO: implement me
 };
 
 // TODO: create and use a TableCellIterator instead of express iteration?
@@ -568,107 +569,36 @@ DOMFilter.transformSingleColumnTable = function(table) {
   table.remove();
 };
 
-
-// TODO: this contains some experimental code I don't think I ended up
-// using, it should be deleted
-// TODO: it may be important to consider the unwrap parent. for example,
-// what if this is unwrapping the content into another element that
-// should not contain it, like as an immediate child of <table> or
-// something like that.
-// TODO: focusing on orthogonality, or factoring of features, i think
-// that unwrapList and unwrapTable should probably all be merged into
-// the general unwrap element function, somehow? Or maybe not, look at
-// what I did in filter-single-column-tables regarding moveOperation.
-// In order to do this for list, i think i want to pass in the LI, and have
-// unwrap find the parent. similarly, for table, i want to pass in the
-// the cell, and have unwrap find the container table.
-// notably this has the side benefit of avoiding some of the work
-// i do below, of re-finding the target child in each of the unwrappers
-// TODO: i don't like the check for document.body in this call, it smells,
-// think about whose responsibility it is, or maybe do not use document.body
-// anyhwere (use querySelectorAll on document)
-// change document.body.qsa to document.qsa?
 DOMFilter.filterSingleItemLists = function(document) {
-
-  if(!document.body) {
-    return;
-  }
-
-  const elements = document.body.querySelectorAll('ul');
-  let children = null;
-  for(let i = 0, len = elements.length, list; i < len; i++) {
-    list = elements[i];
-    //children = getListItems(list);
-    //if(children.length === 1) {
-    //  unwrapListItem(children[0]);
-    //}
-
+  const lists = document.querySelectorAll('ul, ol');
+  lists[Symbol.iterator] = Array.prototype[Symbol.iterator];
+  for(let list of lists) {
     if(DOMFilter.countListItems(list) === 1) {
       DOMFilter.unwrapSingleItemList(list);
     }
   }
 };
 
-DOMFilter.getListItems = function(list) {
-  return Array.prototype.filter.call(list.childNodes, DOMFilter.isListItem);
-};
+DOMFilter.isListItem = DOMFilter.elementHasName.bind(null, 'li');
 
-// TODO: childNodes returns nodes, make sure this is the proper test?
-DOMFilter.isListItem = function(node) {
-  return node.localName === 'li';
-};
-
-// TODO: this is generating an intermediate array, that just
-// feels wrong, so use an imperative loop instead?
 DOMFilter.countListItems = function(list) {
-  return Array.prototype.filter.call(list.childNodes,
-    DOMFilter.isListItem).length;
+  const childNodes = list.childNodes;
+  childNodes[Symbol.iterator] = Array.prototype[Symbol.iterator];
+  let count = 0;
+  for(let childNode of childNodes) {
+    if(DOMFilter.isListItem(childNode)) {
+      count++;
+    }
+  }
+  return count;
 };
 
 DOMFilter.getFirstListItem = function(list) {
-  for(let i = 0, nodes = list.childNodes, len = nodes.length, node;
-    i < len; i++) {
-    node = nodes[i];
-    if(DOMFilter.isListItem(node)) {
-      return node;
-    }
-  }
+  return Array.prototype.find.call(list.childNodes, DOMFilter.isListItem);
 };
-
-// Finds the parent of an <LI>. Returns undefined if not found.
-DOMFilter.getListItemListParent = function(listItem) {
-  let parent = listItem.parentElement;
-  while(parent) {
-    if(parent.localName === 'ul' || parent.localName === 'ol') {
-      return parent;
-    }
-
-    parent = parent.parentElement;
-  }
-};
-
-// TODO: actually, the problem is that we are unwrapping the
-// list, not just the list item. this is now semantically misleading.
-DOMFilter.unwrapListItem = function(listItem) {
-  const list = getListItemListParent(listItem);
-
-  let parent = null, nextSibling = null;
-
-  if(list) {
-    parent = list.parentElement;
-    nextSibling = list.nextSibling;
-  } else {
-    parent = listItem.parentElement;
-    // ??? TODO what do we point too?
-    nextSibling = null;
-  }
-
-  // TODO: now unwrap
-  // don't forget to remove the list and list item
-};
-
 
 // assumes the list item count > 0
+// TODO: detach first to reduce ops on live (see unwrapElement)
 DOMFilter.unwrapSingleItemList = function(list) {
   const parent = list.parentElement;
   const item = DOMFilter.getFirstListItem(list);
@@ -689,14 +619,12 @@ DOMFilter.unwrapSingleItemList = function(list) {
 // Removes images without a source. This should only be called after
 // transformLazyImages because that function may derive a source property for
 // an otherwise sourceless image.
-// TODO: use for..of once Chrome supports iterable NodeLists
 // TODO: eventually stop logging. For now it helps as a way to
 // identify new lazily-loaded images
 DOMFilter.filterSourcelessImages = function(document) {
   const images = document.querySelectorAll('img');
-  const numImages = images.length;
-  for(let i = 0, image; i < numImages; i++) {
-    image = images[i];
+  images[Symbol.iterator] = Array.prototype[Symbol.iterator];
+  for(let image of images) {
     if(DOMFilter.isSourcelessImage(image)) {
       console.debug('Removing sourceless image: %s', image.outerHTML);
       image.remove();
@@ -712,12 +640,11 @@ DOMFilter.isSourcelessImage = function(image) {
   return !image.hasAttribute('src') && !image.hasAttribute('srcset');
 };
 
-// Removes stat-tracking images
+// Removes all tracer images
 DOMFilter.filterTracerImages = function(document) {
   const images = document.querySelectorAll('img');
-  const numImages = images.length;
-  for(let i = 0, image; i < numImages; i++) {
-    image = images[i];
+  images[Symbol.iterator] = Array.prototype[Symbol.iterator];
+  for(let image of images) {
     if(DOMFilter.isTracerImage(image)) {
       image.remove();
     }
@@ -754,12 +681,11 @@ DOMFilter.isTracerImage = function(image) {
 // @param selector {String}
 // @returns void
 DOMFilter.moveElementsBySelector = function(source, destination, selector) {
-  const elements = source.querySelectorAll(selector);
-  const numElements = elements.length;
   const targetDocument = destination ||
     document.implementation.createHTMLDocument();
-  for(let i = 0, element; i < numElements; i++) {
-    element = elements[i];
+  const elements = source.querySelectorAll(selector);
+  elements[Symbol.iterator] = Array.prototype[Symbol.iterator];
+  for(let element of elements) {
     if(element.ownerDocument === source) {
       targetDocument.adoptNode(element);
     }
@@ -794,19 +720,17 @@ DOMFilter.removeElementsByName = function(document, tagName) {
 // TODO: use for..of once Chrome supports NodeList iterators
 DOMFilter.removeElementsBySelector = function(document, selector) {
   const elements = document.querySelectorAll(selector);
-  const numElements = elements.length;
-  for(let i = 0; i < numElements; i++) {
-    elements[i].remove();
+  elements[Symbol.iterator] = Array.prototype[Symbol.iterator];
+  for(let element of elements) {
+    element.remove();
   }
 };
 
 DOMFilter.manipulateElementsBySelectorAndPredicate = function(document,
   selector, predicate, manipulate) {
-
   const elements = document.querySelectorAll(selector);
-  const numElements = elements.length;
-  for(let i = 0, element; i < numElements; i++) {
-    element = elements[i];
+  elements[Symbol.iterator] = Array.prototype[Symbol.iterator];
+  for(let element of elements) {
     if(predicate(element)) {
       manipulate(element);
     }
@@ -824,7 +748,8 @@ DOMFilter.NBSP_PATTERN = /&nbsp;/g;
 DOMFilter.normalizeWhitespace = function(document) {
   const iterator = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_TEXT, DOMFilter.rejectTrivialTextNodeValues);
-  for(let node = iterator.nextNode(); node; node = iterator.nextNode()) {
+  DOMFilter.makeIterableNodeIterator(iterator);
+  for(let node of iterator) {
     node.nodeValue = node.nodeValue.replace(DOMFilter.NBSP_PATTERN, ' ');
   }
 };
@@ -836,7 +761,8 @@ DOMFilter.condenseNodeValues = function(document, sensitiveElements) {
   const iterator = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_TEXT,
     DOMFilter.rejectIfSensitive.bind(null, sensitiveElements));
-  for(let node = iterator.nextNode(); node; node = iterator.nextNode()) {
+  DOMFilter.makeIterableNodeIterator(iterator);
+  for(let node of iterator) {
     node.nodeValue = DOMFilter.condenseSpaces(node.nodeValue);
   }
 };
@@ -859,6 +785,8 @@ DOMFilter.condenseSpaces = function(inputString) {
 // NOTE: should isTrimmableElement be merged or share functionality with
 // the isLeafElement function?
 // NOTE: should only be called after filterLeafElements if that is ever called
+// TODO: don't require body, e.g. let root = document.body ||
+// document.documentElement
 DOMFilter.trimDocument = function(document) {
   if(document.body) {
     let sibling = document.body;
@@ -912,10 +840,10 @@ DOMFilter.trimTextNodes = function(document, sensitiveElements) {
   const iterator = document.createNodeIterator(
     document.documentElement, NodeFilter.SHOW_TEXT,
     DOMFilter.rejectIfSensitive.bind(null, sensitiveElements));
+  DOMFilter.makeIterableNodeIterator(iterator);
   const isElement = DOMFilter.isElement;
   const isInlineElement = DOMFilter.isInlineElement;
-  let node = iterator.nextNode();
-  while(node) {
+  for(let node of iterator) {
     if(node.previousSibling) {
       if(isElement(node.previousSibling)) {
         if(isInlineElement(node.previousSibling)) {
@@ -964,15 +892,14 @@ DOMFilter.trimTextNodes = function(document, sensitiveElements) {
       // introduce a single space after the element, but that seems strange.
       node.nodeValue = node.nodeValue.trimLeft();
     }
-
-    node = iterator.nextNode();
   }
 };
 
 DOMFilter.filterEmptyTextNodes = function(document) {
   const iterator = document.createNodeIterator(
     document.documentElement, NodeFilter.SHOW_TEXT);
-  for(let node = iterator.nextNode(); node; node = iterator.nextNode()) {
+  DOMFilter.makeIterableNodeIterator(iterator);
+  for(let node of iterator) {
     if(!node.nodeValue) {
       node.remove();
     }
@@ -1054,22 +981,34 @@ DOMFilter.isElement = function(node) {
 };
 
 // Replaces an element with its child nodes
-// TODO: not optimized for live documents, redesign so that this uses fewer
-// dom operations, maybe use a DocumentFragment
-// TODO: do additional research into whether there is some native method that
-// provides sufficiently similar functionality.
-// TODO: should I be removing parentless elements anyway? move element.remove
-// outside of the if block?
-// TODO: i recently noticed jQuery provides some kind of unwrap function,
-// look into it more and compare it to this
 DOMFilter.unwrapElement = function(element) {
   const parent = element.parentElement;
   if(parent) {
-    let firstNode = element.firstChild;
-    while(firstNode) {
-      parent.insertBefore(firstNode, element);
-      firstNode = element.firstChild;
+    const grandParent = parent.parentElement;
+    const nextSibling = parent.nextSibling;
+    if(grandParent) {
+      parent.remove();
+      DOMFilter._unwrapLiveElement(parent, element);
+      if(nextSibling) {
+        grandParent.insertBefore(parent, nextSibling);
+      } else {
+        grandParent.appendChild(parent);
+      }
+    } else {
+      DOMFilter._unwrapLiveElement(parent, element);
     }
+  } else {
     element.remove();
   }
+};
+
+// Private helper for unwrapElement
+DOMFilter._unwrapLiveElement = function(parent, element) {
+  let firstNode = element.firstChild;
+  while(firstNode) {
+    parent.insertBefore(firstNode, element);
+    firstNode = element.firstChild;
+  }
+
+  element.remove();
 };
