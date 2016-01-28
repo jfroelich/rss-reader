@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Requires: /document-transform/dom-filter.js
+// Requires: /dom-filter.js
 
 // Applies a series of transformations to a document in preparation for
 // appending it to the UI.
@@ -31,15 +31,19 @@ function prepareDocumentForView(document) {
   calamine.prune();
 
   DOMFilter.filterSourcelessImages(document);
-  DOMFilter.filterTracerElements(document);
-  DOMFilter.normalizeNodeWhitespace(document);
+  DOMFilter.filterTracerImages(document);
+  DOMFilter.normalizeWhitespace(document);
+
+  const sensitiveElements = DOMFilter.getSensitiveSet(document);
+  DOMFilter.condenseNodeValues(document, sensitiveElements);
   DOMFilter.filterNominalAnchors(document);
   DOMFilter.filterInlineElements(document);
-  DOMFilter.trimTextNodes(document);
+  DOMFilter.trimTextNodes(document, sensitiveElements);
+  DOMFilter.filterEmptyTextNodes(document);
   DOMFilter.filterLeafElements(document);
   DOMFilter.filterSingleItemLists(document);
   DOMFilter.filterSingleCellTables(document);
   DOMFilter.filterSingleColumnTables(document);
   DOMFilter.trimDocument(document);
-  DOMFilter.filterElementAttributes(document);
+  DOMFilter.filterAttributes(document);
 }

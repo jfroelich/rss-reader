@@ -2,67 +2,34 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Requires: /dom/dom-module.js
-
-// TODO: merge dom-module into this
-// TODO: use an IIFE to avoid global strict mode? Or move use strict into
-// every function
+// TODO: avoid global strict mode, maybe use an IIFE?
+// TODO: look into http://www.streamjs.org/ for a NodeStream concept?
 
 'use strict';
 
 const DOMFilter = {};
 
-// Create a custom iterator wrapper around NodeList because
-// I do not want to modify NodeList.prototype and Chrome does not yet
-// support iterable node lists. So this is a placeholder function to remind me
-// of this idea of how to allow all my other iterating functions that work
-// with nodelists to use for..of.
+// Creates an iterator object for a node list so that it can be traversed using
+// for..of, because NodeList currently does not support that syntax. This is
+// merely a placeholder for that idea.
 DOMFilter.createNodeListIterator = function(nodeList) {
   throw new Error('Not implemented');
 };
 
-// Returns true if the element is a figure element
-// TODO: look into the canonical way of doing this. For example, is it more
-// standard to use tagName, or instanceof like in the case of
-// element instanceof HTMLFigureElement?
-DOMFilter.isFigureElement = function(element) {
-  return element.localName === 'figure';
+DOMFilter.elementHasName = function(name, element) {
+  return element.localName === name;
 };
 
+// No longer in use, will delete eventually
+//DOMFilter.isFigureElement = DOMFilter.elementHasName.bind(null, 'figure');
 
-// Finds the associated caption for an image element
-// TODO: optimize? For example, maybe I should just be searching ancestors
-// and returning the first matching ancestor, instead of storing all ancestors
-// in an array. Maybe I need a findAncestor function? However, this involves
-// not using the native Array.prototype.find function, so I am not sure.
-// TODO: rename to selectImageCaption or selectCaption as only images
-// have captions? or can other elements have captions, like tables?
-// TODO: maybe move this into calamine if that is the only context for it
+// Finds the associated caption for an image
+// NOTE: Requires Element.prototype.closest
 DOMFilter.findImageCaption = function(image) {
-  const isFigureElement = DOMFilter.isFigureElement;
-  const getNodeAncestors = DOMFilter.getNodeAncestors;
-  const ancestors = getNodeAncestors(image);
-  const figure = ancestors.find(isFigureElement);
-  let caption = null;
-  if(figure) {
-    caption = figure.querySelector('figcaption');
-  }
-  return caption;
+  const figure = image.closest('figure');
+  return figure ? figure.querySelector('figcaption') : null;
 };
 
-// Returns an array of ancestor elements for the given node up to and including
-// the documentElement, in bottom up order
-DOMFilter.getNodeAncestors = function(node) {
-  const ancestors = [];
-  let parentElement = node.parentElement;
-  while(parentElement) {
-    ancestors.push(parentElement);
-    parentElement = parentElement.parentElement;
-  }
-  return ancestors;
-};
-
-// Removes all comment nodes from the document
 DOMFilter.filterCommentNodes = function(document) {
   const iterator = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_COMMENT);
@@ -118,67 +85,88 @@ DOMFilter.filterBlacklistedElements = function(document) {
 // problems with its current approach, such as what happens when inserting
 // a paragraph element within an inline element.
 // error case: http://paulgraham.com/procrastination.html
-// TODO: does using const in loop still cause deopts?
 DOMFilter.filterBreakruleElements = function(document) {
   const elements = document.querySelectorAll('br');
   const numElements = elements.length;
-  for(let i = 0; i < numElements; i++) {
-    const element = elements[i];
-    const parent = element.parentElement;
-    const p = document.createElement('p');
+  for(let i = 0, element, parent, p; i < numElements; i++) {
+    element = elements[i];
+    parent = element.parentElement;
+    p = document.createElement('p');
     parent.replaceChild(p, element);
   }
 };
 
-// Removes attributes from elements in the document
-// TODO: only allow the retainable attributes on the proper elements that can
-// have them, instead of on any element (e.g. only images can have a src
-// attribute)
-// TODO: don't recreate the exception set each call
-DOMFilter.filterElementAttributes = function(document) {
-
-  const RETAIN_ATTRIBUTE_NAMES = new Set([
-    'alt',
-    'href',
-    'src',
-    // New HTML responsive design in images
-    'srcset',
-    'title'
-  ]);
-
+// Removes certain attributes from all elements in the document
+DOMFilter.filterAttributes = function(document) {
   const elements = document.getElementsByTagName('*');
-  let attributes = null;
-  let name = '';
-  let element = null;
-  for(let i = 0, j = 0, len = elements.length; i < len; i++) {
-    element = elements[i];
+  const numElements = elements.length;
+  for(let i = 0; i < numElements; i++) {
+    DOMFilter.filterElementAttributes(elements[i]);
+  }
+};
 
-    // Skip SVG
-    // TODO: but what about onclick and such? this would be a security hole
-    // TODO: leaving in SVG turns out to cause some funky display issues,
-    // so this requires more thought. For example, I observed an article where
-    // the SVG element was permanently floating in higher layer over the
-    // article's actual text, making the article unreadable.
-    // TODO: maybe svg and path should just be blacklisted
-    if(element.localName === 'svg' || element.localName === 'path') {
-      continue;
-    }
+// Removes certain attributes from an element
+DOMFilter.filterElementAttributes = function(element) {
 
-    attributes = element.attributes;
+  const elementName = element.localName;
 
-    if(!attributes) {
-      continue;
-    }
+  // Skip SVG
+  // TODO: but what about onclick and such? this would be a security hole
+  // TODO: leaving in SVG turns out to cause some funky display issues,
+  // so this requires more thought. For example, I observed an article where
+  // the SVG element was permanently floating in higher layer over the
+  // article's actual text, making the article unreadable.
+  // TODO: maybe svg and path should just be blacklisted
+  // TODO: also, the size is way off this way, because the element isn't
+  // bounded to its container
+  if(elementName === 'svg' || elementName === 'path') {
+    return;
+  }
 
-    // NOTE: we iterate in reverse to avoid issues with mutating a live
-    // NodeList while iterating
-    for(j = attributes.length - 1; j > -1; j--) {
-      name = attributes[j].name;
-      if(!RETAIN_ATTRIBUTE_NAMES.has(name)) {
-        element.removeAttribute(name);
-      }
+  // NOTE: we iterate in reverse to avoid issues with mutating a live
+  // NodeList while iterating
+  const attributes = element.attributes || [];
+  for(let j = attributes.length - 1, attributeName; j > -1; j--) {
+    attributeName = attributes[j].name;
+    if(!DOMFilter.isPermittedAttribute(elementName, attributeName)) {
+      element.removeAttribute(attributeName);
     }
   }
+};
+
+// Returns whether an attribute should not be removed
+// TODO: try and preserve more accessibility attributes
+// TODO: support media and other embeds
+// TODO: this should be implemented to work independently of the element
+// blacklist policy. Even though an element may be blacklisted, it should
+// still be processed here according to its own attribute policy.
+// TODO: review aria handling
+// TODO: what about role and other microdata attributes?
+DOMFilter.isPermittedAttribute = function(elementName, attributeName) {
+  if(elementName === 'a') {
+    return attributeName === 'href' ||
+      attributeName === 'name' ||
+      attributeName === 'title';
+  }
+
+  if(elementName === 'html') {
+    return attributeName === 'lang';
+  }
+
+  if(elementName === 'iframe') {
+    return attributeName === 'src';
+  }
+
+  if(elementName === 'img') {
+    return attributeName === 'alt' || attributeName === 'src' ||
+      attributeName === 'srcset' || attributeName === 'title';
+  }
+
+  if(elementName === 'param') {
+    return attributeName === 'name' || attributeName === 'value';
+  }
+
+  return false;
 };
 
 // Handles frame, noframes, frameset, and iframe elements
@@ -214,6 +202,8 @@ DOMFilter.filterFrameElements = function(document) {
   DOMFilter.removeElementsBySelector(document, 'frameset, frame, iframe');
 };
 
+//TODO: review aria properties, maybe include aria hidden?
+// https://www.w3.org/TR/wai-aria/states_and_properties#aria-hidden
 DOMFilter.HIDDEN_ELEMENTS_SELECTOR = [
   '[style*="display:none"]',
   '[style*="display: none"]',
@@ -224,20 +214,13 @@ DOMFilter.HIDDEN_ELEMENTS_SELECTOR = [
   '[style*="opacity:0"]'
 ].join(',');
 
-// Removes hidden elements from a document.
-// NOTE: this originally iterated over all elements and tested against
-// each element's style property. Performance analysis showed this was
-// very slow. So we sacrifice accuracy to move most of the traveral
-// operations to a native querySelectorAll call. The selectors here do
-// not match ALL hidden elements. First, we
-// are only looking at inline styles and not considering the other
-// relevant CSS, so we are already simplifying the problem and allowing
-// for hidden elements. Second, hidden elements do not show up in the
-// output.
-// This is really only a component of compression, which isn't
-// the primary purpose of the overall application.
-// It may have some impact on boilerplate analysis, but I haven't given that
-// too much consideration.
+// Removes hidden elements from a document using a semi-accurate but fast
+// approach. This function previously was more accurate and investigated each
+// element's style property. However, this resulted in Chrome lazily computing
+// each element's style, which resulted in poor performance. Given that we are
+// ignoring non-inline styles in the first place, I don't think the loss of
+// accuracy is too important. The only real issue is that failing to remove
+// such elements could negatively affect boilerplate analysis.
 DOMFilter.filterHiddenElements = function(document) {
   DOMFilter.removeElementsBySelector(document,
     DOMFilter.HIDDEN_ELEMENTS_SELECTOR);
@@ -301,6 +284,9 @@ DOMFilter.INLINE_ELEMENTS_SELECTOR = Array.from(new Set([
 // ancestor tree to the first non-unwrappable (stopping before document.body).
 // I think this means we cannot use unwrapElement, because that
 // hardcodes the move destination as element.parentElement
+// TODO: when unwrapping an inline element, I need to insert a space following
+// the contents of the element (e.g. createTextNode(' ')), to avoid things like
+// <div><span>text</span>text</div> becoming texttext
 DOMFilter.filterInlineElements = function(document) {
   const unwrapElement = DOMFilter.unwrapElement;
   const elements = document.querySelectorAll(
@@ -329,7 +315,7 @@ DOMFilter.LEAF_EXCEPTION_ELEMENT_NAMES = new Set([
 ]);
 
 // Elements containing only these text node values are still leaves
-DOMFilter.LEAF_TRIVIAL_TEXT_NODE_VALUES = new Set([
+DOMFilter.TRIVIAL_TEXT_NODE_VALUES = new Set([
   '',
   '\n',
   '\n\t',
@@ -349,7 +335,6 @@ DOMFilter.LEAF_TRIVIAL_TEXT_NODE_VALUES = new Set([
 // such as <p>\n</p>
 // TODO: this could still use improvement. it is revisiting and
 // re-evaluating children sometimes.
-// TODO: i would like to do this without recursion for better perf
 // TODO: does the resulting set of leaves contain leaves within
 // leaves? i want to avoid removing leaves within leaves.
 // TODO: test cases
@@ -361,28 +346,26 @@ DOMFilter.LEAF_TRIVIAL_TEXT_NODE_VALUES = new Set([
 // TODO: maybe what i should do is gather all leaves, then remove, so write
 // a funciton that abstracts the gathering
 DOMFilter.filterLeafElements = function(document) {
-  const visit = DOMFilter._filterLeafElementsVisit;
-  const leaves = new Set();
-  visit(leaves, document.body, document.documentElement);
-  for(let leaf of leaves) {
-    // console.debug('Removing leaf: ', leaf.outerHTML);
+  const leafSet = new Set();
+  DOMFilter._filterLeafElementsVisit(leafSet, document.body,
+    document.documentElement);
+  for(let leaf of leafSet) {
     leaf.remove();
   }
 };
 
 // Recursively traverses and finds leaf elements and adds them to leaves
+// TODO: i would like to do this without recursion for better perf
 DOMFilter._filterLeafElementsVisit = function(leaves, bodyElement, element) {
-  const isLeaf = DOMFilter._filterLeafElementsIsLeaf;
-  const visit = DOMFilter._filterLeafElementsVisit;
   const childNodes = element.childNodes;
-  const childNodeCount = childNodes.length;
-  for(let i = 0, cursor; i < childNodeCount; i++) {
+  const numChildNodes = childNodes.length;
+  for(let i = 0, cursor; i < numChildNodes; i++) {
     cursor = childNodes[i];
-    if(cursor.nodeType === Node.ELEMENT_NODE) {
-      if(isLeaf(bodyElement, cursor)) {
+    if(DOMFilter.isElement(cursor)) {
+      if(DOMFilter._filterLeafElementsIsLeaf(bodyElement, cursor)) {
         leaves.add(cursor);
       } else {
-        visit(leaves, bodyElement, cursor);
+        DOMFilter._filterLeafElementsVisit(leaves, bodyElement, cursor);
       }
     }
   }
@@ -400,18 +383,16 @@ DOMFilter._filterLeafElementsIsLeaf = function(bodyElement, element) {
     return false;
   }
 
-  const isLeaf = DOMFilter._filterLeafElementsIsLeaf;
-  const trivialSet = DOMFilter.LEAF_TRIVIAL_TEXT_NODE_VALUES;
   const childNodes = element.childNodes;
-  const childCount = childNodes.length;
-  for(let i = 0, child; i < childCount; i++) {
+  const numChildNodes = childNodes.length;
+  for(let i = 0, child; i < numChildNodes; i++) {
     child = childNodes[i];
     if(child.nodeType === Node.TEXT_NODE) {
-      if(!trivialSet.has(child.nodeValue)) {
+      if(!DOMFilter.TRIVIAL_TEXT_NODE_VALUES.has(child.nodeValue)) {
         return false;
       }
-    } else if(child.nodeType === Node.ELEMENT_NODE) {
-      if(!isLeaf(bodyElement, child)) {
+    } else if(DOMFilter.isElement(child)) {
+      if(!DOMFilter._filterLeafElementsIsLeaf(bodyElement, child)) {
         return false;
       }
     } else {
@@ -423,7 +404,6 @@ DOMFilter._filterLeafElementsIsLeaf = function(bodyElement, element) {
 };
 
 // Unwraps anchors that are not links to other pages
-// Requires: /dom/dom-module.js
 DOMFilter.filterNominalAnchors = function(document) {
   const anchors = document.querySelectorAll('a');
   const numAnchors = anchors.length;
@@ -437,6 +417,10 @@ DOMFilter.filterNominalAnchors = function(document) {
       }
     }
   }
+};
+
+DOMFilter.isNominalAnchor = function(anchor) {
+  // todo: implement me
 };
 
 DOMFilter.filterScriptElements = function(document) {
@@ -454,18 +438,22 @@ DOMFilter.filterNoScriptElements = function(document) {
 // Disable anchors that use javascript protocol. Keep the href
 // around for boilerplate analysis, and because I am not quite sure I want
 // remove content beneath such anchors.
-// NOTE: rather than use a regex, we can take advantage of the accurate
-// parsing of the browser (and mirror its behavior for that matter) by
-// just accessing the protocol property.
 DOMFilter.filterJavascriptAnchors = function(document) {
   const anchors = document.querySelectorAll('a[href]');
   const numAnchors = anchors.length;
   for(let i = 0, anchor; i < numAnchors; i++) {
     anchor = anchors[i];
-    if(anchor.protocol === 'javascript:') {
+    if(DOMFilter.isJavascriptAnchor(anchor)) {
       anchor.setAttribute('href', '');
     }
   }
+};
+
+// NOTE: rather than use a regex, we can take advantage of the accurate
+// parsing of the browser (and mirror its behavior for that matter) by
+// just accessing the protocol property.
+DOMFilter.isJavascriptAnchor = function(anchor) {
+  return anchor.protocol === 'javascript:';
 };
 
 DOMFilter.filterSingleCellTables = function(document) {
@@ -599,6 +587,7 @@ DOMFilter.transformSingleColumnTable = function(table) {
 // TODO: i don't like the check for document.body in this call, it smells,
 // think about whose responsibility it is, or maybe do not use document.body
 // anyhwere (use querySelectorAll on document)
+// change document.body.qsa to document.qsa?
 DOMFilter.filterSingleItemLists = function(document) {
 
   if(!document.body) {
@@ -658,7 +647,6 @@ DOMFilter.getListItemListParent = function(listItem) {
   }
 };
 
-
 // TODO: actually, the problem is that we are unwrapping the
 // list, not just the list item. this is now semantically misleading.
 DOMFilter.unwrapListItem = function(listItem) {
@@ -701,12 +689,6 @@ DOMFilter.unwrapSingleItemList = function(list) {
 // Removes images without a source. This should only be called after
 // transformLazyImages because that function may derive a source property for
 // an otherwise sourceless image.
-// NOTE: we use querySelectorAll because we are mutating while iterating
-// forward
-// NOTE: using hasAttribute allows for whitespace-only values, but I do not
-// think this is too important
-// NOTE: access by attribute, not by property, because the browser may
-// supply a base url prefix or something like that to the property
 // TODO: use for..of once Chrome supports iterable NodeLists
 // TODO: eventually stop logging. For now it helps as a way to
 // identify new lazily-loaded images
@@ -715,36 +697,41 @@ DOMFilter.filterSourcelessImages = function(document) {
   const numImages = images.length;
   for(let i = 0, image; i < numImages; i++) {
     image = images[i];
-    if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
+    if(DOMFilter.isSourcelessImage(image)) {
       console.debug('Removing sourceless image: %s', image.outerHTML);
       image.remove();
     }
   }
 };
 
-// Removes images that do not have a source url or that appear to be tracers.
-// A tracer image is a tracking technique where some websites embed a small,
-// hidden image into a document and then track the requests for that image
-// using a traditional web request log analytics tool. This function considers
-// width and height independently, resulting in removal of images that appear
-// like horizontal rule elements or vertical bars, which is also desired.
-// TODO: this only deals with images, no need to be more abstract, rename
-// to filterTracerImages
-// NOTE: this assumes that images without explicit dimensions were pre-analyzed
-// by setImageDimensions. If there is a simple way to check if an image's
-// dimensions are not set, maybe this disambiguates what image.width=0 means.
-DOMFilter.filterTracerElements = function(document) {
+// NOTE: using hasAttribute allows for whitespace-only values, but I do not
+// think this is too important
+// NOTE: access by attribute, not by property, because the browser may
+// supply a base url prefix or something like that to the property
+DOMFilter.isSourcelessImage = function(image) {
+  return !image.hasAttribute('src') && !image.hasAttribute('srcset');
+};
+
+// Removes stat-tracking images
+DOMFilter.filterTracerImages = function(document) {
   const images = document.querySelectorAll('img');
   const numImages = images.length;
   for(let i = 0, image; i < numImages; i++) {
     image = images[i];
-    if(image.width < 2 || image.height < 2) {
+    if(DOMFilter.isTracerImage(image)) {
       image.remove();
     }
   }
 };
 
-
+// This function considers width and height independently, resulting in removal
+// of not just tracer images but also images used as horizontal rule elements
+// or vertical bars, which is desired.
+// This requires the dimensions be set. If an image does not have dimension
+// attributes, it should be pre-fetched before calling this.
+DOMFilter.isTracerImage = function(image) {
+  return image.width < 2 || image.height < 2;
+};
 
 // Moves elements matching the selector query from the source document into
 // the destination document. This function iterates over elements in the node
@@ -769,15 +756,12 @@ DOMFilter.filterTracerElements = function(document) {
 DOMFilter.moveElementsBySelector = function(source, destination, selector) {
   const elements = source.querySelectorAll(selector);
   const numElements = elements.length;
-
-  // TODO: do not mutate arguments (as a convention), and to avoid a possible
-  // de-opt
-  destination = destination || document.implementation.createHTMLDocument();
-
+  const targetDocument = destination ||
+    document.implementation.createHTMLDocument();
   for(let i = 0, element; i < numElements; i++) {
     element = elements[i];
     if(element.ownerDocument === source) {
-      destination.adoptNode(element);
+      targetDocument.adoptNode(element);
     }
   }
 };
@@ -816,90 +800,122 @@ DOMFilter.removeElementsBySelector = function(document, selector) {
   }
 };
 
-// Normalizes the values of all text nodes in a document
-// NOTE: this should not be confused with Node.prototype.normalize
-// TODO: condense consecutive whitespace?
-// TODO: this would have to only occur in non-whitespace sensitive context
-//value = value.replace(/[ ]{2,}/g, ' ');
-DOMFilter.normalizeNodeWhitespace = function(document) {
-  const TRIVIAL_VALUES = new Set([
-    '\n', '\n\t', '\n\t\t'
-  ]);
+DOMFilter.manipulateElementsBySelectorAndPredicate = function(document,
+  selector, predicate, manipulate) {
 
-  const NBSP_PATTERN = /&nbsp;/g;
-  const iterator = document.createNodeIterator(document.documentElement,
-    NodeFilter.SHOW_TEXT);
-  let node = iterator.nextNode();
-  while(node) {
-    let value = node.nodeValue;
-    if(!TRIVIAL_VALUES.has(value)) {
-      value = value.replace(NBSP_PATTERN, ' ');
-      node.nodeValue = value;
+  const elements = document.querySelectorAll(selector);
+  const numElements = elements.length;
+  for(let i = 0, element; i < numElements; i++) {
+    element = elements[i];
+    if(predicate(element)) {
+      manipulate(element);
     }
-    node = iterator.nextNode();
   }
+};
+
+DOMFilter.rejectTrivialTextNodeValues = function(node) {
+  return DOMFilter.TRIVIAL_TEXT_NODE_VALUES.has(node.nodeValue) ?
+    NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+};
+
+DOMFilter.NBSP_PATTERN = /&nbsp;/g;
+
+// Normalizes the values of all text nodes in a document
+DOMFilter.normalizeWhitespace = function(document) {
+  const iterator = document.createNodeIterator(document.documentElement,
+    NodeFilter.SHOW_TEXT, DOMFilter.rejectTrivialTextNodeValues);
+  for(let node = iterator.nextNode(); node; node = iterator.nextNode()) {
+    node.nodeValue = node.nodeValue.replace(DOMFilter.NBSP_PATTERN, ' ');
+  }
+};
+
+// Condenses spaces of text nodes that are not descendants of whitespace
+// sensitive elements such as <pre>. This expects that node values were
+// previous normalized, so, for example, it does not consider &nbsp;.
+DOMFilter.condenseNodeValues = function(document, sensitiveElements) {
+  const iterator = document.createNodeIterator(document.documentElement,
+    NodeFilter.SHOW_TEXT,
+    DOMFilter.rejectIfSensitive.bind(null, sensitiveElements));
+  for(let node = iterator.nextNode(); node; node = iterator.nextNode()) {
+    node.nodeValue = DOMFilter.condenseSpaces(node.nodeValue);
+  }
+};
+
+DOMFilter.rejectIfSensitive = function(sensitiveElements, node) {
+  return sensitiveElements.has(node.parentElement) ?
+    NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+};
+
+// A regular expression that matches any number of occurrences of one or more
+// consecutive spaces
+DOMFilter.CONSECUTIVE_SPACES_PATTERN = / +/g;
+
+// Replaces one or more consecutive spaces with a single space
+DOMFilter.condenseSpaces = function(inputString) {
+  return inputString.replace(DOMFilter.CONSECUTIVE_SPACES_PATTERN, ' ');
 };
 
 // Removes trimmable elements from the start and end of the document
 // NOTE: should isTrimmableElement be merged or share functionality with
-// the isLeaf function?
+// the isLeafElement function?
+// NOTE: should only be called after filterLeafElements if that is ever called
 DOMFilter.trimDocument = function(document) {
-  const root = document.body;
+  if(document.body) {
+    let sibling = document.body;
+    let node = document.body.firstChild;
+    while(node && DOMFilter.isTrimmableNode(node)) {
+      sibling = node.nextSibling;
+      node.remove();
+      node = sibling;
+    }
 
-  if(!root) {
-    return;
-  }
-
-  let sibling = root;
-  let node = root.firstChild;
-  while(DOMFilter.isTrimmableElement(node)) {
-    sibling = node.nextSibling;
-    node.remove();
-    node = sibling;
-  }
-
-  node = root.lastChild;
-  while(DOMFilter.isTrimmableElement(node)) {
-    sibling = node.previousSibling;
-    node.remove();
-    node = sibling;
+    node = document.body.lastChild;
+    while(node && DOMFilter.isTrimmableNode(node)) {
+      sibling = node.previousSibling;
+      node.remove();
+      node = sibling;
+    }
   }
 };
 
-DOMFilter.isTrimmableElement = function(element) {
-  const ELEMENT_NODE = Node.ELEMENT_NODE;
-  if(!element) return false;
-  if(element.nodeType !== ELEMENT_NODE) return false;
-  let name = element.localName;
-  if(name === 'br') return true;
-  if(name === 'hr') return true;
-  if(name === 'p' && !element.firstChild) return true;
-  return false;
+DOMFilter.TRIMMABLE_NODE_NAMES = new Set([
+  'br', 'hr', 'nobr'
+]);
+
+// TODO: support additional cases of empty elements other than paragraph? we
+// basically want to consider every element except for img, svg, etc.
+// TODO: review interaction with removal of empty node values, does that
+// still happen anywhere? if a node value that is empty remains then
+// the empty paragraph check or other similar checks, will not work if such
+// checks only look at the presence of a child node, i think i do this
+// implicitly as a part of trimTextNodes, maybe that should be separated out
+// TODO: review interaction with filterLeafElements, won't the removal of
+// all empty paragraphs already consider this? but then trimming would have
+// to occur after leaves removed, right? should order matter?
+DOMFilter.isTrimmableNode = function(node) {
+  return DOMFilter.isElement(node) &&
+    (DOMFilter.TRIMMABLE_NODE_NAMES.has(node.localName) ||
+    DOMFilter.isEmptyParagraph(node));
 };
 
+DOMFilter.isEmptyParagraph = function(element) {
+  return element && element.localName === 'p' && !element.firstChild;
+};
 
 // Carefully trims a document's text nodes, with special handling for
 // nodes near inline elements and whitespace sensitive elements such as <pre>
 // TODO: this is still causing an issue where there is no space adjacent
 // to an inline element, e.g. a<em>b</em> is rendered as ab
-
-// TODO: i am still observing trim errors in the output that I attribute to
-// this function, so something is still wrong with it, requires testing
-// of specific cases
-DOMFilter.trimTextNodes = function(document) {
-  const sensitives = DOMFilter.getSensitiveSet(document);
+// TODO: i am still observing errors in the output that I attribute to
+// this function
+DOMFilter.trimTextNodes = function(document, sensitiveElements) {
   const iterator = document.createNodeIterator(
-    document.documentElement, NodeFilter.SHOW_TEXT);
+    document.documentElement, NodeFilter.SHOW_TEXT,
+    DOMFilter.rejectIfSensitive.bind(null, sensitiveElements));
   const isElement = DOMFilter.isElement;
   const isInlineElement = DOMFilter.isInlineElement;
   let node = iterator.nextNode();
   while(node) {
-
-    if(sensitives.has(node.parentElement)) {
-      node = iterator.nextNode();
-      continue;
-    }
-
     if(node.previousSibling) {
       if(isElement(node.previousSibling)) {
         if(isInlineElement(node.previousSibling)) {
@@ -949,11 +965,17 @@ DOMFilter.trimTextNodes = function(document) {
       node.nodeValue = node.nodeValue.trimLeft();
     }
 
+    node = iterator.nextNode();
+  }
+};
+
+DOMFilter.filterEmptyTextNodes = function(document) {
+  const iterator = document.createNodeIterator(
+    document.documentElement, NodeFilter.SHOW_TEXT);
+  for(let node = iterator.nextNode(); node; node = iterator.nextNode()) {
     if(!node.nodeValue) {
       node.remove();
     }
-
-    node = iterator.nextNode();
   }
 };
 
@@ -972,11 +994,16 @@ DOMFilter.SENSITIVE_ELEMENTS_SELECTOR = [
   'xmp *'
 ].join(',');
 
-// Return a set of elements that are whitespace sensitive
+// Return a set of elements that are whitespace sensitive. This is useful
+// for checking whether a text node has an ancestor that deems it as sensitive.
+// Rather than walking the ancestor chain each time to do such a check, we
+// collect all such elements and their descendants into a large set, so that
+// we can simply check if a text node's parent element is a member.
+// TODO: see if I can avoid Array.from once Chrome supports iterable NodeLists
 DOMFilter.getSensitiveSet = function(document) {
-  const elements = document.querySelectorAll(
+  const sensitiveElements = document.querySelectorAll(
     DOMFilter.SENSITIVE_ELEMENTS_SELECTOR);
-  return new Set(Array.from(elements));
+  return new Set(Array.from(sensitiveElements));
 };
 
 // TODO: merge with inline elements above?
