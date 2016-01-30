@@ -9,9 +9,10 @@
 
 const DOMFilter = {};
 
-// Allows for..of over NodeIterators
-DOMFilter.makeIterableNodeIterator = function(iterator) {
-  iterator[Symbol.iterator] = function() {
+// Allows for..of over NodeIterators, to use do:
+// myNodeIterator[Symbol.iterator] = DOMFilter.getSymbolIteratorImpl
+DOMFilter.getSymbolIteratorImpl = function(iterator) {
+  return function() {
     return {
       next: function() {
         const node = iterator.nextNode();
@@ -36,51 +37,49 @@ DOMFilter.findImageCaption = function(image) {
 DOMFilter.filterCommentNodes = function(document) {
   const iterator = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_COMMENT);
-  DOMFilter.makeIterableNodeIterator(iterator);
+  iterator[Symbol.iterator] = DOMFilter.getSymbolIteratorImpl(iterator);
   for(let comment of iterator) {
     comment.remove();
   }
 };
 
-// TODO: i don't like how filterBlacklistedElements hardcodes which elements
-// to remove, and how it encompasses multiple purposes, so it needs some
-// redesign, maybe use a default set of blacklisted that is configurable?
-DOMFilter.filterBlacklistedElements = function(document) {
+DOMFilter.DEFAULT_BLACKLIST_POLICY = new Set([
+  'applet',
+  'object',
+  'embed',
+  'param',
+  'video',
+  'audio',
+  'bgsound',
+  'head',
+  'meta',
+  'title',
+  'datalist',
+  'dialog',
+  'fieldset',
+  'isindex',
+  'math',
+  'output',
+  'optgroup',
+  'progress',
+  'spacer',
+  'xmp',
+  'style',
+  'link',
+  'basefont',
+  'select',
+  'option',
+  'textarea',
+  'input',
+  'button',
+  'command'
+]);
 
-  const blacklist = [
-    'applet',
-    'object',
-    'embed',
-    'param',
-    'video',
-    'audio',
-    'bgsound',
-    'head',
-    'meta',
-    'title',
-    'datalist',
-    'dialog',
-    'fieldset',
-    'isindex',
-    'math',
-    'output',
-    'optgroup',
-    'progress',
-    'spacer',
-    'xmp',
-    'style',
-    'link',
-    'basefont',
-    'select',
-    'option',
-    'textarea',
-    'input',
-    'button',
-    'command'
-  ];
-
-  const blacklistSelector = blacklist.join(',');
-  DOMFilter.moveElementsBySelector(document, null, blacklistSelector);
+// @param policy {Set} element names to remove
+DOMFilter.filterBlacklistedElements = function(document, policy) {
+  const localPolicy = policy || DOMFilter.DEFAULT_BLACKLIST_POLICY;
+  const selector = Array.from(localPolicy).join(',');
+  DOMFilter.moveElementsBySelector(document, null, selector);
 };
 
 // Replaces <br> elements within a document with <p>
@@ -211,13 +210,11 @@ DOMFilter.HIDDEN_ELEMENTS_SELECTOR = [
   '[style*="opacity:0"]'
 ].join(',');
 
-// Removes hidden elements from a document using a semi-accurate but fast
-// approach. This function previously was more accurate and investigated each
-// element's style property. However, this resulted in Chrome lazily computing
-// each element's style, which resulted in poor performance. Given that we are
-// ignoring non-inline styles in the first place, I don't think the loss of
-// accuracy is too important. The only real issue is that failing to remove
-// such elements could negatively affect boilerplate analysis.
+// Removes hidden elements from a document. This function previously was more
+// accurate and investigated each element's style property. However, this
+// resulted in Chrome lazily computing each element's style, which resulted in
+// poor performance. Given that we are ignoring non-inline styles in the first
+// place, I don't think the loss of accuracy is too important.
 DOMFilter.filterHiddenElements = function(document) {
   DOMFilter.removeElementsBySelector(document,
     DOMFilter.HIDDEN_ELEMENTS_SELECTOR);
@@ -230,7 +227,7 @@ DOMFilter.filterHiddenElements = function(document) {
 // TODO: some of these would maybe be better handled in other more
 // specialized handlers
 // noscript and noembed are handled by other transforms
-DOMFilter.INLINE_ELEMENTS_SELECTOR = Array.from(new Set([
+DOMFilter.INLINE_ELEMENT_NAMES = new Set([
   'article',
   'center',
   'colgroup',
@@ -265,25 +262,33 @@ DOMFilter.INLINE_ELEMENTS_SELECTOR = Array.from(new Set([
   'plaintext',
   'small',
   'tt'
-])).join(',');
+]);
 
-// Unwraps various inline elements in a document. Given that style information
+DOMFilter.INLINE_ELEMENTS_SELECTOR = Array.from(
+  DOMFilter.INLINE_ELEMENT_NAMES).join(',');
+
+DOMFilter.isInlineElement = function(element) {
+  return DOMFilter.INLINE_ELEMENT_NAMES.has(element.localName);
+};
+
+// TODO: in cases like <blockquote><p>text</p></blockquote>, the p can be
+// unwrapped? Leaving this as a place holder
+DOMFilter.filterNestedBlockElements = function(document) {
+  throw new Error('Not yet implemented');
+};
+
+// Removes various inline elements in a document. Given that style information
 // and other information is removed, several elements in the document may
 // no longer serve a formatting purpose, so we want to remove them but
 // keep the child elements.
-// TODO: this is doing some wasted operations in the case of nested
-// inline elements. For example, for <div><div>content</div><div>,
-// content should be hoisted all the way outside of the div in a single
-// move. Right now it unwraps both inner and outer, doing the move twice. So
-// instead of finding the parent in unwrap, we would want to walk up the
-// ancestor tree to the first non-unwrappable (stopping before document.body).
-// I think this means we cannot use unwrapElement, because that
-// hardcodes the move destination as element.parentElement
 // TODO: when unwrapping an inline element, I need to insert a space following
 // the contents of the element (e.g. createTextNode(' ')), to avoid things like
 // <div><span>text</span>text</div> becoming texttext
-// TODO: in cases like <blockquote><p>text</p></blockquote>, the p can be
-// unwrapped
+// TODO: I observed an extreme performance drop when processing the URL
+// https://www.reddit.com/r/announcements/comments/434h6c/reddit_in_2016/
+// and my current best guess is that it is due to the above note about
+// doing wasted moves in the case of <div><div>content</div><div>, so this
+// function needs to be optimized
 DOMFilter.filterInlineElements = function(document) {
   const elements = document.querySelectorAll(
     DOMFilter.INLINE_ELEMENTS_SELECTOR);
@@ -291,6 +296,43 @@ DOMFilter.filterInlineElements = function(document) {
   for(let element of elements) {
     DOMFilter.unwrapElement(element);
   }
+};
+
+// TODO: this is completely untested, unfinished at the moment
+// TODO: maybe optimize for the case <p><div>\n<div>text</div>\n</div></p>
+// TODO: consider the similarities to filterLeafElements more, maybe the two
+// should somehow be merged
+// TODO: what about case of <p><div><div></div></div></p> => <p></p> ?
+// Shouldn't I also be skipping in that case? Right now I am requiring content?
+DOMFilter.filterInlineElements2 = function(document) {
+  const elements = document.querySelectorAll(
+    DOMFilter.INLINE_ELEMENTS_SELECTOR);
+  elements[Symbol.iterator] = Array.prototype[Symbol.iterator];
+
+  for(let element of elements) {
+    if(!DOMFilter.isIntermediateInlineElement(element)) {
+      DOMFilter.unwrapInlineElement(element);
+    }
+  }
+};
+
+DOMFilter.isIntermediateInlineElement = function(element) {
+  return element.childNodes.length === 1 &&
+    DOMFilter.isInlineElement(element.firstChild);
+};
+
+// Unwraps the child nodes of an node into an ancestor, and removes
+// intermediate ancestors and the node itself. Internally this searches for
+// outermost inline ancestor to unwrap.
+// we don't want to just find the first non inline ancestor, we want
+// to find either the nextSibling of the outermost inline ancestor beneath
+// the first noninline ancestor, so that we can insertBefore, or we want to
+// use the noninline ancestor and appendChild into it.
+// TODO: once i get this working, i would need to eventually do the same
+// optimization i did for unwrapElement where i sometimes remove the parent
+// before doing other manipulations.
+DOMFilter.unwrapInlineElement = function(element) {
+  throw new Error('Not yet implemented');
 };
 
 // These element names are never considered leaves
@@ -748,7 +790,7 @@ DOMFilter.NBSP_PATTERN = /&nbsp;/g;
 DOMFilter.normalizeWhitespace = function(document) {
   const iterator = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_TEXT, DOMFilter.rejectTrivialTextNodeValues);
-  DOMFilter.makeIterableNodeIterator(iterator);
+  iterator[Symbol.iterator] = DOMFilter.getSymbolIteratorImpl(iterator);
   for(let node of iterator) {
     node.nodeValue = node.nodeValue.replace(DOMFilter.NBSP_PATTERN, ' ');
   }
@@ -761,12 +803,15 @@ DOMFilter.condenseNodeValues = function(document, sensitiveElements) {
   const iterator = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_TEXT,
     DOMFilter.rejectIfSensitive.bind(null, sensitiveElements));
-  DOMFilter.makeIterableNodeIterator(iterator);
+  iterator[Symbol.iterator] = DOMFilter.getSymbolIteratorImpl(iterator);
   for(let node of iterator) {
     node.nodeValue = DOMFilter.condenseSpaces(node.nodeValue);
   }
 };
 
+// TODO: it is nice to use the function filter argument to createNodeIterator
+// but performance is dropping because of it, maybe move the condition back
+// inot the respective loops
 DOMFilter.rejectIfSensitive = function(sensitiveElements, node) {
   return sensitiveElements.has(node.parentElement) ?
     NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
@@ -840,9 +885,11 @@ DOMFilter.trimTextNodes = function(document, sensitiveElements) {
   const iterator = document.createNodeIterator(
     document.documentElement, NodeFilter.SHOW_TEXT,
     DOMFilter.rejectIfSensitive.bind(null, sensitiveElements));
-  DOMFilter.makeIterableNodeIterator(iterator);
+  iterator[Symbol.iterator] = DOMFilter.getSymbolIteratorImpl(iterator);
   const isElement = DOMFilter.isElement;
-  const isInlineElement = DOMFilter.isInlineElement;
+  // Note this is using the no trim function, not the other function
+  // for the purpose of unwrapping inlines, it is a different set
+  const isInlineElement = DOMFilter.isInlineElementNoTrim;
   for(let node of iterator) {
     if(node.previousSibling) {
       if(isElement(node.previousSibling)) {
@@ -898,7 +945,7 @@ DOMFilter.trimTextNodes = function(document, sensitiveElements) {
 DOMFilter.filterEmptyTextNodes = function(document) {
   const iterator = document.createNodeIterator(
     document.documentElement, NodeFilter.SHOW_TEXT);
-  DOMFilter.makeIterableNodeIterator(iterator);
+  iterator[Symbol.iterator] = DOMFilter.getSymbolIteratorImpl(iterator);
   for(let node of iterator) {
     if(!node.nodeValue) {
       node.remove();
@@ -934,6 +981,7 @@ DOMFilter.getSensitiveSet = function(document) {
 };
 
 // TODO: merge with inline elements above?
+// TODO: rename to something simple
 DOMFilter.INLINE_ELEMENTS_NO_TRIM = new Set([
   'a',
   'abbr',
@@ -972,7 +1020,7 @@ DOMFilter.INLINE_ELEMENTS_NO_TRIM = new Set([
   'var'
 ]);
 
-DOMFilter.isInlineElement = function(element) {
+DOMFilter.isInlineElementNoTrim = function(element) {
   return DOMFilter.INLINE_ELEMENTS_NO_TRIM.has(element.localName);
 };
 
@@ -981,29 +1029,71 @@ DOMFilter.isElement = function(node) {
 };
 
 // Replaces an element with its child nodes
+// TODO: performance profiling showing hotspot when called by
+// filterInlineElements. I think it actually may be that filterInlineElements
+// does extra removals in the case of nested inlines
 DOMFilter.unwrapElement = function(element) {
+
+  // Count the number of child nodes we plan to move as an estimate of
+  // how many dom manipulations will be performed
+  const numChildNodes = element.childNodes.length;
+
+  // Exit early when there are no children to move. Basically, we 'perform'
+  // 0 move operations then delete the element as normal.
+  if(!numChildNodes) {
+    element.remove();
+    return;
+  }
+
   const parent = element.parentElement;
-  if(parent) {
-    const grandParent = parent.parentElement;
+
+  // Without a parent, there is no destination for the child elements,
+  // which means we are just going to completely delete the element
+  // and its descendants. I am not sure that deleting the element is
+  // necessary, but I like the consistent behavior of always deleting the
+  // element. I am not sure, however, what it even means to delete an
+  // element without a parent. If an element doesn't have a parent it is
+  // probably already detached and we can just ignore it.
+  // This might change, however, if we plan on allowing for an alternate
+  // destination for the children
+  if(!parent) {
+    element.remove();
+    return;
+  }
+
+  // Detach the parent only if we are going to be doing more than
+  // 2 move operations on child nodes and there is a known grandparent
+  // under which to re-attach the parent. I chose 2 because we are doing
+  // one operation by removing the parent, and one operation re-attaching
+  // the parent, and so we only have a reduction in dom manipulations if
+  // the number of children we are going to move is greater than 2.
+  const grandParent = parent.parentElement;
+  if(grandParent && numChildNodes > 2) {
+    // Cache the location of the parent within the grandparent before
+    // detaching the parent, because removing the parent sets this to null, and
+    // we need to know this to properly re-attach the parent
     const nextSibling = parent.nextSibling;
-    if(grandParent) {
-      parent.remove();
-      DOMFilter._unwrapLiveElement(parent, element);
-      if(nextSibling) {
-        grandParent.insertBefore(parent, nextSibling);
-      } else {
-        grandParent.appendChild(parent);
-      }
+    // Detach the parent before moving the child nodes. This reduces the
+    // number of dom operations on a possibly live document
+    parent.remove();
+    // Move the child nodes and delete the element
+    DOMFilter.moveChildNodesIntoParent(parent, element);
+    // Reattach the parent
+    if(nextSibling) {
+      grandParent.insertBefore(parent, nextSibling);
     } else {
-      DOMFilter._unwrapLiveElement(parent, element);
+      grandParent.appendChild(parent);
     }
   } else {
-    element.remove();
+    // There was either not a grand parent, so we could not detach the parent,
+    // or there are only a small number of nodes being moved
+    // Move the child nodes and delete the element
+    DOMFilter.moveChildNodesIntoParent(parent, element);
   }
 };
 
 // Private helper for unwrapElement
-DOMFilter._unwrapLiveElement = function(parent, element) {
+DOMFilter.moveChildNodesIntoParent = function(parent, element) {
   let firstNode = element.firstChild;
   while(firstNode) {
     parent.insertBefore(firstNode, element);
