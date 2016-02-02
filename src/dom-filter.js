@@ -2,16 +2,14 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: avoid global strict mode, maybe use an IIFE?
 // TODO: look into http://www.streamjs.org/ for a NodeStream concept?
 
-'use strict';
-
-const DOMFilter = {};
+var DOMFilter = {};
 
 // Allows for..of over NodeIterators, to use do:
 // myNodeIterator[Symbol.iterator] = DOMFilter.getSymbolIteratorImpl
 DOMFilter.getSymbolIteratorImpl = function(iterator) {
+  'use strict';
   return function() {
     return {
       next: function() {
@@ -24,17 +22,20 @@ DOMFilter.getSymbolIteratorImpl = function(iterator) {
 
 // Returns whether the element has the given lowercase name
 DOMFilter.elementHasName = function(name, element) {
+  'use strict';
   return element.localName === name;
 };
 
 // Finds the associated caption for an image
 DOMFilter.findImageCaption = function(image) {
+  'use strict';
   const figure = image.closest('figure');
   return figure ? figure.querySelector('figcaption') : null;
 };
 
 // Removes all comment nodes from the document
 DOMFilter.filterCommentNodes = function(document) {
+  'use strict';
   const iterator = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_COMMENT);
   iterator[Symbol.iterator] = DOMFilter.getSymbolIteratorImpl(iterator);
@@ -77,6 +78,7 @@ DOMFilter.DEFAULT_BLACKLIST_POLICY = new Set([
 
 // @param policy {Set} element names to remove
 DOMFilter.filterBlacklistedElements = function(document, policy) {
+  'use strict';
   const localPolicy = policy || DOMFilter.DEFAULT_BLACKLIST_POLICY;
   const selector = Array.from(localPolicy).join(',');
   DOMFilter.moveElementsBySelector(document, null, selector);
@@ -88,6 +90,7 @@ DOMFilter.filterBlacklistedElements = function(document, policy) {
 // a paragraph element within an inline element.
 // error case: http://paulgraham.com/procrastination.html
 DOMFilter.filterBreakruleElements = function(document) {
+  'use strict';
   const breakRuleElements = document.querySelectorAll('br');
   breakRuleElements[Symbol.iterator] = Array.prototype[Symbol.iterator];
   for(let breakRuleElement of breakRuleElements) {
@@ -99,6 +102,7 @@ DOMFilter.filterBreakruleElements = function(document) {
 
 // Removes certain attributes from all elements in the document
 DOMFilter.filterAttributes = function(document) {
+  'use strict';
   const elements = document.getElementsByTagName('*');
   elements[Symbol.iterator] = Array.prototype[Symbol.iterator];
   for(let element of elements) {
@@ -112,7 +116,7 @@ DOMFilter.filterAttributes = function(document) {
 // TODO: not filtering SVG creates display issues because the SVGs are not
 // sized well
 DOMFilter.filterElementAttributes = function(element) {
-
+  'use strict';
   const elementName = element.localName;
 
   if(elementName === 'svg' || elementName === 'path') {
@@ -139,6 +143,7 @@ DOMFilter.filterElementAttributes = function(element) {
 // TODO: review aria handling
 // TODO: what about role and other microdata attributes?
 DOMFilter.isPermittedAttribute = function(elementName, attributeName) {
+  'use strict';
   if(elementName === 'a') {
     return attributeName === 'href' ||
       attributeName === 'name' ||
@@ -179,6 +184,7 @@ DOMFilter.isPermittedAttribute = function(elementName, attributeName) {
 // TODO: the replacement text should be localized
 // TODO: what if noframes contains an iframe or other frames?
 DOMFilter.filterFrameElements = function(document) {
+  'use strict';
   let body = document.querySelector('body');
   const frameset = document.querySelector('frameset');
   if(!body && frameset) {
@@ -216,6 +222,7 @@ DOMFilter.HIDDEN_ELEMENTS_SELECTOR = [
 // poor performance. Given that we are ignoring non-inline styles in the first
 // place, I don't think the loss of accuracy is too important.
 DOMFilter.filterHiddenElements = function(document) {
+  'use strict';
   DOMFilter.removeElementsBySelector(document,
     DOMFilter.HIDDEN_ELEMENTS_SELECTOR);
 };
@@ -268,17 +275,20 @@ DOMFilter.INLINE_ELEMENTS_SELECTOR = Array.from(
   DOMFilter.INLINE_ELEMENT_NAMES).join(',');
 
 DOMFilter.isInlineElement = function(element) {
+  'use strict';
   return DOMFilter.INLINE_ELEMENT_NAMES.has(element.localName);
 };
 
 // TODO: in cases like <blockquote><p>text</p></blockquote>, the p can be
 // unwrapped? Leaving this as a place holder
 DOMFilter.filterNestedBlockElements = function(document) {
+  'use strict';
   throw new Error('Not yet implemented');
 };
 
 // Removes superfluous elements
 DOMFilter.filterInlineElements = function(document) {
+  'use strict';
   const elements = selectInlines(document);
   for(let element of elements) {
     if(!isIntermediate(element)) {
@@ -358,6 +368,7 @@ DOMFilter.TRIVIAL_TEXT_NODE_VALUES = new Set([
 // TODO: maybe what i should do is gather all leaves, then remove, so write
 // a funciton that abstracts the gathering
 DOMFilter.filterLeafElements = function(document) {
+  'use strict';
   const leafSet = new Set();
   DOMFilter.collectLeavesRecursively(leafSet, document.body,
     document.documentElement);
@@ -369,6 +380,7 @@ DOMFilter.filterLeafElements = function(document) {
 // Recursively traverses and finds leaf elements and adds them to leaves
 // TODO: i would like to do this without recursion for better perf
 DOMFilter.collectLeavesRecursively = function(leaves, bodyElement, element) {
+  'use strict';
   const childNodes = element.childNodes;
   const numChildNodes = childNodes.length;
   for(let i = 0, cursor; i < numChildNodes; i++) {
@@ -386,6 +398,7 @@ DOMFilter.collectLeavesRecursively = function(leaves, bodyElement, element) {
 // Returns true if the given element is a leaf
 // TODO: remove the bodyElement parameter
 DOMFilter.isLeafElement = function(bodyElement, element) {
+  'use strict';
   if(element === bodyElement) {
     return false;
   }
@@ -416,6 +429,7 @@ DOMFilter.isLeafElement = function(bodyElement, element) {
 
 // Unwraps anchors that are not links to other pages
 DOMFilter.filterNominalAnchors = function(document) {
+  'use strict';
   const anchors = document.querySelectorAll('a');
   anchors[Symbol.iterator] = Array.prototype[Symbol.iterator];
   for(let anchor of anchors) {
@@ -430,10 +444,12 @@ DOMFilter.filterNominalAnchors = function(document) {
 };
 
 DOMFilter.isNominalAnchor = function(anchor) {
+  'use strict';
   // todo: implement me
 };
 
 DOMFilter.filterScriptElements = function(document) {
+  'use strict';
   DOMFilter.removeElementsBySelector(document, 'script');
 };
 
@@ -443,6 +459,7 @@ DOMFilter.filterScriptElements = function(document) {
 // I give this more thought. There is also something I don't quite understand
 // with a practice of using encoded html as the text content.
 DOMFilter.filterNoScriptElements = function(document) {
+  'use strict';
   DOMFilter.removeElementsBySelector(document, 'noscript');
 };
 
@@ -452,6 +469,7 @@ DOMFilter.filterNoScriptElements = function(document) {
 // of junk words like 'click me' in the text that are not links. If I remove,
 // I risk removing informative content.
 DOMFilter.filterJavascriptAnchors = function(document) {
+  'use strict';
   const anchors = document.querySelectorAll('a[href]');
   anchors[Symbol.iterator] = Array.prototype[Symbol.iterator];
   for(let anchor of anchors) {
@@ -465,13 +483,17 @@ DOMFilter.filterJavascriptAnchors = function(document) {
 // NOTE: rather than use a regex, we can take advantage of the accurate
 // parsing of the browser (and mirror its behavior for that matter) by
 // just accessing the protocol property.
+// NOTE: this occassionally yields poor performance for some reason, maybe
+// the regex is faster
 DOMFilter.isJavascriptAnchor = function(anchor) {
+  'use strict';
   return anchor.protocol === 'javascript:';
 };
 
 // Unwraps tables that consist of a single cell, which generally indicates
 // a formatting purpose
 DOMFilter.filterSingleCellTables = function(document) {
+  'use strict';
   const tables = document.querySelectorAll('table');
   tables[Symbol.iterator] = Array.prototype[Symbol.iterator];
   for(let table of tables) {
@@ -487,6 +509,7 @@ DOMFilter.filterSingleCellTables = function(document) {
 // the element instead of a boolean so that subsequent code does not need to
 // find the cell again.
 DOMFilter.getTableSingleCell = function(table) {
+  'use strict';
   const rows = table.rows;
   let cell = null;
   if(rows.length === 1) {
@@ -500,27 +523,21 @@ DOMFilter.getTableSingleCell = function(table) {
 };
 
 // Replaces a table in the dom with the child nodes of its single cell
-// TODO: does HTMLTDElement have a pointer to its container table?
 // TODO: detach before unwrap to reduce dom ops (see unwrap)
 DOMFilter.unwrapSingleCellTable = function(table, cell) {
+  'use strict';
   const parent = table.parentElement;
-  const nextSibling = table.nextSibling;
-
-  if(nextSibling) {
-    for(let node = cell.firstChild; node; node = cell.firstChild) {
-      parent.insertBefore(node, nextSibling);
-    }
-  } else {
-    for(let node = cell.firstChild; node; node = cell.firstChild) {
-      parent.appendChild(node);
-    }
+  const document = table.ownerDocument;
+  for(let node = cell.firstChild; node; node = cell.firstChild) {
+    parent.insertBefore(node, table);
   }
-
+  parent.insertBefore(document.createTextNode(' '), table);
   table.remove();
 };
 
 // Transforms single column tables into paragraph separated row content
 DOMFilter.filterSingleColumnTables = function(document) {
+  'use strict';
   const tables = document.querySelectorAll('table');
   tables[Symbol.iterator] = Array.prototype[Symbol.iterator];
   for(let table of tables) {
@@ -532,6 +549,7 @@ DOMFilter.filterSingleColumnTables = function(document) {
 
 // Returns true if the table appears to consist of only a single column
 DOMFilter.isSingleColumnTable = function(table) {
+  'use strict';
   const rows = table.rows;
   const upperBound = Math.min(rows.length, 20);
   let isSingleColumn = true;
@@ -548,21 +566,16 @@ DOMFilter.isSingleColumnTable = function(table) {
 // Returns an iterator that yields the cells of a table, in top down
 // then left right order
 DOMFilter.createTableCellIterator = function(table) {
+  'use strict';
   // TODO: implement me
 };
 
 // TODO: create and use a TableCellIterator instead of express iteration?
 // TODO: test
 DOMFilter.transformSingleColumnTable = function(table) {
+  'use strict';
   const parent = table.parentElement;
-  const nextSibling = table.nextSibling;
-  const insert = function(node, beforeNode) {
-    parent.insertBefore(node, beforeNode);
-  };
-  const append = function(node) { parent.appendChild(node); };
-  const moveNode = nextSibling ? insert : append;
-
-  const ownerDocument = table.ownerDocument;
+  const document = table.ownerDocument;
   for(let rows = table.rows, numRows = rows.length, rowIndex = 0,
     columnIndex = 0, cell, cells, numCells = 0, firstChild; rowIndex < numRows;
     rowIndex++) {
@@ -570,17 +583,18 @@ DOMFilter.transformSingleColumnTable = function(table) {
       columnIndex < numCells; columnIndex++) {
       for(cell = cells[columnIndex], firstChild = cell.firstChild; firstChild;
         firstChild = cell.firstChild) {
-        moveNode(firstChild, nextSibling);
+        parent.insertBefore(firstChild, table);
       }
     }
 
-    moveNode(ownerDocument.createElement('p'), nextSibling);
+    parent.insertBefore(document.createElement('p'), table);
   }
 
   table.remove();
 };
 
 DOMFilter.filterSingleItemLists = function(document) {
+  'use strict';
   const lists = document.querySelectorAll('ul, ol');
   lists[Symbol.iterator] = Array.prototype[Symbol.iterator];
   for(let list of lists) {
@@ -592,7 +606,9 @@ DOMFilter.filterSingleItemLists = function(document) {
 
 DOMFilter.isListItem = DOMFilter.elementHasName.bind(null, 'li');
 
+// TODO: use Array.prototype.reduce?
 DOMFilter.countListItems = function(list) {
+  'use strict';
   const childNodes = list.childNodes;
   childNodes[Symbol.iterator] = Array.prototype[Symbol.iterator];
   let count = 0;
@@ -605,12 +621,14 @@ DOMFilter.countListItems = function(list) {
 };
 
 DOMFilter.getFirstListItem = function(list) {
+  'use strict';
   return Array.prototype.find.call(list.childNodes, DOMFilter.isListItem);
 };
 
 // assumes the list item count > 0
 // TODO: detach first to reduce ops on live (see unwrap)
 DOMFilter.unwrapSingleItemList = function(list) {
+  'use strict';
   const parent = list.parentElement;
   const item = DOMFilter.getFirstListItem(list);
   while(item.firstChild) {
@@ -625,6 +643,7 @@ DOMFilter.unwrapSingleItemList = function(list) {
 // TODO: eventually stop logging. For now it helps as a way to
 // identify new lazily-loaded images
 DOMFilter.filterSourcelessImages = function(document) {
+  'use strict';
   const images = document.querySelectorAll('img');
   images[Symbol.iterator] = Array.prototype[Symbol.iterator];
   for(let image of images) {
@@ -640,11 +659,13 @@ DOMFilter.filterSourcelessImages = function(document) {
 // NOTE: access by attribute, not by property, because the browser may
 // supply a base url prefix or something like that to the property
 DOMFilter.isSourcelessImage = function(image) {
+  'use strict';
   return !image.hasAttribute('src') && !image.hasAttribute('srcset');
 };
 
 // Removes all tracer images
 DOMFilter.filterTracerImages = function(document) {
+  'use strict';
   const images = document.querySelectorAll('img');
   images[Symbol.iterator] = Array.prototype[Symbol.iterator];
   for(let image of images) {
@@ -660,6 +681,7 @@ DOMFilter.filterTracerImages = function(document) {
 // This requires the dimensions be set. If an image does not have dimension
 // attributes, it should be pre-fetched before calling this.
 DOMFilter.isTracerImage = function(image) {
+  'use strict';
   return image.width < 2 || image.height < 2;
 };
 
@@ -683,6 +705,7 @@ DOMFilter.isTracerImage = function(image) {
 // @param selector {String}
 // @returns void
 DOMFilter.moveElementsBySelector = function(source, destination, selector) {
+  'use strict';
   const targetDocument = destination ||
     document.implementation.createHTMLDocument();
   const elements = source.querySelectorAll(selector);
@@ -702,6 +725,7 @@ DOMFilter.moveElementsBySelector = function(source, destination, selector) {
 // screws up all later index access when iterating forward. To avoid this,
 // use a non-live list such as the one returned by querySelectorAll.
 DOMFilter.removeElementsByName = function(document, tagName) {
+  'use strict';
   const elements = document.getElementsByTagName(tagName);
   const numElements = elements.length;
   for(let i = numElements - 1; i > -1; i--) {
@@ -720,38 +744,26 @@ DOMFilter.removeElementsByName = function(document, tagName) {
 // is whether the set of remove operations is slower than the time it takes
 // to traverse. I assume traversal is faster, but not fast enough to merit it.
 DOMFilter.removeElementsBySelector = function(document, selector) {
+  'use strict';
   const elements = document.querySelectorAll(selector);
-  elements[Symbol.iterator] = Array.prototype[Symbol.iterator];
-  for(let element of elements) {
-    element.remove();
-  }
+  const remove = function(element) { element.remove(); };
+  Array.prototype.forEach.call(elements, remove);
 };
-
-DOMFilter.manipulateElementsBySelectorAndPredicate = function(document,
-  selector, predicate, manipulate) {
-  const elements = document.querySelectorAll(selector);
-  elements[Symbol.iterator] = Array.prototype[Symbol.iterator];
-  for(let element of elements) {
-    if(predicate(element)) {
-      manipulate(element);
-    }
-  }
-};
-
-DOMFilter.rejectTrivialTextNodeValues = function(node) {
-  return DOMFilter.TRIVIAL_TEXT_NODE_VALUES.has(node.nodeValue) ?
-    NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
-};
-
-DOMFilter.NBSP_PATTERN = /&nbsp;/g;
 
 // Normalizes the values of all text nodes in a document
 DOMFilter.normalizeWhitespace = function(document) {
+  'use strict';
+  const NBSP_PATTERN = /&nbsp;/g;
+  const trivials = DOMFilter.TRIVIAL_TEXT_NODE_VALUES;
   const iterator = document.createNodeIterator(document.documentElement,
-    NodeFilter.SHOW_TEXT, DOMFilter.rejectTrivialTextNodeValues);
+    NodeFilter.SHOW_TEXT);
   iterator[Symbol.iterator] = DOMFilter.getSymbolIteratorImpl(iterator);
+  let value = null;
   for(let node of iterator) {
-    node.nodeValue = node.nodeValue.replace(DOMFilter.NBSP_PATTERN, ' ');
+    value = node.nodeValue;
+    if(!trivials.has(value)) {
+      node.nodeValue = value.replace(NBSP_PATTERN, ' ');
+    }
   }
 };
 
@@ -759,6 +771,7 @@ DOMFilter.normalizeWhitespace = function(document) {
 // sensitive elements such as <pre>. This expects that node values were
 // previous normalized, so, for example, it does not consider &nbsp;.
 DOMFilter.condenseNodeValues = function(document, sensitiveElements) {
+  'use strict';
   const iterator = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_TEXT,
     DOMFilter.rejectIfSensitive.bind(null, sensitiveElements));
@@ -771,7 +784,9 @@ DOMFilter.condenseNodeValues = function(document, sensitiveElements) {
 // TODO: it is nice to use the function filter argument to createNodeIterator
 // but performance is dropping because of it, maybe move the condition back
 // inot the respective loops
+// TODO: deprecate
 DOMFilter.rejectIfSensitive = function(sensitiveElements, node) {
+  'use strict';
   return sensitiveElements.has(node.parentElement) ?
     NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
 };
@@ -782,6 +797,7 @@ DOMFilter.CONSECUTIVE_SPACES_PATTERN = / +/g;
 
 // Replaces one or more consecutive spaces with a single space
 DOMFilter.condenseSpaces = function(inputString) {
+  'use strict';
   return inputString.replace(DOMFilter.CONSECUTIVE_SPACES_PATTERN, ' ');
 };
 
@@ -792,6 +808,7 @@ DOMFilter.condenseSpaces = function(inputString) {
 // TODO: don't require body, e.g. let root = document.body ||
 // document.documentElement
 DOMFilter.trimDocument = function(document) {
+  'use strict';
   if(document.body) {
     let sibling = document.body;
     let node = document.body.firstChild;
@@ -825,12 +842,14 @@ DOMFilter.TRIMMABLE_NODE_NAMES = new Set([
 // all empty paragraphs already consider this? but then trimming would have
 // to occur after leaves removed, right? should order matter?
 DOMFilter.isTrimmableNode = function(node) {
+  'use strict';
   return DOMFilter.isElement(node) &&
     (DOMFilter.TRIMMABLE_NODE_NAMES.has(node.localName) ||
     DOMFilter.isEmptyParagraph(node));
 };
 
 DOMFilter.isEmptyParagraph = function(element) {
+  'use strict';
   return element && element.localName === 'p' && !element.firstChild;
 };
 
@@ -841,6 +860,7 @@ DOMFilter.isEmptyParagraph = function(element) {
 // TODO: i am still observing errors in the output that I attribute to
 // this function
 DOMFilter.trimTextNodes = function(document, sensitiveElements) {
+  'use strict';
   const iterator = document.createNodeIterator(
     document.documentElement, NodeFilter.SHOW_TEXT,
     DOMFilter.rejectIfSensitive.bind(null, sensitiveElements));
@@ -902,6 +922,7 @@ DOMFilter.trimTextNodes = function(document, sensitiveElements) {
 };
 
 DOMFilter.filterEmptyTextNodes = function(document) {
+  'use strict';
   const iterator = document.createNodeIterator(
     document.documentElement, NodeFilter.SHOW_TEXT);
   iterator[Symbol.iterator] = DOMFilter.getSymbolIteratorImpl(iterator);
@@ -934,6 +955,7 @@ DOMFilter.SENSITIVE_ELEMENTS_SELECTOR = [
 // we can simply check if a text node's parent element is a member.
 // TODO: see if I can avoid Array.from once Chrome supports iterable NodeLists
 DOMFilter.getSensitiveSet = function(document) {
+  'use strict';
   const sensitiveElements = document.querySelectorAll(
     DOMFilter.SENSITIVE_ELEMENTS_SELECTOR);
   return new Set(Array.from(sensitiveElements));
@@ -980,21 +1002,24 @@ DOMFilter.INLINE_ELEMENTS_NO_TRIM = new Set([
 ]);
 
 DOMFilter.isInlineElementNoTrim = function(element) {
+  'use strict';
   return DOMFilter.INLINE_ELEMENTS_NO_TRIM.has(element.localName);
 };
 
 DOMFilter.isElement = function(node) {
+  'use strict';
   return node.nodeType === Node.ELEMENT_NODE;
 };
 
 DOMFilter.isTextNode = function(node) {
+  'use strict';
   return node.nodeType === Node.TEXT_NODE;
 };
 
 // Unwraps the element's child nodes into the parent of the element or, if
 // provided, the parent of the alternate element
 DOMFilter.unwrap = function(element, alternate) {
-
+  'use strict';
   const isTextNode = DOMFilter.isTextNode;
   const moveChildren = function(element, parent, before) {
     for(let node = element.firstChild; node; node = element.firstChild) {
