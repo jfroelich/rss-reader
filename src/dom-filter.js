@@ -283,28 +283,9 @@ DOMFilter.filterNestedBlockElements = function(document) {
 // keep the child elements.
 // TODO: when unwrapping an inline element, I need to insert a space following
 // the contents of the element (e.g. createTextNode(' ')), to avoid things like
-// <div><span>text</span>text</div> becoming texttext
-// TODO: I observed an extreme performance drop when processing the URL
-// https://www.reddit.com/r/announcements/comments/434h6c/reddit_in_2016/
-// and my current best guess is that it is due to the above note about
-// doing wasted moves in the case of <div><div>content</div><div>, so this
-// function needs to be optimized
+// <div><span>text</span>text</div> becoming texttext, also note the space may
+// need to be before the nodes, and/or a space before and after.
 DOMFilter.filterInlineElements = function(document) {
-  const elements = document.querySelectorAll(
-    DOMFilter.INLINE_ELEMENTS_SELECTOR);
-  elements[Symbol.iterator] = Array.prototype[Symbol.iterator];
-  for(let element of elements) {
-    DOMFilter.unwrapElement(element);
-  }
-};
-
-// TODO: this is completely untested, unfinished at the moment
-// TODO: maybe optimize for the case <p><div>\n<div>text</div>\n</div></p>
-// TODO: consider the similarities to filterLeafElements more, maybe the two
-// should somehow be merged
-// TODO: what about case of <p><div><div></div></div></p> => <p></p> ?
-// Shouldn't I also be skipping in that case? Right now I am requiring content?
-DOMFilter.filterInlineElements2 = function(document) {
   const elements = document.querySelectorAll(
     DOMFilter.INLINE_ELEMENTS_SELECTOR);
   elements[Symbol.iterator] = Array.prototype[Symbol.iterator];
@@ -317,23 +298,11 @@ DOMFilter.filterInlineElements2 = function(document) {
 };
 
 DOMFilter.isIntermediateInlineElement = function(element) {
-  return element.childNodes.length === 1 &&
+  return DOMFilter.isInlineElement(element) &&
+    element.childNodes.length === 1 &&
     DOMFilter.isInlineElement(element.firstChild);
 };
 
-// Unwraps the child nodes of an node into an ancestor, and removes
-// intermediate ancestors and the node itself. Internally this searches for
-// outermost inline ancestor to unwrap.
-// we don't want to just find the first non inline ancestor, we want
-// to find either the nextSibling of the outermost inline ancestor beneath
-// the first noninline ancestor, so that we can insertBefore, or we want to
-// use the noninline ancestor and appendChild into it.
-// TODO: once i get this working, i would need to eventually do the same
-// optimization i did for unwrapElement where i sometimes remove the parent
-// before doing other manipulations.
-DOMFilter.unwrapInlineElement = function(element) {
-  throw new Error('Not yet implemented');
-};
 
 // These element names are never considered leaves
 DOMFilter.LEAF_EXCEPTION_ELEMENT_NAMES = new Set([
@@ -717,7 +686,6 @@ DOMFilter.isTracerImage = function(image) {
 // If destination is undefined, then a dummy document is supplied, which is
 // discarded when the function completes, which results in the elements being
 // simply removed from the source document.
-// TODO: use for..of once Chrome supports NodeList iterators
 // @param source {Document}
 // @param destination {Document}
 // @param selector {String}
@@ -759,7 +727,6 @@ DOMFilter.removeElementsByName = function(document, tagName) {
 // probably less efficient than just visiting descendants. The real tradeoff
 // is whether the set of remove operations is slower than the time it takes
 // to traverse. I assume traversal is faster, but not fast enough to merit it.
-// TODO: use for..of once Chrome supports NodeList iterators
 DOMFilter.removeElementsBySelector = function(document, selector) {
   const elements = document.querySelectorAll(selector);
   elements[Symbol.iterator] = Array.prototype[Symbol.iterator];
@@ -1028,10 +995,63 @@ DOMFilter.isElement = function(node) {
   return node.nodeType === Node.ELEMENT_NODE;
 };
 
+
+// Unwraps the child nodes of an node into an ancestor, and removes
+// intermediate ancestors and the node itself. Internally this searches for
+// outermost inline ancestor to unwrap.
+DOMFilter.unwrapInlineElement = function(element) {
+
+  const numChildNodes = element.childNodes.length;
+
+  let farthestInlineAncestor = element;
+  for(let cursor = element.parentElement; cursor &&
+    DOMFilter.isIntermediateInlineElement(cursor);
+    cursor = cursor.parentElement) {
+    farthestInlineAncestor = cursor;
+  }
+
+  if(!numChildNodes) {
+    farthestInlineAncestor.remove();
+    return;
+  }
+
+  const closestBlockAncestor = farthestInlineAncestor.parentElement;
+  if(!closestBlockAncestor) {
+    farthestInlineAncestor.remove();
+    return;
+  }
+
+  // In order to reduce the number of live dom operations, we remove the outer
+  // element, then move the child nodes, then reattach the outer element in
+  // the same place.
+
+  const blockParent = closestBlockAncestor.parentElement;
+  if(blockParent && numChildNodes > 2) {
+    const nextSibling = closestBlockAncestor.nextSibling;
+    closestBlockAncestor.remove();
+    for(let node = element.firstChild; node; node = element.firstChild) {
+      closestBlockAncestor.insertBefore(node, farthestInlineAncestor);
+    }
+
+    if(nextSibling) {
+      blockParent.insertBefore(closestBlockAncestor, nextSibling);
+    } else {
+      blockParent.appendChild(closestBlockAncestor);
+    }
+
+  } else {
+    for(let node = element.firstChild; node; node = element.firstChild) {
+      closestBlockAncestor.insertBefore(node, farthestInlineAncestor);
+    }
+  }
+
+  farthestInlineAncestor.remove();
+};
+
 // Replaces an element with its child nodes
-// TODO: performance profiling showing hotspot when called by
-// filterInlineElements. I think it actually may be that filterInlineElements
-// does extra removals in the case of nested inlines
+// TODO: add a second optional boolean parameter, farthest, that if true,
+// uses the functionality of unwrapInlineElement, and then merge the two
+// functions together into unwrapElement
 DOMFilter.unwrapElement = function(element) {
 
   // Count the number of child nodes we plan to move as an estimate of
@@ -1093,12 +1113,11 @@ DOMFilter.unwrapElement = function(element) {
 };
 
 // Private helper for unwrapElement
+// NOTE: wondering if the call to remove should be the caller's responsibility
 DOMFilter.moveChildNodesIntoParent = function(parent, element) {
-  let firstNode = element.firstChild;
-  while(firstNode) {
+  for(let firstNode = element.firstChild; firstNode;
+    firstNode = element.firstChild) {
     parent.insertBefore(firstNode, element);
-    firstNode = element.firstChild;
   }
-
   element.remove();
 };
