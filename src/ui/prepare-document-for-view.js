@@ -34,10 +34,11 @@ function prepareDocumentForView(document) {
   DOMFilter.filterTracerImages(document);
   DOMFilter.normalizeWhitespace(document);
 
+  DOMFilter.filterInlineElements(document);
+
   const sensitiveElements = DOMFilter.getSensitiveSet(document);
   DOMFilter.condenseNodeValues(document, sensitiveElements);
   DOMFilter.filterNominalAnchors(document);
-  DOMFilter.filterInlineElements(document);
   DOMFilter.trimTextNodes(document, sensitiveElements);
   DOMFilter.filterEmptyTextNodes(document);
   DOMFilter.filterLeafElements(document);

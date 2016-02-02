@@ -277,32 +277,37 @@ DOMFilter.filterNestedBlockElements = function(document) {
   throw new Error('Not yet implemented');
 };
 
-// Removes various inline elements in a document. Given that style information
-// and other information is removed, several elements in the document may
-// no longer serve a formatting purpose, so we want to remove them but
-// keep the child elements.
-// TODO: when unwrapping an inline element, I need to insert a space following
-// the contents of the element (e.g. createTextNode(' ')), to avoid things like
-// <div><span>text</span>text</div> becoming texttext, also note the space may
-// need to be before the nodes, and/or a space before and after.
+// Removes superfluous elements
 DOMFilter.filterInlineElements = function(document) {
-  const elements = document.querySelectorAll(
-    DOMFilter.INLINE_ELEMENTS_SELECTOR);
-  elements[Symbol.iterator] = Array.prototype[Symbol.iterator];
-
+  const elements = selectInlines(document);
   for(let element of elements) {
-    if(!DOMFilter.isIntermediateInlineElement(element)) {
-      DOMFilter.unwrapInlineElement(element);
+    if(!isIntermediate(element)) {
+      DOMFilter.unwrap(element, findFarthest(element));
     }
   }
-};
 
-DOMFilter.isIntermediateInlineElement = function(element) {
-  return DOMFilter.isInlineElement(element) &&
-    element.childNodes.length === 1 &&
-    DOMFilter.isInlineElement(element.firstChild);
-};
+  function selectInlines(document) {
+    const elements = document.querySelectorAll(
+      DOMFilter.INLINE_ELEMENTS_SELECTOR);
+    elements[Symbol.iterator] = Array.prototype[Symbol.iterator];
+    return elements;
+  }
 
+  function isIntermediate(element) {
+    return DOMFilter.isInlineElement(element) &&
+      element.childNodes.length === 1 &&
+      DOMFilter.isInlineElement(element.firstChild);
+  }
+
+  function findFarthest(element) {
+    let result = null;
+    for(let cursor = element.parentElement; cursor && isIntermediate(cursor);
+      cursor = cursor.parentElement) {
+      result = cursor;
+    }
+    return result;
+  }
+};
 
 // These element names are never considered leaves
 DOMFilter.LEAF_EXCEPTION_ELEMENT_NAMES = new Set([
@@ -418,7 +423,7 @@ DOMFilter.filterNominalAnchors = function(document) {
       let href = anchor.getAttribute('href') || '';
       href = href.trim();
       if(!href) {
-        DOMFilter.unwrapElement(anchor);
+        DOMFilter.unwrap(anchor);
       }
     }
   }
@@ -496,7 +501,7 @@ DOMFilter.getTableSingleCell = function(table) {
 
 // Replaces a table in the dom with the child nodes of its single cell
 // TODO: does HTMLTDElement have a pointer to its container table?
-// TODO: detach before unwrap to reduce dom ops (see unwrapElement)
+// TODO: detach before unwrap to reduce dom ops (see unwrap)
 DOMFilter.unwrapSingleCellTable = function(table, cell) {
   const parent = table.parentElement;
   const nextSibling = table.nextSibling;
@@ -551,15 +556,10 @@ DOMFilter.createTableCellIterator = function(table) {
 DOMFilter.transformSingleColumnTable = function(table) {
   const parent = table.parentElement;
   const nextSibling = table.nextSibling;
-
-  function insert(node, beforeNode) {
+  const insert = function(node, beforeNode) {
     parent.insertBefore(node, beforeNode);
-  }
-
-  function append(node) {
-    parent.appendChild(node);
-  }
-
+  };
+  const append = function(node) { parent.appendChild(node); };
   const moveNode = nextSibling ? insert : append;
 
   const ownerDocument = table.ownerDocument;
@@ -609,21 +609,13 @@ DOMFilter.getFirstListItem = function(list) {
 };
 
 // assumes the list item count > 0
-// TODO: detach first to reduce ops on live (see unwrapElement)
+// TODO: detach first to reduce ops on live (see unwrap)
 DOMFilter.unwrapSingleItemList = function(list) {
   const parent = list.parentElement;
   const item = DOMFilter.getFirstListItem(list);
-  const nextSibling = list.nextSibling;
-  if(nextSibling) {
-    while(item.firstChild) {
-      parent.insertBefore(item.firstChild, nextSibling);
-    }
-  } else {
-    while(item.firstChild) {
-      parent.appendChild(item.firstChild);
-    }
+  while(item.firstChild) {
+    parent.insertBefore(item.firstChild, list);
   }
-
   list.remove();
 };
 
@@ -995,129 +987,49 @@ DOMFilter.isElement = function(node) {
   return node.nodeType === Node.ELEMENT_NODE;
 };
 
-
-// Unwraps the child nodes of an node into an ancestor, and removes
-// intermediate ancestors and the node itself. Internally this searches for
-// outermost inline ancestor to unwrap.
-DOMFilter.unwrapInlineElement = function(element) {
-
-  const numChildNodes = element.childNodes.length;
-
-  let farthestInlineAncestor = element;
-  for(let cursor = element.parentElement; cursor &&
-    DOMFilter.isIntermediateInlineElement(cursor);
-    cursor = cursor.parentElement) {
-    farthestInlineAncestor = cursor;
-  }
-
-  if(!numChildNodes) {
-    farthestInlineAncestor.remove();
-    return;
-  }
-
-  const closestBlockAncestor = farthestInlineAncestor.parentElement;
-  if(!closestBlockAncestor) {
-    farthestInlineAncestor.remove();
-    return;
-  }
-
-  // In order to reduce the number of live dom operations, we remove the outer
-  // element, then move the child nodes, then reattach the outer element in
-  // the same place.
-
-  const blockParent = closestBlockAncestor.parentElement;
-  if(blockParent && numChildNodes > 2) {
-    const nextSibling = closestBlockAncestor.nextSibling;
-    closestBlockAncestor.remove();
-    for(let node = element.firstChild; node; node = element.firstChild) {
-      closestBlockAncestor.insertBefore(node, farthestInlineAncestor);
-    }
-
-    if(nextSibling) {
-      blockParent.insertBefore(closestBlockAncestor, nextSibling);
-    } else {
-      blockParent.appendChild(closestBlockAncestor);
-    }
-
-  } else {
-    for(let node = element.firstChild; node; node = element.firstChild) {
-      closestBlockAncestor.insertBefore(node, farthestInlineAncestor);
-    }
-  }
-
-  farthestInlineAncestor.remove();
+DOMFilter.isTextNode = function(node) {
+  return node.nodeType === Node.TEXT_NODE;
 };
 
-// Replaces an element with its child nodes
-// TODO: add a second optional boolean parameter, farthest, that if true,
-// uses the functionality of unwrapInlineElement, and then merge the two
-// functions together into unwrapElement
-DOMFilter.unwrapElement = function(element) {
+// Unwraps the element's child nodes into the parent of the element or, if
+// provided, the parent of the alternate element
+DOMFilter.unwrap = function(element, alternate) {
 
-  // Count the number of child nodes we plan to move as an estimate of
-  // how many dom manipulations will be performed
-  const numChildNodes = element.childNodes.length;
-
-  // Exit early when there are no children to move. Basically, we 'perform'
-  // 0 move operations then delete the element as normal.
-  if(!numChildNodes) {
-    element.remove();
-    return;
-  }
-
-  const parent = element.parentElement;
-
-  // Without a parent, there is no destination for the child elements,
-  // which means we are just going to completely delete the element
-  // and its descendants. I am not sure that deleting the element is
-  // necessary, but I like the consistent behavior of always deleting the
-  // element. I am not sure, however, what it even means to delete an
-  // element without a parent. If an element doesn't have a parent it is
-  // probably already detached and we can just ignore it.
-  // This might change, however, if we plan on allowing for an alternate
-  // destination for the children
-  if(!parent) {
-    element.remove();
-    return;
-  }
-
-  // Detach the parent only if we are going to be doing more than
-  // 2 move operations on child nodes and there is a known grandparent
-  // under which to re-attach the parent. I chose 2 because we are doing
-  // one operation by removing the parent, and one operation re-attaching
-  // the parent, and so we only have a reduction in dom manipulations if
-  // the number of children we are going to move is greater than 2.
-  const grandParent = parent.parentElement;
-  if(grandParent && numChildNodes > 2) {
-    // Cache the location of the parent within the grandparent before
-    // detaching the parent, because removing the parent sets this to null, and
-    // we need to know this to properly re-attach the parent
-    const nextSibling = parent.nextSibling;
-    // Detach the parent before moving the child nodes. This reduces the
-    // number of dom operations on a possibly live document
-    parent.remove();
-    // Move the child nodes and delete the element
-    DOMFilter.moveChildNodesIntoParent(parent, element);
-    // Reattach the parent
-    if(nextSibling) {
-      grandParent.insertBefore(parent, nextSibling);
-    } else {
-      grandParent.appendChild(parent);
+  const isTextNode = DOMFilter.isTextNode;
+  const moveChildren = function(element, parent, before) {
+    for(let node = element.firstChild; node; node = element.firstChild) {
+      parent.insertBefore(node, before);
     }
-  } else {
-    // There was either not a grand parent, so we could not detach the parent,
-    // or there are only a small number of nodes being moved
-    // Move the child nodes and delete the element
-    DOMFilter.moveChildNodesIntoParent(parent, element);
-  }
-};
+  };
 
-// Private helper for unwrapElement
-// NOTE: wondering if the call to remove should be the caller's responsibility
-DOMFilter.moveChildNodesIntoParent = function(parent, element) {
-  for(let firstNode = element.firstChild; firstNode;
-    firstNode = element.firstChild) {
-    parent.insertBefore(firstNode, element);
+  const numChildNodes = element.childNodes.length;
+  const document = element.ownerDocument;
+  const target = alternate || element;
+  const parent = target.parentElement;
+
+  if(numChildNodes && parent) {
+    if(target.previousSibling && isTextNode(target.previousSibling)) {
+      parent.insertBefore(document.createTextNode(' '), target);
+    }
+
+    const grandParent = parent.parentElement;
+    if(grandParent && numChildNodes > 2) {
+      const nextSibling = parent.nextSibling;
+      parent.remove();
+      moveChildren(element, parent, target);
+      if(nextSibling) {
+        grandParent.insertBefore(parent, nextSibling);
+      } else {
+        grandParent.appendChild(parent);
+      }
+    } else {
+      moveChildren(element, parent, target);
+    }
+
+    if(target.nextSibling && isTextNode(target.nextSibling)) {
+      parent.insertBefore(document.createTextNode(' '), target);
+    }
   }
-  element.remove();
+
+  target.remove();
 };
