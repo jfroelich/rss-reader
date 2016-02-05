@@ -3,12 +3,55 @@
 // that can be found in the LICENSE file
 
 // TODO: look into http://www.streamjs.org/ for a NodeStream concept?
+// TODO: create vprune.js and rewrite all of this to use vnode.js
 
 var DOMFilter = {};
 
+// Returns whether the element has the given lowercase name
+DOMFilter.elementHasName = function(name, element) {
+  'use strict';
+  return element.localName === name;
+};
+
+DOMFilter.nodeHasType = function(nodeType, node) {
+  'use strict';
+  return node.nodeType === nodeType;
+};
+
+DOMFilter.isElement = DOMFilter.nodeHasType.bind(null, Node.ELEMENT_NODE);
+DOMFilter.isTextNode = DOMFilter.nodeHasType.bind(null, Node.TEXT_NODE);
+
+
+// Finds the associated caption for an image
+DOMFilter.findImageCaption = function(image) {
+  'use strict';
+  const figure = image.closest('figure');
+  return figure ? figure.querySelector('figcaption') : null;
+};
+
+DOMFilter.getCommentNodeIterator = function(document) {
+  'use strict';
+  const iterator = document.createNodeIterator(
+    document.documentElement,
+    NodeFilter.SHOW_COMMENT);
+  iterator[Symbol.iterator] = DOMFilter.getNodeIteratorSymbolIterator(
+    iterator);
+  return iterator;
+};
+
+DOMFilter.getTextNodeIterator = function(document) {
+  'use strict';
+  const iterator = document.createNodeIterator(
+    document.documentElement,
+    NodeFilter.SHOW_TEXT);
+  iterator[Symbol.iterator] = DOMFilter.getNodeIteratorSymbolIterator(
+    iterator);
+  return iterator;
+};
+
 // Allows for..of over NodeIterators, to use do:
-// myNodeIterator[Symbol.iterator] = DOMFilter.getSymbolIteratorImpl
-DOMFilter.getSymbolIteratorImpl = function(iterator) {
+// myNodeIterator[Symbol.iterator] = DOMFilter.getNodeIteratorSymbolIterator
+DOMFilter.getNodeIteratorSymbolIterator = function(iterator) {
   'use strict';
   return function() {
     return {
@@ -20,26 +63,10 @@ DOMFilter.getSymbolIteratorImpl = function(iterator) {
   };
 };
 
-// Returns whether the element has the given lowercase name
-DOMFilter.elementHasName = function(name, element) {
-  'use strict';
-  return element.localName === name;
-};
-
-// Finds the associated caption for an image
-DOMFilter.findImageCaption = function(image) {
-  'use strict';
-  const figure = image.closest('figure');
-  return figure ? figure.querySelector('figcaption') : null;
-};
-
 // Removes all comment nodes from the document
 DOMFilter.filterCommentNodes = function(document) {
   'use strict';
-  const iterator = document.createNodeIterator(document.documentElement,
-    NodeFilter.SHOW_COMMENT);
-  iterator[Symbol.iterator] = DOMFilter.getSymbolIteratorImpl(iterator);
-  for(let comment of iterator) {
+  for(let comment of DOMFilter.getCommentNodeIterator(document)) {
     comment.remove();
   }
 };
@@ -79,8 +106,8 @@ DOMFilter.DEFAULT_BLACKLIST_POLICY = new Set([
 // @param policy {Set} element names to remove
 DOMFilter.filterBlacklistedElements = function(document, policy) {
   'use strict';
-  const localPolicy = policy || DOMFilter.DEFAULT_BLACKLIST_POLICY;
-  const selector = Array.from(localPolicy).join(',');
+  const selector = Array.from(policy ||
+    DOMFilter.DEFAULT_BLACKLIST_POLICY).join(',');
   DOMFilter.moveElementsBySelector(document, null, selector);
 };
 
@@ -289,30 +316,29 @@ DOMFilter.filterNestedBlockElements = function(document) {
 // Removes superfluous elements
 DOMFilter.filterInlineElements = function(document) {
   'use strict';
-  const elements = selectInlines(document);
-  for(let element of elements) {
-    if(!isIntermediate(element)) {
-      DOMFilter.unwrap(element, findFarthest(element));
+  for(let element of selectInlineElements(document)) {
+    if(!isIntermediateInlineAncestor(element)) {
+      DOMFilter.unwrap(element, findFarthestInlineAncestor(element));
     }
   }
 
-  function selectInlines(document) {
+  function selectInlineElements(document) {
     const elements = document.querySelectorAll(
       DOMFilter.INLINE_ELEMENTS_SELECTOR);
     elements[Symbol.iterator] = Array.prototype[Symbol.iterator];
     return elements;
   }
 
-  function isIntermediate(element) {
+  function isIntermediateInlineAncestor(element) {
     return DOMFilter.isInlineElement(element) &&
       element.childNodes.length === 1 &&
       DOMFilter.isInlineElement(element.firstChild);
   }
 
-  function findFarthest(element) {
+  function findFarthestInlineAncestor(element) {
     let result = null;
-    for(let cursor = element.parentElement; cursor && isIntermediate(cursor);
-      cursor = cursor.parentElement) {
+    for(let cursor = element.parentElement; cursor &&
+      isIntermediateInlineAncestor(cursor); cursor = cursor.parentElement) {
       result = cursor;
     }
     return result;
@@ -397,6 +423,7 @@ DOMFilter.collectLeavesRecursively = function(leaves, bodyElement, element) {
 
 // Returns true if the given element is a leaf
 // TODO: remove the bodyElement parameter
+// TODO: make this non-recursive
 DOMFilter.isLeafElement = function(bodyElement, element) {
   'use strict';
   if(element === bodyElement) {
@@ -408,8 +435,8 @@ DOMFilter.isLeafElement = function(bodyElement, element) {
   }
 
   const childNodes = element.childNodes;
-
   childNodes[Symbol.iterator] = Array.prototype[Symbol.iterator];
+
   for(let childNode of childNodes) {
     if(childNode.nodeType === Node.TEXT_NODE) {
       if(!DOMFilter.TRIVIAL_TEXT_NODE_VALUES.has(childNode.nodeValue)) {
@@ -753,16 +780,10 @@ DOMFilter.removeElementsBySelector = function(document, selector) {
 // Normalizes the values of all text nodes in a document
 DOMFilter.normalizeWhitespace = function(document) {
   'use strict';
-  const NBSP_PATTERN = /&nbsp;/g;
-  const trivials = DOMFilter.TRIVIAL_TEXT_NODE_VALUES;
-  const iterator = document.createNodeIterator(document.documentElement,
-    NodeFilter.SHOW_TEXT);
-  iterator[Symbol.iterator] = DOMFilter.getSymbolIteratorImpl(iterator);
-  let value = null;
-  for(let node of iterator) {
-    value = node.nodeValue;
-    if(!trivials.has(value)) {
-      node.nodeValue = value.replace(NBSP_PATTERN, ' ');
+  for(let node of DOMFilter.getTextNodeIterator(document)) {
+    let value = node.nodeValue;
+    if(!DOMFilter.TRIVIAL_TEXT_NODE_VALUES.has(value)) {
+      node.nodeValue = value.replace(/&nbsp;/g, ' ');
     }
   }
 };
@@ -772,33 +793,17 @@ DOMFilter.normalizeWhitespace = function(document) {
 // previous normalized, so, for example, it does not consider &nbsp;.
 DOMFilter.condenseNodeValues = function(document, sensitiveElements) {
   'use strict';
-  const iterator = document.createNodeIterator(document.documentElement,
-    NodeFilter.SHOW_TEXT,
-    DOMFilter.rejectIfSensitive.bind(null, sensitiveElements));
-  iterator[Symbol.iterator] = DOMFilter.getSymbolIteratorImpl(iterator);
-  for(let node of iterator) {
-    node.nodeValue = DOMFilter.condenseSpaces(node.nodeValue);
+  for(let node of DOMFilter.getTextNodeIterator(document)) {
+    if(!sensitiveElements.has(node.parentElement)) {
+      node.nodeValue = DOMFilter.condenseSpaces(node.nodeValue);
+    }
   }
 };
-
-// TODO: it is nice to use the function filter argument to createNodeIterator
-// but performance is dropping because of it, maybe move the condition back
-// inot the respective loops
-// TODO: deprecate
-DOMFilter.rejectIfSensitive = function(sensitiveElements, node) {
-  'use strict';
-  return sensitiveElements.has(node.parentElement) ?
-    NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
-};
-
-// A regular expression that matches any number of occurrences of one or more
-// consecutive spaces
-DOMFilter.CONSECUTIVE_SPACES_PATTERN = / +/g;
 
 // Replaces one or more consecutive spaces with a single space
 DOMFilter.condenseSpaces = function(inputString) {
   'use strict';
-  return inputString.replace(DOMFilter.CONSECUTIVE_SPACES_PATTERN, ' ');
+  return inputString.replace(/ +/g, ' ');
 };
 
 // Removes trimmable elements from the start and end of the document
@@ -861,15 +866,17 @@ DOMFilter.isEmptyParagraph = function(element) {
 // this function
 DOMFilter.trimTextNodes = function(document, sensitiveElements) {
   'use strict';
-  const iterator = document.createNodeIterator(
-    document.documentElement, NodeFilter.SHOW_TEXT,
-    DOMFilter.rejectIfSensitive.bind(null, sensitiveElements));
-  iterator[Symbol.iterator] = DOMFilter.getSymbolIteratorImpl(iterator);
+
   const isElement = DOMFilter.isElement;
   // Note this is using the no trim function, not the other function
   // for the purpose of unwrapping inlines, it is a different set
   const isInlineElement = DOMFilter.isInlineElementNoTrim;
-  for(let node of iterator) {
+  for(let node of DOMFilter.getTextNodeIterator(document)) {
+
+    if(sensitiveElements.has(node.parentElement)) {
+      continue;
+    }
+
     if(node.previousSibling) {
       if(isElement(node.previousSibling)) {
         if(isInlineElement(node.previousSibling)) {
@@ -923,10 +930,7 @@ DOMFilter.trimTextNodes = function(document, sensitiveElements) {
 
 DOMFilter.filterEmptyTextNodes = function(document) {
   'use strict';
-  const iterator = document.createNodeIterator(
-    document.documentElement, NodeFilter.SHOW_TEXT);
-  iterator[Symbol.iterator] = DOMFilter.getSymbolIteratorImpl(iterator);
-  for(let node of iterator) {
+  for(let node of DOMFilter.getTextNodeIterator(document)) {
     if(!node.nodeValue) {
       node.remove();
     }
@@ -1006,31 +1010,26 @@ DOMFilter.isInlineElementNoTrim = function(element) {
   return DOMFilter.INLINE_ELEMENTS_NO_TRIM.has(element.localName);
 };
 
-DOMFilter.isElement = function(node) {
-  'use strict';
-  return node.nodeType === Node.ELEMENT_NODE;
-};
-
-DOMFilter.isTextNode = function(node) {
-  'use strict';
-  return node.nodeType === Node.TEXT_NODE;
-};
 
 // Unwraps the element's child nodes into the parent of the element or, if
 // provided, the parent of the alternate element
+// https://developer.mozilla.org/en-US/docs/Web/API/Node/insertBefore
+// https://code.google.com/p/chromium/issues/detail?id=419780
+// I don't need to choose between appendChild and insertBefore, I just
+// need to use nextSibling || null
 DOMFilter.unwrap = function(element, alternate) {
   'use strict';
   const isTextNode = DOMFilter.isTextNode;
-  const moveChildren = function(element, parent, before) {
-    for(let node = element.firstChild; node; node = element.firstChild) {
-      parent.insertBefore(node, before);
-    }
-  };
-
   const numChildNodes = element.childNodes.length;
   const document = element.ownerDocument;
   const target = alternate || element;
   const parent = target.parentElement;
+  const insertChildrenBefore = function(element, referenceNode) {
+    const parent = referenceNode.parentElement;
+    for(let node = element.firstChild; node; node = element.firstChild) {
+      parent.insertBefore(node, referenceNode);
+    }
+  };
 
   if(numChildNodes && parent) {
     if(target.previousSibling && isTextNode(target.previousSibling)) {
@@ -1041,14 +1040,10 @@ DOMFilter.unwrap = function(element, alternate) {
     if(grandParent && numChildNodes > 2) {
       const nextSibling = parent.nextSibling;
       parent.remove();
-      moveChildren(element, parent, target);
-      if(nextSibling) {
-        grandParent.insertBefore(parent, nextSibling);
-      } else {
-        grandParent.appendChild(parent);
-      }
+      insertChildrenBefore(element, target);
+      grandParent.insertBefore(parent, nextSibling || null);
     } else {
-      moveChildren(element, parent, target);
+      insertChildrenBefore(element, target);
     }
 
     if(target.nextSibling && isTextNode(target.nextSibling)) {

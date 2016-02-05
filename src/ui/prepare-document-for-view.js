@@ -12,6 +12,7 @@
 // clear that I am unclear about how it will turn out currently.
 // TODO: properly handle noembed
 // TODO: support audio/video
+// TODO: just move this back into dom-filter I suppose
 
 function prepareDocumentForView(document) {
   'use strict';
