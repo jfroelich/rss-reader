@@ -4,50 +4,6 @@
 
 'use strict';
 
-// TODO: customizable update schedules per feed
-// TODO: backoff per feed if poll did not find updated content
-// TODO: de-activation of feeds with 404s
-// TODO: de-activation of too much time elapsed since feed had new articles
-// TODO: only poll if feed is active
-// TODO: store de-activated reason code
-// TODO: store de-activated date
-// TODO: pass along a stats histogram object that trackers poll stats
-// TODO: navigator should be a dependency injection so it can be mocked?
-// TODO: Database should be a dependency injection
-// TODO: FeedStore should be a dependency injection
-// TODO: FeedRequest should be a dependency injection
-// TODO: EntryUtils should be a dependency injection
-// TODO: showNotification should be a dependency injection
-// TODO: async should be a dependncy injection? Maybe? Or maybe I should
-// just completely get rid of this and roll my own like before, because
-// I am not sure it is adding that much simplicity, and as noted, I
-// am having trouble tracking when all requests are complete (see later)
-// TODO: due to the large number of dependencies, make I should make
-// it an object where the state is the dependencies? Maybe it would
-// reduce the number of parameters passed around in continuations
-
-// TODO: some entry link URLs from feeds are pre-chain-of-redirect-resolution,
-// and are technically duplicates because each redirects to the same URL at the
-// end of the redirect chain. Therefore we should be storing the terminal link,
-// not the source link. Or maybe we should be storing both. That way a lookup
-// will detect the article already exists and we store fewer dups
-// I think that fetching does use responseURL, but we end up not using response
-// URL at some point later in processing. Basically, the responseURL has to be
-// detected at the point of augment, and we want to rewrite at that point
-// So this note is here but technically this note belongs to several issues in
-// the holistic view of the update process. Maybe it does not belong to subscribe
-// and only to poll because maybe only poll should be downloading and augmenting
-// entries, and subscribe should just add the feed and not add any entries because
-// subscribe should be near instant. So subscribe should store the feed and then
-// enqueue a one-feed poll update.
-
-// TODO: i need to figure out how to bypass feedproxy.google.com and rewrite
-// the url properly, because it is screwing up everything. not to mention it
-// is tracking clicks.
-
-// TODO: maybe have an option to exclude PDFs or embed PDFs as iframes or
-// something like that
-
 { // BEGIN ANONYMOUS NAMESPACE
 
 function pollFeeds() {
@@ -57,9 +13,6 @@ function pollFeeds() {
     console.debug('Polling canceled as offline');
     return;
   }
-
-  // TODO: use the new, more global, navigator.permission check instead of
-  // the extension API
 
   chrome.permissions.contains({permissions: ['idle']},
     onCheckIdlePermission);

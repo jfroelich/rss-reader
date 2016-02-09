@@ -4,17 +4,6 @@
 
 // Requires: /fetch/fetch-image.js
 
-// TODO: this also serves to check if an image's src is correct. consider
-// removing 404 images or replacing them with an error message.
-// so maybe this has to be a more general process-images document-transform?
-// The idea is that we only want to touch images once.
-// TODO: this needs to consider srcset, which makes it much more tricky,
-// because there could be multiple dimensions to consider, and also, because
-// filterSourcelessImages delegates responsive design loading mechanics to
-// the browser. The current design makes this nearly impossible, e.g.
-// shouldFetchImage doesn't even make sense
-// TODO: decouple async to allow for passing parameters to callback
-
 'use strict';
 
 { // BEGIN ANONYMOUS NAMESPACE
