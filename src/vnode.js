@@ -2,14 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// This is under heavy construction and is really just an experiment.
-// The idea is to improve the processing done in dom-filter and
-// calamine. Rather than apply changes to an actual document object, we are
-// going to create our own very simple non-native document object,
-// with limited functionality, and then manipulate it,
-// to see if it is faster to do all the manipulations on the virtual document
-// TODO: create vprune.js and make calls
-// TODO: support other node types (e.g. comments)
+// Virtual dom library
 
 function VNode() {
   'use strict';
@@ -43,29 +36,85 @@ VNode.createElement = function(name) {
   return node;
 };
 
-// Returns whether this node is allowed to contain the childNode. This is
-// currently extremely simple and not spec compliant.
-// TODO: what about constraints like <script> cannot contain <any-element>?
-// Current constraints:
-// * A node cannot contain itself
-// * Only element nodes can contain other nodes
-VNode.prototype.mayContainChild = function(childNode) {
+// These nodes cannot contain other elements. Some of these nodes may
+// still contain other text nodes
+// See: http://w3c.github.io/html-reference/syntax.html
+// See: https://github.com/google/closure-library/blob/master/closure/goog
+// /dom/dom.js
+VNode.VOID_ELEMENT_NAMES = new Set([
+  'applet',
+  'area',
+  'base',
+  'br',
+  'col',
+  'command',
+  'embed',
+  'frame',
+  'hr',
+  'img',
+  'input',
+  'iframe',
+  'isindex',
+  'keygen',
+  'link',
+  'noframes',
+  'noscript',
+  'meta',
+  'object',
+  'param',
+  'script',
+  'source',
+  'style',
+  'track',
+  'wbr'
+]);
+
+// Returns whether this node is allowed to contain the childNode.
+// Throws an error if childNode is undefined.
+VNode.prototype.mayContain = function(childNode) {
   'use strict';
-  return this !== childNode && this.isElement();
+
+  // A node cannot contain itself
+  if(this === childNode) {
+    return false;
+  }
+
+  // Only elements can contain other nodes
+  if(!this.isElement()) {
+    return false;
+  }
+
+  // Certain elements should not contain other elements
+  const thisIsVoid = VNode.VOID_ELEMENT_NAMES.has(this.name);
+  if(childNode.isElement() && thisIsVoid) {
+    return false;
+  }
+
+  return true;
 };
 
-// TODO: if appending a text node, can we immediately normalize?
 VNode.prototype.appendChild = function(node) {
   'use strict';
 
-  if(!this.mayContainChild(node))
-    return false;
-
-  // Attempting to append the last child again is a successful no-op
-  if(this.lastChild === node)
+  // Attempting to append nothing is a successful no-op
+  if(!node) {
     return true;
+  }
 
-  // If the node was attached, detach it (keeping its child edges intact)
+  if(!this.mayContain(node)) {
+    return false;
+  }
+
+  // Attempting to append the same last child again is a successful no-op. This
+  // is quite different than just checking if the node already has this node
+  // as a parent, because in that case, when the node being appended is not the
+  // the last child, appendChild acts as a move operation by moving the node
+  // from its current position to the end of the parent's child nodes.
+  if(this.lastChild === node) {
+    return true;
+  }
+
+  // If the node was attached, detach it (keeping its child edges intact).
   // This also ensures that node.nextSibling is set to null.
   node.remove();
 
@@ -76,13 +125,18 @@ VNode.prototype.appendChild = function(node) {
   node.previousSibling = this.lastChild;
 
   if(this.lastChild) {
-    // If this node has a last child prior to the append, then we know it
+    // If this node has a lastChild prior to the append, then we know it
     // contains at least one other node. Link the previous lastChild to the
-    // new node
+    // new node. This has to be done before we update the parent's
+    // lastChild 'pointer' to the newly appended node.
     this.lastChild.nextSibling = node;
+    // Because this is an append operation, and because there was at least one
+    // other node prior to the append, we leave firstChild as is.
   } else {
-    // No last child means implicitly means no firstChild either, which means
-    // the appended node is now the first child
+    // If lastChild is undefined then the node does not contain any child
+    // nodes prior to the append operation. This means that firstChild is also
+    // undefined, and now must become defined because we are appending a new
+    // child.
     this.firstChild = node;
   }
 
@@ -106,50 +160,70 @@ VNode.prototype.replaceChild = function(newChild, oldChild) {
     return true;
   }
 
+  // Slightly wasteful but avoids repetitive code
   return this.insertBefore(newChild, oldChild) && oldChild.remove();
 };
 
 VNode.prototype.insertBefore = function(node, referenceNode) {
   'use strict';
 
-  if(!referenceNode)
-    return this.appendChild(node);
-  if(!this.mayContainChild(node))
-    return false;
-  if(referenceNode.parentNode !== this)
-    return false;
-
-  // TODO: should this actually return true? Is it a no-op success?
-  if(referenceNode.previousSibling === node)
-    return false;
-
-  // TODO: is this actually a failure? What does it mean to try and insert
-  // a node before itself?
-  if(node === referenceNode)
+  // Inserting nothing is a successful no-op
+  if(!node) {
     return true;
+  }
 
-  // Remove the node from its old tree (but keep the node's children intact)
+  if(!referenceNode) {
+    return this.appendChild(node);
+  }
+
+  if(!this.mayContain(node)) {
+    return false;
+  }
+
+  if(referenceNode.parentNode !== this) {
+    return false;
+  }
+
+  // In order to be consistent with appendChild, this is a successful no-op
+  if(referenceNode.previousSibling === node) {
+    return true;
+  }
+
+  // Inserting a node before itself is a successful no-op
+  if(node === referenceNode) {
+    return true;
+  }
+
+  // Remove the node from its old tree (but keep the node's children intact).
+  // We do this because we have to update the old tree in case we are
+  // inserting a node that was already attached somewhere else.
   node.remove();
 
-  node.parentNode = referenceNode.parentNode;
+  node.parentNode = this;
   node.nextSibling = referenceNode;
   const oldPreviousSibling = referenceNode.previousSibling;
   if(oldPreviousSibling) {
     oldPreviousSibling.nextSibling = node;
     node.previousSibling = oldPreviousSibling;
   } else {
-    referenceNode.parentNode.firstChild = node;
+    this.firstChild = node;
   }
   referenceNode.previousSibling = node;
   return true;
 };
 
-// NOTE: this leaves the node's edges to its children intact
-// (this.firstChild && this.lastChild are unchanged). It breaks the edges
-// to the parent and siblings.
-// TODO: why is this boolean? it never can return false
+// Removing a node detaches the node from its tree. It breaks the edges
+// from the node's parent to the node, and breaks the edges between the node
+// and its siblings. It does NOT remove the links to the node's child nodes. In
+// other words, removing a node removes both the node and all of its
+// descendants. In addition, removing a node does not 'delete' the node. The
+// node still exists in memory and can be re-attached.
+// Returns whether the remove operation was successful. Currently, this always
+// returns true.
 VNode.prototype.remove = function() {
   'use strict';
+
+  // Store a reference to the parent node prior to removal
   const parentNode = this.parentNode;
 
   // If there is no parent, it is a successful no-op, not a failure
@@ -157,13 +231,17 @@ VNode.prototype.remove = function() {
     return true;
   }
 
+  // Store sibling references prior to removal
   const nextSibling = this.nextSibling;
   const previousSibling = this.previousSibling;
 
+  // Update the removed node's own references to other nodes, but leave
+  // the references to this node's children intact.
   this.parentNode = null;
   this.nextSibling = null;
   this.previousSibling = null;
 
+  // Update other nodes' references to this node
   if(nextSibling) {
     nextSibling.previousSibling = previousSibling;
     if(previousSibling) {
@@ -182,11 +260,11 @@ VNode.prototype.remove = function() {
   return true;
 };
 
-// Returns the closest ancestor node matching the predicate, excluding the
-// node itself (unlike the spec). Returns null if no ancestors matched.
-VNode.prototype.closest = function(predicate) {
+// Returns the closest ancestor node matching the predicate, or null if
+// no ancestors matched.
+VNode.prototype.closest = function(predicate, includeSelf) {
   'use strict';
-  let node = this.parentNode;
+  let node = includeSelf ? this : this.parentNode;
   let result = null;
   while(!result && node) {
     if(predicate(node)) {
@@ -213,7 +291,7 @@ Object.defineProperty(VNode.prototype, 'parentElement', {
     'use strict';
     return this.closest(function(node) {
       return node.isElement();
-    });
+    }, false);
   }
 });
 
@@ -305,10 +383,15 @@ VNode.prototype.setAttribute = function(name, value) {
     this.attributes = new Map();
   }
 
-  // Force some magical minor cleaning of the value as a convenience
-  let storedValue = VNode._isString(value) ? value :
-    (value ? String(value) : '');
-  storedValue = storedValue.trim();
+  let storedValue = '';
+  if(value === null || typeof value === 'undefined') {
+  } else if(VNode.isString(value)) {
+    storedValue = value;
+  } else {
+    // See http://jsperf.com/cast-to-string/13
+    storedValue += value;
+  }
+
   this.attributes.set(name, storedValue);
 };
 
@@ -333,13 +416,11 @@ VNode.prototype.removeAttribute = function(name) {
 // TODO: less repetitive code?
 VNode.prototype.traverse = function(callback, includeSelf) {
   'use strict';
-
-  const stack = [];
-  let node = null;
+  const stack = new Array();
   if(includeSelf) {
     stack.push(this);
   } else {
-    node = this.lastChild;
+    let node = this.lastChild;
     while(node) {
       stack.push(node);
       node = node.previousSibling;
@@ -347,7 +428,7 @@ VNode.prototype.traverse = function(callback, includeSelf) {
   }
 
   while(stack.length) {
-    node = stack.pop();
+    let node = stack.pop();
     callback(node);
     node = node.lastChild;
     while(node) {
@@ -357,29 +438,17 @@ VNode.prototype.traverse = function(callback, includeSelf) {
   }
 };
 
-// Searches all descendants, self included, for the first node to match
-// the given predicate function, and returns the first match or null.
-// Kind of like querySelector, but no need for intermediate string
-// representation
-// I've chosen to re-implement the stack based DFS pre-order traversal
-// approach here, because of the short circuiting logic that does not
-// belong in the other method.
-// TODO: exclude the node itself? or should i start from
-// this.firstChild above? If I start above I have to also
-// visit siblings
-// TODO: does querySelector include the current node?
+// Searches descendants for the first node to match
+// the predicate
+// TODO: use an includeSelf param like traverse
 VNode.prototype.search = function(predicate) {
   'use strict';
 
   const stack = [this];
   let node = null;
-  let found = false;
   let match = null;
   while(!match && stack.length) {
     node = stack.pop();
-
-    // if(node !== this && predicate(node)) {
-
     if(predicate(node)) {
       match = node;
     } else {
@@ -396,11 +465,12 @@ VNode.prototype.search = function(predicate) {
 // Removes empty text nodes from the set of descendants, self excluded
 // Merges adjacent text nodes from the set of descendants, self excluded
 // TODO: if converting to DOM takes care of this, deprecate
-// TODO: if perf is poor, inline traversal or write a mutation-allowing iterator
+// TODO: if perf is poor, inline traversal or write a mutation-allowing
+// iterator
 VNode.prototype.normalize = function() {
   'use strict';
 
-  // Build a static list of all text nodes, excluding the current node
+  // Build a static list of descendant text nodes
   let nodes = [];
   this.traverse(function(node) {
     if(node.isText()) {
@@ -415,7 +485,7 @@ VNode.prototype.normalize = function() {
     node.remove();
   });
 
-  // Regenerate a static collection of text nodes
+  // Regenerate the list
   nodes = [];
   this.traverse(function(node) {
     if(node.isText()) {
@@ -429,19 +499,19 @@ VNode.prototype.normalize = function() {
   nodes.forEach(function(node) {
     const prev = node.previousSibling;
     if(prev && prev.isText()) {
+      // See http://jsperf.com/concat-vs-plus-vs-join
       prev.value = prev.value + node.value;
       node.remove();
     }
   });
 };
 
-
-// Returns a static array of matching descendant nodes. Departs from the spec.
-// Not very performant.
-// TODO: does getElementsByTagName include the current node?
+// Returns a static array of matching descendant nodes.
+// NOTE: when called on document, includes the root node. When called on
+// an element, excludes the element. I leave it up to the caller.
 VNode.prototype.getElementsByName = function(name, includeSelf) {
   'use strict';
-  const elements = [];
+  const elements = new Array();
   this.traverse(function(node) {
     if(node.name === name) {
       elements.push(node);
@@ -452,9 +522,11 @@ VNode.prototype.getElementsByName = function(name, includeSelf) {
 
 // Not optimized what-so-ever. Limited to descendants of the node, including
 // self.
+// TODO: if VNode.search is changed to accept includeSelf parameter, this
+// can be changed to accept includeSelf parameter.
 VNode.prototype.getElementById = function(id) {
   'use strict';
-  if(VNode._isString(id)) {
+  if(VNode.isString(id)) {
     return this.search(function(node) {
       return id === node.id;
     });
@@ -463,58 +535,41 @@ VNode.prototype.getElementById = function(id) {
 
 // Rather than calling getElementById, which traverses each time, consider
 // calling this once on a tree and then using a map lookup to get an element
-// by its id. The map includes the id of the root element (if it has one).
-VNode.generateIdMap = function(tree) {
+// by its id. Tree modification is not reflected in the index.
+VNode.indexIds = function(tree) {
   'use strict';
-  const ids = new Map();
+  const index = new Map();
   tree.traverse(function(node) {
     if(node.isElement()) {
-      const id = node.getAttribute('id');
-      if(VNode._isString(id)) {
-        ids.set(id, node);
+      const id = node.id;
+      if(id && !index.has(id)) {
+        index.set(id, node);
       }
     }
   }, true);
-  return ids;
+  return index;
 };
 
-
-VNode.prototype.isTable = function() {
-  'use strict';
-  return this.name === 'table';
-}
-
-VNode.prototype.isTableRow = function() {
-  'use strict';
-  return this.name === 'tr';
-};
-
-VNode.prototype.isTableSection = function() {
-  'use strict';
-  const name = this.name;
-  return name === 'thead' || name === 'tbody' || name === 'tfoot';
-};
-
-// NOTE: the current implementation is rather strict and does not account
-// for things like intermediate wrapping elements within a table element
+// NOTE: the current implementation does not allow for intermediate
+// wrapping elements such as the form element in
+// <table><form><tr>...</tr></form></table>
 Object.defineProperty(VNode.prototype, 'rows', {
   get: function() {
     'use strict';
 
-    // This property should only be defined on table elements
-    if(!this.isTable()) {
+    if(this.name !== 'table') {
       return;
     }
 
     const rows = [];
-    for(let node = this.firstChild; node; node = node.nextSibling) {
-      if(node.isTableRow()) {
+    for(let node = this.firstChild, name; node; node = node.nextSibling) {
+      name = node.name;
+      if(name === 'tr') {
         rows.push(node);
-      } else if(node.isTableSection()) {
-        for(let subNode = node.firstChild; subNode;
-          subNode = subNode.nextSibling) {
-          if(subNode.isTableRow()) {
-            rows.push(subNode);
+      } else if(name === 'thead' || name === 'tbody' || name === 'tfoot') {
+        for(let snode = node.firstChild; snode; snode = snode.nextSibling) {
+          if(snode.name === 'tr') {
+            rows.push(snode);
           }
         }
       }
@@ -523,20 +578,15 @@ Object.defineProperty(VNode.prototype, 'rows', {
   }
 });
 
-VNode.prototype.isTableCell = function() {
-  return this.name === 'td';
-};
-
 Object.defineProperty(VNode.prototype, 'cols', {
   get: function() {
     'use strict';
-    // This property should only be defined on HTMLTRElements
-    if(!this.isTableRow()) {
+    if(this.name !== 'tr') {
       return;
     }
     const columns = [];
     for(let node = this.firstChild; node; node = node.nextSibling) {
-      if(node.isTableCell()) {
+      if(node.name === 'td') {
         columns.push(node);
       }
     }
@@ -544,29 +594,12 @@ Object.defineProperty(VNode.prototype, 'cols', {
   }
 });
 
-// TODO: convert into a DOMNode and then toString that
+// TODO: try and defer to the native
 VNode.prototype.toString = function() {
   'use strict';
-
-  if(this.isText()) {
-    return '"' + this.value + '"';
-  } else {
-    let buffer = new Array();
-    buffer.push('<');
-    buffer.push(this.name);
-    const attributes = this.attributes || [];
-    for(let entry of attributes) {
-      buffer.push(' ');
-      buffer.push(entry[0]);
-      buffer.push('="');
-      buffer.push(entry[1]);
-      buffer.push('"');
-    }
-    buffer.push('/>');
-    return buffer.join('');
-  }
+  const node = VNode.toDOMNode(this);
+  return node.outerHTML;
 };
-
 
 // Generates a VNode representation of a DOM node. Does not do any linking to
 // other vnodes (you have to append). Does not inspect
@@ -578,8 +611,6 @@ VNode.fromDOMNode = function(node) {
   const vNode = new VNode();
 
   if(node.nodeType === Node.ELEMENT_NODE) {
-
-    // TODO: data mapped properties not present as attributes?
 
     vNode.type = node.nodeType;
     vNode.name = node.localName;
@@ -604,16 +635,12 @@ VNode.fromDOMNode = function(node) {
     vNode.type = node.nodeType;
     vNode.value = node.nodeValue;
   } else {
-    console.debug('Unsupported node type: ', node);
     return;
   }
 
   return vNode;
 };
 
-// NOTE: we create it within the local hosting document, I do not expect
-// it to be a problem to append such a node to another document. I suppose
-// maybe there is a problem if Chrome does eager fetching?
 VNode.toDOMNode = function(vNode) {
   'use strict';
   let node = null;
@@ -641,43 +668,44 @@ VNode.fromHTMLDocument = function(document) {
     this.currentNode = currentNode;
   };
 
-  if(!document ||
-    document.nodeType !== Node.DOCUMENT_NODE ||
+  if(!document || document.nodeType !== Node.DOCUMENT_NODE ||
     !document.documentElement ||
     document.documentElement.nodeType !== Node.ELEMENT_NODE) {
     return null;
   }
 
   let virtualRoot = null;
-
+  let pair = null;
+  let parent = null;
+  let node = null;
+  let virtualNode = null;
+  let appended = false;
   const stack = new Array();
   stack.push(new Pair(null, document.documentElement));
-
   while(stack.length) {
-    let pair = stack.pop();
-    let parent = pair.virtualParent;
-    let node = pair.currentNode;
+    pair = stack.pop();
+    parent = pair.virtualParent;
+    node = pair.currentNode;
+    virtualNode = VNode.fromDOMNode(node);
+    if(virtualNode) {
+      if(parent) {
+        appended = parent.appendChild(virtualNode);
+      } else {
+        virtualRoot = virtualNode;
+        appended = true;// treat the root as appended
+      }
 
-    if(node.nodeType !== Node.ELEMENT_NODE &&
-      node.nodeType !== Node.TEXT_NODE) {
-      // console.debug('Skipping unsupported node', node);
-      continue;
-    }
+      if(appended) {
+        node = node.lastChild;
+        while(node) {
+          pair = new Pair(virtualNode, node);
+          stack.push(pair);
+          node = node.previousSibling;
+        }
+      }
 
-    let virtualNode = VNode.fromDOMNode(node);
-    if(parent) {
-      parent.appendChild(virtualNode);
-    } else {
-      virtualRoot = virtualNode;
-    }
-
-    node = node.lastChild;
-    while(node) {
-      stack.push(new Pair(virtualNode, node));
-      node = node.previousSibling;
     }
   }
-
   return virtualRoot;
 };
 
@@ -697,6 +725,6 @@ Object.defineProperty(VNode.prototype, 'outerHTML', {
 });
 
 // See http://stackoverflow.com/questions/4059147
-VNode._isString = function(value) {
+VNode.isString = function(value) {
   return Object.prototype.toString.call(value) === '[object String]';
 };

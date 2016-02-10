@@ -31,31 +31,31 @@ VNodeTest.construct = function() {
 
 VNodeTest.construct();
 
-VNodeTest.mayContainChildTest = function() {
+VNodeTest.mayContainTest = function() {
   'use strict';
-  console.group('Running mayContainChild tests');
-  const elementNode = new VNode();
-  elementNode.type = Node.ELEMENT_NODE;
-  const elementNode2 = new VNode();
-  elementNode2.type = Node.ELEMENT_NODE;
-  const textNode = new VNode();
-  textNode.type = Node.TEXT_NODE;
-  const textNode2 = new VNode();
-  textNode2.type = Node.TEXT_NODE;
+  console.group('Running mayContain tests');
+  const elementNode = VNode.createElement('div');
+  const elementNode2 = VNode.createElement('div');
+  const textNode = VNode.createTextNode('test');
+  const textNode2 = VNode.createTextNode('test');
+  const voidNode = VNode.createElement('br');
   console.log('Element cannot contain itself?',
-    !elementNode.mayContainChild(elementNode));
+    !elementNode.mayContain(elementNode));
   console.log('Element node may contain element node?',
-    elementNode.mayContainChild(elementNode2));
+    elementNode.mayContain(elementNode2));
   console.log('Element node may contain text node?',
-    elementNode.mayContainChild(textNode));
+    elementNode.mayContain(textNode));
   console.log('Text node cannot contain element node?',
-    !textNode.mayContainChild(elementNode));
+    !textNode.mayContain(elementNode));
   console.log('Text node cannot contain text node?',
-    !textNode.mayContainChild(textNode2));
+    !textNode.mayContain(textNode2));
+  console.log('Void node cannot contain element?',
+    !voidNode.mayContain(elementNode));
+  console.log('Void node may contain text node?',
+    voidNode.mayContain(textNode));
   console.groupEnd();
 };
-
-VNodeTest.mayContainChildTest();
+VNodeTest.mayContainTest();
 
 VNodeTest.appendChildTest = function() {
   'use strict';
@@ -626,9 +626,9 @@ VNodeTest.testGetElementById = function() {
   console.log('Found child by id?', !!match && match.id === 'child-id'
     && match === child);
 
-  const idmap = VNode.generateIdMap(parent);
-  console.log('Found child in map by id?',
-    !!idmap.get('child-id'));
+  const index = VNode.indexIds(parent);
+  console.log('Found child in index?',
+    !!index.get('child-id'));
 
   console.groupEnd();
 };
