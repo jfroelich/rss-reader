@@ -46,9 +46,7 @@ VNodeTest.mayContainTest = function() {
   console.log('Element node may contain text node?',
     elementNode.mayContain(textNode));
   console.log('Text node cannot contain element node?',
-    !textNode.mayContain(elementNode));
-  console.log('Text node cannot contain text node?',
-    !textNode.mayContain(textNode2));
+    !textNode.hasOwnProperty('mayContain'));
   console.log('Void node cannot contain element?',
     !voidNode.mayContain(elementNode));
   console.log('Void node may contain text node?',
@@ -97,9 +95,8 @@ VNodeTest.appendChildTest = function() {
   console.log('Unable to append itself as child?', !selfAppendResult);
 
   const sterile = VNode.createTextNode('sterile');
-  const adoptable = VNode.createTextNode('adoptable');
-  const sterileAdoptResult = sterile.appendChild(adoptable);
-  console.log('Unable to append child to text node?', !sterileAdoptResult);
+  console.log('Unable to append child to text node?',
+    !sterile.hasOwnProperty('appendChild'));
 
   // Test re-appending
   const reappendParent = VNode.createElement('reappendParent');
@@ -448,15 +445,6 @@ VNodeTest.childNodesTests = function() {
     childNodes.length === 3);
   console.log('childNodes[0] is still c1?',
     childNodes[0].name === 'c1');
-
-  // Test child node iteration
-  const nodes = new Array();
-  for(let node of parent.childIterator) {
-    nodes.push(node);
-  }
-  console.log('Child iterator produced correct number of nodes?',
-    nodes.length === parent.childNodes.length);
-
   console.groupEnd();
 };
 VNodeTest.childNodesTests();
@@ -482,9 +470,8 @@ VNodeTest.testAttributes = function() {
     !node.getAttribute('a'));
 
   const textNode = VNode.createTextNode('textNode');
-  textNode.setAttribute('a', '1');
-  console.log('setAttribute on textNode was ineffective?',
-    !node.hasAttribute('a'));
+  console.log('Unable to setAttribute on textNode?',
+    !node.hasOwnProperty('setAttribute'));
 
   const idnode = VNode.createElement('idnode');
   idnode.setAttribute('id', 'test-id');
@@ -634,7 +621,7 @@ VNodeTest.testGetElementById = function() {
   console.log('Found child by id?', !!match && match.id === 'child-id'
     && match === child);
 
-  const index = VNode.indexIds(parent);
+  const index = VElement.indexIds(parent);
   console.log('Found child in index?',
     !!index.get('child-id'));
 
@@ -686,7 +673,7 @@ VNodeTest.testFromDOMNode = function() {
   console.log('Element has correct type?', vp.type === Node.ELEMENT_NODE);
   console.log('Element has correct name?', vp.name === 'p');
   console.log('Element has correct attributes?',
-    vp.getAttribute('id') === 'p');
+    vp.getAttribute && (vp.getAttribute('id') === 'p'));
   console.log('Text node has correct type?',
     vt.type === Node.TEXT_NODE);
   console.log('Text node has correct value?',

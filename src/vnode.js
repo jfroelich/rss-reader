@@ -13,171 +13,28 @@ class VNode {
   // such as VNode.createElement to create new vnodes.
   constructor() {
     this.parentNode = null;
-    this.firstChild = null;
-    this.lastChild = null;
     this.nextSibling = null;
     this.previousSibling = null;
-    // always lower case name (only for element nodes)
-    this.name = null;
+
     // nodeType (e.g. Node.TEXT_NODE)
     this.type = null;
-    // value (set for text nodes, not element nodes)
-    this.value = null;
-    // lazily-loaded Map<String, String> of attributes
-    this.attributes = null;
   }
 
   static createTextNode(value) {
-    const node = new VNode();
-    node.type = Node.TEXT_NODE;
-    node.value = value;
-    return node;
+    return new VTextNode(value);
   }
 
   static createElement(name) {
-    const node = new VNode();
-    node.type = Node.ELEMENT_NODE;
-    node.name = name;
-    return node;
-  }
-
-  // Returns whether this node is allowed to contain the node.
-  // Throws an error if node is undefined.
-  mayContain(node) {
-
-    // A node cannot contain itself
-    if(this === node) {
-      return false;
-    }
-
-    // Only elements can contain other nodes
-    if(!this.isElement()) {
-      return false;
-    }
-
-    // Certain elements should not contain other elements
-    const thisIsVoid = VNode.VOID_ELEMENT_NAMES.has(this.name);
-    if(node.isElement() && thisIsVoid) {
-      return false;
-    }
-
-    return true;
-  }
-
-  appendChild(node) {
-
-    // Attempting to append nothing is a successful no-op
-    if(!node) {
-      return true;
-    }
-
-    if(!this.mayContain(node)) {
-      return false;
-    }
-
-    // Attempting to append the same last child again is a successful no-op. This
-    // is quite different than just checking if the node already has this node
-    // as a parent, because in that case, when the node being appended is not the
-    // the last child, appendChild acts as a move operation by moving the node
-    // from its current position to the end of the parent's child nodes.
-    if(this.lastChild === node) {
-      return true;
-    }
-
-    // If the node was attached, detach it (keeping its child edges intact).
-    // This also ensures that node.nextSibling is set to null.
-    node.remove();
-
-    // Create an edge relation between the parent and the appended node
-    node.parentNode = this;
-
-    // This always occurs, even if this.lastChild is undefined
-    node.previousSibling = this.lastChild;
-
-    if(this.lastChild) {
-      // If this node has a lastChild prior to the append, then we know it
-      // contains at least one other node. Link the previous lastChild to the
-      // new node. This has to be done before we update the parent's
-      // lastChild 'pointer' to the newly appended node.
-      this.lastChild.nextSibling = node;
-      // Because this is an append operation, and because there was at least one
-      // other node prior to the append, we leave firstChild as is.
+    let element = null;
+    if(name === 'table') {
+      element = new VTableNode();
+    } else if(name === 'tr') {
+      element = new VRowNode();
     } else {
-      // If lastChild is undefined then the node does not contain any child
-      // nodes prior to the append operation. This means that firstChild is also
-      // undefined, and now must become defined because we are appending a new
-      // child.
-      this.firstChild = node;
+      element = new VElement(name);
     }
 
-    // Regardless of whether the node contained nodes prior to the append,
-    // the newly appended node is now the last child.
-    this.lastChild = node;
-
-    return true;
-  }
-
-  // TODO: what should be the behavior if either argument is undefined?
-  replaceChild(newChild, oldChild) {
-    // Replacing a child with itself is a succesful no-op. We have to explicitly
-    // do this check here to avoid the default behavior of insertBefore which
-    // considers this a failure.
-    // TODO: actually, I think insertBefore considers this a success, so this
-    // check is not needed?
-    if(newChild === oldChild) {
-      return true;
-    }
-
-    // Slightly wasteful but avoids repetitive code
-    return this.insertBefore(newChild, oldChild) && oldChild.remove();
-  }
-
-  insertBefore(node, referenceNode) {
-
-    // Inserting nothing is a successful no-op
-    // TODO: is that right?
-    if(!node) {
-      return true;
-    }
-
-    if(!referenceNode) {
-      return this.appendChild(node);
-    }
-
-    if(referenceNode.parentNode !== this) {
-      return false;
-    }
-
-    // In order to be consistent with appendChild, this is a successful no-op
-    if(referenceNode.previousSibling === node) {
-      return true;
-    }
-
-    // Inserting a node before itself is a successful no-op
-    if(node === referenceNode) {
-      return true;
-    }
-
-    if(!this.mayContain(node)) {
-      return false;
-    }
-
-    // Remove the node from its old tree (but keep the node's children intact).
-    // We do this because we have to update the old tree in case we are
-    // inserting a node that was already attached somewhere else.
-    node.remove();
-
-    node.parentNode = this;
-    node.nextSibling = referenceNode;
-    const oldPreviousSibling = referenceNode.previousSibling;
-    if(oldPreviousSibling) {
-      oldPreviousSibling.nextSibling = node;
-      node.previousSibling = oldPreviousSibling;
-    } else {
-      this.firstChild = node;
-    }
-    referenceNode.previousSibling = node;
-    return true;
+    return element;
   }
 
   // Removing a node detaches the node from its tree. It breaks the edges
@@ -242,76 +99,17 @@ class VNode {
   }
 
   isText() {
-    return this.type === Node.TEXT_NODE;
+    return false;
   }
 
   isElement() {
-    return this.type === Node.ELEMENT_NODE;
+    return false;
   }
 
   get parentElement() {
     return this.closest(function(node) {
       return node.isElement();
     }, false);
-  }
-
-  get firstElementChild() {
-    /*let result = null;
-    for(let node = this.firstChild; !result && node; node = node.nextSibling) {
-      if(node.isElement()) {
-        result = node;
-      }
-    }
-    return result;*/
-
-    let result = null;
-    for(let node of this.childIterator) {
-      if(node.type === Node.ELEMENT_NODE) {
-        result = node;
-        break;
-      }
-    }
-    return result;
-  }
-
-  get lastElementChild() {
-    let result = null;
-    for(let node = this.lastChild; !result && node;
-      node = node.previousSibling) {
-      if(node.isElement()) {
-        result = node;
-      }
-    }
-    return result;
-  }
-
-  get childElementCount() {
-    let count = 0;
-    /*for(let node = this.firstChild; node; node = node.nextSibling) {
-      if(node.isElement()) {
-        count++;
-      }
-    }*/
-
-    for(let node of this.childIterator) {
-      if(node.type === Node.ELEMENT_NODE) {
-        count++;
-      }
-    }
-
-    return count;
-  }
-
-  get childNodes() {
-    const childNodes = [];
-    //for(let node = this.firstChild; node; node = node.nextSibling) {
-    //  childNodes.push(node);
-    //}
-    for(let node of this.childIterator) {
-      childNodes.push(node);
-    }
-
-    return childNodes;
   }
 
   // Gets the node that is at the root of this node's tree
@@ -321,50 +119,6 @@ class VNode {
       node = node.parentNode;
     }
     return node;
-  }
-
-  get id() {
-    return this.getAttribute('id');
-  }
-
-  getAttribute(name) {
-    if(this.attributes) {
-      return this.attributes.get(name);
-    }
-  }
-
-  setAttribute(name, value) {
-    if(!this.isElement()) {
-      return;
-    }
-
-    if(!this.attributes) {
-      this.attributes = new Map();
-    }
-
-    let storedValue = '';
-    if(value === null || typeof value === 'undefined') {
-    } else if(VNode.isString(value)) {
-      storedValue = value;
-    } else {
-      // See http://jsperf.com/cast-to-string/13
-      storedValue += value;
-    }
-
-    this.attributes.set(name, storedValue);
-  }
-
-  hasAttribute(name) {
-    return this.getAttribute(name);
-  }
-
-  removeAttribute(name) {
-    if(this.isElement() && this.attributes) {
-      this.attributes.delete(name);
-      if(!this.attributes.size) {
-        this.attributes = null;
-      }
-    }
   }
 
   // Pre-order DFS traversal
@@ -394,41 +148,6 @@ class VNode {
     }
   }
 
-  // The thinking here is that functions that traverse descendants do not need
-  // to call a function per descendant node, instead they can use an imperative
-  // iterator and do their processing within their function
-  // TODO: this should be optimized, it should not delegate its traversal
-  // because that is creating an intermediate array and calling a function
-  // per node
-  get descendantIterator() {
-    const nodes = new Array();
-    this.traverse(function(node) {
-      nodes.push(node);
-    }, false);
-    return nodes;
-  }
-
-  // The thinking here is that I do quite a lot of simple iteration over
-  // children, this would reduce repetitive code, and for similar reasons as
-  // descendantIterator
-  get childIterator() {
-    let cursor = this.firstChild;
-    const iterator = {};
-    iterator[Symbol.iterator] = function() {
-      return {
-        next: function() {
-          if(cursor) {
-            const node = cursor;
-            cursor = cursor.nextSibling;
-            return { value: node, done: false};
-          } else {
-            return {done: true};
-          }
-        }
-      };
-    };
-    return iterator;
-  }
 
   // Searches descendants for the first node to match
   // the predicate
@@ -460,31 +179,28 @@ class VNode {
   normalize() {
     // Build a static list of descendant text nodes
     let nodes = [];
-    this.traverse(function(node) {
+    this.traverse(function appendIfText(node) {
       if(node.isText()) {
         nodes.push(node);
       }
     }, false);
 
     // Get only empty text nodes, then remove them
-    nodes.filter(function(node) {
+    nodes.filter(function isEmptyTextNode(node) {
       return node.value === null || node.value === void 0;
-    }).forEach(function(node) {
+    }).forEach(function removeNode(node) {
       node.remove();
     });
 
     // Regenerate the list
     nodes = [];
-    this.traverse(function(node) {
+    this.traverse(function reappendIfText(node) {
       if(node.isText()) {
         nodes.push(node);
       }
     }, false);
 
-    // Merge each follower with its predecessor. Due to how traverse is
-    // implemented, we know that previousSibling will always be visited prior
-    // to visiting the current node in the iteration.
-    nodes.forEach(function(node) {
+    nodes.forEach(function maybeMergeIntoPrevious(node) {
       const prev = node.previousSibling;
       if(prev && prev.isText()) {
         // See http://jsperf.com/concat-vs-plus-vs-join
@@ -494,106 +210,15 @@ class VNode {
     });
   }
 
-  // Returns a static array of matching descendant nodes.
-  // In the spec, when called on a document, the behavior is equivalent to
-  // includeSelf is true, but when called on an element, false.
-  getElementsByName(name, includeSelf) {
-    const elements = new Array();
-    this.traverse(function(node) {
-      if(node.name === name) {
-        elements.push(node);
-      }
-    }, includeSelf);
-    return elements;
-  }
-
-  // Not optimized what-so-ever. Limited to descendants of the node, including
-  // self.
-  // TODO: if VNode.search is changed to accept includeSelf parameter, this
-  // can be changed to accept includeSelf parameter.
-  getElementById(id) {
-    if(VNode.isString(id)) {
-      return this.search(function(node) {
-        return id === node.id;
-      });
-    }
-  }
-
-  // Rather than calling getElementById, which traverses each time, consider
-  // calling this once on a tree and then using a map lookup to get an element
-  // by its id. Tree modification is not reflected in the index.
-  static indexIds(tree) {
-    const index = new Map();
-    tree.traverse(function(node) {
-      if(node.isElement()) {
-        const id = node.id;
-        if(id && !index.has(id)) {
-          index.set(id, node);
-        }
-      }
-    }, true);
-    return index;
-  }
-
-  // NOTE: the current implementation does not allow for intermediate
-  // wrapping elements such as the form element in
-  // <table><form><tr>...</tr></form></table>
-  get rows() {
-    if(this.name !== 'table') {
-      return;
-    }
-
-    const rows = [];
-    for(let node = this.firstChild, name; node; node = node.nextSibling) {
-      name = node.name;
-      if(name === 'tr') {
-        rows.push(node);
-      } else if(name === 'thead' || name === 'tbody' || name === 'tfoot') {
-        for(let snode = node.firstChild; snode; snode = snode.nextSibling) {
-          if(snode.name === 'tr') {
-            rows.push(snode);
-          }
-        }
-      }
-    }
-    return rows;
-  }
-
-  get cols() {
-    if(this.name !== 'tr') {
-      return;
-    }
-    /*
-    const columns = [];
-    //for(let node = this.firstChild; node; node = node.nextSibling) {
-    for(let node of this.childIterator) {
-      if(node.name === 'td') {
-        columns.push(node);
-      }
-    }
-    return columns;
-    */
-    return this.childNodes.filter(function(node) {
-      return node.name === 'td';
-    });
-  }
-
-  toString() {
-    const node = VNode.toDOMNode(this);
-    return node.outerHTML;
-  }
-
   // Generates a VNode representation of a DOM node. Does not do any linking to
   // other vnodes (you have to append). Does not inspect
   // more deeply and bring in dom child nodes. Returns undefined
   // if cannot create the node (e.g. tried to import a comment).
   static fromDOMNode(node) {
-    const vNode = new VNode();
+    let vNode = null;
 
     if(node.nodeType === Node.ELEMENT_NODE) {
-
-      vNode.type = node.nodeType;
-      vNode.name = node.localName;
+      vNode = VNode.createElement(node.localName);
 
       const attributes = node.attributes;
       const numAttributes = attributes.length;
@@ -612,8 +237,7 @@ class VNode {
       }
 
     } else if(node.nodeType === Node.TEXT_NODE) {
-      vNode.type = node.nodeType;
-      vNode.value = node.nodeValue;
+      vNode = VNode.createTextNode(node.nodeValue);
     } else {
       return;
     }
@@ -624,12 +248,13 @@ class VNode {
   static toDOMNode(vNode) {
     let node = null;
 
-    if(vNode.type === Node.TEXT_NODE) {
+    if(vNode.isText()) {
       node = document.createTextNode(vNode.value);
-    } else if(vNode.type === Node.ELEMENT_NODE) {
+    } else if(vNode.isElement()) {
       node = document.createElement(vNode.name);
-      for(let attribute of vNode.attributes || []) {
-        node.setAttribute(attribute[0], attribute[1]);
+      const attributes = vNode.attributes || [];
+      for(let entry of attributes) {
+        node.setAttribute(entry[0], entry[1]);
       }
     } else {
       console.log('Unsupported type ', vNode.type);
@@ -701,6 +326,373 @@ class VNode {
   // See http://stackoverflow.com/questions/4059147
   static isString(value) {
     return Object.prototype.toString.call(value) === '[object String]';
+  }
+}
+
+class VTextNode extends VNode {
+  constructor(value) {
+    super();
+    this.type = Node.TEXT_NODE;
+    this.value = value;
+  }
+
+  isText() {
+    return true;
+  }
+
+  toString() {
+    return this.value;
+  }
+}
+
+class VElement extends VNode {
+
+  constructor(name) {
+    super();
+
+    this.type = Node.ELEMENT_NODE;
+
+    // NOTE: Name should be lowercase
+    this.name = name;
+
+    // Elements can have children
+    this.firstChild = null;
+    this.lastChild = null;
+
+    // lazily-loaded Map<String, String> of attributes
+    this.attributes = null;
+  }
+
+  // Returns whether this node is allowed to contain the node.
+  // Throws an error if node is undefined.
+  mayContain(node) {
+
+    // A node cannot contain itself
+    if(this === node) {
+      return false;
+    }
+
+    // Certain elements should not contain other elements
+    const thisIsVoid = VNode.VOID_ELEMENT_NAMES.has(this.name);
+    if(node.isElement() && thisIsVoid) {
+      return false;
+    }
+
+    return true;
+  }
+
+  appendChild(node) {
+
+    // Attempting to append nothing is a successful no-op
+    if(!node) {
+      return true;
+    }
+
+    if(!this.mayContain(node)) {
+      return false;
+    }
+
+    // Attempting to append the same last child again is a successful no-op.
+    // This is quite different than just checking if the node already has this
+    // node as a parent, because in that case, when the node being appended is
+    // not the the last child, appendChild acts as a move operation by moving
+    // the node from its current position to the end of the parent's child
+    // nodes.
+    if(this.lastChild === node) {
+      return true;
+    }
+
+    // If the node was attached, detach it (keeping its child edges intact).
+    // This also ensures that node.nextSibling is set to null.
+    node.remove();
+
+    // Create an edge relation between the parent and the appended node
+    node.parentNode = this;
+
+    // This always occurs, even if this.lastChild is undefined
+    node.previousSibling = this.lastChild;
+
+    if(this.lastChild) {
+      // If this node has a lastChild prior to the append, then we know it
+      // contains at least one other node. Link the previous lastChild to the
+      // new node. This has to be done before we update the parent's
+      // lastChild 'pointer' to the newly appended node.
+      this.lastChild.nextSibling = node;
+      // Because this is an append operation, and because there was at least one
+      // other node prior to the append, we leave firstChild as is.
+    } else {
+      // If lastChild is undefined then the node does not contain any child
+      // nodes prior to the append operation. This means that firstChild is also
+      // undefined, and now must become defined because we are appending a new
+      // child.
+      this.firstChild = node;
+    }
+
+    // Regardless of whether the node contained nodes prior to the append,
+    // the newly appended node is now the last child.
+    this.lastChild = node;
+
+    return true;
+  }
+
+  // TODO: what should be the behavior if either argument is undefined?
+  replaceChild(newChild, oldChild) {
+    // Replacing a child with itself is a succesful no-op. We have to
+    // explicitly do this check here to avoid the default behavior of
+    // insertBefore which considers this a failure.
+    // TODO: actually, I think insertBefore considers this a success, so this
+    // check is not needed?
+    if(newChild === oldChild) {
+      return true;
+    }
+
+    // Slightly wasteful but avoids repetitive code
+    return this.insertBefore(newChild, oldChild) && oldChild.remove();
+  }
+
+  insertBefore(node, referenceNode) {
+
+    // Inserting nothing is a successful no-op
+    // TODO: is that right?
+    if(!node) {
+      return true;
+    }
+
+    // referenceNode is optional. If it is unset, insertBefore degrades
+    // into appendChild's behavior.
+    if(!referenceNode) {
+      return this.appendChild(node);
+    }
+
+    // For a reason unbeknownst to me, insertBefore is defined such that it
+    // could be called with a referenceNode that has a different parent.
+    // If this function was implemented in the form of
+    // node.insertBefore(referenceNode) then there would be no need to do this
+    // check, because the parent is implied by simply accessing the
+    // referenceNode's parent. I guess if the function were implemented that
+    // way, we would still need to have some logic that checked whether the
+    // referenceNode has a parent.
+    if(referenceNode.parentNode !== this) {
+      return false;
+    }
+
+    // In order to be consistent with appendChild, this is a successful no-op
+    if(referenceNode.previousSibling === node) {
+      return true;
+    }
+
+    // Inserting a node before itself is a successful no-op, because we are
+    // basically moving the node into its same position
+    if(node === referenceNode) {
+      return true;
+    }
+
+    // This check does the most work, so we defer it until the end. This
+    // also assures us that we do not try and insert the parent before
+    // the referenceNode, because it checks that the parent is not equal to
+    // the node. As an aside, I suppose that technically we could allow a
+    // parent to be inserted before a reference, it would be some strange
+    // unwrap logic?
+    if(!this.mayContain(node)) {
+      return false;
+    }
+
+    // Remove the node from its old tree (but keep the node's children intact).
+    // We do this because we have to update the old tree in case we are
+    // inserting a node that was already attached somewhere else.
+    node.remove();
+
+    node.parentNode = this;
+    node.nextSibling = referenceNode;
+    const oldPreviousSibling = referenceNode.previousSibling;
+    if(oldPreviousSibling) {
+      oldPreviousSibling.nextSibling = node;
+      node.previousSibling = oldPreviousSibling;
+    } else {
+      this.firstChild = node;
+    }
+    referenceNode.previousSibling = node;
+    return true;
+  }
+
+  isElement() {
+    return true;
+  }
+
+  get firstElementChild() {
+    let result = null;
+    for(let node = this.firstChild; !result && node; node = node.nextSibling) {
+      if(node.isElement()) {
+        result = node;
+      }
+    }
+    return result;
+  }
+
+  get lastElementChild() {
+    let result = null;
+    for(let node = this.lastChild; !result && node;
+      node = node.previousSibling) {
+      if(node.isElement()) {
+        result = node;
+      }
+    }
+    return result;
+  }
+
+  get childElementCount() {
+    let count = 0;
+    for(let node = this.firstChild; node; node = node.nextSibling) {
+      if(node.isElement()) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  get childNodes() {
+    const childNodes = [];
+    for(let node = this.firstChild; node; node = node.nextSibling) {
+      childNodes.push(node);
+    }
+    return childNodes;
+  }
+
+  // Returns a static array of matching descendant nodes.
+  // In the spec, when called on a document, the behavior is equivalent to
+  // includeSelf is true, but when called on an element, false.
+  getElementsByName(name, includeSelf) {
+    const elements = new Array();
+    this.traverse(function appendIfHasName(node) {
+      if(node.name === name) {
+        elements.push(node);
+      }
+    }, includeSelf);
+    return elements;
+  }
+
+  getAttribute(name) {
+    if(this.attributes) {
+      return this.attributes.get(name);
+    }
+  }
+
+  setAttribute(name, value) {
+    if(!this.isElement()) {
+      return;
+    }
+
+    if(!this.attributes) {
+      this.attributes = new Map();
+    }
+
+    let storedValue = '';
+    if(value === null || typeof value === 'undefined') {
+    } else if(VNode.isString(value)) {
+      storedValue = value;
+    } else {
+      // See http://jsperf.com/cast-to-string/13
+      storedValue += value;
+    }
+
+    this.attributes.set(name, storedValue);
+  }
+
+  hasAttribute(name) {
+    return this.getAttribute(name);
+  }
+
+  removeAttribute(name) {
+    if(this.isElement() && this.attributes) {
+      this.attributes.delete(name);
+      if(!this.attributes.size) {
+        this.attributes = null;
+      }
+    }
+  }
+
+  get id() {
+    return this.getAttribute('id');
+  }
+
+  // Not optimized what-so-ever. Limited to descendants of the node, including
+  // self.
+  // TODO: if VNode.search is changed to accept includeSelf parameter, this
+  // can be changed to accept includeSelf parameter.
+  getElementById(id) {
+    if(VNode.isString(id)) {
+      return this.search(function(node) {
+        return id === node.id;
+      });
+    }
+  }
+
+  // Rather than calling getElementById, which traverses each time, consider
+  // calling this once on a tree and then using a map lookup to get an element
+  // by its id. Tree modification is not reflected in the index.
+  static indexIds(tree) {
+    const index = new Map();
+    tree.traverse(function(node) {
+      if(node.isElement()) {
+        const id = node.id;
+        if(id && !index.has(id)) {
+          index.set(id, node);
+        }
+      }
+    }, true);
+    return index;
+  }
+
+  toString() {
+    const node = VNode.toDOMNode(this);
+    return node.outerHTML;
+  }
+}
+
+class VTableNode extends VElement {
+  constructor() {
+    super('table');
+  }
+
+  // NOTE: the current implementation does not allow for intermediate
+  // wrapping elements such as the form element in
+  // <table><form><tr>...</tr></form></table>
+  get rows() {
+    const rows = [];
+    for(let node = this.firstChild, name; node; node = node.nextSibling) {
+      name = node.name;
+      if(node.name === 'tr') {
+        rows.push(node);
+      } else if(VTableNode.isSectionName(name)) {
+        for(let snode = node.firstChild; snode; snode = snode.nextSibling) {
+          if(snode.name === 'tr') {
+            rows.push(snode);
+          }
+        }
+      }
+    }
+    return rows;
+  }
+
+  static isSectionName(name) {
+    return name === 'thead' || name === 'tbody' || name === 'tfoot';
+  }
+}
+
+class VRowNode extends VElement {
+
+  constructor() {
+    super('tr');
+  }
+
+  get cols() {
+    const columns = [];
+    for(let node = this.firstChild; node; node = node.nextSibling) {
+      if(node.name === 'td') {
+        columns.push(node);
+      }
+    }
+    return columns;
   }
 }
 
