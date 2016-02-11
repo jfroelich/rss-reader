@@ -27,9 +27,9 @@ class VNode {
   static createElement(name) {
     let element = null;
     if(name === 'table') {
-      element = new VTableNode();
+      element = new VTableElement();
     } else if(name === 'tr') {
-      element = new VRowNode();
+      element = new VRowElement();
     } else {
       element = new VElement(name);
     }
@@ -373,7 +373,7 @@ class VElement extends VNode {
     }
 
     // Certain elements should not contain other elements
-    const thisIsVoid = VNode.VOID_ELEMENT_NAMES.has(this.name);
+    const thisIsVoid = VElement.VOID_NAMES.has(this.name);
     if(node.isElement() && thisIsVoid) {
       return false;
     }
@@ -649,59 +649,12 @@ class VElement extends VNode {
   }
 }
 
-class VTableNode extends VElement {
-  constructor() {
-    super('table');
-  }
-
-  // NOTE: the current implementation does not allow for intermediate
-  // wrapping elements such as the form element in
-  // <table><form><tr>...</tr></form></table>
-  get rows() {
-    const rows = [];
-    for(let node = this.firstChild, name; node; node = node.nextSibling) {
-      name = node.name;
-      if(node.name === 'tr') {
-        rows.push(node);
-      } else if(VTableNode.isSectionName(name)) {
-        for(let snode = node.firstChild; snode; snode = snode.nextSibling) {
-          if(snode.name === 'tr') {
-            rows.push(snode);
-          }
-        }
-      }
-    }
-    return rows;
-  }
-
-  static isSectionName(name) {
-    return name === 'thead' || name === 'tbody' || name === 'tfoot';
-  }
-}
-
-class VRowNode extends VElement {
-
-  constructor() {
-    super('tr');
-  }
-
-  get cols() {
-    const columns = [];
-    for(let node = this.firstChild; node; node = node.nextSibling) {
-      if(node.name === 'td') {
-        columns.push(node);
-      }
-    }
-    return columns;
-  }
-}
-
 // These nodes cannot contain other elements. Some of these nodes may
 // still contain other text nodes. I am not aiming for perfect compliance.
 // See: http://w3c.github.io/html-reference/syntax.html
 // See: https://github.com/google/closure-library/blob/master/closure/goog
 // /dom/dom.js
-VNode.VOID_ELEMENT_NAMES = new Set([
+VElement.VOID_NAMES = new Set([
   'applet',
   'area',
   'base',
@@ -728,3 +681,50 @@ VNode.VOID_ELEMENT_NAMES = new Set([
   'track',
   'wbr'
 ]);
+
+class VTableElement extends VElement {
+  constructor() {
+    super('table');
+  }
+
+  // NOTE: the current implementation does not allow for intermediate
+  // wrapping elements such as the form element in
+  // <table><form><tr>...</tr></form></table>
+  get rows() {
+    const rows = [];
+    for(let node = this.firstChild, name; node; node = node.nextSibling) {
+      name = node.name;
+      if(node.name === 'tr') {
+        rows.push(node);
+      } else if(VTableElement.isSectionName(name)) {
+        for(let snode = node.firstChild; snode; snode = snode.nextSibling) {
+          if(snode.name === 'tr') {
+            rows.push(snode);
+          }
+        }
+      }
+    }
+    return rows;
+  }
+
+  static isSectionName(name) {
+    return name === 'thead' || name === 'tbody' || name === 'tfoot';
+  }
+}
+
+class VRowElement extends VElement {
+
+  constructor() {
+    super('tr');
+  }
+
+  get cols() {
+    const columns = [];
+    for(let node = this.firstChild; node; node = node.nextSibling) {
+      if(node.name === 'td') {
+        columns.push(node);
+      }
+    }
+    return columns;
+  }
+}
