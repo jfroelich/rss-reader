@@ -449,6 +449,14 @@ VNodeTest.childNodesTests = function() {
   console.log('childNodes[0] is still c1?',
     childNodes[0].name === 'c1');
 
+  // Test child node iteration
+  const nodes = new Array();
+  for(let node of parent.childIterator) {
+    nodes.push(node);
+  }
+  console.log('Child iterator produced correct number of nodes?',
+    nodes.length === parent.childNodes.length);
+
   console.groupEnd();
 };
 VNodeTest.childNodesTests();
