@@ -10,7 +10,7 @@ VNodeTest.startTests = function() {
 
 VNodeTest.startTests();
 
-VNodeTest.construct = function() {
+VNodeTest.constructTest = function() {
   'use strict';
   console.group('Running VNode construction tests');
   const node = new VNode();
@@ -29,7 +29,71 @@ VNodeTest.construct = function() {
   console.groupEnd();
 };
 
-VNodeTest.construct();
+VNodeTest.constructTest();
+
+VNodeTest.setNodeValueTest = function() {
+  'use strict';
+  console.group('Running set node value tests');
+
+  const textNode = VNode.createTextNode('');
+
+  console.log('Created text node with empty string?',
+    !!textNode);
+  textNode.nodeValue = null;
+  console.log('Set to null?', textNode.nodeValue === null);
+  textNode.nodeValue = void 0;
+  console.log('Set to undefined?', textNode.nodeValue === void 0 &&
+    typeof textNode.nodeValue === 'undefined');
+  textNode.nodeValue = 1;
+  console.log('Set to number casted to string?',
+    textNode.nodeValue === '1');
+  textNode.nodeValue = true;
+  console.log('Set to boolean true casted to string?',
+    textNode.nodeValue === 'true');
+  textNode.nodeValue = false;
+  console.log('Set to boolean false casted to string?',
+    textNode.nodeValue === 'false');
+
+  console.groupEnd();
+};
+VNodeTest.setNodeValueTest();
+
+VNodeTest.equalsTest = function() {
+  'use strict';
+  console.group('Running equals test');
+
+  const node1 = VNode.createElement('node1');
+  const node2 = VNode.createElement('node2');
+  console.log('Node equals itself?',
+    node1.equals(node1));
+  console.log('Node not equals other node?',
+    !node1.equals(node2));
+  console.groupEnd();
+};
+VNodeTest.equalsTest();
+
+VNodeTest.containsTest = function() {
+  'use strict';
+  console.group('Running contains test');
+
+  const node1 = VNode.createElement('node1');
+  const node2 = VNode.createElement('node2');
+  const node3 = VNode.createElement('node3');
+  const node4 = VNode.createTextNode('node4');
+  node1.appendChild(node2);
+  node2.appendChild(node3);
+
+  console.log('node1 contains node2?',
+    !!node1.contains(node2));
+  console.log('node1 contains node3',
+    !!node1.contains(node3));
+  console.log('node1 does not contain detached node4?',
+    !node1.contains(node4));
+  console.log('node3 does not contain node2?',
+    !node3.contains(node2));
+  console.groupEnd();
+};
+VNodeTest.containsTest();
 
 VNodeTest.mayContainTest = function() {
   'use strict';
@@ -379,6 +443,8 @@ VNodeTest.parentElementTest = function() {
   const child = VNode.createTextNode('child');
   const notChild = VNode.createTextNode('notChild');
   parent.appendChild(child);
+  console.log('child.parentElement is an element?',
+    child.parentElement && child.parentElement.isElement());
   console.log('child.parentElement is parent?',
     child.parentElement === parent);
   console.log('non child parentElement is undefined?',
@@ -670,12 +736,12 @@ VNodeTest.testFromDOMNode = function() {
   const vt = VNode.fromDOMNode(t);
 
   console.log('Virtual node created?', !!vp);
-  console.log('Element has correct type?', vp.type === Node.ELEMENT_NODE);
+  console.log('Element has correct type?', vp.isElement());
   console.log('Element has correct name?', vp.name === 'p');
   console.log('Element has correct attributes?',
     vp.getAttribute && (vp.getAttribute('id') === 'p'));
   console.log('Text node has correct type?',
-    vt.type === Node.TEXT_NODE);
+    vt.isText());
   console.log('Text node has correct value?',
     vt.value === 'test');
 

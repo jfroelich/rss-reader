@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Global strict mode requires for class
+// Global strict mode is currently required in Chrome for ES6 class syntax
 'use strict';
 
 // Virtual dom library
@@ -10,20 +10,19 @@
 class VNode {
 
   // This should not be called directly, use the static methods
-  // such as VNode.createElement to create new vnodes.
+  // such as createElement to create new vnodes.
   constructor() {
     this.parentNode = null;
     this.nextSibling = null;
     this.previousSibling = null;
-
-    // nodeType (e.g. Node.TEXT_NODE)
-    this.type = null;
   }
 
+  // Returns a virtual text node with the given value
   static createTextNode(value) {
     return new VTextNode(value);
   }
 
+  // Returns a virtual element with the given tag name
   static createElement(name) {
     let element = null;
     if(name === 'table') {
@@ -35,6 +34,10 @@ class VNode {
     }
 
     return element;
+  }
+
+  equals(otherNode) {
+    return this === otherNode;
   }
 
   // Removing a node detaches the node from its tree. It breaks the edges
@@ -98,35 +101,47 @@ class VNode {
     return result;
   }
 
+  // Child classes should overwrite this as appropriate
   isText() {
     return false;
   }
 
+  // Child classes should overwrite this as appropriate
   isElement() {
     return false;
   }
 
+  // Returns true if the node is an element
+  static isElementNode(node) {
+    return node.isElement();
+  }
+
+  // Finds and returns the first ancestor of this node that is an element
   get parentElement() {
-    return this.closest(function(node) {
-      return node.isElement();
-    }, false);
+    // If only elements can have children, because we restrict how virtual
+    // nodes can be appended (assuming clients do not modify the properties
+    // directly) then this is actually just O(1)
+    // return this.closest(isElementNode, false);
+    return this.parentNode;
   }
 
-  // Gets the node that is at the root of this node's tree
+  // Returns true if the node does not have a parent node
+  static isOrphan(node) {
+    return !node.parentNode;
+  }
+
+  // Returns the node that is at the root of this node's tree, which could
+  // be this node
   get root() {
-    let node = this;
-    while(node.parentNode) {
-      node = node.parentNode;
-    }
-    return node;
+    return this.closest(VElement.isOrphan, true);
   }
 
-  // Pre-order DFS traversal
+  // Traverses the descendants of this node in pre-order, depth first order,
+  // calling callback on each descendant node.
   // @param includeSelf {boolean} whether to include the current node in the
   // traversal
-  // TODO: less repetitive code?
   traverse(callback, includeSelf) {
-    const stack = new Array();
+    const stack = [];
     if(includeSelf) {
       stack.push(this);
     } else {
@@ -229,11 +244,11 @@ class VNode {
       }
 
       if(node.width && !vNode.hasAttribute('width')) {
-        vNode.setAttribute('width', String(node.width));
+        vNode.setAttribute('width', '' + node.width);
       }
 
       if(node.height && !vNode.hasAttribute('height')) {
-        vNode.setAttribute('height', String(node.height));
+        vNode.setAttribute('height', '' + node.height);
       }
 
     } else if(node.nodeType === Node.TEXT_NODE) {
@@ -245,25 +260,8 @@ class VNode {
     return vNode;
   }
 
-  static toDOMNode(vNode) {
-    let node = null;
-
-    if(vNode.isText()) {
-      node = document.createTextNode(vNode.value);
-    } else if(vNode.isElement()) {
-      node = document.createElement(vNode.name);
-      const attributes = vNode.attributes || [];
-      for(let entry of attributes) {
-        node.setAttribute(entry[0], entry[1]);
-      }
-    } else {
-      console.log('Unsupported type ', vNode.type);
-    }
-
-    return node;
-  }
-
-  // Create a vNode tree from an dom root node
+  // Creates a virtual tree from a Document, with the root of the tree
+  // representing document.documentElement
   static fromHTMLDocument(document) {
     const Pair = function(virtualParent, currentNode) {
       this.virtualParent = virtualParent;
@@ -282,7 +280,7 @@ class VNode {
     let node = null;
     let virtualNode = null;
     let appended = false;
-    const stack = new Array();
+    const stack = [];
     stack.push(new Pair(null, document.documentElement));
     while(stack.length) {
       pair = stack.pop();
@@ -294,7 +292,8 @@ class VNode {
           appended = parent.appendChild(virtualNode);
         } else {
           virtualRoot = virtualNode;
-          appended = true;// treat the root as appended
+          // treat the root as appended
+          appended = true;
         }
 
         if(appended) {
@@ -323,17 +322,38 @@ class VNode {
     throw new Error('Not implemented');
   }
 
+  // Returns whether the value is a string. This function doesn't really
+  // belong here but I am not quite sure where to put it.
   // See http://stackoverflow.com/questions/4059147
   static isString(value) {
     return Object.prototype.toString.call(value) === '[object String]';
   }
 }
 
+// See http://www.howtocreate.co.uk/tutorials/javascript/dombasics
+// 4KB is approximate max size of text node, and normalize does not work
+// correctly sometimes (artificial truncate), or at all
+// See http://stackoverflow.com/questions/4695187
+// The maximum size of a single string is approx 512MB on certain platforms
 class VTextNode extends VNode {
   constructor(value) {
     super();
     this.type = Node.TEXT_NODE;
-    this.value = value;
+    this.value = VTextNode._isStorable(value) ? value : '' + value;
+  }
+
+  static _isStorable(value) {
+    return value === null ||
+      typeof value === 'undefined' ||
+      VNode.isString(value);
+  }
+
+  get nodeValue() {
+    return this.value;
+  }
+
+  set nodeValue(value) {
+    this.value = VTextNode._isStorable(value) ? value : '' + value;
   }
 
   isText() {
@@ -343,42 +363,78 @@ class VTextNode extends VNode {
   toString() {
     return this.value;
   }
+
+  toDOMNode() {
+    return document.createTextNode(this.value);
+  }
 }
 
 class VElement extends VNode {
 
+  // Creates a new virtual element with the given tag name. The name should
+  // be in lowercase.
   constructor(name) {
     super();
-
     this.type = Node.ELEMENT_NODE;
-
-    // NOTE: Name should be lowercase
     this.name = name;
-
-    // Elements can have children
     this.firstChild = null;
     this.lastChild = null;
-
-    // lazily-loaded Map<String, String> of attributes
     this.attributes = null;
   }
 
-  // Returns whether this node is allowed to contain the node.
-  // Throws an error if node is undefined.
-  mayContain(node) {
+  // Returns whether this node is allowed to contain the child node.
+  // Throws an error if the child node is undefined.
+  mayContain(childNode) {
 
-    // A node cannot contain itself
-    if(this === node) {
+    // A node is not allowed to contain itself
+    if(this === childNode) {
       return false;
     }
 
-    // Certain elements should not contain other elements
-    const thisIsVoid = VElement.VOID_NAMES.has(this.name);
-    if(node.isElement() && thisIsVoid) {
-      return false;
+    if(childNode.isElement()) {
+      // If the child node is an element, but this node is a void element
+      // that cannot contain other elements, then this element cannot contain
+      // the child. We check whether the child node is an element first because
+      // it is a shared condition, and because the map lookup is slower so
+      // it is preferable to restrict when it is called. Also, we include the
+      // test for whether the child is an element because we depart from the
+      // spec, because we loosely allow void elements to contain child text
+      // nodes, such as a <style> node.
+      if(VElement.VOID_NAMES.has(this.name)) {
+        return false;
+      }
+
+      // If the child node that is to be inserted is an element, then it can
+      // contain other elements. However, if the child node is currently
+      // an ancestor of this node, then this node cannot contain the child,
+      // so the child cannot be appended/inserted into this node, because we
+      // cannot convert an ancestor into a child of a descendant.
+      if(childNode.contains(this)) {
+        return false;
+      }
     }
 
+    // This node can contain the child node
     return true;
+  }
+
+  // Returns whether this node contains the child node. A node contains the
+  // the child node when the node is an ancestor of the child node.
+  contains(childNode) {
+
+    // TODO: perf test and pick an implementation
+    return !!childNode.closest((node) => node === this, false);
+
+    /*let cursorNode = childNode.parentNode;
+    let foundThisNodeAsParent = false;
+    while(cursorNode && !foundThisNodeAsParent) {
+      if(cursorNode === this) {
+        foundThisNodeAsParent = true;
+      } else {
+        cursorNode = cursorNode.parentNode;
+      }
+    }
+    return foundThisNodeAsParent;*/
   }
 
   appendChild(node) {
@@ -435,25 +491,13 @@ class VElement extends VNode {
     return true;
   }
 
-  // TODO: what should be the behavior if either argument is undefined?
   replaceChild(newChild, oldChild) {
-    // Replacing a child with itself is a succesful no-op. We have to
-    // explicitly do this check here to avoid the default behavior of
-    // insertBefore which considers this a failure.
-    // TODO: actually, I think insertBefore considers this a success, so this
-    // check is not needed?
-    if(newChild === oldChild) {
-      return true;
-    }
-
-    // Slightly wasteful but avoids repetitive code
     return this.insertBefore(newChild, oldChild) && oldChild.remove();
   }
 
   insertBefore(node, referenceNode) {
 
     // Inserting nothing is a successful no-op
-    // TODO: is that right?
     if(!node) {
       return true;
     }
@@ -482,7 +526,7 @@ class VElement extends VNode {
     }
 
     // Inserting a node before itself is a successful no-op, because we are
-    // basically moving the node into its same position
+    // basically moving the node into its same position.
     if(node === referenceNode) {
       return true;
     }
@@ -515,10 +559,12 @@ class VElement extends VNode {
     return true;
   }
 
+  // Override the base class function to always return true
   isElement() {
     return true;
   }
 
+  // Returns the first child node of this node that is an element
   get firstElementChild() {
     let result = null;
     for(let node = this.firstChild; !result && node; node = node.nextSibling) {
@@ -529,6 +575,7 @@ class VElement extends VNode {
     return result;
   }
 
+  // Returns the last child node of this node that is an element
   get lastElementChild() {
     let result = null;
     for(let node = this.lastChild; !result && node;
@@ -540,6 +587,7 @@ class VElement extends VNode {
     return result;
   }
 
+  // Returns the number of child nodes of this node that are elements
   get childElementCount() {
     let count = 0;
     for(let node = this.firstChild; node; node = node.nextSibling) {
@@ -550,6 +598,8 @@ class VElement extends VNode {
     return count;
   }
 
+  // Allocates and returns an array of this nodes child nodes. This is a
+  // static array, not a live node list like in the DOM.
   get childNodes() {
     const childNodes = [];
     for(let node = this.firstChild; node; node = node.nextSibling) {
@@ -560,9 +610,13 @@ class VElement extends VNode {
 
   // Returns a static array of matching descendant nodes.
   // In the spec, when called on a document, the behavior is equivalent to
-  // includeSelf is true, but when called on an element, false.
+  // includeSelf is true, but when called on an element, false. Here, I leave
+  // the desired behavior up to the caller with the optional includeSelf
+  // parameter.
+  // TODO: perf test, I am not sure calling a function on every node is
+  // very performant? Maybe I need to re-implement traverse
   getElementsByName(name, includeSelf) {
-    const elements = new Array();
+    const elements = [];
     this.traverse(function appendIfHasName(node) {
       if(node.name === name) {
         elements.push(node);
@@ -571,12 +625,14 @@ class VElement extends VNode {
     return elements;
   }
 
+  // Returns the value of this element's attribute with the given name
   getAttribute(name) {
     if(this.attributes) {
       return this.attributes.get(name);
     }
   }
 
+  // Sets the value of the named attribute on this element
   setAttribute(name, value) {
     if(!this.isElement()) {
       return;
@@ -598,10 +654,12 @@ class VElement extends VNode {
     this.attributes.set(name, storedValue);
   }
 
+  // Returns whether this element has the named attribute
   hasAttribute(name) {
     return this.getAttribute(name);
   }
 
+  // Removes the named attribute from this element
   removeAttribute(name) {
     if(this.isElement() && this.attributes) {
       this.attributes.delete(name);
@@ -611,13 +669,19 @@ class VElement extends VNode {
     }
   }
 
+  // Returns the value of the element's id attribute
   get id() {
     return this.getAttribute('id');
   }
 
+  // Sets the id attribute to this value
+  set id(value) {
+    this.setAttribute('id', value);
+  }
+
   // Not optimized what-so-ever. Limited to descendants of the node, including
   // self.
-  // TODO: if VNode.search is changed to accept includeSelf parameter, this
+  // TODO: if search is changed to accept includeSelf parameter, this
   // can be changed to accept includeSelf parameter.
   getElementById(id) {
     if(VNode.isString(id)) {
@@ -627,9 +691,11 @@ class VElement extends VNode {
     }
   }
 
+  // Returns a map of ids to elements. When more than one element has the same
+  // id, only the first element (in document order) is stored in the map.
   // Rather than calling getElementById, which traverses each time, consider
   // calling this once on a tree and then using a map lookup to get an element
-  // by its id. Tree modification is not reflected in the index.
+  // by its id. Tree modification is not reflected in the map.
   static indexIds(tree) {
     const index = new Map();
     tree.traverse(function(node) {
@@ -643,13 +709,22 @@ class VElement extends VNode {
     return index;
   }
 
+  toDOMNode() {
+    const node = document.createElement(this.name);
+    const attributes = this.attributes || [];
+    for(let entry of attributes) {
+      node.setAttribute(entry[0], entry[1]);
+    }
+    return node;
+  }
+
+  // Returns a string representation of this element
   toString() {
-    const node = VNode.toDOMNode(this);
-    return node.outerHTML;
+    return this.toDOMNode().outerHTML;
   }
 }
 
-// These nodes cannot contain other elements. Some of these nodes may
+// These nodes should not contain other elements. Some of these nodes may
 // still contain other text nodes. I am not aiming for perfect compliance.
 // See: http://w3c.github.io/html-reference/syntax.html
 // See: https://github.com/google/closure-library/blob/master/closure/goog
@@ -718,6 +793,7 @@ class VRowElement extends VElement {
     super('tr');
   }
 
+  // Returns a static array of this row's child columns
   get cols() {
     const columns = [];
     for(let node = this.firstChild; node; node = node.nextSibling) {
