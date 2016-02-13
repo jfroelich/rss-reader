@@ -238,7 +238,7 @@ function hideSubscriptionPreview() {
 function startSubscription(url) {
   hideSubscriptionPreview();
 
-  if(!URLUtils.isValid(url)) {
+  if(!isValidURL(url)) {
     showErrorMessage('Invalid url "' + url + '".');
     return;
   }
