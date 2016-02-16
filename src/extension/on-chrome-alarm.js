@@ -28,7 +28,7 @@ alarms.set('archive', {
 alarms.set('poll', {
   schedule: {periodInMinutes: 20},
   getAlarmFunction: function() {
-    return pollFeeds;
+    return FeedPoll.pollFeeds();
   }
 });
 
