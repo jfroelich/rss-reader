@@ -155,12 +155,12 @@ VNode.prototype.remove = function() {
 };
 
 // Returns the closest ancestor node matching the predicate
-VNode.prototype.closest = function(predicate, includeSelf) {
+VNode.prototype.closest = function(ƒ, includeSelf) {
   'use strict';
   let cursor = includeSelf ? this : this.parentNode;
   let result = null;
   while(!result && cursor) {
-    if(predicate(cursor)) {
+    if(ƒ(cursor)) {
       result = cursor;
     } else {
       cursor = cursor.parentNode;
@@ -242,7 +242,7 @@ Object.defineProperty(VNode.prototype, 'childNodes', {
 // calling callback on each descendant node.
 // @param includeRoot {boolean} whether to include the current node in the
 // traversal
-VNode.prototype.traverse = function(callback, includeSelf) {
+VNode.prototype.traverse = function(ƒ, includeSelf) {
   'use strict';
   const stack = [];
   let node = this;
@@ -258,7 +258,7 @@ VNode.prototype.traverse = function(callback, includeSelf) {
 
   while(stack.length) {
     node = stack.pop();
-    callback(node);
+    ƒ(node);
     node = node.lastChild;
     while(node) {
       stack.push(node);
@@ -270,14 +270,14 @@ VNode.prototype.traverse = function(callback, includeSelf) {
 // Searches descendants, excluding this node, for the first node to match
 // the predicate
 // TODO: use an includeSelf param like traverse?
-VNode.prototype.search = function(predicate) {
+VNode.prototype.search = function(ƒ) {
   'use strict';
   const stack = [this];
   let node = this;
   let match = null;
   while(!match && stack.length) {
     node = stack.pop();
-    if(predicate(node)) {
+    if(ƒ(node)) {
       match = node;
     } else {
       node = node.lastChild;
