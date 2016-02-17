@@ -2,9 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Requires: replace-breakrules-in-string.js
-// Requires: replaceHTML
-// Requires: truncateString
+// Requires: /src/html/replace-html.js
+// Requires: /src/lang/truncate-string.js
 
 // NOTE: Google formally deprecated this service. Around December 1st, 2015, I
 // first noticed that the queries stopped working. However, I have witnessed
@@ -14,13 +13,12 @@
 // leave unclosed tags in the result. Think about how to
 // prevent these issues.
 
-'use strict';
+const googlefeeds = {};
 
-{ // BEGIN ANONYMOUS NAMESPACE
-
-// The url of Google's find feed service.
-const BASE_URL =
+googlefeeds.BASE_URL =
   'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
+
+googlefeeds.CONTENT_SNIPPET_MAX_LENGTH = 400;
 
 // Sends an async request to Google to search for feeds that correspond to
 // a general text query. Passes the results to the callback. The callback
@@ -31,25 +29,22 @@ const BASE_URL =
 // basic js object containing the string properties url, link, title, and
 // contentSnippet. The title and content snippet may contain basic HTML such as
 // <b></b> around terms that were present in the query.
-function searchGoogleFeeds(query, timeout, callback) {
+googlefeeds.search = function(query, timeout, callback) {
+  'use strict';
   const request = new XMLHttpRequest();
   request.timeout = timeout;
   request.onerror = callback;
   request.ontimeout = callback;
   request.onabort = callback;
-  request.onload = findFeedOnload.bind(request, callback);
-  const url = BASE_URL + encodeURIComponent(query);
+  request.onload = googlefeeds.onSearchResponse.bind(request, callback);
+  const url = googlefeeds.BASE_URL + encodeURIComponent(query);
   request.open('GET', url, true);
   request.responseType = 'json';
   request.send();
-}
+};
 
-// Export a global
-this.searchGoogleFeeds = searchGoogleFeeds;
-
-// Cleans up the search results and passes them along
-// to the callback
-function findFeedOnload(callback, event) {
+googlefeeds.onSearchResponse = function(callback, event) {
+  'use strict';
   const request = event.target;
   const response = request.response;
   const data = response.responseData;
@@ -62,34 +57,39 @@ function findFeedOnload(callback, event) {
 
   const query = data.query || '';
   let entries = data.entries || [];
-
-  entries = entries.filter(getEntryURL);
-
-  // Remove duplicates
-  entries = Array.from(new Map(entries.map(expandEntry)).values());
-
-  entries.forEach(sanitizeEntry);
+  entries = googlefeeds.removeEntriesWithoutURLs(entries);
+  entries = googlefeeds.removeDuplicateEntriesByURL(entries);
+  entries.forEach(googlefeeds.sanitizeEntry);
   callback(null, query, entries);
-}
+};
 
-function expandEntry(entry) {
-  return [entry.url, entry];
-}
+googlefeeds.removeEntriesWithoutURLs = function(entriesArray) {
+  'use strict';
+  return entriesArray.filter(function getEntryURL(entry) {
+    return entry.url;
+  });
+};
 
-function getEntryURL(entry) {
-  return entry.url;
-}
+googlefeeds.removeDuplicateEntriesByURL = function(entriesArray) {
+  'use strict';
+  const expandedEntries = entriesArray.map(function expand(entry) {
+    return [entry.url, entry];
+  });
+  const entriesAggregatedByURL = new Map(expandedEntries);
+  const aggregateValues = entriesAggregatedByURL.values();
+  return Array.from(aggregateValues);
+};
 
-function sanitizeEntry(entry) {
+googlefeeds.sanitizeEntry = function(entry) {
+  'use strict';
   if(entry.title) {
     entry.title = replaceHTML(entry.title);
     entry.title = truncateString(entry.title, 100);
   }
 
   if(entry.contentSnippet) {
-    entry.contentSnippet = replaceBreakrulesInString(entry.contentSnippet);
-    entry.contentSnippet = truncateString(entry.contentSnippet, 400);
+    entry.contentSnippet = entry.contentSnippet.replace(/<\s*br\s*>/gi, ' ');
+    entry.contentSnippet = truncateString(entry.contentSnippet,
+      googlefeeds.CONTENT_SNIPPET_MAX_LENGTH);
   }
-}
-
-} // END ANONYMOUS NAMESPACE
+};

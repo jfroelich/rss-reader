@@ -372,7 +372,7 @@ function onSubscribeSubmit(event) {
     $$('discover-results-list').innerHTML = '';
     $$('discover-no-results').style.display = 'none';
     $$('discover-in-progress').style.display = 'block';
-    searchGoogleFeeds(query, 5000, onDiscoverFeedsComplete);
+    googlefeeds.search(query, 5000, onDiscoverFeedsComplete);
   }
 
   return false;
