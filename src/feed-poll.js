@@ -2,16 +2,20 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Requires: /fetch/fetch-image.js
 // Requires: /lib/parse-srcset.js
 // Requires: /lib/URI.js
-// Requires: /url/parse-url.js
+// Requires: /src/fetch/fetch-image.js
+// Requires: /src/url/parse-url.js
+// Requires: /src/storage/open-indexeddb.js
+// Requires: /src/storage/feed-store.js
+// Requires: /src/extension/update-badge.js
+// Requires: /src/extension/show-notification.js
 
 const FeedPoll = {};
 
 FeedPoll.pollFeeds = function() {
   'use strict';
-  console.debug('Polling feeds');
+  console.log('Polling feeds');
 
   if(!navigator.onLine) {
     console.debug('Polling canceled as offline');
@@ -144,7 +148,6 @@ FeedPoll.augmentEntryContent = function(entry, timeout, callback) {
 
 FeedPoll.onFetchHTML = function(entry, callback, error, document,
   responseURL) {
-
   'use strict';
 
   if(error) {
@@ -159,18 +162,15 @@ FeedPoll.onFetchHTML = function(entry, callback, error, document,
       responseURL);
   }
 
-  // Before calling resolveDocumentURLs, we try and do some minor scrubbing
-  // of the document. For example, we try and fix the attributes of image
-  // elements where some type of lazy-loading technique is occurring.
   FeedPoll.transformLazyImages(document);
-
   FeedPoll.resolveDocumentURLs(document, responseURL);
-  FeedPoll.fetchImageDimensions(document,
-    FeedPoll.onFetchImageDimensions.bind(null, entry, document, callback));
+  FeedPoll.setImageDimensions(document,
+    FeedPoll.onSetImageDimensions.bind(null, entry, document, callback));
 };
 
-FeedPoll.onFetchImageDimensions = function(entry, document, callback) {
+FeedPoll.onSetImageDimensions = function(entry, document, callback) {
   'use strict';
+  // TODO: is this right? the innerHTML of the documentElement?
   const content = document.documentElement.innerHTML;
   if(content) {
     entry.content = content;
@@ -178,48 +178,23 @@ FeedPoll.onFetchImageDimensions = function(entry, document, callback) {
   callback();
 };
 
-// Asynchronously attempts to set the width and height for
-// all image elements. Calls callback when complete
-FeedPoll.fetchImageDimensions = function(document, callback) {
+FeedPoll.setImageDimensions = function(document, callback) {
   'use strict';
   const images = document.getElementsByTagName('img');
-  const filter = Array.prototype.filter;
-  const fetchables = filter.call(images, FeedPoll.shouldFetchImage);
+  const fetchables = Array.prototype.filter.call(images,
+    FeedPoll.shouldFetchImage);
   async.forEach(fetchables, FeedPoll.fetchImage, callback);
+};
+
+FeedPoll.isObjectURL = function(url) {
+  return /^\s*data\s*:/i.test(url);
 };
 
 FeedPoll.shouldFetchImage = function(image) {
   'use strict';
-
-  // We use the attribute, not the property, to avoid any
-  // changes by the user agent to the value
-  let sourceURL = image.getAttribute('src') || '';
-  sourceURL = sourceURL.trim();
-
-  // Can't do anything about a sourceless image
-  if(!sourceURL) {
-    return false;
-  }
-
-  // Can't do anything about an embedded image aside
-  // from relying on its attributes or properties
-  // TODO: or can we? Does it matter if it an inert
-  // document (e.g. created by XMLHttpRequest?)
-  // Are the width and height properties automatically set
-  // for a data URI within an inert document context? If so,
-  // then we do not need to fetch.
-  // TODO: can we test against url.protocol instead of using
-  // a regex? or is there something like isObjectURL?
-  if(/^\s*data\s*:/i.test(sourceURL)) {
-    return false;
-  }
-
-  // If the image already has dimensions, do not re-fetch
-  if(image.width > 0) {
-    return false;
-  }
-
-  return true;
+  let url = image.getAttribute('src') || '';
+  url = url.trim();
+  return url && !FeedPoll.isObjectURL(url) && !image.width;
 };
 
 FeedPoll.fetchImage = function(image, callback) {
@@ -246,9 +221,8 @@ FeedPoll.onFetchImage = function(image, callback, event) {
   callback();
 };
 
-
 // A map of element names to attributes that contain urls
-FeedPoll.ATTRIBUTE_MAP = new Map([
+FeedPoll.ELEMENT_URL_ATTRIBUTE_MAP = new Map([
   ['a', 'href'],
   ['area', 'href'],
   ['audio', 'src'],
@@ -271,7 +245,7 @@ FeedPoll.ATTRIBUTE_MAP = new Map([
 FeedPoll.RESOLVE_SELECTOR = function() {
   'use strict';
   let keys = [];
-  FeedPoll.ATTRIBUTE_MAP.forEach(function(value, key) {
+  FeedPoll.ELEMENT_URL_ATTRIBUTE_MAP.forEach(function(value, key) {
     keys.push(key + '[' + value +']');
   });
   return keys.join(',');
@@ -304,7 +278,7 @@ FeedPoll.resolveDocumentURLs = function(document, baseURL) {
 
 FeedPoll.resolveElement = function(baseURL, element) {
   'use strict';
-  const attributeName = FeedPoll.ATTRIBUTE_MAP.get(element.localName);
+  const attributeName = FeedPoll.ELEMENT_URL_ATTRIBUTE_MAP.get(element.localName);
 
   // We know attribute is defined because the selector
   // included the condition (e.g. element[attribute])
