@@ -2,10 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: look into http://www.streamjs.org/ for a NodeStream concept?
-// TODO: create vprune.js and rewrite all of this to use vnode.js
-
-var DOMFilter = {};
+const DOMFilter = {};
 
 // Returns whether the element has the given lowercase name
 DOMFilter.elementHasName = function(name, element) {
@@ -21,8 +18,6 @@ DOMFilter.nodeHasType = function(nodeType, node) {
 DOMFilter.isElement = DOMFilter.nodeHasType.bind(null, Node.ELEMENT_NODE);
 DOMFilter.isTextNode = DOMFilter.nodeHasType.bind(null, Node.TEXT_NODE);
 
-
-// Finds the associated caption for an image
 DOMFilter.findImageCaption = function(image) {
   'use strict';
   const figure = image.closest('figure');
@@ -50,7 +45,6 @@ DOMFilter.getTextNodeIterator = function(document) {
 };
 
 // Allows for..of over NodeIterators, to use do:
-// myNodeIterator[Symbol.iterator] = DOMFilter.getNodeIteratorSymbolIterator
 DOMFilter.getNodeIteratorSymbolIterator = function(iterator) {
   'use strict';
   return function() {
@@ -138,10 +132,6 @@ DOMFilter.filterAttributes = function(document) {
 };
 
 // Removes certain attributes from an element
-// TODO: not filtering attributes from SVG creates a security hole because it
-// allows for onclick and such to pass through the filter.
-// TODO: not filtering SVG creates display issues because the SVGs are not
-// sized well
 DOMFilter.filterElementAttributes = function(element) {
   'use strict';
   const elementName = element.localName;
@@ -162,13 +152,6 @@ DOMFilter.filterElementAttributes = function(element) {
 };
 
 // Returns whether an attribute should not be removed
-// TODO: try and preserve more accessibility attributes
-// TODO: support media and other embeds
-// TODO: this should be implemented to work independently of the element
-// blacklist policy. Even though an element may be blacklisted, it should
-// still be processed here according to its own attribute policy.
-// TODO: review aria handling
-// TODO: what about role and other microdata attributes?
 DOMFilter.isPermittedAttribute = function(elementName, attributeName) {
   'use strict';
   if(elementName === 'a') {
@@ -197,19 +180,7 @@ DOMFilter.isPermittedAttribute = function(elementName, attributeName) {
   return false;
 };
 
-// Handles frame, noframes, frameset, and iframe elements
-// Looks for the presence of a frameset and lack of a body
-// element, and then removes the frameset and generates a body
-// consisting of either noframes content or an error message.
-// TODO: this may need to be a more general transform that is async
-// and automatically identifies the core content frame, fetches its content,
-// and then incorporates it into the document
-// TODO: i want to consider inlining iframe content
-// TODO: iframes are frame-like, but in the end, i think iframe filtering
-// or handling should be done in its own transformational function, and not
-// mixed-in here.
-// TODO: the replacement text should be localized
-// TODO: what if noframes contains an iframe or other frames?
+// Filters frame, noframes, frameset, and iframe elements
 DOMFilter.filterFrameElements = function(document) {
   'use strict';
   let body = document.querySelector('body');
@@ -255,12 +226,6 @@ DOMFilter.filterHiddenElements = function(document) {
 };
 
 // A set of names of inline elements that can be unwrapped
-// NOTE: This does not contain ALL inline elements, just those we
-// want to unwrap. This is different than the set of inline
-// elements defined for the purpose of trimming text nodes.
-// TODO: some of these would maybe be better handled in other more
-// specialized handlers
-// noscript and noembed are handled by other transforms
 DOMFilter.INLINE_ELEMENT_NAMES = new Set([
   'article',
   'center',
@@ -306,14 +271,7 @@ DOMFilter.isInlineElement = function(element) {
   return DOMFilter.INLINE_ELEMENT_NAMES.has(element.localName);
 };
 
-// TODO: in cases like <blockquote><p>text</p></blockquote>, the p can be
-// unwrapped? Leaving this as a place holder
-DOMFilter.filterNestedBlockElements = function(document) {
-  'use strict';
-  throw new Error('Not yet implemented');
-};
-
-// Removes superfluous elements
+// Removes superfluous inline elements
 DOMFilter.filterInlineElements = function(document) {
   'use strict';
   for(let element of selectInlineElements(document)) {
@@ -379,20 +337,6 @@ DOMFilter.TRIVIAL_TEXT_NODE_VALUES = new Set([
 // considered leaves.
 // Certain elements are treated differently. For example, <img> is never
 // considered a leaf even though it has no nested elements or text.
-// Elements that contain only trivial text nodes are still considered leaves,
-// such as <p>\n</p>
-// TODO: this could still use improvement. it is revisiting and
-// re-evaluating children sometimes.
-// TODO: does the resulting set of leaves contain leaves within
-// leaves? i want to avoid removing leaves within leaves.
-// TODO: test cases
-// TODO: i would like to do this without having a visitor function and
-// an isLeaf function that also visits, it feels wrong.
-// TODO: if we treat the document as a DAG, we can use graph principles,
-// and process the document as if it were a graph. maybe we need a graph
-// library.
-// TODO: maybe what i should do is gather all leaves, then remove, so write
-// a funciton that abstracts the gathering
 DOMFilter.filterLeafElements = function(document) {
   'use strict';
   const leafSet = new Set();
@@ -468,11 +412,6 @@ DOMFilter.filterNominalAnchors = function(document) {
       }
     }
   }
-};
-
-DOMFilter.isNominalAnchor = function(anchor) {
-  'use strict';
-  // todo: implement me
 };
 
 DOMFilter.filterScriptElements = function(document) {
@@ -590,15 +529,6 @@ DOMFilter.isSingleColumnTable = function(table) {
   return isSingleColumn;
 };
 
-// Returns an iterator that yields the cells of a table, in top down
-// then left right order
-DOMFilter.createTableCellIterator = function(table) {
-  'use strict';
-  // TODO: implement me
-};
-
-// TODO: create and use a TableCellIterator instead of express iteration?
-// TODO: test
 DOMFilter.transformSingleColumnTable = function(table) {
   'use strict';
   const parent = table.parentElement;
@@ -633,7 +563,6 @@ DOMFilter.filterSingleItemLists = function(document) {
 
 DOMFilter.isListItem = DOMFilter.elementHasName.bind(null, 'li');
 
-// TODO: use Array.prototype.reduce?
 DOMFilter.countListItems = function(list) {
   'use strict';
   const childNodes = list.childNodes;
@@ -653,7 +582,6 @@ DOMFilter.getFirstListItem = function(list) {
 };
 
 // assumes the list item count > 0
-// TODO: detach first to reduce ops on live (see unwrap)
 DOMFilter.unwrapSingleItemList = function(list) {
   'use strict';
   const parent = list.parentElement;
@@ -664,18 +592,13 @@ DOMFilter.unwrapSingleItemList = function(list) {
   list.remove();
 };
 
-// Removes images without a source. This should only be called after
-// transformLazyImages because that function may derive a source property for
-// an otherwise sourceless image.
-// TODO: eventually stop logging. For now it helps as a way to
-// identify new lazily-loaded images
+// Removes images without a source
 DOMFilter.filterSourcelessImages = function(document) {
   'use strict';
   const images = document.querySelectorAll('img');
   images[Symbol.iterator] = Array.prototype[Symbol.iterator];
   for(let image of images) {
     if(DOMFilter.isSourcelessImage(image)) {
-      console.debug('Removing sourceless image: %s', image.outerHTML);
       image.remove();
     }
   }
@@ -836,16 +759,6 @@ DOMFilter.TRIMMABLE_NODE_NAMES = new Set([
   'br', 'hr', 'nobr'
 ]);
 
-// TODO: support additional cases of empty elements other than paragraph? we
-// basically want to consider every element except for img, svg, etc.
-// TODO: review interaction with removal of empty node values, does that
-// still happen anywhere? if a node value that is empty remains then
-// the empty paragraph check or other similar checks, will not work if such
-// checks only look at the presence of a child node, i think i do this
-// implicitly as a part of trimTextNodes, maybe that should be separated out
-// TODO: review interaction with filterLeafElements, won't the removal of
-// all empty paragraphs already consider this? but then trimming would have
-// to occur after leaves removed, right? should order matter?
 DOMFilter.isTrimmableNode = function(node) {
   'use strict';
   return DOMFilter.isElement(node) &&
@@ -858,18 +771,11 @@ DOMFilter.isEmptyParagraph = function(element) {
   return element && element.localName === 'p' && !element.firstChild;
 };
 
-// Carefully trims a document's text nodes, with special handling for
-// nodes near inline elements and whitespace sensitive elements such as <pre>
-// TODO: this is still causing an issue where there is no space adjacent
-// to an inline element, e.g. a<em>b</em> is rendered as ab
-// TODO: i am still observing errors in the output that I attribute to
-// this function
+// Trims a document's text nodes
 DOMFilter.trimTextNodes = function(document, sensitiveElements) {
   'use strict';
 
   const isElement = DOMFilter.isElement;
-  // Note this is using the no trim function, not the other function
-  // for the purpose of unwrapping inlines, it is a different set
   const isInlineElement = DOMFilter.isInlineElementNoTrim;
   for(let node of DOMFilter.getTextNodeIterator(document)) {
 
@@ -957,7 +863,7 @@ DOMFilter.SENSITIVE_ELEMENTS_SELECTOR = [
 // Rather than walking the ancestor chain each time to do such a check, we
 // collect all such elements and their descendants into a large set, so that
 // we can simply check if a text node's parent element is a member.
-// TODO: see if I can avoid Array.from once Chrome supports iterable NodeLists
+// TODO: see if I can avoid Array.from
 DOMFilter.getSensitiveSet = function(document) {
   'use strict';
   const sensitiveElements = document.querySelectorAll(
@@ -965,8 +871,6 @@ DOMFilter.getSensitiveSet = function(document) {
   return new Set(Array.from(sensitiveElements));
 };
 
-// TODO: merge with inline elements above?
-// TODO: rename to something simple
 DOMFilter.INLINE_ELEMENTS_NO_TRIM = new Set([
   'a',
   'abbr',
@@ -1009,7 +913,6 @@ DOMFilter.isInlineElementNoTrim = function(element) {
   'use strict';
   return DOMFilter.INLINE_ELEMENTS_NO_TRIM.has(element.localName);
 };
-
 
 // Unwraps the element's child nodes into the parent of the element or, if
 // provided, the parent of the alternate element
