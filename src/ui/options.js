@@ -246,7 +246,7 @@ function startSubscription(url) {
   showSubscriptionMonitor();
   updateSubscriptionMonitor('Subscribing...');
 
-  openIndexedDB(function(event) {
+  db.open(function(event) {
     if(event.type !== 'success') {
       console.debug(event);
       hideSubsciptionMonitor(function() {
@@ -258,7 +258,7 @@ function startSubscription(url) {
 
     const connection = event.target.result;
 
-    FeedStore.findByURL(connection, url,
+    db.findFeedByURL(connection, url,
       onFindByURL.bind(null, connection));
   });
 
@@ -271,7 +271,7 @@ function startSubscription(url) {
     }
 
     if(!window.navigator.onLine) {
-      FeedStore.put(connection, null, {url: url}, onSubscribe);
+      db.storeFeed(connection, null, {url: url}, onSubscribe);
     } else {
       fetchFeed(url, 10 * 1000, onFetch.bind(null, connection));
     }
@@ -286,7 +286,7 @@ function startSubscription(url) {
       return;
     }
 
-    FeedStore.put(connection, null, remoteFeed, function() {
+    db.storeFeed(connection, null, remoteFeed, function() {
       onSubscribe(remoteFeed, 0, 0);
     });
   }
@@ -308,12 +308,12 @@ function startSubscription(url) {
 // TODO: show num entries, num unread/red, etc
 // TODO: react to connection error, find error
 function populateFeedDetailsSection(feedId) {
-  openIndexedDB(function(event) {
+  db.open(function(event) {
     if(event.type !== 'success') {
       return;
     }
 
-    FeedStore.findById(event.target.result, feedId, function(event) {
+    db.findFeedById(event.target.result, feedId, function(event) {
       const feed = event.target.result;
       if(!feed) {
         return;
@@ -462,7 +462,7 @@ function onUnsubscribeButtonClicked(event) {
     return;
   }
 
-  openIndexedDB(onOpenDatabase);
+  db.open(onOpenDatabase);
 
   function onOpenDatabase(event) {
     if(event.type !== 'success') {
@@ -471,7 +471,7 @@ function onUnsubscribeButtonClicked(event) {
     }
 
     const connection = event.target.result;
-    FeedStore.unsubscribe(connection, feedId,
+    db.unsubscribe(connection, feedId,
       onUnsubscribe.bind(null, connection));
   }
 
@@ -564,13 +564,13 @@ function onImportOPMLClick(event) {
 // function like triggerFileDownload(hostDocument, title, contentBlob);
 
 function onExportOPMLClick(event) {
-  openIndexedDB(onExportOPMLClickOnOpenIndexedDB);
+  db.open(onExportOPMLClickOndb.open);
 }
 
-function onExportOPMLClickOnOpenIndexedDB(event) {
+function onExportOPMLClickOndb.open(event) {
   if(event.type === 'success') {
     const connection = event.target.result;
-    getAllFeeds(connection, onExportOPMLClickOnGetAllFeeds);
+    db.getAllFeeds(connection, onExportOPMLClickOnGetAllFeeds);
   } else {
     // TODO: visually report the error
     console.debug('Failed to connect to database when exporting opml');
@@ -729,14 +729,14 @@ function initSubscriptionsSection() {
 
   let feedCount = 0;
 
-  openIndexedDB(function(event) {
+  db.open(function(event) {
     if(event.type !== 'success') {
       // TODO: react
       console.debug(event);
       return;
     }
 
-    FeedStore.forEach(event.target.result, handleFeed, true, onComplete);
+    db.forEachFeed(event.target.result, handleFeed, true, onComplete);
   });
 
   function handleFeed(feed) {

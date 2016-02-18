@@ -16,7 +16,7 @@ function onRuntimeInstalled(event) {
   console.log('Installing extension...');
 
   // Trigger database upgrade by opening a connection
-  openIndexedDB(function(event) {
+  db.open(function(event) {
     // NOOP
     // TODO: close the connection immediately?
   });

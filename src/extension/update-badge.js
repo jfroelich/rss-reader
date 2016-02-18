@@ -2,8 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Requires: openIndexedDB
-// Requires: countUnreadEntries
+// Requires: /src/db.js
 
 'use strict';
 
@@ -12,9 +11,9 @@
 // Updates the unread count of the extension's badge
 function updateBadge(connection) {
   if(connection) {
-    countUnreadEntries(connection, setBadgeText);
+    db.countUnreadEntries(connection, setBadgeText);
   } else {
-    openIndexedDB(updateOnConnect);
+    db.open(updateOnConnect);
   }
 }
 
@@ -23,7 +22,7 @@ this.updateBadge = updateBadge;
 function updateOnConnect(event) {
   if(event.type === 'success') {
     const connection = event.target.result;
-    countUnreadEntries(connection, setBadgeText);
+    db.countUnreadEntries(connection, setBadgeText);
   } else {
     // Connection error
     console.debug(event);

@@ -5,9 +5,8 @@
 // Requires: /lib/parse-srcset.js
 // Requires: /lib/URI.js
 // Requires: /src/fetch/fetch-image.js
-// Requires: /src/url/parse-url.js
-// Requires: /src/storage/open-indexeddb.js
-// Requires: /src/storage/feed-store.js
+// Requires: /src/utils.js
+// Requires: /src/db.js
 // Requires: /src/extension/update-badge.js
 // Requires: /src/extension/show-notification.js
 
@@ -34,14 +33,14 @@ FeedPoll.onCheckIdlePermission = function(permitted) {
     chrome.idle.queryState(IDLE_PERIOD,
       FeedPoll.onQueryIdleState);
   } else {
-    openIndexedDB(FeedPoll.iterateFeeds);
+    db.open(FeedPoll.iterateFeeds);
   }
 };
 
 FeedPoll.onQueryIdleState = function(state) {
   'use strict';
   if(state === 'locked' || state === 'idle') {
-    openIndexedDB(FeedPoll.iterateFeeds);
+    db.open(FeedPoll.iterateFeeds);
   } else {
     console.debug('Polling canceled as not idle');
     FeedPoll.onComplete();
@@ -53,7 +52,7 @@ FeedPoll.iterateFeeds = function(event) {
 
   if(event.type === 'success') {
     const connection = event.target.result;
-    FeedStore.forEach(connection, FeedPoll.fetchFeed.bind(null,
+    db.forEachFeed(connection, FeedPoll.fetchFeed.bind(null,
       connection), false, FeedPoll.onComplete);
   } else {
     console.debug(event);
@@ -74,9 +73,9 @@ FeedPoll.onFetchFeed = function(connection, feed, event, remoteFeed) {
   if(event) {
     console.dir(event);
   } else {
-    // TODO: if we are cleaning up the properties in FeedStore.put,
+    // TODO: if we are cleaning up the properties in db.storeFeed,
     // are we properly cascading those cleaned properties to the entries?
-    FeedStore.put(connection, feed, remoteFeed,
+    db.storeFeed(connection, feed, remoteFeed,
       FeedPoll.onPutFeed.bind(null, connection, feed, remoteFeed));
   }
 };
@@ -95,7 +94,7 @@ FeedPoll.onEntriesUpdated = function(connection) {
 
 FeedPoll.findEntryByLink = function(connection, feed, entry, callback) {
   'use strict';
-  findEntryByLink(connection, entry.link,
+  db.findEntryByLink(connection, entry.link,
     FeedPoll.onFindEntry.bind(null, connection, feed, entry, callback));
 };
 
@@ -112,7 +111,7 @@ FeedPoll.onFindEntry = function(connection, feed, entry, callback, event) {
 
   function onAugment(event) {
     FeedPoll.cascadeFeedProperties(feed, entry);
-    storeEntry(connection, entry, callback);
+    db.storeEntry(connection, entry, callback);
   }
 };
 

@@ -2,15 +2,14 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Requires: /storage/open-indexeddb.js
-// Requires: /storage/entry-store.js
+// Requires: /src/db.js
 
 const ArchiveService = {};
 
 ArchiveService.archiveEntries = function() {
   'use strict';
   console.log('Archiving entries');
-  openIndexedDB(ArchiveService.onConnect);
+  db.open(ArchiveService.onConnect);
 };
 
 ArchiveService.onConnect = function(event) {
@@ -31,8 +30,8 @@ ArchiveService.onConnect = function(event) {
   transaction.oncomplete = ArchiveService.onComplete.bind(transaction, stats);
   const store = transaction.objectStore('entry');
   const index = store.index('archiveState-readState');
-  const range = IDBKeyRange.only([EntryStore.UNARCHIVED,
-    EntryStore.READ]);
+  const range = IDBKeyRange.only([db.EntryFlags.UNARCHIVED,
+    db.EntryFlags.READ]);
   const request = index.openCursor(range);
   request.onsuccess = ArchiveService.archiveNextEntry.bind(request, stats);
 };
@@ -61,7 +60,7 @@ ArchiveService.archiveNextEntry = function(stats, event) {
     delete entry.updated;
     delete entry.title;
     delete entry.author;
-    entry.archiveState = EntryStore.ARCHIVED;
+    entry.archiveState = db.EntryFlags.ARCHIVED;
     entry.archiveDate = now;
     cursor.update(entry);
     chrome.runtime.sendMessage({type: 'archivedEntry', entry: entry});

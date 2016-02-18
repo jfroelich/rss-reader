@@ -18,6 +18,7 @@
       "/lib/URI.js",
       "/lib/utf8.js",
       "/src/archive-service.js",
+      "/src/db.js",
       "/src/extension/on-browser-action-clicked.js",
       "/src/extension/on-chrome-alarm.js",
       "/src/extension/on-runtime-installed.js",
@@ -29,14 +30,6 @@
       "/src/fetch/fetch-image.js",
       "/src/fetch/fetch-xml.js",
       "/src/feed-poll.js",
-      "/src/storage/entry-store.js",
-      "/src/storage/clear-entry-store.js",
-      "/src/storage/count-unread-entries.js",
-      "/src/storage/feed-store.js",
-      "/src/storage/find-entry-by-link.js",
-      "/src/storage/open-indexeddb.js",
-      "/src/storage/store-entry.js",
-      "/src/storage/upgrade-indexeddb.js",
       "/src/utils.js"
     ]
   },

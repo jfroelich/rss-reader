@@ -2,6 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Requires: /src/db.js
 // Requires: /src/utils.js
 
 'use strict';
@@ -75,7 +76,7 @@ function markSlideRead(slide) {
   slide.setAttribute('read', '');
   const entryAttribute = slide.getAttribute('entry');
 
-  openIndexedDB(function(event) {
+  db.open(function(event) {
     if(event.type !== 'success') {
       // TODO: react to database error?
       console.debug(event);
@@ -84,7 +85,7 @@ function markSlideRead(slide) {
 
     const entryId = parseInt(entryAttribute);
     const connection = event.target.result;
-    markEntryAsRead(connection, entryId);
+    db.markEntryAsRead(connection, entryId);
   });
 }
 
@@ -94,7 +95,7 @@ function appendSlides(oncomplete, isFirst) {
   const offset = countUnreadSlides();
   let notAdvanced = true;
 
-  openIndexedDB(function(event) {
+  db.open(function(event) {
     if(event.type !== 'success') {
       // TODO: react?
       console.debug(event);
@@ -110,8 +111,8 @@ function appendSlides(oncomplete, isFirst) {
     // in the next major revision
 
     const index = entryStore.index('archiveState-readState');
-    const range = IDBKeyRange.only([EntryStore.UNARCHIVED,
-      EntryStore.UNREAD]);
+    const range = IDBKeyRange.only([db.EntryFlags.UNARCHIVED,
+      db.EntryFlags.UNREAD]);
     const request = index.openCursor(range);
     request.onsuccess = renderEntry;
   });

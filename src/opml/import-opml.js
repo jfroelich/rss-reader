@@ -77,7 +77,7 @@ function onFileLoad(tracker, callback, event) {
     return;
   }
 
-  openIndexedDB(storeFeeds.bind(null, tracker, callback, urlFeedMap));
+  db.open(storeFeeds.bind(null, tracker, callback, urlFeedMap));
 }
 
 function expandFeed(feed) {
@@ -157,7 +157,7 @@ function storeFeeds(tracker, callback, urlFeedMap, event) {
 
   // Fire off async requests, we do not wait for them to complete
   for(let feed of urlFeedMap.values()) {
-    FeedStore.put(connection, null, feed, NOOP);
+    db.storeFeed(connection, null, feed, NOOP);
   }
 
   if(tracker.filesImported === tracker.numFiles) {
