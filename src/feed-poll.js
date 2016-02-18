@@ -277,14 +277,10 @@ FeedPoll.resolveDocumentURLs = function(document, baseURL) {
 
 FeedPoll.resolveElement = function(baseURL, element) {
   'use strict';
-  const attributeName = FeedPoll.ELEMENT_URL_ATTRIBUTE_MAP.get(element.localName);
-
-  // We know attribute is defined because the selector
-  // included the condition (e.g. element[attribute])
+  const attributeName = FeedPoll.ELEMENT_URL_ATTRIBUTE_MAP.get(
+    element.localName);
   const url = element.getAttribute(attributeName).trim();
-
   const resolved = utils.resolveURL(baseURL, url);
-
   if(resolved && resolved !== url) {
     element.setAttribute(attributeName, resolved);
   }
@@ -295,35 +291,29 @@ FeedPoll.resolveElement = function(baseURL, element) {
 // descriptors array back into a string and modifies the element
 FeedPoll.resolveImageSrcSet = function(baseURL, image) {
   'use strict';
-
-  const srcSetString = image.getAttribute('srcset');
-
-  // [{url: _, d: _, w: _, h:_}, ...]
-  let descriptors = parseSrcset(srcSetString) || [];
-  const numDescriptors = descriptors.length;
-
-  for(let i = 0, descriptor, resolvedURL; i < numDescriptors; i++) {
-    descriptor = descriptors[i];
-    // note: this previously forgot to pass in baseURL, this may have
-    // been part of the cause of the errors
-    resolvedURL = utils.resolveURL(baseURL, descriptor.url);
-
-    if(!resolvedURL) {
-      console.debug('resolved was undefined after utils.resolveURL(%s,%s)',
-        baseURL, descriptor.url);
-    }
-
+  const source = image.getAttribute('srcset');
+  let descriptors = parseSrcset(source) || [];
+  let numURLsChanged = 0;
+  let resolvedDescriptors = descriptors.map(function(descriptor) {
+    const resolvedURL = utils.resolvedURL(baseURL, descriptor.url);
+    let newURL = descriptor.url;
     if(resolvedURL && resolvedURL !== descriptor.url) {
-      descriptor.url = resolvedURL;
+      newURL = resolvedURL;
+      numURLsChanged++;
     }
+
+    return {
+      url: newURL, d: descriptor.d, w: descriptor.w, h: descriptor.h
+    };
+  });
+
+  if(numURLsChanged === 0) {
+    return;
   }
 
-  // Reserialize
-  const newSrcSetString = FeedPoll.serializeSrcSet(descriptors);
-
-  // Update the element
-  console.debug('Changing srcset %s to %s', srcSetString, newSrcSetString);
-  image.setAttribute('srcset', newSrcSetString);
+  const newSource = FeedPoll.serializeSrcSet(resolvedDescriptors);
+  console.debug('Changing srcset %s to %s', source, newSource);
+  image.setAttribute('srcset', newSource);
 };
 
 // Returns a string representing serialized descriptors, which is a suitable
@@ -331,6 +321,7 @@ FeedPoll.resolveImageSrcSet = function(baseURL, image) {
 // TODO: THIS IS INCOMPLETE, because I do not yet include the other dimensions
 // back into the string, and I am getting image errors in the output
 // TODO: support d,w,h
+// TODO: do a no-op if the urls were already absolute
 FeedPoll.serializeSrcSet = function(descriptors) {
   'use strict';
   const resolvedDescriptors = [];
