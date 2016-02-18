@@ -140,15 +140,15 @@ function appendFeed(feed, insertedSort) {
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
   item.setAttribute('feed', feed.id);
-  item.setAttribute('title', replaceHTML(feed.description) || '');
+  item.setAttribute('title', utils.replaceHTML(feed.description) || '');
   item.onclick = onFeedListItemClick;
   var favIconElement = document.createElement('img');
-  favIconElement.src = getFaviconURL(feed.link);
+  favIconElement.src = FavIcon.getURL(feed.link);
   if(feed.title) favIconElement.title = feed.title;
   item.appendChild(favIconElement);
 
   const title = document.createElement('span');
-  title.textContent = truncateString(feed.title,300) || 'Untitled';
+  title.textContent = utils.truncateString(feed.title,300) || 'Untitled';
   item.appendChild(title);
 
   const feedListElement = $$('feedlist');
@@ -221,9 +221,9 @@ function showOrSkipSubscriptionPreview(url) {
     for(var i = 0, len = Math.min(5,result.entries.length); i < len;i++) {
       var entry = result.entries[i];
       var item = document.createElement('li');
-      item.innerHTML = replaceHTML(entry.title);
+      item.innerHTML = utils.replaceHTML(entry.title);
       var content = document.createElement('span');
-      content.innerHTML = replaceHTML(entry.content);
+      content.innerHTML = utils.replaceHTML(entry.content);
       item.appendChild(content);
       $$('subscription-preview-entries').appendChild(item);
     }
@@ -238,7 +238,7 @@ function hideSubscriptionPreview() {
 function startSubscription(url) {
   hideSubscriptionPreview();
 
-  if(!isValidURL(url)) {
+  if(!utils.isValidURL(url)) {
     showErrorMessage('Invalid url "' + url + '".');
     return;
   }
@@ -320,9 +320,9 @@ function populateFeedDetailsSection(feedId) {
       }
 
       $$('details-title').textContent = feed.title || 'Untitled';
-      $$('details-favicon').setAttribute('src', getFaviconURL(feed.url));
+      $$('details-favicon').setAttribute('src', FavIcon.getURL(feed.url));
       $$('details-feed-description').textContent =
-        replaceHTML(feed.description) || 'No description';
+        utils.replaceHTML(feed.description) || 'No description';
       $$('details-feed-url').textContent = feed.url;
       $$('details-feed-link').textContent = feed.link;
       $$('details-unsubscribe').value = feed.id;
@@ -362,7 +362,7 @@ function onSubscribeSubmit(event) {
     return false;
   }
 
-  if(isValidURL(query)) {
+  if(utils.isValidURL(query)) {
     $$('discover-results-list').innerHTML = '';
     $$('discover-no-results').style.display = 'none';
     $$('discover-in-progress').style.display = 'none';
@@ -434,7 +434,7 @@ function onDiscoverFeedsComplete(errorEvent, query, results) {
     button.onclick = discoverSubscribeClick;
     item.appendChild(button);
     const image = document.createElement('img');
-    image.setAttribute('src', getFaviconURL(result.url));
+    image.setAttribute('src', FavIcon.getURL(result.url));
     image.title = result.link;
     item.appendChild(image);
     const a = document.createElement('a');

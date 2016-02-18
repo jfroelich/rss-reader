@@ -284,7 +284,7 @@ FeedPoll.resolveElement = function(baseURL, element) {
   // included the condition (e.g. element[attribute])
   const url = element.getAttribute(attributeName).trim();
 
-  const resolved = resolveURL(baseURL, url);
+  const resolved = utils.resolveURL(baseURL, url);
 
   if(resolved && resolved !== url) {
     element.setAttribute(attributeName, resolved);
@@ -307,10 +307,10 @@ FeedPoll.resolveImageSrcSet = function(baseURL, image) {
     descriptor = descriptors[i];
     // note: this previously forgot to pass in baseURL, this may have
     // been part of the cause of the errors
-    resolvedURL = resolveURL(baseURL, descriptor.url);
+    resolvedURL = utils.resolveURL(baseURL, descriptor.url);
 
     if(!resolvedURL) {
-      console.debug('resolved was undefined after resolveURL(%s,%s)',
+      console.debug('resolved was undefined after utils.resolveURL(%s,%s)',
         baseURL, descriptor.url);
     }
 

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Requires: EntryStore.js
-// Requires: lang/is-valid-date.js
+// Requires: /src/storage/entry-store.js
+// Requires: /src/utils.js
 
 // TODO: maybe make a separate private helper function that prepares the
 // entry for storage, as opposed to doing it all in a single function
@@ -62,7 +62,7 @@ function storeEntry(connection, entry, callback) {
   // or similar every where else. Like in poll denormalize
   if(entry.pubdate) {
     const date = new Date(entry.pubdate);
-    if(isValidDate(date)) {
+    if(utils.isValidDate(date)) {
       storable.pubdate = date.getTime();
     }
   }

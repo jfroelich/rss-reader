@@ -2,17 +2,18 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Requires: /src/utils.js
+
 'use strict';
 
 const FeedStore = {};
 
 // Queries the database for a feed with the given url
-// TODO: explicit dependency on getSchemelessURL
 FeedStore.findByURL = function(connection, url, callback) {
   const transaction = connection.transaction('feed');
   const store = transaction.objectStore('feed');
   const index = store.index('schemeless');
-  const schemeless = getSchemelessURL(url);
+  const schemeless = utils.filterURLProtocol(url);
   const request = index.get(schemeless);
   request.onsuccess = callback;
 };
@@ -97,7 +98,7 @@ FeedStore.put = function(connection, original, feed, callback) {
   if(original) {
     storable.schemeless = original.schemeless;
   } else {
-    storable.schemeless = getSchemelessURL(storable.url);
+    storable.schemeless = utils.filterURLProtocol(storable.url);
   }
 
   const title = sanitizeValue(feed.title);
@@ -148,8 +149,8 @@ function onPutFeed(callback, event) {
 // TODO: sanitize html entities?
 function sanitizeValue(value) {
   if(value) {
-    value = replaceHTML(value);
-    value = filterControlCharacters(value);
+    value = utils.replaceHTML(value);
+    value = utils.filterControlCharacters(value);
     value = value.replace(/\s+/, ' ');
     value = value.trim();
     return value;

@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Requires: /src/utils.js
+
 'use strict';
 
 { // BEGIN ANONYMOUS NAMESPACE
@@ -123,7 +125,7 @@ function parseEntry(isAtom, entry) {
   const author = isAtom ? getText(entry, 'author name') :
     (getText(entry, 'creator') || getText(entry, 'publisher'));
   if(author) {
-    result.author = replaceHTML(author, ' ');
+    result.author = utils.replaceHTML(author, ' ');
   }
 
   let link = '';

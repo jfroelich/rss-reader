@@ -2,8 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Requires: /src/html/replace-html.js
-// Requires: /src/lang/truncate-string.js
+// Requires: /src/utils.js
 
 // NOTE: Google formally deprecated this service. Around December 1st, 2015, I
 // first noticed that the queries stopped working. However, I have witnessed
@@ -83,13 +82,13 @@ googlefeeds.removeDuplicateEntriesByURL = function(entriesArray) {
 googlefeeds.sanitizeEntry = function(entry) {
   'use strict';
   if(entry.title) {
-    entry.title = replaceHTML(entry.title);
-    entry.title = truncateString(entry.title, 100);
+    entry.title = utils.replaceHTML(entry.title);
+    entry.title = utils.truncateString(entry.title, 100);
   }
 
   if(entry.contentSnippet) {
     entry.contentSnippet = entry.contentSnippet.replace(/<\s*br\s*>/gi, ' ');
-    entry.contentSnippet = truncateString(entry.contentSnippet,
+    entry.contentSnippet = utils.truncateString(entry.contentSnippet,
       googlefeeds.CONTENT_SNIPPET_MAX_LENGTH);
   }
 };

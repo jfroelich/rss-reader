@@ -677,7 +677,7 @@ VNodeTest.testFromHTMLDocument = function() {
   'use strict';
   console.group('Running fromHTMLDocument tests');
 
-  const doc = parseHTML('<html><head><title>Test</title></head><body>'+
+  const doc = utils.parseHTML('<html><head><title>Test</title></head><body>'+
   '<p id="first paragraph">Hello World!</p><a href="pathtonowhere.html">'+
   'This is an anchor</a><!-- A comment --></body></html>');
 

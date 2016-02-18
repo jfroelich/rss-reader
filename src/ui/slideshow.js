@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Requires: /src/utils.js
+
 'use strict';
 
 { // BEGIN ANONYMOUS NAMESPACE
@@ -231,9 +233,9 @@ function appendSlide(entry, isFirst) {
   title.setAttribute('target','_blank');
   title.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
-    let titleText = replaceHTML(entry.title);
+    let titleText = utils.replaceHTML(entry.title);
     titleText = filterArticleTitle(titleText);
-    titleText = truncateString(titleText, 300);
+    titleText = utils.truncateString(titleText, 300);
     title.innerHTML = titleText;
   } else {
     title.textContent = 'Untitled';
@@ -245,7 +247,7 @@ function appendSlide(entry, isFirst) {
   const content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
 
-  const doc = parseHTML(entry.content);
+  const doc = utils.parseHTML(entry.content);
   prepareDocumentForView(doc);
 
   if(doc.documentElement) {
@@ -262,8 +264,7 @@ function appendSlide(entry, isFirst) {
   slide.appendChild(source);
 
   const favIcon = document.createElement('img');
-  // TODO: where am i getting baseURI from? I don't even think that exists
-  const iconSource = getFaviconURL(entry.feedLink || entry.baseURI);
+  const iconSource = FavIcon.getURL(entry.feedLink);
   favIcon.setAttribute('src', iconSource);
   favIcon.setAttribute('width', '16');
   favIcon.setAttribute('height', '16');
@@ -272,7 +273,7 @@ function appendSlide(entry, isFirst) {
   const feedTitle = document.createElement('span');
   feedTitle.setAttribute('title',entry.feedLink);
   const entryPubDate = entry.pubdate ?
-    ' on ' + formatDate(new Date(entry.pubdate)) : '';
+    ' on ' + utils.formatDate(new Date(entry.pubdate)) : '';
   feedTitle.textContent = (entry.feedTitle || 'Unknown feed') + ' by ' +
     (entry.author || 'Unknown author') + entryPubDate;
   source.appendChild(feedTitle);

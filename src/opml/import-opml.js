@@ -2,11 +2,10 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Requires: /html/replace-html.js
-// Requires: /lang/filter-control-characters.js
-// Requires: /opml/parse-opml.js
-// Requires: /storage/open-indexeddb.js
-// Requires: /storage/feed-store.js
+// Requires: /src/utils.js
+// Requires: /src/opml/parse-opml.js
+// Requires: /src/storage/open-indexeddb.js
+// Requires: /src/storage/feed-store.js
 
 'use strict';
 
@@ -109,17 +108,17 @@ function createOutlineFromElement(element) {
     title = element.getAttribute('text') || '';
     title = title.trim();
   }
-  title = filterControlCharacters(title);
+  title = utils.filterControlCharacters(title);
   if(title) {
     outline.title = title;
   }
 
   let description = element.getAttribute('description');
   if(description) {
-    description = filterControlCharacters(description);
+    description = utils.filterControlCharacters(description);
   }
   if(description) {
-    description = replaceHTML(description);
+    description = utils.replaceHTML(description);
   }
   if(description) {
     description = description.trim();
@@ -129,14 +128,14 @@ function createOutlineFromElement(element) {
   }
 
   let url = element.getAttribute('xmlUrl') || '';
-  url = filterControlCharacters(url);
+  url = utils.filterControlCharacters(url);
   url = url.trim();
   if(url) {
     outline.url = url;
   }
 
   let link = element.getAttribute('htmlUrl') || '';
-  link = filterControlCharacters(link);
+  link = utils.filterControlCharacters(link);
   link = link.trim();
   if(link) {
     outline.link = link;

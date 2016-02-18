@@ -70,7 +70,7 @@ function entryHasLink(entry) {
 }
 
 function rewriteEntryLink(entry) {
-  entry.link = rewriteURL(entry.link);
+  entry.link = utils.rewriteURL(entry.link);
 }
 
 function expandEntry(entry) {
