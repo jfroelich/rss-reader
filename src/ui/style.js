@@ -129,7 +129,7 @@ function updateEntryStyles() {
 
     const bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
     contentRule.style.lineHeight = (bodyLineHeight / 10).toFixed(2);
-    const columnCount = localStorage.COLUMN_COUNT;
+    let columnCount = localStorage.COLUMN_COUNT;
     const VALID_COUNTS = { '1': true, '2': true, '3': true };
     if(!(columnCount in VALID_COUNTS)) {
       columnCount = '1';

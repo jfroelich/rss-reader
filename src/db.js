@@ -286,7 +286,7 @@ db.storeFeed = function(connection, original, feed, callback) {
   const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.put(storable);
-  transaction.oncomplete = function(callback, event) {
+  transaction.oncomplete = function(event) {
     if(event.target.error) {
       console.debug(event);
     }

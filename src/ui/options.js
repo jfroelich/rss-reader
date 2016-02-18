@@ -475,7 +475,7 @@ function onUnsubscribeButtonClicked(event) {
       onUnsubscribe.bind(null, connection));
   }
 
-  function onUnsubscribe(event) {
+  function onUnsubscribe(connection, event) {
     const sectionMenu = $$('mi-subscriptions');
 
     // Update the badge in case any unread articles belonged to
@@ -564,10 +564,10 @@ function onImportOPMLClick(event) {
 // function like triggerFileDownload(hostDocument, title, contentBlob);
 
 function onExportOPMLClick(event) {
-  db.open(onExportOPMLClickOndb.open);
+  db.open(onExportOPMLClickOnOpenDB);
 }
 
-function onExportOPMLClickOndb.open(event) {
+function onExportOPMLClickOnOpenDB(event) {
   if(event.type === 'success') {
     const connection = event.target.result;
     db.getAllFeeds(connection, onExportOPMLClickOnGetAllFeeds);
