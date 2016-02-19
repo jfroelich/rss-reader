@@ -80,7 +80,7 @@ FeedPoll.onFetchFeed = function(connection, feed, event, remoteFeed) {
   }
 };
 
-FeedPoll.onPutFeed = function(connection, feed, remoteFeed, event) {
+FeedPoll.onPutFeed = function(connection, feed, remoteFeed, _) {
   'use strict';
   async.forEach(remoteFeed.entries,
     FeedPoll.findEntryByLink.bind(null, connection, feed),
@@ -118,10 +118,9 @@ FeedPoll.onFindEntry = function(connection, feed, entry, callback, event) {
 FeedPoll.cascadeFeedProperties = function(feed, entry) {
   'use strict';
 
-  // Set the foreign key
   entry.feed = feed.id;
 
-  // Set up some functional dependencies
+  // Denormalize now to avoid doing the lookup on render
   entry.feedLink = feed.link;
   entry.feedTitle = feed.title;
 
@@ -134,8 +133,6 @@ FeedPoll.cascadeFeedProperties = function(feed, entry) {
 FeedPoll.onComplete = function() {
   console.log('Polling completed');
   localStorage.LAST_POLL_DATE_MS = String(Date.now());
-  // const message = {type: 'pollCompleted'};
-  // chrome.runtime.sendMessage(message);
   showNotification('Updated articles');
 };
 
@@ -170,6 +167,7 @@ FeedPoll.onFetchHTML = function(entry, callback, error, document,
 FeedPoll.onSetImageDimensions = function(entry, document, callback) {
   'use strict';
   // TODO: is this right? the innerHTML of the documentElement?
+  // Do I actually want outerHTML?
   const content = document.documentElement.innerHTML;
   if(content) {
     entry.content = content;
@@ -253,37 +251,30 @@ FeedPoll.RESOLVE_SELECTOR = function() {
 FeedPoll.resolveDocumentURLs = function(document, baseURL) {
   'use strict';
 
-  const bases = document.querySelectorAll('base');
-  const numBases = bases.length;
-  for(let i = 0; i < numBases; i++) {
-    bases[i].remove();
-  }
+  const forEach = Array.prototype.forEach;
+  const baseElementList = document.querySelectorAll('base');
+  const removeBaseElement = function(baseElement) {
+    baseElement.remove();
+  };
+  forEach.call(baseElementList, removeBaseElement);
 
-  // Resolve the attribute values for various elements
+  const getNameOfAttributeWithURL = function(element) {
+    return FeedPoll.ELEMENT_URL_ATTRIBUTE_MAP.get(element.localName);
+  };
+
   const resolvables = document.querySelectorAll(FeedPoll.RESOLVE_SELECTOR);
-  const numResolvables = resolvables.length;
-  for(let i = 0; i < numResolvables; i++) {
-    FeedPoll.resolveElement(baseURL, resolvables[i]);
-  }
+  forEach.call(resolvables, function(element) {
+    const attribute = getNameOfAttributeWithURL(element);
+    const url = element.getAttribute(attribute).trim();
+    const resolved = utils.resolveURL(baseURL, url);
+    if(resolved && resolved !== url) {
+      element.setAttribute(attribute, resolved);
+    }
 
-  // Hackish support for srcset, we do another pass over images
-  // to handle the srcset attribute
-  const images = document.querySelectorAll('img[srcset]');
-  const numImages = images.length;
-  for(let i = 0; i < numImages; i++) {
-    FeedPoll.resolveImageSrcSet(baseURL, images[i]);
-  }
-};
-
-FeedPoll.resolveElement = function(baseURL, element) {
-  'use strict';
-  const attributeName = FeedPoll.ELEMENT_URL_ATTRIBUTE_MAP.get(
-    element.localName);
-  const url = element.getAttribute(attributeName).trim();
-  const resolved = utils.resolveURL(baseURL, url);
-  if(resolved && resolved !== url) {
-    element.setAttribute(attributeName, resolved);
-  }
+    if(element.localName === 'img' && element.hasAttribute('srcset')) {
+      FeedPoll.resolveImageSrcSet(baseURL, element);
+    }
+  });
 };
 
 // Access an image element's srcset attribute, parses it into an array of
@@ -295,7 +286,7 @@ FeedPoll.resolveImageSrcSet = function(baseURL, image) {
   let descriptors = parseSrcset(source) || [];
   let numURLsChanged = 0;
   let resolvedDescriptors = descriptors.map(function(descriptor) {
-    const resolvedURL = utils.resolvedURL(baseURL, descriptor.url);
+    const resolvedURL = utils.resolveURL(baseURL, descriptor.url);
     let newURL = descriptor.url;
     if(resolvedURL && resolvedURL !== descriptor.url) {
       newURL = resolvedURL;
