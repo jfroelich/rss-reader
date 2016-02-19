@@ -128,11 +128,6 @@ function updateFeedCount() {
 }
 
 function appendFeed(feed, insertedSort) {
-  if(!feed) {
-    console.error('feed undefined in appendFeed');
-    return;
-  }
-
   const item = document.createElement('li');
   item.setAttribute('sort-key', feed.title);
 
@@ -286,12 +281,13 @@ function startSubscription(url) {
       return;
     }
 
-    db.storeFeed(connection, null, remoteFeed, function() {
+    db.storeFeed(connection, null, remoteFeed, function(newId) {
+      remoteFeed.id = newId;
       onSubscribe(remoteFeed, 0, 0);
     });
   }
 
-  function onSubscribe(addedFeed, entriesProcessed, entriesAdded) {
+  function onSubscribe(addedFeed) {
     appendFeed(addedFeed, true);
     updateFeedCount();
     updateSubscriptionMonitor('Subscribed to ' + url);
@@ -308,12 +304,20 @@ function startSubscription(url) {
 // TODO: show num entries, num unread/red, etc
 // TODO: react to connection error, find error
 function populateFeedDetailsSection(feedId) {
+
+  if(!feedId) {
+    console.debug('invalid feedId passed to populateFeedDetailsSection');
+    return;
+  }
+
   db.open(function(event) {
     if(event.type !== 'success') {
       return;
     }
 
-    db.findFeedById(event.target.result, feedId, function(event) {
+    const connection = event.target.result;
+
+    db.findFeedById(connection, feedId, function(event) {
       const feed = event.target.result;
       if(!feed) {
         return;
@@ -331,7 +335,14 @@ function populateFeedDetailsSection(feedId) {
 }
 
 function onFeedListItemClick(event) {
-  const feedId = parseInt(event.currentTarget.getAttribute('feed'));
+  const element = event.currentTarget;
+  const feedIdString = element.getAttribute('feed');
+  const feedId = parseInt(feedIdString);
+  if(isNaN(feedId)) {
+    console.debug('invalid feed id: ', feedIdString);
+    return;
+  }
+
   populateFeedDetailsSection(feedId);
   // TODO: These calls should really be in an async callback
   // passed to populateFeedDetailsSection
