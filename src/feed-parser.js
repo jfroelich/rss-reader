@@ -4,36 +4,55 @@
 
 // Requires: /src/utils.js
 
-'use strict';
+const FeedParser = {};
 
-{ // BEGIN ANONYMOUS NAMESPACE
+FeedParser.elementHasName = function(name, element) {
+  return name === element.localName;
+};
 
-// Generates a feed object from a document
-function parseFeed(document) {
+FeedParser.isChannelElement = FeedParser.elementHasName.bind(null, 'channel');
+FeedParser.isTitleElement = FeedParser.elementHasName.bind(null, 'title');
+
+FeedParser.getChannelElement = function(document) {
+  'use strict';
+  const documentElement = document.documentElement;
+  if(documentElement.matches('feed'))
+    return documentElement;
+  const childNodes = documentElement.childNodes;
+  const find = Array.prototype.find;
+  return find.call(childNodes, FeedParser.isChannelElement);
+};
+
+FeedParser.setIfDefined = function(object, property, value) {
+  'use strict';
+  if(value) {
+    object[property] = value;
+  }
+};
+
+FeedParser.parseDocument = function(document) {
+  'use strict';
 
   const documentElement = document.documentElement;
-  validateDocumentElement(documentElement);
+  if(!documentElement) {
+    throw new Error('Undefined document element');
+  }
+
+  if(!documentElement.matches('feed, rss, rdf')) {
+    throw new Error('Unsupported document element: ' +
+      element.localName);
+  }
 
   const isAtom = documentElement.matches('feed');
   const isRDF = documentElement.matches('rdf');
-
-  // <channel> is required for feeds and rdf
-  if(!isAtom && !document.querySelector(
-    documentElement.localName + ' > channel')) {
-    throw new Error('Missing required channel element');
+  const channel = FeedParser.getChannelElement(document);
+  if(!channel) {
+    throw new Error('Missing required channel element or no '+
+      'document element found');
   }
-
-  const channel = isAtom ? documentElement :
-    document.querySelector(documentElement.localName + ' > channel');
 
   const feed = {};
 
-  // Ensure the type values conform to the OPML standard
-  // Record the feed's original format as a type property to increase
-  // compliance with the OPML standard
-  // TODO: in order for this to matter, feed loading and updating and so
-  // forth needs to maintain the type property, which i don't think is
-  // currently implemented
   if(isAtom) {
     feed.type = 'feed';
   } else if(isRDF) {
@@ -42,12 +61,17 @@ function parseFeed(document) {
     feed.type = 'rss';
   }
 
-  const getText = getElementText;
+  const getText = FeedParser.getElementText;
+  const channelFindText = FeedParser.findText.bind(null, channel);
+  const setIfDefined = FeedParser.setIfDefined;
 
-  const title = getText(channel, 'title');
-  if(title) {
-    feed.title = title;
-  }
+  // delete after testing
+  //const title = getText(channel, 'title');
+  //if(title) {
+  //  feed.title = title;
+  //}
+
+  setIfDefined(feed, 'title', channelFindText(FeedParser.isTitleElement));
 
   const description = getText(channel, isAtom ? 'subtitle' : 'description');
   if(description) {
@@ -96,26 +120,14 @@ function parseFeed(document) {
 
   const map = Array.prototype.map;
 
-  feed.entries = map.call(entries, parseEntry.bind(null, isAtom));
+  feed.entries = map.call(entries, FeedParser.parseEntry.bind(null, isAtom));
 
   return feed;
-}
+};
 
-this.parseFeed = parseFeed;
-
-function validateDocumentElement(element) {
-  if(!element) {
-    throw new Error('Undefined document element');
-  }
-
-  if(!element.matches('feed, rss, rdf')) {
-    throw new Error('Unsupported document element: ' +
-      element.localName);
-  }
-}
-
-function parseEntry(isAtom, entry) {
-  const getText = getElementText;
+FeedParser.parseEntry = function(isAtom, entry) {
+  'use strict';
+  const getText = FeedParser.getElementText;
   const result = {};
   const title = getText(entry, 'title');
   if(title) {
@@ -192,11 +204,25 @@ function parseEntry(isAtom, entry) {
   }
 
   return result;
-}
+};
+
+FeedParser.findText = function(parentElement, predicate) {
+  'use strict';
+  const find = Array.prototype.find;
+  const childNodes = parentElement.childNodes;
+  const element = find.call(childNodes, predicate);
+  if(element) {
+    const text = element.textContent;
+    if(text) {
+      return text.trim();
+    }
+  }
+};
 
 // Returns the text content of the first element matching the
 // selector within the parent, or undefined
-function getElementText(parent, selector) {
+FeedParser.getElementText = function(parent, selector) {
+  'use strict';
   const element = parent.querySelector(selector);
   if(element) {
     const text = element.textContent;
@@ -204,6 +230,4 @@ function getElementText(parent, selector) {
       return text.trim();
     }
   }
-}
-
-} // END ANONYMOUS NAMESPACE
+};

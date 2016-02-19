@@ -286,11 +286,11 @@ db.storeFeed = function(connection, original, feed, callback) {
   const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.put(storable);
-  transaction.oncomplete = function(event) {
-    if(event.target.error) {
-      console.debug(event);
-    }
-
+  request.onsuccess = function(event) {
+    const newId = event.target.result;
+    callback(newId);
+  };
+  request.onerror = function(event) {
     callback();
   };
 };

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Requires: /feed/parse-feed.js
+// Requires: /feed-parser.js
 // Requires: /fetch/fetch-xml.js
 
 // TODO: the post-processing where i clean up entries should not be done here,
@@ -40,7 +40,7 @@ function onFetchFeed(url, callback, errorEvent, document, responseURL) {
 
   let feed = null;
   try {
-    feed = parseFeed(document);
+    feed = FeedParser.parseDocument(document);
   } catch(exception) {
     callback(exception, null, responseURL);
     return;

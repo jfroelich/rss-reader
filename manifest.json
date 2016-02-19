@@ -24,7 +24,7 @@
       "/src/extension/on-runtime-installed.js",
       "/src/extension/show-notification.js",
       "/src/extension/update-badge.js",
-      "/src/feed/parse-feed.js",
+      "/src/feed-parser.js",
       "/src/fetch/fetch-feed.js",
       "/src/fetch/fetch-html.js",
       "/src/fetch/fetch-image.js",
