@@ -155,12 +155,12 @@ VNode.prototype.remove = function() {
 };
 
 // Returns the closest ancestor node matching the predicate
-VNode.prototype.closest = function(ƒ, includeSelf) {
+VNode.prototype.closest = function(predicate, includeSelf) {
   'use strict';
   let cursor = includeSelf ? this : this.parentNode;
   let result = null;
   while(!result && cursor) {
-    if(ƒ(cursor)) {
+    if(predicate(cursor)) {
       result = cursor;
     } else {
       cursor = cursor.parentNode;
@@ -200,6 +200,21 @@ Object.defineProperty(VNode.prototype, 'firstElementChild', {
   }
 });
 
+// TODO: should this and firstElementChild delegate to a shared helper function
+Object.defineProperty(VNode.prototype, 'nextElementSibling', {
+  get: function() {
+    'use strict';
+    let result = null;
+    for(let node = this.nextSibling; !result && node;
+      node = node.nextSibling) {
+      if(VNode.isElement(node)) {
+        result = node;
+      }
+    }
+    return result;
+  }
+});
+
 Object.defineProperty(VNode.prototype, 'lastElementChild', {
   get: function() {
     'use strict';
@@ -218,11 +233,19 @@ Object.defineProperty(VNode.prototype, 'childElementCount', {
   get: function() {
     'use strict';
     let count = 0;
-    for(let node = this.firstChild; node; node = node.nextSibling) {
-      if(VNode.isElement(node)) {
-        count++;
-      }
+
+    // TODO: test perf, if perf is bad, fallback to this.
+    //for(let node = this.firstChild; node; node = node.nextSibling) {
+    //  if(VNode.isElement(node)) {
+    //    count++;
+    //  }
+    //}
+
+    for(let element = this.firstElementChild; element;
+      element = element.nextElementSibling) {
+      count++;
     }
+
     return count;
   }
 });
@@ -242,7 +265,7 @@ Object.defineProperty(VNode.prototype, 'childNodes', {
 // calling callback on each descendant node.
 // @param includeRoot {boolean} whether to include the current node in the
 // traversal
-VNode.prototype.traverse = function(ƒ, includeSelf) {
+VNode.prototype.traverse = function(visitorFunction, includeSelf) {
   'use strict';
   const stack = [];
   let node = this;
@@ -258,7 +281,7 @@ VNode.prototype.traverse = function(ƒ, includeSelf) {
 
   while(stack.length) {
     node = stack.pop();
-    ƒ(node);
+    visitorFunction(node);
     node = node.lastChild;
     while(node) {
       stack.push(node);
@@ -270,14 +293,14 @@ VNode.prototype.traverse = function(ƒ, includeSelf) {
 // Searches descendants, excluding this node, for the first node to match
 // the predicate
 // TODO: use an includeSelf param like traverse?
-VNode.prototype.search = function(ƒ) {
+VNode.prototype.search = function(predicate) {
   'use strict';
   const stack = [this];
   let node = this;
   let match = null;
   while(!match && stack.length) {
     node = stack.pop();
-    if(ƒ(node)) {
+    if(predicate(node)) {
       match = node;
     } else {
       node = node.lastChild;
@@ -365,7 +388,7 @@ Object.defineProperty(VNode.prototype, 'id', {
   }
 });
 
-// TODO: provide includeSelf param?
+// TODO: provide includeSelf param? does it include self?
 VNode.prototype.getElementById = function(id) {
   if(VNode.isString(id)) {
     return this.search(function(node) {
@@ -423,14 +446,16 @@ Object.defineProperty(VNode.prototype, 'rows', {
     'use strict';
     if(this.name !== 'table')
       return;
-
+    let snode;
     const rows = [];
-    for(let node = this.firstChild, name; node; node = node.nextSibling) {
+    for(let node = this.firstElementChild, name; node;
+      node = node.nextElementSibling) {
       name = node.name;
       if(name === 'tr') {
         rows.push(node);
       } else if(VNode.isSectionName(name)) {
-        for(let snode = node.firstChild; snode; snode = snode.nextSibling) {
+        for(snode = node.firstElementChild; snode;
+          snode = snode.nextElementSibling) {
           if(snode.name === 'tr') {
             rows.push(snode);
           }
@@ -454,7 +479,8 @@ Object.defineProperty(VNode.prototype, 'cols', {
     }
 
     const columns = [];
-    for(let node = this.firstChild; node; node = node.nextSibling) {
+    for(let node = this.firstElementChild; node;
+      node = node.nextElementSibling) {
       if(node.name === 'td') {
         columns.push(node);
       }
