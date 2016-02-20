@@ -7,6 +7,35 @@
 // Misc. utility functions
 const utils = {};
 
+utils.fadeElement = function(element, duration, delay, callback) {
+  'use strict';
+
+  function fadeEnd(callback, element, event) {
+    event.target.removeEventListener('webkitTransitionEnd', fadeEnd);
+    callback(element);
+  }
+
+  const style = element.style;
+
+  if(style.display === 'none') {
+    style.display = '';
+    style.opacity = '0';
+  }
+
+  if(!style.opacity) {
+    style.opacity = style.display === 'none' ? '0' : '1';
+  }
+
+  if(callback) {
+    const fadeEndCallback = fadeEnd.bind(element, callback, element);
+    element.addEventListener('webkitTransitionEnd', fadeEndCallback);
+  }
+
+  // property duration function delay
+  style.transition = 'opacity ' + duration + 's ease ' + delay + 's';
+  style.opacity = style.opacity === '1' ? '0' : '1';
+};
+
 // Removes various binary characters from a string
 utils.filterControlCharacters = function(string) {
   'use strict';
@@ -124,6 +153,40 @@ utils.selectTextNodes = function(document) {
     node = iterator.nextNode();
   }
   return nodes;
+};
+
+utils.scrollElementTo = function(element, deltaY, targetY) {
+  'use strict';
+  let scrollYStartTimer; // debounce
+  let scrollYIntervalTimer; // incrementally move
+  let amountToScroll = 0;
+  let amountScrolled = 0;
+
+  return function() {
+    clearTimeout(scrollYStartTimer);
+    clearInterval(scrollYIntervalTimer);
+    scrollYStartTimer = setTimeout(startScrolling, 5);
+  }();
+
+  function startScrolling() {
+    amountToScroll = Math.abs(targetY - element.scrollTop);
+    amountScrolled = 0;
+
+    if(amountToScroll === 0) {
+      return;
+    }
+
+    scrollYIntervalTimer = setInterval(scrollToY,20);
+  }
+
+  function scrollToY() {
+    const currentY = element.scrollTop;
+    element.scrollTop += deltaY;
+    amountScrolled += Math.abs(deltaY);
+    if(currentY === element.scrollTop || amountScrolled >= amountToScroll) {
+      clearInterval(scrollYIntervalTimer);
+    }
+  }
 };
 
 // Truncates a string at the given position, and then appends the extension

@@ -530,7 +530,7 @@ VNode.fromHTMLDocument = function(document) {
   if(!document || document.nodeType !== Node.DOCUMENT_NODE ||
     !document.documentElement ||
     document.documentElement.nodeType !== Node.ELEMENT_NODE) {
-    return null;
+    return;
   }
 
   stack.push(new Pair(null, document.documentElement));

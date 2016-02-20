@@ -34,7 +34,7 @@ function showErrorMessage(message, fadeIn) {
   if(fadeIn) {
     container.style.opacity = '0';
     document.body.appendChild(container);
-    fadeElement(container, 1, 0);
+    utils.fadeElement(container, 1, 0);
   } else {
     container.style.display = '';
     container.style.opacity = '1';
@@ -78,7 +78,7 @@ function hideSubsciptionMonitor(onComplete, fadeOut) {
   }
 
   if(fadeOut) {
-    fadeElement(container, 2, 1, removeAndComplete);
+    utils.fadeElement(container, 2, 1, removeAndComplete);
   } else {
     removeAndComplete();
   }

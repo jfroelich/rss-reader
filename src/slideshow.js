@@ -373,16 +373,16 @@ function onKeyDown(event) {
 
   if(currentSlide) {
     if(key === km.DOWN) {
-      scrollElementTo(currentSlide, 50, currentSlide.scrollTop + 200)
+      utils.scrollElementTo(currentSlide, 50, currentSlide.scrollTop + 200)
       return;
     } else if(key === km.PAGE_DOWN) {
-      scrollElementTo(currentSlide, 100, currentSlide.scrollTop + 800);
+      utils.scrollElementTo(currentSlide, 100, currentSlide.scrollTop + 800);
       return;
     } else if(key === km.UP) {
-      scrollElementTo(currentSlide, -50, currentSlide.scrollTop - 200);
+      utils.scrollElementTo(currentSlide, -50, currentSlide.scrollTop - 200);
       return;
     } else if(key === km.PAGE_UP) {
-      scrollElementTo(currentSlide, -100, currentSlide.scrollTop - 800);
+      utils.scrollElementTo(currentSlide, -100, currentSlide.scrollTop - 800);
       return;
     }
   }
