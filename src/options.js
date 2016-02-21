@@ -544,7 +544,7 @@ function onImportOPMLClick(event) {
       return;
     }
 
-    importOPML(uploader.files, onImport);
+    opml.importOPML(uploader.files, onImport);
   };
 
   document.body.appendChild(uploader);
@@ -590,7 +590,7 @@ function onExportOPMLClickOnOpenDB(event) {
 
 function onExportOPMLClickOnGetAllFeeds(feeds) {
   const title = 'Subscriptions';
-  const doc = createOPMLDocument(title, feeds);
+  const doc = opml.createOPMLDocument(title, feeds);
   const writer = new XMLSerializer();
   const serializedString = writer.serializeToString(doc);
   const blobFormat = {type: 'application/xml'};
