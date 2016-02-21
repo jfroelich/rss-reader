@@ -42,6 +42,7 @@ utils.filterControlCharacters = function(string) {
   if(string) {
     return string.replace(/[\t\r\n]/g, '');
   }
+  return string;
 };
 
 // Returns a url string without its protocol
