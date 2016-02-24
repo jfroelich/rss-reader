@@ -12,12 +12,12 @@
 // leave unclosed tags in the result. Think about how to
 // prevent these issues.
 
-const googlefeeds = {};
+const GoogleFeeds = {};
 
-googlefeeds.BASE_URL =
+GoogleFeeds.BASE_URL =
   'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
 
-googlefeeds.CONTENT_SNIPPET_MAX_LENGTH = 400;
+GoogleFeeds.CONTENT_SNIPPET_MAX_LENGTH = 400;
 
 // Sends an async request to Google to search for feeds that correspond to
 // a general text query. Passes the results to the callback. The callback
@@ -28,21 +28,21 @@ googlefeeds.CONTENT_SNIPPET_MAX_LENGTH = 400;
 // basic js object containing the string properties url, link, title, and
 // contentSnippet. The title and content snippet may contain basic HTML such as
 // <b></b> around terms that were present in the query.
-googlefeeds.search = function(query, timeout, callback) {
+GoogleFeeds.search = function(query, timeout, callback) {
   'use strict';
   const request = new XMLHttpRequest();
   request.timeout = timeout;
   request.onerror = callback;
   request.ontimeout = callback;
   request.onabort = callback;
-  request.onload = googlefeeds.onSearchResponse.bind(request, callback);
-  const url = googlefeeds.BASE_URL + encodeURIComponent(query);
+  request.onload = GoogleFeeds.onSearchResponse.bind(request, callback);
+  const url = GoogleFeeds.BASE_URL + encodeURIComponent(query);
   request.open('GET', url, true);
   request.responseType = 'json';
   request.send();
 };
 
-googlefeeds.onSearchResponse = function(callback, event) {
+GoogleFeeds.onSearchResponse = function(callback, event) {
   'use strict';
   const request = event.target;
   const response = request.response;
@@ -56,20 +56,20 @@ googlefeeds.onSearchResponse = function(callback, event) {
 
   const query = data.query || '';
   let entries = data.entries || [];
-  entries = googlefeeds.removeEntriesWithoutURLs(entries);
-  entries = googlefeeds.removeDuplicateEntriesByURL(entries);
-  entries.forEach(googlefeeds.sanitizeEntry);
+  entries = GoogleFeeds.removeEntriesWithoutURLs(entries);
+  entries = GoogleFeeds.removeDuplicateEntriesByURL(entries);
+  entries.forEach(GoogleFeeds.sanitizeEntry);
   callback(null, query, entries);
 };
 
-googlefeeds.removeEntriesWithoutURLs = function(entriesArray) {
+GoogleFeeds.removeEntriesWithoutURLs = function(entriesArray) {
   'use strict';
   return entriesArray.filter(function getEntryURL(entry) {
     return entry.url;
   });
 };
 
-googlefeeds.removeDuplicateEntriesByURL = function(entriesArray) {
+GoogleFeeds.removeDuplicateEntriesByURL = function(entriesArray) {
   'use strict';
   const expandedEntries = entriesArray.map(function expand(entry) {
     return [entry.url, entry];
@@ -79,7 +79,7 @@ googlefeeds.removeDuplicateEntriesByURL = function(entriesArray) {
   return Array.from(aggregateValues);
 };
 
-googlefeeds.sanitizeEntry = function(entry) {
+GoogleFeeds.sanitizeEntry = function(entry) {
   'use strict';
   if(entry.title) {
     entry.title = utils.replaceHTML(entry.title);
@@ -89,6 +89,6 @@ googlefeeds.sanitizeEntry = function(entry) {
   if(entry.contentSnippet) {
     entry.contentSnippet = entry.contentSnippet.replace(/<\s*br\s*>/gi, ' ');
     entry.contentSnippet = utils.truncateString(entry.contentSnippet,
-      googlefeeds.CONTENT_SNIPPET_MAX_LENGTH);
+      GoogleFeeds.CONTENT_SNIPPET_MAX_LENGTH);
   }
 };

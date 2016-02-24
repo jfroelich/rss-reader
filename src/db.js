@@ -130,7 +130,7 @@ db.markEntryAsRead = function(connection, entryId) {
     entry.readDate = Date.now();
     cursor.update(entry);
     const connection = request.transaction.db;
-    updateBadge(connection);
+    utils.updateBadge(connection);
     const message = {type: 'entryRead', entry: entry};
     chrome.runtime.sendMessage(message);
   };

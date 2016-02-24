@@ -263,8 +263,6 @@ Object.defineProperty(VNode.prototype, 'childNodes', {
 
 // Traverses the descendants of the root node in pre-order, depth first order,
 // calling callback on each descendant node.
-// @param includeRoot {boolean} whether to include the current node in the
-// traversal
 VNode.prototype.traverse = function(visitorFunction, includeSelf) {
   'use strict';
   const stack = [];

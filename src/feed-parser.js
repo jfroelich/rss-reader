@@ -147,7 +147,6 @@ FeedParser.parseEntry = function(entry) {
 
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
 
-  const getText = FeedParser.getElementText;
   const result = {};
   result.title = FeedParser.findText(entry, 'title');
 
@@ -237,7 +236,7 @@ FeedParser.getEntryPubDate = function(entry) {
       FeedParser.findText(entry, 'date');
   }
   if(dateText) {
-    dateText = date.trim();
+    dateText = dateText.trim();
   }
   return dateText;
 };
@@ -286,20 +285,6 @@ FeedParser.findText = function(element, name) {
   const childElement = FeedParser.findChildElementByName(element, name);
   if(childElement) {
     const text = childElement.textContent;
-    if(text) {
-      return text.trim();
-    }
-  }
-};
-
-// Returns the text content of the first element matching the
-// selector within the parent, or undefined
-// DEPRECATED
-FeedParser.getElementText = function(parent, selector) {
-  'use strict';
-  const element = parent.querySelector(selector);
-  if(element) {
-    const text = element.textContent;
     if(text) {
       return text.trim();
     }

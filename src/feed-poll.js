@@ -89,7 +89,7 @@ FeedPoll.onPutFeed = function(connection, feed, remoteFeed, _) {
 
 FeedPoll.onEntriesUpdated = function(connection) {
   'use strict';
-  updateBadge(connection);
+  utils.updateBadge(connection);
 };
 
 FeedPoll.findEntryByLink = function(connection, feed, entry, callback) {
@@ -133,7 +133,7 @@ FeedPoll.cascadeFeedProperties = function(feed, entry) {
 FeedPoll.onComplete = function() {
   console.log('Polling completed');
   localStorage.LAST_POLL_DATE_MS = String(Date.now());
-  showNotification('Updated articles');
+  utils.showNotification('Updated articles');
 };
 
 FeedPoll.augmentEntryContent = function(entry, timeout, callback) {

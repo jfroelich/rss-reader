@@ -36,6 +36,26 @@ utils.fadeElement = function(element, duration, delay, callback) {
   style.opacity = style.opacity === '1' ? '0' : '1';
 };
 
+utils.filterArticleTitle = function(title) {
+  'use strict';
+  if(!title)
+    return;
+  let index = title.lastIndexOf(' - ');
+  if(index === -1)
+    index = title.lastIndexOf(' | ');
+  if(index === -1)
+    index = title.lastIndexOf(' : ');
+  if(index === -1)
+    return title;
+  const trailingText = title.substring(index + 1);
+  const terms = utils.tokenize(trailingText);
+  if(terms.length < 5) {
+    const newTitle = title.substring(0, index).trim();
+    return newTitle;
+  }
+  return title;
+};
+
 // Removes various binary characters from a string
 utils.filterControlCharacters = function(string) {
   'use strict';
@@ -67,10 +87,26 @@ utils.formatDate = function(date, delimiter) {
   return parts.join(delimiter || '');
 };
 
+utils.getFavIconURL = function(url) {
+  'use strict';
+
+  if(url) {
+    return 'http://www.google.com/s2/favicons?domain_url=' +
+      encodeURIComponent(url);
+  } else {
+    return '/media/rss_icon_trans.gif';
+  }
+};
+
 // Returns the value of a dom node
 utils.getNodeValue = function(node) {
   'use strict';
   return node.nodeValue;
+};
+
+utils.identity = function(value) {
+  'use strict';
+  return value;
 };
 
 // See http://stackoverflow.com/questions/1353684
@@ -156,6 +192,27 @@ utils.selectTextNodes = function(document) {
   return nodes;
 };
 
+utils.showNotification = function(message) {
+  'use strict';
+
+  const notification = {
+    type: 'basic',
+    title: chrome.runtime.getManifest().name,
+    iconUrl: '/media/rss_icon_trans.gif',
+    message: message
+  };
+
+  const callback = function() {};
+
+  const show = function(permitted) {
+    if(!permitted)
+      return;
+    chrome.notifications.create('lucubrate', notification, callback);
+  };
+
+  chrome.permissions.contains({permissions: ['notifications']}, show);
+};
+
 utils.scrollElementTo = function(element, deltaY, targetY) {
   'use strict';
   let scrollYStartTimer; // debounce
@@ -190,6 +247,15 @@ utils.scrollElementTo = function(element, deltaY, targetY) {
   }
 };
 
+// Split the string into an array of words
+utils.tokenize = function(string) {
+  'use strict';
+  const WHITESPACE_PATTERN = /s+/;
+  const tokens = string.split(WHITESPACE_PATTERN);
+  const definedTokens = tokens.filter(utils.identity);
+  return definedTokens;
+};
+
 // Truncates a string at the given position, and then appends the extension
 // string. An ellipsis is appended if an extension was not specified.
 utils.truncateString = function(string, position, extension) {
@@ -200,4 +266,33 @@ utils.truncateString = function(string, position, extension) {
     return string.substr(0, position) + extension;
   }
   return string;
+};
+
+// Updates the unread count of the extension's badge
+utils.updateBadge = function(connection) {
+  'use strict';
+
+  const setBadgeText = function(event) {
+    const count = event.target.result || '?';
+    const countString = '' + count;
+    chrome.browserAction.setBadgeText({
+      text: countString
+    });
+  };
+
+  const onConnect = function(event) {
+    if(event.type === 'success') {
+      const connection = event.target.result;
+      db.countUnreadEntries(connection, setBadgeText);
+    } else {
+      console.debug(event);
+      chrome.browserAction.setBadgeText({text: '?'});
+    }
+  };
+
+  if(connection) {
+    db.countUnreadEntries(connection, setBadgeText);
+  } else {
+    db.open(onConnect);
+  }
 };

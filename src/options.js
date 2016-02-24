@@ -138,7 +138,7 @@ function appendFeed(feed, insertedSort) {
   item.setAttribute('title', utils.replaceHTML(feed.description) || '');
   item.onclick = onFeedListItemClick;
   var favIconElement = document.createElement('img');
-  favIconElement.src = FavIcon.getURL(feed.link);
+  favIconElement.src = utils.getFavIconURL(feed.link);
   if(feed.title) favIconElement.title = feed.title;
   item.appendChild(favIconElement);
 
@@ -297,7 +297,7 @@ function startSubscription(url) {
 
     // Show a notification
     var title = addedFeed.title || addedFeed.url;
-    showNotification('Subscribed to ' + title);
+    utils.showNotification('Subscribed to ' + title);
   }
 }
 
@@ -324,7 +324,7 @@ function populateFeedDetailsSection(feedId) {
       }
 
       $$('details-title').textContent = feed.title || 'Untitled';
-      $$('details-favicon').setAttribute('src', FavIcon.getURL(feed.url));
+      $$('details-favicon').setAttribute('src', utils.getFavIconURL(feed.url));
       $$('details-feed-description').textContent =
         utils.replaceHTML(feed.description) || 'No description';
       $$('details-feed-url').textContent = feed.url;
@@ -383,7 +383,7 @@ function onSubscribeSubmit(event) {
     $$('discover-results-list').innerHTML = '';
     $$('discover-no-results').style.display = 'none';
     $$('discover-in-progress').style.display = 'block';
-    googlefeeds.search(query, 5000, onDiscoverFeedsComplete);
+    GoogleFeeds.search(query, 5000, onDiscoverFeedsComplete);
   }
 
   return false;
@@ -445,7 +445,7 @@ function onDiscoverFeedsComplete(errorEvent, query, results) {
     button.onclick = discoverSubscribeClick;
     item.appendChild(button);
     const image = document.createElement('img');
-    image.setAttribute('src', FavIcon.getURL(result.url));
+    image.setAttribute('src', utils.getFavIconURL(result.url));
     image.title = result.link;
     item.appendChild(image);
     const a = document.createElement('a');
@@ -491,7 +491,7 @@ function onUnsubscribeButtonClicked(event) {
 
     // Update the badge in case any unread articles belonged to
     // the unsubscribed feed
-    updateBadge(connection);
+    utils.updateBadge(connection);
 
     // TODO: send out a message notifying other views
     // of the unsubscribe. That way the slides view can
@@ -564,7 +564,8 @@ function onImportOPMLClick(event) {
       console.debug('Encountered exceptions when importing: %o', errors);
     }
 
-    // TODO: showNotification because opml import no longer does this itself
+    // TODO: utils.showNotification because opml import no longer does this
+    // itself
 
     console.info('Completed opml import, imported %s of %s files',
       tracker.filesImported, tracker.numFiles);

@@ -235,7 +235,7 @@ function appendSlide(entry, isFirst) {
   title.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
     let titleText = utils.replaceHTML(entry.title);
-    titleText = filterArticleTitle(titleText);
+    titleText = utils.filterArticleTitle(titleText);
     titleText = utils.truncateString(titleText, 300);
     title.innerHTML = titleText;
   } else {
@@ -249,7 +249,7 @@ function appendSlide(entry, isFirst) {
   content.setAttribute('class', 'entry-content');
 
   const doc = utils.parseHTML(entry.content);
-  prepareDocumentForView(doc);
+  DOMFilter.prepareDocumentForView(doc);
 
   if(doc.documentElement) {
     if(doc.body) {
@@ -265,7 +265,7 @@ function appendSlide(entry, isFirst) {
   slide.appendChild(source);
 
   const favIcon = document.createElement('img');
-  const iconSource = FavIcon.getURL(entry.feedLink);
+  const iconSource = utils.getFavIconURL(entry.feedLink);
   favIcon.setAttribute('src', iconSource);
   favIcon.setAttribute('width', '16');
   favIcon.setAttribute('height', '16');

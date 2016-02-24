@@ -4,6 +4,8 @@
 
 // Requires: utf8.js
 
+// TODO: deprecate, merge back into fetch-feed.js
+
 // TODO: review why I am using the overrideMimeType approach. It seems like it
 // would be better to use the responseType approach. I cannot remember why I
 // chose to implement it in this way.

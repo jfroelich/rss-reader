@@ -2,8 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: merge into feed-poll, this is not used elsewhere
 // TODO: look into the implied timeout that is used
-
 // TODO: look for status code 301/302 and pass such info to the callback
 // so that, for example, the caller can filter 302s
 

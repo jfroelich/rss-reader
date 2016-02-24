@@ -22,8 +22,6 @@
       "/src/on-browser-action-clicked.js",
       "/src/on-chrome-alarm.js",
       "/src/on-runtime-installed.js",
-      "/src/show-notification.js",
-      "/src/update-badge.js",
       "/src/feed-parser.js",
       "/src/fetch-feed.js",
       "/src/fetch-html.js",
