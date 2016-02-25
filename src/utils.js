@@ -109,6 +109,11 @@ utils.identity = function(value) {
   return value;
 };
 
+utils.isObjectURL = function(url) {
+  'use strict';
+  return /^\s*data\s*:/i.test(url);
+};
+
 // See http://stackoverflow.com/questions/1353684
 utils.isValidDate = function(date) {
   'use strict';

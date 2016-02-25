@@ -2,10 +2,12 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Requires: /src/net.js
+
 // todo: look into using a custom devtools panel like domdistiller
 function testCalamine(url) {
   'use strict';
-  fetchHTML(url, 20000, function(error, document, responseURL) {
+  net.fetchHTML(url, 20000, function(error, document, responseURL) {
     if(error) {
       console.debug(error);
       return;

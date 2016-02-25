@@ -1,7 +1,10 @@
 
+// Requires: /src/dom-filter.js
+// Requires: /src/net.js
+
 function testFilterInline(url) {
   'use strict';
-  fetchHTML(url, 20000, function(error, document, responseURL) {
+  net.fetchHTML(url, 20000, function(error, document, responseURL) {
     if(error) {
       console.debug(error);
       return;

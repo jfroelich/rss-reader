@@ -19,15 +19,12 @@
       "/lib/utf8.js",
       "/src/archive-service.js",
       "/src/db.js",
+      "/src/feed-parser.js",
+      "/src/feed-poll.js",
+      "/src/net.js",
       "/src/on-browser-action-clicked.js",
       "/src/on-chrome-alarm.js",
       "/src/on-runtime-installed.js",
-      "/src/feed-parser.js",
-      "/src/fetch-feed.js",
-      "/src/fetch-html.js",
-      "/src/fetch-image.js",
-      "/src/fetch-xml.js",
-      "/src/feed-poll.js",
       "/src/utils.js"
     ]
   },

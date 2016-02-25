@@ -2,6 +2,11 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Requires: /src/db.js
+// Requires: /src/net.js
+// Requires: /src/utils.js
+
+
 'use strict';
 
 { // BEGIN ANONYMOUS NAMESPACE
@@ -192,7 +197,7 @@ function showOrSkipSubscriptionPreview(url) {
   $$('subscription-preview-load-progress').style.display = 'block';
   const timeout = 10 * 1000;
   // TODO: check if already subscribed before preview?
-  fetchFeed(url, timeout, onFetch);
+  net.fetchFeed(url, timeout, onFetch);
 
   function onFetch(event, result) {
     if(event) {
@@ -268,7 +273,7 @@ function startSubscription(url) {
     if(!window.navigator.onLine) {
       db.storeFeed(connection, null, {url: url}, onSubscribe);
     } else {
-      fetchFeed(url, 10 * 1000, onFetch.bind(null, connection));
+      net.fetchFeed(url, 10 * 1000, onFetch.bind(null, connection));
     }
   }
 

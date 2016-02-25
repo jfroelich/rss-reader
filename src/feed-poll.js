@@ -4,11 +4,9 @@
 
 // Requires: /lib/parse-srcset.js
 // Requires: /lib/URI.js
-// Requires: /src/fetch/fetch-image.js
-// Requires: /src/utils.js
 // Requires: /src/db.js
-// Requires: /src/extension/update-badge.js
-// Requires: /src/extension/show-notification.js
+// Requires: /src/net.js
+// Requires: /src/utils.js
 
 const FeedPoll = {};
 
@@ -64,7 +62,7 @@ FeedPoll.fetchFeed = function(connection, feed) {
   'use strict';
 
   const timeout = 10 * 1000;
-  fetchFeed(feed.url, timeout,
+  net.fetchFeed(feed.url, timeout,
     FeedPoll.onFetchFeed.bind(null, connection, feed));
 };
 
@@ -138,7 +136,7 @@ FeedPoll.onComplete = function() {
 
 FeedPoll.augmentEntryContent = function(entry, timeout, callback) {
   'use strict';
-  fetchHTML(entry.link, timeout,
+  net.fetchHTML(entry.link, timeout,
     FeedPoll.onFetchHTML.bind(null, entry, callback));
 };
 
@@ -183,38 +181,36 @@ FeedPoll.setImageDimensions = function(document, callback) {
   async.forEach(fetchables, FeedPoll.fetchImage, callback);
 };
 
-FeedPoll.isObjectURL = function(url) {
-  return /^\s*data\s*:/i.test(url);
-};
-
 FeedPoll.shouldFetchImage = function(image) {
   'use strict';
   let url = image.getAttribute('src') || '';
   url = url.trim();
-  return url && !FeedPoll.isObjectURL(url) && !image.width;
+  return url && !utils.isObjectURL(url) && !image.width;
 };
 
 FeedPoll.fetchImage = function(image, callback) {
   'use strict';
   const url = image.getAttribute('src');
-  fetchImage(url, FeedPoll.onFetchImage.bind(null, image, callback));
+  const proxy = document.createElement('img');
+  proxy.onload = function(event) {
+    FeedPoll.onFetchImage(image, callback, event);
+  };
+  proxy.onerror = function(event) {
+    FeedPoll.onFetchImage(image, callback, event);
+  };
+  proxy.src = url;
 };
 
 FeedPoll.onFetchImage = function(image, callback, event) {
   'use strict';
-
   if(event.type === 'load') {
-    const fetchedImage = event.target;
-    image.width = fetchedImage.width;
-    image.height = fetchedImage.height;
+    const proxy = event.target;
+    image.width = proxy.width;
+    image.height = proxy.height;
   } else {
-    // Here, event.type === 'error' usually, but there is not
-    // much else in terms of useful information
-    // It does serve as a hint that the url is invalid however
-    // (even though it could be valid but temporarily unreachable)
+    console.debug('Failed to fetch image', image.getAttribute('src') ||
+      image.getAttribute('srcset'));
   }
-
-  // Use no args to indicate to async.forEach that it should continue
   callback();
 };
 
