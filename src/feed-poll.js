@@ -208,8 +208,7 @@ FeedPoll.onFetchImage = function(image, callback, event) {
     image.width = proxy.width;
     image.height = proxy.height;
   } else {
-    console.debug('Failed to fetch image', image.getAttribute('src') ||
-      image.getAttribute('srcset'));
+    console.debug('Error: Failed to fetch image', image.getAttribute('src'));
   }
   callback();
 };

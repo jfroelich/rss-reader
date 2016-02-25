@@ -48,8 +48,6 @@ net.onFetchFeed = function(url, callback, errorEvent, document, responseURL) {
   const distinctEntriesMap = new Map(expandedEntries);
   feed.entries = Array.from(distinctEntriesMap.values());
 
-  feed.entries = getUniqueEntries(feed.entries);
-
   callback(null, feed, responseURL);
 };
 
@@ -91,7 +89,7 @@ net.fetchXML = function(url, timeout, callback) {
   request.onabort = callback;
   request.onload = net.onFetchXML.bind(request, url, callback);
   request.open('GET', url, true);
-  request.overrideMimeType(MIME_TYPE_XML);
+  request.overrideMimeType(net.MIME_TYPE_XML);
   request.send();
 };
 
