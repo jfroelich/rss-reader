@@ -5,6 +5,7 @@
 // Virtual dom functionality
 
 function VNode() {
+  'use strict';
   this.parentNode = null;
   this.firstChild = null;
   this.lastChild = null;
@@ -20,10 +21,12 @@ VNode.TEXT = Node.TEXT_NODE;
 VNode.ELEMENT = Node.ELEMENT_NODE;
 
 VNode.isElement = function(node) {
+  'use strict';
   return node.type === VNode.ELEMENT;
 };
 
 VNode.isText = function(node) {
+  'use strict';
   return node.type === VNode.TEXT;
 };
 
@@ -44,14 +47,17 @@ VNode.createTextNode = function(value) {
 };
 
 VNode.equals = function(node, otherNode) {
+  'use strict';
   return node === otherNode;
 };
 
 Object.defineProperty(VNode.prototype, 'nodeValue', {
   get: function() {
+    'use strict';
     return this.value;
   },
   set: function(value) {
+    'use strict';
     this.value = value === null || typeof value === 'undefined' ||
       VNode.isString(value) ? value : '' + value;
   }
@@ -95,6 +101,7 @@ VNode.prototype.appendChild = function(childNode) {
 };
 
 VNode.prototype.replaceChild = function(newChild, oldChild) {
+  'use strict';
   return this.insertBefore(newChild, oldChild) && oldChild.remove();
 };
 
@@ -154,34 +161,38 @@ VNode.prototype.remove = function() {
   return true;
 };
 
-// Returns the closest ancestor node matching the predicate
+// Finds the closest ancestor matching the predicate
 VNode.prototype.closest = function(predicate, includeSelf) {
   'use strict';
-  let cursor = includeSelf ? this : this.parentNode;
-  let result = null;
-  while(!result && cursor) {
-    if(predicate(cursor)) {
-      result = cursor;
-    } else {
-      cursor = cursor.parentNode;
-    }
+  for(let cursor = includeSelf ? this : this.parentNode; cursor;
+    cursor = cursor.parentNode) {
+    if(predicate(cursor))
+      return cursor;
   }
-  return result;
 };
 
 // Returns whether the node is parentless
 VNode.isOrphan = function(node) {
+  'use strict';
   return !node.parentNode;
 };
 
 Object.defineProperty(VNode.prototype, 'parentElement', {
   get: function() {
+    'use strict';
+
+    // Temp
+    console.assert(this.parentNode ?
+      this.parentNode.type === VNode.ELEMENT : true,
+      'parentNode was not an element! ' + this.parentNode)
+
     return this.parentNode;
   }
 });
 
 Object.defineProperty(VNode.prototype, 'root', {
   get: function() {
+    'use strict';
     return this.closest(VNode.isOrphan, true);
   }
 });
@@ -189,14 +200,12 @@ Object.defineProperty(VNode.prototype, 'root', {
 Object.defineProperty(VNode.prototype, 'firstElementChild', {
   get: function() {
     'use strict';
-    let result = null;
-    for(let node = this.firstChild; !result && node;
-      node = node.nextSibling) {
-      if(VNode.isElement(node)) {
-        result = node;
+    const ELEMENT = VNode.ELEMENT;
+    for(let node = this.firstChild; node; node = node.nextSibling) {
+      if(node.type === ELEMENT) {
+        return node;
       }
     }
-    return result;
   }
 });
 
@@ -204,28 +213,24 @@ Object.defineProperty(VNode.prototype, 'firstElementChild', {
 Object.defineProperty(VNode.prototype, 'nextElementSibling', {
   get: function() {
     'use strict';
-    let result = null;
-    for(let node = this.nextSibling; !result && node;
-      node = node.nextSibling) {
-      if(VNode.isElement(node)) {
-        result = node;
+    const ELEMENT = VNode.ELEMENT;
+    for(let node = this.nextSibling; node; node = node.nextSibling) {
+      if(node.type === ELEMENT) {
+        return node;
       }
     }
-    return result;
   }
 });
 
 Object.defineProperty(VNode.prototype, 'lastElementChild', {
   get: function() {
     'use strict';
-    let result = null;
-    for(let node = this.lastChild; !result && node;
-      node = node.previousSibling) {
-      if(VNode.isElement(node)) {
-        result = node;
+    const ELEMENT = VNode.ELEMENT;
+    for(let node = this.lastChild; node; node = node.previousSibling) {
+      if(node.type === ELEMENT) {
+        return node;
       }
     }
-    return result;
   }
 });
 
@@ -233,19 +238,10 @@ Object.defineProperty(VNode.prototype, 'childElementCount', {
   get: function() {
     'use strict';
     let count = 0;
-
-    // TODO: test perf, if perf is bad, fallback to this.
-    //for(let node = this.firstChild; node; node = node.nextSibling) {
-    //  if(VNode.isElement(node)) {
-    //    count++;
-    //  }
-    //}
-
     for(let element = this.firstElementChild; element;
       element = element.nextElementSibling) {
       count++;
     }
-
     return count;
   }
 });
@@ -291,7 +287,7 @@ VNode.prototype.traverse = function(visitorFunction, includeSelf) {
 // Searches descendants, excluding this node, for the first node to match
 // the predicate
 // TODO: use an includeSelf param like traverse?
-VNode.prototype.search = function(predicate) {
+VNode.prototype.find = function(predicate) {
   'use strict';
   const stack = [this];
   let node = this;
@@ -311,8 +307,20 @@ VNode.prototype.search = function(predicate) {
   return match;
 };
 
+// Returns a static array of descendants matching the predicate
+VNode.prototype.findAll = function(predicate, includeSelf) {
+  'use strict';
+  const matches = [];
+  this.traverse(function(node) {
+    if(predicate(node))
+      matches.push(node);
+  }, includeSelf);
+  return matches;
+};
+
 // See http://stackoverflow.com/questions/4059147
 VNode.isString = function(value) {
+  'use strict';
   return Object.prototype.toString.call(value) === '[object String]';
 };
 
@@ -325,19 +333,15 @@ VNode.prototype.toString = function() {
   }
 };
 
-// TODO: Is this more like findAll special case?
 VNode.prototype.getElementsByName = function(name, includeSelf) {
   'use strict';
-  const elements = [];
-  this.traverse(function(node) {
-    if(node.name === name) {
-      elements.push(node);
-    }
+  return this.findAll(function(node) {
+    return node.name === name;
   }, includeSelf);
-  return elements;
 };
 
 VNode.prototype.getAttribute = function(name) {
+  'use strict';
   if(this.attributes) {
     return this.attributes.get(name);
   }
@@ -345,12 +349,9 @@ VNode.prototype.getAttribute = function(name) {
 
 VNode.prototype.setAttribute = function(name, value) {
   'use strict';
-  if(!VNode.isElement(this)) {
+  if(this.type !== VNode.ELEMENT)
     return;
-  }
-
   this.attributes = this.attributes || new Map();
-
   let storedValue = '';
   if(value === null || typeof value === 'undefined') {
   } else if(VNode.isString(value)) {
@@ -358,19 +359,18 @@ VNode.prototype.setAttribute = function(name, value) {
   } else {
     storedValue += value;
   }
-
   this.attributes.set(name, storedValue);
 };
 
 VNode.prototype.hasAttribute = function(name) {
+  'use strict';
   return !!this.getAttribute(name);
 };
 
 VNode.prototype.removeAttribute = function(name) {
-  if(VNode.isElement(this) && this.attributes) {
+  'use strict';
+  if(this.type === VNode.ELEMENT && this.attributes) {
     this.attributes.delete(name);
-
-    // Compact
     if(!this.attributes.size) {
       this.attributes = null;
     }
@@ -379,20 +379,21 @@ VNode.prototype.removeAttribute = function(name) {
 
 Object.defineProperty(VNode.prototype, 'id', {
   get: function() {
+    'use strict';
     return this.getAttribute('id');
   },
   set: function(value) {
+    'use strict';
     this.setAttribute('id', value);
   }
 });
 
 // TODO: provide includeSelf param? does it include self?
 VNode.prototype.getElementById = function(id) {
-  if(VNode.isString(id)) {
-    return this.search(function(node) {
-      return id === node.getAttribute('id');
-    });
-  }
+  'use strict';
+  return this.find(function(node) {
+    return id === node.id;
+  });
 };
 
 VNode.prototype.createIdMap = function() {
@@ -444,18 +445,19 @@ Object.defineProperty(VNode.prototype, 'rows', {
     'use strict';
     if(this.name !== 'table')
       return;
-    let snode;
+    let subElement;
+    const sections = new Set(['thead', 'tbody', 'tfoot']);
     const rows = [];
-    for(let node = this.firstElementChild, name; node;
-      node = node.nextElementSibling) {
-      name = node.name;
+    for(let element = this.firstElementChild, name; element;
+      element = element.nextElementSibling) {
+      name = element.name;
       if(name === 'tr') {
-        rows.push(node);
-      } else if(VNode.isSectionName(name)) {
-        for(snode = node.firstElementChild; snode;
-          snode = snode.nextElementSibling) {
-          if(snode.name === 'tr') {
-            rows.push(snode);
+        rows.push(element);
+      } else if(sections.has(name)) {
+        for(subElement = element.firstElementChild; subElement;
+          subElement = subElement.nextElementSibling) {
+          if(subElement.name === 'tr') {
+            rows.push(subElement);
           }
         }
       }
@@ -464,23 +466,16 @@ Object.defineProperty(VNode.prototype, 'rows', {
   }
 });
 
-VNode.isSectionName = function(name) {
-  return name === 'thead' || name === 'tbody' || name === 'tfoot';
-};
-
 Object.defineProperty(VNode.prototype, 'cols', {
   get: function() {
     'use strict';
-
-    if(this.name !== 'tr') {
+    if(this.name !== 'tr')
       return;
-    }
-
     const columns = [];
-    for(let node = this.firstElementChild; node;
-      node = node.nextElementSibling) {
-      if(node.name === 'td') {
-        columns.push(node);
+    for(let element = this.firstElementChild; element;
+      element = element.nextElementSibling) {
+      if(element.name === 'td') {
+        columns.push(element);
       }
     }
     return columns;

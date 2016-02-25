@@ -2,14 +2,11 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: all the tests now need to be updated
-
 var VNodeTest = {};
 
 VNodeTest.startTests = function() {
   console.log('Running VNode tests');
 };
-
 VNodeTest.startTests();
 
 VNodeTest.constructTest = function() {
@@ -17,13 +14,11 @@ VNodeTest.constructTest = function() {
   console.group('Running VNode construction tests');
   const node = new VNode();
   console.log('Created VNode instance? ', !!node);
-
   const p = VNode.createElement('p');
   console.log('Created element?', !!p);
   console.log('Element is type element?', VNode.isElement(p));
   console.log('Element has proper tag name?', p.name === 'p');
   console.log('Element does not have a value?', !p.value);
-
   const textNode = VNode.createTextNode('Hello');
   console.log('Created text node?', !!textNode);
   console.log('Text node is type text?', VNode.isText(textNode));
@@ -61,10 +56,8 @@ VNodeTest.equalsTest = function() {
   console.group('Running equals test');
   const node1 = VNode.createElement('node1');
   const node2 = VNode.createElement('node2');
-  console.log('Node equals itself?',
-    VNode.equals(node1, node1));
-  console.log('Node not equals different node?',
-    !VNode.equals(node1, node2));
+  console.log('Node equals itself?', VNode.equals(node1, node1));
+  console.log('Node not equals different node?', !VNode.equals(node1, node2));
   console.groupEnd();
 };
 VNodeTest.equalsTest();
@@ -366,7 +359,6 @@ VNodeTest.closestTest = function() {
   const grandChild = VNode.createTextNode('grandChild');
   parent.appendChild(child);
   child.appendChild(grandChild);
-
   const closestIsChild = grandChild.closest(function(node) {
     return node === child;
   }, false);
@@ -480,12 +472,10 @@ VNodeTest.childNodesTests();
 VNodeTest.testAttributes = function() {
   'use strict';
   console.group('Running attribute tests');
-
   const node = VNode.createElement('node');
-
   console.log('getAttribute for no attributes is undefined?',
     !node.getAttribute('a'));
-  console.log('hasAttribute for no attribuets is undefined?',
+  console.log('hasAttribute for no attributes is undefined?',
     !node.hasAttribute('b'));
   node.setAttribute('a', '1');
   console.log('setAttribute set an attribute?',
@@ -494,18 +484,13 @@ VNodeTest.testAttributes = function() {
   console.log('setAttribute on existing attribute overwrote?',
     node.getAttribute('a') === '2');
   node.removeAttribute('a');
-  console.log('removeAttribute did remove?',
-    !node.getAttribute('a'));
-
+  console.log('removeAttribute did remove?', !node.getAttribute('a'));
   const textNode = VNode.createTextNode('textNode');
   console.log('Unable to setAttribute on textNode?',
     !node.hasOwnProperty('setAttribute'));
-
   const idnode = VNode.createElement('idnode');
   idnode.setAttribute('id', 'test-id');
-  console.log('node.id produces correct id value?',
-    idnode.id === 'test-id');
-
+  console.log('node.id produces correct id value?', idnode.id === 'test-id');
   console.groupEnd();
 };
 VNodeTest.testAttributes();
@@ -513,24 +498,18 @@ VNodeTest.testAttributes();
 VNodeTest.rootTests = function() {
   'use strict';
   console.group('Running root tests');
-
   const rootNode = VNode.createElement('rootNode');
   const child1 = VNode.createElement('child1');
   const grandChild = VNode.createTextNode('grandChild');
   rootNode.appendChild(child1);
   child1.appendChild(grandChild);
-
-  console.log('Root node root is self?',
-    rootNode.root === rootNode);
-  console.log('Child root node is root?',
-    child1.root === rootNode);
+  console.log('Root node root is self?', rootNode.root === rootNode);
+  console.log('Child root node is root?', child1.root === rootNode);
   console.log('Grand child root node is root?',
     grandChild.root === rootNode);
-
   grandChild.remove();
   console.log('Root changed after manipulation?',
     grandChild.root === grandChild);
-
   console.groupEnd();
 };
 VNodeTest.rootTests();
@@ -538,7 +517,6 @@ VNodeTest.rootTests();
 VNodeTest.traverseTests = function() {
   'use strict';
   console.group('Running traverse tests');
-
   const a = VNode.createElement('a');
   const b = VNode.createElement('b');
   const c = VNode.createElement('c');
@@ -548,39 +526,38 @@ VNodeTest.traverseTests = function() {
   a.appendChild(c);
   b.appendChild(d);
   c.appendChild(e);
-
   const nodes = [];
-  a.traverse(function(n) {
-    nodes.push(n.name);
-  }, true);
+  a.traverse(function(n) { nodes.push(n.name); }, true);
   const descendants = [];
-  a.traverse(function(n) {
-    descendants.push(n.name);
-  }, false);
-
-  console.log('traverse worked?',
-    nodes.join('') === 'abdce' && nodes.length === 5);
+  a.traverse(function(n) { descendants.push(n.name);}, false);
+  console.log('traverse worked?', nodes.join('') === 'abdce' &&
+    nodes.length === 5);
   console.log('traverse excluding self did exclude self?',
     descendants.indexOf('a') === -1);
   console.groupEnd();
 };
 VNodeTest.traverseTests();
 
-VNodeTest.searchTests = function() {
+VNodeTest.findTests = function() {
   'use strict';
-  console.group('Running search tests');
+  console.group('Running find tests');
   const a = VNode.createElement('a');
   const b = VNode.createElement('b');
   const c = VNode.createElement('c');
   a.appendChild(b);
   b.appendChild(c);
-  const matchC = a.search(function(node) { return node.name === 'c'; });
-  console.log('Search worked?', !!matchC && (matchC.name === 'c'));
-  const noMatch = a.search(function(node) { return false;});
-  console.log('Search failed as expected?', !noMatch);
+  const matchC = a.find(function(node) { return node.name === 'c'; });
+  console.log('Find worked?', !!matchC && (matchC.name === 'c'));
+  const noMatch = a.find(function(node) { return false;});
+  console.log('Find failed as expected?', !noMatch);
+  const matches = a.findAll(function(node) {
+    return node.name === 'a' || node.name === 'c';
+  }, true);
+  console.log('Find all found 2 results?', matches && matches.length === 2);
+
   console.groupEnd();
 };
-VNodeTest.searchTests();
+VNodeTest.findTests();
 
 VNodeTest.testGetElementsByName = function() {
   'use strict';
@@ -594,7 +571,7 @@ VNodeTest.testGetElementsByName = function() {
   b.appendChild(c1);
   b.appendChild(c2);
   b.appendChild(c3);
-  const elements = a.getElementsByName('c', false);
+  const elements = a.getElementsByName('c');
   console.log('Matched 3 elements? ', elements.length === 3);
   console.groupEnd();
 };
@@ -610,11 +587,8 @@ VNodeTest.testGetElementById = function() {
   const match = parent.getElementById('child-id');
   console.log('Found child by id?', !!match && match.id === 'child-id'
     && match === child);
-
   const index = parent.createIdMap();
-  console.log('Found child in index?',
-    !!index.get('child-id'));
-
+  console.log('Found child in index?', !!index.get('child-id'));
   console.groupEnd();
 };
 VNodeTest.testGetElementById();
@@ -637,14 +611,12 @@ VNodeTest.testTableAccess = function() {
   const c2 = VNode.createElement('td');
   r1.appendChild(c1);
   r1.appendChild(c2);
-  console.log('Table has proper number of rows?',
-    table.rows.length === 4);
+  console.log('Table has proper number of rows?', table.rows.length === 4);
   console.log('First row has expected number of columns?',
     table.rows[0].cols.length === 2);
   console.log('Second row has expected number of columns?',
     table.rows[1].cols.length === 0);
-  console.log('Table has no cols property?',
-    !table.cols);
+  console.log('Table has no cols property?', !table.cols);
   console.groupEnd();
 };
 VNodeTest.testTableAccess();
@@ -652,23 +624,18 @@ VNodeTest.testTableAccess();
 VNodeTest.testFromDOMNode = function() {
   'use strict';
   console.group('Testing fromDOMNode');
-
   const p = document.createElement('p');
   p.setAttribute('id', 'p');
   const vp = VNode.fromDOMNode(p);
   const t = document.createTextNode('test');
   const vt = VNode.fromDOMNode(t);
-
   console.log('Virtual node created?', !!vp);
   console.log('Element has correct type?', VNode.isElement(vp));
   console.log('Element has correct name?', vp.name === 'p');
   console.log('Element has correct attributes?',
     vp.getAttribute && (vp.getAttribute('id') === 'p'));
-  console.log('Text node has correct type?',
-    VNode.isText(vt));
-  console.log('Text node has correct value?',
-    vt.value === 'test');
-
+  console.log('Text node has correct type?', VNode.isText(vt));
+  console.log('Text node has correct value?', vt.value === 'test');
   console.groupEnd();
 };
 VNodeTest.testFromDOMNode();
@@ -688,7 +655,6 @@ VNodeTest.testFromHTMLDocument = function() {
   }, true);
   console.log(doc.documentElement.outerHTML);
   console.log(serialized.join(''));
-
   console.groupEnd();
 };
 VNodeTest.testFromHTMLDocument();
