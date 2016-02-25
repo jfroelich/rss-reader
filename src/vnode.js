@@ -63,6 +63,37 @@ Object.defineProperty(VNode.prototype, 'nodeValue', {
   }
 });
 
+// See: http://w3c.github.io/html-reference/syntax.html
+// See: https://github.com/google/closure-library/blob/master/closure/goog
+// /dom/dom.js
+VNode.VOID_ELEMENT_NAMES = new Set([
+  'applet',
+  'area',
+  'base',
+  'br',
+  'col',
+  'command',
+  'embed',
+  'frame',
+  'hr',
+  'img',
+  'input',
+  'iframe',
+  'isindex',
+  'keygen',
+  'link',
+  'noframes',
+  'noscript',
+  'meta',
+  'object',
+  'param',
+  'script',
+  'source',
+  'style',
+  'track',
+  'wbr'
+]);
+
 // Returns whether this node may contain the child node
 VNode.prototype.mayContain = function(childNode) {
   return VNode.isElement(this) &&
@@ -290,12 +321,11 @@ VNode.prototype.traverse = function(visitorFunction, includeSelf) {
 VNode.prototype.find = function(predicate) {
   'use strict';
   const stack = [this];
-  let node = this;
-  let match = null;
-  while(!match && stack.length) {
+  let node;
+  while(stack.length) {
     node = stack.pop();
     if(predicate(node)) {
-      match = node;
+      return node;
     } else {
       node = node.lastChild;
       while(node) {
@@ -304,7 +334,6 @@ VNode.prototype.find = function(predicate) {
       }
     }
   }
-  return match;
 };
 
 // Returns a static array of descendants matching the predicate
@@ -409,36 +438,6 @@ VNode.prototype.createIdMap = function() {
   return map;
 };
 
-// See: http://w3c.github.io/html-reference/syntax.html
-// See: https://github.com/google/closure-library/blob/master/closure/goog
-// /dom/dom.js
-VNode.VOID_ELEMENT_NAMES = new Set([
-  'applet',
-  'area',
-  'base',
-  'br',
-  'col',
-  'command',
-  'embed',
-  'frame',
-  'hr',
-  'img',
-  'input',
-  'iframe',
-  'isindex',
-  'keygen',
-  'link',
-  'noframes',
-  'noscript',
-  'meta',
-  'object',
-  'param',
-  'script',
-  'source',
-  'style',
-  'track',
-  'wbr'
-]);
 
 Object.defineProperty(VNode.prototype, 'rows', {
   get: function() {
