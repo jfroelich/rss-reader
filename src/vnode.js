@@ -17,18 +17,9 @@ function VNode() {
   this.attributes = null;
 }
 
+// Type constants
 VNode.TEXT = Node.TEXT_NODE;
 VNode.ELEMENT = Node.ELEMENT_NODE;
-
-VNode.isElement = function(node) {
-  'use strict';
-  return node.type === VNode.ELEMENT;
-};
-
-VNode.isText = function(node) {
-  'use strict';
-  return node.type === VNode.TEXT;
-};
 
 VNode.createElement = function(name) {
   'use strict';
@@ -46,11 +37,6 @@ VNode.createTextNode = function(value) {
   return node;
 };
 
-VNode.equals = function(node, otherNode) {
-  'use strict';
-  return node === otherNode;
-};
-
 Object.defineProperty(VNode.prototype, 'nodeValue', {
   get: function() {
     'use strict';
@@ -64,8 +50,6 @@ Object.defineProperty(VNode.prototype, 'nodeValue', {
 });
 
 // See: http://w3c.github.io/html-reference/syntax.html
-// See: https://github.com/google/closure-library/blob/master/closure/goog
-// /dom/dom.js
 VNode.VOID_ELEMENT_NAMES = new Set([
   'applet',
   'area',
@@ -96,16 +80,19 @@ VNode.VOID_ELEMENT_NAMES = new Set([
 
 // Returns whether this node may contain the child node
 VNode.prototype.mayContain = function(childNode) {
-  return VNode.isElement(this) &&
-    this !== childNode &&
-    (VNode.isElement(childNode) ?
+  return this.type === VNode.ELEMENT && this !== childNode &&
+    (childNode.type === VNode.ELEMENT ?
     !VNode.VOID_ELEMENT_NAMES.has(this.name) &&
     !childNode.contains(this) : true);
 };
 
 // Returns whether this node contains the child node
 VNode.prototype.contains = function(childNode) {
-  return !!childNode.closest(VNode.equals.bind(null, this), false);
+  'use strict';
+  const self = this;
+  return !!childNode.closest(function isParentSelf(node) {
+    return node === self;
+  }, false);
 };
 
 // Returns whether the child node was appended
@@ -118,7 +105,6 @@ VNode.prototype.appendChild = function(childNode) {
   const currentLastChild = this.lastChild;
   if(currentLastChild === childNode)
     return true;
-
   childNode.remove();
   childNode.parentNode = this;
   if(currentLastChild) {
@@ -131,11 +117,7 @@ VNode.prototype.appendChild = function(childNode) {
   return true;
 };
 
-VNode.prototype.replaceChild = function(newChild, oldChild) {
-  'use strict';
-  return this.insertBefore(newChild, oldChild) && oldChild.remove();
-};
-
+// Inserts the node as the previous sibling of the reference node
 VNode.prototype.insertBefore = function(node, referenceNode) {
   'use strict';
   if(!node)
@@ -162,6 +144,12 @@ VNode.prototype.insertBefore = function(node, referenceNode) {
   }
   referenceNode.previousSibling = node;
   return true;
+};
+
+// Replaces the old child node with the new child node
+VNode.prototype.replaceChild = function(newChild, oldChild) {
+  'use strict';
+  return this.insertBefore(newChild, oldChild) && oldChild.remove();
 };
 
 // Detaches this node from its tree and returns true.
@@ -202,21 +190,9 @@ VNode.prototype.closest = function(predicate, includeSelf) {
   }
 };
 
-// Returns whether the node is parentless
-VNode.isOrphan = function(node) {
-  'use strict';
-  return !node.parentNode;
-};
-
 Object.defineProperty(VNode.prototype, 'parentElement', {
   get: function() {
     'use strict';
-
-    // Temp
-    console.assert(this.parentNode ?
-      this.parentNode.type === VNode.ELEMENT : true,
-      'parentNode was not an element! ' + this.parentNode)
-
     return this.parentNode;
   }
 });
@@ -224,7 +200,9 @@ Object.defineProperty(VNode.prototype, 'parentElement', {
 Object.defineProperty(VNode.prototype, 'root', {
   get: function() {
     'use strict';
-    return this.closest(VNode.isOrphan, true);
+    return this.closest(function isOrphanNode(node) {
+      return !node.parentNode;
+    }, true);
   }
 });
 
@@ -233,22 +211,19 @@ Object.defineProperty(VNode.prototype, 'firstElementChild', {
     'use strict';
     const ELEMENT = VNode.ELEMENT;
     for(let node = this.firstChild; node; node = node.nextSibling) {
-      if(node.type === ELEMENT) {
+      if(node.type === ELEMENT)
         return node;
-      }
     }
   }
 });
 
-// TODO: should this and firstElementChild delegate to a shared helper function
 Object.defineProperty(VNode.prototype, 'nextElementSibling', {
   get: function() {
     'use strict';
     const ELEMENT = VNode.ELEMENT;
     for(let node = this.nextSibling; node; node = node.nextSibling) {
-      if(node.type === ELEMENT) {
+      if(node.type === ELEMENT)
         return node;
-      }
     }
   }
 });
@@ -258,9 +233,8 @@ Object.defineProperty(VNode.prototype, 'lastElementChild', {
     'use strict';
     const ELEMENT = VNode.ELEMENT;
     for(let node = this.lastChild; node; node = node.previousSibling) {
-      if(node.type === ELEMENT) {
+      if(node.type === ELEMENT)
         return node;
-      }
     }
   }
 });
@@ -292,7 +266,7 @@ Object.defineProperty(VNode.prototype, 'childNodes', {
 // calling callback on each descendant node.
 VNode.prototype.traverse = function(visitorFunction, includeSelf) {
   'use strict';
-  const stack = [];
+  const stack = new Array(50);
   let node = this;
   if(includeSelf) {
     stack.push(this);
@@ -355,16 +329,16 @@ VNode.isString = function(value) {
 
 VNode.prototype.toString = function() {
   'use strict';
-  if(VNode.isText(this)) {
+  if(this.type === VNode.TEXT) {
     return this.value;
-  } else if(VNode.isElement(this)) {
+  } else if(this.type === VNode.ELEMENT) {
     return VNode.toDOMNode(this).outerHTML;
   }
 };
 
 VNode.prototype.getElementsByName = function(name, includeSelf) {
   'use strict';
-  return this.findAll(function(node) {
+  return this.findAll(function nodeHasName(node) {
     return node.name === name;
   }, includeSelf);
 };
@@ -383,6 +357,7 @@ VNode.prototype.setAttribute = function(name, value) {
   this.attributes = this.attributes || new Map();
   let storedValue = '';
   if(value === null || typeof value === 'undefined') {
+    // leave storedValue as ''
   } else if(VNode.isString(value)) {
     storedValue = value;
   } else {
@@ -420,24 +395,25 @@ Object.defineProperty(VNode.prototype, 'id', {
 // TODO: provide includeSelf param? does it include self?
 VNode.prototype.getElementById = function(id) {
   'use strict';
-  return this.find(function(node) {
-    return id === node.id;
+  return this.find(function nodeHasId(node) {
+    return node.id === id;
   });
 };
 
 VNode.prototype.createIdMap = function() {
   'use strict';
   const map = new Map();
-  this.traverse(function(node) {
-    if(!VNode.isElement(node))
-      return;
-    const id = node.id;
-    if(id && !map.has(id))
-      map.set(id, node);
+  this.traverse(function putNode(node) {
+    if(node.type === VNode.ELEMENT) {
+      const id = node.id;
+      // Favor nodes visited earlier
+      if(id && !map.has(id)) {
+        map.set(id, node);
+      }
+    }
   }, true);
   return map;
 };
-
 
 Object.defineProperty(VNode.prototype, 'rows', {
   get: function() {
@@ -482,8 +458,7 @@ Object.defineProperty(VNode.prototype, 'cols', {
 });
 
 // Generates a VNode representation of a DOM node. Does not do any linking to
-// other vnodes. Does not inspect siblings/descendants/ancestors of the dom
-// node.
+// other vnodes.
 VNode.fromDOMNode = function(node) {
   'use strict';
   let vNode;
@@ -497,12 +472,12 @@ VNode.fromDOMNode = function(node) {
       vNode.setAttribute(attributeName, node.getAttribute(attributeName));
     }
 
-    if(node.width && !VNode.hasAttribute(vNode, 'width')) {
-      vNode.setAttribute('width', '' + node.width);
+    if(node.width && !vNode.hasAttribute('width')) {
+      vNode.setAttribute('width', node.width);
     }
 
-    if(node.height && !VNode.hasAttribute(vNode, 'height')) {
-      vNode.setAttribute('height', '' + node.height);
+    if(node.height && !vNode.hasAttribute('height')) {
+      vNode.setAttribute('height', node.height);
     }
 
   } else if(node.nodeType === Node.TEXT_NODE) {
@@ -514,16 +489,15 @@ VNode.fromDOMNode = function(node) {
 
 VNode.toDOMNode = function(virtualNode) {
   'use strict';
-
   if(virtualNode.type === VNode.TEXT) {
     return document.createTextNode(virtualNode.value);
   } else if(virtualNode.type === VNode.ELEMENT) {
-    const node = document.createElement(virtualNode.name);
+    const element = document.createElement(virtualNode.name);
     const attributes = virtualNode.attributes || [];
     for(let entry of attributes) {
-      node.setAttribute(entry[0], entry[1]);
+      element.setAttribute(entry[0], entry[1]);
     }
-    return node;
+    return element;
   }
 };
 
