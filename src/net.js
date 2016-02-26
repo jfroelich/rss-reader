@@ -47,7 +47,6 @@ net.onFetchFeed = function(url, callback, errorEvent, document, responseURL) {
   });
   const distinctEntriesMap = new Map(expandedEntries);
   feed.entries = Array.from(distinctEntriesMap.values());
-
   callback(null, feed, responseURL);
 };
 
