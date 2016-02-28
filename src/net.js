@@ -9,59 +9,90 @@ var net = {};
 
 net.fetchFeed = function(url, timeout, callback) {
   'use strict';
-  net.fetchXML(url, timeout, net.onFetchFeed.bind(null, url, callback));
-};
 
-net.onFetchFeed = function(url, callback, errorEvent, document, responseURL) {
-  'use strict';
+  const request = new XMLHttpRequest();
+  request.timeout = timeout;
+  request.onerror = function(event) {
+    callback(event, null, request.responseURL);
+  };
+  request.ontimeout = function(event) {
+    callback(event, null, request.responseURL);
+  };
+  request.onabort = function(event) {
+    callback(event, null, request.responseURL);
+  };
+  request.onload = function(event) {
+    const document = request.responseXML;
 
-  if(errorEvent) {
-    callback(errorEvent, null, responseURL);
-    return;
-  }
+    if(!document) {
+      callback(event, document, request.responseURL);
+      return;
+    }
 
-  let feed = null;
-  try {
-    feed = FeedParser.parseDocument(document);
-  } catch(exception) {
-    callback(exception, null, responseURL);
-    return;
-  }
+    if(!document.documentElement) {
+      callback(event, document, request.responseURL);
+      return;
+    }
 
-  feed.url = url;
-  feed.fetched = Date.now();
+    const parserError = document.querySelector('parsererror');
+    if(parserError) {
+      console.debug(parserError.outerHTML);
+      parserError.remove();
+    }
 
-  // Filter empty links
-  feed.entries = feed.entries.filter(function(entry) {
-    return entry.link;
-  });
+    let feed = null;
+    try {
+      feed = FeedParser.parseDocument(document);
+    } catch(exception) {
+      callback(exception, null, request.responseURL);
+      return;
+    }
 
-  // Rewrite links
-  feed.entries.forEach(function(entry) {
-    entry.link = utils.rewriteURL(entry.link);
-  });
+    feed.url = url;
+    feed.fetched = Date.now();
 
-  // Remove duplicates
-  const expandedEntries = feed.entries.map(function(entry) {
-    return [entry.link, entry];
-  });
-  const distinctEntriesMap = new Map(expandedEntries);
-  feed.entries = Array.from(distinctEntriesMap.values());
-  callback(null, feed, responseURL);
+    // Filter empty links
+    feed.entries = feed.entries.filter(function(entry) {
+      return entry.link;
+    });
+
+    // Rewrite links
+    feed.entries.forEach(function(entry) {
+      entry.link = utils.rewriteURL(entry.link);
+    });
+
+    // Remove duplicates
+    const expandedEntries = feed.entries.map(function(entry) {
+      return [entry.link, entry];
+    });
+    const distinctEntriesMap = new Map(expandedEntries);
+    feed.entries = Array.from(distinctEntriesMap.values());
+    callback(null, feed, request.responseURL);
+  };
+  request.open('GET', url, true);
+
+  // TODO: test this new line, maybe i no longer need
+  // overrideMimeType (old issue with concurringopinions.com)
+  request.responseType = 'document';
+
+  // Test without this
+  // request.overrideMimeType('application/xml');
+  request.send();
 };
 
 net.fetchHTML = function(url, timeout, callback) {
   'use strict';
   const request = new XMLHttpRequest();
   request.timeout = timeout;
-
-  const onError = function(event) {
+  request.ontimeout = function(event) {
     callback(event, null, request.responseURL);
   };
-
-  request.ontimeout = onError;
-  request.onerror = onError;
-  request.onabort = onError;
+  request.onerror = function(event) {
+    callback(event, null, request.responseURL);
+  };
+  request.onabort = function(event) {
+    callback(event, null, request.responseURL);
+  };
   request.onload = function(event) {
     let error = null;
     const document = request.responseXML;
@@ -75,49 +106,4 @@ net.fetchHTML = function(url, timeout, callback) {
   request.open('GET', url, true);
   request.responseType = 'document';
   request.send();
-};
-
-net.MIME_TYPE_XML = 'application/xml';
-
-net.fetchXML = function(url, timeout, callback) {
-  'use strict';
-  const request = new XMLHttpRequest();
-  request.timeout = timeout;
-  request.onerror = callback;
-  request.ontimeout = callback;
-  request.onabort = callback;
-  request.onload = net.onFetchXML.bind(request, url, callback);
-  request.open('GET', url, true);
-  request.overrideMimeType(net.MIME_TYPE_XML);
-  request.send();
-};
-
-net.onFetchXML = function(url, callback, event) {
-  'use strict';
-  const request = event.target;
-  const responseURL = request.responseURL;
-  let document = request.responseXML;
-
-  if(!document) {
-    try {
-      const encoded = utf8.encode(request.responseText);
-      const parser = new DOMParser();
-      const reparsedDocument = parser.parseFromString(encoded, MIME_TYPE_XML);
-      const error = reparsedDocument.querySelector('parsererror');
-      if(error) {
-        error.remove();
-      }
-
-      document = reparsedDocument;
-    } catch(exception) {
-      console.debug('fetchXML exception %o', exception);
-    }
-  }
-
-  if(!document || !document.documentElement) {
-    callback(event, null, responseURL);
-    return;
-  }
-
-  callback(null, document, responseURL);
 };
