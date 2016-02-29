@@ -20,6 +20,7 @@ function VNode() {
 // Type constants
 VNode.TEXT = Node.TEXT_NODE;
 VNode.ELEMENT = Node.ELEMENT_NODE;
+VNode.COMMENT = Node.COMMENT_NODE;
 
 VNode.createElement = function(name) {
   'use strict';
@@ -37,15 +38,34 @@ VNode.createTextNode = function(value) {
   return node;
 };
 
+VNode.createComment = function(value) {
+  'use strict';
+  const node = new VNode();
+  node.type = VNode.COMMENT;
+  node.value = value;
+  return node;
+};
+
 Object.defineProperty(VNode.prototype, 'nodeValue', {
   get: function() {
     'use strict';
-    return this.value;
+    if(this.type === VNode.TEXT) {
+      return this.value;
+    }
   },
   set: function(value) {
     'use strict';
-    this.value = value === null || typeof value === 'undefined' ||
-      VNode.isString(value) ? value : '' + value;
+    if(this.type === VNode.TEXT) {
+      if(value === null) {
+        this.value = value;
+      } else if(typeof value === 'undefined') {
+        this.value = value;
+      } else if(VNode.isString(value)) {
+        this.value = value;
+      } else {
+        this.value = '' + value;
+      }
+    }
   }
 });
 
@@ -266,7 +286,7 @@ Object.defineProperty(VNode.prototype, 'childNodes', {
 // calling callback on each descendant node.
 VNode.prototype.traverse = function(visitorFunction, includeSelf) {
   'use strict';
-  const stack = new Array(50);
+  const stack = [];
   let node = this;
   if(includeSelf) {
     stack.push(this);
@@ -291,21 +311,29 @@ VNode.prototype.traverse = function(visitorFunction, includeSelf) {
 
 // Searches descendants, excluding this node, for the first node to match
 // the predicate
-// TODO: use an includeSelf param like traverse?
-VNode.prototype.find = function(predicate) {
+VNode.prototype.find = function(predicate, includeSelf) {
   'use strict';
-  const stack = [this];
-  let node;
+  const stack = [];
+  let node = this;
+  if(includeSelf) {
+    stack.push(this);
+  } else {
+    node = this.lastChild;
+    while(node) {
+      stack.push(node);
+      node = node.previousSibling;
+    }
+  }
+
   while(stack.length) {
     node = stack.pop();
     if(predicate(node)) {
       return node;
-    } else {
-      node = node.lastChild;
-      while(node) {
-        stack.push(node);
-        node = node.previousSibling;
-      }
+    }
+    node = node.lastChild;
+    while(node) {
+      stack.push(node);
+      node = node.previousSibling;
     }
   }
 };
@@ -333,6 +361,8 @@ VNode.prototype.toString = function() {
     return this.value;
   } else if(this.type === VNode.ELEMENT) {
     return VNode.toDOMNode(this).outerHTML;
+  } else if(this.type === VNode.COMMENT) {
+    return '<!--' + this.value + '-->';
   }
 };
 
@@ -384,20 +414,28 @@ VNode.prototype.removeAttribute = function(name) {
 Object.defineProperty(VNode.prototype, 'id', {
   get: function() {
     'use strict';
-    return this.getAttribute('id');
+    if(this.type === VNode.ELEMENT) {
+      return this.getAttribute('id');
+    }
   },
   set: function(value) {
     'use strict';
-    this.setAttribute('id', value);
+    if(this.type === VNode.ELEMENT) {
+      this.setAttribute('id', value);
+    }
   }
 });
 
-// TODO: provide includeSelf param? does it include self?
-VNode.prototype.getElementById = function(id) {
+VNode.prototype.getElementById = function(id, includeSelf) {
   'use strict';
+
+  if(!VNode.isString(id)) {
+    return;
+  }
+
   return this.find(function nodeHasId(node) {
     return node.id === id;
-  });
+  }, includeSelf);
 };
 
 VNode.prototype.createIdMap = function() {
@@ -457,6 +495,13 @@ Object.defineProperty(VNode.prototype, 'cols', {
   }
 });
 
+Object.defineProperty(VNode.prototype, 'outerHTML', {
+  get: function() {
+    'use strict';
+    return VNode.translate(this).outerHTML;
+  }
+});
+
 // Generates a VNode representation of a DOM node. Does not do any linking to
 // other vnodes.
 VNode.fromDOMNode = function(node) {
@@ -482,6 +527,8 @@ VNode.fromDOMNode = function(node) {
 
   } else if(node.nodeType === Node.TEXT_NODE) {
     vNode = VNode.createTextNode(node.nodeValue);
+  } else if(node.nodeType === Node.COMMENT_NODE) {
+    vNode = VNode.createComment(node.nodeValue);
   }
 
   return vNode;
@@ -498,74 +545,56 @@ VNode.toDOMNode = function(virtualNode) {
       element.setAttribute(entry[0], entry[1]);
     }
     return element;
+  } else if(virtualNode.type === VNode.COMMENT) {
+    return document.createComment(virtualNode.value);
   }
 };
 
-// Creates a virtual tree from a Document, with the root of the tree
-// representing document.documentElement
-VNode.fromHTMLDocument = function(document) {
+// Translates between a dom node and a virtual node, including descendants,
+// in either direction (virtual to real or real to virtual)
+VNode.translate = function(inputNode) {
   'use strict';
 
-  const Pair = function(virtualParent, currentNode) {
-    this.virtualParent = virtualParent;
-    this.currentNode = currentNode;
+  const Frame = function(frameParent, frameChild) {
+    this.frameParent = frameParent;
+    this.frameChild = frameChild;
   };
 
-  let virtualRoot = null;
-  let pair = null;
-  let virtualParent = null;
-  let node = null;
-  let virtualNode = null;
-  let appended = false;
   const stack = [];
+  stack.push(new Frame(null, inputNode));
+  const translateOp = inputNode instanceof VNode ?
+    VNode.toDOMNode : VNode.fromDOMNode;
+  let outputNode = null;
+  let frame = null;
+  let frameParent = null;
+  let frameChild = null;
+  let translatedNode = null;
+  let appended = false;
 
-  if(!document || document.nodeType !== Node.DOCUMENT_NODE ||
-    !document.documentElement ||
-    document.documentElement.nodeType !== Node.ELEMENT_NODE) {
-    return;
-  }
-
-  stack.push(new Pair(null, document.documentElement));
   while(stack.length) {
-    pair = stack.pop();
-    virtualParent = pair.virtualParent;
-    node = pair.currentNode;
-    virtualNode = VNode.fromDOMNode(node);
-
-    if(!virtualNode) {
+    frame = stack.pop();
+    frameParent = frame.frameParent;
+    frameChild = frame.frameChild;
+    translatedNode = translateOp(frameChild);
+    if(!translatedNode) {
       continue;
     }
 
-    if(virtualParent) {
-      appended = virtualParent.appendChild(virtualNode);
+    if(frameParent) {
+      appended = frameParent.appendChild(translatedNode);
     } else {
-      virtualRoot = virtualNode;
+      outputNode = translatedNode;
       appended = true;
     }
 
     if(appended) {
-      node = node.lastChild;
-      while(node) {
-        pair = new Pair(virtualNode, node);
-        stack.push(pair);
-        node = node.previousSibling;
+      frameChild = frameChild.lastChild;
+      while(frameChild) {
+        frame = new Frame(translatedNode, frameChild);
+        stack.push(frame);
+        frameChild = frameChild.previousSibling;
       }
     }
-
   }
-  return virtualRoot;
-};
-
-// Creates an returns a new HTMLDocument instance from this VNode and its
-// connected nodes. tree should be the root VNode of a VNode tree.
-VNode.toHTMLDocument = function(virtualNode) {
-  'use strict';
-  throw new Error('Not implemented');
-};
-
-// TODO: Treat the current node as document like. Create a dom starting this
-// with node as the root, then call outerHTML on its root node.
-VNode.getOuterHTML = function(virtualNode) {
-  'use strict';
-  throw new Error('Not implemented');
+  return outputNode;
 };
