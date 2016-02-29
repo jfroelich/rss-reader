@@ -49,7 +49,7 @@ net.fetchFeed = function(url, timeout, callback) {
     }
 
     feed.url = url;
-    feed.fetched = Date.now();
+    feed.fetchDate = Date.now();
 
     // Filter empty links
     feed.entries = feed.entries.filter(function(entry) {
@@ -70,13 +70,7 @@ net.fetchFeed = function(url, timeout, callback) {
     callback(null, feed, request.responseURL);
   };
   request.open('GET', url, true);
-
-  // TODO: test this new line, maybe i no longer need
-  // overrideMimeType (old issue with concurringopinions.com)
   request.responseType = 'document';
-
-  // Test without this
-  // request.overrideMimeType('application/xml');
   request.send();
 };
 
