@@ -272,8 +272,8 @@ db.storeFeed = function(connection, original, feed, callback) {
     storable.date = feed.date;
   }
 
-  if(feed.fetched) {
-    storable.fetched = feed.fetched;
+  if(feed.fetchDate) {
+    storable.fetchDate = feed.fetchDate;
   }
 
   if(original) {
