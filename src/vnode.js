@@ -11,6 +11,8 @@ function VNode() {
   this.lastChild = null;
   this.nextSibling = null;
   this.previousSibling = null;
+
+  // todo: use _name to emphasize distiction from Function.name?
   this.name = null;
   this.value = null;
   this.type = null;
@@ -65,6 +67,31 @@ Object.defineProperty(VNode.prototype, 'nodeValue', {
       } else {
         this.value = '' + value;
       }
+    }
+  }
+});
+
+// NOTE: untested
+Object.defineProperty(VNode.prototype, 'textContent', {
+  set: function(value) {
+    'use strict';
+    if(this.type === VNode.ELEMENT) {
+      // https://www.w3.org/TR/DOM-Level-3-Core/core.html#Node3-textContent
+      // On setting, any possible children this node may have are removed and,
+      // if it the new string is not empty or null, replaced by a single Text
+      // node containing the string this attribute is set to.
+      const childNodes = this.childNodes;
+      for(let i = 0, len = childNodes.length; i < len; i++) {
+        childNodes[i].remove();
+      }
+
+      // TODO: avoid creating/appending if the value is null/undefined
+      const newChildTextNode = VNode.createTextNode(value);
+      this.appendChild(newChildTextNode);
+    } else if(this.type === VNode.TEXT) {
+      this.nodeValue = value;
+    } else if(this.type === VNode.COMMENT) {
+      this.value = value;
     }
   }
 });
@@ -217,12 +244,39 @@ Object.defineProperty(VNode.prototype, 'parentElement', {
   }
 });
 
-Object.defineProperty(VNode.prototype, 'root', {
+Object.defineProperty(VNode.prototype, 'ownerDocument', {
   get: function() {
     'use strict';
     return this.closest(function isOrphanNode(node) {
       return !node.parentNode;
     }, true);
+  }
+});
+
+Object.defineProperty(VNode.prototype, 'body', {
+  get: function() {
+    'use strict';
+    // This is only defined on the documentElement
+    if(this.type !== VNode.ELEMENT || this.name !== 'html' ||
+      this.parentNode) {
+      return;
+    }
+
+    // Search only within the immediate children
+    for(let element = this.firstElementChild; element;
+      element = element.nextElementSibling) {
+      if(element.name === 'body' || element.name === 'frameset') {
+        return element;
+      }
+    }
+  },
+  set: function(node) {
+    'use strict';
+    if(this.type !== VNode.ELEMENT || this.name !== 'html' ||
+      this.parentNode || node.type !== VNode.ELEMENT) {
+      return;
+    }
+    this.replaceChild(node, this.body);
   }
 });
 
@@ -309,8 +363,8 @@ VNode.prototype.traverse = function(visitorFunction, includeSelf) {
   }
 };
 
-// Searches descendants, excluding this node, for the first node to match
-// the predicate
+// Searches descendants for the first node to match the predicate. Also tests
+// against this node if includeSelf is true.
 VNode.prototype.find = function(predicate, includeSelf) {
   'use strict';
   const stack = [];
@@ -338,7 +392,11 @@ VNode.prototype.find = function(predicate, includeSelf) {
   }
 };
 
-// Returns a static array of descendants matching the predicate
+// Returns a static array of descendants matching the predicate. Includes
+// this node if includeSelf is true.
+// TODO: this has uses for finding nodes, i think, but maybe i should
+// just restrict it to matching elements only? similar to querySelector?
+// I don't think querySelector can even match non-elements
 VNode.prototype.findAll = function(predicate, includeSelf) {
   'use strict';
   const matches = [];
@@ -349,10 +407,44 @@ VNode.prototype.findAll = function(predicate, includeSelf) {
   return matches;
 };
 
+// Similar to findAll, but once a node is matched, its descendants are
+// ignored
+VNode.prototype.findAllShallow = function(predicate, includeSelf) {
+  'use strict';
+  const matches = [];
+  const stack = [];
+  let node = this;
+  if(includeSelf) {
+    stack.push(this);
+  } else {
+    node = this.lastChild;
+    while(node) {
+      stack.push(node);
+      node = node.previousSibling;
+    }
+  }
+
+  while(stack.length) {
+    node = stack.pop();
+    if(predicate(node)) {
+      matches.push(node);
+    } else {
+      // Only push children onto the stack if the node did not match
+      node = node.lastChild;
+      while(node) {
+        stack.push(node);
+        node = node.previousSibling;
+      }
+    }
+  }
+  return matches;
+};
+
 // See http://stackoverflow.com/questions/4059147
 VNode.isString = function(value) {
   'use strict';
-  return Object.prototype.toString.call(value) === '[object String]';
+  return typeof value === 'string' ||
+    Object.prototype.toString.call(value) === '[object String]';
 };
 
 VNode.prototype.toString = function() {
@@ -411,6 +503,45 @@ VNode.prototype.removeAttribute = function(name) {
   }
 };
 
+// TODO: maybe rather than parseInt each access, have all nodes
+// provide _width and _height that is updated each time
+// the corresponding setAttribute is called
+Object.defineProperty(VNode.prototype, 'width', {
+  get: function() {
+    'use strict';
+    if(this.type !== VNode.ELEMENT)
+      return;
+
+    const widthString = this.getAttribute('width');
+    if(!widthString)
+      return;
+    // TODO: remove units like 'w'?
+    try {
+      return parseInt(widthString, 10);
+    } catch(exception) {
+      console.debug('Invalid width:', widthString);
+    }
+  }
+});
+
+Object.defineProperty(VNode.prototype, 'height', {
+  get: function() {
+    'use strict';
+    if(this.type !== VNode.ELEMENT)
+      return;
+
+    const heightString = this.getAttribute('height');
+    if(!heightString)
+      return;
+    // TODO: remove units like 'w'?
+    try {
+      return parseInt(heightString, 10);
+    } catch(exception) {
+      console.debug('Invalid height:', heightString);
+    }
+  }
+});
+
 Object.defineProperty(VNode.prototype, 'id', {
   get: function() {
     'use strict';
@@ -430,6 +561,10 @@ VNode.prototype.getElementById = function(id, includeSelf) {
   'use strict';
 
   if(!VNode.isString(id)) {
+    return;
+  }
+
+  if(this.type !== VNode.ELEMENT) {
     return;
   }
 
@@ -478,6 +613,8 @@ Object.defineProperty(VNode.prototype, 'rows', {
     return rows;
   }
 });
+
+
 
 Object.defineProperty(VNode.prototype, 'cols', {
   get: function() {
