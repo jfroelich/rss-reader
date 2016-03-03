@@ -571,14 +571,10 @@ function onImportOPMLClick(event) {
 
     // TODO: utils.showNotification because opml import no longer does this
     // itself
-
     console.info('Completed opml import, imported %s of %s files',
       tracker.filesImported, tracker.numFiles);
   }
 }
-
-// todo: this should delegate its functionality to an external
-// function like triggerFileDownload(hostDocument, title, contentBlob);
 
 function onExportOPMLClick(event) {
   db.open(onExportOPMLClickOnOpenDB);
@@ -797,7 +793,7 @@ function initDisplaySettingsSection() {
   BACKGROUND_IMAGES.forEach(function(path) {
     option = document.createElement('option');
     option.value = path;
-    option.textContent = path.substring('/media/'.length);
+    option.textContent = path.substring('/images/'.length);
     option.selected = localStorage.BACKGROUND_IMAGE == path;
     $$('entry-background-image').appendChild(option);
   });

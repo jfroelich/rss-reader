@@ -7,7 +7,7 @@
   "homepage_url": "https://github.com/jfroelich/rss-reader",
   "description": "Reading by artificial light late into the night",
   "browser_action": {
-    "default_icon": "/media/rss_icon_trans.png",
+    "default_icon": "/images/rss_icon_trans.png",
     "default_title": "Lucubrate"
   },
   "background": {

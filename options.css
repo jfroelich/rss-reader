@@ -56,7 +56,7 @@ h2 {
   border-bottom: 1px solid #cccccc;
 }
 
-/***************************** DISPLAY SETTINGS **********************************/
+/***************************** DISPLAY SETTINGS **********************/
 
 
 #section-display-settings {
@@ -95,7 +95,7 @@ h2 {
   margin-left: 0px;
 }
 
-/***************************** NAVIGATION **********************************/
+/***************************** NAVIGATION ********************/
 
 td#nav-cell-container {
   font-size: 130%;
@@ -135,7 +135,7 @@ ul#navigation-menu li.navigation-item-selected {
   pointer-events: none;
 }
 
-/***************************** SUBSCRIBE-DISCOVER **********************************/
+/***************************** SUBSCRIBE-DISCOVER *****************/
 
 
 #section-add-subscription {
@@ -232,7 +232,7 @@ ul#navigation-menu li.navigation-item-selected {
   margin-left: 10px;
 }
 
-/***************************** GENERAL SETTINGS **********************************/
+/***************************** GENERAL SETTINGS ***************/
 
 #section-general-settings {
     display:none;
@@ -249,7 +249,7 @@ ul#navigation-menu li.navigation-item-selected {
     padding: 5px;
 }
 
-/***************************** SUBSCRIPTIONS **********************************/
+/***************************** SUBSCRIPTIONS *******************/
 
 #section-subscriptions {
     display:none;
@@ -290,7 +290,7 @@ ul#navigation-menu li.navigation-item-selected {
   display: none;
 }
 
-/***************************** FEED DETAILS **********************************/
+/***************************** FEED DETAILS *************/
 
 #section-feed-details {
   display:none;
@@ -306,26 +306,26 @@ ul#navigation-menu li.navigation-item-selected {
 }
 
 
-/***************************** IMPORT-EXPORT **********************************/
+/***************************** IMPORT-EXPORT ***************/
 
 #section-backup {
   display:none;
 }
 
-/***************************** HELP **********************************/
+/***************************** HELP ****************/
 
 #divhelp {
   display:none;
 }
 
-/***************************** ABOUT **********************************/
+/***************************** ABOUT **************/
 
 #divabout {
   display:none;
 }
 
 
-/***************************** SUBSCRIPTION MONITOR **********************************/
+/***************************** SUBSCRIPTION MONITOR ***********/
 #options_subscription_monitor {
   display:block;
   background-color: #ffffff;
@@ -340,7 +340,7 @@ ul#navigation-menu li.navigation-item-selected {
   border: 1px solid #444444;
 }
 
-/***************************** ERROR MESSAGE **********************************/
+/***************************** ERROR MESSAGE *********/
 #options_error_message {
   display:block;
   opacity: 0;

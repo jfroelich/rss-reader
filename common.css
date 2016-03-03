@@ -14,13 +14,6 @@ div.entry img {
   max-width: 100%;
 }
 
-/*div.entry p {
-  margin-top: 0px;
-  margin-bottom: 0px;
-  padding-top: 2px;
-  padding-bottom: 2px;
-}*/
-
 /*
 This is required to get long words without spaces to break when
 within a table cell
@@ -53,30 +46,6 @@ div.entry span.entry-content img {
   box-shadow: 0 8px 6px -6px #222222;
 }
 
-/*
-div.entry span.entry-content table {
-  table-layout: fixed;
-}
-*/
-
-/*
-While debugging sanitizer, columns are not being used in
-stylize so I want to avoid page breaks here for now in the next
-2 rules
-*/
-
-/*
-div.entry h1, div.entry h2, div.entry h3 {
-  border-top:1px dotted #cccccc;
-  -webkit-column-span: all;
-}*/
-
-/* See if this helps layout for things like Google news */
-/*
-div.entry table {
-  -webkit-column-span: all;
-}*/
-
 .entrysource {
   display: block;
   font-size:10pt;
@@ -91,13 +60,13 @@ div.entry table {
 
 @font-face {
   font-family: ArchivoNarrow-Regular;
-  src: url('/media/ArchivoNarrow-Regular.ttf') format('truetype');
+  src: url('/fonts/ArchivoNarrow-Regular.ttf') format('truetype');
 }
 
 @font-face {
   /* Free from http://www.fontex.org/download/carto-gothic-std.otf */
   font-family: CartoGothicStd;
-  src: url('/media/CartoGothicStd-Book.otf') format('opentype');
+  src: url('/fonts/CartoGothicStd-Book.otf') format('opentype');
 }
 
 @font-face {
@@ -107,47 +76,47 @@ div.entry table {
   Based on http://mutcd.fhwa.dot.gov/pdfs/clearviewspacingia5.pdf
   */
   font-family: Clearly Different;
-  src: url('/media/ClearlyDifferent1WNegativeContrast-Regular.otf') format('opentype');
+  src: url('/fonts/ClearlyDifferent1WNegativeContrast-Regular.otf') format('opentype');
 }
 
 @font-face {
   /* By John Stracke, Released under the OFL. Downloaded from his website */
   font-family: Essays1743;
-  src: url('/media/essays1743/Essays1743.ttf') format('truetype');
+  src: url('/fonts/Essays1743.ttf') format('truetype');
 }
 
 @font-face {
   font-family: FeltTip;
-  src: url('/media/FontPalace-Free-Felt-Tip-Roman.ttf') format('truetype');
+  src: url('/fonts/FontPalace-Free-Felt-Tip-Roman.ttf') format('truetype');
 }
 
 @font-face {
   font-family: Montserrat;
-  src: url('/media/montserrat/Montserrat-Regular.ttf') format('truetype');
+  src: url('/fonts/Montserrat-Regular.ttf') format('truetype');
 }
 
 @font-face {
   font-family: News Cycle;
-  src: url('/media/NewsCycle-Regular.ttf') format('truetype');
+  src: url('/fonts/NewsCycle-Regular.ttf') format('truetype');
 }
 
 @font-face {
   font-family: Noto Sans;
-  src: url('/media/noto-sans/NotoSans-Regular.ttf') format('truetype');
+  src: url('/fonts/NotoSans-Regular.ttf') format('truetype');
 }
 
 @font-face {
   font-family: Open Sans Regular;
-  src: url('/media/OpenSans-Regular.ttf') format('truetype');
+  src: url('/fonts/OpenSans-Regular.ttf') format('truetype');
 }
 
 @font-face {
   font-family: PathwayGothicOne;
-  src: url('/media/PathwayGothicOne-Regular.ttf') format('truetype');
+  src: url('/fonts/PathwayGothicOne-Regular.ttf') format('truetype');
 }
 @font-face {
   font-family: PlayfairDisplaySC;
-  src: url('/media/PlayfairDisplaySC-Regular.ttf');
+  src: url('/fonts/PlayfairDisplaySC-Regular.ttf');
 }
 
 @font-face {
@@ -157,5 +126,5 @@ div.entry table {
 
 @font-face {
   font-family: Roboto Regular;
-  src: url('/media/Roboto-Regular.ttf');
+  src: url('/fonts/Roboto-Regular.ttf');
 }

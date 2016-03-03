@@ -18,29 +18,29 @@ chrome.runtime.onMessage.addListener(function(message) {
 
 // todo: this is not yet in use, but the idea is to  remove media prefix
 // as it is DRY
-const BACKGROUND_PATH_BASE = '/media/';
+const BACKGROUND_PATH_BASE = '/images/';
 
 // TODO: use a set
 const BACKGROUND_IMAGES = [
-  '/media/bgfons-paper_texture318.jpg',
-  '/media/CCXXXXXXI_by_aqueous.jpg',
-  '/media/paper-backgrounds-vintage-white.jpg',
-  '/media/pickering-texturetastic-gray.png',
-  '/media/reusage-recycled-paper-white-first.png',
-  '/media/subtle-patterns-beige-paper.png',
-  '/media/subtle-patterns-cream-paper.png',
-  '/media/subtle-patterns-exclusive-paper.png',
-  '/media/subtle-patterns-groove-paper.png',
-  '/media/subtle-patterns-handmade-paper.png',
-  '/media/subtle-patterns-paper-1.png',
-  '/media/subtle-patterns-paper-2.png',
-  '/media/subtle-patterns-paper.png',
-  '/media/subtle-patterns-rice-paper-2.png',
-  '/media/subtle-patterns-rice-paper-3.png',
-  '/media/subtle-patterns-soft-wallpaper.png',
-  '/media/subtle-patterns-white-wall.png',
-  '/media/subtle-patterns-witewall-3.png',
-  '/media/thomas-zucx-noise-lines.png'
+  '/images/bgfons-paper_texture318.jpg',
+  '/images/CCXXXXXXI_by_aqueous.jpg',
+  '/images/paper-backgrounds-vintage-white.jpg',
+  '/images/pickering-texturetastic-gray.png',
+  '/images/reusage-recycled-paper-white-first.png',
+  '/images/subtle-patterns-beige-paper.png',
+  '/images/subtle-patterns-cream-paper.png',
+  '/images/subtle-patterns-exclusive-paper.png',
+  '/images/subtle-patterns-groove-paper.png',
+  '/images/subtle-patterns-handmade-paper.png',
+  '/images/subtle-patterns-paper-1.png',
+  '/images/subtle-patterns-paper-2.png',
+  '/images/subtle-patterns-paper.png',
+  '/images/subtle-patterns-rice-paper-2.png',
+  '/images/subtle-patterns-rice-paper-3.png',
+  '/images/subtle-patterns-soft-wallpaper.png',
+  '/images/subtle-patterns-white-wall.png',
+  '/images/subtle-patterns-witewall-3.png',
+  '/images/thomas-zucx-noise-lines.png'
 ];
 
 // TODO: use a set

@@ -94,7 +94,7 @@ utils.getFavIconURL = function(url) {
     return 'http://www.google.com/s2/favicons?domain_url=' +
       encodeURIComponent(url);
   } else {
-    return '/media/rss_icon_trans.gif';
+    return '/images/rss_icon_trans.gif';
   }
 };
 
@@ -203,7 +203,7 @@ utils.showNotification = function(message) {
   const notification = {
     type: 'basic',
     title: chrome.runtime.getManifest().name,
-    iconUrl: '/media/rss_icon_trans.gif',
+    iconUrl: '/images/rss_icon_trans.gif',
     message: message
   };
 
