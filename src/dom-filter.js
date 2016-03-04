@@ -4,7 +4,6 @@
 
 const DOMFilter = {};
 
-
 // Applies a series of transformations to a document in preparation for
 // appending it to the UI.
 // NOTE: eventually i will want something that can do pre-storage cleanup. That

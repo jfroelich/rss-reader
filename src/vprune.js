@@ -4,7 +4,55 @@
 
 // Pruning functions for VNodes
 
+// TODO: using multiple passes appears to be slow. do a single walk and mutate
+// as we go. so do an explicit walk so i dont have to deal with all the strange
+// communications back to the walker function on where to go next. very much
+// like the original approach i used to sanitize 2 years ago.
+
 var VPrune = {};
+
+VPrune.prepareDocumentForView = function(document) {
+  'use strict';
+
+  const vd = VNode_translate(document.documentElement);
+
+  VPrune.filterCommentNodes(vd);
+  VPrune.filterFrameElements(vd);
+  VPrune.filterScriptElements(vd);
+  VPrune.filterNoScriptElements(vd);
+  VPrune.filterJavascriptAnchors(vd);
+  VPrune.filterBlacklistedElements(vd);
+  VPrune.filterHiddenElements(vd);
+  // VPrune.filterBreakruleElements(vd);
+
+  // Filter boilerplate using Calamine
+  //const calamine = new Calamine();
+  //calamine.analyze(cd);
+  //calamine.prune();
+
+  VPrune.filterSourcelessImages(vd);
+  VPrune.filterTracerImages(vd);
+  VPrune.normalizeWhitespace(vd);
+  //VPrune.filterInlineElements(vd);
+
+  const sensitiveElements = VPrune.getSensitiveSet(vd);
+  VPrune.condenseNodeValues(vd, sensitiveElements);
+  VPrune.filterNominalAnchors(vd);
+  //VPrune.trimTextNodes(vd, sensitiveElements);
+
+  VPrune.filterEmptyTextNodes(vd);
+
+  // VPrune.filterLeafElements(vd);
+  // VPrune.filterSingleItemLists(vd);
+  // VPrune.filterSingleCellTables(vd);
+  // VPrune.filterSingleColumnTables(vd);
+  VPrune.trimDocument(vd);
+  VPrune.filterAttributes(vd);
+
+  // TODO: optimize
+  const modified = VNode_translate(vd);
+  document.documentElement.innerHTML = modified.innerHTML;
+};
 
 VPrune.findImageCaption = function(image) {
   'use strict';
@@ -18,7 +66,7 @@ VPrune.findImageCaption = function(image) {
   return figure ? figure.find(isFigCaption, false) : null;
 };
 
-VNode.removeAll = function(nodes) {
+VPrune.removeAll = function(nodes) {
   'use strict';
   for(let i = 0, len = nodes.length; i < len; i++) {
     nodes[i].remove();
@@ -31,7 +79,7 @@ VNode.removeAll = function(nodes) {
 VPrune.filterCommentNodes = function(node) {
   'use strict';
   const isComment = function(node) {
-    return node.type === VNode.COMMENT;
+    return node.type === VNode_COMMENT;
   };
   const comments = node.findAll(isComment, false);
   VPrune.removeAll(comments);
@@ -76,7 +124,7 @@ VPrune.filterBlacklistedElements = function(node, customBlacklist) {
   // this collects matches into a static array first
   const blacklist = customBlacklist || VPrune.DEFAULT_BLACKLIST;
   const isBlacklisted = function(node) {
-    return node.type === VNode.ELEMENT && blacklist.has(node.name);
+    return node.type === VNode_ELEMENT && blacklist.has(node.name);
   };
   const matches = node.findAllShallow(isBlacklisted, true);
   VPrune.removeAll(matches);
@@ -107,15 +155,15 @@ VPrune.filterBreakruleElements = function(node) {
 VPrune.filterAttributes = function(node) {
   'use strict';
   node.traverse(function(node) {
-    if(node.type !== VNode.ELEMENT)
+    if(node.type !== VNode_ELEMENT)
       return;
     const elementName = node.name;
     if(elementName === 'svg' || elementName === 'path')
       return;
-    const attributes = node.attributes || [];
-    for(let entry of attributes) {
-      if(!VPrune.isPermittedAttribute(elementName, entry[0])) {
-        node.removeAttribute(entry[0]);
+    const attributes = node.attributes || {};
+    for(let name in attributes) {
+      if(!VPrune.isPermittedAttribute(name, attributes[name])) {
+        node.removeAttribute(name);
       }
     }
   }, true);
@@ -150,7 +198,7 @@ VPrune.isPermittedAttribute = function(elementName, attributeName) {
 
 VPrune.filterFrameElements = function(node) {
   'use strict';
-  if(node.type !== VNode.ELEMENT || node.name !== 'html' || node.parentNode) {
+  if(node.type !== VNode_ELEMENT || node.name !== 'html' || node.parentNode) {
     return;
   }
 
@@ -192,7 +240,7 @@ VPrune.filterFrameElements = function(node) {
 VPrune.filterHiddenElements = function(node) {
   'use strict';
   const matches = node.findAllShallow(function(node) {
-    const value = node.type === VNode.ELEMENT && node.getAttribute('style');
+    const value = node.type === VNode_ELEMENT && node.getAttribute('style');
     // TODO: the opacity check has false positives like opacity: 0.9
     // TODO: use a single regexp call, using |, for performance
     // TODO: is a space preceding : allowed?
@@ -260,7 +308,7 @@ VPrune.filterSourcelessImages = function(node) {
 VPrune.filterTracerImages = function(node) {
   'use strict';
   const isTracerImage = function(node) {
-    return node.name === 'img' && (image.width < 2 || image.height < 2);
+    return node.name === 'img' && (node.width < 2 || node.height < 2);
   };
   const images = node.findAll(isTracerImage, false);
   VPrune.removeAll(images);
@@ -269,7 +317,7 @@ VPrune.filterTracerImages = function(node) {
 VPrune.normalizeWhitespace = function(node) {
   'use strict';
   node.traverse(function(node) {
-    if(node.type !== VNode.TEXT)
+    if(node.type !== VNode_TEXT)
       return;
     switch(node.value) {
       case null:
@@ -290,7 +338,7 @@ VPrune.normalizeWhitespace = function(node) {
 VPrune.isSensitiveElement = function(node) {
   'use strict';
   const name = node.name;
-  return node.type === VNode.ELEMENT && (name === 'code' || name === 'pre' ||
+  return node.type === VNode_ELEMENT && (name === 'code' || name === 'pre' ||
     name === 'ruby' || name === 'textarea' || name === 'xml');
 };
 
@@ -305,7 +353,7 @@ VPrune.getSensitiveSet = function(node) {
 VPrune.condenseNodeValues = function(node, sensitiveElements) {
   'use strict';
   node.traverse(function(node) {
-    if(node.type === VNode.TEXT && node.value &&
+    if(node.type === VNode_TEXT && node.value &&
       !sensitiveElements.has(node.parentElement)) {
       node.value = node.value.replace(/  +/g, ' ');
     }
@@ -337,8 +385,11 @@ VPrune.trimDocument = function(rootNode) {
 
 VPrune.isTrimmable = function(node) {
   'use strict';
-  if(node.type !== VNode.ELEMENT)
-    return false;
+
+  // NOTE: no need to check type, only element nodes have a name
+  //if(node.type !== VNode_ELEMENT)
+  //  return false;
+
   switch(node.name) {
     case 'br':
     case 'hr':
@@ -357,9 +408,9 @@ VPrune.isTrimmable = function(node) {
 VPrune.filterEmptyTextNodes = function(node) {
   'use strict';
   const nodes = node.findAll(function(node) {
-    return node.type === VNode.TEXT && !node.value;
+    return node.type === VNode_TEXT && !node.value;
   }, false);
-  VNode.removeAll(nodes);
+  VPrune.removeAll(nodes);
 };
 
 VPrune.unwrap = function(node) {
