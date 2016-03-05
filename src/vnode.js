@@ -530,11 +530,11 @@ VNode.isString = function VNode_isString(value) {
     Object.prototype.toString.call(value) === '[object String]';
 };
 
-VNode.prototype.getElementsByName = function VNode_getElementesByName(name,
+VNode.prototype.getElementsByName = function VNode_getElementsByName(name,
   includeSelf) {
   'use strict';
-  return this.findAll(function nodeHasName(node) {
-    return node.name === name;
+  return this.findAll(function isElementWithName(node) {
+    return node.type === VNode_ELEMENT && node.name === name;
   }, includeSelf);
 };
 

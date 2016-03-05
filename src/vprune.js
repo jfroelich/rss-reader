@@ -56,12 +56,14 @@ VPrune.prepareDocumentForView = function(document) {
 
 VPrune.findImageCaption = function(image) {
   'use strict';
-  const isFigure = function(node) {
+  function isFigure(node) {
     return node.name === 'figure';
-  };
-  const isFigCaption = function(node) {
+  }
+
+  function isFigCaption(node) {
     return node.name === 'figcaption';
-  };
+  }
+
   const figure = image.closest(isFigure, false);
   return figure ? figure.find(isFigCaption, false) : null;
 };
@@ -78,60 +80,63 @@ VPrune.removeAll = function(nodes) {
 // removes after iteration is completed
 VPrune.filterCommentNodes = function(node) {
   'use strict';
-  const isComment = function(node) {
+
+  function isComment(node) {
     return node.type === VNode_COMMENT;
-  };
+  }
+
   const comments = node.findAll(isComment, false);
   VPrune.removeAll(comments);
 };
 
-VPrune.DEFAULT_BLACKLIST = new Set([
-  'applet',
-  'object',
-  'embed',
-  'param',
-  'video',
-  'audio',
-  'bgsound',
-  'head',
-  'meta',
-  'title',
-  'datalist',
-  'dialog',
-  'fieldset',
-  'isindex',
-  'math',
-  'output',
-  'optgroup',
-  'progress',
-  'spacer',
-  'xmp',
-  'style',
-  'link',
-  'basefont',
-  'select',
-  'option',
-  'textarea',
-  'input',
-  'button',
-  'command'
-]);
-
-// @param customBlacklist {Set} lowercase element names to remove
-VPrune.filterBlacklistedElements = function(node, customBlacklist) {
+VPrune.isBlacklisted = function(node) {
   'use strict';
-  // TODO: not quite comfortable yet with mutation while iterating so for now
-  // this collects matches into a static array first
-  const blacklist = customBlacklist || VPrune.DEFAULT_BLACKLIST;
-  const isBlacklisted = function(node) {
-    return node.type === VNode_ELEMENT && blacklist.has(node.name);
-  };
-  const matches = node.findAllShallow(isBlacklisted, true);
-  VPrune.removeAll(matches);
+  if(node.type !== VNode_ELEMENT) {
+    return false;
+  }
+  switch(node.name) {
+    case 'applet':
+    case 'object':
+    case 'embed':
+    case 'param':
+    case 'video':
+    case 'audio':
+    case 'bgsound':
+    case 'head':
+    case 'meta':
+    case 'title':
+    case 'datalist':
+    case 'dialog':
+    case 'fieldset':
+    case 'isindex':
+    case 'math':
+    case 'output':
+    case 'optgroup':
+    case 'progress':
+    case 'spacer':
+    case 'xmp':
+    case 'style':
+    case 'link':
+    case 'basefont':
+    case 'select':
+    case 'option':
+    case 'textarea':
+    case 'input':
+    case 'button':
+    case 'command':
+      return true;
+    default:
+      return false;
+  }
 };
 
+VPrune.filterBlacklistedElements = function(node) {
+  'use strict';
 
+  const matches = node.findAllShallow(VPrune.isBlacklisted, true);
 
+  VPrune.removeAll(matches);
+};
 
 // Replaces <br> elements within a document with <p>
 // TODO: this function needs some substantial improvement. there are several
@@ -198,27 +203,26 @@ VPrune.isPermittedAttribute = function(elementName, attributeName) {
 
 VPrune.filterFrameElements = function(node) {
   'use strict';
-  if(node.type !== VNode_ELEMENT || node.name !== 'html' || node.parentNode) {
-    return;
-  }
-
   let body = node.body;
 
-  // TODO: this matches a frameset anywhere. Use a more restricted
-  // query that only looks in the proper locations
-  const frameset = node.find(function(node) {
-    return node.name === 'frameset';
-  }, true);
+  let frameset = null;
+  for(let childElement = node.firstElementChild; childElement;
+    childElement = childElement.nextElementSibling) {
+    if(childElement.name === 'frameset') {
+      frameset = childElement;
+      break;
+    }
+  }
 
   if(!body && frameset) {
     // TODO: use a more restrictive location
-    const noframes = frameset.find(function(node) {
-      return node.name === 'noframes';
+    const noframes = frameset.find(function isNoframes(node) {
+      return node.type === VNode_ELEMENT && node.name === 'noframes';
     }, false);
 
     body = VNode.createElement('body');
     if(noframes) {
-      noframes.traverse(function(node) {
+      noframes.traverse(function appendToBody(node) {
         body.appendChild(node);
       }, false);
     } else {
@@ -227,41 +231,39 @@ VPrune.filterFrameElements = function(node) {
 
     node.appendChild(body);
     frameset.remove();
-    return;
-  }
 
-  const matches = node.findAllShallow(function(node) {
-    const name = node.name;
-    return name === 'frame' || name === 'frameset' || name === 'iframe';
-  }, false);
-  VPrune.removeAll(matches);
+  } else {
+    const framesets = node.getElementsByName('frameset');
+    VPrune.removeAll(framesets);
+    const frames = node.getElementsByName('frame');
+    VPrune.removeAll(frames);
+    const iframes = node.getElementsByName('iframe');
+    VPrune.removeAll(iframes);
+  }
 };
 
 VPrune.filterHiddenElements = function(node) {
   'use strict';
   const matches = node.findAllShallow(function(node) {
-    const value = node.type === VNode_ELEMENT && node.getAttribute('style');
+    const style = node.type === VNode_ELEMENT && node.getAttribute('style');
     // TODO: the opacity check has false positives like opacity: 0.9
-    // TODO: use a single regexp call, using |, for performance
-    // TODO: is a space preceding : allowed?
-    return value && (/display\s*:\s*none/i.test(value) ||
-      /visibility\s*:\s*hidden/i.test(value) ||
-      /opacity\s*:\s*0/i.test(value));
+    return
+      /(display:\s*none)|(visibility:\s*hidden)|(opacity:\s*0)/i.test(style);
   }, true);
   VPrune.removeAll(matches);
 };
 
 VPrune.filterNominalAnchors = function(node) {
   'use strict';
-  const isAnchor = function(node) {
-    return node.name === 'a';
-  };
-  const anchors = node.findAll(isAnchor, false);
+
+  const anchors = node.getElementsByName('a', false);
   for(let i = 0, anchor, href, len = anchors.length; i < len; i++) {
     anchor = anchors[i];
     if(!anchor.hasAttribute('name')) {
       href = anchor.getAttribute('href') || '';
-      href = href.trim();
+      if(href) {
+        href = href.trim();
+      }
       if(!href) {
         VPrune.unwrap(anchor);
       }
@@ -316,7 +318,7 @@ VPrune.filterTracerImages = function(node) {
 
 VPrune.normalizeWhitespace = function(node) {
   'use strict';
-  node.traverse(function(node) {
+  node.traverse(function normalizeNodeWhitespace(node) {
     if(node.type !== VNode_TEXT)
       return;
     switch(node.value) {
@@ -327,6 +329,8 @@ VPrune.normalizeWhitespace = function(node) {
       case '\n\t':
       case '\n\t\t':
       case '\n\t\t\t':
+      case '\n\t\t\t\t':
+      case '\n\t\t\t\t\t':
         break;
       default:
         node.value = node.value.replace(/&nbsp;/g, ' ');
@@ -344,7 +348,13 @@ VPrune.isSensitiveElement = function(node) {
 
 VPrune.getSensitiveSet = function(node) {
   'use strict';
-  const elements = node.findAll(function(node) {
+
+  // TODO: this has extremely bad performance
+  if(true) {
+    return new Set();
+  }
+
+  const elements = node.findAll(function isSensitive(node) {
     return node.closest(VPrune.isSensitiveElement, true);
   }, true);
   return new Set(elements);
@@ -352,10 +362,11 @@ VPrune.getSensitiveSet = function(node) {
 
 VPrune.condenseNodeValues = function(node, sensitiveElements) {
   'use strict';
-  node.traverse(function(node) {
-    if(node.type === VNode_TEXT && node.value &&
-      !sensitiveElements.has(node.parentElement)) {
-      node.value = node.value.replace(/  +/g, ' ');
+  node.traverse(function condenseTextNode(node) {
+    const value = node.value;
+    if(node.type === VNode_TEXT && value &&
+      !sensitiveElements.has(node.parentNode)) {
+      node.value = value.replace(/\s{2,}/g, ' ');
     }
   }, false);
 };
@@ -385,29 +396,26 @@ VPrune.trimDocument = function(rootNode) {
 
 VPrune.isTrimmable = function(node) {
   'use strict';
-
-  // NOTE: no need to check type, only element nodes have a name
-  //if(node.type !== VNode_ELEMENT)
-  //  return false;
-
-  switch(node.name) {
-    case 'br':
-    case 'hr':
-    case 'nobr':
-      return true;
-    case 'p':
-    case 'blockquote':
-    case 'div':
-      return !node.firstChild;
-    default:
-      break;
+  if(node.type === VNode_ELEMENT) {
+    switch(node.name) {
+      case 'br':
+      case 'hr':
+      case 'nobr':
+        return true;
+      case 'p':
+      case 'blockquote':
+      case 'div':
+        return !node.firstChild;
+      default:
+        break;
+    }
   }
   return false;
 };
 
 VPrune.filterEmptyTextNodes = function(node) {
   'use strict';
-  const nodes = node.findAll(function(node) {
+  const nodes = node.findAll(function isEmptyTextNode(node) {
     return node.type === VNode_TEXT && !node.value;
   }, false);
   VPrune.removeAll(nodes);
