@@ -251,6 +251,9 @@ function appendSlide(entry, isFirst) {
   const doc = utils.parseHTML(entry.content);
   DOMFilter.prepareDocumentForView(doc);
 
+  // Testing VPrune substitute for DOMFilter
+  //VPrune.prepareDocumentForView(doc);
+
   if(doc.documentElement) {
     if(doc.body) {
       content.innerHTML = doc.body.innerHTML;

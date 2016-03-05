@@ -2,7 +2,11 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-const DOMFilter = {};
+// TODO: inline function calls, they are expensive
+
+// TODO: Map and Set are slow, use select statements
+
+var DOMFilter = {};
 
 // Applies a series of transformations to a document in preparation for
 // appending it to the UI.
@@ -48,68 +52,23 @@ DOMFilter.prepareDocumentForView = function(document) {
   DOMFilter.filterAttributes(document);
 };
 
-// Returns whether the element has the given lowercase name
-DOMFilter.elementHasName = function(name, element) {
-  'use strict';
-  return element.localName === name;
-};
-
-DOMFilter.nodeHasType = function(nodeType, node) {
-  'use strict';
-  return node.nodeType === nodeType;
-};
-
-DOMFilter.isElement = DOMFilter.nodeHasType.bind(null, Node.ELEMENT_NODE);
-DOMFilter.isTextNode = DOMFilter.nodeHasType.bind(null, Node.TEXT_NODE);
-
 DOMFilter.findImageCaption = function(image) {
   'use strict';
   const figure = image.closest('figure');
   return figure ? figure.querySelector('figcaption') : null;
 };
 
-DOMFilter.getCommentNodeIterator = function(document) {
-  'use strict';
-  const iterator = document.createNodeIterator(
-    document.documentElement,
-    NodeFilter.SHOW_COMMENT);
-  iterator[Symbol.iterator] = DOMFilter.getNodeIteratorSymbolIterator(
-    iterator);
-  return iterator;
-};
-
-DOMFilter.getTextNodeIterator = function(document) {
-  'use strict';
-  const iterator = document.createNodeIterator(
-    document.documentElement,
-    NodeFilter.SHOW_TEXT);
-  iterator[Symbol.iterator] = DOMFilter.getNodeIteratorSymbolIterator(
-    iterator);
-  return iterator;
-};
-
-// Allows for..of over NodeIterators, to use do:
-DOMFilter.getNodeIteratorSymbolIterator = function(iterator) {
-  'use strict';
-  return function() {
-    return {
-      next: function() {
-        const node = iterator.nextNode();
-        return { value: node, done: !node };
-      }
-    };
-  };
-};
-
 // Removes all comment nodes from the document
 DOMFilter.filterCommentNodes = function(document) {
   'use strict';
-  for(let comment of DOMFilter.getCommentNodeIterator(document)) {
-    comment.remove();
+  const it = document.createNodeIterator(document.documentElement,
+    NodeFilter.SHOW_COMMENT);
+  for(let node = it.nextNode(); node; node = it.nextNode()) {
+    node.remove();
   }
 };
 
-DOMFilter.DEFAULT_BLACKLIST_POLICY = new Set([
+DOMFilter.BLACKLIST = [
   'applet',
   'object',
   'embed',
@@ -139,13 +98,11 @@ DOMFilter.DEFAULT_BLACKLIST_POLICY = new Set([
   'input',
   'button',
   'command'
-]);
+];
 
-// @param policy {Set} element names to remove
-DOMFilter.filterBlacklistedElements = function(document, policy) {
+DOMFilter.filterBlacklistedElements = function(document) {
   'use strict';
-  const selector = Array.from(policy ||
-    DOMFilter.DEFAULT_BLACKLIST_POLICY).join(',');
+  const selector = Array.from(DOMFilter.BLACKLIST).join(',');
   DOMFilter.moveElementsBySelector(document, null, selector);
 };
 
@@ -156,12 +113,13 @@ DOMFilter.filterBlacklistedElements = function(document, policy) {
 // error case: http://paulgraham.com/procrastination.html
 DOMFilter.filterBreakruleElements = function(document) {
   'use strict';
-  const breakRuleElements = document.querySelectorAll('br');
-  breakRuleElements[Symbol.iterator] = Array.prototype[Symbol.iterator];
-  for(let breakRuleElement of breakRuleElements) {
-    let parent = breakRuleElement.parentElement;
-    let paragraph = document.createElement('p');
-    parent.replaceChild(paragraph, breakRuleElement);
+  const elements = document.querySelectorAll('br');
+  const numElements = elements.length;
+  for(let i = 0, element, parent, p; i < numElements; i++) {
+    element = elements[i];
+    parent = element.parentNode;
+    p = document.createElement('p');
+    parent.replaceChild(p, element);
   }
 };
 
@@ -169,104 +127,89 @@ DOMFilter.filterBreakruleElements = function(document) {
 DOMFilter.filterAttributes = function(document) {
   'use strict';
   const elements = document.getElementsByTagName('*');
-  elements[Symbol.iterator] = Array.prototype[Symbol.iterator];
-  for(let element of elements) {
-    DOMFilter.filterElementAttributes(element);
-  }
-};
+  const numElements = elements.length;
 
-// Removes certain attributes from an element
-DOMFilter.filterElementAttributes = function(element) {
-  'use strict';
-  const elementName = element.localName;
+  // Iterate attribetus in reverse to avoid issues with mutating a live
+  // NodeList during iteration
 
-  if(elementName === 'svg' || elementName === 'path') {
-    return;
-  }
+  let elementName = null;
+  let attributeName = null;
+  let element = null;
+  let attributes = null;
+  let j = 0;
 
-  // Iterate in reverse to avoid issues with mutating a live NodeList during
-  // iteration
-  const attributes = element.attributes || [];
-  for(let j = attributes.length - 1, attributeName; j > -1; j--) {
-    attributeName = attributes[j].name;
-    if(!DOMFilter.isPermittedAttribute(elementName, attributeName)) {
-      element.removeAttribute(attributeName);
+  for(let i = 0; i < numElements; i++) {
+    element = elements[i];
+    elementName = element.localName;
+    attributes = element.attributes;
+    if(!attributes || !attributes.length) {
+      continue;
+    }
+
+    if(elementName === 'svg' || elementName === 'path') {
+      // NO-OP
+    } else if(elementName === 'a') {
+      for(j = attributes.length - 1; j > -1; j--) {
+        attributeName = attributes[j].name;
+        if(attributeName !== 'href' && attributeName !== 'name' &&
+          attributeName !== 'title') {
+          element.removeAttribute(attributeName);
+        }
+      }
+    } else if(elementName === 'iframe') {
+      for(j = attributes.length - 1; j > -1; j--) {
+        attributeName = attributes[j].name;
+        if(attributeName !== 'src') {
+          element.removeAttribute(attributeName);
+        }
+      }
+    } else if(elementName === 'img') {
+      for(j = attributes.length - 1; j > -1; j--) {
+        attributeName = attributes[j].name;
+        if(attributeName !== 'src' && attributeName !== 'alt' &&
+          attributeName !== 'srcset' && attributeName !== 'title') {
+          element.removeAttribute(attributeName);
+        }
+      }
+    } else {
+      for(j = attributes.length - 1; j > -1; j--) {
+        element.removeAttribute(attributes[j].name);
+      }
     }
   }
-};
-
-// Returns whether an attribute should not be removed
-DOMFilter.isPermittedAttribute = function(elementName, attributeName) {
-  'use strict';
-  if(elementName === 'a') {
-    return attributeName === 'href' ||
-      attributeName === 'name' ||
-      attributeName === 'title';
-  }
-
-  if(elementName === 'html') {
-    return attributeName === 'lang';
-  }
-
-  if(elementName === 'iframe') {
-    return attributeName === 'src';
-  }
-
-  if(elementName === 'img') {
-    return attributeName === 'alt' || attributeName === 'src' ||
-      attributeName === 'srcset' || attributeName === 'title';
-  }
-
-  if(elementName === 'param') {
-    return attributeName === 'name' || attributeName === 'value';
-  }
-
-  return false;
 };
 
 // Filters frame, noframes, frameset, and iframe elements
 DOMFilter.filterFrameElements = function(document) {
   'use strict';
-  let body = document.querySelector('body');
-  const frameset = document.querySelector('frameset');
-  if(!body && frameset) {
-    const noframes = frameset.querySelector('noframes');
-    body = document.createElement('body');
+  const body = document.body;
+  if(body && body.localName === 'frameset') {
+    const noframes = document.querySelector('noframes');
     if(noframes) {
       body.innerHTML = noframes.innerHTML;
     } else {
       body.textContent = 'Unable to display document due to frames.';
     }
-
-    document.documentElement.appendChild(body);
-    frameset.remove();
-    return;
+  } else {
+    DOMFilter.removeElementsBySelector(document, 'frameset, frame, iframe');
   }
-
-  DOMFilter.removeElementsBySelector(document, 'frameset, frame, iframe');
 };
 
-//TODO: review aria properties, maybe include aria hidden?
-// https://www.w3.org/TR/wai-aria/states_and_properties#aria-hidden
-DOMFilter.HIDDEN_ELEMENTS_SELECTOR = [
-  '[style*="display:none"]',
-  '[style*="display: none"]',
-  '[style*="visibility:hidden"]',
-  '[style*="visibility: hidden"]',
-  '[style*="opacity:0.0"]',
-  '[style*="opacity: 0.0"]',
-  '[style*="opacity:0"]'
-].join(',');
-
-// Removes hidden elements from a document. This function previously was more
-// accurate and investigated each element's style property. However, this
-// resulted in Chrome lazily computing each element's style, which resulted in
-// poor performance. Given that we are ignoring non-inline styles in the first
-// place, I don't think the loss of accuracy is too important.
 DOMFilter.filterHiddenElements = function(document) {
   'use strict';
-  DOMFilter.removeElementsBySelector(document,
-    DOMFilter.HIDDEN_ELEMENTS_SELECTOR);
+  //TODO: include aria hidden?
+  // https://www.w3.org/TR/wai-aria/states_and_properties#aria-hidden
+  const selector = [
+    '[style*="display:none"]',
+    '[style*="display: none"]',
+    '[style*="visibility:hidden"]',
+    '[style*="visibility: hidden"]',
+    '[style*="opacity:0.0"]',
+    '[style*="opacity: 0.0"]',
+    '[style*="opacity:0"]'
+  ].join(',');
+
+  DOMFilter.removeElementsBySelector(document, selector);
 };
 
 // A set of names of inline elements that can be unwrapped
@@ -310,68 +253,33 @@ DOMFilter.INLINE_ELEMENT_NAMES = new Set([
 DOMFilter.INLINE_ELEMENTS_SELECTOR = Array.from(
   DOMFilter.INLINE_ELEMENT_NAMES).join(',');
 
-DOMFilter.isInlineElement = function(element) {
-  'use strict';
-  return DOMFilter.INLINE_ELEMENT_NAMES.has(element.localName);
-};
-
 // Removes superfluous inline elements
 DOMFilter.filterInlineElements = function(document) {
   'use strict';
-  for(let element of selectInlineElements(document)) {
-    if(!isIntermediateInlineAncestor(element)) {
-      DOMFilter.unwrap(element, findFarthestInlineAncestor(element));
-    }
-  }
+  const inlines = DOMFilter.INLINE_ELEMENT_NAMES;
+  const selector = DOMFilter.INLINE_ELEMENTS_SELECTOR;
+  const elements = document.querySelectorAll(selector);
+  const numElements = elements.length;
 
-  function selectInlineElements(document) {
-    const elements = document.querySelectorAll(
-      DOMFilter.INLINE_ELEMENTS_SELECTOR);
-    elements[Symbol.iterator] = Array.prototype[Symbol.iterator];
-    return elements;
-  }
-
-  function isIntermediateInlineAncestor(element) {
-    return DOMFilter.isInlineElement(element) &&
+  for(let i = 0, element, farthest, cursor; i < numElements; i++) {
+    element = elements[i];
+    if(inlines.has(element.localName) &&
       element.childNodes.length === 1 &&
-      DOMFilter.isInlineElement(element.firstChild);
-  }
-
-  function findFarthestInlineAncestor(element) {
-    let result = null;
-    for(let cursor = element.parentElement; cursor &&
-      isIntermediateInlineAncestor(cursor); cursor = cursor.parentElement) {
-      result = cursor;
+      inlines.has(element.firstChild.localName)) {
+      // Skip
+    } else {
+      farthest = null;
+      for(cursor = element.parentNode; cursor &&
+        inlines.has(cursor.localName) &&
+        cursor.childNodes.length === 1 &&
+        inlines.has(cursor.firstChild.localName);
+        cursor = cursor.parentNode) {
+        farthest = cursor;
+      }
+      DOMFilter.unwrap(element, farthest);
     }
-    return result;
   }
 };
-
-// These element names are never considered leaves
-DOMFilter.LEAF_EXCEPTION_ELEMENT_NAMES = new Set([
-  'area',
-  'audio',
-  'br',
-  'canvas',
-  'col',
-  'hr',
-  'iframe',
-  'img',
-  'path', // an SVG component
-  'source',
-  'svg',
-  'track',
-  'video'
-]);
-
-// Elements containing only these text node values are still leaves
-DOMFilter.TRIVIAL_TEXT_NODE_VALUES = new Set([
-  '',
-  '\n',
-  '\n\t',
-  '\n\t\t',
-  '\n\t\t\t'
-]);
 
 // Prunes leaf elements from the document. Leaf elements are those
 // elements that do not contain sub elements, such as <p></p>, or elements
@@ -399,7 +307,7 @@ DOMFilter.collectLeavesRecursively = function(leaves, bodyElement, element) {
   const numChildNodes = childNodes.length;
   for(let i = 0, cursor; i < numChildNodes; i++) {
     cursor = childNodes[i];
-    if(DOMFilter.isElement(cursor)) {
+    if(cursor.nodeType === Node.ELEMENT_NODE) {
       if(DOMFilter.isLeafElement(bodyElement, cursor)) {
         leaves.add(cursor);
       } else {
@@ -414,24 +322,48 @@ DOMFilter.collectLeavesRecursively = function(leaves, bodyElement, element) {
 // TODO: make this non-recursive
 DOMFilter.isLeafElement = function(bodyElement, element) {
   'use strict';
+
   if(element === bodyElement) {
     return false;
   }
 
-  if(DOMFilter.LEAF_EXCEPTION_ELEMENT_NAMES.has(element.localName)) {
-    return false;
+  switch(element.localName) {
+    case 'area':
+    case 'audio':
+    case 'br':
+    case 'canvas':
+    case 'col':
+    case 'hr':
+    case 'iframe':
+    case 'img':
+    case 'path':
+    case 'source':
+    case 'svg':
+    case 'track':
+    case 'video':
+      return false;
+    default:
+      break;
   }
 
   const childNodes = element.childNodes;
-  childNodes[Symbol.iterator] = Array.prototype[Symbol.iterator];
-
-  for(let childNode of childNodes) {
-    if(childNode.nodeType === Node.TEXT_NODE) {
-      if(!DOMFilter.TRIVIAL_TEXT_NODE_VALUES.has(childNode.nodeValue)) {
-        return false;
+  const numChildNodes = childNodes.length;
+  for(let i = 0, node; i < numChildNodes; i++) {
+    node = childNodes[i];
+    if(node.nodeType === Node.TEXT_NODE) {
+      switch(node.nodeValue) {
+        case '':
+        case '\n':
+        case '\n\t':
+        case '\n\t\t':
+        case '\n\t\t\t':
+        case '\n\t\t\t\t':
+          break;
+        default:
+          return false;
       }
-    } else if(DOMFilter.isElement(childNode)) {
-      if(!DOMFilter.isLeafElement(bodyElement, childNode)) {
+    } else if(node.nodeType === Node.ELEMENT_NODE) {
+      if(!DOMFilter.isLeafElement(bodyElement, node)) {
         return false;
       }
     } else {
@@ -445,15 +377,13 @@ DOMFilter.isLeafElement = function(bodyElement, element) {
 // Unwraps anchors that are not links to other pages
 DOMFilter.filterNominalAnchors = function(document) {
   'use strict';
-  const anchors = document.querySelectorAll('a');
-  anchors[Symbol.iterator] = Array.prototype[Symbol.iterator];
-  for(let anchor of anchors) {
-    if(!anchor.hasAttribute('name')) {
-      let href = anchor.getAttribute('href') || '';
-      href = href.trim();
-      if(!href) {
-        DOMFilter.unwrap(anchor);
-      }
+  const elements = document.querySelectorAll('a');
+  const numElements = elements.length;
+  const unwrap = DOMFilter.unwrap;
+  for(let i = 0, anchor; i < elements.length; i++) {
+    anchor = elements[i];
+    if(!anchor.hasAttribute('name') && !anchor.hasAttribute('href')) {
+      unwrap(anchor);
     }
   }
 };
@@ -478,26 +408,18 @@ DOMFilter.filterNoScriptElements = function(document) {
 // remove content beneath such anchors. If I just unwrap, this leads to lots
 // of junk words like 'click me' in the text that are not links. If I remove,
 // I risk removing informative content.
+// TODO: maybe just always remove?
 DOMFilter.filterJavascriptAnchors = function(document) {
   'use strict';
-  const anchors = document.querySelectorAll('a[href]');
-  anchors[Symbol.iterator] = Array.prototype[Symbol.iterator];
-  for(let anchor of anchors) {
-    if(DOMFilter.isJavascriptAnchor(anchor)) {
+  const elements = document.querySelectorAll('a[href]');
+  const numElements = elements.length;
+  const pattern = /\s*javascript\s*:/i;
+  for(let i = 0, anchor; i < numElements; i++) {
+    anchor = elements[i];
+    if(pattern.test(anchor.getAttribute('href'))) {
       anchor.setAttribute('href', '');
     }
   }
-};
-
-// Returns whether the anchor is a javascript anchor
-// NOTE: rather than use a regex, we can take advantage of the accurate
-// parsing of the browser (and mirror its behavior for that matter) by
-// just accessing the protocol property.
-// NOTE: this occassionally yields poor performance for some reason, maybe
-// the regex is faster
-DOMFilter.isJavascriptAnchor = function(anchor) {
-  'use strict';
-  return anchor.protocol === 'javascript:';
 };
 
 // Unwraps tables that consist of a single cell, which generally indicates
@@ -505,9 +427,10 @@ DOMFilter.isJavascriptAnchor = function(anchor) {
 DOMFilter.filterSingleCellTables = function(document) {
   'use strict';
   const tables = document.querySelectorAll('table');
-  tables[Symbol.iterator] = Array.prototype[Symbol.iterator];
-  for(let table of tables) {
-    let cell = DOMFilter.getTableSingleCell(table);
+  const numTables = tables.length;
+  for(let i = 0, table, cell; i < numTables; i++) {
+    table = tables[i];
+    cell = DOMFilter.getTableSingleCell(table);
     if(cell) {
       DOMFilter.unwrapSingleCellTable(table, cell);
     }
@@ -549,8 +472,9 @@ DOMFilter.unwrapSingleCellTable = function(table, cell) {
 DOMFilter.filterSingleColumnTables = function(document) {
   'use strict';
   const tables = document.querySelectorAll('table');
-  tables[Symbol.iterator] = Array.prototype[Symbol.iterator];
-  for(let table of tables) {
+  const numTables = tables.length;
+  for(let i = 0, table; i < numTables; i++) {
+    table = tables[i];
     if(DOMFilter.isSingleColumnTable(table)) {
       DOMFilter.transformSingleColumnTable(table);
     }
@@ -597,23 +521,21 @@ DOMFilter.transformSingleColumnTable = function(table) {
 DOMFilter.filterSingleItemLists = function(document) {
   'use strict';
   const lists = document.querySelectorAll('ul, ol');
-  lists[Symbol.iterator] = Array.prototype[Symbol.iterator];
-  for(let list of lists) {
+  const numLists = lists.length;
+  for(let i = 0, list; i < numLists; i++) {
+    list = lists[i];
     if(DOMFilter.countListItems(list) === 1) {
       DOMFilter.unwrapSingleItemList(list);
     }
   }
 };
 
-DOMFilter.isListItem = DOMFilter.elementHasName.bind(null, 'li');
-
 DOMFilter.countListItems = function(list) {
   'use strict';
-  const childNodes = list.childNodes;
-  childNodes[Symbol.iterator] = Array.prototype[Symbol.iterator];
   let count = 0;
-  for(let childNode of childNodes) {
-    if(DOMFilter.isListItem(childNode)) {
+  for(let element = list.firstElementChild; element;
+    element = element.nextElementSibling) {
+    if(element.localName === 'li') {
       count++;
     }
   }
@@ -622,7 +544,11 @@ DOMFilter.countListItems = function(list) {
 
 DOMFilter.getFirstListItem = function(list) {
   'use strict';
-  return Array.prototype.find.call(list.childNodes, DOMFilter.isListItem);
+  // TODO: use an explicit loop, find is slow. Also, use firstElementChild
+  // and nextElementSibling to loop over child elements
+  return Array.prototype.find.call(list.childNodes, function(node) {
+    return node.nodeType === Node.ELEMENT_NODE && node.localName === 'li';
+  });
 };
 
 // assumes the list item count > 0
@@ -640,43 +566,26 @@ DOMFilter.unwrapSingleItemList = function(list) {
 DOMFilter.filterSourcelessImages = function(document) {
   'use strict';
   const images = document.querySelectorAll('img');
-  images[Symbol.iterator] = Array.prototype[Symbol.iterator];
-  for(let image of images) {
-    if(DOMFilter.isSourcelessImage(image)) {
+  const numImages = images.length;
+  for(let i = 0, image; i < numImages; i++) {
+    image = images[i];
+    if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
       image.remove();
     }
   }
-};
-
-// NOTE: using hasAttribute allows for whitespace-only values, but I do not
-// think this is too important
-// NOTE: access by attribute, not by property, because the browser may
-// supply a base url prefix or something like that to the property
-DOMFilter.isSourcelessImage = function(image) {
-  'use strict';
-  return !image.hasAttribute('src') && !image.hasAttribute('srcset');
 };
 
 // Removes all tracer images
 DOMFilter.filterTracerImages = function(document) {
   'use strict';
   const images = document.querySelectorAll('img');
-  images[Symbol.iterator] = Array.prototype[Symbol.iterator];
-  for(let image of images) {
-    if(DOMFilter.isTracerImage(image)) {
+  const numImages = images.length;
+  for(let i = 0, image; i < numImages; i++) {
+    image = images[i];
+    if(image.width < 2 || image.height < 2) {
       image.remove();
     }
   }
-};
-
-// This function considers width and height independently, resulting in removal
-// of not just tracer images but also images used as horizontal rule elements
-// or vertical bars, which is desired.
-// This requires the dimensions be set. If an image does not have dimension
-// attributes, it should be pre-fetched before calling this.
-DOMFilter.isTracerImage = function(image) {
-  'use strict';
-  return image.width < 2 || image.height < 2;
 };
 
 // Moves elements matching the selector query from the source document into
@@ -700,13 +609,13 @@ DOMFilter.isTracerImage = function(image) {
 // @returns void
 DOMFilter.moveElementsBySelector = function(source, destination, selector) {
   'use strict';
-  const targetDocument = destination ||
-    document.implementation.createHTMLDocument();
+  const target = destination || document.implementation.createHTMLDocument();
   const elements = source.querySelectorAll(selector);
-  elements[Symbol.iterator] = Array.prototype[Symbol.iterator];
-  for(let element of elements) {
+  const numElements = elements.length;
+  for(let i = 0, element; i < numElements; i++) {
+    element = elements[i];
     if(element.ownerDocument === source) {
-      targetDocument.adoptNode(element);
+      target.adoptNode(element);
     }
   }
 };
@@ -740,17 +649,30 @@ DOMFilter.removeElementsByName = function(document, tagName) {
 DOMFilter.removeElementsBySelector = function(document, selector) {
   'use strict';
   const elements = document.querySelectorAll(selector);
-  const remove = function(element) { element.remove(); };
-  Array.prototype.forEach.call(elements, remove);
+  const numElements = elements.length;
+  for(let i = 0; i < numElements; i++) {
+    elements[i].remove();
+  }
 };
 
 // Normalizes the values of all text nodes in a document
 DOMFilter.normalizeWhitespace = function(document) {
   'use strict';
-  for(let node of DOMFilter.getTextNodeIterator(document)) {
-    let value = node.nodeValue;
-    if(!DOMFilter.TRIVIAL_TEXT_NODE_VALUES.has(value)) {
-      node.nodeValue = value.replace(/&nbsp;/g, ' ');
+
+  const it = document.createNodeIterator(document.documentElement,
+    NodeFilter.SHOW_TEXT);
+  for(let value = '', node = it.nextNode(); node; node = it.nextNode()) {
+    value = node.nodeValue;
+    switch(value) {
+      case '':
+      case '\n':
+      case '\n\t':
+      case '\n\t\t':
+      case '\n\t\t\t':
+      case '\n\t\t\t\t':
+        break;
+      default:
+        node.nodeValue = value.replace(/&nbsp;/g, ' ');
     }
   }
 };
@@ -760,17 +682,16 @@ DOMFilter.normalizeWhitespace = function(document) {
 // previous normalized, so, for example, it does not consider &nbsp;.
 DOMFilter.condenseNodeValues = function(document, sensitiveElements) {
   'use strict';
-  for(let node of DOMFilter.getTextNodeIterator(document)) {
-    if(!sensitiveElements.has(node.parentElement)) {
-      node.nodeValue = DOMFilter.condenseSpaces(node.nodeValue);
+  const it = document.createNodeIterator(document.documentElement,
+    NodeFilter.SHOW_TEXT);
+  const TWO_OR_MORE_SPACES = /\s{2,}/g;
+  const SINGLE_SPACE = ' ';
+  for(let node = it.nextNode(); node; node = it.nextNode()) {
+    if(!sensitiveElements.has(node.parentNode)) {
+      node.nodeValue = node.nodeValue.replace(TWO_OR_MORE_SPACES,
+        SINGLE_SPACE);
     }
   }
-};
-
-// Replaces one or more consecutive spaces with a single space
-DOMFilter.condenseSpaces = function(inputString) {
-  'use strict';
-  return inputString.replace(/ +/g, ' ');
 };
 
 // Removes trimmable elements from the start and end of the document
@@ -781,57 +702,68 @@ DOMFilter.condenseSpaces = function(inputString) {
 // document.documentElement
 DOMFilter.trimDocument = function(document) {
   'use strict';
-  if(document.body) {
-    let sibling = document.body;
-    let node = document.body.firstChild;
-    while(node && DOMFilter.isTrimmableNode(node)) {
-      sibling = node.nextSibling;
-      node.remove();
-      node = sibling;
-    }
+  const body = document.body;
+  const isTrimmable = DOMFilter.isTrimmableNode;
 
-    node = document.body.lastChild;
-    while(node && DOMFilter.isTrimmableNode(node)) {
-      sibling = node.previousSibling;
-      node.remove();
-      node = sibling;
-    }
+  if(!body) {
+    return;
+  }
+
+  let sibling = body;
+  let node = body.firstChild;
+  while(node && isTrimmable(node)) {
+    sibling = node.nextSibling;
+    node.remove();
+    node = sibling;
+  }
+
+  node = body.lastChild;
+  while(node && isTrimmable(node)) {
+    sibling = node.previousSibling;
+    node.remove();
+    node = sibling;
   }
 };
 
-DOMFilter.TRIMMABLE_NODE_NAMES = new Set([
-  'br', 'hr', 'nobr'
-]);
-
 DOMFilter.isTrimmableNode = function(node) {
   'use strict';
-  return DOMFilter.isElement(node) &&
-    (DOMFilter.TRIMMABLE_NODE_NAMES.has(node.localName) ||
-    DOMFilter.isEmptyParagraph(node));
-};
+  if(node.nodeType === Node.ELEMENT_NODE) {
+    switch(node.localName) {
+      case 'br':
+      case 'hr':
+      case 'nobr':
+        return true;
+      case 'p':
+        return !node.firstChild;
+      default:
+        break;
+    }
+  } else if(node.nodeType === Node.TEXT_NODE) {
+    return node.nodeValue && node.nodeValue.trim();
+  }
 
-DOMFilter.isEmptyParagraph = function(element) {
-  'use strict';
-  return element && element.localName === 'p' && !element.firstChild;
+  return false;
 };
 
 // Trims a document's text nodes
 DOMFilter.trimTextNodes = function(document, sensitiveElements) {
   'use strict';
 
-  const isElement = DOMFilter.isElement;
-  const isInlineElement = DOMFilter.isInlineElementNoTrim;
-  for(let node of DOMFilter.getTextNodeIterator(document)) {
+  const isInlineElement = DOMFilter.isNoTrimInlineElement;
+  const it = document.createNodeIterator(document.documentElement,
+    NodeFilter.SHOW_TEXT);
 
-    if(sensitiveElements.has(node.parentElement)) {
+  for(let node = it.nextNode(); node; node = it.nextNode()) {
+
+    if(sensitiveElements.has(node.parentNode)) {
       continue;
     }
 
     if(node.previousSibling) {
-      if(isElement(node.previousSibling)) {
+      if(node.previousSibling.nodeType === Node.ELEMENT_NODE) {
         if(isInlineElement(node.previousSibling)) {
           if(node.nextSibling) {
-            if(isElement(node.nextSibling)) {
+            if(node.nextSibling.nodeType === Node.ELEMENT_NODE) {
               if(!isInlineElement(node.nextSibling)) {
                 node.nodeValue = node.nodeValue.trimRight();
               }
@@ -844,7 +776,7 @@ DOMFilter.trimTextNodes = function(document, sensitiveElements) {
         }
       } else {
        if(node.nextSibling) {
-          if(isElement(node.nextSibling)) {
+          if(node.nextSibling.nodeType === Node.ELEMENT_NODE) {
             if(isInlineElement(node.nextSibling)) {
             } else {
              node.nodeValue = node.nodeValue.trimRight();
@@ -855,7 +787,7 @@ DOMFilter.trimTextNodes = function(document, sensitiveElements) {
         }
       }
     } else if(node.nextSibling) {
-     if(isElement(node.nextSibling)) {
+     if(node.nextSibling.nodeType === Node.ELEMENT_NODE) {
         if(isInlineElement(node.nextSibling)) {
           node.nodeValue = node.nodeValue.trimLeft();
         } else {
@@ -880,82 +812,73 @@ DOMFilter.trimTextNodes = function(document, sensitiveElements) {
 
 DOMFilter.filterEmptyTextNodes = function(document) {
   'use strict';
-  for(let node of DOMFilter.getTextNodeIterator(document)) {
+  const it = document.createNodeIterator(document.documentElement,
+    NodeFilter.SHOW_TEXT);
+  for(let node = it.nextNode(); node; node = it.nextNode()) {
     if(!node.nodeValue) {
       node.remove();
     }
   }
 };
 
-// These elements are whitespace sensitive
-// TODO: use a Set?
-DOMFilter.SENSITIVE_ELEMENTS_SELECTOR = [
-  'code',
-  'code *',
-  'pre',
-  'pre *',
-  'ruby',
-  'ruby *',
-  'textarea',
-  'textarea *',
-  'xmp',
-  'xmp *'
-].join(',');
-
 // Return a set of elements that are whitespace sensitive. This is useful
 // for checking whether a text node has an ancestor that deems it as sensitive.
 // Rather than walking the ancestor chain each time to do such a check, we
 // collect all such elements and their descendants into a large set, so that
 // we can simply check if a text node's parent element is a member.
-// TODO: see if I can avoid Array.from
 DOMFilter.getSensitiveSet = function(document) {
   'use strict';
   const sensitiveElements = document.querySelectorAll(
-    DOMFilter.SENSITIVE_ELEMENTS_SELECTOR);
+    'code, code *, pre, pre *, ruby, ruby *, ' +
+    'textarea, textarea *, xmp, xmp *');
   return new Set(Array.from(sensitiveElements));
 };
 
-DOMFilter.INLINE_ELEMENTS_NO_TRIM = new Set([
-  'a',
-  'abbr',
-  'acronym',
-  'address',
-  'b',
-  'bdi',
-  'bdo',
-  'blink',
-  'cite',
-  'code',
-  'data',
-  'del',
-  'dfn',
-  'em',
-  'font',
-  'i',
-  'ins',
-  'kbd',
-  'mark',
-  'map',
-  'meter',
-  'q',
-  'rp',
-  'rt',
-  'samp',
-  'small',
-  'span',
-  'strike',
-  'strong',
-  'sub',
-  'sup',
-  'time',
-  'tt',
-  'u',
-  'var'
-]);
-
-DOMFilter.isInlineElementNoTrim = function(element) {
+DOMFilter.isNoTrimInlineElement = function(element) {
   'use strict';
-  return DOMFilter.INLINE_ELEMENTS_NO_TRIM.has(element.localName);
+
+  switch(element.localName) {
+    case 'a':
+    case 'abbr':
+    case 'acronym':
+    case 'address':
+    case 'b':
+    case 'bdi':
+    case 'bdo':
+    case 'blink':
+    case 'cite':
+    case 'code':
+    case 'data':
+    case 'del':
+    case 'dfn':
+    case 'em':
+    case 'font':
+    case 'i':
+    case 'ins':
+    case 'kbd':
+    case 'mark':
+    case 'map':
+    case 'meter':
+    case 'q':
+    case 'rp':
+    case 'rt':
+    case 'samp':
+    case 'small':
+    case 'span':
+    case 'strike':
+    case 'strong':
+    case 'sub':
+    case 'sup':
+    case 'time':
+    case 'tt':
+    case 'u':
+    case 'var':
+      return true;
+    default:
+      break;
+  }
+
+  return false;
 };
 
 // Unwraps the element's child nodes into the parent of the element or, if
@@ -966,7 +889,6 @@ DOMFilter.isInlineElementNoTrim = function(element) {
 // need to use nextSibling || null
 DOMFilter.unwrap = function(element, alternate) {
   'use strict';
-  const isTextNode = DOMFilter.isTextNode;
   const numChildNodes = element.childNodes.length;
   const document = element.ownerDocument;
   const target = alternate || element;
@@ -979,7 +901,8 @@ DOMFilter.unwrap = function(element, alternate) {
   };
 
   if(numChildNodes && parent) {
-    if(target.previousSibling && isTextNode(target.previousSibling)) {
+    if(target.previousSibling &&
+      target.previousSibling.nodeType === Node.TEXT_NODE) {
       parent.insertBefore(document.createTextNode(' '), target);
     }
 
@@ -993,7 +916,7 @@ DOMFilter.unwrap = function(element, alternate) {
       insertChildrenBefore(element, target);
     }
 
-    if(target.nextSibling && isTextNode(target.nextSibling)) {
+    if(target.nextSibling && target.nextSibling.nodeType === Node.TEXT_NODE) {
       parent.insertBefore(document.createTextNode(' '), target);
     }
   }
