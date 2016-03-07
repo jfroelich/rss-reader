@@ -237,7 +237,7 @@ function appendSlide(entry, isFirst) {
     let titleText = utils.replaceHTML(entry.title);
     titleText = utils.filterArticleTitle(titleText);
     titleText = utils.truncateString(titleText, 300);
-    title.innerHTML = titleText;
+    title.textContent = titleText;
   } else {
     title.textContent = 'Untitled';
   }
@@ -257,8 +257,15 @@ function appendSlide(entry, isFirst) {
   if(doc.documentElement) {
     if(doc.body) {
       content.innerHTML = doc.body.innerHTML;
+      //for(let node = doc.body.firstChild; node; node = node.nextSibling) {
+      //  console.debug('Appending from body', node);
+      //  content.appendChild(node);
+      //}
     } else {
       content.innerHTML = doc.documentElement.innerHTML;
+      //for(let node = doc.documentElement.firstChild; node; node = node.nextSibling) {
+      //  content.appendChild(node);
+      //}
     }
   }
   slide.appendChild(content);
