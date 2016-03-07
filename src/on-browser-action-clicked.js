@@ -2,46 +2,40 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-'use strict';
+function browserActionOnClick() {
+  'use strict';
 
-{ // BEGIN FILE SCOPE
+  const viewURL = chrome.extension.getURL('slides.html');
 
-// TODO: whether to reuse the newtab page should possibly be a setting that
-// is disabled by default, so this should be checking if that setting is
-// enabled before querying for the new tab.
-// NOTE: the calls to chrome.tabs here do not require the tabs permission
-// NOTE: because this file does the binding, it should only be included once
-// in the background page of the extension, otherwise the multiple listeners are
-// registered and funky things happen.
+  chrome.tabs.create({url: viewURL});
 
-const viewURL = chrome.extension.getURL('slides.html');
+  // TODO: the above works. Something went wrong upgrading from chrome 48...
+  // to 49.... The query finds the existing tab and updates it, but it is
+  // never displayed. It finds it even where there is no visible matching
+  // tab. Also, the first time I clicked it, Chrome crashed. Review the
+  // chrome tabs API.
+  // TODO: looking at release notes for 50, I am seeing that they are
+  // mucking with tab management 
+  //chrome.tabs.query({'url': viewURL}, onQueryView);
 
-// React to user clicking on the toolbar button. If the extension is already
-// open, switch to it. Otherwise, if the new tab page is present, replace
-// it. Otherwise, open a new tab and switch to it.
-function onBrowserActionClicked(event) {
-  chrome.tabs.query({'url': viewURL}, onQueryView);
-}
+  function onQueryView(tabs) {
+    // TODO: is the trailing slash necessary?
+    const newTabURL = 'chrome://newtab/';
 
-function onQueryView(tabs) {
-  // TODO: is the trailing slash necessary for new tab?
-  const newTabURL = 'chrome://newtab/';
+    if(tabs.length) {
+      chrome.tabs.update(tabs[0].id, {active: true});
+    } else {
+      chrome.tabs.query({url: newTabURL}, onQueryNewTab);
+    }
+  }
 
-  if(tabs.length) {
-    chrome.tabs.update(tabs[0].id, {active: true});
-  } else {
-    chrome.tabs.query({url: newTabURL}, onQueryNewTab);
+  function onQueryNewTab(tabs) {
+    if(tabs.length) {
+      chrome.tabs.update(tabs[0].id, {active: true, url: viewURL});
+    } else {
+      chrome.tabs.create({url: viewURL});
+    }
   }
 }
 
-function onQueryNewTab(tabs) {
-  if(tabs.length) {
-    chrome.tabs.update(tabs[0].id, {active: true, url: viewURL});
-  } else {
-    chrome.tabs.create({url: viewURL});
-  }
-}
-
-chrome.browserAction.onClicked.addListener(onBrowserActionClicked);
-
-} // END FILE SCOPE
+chrome.browserAction.onClicked.addListener(browserActionOnClick);
