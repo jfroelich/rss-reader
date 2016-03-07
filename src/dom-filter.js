@@ -99,8 +99,29 @@ DOMFilter.BLACKLIST = [
 
 DOMFilter.filterBlacklistedElements = function(document) {
   'use strict';
-  const selector = Array.from(DOMFilter.BLACKLIST).join(',');
-  DOMFilter.moveElementsBySelector(document, null, selector);
+/*
+  // TODO: test whether this actually improves performance. The idea here is
+  // that using adoptNode let's us skip later adopt calls.
+  const selector = DOMFilter.BLACKLIST.join(',');
+  const target = document.implementation.createHTMLDocument();
+  const elements = document.querySelectorAll(selector);
+  const numElements = elements.length;
+  for(let i = 0, element; i < numElements; i++) {
+    element = elements[i];
+    if(element.ownerDocument === document) {
+      target.adoptNode(element);
+    }
+  }
+*/
+
+  // NOTE: I am getting almost identical performance ...
+
+  const selector = DOMFilter.BLACKLIST.join(',');
+  const elements = document.querySelectorAll(selector);
+  const numElements = elements.length;
+  for(let i = 0; i < numElements; i++) {
+    elements[i].remove();
+  }
 };
 
 // Replaces <br> elements within a document with <p>
@@ -126,7 +147,7 @@ DOMFilter.filterAttributes = function(document) {
   const elements = document.getElementsByTagName('*');
   const numElements = elements.length;
 
-  // Iterate attribetus in reverse to avoid issues with mutating a live
+  // Iterate in reverse to avoid issues with mutating a live
   // NodeList during iteration
 
   let elementName = null;
@@ -134,9 +155,6 @@ DOMFilter.filterAttributes = function(document) {
   let element = null;
   let attributes = null;
   let j = 0;
-
-  // TODO: I think attributesMap.name is doing something funky, it is showing
-  // up in the profiler?
 
   for(let i = 0; i < numElements; i++) {
     element = elements[i];
@@ -172,7 +190,6 @@ DOMFilter.filterAttributes = function(document) {
         }
       }
     } else {
-      //console.dir(attributes);
       for(j = attributes.length - 1; j > -1; j--) {
         element.removeAttribute(attributes[j].name);
       }
@@ -191,8 +208,12 @@ DOMFilter.filterFrameElements = function(document) {
     } else {
       body.textContent = 'Unable to display document due to frames.';
     }
-  } else {
-    DOMFilter.removeElementsBySelector(document, 'frameset, frame, iframe');
+  }
+
+  const elements = document.querySelectorAll('frameset, frame, iframe');
+  const numElements = elements.length;
+  for(let i = 0; i < numElements; i++) {
+    elements[i].remove();
   }
 };
 
@@ -210,7 +231,13 @@ DOMFilter.filterHiddenElements = function(document) {
     '[style*="opacity:0"]'
   ].join(',');
 
-  DOMFilter.removeElementsBySelector(document, selector);
+  // TODO: do not remove hidden within removed hidden, so use move technique?
+  // or experiment with a walk that finds shallowest descendants
+  const elements = document.querySelectorAll(selector);
+  const numElements = elements.length;
+  for(let i = 0; i < numElements; i++) {
+    elements[i].remove();
+  }
 };
 
 // A set of names of inline elements that can be unwrapped
@@ -255,7 +282,17 @@ DOMFilter.INLINE_ELEMENTS_SELECTOR = Array.from(
   DOMFilter.INLINE_ELEMENT_NAMES).join(',');
 
 // Removes superfluous inline elements
+// TODO: this is consistently the slowest component, and partly due
+// to unwrap. maybe the unwrap detach parent overhead is silly?
+// It is either the speed of unwrap itself, or the number of calls to unwrap.
+// if it is the number of calls, this needs to be refactored.
 DOMFilter.filterInlineElements = function(document) {
+
+  // TODO: test using an explicit walk over all elemnts rather
+  // than using a query selector
+  // in the walk, use the VPrune.findAllShallow behavior? Or that is
+  // still not quite right
+
   'use strict';
   const inlines = DOMFilter.INLINE_ELEMENT_NAMES;
   const selector = DOMFilter.INLINE_ELEMENTS_SELECTOR;
@@ -264,8 +301,9 @@ DOMFilter.filterInlineElements = function(document) {
 
   for(let i = 0, element, farthest, cursor; i < numElements; i++) {
     element = elements[i];
-    if(inlines.has(element.localName) &&
-      element.childNodes.length === 1 &&
+    // TODO: why am i testing inlines.has in the first part of this
+    // if, when i know it is inline from the query selector?
+    if(element.childNodes.length === 1 &&
       inlines.has(element.firstChild.localName)) {
       // Skip
     } else {
@@ -391,7 +429,11 @@ DOMFilter.filterNominalAnchors = function(document) {
 
 DOMFilter.filterScriptElements = function(document) {
   'use strict';
-  DOMFilter.removeElementsBySelector(document, 'script');
+  const elements = document.querySelectorAll('script');
+  const numElements = elements.length;
+  for(let i = 0; i < numElements; i++) {
+    elements[i].remove();
+  }
 };
 
 // NOTE: Due to content-loading tricks, noscript requires special handling
@@ -401,7 +443,11 @@ DOMFilter.filterScriptElements = function(document) {
 // with a practice of using encoded html as the text content.
 DOMFilter.filterNoScriptElements = function(document) {
   'use strict';
-  DOMFilter.removeElementsBySelector(document, 'noscript');
+  const elements = document.querySelectorAll('noscript');
+  const numElements = elements.length;
+  for(let i = 0; i < numElements; i++) {
+    elements[i].remove();
+  }
 };
 
 // Disable anchors that use javascript protocol. Keep the href
@@ -429,44 +475,23 @@ DOMFilter.filterSingleCellTables = function(document) {
   'use strict';
   const tables = document.querySelectorAll('table');
   const numTables = tables.length;
-  for(let i = 0, table, cell; i < numTables; i++) {
+  for(let i = 0, table, rows, cells, parent, cell, node; i < numTables; i++) {
     table = tables[i];
-    cell = DOMFilter.getTableSingleCell(table);
-    if(cell) {
-      DOMFilter.unwrapSingleCellTable(table, cell);
+    rows = table.rows;
+    if(rows.length === 1) {
+      cells = rows[0].cells;
+      if(cells.length === 1) {
+        cell = cells[0];
+        parent = table.parentElement;
+        parent.insertBefore(document.createTextNode(' '), table);
+        for(node = cell.firstChild; node; node = cell.firstChild) {
+          parent.insertBefore(node, table);
+        }
+        parent.insertBefore(document.createTextNode(' '), table);
+        table.remove();
+      }
     }
   }
-};
-
-// Returns the single cell of a table iff it is a single cell table,
-// which means it has only 1 row and 1 column. This is implemented to return
-// the element instead of a boolean so that subsequent code does not need to
-// find the cell again.
-DOMFilter.getTableSingleCell = function(table) {
-  'use strict';
-  const rows = table.rows;
-  let cell = null;
-  if(rows.length === 1) {
-    let cells = rows[0].cells;
-    if(cells.length === 1) {
-      cell = cells[0];
-    }
-  }
-
-  return cell;
-};
-
-// Replaces a table in the dom with the child nodes of its single cell
-// TODO: detach before unwrap to reduce dom ops (see unwrap)
-DOMFilter.unwrapSingleCellTable = function(table, cell) {
-  'use strict';
-  const parent = table.parentElement;
-  const document = table.ownerDocument;
-  for(let node = cell.firstChild; node; node = cell.firstChild) {
-    parent.insertBefore(node, table);
-  }
-  parent.insertBefore(document.createTextNode(' '), table);
-  table.remove();
 };
 
 // Transforms single column tables into paragraph separated row content
@@ -474,28 +499,23 @@ DOMFilter.filterSingleColumnTables = function(document) {
   'use strict';
   const tables = document.querySelectorAll('table');
   const numTables = tables.length;
-  for(let i = 0, table; i < numTables; i++) {
+  let isSingleColumn = false;
+  for(let i = 0, j = 0, table, rows, upperBound; i < numTables; i++) {
     table = tables[i];
-    if(DOMFilter.isSingleColumnTable(table)) {
+    rows = table.rows;
+    upperBound = Math.min(rows.length, 20);
+    isSingleColumn = true;
+    for(j = 0; j < upperBound; j++) {
+      if(rows[j].cells.length > 1) {
+        isSingleColumn = false;
+        break;
+      }
+    }
+
+    if(isSingleColumn) {
       DOMFilter.transformSingleColumnTable(table);
     }
   }
-};
-
-// Returns true if the table appears to consist of only a single column
-DOMFilter.isSingleColumnTable = function(table) {
-  'use strict';
-  const rows = table.rows;
-  const upperBound = Math.min(rows.length, 20);
-  let isSingleColumn = true;
-  for(let i = 0; i < upperBound; i++) {
-    if(rows[i].cells.length > 1) {
-      isSingleColumn = false;
-      break;
-    }
-  }
-
-  return isSingleColumn;
 };
 
 DOMFilter.transformSingleColumnTable = function(table) {
@@ -523,47 +543,21 @@ DOMFilter.filterSingleItemLists = function(document) {
   'use strict';
   const lists = document.querySelectorAll('ul, ol');
   const numLists = lists.length;
-  for(let i = 0, list; i < numLists; i++) {
+  for(let i = 0, list, node, item, parent; i < numLists; i++) {
     list = lists[i];
-    if(DOMFilter.countListItems(list) === 1) {
-      DOMFilter.unwrapSingleItemList(list);
+    if(list.childElementCount === 1) {
+      item = list.firstElementChild;
+      if(item.localName === 'li') {
+        parent = list.parentNode;
+        for(node = item.firstChild; node; node = item.firstChild) {
+          parent.insertBefore(node, list);
+        }
+        list.remove();
+      }
     }
   }
 };
 
-DOMFilter.countListItems = function(list) {
-  'use strict';
-  let count = 0;
-  for(let element = list.firstElementChild; element;
-    element = element.nextElementSibling) {
-    if(element.localName === 'li') {
-      count++;
-    }
-  }
-  return count;
-};
-
-DOMFilter.getFirstListItem = function(list) {
-  'use strict';
-  // TODO: use an explicit loop, find is slow. Also, use firstElementChild
-  // and nextElementSibling to loop over child elements
-  return Array.prototype.find.call(list.childNodes, function(node) {
-    return node.nodeType === Node.ELEMENT_NODE && node.localName === 'li';
-  });
-};
-
-// assumes the list item count > 0
-DOMFilter.unwrapSingleItemList = function(list) {
-  'use strict';
-  const parent = list.parentElement;
-  const item = DOMFilter.getFirstListItem(list);
-  while(item.firstChild) {
-    parent.insertBefore(item.firstChild, list);
-  }
-  list.remove();
-};
-
-// Removes images without a source
 DOMFilter.filterSourcelessImages = function(document) {
   'use strict';
   const images = document.querySelectorAll('img');
@@ -576,7 +570,6 @@ DOMFilter.filterSourcelessImages = function(document) {
   }
 };
 
-// Removes all tracer images
 DOMFilter.filterTracerImages = function(document) {
   'use strict';
   const images = document.querySelectorAll('img');
@@ -589,79 +582,11 @@ DOMFilter.filterTracerImages = function(document) {
   }
 };
 
-// Moves elements matching the selector query from the source document into
-// the destination document. This function iterates over elements in the node
-// list generated as a result of querySelectorAll. Once an element is moved,
-// its children are implicitly also moved. If a child also matches the selector
-// query, it is not moved again.
-// This function works similarly to removeElementsBySelector, but potentially
-// performs fewer dom manipulations because of how it avoids manipulating
-// child elements of moved elements. In theory, this can lead to better
-// performance. This also achieves better technical accuracy, because the fact
-// that removed/moved child elements remain in the node list even after a parent
-// was removed/moved, is undesirable behavior. Unfortunately, I cannot think of
-// a way to accomplish the desired behavior using the native API provided.
-// If destination is undefined, then a dummy document is supplied, which is
-// discarded when the function completes, which results in the elements being
-// simply removed from the source document.
-// @param source {Document}
-// @param destination {Document}
-// @param selector {String}
-// @returns void
-DOMFilter.moveElementsBySelector = function(source, destination, selector) {
-  'use strict';
-  const target = destination || document.implementation.createHTMLDocument();
-  const elements = source.querySelectorAll(selector);
-  const numElements = elements.length;
-  for(let i = 0, element; i < numElements; i++) {
-    element = elements[i];
-    if(element.ownerDocument === source) {
-      target.adoptNode(element);
-    }
-  }
-};
-
-// Finds all elements with the given tagName and removes them,
-// in reverse document order. This will remove elements that do not need to
-// be removed because an ancestor of them will be removed in a later iteration.
-// NOTE: this ONLY works in reverse. getElementsByTagName returns a LIVE
-// NodeList/HTMLCollection. Removing elements from the list while iterating
-// screws up all later index access when iterating forward. To avoid this,
-// use a non-live list such as the one returned by querySelectorAll.
-DOMFilter.removeElementsByName = function(document, tagName) {
-  'use strict';
-  const elements = document.getElementsByTagName(tagName);
-  const numElements = elements.length;
-  for(let i = numElements - 1; i > -1; i--) {
-    elements[i].remove();
-  }
-};
-
-// Finds all elements matching the selector and removes them,
-// in forward document order. In contrast to moveElementsBySelector, this
-// removes elements that are descendants of elements already removed.
-// NOTE: i tried to find a way to avoid visiting detached subtrees, but
-// document.contains still returns true for a removed element. The only way
-// seems to be to traverse upwards and checking if documentElement is still at
-// the top of the ancestors chain. That is obviously too inefficient, and
-// probably less efficient than just visiting descendants. The real tradeoff
-// is whether the set of remove operations is slower than the time it takes
-// to traverse. I assume traversal is faster, but not fast enough to merit it.
-DOMFilter.removeElementsBySelector = function(document, selector) {
-  'use strict';
-  const elements = document.querySelectorAll(selector);
-  const numElements = elements.length;
-  for(let i = 0; i < numElements; i++) {
-    elements[i].remove();
-  }
-};
-
-// Normalizes the values of all text nodes in a document
 DOMFilter.normalizeWhitespace = function(document) {
   'use strict';
-
   const it = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_TEXT);
+  const NBSP_PATTERN = /&nbsp;/ig;
   for(let value = '', node = it.nextNode(); node; node = it.nextNode()) {
     value = node.nodeValue;
     switch(value) {
@@ -673,7 +598,8 @@ DOMFilter.normalizeWhitespace = function(document) {
       case '\n\t\t\t\t':
         break;
       default:
-        node.nodeValue = value.replace(/&nbsp;/g, ' ');
+        node.nodeValue = value.replace(NBSP_PATTERN, ' ');
+        break;
     }
   }
 };
@@ -684,45 +610,33 @@ DOMFilter.condenseNodeValues = function(document) {
   const it = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_TEXT);
   const TWO_OR_MORE_SPACES = /\s{2,}/g;
-  const SINGLE_SPACE = ' ';
   const selector = 'code, pre, ruby, textarea, xmp';
-
   for(let node = it.nextNode(); node; node = it.nextNode()) {
     if(node.nodeValue && !node.parentNode.closest(selector)) {
-      node.nodeValue = node.nodeValue.replace(TWO_OR_MORE_SPACES,
-        SINGLE_SPACE);
+      node.nodeValue = node.nodeValue.replace(TWO_OR_MORE_SPACES, ' ');
     }
   }
 };
 
-// Removes trimmable elements from the start and end of the document
-// NOTE: should isTrimmableElement be merged or share functionality with
-// the isLeafElement function?
-// NOTE: should only be called after filterLeafElements if that is ever called
-// TODO: don't require body, e.g. let root = document.body ||
-// document.documentElement
 DOMFilter.trimDocument = function(document) {
   'use strict';
-  const body = document.body;
   const isTrimmable = DOMFilter.isTrimmableNode;
+  const body = document.body;
+  if(body) {
+    let sibling = body;
+    let node = body.firstChild;
+    while(node && isTrimmable(node)) {
+      sibling = node.nextSibling;
+      node.remove();
+      node = sibling;
+    }
 
-  if(!body) {
-    return;
-  }
-
-  let sibling = body;
-  let node = body.firstChild;
-  while(node && isTrimmable(node)) {
-    sibling = node.nextSibling;
-    node.remove();
-    node = sibling;
-  }
-
-  node = body.lastChild;
-  while(node && isTrimmable(node)) {
-    sibling = node.previousSibling;
-    node.remove();
-    node = sibling;
+    node = body.lastChild;
+    while(node && isTrimmable(node)) {
+      sibling = node.previousSibling;
+      node.remove();
+      node = sibling;
+    }
   }
 };
 
@@ -757,7 +671,9 @@ DOMFilter.trimTextNodes = function(document) {
 
   for(let node = it.nextNode(); node; node = it.nextNode()) {
 
-    if(node.parentNode && node.parentNode.closest(selector)) {
+    // If the node is a descendant of a whitespace sensitive element,
+    // do not modify its value
+    if(node.parentNode.closest(selector)) {
       continue;
     }
 
@@ -799,14 +715,6 @@ DOMFilter.trimTextNodes = function(document) {
         node.nodeValue = node.nodeValue.trimLeft();
       }
     } else {
-      // In this branch, we have a text node that has no siblings, which is
-      // generally a text node within an inline element.
-      // It feels like we want to full trim here, but we actually do not want
-      // to trim, because it causes a funky display error where text following
-      // an inline element's text is immediately adjacent to the inline
-      // text. Not full-trimming here leaves trailing whitespace in the inline
-      // element, which avoids the issue. I suppose, alternatively, we could
-      // introduce a single space after the element, but that seems strange.
       node.nodeValue = node.nodeValue.trimLeft();
     }
   }
@@ -814,19 +722,13 @@ DOMFilter.trimTextNodes = function(document) {
 
 DOMFilter.filterEmptyTextNodes = function(document) {
   'use strict';
-
-  // TODO: why is this showing an anonynmous function call in the profiler?
-
-  const it = document.createNodeIterator(
-    document.documentElement,
+  const it = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_TEXT);
-
   for(let node = it.nextNode(); node; node = it.nextNode()) {
     if(!node.nodeValue) {
       node.remove();
     }
   }
-
 };
 
 DOMFilter.isNoTrimInlineElement = function(element) {
@@ -878,10 +780,8 @@ DOMFilter.isNoTrimInlineElement = function(element) {
 
 // Unwraps the element's child nodes into the parent of the element or, if
 // provided, the parent of the alternate element
-// https://developer.mozilla.org/en-US/docs/Web/API/Node/insertBefore
 // https://code.google.com/p/chromium/issues/detail?id=419780
-// I don't need to choose between appendChild and insertBefore, I just
-// need to use nextSibling || null
+
 DOMFilter.unwrap = function(element, alternate) {
   'use strict';
   const numChildNodes = element.childNodes.length;
