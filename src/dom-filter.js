@@ -2,10 +2,6 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: inline function calls, they are expensive
-
-// TODO: Map and Set are slow, use select statements
-
 var DOMFilter = {};
 
 // Applies a series of transformations to a document in preparation for
@@ -21,8 +17,10 @@ DOMFilter.prepareDocumentForView = function(document) {
 
   DOMFilter.filterCommentNodes(document);
   DOMFilter.filterFrameElements(document);
+
   DOMFilter.filterScriptElements(document);
   DOMFilter.filterNoScriptElements(document);
+
   DOMFilter.filterJavascriptAnchors(document);
   DOMFilter.filterBlacklistedElements(document);
   DOMFilter.filterHiddenElements(document);
@@ -39,10 +37,9 @@ DOMFilter.prepareDocumentForView = function(document) {
 
   DOMFilter.filterInlineElements(document);
 
-  const sensitiveElements = DOMFilter.getSensitiveSet(document);
-  DOMFilter.condenseNodeValues(document, sensitiveElements);
+  DOMFilter.condenseNodeValues(document);
   DOMFilter.filterNominalAnchors(document);
-  DOMFilter.trimTextNodes(document, sensitiveElements);
+  DOMFilter.trimTextNodes(document);
   DOMFilter.filterEmptyTextNodes(document);
   DOMFilter.filterLeafElements(document);
   DOMFilter.filterSingleItemLists(document);
@@ -138,6 +135,9 @@ DOMFilter.filterAttributes = function(document) {
   let attributes = null;
   let j = 0;
 
+  // TODO: I think attributesMap.name is doing something funky, it is showing
+  // up in the profiler?
+
   for(let i = 0; i < numElements; i++) {
     element = elements[i];
     elementName = element.localName;
@@ -172,6 +172,7 @@ DOMFilter.filterAttributes = function(document) {
         }
       }
     } else {
+      //console.dir(attributes);
       for(j = attributes.length - 1; j > -1; j--) {
         element.removeAttribute(attributes[j].name);
       }
@@ -677,17 +678,17 @@ DOMFilter.normalizeWhitespace = function(document) {
   }
 };
 
-// Condenses spaces of text nodes that are not descendants of whitespace
-// sensitive elements such as <pre>. This expects that node values were
-// previous normalized, so, for example, it does not consider &nbsp;.
-DOMFilter.condenseNodeValues = function(document, sensitiveElements) {
+// Condenses whitespace of text nodes
+DOMFilter.condenseNodeValues = function(document) {
   'use strict';
   const it = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_TEXT);
   const TWO_OR_MORE_SPACES = /\s{2,}/g;
   const SINGLE_SPACE = ' ';
+  const selector = 'code, pre, ruby, textarea, xmp';
+
   for(let node = it.nextNode(); node; node = it.nextNode()) {
-    if(!sensitiveElements.has(node.parentNode)) {
+    if(node.nodeValue && !node.parentNode.closest(selector)) {
       node.nodeValue = node.nodeValue.replace(TWO_OR_MORE_SPACES,
         SINGLE_SPACE);
     }
@@ -746,16 +747,17 @@ DOMFilter.isTrimmableNode = function(node) {
 };
 
 // Trims a document's text nodes
-DOMFilter.trimTextNodes = function(document, sensitiveElements) {
+DOMFilter.trimTextNodes = function(document) {
   'use strict';
 
   const isInlineElement = DOMFilter.isNoTrimInlineElement;
   const it = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_TEXT);
+  const selector = 'code, pre, ruby, textarea, xmp';
 
   for(let node = it.nextNode(); node; node = it.nextNode()) {
 
-    if(sensitiveElements.has(node.parentNode)) {
+    if(node.parentNode && node.parentNode.closest(selector)) {
       continue;
     }
 
@@ -812,26 +814,19 @@ DOMFilter.trimTextNodes = function(document, sensitiveElements) {
 
 DOMFilter.filterEmptyTextNodes = function(document) {
   'use strict';
-  const it = document.createNodeIterator(document.documentElement,
+
+  // TODO: why is this showing an anonynmous function call in the profiler?
+
+  const it = document.createNodeIterator(
+    document.documentElement,
     NodeFilter.SHOW_TEXT);
+
   for(let node = it.nextNode(); node; node = it.nextNode()) {
     if(!node.nodeValue) {
       node.remove();
     }
   }
-};
 
-// Return a set of elements that are whitespace sensitive. This is useful
-// for checking whether a text node has an ancestor that deems it as sensitive.
-// Rather than walking the ancestor chain each time to do such a check, we
-// collect all such elements and their descendants into a large set, so that
-// we can simply check if a text node's parent element is a member.
-DOMFilter.getSensitiveSet = function(document) {
-  'use strict';
-  const sensitiveElements = document.querySelectorAll(
-    'code, code *, pre, pre *, ruby, ruby *, ' +
-    'textarea, textarea *, xmp, xmp *');
-  return new Set(Array.from(sensitiveElements));
 };
 
 DOMFilter.isNoTrimInlineElement = function(element) {
