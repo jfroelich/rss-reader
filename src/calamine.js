@@ -91,6 +91,10 @@ Calamine.prototype.analyze = function(document) {
 // TODO: use Node.compareDocumentPosition
 Calamine.prototype.prune = function() {
 
+  // TODO: instead of using garbage.adoptNode, just retain the root
+  // node of the source doc and test source.contains, and do nothing
+  // if false.
+
   // TODO: review why i was having problems with using local
   // constants
   // const body = this.body;
@@ -478,6 +482,10 @@ function imageParentIsBodyCandidate(element) {
   return candidateNames.has(element.localName);
 }
 
+function findImageCaption(image) {
+  const figure = image.closest('figure');
+  return figure ? figure.querySelector('figcaption') : null;
+}
 
 // TODO: this works, but not quite like I want. I think I need to propagate
 // farther up the hierarchy, because the immediate ancestor is sometimes
@@ -491,8 +499,6 @@ function imageParentIsBodyCandidate(element) {
 function deriveBodyImageContainerScores() {
 
   this.bodyImageContainerScores = new Map();
-
-  const findImageCaption = DOMFilter.findImageCaption;
 
   const images = this.document.getElementsByTagName('img');
   const numImages = images.length;
