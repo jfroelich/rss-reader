@@ -482,7 +482,7 @@ DOMFilter.filterSingleCellTables = function(document) {
       cells = rows[0].cells;
       if(cells.length === 1) {
         cell = cells[0];
-        parent = table.parentElement;
+        parent = table.parentNode;
         parent.insertBefore(document.createTextNode(' '), table);
         for(node = cell.firstChild; node; node = cell.firstChild) {
           parent.insertBefore(node, table);
@@ -520,7 +520,7 @@ DOMFilter.filterSingleColumnTables = function(document) {
 
 DOMFilter.transformSingleColumnTable = function(table) {
   'use strict';
-  const parent = table.parentElement;
+  const parent = table.parentNode;
   const document = table.ownerDocument;
   for(let rows = table.rows, numRows = rows.length, rowIndex = 0,
     columnIndex = 0, cell, cells, numCells = 0, firstChild; rowIndex < numRows;
@@ -780,40 +780,42 @@ DOMFilter.isNoTrimInlineElement = function(element) {
 
 // Unwraps the element's child nodes into the parent of the element or, if
 // provided, the parent of the alternate element
-// https://code.google.com/p/chromium/issues/detail?id=419780
-
 DOMFilter.unwrap = function(element, alternate) {
   'use strict';
   const numChildNodes = element.childNodes.length;
   const document = element.ownerDocument;
   const target = alternate || element;
-  const parent = target.parentElement;
-  const insertChildrenBefore = function(element, referenceNode) {
-    const parent = referenceNode.parentElement;
-    for(let node = element.firstChild; node; node = element.firstChild) {
-      parent.insertBefore(node, referenceNode);
-    }
-  };
+  const parent = target.parentNode;
 
-  if(numChildNodes && parent) {
-    if(target.previousSibling &&
-      target.previousSibling.nodeType === Node.TEXT_NODE) {
-      parent.insertBefore(document.createTextNode(' '), target);
-    }
+  // Without a parent, this is presumed detached, meaning it is pointless
+  // to unwrap. It also makes using insertBefore impossible. Nevertheless,
+  // remove the node and exit.
+  if(!parent) {
+    element.remove();
+    return;
+  }
 
-    const grandParent = parent.parentElement;
-    if(grandParent && numChildNodes > 2) {
-      const nextSibling = parent.nextSibling;
-      parent.remove();
-      insertChildrenBefore(element, target);
-      grandParent.insertBefore(parent, nextSibling || null);
-    } else {
-      insertChildrenBefore(element, target);
-    }
+  // If there is nothing to move, then just remove the node and exit.
+  if(numChildNodes === 0) {
+    element.remove();
+    return;
+  }
 
-    if(target.nextSibling && target.nextSibling.nodeType === Node.TEXT_NODE) {
-      parent.insertBefore(document.createTextNode(' '), target);
-    }
+  // Unwrapping can lead to adjacent text nodes that are not normalized.
+  // Insert a preceding space.
+  const ps = target.previousSibling;
+  if(ps && ps.nodeType === Node.TEXT_NODE) {
+    parent.insertBefore(document.createTextNode(' '), target);
+  }
+
+  for(let node = element.firstChild; node; node = element.firstChild) {
+    parent.insertBefore(node, target);
+  }
+
+  // Insert a subsequent space.
+  const ns = target.nextSibling;
+  if(ns && ns.nodeType === Node.TEXT_NODE) {
+    parent.insertBefore(document.createTextNode(' '), target);
   }
 
   target.remove();
