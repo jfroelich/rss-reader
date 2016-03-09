@@ -249,7 +249,7 @@ function appendSlide(entry, isFirst) {
   content.setAttribute('class', 'entry-content');
 
   const doc = utils.parseHTML(entry.content);
-  pruned_transform(doc);
+  pruneDocument(doc);
 
   // Testing VPrune substitute for DOMFilter
   //VPrune.prepareDocumentForView(doc);

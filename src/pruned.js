@@ -2,10 +2,51 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: IIAFE and drop pruned_ prefix on non-exported functions?
+// Requires: /src/calamine.js
+// Exports: pruneDocument
+// For filtering the contents of an HTML Document object
+
 // TODO: merge table processing functions
 
-var pruned_blacklist = [
+(function(exports, Calamine) {
+
+'use strict';
+
+const NODE_TYPE_ELEMENT = Node.ELEMENT_NODE;
+const NODE_TYPE_TEXT = Node.TEXT_NODE;
+
+function pruneDocument(document) {
+  filterComments(document);
+  filterFrames(document);
+  applyBlacklist(document);
+  filterHidden(document);
+
+  const calamine = new Calamine();
+  calamine.analyze(document);
+  calamine.prune();
+
+  filterAnchors(document);
+  filterBreaks(document);
+  filterImages(document);
+  filterInlines(document);
+  filterTexts(document);
+  filterLeaves(document);
+  filterLists(document);
+  filterSingleCellTables(document);
+  filterSingleColumnTables(document);
+  trimDocument(document);
+  filterAttributes(document);
+}
+
+function filterComments(document) {
+  const it = document.createNodeIterator(document.documentElement,
+    NodeFilter.SHOW_COMMENT);
+  for(let node = it.nextNode(); node; node = it.nextNode()) {
+    node.remove();
+  }
+}
+
+const BLACKLIST = [
   'applet',
   'audio',
   'basefont',
@@ -40,83 +81,10 @@ var pruned_blacklist = [
   'xmp'
 ];
 
-var pruned_inline_element_names = [
-  'article',
-  'center',
-  'colgroup',
-  'data',
-  'details',
-  'div',
-  'footer',
-  'header',
-  'help',
-  'hgroup',
-  'ilayer',
-  'insert',
-  'layer',
-  'legend',
-  'main',
-  'mark',
-  'marquee',
-  'meter',
-  'multicol',
-  'nobr',
-  'noembed',
-  'section',
-  'span',
-  'tbody',
-  'tfoot',
-  'thead',
-  'form',
-  'label',
-  'big',
-  'blink',
-  'font',
-  'plaintext',
-  'small',
-  'tt'
-];
+const BLACKLIST_SELECTOR = BLACKLIST.join(',');
 
-var pruned_inline_element_selector = pruned_inline_element_names.join(',');
-
-// Filters various nodes from a document
-function pruned_transform(document) {
-  'use strict';
-  pruned_filter_comments(document);
-  pruned_filter_frames(document);
-  pruned_apply_blacklist(document);
-  pruned_filter_hidden(document);
-
-  const calamine = new Calamine();
-  calamine.analyze(document);
-  calamine.prune();
-
-  pruned_filter_anchors(document);
-  pruned_filter_breaks(document);
-  pruned_filter_images(document);
-  pruned_filter_inlines(document);
-  pruned_filter_texts(document);
-  pruned_filter_leaves(document);
-  pruned_filter_lists(document);
-  pruned_filter_single_cell_tables(document);
-  pruned_filter_single_column_tables(document);
-  pruned_trim_document(document);
-  pruned_filter_attributes(document);
-}
-
-function pruned_filter_comments(document) {
-  'use strict';
-  const it = document.createNodeIterator(document.documentElement,
-    NodeFilter.SHOW_COMMENT);
-  for(let node = it.nextNode(); node; node = it.nextNode()) {
-    node.remove();
-  }
-}
-
-function pruned_apply_blacklist(document) {
-  'use strict';
-  const selector = pruned_blacklist.join(',');
-  const elements = document.querySelectorAll(selector);
+function applyBlacklist(document) {
+  const elements = document.querySelectorAll(BLACKLIST_SELECTOR);
   const numElements = elements.length;
   const root = document.documentElement;
   for(let i = 0, element = root; i < numElements; i++) {
@@ -127,8 +95,7 @@ function pruned_apply_blacklist(document) {
   }
 }
 
-function pruned_filter_frames(document) {
-  'use strict';
+function filterFrames(document) {
   const body = document.body;
 
   if(body && body.localName === 'frameset') {
@@ -159,16 +126,13 @@ function pruned_filter_frames(document) {
   }
 }
 
-function pruned_filter_breaks(document) {
-  'use strict';
-
+function filterBreaks(document) {
+  // TODO: improve
+  // error case: http://paulgraham.com/procrastination.html
   // This is buggy, temporarily a NO-OP.
   if(true) {
     return;
   }
-
-  // TODO: improve
-  // error case: http://paulgraham.com/procrastination.html
 
   const elements = document.querySelectorAll('br');
   const numElements = elements.length;
@@ -180,8 +144,7 @@ function pruned_filter_breaks(document) {
   }
 }
 
-function pruned_filter_attributes(document) {
-  'use strict';
+function filterAttributes(document) {
   const elements = document.getElementsByTagName('*');
   const numElements = elements.length;
 
@@ -239,21 +202,20 @@ function pruned_filter_attributes(document) {
   }
 }
 
-function pruned_filter_hidden(document) {
-  'use strict';
-  //TODO: include aria hidden?
-  // https://www.w3.org/TR/wai-aria/states_and_properties#aria-hidden
-  const selector = [
-    '[style*="display:none"]',
-    '[style*="display: none"]',
-    '[style*="visibility:hidden"]',
-    '[style*="visibility: hidden"]',
-    '[style*="opacity:0.0"]',
-    '[style*="opacity: 0.0"]',
-    '[style*="opacity:0"]'
-  ].join(',');
+const HIDDEN_SELECTOR = [
+  '[style*="display:none"]',
+  '[style*="display: none"]',
+  '[style*="visibility:hidden"]',
+  '[style*="visibility: hidden"]',
+  '[style*="opacity:0.0"]',
+  '[style*="opacity: 0.0"]',
+  '[style*="opacity:0"]'
+].join(',');
 
-  const elements = document.querySelectorAll(selector);
+//TODO: include aria hidden?
+// https://www.w3.org/TR/wai-aria/states_and_properties#aria-hidden
+function filterHidden(document) {
+  const elements = document.querySelectorAll(HIDDEN_SELECTOR);
   const numElements = elements.length;
   const root = document.documentElement;
   for(let i = 0, element; i < numElements; i++) {
@@ -264,13 +226,50 @@ function pruned_filter_hidden(document) {
   }
 }
 
-function pruned_filter_inlines(document) {
-  'use strict';
 
-  // TODO: this is still slow. profile against the more naive version
-  // that unwrapped all elements immediately
+const INLINE_ELEMENT_NAMES = [
+  'article',
+  'center',
+  'colgroup',
+  'data',
+  'details',
+  'div',
+  'footer',
+  'header',
+  'help',
+  'hgroup',
+  'ilayer',
+  'insert',
+  'layer',
+  'legend',
+  'main',
+  'mark',
+  'marquee',
+  'meter',
+  'multicol',
+  'nobr',
+  'noembed',
+  'section',
+  'span',
+  'tbody',
+  'tfoot',
+  'thead',
+  'form',
+  'label',
+  'big',
+  'blink',
+  'font',
+  'plaintext',
+  'small',
+  'tt'
+];
 
-  const elements = document.querySelectorAll(pruned_inline_element_selector);
+const INLINE_SELECTOR = INLINE_ELEMENT_NAMES.join(',');
+
+// TODO: this is still slow. profile against the more naive version
+// that unwrapped all elements immediately
+function filterInlines(document) {
+  const elements = document.querySelectorAll(INLINE_SELECTOR);
   const numElements = elements.length;
 
   for(let i = 0, element, firstChild, farthest, ancestor; i < numElements;
@@ -279,28 +278,26 @@ function pruned_filter_inlines(document) {
 
     firstChild = element.firstChild;
     if(firstChild && firstChild === element.lastChild &&
-      firstChild.nodeType === Node.ELEMENT_NODE &&
-      firstChild.matches(pruned_inline_element_selector)) {
+      firstChild.nodeType === NODE_TYPE_ELEMENT &&
+      firstChild.matches(INLINE_SELECTOR)) {
       // Skip
     } else {
       // Find shallowest consecutive inline ancestor
       farthest = null;
       for(ancestor = element.parentNode; ancestor &&
-        ancestor.childElementCount === 1
-        ancestor.matches(pruned_inline_element_selector);
+        ancestor.childElementCount === 1 &&
+        ancestor.matches(INLINE_SELECTOR);
         ancestor = ancestor.parentNode) {
         farthest = ancestor;
       }
-      pruned_unwrap(element, farthest);
+      unwrap(element, farthest);
     }
   }
 }
 
-function pruned_filter_leaves(document) {
-  'use strict';
+function filterLeaves(document) {
   const leafSet = new Set();
-  pruned_collect_leaves(leafSet, document.body,
-    document.documentElement);
+  collectLeaves(leafSet, document.body, document.documentElement);
   const rootElement = document.documentElement;
   for(let leaf of leafSet) {
     if(rootElement.contains(leaf)) {
@@ -310,27 +307,25 @@ function pruned_filter_leaves(document) {
 }
 
 // TODO: no recursion
-function pruned_collect_leaves(leaves, bodyElement, element) {
-  'use strict';
+function collectLeaves(leaves, bodyElement, element) {
   const childNodes = element.childNodes;
   const numChildNodes = childNodes.length;
   for(let i = 0, cursor; i < numChildNodes; i++) {
     cursor = childNodes[i];
-    if(cursor.nodeType === Node.ELEMENT_NODE) {
-      if(pruned_is_leaf(bodyElement, cursor)) {
+    if(cursor.nodeType === NODE_TYPE_ELEMENT) {
+      if(isLeaf(bodyElement, cursor)) {
         leaves.add(cursor);
       } else {
-        pruned_collect_leaves(leaves, bodyElement, cursor);
+        collectLeaves(leaves, bodyElement, cursor);
       }
     }
   }
 }
 
+
 // TODO: remove the bodyElement parameter
 // TODO: non-recursive
-function pruned_is_leaf(bodyElement, element) {
-  'use strict';
-
+function isLeaf(bodyElement, element) {
   if(element === bodyElement) {
     return false;
   }
@@ -358,7 +353,7 @@ function pruned_is_leaf(bodyElement, element) {
   const numChildNodes = childNodes.length;
   for(let i = 0, node; i < numChildNodes; i++) {
     node = childNodes[i];
-    if(node.nodeType === Node.TEXT_NODE) {
+    if(node.nodeType === NODE_TYPE_TEXT) {
       switch(node.nodeValue) {
         case '':
         case '\n':
@@ -370,8 +365,8 @@ function pruned_is_leaf(bodyElement, element) {
         default:
           return false;
       }
-    } else if(node.nodeType === Node.ELEMENT_NODE) {
-      if(!pruned_is_leaf(bodyElement, node)) {
+    } else if(node.nodeType === NODE_TYPE_ELEMENT) {
+      if(!isLeaf(bodyElement, node)) {
         return false;
       }
     } else {
@@ -382,27 +377,22 @@ function pruned_is_leaf(bodyElement, element) {
   return true;
 }
 
-function pruned_filter_anchors(document) {
-  'use strict';
+// TODO: unwrap/remove js anchors?
+function filterAnchors(document) {
   const elements = document.querySelectorAll('a');
   const numElements = elements.length;
-  const JSPROTOCOL = /\s*javascript\s*:/i;
   for(let i = 0, anchor; i < elements.length; i++) {
     anchor = elements[i];
     if(!anchor.hasAttribute('name') && !anchor.hasAttribute('href')) {
-      // It is a nominal anchor, unwrap
-      pruned_unwrap(anchor);
+      unwrap(anchor);
     } else if(anchor.hasAttribute('href') &&
-      JSPROTOCOL.test(anchor.getAttribute('href'))) {
-      // If it is a javascript anchor, remove the link
-      // TODO: maybe unwrap or remove?
+      /\s*javascript\s*:/i.test(anchor.getAttribute('href'))) {
       anchor.setAttribute('href', '');
     }
   }
 }
 
-function pruned_filter_single_cell_tables(document) {
-  'use strict';
+function filterSingleCellTables(document) {
   const tables = document.querySelectorAll('table');
   const numTables = tables.length;
   for(let i = 0, table, rows, cells, parent, cell, node; i < numTables; i++) {
@@ -414,7 +404,7 @@ function pruned_filter_single_cell_tables(document) {
         cell = cells[0];
         parent = table.parentNode;
         parent.insertBefore(document.createTextNode(' '), table);
-        pruned_insert_children_before(cell, table);
+        insertChildrenBefore(cell, table);
         parent.insertBefore(document.createTextNode(' '), table);
         table.remove();
       }
@@ -422,8 +412,7 @@ function pruned_filter_single_cell_tables(document) {
   }
 }
 
-function pruned_filter_single_column_tables(document) {
-  'use strict';
+function filterSingleColumnTables(document) {
   const tables = document.querySelectorAll('table');
   const numTables = tables.length;
   let isSingleColumn = false;
@@ -440,13 +429,12 @@ function pruned_filter_single_column_tables(document) {
     }
 
     if(isSingleColumn) {
-      pruned_transform_single_column_table(table);
+      transformSingleColumnTable(table);
     }
   }
 }
 
-function pruned_transform_single_column_table(table) {
-  'use strict';
+function transformSingleColumnTable(table) {
   const parent = table.parentNode;
   const document = table.ownerDocument;
   for(let rows = table.rows, numRows = rows.length, rowIndex = 0,
@@ -455,7 +443,7 @@ function pruned_transform_single_column_table(table) {
     for(columnIndex = 0, cells = rows[rowIndex], numCells = cells.length;
       columnIndex < numCells; columnIndex++) {
       cell = cells[columnIndex];
-      pruned_insert_children_before(cell, table);
+      insertChildrenBefore(cell, table);
     }
 
     parent.insertBefore(document.createElement('p'), table);
@@ -464,8 +452,7 @@ function pruned_transform_single_column_table(table) {
   table.remove();
 }
 
-function pruned_filter_lists(document) {
-  'use strict';
+function filterLists(document) {
   const lists = document.querySelectorAll('ul, ol');
   const numLists = lists.length;
   for(let i = 0, list, node, item; i < numLists; i++) {
@@ -473,43 +460,39 @@ function pruned_filter_lists(document) {
     if(list.childElementCount === 1) {
       item = list.firstElementChild;
       if(item.localName === 'li') {
-        pruned_insert_children_before(item, list);
+        insertChildrenBefore(item, list);
         list.remove();
       }
     }
   }
 }
 
-function pruned_filter_images(document) {
-  'use strict';
+function filterImages(document) {
   const images = document.querySelectorAll('img');
   const numImages = images.length;
   for(let i = 0, image; i < numImages; i++) {
     image = images[i];
     if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
-      // images must have a source
       image.remove();
     } else if(image.width < 2 || image.height < 2) {
-      // it is probably a tracer
       image.remove();
     }
   }
 }
 
-function pruned_trim_document(document) {
-  'use strict';
+function trimDocument(document) {
   const body = document.body;
   if(body) {
     let sibling = body;
     let node = body.firstChild;
-    while(node && pruned_is_trimmable(node)) {
+    while(node && isTrimmable(node)) {
       sibling = node.nextSibling;
       node.remove();
       node = sibling;
     }
 
     node = body.lastChild;
-    while(node && pruned_is_trimmable(node)) {
+    while(node && isTrimmable(node)) {
       sibling = node.previousSibling;
       node.remove();
       node = sibling;
@@ -517,9 +500,8 @@ function pruned_trim_document(document) {
   }
 }
 
-function pruned_is_trimmable(node) {
-  'use strict';
-  if(node.nodeType === Node.ELEMENT_NODE) {
+function isTrimmable(node) {
+  if(node.nodeType === NODE_TYPE_ELEMENT) {
     switch(node.localName) {
       case 'br':
       case 'hr':
@@ -530,15 +512,14 @@ function pruned_is_trimmable(node) {
       default:
         break;
     }
-  } else if(node.nodeType === Node.TEXT_NODE) {
+  } else if(node.nodeType === NODE_TYPE_TEXT) {
     return node.nodeValue && node.nodeValue.trim();
   }
 
   return false;
 }
 
-function pruned_filter_texts(document) {
-  'use strict';
+function filterTexts(document) {
   const it = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_TEXT);
   for(let node = it.nextNode(); node; node = it.nextNode()) {
@@ -562,27 +543,30 @@ function pruned_filter_texts(document) {
 
 // Unwraps the element's child nodes into the parent of the element or, if
 // provided, the parent of the alternate element
-function pruned_unwrap(element, referenceNode) {
-  'use strict';
+function unwrap(element, referenceNode) {
   const target = referenceNode || element;
   const parent = target.parentNode;
   const document = element.ownerDocument;
   const prevSibling = target.previousSibling;
   const nextSibling = target.nextSibling;
   if(parent) {
-    if(prevSibling && prevSibling.nodeType === Node.TEXT_NODE)
+    if(prevSibling && prevSibling.nodeType === NODE_TYPE_TEXT)
       parent.insertBefore(document.createTextNode(' '), target);
-    pruned_insert_children_before(element, target);
-    if(nextSibling && nextSibling.nodeType === Node.TEXT_NODE)
+    insertChildrenBefore(element, target);
+    if(nextSibling && nextSibling.nodeType === NODE_TYPE_TEXT)
       parent.insertBefore(document.createTextNode(' '), target);
   }
   target.remove();
 }
 
-function pruned_insert_children_before(parentNode, referenceNode) {
-  'use strict';
+function insertChildrenBefore(parentNode, referenceNode) {
   const referenceParent = referenceNode.parentNode;
   for(let node = parentNode.firstChild; node; node = parentNode.firstChild) {
     referenceParent.insertBefore(node, referenceNode);
   }
 }
+
+// Exports
+exports.pruneDocument = pruneDocument;
+
+}(this, Calamine));
