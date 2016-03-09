@@ -2,8 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: IIAFE and drop pruned_ prefix on non-exported functions?
 // TODO: merge table processing functions
-// TODO: merge text node processing functions
 
 var pruned_blacklist = [
   'applet',
@@ -40,7 +40,7 @@ var pruned_blacklist = [
   'xmp'
 ];
 
-var pruned_INLINE_ELEMENT_NAMES = new Set([
+var pruned_inline_element_names = [
   'article',
   'center',
   'colgroup',
@@ -75,40 +75,36 @@ var pruned_INLINE_ELEMENT_NAMES = new Set([
   'plaintext',
   'small',
   'tt'
-]);
+];
 
-var pruned_INLINE_ELEMENTS_SELECTOR = Array.from(
-  pruned_INLINE_ELEMENT_NAMES).join(',');
+var pruned_inline_element_selector = pruned_inline_element_names.join(',');
 
 // Filters various nodes from a document
 function pruned_transform(document) {
   'use strict';
-  pruned_filterComments(document);
-  pruned_filterFrames(document);
-  pruned_applyBlacklist(document);
-  pruned_filterHidden(document);
+  pruned_filter_comments(document);
+  pruned_filter_frames(document);
+  pruned_apply_blacklist(document);
+  pruned_filter_hidden(document);
 
   const calamine = new Calamine();
   calamine.analyze(document);
   calamine.prune();
 
-  pruned_filterAnchors(document);
-  pruned_filterBRs(document);
-  pruned_filterImages(document);
-  pruned_normalizeWhitespace(document);
-  pruned_filterInlines(document);
-  pruned_condenseValues(document);
-  pruned_trimNodes(document);
-  pruned_filterEmptyTextNodes(document);
-  pruned_filterLeaves(document);
-  pruned_filterLists(document);
-  pruned_filterSingleCellTables(document);
-  pruned_filterSingleColumnTables(document);
-  pruned_trimDocument(document);
-  pruned_filterAttributes(document);
+  pruned_filter_anchors(document);
+  pruned_filter_breaks(document);
+  pruned_filter_images(document);
+  pruned_filter_inlines(document);
+  pruned_filter_texts(document);
+  pruned_filter_leaves(document);
+  pruned_filter_lists(document);
+  pruned_filter_single_cell_tables(document);
+  pruned_filter_single_column_tables(document);
+  pruned_trim_document(document);
+  pruned_filter_attributes(document);
 }
 
-function pruned_filterComments(document) {
+function pruned_filter_comments(document) {
   'use strict';
   const it = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_COMMENT);
@@ -117,7 +113,7 @@ function pruned_filterComments(document) {
   }
 }
 
-function pruned_applyBlacklist(document) {
+function pruned_apply_blacklist(document) {
   'use strict';
   const selector = pruned_blacklist.join(',');
   const elements = document.querySelectorAll(selector);
@@ -131,8 +127,7 @@ function pruned_applyBlacklist(document) {
   }
 }
 
-
-function pruned_filterFrames(document) {
+function pruned_filter_frames(document) {
   'use strict';
   const body = document.body;
 
@@ -164,7 +159,7 @@ function pruned_filterFrames(document) {
   }
 }
 
-function pruned_filterBRs(document) {
+function pruned_filter_breaks(document) {
   'use strict';
 
   // This is buggy, temporarily a NO-OP.
@@ -185,7 +180,7 @@ function pruned_filterBRs(document) {
   }
 }
 
-function pruned_filterAttributes(document) {
+function pruned_filter_attributes(document) {
   'use strict';
   const elements = document.getElementsByTagName('*');
   const numElements = elements.length;
@@ -206,6 +201,10 @@ function pruned_filterAttributes(document) {
     if(!attributes || !attributes.length) {
       continue;
     }
+
+    // TODO: no-op on SVG leads to large strange svg images appearing
+    // in the output, maybe I just can't support, or maybe I somehow
+    // enforce maximum dimensions
 
     if(elementName === 'svg' || elementName === 'path') {
       // NO-OP
@@ -240,7 +239,7 @@ function pruned_filterAttributes(document) {
   }
 }
 
-function pruned_filterHidden(document) {
+function pruned_filter_hidden(document) {
   'use strict';
   //TODO: include aria hidden?
   // https://www.w3.org/TR/wai-aria/states_and_properties#aria-hidden
@@ -265,39 +264,42 @@ function pruned_filterHidden(document) {
   }
 }
 
-function pruned_filterInlines(document) {
+function pruned_filter_inlines(document) {
   'use strict';
 
-  const inlines = pruned_INLINE_ELEMENT_NAMES;
-  const selector = pruned_INLINE_ELEMENTS_SELECTOR;
-  const elements = document.querySelectorAll(selector);
+  // TODO: this is still slow. profile against the more naive version
+  // that unwrapped all elements immediately
+
+  const elements = document.querySelectorAll(pruned_inline_element_selector);
   const numElements = elements.length;
 
-  for(let i = 0, element, farthest, cursor; i < numElements; i++) {
+  for(let i = 0, element, firstChild, farthest, ancestor; i < numElements;
+    i++) {
     element = elements[i];
-    // TODO: why am i testing inlines.has in the first part of this
-    // if, when i know it is inline from the query selector?
-    if(element.childNodes.length === 1 &&
-      inlines.has(element.firstChild.localName)) {
+
+    firstChild = element.firstChild;
+    if(firstChild && firstChild === element.lastChild &&
+      firstChild.nodeType === Node.ELEMENT_NODE &&
+      firstChild.matches(pruned_inline_element_selector)) {
       // Skip
     } else {
+      // Find shallowest consecutive inline ancestor
       farthest = null;
-      for(cursor = element.parentNode; cursor &&
-        inlines.has(cursor.localName) &&
-        cursor.childNodes.length === 1 &&
-        inlines.has(cursor.firstChild.localName);
-        cursor = cursor.parentNode) {
-        farthest = cursor;
+      for(ancestor = element.parentNode; ancestor &&
+        ancestor.childElementCount === 1
+        ancestor.matches(pruned_inline_element_selector);
+        ancestor = ancestor.parentNode) {
+        farthest = ancestor;
       }
       pruned_unwrap(element, farthest);
     }
   }
 }
 
-function pruned_filterLeaves(document) {
+function pruned_filter_leaves(document) {
   'use strict';
   const leafSet = new Set();
-  pruned_collectLeaves(leafSet, document.body,
+  pruned_collect_leaves(leafSet, document.body,
     document.documentElement);
   const rootElement = document.documentElement;
   for(let leaf of leafSet) {
@@ -308,17 +310,17 @@ function pruned_filterLeaves(document) {
 }
 
 // TODO: no recursion
-function pruned_collectLeaves(leaves, bodyElement, element) {
+function pruned_collect_leaves(leaves, bodyElement, element) {
   'use strict';
   const childNodes = element.childNodes;
   const numChildNodes = childNodes.length;
   for(let i = 0, cursor; i < numChildNodes; i++) {
     cursor = childNodes[i];
     if(cursor.nodeType === Node.ELEMENT_NODE) {
-      if(pruned_isLeafElement(bodyElement, cursor)) {
+      if(pruned_is_leaf(bodyElement, cursor)) {
         leaves.add(cursor);
       } else {
-        pruned_collectLeaves(leaves, bodyElement, cursor);
+        pruned_collect_leaves(leaves, bodyElement, cursor);
       }
     }
   }
@@ -326,7 +328,7 @@ function pruned_collectLeaves(leaves, bodyElement, element) {
 
 // TODO: remove the bodyElement parameter
 // TODO: non-recursive
-function pruned_isLeafElement(bodyElement, element) {
+function pruned_is_leaf(bodyElement, element) {
   'use strict';
 
   if(element === bodyElement) {
@@ -369,7 +371,7 @@ function pruned_isLeafElement(bodyElement, element) {
           return false;
       }
     } else if(node.nodeType === Node.ELEMENT_NODE) {
-      if(!pruned_isLeafElement(bodyElement, node)) {
+      if(!pruned_is_leaf(bodyElement, node)) {
         return false;
       }
     } else {
@@ -380,7 +382,7 @@ function pruned_isLeafElement(bodyElement, element) {
   return true;
 }
 
-function pruned_filterAnchors(document) {
+function pruned_filter_anchors(document) {
   'use strict';
   const elements = document.querySelectorAll('a');
   const numElements = elements.length;
@@ -399,7 +401,7 @@ function pruned_filterAnchors(document) {
   }
 }
 
-function pruned_filterSingleCellTables(document) {
+function pruned_filter_single_cell_tables(document) {
   'use strict';
   const tables = document.querySelectorAll('table');
   const numTables = tables.length;
@@ -412,7 +414,7 @@ function pruned_filterSingleCellTables(document) {
         cell = cells[0];
         parent = table.parentNode;
         parent.insertBefore(document.createTextNode(' '), table);
-        pruned_insertChildrenBefore(cell, table);
+        pruned_insert_children_before(cell, table);
         parent.insertBefore(document.createTextNode(' '), table);
         table.remove();
       }
@@ -420,8 +422,7 @@ function pruned_filterSingleCellTables(document) {
   }
 }
 
-// Transforms single column tables into paragraph separated row content
-function pruned_filterSingleColumnTables(document) {
+function pruned_filter_single_column_tables(document) {
   'use strict';
   const tables = document.querySelectorAll('table');
   const numTables = tables.length;
@@ -439,12 +440,12 @@ function pruned_filterSingleColumnTables(document) {
     }
 
     if(isSingleColumn) {
-      pruned_transformSingleColumnTable(table);
+      pruned_transform_single_column_table(table);
     }
   }
 }
 
-function pruned_transformSingleColumnTable(table) {
+function pruned_transform_single_column_table(table) {
   'use strict';
   const parent = table.parentNode;
   const document = table.ownerDocument;
@@ -454,7 +455,7 @@ function pruned_transformSingleColumnTable(table) {
     for(columnIndex = 0, cells = rows[rowIndex], numCells = cells.length;
       columnIndex < numCells; columnIndex++) {
       cell = cells[columnIndex];
-      pruned_insertChildrenBefore(cell, table);
+      pruned_insert_children_before(cell, table);
     }
 
     parent.insertBefore(document.createElement('p'), table);
@@ -463,7 +464,7 @@ function pruned_transformSingleColumnTable(table) {
   table.remove();
 }
 
-function pruned_filterLists(document) {
+function pruned_filter_lists(document) {
   'use strict';
   const lists = document.querySelectorAll('ul, ol');
   const numLists = lists.length;
@@ -472,14 +473,14 @@ function pruned_filterLists(document) {
     if(list.childElementCount === 1) {
       item = list.firstElementChild;
       if(item.localName === 'li') {
-        pruned_insertChildrenBefore(item, list);
+        pruned_insert_children_before(item, list);
         list.remove();
       }
     }
   }
 }
 
-function pruned_filterImages(document) {
+function pruned_filter_images(document) {
   'use strict';
   const images = document.querySelectorAll('img');
   const numImages = images.length;
@@ -495,59 +496,20 @@ function pruned_filterImages(document) {
   }
 }
 
-function pruned_normalizeWhitespace(document) {
-  'use strict';
-  const it = document.createNodeIterator(document.documentElement,
-    NodeFilter.SHOW_TEXT);
-  const NBSP_PATTERN = /&nbsp;/ig;
-  for(let value = '', node = it.nextNode(); node; node = it.nextNode()) {
-    value = node.nodeValue;
-    switch(value) {
-      case '':
-      case '\n':
-      case '\n\t':
-      case '\n\t\t':
-      case '\n\t\t\t':
-      case '\n\t\t\t\t':
-        break;
-      default:
-        node.nodeValue = value.replace(NBSP_PATTERN, ' ');
-        break;
-    }
-  }
-}
-
-function pruned_condenseValues(document) {
-  'use strict';
-  const it = document.createNodeIterator(document.documentElement,
-    NodeFilter.SHOW_TEXT);
-  const TWO_OR_MORE_SPACES = /\s{2,}/g;
-  for(let node = it.nextNode(); node; node = it.nextNode()) {
-    if(node.nodeValue && !pruned_isWhitespaceSensitive(node)) {
-      node.nodeValue = node.nodeValue.replace(TWO_OR_MORE_SPACES, ' ');
-    }
-  }
-}
-
-function pruned_isWhitespaceSensitive(textNode) {
-  'use strict';
-  return textNode.parentNode.closest('code, pre, ruby, textarea, xmp');
-}
-
-function pruned_trimDocument(document) {
+function pruned_trim_document(document) {
   'use strict';
   const body = document.body;
   if(body) {
     let sibling = body;
     let node = body.firstChild;
-    while(node && pruned_isTrimmableNode(node)) {
+    while(node && pruned_is_trimmable(node)) {
       sibling = node.nextSibling;
       node.remove();
       node = sibling;
     }
 
     node = body.lastChild;
-    while(node && pruned_isTrimmableNode(node)) {
+    while(node && pruned_is_trimmable(node)) {
       sibling = node.previousSibling;
       node.remove();
       node = sibling;
@@ -555,7 +517,7 @@ function pruned_trimDocument(document) {
   }
 }
 
-function pruned_isTrimmableNode(node) {
+function pruned_is_trimmable(node) {
   'use strict';
   if(node.nodeType === Node.ELEMENT_NODE) {
     switch(node.localName) {
@@ -575,141 +537,49 @@ function pruned_isTrimmableNode(node) {
   return false;
 }
 
-function pruned_trimNodes(document) {
+function pruned_filter_texts(document) {
   'use strict';
   const it = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_TEXT);
   for(let node = it.nextNode(); node; node = it.nextNode()) {
-
-    if(pruned_isWhitespaceSensitive(node)) {
-      continue;
+    switch(node.nodeValue) {
+      case '\n':
+      case '\n\t':
+      case '\n\t\t':
+      case '\n\t\t\t':
+        break;
+      default:
+        // Normalize whitespace
+        node.nodeValue = node.nodeValue.replace(/&nbsp;/ig, ' ');
+        break;
     }
 
-    if(node.previousSibling) {
-      if(node.previousSibling.nodeType === Node.ELEMENT_NODE) {
-        if(pruned_isNoTrimInlineElement(node.previousSibling)) {
-          if(node.nextSibling) {
-            if(node.nextSibling.nodeType === Node.ELEMENT_NODE) {
-              if(!pruned_isNoTrimInlineElement(node.nextSibling)) {
-                node.nodeValue = node.nodeValue.trimRight();
-              }
-            }
-          } else {
-            node.nodeValue = node.nodeValue.trimRight();
-          }
-        } else {
-          node.nodeValue = node.nodeValue.trim();
-        }
-      } else {
-       if(node.nextSibling) {
-          if(node.nextSibling.nodeType === Node.ELEMENT_NODE) {
-            if(pruned_isNoTrimInlineElement(node.nextSibling)) {
-            } else {
-             node.nodeValue = node.nodeValue.trimRight();
-            }
-          }
-        } else {
-          node.nodeValue = node.nodeValue.trimRight();
-        }
-      }
-    } else if(node.nextSibling) {
-     if(node.nextSibling.nodeType === Node.ELEMENT_NODE) {
-        if(pruned_isNoTrimInlineElement(node.nextSibling)) {
-          node.nodeValue = node.nodeValue.trimLeft();
-        } else {
-          node.nodeValue = node.nodeValue.trim();
-        }
-      } else {
-        node.nodeValue = node.nodeValue.trimLeft();
-      }
-    } else {
-      node.nodeValue = node.nodeValue.trimLeft();
+    if(!node.parentNode.closest('code, pre, ruby, textarea, xmp')) {
+      node.nodeValue = node.nodeValue.replace(/\s{2,}/g, ' ');
     }
   }
-}
-
-function pruned_filterEmptyTextNodes(document) {
-  'use strict';
-  const it = document.createNodeIterator(document.documentElement,
-    NodeFilter.SHOW_TEXT);
-  for(let node = it.nextNode(); node; node = it.nextNode()) {
-    if(!node.nodeValue) {
-      node.remove();
-    }
-  }
-}
-
-function pruned_isNoTrimInlineElement(element) {
-  'use strict';
-
-  switch(element.localName) {
-    case 'a':
-    case 'abbr':
-    case 'acronym':
-    case 'address':
-    case 'b':
-    case 'bdi':
-    case 'bdo':
-    case 'blink':
-    case 'cite':
-    case 'code':
-    case 'data':
-    case 'del':
-    case 'dfn':
-    case 'em':
-    case 'font':
-    case 'i':
-    case 'ins':
-    case 'kbd':
-    case 'mark':
-    case 'map':
-    case 'meter':
-    case 'q':
-    case 'rp':
-    case 'rt':
-    case 'samp':
-    case 'small':
-    case 'span':
-    case 'strike':
-    case 'strong':
-    case 'sub':
-    case 'sup':
-    case 'time':
-    case 'tt':
-    case 'u':
-    case 'var':
-      return true;
-    default:
-      break;
-  }
-
-  return false;
 }
 
 // Unwraps the element's child nodes into the parent of the element or, if
 // provided, the parent of the alternate element
-function pruned_unwrap(element, alternate) {
+function pruned_unwrap(element, referenceNode) {
   'use strict';
-  const target = alternate || element;
+  const target = referenceNode || element;
   const parent = target.parentNode;
-  if(!parent || !element.childNodes.length) {
-    element.remove();
-    return;
-  }
   const document = element.ownerDocument;
-  const ps = target.previousSibling;
-  if(ps && ps.nodeType === Node.TEXT_NODE) {
-    parent.insertBefore(document.createTextNode(' '), target);
-  }
-  pruned_insertChildrenBefore(element, target);
-  const ns = target.nextSibling;
-  if(ns && ns.nodeType === Node.TEXT_NODE) {
-    parent.insertBefore(document.createTextNode(' '), target);
+  const prevSibling = target.previousSibling;
+  const nextSibling = target.nextSibling;
+  if(parent) {
+    if(prevSibling && prevSibling.nodeType === Node.TEXT_NODE)
+      parent.insertBefore(document.createTextNode(' '), target);
+    pruned_insert_children_before(element, target);
+    if(nextSibling && nextSibling.nodeType === Node.TEXT_NODE)
+      parent.insertBefore(document.createTextNode(' '), target);
   }
   target.remove();
 }
 
-function pruned_insertChildrenBefore(parentNode, referenceNode) {
+function pruned_insert_children_before(parentNode, referenceNode) {
   'use strict';
   const referenceParent = referenceNode.parentNode;
   for(let node = parentNode.firstChild; node; node = parentNode.firstChild) {
