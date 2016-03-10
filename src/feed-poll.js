@@ -3,119 +3,105 @@
 // that can be found in the LICENSE file
 
 // Requires: /lib/parse-srcset.js
-// Requires: /lib/URI.js
 // Requires: /src/db.js
 // Requires: /src/net.js
 // Requires: /src/utils.js
 
-const FeedPoll = {};
+// todo: pass in exports to the IIFE
 
-FeedPoll.pollFeeds = function() {
-  'use strict';
+(function(exports) {
+
+'use strict';
+
+function pollFeeds() {
   console.log('Polling feeds');
 
   if(!navigator.onLine) {
-    console.debug('Polling canceled as offline');
+    console.debug('Offline');
     return;
   }
 
-  chrome.permissions.contains({permissions: ['idle']},
-    FeedPoll.onCheckIdlePermission);
-};
+  chrome.permissions.contains({permissions: ['idle']}, onCheckIdlePermission);
+}
 
-FeedPoll.onCheckIdlePermission = function(permitted) {
-  'use strict';
-
-  const IDLE_PERIOD = 60 * 5; // 5 minutes
+const IDLE_PERIOD = 60 * 5; // 5 minutes
+function onCheckIdlePermission(permitted) {
   if(permitted) {
     chrome.idle.queryState(IDLE_PERIOD,
-      FeedPoll.onQueryIdleState);
+      onQueryIdleState);
   } else {
-    db.open(FeedPoll.iterateFeeds);
+    db.open(iterateFeeds);
   }
-};
+}
 
-FeedPoll.onQueryIdleState = function(state) {
-  'use strict';
+function onQueryIdleState(state) {
   if(state === 'locked' || state === 'idle') {
-    db.open(FeedPoll.iterateFeeds);
+    db.open(iterateFeeds);
   } else {
-    console.debug('Polling canceled as not idle');
-    FeedPoll.onComplete();
+    console.debug('Not idle');
+    onPollComplete();
   }
-};
+}
 
-FeedPoll.iterateFeeds = function(event) {
-  'use strict';
-
+function iterateFeeds(event) {
   if(event.type === 'success') {
     const connection = event.target.result;
-    db.forEachFeed(connection, FeedPoll.fetchFeed.bind(null,
-      connection), false, FeedPoll.onComplete);
+    db.forEachFeed(connection, fetchFeed.bind(null, connection), false,
+      onPollComplete);
   } else {
     console.debug(event);
-    FeedPoll.onComplete();
+    onPollComplete();
   }
-};
+}
 
-FeedPoll.fetchFeed = function(connection, feed) {
-  'use strict';
-
+function fetchFeed(connection, feed) {
   const timeout = 10 * 1000;
   net.fetchFeed(feed.url, timeout,
-    FeedPoll.onFetchFeed.bind(null, connection, feed));
-};
+    onFetchFeed.bind(null, connection, feed));
+}
 
-FeedPoll.onFetchFeed = function(connection, feed, event, remoteFeed) {
-  'use strict';
+function onFetchFeed(connection, feed, event, remoteFeed) {
   if(event) {
     console.dir(event);
   } else {
     // TODO: if we are cleaning up the properties in db.storeFeed,
     // are we properly cascading those cleaned properties to the entries?
     db.storeFeed(connection, feed, remoteFeed,
-      FeedPoll.onPutFeed.bind(null, connection, feed, remoteFeed));
+      onStoreFeed.bind(null, connection, feed, remoteFeed));
   }
-};
+}
 
-FeedPoll.onPutFeed = function(connection, feed, remoteFeed, _) {
-  'use strict';
+function onStoreFeed(connection, feed, remoteFeed, _) {
   async.forEach(remoteFeed.entries,
-    FeedPoll.findEntryByLink.bind(null, connection, feed),
-    FeedPoll.onEntriesUpdated.bind(null, connection));
-};
+    onFindEntryByLink.bind(null, connection, feed),
+    onEntriesUpdated.bind(null, connection));
+}
 
-FeedPoll.onEntriesUpdated = function(connection) {
-  'use strict';
+function onEntriesUpdated(connection) {
   utils.updateBadge(connection);
-};
+}
 
-FeedPoll.findEntryByLink = function(connection, feed, entry, callback) {
-  'use strict';
+function onFindEntryByLink(connection, feed, entry, callback) {
   db.findEntryByLink(connection, entry.link,
-    FeedPoll.onFindEntry.bind(null, connection, feed, entry, callback));
-};
+    onFindEntry.bind(null, connection, feed, entry, callback));
+}
 
-FeedPoll.onFindEntry = function(connection, feed, entry, callback, event) {
-  'use strict';
-
+function onFindEntry(connection, feed, entry, callback, event) {
   const localEntry = event.target.result;
   if(localEntry) {
     callback();
   } else {
     const timeout = 20 * 1000;
-    FeedPoll.augmentEntryContent(entry, timeout, onAugment);
+    augmentEntryContent(entry, timeout, onAugment);
   }
 
   function onAugment(event) {
-    FeedPoll.cascadeFeedProperties(feed, entry);
+    cascadeFeedProperties(feed, entry);
     db.storeEntry(connection, entry, callback);
   }
-};
+}
 
-FeedPoll.cascadeFeedProperties = function(feed, entry) {
-  'use strict';
-
+function cascadeFeedProperties(feed, entry) {
   entry.feed = feed.id;
 
   // Denormalize now to avoid doing the lookup on render
@@ -126,23 +112,19 @@ FeedPoll.cascadeFeedProperties = function(feed, entry) {
   if(!entry.pubdate && feed.date) {
     entry.pubdate = feed.date;
   }
-};
+}
 
-FeedPoll.onComplete = function() {
+function onPollComplete() {
   console.log('Polling completed');
   localStorage.LAST_POLL_DATE_MS = String(Date.now());
   utils.showNotification('Updated articles');
-};
+}
 
-FeedPoll.augmentEntryContent = function(entry, timeout, callback) {
-  'use strict';
-  net.fetchHTML(entry.link, timeout,
-    FeedPoll.onFetchHTML.bind(null, entry, callback));
-};
+function augmentEntryContent(entry, timeout, callback) {
+  net.fetchHTML(entry.link, timeout, onFetchHTML.bind(null, entry, callback));
+}
 
-FeedPoll.onFetchHTML = function(entry, callback, error, document,
-  responseURL) {
-  'use strict';
+function onFetchHTML(entry, callback, error, document, responseURL) {
 
   if(error) {
     console.debug(error);
@@ -156,14 +138,13 @@ FeedPoll.onFetchHTML = function(entry, callback, error, document,
       responseURL);
   }
 
-  FeedPoll.transformLazyImages(document);
-  FeedPoll.resolveDocumentURLs(document, responseURL);
-  FeedPoll.setImageDimensions(document,
-    FeedPoll.onSetImageDimensions.bind(null, entry, document, callback));
-};
+  transformLazyImages(document);
+  resolveDocumentURLs(document, responseURL);
+  setImageDimensions(document, onSetImageDimensions.bind(null, entry,
+    document, callback));
+}
 
-FeedPoll.onSetImageDimensions = function(entry, document, callback) {
-  'use strict';
+function onSetImageDimensions(entry, document, callback) {
   // TODO: is this right? the innerHTML of the documentElement?
   // Do I actually want outerHTML?
   const content = document.documentElement.innerHTML;
@@ -171,38 +152,34 @@ FeedPoll.onSetImageDimensions = function(entry, document, callback) {
     entry.content = content;
   }
   callback();
-};
+}
 
-FeedPoll.setImageDimensions = function(document, callback) {
-  'use strict';
+function setImageDimensions(document, callback) {
+
   const images = document.getElementsByTagName('img');
-  const fetchables = Array.prototype.filter.call(images,
-    FeedPoll.shouldFetchImage);
-  async.forEach(fetchables, FeedPoll.fetchImage, callback);
+  const fetchables = Array.prototype.filter.call(images, shouldFetchImage);
+  async.forEach(fetchables, fetchImage, callback);
 };
 
-FeedPoll.shouldFetchImage = function(image) {
-  'use strict';
+function shouldFetchImage(image) {
   let url = image.getAttribute('src') || '';
   url = url.trim();
   return url && !utils.isObjectURL(url) && !image.width;
-};
+}
 
-FeedPoll.fetchImage = function(image, callback) {
-  'use strict';
+function fetchImage(image, callback) {
   const url = image.getAttribute('src');
   const proxy = document.createElement('img');
   proxy.onload = function(event) {
-    FeedPoll.onFetchImage(image, callback, event);
+    onFetchImage(image, callback, event);
   };
   proxy.onerror = function(event) {
-    FeedPoll.onFetchImage(image, callback, event);
+    onFetchImage(image, callback, event);
   };
   proxy.src = url;
 };
 
-FeedPoll.onFetchImage = function(image, callback, event) {
-  'use strict';
+function onFetchImage(image, callback, event) {
   if(event.type === 'load') {
     const proxy = event.target;
     image.width = proxy.width;
@@ -211,10 +188,9 @@ FeedPoll.onFetchImage = function(image, callback, event) {
     console.debug('Error: Failed to fetch image', image.getAttribute('src'));
   }
   callback();
-};
+}
 
-// A map of element names to attributes that contain urls
-FeedPoll.ELEMENT_URL_ATTRIBUTE_MAP = new Map([
+const ELEMENT_URL_ATTRIBUTE_MAP = new Map([
   ['a', 'href'],
   ['area', 'href'],
   ['audio', 'src'],
@@ -234,18 +210,15 @@ FeedPoll.ELEMENT_URL_ATTRIBUTE_MAP = new Map([
   ['video', 'src']
 ]);
 
-FeedPoll.RESOLVE_SELECTOR = function() {
-  'use strict';
+const RESOLVE_SELECTOR = function() {
   let keys = [];
-  FeedPoll.ELEMENT_URL_ATTRIBUTE_MAP.forEach(function(value, key) {
+  ELEMENT_URL_ATTRIBUTE_MAP.forEach(function(value, key) {
     keys.push(key + '[' + value +']');
   });
   return keys.join(',');
 }();
 
-FeedPoll.resolveDocumentURLs = function(document, baseURL) {
-  'use strict';
-
+function resolveDocumentURLs(document, baseURL) {
   const forEach = Array.prototype.forEach;
   const baseElementList = document.querySelectorAll('base');
   const removeBaseElement = function(baseElement) {
@@ -254,10 +227,10 @@ FeedPoll.resolveDocumentURLs = function(document, baseURL) {
   forEach.call(baseElementList, removeBaseElement);
 
   const getNameOfAttributeWithURL = function(element) {
-    return FeedPoll.ELEMENT_URL_ATTRIBUTE_MAP.get(element.localName);
+    return ELEMENT_URL_ATTRIBUTE_MAP.get(element.localName);
   };
 
-  const resolvables = document.querySelectorAll(FeedPoll.RESOLVE_SELECTOR);
+  const resolvables = document.querySelectorAll(RESOLVE_SELECTOR);
   forEach.call(resolvables, function(element) {
     const attribute = getNameOfAttributeWithURL(element);
     const url = element.getAttribute(attribute).trim();
@@ -267,16 +240,16 @@ FeedPoll.resolveDocumentURLs = function(document, baseURL) {
     }
 
     if(element.localName === 'img' && element.hasAttribute('srcset')) {
-      FeedPoll.resolveImageSrcSet(baseURL, element);
+      resolveImageSrcSet(baseURL, element);
     }
   });
-};
+}
 
 // Access an image element's srcset attribute, parses it into an array of
 // descriptors, resolves the url for each descriptor, and then composes the
 // descriptors array back into a string and modifies the element
-FeedPoll.resolveImageSrcSet = function(baseURL, image) {
-  'use strict';
+function resolveImageSrcSet(baseURL, image) {
+
   const source = image.getAttribute('srcset');
   let descriptors = parseSrcset(source) || [];
   let numURLsChanged = 0;
@@ -297,7 +270,7 @@ FeedPoll.resolveImageSrcSet = function(baseURL, image) {
     return;
   }
 
-  const newSource = FeedPoll.serializeSrcSet(resolvedDescriptors);
+  const newSource = serializeSrcSet(resolvedDescriptors);
   console.debug('Changing srcset %s to %s', source, newSource);
   image.setAttribute('srcset', newSource);
 };
@@ -308,8 +281,8 @@ FeedPoll.resolveImageSrcSet = function(baseURL, image) {
 // back into the string, and I am getting image errors in the output
 // TODO: support d,w,h
 // TODO: do a no-op if the urls were already absolute
-FeedPoll.serializeSrcSet = function(descriptors) {
-  'use strict';
+function serializeSrcSet(descriptors) {
+
   const resolvedDescriptors = [];
   const numDescriptors = descriptors.length;
 
@@ -334,39 +307,28 @@ FeedPoll.serializeSrcSet = function(descriptors) {
 
   // i believe a comma is what joins? have not researched
   return resolvedDescriptors.join(', ');
-};
+}
 
-
-// Modifies various image elements that appear as lazily-loaded in an effort
-// to improve the number of images captured
-FeedPoll.transformLazyImages = function(document) {
-  'use strict';
+function transformLazyImages(document) {
   const images = document.querySelectorAll('img');
   const numImages = images.length;
   for(let i = 0; i < numImages; i++) {
-    FeedPoll.transformLazyImage(images[i]);
+    transformLazyImage(images[i]);
   }
-};
+}
 
-FeedPoll.transformLazyImage = function(image) {
-  'use strict';
-
-  // Case 1: <img lazy-state="queue" load-src="url">
-  // Case 2: <img load-src="url">
+function transformLazyImage(image) {
   if(!image.hasAttribute('src') && image.hasAttribute('load-src')) {
     image.setAttribute('src', image.getAttribute('load-src'));
     return;
   }
 
-  // Case 3: <img src="blankurl" class="lazy-image" data-src="url">
   if(image.hasAttribute('data-src') &&
     image.classList.contains('lazy-image')) {
     image.setAttribute('src', image.getAttribute('data-src'));
     return;
   }
 
-  // Case 4: <img data-src="url">
-  // TODO: integrate with case 3?
   if(!image.hasAttribute('src') && image.hasAttribute('data-src')) {
     image.setAttribute('src', image.getAttribute('data-src'));
     return;
@@ -374,21 +336,17 @@ FeedPoll.transformLazyImage = function(image) {
 
   // TODO: responsive design conflicts with the approach this takes,
   // this needs to be handled instead by the srcset handler
-  // Case 5: <img class="lazy" data-original-desktop="url"
-  // data-original-tablet="url" data-original-mobile="url">
   if(!image.hasAttribute('src') &&
     image.hasAttribute('data-original-desktop')) {
     image.setAttribute('src', image.getAttribute('data-original-desktop'));
     return;
   }
 
-  // Case 6: <img data-baseurl="url">
   if(!image.hasAttribute('src') && image.hasAttribute('data-baseurl')) {
     image.setAttribute('src', image.getAttribute('data-baseurl'));
     return;
   }
 
-  // Case 7: <img data-lazy="url">
   if(!image.hasAttribute('src') && image.hasAttribute('data-lazy')) {
     image.setAttribute('src', image.getAttribute('data-lazy'));
     return;
@@ -400,15 +358,17 @@ FeedPoll.transformLazyImage = function(image) {
     return;
   }
 
-  // Case 9: <img data-original="url">
   if(!image.hasAttribute('src') && image.hasAttribute('data-original')) {
     image.setAttribute('src', image.getAttribute('data-original'));
     return;
   }
 
-  // Case 10: <img data-adaptive-img="">
   if(!image.hasAttribute('src') && image.hasAttribute('data-adaptive-img')) {
     image.setAttribute('src', image.getAttribute('data-adaptive-img'));
     return;
   }
-};
+}
+
+exports.pollFeeds = pollFeeds;
+
+} (this));
