@@ -4,17 +4,16 @@
 
 // Requires: /src/db.js
 
-const ArchiveService = {};
+(function(exports) {
 
-ArchiveService.archiveEntries = function() {
-  'use strict';
+'use strict';
+
+function archiveEntries() {
   console.log('Archiving entries');
-  db.open(ArchiveService.onConnect);
-};
+  db.open(onConnect);
+}
 
-ArchiveService.onConnect = function(event) {
-  'use strict';
-
+function onConnect(event) {
   if(event.type !== 'success') {
     console.debug(event);
     return;
@@ -27,22 +26,22 @@ ArchiveService.onConnect = function(event) {
 
   const connection = event.target.result;
   const transaction = connection.transaction('entry', 'readwrite');
-  transaction.oncomplete = ArchiveService.onComplete.bind(transaction, stats);
+  transaction.oncomplete = onComplete.bind(transaction, stats);
   const store = transaction.objectStore('entry');
   const index = store.index('archiveState-readState');
   const range = IDBKeyRange.only([db.EntryFlags.UNARCHIVED,
     db.EntryFlags.READ]);
   const request = index.openCursor(range);
-  request.onsuccess = ArchiveService.archiveNextEntry.bind(request, stats);
-};
+  request.onsuccess = archiveNextEntry.bind(request, stats);
+}
 
-ArchiveService.archiveNextEntry = function(stats, event) {
-  'use strict';
+const EXPIRES_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
 
-  const EXPIRES_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
+function archiveNextEntry(stats, event) {
   const cursor = event.target.result;
   if(!cursor)
     return;
+
   stats.processed++;
   const entry = cursor.value;
   const now = Date.now();
@@ -67,8 +66,12 @@ ArchiveService.archiveNextEntry = function(stats, event) {
   }
 
   cursor.continue();
-};
+}
 
-ArchiveService.onComplete = function(stats, event) {
+function onComplete(stats, event) {
   console.log('Archived %s of %s entries', stats.archived, stats.processed);
-};
+}
+
+exports.archiveEntries = archiveEntries;
+
+} (this));

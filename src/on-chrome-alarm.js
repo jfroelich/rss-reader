@@ -22,7 +22,7 @@ const alarms = new Map();
 alarms.set('archive', {
   schedule: {periodInMinutes: 24 * 60},
   getAlarmFunction: function() {
-    return ArchiveService.archiveEntries;
+    return archiveEntries;
   }
 });
 alarms.set('poll', {
