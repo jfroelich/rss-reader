@@ -2,9 +2,38 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-function browserActionOnClick() {
-  'use strict';
+// Background code, should only be included in the extension's background page
+// Requires: /src/db.js
+// Requires: /src/poll-feeds.js
+// Requires: /src/archive-entries.js
 
+(function(exports) {
+'use strict';
+
+function onInstalled(event) {
+  console.log('Installing extension...');
+
+  // Trigger database upgrade by opening a connection
+  db.open(function(event) {});
+}
+
+// Bind the listener
+chrome.runtime.onInstalled.addListener(onInstalled);
+
+function onChromeAlarm(alarm) {
+  const name = alarm.name;
+  if(name === 'archive') {
+    archiveEntries();
+  } else if(name === 'poll') {
+    pollFeeds();
+  }
+}
+
+chrome.alarms.create('archive', {periodInMinutes: 24 * 60});
+chrome.alarms.create('poll', {periodInMinutes: 20});
+chrome.alarms.onAlarm.addListener(onChromeAlarm);
+
+function browserActionOnClick() {
   const viewURL = chrome.extension.getURL('slides.html');
 
   chrome.tabs.create({url: viewURL});
@@ -15,7 +44,7 @@ function browserActionOnClick() {
   // tab. Also, the first time I clicked it, Chrome crashed. Review the
   // chrome tabs API.
   // TODO: looking at release notes for 50, I am seeing that they are
-  // mucking with tab management 
+  // mucking with tab management
   //chrome.tabs.query({'url': viewURL}, onQueryView);
 
   function onQueryView(tabs) {
@@ -39,3 +68,5 @@ function browserActionOnClick() {
 }
 
 chrome.browserAction.onClicked.addListener(browserActionOnClick);
+
+} (this));
