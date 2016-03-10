@@ -7,8 +7,6 @@
 // Requires: /src/net.js
 // Requires: /src/utils.js
 
-// todo: pass in exports to the IIFE
-
 (function(exports) {
 
 'use strict';
@@ -155,11 +153,10 @@ function onSetImageDimensions(entry, document, callback) {
 }
 
 function setImageDimensions(document, callback) {
-
   const images = document.getElementsByTagName('img');
   const fetchables = Array.prototype.filter.call(images, shouldFetchImage);
   async.forEach(fetchables, fetchImage, callback);
-};
+}
 
 function shouldFetchImage(image) {
   let url = image.getAttribute('src') || '';
@@ -177,7 +174,7 @@ function fetchImage(image, callback) {
     onFetchImage(image, callback, event);
   };
   proxy.src = url;
-};
+}
 
 function onFetchImage(image, callback, event) {
   if(event.type === 'load') {
@@ -273,7 +270,7 @@ function resolveImageSrcSet(baseURL, image) {
   const newSource = serializeSrcSet(resolvedDescriptors);
   console.debug('Changing srcset %s to %s', source, newSource);
   image.setAttribute('srcset', newSource);
-};
+}
 
 // Returns a string representing serialized descriptors, which is a suitable
 // srcset attribute value for an element
@@ -352,7 +349,6 @@ function transformLazyImage(image) {
     return;
   }
 
-  // Case 8: <img data-img-src="url">
   if(!image.hasAttribute('src') && image.hasAttribute('data-img-src')) {
     image.setAttribute('src', image.getAttribute('data-img-src'));
     return;
