@@ -42,7 +42,7 @@ net.fetchFeed = function(url, timeout, callback) {
 
     let feed = null;
     try {
-      feed = FeedParser.parseDocument(document);
+      feed = parseFeed(document);
     } catch(exception) {
       callback(exception, null, request.responseURL);
       return;
