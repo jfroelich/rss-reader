@@ -3,15 +3,15 @@
 // that can be found in the LICENSE file
 
 // Requires: /src/db.js
+// Requires: /src/pruned.js
 // Requires: /src/utils.js
 
+(function(exports) {
 'use strict';
-
-{ // BEGIN ANONYMOUS NAMESPACE
 
 let currentSlide = null;
 
-chrome.runtime.onMessage.addListener(function(message) {
+function onRuntimeMessage(message) {
   const type = message.type;
   if(type === 'pollCompleted') {
     maybeAppendMoreSlides();
@@ -22,9 +22,10 @@ chrome.runtime.onMessage.addListener(function(message) {
   } else if(type === 'archivedEntry') {
     // TODO: react to the archiving an entry that is read
     // and still loaded into the view
-    // message.entry is the archived entry
   }
-});
+}
+
+chrome.runtime.onMessage.addListener(onRuntimeMessage);
 
 function maybeAppendMoreSlides() {
   const unreadCount = countUnreadSlides();
@@ -48,7 +49,7 @@ function onUnsubscribeMessage(message) {
   const slidesForFeed = document.querySelectorAll(
     'div[feed="'+ message.feed +'"]');
   const removedCurrentSlide = Array.prototype.reduce.call(
-    slidesForFeed, function(removedCurrent, slide) {
+    slidesForFeed, function removeAndCheck(removedCurrent, slide) {
     // TODO: verify removing all listeners
     removeSlideElement(slide);
     return removedCurrent || (slide === currentSlide);
@@ -143,18 +144,14 @@ function appendSlides(oncomplete, isFirst) {
   }
 }
 
-/**
- * React to slide clicked. Only interested in anchor clicks.
- *
- * TODO: just checking if image parent is in anchor is incorrect
- * The correct condition is if image is a descendant of an anchor
- * TODO: this should probably be the handler that determines
- * whether to open an anchor click in a new tab, instead of
- * setting a target attribute per anchor.
- *
- * NOTE: event.target is what was clicked. event.currentTarget
- * is where the listener is attached.
- */
+
+// TODO: just checking if image parent is in anchor is incorrect
+// The correct condition is if image is a descendant of an anchor
+// TODO: this should probably be the handler that determines
+// whether to open an anchor click in a new tab, instead of
+// setting a target attribute per anchor.
+// NOTE: event.target is what was clicked. event.currentTarget is where the
+// listener is attached.
 function onSlideClick(event) {
   if(event.which !== 1) {
     return false;
@@ -162,7 +159,6 @@ function onSlideClick(event) {
 
   // BUG: when clicking on an image in a link, it is still a link
   // click that should open the link in a new window...
-
   // TODO: this should be checking if in anchor axis, not
   // just immediate parent
   if(event.target.matches('img')) {
@@ -174,7 +170,6 @@ function onSlideClick(event) {
   }
 
   if(!event.currentTarget.hasAttribute('read')) {
-
     // We cannot remove the listener here because there may be additional
     // clicks on other links that we still want to capture. So we have to
     // defer until slide removal. So we just need to ensure that
@@ -182,7 +177,6 @@ function onSlideClick(event) {
     // NOTE: this means that super-fast extra clicks can retrigger
     // this call.
     //event.currentTarget.removeEventListener('click', onSlideClick);
-
     markSlideRead(event.currentTarget);
   }
 
@@ -201,7 +195,6 @@ function onSlideClick(event) {
  * Add a new slide to the view. If isFirst is true, the slide
  * is immediately visible. Otherwise, the slide is positioned
  * off screen.
- *
  * NOTE: in the current design, fetched content scrubbing is
  * done onLoad instead of onBeforeStore. This is not
  * the best performance. This is done primarily to simplify
@@ -251,9 +244,6 @@ function appendSlide(entry, isFirst) {
   const doc = utils.parseHTML(entry.content);
   pruneDocument(doc);
 
-  // Testing VPrune substitute for DOMFilter
-  //VPrune.prepareDocumentForView(doc);
-
   if(doc.documentElement) {
     if(doc.body) {
       content.innerHTML = doc.body.innerHTML;
@@ -263,7 +253,8 @@ function appendSlide(entry, isFirst) {
       //}
     } else {
       content.innerHTML = doc.documentElement.innerHTML;
-      //for(let node = doc.documentElement.firstChild; node; node = node.nextSibling) {
+      //for(let node = doc.documentElement.firstChild; node;
+      // node = node.nextSibling) {
       //  content.appendChild(node);
       //}
     }
@@ -355,7 +346,7 @@ function hideNoUnreadArticlesSlide() {
   console.warn('hideNoUnreadArticlesSlide not implemented');
 }
 
-let keyDownTimer;
+
 // TODO: instead of binding this to window, bind to each slide? that way
 // we don't have to use the currentSlide hack?
 const KEY_MAP = {
@@ -369,6 +360,8 @@ const KEY_MAP = {
   N: 78,
   P: 80
 };
+
+let keyDownTimer;
 
 function onKeyDown(event) {
   //event.target is body
@@ -406,8 +399,7 @@ function onKeyDown(event) {
   }
 }
 
-// this === window
-this.addEventListener('keydown', onKeyDown, false);
+window.addEventListener('keydown', onKeyDown, false);
 
 function initSlideShow(event) {
   document.removeEventListener('DOMContentLoaded', initSlideShow);
@@ -417,4 +409,4 @@ function initSlideShow(event) {
 
 document.addEventListener('DOMContentLoaded', initSlideShow);
 
-} // END ANONYMOUS NAMESPACE
+}(this));
