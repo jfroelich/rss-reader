@@ -11,7 +11,7 @@
 (function(exports, Calamine) {
 'use strict';
 
-const BLACKLIST = [
+const BLACKLIST_SELECTOR = [
   'applet',
   'audio',
   'basefont',
@@ -22,7 +22,10 @@ const BLACKLIST = [
   'dialog',
   'embed',
   'fieldset',
+  'frame',
+  'frameset',
   'head',
+  'iframe',
   'input',
   'isindex',
   'link',
@@ -46,9 +49,7 @@ const BLACKLIST = [
   'title',
   'video',
   'xmp'
-];
-
-const BLACKLIST_SELECTOR = BLACKLIST.join(',');
+].join(',');
 
 //TODO: include aria hidden?
 // https://www.w3.org/TR/wai-aria/states_and_properties#aria-hidden
@@ -60,26 +61,21 @@ const HIDDEN_SELECTOR = [
   '[style*="opacity:0.0"]'
 ].join(',');
 
-const NODE_TYPE_ELEMENT = Node.ELEMENT_NODE;
-const NODE_TYPE_TEXT = Node.TEXT_NODE;
-const NODE_TYPE_COMMENT = Node.COMMENT_NODE;
-
 function pruneDocument(document) {
   filterComments(document);
   replaceFrames(document);
-  removeElementsBySelector(document, 'frameset, frame, iframe');
-  removeElementsBySelector(document, BLACKLIST_SELECTOR);
-  removeElementsBySelector(document, HIDDEN_SELECTOR);
+  forEach(document.querySelectorAll(BLACKLIST_SELECTOR), removeIfAttached);
+  forEach(document.querySelectorAll(HIDDEN_SELECTOR), removeIfAttached);
   filterBoilerplate(document);
-  filterAnchors(document);
-  filterBreaks(document);
-  filterImages(document);
+  forEach(document.querySelectorAll('a'), filterAnchor);
+  // forEach(document.querySelectorAll('br'), filterBreakRule);
+  forEach(filter(document.querySelectorAll('img'), isFilterableImage), remove);
   filterInlines(document);
   filterTexts(document);
-  filterLeaves(document);
   filterLists(document);
-  filterSingleCellTables(document);
+  unwrapSingleCellTables(document);
   filterSingleColumnTables(document);
+  filterLeaves(document);
   trimDocument(document);
   filterAttributes(document);
 }
@@ -92,21 +88,21 @@ function filterBoilerplate(document) {
 
 function filterComments(document) {
   const it = document.createNodeIterator(document.documentElement,
-    NODE_TYPE_COMMENT);
+    NodeFilter.SHOW_COMMENT);
   for(let node = it.nextNode(); node; node = it.nextNode()) {
     node.remove();
   }
 }
 
-function removeElementsBySelector(document, selector) {
-  const elements = document.querySelectorAll(selector);
-  const numElements = elements.length;
-  const root = document.documentElement;
-  for(let i = 0, element = root; i < numElements; i++) {
-    element = elements[i];
-    if(root.contains(element)) {
-      element.remove();
-    }
+function removeIfAttached(element) {
+  if(element.ownerDocument.documentElement.contains(element)) {
+    element.remove();
+  }
+}
+
+function forEach(subject, callback) {
+  for(let i = 0, length = subject.length; i < length; i++) {
+    callback(subject[i]);
   }
 }
 
@@ -126,22 +122,14 @@ function replaceFrames(document) {
   }
 }
 
-function filterBreaks(document) {
+function filterBreakRule(element) {
   // TODO: improve
   // error case: http://paulgraham.com/procrastination.html
   // This is buggy, temporarily a NO-OP.
-  if(true) {
-    return;
-  }
 
-  const elements = document.querySelectorAll('br');
-  const numElements = elements.length;
-  for(let i = 0, element, parent, p; i < numElements; i++) {
-    element = elements[i];
-    parent = element.parentNode;
-    p = document.createElement('p');
-    parent.replaceChild(p, element);
-  }
+  const parent = element.parentNode;
+  const p = document.createElement('p');
+  parent.replaceChild(p, element);
 }
 
 function filterAttributes(document) {
@@ -165,7 +153,17 @@ function filterAttributes(document) {
       continue;
     }
 
-    if(elementName === 'a') {
+    if(elementName === 'source') {
+      // new <picture><source></picture> stuff
+      for(j = attributes.length - 1; j > -1; j--) {
+        attributeName = attributes[j].name;
+        if(attributeName !== 'type' && attributeName !== 'srcset' &&
+          attributeName !== 'sizes' && attributeName !== 'media' &&
+          attributeName !== 'src') {
+          element.removeAttribute(attributeName);
+        }
+      }
+    } else if(elementName === 'a') {
       for(j = attributes.length - 1; j > -1; j--) {
         attributeName = attributes[j].name;
         if(attributeName !== 'href' && attributeName !== 'name' &&
@@ -247,7 +245,7 @@ function filterInlines(document) {
 
     firstChild = element.firstChild;
     if(firstChild && firstChild === element.lastChild &&
-      firstChild.nodeType === NODE_TYPE_ELEMENT &&
+      isElementNode(firstChild) &&
       firstChild.matches(INLINE_SELECTOR)) {
       // Skip
     } else {
@@ -264,146 +262,206 @@ function filterInlines(document) {
   }
 }
 
-// Never considered a leaf element even without child nodes
+function filterLeaves(document) {
+  forEach(document.querySelectorAll('*'), removeIfAttachedLeaf);
+}
+
+function removeIfAttachedLeaf(element) {
+  if(element.ownerDocument.documentElement.contains(element) &&
+    isLeaf(element)) {
+    element.remove();
+  }
+}
+
 const LEAF_EXCEPTIONS = {
   'area': 1,
   'audio': 1,
+  'base': 1,
+  'col': 1,
+  'command': 1,
   'br': 1,
   'canvas': 1,
   'col': 1,
   'hr': 1,
   'iframe': 1,
   'img': 1,
+  'input': 1,
+  'keygen': 1,
+  'meta': 1,
+  'nobr': 1,
+  'param': 1,
   'path': 1,
   'source': 1,
   'svg': 1,
+  'textarea': 1,
   'track': 1,
-  'video': 1
+  'video': 1,
+  'wbr': 1
 };
 
-function filterLeaves(document) {
-  const stack = [document.documentElement];
-  const leaves = [];
-  let element = null;
-  while(stack.length) {
-    element = stack.pop();
-    if(!element.firstChild && !(element.localName in LEAF_EXCEPTIONS)) {
-      leaves.push(element);
-    } else {
-      element = element.lastElementChild;
-      while(element) {
-        stack.push(element);
-        element = element.previousElementSibling;
-      }
+function isLeafException(element) {
+  return element.localName in LEAF_EXCEPTIONS;
+}
+
+function isLeaf(element) {
+  return !isLeafException(element) && !some(element.childNodes,
+    isNonLeafChild);
+}
+
+function some(subject, predicate) {
+  const length = subject.length;
+  for(let i = 0; i < length; i++) {
+    if(predicate(subject[i])) {
+      return true;
     }
   }
+  return false;
+}
 
-  for(let i = 0, length = leaves.length; i < length; i++) {
-    leaves[i].remove();
+// An element is a non-leaf child it is a text node with a non-whitespace
+// value or if it is a non-leaf element
+function isNonLeafChild(node) {
+  if(isTextNode(node)) {
+    if(node.nodeValue.trim()) {
+      return true;
+    }
+  } else if(isElementNode(node)) {
+    if(!isLeaf(node)) {
+      return true;
+    }
+  } else {
+    // Treat other node types as non-leaf
+    return true;
+  }
+
+  return false;
+}
+
+function isTextNode(node) {
+  return node.nodeType === Node.TEXT_NODE;
+}
+
+function isElementNode(node) {
+  return node.nodeType === Node.ELEMENT_NODE;
+}
+
+function filter(subject, predicate) {
+  const length = subject.length;
+  const result = [];
+  for(let i = 0, item; i < length; i++) {
+    item = subject[i];
+    if(predicate(item)) {
+      result.push(item);
+    }
+  }
+  return result;
+}
+
+function filterAnchor(anchor) {
+  if(isNominalAnchor(anchor)) {
+    unwrap(anchor);
+  } else if(isJavascriptAnchor(anchor)) {
+    // TODO: unwrap/remove?
+    anchor.setAttribute('href', '');
   }
 }
 
-// TODO: unwrap/remove js anchors?
-function filterAnchors(document) {
-  const elements = document.querySelectorAll('a');
-  const numElements = elements.length;
-  for(let i = 0, anchor; i < elements.length; i++) {
-    anchor = elements[i];
-    if(!anchor.hasAttribute('name') && !anchor.hasAttribute('href')) {
-      unwrap(anchor);
-    } else if(anchor.hasAttribute('href') &&
-      /\s*javascript\s*:/i.test(anchor.getAttribute('href'))) {
-      anchor.setAttribute('href', '');
-    }
-  }
+function isNominalAnchor(anchor) {
+  return !anchor.hasAttribute('name') && !anchor.hasAttribute('href');
 }
 
-function filterSingleCellTables(document) {
-  const tables = document.querySelectorAll('table');
-  const numTables = tables.length;
-  for(let i = 0, table, rows, cells, parent, cell, node; i < numTables; i++) {
-    table = tables[i];
-    rows = table.rows;
-    if(rows.length === 1) {
-      cells = rows[0].cells;
-      if(cells.length === 1) {
-        cell = cells[0];
-        parent = table.parentNode;
-        parent.insertBefore(document.createTextNode(' '), table);
-        insertChildrenBefore(cell, table);
-        parent.insertBefore(document.createTextNode(' '), table);
-        table.remove();
-      }
+function isJavascriptAnchor(anchor) {
+  return /\s*javascript\s*:/i.test(anchor.getAttribute('href'));
+}
+
+function unwrapSingleCellTables(document) {
+  forEach(document.querySelectorAll('table'), unwrapTableIfSingleCell);
+}
+
+// TODO: what about skipping past empty rows and still unwrapping?
+function unwrapTableIfSingleCell(table) {
+  const rows = table.rows;
+  if(rows.length === 1) {
+    const cells = rows[0].cells;
+    if(cells.length === 1) {
+      const cell = cells[0];
+      const parent = table.parentNode;
+      parent.insertBefore(document.createTextNode(' '), table);
+      insertChildrenBefore(cell, table);
+      parent.insertBefore(document.createTextNode(' '), table);
+      table.remove();
     }
   }
 }
 
 function filterSingleColumnTables(document) {
-  const tables = document.querySelectorAll('table');
-  const numTables = tables.length;
-  let isSingleColumn = false;
-  for(let i = 0, j = 0, table, rows, upperBound; i < numTables; i++) {
-    table = tables[i];
-    rows = table.rows;
-    upperBound = Math.min(rows.length, 20);
-    isSingleColumn = true;
-    for(j = 0; j < upperBound; j++) {
-      if(rows[j].cells.length > 1) {
-        isSingleColumn = false;
-        break;
+  forEach(document.querySelectorAll('table'), filterTableIfSingleColumn);
+}
+
+function filterTableIfSingleColumn(table) {
+  if(isProbablySingleColumnTable(table)) {
+    const parent = table.parentNode;
+    const document = table.ownerDocument;
+    for(let rows = table.rows, numRows = rows.length, rowIndex = 0,
+      columnIndex = 0, cell, cells, numCells = 0;
+      rowIndex < numRows; rowIndex++) {
+      for(columnIndex = 0, cells = rows[rowIndex], numCells = cells.length;
+        columnIndex < numCells; columnIndex++) {
+        cell = cells[columnIndex];
+        insertChildrenBefore(cell, table);
       }
+
+      parent.insertBefore(document.createElement('p'), table);
     }
 
-    if(isSingleColumn) {
-      transformSingleColumnTable(table);
-    }
+    table.remove();
   }
 }
 
-function transformSingleColumnTable(table) {
-  const parent = table.parentNode;
-  const document = table.ownerDocument;
-  for(let rows = table.rows, numRows = rows.length, rowIndex = 0,
-    columnIndex = 0, cell, cells, numCells = 0;
-    rowIndex < numRows; rowIndex++) {
-    for(columnIndex = 0, cells = rows[rowIndex], numCells = cells.length;
-      columnIndex < numCells; columnIndex++) {
-      cell = cells[columnIndex];
-      insertChildrenBefore(cell, table);
+function isProbablySingleColumnTable(table) {
+  const rows = table.rows;
+  for(let i = 0, upper = Math.min(rows.length, 50); i < upper; i++) {
+    if(rows[i].cells.length > 1) {
+      return false;
     }
-
-    parent.insertBefore(document.createElement('p'), table);
   }
-
-  table.remove();
+  return true;
 }
 
 function filterLists(document) {
-  const lists = document.querySelectorAll('ul, ol');
-  const numLists = lists.length;
-  for(let i = 0, list, node, item; i < numLists; i++) {
-    list = lists[i];
-    if(list.childElementCount === 1) {
-      item = list.firstElementChild;
-      if(item.localName === 'li') {
-        insertChildrenBefore(item, list);
-        list.remove();
-      }
+  forEach(document.querySelectorAll('ul, ol'), unwrapSingleItemList);
+}
+
+function unwrapSingleItemList(list) {
+  if(list.childElementCount === 1) {
+    const item = list.firstElementChild;
+    if(item.localName === 'li') {
+      insertChildrenBefore(item, list);
+      list.remove();
     }
   }
 }
 
-function filterImages(document) {
-  const images = document.querySelectorAll('img');
-  const numImages = images.length;
-  for(let i = 0, image; i < numImages; i++) {
-    image = images[i];
-    if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
-      image.remove();
-    } else if(image.width < 2 || image.height < 2) {
-      image.remove();
-    }
+function remove(childNode) {
+  childNode.remove();
+}
+
+function isFilterableImage(image) {
+  return isSourcelessImage(image) || isTracerImage(image);
+}
+
+function filterImage(image) {
+  if(isSourcelessImage(image) || isTracerImage(image)) {
+    image.remove();
   }
+}
+
+function isSourcelessImage(image) {
+  return !image.hasAttribute('src') && !image.hasAttribute('srcset');
+}
+
+function isTracerImage(image) {
+  return image.width < 2 || image.height < 2;
 }
 
 function trimDocument(document) {
@@ -426,29 +484,24 @@ function trimDocument(document) {
   }
 }
 
-function isTrimmable(node) {
-  if(node.nodeType === NODE_TYPE_ELEMENT) {
-    const name = node.localName;
-    if(name === 'br' || name === 'hr' || name === 'nobr') {
-      return true;
-    } else if(name === 'p') {
-      return !node.firstChild;
-    }
-  } else if(node.nodeType === NODE_TYPE_TEXT) {
-    const value = node.nodeValue;
-    return value && value.trim();
-  }
+const TRIMMABLE_ELEMENTS = {
+  'br': 1,
+  'hr': 1,
+  'nobr': 1
+};
 
-  return false;
+function isTrimmable(node) {
+  return (isElementNode(node) && node.localName in TRIMMABLE_ELEMENTS) ||
+    (isTextNode(node) && !node.nodeValue.trim());
 }
 
-function hasTrivialNodeValue(value) {
+function isTrivialNodeValue(value) {
   return value === '' || value === '\n' || value === '\n\t' ||
     value === '\n\t\t' || value === '\n\t\t\t' || value === '\n\t\t\t\t';
 }
 
-function isWhitespaceSensitive(node) {
-  return node.parentNode.closest('code, pre, ruby, textarea, xmp');
+function isWhitespaceSensitive(element) {
+  return element.closest('code, pre, ruby, textarea, xmp');
 }
 
 function filterTexts(document) {
@@ -456,15 +509,22 @@ function filterTexts(document) {
     NodeFilter.SHOW_TEXT);
   for(let node = it.nextNode(), value; node; node = it.nextNode()) {
     value = node.nodeValue;
-    if(!hasTrivialNodeValue(value)) {
-      value = value.replace(/&nbsp;/ig, ' ');
+    if(!isTrivialNodeValue(value)) {
+      value = canonicalizeWhitespace(value);
     }
-
-    if(!isWhitespaceSensitive(node)) {
-      value = value.replace(/\s{2,}/g, ' ');
+    if(!isWhitespaceSensitive(node.parentNode)) {
+      value = condenseSpaces(value);
     }
     node.nodeValue = value;
   }
+}
+
+function canonicalizeWhitespace(nodeValue) {
+  return nodeValue.replace(/&nbsp;/ig, ' ');
+}
+
+function condenseSpaces(nodeValue) {
+  return nodeValue.replace(/\s{2,}/g, ' ');
 }
 
 // Unwraps the element's child nodes into the parent of the element or, if
@@ -476,10 +536,10 @@ function unwrap(element, referenceNode) {
   const prevSibling = target.previousSibling;
   const nextSibling = target.nextSibling;
   if(parent) {
-    if(prevSibling && prevSibling.nodeType === NODE_TYPE_TEXT)
+    if(prevSibling && isTextNode(prevSibling))
       parent.insertBefore(document.createTextNode(' '), target);
     insertChildrenBefore(element, target);
-    if(nextSibling && nextSibling.nodeType === NODE_TYPE_TEXT)
+    if(nextSibling && isTextNode(nextSibling))
       parent.insertBefore(document.createTextNode(' '), target);
   }
   target.remove();
