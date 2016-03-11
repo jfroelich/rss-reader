@@ -6,10 +6,8 @@
 // Requires: /src/net.js
 // Requires: /src/utils.js
 
-
+(function(exports) {
 'use strict';
-
-{ // BEGIN ANONYMOUS NAMESPACE
 
 function $$(name) {
   return document.getElementById(name);
@@ -98,7 +96,7 @@ var currentMenuItem_;
 var currentSection_;
 
 function showSection(menuItem) {
-  if(!menuItem || currentMenuItem_ == menuItem) {
+  if(!menuItem || currentMenuItem_ === menuItem) {
     return;
   }
 
@@ -121,15 +119,7 @@ function showSection(menuItem) {
 function updateFeedCount() {
   const count = $$('feedlist').childElementCount;
   const countElement = $$('subscription-count');
-  if(count) {
-    if(count > 1000) {
-      countElement.textContent = ' (999+)';
-    } else {
-      countElement.textContent = ' ('+ count +')';
-    }
-  } else {
-    countElement.textContent = '';
-  }
+  countElement.textContent = count > 1000 ? ' (999+)' : ' ('+ count +')';
 }
 
 function appendFeed(feed, insertedSort) {
@@ -315,14 +305,14 @@ function populateFeedDetailsSection(feedId) {
     return;
   }
 
-  db.open(function(event) {
+  db.open(function onOpen(event) {
     if(event.type !== 'success') {
       return;
     }
 
     const connection = event.target.result;
 
-    db.findFeedById(connection, feedId, function(event) {
+    db.findFeedById(connection, feedId, function onFind(event) {
       const feed = event.target.result;
       if(!feed) {
         return;
@@ -356,8 +346,8 @@ function onFeedListItemClick(event) {
 }
 
 function onSubscribeSubmit(event) {
-
-  event.preventDefault();// Prevent normal form submission event
+  // Prevent normal form submission event
+  event.preventDefault();
 
   var query = $$('subscribe-discover-query').value;
   query = query || '';
@@ -730,8 +720,10 @@ function initGeneralSettingsSection() {
     $$('enable-idle-check').checked = permitted;
   });
 
-  $$('enable-subscription-preview').checked = !!localStorage.ENABLE_SUBSCRIBE_PREVIEW;
-  $$('enable-subscription-preview').onchange = onEnableSubscriptionPreviewChange;
+  $$('enable-subscription-preview').checked =
+    !!localStorage.ENABLE_SUBSCRIBE_PREVIEW;
+  $$('enable-subscription-preview').onchange =
+    onEnableSubscriptionPreviewChange;
   $$('rewriting-enable').checked = !!localStorage.URL_REWRITING_ENABLED;
   $$('rewriting-enable').onchange = onEnableURLRewritingChange;
 }
@@ -742,7 +734,7 @@ function initSubscriptionsSection() {
 
   let feedCount = 0;
 
-  db.open(function(event) {
+  db.open(function onConnect(event) {
     if(event.type !== 'success') {
       // TODO: react
       console.debug(event);
@@ -838,7 +830,8 @@ function initDisplaySettingsSection() {
 
   var inputChangedTimer, inputChangedDelay = 400;
 
-  $$('entry-background-color').value = localStorage.ENTRY_BACKGROUND_COLOR || '';
+  $$('entry-background-color').value =
+    localStorage.ENTRY_BACKGROUND_COLOR || '';
   $$('entry-background-color').oninput = function() {
     if(event.target.value)
       localStorage.ENTRY_BACKGROUND_COLOR = event.target.value;
@@ -849,11 +842,13 @@ function initDisplaySettingsSection() {
 
   $$('entry-margin').value = parseInt(localStorage.ENTRY_MARGIN) || '10';
   $$('entry-margin').onchange = onEntryMarginChange;
-  $$('header-font-size').value = parseInt(localStorage.HEADER_FONT_SIZE) || '1';
+  $$('header-font-size').value =
+    parseInt(localStorage.HEADER_FONT_SIZE) || '1';
   $$('header-font-size').onchange = onHeaderFontSizeChange;
   $$('body-font-size').value = parseInt(localStorage.BODY_FONT_SIZE) || '1';
   $$('body-font-size').onchange = onBodyFontSizeChange;
-  $$('justify-text').checked = (localStorage.JUSTIFY_TEXT == '1') ? true : false;
+  $$('justify-text').checked =
+    (localStorage.JUSTIFY_TEXT == '1') ? true : false;
   $$('justify-text').onchange = onJustifyChange;
   const bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
   $$('body-line-height').value = (bodyLineHeight / 10).toFixed(2);
@@ -869,18 +864,20 @@ function initAboutSection() {
   $$('extension-homepage').textContent = manifest.homepage_url || '';
 }
 
-function initOptionsPage(event) {
-  document.removeEventListener('DOMContentLoaded', initOptionsPage);
+function initOptions(event) {
+  document.removeEventListener('DOMContentLoaded', initOptions);
+
   initNavigation();
-  showSection($$('mi-subscriptions'));
   initGeneralSettingsSection();
   initSubscriptionsSection();
   initFeedDetailsSection();
   initSubscribeDiscoverSection();
   initDisplaySettingsSection();
   initAboutSection();
+
+  showSection($$('mi-subscriptions'));
 }
 
-document.addEventListener('DOMContentLoaded', initOptionsPage);
+document.addEventListener('DOMContentLoaded', initOptions);
 
-} // END ANONYMOUS NAMESPACE
+} (this));
