@@ -9,42 +9,7 @@
 // TODO: merge table processing functions
 
 (function(exports, Calamine) {
-
 'use strict';
-
-const NODE_TYPE_ELEMENT = Node.ELEMENT_NODE;
-const NODE_TYPE_TEXT = Node.TEXT_NODE;
-
-function pruneDocument(document) {
-  filterComments(document);
-  filterFrames(document);
-  applyBlacklist(document);
-  filterHidden(document);
-
-  const calamine = new Calamine();
-  calamine.analyze(document);
-  calamine.prune();
-
-  filterAnchors(document);
-  filterBreaks(document);
-  filterImages(document);
-  filterInlines(document);
-  filterTexts(document);
-  filterLeaves(document);
-  filterLists(document);
-  filterSingleCellTables(document);
-  filterSingleColumnTables(document);
-  trimDocument(document);
-  filterAttributes(document);
-}
-
-function filterComments(document) {
-  const it = document.createNodeIterator(document.documentElement,
-    NodeFilter.SHOW_COMMENT);
-  for(let node = it.nextNode(); node; node = it.nextNode()) {
-    node.remove();
-  }
-}
 
 const BLACKLIST = [
   'applet',
@@ -70,11 +35,13 @@ const BLACKLIST = [
   'optgroup',
   'option',
   'param',
+  'path',
   'progress',
   'script',
   'select',
   'spacer',
   'style',
+  'svg',
   'textarea',
   'title',
   'video',
@@ -83,8 +50,56 @@ const BLACKLIST = [
 
 const BLACKLIST_SELECTOR = BLACKLIST.join(',');
 
-function applyBlacklist(document) {
-  const elements = document.querySelectorAll(BLACKLIST_SELECTOR);
+//TODO: include aria hidden?
+// https://www.w3.org/TR/wai-aria/states_and_properties#aria-hidden
+const HIDDEN_SELECTOR = [
+  '[style*="display:none"]',
+  '[style*="display: none"]',
+  '[style*="visibility:hidden"]',
+  '[style*="visibility: hidden"]',
+  '[style*="opacity:0.0"]'
+].join(',');
+
+const NODE_TYPE_ELEMENT = Node.ELEMENT_NODE;
+const NODE_TYPE_TEXT = Node.TEXT_NODE;
+const NODE_TYPE_COMMENT = Node.COMMENT_NODE;
+
+function pruneDocument(document) {
+  filterComments(document);
+  transformFrameset(document);
+  removeElementsBySelector(document, 'frameset, frame, iframe');
+  removeElementsBySelector(document, BLACKLIST_SELECTOR);
+  removeElementsBySelector(document, HIDDEN_SELECTOR);
+  filterBoilerplate(document);
+  filterAnchors(document);
+  filterBreaks(document);
+  filterImages(document);
+  filterInlines(document);
+  filterTexts(document);
+  filterLeaves(document);
+  filterLists(document);
+  filterSingleCellTables(document);
+  filterSingleColumnTables(document);
+  trimDocument(document);
+  filterAttributes(document);
+}
+
+function filterBoilerplate(document) {
+  const calamine = new Calamine();
+  calamine.analyze(document);
+  calamine.prune();
+}
+
+function filterComments(document) {
+  const it = document.createNodeIterator(document.documentElement,
+    NODE_TYPE_COMMENT);
+  for(let node = it.nextNode(); node; node = it.nextNode()) {
+    node.remove();
+  }
+}
+
+function removeElementsBySelector(document, selector) {
+  const elements = document.querySelectorAll(selector);
   const numElements = elements.length;
   const root = document.documentElement;
   for(let i = 0, element = root; i < numElements; i++) {
@@ -95,34 +110,19 @@ function applyBlacklist(document) {
   }
 }
 
-function filterFrames(document) {
-  const body = document.body;
-
-  if(body && body.localName === 'frameset') {
-    const noframes = document.querySelector('noframes');
-
-    const newBody = document.createElement('body');
-
-    if(noframes) {
-      // TODO: fix encoding issues, maybe use textContent instead?
-      // or use appendChild?
-      newBody.innerHTML = noframes.innerHTML;
-    } else {
-      newBody.textContent = 'Unable to display document due to frames.';
-    }
-
-    document.documentElement.appendChild(newBody);
-    body.remove();
+// TODO: research why content sometimes appears garbled, like encoded, as if
+// it is re-encoding html
+function transformFrameset(document) {
+  let body = document.body;
+  if(!body || body.localName !== 'frameset') {
+    return;
   }
 
-  const elements = document.querySelectorAll('frameset, frame, iframe');
-  const numElements = elements.length;
-  const root = document.documentElement;
-  for(let i = 0, element; i < numElements; i++) {
-    element = elements[i];
-    if(root.contains(element)) {
-      element.remove();
-    }
+  const noframes = document.querySelector('noframes');
+  if(noframes) {
+    body.innerHTML = noframes.innerHTML;
+  } else {
+    body.textContent = 'Unable to display document due to frames.';
   }
 }
 
@@ -165,13 +165,7 @@ function filterAttributes(document) {
       continue;
     }
 
-    // TODO: no-op on SVG leads to large strange svg images appearing
-    // in the output, maybe I just can't support, or maybe I somehow
-    // enforce maximum dimensions
-
-    if(elementName === 'svg' || elementName === 'path') {
-      // NO-OP
-    } else if(elementName === 'a') {
+    if(elementName === 'a') {
       for(j = attributes.length - 1; j > -1; j--) {
         attributeName = attributes[j].name;
         if(attributeName !== 'href' && attributeName !== 'name' &&
@@ -201,31 +195,6 @@ function filterAttributes(document) {
     }
   }
 }
-
-const HIDDEN_SELECTOR = [
-  '[style*="display:none"]',
-  '[style*="display: none"]',
-  '[style*="visibility:hidden"]',
-  '[style*="visibility: hidden"]',
-  '[style*="opacity:0.0"]',
-  '[style*="opacity: 0.0"]',
-  '[style*="opacity:0"]'
-].join(',');
-
-//TODO: include aria hidden?
-// https://www.w3.org/TR/wai-aria/states_and_properties#aria-hidden
-function filterHidden(document) {
-  const elements = document.querySelectorAll(HIDDEN_SELECTOR);
-  const numElements = elements.length;
-  const root = document.documentElement;
-  for(let i = 0, element; i < numElements; i++) {
-    element = elements[i];
-    if(root.contains(element)) {
-      element.remove();
-    }
-  }
-}
-
 
 const INLINE_ELEMENT_NAMES = [
   'article',
@@ -321,7 +290,6 @@ function collectLeaves(leaves, bodyElement, element) {
     }
   }
 }
-
 
 // TODO: remove the bodyElement parameter
 // TODO: non-recursive
@@ -502,42 +470,42 @@ function trimDocument(document) {
 
 function isTrimmable(node) {
   if(node.nodeType === NODE_TYPE_ELEMENT) {
-    switch(node.localName) {
-      case 'br':
-      case 'hr':
-      case 'nobr':
-        return true;
-      case 'p':
-        return !node.firstChild;
-      default:
-        break;
+    const name = node.localName;
+    if(name === 'br' || name === 'hr' || name === 'nobr') {
+      return true;
+    } else if(name === 'p') {
+      return !node.firstChild;
     }
   } else if(node.nodeType === NODE_TYPE_TEXT) {
-    return node.nodeValue && node.nodeValue.trim();
+    const value = node.nodeValue;
+    return value && value.trim();
   }
 
   return false;
 }
 
+function hasTrivialNodeValue(value) {
+  return value === '' || value === '\n' || value === '\n\t' ||
+    value === '\n\t\t' || value === '\n\t\t\t' || value === '\n\t\t\t\t';
+}
+
+function isWhitespaceSensitive(node) {
+  return node.parentNode.closest('code, pre, ruby, textarea, xmp');
+}
+
 function filterTexts(document) {
   const it = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_TEXT);
-  for(let node = it.nextNode(); node; node = it.nextNode()) {
-    switch(node.nodeValue) {
-      case '\n':
-      case '\n\t':
-      case '\n\t\t':
-      case '\n\t\t\t':
-        break;
-      default:
-        // Normalize whitespace
-        node.nodeValue = node.nodeValue.replace(/&nbsp;/ig, ' ');
-        break;
+  for(let node = it.nextNode(), value; node; node = it.nextNode()) {
+    value = node.nodeValue;
+    if(!hasTrivialNodeValue(value)) {
+      value = value.replace(/&nbsp;/ig, ' ');
     }
 
-    if(!node.parentNode.closest('code, pre, ruby, textarea, xmp')) {
-      node.nodeValue = node.nodeValue.replace(/\s{2,}/g, ' ');
+    if(!isWhitespaceSensitive(node)) {
+      value = value.replace(/\s{2,}/g, ' ');
     }
+    node.nodeValue = value;
   }
 }
 
