@@ -66,7 +66,7 @@ const NODE_TYPE_COMMENT = Node.COMMENT_NODE;
 
 function pruneDocument(document) {
   filterComments(document);
-  transformFrameset(document);
+  replaceFrames(document);
   removeElementsBySelector(document, 'frameset, frame, iframe');
   removeElementsBySelector(document, BLACKLIST_SELECTOR);
   removeElementsBySelector(document, HIDDEN_SELECTOR);
@@ -112,7 +112,7 @@ function removeElementsBySelector(document, selector) {
 
 // TODO: research why content sometimes appears garbled, like encoded, as if
 // it is re-encoding html
-function transformFrameset(document) {
+function replaceFrames(document) {
   let body = document.body;
   if(!body || body.localName !== 'frameset') {
     return;
@@ -122,7 +122,7 @@ function transformFrameset(document) {
   if(noframes) {
     body.innerHTML = noframes.innerHTML;
   } else {
-    body.textContent = 'Unable to display document due to frames.';
+    body.textContent = 'Unable to display framed document.';
   }
 }
 
@@ -264,85 +264,43 @@ function filterInlines(document) {
   }
 }
 
+// Never considered a leaf element even without child nodes
+const LEAF_EXCEPTIONS = {
+  'area': 1,
+  'audio': 1,
+  'br': 1,
+  'canvas': 1,
+  'col': 1,
+  'hr': 1,
+  'iframe': 1,
+  'img': 1,
+  'path': 1,
+  'source': 1,
+  'svg': 1,
+  'track': 1,
+  'video': 1
+};
+
 function filterLeaves(document) {
-  const leafSet = new Set();
-  collectLeaves(leafSet, document.body, document.documentElement);
-  const rootElement = document.documentElement;
-  for(let leaf of leafSet) {
-    if(rootElement.contains(leaf)) {
-      leaf.remove();
-    }
-  }
-}
-
-// TODO: no recursion
-function collectLeaves(leaves, bodyElement, element) {
-  const childNodes = element.childNodes;
-  const numChildNodes = childNodes.length;
-  for(let i = 0, cursor; i < numChildNodes; i++) {
-    cursor = childNodes[i];
-    if(cursor.nodeType === NODE_TYPE_ELEMENT) {
-      if(isLeaf(bodyElement, cursor)) {
-        leaves.add(cursor);
-      } else {
-        collectLeaves(leaves, bodyElement, cursor);
-      }
-    }
-  }
-}
-
-// TODO: remove the bodyElement parameter
-// TODO: non-recursive
-function isLeaf(bodyElement, element) {
-  if(element === bodyElement) {
-    return false;
-  }
-
-  switch(element.localName) {
-    case 'area':
-    case 'audio':
-    case 'br':
-    case 'canvas':
-    case 'col':
-    case 'hr':
-    case 'iframe':
-    case 'img':
-    case 'path':
-    case 'source':
-    case 'svg':
-    case 'track':
-    case 'video':
-      return false;
-    default:
-      break;
-  }
-
-  const childNodes = element.childNodes;
-  const numChildNodes = childNodes.length;
-  for(let i = 0, node; i < numChildNodes; i++) {
-    node = childNodes[i];
-    if(node.nodeType === NODE_TYPE_TEXT) {
-      switch(node.nodeValue) {
-        case '':
-        case '\n':
-        case '\n\t':
-        case '\n\t\t':
-        case '\n\t\t\t':
-        case '\n\t\t\t\t':
-          break;
-        default:
-          return false;
-      }
-    } else if(node.nodeType === NODE_TYPE_ELEMENT) {
-      if(!isLeaf(bodyElement, node)) {
-        return false;
-      }
+  const stack = [document.documentElement];
+  const leaves = [];
+  let element = null;
+  while(stack.length) {
+    element = stack.pop();
+    if(!element.firstChild && !(element.localName in LEAF_EXCEPTIONS)) {
+      leaves.push(element);
     } else {
-      return false;
+      element = element.lastElementChild;
+      while(element) {
+        stack.push(element);
+        element = element.previousElementSibling;
+      }
     }
   }
 
-  return true;
+  for(let i = 0, length = leaves.length; i < length; i++) {
+    leaves[i].remove();
+  }
 }
 
 // TODO: unwrap/remove js anchors?
