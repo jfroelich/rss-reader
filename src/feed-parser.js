@@ -84,7 +84,6 @@ function getFeedDate(channel) {
 
 function getFeedLink(channel) {
   const isAtom = channel.ownerDocument.documentElement.matches('feed');
-  const findChildElement = findChildElement;
 
   const isLinkRelAlternate = function(element) {
     return element.localName === 'link' &&
