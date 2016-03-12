@@ -36,6 +36,19 @@ utils.fadeElement = function(element, duration, delay, callback) {
   style.opacity = style.opacity === '1' ? '0' : '1';
 };
 
+utils.filter = function(subject, predicate) {
+  'use strict';
+  const length = subject.length;
+  const result = [];
+  for(let i = 0, item; i < length; i++) {
+    item = subject[i];
+    if(predicate(item)) {
+      result.push(item);
+    }
+  }
+  return result;
+};
+
 utils.filterArticleTitle = function(title) {
   'use strict';
   if(!title)
@@ -72,6 +85,13 @@ utils.filterURLProtocol = function(url) {
   uri.protocol('');
   // Remove the leading slashes before returning
   return uri.toString().substring(2);
+};
+
+utils.forEach = function(subject, callback) {
+  'use strict';
+  for(let i = 0, length = subject.length; i < length; i++) {
+    callback(subject[i]);
+  }
 };
 
 // A quick and dirty way to get a formatted date
@@ -134,6 +154,11 @@ utils.parseHTML = function(html) {
   const doc = document.implementation.createHTMLDocument();
   doc.documentElement.innerHTML = html;
   return doc;
+};
+
+utils.removeNode = function(childNode) {
+  'use strict';
+  childNode.remove();
 };
 
 // Returns a new string where html elements were replaced with the optional
@@ -250,6 +275,17 @@ utils.scrollElementTo = function(element, deltaY, targetY) {
       clearInterval(scrollYIntervalTimer);
     }
   }
+};
+
+utils.some = function(subject, predicate) {
+  'use strict';
+  const length = subject.length;
+  for(let i = 0; i < length; i++) {
+    if(predicate(subject[i])) {
+      return true;
+    }
+  }
+  return false;
 };
 
 // Split the string into an array of words

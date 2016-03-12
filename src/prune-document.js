@@ -3,8 +3,9 @@
 // that can be found in the LICENSE file
 
 // Requires: /src/calamine.js
+// Requires: /src/utils.js
 // Exports: pruneDocument
-// For filtering the contents of an HTML Document object
+// Lib for filtering the contents of an HTML Document object
 
 // TODO: merge table processing functions
 
@@ -64,12 +65,14 @@ const HIDDEN_SELECTOR = [
 function pruneDocument(document) {
   filterComments(document);
   replaceFrames(document);
-  forEach(document.querySelectorAll(BLACKLIST_SELECTOR), removeIfAttached);
-  forEach(document.querySelectorAll(HIDDEN_SELECTOR), removeIfAttached);
+  utils.forEach(document.querySelectorAll(BLACKLIST_SELECTOR),
+    removeIfAttached);
+  utils.forEach(document.querySelectorAll(HIDDEN_SELECTOR), removeIfAttached);
   filterBoilerplate(document);
-  forEach(document.querySelectorAll('a'), filterAnchor);
-  // forEach(document.querySelectorAll('br'), filterBreakRule);
-  forEach(filter(document.querySelectorAll('img'), isFilterableImage), remove);
+  utils.forEach(document.querySelectorAll('a'), filterAnchor);
+  // utils.forEach(document.querySelectorAll('br'), filterBreakRule);
+  utils.forEach(utils.filter(document.querySelectorAll('img'),
+    isFilterableImage), utils.removeNode);
   filterInlines(document);
   filterTexts(document);
   filterLists(document);
@@ -97,12 +100,6 @@ function filterComments(document) {
 function removeIfAttached(element) {
   if(element.ownerDocument.documentElement.contains(element)) {
     element.remove();
-  }
-}
-
-function forEach(subject, callback) {
-  for(let i = 0, length = subject.length; i < length; i++) {
-    callback(subject[i]);
   }
 }
 
@@ -194,7 +191,7 @@ function filterAttributes(document) {
   }
 }
 
-const INLINE_ELEMENT_NAMES = [
+const INLINE_ELEMENT_SELECTOR = [
   'article',
   'center',
   'colgroup',
@@ -229,46 +226,46 @@ const INLINE_ELEMENT_NAMES = [
   'plaintext',
   'small',
   'tt'
-];
+].join(',');
 
-const INLINE_SELECTOR = INLINE_ELEMENT_NAMES.join(',');
+function filterInlines(document) {
+  utils.forEach(document.querySelectorAll(INLINE_ELEMENT_SELECTOR),
+    filterInlineElement);
+}
 
 // TODO: this is still slow. profile against the more naive version
 // that unwrapped all elements immediately
-function filterInlines(document) {
-  const elements = document.querySelectorAll(INLINE_SELECTOR);
-  const numElements = elements.length;
-
-  for(let i = 0, element, firstChild, farthest, ancestor; i < numElements;
-    i++) {
-    element = elements[i];
-
-    firstChild = element.firstChild;
-    if(firstChild && firstChild === element.lastChild &&
-      isElementNode(firstChild) &&
-      firstChild.matches(INLINE_SELECTOR)) {
-      // Skip
-    } else {
-      // Find shallowest consecutive inline ancestor
-      farthest = null;
-      for(ancestor = element.parentNode; ancestor &&
-        ancestor.childElementCount === 1 &&
-        ancestor.matches(INLINE_SELECTOR);
-        ancestor = ancestor.parentNode) {
-        farthest = ancestor;
-      }
-      unwrap(element, farthest);
+function filterInlineElement(element) {
+  const firstChild = element.firstChild;
+  if(firstChild && firstChild === element.lastChild &&
+    isElementNode(firstChild) &&
+    firstChild.matches(INLINE_ELEMENT_SELECTOR)) {
+    // Skip
+  } else {
+    // Find shallowest consecutive inline ancestor
+    let farthest = null;
+    for(let ancestor = element.parentNode; ancestor &&
+      ancestor.childElementCount === 1 &&
+      ancestor.matches(INLINE_ELEMENT_SELECTOR);
+      ancestor = ancestor.parentNode) {
+      farthest = ancestor;
     }
+    unwrap(element, farthest);
   }
 }
 
 function filterLeaves(document) {
-  forEach(document.querySelectorAll('*'), removeIfAttachedLeaf);
+  utils.forEach(document.querySelectorAll('*'), removeIfAttachedLeaf);
 }
 
 function removeIfAttachedLeaf(element) {
-  if(element.ownerDocument.documentElement.contains(element) &&
-    isLeaf(element)) {
+  const documentElement = element.ownerDocument.documentElement;
+  if(!documentElement) {
+    console.debug('No document element:', element.outerHTML);
+    return;
+  }
+
+  if(documentElement.contains(element) && isLeaf(element)) {
     element.remove();
   }
 }
@@ -304,18 +301,8 @@ function isLeafException(element) {
 }
 
 function isLeaf(element) {
-  return !isLeafException(element) && !some(element.childNodes,
-    isNonLeafChild);
-}
-
-function some(subject, predicate) {
-  const length = subject.length;
-  for(let i = 0; i < length; i++) {
-    if(predicate(subject[i])) {
-      return true;
-    }
-  }
-  return false;
+  return !isLeafException(element) &&
+    !utils.some(element.childNodes, isNonLeafChild);
 }
 
 // An element is a non-leaf child it is a text node with a non-whitespace
@@ -345,17 +332,7 @@ function isElementNode(node) {
   return node.nodeType === Node.ELEMENT_NODE;
 }
 
-function filter(subject, predicate) {
-  const length = subject.length;
-  const result = [];
-  for(let i = 0, item; i < length; i++) {
-    item = subject[i];
-    if(predicate(item)) {
-      result.push(item);
-    }
-  }
-  return result;
-}
+
 
 function filterAnchor(anchor) {
   if(isNominalAnchor(anchor)) {
@@ -375,7 +352,7 @@ function isJavascriptAnchor(anchor) {
 }
 
 function unwrapSingleCellTables(document) {
-  forEach(document.querySelectorAll('table'), unwrapTableIfSingleCell);
+  utils.forEach(document.querySelectorAll('table'), unwrapTableIfSingleCell);
 }
 
 // TODO: what about skipping past empty rows and still unwrapping?
@@ -395,7 +372,7 @@ function unwrapTableIfSingleCell(table) {
 }
 
 function filterSingleColumnTables(document) {
-  forEach(document.querySelectorAll('table'), filterTableIfSingleColumn);
+  utils.forEach(document.querySelectorAll('table'), filterTableIfSingleColumn);
 }
 
 function filterTableIfSingleColumn(table) {
@@ -429,7 +406,7 @@ function isProbablySingleColumnTable(table) {
 }
 
 function filterLists(document) {
-  forEach(document.querySelectorAll('ul, ol'), unwrapSingleItemList);
+  utils.forEach(document.querySelectorAll('ul, ol'), unwrapSingleItemList);
 }
 
 function unwrapSingleItemList(list) {
@@ -442,9 +419,7 @@ function unwrapSingleItemList(list) {
   }
 }
 
-function remove(childNode) {
-  childNode.remove();
-}
+
 
 function isFilterableImage(image) {
   return isSourcelessImage(image) || isTracerImage(image);
