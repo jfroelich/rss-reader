@@ -2,484 +2,345 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Requires: /src/utils.js
+
+(function(exports) {
 'use strict';
 
-// TODO: i am using scores for finding the body for now, but maybe i want to
-// express the weights as probabilities instead of magnitudes
+function applyCalamine(document, annotate) {
 
-{ // BEGIN ANONYMOUS NAMESPACE
+  let bestElement = fastFindBestElement(document);
 
-function Calamine() {
-  this.document = null;
-  this.body = null;
-  this.textLengths = null;
-  this.anchorLengths = null;
-  this.bodyTextScores = null;
-  this.bodyListDescendantScores = null;
-  this.bodyNavDescendantScores = null;
-  this.bodyAncestorScores = null;
-  this.bodyImageContainerScores = null;
-  this.bodyAttributeScores = null;
-  this.bodyScores = null;
-  this.boilerplateElements = null;
+  if(!bestElement) {
+    const textLengths = deriveTextLengths(document);
+    const anchorLengths = deriveAnchorLengths(document, textLengths);
+    const candidates = selectCandidates(document);
+
+    const textScores = deriveTextScores(candidates, textLengths, anchorLengths);
+    const listScores = deriveListScores(candidates);
+    const navScores = deriveNavScores(candidates);
+    const ancestorScores = deriveAncestorScores(candidates);
+    const imageScores = deriveImageScores(document);
+    const attributeScores = deriveAttributeScores(candidates);
+
+    if(annotate) {
+      for(let entry of textLengths) {
+        entry[0].dataset.textLength = entry[1];
+      }
+
+      for(let entry of anchorLengths) {
+        entry[0].dataset.anchorLength = entry[1];
+      }
+
+      for(let entry of textScores) {
+        entry[0].dataset.textScore = entry[1];
+      }
+
+      for(let entry of listScores) {
+        entry[0].dataset.listScore = entry[1];
+      }
+
+      for(let entry of navScores) {
+        entry[0].dataset.navScore = entry[1];
+      }
+
+      for(let entry of ancestorScores) {
+        entry[0].dataset.ancestorScore = entry[1];
+      }
+
+      for(let entry of imageScores) {
+        entry[0].dataset.imageScore = entry[1];
+      }
+
+      for(let entry of attributeScores) {
+        entry[0].dataset.attributeScore = entry[1];
+      }
+    }
+
+    // Integrate the scores
+    const scores = new Map();
+    for(let entry of textScores) {
+      scores.set(entry[0], entry[1]);
+    }
+
+    for(let entry of listScores) {
+      scores.set(entry[0], (scores.get(entry[0]) || 0.0) + entry[1]);
+    }
+
+    for(let entry of navScores) {
+      scores.set(entry[0], (scores.get(entry[0]) || 0.0) + entry[1]);
+    }
+
+    for(let entry of ancestorScores) {
+      scores.set(entry[0], (scores.get(entry[0]) || 0.0) + entry[1]);
+    }
+
+    for(let entry of imageScores) {
+      scores.set(entry[0], (scores.get(entry[0]) || 0.0) + entry[1]);
+    }
+
+    for(let entry of attributeScores) {
+      scores.set(entry[0], (scores.get(entry[0]) || 0.0) + entry[1]);
+    }
+
+    // Find the highest scoring element
+    let highScore = 0.0;
+    bestElement = document.documentElement;
+    for(let entry of scores) {
+      if(entry[1] > highScore) {
+        bestElement = entry[0];
+        highScore = entry[1];
+      }
+    }
+  }
+
+  // Prune
+  prune(document, bestElement);
 }
 
-// Export global
-this.Calamine = Calamine;
+function fastFindBestElement(document) {
 
-// Analyzes a document. Extracts various features and stores them
-// as internal properties.
-// NOTE: assumes 'this' is bound to the Calamine instance
-Calamine.prototype.analyze = function(document) {
-  this.document = document;
+  const SIGNATURES = [
+    'article',
+    '.hentry',
+    '.entry-content',
+    '#article',
+    '.articleText',
+    '.articleBody',
+    '#articleBody',
+    '.article_body',
+    '.articleContent',
+    '.full-article',
+    '.repository-content',
+    '[itemprop="articleBody"]',
+    '[role="article"]',
+    'div[itemtype="http://schema.org/Article"]',
+    'div[itemtype="http://schema.org/BlogPosting"]',
+    'div[itemtype="http://schema.org/Blog"]',
+    'div[itemtype="http://schema.org/NewsArticle"]',
+    'div[itemtype="http://schema.org/TechArticle"]',
+    'div[itemtype="http://schema.org/ScholarlyArticle"]',
+    'div[itemtype="http://schema.org/WebPage"]',
+    '#WNStoryBody'
+  ];
 
-  // Only analyze documents with an actual body element. The prune function
-  // exits early if bodyElement is not set. We cannot use document.body
-  // because that is truthy for non-body elements like frameset.
-  if(!document.querySelector('body')) {
-    console.debug('calamine: no body element found');
-    return;
-  }
-
-  // Default the predicted body to the actual body. We only set this after
-  // checking for frameset above so that later functions like prune know to
-  // exit early by testing if this.body is defined
-  this.body = document.body;
-
-  // Do a quick search for a body matching a known signature
-  let signatureBody = fastFindBodyElement.call(this);
-  if(signatureBody) {
-    this.body = signatureBody;
-  } else {
-    // Extract features indicative of the body
-    deriveTextLength.call(this);
-    deriveAnchorLength.call(this);
-    deriveBodyTextScores.call(this);
-    deriveBodyListDescendantScores.call(this);
-    deriveBodyNavDescendantScores.call(this);
-    deriveBodyAncestorScores.call(this);
-    deriveBodyImageContainerScores.call(this);
-    deriveBodyAttributeScores.call(this);
-    deriveBodyScores.call(this);
-
-    // Set this.body to the body candidate with the highest body score
-    // NOTE: unlike previous, init to 0, because document.body is not within
-    // bodyScores, because document.body is not a candidate, and because
-    // we query only under document.body for candidates. This may require more
-    // thought in the case that the body element itself should be considered
-    // as the potential best body element.
-    let bestBodyScore = 0.0;
-    for(let entry of this.bodyScores) {
-      if(entry[1] > bestBodyScore) {
-        this.body = entry[0];
-        bestBodyScore = entry[1];
-      }
-    }
-  }
-
-  // Now that we have a body, analyze the elements within the body as
-  // individual blocks and determine whether each block is boilerplate or not
-  // boilerplate. if positive score, its content, if negative score,
-  // its boilerplate.
-
-  // old code to integrate
-  //results.boilerplateElements = classifyBoilerplate(results.bodyElement);
-  classifyInBodyContent.call(this);
-};
-
-// Removes boilerplate content
-// TODO: use Node.compareDocumentPosition
-Calamine.prototype.prune = function() {
-
-  // TODO: instead of using garbage.adoptNode, just retain the root
-  // node of the source doc and test source.contains, and do nothing
-  // if false.
-
-  // TODO: review why i was having problems with using local
-  // constants
-  // const body = this.body;
-  // const document = this.document;
-
-  if(!this.body) {
-    return;
-  }
-
-  const garbage = this.document.implementation.createHTMLDocument();
-  const elements = this.document.querySelectorAll('*');
-  const numElements = elements.length;
-  for(let i = 0, element; i < numElements; i++) {
-    element = elements[i];
-
-    if(element.ownerDocument !== this.document) {
-      continue;
-    }
-
-    if(element === this.body) {
-      continue;
-    }
-
-    if(element.contains(this.body)) {
-      continue;
-    }
-
-    if(this.body.contains(element)) {
-
-      if(this.boilerplateElements.has(element)) {
-        garbage.adoptNode(element);
-      } else {
-        // Keep it
-      }
-
-    } else {
-      garbage.adoptNode(element);
-    }
-  }
-};
-
-Calamine.prototype.annotate = function() {
-
-  if(this.textLengths) {
-    for(let entry of this.textLengths) {
-      entry[0].dataset.textLength = entry[1];
-    }
-  }
-
-  if(this.anchorLengths) {
-    for(let entry of this.anchorLengths) {
-      entry[0].dataset.anchorLength = entry[1];
-    }
-  }
-
-  if(this.bodyTextScores) {
-    for(let entry of this.bodyTextScores) {
-      entry[0].dataset.bodyTextScore = entry[1];
-    }
-  }
-
-  if(this.bodyListDescendantScores) {
-    for(let entry of this.bodyListDescendantScores) {
-      entry[0].dataset.bodyListDescendantScore = entry[1];
-    }
-  }
-
-  if(this.bodyNavDescendantScores) {
-    for(let entry of this.bodyNavDescendantScores) {
-      entry[0].dataset.bodyNavDescendantScore = entry[1];
-    }
-  }
-
-  if(this.bodyAncestorScores) {
-    for(let entry of this.bodyAncestorScores) {
-      entry[0].dataset.bodyAncestorScore = entry[1];
-    }
-  }
-
-  if(this.bodyImageContainerScores) {
-    for(let entry of this.bodyImageContainerScores) {
-      entry[0].dataset.bodyImageContainerScore = entry[1];
-    }
-  }
-
-  if(this.bodyAttributeScores) {
-    for(let entry of this.bodyAttributeScores) {
-      entry[0].dataset.bodyAttributeScore = entry[1];
-    }
-  }
-
-  if(this.bodyScores) {
-    for(let entry of this.bodyScores) {
-      entry[0].dataset.bodyScore = entry[1];
-    }
-  }
-
-  // Annotate the chosen body as the prediction
-  this.body.dataset.predictedBody = 'true';
-
-  if(this.boilerplateElements) {
-    for(let element of this.boilerplateElements) {
-      element.dataset.boilerplate = 'true';
-    }
-  }
-};
-
-const BODY_SIGNATURES = [
-  'article',
-  '.hentry',
-  '.entry-content',
-  '#article',
-  '.articleText',
-  '.articleBody',
-  '#articleBody',
-  '.article_body',
-  '.articleContent',
-  '.full-article',
-  '.repository-content',
-  '[itemprop="articleBody"]',
-  '[role="article"]',
-  'div[itemtype="http://schema.org/Article"]',
-  'div[itemtype="http://schema.org/BlogPosting"]',
-  'div[itemtype="http://schema.org/Blog"]',
-  'div[itemtype="http://schema.org/NewsArticle"]',
-  'div[itemtype="http://schema.org/TechArticle"]',
-  'div[itemtype="http://schema.org/ScholarlyArticle"]',
-  'div[itemtype="http://schema.org/WebPage"]',
-  '#WNStoryBody'
-];
-
-const NUM_SIGNATURES = BODY_SIGNATURES.length;
-
-// Do a quick search for known, obvious body signatures
-function fastFindBodyElement() {
-  const body = this.document.body;
-  for(let i = 0, elements = null; i < NUM_SIGNATURES; i++) {
-    elements = body.querySelectorAll(BODY_SIGNATURES[i]);
+  for(let i = 0, len = SIGNATURES.length; i < len; i++) {
+    const elements = document.querySelectorAll(SIGNATURES[i]);
     if(elements.length === 1) {
       return elements[0];
     }
   }
 }
 
-// Extract character counts per element
-// TODO: this should only count characters of candidate elements, not
-// all elements, as an optimization? but how would i propagate upward?
-function deriveTextLength() {
-  this.textLengths = new Map();
-  const iterator = this.document.createNodeIterator(
-    this.document.documentElement, NodeFilter.SHOW_TEXT);
-  let node = iterator.nextNode();
-  let length = 0;
-  let element = null;
-  let previousLength = 0;
-  while(node) {
-    length = getNodeTextLength(node);
-    if(length) {
-      element = node.parentElement;
-      while(element) {
-        previousLength = this.textLengths.get(element) || 0;
-        this.textLengths.set(element, previousLength + length);
-        element = element.parentElement;
-      }
+// TODO: use Node.compareDocumentPosition
+function prune(document, bestElement) {
+
+  const documentElement = document.documentElement;
+
+  // There is no pruning work to be done if the best element is the root
+  if(bestElement === documentElement) {
+    return;
+  }
+
+  utils.forEach(document.querySelectorAll('*'), function maybePrune(element) {
+    // The element is a descendant of an element removed in a prior
+    // iteration, ignore it
+    if(!documentElement.contains(element)) {
+      return;
     }
 
-    node = iterator.nextNode();
-  }
+    // The element is the best element so we must retain
+    if(element === bestElement) {
+      return;
+    }
+
+    if(!element) {
+      console.debug('undefined element');
+      return;
+    }
+
+    if(element.nodeType !== Node.ELEMENT_NODE) {
+      console.debug('NOT AN ELEMENT:', element.outerHTML);
+      return;
+    }
+
+    // The element is an ancestor of the best element, so we must retain
+    if(element.contains(bestElement)) {
+      return;
+    }
+
+    if(bestElement.contains(element)) {
+      // Keep the element unless it is specifically boilerplate
+      // For now we just keep
+      return;
+    }
+
+    // The element does not intersect, remove it
+    element.remove();
+  });
 }
 
-const RE_WHITESPACE = /\s|&nbsp;/g;
+// Measure the text lengths of all elements in the document. For performance,
+// this works from the bottom up. Returns Map<Element,int>.
+function deriveTextLengths(document) {
+  const result = new Map();
+  const it = document.createNodeIterator(document.documentElement,
+    NodeFilter.SHOW_TEXT);
+  for(let node = it.nextNode(), length = 0, element; node;
+    node = it.nextNode()) {
+    length = deriveTextNodeLength(node);
+    for(element = length ? node.parentNode : null; element;
+      element = element.parentNode) {
+      result.set(element, (result.get(element) || 0) + length);
+    }
+  }
+  return result;
+}
 
-// Gets a representation of the number of characters for a text node
-function getNodeTextLength(node) {
-  const value = node.nodeValue;
-  let length = 0;
-  // Avoid the overhead of the regular expression by checking for
-  // various frequently occurring trivial text values
-  if(value !== '\n' && value !== '\n\t' && value !== '\n\t\t') {
-    // Get the length of the string without whitespace
-    length = value.replace(RE_WHITESPACE, '').length;
+// Get the length of a text node's nodeValue, ignoring certain whitespace
+function deriveTextNodeLength(textNode) {
+  const value = textNode.nodeValue;
+  let length = value.length;
+
+  // Only do the whitespace ignore if the text is sufficiently long, this
+  // reduces the number of regexp calls on trivial node values like
+  // '\n' or '\n\t'
+  // TODO: does \s consider &nbsp;?
+  if(length > 3) {
+    length = value.replace(/\s|&nbsp;/ig, '').length;
   }
 
   return length;
 }
 
-// Generate a map between document elements and a count of
-// the characters contained within anchor elements present
-// anywhere within the elements.
-function deriveAnchorLength() {
-
-  // NOTE: this double counts in the case of malformed HTML containing nested
-  // anchors. for now this case is ignored.
-
-  // TODO: cache the lookup to this.textLengths outside of the loop
-
-  this.anchorLengths = new Map();
-  const anchors = this.document.querySelectorAll('a[href]');
-  const numAnchors = anchors.length;
-
-  for(let i = 0, length, previousLength, anchor, ancestor; i < numAnchors;
-    i++) {
-
-    anchor = anchors[i];
-    length = this.textLengths.get(anchor);
-    if(!length) continue;
-
-    // TODO: if i only care about anchor lengths for candidate elements,
-    // and so because an anchor is not a candidate, this may be pointless?
-    this.anchorLengths.set(anchor,
-      (this.anchorLengths.get(anchor) || 0) + length);
-
-    ancestor = anchor.parentElement;
-    while(ancestor) {
-      previousLength = (this.anchorLengths.get(ancestor) || 0);
-      this.anchorLengths.set(ancestor, previousLength + length);
-      ancestor = ancestor.parentElement;
+function deriveAnchorLengths(document, textLengths) {
+  const result = new Map();
+  const anchors = document.querySelectorAll('a[href]');
+  utils.forEach(anchors, function measureAnchor(anchor) {
+    const length = textLengths.get(anchor);
+    for(let node = length ? anchor.parentNode : null; node;
+      node = node.parentNode) {
+      result.set(node, (result.get(node) || 0) + length);
     }
-  }
+  });
+  return result;
 }
 
-function selectBodyCandidates(document) {
-  // note: this only selects candidates WITHIN document.body, it excludes
-  // document.body itself as a candidate
-  // NOTE: maybe this should access a Set instead of hardcoding the query
-  return document.body.querySelectorAll(
-    'article, content, div, layer, main, section, td');
+function selectCandidates(document) {
+  return document.querySelectorAll(
+    'article, content, div, layer, main, section, span, td');
 }
 
 // Calculates and records the text bias for elements. The text bias metric is
 // adapted from the paper "Boilerplate Detection using Shallow Text Features".
-// See http://www.l3s.de/~kohlschuetter/boilerplate. This only looks at
-// character counts, this views elements as text blocks, this only looks at
-// certain elements (body candidates)
-function deriveBodyTextScores() {
-
-  // NOTE: unlike prior versions, this only sets scores on those elements
-  // that could be the body
-
-  this.bodyTextScores = new Map();
-  const elements = selectBodyCandidates(this.document);
-  const numElements = elements.length;
-  for(let i = 0, element, length, anchorLength, weight; i < numElements; i++) {
-    element = elements[i];
-    length = this.textLengths.get(element);
-    if(!length) continue;
-    anchorLength = this.anchorLengths.get(element) || 0;
-    weight = (0.25 * length) - (0.7 * anchorLength);
-    weight = Math.min(4000.0, weight);
-    if(!weight) continue;
-    this.bodyTextScores.set(element,
-      (this.bodyTextScores.get(element) || 0.0) + weight);
-  }
-}
-
-// TODO: this should be re-aligned, use some type of general utility function
-// like hasAncestor
-
-function isBodyCandidateListDescendant(element) {
-  let ancestor = element.parentElement;
-  let name = null;
-  while(ancestor) {
-
-    name = ancestor.localName;
-
-    if(name === 'li' || name === 'ol' || name === 'ul' ||
-      name === 'dd' || name === 'dl' || name === 'dt') {
-      return true;
-    }
-
-    ancestor = ancestor.parentElement;
-  }
-
-  return false;
-}
-
-function deriveBodyListDescendantScores() {
-  this.bodyListDescendantScores = new Map();
-  const elements = selectBodyCandidates(this.document);
-  const numElements = elements.length;
-  for(let i = 0, element; i < numElements; i++) {
-    element = elements[i];
-    if(isBodyCandidateListDescendant(element)) {
-      this.bodyListDescendantScores.set(element, -200.0);
-    }
-  }
-}
-
-function isBodyCandidateNavDescendant(element) {
-  let ancestor = element.parentElement;
-  let name = null;
-  while(ancestor) {
-    name = ancestor.localName;
-    if(name === 'aside' || name === 'header' || name === 'footer' ||
-      name === 'nav' || name === 'menu' || name === 'menuitem') {
-      return true;
-    }
-
-    ancestor = ancestor.parentElement;
-  }
-
-  return false;
-}
-
-function deriveBodyNavDescendantScores() {
-  this.bodyNavDescendantScores = new Map();
-  const elements = selectBodyCandidates(this.document);
-  const numElements = elements.length;
-  for(let i = 0, element; i < numElements; i++) {
-    element = elements[i];
-    if(isBodyCandidateNavDescendant(element)) {
-      this.bodyNavDescendantScores.set(element, -500.0);
-    }
-  }
-}
-
-// Bias parent body candidate elements for containing these elements
-// as immediate children
-// NOTE: this may need some refinement because it can heavily promote a
-// nested div of the main div which results in the best body not including
-// things like mastheads (an article's main introductory image)
-const UPWARD_BIAS = new Map([
-  ['a', -5.0],
-  ['aside', -50.0],
-  ['blockquote', 20.0],
-  ['br', 3.0],
-  ['div', -50.0],
-  ['figure', 20.0],
-  ['h1', 10.0],
-  ['h2', 10.0],
-  ['h3', 10.0],
-  ['h4', 10.0],
-  ['h5', 10.0],
-  ['h6', 10.0],
-  ['li', -5.0],
-  ['nav', -100.0],
-  ['ol', -20.0],
-  ['p', 100.0],
-  ['pre', 10.0],
-  ['section', -20.0],
-  ['ul', -20.0]
-]);
-
-function deriveBodyAncestorScores() {
-  this.bodyAncestorScores = new Map();
-
-  // Promote body candidate elements for containing certain elements
-  const elements = selectBodyCandidates(this.document);
-  const numElements = elements.length;
-  let childNodes = null;
-  let numChildren = 0;
-  let j = 0;
-  let child = null;
-  let bias = 0.0;
-  for(let i = 0, element; i < numElements; i++) {
-    element = elements[i];
-    childNodes = element.childNodes;
-    numChildren = childNodes.length;
-    for(j = 0; j < numChildren; j++) {
-      child = childNodes[j];
-      if(child.nodeType === Node.ELEMENT_NODE) {
-        bias = UPWARD_BIAS.get(child.localName);
-        if(bias) {
-          this.bodyAncestorScores.set(element,
-            (this.bodyAncestorScores.get(element) || 0.0) + bias);
-        }
+// See http://www.l3s.de/~kohlschuetter/boilerplate.
+function deriveTextScores(candidates, textLengths, anchorLengths) {
+  const result = new Map();
+  utils.forEach(candidates, function getScore(element) {
+    const textLength = textLengths.get(element);
+    if(textLength) {
+      const anchorLength = anchorLengths.get(element) || 0;
+      let weight = (0.25 * textLength) - (0.7 * anchorLength);
+      weight = Math.min(4000.0, weight);
+      if(weight) {
+        result.set(element, weight);
       }
     }
-  }
+  });
+  return result;
 }
 
-function imageParentIsBodyCandidate(element) {
-  // TODO: eventually remove the DRY violation with selectBodyCandidates
-  // and hoist the invariant into outer scope, and maybe even just
-  // deprecate this function at that point since it is so simple
-  const candidateNames = new Set([
-    'article',
-    'content',
-    'div',
-    'layer',
-    'main',
-    'section',
-    'td'
-  ]);
-  return candidateNames.has(element.localName);
+function deriveListScores(candidates) {
+  const result = new Map();
+  utils.forEach(candidates, function deriveListScore(element) {
+    if(hasListAncestor(element)) {
+      result.set(element, -200.0);
+    }
+  });
+  return result;
+}
+
+function hasListAncestor(element) {
+  // TODO: use element.parentNode as closest includes self?
+  return element.closest('li,ol,ul,dd,dl,dt');
+}
+
+function hasNavAncestor(element) {
+  return element.closest('aside,header,footer,nav,menu,menuitem');
+}
+
+function deriveNavScores(candidates) {
+  const result = new Map();
+  utils.forEach(candidates, function deriveNavScore(element) {
+    if(hasNavAncestor(element)) {
+      result.set(element, -500.0);
+    }
+  });
+  return result;
+}
+
+const ANCESTOR_BIAS = {
+  'a': -5.0,
+  'aside': -50.0,
+  'blockquote': 20.0,
+  'br': 3.0,
+  'div': -50.0,
+  'figure': 20.0,
+  'h1': 10.0,
+  'h2': 10.0,
+  'h3': 10.0,
+  'h4': 10.0,
+  'h5': 10.0,
+  'h6': 10.0,
+  'nav': -100.0,
+  'ol': -20.0,
+  'p': 10.0,
+  'pre': 10.0,
+  'section': -20.0,
+  'ul': -20.0
+};
+
+
+function deriveAncestorScores(candidates) {
+  const result = new Map();
+  utils.forEach(candidates, function deriveAncestorScores(element) {
+    let bias = 0.0;
+    for(let childElement = element.firstElementChild; childElement;
+      childElement = childElement.nextElementSibling) {
+      bias += ANCESTOR_BIAS[childElement.localName] || 0.0;
+    }
+    if(bias) {
+      result.set(element, bias);
+    }
+  });
+  return result;
+}
+
+// TODO: only score parents if they are candidates
+function deriveImageScores(document) {
+  const result = new Map();
+  const images = document.querySelectorAll('img');
+  utils.forEach(images, function deriveImageScore(image) {
+    let bias = 0.0;
+    const parent = image.parentNode;
+    bias += image.width && image.height ?
+      0.0015 * Math.min(100000, image.width * image.height) : 0.0;
+    bias += image.getAttribute('alt') ? 20.0 : 0.0;
+    bias += image.getAttribute('title') ? 30.0 : 0.0;
+    bias += findImageCaption(image) ? 100.0 : 0.0;
+
+    for(let element = parent.firstElementChild; element;
+      element = element.nextElementSibling) {
+      if(element !== image && element.localName === 'img') {
+        bias -= 50.0;
+      }
+    }
+
+    if(bias) {
+      result.set(parent, (result.get(parent) || 0.0) + bias);
+    }
+  });
+  return result;
 }
 
 function findImageCaption(image) {
@@ -487,223 +348,73 @@ function findImageCaption(image) {
   return figure ? figure.querySelector('figcaption') : null;
 }
 
-// TODO: this works, but not quite like I want. I think I need to propagate
-// farther up the hierarchy, because the immediate ancestor is sometimes
-// an extra nested non-candidate div. When there is that extra nesting, it
-// seems like the typical case that the masthead image gets excluded because
-// another nested div containing most of the text content gets picked as the
-// body.
-// TODO: this should at least be finding the first ancestor that is a body
-// candidate, not just the immediate parent
-// TODO: actually not sure this works, need to test more
-function deriveBodyImageContainerScores() {
-
-  this.bodyImageContainerScores = new Map();
-
-  const images = this.document.getElementsByTagName('img');
-  const numImages = images.length;
-  let imageParent = null;
-  let bias = 0.0;
-  let area = 0.0;
-  let caption = null;
-  let children = null;
-  let numChildren = 0;
-  let j = 0;
-  let node = null;
-  for(let i = 0, image; i < numImages; i++) {
-    image = images[i];
-    imageParent = image.parentElement;
-
-    if(!imageParent) {
-      continue;
-    }
-
-    // Check that the imageParent is a body candidate
-    if(!imageParentIsBodyCandidate(imageParent)) {
-      continue;
-    }
-
-    bias = 0.0;
-
-    // Dimension bias
-    if(image.width && image.height) {
-      area = image.width * image.height;
-      bias += 0.0015 * Math.min(100000, area);
-    }
-
-    // TODO: check data-alt and data-title?
-    if(image.getAttribute('alt')) {
-      bias += 20.0;
-    }
-
-    if(image.getAttribute('title')) {
-      bias += 30.0;
-    }
-
-    caption = findImageCaption(image);
-    if(caption) {
-      bias += 100.0;
-    }
-
-    // Carousel bias
-    children = imageParent.childNodes;
-    numChildren = children.length;
-    for(j = 0; j < numChildren; j++) {
-      node = children[j];
-      if(node !== image && node.localName === 'img') {
-        bias = bias - 50.0;
-      }
-    }
-
+function deriveAttributeScores(candidates) {
+  const result = new Map();
+  utils.forEach(candidates, function deriveAttributeScore(element) {
+    const tokens = getAttributeTokens(element);
+    const bias = getTokenBias(tokens);
     if(bias) {
-      this.bodyImageContainerScores.set(imageParent,
-        (this.bodyImageContainerScores.get(imageParent) || 0.0) + bias);
+      result.set(element. bias);
     }
-  }
+  });
+  return result;
 }
 
-// Looks for delimiting characters of attribute values
-// TODO: split on case-transition (lower2upper,upper2lower)
-const ATTRIBUTE_SPLIT = /[\s\-_0-9]+/g;
-
-
-// TODO: the use of the prefix 'get' is not quite accurate, because it implies
-// we are just returning a property, whereas this is actually doing substantial
-// calculation. Think of a better name. Or maybe it's fine.
-function getElementAttributeTokens(element) {
-
+function getAttributeTokens(element) {
   const values = [
     element.id,
     element.name,
     element.className
   ].join(' ');
 
-  const tokenSet = new Set();
-  if(values.length > 2) {
-    const tokenArray = values.toLowerCase().split(ATTRIBUTE_SPLIT);
-    for(let token of tokenArray) {
-      tokenSet.add(token);
-    }
-  }
+  if(values.length < 3)
+    return [];
 
-  return tokenSet;
-
+  const words = values.toLowerCase().split(/[\s\-_0-9]+/g);
+  return Array.from(new Set(words));
 }
 
-const BODY_ATTRIBUTE_BIAS = new Map([
-  ['ad', -500.0],
-  ['ads', -500.0],
-  ['advert', -500.0],
-  ['article', 500.0],
-  ['body', 500.0],
-  ['comment', -500.0],
-  ['content', 500.0],
-  ['contentpane', 500.0],
-  ['gutter', -300.0],
-  ['left', -50.0],
-  ['main', 500.0],
-  ['meta', -50.0],
-  ['nav', -200.0],
-  ['navbar', -200.0],
-  ['newsarticle', 500.0],
-  ['page', 200.0],
-  ['post', 300.0],
-  ['promo', -100.0],
-  ['rail', -300.0],
-  ['rel', -50.0],
-  ['relate', -500.0],
-  ['related', -500.0],
-  ['right', -50.0],
-  ['social', -200.0],
-  ['story', 100.0],
-  ['storytxt', 500.0],
-  ['tool', -200.0],
-  ['tools', -200.0],
-  ['widget', -200.0],
-  ['zone', -50.0]
-]);
+const ATTRIBUTE_BIAS = {
+  'ad': -500.0,
+  'ads': -500.0,
+  'advert': -500.0,
+  'article': 500.0,
+  'body': 500.0,
+  'comment': -500.0,
+  'content': 500.0,
+  'contentpane': 500.0,
+  'gutter': -300.0,
+  'left': -50.0,
+  'main': 500.0,
+  'meta': -50.0,
+  'nav': -200.0,
+  'navbar': -200.0,
+  'newsarticle': 500.0,
+  'page': 200.0,
+  'post': 300.0,
+  'promo': -100.0,
+  'rail': -300.0,
+  'rel': -50.0,
+  'relate': -500.0,
+  'related': -500.0,
+  'right': -50.0,
+  'social': -200.0,
+  'story': 100.0,
+  'storytxt': 500.0,
+  'tool': -200.0,
+  'tools': -200.0,
+  'widget': -200.0,
+  'zone': -50.0
+};
 
-function getBodyAttributeTokenSetBias(tokens) {
+function getTokenBias(tokens) {
   let bias = 0.0;
-  let total = 0.0;
-  for(let token of tokens) {
-    bias = BODY_ATTRIBUTE_BIAS.get(token);
-    if(bias) {
-      total += bias;
-    }
+  for(let i = 0, len = tokens.length; i < len; i++) {
+    bias += ATTRIBUTE_BIAS[tokens[i]] || 0.0;
   }
-
-  return total;
-
+  return bias;
 }
 
-function deriveBodyAttributeScores() {
+exports.applyCalamine = applyCalamine;
 
-  this.bodyAttributeScores = new Map();
-
-  const elements = selectBodyCandidates(this.document);
-  const numElements = elements.length;
-  let tokens = null;
-  let bias = 0.0;
-  for(let i = 0, element; i < numElements; i++) {
-    element = elements[i];
-    tokens = getElementAttributeTokens(element);
-    bias = getBodyAttributeTokenSetBias(tokens);
-    if(bias) {
-      this.bodyAttributeScores.set(element, bias);
-    }
-  }
-}
-
-// Sum up the other scores that influence the bodyScore for each body
-// candidate element
-function deriveBodyScores() {
-  this.bodyScores = new Map();
-
-  for(let entry of this.bodyTextScores) {
-    this.bodyScores.set(entry[0],
-      (this.bodyScores.get(entry[0]) || 0.0) + entry[1]);
-  }
-
-  for(let entry of this.bodyListDescendantScores) {
-    this.bodyScores.set(entry[0],
-      (this.bodyScores.get(entry[0]) || 0.0) + entry[1]);
-  }
-
-  for(let entry of this.bodyNavDescendantScores) {
-    this.bodyScores.set(entry[0],
-      (this.bodyScores.get(entry[0]) || 0.0) + entry[1]);
-  }
-
-  for(let entry of this.bodyAncestorScores) {
-    this.bodyScores.set(entry[0],
-      (this.bodyScores.get(entry[0]) || 0.0) + entry[1]);
-  }
-
-  for(let entry of this.bodyImageContainerScores) {
-    this.bodyScores.set(entry[0],
-      (this.bodyScores.get(entry[0]) || 0.0) + entry[1]);
-  }
-
-  for(let entry of this.bodyAttributeScores) {
-    this.bodyScores.set(entry[0],
-      (this.bodyScores.get(entry[0]) || 0.0) + entry[1]);
-  }
-}
-
-function classifyInBodyContent() {
-  this.boilerplateElements = new Set();
-
-  // TODO: examine the elements in this.body, and determine whether they
-  // are boilerplate.
-
-  // NOTE: element type score?
-
-  // NOTE: i am thinking of targeting specific boilerplate signatures:
-  // - lists of links, menu items, related posts, read more
-  // - social tools
-  // - comment sections
-  // - embedded advertisements
-}
-
-} // END ANONYMOUS NAMESPACE
+}(this));

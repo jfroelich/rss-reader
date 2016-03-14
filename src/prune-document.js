@@ -9,7 +9,7 @@
 
 // TODO: merge table processing functions
 
-(function(exports, Calamine) {
+(function(exports) {
 'use strict';
 
 const BLACKLIST_SELECTOR = [
@@ -84,9 +84,7 @@ function pruneDocument(document) {
 }
 
 function filterBoilerplate(document) {
-  const calamine = new Calamine();
-  calamine.analyze(document);
-  calamine.prune();
+  applyCalamine(document, false);
 }
 
 function filterComments(document) {
@@ -236,6 +234,7 @@ function filterInlines(document) {
 // TODO: this is still slow. profile against the more naive version
 // that unwrapped all elements immediately
 function filterInlineElement(element) {
+  // TODO: describe why this is done, it is non-obvious
   const firstChild = element.firstChild;
   if(firstChild && firstChild === element.lastChild &&
     isElementNode(firstChild) &&
@@ -260,6 +259,10 @@ function filterLeaves(document) {
 
 function removeIfAttachedLeaf(element) {
   const documentElement = element.ownerDocument.documentElement;
+
+  // TODO: rather than return, maybe just suppress the isAttached check and
+  // still do the isLeaf->remove sequence? What is the more intuitive or
+  // expected behavior?
   if(!documentElement) {
     console.debug('No document element:', element.outerHTML);
     return;
@@ -331,8 +334,6 @@ function isTextNode(node) {
 function isElementNode(node) {
   return node.nodeType === Node.ELEMENT_NODE;
 }
-
-
 
 function filterAnchor(anchor) {
   if(isNominalAnchor(anchor)) {
@@ -419,16 +420,8 @@ function unwrapSingleItemList(list) {
   }
 }
 
-
-
 function isFilterableImage(image) {
   return isSourcelessImage(image) || isTracerImage(image);
-}
-
-function filterImage(image) {
-  if(isSourcelessImage(image) || isTracerImage(image)) {
-    image.remove();
-  }
 }
 
 function isSourcelessImage(image) {
@@ -444,14 +437,14 @@ function trimDocument(document) {
   if(body) {
     let sibling = body;
     let node = body.firstChild;
-    while(node && isTrimmable(node)) {
+    while(node && isWhitespaceNode(node)) {
       sibling = node.nextSibling;
       node.remove();
       node = sibling;
     }
 
     node = body.lastChild;
-    while(node && isTrimmable(node)) {
+    while(node && isWhitespaceNode(node)) {
       sibling = node.previousSibling;
       node.remove();
       node = sibling;
@@ -459,18 +452,19 @@ function trimDocument(document) {
   }
 }
 
-const TRIMMABLE_ELEMENTS = {
-  'br': 1,
-  'hr': 1,
-  'nobr': 1
-};
+function isWhitespaceNode(node) {
+  const TRIMMABLE_ELEMENTS = {
+    'br': 1,
+    'hr': 1,
+    'nobr': 1
+  };
 
-function isTrimmable(node) {
   return (isElementNode(node) && node.localName in TRIMMABLE_ELEMENTS) ||
     (isTextNode(node) && !node.nodeValue.trim());
 }
 
 function isTrivialNodeValue(value) {
+  // todo: would a length check or switch improve/simplify?
   return value === '' || value === '\n' || value === '\n\t' ||
     value === '\n\t\t' || value === '\n\t\t\t' || value === '\n\t\t\t\t';
 }
@@ -530,4 +524,4 @@ function insertChildrenBefore(parentNode, referenceNode) {
 // Exports
 exports.pruneDocument = pruneDocument;
 
-}(this, Calamine));
+}(this));
