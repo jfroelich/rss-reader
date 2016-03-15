@@ -87,6 +87,16 @@ utils.filterURLProtocol = function(url) {
   return uri.toString().substring(2);
 };
 
+utils.find = function(subject, predicate) {
+  'use strict';
+  for(let i = 0, len = subject.length, item; i < len; i++) {
+    item = subject[i];
+    if(predicate(item)) {
+      return item;
+    }
+  }
+};
+
 utils.forEach = function(subject, callback) {
   'use strict';
   for(let i = 0, length = subject.length; i < length; i++) {
