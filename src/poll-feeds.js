@@ -366,5 +366,7 @@ function transformLazyImage(image) {
 }
 
 exports.pollFeeds = pollFeeds;
+exports.resolveDocumentURLs = resolveDocumentURLs;
+exports.setImageDimensions = setImageDimensions;
 
 } (this));
