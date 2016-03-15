@@ -12,10 +12,9 @@ function applyCalamine(document, annotate) {
   let bestElement = fastFindBestElement(document);
 
   if(!bestElement) {
-    const textLengths = deriveTextLengths(document);
-    const anchorLengths = deriveAnchorLengths(document, textLengths);
     const candidates = selectCandidates(document);
-
+    const textLengths = deriveTextLengths(candidates);
+    const anchorLengths = deriveAnchorLengths(document, textLengths);
     const textScores = deriveTextScores(candidates, textLengths, anchorLengths);
     const listScores = deriveListScores(candidates);
     const navScores = deriveNavScores(candidates);
@@ -154,16 +153,6 @@ function prune(document, bestElement) {
       return;
     }
 
-    if(!element) {
-      console.debug('undefined element');
-      return;
-    }
-
-    if(element.nodeType !== Node.ELEMENT_NODE) {
-      console.debug('NOT AN ELEMENT:', element.outerHTML);
-      return;
-    }
-
     // The element is an ancestor of the best element, so we must retain
     if(element.contains(bestElement)) {
       return;
@@ -180,37 +169,17 @@ function prune(document, bestElement) {
   });
 }
 
-// Measure the text lengths of all elements in the document. For performance,
-// this works from the bottom up. Returns Map<Element,int>.
-function deriveTextLengths(document) {
+// Measure the text lengths of candidates
+function deriveTextLengths(candidates) {
   const result = new Map();
-  const it = document.createNodeIterator(document.documentElement,
-    NodeFilter.SHOW_TEXT);
-  for(let node = it.nextNode(), length = 0, element; node;
-    node = it.nextNode()) {
-    length = deriveTextNodeLength(node);
-    for(element = length ? node.parentNode : null; element;
-      element = element.parentNode) {
-      result.set(element, (result.get(element) || 0) + length);
+  utils.forEach(candidates, function deriveElementLength(element) {
+    //const length = element.textContent.replace(/\s/g, '').length;
+    const length = element.textContent.trim().length;
+    if(length) {
+      result.set(element, length);
     }
-  }
+  });
   return result;
-}
-
-// Get the length of a text node's nodeValue, ignoring certain whitespace
-function deriveTextNodeLength(textNode) {
-  const value = textNode.nodeValue;
-  let length = value.length;
-
-  // Only do the whitespace ignore if the text is sufficiently long, this
-  // reduces the number of regexp calls on trivial node values like
-  // '\n' or '\n\t'
-  // TODO: does \s consider &nbsp;?
-  if(length > 3) {
-    length = value.replace(/\s|&nbsp;/ig, '').length;
-  }
-
-  return length;
 }
 
 function deriveAnchorLengths(document, textLengths) {
@@ -220,6 +189,7 @@ function deriveAnchorLengths(document, textLengths) {
     const length = textLengths.get(anchor);
     for(let node = length ? anchor.parentNode : null; node;
       node = node.parentNode) {
+      // TODO: only set if node is a candidate?
       result.set(node, (result.get(node) || 0) + length);
     }
   });
@@ -302,10 +272,11 @@ const ANCESTOR_BIAS = {
 
 
 function deriveAncestorScores(candidates) {
-  const result = new Map();
+  // NOTE: using var due to warning about unsupported compound let assignment
+  var result = new Map();
   utils.forEach(candidates, function deriveAncestorScores(element) {
-    let bias = 0.0;
-    for(let childElement = element.firstElementChild; childElement;
+    var bias = 0.0;
+    for(var childElement = element.firstElementChild; childElement;
       childElement = childElement.nextElementSibling) {
       bias += ANCESTOR_BIAS[childElement.localName] || 0.0;
     }
@@ -354,23 +325,28 @@ function deriveAttributeScores(candidates) {
     const tokens = getAttributeTokens(element);
     const bias = getTokenBias(tokens);
     if(bias) {
-      result.set(element. bias);
+      result.set(element, bias);
     }
   });
   return result;
 }
 
-function getAttributeTokens(element) {
-  const values = [
+function getConcatenatedAttributeValues(element) {
+  return [
     element.id,
     element.name,
     element.className
   ].join(' ');
+}
 
+const WORD_BOUNDARY = /[\s\-_0-9]+/g;
+
+function getAttributeTokens(element) {
+  const values = getConcatenatedAttributeValues(element);
   if(values.length < 3)
     return [];
-
-  const words = values.toLowerCase().split(/[\s\-_0-9]+/g);
+  // TODO: this is all really slow
+  const words = values.toLowerCase().split(WORD_BOUNDARY);
   return Array.from(new Set(words));
 }
 
@@ -408,9 +384,13 @@ const ATTRIBUTE_BIAS = {
 };
 
 function getTokenBias(tokens) {
-  let bias = 0.0;
-  for(let i = 0, len = tokens.length; i < len; i++) {
-    bias += ATTRIBUTE_BIAS[tokens[i]] || 0.0;
+  // Getting 'Unsupported let compound assignment' warning,
+  // reverted to using var
+  var bias = 0.0;
+  var i = 0;
+  var len = tokens.length;
+  for(; i < len; i++) {
+    bias += (ATTRIBUTE_BIAS[tokens[i]] || 0.0);
   }
   return bias;
 }
