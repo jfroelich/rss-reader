@@ -82,27 +82,26 @@ function getFeedDate(channel) {
   }
 }
 
+function isLinkRelAlternate(element) {
+  return element.localName === 'link' &&
+    element.getAttribute('rel') === 'alternate';
+}
+
+function isLinkRelSelf(element) {
+  return element.localName === 'link' &&
+    element.getAttribute('rel') === 'self';
+}
+
+function isLinkWithHref(element) {
+  return element.localName === 'link' && element.hasAttribute('href');
+}
+
+function isLinkWithoutHref(element) {
+  return element.localName === 'link' && !element.hasAttribute('href');
+}
+
 function getFeedLink(channel) {
   const isAtom = channel.ownerDocument.documentElement.matches('feed');
-
-  const isLinkRelAlternate = function(element) {
-    return element.localName === 'link' &&
-      element.getAttribute('rel') === 'alternate';
-  };
-
-  const isLinkRelSelf = function(element) {
-    return element.localName === 'link' &&
-      element.getAttribute('rel') === 'self';
-  };
-
-  const isLinkWithHref = function(element) {
-    return element.localName === 'link' &&
-      element.hasAttribute('href');
-  };
-
-  const isLinkWithoutHref = function(element) {
-    return element.localName === 'link' && !element.hasAttribute('href');
-  };
 
   let linkText, linkElement;
   if(isAtom) {
@@ -171,19 +170,6 @@ function getEntryAuthor(entry) {
 
 function getEntryLink(entry) {
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
-  const isLinkRelAlternate = function(element) {
-    return element.localname === 'link' &&
-      element.getAttribute('rel') === 'alternate';
-  };
-
-  const isLinkRelSelf = function(element) {
-    return element.localName === 'link' &&
-      element.getAttribute('rel') === 'self';
-  };
-
-  const isLinkWithHref = function(element) {
-    return element.localName === 'link' && element.hasAttribute('href');
-  };
 
   let linkText;
   let linkElement;
@@ -225,16 +211,18 @@ function getEntryContent(entry) {
     const content = findChildElementByName(entry, 'content');
     const nodes = content ? content.childNodes : [];
     const map = Array.prototype.map;
-    result = map.call(nodes, function getElementContent(node) {
-      return node.nodeType === Node.ELEMENT_NODE ?
-        node.innerHTML : node.textContent;
-    }).join('').trim();
+    result = map.call(nodes, getAtomElementTextContent).join('').trim();
   } else {
     result = findText(entry, 'encoded') ||
       findText(entry, 'description') ||
       findText(entry, 'summary');
   }
   return result;
+}
+
+function getAtomElementTextContent(node) {
+  return node.nodeType === Node.ELEMENT_NODE ?
+    node.innerHTML : node.textContent;
 }
 
 function findChildElement(parentElement, predicate) {
