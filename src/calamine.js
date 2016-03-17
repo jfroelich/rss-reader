@@ -7,246 +7,102 @@
 (function(exports) {
 'use strict';
 
-function applyCalamine(document, annotate) {
+// Only these elements are considered as potential best elements
+const CANDIDATE_SELECTOR = [
+  'article',
+  'content',
+  'div',
+  'layer',
+  'main',
+  'section',
+  'span',
+  'td'
+].join(',');
 
-  let bestElement = fastFindBestElement(document);
-
+function applyCalamine(document) {
+  let bestElement = findSignature(document);
   if(!bestElement) {
-    const candidates = selectCandidates(document);
-    const textLengths = deriveTextLengths(candidates);
-    const anchorLengths = deriveAnchorLengths(document, textLengths);
-    const textScores = deriveTextScores(candidates, textLengths, anchorLengths);
-    const listScores = deriveListScores(candidates);
-    const navScores = deriveNavScores(candidates);
-    const ancestorScores = deriveAncestorScores(candidates);
-    const imageScores = deriveImageScores(document);
-    const attributeScores = deriveAttributeScores(candidates);
-
-    if(annotate) {
-      for(let entry of textLengths) {
-        entry[0].dataset.textLength = entry[1];
-      }
-
-      for(let entry of anchorLengths) {
-        entry[0].dataset.anchorLength = entry[1];
-      }
-
-      for(let entry of textScores) {
-        entry[0].dataset.textScore = entry[1];
-      }
-
-      for(let entry of listScores) {
-        entry[0].dataset.listScore = entry[1];
-      }
-
-      for(let entry of navScores) {
-        entry[0].dataset.navScore = entry[1];
-      }
-
-      for(let entry of ancestorScores) {
-        entry[0].dataset.ancestorScore = entry[1];
-      }
-
-      for(let entry of imageScores) {
-        entry[0].dataset.imageScore = entry[1];
-      }
-
-      for(let entry of attributeScores) {
-        entry[0].dataset.attributeScore = entry[1];
-      }
-    }
-
-    // Integrate the scores
-    const scores = new Map();
-    for(let entry of textScores) {
-      scores.set(entry[0], entry[1]);
-    }
-
-    for(let entry of listScores) {
-      scores.set(entry[0], (scores.get(entry[0]) || 0.0) + entry[1]);
-    }
-
-    for(let entry of navScores) {
-      scores.set(entry[0], (scores.get(entry[0]) || 0.0) + entry[1]);
-    }
-
-    for(let entry of ancestorScores) {
-      scores.set(entry[0], (scores.get(entry[0]) || 0.0) + entry[1]);
-    }
-
-    for(let entry of imageScores) {
-      scores.set(entry[0], (scores.get(entry[0]) || 0.0) + entry[1]);
-    }
-
-    for(let entry of attributeScores) {
-      scores.set(entry[0], (scores.get(entry[0]) || 0.0) + entry[1]);
-    }
-
-    // Find the highest scoring element
-    let highScore = 0.0;
     bestElement = document.documentElement;
-    for(let entry of scores) {
-      if(entry[1] > highScore) {
-        bestElement = entry[0];
-        highScore = entry[1];
+    const candidates = document.querySelectorAll(CANDIDATE_SELECTOR);
+    const numCandidates = candidates.length;
+    let highScore = 0.0;
+    let score = 0.0;
+    for(let i = 0, element; i < numCandidates; i++) {
+      element = candidates[i];
+      score = getElementScore(element);
+      if(score > highScore) {
+        bestElement = element;
+        highScore = score;
       }
     }
   }
 
-  // Prune
-  prune(document, bestElement);
+  if(bestElement !== document.documentElement) {
+    prune(document, bestElement);
+  }
 }
 
-function fastFindBestElement(document) {
+const SIGNATURES = [
+  'article',
+  '.hentry',
+  '.entry-content',
+  '#article',
+  '.articleText',
+  '.articleBody',
+  '#articleBody',
+  '.article_body',
+  '.articleContent',
+  '.full-article',
+  '.repository-content',
+  '[itemprop="articleBody"]',
+  '[role="article"]',
+  'div[itemtype="http://schema.org/Article"]',
+  'div[itemtype="http://schema.org/BlogPosting"]',
+  'div[itemtype="http://schema.org/Blog"]',
+  'div[itemtype="http://schema.org/NewsArticle"]',
+  'div[itemtype="http://schema.org/TechArticle"]',
+  'div[itemtype="http://schema.org/ScholarlyArticle"]',
+  'div[itemtype="http://schema.org/WebPage"]',
+  '#WNStoryBody'
+];
 
-  const SIGNATURES = [
-    'article',
-    '.hentry',
-    '.entry-content',
-    '#article',
-    '.articleText',
-    '.articleBody',
-    '#articleBody',
-    '.article_body',
-    '.articleContent',
-    '.full-article',
-    '.repository-content',
-    '[itemprop="articleBody"]',
-    '[role="article"]',
-    'div[itemtype="http://schema.org/Article"]',
-    'div[itemtype="http://schema.org/BlogPosting"]',
-    'div[itemtype="http://schema.org/Blog"]',
-    'div[itemtype="http://schema.org/NewsArticle"]',
-    'div[itemtype="http://schema.org/TechArticle"]',
-    'div[itemtype="http://schema.org/ScholarlyArticle"]',
-    'div[itemtype="http://schema.org/WebPage"]',
-    '#WNStoryBody'
-  ];
-
-  for(let i = 0, len = SIGNATURES.length; i < len; i++) {
-    const elements = document.querySelectorAll(SIGNATURES[i]);
+function findSignature(document) {
+  for(let i = 0, len = SIGNATURES.length, elements; i < len; i++) {
+    elements = document.querySelectorAll(SIGNATURES[i]);
     if(elements.length === 1) {
       return elements[0];
     }
   }
 }
 
-// TODO: use Node.compareDocumentPosition
-function prune(document, bestElement) {
-
-  const documentElement = document.documentElement;
-
-  // There is no pruning work to be done if the best element is the root
-  if(bestElement === documentElement) {
-    return;
-  }
-
-  utils.forEach(document.querySelectorAll('*'), function maybePrune(element) {
-    // The element is a descendant of an element removed in a prior
-    // iteration, ignore it
-    if(!documentElement.contains(element)) {
-      return;
-    }
-
-    // The element is the best element so we must retain
-    if(element === bestElement) {
-      return;
-    }
-
-    // The element is an ancestor of the best element, so we must retain
-    if(element.contains(bestElement)) {
-      return;
-    }
-
-    if(bestElement.contains(element)) {
-      // Keep the element unless it is specifically boilerplate
-      // For now we just keep
-      return;
-    }
-
-    // The element does not intersect, remove it
-    element.remove();
-  });
+function getElementScore(element) {
+  const textBias = getTextBias(element);
+  const listBias = getListBias(element);
+  const navBias = getNavBias(element);
+  const ancestorBias = getAncestorBias(element);
+  const attributeBias = getAttributeBias(element);
+  return textBias + listBias + navBias + ancestorBias + attributeBias;
 }
 
-// Measure the text lengths of candidates
-function deriveTextLengths(candidates) {
-  const result = new Map();
-  utils.forEach(candidates, function deriveElementLength(element) {
-    //const length = element.textContent.replace(/\s/g, '').length;
-    const length = element.textContent.trim().length;
-    if(length) {
-      result.set(element, length);
-    }
-  });
-  return result;
+function getTextBias(element) {
+  const textLength = element.textContent.trim().length;
+  const anchors = element.querySelectorAll('a[href]');
+  const anchorLength = Array.prototype.reduce.call(anchors,
+    function(totalLength, anchor) {
+    return totalLength += anchor.textContent.trim().length;
+  }, 0);
+  let textBias = (0.25 * textLength) - (0.7 * anchorLength);
+  textBias = Math.min(4000.0, textBias);
+  return textBias;
 }
 
-function deriveAnchorLengths(document, textLengths) {
-  const result = new Map();
-  const anchors = document.querySelectorAll('a[href]');
-  utils.forEach(anchors, function measureAnchor(anchor) {
-    const length = textLengths.get(anchor);
-    for(let node = length ? anchor.parentNode : null; node;
-      node = node.parentNode) {
-      // TODO: only set if node is a candidate?
-      result.set(node, (result.get(node) || 0) + length);
-    }
-  });
-  return result;
+function getListBias(element) {
+  return element.closest('li,ol,ul,dd,dl,dt') ? -200.0 : 0.0;
 }
 
-function selectCandidates(document) {
-  return document.querySelectorAll(
-    'article, content, div, layer, main, section, span, td');
-}
-
-// Calculates and records the text bias for elements. The text bias metric is
-// adapted from the paper "Boilerplate Detection using Shallow Text Features".
-// See http://www.l3s.de/~kohlschuetter/boilerplate.
-function deriveTextScores(candidates, textLengths, anchorLengths) {
-  const result = new Map();
-  utils.forEach(candidates, function getScore(element) {
-    const textLength = textLengths.get(element);
-    if(textLength) {
-      const anchorLength = anchorLengths.get(element) || 0;
-      let weight = (0.25 * textLength) - (0.7 * anchorLength);
-      weight = Math.min(4000.0, weight);
-      if(weight) {
-        result.set(element, weight);
-      }
-    }
-  });
-  return result;
-}
-
-function deriveListScores(candidates) {
-  const result = new Map();
-  utils.forEach(candidates, function deriveListScore(element) {
-    if(hasListAncestor(element)) {
-      result.set(element, -200.0);
-    }
-  });
-  return result;
-}
-
-function hasListAncestor(element) {
-  // TODO: use element.parentNode as closest includes self?
-  return element.closest('li,ol,ul,dd,dl,dt');
-}
-
-function hasNavAncestor(element) {
-  return element.closest('aside,header,footer,nav,menu,menuitem');
-}
-
-function deriveNavScores(candidates) {
-  const result = new Map();
-  utils.forEach(candidates, function deriveNavScore(element) {
-    if(hasNavAncestor(element)) {
-      result.set(element, -500.0);
-    }
-  });
-  return result;
+function getNavBias(element) {
+  return element.closest('aside,header,footer,nav,menu,menuitem') ? -500.0 :
+    0.0;
 }
 
 const ANCESTOR_BIAS = {
@@ -270,84 +126,38 @@ const ANCESTOR_BIAS = {
   'ul': -20.0
 };
 
-
-function deriveAncestorScores(candidates) {
-  // NOTE: using var due to warning about unsupported compound let assignment
-  var result = new Map();
-  utils.forEach(candidates, function deriveAncestorScores(element) {
-    var bias = 0.0;
-    for(var childElement = element.firstElementChild; childElement;
-      childElement = childElement.nextElementSibling) {
-      bias += ANCESTOR_BIAS[childElement.localName] || 0.0;
-    }
-    if(bias) {
-      result.set(element, bias);
-    }
-  });
-  return result;
+function getAncestorBias(element) {
+  var bias = 0.0;
+  for(var childElement = element.firstElementChild; childElement;
+    childElement = childElement.nextElementSibling) {
+    bias += ANCESTOR_BIAS[childElement.localName] || 0.0;
+  }
+  return bias;
 }
 
-// TODO: only score parents if they are candidates
-function deriveImageScores(document) {
-  const result = new Map();
-  const images = document.querySelectorAll('img');
-  utils.forEach(images, function deriveImageScore(image) {
-    let bias = 0.0;
-    const parent = image.parentNode;
-    bias += image.width && image.height ?
-      0.0015 * Math.min(100000, image.width * image.height) : 0.0;
+function getImageBias(element) {
+  const images = utils.filter(element.childNodes, isImageElement);
+  let bias = 0.0;
+  utils.forEach(images, function updateImageBias(image) {
+    bias += 0.0015 * Math.min(100000.0, image.width * image.height);
     bias += image.getAttribute('alt') ? 20.0 : 0.0;
     bias += image.getAttribute('title') ? 30.0 : 0.0;
     bias += findImageCaption(image) ? 100.0 : 0.0;
-
-    for(let element = parent.firstElementChild; element;
-      element = element.nextElementSibling) {
-      if(element !== image && element.localName === 'img') {
-        bias -= 50.0;
-      }
-    }
-
-    if(bias) {
-      result.set(parent, (result.get(parent) || 0.0) + bias);
-    }
   });
-  return result;
+  // Carousel penalty
+  if(images.length) {
+    bias += -50.0 * (images.length - 1);
+  }
+  return bias;
+}
+
+function isImageElement(node) {
+  return node.nodeType === Node.ELEMENT_NODE && node.localName === 'img';
 }
 
 function findImageCaption(image) {
   const figure = image.closest('figure');
   return figure ? figure.querySelector('figcaption') : null;
-}
-
-function deriveAttributeScores(candidates) {
-  const result = new Map();
-  utils.forEach(candidates, function deriveAttributeScore(element) {
-    const tokens = getAttributeTokens(element);
-    const bias = getTokenBias(tokens);
-    if(bias) {
-      result.set(element, bias);
-    }
-  });
-  return result;
-}
-
-function getConcatenatedAttributeValues(element) {
-  return [
-    element.id,
-    element.name,
-    element.className
-  ].join(' ');
-}
-
-const WORD_BOUNDARY = /[\s\-_0-9]+/g;
-
-function getAttributeTokens(element) {
-  const values = getConcatenatedAttributeValues(element);
-  if(values.length < 3)
-    return [];
-  // TODO: this is all really slow
-  const words = values.toLowerCase().split(WORD_BOUNDARY);
-  return Array.from(new Set(words));
 }
 
 const ATTRIBUTE_BIAS = {
@@ -383,18 +193,53 @@ const ATTRIBUTE_BIAS = {
   'zone': -50.0
 };
 
-function getTokenBias(tokens) {
-  // Getting 'Unsupported let compound assignment' warning,
-  // reverted to using var
+function getUniqueTokens(tokens) {
+  const distinctTokens = [];
+  for(let i = 0, len = tokens.length, token, keys = {}; i < len; i++) {
+    token = tokens[i];
+    if(!(token in keys)) {
+      keys[token] = 1;
+      distinctTokens.push(token);
+    }
+  }
+  return distinctTokens;
+}
+
+function getAttributeBias(element) {
+  var values = [
+    element.id,
+    element.name,
+    element.className
+  ].join(' ');
+  var tokens = [];
+  if(values.length > 2) {
+    tokens = values.toLowerCase().split(/[\s\-_0-9]+/g);
+    tokens = getUniqueTokens(tokens);
+  }
+
   var bias = 0.0;
   var i = 0;
   var len = tokens.length;
+  var token;
   for(; i < len; i++) {
-    bias += (ATTRIBUTE_BIAS[tokens[i]] || 0.0);
+    token = tokens[i];
+    if(token) {
+      bias += (ATTRIBUTE_BIAS[token] || 0.0);
+    }
   }
   return bias;
 }
 
-exports.applyCalamine = applyCalamine;
+function prune(document, bestElement) {
+  const documentElement = document.documentElement;
+  const elements = document.querySelectorAll('*');
+  utils.forEach(elements, function maybePrune(element) {
+    if(!element.contains(bestElement) && !bestElement.contains(element) &&
+      documentElement.contains(element)) {
+      element.remove();
+    }
+  });
+}
 
-}(this));
+exports.applyCalamine = applyCalamine;
+} (this));
