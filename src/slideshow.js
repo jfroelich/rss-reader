@@ -346,19 +346,23 @@ function hideNoUnreadArticlesSlide() {
   console.warn('hideNoUnreadArticlesSlide not implemented');
 }
 
+const KEY_CODES = {
+  'SPACE': 32,
+  'PAGE_UP': 33,
+  'PAGE_DOWN': 34,
+  'LEFT': 37,
+  'UP': 38,
+  'RIGHT': 39,
+  'DOWN': 40,
+  'N': 78,
+  'P': 80
+};
 
-// TODO: instead of binding this to window, bind to each slide? that way
-// we don't have to use the currentSlide hack?
-const KEY_MAP = {
-  SPACE: 32,
-  PAGE_UP: 33,
-  PAGE_DOWN: 34,
-  LEFT: 37,
-  UP: 38,
-  RIGHT: 39,
-  DOWN: 40,
-  N: 78,
-  P: 80
+const SCROLL_DELTAS = {
+  '40': [50, 200],
+  '34': [100, 800],
+  '38': [-50, -200],
+  '33': [-100, -800]
 };
 
 let keyDownTimer;
@@ -366,40 +370,52 @@ let keyDownTimer;
 function onKeyDown(event) {
   //event.target is body
   //event.currentTarget is window
-  const key = event.keyCode;
-  const km = KEY_MAP;
 
-  if(key === km.SPACE || key === km.DOWN || key === km.PAGE_DOWN ||
-      key === km.UP || key === km.PAGE_UP) {
-    event.preventDefault();
+  // Override the default behavior for certain keys
+  switch(event.keyCode) {
+    case KEY_CODES.SPACE:
+    case KEY_CODES.DOWN:
+    case KEY_CODES.PAGE_DOWN:
+    case KEY_CODES.UP:
+    case KEY_CODES.PAGE_UP:
+      event.preventDefault();
+      break;
+    default:
+      break;
   }
 
+  // Scroll the contents of the current slide
   if(currentSlide) {
-    if(key === km.DOWN) {
-      utils.scrollElementTo(currentSlide, 50, currentSlide.scrollTop + 200)
-      return;
-    } else if(key === km.PAGE_DOWN) {
-      utils.scrollElementTo(currentSlide, 100, currentSlide.scrollTop + 800);
-      return;
-    } else if(key === km.UP) {
-      utils.scrollElementTo(currentSlide, -50, currentSlide.scrollTop - 200);
-      return;
-    } else if(key === km.PAGE_UP) {
-      utils.scrollElementTo(currentSlide, -100, currentSlide.scrollTop - 800);
+    const delta = SCROLL_DELTAS['' + event.keyCode];
+    if(delta) {
+      utils.scrollElementTo(currentSlide, delta[0],
+        currentSlide.scrollTop + delta[1]);
       return;
     }
   }
 
-  if(key === km.SPACE || key === km.RIGHT || key === km.N) {
-    clearTimeout(keyDownTimer);
-    keyDownTimer = setTimeout(showNextSlide, 50);
-  } else if(key === km.LEFT || key === km.P) {
-    clearTimeout(keyDownTimer);
-    keyDownTimer = setTimeout(showPreviousSlide, 50);
+  // React to navigational commands
+  switch(event.keyCode) {
+    case KEY_CODES.SPACE:
+    case KEY_CODES.RIGHT:
+    case KEY_CODES.N:
+      clearTimeout(keyDownTimer);
+      keyDownTimer = setTimeout(showNextSlide, 50);
+      break;
+    case KEY_CODES.LEFT:
+    case KEY_CODES.P:
+      clearTimeout(keyDownTimer);
+      keyDownTimer = setTimeout(showPreviousSlide, 50);
+      break;
+    default:
+      break;
   }
 }
 
-window.addEventListener('keydown', onKeyDown, false);
+// TODO: instead of binding this to window, bind to each slide? that way
+// we don't have to use the currentSlide hack?
+// Bound to window
+addEventListener('keydown', onKeyDown, false);
 
 function initSlideShow(event) {
   document.removeEventListener('DOMContentLoaded', initSlideShow);
