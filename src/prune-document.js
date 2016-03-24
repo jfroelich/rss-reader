@@ -2,11 +2,11 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: maybe rename this to sanitize-html.js
+
+// Lib for filtering the contents of an HTML Document object
 // Requires: /src/calamine.js
 // Requires: /src/utils.js
-// Exports: pruneDocument
-// Lib for filtering the contents of an HTML Document object
-
 // TODO: merge table processing functions
 
 (function(exports) {
@@ -32,7 +32,7 @@ const BLACKLIST_SELECTOR = [
   'link',
   'math',
   'meta',
-  'noembded',
+  //'noembed',
   'noscript',
   'object',
   'output',
@@ -52,6 +52,49 @@ const BLACKLIST_SELECTOR = [
   'xmp'
 ].join(',');
 
+// Inline elements that I want to unwrap. This is not all inline elements.
+const INLINE_ELEMENT_SELECTOR = [
+  'abbr',
+  'acronym',
+  'article',
+  'center',
+  'colgroup',
+  'data',
+  'details',
+  'div',
+  'footer',
+  'header',
+  'help',
+  'hgroup',
+  'ilayer',
+  'insert',
+  'layer',
+  'legend',
+  'main',
+  'mark',
+  'marquee',
+  'meter',
+  'multicol',
+  'nobr',
+  //'noembed',
+  //'rp',
+  //'rt',
+  //'rtc',
+  'section',
+  'span',
+  'tbody',
+  'tfoot',
+  'thead',
+  'form',
+  'label',
+  'big',
+  'blink',
+  'font',
+  'plaintext',
+  'small',
+  'tt'
+].join(',');
+
 //TODO: include aria hidden?
 // https://www.w3.org/TR/wai-aria/states_and_properties#aria-hidden
 const HIDDEN_SELECTOR = [
@@ -63,19 +106,38 @@ const HIDDEN_SELECTOR = [
 ].join(',');
 
 function pruneDocument(document) {
+
+  // TODO: ensure calamine works without this, and move applyCalamine out
+  // of this and require caller to do it separately, so it is completely
+  // decoupled. it should still be called before this
+
+
   filterComments(document);
   replaceFrames(document);
-  utils.forEach(document.querySelectorAll(BLACKLIST_SELECTOR),
-    removeIfAttached);
-  utils.forEach(document.querySelectorAll(HIDDEN_SELECTOR), removeIfAttached);
-  filterBoilerplate(document);
-  utils.forEach(document.querySelectorAll('a'), filterAnchor);
+
+  const blacklistedElements = document.querySelectorAll(BLACKLIST_SELECTOR);
+  utils.forEach(blacklistedElements, removeIfAttached);
+
+  // TODO: explicit handling of noscript
+  // TODO: explicit handling of noembed/audio/video/embed
+
+  const hiddenElements = document.querySelectorAll(HIDDEN_SELECTOR);
+  utils.forEach(hiddenElements, removeIfAttached);
+  applyCalamine(document, false);
+
   // utils.forEach(document.querySelectorAll('br'), filterBreakRule);
-  utils.forEach(utils.filter(document.querySelectorAll('img'),
-    isFilterableImage), utils.removeNode);
-  filterInlines(document);
+  const anchors = document.querySelectorAll('a');
+  utils.forEach(anchors, filterAnchor);
+  const images = document.querySelectorAll('img');
+  const filterableImages = utils.filter(images, isFilterableImage);
+  utils.forEach(filterableImages, utils.removeNode);
+
+  const inlineElements = document.querySelectorAll(INLINE_ELEMENT_SELECTOR);
+  utils.forEach(inlineElements, filterInlineElement);
+
   filterTexts(document);
   filterLists(document);
+  filterConsecutiveRules(document);
   unwrapSingleCellTables(document);
   filterSingleColumnTables(document);
   filterLeaves(document);
@@ -83,15 +145,11 @@ function pruneDocument(document) {
   filterAttributes(document);
 }
 
-function filterBoilerplate(document) {
-  applyCalamine(document, false);
-}
-
 function filterComments(document) {
   const it = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_COMMENT);
-  for(let node = it.nextNode(); node; node = it.nextNode()) {
-    node.remove();
+  for(let comment = it.nextNode(); comment; comment = it.nextNode()) {
+    comment.remove();
   }
 }
 
@@ -103,25 +161,29 @@ function removeIfAttached(element) {
 
 // TODO: research why content sometimes appears garbled, like encoded, as if
 // it is re-encoding html
+// TODO: this assumes that <frameset> means absense of body. What if both
+// are present?
 function replaceFrames(document) {
-  let body = document.body;
-  if(!body || body.localName !== 'frameset') {
+  const frameset = document.body;
+  if(!frameset || frameset.localName !== 'frameset') {
     return;
   }
 
+  console.debug('Replacing:', frameset.outerHTML);
+
+  const body = document.createElement('body');
   const noframes = document.querySelector('noframes');
   if(noframes) {
     body.innerHTML = noframes.innerHTML;
   } else {
     body.textContent = 'Unable to display framed document.';
   }
+  frameset.parentNode.replaceChild(frameset, body);
 }
 
 function filterBreakRule(element) {
-  // TODO: improve
+  // TODO: improve, this is very buggy
   // error case: http://paulgraham.com/procrastination.html
-  // This is buggy, temporarily a NO-OP.
-
   const parent = element.parentNode;
   const p = document.createElement('p');
   parent.replaceChild(p, element);
@@ -133,6 +195,9 @@ function filterAttributes(document) {
 
   // Iterate attributes in reverse to avoid issues with mutating a live
   // NodeList during iteration
+
+  // TODO: clean this up, make less dry,
+  // maybe go back to using hash objects
 
   let elementName = null;
   let attributeName = null;
@@ -189,52 +254,11 @@ function filterAttributes(document) {
   }
 }
 
-const INLINE_ELEMENT_SELECTOR = [
-  'article',
-  'center',
-  'colgroup',
-  'data',
-  'details',
-  'div',
-  'footer',
-  'header',
-  'help',
-  'hgroup',
-  'ilayer',
-  'insert',
-  'layer',
-  'legend',
-  'main',
-  'mark',
-  'marquee',
-  'meter',
-  'multicol',
-  'nobr',
-  'noembed',
-  'section',
-  'span',
-  'tbody',
-  'tfoot',
-  'thead',
-  'form',
-  'label',
-  'big',
-  'blink',
-  'font',
-  'plaintext',
-  'small',
-  'tt'
-].join(',');
-
-function filterInlines(document) {
-  utils.forEach(document.querySelectorAll(INLINE_ELEMENT_SELECTOR),
-    filterInlineElement);
-}
-
 // TODO: this is still slow. profile against the more naive version
-// that unwrapped all elements immediately
+// that unwrapped all elements immediately?
 function filterInlineElement(element) {
-  // TODO: describe why this is done, it is non-obvious
+  // TODO: describe why this is done, it is non-obvious, or in the alternative,
+  // make this more idiomatic by delegating to function calls
   const firstChild = element.firstChild;
   if(firstChild && firstChild === element.lastChild &&
     isElementNode(firstChild) &&
@@ -242,14 +266,14 @@ function filterInlineElement(element) {
     // Skip
   } else {
     // Find shallowest consecutive inline ancestor
-    let farthest = null;
+    let shallowestInlineAncestor = null;
     for(let ancestor = element.parentNode; ancestor &&
       ancestor.childElementCount === 1 &&
       ancestor.matches(INLINE_ELEMENT_SELECTOR);
       ancestor = ancestor.parentNode) {
-      farthest = ancestor;
+      shallowestInlineAncestor = ancestor;
     }
-    unwrap(element, farthest);
+    unwrap(element, shallowestInlineAncestor);
   }
 }
 
@@ -420,6 +444,18 @@ function unwrapSingleItemList(list) {
   }
 }
 
+function filterConsecutiveRules(document) {
+  for(let i = 0, rules = document.querySelectorAll('hr'), len = rules.length,
+    rule, previousSibling; i < len; i++) {
+    rule = rules[i];
+    previousSibling = rule.previousSibling;
+    if(previousSibling && previousSibling.nodeType === Node.ELEMENT_NODE &&
+      previousSibling.localName === 'hr') {
+      rule.remove();
+    }
+  }
+}
+
 function isFilterableImage(image) {
   return isSourcelessImage(image) || isTracerImage(image);
 }
@@ -482,18 +518,18 @@ function filterTexts(document) {
       value = canonicalizeWhitespace(value);
     }
     if(!isWhitespaceSensitive(node.parentNode)) {
-      value = condenseSpaces(value);
+      value = condenseWhitespace(value);
     }
     node.nodeValue = value;
   }
 }
 
-function canonicalizeWhitespace(nodeValue) {
-  return nodeValue.replace(/&nbsp;/ig, ' ');
+function canonicalizeWhitespace(value) {
+  return value.replace(/&nbsp;/ig, ' ');
 }
 
-function condenseSpaces(nodeValue) {
-  return nodeValue.replace(/\s{2,}/g, ' ');
+function condenseWhitespace(value) {
+  return value.replace(/\s{2,}/g, ' ');
 }
 
 // Unwraps the element's child nodes into the parent of the element or, if
@@ -505,11 +541,13 @@ function unwrap(element, referenceNode) {
   const prevSibling = target.previousSibling;
   const nextSibling = target.nextSibling;
   if(parent) {
-    if(prevSibling && isTextNode(prevSibling))
+    if(prevSibling && isTextNode(prevSibling)) {
       parent.insertBefore(document.createTextNode(' '), target);
+    }
     insertChildrenBefore(element, target);
-    if(nextSibling && isTextNode(nextSibling))
+    if(nextSibling && isTextNode(nextSibling)) {
       parent.insertBefore(document.createTextNode(' '), target);
+    }
   }
   target.remove();
 }
