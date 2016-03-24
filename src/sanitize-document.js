@@ -2,10 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: maybe rename this to sanitize-html.js
-
 // Lib for filtering the contents of an HTML Document object
-// Requires: /src/calamine.js
 // Requires: /src/utils.js
 // TODO: merge table processing functions
 
@@ -105,12 +102,7 @@ const HIDDEN_SELECTOR = [
   '[style*="opacity:0.0"]'
 ].join(',');
 
-function pruneDocument(document) {
-
-  // TODO: ensure calamine works without this, and move applyCalamine out
-  // of this and require caller to do it separately, so it is completely
-  // decoupled. it should still be called before this
-
+function sanitizeDocument(document) {
 
   filterComments(document);
   replaceFrames(document);
@@ -123,7 +115,6 @@ function pruneDocument(document) {
 
   const hiddenElements = document.querySelectorAll(HIDDEN_SELECTOR);
   utils.forEach(hiddenElements, removeIfAttached);
-  applyCalamine(document, false);
 
   // utils.forEach(document.querySelectorAll('br'), filterBreakRule);
   const anchors = document.querySelectorAll('a');
@@ -144,6 +135,8 @@ function pruneDocument(document) {
   trimDocument(document);
   filterAttributes(document);
 }
+
+exports.sanitizeDocument = sanitizeDocument;
 
 function filterComments(document) {
   const it = document.createNodeIterator(document.documentElement,
@@ -559,7 +552,6 @@ function insertChildrenBefore(parentNode, referenceNode) {
   }
 }
 
-// Exports
-exports.pruneDocument = pruneDocument;
+
 
 }(this));
