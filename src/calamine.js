@@ -84,25 +84,33 @@ function getElementScore(element) {
   return textBias + listBias + navBias + ancestorBias + attributeBias;
 }
 
+function getAnchorLength(element) {
+  // using var due to deopt (inline bailout reason)
+  var anchors = element.querySelectorAll('a[href]');
+  var numAnchors = anchors.length;
+  var anchorLength = 0;
+  for(var i = 0; i < numAnchors; i++) {
+    anchorLength += anchors[i].textContent.trim().length;
+  }
+  return anchorLength;
+}
+
 function getTextBias(element) {
-  const textLength = element.textContent.trim().length;
-  const anchors = element.querySelectorAll('a[href]');
-  const anchorLength = Array.prototype.reduce.call(anchors,
-    function(totalLength, anchor) {
-    return totalLength += anchor.textContent.trim().length;
-  }, 0);
-  let textBias = (0.25 * textLength) - (0.7 * anchorLength);
-  textBias = Math.min(4000.0, textBias);
-  return textBias;
+  const text = element.textContent;
+  const trimmedText = text.trim();
+  const textLength = trimmedText.length;
+  const anchorLength = getAnchorLength(element);
+  return (0.25 * textLength) - (0.7 * anchorLength);
 }
 
+const LIST_SELECTOR = 'li,ol,ul,dd,dl,dt';
 function getListBias(element) {
-  return element.closest('li,ol,ul,dd,dl,dt') ? -200.0 : 0.0;
+  return element.closest(LIST_SELECTOR) ? -200.0 : 0.0;
 }
 
+const NAV_SELECTOR = 'aside,header,footer,nav,menu,menuitem';
 function getNavBias(element) {
-  return element.closest('aside,header,footer,nav,menu,menuitem') ? -500.0 :
-    0.0;
+  return element.closest(NAV_SELECTOR) ? -500.0 : 0.0;
 }
 
 const ANCESTOR_BIAS = {
