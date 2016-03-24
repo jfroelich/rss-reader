@@ -7,36 +7,13 @@
 (function(exports) {
 'use strict';
 
-// Only these elements are considered as potential best elements
-const CANDIDATE_SELECTOR = [
-  'article',
-  'content',
-  'div',
-  'layer',
-  'main',
-  'section',
-  'span',
-  'td'
-].join(',');
 
+
+// Looks for the element that is most likely the root element of the content
+// and removes elements all other elements
 function applyCalamine(document) {
-  let bestElement = findSignature(document);
-  if(!bestElement) {
-    bestElement = document.documentElement;
-    const candidates = document.querySelectorAll(CANDIDATE_SELECTOR);
-    const numCandidates = candidates.length;
-    let highScore = 0.0;
-    let score = 0.0;
-    for(let i = 0, element; i < numCandidates; i++) {
-      element = candidates[i];
-      score = getElementScore(element);
-      if(score > highScore) {
-        bestElement = element;
-        highScore = score;
-      }
-    }
-  }
-
+  let bestElement = findSignature(document) ||
+    findHighestScoringElement(document);
   if(bestElement !== document.documentElement) {
     prune(document, bestElement);
   }
@@ -66,6 +43,8 @@ const SIGNATURES = [
   '#WNStoryBody'
 ];
 
+// Looks for the first single occurrence of an element matching
+// one of the signatures
 function findSignature(document) {
   for(let i = 0, len = SIGNATURES.length, elements; i < len; i++) {
     elements = document.querySelectorAll(SIGNATURES[i]);
@@ -75,15 +54,52 @@ function findSignature(document) {
   }
 }
 
-function getElementScore(element) {
+// Only these elements are considered as potential best elements
+const CANDIDATE_SELECTOR = [
+  'article',
+  'content',
+  'div',
+  'layer',
+  'main',
+  'section',
+  'span',
+  'td'
+].join(',');
+
+// Scores each of the candidate elements and returns the one with
+// the highest score
+function findHighestScoringElement(document) {
+  let bestElement = document.documentElement;
+  const elements = document.querySelectorAll(CANDIDATE_SELECTOR);
+  const numElements = elements.length;
+  for(let i = 0, element, highScore = 0.0, score = 0.0;
+    i < numElements; i++) {
+    element = elements[i];
+    score = deriveElementScore(element);
+    if(score > highScore) {
+      bestElement = element;
+      highScore = score;
+    }
+  }
+  return bestElement;
+}
+
+// Calculates an elements score. A higher score means the element is more
+// likely to be the root element of the content of the document containing
+// the element
+function deriveElementScore(element) {
   const textBias = getTextBias(element);
   const listBias = getListBias(element);
   const navBias = getNavBias(element);
   const ancestorBias = getAncestorBias(element);
+  const imageBias = getImageBias(element);
   const attributeBias = getAttributeBias(element);
-  return textBias + listBias + navBias + ancestorBias + attributeBias;
+  return textBias + listBias + navBias + ancestorBias + imageBias +
+    attributeBias;
 }
 
+// Returns the approximate number of characters contained within anchors that
+// are descendants of the element. Assumes no anchor nesting.
 function getAnchorLength(element) {
   // using var due to deopt (inline bailout reason)
   var anchors = element.querySelectorAll('a[href]');
@@ -95,6 +111,10 @@ function getAnchorLength(element) {
   return anchorLength;
 }
 
+// This returns a approximate measure representing a ratio of the amount of
+// text in the element to text within descendant anchors. The text bias metric
+// is adapted from the paper "Boilerplate Detection using Shallow Text
+// Features". See http://www.l3s.de/~kohlschuetter/boilerplate.
 function getTextBias(element) {
   const text = element.textContent;
   const trimmedText = text.trim();
@@ -103,13 +123,15 @@ function getTextBias(element) {
   return (0.25 * textLength) - (0.7 * anchorLength);
 }
 
-const LIST_SELECTOR = 'li,ol,ul,dd,dl,dt';
+// Penalizes an element for being a descendant of a list
 function getListBias(element) {
+  const LIST_SELECTOR = 'li,ol,ul,dd,dl,dt';
   return element.closest(LIST_SELECTOR) ? -200.0 : 0.0;
 }
 
-const NAV_SELECTOR = 'aside,header,footer,nav,menu,menuitem';
+// Penalizes an element for being a descendant of a navigational section
 function getNavBias(element) {
+  const NAV_SELECTOR = 'aside,header,footer,nav,menu,menuitem';
   return element.closest(NAV_SELECTOR) ? -500.0 : 0.0;
 }
 
@@ -134,6 +156,7 @@ const ANCESTOR_BIAS = {
   'ul': -20.0
 };
 
+// Derives a bias based on the immediate child elements
 function getAncestorBias(element) {
   var bias = 0.0;
   for(var childElement = element.firstElementChild; childElement;
@@ -143,18 +166,29 @@ function getAncestorBias(element) {
   return bias;
 }
 
-function getImageBias(element) {
-  const images = utils.filter(element.childNodes, isImageElement);
+function getImageArea(image) {
+  return image.width * image.height;
+}
+
+// Derives a bias based on child images
+function getImageBias(parentElement) {
   let bias = 0.0;
-  utils.forEach(images, function updateImageBias(image) {
-    bias += 0.0015 * Math.min(100000.0, image.width * image.height);
-    bias += image.getAttribute('alt') ? 20.0 : 0.0;
-    bias += image.getAttribute('title') ? 30.0 : 0.0;
-    bias += findImageCaption(image) ? 100.0 : 0.0;
-  });
-  // Carousel penalty
-  if(images.length) {
-    bias += -50.0 * (images.length - 1);
+  let numImages = 0;
+  for(let element = parentElement.firstElementChild; element;
+    element = element.nextElementSibling) {
+    if(element.localName === 'img') {
+      bias += 0.0015 * Math.min(100000.0, getImageArea(element));
+      bias += element.getAttribute('alt') ? 20.0 : 0.0;
+      bias += element.getAttribute('title') ? 30.0 : 0.0;
+      bias += findImageCaption(element) ? 100.0 : 0.0;
+      numImages++;
+    }
+  }
+
+  // Penalize elements containing multiple images. These are usually
+  // carousels.
+  if(numImages > 1) {
+    bias += -50.0 * (numImages - 1);
   }
   return bias;
 }
@@ -201,6 +235,8 @@ const ATTRIBUTE_BIAS = {
   'zone': -50.0
 };
 
+// While Array.from(new Set(tokens)) would accomplish this, testing showed
+// absolutely horrid performance.
 function getUniqueTokens(tokens) {
   const distinctTokens = [];
   for(let i = 0, len = tokens.length, token, keys = {}; i < len; i++) {
@@ -213,37 +249,64 @@ function getUniqueTokens(tokens) {
   return distinctTokens;
 }
 
+// Splits a string value into an array of strings ideally representing
+// separate words
+function tokenize(value) {
+  return value.split(/[\s\-_0-9]+/g);
+}
+
+// Derives a bias to an element's score based on its attributes
+// TODO: maybe it is ok to assume that id and name are always single
+// words and never multi-word values, and maybe i only need to tokenize
+// className
 function getAttributeBias(element) {
-  var values = [
-    element.id,
-    element.name,
-    element.className
-  ].join(' ');
-  var tokens = [];
-  if(values.length > 2) {
-    tokens = values.toLowerCase().split(/[\s\-_0-9]+/g);
-    tokens = getUniqueTokens(tokens);
+  // I am using var for now because of Chrome deopt warnings
+  var bias = 0.0;
+
+  // Merge attribute values into a single string
+  // Accessing attributes by property is faster than using getAttribute
+  // Array.prototype.join implicitly filters null values
+  var values = [element.id, element.name, element.className].join(' ');
+
+  // If the element did not have any values for the attributes checked,
+  // then values will only contain a small string of spaces so we exit early
+  // to minimize the work done.
+  if(values.length < 3) {
+    return bias;
   }
 
-  var bias = 0.0;
-  var i = 0;
-  var len = tokens.length;
-  var token;
-  for(; i < len; i++) {
+  var tokens = getUniqueTokens(tokenize(values.toLowerCase()));
+
+  // Using a raw for loop instead of reduce or map then reduce because
+  // of performance issues.
+  for(var i = 0, len = tokens.length, token; i < len; i++) {
     token = tokens[i];
     if(token) {
       bias += (ATTRIBUTE_BIAS[token] || 0.0);
     }
   }
+
   return bias;
 }
 
+// Remove elements that do not intersect with the best element
 function prune(document, bestElement) {
-  const documentElement = document.documentElement;
+
+  // In order to reduce the number of removals, this uses a contains check
+  // to avoid removing elements that exist in the static node list but
+  // are descendants of elements removed in a previous iteration. The
+  // assumption is that this yields better performance.
+
+  // TODO: instead of doing two calls to contains, I think I can use one
+  // call to compareDocumentPosition and then check against its result.
+  // I am not very familiar with compareDocumentPosition yet, that is the
+  // only reason I am not using it.
+
+  const docElement = document.documentElement;
   const elements = document.querySelectorAll('*');
   utils.forEach(elements, function maybePrune(element) {
     if(!element.contains(bestElement) && !bestElement.contains(element) &&
-      documentElement.contains(element)) {
+      docElement.contains(element)) {
       element.remove();
     }
   });
