@@ -2,6 +2,10 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: move the url stuff into a resolver module, this has become
+// too monolithic
+// TODO: resolve xlink type simple (on any attribute)
+
 // Requires: /lib/parse-srcset.js
 // Requires: /src/db.js
 // Requires: /src/net.js
@@ -25,8 +29,7 @@ function pollFeeds() {
 const IDLE_PERIOD = 60 * 5; // 5 minutes
 function onCheckIdlePermission(permitted) {
   if(permitted) {
-    chrome.idle.queryState(IDLE_PERIOD,
-      onQueryIdleState);
+    chrome.idle.queryState(IDLE_PERIOD, onQueryIdleState);
   } else {
     db.open(iterateFeeds);
   }
@@ -54,8 +57,7 @@ function iterateFeeds(event) {
 
 function fetchFeed(connection, feed) {
   const timeout = 10 * 1000;
-  net.fetchFeed(feed.url, timeout,
-    onFetchFeed.bind(null, connection, feed));
+  net.fetchFeed(feed.url, timeout, onFetchFeed.bind(null, connection, feed));
 }
 
 function onFetchFeed(connection, feed, event, remoteFeed) {
@@ -131,15 +133,14 @@ function onFetchHTML(entry, callback, error, document, responseURL) {
   }
 
   if(responseURL !== entry.link) {
-    console.debug('Response URL changed from %s to %s',
-      entry.link,
+    console.debug('Response URL changed from %s to %s', entry.link,
       responseURL);
   }
 
   transformLazyImages(document);
   resolveDocumentURLs(document, responseURL);
-  setImageDimensions(document, onSetImageDimensions.bind(null, entry,
-    document, callback));
+  setImageDimensions(document, onSetImageDimensions.bind(null, entry, document,
+    callback));
 }
 
 function onSetImageDimensions(entry, document, callback) {
