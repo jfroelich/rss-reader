@@ -242,7 +242,9 @@ function appendSlide(entry, isFirst) {
   content.setAttribute('class', 'entry-content');
 
   const doc = utils.parseHTML(entry.content);
-  pruneDocument(doc);
+
+  applyCalamine(doc);
+  sanitizeDocument(doc);
 
   if(doc.documentElement) {
     if(doc.body) {
