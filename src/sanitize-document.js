@@ -107,11 +107,12 @@ function sanitizeDocument(document) {
   filterComments(document);
   replaceFrames(document);
 
-  const blacklistedElements = document.querySelectorAll(BLACKLIST_SELECTOR);
-  utils.forEach(blacklistedElements, removeIfAttached);
+  // TODO: explicit handling of noembed/audio/video/embed
 
   // TODO: explicit handling of noscript
-  // TODO: explicit handling of noembed/audio/video/embed
+
+  const blacklistedElements = document.querySelectorAll(BLACKLIST_SELECTOR);
+  utils.forEach(blacklistedElements, removeIfAttached);
 
   const hiddenElements = document.querySelectorAll(HIDDEN_SELECTOR);
   utils.forEach(hiddenElements, removeIfAttached);
@@ -353,20 +354,30 @@ function isElementNode(node) {
 }
 
 function filterAnchor(anchor) {
-  if(isNominalAnchor(anchor)) {
+
+  const jspattern = /\s*javascript\s*:/i;
+  const jslen = 'javascript:'.length;
+
+  if(anchor.hasAttribute('href')) {
+    // NOTE: accessing anchor.protocol performs even worse than
+    // using a regexp.
+    // NOTE: we do an explicit minlength test as an optimization because it
+    // can reduce number of slow regexp calls
+    const href = anchor.getAttribute('href');
+    if(href.length > jslen && jspattern.test(href)) {
+
+      // NOTE: maybe consider removing or unwrapping, for now
+      // I suppress
+      anchor.setAttribute('href', '');
+    }
+
+  } else if(anchor.hasAttribute('name')) {
+    // It is a named anchor without an href. Ignore it.
+  } else {
+    // The anchor is nominal, and can be treated like a span or any other
+    // inline element. Unwrap it.
     unwrap(anchor);
-  } else if(isJavascriptAnchor(anchor)) {
-    // TODO: unwrap/remove?
-    anchor.setAttribute('href', '');
   }
-}
-
-function isNominalAnchor(anchor) {
-  return !anchor.hasAttribute('name') && !anchor.hasAttribute('href');
-}
-
-function isJavascriptAnchor(anchor) {
-  return /\s*javascript\s*:/i.test(anchor.getAttribute('href'));
 }
 
 function unwrapSingleCellTables(document) {
