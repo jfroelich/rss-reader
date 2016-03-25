@@ -6,12 +6,13 @@
 // Requires: /src/utils.js
 // TODO: merge table processing functions
 
-(function(exports) {
+(function IIFE_SANITIZE_DOCUMENT(exports) {
 'use strict';
 
 const BLACKLIST_SELECTOR = [
   'applet',
   'audio',
+  'base',
   'basefont',
   'bgsound',
   'button',
@@ -133,11 +134,23 @@ function sanitizeDocument(document) {
   unwrapSingleCellTables(document);
   filterSingleColumnTables(document);
   filterLeaves(document);
+  filterConsecutiveBreaks(document);
   trimDocument(document);
   filterAttributes(document);
 }
 
 exports.sanitizeDocument = sanitizeDocument;
+
+function filterConsecutiveBreaks(document) {
+  const TYPE_ELEMENT = Node.ELEMENT_NODE;
+  const breaks = document.querySelectorAll('br');
+  utils.forEach(breaks, function removePrevIfBreak(element) {
+    const prev = element.previousSibling;
+    if(prev && prev.nodeType === TYPE_ELEMENT && prev.localName === 'br') {
+      prev.remove();
+    }
+  });
+}
 
 function filterComments(document) {
   const it = document.createNodeIterator(document.documentElement,
@@ -255,7 +268,7 @@ function filterInlineElement(element) {
   // make this more idiomatic by delegating to function calls
   const firstChild = element.firstChild;
   if(firstChild && firstChild === element.lastChild &&
-    isElementNode(firstChild) &&
+    firstChild.nodeType === Node.ELEMENT_NODE &&
     firstChild.matches(INLINE_ELEMENT_SELECTOR)) {
     // Skip
   } else {
@@ -272,22 +285,18 @@ function filterInlineElement(element) {
 }
 
 function filterLeaves(document) {
-  utils.forEach(document.querySelectorAll('*'), removeIfAttachedLeaf);
-}
+  const elements = document.querySelectorAll('*');
+  const numElements = elements.length;
+  const docElement = document.documentElement;
 
-function removeIfAttachedLeaf(element) {
-  const documentElement = element.ownerDocument.documentElement;
+  // The contains check avoids removing nodes that are descendants of nodes
+  // removed in prior iteration
 
-  // TODO: rather than return, maybe just suppress the isAttached check and
-  // still do the isLeaf->remove sequence? What is the more intuitive or
-  // expected behavior?
-  if(!documentElement) {
-    console.debug('No document element:', element.outerHTML);
-    return;
-  }
-
-  if(documentElement.contains(element) && isLeaf(element)) {
-    element.remove();
+  for(let i = 0, element; i < numElements; i++) {
+    element = elements[i];
+    if(docElement.contains(element) && isLeaf(element)) {
+      element.remove();
+    }
   }
 }
 
@@ -317,60 +326,50 @@ const LEAF_EXCEPTIONS = {
   'wbr': 1
 };
 
-function isLeafException(element) {
-  return element.localName in LEAF_EXCEPTIONS;
-}
-
+// Recursive
 function isLeaf(element) {
-  return !isLeafException(element) &&
-    !utils.some(element.childNodes, isNonLeafChild);
-}
-
-// An element is a non-leaf child it is a text node with a non-whitespace
-// value or if it is a non-leaf element
-function isNonLeafChild(node) {
-  if(isTextNode(node)) {
-    if(node.nodeValue.trim()) {
-      return true;
-    }
-  } else if(isElementNode(node)) {
-    if(!isLeaf(node)) {
-      return true;
-    }
-  } else {
-    // Treat other node types as non-leaf
-    return true;
+  if(element.localName in LEAF_EXCEPTIONS) {
+    return false;
   }
 
-  return false;
-}
+  const TEXT_NODE = Node.TEXT_NODE;
+  const ELEMENT_NODE = Node.ELEMENT_NODE;
 
-function isTextNode(node) {
-  return node.nodeType === Node.TEXT_NODE;
-}
+  // An element is a leaf unless it contains a non-leaf child node
+  for(let node = element.firstChild; node; node = node.nextSibling) {
+    switch(node.nodeType) {
+      case TEXT_NODE:
+        // An element is not a leaf if it contains a non-empty text node
+        if(node.nodeValue.trim()) {
+          return false;
+        }
+        break;
+      case ELEMENT_NODE:
+        // An element is not a leaf if it contains a non-leaf child element
+        if(!isLeaf(node)) {
+          return false;
+        }
+        break;
+      default:
+        // An element is not a leaf if it contains an unknown node type
+        return false;
+    }
+  }
 
-function isElementNode(node) {
-  return node.nodeType === Node.ELEMENT_NODE;
+  return true;
 }
 
 function filterAnchor(anchor) {
-
   const jspattern = /\s*javascript\s*:/i;
-  const jslen = 'javascript:'.length;
-
+  const minjslen = 'javascript:'.length - 1;
+  // NOTE: accessing anchor.protocol performs even worse than
+  // using a regexp.
   if(anchor.hasAttribute('href')) {
-    // NOTE: accessing anchor.protocol performs even worse than
-    // using a regexp.
-    // NOTE: we do an explicit minlength test as an optimization because it
-    // can reduce number of slow regexp calls
     const href = anchor.getAttribute('href');
-    if(href.length > jslen && jspattern.test(href)) {
-
-      // NOTE: maybe consider removing or unwrapping, for now
-      // I suppress
+    if(href.length > minjslen && jspattern.test(href)) {
+      // NOTE: consider removing or unwrapping
       anchor.setAttribute('href', '');
     }
-
   } else if(anchor.hasAttribute('name')) {
     // It is a named anchor without an href. Ignore it.
   } else {
@@ -499,8 +498,9 @@ function isWhitespaceNode(node) {
     'nobr': 1
   };
 
-  return (isElementNode(node) && node.localName in TRIMMABLE_ELEMENTS) ||
-    (isTextNode(node) && !node.nodeValue.trim());
+  return (node.nodeType === Node.ELEMENT_NODE &&
+    node.localName in TRIMMABLE_ELEMENTS) ||
+    (node.nodeType === Node.TEXT_NODE && !node.nodeValue.trim());
 }
 
 function isTrivialNodeValue(value) {
@@ -545,11 +545,11 @@ function unwrap(element, referenceNode) {
   const prevSibling = target.previousSibling;
   const nextSibling = target.nextSibling;
   if(parent) {
-    if(prevSibling && isTextNode(prevSibling)) {
+    if(prevSibling && prevSibling.nodeType === Node.TEXT_NODE) {
       parent.insertBefore(document.createTextNode(' '), target);
     }
     insertChildrenBefore(element, target);
-    if(nextSibling && isTextNode(nextSibling)) {
+    if(nextSibling && nextSibling.nodeType === Node.TEXT_NODE) {
       parent.insertBefore(document.createTextNode(' '), target);
     }
   }
