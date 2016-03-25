@@ -237,7 +237,8 @@ function resolveDocumentURLs(document, baseURL) {
       element.setAttribute(attribute, resolved);
     }
 
-    if(element.localName === 'img' && element.hasAttribute('srcset')) {
+    if((element.localName === 'img' || element.localName === 'source') &&
+      element.hasAttribute('srcset')) {
       resolveImageSrcSet(baseURL, element);
     }
   });
