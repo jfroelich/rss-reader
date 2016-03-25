@@ -23,6 +23,7 @@
       "/src/feed-parser.js",
       "/src/net.js",
       "/src/poll-feeds.js",
+      "/src/resolve-urls.js",
       "/src/utils.js"
     ]
   },
