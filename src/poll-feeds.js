@@ -2,6 +2,11 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: move fetchImageDimensions and transformLazyImage into
+// separate file, and also remove async dependency, and update exports
+// to not export setImageDimensions, and updates Requires: list
+
+// Requires: /lib/async.js
 // Requires: /lib/parse-srcset.js
 // Requires: /src/db.js
 // Requires: /src/net.js
@@ -13,18 +18,20 @@
 'use strict';
 
 function pollFeeds() {
-  console.log('Polling feeds');
 
   if(!navigator.onLine) {
-    console.debug('Offline');
+    console.debug('Polling canceled because offline');
     return;
   }
 
+  console.log('Polling feeds');
   chrome.permissions.contains({permissions: ['idle']}, onCheckIdlePermission);
 }
 
-const IDLE_PERIOD = 60 * 5; // 5 minutes
+exports.pollFeeds = pollFeeds;
+
 function onCheckIdlePermission(permitted) {
+  const IDLE_PERIOD = 60 * 5; // 5 minutes
   if(permitted) {
     chrome.idle.queryState(IDLE_PERIOD, onQueryIdleState);
   } else {
@@ -36,7 +43,7 @@ function onQueryIdleState(state) {
   if(state === 'locked' || state === 'idle') {
     db.open(iterateFeeds);
   } else {
-    console.debug('Not idle');
+    console.debug('Polling canceled because not idle');
     onPollComplete();
   }
 }
@@ -44,8 +51,8 @@ function onQueryIdleState(state) {
 function iterateFeeds(event) {
   if(event.type === 'success') {
     const connection = event.target.result;
-    db.forEachFeed(connection, fetchFeed.bind(null, connection), false,
-      onPollComplete);
+    const bFetchFeed = fetchFeed.bind(null, connection);
+    db.forEachFeed(connection, bFetchFeed, false, onPollComplete);
   } else {
     console.debug(event);
     onPollComplete();
@@ -54,7 +61,8 @@ function iterateFeeds(event) {
 
 function fetchFeed(connection, feed) {
   const timeout = 10 * 1000;
-  net.fetchFeed(feed.url, timeout, onFetchFeed.bind(null, connection, feed));
+  const onFetchFeed = onFetchFeed.bind(null, connection, feed);
+  net.fetchFeed(feed.url, timeout, onFetchFeed);
 }
 
 function onFetchFeed(connection, feed, event, remoteFeed) {
@@ -63,8 +71,8 @@ function onFetchFeed(connection, feed, event, remoteFeed) {
   } else {
     // TODO: if we are cleaning up the properties in db.storeFeed,
     // are we properly cascading those cleaned properties to the entries?
-    db.storeFeed(connection, feed, remoteFeed,
-      onStoreFeed.bind(null, connection, feed, remoteFeed));
+    const onStoreFeed = onStoreFeed.bind(null, connection, feed, remoteFeed)
+    db.storeFeed(connection, feed, remoteFeed, onStoreFeed);
   }
 }
 
@@ -79,8 +87,9 @@ function onEntriesUpdated(connection) {
 }
 
 function onFindEntryByLink(connection, feed, entry, callback) {
-  db.findEntryByLink(connection, entry.link,
-    onFindEntry.bind(null, connection, feed, entry, callback));
+  const onFindEntry = onFindEntry.bind(null, connection, feed, entry,
+    callback);
+  db.findEntryByLink(connection, entry.link, onFindEntry);
 }
 
 function onFindEntry(connection, feed, entry, callback, event) {
@@ -118,7 +127,8 @@ function onPollComplete() {
 }
 
 function augmentEntryContent(entry, timeout, callback) {
-  net.fetchHTML(entry.link, timeout, onFetchHTML.bind(null, entry, callback));
+  const onFetchHTML = onFetchHTML.bind(null, entry, callback);
+  net.fetchHTML(entry.link, timeout, onFetchHTML);
 }
 
 function onFetchHTML(entry, callback, error, document, responseURL) {
@@ -136,9 +146,9 @@ function onFetchHTML(entry, callback, error, document, responseURL) {
 
   transformLazyImages(document);
   resolveURLs(document, responseURL);
-
-  setImageDimensions(document, onSetImageDimensions.bind(null, entry, document,
-    callback));
+  const onSetDimensions = onSetImageDimensions.bind(null, entry, document,
+    callback);
+  setImageDimensions(document, onSetDimensions);
 }
 
 function onSetImageDimensions(entry, document, callback) {
@@ -156,6 +166,8 @@ function setImageDimensions(document, callback) {
   const fetchables = Array.prototype.filter.call(images, shouldFetchImage);
   async.forEach(fetchables, fetchImage, callback);
 }
+
+exports.setImageDimensions = setImageDimensions;
 
 function shouldFetchImage(image) {
   let url = image.getAttribute('src') || '';
@@ -244,8 +256,5 @@ function transformLazyImage(image) {
     return;
   }
 }
-
-exports.pollFeeds = pollFeeds;
-exports.setImageDimensions = setImageDimensions;
 
 } (this));
