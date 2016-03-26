@@ -2,9 +2,6 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// TODO: do some additional testing after recent changes, i didn't see any
-// images appear in the output
-
 // TODO: resolve xlink type simple (on any attribute)
 // TODO: finish implementing serializeSrcSet
 // TODO: rather than do a separate check for srcset, it should somehow be
@@ -12,12 +9,16 @@
 // have dup keys. so maybe the map needs to instead contain arrays of
 // attribute names (similarly, support longdesc in iframe)
 // TODO: look into whether srcset can be anywhere or just in img/source els
-
-// Requires: /src/utils.js
+// TODO: maybe do not remove base, maybe that is not this functions role, but
+// some other more general responsibility of calling context. After all, if
+// all urls are absolute then leaving in base has no effect. it is only the
+// caller, pollFeeds.augmentEntryContent, that is concerned about prepping
+// the document for render and caring about removing base elements
 
 (function(exports) {
 'use strict';
 
+// Resolves all urls in a document, such as element attribute values
 function resolveURLs(document, baseURL) {
   removeBaseElements(document);
   modifyResolvableAttributes(document, baseURL);
@@ -34,13 +35,27 @@ function removeBaseElements(document) {
   }
 }
 
+// TODO: maybe reverse argument order?
+function resolveURL(baseURL, url) {
+  try {
+    const uri = new URI(url);
+    if(!uri.protocol()) {
+      const resolved = uri.absoluteTo(baseURL).toString();
+      return resolved;
+    }
+  } catch(exception) {
+    console.debug('Exception resolving url "%s": %o', url, exception);
+  }
+
+  return url;
+}
+
 function modifyResolvableAttributes(document, baseURL) {
   const elements = document.querySelectorAll(RESOLVE_SELECTOR);
-  const resolveURL = utils.resolveURL;
   for(let i = 0, len = elements.length, element, attribute, originalURL,
     resolvedURL; i < len; i++) {
     element = elements[i];
-    attribute = getURLAttribute(element);
+    attribute = URL_ATTRIBUTE[element.localName];
     originalURL = element.getAttribute(attribute).trim();
     resolvedURL = resolveURL(baseURL, originalURL);
     if(resolvedURL && resolvedURL !== originalURL) {
@@ -60,8 +75,6 @@ const URL_ATTRIBUTE = {
   'applet': 'codebase',
   'area': 'href',
   'audio': 'src',
-  // base elements are always removed, but i am leaving this in here
-  // for completeness
   'base': 'href',
   'blockquote': 'cite',
   'body': 'background',
@@ -89,16 +102,6 @@ const RESOLVE_SELECTOR = Object.keys(URL_ATTRIBUTE).map(function(key) {
   return key + '[' + URL_ATTRIBUTE[key] +']';
 }).join(',');
 
-console.debug(RESOLVE_SELECTOR);
-
-function getURLAttribute(element) {
-  return URL_ATTRIBUTE[element.localName];
-}
-
-function removeElement(element) {
-  element.remove();
-}
-
 // Access an element's srcset attribute, parses it into an array of
 // descriptors, resolves the url for each descriptor, and then composes the
 // descriptors array back into a string and modifies the element
@@ -108,7 +111,7 @@ function resolveSrcSetAttribute(baseURL, element) {
   let descriptors = parseSrcset(source) || [];
   let numURLsChanged = 0;
   let resolvedDescriptors = descriptors.map(function transform(descriptor) {
-    const resolvedURL = utils.resolveURL(baseURL, descriptor.url);
+    const resolvedURL = resolveURL(baseURL, descriptor.url);
     let newURL = descriptor.url;
     if(resolvedURL && resolvedURL !== descriptor.url) {
       newURL = resolvedURL;

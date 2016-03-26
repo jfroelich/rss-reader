@@ -190,22 +190,6 @@ utils.replaceHTML = function(inputString, replacement) {
   return outputString;
 };
 
-// Returns a resolved url
-utils.resolveURL = function(baseURL, url) {
-  'use strict';
-  try {
-    const uri = new URI(url);
-    if(!uri.protocol()) {
-      const resolved = uri.absoluteTo(baseURL).toString();
-      return resolved;
-    }
-  } catch(exception) {
-    console.debug('Exception resolving url "%s": %o', url, exception);
-  }
-
-  return url;
-};
-
 // Applies a set of rules to a url string and returns a modified url string
 utils.rewriteURL = function(url) {
   'use strict';
