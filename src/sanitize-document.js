@@ -5,6 +5,7 @@
 // Lib for filtering the contents of an HTML Document object
 // Requires: /src/utils.js
 // TODO: merge table processing functions
+// TODO: maybe use nodeName instead of localName?
 
 (function IIFE_SANITIZE_DOCUMENT(exports) {
 'use strict';
@@ -103,14 +104,12 @@ const HIDDEN_SELECTOR = [
   '[style*="opacity:0.0"]'
 ].join(',');
 
+// TODO: explicit handling of noembed/audio/video/embed
+// TODO: explicit handling of noscript
 function sanitizeDocument(document) {
 
   filterComments(document);
   replaceFrames(document);
-
-  // TODO: explicit handling of noembed/audio/video/embed
-
-  // TODO: explicit handling of noscript
 
   const blacklistedElements = document.querySelectorAll(BLACKLIST_SELECTOR);
   utils.forEach(blacklistedElements, removeIfAttached);
@@ -125,8 +124,15 @@ function sanitizeDocument(document) {
   const filterableImages = utils.filter(images, isFilterableImage);
   utils.forEach(filterableImages, utils.removeNode);
 
-  const inlineElements = document.querySelectorAll(INLINE_ELEMENT_SELECTOR);
-  utils.forEach(inlineElements, filterInlineElement);
+  // TODO: rename related inline stuff to filterUnwrappableElements? Because
+  // the inline set is not exhaustive, there are some inlines that i do not
+  // unwrap, and i also unwrap some elements that are not inline. Maybe this
+  // is labeling it all wrong.
+  // NOTE: currently naive is better perf. I think part of the problem is
+  // that the attempt doubles some of its logic, and involves recursion
+  const unwrapCount = filterInlineElementsNaive(document);
+  //const unwrapCount = filterInlineElements(document);
+  //console.debug('Unwrapped %s elements', unwrapCount);
 
   filterTexts(document);
   filterLists(document);
@@ -261,27 +267,65 @@ function filterAttributes(document) {
   }
 }
 
-// TODO: this is still slow. profile against the more naive version
-// that unwrapped all elements immediately?
-function filterInlineElement(element) {
-  // TODO: describe why this is done, it is non-obvious, or in the alternative,
-  // make this more idiomatic by delegating to function calls
-  const firstChild = element.firstChild;
-  if(firstChild && firstChild === element.lastChild &&
-    firstChild.nodeType === Node.ELEMENT_NODE &&
-    firstChild.matches(INLINE_ELEMENT_SELECTOR)) {
-    // Skip
-  } else {
-    // Find shallowest consecutive inline ancestor
-    let shallowestInlineAncestor = null;
-    for(let ancestor = element.parentNode; ancestor &&
-      ancestor.childElementCount === 1 &&
-      ancestor.matches(INLINE_ELEMENT_SELECTOR);
-      ancestor = ancestor.parentNode) {
-      shallowestInlineAncestor = ancestor;
-    }
-    unwrap(element, shallowestInlineAncestor);
+// Unwraps all matching inline elements.
+function filterInlineElementsNaive(document) {
+  const elements = document.querySelectorAll(INLINE_ELEMENT_SELECTOR);
+  const numElements = elements.length;
+  for(let i = 0; i < numElements; i++) {
+    unwrap(elements[i], null);
   }
+  return numElements;
+}
+
+// Unwrapping has shown to be pretty expensive.
+// Rather than simply unwrap all the inline elements, this tries to reduce
+// the number of calls to unwrap by allowing for unwrapping at a distance.
+// For example, in <p><a><b>text</b></a></p>, instead of unwrapping a and
+// then unwrapping b, we skip over a, and we unwrap b's content into p,
+// and delete a.
+// TODO: think of a way to not call isInlineParent here and also in
+// findShallowestInlineAncestor. Maybe there is some type of top down recusive
+// approach that works similar to how filterLeaves works?
+// TODO: figure out a way of repeatedly callin matches in isInlineParent
+// TODO: figure out a way of not repeatedly trimming
+function filterInlineElements(document) {
+  const elements = document.querySelectorAll(INLINE_ELEMENT_SELECTOR);
+  let unwrapCount = 0;
+  for(let i = 0, len = elements.length, element, shallowest; i < len; i++) {
+    element = elements[i];
+    if(!isInlineParent(element)) {
+      shallowest = findShallowestInlineAncestor(element);
+      unwrap(element, shallowest);
+      unwrapCount++;
+    }
+  }
+  return unwrapCount;
+}
+
+// Recursive
+function isInlineParent(element) {
+  let result = element.matches(INLINE_ELEMENT_SELECTOR);
+  for(let node = element.firstChild; result && node; node = node.nextSibling) {
+    if(node.nodeType === Node.ELEMENT_NODE) {
+      if(!isInlineParent(node)) {
+        result = false;
+      }
+    } else if(node.nodeType === Node.TEXT_NODE) {
+      if(node.nodeValue.trim()) {
+        result = false;
+      }
+    }
+  }
+  return result;
+}
+
+function findShallowestInlineAncestor(element) {
+  let shallowest = null;
+  for(let node = element.parentNode; node && isInlineParent(node);
+    node = node.parentNode) {
+    shallowest = node;
+  }
+  return shallowest;
 }
 
 function filterLeaves(document) {
