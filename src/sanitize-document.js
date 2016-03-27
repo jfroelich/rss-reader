@@ -3,104 +3,33 @@
 // that can be found in the LICENSE file
 
 // Lib for filtering the contents of an HTML Document object
-// Requires: /src/utils.js
-// TODO: merge table processing functions
-// TODO: maybe use nodeName instead of localName?
 
 (function IIFE_SANITIZE_DOCUMENT(exports) {
 'use strict';
 
 const BLACKLIST_SELECTOR = [
-  'applet',
-  'audio',
-  'base',
-  'basefont',
-  'bgsound',
-  'button',
-  'command',
-  'datalist',
-  'dialog',
-  'embed',
-  'fieldset',
-  'frame',
-  'frameset',
-  'head',
-  'iframe',
-  'input',
-  'isindex',
-  'link',
-  'math',
-  'meta',
-  //'noembed',
-  'noscript',
-  'object',
-  'output',
-  'optgroup',
-  'option',
-  'param',
-  'path',
-  'progress',
-  'script',
-  'select',
-  'spacer',
-  'style',
-  'svg',
-  'textarea',
-  'title',
-  'video',
-  'xmp'
+  'APPLET', 'AUDIO', 'BASE', 'BASEFONT', 'BGSOUND', 'BUTTON', 'COMMAND',
+  'DATALIST', 'DIALOG', 'EMBED', 'FIELDSET', 'FRAME', 'FRAMESET', 'HEAD',
+  'IFRAME', 'INPUT', 'ISINDEX', 'LINK', 'MATH', 'META', 'NOSCRIPT',
+  'OBJECT', 'OUTPUT', 'OPTGROUP', 'OPTION', 'PARAM', 'PATH', 'PROGRESS',
+  'SCRIPT', 'SELECT', 'SPACER', 'STYLE', 'SVG', 'TEXTAREA', 'TITLE',
+  'VIDEO', 'XMP'
 ].join(',');
 
-// Inline elements that I want to unwrap. This is not all inline elements.
-const INLINE_ELEMENT_SELECTOR = [
-  'abbr',
-  'acronym',
-  'article',
-  'center',
-  'colgroup',
-  'data',
-  'details',
-  'div',
-  'footer',
-  'header',
-  'help',
-  'hgroup',
-  'ilayer',
-  'insert',
-  'layer',
-  'legend',
-  'main',
-  'mark',
-  'marquee',
-  'meter',
-  'multicol',
-  'nobr',
-  //'noembed',
-  //'rp',
-  //'rt',
-  //'rtc',
-  'section',
-  'span',
-  'tbody',
-  'tfoot',
-  'thead',
-  'form',
-  'label',
-  'big',
-  'blink',
-  'font',
-  'plaintext',
-  'small',
-  'tt'
+// Elements to unwrap
+const UNWRAPPABLE_SELECTOR = [
+  'ABBR', 'ACRONYM', 'ARTICLE', 'ASIDE', 'CENTER', 'COLGROUP', 'DATA',
+  'DETAILS', 'DIV', 'FOOTER', 'HEADER', 'HELP', 'HGROUP', 'ILAYER',
+  'INSERT', 'LAYER', 'LEGEND', 'MAIN', 'MARK', 'MARQUEE', 'METER',
+  'MULTICOL', 'NOBR', 'SECTION', 'SPAN', 'TBODY', 'TFOOT', 'THEAD', 'FORM',
+  'LABEL', 'BIG', 'BLINK', 'FONT', 'PLAINTEXT', 'SMALL', 'TT'
 ].join(',');
 
 //TODO: include aria hidden?
 // https://www.w3.org/TR/wai-aria/states_and_properties#aria-hidden
 const HIDDEN_SELECTOR = [
-  '[style*="display:none"]',
-  '[style*="display: none"]',
-  '[style*="visibility:hidden"]',
-  '[style*="visibility: hidden"]',
+  '[style*="display:none"]', '[style*="display: none"]',
+  '[style*="visibility:hidden"]', '[style*="visibility: hidden"]',
   '[style*="opacity:0.0"]'
 ].join(',');
 
@@ -110,28 +39,16 @@ function sanitizeDocument(document) {
 
   filterComments(document);
   replaceFrames(document);
+  filterBlacklistedElements(document);
+  filterHiddenElements(document);
+  //replaceBreakRuleElements(document);
+  filterAnchors(document);
+  filterImages(document);
 
-  const blacklistedElements = document.querySelectorAll(BLACKLIST_SELECTOR);
-  utils.forEach(blacklistedElements, removeIfAttached);
-
-  const hiddenElements = document.querySelectorAll(HIDDEN_SELECTOR);
-  utils.forEach(hiddenElements, removeIfAttached);
-
-  // utils.forEach(document.querySelectorAll('br'), filterBreakRule);
-  const anchors = document.querySelectorAll('a');
-  utils.forEach(anchors, filterAnchor);
-  const images = document.querySelectorAll('img');
-  const filterableImages = utils.filter(images, isFilterableImage);
-  utils.forEach(filterableImages, utils.removeNode);
-
-  // TODO: rename related inline stuff to filterUnwrappableElements? Because
-  // the inline set is not exhaustive, there are some inlines that i do not
-  // unwrap, and i also unwrap some elements that are not inline. Maybe this
-  // is labeling it all wrong.
   // NOTE: currently naive is better perf. I think part of the problem is
   // that the attempt doubles some of its logic, and involves recursion
-  const unwrapCount = filterInlineElementsNaive(document);
-  //const unwrapCount = filterInlineElements(document);
+  const unwrapCount = filterUnwrappablesNaive(document);
+  //const unwrapCount = filterUnwrappables(document);
   //console.debug('Unwrapped %s elements', unwrapCount);
 
   filterTexts(document);
@@ -147,15 +64,26 @@ function sanitizeDocument(document) {
 
 exports.sanitizeDocument = sanitizeDocument;
 
-function filterConsecutiveBreaks(document) {
-  const TYPE_ELEMENT = Node.ELEMENT_NODE;
-  const breaks = document.querySelectorAll('br');
-  utils.forEach(breaks, function removePrevIfBreak(element) {
-    const prev = element.previousSibling;
-    if(prev && prev.nodeType === TYPE_ELEMENT && prev.localName === 'br') {
-      prev.remove();
+function filterBlacklistedElements(document) {
+  const elements = document.querySelectorAll(BLACKLIST_SELECTOR);
+  const docElement = document.documentElement;
+  for(let i = 0, len = elements.length, element; i < len; i++) {
+    element = elements[i];
+    if(docElement.contains(element)) {
+      element.remove();
     }
-  });
+  }
+}
+
+function filterHiddenElements(document) {
+  const elements = document.querySelectorAll(HIDDEN_SELECTOR);
+  const docElement = document.documentElement;
+  for(let i = 0, len = elements.length, element; i < len; i++) {
+    element = elements[i];
+    if(docElement.contains(element)) {
+      element.remove();
+    }
+  }
 }
 
 function filterComments(document) {
@@ -166,26 +94,20 @@ function filterComments(document) {
   }
 }
 
-function removeIfAttached(element) {
-  if(element.ownerDocument.documentElement.contains(element)) {
-    element.remove();
-  }
-}
-
 // TODO: research why content sometimes appears garbled, like encoded, as if
 // it is re-encoding html
 // TODO: this assumes that <frameset> means absense of body. What if both
 // are present?
 function replaceFrames(document) {
   const frameset = document.body;
-  if(!frameset || frameset.localName !== 'frameset') {
+  if(!frameset || frameset.nodeName !== 'FRAMESET') {
     return;
   }
 
   console.debug('Replacing:', frameset.outerHTML);
 
-  const body = document.createElement('body');
-  const noframes = document.querySelector('noframes');
+  const body = document.createElement('BODY');
+  const noframes = document.querySelector('NOFRAMES');
   if(noframes) {
     body.innerHTML = noframes.innerHTML;
   } else {
@@ -194,23 +116,14 @@ function replaceFrames(document) {
   frameset.parentNode.replaceChild(frameset, body);
 }
 
-function filterBreakRule(element) {
-  // TODO: improve, this is very buggy
-  // error case: http://paulgraham.com/procrastination.html
-  const parent = element.parentNode;
-  const p = document.createElement('p');
-  parent.replaceChild(p, element);
-}
 
+// TODO: clean this up, make less dry
 function filterAttributes(document) {
   const elements = document.getElementsByTagName('*');
   const numElements = elements.length;
 
   // Iterate attributes in reverse to avoid issues with mutating a live
   // NodeList during iteration
-
-  // TODO: clean this up, make less dry,
-  // maybe go back to using hash objects
 
   let elementName = null;
   let attributeName = null;
@@ -220,14 +133,13 @@ function filterAttributes(document) {
 
   for(let i = 0; i < numElements; i++) {
     element = elements[i];
-    elementName = element.localName;
+    elementName = element.nodeName;
     attributes = element.attributes;
     if(!attributes || !attributes.length) {
       continue;
     }
 
-    if(elementName === 'source') {
-      // new <picture><source></picture> stuff
+    if(elementName === 'SOURCE') {
       for(j = attributes.length - 1; j > -1; j--) {
         attributeName = attributes[j].name;
         if(attributeName !== 'type' && attributeName !== 'srcset' &&
@@ -236,7 +148,7 @@ function filterAttributes(document) {
           element.removeAttribute(attributeName);
         }
       }
-    } else if(elementName === 'a') {
+    } else if(elementName === 'A') {
       for(j = attributes.length - 1; j > -1; j--) {
         attributeName = attributes[j].name;
         if(attributeName !== 'href' && attributeName !== 'name' &&
@@ -244,14 +156,14 @@ function filterAttributes(document) {
           element.removeAttribute(attributeName);
         }
       }
-    } else if(elementName === 'iframe') {
+    } else if(elementName === 'IFRAME') {
       for(j = attributes.length - 1; j > -1; j--) {
         attributeName = attributes[j].name;
         if(attributeName !== 'src') {
           element.removeAttribute(attributeName);
         }
       }
-    } else if(elementName === 'img') {
+    } else if(elementName === 'IMG') {
       for(j = attributes.length - 1; j > -1; j--) {
         attributeName = attributes[j].name;
         if(attributeName !== 'src' && attributeName !== 'alt' &&
@@ -267,9 +179,8 @@ function filterAttributes(document) {
   }
 }
 
-// Unwraps all matching inline elements.
-function filterInlineElementsNaive(document) {
-  const elements = document.querySelectorAll(INLINE_ELEMENT_SELECTOR);
+function filterUnwrappablesNaive(document) {
+  const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
   const numElements = elements.length;
   for(let i = 0; i < numElements; i++) {
     unwrap(elements[i], null);
@@ -283,18 +194,18 @@ function filterInlineElementsNaive(document) {
 // For example, in <p><a><b>text</b></a></p>, instead of unwrapping a and
 // then unwrapping b, we skip over a, and we unwrap b's content into p,
 // and delete a.
-// TODO: think of a way to not call isInlineParent here and also in
-// findShallowestInlineAncestor. Maybe there is some type of top down recusive
-// approach that works similar to how filterLeaves works?
-// TODO: figure out a way of repeatedly callin matches in isInlineParent
+// TODO: think of a way to not call isUnwrappableParent here and also in
+// findShallowestUnwrappableAncestor. Maybe there is some type of top down
+// recusive approach that works similar to how filterLeaves works?
+// TODO: figure out a way of repeatedly callin matches in isUnwrappableParent
 // TODO: figure out a way of not repeatedly trimming
-function filterInlineElements(document) {
-  const elements = document.querySelectorAll(INLINE_ELEMENT_SELECTOR);
+function filterUnwrappables(document) {
+  const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
   let unwrapCount = 0;
   for(let i = 0, len = elements.length, element, shallowest; i < len; i++) {
     element = elements[i];
-    if(!isInlineParent(element)) {
-      shallowest = findShallowestInlineAncestor(element);
+    if(!isUnwrappableParent(element)) {
+      shallowest = findShallowestUnwrappableAncestor(element);
       unwrap(element, shallowest);
       unwrapCount++;
     }
@@ -302,12 +213,11 @@ function filterInlineElements(document) {
   return unwrapCount;
 }
 
-// Recursive
-function isInlineParent(element) {
-  let result = element.matches(INLINE_ELEMENT_SELECTOR);
+function isUnwrappableParent(element) {
+  let result = element.matches(UNWRAPPABLE_SELECTOR);
   for(let node = element.firstChild; result && node; node = node.nextSibling) {
     if(node.nodeType === Node.ELEMENT_NODE) {
-      if(!isInlineParent(node)) {
+      if(!isUnwrappableParent(node)) {
         result = false;
       }
     } else if(node.nodeType === Node.TEXT_NODE) {
@@ -319,9 +229,9 @@ function isInlineParent(element) {
   return result;
 }
 
-function findShallowestInlineAncestor(element) {
+function findShallowestUnwrappableAncestor(element) {
   let shallowest = null;
-  for(let node = element.parentNode; node && isInlineParent(node);
+  for(let node = element.parentNode; node && isUnwrappableParent(node);
     node = node.parentNode) {
     shallowest = node;
   }
@@ -332,10 +242,6 @@ function filterLeaves(document) {
   const elements = document.querySelectorAll('*');
   const numElements = elements.length;
   const docElement = document.documentElement;
-
-  // The contains check avoids removing nodes that are descendants of nodes
-  // removed in prior iteration
-
   for(let i = 0, element; i < numElements; i++) {
     element = elements[i];
     if(docElement.contains(element) && isLeaf(element)) {
@@ -345,34 +251,15 @@ function filterLeaves(document) {
 }
 
 const LEAF_EXCEPTIONS = {
-  'area': 1,
-  'audio': 1,
-  'base': 1,
-  'col': 1,
-  'command': 1,
-  'br': 1,
-  'canvas': 1,
-  'col': 1,
-  'hr': 1,
-  'iframe': 1,
-  'img': 1,
-  'input': 1,
-  'keygen': 1,
-  'meta': 1,
-  'nobr': 1,
-  'param': 1,
-  'path': 1,
-  'source': 1,
-  'svg': 1,
-  'textarea': 1,
-  'track': 1,
-  'video': 1,
-  'wbr': 1
+  'AREA': 1, 'AUDIO': 1, 'BASE': 1, 'COL': 1, 'COMMAND': 1, 'BR': 1,
+  'CANVAS': 1, 'COL': 1, 'HR': 1, 'IFRAME': 1, 'IMG': 1, 'INPUT': 1,
+  'KEYGEN': 1, 'META': 1, 'NOBR': 1, 'PARAM': 1, 'PATH': 1, 'SOURCE': 1,
+  'SBG': 1, 'TEXTAREA': 1, 'TRACK': 1, 'VIDEO': 1, 'WBR': 1
 };
 
 // Recursive
 function isLeaf(element) {
-  if(element.localName in LEAF_EXCEPTIONS) {
+  if(element.nodeName in LEAF_EXCEPTIONS) {
     return false;
   }
 
@@ -383,19 +270,16 @@ function isLeaf(element) {
   for(let node = element.firstChild; node; node = node.nextSibling) {
     switch(node.nodeType) {
       case TEXT_NODE:
-        // An element is not a leaf if it contains a non-empty text node
         if(node.nodeValue.trim()) {
           return false;
         }
         break;
       case ELEMENT_NODE:
-        // An element is not a leaf if it contains a non-leaf child element
         if(!isLeaf(node)) {
           return false;
         }
         break;
       default:
-        // An element is not a leaf if it contains an unknown node type
         return false;
     }
   }
@@ -403,28 +287,38 @@ function isLeaf(element) {
   return true;
 }
 
-function filterAnchor(anchor) {
-  const jspattern = /\s*javascript\s*:/i;
-  const minjslen = 'javascript:'.length - 1;
-  // NOTE: accessing anchor.protocol performs even worse than
-  // using a regexp.
-  if(anchor.hasAttribute('href')) {
-    const href = anchor.getAttribute('href');
-    if(href.length > minjslen && jspattern.test(href)) {
-      // NOTE: consider removing or unwrapping
-      anchor.setAttribute('href', '');
+// NOTE: testing whether anchor.protocol === 'javascript:' is slower than
+// using a regular expression.
+function filterAnchors(document) {
+  const anchors = document.querySelectorAll('A');
+  const jspattern = /^\s*JAVASCRIPT\s*:/i;
+  const MIN_HREF_LEN = 'JAVASCRIPT:'.length - 1;
+
+  for(let i = 0, len = anchors.length, anchor, href; i < len; i++) {
+    anchor = anchors[i];
+
+    if(anchor.hasAttribute('href')) {
+      href = anchor.getAttribute('href');
+      if(href.length > MIN_HREF_LEN && jspattern.test(href)) {
+        // NOTE: consider removing or unwrapping
+        anchor.setAttribute('href', '');
+      }
+    } else if(anchor.hasAttribute('name')) {
+      // Leave as is
+    } else {
+      // Nominal
+      unwrap(anchor);
     }
-  } else if(anchor.hasAttribute('name')) {
-    // It is a named anchor without an href. Ignore it.
-  } else {
-    // The anchor is nominal, and can be treated like a span or any other
-    // inline element. Unwrap it.
-    unwrap(anchor);
   }
 }
 
+// TODO: merge table processing functions
 function unwrapSingleCellTables(document) {
-  utils.forEach(document.querySelectorAll('table'), unwrapTableIfSingleCell);
+  const tables = document.querySelectorAll('TABLE');
+  for(let i = 0, len = tables.length; i < len; i++) {
+    unwrapTableIfSingleCell(tables[i]);
+  }
+
 }
 
 // TODO: what about skipping past empty rows and still unwrapping?
@@ -444,7 +338,10 @@ function unwrapTableIfSingleCell(table) {
 }
 
 function filterSingleColumnTables(document) {
-  utils.forEach(document.querySelectorAll('table'), filterTableIfSingleColumn);
+  const tables = document.querySelectorAll('TABLE');
+  for(let i = 0, len = tables.length; i < len; i++) {
+    filterTableIfSingleColumn(tables[i]);
+  }
 }
 
 function filterTableIfSingleColumn(table) {
@@ -460,7 +357,7 @@ function filterTableIfSingleColumn(table) {
         insertChildrenBefore(cell, table);
       }
 
-      parent.insertBefore(document.createElement('p'), table);
+      parent.insertBefore(document.createElement('P'), table);
     }
 
     table.remove();
@@ -478,13 +375,16 @@ function isProbablySingleColumnTable(table) {
 }
 
 function filterLists(document) {
-  utils.forEach(document.querySelectorAll('ul, ol'), unwrapSingleItemList);
+  const lists = document.querySelectorAll('UL, OL');
+  for(let i = 0, len = lists.length; i < len; i++) {
+    unwrapSingleItemList(lists[i]);
+  }
 }
 
 function unwrapSingleItemList(list) {
   if(list.childElementCount === 1) {
     const item = list.firstElementChild;
-    if(item.localName === 'li') {
+    if(item.nodeName === 'LI') {
       insertChildrenBefore(item, list);
       list.remove();
     }
@@ -492,92 +392,99 @@ function unwrapSingleItemList(list) {
 }
 
 function filterConsecutiveRules(document) {
-  for(let i = 0, rules = document.querySelectorAll('hr'), len = rules.length,
-    rule, previousSibling; i < len; i++) {
-    rule = rules[i];
-    previousSibling = rule.previousSibling;
-    if(previousSibling && previousSibling.nodeType === Node.ELEMENT_NODE &&
-      previousSibling.localName === 'hr') {
-      rule.remove();
+  for(let i = 0, rules = document.querySelectorAll('HR'), len = rules.length,
+    rule, prev; i < len; i++) {
+    prev = rules[i].previousSibling;
+    if(prev && prev.nodeName === 'HR') {
+      prev.remove();
     }
   }
 }
 
-function isFilterableImage(image) {
-  return isSourcelessImage(image) || isTracerImage(image);
+function filterConsecutiveBreaks(document) {
+  const breaks = document.querySelectorAll('BR');
+  for(let i = 0, len = breaks.length, prev; i < len; i++) {
+    prev = breaks[i].previousSibling;
+    if(prev && prev.nodeName === 'BR') {
+      prev.remove();
+    }
+  }
 }
 
-function isSourcelessImage(image) {
-  return !image.hasAttribute('src') && !image.hasAttribute('srcset');
+function replaceBreakRuleElements(document) {
+  const elements = document.querySelectorAll('BR');
+  for(let i = 0, len = elements.length, element; i < len; i++) {
+    element = elements[i];
+    filterBreakRule(element);
+  }
 }
 
-function isTracerImage(image) {
-  return image.width < 2 || image.height < 2;
+
+// TODO: improve, this is very buggy
+// error case: http://paulgraham.com/procrastination.html
+function filterBreakRule(element) {
+  const parent = element.parentNode;
+  const p = document.createElement('P');
+  parent.replaceChild(p, element);
+}
+
+function filterImages(document) {
+  const images = document.querySelectorAll('IMG');
+  for(let i = 0, len = images.length, image; i < len; i++) {
+    image = images[i];
+    if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
+      image.remove();
+    } else if(image.width < 2 || image.height < 2) {
+      image.remove();
+    }
+  }
 }
 
 function trimDocument(document) {
   const body = document.body;
   if(body) {
-    let sibling = body;
-    let node = body.firstChild;
-    while(node && isWhitespaceNode(node)) {
-      sibling = node.nextSibling;
-      node.remove();
-      node = sibling;
-    }
-
-    node = body.lastChild;
-    while(node && isWhitespaceNode(node)) {
-      sibling = node.previousSibling;
-      node.remove();
-      node = sibling;
+    const firstChild = body.firstChild;
+    if(firstChild) {
+      removeNodesByStep(firstChild, 'nextSibling');
+      const lastChild = body.lastChild;
+      if(lastChild && lastChild !== firstChild) {
+        removeNodesByStep(body.lastChild, 'previousSibling');
+      }
     }
   }
 }
 
-function isWhitespaceNode(node) {
-  const TRIMMABLE_ELEMENTS = {
-    'br': 1,
-    'hr': 1,
-    'nobr': 1
-  };
-
-  return (node.nodeType === Node.ELEMENT_NODE &&
-    node.localName in TRIMMABLE_ELEMENTS) ||
-    (node.nodeType === Node.TEXT_NODE && !node.nodeValue.trim());
-}
-
-function isTrivialNodeValue(value) {
-  // todo: would a length check or switch improve/simplify?
-  return value === '' || value === '\n' || value === '\n\t' ||
-    value === '\n\t\t' || value === '\n\t\t\t' || value === '\n\t\t\t\t';
-}
-
-function isWhitespaceSensitive(element) {
-  return element.closest('code, pre, ruby, textarea, xmp');
+function removeNodesByStep(startNode, step) {
+  const VOIDS = {'BR': 1, 'HR': 1, 'NOBR': 1};
+  const ELEMENT = Node.ELEMENT_NODE;
+  const TEXT = Node.TEXT_NODE;
+  let node = startNode, sibling = startNode;
+  while(node && ((node.nodeType === ELEMENT && node.nodeName in VOIDS) ||
+    (node.nodeType === TEXT && !node.nodeValue.trim()))) {
+    sibling = node[step];
+    node.remove();
+    node = sibling;
+  }
 }
 
 function filterTexts(document) {
-  const it = document.createNodeIterator(document.documentElement,
+  const iterator = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_TEXT);
-  for(let node = it.nextNode(), value; node; node = it.nextNode()) {
+  const SENSITIVE_SELECTOR = 'CODE, PRE, RUBY, TEXTAREA, XMP';
+  for(let node = iterator.nextNode(), value, length = 0; node;
+    node = iterator.nextNode()) {
     value = node.nodeValue;
-    if(!isTrivialNodeValue(value)) {
-      value = canonicalizeWhitespace(value);
+    length = value.length;
+    if(length > 3) {
+      if(length > 5) {
+        value = value.replace(/&nbsp;/ig, ' ');
+      }
+      if(!node.parentNode.closest(SENSITIVE_SELECTOR)) {
+        value = value.replace(/\s{2,}/g, ' ');
+      }
+      node.nodeValue = value;
     }
-    if(!isWhitespaceSensitive(node.parentNode)) {
-      value = condenseWhitespace(value);
-    }
-    node.nodeValue = value;
   }
-}
-
-function canonicalizeWhitespace(value) {
-  return value.replace(/&nbsp;/ig, ' ');
-}
-
-function condenseWhitespace(value) {
-  return value.replace(/\s{2,}/g, ' ');
 }
 
 // Unwraps the element's child nodes into the parent of the element or, if
@@ -606,7 +513,5 @@ function insertChildrenBefore(parentNode, referenceNode) {
     referenceParent.insertBefore(node, referenceNode);
   }
 }
-
-
 
 }(this));
