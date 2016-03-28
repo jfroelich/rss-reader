@@ -142,7 +142,12 @@ function serializeSrcSet(descriptors) {
   const resolvedDescriptors = [];
   const numDescriptors = descriptors.length;
 
+  // TODO: i am also seeing something like url 2x or 1.5x, what's x?i assume
+  // it is something like zoom level (2x is 2 times size)
+
   for(let i = 0, descriptor, newString; i < numDescriptors; i++) {
+    console.debug('Descriptor:', descriptor);
+
     descriptor = descriptors[i];
     newString = descriptor.url;
 
