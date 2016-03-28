@@ -3,8 +3,20 @@
 // that can be found in the LICENSE file
 
 // Lib for filtering the contents of an HTML Document object
+// Requires: /src/sanitize-unwrap.js
 
-(function IIFE_SANITIZE_DOCUMENT(exports) {
+// TODO: explicit handling of noembed/audio/video/embed
+// TODO: explicit handling of noscript
+// TODO: include aria hidden in HIDDEN_SELECTOR?
+// https://www.w3.org/TR/wai-aria/states_and_properties#aria-hidden
+// TODO: research why content sometimes appears garbled, like encoded, as if
+// it is re-encoding html, when using content of noframes in replaceFrames
+// TODO: what if both body and frameset are present in replaceFrames ?
+// TODO: make filterAttributes less dry
+// TODO: maybe blacklist all urls not using an acceptable protocol in
+// filterAnchors
+
+(function(exports) {
 'use strict';
 
 const BLACKLIST_SELECTOR = [
@@ -16,27 +28,13 @@ const BLACKLIST_SELECTOR = [
   'VIDEO', 'XMP'
 ].join(',');
 
-// Elements to unwrap
-const UNWRAPPABLE_SELECTOR = [
-  'ABBR', 'ACRONYM', 'ARTICLE', 'ASIDE', 'CENTER', 'COLGROUP', 'DATA',
-  'DETAILS', 'DIV', 'FOOTER', 'HEADER', 'HELP', 'HGROUP', 'ILAYER',
-  'INSERT', 'LAYER', 'LEGEND', 'MAIN', 'MARK', 'MARQUEE', 'METER',
-  'MULTICOL', 'NOBR', 'SECTION', 'SPAN', 'TBODY', 'TFOOT', 'THEAD', 'FORM',
-  'LABEL', 'BIG', 'BLINK', 'FONT', 'PLAINTEXT', 'SMALL', 'TT'
-].join(',');
-
-//TODO: include aria hidden?
-// https://www.w3.org/TR/wai-aria/states_and_properties#aria-hidden
 const HIDDEN_SELECTOR = [
   '[style*="display:none"]', '[style*="display: none"]',
   '[style*="visibility:hidden"]', '[style*="visibility: hidden"]',
   '[style*="opacity:0.0"]'
 ].join(',');
 
-// TODO: explicit handling of noembed/audio/video/embed
-// TODO: explicit handling of noscript
 function sanitizeDocument(document) {
-
   filterComments(document);
   replaceFrames(document);
   filterBlacklistedElements(document);
@@ -44,19 +42,12 @@ function sanitizeDocument(document) {
   //replaceBreakRuleElements(document);
   filterAnchors(document);
   filterImages(document);
-
-  // NOTE: currently naive is better perf. I think part of the problem is
-  // that the attempt doubles some of its logic, and involves recursion
-  const unwrapCount = filterUnwrappablesNaive(document);
-  //const unwrapCount = filterUnwrappables(document);
-  //console.debug('Unwrapped %s elements', unwrapCount);
-
+  filterUnwrappables(document);
   filterTexts(document);
   filterLists(document);
-  filterConsecutiveRules(document);
-  unwrapSingleCellTables(document);
-  filterSingleColumnTables(document);
+  filterTables(document);
   filterLeaves(document);
+  filterConsecutiveRules(document);
   filterConsecutiveBreaks(document);
   trimDocument(document);
   filterAttributes(document);
@@ -94,17 +85,11 @@ function filterComments(document) {
   }
 }
 
-// TODO: research why content sometimes appears garbled, like encoded, as if
-// it is re-encoding html
-// TODO: this assumes that <frameset> means absense of body. What if both
-// are present?
 function replaceFrames(document) {
   const frameset = document.body;
   if(!frameset || frameset.nodeName !== 'FRAMESET') {
     return;
   }
-
-  console.debug('Replacing:', frameset.outerHTML);
 
   const body = document.createElement('BODY');
   const noframes = document.querySelector('NOFRAMES');
@@ -116,15 +101,12 @@ function replaceFrames(document) {
   frameset.parentNode.replaceChild(frameset, body);
 }
 
-
-// TODO: clean this up, make less dry
 function filterAttributes(document) {
   const elements = document.getElementsByTagName('*');
   const numElements = elements.length;
 
   // Iterate attributes in reverse to avoid issues with mutating a live
   // NodeList during iteration
-
   let elementName = null;
   let attributeName = null;
   let element = null;
@@ -179,65 +161,6 @@ function filterAttributes(document) {
   }
 }
 
-function filterUnwrappablesNaive(document) {
-  const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
-  const numElements = elements.length;
-  for(let i = 0; i < numElements; i++) {
-    unwrap(elements[i], null);
-  }
-  return numElements;
-}
-
-// Unwrapping has shown to be pretty expensive.
-// Rather than simply unwrap all the inline elements, this tries to reduce
-// the number of calls to unwrap by allowing for unwrapping at a distance.
-// For example, in <p><a><b>text</b></a></p>, instead of unwrapping a and
-// then unwrapping b, we skip over a, and we unwrap b's content into p,
-// and delete a.
-// TODO: think of a way to not call isUnwrappableParent here and also in
-// findShallowestUnwrappableAncestor. Maybe there is some type of top down
-// recusive approach that works similar to how filterLeaves works?
-// TODO: figure out a way of repeatedly callin matches in isUnwrappableParent
-// TODO: figure out a way of not repeatedly trimming
-function filterUnwrappables(document) {
-  const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
-  let unwrapCount = 0;
-  for(let i = 0, len = elements.length, element, shallowest; i < len; i++) {
-    element = elements[i];
-    if(!isUnwrappableParent(element)) {
-      shallowest = findShallowestUnwrappableAncestor(element);
-      unwrap(element, shallowest);
-      unwrapCount++;
-    }
-  }
-  return unwrapCount;
-}
-
-function isUnwrappableParent(element) {
-  let result = element.matches(UNWRAPPABLE_SELECTOR);
-  for(let node = element.firstChild; result && node; node = node.nextSibling) {
-    if(node.nodeType === Node.ELEMENT_NODE) {
-      if(!isUnwrappableParent(node)) {
-        result = false;
-      }
-    } else if(node.nodeType === Node.TEXT_NODE) {
-      if(node.nodeValue.trim()) {
-        result = false;
-      }
-    }
-  }
-  return result;
-}
-
-function findShallowestUnwrappableAncestor(element) {
-  let shallowest = null;
-  for(let node = element.parentNode; node && isUnwrappableParent(node);
-    node = node.parentNode) {
-    shallowest = node;
-  }
-  return shallowest;
-}
-
 function filterLeaves(document) {
   const elements = document.querySelectorAll('*');
   const numElements = elements.length;
@@ -257,14 +180,13 @@ const LEAF_EXCEPTIONS = {
   'SBG': 1, 'TEXTAREA': 1, 'TRACK': 1, 'VIDEO': 1, 'WBR': 1
 };
 
-// Recursive
 function isLeaf(element) {
   if(element.nodeName in LEAF_EXCEPTIONS) {
     return false;
   }
 
-  const TEXT_NODE = Node.TEXT_NODE;
-  const ELEMENT_NODE = Node.ELEMENT_NODE;
+  const TEXT_NODE = Node.TEXT_NODE,
+    ELEMENT_NODE = Node.ELEMENT_NODE;
 
   // An element is a leaf unless it contains a non-leaf child node
   for(let node = element.firstChild; node; node = node.nextSibling) {
@@ -292,101 +214,92 @@ function isLeaf(element) {
 function filterAnchors(document) {
   const anchors = document.querySelectorAll('A');
   const jspattern = /^\s*JAVASCRIPT\s*:/i;
-  const MIN_HREF_LEN = 'JAVASCRIPT:'.length - 1;
+  const MIN_HREF_LEN = 'JAVASCRIPT'.length;
 
   for(let i = 0, len = anchors.length, anchor, href; i < len; i++) {
     anchor = anchors[i];
-
     if(anchor.hasAttribute('href')) {
       href = anchor.getAttribute('href');
       if(href.length > MIN_HREF_LEN && jspattern.test(href)) {
         // NOTE: consider removing or unwrapping
         anchor.setAttribute('href', '');
       }
-    } else if(anchor.hasAttribute('name')) {
-      // Leave as is
-    } else {
-      // Nominal
+    } else if(!anchor.hasAttribute('name')) {
       unwrap(anchor);
     }
   }
 }
 
-// TODO: merge table processing functions
-function unwrapSingleCellTables(document) {
+// TODO: what about skipping past empty rows and still unwrapping when
+// processing single cell tables?
+function filterTables(document) {
   const tables = document.querySelectorAll('TABLE');
-  for(let i = 0, len = tables.length; i < len; i++) {
-    unwrapTableIfSingleCell(tables[i]);
-  }
+  const tableLength = tables.length;
+  let rows = null;
+  let cells = null;
+  let cell = null;
+  let tableParent = null;
+  let table = null;
+  let isSingleColumn = true;
+  let upperBound = 0;
+  let tableIndex = 0;
+  let rowIndex = 0;
+  let colIndex = 0;
+  let rowLength = 0;
 
-}
+  for(tableIndex = 0; tableIndex < tableLength; tableIndex++) {
+    table = tables[tableIndex];
+    tableParent = table.parentNode;
+    rows = table.rows;
+    rowLength = rows.length;
 
-// TODO: what about skipping past empty rows and still unwrapping?
-function unwrapTableIfSingleCell(table) {
-  const rows = table.rows;
-  if(rows.length === 1) {
-    const cells = rows[0].cells;
-    if(cells.length === 1) {
-      const cell = cells[0];
-      const parent = table.parentNode;
-      parent.insertBefore(document.createTextNode(' '), table);
-      insertChildrenBefore(cell, table);
-      parent.insertBefore(document.createTextNode(' '), table);
+    if(rowLength === 1) {
+      cells = rows[0].cells;
+      if(cells.length === 1) {
+        cell = cells[0];
+        tableParent.insertBefore(document.createTextNode(' '), table);
+        insertChildrenBefore(cell, table);
+        tableParent.insertBefore(document.createTextNode(' '), table);
+        table.remove();
+        continue;
+      }
+    }
+
+    isSingleColumn = true;
+    upperBound = Math.min(rowLength, 50);
+    for(rowIndex = 0; rowIndex < upperBound; rowIndex++) {
+      if(rows[rowIndex].cells.length > 1) {
+        isSingleColumn = false;
+        break;
+      }
+    }
+
+    if(isSingleColumn) {
+      // console.debug('Unwrapping single column table', table);
+      tableParent.insertBefore(document.createTextNode(' '), table);
+      for(rowIndex = 0; rowIndex < rowLength; rowIndex++) {
+        cells = rows[rowIndex];
+        for(colIndex = 0; colIndex < cells.length; colIndex++) {
+          insertChildrenBefore(cells[colIndex], table);
+        }
+        tableParent.insertBefore(document.createElement('P'), table);
+      }
+      tableParent.insertBefore(document.createTextNode(' '), table);
       table.remove();
     }
   }
 }
 
-function filterSingleColumnTables(document) {
-  const tables = document.querySelectorAll('TABLE');
-  for(let i = 0, len = tables.length; i < len; i++) {
-    filterTableIfSingleColumn(tables[i]);
-  }
-}
-
-function filterTableIfSingleColumn(table) {
-  if(isProbablySingleColumnTable(table)) {
-    const parent = table.parentNode;
-    const document = table.ownerDocument;
-    for(let rows = table.rows, numRows = rows.length, rowIndex = 0,
-      columnIndex = 0, cell, cells, numCells = 0;
-      rowIndex < numRows; rowIndex++) {
-      for(columnIndex = 0, cells = rows[rowIndex], numCells = cells.length;
-        columnIndex < numCells; columnIndex++) {
-        cell = cells[columnIndex];
-        insertChildrenBefore(cell, table);
-      }
-
-      parent.insertBefore(document.createElement('P'), table);
-    }
-
-    table.remove();
-  }
-}
-
-function isProbablySingleColumnTable(table) {
-  const rows = table.rows;
-  for(let i = 0, upper = Math.min(rows.length, 50); i < upper; i++) {
-    if(rows[i].cells.length > 1) {
-      return false;
-    }
-  }
-  return true;
-}
-
 function filterLists(document) {
   const lists = document.querySelectorAll('UL, OL');
-  for(let i = 0, len = lists.length; i < len; i++) {
-    unwrapSingleItemList(lists[i]);
-  }
-}
-
-function unwrapSingleItemList(list) {
-  if(list.childElementCount === 1) {
-    const item = list.firstElementChild;
-    if(item.nodeName === 'LI') {
-      insertChildrenBefore(item, list);
-      list.remove();
+  for(let i = 0, len = lists.length, list, item; i < len; i++) {
+    list = lists[i];
+    if(list.childElementCount === 1) {
+      item = list.firstElementChild;
+      if(item.nodeName === 'LI') {
+        insertChildrenBefore(item, list);
+        list.remove();
+      }
     }
   }
 }
@@ -419,7 +332,6 @@ function replaceBreakRuleElements(document) {
   }
 }
 
-
 // TODO: improve, this is very buggy
 // error case: http://paulgraham.com/procrastination.html
 function filterBreakRule(element) {
@@ -445,16 +357,16 @@ function trimDocument(document) {
   if(body) {
     const firstChild = body.firstChild;
     if(firstChild) {
-      removeNodesByStep(firstChild, 'nextSibling');
+      removeTrimmableNodesByStep(firstChild, 'nextSibling');
       const lastChild = body.lastChild;
       if(lastChild && lastChild !== firstChild) {
-        removeNodesByStep(body.lastChild, 'previousSibling');
+        removeTrimmableNodesByStep(body.lastChild, 'previousSibling');
       }
     }
   }
 }
 
-function removeNodesByStep(startNode, step) {
+function removeTrimmableNodesByStep(startNode, step) {
   const VOIDS = {'BR': 1, 'HR': 1, 'NOBR': 1};
   const ELEMENT = Node.ELEMENT_NODE;
   const TEXT = Node.TEXT_NODE;
@@ -484,33 +396,6 @@ function filterTexts(document) {
       }
       node.nodeValue = value;
     }
-  }
-}
-
-// Unwraps the element's child nodes into the parent of the element or, if
-// provided, the parent of the alternate element
-function unwrap(element, referenceNode) {
-  const target = referenceNode || element;
-  const parent = target.parentNode;
-  const document = element.ownerDocument;
-  const prevSibling = target.previousSibling;
-  const nextSibling = target.nextSibling;
-  if(parent) {
-    if(prevSibling && prevSibling.nodeType === Node.TEXT_NODE) {
-      parent.insertBefore(document.createTextNode(' '), target);
-    }
-    insertChildrenBefore(element, target);
-    if(nextSibling && nextSibling.nodeType === Node.TEXT_NODE) {
-      parent.insertBefore(document.createTextNode(' '), target);
-    }
-  }
-  target.remove();
-}
-
-function insertChildrenBefore(parentNode, referenceNode) {
-  const referenceParent = referenceNode.parentNode;
-  for(let node = parentNode.firstChild; node; node = parentNode.firstChild) {
-    referenceParent.insertBefore(node, referenceNode);
   }
 }
 
