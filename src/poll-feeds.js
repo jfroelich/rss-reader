@@ -61,8 +61,8 @@ function iterateFeeds(event) {
 
 function fetchFeed(connection, feed) {
   const timeout = 10 * 1000;
-  const onFetchFeed = onFetchFeed.bind(null, connection, feed);
-  net.fetchFeed(feed.url, timeout, onFetchFeed);
+  const onFetchFeedBound = onFetchFeed.bind(null, connection, feed);
+  net.fetchFeed(feed.url, timeout, onFetchFeedBound);
 }
 
 function onFetchFeed(connection, feed, event, remoteFeed) {
@@ -71,8 +71,9 @@ function onFetchFeed(connection, feed, event, remoteFeed) {
   } else {
     // TODO: if we are cleaning up the properties in db.storeFeed,
     // are we properly cascading those cleaned properties to the entries?
-    const onStoreFeed = onStoreFeed.bind(null, connection, feed, remoteFeed)
-    db.storeFeed(connection, feed, remoteFeed, onStoreFeed);
+    const onStoreFeedBound = onStoreFeed.bind(null, connection, feed,
+      remoteFeed);
+    db.storeFeed(connection, feed, remoteFeed, onStoreFeedBound);
   }
 }
 
@@ -87,9 +88,9 @@ function onEntriesUpdated(connection) {
 }
 
 function onFindEntryByLink(connection, feed, entry, callback) {
-  const onFindEntry = onFindEntry.bind(null, connection, feed, entry,
+  const onFindEntryBound = onFindEntry.bind(null, connection, feed, entry,
     callback);
-  db.findEntryByLink(connection, entry.link, onFindEntry);
+  db.findEntryByLink(connection, entry.link, onFindEntryBound);
 }
 
 function onFindEntry(connection, feed, entry, callback, event) {
@@ -127,8 +128,8 @@ function onPollComplete() {
 }
 
 function augmentEntryContent(entry, timeout, callback) {
-  const onFetchHTML = onFetchHTML.bind(null, entry, callback);
-  net.fetchHTML(entry.link, timeout, onFetchHTML);
+  const onFetchHTMLBound = onFetchHTML.bind(null, entry, callback);
+  net.fetchHTML(entry.link, timeout, onFetchHTMLBound);
 }
 
 function onFetchHTML(entry, callback, error, document, responseURL) {
