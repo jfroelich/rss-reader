@@ -244,7 +244,7 @@ function appendSlide(entry, isFirst) {
   const doc = utils.parseHTML(entry.content);
 
   applyCalamine(doc);
-  sanitizeDocument(doc);
+  sanity_sanitize_document(doc);
 
   if(doc.documentElement) {
     if(doc.body) {

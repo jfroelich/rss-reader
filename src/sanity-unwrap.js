@@ -68,12 +68,12 @@ yet to be visited in the iteration of unwrapple elements. It will eventually
 be visited, and it will still have a parent. The problem is that the parent
 at that point is no longer attached.
 
-I do not like that isUnwrappableParent makes a call to match. It feels
+I do not like that sanity_is_unwrappable_parent makes a call to match. It feels
 somehow redundant. match is also slow. one idea is to keep a set (or basic
 array) of the inline elements initially found, and just check set membership
 instead of calling matches
 
-I do not like how I am calling isUnwrappableParent multiple times. First
+I do not like how I am calling sanity_is_unwrappable_parent multiple times. First
 in the iteration in order to skip, and second when finding the shallowest
 ancestor.
 
@@ -81,10 +81,7 @@ I do not like how I am repeatedly trimming several text nodes. This feels
 sluggish.
 */
 
-(function(exports) {
-'use strict';
-
-const UNWRAPPABLE_SELECTOR = [
+var SANITY_UNWRAPPABLE_SELECTOR = [
   'ABBR', 'ACRONYM', 'ARTICLE', 'ASIDE', 'CENTER', 'COLGROUP', 'DATA',
   'DETAILS', 'DIV', 'FOOTER', 'HEADER', 'HELP', 'HGROUP', 'ILAYER',
   'INSERT', 'LAYER', 'LEGEND', 'MAIN', 'MARK', 'MARQUEE', 'METER',
@@ -92,34 +89,37 @@ const UNWRAPPABLE_SELECTOR = [
   'LABEL', 'BIG', 'BLINK', 'FONT', 'PLAINTEXT', 'SMALL', 'TT'
 ].join(',');
 
-function filterUnwrappablesNaive(document) {
-  const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
+function sanity_filter_unwrappables(document) {
+  return sanity_filter_unwrappables_naive(document);
+}
+
+function sanity_filter_unwrappables_naive(document) {
+  'use strict';
+  const elements = document.querySelectorAll(SANITY_UNWRAPPABLE_SELECTOR);
   const numElements = elements.length;
   for(let i = 0; i < numElements; i++) {
-    unwrap(elements[i], null);
+    sanity_unwrap(elements[i], null);
   }
-  return numElements;
 }
 
-function filterUnwrappables(document) {
-  const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
-  let unwrapCount = 0;
+function sanity_filter_unwrappables_complex(document) {
+  'use strict';
+  const elements = document.querySelectorAll(SANITY_UNWRAPPABLE_SELECTOR);
   for(let i = 0, len = elements.length, element, shallowest; i < len; i++) {
     element = elements[i];
-    if(!isUnwrappableParent(element)) {
-      shallowest = findShallowestUnwrappableAncestor(element);
-      unwrap(element, shallowest);
-      unwrapCount++;
+    if(!sanity_is_unwrappable_parent(element)) {
+      shallowest = sanity_find_shallowest_unwrappable_ancestor(element);
+      sanity_unwrap(element, shallowest);
     }
   }
-  return unwrapCount;
 }
 
-function isUnwrappableParent(element) {
-  let result = element.matches(UNWRAPPABLE_SELECTOR);
+function sanity_is_unwrappable_parent(element) {
+  'use strict';
+  let result = element.matches(SANITY_UNWRAPPABLE_SELECTOR);
   for(let node = element.firstChild; result && node; node = node.nextSibling) {
     if(node.nodeType === Node.ELEMENT_NODE) {
-      if(!isUnwrappableParent(node)) {
+      if(!sanity_is_unwrappable_parent(node)) {
         result = false;
       }
     } else if(node.nodeType === Node.TEXT_NODE) {
@@ -131,9 +131,10 @@ function isUnwrappableParent(element) {
   return result;
 }
 
-function findShallowestUnwrappableAncestor(element) {
+function sanity_find_shallowest_unwrappable_ancestor(element) {
+  'use strict';
   let shallowest = null;
-  for(let node = element.parentNode; node && isUnwrappableParent(node);
+  for(let node = element.parentNode; node && sanity_is_unwrappable_parent(node);
     node = node.parentNode) {
     shallowest = node;
   }
@@ -142,7 +143,8 @@ function findShallowestUnwrappableAncestor(element) {
 
 // Moves the element's child nodes into the element's or the parent of the
 // alternate element if defined, and then removes the element
-function unwrap(element, referenceNode) {
+function sanity_unwrap(element, referenceNode) {
+  'use strict';
   const target = referenceNode || element;
   const parent = target.parentNode;
   if(parent) {
@@ -152,7 +154,7 @@ function unwrap(element, referenceNode) {
     if(prevSibling && prevSibling.nodeType === Node.TEXT_NODE) {
       parent.insertBefore(document.createTextNode(' '), target);
     }
-    insertChildrenBefore(element, target);
+    sanity_insert_children_before(element, target);
     if(nextSibling && nextSibling.nodeType === Node.TEXT_NODE) {
       parent.insertBefore(document.createTextNode(' '), target);
     }
@@ -160,16 +162,10 @@ function unwrap(element, referenceNode) {
   }
 }
 
-function insertChildrenBefore(parentNode, referenceNode) {
+function sanity_insert_children_before(parentNode, referenceNode) {
+  'use strict';
   const referenceParent = referenceNode.parentNode;
   for(let node = parentNode.firstChild; node; node = parentNode.firstChild) {
     referenceParent.insertBefore(node, referenceNode);
   }
 }
-
-exports.filterUnwrappablesExperimental = filterUnwrappables;
-exports.filterUnwrappables = filterUnwrappablesNaive;
-exports.unwrap = unwrap;
-exports.insertChildrenBefore = insertChildrenBefore;
-
-} (this));
