@@ -7,23 +7,24 @@
 // Requires: /src/poll-feeds.js
 // Requires: /src/archive-entries.js
 
-(function(exports) {
-'use strict';
+function background_on_installed(event) {
+  'use strict';
 
-function onInstalled(event) {
-  console.log('Installing extension...');
+  // NOTE: this is getting called on every background page load
 
+  console.log('Installing...');
   // Trigger database upgrade by opening a connection
   db.open(function(event) {});
 }
 
-// Bind the listener
-chrome.runtime.onInstalled.addListener(onInstalled);
+chrome.runtime.onInstalled.addListener(background_on_installed);
 
-function onChromeAlarm(alarm) {
+function background_on_alarm(alarm) {
+  'use strict';
+
   const name = alarm.name;
   if(name === 'archive') {
-    archiveEntries();
+    archive_entries();
   } else if(name === 'poll') {
     pollFeeds();
   }
@@ -31,12 +32,16 @@ function onChromeAlarm(alarm) {
 
 chrome.alarms.create('archive', {periodInMinutes: 24 * 60});
 chrome.alarms.create('poll', {periodInMinutes: 20});
-chrome.alarms.onAlarm.addListener(onChromeAlarm);
+chrome.alarms.onAlarm.addListener(background_on_alarm);
 
-function browserActionOnClick() {
-  const viewURL = chrome.extension.getURL('slides.html');
+var BACKGROUND_VIEW_URL = chrome.extension.getURL('slides.html');
+// TODO: is the trailing slash necessary?
+var BACKGROUND_NEWTAB_URL = 'chrome://newtab/';
 
-  chrome.tabs.create({url: viewURL});
+function background_on_click() {
+  'use strict';
+
+  chrome.tabs.create({url: BACKGROUND_VIEW_URL});
 
   // TODO: the above works. Something went wrong upgrading from chrome 48...
   // to 49.... The query finds the existing tab and updates it, but it is
@@ -45,28 +50,27 @@ function browserActionOnClick() {
   // chrome tabs API.
   // TODO: looking at release notes for 50, I am seeing that they are
   // mucking with tab management
-  //chrome.tabs.query({'url': viewURL}, onQueryView);
+  //chrome.tabs.query({'url': viewURL}, background_on_query_view);
+}
 
-  function onQueryView(tabs) {
-    // TODO: is the trailing slash necessary?
-    const newTabURL = 'chrome://newtab/';
-
-    if(tabs.length) {
-      chrome.tabs.update(tabs[0].id, {active: true});
-    } else {
-      chrome.tabs.query({url: newTabURL}, onQueryNewTab);
-    }
-  }
-
-  function onQueryNewTab(tabs) {
-    if(tabs.length) {
-      chrome.tabs.update(tabs[0].id, {active: true, url: viewURL});
-    } else {
-      chrome.tabs.create({url: viewURL});
-    }
+function background_on_query_view(tabs) {
+  'use strict';
+  if(tabs.length) {
+    chrome.tabs.update(tabs[0].id, {active: true});
+  } else {
+    chrome.tabs.query({url: BACKGROUND_NEWTAB_URL},
+      background_on_query_new_tab);
   }
 }
 
-chrome.browserAction.onClicked.addListener(browserActionOnClick);
+function background_on_query_new_tab(tabs) {
+  'use strict';
 
-} (this));
+  if(tabs.length) {
+    chrome.tabs.update(tabs[0].id, {active: true, url: BACKGROUND_VIEW_URL});
+  } else {
+    chrome.tabs.create({url: BACKGROUND_VIEW_URL});
+  }
+}
+
+chrome.browserAction.onClicked.addListener(background_on_click);

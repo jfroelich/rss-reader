@@ -104,7 +104,9 @@ function sanity_replace_frames(document) {
   } else {
     body.textContent = 'Unable to display framed document.';
   }
-  frameset.parentNode.replaceChild(frameset, body);
+
+  frameset.remove();
+  document.documentElement.appendChild(body);
 }
 
 // NOTE: anchor.protocol === 'javascript:' is slower than using a regular

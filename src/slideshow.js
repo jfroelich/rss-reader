@@ -243,7 +243,10 @@ function appendSlide(entry, isFirst) {
 
   const doc = utils.parseHTML(entry.content);
 
-  applyCalamine(doc);
+  // Remove boilerplate
+  calamine_apply(doc);
+
+  // Sanitize the html
   sanity_sanitize_document(doc);
 
   if(doc.documentElement) {

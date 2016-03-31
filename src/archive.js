@@ -2,18 +2,18 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Lib for archiving old entries
 // Requires: /src/db.js
 
-(function(exports) {
-
-'use strict';
-
-function archiveEntries() {
+function archive_entries() {
+  'use strict';
   console.log('Archiving entries');
-  db.open(onConnect);
+  db.open(archive_on_connect);
 }
 
-function onConnect(event) {
+function archive_on_connect(event) {
+  'use strict';
+
   if(event.type !== 'success') {
     console.debug(event);
     return;
@@ -26,18 +26,19 @@ function onConnect(event) {
 
   const connection = event.target.result;
   const transaction = connection.transaction('entry', 'readwrite');
-  transaction.oncomplete = onComplete.bind(transaction, stats);
+  transaction.oncomplete = archive_on_complete.bind(transaction, stats);
   const store = transaction.objectStore('entry');
   const index = store.index('archiveState-readState');
-  const range = IDBKeyRange.only([db.EntryFlags.UNARCHIVED,
-    db.EntryFlags.READ]);
-  const request = index.openCursor(range);
-  request.onsuccess = archiveNextEntry.bind(request, stats);
+  const keyPath = [db.EntryFlags.UNARCHIVED, db.EntryFlags.READ];
+  const request = index.openCursor(keyPath);
+  request.onsuccess = archive_next_entry.bind(request, stats);
 }
 
-const EXPIRES_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
+function archive_next_entry(stats, event) {
+  'use strict';
 
-function archiveNextEntry(stats, event) {
+  var ARCHIVE_EXPIRES_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
+
   const cursor = event.target.result;
   if(!cursor)
     return;
@@ -46,7 +47,7 @@ function archiveNextEntry(stats, event) {
   const entry = cursor.value;
   const now = Date.now();
   const age = now - entry.created;
-  if(age > EXPIRES_AFTER_MS) {
+  if(age > ARCHIVE_EXPIRES_AFTER_MS) {
     stats.archived++;
 
     // Leave intact entry.id, entry.feed, entry.link
@@ -68,10 +69,7 @@ function archiveNextEntry(stats, event) {
   cursor.continue();
 }
 
-function onComplete(stats, event) {
+function archive_on_complete(stats, event) {
+  'use strict';
   console.log('Archived %s of %s entries', stats.archived, stats.processed);
 }
-
-exports.archiveEntries = archiveEntries;
-
-} (this));
