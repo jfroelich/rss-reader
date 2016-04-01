@@ -2,39 +2,47 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Requires: /src/utils.js
+// Lib for importing and exporting opml files
 // Requires: /src/db.js
+// Requires: /src/html.js
+// Requires: /src/string.js
 
-var opml = {};
-
-opml.createOPMLDocument = function(title, feeds) {
+// Creates and returns an opml document with the given title and containing
+// the given feeds as outline elements
+function opml_create_document(title, feeds) {
   'use strict';
-  const doc = document.implementation.createDocument(null, 'opml', null);
+  const doc = document.implementation.createDocument(null, 'OPML', null);
   const documentElement = doc.documentElement;
   documentElement.setAttribute('version', '2.0');
 
-  const headElement = doc.createElement('head');
+  const headElement = doc.createElement('HEAD');
   documentElement.appendChild(headElement);
-  const titleElement = doc.createElement('title');
+
+  const titleElement = doc.createElement('TITLE');
   titleElement.textContent = title || '';
   headElement.appendChild(titleElement);
+
   const nowDate = new Date();
   const nowUTCString = nowDate.toUTCString();
-  const dateCreatedElement = doc.createElement('dateCreated');
+
+  const dateCreatedElement = doc.createElement('DATECREATED');
   dateCreatedElement.textContent = nowUTCString;
   headElement.appendChild(dateCreatedElement);
-  const dateModifiedElement = doc.createElement('dateModified');
+
+  const dateModifiedElement = doc.createElement('DATEMODIFIED');
   dateModifiedElement.textContent = nowUTCString;
   headElement.appendChild(dateModifiedElement);
-  const docsElement = doc.createElement('docs');
+
+  const docsElement = doc.createElement('DOCS');
   docsElement.textContent = 'http://dev.opml.org/spec2.html';
   headElement.appendChild(docsElement);
-  const bodyElement = doc.createElement('body');
+
+  const bodyElement = doc.createElement('BODY');
   documentElement.appendChild(bodyElement);
 
   let outlineElement;
   for(let feed of feeds) {
-    outlineElement = doc.createElement('outline');
+    outlineElement = doc.createElement('OUTLINE');
     outlineElement.setAttribute('type', feed.type || 'rss');
     outlineElement.setAttribute('xmlUrl', feed.url);
     outlineElement.setAttribute('text', feed.title || '');
@@ -45,12 +53,13 @@ opml.createOPMLDocument = function(title, feeds) {
   }
 
   return doc;
-};
+}
 
 // Imports an array of files representing OPML documents. Calls callback when
-// complete.
-opml.importOPML = function(files, callback) {
+// complete, with tracking information.
+function opml_import_files(connection, files, callback) {
   'use strict';
+
   const tracker = {
     errors: [],
     numFiles: files.length,
@@ -62,23 +71,30 @@ opml.importOPML = function(files, callback) {
   // and calls callback. Then bind callback once to onImportComplete
   // and pass that around.
 
-  Array.prototype.forEach.call(files,
-    opml.importOPMLFile.bind(null, tracker, callback));
-};
+  const numFiles = files.length;
+  for(let i = 0; i < numFiles; i++) {
+    opml_import_file(files[i], connection, tracker, callback);
+  }
+}
 
-opml.importOPMLFile = function(tracker, callback, file) {
+function opml_import_file(file, connection, tracker, callback) {
   'use strict';
+
   const reader = new FileReader();
-  const onload = opml.onFileLoad.bind(reader, tracker, callback);
+
+  const onload = opml_on_file_load.bind(reader, connection, tracker, callback);
   reader.onload = onload;
   reader.onerror = onload;
-  reader.readAsText(file);
-};
 
-opml.onFileLoad = function(tracker, callback, event) {
+  reader.readAsText(file);
+}
+
+function opml_on_file_load(connection, tracker, callback, event) {
   'use strict';
+
   tracker.filesImported++;
 
+  // React to file loading error
   if(event.type === 'error') {
     tracker.errors.push(event);
     if(tracker.filesImported === tracker.numFiles) {
@@ -89,9 +105,11 @@ opml.onFileLoad = function(tracker, callback, event) {
 
   const reader = event.target;
   const text = reader.result;
+
+  // Parse the file's text into an OPML document object
   let document = null;
   try {
-    document = opml.parseOPML(text);
+    document = opml_parse_opml_string(text);
   } catch(exception) {
 
     tracker.errors.push(exception);
@@ -101,88 +119,173 @@ opml.onFileLoad = function(tracker, callback, event) {
     return;
   }
 
-  let feeds = opml.parseFeeds(document);
-  feeds = opml.getDistinctFeedsByURL(feeds);
 
-  if(!feeds.length) {
+  let outlineElements = opml_select_outline_elements(document);
+
+  if(!outlineElements.length) {
     if(tracker.filesImported === tracker.numFiles) {
       callback(tracker);
     }
     return;
   }
 
-  db.open(opml.storeFeeds.bind(null, tracker, callback, feeds));
-};
+  // Parse the outline elements as feeds
+  let feeds = [];
+  for(let i = 0, len = outlineElements.length, outline; i < len; i++) {
+    outline = opml_parse_outline_element(outlineElements[i]);
+    feeds.push(outline);
+  }
 
-opml.getDistinctFeedsByURL = function(feeds) {
+  // Reduce the number of failed insert attempts before hitting the
+  // the database
+  feeds = opml_remove_duplicate_feeds(feeds);
+
+  // TODO: should this be waiting for all storage calls to complete
+  // before calling back?
+  // TODO: db_store_feed should allow for a null callback argument
+  // and handle it on its own, i shouldn't need to use a noop here
+  for(let feed of feeds) {
+    db_store_feed(connection, null, feed, opml_noop);
+  }
+
+  if(tracker.filesImported === tracker.numFiles) {
+    callback(tracker);
+  }
+}
+
+function opml_noop() {
   'use strict';
-  const pairs = feeds.map(function expand(feed) {
+}
+
+function opml_remove_duplicate_feeds(feeds) {
+  'use strict';
+
+  const pairs = feeds.map(function expand_feed(feed) {
     return [feed.url, feed];
   });
+
   const map = new Map(pairs);
   return map.values();
-};
+}
 
-opml.isValidOutlineElement = function(element) {
+function opml_is_valid_outline_element(element) {
   'use strict';
   const TYPE_PATTERN = /rss|rdf|feed/i;
   const type = element.getAttribute('type');
   const url = element.getAttribute('xmlUrl') || '';
-  return TYPE_PATTERN.test(type) && url.trim();
-};
+  return type && TYPE_PATTERN.test(type) && url.trim();
+}
 
-opml.parseFeed = function(element) {
+function opml_sanitize_string(inputString) {
   'use strict';
-  const feed = {};
+
+  // TODO: consider max length of each field and the behavior when
+  // exceeded
+
+  let outputString = inputString || '';
+  if(outputString) {
+    outputString = string_filter_controls(outputString);
+    outputString = html_replace(outputString, '');
+  }
+
+  return outputString.trim();
+}
+
+function opml_parse_outline_element(element) {
+  'use strict';
+
   let title = element.getAttribute('title') ||
-    element.getAttribute('text') || '';
-  feed.title = utils.filterControlCharacters(title).trim();
-  let description = element.getAttribute('description') || '';
-  description = utils.filterControlCharacters(description);
-  description = utils.replaceHTML(description);
-  feed.description = description.trim();
-  let url = element.getAttribute('xmlUrl') || '';
-  feed.url = utils.filterControlCharacters(url).trim();
-  let link = element.getAttribute('htmlUrl') || '';
-  feed.link = utils.filterControlCharacters(link).trim();
+    element.getAttribute('text');
+  let description = element.getAttribute('description');
+  let url = element.getAttribute('xmlUrl');
+  let link = element.getAttribute('htmlUrl');
+
+  const feed = {};
+  feed.title = opml_sanitize_string(title);
+  feed.description = opml_sanitize_string(description);
+  feed.url = opml_sanitize_string(url);
+  feed.link = opml_sanitize_string(link);
   return feed;
-};
+}
 
-opml.parseFeeds = function(document) {
+// Returns the first matching <body> element of an opml document, if one
+// exists.
+// TODO: this should probably delegate its functionality to some dom utility
+// function (but that does not currently exist). In fact if that exists I
+// should replace this function with that one in the calling context.
+function opml_find_body_element(document) {
   'use strict';
-
-  const root = document.documentElement;
-  if(!root) return [];
-  let body = null;
-  for(let element = root.firstElementChild; element && !body;
-    element = node.nextElementSibling) {
-    if(element.localName === 'body') {
-      body = element;
+  for(let element = document.documentElement.firstElementChild;
+    element; element = node.nextElementSibling) {
+    if(opml_is_body_element(element)) {
+      return element;
     }
   }
-  if(!body) return [];
-  const feeds = [];
-  for(let element = body.firstElementChild; element;
+}
+
+// Returns an array of all <outline> elements found in the document
+// that are immediate children of the document's <body> element and
+// represent minimally valid feeds.
+function opml_select_outline_elements(document) {
+  'use strict';
+
+  const elementsArray = [];
+  const bodyElement = opml_find_body_element(document);
+  if(!bodyElement) {
+    return elementsArray;
+  }
+
+  for(let element = bodyElement.firstElementChild; element;
     element = node.nextElementSibling) {
-    if(element.localName === 'outline' &&
-      opml.isValidOutlineElement(element)) {
-      feeds.push(opml.parseFeed(element));
+    if(opml_is_outline_element(element) &&
+      opml_is_valid_outline_element(element)) {
+      elementsArray.push(element);
     }
   }
-  return feeds;
-};
 
-opml.parseOPML = function(string) {
+  return elementsArray;
+}
+
+// Returns true if the element is an <outline> element
+function opml_is_outline_element(element) {
   'use strict';
-  const document = opml.parseXML(string);
-  if(!document.documentElement.matches('opml')) {
+  return string_equals_ignore_case(element.nodeName, 'OUTLINE');
+}
+
+// Returns true if the element is an <body> element
+function opml_is_body_element(element) {
+  'use strict';
+  return string_equals_ignore_case(element.nodeName, 'BODY');
+}
+
+// Parses a string into an opml document. Throws an exception if a parsing
+// error occurs or the document is invalid. Otherwise, returns the document.
+function opml_parse_opml_string(string) {
+  'use strict';
+
+  // Allow parsing exceptions to bubble up
+  const document = opml_parse_xml_string(string);
+
+  // document and document element are now guaranteed defined because
+  // otherwise opml_parse_xml_string throws an exception
+
+  // We still have to check that the xml document represents an opml document
+  if(!opml_is_opml_element(document.documentElement)) {
     throw new Error('Invalid document element: ' +
-      document.documentElement.localName);
+      document.documentElement.nodeName);
   }
-  return document;
-};
 
-opml.parseXML = function(string) {
+  return document;
+}
+
+// Returns true if the element is an <opml> element
+function opml_is_opml_element(element) {
+  'use strict';
+  return string_equals_ignore_case(element.nodeName, 'OPML');
+}
+
+// Parses a string into a document
+function opml_parse_xml_string(string) {
   'use strict';
 
   const parser = new DOMParser();
@@ -197,35 +300,10 @@ opml.parseXML = function(string) {
     throw new Error('Undefined document element');
   }
 
-  // TODO: strip html from the error message?
   const parserError = document.querySelector('parsererror');
   if(parserError) {
-    throw new Error(parserError.textContent);
+    throw new Error('Format error: ' + parserError.textContent);
   }
 
   return document;
-};
-
-// TODO: accept feeds array, not map
-opml.storeFeeds = function(tracker, callback, feeds, event) {
-  'use strict';
-
-  if(event.type !== 'success') {
-    tracker.errors.push(event);
-    if(tracker.filesImported === tracker.numFiles) {
-      callback(tracker);
-    }
-    return;
-  }
-
-  const connection = event.target.result;
-  for(let feed of feeds) {
-    db.storeFeed(connection, null, feed, opml.NOOP);
-  }
-
-  if(tracker.filesImported === tracker.numFiles) {
-    callback(tracker);
-  }
-};
-
-opml.NOOP = function() {};
+}

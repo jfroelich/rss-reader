@@ -19,12 +19,20 @@
       "/lib/utf8.js",
       "/src/archive.js",
       "/src/background.js",
+      "/src/badge.js",
+      "/src/date.js",
       "/src/db.js",
       "/src/feed-parser.js",
+      "/src/html.js",
+      "/src/image.js",
+      "/src/image-dimensions.js",
       "/src/net.js",
-      "/src/poll-feeds.js",
+      "/src/notification.js",
+      "/src/poll.js",
       "/src/resolve-urls.js",
-      "/src/utils.js"
+      "/src/rewrite.js",
+      "/src/string.js",
+      "/src/url.js"
     ]
   },
   "options_page": "options.html",

@@ -2,84 +2,104 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Database functionality
-const db = {};
-db.NAME = 'reader';
-db.VERSION = 17;
+// indexedDB functionality
 
-db.EntryFlags = {
+// NOTE: using var instead of const in global scope because i don't want
+// global strict mode and i cannot use const outside of strict mode in chrome
+// (yet)
+
+var DB_NAME = 'reader';
+var DB_VERSION = 17;
+
+var DB_ENTRY_FLAGS = {
   UNREAD: 0,
   READ: 1,
   UNARCHIVED: 0,
   ARCHIVED: 1
 };
 
-db.clearEntries = function(connection) {
+function db_open(callback) {
+  'use strict';
+  const request = indexedDB.open(DB_NAME, DB_VERSION);
+  request.onupgradeneeded = db_upgrade;
+  request.onsuccess = callback;
+  request.onerror = callback;
+  request.onblocked = callback;
+}
+
+function db_clear_entries(connection) {
   'use strict';
 
-  const run = function(connection) {
+  function clear_entries(connection) {
     const transaction = connection.transaction('entry', 'readwrite');
-    transaction.oncomplete = onComplete;
+    transaction.oncomplete = on_complete;
     const store = transaction.objectStore('entry');
     store.clear();
-  };
+  }
 
-  const onOpen = function(event) {
+  function on_open(event) {
     if(event.type !== 'success') {
       console.debug(event);
       return;
     }
 
-    run(event.target.result);
-  };
+    clear_entries(event.target.result);
+  }
 
-  const onComplete = function(event) {
+  function on_complete(event) {
     console.log('Cleared entry object store');
-  };
+  }
 
-  connection ? run(connection) : db.open(onOpen);
-};
+  connection ? clear_entries(connection) : db_open(on_open);
+}
 
-db.countUnreadEntries = function(connection, callback) {
+function db_count_unread_entries(connection, callback) {
   'use strict';
   const transaction = connection.transaction('entry');
   const store = transaction.objectStore('entry');
   const index = store.index('readState');
-  //const range = IDBKeyRange.only(db.EntryFlags.UNREAD);
-  //const request = index.count(range);
-  const request = index.count(db.EntryFlags.UNREAD);
+  const request = index.count(DB_ENTRY_FLAGS.UNREAD);
   request.onsuccess = callback;
-};
+}
 
-db.findEntryByLink = function(connection, entryLink, callback) {
+function db_find_entry_by_link(connection, entryLink, callback) {
   'use strict';
   const transaction = connection.transaction('entry');
   const entries = transaction.objectStore('entry');
   const links = entries.index('link');
   const request = links.get(entryLink);
   request.onsuccess = callback;
-};
+}
 
-db.findFeedById = function(connection, id, callback) {
+function db_find_feed_by_id(connection, id, callback) {
   'use strict';
   const transaction = connection.transaction('feed');
   const store = transaction.objectStore('feed');
   const request = store.get(id);
   request.onsuccess = callback;
-};
+}
 
-db.findFeedByURL = function(connection, url, callback) {
+function db_find_feed_by_url(connection, url, callback) {
   'use strict';
   const transaction = connection.transaction('feed');
   const store = transaction.objectStore('feed');
   const index = store.index('schemeless');
-  const schemeless = utils.filterURLProtocol(url);
+  const schemeless = url_filter_protocol(url);
   const request = index.get(schemeless);
   request.onsuccess = callback;
-};
+}
 
-db.forEachFeed = function(connection, handleFeed, sortByTitle, callback) {
+function db_for_each_feed(connection, handleFeed, sortByTitle, callback) {
   'use strict';
+
+  function on_success(event) {
+    const cursor = event.target.result;
+    if(cursor) {
+      handleFeed(cursor.value);
+      cursor.continue();
+    }
+  }
+
   const transaction = connection.transaction('feed');
   transaction.oncomplete = callback;
   let store = transaction.objectStore('feed');
@@ -88,22 +108,13 @@ db.forEachFeed = function(connection, handleFeed, sortByTitle, callback) {
   }
 
   const request = store.openCursor();
-  request.onsuccess = function(event) {
-    const cursor = event.target.result;
-    if(cursor) {
-      handleFeed(cursor.value);
-      cursor.continue();
-    }
-  };
-};
+  request.onsuccess = on_success;
+}
 
-db.getAllFeeds = function(connection, callback) {
+function db_get_all_feeds(connection, callback) {
   'use strict';
-  const transaction = connection.transaction('feed');
-  const store = transaction.objectStore('feed');
-  const request = store.openCursor();
-  const feeds = [];
-  request.onsuccess = function(event) {
+
+  function on_success(event) {
     const cursor = event.target.result;
     if(cursor) {
       feeds.push(cursor.value);
@@ -111,69 +122,85 @@ db.getAllFeeds = function(connection, callback) {
     } else {
       callback(feeds);
     }
-  };
-};
+  }
 
-db.markEntryAsRead = function(connection, entryId) {
+  const transaction = connection.transaction('feed');
+  const store = transaction.objectStore('feed');
+  const request = store.openCursor();
+  const feeds = [];
+  request.onsuccess = on_success;
+}
+
+function db_mark_entry_as_read(connection, entryId) {
   'use strict';
+
+  function on_success(event) {
+    const request = event.target;
+    const cursor = request.result;
+
+    if(!cursor) {
+      return;
+    }
+
+    const entry = cursor.value;
+    if(!entry) {
+      return;
+    }
+
+    if(entry.readState === DB_ENTRY_FLAGS.READ) {
+      return;
+    }
+    entry.readState = DB_ENTRY_FLAGS.READ;
+    entry.readDate = Date.now();
+    cursor.update(entry);
+
+    const connection = request.transaction.db;
+    badge_update_count(connection);
+
+    const message = {type: 'entryRead', entry: entry};
+    chrome.runtime.sendMessage(message);
+  }
+
   const transaction = connection.transaction('entry', 'readwrite');
   const store = transaction.objectStore('entry');
   const request = store.openCursor(entryId);
-  request.onsuccess = function onSuccess(event) {
-    const request = event.target;
-    const cursor = request.result;
-    if(!cursor) return;
-    const entry = cursor.value;
-    if(!entry) return;
-    if(entry.readState === db.EntryFlags.READ) return;
-    entry.readState = db.EntryFlags.READ;
-    entry.readDate = Date.now();
-    cursor.update(entry);
-    const connection = request.transaction.db;
-    utils.updateBadge(connection);
-    const message = {type: 'entryRead', entry: entry};
-    chrome.runtime.sendMessage(message);
-  };
-};
+  request.onsuccess = on_success;
+}
 
-db.open = function(callback) {
+function db_remove_entries_by_feed(connection, id, callback) {
   'use strict';
-  const request = indexedDB.open(db.NAME, db.VERSION);
-  request.onupgradeneeded = db.upgrade;
-  request.onsuccess = callback;
-  request.onerror = callback;
-  request.onblocked = callback;
-};
 
-db.removeEntriesByFeed = function(connection, id, callback) {
-  'use strict';
-  const transaction = connection.transaction('entry', 'readwrite');
-  transaction.oncomplete = callback;
-  const store = transaction.objectStore('entry');
-  const index = store.index('feed');
-  const request = index.openCursor(id);
-  request.onsuccess = function(event) {
+  function on_success(event) {
     const cursor = event.target.result;
     if(cursor) {
       cursor.delete();
       cursor.continue();
     }
-  };
-};
+  }
 
-db.removeFeed = function(connection, id, callback) {
+  const transaction = connection.transaction('entry', 'readwrite');
+  transaction.oncomplete = callback;
+  const store = transaction.objectStore('entry');
+  const index = store.index('feed');
+  const request = index.openCursor(id);
+  request.onsuccess = on_success;
+}
+
+function db_remove_feed(connection, id, callback) {
   'use strict';
   const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.delete(id);
   request.onsuccess = callback;
-};
+}
 
-db.storeEntry = function(connection, entry, callback) {
+function db_store_entry(connection, entry, callback) {
   'use strict';
+
   const storable = {};
-  if(entry.id)
+  if(entry.id) {
     storable.id = entry.id;
+  }
   if(entry.hasOwnProperty('feedLink'))
     storable.feedLink = entry.feedLink;
   if(entry.hasOwnProperty('feedTitle'))
@@ -186,7 +213,7 @@ db.storeEntry = function(connection, entry, callback) {
   if(entry.hasOwnProperty('readState')) {
     storable.readState = entry.readState;
   } else {
-    storable.readState = db.EntryFlags.UNREAD;
+    storable.readState = DB_ENTRY_FLAGS.UNREAD;
   }
 
   if(entry.hasOwnProperty('readDate'))
@@ -198,7 +225,7 @@ db.storeEntry = function(connection, entry, callback) {
 
   if(entry.pubdate) {
     const date = new Date(entry.pubdate);
-    if(utils.isValidDate(date)) {
+    if(date_is_valid(date)) {
       storable.pubdate = date.getTime();
     }
   }
@@ -215,27 +242,32 @@ db.storeEntry = function(connection, entry, callback) {
   if(entry.hasOwnProperty('archiveState')) {
     storable.archiveState = entry.archiveState;
   } else {
-    storable.archiveState = db.EntryFlags.UNARCHIVED;
+    storable.archiveState = DB_ENTRY_FLAGS.UNARCHIVED;
+  }
+
+  // TODO: deprecate async in calling context so that this can just call
+  // callback directly
+  function on_complete() {
+    callback();
   }
 
   const transaction = connection.transaction('entry', 'readwrite');
-  transaction.oncomplete = function() {
-    callback();
-  };
+  transaction.oncomplete = on_complete;
   transaction.objectStore('entry').put(storable);
-};
+}
 
-db.storeFeed = function(connection, original, feed, callback) {
+function db_sanitize_value(value) {
+  if(value) {
+    value = html_replace(value, '');
+    value = string_filter_controls(value);
+    value = value.replace(/\s+/, ' ');
+    value = value.trim();
+    return value;
+  }
+}
+
+function db_store_feed(connection, original, feed, callback) {
   'use strict';
-  const sanitizeValue = function(value) {
-    if(value) {
-      value = utils.replaceHTML(value);
-      value = utils.filterControlCharacters(value);
-      value = value.replace(/\s+/, ' ');
-      value = value.trim();
-      return value;
-    }
-  };
 
   const storable = {};
 
@@ -252,18 +284,18 @@ db.storeFeed = function(connection, original, feed, callback) {
   if(original) {
     storable.schemeless = original.schemeless;
   } else {
-    storable.schemeless = utils.filterURLProtocol(storable.url);
+    storable.schemeless = url_filter_protocol(storable.url);
   }
 
-  const title = sanitizeValue(feed.title);
+  const title = db_sanitize_value(feed.title);
   storable.title = title || '';
 
-  const description = sanitizeValue(feed.description);
+  const description = db_sanitize_value(feed.description);
   if(description) {
     storable.description = description;
   }
 
-  const link = sanitizeValue(feed.link);
+  const link = db_sanitize_value(feed.link);
   if(link) {
     storable.link = link;
   }
@@ -286,23 +318,23 @@ db.storeFeed = function(connection, original, feed, callback) {
   const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.put(storable);
-  request.onsuccess = function(event) {
+  request.onsuccess = function onSuccess(event) {
     const newId = event.target.result;
     callback(newId);
   };
-  request.onerror = function(event) {
+  request.onerror = function onError(event) {
     callback();
   };
-};
+}
 
-db.unsubscribe = function(connection, id, callback) {
+function db_unsubscribe(connection, id, callback) {
   'use strict';
-  db.removeFeed(connection, id, function onRemoveFeed(event) {
-    db.removeEntriesByFeed(connection, id, callback);
+  db_remove_feed(connection, id, function onRemoveFeed(event) {
+    db_remove_entries_by_feed(connection, id, callback);
   });
-};
+}
 
-db.upgrade = function(event) {
+function db_upgrade(event) {
   'use strict';
   console.log('Upgrading database from version %s', event.oldVersion);
 
@@ -376,4 +408,4 @@ db.upgrade = function(event) {
   if(entryIndices.contains('hash')) {
     entryStore.deleteIndex('hash');
   }
-};
+}

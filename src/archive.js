@@ -8,7 +8,7 @@
 function archive_entries() {
   'use strict';
   console.log('Archiving entries');
-  db.open(archive_on_connect);
+  db_open(archive_on_connect);
 }
 
 function archive_on_connect(event) {
@@ -29,7 +29,7 @@ function archive_on_connect(event) {
   transaction.oncomplete = archive_on_complete.bind(transaction, stats);
   const store = transaction.objectStore('entry');
   const index = store.index('archiveState-readState');
-  const keyPath = [db.EntryFlags.UNARCHIVED, db.EntryFlags.READ];
+  const keyPath = [DB_ENTRY_FLAGS.UNARCHIVED, DB_ENTRY_FLAGS.READ];
   const request = index.openCursor(keyPath);
   request.onsuccess = archive_next_entry.bind(request, stats);
 }
@@ -60,7 +60,7 @@ function archive_next_entry(stats, event) {
     delete entry.updated;
     delete entry.title;
     delete entry.author;
-    entry.archiveState = db.EntryFlags.ARCHIVED;
+    entry.archiveState = DB_ENTRY_FLAGS.ARCHIVED;
     entry.archiveDate = now;
     cursor.update(entry);
     chrome.runtime.sendMessage({type: 'archivedEntry', entry: entry});

@@ -12,7 +12,7 @@
 // TODO: maybe do not remove base, maybe that is not this functions role, but
 // some other more general responsibility of calling context. After all, if
 // all urls are absolute then leaving in base has no effect. it is only the
-// caller, pollFeeds.augmentEntryContent, that is concerned about prepping
+// caller, poll_augmentEntryContent, that is concerned about prepping
 // the document for render and caring about removing base elements
 
 (function(exports) {

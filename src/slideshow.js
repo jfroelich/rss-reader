@@ -27,6 +27,44 @@ function onRuntimeMessage(message) {
 
 chrome.runtime.onMessage.addListener(onRuntimeMessage);
 
+// Attempts to filter publisher information from an article's title.
+// The input data generally looks like 'Article Title - Delimiter - Publisher'.
+// The basic approach involves looking for an end delimiter, and if one is
+// found, checking the approximate number of words following the delimiter,
+// and if the number is less than a given threshold, returning a new string
+// without the final delimiter or any of the words following it. This uses the
+// threshold condition to reduce the chance of confusing the title with the
+// the publisher in the case that there is an early delimiter, based on the
+// assumption that the title is usually longer than the pubisher, or rather,
+// that the publisher's name is generally short.
+//
+// There are probably some great enhancements that could be done, such as not
+// truncating in the event the resulting title would be too short, as in, the
+// the resulting title would not contain enough words. We could also consider
+// comparing the number of words preceding the final delimiter to the number
+// of words trailing the final delimiter. I could also consider trying to
+// remove the publisher when it is present as a prefix, but this seems to be
+// less frequent.
+function filter_article_title(title) {
+  'use strict';
+  if(!title)
+    return;
+  let index = title.lastIndexOf(' - ');
+  if(index === -1)
+    index = title.lastIndexOf(' | ');
+  if(index === -1)
+    index = title.lastIndexOf(' : ');
+  if(index === -1)
+    return title;
+  const trailingText = title.substring(index + 1);
+  const terms = string_tokenize(trailingText);
+  if(terms.length < 5) {
+    const newTitle = title.substring(0, index).trim();
+    return newTitle;
+  }
+  return title;
+}
+
 function maybeAppendMoreSlides() {
   const unreadCount = countUnreadSlides();
 
@@ -77,7 +115,7 @@ function markSlideRead(slide) {
   slide.setAttribute('read', '');
   const entryAttribute = slide.getAttribute('entry');
 
-  db.open(function(event) {
+  db_open(function(event) {
     if(event.type !== 'success') {
       // TODO: react to database error?
       console.debug(event);
@@ -86,7 +124,7 @@ function markSlideRead(slide) {
 
     const entryId = parseInt(entryAttribute);
     const connection = event.target.result;
-    db.markEntryAsRead(connection, entryId);
+    db_mark_entry_as_read(connection, entryId);
   });
 }
 
@@ -96,7 +134,7 @@ function appendSlides(oncomplete, isFirst) {
   const offset = countUnreadSlides();
   let notAdvanced = true;
 
-  db.open(function(event) {
+  db_open(function(event) {
     if(event.type !== 'success') {
       // TODO: react?
       console.debug(event);
@@ -112,8 +150,8 @@ function appendSlides(oncomplete, isFirst) {
     // in the next major revision
 
     const index = entryStore.index('archiveState-readState');
-    const range = IDBKeyRange.only([db.EntryFlags.UNARCHIVED,
-      db.EntryFlags.UNREAD]);
+    const range = IDBKeyRange.only([DB_ENTRY_FLAGS.UNARCHIVED,
+      DB_ENTRY_FLAGS.UNREAD]);
     const request = index.openCursor(range);
     request.onsuccess = renderEntry;
   });
@@ -227,9 +265,10 @@ function appendSlide(entry, isFirst) {
   title.setAttribute('target','_blank');
   title.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
-    let titleText = utils.replaceHTML(entry.title);
-    titleText = utils.filterArticleTitle(titleText);
-    titleText = utils.truncateString(titleText, 300);
+    // TODO: also strip control characters
+    let titleText = html_replace(entry.title, '');
+    titleText = filter_article_title(titleText);
+    titleText = string_truncate(titleText, 300);
     title.textContent = titleText;
   } else {
     title.textContent = 'Untitled';
@@ -241,7 +280,7 @@ function appendSlide(entry, isFirst) {
   const content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
 
-  const doc = utils.parseHTML(entry.content);
+  const doc = html_parse(entry.content);
 
   // Remove boilerplate
   calamine_apply(doc);
@@ -271,7 +310,7 @@ function appendSlide(entry, isFirst) {
   slide.appendChild(source);
 
   const favIcon = document.createElement('img');
-  const iconSource = utils.getFavIconURL(entry.feedLink);
+  const iconSource = favicon_get_url(entry.feedLink);
   favIcon.setAttribute('src', iconSource);
   favIcon.setAttribute('width', '16');
   favIcon.setAttribute('height', '16');
@@ -280,7 +319,7 @@ function appendSlide(entry, isFirst) {
   const feedTitle = document.createElement('span');
   feedTitle.setAttribute('title',entry.feedLink);
   const entryPubDate = entry.pubdate ?
-    ' on ' + utils.formatDate(new Date(entry.pubdate)) : '';
+    ' on ' + date_format(new Date(entry.pubdate)) : '';
   feedTitle.textContent = (entry.feedTitle || 'Unknown feed') + ' by ' +
     (entry.author || 'Unknown author') + entryPubDate;
   source.appendChild(feedTitle);
@@ -393,7 +432,7 @@ function onKeyDown(event) {
   if(currentSlide) {
     const delta = SCROLL_DELTAS['' + event.keyCode];
     if(delta) {
-      utils.scrollElementTo(currentSlide, delta[0],
+      scroll_element_to(currentSlide, delta[0],
         currentSlide.scrollTop + delta[1]);
       return;
     }

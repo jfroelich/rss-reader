@@ -14,7 +14,7 @@ function background_on_installed(event) {
 
   console.log('Installing...');
   // Trigger database upgrade by opening a connection
-  db.open(function(event) {});
+  db_open(function(event) {});
 }
 
 chrome.runtime.onInstalled.addListener(background_on_installed);
@@ -26,7 +26,7 @@ function background_on_alarm(alarm) {
   if(name === 'archive') {
     archive_entries();
   } else if(name === 'poll') {
-    pollFeeds();
+    poll_start();
   }
 }
 

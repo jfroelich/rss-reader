@@ -4,7 +4,8 @@
 
 // Requires: /src/db.js
 // Requires: /src/net.js
-// Requires: /src/utils.js
+// Requires: /src/html.js
+// Requires: /src/string.js
 
 (function(exports) {
 'use strict';
@@ -37,7 +38,7 @@ function showErrorMessage(message, fadeIn) {
   if(fadeIn) {
     container.style.opacity = '0';
     document.body.appendChild(container);
-    utils.fadeElement(container, 1, 0);
+    fade_element(container, 1, 0);
   } else {
     container.style.display = '';
     container.style.opacity = '1';
@@ -81,7 +82,7 @@ function hideSubsciptionMonitor(onComplete, fadeOut) {
   }
 
   if(fadeOut) {
-    utils.fadeElement(container, 2, 1, removeAndComplete);
+    fade_element(container, 2, 1, removeAndComplete);
   } else {
     removeAndComplete();
   }
@@ -130,15 +131,15 @@ function appendFeed(feed, insertedSort) {
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
   item.setAttribute('feed', feed.id);
-  item.setAttribute('title', utils.replaceHTML(feed.description) || '');
+  item.setAttribute('title', html_replace(feed.description) || '');
   item.onclick = onFeedListItemClick;
   var favIconElement = document.createElement('img');
-  favIconElement.src = utils.getFavIconURL(feed.link);
+  favIconElement.src = favicon_get_url(feed.link);
   if(feed.title) favIconElement.title = feed.title;
   item.appendChild(favIconElement);
 
   const title = document.createElement('span');
-  title.textContent = utils.truncateString(feed.title,300) || 'Untitled';
+  title.textContent = string_truncate(feed.title,300) || 'Untitled';
   item.appendChild(title);
 
   const feedListElement = $$('feedlist');
@@ -187,7 +188,7 @@ function showOrSkipSubscriptionPreview(url) {
   $$('subscription-preview-load-progress').style.display = 'block';
   const timeout = 10 * 1000;
   // TODO: check if already subscribed before preview?
-  net.fetchFeed(url, timeout, onFetch);
+  net_fetch_feed(url, timeout, onFetch);
 
   function onFetch(event, result) {
     if(event) {
@@ -211,9 +212,9 @@ function showOrSkipSubscriptionPreview(url) {
     for(var i = 0, len = Math.min(5,result.entries.length); i < len;i++) {
       var entry = result.entries[i];
       var item = document.createElement('li');
-      item.innerHTML = utils.replaceHTML(entry.title);
+      item.innerHTML = html_replace(entry.title, '');
       var content = document.createElement('span');
-      content.innerHTML = utils.replaceHTML(entry.content);
+      content.innerHTML = html_replace(entry.content, '');
       item.appendChild(content);
       $$('subscription-preview-entries').appendChild(item);
     }
@@ -228,7 +229,7 @@ function hideSubscriptionPreview() {
 function startSubscription(url) {
   hideSubscriptionPreview();
 
-  if(!utils.isValidURL(url)) {
+  if(!url_is_valid(url)) {
     showErrorMessage('Invalid url "' + url + '".');
     return;
   }
@@ -236,7 +237,7 @@ function startSubscription(url) {
   showSubscriptionMonitor();
   updateSubscriptionMonitor('Subscribing...');
 
-  db.open(function(event) {
+  db_open(function(event) {
     if(event.type !== 'success') {
       console.debug(event);
       hideSubsciptionMonitor(function() {
@@ -248,7 +249,7 @@ function startSubscription(url) {
 
     const connection = event.target.result;
 
-    db.findFeedByURL(connection, url,
+    db_find_feed_by_url(connection, url,
       onFindByURL.bind(null, connection));
   });
 
@@ -261,9 +262,9 @@ function startSubscription(url) {
     }
 
     if(!window.navigator.onLine) {
-      db.storeFeed(connection, null, {url: url}, onSubscribe);
+      db_store_feed(connection, null, {url: url}, onSubscribe);
     } else {
-      net.fetchFeed(url, 10 * 1000, onFetch.bind(null, connection));
+      net_fetch_feed(url, 10 * 1000, onFetch.bind(null, connection));
     }
   }
 
@@ -276,7 +277,7 @@ function startSubscription(url) {
       return;
     }
 
-    db.storeFeed(connection, null, remoteFeed, function(newId) {
+    db_store_feed(connection, null, remoteFeed, function(newId) {
       remoteFeed.id = newId;
       onSubscribe(remoteFeed, 0, 0);
     });
@@ -292,7 +293,7 @@ function startSubscription(url) {
 
     // Show a notification
     var title = addedFeed.title || addedFeed.url;
-    utils.showNotification('Subscribed to ' + title);
+    notification_show('Subscribed to ' + title);
   }
 }
 
@@ -305,23 +306,23 @@ function populateFeedDetailsSection(feedId) {
     return;
   }
 
-  db.open(function onOpen(event) {
+  db_open(function onOpen(event) {
     if(event.type !== 'success') {
       return;
     }
 
     const connection = event.target.result;
 
-    db.findFeedById(connection, feedId, function onFind(event) {
+    db_find_feed_by_id(connection, feedId, function onFind(event) {
       const feed = event.target.result;
       if(!feed) {
         return;
       }
 
       $$('details-title').textContent = feed.title || 'Untitled';
-      $$('details-favicon').setAttribute('src', utils.getFavIconURL(feed.url));
+      $$('details-favicon').setAttribute('src', favicon_get_url(feed.url));
       $$('details-feed-description').textContent =
-        utils.replaceHTML(feed.description) || 'No description';
+        html_replace(feed.description, '') || 'No description';
       $$('details-feed-url').textContent = feed.url;
       $$('details-feed-link').textContent = feed.link;
       $$('details-unsubscribe').value = feed.id;
@@ -368,7 +369,7 @@ function onSubscribeSubmit(event) {
     return false;
   }
 
-  if(utils.isValidURL(query)) {
+  if(url_is_valid(query)) {
     $$('discover-results-list').innerHTML = '';
     $$('discover-no-results').style.display = 'none';
     $$('discover-in-progress').style.display = 'none';
@@ -378,7 +379,7 @@ function onSubscribeSubmit(event) {
     $$('discover-results-list').innerHTML = '';
     $$('discover-no-results').style.display = 'none';
     $$('discover-in-progress').style.display = 'block';
-    GoogleFeeds.search(query, 5000, onDiscoverFeedsComplete);
+    google_feeds_search(query, 5000, onDiscoverFeedsComplete);
   }
 
   return false;
@@ -440,7 +441,7 @@ function onDiscoverFeedsComplete(errorEvent, query, results) {
     button.onclick = discoverSubscribeClick;
     item.appendChild(button);
     const image = document.createElement('img');
-    image.setAttribute('src', utils.getFavIconURL(result.url));
+    image.setAttribute('src', favicon_get_url(result.url));
     image.title = result.link;
     item.appendChild(image);
     const a = document.createElement('a');
@@ -468,7 +469,7 @@ function onUnsubscribeButtonClicked(event) {
     return;
   }
 
-  db.open(onOpenDatabase);
+  db_open(onOpenDatabase);
 
   function onOpenDatabase(event) {
     if(event.type !== 'success') {
@@ -477,7 +478,7 @@ function onUnsubscribeButtonClicked(event) {
     }
 
     const connection = event.target.result;
-    db.unsubscribe(connection, feedId,
+    db_unsubscribe(connection, feedId,
       onUnsubscribe.bind(null, connection));
   }
 
@@ -486,7 +487,7 @@ function onUnsubscribeButtonClicked(event) {
 
     // Update the badge in case any unread articles belonged to
     // the unsubscribed feed
-    utils.updateBadge(connection);
+    badge_update_count(connection);
 
     // TODO: send out a message notifying other views
     // of the unsubscribe. That way the slides view can
@@ -539,7 +540,19 @@ function onImportOPMLClick(event) {
       return;
     }
 
-    opml.importOPML(uploader.files, onImport);
+
+    db_open(function on_open(event) {
+
+      if(event.type !== 'success') {
+        // TODO: show a visual error message
+        console.debug(event);
+        return;
+      }
+
+      const connection = event.target.result;
+      opml_import_files(connection, uploader.files, onImport);
+    });
+
   };
 
   document.body.appendChild(uploader);
@@ -559,7 +572,7 @@ function onImportOPMLClick(event) {
       console.debug('Encountered exceptions when importing: %o', errors);
     }
 
-    // TODO: utils.showNotification because opml import no longer does this
+    // TODO: notification_show because opml import no longer does this
     // itself
     console.info('Completed opml import, imported %s of %s files',
       tracker.filesImported, tracker.numFiles);
@@ -567,13 +580,13 @@ function onImportOPMLClick(event) {
 }
 
 function onExportOPMLClick(event) {
-  db.open(onExportOPMLClickOnOpenDB);
+  db_open(onExportOPMLClickOnOpenDB);
 }
 
 function onExportOPMLClickOnOpenDB(event) {
   if(event.type === 'success') {
     const connection = event.target.result;
-    db.getAllFeeds(connection, onExportOPMLClickOnGetAllFeeds);
+    db_get_all_feeds(connection, onExportOPMLClickOnGetAllFeeds);
   } else {
     // TODO: visually report the error
     console.debug('Failed to connect to database when exporting opml');
@@ -582,7 +595,7 @@ function onExportOPMLClickOnOpenDB(event) {
 
 function onExportOPMLClickOnGetAllFeeds(feeds) {
   const title = 'Subscriptions';
-  const doc = opml.createOPMLDocument(title, feeds);
+  const doc = opml_create_document(title, feeds);
   const writer = new XMLSerializer();
   const serializedString = writer.serializeToString(doc);
   const blobFormat = {type: 'application/xml'};
@@ -734,14 +747,14 @@ function initSubscriptionsSection() {
 
   let feedCount = 0;
 
-  db.open(function onConnect(event) {
+  db_open(function onConnect(event) {
     if(event.type !== 'success') {
       // TODO: react
       console.debug(event);
       return;
     }
 
-    db.forEachFeed(event.target.result, handleFeed, true, onComplete);
+    db_for_each_feed(event.target.result, handleFeed, true, onComplete);
   });
 
   function handleFeed(feed) {

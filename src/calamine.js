@@ -2,10 +2,12 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Rudimentary lib for filtering boilerplate content from a document
 // Requires: /src/utils.js
+// TODO: re-introduce support for annotation
 
 // Looks for the element that is most likely the root element of the content
-// and removes elements all other elements
+// and removes elements all other elements.
 function calamine_apply(document) {
   'use strict';
 
@@ -17,7 +19,7 @@ function calamine_apply(document) {
 }
 
 var CALAMINE_SIGNATURES = [
-  'article',
+  'ARTICLE',
   '.hentry',
   '.entry-content',
   '#article',
@@ -30,13 +32,13 @@ var CALAMINE_SIGNATURES = [
   '.repository-content',
   '[itemprop="articleBody"]',
   '[role="article"]',
-  'div[itemtype="http://schema.org/Article"]',
-  'div[itemtype="http://schema.org/BlogPosting"]',
-  'div[itemtype="http://schema.org/Blog"]',
-  'div[itemtype="http://schema.org/NewsArticle"]',
-  'div[itemtype="http://schema.org/TechArticle"]',
-  'div[itemtype="http://schema.org/ScholarlyArticle"]',
-  'div[itemtype="http://schema.org/WebPage"]',
+  'DIV[itemtype="http://schema.org/Article"]',
+  'DIV[itemtype="http://schema.org/BlogPosting"]',
+  'DIV[itemtype="http://schema.org/Blog"]',
+  'DIV[itemtype="http://schema.org/NewsArticle"]',
+  'DIV[itemtype="http://schema.org/TechArticle"]',
+  'DIV[itemtype="http://schema.org/ScholarlyArticle"]',
+  'DIV[itemtype="http://schema.org/WebPage"]',
   '#WNStoryBody'
 ];
 
@@ -54,7 +56,7 @@ function calamine_find_signature(document) {
 
 // Only these elements are considered as potential best elements
 var CALAMINE_CANDIDATE_SELECTOR = [
-  'article', 'content', 'div', 'layer', 'main', 'section', 'span', 'td'
+  'ARTICLE', 'CONTENT', 'DIV', 'LAYER', 'MAIN', 'SECTION', 'SPAN', 'TD'
 ].join(',');
 
 // Scores each of the candidate elements and returns the one with
@@ -99,7 +101,7 @@ function calamine_derive_element_score(element) {
 function calamine_derive_anchor_length(element) {
   'use strict';
 
-  const anchors = element.querySelectorAll('a[href]');
+  const anchors = element.querySelectorAll('A[href]');
 
   const numAnchors = anchors.length;
   let anchorLength = 0;
@@ -109,7 +111,7 @@ function calamine_derive_anchor_length(element) {
     anchorLength = anchorLength + content.length;
   }
 
-  return 0.0 + anchorLength;
+  return anchorLength;
 }
 
 // This returns a approximate measure representing a ratio of the amount of
@@ -122,7 +124,7 @@ function calamine_derive_text_bias(element) {
   const text = element.textContent;
   const trimmedText = text.trim();
   const textLength = 0.0 + trimmedText.length;
-  const anchorLength = calamine_derive_anchor_length(element);
+  const anchorLength = 0.0 + calamine_derive_anchor_length(element);
   return (0.25 * textLength) - (0.7 * anchorLength);
 }
 
@@ -190,27 +192,29 @@ function calamine_derive_image_bias(parentElement) {
   // Walk the child elements, looking for images
   for(let element = parentElement.firstElementChild; element;
     element = element.nextElementSibling) {
-    if(element.nodeName === 'IMG') {
-      area = element.width * element.height;
-
-      if(area) {
-        bias = bias + (0.0015 * Math.min(100000.0, area));
-      }
-
-      if(element.getAttribute('alt')) {
-        bias = bias + 20.0;
-      }
-
-      if(element.getAttribute('title')) {
-        bias = bias + 30.0;
-      }
-
-      if(calamine_find_image_caption(element)) {
-        bias = bias + 100.0;
-      }
-
-      numImages++;
+    if(element.nodeName !== 'IMG') {
+      continue;
     }
+
+    area = element.width * element.height;
+
+    if(area) {
+      bias = bias + (0.0015 * Math.min(100000.0, area));
+    }
+
+    if(element.getAttribute('alt')) {
+      bias = bias + 20.0;
+    }
+
+    if(element.getAttribute('title')) {
+      bias = bias + 30.0;
+    }
+
+    if(calamine_find_image_caption(element)) {
+      bias = bias + 100.0;
+    }
+
+    numImages++;
   }
 
   // Penalize elements containing multiple images. These are usually
@@ -224,49 +228,52 @@ function calamine_derive_image_bias(parentElement) {
 
 function calamine_find_image_caption(image) {
   'use strict';
+
+  // NOTE: unclear whether closest still works if using uppercase
+
   const figure = image.closest('figure');
-  return figure ? figure.querySelector('figcaption') : null;
+  return figure ? figure.querySelector('FIGCAPTION') : null;
 }
 
 // Derives a bias to an element's score based on its attributes
 // TODO: maybe it is ok to assume that id and name are always single
 // words and never multi-word values, and maybe i only need to
-// calamine_tokenize className
+// calamine_tokenize className, does the spec say id cannot have space?
 // TODO: improve performance
 function calamine_derive_attribute_bias(element) {
   'use strict';
 
   const TOKEN_WEIGHTS = {
-    'ad': -500.0,
-    'ads': -500.0,
-    'advert': -500.0,
-    'article': 500.0,
-    'body': 500.0,
-    'comment': -500.0,
-    'content': 500.0,
-    'contentpane': 500.0,
-    'gutter': -300.0,
-    'left': -50.0,
-    'main': 500.0,
-    'meta': -50.0,
-    'nav': -200.0,
-    'navbar': -200.0,
-    'newsarticle': 500.0,
-    'page': 200.0,
-    'post': 300.0,
-    'promo': -100.0,
-    'rail': -300.0,
-    'rel': -50.0,
-    'relate': -500.0,
-    'related': -500.0,
-    'right': -50.0,
-    'social': -200.0,
-    'story': 100.0,
-    'storytxt': 500.0,
-    'tool': -200.0,
-    'tools': -200.0,
-    'widget': -200.0,
-    'zone': -50.0
+    'ad': -500,
+    'ads': -500,
+    'advert': -500,
+    'article': 500,
+    'body': 500,
+    'comment': -500,
+    'content': 500,
+    'contentpane': 500,
+    'gutter': -300,
+    'left': -50,
+    'main': 500,
+    'meta': -50,
+    'nav': -200,
+    'navbar': -200,
+    'newsarticle': 500,
+    'page': 200,
+    'post': 300,
+    'promo': -100,
+    'rail': -300,
+    'rel': -50,
+    'relate': -500,
+    'related': -500,
+    'right': -50,
+    'social': -200,
+    'story': 100,
+    'storytxt': 500,
+    'tool': -200,
+    'tools': -200,
+    'widget': -200,
+    'zone': -50
   };
 
   // Merge attribute values into a single string
@@ -286,10 +293,12 @@ function calamine_derive_attribute_bias(element) {
 
   // Tokenize into words
   const tokens = lowerValues.split(/[\s\-_0-9]+/g);
+
+  // Add up the bias of each distinct token
   const numTokens = tokens.length;
   const seen = {};
-  let totalBias = 0.0;
-  for(let i = 0, bias = 0.0, token = ''; i < numTokens; i++) {
+  let totalBias = 0;
+  for(let i = 0, bias = 0, token = ''; i < numTokens; i++) {
     token = tokens[i];
 
     if(!token) {
@@ -307,7 +316,8 @@ function calamine_derive_attribute_bias(element) {
     }
   }
 
-  return totalBias;
+  const totalBiasAsLong = 0.0 + totalBias;
+  return totalBiasAsLong;
 }
 
 // Remove elements that do not intersect with the best element

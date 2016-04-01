@@ -2,22 +2,18 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Requires: /src/utils.js
-
+// Accesses the basic find-feeds functionality of the Google Feeds API
 // NOTE: Google formally deprecated this service. Around December 1st, 2015, I
 // first noticed that the queries stopped working. However, I have witnessed
 // the service occassionally work thereafter.
-// TODO: the truncation of html in a result's content snippet is arbitrary with
-// respect to tags and could lead to truncating in the middle of a tag, or
-// leave unclosed tags in the result. Think about how to
-// prevent these issues.
 
-const GoogleFeeds = {};
+// Requires: /src/html.js
+// Requires: /src/string.js
 
-GoogleFeeds.BASE_URL =
+var GOOGLE_FEEDS_BASE_URL =
   'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
 
-GoogleFeeds.CONTENT_SNIPPET_MAX_LENGTH = 400;
+var GOOGLE_FEEDS_CONTENT_SNIPPET_MAX_LENGTH = 400;
 
 // Sends an async request to Google to search for feeds that correspond to
 // a general text query. Passes the results to the callback. The callback
@@ -28,21 +24,23 @@ GoogleFeeds.CONTENT_SNIPPET_MAX_LENGTH = 400;
 // basic js object containing the string properties url, link, title, and
 // contentSnippet. The title and content snippet may contain basic HTML such as
 // <b></b> around terms that were present in the query.
-GoogleFeeds.search = function(query, timeout, callback) {
+function google_feeds_search(query, timeout, callback) {
   'use strict';
+
+  const url = GOOGLE_FEEDS_BASE_URL + encodeURIComponent(query);
+
   const request = new XMLHttpRequest();
   request.timeout = timeout;
   request.onerror = callback;
   request.ontimeout = callback;
   request.onabort = callback;
-  request.onload = GoogleFeeds.onSearchResponse.bind(request, callback);
-  const url = GoogleFeeds.BASE_URL + encodeURIComponent(query);
+  request.onload = google_feeds_on_response.bind(request, callback);
   request.open('GET', url, true);
   request.responseType = 'json';
   request.send();
-};
+}
 
-GoogleFeeds.onSearchResponse = function(callback, event) {
+function google_feeds_on_response(callback, event) {
   'use strict';
   const request = event.target;
   const response = request.response;
@@ -56,20 +54,23 @@ GoogleFeeds.onSearchResponse = function(callback, event) {
 
   const query = data.query || '';
   let entries = data.entries || [];
-  entries = GoogleFeeds.removeEntriesWithoutURLs(entries);
-  entries = GoogleFeeds.removeDuplicateEntriesByURL(entries);
-  entries.forEach(GoogleFeeds.sanitizeEntry);
+  entries = google_feeds_filter_entries_without_urls(entries);
+  entries = google_feeds_filter_duplicate_entries(entries);
+  entries.forEach(google_feeds_sanitize_entry);
   callback(null, query, entries);
-};
+}
 
-GoogleFeeds.removeEntriesWithoutURLs = function(entriesArray) {
+function google_feeds_filter_entries_without_urls(entriesArray) {
   'use strict';
-  return entriesArray.filter(function getEntryURL(entry) {
-    return entry.url;
-  });
+  return entriesArray.filter(google_feeds_get_entry_url);
 };
 
-GoogleFeeds.removeDuplicateEntriesByURL = function(entriesArray) {
+function google_feeds_get_entry_url(entry) {
+  'use strict';
+  return entry.url;
+}
+
+function google_feeds_filter_duplicate_entries(entriesArray) {
   'use strict';
   const expandedEntries = entriesArray.map(function expand(entry) {
     return [entry.url, entry];
@@ -77,18 +78,20 @@ GoogleFeeds.removeDuplicateEntriesByURL = function(entriesArray) {
   const entriesAggregatedByURL = new Map(expandedEntries);
   const aggregateValues = entriesAggregatedByURL.values();
   return Array.from(aggregateValues);
-};
+}
 
-GoogleFeeds.sanitizeEntry = function(entry) {
+function google_feeds_sanitize_entry(entry) {
   'use strict';
   if(entry.title) {
-    entry.title = utils.replaceHTML(entry.title);
-    entry.title = utils.truncateString(entry.title, 100);
+    entry.title = string_filter_controls(entry.title);
+    entry.title = html_replace(entry.title, '');
+    entry.title = string_truncate(entry.title, 100);
   }
 
   if(entry.contentSnippet) {
-    entry.contentSnippet = entry.contentSnippet.replace(/<\s*br\s*>/gi, ' ');
-    entry.contentSnippet = utils.truncateString(entry.contentSnippet,
-      GoogleFeeds.CONTENT_SNIPPET_MAX_LENGTH);
+    entry.contentSnippet = string_filter_controls(entry.contentSnippet);
+    entry.contentSnippet = html_replace_breakrules(entry.contentSnippet);
+    entrt.contentSnippet = html_truncate(entry.contentSnippet,
+      GOOGLE_FEEDS_CONTENT_SNIPPET_MAX_LENGTH, '...');
   }
-};
+}

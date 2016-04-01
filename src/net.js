@@ -3,25 +3,25 @@
 // that can be found in the LICENSE file
 
 // Requires: /src/feed-parser.js
-// Requires: /src/utils.js
 
-var net = {};
-
-net.fetchFeed = function(url, timeout, callback) {
+function net_fetch_feed(url, timeout, callback) {
   'use strict';
 
   const request = new XMLHttpRequest();
   request.timeout = timeout;
-  request.onerror = function(event) {
+  request.onerror = function on_error(event) {
     callback(event, null, request.responseURL);
   };
-  request.ontimeout = function(event) {
+
+  request.ontimeout = function on_timeout(event) {
     callback(event, null, request.responseURL);
   };
-  request.onabort = function(event) {
+
+  request.onabort = function on_abort(event) {
     callback(event, null, request.responseURL);
   };
-  request.onload = function(event) {
+
+  request.onload = function on_load(event) {
     const document = request.responseXML;
 
     if(!document) {
@@ -42,52 +42,60 @@ net.fetchFeed = function(url, timeout, callback) {
 
     let feed = null;
     try {
-      feed = parseFeed(document);
+      feed = feed_parser_parse_document(document);
     } catch(exception) {
       callback(exception, null, request.responseURL);
       return;
     }
 
     feed.url = url;
-    feed.fetchDate = Date.now();
+
+    // TODO: look into the consistency of storing dates for other fields. I
+    // think all fields should use the same convention. And I think that a
+    // date should be a date. This might require several other changes.
+    feed.fetchDate = new Date();
+
+    // TODO: this post-processing may be outside the scope of this
+    // functions responsibility
 
     // Filter empty links
-    feed.entries = feed.entries.filter(function(entry) {
+    feed.entries = feed.entries.filter(function get_entry_link(entry) {
       return entry.link;
     });
 
     // Rewrite links
-    feed.entries.forEach(function(entry) {
-      entry.link = utils.rewriteURL(entry.link);
+    feed.entries.forEach(function rewrite_entry_link(entry) {
+      entry.link = rewrite_url(entry.link);
     });
 
-    // Remove duplicates
-    const expandedEntries = feed.entries.map(function(entry) {
+    // Remove duplicate entries by link
+    const expandedEntries = feed.entries.map(function expand_entry(entry) {
       return [entry.link, entry];
     });
     const distinctEntriesMap = new Map(expandedEntries);
     feed.entries = Array.from(distinctEntriesMap.values());
+
     callback(null, feed, request.responseURL);
   };
   request.open('GET', url, true);
   request.responseType = 'document';
   request.send();
-};
+}
 
-net.fetchHTML = function(url, timeout, callback) {
+function net_fetch_html(url, timeout, callback) {
   'use strict';
   const request = new XMLHttpRequest();
   request.timeout = timeout;
-  request.ontimeout = function(event) {
+  request.ontimeout = function on_timeout(event) {
     callback(event, null, request.responseURL);
   };
-  request.onerror = function(event) {
+  request.onerror = function on_error(event) {
     callback(event, null, request.responseURL);
   };
-  request.onabort = function(event) {
+  request.onabort = function on_abort(event) {
     callback(event, null, request.responseURL);
   };
-  request.onload = function(event) {
+  request.onload = function on_load(event) {
     let error = null;
     const document = request.responseXML;
     if(!document) {
@@ -100,4 +108,4 @@ net.fetchHTML = function(url, timeout, callback) {
   request.open('GET', url, true);
   request.responseType = 'document';
   request.send();
-};
+}
