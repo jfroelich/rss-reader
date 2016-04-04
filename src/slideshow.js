@@ -2,30 +2,45 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Requires: /src/calamine.js
+// Requires: /src/date.js
 // Requires: /src/db.js
-// Requires: /src/pruned.js
+// Requires: /src/sanity.js
+// Requires: /src/style.js
 // Requires: /src/utils.js
 
-(function(exports) {
-'use strict';
+// TODO: rather than store slideshow_currentSlide in global state,
+// use a simple object instance that we store in global state that wraps
+// this variable. This will also avoid the need to pass around the variable
+// because functions that need to access it can just be defined on the
+// prototype and access via 'this'.
 
-let currentSlide = null;
+let slideshow_currentSlide = null;
 
-function onRuntimeMessage(message) {
-  const type = message.type;
-  if(type === 'pollCompleted') {
-    maybeAppendMoreSlides();
-  } else if(type === 'subscribe') {
-    maybeAppendMoreSlides();
-  } else if(type === 'unsubscribe') {
-    onUnsubscribeMessage();
-  } else if(type === 'archivedEntry') {
-    // TODO: react to the archiving an entry that is read
-    // and still loaded into the view
+function slideshow_onmessage(message) {
+  'use strict';
+
+  switch(message.type) {
+    case 'pollCompleted':
+      slideshow_maybe_append_slides();
+      break;
+    case 'subscribe':
+      slideshow_maybe_append_slides();
+      break;
+    case 'unsubscribe':
+      slideshow_on_unsubscribe();
+      break;
+    case 'archivedEntry':
+      // TODO: react to the archiving of an entry that is read
+      // and possibly still loaded into the view
+      break;
+    default:
+      // Ignore the message
+      break;
   }
 }
 
-chrome.runtime.onMessage.addListener(onRuntimeMessage);
+chrome.runtime.onMessage.addListener(slideshow_onmessage);
 
 // Attempts to filter publisher information from an article's title.
 // The input data generally looks like 'Article Title - Delimiter - Publisher'.
@@ -45,7 +60,7 @@ chrome.runtime.onMessage.addListener(onRuntimeMessage);
 // of words trailing the final delimiter. I could also consider trying to
 // remove the publisher when it is present as a prefix, but this seems to be
 // less frequent.
-function filter_article_title(title) {
+function slideshow_filter_article_title(title) {
   'use strict';
   if(!title)
     return;
@@ -62,35 +77,41 @@ function filter_article_title(title) {
     const newTitle = title.substring(0, index).trim();
     return newTitle;
   }
+
   return title;
 }
 
-function maybeAppendMoreSlides() {
-  const unreadCount = countUnreadSlides();
+function slideshow_maybe_append_slides() {
+  'use strict';
 
-  // There are still some unread slides loaded, so do not bother
-  // appending
+
+  const unreadCount = slideshow_count_unread();
+
   if(unreadCount) {
+    // There are still some unread slides loaded, so do not bother
+    // appending
     return;
   }
 
-  // TODO: we do not actually need a count here, just a check
-  // of whether firstElementChild is defined.
   // TODO: we can use querySelector to get the first slide
   // itself instead of getting the parent container and
   // checking its children.
+  // TODO: we do not actually need a count here, just a check
+  // of whether firstElementChild is defined.
+
   const isFirst = !document.getElementById('slideshow-container').firstChild;
-  appendSlides(hideNoUnreadArticlesSlide, isFirst);
+  slideshow_append_slides(slideshow_hide_all_unread, isFirst);
 }
 
-function onUnsubscribeMessage(message) {
+function slideshow_on_unsubscribe(message) {
+  'use strict';
   const slidesForFeed = document.querySelectorAll(
     'div[feed="'+ message.feed +'"]');
   const removedCurrentSlide = Array.prototype.reduce.call(
     slidesForFeed, function removeAndCheck(removedCurrent, slide) {
     // TODO: verify removing all listeners
-    removeSlideElement(slide);
-    return removedCurrent || (slide === currentSlide);
+    slideshow_remove_slide(slide);
+    return removedCurrent || (slide === slideshow_currentSlide);
   }, false);
 
   if(removedCurrentSlide) {
@@ -99,15 +120,17 @@ function onUnsubscribeMessage(message) {
       ' not update UI');
   }
 
-  maybeShowNoUnreadArticlesSlide();
+  slideshow_maybe_show_all_read();
 }
 
-function removeSlideElement(slideElement) {
-  slideElement.removeEventListener('click', onSlideClick);
+function slideshow_remove_slide(slideElement) {
+  'use strict';
+  slideElement.removeEventListener('click', slideshow_on_slide_click);
   slideElement.remove();
 }
 
-function markSlideRead(slide) {
+function slideshow_mark_read(slide) {
+  'use strict';
   if(slide.hasAttribute('read')) {
     return;
   }
@@ -128,60 +151,63 @@ function markSlideRead(slide) {
   });
 }
 
-function appendSlides(oncomplete, isFirst) {
-  let counter = 0;
-  const limit = 3;
-  const offset = countUnreadSlides();
-  let notAdvanced = true;
+function slideshow_append_slides(oncomplete, isFirst) {
+  'use strict';
 
-  db_open(function(event) {
+  let counter = 0;
+  const limit = 5;
+  const offset = slideshow_count_unread();
+  let notAdvanced = true;
+  db_open(on_dbopen);
+
+  // Load all articles that are unread and unarchived
+  function on_dbopen(event) {
     if(event.type !== 'success') {
-      // TODO: react?
+      // TODO: show an error?
       console.debug(event);
       return;
     }
+
     const connection = event.target.result;
     const transaction = connection.transaction('entry');
     transaction.oncomplete = oncomplete;
     const entryStore = transaction.objectStore('entry');
-
-    // Load all articles that are unread and unarchived
-    // TODO: this has to be sorted, but I think I will do that
-    // in the next major revision
-
     const index = entryStore.index('archiveState-readState');
     const range = IDBKeyRange.only([DB_ENTRY_FLAGS.UNARCHIVED,
       DB_ENTRY_FLAGS.UNREAD]);
     const request = index.openCursor(range);
-    request.onsuccess = renderEntry;
-  });
+    request.onsuccess = request_onsuccess;
+  }
 
-  function renderEntry() {
+  function request_onsuccess() {
     const cursor = this.result;
 
-    if(cursor) {
-      if(notAdvanced && offset) {
-        notAdvanced = false;
-        cursor.advance(offset);
-      } else {
-        appendSlide(cursor.value, isFirst);
+    if(!cursor) {
+      return;
+    }
 
-        if(isFirst && counter === 0) {
+    if(notAdvanced && offset) {
+      notAdvanced = false;
+      cursor.advance(offset);
+      return;
+    }
 
-          // TODO: could just directly query for the slide
-          // using querySelector, which would match first slide
-          // in doc order.
-          currentSlide = document.getElementById('slideshow-container').firstChild;
-          isFirst = false;
-        }
+    slideshow_append_slide(cursor.value, isFirst);
 
-        if(++counter < limit)
-          cursor.continue();
-      }
+    if(isFirst && counter === 0) {
+      // TODO: could just directly query for the slide
+      // using querySelector, which would match first slide
+      // in doc order.
+      slideshow_currentSlide = document.getElementById(
+        'slideshow-container').firstChild;
+      isFirst = false;
+    }
+
+    if(++counter < limit) {
+      cursor.continue();
     }
   }
 }
-
 
 // TODO: just checking if image parent is in anchor is incorrect
 // The correct condition is if image is a descendant of an anchor
@@ -190,7 +216,8 @@ function appendSlides(oncomplete, isFirst) {
 // setting a target attribute per anchor.
 // NOTE: event.target is what was clicked. event.currentTarget is where the
 // listener is attached.
-function onSlideClick(event) {
+function slideshow_on_slide_click(event) {
+  'use strict';
   if(event.which !== 1) {
     return false;
   }
@@ -214,8 +241,9 @@ function onSlideClick(event) {
     // currentTarget has not already been read.
     // NOTE: this means that super-fast extra clicks can retrigger
     // this call.
-    //event.currentTarget.removeEventListener('click', onSlideClick);
-    markSlideRead(event.currentTarget);
+    //event.currentTarget.removeEventListener('click',
+    //  slideshow_on_slide_click);
+    slideshow_mark_read(event.currentTarget);
   }
 
   // Prevent the normal link click behavior
@@ -243,13 +271,14 @@ function onSlideClick(event) {
  * must be tuned to be fast enough not to cause lag while
  * blocking, because this is synchronous.
  */
-function appendSlide(entry, isFirst) {
+function slideshow_append_slide(entry, isFirst) {
+  'use strict';
   // TODO: use <article> instead of div
   const slide = document.createElement('div');
   slide.setAttribute('entry', entry.id);
   slide.setAttribute('feed', entry.feed);
   slide.setAttribute('class','entry');
-  slide.addEventListener('click', onSlideClick);
+  slide.addEventListener('click', slideshow_on_slide_click);
 
   slide.style.position='absolute';
   slide.style.left = isFirst ? '0%' : '100%';
@@ -267,7 +296,7 @@ function appendSlide(entry, isFirst) {
   if(entry.title) {
     // TODO: also strip control characters
     let titleText = html_replace(entry.title, '');
-    titleText = filter_article_title(titleText);
+    titleText = slideshow_filter_article_title(titleText);
     titleText = string_truncate(titleText, 300);
     title.textContent = titleText;
   } else {
@@ -327,23 +356,25 @@ function appendSlide(entry, isFirst) {
   document.getElementById('slideshow-container').appendChild(slide);
 }
 
-function showNextSlide() {
-  if(countUnreadSlides() < 2) {
-    appendSlides(function() {
+function slideshow_show_next_slide() {
+  'use strict';
+  if(slideshow_count_unread() < 2) {
+    slideshow_append_slides(function() {
       const c = document.getElementById('slideshow-container');
-      while(c.childElementCount > 30 && c.firstChild != currentSlide) {
-        removeSlideElement(c.firstChild);
+      while(c.childElementCount > 30 &&
+        c.firstChild != slideshow_currentSlide) {
+        slideshow_remove_slide(c.firstChild);
       }
 
-      showNext();
-      maybeShowNoUnreadArticlesSlide();
+      show_next();
+      slideshow_maybe_show_all_read();
     }, false);
   } else {
-    showNext();
+    show_next();
   }
 
-  function showNext() {
-    const current = currentSlide;
+  function show_next() {
+    const current = slideshow_currentSlide;
     if(current.nextSibling) {
       current.style.left = '-100%';
       current.style.right = '100%';
@@ -351,46 +382,51 @@ function showNextSlide() {
       current.nextSibling.style.right = '0px';
       current.scrollTop = 0;
 
-      markSlideRead(current);
-      currentSlide = current.nextSibling;
+      slideshow_mark_read(current);
+      slideshow_currentSlide = current.nextSibling;
     }
   }
 }
 
-function showPreviousSlide() {
-  const current = currentSlide;
+function slideshow_show_previous_slide() {
+  'use strict';
+  const current = slideshow_currentSlide;
   if(current.previousSibling) {
     current.style.left = '100%';
     current.style.right = '-100%';
     current.previousSibling.style.left = '0px';
     current.previousSibling.style.right = '0px';
-    currentSlide = current.previousSibling;
+    slideshow_currentSlide = current.previousSibling;
   }
 }
 
-function isEntryElementUnread(entryElement) {
+function slideshow_is_unread_entry(entryElement) {
+  'use strict';
   return !entryElement.hasAttribute('read');
 }
 
-function countUnreadSlides() {
+function slideshow_count_unread() {
+  'use strict';
   const slides = document.body.querySelectorAll('div[entry]:not([read])');
   return slides ? slides.length : 0;
 }
 
-function maybeShowNoUnreadArticlesSlide() {
-  const numUnread = countUnreadSlides();
+function slideshow_maybe_show_all_read() {
+  'use strict';
+  const numUnread = slideshow_count_unread();
   if(numUnread) {
     return;
   }
 
-  console.warn('maybeShowNoUnreadArticlesSlide not implemented');
+  console.warn('slideshow_maybe_show_all_read not implemented');
 }
 
-function hideNoUnreadArticlesSlide() {
-  console.warn('hideNoUnreadArticlesSlide not implemented');
+function slideshow_hide_all_unread() {
+  'use strict';
+  console.warn('slideshow_hide_all_unread not implemented');
 }
 
-const KEY_CODES = {
+var SLIDESHOW_KEY_CODES = {
   'SPACE': 32,
   'PAGE_UP': 33,
   'PAGE_DOWN': 34,
@@ -402,26 +438,27 @@ const KEY_CODES = {
   'P': 80
 };
 
-const SCROLL_DELTAS = {
+var SLIDESHOW_SCROLL_DELTAS = {
   '40': [50, 200],
   '34': [100, 800],
   '38': [-50, -200],
   '33': [-100, -800]
 };
 
-let keyDownTimer;
+var slideshow_keydown_timer;
 
-function onKeyDown(event) {
+function slideshow_onkeydown(event) {
+  'use strict';
   //event.target is body
   //event.currentTarget is window
 
   // Override the default behavior for certain keys
   switch(event.keyCode) {
-    case KEY_CODES.SPACE:
-    case KEY_CODES.DOWN:
-    case KEY_CODES.PAGE_DOWN:
-    case KEY_CODES.UP:
-    case KEY_CODES.PAGE_UP:
+    case SLIDESHOW_KEY_CODES.SPACE:
+    case SLIDESHOW_KEY_CODES.DOWN:
+    case SLIDESHOW_KEY_CODES.PAGE_DOWN:
+    case SLIDESHOW_KEY_CODES.UP:
+    case SLIDESHOW_KEY_CODES.PAGE_UP:
       event.preventDefault();
       break;
     default:
@@ -429,27 +466,27 @@ function onKeyDown(event) {
   }
 
   // Scroll the contents of the current slide
-  if(currentSlide) {
-    const delta = SCROLL_DELTAS['' + event.keyCode];
+  if(slideshow_currentSlide) {
+    const delta = SLIDESHOW_SCROLL_DELTAS['' + event.keyCode];
     if(delta) {
-      scroll_element_to(currentSlide, delta[0],
-        currentSlide.scrollTop + delta[1]);
+      scroll_element_to(slideshow_currentSlide, delta[0],
+        slideshow_currentSlide.scrollTop + delta[1]);
       return;
     }
   }
 
   // React to navigational commands
   switch(event.keyCode) {
-    case KEY_CODES.SPACE:
-    case KEY_CODES.RIGHT:
-    case KEY_CODES.N:
-      clearTimeout(keyDownTimer);
-      keyDownTimer = setTimeout(showNextSlide, 50);
+    case SLIDESHOW_KEY_CODES.SPACE:
+    case SLIDESHOW_KEY_CODES.RIGHT:
+    case SLIDESHOW_KEY_CODES.N:
+      clearTimeout(slideshow_keydown_timer);
+      slideshow_keydown_timer = setTimeout(slideshow_show_next_slide, 50);
       break;
-    case KEY_CODES.LEFT:
-    case KEY_CODES.P:
-      clearTimeout(keyDownTimer);
-      keyDownTimer = setTimeout(showPreviousSlide, 50);
+    case SLIDESHOW_KEY_CODES.LEFT:
+    case SLIDESHOW_KEY_CODES.P:
+      clearTimeout(slideshow_keydown_timer);
+      slideshow_keydown_timer = setTimeout(slideshow_show_previous_slide, 50);
       break;
     default:
       break;
@@ -457,16 +494,14 @@ function onKeyDown(event) {
 }
 
 // TODO: instead of binding this to window, bind to each slide? that way
-// we don't have to use the currentSlide hack?
-// Bound to window
-addEventListener('keydown', onKeyDown, false);
+// we don't have to use the slideshow_currentSlide hack?
+window.addEventListener('keydown', slideshow_onkeydown, false);
 
-function initSlideShow(event) {
-  document.removeEventListener('DOMContentLoaded', initSlideShow);
-  loadEntryStyles();
-  appendSlides(maybeShowNoUnreadArticlesSlide, true);
+function slideshow_init(event) {
+  'use strict';
+  document.removeEventListener('DOMContentLoaded', slideshow_init);
+  style_load_styles();
+  slideshow_append_slides(slideshow_maybe_show_all_read, true);
 }
 
-document.addEventListener('DOMContentLoaded', initSlideShow);
-
-}(this));
+document.addEventListener('DOMContentLoaded', slideshow_init);

@@ -21,6 +21,7 @@ function string_equals_ignore_case(string1, string2) {
 // http://stackoverflow.com/questions/24229262
 function string_filter_controls(string) {
   'use strict';
+
   if(string) {
     return string.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
   }
@@ -33,6 +34,7 @@ function string_filter_controls(string) {
 // typeof extension === 'string'?
 function string_truncate(string, position, extension) {
   'use strict';
+
   const ELLIPSIS = '\u2026';
   if(string && string.length > position) {
     extension = extension || ELLIPSIS;

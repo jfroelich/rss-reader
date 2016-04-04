@@ -108,7 +108,8 @@ function poll_on_fetch_feed(connection, feed, event, remoteFeed) {
   // TODO: rather than check if event is defined or not, check if event
   // has the proper type (e.g. type === 'load') or whatever it is
   if(event) {
-    console.dir(event);
+    //console.dir(event);
+    console.debug('Error fetching', feed.url);
     return;
   }
 
@@ -226,7 +227,7 @@ function poll_on_fetch_html(entry, callback, error, document, responseURL) {
   poll_filter_blacklisted_urls(document);
 
   image_transform_lazily_loaded(document);
-  resolveURLs(document, responseURL);
+  resolve_urls(document, responseURL);
   const onSetDimensions = poll_on_set_image_dimensions.bind(null, entry, document,
     callback);
   image_dimensions_set_all(document, onSetDimensions);

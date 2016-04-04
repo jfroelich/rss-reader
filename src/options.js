@@ -1,5 +1,5 @@
 // Copyright 2016 Josh Froelich. All rights reserved.
-// Use of this source code is governed by a MIT-style license
+// Use of this source code is governed by a MIT-`style` license
 // that can be found in the LICENSE file
 
 // Requires: /src/db.js
@@ -789,13 +789,13 @@ function initSubscribeDiscoverSection() {
 }
 
 function initDisplaySettingsSection() {
-  loadEntryStyles();
+  style_load_styles();
   let option = document.createElement('option');
   option.value = '';
   option.textContent = 'Use background color';
   $$('entry-background-image').appendChild(option);
 
-  BACKGROUND_IMAGES.forEach(function(path) {
+  STYLE_BACKGROUND_IMAGES.forEach(function(path) {
     option = document.createElement('option');
     option.value = path;
     option.textContent = path.substring('/images/'.length);
@@ -813,14 +813,14 @@ function initDisplaySettingsSection() {
   option.textContent = 'Use Chrome font settings';
   $$('select_body_font').appendChild(option);
 
-  FONT_FAMILIES.forEach(function(fontFamily) {
+  STYLE_FONT_FAMILIES.forEach(function(fontFamily) {
     option = document.createElement('option');
     option.value = fontFamily;
     option.selected = fontFamily === localStorage.HEADER_FONT_FAMILY;
     option.textContent = fontFamily;
     $$('select_header_font').appendChild(option);
   });
-  FONT_FAMILIES.forEach(function (fontFamily) {
+  STYLE_FONT_FAMILIES.forEach(function (fontFamily) {
     option = document.createElement('option');
     option.value = fontFamily;
     option.selected = fontFamily === localStorage.BODY_FONT_FAMILY;

@@ -7,6 +7,10 @@
 // Requires: /src/html.js
 // Requires: /src/string.js
 
+// TODO: i think my original idea of two libs, one just about opml, and
+// one that deals with import/export and interaction with other components
+// was better. right now this feels like it does too much, and isn't generic
+
 // Creates and returns an opml document with the given title and containing
 // the given feeds as outline elements
 function opml_create_document(title, feeds) {
@@ -80,6 +84,10 @@ function opml_import_files(connection, files, callback) {
 function opml_import_file(file, connection, tracker, callback) {
   'use strict';
 
+  // TODO: i think i might want to delegate some of this to a general
+  // purpose file.js function file_read_as_text(file, callback) that passes
+  // error, text to callback
+
   const reader = new FileReader();
 
   const onload = opml_on_file_load.bind(reader, connection, tracker, callback);
@@ -129,7 +137,7 @@ function opml_on_file_load(connection, tracker, callback, event) {
     return;
   }
 
-  // Parse the outline elements as feeds
+  // Parse the outline elements into feed objects
   let feeds = [];
   for(let i = 0, len = outlineElements.length, outline; i < len; i++) {
     outline = opml_parse_outline_element(outlineElements[i]);
@@ -235,6 +243,10 @@ function opml_select_outline_elements(document) {
     return elementsArray;
   }
 
+  // TODO: i think i may want to delegate iteration of an element's child
+  // elements to some general purpose function like in dom.js
+  // for_each_child_element ?
+
   for(let element = bodyElement.firstElementChild; element;
     element = node.nextElementSibling) {
     if(opml_is_outline_element(element) &&
@@ -244,18 +256,6 @@ function opml_select_outline_elements(document) {
   }
 
   return elementsArray;
-}
-
-// Returns true if the element is an <outline> element
-function opml_is_outline_element(element) {
-  'use strict';
-  return string_equals_ignore_case(element.nodeName, 'OUTLINE');
-}
-
-// Returns true if the element is an <body> element
-function opml_is_body_element(element) {
-  'use strict';
-  return string_equals_ignore_case(element.nodeName, 'BODY');
 }
 
 // Parses a string into an opml document. Throws an exception if a parsing
@@ -278,6 +278,19 @@ function opml_parse_opml_string(string) {
   return document;
 }
 
+
+// Returns true if the element is an <outline> element
+function opml_is_outline_element(element) {
+  'use strict';
+  return string_equals_ignore_case(element.nodeName, 'OUTLINE');
+}
+
+// Returns true if the element is an <body> element
+function opml_is_body_element(element) {
+  'use strict';
+  return string_equals_ignore_case(element.nodeName, 'BODY');
+}
+
 // Returns true if the element is an <opml> element
 function opml_is_opml_element(element) {
   'use strict';
@@ -287,6 +300,9 @@ function opml_is_opml_element(element) {
 // Parses a string into a document
 function opml_parse_xml_string(string) {
   'use strict';
+
+  // TODO: i think i want to move this back into a general purpose
+  // xml.js file
 
   const parser = new DOMParser();
   const MIME_TYPE_XML = 'application/xml';

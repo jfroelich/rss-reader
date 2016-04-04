@@ -2,26 +2,28 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-'use strict';
-
-// Style lib. Contains functions and global constants for
-// updating the display of articles
+// Style lib
 // TODO: maybe use just one function for both load/change
-// TODO: use an anonymous namespace
-// TODO: review why i chose to implement it this way and take notes this time
 
-chrome.runtime.onMessage.addListener(function(message) {
-  if(message && message.type === 'displaySettingsChanged') {
-    updateEntryStyles();
+function style_onmessage(message) {
+  'use strict';
+
+  if(!message) {
+    console.debug('Undefined message');
+    return;
   }
-});
 
-// todo: this is not yet in use, but the idea is to  remove media prefix
-// as it is DRY
-const BACKGROUND_PATH_BASE = '/images/';
+  if(message.type === 'displaySettingsChanged') {
+    style_update_styles();
+  }
+}
 
-// TODO: use a set
-const BACKGROUND_IMAGES = [
+chrome.runtime.onMessage.addListener(style_onmessage);
+
+// todo: this is not yet in use, but the idea is to remove media prefix
+var STYLE_BACKGROUND_BASE_PATH = '/images/';
+
+var STYLE_BACKGROUND_IMAGES = [
   '/images/bgfons-paper_texture318.jpg',
   '/images/CCXXXXXXI_by_aqueous.jpg',
   '/images/paper-backgrounds-vintage-white.jpg',
@@ -43,8 +45,7 @@ const BACKGROUND_IMAGES = [
   '/images/thomas-zucx-noise-lines.png'
 ];
 
-// TODO: use a set
-const FONT_FAMILIES = [
+var STYLE_FONT_FAMILIES = [
   'ArchivoNarrow-Regular',
   'Arial, sans-serif',
   'Calibri',
@@ -74,17 +75,20 @@ const FONT_FAMILIES = [
 
 // TODO: elevate this into its own file
 // Note: Array.prototype.find requires Chrome 45+
-function findCSSRule(sheet, selectorText) {
-  return Array.prototype.find.call(sheet.cssRules, function(rule) {
+function style_find_css_rule(sheet, selectorText) {
+  'use strict';
+  return Array.prototype.find.call(sheet.cssRules, function equals(rule) {
     return rule.selectorText === selectorText;
   });
 }
 
-function updateEntryStyles() {
+function style_update_styles() {
+  'use strict';
+
   // Assume a sheet is always available
   const sheet = document.styleSheets[0];
 
-  const entryRule = findCSSRule(sheet, 'div.entry');
+  const entryRule = style_find_css_rule(sheet, 'div.entry');
   if(entryRule) {
     if(localStorage.BACKGROUND_IMAGE) {
       entryRule.style.backgroundColor = '';
@@ -103,7 +107,7 @@ function updateEntryStyles() {
     entryRule.style.paddingRight = entryMargin + 'px';
   }
 
-  const titleRule = findCSSRule(sheet,'div.entry a.entry-title');
+  const titleRule = style_find_css_rule(sheet,'div.entry a.entry-title');
   if(titleRule) {
     titleRule.style.background = '';
     titleRule.style.fontFamily = localStorage.HEADER_FONT_FAMILY;
@@ -114,12 +118,12 @@ function updateEntryStyles() {
     }
   }
 
-  const contentRule = findCSSRule(sheet, 'div.entry span.entry-content');
+  const contentRule = style_find_css_rule(sheet, 'div.entry span.entry-content');
   if(contentRule) {
     contentRule.style.background = '';
     contentRule.style.fontFamily = localStorage.BODY_FONT_FAMILY || 'initial';
 
-    const bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10) || 0;
+    const bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10);
     if(bfs) {
       contentRule.style.fontSize = (bfs / 10).toFixed(2) + 'em';
     }
@@ -127,7 +131,7 @@ function updateEntryStyles() {
     contentRule.style.textAlign = (localStorage.JUSTIFY_TEXT === '1') ?
       'justify' : 'left';
 
-    const bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
+    const bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT, 10) || 10;
     contentRule.style.lineHeight = (bodyLineHeight / 10).toFixed(2);
     let columnCount = localStorage.COLUMN_COUNT;
     const VALID_COUNTS = { '1': true, '2': true, '3': true };
@@ -139,55 +143,86 @@ function updateEntryStyles() {
   }
 }
 
-function loadEntryStyles() {
+// Dynamically creates new style rules and appends them to the first style
+// sheet. This assumes the first style sheet exists.
+function style_load_styles() {
+  'use strict';
+
+  // Assume a sheet is always available
   const sheet = document.styleSheets[0];
-  let s = '';
+
+  let buffer = [];
+
   if(localStorage.BACKGROUND_IMAGE) {
-    s += 'background: url('+ localStorage.BACKGROUND_IMAGE  +');';
+    buffer.push('background:url(');
+    buffer.push(localStorage.BACKGROUND_IMAGE);
+    buffer.push(');');
   } else if(localStorage.ENTRY_BACKGROUND_COLOR) {
-    s += 'background:'+ localStorage.ENTRY_BACKGROUND_COLOR+';';
+    buffer.push('background:');
+    buffer.push(localStorage.ENTRY_BACKGROUND_COLOR);
+    buffer.push(';');
   }
 
-  s += 'margin: 0px;';
+  buffer.push('margin:0px;');
 
   const entryMargin = localStorage.ENTRY_MARGIN;
   if(entryMargin) {
-    s += 'padding: ' + entryMargin + 'px;';
+    buffer.push('padding:');
+    buffer.push(entryMargin);
+    buffer.push('px;');
   }
 
-  sheet.addRule('div.entry',s);
-  s = '';
-  const hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
+  sheet.addRule('div.entry', buffer.join(''));
+
+  // Reset the buffer.
+  buffer = [];
+
+  const hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10);
   if(hfs) {
-    s += 'font-size:' + (hfs / 10).toFixed(2) + 'em;';
+    buffer.push('font-size:');
+    buffer.push((hfs / 10).toFixed(2));
+    buffer.push('em;');
   }
 
-  s += 'font-family:'+ (localStorage.HEADER_FONT_FAMILY || '')  +';';
-  s += 'letter-spacing: -0.03em;';
-  s += 'color: rgba(50, 50, 50, 0.9);';
-  s += 'text-decoration:none;';
-  s += 'display:block;';
-  s += 'word-wrap: break-word;';
-  s += 'text-shadow: 1px 1px 2px #cccccc;';
-  s += 'text-transform: capitalize;';
-  s += 'margin: 0px';
-  s += 'padding: 0px';
+  const headerFontFamily = localStorage.HEADER_FONT_FAMILY;
+  if(headerFontFamily) {
+    buffer.push('font-family:');
+    buffer.push(headerFontFamily);
+    buffer.push(';');
+  }
 
-  sheet.addRule('div.entry a.entry-title', s);
-  s = '';
-  const bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10) || 0;
+  buffer.push('letter-spacing:-0.03em;');
+  buffer.push('color:rgba(50, 50, 50, 0.9);');
+  buffer.push('text-decoration:none;');
+  buffer.push('display:block;');
+  buffer.push('word-wrap: break-word;');
+  buffer.push('text-shadow: 1px 1px 2px #cccccc;');
+  buffer.push('text-transform: capitalize;');
+  buffer.push('margin:0px');
+  buffer.push('padding:0px');
+
+  sheet.addRule('div.entry a.entry-title', buffer.join(''));
+
+  buffer = [];
+
+
+  const bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10);
   if(bfs) {
-    s += 'font-size:' + (bfs / 10).toFixed(2) + 'em;';
+    buffer.push('font-size:');
+    buffer.push((bfs / 10).toFixed(2));
+    buffer.push('em;');
   }
 
   const bodyTextJustify = localStorage.JUSTIFY_TEXT === '1';
   if(bodyTextJustify) {
-    s += 'text-align: justify;';
+    buffer.push('text-align: justify;');
   }
 
   const bodyFontFamily = localStorage.BODY_FONT_FAMILY;
   if(bodyFontFamily) {
-    s += 'font-family:' + bodyFontFamily + ';';
+    buffer.push('font-family:');
+    buffer.push(bodyFontFamily);
+    buffer.push(';');
   }
 
   let bodyLineHeight = localStorage.BODY_LINE_HEIGHT;
@@ -195,37 +230,40 @@ function loadEntryStyles() {
     bodyLineHeight = parseInt(bodyLineHeight);
     if(bodyLineHeight) {
       // TODO: units?
-      s += 'line-height:' + (bodyLineHeight / 10).toFixed(2) + ';';
+      buffer.push('line-height:');
+      buffer.push((bodyLineHeight / 10).toFixed(2));
+      buffer.push(';');
     }
   }
 
-  s += 'vertical-align: text-top;';
-  //s += 'letter-spacing: -0.03em;';
-  //s += 'word-spacing: -0.5em;';
-  s += 'display: block;';
+  buffer.push('vertical-align:text-top;');
+  //buffer.push('letter-spacing:-0.03em;');
+  //buffer.push('word-spacing:-0.5em;');
+  buffer.push('display:block;');
+  buffer.push('word-wrap:break-word;');
 
-  s += 'word-wrap: break-word;';
-
-
-  // s += 'white-space: normal;';
-
+  // buffer.push('white-space: normal;');
   // Actually this screws it up, now it is breaking everything instead of
   // wrapping, so only apply it to td
-  // s += 'word-break: break-all;';
+  // buffer.push('word-break: break-all;');
 
+  buffer.push('padding-top:20px;');
+  buffer.push('padding-right:0px;');
+  buffer.push('padding-left:0px;');
+  buffer.push('padding-bottom:20px;');
+  buffer.push('margin:0px;');
 
-  s += 'padding-top: 20px;';
-  s += 'padding-right: 0px;';
-  s += 'padding-left: 0px;';
-  s += 'padding-bottom: 20px;';
-  s += 'margin: 0px;';
   // TODO: use this if columns enabled (use 1(none), 2, 3 as options).
   const columnCount = localStorage.COLUMN_COUNT;
   if(columnCount === '2' || columnCount === '3') {
-    s += '-webkit-column-count: ' + columnCount + ';';
-    s += '-webkit-column-gap: 30px;';
-    s += '-webkit-column-rule: 1px outset #AAAAAA;';
+    buffer.push('-webkit-column-count:');
+    buffer.push(columnCount);
+    buffer.push(';');
+    buffer.push('-webkit-column-gap:30px;');
+    buffer.push('-webkit-column-rule:1px outset #AAAAAA;');
   }
 
-  sheet.addRule('div.entry span.entry-content', s);
+  sheet.addRule('div.entry span.entry-content', buffer.join(''));
+
+  // Reminder: if adding another rule, reset the buffer variable
 }
