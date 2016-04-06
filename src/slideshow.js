@@ -173,8 +173,8 @@ function slideshow_append_slides(oncomplete, isFirst) {
     transaction.oncomplete = oncomplete;
     const entryStore = transaction.objectStore('entry');
     const index = entryStore.index('archiveState-readState');
-    const range = IDBKeyRange.only([DB_ENTRY_FLAGS.UNARCHIVED,
-      DB_ENTRY_FLAGS.UNREAD]);
+    const range = IDBKeyRange.only([ENTRY_FLAGS.UNARCHIVED,
+      ENTRY_FLAGS.UNREAD]);
     const request = index.openCursor(range);
     request.onsuccess = request_onsuccess;
   }
@@ -309,29 +309,13 @@ function slideshow_append_slide(entry, isFirst) {
   const content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
 
-  const doc = html_parse(entry.content);
+  const entryContentDocument = html_parse(entry.content);
+  calamine_remove_boilerplate(entryContentDocument);
+  sanity_sanitize_document(entryContentDocument);
+  const entryContentBody = entryContentDocument.body ||
+    entryContentDocument.documentElement;
+  dom_append_children(entryContentBody, content);
 
-  // Remove boilerplate
-  calamine_apply(doc);
-
-  // Sanitize the html
-  sanity_sanitize_document(doc);
-
-  if(doc.documentElement) {
-    if(doc.body) {
-      content.innerHTML = doc.body.innerHTML;
-      //for(let node = doc.body.firstChild; node; node = node.nextSibling) {
-      //  console.debug('Appending from body', node);
-      //  content.appendChild(node);
-      //}
-    } else {
-      content.innerHTML = doc.documentElement.innerHTML;
-      //for(let node = doc.documentElement.firstChild; node;
-      // node = node.nextSibling) {
-      //  content.appendChild(node);
-      //}
-    }
-  }
   slide.appendChild(content);
 
   const source = document.createElement('span');
@@ -353,7 +337,8 @@ function slideshow_append_slide(entry, isFirst) {
     (entry.author || 'Unknown author') + entryPubDate;
   source.appendChild(feedTitle);
 
-  document.getElementById('slideshow-container').appendChild(slide);
+  const slidesContainer = document.getElementById('slideshow-container');
+  slidesContainer.appendChild(slide);
 }
 
 function slideshow_show_next_slide() {
