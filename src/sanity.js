@@ -23,6 +23,9 @@ function sanity_sanitize_document(document) {
   'use strict';
   sanity_filter_comments(document);
   sanity_replace_frames(document);
+
+  // sanity_filter_out_of_body_nodes(document);
+
   sanity_filter_blacklisted_elements(document);
   sanity_filter_hidden_elements(document);
   //sanity_replace_break_rules(document);
@@ -60,6 +63,32 @@ function sanity_filter_blacklisted_elements(document) {
   }
 }
 
+function sanity_filter_out_of_body_nodes(document) {
+  'use strict';
+
+  // This function is temp, just researching an issue
+  // See this page
+  // http://blog.hackerrank.com/step-0-before-you-do-anything/
+  // It has an error with a noscript node. The guy forgot the < to start the
+  // nested script tag in it. So, part of its contents becomes a
+  // text node. This text node is somehow the first text node of the body in
+  // the DOM hierarchy represented to me in JS,
+  // even though it is not located within the body. Because it isn't filtered
+  // by the blacklist or anything, it shows up really awkwardly within the
+  // output as the first piece of body text.
+
+  const docElement = document.documentElement;
+  const body = document.body;
+  if(!body) {
+    return;
+  }
+
+  const iterator = document.createNodeIterator(body, NodeFilter.SHOW_TEXT);
+  for(let node = iterator.nextNode(); node; node = iterator.nextNode()) {
+    console.debug('Text:', node);
+  }
+}
+
 var SANITY_HIDDEN_SELECTOR = [
   '[style*="display:none"]', '[style*="display: none"]',
   '[style*="visibility:hidden"]', '[style*="visibility: hidden"]',
@@ -92,6 +121,9 @@ function sanity_filter_comments(document) {
 function sanity_replace_frames(document) {
   'use strict';
 
+  // TODO: there can be multiple bodies when illformed. Maybe use
+  // querySelectorAll and handle multi-body branch differently
+
   const frameset = document.body;
   if(!frameset || frameset.nodeName !== 'FRAMESET') {
     return;
@@ -115,14 +147,14 @@ function sanity_filter_anchors(document) {
   'use strict';
 
   const anchors = document.querySelectorAll('A');
-  const jspattern = /^\s*JAVASCRIPT\s*:/i;
+  const JS_PATTERN = /^\s*JAVASCRIPT\s*:/i;
   const MIN_HREF_LEN = 'JAVASCRIPT'.length;
 
   for(let i = 0, len = anchors.length, anchor, href; i < len; i++) {
     anchor = anchors[i];
     if(anchor.hasAttribute('href')) {
       href = anchor.getAttribute('href');
-      if(href.length > MIN_HREF_LEN && jspattern.test(href)) {
+      if(href.length > MIN_HREF_LEN && JS_PATTERN.test(href)) {
         // NOTE: consider removing or unwrapping
         anchor.setAttribute('href', '');
       }
