@@ -8,7 +8,7 @@
 
 // Looks for the element that is most likely the root element of the content
 // and removes elements all other elements.
-function calamine_apply(document) {
+function calamine_remove_boilerplate(document) {
   'use strict';
 
   let bestElement = calamine_find_signature(document) ||
@@ -240,10 +240,12 @@ function calamine_find_image_caption(image) {
 // words and never multi-word values, and maybe i only need to
 // calamine_tokenize className, does the spec say id cannot have space?
 // TODO: improve performance
+// TODO: use const/let once I figure out why I keep getting a profiler
+// warning about "unsupported phi use of const variable"
 function calamine_derive_attribute_bias(element) {
   'use strict';
 
-  const TOKEN_WEIGHTS = {
+  var TOKEN_WEIGHTS = {
     'ad': -500,
     'ads': -500,
     'advert': -500,
@@ -279,7 +281,8 @@ function calamine_derive_attribute_bias(element) {
   // Merge attribute values into a single string
   // Accessing attributes by property is faster than using getAttribute
   // The join implicitly filters null values
-  const values = [element.id, element.name, element.className].join(' ');
+  var valuesArray = [element.id, element.name, element.className];
+  var values = valuesArray.join(' ');
 
   // If the element did not have any values for the attributes checked,
   // then values will only contain a small string of spaces so we exit early
@@ -289,16 +292,16 @@ function calamine_derive_attribute_bias(element) {
   }
 
   // Normalize
-  const lowerValues = values.toLowerCase();
+  var lowerValues = values.toLowerCase();
 
   // Tokenize into words
-  const tokens = lowerValues.split(/[\s\-_0-9]+/g);
+  var tokens = lowerValues.split(/[\s\-_0-9]+/g);
 
   // Add up the bias of each distinct token
-  const numTokens = tokens.length;
-  const seen = {};
-  let totalBias = 0;
-  for(let i = 0, bias = 0, token = ''; i < numTokens; i++) {
+  var numTokens = tokens.length;
+  var seen = {};
+  var totalBias = 0;
+  for(var i = 0, bias = 0, token = ''; i < numTokens; i = i + 1) {
     token = tokens[i];
 
     if(!token) {
@@ -316,7 +319,7 @@ function calamine_derive_attribute_bias(element) {
     }
   }
 
-  const totalBiasAsLong = 0.0 + totalBias;
+  var totalBiasAsLong = 0.0 + totalBias;
   return totalBiasAsLong;
 }
 
