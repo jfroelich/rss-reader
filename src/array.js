@@ -2,6 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// faster than Array.prototype.filter because assumes dense
 function array_filter(subject, predicate) {
   'use strict';
 
@@ -21,6 +22,7 @@ function array_filter(subject, predicate) {
 // faster than Array.prototype.find because assumes dense
 function array_find(subject, predicate) {
   'use strict';
+
   const length = subject.length;
   for(let i = 0, item; i < length; i++) {
     item = subject[i];
@@ -33,6 +35,7 @@ function array_find(subject, predicate) {
 // faster than Array.prototype.forEach because assumes dense
 function array_for_each(subject, callback) {
   'use strict';
+
   const length = subject.length;
   for(let i = 0; i < length; i++) {
     callback(subject[i]);
@@ -42,11 +45,13 @@ function array_for_each(subject, callback) {
 // faster than Array.prototype.some because assumes dense
 function array_some(subject, predicate) {
   'use strict';
+
   const length = subject.length;
   for(let i = 0; i < length; i++) {
     if(predicate(subject[i])) {
       return true;
     }
   }
+
   return false;
 }
