@@ -118,7 +118,8 @@ function style_update_styles() {
     }
   }
 
-  const contentRule = style_find_css_rule(sheet, 'div.entry span.entry-content');
+  const contentRule = style_find_css_rule(sheet,
+    'div.entry span.entry-content');
   if(contentRule) {
     contentRule.style.background = '';
     contentRule.style.fontFamily = localStorage.BODY_FONT_FAMILY || 'initial';
