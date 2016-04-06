@@ -11,13 +11,6 @@
 var DB_NAME = 'reader';
 var DB_VERSION = 17;
 
-var DB_ENTRY_FLAGS = {
-  UNREAD: 0,
-  READ: 1,
-  UNARCHIVED: 0,
-  ARCHIVED: 1
-};
-
 function db_open(callback) {
   'use strict';
   const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -30,11 +23,10 @@ function db_open(callback) {
 function db_clear_entries(connection) {
   'use strict';
 
-  function clear_entries(connection) {
-    const transaction = connection.transaction('entry', 'readwrite');
-    transaction.oncomplete = on_complete;
-    const store = transaction.objectStore('entry');
-    store.clear();
+  if(connection) {
+    clear_entries(connection);
+  } else {
+    db_open(on_open);
   }
 
   function on_open(event) {
@@ -43,14 +35,20 @@ function db_clear_entries(connection) {
       return;
     }
 
-    clear_entries(event.target.result);
+    const connection = event.target.result;
+    clear_entries(connection);
+  }
+
+  function clear_entries(connection) {
+    const transaction = connection.transaction('entry', 'readwrite');
+    transaction.oncomplete = on_complete;
+    const store = transaction.objectStore('entry');
+    store.clear();
   }
 
   function on_complete(event) {
     console.log('Cleared entry object store');
   }
-
-  connection ? clear_entries(connection) : db_open(on_open);
 }
 
 function db_count_unread_entries(connection, callback) {
@@ -58,7 +56,7 @@ function db_count_unread_entries(connection, callback) {
   const transaction = connection.transaction('entry');
   const store = transaction.objectStore('entry');
   const index = store.index('readState');
-  const request = index.count(DB_ENTRY_FLAGS.UNREAD);
+  const request = index.count(ENTRY_FLAGS.UNREAD);
   request.onsuccess = callback;
 }
 
@@ -147,10 +145,10 @@ function db_mark_entry_as_read(connection, entryId) {
       return;
     }
 
-    if(entry.readState === DB_ENTRY_FLAGS.READ) {
+    if(entry.readState === ENTRY_FLAGS.READ) {
       return;
     }
-    entry.readState = DB_ENTRY_FLAGS.READ;
+    entry.readState = ENTRY_FLAGS.READ;
     entry.readDate = Date.now();
     cursor.update(entry);
 
@@ -213,7 +211,7 @@ function db_store_entry(connection, entry, callback) {
   if(entry.hasOwnProperty('readState')) {
     storable.readState = entry.readState;
   } else {
-    storable.readState = DB_ENTRY_FLAGS.UNREAD;
+    storable.readState = ENTRY_FLAGS.UNREAD;
   }
 
   if(entry.hasOwnProperty('readDate'))
@@ -242,7 +240,7 @@ function db_store_entry(connection, entry, callback) {
   if(entry.hasOwnProperty('archiveState')) {
     storable.archiveState = entry.archiveState;
   } else {
-    storable.archiveState = DB_ENTRY_FLAGS.UNARCHIVED;
+    storable.archiveState = ENTRY_FLAGS.UNARCHIVED;
   }
 
   // TODO: deprecate async in calling context so that this can just call
