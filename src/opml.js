@@ -6,6 +6,7 @@
 // Requires: /src/db.js
 // Requires: /src/html.js
 // Requires: /src/string.js
+// Requires: /src/xml.js
 
 // TODO: i think my original idea of two libs, one just about opml, and
 // one that deals with import/export and interaction with other components
@@ -61,6 +62,23 @@ function opml_create_document(title, feeds) {
 
 // Imports an array of files representing OPML documents. Calls callback when
 // complete, with tracking information.
+// TODO: this should show a notification before calling the callback. I think
+// what i will do is create my own on_complete callback, have it call the
+// callback argument here, and then pass around the on_complete to the
+// helper continuation functions.
+// TODO: i don't think this should be dealing directly with files. Something
+// else should be responsible for loading the text of files. This should only
+// be responsible for storing the feeds from a single file. To do this, I think
+// I should have a separate lib devoted to export/import, and have that do
+// all the file handling. This should just be given the contents of a file
+// and import it. It should not even be aware of multiple files, because
+// files should be imported independently because I think that is more
+// scalable. I think it should just accept a File argument, a connection,
+// and a callback. It should just import that one file.
+// TODO: the logic of tracking progress of importing all the files
+// should not be a concern within the import-opml-file lib, it should just
+// call a callback when it is done. The caller can design the callback to
+// do the checks for whether all files were imported.
 function opml_import_files(connection, files, callback) {
   'use strict';
 
@@ -117,7 +135,7 @@ function opml_on_file_load(connection, tracker, callback, event) {
   // Parse the file's text into an OPML document object
   let document = null;
   try {
-    document = opml_parse_opml_string(text);
+    document = opml_parse_string(text);
   } catch(exception) {
 
     tracker.errors.push(exception);
@@ -176,6 +194,7 @@ function opml_remove_duplicate_feeds(feeds) {
   return map.values();
 }
 
+// TODO: validate that the url value looks like a url
 function opml_is_valid_outline_element(element) {
   'use strict';
   const TYPE_PATTERN = /rss|rdf|feed/i;
@@ -202,18 +221,22 @@ function opml_sanitize_string(inputString) {
 function opml_parse_outline_element(element) {
   'use strict';
 
+  // TODO: i am not sure if this should actually be responsible for
+  // sanitizing the input. I feel like another function called by
+  // the caller should do that explicitly.
+
   let title = element.getAttribute('title') ||
     element.getAttribute('text');
   let description = element.getAttribute('description');
   let url = element.getAttribute('xmlUrl');
   let link = element.getAttribute('htmlUrl');
 
-  const feed = {};
-  feed.title = opml_sanitize_string(title);
-  feed.description = opml_sanitize_string(description);
-  feed.url = opml_sanitize_string(url);
-  feed.link = opml_sanitize_string(link);
-  return feed;
+  const outline = {};
+  outline.title = opml_sanitize_string(title);
+  outline.description = opml_sanitize_string(description);
+  outline.url = opml_sanitize_string(url);
+  outline.link = opml_sanitize_string(link);
+  return outline;
 }
 
 // Returns the first matching <body> element of an opml document, if one
@@ -243,7 +266,7 @@ function opml_select_outline_elements(document) {
     return elementsArray;
   }
 
-  // TODO: i think i may want to delegate iteration of an element's child
+  // TODO: maybe delegate iteration of an element's child
   // elements to some general purpose function like in dom.js
   // for_each_child_element ?
 
@@ -260,14 +283,14 @@ function opml_select_outline_elements(document) {
 
 // Parses a string into an opml document. Throws an exception if a parsing
 // error occurs or the document is invalid. Otherwise, returns the document.
-function opml_parse_opml_string(string) {
+function opml_parse_string(string) {
   'use strict';
 
   // Allow parsing exceptions to bubble up
-  const document = opml_parse_xml_string(string);
+  const document = xml_parse_string(string);
 
   // document and document element are now guaranteed defined because
-  // otherwise opml_parse_xml_string throws an exception
+  // otherwise xml_parse_string throws an exception
 
   // We still have to check that the xml document represents an opml document
   if(!opml_is_opml_element(document.documentElement)) {
@@ -277,7 +300,6 @@ function opml_parse_opml_string(string) {
 
   return document;
 }
-
 
 // Returns true if the element is an <outline> element
 function opml_is_outline_element(element) {
@@ -295,31 +317,4 @@ function opml_is_body_element(element) {
 function opml_is_opml_element(element) {
   'use strict';
   return string_equals_ignore_case(element.nodeName, 'OPML');
-}
-
-// Parses a string into a document
-function opml_parse_xml_string(string) {
-  'use strict';
-
-  // TODO: i think i want to move this back into a general purpose
-  // xml.js file
-
-  const parser = new DOMParser();
-  const MIME_TYPE_XML = 'application/xml';
-  const document = parser.parseFromString(string, MIME_TYPE_XML);
-
-  if(!document) {
-    throw new Error('Undefined document');
-  }
-
-  if(!document.documentElement) {
-    throw new Error('Undefined document element');
-  }
-
-  const parserError = document.querySelector('parsererror');
-  if(parserError) {
-    throw new Error('Format error: ' + parserError.textContent);
-  }
-
-  return document;
 }
