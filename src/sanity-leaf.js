@@ -13,7 +13,8 @@
 // then the outerleaf. The outerleaf is also a leaf because upon removing the
 // innerleaf, it then satisfies the is-leaf condition. Instead, this recognizes
 // this situation, and only removes outerleaf. The cost of doing this is
-// that the is-leaf function is recursive.
+// that the is-leaf function is recursive. However, this cost is supposedly
+// less than the cost of removing every leaf.
 //
 // This still iterates over all of the elements, because using querySelectorAll
 // is faster than walking. As a result, this also checks at each step of the
@@ -23,9 +24,32 @@
 function sanity_filter_leaves(document) {
   'use strict';
 
-  const elements = document.querySelectorAll('*');
-  const numElements = elements.length;
+  // A document element is required.
   const docElement = document.documentElement;
+  if(!docElement) {
+    return;
+  }
+
+  // TODO: maybe I do not need docElement. Maybe just checking if
+  // bodyElement contains is sufficient.
+
+  // A body element is required.
+  const bodyElement = document.body;
+  if(!bodyElement) {
+    return;
+  }
+
+  // Only iterate elements within the body element. This prevents the body
+  // element itself and the document element from also being iterated and
+  // therefore identified as leaves and therefore removed in the case of an
+  // empty document.
+  // docElement.contains(docElement) returns true because docElement
+  // is an inclusive descendant of docElement as defined in the spec. This is
+  // why docElement itself can also be removed if this iterated over all
+  // elements and not just those within the body.
+
+  const elements = bodyElement.querySelectorAll('*');
+  const numElements = elements.length;
   for(let i = 0, element; i < numElements; i++) {
     element = elements[i];
     if(docElement.contains(element) && sanity_is_leaf_node(element)) {
@@ -35,9 +59,16 @@ function sanity_filter_leaves(document) {
 }
 
 // These elements are never considered leaves, regardless of other criteria.
+// In general, these elements correspond to 'void' elements that generally
+// cannot contain child elements.
 // In an HTML document context, element.nodeName is always uppercase
 // I am using a plain old object instead of a Set because profiling showed
 // poor performance.
+// This is declared as var because const requires use strict but I do not
+// want global strict mode.
+// TODO: because I just check for existence, look into storing null or whatever
+// is the smallest value. Also look into the new ES6 style of object literal
+// declaration
 var SANITY_LEAF_EXCEPTIONS = {
   'AREA': 1, 'AUDIO': 1, 'BASE': 1, 'COL': 1, 'COMMAND': 1, 'BR': 1,
   'CANVAS': 1, 'COL': 1, 'HR': 1, 'IFRAME': 1, 'IMG': 1, 'INPUT': 1,

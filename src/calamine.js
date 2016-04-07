@@ -46,26 +46,42 @@ var CALAMINE_SIGNATURES = [
 // one of the signatures
 function calamine_find_signature(document) {
   'use strict';
-  for(let i = 0, len = CALAMINE_SIGNATURES.length, elements; i < len; i++) {
-    elements = document.querySelectorAll(CALAMINE_SIGNATURES[i]);
+
+  const bodyElement = document.body;
+  if(!bodyElement) {
+    return;
+  }
+
+  const numSignatures = CALAMINE_SIGNATURES.length;
+
+  for(let i = 0, elements; i < numSignatures; i++) {
+    elements = bodyElement.querySelectorAll(CALAMINE_SIGNATURES[i]);
     if(elements.length === 1) {
       return elements[0];
     }
   }
 }
 
-// Only these elements are considered as potential best elements
-var CALAMINE_CANDIDATE_SELECTOR = [
-  'ARTICLE', 'CONTENT', 'DIV', 'LAYER', 'MAIN', 'SECTION', 'SPAN', 'TD'
-].join(',');
+
 
 // Scores each of the candidate elements and returns the one with
 // the highest score
 function calamine_find_highest_scoring_element(document) {
   'use strict';
 
+  // Only these elements are considered as potential best elements
+  const CANDIDATE_SELECTOR = [
+    'ARTICLE', 'CONTENT', 'DIV', 'LAYER', 'MAIN', 'SECTION', 'SPAN', 'TD'
+  ].join(',');
+
+  const bodyElement = document.body;
+  if(!bodyElement) {
+    return document.documentElement;
+  }
+
+
   let bestElement = document.documentElement;
-  const elements = document.querySelectorAll(CALAMINE_CANDIDATE_SELECTOR);
+  const elements = bodyElement.querySelectorAll(CANDIDATE_SELECTOR);
   const numElements = elements.length;
   for(let i = 0, element, highScore = 0.0, score = 0.0;
     i < numElements; i++) {
@@ -327,6 +343,11 @@ function calamine_derive_attribute_bias(element) {
 function calamine_prune(document, bestElement) {
   'use strict';
 
+  const bodyElement = document.body;
+  if(!bodyElement) {
+    return;
+  }
+
   // In order to reduce the number of removals, this uses a contains check
   // to avoid removing elements that exist in the static node list but
   // are descendants of elements removed in a previous iteration. The
@@ -338,7 +359,7 @@ function calamine_prune(document, bestElement) {
   // only reason I am not using it.
 
   const docElement = document.documentElement;
-  const elements = document.querySelectorAll('*');
+  const elements = bodyElement.querySelectorAll('*');
   const numElements = elements.length;
   for(let i = 0, element; i < numElements; i++) {
     element = elements[i];

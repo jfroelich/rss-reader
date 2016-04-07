@@ -8,6 +8,8 @@
 function sanity_filter_tables(document) {
   'use strict';
 
+  // TODO: restrict to document.body
+
   const tables = document.querySelectorAll('TABLE');
   const tableLength = tables.length;
 
@@ -39,11 +41,12 @@ function sanity_filter_tables(document) {
 // TODO: allow for empty rows?
 function sanity_unwrap_single_cell_table(table) {
   'use strict';
+
   const cell = table.rows[0].cells[0];
   const document = table.ownerDocument;
   const tableParent = table.parentNode;
   tableParent.insertBefore(document.createTextNode(' '), table);
-  sanity_insert_children_before(cell, table);
+  dom_insert_children_before(cell, table);
   tableParent.insertBefore(document.createTextNode(' '), table);
   table.remove();
 }
@@ -79,7 +82,7 @@ function sanity_unwrap_single_column_table(table) {
     rowIndex++) {
     cells = rows[rowIndex];
     for(colIndex = 0; colIndex < cells.length; colIndex++) {
-      sanity_insert_children_before(cells[colIndex], table);
+      dom_insert_children_before(cells[colIndex], table);
     }
     tableParent.insertBefore(document.createElement('P'), table);
   }

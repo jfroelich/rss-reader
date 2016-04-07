@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Requires: /src/dom.js
+
 /*
 Provides basic unwrap function and a sanitize html function that unwraps
 various elements. To unwrap an element means to replace the element with
@@ -81,7 +83,7 @@ I do not like how I am repeatedly trimming several text nodes. This feels
 sluggish.
 */
 
-var SANITY_UNWRAPPABLE_SELECTOR = [
+var UNWRAPPABLE_SELECTOR = [
   'ABBR', 'ACRONYM', 'ARTICLE', 'ASIDE', 'CENTER', 'COLGROUP', 'DATA',
   'DETAILS', 'DIV', 'FOOTER', 'HEADER', 'HELP', 'HGROUP', 'ILAYER',
   'INSERT', 'LAYER', 'LEGEND', 'MAIN', 'MARK', 'MARQUEE', 'METER',
@@ -90,33 +92,44 @@ var SANITY_UNWRAPPABLE_SELECTOR = [
 ].join(',');
 
 function sanity_filter_unwrappables(document) {
+  'use strict';
+
   return sanity_filter_unwrappables_naive(document);
 }
 
 function sanity_filter_unwrappables_naive(document) {
   'use strict';
-  const elements = document.querySelectorAll(SANITY_UNWRAPPABLE_SELECTOR);
+
+  // Require body. Only examine elements beneath body.
+  const bodyElement = document.body;
+  if(!bodyElement) {
+    return;
+  }
+
+  const elements = bodyElement.querySelectorAll(UNWRAPPABLE_SELECTOR);
   const numElements = elements.length;
   for(let i = 0; i < numElements; i++) {
-    sanity_unwrap(elements[i], null);
+    dom_unwrap(elements[i], null);
   }
 }
 
 function sanity_filter_unwrappables_complex(document) {
   'use strict';
-  const elements = document.querySelectorAll(SANITY_UNWRAPPABLE_SELECTOR);
+
+  const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
   for(let i = 0, len = elements.length, element, shallowest; i < len; i++) {
     element = elements[i];
     if(!sanity_is_unwrappable_parent(element)) {
       shallowest = sanity_find_shallowest_unwrappable_ancestor(element);
-      sanity_unwrap(element, shallowest);
+      dom_unwrap(element, shallowest);
     }
   }
 }
 
 function sanity_is_unwrappable_parent(element) {
   'use strict';
-  let result = element.matches(SANITY_UNWRAPPABLE_SELECTOR);
+
+  let result = element.matches(UNWRAPPABLE_SELECTOR);
   for(let node = element.firstChild; result && node; node = node.nextSibling) {
     if(node.nodeType === Node.ELEMENT_NODE) {
       if(!sanity_is_unwrappable_parent(node)) {
@@ -128,44 +141,21 @@ function sanity_is_unwrappable_parent(element) {
       }
     }
   }
+
   return result;
 }
 
 function sanity_find_shallowest_unwrappable_ancestor(element) {
   'use strict';
+
+  // TODO: do not iterate past body
+
   let shallowest = null;
-  for(let node = element.parentNode; node && sanity_is_unwrappable_parent(node);
+  for(let node = element.parentNode;
+    node && sanity_is_unwrappable_parent(node);
     node = node.parentNode) {
+
     shallowest = node;
   }
   return shallowest;
-}
-
-// Moves the element's child nodes into the element's or the parent of the
-// alternate element if defined, and then removes the element
-function sanity_unwrap(element, referenceNode) {
-  'use strict';
-  const target = referenceNode || element;
-  const parent = target.parentNode;
-  if(parent) {
-    const document = element.ownerDocument;
-    const prevSibling = target.previousSibling;
-    const nextSibling = target.nextSibling;
-    if(prevSibling && prevSibling.nodeType === Node.TEXT_NODE) {
-      parent.insertBefore(document.createTextNode(' '), target);
-    }
-    sanity_insert_children_before(element, target);
-    if(nextSibling && nextSibling.nodeType === Node.TEXT_NODE) {
-      parent.insertBefore(document.createTextNode(' '), target);
-    }
-    target.remove();
-  }
-}
-
-function sanity_insert_children_before(parentNode, referenceNode) {
-  'use strict';
-  const referenceParent = referenceNode.parentNode;
-  for(let node = parentNode.firstChild; node; node = parentNode.firstChild) {
-    referenceParent.insertBefore(node, referenceNode);
-  }
 }

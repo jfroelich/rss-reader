@@ -84,6 +84,7 @@ function net_fetch_feed(url, timeout, callback) {
 
 function net_fetch_html(url, timeout, callback) {
   'use strict';
+
   const request = new XMLHttpRequest();
   request.timeout = timeout;
   request.ontimeout = function on_timeout(event) {

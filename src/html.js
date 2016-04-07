@@ -5,13 +5,8 @@
 // Requires: /src/string.js
 
 // Parses an inputString containing html into a Document object
-// TODO: if the document element has only one child and it is <html>, the
-// child should be unwrapped
 function html_parse(inputString) {
   'use strict';
-  //const doc = document.implementation.createHTMLDocument();
-  //doc.documentElement.innerHTML = inputString;
-  //return doc;
 
   const parser = new DOMParser();
   const document = parser.parseFromString(inputString, 'text/html');
@@ -20,8 +15,11 @@ function html_parse(inputString) {
 
 // Returns a new string where html elements were replaced with the optional
 // replacement string.
+// TODO: what if there is no document element resulting from parsing? how
+// does that work? Is it implicit? Am I accidentally introducing content?
 function html_replace(inputString, replacementString) {
   'use strict';
+
   let outputString = null;
   if(inputString) {
     const document = html_parse(inputString);
@@ -41,10 +39,12 @@ function html_replace(inputString, replacementString) {
 // Helper function for html_replace
 function html_dom_select_text_nodes(document) {
   'use strict';
+
+  // NOTE: this is NOT restricted to text nodes in the body.
+
   const nodes = [];
   const iterator = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_TEXT);
-
   for(let node = iterator.nextNode(); node; node = iterator.nextNode()) {
     nodes.push(node);
   }
@@ -75,5 +75,6 @@ function html_replace_breakrules(inputString) {
 // the desired length I suppose.
 function html_truncate(inputString, position, extension) {
   'use strict';
+
   return string_truncate(inputString, position, extension);
 }

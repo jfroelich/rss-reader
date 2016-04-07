@@ -10,6 +10,9 @@
 // the width and height attributes of the image element within the html.
 function image_dimensions_set_all(document, callback) {
   'use strict';
+
+  // TODO: restrict to document.body.
+
   const images = document.getElementsByTagName('img');
   const fetchables = Array.prototype.filter.call(images,
     image_dimensions_should_fetch);
@@ -20,6 +23,7 @@ function image_dimensions_set_all(document, callback) {
 // TODO: should I also check attributes?
 function image_dimensions_should_fetch(image) {
   'use strict';
+
   let url = image.getAttribute('src') || '';
   url = url.trim();
   return url && !url_is_object(url) && !image.width;
@@ -58,5 +62,6 @@ function image_dimensions_on_fetch(image, callback, event) {
   } else {
     console.debug('Failed to fetch image:', image.getAttribute('src'));
   }
+
   callback();
 }

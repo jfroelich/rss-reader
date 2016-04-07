@@ -13,7 +13,7 @@ function notification_show(message) {
   };
 
   // TODO: I think this is the on_click handler? Name it something clearer
-  const callback = function() {};
+  function callback() {}
 
   function show_if_permitted(permitted) {
     if(!permitted)

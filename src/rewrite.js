@@ -13,11 +13,12 @@
 // redirects and therefore the whole process should be more abstract
 function rewrite_url(url) {
   'use strict';
-  const GOOGLE_NEWS =
-    /^https?:\/\/news.google.com\/news\/url\?.*url=(.*)/i;
+
+  const GOOGLE_NEWS = /^https?:\/\/news.google.com\/news\/url\?.*url=(.*)/i;
   const matches = GOOGLE_NEWS.exec(url);
   if(matches && matches.length === 2 && matches[1]) {
     return decodeURIComponent(matches[1]);
   }
+
   return url;
 }

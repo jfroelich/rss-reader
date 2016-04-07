@@ -15,6 +15,7 @@
 // Unmarshall an xml document into a feed object
 function feed_parser_parse_document(document) {
   'use strict';
+
   const documentElement = document.documentElement;
   if(!documentElement) {
     throw new Error('Undefined document element');
@@ -77,7 +78,7 @@ function feed_parser_get_entries(channel) {
   }
 
   // TODO: this should probably be delegated to some general purpose
-  // dom-find-all or dom-filter-children function 
+  // dom-find-all or dom-filter-children function
   for(let element = entryParent.firstElementChild; element;
     element = element.nextElementSibling) {
     if(string_equals_ignore_case(element.nodeName, entryNodeName)) {
@@ -109,6 +110,7 @@ function feed_parser_get_feed_type(documentElement) {
 
 function feed_parser_get_feed_date(channel) {
   'use strict';
+
   const isAtom = channel.ownerDocument.documentElement.matches('feed');
   if(isAtom) {
     return feed_parser_find_child_element_text(channel, 'UPDATED');
@@ -122,18 +124,21 @@ function feed_parser_get_feed_date(channel) {
 // TODO: maybe just use element.matches('link[rel="alternate"]')
 function feed_parser_is_link_rel_alternate(element) {
   'use strict';
+
   return string_equals_ignore_case(element.nodeName, 'LINK') &&
     string_equals_ignore_case(element.getAttribute('rel'), 'ALTERNATE');
 }
 
 function feed_parser_is_link_rel_self(element) {
   'use strict';
+
   return string_equals_ignore_case(element.nodeName, 'LINK') &&
     string_equals_ignore_case(element.getAttribute('rel'), 'SELF');
 }
 
 function feed_parser_is_link_with_href(element) {
   'use strict';
+
   return string_equals_ignore_case(element.nodeName, 'LINK') &&
     element.hasAttribute('href');
 }
@@ -142,12 +147,14 @@ function feed_parser_is_link_with_href(element) {
 // feed_parser_is_link_with_href, because that could be any element
 function feed_parser_is_link_without_href(element) {
   'use strict';
+
   return string_equals_ignore_case(element.nodeName, 'LINK') &&
     !element.hasAttribute('href');
 }
 
 function feed_parser_get_feed_link(channel) {
   'use strict';
+
   const isAtom = channel.ownerDocument.documentElement.matches('feed');
 
   let linkText, linkElement;
@@ -178,6 +185,7 @@ function feed_parser_get_feed_link(channel) {
 
 function feed_parser_parse_entry(entry) {
   'use strict';
+
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
   const result = {};
   result.title = feed_parser_find_child_element_text(entry, 'TITLE');
@@ -206,6 +214,7 @@ function feed_parser_parse_entry(entry) {
 
 function feed_parser_get_entry_author(entry) {
   'use strict';
+
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
   if(isAtom) {
     const author = feed_parser_find_child_element_by_name(entry, 'AUTHOR');
@@ -220,6 +229,7 @@ function feed_parser_get_entry_author(entry) {
 
 function feed_parser_get_entry_link(entry) {
   'use strict';
+
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
 
   let linkText;
@@ -265,6 +275,7 @@ function feed_parser_get_entry_date(entry) {
 
 function feed_parser_get_entry_content(entry) {
   'use strict';
+
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
   let result;
 
@@ -289,6 +300,7 @@ function feed_parser_get_entry_content(entry) {
 
 function feed_parser_get_atom_entry_content(node) {
   'use strict';
+
   return node.nodeType === Node.ELEMENT_NODE ?
     node.innerHTML : node.textContent;
 }
@@ -296,6 +308,7 @@ function feed_parser_get_atom_entry_content(node) {
 // TODO: move into general purpose dom.js module
 function feed_parser_find_child_element(parentElement, predicate) {
   'use strict';
+
   for(let element = parentElement.firstElementChild; element;
     element = element.nextElementSibling) {
     if(predicate(element)) {

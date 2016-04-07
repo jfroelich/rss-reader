@@ -7,6 +7,8 @@
 function image_transform_lazily_loaded(document) {
   'use strict';
 
+  // TODO: restrict to document.body.
+
   const images = document.querySelectorAll('img');
   const numImages = images.length;
   for(let i = 0; i < numImages; i++) {

@@ -72,6 +72,10 @@ var RESOLVE_SELECTOR = Object.keys(
 function resolve_modify_attributes(document, baseURL) {
   'use strict';
 
+  // Note this is not restricted to elements in the body, because there
+  // are resolvable elements in the head, and <html> itself has a
+  // resolvable attribute.
+
   const elements = document.querySelectorAll(RESOLVE_SELECTOR);
   const numElements = elements.length;
   for(let i = 0, element, attribute, originalURL,

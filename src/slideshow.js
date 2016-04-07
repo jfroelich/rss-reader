@@ -138,7 +138,9 @@ function slideshow_mark_read(slide) {
   slide.setAttribute('read', '');
   const entryAttribute = slide.getAttribute('entry');
 
-  db_open(function(event) {
+  db_open(on_open);
+
+  function on_open(event) {
     if(event.type !== 'success') {
       // TODO: react to database error?
       console.debug(event);
@@ -148,7 +150,7 @@ function slideshow_mark_read(slide) {
     const entryId = parseInt(entryAttribute);
     const connection = event.target.result;
     db_mark_entry_as_read(connection, entryId);
-  });
+  }
 }
 
 function slideshow_append_slides(oncomplete, isFirst) {
@@ -210,7 +212,8 @@ function slideshow_append_slides(oncomplete, isFirst) {
 }
 
 // TODO: just checking if image parent is in anchor is incorrect
-// The correct condition is if image is a descendant of an anchor
+// The correct condition is if image is a descendant of an anchor, use
+// closest instead of parentNode
 // TODO: this should probably be the handler that determines
 // whether to open an anchor click in a new tab, instead of
 // setting a target attribute per anchor.
@@ -218,16 +221,26 @@ function slideshow_append_slides(oncomplete, isFirst) {
 // listener is attached.
 function slideshow_on_slide_click(event) {
   'use strict';
-  if(event.which !== 1) {
+
+  const mouseButtonCode = event.which;
+  const LEFT_MOUSE_BUTTON_CODE = 1;
+  const MOUSE_WHEEL_BUTTON_CODE = 2;
+
+  // Only react to left clicks
+  if(mouseButtonCode !== LEFT_MOUSE_BUTTON_CODE) {
     return false;
   }
 
-  // BUG: when clicking on an image in a link, it is still a link
+  // TODO: define event.target using a variable. What does it mean. Does it
+  // mean the dom object to which the listener is attached? Or does it
+  // mean the element that was clicked on? etc.
+
+  // TODO: bug, when clicking on an image in a link, it is still a link
   // click that should open the link in a new window...
   // TODO: this should be checking if in anchor axis, not
   // just immediate parent
   if(event.target.matches('img')) {
-    if(!event.target.parentElement.matches('a')) {
+    if(!event.target.parentNode.matches('a')) {
       return false;
     }
   } else if(!event.target.matches('a')) {
@@ -273,6 +286,7 @@ function slideshow_on_slide_click(event) {
  */
 function slideshow_append_slide(entry, isFirst) {
   'use strict';
+
   // TODO: use <article> instead of div
   const slide = document.createElement('div');
   slide.setAttribute('entry', entry.id);
@@ -343,19 +357,22 @@ function slideshow_append_slide(entry, isFirst) {
 
 function slideshow_show_next_slide() {
   'use strict';
-  if(slideshow_count_unread() < 2) {
-    slideshow_append_slides(function() {
-      const c = document.getElementById('slideshow-container');
-      while(c.childElementCount > 30 &&
-        c.firstChild != slideshow_currentSlide) {
-        slideshow_remove_slide(c.firstChild);
-      }
 
-      show_next();
-      slideshow_maybe_show_all_read();
-    }, false);
+  if(slideshow_count_unread() < 2) {
+    const isFirst = false;
+    slideshow_append_slides(on_append_complete, isFirst);
   } else {
     show_next();
+  }
+
+  function on_append_complete() {
+    const c = document.getElementById('slideshow-container');
+    while(c.childElementCount > 30 && c.firstChild != slideshow_currentSlide) {
+      slideshow_remove_slide(c.firstChild);
+    }
+
+    show_next();
+    slideshow_maybe_show_all_read();
   }
 
   function show_next() {
@@ -484,6 +501,7 @@ window.addEventListener('keydown', slideshow_onkeydown, false);
 
 function slideshow_init(event) {
   'use strict';
+
   document.removeEventListener('DOMContentLoaded', slideshow_init);
   style_load_styles();
   slideshow_append_slides(slideshow_maybe_show_all_read, true);

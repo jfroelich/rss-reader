@@ -14,7 +14,7 @@ function background_on_installed(event) {
 
   console.log('Installing...');
   // Trigger database upgrade by opening a connection
-  db_open(function(event) {});
+  db_open(function on_open_noop(event) {});
 }
 
 chrome.runtime.onInstalled.addListener(background_on_installed);

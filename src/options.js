@@ -994,7 +994,7 @@ function options_init_display_settings_section() {
   document.getElementById('select_body_font').onchange =
     options_on_body_font_change;
 
-  [1,2,3].forEach(function (columnCount) {
+  [1,2,3].forEach(function append_col_count_option(columnCount) {
     option = document.createElement('option');
     option.value = columnCount;
     option.selected = columnCount === localStorage.COLUMN_COUNT;
