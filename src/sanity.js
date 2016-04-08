@@ -38,11 +38,19 @@
 // this or maybe I want to allow it, not sure.
 // * H1s within anchors?
 
+// TODO: due to handling of <noscript> this is causing articles from
+// fortune.com to appear empty. Remove noscript from blacklisted elements.
+// Then write a function that handles noscript specially.
+
 
 function sanity_sanitize_document(document) {
   'use strict';
+
   sanity_filter_comments(document);
   sanity_replace_frames(document);
+
+  sanity_filter_noscripts(document);
+
   // sanity_filter_out_of_body_nodes(document);
   sanity_filter_blacklisted_elements(document);
   sanity_filter_hidden_elements(document);
@@ -64,6 +72,30 @@ function sanity_sanitize_document(document) {
   sanity_filter_attributes(document);
 }
 
+// NOTE: we cannot remove noscript elements because some sites embed the
+// article within a noscript tag. So instead we treat noscripts as unwrappable
+// Because noscripts are a special case for now I am not simply adding noscript
+// to sanity-unwrap
+// We still have to unwrap. If noscript remains, the content remains within the
+// document, but it isn't visible/rendered because we obviously support scripts
+// and so the browser hides it. So now we have to remove it.
+function sanity_filter_noscripts(document) {
+  'use strict';
+
+  const bodyElement = document.body;
+  if(!bodyElement) {
+    return;
+  }
+
+  const noscripts = bodyElement.querySelectorAll('noscript');
+  const numNoscripts = noscripts.length;
+
+  for(let i = 0; i < numNoscripts; i++) {
+    dom_unwrap(noscripts[i], null);
+  }
+}
+
+
 // This uses a blacklist approach instead of a whitelist because of issues
 // with custom html elements. If I used a whitelist approach, any element
 // not in the whitelist would be removed. The problem is that custom elements
@@ -74,7 +106,7 @@ function sanity_filter_blacklisted_elements(document) {
   const BLACKLIST = [
     'APPLET', 'AUDIO', 'BASE', 'BASEFONT', 'BGSOUND', 'BUTTON', 'COMMAND',
     'DATALIST', 'DIALOG', 'EMBED', 'FIELDSET', 'FRAME', 'FRAMESET', 'HEAD',
-    'IFRAME', 'INPUT', 'ISINDEX', 'LINK', 'MATH', 'META', 'NOSCRIPT',
+    'IFRAME', 'INPUT', 'ISINDEX', 'LINK', 'MATH', 'META',
     'OBJECT', 'OUTPUT', 'OPTGROUP', 'OPTION', 'PARAM', 'PATH', 'PROGRESS',
     'SCRIPT', 'SELECT', 'SPACER', 'STYLE', 'SVG', 'TEXTAREA', 'TITLE',
     'VIDEO', 'XMP'
