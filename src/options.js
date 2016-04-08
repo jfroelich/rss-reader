@@ -3,13 +3,21 @@
 // that can be found in the LICENSE file
 
 // Requires: /src/db.js
+// Requires: /src/dom.js
 // Requires: /src/net.js
 // Requires: /src/html.js
+// Requires: /src/opml.js
 // Requires: /src/string.js
+// Requires: /src/subscription.js
 
+// TODO: what are these? elements? ints? use clearer names
+// TODO: maybe make an OptionsMenu class and have these be member variables
 var options_currentMenuItem = null;
 var options_currentSection = null;
 
+// Hides the error message
+// TODO: maybe make an OptionsPageErrorMessage class and have this be
+// a member function.
 function options_hide_error() {
   'use strict';
 
@@ -57,6 +65,8 @@ function options_show_error(message, fadeIn) {
 }
 
 // TODO: instead of removing and re-adding, reset and reuse
+// TODO: maybe make an OptionsSubscriptionMonitor class and have this just be
+// a member function.
 function options_show_sub_monitor() {
   'use strict';
 
@@ -122,60 +132,57 @@ function options_hide_sub_monitor(callback, fadeOut) {
   }
 }
 
-function options_show_element(element) {
-  'use strict';
-  element.style.display = 'block';
-}
-
-function options_hide_element(element) {
-  'use strict';
-  element.style.display = 'none';
-}
-
-function options_add_class(element, classNameString) {
-  'use strict';
-  element.classList.add(classNameString);
-}
-
-function options_remove_class(element, classNameString) {
-  'use strict';
-  element.classList.remove(classNameString);
-}
-
 function options_show_section(menuItem) {
   'use strict';
 
-  if(!menuItem || options_currentMenuItem === menuItem) {
+  // TODO: maybe do not check for this? Should just fail if I forgot to set it
+  // somewhere.
+  if(!menuItem) {
     return;
   }
 
-  options_add_class(menuItem, 'navigation-item-selected');
+  // Do nothing if not switching.
+  if(options_currentMenuItem === menuItem) {
+    return;
+  }
 
+  // Make the previous item appear de-selected
   if(options_currentMenuItem) {
-    options_remove_class(options_currentMenuItem, 'navigation-item-selected');
+    dom_remove_class(options_currentMenuItem, 'navigation-item-selected');
   }
 
+  // Hide the old section
   if(options_currentSection) {
-    options_hide_element(options_currentSection);
+    dom_hide_element(options_currentSection);
   }
 
+  // Make the new item appear selected
+  dom_add_class(menuItem, 'navigation-item-selected');
+
+  // Show the new section
   const sectionId = menuItem.getAttribute('section');
   const sectionElement = document.getElementById(sectionId);
   if(sectionElement) {
-    options_show_element(sectionElement);
+    dom_show_element(sectionElement);
   }
 
+  // Update the global tracking vars
   options_currentMenuItem = menuItem;
   options_currentSection = sectionElement;
 }
 
+// TODO: also return the count so that caller does not need to potentially
+// do it again. Or, require count to be passed in and change this to just
+// options_set_feed_count (and create options_get_feed_count)
+// Then, also consider if options_get_feed_count should be using the UI as
+// its source of truth or should instead be using the database.
 function options_update_feed_count() {
   'use strict';
 
   const feedListElement = document.getElementById('feedlist');
   const count = feedListElement.childElementCount;
-  const countElement = document.getElementById('subscription-count');
 
+  const countElement = document.getElementById('subscription-count');
   if(count > 1000) {
     countElement.textContent = ' (999+)';
   } else {
@@ -183,6 +190,7 @@ function options_update_feed_count() {
   }
 }
 
+// TODO: rename, where is this appending?
 function options_append_feed(feed, insertedSort) {
   'use strict';
 
@@ -213,8 +221,8 @@ function options_append_feed(feed, insertedSort) {
     const currentItems = feedListElement.childNodes;
     var added = false;
 
-    for(var i = 0, len = currentItems.length; i < len; i++) {
-      var currentKey = currentItems[i].getAttribute('sort-key');
+    for(var i = 0, len = currentItems.length, currentKey; i < len; i++) {
+      currentKey = currentItems[i].getAttribute('sort-key');
       if(indexedDB.cmp(feed.title || '', currentKey || '') < 0) {
         added = true;
         feedListElement.insertBefore(item, currentItems[i]);
@@ -253,11 +261,16 @@ function options_show_sub_preview(url) {
     return;
   }
 
-  document.getElementById('subscription-preview').style.display = 'block';
-  document.getElementById('subscription-preview-load-progress').style.display = 'block';
-  const timeout = 10 * 1000;
+  const previewElement = document.getElementById('subscription-preview');
+  dom_show_element(previewElement);
+  const progressElement = document.getElementById(
+    'subscription-preview-load-progress');
+  dom_show_element(progressElement);
+
   // TODO: check if already subscribed before preview?
-  net_fetch_feed(url, timeout, onFetch);
+
+  const fetchFeedTimeout = 10 * 1000;
+  net_fetch_feed(url, fetchFeedTimeout, onFetch);
 
   function onFetch(event, result) {
     if(event) {
@@ -267,35 +280,54 @@ function options_show_sub_preview(url) {
       return;
     }
 
-    document.getElementById('subscription-preview-load-progress').style.display = 'none';
-    //document.getElementById('subscription-preview-title').style.display = 'block';
-    document.getElementById('subscription-preview-title').textContent =
-      result.title || 'Untitled';
-    document.getElementById('subscription-preview-continue').value = result.url;
+    const progressElement = document.getElementById(
+      'subscription-preview-load-progress');
+    dom_hide_element(progressElement);
+
+    const titleElement = document.getElementById('subscription-preview-title');
+    titleElement.textContent = result.title || 'Untitled';
+
+    const continueButton = document.getElementById(
+      'subscription-preview-continue');
+    continueButton.value = result.url;
+
+    const resultsListElement = document.getElementById(
+      'subscription-preview-entries');
+
     if(!result.entries || !result.entries.length) {
       var item = document.createElement('li');
       item.textContent = 'No previewable entries';
-      document.getElementById('subscription-preview-entries').appendChild(item);
+      resultsListElement.appendChild(item);
     }
 
-    for(var i = 0, len = Math.min(5,result.entries.length); i < len;i++) {
-      var entry = result.entries[i];
-      var item = document.createElement('li');
+    const resultLimit = Math.min(5,result.entries.length);
+
+    for(var i = 0, entry, item, content; i < resultLimit;i++) {
+      entry = result.entries[i];
+      item = document.createElement('li');
       item.innerHTML = html_replace(entry.title, '');
-      var content = document.createElement('span');
+      content = document.createElement('span');
       content.innerHTML = html_replace(entry.content, '');
       item.appendChild(content);
-      document.getElementById('subscription-preview-entries').appendChild(item);
+      resultsListElement.appendChild(item);
     }
   }
 }
 
 function options_hide_sub_preview() {
   'use strict';
-  document.getElementById('subscription-preview').style.display = 'none';
-  document.getElementById('subscription-preview-entries').innerHTML = '';
+
+  const previewElement = document.getElementById('subscription-preview');
+  dom_hide_element(previewElement);
+  const resultsListElement = document.getElementById(
+    'subscription-preview-entries');
+  while(resultsListElement.firstChild) {
+    resultsListElement.firstChild.remove();
+  }
 }
 
+// TODO: this should be calling out to a function in subscription.js and
+// delegating most of its logic to that function.
 function options_start_subscription(url) {
   'use strict';
 
@@ -412,18 +444,27 @@ function populateFeedDetailsSection(feedId) {
     if(!title) {
       title = 'Untitled';
     }
-    document.getElementById('details-title').textContent = title;
+
+    const titleElement = document.getElementById('details-title');
+    titleElement.textContent = title;
 
     const favIconURL = favicon_get_url(feed.url);
-    document.getElementById('details-favicon').setAttribute('src', favIconURL);
+    const favIconElement = document.getElementById('details-favicon');
+    favIconElement.setAttribute('src', favIconURL);
 
     const description = html_replace(feed.description, '');
-    document.getElementById('details-feed-description').textContent =
-      description;
+    const descriptionElement = document.getElementById(
+      'details-feed-description');
+    descriptionElement.textContent = description;
 
-    document.getElementById('details-feed-url').textContent = feed.url;
-    document.getElementById('details-feed-link').textContent = feed.link;
-    document.getElementById('details-unsubscribe').value = feed.id;
+    const feedURLElement = document.getElementById('details-feed-url');
+    feedURLElement.textContent = feed.url;
+
+    const feedLinkElement = document.getElementById('details-feed-link');
+    feedLinkElement.textContent = feed.link;
+
+    const unsubscribeButton = document.getElementById('details-unsubscribe');
+    unsubscribeButton.value = feed.id;
   }
 }
 
@@ -450,18 +491,15 @@ function options_on_feed_list_item_click(event) {
   window.scrollTo(0,0);
 }
 
-function options_is_element_visible(element) {
-  'use strict';
-  return element.style.display === 'block';
-}
-
 function options_on_subscribe_submit(event) {
   'use strict';
 
   // Prevent normal form submission event
   event.preventDefault();
 
-  var query = document.getElementById('subscribe-discover-query').value;
+  const queryElement = document.getElementById('subscribe-discover-query');
+
+  var query = queryElement.value;
   query = query || '';
   query = query.trim();
 
@@ -474,34 +512,37 @@ function options_on_subscribe_submit(event) {
 
   // Do nothing if still searching
   const progressElement = document.getElementById('discover-in-progress');
-  if(options_is_element_visible(progressElement)) {
+  if(dom_is_element_visible(progressElement)) {
     return false;
   }
 
   // Do nothing if subscribing
   const subMonitor = document.getElementById('options_subscription_monitor');
-  if(subMonitor && options_is_element_visible(subMonitor)) {
+  if(subMonitor && dom_is_element_visible(subMonitor)) {
     return false;
   }
 
   // Clear the previous results list
-  document.getElementById('discover-results-list').innerHTML = '';
+  const resultsListElement = document.getElementById('discover-results-list');
+  while(resultsListElement.firstChild) {
+    resultsListElement.firstChild.remove();
+  }
 
   // Ensure the no-results-found message, if present from a prior search,
   // is hidden. This should never happen because we exit early if it is still
   // visible above.
-  options_hide_element(progressElement);
+  dom_hide_element(progressElement);
 
   // If the query is a url, subscribe to the url. Otherwise, use the Google
   // Feeds api to do a search for matching feeds.
   if(url_is_valid(query)) {
     // Start subscribing
-    options_hide_element(progressElement);
-    document.getElementById('subscribe-discover-query').value = '';
+    dom_hide_element(progressElement);
+    queryElement.value = '';
     options_show_sub_preview(query);
   } else {
     // Show search results
-    options_show_element(progressElement);
+    dom_show_element(progressElement);
     google_feeds_search(query, 5000, options_on_discover_complete);
   }
 
@@ -521,7 +562,7 @@ function options_on_discover_subscribe_click(event) {
   // TODO: Ignore future clicks if error was displayed?
   // Ignore future clicks while subscription in progress
   const subMonitor = document.getElementById('options_subscription_monitor');
-  if(subMonitor && options_is_element_visible(subMonitor)) {
+  if(subMonitor && dom_is_element_visible(subMonitor)) {
     return;
   }
 
@@ -546,29 +587,29 @@ function options_on_discover_complete(errorEvent, query, results) {
   // and exit early.
   if(errorEvent) {
     console.debug('Discover feeds error:', errorEvent);
-    options_hide_element(progressElement);
+    dom_hide_element(progressElement);
     options_show_error('An error occurred when searching for feeds: ' +
       errorEvent);
     return;
   }
 
   // Searching completed, hide the progress
-  options_hide_element(progressElement);
+  dom_hide_element(progressElement);
 
   // If there were no search results, hide the results list and show the
   // no results element and exit early.
   if(results.length < 1) {
-    options_hide_element(resultsList);
-    options_show_element(noResultsElement);
+    dom_hide_element(resultsList);
+    dom_show_element(noResultsElement);
     return;
   }
 
-  if(options_is_element_visible(resultsList)) {
+  if(dom_is_element_visible(resultsList)) {
     // Clear the previous results
     resultsList.innerHTML = '';
   } else {
-    options_hide_element(noResultsElement);
-    options_show_element(resultsList);
+    dom_hide_element(noResultsElement);
+    dom_show_element(resultsList);
   }
 
   // Add an initial count as one of the list items
@@ -580,8 +621,8 @@ function options_on_discover_complete(errorEvent, query, results) {
   // Generate an array of result elements to append
   const resultElements = results.map(options_create_search_result_item);
 
-  resultElements.forEach(function append_result_item(resultElement)) {
-    resultsList.appendChild(resultElement);
+  for(let i = 0, len = resultElements.length; i < len; i++) {
+    resultsList.appendChild(resultElements[i]);
   }
 }
 
@@ -619,7 +660,7 @@ function options_create_search_result_item(result) {
 
   // Show the feed's url
   const span = document.createElement('span');
-  span.setAttribute('class','discover-search-result-url');
+  span.setAttribute('class', 'discover-search-result-url');
   span.textContent = result.url;
   item.appendChild(span);
 
@@ -628,60 +669,45 @@ function options_create_search_result_item(result) {
 
 function options_on_unsubscribe_click(event) {
   'use strict';
-  const button = event.target;
-  const buttonValue = button.value;
-  const feedId = parseInt(buttonValue);
+  const unsubscribeButton = event.target;
+  const feedIdString = button.value;
+  const feedId = parseInt(feedIdString, 10);
+  unsubscribe(feedId, options_on_unsubscribe);
+}
 
-  if(!feedId) {
-    console.debug('Invalid feed id:', buttonValue);
+// TODO: do i react to the cross-window message event, or do I react
+// to the immediate callback?
+function options_on_unsubscribe(event) {
+  'use strict';
+
+  if(event.type === 'error') {
+    // TODO: show an error message
+    console.debug(event);
     return;
   }
 
-  db_open(on_open);
-
-  function on_open(event) {
-    if(event.type !== 'success') {
-      // TODO: show an error message
-      console.debug(event);
-      return;
-    }
-
-    const connection = event.target.result;
-    db_unsubscribe(connection, feedId, on_unsubscribe.bind(null, connection));
+  // Remove the feed from the subscription list
+  const selector = 'feedlist li[feed="' + feedId + '"]';
+  const feedElement = document.querySelector(selector);
+  if(item) {
+    feedElement.removeEventListener('click',
+      options_on_feed_list_item_click);
+    feedElement.remove();
   }
 
-  function on_unsubscribe(connection, event) {
-    const sectionMenu = document.getElementById('mi-subscriptions');
+  options_update_feed_count();
 
-    // Update the badge in case any unread articles belonged to
-    // the unsubscribed feed
-    badge_update_count(connection);
-
-    // TODO: send out a message notifying other views of the unsubscribe event,
-    // that way the slides view can remove any articles. Actually this should
-    // be done by the unsubscribe function.
-
-    const item = document.querySelector('feedlist li[feed="' + feedId + '"]');
-    if(item) {
-      item.removeEventListener('click', options_on_feed_list_item_click);
-      item.remove();
-    }
-
-    // Update the count of feeds
-    options_update_feed_count();
-
-    const feedListElement = document.getElementById('feedlist');
-    const noFeedsElement = document.getElementById('nosubscriptions');
-
-    // If the feed list has no items, hide it and show a message
-    if(feedListElement.childElementCount === 0) {
-      options_hide_element(feedListElement);
-      options_show_element(noFeedsElement);
-    }
-
-    // Switch to the main view
-    options_show_section(sectionMenu);
+  // If the feed list has no items, hide it and show a message instead
+  const feedListElement = document.getElementById('feedlist');
+  const noFeedsElement = document.getElementById('nosubscriptions');
+  if(feedListElement.childElementCount === 0) {
+    dom_hide_element(feedListElement);
+    dom_show_element(noFeedsElement);
   }
+
+  // Switch to the main view
+  const sectionMenu = document.getElementById('mi-subscriptions');
+  options_show_section(sectionMenu);
 }
 
 function options_on_enable_rewriting_change(event) {
@@ -695,7 +721,7 @@ function options_on_enable_rewriting_change(event) {
   }
 }
 
-// TODO: onFeedsImported needs to notify the user of a successful
+// TODO: needs to notify the user of a successful
 // import. In the UI and maybe in a notification. Maybe also combine
 // with the immediate visual feedback (like a simple progress monitor
 // popup but no progress bar). The monitor should be hideable. No
@@ -703,14 +729,13 @@ function options_on_enable_rewriting_change(event) {
 // TODO: notify the user if there was an error parsing the OPML
 // TODO: the user needs immediate visual feedback that we are importing
 // the OPML file.
-// TODO: notify the user of successful import
 // TODO: switch to a different section of the options ui on complete?
 function options_on_import_opml_click(event) {
   'use strict';
 
   const uploader = document.createElement('input');
   uploader.setAttribute('type', 'file');
-  options_hide_element(uploader);
+  dom_hide_element(uploader);
   uploader.onchange = on_uploader_change;
   document.body.appendChild(uploader);
   uploader.click();
@@ -788,11 +813,16 @@ function options_on_export_opml_click_on_get_feeds(feeds) {
   'use strict';
   const title = 'Subscriptions';
   const doc = opml_create_document(title, feeds);
+
+  // TODO: should should probably be delegating something to a function
+  // in xml.js
   const writer = new XMLSerializer();
   const serializedString = writer.serializeToString(doc);
+
   const blobFormat = {type: 'application/xml'};
   const blob = new Blob([serializedString], blobFormat);
   const objectURL = URL.createObjectURL(blob);
+
   const anchor = document.createElement('a');
   anchor.href = objectURL;
   const fileName = 'subscriptions.xml';
@@ -800,12 +830,14 @@ function options_on_export_opml_click_on_get_feeds(feeds) {
   anchor.style.display = 'none';
   document.body.appendChild(anchor);
   anchor.click();
+
+  // Cleanup
   URL.revokeObjectURL(objectURL);
   anchor.remove();
+
   console.debug('Completed exporting %s feeds to opml file %s',
     doc.querySelectorAll('outline').length, fileName);
-
-  // TODO: show a temporary message?
+  // TODO: show a message?
 }
 
 function options_on_header_font_change(event){
@@ -900,7 +932,6 @@ function options_on_enable_idle_check_change(event) {
     chrome.permissions.remove({permissions:['idle']}, function(){});
 }
 
-
 function options_on_nav_feed_click(event) {
   'use strict';
   // Use currentTarget instead of event.target as some of the menu items have a
@@ -937,18 +968,102 @@ function options_init_sub_section() {
     const noFeedsElement = document.getElementById('nosubscriptions');
     const feedListElement = document.getElementById('feedlist');
     if(feedCount === 0) {
-      options_show_element(noFeedsElement);
-      options_hide_element(feedListElement);
+      dom_show_element(noFeedsElement);
+      dom_hide_element(feedListElement);
     } else {
-      options_hide_element(noFeedsElement);
-      options_show_element(feedListElement);
+      dom_hide_element(noFeedsElement);
+      dom_show_element(feedListElement);
     }
   }
 }
 
-function options_init_display_settings_section() {
+
+function options_init(event) {
   'use strict';
 
+  // Avoid attempts to re-init
+  document.removeEventListener('DOMContentLoaded', options_init);
+
+  // Call out to load styles because this affects the feed settings preview
+  // area in the display settings section
+  style_load_styles();
+
+  // Conditionally show/hide the Allow embeds option in the left menu
+  // TODO: if I am not even supporting the embed option anymore, why
+  // is this still here?
+  const navEmbedItem = document.getElementById('mi-embeds');
+  const isAskPolicy = localStorage.EMBED_POLICY === 'ask';
+  if(isAskPolicy) {
+    dom_show_element(navEmbedItem);
+  } else {
+    dom_hide_element(navEmbedItem);
+  }
+
+  // Attach click handlers to feeds in the feed list on the left.
+  // TODO: it would probably be easier and more efficient to attach a single
+  // click handler that figures out which item was clicked.
+  const navFeedItems = document.querySelectorAll('#navigation-menu li');
+  for(let i = 0, len = navFeedItems.length; i < len; i++) {
+    navFeedItems[i].onclick = options_on_nav_feed_click;
+  }
+
+  // Init the general settings page
+  document.getElementById('enable-notifications').onclick =
+    options_on_enable_notifications_change;
+
+  chrome.permissions.contains({permissions: ['notifications']},
+    function has_notifications_permission(permitted) {
+    document.getElementById('enable-notifications').checked = permitted;
+  });
+
+  document.getElementById('enable-background').onclick =
+    options_on_enable_background_change;
+
+  chrome.permissions.contains({permissions:['background']},
+    function has_run_in_background_permission(permitted) {
+    document.getElementById('enable-background').checked = permitted;
+  });
+
+  document.getElementById('enable-idle-check').onclick =
+    options_on_enable_idle_check_change;
+
+  chrome.permissions.contains({permissions:['idle']},
+    function has_check_idle_permission(permitted) {
+    document.getElementById('enable-idle-check').checked = permitted;
+  });
+
+  document.getElementById('enable-subscription-preview').checked =
+    !!localStorage.ENABLE_SUBSCRIBE_PREVIEW;
+  document.getElementById('enable-subscription-preview').onchange =
+    options_on_enable_sub_preview_change;
+  document.getElementById('rewriting-enable').checked =
+    !!localStorage.URL_REWRITING_ENABLED;
+  document.getElementById('rewriting-enable').onchange =
+    options_on_enable_rewriting_change;
+
+  // Init the opml import/export buttons
+  document.getElementById('button-export-opml').onclick =
+    options_on_export_opml_click;
+  document.getElementById('button-import-opml').onclick =
+    options_on_import_opml_click;
+
+  options_init_sub_section();
+
+  // Init feed details section unsubscribe button click handler
+  const unsubscribeButton = document.getElementById('details-unsubscribe');
+  unsubscribeButton.onclick = options_on_unsubscribe_click;
+
+  // Init the subscription form section
+  document.getElementById('subscription-form').onsubmit =
+    options_on_subscribe_submit;
+  document.getElementById('subscription-preview-continue').onclick =
+    function on_preview_continue_click(event) {
+    const url = event.currentTarget.value;
+    options_hide_sub_preview();
+    options_start_subscription(url);
+  };
+
+  // Init display settings
   let option = document.createElement('option');
   option.value = '';
   option.textContent = 'Use background color';
@@ -1036,94 +1151,7 @@ function options_init_display_settings_section() {
     (bodyLineHeight / 10).toFixed(2);
   document.getElementById('body-line-height').oninput =
     options_on_body_line_height_change;
-}
 
-function options_init(event) {
-  'use strict';
-
-  // Avoid attempts to re-init
-  document.removeEventListener('DOMContentLoaded', options_init);
-
-  // Call out to load styles because this affects the feed settings preview
-  // area in the display settings section
-  style_load_styles();
-
-  // Conditionally show/hide the Allow embeds option in the left menu
-  // TODO: if I am not even supporting the embed option anymore, why
-  // is this still here?
-  const navEmbedItem = document.getElementById('mi-embeds');
-  const isAskPolicy = localStorage.EMBED_POLICY === 'ask';
-  if(isAskPolicy) {
-    options_show_element(navEmbedItem);
-  } else {
-    options_hide_element(navEmbedItem);
-  }
-
-  // Attach click handlers to feeds in the feed list on the left.
-  // TODO: it would probably be easier and more efficient to attach a single
-  // click handler that figures out which item was clicked.
-  const navFeedItems = document.querySelectorAll('#navigation-menu li');
-  for(let i = 0, len = menuItems.length; i < len; i++) {
-    navFeedItems[i].onclick = options_on_nav_feed_click;
-  }
-
-  // Init the general settings page
-  document.getElementById('enable-notifications').onclick =
-    options_on_enable_notifications_change;
-
-  chrome.permissions.contains({permissions: ['notifications']},
-    function has_notifications_permission(permitted) {
-    document.getElementById('enable-notifications').checked = permitted;
-  });
-
-  document.getElementById('enable-background').onclick =
-    options_on_enable_background_change;
-
-  chrome.permissions.contains({permissions:['background']},
-    function has_run_in_background_permission(permitted) {
-    document.getElementById('enable-background').checked = permitted;
-  });
-
-  document.getElementById('enable-idle-check').onclick =
-    options_on_enable_idle_check_change;
-
-  chrome.permissions.contains({permissions:['idle']},
-    function has_check_idle_permission(permitted) {
-    document.getElementById('enable-idle-check').checked = permitted;
-  });
-
-  document.getElementById('enable-subscription-preview').checked =
-    !!localStorage.ENABLE_SUBSCRIBE_PREVIEW;
-  document.getElementById('enable-subscription-preview').onchange =
-    options_on_enable_sub_preview_change;
-  document.getElementById('rewriting-enable').checked =
-    !!localStorage.URL_REWRITING_ENABLED;
-  document.getElementById('rewriting-enable').onchange =
-    options_on_enable_rewriting_change;
-
-  // Init the opml import/export buttons
-  document.getElementById('button-export-opml').onclick =
-    options_on_export_opml_click;
-  document.getElementById('button-import-opml').onclick =
-    options_on_import_opml_click;
-
-  options_init_sub_section();
-
-  // Init feed details section unsubscribe button click handler
-  const unsubscribeButton = document.getElementById('details-unsubscribe');
-  unsubscribeButton.onclick = options_on_unsubscribe_click;
-
-  // Init the subscription form section
-  document.getElementById('subscription-form').onsubmit =
-    options_on_subscribe_submit;
-  document.getElementById('subscription-preview-continue').onclick =
-    function on_preview_continue_click(event) {
-    const url = event.currentTarget.value;
-    options_hide_sub_preview();
-    options_start_subscription(url);
-  };
-
-  options_init_display_settings_section();
 
   // Init the about section
   const manifest = chrome.runtime.getManifest();

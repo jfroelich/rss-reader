@@ -168,6 +168,8 @@ function db_mark_entry_as_read(connection, entryId) {
 function db_remove_entries_by_feed(connection, id, callback) {
   'use strict';
 
+  // TODO: look into whether there is a batch delete operation
+
   function on_success(event) {
     const cursor = event.target.result;
     if(cursor) {
@@ -323,13 +325,6 @@ function db_store_feed(connection, original, feed, callback) {
   request.onerror = function onError(event) {
     callback();
   };
-}
-
-function db_unsubscribe(connection, id, callback) {
-  'use strict';
-  db_remove_feed(connection, id, function onRemoveFeed(event) {
-    db_remove_entries_by_feed(connection, id, callback);
-  });
 }
 
 function db_upgrade(event) {

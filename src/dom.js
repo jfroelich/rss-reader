@@ -12,6 +12,8 @@
 // time. I have a feeling the suboptimal performance is because it is doing
 // lots of wasted operations. Although actually another part of the reason
 // this is slow is because of the possible inert-live transition.
+// Using insertAdjacentHTML and innerHTML do not work that well, because
+// that requires marshalling/unmarshalling.
 function dom_append_children(source, destination) {
   'use strict';
 
@@ -72,4 +74,29 @@ function dom_unwrap(element, referenceNode) {
     }
     target.remove();
   }
+}
+
+function dom_hide_element(element) {
+  'use strict';
+  element.style.display = 'none';
+}
+
+function dom_show_element(element) {
+  'use strict';
+  element.style.display = 'block';
+}
+
+function dom_add_class(element, classNameString) {
+  'use strict';
+  element.classList.add(classNameString);
+}
+
+function dom_remove_class(element, classNameString) {
+  'use strict';
+  element.classList.remove(classNameString);
+}
+
+function dom_is_element_visible(element) {
+  'use strict';
+  return element.style.display === 'block';
 }
