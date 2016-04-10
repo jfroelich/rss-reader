@@ -73,8 +73,8 @@ function html_replace_breakrules(inputString) {
 // leave unclosed tags in the result. Think about how to
 // prevent these issues. I could parse and then add up texts until I get to
 // the desired length I suppose.
-function html_truncate(inputString, position, extension) {
+function html_truncate(inputString, position, extensionString) {
   'use strict';
 
-  return string_truncate(inputString, position, extension);
+  return string_truncate(inputString, position, extensionString);
 }

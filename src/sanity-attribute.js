@@ -10,7 +10,8 @@
 function sanity_filter_attributes(document) {
   'use strict';
 
-  // NOTE: This applies to all elements, not just those within body.
+  // NOTE: This applies to all elements, not just those within body. This
+  // is intentional because we have to consider everything.
 
 
   const elements = document.getElementsByTagName('*');

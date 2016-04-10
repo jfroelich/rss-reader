@@ -2,53 +2,60 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// faster than Array.prototype.filter because assumes dense
-function array_filter(subject, predicate) {
+// Faster than Array.prototype.filter because assumes that the input array
+// is dense, and because it does not support custom binding.
+function array_filter(inputArray, predicateFunction) {
   'use strict';
 
-  const length = subject.length;
-  const result = [];
+  const length = inputArray.length;
+  const outputArray = [];
 
   for(let i = 0, item; i < length; i++) {
-    item = subject[i];
-    if(predicate(item)) {
-      result.push(item);
+    item = inputArray[i];
+    if(predicateFunction(item)) {
+      outputArray.push(item);
     }
   }
 
-  return result;
+  return outputArray;
 }
 
-// faster than Array.prototype.find because assumes dense
-function array_find(subject, predicate) {
+// Faster than Array.prototype.find because assumes the subject array
+// is dense.
+// The predicate function should be pure, and especially, it should not modify
+// the subject array.
+function array_find(subjectArray, predicateFunction) {
   'use strict';
 
-  const length = subject.length;
+  const length = subjectArray.length;
   for(let i = 0, item; i < length; i++) {
-    item = subject[i];
-    if(predicate(item)) {
+    item = subjectArray[i];
+    if(predicateFunction(item)) {
       return item;
     }
   }
 }
 
-// faster than Array.prototype.forEach because assumes dense
-function array_for_each(subject, callback) {
+// Faster than Array.prototype.forEach because assumes dense
+function array_for_each(subjectArray, callbackFunction) {
   'use strict';
 
-  const length = subject.length;
+  const length = subjectArray.length;
   for(let i = 0; i < length; i++) {
-    callback(subject[i]);
+    callbackFunction(subjectArray[i]);
   }
 }
 
-// faster than Array.prototype.some because assumes dense
-function array_some(subject, predicate) {
+// Returns true if the predicate returns true for at least one item of the
+// subject array.
+// This is faster than Array.prototype.some because it assumes the subject
+// array is dense.
+function array_some(subjectArray, predicateFunction) {
   'use strict';
 
-  const length = subject.length;
+  const length = subjectArray.length;
   for(let i = 0; i < length; i++) {
-    if(predicate(subject[i])) {
+    if(predicateFunction(subjectArray[i])) {
       return true;
     }
   }

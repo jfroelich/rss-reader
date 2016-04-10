@@ -26,6 +26,8 @@ function sanity_filter_leaves(document) {
 
   // A document element is required.
   const docElement = document.documentElement;
+
+  // TODO: is this check even needed?
   if(!docElement) {
     return;
   }
@@ -64,12 +66,10 @@ function sanity_filter_leaves(document) {
 // In an HTML document context, element.nodeName is always uppercase
 // I am using a plain old object instead of a Set because profiling showed
 // poor performance.
-// This is declared as var because const requires use strict but I do not
-// want global strict mode.
 // TODO: because I just check for existence, look into storing null or whatever
 // is the smallest value. Also look into the new ES6 style of object literal
 // declaration
-var SANITY_LEAF_EXCEPTIONS = {
+const SANITY_LEAF_EXCEPTIONS = {
   'AREA': 1, 'AUDIO': 1, 'BASE': 1, 'COL': 1, 'COMMAND': 1, 'BR': 1,
   'CANVAS': 1, 'COL': 1, 'HR': 1, 'IFRAME': 1, 'IMG': 1, 'INPUT': 1,
   'KEYGEN': 1, 'META': 1, 'NOBR': 1, 'PARAM': 1, 'PATH': 1, 'SOURCE': 1,

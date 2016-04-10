@@ -58,10 +58,10 @@ function feed_parser_find_channel(documentElement) {
   }
 }
 
-function feed_parser_get_entries(channel) {
+function feed_parser_get_entries(channelElement) {
   'use strict';
 
-  const documentElement = channel.ownerDocument.documentElement;
+  const documentElement = channelElement.ownerDocument.documentElement;
   const entries = [];
   let entryParent;
   let entryNodeName;
@@ -73,7 +73,7 @@ function feed_parser_get_entries(channel) {
     entryParent = documentElement;
     entryNodeName = 'ITEM';
   } else {
-    entryParent = channel;
+    entryParent = channelElement;
     entryNodeName = 'ITEM';
   }
 
@@ -89,41 +89,41 @@ function feed_parser_get_entries(channel) {
   return entries;
 }
 
-// Returns a lowercase type
+// Returns a lowercase type of the feed's type
+// TODO: maybe this shouldn't assume validity and should also check
+// for whether matches rss, and otherwise return null/undefined.
 function feed_parser_get_feed_type(documentElement) {
   'use strict';
 
-  // TODO: maybe this shouldn't assume validity and should also check
-  // for whether matches rss, and otherwise return null/undefined.
-
-  let type = null;
+  let typeString = null;
   if(documentElement.matches('feed')) {
-    type = 'feed';
+    typeString = 'feed';
   } else if(documentElement.matches('rdf')) {
-    type = 'rdf';
+    typeString = 'rdf';
   } else {
-    type = 'rss';
+    typeString = 'rss';
   }
 
-  return type;
+  return typeString;
 }
 
-function feed_parser_get_feed_date(channel) {
+function feed_parser_get_feed_date(channelElement) {
   'use strict';
 
-  const isAtom = channel.ownerDocument.documentElement.matches('feed');
+  const isAtom = channelElement.ownerDocument.documentElement.matches('feed');
   if(isAtom) {
-    return feed_parser_find_child_element_text(channel, 'UPDATED');
+    return feed_parser_find_child_element_text(channelElement, 'UPDATED');
   } else {
-    return feed_parser_find_child_element_text(channel, 'PUBDATE') ||
-      feed_parser_find_child_element_text(channel, 'LASTBUILDDATE') ||
-      feed_parser_find_child_element_text(channel, 'DATE');
+    return feed_parser_find_child_element_text(channelElement, 'PUBDATE') ||
+      feed_parser_find_child_element_text(channelElement, 'LASTBUILDDATE') ||
+      feed_parser_find_child_element_text(channelElement, 'DATE');
   }
 }
 
-// TODO: maybe just use element.matches('link[rel="alternate"]')
 function feed_parser_is_link_rel_alternate(element) {
   'use strict';
+
+  // TODO: maybe just use element.matches('link[rel="alternate"]')
 
   return string_equals_ignore_case(element.nodeName, 'LINK') &&
     string_equals_ignore_case(element.getAttribute('rel'), 'ALTERNATE');
@@ -152,26 +152,30 @@ function feed_parser_is_link_without_href(element) {
     !element.hasAttribute('href');
 }
 
-function feed_parser_get_feed_link(channel) {
+function feed_parser_get_feed_link(channelElement) {
   'use strict';
 
-  const isAtom = channel.ownerDocument.documentElement.matches('feed');
+  const isAtom = channelElement.ownerDocument.documentElement.matches('feed');
 
   let linkText, linkElement;
   if(isAtom) {
-    linkElement = feed_parser_find_child_element(channel,
+    linkElement = feed_parser_find_child_element(channelElement,
       feed_parser_is_link_rel_alternate) ||
-      feed_parser_find_child_element(channel, feed_parser_is_link_rel_self) ||
-      feed_parser_find_child_element(channel, feed_parser_is_link_with_href);
-    if(linkElement)
+      feed_parser_find_child_element(channelElement,
+        feed_parser_is_link_rel_self) ||
+      feed_parser_find_child_element(channelElement,
+        feed_parser_is_link_with_href);
+    if(linkElement) {
       linkText = linkElement.getAttribute('href');
+    }
+
   } else {
-    linkElement = feed_parser_find_child_element(channel,
+    linkElement = feed_parser_find_child_element(channelElement,
       feed_parser_is_link_without_href);
     if(linkElement) {
       linkText = linkElement.textContent;
     } else {
-      linkElement = feed_parser_find_child_element(channel,
+      linkElement = feed_parser_find_child_element(channelElement,
         feed_parser_is_link_with_href);
       if(linkElement)
         linkText = linkElement.getAttribute('href');
@@ -183,16 +187,18 @@ function feed_parser_get_feed_link(channel) {
   }
 }
 
-function feed_parser_parse_entry(entry) {
+// TODO: maybe I should define an Entry object within entry.js and this
+// should create a new Entry object and populate its fields
+function feed_parser_parse_entry(entryElement) {
   'use strict';
 
-  const isAtom = entry.ownerDocument.documentElement.matches('feed');
+  const isAtom = entryElement.ownerDocument.documentElement.matches('feed');
   const result = {};
-  result.title = feed_parser_find_child_element_text(entry, 'TITLE');
-  result.author = feed_parser_get_entry_author(entry);
-  result.link = feed_parser_get_entry_link(entry);
-  result.pubdate = feed_parser_get_entry_date(entry);
-  result.content = feed_parser_get_entry_content(entry);
+  result.title = feed_parser_find_child_element_text(entryElement, 'TITLE');
+  result.author = feed_parser_get_entry_author(entryElement);
+  result.link = feed_parser_get_entry_link(entryElement);
+  result.pubdate = feed_parser_get_entry_date(entryElement);
+  result.content = feed_parser_get_entry_content(entryElement);
 
   // NOTE: An enclosure is once per item
   // TODO: i suppose the url resolution processing that happens in other Lib
@@ -200,7 +206,8 @@ function feed_parser_parse_entry(entry) {
   // absolute so it is not an urgent issue
   // TODO: move this into a separate function similar to the helper functions
   // for other entry fields
-  const enclosure = feed_parser_find_child_element_by_name(entry, 'ENCLOSURE');
+  const enclosure = feed_parser_find_child_element_by_name(entryElement,
+    'ENCLOSURE');
   if(enclosure) {
     result.enclosure = {
       url: enclosure.getAttribute('url'),
@@ -317,7 +324,7 @@ function feed_parser_find_child_element(parentElement, predicate) {
   }
 }
 
-function feed_parser_find_child_element_by_name(parent, nodeName) {
+function feed_parser_find_child_element_by_name(parentElement, nodeName) {
   'use strict';
 
   // NOTE: nodeName is possibly or always lowercase, this has something to
@@ -328,7 +335,7 @@ function feed_parser_find_child_element_by_name(parent, nodeName) {
     return string_equals_ignore_case(element.nodeName, nodeName);
   }
 
-  return feed_parser_find_child_element(parent, isNodeNameEqual);
+  return feed_parser_find_child_element(parentElement, isNodeNameEqual);
 }
 
 function feed_parser_find_child_element_text(element, nodeName) {
@@ -338,9 +345,9 @@ function feed_parser_find_child_element_text(element, nodeName) {
     nodeName);
 
   if(childElement) {
-    const text = childElement.textContent;
-    if(text) {
-      return text.trim();
+    const childText = childElement.textContent;
+    if(childText) {
+      return childText.trim();
     }
   }
 }

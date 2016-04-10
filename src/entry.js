@@ -5,7 +5,7 @@
 // Entry utilities
 // Requires: /src/db.js
 
-var ENTRY_FLAGS = {
+const ENTRY_FLAGS = {
   UNREAD: 0,
   READ: 1,
   UNARCHIVED: 0,

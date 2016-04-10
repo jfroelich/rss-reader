@@ -7,12 +7,15 @@
 function image_transform_lazily_loaded(document) {
   'use strict';
 
-  // TODO: restrict to document.body.
+  const bodyElement = document.body;
+  if(!bodyElement) {
+    return;
+  }
 
-  const images = document.querySelectorAll('img');
-  const numImages = images.length;
-  for(let i = 0; i < numImages; i++) {
-    image_transform_lazily_loaded_image(images[i]);
+  const imageNodeList = bodyElement.querySelectorAll('img');
+  const listLength = imageNodeList.length;
+  for(let i = 0; i < listLength; i++) {
+    image_transform_lazily_loaded_image(imageNodeList[i]);
   }
 }
 

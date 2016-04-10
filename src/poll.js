@@ -13,6 +13,8 @@
 // Requires: /src/image.js
 // Requires: /src/image-dimensions.js
 // Requires: /src/net.js
+// Requires: /src/notification.js
+// Requires: /src/notrack.js
 // Requires: /src/resolve-urls.js
 // Requires: /src/url.js
 
@@ -30,6 +32,7 @@ function poll_start() {
     poll_on_check_idle_permission);
 }
 
+// TODO: move to net.js?
 function poll_is_online() {
   'use strict';
 
@@ -46,12 +49,13 @@ function poll_is_online() {
 
 function poll_on_check_idle_permission(permitted) {
   'use strict';
-  const IDLE_PERIOD = 60 * 5; // 5 minutes
+
+  const IDLE_PERIOD_IN_SECONDS = 60 * 5; // 5 minutes
 
   // If we are permitted to check idle state, then check it. Otherwise,
   // immediately continue to polling.
   if(permitted) {
-    chrome.idle.queryState(IDLE_PERIOD, poll_on_query_idle_state);
+    chrome.idle.queryState(IDLE_PERIOD_IN_SECONDS, poll_on_query_idle_state);
   } else {
     db_open(poll_iterate_feeds);
   }
@@ -108,8 +112,8 @@ function poll_on_fetch_feed(connection, feed, event, remoteFeed) {
   // TODO: rather than check if event is defined or not, check if event
   // has the proper type (e.g. type === 'load') or whatever it is
   if(event) {
-    //console.dir(event);
-    console.debug('Error fetching', feed.url);
+    console.debug('Error fetching:', feed.url);
+    console.dir(event);
     return;
   }
 
@@ -213,49 +217,50 @@ function poll_augment_entry_content(entry, timeout, callback) {
 // Otherwise, clean up the html. Remove urls, set image sizes, resolve urls.
 function poll_on_fetch_html(entry, callback, error, document, responseURL) {
   'use strict';
+
   if(error) {
     console.debug(error);
     callback();
     return;
   }
 
+  // TODO: eventually do something with this?
   if(responseURL !== entry.link) {
     console.debug('Response URL changed from %s to %s', entry.link,
       responseURL);
   }
 
-  poll_filter_blacklisted_urls(document);
-
+  no_track_filter_elements(document);
   image_transform_lazily_loaded(document);
   resolve_urls(document, responseURL);
-  const onSetDimensions = poll_on_set_image_dimensions.bind(null, entry, document,
-    callback);
+  const onSetDimensions = poll_on_set_image_dimensions.bind(null, entry,
+    document, callback);
   image_dimensions_set_all(document, onSetDimensions);
 }
 
-// Remove or modify elements with unwanted urls
-function poll_filter_blacklisted_urls(document) {
-  'use strict';
-  const images = document.querySelectorAll('img');
-  for(let i = 0, len = images.length, image, src; i < len; i++) {
-    image = images[i];
-
-    src = image.getAttribute('src');
-
-    if(src && /scorecardresearch\.com/i.test(src)) {
-      // console.debug('Removing:', image.outerHTML);
-      image.remove();
-    }
-  }
-}
-
 // Upon setting the sizes of images, replace the content property of the entry,
-// and then callback to signal to async.forEach to continue.
+// and then callback without arguments to signal to async.forEach to continue.
 function poll_on_set_image_dimensions(entry, document, callback) {
   'use strict';
-  const content = document.documentElement.outerHTML;
-  if(content) {
-    entry.content = content;
+
+  const documentElement = document.documentElement;
+  if(documentElement) {
+    const fullDocumentHTMLString = documentElement.outerHTML;
+    if(fullDocumentHTMLString) {
+      // Check for content length. This should reduce the number of empty
+      // articles.
+      // TODO: maybe I should be checking the content of body. In fact if
+      // there is no body element, maybe this shouldn't even be replacing
+      // entry.content at all. Maybe documentElement is the wrong thing
+      // to consider. Maybe I want to check body but use the full content
+      // of documentElement.
+      // Also, maybe I want to use an substitute message.
+      const trimmedString = fullDocumentHTMLString.trim();
+      if(trimmedString) {
+        entry.content = fullDocumentHTMLString;
+      }
+    }
   }
+
   callback();
 }

@@ -21,9 +21,9 @@ function style_onmessage(message) {
 chrome.runtime.onMessage.addListener(style_onmessage);
 
 // todo: this is not yet in use, but the idea is to remove media prefix
-var STYLE_BACKGROUND_BASE_PATH = '/images/';
+const STYLE_BACKGROUND_BASE_PATH = '/images/';
 
-var STYLE_BACKGROUND_IMAGES = [
+const STYLE_BACKGROUND_IMAGES = [
   '/images/bgfons-paper_texture318.jpg',
   '/images/CCXXXXXXI_by_aqueous.jpg',
   '/images/paper-backgrounds-vintage-white.jpg',
@@ -45,7 +45,7 @@ var STYLE_BACKGROUND_IMAGES = [
   '/images/thomas-zucx-noise-lines.png'
 ];
 
-var STYLE_FONT_FAMILIES = [
+const STYLE_FONT_FAMILIES = [
   'ArchivoNarrow-Regular',
   'Arial, sans-serif',
   'Calibri',

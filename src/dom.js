@@ -14,9 +14,8 @@
 // this is slow is because of the possible inert-live transition.
 // Using insertAdjacentHTML and innerHTML do not work that well, because
 // that requires marshalling/unmarshalling.
-function dom_append_children(source, destination) {
+function dom_append_children(sourceElement, destinationElement) {
   'use strict';
-
 
   // NOTE: this is where nodes in an inert content 'go live'. This is where
   // XSS happens. This is where Chrome eagerly prefetches images. And as a
@@ -41,13 +40,15 @@ function dom_append_children(source, destination) {
   // removed from its previous parent, meaning that the next child becomes the
   // parent.firstChild node. This is why we reassign node to firstChild again
   // and not child.nextSibling.
-  for(let node = source.firstChild; node; node = source.firstChild) {
-    destination.appendChild(node);
+  for(let node = sourceElement.firstChild; node;
+    node = sourceElement.firstChild) {
+    destinationElement.appendChild(node);
   }
 }
 
 function dom_insert_children_before(parentNode, referenceNode) {
   'use strict';
+
   const referenceParent = referenceNode.parentNode;
   for(let node = parentNode.firstChild; node; node = parentNode.firstChild) {
     referenceParent.insertBefore(node, referenceNode);
@@ -59,6 +60,7 @@ function dom_insert_children_before(parentNode, referenceNode) {
 // referenceNode is optional.
 function dom_unwrap(element, referenceNode) {
   'use strict';
+
   const target = referenceNode || element;
   const parent = target.parentNode;
   if(parent) {

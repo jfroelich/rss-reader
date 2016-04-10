@@ -83,7 +83,7 @@ I do not like how I am repeatedly trimming several text nodes. This feels
 sluggish.
 */
 
-var UNWRAPPABLE_SELECTOR = [
+const UNWRAPPABLE_SELECTOR = [
   'ABBR', 'ACRONYM', 'ARTICLE', 'ASIDE', 'CENTER', 'COLGROUP', 'DATA',
   'DETAILS', 'DIV', 'FOOTER', 'HEADER', 'HELP', 'HGROUP', 'ILAYER',
   'INSERT', 'LAYER', 'LEGEND', 'MAIN', 'MARK', 'MARQUEE', 'METER',

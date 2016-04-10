@@ -4,15 +4,17 @@
 
 // indexedDB functionality
 
-// NOTE: using var instead of const in global scope because i don't want
-// global strict mode and i cannot use const outside of strict mode in chrome
-// (yet)
-
-var DB_NAME = 'reader';
-var DB_VERSION = 17;
+// TODO: just store scheme and schemeless props as parts of a url object
+// property? remember that indexeddb can access deeper props using '.' in
+// keypaths, right?
+// TODO: store urls as URL objects?
 
 function db_open(callback) {
   'use strict';
+
+  const DB_NAME = 'reader';
+  const DB_VERSION = 17;
+
   const request = indexedDB.open(DB_NAME, DB_VERSION);
   request.onupgradeneeded = db_upgrade;
   request.onsuccess = callback;
@@ -129,6 +131,9 @@ function db_get_all_feeds(connection, callback) {
   request.onsuccess = on_success;
 }
 
+// TODO: should this also update a dateUpdated property of the entry?
+// TODO: should something else be responsible for the badge update stuff, like
+// a decoupled listener?
 function db_mark_entry_as_read(connection, entryId) {
   'use strict';
 
@@ -165,10 +170,16 @@ function db_mark_entry_as_read(connection, entryId) {
   request.onsuccess = on_success;
 }
 
+// TODO: look into whether there is a batch delete operation
 function db_remove_entries_by_feed(connection, id, callback) {
   'use strict';
 
-  // TODO: look into whether there is a batch delete operation
+  const transaction = connection.transaction('entry', 'readwrite');
+  transaction.oncomplete = callback;
+  const store = transaction.objectStore('entry');
+  const index = store.index('feed');
+  const request = index.openCursor(id);
+  request.onsuccess = on_success;
 
   function on_success(event) {
     const cursor = event.target.result;
@@ -177,13 +188,6 @@ function db_remove_entries_by_feed(connection, id, callback) {
       cursor.continue();
     }
   }
-
-  const transaction = connection.transaction('entry', 'readwrite');
-  transaction.oncomplete = callback;
-  const store = transaction.objectStore('entry');
-  const index = store.index('feed');
-  const request = index.openCursor(id);
-  request.onsuccess = on_success;
 }
 
 function db_remove_feed(connection, id, callback) {
@@ -193,6 +197,17 @@ function db_remove_feed(connection, id, callback) {
   const request = store.delete(id);
   request.onsuccess = callback;
 }
+
+// TODO: maybe make a separate private helper function that prepares the
+// entry for storage, as opposed to doing it all in a single function
+// TODO: maybe the prepareEntryForStorage function should be its own global
+// function and the caller has the responsibility of preparation and then the
+// only concern of this function is to do an update?
+// TODO: i really just don't like the fact I have to wrap the callback
+// function, so think about this would have to be changed to not do that
+// TODO: make sure pubdate has a consistent value. I am using
+// date.getTime here, but I am not sure I am using the same
+// or similar every where else. Like in poll denormalize
 
 function db_store_entry(connection, entry, callback) {
   'use strict';
@@ -266,6 +281,12 @@ function db_sanitize_value(value) {
   }
 }
 
+
+// TODO: check last modified date of the remote xml file to avoid
+// pointless updates?
+// TODO: ensure the date is not beyond the current date?
+// TODO: maybe not modify date updated if not dirty
+// TODO: sanitize html entities?
 function db_store_feed(connection, original, feed, callback) {
   'use strict';
 

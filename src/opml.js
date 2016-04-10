@@ -286,11 +286,13 @@ function opml_select_outline_elements(document) {
 function opml_parse_string(string) {
   'use strict';
 
-  // Allow parsing exceptions to bubble up
+  // xml_parse_string throws some exceptions that we intentionally just
+  // pass onward
   const document = xml_parse_string(string);
 
   // document and document element are now guaranteed defined because
-  // otherwise xml_parse_string throws an exception
+  // otherwise xml_parse_string throws an exception, so we do not need
+  // to check if defined
 
   // We still have to check that the xml document represents an opml document
   if(!opml_is_opml_element(document.documentElement)) {

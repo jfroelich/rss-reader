@@ -13,13 +13,23 @@ function calamine_remove_boilerplate(document) {
 
   let bestElement = calamine_find_signature(document) ||
     calamine_find_highest_scoring_element(document);
+
   if(bestElement !== document.documentElement) {
     calamine_prune(document, bestElement);
   }
 }
 
-var CALAMINE_SIGNATURES = [
-  'ARTICLE',
+// NOTE: we cannot use just article, because it screws up on certain pages.
+// This may be a symptom of a larger problem of trying to use a fast path.
+// For example, in https://news.vice.com/article/north-korea-claims-new-
+// missile-engine-puts-us-within-nuclear-strike-range, it finds
+// the one <article> element that isn't the desired best element.
+// For now I am using this ugly hack to avoid that one error case. I really
+// do not like this and it suggests the entire fast-path thing should be
+// scrapped.
+
+const CALAMINE_SIGNATURES = [
+  'article:not([class*="ad"])',
   '.hentry',
   '.entry-content',
   '#article',
@@ -61,8 +71,6 @@ function calamine_find_signature(document) {
     }
   }
 }
-
-
 
 // Scores each of the candidate elements and returns the one with
 // the highest score
@@ -158,7 +166,7 @@ function calamine_derive_nav_bias(element) {
   return element.closest(NAV_SELECTOR) ? -500.0 : 0.0;
 }
 
-var CALAMINE_ANCESTOR_BIAS = {
+const CALAMINE_ANCESTOR_BIAS = {
   'A': -5.0,
   'ASIDE': -50.0,
   'BLOCKQUOTE': 20.0,

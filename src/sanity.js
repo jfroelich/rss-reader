@@ -13,8 +13,14 @@
 // TODO: research why some articles appear without content. I know pdfs
 // work this way, but look into the issue with other ones.
 
+// TODO: look into issues with rendering google groups pages.
+// For example:
+// view-source:https://groups.google.com/forum/#!topic/golang-nuts/MmSbFHLPo8g
+// The content in the body after the <xmp>.<xmp> shows up as encoded? Maybe
+// it is due to the single <plaintext/> tag preceding it? I can't tell what is
+// going on. Does the parser screw up?
+
 // TODO: explicit handling of noembed/audio/video/embed
-// TODO: explicit handling of noscript
 
 // TODO: maybe I should have some other function
 // that deals with malformed html and removes all nodes that do not conform
@@ -23,7 +29,6 @@
 
 // TODO: some things i want to maybe deal with at this url
 // view-source:http://stevehanov.ca/blog/index.php?id=132
-
 // It is using sprites. So transp is ignored. osrc is also ignored, i think it
 // was macromedia dreamweaver rollover code that also just serves as a reminder
 // of the desired original image source if rollover is disabled, and then
@@ -33,27 +38,33 @@
 // I would have to modify a lot of things to support this. I would have to
 // make sure urls appropriate resolved, that image not incorrectly removed,
 // and i would have to partially retain style value.
+// Another issue with that page is flow formatting, maybe I want to correct
+// this or maybe I want to allow it, not sure. Specifically H1s within anchors
 
-// Another issue with the page is flow formatting, maybe I want to correct
-// this or maybe I want to allow it, not sure.
-// * H1s within anchors?
-
-// TODO: due to handling of <noscript> this is causing articles from
-// fortune.com to appear empty. Remove noscript from blacklisted elements.
-// Then write a function that handles noscript specially.
-
-
+// TODO: there are quirks with malformed html. See this page
+// http://blog.hackerrank.com/step-0-before-you-do-anything/
+// It has an error with a noscript node. The guy forgot the < to start the
+// nested script tag in it. So, part of its contents becomes a text node. This
+// text node is somehow the first text node of the body in the DOM hierarchy
+// represented to me in JS, even though it is not located within the body.
+// Because it isn't filtered by the blacklist or anything, it shows up really
+// awkwardly within the output as the first piece of body text.
+//
+// TODO: if I have no use for nodes outside of body, maybe it makes sense to
+// just explicitly removal all such nodes.
 function sanity_sanitize_document(document) {
   'use strict';
 
   sanity_filter_comments(document);
   sanity_replace_frames(document);
-
   sanity_filter_noscripts(document);
 
-  // sanity_filter_out_of_body_nodes(document);
   sanity_filter_blacklisted_elements(document);
+
+
+
   sanity_filter_hidden_elements(document);
+
 
   // This feature is disabled because it does not work very well right now
   // and is not too critical.
@@ -62,6 +73,9 @@ function sanity_sanitize_document(document) {
   sanity_filter_anchors(document);
   sanity_filter_images(document);
   sanity_filter_unwrappables(document);
+
+  sanity_filter_figures(document);
+
   sanity_filter_texts(document);
   sanity_filter_lists(document);
   sanity_filter_tables(document);
@@ -111,6 +125,7 @@ function sanity_filter_blacklisted_elements(document) {
     'SCRIPT', 'SELECT', 'SPACER', 'STYLE', 'SVG', 'TEXTAREA', 'TITLE',
     'VIDEO', 'XMP'
   ];
+
   const BLACKLIST_SELECTOR = BLACKLIST.join(',');
 
   const docElement = document.documentElement;
@@ -124,32 +139,6 @@ function sanity_filter_blacklisted_elements(document) {
   }
 }
 
-// This function is temp, just researching an issue
-function sanity_filter_out_of_body_nodes(document) {
-  'use strict';
-
-  // See this page
-  // http://blog.hackerrank.com/step-0-before-you-do-anything/
-  // It has an error with a noscript node. The guy forgot the < to start the
-  // nested script tag in it. So, part of its contents becomes a
-  // text node. This text node is somehow the first text node of the body in
-  // the DOM hierarchy represented to me in JS,
-  // even though it is not located within the body. Because it isn't filtered
-  // by the blacklist or anything, it shows up really awkwardly within the
-  // output as the first piece of body text.
-
-  const docElement = document.documentElement;
-  const body = document.body;
-  if(!body) {
-    return;
-  }
-
-  const iterator = document.createNodeIterator(body, NodeFilter.SHOW_TEXT);
-  for(let node = iterator.nextNode(); node; node = iterator.nextNode()) {
-    console.debug('Text:', node);
-  }
-}
-
 function sanity_filter_comments(document) {
   'use strict';
 
@@ -160,34 +149,34 @@ function sanity_filter_comments(document) {
   }
 }
 
-// TODO: research why content sometimes appears garbled, like encoded, as if
-// it is re-encoding html, when using content of noframes
+
 // TODO: what if both body and frameset are present?
+// TODO: there can be multiple bodies when illformed. Maybe use
+// querySelectorAll and handle multi-body branch differently
 function sanity_replace_frames(document) {
   'use strict';
 
-  // TODO: there can be multiple bodies when illformed. Maybe use
-  // querySelectorAll and handle multi-body branch differently
-
-  const frameset = document.body;
-  if(!frameset || frameset.nodeName !== 'FRAMESET') {
+  const framesetElement = document.body;
+  if(!framesetElement || framesetElement.nodeName !== 'FRAMESET') {
     return;
   }
 
-  const body = document.createElement('BODY');
+  const bodyElement = document.createElement('BODY');
   const noframes = document.querySelector('NOFRAMES');
   if(noframes) {
-    body.innerHTML = noframes.innerHTML;
+    for(let node = noframes.firstChild; node; node = noframes.firstChild) {
+      bodyElement.appendChild(node);
+    }
   } else {
-    body.textContent = 'Unable to display framed document.';
+    const errorTextNode = document.createTextNode(
+      'Unable to display framed document.');
+    bodyElement.appendChild(errorTextNode);
   }
 
-  frameset.remove();
-  document.documentElement.appendChild(body);
+  framesetElement.remove();
+  document.documentElement.appendChild(bodyElement);
 }
 
-// NOTE: anchor.protocol === 'javascript:' is slower than using a regular
-// expression
 function sanity_filter_anchors(document) {
   'use strict';
 
@@ -196,13 +185,17 @@ function sanity_filter_anchors(document) {
     return;
   }
 
+  // This looks for anchors that contain inline script. I tested using
+  // anchor.protocol === 'javascript:' and found that it was subtantially
+  // slower than using a RegExp.
+
   const anchors = bodyElement.querySelectorAll('A');
   const numAnchors = anchors.length;
   const JS_PATTERN = /^\s*JAVASCRIPT\s*:/i;
-  const MIN_HREF_LEN = 'JAVASCRIPT'.length;
+  const MIN_HREF_LEN = 'JAVASCRIPT:'.length;
 
-  // NOTE: i decided to not care about how hasAttribute returns true even
-  // if its value is an empty string. I save a lot of processing.
+  // NOTE: hasAttribute is true for empty attribute values, but I am not
+  // concerned with this at the moment.
 
   for(let i = 0, anchor, href; i < anchors; i++) {
     anchor = anchors[i];
@@ -221,6 +214,7 @@ function sanity_filter_anchors(document) {
   }
 }
 
+// TODO: support DT/DD ?
 function sanity_filter_lists(document) {
   'use strict';
 
@@ -229,10 +223,9 @@ function sanity_filter_lists(document) {
     return;
   }
 
-  // TODO: support DT/DD ?
-
   const lists = bodyElement.querySelectorAll('UL, OL');
-  for(let i = 0, len = lists.length, list, item; i < len; i++) {
+  const numLists = lists.length;
+  for(let i = 0, list, item; i < numLists; i++) {
     list = lists[i];
     if(list.childElementCount === 1) {
       item = list.firstElementChild;
@@ -282,6 +275,8 @@ function sanity_filter_consecutive_break_rules(document) {
   }
 }
 
+// TODO: improve, this is very buggy
+// error case: http://paulgraham.com/procrastination.html
 function sanity_replace_break_rules(document) {
   'use strict';
 
@@ -289,9 +284,6 @@ function sanity_replace_break_rules(document) {
   if(!bodyElement) {
     return;
   }
-
-  // TODO: improve, this is very buggy
-  // error case: http://paulgraham.com/procrastination.html
 
   const elements = bodyElement.querySelectorAll('BR');
   const numElements = elements.length;
@@ -359,6 +351,28 @@ function sanity_remove_trimmable_nodes_by_step(startNode, step) {
     sibling = node[step];
     node.remove();
     node = sibling;
+  }
+}
+
+// If a figure has only one child element image, then it is useless.
+// NOTE: boilerplate analysis examines figures, so ensure this is not done
+// before it.
+function sanity_filter_figures(document) {
+  'use strict';
+
+  const bodyElement = document.body;
+  if(!bodyElement) {
+    return;
+  }
+
+  const figures = bodyElement.querySelectorAll('FIGURE');
+  const numFigures = figures.length;
+  for(let i = 0, figure; i < numFigures; i++) {
+    figure = figures[i];
+    if(figure.childElementCount === 1) {
+      // console.debug('Unwrapping basic figure:', figure.outerHTML);
+      dom_unwrap(figure, null);
+    }
   }
 }
 

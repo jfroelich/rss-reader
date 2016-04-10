@@ -84,12 +84,9 @@ function slideshow_filter_article_title(title) {
 function slideshow_maybe_append_slides() {
   'use strict';
 
-
   const unreadCount = slideshow_count_unread();
-
   if(unreadCount) {
-    // There are still some unread slides loaded, so do not bother
-    // appending
+    // There are still some unread slides loaded, so do not bother appending
     return;
   }
 
@@ -428,7 +425,7 @@ function slideshow_hide_all_unread() {
   console.warn('slideshow_hide_all_unread not implemented');
 }
 
-var SLIDESHOW_KEY_CODES = {
+const SLIDESHOW_KEY_CODES = {
   'SPACE': 32,
   'PAGE_UP': 33,
   'PAGE_DOWN': 34,
@@ -440,14 +437,14 @@ var SLIDESHOW_KEY_CODES = {
   'P': 80
 };
 
-var SLIDESHOW_SCROLL_DELTAS = {
+const SLIDESHOW_SCROLL_DELTAS = {
   '40': [50, 200],
   '34': [100, 800],
   '38': [-50, -200],
   '33': [-100, -800]
 };
 
-var slideshow_keydown_timer;
+let slideshow_keydown_timer;
 
 function slideshow_onkeydown(event) {
   'use strict';

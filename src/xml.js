@@ -4,13 +4,14 @@
 
 // XML routines
 
-// Parses a string into a document
-function xml_parse_string(string) {
+// Parses a string containing xml into an XML document
+// Note that node.nodeName works differently for xml documents.
+function xml_parse_string(xmlString) {
   'use strict';
 
   const parser = new DOMParser();
   const MIME_TYPE_XML = 'application/xml';
-  const document = parser.parseFromString(string, MIME_TYPE_XML);
+  const document = parser.parseFromString(xmlString, MIME_TYPE_XML);
 
   // TODO: are document or documentElement ever undefined? I feel like
   // parseFromString guarantees they are defined or else it would throw

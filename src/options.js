@@ -4,16 +4,19 @@
 
 // Requires: /src/db.js
 // Requires: /src/dom.js
-// Requires: /src/net.js
+// Requires: /src/fade-element.js
+// Requires: /src/favicon.js
 // Requires: /src/html.js
+// Requires: /src/net.js
 // Requires: /src/opml.js
 // Requires: /src/string.js
 // Requires: /src/subscription.js
+// Requires: /src/url.js
 
 // TODO: what are these? elements? ints? use clearer names
 // TODO: maybe make an OptionsMenu class and have these be member variables
-var options_currentMenuItem = null;
-var options_currentSection = null;
+let options_currentMenuItem = null;
+let options_currentSection = null;
 
 // Hides the error message
 // TODO: maybe make an OptionsPageErrorMessage class and have this be
@@ -35,80 +38,85 @@ function options_hide_error() {
   errorMessage.remove();
 }
 
-function options_show_error(message, fadeIn) {
+function options_show_error(messageString, fadeIn) {
   'use strict';
 
   options_hide_error();
 
-  const elMessage = document.createElement('span');
-  elMessage.textContent = message;
+  const errorWidgetElement = document.createElement('div');
+  errorWidgetElement.setAttribute('id','options_error_message');
+
+  const messageElement = document.createElement('span');
+  messageElement.textContent = messageString;
+  errorWidgetElement.appendChild(messageElement);
 
   const dismissButton = document.createElement('button');
-  dismissButton.setAttribute('id','options_dismiss_error_button');
+  dismissButton.setAttribute('id', 'options_dismiss_error_button');
   dismissButton.textContent = 'Dismiss';
   dismissButton.onclick = options_hide_error;
-
-  const container = document.createElement('div');
-  container.setAttribute('id','options_error_message');
-  container.appendChild(elMessage);
-  container.appendChild(dismissButton);
+  errorWidgetElement.appendChild(dismissButton);
 
   if(fadeIn) {
-    container.style.opacity = '0';
-    document.body.appendChild(container);
+    errorWidgetElement.style.opacity = '0';
+    document.body.appendChild(errorWidgetElement);
     fade_element(container, 1, 0);
   } else {
-    container.style.display = '';
-    container.style.opacity = '1';
-    document.body.appendChild(container);
+    errorWidgetElement.style.opacity = '1';
+    dom_show_element(errorWidgetElement);
+    document.body.appendChild(errorWidgetElement);
   }
 }
 
 // TODO: instead of removing and re-adding, reset and reuse
 // TODO: maybe make an OptionsSubscriptionMonitor class and have this just be
-// a member function.
+// a member function. Call it a widget.
 function options_show_sub_monitor() {
   'use strict';
 
   options_reset_sub_monitor();
 
-  const container = document.createElement('div');
-  container.setAttribute('id', 'options_subscription_monitor');
-  container.style.opacity = '1';
-  document.body.appendChild(container);
+  const monitorElement = document.createElement('div');
+  monitorElement.setAttribute('id', 'options_subscription_monitor');
+  monitorElement.style.opacity = '1';
+  document.body.appendChild(monitorElement);
 
-  const progress = document.createElement('progress');
-  progress.textContent = 'working...';
-  container.appendChild(progress);
+  const progressElement = document.createElement('progress');
+  progressElement.textContent = 'Working...';
+  monitorElement.appendChild(progressElement);
 }
 
 function options_reset_sub_monitor() {
   'use strict';
-  const subMonitor = document.getElementById('options_subscription_monitor');
-  if(subMonitor) {
-    subMonitor.remove();
+
+  const monitorElement = document.getElementById(
+    'options_subscription_monitor');
+  if(monitorElement) {
+    monitorElement.remove();
   }
 }
 
-function options_update_sub_monitor(message) {
+function options_update_sub_monitor(messageString) {
   'use strict';
 
-  const subMonitor = document.getElementById('options_subscription_monitor');
-  if(!subMonitor) {
+  const monitorElement = document.getElementById(
+    'options_subscription_monitor');
+  if(!monitorElement) {
+    console.error('No element with id options_subscription_monitor found');
     return;
   }
 
-  const messageContainer = document.createElement('p');
-  messageContainer.textContent = message;
-  subMonitor.appendChild(messageContainer);
+  const messageElement = document.createElement('p');
+  messageElement.textContent = messageString;
+  monitorElement.appendChild(messageElement);
 }
 
 function options_hide_sub_monitor(callback, fadeOut) {
   'use strict';
 
-  const subMonitor = document.getElementById('options_subscription_monitor');
+  const monitorElement = document.getElementById(
+    'options_subscription_monitor');
 
-  if(!subMonitor) {
+  if(!monitorElement) {
     if(callback) {
       callback();
       return;
@@ -116,14 +124,14 @@ function options_hide_sub_monitor(callback, fadeOut) {
   }
 
   if(fadeOut) {
-    fade_element(subMonitor, 2, 1, remove_then_call_callback);
+    fade_element(monitorElement, 2, 1, remove_then_call_callback);
   } else {
     remove_then_call_callback();
   }
 
   function remove_then_call_callback() {
-    if(subMonitor) {
-      subMonitor.remove();
+    if(monitorElement) {
+      monitorElement.remove();
     }
 
     if(callback) {
@@ -321,6 +329,8 @@ function options_hide_sub_preview() {
   dom_hide_element(previewElement);
   const resultsListElement = document.getElementById(
     'subscription-preview-entries');
+
+  // TODO: create and use dom_clear_element
   while(resultsListElement.firstChild) {
     resultsListElement.firstChild.remove();
   }
@@ -342,62 +352,72 @@ function options_start_subscription(url) {
   options_update_sub_monitor('Subscribing...');
   db_open(on_open);
 
+  function on_hide_monitor_show_connection_error() {
+    options_show_error(
+      'An error occurred while trying to subscribe to ' + url);
+  }
+
   function on_open(event) {
     if(event.type !== 'success') {
       console.debug(event);
-      options_hide_sub_monitor(function on_hide() {
-        options_show_error(
-          'An error occurred while trying to subscribe to ' + url);
-      });
+      options_hide_sub_monitor(on_hide_monitor_show_connection_error);
       return;
     }
 
     const connection = event.target.result;
-
-    db_find_feed_by_url(connection, url, on_find.bind(null, connection));
+    const boundOnFindFeed = on_find_feed.bind(null, connection);
+    db_find_feed_by_url(connection, url, boundOnFindFeed);
   }
 
-  function on_find(connection, event) {
+  function on_hide_monitor_show_exists_error() {
+    options_show_error('Already subscribed to ' + url + '.');
+  }
+
+  function on_find_feed(connection, event) {
     if(event.target.result) {
-      options_hide_sub_monitor(function on_hide() {
-        options_show_error('Already subscribed to ' + url + '.');
-      });
+      options_hide_sub_monitor(on_hide_monitor_show_exists_error);
       return;
     }
 
-    if(!window.navigator.onLine) {
+    // TODO: call out to net function
+    if(!navigator.onLine) {
       db_store_feed(connection, null, {url: url}, onSubscribe);
     } else {
-      net_fetch_feed(url, 10 * 1000, on_fetch.bind(null, connection));
+      const boundOnFetchFeed = on_fetch_feed.bind(null, connection);
+      net_fetch_feed(url, 10 * 1000, boundOnFetchFeed);
     }
   }
 
-  function on_fetch(connection, event, remoteFeed) {
+  function on_hide_show_fetch_error() {
+    options_show_error('An error occurred while trying to subscribe to ' +
+      url);
+  }
+
+  function on_fetch_feed(connection, event, remoteFeed) {
     if(event) {
       console.dir(event);
-      options_hide_sub_monitor(function on_hide() {
-        options_show_error('An error occurred while trying to subscribe to ' +
-          url);
-      });
+      options_hide_sub_monitor(on_hide_show_fetch_error);
       return;
     }
 
-    db_store_feed(connection, null, remoteFeed, function on_store(newId) {
+    db_store_feed(connection, null, remoteFeed, on_store_feed);
+
+    function on_store_feed(newId) {
       remoteFeed.id = newId;
       on_subscribe(remoteFeed, 0, 0);
-    });
+    }
+  }
+
+  function on_hide_monitor_sub_completed() {
+    const subSection = document.getElementById('mi-subscriptions');
+    options_show_section(subSection);
   }
 
   function on_subscribe(addedFeed) {
     options_append_feed(addedFeed, true);
     options_update_feed_count();
     options_update_sub_monitor('Subscribed to ' + url);
-    options_hide_sub_monitor(on_hide, true);
-
-    function on_hide() {
-      const subSection = document.getElementById('mi-subscriptions');
-      options_show_section(subSection);
-    }
+    options_hide_sub_monitor(on_hide_monitor_sub_completed, true);
 
     // Show a notification
     const title = addedFeed.title || addedFeed.url;
@@ -411,13 +431,13 @@ function populateFeedDetailsSection(feedId) {
   'use strict';
 
   if(!feedId) {
-    console.debug('Invalid feedId');
+    console.error('Invalid feedId');
     return;
   }
 
-  db_open(on_open);
+  db_open(on_open_db);
 
-  function on_open(event) {
+  function on_open_db(event) {
     if(event.type !== 'success') {
       // TODO: show an error message?
       console.debug('Database connection error');
@@ -559,7 +579,8 @@ function options_on_discover_subscribe_click(event) {
     return;
   }
 
-  // TODO: Ignore future clicks if error was displayed?
+  // TODO: Ignore future clicks if an error was displayed?
+
   // Ignore future clicks while subscription in progress
   const subMonitor = document.getElementById('options_subscription_monitor');
   if(subMonitor && dom_is_element_visible(subMonitor)) {
@@ -612,9 +633,9 @@ function options_on_discover_complete(errorEvent, query, results) {
     dom_show_element(resultsList);
   }
 
-  // Add an initial count as one of the list items
+  // Add an initial count of the number of feeds as one of the feed list items
   const listItem = document.createElement('li');
-  // TODO: use Javascript's new template feature here
+  // TODO: consider using Javascript's new template feature here
   listItem.textContent = 'Found ' + results.length + ' results.';
   resultsList.appendChild(listItem);
 
@@ -672,6 +693,12 @@ function options_on_unsubscribe_click(event) {
   const unsubscribeButton = event.target;
   const feedIdString = button.value;
   const feedId = parseInt(feedIdString, 10);
+
+  if(!feedId || isNaN(feedId)) {
+    console.error('Invalid feed id:', feedIdString);
+    return;
+  }
+
   unsubscribe(feedId, options_on_unsubscribe);
 }
 
@@ -708,17 +735,6 @@ function options_on_unsubscribe(event) {
   // Switch to the main view
   const sectionMenu = document.getElementById('mi-subscriptions');
   options_show_section(sectionMenu);
-}
-
-function options_on_enable_rewriting_change(event) {
-  'use strict';
-
-  const checkboxElement = event.target;
-  if(checkboxElement.checked) {
-    localStorage.URL_REWRITING_ENABLED = '1';
-  } else {
-    delete localStorage.URL_REWRITING_ENABLED;
-  }
 }
 
 // TODO: needs to notify the user of a successful
@@ -840,6 +856,17 @@ function options_on_export_opml_click_on_get_feeds(feeds) {
   // TODO: show a message?
 }
 
+function options_on_enable_rewriting_change(event) {
+  'use strict';
+
+  const checkboxElement = event.target;
+  if(checkboxElement.checked) {
+    localStorage.URL_REWRITING_ENABLED = '1';
+  } else {
+    delete localStorage.URL_REWRITING_ENABLED;
+  }
+}
+
 function options_on_header_font_change(event){
   'use strict';
   if(event.target.value)
@@ -942,7 +969,6 @@ function options_on_nav_feed_click(event) {
 function options_init_sub_section() {
   'use strict';
 
-
   let feedCount = 0;
 
   db_open(on_open);
@@ -977,7 +1003,6 @@ function options_init_sub_section() {
   }
 }
 
-
 function options_init(event) {
   'use strict';
 
@@ -1008,13 +1033,17 @@ function options_init(event) {
   }
 
   // Init the general settings page
-  document.getElementById('enable-notifications').onclick =
-    options_on_enable_notifications_change;
+  const enableNotificationsCheckbox = document.getElementById(
+    'enable-notifications');
+  enableNotificationsCheckbox.onclick = options_on_enable_notifications_change;
 
-  chrome.permissions.contains({permissions: ['notifications']},
-    function has_notifications_permission(permitted) {
-    document.getElementById('enable-notifications').checked = permitted;
-  });
+  function has_notifications_permission(permitted) {
+    enableNotificationsCheckbox.checked = permitted;
+  }
+
+  const notificationsPermissionQuery = {'permissions': ['notifications']};
+  chrome.permissions.contains(notificationsPermissionQuery,
+    has_notifications_permission);
 
   document.getElementById('enable-background').onclick =
     options_on_enable_background_change;

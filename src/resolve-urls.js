@@ -35,7 +35,7 @@ function resolve_remove_base_elements(document) {
   }
 }
 
-var RESOLVE_URL_ATTRIBUTE_MAP = {
+const RESOLVE_URL_ATTRIBUTE_MAP = {
   'a': 'href',
   'applet': 'codebase',
   'area': 'href',
@@ -178,6 +178,8 @@ function resolve_serialize_srcset(descriptors) {
     resolvedDescriptors.push(newString);
   }
 
-  // i believe a comma is what joins? have not researched
-  return resolvedDescriptors.join(',');
+  // There must be a comma after the space, otherwise a comma can be
+  // misinterpreted as part of the url (I guess?). I witnessed image fetch
+  // errors where it looked like this was the case.
+  return resolvedDescriptors.join(', ');
 }
