@@ -9,6 +9,7 @@
 // Requires: /src/sanity-table.js
 // Requires: /src/sanity-unwrap.js
 // Requires: /src/sanity-visibility.js
+// Requires: /src/string.js
 
 // TODO: research why some articles appear without content. I know pdfs
 // work this way, but look into the issue with other ones.
@@ -26,6 +27,9 @@
 // that deals with malformed html and removes all nodes that do not conform
 // to <html><head>*</head><body>*</body></html> and then none of the sanity
 // functions need to be concerned.
+
+// TODO: if I have no use for nodes outside of body, maybe it makes sense to
+// just explicitly removal all such nodes.
 
 // TODO: some things i want to maybe deal with at this url
 // view-source:http://stevehanov.ca/blog/index.php?id=132
@@ -49,9 +53,7 @@
 // represented to me in JS, even though it is not located within the body.
 // Because it isn't filtered by the blacklist or anything, it shows up really
 // awkwardly within the output as the first piece of body text.
-//
-// TODO: if I have no use for nodes outside of body, maybe it makes sense to
-// just explicitly removal all such nodes.
+
 function sanity_sanitize_document(document) {
   'use strict';
 
@@ -71,6 +73,7 @@ function sanity_sanitize_document(document) {
   //sanity_replace_break_rules(document);
 
   sanity_filter_anchors(document);
+  no_track_filter_tiny_images(document);
   sanity_filter_images(document);
   sanity_filter_unwrappables(document);
 
@@ -214,7 +217,7 @@ function sanity_filter_anchors(document) {
   }
 }
 
-// TODO: support DT/DD ?
+// Unwrap lists with only one item.
 function sanity_filter_lists(document) {
   'use strict';
 
@@ -223,15 +226,21 @@ function sanity_filter_lists(document) {
     return;
   }
 
-  const lists = bodyElement.querySelectorAll('UL, OL');
-  const numLists = lists.length;
-  for(let i = 0, list, item; i < numLists; i++) {
-    list = lists[i];
-    if(list.childElementCount === 1) {
-      item = list.firstElementChild;
-      if(item.nodeName === 'LI') {
-        dom_insert_children_before(item, list);
-        list.remove();
+  const ITEM_ELEMENT_NAMES = {'LI': 1, 'DT': 1, 'DD': 1};
+
+  const listNodeList = bodyElement.querySelectorAll('UL, OL, DL');
+  const nodeListLength = listNodeList.length;
+  for(let i = 0, listElement, itemElement; i < nodeListLength; i++) {
+    listElement = listNodeList[i];
+    if(listElement.childElementCount === 1) {
+      itemElement = listElement.firstElementChild;
+      if(itemElement.nodeName in ITEM_ELEMENT_NAMES) {
+        listElement.parentNode.insertBefore(document.createTextNode(' '),
+          listElement);
+        dom_insert_children_before(itemElement, listElement);
+        listElement.parentNode.insertBefore(document.createTextNode(' '),
+          listElement);
+        listElement.remove();
       }
     }
   }
@@ -285,17 +294,19 @@ function sanity_replace_break_rules(document) {
     return;
   }
 
-  const elements = bodyElement.querySelectorAll('BR');
-  const numElements = elements.length;
+  const nodeList = bodyElement.querySelectorAll('BR');
+  const listLength = nodeList.length;
 
-  for(let i = 0, element, parent, p; i < numElements; i++) {
-    element = elements[i];
-    parent = element.parentNode;
+  for(let i = 0, brElement, parent, p; i < listLength; i++) {
+    brElement = nodeList[i];
+    parent = brElement.parentNode;
     p = document.createElement('P');
-    parent.replaceChild(p, element);
+    parent.replaceChild(p, brElement);
   }
 }
 
+// Currently this only removes img elements without a source.
+// Images may be removed by other components like in notrack.js
 function sanity_filter_images(document) {
   'use strict';
 
@@ -304,16 +315,13 @@ function sanity_filter_images(document) {
     return;
   }
 
-  const elements = bodyElement.querySelectorAll('IMG');
-  const numElements = elements.length;
-
-  for(let i = 0, image; i < numElements; i++) {
-    image = elements[i];
-
-    if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
-      image.remove();
-    } else if(image.width < 2 || image.height < 2) {
-      image.remove();
+  const imageNodeList = bodyElement.querySelectorAll('IMG');
+  const listLength = imageNodeList.length;
+  for(let i = 0, imageElement; i < listLength; i++) {
+    imageElement = imageNodeList[i];
+    if(!imageElement.hasAttribute('src') &&
+      !imageElement.hasAttribute('srcset')) {
+      imageElement.remove();
     }
   }
 }
@@ -395,8 +403,7 @@ function sanity_filter_texts(document) {
     length = value.length;
     if(length > 3) {
       if(length > 5) {
-        // Normalize whitespace
-        value = value.replace(/&nbsp;/ig, ' ');
+        value = string_normalize_spaces(value);
       }
       if(!node.parentNode.closest(SENSITIVE_SELECTOR)) {
         // Condense consecutive spaces
