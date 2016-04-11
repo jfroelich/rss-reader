@@ -22,6 +22,7 @@
       "/src/badge.js",
       "/src/date.js",
       "/src/db.js",
+      "/src/dom.js",
       "/src/entry.js",
       "/src/feed-parser.js",
       "/src/html.js",

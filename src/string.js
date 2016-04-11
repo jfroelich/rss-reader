@@ -11,7 +11,7 @@ function string_equals_ignore_case(string1, string2) {
     return string1.toUpperCase() === string2.toUpperCase();
   }
 
-  // e.g. is '' === '' or is null === undefined etc
+  // e.g. is '' === '', is null === undefined etc
   return string1 === string2;
 }
 
@@ -60,4 +60,28 @@ function string_tokenize(string) {
   });
 
   return definedTokens;
+}
+
+function string_normalize_spaces(inputString) {
+  'use strict';
+
+  // The old code
+  //inputString = inputString.replace(/&nbsp;/ig, ' ');
+
+  // TODO: change it to match all \s but not \t\r\n, then we do not need
+  // to even use a replacement function?
+
+  return inputString.replace(/\s/g, function getReplacement(match) {
+    switch(match) {
+      case ' ':
+      case '\r':
+      case '\n':
+      case '\t':
+        return match;
+        break;
+      default:
+        // console.debug('Replacing:', match.charCodeAt(0));
+        return ' ';
+    }
+  });
 }

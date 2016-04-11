@@ -16,7 +16,7 @@ const NO_TRACK_IMAGE_SRC_URLS = [
 
 function no_track_make_image_selector_part(urlString) {
   'use strict';
-  return 'img[src^="' + urlString + '"]';
+  return 'IMG[src^="' + urlString + '"]';
 }
 
 const NO_TRACK_IMAGE_SELECTOR_PARTS = NO_TRACK_IMAGE_SRC_URLS.map(
@@ -45,5 +45,24 @@ function no_track_filter_elements(document) {
     imageElement = imageNodeList[i];
     console.debug('Removing tracking image or ad:', imageElement.outerHTML);
     imageElement.remove();
+  }
+}
+
+function no_track_filter_tiny_images(document) {
+  'use strict';
+
+  const bodyElement = document.body;
+  if(!bodyElement) {
+    return;
+  }
+
+  const imageNodeList = bodyElement.querySelectorAll('IMG');
+  const listLength = imageNodeList.length;
+
+  for(let i = 0, image; i < listLength; i++) {
+    image = imageNodeList[i];
+    if(image.width < 2 || image.height < 2) {
+      image.remove();
+    }
   }
 }

@@ -78,6 +78,28 @@ function dom_unwrap(element, referenceNode) {
   }
 }
 
+// Returns a static array of all text nodes in a document
+// NOTE: this is NOT restricted to text nodes in the body.
+function dom_select_text_nodes(document) {
+  'use strict';
+
+  const nodes = [];
+  const iterator = document.createNodeIterator(document.documentElement,
+    NodeFilter.SHOW_TEXT);
+  for(let node = iterator.nextNode(); node; node = iterator.nextNode()) {
+    nodes.push(node);
+  }
+
+  return nodes;
+}
+
+
+// Returns the value of a dom text node
+function dom_get_node_value(textNode) {
+  'use strict';
+  return textNode.nodeValue;
+}
+
 function dom_hide_element(element) {
   'use strict';
   element.style.display = 'none';

@@ -27,8 +27,14 @@ function slideshow_onmessage(message) {
     case 'subscribe':
       slideshow_maybe_append_slides();
       break;
-    case 'unsubscribe':
-      slideshow_on_unsubscribe();
+
+    // NOTE: I believe this was deprecated
+    //case 'unsubscribe':
+    //  slideshow_on_unsubscribe();
+    //  break;
+    case 'entryDeleteRequestedByUnsubscribe':
+      console.debug('Reaction to removal of entry %s not yet implemented',
+        message.entryId);
       break;
     case 'archivedEntry':
       // TODO: react to the archiving of an entry that is read
@@ -320,7 +326,7 @@ function slideshow_append_slide(entry, isFirst) {
   const content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
 
-  const entryContentDocument = html_parse(entry.content);
+  const entryContentDocument = html_parse_string(entry.content);
   calamine_remove_boilerplate(entryContentDocument);
   sanity_sanitize_document(entryContentDocument);
   const entryContentBody = entryContentDocument.body ||

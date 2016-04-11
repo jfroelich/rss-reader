@@ -170,34 +170,6 @@ function db_mark_entry_as_read(connection, entryId) {
   request.onsuccess = on_success;
 }
 
-// TODO: look into whether there is a batch delete operation
-function db_remove_entries_by_feed(connection, id, callback) {
-  'use strict';
-
-  const transaction = connection.transaction('entry', 'readwrite');
-  transaction.oncomplete = callback;
-  const store = transaction.objectStore('entry');
-  const index = store.index('feed');
-  const request = index.openCursor(id);
-  request.onsuccess = on_success;
-
-  function on_success(event) {
-    const cursor = event.target.result;
-    if(cursor) {
-      cursor.delete();
-      cursor.continue();
-    }
-  }
-}
-
-function db_remove_feed(connection, id, callback) {
-  'use strict';
-  const transaction = connection.transaction('feed', 'readwrite');
-  const store = transaction.objectStore('feed');
-  const request = store.delete(id);
-  request.onsuccess = callback;
-}
-
 // TODO: maybe make a separate private helper function that prepares the
 // entry for storage, as opposed to doing it all in a single function
 // TODO: maybe the prepareEntryForStorage function should be its own global

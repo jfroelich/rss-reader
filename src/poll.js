@@ -200,7 +200,7 @@ function poll_cascade_feed_properties(feed, entry) {
 function poll_on_complete() {
   'use strict';
   console.log('Polling completed');
-  localStorage.LAST_POLL_DATE_MS = String(Date.now());
+  localStorage.LAST_POLL_DATE_MS = '' +Date.now();
   notification_show('Updated articles');
 }
 
