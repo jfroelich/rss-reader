@@ -26,7 +26,9 @@ function test_html_onload(event) {
   console.debug('Input:', input5);
   console.debug('Output:', html_truncate(input5, 2, '...'));
 
-
+  const input6 = 'a&nbsp;b&amp;c&lt;d';
+  console.debug('Input:', input6);
+  console.debug('Output:', html_truncate(input6, 5, '...'));
 }
 
 document.addEventListener('DOMContentLoaded', test_html_onload);
