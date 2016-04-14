@@ -152,7 +152,7 @@ function slideshow_mark_read(slide) {
 
     const entryId = parseInt(entryAttribute);
     const connection = event.target.result;
-    db_mark_entry_as_read(connection, entryId);
+    entry_mark_as_read(connection, entryId);
   }
 }
 
@@ -311,8 +311,11 @@ function slideshow_append_slide(entry, isFirst) {
   title.setAttribute('target','_blank');
   title.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
-    // TODO: also strip control characters
-    let titleText = html_replace(entry.title, '');
+    // TODO: also strip control characters?
+    // TODO: did I do this sanitization earlier, like when storing? if so
+    // then i don't need to be stripping tags or removing control chars
+    // here.
+    let titleText = html_replace(entry.title || '', '');
     titleText = slideshow_filter_article_title(titleText);
     titleText = string_truncate(titleText, 300);
     title.textContent = titleText;

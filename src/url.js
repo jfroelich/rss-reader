@@ -5,29 +5,24 @@
 // Requires: /lib/URI.js
 
 // Returns a url string without its protocol
-function url_filter_protocol(url) {
+function url_filter_protocol(urlString) {
   'use strict';
-
-  const uri = new URI(url);
+  const uri = new URI(urlString);
   uri.protocol('');
-  // Remove the leading slashes before returning
+  // Remove the leading slashes
   return uri.toString().substring(2);
 }
 
-function url_is_object(url) {
+function url_is_object(urlString) {
   'use strict';
-
-  return /^\s*data\s*:/i.test(url);
+  return /^\s*data\s*:/i.test(urlString);
 }
 
 // Returns true if the url is minimally valid
-function url_is_valid(url) {
+function url_is_valid(urlString) {
   'use strict';
-
   try {
-    let uri = URI(url);
+    let uri = URI(urlString);
     return uri && uri.protocol() && uri.hostname();
-  } catch(exception) {
-
-  }
+  } catch(exception) { }
 }

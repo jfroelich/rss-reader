@@ -16,9 +16,11 @@
 // The document is inert, similar to XMLHttpRequest.responseXML, meaning that
 // images/css are not pre-fetched, and various properties like computed style
 // are not initialized.
-// TODO: How does this work when the html is not a document? Does this just
-// generate a node tree with a fake root node? Or does it auto-generate
-// a doc and body and insert the html into the body? Or something else?
+// NOTE: if parsing html not within a document, this automatically wraps
+// the html in <html><body></body></html>. If there already is a body, it
+// just uses that and does not rewrap.
+
+
 // TODO: can this ever throw an exception? If so, document it, and make sure
 // that dependent features handle it appropriately.
 function html_parse_string(inputString) {
@@ -28,6 +30,10 @@ function html_parse_string(inputString) {
   // and reduce the chance of XSS. Also, manual parsing seems sluggish
   // and error prone.
 
+  // NOTE: this will automatically create wrapping doc and body element
+  // around the content. This may not be what someone wants. The consumer
+  // has to be careful.
+
   const MIME_TYPE_HTML = 'text/html';
   const parser = new DOMParser();
   const document = parser.parseFromString(inputString, MIME_TYPE_HTML);
@@ -36,35 +42,32 @@ function html_parse_string(inputString) {
 
 // Returns a new string where html elements were replaced with the optional
 // replacement string.
-// TODO: what if there is no document element resulting from parsing? how
-// does that work? Is it implicit? Am I accidentally introducing content?
-// TODO: is selecting all text nodes into an array seems like it is not
-// ideal performance. Think of a better way. Maybe inline the functions
-// and avoid using map.
 function html_replace(inputString, replacementString) {
   'use strict';
 
-  // TODO: is it even correct to guard against undefined/null here? I am not
-  // guarding against type.
-  if(!inputString) {
-    return;
-  }
-
-  // NOTE: dom_select_text_nodes is not restricted to text nodes
-  // in the body. Which again is related to the unclear behavior of parsing
-  // a non-document html string such as "<element>text</element>"
-  // TODO: but it should be restricted to the body. In fact, text nodes
-  // outside the body should be ignored or even implicitly removed by
-  // not being returned or joined into the return value.
+  // NOTE: this cannot use html_parse_string because it is ambiguous regarding
+  // whether the input contains an <html> and <body> tag.
+  // See how I solved it in html-truncate.js
 
   let outputString = null;
-  const document = html_parse_string(inputString);
+
+  const doc = document.implementation.createHTMLDocument();
+  const bodyElement = doc.body;
+  bodyElement.innerHTML = inputString;
+
   if(replacementString) {
-    const nodes = dom_select_text_nodes(document);
-    const values = nodes.map(dom_get_node_value);
-    outputString = values.join(replacementString);
+
+    const it = doc.createNodeIterator(bodyElement, NodeFilter.SHOW_TEXT);
+    let node = it.nextNode();
+    const nodeValueBuffer = [];
+    while(node) {
+      nodeValueBuffer.push(node.nodeValue);
+      node = it.nextNode();
+    }
+
+    outputString = nodeValueBuffer.join(replacementString);
   } else {
-    outputString = document.documentElement.textContent;
+    outputString = bodyElement.textContent;
   }
 
   return outputString;
@@ -73,29 +76,10 @@ function html_replace(inputString, replacementString) {
 // Returns a new string where <br>s have been replaced with spaces. This is
 // intended to be rudimentary and fast rather than perfectly accurate. I do
 // not do any heavy-weight html marshalling.
+// TODO: does this mirror Chrome's behavior? Does chrome's parser allow
+// for whitespace preceding the tag name? Maybe this should be stricter.
 function html_replace_breakrules(inputString) {
   'use strict';
-  // TODO: should I be guarding against undefined? My instict says no.
-  // I am not sure. I am leaving this here for now because I guard in various
-  // other plays so I am somewhat consistent, and because it isn't a perf
-  // issue.
-  // TODO: does this mirror Chrome's behavior? Does chrome's parser allow
-  // for whitespace preceding the tag name? Maybe this should be stricter.
-
   const BREAK_RULE_PATTERN = /<\s*br\s*>/gi;
-
-  if(inputString) {
-    return inputString.replace(BREAK_RULE_PATTERN, ' ');
-  }
-}
-
-// TODO: THIS FUNCTION IS NOT YET FULLY IMPLEMENTED. For now I just defer to
-// normal string truncation. The truncation of a string is arbitrary with
-// respect to html tags and could lead to truncating in the middle of a tag, or
-// leave unclosed tags in the result. Think about how to prevent these issues.
-// I could parse and then add up texts until I get to the desired length I
-// suppose?
-function html_truncate(inputString, position, extensionString) {
-  'use strict';
-  return string_truncate(inputString, position, extensionString);
+  return inputString.replace(BREAK_RULE_PATTERN, ' ');
 }

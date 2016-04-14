@@ -27,6 +27,10 @@ function string_filter_controls(string) {
   }
 }
 
+// TODO: i just realized the callers of string_truncate may be passing
+// in strings with html entities. Those callers should not be using this
+// function, or should resolve entities before using this function.
+
 // Truncates a string at the given position, and then appends the extension
 // string. An ellipsis is appended if an extension was not specified.
 // TODO: how does one simply truncate without appending? The test below

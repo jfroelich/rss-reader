@@ -12,6 +12,8 @@ function image_transform_lazily_loaded(document) {
     return;
   }
 
+  // TODO: review whether I can use 'IMG' in querySelectorAll
+
   const imageNodeList = bodyElement.querySelectorAll('img');
   const listLength = imageNodeList.length;
   for(let i = 0; i < listLength; i++) {
@@ -23,6 +25,15 @@ function image_transform_lazily_loaded_image(image) {
   'use strict';
 
   // TODO: reduce the DRYness of this function
+
+  // TODO: support this case better. There is a problem here because
+  // the tiny image filter is picking this up and removing it.
+  /*
+<img data-thumb="url" data-full-size-image="url" data-lar
+ge-size-image="url" data-trigger-notification="1" data-scalable="fa
+lse" alt="" data-src="url" data-tc-lazyload="deferred" src="url" width=
+"1" height="1">
+  */
 
   if(!image.hasAttribute('src') && image.hasAttribute('load-src')) {
     image.setAttribute('src', image.getAttribute('load-src'));

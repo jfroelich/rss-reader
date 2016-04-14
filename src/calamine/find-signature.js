@@ -2,8 +2,6 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-
-
 // NOTE: we cannot use just article, because it screws up on certain pages.
 // This may be a symptom of a larger problem of trying to use a fast path.
 // For example, in https://news.vice.com/article/north-korea-claims-new-
@@ -49,6 +47,8 @@ function calamine_find_signature(document) {
 
   const numSignatures = CALAMINE_SIGNATURES.length;
 
+  // If a signature occurs once in a document, then return it. Use whatever
+  // signature matches first in the order defined in CALAMINE_SIGNATURES
   for(let i = 0, elements; i < numSignatures; i++) {
     elements = bodyElement.querySelectorAll(CALAMINE_SIGNATURES[i]);
     if(elements.length === 1) {

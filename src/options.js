@@ -313,9 +313,9 @@ function options_show_sub_preview(url) {
     for(var i = 0, entry, item, content; i < resultLimit;i++) {
       entry = result.entries[i];
       item = document.createElement('li');
-      item.innerHTML = html_replace(entry.title, '');
+      item.innerHTML = html_replace(entry.title || '', '');
       content = document.createElement('span');
-      content.innerHTML = html_replace(entry.content, '');
+      content.innerHTML = html_replace(entry.content || '', '');
       item.appendChild(content);
       resultsListElement.appendChild(item);
     }
@@ -366,7 +366,7 @@ function options_start_subscription(url) {
 
     const connection = event.target.result;
     const boundOnFindFeed = on_find_feed.bind(null, connection);
-    db_find_feed_by_url(connection, url, boundOnFindFeed);
+    feed_find_by_url(connection, url, boundOnFindFeed);
   }
 
   function on_hide_monitor_show_exists_error() {
@@ -445,7 +445,7 @@ function populateFeedDetailsSection(feedId) {
     }
 
     const connection = event.target.result;
-    db_find_feed_by_id(connection, feedId, on_find_feed);
+    feed_find_by_id(connection, feedId, on_find_feed);
   }
 
   function on_find_feed(event) {
@@ -460,7 +460,7 @@ function populateFeedDetailsSection(feedId) {
     // TODO: do I need to do additional sanitization here?
 
     let title = feed.title;
-    title = html_replace(title, '');
+    title = html_replace(title || '', '');
     if(!title) {
       title = 'Untitled';
     }
@@ -472,7 +472,7 @@ function populateFeedDetailsSection(feedId) {
     const favIconElement = document.getElementById('details-favicon');
     favIconElement.setAttribute('src', favIconURL);
 
-    const description = html_replace(feed.description, '');
+    const description = html_replace(feed.description || '', '');
     const descriptionElement = document.getElementById(
       'details-feed-description');
     descriptionElement.textContent = description;
@@ -822,7 +822,7 @@ function options_on_export_opml_click_on_open(event) {
   }
 
   const connection = event.target.result;
-  db_get_all_feeds(connection, options_on_export_opml_click_on_get_feeds);
+  feed_get_all(connection, options_on_export_opml_click_on_get_feeds);
 }
 
 function options_on_export_opml_click_on_get_feeds(feeds) {
@@ -980,7 +980,7 @@ function options_init_sub_section() {
       return;
     }
 
-    db_for_each_feed(event.target.result, process_feed, true,
+    feed_for_each(event.target.result, process_feed, true,
       on_feeds_iterated);
   }
 

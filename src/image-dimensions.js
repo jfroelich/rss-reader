@@ -2,12 +2,11 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-
 // Requires: /lib/async.js
 // Requires: /src/url.js
 
 // TODO: stop using async lib
-// TODO: maybe move all this stuff into image.js
+// TODO: maybe move all this stuff into image.js?
 // TODO: track num fetched, errors
 
 // Given a document, ensure that the width and height of each image element is
@@ -34,8 +33,19 @@ function image_dimensions_set_all(document, callback) {
 function image_dimensions_should_fetch(imageElement) {
   'use strict';
 
+  // TODO: maybe I should always fetch dimensions for images with urls?
+  // How much of a benefit it is to reduce the number of fetches?
+  // Why do I even want to keep the original dimensions? I am using CSS to
+  // restrict the widths on render. Put some more thought into this to clarify
+  // the rationale.
+
   // Checking width is sufficient to determine whether the image has
   // dimensions. I think. I am a bit tentative about it.
+
+  // TODO: as an aside, why am I checking for presence of URL here? Shouldn't
+  // images without URLs already have been handled by this point? Or is it
+  // better to be redundant and make fewer assumptions about other code and
+  // the timing of when it is called.
 
   let url = imageElement.getAttribute('src') || '';
   url = url.trim();
@@ -58,30 +68,36 @@ function image_dimensions_fetch(imageElement, callback) {
   const sourceURLString = imageElement.getAttribute('src');
   const proxyImageElement = document.createElement('img');
 
-  proxyImageElement.onload = function proxy_onload(event) {
+  function proxy_onfetch(event) {
     image_dimensions_on_fetch(imageElement, callback, event);
-  };
+  }
 
-  proxyImageElement.onerror = function proxy_onerror(event) {
-    image_dimensions_on_fetch(imageElement, callback, event);
-  };
+  proxyImageElement.onload = proxy_onfetch;
+  proxyImageElement.onerror = proxy_onfetch;
 
-  // Setting the source triggers the fetch
+  // Setting the source triggers the fetch within the context of a live
+  // document. We are using the document containing this script so we know
+  // that proxy is located in a live context.
   proxyImageElement.src = sourceURLString;
 }
 
 // On requesting the image, if successful, update the attributes of the
 // local image.
-// TODO: shouldn't I actually be setting the attributes and not just the
-// properties? What if the properties are not serialized as attributes when
-// converting back to a string?
 function image_dimensions_on_fetch(imageElement, callback, event) {
   'use strict';
 
   if(event.type === 'load') {
     const proxyImageElement = event.target;
-    imageElement.width = proxyImageElement.width;
-    imageElement.height = proxyImageElement.height;
+
+    // Set the attributes, not the properties. The properties will be set
+    // by setting the attributes. Setting properties will not set the
+    // attributes. If any code does any serialization/deserialization to or
+    // from innerHTML, it would not store the new values if I only set the
+    // properties.
+
+    imageElement.setAttribute('width', proxyImageElement.width);
+    imageElement.setAttribute('height', proxyImageElement.height);
+
   } else {
     const sourceURLString = imageElement.getAttribute('src');
     console.debug('Failed to fetch image:', sourceURLString);

@@ -24,6 +24,7 @@
       "/src/db.js",
       "/src/dom.js",
       "/src/entry.js",
+      "/src/feed.js",
       "/src/feed-parser.js",
       "/src/html.js",
       "/src/image.js",

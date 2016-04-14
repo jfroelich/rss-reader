@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// DOM routines
+// DOM utilities
 
 // Appends source's child nodes to destination. The nodes are moved, not
 // copied. Assumes source and destination are defined dom nodes.
@@ -14,32 +14,26 @@
 // this is slow is because of the possible inert-live transition.
 // Using insertAdjacentHTML and innerHTML do not work that well, because
 // that requires marshalling/unmarshalling.
+// NOTE: this is where nodes in an inert content 'go live'. This is where
+// XSS happens. This is where Chrome eagerly prefetches images. And as a
+// result of that, this is also where pre-fetch errors occur. For example,
+// Chrome reports an error if a srcset attribute value has invalid syntax.
+// NOTE: there is no need to use 'adoptNode' or 'importNode'. The transfer
+// of a node between document contexts is done implicitly by appendChild.
+// TODO: maybe this could just be insertBefore with null as the
+// second argument.
+// That is because insertBefore defaults to appendChild behavior when the
+// second argument is undefined (sort of).
+// Chrome has strange behavior if second
+// argument to insertBefore is undefined (but it works as expected if null).
+// Therefore I think I should deprecate this function and just use
+// dom_insert_children_before.
+// But I can't do this easily, because I use referenceNode.parentNode in
+// dom_insert_children_before. I can't pass null.
 function dom_append_children(sourceElement, destinationElement) {
   'use strict';
-
-  // NOTE: this is where nodes in an inert content 'go live'. This is where
-  // XSS happens. This is where Chrome eagerly prefetches images. And as a
-  // result of that, this is also where pre-fetch errors occur. For example,
-  // Chrome reports an error if a srcset attribute value has invalid syntax.
-
-  // NOTE: there is no need to use 'adoptNode' or 'importNode'. The transfer
-  // of a node between document contexts is done implicitly by appendChild.
-
-  // TODO: maybe this could just be insertBefore with null as the
-  // second argument.
-  // That is because insertBefore defaults to appendChild behavior when the
-  // second argument is undefined (sort of).
-  // Chrome has strange behavior if second
-  // argument to insertBefore is undefined (but it works as expected if null).
-  // Therefore I think I should deprecate this function and just use
-  // dom_insert_children_before.
-  // But I can't do this easily, because I use referenceNode.parentNode in
-  // dom_insert_children_before. I can't pass null.
-
-  // The confusing part of this is that as each child is appended, it is
-  // removed from its previous parent, meaning that the next child becomes the
-  // parent.firstChild node. This is why we reassign node to firstChild again
-  // and not child.nextSibling.
+  // This repeatedly accesses firstChild because each append removes the
+  // node and shifts firstChild to nextSibling
   for(let node = sourceElement.firstChild; node;
     node = sourceElement.firstChild) {
     destinationElement.appendChild(node);
@@ -48,7 +42,6 @@ function dom_append_children(sourceElement, destinationElement) {
 
 function dom_insert_children_before(parentNode, referenceNode) {
   'use strict';
-
   const referenceParent = referenceNode.parentNode;
   for(let node = parentNode.firstChild; node; node = parentNode.firstChild) {
     referenceParent.insertBefore(node, referenceNode);
@@ -60,7 +53,6 @@ function dom_insert_children_before(parentNode, referenceNode) {
 // referenceNode is optional.
 function dom_unwrap(element, referenceNode) {
   'use strict';
-
   const target = referenceNode || element;
   const parent = target.parentNode;
   if(parent) {
@@ -82,7 +74,6 @@ function dom_unwrap(element, referenceNode) {
 // NOTE: this is NOT restricted to text nodes in the body.
 function dom_select_text_nodes(document) {
   'use strict';
-
   const nodes = [];
   const iterator = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_TEXT);

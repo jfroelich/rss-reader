@@ -7,6 +7,7 @@
 // first noticed that the queries stopped working. However, I have witnessed
 // the service occassionally work thereafter.
 // Requires: /src/html.js
+// Requires: /src/html-truncate.js
 // Requires: /src/string.js
 
 // Sends an async request to Google to search for feeds that correspond to
@@ -20,7 +21,6 @@
 // <b></b> around terms that were present in the query.
 function google_feeds_search(queryString, timeoutMillis, callback) {
   'use strict';
-
   const BASE_URL =
     'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
 
@@ -40,16 +40,12 @@ function google_feeds_search(queryString, timeoutMillis, callback) {
 // Cleans up the response data before sending it to the callback
 function google_feeds_on_response(callback, event) {
   'use strict';
-
   const request = event.target;
   const response = request.response;
-
-  // For responseType JSON, the result is defined in responseData
   const data = response.responseData;
 
   if(!data) {
-    console.debug(response.responseDetails);
-    callback(response.responseDetails, null, null);
+    callback(response.responseDetails);
     return;
   }
 
@@ -61,10 +57,9 @@ function google_feeds_on_response(callback, event) {
   entries = google_feeds_filter_entries_without_urls(entries);
 
   // I have noticed that the search results occassionally contain multiple
-  // hits for the same feed. Only retain the first.
+  // hits for the same url. Only retain the first.
   entries = google_feeds_filter_duplicate_entries(entries);
 
-  // Clean up some of the formatting
   entries.forEach(google_feeds_sanitize_entry);
 
   // Callback with null to indicate to no error
@@ -73,7 +68,6 @@ function google_feeds_on_response(callback, event) {
 
 function google_feeds_filter_entries_without_urls(entriesArray) {
   'use strict';
-
   return entriesArray.filter(google_feeds_get_entry_url);
 };
 
@@ -84,7 +78,6 @@ function google_feeds_get_entry_url(entry) {
 
 function google_feeds_filter_duplicate_entries(entriesArray) {
   'use strict';
-
   const expandedEntries = entriesArray.map(function expand(entry) {
     return [entry.url, entry];
   });
@@ -97,7 +90,6 @@ function google_feeds_filter_duplicate_entries(entriesArray) {
 
 function google_feeds_sanitize_entry(entry) {
   'use strict';
-
   const TITLE_MAX_LENGTH = 200;
   const CONTENT_SNIPPET_MAX_LENGTH = 400;
 
@@ -107,11 +99,13 @@ function google_feeds_sanitize_entry(entry) {
     // I don't want any html formatting to remain in the title
     entry.title = html_replace(entry.title, '');
 
+    // TODO: this may have an error regarding html entities in the title,
+    // maybe I should only be using html_truncate here.
     entry.title = string_truncate(entry.title, TITLE_MAX_LENGTH);
   }
 
-  // Entry snipped may contain some html formatting, like <b> tags around
-  // query terms. We want to retain that info, but remove some other info.
+  // The snippet may contain some html formatting, such as <b> tags around
+  // query terms. We want to retain that, but remove other tags.
 
   if(entry.contentSnippet) {
     entry.contentSnippet = string_filter_controls(entry.contentSnippet);

@@ -3,7 +3,7 @@
 // that can be found in the LICENSE file
 
 // TODO: remove async dependency
-// TODO: remove reliance on db_for_each_feed, do explicit iteration here,
+// TODO: remove reliance on feed_for_each, do explicit iteration here,
 // or maybe make a function that generates the initial request at least, and
 // then do the iteration (e.g. db_get_feeds_request)
 
@@ -92,7 +92,7 @@ function poll_iterate_feeds(event) {
 
   const connection = event.target.result;
   const boundFetchFeed = poll_fetch_feed.bind(null, connection);
-  db_for_each_feed(connection, boundFetchFeed, false, poll_on_complete);
+  feed_for_each(connection, boundFetchFeed, false, poll_on_complete);
 }
 
 function poll_fetch_feed(connection, feed) {
@@ -156,9 +156,15 @@ function poll_on_entries_updated(connection) {
 // already exists.
 function poll_find_entry_by_link(connection, feed, entry, callback) {
   'use strict';
+
+  const transaction = connection.transaction('entry');
+  const entries = transaction.objectStore('entry');
+  const links = entries.index('link');
+  const request = links.get(entry.link);
+
   const onFindEntryBound = poll_on_find_entry.bind(null, connection, feed,
     entry, callback);
-  db_find_entry_by_link(connection, entry.link, onFindEntryBound);
+  request.onsuccess = onFindEntryBound;
 }
 
 // If an existing entry was found, then exit early (callback with no args to
@@ -167,7 +173,10 @@ function poll_find_entry_by_link(connection, feed, entry, callback) {
 // entry. Then store the entry, and then callback to async.forEach.
 function poll_on_find_entry(connection, feed, entry, callback, event) {
   'use strict';
-  const localEntry = event.target.result;
+
+  const getEntryRequest = event.target;
+  const localEntry = getEntryRequest.result;
+
   if(localEntry) {
     callback();
   } else {
@@ -177,7 +186,7 @@ function poll_on_find_entry(connection, feed, entry, callback, event) {
 
   function onAugment(event) {
     poll_cascade_feed_properties(feed, entry);
-    db_store_entry(connection, entry, callback);
+    entry_put(connection, entry, callback);
   }
 }
 

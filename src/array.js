@@ -6,17 +6,14 @@
 // is dense, and because it does not support custom binding.
 function array_filter(inputArray, predicateFunction) {
   'use strict';
-
   const length = inputArray.length;
   const outputArray = [];
-
   for(let i = 0, item; i < length; i++) {
     item = inputArray[i];
     if(predicateFunction(item)) {
       outputArray.push(item);
     }
   }
-
   return outputArray;
 }
 
@@ -26,7 +23,6 @@ function array_filter(inputArray, predicateFunction) {
 // the subject array.
 function array_find(subjectArray, predicateFunction) {
   'use strict';
-
   const length = subjectArray.length;
   for(let i = 0, item; i < length; i++) {
     item = subjectArray[i];
@@ -37,12 +33,11 @@ function array_find(subjectArray, predicateFunction) {
 }
 
 // Faster than Array.prototype.forEach because assumes dense
-function array_for_each(subjectArray, callbackFunction) {
+function array_for_each(subjectArray, callback) {
   'use strict';
-
   const length = subjectArray.length;
   for(let i = 0; i < length; i++) {
-    callbackFunction(subjectArray[i]);
+    callback(subjectArray[i]);
   }
 }
 
@@ -52,13 +47,11 @@ function array_for_each(subjectArray, callbackFunction) {
 // array is dense.
 function array_some(subjectArray, predicateFunction) {
   'use strict';
-
   const length = subjectArray.length;
   for(let i = 0; i < length; i++) {
     if(predicateFunction(subjectArray[i])) {
       return true;
     }
   }
-
   return false;
 }

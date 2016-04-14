@@ -9,7 +9,6 @@
 // Queries storage for currently archivable entries and archives them.
 function archive_entries() {
   'use strict';
-
   console.log('Archiving entries');
   db_open(archive_entries_on_connect);
 }
@@ -18,7 +17,6 @@ function archive_entries() {
 // entries that are not archived and marked as read, and then start iterating.
 function archive_entries_on_connect(event) {
   'use strict';
-
   if(event.type !== 'success') {
     console.debug(event);
     return;
@@ -29,9 +27,7 @@ function archive_entries_on_connect(event) {
     archived: 0
   };
 
-  // TODO: I think I would like this to call out to a db function that
-  // returns the request object. Maybe this could be a function in the
-  // entry.js lib.
+  // Open a cursor over all entries that are read and not archived
   const connection = event.target.result;
   const transaction = connection.transaction('entry', 'readwrite');
   transaction.oncomplete = archive_entries_on_complete.bind(transaction,
@@ -43,14 +39,15 @@ function archive_entries_on_connect(event) {
   request.onsuccess = archive_next_entry.bind(request, stats);
 }
 
-// Iterate over the entries loaded by archive_entries_on_connect. Check if an
-// entry should be archived, and if so, archives it and then proceeds to
-// the next entry.
+// Check if the entry at the current cursor position should be archived, and if
+// so, archive it, and then proceed to the next entry.
 function archive_next_entry(stats, event) {
   'use strict';
 
   const request = event.target;
   const cursor = request.result;
+
+  // Either no entries found or completed iteration
   if(!cursor) {
     return;
   }
@@ -59,21 +56,65 @@ function archive_next_entry(stats, event) {
 
   // 30 days
   const EXPIRES_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
+
   const entry = cursor.value;
+
+  // TODO: access dateCreated once field is renamed
+  // TODO: the object will be a Date object once I make other changes so
+  // the calculation here needs to change.
 
   // TODO: i don't like how this directly accesses the created property.
   const ageInMillis = Date.now() - entry.created;
   const shouldArchiveEntry = ageInMillis > EXPIRES_AFTER_MS;
 
   if(shouldArchiveEntry) {
-    const newEntry = entry_to_archive(entry);
-    cursor.update(newEntry);
-    const archiveMessage = {type: 'archivedEntry', entry: entry};
+    const newEntry = archive_get_archivable_entry(entry);
+
+    // Trigger a new request but do not wait for it to complete
+    const asyncUpdateRequest = cursor.update(newEntry);
+
+    const archiveMessage = {
+      'type': 'archivedEntry',
+      'entryId': entry.id
+    };
+
+    // NOTE: does not wait for asyncUpdateRequest to complete or check if
+    // transaction failed
     chrome.runtime.sendMessage(archiveMessage);
+
     stats.archived++;
   }
 
   cursor.continue();
+}
+
+// Returns an entry object suitable for storage. This contains only those
+// fields that should persist after archive.
+function archive_get_archivable_entry(inputEntry) {
+  'use strict';
+
+  const outputEntry = {};
+
+  // Maintain id because it is required to uniquely identify and reference
+  // entries in the store.
+  outputEntry.id = inputEntry.id;
+
+  // Maintain feed id because we need to be able to remove archived entries
+  // as a result of unsubscribing from a feed.
+  outputEntry.feed = inputEntry.feed;
+
+  // Maintain link because we still want to represent that the entry already
+  // exists when comparing a new entry to existing entries.
+  outputEntry.link = inputEntry.link;
+
+  // NOTE: this was previously named archiveDate, some entries currently
+  // exist in my testing storage with the old field and not the new field.
+  // NOTE: this previously used a timestamp instead of a Date object.
+  // TODO: I need to reset the database and then I can delete this comment.
+  outputEntry.dateArchived = new Date();
+
+  outputEntry.archiveState = ENTRY_FLAGS.ARCHIVED;
+  return outputEntry;
 }
 
 function archive_entries_on_complete(stats, event) {

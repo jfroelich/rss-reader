@@ -2,24 +2,35 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Rudimentary lib for filtering boilerplate content from a document
+// Rudimentary lib for filtering boilerplate content from a document. This is
+// essentially a document transformation. Given an input document, analyze
+// the document's content, and then produce a new document where some of the
+// content was filtered.
+//
+// For performance, this modifies the document in place, although I am
+// considering generating a new document instead as a part of an effort to
+// produce a pure function without side effects.
+//
+// The current implementation is pretty simple. The document is viewed as a
+// set of data, where nodes represent pieces of content. Each node is given
+// a score indicating how likely the node contains content. Then the node
+// with the highest score is found, and all non-intersecting nodes are removed.
+//
 // Requires: /src/calamine/find-signature.js
 // Requires: /src/calamine/find-high-score.js
 // Requires: /src/calamine/prune.js
 
 // TODO: re-introduce support for annotation
-// TODO: think about how to make this pure. Maybe returning a new document
-// is nicer. However, it doesn't seem very performant.
-// TODO: deal with titles remaining in content
-// TODO: i am using scores for finding the body for now, but maybe i want to
-// express the weights as probabilities instead of magnitudes
-// express everything as probability? Use a scale of 0 to 100
-// to represent each element's likelihood of being useful content, where
-// 100 is most likely. Every block gets its own probability score. Then
-// iteratively back from from a threshold of something like 50%. Or instead
-// of blocks weight the elements and use the best element approach again,
-// where probability means the likelihood of any given element being the
-// best element, not whether it is content or boilerplate.
+// TODO: deal with titles remaining in content as a special case.
+// TODO: instead of an absolute number, consider treating scores as
+// probabilities. 0 is the baseline. The score is signed, meaning there could
+// be negative probabilities.
+// TODO: maybe deprecate the fast method. It has too many edge cases. Instead,
+// just heavily bias the signature-matching elements.
+// TODO: go back to my original attempt that used blocks intead of trying to
+// find the best root and including all its children. I am getting too many
+// false positives. While the best root is very accurate, there is a lot of
+// junk included along with it.
 
 // Looks for the element that is most likely the root element of the content
 // and removes elements all other elements.

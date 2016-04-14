@@ -19,7 +19,7 @@
 // view-source:https://groups.google.com/forum/#!topic/golang-nuts/MmSbFHLPo8g
 // The content in the body after the <xmp>.<xmp> shows up as encoded? Maybe
 // it is due to the single <plaintext/> tag preceding it? I can't tell what is
-// going on. Does the parser screw up?
+// going on. Does chrome's html parser screw up?
 
 // TODO: explicit handling of noembed/audio/video/embed
 
@@ -53,32 +53,23 @@
 // represented to me in JS, even though it is not located within the body.
 // Because it isn't filtered by the blacklist or anything, it shows up really
 // awkwardly within the output as the first piece of body text.
+// NOTE: filtering the nodes out of the body won't help.
 
+// Applies a hardcoded series of filters to a document. Modifies the document
+// in place.
 function sanity_sanitize_document(document) {
   'use strict';
-
   sanity_filter_comments(document);
   sanity_replace_frames(document);
   sanity_filter_noscripts(document);
-
   sanity_filter_blacklisted_elements(document);
-
-
-
   sanity_filter_hidden_elements(document);
-
-
-  // This feature is disabled because it does not work very well right now
-  // and is not too critical.
-  //sanity_replace_break_rules(document);
-
+  sanity_replace_break_rules(document);
   sanity_filter_anchors(document);
   no_track_filter_tiny_images(document);
   sanity_filter_images(document);
   sanity_filter_unwrappables(document);
-
   sanity_filter_figures(document);
-
   sanity_filter_texts(document);
   sanity_filter_lists(document);
   sanity_filter_tables(document);
@@ -288,6 +279,11 @@ function sanity_filter_consecutive_break_rules(document) {
 // error case: http://paulgraham.com/procrastination.html
 function sanity_replace_break_rules(document) {
   'use strict';
+
+  // NOTE: Due to buggy output this is a no-op for now
+  if(true) {
+    return;
+  }
 
   const bodyElement = document.body;
   if(!bodyElement) {
