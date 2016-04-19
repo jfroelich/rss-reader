@@ -386,29 +386,46 @@ function sanity_filter_figures(document) {
 function sanity_filter_texts(document) {
   'use strict';
 
+  // NOTE: this only sanitizes text nodes within the body element.
+  // TODO: delete all text nodes outside of the body?
+
+  // NOTE: node.nodeValue yields a decoded value without entities, not the
+  // raw encoded value that contains entities.
+  // NOTE: node.nodeValue is guaranteed defined, otherwises the text node
+  // would not exist.
+
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
   }
 
   // The whitespace of text nodes within these elements is important.
-  const SENSITIVE_SELECTOR = 'CODE, PRE, RUBY, TEXTAREA, XMP';
+  const SENSITIVE_ELEMENTS = ['CODE', 'PRE', 'RUBY', 'TEXTAREA', 'XMP'];
+  const SENSITIVE_SELECTOR = SENSITIVE_ELEMENTS.join(',');
 
   const iterator = document.createNodeIterator(bodyElement,
     NodeFilter.SHOW_TEXT);
-  for(let node = iterator.nextNode(), value, length = 0; node;
+  for(let node = iterator.nextNode(), value, condensedValue; node;
     node = iterator.nextNode()) {
     value = node.nodeValue;
-    length = value.length;
-    if(length > 3) {
-      if(length > 5) {
-        value = string_normalize_spaces(value);
-      }
+
+    // The length check minimizes the number of calls to closest and the
+    // regexp, which are costly.
+    if(value.length > 3) {
+      // Check if the current text node is a descendant of a whitespace
+      // sensitive element.
       if(!node.parentNode.closest(SENSITIVE_SELECTOR)) {
         // Condense consecutive spaces
-        value = value.replace(/\s{2,}/g, ' ');
+        condensedValue = value.replace(/\s{2,}/g, ' ');
+
+        // We only bother to set nodeValue if we changed it. Setting nodeValue
+        // is actually a pretty costly operation that involves parsing entities
+        // and such, so avoid it if possible.
+        if(condensedValue !== value) {
+          // NOTE: the value will be re-encoded automatically for us.
+          node.nodeValue = condensedValue;
+        }
       }
-      node.nodeValue = value;
     }
   }
 }
