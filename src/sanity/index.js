@@ -295,9 +295,12 @@ function sanity_replace_break_rules(document) {
 
   for(let i = 0, brElement, parent, p; i < listLength; i++) {
     brElement = nodeList[i];
-    parent = brElement.parentNode;
-    p = document.createElement('P');
-    parent.replaceChild(p, brElement);
+
+    brElement.renameNode('p');
+
+    //parent = brElement.parentNode;
+    //p = document.createElement('P');
+    //parent.replaceChild(p, brElement);
   }
 }
 

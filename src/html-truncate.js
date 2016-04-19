@@ -7,108 +7,40 @@
 // TODO: there are several callers of string_truncate in other files where the
 // text may contain html entities. Those call sites should be
 // modified to use html_truncate instead so that entities are handled properly.
-
-// TODO: test malformed html
-// TODO: research side issuue of malformed html with multi-body elements,
-// either adjacent or nested. How is document.body resolved? Is it simply the
-// first body in document order as defined by the spec (as in, querySelectorAll
-// traversal order)?
-// TODO: test some basic XSS attacks
-// TODO: rather than decode and encode, maybe it would be better to implement
-// a truncation function that properly handles and counts encoded length,
-// without any conversion done. This would avoid some of the unwanted behavior
-// such as losing &nbsp; or implicitly switching from &#32; to &nbsp; or space
-// or whatever. It would also avoid the use of the dummy encoder element which
-// feels too heavyweight. However, I would also have to deal with the behavior
-// of how to react to invalid characters, for example, &nbsp with no semicolon.
-// I would have to match the browser's behavior.
-// TODO: I would rather not deal with all the <html><body> issues that arise
-// from setting innerHTML. Think of an alternative.
-
-// NOTE: regarding terminology, a text node's nodeValue is said to be in
-// encoded form, meaning that it contains entities such as &nbsp;. Decoding
-// means to replace such entities with their single character equivalent.
-// Encoding means to replace certain single characters with their
-// NOTE: if the input string contains a document and/or body element, those
-// are removed from the output. Only child nodes of the body are considered
-// and returned.
-// NOTE: text that is hidden by html (for any number of reasons) still
-// contributes toward the length of the input string.
-// NOTE: if given an input string containing a document element and a body
-// element, text outside of the body element is ignored; out-of-body text does
-// not contribute toward the length of the input string; out-of-body text is
-// not included in the return value.
-// NOTE: due to how html character entity decoding and encoding is implemented,
-// certain entities such as &nbsp; are not retained in the output. The problem
-// is that once &nbsp; is converted to space, it will not be converted back
-// to an entity. Only certain characters are guaranteed converted back, such as
-// < and >. Similarly, the encoding may change from using characters to using
-// numerical entity codes, or from using numerical entity codes to using
-// character-based entity codes. For example, &nbsp; and &#32;.
-// NOTE: this assumes inputString is a defined string
-// NOTE: this assumes position is a defined integer greater than 0
-// NOTE: extensionString is optional. However, if defined, it should be a
-// string. It should be in encoded form (it shouldn't contain unencoded values
-// like <, &, >, etc.). This does not validate or check whether it is encoded.
-
+// TODO: use the encoding approach outlined in html-truncate2.js here and
+// stop using the dummy element approach, then delete html-truncate2.js
+// TODO: remove dependency on string_truncate, do the truncation here
+// TODO: extension string should be encoded or documented that it should be
+// ready to be inserted into html as is
 
 function html_truncate(inputString, position, extensionString) {
   'use strict';
 
-  let truncatedDecodedValue = null;
-  let decodedValue = null;
-  let reencodedValue = null;
+  // NOTE: this check behaves incorrectly in cases such as:
+  // <html in javascript string literal in script tag
+  // <html in comment
+  // <html in attribute value
+  // malformed html such as multiple document elements
+  // I gave up on trying other approaches. As a result, however, this entire
+  // function can possibly behave incorrectly in such cases.
+  // Also, I am not bothering to do the additional checks for <body>. I just
+  // assume that if <html> is present then <body> or <frameset> are present.
+  const hasHTMLTag = /<html/i.test(inputString);
 
-  // This is a fast path check. Before dealing with html, check if we have
-  // input that does not contain any elements. If there are no elements, then
-  // we only have to deal with entities and can avoid the heavier processing
-  // that occurs later.
-  const firstCarotPosition = inputString.indexOf('<');
-  if(firstCarotPosition === -1) {
-    decodedValue = html_truncate_decode_entities_unsafe(inputString);
-    truncatedDecodedValue = string_truncate(decodedValue, position,
-      extensionString);
-    reencodedValue = html_truncate_encode_entities(truncatedDecodedValue);
-    return reencodedValue;
-  }
+  const inertDocument = document.implementation.createHTMLDocument();
+  inertDocument.documentElement.innerHTML = inputString;
 
-  // NOTE: I use createHTMLDocument because it generates an inert document
-  // context. We cannot use a live document context such as the document
-  // containing this script, because that will cause the browser to do things
-  // like eagerly pre-fetch images, evaluate scripts, etc. That is why this
-  // does the heavyweight call to createHTMLDocument. The only alternative
-  // seems to be to build a lexer which would probably be even slower and
-  // probably subject to exploits and probably not mirror the browser's own
-  // parsing behavior.
-
-  // NOTE: createHTMLDocument will supply its own <html> document element if
-  // it is not present in the input string. It will also supply its own
-  // body element if not present in the input string. If the input string
-  // contains an html document element, that will replace the one supplied
-  // by createHTMLDocument. If the input string contains a body element, that
-  // will replace the one supplied by createHTMLDocument.
-
-  const doc = document.implementation.createHTMLDocument();
-  const docElement = doc.documentElement;
-
-  // Parse the html.
-  docElement.innerHTML = inputString;
-
-  // This must occur AFTER innerHTML is set. Setting the document element's
-  // innerHTML in the previous line implicitly detaches the prior body element
-  // that was implicitly created by createHTMLDocument. Storing a handle to the
-  // old body element means that the body element would not contain any nodes
-  // at all.
-  const bodyElement = doc.body;
-
-  // Iterate over only the nodes within the body element.
-  const textNodeIterator = doc.createNodeIterator(bodyElement,
+  // Restrict to text nodes within body, regardless of whether <body>
+  // is present in the input string.
+  const textNodeIterator = inertDocument.createNodeIterator(inertDocument.body,
     NodeFilter.SHOW_TEXT);
 
+  let truncatedDecodedValue = null;
+  let decodedValue = null;
   let acceptingAdditionalTextNodes = true;
   let accumulatedLength = 0;
-  let value = null;
-  let valueLength = null;
+  let encodedValue = null;
+  let decodedValueLength = null;
   let node = textNodeIterator.nextNode();
 
   while(node) {
@@ -119,57 +51,35 @@ function html_truncate(inputString, position, extensionString) {
       continue;
     }
 
-    // Get the raw value, which is encoded (has entities present)
-    value = node.nodeValue;
-    // Get the decoded value, where entities were replaced with chars
-    decodedValue = html_truncate_decode_entities_unsafe(value);
-    // Get the length of the decoded value
-    valueLength = decodedValue.length;
+    encodedValue = node.nodeValue;
+    decodedValue = html_truncate_decode_entities_unsafe(encodedValue);
+    decodedValueLength = decodedValue.length;
 
-    if(accumulatedLength + valueLength > position) {
-
-      // At the current text node, the length has reached or passed the
-      // position. Truncate this value, and also state that all later nodes
-      // should be deleted.
-
+    if(accumulatedLength + decodedValueLength > position) {
       acceptingAdditionalTextNodes = false;
-
-      // Truncate the decoded value. By truncating the decoded value, this
-      // counts character entities as only contributing one towards the
-      // length of the value instead of between 4-6, and also avoids truncation
-      // in the midst of a character entity.
       truncatedDecodedValue = string_truncate(decodedValue,
         position - accumulatedLength, extensionString);
-
-      // Re-encode the value.
-      reencodedValue = html_truncate_encode_entities(truncatedDecodedValue);
-
-      // Update node value to the re-encoded value. Note that I prefer this
-      // method to something like createTextNode and parentNode.replaceChild
-      // because that just makes the node iterator do more work keeping track
-      // of its cursor position over text nodes, and seems more confusing as
-      // to whether the cursor position would be off track as a result of a
-      // node swap. However I am not sure which method performs better and I
-      // would prefer the faster method.
-      node.nodeValue = reencodedValue;
-
+      node.nodeValue = html_truncate_encode_entities(truncatedDecodedValue);
     } else {
-      accumulatedLength = accumulatedLength + valueLength;
+      accumulatedLength = accumulatedLength + decodedValueLength;
     }
 
     node = textNodeIterator.nextNode();
   }
 
-  // Return the truncated output html
-  // NOTE: this is from within the body only. If the input had a body element,
-  // that element is gone. So are any other nodes not under the body.
-  return bodyElement.innerHTML;
+  if(hasHTMLTag) {
+    return inertDocument.documentElement.outerHTML;
+  } else {
+    return inertDocument.body.innerHTML;
+  }
 }
 
 // This is created once sits forever in memory. In theory this means that
 // the encode/decode functions will perform faster.
 // TODO: look closer into maximum text node length and maximum string value
 // lengths for possible issues.
+// TODO: look into a simpler way of doing this that doesn't involve using a
+// dummy element.
 const HTML_TRUNCATE_DUMMY_ELEMENT = document.createElement('p');
 
 // Clear the contents of HTML_TRUNCATE_DUMMY_ELEMENT so its contents are not
@@ -177,27 +87,13 @@ const HTML_TRUNCATE_DUMMY_ELEMENT = document.createElement('p');
 // and so that it does not expose sensitive data.
 function html_truncate_clear_dummy_element() {
   'use strict';
-
-  // TODO: is HTML_TRUNCATE_DUMMY_ELEMENT.textContent = '' faster or is
-  // removing all child nodes faster?
-  //const el = HTML_TRUNCATE_DUMMY_ELEMENT;
-  //for(let node = el.firstChild; node; node = el.firstChild) {
-  //  node.remove();
-  //}
-
   HTML_TRUNCATE_DUMMY_ELEMENT.textContent = '';
 }
-
-// TODO: look into a simpler way of doing this that doesn't involve using a
-// dummy element.
-// TODO: if these become sophisticated enough, I should probably have an
-// html-encoding library and these do not belong here, this should become
-// a dependency.
 
 // Simple helper to take a raw node value that contains entities such as
 // '&amp;' or '&nbsp;' and replaces them with their character equivalents.
 // For example, converts 'a&amp;b' to 'a&b'
-// DO NOT USE decodeEntities ON ANYTHING OTHER THAN KNOWN TEXT NODE VALUE OR
+// DO NOT USE ON ANYTHING OTHER THAN SIMPLE TEXT NODE VALUE OR
 // RISK XSS. This sets a live element's innerHTML to decode the entities,
 // so if <script> tags or similar are present this can be exploited.
 function html_truncate_decode_entities_unsafe(encodedStringWithoutHTMLTags) {

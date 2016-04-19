@@ -2,6 +2,12 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: decouple loading of additional content with navigation. It causes
+// lag. Instead, create a queue of articles, and refill it periodically on
+// some type of schedule (using setInterval or a re-setTimeout-per-append)
+// Only append during navigation if the queue has not yet refilled.
+
+
 // Requires: /src/calamine.js
 // Requires: /src/date.js
 // Requires: /src/db.js
