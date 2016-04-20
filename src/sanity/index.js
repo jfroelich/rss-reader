@@ -4,11 +4,15 @@
 
 // Lib for filtering the contents of an HTML Document object
 // Requires: /src/dom.js
-// Requires: /src/sanity-attribute.js
-// Requires: /src/sanity-leaf.js
-// Requires: /src/sanity-table.js
-// Requires: /src/sanity-unwrap.js
-// Requires: /src/sanity-visibility.js
+// Requires: /src/sanity/attribute.js
+// Requires: /src/sanity/blacklist.js
+// Requires: /src/sanity/condense-whitespace.js
+// Requires: /src/sanity/image.js
+// Requires: /src/sanity/leaf.js
+// Requires: /src/sanity/table.js
+// Requires: /src/sanity/trim.js
+// Requires: /src/sanity/unwrap.js
+// Requires: /src/sanity/visibility.js
 // Requires: /src/string.js
 
 // TODO: research why some articles appear without content. I know pdfs
@@ -70,7 +74,7 @@ function sanity_sanitize_document(document) {
   sanity_filter_images(document);
   sanity_filter_unwrappables(document);
   sanity_filter_figures(document);
-  sanity_filter_texts(document);
+  sanity_condense_whitespace(document);
   sanity_filter_lists(document);
   sanity_filter_tables(document);
   sanity_filter_leaves(document);
@@ -103,35 +107,6 @@ function sanity_filter_noscripts(document) {
   }
 }
 
-
-// This uses a blacklist approach instead of a whitelist because of issues
-// with custom html elements. If I used a whitelist approach, any element
-// not in the whitelist would be removed. The problem is that custom elements
-// wouldn't be in the whitelist, but they easily contain valuable content.
-function sanity_filter_blacklisted_elements(document) {
-  'use strict';
-
-  const BLACKLIST = [
-    'APPLET', 'AUDIO', 'BASE', 'BASEFONT', 'BGSOUND', 'BUTTON', 'COMMAND',
-    'DATALIST', 'DIALOG', 'EMBED', 'FIELDSET', 'FRAME', 'FRAMESET', 'HEAD',
-    'IFRAME', 'INPUT', 'ISINDEX', 'LINK', 'MATH', 'META',
-    'OBJECT', 'OUTPUT', 'OPTGROUP', 'OPTION', 'PARAM', 'PATH', 'PROGRESS',
-    'SCRIPT', 'SELECT', 'SPACER', 'STYLE', 'SVG', 'TEXTAREA', 'TITLE',
-    'VIDEO', 'XMP'
-  ];
-
-  const BLACKLIST_SELECTOR = BLACKLIST.join(',');
-
-  const docElement = document.documentElement;
-  const elements = document.querySelectorAll(BLACKLIST_SELECTOR);
-  const numElements = elements.length;
-  for(let i = 0, element; i < numElements; i++) {
-    element = elements[i];
-    if(docElement.contains(element)) {
-      element.remove();
-    }
-  }
-}
 
 function sanity_filter_comments(document) {
   'use strict';
@@ -304,63 +279,6 @@ function sanity_replace_break_rules(document) {
   }
 }
 
-// Currently this only removes img elements without a source.
-// Images may be removed by other components like in notrack.js
-function sanity_filter_images(document) {
-  'use strict';
-
-  const bodyElement = document.body;
-  if(!bodyElement) {
-    return;
-  }
-
-  const imageNodeList = bodyElement.querySelectorAll('IMG');
-  const listLength = imageNodeList.length;
-  for(let i = 0, imageElement; i < listLength; i++) {
-    imageElement = imageNodeList[i];
-    if(!imageElement.hasAttribute('src') &&
-      !imageElement.hasAttribute('srcset')) {
-      imageElement.remove();
-    }
-  }
-}
-
-function sanity_trim_document(document) {
-  'use strict';
-
-  const bodyElement = document.body;
-
-  // Body is required. This only examines nodes contained within the body.
-  if(!bodyElement) {
-    return;
-  }
-
-  const firstChild = bodyElement.firstChild;
-  if(firstChild) {
-    sanity_remove_trimmable_nodes_by_step(firstChild, 'nextSibling');
-    const lastChild = bodyElement.lastChild;
-    if(lastChild && lastChild !== firstChild) {
-      sanity_remove_trimmable_nodes_by_step(bodyElement.lastChild,
-        'previousSibling');
-    }
-  }
-}
-
-function sanity_remove_trimmable_nodes_by_step(startNode, step) {
-  'use strict';
-
-  const VOIDS = {'BR': 1, 'HR': 1, 'NOBR': 1};
-  const ELEMENT = Node.ELEMENT_NODE;
-  const TEXT = Node.TEXT_NODE;
-  let node = startNode, sibling = startNode;
-  while(node && ((node.nodeType === ELEMENT && node.nodeName in VOIDS) ||
-    (node.nodeType === TEXT && !node.nodeValue.trim()))) {
-    sibling = node[step];
-    node.remove();
-    node = sibling;
-  }
-}
-
 // If a figure has only one child element image, then it is useless.
 // NOTE: boilerplate analysis examines figures, so ensure this is not done
 // before it.
@@ -379,53 +297,6 @@ function sanity_filter_figures(document) {
     if(figure.childElementCount === 1) {
       // console.debug('Unwrapping basic figure:', figure.outerHTML);
       dom_unwrap(figure, null);
-    }
-  }
-}
-
-function sanity_filter_texts(document) {
-  'use strict';
-
-  // NOTE: this only sanitizes text nodes within the body element.
-  // TODO: delete all text nodes outside of the body?
-
-  // NOTE: node.nodeValue yields a decoded value without entities, not the
-  // raw encoded value that contains entities.
-  // NOTE: node.nodeValue is guaranteed defined, otherwises the text node
-  // would not exist.
-
-  const bodyElement = document.body;
-  if(!bodyElement) {
-    return;
-  }
-
-  // The whitespace of text nodes within these elements is important.
-  const SENSITIVE_ELEMENTS = ['CODE', 'PRE', 'RUBY', 'TEXTAREA', 'XMP'];
-  const SENSITIVE_SELECTOR = SENSITIVE_ELEMENTS.join(',');
-
-  const iterator = document.createNodeIterator(bodyElement,
-    NodeFilter.SHOW_TEXT);
-  for(let node = iterator.nextNode(), value, condensedValue; node;
-    node = iterator.nextNode()) {
-    value = node.nodeValue;
-
-    // The length check minimizes the number of calls to closest and the
-    // regexp, which are costly.
-    if(value.length > 3) {
-      // Check if the current text node is a descendant of a whitespace
-      // sensitive element.
-      if(!node.parentNode.closest(SENSITIVE_SELECTOR)) {
-        // Condense consecutive spaces
-        condensedValue = value.replace(/\s{2,}/g, ' ');
-
-        // We only bother to set nodeValue if we changed it. Setting nodeValue
-        // is actually a pretty costly operation that involves parsing entities
-        // and such, so avoid it if possible.
-        if(condensedValue !== value) {
-          // NOTE: the value will be re-encoded automatically for us.
-          node.nodeValue = condensedValue;
-        }
-      }
     }
   }
 }
