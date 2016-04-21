@@ -51,7 +51,7 @@ calls to unwrap. There are several situations where this is possible:
 
 So far I have two implementations, a naive version that unwraps everything, and
 a crappy more complex version that attempts to reduce the number of calls.
-Unfortunaely, the naive is still currently better performance. I think part of
+Unfortunately, the naive is still currently better performance. I think part of
 the problem is that the attempt doubles some of its logic, and involves
 recursion. For example, I am seeing in a profile that I drop the total time
 spent calling unwrap, because of the reduced number of calls, but the overhead
@@ -75,7 +75,8 @@ somehow redundant. match is also slow. one idea is to keep a set (or basic
 array) of the inline elements initially found, and just check set membership
 instead of calling matches
 
-I do not like how I am calling sanity_is_unwrappable_parent multiple times. First
+I do not like how I am calling sanity_is_unwrappable_parent multiple times.
+First
 in the iteration in order to skip, and second when finding the shallowest
 ancestor.
 
