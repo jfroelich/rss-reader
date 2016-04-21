@@ -4,42 +4,52 @@
 
 // DOM utilities
 
-// Appends source's child nodes to destination. The nodes are moved, not
-// copied. Assumes source and destination are defined dom nodes.
-// This is not optimized for moving attached nodes.
-// The order of children is maintained.
-// TODO: look into some way of doing this in batch instead of one node at a
-// time. I have a feeling the suboptimal performance is because it is doing
-// lots of wasted operations. Although actually another part of the reason
-// this is slow is because of the possible inert-live transition.
-// Using insertAdjacentHTML and innerHTML do not work that well, because
-// that requires marshalling/unmarshalling.
-// NOTE: this is where nodes in an inert content 'go live'. This is where
-// XSS happens. This is where Chrome eagerly prefetches images. And as a
-// result of that, this is also where pre-fetch errors occur. For example,
-// Chrome reports an error if a srcset attribute value has invalid syntax.
-// NOTE: there is no need to use 'adoptNode' or 'importNode'. The transfer
-// of a node between document contexts is done implicitly by appendChild.
-// TODO: maybe this could just be insertBefore with null as the
-// second argument.
-// That is because insertBefore defaults to appendChild behavior when the
-// second argument is undefined (sort of).
-// Chrome has strange behavior if second
-// argument to insertBefore is undefined (but it works as expected if null).
-// Therefore I think I should deprecate this function and just use
-// dom_insert_children_before.
-// But I can't do this easily, because I use referenceNode.parentNode in
-// dom_insert_children_before. I can't pass null.
+// Moves source's child nodes to destination. Assumes source and destination
+// are defined elements.
+// TODO: consider renaming to dom_move_children
 function dom_append_children(sourceElement, destinationElement) {
   'use strict';
-  // This repeatedly accesses firstChild because each append removes the
-  // node and shifts firstChild to nextSibling
+
+  // Copy the source element's nodes into a document fragment before moving
+  // them. This yields an incredible performance improvement because all of
+  // the appending takes place in a single append of the fragment into the
+  // destination.
+  // Create the fragment using the source document. This way the appends
+  // into the fragment are not doing anything funky like eager evaluation of
+  // scripts. Although I am not sure if this matters because append's behavior
+  // may change in the context of a fragment.
+  const sourceDocument = sourceElement.ownerDocument;
+  const fragment = sourceDocument.createDocumentFragment();
+
+  // Next, move the source element's child nodes into the fragment. We are
+  // still in an inert context so we are not yet touching the live dom. This
+  // repeatedly accesses parentNode.firstChild instead of childNode.nextSibling
+  // because each append removes the childNode and shifts firstChild to
+  // nextSibling for us.
+  // TODO: if we parse into a frag before sanitize and accept the frag as
+  // input, i could skip this step? Would it be better to skip?
+  // In fact, wouldn't it make sense to always use a document fragment instead
+  // of a full document? frags are lightweight document containers after all.
+  // but then i still have to think about how to move over just children of
+  // the body. i suppose i could just move those into a frag at the start.
   for(let node = sourceElement.firstChild; node;
     node = sourceElement.firstChild) {
-    destinationElement.appendChild(node);
+    fragment.appendChild(node);
   }
+
+  // Append everything to the live document all at once. This is when
+  // all the script evaluation and computed styling and repaints occur.
+  // There is no need to use 'adoptNode' or 'importNode'. The transfer
+  // of a node between document contexts is done implicitly by appendChild.
+  // This is where XSS happens. This is where Chrome eagerly prefetches images.
+  // And as a result of that, this is also where pre-fetch errors occur. For
+  // example, Chrome reports an error if a srcset attribute value has invalid
+  // syntax.
+  destinationElement.appendChild(fragment);
 }
 
+// NOTE: this assumes both nodes in the same document and that it is inert.
+// TODO: would using fragment here also improve performance?
 function dom_insert_children_before(parentNode, referenceNode) {
   'use strict';
   const referenceParent = referenceNode.parentNode;
@@ -51,39 +61,29 @@ function dom_insert_children_before(parentNode, referenceNode) {
 // Moves the element's child nodes into the element's or the parent of the
 // alternate element if defined, and then removes the element.
 // referenceNode is optional.
+// TODO: make the space wrapping optional or give caller the responsibility
 function dom_unwrap(element, referenceNode) {
   'use strict';
   const target = referenceNode || element;
   const parent = target.parentNode;
   if(parent) {
     const document = element.ownerDocument;
+
     const prevSibling = target.previousSibling;
-    const nextSibling = target.nextSibling;
     if(prevSibling && prevSibling.nodeType === Node.TEXT_NODE) {
       parent.insertBefore(document.createTextNode(' '), target);
     }
+
     dom_insert_children_before(element, target);
+
+    const nextSibling = target.nextSibling;
     if(nextSibling && nextSibling.nodeType === Node.TEXT_NODE) {
       parent.insertBefore(document.createTextNode(' '), target);
     }
+
     target.remove();
   }
 }
-
-// Returns a static array of all text nodes in a document
-// NOTE: this is NOT restricted to text nodes in the body.
-function dom_select_text_nodes(document) {
-  'use strict';
-  const nodes = [];
-  const iterator = document.createNodeIterator(document.documentElement,
-    NodeFilter.SHOW_TEXT);
-  for(let node = iterator.nextNode(); node; node = iterator.nextNode()) {
-    nodes.push(node);
-  }
-
-  return nodes;
-}
-
 
 // Returns the value of a dom text node
 function dom_get_node_value(textNode) {
