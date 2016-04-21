@@ -28,6 +28,8 @@ function entry_put(connection, entry, callback) {
 
   const storable = {};
 
+  // TODO: won't this always be defined? If it is a required field,
+  // why even check?
   if(entry.id) {
     storable.id = entry.id;
   }

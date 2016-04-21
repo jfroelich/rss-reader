@@ -70,8 +70,6 @@ function sanity_is_single_column_table(table) {
 
 function sanity_unwrap_single_column_table(table) {
   'use strict';
-
-  // console.debug('Unwrapping single column table', table);
   const document = table.ownerDocument;
   const tableParent = table.parentNode;
   const rows = table.rows;

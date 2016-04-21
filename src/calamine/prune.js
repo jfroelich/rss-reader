@@ -17,7 +17,7 @@ function calamine_prune(document, bestElement) {
   // are descendants of elements removed in a previous iteration. The
   // assumption is that this yields better performance.
 
-  // TODO: instead of doing two calls to contains, I think I can use one
+  // TODO: instead of doing multiple calls to contains, I think I can use one
   // call to compareDocumentPosition and then check against its result.
   // I am not very familiar with compareDocumentPosition yet, that is the
   // only reason I am not using it.

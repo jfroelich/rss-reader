@@ -24,11 +24,10 @@ function calamine_derive_text_bias(element) {
 // are descendants of the element.
 // This assumes that the HTML is generally well-formed. Specifically it assumes
 // no anchor nesting.
+// TODO: maybe just inline this in the caller.
 function calamine_derive_anchor_length(element) {
   'use strict';
-
-  const anchors = element.querySelectorAll('A[href]');
-
+  const anchors = element.querySelectorAll('a[href]');
   const numAnchors = anchors.length;
   let anchorLength = 0;
   for(let i = 0, anchor, content; i < numAnchors; i++) {
