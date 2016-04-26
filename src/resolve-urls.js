@@ -27,7 +27,6 @@ function resolve_urls(document, baseURL) {
 // of this module if used independently requires this behavior.
 function resolve_remove_base_elements(document) {
   'use strict';
-
   const bases = document.querySelectorAll('base');
   const numBases = bases.length;
   for(let i = 0; i < numBases; i++) {
@@ -63,11 +62,17 @@ const RESOLVE_URL_ATTRIBUTE_MAP = {
   'video': 'src'
 };
 
-var RESOLVE_SELECTOR = Object.keys(
-  RESOLVE_URL_ATTRIBUTE_MAP).map(function resolve_generate_part(key) {
+function resolve_generate_selector_part(key) {
   'use strict';
   return key + '[' + RESOLVE_URL_ATTRIBUTE_MAP[key] +']';
-}).join(',');
+}
+
+const RESOLVE_SELECTOR = Object.keys(RESOLVE_URL_ATTRIBUTE_MAP).map(
+  resolve_generate_selector_part).join(',');
+
+// TODO: i want to modify this so that I do not also check for
+// srcset, I would rather be iterating over all elements, or iterate over
+// srcset elements separately.
 
 function resolve_modify_attributes(document, baseURL) {
   'use strict';

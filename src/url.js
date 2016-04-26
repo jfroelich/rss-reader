@@ -13,11 +13,6 @@ function url_filter_protocol(urlString) {
   return uri.toString().substring(2);
 }
 
-function url_is_object(urlString) {
-  'use strict';
-  return /^\s*data\s*:/i.test(urlString);
-}
-
 // Returns true if the url is minimally valid
 function url_is_valid(urlString) {
   'use strict';

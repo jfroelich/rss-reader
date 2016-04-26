@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// Entry utilities
+// Mark entry as read functionality
 // Requires: /src/entry.js
 
 // Marks the entry with the corresponding entryId as read in storage.

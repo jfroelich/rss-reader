@@ -14,7 +14,7 @@
 
 // Creates and returns an opml document with the given title and containing
 // the given feeds as outline elements
-function opml_create_document(title, feeds) {
+function opml_create_document(titleString, feeds) {
   'use strict';
   const doc = document.implementation.createDocument(null, 'OPML', null);
   const documentElement = doc.documentElement;
@@ -24,7 +24,7 @@ function opml_create_document(title, feeds) {
   documentElement.appendChild(headElement);
 
   const titleElement = doc.createElement('TITLE');
-  titleElement.textContent = title || '';
+  titleElement.textContent = titleString || '';
   headElement.appendChild(titleElement);
 
   const nowDate = new Date();

@@ -7,10 +7,13 @@
 // TODO: just store scheme and schemeless props as parts of a url object
 // property? remember that indexeddb can access deeper props using '.' in
 // keypaths.
-// TODO: store urls as URL objects?
+// TODO: store urls as URL objects
+// https://developer.mozilla.org/en-US/docs/Web/API/URL/URL
 
+// Open a database connection. The callback receives the request event.
 function db_open(callback) {
   'use strict';
+
   const DB_NAME = 'reader';
   const DB_VERSION = 17;
 
@@ -97,7 +100,7 @@ function db_upgrade(event) {
   }
 }
 
-// Removes everything from the entry object store
+// Removes all entry objects from the entry object store
 function db_clear_entry_store(connection) {
   'use strict';
 

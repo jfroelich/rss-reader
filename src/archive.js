@@ -63,7 +63,6 @@ function archive_next_entry(stats, event) {
   // TODO: the object will be a Date object once I make other changes so
   // the calculation here needs to change.
 
-  // TODO: i don't like how this directly accesses the created property.
   const ageInMillis = Date.now() - entry.created;
   const shouldArchiveEntry = ageInMillis > EXPIRES_AFTER_MS;
 
@@ -73,13 +72,11 @@ function archive_next_entry(stats, event) {
     // Trigger a new request but do not wait for it to complete
     const asyncUpdateRequest = cursor.update(newEntry);
 
+    // Notify listeners of the state change
     const archiveMessage = {
       'type': 'archivedEntry',
       'entryId': entry.id
     };
-
-    // NOTE: does not wait for asyncUpdateRequest to complete or check if
-    // transaction failed
     chrome.runtime.sendMessage(archiveMessage);
 
     stats.archived++;

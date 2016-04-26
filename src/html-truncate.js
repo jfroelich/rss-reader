@@ -46,16 +46,15 @@ function html_truncate(inputString, position, extensionString) {
     inertDocument.body,
     NodeFilter.SHOW_TEXT);
 
-  let acceptingAdditionalTextNodes = true;
-  let accumulatedLength = 0;
-  let node = textNodeIterator.nextNode();
-
   const ELLIPSIS = '\u2026';
   extensionString = extensionString || ELLIPSIS;
 
+  let acceptingAdditionalTextNodes = true;
+  let accumulatedLength = 0;
   let value = null;
   let valueLength = 0;
   let remaining = 0;
+  let node = textNodeIterator.nextNode();
 
   while(node) {
 
@@ -67,7 +66,7 @@ function html_truncate(inputString, position, extensionString) {
       continue;
     }
 
-    // node.nodeValue is decoded, not the raw text
+    // node.nodeValue is decoded, it is not the raw input text
     value = node.nodeValue;
     valueLength = value.length;
     if(accumulatedLength + valueLength >= position) {

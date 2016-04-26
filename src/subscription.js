@@ -107,7 +107,7 @@ function unsubscribe_delete_next_entry(state, event) {
 
 function unsubscribe_on_remove_entries(state, event) {
   'use strict';
-  // TODO: retreive connection from event instead of state.
+  // TODO: retrieve connection from event instead of state.
   const connection = state.connection;
   const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
@@ -119,11 +119,15 @@ function unsubscribe_on_remove_entries(state, event) {
 function unsubscribe_on_complete(state, event) {
   'use strict';
 
+  // TODO: retrieve connection from event instead of state
+  const connection = state.connection;
+
+
   // NOTE: This happens after because it is a separate read transaction,
   // despite pending delete requests of the previous transaction
-  // TODO: retrieve connection from event instead of state
-  badge_update_count(state.connection);
+  badge_update_count(connection);
 
+  // Notify listeners of the unsubscribe (even if db updates still pending)
   const subscriptionEvent = {
     'type': 'success',
     'feedId': state.feedId,

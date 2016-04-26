@@ -8,11 +8,7 @@
 function style_onmessage(message) {
   'use strict';
 
-  if(!message) {
-    console.debug('Undefined message');
-    return;
-  }
-
+  // Only react to the one message type of interest
   if(message.type === 'displaySettingsChanged') {
     style_update_styles();
   }
@@ -20,9 +16,11 @@ function style_onmessage(message) {
 
 chrome.runtime.onMessage.addListener(style_onmessage);
 
-// todo: this is not yet in use, but the idea is to remove media prefix
+// TODO: this is not yet in use, but the idea is to remove media prefix
 const STYLE_BACKGROUND_BASE_PATH = '/images/';
 
+// TODO: remove some of these backgrounds, I kind of went overboard, some of
+// these are useless
 const STYLE_BACKGROUND_IMAGES = [
   '/images/bgfons-paper_texture318.jpg',
   '/images/CCXXXXXXI_by_aqueous.jpg',
@@ -45,6 +43,7 @@ const STYLE_BACKGROUND_IMAGES = [
   '/images/thomas-zucx-noise-lines.png'
 ];
 
+// TODO: remove support for some of these fonts that are not very readable
 const STYLE_FONT_FAMILIES = [
   'ArchivoNarrow-Regular',
   'Arial, sans-serif',
@@ -73,7 +72,6 @@ const STYLE_FONT_FAMILIES = [
   'Roboto Regular'
 ];
 
-// TODO: elevate this into its own file
 // Note: Array.prototype.find requires Chrome 45+
 function style_find_css_rule(sheet, selectorText) {
   'use strict';
@@ -204,6 +202,7 @@ function style_load_styles() {
 
   sheet.addRule('div.entry a.entry-title', buffer.join(''));
 
+  // Reset the buffer
   buffer = [];
 
 

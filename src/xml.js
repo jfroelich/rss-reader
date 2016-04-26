@@ -2,10 +2,9 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// XML routines
-
-// Parses a string containing xml into an XML document
-// Note that node.nodeName works differently for xml documents.
+// Parses a string containing xml into an document. The document is XML-flagged,
+// so node.nodeName is case-sensitive. Throws an exception when a parsing
+// error occurs.
 function xml_parse_string(xmlString) {
   'use strict';
 

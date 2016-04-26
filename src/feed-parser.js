@@ -2,15 +2,15 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// TODO: now that the parser sets the type property, all the other code needs
+// to support it (e.g. save it, update it properly) - this is a general note
+
+// TODO: store URL strings as URL objects
+
 // Lib for unmarshalling an xml document into a feed object. The values stored
 // in the feed object are not sanitized, and should be sanitized later by the
 // caller before rendering/storing
 // Requires: /src/string.js
-// TODO: use a feed object into of a basic javascript object. This
-// ties into the need to understand the indexedDB structured cloning algorithm
-// in more detail and how it handles serialization of function objects
-// TODO: now that the parser sets the type property, all the other code needs
-// to support it (e.g. save it, update it properly) - this is a general note
 
 // Unmarshall an xml document into a feed object
 function feed_parser_parse_document(document) {
@@ -23,7 +23,7 @@ function feed_parser_parse_document(document) {
 
   // NOTE: selector must be lowercase to match, I do not have a clear
   // understanding of why, i suppose it is related to the document being
-  // xml-flagged
+  // xml-flagged?
 
   if(!documentElement.matches('feed, rss, rdf')) {
     throw new Error('Unsupported document element: ' +

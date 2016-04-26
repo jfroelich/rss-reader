@@ -49,7 +49,12 @@ function image_dimensions_should_fetch(imageElement) {
 
   let url = imageElement.getAttribute('src') || '';
   url = url.trim();
-  return url && !url_is_object(url) && !imageElement.width;
+  return url && !image_dimensions_is_data_url(url) && !imageElement.width;
+}
+
+function image_dimensions_is_data_url(urlString) {
+  'use strict';
+  return /^\s*data\s*:/i.test(urlString);
 }
 
 // Request the image.
