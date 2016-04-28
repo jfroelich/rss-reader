@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Requires: /src/calamine/ancestor-bias.js
 // Requires: /src/calamine/attribute-bias.js
 // Requires: /src/calamine/image-bias.js
@@ -15,8 +17,6 @@ const CALAMINE_CANDIDATE_SELECTOR = [
 // Scores each of the candidate elements and returns the one with
 // the highest score
 function calamine_find_highest_scoring_element(document) {
-  'use strict';
-
   const LIST_SELECTOR = 'LI, OL, UL, DD, DL, DT';
   const NAV_SELECTOR = 'ASIDE, HEADER, FOOTER, NAV, MENU, MENUITEM';
 

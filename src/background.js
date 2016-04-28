@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Background code, should only be included in the extension's background page
 // Requires: /src/archive.js
 // Requires: /src/db.js
@@ -13,8 +15,6 @@
 // present. So maybe I should search for the listener?
 // TODO: are there any other settings I should be installing?
 function background_on_installed(event) {
-  'use strict';
-
   console.log('Installing...');
 
   // Trigger database upgrade by opening a connection
@@ -29,8 +29,6 @@ chrome.runtime.onInstalled.addListener(background_on_installed);
 
 // Called by Chrome when an alarm wakes up
 function background_on_alarm(alarm) {
-  'use strict';
-
   const alarmName = alarm.name;
   if(alarmName === BACKGROUND_ARCHIVE_ALARM_NAME) {
     archive_entries();
@@ -53,8 +51,6 @@ chrome.alarms.onAlarm.addListener(background_on_alarm);
 const BACKGROUND_VIEW_URL = chrome.extension.getURL('slides.html');
 
 function background_on_badge_click() {
-  'use strict';
-
   // TODO: Something went wrong upgrading from chrome 48 to 49. The query finds
   // the existing tab and updates it, but it is never displayed. It finds it
   // even where there is no visible matching tab. Also, the first time I
@@ -70,8 +66,6 @@ function background_on_badge_click() {
 }
 
 function background_on_query_for_view_tab(tabsArray) {
-  'use strict';
-
   const didFindOpenViewTab = !!tabsArray.length;
 
   if(didFindOpenViewTab) {
@@ -86,8 +80,6 @@ function background_on_query_for_view_tab(tabsArray) {
 }
 
 function background_on_query_for_new_tab(tabsArray) {
-  'use strict';
-
   const didFindNewTab = !!tabsArray.length;
 
   if(didFindNewTab) {

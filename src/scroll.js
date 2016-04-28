@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // TODO: this should probably use an even more qualified name like
 // scrollElementToY, given that it does not handle horizontal movement
 // Or maybe name it verticalScrollElement
@@ -9,7 +11,6 @@
 // just use 0 for x.
 // TODO: do not use nested functions
 function scroll_element_to(element, deltaY, targetY) {
-  'use strict';
   let scrollYStartTimer; // debounce
   let scrollYIntervalTimer; // incrementally move
   let amountToScroll = 0;

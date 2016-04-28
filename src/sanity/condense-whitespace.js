@@ -2,11 +2,11 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // NOTE: this only sanitizes text nodes within the body element.
 // TODO: delete all text nodes outside of the body?
 function sanity_condense_whitespace(document) {
-  'use strict';
-
 
   // NOTE: node.nodeValue yields a decoded value without entities, not the
   // raw encoded value that contains entities.

@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // TODO: if I stop using the fast path of find-signature.js, and I return to
 // individually weighting blocks, I should expand this list.
 
@@ -45,7 +47,6 @@ const CALAMINE_ATTRIBUTE_BIAS_TOKEN_WEIGHTS = {
 // Computes a bias for an element based on the values of some of its
 // attributes.
 function calamine_derive_attribute_bias(element) {
-  'use strict';
 
   // As much as I would look to organize the statements of this function into
   // smaller helper functions, this is a hotspot, so I have inlined

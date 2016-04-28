@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Lib for removing blacklisted elements. This fulfills multiple purposes.
 // Certain blacklisted elements are unwrapped instead of removed and that
 // is handled by other sanity functionality.
@@ -23,7 +25,6 @@ const SANITY_BLACKLIST_SELECTOR = SANITY_BLACKLISTED_ELEMENTS.join(',');
 // not in the whitelist would be removed. The problem is that custom elements
 // wouldn't be in the whitelist, but they easily contain valuable content.
 function sanity_filter_blacklisted_elements(document) {
-  'use strict';
   const docElement = document.documentElement;
   const elements = document.querySelectorAll(SANITY_BLACKLIST_SELECTOR);
   const numElements = elements.length;

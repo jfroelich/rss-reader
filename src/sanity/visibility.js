@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Sanity helper functions for dealing with hidden elements.
 // Requires: /src/dom.js
 //
@@ -45,8 +47,6 @@
 // https://www.w3.org/TR/wai-aria/states_and_properties#aria-hidden
 
 function sanity_filter_hidden_elements(document) {
-  'use strict';
-
   // Document element is required.
   // TODO: maybe i do not need docElement, maybe
   // checking bodyElement.contains is sufficient.

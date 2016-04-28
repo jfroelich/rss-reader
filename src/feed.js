@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Requires: /src/url.js
 
 // Feed routines. One of the main goals is to centralize all functions that
@@ -20,7 +22,6 @@
 
 
 function feed_find_by_id(connection, id, callback) {
-  'use strict';
   const transaction = connection.transaction('feed');
   const store = transaction.objectStore('feed');
   const request = store.get(id);
@@ -28,7 +29,6 @@ function feed_find_by_id(connection, id, callback) {
 }
 
 function feed_find_by_url(connection, url, callback) {
-  'use strict';
   const transaction = connection.transaction('feed');
   const store = transaction.objectStore('feed');
   const index = store.index('schemeless');
@@ -39,8 +39,6 @@ function feed_find_by_url(connection, url, callback) {
 
 // TODO: deprecate, this is a caller responsibility
 function feed_for_each(connection, handleFeed, sortByTitle, callback) {
-  'use strict';
-
   function on_success(event) {
     const cursor = event.target.result;
     if(cursor) {
@@ -62,8 +60,6 @@ function feed_for_each(connection, handleFeed, sortByTitle, callback) {
 
 // TODO: maybe deprecate, this is a caller responsibility
 function feed_get_all(connection, callback) {
-  'use strict';
-
   function on_success(event) {
     const cursor = event.target.result;
     if(cursor) {
@@ -88,8 +84,6 @@ function feed_get_all(connection, callback) {
 // TODO: maybe not modify date updated if not dirty
 // TODO: sanitize html entities?
 function db_store_feed(connection, original, feed, callback) {
-  'use strict';
-
   const storable = {};
 
   if(original) {
@@ -149,8 +143,6 @@ function db_store_feed(connection, original, feed, callback) {
 }
 
 function feed_sanitize_before_store(value) {
-  'use strict';
-
   if(value) {
     value = html_replace(value, '');
     value = string_filter_controls(value);

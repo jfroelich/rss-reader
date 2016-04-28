@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Lib for helping reduce the number of tracking elements in an HTML
 // document.
 
@@ -18,7 +20,6 @@ const NO_TRACK_IMAGE_SRC_URLS = [
 ];
 
 function no_track_make_image_selector_part(urlString) {
-  'use strict';
   return 'IMG[src^="' + urlString + '"]';
 }
 
@@ -31,8 +32,6 @@ const NO_TRACK_IMAGE_SELECTOR = NO_TRACK_IMAGE_SELECTOR_PARTS.join(',');
 // called. This is done before doing image dimension fetches. Otherwise the
 // pings would still occur.
 function no_track_filter_elements(document) {
-  'use strict';
-
   // I only look for tracking elements within the body, because I assume
   // that out-of-body information is removed separately in the sanity
   // functions.
@@ -52,8 +51,6 @@ function no_track_filter_elements(document) {
 }
 
 function no_track_filter_tiny_images(document) {
-  'use strict';
-
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
@@ -61,23 +58,10 @@ function no_track_filter_tiny_images(document) {
 
   const imageNodeList = bodyElement.querySelectorAll('IMG');
   const listLength = imageNodeList.length;
-
-  // Because this happens before ensuring that image dimensions are set,
-  // image.width and image.height may be undefined/0. Therefore we have to
-  // check for whether they are defined before determining if they are tiny.
-
-  // Actually, nevermind. This is located here but only called by
-  // sanity. So it is just some poorly organized code. This is actually
-  // called on render after dimensions have been fetched.
-
-
   for(let i = 0, imageElement; i < listLength; i++) {
     imageElement = imageNodeList[i];
-    //if(imageElement.width && imageElement.height) {
-      if(imageElement.width < 2 || imageElement.height < 2) {
-        //console.debug('Removing tiny image:', imageElement.outerHTML);
-        imageElement.remove();
-      }
-    //}
+    if(imageElement.width < 2 || imageElement.height < 2) {
+      imageElement.remove();
+    }
   }
 }

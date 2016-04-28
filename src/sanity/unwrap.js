@@ -1,6 +1,7 @@
 // Copyright 2016 Josh Froelich. All rights reserved.
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
+'use strict';
 
 // Requires: /src/dom.js
 
@@ -93,14 +94,10 @@ const UNWRAPPABLE_SELECTOR = [
 ].join(',');
 
 function sanity_filter_unwrappables(document) {
-  'use strict';
-
   return sanity_filter_unwrappables_naive(document);
 }
 
 function sanity_filter_unwrappables_naive(document) {
-  'use strict';
-
   // Require body. Only examine elements beneath body.
   const bodyElement = document.body;
   if(!bodyElement) {
@@ -115,8 +112,6 @@ function sanity_filter_unwrappables_naive(document) {
 }
 
 function sanity_filter_unwrappables_complex(document) {
-  'use strict';
-
   const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
   for(let i = 0, len = elements.length, element, shallowest; i < len; i++) {
     element = elements[i];
@@ -128,8 +123,6 @@ function sanity_filter_unwrappables_complex(document) {
 }
 
 function sanity_is_unwrappable_parent(element) {
-  'use strict';
-
   let result = element.matches(UNWRAPPABLE_SELECTOR);
   for(let node = element.firstChild; result && node; node = node.nextSibling) {
     if(node.nodeType === Node.ELEMENT_NODE) {
@@ -147,8 +140,6 @@ function sanity_is_unwrappable_parent(element) {
 }
 
 function sanity_find_shallowest_unwrappable_ancestor(element) {
-  'use strict';
-
   // TODO: do not iterate past body
 
   let shallowest = null;

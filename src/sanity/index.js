@@ -1,6 +1,7 @@
 // Copyright 2016 Josh Froelich. All rights reserved.
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
+'use strict';
 
 // Lib for filtering the contents of an HTML Document object
 // Requires: /src/dom.js
@@ -62,7 +63,6 @@
 // Applies a hardcoded series of filters to a document. Modifies the document
 // in place.
 function sanity_sanitize_document(document) {
-  'use strict';
   sanity_filter_comments(document);
   sanity_replace_frames(document);
   sanity_filter_noscripts(document);
@@ -92,8 +92,6 @@ function sanity_sanitize_document(document) {
 // document, but it isn't visible/rendered because we obviously support scripts
 // and so the browser hides it. So now we have to remove it.
 function sanity_filter_noscripts(document) {
-  'use strict';
-
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
@@ -109,8 +107,6 @@ function sanity_filter_noscripts(document) {
 
 
 function sanity_filter_comments(document) {
-  'use strict';
-
   const it = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_COMMENT);
   for(let comment = it.nextNode(); comment; comment = it.nextNode()) {
@@ -123,8 +119,6 @@ function sanity_filter_comments(document) {
 // TODO: there can be multiple bodies when illformed. Maybe use
 // querySelectorAll and handle multi-body branch differently
 function sanity_replace_frames(document) {
-  'use strict';
-
   const framesetElement = document.body;
   if(!framesetElement || framesetElement.nodeName !== 'FRAMESET') {
     return;
@@ -147,8 +141,6 @@ function sanity_replace_frames(document) {
 }
 
 function sanity_filter_anchors(document) {
-  'use strict';
-
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
@@ -185,8 +177,6 @@ function sanity_filter_anchors(document) {
 
 // Unwrap lists with only one item.
 function sanity_filter_lists(document) {
-  'use strict';
-
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
@@ -213,8 +203,6 @@ function sanity_filter_lists(document) {
 }
 
 function sanity_filter_consecutive_rules(document) {
-  'use strict';
-
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
@@ -232,8 +220,6 @@ function sanity_filter_consecutive_rules(document) {
 }
 
 function sanity_filter_consecutive_break_rules(document) {
-  'use strict';
-
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
@@ -253,8 +239,6 @@ function sanity_filter_consecutive_break_rules(document) {
 // TODO: improve, this is very buggy
 // error case: http://paulgraham.com/procrastination.html
 function sanity_replace_break_rules(document) {
-  'use strict';
-
   // NOTE: Due to buggy output this is a no-op for now
   if(true) {
     return;
@@ -283,8 +267,6 @@ function sanity_replace_break_rules(document) {
 // NOTE: boilerplate analysis examines figures, so ensure this is not done
 // before it.
 function sanity_filter_figures(document) {
-  'use strict';
-
   const bodyElement = document.body;
   if(!bodyElement) {
     return;

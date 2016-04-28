@@ -2,14 +2,14 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // DOM utilities
 
 // Moves source's child nodes to destination. Assumes source and destination
 // are defined elements.
 // TODO: consider renaming to dom_move_children
 function dom_append_children(sourceElement, destinationElement) {
-  'use strict';
-
   // Copy the source element's nodes into a document fragment before moving
   // them. This yields an incredible performance improvement because all of
   // the appending takes place in a single append of the fragment into the
@@ -51,7 +51,6 @@ function dom_append_children(sourceElement, destinationElement) {
 // NOTE: this assumes both nodes in the same document and that it is inert.
 // TODO: would using fragment here also improve performance?
 function dom_insert_children_before(parentNode, referenceNode) {
-  'use strict';
   const referenceParent = referenceNode.parentNode;
   for(let node = parentNode.firstChild; node; node = parentNode.firstChild) {
     referenceParent.insertBefore(node, referenceNode);
@@ -63,7 +62,6 @@ function dom_insert_children_before(parentNode, referenceNode) {
 // referenceNode is optional.
 // TODO: make the space wrapping optional or give caller the responsibility
 function dom_unwrap(element, referenceNode) {
-  'use strict';
   const target = referenceNode || element;
   const parent = target.parentNode;
   if(parent) {
@@ -87,31 +85,25 @@ function dom_unwrap(element, referenceNode) {
 
 // Returns the value of a dom text node
 function dom_get_node_value(textNode) {
-  'use strict';
   return textNode.nodeValue;
 }
 
 function dom_hide_element(element) {
-  'use strict';
   element.style.display = 'none';
 }
 
 function dom_show_element(element) {
-  'use strict';
   element.style.display = 'block';
 }
 
 function dom_add_class(element, classNameString) {
-  'use strict';
   element.classList.add(classNameString);
 }
 
 function dom_remove_class(element, classNameString) {
-  'use strict';
   element.classList.remove(classNameString);
 }
 
 function dom_is_element_visible(element) {
-  'use strict';
   return element.style.display === 'block';
 }

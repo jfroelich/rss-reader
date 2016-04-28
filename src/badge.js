@@ -2,12 +2,13 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Requires: /src/db.js
 // Requires: /src/entry.js
 
 // Updates the unread count of the extension's badge
 function badge_update_count(connection) {
-  'use strict';
   if(connection) {
     badge_count_unread_entries(connection, badge_set_count_from_request);
   } else {
@@ -16,7 +17,6 @@ function badge_update_count(connection) {
 }
 
 function badge_on_connect(event) {
-  'use strict';
   if(event.type === 'success') {
     const connection = event.target.result;
     badge_count_unread_entries(connection, badge_set_count_from_request);
@@ -27,7 +27,6 @@ function badge_on_connect(event) {
 }
 
 function badge_set_count_from_request(event) {
-  'use strict';
   const request = event.target;
   const count = request.result || 0;
   const text = {'text': '' + count};
@@ -35,7 +34,6 @@ function badge_set_count_from_request(event) {
 }
 
 function badge_count_unread_entries(connection, callback) {
-  'use strict';
   const transaction = connection.transaction('entry');
   const store = transaction.objectStore('entry');
   const index = store.index('readState');

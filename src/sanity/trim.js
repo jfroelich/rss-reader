@@ -2,10 +2,10 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Remove trimmable nodes from the start and end of the document.
 function sanity_trim_document(document) {
-  'use strict';
-
   // Restrict the scope of the descendants of body
   const bodyElement = document.body;
   if(!bodyElement) {
@@ -44,8 +44,6 @@ const SANITY_TRIMMABLE_VOID_ELEMENTS = {
 // TODO: seems like duplication or something of a similar issue with filtering
 // leaves in leaf.js. Are the operations are associative?
 function sanity_remove_trimmable_nodes_by_step(startNode, step) {
-  'use strict';
-
   // A node is trimmable when it is:
   // 1) A named element
   // 2) A whitespace only or empty text node

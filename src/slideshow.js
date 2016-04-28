@@ -2,18 +2,23 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // TODO: decouple loading of additional content with navigation. It causes
 // lag. Instead, create a queue of articles, and refill it periodically on
 // some type of schedule (using setInterval or a re-setTimeout-per-append)
 // Only append during navigation if the queue has not yet refilled.
 
+// TODO: if advancing to next article too quickly, some articles are loaded
+// that were already loaded, leading to duplicate articles. The call to append
+// articles needs to be delayed until scrolling completes or something like
+// that.
 
-// Requires: /src/calamine.js
+// Requires: /src/calamine/index.js
 // Requires: /src/date.js
 // Requires: /src/db.js
-// Requires: /src/sanity.js
+// Requires: /src/sanity/*
 // Requires: /src/style.js
-// Requires: /src/utils.js
 
 // TODO: rather than store slideshow_currentSlide in global state,
 // use a simple object instance that we store in global state that wraps
@@ -24,8 +29,6 @@
 let slideshow_currentSlide = null;
 
 function slideshow_onmessage(message) {
-  'use strict';
-
   switch(message.type) {
     case 'pollCompleted':
       slideshow_maybe_append_slides();
@@ -73,7 +76,6 @@ chrome.runtime.onMessage.addListener(slideshow_onmessage);
 // remove the publisher when it is present as a prefix, but this seems to be
 // less frequent.
 function slideshow_filter_article_title(title) {
-  'use strict';
   if(!title)
     return;
   let index = title.lastIndexOf(' - ');
@@ -94,8 +96,6 @@ function slideshow_filter_article_title(title) {
 }
 
 function slideshow_maybe_append_slides() {
-  'use strict';
-
   const unreadCount = slideshow_count_unread();
   if(unreadCount) {
     // There are still some unread slides loaded, so do not bother appending
@@ -113,7 +113,6 @@ function slideshow_maybe_append_slides() {
 }
 
 function slideshow_on_unsubscribe(message) {
-  'use strict';
   const slidesForFeed = document.querySelectorAll(
     'div[feed="'+ message.feed +'"]');
   const removedCurrentSlide = Array.prototype.reduce.call(
@@ -133,13 +132,11 @@ function slideshow_on_unsubscribe(message) {
 }
 
 function slideshow_remove_slide(slideElement) {
-  'use strict';
   slideElement.removeEventListener('click', slideshow_on_slide_click);
   slideElement.remove();
 }
 
 function slideshow_mark_read(slide) {
-  'use strict';
   if(slide.hasAttribute('read')) {
     return;
   }
@@ -163,8 +160,6 @@ function slideshow_mark_read(slide) {
 }
 
 function slideshow_append_slides(oncomplete, isFirst) {
-  'use strict';
-
   let counter = 0;
   const limit = 5;
   const offset = slideshow_count_unread();
@@ -229,8 +224,6 @@ function slideshow_append_slides(oncomplete, isFirst) {
 // NOTE: event.target is what was clicked. event.currentTarget is where the
 // listener is attached.
 function slideshow_on_slide_click(event) {
-  'use strict';
-
   const mouseButtonCode = event.which;
   const LEFT_MOUSE_BUTTON_CODE = 1;
   const MOUSE_WHEEL_BUTTON_CODE = 2;
@@ -294,8 +287,6 @@ function slideshow_on_slide_click(event) {
  * blocking, because this is synchronous.
  */
 function slideshow_append_slide(entry, isFirst) {
-  'use strict';
-
   // TODO: use <article> instead of div
   const slide = document.createElement('div');
   slide.setAttribute('entry', entry.id);
@@ -368,8 +359,6 @@ function slideshow_append_slide(entry, isFirst) {
 }
 
 function slideshow_show_next_slide() {
-  'use strict';
-
   if(slideshow_count_unread() < 2) {
     const isFirst = false;
     slideshow_append_slides(on_append_complete, isFirst);
@@ -403,7 +392,6 @@ function slideshow_show_next_slide() {
 }
 
 function slideshow_show_previous_slide() {
-  'use strict';
   const current = slideshow_currentSlide;
   if(current.previousSibling) {
     current.style.left = '100%';
@@ -415,18 +403,15 @@ function slideshow_show_previous_slide() {
 }
 
 function slideshow_is_unread_entry(entryElement) {
-  'use strict';
   return !entryElement.hasAttribute('read');
 }
 
 function slideshow_count_unread() {
-  'use strict';
   const slides = document.body.querySelectorAll('div[entry]:not([read])');
   return slides ? slides.length : 0;
 }
 
 function slideshow_maybe_show_all_read() {
-  'use strict';
   const numUnread = slideshow_count_unread();
   if(numUnread) {
     return;
@@ -436,7 +421,6 @@ function slideshow_maybe_show_all_read() {
 }
 
 function slideshow_hide_all_unread() {
-  'use strict';
   console.warn('slideshow_hide_all_unread not implemented');
 }
 
@@ -462,7 +446,6 @@ const SLIDESHOW_SCROLL_DELTAS = {
 let slideshow_keydown_timer;
 
 function slideshow_onkeydown(event) {
-  'use strict';
   //event.target is body
   //event.currentTarget is window
 
@@ -512,8 +495,6 @@ function slideshow_onkeydown(event) {
 window.addEventListener('keydown', slideshow_onkeydown, false);
 
 function slideshow_init(event) {
-  'use strict';
-
   document.removeEventListener('DOMContentLoaded', slideshow_init);
   style_load_styles();
   slideshow_append_slides(slideshow_maybe_show_all_read, true);

@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Returns a measure indicating whether the element contains boilerplate or
 // content based on its text. Elements with a large amount of text are
 // generally more likely to be content. Elements with a small amount of text
@@ -11,8 +13,6 @@
 // "Boilerplate Detection using Shallow Text Features".
 // See http://www.l3s.de/~kohlschuetter/boilerplate.
 function calamine_derive_text_bias(element) {
-  'use strict';
-
   const text = element.textContent;
   const trimmedText = text.trim();
   const textLength = 0.0 + trimmedText.length;
@@ -26,7 +26,6 @@ function calamine_derive_text_bias(element) {
 // no anchor nesting.
 // TODO: maybe just inline this in the caller.
 function calamine_derive_anchor_length(element) {
-  'use strict';
   const anchors = element.querySelectorAll('a[href]');
   const numAnchors = anchors.length;
   let anchorLength = 0;

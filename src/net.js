@@ -2,11 +2,11 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Requires: /src/feed-parser.js
 
 function net_fetch_feed(url, timeout, callback) {
-  'use strict';
-
   const request = new XMLHttpRequest();
   request.timeout = timeout;
   request.onerror = function on_error(event) {
@@ -83,8 +83,6 @@ function net_fetch_feed(url, timeout, callback) {
 }
 
 function net_fetch_html(url, timeout, callback) {
-  'use strict';
-
   const request = new XMLHttpRequest();
   request.timeout = timeout;
   request.ontimeout = function on_timeout(event) {

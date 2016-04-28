@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // TODO: remove async dependency
 // TODO: remove reliance on feed_for_each, do explicit iteration here,
 // or maybe make a function that generates the initial request at least, and
@@ -22,8 +24,6 @@
 // Requires: /src/url.js
 
 function poll_start() {
-  'use strict';
-
   console.log('Starting poll ...');
 
   if(!poll_is_online()) {
@@ -35,10 +35,7 @@ function poll_start() {
     poll_on_check_idle_permission);
 }
 
-// TODO: move to net.js?
 function poll_is_online() {
-  'use strict';
-
   if(!navigator) {
     return true;
   }
@@ -51,8 +48,6 @@ function poll_is_online() {
 }
 
 function poll_on_check_idle_permission(permitted) {
-  'use strict';
-
   const IDLE_PERIOD_IN_SECONDS = 60 * 5; // 5 minutes
 
   // If we are permitted to check idle state, then check it. Otherwise,
@@ -65,8 +60,6 @@ function poll_on_check_idle_permission(permitted) {
 }
 
 function poll_on_query_idle_state(state) {
-  'use strict';
-
   if(state === 'locked' || state === 'idle') {
     // If we appear to be idle then start polling
     db_open(poll_iterate_feeds);
@@ -79,8 +72,6 @@ function poll_on_query_idle_state(state) {
 
 // Iterate over the feeds in the database, and update each feed.
 function poll_iterate_feeds(event) {
-  'use strict';
-
   // Exit early if there was a database connection error
   if(event.type !== 'success') {
     console.debug(event);
@@ -99,16 +90,12 @@ function poll_iterate_feeds(event) {
 }
 
 function poll_fetch_feed(connection, feed) {
-  'use strict';
-
   const timeout = 10 * 1000;
   const onFetchFeedBound = poll_on_fetch_feed.bind(null, connection, feed);
   net_fetch_feed(feed.url, timeout, onFetchFeedBound);
 }
 
 function poll_on_fetch_feed(connection, feed, event, remoteFeed) {
-  'use strict';
-
   // Exit early if an error occurred while fetching. This does not
   // continue processing the feed or its entries. The event is only defined
   // if there was a fetch error.
@@ -137,8 +124,6 @@ function poll_on_fetch_feed(connection, feed, event, remoteFeed) {
 
 // TODO: what's with the _?
 function poll_on_store_feed(connection, feed, remoteFeed, _) {
-  'use strict';
-
   // TODO: stop using the async lib. Do custom async iteration here.
 
   async.forEach(remoteFeed.entries,
@@ -147,8 +132,6 @@ function poll_on_store_feed(connection, feed, remoteFeed, _) {
 }
 
 function poll_on_entries_updated(connection) {
-  'use strict';
-
   // Update the number of unread entries now that the number possibly changed
   // Pass along the current connection so that badge_update_count does not
   // have to create a new one.
@@ -158,8 +141,6 @@ function poll_on_entries_updated(connection) {
 // For an entry in the feed, check whether an entry with the same link
 // already exists.
 function poll_find_entry_by_link(connection, feed, entry, callback) {
-  'use strict';
-
   const transaction = connection.transaction('entry');
   const entries = transaction.objectStore('entry');
   const links = entries.index('link');
@@ -175,8 +156,6 @@ function poll_find_entry_by_link(connection, feed, entry, callback) {
 // doesn't exist. Get the full html of the entry. Update the properties of the
 // entry. Then store the entry, and then callback to async.forEach.
 function poll_on_find_entry(connection, feed, entry, callback, event) {
-  'use strict';
-
   const getEntryRequest = event.target;
   const localEntry = getEntryRequest.result;
 
@@ -195,7 +174,6 @@ function poll_on_find_entry(connection, feed, entry, callback, event) {
 
 // Copy some properties from feed into entry prior to storage
 function poll_cascade_feed_properties(feed, entry) {
-  'use strict';
   entry.feed = feed.id;
 
   // Denormalize now to avoid doing the lookup on render
@@ -210,7 +188,6 @@ function poll_cascade_feed_properties(feed, entry) {
 
 // The entire poll completed
 function poll_on_complete() {
-  'use strict';
   console.log('Polling completed');
   localStorage.LAST_POLL_DATE_MS = '' +Date.now();
   notification_show('Updated articles');
@@ -219,7 +196,6 @@ function poll_on_complete() {
 // TODO: move this into a separate lib?
 // Fetch the full content for the entry
 function poll_augment_entry_content(entry, timeout, callback) {
-  'use strict';
   const onFetchHTMLBound = poll_on_fetch_html.bind(null, entry, callback);
   net_fetch_html(entry.link, timeout, onFetchHTMLBound);
 }
@@ -228,8 +204,6 @@ function poll_augment_entry_content(entry, timeout, callback) {
 // callback to signal to async.forEach to continue to the next entry.
 // Otherwise, clean up the html. Remove urls, set image sizes, resolve urls.
 function poll_on_fetch_html(entry, callback, error, document, responseURL) {
-  'use strict';
-
   if(error) {
     console.debug(error);
     callback();
@@ -253,8 +227,6 @@ function poll_on_fetch_html(entry, callback, error, document, responseURL) {
 // Upon setting the sizes of images, replace the content property of the entry,
 // and then callback without arguments to signal to async.forEach to continue.
 function poll_on_set_image_dimensions(entry, document, callback) {
-  'use strict';
-
   const documentElement = document.documentElement;
   if(documentElement) {
     const fullDocumentHTMLString = documentElement.outerHTML;

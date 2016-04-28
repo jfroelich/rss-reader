@@ -2,10 +2,10 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // A quick and dirty way to get a formatted date string
 function date_format(date, optionalDelimiterString) {
-  'use strict';
-
   // Almost no guarding is done. Just fail on the date.getMonth line.
 
   if(!date) {
@@ -24,10 +24,7 @@ function date_format(date, optionalDelimiterString) {
 // do it?
 // See http://stackoverflow.com/questions/1353684
 function date_is_valid(date) {
-  'use strict';
-
   const OBJECT_TO_STRING = Object.prototype.toString;
-
   return date && OBJECT_TO_STRING.call(date) === '[object Date]' &&
     isFinite(date);
 }

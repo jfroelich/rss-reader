@@ -2,12 +2,12 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Parses a string containing xml into an document. The document is XML-flagged,
 // so node.nodeName is case-sensitive. Throws an exception when a parsing
 // error occurs.
 function xml_parse_string(xmlString) {
-  'use strict';
-
   const parser = new DOMParser();
   const MIME_TYPE_XML = 'application/xml';
   const document = parser.parseFromString(xmlString, MIME_TYPE_XML);

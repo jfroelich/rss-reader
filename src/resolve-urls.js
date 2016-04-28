@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // TODO: resolve xlink type simple (on any attribute) in xml docs
 // TODO: finish implementing resolve_serialize_srcset
 // TODO: rather than do a separate check for srcset, it should somehow be
@@ -18,7 +20,6 @@
 // Resolves all urls in a document, such as element attribute values
 // TODO: use a clearer name
 function resolve_urls(document, baseURL) {
-  'use strict';
   resolve_remove_base_elements(document);
   resolve_modify_attributes(document, baseURL);
 }
@@ -26,7 +27,6 @@ function resolve_urls(document, baseURL) {
 // Remove base. base is blacklisted in sanitize-document.js but the integrity
 // of this module if used independently requires this behavior.
 function resolve_remove_base_elements(document) {
-  'use strict';
   const bases = document.querySelectorAll('base');
   const numBases = bases.length;
   for(let i = 0; i < numBases; i++) {
@@ -63,7 +63,6 @@ const RESOLVE_URL_ATTRIBUTE_MAP = {
 };
 
 function resolve_generate_selector_part(key) {
-  'use strict';
   return key + '[' + RESOLVE_URL_ATTRIBUTE_MAP[key] +']';
 }
 
@@ -75,8 +74,6 @@ const RESOLVE_SELECTOR = Object.keys(RESOLVE_URL_ATTRIBUTE_MAP).map(
 // srcset elements separately.
 
 function resolve_modify_attributes(document, baseURL) {
-  'use strict';
-
   // Note this is not restricted to elements in the body, because there
   // are resolvable elements in the head, and <html> itself has a
   // resolvable attribute.
@@ -104,8 +101,6 @@ function resolve_modify_attributes(document, baseURL) {
 
 // TODO: maybe reverse argument order?
 function resolve_url(baseURL, url) {
-  'use strict';
-
   try {
     const uri = new URI(url);
     if(!uri.protocol()) {
@@ -123,7 +118,6 @@ function resolve_url(baseURL, url) {
 // descriptors, resolves the url for each descriptor, and then composes the
 // descriptors array back into a string and modifies the element
 function resolve_resolve_srcset(baseURL, element) {
-  'use strict';
   const source = element.getAttribute('srcset');
   let descriptors = parseSrcset(source) || [];
   let numURLsChanged = 0;
@@ -155,7 +149,6 @@ function resolve_resolve_srcset(baseURL, element) {
 // back into the string, and I am getting image errors in the output
 // TODO: support d,w,h
 function resolve_serialize_srcset(descriptors) {
-  'use strict';
   const resolvedDescriptors = [];
   const numDescriptors = descriptors.length;
 

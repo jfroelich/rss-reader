@@ -2,14 +2,13 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Requires: /src/sanity-unwrap.js
 
 // Unwraps single column and single cell tables
 function sanity_filter_tables(document) {
-  'use strict';
-
   // TODO: restrict to document.body
-
   const tables = document.querySelectorAll('TABLE');
   const tableLength = tables.length;
 
@@ -40,8 +39,6 @@ function sanity_filter_tables(document) {
 
 // TODO: allow for empty rows?
 function sanity_unwrap_single_cell_table(table) {
-  'use strict';
-
   const cell = table.rows[0].cells[0];
   const document = table.ownerDocument;
   const tableParent = table.parentNode;
@@ -54,8 +51,6 @@ function sanity_unwrap_single_cell_table(table) {
 // Examines the first 50 rows of a table element and decides whether
 // the table is probably a simple single column table
 function sanity_is_single_column_table(table) {
-  'use strict';
-
   const rows = table.rows;
   const rowLength = rows.length;
   const upperBound = Math.min(rowLength, 50);
@@ -69,7 +64,6 @@ function sanity_is_single_column_table(table) {
 }
 
 function sanity_unwrap_single_column_table(table) {
-  'use strict';
   const document = table.ownerDocument;
   const tableParent = table.parentNode;
   const rows = table.rows;

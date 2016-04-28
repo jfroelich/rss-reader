@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // TODO: now that the parser sets the type property, all the other code needs
 // to support it (e.g. save it, update it properly) - this is a general note
 
@@ -14,8 +16,6 @@
 
 // Unmarshall an xml document into a feed object
 function feed_parser_parse_document(document) {
-  'use strict';
-
   const documentElement = document.documentElement;
   if(!documentElement) {
     throw new Error('Undefined document element');
@@ -49,8 +49,6 @@ function feed_parser_parse_document(document) {
 }
 
 function feed_parser_find_channel(documentElement) {
-  'use strict';
-
   if(documentElement.matches('feed')) {
     return documentElement;
   } else {
@@ -59,8 +57,6 @@ function feed_parser_find_channel(documentElement) {
 }
 
 function feed_parser_get_entries(channelElement) {
-  'use strict';
-
   const documentElement = channelElement.ownerDocument.documentElement;
   const entries = [];
   let entryParent;
@@ -93,8 +89,6 @@ function feed_parser_get_entries(channelElement) {
 // TODO: maybe this shouldn't assume validity and should also check
 // for whether matches rss, and otherwise return null/undefined.
 function feed_parser_get_feed_type(documentElement) {
-  'use strict';
-
   let typeString = null;
   if(documentElement.matches('feed')) {
     typeString = 'feed';
@@ -108,8 +102,6 @@ function feed_parser_get_feed_type(documentElement) {
 }
 
 function feed_parser_get_feed_date(channelElement) {
-  'use strict';
-
   const isAtom = channelElement.ownerDocument.documentElement.matches('feed');
   if(isAtom) {
     return feed_parser_find_child_element_text(channelElement, 'UPDATED');
@@ -121,8 +113,6 @@ function feed_parser_get_feed_date(channelElement) {
 }
 
 function feed_parser_is_link_rel_alternate(element) {
-  'use strict';
-
   // TODO: maybe just use element.matches('link[rel="alternate"]')
 
   return string_equals_ignore_case(element.nodeName, 'LINK') &&
@@ -130,15 +120,11 @@ function feed_parser_is_link_rel_alternate(element) {
 }
 
 function feed_parser_is_link_rel_self(element) {
-  'use strict';
-
   return string_equals_ignore_case(element.nodeName, 'LINK') &&
     string_equals_ignore_case(element.getAttribute('rel'), 'SELF');
 }
 
 function feed_parser_is_link_with_href(element) {
-  'use strict';
-
   return string_equals_ignore_case(element.nodeName, 'LINK') &&
     element.hasAttribute('href');
 }
@@ -146,15 +132,11 @@ function feed_parser_is_link_with_href(element) {
 // NOTE: this is not necessarily the simple inverse of
 // feed_parser_is_link_with_href, because that could be any element
 function feed_parser_is_link_without_href(element) {
-  'use strict';
-
   return string_equals_ignore_case(element.nodeName, 'LINK') &&
     !element.hasAttribute('href');
 }
 
 function feed_parser_get_feed_link(channelElement) {
-  'use strict';
-
   const isAtom = channelElement.ownerDocument.documentElement.matches('feed');
 
   let linkText, linkElement;
@@ -190,8 +172,6 @@ function feed_parser_get_feed_link(channelElement) {
 // TODO: maybe I should define an Entry object within entry.js and this
 // should create a new Entry object and populate its fields
 function feed_parser_parse_entry(entryElement) {
-  'use strict';
-
   const isAtom = entryElement.ownerDocument.documentElement.matches('feed');
   const result = {};
   result.title = feed_parser_find_child_element_text(entryElement, 'TITLE');
@@ -220,8 +200,6 @@ function feed_parser_parse_entry(entryElement) {
 }
 
 function feed_parser_get_entry_author(entry) {
-  'use strict';
-
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
   if(isAtom) {
     const author = feed_parser_find_child_element_by_name(entry, 'AUTHOR');
@@ -235,8 +213,6 @@ function feed_parser_get_entry_author(entry) {
 }
 
 function feed_parser_get_entry_link(entry) {
-  'use strict';
-
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
 
   let linkText;
@@ -260,8 +236,6 @@ function feed_parser_get_entry_link(entry) {
 }
 
 function feed_parser_get_entry_date(entry) {
-  'use strict';
-
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
   let value = null;
 
@@ -281,8 +255,6 @@ function feed_parser_get_entry_date(entry) {
 }
 
 function feed_parser_get_entry_content(entry) {
-  'use strict';
-
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
   let result;
 
@@ -306,16 +278,12 @@ function feed_parser_get_entry_content(entry) {
 }
 
 function feed_parser_get_atom_entry_content(node) {
-  'use strict';
-
   return node.nodeType === Node.ELEMENT_NODE ?
     node.innerHTML : node.textContent;
 }
 
 // TODO: move into general purpose dom.js module
 function feed_parser_find_child_element(parentElement, predicate) {
-  'use strict';
-
   for(let element = parentElement.firstElementChild; element;
     element = element.nextElementSibling) {
     if(predicate(element)) {
@@ -325,8 +293,6 @@ function feed_parser_find_child_element(parentElement, predicate) {
 }
 
 function feed_parser_find_child_element_by_name(parentElement, nodeName) {
-  'use strict';
-
   // NOTE: nodeName is possibly or always lowercase, this has something to
   // do with the document containing the node being xml
   // I know that we are needlessly uppercasing the name each time here, but
@@ -339,8 +305,6 @@ function feed_parser_find_child_element_by_name(parentElement, nodeName) {
 }
 
 function feed_parser_find_child_element_text(element, nodeName) {
-  'use strict';
-
   const childElement = feed_parser_find_child_element_by_name(element,
     nodeName);
 

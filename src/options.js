@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-`style` license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Requires: /src/db.js
 // Requires: /src/dom.js
 // Requires: /src/fade-element.js
@@ -22,8 +24,6 @@ let options_currentSection = null;
 // TODO: maybe make an OptionsPageErrorMessage class and have this be
 // a member function.
 function options_hide_error() {
-  'use strict';
-
   const errorMessage = document.getElementById('options_error_message');
   if(!errorMessage) {
     return;
@@ -39,8 +39,6 @@ function options_hide_error() {
 }
 
 function options_show_error(messageString, fadeIn) {
-  'use strict';
-
   options_hide_error();
 
   const errorWidgetElement = document.createElement('div');
@@ -71,8 +69,6 @@ function options_show_error(messageString, fadeIn) {
 // TODO: maybe make an OptionsSubscriptionMonitor class and have this just be
 // a member function. Call it a widget.
 function options_show_sub_monitor() {
-  'use strict';
-
   options_reset_sub_monitor();
 
   const monitorElement = document.createElement('div');
@@ -86,8 +82,6 @@ function options_show_sub_monitor() {
 }
 
 function options_reset_sub_monitor() {
-  'use strict';
-
   const monitorElement = document.getElementById(
     'options_subscription_monitor');
   if(monitorElement) {
@@ -96,8 +90,6 @@ function options_reset_sub_monitor() {
 }
 
 function options_update_sub_monitor(messageString) {
-  'use strict';
-
   const monitorElement = document.getElementById(
     'options_subscription_monitor');
   if(!monitorElement) {
@@ -111,8 +103,6 @@ function options_update_sub_monitor(messageString) {
 }
 
 function options_hide_sub_monitor(callback, fadeOut) {
-  'use strict';
-
   const monitorElement = document.getElementById(
     'options_subscription_monitor');
 
@@ -141,8 +131,6 @@ function options_hide_sub_monitor(callback, fadeOut) {
 }
 
 function options_show_section(menuItem) {
-  'use strict';
-
   // TODO: maybe do not check for this? Should just fail if I forgot to set it
   // somewhere.
   if(!menuItem) {
@@ -185,8 +173,6 @@ function options_show_section(menuItem) {
 // Then, also consider if options_get_feed_count should be using the UI as
 // its source of truth or should instead be using the database.
 function options_update_feed_count() {
-  'use strict';
-
   const feedListElement = document.getElementById('feedlist');
   const count = feedListElement.childElementCount;
 
@@ -200,8 +186,6 @@ function options_update_feed_count() {
 
 // TODO: rename, where is this appending?
 function options_append_feed(feed, insertedSort) {
-  'use strict';
-
   const item = document.createElement('li');
   item.setAttribute('sort-key', feed.title);
 
@@ -247,8 +231,6 @@ function options_append_feed(feed, insertedSort) {
 }
 
 function options_on_enable_sub_preview_change() {
-  'use strict';
-
   if(this.checked)
     localStorage.ENABLE_SUBSCRIBE_PREVIEW = '1';
   else
@@ -256,8 +238,6 @@ function options_on_enable_sub_preview_change() {
 }
 
 function options_show_sub_preview(url) {
-  'use strict';
-
   options_hide_sub_preview();
   if(!localStorage.ENABLE_SUBSCRIBE_PREVIEW) {
     options_start_subscription(url);
@@ -323,8 +303,6 @@ function options_show_sub_preview(url) {
 }
 
 function options_hide_sub_preview() {
-  'use strict';
-
   const previewElement = document.getElementById('subscription-preview');
   dom_hide_element(previewElement);
   const resultsListElement = document.getElementById(
@@ -339,8 +317,6 @@ function options_hide_sub_preview() {
 // TODO: this should be calling out to a function in subscription.js and
 // delegating most of its logic to that function.
 function options_start_subscription(url) {
-  'use strict';
-
   options_hide_sub_preview();
 
   if(!url_is_valid(url)) {
@@ -428,8 +404,6 @@ function options_start_subscription(url) {
 // TODO: show num entries, num unread/red, etc
 // TODO: react to connection error, find error
 function populateFeedDetailsSection(feedId) {
-  'use strict';
-
   if(!feedId) {
     console.error('Invalid feedId');
     return;
@@ -489,8 +463,6 @@ function populateFeedDetailsSection(feedId) {
 }
 
 function options_on_feed_list_item_click(event) {
-  'use strict';
-
   const element = event.currentTarget;
   const feedIdString = element.getAttribute('feed');
   const feedId = parseInt(feedIdString);
@@ -512,8 +484,6 @@ function options_on_feed_list_item_click(event) {
 }
 
 function options_on_subscribe_submit(event) {
-  'use strict';
-
   // Prevent normal form submission event
   event.preventDefault();
 
@@ -571,8 +541,6 @@ function options_on_subscribe_submit(event) {
 }
 
 function options_on_discover_subscribe_click(event) {
-  'use strict';
-
   const button = event.target;
   const url = button.value;
   if(!url) {
@@ -591,8 +559,6 @@ function options_on_discover_subscribe_click(event) {
 }
 
 function options_on_discover_complete(errorEvent, query, results) {
-  'use strict';
-
   const progressElement = document.getElementById('discover-in-progress');
   const noResultsElement = document.getElementById('discover-no-results');
   const resultsList = document.getElementById('discover-results-list');
@@ -648,8 +614,6 @@ function options_on_discover_complete(errorEvent, query, results) {
 }
 
 function options_create_search_result_item(result) {
-  'use strict';
-
   const item = document.createElement('li');
 
   // Create the subscribe button for the result
@@ -689,7 +653,6 @@ function options_create_search_result_item(result) {
 }
 
 function options_on_unsubscribe_click(event) {
-  'use strict';
   const unsubscribeButton = event.target;
   const feedIdString = button.value;
   const feedId = parseInt(feedIdString, 10);
@@ -705,8 +668,6 @@ function options_on_unsubscribe_click(event) {
 // TODO: do i react to the cross-window message event, or do I react
 // to the immediate callback?
 function options_on_unsubscribe(event) {
-  'use strict';
-
   if(event.type === 'error') {
     // TODO: show an error message
     console.debug(event);
@@ -747,8 +708,6 @@ function options_on_unsubscribe(event) {
 // the OPML file.
 // TODO: switch to a different section of the options ui on complete?
 function options_on_import_opml_click(event) {
-  'use strict';
-
   const uploader = document.createElement('input');
   uploader.setAttribute('type', 'file');
   dom_hide_element(uploader);
@@ -808,13 +767,10 @@ function options_on_import_opml_click(event) {
 }
 
 function options_on_export_opml_click(event) {
-  'use strict';
   db_open(options_on_export_opml_click_on_open);
 }
 
 function options_on_export_opml_click_on_open(event) {
-  'use strict';
-
   if(event.type !== 'success') {
     // TODO: visually report the error
     console.debug('Failed to connect to database when exporting opml');
@@ -826,7 +782,6 @@ function options_on_export_opml_click_on_open(event) {
 }
 
 function options_on_export_opml_click_on_get_feeds(feeds) {
-  'use strict';
   const title = 'Subscriptions';
   const doc = opml_create_document(title, feeds);
 
@@ -857,8 +812,6 @@ function options_on_export_opml_click_on_get_feeds(feeds) {
 }
 
 function options_on_enable_rewriting_change(event) {
-  'use strict';
-
   const checkboxElement = event.target;
   if(checkboxElement.checked) {
     localStorage.URL_REWRITING_ENABLED = '1';
@@ -868,7 +821,6 @@ function options_on_enable_rewriting_change(event) {
 }
 
 function options_on_header_font_change(event){
-  'use strict';
   if(event.target.value)
     localStorage.HEADER_FONT_FAMILY = event.target.value;
   else
@@ -877,7 +829,6 @@ function options_on_header_font_change(event){
 }
 
 function options_on_header_font_size_change(event) {
-  'use strict';
   localStorage.HEADER_FONT_SIZE = parseInt(event.target.value) || 1;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
 }
@@ -891,7 +842,6 @@ function options_on_body_font_change(event) {
 }
 
 function options_on_column_count_change(event) {
-  'use strict';
   if(event.target.value)
     localStorage.COLUMN_COUNT = event.target.value;
   else
@@ -900,25 +850,21 @@ function options_on_column_count_change(event) {
 }
 
 function options_on_body_font_size_change(event) {
-  'use strict';
   localStorage.BODY_FONT_SIZE = parseInt(event.target.value) || 1;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
 }
 
 function options_on_body_line_height_change(event) {
-  'use strict';
   localStorage.BODY_LINE_HEIGHT = event.target.value || '10';
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
 }
 
 function options_on_margin_change(event) {
-  'use strict';
   localStorage.ENTRY_MARGIN = parseInt(event.target.value) || 10;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
 }
 
 function options_on_background_image_change(event) {
-  'use strict';
   if(event.target.value)
     localStorage.BACKGROUND_IMAGE = event.target.value;
   else
@@ -927,7 +873,6 @@ function options_on_background_image_change(event) {
 }
 
 function options_on_justify_change(event) {
-  'use strict';
   if(event.target.checked)
     localStorage.JUSTIFY_TEXT = '1';
   else
@@ -936,7 +881,6 @@ function options_on_justify_change(event) {
 }
 
 function options_on_enable_notifications_change(event) {
-  'use strict';
   if(event.target.checked)
     chrome.permissions.request({permissions:['notifications']}, function() {});
   else
@@ -944,7 +888,6 @@ function options_on_enable_notifications_change(event) {
 }
 
 function options_on_enable_background_change(event) {
-  'use strict';
   if(event.target.checked)
     chrome.permissions.request({permissions:['background']}, function() {});
   else
@@ -952,7 +895,6 @@ function options_on_enable_background_change(event) {
 }
 
 function options_on_enable_idle_check_change(event) {
-  'use strict';
   if(event.target.checked)
     chrome.permissions.request({permissions:['idle']}, function(){});
   else
@@ -960,15 +902,12 @@ function options_on_enable_idle_check_change(event) {
 }
 
 function options_on_nav_feed_click(event) {
-  'use strict';
   // Use currentTarget instead of event.target as some of the menu items have a
   // nested element that is the event.target
   options_show_section(event.currentTarget);
 }
 
 function options_init_sub_section() {
-  'use strict';
-
   let feedCount = 0;
 
   db_open(on_open);
@@ -1004,8 +943,6 @@ function options_init_sub_section() {
 }
 
 function options_init(event) {
-  'use strict';
-
   // Avoid attempts to re-init
   document.removeEventListener('DOMContentLoaded', options_init);
 

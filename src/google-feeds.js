@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Accesses the basic find-feeds functionality of the Google Feeds API.
 // Google formally deprecated this service. Around December 1st, 2015, I
 // first noticed that the queries stopped working. However, I have witnessed
@@ -20,7 +22,6 @@
 // contentSnippet. The title and content snippet may contain basic HTML such as
 // <b></b> around terms that were present in the query.
 function google_feeds_search(queryString, timeoutMillis, callback) {
-  'use strict';
   const BASE_URL =
     'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
 
@@ -39,7 +40,6 @@ function google_feeds_search(queryString, timeoutMillis, callback) {
 
 // Cleans up the response data before sending it to the callback
 function google_feeds_on_response(callback, event) {
-  'use strict';
   const request = event.target;
   const response = request.response;
   const data = response.responseData;
@@ -67,17 +67,14 @@ function google_feeds_on_response(callback, event) {
 }
 
 function google_feeds_filter_entries_without_urls(entriesArray) {
-  'use strict';
   return entriesArray.filter(google_feeds_get_entry_url);
 };
 
 function google_feeds_get_entry_url(entry) {
-  'use strict';
   return entry.url;
 }
 
 function google_feeds_filter_duplicate_entries(entriesArray) {
-  'use strict';
   const expandedEntries = entriesArray.map(function expand(entry) {
     return [entry.url, entry];
   });
@@ -89,7 +86,6 @@ function google_feeds_filter_duplicate_entries(entriesArray) {
 
 
 function google_feeds_sanitize_entry(entry) {
-  'use strict';
   const TITLE_MAX_LENGTH = 200;
   const CONTENT_SNIPPET_MAX_LENGTH = 400;
 

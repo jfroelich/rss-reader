@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Applies a set of rules to a url string and returns a modified url string
 // Currently this only modifies Google News urls, but I may want to include
 // others
@@ -12,8 +14,6 @@
 // it involves an async process, maybe it requires traversing a chain of
 // redirects and therefore the whole process should be more abstract
 function rewrite_url(url) {
-  'use strict';
-
   const GOOGLE_NEWS = /^https?:\/\/news.google.com\/news\/url\?.*url=(.*)/i;
   const matches = GOOGLE_NEWS.exec(url);
   if(matches && matches.length === 2 && matches[1]) {

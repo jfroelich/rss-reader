@@ -2,12 +2,13 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Mark entry as read functionality
 // Requires: /src/entry.js
 
 // Marks the entry with the corresponding entryId as read in storage.
 function entry_mark_as_read(connection, entryId) {
-  'use strict';
   const transaction = connection.transaction('entry', 'readwrite');
   const store = transaction.objectStore('entry');
   const request = store.openCursor(entryId);
@@ -15,7 +16,6 @@ function entry_mark_as_read(connection, entryId) {
 }
 
 function entry_mark_as_read_on_open_cursor(event) {
-  'use strict';
   const request = event.target;
   const cursor = request.result;
 

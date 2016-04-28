@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // indexedDB functionality
 
 // TODO: just store scheme and schemeless props as parts of a url object
@@ -12,8 +14,6 @@
 
 // Open a database connection. The callback receives the request event.
 function db_open(callback) {
-  'use strict';
-
   const DB_NAME = 'reader';
   const DB_VERSION = 17;
 
@@ -25,7 +25,6 @@ function db_open(callback) {
 }
 
 function db_upgrade(event) {
-  'use strict';
   console.log('Upgrading database from version %s', event.oldVersion);
 
   const request = event.target;
@@ -102,8 +101,6 @@ function db_upgrade(event) {
 
 // Removes all entry objects from the entry object store
 function db_clear_entry_store(connection) {
-  'use strict';
-
   if(connection) {
     clear_entries(connection);
   } else {

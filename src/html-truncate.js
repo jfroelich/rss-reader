@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // NOTE: the input string should be encoded, meaning that it should contain
 // character entities where appropriate (and optionally tags).
 // NOTE: because this manipulates node values using built in dom parsing,
@@ -24,8 +26,6 @@
 // not validated.
 
 function html_truncate(inputString, position, extensionString) {
-  'use strict';
-
   // TODO: this feels like it could be optimized. Right now it is doing
   // multiple passes over the input: parsing into document, walking the doc,
   // and testing if fragment. I would prefer using a one-pass algorithm. The

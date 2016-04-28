@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // These scores adjust the parent scores of these elements. A parent element
 // is more likely to be the best element or a content element when it contains
 // several paragraphs and headers. Parents are more likely to be boilerplate
@@ -35,8 +37,6 @@ const CALAMINE_ANCESTOR_BIAS = {
 
 // Derives a bias based on child elements
 function calamine_derive_ancestor_bias(element) {
-  'use strict';
-
   let totalBias = 0;
   let bias = 0;
 

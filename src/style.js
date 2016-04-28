@@ -2,12 +2,12 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Style lib
 // TODO: maybe use just one function for both load/change
 
 function style_onmessage(message) {
-  'use strict';
-
   // Only react to the one message type of interest
   if(message.type === 'displaySettingsChanged') {
     style_update_styles();
@@ -74,14 +74,12 @@ const STYLE_FONT_FAMILIES = [
 
 // Note: Array.prototype.find requires Chrome 45+
 function style_find_css_rule(sheet, selectorText) {
-  'use strict';
   return Array.prototype.find.call(sheet.cssRules, function equals(rule) {
     return rule.selectorText === selectorText;
   });
 }
 
 function style_update_styles() {
-  'use strict';
 
   // Assume a sheet is always available
   const sheet = document.styleSheets[0];
@@ -145,8 +143,6 @@ function style_update_styles() {
 // Dynamically creates new style rules and appends them to the first style
 // sheet. This assumes the first style sheet exists.
 function style_load_styles() {
-  'use strict';
-
   // Assume a sheet is always available
   const sheet = document.styleSheets[0];
 

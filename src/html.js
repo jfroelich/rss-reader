@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // HTML-related functionality.
 // TODO: I am not sure if this all belongs together. Yes, these all deal with
 // HTML. However, one deals with parsing, and some others deal with various
@@ -24,8 +26,6 @@
 // TODO: can this ever throw an exception? If so, document it, and make sure
 // that dependent features handle it appropriately.
 function html_parse_string(inputString) {
-  'use strict';
-
   // Defer to the browser. This way we mirror parsing behavior
   // and reduce the chance of XSS. Also, manual parsing seems sluggish
   // and error prone.
@@ -43,8 +43,6 @@ function html_parse_string(inputString) {
 // Returns a new string where html elements were replaced with the optional
 // replacement string.
 function html_replace(inputString, replacementString) {
-  'use strict';
-
   // NOTE: this cannot use html_parse_string because it is ambiguous regarding
   // whether the input contains an <html> and <body> tag.
   // See how I solved it in html-truncate.js
@@ -79,7 +77,6 @@ function html_replace(inputString, replacementString) {
 // TODO: does this mirror Chrome's behavior? Does chrome's parser allow
 // for whitespace preceding the tag name? Maybe this should be stricter.
 function html_replace_breakrules(inputString) {
-  'use strict';
   const BREAK_RULE_PATTERN = /<\s*br\s*>/gi;
   return inputString.replace(BREAK_RULE_PATTERN, ' ');
 }

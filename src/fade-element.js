@@ -2,9 +2,9 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-function fade_element(element, duration, delay, callback) {
-  'use strict';
+'use strict';
 
+function fade_element(element, duration, delay, callback) {
   function fade_end(callback, element, event) {
     event.target.removeEventListener('webkitTransitionEnd', fade_end);
     callback(element);

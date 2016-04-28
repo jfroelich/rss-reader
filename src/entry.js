@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Entry utilities
 // Requires: /src/db.js
 
@@ -24,8 +26,6 @@ const ENTRY_FLAGS = {
 // or similar every where else. Like in poll denormalize
 // TODO: I should be using Date objects for date values. Not timestamps.
 function entry_put(connection, entry, callback) {
-  'use strict';
-
   const storable = {};
 
   // TODO: won't this always be defined? If it is a required field,

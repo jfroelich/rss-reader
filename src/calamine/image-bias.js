@@ -2,11 +2,10 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
 
 // Derives a bias for an element based on child images
 function calamine_derive_image_bias(parentElement) {
-  'use strict';
-
   let bias = 0.0;
   let numImages = 0;
   let area = 0;
@@ -51,8 +50,6 @@ function calamine_derive_image_bias(parentElement) {
 
 // Finds the associated caption element for an image.
 function calamine_find_image_caption(image) {
-  'use strict';
-
   // NOTE: unsure if closest works with uppercase
 
   const figure = image.closest('figure');

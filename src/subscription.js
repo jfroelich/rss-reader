@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // TODO: move subscription related functionality from options.js to here.
 // For example, create a subscribe function that passes a subscription event
 // to its callback.
@@ -14,8 +16,6 @@
 // removes the feed, and then calls the callback.
 // @param feedId - integer
 function unsubscribe(feedId, callback) {
-  'use strict';
-
   // A shared state object used by continuations
   const state = {
     'feedId': feedId,
@@ -42,8 +42,6 @@ function unsubscribe(feedId, callback) {
 }
 
 function unsubscribe_on_open(state, event) {
-  'use strict';
-
   if(event.type !== 'success') {
     // TODO: expose some more info about a connection error? What are the
     // props to consider from the indexedDB event?
@@ -88,7 +86,6 @@ function unsubscribe_on_open(state, event) {
 }
 
 function unsubscribe_delete_next_entry(state, event) {
-  'use strict';
   const request = event.target;
   const cursor = request.result;
   if(cursor) {
@@ -106,7 +103,6 @@ function unsubscribe_delete_next_entry(state, event) {
 }
 
 function unsubscribe_on_remove_entries(state, event) {
-  'use strict';
   // TODO: retrieve connection from event instead of state.
   const connection = state.connection;
   const transaction = connection.transaction('feed', 'readwrite');
@@ -117,8 +113,6 @@ function unsubscribe_on_remove_entries(state, event) {
 }
 
 function unsubscribe_on_complete(state, event) {
-  'use strict';
-
   // TODO: retrieve connection from event instead of state
   const connection = state.connection;
 

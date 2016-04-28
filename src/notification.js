@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // TODO: i think it was a mistake to determine whether a notification
 // should be shown based on whether the permission is available. The
 // permission should be always, and this should instead be checking
@@ -14,8 +16,6 @@
 // should also be changed to use local storage.
 
 function notification_show(messageString) {
-  'use strict';
-
   const permissionQuery = {permissions: ['notifications']};
   chrome.permissions.contains(permissionQuery, on_check_permitted);
 

@@ -2,18 +2,16 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Removes most attributes from elements using a per element whitelist
 // TODO: make less dry, maybe add helpers
 // TODO: removeAttribute just does a lookup of the attribute again. Look
 // into whether there is a simple way to remove an attribute if I already
 // have the attribute node object.
+// NOTE: This applies to all elements, not just those within body. This
+// is intentional because we have to consider everything.
 function sanity_filter_attributes(document) {
-  'use strict';
-
-  // NOTE: This applies to all elements, not just those within body. This
-  // is intentional because we have to consider everything.
-
-
   const elements = document.getElementsByTagName('*');
   const numElements = elements.length;
 

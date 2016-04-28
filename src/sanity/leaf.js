@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Removes leaf-like elements from the document. An element is a leaf unless
 // it is a named exception, contains a non-whitespace-only text node, or
 // contains at least one non-leaf child element.
@@ -22,8 +24,6 @@
 // avoids removing elements that were detached by virtue of an ancestor being
 // detached in a prior iteration step.
 function sanity_filter_leaves(document) {
-  'use strict';
-
   // A document element is required.
   const docElement = document.documentElement;
 
@@ -78,8 +78,6 @@ const SANITY_LEAF_EXCEPTIONS = {
 
 // Returns whether the given node is a leaf. Recursive.
 function sanity_is_leaf_node(node) {
-  'use strict';
-
   if(node.nodeType === Node.ELEMENT_NODE) {
     if(node.nodeName in SANITY_LEAF_EXCEPTIONS) {
       return false;

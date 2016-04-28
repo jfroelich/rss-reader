@@ -2,11 +2,11 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Modify the src values of images that appear to be lazily loaded.
 // TODO: maybe skip an image if image.closest('picture') ?
 function image_transform_lazily_loaded(document) {
-  'use strict';
-
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
@@ -22,8 +22,6 @@ function image_transform_lazily_loaded(document) {
 }
 
 function image_transform_lazily_loaded_image(image) {
-  'use strict';
-
   // TODO: reduce the DRYness of this function
 
   // TODO: support this case better. There is a problem here because

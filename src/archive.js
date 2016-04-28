@@ -2,13 +2,49 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Lib for archiving old entries
 // Requires: /src/db.js
 // Requirse: /src/entry.js
 
+
+/////////////////
+/// EXPERIMENTAL BRAINSTORMING CODE
+
+/*
+class ArchiveService {
+  static run() {
+    'use strict';
+    console.log('Archiving entries');
+    db_open(this.onConnect);
+  }
+
+  static onConnect(event) {
+    'use strict';
+  }
+}
+
+
+const ArchiveService = {
+
+  function run() {
+
+  },
+  function onOpen(event) {
+
+  }
+};
+
+
+*/
+
+
+/////////////////////
+
+
 // Queries storage for currently archivable entries and archives them.
 function archive_entries() {
-  'use strict';
   console.log('Archiving entries');
   db_open(archive_entries_on_connect);
 }
@@ -16,7 +52,6 @@ function archive_entries() {
 // Open a read-write transaction on the entry store and request all
 // entries that are not archived and marked as read, and then start iterating.
 function archive_entries_on_connect(event) {
-  'use strict';
   if(event.type !== 'success') {
     console.debug(event);
     return;
@@ -42,8 +77,6 @@ function archive_entries_on_connect(event) {
 // Check if the entry at the current cursor position should be archived, and if
 // so, archive it, and then proceed to the next entry.
 function archive_next_entry(stats, event) {
-  'use strict';
-
   const request = event.target;
   const cursor = request.result;
 
@@ -88,8 +121,6 @@ function archive_next_entry(stats, event) {
 // Returns an entry object suitable for storage. This contains only those
 // fields that should persist after archive.
 function archive_get_archivable_entry(inputEntry) {
-  'use strict';
-
   const outputEntry = {};
 
   // Maintain id because it is required to uniquely identify and reference
@@ -115,6 +146,5 @@ function archive_get_archivable_entry(inputEntry) {
 }
 
 function archive_entries_on_complete(stats, event) {
-  'use strict';
   console.log('Archived %s of %s entries', stats.archived, stats.processed);
 }

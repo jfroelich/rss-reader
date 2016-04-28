@@ -2,11 +2,10 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
 
 // Remove elements that do not intersect with the best element
 function calamine_prune(document, bestElement) {
-  'use strict';
-
   const bodyElement = document.body;
   if(!bodyElement) {
     return;

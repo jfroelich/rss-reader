@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Rudimentary lib for filtering boilerplate content from a document. This is
 // essentially a document transformation. Given an input document, analyze
 // the document's content, and then produce a new document where some of the
@@ -35,8 +37,6 @@
 // Looks for the element that is most likely the root element of the content
 // and removes elements all other elements.
 function calamine_remove_boilerplate(document) {
-  'use strict';
-
   let bestElement = calamine_find_signature(document);
 
   if(!bestElement) {

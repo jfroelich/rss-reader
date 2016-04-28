@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Returns a url string pointing to the favicon associated with the input
 // url string.
 // NOTE: I originally rolled my own thing that did url parsing and
@@ -14,7 +16,6 @@
 // query against that property on display, instead of calling this function
 // per article.
 function favicon_get_url(urlString) {
-  'use strict';
 
   if(urlString) {
     return 'http://www.google.com/s2/favicons?domain_url=' +
@@ -52,8 +53,6 @@ function FavIcon() {
 // because it throws a malformed url error?
 
 FavIcon.prototype.getFavIconURLString = function(urlObject, callback) {
-  'use strict';
-
   const toString = Object.prototype.toString;
 
   if(!callback) {
@@ -126,13 +125,11 @@ FavIcon.prototype.getFavIconURLString = function(urlObject, callback) {
 // The idea here is that I may want to reset the cache occassionally during
 // testing. This would simply clear all the data.
 FavIcon.prototype.reset = function() {
-  'use strict';
   throw new Error('Not yet implemented');
 };
 
 // This is a function that can be called on a schedule, it would update the
 // cache.
 FavIcon.prototype.refresh = function() {
-  'use strict';
   throw new Error('Not yet implemented');
 };

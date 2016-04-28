@@ -2,10 +2,11 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Faster than Array.prototype.filter because assumes that the input array
 // is dense, and because it does not support custom binding.
 function array_filter(inputArray, predicateFunction) {
-  'use strict';
   const length = inputArray.length;
   const outputArray = [];
   for(let i = 0, item; i < length; i++) {
@@ -22,7 +23,6 @@ function array_filter(inputArray, predicateFunction) {
 // The predicate function should be pure, and especially, it should not modify
 // the subject array.
 function array_find(subjectArray, predicateFunction) {
-  'use strict';
   const length = subjectArray.length;
   for(let i = 0, item; i < length; i++) {
     item = subjectArray[i];
@@ -34,7 +34,6 @@ function array_find(subjectArray, predicateFunction) {
 
 // Faster than Array.prototype.forEach because assumes dense
 function array_for_each(subjectArray, callback) {
-  'use strict';
   const length = subjectArray.length;
   for(let i = 0; i < length; i++) {
     callback(subjectArray[i]);
@@ -46,7 +45,6 @@ function array_for_each(subjectArray, callback) {
 // This is faster than Array.prototype.some because it assumes the subject
 // array is dense.
 function array_some(subjectArray, predicateFunction) {
-  'use strict';
   const length = subjectArray.length;
   for(let i = 0; i < length; i++) {
     if(predicateFunction(subjectArray[i])) {

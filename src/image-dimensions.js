@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Requires: /lib/async.js
 // Requires: /src/url.js
 
@@ -13,8 +15,6 @@
 // set. If not set, fetch the image, check its dimensions, and explicitly set
 // the width and height attributes of the image element within the html.
 function image_dimensions_set_all(document, callback) {
-  'use strict';
-
   const bodyElement = document.body;
   if(!bodyElement) {
     // The callback expects no args
@@ -31,8 +31,6 @@ function image_dimensions_set_all(document, callback) {
 // Returns whether the image should be fetched.
 // TODO: should I also check attributes?
 function image_dimensions_should_fetch(imageElement) {
-  'use strict';
-
   // TODO: maybe I should always fetch dimensions for images with urls?
   // How much of a benefit it is to reduce the number of fetches?
   // Why do I even want to keep the original dimensions? I am using CSS to
@@ -53,14 +51,11 @@ function image_dimensions_should_fetch(imageElement) {
 }
 
 function image_dimensions_is_data_url(urlString) {
-  'use strict';
   return /^\s*data\s*:/i.test(urlString);
 }
 
 // Request the image.
 function image_dimensions_fetch(imageElement, callback) {
-  'use strict';
-
   // Proxy is intentionally created within the local document
   // context. We know it is live, so Chrome will eagerly fetch upon
   // changing the image element's src property. We do not know if the
@@ -89,8 +84,6 @@ function image_dimensions_fetch(imageElement, callback) {
 // On requesting the image, if successful, update the attributes of the
 // local image.
 function image_dimensions_on_fetch(imageElement, callback, event) {
-  'use strict';
-
   if(event.type === 'load') {
     const proxyImageElement = event.target;
 

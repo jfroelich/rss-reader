@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // NOTE: we cannot use just article, because it screws up on certain pages.
 // This may be a symptom of a larger problem of trying to use a fast path.
 // For example, in https://news.vice.com/article/north-korea-claims-new-
@@ -38,8 +40,6 @@ const CALAMINE_SIGNATURES = [
 // Looks for the first single occurrence of an element matching
 // one of the signatures
 function calamine_find_signature(document) {
-  'use strict';
-
   const bodyElement = document.body;
   if(!bodyElement) {
     return;

@@ -2,6 +2,8 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+'use strict';
+
 // Lib for importing and exporting opml files
 // Requires: /src/db.js
 // Requires: /src/html.js
@@ -15,7 +17,6 @@
 // Creates and returns an opml document with the given title and containing
 // the given feeds as outline elements
 function opml_create_document(titleString, feeds) {
-  'use strict';
   const doc = document.implementation.createDocument(null, 'OPML', null);
   const documentElement = doc.documentElement;
   documentElement.setAttribute('version', '2.0');
@@ -80,8 +81,6 @@ function opml_create_document(titleString, feeds) {
 // call a callback when it is done. The caller can design the callback to
 // do the checks for whether all files were imported.
 function opml_import_files(connection, files, callback) {
-  'use strict';
-
   const tracker = {
     errors: [],
     numFiles: files.length,
@@ -100,8 +99,6 @@ function opml_import_files(connection, files, callback) {
 }
 
 function opml_import_file(file, connection, tracker, callback) {
-  'use strict';
-
   // TODO: i think i might want to delegate some of this to a general
   // purpose file.js function file_read_as_text(file, callback) that passes
   // error, text to callback
@@ -116,8 +113,6 @@ function opml_import_file(file, connection, tracker, callback) {
 }
 
 function opml_on_file_load(connection, tracker, callback, event) {
-  'use strict';
-
   tracker.filesImported++;
 
   // React to file loading error
@@ -180,12 +175,9 @@ function opml_on_file_load(connection, tracker, callback, event) {
 }
 
 function opml_noop() {
-  'use strict';
 }
 
 function opml_remove_duplicate_feeds(feeds) {
-  'use strict';
-
   const pairs = feeds.map(function expand_feed(feed) {
     return [feed.url, feed];
   });
@@ -196,7 +188,6 @@ function opml_remove_duplicate_feeds(feeds) {
 
 // TODO: validate that the url value looks like a url
 function opml_is_valid_outline_element(element) {
-  'use strict';
   const TYPE_PATTERN = /rss|rdf|feed/i;
   const type = element.getAttribute('type');
   const url = element.getAttribute('xmlUrl') || '';
@@ -204,8 +195,6 @@ function opml_is_valid_outline_element(element) {
 }
 
 function opml_sanitize_string(inputString) {
-  'use strict';
-
   // TODO: consider max length of each field and the behavior when
   // exceeded
 
@@ -219,8 +208,6 @@ function opml_sanitize_string(inputString) {
 }
 
 function opml_parse_outline_element(element) {
-  'use strict';
-
   // TODO: i am not sure if this should actually be responsible for
   // sanitizing the input. I feel like another function called by
   // the caller should do that explicitly.
@@ -245,7 +232,6 @@ function opml_parse_outline_element(element) {
 // function (but that does not currently exist). In fact if that exists I
 // should replace this function with that one in the calling context.
 function opml_find_body_element(document) {
-  'use strict';
   for(let element = document.documentElement.firstElementChild;
     element; element = node.nextElementSibling) {
     if(opml_is_body_element(element)) {
@@ -258,8 +244,6 @@ function opml_find_body_element(document) {
 // that are immediate children of the document's <body> element and
 // represent minimally valid feeds.
 function opml_select_outline_elements(document) {
-  'use strict';
-
   const elementsArray = [];
   const bodyElement = opml_find_body_element(document);
   if(!bodyElement) {
@@ -284,8 +268,6 @@ function opml_select_outline_elements(document) {
 // Parses a string into an opml document. Throws an exception if a parsing
 // error occurs or the document is invalid. Otherwise, returns the document.
 function opml_parse_string(string) {
-  'use strict';
-
   // xml_parse_string throws some exceptions that we intentionally just
   // pass onward
   const document = xml_parse_string(string);
@@ -305,18 +287,15 @@ function opml_parse_string(string) {
 
 // Returns true if the element is an <outline> element
 function opml_is_outline_element(element) {
-  'use strict';
   return string_equals_ignore_case(element.nodeName, 'OUTLINE');
 }
 
 // Returns true if the element is an <body> element
 function opml_is_body_element(element) {
-  'use strict';
   return string_equals_ignore_case(element.nodeName, 'BODY');
 }
 
 // Returns true if the element is an <opml> element
 function opml_is_opml_element(element) {
-  'use strict';
   return string_equals_ignore_case(element.nodeName, 'OPML');
 }
