@@ -15,13 +15,11 @@
 /*
 class ArchiveService {
   static run() {
-    'use strict';
     console.log('Archiving entries');
     db_open(this.onConnect);
   }
 
   static onConnect(event) {
-    'use strict';
   }
 }
 

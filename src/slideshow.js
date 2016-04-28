@@ -12,13 +12,8 @@
 // TODO: if advancing to next article too quickly, some articles are loaded
 // that were already loaded, leading to duplicate articles. The call to append
 // articles needs to be delayed until scrolling completes or something like
-// that.
-
-// Requires: /src/calamine/index.js
-// Requires: /src/date.js
-// Requires: /src/db.js
-// Requires: /src/sanity/*
-// Requires: /src/style.js
+// that. Actually I think it is because the mark-read is on a diff 'thread'
+// than the update code. The append needs to wait for mark read to complete.
 
 // TODO: rather than store slideshow_currentSlide in global state,
 // use a simple object instance that we store in global state that wraps
