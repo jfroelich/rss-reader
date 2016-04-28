@@ -4,6 +4,35 @@
 
 'use strict';
 
+/*
+maybe make fetchDocument and merge fetchHTML and fetchFeed together, and
+then move all of feed post-fetch processing into a separate function
+
+- fetch feed notes
+// TODO: the post-processing where i clean up entries should not be done here,
+// it should be the caller's responsibility, it is not intrinsic to this
+// function's purpose, improper separation of concerns
+// TODO: the type of error passed back as first argument to the final callback
+// should be consistent. Perhaps should mimic an event object and use that
+// in all cases
+// TODO: responseURL may be different than requested url, I observed this
+// through logging, this should be handled here or by the caller somehow, right
+// now this sets feed.url to requested url and just passes back responseURL
+// as the third argument to the callback
+-------
+
+- fetch html notes
+// TODO: what is the default behavior of XMLHttpRequest? If responseType
+// defaults to document and by default fetches HTML, do we even need to
+// specify the type?
+// TODO: instead of creating an error object when document is undefined, maybe
+// this should create an event object so that it is minimally consistent with
+// the other types of the first argument when the callback is called due to
+// another type of error. I could use a plain javascript object with just the
+// desired relevant properties, or I could research how to create custom
+// events.
+*/
+
 // Requires: /src/feed-parser.js
 
 function net_fetch_feed(url, timeout, callback) {
