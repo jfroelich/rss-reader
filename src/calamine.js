@@ -172,6 +172,8 @@ Calamine.ATTRIBUTE_TOKEN_WEIGHTS = {
 
 // Computes a bias for an element based on the values of some of its
 // attributes.
+// TODO: Profiling shows a warning about 'Unsupported use of compound let
+// statement' again. Revert to using var for now. Figure out why.
 Calamine.deriveAttributeBias = function(element) {
 
   // As much as I would look to organize the statements of this function into
@@ -193,11 +195,11 @@ Calamine.deriveAttributeBias = function(element) {
   // element.outerHTML, parsing the element's tag text, parsing its attributes,
   // and doing it all myself. My suspicion is that would be even slower.
   // TODO: test if using hasAttribute speeds it up?
-  const valuesArray = [element.id, element.name, element.className];
+  var valuesArray = [element.id, element.name, element.className];
 
   // Array.prototype.join implicitly filters null/undefined values so we do not
   // need to check if the property values are defined.
-  const valuesString = valuesArray.join(' ');
+  var valuesString = valuesArray.join(' ');
 
   // If the element did not have any values for the attributes checked,
   // then values will only contain a small string of spaces or some negligible
@@ -217,34 +219,34 @@ Calamine.deriveAttributeBias = function(element) {
   // that for us. Also, this is one function call in constrast to 3. toLowerCase
   // scales better with larger strings that the JS engine scales with function
   // calls.
-  const lowerCaseValuesString = valuesString.toLowerCase();
+  var lowerCaseValuesString = valuesString.toLowerCase();
 
   // Tokenize the values into word-like tokens
   // TODO: why am i even seeing empty strings or whitespace only strings?
   // Think of a way to write the split that excludes these if possible.
-  const tokenArray = lowerCaseValuesString.split(/[\s\-_0-9]+/g);
+  var tokenArray = lowerCaseValuesString.split(/[\s\-_0-9]+/g);
 
   // Now add up the bias of each distinct token. Previously this was done in
   // two passes, with the first pass generating a new array of distinct tokens,
   // and the second pass summing up the distinct token biases. I seem to get
   // better performance without creating an intermediate array.
   // Avoid calculating loop length per iteration as it is invariant
-  const tokenArrayLength = tokenArray.length;
+  var tokenArrayLength = tokenArray.length;
 
   // The set of seen token strings. I am using a plain object instead of a
   // Set due to performance.
-  const seenTokenSet = {};
+  var seenTokenSet = {};
 
-  let totalBias = 0;
-  let bias = 0;
-  let token;
+  var totalBias = 0;
+  var bias = 0;
+  var token;
 
   // TODO: maybe keeping track of the number of tokens added to 'seen' would
   // help reduce the number of calls to 'in'? Similarly, I could also check
   // if i > 0. Because the token will never be in seen in the first iteration.
   // But would that improve the perf? How expensive is 'in'?
 
-  for(let i = 0; i < tokenArrayLength; i++) {
+  for(var i = 0; i < tokenArrayLength; i++) {
     token = tokenArray[i];
 
     // Split can yield empty strings for some reason, so skip those.
