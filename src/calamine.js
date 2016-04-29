@@ -29,17 +29,19 @@
 
 // TODO: revert to using a namespace object and camel case
 
-function calamine_remove_boilerplate(document) {
-  let bestElement = calamine_find_signature(document);
+const Calamine = {};
+
+Calamine.removeBoilerplate = function(document) {
+  let bestElement = Calamine.findSignature(document);
 
   if(!bestElement) {
-    bestElement = calamine_find_highest_scoring_element(document);
+    bestElement = Calamine.findHighestScoringElement(document);
   }
 
   if(bestElement !== document.documentElement) {
-    calamine_prune(document, bestElement);
+    Calamine.prune(document, bestElement);
   }
-}
+};
 
 // Returns a measure indicating whether the element contains boilerplate or
 // content based on its text. Elements with a large amount of text are
@@ -48,20 +50,20 @@ function calamine_remove_boilerplate(document) {
 // The metric is adapted from the paper:
 // "Boilerplate Detection using Shallow Text Features".
 // See http://www.l3s.de/~kohlschuetter/boilerplate.
-function calamine_derive_text_bias(element) {
+Calamine.deriveTextBias = function(element) {
   const text = element.textContent;
   const trimmedText = text.trim();
   const textLength = 0.0 + trimmedText.length;
-  const anchorLength = 0.0 + calamine_derive_anchor_length(element);
+  const anchorLength = 0.0 + Calamine.deriveAnchorLength(element);
   return (0.25 * textLength) - (0.7 * anchorLength);
-}
+};
 
 // Returns the approximate number of characters contained within anchors that
 // are descendants of the element.
 // This assumes that the HTML is generally well-formed. Specifically it assumes
 // no anchor nesting.
 // TODO: maybe just inline this in the caller.
-function calamine_derive_anchor_length(element) {
+Calamine.deriveAnchorLength = function(element) {
   const anchors = element.querySelectorAll('a[href]');
   const numAnchors = anchors.length;
   let anchorLength = 0;
@@ -72,7 +74,7 @@ function calamine_derive_anchor_length(element) {
   }
 
   return anchorLength;
-}
+};
 
 // These scores adjust the parent scores of these elements. A parent element
 // is more likely to be the best element or a content element when it contains
@@ -83,8 +85,7 @@ function calamine_derive_anchor_length(element) {
 // Ancestor bias contributes very little to an element's total bias in
 // comparision to some of the other biases. The most help comes when there is
 // a clear container element of multiple paragraphs.
-
-const CALAMINE_ANCESTOR_BIAS = {
+Calamine.ANCESTOR_BIAS = {
   'A': -5,
   'ASIDE': -50,
   'BLOCKQUOTE': 20,
@@ -106,14 +107,14 @@ const CALAMINE_ANCESTOR_BIAS = {
 };
 
 // Derives a bias based on child elements
-function calamine_derive_ancestor_bias(element) {
+Calamine.deriveAncestorBias = function(element) {
   let totalBias = 0;
   let bias = 0;
 
   // Walk the child elements and sum up the each child's bias
   for(let childElement = element.firstElementChild; childElement;
     childElement = childElement.nextElementSibling) {
-    bias = CALAMINE_ANCESTOR_BIAS[childElement.nodeName];
+    bias = Calamine.ANCESTOR_BIAS[childElement.nodeName];
 
     // Using += sugar seems to cause deopt issues when using let or const (at
     // least in Chrome 49), hence the expanded syntax.
@@ -125,12 +126,10 @@ function calamine_derive_ancestor_bias(element) {
   // Return a double (or is it long? whatever) so that type coercion is
   // explicit. Externally, scores when aggregated are doubles because certain
   // other biases are doubles.
-
   // TODO: maybe the coercion is the responsibility of the caller and not
   // this function's concern?
-
   return 0.0 + totalBias;
-}
+};
 
 // TODO: if I stop using the fast path of find-signature and I return to
 // individually weighting blocks, I should expand this list.
@@ -138,7 +137,7 @@ function calamine_derive_ancestor_bias(element) {
 // these bias the element's boilerplate score. A higher score means that the
 // element is more likely to be content. This list was gathered empirically and
 // the weighting was chosen empirically.
-const CALAMINE_ATTRIBUTE_BIAS_TOKEN_WEIGHTS = {
+Calamine.ATTRIBUTE_TOKEN_WEIGHTS = {
   'ad': -500,
   'ads': -500,
   'advert': -500,
@@ -173,20 +172,18 @@ const CALAMINE_ATTRIBUTE_BIAS_TOKEN_WEIGHTS = {
 
 // Computes a bias for an element based on the values of some of its
 // attributes.
-function calamine_derive_attribute_bias(element) {
+Calamine.deriveAttributeBias = function(element) {
 
   // As much as I would look to organize the statements of this function into
   // smaller helper functions, this is a hotspot, so I have inlined
   // everything. Maybe I can return at a later time and try again once V8
   // stabilizes more.
-
   // TODO: maybe id and name do not need to be tokenized. I think the spec
   // declares that such values should not contain spaces. On the other hand,
   // what about hyphen or underscore separated terms? If they do not need to
   // be tokenized they could become the first two entries in the token array.
   // I guess it is a question of comparing the desired accuray to the desired
   // performance.
-
   // Start by merging the element's interesting attribute values into a single
   // string in preparation for tokenization.
   // Accessing attributes by property is faster than using getAttribute. It
@@ -224,14 +221,13 @@ function calamine_derive_attribute_bias(element) {
 
   // Tokenize the values into word-like tokens
   // TODO: why am i even seeing empty strings or whitespace only strings?
-  // Isn't this greedy?
+  // Think of a way to write the split that excludes these if possible.
   const tokenArray = lowerCaseValuesString.split(/[\s\-_0-9]+/g);
 
   // Now add up the bias of each distinct token. Previously this was done in
   // two passes, with the first pass generating a new array of distinct tokens,
   // and the second pass summing up the distinct token biases. I seem to get
   // better performance without creating an intermediate array.
-
   // Avoid calculating loop length per iteration as it is invariant
   const tokenArrayLength = tokenArray.length;
 
@@ -265,7 +261,7 @@ function calamine_derive_attribute_bias(element) {
     }
 
     // Adjust total bias if there is a bias for the token
-    bias = CALAMINE_ATTRIBUTE_BIAS_TOKEN_WEIGHTS[token];
+    bias = Calamine.ATTRIBUTE_TOKEN_WEIGHTS[token];
     if(bias) {
       totalBias += bias;
     }
@@ -273,18 +269,19 @@ function calamine_derive_attribute_bias(element) {
 
   // TODO: maybe type coercion is responsibility of the caller
   return 0.0 + totalBias;
-}
+};
 
 // Only these elements are considered as potential best elements
-const CALAMINE_CANDIDATE_SELECTOR = [
+Calamine.CANDIDATE_SELECTOR = [
   'ARTICLE', 'CONTENT', 'DIV', 'LAYER', 'MAIN', 'SECTION', 'SPAN', 'TD'
 ].join(',');
 
+Calamine.LIST_SELECTOR = 'LI, OL, UL, DD, DL, DT';
+Calamine.NAV_SELECTOR = 'ASIDE, HEADER, FOOTER, NAV, MENU, MENUITEM';
+
 // Scores each of the candidate elements and returns the one with
 // the highest score
-function calamine_find_highest_scoring_element(document) {
-  const LIST_SELECTOR = 'LI, OL, UL, DD, DL, DT';
-  const NAV_SELECTOR = 'ASIDE, HEADER, FOOTER, NAV, MENU, MENUITEM';
+Calamine.findHighestScoringElement = function(document) {
 
   // Init to documentElement. This ensures we always return something and
   // also sets documentElement as the default best element.
@@ -296,7 +293,7 @@ function calamine_find_highest_scoring_element(document) {
   }
 
   const elementNodeList = bodyElement.querySelectorAll(
-    CALAMINE_CANDIDATE_SELECTOR);
+    Calamine.CANDIDATE_SELECTOR);
   const listLength = elementNodeList.length;
   let element = null;
   let highScore = 0.0;
@@ -305,19 +302,19 @@ function calamine_find_highest_scoring_element(document) {
   for(let i = 0; i < listLength; i++) {
     element = elementNodeList[i];
 
-    score = calamine_derive_text_bias(element);
+    score = Calamine.deriveTextBias(element);
 
-    if(element.closest(LIST_SELECTOR)) {
+    if(element.closest(Calamine.LIST_SELECTOR)) {
       score -= 200.0;
     }
 
-    if(element.closest(NAV_SELECTOR)) {
+    if(element.closest(Calamine.NAV_SELECTOR)) {
       score -= 500.0;
     }
 
-    score += calamine_derive_ancestor_bias(element);
-    score += calamine_derive_image_bias(element);
-    score += calamine_derive_attribute_bias(element);
+    score += Calamine.deriveAncestorBias(element);
+    score += Calamine.deriveImageBias(element);
+    score += Calamine.deriveAttributeBias(element);
 
     if(score > highScore) {
       bestElement = element;
@@ -326,7 +323,7 @@ function calamine_find_highest_scoring_element(document) {
   }
 
   return bestElement;
-}
+};
 
 // NOTE: we cannot use just article, because it screws up on certain pages.
 // This may be a symptom of a larger problem of trying to use a fast path.
@@ -336,7 +333,7 @@ function calamine_find_highest_scoring_element(document) {
 // For now I am using this ugly hack to avoid that one error case. I really
 // do not like this and it suggests the entire fast-path thing should be
 // scrapped.
-const CALAMINE_SIGNATURES = [
+Calamine.SIGNATURES = [
   'article:not([class*="ad"])',
   '.hentry',
   '.entry-content',
@@ -362,26 +359,26 @@ const CALAMINE_SIGNATURES = [
 
 // Looks for the first single occurrence of an element matching
 // one of the signatures
-function calamine_find_signature(document) {
+Calamine.findSignature = function(document) {
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
   }
 
-  const numSignatures = CALAMINE_SIGNATURES.length;
+  const numSignatures = Calamine.SIGNATURES.length;
 
   // If a signature occurs once in a document, then return it. Use whatever
-  // signature matches first in the order defined in CALAMINE_SIGNATURES
+  // signature matches first in the order defined in Calamine.SIGNATURES
   for(let i = 0, elements; i < numSignatures; i++) {
-    elements = bodyElement.querySelectorAll(CALAMINE_SIGNATURES[i]);
+    elements = bodyElement.querySelectorAll(Calamine.SIGNATURES[i]);
     if(elements.length === 1) {
       return elements[0];
     }
   }
-}
+};
 
 // Derives a bias for an element based on child images
-function calamine_derive_image_bias(parentElement) {
+Calamine.deriveImageBias = function(parentElement) {
   let bias = 0.0;
   let numImages = 0;
   let area = 0;
@@ -408,7 +405,7 @@ function calamine_derive_image_bias(parentElement) {
       bias = bias + 30.0;
     }
 
-    if(calamine_find_image_caption(element)) {
+    if(Calamine.findImageCaption(element)) {
       bias = bias + 100.0;
     }
 
@@ -422,32 +419,28 @@ function calamine_derive_image_bias(parentElement) {
   }
 
   return bias;
-}
+};
 
 // Finds the associated caption element for an image.
-function calamine_find_image_caption(image) {
+Calamine.findImageCaption = function(image) {
   const figure = image.closest('figure');
   return figure ? figure.querySelector('FIGCAPTION') : null;
-}
-
+};
 
 // Remove elements that do not intersect with the best element
-function calamine_prune(document, bestElement) {
+// In order to reduce the number of removals, this uses a contains check
+// to avoid removing elements that exist in the static node list but
+// are descendants of elements removed in a previous iteration. The
+// assumption is that this yields better performance.
+// TODO: instead of doing multiple calls to contains, I think I can use one
+// call to compareDocumentPosition and then check against its result.
+// I am not very familiar with compareDocumentPosition yet, that is the
+// only reason I am not using it.
+Calamine.prune = function(document, bestElement) {
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
   }
-
-  // In order to reduce the number of removals, this uses a contains check
-  // to avoid removing elements that exist in the static node list but
-  // are descendants of elements removed in a previous iteration. The
-  // assumption is that this yields better performance.
-
-  // TODO: instead of doing multiple calls to contains, I think I can use one
-  // call to compareDocumentPosition and then check against its result.
-  // I am not very familiar with compareDocumentPosition yet, that is the
-  // only reason I am not using it.
-
   const docElement = document.documentElement;
   const elements = bodyElement.querySelectorAll('*');
   const numElements = elements.length;
@@ -458,4 +451,4 @@ function calamine_prune(document, bestElement) {
       element.remove();
     }
   }
-}
+};

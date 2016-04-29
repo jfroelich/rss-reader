@@ -322,7 +322,7 @@ function slideshow_append_slide(entry, isFirst) {
   content.setAttribute('class', 'entry-content');
 
   const entryContentDocument = html_parse_string(entry.content);
-  calamine_remove_boilerplate(entryContentDocument);
+  Calamine.removeBoilerplate(entryContentDocument);
   sanity_sanitize_document(entryContentDocument);
   const entryContentBody = entryContentDocument.body ||
     entryContentDocument.documentElement;
