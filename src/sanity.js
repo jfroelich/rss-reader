@@ -4,40 +4,33 @@
 
 'use strict';
 
-
-// Lib for filtering the contents of an HTML Document object
+// Lib for cleaning up a document
 // Requires: /src/dom.js
-// Requires: /src/sanity/attribute.js
-// Requires: /src/sanity/blacklist.js
-// Requires: /src/sanity/condense-whitespace.js
-// Requires: /src/sanity/image.js
-// Requires: /src/sanity/leaf.js
-// Requires: /src/sanity/table.js
-// Requires: /src/sanity/trim.js
-// Requires: /src/sanity/unwrap.js
-// Requires: /src/sanity/visibility.js
 // Requires: /src/string.js
+
+const sanity = {};
+
+// TODO: rename to domaid.js and use domaid namespace object
+// TODO: remove reliance on string.js
+// TODO: remove reliance on dom.js
+// TODO: remove reliance on notrack.js
+// TODO: rename filterUnwrappables_complex to filterUnwrappablesExperimental
 
 // TODO: research why some articles appear without content. I know pdfs
 // work this way, but look into the issue with other ones.
-
 // TODO: look into issues with rendering google groups pages.
 // For example:
 // view-source:https://groups.google.com/forum/#!topic/golang-nuts/MmSbFHLPo8g
 // The content in the body after the <xmp>.<xmp> shows up as encoded? Maybe
 // it is due to the single <plaintext/> tag preceding it? I can't tell what is
 // going on. Does chrome's html parser screw up?
-
 // TODO: explicit handling of noembed/audio/video/embed
-
 // TODO: maybe I should have some other function
 // that deals with malformed html and removes all nodes that do not conform
 // to <html><head>*</head><body>*</body></html> and then none of the sanity
 // functions need to be concerned.
-
 // TODO: if I have no use for nodes outside of body, maybe it makes sense to
 // just explicitly removal all such nodes.
-
 // TODO: some things i want to maybe deal with at this url
 // view-source:http://stevehanov.ca/blog/index.php?id=132
 // It is using sprites. So transp is ignored. osrc is also ignored, i think it
@@ -64,27 +57,27 @@
 
 // Applies a hardcoded series of filters to a document. Modifies the document
 // in place.
-function sanity_sanitize_document(document) {
-  sanity_filter_comments(document);
-  sanity_replace_frames(document);
-  sanity_filter_noscripts(document);
-  sanity_filter_blacklisted_elements(document);
-  sanity_filter_hidden_elements(document);
-  sanity_replace_break_rules(document);
-  sanity_filter_anchors(document);
+sanity.cleanDocument = function(document) {
+  sanity.filterComments(document);
+  sanity.replaceFrames(document);
+  sanity.filterNoscripts(document);
+  sanity.filterBlacklistedElements(document);
+  sanity.filterHiddenElements(document);
+  sanity.replaceBreakRuleElements(document);
+  sanity.filterAnchors(document);
   no_track_filter_tiny_images(document);
-  sanity_filter_images(document);
-  sanity_filter_unwrappables(document);
-  sanity_filter_figures(document);
-  sanity_condense_whitespace(document);
-  sanity_filter_lists(document);
-  sanity_filter_tables(document);
-  sanity_filter_leaves(document);
-  sanity_filter_consecutive_rules(document);
-  sanity_filter_consecutive_break_rules(document);
-  sanity_trim_document(document);
-  sanity_filter_attributes(document);
-}
+  sanity.filterImages(document);
+  sanity.filterUnwrappables(document);
+  sanity.filterFigureElements(document);
+  sanity.condenseWhitespace(document);
+  sanity.filterListElements(document);
+  sanity.filterTableElements(document);
+  sanity.filterLeafElements(document);
+  sanity.filterConsecutiveHRElements(document);
+  sanity.filterConsecutiveBRElements(document);
+  sanity.trimDocument(document);
+  sanity.filterAttributes(document);
+};
 
 // NOTE: we cannot remove noscript elements because some sites embed the
 // article within a noscript tag. So instead we treat noscripts as unwrappable
@@ -93,7 +86,7 @@ function sanity_sanitize_document(document) {
 // We still have to unwrap. If noscript remains, the content remains within the
 // document, but it isn't visible/rendered because we obviously support scripts
 // and so the browser hides it. So now we have to remove it.
-function sanity_filter_noscripts(document) {
+sanity.filterNoscripts = function(document) {
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
@@ -105,22 +98,21 @@ function sanity_filter_noscripts(document) {
   for(let i = 0; i < numNoscripts; i++) {
     dom_unwrap(noscripts[i], null);
   }
-}
+};
 
-
-function sanity_filter_comments(document) {
+sanity.filterComments = function(document) {
   const it = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_COMMENT);
   for(let comment = it.nextNode(); comment; comment = it.nextNode()) {
     comment.remove();
   }
-}
+};
 
 
 // TODO: what if both body and frameset are present?
 // TODO: there can be multiple bodies when illformed. Maybe use
 // querySelectorAll and handle multi-body branch differently
-function sanity_replace_frames(document) {
+sanity.replaceFrames = function(document) {
   const framesetElement = document.body;
   if(!framesetElement || framesetElement.nodeName !== 'FRAMESET') {
     return;
@@ -140,9 +132,9 @@ function sanity_replace_frames(document) {
 
   framesetElement.remove();
   document.documentElement.appendChild(bodyElement);
-}
+};
 
-function sanity_filter_anchors(document) {
+sanity.filterAnchors = function(document) {
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
@@ -175,10 +167,10 @@ function sanity_filter_anchors(document) {
       dom_unwrap(anchor);
     }
   }
-}
+};
 
 // Unwrap lists with only one item.
-function sanity_filter_lists(document) {
+sanity.filterListElements = function(document) {
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
@@ -202,9 +194,9 @@ function sanity_filter_lists(document) {
       }
     }
   }
-}
+};
 
-function sanity_filter_consecutive_rules(document) {
+sanity.filterConsecutiveHRElements = function(document) {
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
@@ -219,9 +211,9 @@ function sanity_filter_consecutive_rules(document) {
       prev.remove();
     }
   }
-}
+};
 
-function sanity_filter_consecutive_break_rules(document) {
+sanity.filterConsecutiveBRElements = function(document) {
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
@@ -236,12 +228,13 @@ function sanity_filter_consecutive_break_rules(document) {
       prev.remove();
     }
   }
-}
+};
 
 // TODO: improve, this is very buggy
 // error case: http://paulgraham.com/procrastination.html
-function sanity_replace_break_rules(document) {
-  // NOTE: Due to buggy output this is a no-op for now
+sanity.replaceBreakRuleElements = function(document) {
+
+  // NOTE: Due to buggy output this is a NOOP for now
   if(true) {
     return;
   }
@@ -263,12 +256,12 @@ function sanity_replace_break_rules(document) {
     //p = document.createElement('P');
     //parent.replaceChild(p, brElement);
   }
-}
+};
 
 // If a figure has only one child element image, then it is useless.
 // NOTE: boilerplate analysis examines figures, so ensure this is not done
 // before it.
-function sanity_filter_figures(document) {
+sanity.filterFigureElements = function(document) {
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
@@ -283,7 +276,7 @@ function sanity_filter_figures(document) {
       dom_unwrap(figure, null);
     }
   }
-}
+};
 
 // Removes most attributes from elements using a per element whitelist
 // TODO: make less dry, maybe add helpers
@@ -292,7 +285,7 @@ function sanity_filter_figures(document) {
 // have the attribute node object.
 // NOTE: This applies to all elements, not just those within body. This
 // is intentional because we have to consider everything.
-function sanity_filter_attributes(document) {
+sanity.filterAttributes = function(document) {
   const elements = document.getElementsByTagName('*');
   const numElements = elements.length;
 
@@ -350,14 +343,13 @@ function sanity_filter_attributes(document) {
       }
     }
   }
-}
-
+};
 
 // Lib for removing blacklisted elements. This fulfills multiple purposes.
 // Certain blacklisted elements are unwrapped instead of removed and that
 // is handled by other sanity functionality.
 
-const SANITY_BLACKLISTED_ELEMENTS = [
+sanity.BLACKLISTED_ELEMENT_NAMES = [
   'APPLET', 'AUDIO', 'BASE', 'BASEFONT', 'BGSOUND', 'BUTTON', 'COMMAND',
   'DATALIST', 'DIALOG', 'EMBED', 'FIELDSET', 'FRAME', 'FRAMESET', 'HEAD',
   'IFRAME', 'INPUT', 'ISINDEX', 'LINK', 'MATH', 'META',
@@ -366,16 +358,16 @@ const SANITY_BLACKLISTED_ELEMENTS = [
   'VIDEO', 'XMP'
 ];
 
-const SANITY_BLACKLIST_SELECTOR = SANITY_BLACKLISTED_ELEMENTS.join(',');
+sanity.BLACKLIST_SELECTOR = sanity.BLACKLISTED_ELEMENT_NAMES.join(',');
 
 // Removes blacklisted elements from the document.
 // This uses a blacklist approach instead of a whitelist because of issues
 // with custom html elements. If I used a whitelist approach, any element
 // not in the whitelist would be removed. The problem is that custom elements
 // wouldn't be in the whitelist, but they easily contain valuable content.
-function sanity_filter_blacklisted_elements(document) {
+sanity.filterBlacklistedElements = function(document) {
   const docElement = document.documentElement;
-  const elements = document.querySelectorAll(SANITY_BLACKLIST_SELECTOR);
+  const elements = document.querySelectorAll(sanity.BLACKLIST_SELECTOR);
   const numElements = elements.length;
   for(let i = 0, element; i < numElements; i++) {
     element = elements[i];
@@ -383,12 +375,11 @@ function sanity_filter_blacklisted_elements(document) {
       element.remove();
     }
   }
-}
-
+};
 
 // NOTE: this only sanitizes text nodes within the body element.
 // TODO: delete all text nodes outside of the body?
-function sanity_condense_whitespace(document) {
+sanity.condenseWhitespace = function(document) {
 
   // NOTE: node.nodeValue yields a decoded value without entities, not the
   // raw encoded value that contains entities.
@@ -429,12 +420,11 @@ function sanity_condense_whitespace(document) {
       }
     }
   }
-}
-
+};
 
 // Currently this only removes img elements without a source.
 // Images may be removed by other components like in notrack.js
-function sanity_filter_images(document) {
+sanity.filterImages = function(document) {
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
@@ -449,13 +439,11 @@ function sanity_filter_images(document) {
       imageElement.remove();
     }
   }
-}
-
+};
 
 // Removes leaf-like elements from the document. An element is a leaf unless
 // it is a named exception, contains a non-whitespace-only text node, or
 // contains at least one non-leaf child element.
-//
 // Because DOM modification is expensive, this tries to minimize the number
 // of elements removed by only removing the shallowest elements. For example,
 // when processing <outerleaf><innerleaf></innerleaf></outerleaf>, the naive
@@ -465,13 +453,12 @@ function sanity_filter_images(document) {
 // this situation, and only removes outerleaf. The cost of doing this is
 // that the is-leaf function is recursive. However, this cost is supposedly
 // less than the cost of removing every leaf.
-//
 // This still iterates over all of the elements, because using querySelectorAll
 // is faster than walking. As a result, this also checks at each step of the
 // iteration whether the current element is still attached to the document, and
 // avoids removing elements that were detached by virtue of an ancestor being
 // detached in a prior iteration step.
-function sanity_filter_leaves(document) {
+sanity.filterLeafElements = function(document) {
   // A document element is required.
   const docElement = document.documentElement;
 
@@ -502,11 +489,11 @@ function sanity_filter_leaves(document) {
   const numElements = elements.length;
   for(let i = 0, element; i < numElements; i++) {
     element = elements[i];
-    if(docElement.contains(element) && sanity_is_leaf_node(element)) {
+    if(docElement.contains(element) && sanity.isLeafNode(element)) {
       element.remove();
     }
   }
-}
+};
 
 // These elements are never considered leaves, regardless of other criteria.
 // In general, these elements correspond to 'void' elements that generally
@@ -517,7 +504,7 @@ function sanity_filter_leaves(document) {
 // TODO: because I just check for existence, look into storing null or whatever
 // is the smallest value. Also look into the new ES6 style of object literal
 // declaration
-const SANITY_LEAF_EXCEPTIONS = {
+sanity.LEAF_EXCEPTIONS = {
   'AREA': 1, 'AUDIO': 1, 'BASE': 1, 'COL': 1, 'COMMAND': 1, 'BR': 1,
   'CANVAS': 1, 'COL': 1, 'HR': 1, 'IFRAME': 1, 'IMG': 1, 'INPUT': 1,
   'KEYGEN': 1, 'META': 1, 'NOBR': 1, 'PARAM': 1, 'PATH': 1, 'SOURCE': 1,
@@ -525,9 +512,9 @@ const SANITY_LEAF_EXCEPTIONS = {
 };
 
 // Returns whether the given node is a leaf. Recursive.
-function sanity_is_leaf_node(node) {
+sanity.isLeafNode = function(node) {
   if(node.nodeType === Node.ELEMENT_NODE) {
-    if(node.nodeName in SANITY_LEAF_EXCEPTIONS) {
+    if(node.nodeName in sanity.LEAF_EXCEPTIONS) {
       return false;
     }
 
@@ -536,7 +523,7 @@ function sanity_is_leaf_node(node) {
     // or no child non-leaves found, fall through to the return true at the
     // the bottom.
     for(let child = node.firstChild; child; child = child.nextSibling) {
-      if(!sanity_is_leaf_node(child)) {
+      if(!sanity.isLeafNode(child)) {
         return false;
       }
     }
@@ -554,11 +541,10 @@ function sanity_is_leaf_node(node) {
   }
 
   return true;
-}
-
+};
 
 // Unwraps single column and single cell tables
-function sanity_filter_tables(document) {
+sanity.filterTableElements = function(document) {
   // TODO: restrict to document.body
   const tables = document.querySelectorAll('TABLE');
   const tableLength = tables.length;
@@ -577,19 +563,19 @@ function sanity_filter_tables(document) {
     if(rowLength === 1) {
       cells = rows[0].cells;
       if(cells.length === 1) {
-        sanity_unwrap_single_cell_table(table);
+        sanity.unwrapSingleCellTable(table);
         continue;
       }
     }
 
-    if(sanity_is_single_column_table(table)) {
-      sanity_unwrap_single_column_table(table);
+    if(sanity.isSingleColumnTable(table)) {
+      sanity.unwrapSingleColumnTable(table);
     }
   }
-}
+};
 
 // TODO: allow for empty rows?
-function sanity_unwrap_single_cell_table(table) {
+sanity.unwrapSingleCellTable = function(table) {
   const cell = table.rows[0].cells[0];
   const document = table.ownerDocument;
   const tableParent = table.parentNode;
@@ -597,11 +583,11 @@ function sanity_unwrap_single_cell_table(table) {
   dom_insert_children_before(cell, table);
   tableParent.insertBefore(document.createTextNode(' '), table);
   table.remove();
-}
+};
 
 // Examines the first 50 rows of a table element and decides whether
 // the table is probably a simple single column table
-function sanity_is_single_column_table(table) {
+sanity.isSingleColumnTable = function(table) {
   const rows = table.rows;
   const rowLength = rows.length;
   const upperBound = Math.min(rowLength, 50);
@@ -612,9 +598,9 @@ function sanity_is_single_column_table(table) {
   }
 
   return true;
-}
+};
 
-function sanity_unwrap_single_column_table(table) {
+sanity.unwrapSingleColumnTable = function(table) {
   const document = table.ownerDocument;
   const tableParent = table.parentNode;
   const rows = table.rows;
@@ -631,11 +617,10 @@ function sanity_unwrap_single_column_table(table) {
   }
   tableParent.insertBefore(document.createTextNode(' '), table);
   table.remove();
-}
-
+};
 
 // Remove trimmable nodes from the start and end of the document.
-function sanity_trim_document(document) {
+sanity.trimDocument = function(document) {
   // Restrict the scope of the descendants of body
   const bodyElement = document.body;
   if(!bodyElement) {
@@ -644,7 +629,7 @@ function sanity_trim_document(document) {
 
   const firstChild = bodyElement.firstChild;
   if(firstChild) {
-    sanity_remove_trimmable_nodes_by_step(firstChild, 'nextSibling');
+    sanity.removeTrimmableNodesByStep(firstChild, 'nextSibling');
 
     // Now start from the last child. This block is nested here because there
     // could only possibly be a last child if there was a first.
@@ -654,16 +639,16 @@ function sanity_trim_document(document) {
     // because it avoids the function call in the simple case.
     const lastChild = bodyElement.lastChild;
     if(lastChild && lastChild !== firstChild) {
-      sanity_remove_trimmable_nodes_by_step(bodyElement.lastChild,
+      sanity.removeTrimmableNodesByStep(bodyElement.lastChild,
         'previousSibling');
     }
   }
-}
+};
 
 // A set of element node names that are considered trimmable. This generally
 // corresponds to VOID nodes as defined in the spec. However, not all void
 // nodes are analogous to whitespace.
-const SANITY_TRIMMABLE_VOID_ELEMENTS = {
+sanity.TRIMMABLE_VOID_ELEMENT_NAMES = {
   'BR': 1,
   'HR': 1,
   'NOBR': 1
@@ -673,7 +658,7 @@ const SANITY_TRIMMABLE_VOID_ELEMENTS = {
 // node if it is trimmable.
 // TODO: seems like duplication or something of a similar issue with filtering
 // leaves in leaf.js. Are the operations are associative?
-function sanity_remove_trimmable_nodes_by_step(startNode, step) {
+sanity.removeTrimmableNodesByStep = function(startNode, step) {
   // A node is trimmable when it is:
   // 1) A named element
   // 2) A whitespace only or empty text node
@@ -693,13 +678,13 @@ function sanity_remove_trimmable_nodes_by_step(startNode, step) {
   // TODO: I think this loop can be simplified. I don't like having a complex
   // condition in the loop head.
 
-  while(node && (node.nodeName in SANITY_TRIMMABLE_VOID_ELEMENTS ||
+  while(node && (node.nodeName in sanity.TRIMMABLE_VOID_ELEMENT_NAMES ||
     (node.nodeType === TEXT && !node.nodeValue.trim()))) {
     sibling = node[step];
     node.remove();
     node = sibling;
   }
-}
+};
 
 
 /*
@@ -768,12 +753,12 @@ yet to be visited in the iteration of unwrapple elements. It will eventually
 be visited, and it will still have a parent. The problem is that the parent
 at that point is no longer attached.
 
-I do not like that sanity_is_unwrappable_parent makes a call to match. It feels
+I do not like that sanity.isUnwrappableParent makes a call to match. It feels
 somehow redundant. match is also slow. one idea is to keep a set (or basic
 array) of the inline elements initially found, and just check set membership
 instead of calling matches
 
-I do not like how I am calling sanity_is_unwrappable_parent multiple times.
+I do not like how I am calling sanity.isUnwrappableParent multiple times.
 First
 in the iteration in order to skip, and second when finding the shallowest
 ancestor.
@@ -782,7 +767,7 @@ I do not like how I am repeatedly trimming several text nodes. This feels
 sluggish.
 */
 
-const UNWRAPPABLE_SELECTOR = [
+sanity.UNWRAPPABLE_SELECTOR = [
   'ABBR', 'ACRONYM', 'ARTICLE', 'ASIDE', 'CENTER', 'COLGROUP', 'DATA',
   'DETAILS', 'DIV', 'FOOTER', 'HEADER', 'HELP', 'HGROUP', 'ILAYER',
   'INSERT', 'LAYER', 'LEGEND', 'MAIN', 'MARK', 'MARQUEE', 'METER',
@@ -790,40 +775,40 @@ const UNWRAPPABLE_SELECTOR = [
   'LABEL', 'BIG', 'BLINK', 'FONT', 'PLAINTEXT', 'SMALL', 'TT'
 ].join(',');
 
-function sanity_filter_unwrappables(document) {
-  return sanity_filter_unwrappables_naive(document);
-}
+sanity.filterUnwrappables = function(document) {
+  return sanity.filterUnwrappables_naive(document);
+};
 
-function sanity_filter_unwrappables_naive(document) {
+sanity.filterUnwrappables_naive = function(document) {
   // Require body. Only examine elements beneath body.
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
   }
 
-  const elements = bodyElement.querySelectorAll(UNWRAPPABLE_SELECTOR);
+  const elements = bodyElement.querySelectorAll(sanity.UNWRAPPABLE_SELECTOR);
   const numElements = elements.length;
   for(let i = 0; i < numElements; i++) {
     dom_unwrap(elements[i], null);
   }
-}
+};
 
-function sanity_filter_unwrappables_complex(document) {
-  const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
+sanity.filterUnwrappables_complex = function(document) {
+  const elements = document.querySelectorAll(sanity.UNWRAPPABLE_SELECTOR);
   for(let i = 0, len = elements.length, element, shallowest; i < len; i++) {
     element = elements[i];
-    if(!sanity_is_unwrappable_parent(element)) {
-      shallowest = sanity_find_shallowest_unwrappable_ancestor(element);
+    if(!sanity.isUnwrappableParent(element)) {
+      shallowest = sanity.findShallowestUnwrappableAncestor(element);
       dom_unwrap(element, shallowest);
     }
   }
 }
 
-function sanity_is_unwrappable_parent(element) {
-  let result = element.matches(UNWRAPPABLE_SELECTOR);
+sanity.isUnwrappableParent = function(element) {
+  let result = element.matches(sanity.UNWRAPPABLE_SELECTOR);
   for(let node = element.firstChild; result && node; node = node.nextSibling) {
     if(node.nodeType === Node.ELEMENT_NODE) {
-      if(!sanity_is_unwrappable_parent(node)) {
+      if(!sanity.isUnwrappableParent(node)) {
         result = false;
       }
     } else if(node.nodeType === Node.TEXT_NODE) {
@@ -834,25 +819,21 @@ function sanity_is_unwrappable_parent(element) {
   }
 
   return result;
-}
+};
 
-function sanity_find_shallowest_unwrappable_ancestor(element) {
-  // TODO: do not iterate past body
-
+// TODO: do not iterate past body
+sanity.findShallowestUnwrappableAncestor = function(element) {
   let shallowest = null;
   for(let node = element.parentNode;
-    node && sanity_is_unwrappable_parent(node);
+    node && sanity.isUnwrappableParent(node);
     node = node.parentNode) {
 
     shallowest = node;
   }
   return shallowest;
-}
-
+};
 
 // Sanity helper functions for dealing with hidden elements.
-// Requires: /src/dom.js
-//
 // Filters hidden elements from a document. This originally was more accurate
 // because it checked computed style. However that turned out to be terribly
 // slow. So instead, this uses a gimmick with query selectors to look for
@@ -860,14 +841,12 @@ function sanity_find_shallowest_unwrappable_ancestor(element) {
 // those are removed anyway. I might consider writing a document preprocessor
 // that inlines all styles. As a result of the gimmick, it is less accurate
 // but it is much faster.
-//
 // I cannot use the offsetWidth/offsetHeight tricks like how jQuery does
 // this because that trick only works for live documents. This is designed
 // to work with an inert document such as one produceed by
 // XMLHttpRequest.responseXML or DOMParser or
 // document.implementation.createHTMLDocument. offsetWidth and offsetHeight
 // are 0 for all elements in an inert document.
-//
 // This originally removed elements. Now it just unwraps. This helps avoid
 // an issue with documents that wrap all content in a hidden element and then
 // dynamically unhide the element. For example:
@@ -876,7 +855,6 @@ function sanity_find_shallowest_unwrappable_ancestor(element) {
 // at the bottom of the page that sets the visibility to visible. I also
 // think this is a document produced by Macromedia Dreamweaver, so I think
 // this is not a one-time thing.
-//
 // I have mixed feelings about unwrapping hidden content. There is an ambiguity
 // regarding whether the content is useful. It is either content subject to the
 // un-hide trick, or it is content that is intentionally hidden for some
@@ -884,7 +862,6 @@ function sanity_find_shallowest_unwrappable_ancestor(element) {
 // some authors hide content maliciously to fool search engines or simply
 // because it is remnant of drafting the page, or because it is auxillary
 // stuff, or because it is part of some scripted component of the page.
-//
 // TODO: now that this unwraps, do additional testing to see if unwrapped
 // content appears. Maybe a middle ground is to remove if removing does not
 // leave an empty body. As in, if the parent is body, unwrap, otherwise
@@ -892,7 +869,7 @@ function sanity_find_shallowest_unwrappable_ancestor(element) {
 // TODO: support aria hidden ?
 // https://www.w3.org/TR/wai-aria/states_and_properties#aria-hidden
 
-function sanity_filter_hidden_elements(document) {
+sanity.filterHiddenElements = function(document) {
   // Document element is required.
   // TODO: maybe i do not need docElement, maybe
   // checking bodyElement.contains is sufficient.
@@ -920,19 +897,16 @@ function sanity_filter_hidden_elements(document) {
 
   // Removing nodes that reside in a node already removed is harmless. However,
   // it is a wasted operation, and dom operations are generally expensive.
-
   // This checks 'contains' so as to avoid removing elements that were already
   // removed in a prior iteration. Nodes are walked in document order
   // because that is how querySelectorAll produces its NodeList content.
   // Therefore descendants are visisted after ancestors. Therefore it is
   // possible to iterate over descendants that reside in an ancestor that was
   // already removed.
-
   // I would prefer to not even visit such descendants. I suppose I could
   // use a TreeWalker. However, I have found that tree walking is very slow
   // in comparison to querySelectorAll and contains. However, I have not
   // tested this in a while so maybe it is worth it to experiment again.
-
   // Select from within body so as to exclude documentElement and body from
   // the set of elements analyzed. This is important because it prevents
   // the chance that the body and document element are removed.
@@ -946,4 +920,4 @@ function sanity_filter_hidden_elements(document) {
       dom_unwrap(element);
     }
   }
-}
+};
