@@ -15,6 +15,8 @@ const domaid = {};
 // TODO: remove reliance on notrack.js
 // TODO: rename filterUnwrappables_complex to filterUnwrappablesExperimental
 
+// TODO: should this be DOMaid instead of domaid? What style is better?
+
 // TODO: research why some articles appear without content. I know pdfs
 // work this way, but look into the issue with other ones.
 // TODO: look into issues with rendering google groups pages.
@@ -54,9 +56,13 @@ const domaid = {};
 // awkwardly within the output as the first piece of body text.
 // NOTE: filtering the nodes out of the body won't help.
 
-// Applies a hardcoded series of filters to a document. Modifies the document
+// Applies a series of filters to a document. Modifies the document
 // in place.
 domaid.cleanDocument = function(document) {
+
+  // The order is designed to try and minimize the work done by each
+  // sequential step, and to ensure proper handling of frameset.
+
   domaid.filterComments(document);
   domaid.replaceFrames(document);
   domaid.filterNoscripts(document);
@@ -145,11 +151,21 @@ domaid.isJavascriptAnchor = function(anchorElement) {
   // The length check reduces the number of calls to the regexp because of
   // short circuited evaluation
   return href && href.length > MIN_HREF_LEN && JS_PATTERN.test(href);
-}
+};
+
+// An anchor is a formatting anchor when it serves no other role than being a
+// container. In this context, where formatting information is ignored, it is
+// useless.
+domaid.isFormattingAnchor = function(anchorElement) {
+  return !anchorElement.hasAttribute('href') &&
+    !anchorElement.hasAttribute('name');
+};
 
 // Transform anchors that contain inline script or only serve a formatting role
 domaid.filterAnchors = function(document) {
   const rootElement = document.body || document.documentElement;
+  // TODO: if document.documentElement is never undefined, is this invariant?
+  // Maybe I don't need this check.
   if(!rootElement) {
     return;
   }
@@ -157,9 +173,8 @@ domaid.filterAnchors = function(document) {
   const numAnchors = anchorNodeList.length;
   for(let i = 0, anchor; i < numAnchors; i++) {
     anchor = anchorNodeList[i];
-    if(domaid.isJavascriptAnchor(anchor)) {
-      dom_unwrap(anchor);
-    } else if(!anchor.hasAttribute('href') && !anchor.hasAttribute('name')) {
+    if(domaid.isFormattingAnchor(anchor) ||
+      domaid.isJavascriptAnchor(anchor)) {
       dom_unwrap(anchor);
     }
   }
@@ -341,10 +356,8 @@ domaid.filterAttributes = function(document) {
   }
 };
 
-// Lib for removing blacklisted elements. This fulfills multiple purposes.
 // Certain blacklisted elements are unwrapped instead of removed and that
 // is handled by other sanity functionality.
-
 domaid.BLACKLISTED_ELEMENT_NAMES = [
   'APPLET', 'AUDIO', 'BASE', 'BASEFONT', 'BGSOUND', 'BUTTON', 'COMMAND',
   'DATALIST', 'DIALOG', 'EMBED', 'FIELDSET', 'FRAME', 'FRAMESET', 'HEAD',
@@ -353,7 +366,6 @@ domaid.BLACKLISTED_ELEMENT_NAMES = [
   'SCRIPT', 'SELECT', 'SPACER', 'STYLE', 'SVG', 'TEXTAREA', 'TITLE',
   'VIDEO', 'XMP'
 ];
-
 domaid.BLACKLIST_SELECTOR = domaid.BLACKLISTED_ELEMENT_NAMES.join(',');
 
 // Removes blacklisted elements from the document.
