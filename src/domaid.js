@@ -133,53 +133,33 @@ domaid.replaceFrames = function(document) {
   document.documentElement.appendChild(bodyElement);
 };
 
+// Assumes anchorElement is defined.
+domaid.isJavascriptAnchor = function(anchorElement) {
+  const JS_PATTERN = /^\s*JAVASCRIPT\s*:/i;
+  const MIN_HREF_LEN = 'JAVASCRIPT:'.length;
+  // NOTE: the call to getAttribute is now the slowest part of this function,
+  // it is even slower than the regex
+  // NOTE: accessing anchor.href is noticeably slower
+  // NOTE: accessing anchor.protocol is noticeably slower
+  const href = anchorElement.getAttribute('href');
+  // The length check reduces the number of calls to the regexp because of
+  // short circuited evaluation
+  return href && href.length > MIN_HREF_LEN && JS_PATTERN.test(href);
+}
+
 // Transform anchors that contain inline script or only serve a formatting role
 domaid.filterAnchors = function(document) {
-  // Using a regexp seems faster than accessing anchor.protocol. I assume that
-  // this is because the property is lazily computed in an inert document
-  // context, but I am not sure why. I would prefer using protocol because that
-  // guarantees that this matches the behavior of the browser. If I do not
-  // accurately match the behavior then this can lead to scripted anchors
-  // appearing in the view. Inline script is ultimately disabled by the Chrome
-  // extension settings context, so it is not a major security concern.
-  // However, it does potentially leave cruft in the output, which I want to
-  // minimize.
-
   const rootElement = document.body || document.documentElement;
   if(!rootElement) {
     return;
   }
   const anchorNodeList = rootElement.querySelectorAll('a');
   const numAnchors = anchorNodeList.length;
-  const JS_PATTERN = /^\s*JAVASCRIPT\s*:/i;
-  const MIN_HREF_LEN = 'JAVASCRIPT:'.length;
-
-  // NOTE: hasAttribute returns true for empty attributes, but the case where
-  // this matters is very rare, so I prefer its simplicity and speed over
-  // getAttribute and trim.
-  // TODO: consider removing or unwrapping script anchors. One reason is that
-  // leaving in an empty href attribute leads to clumsy behavior in the view.
-  // I think the browser substitutes in the url of the page itself, leading
-  // to just a refresh, which is misleading. In general, javascript anchors
-  // perform some type of functionality not related to the content of the page
-  // itself and should be removed. However, they should only be unwrapped
-  // and not simply removed, because sometimes they contain valuable content.
-
-  // NOTE: I recently fixed a bug here, this was testing if i < anchors,
-  // not anchors.length, which made no sense. I am not sure what this was
-  // doing previously. I need to test this again.
-
-  for(let i = 0, anchor, href; i < numAnchors; i++) {
+  for(let i = 0, anchor; i < numAnchors; i++) {
     anchor = anchorNodeList[i];
-    if(anchor.hasAttribute('href')) {
-      href = anchor.getAttribute('href');
-      // The length check reduces the number of calls to the regexp
-      if(href.length > MIN_HREF_LEN && JS_PATTERN.test(href)) {
-        // anchor.setAttribute('href', '');
-      }
-    } else if(!anchor.hasAttribute('name')) {
-      // Without a name and href the anchor's role is just formatting
-      //console.debug('Unwrapping style-only anchor:', anchor.outerHTML);
+    if(domaid.isJavascriptAnchor(anchor)) {
+      dom_unwrap(anchor);
+    } else if(!anchor.hasAttribute('href') && !anchor.hasAttribute('name')) {
       dom_unwrap(anchor);
     }
   }
