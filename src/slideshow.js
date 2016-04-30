@@ -323,7 +323,7 @@ function slideshow_append_slide(entry, isFirst) {
 
   const entryContentDocument = html_parse_string(entry.content);
   Calamine.removeBoilerplate(entryContentDocument);
-  sanity.cleanDocument(entryContentDocument);
+  domaid.cleanDocument(entryContentDocument);
   const entryContentBody = entryContentDocument.body ||
     entryContentDocument.documentElement;
   dom_append_children(entryContentBody, content);
