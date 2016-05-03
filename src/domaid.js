@@ -5,11 +5,7 @@
 'use strict';
 
 // Lib for cleaning up a document
-// Requires: /src/dom.js
-
 const DOMAid = {};
-
-// TODO: remove reliance on dom.js
 
 // TODO: research why some articles appear without content. I know pdfs
 // work this way, but look into the issue with other ones.
@@ -78,6 +74,42 @@ DOMAid.cleanDocument = function(document) {
   DOMAid.filterAttributes(document);
 };
 
+
+// Moves the element's child nodes into the element's or the parent of the
+// alternate element if defined, and then removes the element.
+// referenceNode is optional.
+// TODO: make the space wrapping optional or give caller the responsibility?
+DOMAid.unwrap = function(element, referenceNode) {
+  const target = referenceNode || element;
+  const parent = target.parentNode;
+  if(parent) {
+    const document = element.ownerDocument;
+
+    const prevSibling = target.previousSibling;
+    if(prevSibling && prevSibling.nodeType === Node.TEXT_NODE) {
+      parent.insertBefore(document.createTextNode(' '), target);
+    }
+
+    DOMAid.insertChildrenBefore(element, target);
+
+    const nextSibling = target.nextSibling;
+    if(nextSibling && nextSibling.nodeType === Node.TEXT_NODE) {
+      parent.insertBefore(document.createTextNode(' '), target);
+    }
+
+    target.remove();
+  }
+};
+
+// NOTE: this assumes both nodes in the same document and that it is inert.
+// TODO: would using fragment here also improve performance?
+DOMAid.insertChildrenBefore = function(parentNode, referenceNode) {
+  const referenceParent = referenceNode.parentNode;
+  for(let node = parentNode.firstChild; node; node = parentNode.firstChild) {
+    referenceParent.insertBefore(node, referenceNode);
+  }
+};
+
 // NOTE: we cannot remove noscript elements because some sites embed the
 // article within a noscript tag. So instead we treat noscripts as unwrappable
 // Because noscripts are a special case for now I am not simply adding noscript
@@ -95,7 +127,7 @@ DOMAid.filterNoscripts = function(document) {
   const numNoscripts = noscripts.length;
 
   for(let i = 0; i < numNoscripts; i++) {
-    dom_unwrap(noscripts[i], null);
+    DOMAid.unwrap(noscripts[i], null);
   }
 };
 
@@ -135,15 +167,17 @@ DOMAid.replaceFrames = function(document) {
 
 // Assumes anchorElement is defined.
 DOMAid.isJavascriptAnchor = function(anchorElement) {
-  const JS_PATTERN = /^\s*JAVASCRIPT\s*:/i;
-  const MIN_HREF_LEN = 'JAVASCRIPT:'.length;
   // NOTE: the call to getAttribute is now the slowest part of this function,
   // it is even slower than the regex
   // NOTE: accessing anchor.href is noticeably slower
   // NOTE: accessing anchor.protocol is noticeably slower
-  const href = anchorElement.getAttribute('href');
   // The length check reduces the number of calls to the regexp because of
   // short circuited evaluation
+  // TODO: check whether Chrome lets through other types of inline script
+  // like this
+  const JS_PATTERN = /^\s*JAVASCRIPT\s*:/i;
+  const MIN_HREF_LEN = 'JAVASCRIPT:'.length;
+  const href = anchorElement.getAttribute('href');
   return href && href.length > MIN_HREF_LEN && JS_PATTERN.test(href);
 };
 
@@ -169,7 +203,7 @@ DOMAid.filterAnchors = function(document) {
     anchor = anchorNodeList[i];
     if(DOMAid.isFormattingAnchor(anchor) ||
       DOMAid.isJavascriptAnchor(anchor)) {
-      dom_unwrap(anchor);
+      DOMAid.unwrap(anchor);
     }
   }
 };
@@ -192,7 +226,7 @@ DOMAid.filterListElements = function(document) {
       if(itemElement.nodeName in ITEM_ELEMENT_NAMES) {
         listElement.parentNode.insertBefore(document.createTextNode(' '),
           listElement);
-        dom_insert_children_before(itemElement, listElement);
+        DOMAid.insertChildrenBefore(itemElement, listElement);
         listElement.parentNode.insertBefore(document.createTextNode(' '),
           listElement);
         listElement.remove();
@@ -278,7 +312,7 @@ DOMAid.filterFigureElements = function(document) {
     figure = figures[i];
     if(figure.childElementCount === 1) {
       // console.debug('Unwrapping basic figure:', figure.outerHTML);
-      dom_unwrap(figure, null);
+      DOMAid.unwrap(figure, null);
     }
   }
 };
@@ -598,7 +632,7 @@ DOMAid.unwrapSingleCellTable = function(table) {
   const document = table.ownerDocument;
   const tableParent = table.parentNode;
   tableParent.insertBefore(document.createTextNode(' '), table);
-  dom_insert_children_before(cell, table);
+  DOMAid.insertChildrenBefore(cell, table);
   tableParent.insertBefore(document.createTextNode(' '), table);
   table.remove();
 };
@@ -629,7 +663,7 @@ DOMAid.unwrapSingleColumnTable = function(table) {
     rowIndex++) {
     cells = rows[rowIndex];
     for(colIndex = 0; colIndex < cells.length; colIndex++) {
-      dom_insert_children_before(cells[colIndex], table);
+      DOMAid.insertChildrenBefore(cells[colIndex], table);
     }
     tableParent.insertBefore(document.createElement('P'), table);
   }
@@ -803,7 +837,7 @@ DOMAid.filterUnwrappables = function(document) {
   const elements = rootElement.querySelectorAll(DOMAid.UNWRAPPABLE_SELECTOR);
   const numElements = elements.length;
   for(let i = 0; i < numElements; i++) {
-    dom_unwrap(elements[i], null);
+    DOMAid.unwrap(elements[i], null);
   }
 };
 
@@ -813,7 +847,7 @@ DOMAid.filterUnwrappablesExperimental = function(document) {
     element = elements[i];
     if(!DOMAid.isUnwrappableParent(element)) {
       shallowest = DOMAid.findShallowestUnwrappableAncestor(element);
-      dom_unwrap(element, shallowest);
+      DOMAid.unwrap(element, shallowest);
     }
   }
 }
@@ -931,7 +965,7 @@ DOMAid.filterHiddenElements = function(document) {
   for(let i = 0, element; i < numElements; i++) {
     element = elements[i];
     if(docElement.contains(element)) {
-      dom_unwrap(element);
+      DOMAid.unwrap(element);
     }
   }
 };
