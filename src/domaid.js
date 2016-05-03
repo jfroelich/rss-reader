@@ -6,15 +6,11 @@
 
 // Lib for cleaning up a document
 // Requires: /src/dom.js
-// Requires: /src/string.js
 
 const domaid = {};
 
-// TODO: remove reliance on string.js
 // TODO: remove reliance on dom.js
-// TODO: remove reliance on notrack.js
 // TODO: rename filterUnwrappables_complex to filterUnwrappablesExperimental
-
 // TODO: should this be DOMaid instead of domaid? What style is better?
 
 // TODO: research why some articles appear without content. I know pdfs
@@ -70,7 +66,7 @@ domaid.cleanDocument = function(document) {
   domaid.filterHiddenElements(document);
   domaid.replaceBreakRuleElements(document);
   domaid.filterAnchors(document);
-  no_track_filter_tiny_images(document);
+  domaid.filterTinyImages(document);
   domaid.filterImages(document);
   domaid.filterUnwrappables(document);
   domaid.filterFigureElements(document);
@@ -83,6 +79,8 @@ domaid.cleanDocument = function(document) {
   domaid.trimDocument(document);
   domaid.filterAttributes(document);
 };
+
+
 
 // NOTE: we cannot remove noscript elements because some sites embed the
 // article within a noscript tag. So instead we treat noscripts as unwrappable
@@ -444,6 +442,22 @@ domaid.filterImages = function(document) {
     imageElement = imageNodeList[i];
     if(!imageElement.hasAttribute('src') &&
       !imageElement.hasAttribute('srcset')) {
+      imageElement.remove();
+    }
+  }
+};
+
+domaid.filterTinyImages = function(document) {
+  const rootElement = document.body || document.documentElement;
+  if(!rootElement) {
+    return;
+  }
+
+  const imageNodeList = rootElement.querySelectorAll('img');
+  const listLength = imageNodeList.length;
+  for(let i = 0, imageElement; i < listLength; i++) {
+    imageElement = imageNodeList[i];
+    if(imageElement.width < 2 || imageElement.height < 2) {
       imageElement.remove();
     }
   }

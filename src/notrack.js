@@ -49,19 +49,3 @@ function no_track_filter_elements(document) {
     imageElement.remove();
   }
 }
-
-function no_track_filter_tiny_images(document) {
-  const bodyElement = document.body;
-  if(!bodyElement) {
-    return;
-  }
-
-  const imageNodeList = bodyElement.querySelectorAll('IMG');
-  const listLength = imageNodeList.length;
-  for(let i = 0, imageElement; i < listLength; i++) {
-    imageElement = imageNodeList[i];
-    if(imageElement.width < 2 || imageElement.height < 2) {
-      imageElement.remove();
-    }
-  }
-}
