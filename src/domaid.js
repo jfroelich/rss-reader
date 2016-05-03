@@ -10,7 +10,6 @@
 const domaid = {};
 
 // TODO: remove reliance on dom.js
-// TODO: rename filterUnwrappables_complex to filterUnwrappablesExperimental
 // TODO: should this be DOMaid instead of domaid? What style is better?
 
 // TODO: research why some articles appear without content. I know pdfs
@@ -798,24 +797,20 @@ domaid.UNWRAPPABLE_SELECTOR = [
 ].join(',');
 
 domaid.filterUnwrappables = function(document) {
-  return domaid.filterUnwrappables_naive(document);
-};
-
-domaid.filterUnwrappables_naive = function(document) {
   // Require body. Only examine elements beneath body.
-  const bodyElement = document.body;
-  if(!bodyElement) {
+  const rootElement = document.body || document.documentElement;
+  if(!rootElement) {
     return;
   }
 
-  const elements = bodyElement.querySelectorAll(domaid.UNWRAPPABLE_SELECTOR);
+  const elements = rootElement.querySelectorAll(domaid.UNWRAPPABLE_SELECTOR);
   const numElements = elements.length;
   for(let i = 0; i < numElements; i++) {
     dom_unwrap(elements[i], null);
   }
 };
 
-domaid.filterUnwrappables_complex = function(document) {
+domaid.filterUnwrappablesExperimental = function(document) {
   const elements = document.querySelectorAll(domaid.UNWRAPPABLE_SELECTOR);
   for(let i = 0, len = elements.length, element, shallowest; i < len; i++) {
     element = elements[i];
