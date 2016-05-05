@@ -100,6 +100,8 @@ function resolve_modify_attributes(document, baseURL) {
 }
 
 // TODO: maybe reverse argument order?
+// TODO: i am not sure yet but I think the built in URL object added to
+// javascript can now do this for me, maybe I don't need the URI lib!
 function resolve_url(baseURL, url) {
   try {
     const uri = new URI(url);

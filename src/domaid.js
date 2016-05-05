@@ -4,47 +4,8 @@
 
 'use strict';
 
-// Lib for cleaning up a document
+// Routines for cleaning up nodes in an HTMLDocument
 const DOMAid = {};
-
-// TODO: research why some articles appear without content. I know pdfs
-// work this way, but look into the issue with other ones.
-// TODO: look into issues with rendering google groups pages.
-// For example:
-// view-source:https://groups.google.com/forum/#!topic/golang-nuts/MmSbFHLPo8g
-// The content in the body after the <xmp>.<xmp> shows up as encoded? Maybe
-// it is due to the single <plaintext/> tag preceding it? I can't tell what is
-// going on. Does chrome's html parser screw up?
-// TODO: explicit handling of noembed/audio/video/embed
-// TODO: maybe I should have some other function
-// that deals with malformed html and removes all nodes that do not conform
-// to <html><head>*</head><body>*</body></html> and then none of the sanity
-// functions need to be concerned.
-// TODO: if I have no use for nodes outside of body, maybe it makes sense to
-// just explicitly removal all such nodes.
-// TODO: some things i want to maybe deal with at this url
-// view-source:http://stevehanov.ca/blog/index.php?id=132
-// It is using sprites. So transp is ignored. osrc is also ignored, i think it
-// was macromedia dreamweaver rollover code that also just serves as a reminder
-// of the desired original image source if rollover is disabled, and then
-// the style points to the image embedded within a sprite.
-// <img src="transparent.gif" osrc="kwijibo.png" style="background:
-// url(sprite.jpg); background-position: 0px -5422px;width:270px;height:87px">
-// I would have to modify a lot of things to support this. I would have to
-// make sure urls appropriate resolved, that image not incorrectly removed,
-// and i would have to partially retain style value.
-// Another issue with that page is flow formatting, maybe I want to correct
-// this or maybe I want to allow it, not sure. Specifically H1s within anchors
-
-// TODO: there are quirks with malformed html. See this page
-// http://blog.hackerrank.com/step-0-before-you-do-anything/
-// It has an error with a noscript node. The guy forgot the < to start the
-// nested script tag in it. So, part of its contents becomes a text node. This
-// text node is somehow the first text node of the body in the DOM hierarchy
-// represented to me in JS, even though it is not located within the body.
-// Because it isn't filtered by the blacklist or anything, it shows up really
-// awkwardly within the output as the first piece of body text.
-// NOTE: filtering the nodes out of the body won't help.
 
 // Applies a series of filters to a document. Modifies the document
 // in place. The filters are applied in a preset order so as to minimize the
@@ -74,60 +35,86 @@ DOMAid.cleanDocument = function(document) {
   DOMAid.filterAttributes(document);
 };
 
-
-// Moves the element's child nodes into the element's or the parent of the
-// alternate element if defined, and then removes the element.
-// referenceNode is optional.
-// TODO: make the space wrapping optional or give caller the responsibility?
+// Moves the element's child nodes into the element's parent, preceding the
+// element, and then removes the element. If a reference node is defined, this
+// instead moves the element's child nodes into the parent of the reference
+// node, and then removes the reference node.
+//
+// Padding is added around the child nodes to avoid issues with text that
+// becomes adjacent as a result of removing the element.
+//
+// This is not optimized to work on a live document. The element, and the
+// reference node if defined, should be located within an inert document.
 DOMAid.unwrap = function(element, referenceNode) {
   const target = referenceNode || element;
   const parent = target.parentNode;
-  if(parent) {
-    const document = element.ownerDocument;
 
-    const prevSibling = target.previousSibling;
-    if(prevSibling && prevSibling.nodeType === Node.TEXT_NODE) {
-      parent.insertBefore(document.createTextNode(' '), target);
-    }
+  // We can only unwrap if a parent node is defined. If there is no parent
+  // node then unwrapping does not make sense.
 
-    DOMAid.insertChildrenBefore(element, target);
-
-    const nextSibling = target.nextSibling;
-    if(nextSibling && nextSibling.nodeType === Node.TEXT_NODE) {
-      parent.insertBefore(document.createTextNode(' '), target);
-    }
-
-    target.remove();
+  if(!parent) {
+    return;
   }
+
+  const document = element.ownerDocument;
+
+  // Pad left if next to a text node
+  const prevSibling = target.previousSibling;
+  if(prevSibling && prevSibling.nodeType === Node.TEXT_NODE) {
+    parent.insertBefore(document.createTextNode(' '), target);
+  }
+
+  // Move the child nodes
+  DOMAid.insertChildrenBefore(element, target);
+
+  // Pad right if next to a text node
+  const nextSibling = target.nextSibling;
+  if(nextSibling && nextSibling.nodeType === Node.TEXT_NODE) {
+    parent.insertBefore(document.createTextNode(' '), target);
+  }
+
+  target.remove();
 };
 
-// NOTE: this assumes both nodes in the same document and that it is inert.
-// TODO: would using fragment here also improve performance?
+// Inserts the children of the parentNode before the reference node. This
+// function is not optimized for working with live documents. Note that the
+// parent node may be equal to the reference node.
 DOMAid.insertChildrenBefore = function(parentNode, referenceNode) {
+  // Get the parent of the reference node. Assume it always exists.
   const referenceParent = referenceNode.parentNode;
+  // Move the children one a time, maintaining child order.
   for(let node = parentNode.firstChild; node; node = parentNode.firstChild) {
     referenceParent.insertBefore(node, referenceNode);
   }
 };
 
-// NOTE: we cannot remove noscript elements because some sites embed the
-// article within a noscript tag. So instead we treat noscripts as unwrappable
-// Because noscripts are a special case for now I am not simply adding noscript
-// to sanity-unwrap
-// We still have to unwrap. If noscript remains, the content remains within the
-// document, but it isn't visible/rendered because we obviously support scripts
-// and so the browser hides it. So now we have to remove it.
+// Unwraps <noscript> elements. Although this could be done by
+// filterUnwrappables, I am doing it here because I consider <noscript> to be
+// a special case. This unwraps instead of removes because some documents
+// embed the entire content in a noscript tag and then use their own scripted
+// unwrapping call to make the content available.
+//
+// TODO: should this be restricting to body? What about noscript elements
+// located outside of body? Should those just be ignored? Or removed?
+// TODO: look into whether I can make a more educated guess about whether
+// to unwrap or to remove. For example, maybe if there is only one noscript
+// tag found, or if the number of elements outside of the node script but
+// within the body is above or below some threshold (which may need to be
+// relative to the total number of elements within the body?)
 DOMAid.filterNoscripts = function(document) {
-  const bodyElement = document.body;
-  if(!bodyElement) {
+  const rootElement = document.body || document.documentElement;
+  // TODO: now that this defaults to document.documentElement, is this check
+  // even required? Is documentElement always defined?
+  if(!rootElement) {
     return;
   }
 
-  const noscripts = bodyElement.querySelectorAll('noscript');
-  const numNoscripts = noscripts.length;
+  const elementNodeList = rootElement.querySelectorAll('noscript');
+  const listLength = elementNodeList.length;
 
-  for(let i = 0; i < numNoscripts; i++) {
-    DOMAid.unwrap(noscripts[i], null);
+  for(let i = 0; i < listLength; i++) {
+    // Explicitly pass null to indicate no reference node use
+    DOMAid.unwrap(elementNodeList[i], null);
   }
 };
 

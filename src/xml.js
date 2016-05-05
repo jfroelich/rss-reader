@@ -4,6 +4,9 @@
 
 'use strict';
 
+// TODO: this is really only ever called by opml.js, just move it back into
+// that lib
+
 // Parses a string containing xml into an document. The document is XML-flagged,
 // so node.nodeName is case-sensitive. Throws an exception when a parsing
 // error occurs.

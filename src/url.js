@@ -4,6 +4,9 @@
 
 'use strict';
 
+// TODO: maybe I can now use the builtin URL object to do this
+// and avoid using the URI lib
+
 // Requires: /lib/URI.js
 
 // Returns a url string without its protocol
