@@ -17,7 +17,6 @@
       "/lib/parse-srcset.js",
       "/lib/URI.js",
       "/lib/utf8.js",
-      "/src/archive.js",
       "/src/background.js",
       "/src/badge.js",
       "/src/date.js",
