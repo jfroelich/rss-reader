@@ -90,25 +90,25 @@ function google_feeds_sanitize_entry(entry) {
   const CONTENT_SNIPPET_MAX_LENGTH = 400;
 
   if(entry.title) {
-    entry.title = string_filter_controls(entry.title);
+    entry.title = utils.string.filterControlCharacters(entry.title);
 
     // I don't want any html formatting to remain in the title
     entry.title = html_replace(entry.title, '');
 
     // TODO: this may have an error regarding html entities in the title,
     // maybe I should only be using html_truncate here.
-    entry.title = string_truncate(entry.title, TITLE_MAX_LENGTH);
+    entry.title = utils.string.truncate(entry.title, TITLE_MAX_LENGTH);
   }
 
   // The snippet may contain some html formatting, such as <b> tags around
   // query terms. We want to retain that, but remove other tags.
 
   if(entry.contentSnippet) {
-    entry.contentSnippet = string_filter_controls(entry.contentSnippet);
+    entry.contentSnippet = utils.string.filterControlCharacters(entry.contentSnippet);
     entry.contentSnippet = html_replace_breakrules(entry.contentSnippet);
 
     // The snippet contains HTML, so we have to be wary of truncating, so
-    // we use html_truncate instead of string_truncate
+    // we use html_truncate instead of utils.string.truncate
     entry.contentSnippet = html_truncate(entry.contentSnippet,
       CONTENT_SNIPPET_MAX_LENGTH, '...');
   }

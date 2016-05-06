@@ -200,7 +200,7 @@ function opml_sanitize_string(inputString) {
 
   let outputString = inputString || '';
   if(outputString) {
-    outputString = string_filter_controls(outputString);
+    outputString = utils.string.filterControlCharacters(outputString);
     outputString = html_replace(outputString, '');
   }
 
@@ -287,15 +287,15 @@ function opml_parse_string(string) {
 
 // Returns true if the element is an <outline> element
 function opml_is_outline_element(element) {
-  return string_equals_ignore_case(element.nodeName, 'OUTLINE');
+  return utils.string.equalsIgnoreCase(element.nodeName, 'OUTLINE');
 }
 
 // Returns true if the element is an <body> element
 function opml_is_body_element(element) {
-  return string_equals_ignore_case(element.nodeName, 'BODY');
+  return utils.string.equalsIgnoreCase(element.nodeName, 'BODY');
 }
 
 // Returns true if the element is an <opml> element
 function opml_is_opml_element(element) {
-  return string_equals_ignore_case(element.nodeName, 'OPML');
+  return utils.string.equalsIgnoreCase(element.nodeName, 'OPML');
 }

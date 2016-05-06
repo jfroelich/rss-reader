@@ -77,7 +77,7 @@ function feed_parser_get_entries(channelElement) {
   // dom-find-all or dom-filter-children function
   for(let element = entryParent.firstElementChild; element;
     element = element.nextElementSibling) {
-    if(string_equals_ignore_case(element.nodeName, entryNodeName)) {
+    if(utils.string.equalsIgnoreCase(element.nodeName, entryNodeName)) {
       entries.push(element);
     }
   }
@@ -115,24 +115,24 @@ function feed_parser_get_feed_date(channelElement) {
 function feed_parser_is_link_rel_alternate(element) {
   // TODO: maybe just use element.matches('link[rel="alternate"]')
 
-  return string_equals_ignore_case(element.nodeName, 'LINK') &&
-    string_equals_ignore_case(element.getAttribute('rel'), 'ALTERNATE');
+  return utils.string.equalsIgnoreCase(element.nodeName, 'LINK') &&
+    utils.string.equalsIgnoreCase(element.getAttribute('rel'), 'ALTERNATE');
 }
 
 function feed_parser_is_link_rel_self(element) {
-  return string_equals_ignore_case(element.nodeName, 'LINK') &&
-    string_equals_ignore_case(element.getAttribute('rel'), 'SELF');
+  return utils.string.equalsIgnoreCase(element.nodeName, 'LINK') &&
+    utils.string.equalsIgnoreCase(element.getAttribute('rel'), 'SELF');
 }
 
 function feed_parser_is_link_with_href(element) {
-  return string_equals_ignore_case(element.nodeName, 'LINK') &&
+  return utils.string.equalsIgnoreCase(element.nodeName, 'LINK') &&
     element.hasAttribute('href');
 }
 
 // NOTE: this is not necessarily the simple inverse of
 // feed_parser_is_link_with_href, because that could be any element
 function feed_parser_is_link_without_href(element) {
-  return string_equals_ignore_case(element.nodeName, 'LINK') &&
+  return utils.string.equalsIgnoreCase(element.nodeName, 'LINK') &&
     !element.hasAttribute('href');
 }
 
@@ -298,7 +298,7 @@ function feed_parser_find_child_element_by_name(parentElement, nodeName) {
   // I know that we are needlessly uppercasing the name each time here, but
   // I like using the same function call used everywhere where names are tested
   function isNodeNameEqual(element) {
-    return string_equals_ignore_case(element.nodeName, nodeName);
+    return utils.string.equalsIgnoreCase(element.nodeName, nodeName);
   }
 
   return feed_parser_find_child_element(parentElement, isNodeNameEqual);

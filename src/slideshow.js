@@ -125,7 +125,7 @@ function slideshow_filter_article_title(title) {
   if(index === -1)
     return title;
   const trailingText = title.substring(index + 1);
-  const terms = string_tokenize(trailingText);
+  const terms = utils.string.tokenize(trailingText);
   if(terms.length < 5) {
     const newTitle = title.substring(0, index).trim();
     return newTitle;
@@ -353,7 +353,7 @@ function slideshow_append_slide(entry, isFirst) {
     // here.
     let titleText = html_replace(entry.title || '', '');
     titleText = slideshow_filter_article_title(titleText);
-    titleText = string_truncate(titleText, 300);
+    titleText = utils.string.truncate(titleText, 300);
     title.textContent = titleText;
   } else {
     title.textContent = 'Untitled';

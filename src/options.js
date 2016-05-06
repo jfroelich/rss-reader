@@ -204,7 +204,7 @@ function options_append_feed(feed, insertedSort) {
   item.appendChild(favIconElement);
 
   const title = document.createElement('span');
-  title.textContent = string_truncate(feed.title,300) || 'Untitled';
+  title.textContent = utils.string.truncate(feed.title,300) || 'Untitled';
   item.appendChild(title);
 
   const feedListElement = document.getElementById('feedlist');

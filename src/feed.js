@@ -145,7 +145,7 @@ function db_store_feed(connection, original, feed, callback) {
 function feed_sanitize_before_store(value) {
   if(value) {
     value = html_replace(value, '');
-    value = string_filter_controls(value);
+    value = utils.string.filterControlCharacters(value);
     value = value.replace(/\s+/, ' ');
     value = value.trim();
     return value;

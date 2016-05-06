@@ -33,7 +33,6 @@
       "/src/poll.js",
       "/src/resolve-urls.js",
       "/src/rewrite.js",
-      "/src/string.js",
       "/src/url.js",
       "/src/utils.js"
     ]
