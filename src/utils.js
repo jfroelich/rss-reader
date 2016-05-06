@@ -76,6 +76,40 @@ utils.fadeElement = function(element, duration, delay, callback) {
   style.opacity = style.opacity === '1' ? '0' : '1';
 };
 
+// TODO: i do not love the innards of this function, make this easier to read
+utils.scrollToY = function(element, deltaY, targetY) {
+  let scrollYStartTimer; // debounce
+  let scrollYIntervalTimer; // incrementally move
+  let amountToScroll = 0;
+  let amountScrolled = 0;
+
+  return function debounce_scroll_to() {
+    clearTimeout(scrollYStartTimer);
+    clearInterval(scrollYIntervalTimer);
+    scrollYStartTimer = setTimeout(start_scroll, 5);
+  }();
+
+  function start_scroll() {
+    amountToScroll = Math.abs(targetY - element.scrollTop);
+    amountScrolled = 0;
+
+    if(amountToScroll === 0) {
+      return;
+    }
+
+    scrollYIntervalTimer = setInterval(scroll_to_y, 20);
+  }
+
+  function scroll_to_y() {
+    const currentY = element.scrollTop;
+    element.scrollTop += deltaY;
+    amountScrolled += Math.abs(deltaY);
+    if(currentY === element.scrollTop || amountScrolled >= amountToScroll) {
+      clearInterval(scrollYIntervalTimer);
+    }
+  }
+};
+
 utils.string = {};
 
 // Returns whether string1 is equal to string2, case-insensitive

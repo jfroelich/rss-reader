@@ -505,7 +505,7 @@ function slideshow_onkeydown(event) {
   if(slideshow_currentSlide) {
     const delta = SLIDESHOW_SCROLL_DELTAS['' + event.keyCode];
     if(delta) {
-      scroll_element_to(slideshow_currentSlide, delta[0],
+      utils.scrollToY(slideshow_currentSlide, delta[0],
         slideshow_currentSlide.scrollTop + delta[1]);
       return;
     }
