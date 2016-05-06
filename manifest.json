@@ -32,7 +32,6 @@
       "/src/notrack.js",
       "/src/poll.js",
       "/src/resolve-urls.js",
-      "/src/rewrite.js",
       "/src/utils.js"
     ]
   },

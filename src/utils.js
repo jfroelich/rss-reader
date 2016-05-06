@@ -204,3 +204,23 @@ utils.url.isValid = function(urlString) {
     return uri && uri.protocol() && uri.hostname();
   } catch(exception) { }
 };
+
+// Applies a set of rules to a url string and returns a modified url string
+// Currently this only modifies Google News urls, but I plan to include more
+// TODO: research how to bypass feedproxy given the feedburner changes. Google
+// reader was deprecated. Several sites only support feed access via feed burner
+// Feed burner rewrites all urls to filter through feed burner for I guess
+// purposes of link tracking. Figure out how to get past the rewrite. Maybe
+// it involves an async process, maybe it requires traversing a chain of
+// redirects and therefore the whole process should be more abstract
+// TODO: if this becomes complete enough it could merit being its own module,
+// but for now I think it is fine as a misc. utility function
+utils.url.rewrite = function(url) {
+  const GOOGLE_NEWS = /^https?:\/\/news.google.com\/news\/url\?.*url=(.*)/i;
+  const matches = GOOGLE_NEWS.exec(url);
+  if(matches && matches.length === 2 && matches[1]) {
+    return decodeURIComponent(matches[1]);
+  }
+
+  return url;
+};

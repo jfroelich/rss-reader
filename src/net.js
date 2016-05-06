@@ -94,7 +94,7 @@ function net_fetch_feed(url, timeout, callback) {
 
     // Rewrite links
     feed.entries.forEach(function rewrite_entry_link(entry) {
-      entry.link = rewrite_url(entry.link);
+      entry.link = utils.url.rewrite(entry.link);
     });
 
     // Remove duplicate entries by link
