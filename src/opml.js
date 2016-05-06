@@ -10,6 +10,37 @@
 // Requires: /src/string.js
 // Requires: /src/xml.js
 
+
+// Parses a string containing xml into an document. The document is XML-flagged,
+// so node.nodeName is case-sensitive. Throws an exception when a parsing
+// error occurs.
+function opml_parse_xml_string(xmlString) {
+  const parser = new DOMParser();
+  const MIME_TYPE_XML = 'application/xml';
+  const document = parser.parseFromString(xmlString, MIME_TYPE_XML);
+
+  // TODO: are document or documentElement ever undefined? I feel like
+  // parseFromString guarantees they are defined or else it would throw
+  // or something like that. Look into this.
+
+  if(!document) {
+    throw new Error('Undefined document');
+  }
+
+  if(!document.documentElement) {
+    throw new Error('Undefined document element');
+  }
+
+  // If there is a parsing error, some browsers (or all??) insert the
+  // error into the content. Pluck it and throw it.
+  const parserError = document.querySelector('PARSERERROR');
+  if(parserError) {
+    throw new Error('Format error: ' + parserError.textContent);
+  }
+
+  return document;
+}
+
 // TODO: i think my original idea of two libs, one just about opml, and
 // one that deals with import/export and interaction with other components
 // was better. right now this feels like it does too much, and isn't generic
@@ -268,12 +299,12 @@ function opml_select_outline_elements(document) {
 // Parses a string into an opml document. Throws an exception if a parsing
 // error occurs or the document is invalid. Otherwise, returns the document.
 function opml_parse_string(string) {
-  // xml_parse_string throws some exceptions that we intentionally just
+  // opml_parse_xml_string throws some exceptions that we intentionally just
   // pass onward
-  const document = xml_parse_string(string);
+  const document = opml_parse_xml_string(string);
 
   // document and document element are now guaranteed defined because
-  // otherwise xml_parse_string throws an exception, so we do not need
+  // otherwise opml_parse_xml_string throws an exception, so we do not need
   // to check if defined
 
   // We still have to check that the xml document represents an opml document
