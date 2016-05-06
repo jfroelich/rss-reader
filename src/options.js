@@ -319,7 +319,7 @@ function options_hide_sub_preview() {
 function options_start_subscription(url) {
   options_hide_sub_preview();
 
-  if(!url_is_valid(url)) {
+  if(!utils.url.isValid(url)) {
     options_show_error('Invalid url "' + url + '".');
     return;
   }
@@ -525,7 +525,7 @@ function options_on_subscribe_submit(event) {
 
   // If the query is a url, subscribe to the url. Otherwise, use the Google
   // Feeds api to do a search for matching feeds.
-  if(url_is_valid(query)) {
+  if(utils.url.isValid(query)) {
     // Start subscribing
     dom_hide_element(progressElement);
     queryElement.value = '';

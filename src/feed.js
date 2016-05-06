@@ -32,7 +32,7 @@ function feed_find_by_url(connection, url, callback) {
   const transaction = connection.transaction('feed');
   const store = transaction.objectStore('feed');
   const index = store.index('schemeless');
-  const schemeless = url_filter_protocol(url);
+  const schemeless = utils.url.filterProtocol(url);
   const request = index.get(schemeless);
   request.onsuccess = callback;
 }
@@ -99,7 +99,7 @@ function db_store_feed(connection, original, feed, callback) {
   if(original) {
     storable.schemeless = original.schemeless;
   } else {
-    storable.schemeless = url_filter_protocol(storable.url);
+    storable.schemeless = utils.url.filterProtocol(storable.url);
   }
 
   const title = feed_sanitize_before_store(feed.title);

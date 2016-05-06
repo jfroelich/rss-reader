@@ -4,6 +4,8 @@
 
 'use strict';
 
+
+// Requires: /lib/URI.js
 // Requires: /src/db.js
 // Requires: /src/entry.js
 
@@ -146,4 +148,25 @@ utils.string.normalizeSpaces = function(inputString) {
         return ' ';
     }
   });
+};
+
+// TODO: maybe I can now use the builtin URL object to do these url utility
+// functions and avoid using the URI lib
+utils.url = {};
+
+// Returns a url string without its protocol
+utils.url.filterProtocol = function(urlString) {
+  const uri = new URI(urlString);
+  uri.protocol('');
+  // Remove the leading slashes
+  return uri.toString().substring(2);
+};
+
+
+// Returns true if the url is minimally valid
+utils.url.isValid = function(urlString) {
+  try {
+    let uri = URI(urlString);
+    return uri && uri.protocol() && uri.hostname();
+  } catch(exception) { }
 };
