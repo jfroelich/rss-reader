@@ -57,7 +57,7 @@ function options_show_error(messageString, fadeIn) {
   if(fadeIn) {
     errorWidgetElement.style.opacity = '0';
     document.body.appendChild(errorWidgetElement);
-    fade_element(container, 1, 0);
+    utils.fadeElement(container, 1, 0);
   } else {
     errorWidgetElement.style.opacity = '1';
     dom_show_element(errorWidgetElement);
@@ -114,7 +114,7 @@ function options_hide_sub_monitor(callback, fadeOut) {
   }
 
   if(fadeOut) {
-    fade_element(monitorElement, 2, 1, remove_then_call_callback);
+    utils.fadeElement(monitorElement, 2, 1, remove_then_call_callback);
   } else {
     remove_then_call_callback();
   }
