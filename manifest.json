@@ -28,7 +28,6 @@
       "/src/image.js",
       "/src/image-dimensions.js",
       "/src/net.js",
-      "/src/notification.js",
       "/src/notrack.js",
       "/src/poll.js",
       "/src/resolve-urls.js",

@@ -397,7 +397,7 @@ function options_start_subscription(url) {
 
     // Show a notification
     const title = addedFeed.title || addedFeed.url;
-    notification_show('Subscribed to ' + title);
+    utils.showNotification('Subscribed to ' + title);
   }
 }
 
@@ -755,7 +755,7 @@ function options_on_import_opml_click(event) {
       console.debug('Encountered exceptions when importing: %o', errors);
     }
 
-    // TODO: notification_show because opml import no longer does this
+    // TODO: utils.showNotification because opml import no longer does this
     // itself
     // TODO: the importer should be the one responsible for sending the
     // notification, not here
