@@ -44,3 +44,33 @@ utils.updateBadgeText = function(connection) {
     db_open(onConnect);
   }
 };
+
+utils.fadeElement = function(element, duration, delay, callback) {
+  function fade_end(callback, element, event) {
+    event.target.removeEventListener('webkitTransitionEnd', fade_end);
+    callback(element);
+  }
+
+  const style = element.style;
+
+  if(style.display === 'none') {
+    style.display = '';
+    style.opacity = '0';
+  }
+
+  if(!style.opacity) {
+    style.opacity = style.display === 'none' ? '0' : '1';
+  }
+
+  // TODO: why bind here? I moved the function into this function so I
+  // no longer need to do this
+
+  if(callback) {
+    const fadeEndCallback = fade_end.bind(element, callback, element);
+    element.addEventListener('webkitTransitionEnd', fadeEndCallback);
+  }
+
+  // property duration function delay
+  style.transition = 'opacity ' + duration + 's ease ' + delay + 's';
+  style.opacity = style.opacity === '1' ? '0' : '1';
+};
