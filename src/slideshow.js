@@ -388,7 +388,7 @@ function slideshow_append_slide(entry, isFirst) {
   const feedTitle = document.createElement('span');
   feedTitle.setAttribute('title',entry.feedLink);
   const entryPubDate = entry.pubdate ?
-    ' on ' + date_format(new Date(entry.pubdate)) : '';
+    ' on ' + utils.date.format(new Date(entry.pubdate)) : '';
   feedTitle.textContent = (entry.feedTitle || 'Unknown feed') + ' by ' +
     (entry.author || 'Unknown author') + entryPubDate;
   source.appendChild(feedTitle);

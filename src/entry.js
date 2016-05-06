@@ -73,7 +73,7 @@ function entry_put(connection, entry, callback) {
   // TODO: store a Date object instead of a timestamp
   if(entry.pubdate) {
     const date = new Date(entry.pubdate);
-    if(date_is_valid(date)) {
+    if(utils.date.isValid(date)) {
       storable.pubdate = date.getTime();
     }
   }

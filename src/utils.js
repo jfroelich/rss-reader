@@ -146,6 +146,29 @@ utils.scrollToY = function(element, deltaY, targetY) {
   }
 };
 
+utils.date = {};
+
+// A quick and dirty way to get a formatted date string, probably needs some
+// improvement eventually.
+utils.date.format = function(date, optionalDelimiterString) {
+  const datePartsArray = [];
+  if(date) {
+    datePartsArray.push(date.getMonth() + 1);
+    datePartsArray.push(date.getDate());
+    datePartsArray.push(date.getFullYear());
+  }
+  return datePartsArray.join(optionalDelimiterString || '');
+};
+
+// TODO: check whether there is a better way to do this in ES6
+// TODO: compare to other lib implementations, e.g. underscore/lo-dash
+// See http://stackoverflow.com/questions/1353684
+utils.date.isValid = function(date) {
+  const OBJECT_TO_STRING = Object.prototype.toString;
+  return date && OBJECT_TO_STRING.call(date) === '[object Date]' &&
+    isFinite(date);
+};
+
 utils.string = {};
 
 // Returns whether string1 is equal to string2, case-insensitive

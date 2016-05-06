@@ -32,11 +32,17 @@
 const Calamine = {};
 
 Calamine.removeBoilerplate = function(document) {
-  let bestElement = Calamine.findSignature(document);
+  //let bestElement = Calamine.findSignature(document);
 
-  if(!bestElement) {
-    bestElement = Calamine.findHighestScoringElement(document);
-  }
+  //if(!bestElement) {
+  //  bestElement = Calamine.findHighestScoringElement(document);
+  //}
+
+  // NOTE: I am tentatively disabling findSignature as I do not think it
+  // works all that well, and I'd like to experience the actual result
+  // for more testing
+
+  let bestElement = Calamine.findHighestScoringElement(document);
 
   if(bestElement !== document.documentElement) {
     Calamine.prune(document, bestElement);

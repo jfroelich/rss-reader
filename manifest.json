@@ -18,7 +18,6 @@
       "/lib/URI.js",
       "/lib/utf8.js",
       "/src/background.js",
-      "/src/date.js",
       "/src/db.js",
       "/src/dom.js",
       "/src/entry.js",
