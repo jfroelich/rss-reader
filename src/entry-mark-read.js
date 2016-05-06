@@ -41,7 +41,7 @@ function entry_mark_as_read_on_open_cursor(event) {
   // it involves a separate read transaction that is implicitly blocked by
   // the current readwrite request, so it still occurs afterward.
   const connection = request.transaction.db;
-  badge_update_count(connection);
+  utils.updateBadgeText(connection);
 
   // Notify listeners that an entry was read.
   // NOTE: this happens async. The entry may not yet be updated.

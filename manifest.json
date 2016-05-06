@@ -18,7 +18,6 @@
       "/lib/URI.js",
       "/lib/utf8.js",
       "/src/background.js",
-      "/src/badge.js",
       "/src/date.js",
       "/src/db.js",
       "/src/dom.js",
@@ -35,7 +34,8 @@
       "/src/resolve-urls.js",
       "/src/rewrite.js",
       "/src/string.js",
-      "/src/url.js"
+      "/src/url.js",
+      "/src/utils.js"
     ]
   },
   "options_page": "options.html",

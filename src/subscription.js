@@ -119,7 +119,7 @@ function unsubscribe_on_complete(state, event) {
 
   // NOTE: This happens after because it is a separate read transaction,
   // despite pending delete requests of the previous transaction
-  badge_update_count(connection);
+  utils.updateBadgeText(connection);
 
   // Notify listeners of the unsubscribe (even if db updates still pending)
   const subscriptionEvent = {

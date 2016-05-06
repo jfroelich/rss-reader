@@ -133,9 +133,9 @@ function poll_on_store_feed(connection, feed, remoteFeed, _) {
 
 function poll_on_entries_updated(connection) {
   // Update the number of unread entries now that the number possibly changed
-  // Pass along the current connection so that badge_update_count does not
+  // Pass along the current connection so that utils.updateBadgeText does not
   // have to create a new one.
-  badge_update_count(connection);
+  utils.updateBadgeText(connection);
 }
 
 // For an entry in the feed, check whether an entry with the same link
