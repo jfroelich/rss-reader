@@ -6,6 +6,7 @@
 
 // Mark entry as read functionality
 // Requires: /src/entry.js
+// Requires: /src/utils.js
 
 // Marks the entry with the corresponding entryId as read in storage.
 function entry_mark_as_read(connection, entryId) {

@@ -8,9 +8,7 @@
 // TODO: remove reliance on feed_for_each, do explicit iteration here,
 // or maybe make a function that generates the initial request at least, and
 // then do the iteration (e.g. db_get_feeds_request)
-
 // TODO: do not augment certain urls, such as links to google groups pages
-
 
 // Requires: /lib/async.js
 // Requires: /lib/parse-srcset.js
@@ -22,6 +20,7 @@
 // Requires: /src/notrack.js
 // Requires: /src/resolve-urls.js
 // Requires: /src/url.js
+// Requires: /src/utils.js
 
 function poll_start() {
   console.log('Starting poll ...');
