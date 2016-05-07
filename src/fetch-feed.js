@@ -52,7 +52,7 @@ function net_fetch_feed(url, timeout, callback) {
 
     let feed = null;
     try {
-      feed = feed_parser_parse_document(document);
+      feed = FeedParser.parse(document);
     } catch(exception) {
       callback(exception, null, request.responseURL);
       return;

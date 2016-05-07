@@ -4,6 +4,8 @@
 
 'use strict';
 
+const FeedParser = {};
+
 // TODO: now that the parser sets the type property, all the other code needs
 // to support it (e.g. save it, update it properly) - this is a general note
 
@@ -15,7 +17,7 @@
 // Requires: /src/string.js
 
 // Unmarshall an xml document into a feed object
-function feed_parser_parse_document(document) {
+FeedParser.parse = function(document) {
   const documentElement = document.documentElement;
   if(!documentElement) {
     throw new Error('Undefined document element');
@@ -30,33 +32,33 @@ function feed_parser_parse_document(document) {
       documentElement.nodeName);
   }
 
-  const channel = feed_parser_find_channel(documentElement);
+  const channel = FeedParser.findChannel(documentElement);
   if(!channel) {
     throw new Error('Missing channel element');
   }
 
   const feed = {};
-  feed.type = feed_parser_get_feed_type(documentElement);
-  feed.title = feed_parser_find_child_element_text(channel, 'TITLE');
-  feed.description = feed_parser_find_child_element_text(channel,
+  feed.type = FeedParser.getFeedType(documentElement);
+  feed.title = FeedParser.findChildElementText(channel, 'TITLE');
+  feed.description = FeedParser.findChildElementText(channel,
     documentElement.matches('feed') ? 'SUBTITLE' : 'DESCRIPTION');
-  feed.date = feed_parser_get_feed_date(channel);
-  feed.link = feed_parser_get_feed_link(channel);
+  feed.date = FeedParser.findFeedDate(channel);
+  feed.link = FeedParser.findFeedLink(channel);
 
-  const entryElements = feed_parser_get_entries(channel);
-  feed.entries = entryElements.map(feed_parser_parse_entry);
+  const entryElements = FeedParser.findEntries(channel);
+  feed.entries = entryElements.map(FeedParser.createEntryFromElement);
   return feed;
-}
+};
 
-function feed_parser_find_channel(documentElement) {
+FeedParser.findChannel = function(documentElement) {
   if(documentElement.matches('feed')) {
     return documentElement;
   } else {
-    return feed_parser_find_child_element_by_name(documentElement, 'CHANNEL');
+    return FeedParser.findChildElementByName(documentElement, 'CHANNEL');
   }
-}
+};
 
-function feed_parser_get_entries(channelElement) {
+FeedParser.findEntries = function(channelElement) {
   const documentElement = channelElement.ownerDocument.documentElement;
   const entries = [];
   let entryParent;
@@ -83,12 +85,12 @@ function feed_parser_get_entries(channelElement) {
   }
 
   return entries;
-}
+};
 
 // Returns a lowercase type of the feed's type
 // TODO: maybe this shouldn't assume validity and should also check
 // for whether matches rss, and otherwise return null/undefined.
-function feed_parser_get_feed_type(documentElement) {
+FeedParser.getFeedType = function(documentElement) {
   let typeString = null;
   if(documentElement.matches('feed')) {
     typeString = 'feed';
@@ -99,66 +101,64 @@ function feed_parser_get_feed_type(documentElement) {
   }
 
   return typeString;
-}
+};
 
-function feed_parser_get_feed_date(channelElement) {
+FeedParser.findFeedDate = function(channelElement) {
   const isAtom = channelElement.ownerDocument.documentElement.matches('feed');
   if(isAtom) {
-    return feed_parser_find_child_element_text(channelElement, 'UPDATED');
+    return FeedParser.findChildElementText(channelElement, 'UPDATED');
   } else {
-    return feed_parser_find_child_element_text(channelElement, 'PUBDATE') ||
-      feed_parser_find_child_element_text(channelElement, 'LASTBUILDDATE') ||
-      feed_parser_find_child_element_text(channelElement, 'DATE');
+    return FeedParser.findChildElementText(channelElement, 'PUBDATE') ||
+      FeedParser.findChildElementText(channelElement, 'LASTBUILDDATE') ||
+      FeedParser.findChildElementText(channelElement, 'DATE');
   }
-}
+};
 
-function feed_parser_is_link_rel_alternate(element) {
-  // TODO: maybe just use element.matches('link[rel="alternate"]')
-
+// TODO: maybe just use element.matches('link[rel="alternate"]')
+FeedParser.isLinkRelAlternate = function(element) {
   return utils.string.equalsIgnoreCase(element.nodeName, 'LINK') &&
     utils.string.equalsIgnoreCase(element.getAttribute('rel'), 'ALTERNATE');
-}
+};
 
-function feed_parser_is_link_rel_self(element) {
+FeedParser.isLinkRelSelf = function(element) {
   return utils.string.equalsIgnoreCase(element.nodeName, 'LINK') &&
     utils.string.equalsIgnoreCase(element.getAttribute('rel'), 'SELF');
-}
+};
 
-function feed_parser_is_link_with_href(element) {
+FeedParser.isLinkWithHref = function(element) {
   return utils.string.equalsIgnoreCase(element.nodeName, 'LINK') &&
     element.hasAttribute('href');
-}
+};
 
 // NOTE: this is not necessarily the simple inverse of
-// feed_parser_is_link_with_href, because that could be any element
-function feed_parser_is_link_without_href(element) {
+// FeedParser.isLinkWithHref, because that could be any element
+FeedParser.isLinkWithoutHref = function(element) {
   return utils.string.equalsIgnoreCase(element.nodeName, 'LINK') &&
     !element.hasAttribute('href');
-}
+};
 
-function feed_parser_get_feed_link(channelElement) {
+FeedParser.findFeedLink = function(channelElement) {
   const isAtom = channelElement.ownerDocument.documentElement.matches('feed');
-
   let linkText, linkElement;
   if(isAtom) {
-    linkElement = feed_parser_find_child_element(channelElement,
-      feed_parser_is_link_rel_alternate) ||
-      feed_parser_find_child_element(channelElement,
-        feed_parser_is_link_rel_self) ||
-      feed_parser_find_child_element(channelElement,
-        feed_parser_is_link_with_href);
+    linkElement = FeedParser.findChildElement(channelElement,
+      FeedParser.isLinkRelAlternate) ||
+      FeedParser.findChildElement(channelElement,
+        FeedParser.isLinkRelSelf) ||
+      FeedParser.findChildElement(channelElement,
+        FeedParser.isLinkWithHref);
     if(linkElement) {
       linkText = linkElement.getAttribute('href');
     }
 
   } else {
-    linkElement = feed_parser_find_child_element(channelElement,
-      feed_parser_is_link_without_href);
+    linkElement = FeedParser.findChildElement(channelElement,
+      FeedParser.isLinkWithoutHref);
     if(linkElement) {
       linkText = linkElement.textContent;
     } else {
-      linkElement = feed_parser_find_child_element(channelElement,
-        feed_parser_is_link_with_href);
+      linkElement = FeedParser.findChildElement(channelElement,
+        FeedParser.isLinkWithHref);
       if(linkElement)
         linkText = linkElement.getAttribute('href');
     }
@@ -167,18 +167,16 @@ function feed_parser_get_feed_link(channelElement) {
   if(linkText) {
     return linkText.trim();
   }
-}
+};
 
-// TODO: maybe I should define an Entry object within entry.js and this
-// should create a new Entry object and populate its fields
-function feed_parser_parse_entry(entryElement) {
+FeedParser.createEntryFromElement = function(entryElement) {
   const isAtom = entryElement.ownerDocument.documentElement.matches('feed');
   const result = {};
-  result.title = feed_parser_find_child_element_text(entryElement, 'TITLE');
-  result.author = feed_parser_get_entry_author(entryElement);
-  result.link = feed_parser_get_entry_link(entryElement);
-  result.pubdate = feed_parser_get_entry_date(entryElement);
-  result.content = feed_parser_get_entry_content(entryElement);
+  result.title = FeedParser.findChildElementText(entryElement, 'TITLE');
+  result.author = FeedParser.findEntryAuthor(entryElement);
+  result.link = FeedParser.findEntryLink(entryElement);
+  result.pubdate = FeedParser.findEntryDate(entryElement);
+  result.content = FeedParser.findEntryContent(entryElement);
 
   // NOTE: An enclosure is once per item
   // TODO: i suppose the url resolution processing that happens in other Lib
@@ -186,7 +184,7 @@ function feed_parser_parse_entry(entryElement) {
   // absolute so it is not an urgent issue
   // TODO: move this into a separate function similar to the helper functions
   // for other entry fields
-  const enclosure = feed_parser_find_child_element_by_name(entryElement,
+  const enclosure = FeedParser.findChildElementByName(entryElement,
     'ENCLOSURE');
   if(enclosure) {
     result.enclosure = {
@@ -197,54 +195,53 @@ function feed_parser_parse_entry(entryElement) {
   }
 
   return result;
-}
+};
 
-function feed_parser_get_entry_author(entry) {
+FeedParser.findEntryAuthor = function(entry) {
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
   if(isAtom) {
-    const author = feed_parser_find_child_element_by_name(entry, 'AUTHOR');
+    const author = FeedParser.findChildElementByName(entry, 'AUTHOR');
     if(author) {
-      return feed_parser_find_child_element_text(author, 'NAME');
+      return FeedParser.findChildElementText(author, 'NAME');
     }
   } else {
-    return feed_parser_find_child_element_text(entry, 'CREATOR') ||
-      feed_parser_find_child_element_text(entry, 'PUBLISHER');
+    return FeedParser.findChildElementText(entry, 'CREATOR') ||
+      FeedParser.findChildElementText(entry, 'PUBLISHER');
   }
-}
+};
 
-function feed_parser_get_entry_link(entry) {
+FeedParser.findEntryLink = function(entry) {
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
-
   let linkText;
   let linkElement;
   if(isAtom) {
-    linkElement = feed_parser_find_child_element(entry,
-        feed_parser_is_link_rel_alternate) ||
-      feed_parser_find_child_element(entry, feed_parser_is_link_rel_self) ||
-      feed_parser_find_child_element(entry, feed_parser_is_link_with_href);
+    linkElement = FeedParser.findChildElement(entry,
+        FeedParser.isLinkRelAlternate) ||
+      FeedParser.findChildElement(entry, FeedParser.isLinkRelSelf) ||
+      FeedParser.findChildElement(entry, FeedParser.isLinkWithHref);
     if(linkElement) {
       linkText = linkElement.getAttribute('href');
     }
   } else {
-    linkText = feed_parser_find_child_element_text(entry, 'ORIGLINK') ||
-      feed_parser_find_child_element_text(entry, 'LINK');
+    linkText = FeedParser.findChildElementText(entry, 'ORIGLINK') ||
+      FeedParser.findChildElementText(entry, 'LINK');
   }
   if(linkText) {
     linkText = linkText.trim();
   }
   return linkText;
-}
+};
 
-function feed_parser_get_entry_date(entry) {
+FeedParser.findEntryDate = function(entry) {
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
   let value = null;
 
   if(isAtom) {
-    value = feed_parser_find_child_element_text(entry, 'PUBLISHED') ||
-      feed_parser_find_child_element_text(entry, 'UPDATED');
+    value = FeedParser.findChildElementText(entry, 'PUBLISHED') ||
+      FeedParser.findChildElementText(entry, 'UPDATED');
   } else {
-    value = feed_parser_find_child_element_text(entry, 'PUBDATE') ||
-      feed_parser_find_child_element_text(entry, 'DATE');
+    value = FeedParser.findChildElementText(entry, 'PUBDATE') ||
+      FeedParser.findChildElementText(entry, 'DATE');
   }
 
   if(value) {
@@ -252,47 +249,42 @@ function feed_parser_get_entry_date(entry) {
   }
 
   return value;
-}
+};
 
-function feed_parser_get_entry_content(entry) {
+FeedParser.findEntryContent = function(entry) {
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
   let result;
-
   if(isAtom) {
     // Special handling for some strange issue (CDATA-related?)
-    const content = feed_parser_find_child_element_by_name(entry, 'CONTENT');
+    const content = FeedParser.findChildElementByName(entry, 'CONTENT');
     const nodes = content ? content.childNodes : [];
     const map = Array.prototype.map;
-    result = map.call(nodes,
-      feed_parser_get_atom_entry_content).join('').trim();
+    result = map.call(nodes, FeedParser.getAtomNodeText).join('').trim();
   } else {
-
     // TODO: now that I am using nodeName, look into whether
     // content:encoded still works, my instinct is no
-
-    result = feed_parser_find_child_element_text(entry, 'ENCODED') ||
-      feed_parser_find_child_element_text(entry, 'DESCRIPTION') ||
-      feed_parser_find_child_element_text(entry, 'SUMMARY');
+    result = FeedParser.findChildElementText(entry, 'ENCODED') ||
+      FeedParser.findChildElementText(entry, 'DESCRIPTION') ||
+      FeedParser.findChildElementText(entry, 'SUMMARY');
   }
   return result;
-}
+};
 
-function feed_parser_get_atom_entry_content(node) {
+FeedParser.getAtomNodeText = function(node) {
   return node.nodeType === Node.ELEMENT_NODE ?
     node.innerHTML : node.textContent;
-}
+};
 
-// TODO: move into general purpose dom.js module
-function feed_parser_find_child_element(parentElement, predicate) {
+FeedParser.findChildElement = function(parentElement, predicate) {
   for(let element = parentElement.firstElementChild; element;
     element = element.nextElementSibling) {
     if(predicate(element)) {
       return element;
     }
   }
-}
+};
 
-function feed_parser_find_child_element_by_name(parentElement, nodeName) {
+FeedParser.findChildElementByName = function(parentElement, nodeName) {
   // NOTE: nodeName is possibly or always lowercase, this has something to
   // do with the document containing the node being xml
   // I know that we are needlessly uppercasing the name each time here, but
@@ -301,17 +293,15 @@ function feed_parser_find_child_element_by_name(parentElement, nodeName) {
     return utils.string.equalsIgnoreCase(element.nodeName, nodeName);
   }
 
-  return feed_parser_find_child_element(parentElement, isNodeNameEqual);
-}
+  return FeedParser.findChildElement(parentElement, isNodeNameEqual);
+};
 
-function feed_parser_find_child_element_text(element, nodeName) {
-  const childElement = feed_parser_find_child_element_by_name(element,
-    nodeName);
-
+FeedParser.findChildElementText = function(element, nodeName) {
+  const childElement = FeedParser.findChildElementByName(element, nodeName);
   if(childElement) {
     const childText = childElement.textContent;
     if(childText) {
       return childText.trim();
     }
   }
-}
+};
