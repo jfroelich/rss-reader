@@ -25,7 +25,6 @@
       "/src/feed-parser.js",
       "/src/html.js",
       "/src/image.js",
-      "/src/image-dimensions.js",
       "/src/net.js",
       "/src/notrack.js",
       "/src/poll.js",
