@@ -39,6 +39,12 @@ chrome.runtime.onInstalled.addListener(Background.onInstalled);
 Background.onAlarm = function(alarm) {
   const alarmName = alarm.name;
   if(alarmName === Background.ARCHIVE_ALARM_NAME) {
+
+    // Temp, testing. For some reason it feels like this is never run, but
+    // i tested the funciton directly and it works, so my best guess is that
+    // it is somehow not being called
+    console.debug('Received archive alarm wakeup, calling archiveEntries');
+
     Background.archiveEntries();
   } else if(alarmName === Background.POLL_ALARM_NAME) {
     poll_start();
@@ -104,14 +110,30 @@ Background.onBadgeClick = function() {
 chrome.browserAction.onClicked.addListener(Background.onBadgeClick);
 
 // Archives certain read entries
-// TODO: it would be cool if this could read in a property set in manifest.js
-// regarding the expiration period instead of hard coding a preference.
+// TODO: i have a more general idea about dealing with the situation where I
+// subscribe to a lot of feeds and then do not bother to read everything and
+// so the unread count starts to pile up. I could phase out various entries
+// over time. Basically you would have a window in which to read entries, and
+// after some point if the entry is still unread, it will never be read because
+// it is probably out dated or no longer of interest, at which point it makes
+// sense to remove it. So maybe I also want to check for unread entries that
+// are very old and do something to them. From this perspective maybe it does
+// make sense to use two flags (archiveState and readState) instead of one
+// flag, because this way I can differentiate entries that were never read
+// from those that were read once those entries are archived. Also, I still
+// have some reservations about this, because I don't like the anxiety it
+// causes me simply for not constantly reading. I don't want to feel like I
+// just magically completely missed out on an important article. Another note,
+// is that if I ever implement the history view, I have to be careful about
+// what data I should retain.
 Background.archiveEntries = function() {
   console.log('Archiving entries');
   let processedEntryCount = 0, archivedEntryCount = 0;
   db_open(onConnect);
 
   function onConnect(event) {
+    // NOTE: there can be normal cases where this happens. For example, if
+    // the request is blocked
     if(event.type !== 'success') {
       console.debug(event);
       return;
@@ -146,6 +168,9 @@ Background.archiveEntries = function() {
     processedEntryCount++;
 
     // 10 days
+    // TODO: it would be cool if this could read in a property set in
+    // manifest.js regarding the expiration period instead of hard coding a
+    // preference.
     const EXPIRES_AFTER_MS = 10 * 24 * 60 * 60 * 1000;
 
     const entry = cursor.value;
@@ -158,6 +183,7 @@ Background.archiveEntries = function() {
     const shouldArchiveEntry = ageInMillis > EXPIRES_AFTER_MS;
 
     if(shouldArchiveEntry) {
+      console.debug('Archiving entry', entry.id);
       const newEntry = toArchivableEntry(entry);
 
       // Trigger a new request but do not wait for it to complete
@@ -178,6 +204,20 @@ Background.archiveEntries = function() {
 
   // Returns an entry object suitable for storage. This contains only those
   // fields that should persist after archival.
+  // TODO: Do I need to also set readState? Perhaps that is implicit
+  // in archiveState? Moreover, if that is implicit, why am I
+  // using two separate flags instead of just one flag with 3 states? Using
+  // one flag would simplify the index keypath and store one less field in
+  // the entry store (both pre and post archive transform).
+  // I suppose I would also need to think about other things like count
+  // of unread and other areas that use the flag. Maybe I should just be
+  // using one flag.
+
+  // TODO: if I ever plan to implement a history view where I can see articles
+  // read, I should consider maintaining entry.title so that it can appear
+  // in the history view. Maybe I also want to add in a 'blurb' that is
+  // like html_truncate that shows a bit of the full text of each entry.
+
   function toArchivableEntry(inputEntry) {
     const outputEntry = {};
 
@@ -199,7 +239,10 @@ Background.archiveEntries = function() {
     // TODO: I need to reset the database and then I can delete this comment.
     outputEntry.dateArchived = new Date();
 
+    // Ensure the new entry is marked as archived so it is not revisited in
+    // future runs
     outputEntry.archiveState = ENTRY_FLAGS.ARCHIVED;
+
     return outputEntry;
   }
 };
