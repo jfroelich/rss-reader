@@ -38,7 +38,7 @@ function unsubscribe(feedId, callback) {
   }
 
   const boundOnOpen = unsubscribe_on_open.bind(null, state);
-  db_open(boundOnOpen);
+  db.open(boundOnOpen);
 }
 
 function unsubscribe_on_open(state, event) {

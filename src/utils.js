@@ -90,7 +90,7 @@ utils.updateBadgeText = function(connection) {
   if(connection) {
     countUnread(connection);
   } else {
-    db_open(onConnect);
+    db.open(onConnect);
   }
 
   function countUnread(connection) {

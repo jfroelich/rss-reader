@@ -346,7 +346,7 @@ function options_start_subscription(url) {
 
   options_show_sub_monitor();
   options_update_sub_monitor('Subscribing...');
-  db_open(on_open);
+  db.open(on_open);
 
   function on_hide_monitor_show_connection_error() {
     options_show_error(
@@ -429,7 +429,7 @@ function populateFeedDetailsSection(feedId) {
     return;
   }
 
-  db_open(on_open_db);
+  db.open(on_open_db);
 
   function on_open_db(event) {
     if(event.type !== 'success') {
@@ -744,7 +744,7 @@ function options_on_import_opml_click(event) {
       return;
     }
 
-    db_open(on_open);
+    db.open(on_open);
   }
 
   function on_open(event) {
@@ -787,7 +787,7 @@ function options_on_import_opml_click(event) {
 }
 
 function options_on_export_opml_click(event) {
-  db_open(options_on_export_opml_click_on_open);
+  db.open(options_on_export_opml_click_on_open);
 }
 
 function options_on_export_opml_click_on_open(event) {
@@ -930,7 +930,7 @@ function options_on_nav_feed_click(event) {
 function options_init_sub_section() {
   let feedCount = 0;
 
-  db_open(on_open);
+  db.open(on_open);
 
   function on_open(event) {
     if(event.type !== 'success') {

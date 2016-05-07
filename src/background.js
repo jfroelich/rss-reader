@@ -30,7 +30,7 @@ Background.onInstalled = function(event) {
 
   console.log('Installing extension ...');
   // Trigger database install or upgrade by opening a connection
-  db_open(onConnect);
+  db.open(onConnect);
 };
 
 chrome.runtime.onInstalled.addListener(Background.onInstalled);
@@ -129,7 +129,7 @@ chrome.browserAction.onClicked.addListener(Background.onBadgeClick);
 Background.archiveEntries = function() {
   console.log('Archiving entries');
   let processedEntryCount = 0, archivedEntryCount = 0;
-  db_open(onConnect);
+  db.open(onConnect);
 
   function onConnect(event) {
     // NOTE: there can be normal cases where this happens. For example, if

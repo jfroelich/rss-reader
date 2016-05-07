@@ -4,6 +4,8 @@
 
 'use strict';
 
+const db = {};
+
 // indexedDB functionality
 
 // TODO: just store scheme and schemeless props as parts of a url object
@@ -13,18 +15,18 @@
 // https://developer.mozilla.org/en-US/docs/Web/API/URL/URL
 
 // Open a database connection. The callback receives the request event.
-function db_open(callback) {
+db.open = function(callback) {
   const DB_NAME = 'reader';
   const DB_VERSION = 17;
 
   const request = indexedDB.open(DB_NAME, DB_VERSION);
-  request.onupgradeneeded = db_upgrade;
+  request.onupgradeneeded = db.upgrade;
   request.onsuccess = callback;
   request.onerror = callback;
   request.onblocked = callback;
-}
+};
 
-function db_upgrade(event) {
+db.upgrade = function(event) {
   console.log('Upgrading database from version %s', event.oldVersion);
 
   const request = event.target;
@@ -97,14 +99,14 @@ function db_upgrade(event) {
   if(entryIndices.contains('hash')) {
     entryStore.deleteIndex('hash');
   }
-}
+};
 
 // Removes all entry objects from the entry object store
-function db_clear_entry_store(connection) {
+db.clearEntryStore = function(connection) {
   if(connection) {
     clear_entries(connection);
   } else {
-    db_open(on_open);
+    db.open(on_open);
   }
 
   function on_open(event) {
@@ -127,4 +129,4 @@ function db_clear_entry_store(connection) {
   function on_complete(event) {
     console.log('Cleared entry object store');
   }
-}
+};

@@ -57,14 +57,14 @@ function poll_on_check_idle_permission(permitted) {
   if(permitted) {
     chrome.idle.queryState(IDLE_PERIOD_IN_SECONDS, poll_on_query_idle_state);
   } else {
-    db_open(poll_iterate_feeds);
+    db.open(poll_iterate_feeds);
   }
 }
 
 function poll_on_query_idle_state(state) {
   if(state === 'locked' || state === 'idle') {
     // If we appear to be idle then start polling
-    db_open(poll_iterate_feeds);
+    db.open(poll_iterate_feeds);
   } else {
     // We are not idle, so end polling
     console.debug('Polling canceled because not idle');

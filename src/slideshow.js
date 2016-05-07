@@ -183,7 +183,7 @@ function slideshow_mark_read(slide) {
   slide.setAttribute('read', '');
   const entryAttribute = slide.getAttribute('entry');
 
-  db_open(on_open);
+  db.open(on_open);
 
   function on_open(event) {
     if(event.type !== 'success') {
@@ -203,7 +203,7 @@ function slideshow_append_slides(oncomplete, isFirst) {
   const limit = 5;
   const offset = slideshow_count_unread();
   let notAdvanced = true;
-  db_open(on_dbopen);
+  db.open(on_dbopen);
 
   // Load all articles that are unread and unarchived
   function on_dbopen(event) {
