@@ -11,6 +11,58 @@
 
 const utils = {};
 
+utils.array = {};
+
+// Faster than Array.prototype.filter because assumes that the input array
+// is dense, and because it does not support custom binding.
+utils.array.filter = function(inputArray, predicateFunction) {
+  const length = inputArray.length;
+  const outputArray = [];
+  for(let i = 0, item; i < length; i++) {
+    item = inputArray[i];
+    if(predicateFunction(item)) {
+      outputArray.push(item);
+    }
+  }
+  return outputArray;
+};
+
+// Faster than Array.prototype.find because assumes the subject array
+// is dense.
+// The predicate function should be pure, and especially, it should not modify
+// the subject array.
+utils.array.find = function(subjectArray, predicateFunction) {
+  const length = subjectArray.length;
+  for(let i = 0, item; i < length; i++) {
+    item = subjectArray[i];
+    if(predicateFunction(item)) {
+      return item;
+    }
+  }
+};
+
+// Faster than Array.prototype.forEach because assumes dense
+utils.array.forEach = function(subjectArray, callback) {
+  const length = subjectArray.length;
+  for(let i = 0; i < length; i++) {
+    callback(subjectArray[i]);
+  }
+};
+
+// Returns true if the predicate returns true for at least one item of the
+// subject array.
+// This is faster than Array.prototype.some because it assumes the subject
+// array is dense.
+utils.array.some = function(subjectArray, predicateFunction) {
+  const length = subjectArray.length;
+  for(let i = 0; i < length; i++) {
+    if(predicateFunction(subjectArray[i])) {
+      return true;
+    }
+  }
+  return false;
+};
+
 // Updates the unread count of the extension's badge. Connection is optional.
 utils.updateBadgeText = function(connection) {
   if(connection) {
