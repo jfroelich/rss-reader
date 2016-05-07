@@ -20,6 +20,26 @@
 let options_currentMenuItem = null;
 let options_currentSection = null;
 
+function options_hide_element(element) {
+  element.style.display = 'none';
+}
+
+function options_show_element(element) {
+  element.style.display = 'block';
+}
+
+function options_add_class(element, classNameString) {
+  element.classList.add(classNameString);
+}
+
+function options_remove_class(element, classNameString) {
+  element.classList.remove(classNameString);
+}
+
+function options_is_element_visible(element) {
+  return element.style.display === 'block';
+}
+
 // Hides the error message
 // TODO: maybe make an OptionsPageErrorMessage class and have this be
 // a member function.
@@ -60,7 +80,7 @@ function options_show_error(messageString, fadeIn) {
     utils.fadeElement(container, 1, 0);
   } else {
     errorWidgetElement.style.opacity = '1';
-    dom_show_element(errorWidgetElement);
+    options_show_element(errorWidgetElement);
     document.body.appendChild(errorWidgetElement);
   }
 }
@@ -144,22 +164,22 @@ function options_show_section(menuItem) {
 
   // Make the previous item appear de-selected
   if(options_currentMenuItem) {
-    dom_remove_class(options_currentMenuItem, 'navigation-item-selected');
+    options_remove_class(options_currentMenuItem, 'navigation-item-selected');
   }
 
   // Hide the old section
   if(options_currentSection) {
-    dom_hide_element(options_currentSection);
+    options_hide_element(options_currentSection);
   }
 
   // Make the new item appear selected
-  dom_add_class(menuItem, 'navigation-item-selected');
+  options_add_class(menuItem, 'navigation-item-selected');
 
   // Show the new section
   const sectionId = menuItem.getAttribute('section');
   const sectionElement = document.getElementById(sectionId);
   if(sectionElement) {
-    dom_show_element(sectionElement);
+    options_show_element(sectionElement);
   }
 
   // Update the global tracking vars
@@ -250,10 +270,10 @@ function options_show_sub_preview(url) {
   }
 
   const previewElement = document.getElementById('subscription-preview');
-  dom_show_element(previewElement);
+  options_show_element(previewElement);
   const progressElement = document.getElementById(
     'subscription-preview-load-progress');
-  dom_show_element(progressElement);
+  options_show_element(progressElement);
 
   // TODO: check if already subscribed before preview?
 
@@ -270,7 +290,7 @@ function options_show_sub_preview(url) {
 
     const progressElement = document.getElementById(
       'subscription-preview-load-progress');
-    dom_hide_element(progressElement);
+    options_hide_element(progressElement);
 
     const titleElement = document.getElementById('subscription-preview-title');
     titleElement.textContent = result.title || 'Untitled';
@@ -304,7 +324,7 @@ function options_show_sub_preview(url) {
 
 function options_hide_sub_preview() {
   const previewElement = document.getElementById('subscription-preview');
-  dom_hide_element(previewElement);
+  options_hide_element(previewElement);
   const resultsListElement = document.getElementById(
     'subscription-preview-entries');
 
@@ -502,13 +522,13 @@ function options_on_subscribe_submit(event) {
 
   // Do nothing if still searching
   const progressElement = document.getElementById('discover-in-progress');
-  if(dom_is_element_visible(progressElement)) {
+  if(options_is_element_visible(progressElement)) {
     return false;
   }
 
   // Do nothing if subscribing
   const subMonitor = document.getElementById('options_subscription_monitor');
-  if(subMonitor && dom_is_element_visible(subMonitor)) {
+  if(subMonitor && options_is_element_visible(subMonitor)) {
     return false;
   }
 
@@ -521,18 +541,18 @@ function options_on_subscribe_submit(event) {
   // Ensure the no-results-found message, if present from a prior search,
   // is hidden. This should never happen because we exit early if it is still
   // visible above.
-  dom_hide_element(progressElement);
+  options_hide_element(progressElement);
 
   // If the query is a url, subscribe to the url. Otherwise, use the Google
   // Feeds api to do a search for matching feeds.
   if(utils.url.isValid(query)) {
     // Start subscribing
-    dom_hide_element(progressElement);
+    options_hide_element(progressElement);
     queryElement.value = '';
     options_show_sub_preview(query);
   } else {
     // Show search results
-    dom_show_element(progressElement);
+    options_show_element(progressElement);
     google_feeds_search(query, 5000, options_on_discover_complete);
   }
 
@@ -551,7 +571,7 @@ function options_on_discover_subscribe_click(event) {
 
   // Ignore future clicks while subscription in progress
   const subMonitor = document.getElementById('options_subscription_monitor');
-  if(subMonitor && dom_is_element_visible(subMonitor)) {
+  if(subMonitor && options_is_element_visible(subMonitor)) {
     return;
   }
 
@@ -574,29 +594,29 @@ function options_on_discover_complete(errorEvent, query, results) {
   // and exit early.
   if(errorEvent) {
     console.debug('Discover feeds error:', errorEvent);
-    dom_hide_element(progressElement);
+    options_hide_element(progressElement);
     options_show_error('An error occurred when searching for feeds: ' +
       errorEvent);
     return;
   }
 
   // Searching completed, hide the progress
-  dom_hide_element(progressElement);
+  options_hide_element(progressElement);
 
   // If there were no search results, hide the results list and show the
   // no results element and exit early.
   if(results.length < 1) {
-    dom_hide_element(resultsList);
-    dom_show_element(noResultsElement);
+    options_hide_element(resultsList);
+    options_show_element(noResultsElement);
     return;
   }
 
-  if(dom_is_element_visible(resultsList)) {
+  if(options_is_element_visible(resultsList)) {
     // Clear the previous results
     resultsList.innerHTML = '';
   } else {
-    dom_hide_element(noResultsElement);
-    dom_show_element(resultsList);
+    options_hide_element(noResultsElement);
+    options_show_element(resultsList);
   }
 
   // Add an initial count of the number of feeds as one of the feed list items
@@ -689,8 +709,8 @@ function options_on_unsubscribe(event) {
   const feedListElement = document.getElementById('feedlist');
   const noFeedsElement = document.getElementById('nosubscriptions');
   if(feedListElement.childElementCount === 0) {
-    dom_hide_element(feedListElement);
-    dom_show_element(noFeedsElement);
+    options_hide_element(feedListElement);
+    options_show_element(noFeedsElement);
   }
 
   // Switch to the main view
@@ -710,7 +730,7 @@ function options_on_unsubscribe(event) {
 function options_on_import_opml_click(event) {
   const uploader = document.createElement('input');
   uploader.setAttribute('type', 'file');
-  dom_hide_element(uploader);
+  options_hide_element(uploader);
   uploader.onchange = on_uploader_change;
   document.body.appendChild(uploader);
   uploader.click();
@@ -933,11 +953,11 @@ function options_init_sub_section() {
     const noFeedsElement = document.getElementById('nosubscriptions');
     const feedListElement = document.getElementById('feedlist');
     if(feedCount === 0) {
-      dom_show_element(noFeedsElement);
-      dom_hide_element(feedListElement);
+      options_show_element(noFeedsElement);
+      options_hide_element(feedListElement);
     } else {
-      dom_hide_element(noFeedsElement);
-      dom_show_element(feedListElement);
+      options_hide_element(noFeedsElement);
+      options_show_element(feedListElement);
     }
   }
 }
@@ -956,9 +976,9 @@ function options_init(event) {
   const navEmbedItem = document.getElementById('mi-embeds');
   const isAskPolicy = localStorage.EMBED_POLICY === 'ask';
   if(isAskPolicy) {
-    dom_show_element(navEmbedItem);
+    options_show_element(navEmbedItem);
   } else {
-    dom_hide_element(navEmbedItem);
+    options_hide_element(navEmbedItem);
   }
 
   // Attach click handlers to feeds in the feed list on the left.
