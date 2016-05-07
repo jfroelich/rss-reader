@@ -19,7 +19,6 @@
       "/lib/utf8.js",
       "/src/background.js",
       "/src/db.js",
-      "/src/dom.js",
       "/src/entry.js",
       "/src/feed.js",
       "/src/feed-parser.js",
