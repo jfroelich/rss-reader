@@ -22,6 +22,9 @@
 // Requires: /src/url.js
 // Requires: /src/utils.js
 
+
+
+
 function poll_start() {
   console.log('Starting poll ...');
 
@@ -196,7 +199,44 @@ function poll_on_complete() {
 // Fetch the full content for the entry
 function poll_augment_entry_content(entry, timeout, callback) {
   const onFetchHTMLBound = poll_on_fetch_html.bind(null, entry, callback);
-  net_fetch_html(entry.link, timeout, onFetchHTMLBound);
+  poll_fetch_html(entry.link, timeout, onFetchHTMLBound);
+}
+
+
+// TODO: what is the default behavior of XMLHttpRequest? If responseType
+// defaults to document and by default fetches HTML, do we even need to
+// specify the type?
+// TODO: instead of creating an error object when document is undefined, maybe
+// this should create an event object so that it is minimally consistent with
+// the other types of the first argument when the callback is called due to
+// another type of error. I could use a plain javascript object with just the
+// desired relevant properties, or I could research how to create custom
+// events.
+function poll_fetch_html(url, timeout, callback) {
+  const request = new XMLHttpRequest();
+  request.timeout = timeout;
+  request.ontimeout = function on_timeout(event) {
+    callback(event, null, request.responseURL);
+  };
+  request.onerror = function on_error(event) {
+    callback(event, null, request.responseURL);
+  };
+  request.onabort = function on_abort(event) {
+    callback(event, null, request.responseURL);
+  };
+  request.onload = function on_load(event) {
+    let error = null;
+    const document = request.responseXML;
+    if(!document) {
+      error = new Error('Undefined document for url ' + url);
+    } else if(!document.documentElement) {
+      error = new Error('Undefined document element for url ' + url);
+    }
+    callback(error, document, request.responseURL);
+  };
+  request.open('GET', url, true);
+  request.responseType = 'document';
+  request.send();
 }
 
 // If an error occurred when fetching the full html, exit early with a no-args

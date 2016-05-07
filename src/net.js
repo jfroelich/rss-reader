@@ -4,11 +4,8 @@
 
 'use strict';
 
-/*
-maybe make fetchDocument and merge fetchHTML and fetchFeed together, and
-then move all of feed post-fetch processing into a separate function
+// Requires: /src/feed-parser.js
 
-- fetch feed notes
 // TODO: the post-processing where i clean up entries should not be done here,
 // it should be the caller's responsibility, it is not intrinsic to this
 // function's purpose, improper separation of concerns
@@ -19,22 +16,6 @@ then move all of feed post-fetch processing into a separate function
 // through logging, this should be handled here or by the caller somehow, right
 // now this sets feed.url to requested url and just passes back responseURL
 // as the third argument to the callback
--------
-
-- fetch html notes
-// TODO: what is the default behavior of XMLHttpRequest? If responseType
-// defaults to document and by default fetches HTML, do we even need to
-// specify the type?
-// TODO: instead of creating an error object when document is undefined, maybe
-// this should create an event object so that it is minimally consistent with
-// the other types of the first argument when the callback is called due to
-// another type of error. I could use a plain javascript object with just the
-// desired relevant properties, or I could research how to create custom
-// events.
-*/
-
-// Requires: /src/feed-parser.js
-
 function net_fetch_feed(url, timeout, callback) {
   const request = new XMLHttpRequest();
   request.timeout = timeout;
@@ -105,33 +86,6 @@ function net_fetch_feed(url, timeout, callback) {
     feed.entries = Array.from(distinctEntriesMap.values());
 
     callback(null, feed, request.responseURL);
-  };
-  request.open('GET', url, true);
-  request.responseType = 'document';
-  request.send();
-}
-
-function net_fetch_html(url, timeout, callback) {
-  const request = new XMLHttpRequest();
-  request.timeout = timeout;
-  request.ontimeout = function on_timeout(event) {
-    callback(event, null, request.responseURL);
-  };
-  request.onerror = function on_error(event) {
-    callback(event, null, request.responseURL);
-  };
-  request.onabort = function on_abort(event) {
-    callback(event, null, request.responseURL);
-  };
-  request.onload = function on_load(event) {
-    let error = null;
-    const document = request.responseXML;
-    if(!document) {
-      error = new Error('Undefined document for url ' + url);
-    } else if(!document.documentElement) {
-      error = new Error('Undefined document element for url ' + url);
-    }
-    callback(error, document, request.responseURL);
   };
   request.open('GET', url, true);
   request.responseType = 'document';
