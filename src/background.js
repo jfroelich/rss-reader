@@ -144,7 +144,7 @@ Background.archiveEntries = function() {
     transaction.oncomplete = onComplete;
     const store = transaction.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const keyPath = [ENTRY_FLAGS.UNARCHIVED, ENTRY_FLAGS.READ];
+    const keyPath = [Entry.Flags.UNARCHIVED, Entry.Flags.READ];
     const request = index.openCursor(keyPath);
     request.onsuccess = archiveNextEntry;
   }
@@ -241,7 +241,7 @@ Background.archiveEntries = function() {
 
     // Ensure the new entry is marked as archived so it is not revisited in
     // future runs
-    outputEntry.archiveState = ENTRY_FLAGS.ARCHIVED;
+    outputEntry.archiveState = Entry.Flags.ARCHIVED;
 
     return outputEntry;
   }

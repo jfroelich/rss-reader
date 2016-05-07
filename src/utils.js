@@ -97,7 +97,7 @@ utils.updateBadgeText = function(connection) {
     const transaction = connection.transaction('entry');
     const store = transaction.objectStore('entry');
     const index = store.index('readState');
-    const request = index.count(ENTRY_FLAGS.UNREAD);
+    const request = index.count(Entry.Flags.UNREAD);
     request.onsuccess = setText;
   }
 

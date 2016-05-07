@@ -4,10 +4,13 @@
 
 'use strict';
 
-// Entry utilities
+// Entry related functions
 // Requires: /src/db.js
+// Requires: /src/utils.js
 
-const ENTRY_FLAGS = {
+const Entry = {};
+
+Entry.Flags = {
   UNREAD: 0,
   READ: 1,
   UNARCHIVED: 0,
@@ -19,20 +22,14 @@ const ENTRY_FLAGS = {
 // TODO: maybe the prepareEntryForStorage function should be its own global
 // function and the caller has the responsibility of preparation and then the
 // only concern of this function is to do an update?
-// TODO: i really just don't like the fact I have to wrap the callback
-// function, so think about this would have to be changed to not do that
 // TODO: make sure pubdate has a consistent value. I am using
 // date.getTime here, but I am not sure I am using the same
 // or similar every where else. Like in poll denormalize
 // TODO: I should be using Date objects for date values. Not timestamps.
-function entry_put(connection, entry, callback) {
+Entry.put = function(connection, entry, callback) {
   const storable = {};
 
-  // TODO: won't this always be defined? If it is a required field,
-  // why even check?
-  if(entry.id) {
-    storable.id = entry.id;
-  }
+  storable.id = entry.id;
 
   if('feedLink' in entry) {
     storable.feedLink = entry.feedLink;
@@ -53,7 +50,7 @@ function entry_put(connection, entry, callback) {
   if('readState' in entry) {
     storable.readState = entry.readState;
   } else {
-    storable.readState = ENTRY_FLAGS.UNREAD;
+    storable.readState = Entry.Flags.UNREAD;
   }
 
   if('dateRead' in entry) {
@@ -93,7 +90,7 @@ function entry_put(connection, entry, callback) {
   if('archiveState' in entry) {
     storable.archiveState = entry.archiveState;
   } else {
-    storable.archiveState = ENTRY_FLAGS.UNARCHIVED;
+    storable.archiveState = Entry.Flags.UNARCHIVED;
   }
 
   // Use an isolated transaction for storing an entry. The problem with using a
@@ -115,51 +112,46 @@ function entry_put(connection, entry, callback) {
 
   const store = transaction.objectStore('entry');
   store.put(storable);
-}
-
-
-// Mark entry as read functionality
-// Requires: /src/entry.js
-// Requires: /src/utils.js
+};
 
 // Marks the entry with the corresponding entryId as read in storage.
-function entry_mark_as_read(connection, entryId) {
+Entry.markAsRead = function(connection, entryId) {
   const transaction = connection.transaction('entry', 'readwrite');
   const store = transaction.objectStore('entry');
   const request = store.openCursor(entryId);
-  request.onsuccess = entry_mark_as_read_on_open_cursor;
-}
+  request.onsuccess = onOpenCursor;
 
-function entry_mark_as_read_on_open_cursor(event) {
-  const request = event.target;
-  const cursor = request.result;
+  function onOpenCursor(event) {
+    const request = event.target;
+    const cursor = request.result;
 
-  // No matching entry found
-  if(!cursor) {
-    return;
+    // No matching entry found
+    if(!cursor) {
+      return;
+    }
+
+    const entry = cursor.value;
+
+    if(entry.readState === Entry.Flags.READ) {
+      console.debug('Attempted to remark a read entry as read:', entry.id);
+      return;
+    }
+
+    entry.readState = Entry.Flags.READ;
+    entry.dateRead = new Date();
+
+    // Trigger an update request. Do not wait for it to complete.
+    const updateRequest = cursor.update(entry);
+
+    // NOTE: while this occurs concurrently with the update request,
+    // it involves a separate read transaction that is implicitly blocked by
+    // the current readwrite request, so it still occurs afterward.
+    const connection = request.transaction.db;
+    utils.updateBadgeText(connection);
+
+    // Notify listeners that an entry was read.
+    // NOTE: this happens async. The entry may not yet be updated.
+    const entryReadMessage = {'type': 'entryRead', 'entryId': entry.id};
+    chrome.runtime.sendMessage(entryReadMessage);
   }
-
-  const entry = cursor.value;
-
-  if(entry.readState === ENTRY_FLAGS.READ) {
-    console.debug('Attempted to remark a read entry as read:', entry.id);
-    return;
-  }
-
-  entry.readState = ENTRY_FLAGS.READ;
-  entry.dateRead = new Date();
-
-  // Trigger an update request. Do not wait for it to complete.
-  const updateRequest = cursor.update(entry);
-
-  // NOTE: while this occurs concurrently with the update request,
-  // it involves a separate read transaction that is implicitly blocked by
-  // the current readwrite request, so it still occurs afterward.
-  const connection = request.transaction.db;
-  utils.updateBadgeText(connection);
-
-  // Notify listeners that an entry was read.
-  // NOTE: this happens async. The entry may not yet be updated.
-  const entryReadMessage = {'type': 'entryRead', 'entryId': entry.id};
-  chrome.runtime.sendMessage(entryReadMessage);
-}
+};

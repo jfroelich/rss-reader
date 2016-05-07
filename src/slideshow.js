@@ -194,7 +194,7 @@ function slideshow_mark_read(slide) {
 
     const entryId = parseInt(entryAttribute);
     const connection = event.target.result;
-    entry_mark_as_read(connection, entryId);
+    Entry.markAsRead(connection, entryId);
   }
 }
 
@@ -218,8 +218,8 @@ function slideshow_append_slides(oncomplete, isFirst) {
     transaction.oncomplete = oncomplete;
     const entryStore = transaction.objectStore('entry');
     const index = entryStore.index('archiveState-readState');
-    const range = IDBKeyRange.only([ENTRY_FLAGS.UNARCHIVED,
-      ENTRY_FLAGS.UNREAD]);
+    const range = IDBKeyRange.only([Entry.Flags.UNARCHIVED,
+      Entry.Flags.UNREAD]);
     const request = index.openCursor(range);
     request.onsuccess = request_onsuccess;
   }

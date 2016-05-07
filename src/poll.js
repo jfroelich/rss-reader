@@ -170,7 +170,7 @@ function poll_on_find_entry(connection, feed, entry, callback, event) {
 
   function onAugment(event) {
     poll_cascade_feed_properties(feed, entry);
-    entry_put(connection, entry, callback);
+    Entry.put(connection, entry, callback);
   }
 }
 
