@@ -197,7 +197,7 @@ function options_append_feed(feed, insertedSort) {
   item.onclick = options_on_feed_list_item_click;
 
   var favIconElement = document.createElement('img');
-  favIconElement.src = favicon_get_url(feed.link);
+  favIconElement.src = utils.getFavIconURLString(feed.link);
   if(feed.title) {
     favIconElement.title = feed.title;
   }
@@ -442,7 +442,7 @@ function populateFeedDetailsSection(feedId) {
     const titleElement = document.getElementById('details-title');
     titleElement.textContent = title;
 
-    const favIconURL = favicon_get_url(feed.url);
+    const favIconURL = utils.getFavIconURLString(feed.url);
     const favIconElement = document.getElementById('details-favicon');
     favIconElement.setAttribute('src', favIconURL);
 
@@ -626,7 +626,7 @@ function options_create_search_result_item(result) {
 
   // Show the feed's favicon
   const image = document.createElement('img');
-  image.setAttribute('src', favicon_get_url(result.url));
+  image.setAttribute('src', utils.getFavIconURLString(result.url));
   image.title = result.link;
   item.appendChild(image);
 

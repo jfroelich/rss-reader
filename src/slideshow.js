@@ -379,7 +379,7 @@ function slideshow_append_slide(entry, isFirst) {
   slide.appendChild(source);
 
   const favIcon = document.createElement('img');
-  const iconSource = favicon_get_url(entry.feedLink);
+  const iconSource = utils.getFavIconURLString(entry.feedLink);
   favIcon.setAttribute('src', iconSource);
   favIcon.setAttribute('width', '16');
   favIcon.setAttribute('height', '16');
