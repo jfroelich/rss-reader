@@ -42,6 +42,9 @@ function fetchFeed(url, timeout, callback) {
   function onLoad(event) {
     const document = request.responseXML;
 
+    // TODO: would document or documentElement ever actually be undefined?
+    // If an error occurs, wouldn't that mean that onLoad doesn't even
+    // get called? I need to look into this more.
     if(!document) {
       callback(event, document, request.responseURL);
       return;
@@ -52,12 +55,17 @@ function fetchFeed(url, timeout, callback) {
       return;
     }
 
+    // NOTE: I am not sure this ever happens actually. This happens when
+    // doing it myself with DOMParser.parseFromString, but I think if this
+    // happens in XMLHttpRequest then something else occurs, like a fetch
+    // error? So maybe this is dumb.
     const parserError = document.querySelector('parsererror');
     if(parserError) {
       console.debug(parserError.outerHTML);
       parserError.remove();
     }
 
+    // Parse the XMLDocument into a basic feed object
     let feed = null;
     try {
       feed = FeedParser.parse(document);
@@ -66,33 +74,42 @@ function fetchFeed(url, timeout, callback) {
       return;
     }
 
+    // Set some implicit properties of the fetched feed that pertain to this
+    // operation of fetching
+    // NOTE: I am using requested url, not response url, here. I am not sure
+    // if this is what I want to be doing.
     feed.url = url;
 
-    // TODO: look into the consistency of storing dates for other fields. I
-    // think all fields should use the same convention. And I think that a
-    // date should be a date. This might require several other changes.
     feed.fetchDate = new Date();
 
-    // TODO: this post-processing may be outside the scope of this
-    // functions responsibility
+    // Do some post-fetch processing of the feed that generally always has to
+    // occur in every calling context.
 
     // Filter empty links
-    feed.entries = feed.entries.filter(function get_entry_link(entry) {
-      return entry.link;
-    });
+    feed.entries = feed.entries.filter(getEntryLink);
 
     // Rewrite links
-    feed.entries.forEach(function rewrite_entry_link(entry) {
-      entry.link = utils.url.rewrite(entry.link);
-    });
+    feed.entries.forEach(rewriteEntryLink);
 
     // Remove duplicate entries by link
-    const expandedEntries = feed.entries.map(function expand_entry(entry) {
-      return [entry.link, entry];
-    });
+    const expandedEntries = feed.entries.map(expandEntry);
     const distinctEntriesMap = new Map(expandedEntries);
     feed.entries = Array.from(distinctEntriesMap.values());
 
+    // Using null as the first parameter to callback indicates that no error
+    // occurred
     callback(null, feed, request.responseURL);
+  }
+
+  function getEntryLink(entry) {
+    return entry.link;
+  }
+
+  function rewriteEntryLink(entry) {
+    entry.link = utils.url.rewrite(entry.link);
+  }
+
+  function expandEntry(entry) {
+    return [entry.link, entry];
   }
 }

@@ -132,6 +132,7 @@ Feed.put = function(connection, original, feed, callback) {
 
   // TODO: this property should be renamed so as to be consistent with the
   // names of other date properties
+  // NOTE: this is set in fetchFeed to a Date object
   if(feed.fetchDate) {
     storable.fetchDate = feed.fetchDate;
   }
