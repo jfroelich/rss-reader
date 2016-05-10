@@ -17,6 +17,11 @@ Entry.Flags = {
   ARCHIVED: 1
 };
 
+// TODO: i can't think of when I ever update instead of just insert entries,
+// so maybe this should just be deprecated and I should just have an insert
+// function instead, and that function should be tailored to ignore the
+// update case (e.g. less worry about whether fields are defined in certain
+// ways).
 // TODO: maybe make a separate private helper function that prepares the
 // entry for storage, as opposed to doing it all in a single function?
 // TODO: maybe the prepareEntryForStorage function should be its own global
@@ -25,6 +30,8 @@ Entry.Flags = {
 // TODO: make sure pubdate has a consistent value. I am using
 // date.getTime here, but I am not sure I am using the same
 // or similar every where else. Like in poll denormalize
+// TODO: rename pubdate to something clearer, like datePublished or something
+// to that effect.
 // TODO: I should be using Date objects for date values. Not timestamps.
 Entry.put = function(connection, entry, callback) {
   const storable = {};
