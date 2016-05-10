@@ -98,8 +98,11 @@ function image_dimensions_on_fetch(imageElement, callback, event) {
     imageElement.setAttribute('height', proxyImageElement.height);
 
   } else {
-    const sourceURLString = imageElement.getAttribute('src');
-    console.debug('Failed to fetch image:', sourceURLString);
+    // NOTE: Tentatively not logging this error message. It definitely
+    // happens and is leading to lots of log messages sometimes so I am
+    // disabling it until I return to work on this feature.
+    //const sourceURLString = imageElement.getAttribute('src');
+    //console.debug('Failed to fetch image:', sourceURLString);
   }
 
   // Callback with no args to signal async.forEach to continue.
