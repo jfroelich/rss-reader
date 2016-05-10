@@ -29,7 +29,10 @@ Entry.Flags = {
 Entry.put = function(connection, entry, callback) {
   const storable = {};
 
-  storable.id = entry.id;
+  // id is not defined in entry if we are doing an add
+  if('id' in entry) {
+    storable.id = entry.id;
+  }
 
   if('feedLink' in entry) {
     storable.feedLink = entry.feedLink;
