@@ -32,7 +32,9 @@ function no_track_filter_elements(document) {
   const listLength = imageNodeList.length;
   for(let i = 0, imageElement; i < listLength; i++) {
     imageElement = imageNodeList[i];
-    console.debug('Removing tracker:', imageElement.outerHTML);
+    // Tentatively not logging this while I work on other things, it is
+    // causing a lot of spam in the log
+    // console.debug('Removing tracker:', imageElement.outerHTML);
     imageElement.remove();
   }
 }
