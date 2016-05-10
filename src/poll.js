@@ -245,8 +245,11 @@ function poll_on_fetch_html(entry, callback, error, document, responseURL) {
 
   // TODO: eventually do something with this?
   if(responseURL !== entry.link) {
-    console.debug('Response URL changed from %s to %s', entry.link,
-      responseURL);
+    // NOTE: tentatively I am not logging this while I work on other things
+    // because it floods the log. But note that this definitely happens,
+    // the responseURL is sometimes different than entry.link
+    //console.debug('Response URL changed from %s to %s', entry.link,
+    //  responseURL);
   }
 
   no_track_filter_elements(document);
