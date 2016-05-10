@@ -362,7 +362,7 @@ function options_start_subscription(url) {
 
     const connection = event.target.result;
     const boundOnFindFeed = on_find_feed.bind(null, connection);
-    feed_find_by_url(connection, url, boundOnFindFeed);
+    Feed.findByURL(connection, url, boundOnFindFeed);
   }
 
   function on_hide_monitor_show_exists_error() {
@@ -377,7 +377,7 @@ function options_start_subscription(url) {
 
     // TODO: call out to net function
     if(!navigator.onLine) {
-      db_store_feed(connection, null, {url: url}, onSubscribe);
+      Feed.put(connection, null, {url: url}, onSubscribe);
     } else {
       const boundOnFetchFeed = on_fetch_feed.bind(null, connection);
       net_fetch_feed(url, 10 * 1000, boundOnFetchFeed);
@@ -396,7 +396,7 @@ function options_start_subscription(url) {
       return;
     }
 
-    db_store_feed(connection, null, remoteFeed, on_store_feed);
+    Feed.put(connection, null, remoteFeed, on_store_feed);
 
     function on_store_feed(newId) {
       remoteFeed.id = newId;
@@ -439,7 +439,7 @@ function populateFeedDetailsSection(feedId) {
     }
 
     const connection = event.target.result;
-    feed_find_by_id(connection, feedId, on_find_feed);
+    Feed.findById(connection, feedId, on_find_feed);
   }
 
   function on_find_feed(event) {
@@ -798,7 +798,7 @@ function options_on_export_opml_click_on_open(event) {
   }
 
   const connection = event.target.result;
-  feed_get_all(connection, options_on_export_opml_click_on_get_feeds);
+  Feed.getAll(connection, options_on_export_opml_click_on_get_feeds);
 }
 
 function options_on_export_opml_click_on_get_feeds(feeds) {
@@ -939,7 +939,7 @@ function options_init_sub_section() {
       return;
     }
 
-    feed_for_each(event.target.result, process_feed, true,
+    Feed.forEach(event.target.result, process_feed, true,
       on_feeds_iterated);
   }
 

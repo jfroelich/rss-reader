@@ -194,10 +194,10 @@ function opml_on_file_load(connection, tracker, callback, event) {
 
   // TODO: should this be waiting for all storage calls to complete
   // before calling back?
-  // TODO: db_store_feed should allow for a null callback argument
+  // TODO: Feed.put should allow for a null callback argument
   // and handle it on its own, i shouldn't need to use a noop here
   for(let feed of feeds) {
-    db_store_feed(connection, null, feed, opml_noop);
+    Feed.put(connection, null, feed, opml_noop);
   }
 
   if(tracker.filesImported === tracker.numFiles) {

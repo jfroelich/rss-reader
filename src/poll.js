@@ -5,7 +5,7 @@
 'use strict';
 
 // TODO: remove async dependency
-// TODO: remove reliance on feed_for_each, do explicit iteration here,
+// TODO: remove reliance on Feed.forEach, do explicit iteration here,
 // or maybe make a function that generates the initial request at least, and
 // then do the iteration (e.g. db_get_feeds_request)
 // TODO: do not augment certain urls, such as links to google groups pages
@@ -14,16 +14,10 @@
 // Requires: /lib/parse-srcset.js
 // Requires: /src/db.js
 // Requires: /src/image.js
-// Requires: /src/image-dimensions.js
-// Requires: /src/net.js
-// Requires: /src/notification.js
+// Requires: /src/fetch-feed.js
 // Requires: /src/notrack.js
 // Requires: /src/resolve-urls.js
-// Requires: /src/url.js
 // Requires: /src/utils.js
-
-
-
 
 function poll_start() {
   console.log('Starting poll ...');
@@ -88,7 +82,7 @@ function poll_iterate_feeds(event) {
 
   const connection = event.target.result;
   const boundFetchFeed = poll_fetch_feed.bind(null, connection);
-  feed_for_each(connection, boundFetchFeed, false, poll_on_complete);
+  Feed.forEach(connection, boundFetchFeed, false, poll_on_complete);
 }
 
 function poll_fetch_feed(connection, feed) {
@@ -109,7 +103,7 @@ function poll_on_fetch_feed(connection, feed, event, remoteFeed) {
     return;
   }
 
-  // TODO: if we are cleaning up the properties in db_store_feed,
+  // TODO: if we are cleaning up the properties in Feed.put,
   // are we properly cascading those cleaned properties to the entries?
   // is there any sanitization there that would need to be propagated?
   // maybe sanitization isn't a function of storage, and storage just
@@ -121,7 +115,7 @@ function poll_on_fetch_feed(connection, feed, event, remoteFeed) {
 
   const onStoreFeedBound = poll_on_store_feed.bind(null, connection, feed,
     remoteFeed);
-  db_store_feed(connection, feed, remoteFeed, onStoreFeedBound);
+  Feed.put(connection, feed, remoteFeed, onStoreFeedBound);
 }
 
 // TODO: what's with the _?
