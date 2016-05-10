@@ -553,7 +553,7 @@ function options_on_subscribe_submit(event) {
   } else {
     // Show search results
     options_show_element(progressElement);
-    google_feeds_search(query, 5000, options_on_discover_complete);
+    GoogleFeedsAPI.search(query, 5000, options_on_discover_complete);
   }
 
   // Indicate that the normal form submit behavior should be prevented

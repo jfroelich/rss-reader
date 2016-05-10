@@ -9,8 +9,9 @@
 // first noticed that the queries stopped working. However, I have witnessed
 // the service occassionally work thereafter.
 // Requires: /src/html.js
-// Requires: /src/html-truncate.js
-// Requires: /src/string.js
+// Requires: /src/utils.js
+
+const GoogleFeedsAPI = {};
 
 // Sends an async request to Google to search for feeds that correspond to
 // a general text query. Passes the results to the callback. The callback
@@ -21,25 +22,23 @@
 // basic js object containing the string properties url, link, title, and
 // contentSnippet. The title and content snippet may contain basic HTML such as
 // <b></b> around terms that were present in the query.
-function google_feeds_search(queryString, timeoutMillis, callback) {
+GoogleFeedsAPI.search = function(queryString, timeoutMillis, callback) {
   const BASE_URL =
     'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
-
   const requestURL = BASE_URL + encodeURIComponent(queryString);
-
   const request = new XMLHttpRequest();
   request.timeout = timeoutMillis;
   request.onerror = callback;
   request.ontimeout = callback;
   request.onabort = callback;
-  request.onload = google_feeds_on_response.bind(request, callback);
+  request.onload = GoogleFeedsAPI._onLoad.bind(request, callback);
   request.open('GET', requestURL, true);
   request.responseType = 'json';
   request.send();
-}
+};
 
 // Cleans up the response data before sending it to the callback
-function google_feeds_on_response(callback, event) {
+GoogleFeedsAPI._onLoad = function(callback, event) {
   const request = event.target;
   const response = request.response;
   const data = response.responseData;
@@ -54,38 +53,38 @@ function google_feeds_on_response(callback, event) {
 
   // There is no point to serving up an entry unless it has a URL to which
   // the user can subscribe.
-  entries = google_feeds_filter_entries_without_urls(entries);
+  entries = GoogleFeedsAPI.filterEntriesWithoutURLs(entries);
 
   // I have noticed that the search results occassionally contain multiple
   // hits for the same url. Only retain the first.
-  entries = google_feeds_filter_duplicate_entries(entries);
+  entries = GoogleFeedsAPI.filterDuplicateEntries(entries);
 
-  entries.forEach(google_feeds_sanitize_entry);
+  entries.forEach(GoogleFeedsAPI.sanitizeEntry);
 
   // Callback with null to indicate to no error
   callback(null, queryString, entries);
-}
-
-function google_feeds_filter_entries_without_urls(entriesArray) {
-  return entriesArray.filter(google_feeds_get_entry_url);
 };
 
-function google_feeds_get_entry_url(entry) {
+GoogleFeedsAPI.filterEntriesWithoutURLs = function(entriesArray) {
+  return entriesArray.filter(GoogleFeedsAPI.getEntryURL);
+};
+
+GoogleFeedsAPI.getEntryURL = function(entry) {
   return entry.url;
-}
+};
 
-function google_feeds_filter_duplicate_entries(entriesArray) {
-  const expandedEntries = entriesArray.map(function expand(entry) {
-    return [entry.url, entry];
-  });
+GoogleFeedsAPI.expandEntryByURL = function(entry) {
+  return [entry.url, entry];
+};
 
+GoogleFeedsAPI.filterDuplicateEntries = function(entriesArray) {
+  const expandedEntries = entriesArray.map(GoogleFeedsAPI.expandEntryByURL);
   const entriesAggregatedByURL = new Map(expandedEntries);
   const aggregateValues = entriesAggregatedByURL.values();
   return Array.from(aggregateValues);
-}
+};
 
-
-function google_feeds_sanitize_entry(entry) {
+GoogleFeedsAPI.sanitizeEntry = function(entry) {
   const TITLE_MAX_LENGTH = 200;
   const CONTENT_SNIPPET_MAX_LENGTH = 400;
 
@@ -104,7 +103,8 @@ function google_feeds_sanitize_entry(entry) {
   // query terms. We want to retain that, but remove other tags.
 
   if(entry.contentSnippet) {
-    entry.contentSnippet = utils.string.filterControlCharacters(entry.contentSnippet);
+    entry.contentSnippet = utils.string.filterControlCharacters(
+      entry.contentSnippet);
     entry.contentSnippet = html_replace_breakrules(entry.contentSnippet);
 
     // The snippet contains HTML, so we have to be wary of truncating, so
@@ -112,4 +112,4 @@ function google_feeds_sanitize_entry(entry) {
     entry.contentSnippet = html_truncate(entry.contentSnippet,
       CONTENT_SNIPPET_MAX_LENGTH, '...');
   }
-}
+};
