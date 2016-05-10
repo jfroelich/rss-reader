@@ -16,22 +16,30 @@
 // through logging, this should be handled here or by the caller somehow, right
 // now this sets feed.url to requested url and just passes back responseURL
 // as the third argument to the callback
-function net_fetch_feed(url, timeout, callback) {
+function fetchFeed(url, timeout, callback) {
   const request = new XMLHttpRequest();
   request.timeout = timeout;
-  request.onerror = function on_error(event) {
-    callback(event, null, request.responseURL);
-  };
+  request.onerror = onError;
+  request.ontimeout = onTimeout;
+  request.onabort = onAbort;
+  request.onload = onLoad;
+  request.open('GET', url, true);
+  request.responseType = 'document';
+  request.send();
 
-  request.ontimeout = function on_timeout(event) {
-    callback(event, null, request.responseURL);
-  };
+  function onError(event) {
+    callback(event, null, event.target.responseURL);
+  }
 
-  request.onabort = function on_abort(event) {
-    callback(event, null, request.responseURL);
-  };
+  function onTimeout(event) {
+    callback(event, null, event.target.responseURL);
+  }
 
-  request.onload = function on_load(event) {
+  function onAbort(event) {
+    callback(event, null, event.target.responseURL);
+  }
+
+  function onLoad(event) {
     const document = request.responseXML;
 
     if(!document) {
@@ -86,8 +94,5 @@ function net_fetch_feed(url, timeout, callback) {
     feed.entries = Array.from(distinctEntriesMap.values());
 
     callback(null, feed, request.responseURL);
-  };
-  request.open('GET', url, true);
-  request.responseType = 'document';
-  request.send();
+  }
 }

@@ -278,7 +278,7 @@ function options_show_sub_preview(url) {
   // TODO: check if already subscribed before preview?
 
   const fetchFeedTimeout = 10 * 1000;
-  net_fetch_feed(url, fetchFeedTimeout, onFetch);
+  fetchFeed(url, fetchFeedTimeout, onFetch);
 
   function onFetch(event, result) {
     if(event) {
@@ -380,7 +380,7 @@ function options_start_subscription(url) {
       Feed.put(connection, null, {url: url}, onSubscribe);
     } else {
       const boundOnFetchFeed = on_fetch_feed.bind(null, connection);
-      net_fetch_feed(url, 10 * 1000, boundOnFetchFeed);
+      fetchFeed(url, 10 * 1000, boundOnFetchFeed);
     }
   }
 

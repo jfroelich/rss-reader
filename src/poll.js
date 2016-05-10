@@ -88,7 +88,7 @@ function poll_iterate_feeds(event) {
 function poll_fetch_feed(connection, feed) {
   const timeout = 10 * 1000;
   const onFetchFeedBound = poll_on_fetch_feed.bind(null, connection, feed);
-  net_fetch_feed(feed.url, timeout, onFetchFeedBound);
+  fetchFeed(feed.url, timeout, onFetchFeedBound);
 }
 
 function poll_on_fetch_feed(connection, feed, event, remoteFeed) {
