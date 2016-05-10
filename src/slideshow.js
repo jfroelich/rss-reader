@@ -351,7 +351,7 @@ function slideshow_append_slide(entry, isFirst) {
     // TODO: did I do this sanitization earlier, like when storing? if so
     // then i don't need to be stripping tags or removing control chars
     // here.
-    let titleText = html_replace(entry.title || '', '');
+    let titleText = HTMLUtils.replaceTags(entry.title || '', '');
     titleText = slideshow_filter_article_title(titleText);
     titleText = utils.string.truncate(titleText, 300);
     title.textContent = titleText;
@@ -365,7 +365,7 @@ function slideshow_append_slide(entry, isFirst) {
   const content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
 
-  const entryContentDocument = html_parse_string(entry.content);
+  const entryContentDocument = HTMLUtils.parseFromString(entry.content);
   Calamine.removeBoilerplate(entryContentDocument);
   DOMAid.cleanDocument(entryContentDocument);
   const entryContentBody = entryContentDocument.body ||

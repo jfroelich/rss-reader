@@ -232,7 +232,7 @@ function opml_sanitize_string(inputString) {
   let outputString = inputString || '';
   if(outputString) {
     outputString = utils.string.filterControlCharacters(outputString);
-    outputString = html_replace(outputString, '');
+    outputString = HTMLUtils.replaceTags(outputString, '');
   }
 
   return outputString.trim();

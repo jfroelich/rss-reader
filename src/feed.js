@@ -171,7 +171,7 @@ Feed.put = function(connection, original, feed, callback) {
 // Prep a string property of an object for storage in indexedDB
 Feed.sanitizeBeforePut = function(value) {
   if(value) {
-    value = html_replace(value, '');
+    value = HTMLUtils.replaceTags(value, '');
     value = utils.string.filterControlCharacters(value);
     value = value.replace(/\s+/, ' ');
     value = value.trim();

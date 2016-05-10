@@ -92,10 +92,10 @@ GoogleFeedsAPI.sanitizeEntry = function(entry) {
     entry.title = utils.string.filterControlCharacters(entry.title);
 
     // I don't want any html formatting to remain in the title
-    entry.title = html_replace(entry.title, '');
+    entry.title = HTMLUtils.replaceTags(entry.title, '');
 
     // TODO: this may have an error regarding html entities in the title,
-    // maybe I should only be using html_truncate here.
+    // maybe I should only be using HTMLUtils.truncate here.
     entry.title = utils.string.truncate(entry.title, TITLE_MAX_LENGTH);
   }
 
@@ -105,11 +105,11 @@ GoogleFeedsAPI.sanitizeEntry = function(entry) {
   if(entry.contentSnippet) {
     entry.contentSnippet = utils.string.filterControlCharacters(
       entry.contentSnippet);
-    entry.contentSnippet = html_replace_breakrules(entry.contentSnippet);
+    entry.contentSnippet = HTMLUtils.filterBreakruleTags(entry.contentSnippet);
 
     // The snippet contains HTML, so we have to be wary of truncating, so
-    // we use html_truncate instead of utils.string.truncate
-    entry.contentSnippet = html_truncate(entry.contentSnippet,
+    // we use HTMLUtils.truncate instead of utils.string.truncate
+    entry.contentSnippet = HTMLUtils.truncate(entry.contentSnippet,
       CONTENT_SNIPPET_MAX_LENGTH, '...');
   }
 };

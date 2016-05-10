@@ -5,15 +5,9 @@
 'use strict';
 
 // HTML-related functionality.
-// TODO: I am not sure if this all belongs together. Yes, these all deal with
-// HTML. However, one deals with parsing, and some others deal with various
-// sanitization functions. Maybe I should be organizing more by each function's
-// purpose rather than its input-output type similarity.
+// Requires: /src/utils.js
 
-// Requires: /src/dom.js
-// Requires: /src/string.js
-
-
+const HTMLUtils = {};
 
 // NOTE: the input string should be encoded, meaning that it should contain
 // character entities where appropriate (and optionally tags).
@@ -35,8 +29,7 @@
 // NOTE: extensionString is optional. If not set, "..." is used. If set, the
 // string should be in decoded form (should NOT contain entities). It is
 // not validated.
-
-function html_truncate(inputString, position, extensionString) {
+HTMLUtils.truncate = function(inputString, position, extensionString) {
   // TODO: this feels like it could be optimized. Right now it is doing
   // multiple passes over the input: parsing into document, walking the doc,
   // and testing if fragment. I would prefer using a one-pass algorithm. The
@@ -112,7 +105,7 @@ function html_truncate(inputString, position, extensionString) {
   } else {
     return inertDocument.body.innerHTML;
   }
-}
+};
 
 // Parses an inputString containing html into a Document object
 // The document is flagged as html, which affects nodeName case.
@@ -126,7 +119,7 @@ function html_truncate(inputString, position, extensionString) {
 
 // TODO: can this ever throw an exception? If so, document it, and make sure
 // that dependent features handle it appropriately.
-function html_parse_string(inputString) {
+HTMLUtils.parseFromString = function(inputString) {
   // Defer to the browser. This way we mirror parsing behavior
   // and reduce the chance of XSS. Also, manual parsing seems sluggish
   // and error prone.
@@ -139,14 +132,14 @@ function html_parse_string(inputString) {
   const parser = new DOMParser();
   const document = parser.parseFromString(inputString, MIME_TYPE_HTML);
   return document;
-}
+};
 
 // Returns a new string where html elements were replaced with the optional
 // replacement string.
-function html_replace(inputString, replacementString) {
-  // NOTE: this cannot use html_parse_string because it is ambiguous regarding
+HTMLUtils.replaceTags = function(inputString, replacementString) {
+  // NOTE: this cannot use HTMLUtils.parseFromString because it is ambiguous regarding
   // whether the input contains an <html> and <body> tag.
-  // See how I solved it in html_truncate
+  // See how I solved it in HTMLUtils.truncate
 
   let outputString = null;
 
@@ -170,14 +163,16 @@ function html_replace(inputString, replacementString) {
   }
 
   return outputString;
-}
+};
 
 // Returns a new string where <br>s have been replaced with spaces. This is
 // intended to be rudimentary and fast rather than perfectly accurate. I do
 // not do any heavy-weight html marshalling.
 // TODO: does this mirror Chrome's behavior? Does chrome's parser allow
 // for whitespace preceding the tag name? Maybe this should be stricter.
-function html_replace_breakrules(inputString) {
+// I did some testing, I don't think you can have leading spaces before the
+// tag name. So this shouldn't allow it.
+HTMLUtils.filterBreakruleTags = function(inputString) {
   const BREAK_RULE_PATTERN = /<\s*br\s*>/gi;
   return inputString.replace(BREAK_RULE_PATTERN, ' ');
-}
+};
