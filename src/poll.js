@@ -238,7 +238,10 @@ function poll_fetch_html(url, timeout, callback) {
 // Otherwise, clean up the html. Remove urls, set image sizes, resolve urls.
 function poll_on_fetch_html(entry, callback, error, document, responseURL) {
   if(error) {
-    console.debug(error);
+    // This error happens when doing things like trying to fetch a PDF
+    // document, the document is undefined. For now I am disabling this
+    // error message until I focus on this particular feature.
+    // console.debug(error);
     callback();
     return;
   }
