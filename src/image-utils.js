@@ -5,15 +5,14 @@
 'use strict';
 
 // Requires: /lib/async.js
-// Requires: /src/utils.js
-// TODO: stop using async lib
-// TODO: track num fetched, errors
 
 const ImageUtils = {};
 
 // Given a document, ensure that the width and height of each image element is
 // set. If not set, fetch the image, check its dimensions, and explicitly set
 // the width and height attributes of the image element within the html.
+// TODO: stop using async lib
+// TODO: track num fetched, errors
 ImageUtils.fetchDimensions = function(document, callback) {
   // TODO: maybe I should fallback to documentElement here?
   const bodyElement = document.body;
@@ -58,22 +57,15 @@ ImageUtils.isObjectURL = function(urlString) {
   return /^\s*data\s*:/i.test(urlString);
 };
 
-// Request the image.
+// Request the image and set its dimensions
 ImageUtils.fetchImage = function(imageElement, callback) {
   // Proxy is intentionally created within the local document
-  // context. We know it is live, so Chrome will eagerly fetch upon
-  // changing the image element's src property. We do not know if the
-  // input image resides in an live or inert document, so we cannot
-  // safely expect that creating the proxy within its document, accessed
-  // via imageElement.ownerDocument, would even do anything.
-  // We know urlString is defined because it was checked before calling.
+  // context because we know it is live. Chrome will eagerly fetch upon
+  // changing the image element's src property.
   const sourceURLString = imageElement.getAttribute('src');
   const proxyImageElement = document.createElement('img');
   proxyImageElement.onload = onFetch;
   proxyImageElement.onerror = onFetch;
-  // Setting the source triggers the fetch within the context of a live
-  // document. We are using the document containing this script so we know
-  // that proxy is located in a live context.
   proxyImageElement.src = sourceURLString;
 
   function onFetch(event) {
