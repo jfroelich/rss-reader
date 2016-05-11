@@ -6,15 +6,16 @@
 
 // Lib for importing and exporting opml files
 // Requires: /src/db.js
-// Requires: /src/html.js
-// Requires: /src/string.js
-// Requires: /src/xml.js
+// Requires: /src/html-utils.js
+// Requires: /src/utils.js
+
+const OPML = {};
 
 
-// Parses a string containing xml into an document. The document is XML-flagged,
-// so node.nodeName is case-sensitive. Throws an exception when a parsing
-// error occurs.
-function opml_parse_xml_string(xmlString) {
+// Parses a string containing xml into an document. The document is
+// XML-flagged, so node.nodeName is case-sensitive. Throws an exception when a
+// parsing error occurs.
+OPML.parseXML = function(xmlString) {
   const parser = new DOMParser();
   const MIME_TYPE_XML = 'application/xml';
   const document = parser.parseFromString(xmlString, MIME_TYPE_XML);
@@ -35,19 +36,29 @@ function opml_parse_xml_string(xmlString) {
   // error into the content. Pluck it and throw it.
   const parserError = document.querySelector('PARSERERROR');
   if(parserError) {
+    // The error has nested elements sometimes, so use textContent, not
+    // innerHTML
     throw new Error('Format error: ' + parserError.textContent);
   }
 
   return document;
-}
+};
 
-// TODO: i think my original idea of two libs, one just about opml, and
-// one that deals with import/export and interaction with other components
-// was better. right now this feels like it does too much, and isn't generic
+// Parses a string into an opml document. Throws an exception if a parsing
+// error occurs or the document is invalid. Otherwise, returns the document.
+OPML.parseFromString = function(string) {
+  const document = OPML.parseXML(string);
+  const documentElement = document.documentElement;
+  const nodeName = documentElement.nodeName.toUpperCase();
+  if(nodeName !== 'OPML') {
+    throw new Error('Invalid document element: ' + documentElement.nodeName);
+  }
+  return document;
+};
 
 // Creates and returns an opml document with the given title and containing
 // the given feeds as outline elements
-function opml_create_document(titleString, feeds) {
+OPML.createDocument = function(titleString, feeds) {
   const doc = document.implementation.createDocument(null, 'OPML', null);
   const documentElement = doc.documentElement;
   documentElement.setAttribute('version', '2.0');
@@ -90,7 +101,7 @@ function opml_create_document(titleString, feeds) {
   }
 
   return doc;
-}
+};
 
 // Imports an array of files representing OPML documents. Calls callback when
 // complete, with tracking information.
@@ -111,7 +122,7 @@ function opml_create_document(titleString, feeds) {
 // should not be a concern within the import-opml-file lib, it should just
 // call a callback when it is done. The caller can design the callback to
 // do the checks for whether all files were imported.
-function opml_import_files(connection, files, callback) {
+OPML.importFiles = function(connection, files, callback) {
   const tracker = {
     errors: [],
     numFiles: files.length,
@@ -125,25 +136,19 @@ function opml_import_files(connection, files, callback) {
 
   const numFiles = files.length;
   for(let i = 0; i < numFiles; i++) {
-    opml_import_file(files[i], connection, tracker, callback);
+    OPML.importFile(files[i], connection, tracker, callback);
   }
-}
+};
 
-function opml_import_file(file, connection, tracker, callback) {
-  // TODO: i think i might want to delegate some of this to a general
-  // purpose file.js function file_read_as_text(file, callback) that passes
-  // error, text to callback
-
+OPML.importFile = function(file, connection, tracker, callback) {
   const reader = new FileReader();
-
-  const onload = opml_on_file_load.bind(reader, connection, tracker, callback);
+  const onload = OPML.onFileLoad.bind(reader, connection, tracker, callback);
   reader.onload = onload;
   reader.onerror = onload;
-
   reader.readAsText(file);
-}
+};
 
-function opml_on_file_load(connection, tracker, callback, event) {
+OPML.onFileLoad = function(connection, tracker, callback, event) {
   tracker.filesImported++;
 
   // React to file loading error
@@ -161,7 +166,7 @@ function opml_on_file_load(connection, tracker, callback, event) {
   // Parse the file's text into an OPML document object
   let document = null;
   try {
-    document = opml_parse_string(text);
+    document = OPML.parseFromString(text);
   } catch(exception) {
 
     tracker.errors.push(exception);
@@ -172,7 +177,7 @@ function opml_on_file_load(connection, tracker, callback, event) {
   }
 
 
-  let outlineElements = opml_select_outline_elements(document);
+  let outlineElements = OPML.findOutlineElements(document);
 
   if(!outlineElements.length) {
     if(tracker.filesImported === tracker.numFiles) {
@@ -184,48 +189,48 @@ function opml_on_file_load(connection, tracker, callback, event) {
   // Parse the outline elements into feed objects
   let feeds = [];
   for(let i = 0, len = outlineElements.length, outline; i < len; i++) {
-    outline = opml_parse_outline_element(outlineElements[i]);
+    outline = OPML.parseOutlineElement(outlineElements[i]);
     feeds.push(outline);
   }
 
   // Reduce the number of failed insert attempts before hitting the
   // the database
-  feeds = opml_remove_duplicate_feeds(feeds);
+  feeds = OPML.removeDuplicateFeeds(feeds);
 
   // TODO: should this be waiting for all storage calls to complete
   // before calling back?
   // TODO: Feed.put should allow for a null callback argument
   // and handle it on its own, i shouldn't need to use a noop here
   for(let feed of feeds) {
-    Feed.put(connection, null, feed, opml_noop);
+    Feed.put(connection, null, feed, OPML.noop);
   }
 
   if(tracker.filesImported === tracker.numFiles) {
     callback(tracker);
   }
-}
+};
 
-function opml_noop() {
-}
+OPML.noop = function() {};
 
-function opml_remove_duplicate_feeds(feeds) {
-  const pairs = feeds.map(function expand_feed(feed) {
-    return [feed.url, feed];
-  });
+OPML.expandFeedObjectToPair = function(feed) {
+  return [feed.url, feed];
+};
 
-  const map = new Map(pairs);
+OPML.removeDuplicateFeeds = function(feedsArray) {
+  const expandedFeedsArray = feedsArray.map(OPML.expandFeedObjectToPair);
+  const map = new Map(expandedFeedsArray);
   return map.values();
-}
+};
 
 // TODO: validate that the url value looks like a url
-function opml_is_valid_outline_element(element) {
+OPML.isValidOutlineElement = function(element) {
   const TYPE_PATTERN = /rss|rdf|feed/i;
   const type = element.getAttribute('type');
   const url = element.getAttribute('xmlUrl') || '';
   return type && TYPE_PATTERN.test(type) && url.trim();
-}
+};
 
-function opml_sanitize_string(inputString) {
+OPML.sanitizeString = function(inputString) {
   // TODO: consider max length of each field and the behavior when
   // exceeded
 
@@ -236,13 +241,12 @@ function opml_sanitize_string(inputString) {
   }
 
   return outputString.trim();
-}
+};
 
-function opml_parse_outline_element(element) {
-  // TODO: i am not sure if this should actually be responsible for
-  // sanitizing the input. I feel like another function called by
-  // the caller should do that explicitly.
-
+// TODO: i am not sure if this should actually be responsible for
+// sanitizing the input. I feel like another function called by
+// the caller should do that explicitly.
+OPML.parseOutlineElement = function(element) {
   let title = element.getAttribute('title') ||
     element.getAttribute('text');
   let description = element.getAttribute('description');
@@ -250,83 +254,42 @@ function opml_parse_outline_element(element) {
   let link = element.getAttribute('htmlUrl');
 
   const outline = {};
-  outline.title = opml_sanitize_string(title);
-  outline.description = opml_sanitize_string(description);
-  outline.url = opml_sanitize_string(url);
-  outline.link = opml_sanitize_string(link);
+  outline.title = OPML.sanitizeString(title);
+  outline.description = OPML.sanitizeString(description);
+  outline.url = OPML.sanitizeString(url);
+  outline.link = OPML.sanitizeString(link);
   return outline;
-}
+};
 
 // Returns the first matching <body> element of an opml document, if one
 // exists.
 // TODO: this should probably delegate its functionality to some dom utility
 // function (but that does not currently exist). In fact if that exists I
 // should replace this function with that one in the calling context.
-function opml_find_body_element(document) {
+OPML.findBodyElement = function(document) {
   for(let element = document.documentElement.firstElementChild;
     element; element = node.nextElementSibling) {
-    if(opml_is_body_element(element)) {
+    if(element.nodeName.toUpperCase() === 'BODY') {
       return element;
     }
   }
-}
+};
 
 // Returns an array of all <outline> elements found in the document
 // that are immediate children of the document's <body> element and
 // represent minimally valid feeds.
-function opml_select_outline_elements(document) {
-  const elementsArray = [];
-  const bodyElement = opml_find_body_element(document);
-  if(!bodyElement) {
-    return elementsArray;
-  }
-
-  // TODO: maybe delegate iteration of an element's child
-  // elements to some general purpose function like in dom.js
-  // for_each_child_element ?
-
-  for(let element = bodyElement.firstElementChild; element;
-    element = node.nextElementSibling) {
-    if(opml_is_outline_element(element) &&
-      opml_is_valid_outline_element(element)) {
-      elementsArray.push(element);
+// TODO: it should be the caller's responsibility to filter, not this
+OPML.findOutlineElements = function(document) {
+  const outlineArray = [];
+  const bodyElement = OPML.findBodyElement(document);
+  if(bodyElement) {
+    for(let element = bodyElement.firstElementChild; element;
+      element = node.nextElementSibling) {
+      if(element.nodeName.toUpperCase() === 'OUTLINE' &&
+        OPML.isValidOutlineElement(element)) {
+        outlineArray.push(element);
+      }
     }
   }
-
-  return elementsArray;
-}
-
-// Parses a string into an opml document. Throws an exception if a parsing
-// error occurs or the document is invalid. Otherwise, returns the document.
-function opml_parse_string(string) {
-  // opml_parse_xml_string throws some exceptions that we intentionally just
-  // pass onward
-  const document = opml_parse_xml_string(string);
-
-  // document and document element are now guaranteed defined because
-  // otherwise opml_parse_xml_string throws an exception, so we do not need
-  // to check if defined
-
-  // We still have to check that the xml document represents an opml document
-  if(!opml_is_opml_element(document.documentElement)) {
-    throw new Error('Invalid document element: ' +
-      document.documentElement.nodeName);
-  }
-
-  return document;
-}
-
-// Returns true if the element is an <outline> element
-function opml_is_outline_element(element) {
-  return utils.string.equalsIgnoreCase(element.nodeName, 'OUTLINE');
-}
-
-// Returns true if the element is an <body> element
-function opml_is_body_element(element) {
-  return utils.string.equalsIgnoreCase(element.nodeName, 'BODY');
-}
-
-// Returns true if the element is an <opml> element
-function opml_is_opml_element(element) {
-  return utils.string.equalsIgnoreCase(element.nodeName, 'OPML');
-}
+  return outlineArray;
+};

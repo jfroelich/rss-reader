@@ -756,7 +756,7 @@ function options_on_import_opml_click(event) {
     }
 
     const connection = event.target.result;
-    opml_import_files(connection, uploader.files, on_import_completed);
+    OPML.importFiles(connection, uploader.files, on_import_completed);
   }
 
   function on_import_completed(tracker) {
@@ -803,7 +803,7 @@ function options_on_export_opml_click_on_open(event) {
 
 function options_on_export_opml_click_on_get_feeds(feeds) {
   const title = 'Subscriptions';
-  const doc = opml_create_document(title, feeds);
+  const doc = OPML.createDocument(title, feeds);
 
   // TODO: should should probably be delegating something to a function
   // in xml.js
