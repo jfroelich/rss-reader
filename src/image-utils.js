@@ -4,18 +4,18 @@
 
 'use strict';
 
-
 // Requires: /lib/async.js
-// Requires: /src/url.js
+// Requires: /src/utils.js
 
+// TODO: rename to image-utils.js
 // TODO: stop using async lib
-// TODO: maybe move all this stuff into image.js?
 // TODO: track num fetched, errors
 
 // Given a document, ensure that the width and height of each image element is
 // set. If not set, fetch the image, check its dimensions, and explicitly set
 // the width and height attributes of the image element within the html.
 function image_dimensions_set_all(document, callback) {
+  // TODO: maybe I should fallback to documentElement here?
   const bodyElement = document.body;
   if(!bodyElement) {
     // The callback expects no args
