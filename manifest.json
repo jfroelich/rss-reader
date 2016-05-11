@@ -25,7 +25,6 @@
       "/src/fetch-feed.js",
       "/src/html-utils.js",
       "/src/image-utils.js",
-      "/src/notrack.js",
       "/src/poll.js",
       "/src/resolve-urls.js",
       "/src/utils.js"

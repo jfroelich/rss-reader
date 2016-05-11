@@ -255,7 +255,7 @@ function poll_on_fetch_html(entry, callback, error, document, responseURL) {
     //  responseURL);
   }
 
-  no_track_filter_elements(document);
+  ImageUtils.filterTrackingImages(document);
   ImageUtils.transformLazilyLoadedImages(document);
   resolve_urls(document, responseURL);
   const onSetDimensions = poll_on_set_image_dimensions.bind(null, entry,
