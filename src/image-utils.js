@@ -52,11 +52,14 @@ ImageUtils.shouldFetch = function(imageElement) {
 };
 
 ImageUtils.isObjectURL = function(urlString) {
+  // NOTE: I am confident Chrome permits the leading space. I am not so
+  // confident about the trailing space.
+
   return /^\s*data\s*:/i.test(urlString);
 };
 
 // Request the image.
-ImageUtils.fetchImage = (imageElement, callback) {
+ImageUtils.fetchImage = function(imageElement, callback) {
   // Proxy is intentionally created within the local document
   // context. We know it is live, so Chrome will eagerly fetch upon
   // changing the image element's src property. We do not know if the
@@ -73,37 +76,30 @@ ImageUtils.fetchImage = (imageElement, callback) {
   // that proxy is located in a live context.
   proxyImageElement.src = sourceURLString;
 
-  // TODO: rather than wrap, this just should call it directly
   function onFetch(event) {
-    ImageUtils.onFetch(imageElement, callback, event);
+    if(event.type === 'load') {
+      const proxyImageElement = event.target;
+
+      // Set the attributes, not the properties. The properties will be set
+      // by setting the attributes. Setting properties will not set the
+      // attributes. If any code does any serialization/deserialization to or
+      // from innerHTML, it would not store the new values if I only set the
+      // properties.
+
+      imageElement.setAttribute('width', proxyImageElement.width);
+      imageElement.setAttribute('height', proxyImageElement.height);
+
+    } else {
+      // NOTE: Tentatively not logging this error message. It definitely
+      // happens and is leading to lots of log messages sometimes so I am
+      // disabling it until I return to work on this feature.
+      //const sourceURLString = imageElement.getAttribute('src');
+      //console.debug('Failed to fetch image:', sourceURLString);
+    }
+
+    // Callback with no args to signal async.forEach to continue.
+    callback();
   }
-};
-
-// On requesting the image, if successful, update the attributes of the
-// local image.
-ImageUtils.onFetch = function(imageElement, callback, event) {
-  if(event.type === 'load') {
-    const proxyImageElement = event.target;
-
-    // Set the attributes, not the properties. The properties will be set
-    // by setting the attributes. Setting properties will not set the
-    // attributes. If any code does any serialization/deserialization to or
-    // from innerHTML, it would not store the new values if I only set the
-    // properties.
-
-    imageElement.setAttribute('width', proxyImageElement.width);
-    imageElement.setAttribute('height', proxyImageElement.height);
-
-  } else {
-    // NOTE: Tentatively not logging this error message. It definitely
-    // happens and is leading to lots of log messages sometimes so I am
-    // disabling it until I return to work on this feature.
-    //const sourceURLString = imageElement.getAttribute('src');
-    //console.debug('Failed to fetch image:', sourceURLString);
-  }
-
-  // Callback with no args to signal async.forEach to continue.
-  callback();
 };
 
 // Modify the src values of images that appear to be lazily loaded.
