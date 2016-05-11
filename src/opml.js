@@ -179,6 +179,9 @@ OPML.onFileLoad = function(connection, tracker, callback, event) {
 
   let outlineElements = OPML.findOutlineElements(document);
 
+  // Remove outlines that are not minimally valid
+  outlineElements = outlineElements.filter(OPML.isValidOutlineElement);
+
   if(!outlineElements.length) {
     if(tracker.filesImported === tracker.numFiles) {
       callback(tracker);
@@ -276,17 +279,14 @@ OPML.findBodyElement = function(document) {
 };
 
 // Returns an array of all <outline> elements found in the document
-// that are immediate children of the document's <body> element and
-// represent minimally valid feeds.
-// TODO: it should be the caller's responsibility to filter, not this
+// that are immediate children of the document's <body> element.
 OPML.findOutlineElements = function(document) {
   const outlineArray = [];
   const bodyElement = OPML.findBodyElement(document);
   if(bodyElement) {
     for(let element = bodyElement.firstElementChild; element;
       element = node.nextElementSibling) {
-      if(element.nodeName.toUpperCase() === 'OUTLINE' &&
-        OPML.isValidOutlineElement(element)) {
+      if(element.nodeName.toUpperCase() === 'OUTLINE') {
         outlineArray.push(element);
       }
     }
