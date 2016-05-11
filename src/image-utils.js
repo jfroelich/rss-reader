@@ -183,16 +183,14 @@ lse" alt="" data-src="url" data-tc-lazyload="deferred" src="url" width=
   }
 };
 
-// Remove elements with unwanted urls
-// This is separate from sanity functions primarily because of when this is
-// called. This is done before doing image dimension fetches. Otherwise the
-// pings would still occur.
-// TODO: this needs a lot of improvement
-// TODO: I am not seeing any of the last 4 urls here being filtered. Maybe
-// I am looking for the wrong thing.
+// Remove images with unwanted urls from the document
 ImageUtils.filterTrackingImages = function(document) {
 
-  const NO_TRACK_IMAGE_SELECTORS = [
+  // TODO: I am not seeing any of the last 4 urls here being filtered. Maybe
+  // I am looking for the wrong thing? I have not seen these occur even
+  // once? Are they just script origins?
+
+  const SELECTORS = [
     'img[src^="http://b.scorecardresearch.com"]',
     'img[src^="https://b.scorecardresearch.com"]',
     'img[src^="http://pagead2.googlesyndication.com"]',
@@ -201,13 +199,13 @@ ImageUtils.filterTrackingImages = function(document) {
     'img[src^="https://pubads.g.doubleclick.net"]'
   ];
 
-  const NO_TRACK_IMAGE_SELECTOR = NO_TRACK_IMAGE_SELECTORS.join(',');
+  const SELECTOR = SELECTORS.join(',');
 
-  // I only look for tracking elements within the body, because I assume
-  // that out-of-body information is removed separately in the sanity
+  // I only look for tracking images within the body, because I assume
+  // that out-of-body information is removed separately in the domaid
   // functions.
   const rootElement = document.body || document.documentElement;
-  const imageNodeList = rootElement.querySelectorAll(NO_TRACK_IMAGE_SELECTOR);
+  const imageNodeList = rootElement.querySelectorAll(SELECTOR);
   const listLength = imageNodeList.length;
   for(let i = 0, imageElement; i < listLength; i++) {
     imageElement = imageNodeList[i];
