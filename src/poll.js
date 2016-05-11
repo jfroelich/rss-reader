@@ -256,11 +256,11 @@ function poll_on_fetch_html(entry, callback, error, document, responseURL) {
   }
 
   no_track_filter_elements(document);
-  image_transform_lazily_loaded(document);
+  ImageUtils.transformLazilyLoadedImages(document);
   resolve_urls(document, responseURL);
   const onSetDimensions = poll_on_set_image_dimensions.bind(null, entry,
     document, callback);
-  image_dimensions_set_all(document, onSetDimensions);
+  ImageUtils.fetchDimensions(document, onSetDimensions);
 }
 
 // Upon setting the sizes of images, replace the content property of the entry,

@@ -6,15 +6,15 @@
 
 // Requires: /lib/async.js
 // Requires: /src/utils.js
-
-// TODO: rename to image-utils.js
 // TODO: stop using async lib
 // TODO: track num fetched, errors
+
+const ImageUtils = {};
 
 // Given a document, ensure that the width and height of each image element is
 // set. If not set, fetch the image, check its dimensions, and explicitly set
 // the width and height attributes of the image element within the html.
-function image_dimensions_set_all(document, callback) {
+ImageUtils.fetchDimensions = function(document, callback) {
   // TODO: maybe I should fallback to documentElement here?
   const bodyElement = document.body;
   if(!bodyElement) {
@@ -25,13 +25,13 @@ function image_dimensions_set_all(document, callback) {
 
   const imageNodeList = bodyElement.getElementsByTagName('img');
   const fetchables = Array.prototype.filter.call(imageNodeList,
-    image_dimensions_should_fetch);
-  async.forEach(fetchables, image_dimensions_fetch, callback);
-}
+    ImageUtils.shouldFetch);
+  async.forEach(fetchables, ImageUtils.fetchImage, callback);
+};
 
 // Returns whether the image should be fetched.
 // TODO: should I also check attributes?
-function image_dimensions_should_fetch(imageElement) {
+ImageUtils.shouldFetch = function(imageElement) {
   // TODO: maybe I should always fetch dimensions for images with urls?
   // How much of a benefit it is to reduce the number of fetches?
   // Why do I even want to keep the original dimensions? I am using CSS to
@@ -48,43 +48,40 @@ function image_dimensions_should_fetch(imageElement) {
 
   let url = imageElement.getAttribute('src') || '';
   url = url.trim();
-  return url && !image_dimensions_is_data_url(url) && !imageElement.width;
-}
+  return url && !ImageUtils.isObjectURL(url) && !imageElement.width;
+};
 
-function image_dimensions_is_data_url(urlString) {
+ImageUtils.isObjectURL = function(urlString) {
   return /^\s*data\s*:/i.test(urlString);
-}
+};
 
 // Request the image.
-function image_dimensions_fetch(imageElement, callback) {
+ImageUtils.fetchImage = (imageElement, callback) {
   // Proxy is intentionally created within the local document
   // context. We know it is live, so Chrome will eagerly fetch upon
   // changing the image element's src property. We do not know if the
   // input image resides in an live or inert document, so we cannot
   // safely expect that creating the proxy within its document, accessed
   // via imageElement.ownerDocument, would even do anything.
-
   // We know urlString is defined because it was checked before calling.
-
   const sourceURLString = imageElement.getAttribute('src');
   const proxyImageElement = document.createElement('img');
-
-  function proxy_onfetch(event) {
-    image_dimensions_on_fetch(imageElement, callback, event);
-  }
-
-  proxyImageElement.onload = proxy_onfetch;
-  proxyImageElement.onerror = proxy_onfetch;
-
+  proxyImageElement.onload = onFetch;
+  proxyImageElement.onerror = onFetch;
   // Setting the source triggers the fetch within the context of a live
   // document. We are using the document containing this script so we know
   // that proxy is located in a live context.
   proxyImageElement.src = sourceURLString;
-}
+
+  // TODO: rather than wrap, this just should call it directly
+  function onFetch(event) {
+    ImageUtils.onFetch(imageElement, callback, event);
+  }
+};
 
 // On requesting the image, if successful, update the attributes of the
 // local image.
-function image_dimensions_on_fetch(imageElement, callback, event) {
+ImageUtils.onFetch = function(imageElement, callback, event) {
   if(event.type === 'load') {
     const proxyImageElement = event.target;
 
@@ -107,27 +104,25 @@ function image_dimensions_on_fetch(imageElement, callback, event) {
 
   // Callback with no args to signal async.forEach to continue.
   callback();
-}
+};
 
 // Modify the src values of images that appear to be lazily loaded.
 // TODO: maybe skip an image if image.closest('picture') ?
-function image_transform_lazily_loaded(document) {
+ImageUtils.transformLazilyLoadedImages = function(document) {
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
   }
 
-  // TODO: review whether I can use 'IMG' in querySelectorAll
-
   const imageNodeList = bodyElement.querySelectorAll('img');
   const listLength = imageNodeList.length;
   for(let i = 0; i < listLength; i++) {
-    image_transform_lazily_loaded_image(imageNodeList[i]);
+    ImageUtils.transformLazilyLoadedImage(imageNodeList[i]);
   }
-}
+};
 
-function image_transform_lazily_loaded_image(image) {
-  // TODO: reduce the DRYness of this function
+// TODO: reduce the DRYness of this function
+ImageUtils.transformLazilyLoadedImage = function(image) {
 
   // TODO: support this case better. There is a problem here because
   // the tiny image filter is picking this up and removing it.
@@ -186,4 +181,4 @@ lse" alt="" data-src="url" data-tc-lazyload="deferred" src="url" width=
     image.setAttribute('src', image.getAttribute('data-adaptive-img'));
     return;
   }
-}
+};
