@@ -11,7 +11,6 @@
 
 const OPML = {};
 
-
 // Parses a string containing xml into an document. The document is
 // XML-flagged, so node.nodeName is case-sensitive. Throws an exception when a
 // parsing error occurs.
@@ -32,8 +31,7 @@ OPML.parseXML = function(xmlString) {
     throw new Error('Undefined document element');
   }
 
-  // If there is a parsing error, some browsers (or all??) insert the
-  // error into the content. Pluck it and throw it.
+  // Check for an implied parsing error
   const parserError = document.querySelector('PARSERERROR');
   if(parserError) {
     // The error has nested elements sometimes, so use textContent, not
@@ -45,13 +43,13 @@ OPML.parseXML = function(xmlString) {
 };
 
 // Parses a string into an opml document. Throws an exception if a parsing
-// error occurs or the document is invalid. Otherwise, returns the document.
+// error occurs or the document is invalid.
 OPML.parseFromString = function(string) {
   const document = OPML.parseXML(string);
   const documentElement = document.documentElement;
-  const nodeName = documentElement.nodeName.toUpperCase();
-  if(nodeName !== 'OPML') {
-    throw new Error('Invalid document element: ' + documentElement.nodeName);
+  const nodeName = documentElement.nodeName;
+  if(nodeName.toUpperCase() !== 'OPML') {
+    throw new Error('Invalid document element: ' + nodeName);
   }
   return document;
 };
@@ -151,8 +149,10 @@ OPML.importFile = function(file, connection, tracker, callback) {
 OPML.onFileLoad = function(connection, tracker, callback, event) {
   tracker.filesImported++;
 
-  // React to file loading error
+  // React to file read error
   if(event.type === 'error') {
+    // TODO: should this be accessing a property of the event instead of
+    // the event itself? I need to see what the error actually looks like
     tracker.errors.push(event);
     if(tracker.filesImported === tracker.numFiles) {
       callback(tracker);
@@ -163,12 +163,11 @@ OPML.onFileLoad = function(connection, tracker, callback, event) {
   const reader = event.target;
   const text = reader.result;
 
-  // Parse the file's text into an OPML document object
+  // Parse the text into an OPML document
   let document = null;
   try {
     document = OPML.parseFromString(text);
   } catch(exception) {
-
     tracker.errors.push(exception);
     if(tracker.filesImported === tracker.numFiles) {
       callback(tracker);
@@ -176,10 +175,7 @@ OPML.onFileLoad = function(connection, tracker, callback, event) {
     return;
   }
 
-
   let outlineElements = OPML.findOutlineElements(document);
-
-  // Remove outlines that are not minimally valid
   outlineElements = outlineElements.filter(OPML.isValidOutlineElement);
 
   if(!outlineElements.length) {
@@ -213,6 +209,7 @@ OPML.onFileLoad = function(connection, tracker, callback, event) {
   }
 };
 
+// TODO: deprecate once Feed.put accepts undefined callback
 OPML.noop = function() {};
 
 OPML.expandFeedObjectToPair = function(feed) {
@@ -225,7 +222,7 @@ OPML.removeDuplicateFeeds = function(feedsArray) {
   return map.values();
 };
 
-// TODO: validate that the url value looks like a url
+// TODO: validate the url?
 OPML.isValidOutlineElement = function(element) {
   const TYPE_PATTERN = /rss|rdf|feed/i;
   const type = element.getAttribute('type');
@@ -233,22 +230,17 @@ OPML.isValidOutlineElement = function(element) {
   return type && TYPE_PATTERN.test(type) && url.trim();
 };
 
+// TODO: consider max length of each field and the behavior when exceeded
 OPML.sanitizeString = function(inputString) {
-  // TODO: consider max length of each field and the behavior when
-  // exceeded
-
   let outputString = inputString || '';
   if(outputString) {
     outputString = utils.string.filterControlCharacters(outputString);
     outputString = HTMLUtils.replaceTags(outputString, '');
   }
-
   return outputString.trim();
 };
 
-// TODO: i am not sure if this should actually be responsible for
-// sanitizing the input. I feel like another function called by
-// the caller should do that explicitly.
+// TODO: should caller be responsible for sanitizing?
 OPML.parseOutlineElement = function(element) {
   let title = element.getAttribute('title') ||
     element.getAttribute('text');
@@ -264,14 +256,10 @@ OPML.parseOutlineElement = function(element) {
   return outline;
 };
 
-// Returns the first matching <body> element of an opml document, if one
-// exists.
-// TODO: this should probably delegate its functionality to some dom utility
-// function (but that does not currently exist). In fact if that exists I
-// should replace this function with that one in the calling context.
+// Returns the first matching <body> element of an opml document
 OPML.findBodyElement = function(document) {
   for(let element = document.documentElement.firstElementChild;
-    element; element = node.nextElementSibling) {
+    element; element = element.nextElementSibling) {
     if(element.nodeName.toUpperCase() === 'BODY') {
       return element;
     }
@@ -285,7 +273,7 @@ OPML.findOutlineElements = function(document) {
   const bodyElement = OPML.findBodyElement(document);
   if(bodyElement) {
     for(let element = bodyElement.firstElementChild; element;
-      element = node.nextElementSibling) {
+      element = element.nextElementSibling) {
       if(element.nodeName.toUpperCase() === 'OUTLINE') {
         outlineArray.push(element);
       }
