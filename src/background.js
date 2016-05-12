@@ -47,7 +47,7 @@ Background.onAlarm = function(alarm) {
 
     Background.archiveEntries();
   } else if(alarmName === Background.POLL_ALARM_NAME) {
-    poll_start();
+    FeedPoller.start();
   }
 };
 
