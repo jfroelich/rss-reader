@@ -268,7 +268,7 @@ FeedPoller.onFetchHTML = function(entry, callback, error, document,
 
   ImageUtils.filterTrackingImages(document);
   ImageUtils.transformLazilyLoadedImages(document);
-  resolve_urls(document, responseURL);
+  URLResolver.resolveURLsInDocument(document, responseURL);
   const onSetDimensions = FeedPoller.onSetImageDimensions.bind(null, entry,
     document, callback);
   ImageUtils.fetchDimensions(document, onSetDimensions);

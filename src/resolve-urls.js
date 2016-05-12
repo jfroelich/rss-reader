@@ -5,7 +5,7 @@
 'use strict';
 
 // TODO: resolve xlink type simple (on any attribute) in xml docs
-// TODO: finish implementing resolve_serialize_srcset
+// TODO: finish implementing URLResolver.serializeSrcSet
 // TODO: rather than do a separate check for srcset, it should somehow be
 // in the main map. but then that means we can't use a map because we
 // have dup keys. so maybe the map needs to instead contain arrays of
@@ -17,24 +17,28 @@
 // caller in poll.js that is concerned about prepping
 // the document for render and caring about removing base elements
 
+// TODO: use the new URL class and stop using the URI lib
+
+const URLResolver = {};
+
 // Resolves all urls in a document, such as element attribute values
 // TODO: use a clearer name
-function resolve_urls(document, baseURL) {
-  resolve_remove_base_elements(document);
-  resolve_modify_attributes(document, baseURL);
-}
+URLResolver.resolveURLsInDocument = function(document, baseURL) {
+  URLResolver.removeBaseElements(document);
+  URLResolver.modifyAllURLAttributes(document, baseURL);
+};
 
 // Remove base. base is blacklisted in sanitize-document.js but the integrity
 // of this module if used independently requires this behavior.
-function resolve_remove_base_elements(document) {
+URLResolver.removeBaseElements = function(document) {
   const bases = document.querySelectorAll('base');
   const numBases = bases.length;
   for(let i = 0; i < numBases; i++) {
     bases[i].remove();
   }
-}
+};
 
-const RESOLVE_URL_ATTRIBUTE_MAP = {
+URLResolver.URL_ATTRIBUTE_MAP = {
   'a': 'href',
   'applet': 'codebase',
   'area': 'href',
@@ -62,30 +66,30 @@ const RESOLVE_URL_ATTRIBUTE_MAP = {
   'video': 'src'
 };
 
-function resolve_generate_selector_part(key) {
-  return key + '[' + RESOLVE_URL_ATTRIBUTE_MAP[key] +']';
-}
+URLResolver.generateSelectorPart = function(key) {
+  return key + '[' + URLResolver.URL_ATTRIBUTE_MAP[key] +']';
+};
 
-const RESOLVE_SELECTOR = Object.keys(RESOLVE_URL_ATTRIBUTE_MAP).map(
-  resolve_generate_selector_part).join(',');
+URLResolver.ELEMENT_SELECTOR = Object.keys(URLResolver.URL_ATTRIBUTE_MAP).map(
+  URLResolver.generateSelectorPart).join(',');
 
 // TODO: i want to modify this so that I do not also check for
 // srcset, I would rather be iterating over all elements, or iterate over
 // srcset elements separately.
 
-function resolve_modify_attributes(document, baseURL) {
+URLResolver.modifyAllURLAttributes = function(document, baseURL) {
   // Note this is not restricted to elements in the body, because there
   // are resolvable elements in the head, and <html> itself has a
   // resolvable attribute.
 
-  const elements = document.querySelectorAll(RESOLVE_SELECTOR);
+  const elements = document.querySelectorAll(URLResolver.ELEMENT_SELECTOR);
   const numElements = elements.length;
   for(let i = 0, element, attribute, originalURL,
     resolvedURL; i < numElements; i++) {
     element = elements[i];
-    attribute = RESOLVE_URL_ATTRIBUTE_MAP[element.localName];
+    attribute = URLResolver.URL_ATTRIBUTE_MAP[element.localName];
     originalURL = element.getAttribute(attribute).trim();
-    resolvedURL = resolve_url(baseURL, originalURL);
+    resolvedURL = URLResolver.resolveURL(baseURL, originalURL);
 
     if(resolvedURL !== originalURL) {
       element.setAttribute(attribute, resolvedURL);
@@ -94,15 +98,15 @@ function resolve_modify_attributes(document, baseURL) {
     // Resolve srcsets
     if((element.localName === 'img' || element.localName === 'source') &&
       element.hasAttribute('srcset')) {
-      resolve_resolve_srcset(baseURL, element);
+      URLResolver.resolveSrcSet(baseURL, element);
     }
   }
-}
+};
 
 // TODO: maybe reverse argument order?
 // TODO: i am not sure yet but I think the built in URL object added to
 // javascript can now do this for me, maybe I don't need the URI lib!
-function resolve_url(baseURL, url) {
+URLResolver.resolveURL = function(baseURL, url) {
   try {
     const uri = new URI(url);
     if(!uri.protocol()) {
@@ -114,17 +118,17 @@ function resolve_url(baseURL, url) {
   }
 
   return url;
-}
+};
 
 // Access an element's srcset attribute, parses it into an array of
 // descriptors, resolves the url for each descriptor, and then composes the
 // descriptors array back into a string and modifies the element
-function resolve_resolve_srcset(baseURL, element) {
+URLResolver.resolveSrcSet = function(baseURL, element) {
   const source = element.getAttribute('srcset');
   let descriptors = parseSrcset(source) || [];
   let numURLsChanged = 0;
   let resolvedDescriptors = descriptors.map(function transform(descriptor) {
-    const resolvedURL = resolve_url(baseURL, descriptor.url);
+    const resolvedURL = URLResolver.resolveURL(baseURL, descriptor.url);
     let newURL = descriptor.url;
     if(resolvedURL && resolvedURL !== descriptor.url) {
       newURL = resolvedURL;
@@ -140,21 +144,21 @@ function resolve_resolve_srcset(baseURL, element) {
     return;
   }
 
-  const newSource = resolve_serialize_srcset(resolvedDescriptors);
+  const newSource = URLResolver.serializeSrcSet(resolvedDescriptors);
   console.debug('Changing srcset %s to %s', source, newSource);
   element.setAttribute('srcset', newSource);
-}
+};
 
 // Returns a string representing serialized descriptors, which is a suitable
 // srcset attribute value for an element
 // TODO: THIS IS INCOMPLETE, because I do not yet include the other dimensions
 // back into the string, and I am getting image errors in the output
 // TODO: support d,w,h
-function resolve_serialize_srcset(descriptors) {
+URLResolver.serializeSrcSet = function(descriptors) {
   const resolvedDescriptors = [];
   const numDescriptors = descriptors.length;
 
-  // TODO: i am also seeing something like url 2x or 1.5x, what's x?i assume
+  // TODO: i am also seeing something like url 2x or 1.5x, what's "x"? i assume
   // it is something like zoom level (2x is 2 times size)
 
   for(let i = 0, descriptor, newString; i < numDescriptors; i++) {
@@ -182,4 +186,4 @@ function resolve_serialize_srcset(descriptors) {
   // misinterpreted as part of the url (I guess?). I witnessed image fetch
   // errors where it looked like this was the case.
   return resolvedDescriptors.join(', ');
-}
+};

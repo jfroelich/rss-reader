@@ -446,7 +446,7 @@ DOMAid.condenseWhitespace = function(document) {
 };
 
 // Currently this only removes img elements without a source.
-// Images may be removed by other components like in notrack.js
+// Images may be removed by other components
 DOMAid.filterImages = function(document) {
   const bodyElement = document.body;
   if(!bodyElement) {
