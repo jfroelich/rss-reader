@@ -968,7 +968,7 @@ function options_init(event) {
 
   // Call out to load styles because this affects the feed settings preview
   // area in the display settings section
-  style_load_styles();
+  DisplaySettings.loadStyles();
 
   // Conditionally show/hide the Allow embeds option in the left menu
   // TODO: if I am not even supporting the embed option anymore, why
@@ -1055,7 +1055,7 @@ function options_init(event) {
   option.textContent = 'Use background color';
   document.getElementById('entry-background-image').appendChild(option);
 
-  STYLE_BACKGROUND_IMAGES.forEach(function append_bgimage_option(path) {
+  DisplaySettings.BACKGROUND_IMAGE_PATHS.forEach(function append_bgimage_option(path) {
     option = document.createElement('option');
     option.value = path;
     option.textContent = path.substring('/images/'.length);
@@ -1074,7 +1074,7 @@ function options_init(event) {
   option.textContent = 'Use Chrome font settings';
   document.getElementById('select_body_font').appendChild(option);
 
-  STYLE_FONT_FAMILIES.forEach(function append_header_font_option(fontFamily) {
+  DisplaySettings.FONT_FAMILIES.forEach(function append_header_font_option(fontFamily) {
     option = document.createElement('option');
     option.value = fontFamily;
     option.selected = fontFamily === localStorage.HEADER_FONT_FAMILY;
@@ -1082,7 +1082,7 @@ function options_init(event) {
     document.getElementById('select_header_font').appendChild(option);
   });
 
-  STYLE_FONT_FAMILIES.forEach(function append_body_font_option(fontFamily) {
+  DisplaySettings.FONT_FAMILIES.forEach(function append_body_font_option(fontFamily) {
     option = document.createElement('option');
     option.value = fontFamily;
     option.selected = fontFamily === localStorage.BODY_FONT_FAMILY;

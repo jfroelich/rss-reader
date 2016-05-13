@@ -6,22 +6,23 @@
 
 // Style lib
 // TODO: maybe use just one function for both load/change
+const DisplaySettings = {};
 
-function style_onmessage(message) {
+DisplaySettings.onMessage = function(message) {
   // Only react to the one message type of interest
   if(message.type === 'displaySettingsChanged') {
-    style_update_styles();
+    DisplaySettings.updateStyles();
   }
-}
+};
 
-chrome.runtime.onMessage.addListener(style_onmessage);
+chrome.runtime.onMessage.addListener(DisplaySettings.onMessage);
 
-// TODO: this is not yet in use, but the idea is to remove media prefix
-const STYLE_BACKGROUND_BASE_PATH = '/images/';
+// TODO: this is not yet in use, but the idea is to remove prefix
+DisplaySettings.BACKGROUND_BASE_PATH = '/images/';
 
 // TODO: remove some of these backgrounds, I kind of went overboard, some of
 // these are useless
-const STYLE_BACKGROUND_IMAGES = [
+DisplaySettings.BACKGROUND_IMAGE_PATHS = [
   '/images/bgfons-paper_texture318.jpg',
   '/images/CCXXXXXXI_by_aqueous.jpg',
   '/images/paper-backgrounds-vintage-white.jpg',
@@ -44,7 +45,7 @@ const STYLE_BACKGROUND_IMAGES = [
 ];
 
 // TODO: remove support for some of these fonts that are not very readable
-const STYLE_FONT_FAMILIES = [
+DisplaySettings.FONT_FAMILIES = [
   'ArchivoNarrow-Regular',
   'Arial, sans-serif',
   'Calibri',
@@ -72,19 +73,18 @@ const STYLE_FONT_FAMILIES = [
   'Roboto Regular'
 ];
 
-// Note: Array.prototype.find requires Chrome 45+
-function style_find_css_rule(sheet, selectorText) {
+DisplaySettings.findCSSRule = function(sheet, selectorText) {
   return Array.prototype.find.call(sheet.cssRules, function equals(rule) {
     return rule.selectorText === selectorText;
   });
-}
+};
 
-function style_update_styles() {
+DisplaySettings.updateStyles = function() {
 
   // Assume a sheet is always available
   const sheet = document.styleSheets[0];
 
-  const entryRule = style_find_css_rule(sheet, 'div.entry');
+  const entryRule = DisplaySettings.findCSSRule(sheet, 'div.entry');
   if(entryRule) {
     if(localStorage.BACKGROUND_IMAGE) {
       entryRule.style.backgroundColor = '';
@@ -103,7 +103,7 @@ function style_update_styles() {
     entryRule.style.paddingRight = entryMargin + 'px';
   }
 
-  const titleRule = style_find_css_rule(sheet,'div.entry a.entry-title');
+  const titleRule = DisplaySettings.findCSSRule(sheet,'div.entry a.entry-title');
   if(titleRule) {
     titleRule.style.background = '';
     titleRule.style.fontFamily = localStorage.HEADER_FONT_FAMILY;
@@ -114,7 +114,7 @@ function style_update_styles() {
     }
   }
 
-  const contentRule = style_find_css_rule(sheet,
+  const contentRule = DisplaySettings.findCSSRule(sheet,
     'div.entry span.entry-content');
   if(contentRule) {
     contentRule.style.background = '';
@@ -138,11 +138,11 @@ function style_update_styles() {
 
     contentRule.style.webkitColumnCount = parseInt(columnCount);
   }
-}
+};
 
 // Dynamically creates new style rules and appends them to the first style
 // sheet. This assumes the first style sheet exists.
-function style_load_styles() {
+DisplaySettings.loadStyles = function() {
   // Assume a sheet is always available
   const sheet = document.styleSheets[0];
 
@@ -262,4 +262,4 @@ function style_load_styles() {
   sheet.addRule('div.entry span.entry-content', buffer.join(''));
 
   // Reminder: if adding another rule, reset the buffer variable
-}
+};

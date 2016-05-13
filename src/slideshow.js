@@ -535,7 +535,7 @@ window.addEventListener('keydown', slideshow_onkeydown, false);
 
 function slideshow_init(event) {
   document.removeEventListener('DOMContentLoaded', slideshow_init);
-  style_load_styles();
+  DisplaySettings.loadStyles();
   slideshow_append_slides(slideshow_maybe_show_all_read, true);
 }
 
