@@ -682,7 +682,7 @@ function options_on_unsubscribe_click(event) {
     return;
   }
 
-  unsubscribe(feedId, options_on_unsubscribe);
+  SubscriptionManager.unsubscribe(feedId, options_on_unsubscribe);
 }
 
 // TODO: do i react to the cross-window message event, or do I react
