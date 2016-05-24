@@ -5,8 +5,6 @@
 'use strict';
 
 // Feed routines
-// Requires: /src/url.js
-
 const Feed = {};
 
 Feed.findById = function(connection, id, callback) {

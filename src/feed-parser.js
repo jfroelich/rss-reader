@@ -14,7 +14,6 @@ const FeedParser = {};
 // Lib for unmarshalling an xml document into a feed object. The values stored
 // in the feed object are not sanitized, and should be sanitized later by the
 // caller before rendering/storing
-// Requires: /src/string.js
 
 // Unmarshall an xml document into a feed object
 FeedParser.parse = function(document) {

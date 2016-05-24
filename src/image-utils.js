@@ -4,8 +4,6 @@
 
 'use strict';
 
-// Requires: /lib/async.js
-
 const ImageUtils = {};
 
 // Given a document, ensure that the width and height of each image element is

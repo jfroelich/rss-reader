@@ -4,13 +4,7 @@
 
 'use strict';
 
-
-// Requires: /lib/URI.js
-// Requires: /src/db.js
-// Requires: /src/entry.js
-
 const utils = {};
-
 
 // Returns a url string pointing to the favicon associated with the input
 // url string.
@@ -31,7 +25,6 @@ utils.getFavIconURLString = function(urlString) {
     return '/images/rss_icon_trans.gif';
   }
 };
-
 
 utils.array = {};
 
@@ -154,7 +147,6 @@ utils.showNotification = function(messageString) {
   // TODO: I think this is the on_click handler? Name it something clearer
   function callback() {}
 };
-
 
 utils.fadeElement = function(element, duration, delay, callback) {
   function fade_end(callback, element, event) {

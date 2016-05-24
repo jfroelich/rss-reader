@@ -8,9 +8,6 @@
 // Google formally deprecated this service. Around December 1st, 2015, I
 // first noticed that the queries stopped working. However, I have witnessed
 // the service occassionally work thereafter.
-// Requires: /src/html.js
-// Requires: /src/utils.js
-
 const GoogleFeedsAPI = {};
 
 // Sends an async request to Google to search for feeds that correspond to

@@ -4,8 +4,6 @@
 
 'use strict';
 
-// Requires: /src/feed-parser.js
-
 // TODO: the post-processing where i clean up entries should not be done here,
 // it should be the caller's responsibility, it is not intrinsic to this
 // function's purpose, improper separation of concerns

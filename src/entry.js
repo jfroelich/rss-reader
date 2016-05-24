@@ -5,8 +5,6 @@
 'use strict';
 
 // Entry related functions
-// Requires: /src/db.js
-// Requires: /src/utils.js
 
 const Entry = {};
 

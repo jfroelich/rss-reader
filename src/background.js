@@ -8,10 +8,6 @@
 // listeners in global scope, so this file should only be included in the
 // background.
 
-// Requires: /src/db.js
-// Requires: /src/poll.js
-// Requires: /src/entry.js
-
 const Background = {};
 
 // TODO: this is getting called on every background page load. I would

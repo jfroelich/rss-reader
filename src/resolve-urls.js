@@ -16,7 +16,6 @@
 // all urls are absolute then leaving in base has no effect. it is only the
 // caller in poll.js that is concerned about prepping
 // the document for render and caring about removing base elements
-
 // TODO: use the new URL class and stop using the URI lib
 
 const URLResolver = {};

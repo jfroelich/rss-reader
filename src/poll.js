@@ -9,16 +9,6 @@
 // or maybe make a function that generates the initial request at least, and
 // then do the iteration (e.g. db_get_feeds_request)
 // TODO: do not augment certain urls, such as links to google groups pages
-
-// Requires: /lib/async.js
-// Requires: /lib/parse-srcset.js
-// Requires: /src/db.js
-// Requires: /src/image.js
-// Requires: /src/fetch-feed.js
-// Requires: /src/resolve-urls.js
-// Requires: /src/utils.js
-
-
 const FeedPoller = {};
 
 

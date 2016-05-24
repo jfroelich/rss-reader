@@ -4,17 +4,6 @@
 
 'use strict';
 
-// Requires: /src/db.js
-// Requires: /src/dom.js
-// Requires: /src/fade-element.js
-// Requires: /src/favicon.js
-// Requires: /src/html.js
-// Requires: /src/net.js
-// Requires: /src/opml.js
-// Requires: /src/string.js
-// Requires: /src/subscription.js
-// Requires: /src/url.js
-
 // TODO: what are these? elements? ints? use clearer names
 // TODO: maybe make an OptionsMenu class and have these be member variables
 let options_currentMenuItem = null;

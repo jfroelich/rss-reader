@@ -5,10 +5,6 @@
 'use strict';
 
 // Lib for importing and exporting opml files
-// Requires: /src/db.js
-// Requires: /src/html-utils.js
-// Requires: /src/utils.js
-
 const OPML = {};
 
 // Parses a string containing xml into an document. The document is

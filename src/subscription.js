@@ -11,6 +11,7 @@
 const SubscriptionManager = {};
 
 // TODO: move functionality out of options and into here
+// TODO: opml-import should also use this to import feeds
 SubscriptionManager.subscribe = function() {
   throw new Error('Not yet implemented');
 };

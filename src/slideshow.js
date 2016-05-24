@@ -23,7 +23,6 @@
 
 let slideshow_currentSlide = null;
 
-
 // Moves source's child nodes to destination. Assumes source and destination
 // are defined elements.
 function slideshow_append_children(sourceElement, destinationElement) {
