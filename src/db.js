@@ -11,8 +11,8 @@ const db = {};
 // TODO: just store scheme and schemeless props as parts of a url object
 // property? remember that indexeddb can access deeper props using '.' in
 // keypaths.
-// TODO: store urls as URL objects
-// https://developer.mozilla.org/en-US/docs/Web/API/URL/URL
+// TODO: look into whether URL objects can be stored as object properties,
+// as in, do URL objects work with the structured cloning algorithm
 
 // Open a database connection. The callback receives the request event.
 db.open = function(callback) {
@@ -101,32 +101,31 @@ db.upgrade = function(event) {
   }
 };
 
-// Removes all entry objects from the entry object store
 db.clearEntryStore = function(connection) {
   if(connection) {
-    clear_entries(connection);
+    clearEntries(connection);
   } else {
-    db.open(on_open);
+    db.open(onOpen);
   }
 
-  function on_open(event) {
+  function onOpen(event) {
     if(event.type !== 'success') {
       console.debug(event);
       return;
     }
 
     const connection = event.target.result;
-    clear_entries(connection);
+    clearEntries(connection);
   }
 
-  function clear_entries(connection) {
+  function clearEntries(connection) {
     const transaction = connection.transaction('entry', 'readwrite');
-    transaction.oncomplete = on_complete;
+    transaction.oncomplete = onComplete;
     const store = transaction.objectStore('entry');
     store.clear();
   }
 
-  function on_complete(event) {
+  function onComplete(event) {
     console.log('Cleared entry object store');
   }
 };
