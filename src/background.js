@@ -33,31 +33,22 @@ chrome.runtime.onInstalled.addListener(Background.onInstalled);
 
 // Called by Chrome when an alarm wakes up
 Background.onAlarm = function(alarm) {
-  const alarmName = alarm.name;
-  if(alarmName === Background.ARCHIVE_ALARM_NAME) {
-
-    // Temp, testing. For some reason it feels like this is never run, but
-    // i tested the funciton directly and it works, so my best guess is that
-    // it is somehow not being called
-    console.debug('Received archive alarm wakeup, calling archiveEntries');
-
+  if(alarm.name === 'archiveAlarm') {
+    // TODO: test whether there is ever called, testing with a temporary
+    // local storage variable
+    localStorage.ARCHIVE_ALARM_WOKEUP = '' + Date.now();
     Background.archiveEntries();
-  } else if(alarmName === Background.POLL_ALARM_NAME) {
+  } else if(alarm.name === 'pollAlarm') {
     FeedPoller.start();
   }
 };
 
-Background.ARCHIVE_ALARM_NAME = 'archive';
-Background.POLL_ALARM_NAME = 'poll';
-
-chrome.alarms.create(Background.ARCHIVE_ALARM_NAME,
-  {'periodInMinutes': 24 * 60});
-chrome.alarms.create(Background.POLL_ALARM_NAME, {'periodInMinutes': 20});
+chrome.alarms.create('archiveAlarm', {'periodInMinutes': 24 * 60});
+chrome.alarms.create('pollAlarm', {'periodInMinutes': 20});
 chrome.alarms.onAlarm.addListener(Background.onAlarm);
 
 // Respond to a click on the extension's icon in Chrome's extension toolbar
 Background.onBadgeClick = function() {
-
   const VIEW_URL = chrome.extension.getURL('slides.html');
 
   // TODO: Something went wrong upgrading from chrome 48 to 49. The query finds
@@ -68,14 +59,13 @@ Background.onBadgeClick = function() {
   // because this was working for over a year.
   // For now, I've disabled the ability to simply re-focus the existing tab and
   // I simply open a new tab each time.
-  //chrome.tabs.query({'url': viewURL}, onQueryForViewTab);
+  // chrome.tabs.query({'url': viewURL}, onQueryForViewTab);
 
   const initialTabSettings = {'url': VIEW_URL};
   chrome.tabs.create(initialTabSettings);
 
   function onQueryForViewTab(tabsArray) {
-    const didFindOpenViewTab = !!tabsArray.length;
-    if(didFindOpenViewTab) {
+    if(tabsArray.length) {
       const existingTab = tabsArray[0];
       const newSettingsForExistingTab = {'active': true};
       chrome.tabs.update(existingTab.id, newSettingsForExistingTab);
@@ -87,9 +77,7 @@ Background.onBadgeClick = function() {
   }
 
   function onQueryForNewTab(tabsArray) {
-    const didFindNewTab = !!tabsArray.length;
-
-    if(didFindNewTab) {
+    if(tabsArray.length) {
       const existingTab = tabsArray[0];
       const newSettingsForExistingTab = {
         'active': true,
@@ -105,31 +93,29 @@ Background.onBadgeClick = function() {
 
 chrome.browserAction.onClicked.addListener(Background.onBadgeClick);
 
-// Archives certain read entries
-// TODO: i have a more general idea about dealing with the situation where I
-// subscribe to a lot of feeds and then do not bother to read everything and
-// so the unread count starts to pile up. I could phase out various entries
-// over time. Basically you would have a window in which to read entries, and
-// after some point if the entry is still unread, it will never be read because
-// it is probably out dated or no longer of interest, at which point it makes
-// sense to remove it. So maybe I also want to check for unread entries that
-// are very old and do something to them. From this perspective maybe it does
-// make sense to use two flags (archiveState and readState) instead of one
-// flag, because this way I can differentiate entries that were never read
-// from those that were read once those entries are archived. Also, I still
-// have some reservations about this, because I don't like the anxiety it
-// causes me simply for not constantly reading. I don't want to feel like I
-// just magically completely missed out on an important article. Another note,
-// is that if I ever implement the history view, I have to be careful about
-// what data I should retain.
+// Archives certain entries
 Background.archiveEntries = function() {
   console.log('Archiving entries');
+
+  // Tracking variables that are shared by the nested helper functions
+  // and used to log stats
   let processedEntryCount = 0, archivedEntryCount = 0;
+
+  // An entry is considered archivable if it was created more than 10 days
+  // ago, among other factors.
+  // TODO: it would be cool if this could read in a property set in
+  // manifest.js regarding the expiration period instead of hard coding a
+  // preference.
+  const EXPIRES_AFTER_MS = 10 * 24 * 60 * 60 * 1000;
+
   db.open(onConnect);
 
   function onConnect(event) {
     // NOTE: there can be normal cases where this happens. For example, if
     // the request is blocked
+    // TODO: should this still call on complete? Should oncomplete accept
+    // a parameter indicating success or failure?
+    // TODO: rather than log the event, log the error. Is that event.error?
     if(event.type !== 'success') {
       console.debug(event);
       return;
@@ -142,60 +128,54 @@ Background.archiveEntries = function() {
     const index = store.index('archiveState-readState');
     const keyPath = [Entry.Flags.UNARCHIVED, Entry.Flags.READ];
     const request = index.openCursor(keyPath);
-    request.onsuccess = archiveNextEntry;
-  }
-
-  function onComplete(event) {
-    console.log('Archived %s of %s entries', archivedEntryCount,
-      processedEntryCount);
+    request.onsuccess = processEntryAtCursor;
   }
 
   // Check if the entry at the current cursor position should be archived, and
   // if so, archive it, and then proceed to the next entry.
-  function archiveNextEntry(event) {
+  // TODO: access dateCreated once field is renamed
+  // TODO: the object will be a Date object once I make other changes so
+  // the calculation here needs to change to compare two date objects
+  function processEntryAtCursor(event) {
     const request = event.target;
     const cursor = request.result;
-
-    // Either no entries found or completed iteration
-    if(!cursor) {
-      return;
+    if(cursor) {
+      processedEntryCount++;
+      const entry = cursor.value;
+      const ageInMillis = Date.now() - entry.created;
+      if(ageInMillis > EXPIRES_AFTER_MS) {
+        archiveEntry(entry);
+      }
+      cursor.continue();
     }
+  }
 
-    processedEntryCount++;
+  function archiveEntry(cursor, entry) {
 
-    // 10 days
-    // TODO: it would be cool if this could read in a property set in
-    // manifest.js regarding the expiration period instead of hard coding a
-    // preference.
-    const EXPIRES_AFTER_MS = 10 * 24 * 60 * 60 * 1000;
+    // This was just for testing, it does seem to work, so commented out
+    // console.debug('Archiving entry', entry.id);
 
-    const entry = cursor.value;
+    // TODO: I should probably integrate toArchivableEntry into this function
+    // now that it exists and is the sole caller and given how simple
+    // toArchivableEntry is
+    const newEntry = toArchivableEntry(entry);
 
-    // TODO: access dateCreated once field is renamed
-    // TODO: the object will be a Date object once I make other changes so
-    // the calculation here needs to change to compare two date objects
+    // Note that IDBCursor.prototype.update is async. I am not waiting for
+    // it to complete here before continuing.
+    cursor.update(newEntry);
+    // NOTE: this is called prior to the update request completing, meaning
+    // listeners are notified while the request is still pending, and even if
+    // it may somehow be unsuccessful
+    sendArchiveNotification(entry);
+    archivedEntryCount++;
+  }
 
-    const ageInMillis = Date.now() - entry.created;
-    const shouldArchiveEntry = ageInMillis > EXPIRES_AFTER_MS;
-
-    if(shouldArchiveEntry) {
-      console.debug('Archiving entry', entry.id);
-      const newEntry = toArchivableEntry(entry);
-
-      // Trigger a new request but do not wait for it to complete
-      const asyncUpdateRequest = cursor.update(newEntry);
-
-      // Notify listeners of the state change (even if its still pending)
-      const archiveMessage = {
-        'type': 'archivedEntry',
-        'entryId': entry.id
-      };
-      chrome.runtime.sendMessage(archiveMessage);
-
-      archivedEntryCount++;
-    }
-
-    cursor.continue();
+  function sendArchiveNotification(entry) {
+    const archiveMessage = {
+      'type': 'archivedEntry',
+      'entryId': entry.id
+    };
+    chrome.runtime.sendMessage(archiveMessage);
   }
 
   // Returns an entry object suitable for storage. This contains only those
@@ -240,5 +220,10 @@ Background.archiveEntries = function() {
     outputEntry.archiveState = Entry.Flags.ARCHIVED;
 
     return outputEntry;
+  }
+
+  function onComplete(event) {
+    console.log('Archived %s of %s entries', archivedEntryCount,
+      processedEntryCount);
   }
 };
