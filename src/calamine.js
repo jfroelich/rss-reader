@@ -117,7 +117,7 @@ Calamine.deriveAncestorBias = function(element) {
   let totalBias = 0;
   let bias = 0;
 
-  // Walk the child elements and sum up the each child's bias
+  // Walk the child elements and sum up each child's bias
   for(let childElement = element.firstElementChild; childElement;
     childElement = childElement.nextElementSibling) {
     bias = Calamine.ANCESTOR_BIAS[childElement.nodeName];
@@ -137,12 +137,11 @@ Calamine.deriveAncestorBias = function(element) {
   return 0.0 + totalBias;
 };
 
-// TODO: if I stop using the fast path of find-signature and I return to
-// individually weighting blocks, I should expand this list.
 // If one of these tokens is found in an attribute value of an element,
 // these bias the element's boilerplate score. A higher score means that the
-// element is more likely to be content. This list was gathered empirically and
-// the weighting was chosen empirically.
+// element is more likely to be content. This list was created empirically.
+// TODO: if I stop using the fast path of find-signature and I return to
+// individually weighting blocks, I should expand this list.
 Calamine.ATTRIBUTE_TOKEN_WEIGHTS = {
   'ad': -500,
   'ads': -500,
@@ -190,26 +189,24 @@ Calamine.deriveAttributeBias = function(element) {
   // declares that such values should not contain spaces. On the other hand,
   // what about hyphen or underscore separated terms? If they do not need to
   // be tokenized they could become the first two entries in the token array.
-  // I guess it is a question of comparing the desired accuray to the desired
+  // I guess it is a question of comparing the desired accuracy to the desired
   // performance.
+
   // Start by merging the element's interesting attribute values into a single
   // string in preparation for tokenization.
   // Accessing attributes by property is faster than using getAttribute. It
   // turns out that getAttribute is horribly slow in Chrome. I have not figured
   // out why, and I have not figured out a workaround. I forgot to record the
-  // testing or cite here. The one workaround I thought of was calling
-  // element.outerHTML, parsing the element's tag text, parsing its attributes,
-  // and doing it all myself. My suspicion is that would be even slower.
-  // TODO: test if using hasAttribute speeds it up?
+  // testing or cite here.
   var valuesArray = [element.id, element.name, element.className];
 
   // Array.prototype.join implicitly filters null/undefined values so we do not
   // need to check if the property values are defined.
   var valuesString = valuesArray.join(' ');
 
-  // If the element did not have any values for the attributes checked,
-  // then values will only contain a small string of spaces or some negligible
-  // token so we exit early to minimize the work done.
+  // If the element did not have attribute values, then the valuesString
+  // variable will only contain whitespace or some negligible token so we exit
+  // early to minimize the work done.
   if(valuesString.length < 3) {
     // TODO: maybe this should return 0 if coercion is the caller's
     // responsibility.
@@ -222,7 +219,7 @@ Calamine.deriveAttributeBias = function(element) {
   // Lowercase the values in one pass. Even though toLowerCase now has to
   // consider extra spaces in its input because it occurs after the join, we
   // don't have to check if inputs are defined non-natively because join did
-  // that for us. Also, this is one function call in constrast to 3. toLowerCase
+  // that for us. Also, this is one function call in contrast to 3. toLowerCase
   // scales better with larger strings that the JS engine scales with function
   // calls.
   var lowerCaseValuesString = valuesString.toLowerCase();
@@ -236,11 +233,12 @@ Calamine.deriveAttributeBias = function(element) {
   // two passes, with the first pass generating a new array of distinct tokens,
   // and the second pass summing up the distinct token biases. I seem to get
   // better performance without creating an intermediate array.
+
   // Avoid calculating loop length per iteration as it is invariant
   var tokenArrayLength = tokenArray.length;
 
   // The set of seen token strings. I am using a plain object instead of a
-  // Set due to performance.
+  // Set due to performance issues.
   var seenTokenSet = {};
 
   var totalBias = 0;
@@ -287,12 +285,12 @@ Calamine.CANDIDATE_SELECTOR = [
 Calamine.LIST_SELECTOR = 'LI, OL, UL, DD, DL, DT';
 Calamine.NAV_SELECTOR = 'ASIDE, HEADER, FOOTER, NAV, MENU, MENUITEM';
 
-// Scores each of the candidate elements and returns the one with
-// the highest score
+// Scores each of the candidate elements and returns the one with the highest
+// score
 Calamine.findHighestScoringElement = function(document) {
 
-  // Init to documentElement. This ensures we always return something and
-  // also sets documentElement as the default best element.
+  // Init to documentElement. This ensures we always return something and also
+  // sets documentElement as the default best element.
   let bestElement = document.documentElement;
 
   const bodyElement = document.body;
