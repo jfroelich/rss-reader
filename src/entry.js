@@ -146,6 +146,10 @@ Entry.markAsRead = function(connection, entryId) {
     }
 
     entry.readState = Entry.Flags.READ;
+
+    // TODO: double check this is storing a date correctly. Perhaps it is a
+    // bug in Chrome's resource view, but dates show up as "{}"
+
     entry.dateRead = new Date();
 
     // Trigger an update request. Do not wait for it to complete.
