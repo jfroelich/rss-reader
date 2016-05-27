@@ -16,7 +16,11 @@
 // all urls are absolute then leaving in base has no effect. it is only the
 // caller in poll.js that is concerned about prepping
 // the document for render and caring about removing base elements
-// TODO: use the new URL class and stop using the URI lib
+
+// TODO: i should not even trying to resolve javascript urls, i think, so it
+// may be worthwhile to filter those out of the document before resolving
+// link urls
+
 
 const URLResolver = {};
 
@@ -38,31 +42,31 @@ URLResolver.removeBaseElements = function(document) {
 };
 
 URLResolver.URL_ATTRIBUTE_MAP = {
-  'a': 'href',
-  'applet': 'codebase',
-  'area': 'href',
-  'audio': 'src',
-  'base': 'href',
-  'blockquote': 'cite',
-  'body': 'background',
-  'button': 'formaction',
-  'del': 'cite',
-  'embed': 'src',
-  'frame': 'src',
-  'head': 'profile',
-  'html': 'manifest',
-  'iframe': 'src',
-  'form': 'action',
-  'img': 'src',
-  'input': 'src',
-  'ins': 'cite',
-  'link': 'href',
-  'object': 'data',
-  'q': 'cite',
-  'script': 'src',
-  'source': 'src',
-  'track': 'src',
-  'video': 'src'
+  'A': 'href',
+  'APPLET': 'codebase',
+  'AREA': 'href',
+  'AUDIO': 'src',
+  'BASE': 'href',
+  'BLOCKQUOTE': 'cite',
+  'BODY': 'background',
+  'BUTTON': 'formaction',
+  'DEL': 'cite',
+  'EMBED': 'src',
+  'FRAME': 'src',
+  'HEAD': 'profile',
+  'HTML': 'manifest',
+  'IFRAME': 'src',
+  'FORM': 'action',
+  'IMG': 'src',
+  'INPUT': 'src',
+  'INS': 'cite',
+  'LINK': 'href',
+  'OBJECT': 'data',
+  'Q': 'cite',
+  'SCRIPT': 'src',
+  'SOURCE': 'src',
+  'TRACK': 'src',
+  'VIDEO': 'src'
 };
 
 URLResolver.generateSelectorPart = function(key) {
@@ -76,17 +80,21 @@ URLResolver.ELEMENT_SELECTOR = Object.keys(URLResolver.URL_ATTRIBUTE_MAP).map(
 // srcset, I would rather be iterating over all elements, or iterate over
 // srcset elements separately.
 
-URLResolver.modifyAllURLAttributes = function(document, baseURL) {
+URLResolver.modifyAllURLAttributes = function(document, baseURLString) {
+
+  // Create a URL object of the base url string once here. resolveURL now
+  // expects a URL object.
+  const baseURL = new URL(baseURLString);
+
   // Note this is not restricted to elements in the body, because there
   // are resolvable elements in the head, and <html> itself has a
   // resolvable attribute.
-
   const elements = document.querySelectorAll(URLResolver.ELEMENT_SELECTOR);
   const numElements = elements.length;
-  for(let i = 0, element, attribute, originalURL,
-    resolvedURL; i < numElements; i++) {
+  for(let i = 0, element, attribute, originalURL, resolvedURL; i < numElements;
+    i++) {
     element = elements[i];
-    attribute = URLResolver.URL_ATTRIBUTE_MAP[element.localName];
+    attribute = URLResolver.URL_ATTRIBUTE_MAP[element.nodeName];
     originalURL = element.getAttribute(attribute).trim();
     resolvedURL = URLResolver.resolveURL(baseURL, originalURL);
 
@@ -95,28 +103,23 @@ URLResolver.modifyAllURLAttributes = function(document, baseURL) {
     }
 
     // Resolve srcsets
-    if((element.localName === 'img' || element.localName === 'source') &&
+    if((element.nodeName === 'IMG' || element.nodeName === 'SOURCE') &&
       element.hasAttribute('srcset')) {
       URLResolver.resolveSrcSet(baseURL, element);
     }
   }
 };
 
-// TODO: maybe reverse argument order?
-// TODO: i am not sure yet but I think the built in URL object added to
-// javascript can now do this for me, maybe I don't need the URI lib!
-URLResolver.resolveURL = function(baseURL, url) {
+// TODO: do I even need the try catch? Do I even need this function?
+URLResolver.resolveURL = function(baseURL, urlString) {
   try {
-    const uri = new URI(url);
-    if(!uri.protocol()) {
-      const resolved = uri.absoluteTo(baseURL).toString();
-      return resolved;
-    }
+    const url = new URL(urlString, baseURL);
+    return url.href;
   } catch(exception) {
-    console.debug('Exception resolving url "%s": %o', url, exception);
+    console.debug(exception.message || exception, baseURL, urlString);
   }
 
-  return url;
+  return urlString;
 };
 
 // Access an element's srcset attribute, parses it into an array of

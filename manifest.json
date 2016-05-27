@@ -15,8 +15,6 @@
     "scripts": [
       "/lib/async.js",
       "/lib/parse-srcset.js",
-      "/lib/URI.js",
-      "/lib/utf8.js",
       "/src/background.js",
       "/src/db.js",
       "/src/entry.js",
