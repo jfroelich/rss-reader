@@ -4,6 +4,8 @@
 
 'use strict';
 
+// TODO: remove preview feature
+
 const OptionsPage = {};
 
 // TODO: what are these? elements? ints? use clearer names
@@ -327,10 +329,16 @@ OptionsPage.hideSubscriptionPreview = function() {
 
 // TODO: this should be calling out to a function in subscription.js and
 // delegating most of its logic to that function.
+
+// TODO: if the parameter is a url, treat it like a URL. Wrap it in a URL
+// object. This will also explicitly test validity, meaning I don't need to
+// check again. In fact maybe this function should only accept a URL
+// object as input.
+
 OptionsPage.startSubscription = function(url) {
   OptionsPage.hideSubscriptionPreview();
 
-  if(!utils.url.isValid(url)) {
+  if(!utils.url.isURLString(url)) {
     OptionsPage.showErrorMessage('Invalid url "' + url + '".');
     return;
   }
@@ -354,6 +362,9 @@ OptionsPage.startSubscription = function(url) {
 
     const connection = event.target.result;
     const boundOnFindFeed = on_find_feed.bind(null, connection);
+
+    // This is the only place that calls this function apparently? Strange,
+    // I thought that I would also be checking this in other places.
     Feed.findByURL(connection, url, boundOnFindFeed);
   }
 
@@ -501,11 +512,14 @@ OptionsPage.onSubscriptionFormSubmit = function(event) {
 
   const queryElement = document.getElementById('subscribe-discover-query');
 
-  var query = queryElement.value;
-  query = query || '';
-  query = query.trim();
+  // TODO: do not use var
+  // TODO: rename query to queryString for clarity
 
-  if(!query) {
+  let queryString = queryElement.value;
+  queryString = queryString || '';
+  queryString = queryString.trim();
+
+  if(!queryString) {
     return false;
   }
 
@@ -537,15 +551,15 @@ OptionsPage.onSubscriptionFormSubmit = function(event) {
 
   // If the query is a url, subscribe to the url. Otherwise, use the Google
   // Feeds api to do a search for matching feeds.
-  if(utils.url.isValid(query)) {
+  if(utils.url.isURLString(queryString)) {
     // Start subscribing
     OptionsPage.hideElement(progressElement);
     queryElement.value = '';
-    OptionsPage.showSubscriptionPreview(query);
+    OptionsPage.showSubscriptionPreview(queryString);
   } else {
     // Show search results
     OptionsPage.showElement(progressElement);
-    GoogleFeedsAPI.search(query, 5000, OptionsPage.onDiscoverComplete);
+    GoogleFeedsAPI.search(queryString, 5000, OptionsPage.onDiscoverComplete);
   }
 
   // Indicate that the normal form submit behavior should be prevented

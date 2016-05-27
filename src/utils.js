@@ -309,25 +309,36 @@ utils.string.normalizeSpaces = function(inputString) {
   });
 };
 
-// TODO: maybe I can now use the builtin URL object to do these url utility
-// functions and avoid using the URI lib
 utils.url = {};
 
-// Returns a url string without its protocol
+// Returns a substring of the input url string, excluding the protocol and
+// also excluding '://'
+// TODO: Maybe I do not need to exclude the '//'. On the one hand, I know that
+// this means 2 less characters stored per field of each entry object, and 2
+// less characters involved in url comparisons. On the other hand, the more
+// formal specs and such seem to include the '//' as a part of the rest of the
+// url
 utils.url.filterProtocol = function(urlString) {
-  const uri = new URI(urlString);
-  uri.protocol('');
-  // Remove the leading slashes
-  return uri.toString().substring(2);
+  // NOTE: i have to be careful about throwing exceptions, i am not sure
+  // that all the calling contexts account for that possibility, this could
+  // totally mess up some of the async code?
+  // So, what should be the behavior in the event the urlString is invalid
+  // or is relative? Should this just return the original string?
+  const urlObject = new URL(urlString);
+  // The 2 is for the '//'
+  const offset = urlObject.protocol.length + 2;
+  return urlObject.href.substr(offset);
 };
 
-
-// Returns true if the url is minimally valid
-utils.url.isValid = function(urlString) {
+// Returns whether the given string looks like a URL
+utils.url.isURLString = function(inputString) {
   try {
-    let uri = URI(urlString);
-    return uri && uri.protocol() && uri.hostname();
-  } catch(exception) { }
+    new URL(inputString);
+    return true;
+  } catch(exception) {
+    console.debug(exception.message || exception);
+  }
+  return false;
 };
 
 // Applies a set of rules to a url string and returns a modified url string
