@@ -4,51 +4,37 @@
 
 'use strict';
 
+const OptionsPage = {};
+
 // TODO: what are these? elements? ints? use clearer names
 // TODO: maybe make an OptionsMenu class and have these be member variables
-let options_currentMenuItem = null;
-let options_currentSection = null;
+OptionsPage.currentMenuItem = null;
+OptionsPage.currentSection = null;
 
-function options_hide_element(element) {
+OptionsPage.hideElement = function(element) {
   element.style.display = 'none';
-}
+};
 
-function options_show_element(element) {
+OptionsPage.showElement = function(element) {
   element.style.display = 'block';
-}
+};
 
-function options_add_class(element, classNameString) {
+OptionsPage.addClass = function(element, classNameString) {
   element.classList.add(classNameString);
-}
+};
 
-function options_remove_class(element, classNameString) {
+OptionsPage.removeClass = function(element, classNameString) {
   element.classList.remove(classNameString);
-}
+};
 
-function options_is_element_visible(element) {
+OptionsPage.isElementVisible = function(element) {
   return element.style.display === 'block';
-}
+};
 
-// Hides the error message
-// TODO: maybe make an OptionsPageErrorMessage class and have this be
-// a member function.
-function options_hide_error() {
-  const errorMessage = document.getElementById('options_error_message');
-  if(!errorMessage) {
-    return;
-  }
-
-  const dismissButton = document.getElementById(
-    'options_dismiss_error_button');
-  if(dismissButton) {
-    dismissButton.removeEventListener('click', options_hide_error);
-  }
-
-  errorMessage.remove();
-}
-
-function options_show_error(messageString, fadeIn) {
-  options_hide_error();
+// TODO: maybe make an OptionsPageErrorMessage class and have show and
+// hide be member functions?
+OptionsPage.showErrorMessage = function(messageString, shouldFadeIn) {
+  OptionsPage.hideErrorMessage();
 
   const errorWidgetElement = document.createElement('div');
   errorWidgetElement.setAttribute('id','options_error_message');
@@ -60,25 +46,40 @@ function options_show_error(messageString, fadeIn) {
   const dismissButton = document.createElement('button');
   dismissButton.setAttribute('id', 'options_dismiss_error_button');
   dismissButton.textContent = 'Dismiss';
-  dismissButton.onclick = options_hide_error;
+  dismissButton.onclick = OptionsPage.hideErrorMessage;
   errorWidgetElement.appendChild(dismissButton);
 
-  if(fadeIn) {
+  if(shouldFadeIn) {
     errorWidgetElement.style.opacity = '0';
     document.body.appendChild(errorWidgetElement);
     utils.fadeElement(container, 1, 0);
   } else {
     errorWidgetElement.style.opacity = '1';
-    options_show_element(errorWidgetElement);
+    OptionsPage.showElement(errorWidgetElement);
     document.body.appendChild(errorWidgetElement);
   }
-}
+};
+
+// TODO: maybe make an OptionsPageErrorMessage class and have this be
+// a member function.
+OptionsPage.hideErrorMessage = function() {
+  const errorMessage = document.getElementById('options_error_message');
+  if(errorMessage) {
+    const dismissButton = document.getElementById(
+      'options_dismiss_error_button');
+    if(dismissButton) {
+      dismissButton.removeEventListener('click', OptionsPage.hideErrorMessage);
+    }
+
+    errorMessage.remove();
+  }
+};
 
 // TODO: instead of removing and re-adding, reset and reuse
 // TODO: maybe make an OptionsSubscriptionMonitor class and have this just be
 // a member function. Call it a widget.
-function options_show_sub_monitor() {
-  options_reset_sub_monitor();
+OptionsPage.showSubscriptionMonitor = function() {
+  OptionsPage.resetSubscriptionMonitor();
 
   const monitorElement = document.createElement('div');
   monitorElement.setAttribute('id', 'options_subscription_monitor');
@@ -88,17 +89,17 @@ function options_show_sub_monitor() {
   const progressElement = document.createElement('progress');
   progressElement.textContent = 'Working...';
   monitorElement.appendChild(progressElement);
-}
+};
 
-function options_reset_sub_monitor() {
+OptionsPage.resetSubscriptionMonitor = function() {
   const monitorElement = document.getElementById(
     'options_subscription_monitor');
   if(monitorElement) {
     monitorElement.remove();
   }
-}
+};
 
-function options_update_sub_monitor(messageString) {
+OptionsPage.updateSubscriptionMonitorMessage = function(messageString) {
   const monitorElement = document.getElementById(
     'options_subscription_monitor');
   if(!monitorElement) {
@@ -109,9 +110,9 @@ function options_update_sub_monitor(messageString) {
   const messageElement = document.createElement('p');
   messageElement.textContent = messageString;
   monitorElement.appendChild(messageElement);
-}
+};
 
-function options_hide_sub_monitor(callback, fadeOut) {
+OptionsPage.hideSubscriptionMonitor = function(callback, fadeOut) {
   const monitorElement = document.getElementById(
     'options_subscription_monitor');
 
@@ -123,12 +124,12 @@ function options_hide_sub_monitor(callback, fadeOut) {
   }
 
   if(fadeOut) {
-    utils.fadeElement(monitorElement, 2, 1, remove_then_call_callback);
+    utils.fadeElement(monitorElement, 2, 1, removeThenCallCallback);
   } else {
-    remove_then_call_callback();
+    removeThenCallCallback();
   }
 
-  function remove_then_call_callback() {
+  function removeThenCallCallback() {
     if(monitorElement) {
       monitorElement.remove();
     }
@@ -137,9 +138,9 @@ function options_hide_sub_monitor(callback, fadeOut) {
       callback();
     }
   }
-}
+};
 
-function options_show_section(menuItem) {
+OptionsPage.showSection = function(menuItem) {
   // TODO: maybe do not check for this? Should just fail if I forgot to set it
   // somewhere.
   if(!menuItem) {
@@ -147,41 +148,42 @@ function options_show_section(menuItem) {
   }
 
   // Do nothing if not switching.
-  if(options_currentMenuItem === menuItem) {
+  if(OptionsPage.currentMenuItem === menuItem) {
     return;
   }
 
   // Make the previous item appear de-selected
-  if(options_currentMenuItem) {
-    options_remove_class(options_currentMenuItem, 'navigation-item-selected');
+  if(OptionsPage.currentMenuItem) {
+    OptionsPage.removeClass(OptionsPage.currentMenuItem,
+      'navigation-item-selected');
   }
 
   // Hide the old section
-  if(options_currentSection) {
-    options_hide_element(options_currentSection);
+  if(OptionsPage.currentSection) {
+    OptionsPage.hideElement(OptionsPage.currentSection);
   }
 
   // Make the new item appear selected
-  options_add_class(menuItem, 'navigation-item-selected');
+  OptionsPage.addClass(menuItem, 'navigation-item-selected');
 
   // Show the new section
   const sectionId = menuItem.getAttribute('section');
   const sectionElement = document.getElementById(sectionId);
   if(sectionElement) {
-    options_show_element(sectionElement);
+    OptionsPage.showElement(sectionElement);
   }
 
   // Update the global tracking vars
-  options_currentMenuItem = menuItem;
-  options_currentSection = sectionElement;
-}
+  OptionsPage.currentMenuItem = menuItem;
+  OptionsPage.currentSection = sectionElement;
+};
 
 // TODO: also return the count so that caller does not need to potentially
 // do it again. Or, require count to be passed in and change this to just
 // options_set_feed_count (and create options_get_feed_count)
 // Then, also consider if options_get_feed_count should be using the UI as
 // its source of truth or should instead be using the database.
-function options_update_feed_count() {
+OptionsPage.updateFeedCount = function() {
   const feedListElement = document.getElementById('feedlist');
   const count = feedListElement.childElementCount;
 
@@ -191,10 +193,10 @@ function options_update_feed_count() {
   } else {
     countElement.textContent = ' (' + count + ')';
   }
-}
+};
 
 // TODO: rename, where is this appending?
-function options_append_feed(feed, insertedSort) {
+OptionsPage.appendFeed = function(feed, insertedSort) {
   const item = document.createElement('li');
   item.setAttribute('sort-key', feed.title);
 
@@ -203,7 +205,7 @@ function options_append_feed(feed, insertedSort) {
   // is there an alternative?
   item.setAttribute('feed', feed.id);
   item.setAttribute('title', HTMLUtils.replaceTags(feed.description) || '');
-  item.onclick = options_on_feed_list_item_click;
+  item.onclick = OptionsPage.feedListOnItemClick;
 
   var favIconElement = document.createElement('img');
   favIconElement.src = utils.getFavIconURLString(feed.link);
@@ -237,32 +239,32 @@ function options_append_feed(feed, insertedSort) {
   } else {
     feedListElement.appendChild(item);
   }
-}
+};
 
-function options_on_enable_sub_preview_change() {
+OptionsPage.enableSubscriptionPreviewOnChange = function() {
   if(this.checked)
     localStorage.ENABLE_SUBSCRIBE_PREVIEW = '1';
   else
     delete localStorage.ENABLE_SUBSCRIBE_PREVIEW;
-}
+};
 
-function options_show_sub_preview(url) {
-  options_hide_sub_preview();
+OptionsPage.showSubscriptionPreview = function(url) {
+  OptionsPage.hideSubscriptionPreview();
   if(!localStorage.ENABLE_SUBSCRIBE_PREVIEW) {
-    options_start_subscription(url);
+    OptionsPage.startSubscription(url);
     return;
   }
 
   if(!navigator.onLine) {
-    options_start_subscription(url);
+    OptionsPage.startSubscription(url);
     return;
   }
 
   const previewElement = document.getElementById('subscription-preview');
-  options_show_element(previewElement);
+  OptionsPage.showElement(previewElement);
   const progressElement = document.getElementById(
     'subscription-preview-load-progress');
-  options_show_element(progressElement);
+  OptionsPage.showElement(progressElement);
 
   // TODO: check if already subscribed before preview?
 
@@ -272,14 +274,14 @@ function options_show_sub_preview(url) {
   function onFetch(event, result) {
     if(event) {
       console.dir(event);
-      options_hide_sub_preview();
-      options_show_error('Unable to fetch' + url);
+      OptionsPage.hideSubscriptionPreview();
+      OptionsPage.showErrorMessage('Unable to fetch' + url);
       return;
     }
 
     const progressElement = document.getElementById(
       'subscription-preview-load-progress');
-    options_hide_element(progressElement);
+    OptionsPage.hideElement(progressElement);
 
     const titleElement = document.getElementById('subscription-preview-title');
     titleElement.textContent = result.title || 'Untitled';
@@ -309,11 +311,11 @@ function options_show_sub_preview(url) {
       resultsListElement.appendChild(item);
     }
   }
-}
+};
 
-function options_hide_sub_preview() {
+OptionsPage.hideSubscriptionPreview = function() {
   const previewElement = document.getElementById('subscription-preview');
-  options_hide_element(previewElement);
+  OptionsPage.hideElement(previewElement);
   const resultsListElement = document.getElementById(
     'subscription-preview-entries');
 
@@ -321,31 +323,32 @@ function options_hide_sub_preview() {
   while(resultsListElement.firstChild) {
     resultsListElement.firstChild.remove();
   }
-}
+};
 
 // TODO: this should be calling out to a function in subscription.js and
 // delegating most of its logic to that function.
-function options_start_subscription(url) {
-  options_hide_sub_preview();
+OptionsPage.startSubscription = function(url) {
+  OptionsPage.hideSubscriptionPreview();
 
   if(!utils.url.isValid(url)) {
-    options_show_error('Invalid url "' + url + '".');
+    OptionsPage.showErrorMessage('Invalid url "' + url + '".');
     return;
   }
 
-  options_show_sub_monitor();
-  options_update_sub_monitor('Subscribing...');
+  OptionsPage.showSubscriptionMonitor();
+  OptionsPage.updateSubscriptionMonitorMessage('Subscribing...');
   db.open(on_open);
 
   function on_hide_monitor_show_connection_error() {
-    options_show_error(
+    OptionsPage.showErrorMessage(
       'An error occurred while trying to subscribe to ' + url);
   }
 
   function on_open(event) {
     if(event.type !== 'success') {
       console.debug(event);
-      options_hide_sub_monitor(on_hide_monitor_show_connection_error);
+      OptionsPage.hideSubscriptionMonitor(
+        on_hide_monitor_show_connection_error);
       return;
     }
 
@@ -355,12 +358,12 @@ function options_start_subscription(url) {
   }
 
   function on_hide_monitor_show_exists_error() {
-    options_show_error('Already subscribed to ' + url + '.');
+    OptionsPage.showErrorMessage('Already subscribed to ' + url + '.');
   }
 
   function on_find_feed(connection, event) {
     if(event.target.result) {
-      options_hide_sub_monitor(on_hide_monitor_show_exists_error);
+      OptionsPage.hideSubscriptionMonitor(on_hide_monitor_show_exists_error);
       return;
     }
 
@@ -374,14 +377,14 @@ function options_start_subscription(url) {
   }
 
   function on_hide_show_fetch_error() {
-    options_show_error('An error occurred while trying to subscribe to ' +
-      url);
+    OptionsPage.showErrorMessage(
+      'An error occurred while trying to subscribe to ' + url);
   }
 
   function on_fetch_feed(connection, event, remoteFeed) {
     if(event) {
       console.dir(event);
-      options_hide_sub_monitor(on_hide_show_fetch_error);
+      OptionsPage.hideSubscriptionMonitor(on_hide_show_fetch_error);
       return;
     }
 
@@ -395,24 +398,24 @@ function options_start_subscription(url) {
 
   function on_hide_monitor_sub_completed() {
     const subSection = document.getElementById('mi-subscriptions');
-    options_show_section(subSection);
+    OptionsPage.showSection(subSection);
   }
 
   function on_subscribe(addedFeed) {
-    options_append_feed(addedFeed, true);
-    options_update_feed_count();
-    options_update_sub_monitor('Subscribed to ' + url);
-    options_hide_sub_monitor(on_hide_monitor_sub_completed, true);
+    OptionsPage.appendFeed(addedFeed, true);
+    OptionsPage.updateFeedCount();
+    OptionsPage.updateSubscriptionMonitorMessage('Subscribed to ' + url);
+    OptionsPage.hideSubscriptionMonitor(on_hide_monitor_sub_completed, true);
 
     // Show a notification
     const title = addedFeed.title || addedFeed.url;
     utils.showNotification('Subscribed to ' + title);
   }
-}
+};
 
 // TODO: show num entries, num unread/red, etc
 // TODO: react to connection error, find error
-function populateFeedDetailsSection(feedId) {
+OptionsPage.populateFeedDetails = function(feedId) {
   if(!feedId) {
     console.error('Invalid feedId');
     return;
@@ -469,9 +472,9 @@ function populateFeedDetailsSection(feedId) {
     const unsubscribeButton = document.getElementById('details-unsubscribe');
     unsubscribeButton.value = feed.id;
   }
-}
+};
 
-function options_on_feed_list_item_click(event) {
+OptionsPage.feedListOnItemClick = function(event) {
   const element = event.currentTarget;
   const feedIdString = element.getAttribute('feed');
   const feedId = parseInt(feedIdString);
@@ -481,18 +484,18 @@ function options_on_feed_list_item_click(event) {
     return;
   }
 
-  populateFeedDetailsSection(feedId);
+  OptionsPage.populateFeedDetails(feedId);
   // TODO: These calls should really be in an async callback
-  // passed to populateFeedDetailsSection
+  // passed to OptionsPage.populateFeedDetails
   const feedDetailsSection = document.getElementById('mi-feed-details');
-  options_show_section(feedDetailsSection);
+  OptionsPage.showSection(feedDetailsSection);
 
   // Ensure the details are visible. If scrolled down when viewing large
   // list of feeds, it would otherwise not be immediately visible.
   window.scrollTo(0,0);
-}
+};
 
-function options_on_subscribe_submit(event) {
+OptionsPage.onSubscriptionFormSubmit = function(event) {
   // Prevent normal form submission event
   event.preventDefault();
 
@@ -511,13 +514,13 @@ function options_on_subscribe_submit(event) {
 
   // Do nothing if still searching
   const progressElement = document.getElementById('discover-in-progress');
-  if(options_is_element_visible(progressElement)) {
+  if(OptionsPage.isElementVisible(progressElement)) {
     return false;
   }
 
   // Do nothing if subscribing
   const subMonitor = document.getElementById('options_subscription_monitor');
-  if(subMonitor && options_is_element_visible(subMonitor)) {
+  if(subMonitor && OptionsPage.isElementVisible(subMonitor)) {
     return false;
   }
 
@@ -530,26 +533,26 @@ function options_on_subscribe_submit(event) {
   // Ensure the no-results-found message, if present from a prior search,
   // is hidden. This should never happen because we exit early if it is still
   // visible above.
-  options_hide_element(progressElement);
+  OptionsPage.hideElement(progressElement);
 
   // If the query is a url, subscribe to the url. Otherwise, use the Google
   // Feeds api to do a search for matching feeds.
   if(utils.url.isValid(query)) {
     // Start subscribing
-    options_hide_element(progressElement);
+    OptionsPage.hideElement(progressElement);
     queryElement.value = '';
-    options_show_sub_preview(query);
+    OptionsPage.showSubscriptionPreview(query);
   } else {
     // Show search results
-    options_show_element(progressElement);
-    GoogleFeedsAPI.search(query, 5000, options_on_discover_complete);
+    OptionsPage.showElement(progressElement);
+    GoogleFeedsAPI.search(query, 5000, OptionsPage.onDiscoverComplete);
   }
 
   // Indicate that the normal form submit behavior should be prevented
   return false;
-}
+};
 
-function options_on_discover_subscribe_click(event) {
+OptionsPage.onDiscoverSubscriptionButtonClick = function(event) {
   const button = event.target;
   const url = button.value;
   if(!url) {
@@ -560,14 +563,14 @@ function options_on_discover_subscribe_click(event) {
 
   // Ignore future clicks while subscription in progress
   const subMonitor = document.getElementById('options_subscription_monitor');
-  if(subMonitor && options_is_element_visible(subMonitor)) {
+  if(subMonitor && OptionsPage.isElementVisible(subMonitor)) {
     return;
   }
 
-  options_show_sub_preview(url);
-}
+  OptionsPage.showSubscriptionPreview(url);
+};
 
-function options_on_discover_complete(errorEvent, query, results) {
+OptionsPage.onDiscoverComplete = function(errorEvent, query, results) {
   const progressElement = document.getElementById('discover-in-progress');
   const noResultsElement = document.getElementById('discover-no-results');
   const resultsList = document.getElementById('discover-results-list');
@@ -583,29 +586,29 @@ function options_on_discover_complete(errorEvent, query, results) {
   // and exit early.
   if(errorEvent) {
     console.debug('Discover feeds error:', errorEvent);
-    options_hide_element(progressElement);
-    options_show_error('An error occurred when searching for feeds: ' +
+    OptionsPage.hideElement(progressElement);
+    OptionsPage.showErrorMessage('An error occurred when searching for feeds: ' +
       errorEvent);
     return;
   }
 
   // Searching completed, hide the progress
-  options_hide_element(progressElement);
+  OptionsPage.hideElement(progressElement);
 
   // If there were no search results, hide the results list and show the
   // no results element and exit early.
   if(results.length < 1) {
-    options_hide_element(resultsList);
-    options_show_element(noResultsElement);
+    OptionsPage.hideElement(resultsList);
+    OptionsPage.showElement(noResultsElement);
     return;
   }
 
-  if(options_is_element_visible(resultsList)) {
+  if(OptionsPage.isElementVisible(resultsList)) {
     // Clear the previous results
     resultsList.innerHTML = '';
   } else {
-    options_hide_element(noResultsElement);
-    options_show_element(resultsList);
+    OptionsPage.hideElement(noResultsElement);
+    OptionsPage.showElement(resultsList);
   }
 
   // Add an initial count of the number of feeds as one of the feed list items
@@ -615,14 +618,14 @@ function options_on_discover_complete(errorEvent, query, results) {
   resultsList.appendChild(listItem);
 
   // Generate an array of result elements to append
-  const resultElements = results.map(options_create_search_result_item);
+  const resultElements = results.map(OptionsPage.createSearchResult);
 
   for(let i = 0, len = resultElements.length; i < len; i++) {
     resultsList.appendChild(resultElements[i]);
   }
-}
+};
 
-function options_create_search_result_item(result) {
+OptionsPage.createSearchResult = function(result) {
   const item = document.createElement('li');
 
   // Create the subscribe button for the result
@@ -630,7 +633,7 @@ function options_create_search_result_item(result) {
   button.value = result.url;
   button.title = result.url;
   button.textContent = 'Subscribe';
-  button.onclick = options_on_discover_subscribe_click;
+  button.onclick = OptionsPage.onDiscoverSubscriptionButtonClick;
   item.appendChild(button);
 
   // Show the feed's favicon
@@ -659,9 +662,9 @@ function options_create_search_result_item(result) {
   item.appendChild(span);
 
   return item;
-}
+};
 
-function options_on_unsubscribe_click(event) {
+OptionsPage.onUnsubscribeClick = function(event) {
   const unsubscribeButton = event.target;
   const feedIdString = button.value;
   const feedId = parseInt(feedIdString, 10);
@@ -671,12 +674,12 @@ function options_on_unsubscribe_click(event) {
     return;
   }
 
-  SubscriptionManager.unsubscribe(feedId, options_on_unsubscribe);
-}
+  SubscriptionManager.unsubscribe(feedId, OptionsPage.onUnsubscribe);
+};
 
 // TODO: do i react to the cross-window message event, or do I react
 // to the immediate callback?
-function options_on_unsubscribe(event) {
+OptionsPage.onUnsubscribe = function(event) {
   if(event.type === 'error') {
     // TODO: show an error message
     console.debug(event);
@@ -688,24 +691,24 @@ function options_on_unsubscribe(event) {
   const feedElement = document.querySelector(selector);
   if(item) {
     feedElement.removeEventListener('click',
-      options_on_feed_list_item_click);
+      OptionsPage.feedListOnItemClick);
     feedElement.remove();
   }
 
-  options_update_feed_count();
+  OptionsPage.updateFeedCount();
 
   // If the feed list has no items, hide it and show a message instead
   const feedListElement = document.getElementById('feedlist');
   const noFeedsElement = document.getElementById('nosubscriptions');
   if(feedListElement.childElementCount === 0) {
-    options_hide_element(feedListElement);
-    options_show_element(noFeedsElement);
+    OptionsPage.hideElement(feedListElement);
+    OptionsPage.showElement(noFeedsElement);
   }
 
   // Switch to the main view
   const sectionMenu = document.getElementById('mi-subscriptions');
-  options_show_section(sectionMenu);
-}
+  OptionsPage.showSection(sectionMenu);
+};
 
 // TODO: needs to notify the user of a successful
 // import. In the UI and maybe in a notification. Maybe also combine
@@ -716,10 +719,10 @@ function options_on_unsubscribe(event) {
 // TODO: the user needs immediate visual feedback that we are importing
 // the OPML file.
 // TODO: switch to a different section of the options ui on complete?
-function options_on_import_opml_click(event) {
+OptionsPage.importOPMLButtonOnClick = function(event) {
   const uploader = document.createElement('input');
   uploader.setAttribute('type', 'file');
-  options_hide_element(uploader);
+  OptionsPage.hideElement(uploader);
   uploader.onchange = on_uploader_change;
   document.body.appendChild(uploader);
   uploader.click();
@@ -773,13 +776,14 @@ function options_on_import_opml_click(event) {
     console.info('Completed opml import, imported %s of %s files',
       tracker.filesImported, tracker.numFiles);
   }
-}
+};
 
-function options_on_export_opml_click(event) {
-  db.open(options_on_export_opml_click_on_open);
-}
+// TODO: move the helper functions back into this function as nested functions
+OptionsPage.exportOPMLButtonOnClick = function(event) {
+  db.open(OptionsPage.exportOPMLOnOpen);
+};
 
-function options_on_export_opml_click_on_open(event) {
+OptionsPage.exportOPMLOnOpen = function(event) {
   if(event.type !== 'success') {
     // TODO: visually report the error
     console.debug('Failed to connect to database when exporting opml');
@@ -787,10 +791,10 @@ function options_on_export_opml_click_on_open(event) {
   }
 
   const connection = event.target.result;
-  Feed.getAll(connection, options_on_export_opml_click_on_get_feeds);
-}
+  Feed.getAll(connection, OptionsPage.exportOPMLOnGetFeeds);
+};
 
-function options_on_export_opml_click_on_get_feeds(feeds) {
+OptionsPage.exportOPMLOnGetFeeds = function(feeds) {
   const title = 'Subscriptions';
   const doc = OPML.createDocument(title, feeds);
 
@@ -818,105 +822,105 @@ function options_on_export_opml_click_on_get_feeds(feeds) {
   console.debug('Completed exporting %s feeds to opml file %s',
     doc.querySelectorAll('outline').length, fileName);
   // TODO: show a message?
-}
+};
 
-function options_on_enable_rewriting_change(event) {
+OptionsPage.enableURLRewritingCheckboxOnChange = function(event) {
   const checkboxElement = event.target;
   if(checkboxElement.checked) {
     localStorage.URL_REWRITING_ENABLED = '1';
   } else {
     delete localStorage.URL_REWRITING_ENABLED;
   }
-}
+};
 
-function options_on_header_font_change(event){
+OptionsPage.headerFontMenuOnChange = function(event){
   if(event.target.value)
     localStorage.HEADER_FONT_FAMILY = event.target.value;
   else
     delete localStorage.HEADER_FONT_FAMILY;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
-}
+};
 
-function options_on_header_font_size_change(event) {
+OptionsPage.headerFontSizeOnChange = function(event) {
   localStorage.HEADER_FONT_SIZE = parseInt(event.target.value) || 1;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
-}
+};
 
-function options_on_body_font_change(event) {
+OptionsPage.bodyFontMenuOnChange = function(event) {
   if(event.target.value)
     localStorage.BODY_FONT_FAMILY = event.target.value;
   else
     delete localStorage.BODY_FONT_FAMILY;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
-}
+};
 
-function options_on_column_count_change(event) {
+OptionsPage.columnCountMenuOnChange = function(event) {
   if(event.target.value)
     localStorage.COLUMN_COUNT = event.target.value;
   else
     delete localStorage.COLUMN_COUNT;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
-}
+};
 
-function options_on_body_font_size_change(event) {
+OptionsPage.bodyFontSizeOnChange = function(event) {
   localStorage.BODY_FONT_SIZE = parseInt(event.target.value) || 1;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
-}
+};
 
-function options_on_body_line_height_change(event) {
+OptionsPage.bodyLineHeightSliderOnChange = function(event) {
   localStorage.BODY_LINE_HEIGHT = event.target.value || '10';
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
-}
+};
 
-function options_on_margin_change(event) {
+OptionsPage.marginOnChange = function(event) {
   localStorage.ENTRY_MARGIN = parseInt(event.target.value) || 10;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
-}
+};
 
-function options_on_background_image_change(event) {
+OptionsPage.backgroundImageOnChange = function(event) {
   if(event.target.value)
     localStorage.BACKGROUND_IMAGE = event.target.value;
   else
     delete localStorage.BACKGROUND_IMAGE;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
-}
+};
 
-function options_on_justify_change(event) {
+OptionsPage.justifyTextCheckboxOnChange = function(event) {
   if(event.target.checked)
     localStorage.JUSTIFY_TEXT = '1';
   else
     delete localStorage.JUSTIFY_TEXT;
   chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
-}
+};
 
-function options_on_enable_notifications_change(event) {
+OptionsPage.enableNotificationsCheckboxOnChange = function(event) {
   if(event.target.checked)
     chrome.permissions.request({permissions:['notifications']}, function() {});
   else
     chrome.permissions.remove({permissions:['notifications']}, function() {});
-}
+};
 
-function options_on_enable_background_change(event) {
+OptionsPage.enableBackgroundProcessingCheckboxOnChange = function(event) {
   if(event.target.checked)
     chrome.permissions.request({permissions:['background']}, function() {});
   else
     chrome.permissions.remove({permissions:['background']}, function() {});
-}
+};
 
-function options_on_enable_idle_check_change(event) {
+OptionsPage.enableIdleCheckCheckboxOnChange = function(event) {
   if(event.target.checked)
     chrome.permissions.request({permissions:['idle']}, function(){});
   else
     chrome.permissions.remove({permissions:['idle']}, function(){});
-}
+};
 
-function options_on_nav_feed_click(event) {
+OptionsPage.onNavigationMenuFeedItemClick = function(event) {
   // Use currentTarget instead of event.target as some of the menu items have a
   // nested element that is the event.target
-  options_show_section(event.currentTarget);
-}
+  OptionsPage.showSection(event.currentTarget);
+};
 
-function options_init_sub_section() {
+OptionsPage.initSubscriptionsSection = function() {
   let feedCount = 0;
 
   db.open(on_open);
@@ -934,26 +938,27 @@ function options_init_sub_section() {
 
   function process_feed(feed) {
     feedCount++;
-    options_append_feed(feed);
-    options_update_feed_count();
+    OptionsPage.appendFeed(feed);
+    OptionsPage.updateFeedCount();
   }
 
   function on_feeds_iterated() {
     const noFeedsElement = document.getElementById('nosubscriptions');
     const feedListElement = document.getElementById('feedlist');
     if(feedCount === 0) {
-      options_show_element(noFeedsElement);
-      options_hide_element(feedListElement);
+      OptionsPage.showElement(noFeedsElement);
+      OptionsPage.hideElement(feedListElement);
     } else {
-      options_hide_element(noFeedsElement);
-      options_show_element(feedListElement);
+      OptionsPage.hideElement(noFeedsElement);
+      OptionsPage.showElement(feedListElement);
     }
   }
-}
+};
 
-function options_init(event) {
+OptionsPage.onDOMContentLoaded = function(event) {
   // Avoid attempts to re-init
-  document.removeEventListener('DOMContentLoaded', options_init);
+  document.removeEventListener('DOMContentLoaded',
+    OptionsPage.onDOMContentLoaded);
 
   // Call out to load styles because this affects the feed settings preview
   // area in the display settings section
@@ -965,9 +970,9 @@ function options_init(event) {
   const navEmbedItem = document.getElementById('mi-embeds');
   const isAskPolicy = localStorage.EMBED_POLICY === 'ask';
   if(isAskPolicy) {
-    options_show_element(navEmbedItem);
+    OptionsPage.showElement(navEmbedItem);
   } else {
-    options_hide_element(navEmbedItem);
+    OptionsPage.hideElement(navEmbedItem);
   }
 
   // Attach click handlers to feeds in the feed list on the left.
@@ -975,13 +980,14 @@ function options_init(event) {
   // click handler that figures out which item was clicked.
   const navFeedItems = document.querySelectorAll('#navigation-menu li');
   for(let i = 0, len = navFeedItems.length; i < len; i++) {
-    navFeedItems[i].onclick = options_on_nav_feed_click;
+    navFeedItems[i].onclick = OptionsPage.onNavigationMenuFeedItemClick;
   }
 
   // Init the general settings page
   const enableNotificationsCheckbox = document.getElementById(
     'enable-notifications');
-  enableNotificationsCheckbox.onclick = options_on_enable_notifications_change;
+  enableNotificationsCheckbox.onclick =
+    OptionsPage.enableNotificationsCheckboxOnChange;
 
   function has_notifications_permission(permitted) {
     enableNotificationsCheckbox.checked = permitted;
@@ -992,7 +998,7 @@ function options_init(event) {
     has_notifications_permission);
 
   document.getElementById('enable-background').onclick =
-    options_on_enable_background_change;
+    OptionsPage.enableBackgroundProcessingCheckboxOnChange;
 
   chrome.permissions.contains({permissions:['background']},
     function has_run_in_background_permission(permitted) {
@@ -1000,7 +1006,7 @@ function options_init(event) {
   });
 
   document.getElementById('enable-idle-check').onclick =
-    options_on_enable_idle_check_change;
+    OptionsPage.enableIdleCheckCheckboxOnChange;
 
   chrome.permissions.contains({permissions:['idle']},
     function has_check_idle_permission(permitted) {
@@ -1010,32 +1016,32 @@ function options_init(event) {
   document.getElementById('enable-subscription-preview').checked =
     !!localStorage.ENABLE_SUBSCRIBE_PREVIEW;
   document.getElementById('enable-subscription-preview').onchange =
-    options_on_enable_sub_preview_change;
+    OptionsPage.enableSubscriptionPreviewOnChange;
   document.getElementById('rewriting-enable').checked =
     !!localStorage.URL_REWRITING_ENABLED;
   document.getElementById('rewriting-enable').onchange =
-    options_on_enable_rewriting_change;
+    OptionsPage.enableURLRewritingCheckboxOnChange;
 
   // Init the opml import/export buttons
   document.getElementById('button-export-opml').onclick =
-    options_on_export_opml_click;
+    OptionsPage.exportOPMLButtonOnClick;
   document.getElementById('button-import-opml').onclick =
-    options_on_import_opml_click;
+    OptionsPage.importOPMLButtonOnClick;
 
-  options_init_sub_section();
+  OptionsPage.initSubscriptionsSection();
 
   // Init feed details section unsubscribe button click handler
   const unsubscribeButton = document.getElementById('details-unsubscribe');
-  unsubscribeButton.onclick = options_on_unsubscribe_click;
+  unsubscribeButton.onclick = OptionsPage.onUnsubscribeClick;
 
   // Init the subscription form section
   document.getElementById('subscription-form').onsubmit =
-    options_on_subscribe_submit;
+    OptionsPage.onSubscriptionFormSubmit;
   document.getElementById('subscription-preview-continue').onclick =
     function on_preview_continue_click(event) {
     const url = event.currentTarget.value;
-    options_hide_sub_preview();
-    options_start_subscription(url);
+    OptionsPage.hideSubscriptionPreview();
+    OptionsPage.startSubscription(url);
   };
 
   // Init display settings
@@ -1044,7 +1050,8 @@ function options_init(event) {
   option.textContent = 'Use background color';
   document.getElementById('entry-background-image').appendChild(option);
 
-  DisplaySettings.BACKGROUND_IMAGE_PATHS.forEach(function append_bgimage_option(path) {
+  DisplaySettings.BACKGROUND_IMAGE_PATHS.forEach(
+    function append_bgimage_option(path) {
     option = document.createElement('option');
     option.value = path;
     option.textContent = path.substring('/images/'.length);
@@ -1053,7 +1060,7 @@ function options_init(event) {
   });
 
   document.getElementById('entry-background-image').onchange =
-    options_on_background_image_change;
+    OptionsPage.backgroundImageOnChange;
 
   option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
@@ -1063,7 +1070,8 @@ function options_init(event) {
   option.textContent = 'Use Chrome font settings';
   document.getElementById('select_body_font').appendChild(option);
 
-  DisplaySettings.FONT_FAMILIES.forEach(function append_header_font_option(fontFamily) {
+  DisplaySettings.FONT_FAMILIES.forEach(
+    function append_header_font_option(fontFamily) {
     option = document.createElement('option');
     option.value = fontFamily;
     option.selected = fontFamily === localStorage.HEADER_FONT_FAMILY;
@@ -1071,7 +1079,8 @@ function options_init(event) {
     document.getElementById('select_header_font').appendChild(option);
   });
 
-  DisplaySettings.FONT_FAMILIES.forEach(function append_body_font_option(fontFamily) {
+  DisplaySettings.FONT_FAMILIES.forEach(
+    function append_body_font_option(fontFamily) {
     option = document.createElement('option');
     option.value = fontFamily;
     option.selected = fontFamily === localStorage.BODY_FONT_FAMILY;
@@ -1080,9 +1089,9 @@ function options_init(event) {
   });
 
   document.getElementById('select_header_font').onchange =
-    options_on_header_font_change;
+    OptionsPage.headerFontMenuOnChange;
   document.getElementById('select_body_font').onchange =
-    options_on_body_font_change;
+    OptionsPage.bodyFontMenuOnChange;
 
   [1,2,3].forEach(function append_col_count_option(columnCount) {
     option = document.createElement('option');
@@ -1093,7 +1102,7 @@ function options_init(event) {
   });
 
   document.getElementById('column-count').onchange =
-    options_on_column_count_change;
+    OptionsPage.columnCountMenuOnChange;
 
   var inputChangedTimer, inputChangedDelay = 400;
 
@@ -1109,23 +1118,25 @@ function options_init(event) {
 
   document.getElementById('entry-margin').value =
     parseInt(localStorage.ENTRY_MARGIN) || '10';
-  document.getElementById('entry-margin').onchange = options_on_margin_change;
+  document.getElementById('entry-margin').onchange =
+    OptionsPage.marginOnChange;
   document.getElementById('header-font-size').value =
     parseInt(localStorage.HEADER_FONT_SIZE) || '1';
   document.getElementById('header-font-size').onchange =
-    options_on_header_font_size_change;
+    OptionsPage.headerFontSizeOnChange;
   document.getElementById('body-font-size').value =
     parseInt(localStorage.BODY_FONT_SIZE) || '1';
   document.getElementById('body-font-size').onchange =
-    options_on_body_font_size_change;
+    OptionsPage.bodyFontSizeOnChange;
   document.getElementById('justify-text').checked =
     (localStorage.JUSTIFY_TEXT == '1') ? true : false;
-  document.getElementById('justify-text').onchange = options_on_justify_change;
+  document.getElementById('justify-text').onchange =
+    OptionsPage.justifyTextCheckboxOnChange;
   const bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
   document.getElementById('body-line-height').value =
     (bodyLineHeight / 10).toFixed(2);
   document.getElementById('body-line-height').oninput =
-    options_on_body_line_height_change;
+    OptionsPage.bodyLineHeightSliderOnChange;
 
 
   // Init the about section
@@ -1141,7 +1152,7 @@ function options_init(event) {
     manifest.homepage_url || '';
 
   // Initially show the subscriptions list
-  options_show_section(document.getElementById('mi-subscriptions'));
-}
+  OptionsPage.showSection(document.getElementById('mi-subscriptions'));
+};
 
-document.addEventListener('DOMContentLoaded', options_init);
+document.addEventListener('DOMContentLoaded', OptionsPage.onDOMContentLoaded);
