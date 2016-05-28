@@ -33,6 +33,7 @@
     "alarms",
     "http://*/*",
     "https://*/*",
+    "tabs",
     "unlimitedStorage"
   ],
   "optional_permissions": [

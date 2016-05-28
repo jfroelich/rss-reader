@@ -12,21 +12,20 @@ const Background = {};
 
 // TODO: this is getting called on every background page load. I would
 // prefer it did not. Maybe it is because I am calling addListener every
-// time and instead should only be calling it if a listener is not already
-// present. So maybe I should search for the listener?
+// time? How to solve it
 // TODO: are there any other settings I should be installing?
-// TODO: initialize unread count
 Background.onInstalled = function(event) {
+  console.log('Installing extension ...');
+  // Trigger database install or upgrade by opening a connection
+  db.open(onConnect);
 
   // TODO: I would like to immediately close the connection.
   // TODO: I would like to log an error if a problem occurred, this could be
   // the first sign of an installation problem.
   function onConnect(event) {
+    const connection = event.target.result;
+    utils.updateBadgeText(connection);
   }
-
-  console.log('Installing extension ...');
-  // Trigger database install or upgrade by opening a connection
-  db.open(onConnect);
 };
 
 chrome.runtime.onInstalled.addListener(Background.onInstalled);
@@ -36,6 +35,9 @@ Background.onAlarm = function(alarm) {
   if(alarm.name === 'archiveAlarm') {
     // TODO: test whether there is ever called, testing with a temporary
     // local storage variable
+    // NOTE: I am not seeing it. This is never getting called.
+    // Theory 1: something to do with creating the alarm per page load
+    // Theory 2: erroneously not persisted, never have page open long enough
     localStorage.ARCHIVE_ALARM_WOKEUP = '' + Date.now();
     Background.archiveEntries();
   } else if(alarm.name === 'pollAlarm') {
@@ -49,44 +51,29 @@ chrome.alarms.onAlarm.addListener(Background.onAlarm);
 
 // Respond to a click on the extension's icon in Chrome's extension toolbar
 Background.onBadgeClick = function() {
+
+  // NOTE: in order to use the url property with chrome.tabs.query, the tabs
+  // permission is required, this is the sole reason it is defined within
+  // manifest.json. Previously this was not the case, but it looks like Chrome
+  // silently changed the requirements without much of a notice, which is
+  // why this had stopped working until I re-added the tabs permission.
+
   const VIEW_URL = chrome.extension.getURL('slides.html');
-
-  // TODO: Something went wrong upgrading from chrome 48 to 49. The query finds
-  // the existing tab and updates it, but it is never displayed. It finds it
-  // even where there is no visible matching tab. Also, the first time I
-  // clicked it, Chrome crashed. Looking at release notes for 50, I am seeing
-  // that they are mucking with tab management. They definitely broke something
-  // because this was working for over a year.
-  // For now, I've disabled the ability to simply re-focus the existing tab and
-  // I simply open a new tab each time.
-  // chrome.tabs.query({'url': viewURL}, onQueryForViewTab);
-
-  const initialTabSettings = {'url': VIEW_URL};
-  chrome.tabs.create(initialTabSettings);
+  chrome.tabs.query({'url': VIEW_URL}, onQueryForViewTab);
 
   function onQueryForViewTab(tabsArray) {
-    if(tabsArray.length) {
-      const existingTab = tabsArray[0];
-      const newSettingsForExistingTab = {'active': true};
-      chrome.tabs.update(existingTab.id, newSettingsForExistingTab);
+    if(tabsArray && tabsArray.length) {
+      chrome.tabs.update(tabsArray[0].id, {'active': true});
     } else {
-      // TODO: is the trailing slash necessary?
-      const NEW_TAB_QUERY = {'url': 'chrome://newtab/'};
-      chrome.tabs.query(NEW_TAB_QUERY, onQueryForNewTab);
+      chrome.tabs.query({'url': 'chrome://newtab/'}, onQueryForNewTab);
     }
   }
 
   function onQueryForNewTab(tabsArray) {
-    if(tabsArray.length) {
-      const existingTab = tabsArray[0];
-      const newSettingsForExistingTab = {
-        'active': true,
-        'url': VIEW_URL
-      };
-      chrome.tabs.update(existingTab.id, newSettingsForExistingTab);
+    if(tabsArray && tabsArray.length) {
+      chrome.tabs.update(tabsArray[0].id, {'active': true, 'url': VIEW_URL});
     } else {
-      const newViewTabSettings = {'url': VIEW_URL};
-      chrome.tabs.create(newViewTabSettings);
+      chrome.tabs.create({'url': VIEW_URL});
     }
   }
 };
