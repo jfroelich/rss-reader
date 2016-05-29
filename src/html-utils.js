@@ -47,8 +47,7 @@ HTMLUtils.truncate = function(inputString, position, extensionString) {
   inertDocument.documentElement.innerHTML = inputString;
 
   const textNodeIterator = inertDocument.createNodeIterator(
-    inertDocument.body,
-    NodeFilter.SHOW_TEXT);
+    inertDocument.body, NodeFilter.SHOW_TEXT);
 
   const ELLIPSIS = '\u2026';
 

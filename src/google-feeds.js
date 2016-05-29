@@ -20,6 +20,7 @@ const GoogleFeedsAPI = {};
 // contentSnippet. The title and content snippet may contain basic HTML such as
 // <b></b> around terms that were present in the query.
 GoogleFeedsAPI.search = function(queryString, timeoutMillis, callback) {
+  // TODO: use a URL object here
   const BASE_URL =
     'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
   const requestURL = BASE_URL + encodeURIComponent(queryString);

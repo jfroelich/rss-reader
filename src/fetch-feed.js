@@ -14,26 +14,20 @@
 // through logging, this should be handled here or by the caller somehow, right
 // now this sets feed.url to requested url and just passes back responseURL
 // as the third argument to the callback
+// TODO: rename url to urlString, or consider requiring a URL object instead of
+// a string.
 function fetchFeed(url, timeout, callback) {
   const request = new XMLHttpRequest();
   request.timeout = timeout;
-  request.onerror = onError;
-  request.ontimeout = onTimeout;
-  request.onabort = onAbort;
+  request.onerror = callbackWithErrorEvent;
+  request.ontimeout = callbackWithErrorEvent;
+  request.onabort = callbackWithErrorEvent;
   request.onload = onLoad;
   request.open('GET', url, true);
   request.responseType = 'document';
   request.send();
 
-  function onError(event) {
-    callback(event, null, event.target.responseURL);
-  }
-
-  function onTimeout(event) {
-    callback(event, null, event.target.responseURL);
-  }
-
-  function onAbort(event) {
+  function callbackWithErrorEvent(event) {
     callback(event, null, event.target.responseURL);
   }
 
@@ -48,6 +42,7 @@ function fetchFeed(url, timeout, callback) {
       return;
     }
 
+    // This can happen, for example, when fetching a PDF.
     if(!document.documentElement) {
       callback(event, document, request.responseURL);
       return;
@@ -78,6 +73,8 @@ function fetchFeed(url, timeout, callback) {
     // if this is what I want to be doing.
     feed.url = url;
 
+    // TODO: this should be named dateFetched to be consistent with naming
+    // of other date properties
     feed.fetchDate = new Date();
 
     // Do some post-fetch processing of the feed that generally always has to

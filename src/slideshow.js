@@ -159,9 +159,9 @@ SlideShow.markAsRead = function(slide) {
   slide.setAttribute('read', '');
   const entryAttribute = slide.getAttribute('entry');
 
-  db.open(on_open);
+  db.open(onOpen);
 
-  function on_open(event) {
+  function onOpen(event) {
     if(event.type !== 'success') {
       // TODO: react to database error?
       console.debug(event);
@@ -196,10 +196,10 @@ SlideShow.appendSlides = function(oncomplete, isFirst) {
   const limit = 5;
   const offset = SlideShow.countUnreadSlides();
   let notAdvanced = true;
-  db.open(on_dbopen);
+  db.open(onOpen);
 
   // Load all articles that are unread and unarchived
-  function on_dbopen(event) {
+  function onOpen(event) {
     if(event.type !== 'success') {
       // TODO: show an error?
       console.debug(event);
@@ -214,11 +214,11 @@ SlideShow.appendSlides = function(oncomplete, isFirst) {
     const range = IDBKeyRange.only([Entry.Flags.UNARCHIVED,
       Entry.Flags.UNREAD]);
     const request = index.openCursor(range);
-    request.onsuccess = request_onsuccess;
+    request.onsuccess = requestOnSuccess;
   }
 
-  function request_onsuccess() {
-    const cursor = this.result;
+  function requestOnSuccess(event) {
+    const cursor = event.target.result;
 
     if(!cursor) {
       return;

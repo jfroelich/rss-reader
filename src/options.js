@@ -4,7 +4,7 @@
 
 'use strict';
 
-// TODO: remove preview feature
+// TODO: remove the subscription preview feature
 
 const OptionsPage = {};
 
@@ -197,7 +197,8 @@ OptionsPage.updateFeedCount = function() {
   }
 };
 
-// TODO: rename, where is this appending?
+// TODO: rename, where is this appending, and to what? Maybe this should be a
+// member function of some type of feed menu object
 OptionsPage.appendFeed = function(feed, insertedSort) {
   const item = document.createElement('li');
   item.setAttribute('sort-key', feed.title);
@@ -243,13 +244,8 @@ OptionsPage.appendFeed = function(feed, insertedSort) {
   }
 };
 
-OptionsPage.enableSubscriptionPreviewOnChange = function() {
-  if(this.checked)
-    localStorage.ENABLE_SUBSCRIBE_PREVIEW = '1';
-  else
-    delete localStorage.ENABLE_SUBSCRIBE_PREVIEW;
-};
-
+// TODO: use a better name for url param, like urlString, to clarify it is
+// not a URL object
 OptionsPage.showSubscriptionPreview = function(url) {
   OptionsPage.hideSubscriptionPreview();
   if(!localStorage.ENABLE_SUBSCRIBE_PREVIEW) {
@@ -329,12 +325,10 @@ OptionsPage.hideSubscriptionPreview = function() {
 
 // TODO: this should be calling out to a function in subscription.js and
 // delegating most of its logic to that function.
-
 // TODO: if the parameter is a url, treat it like a URL. Wrap it in a URL
 // object. This will also explicitly test validity, meaning I don't need to
 // check again. In fact maybe this function should only accept a URL
 // object as input.
-
 OptionsPage.startSubscription = function(url) {
   OptionsPage.hideSubscriptionPreview();
 
@@ -345,36 +339,36 @@ OptionsPage.startSubscription = function(url) {
 
   OptionsPage.showSubscriptionMonitor();
   OptionsPage.updateSubscriptionMonitorMessage('Subscribing...');
-  db.open(on_open);
+  db.open(onOpen);
 
-  function on_hide_monitor_show_connection_error() {
+  function onHideMonitorShowConnectionError() {
     OptionsPage.showErrorMessage(
       'An error occurred while trying to subscribe to ' + url);
   }
 
-  function on_open(event) {
+  function onOpen(event) {
     if(event.type !== 'success') {
       console.debug(event);
       OptionsPage.hideSubscriptionMonitor(
-        on_hide_monitor_show_connection_error);
+        onHideMonitorShowConnectionError);
       return;
     }
 
     const connection = event.target.result;
-    const boundOnFindFeed = on_find_feed.bind(null, connection);
+    const boundOnFindFeed = onFindFeed.bind(null, connection);
 
     // This is the only place that calls this function apparently? Strange,
     // I thought that I would also be checking this in other places.
     Feed.findByURL(connection, url, boundOnFindFeed);
   }
 
-  function on_hide_monitor_show_exists_error() {
+  function onHideMonitorShowExistsError() {
     OptionsPage.showErrorMessage('Already subscribed to ' + url + '.');
   }
 
-  function on_find_feed(connection, event) {
+  function onFindFeed(connection, event) {
     if(event.target.result) {
-      OptionsPage.hideSubscriptionMonitor(on_hide_monitor_show_exists_error);
+      OptionsPage.hideSubscriptionMonitor(onHideMonitorShowExistsError);
       return;
     }
 
@@ -382,20 +376,21 @@ OptionsPage.startSubscription = function(url) {
     if(!navigator.onLine) {
       Feed.put(connection, null, {url: url}, onSubscribe);
     } else {
-      const boundOnFetchFeed = on_fetch_feed.bind(null, connection);
+      const boundOnFetchFeed = onFetchFeed.bind(null, connection);
       fetchFeed(url, 10 * 1000, boundOnFetchFeed);
     }
   }
 
-  function on_hide_show_fetch_error() {
+  function onHideSubscriptionMonitorShowFetchError() {
     OptionsPage.showErrorMessage(
       'An error occurred while trying to subscribe to ' + url);
   }
 
-  function on_fetch_feed(connection, event, remoteFeed) {
+  function onFetchFeed(connection, event, remoteFeed) {
     if(event) {
       console.dir(event);
-      OptionsPage.hideSubscriptionMonitor(on_hide_show_fetch_error);
+      OptionsPage.hideSubscriptionMonitor(
+        onHideSubscriptionMonitorShowFetchError);
       return;
     }
 
@@ -403,20 +398,21 @@ OptionsPage.startSubscription = function(url) {
 
     function on_store_feed(newId) {
       remoteFeed.id = newId;
-      on_subscribe(remoteFeed, 0, 0);
+      onSubscribe(remoteFeed, 0, 0);
     }
   }
 
-  function on_hide_monitor_sub_completed() {
+  function onHideSubscriptionMonitorCompleted() {
     const subSection = document.getElementById('mi-subscriptions');
     OptionsPage.showSection(subSection);
   }
 
-  function on_subscribe(addedFeed) {
+  function onSubscribe(addedFeed) {
     OptionsPage.appendFeed(addedFeed, true);
     OptionsPage.updateFeedCount();
     OptionsPage.updateSubscriptionMonitorMessage('Subscribed to ' + url);
-    OptionsPage.hideSubscriptionMonitor(on_hide_monitor_sub_completed, true);
+    OptionsPage.hideSubscriptionMonitor(onHideSubscriptionMonitorCompleted,
+      true);
 
     // Show a notification
     const title = addedFeed.title || addedFeed.url;
@@ -432,9 +428,9 @@ OptionsPage.populateFeedDetails = function(feedId) {
     return;
   }
 
-  db.open(on_open_db);
+  db.open(onOpen);
 
-  function on_open_db(event) {
+  function onOpen(event) {
     if(event.type !== 'success') {
       // TODO: show an error message?
       console.debug('Database connection error');
@@ -442,10 +438,10 @@ OptionsPage.populateFeedDetails = function(feedId) {
     }
 
     const connection = event.target.result;
-    Feed.findById(connection, feedId, on_find_feed);
+    Feed.findById(connection, feedId, onFindFeed);
   }
 
-  function on_find_feed(event) {
+  function onFindFeed(event) {
     const feed = event.target.result;
     if(!feed) {
       // TODO: show an error message?
@@ -567,21 +563,28 @@ OptionsPage.onSubscriptionFormSubmit = function(event) {
 };
 
 OptionsPage.onDiscoverSubscriptionButtonClick = function(event) {
-  const button = event.target;
-  const url = button.value;
-  if(!url) {
+
+  const buttonSubscribe = event.target;
+  const feedURLString = buttonSubscribe.value;
+
+  // TODO: this will always be defined, so this check isn't necessary, but I
+  // tentatively leaving it in here
+  if(!feedURLString) {
     return;
   }
 
   // TODO: Ignore future clicks if an error was displayed?
 
   // Ignore future clicks while subscription in progress
+  // TODO: use a better element name here.
   const subMonitor = document.getElementById('options_subscription_monitor');
   if(subMonitor && OptionsPage.isElementVisible(subMonitor)) {
     return;
   }
 
-  OptionsPage.showSubscriptionPreview(url);
+  // TODO: I plan to deprecate the preview step, so this should probably be
+  // making a call directly to the step that starts the subscription process.
+  OptionsPage.showSubscriptionPreview(feedURLString);
 };
 
 OptionsPage.onDiscoverComplete = function(errorEvent, query, results) {
@@ -590,6 +593,10 @@ OptionsPage.onDiscoverComplete = function(errorEvent, query, results) {
   const resultsList = document.getElementById('discover-results-list');
 
   // Define an error value if query or results are undefined
+  // TODO: the errorEvent should mimic the type of variable of the parameter
+  // TODO: I should not be modifying the parameter itself, I think that is
+  // a bad convention, so I should be doing something else.
+  // TODO: having no results isn't an error. So this is rather silly.
   if(!query || !results) {
     if(!errorEvent) {
       errorEvent = 'No results';
@@ -599,10 +606,10 @@ OptionsPage.onDiscoverComplete = function(errorEvent, query, results) {
   // If an error occurred, hide the progress element and show an error message
   // and exit early.
   if(errorEvent) {
-    console.debug('Discover feeds error:', errorEvent);
+    console.debug(errorEvent);
     OptionsPage.hideElement(progressElement);
-    OptionsPage.showErrorMessage('An error occurred when searching for feeds: ' +
-      errorEvent);
+    OptionsPage.showErrorMessage(
+      'An error occurred when searching for feeds: ' + errorEvent);
     return;
   }
 
@@ -611,6 +618,8 @@ OptionsPage.onDiscoverComplete = function(errorEvent, query, results) {
 
   // If there were no search results, hide the results list and show the
   // no results element and exit early.
+  // TODO: is < 1 really the best test? Wouldn't !results.length be more
+  // appropriate and simpler?
   if(results.length < 1) {
     OptionsPage.hideElement(resultsList);
     OptionsPage.showElement(noResultsElement);
@@ -634,94 +643,123 @@ OptionsPage.onDiscoverComplete = function(errorEvent, query, results) {
   // Generate an array of result elements to append
   const resultElements = results.map(OptionsPage.createSearchResult);
 
+  // Append the result elements
   for(let i = 0, len = resultElements.length; i < len; i++) {
     resultsList.appendChild(resultElements[i]);
   }
 };
 
+// Creates and returns a search result item to show in the list of search
+// results when searching for feeds.
 OptionsPage.createSearchResult = function(result) {
   const item = document.createElement('li');
 
-  // Create the subscribe button for the result
-  const button = document.createElement('button');
-  button.value = result.url;
-  button.title = result.url;
-  button.textContent = 'Subscribe';
-  button.onclick = OptionsPage.onDiscoverSubscriptionButtonClick;
-  item.appendChild(button);
+  // Append a subscribe button
+  const buttonSubscribe = document.createElement('button');
+  buttonSubscribe.value = result.url;
+  // Give the button a tooltip
+  buttonSubscribe.title = result.url;
+  buttonSubscribe.textContent = 'Subscribe';
+  buttonSubscribe.onclick = OptionsPage.onDiscoverSubscriptionButtonClick;
+  item.appendChild(buttonSubscribe);
 
-  // Show the feed's favicon
-  const image = document.createElement('img');
-  image.setAttribute('src', utils.getFavIconURLString(result.url));
-  image.title = result.link;
-  item.appendChild(image);
+  // Append the feed's favicon
+  const imageFavIcon = document.createElement('img');
+  imageFavIcon.setAttribute('src', utils.getFavIconURLString(result.url));
+  imageFavIcon.title = result.link;
+  item.appendChild(imageFavIcon);
 
-  // Show the feeds title
-  const a = document.createElement('a');
-  a.setAttribute('href', result.link);
-  a.setAttribute('target', '_blank');
-  a.title = result.title;
-  a.innerHTML = result.title;
-  item.appendChild(a);
+  // Append the feeds title
+  const anchorTitle = document.createElement('a');
+  anchorTitle.setAttribute('href', result.link);
+  anchorTitle.setAttribute('target', '_blank');
+  anchorTitle.title = result.title;
+  anchorTitle.innerHTML = result.title;
+  item.appendChild(anchorTitle);
 
-  // Show the feed's description
-  const snippetSpan = document.createElement('span');
-  snippetSpan.innerHTML = result.contentSnippet;
-  item.appendChild(snippetSpan);
+  // Append the feed's description
+  const spanSnippet = document.createElement('span');
+  spanSnippet.innerHTML = result.contentSnippet;
+  item.appendChild(spanSnippet);
 
-  // Show the feed's url
-  const span = document.createElement('span');
-  span.setAttribute('class', 'discover-search-result-url');
-  span.textContent = result.url;
-  item.appendChild(span);
+  // Append the feed's url
+  const spanURL = document.createElement('span');
+  spanURL.setAttribute('class', 'discover-search-result-url');
+  spanURL.textContent = result.url;
+  item.appendChild(spanURL);
 
   return item;
 };
 
-OptionsPage.onUnsubscribeClick = function(event) {
-  const unsubscribeButton = event.target;
-  const feedIdString = button.value;
+OptionsPage.buttonUnsubscribeOnClick = function(event) {
+  // Start by getting the feed id. Whenevever I load the feed details page,
+  // I set the button's value to the feed id, so get it from there.
+  const buttonUnsubscribe = event.target;
+  const feedIdString = buttonUnsubscribe.value;
   const feedId = parseInt(feedIdString, 10);
 
+  // Verify that we have a valid feed id. This check is largely the result of
+  // an earlier bug I was experiencing, and probably isn't that necessary, but
+  // I think it is harmless for now.
   if(!feedId || isNaN(feedId)) {
     console.error('Invalid feed id:', feedIdString);
     return;
   }
 
+  // NOTE: I have the option of reacting to the cross-window message that
+  // is sent by the unsubscribe function instead of the callback, but it is
+  // obviously faster and more local to use the callback, so I chose to go with
+  // that. I am not entirely confident this is the best decision.
+
   SubscriptionManager.unsubscribe(feedId, OptionsPage.onUnsubscribe);
-};
 
-// TODO: do i react to the cross-window message event, or do I react
-// to the immediate callback?
-OptionsPage.onUnsubscribe = function(event) {
-  if(event.type === 'error') {
-    // TODO: show an error message
-    console.debug(event);
-    return;
+  function onUnsubscribe(event) {
+    // If there was some failure to unsubscribe from the feed, react here
+    // and then exit early and do not update the UI
+    // TODO: show an error message about how there was a problem unsubscribing
+    if(event.type === 'error') {
+      console.debug(event);
+      return;
+    }
+
+    // Remove the feed from the subscription list
+    // TODO: getting the feed element from the menu should be more idiomatic,
+    // I should probably be using a function here. That, or the function I
+    // create that removes the feed accepts a feedId parameter and knows how
+    // to get it there.
+    // TODO: removing the feed element from the menu should also probably be
+    // more idiomatic and use a function
+    const selector = 'feedlist li[feed="' + feedId + '"]';
+    const feedElement = document.querySelector(selector);
+    if(item) {
+      feedElement.removeEventListener('click',
+        OptionsPage.feedListOnItemClick);
+      feedElement.remove();
+    }
+
+    // Upon removing the feed, update the displayed number of feeds.
+    // TODO: this should probably be baked into the function that removes the
+    // feed or some function that handles changes to the feed list, so that
+    // I do not need to call it explicitly and do not risk forgetting not to
+    // call it.
+    OptionsPage.updateFeedCount();
+
+    // Upon removing the feed, update the state of the feed list.
+    // If the feed list has no items, hide it and show a message instead
+    // TODO: this should probably also be baked into the function that removes
+    // the feed from the feed list and not the responsibility of the
+    // unsubscribe function.
+    const feedListElement = document.getElementById('feedlist');
+    const noFeedsElement = document.getElementById('nosubscriptions');
+    if(feedListElement.childElementCount === 0) {
+      OptionsPage.hideElement(feedListElement);
+      OptionsPage.showElement(noFeedsElement);
+    }
+
+    // Switch back to the main view
+    const sectionMenu = document.getElementById('mi-subscriptions');
+    OptionsPage.showSection(sectionMenu);
   }
-
-  // Remove the feed from the subscription list
-  const selector = 'feedlist li[feed="' + feedId + '"]';
-  const feedElement = document.querySelector(selector);
-  if(item) {
-    feedElement.removeEventListener('click',
-      OptionsPage.feedListOnItemClick);
-    feedElement.remove();
-  }
-
-  OptionsPage.updateFeedCount();
-
-  // If the feed list has no items, hide it and show a message instead
-  const feedListElement = document.getElementById('feedlist');
-  const noFeedsElement = document.getElementById('nosubscriptions');
-  if(feedListElement.childElementCount === 0) {
-    OptionsPage.hideElement(feedListElement);
-    OptionsPage.showElement(noFeedsElement);
-  }
-
-  // Switch to the main view
-  const sectionMenu = document.getElementById('mi-subscriptions');
-  OptionsPage.showSection(sectionMenu);
 };
 
 // TODO: needs to notify the user of a successful
@@ -737,24 +775,20 @@ OptionsPage.importOPMLButtonOnClick = function(event) {
   const uploader = document.createElement('input');
   uploader.setAttribute('type', 'file');
   OptionsPage.hideElement(uploader);
-  uploader.onchange = on_uploader_change;
+  uploader.onchange = onUploaderChange;
   document.body.appendChild(uploader);
   uploader.click();
 
-  function on_uploader_change(event) {
-
-    uploader.removeEventListener('change', on_uploader_change);
-
+  function onUploaderChange(event) {
+    uploader.removeEventListener('change', onUploaderChange);
     if(!uploader.files || !uploader.files.length) {
-      on_import_completed();
+      onImportCompleted();
       return;
     }
-
-    db.open(on_open);
+    db.open(onOpen);
   }
 
-  function on_open(event) {
-
+  function onOpen(event) {
     if(event.type !== 'success') {
       // TODO: show an error message
       console.debug(event);
@@ -762,10 +796,10 @@ OptionsPage.importOPMLButtonOnClick = function(event) {
     }
 
     const connection = event.target.result;
-    OPML.importFiles(connection, uploader.files, on_import_completed);
+    OPML.importFiles(connection, uploader.files, onImportCompleted);
   }
 
-  function on_import_completed(tracker) {
+  function onImportCompleted(tracker) {
     uploader.remove();
 
     // TODO: remove this after some more testing, this should never happen
@@ -794,169 +828,75 @@ OptionsPage.importOPMLButtonOnClick = function(event) {
 
 // TODO: move the helper functions back into this function as nested functions
 OptionsPage.exportOPMLButtonOnClick = function(event) {
-  db.open(OptionsPage.exportOPMLOnOpen);
-};
+  db.open(onOpen);
 
-OptionsPage.exportOPMLOnOpen = function(event) {
-  if(event.type !== 'success') {
-    // TODO: visually report the error
-    console.debug('Failed to connect to database when exporting opml');
-    return;
-  }
+  function onOpen(event) {
+    if(event.type !== 'success') {
+      // TODO: visually report the error
+      console.debug('Failed to connect to database when exporting opml');
+      return;
+    }
 
-  const connection = event.target.result;
-  Feed.getAll(connection, OptionsPage.exportOPMLOnGetFeeds);
-};
+    const connection = event.target.result;
 
-OptionsPage.exportOPMLOnGetFeeds = function(feeds) {
-  const title = 'Subscriptions';
-  const doc = OPML.createDocument(title, feeds);
+    // TODO: stop using Feed.getAll, do the iteration explicitly here
+    Feed.getAll(connection, onGetFeeds);
+  };
 
-  // TODO: should should probably be delegating something to a function
-  // in xml.js
-  const writer = new XMLSerializer();
-  const serializedString = writer.serializeToString(doc);
+  function onGetFeeds(feeds) {
+    const title = 'Subscriptions';
+    const doc = OPML.createDocument(title, feeds);
 
-  const blobFormat = {type: 'application/xml'};
-  const blob = new Blob([serializedString], blobFormat);
-  const objectURL = URL.createObjectURL(blob);
+    // TODO: should should probably be delegating something to a function
+    // in xml.js
+    const writer = new XMLSerializer();
+    const serializedString = writer.serializeToString(doc);
 
-  const anchor = document.createElement('a');
-  anchor.href = objectURL;
-  const fileName = 'subscriptions.xml';
-  anchor.setAttribute('download', fileName);
-  anchor.style.display = 'none';
-  document.body.appendChild(anchor);
-  anchor.click();
+    const blobFormat = {type: 'application/xml'};
+    const blob = new Blob([serializedString], blobFormat);
+    const objectURL = URL.createObjectURL(blob);
 
-  // Cleanup
-  URL.revokeObjectURL(objectURL);
-  anchor.remove();
+    const anchor = document.createElement('a');
+    anchor.href = objectURL;
+    const fileName = 'subscriptions.xml';
+    anchor.setAttribute('download', fileName);
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
 
-  console.debug('Completed exporting %s feeds to opml file %s',
-    doc.querySelectorAll('outline').length, fileName);
-  // TODO: show a message?
-};
+    // Cleanup
+    URL.revokeObjectURL(objectURL);
+    anchor.remove();
 
-OptionsPage.enableURLRewritingCheckboxOnChange = function(event) {
-  const checkboxElement = event.target;
-  if(checkboxElement.checked) {
-    localStorage.URL_REWRITING_ENABLED = '1';
-  } else {
-    delete localStorage.URL_REWRITING_ENABLED;
-  }
-};
+    console.debug('Completed exporting %s feeds to opml file %s',
+      doc.querySelectorAll('outline').length, fileName);
 
-OptionsPage.headerFontMenuOnChange = function(event){
-  if(event.target.value)
-    localStorage.HEADER_FONT_FAMILY = event.target.value;
-  else
-    delete localStorage.HEADER_FONT_FAMILY;
-  chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
-};
-
-OptionsPage.headerFontSizeOnChange = function(event) {
-  localStorage.HEADER_FONT_SIZE = parseInt(event.target.value) || 1;
-  chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
-};
-
-OptionsPage.bodyFontMenuOnChange = function(event) {
-  if(event.target.value)
-    localStorage.BODY_FONT_FAMILY = event.target.value;
-  else
-    delete localStorage.BODY_FONT_FAMILY;
-  chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
-};
-
-OptionsPage.columnCountMenuOnChange = function(event) {
-  if(event.target.value)
-    localStorage.COLUMN_COUNT = event.target.value;
-  else
-    delete localStorage.COLUMN_COUNT;
-  chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
-};
-
-OptionsPage.bodyFontSizeOnChange = function(event) {
-  localStorage.BODY_FONT_SIZE = parseInt(event.target.value) || 1;
-  chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
-};
-
-OptionsPage.bodyLineHeightSliderOnChange = function(event) {
-  localStorage.BODY_LINE_HEIGHT = event.target.value || '10';
-  chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
-};
-
-OptionsPage.marginOnChange = function(event) {
-  localStorage.ENTRY_MARGIN = parseInt(event.target.value) || 10;
-  chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
-};
-
-OptionsPage.backgroundImageOnChange = function(event) {
-  if(event.target.value)
-    localStorage.BACKGROUND_IMAGE = event.target.value;
-  else
-    delete localStorage.BACKGROUND_IMAGE;
-  chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
-};
-
-OptionsPage.justifyTextCheckboxOnChange = function(event) {
-  if(event.target.checked)
-    localStorage.JUSTIFY_TEXT = '1';
-  else
-    delete localStorage.JUSTIFY_TEXT;
-  chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
-};
-
-OptionsPage.enableNotificationsCheckboxOnChange = function(event) {
-  if(event.target.checked)
-    chrome.permissions.request({permissions:['notifications']}, function() {});
-  else
-    chrome.permissions.remove({permissions:['notifications']}, function() {});
-};
-
-OptionsPage.enableBackgroundProcessingCheckboxOnChange = function(event) {
-  if(event.target.checked)
-    chrome.permissions.request({permissions:['background']}, function() {});
-  else
-    chrome.permissions.remove({permissions:['background']}, function() {});
-};
-
-OptionsPage.enableIdleCheckCheckboxOnChange = function(event) {
-  if(event.target.checked)
-    chrome.permissions.request({permissions:['idle']}, function(){});
-  else
-    chrome.permissions.remove({permissions:['idle']}, function(){});
-};
-
-OptionsPage.onNavigationMenuFeedItemClick = function(event) {
-  // Use currentTarget instead of event.target as some of the menu items have a
-  // nested element that is the event.target
-  OptionsPage.showSection(event.currentTarget);
+    // TODO: show a message? An alert? Something?
+  };
 };
 
 OptionsPage.initSubscriptionsSection = function() {
   let feedCount = 0;
+  db.open(onOpen);
 
-  db.open(on_open);
-
-  function on_open(event) {
+  function onOpen(event) {
     if(event.type !== 'success') {
-      // TODO: react
+      // TODO: react to this error somehow
       console.debug(event);
       return;
     }
 
-    Feed.forEach(event.target.result, process_feed, true,
-      on_feeds_iterated);
+    // TODO: stop using Feed.forEach, do the iteration explicitly here
+    Feed.forEach(event.target.result, processFeed, true, onFeedsIterated);
   }
 
-  function process_feed(feed) {
+  function processFeed(feed) {
     feedCount++;
     OptionsPage.appendFeed(feed);
     OptionsPage.updateFeedCount();
   }
 
-  function on_feeds_iterated() {
+  function onFeedsIterated() {
     const noFeedsElement = document.getElementById('nosubscriptions');
     const feedListElement = document.getElementById('feedlist');
     if(feedCount === 0) {
@@ -974,8 +914,7 @@ OptionsPage.onDOMContentLoaded = function(event) {
   document.removeEventListener('DOMContentLoaded',
     OptionsPage.onDOMContentLoaded);
 
-  // Call out to load styles because this affects the feed settings preview
-  // area in the display settings section
+  // Init CSS styles that affect the display preview area
   DisplaySettings.loadStyles();
 
   // Conditionally show/hide the Allow embeds option in the left menu
@@ -994,179 +933,343 @@ OptionsPage.onDOMContentLoaded = function(event) {
   // click handler that figures out which item was clicked.
   const navFeedItems = document.querySelectorAll('#navigation-menu li');
   for(let i = 0, len = navFeedItems.length; i < len; i++) {
-    navFeedItems[i].onclick = OptionsPage.onNavigationMenuFeedItemClick;
+    navFeedItems[i].onclick = onNavigationMenuFeedItemClick;
+  }
+
+  // Upon clicking a feed in the feed list, switch to showing the details
+  // of that feed
+  // Use currentTarget instead of event.target as some of the menu items have a
+  // nested element that is the desired target
+  // TODO: rather than comment, use a local variable here to clarify why
+  // currentTarget is more appropriate
+  function onNavigationMenuFeedItemClick(event) {
+    OptionsPage.showSection(event.currentTarget);
   }
 
   // Init the general settings page
-  const enableNotificationsCheckbox = document.getElementById(
+  const checkboxEnableNotifications = document.getElementById(
     'enable-notifications');
-  enableNotificationsCheckbox.onclick =
-    OptionsPage.enableNotificationsCheckboxOnChange;
+  checkboxEnableNotifications.onclick =
+    OptionsPage.checkboxEnableNotificationsOnChange;
 
-  function has_notifications_permission(permitted) {
-    enableNotificationsCheckbox.checked = permitted;
+  function checkboxEnableNotificationsOnChange(event) {
+    if(event.target.checked) {
+      chrome.permissions.request({'permissions': ['notifications']},
+        noopCallback);
+    } else {
+      chrome.permissions.remove({'permissions': ['notifications']},
+        noopCallback);
+    }
+
+    function noopCallback() {}
   }
 
   const notificationsPermissionQuery = {'permissions': ['notifications']};
   chrome.permissions.contains(notificationsPermissionQuery,
-    has_notifications_permission);
+    hasNotificationsPermission);
+  function hasNotificationsPermission(permitted) {
+    checkboxEnableNotifications.checked = permitted;
+  }
 
-  document.getElementById('enable-background').onclick =
-    OptionsPage.enableBackgroundProcessingCheckboxOnChange;
+  const checkboxEnableBackgroundProcessing = document.getElementById(
+    'enable-background');
 
-  chrome.permissions.contains({permissions:['background']},
-    function has_run_in_background_permission(permitted) {
-    document.getElementById('enable-background').checked = permitted;
-  });
+  // TODO: should this be onchange or onclick? I had previously named the
+  // function onchange but was listening to onclick
+  checkboxEnableBackgroundProcessing.onclick =
+    checkboxEnableBackgroundProcessingOnClick;
+  function checkboxEnableBackgroundProcessingOnClick(event) {
+    if(event.target.checked) {
+      chrome.permissions.request({'permissions': ['background']},
+        noopCallback);
+    }
+    else {
+      chrome.permissions.remove({'permissions': ['background']}, noopCallback);
+    }
 
-  document.getElementById('enable-idle-check').onclick =
-    OptionsPage.enableIdleCheckCheckboxOnChange;
+    function noopCallback() {}
+  }
 
-  chrome.permissions.contains({permissions:['idle']},
-    function has_check_idle_permission(permitted) {
-    document.getElementById('enable-idle-check').checked = permitted;
-  });
 
-  document.getElementById('enable-subscription-preview').checked =
+  chrome.permissions.contains({'permissions': ['background']},
+    onCheckHasRunInBackgroundPermission);
+
+  function onCheckHasRunInBackgroundPermission(permitted) {
+    checkboxEnableBackgroundProcessing.checked = permitted;
+  }
+
+  const checkboxEnableIdleCheck = document.getElementById('enable-idle-check');
+  checkboxEnableIdleCheck.onclick = checkboxEnableIdleCheckOnChange;
+
+  // Either add or remove the permission when checking or unchecking
+  function checkboxEnableIdleCheckOnChange(event) {
+    if(event.target.checked){
+      chrome.permissions.request({'permissions': ['idle']}, noopCallback);
+    } else {
+      chrome.permissions.remove({'permissions': ['idle']}, noopCallback);
+    }
+
+    function noopCallback() {}
+  }
+
+  // Check the checkbox if the permission is set
+  chrome.permissions.contains({'permissions': ['idle']},
+    hasCheckIdlePermission);
+  function hasCheckIdlePermission(permitted) {
+    checkboxEnableIdleCheck.checked = permitted;
+  }
+
+  // TODO: deprecate this because I plan to deprecate the preview ability.
+  const checkboxEnableSubscriptionPreview =
+    document.getElementById('enable-subscription-preview');
+  checkboxEnableSubscriptionPreview.checked =
     !!localStorage.ENABLE_SUBSCRIBE_PREVIEW;
-  document.getElementById('enable-subscription-preview').onchange =
-    OptionsPage.enableSubscriptionPreviewOnChange;
-  document.getElementById('rewriting-enable').checked =
-    !!localStorage.URL_REWRITING_ENABLED;
-  document.getElementById('rewriting-enable').onchange =
-    OptionsPage.enableURLRewritingCheckboxOnChange;
+  checkboxEnableSubscriptionPreview.onchange =
+    checkboxEnableSubscriptionPreviewOnChange;
+
+  function checkboxEnableSubscriptionPreviewOnChange(event) {
+    if(this.checked) {
+      localStorage.ENABLE_SUBSCRIBE_PREVIEW = '1';
+    } else {
+      delete localStorage.ENABLE_SUBSCRIBE_PREVIEW;
+    }
+  }
+
+  const checkboxEnableURLRewriting = document.getElementById(
+    'rewriting-enable');
+  checkboxEnableURLRewriting.checked = !!localStorage.URL_REWRITING_ENABLED;
+  checkboxEnableURLRewriting.onchange = enableURLRewritingCheckboxOnChange;
+
+  function enableURLRewritingCheckboxOnChange(event) {
+    if(checkboxEnableURLRewriting.checked) {
+      localStorage.URL_REWRITING_ENABLED = '1';
+    } else {
+      delete localStorage.URL_REWRITING_ENABLED;
+    }
+  }
 
   // Init the opml import/export buttons
-  document.getElementById('button-export-opml').onclick =
-    OptionsPage.exportOPMLButtonOnClick;
-  document.getElementById('button-import-opml').onclick =
-    OptionsPage.importOPMLButtonOnClick;
+  const buttonExportOPML = document.getElementById('button-export-opml');
+  buttonExportOPML.onclick = OptionsPage.exportOPMLButtonOnClick;
+  const buttonImportOPML = document.getElementById('button-import-opml');
+  buttonImportOPML.onclick = OptionsPage.importOPMLButtonOnClick;
 
   OptionsPage.initSubscriptionsSection();
 
   // Init feed details section unsubscribe button click handler
   const unsubscribeButton = document.getElementById('details-unsubscribe');
-  unsubscribeButton.onclick = OptionsPage.onUnsubscribeClick;
+  unsubscribeButton.onclick = OptionsPage.buttonUnsubscribeOnClick;
 
   // Init the subscription form section
-  document.getElementById('subscription-form').onsubmit =
-    OptionsPage.onSubscriptionFormSubmit;
-  document.getElementById('subscription-preview-continue').onclick =
-    function on_preview_continue_click(event) {
+  const formSubscribe = document.getElementById('subscription-form');
+  formSubscribe.onsubmit = OptionsPage.onSubscriptionFormSubmit;
+  const buttonSubscriptionPreviewContinue = document.getElementById(
+    'subscription-preview-continue');
+  buttonSubscriptionPreviewContinue.onclick =
+    buttonSubscriptionPreviewContinueOnClick;
+
+  function buttonSubscriptionPreviewContinueOnClick(event) {
     const url = event.currentTarget.value;
     OptionsPage.hideSubscriptionPreview();
     OptionsPage.startSubscription(url);
-  };
+  }
 
   // Init display settings
+
+  // Setup the entry background image menu
+  const menuEntryBackgroundImage = document.getElementById(
+    'entry-background-image');
+  menuEntryBackgroundImage.onchange = menuEntryBackgroundImageOnChange;
+
+  function menuEntryBackgroundImageOnChange(event) {
+    if(event.target.value) {
+      localStorage.BACKGROUND_IMAGE = event.target.value;
+    } else {
+      delete localStorage.BACKGROUND_IMAGE;
+    }
+
+    chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+  }
+
+  // TODO: stop trying to reuse the option variable, just create separate
+  // variables
   let option = document.createElement('option');
   option.value = '';
   option.textContent = 'Use background color';
-  document.getElementById('entry-background-image').appendChild(option);
+  menuEntryBackgroundImage.appendChild(option);
 
-  DisplaySettings.BACKGROUND_IMAGE_PATHS.forEach(
-    function append_bgimage_option(path) {
+  // Load and append the various background images into the menu. Set the
+  // selected option.
+  // TODO: this shouldn't read from the local storage variable per call
+  DisplaySettings.BACKGROUND_IMAGE_PATHS.forEach(appendBackgroundImageOption);
+  function appendBackgroundImageOption(path) {
+    // TODO: option should be a local variable
     option = document.createElement('option');
     option.value = path;
     option.textContent = path.substring('/images/'.length);
-    option.selected = localStorage.BACKGROUND_IMAGE == path;
-    document.getElementById('entry-background-image').appendChild(option);
-  });
+    option.selected = localStorage.BACKGROUND_IMAGE === path;
+    menuEntryBackgroundImage.appendChild(option);
+  }
 
-  document.getElementById('entry-background-image').onchange =
-    OptionsPage.backgroundImageOnChange;
-
+  // Setup the header font menu
+  const menuHeaderFont = document.getElementById('select_header_font');
   option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
   document.getElementById('select_header_font').appendChild(option);
-
-  option = document.createElement('option');
-  option.textContent = 'Use Chrome font settings';
-  document.getElementById('select_body_font').appendChild(option);
-
-  DisplaySettings.FONT_FAMILIES.forEach(
-    function append_header_font_option(fontFamily) {
+  DisplaySettings.FONT_FAMILIES.forEach(appendHeaderFontOption);
+  function appendHeaderFontOption(fontFamily) {
     option = document.createElement('option');
     option.value = fontFamily;
     option.selected = fontFamily === localStorage.HEADER_FONT_FAMILY;
     option.textContent = fontFamily;
     document.getElementById('select_header_font').appendChild(option);
-  });
+  }
+  menuHeaderFont.onchange = headerFontMenuOnChange;
+  function headerFontMenuOnChange(event){
+    if(event.target.value) {
+      localStorage.HEADER_FONT_FAMILY = event.target.value;
+    } else {
+      delete localStorage.HEADER_FONT_FAMILY;
+    }
+    chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+  }
 
-  DisplaySettings.FONT_FAMILIES.forEach(
-    function append_body_font_option(fontFamily) {
+  // Setup the body font menu
+  const menuBodyFont = document.getElementById('select_body_font');
+  option = document.createElement('option');
+  option.textContent = 'Use Chrome font settings';
+  menuBodyFont.appendChild(option);
+  DisplaySettings.FONT_FAMILIES.forEach(appendBodyFontOption);
+
+  function appendBodyFontOption(fontFamily) {
     option = document.createElement('option');
     option.value = fontFamily;
     option.selected = fontFamily === localStorage.BODY_FONT_FAMILY;
     option.textContent = fontFamily;
-    document.getElementById('select_body_font').appendChild(option);
-  });
+    menuBodyFont.appendChild(option);
+  }
+  menuBodyFont.onchange = bodyFontMenuOnChange;
+  function bodyFontMenuOnChange(event) {
+    if(event.target.value) {
+      localStorage.BODY_FONT_FAMILY = event.target.value;
+    } else {
+      delete localStorage.BODY_FONT_FAMILY;
+    }
+    chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+  }
 
-  document.getElementById('select_header_font').onchange =
-    OptionsPage.headerFontMenuOnChange;
-  document.getElementById('select_body_font').onchange =
-    OptionsPage.bodyFontMenuOnChange;
+  const columnCountElement = document.getElementById('column-count');
 
-  [1,2,3].forEach(function append_col_count_option(columnCount) {
+  [1,2,3].forEach(appendColumnCountOption);
+
+  function appendColumnCountOption(columnCount) {
     option = document.createElement('option');
     option.value = columnCount;
     option.selected = columnCount === localStorage.COLUMN_COUNT;
     option.textContent = columnCount;
-    document.getElementById('column-count').appendChild(option);
-  });
+    columnCountElement.appendChild(option);
+  }
 
-  document.getElementById('column-count').onchange =
-    OptionsPage.columnCountMenuOnChange;
+  columnCountElement.onchange = columnCountMenuOnChange;
 
-  var inputChangedTimer, inputChangedDelay = 400;
+  function columnCountMenuOnChange(event) {
+    if(event.target.value) {
+      localStorage.COLUMN_COUNT = event.target.value;
+    } else {
+      delete localStorage.COLUMN_COUNT;
+    }
 
-  document.getElementById('entry-background-color').value =
-    localStorage.ENTRY_BACKGROUND_COLOR || '';
-  document.getElementById('entry-background-color').oninput = function() {
-    if(event.target.value)
-      localStorage.ENTRY_BACKGROUND_COLOR = event.target.value;
-    else
+    chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+  }
+
+  const entryBackgroundColorElement = document.getElementById(
+    'entry-background-color');
+  entryBackgroundColorElement.value = localStorage.ENTRY_BACKGROUND_COLOR ||
+    '';
+  entryBackgroundColorElement.oninput = backgroundColorOnInput;
+
+  function backgroundColorOnInput() {
+    const element = event.target;
+    const value = element.value;
+    if(value) {
+      localStorage.ENTRY_BACKGROUND_COLOR = value;
+    } else {
       delete localStorage.ENTRY_BACKGROUND_COLOR;
-    chrome.runtime.sendMessage({type: 'displaySettingsChanged'});
-  };
+    }
+    chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+  }
 
-  document.getElementById('entry-margin').value =
-    parseInt(localStorage.ENTRY_MARGIN) || '10';
-  document.getElementById('entry-margin').onchange =
-    OptionsPage.marginOnChange;
-  document.getElementById('header-font-size').value =
-    parseInt(localStorage.HEADER_FONT_SIZE) || '1';
-  document.getElementById('header-font-size').onchange =
-    OptionsPage.headerFontSizeOnChange;
-  document.getElementById('body-font-size').value =
-    parseInt(localStorage.BODY_FONT_SIZE) || '1';
-  document.getElementById('body-font-size').onchange =
-    OptionsPage.bodyFontSizeOnChange;
-  document.getElementById('justify-text').checked =
-    (localStorage.JUSTIFY_TEXT == '1') ? true : false;
-  document.getElementById('justify-text').onchange =
-    OptionsPage.justifyTextCheckboxOnChange;
+  // Setup the entry margin slider element
+  // todo: is it correct to set value to a string or an int?
+  const entryMarginElement = document.getElementById('entry-margin');
+  entryMarginElement.value = localStorage.ENTRY_MARGIN || '10';
+  entryMarginElement.onchange = entryMarginElementOnChange;
+
+  function entryMarginElementOnChange(event) {
+    // TODO: why am i defaulting to 10 here?
+    localStorage.ENTRY_MARGIN = event.target.value || '10';
+    chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+  }
+
+  const headerFontSizeElement = document.getElementById('header-font-size');
+  headerFontSizeElement.value = localStorage.HEADER_FONT_SIZE || '1';
+  headerFontSizeElement.onchange = headerFontSizeOnChange;
+
+  function headerFontSizeOnChange(event) {
+    localStorage.HEADER_FONT_SIZE = event.target.value || '1';
+    chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+  }
+
+  const inputBodyFontSize = document.getElementById('body-font-size');
+  inputBodyFontSize.value = localStorage.BODY_FONT_SIZE || '1':
+  inputBodyFontSize.onchange = bodyFontSizeOnChange;
+  function bodyFontSizeOnChange(event) {
+    localStorage.BODY_FONT_SIZE = event.target.value || '1';
+    chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+  }
+
+  const checkboxJustifyText = document.getElementById('justify-text');
+  checkboxJustifyText.checked = (localStorage.JUSTIFY_TEXT === '1') ? true :
+    false;
+  checkboxJustifyText.onchange = justifyTextCheckboxOnChange;
+
+  function justifyTextCheckboxOnChange(event) {
+    if(event.target.checked) {
+      localStorage.JUSTIFY_TEXT = '1';
+    } else {
+      delete localStorage.JUSTIFY_TEXT;
+    }
+    chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+  }
+
+  const bodyLineHeightElement = document.getElementById('body-line-height');
   const bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
-  document.getElementById('body-line-height').value =
-    (bodyLineHeight / 10).toFixed(2);
-  document.getElementById('body-line-height').oninput =
-    OptionsPage.bodyLineHeightSliderOnChange;
+  bodyLineHeightElement.value = (bodyLineHeight / 10).toFixed(2);
+  bodyLineHeightElement.oninput = bodyLineHeightSliderOnChange;
 
+  function bodyLineHeightSliderOnChange(event) {
+    localStorage.BODY_LINE_HEIGHT = event.target.value || '10';
+    chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+  }
 
   // Init the about section
   const manifest = chrome.runtime.getManifest();
-  document.getElementById('extension-name').textContent = manifest.name || '';
-  document.getElementById('extension-version').textContent =
-    manifest.version || '';
-  document.getElementById('extension-author').textContent =
-    manifest.author || '';
-  document.getElementById('extension-description').textContent =
-    manifest.description || '';
-  document.getElementById('extension-homepage').textContent =
-    manifest.homepage_url || '';
+  const extensionNameElement = document.getElementById('extension-name');
+  extensionNameElement.textContent = manifest.name;
+  const extensionVersionElement = document.getElementById('extension-version');
+  extensionVersionElement.textValue = manifest.version;
+  const extensionAuthorElement = document.getElementById('extension-author');
+  extensionAuthorElement.textContent = manifest.author;
+  const extensionDescriptionElement = document.getElementById(
+    'extension-description');
+  extensionDescriptionElement.textContent = manifest.description || '';
+  const extensionHomepageElement = document.getElementById(
+    'extension-homepage');
+  extensionHomepageElement.textContent = manifest.homepage_url;
 
   // Initially show the subscriptions list
-  OptionsPage.showSection(document.getElementById('mi-subscriptions'));
+  const subscriptionListElement = document.getElementById('mi-subscriptions');
+  OptionsPage.showSection(subscriptionListElement);
 };
 
 document.addEventListener('DOMContentLoaded', OptionsPage.onDOMContentLoaded);

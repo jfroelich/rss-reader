@@ -125,9 +125,9 @@ utils.updateBadgeText = function(connection) {
 // should also be changed to use local storage.
 utils.showNotification = function(messageString) {
   const permissionQuery = {permissions: ['notifications']};
-  chrome.permissions.contains(permissionQuery, on_check_permitted);
+  chrome.permissions.contains(permissionQuery, onCheckPermitted);
 
-  function on_check_permitted(permitted) {
+  function onCheckPermitted(permitted) {
     if(!permitted) {
       return;
     }
@@ -149,10 +149,6 @@ utils.showNotification = function(messageString) {
 };
 
 utils.fadeElement = function(element, duration, delay, callback) {
-  function fade_end(callback, element, event) {
-    event.target.removeEventListener('webkitTransitionEnd', fade_end);
-    callback(element);
-  }
 
   const style = element.style;
 
@@ -165,17 +161,22 @@ utils.fadeElement = function(element, duration, delay, callback) {
     style.opacity = style.display === 'none' ? '0' : '1';
   }
 
-  // TODO: why bind here? I moved the function into this function so I
+  // TODO: why bind here? I moved fadeEnd into this function so I
   // no longer need to do this
 
   if(callback) {
-    const fadeEndCallback = fade_end.bind(element, callback, element);
+    const fadeEndCallback = fadeEnd.bind(element, callback, element);
     element.addEventListener('webkitTransitionEnd', fadeEndCallback);
   }
 
   // property duration function delay
   style.transition = 'opacity ' + duration + 's ease ' + delay + 's';
   style.opacity = style.opacity === '1' ? '0' : '1';
+
+  function fadeEnd(callback, element, event) {
+    event.target.removeEventListener('webkitTransitionEnd', fadeEnd);
+    callback(element);
+  }
 };
 
 // TODO: i do not love the innards of this function, make this easier to read
@@ -185,13 +186,13 @@ utils.scrollToY = function(element, deltaY, targetY) {
   let amountToScroll = 0;
   let amountScrolled = 0;
 
-  return function debounce_scroll_to() {
+  return function debounceScrollTo() {
     clearTimeout(scrollYStartTimer);
     clearInterval(scrollYIntervalTimer);
-    scrollYStartTimer = setTimeout(start_scroll, 5);
+    scrollYStartTimer = setTimeout(startScroll, 5);
   }();
 
-  function start_scroll() {
+  function startScroll() {
     amountToScroll = Math.abs(targetY - element.scrollTop);
     amountScrolled = 0;
 
@@ -199,10 +200,10 @@ utils.scrollToY = function(element, deltaY, targetY) {
       return;
     }
 
-    scrollYIntervalTimer = setInterval(scroll_to_y, 20);
+    scrollYIntervalTimer = setInterval(scrollToY, 20);
   }
 
-  function scroll_to_y() {
+  function scrollToY() {
     const currentY = element.scrollTop;
     element.scrollTop += deltaY;
     amountScrolled += Math.abs(deltaY);
@@ -281,11 +282,16 @@ utils.string.tokenize = function(string) {
   if(!string) {
     return [];
   }
+
   const tokens = string.split(/s+/);
+
   // Filter zero-length strings
-  const definedTokens = tokens.filter(function return_first(first) {
+  const definedTokens = tokens.filter(returnFirst);
+
+  function returnFirst(first) {
     return first;
-  });
+  }
+
   return definedTokens;
 };
 

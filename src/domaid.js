@@ -862,7 +862,6 @@ DOMAid.findShallowestUnwrappableAncestor = function(element) {
   for(let node = element.parentNode;
     node && DOMAid.isUnwrappableParent(node);
     node = node.parentNode) {
-
     shallowest = node;
   }
   return shallowest;
@@ -948,7 +947,6 @@ DOMAid.filterHiddenElements = function(document) {
 
   const elements = bodyElement.querySelectorAll(HIDDEN_SELECTOR);
   const numElements = elements.length;
-
   for(let i = 0, element; i < numElements; i++) {
     element = elements[i];
     if(docElement.contains(element)) {

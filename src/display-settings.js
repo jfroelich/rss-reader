@@ -74,9 +74,12 @@ DisplaySettings.FONT_FAMILIES = [
 ];
 
 DisplaySettings.findCSSRule = function(sheet, selectorText) {
-  return Array.prototype.find.call(sheet.cssRules, function equals(rule) {
+
+  function ruleHasText(rule) {
     return rule.selectorText === selectorText;
-  });
+  }
+
+  return Array.prototype.find.call(sheet.cssRules, ruleHasText);
 };
 
 DisplaySettings.updateStyles = function() {
@@ -103,7 +106,8 @@ DisplaySettings.updateStyles = function() {
     entryRule.style.paddingRight = entryMargin + 'px';
   }
 
-  const titleRule = DisplaySettings.findCSSRule(sheet,'div.entry a.entry-title');
+  const titleRule = DisplaySettings.findCSSRule(sheet,
+    'div.entry a.entry-title');
   if(titleRule) {
     titleRule.style.background = '';
     titleRule.style.fontFamily = localStorage.HEADER_FONT_FAMILY;
