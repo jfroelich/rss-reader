@@ -4,43 +4,7 @@
 
 'use strict';
 
-// TODO: one of the causes of duplicate entries is that I am not doing a case
-// insensitive comparision of link urls. I should be lowercasing the incoming
-// url, and storing only lowercase urls, and testing against it. Or, at least,
-// I should be lowercasing a part of the URL? I am not sure why exactly but
-// I think I am seeing some duplicate links. Also, I need to double check that
-// I am trimming, maybe there is padding
-
-// RFC 4343
-// http://stackoverflow.com/questions/7996919/should-url-be-case-sensitive
-// Domain names are case insensitive, but the rest is generally case
-// sensitive. So the link URL comparison needs to be more subtle and pick up
-// this to remove some additional duplicates
-// So what I need to do is normalize the url by lowercasing just its domain,
-// so I need to design a normalize url function.
-// https://en.wikipedia.org/wiki/URL_normalization
-// - convert scheme and case to lowercase
-// - remove the default port???
-// - should maybe consider removing fragments (#trailingthing)
-
-// In fact what i should probably be doing is renaming schemeless to something
-// like 'key' which indicates how articles are compared to one another, which
-// happens to be a derived form of the article's url, where i have normalized
-// the url, and done some other things (removed frags, removed protocol)
-
-// TODO: when fetching feeds and finding changed title, I need to also
-// cascade that change to older entries? Maybe? Or at least I should
-// acknowledge this in a comment to explain why an entry's feedTitle property
-// does not correspond to the current feed title
-
-// TODO: remove async dependency
-// TODO: remove reliance on Feed.forEach, do explicit iteration here,
-// or maybe make a function that generates the initial request at least, and
-// then do the iteration (e.g. db_get_feeds_request)
-// TODO: do not augment certain urls, such as links to google groups pages
-
 const FeedPoller = {};
-
 
 FeedPoller.start = function() {
   console.log('Starting poll ...');
