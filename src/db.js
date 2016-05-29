@@ -126,6 +126,10 @@ db.clearEntryStore = function(connection) {
   }
 
   function onComplete(event) {
+
     console.log('Cleared entry object store');
+
+    // Also update the number of unread
+    utils.updateBadgeText(event.target.db);
   }
 };
