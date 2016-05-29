@@ -70,36 +70,59 @@ URLResolver.URL_ATTRIBUTE_MAP = {
 };
 
 URLResolver.generateSelectorPart = function(key) {
+
+  // NOTE: using lowercase because I have occassionally seen counterintuitive
+  // behavior with uppercase element names in CSS (like in
+  // Element.prototype.matches)
+
   return key + '[' + URLResolver.URL_ATTRIBUTE_MAP[key] +']';
 };
 
 URLResolver.ELEMENT_SELECTOR = Object.keys(URLResolver.URL_ATTRIBUTE_MAP).map(
-  URLResolver.generateSelectorPart).join(',');
-
-// TODO: i want to modify this so that I do not also check for
-// srcset, I would rather be iterating over all elements, or iterate over
-// srcset elements separately.
+  URLResolver.generateSelectorPart).join(', ');
 
 URLResolver.modifyAllURLAttributes = function(document, baseURLString) {
 
-  // Create a URL object of the base url string once here. resolveURL now
-  // expects a URL object.
+  // Create a URL object of the base url string once here.
+  // Assumes baseURLString contains a valid URL
   const baseURL = new URL(baseURLString);
+
+  // TODO: i want to modify this so that I do not also check for
+  // srcset, I would rather be iterating over all elements, or iterate over
+  // srcset elements separately.
+
+  // NOTE: The selector matches elements with attributes, but it does not
+  // guarantee those attributes have values. Apparently, calling getAttribute
+  // on a matched element (from elName[attName]) can even yield undefined
+  // sometimes, and sometimes empty string, so we need to guard against that
+  // case.
 
   // Note this is not restricted to elements in the body, because there
   // are resolvable elements in the head, and <html> itself has a
   // resolvable attribute.
   const elements = document.querySelectorAll(URLResolver.ELEMENT_SELECTOR);
   const numElements = elements.length;
-  for(let i = 0, element, attribute, originalURL, resolvedURL; i < numElements;
-    i++) {
+  for(let i = 0, element, elementName, attribute, originalURL, resolvedURL;
+    i < numElements; i++) {
     element = elements[i];
-    attribute = URLResolver.URL_ATTRIBUTE_MAP[element.nodeName];
-    originalURL = element.getAttribute(attribute).trim();
-    resolvedURL = URLResolver.resolveURL(baseURL, originalURL);
 
-    if(resolvedURL !== originalURL) {
-      element.setAttribute(attribute, resolvedURL);
+    elementName = element.nodeName;
+    attribute = URLResolver.URL_ATTRIBUTE_MAP[elementName];
+
+    // Default to empty string to ensure originalURL is defined, apparently
+    // it can sometimes be undefined, not sure why.
+    originalURL = element.getAttribute(attribute) || '';
+    // Attribute values can have wrapping spaces and still be valid, so trim
+    // This helps the non-empty check and also avoids any oddness with how
+    // 'new URL' in resolveURL treats whitespace padded urls.
+    originalURL = originalURL.trim();
+
+    // Check if url is non-empty so that we skip processing empty strings
+    if(originalURL) {
+      resolvedURL = URLResolver.resolveURL(baseURL, originalURL);
+      if(resolvedURL && resolvedURL !== originalURL) {
+        element.setAttribute(attribute, resolvedURL);
+      }
     }
 
     // Resolve srcsets
@@ -116,7 +139,9 @@ URLResolver.resolveURL = function(baseURL, urlString) {
     const url = new URL(urlString, baseURL);
     return url.href;
   } catch(exception) {
-    console.debug(exception.message || exception, baseURL, urlString);
+    console.debug('Error:', exception.message);
+    console.debug('baseURL:', baseURL);
+    console.debug('urlString:', urlString);
   }
 
   return urlString;
