@@ -14,8 +14,12 @@ FeedPoller.start = function() {
     return;
   }
 
-  chrome.permissions.contains({permissions: ['idle']},
-    FeedPoller.onCheckIdlePermission);
+  // TODO:
+  // change options to get/set the local storage variable
+
+  // Check if we are idling
+  const IDLE_PERIOD_SECONDS = 60 * 5;
+  chrome.idle.queryState(IDLE_PERIOD_SECONDS, FeedPoller.onQueryIdleState);
 };
 
 FeedPoller.isOnline = function() {
@@ -30,33 +34,19 @@ FeedPoller.isOnline = function() {
   return navigator.onLine;
 };
 
-FeedPoller.onCheckIdlePermission = function(permitted) {
-  const IDLE_PERIOD_IN_SECONDS = 60 * 5; // 5 minutes
-
-  // TODO: I no longer like how I dynamically set the permission. The
-  // permission should always be set in manifest.json, and instead I should
-  // just be checking a localStorage property. The options UI should just be
-  // modifying that property. This will also make this step more sync, because
-  // I can skip jumping through the queryState hoop
-
-  // If we are permitted to check idle state, then check it. Otherwise,
-  // immediately continue to polling.
-  if(permitted) {
-    chrome.idle.queryState(IDLE_PERIOD_IN_SECONDS,
-      FeedPoller.onQueryIdleState);
-  } else {
-    db.open(FeedPoller.iterateFeeds);
-  }
-};
-
 FeedPoller.onQueryIdleState = function(state) {
-  if(state === 'locked' || state === 'idle') {
-    // If we appear to be idle then start polling
-    db.open(FeedPoller.iterateFeeds);
+  // TODO: these conditions can be simplified to eliminate the repetition of
+  // the call to db.open
+  if(localStorage.ONLY_POLL_IF_IDLE) {
+    if(state === 'locked' || state === 'idle') {
+      db.open(FeedPoller.iterateFeeds);
+    } else {
+      console.debug('Polling canceled because not idle');
+      FeedPoller.onComplete();
+    }
   } else {
-    // We are not idle, so end polling
-    console.debug('Polling canceled because not idle');
-    FeedPoller.onComplete();
+    // Continue regardless of idle state
+    db.open(FeedPoller.iterateFeeds);
   }
 };
 

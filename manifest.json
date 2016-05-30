@@ -33,6 +33,7 @@
     "alarms",
     "http://*/*",
     "https://*/*",
+    "idle",
     "tabs",
     "unlimitedStorage"
   ],

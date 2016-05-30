@@ -999,24 +999,18 @@ OptionsPage.onDOMContentLoaded = function(event) {
   }
 
   const checkboxEnableIdleCheck = document.getElementById('enable-idle-check');
+  checkboxEnableIdleCheck.checked = !!localStorage.ONLY_POLL_IF_IDLE;
   checkboxEnableIdleCheck.onclick = checkboxEnableIdleCheckOnChange;
 
   // Either add or remove the permission when checking or unchecking
   function checkboxEnableIdleCheckOnChange(event) {
     if(event.target.checked){
-      chrome.permissions.request({'permissions': ['idle']}, noopCallback);
+      localStorage.ONLY_POLL_IF_IDLE = '1';
     } else {
-      chrome.permissions.remove({'permissions': ['idle']}, noopCallback);
+      delete localStorage.ONLY_POLL_IF_IDLE;
     }
 
     function noopCallback() {}
-  }
-
-  // Check the checkbox if the permission is set
-  chrome.permissions.contains({'permissions': ['idle']},
-    hasCheckIdlePermission);
-  function hasCheckIdlePermission(permitted) {
-    checkboxEnableIdleCheck.checked = permitted;
   }
 
   // TODO: deprecate this because I plan to deprecate the preview ability.
