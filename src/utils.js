@@ -113,6 +113,7 @@ utils.updateBadgeText = function(connection) {
   }
 };
 
+// TODO: deprecate
 // TODO: i think it was a mistake to determine whether a notification
 // should be shown based on whether the permission is available. The
 // permission should be always, and this should instead be checking
@@ -124,28 +125,19 @@ utils.updateBadgeText = function(connection) {
 // Side note: anything else I based on this (like the idle check in polling)
 // should also be changed to use local storage.
 utils.showNotification = function(messageString) {
-  const permissionQuery = {permissions: ['notifications']};
-  chrome.permissions.contains(permissionQuery, onCheckPermitted);
 
-  function onCheckPermitted(permitted) {
-    if(!permitted) {
-      return;
-    }
-
-    const extensionName = 'lucubrate';
-
-    const notification = {
-      type: 'basic',
-      title: chrome.runtime.getManifest().name,
-      iconUrl: '/images/rss_icon_trans.gif',
-      message: messageString
-    };
-
-    chrome.notifications.create(extensionName, notification, callback);
+  if(!localStorage.SHOW_NOTIFICATIONS) {
+    return;
   }
 
-  // TODO: I think this is the on_click handler? Name it something clearer
-  function callback() {}
+  const notification = {
+    type: 'basic',
+    title: chrome.runtime.getManifest().name,
+    iconUrl: '/images/rss_icon_trans.gif',
+    message: messageString
+  };
+
+  chrome.notifications.create(extensionName, notification, function() {});
 };
 
 utils.fadeElement = function(element, duration, delay, callback) {

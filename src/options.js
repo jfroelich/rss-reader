@@ -768,7 +768,7 @@ OptionsPage.importOPMLButtonOnClick = function(event) {
       console.debug('Encountered exceptions when importing: %o', errors);
     }
 
-    // TODO: utils.showNotification because opml import no longer does this
+    // TODO: show a notification because opml import no longer does this
     // itself
     // TODO: the importer should be the one responsible for sending the
     // notification, not here
@@ -899,29 +899,17 @@ OptionsPage.onDOMContentLoaded = function(event) {
     OptionsPage.showSection(event.currentTarget);
   }
 
-  // Init the general settings page
+  // Setup the Enable Notifications checkbox in the General Settings section
   const checkboxEnableNotifications = document.getElementById(
     'enable-notifications');
-  checkboxEnableNotifications.onclick =
-    OptionsPage.checkboxEnableNotificationsOnChange;
-
+  checkboxEnableNotifications.checked = SHOW_NOTIFICATIONS in localStorage;
+  checkboxEnableNotifications.onclick = checkboxEnableNotificationsOnChange;
   function checkboxEnableNotificationsOnChange(event) {
     if(event.target.checked) {
-      chrome.permissions.request({'permissions': ['notifications']},
-        noopCallback);
+      localStorage.SHOW_NOTIFICATIONS = '1';
     } else {
-      chrome.permissions.remove({'permissions': ['notifications']},
-        noopCallback);
+      delete localStorage.SHOW_NOTIFICATIONS;
     }
-
-    function noopCallback() {}
-  }
-
-  const notificationsPermissionQuery = {'permissions': ['notifications']};
-  chrome.permissions.contains(notificationsPermissionQuery,
-    hasNotificationsPermission);
-  function hasNotificationsPermission(permitted) {
-    checkboxEnableNotifications.checked = permitted;
   }
 
   const checkboxEnableBackgroundProcessing = document.getElementById(
