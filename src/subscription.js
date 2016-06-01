@@ -10,6 +10,8 @@
 
 const SubscriptionManager = {};
 
+// TODO: if the file name is subscription. then this should be using an
+// object with the name Subscription, not SubscriptionManager
 // TODO: opml-import should also use this to import feeds
 // TODO: also, is the opml lib doing the exists look ups? If it is then that
 // is kind of silly, because this also does the exists lookup. So that would
@@ -27,7 +29,6 @@ SubscriptionManager.subscribe = function(connection, urlString, shouldFetch,
   // otherwise because we only test if defined/truthy.
   // Assume the url is a string, do not guard against other types
   // Assume url is trimmed
-  // Assume url is normalized
 
   console.debug('Subscribing to', urlString);
 
@@ -97,16 +98,15 @@ SubscriptionManager.subscribe = function(connection, urlString, shouldFetch,
     }
 
     if(shouldFetch && navigator.onLine) {
-      const boundOnFetchFeed = onFetchFeed.bind(null, connection);
       const fetchTimeoutMillis = 10 * 1000;
-      fetchFeed(urlString, fetchTimeoutMillis, boundOnFetchFeed);
+      fetchFeed(urlString, fetchTimeoutMillis, onFetchFeed);
     } else {
       const newFeed = {'url': urlString};
       Feed.put(connection, null, newFeed, onPutFeed);
     }
   }
 
-  function onFetchFeed(connection, fetchEvent, fetchedFeed, responseURL) {
+  function onFetchFeed(fetchEvent, fetchedFeed, responseURL) {
 
     // NOTE: even though we fetched entry information along with the feed,
     // this ignores that. Entries are only added by the polling mechanism.
