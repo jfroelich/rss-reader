@@ -14,21 +14,6 @@ Feed.findById = function(connection, id, callback) {
   request.onsuccess = callback;
 };
 
-Feed.findByURL = function(connection, url, callback) {
-  const transaction = connection.transaction('feed');
-  const store = transaction.objectStore('feed');
-  const index = store.index('schemeless');
-
-  // TODO: I was revising filterProtocol and noticed that it can possibly
-  // throw an exception. This is the sole caller of that function. I need to
-  // clearly define the behavior regarding invalid urls. filterProtocol
-  // currently can throw, and because this does not catch, it also can throw.
-  // So I also need to look at this function's callers.
-
-  const schemeless = utils.url.filterProtocol(url);
-  const request = index.get(schemeless);
-  request.onsuccess = callback;
-};
 
 // TODO: deprecate, this is a caller responsibility
 Feed.forEach = function(connection, handleFeed, sortByTitle, callback) {

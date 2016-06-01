@@ -74,6 +74,12 @@ SubscriptionManager.subscribe = function(urlString, shouldFetch, callback) {
     // and I think this can potentially cause problems.
     // Where should url cleaning and normalization take place? Here, or in
     // findByURL, or in the calling context?
+    // Right now I am just stripping protocol. That is probably not right.
+    // I need to be normalizing instead of just stripping. I do however
+    // want to normalize alternate protocols all into http, but just for
+    // the purposes of comparision. So I shouldn't even be using a schemeless
+    // index, I should be using a normalizedURLForComparisionPurposes kind of
+    // index.
 
     // NOTE: The lookup has to occur because we want to possibly fetch.
     // Obviously the put request would fail if a feed with the same url
@@ -82,13 +88,23 @@ SubscriptionManager.subscribe = function(urlString, shouldFetch, callback) {
     // to make this extra roundtrip, even though the check is done
     // again by the db when trying to put the feed.
 
-    // TODO: This is the only place that calls Feed.findByURL. Deprecate the
-    // function and move it into here. (once I update options to use
-    // use this subscribe function)
-
     const connection = connectionEvent.target.result;
+
+    const transaction = connection.transaction('feed');
+    const store = transaction.objectStore('feed');
+    const index = store.index('schemeless');
+
+    // TODO: I was revising filterProtocol and noticed that it can possibly
+    // throw an exception. This is the sole caller of that function. I need to
+    // clearly define the behavior regarding invalid urls. filterProtocol
+    // currently can throw, and because this does not catch, it also can throw.
+    // So I also need to look at this function's callers.
+    const schemeless = utils.url.filterProtocol(urlString);
+    const request = index.get(schemeless);
+
     const boundOnFindByURL = onFindByURL.bind(null, connection);
-    Feed.findByURL(connection, urlString, boundOnFindByURL);
+    request.onsuccess = boundOnFindByURL;
+
   }
 
   function onFindByURL(connection, findEvent) {
