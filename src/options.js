@@ -396,9 +396,19 @@ OptionsPage.startSubscription = function(url) {
 
     Feed.put(connection, null, remoteFeed, on_store_feed);
 
-    function on_store_feed(newId) {
+    function on_store_feed(event) {
+
+      if(event.type !== 'success') {
+        // TODO: exit early, handle error?
+        // TODO: isn't this redundant with stuff in onSubscribe?
+      }
+
+      let newId = event.target.result;
       remoteFeed.id = newId;
-      onSubscribe(remoteFeed, 0, 0);
+      //onSubscribe(remoteFeed, 0, 0);
+      // NOTE: we cannot forward the feed object or anything,
+      // onSubscribe expects the event
+      onSubscribe(event);
     }
   }
 
@@ -407,7 +417,26 @@ OptionsPage.startSubscription = function(url) {
     OptionsPage.showSection(subSection);
   }
 
-  function onSubscribe(addedFeed) {
+  function onSubscribe(event) {
+
+    if(event.type !== 'success') {
+      // Something went wrong with the insert
+      // TODO: Show an error or something here
+      // TODO: and exit early
+    }
+
+    // Reconstruct the added feed because we only receive the newFeedId
+    // here
+    // TODO: maybe Feed.put needs a better callback then, maybe I do need
+    // to wrap the callback in Feed.put
+    let newFeedId = event.target.result;
+    let addedFeed = {};
+    // TODO: think of how to get this
+    addedFeed.title = 'Unknown';
+    addedFeed.id = newFeedId;
+    addedFeed.url = url;
+
+
     OptionsPage.appendFeed(addedFeed, true);
     OptionsPage.updateFeedCount();
     OptionsPage.updateSubscriptionMonitorMessage('Subscribed to ' + url);
@@ -999,18 +1028,18 @@ OptionsPage.onDOMContentLoaded = function(event) {
   }
 
   const checkboxEnableIdleCheck = document.getElementById('enable-idle-check');
+
   checkboxEnableIdleCheck.checked = !!localStorage.ONLY_POLL_IF_IDLE;
+
   checkboxEnableIdleCheck.onclick = checkboxEnableIdleCheckOnChange;
 
   // Either add or remove the permission when checking or unchecking
   function checkboxEnableIdleCheckOnChange(event) {
-    if(event.target.checked){
+    if(event.target.checked) {
       localStorage.ONLY_POLL_IF_IDLE = '1';
     } else {
       delete localStorage.ONLY_POLL_IF_IDLE;
     }
-
-    function noopCallback() {}
   }
 
   // TODO: deprecate this because I plan to deprecate the preview ability.
@@ -1215,7 +1244,7 @@ OptionsPage.onDOMContentLoaded = function(event) {
   }
 
   const inputBodyFontSize = document.getElementById('body-font-size');
-  inputBodyFontSize.value = localStorage.BODY_FONT_SIZE || '1':
+  inputBodyFontSize.value = localStorage.BODY_FONT_SIZE || '1';
   inputBodyFontSize.onchange = bodyFontSizeOnChange;
   function bodyFontSizeOnChange(event) {
     localStorage.BODY_FONT_SIZE = event.target.value || '1';

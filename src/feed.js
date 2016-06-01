@@ -74,7 +74,11 @@ Feed.getAll = function(connection, callback) {
 // pointless updates?
 // TODO: ensure the date is not beyond the current date?
 // TODO: maybe not modify date updated if not dirty
-// TODO: sanitize html entities?
+// TODO: sanitize html?
+// TODO: rename original to originalFeed, and feed to newFeed
+// NOTE: callback receives an event resulting from either request.onsuccess
+// or onerror. Use event.target.result to get the new id in case event.type
+// equals success.
 Feed.put = function(connection, original, feed, callback) {
 
   // Create a storable object from the input feeds by combining together the
@@ -96,6 +100,7 @@ Feed.put = function(connection, original, feed, callback) {
   }
 
   // url is required so assume it exists
+  // TODO: maybe this should not assume, it should test and throw?
   storable.url = feed.url;
 
   // Store the fetched feed type (e.g. rss or rdf) as a string
@@ -164,13 +169,21 @@ Feed.put = function(connection, original, feed, callback) {
   const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.put(storable);
-  request.onsuccess = function onSuccess(event) {
-    const newId = event.target.result;
-    callback(newId);
-  };
-  request.onerror = function onError(event) {
-    callback();
-  };
+
+  // NOTE: callback may be undefined, but that is ok
+  // NOTE: we use request.onsuccess and onerror instead of
+  // transaction.oncomplete because the feed's new id in the case of an add
+  // is defined in event.target.result of onsuccess
+  request.onsuccess = callback;
+  request.onerror = callback;
+
+  //request.onsuccess = function onSuccess(event) {
+  //  const newId = event.target.result;
+  //  callback(newId);
+  //};
+  //request.onerror = function onError(event) {
+  //  callback();
+  //};
 };
 
 // Prep a string property of an object for storage in indexedDB

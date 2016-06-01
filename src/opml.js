@@ -198,19 +198,15 @@ OPML.onFileLoad = function(connection, tracker, callback, event) {
 
   // TODO: should this be waiting for all storage calls to complete
   // before calling back?
-  // TODO: Feed.put should allow for a null callback argument
-  // and handle it on its own, i shouldn't need to use a noop here
+
   for(let feed of feeds) {
-    Feed.put(connection, null, feed, OPML.noop);
+    Feed.put(connection, null, feed, null);
   }
 
   if(tracker.filesImported === tracker.numFiles) {
     callback(tracker);
   }
 };
-
-// TODO: deprecate once Feed.put accepts undefined callback
-OPML.noop = function() {};
 
 OPML.expandFeedObjectToPair = function(feed) {
   return [feed.url, feed];

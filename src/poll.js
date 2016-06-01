@@ -9,113 +9,155 @@ const FeedPoller = {};
 FeedPoller.start = function() {
   console.log('Starting poll ...');
 
-  if(!FeedPoller.isOnline()) {
+  // Check if we are online
+  if('onLine' in navigator && !navigator.onLine) {
     console.debug('Polling canceled because offline');
+    // TODO: still call onComplete despite early exit?
     return;
   }
 
-  // TODO:
-  // change options to get/set the local storage variable
+  const ONLY_POLL_IF_IDLE = localStorage.ONLY_POLL_IF_IDLE;
 
-  // Check if we are idling
-  const IDLE_PERIOD_SECONDS = 60 * 5;
-  chrome.idle.queryState(IDLE_PERIOD_SECONDS, FeedPoller.onQueryIdleState);
-};
-
-FeedPoller.isOnline = function() {
-  if(!navigator) {
-    return true;
+  if(!ONLY_POLL_IF_IDLE) {
+    // Skip the idle check and go straight to opening the database
+    db.open(onOpenDatabase);
+  } else {
+    // Check if we have been idling for a minute
+    const IDLE_PERIOD_SECONDS = 60;
+    chrome.idle.queryState(IDLE_PERIOD_SECONDS, onQueryIdleState);
   }
 
-  if(!navigator.hasOwnProperty('onLine')) {
-    return true;
-  }
-
-  return navigator.onLine;
-};
-
-FeedPoller.onQueryIdleState = function(state) {
   // TODO: these conditions can be simplified to eliminate the repetition of
   // the call to db.open
-  if(localStorage.ONLY_POLL_IF_IDLE) {
-    if(state === 'locked' || state === 'idle') {
-      db.open(FeedPoller.iterateFeeds);
+  function onQueryIdleState(state) {
+    if(ONLY_POLL_IF_IDLE) {
+      if(state === 'locked' || state === 'idle') {
+        db.open(onOpenDatabase);
+      } else {
+        console.debug('Polling canceled because not idle');
+        FeedPoller.onComplete();
+      }
     } else {
-      console.debug('Polling canceled because not idle');
-      FeedPoller.onComplete();
+      // Continue regardless of idle state
+      db.open(onOpenDatabase);
     }
-  } else {
-    // Continue regardless of idle state
-    db.open(FeedPoller.iterateFeeds);
+  }
+
+  function onOpenDatabase(event) {
+    // Exit early if there was a database connection error
+    if(event.type !== 'success') {
+      console.debug(event);
+      FeedPoller.onComplete();
+      return;
+    }
+
+    const connection = event.target.result;
+    FeedPoller.iterateFeeds(connection);
   }
 };
 
 // Iterate over the feeds in the database, and update each feed.
-FeedPoller.iterateFeeds = function(event) {
-  // Exit early if there was a database connection error
-  if(event.type !== 'success') {
-    console.debug(event);
+// TODO: react appropriately to request error
+FeedPoller.iterateFeeds = function(connection) {
+  const iterateFeedsTransaction = connection.transaction('feed');
+  const feedStore = iterateFeedsTransaction.objectStore('feed');
+  const iterateFeedsRequest = feedStore.openCursor();
+  const onSuccess = FeedPoller.onGetNextFeed.bind(iterateFeedsRequest,
+    connection);
+  iterateFeedsRequest.onsuccess = onSuccess;
+};
+
+// Processes the feed at the current cursor position and then advances the
+// cursor.
+FeedPoller.onGetNextFeed = function(connection, event) {
+  const request = event.target;
+  const cursor = request.result;
+
+  if(cursor) {
+    const feed = cursor.value;
+    const timeout = 10 * 1000;
+    const onFetchFeedBound = FeedPoller.onFetchFeed.bind(null, connection,
+      feed);
+    fetchFeed(feed.url, timeout, onFetchFeedBound);
+    //FeedPoller.fetchFeed(connection, cursor.value);
+    cursor.continue();
+  } else {
+    // No more feeds or no feeds found, so theoretically complete
+    // TODO: this is calling onComplete too early. There are
+    // misc additional async things that happen when processing a feed, and
+    // technically it is only complete when each feed has been fully
+    // processed, not just here where iteration has completed. So this is
+    // wrong.
+    // The problem is that cursor.continue is async above, and triggering
+    // a separate request. I want that to happen because I want to process
+    // feeds non-sequentially, concurrently, all at once. This will end up
+    // getting called while some of those requests are still outstanding
+    // or pending or whatever.
+
+    // So how do I solve it? How does each feed handler know if it
+    // the 'last' one if don't know the total number of feeds prior to this?
+    // Maybe I just don't have an onComplete function for now?
+
     FeedPoller.onComplete();
+  }
+};
+
+// TODO: rather than check if event is defined or not, check if event
+// has the proper type (e.g. type === 'load') or whatever it is
+// Right now, event is only defined if there was an error. In the future,
+// I think event should always be defined, it is just that its type is
+// 'load' or whatever for successful fetch.
+// TODO: if I am always passing back event, I can probably get
+// responseURL from the event itself, so I don't need to pass back
+// responseURL as an explicit parameter, I can just use
+// event.target.responseURL
+// TODO: and it shouldn't be called errorEvent then, it should just be
+// an event
+// TODO: I am not even sure how much work fetchFeed should be doing on
+// its own, implicitly. E.g. should it just be fetchXML and then all the
+// post processing happens explicitly, here in the calling context?
+// TODO: just a mental note, I am not yet using responseURL but I planned
+// to use it. Something about how I should be detecting if the feed url is
+// a redirect. I should only be using the post-redirect URL I think? But
+// is that solved as subscribe time as opposed to here? Although any check
+// for update means that after subscribe the source author could have
+// added a redirect, so we always need to continue to check for it every
+// time.
+
+FeedPoller.onFetchFeed = function(connection, localFeed, errorEvent,
+  remoteFeed, responseURL) {
+
+  // Exit early if an error occurred while fetching. The event is only
+  // defined if there was a fetch error.
+  if(errorEvent) {
+    console.debug('Error fetching:', localFeed.url);
+    console.dir(errorEvent);
     return;
   }
 
-  // TODO: rather than delegate iteration to the database, i would prefer to
-  // control iteration here. However, we can still delegate the generation
-  // of the cursor request to an external db function
-
-
-  const connection = event.target.result;
-  const boundFetchFeed = FeedPoller.fetchFeed.bind(null, connection);
-  Feed.forEach(connection, boundFetchFeed, false, FeedPoller.onComplete);
+  const onStoreFeedBound = FeedPoller.onStoreFeed.bind(null, connection,
+    localFeed, remoteFeed);
+  Feed.put(connection, localFeed, remoteFeed, onStoreFeedBound);
 };
 
-FeedPoller.fetchFeed = function(connection, feed) {
-  const timeout = 10 * 1000;
-  const onFetchFeedBound = FeedPoller.onFetchFeed.bind(null, connection, feed);
-  fetchFeed(feed.url, timeout, onFetchFeedBound);
-};
+// TODO: stop using the async lib. Do custom async iteration here.
+FeedPoller.onStoreFeed = function(connection, localFeed, remoteFeed, event) {
 
-FeedPoller.onFetchFeed = function(connection, feed, event, remoteFeed) {
-  // Exit early if an error occurred while fetching. This does not
-  // continue processing the feed or its entries. The event is only defined
-  // if there was a fetch error.
-  // TODO: rather than check if event is defined or not, check if event
-  // has the proper type (e.g. type === 'load') or whatever it is
-  if(event) {
-    console.debug('Error fetching:', feed.url);
-    console.dir(event);
-    return;
-  }
+  // NOTE: we can ignore the event object because we know we are doing an
+  // update, not an insert, and don't need new id from event.target.result, and
+  // otherwise event does not contain anything useful except possibly it
+  // may be type === 'error'?
 
-  // TODO: if we are cleaning up the properties in Feed.put,
-  // are we properly cascading those cleaned properties to the entries?
-  // is there any sanitization there that would need to be propagated?
-  // maybe sanitization isn't a function of storage, and storage just
-  // stores, and so this should be calling sanitize_before_store or
-  // something to that effect that prepares a feed object for storage. in
-  // fact that function creates a new storable object
-  // TODO: also, it still is really unclear which feed is which, what is
-  // feed and what is remoteFeed? How much of the original feed do I need?
-
-  const onStoreFeedBound = FeedPoller.onStoreFeed.bind(null, connection, feed,
-    remoteFeed);
-  Feed.put(connection, feed, remoteFeed, onStoreFeedBound);
-};
-
-// TODO: what's with the _?
-FeedPoller.onStoreFeed = function(connection, feed, remoteFeed, _) {
-  // TODO: stop using the async lib. Do custom async iteration here.
   async.forEach(remoteFeed.entries,
     FeedPoller.findEntryByLink.bind(null, connection, feed),
     FeedPoller.onEntriesUpdated.bind(null, connection));
+
 };
 
-FeedPoller.onEntriesUpdated = function(connection) {
+//FeedPoller.onEntriesUpdated = function(connection) {
   // Update the number of unread entries now that the number possibly changed
-  // Pass along the current connection so that utils.updateBadgeText does not
-  // have to create a new one.
-  utils.updateBadgeText(connection);
-};
+//  utils.updateBadgeText(connection);
+//};
 
 // For an entry in the feed, check whether an entry with the same link
 // already exists.
