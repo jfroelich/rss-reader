@@ -114,6 +114,7 @@ OptionsPage.updateSubscriptionMonitorMessage = function(messageString) {
   monitorElement.appendChild(messageElement);
 };
 
+// TODO: rename to fadeOutSubscriptionMonitor to clarify it is async?
 OptionsPage.hideSubscriptionMonitor = function(callback, fadeOut) {
   const monitorElement = document.getElementById(
     'options_subscription_monitor');
@@ -323,129 +324,37 @@ OptionsPage.hideSubscriptionPreview = function() {
   }
 };
 
-// TODO: this should be calling out to a function in subscription.js and
-// delegating most of its logic to that function.
-// TODO: if the parameter is a url, treat it like a URL. Wrap it in a URL
-// object. This will also explicitly test validity, meaning I don't need to
-// check again. In fact maybe this function should only accept a URL
-// object as input.
 OptionsPage.startSubscription = function(url) {
   OptionsPage.hideSubscriptionPreview();
-
-  if(!utils.url.isURLString(url)) {
-    OptionsPage.showErrorMessage('Invalid url "' + url + '".');
-    return;
-  }
-
   OptionsPage.showSubscriptionMonitor();
-  OptionsPage.updateSubscriptionMonitorMessage('Subscribing...');
-  db.open(onOpen);
-
-  function onHideMonitorShowConnectionError() {
-    OptionsPage.showErrorMessage(
-      'An error occurred while trying to subscribe to ' + url);
-  }
-
-  function onOpen(event) {
-    if(event.type !== 'success') {
-      console.debug(event);
-      OptionsPage.hideSubscriptionMonitor(
-        onHideMonitorShowConnectionError);
-      return;
-    }
-
-    const connection = event.target.result;
-    const boundOnFindFeed = onFindFeed.bind(null, connection);
-
-    // This is the only place that calls this function apparently? Strange,
-    // I thought that I would also be checking this in other places.
-    Feed.findByURL(connection, url, boundOnFindFeed);
-  }
-
-  function onHideMonitorShowExistsError() {
-    OptionsPage.showErrorMessage('Already subscribed to ' + url + '.');
-  }
-
-  function onFindFeed(connection, event) {
-    if(event.target.result) {
-      OptionsPage.hideSubscriptionMonitor(onHideMonitorShowExistsError);
-      return;
-    }
-
-    // TODO: call out to net function
-    if(!navigator.onLine) {
-      Feed.put(connection, null, {url: url}, onSubscribe);
-    } else {
-      const boundOnFetchFeed = onFetchFeed.bind(null, connection);
-      fetchFeed(url, 10 * 1000, boundOnFetchFeed);
-    }
-  }
-
-  function onHideSubscriptionMonitorShowFetchError() {
-    OptionsPage.showErrorMessage(
-      'An error occurred while trying to subscribe to ' + url);
-  }
-
-  function onFetchFeed(connection, event, remoteFeed) {
-    if(event) {
-      console.dir(event);
-      OptionsPage.hideSubscriptionMonitor(
-        onHideSubscriptionMonitorShowFetchError);
-      return;
-    }
-
-    Feed.put(connection, null, remoteFeed, on_store_feed);
-
-    function on_store_feed(event) {
-
-      if(event.type !== 'success') {
-        // TODO: exit early, handle error?
-        // TODO: isn't this redundant with stuff in onSubscribe?
-      }
-
-      let newId = event.target.result;
-      remoteFeed.id = newId;
-      //onSubscribe(remoteFeed, 0, 0);
-      // NOTE: we cannot forward the feed object or anything,
-      // onSubscribe expects the event
-      onSubscribe(event);
-    }
-  }
-
-  function onHideSubscriptionMonitorCompleted() {
-    const subSection = document.getElementById('mi-subscriptions');
-    OptionsPage.showSection(subSection);
-  }
+  OptionsPage.updateSubscriptionMonitorMessage('Subscribing to' + url);
+  const shouldFetch = true;
+  SubscriptionManager.subscribe(url, shouldFetch, onSubscribe);
 
   function onSubscribe(event) {
-
     if(event.type !== 'success') {
-      // Something went wrong with the insert
-      // TODO: Show an error or something here
-      // TODO: and exit early
+      OptionsPage.hideSubscriptionMonitor(function() {
+        OptionsPage.showErrorMessage(event.message);
+      });
+      return;
     }
 
-    // Reconstruct the added feed because we only receive the newFeedId
-    // here
-    // TODO: maybe Feed.put needs a better callback then, maybe I do need
-    // to wrap the callback in Feed.put
-    let newFeedId = event.target.result;
+    // TODO: right now the event does not contain all the info I want,
+    // we only know event.newFeedId
     let addedFeed = {};
-    // TODO: think of how to get this
-    addedFeed.title = 'Unknown';
-    addedFeed.id = newFeedId;
+    addedFeed.id = event.newFeedId;
     addedFeed.url = url;
-
+    addedFeed.title = 'Unknown';
 
     OptionsPage.appendFeed(addedFeed, true);
     OptionsPage.updateFeedCount();
     OptionsPage.updateSubscriptionMonitorMessage('Subscribed to ' + url);
-    OptionsPage.hideSubscriptionMonitor(onHideSubscriptionMonitorCompleted,
-      true);
 
-    // Show a notification
-    const title = addedFeed.title || addedFeed.url;
-    utils.showNotification('Subscribed to ' + title);
+    // Hide the sub monitor then switch back to the main feed list
+    OptionsPage.hideSubscriptionMonitor(function() {
+      const subSection = document.getElementById('mi-subscriptions');
+      OptionsPage.showSection(subSection);
+    }, true);
   }
 };
 

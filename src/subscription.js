@@ -12,8 +12,179 @@ const SubscriptionManager = {};
 
 // TODO: move functionality out of options and into here
 // TODO: opml-import should also use this to import feeds
-SubscriptionManager.subscribe = function() {
-  throw new Error('Not yet implemented');
+// TODO: look into a more native way of creating event objects
+
+// TODO: use a URL object?
+
+// TODO: I have mixed feelings about whether a fetch error means that this
+// should cancel the subscription. Have not fully thought through it.
+
+SubscriptionManager.subscribe = function(urlString, shouldFetch, callback) {
+
+  // Assume callback is a defined function
+  // Assume doNotFetch is a parameter. It should be a boolean but still works
+  // otherwise because we only test if defined/truthy.
+
+  console.debug('Subscribing to', urlString);
+
+  // Ensure that url is defined
+  if(!urlString) {
+    const event = {};
+    event.type = 'error';
+    event.message = 'Missing url';
+    callback(event);
+    return;
+  }
+
+  // Assume the url is a string, do not guard against other types
+  // Assume url is trimmed
+  // Assume url is normalized
+
+  // Ensure the url is a url
+  if(!utils.url.isURLString(urlString)) {
+    const event = {};
+    event.type = 'error';
+    event.message = 'Invalid url: ' + urlString;
+    callback(event);
+    return;
+  }
+
+  db.open(onOpenDatabase);
+
+  function onOpenDatabase(connectionEvent) {
+
+    // Verify that we connected
+    if(connectionEvent.type !== 'success') {
+      const event = {};
+      event.type = 'error';
+      event.message = 'Unable to connect to database';
+      callback(event);
+      return;
+    }
+
+    // TODO: rather than find by the exact urlString, this should probably
+    // be somehow querying by a normalized url string. Right now this
+    // unfortunately is case-sensitive, and whitespace sensitive, and all that
+    // and I think this can potentially cause problems.
+    // Where should url cleaning and normalization take place? Here, or in
+    // findByURL, or in the calling context?
+
+    // NOTE: The lookup has to occur because we want to possibly fetch.
+    // Obviously the put request would fail if a feed with the same url
+    // already existed because there is a uniqueness constraint on the
+    // url field of the feed store because we have a url index. So I have
+    // to make this extra roundtrip, even though the check is done
+    // again by the db when trying to put the feed.
+
+    // TODO: This is the only place that calls Feed.findByURL. Deprecate the
+    // function and move it into here. (once I update options to use
+    // use this subscribe function)
+
+    const connection = connectionEvent.target.result;
+    const boundOnFindByURL = onFindByURL.bind(null, connection);
+    Feed.findByURL(connection, urlString, boundOnFindByURL);
+  }
+
+  function onFindByURL(connection, findEvent) {
+    const existingFeed = findEvent.target.result;
+
+    // If a feed with the same url already exists, callback with an error.
+    if(existingFeed) {
+      const event = {};
+      event.type = 'error';
+      event.message = 'A feed with the same url already exists';
+      callback(event);
+      return;
+    }
+
+    // Otherwise, the feed does not exist, so it is ok to continue.
+
+    if(shouldFetch && navigator.onLine) {
+      // Online subscribe
+      const boundOnFetchFeed = onFetchFeed.bind(null, connection);
+      const fetchTimeoutMillis = 10 * 1000;
+      fetchFeed(urlString, fetchTimeoutMillis, boundOnFetchFeed);
+    } else {
+      // Offline subscribe
+      const newFeed = {'url': urlString};
+      Feed.put(connection, null, newFeed, onPutFeed);
+    }
+  }
+
+  function onFetchFeed(fetchEvent, fetchedFeed, responseURL) {
+
+    // NOTE: even though we fetched entry information along with the feed,
+    // this ignores that. Entries are only added by the polling mechanism.
+    // Entries have to go through a lot of processing which would
+    // make the subscription process slow. So I have chosen to ignore any
+    // entry information and just focus on the feed information.
+    // TODO: I could consider a flag passed to fetchFeed that then passes a
+    // flag to FeedParser that says to ignore entry information because we
+    // are only getting general feed information, this would be a very minor
+    // speedup but also it would be self-documenting the use case more clearly.
+
+    // Check if there was a problem fetching the feed. If there was, cancel
+    // the subscription.
+    // fetchFeed only defined fetchEvent if an error occurred
+    if(fetchEvent) {
+      const event = {};
+      event.type = 'error';
+
+      // TODO: check that fetchEvent.message is what I want
+      // This log message is temporary for debugging
+      console.dir(fetchEvent);
+
+      event.message = fetchEvent.message;
+      callback(event);
+      return;
+    }
+
+    // We were able to successfully fetch the feed, now add it
+    const existingFeed = null;
+    Feed.put(connection, existingFeed, fetchedFeed, onPutFeed);
+  }
+
+  function onPutFeed(putEvent) {
+
+    // Check that the put was successful
+    if(event.type !== 'success') {
+      const event = {};
+      event.type = 'error';
+      event.message = 'There was a problem adding the feed to the database';
+      callback(event);
+      return;
+    }
+
+    const newFeedId = putEvent.target.result;
+
+    // Show a notification
+    // TODO: if I want this to be used by OPML, then maybe I need a
+    // general parameter that suppresses the notification here
+    // TODO: how do I get title? In case of offline subscribe it is unknown,
+    // and in case of online subscribe it is known but could be empty or
+    // not set and also i don't pass it along through Feed.put so I lose it
+    // Maybe Feed.put needs to pass back the object that was put
+    const title = urlString;
+    utils.showNotification('Subscribed to ' + title);
+
+    // And finally, callback successfully
+
+    // TODO: I think the options page needs more information than this
+    // so that it can avoid another roundtrip back to the database to pull
+    // the details of the new feed so it can immediately add it to the
+    // displayed feeds list.
+    // So again, I think Feed.put needs to pass back the inserted feed,
+    // not just the putEvent
+
+    const event = {};
+    event.type = 'success';
+    event.message = 'Successfully subscribed to ' + urlString;
+
+    // TODO: look into the conventions of how non-standard event properties
+    // are defined? Is it just whatever I want? Is it event.data = {...} ?
+    event.newFeedId = newFeedId;
+    callback(event);
+  }
 };
 
 // Unsubscribes from a feed. Removes any entries corresponding to the feed,
@@ -36,9 +207,9 @@ SubscriptionManager.unsubscribe = function(feedId, callback) {
     return;
   }
 
-  db.open(onConnect);
+  db.open(onOpenDatabase);
 
-  function onConnect(event) {
+  function onOpenDatabase(event) {
     if(event.type !== 'success') {
       // TODO: expose some more info about a connection error? What are the
       // props to consider from the indexedDB event?
