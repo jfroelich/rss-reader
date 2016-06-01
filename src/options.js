@@ -899,7 +899,7 @@ OptionsPage.onDOMContentLoaded = function(event) {
   // Setup the Enable Notifications checkbox in the General Settings section
   const checkboxEnableNotifications = document.getElementById(
     'enable-notifications');
-  checkboxEnableNotifications.checked = SHOW_NOTIFICATIONS in localStorage;
+  checkboxEnableNotifications.checked = 'SHOW_NOTIFICATIONS' in localStorage;
   checkboxEnableNotifications.onclick = checkboxEnableNotificationsOnChange;
   function checkboxEnableNotificationsOnChange(event) {
     if(event.target.checked) {
@@ -912,6 +912,8 @@ OptionsPage.onDOMContentLoaded = function(event) {
   const checkboxEnableBackgroundProcessing = document.getElementById(
     'enable-background');
 
+  // TODO: this should be using a local storage variable and instead the
+  // permission should be permanently defined.
   // TODO: should this be onchange or onclick? I had previously named the
   // function onchange but was listening to onclick
   checkboxEnableBackgroundProcessing.onclick =
