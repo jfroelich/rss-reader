@@ -10,12 +10,18 @@
 
 const SubscriptionManager = {};
 
-// TODO: move functionality out of options and into here
 // TODO: opml-import should also use this to import feeds
+// TODO: should this expect a connection object instead of creating one on
+// its own? It seems silly to reconnect per-subscribe when calling from
+// opml. So yeah it does need a connection object. Which means connecting
+// should be the responsibility of the caller? Or the connection parameter
+// should be optional? In OPML we will pass one in, but in subscribe we will
+// not?
+// TODO: also, is the opml lib doing the exists look ups? If it is then that
+// is kind of silly, because this also does the exists lookup. So that would
+// also need to be changed.
 // TODO: look into a more native way of creating event objects
-
 // TODO: use a URL object?
-
 // TODO: I have mixed feelings about whether a fetch error means that this
 // should cancel the subscription. Have not fully thought through it.
 
@@ -111,7 +117,7 @@ SubscriptionManager.subscribe = function(urlString, shouldFetch, callback) {
     }
   }
 
-  function onFetchFeed(fetchEvent, fetchedFeed, responseURL) {
+  function onFetchFeed(connection, fetchEvent, fetchedFeed, responseURL) {
 
     // NOTE: even though we fetched entry information along with the feed,
     // this ignores that. Entries are only added by the polling mechanism.
@@ -147,7 +153,7 @@ SubscriptionManager.subscribe = function(urlString, shouldFetch, callback) {
   function onPutFeed(putEvent) {
 
     // Check that the put was successful
-    if(event.type !== 'success') {
+    if(putEvent.type !== 'success') {
       const event = {};
       event.type = 'error';
       event.message = 'There was a problem adding the feed to the database';
@@ -166,6 +172,9 @@ SubscriptionManager.subscribe = function(urlString, shouldFetch, callback) {
     // Maybe Feed.put needs to pass back the object that was put
     const title = urlString;
     utils.showNotification('Subscribed to ' + title);
+
+    // We do not need to affect the unread count because we are not dealing
+    // with entries, just the feed itself.
 
     // And finally, callback successfully
 
