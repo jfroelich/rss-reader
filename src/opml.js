@@ -192,17 +192,14 @@ OPML.onFileLoad = function(connection, tracker, callback, event) {
   // the database
   feeds = OPML.removeDuplicateFeeds(feeds);
 
-  // NOTE: unlike subscriptions, I am not checking for a failure to insert
-  // a new feed because a feed with a similar url already exists, at least,
-  // i think. i need to go back and look at this again.
-
-  // TODO: should this be waiting for all storage calls to complete
-  // before calling back?
-
+  // Unlike subscriptions, I am not checking for a failure to insert
+  // a new feed because a feed with a similar url already exists
   for(let feed of feeds) {
     Feed.put(connection, null, feed, null);
   }
 
+  // TODO: should this be waiting for all storage calls to complete
+  // before calling back?
   if(tracker.filesImported === tracker.numFiles) {
     callback(tracker);
   }

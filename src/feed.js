@@ -98,6 +98,10 @@ Feed.put = function(connection, original, feed, callback) {
   if(original) {
     storable.schemeless = original.schemeless;
   } else {
+
+    // TODO: I think filterProtocol can throw. I need to think about how
+    // to deal with this expressly.
+
     storable.schemeless = utils.url.filterProtocol(storable.url);
   }
 

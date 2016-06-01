@@ -12,27 +12,19 @@ const SubscriptionManager = {};
 
 // TODO: if the file name is subscription. then this should be using an
 // object with the name Subscription, not SubscriptionManager
-// TODO: opml-import should also use this to import feeds
-// TODO: also, is the opml lib doing the exists look ups? If it is then that
-// is kind of silly, because this also does the exists lookup. So that would
-// also need to be changed.
 // TODO: look into a more native way of creating event objects
 // TODO: use a URL object?
 // TODO: I have mixed feelings about whether a fetch error means that this
 // should cancel the subscription. Have not fully thought through it.
+// Maybe I could require you to be online to subscribe, and then it would
+// make more sense to deny subscribing if a problem occurred.
 
 SubscriptionManager.subscribe = function(connection, urlString, shouldFetch,
   shouldShowNotification, callback) {
-
-  // Assume callback is a defined function
-  // Assume doNotFetch is a parameter. It should be a boolean but still works
-  // otherwise because we only test if defined/truthy.
-  // Assume the url is a string, do not guard against other types
-  // Assume url is trimmed
-
   console.debug('Subscribing to', urlString);
 
-  // Ensure that url is defined
+  // TODO: Maybe I don't need this guard. Calling filterProtocol will
+  // fail if undefined and I can react to that.
   if(!urlString) {
     const event = {};
     event.type = 'error';
@@ -41,7 +33,10 @@ SubscriptionManager.subscribe = function(connection, urlString, shouldFetch,
     return;
   }
 
-  // Ensure the url is a url
+
+  // TODO: Maybe I don't need this. Calling out to XMLHttpRequest and having
+  // it fail does this for me.
+
   if(!utils.url.isURLString(urlString)) {
     const event = {};
     event.type = 'error';
@@ -58,6 +53,12 @@ SubscriptionManager.subscribe = function(connection, urlString, shouldFetch,
   // because I don't quite know how I differentiate between various put request
   // errors (uniqueness constraint vs other general error).
 
+  // TODO: maybe I don't need to do the exists check. Maybe it really is
+  // redundant. So what if I do a wasted fetch. If the put fails because
+  // the uniqueness constraint is violated (on the schemeless index) then
+  // that is fine. It would greatly simplify this code after all.
+
+
   // TODO: rather than find by the exact urlString, this should probably
   // be somehow querying by a normalized url string. Right now this
   // unfortunately is case-sensitive, and whitespace sensitive, and all that
@@ -70,10 +71,6 @@ SubscriptionManager.subscribe = function(connection, urlString, shouldFetch,
   // the purposes of comparision. So I shouldn't even be using a schemeless
   // index, I should be using a normalizedURLForComparisionPurposes kind of
   // index.
-
-  const connection = connectionEvent.target.result;
-  const transaction = connection.transaction('feed');
-  const feedStore = transaction.objectStore('feed');
   // TODO: I was revising filterProtocol and noticed that it can possibly
   // throw an exception. I need to
   // clearly define the behavior regarding invalid urls. filterProtocol
@@ -82,6 +79,10 @@ SubscriptionManager.subscribe = function(connection, urlString, shouldFetch,
   // earlier test of isURLString, so we do not need to be concerned
   // However, maybe it makes sense to have filterProtocol accept a URL
   // object instead of a string as its parameter.
+
+  const connection = connectionEvent.target.result;
+  const transaction = connection.transaction('feed');
+  const feedStore = transaction.objectStore('feed');
   const index = feedStore.index('schemeless');
   const schemeless = utils.url.filterProtocol(urlString);
   const request = index.get(schemeless);
