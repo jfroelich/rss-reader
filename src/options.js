@@ -328,8 +328,23 @@ OptionsPage.startSubscription = function(url) {
   OptionsPage.hideSubscriptionPreview();
   OptionsPage.showSubscriptionMonitor();
   OptionsPage.updateSubscriptionMonitorMessage('Subscribing to' + url);
-  const shouldFetch = true;
-  SubscriptionManager.subscribe(url, shouldFetch, onSubscribe);
+
+  db.open(onOpenDatabase);
+
+  function onOpenDatabase(event) {
+    if(event.type !== 'success') {
+      OptionsPage.hideSubscriptionMonitor(function() {
+        OptionsPage.showErrorMessage('Unable to connect to database');
+      });
+      return;
+    }
+
+    const connection = event.target.result;
+    const shouldFetch = true;
+    const shouldShowNotification = true;
+    SubscriptionManager.subscribe(connection, url, shouldFetch,
+      shouldShowNotification, onSubscribe);
+  }
 
   function onSubscribe(event) {
     if(event.type !== 'success') {

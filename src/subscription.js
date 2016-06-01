@@ -11,12 +11,6 @@
 const SubscriptionManager = {};
 
 // TODO: opml-import should also use this to import feeds
-// TODO: should this expect a connection object instead of creating one on
-// its own? It seems silly to reconnect per-subscribe when calling from
-// opml. So yeah it does need a connection object. Which means connecting
-// should be the responsibility of the caller? Or the connection parameter
-// should be optional? In OPML we will pass one in, but in subscribe we will
-// not?
 // TODO: also, is the opml lib doing the exists look ups? If it is then that
 // is kind of silly, because this also does the exists lookup. So that would
 // also need to be changed.
@@ -25,11 +19,15 @@ const SubscriptionManager = {};
 // TODO: I have mixed feelings about whether a fetch error means that this
 // should cancel the subscription. Have not fully thought through it.
 
-SubscriptionManager.subscribe = function(urlString, shouldFetch, callback) {
+SubscriptionManager.subscribe = function(connection, urlString, shouldFetch,
+  shouldShowNotification, callback) {
 
   // Assume callback is a defined function
   // Assume doNotFetch is a parameter. It should be a boolean but still works
   // otherwise because we only test if defined/truthy.
+  // Assume the url is a string, do not guard against other types
+  // Assume url is trimmed
+  // Assume url is normalized
 
   console.debug('Subscribing to', urlString);
 
@@ -42,10 +40,6 @@ SubscriptionManager.subscribe = function(urlString, shouldFetch, callback) {
     return;
   }
 
-  // Assume the url is a string, do not guard against other types
-  // Assume url is trimmed
-  // Assume url is normalized
-
   // Ensure the url is a url
   if(!utils.url.isURLString(urlString)) {
     const event = {};
@@ -55,62 +49,45 @@ SubscriptionManager.subscribe = function(urlString, shouldFetch, callback) {
     return;
   }
 
-  db.open(onOpenDatabase);
+  // Now that we know we have a valid url, check if a similar feed already
+  // exists in the database. Even though the eventual put request would fail
+  // because a duplicate url would violate the uniqueness constraint, I do
+  // this extra request because it possibly avoids the need to fetch, and
+  // because if I do fetch I want the put to use the fetched info. Also,
+  // because I don't quite know how I differentiate between various put request
+  // errors (uniqueness constraint vs other general error).
 
-  function onOpenDatabase(connectionEvent) {
+  // TODO: rather than find by the exact urlString, this should probably
+  // be somehow querying by a normalized url string. Right now this
+  // unfortunately is case-sensitive, and whitespace sensitive, and all that
+  // and I think this can potentially cause problems.
+  // Where should url cleaning and normalization take place? Here or in the
+  // calling context?
+  // Right now I am just stripping protocol. That is probably not right.
+  // I need to be normalizing instead of just stripping. I do however
+  // want to normalize alternate protocols all into http, but just for
+  // the purposes of comparision. So I shouldn't even be using a schemeless
+  // index, I should be using a normalizedURLForComparisionPurposes kind of
+  // index.
 
-    // Verify that we connected
-    if(connectionEvent.type !== 'success') {
-      const event = {};
-      event.type = 'error';
-      event.message = 'Unable to connect to database';
-      callback(event);
-      return;
-    }
+  const connection = connectionEvent.target.result;
+  const transaction = connection.transaction('feed');
+  const feedStore = transaction.objectStore('feed');
+  // TODO: I was revising filterProtocol and noticed that it can possibly
+  // throw an exception. I need to
+  // clearly define the behavior regarding invalid urls. filterProtocol
+  // currently can throw, and because this does not catch, it also can throw.
+  // NOTE: at this point we know the url is valid, because it passed the
+  // earlier test of isURLString, so we do not need to be concerned
+  // However, maybe it makes sense to have filterProtocol accept a URL
+  // object instead of a string as its parameter.
+  const index = feedStore.index('schemeless');
+  const schemeless = utils.url.filterProtocol(urlString);
+  const request = index.get(schemeless);
+  request.onsuccess = onFindByURL;
 
-    // TODO: rather than find by the exact urlString, this should probably
-    // be somehow querying by a normalized url string. Right now this
-    // unfortunately is case-sensitive, and whitespace sensitive, and all that
-    // and I think this can potentially cause problems.
-    // Where should url cleaning and normalization take place? Here, or in
-    // findByURL, or in the calling context?
-    // Right now I am just stripping protocol. That is probably not right.
-    // I need to be normalizing instead of just stripping. I do however
-    // want to normalize alternate protocols all into http, but just for
-    // the purposes of comparision. So I shouldn't even be using a schemeless
-    // index, I should be using a normalizedURLForComparisionPurposes kind of
-    // index.
-
-    // NOTE: The lookup has to occur because we want to possibly fetch.
-    // Obviously the put request would fail if a feed with the same url
-    // already existed because there is a uniqueness constraint on the
-    // url field of the feed store because we have a url index. So I have
-    // to make this extra roundtrip, even though the check is done
-    // again by the db when trying to put the feed.
-
-    const connection = connectionEvent.target.result;
-
-    const transaction = connection.transaction('feed');
-    const store = transaction.objectStore('feed');
-    const index = store.index('schemeless');
-
-    // TODO: I was revising filterProtocol and noticed that it can possibly
-    // throw an exception. This is the sole caller of that function. I need to
-    // clearly define the behavior regarding invalid urls. filterProtocol
-    // currently can throw, and because this does not catch, it also can throw.
-    // So I also need to look at this function's callers.
-    const schemeless = utils.url.filterProtocol(urlString);
-    const request = index.get(schemeless);
-
-    const boundOnFindByURL = onFindByURL.bind(null, connection);
-    request.onsuccess = boundOnFindByURL;
-
-  }
-
-  function onFindByURL(connection, findEvent) {
+  function onFindByURL(findEvent) {
     const existingFeed = findEvent.target.result;
-
-    // If a feed with the same url already exists, callback with an error.
     if(existingFeed) {
       const event = {};
       event.type = 'error';
@@ -119,15 +96,11 @@ SubscriptionManager.subscribe = function(urlString, shouldFetch, callback) {
       return;
     }
 
-    // Otherwise, the feed does not exist, so it is ok to continue.
-
     if(shouldFetch && navigator.onLine) {
-      // Online subscribe
       const boundOnFetchFeed = onFetchFeed.bind(null, connection);
       const fetchTimeoutMillis = 10 * 1000;
       fetchFeed(urlString, fetchTimeoutMillis, boundOnFetchFeed);
     } else {
-      // Offline subscribe
       const newFeed = {'url': urlString};
       Feed.put(connection, null, newFeed, onPutFeed);
     }
@@ -168,7 +141,6 @@ SubscriptionManager.subscribe = function(urlString, shouldFetch, callback) {
 
   function onPutFeed(putEvent) {
 
-    // Check that the put was successful
     if(putEvent.type !== 'success') {
       const event = {};
       event.type = 'error';
@@ -179,15 +151,17 @@ SubscriptionManager.subscribe = function(urlString, shouldFetch, callback) {
 
     const newFeedId = putEvent.target.result;
 
-    // Show a notification
-    // TODO: if I want this to be used by OPML, then maybe I need a
-    // general parameter that suppresses the notification here
-    // TODO: how do I get title? In case of offline subscribe it is unknown,
-    // and in case of online subscribe it is known but could be empty or
-    // not set and also i don't pass it along through Feed.put so I lose it
-    // Maybe Feed.put needs to pass back the object that was put
-    const title = urlString;
-    utils.showNotification('Subscribed to ' + title);
+    if(shouldShowNotification) {
+      // TODO: I don't think I should be making a call out to show
+      // notification here. I feel like the function is too simple or at least
+      // a needless abstraction. Just directly call to the underlying stuff.
+
+      // TODO: how do I get title? In case of offline subscribe it is unknown,
+      // and in case of online subscribe it is known but could be empty or
+      // not set and also i don't pass it along through Feed.put so I lose it
+      // Maybe Feed.put needs to pass back the object that was put
+      utils.showNotification('Subscribed to ' + urlString);
+    }
 
     // We do not need to affect the unread count because we are not dealing
     // with entries, just the feed itself.
