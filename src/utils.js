@@ -113,33 +113,6 @@ utils.updateBadgeText = function(connection) {
   }
 };
 
-// TODO: deprecate
-// TODO: i think it was a mistake to determine whether a notification
-// should be shown based on whether the permission is available. The
-// permission should be always, and this should instead be checking
-// a local storage variable. I would also need to change how the option
-// works in options.html/options.js, and I would need to make sure the
-// notifications permission is present in manifest.json
-// Once I do that, this no longer needs to do anything async-related and
-// the code is greatly simplified.
-// Side note: anything else I based on this (like the idle check in polling)
-// should also be changed to use local storage.
-utils.showNotification = function(messageString) {
-
-  if(!localStorage.SHOW_NOTIFICATIONS) {
-    return;
-  }
-
-  const notification = {
-    type: 'basic',
-    title: chrome.runtime.getManifest().name,
-    iconUrl: '/images/rss_icon_trans.gif',
-    message: messageString
-  };
-
-  chrome.notifications.create(extensionName, notification, function() {});
-};
-
 utils.fadeElement = function(element, duration, delay, callback) {
 
   const style = element.style;

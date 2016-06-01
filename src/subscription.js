@@ -149,18 +149,18 @@ SubscriptionManager.subscribe = function(connection, urlString, shouldFetch,
       return;
     }
 
-    const newFeedId = putEvent.target.result;
-
-    if(shouldShowNotification) {
-      // TODO: I don't think I should be making a call out to show
-      // notification here. I feel like the function is too simple or at least
-      // a needless abstraction. Just directly call to the underlying stuff.
-
-      // TODO: how do I get title? In case of offline subscribe it is unknown,
-      // and in case of online subscribe it is known but could be empty or
-      // not set and also i don't pass it along through Feed.put so I lose it
-      // Maybe Feed.put needs to pass back the object that was put
-      utils.showNotification('Subscribed to ' + urlString);
+    if(shouldShowNotification && localStorage.SHOW_NOTIFICATIONS) {
+      // TODO: I'd like to improve the contents of the notification. I would
+      // like to set title but right now I can only get newFeedId from
+      // Feed.put, and I would like to use a better notification title
+      // Maybe Feed.put should be passing along the put feed.
+      const notification = {
+        'type': 'basic',
+        'title': chrome.runtime.getManifest().name,
+        'iconUrl': '/images/rss_icon_trans.gif',
+        'message': 'Subscribed to ' + urlString
+      };
+      chrome.notifications.create('Lucubrate', notification, function() {});
     }
 
     // We do not need to affect the unread count because we are not dealing
@@ -181,6 +181,8 @@ SubscriptionManager.subscribe = function(connection, urlString, shouldFetch,
 
     // TODO: look into the conventions of how non-standard event properties
     // are defined? Is it just whatever I want? Is it event.data = {...} ?
+    const newFeedId = putEvent.target.result;
+
     event.newFeedId = newFeedId;
     callback(event);
   }

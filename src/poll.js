@@ -207,11 +207,19 @@ FeedPoller.cascadeFeedProperties = function(feed, entry) {
   }
 };
 
-// The entire poll completed
+// The entire poll completed (requests may still be outstanding however)
 FeedPoller.onComplete = function() {
   console.log('Polling completed');
-  localStorage.LAST_POLL_DATE_MS = '' +Date.now();
-  utils.showNotification('Updated articles');
+  localStorage.LAST_POLL_DATE_MS = '' + Date.now();
+  if(localStorage.SHOW_NOTIFICATIONS) {
+    const notification = {
+      'type': 'basic',
+      'title': chrome.runtime.getManifest().name,
+      'iconUrl': '/images/rss_icon_trans.gif',
+      'message': 'Updated articles'
+    };
+    chrome.notifications.create('Lucubrate', notification, function() {});
+  }
 };
 
 // TODO: move this into a separate lib?
