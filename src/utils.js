@@ -307,7 +307,7 @@ utils.url.isURLString = function(inputString) {
     new URL(inputString);
     return true;
   } catch(exception) {
-    console.debug(exception.message || exception);
+    // console.debug(exception.message || exception);
   }
   return false;
 };
