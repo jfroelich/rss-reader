@@ -342,7 +342,7 @@ OptionsPage.startSubscription = function(url) {
     const connection = event.target.result;
     const shouldFetch = true;
     const shouldShowNotification = true;
-    SubscriptionManager.subscribe(connection, url, shouldFetch,
+    Subscription.add(connection, url, shouldFetch,
       shouldShowNotification, onSubscribe);
   }
 
@@ -664,7 +664,7 @@ OptionsPage.buttonUnsubscribeOnClick = function(event) {
   // obviously faster and more local to use the callback, so I chose to go with
   // that. I am not entirely confident this is the best decision.
 
-  SubscriptionManager.unsubscribe(feedId, OptionsPage.onUnsubscribe);
+  Subscription.remove(feedId, OptionsPage.onUnsubscribe);
 
   function onUnsubscribe(event) {
     // If there was some failure to unsubscribe from the feed, react here

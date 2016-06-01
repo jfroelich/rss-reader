@@ -3,23 +3,15 @@
 // that can be found in the LICENSE file
 
 'use strict';
+const Subscription = {};
 
-// Subscription-related functions
-// Requires: /src/badge.js
-// Requires: /src/db.js
-
-const SubscriptionManager = {};
-
-// TODO: if the file name is subscription. then this should be using an
-// object with the name Subscription, not SubscriptionManager
 // TODO: look into a more native way of creating event objects
 // TODO: use a URL object?
 // TODO: I have mixed feelings about whether a fetch error means that this
 // should cancel the subscription. Have not fully thought through it.
 // Maybe I could require you to be online to subscribe, and then it would
 // make more sense to deny subscribing if a problem occurred.
-
-SubscriptionManager.subscribe = function(connection, urlString, shouldFetch,
+Subscription.add = function(connection, urlString, shouldFetch,
   shouldShowNotification, callback) {
   console.debug('Subscribing to', urlString);
 
@@ -33,10 +25,8 @@ SubscriptionManager.subscribe = function(connection, urlString, shouldFetch,
     return;
   }
 
-
   // TODO: Maybe I don't need this. Calling out to XMLHttpRequest and having
   // it fail does this for me.
-
   if(!utils.url.isURLString(urlString)) {
     const event = {};
     event.type = 'error';
@@ -57,7 +47,6 @@ SubscriptionManager.subscribe = function(connection, urlString, shouldFetch,
   // redundant. So what if I do a wasted fetch. If the put fails because
   // the uniqueness constraint is violated (on the schemeless index) then
   // that is fine. It would greatly simplify this code after all.
-
 
   // TODO: rather than find by the exact urlString, this should probably
   // be somehow querying by a normalized url string. Right now this
@@ -109,6 +98,10 @@ SubscriptionManager.subscribe = function(connection, urlString, shouldFetch,
 
   function onFetchFeed(fetchEvent, fetchedFeed, responseURL) {
 
+    // NOTE: if I remove the online check then this can fail for the
+    // NET_DISCONNECTED reason, I think fetchFeed takes care of that for me
+    // and defines fetchEvent
+
     // NOTE: even though we fetched entry information along with the feed,
     // this ignores that. Entries are only added by the polling mechanism.
     // Entries have to go through a lot of processing which would
@@ -142,7 +135,13 @@ SubscriptionManager.subscribe = function(connection, urlString, shouldFetch,
 
   function onPutFeed(putEvent) {
 
+    // TODO: disambiguate whether the error was a uniqueness constraint
+    // violation or some other general error.
+
     if(putEvent.type !== 'success') {
+
+      console.dir(putEvent);
+
       const event = {};
       event.type = 'error';
       event.message = 'There was a problem adding the feed to the database';
@@ -189,11 +188,7 @@ SubscriptionManager.subscribe = function(connection, urlString, shouldFetch,
   }
 };
 
-// Unsubscribes from a feed. Removes any entries corresponding to the feed,
-// removes the feed, and then calls the callback.
-// @param feedId - integer
-SubscriptionManager.unsubscribe = function(feedId, callback) {
-
+Subscription.remove = function(feedId, callback) {
   let entriesRemoved = 0;
 
   // Although I generally do not guard against invalid inputs, I do so here
@@ -272,10 +267,8 @@ SubscriptionManager.unsubscribe = function(feedId, callback) {
   }
 
   function removeFeed(event) {
-
     // TODO: double check this is how to get the connection variable from
     // the event
-
     const connection = event.target.db;
     const transaction = connection.transaction('feed', 'readwrite');
     const store = transaction.objectStore('feed');
