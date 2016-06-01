@@ -4,17 +4,11 @@
 
 'use strict';
 
-const db = {};
 
-// indexedDB functionality
-
-// TODO: just store scheme and schemeless props as parts of a url object
-// property? remember that indexeddb can access deeper props using '.' in
-// keypaths.
 // TODO: look into whether URL objects can be stored as object properties,
 // as in, do URL objects work with the structured cloning algorithm
+const db = {};
 
-// Open a database connection. The callback receives the request event.
 db.open = function(callback) {
   const DB_NAME = 'reader';
   const DB_VERSION = 17;
@@ -55,8 +49,10 @@ db.upgrade = function(event) {
   const feedIndices = feedStore.indexNames;
   const entryIndices = entryStore.indexNames;
 
+  // NOTE: schemeless imposes a uniqueness constraint so that attempts to
+  // insert duplicate feeds fails
   if(!feedIndices.contains('schemeless')) {
-    feedStore.createIndex('schemeless', 'schemeless', {unique: true});
+    feedStore.createIndex('schemeless', 'schemeless', {'unique': true});
   }
 
   if(!feedIndices.contains('title')) {

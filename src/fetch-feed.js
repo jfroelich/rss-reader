@@ -4,6 +4,10 @@
 
 'use strict';
 
+// NOTE: this does not assume url is defined? It just fails in that case. The
+// thing is, does it fail by calling request.onerror or does it cause a
+// javascript error? If it is a js error then maybe I need to guard.
+
 // TODO: the post-processing where i clean up entries should not be done here,
 // it should be the caller's responsibility, it is not intrinsic to this
 // function's purpose, improper separation of concerns

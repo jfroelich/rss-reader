@@ -340,10 +340,7 @@ OptionsPage.startSubscription = function(url) {
     }
 
     const connection = event.target.result;
-    const shouldFetch = true;
-    const shouldShowNotification = true;
-    Subscription.add(connection, url, shouldFetch,
-      shouldShowNotification, onSubscribe);
+    Subscription.add(connection, url, onSubscribe);
   }
 
   function onSubscribe(event) {

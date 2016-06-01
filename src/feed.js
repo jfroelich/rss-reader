@@ -86,12 +86,18 @@ Feed.put = function(connection, original, feed, callback) {
 
   // url is required so assume it exists
   // TODO: maybe this should not assume, it should test and throw?
+  // TODO: this should test and throw
+  // TODO: this should also not assume that url is trimmed
+  // NOTE: this is used later to derive storable.schemeless
   storable.url = feed.url;
 
   // Store the fetched feed type (e.g. rss or rdf) as a string
   if('type' in feed) {
     storable.type = feed.type;
   }
+
+  // TODO: instead of schemeless, I should be using a fully normalized url
+  // for comparision. I should deprecate this property.
 
   // Derive and store the schemeless url of the feed, which is used to
   // check for dups

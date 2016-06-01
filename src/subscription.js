@@ -7,117 +7,34 @@ const Subscription = {};
 
 // TODO: look into a more native way of creating event objects
 // TODO: use a URL object?
-// TODO: I have mixed feelings about whether a fetch error means that this
-// should cancel the subscription. Have not fully thought through it.
-// Maybe I could require you to be online to subscribe, and then it would
-// make more sense to deny subscribing if a problem occurred.
-Subscription.add = function(connection, urlString, shouldFetch,
-  shouldShowNotification, callback) {
+// TODO: I could consider a flag passed to fetchFeed that then passes a
+// flag to FeedParser that says to ignore entry information because we
+// are only getting general feed information, this would be a very minor
+// speedup but also it would be self-documenting the use case more clearly.
+// TODO: not sure but I think this should be using responseURL somehow? I
+// should be using responseURL instead of the input url in the event that it
+// changed? Should fetchFeed be doing that instead of this?
+// NOTE: this does not also add the entries of the feed
+Subscription.add = function(connection, urlString, callback) {
   console.debug('Subscribing to', urlString);
 
-  // TODO: Maybe I don't need this guard. Calling filterProtocol will
-  // fail if undefined and I can react to that.
-  if(!urlString) {
-    const event = {};
-    event.type = 'error';
-    event.message = 'Missing url';
-    callback(event);
-    return;
-  }
-
-  // TODO: Maybe I don't need this. Calling out to XMLHttpRequest and having
-  // it fail does this for me.
-  if(!utils.url.isURLString(urlString)) {
-    const event = {};
-    event.type = 'error';
-    event.message = 'Invalid url: ' + urlString;
-    callback(event);
-    return;
-  }
-
-  // Now that we know we have a valid url, check if a similar feed already
-  // exists in the database. Even though the eventual put request would fail
-  // because a duplicate url would violate the uniqueness constraint, I do
-  // this extra request because it possibly avoids the need to fetch, and
-  // because if I do fetch I want the put to use the fetched info. Also,
-  // because I don't quite know how I differentiate between various put request
-  // errors (uniqueness constraint vs other general error).
-
-  // TODO: maybe I don't need to do the exists check. Maybe it really is
-  // redundant. So what if I do a wasted fetch. If the put fails because
-  // the uniqueness constraint is violated (on the schemeless index) then
-  // that is fine. It would greatly simplify this code after all.
-
-  // TODO: rather than find by the exact urlString, this should probably
-  // be somehow querying by a normalized url string. Right now this
-  // unfortunately is case-sensitive, and whitespace sensitive, and all that
-  // and I think this can potentially cause problems.
-  // Where should url cleaning and normalization take place? Here or in the
-  // calling context?
-  // Right now I am just stripping protocol. That is probably not right.
-  // I need to be normalizing instead of just stripping. I do however
-  // want to normalize alternate protocols all into http, but just for
-  // the purposes of comparision. So I shouldn't even be using a schemeless
-  // index, I should be using a normalizedURLForComparisionPurposes kind of
-  // index.
-  // TODO: I was revising filterProtocol and noticed that it can possibly
-  // throw an exception. I need to
-  // clearly define the behavior regarding invalid urls. filterProtocol
-  // currently can throw, and because this does not catch, it also can throw.
-  // NOTE: at this point we know the url is valid, because it passed the
-  // earlier test of isURLString, so we do not need to be concerned
-  // However, maybe it makes sense to have filterProtocol accept a URL
-  // object instead of a string as its parameter.
-
-  const connection = connectionEvent.target.result;
-  const transaction = connection.transaction('feed');
-  const feedStore = transaction.objectStore('feed');
-  const index = feedStore.index('schemeless');
-  const schemeless = utils.url.filterProtocol(urlString);
-  const request = index.get(schemeless);
-  request.onsuccess = onFindByURL;
-
-  function onFindByURL(findEvent) {
-    const existingFeed = findEvent.target.result;
-    if(existingFeed) {
-      const event = {};
-      event.type = 'error';
-      event.message = 'A feed with the same url already exists';
-      callback(event);
-      return;
-    }
-
-    if(shouldFetch && navigator.onLine) {
-      const fetchTimeoutMillis = 10 * 1000;
-      fetchFeed(urlString, fetchTimeoutMillis, onFetchFeed);
-    } else {
-      const newFeed = {'url': urlString};
-      Feed.put(connection, null, newFeed, onPutFeed);
-    }
-  }
+  const fetchTimeoutMillis = 10 * 1000;
+  fetchFeed(urlString, fetchTimeoutMillis, onFetchFeed);
 
   function onFetchFeed(fetchEvent, fetchedFeed, responseURL) {
 
-    // NOTE: if I remove the online check then this can fail for the
-    // NET_DISCONNECTED reason, I think fetchFeed takes care of that for me
-    // and defines fetchEvent
+    // Temp, testing
+    if(responseURL !== urlString) {
+      console.debug('url changed from %s to %s', urlString, responseURL);
+    }
 
-    // NOTE: even though we fetched entry information along with the feed,
-    // this ignores that. Entries are only added by the polling mechanism.
-    // Entries have to go through a lot of processing which would
-    // make the subscription process slow. So I have chosen to ignore any
-    // entry information and just focus on the feed information.
-    // TODO: I could consider a flag passed to fetchFeed that then passes a
-    // flag to FeedParser that says to ignore entry information because we
-    // are only getting general feed information, this would be a very minor
-    // speedup but also it would be self-documenting the use case more clearly.
-
-    // Check if there was a problem fetching the feed. If there was, cancel
-    // the subscription.
-    // fetchFeed only defined fetchEvent if an error occurred
     if(fetchEvent) {
       const event = {};
       event.type = 'error';
+
+      // TODO: not sure I want to just pass back the actual message. I should
+      // look into passing back nicer messages because this is displayed
+      // directly to the user.
 
       // TODO: check that fetchEvent.message is what I want
       // This log message is temporary for debugging
@@ -128,7 +45,6 @@ Subscription.add = function(connection, urlString, shouldFetch,
       return;
     }
 
-    // We were able to successfully fetch the feed, now add it
     const existingFeed = null;
     Feed.put(connection, existingFeed, fetchedFeed, onPutFeed);
   }
@@ -149,7 +65,7 @@ Subscription.add = function(connection, urlString, shouldFetch,
       return;
     }
 
-    if(shouldShowNotification && localStorage.SHOW_NOTIFICATIONS) {
+    if(localStorage.SHOW_NOTIFICATIONS) {
       // TODO: I'd like to improve the contents of the notification. I would
       // like to set title but right now I can only get newFeedId from
       // Feed.put, and I would like to use a better notification title
