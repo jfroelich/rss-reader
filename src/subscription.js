@@ -50,17 +50,17 @@ Subscription.add = function(connection, urlString, callback) {
   }
 
   function onPutFeed(putEvent) {
-
-    // TODO: disambiguate whether the error was a uniqueness constraint
-    // violation or some other general error.
-
     if(putEvent.type !== 'success') {
-
-      console.dir(putEvent);
-
       const event = {};
       event.type = 'error';
-      event.message = 'There was a problem adding the feed to the database';
+
+      const error = putEvent.target.error;
+      if(error && error.name === 'ConstraintError') {
+        event.message = 'You are already subscribed to this feed';
+      } else {
+        event.message = 'There was a problem adding the feed to the database';
+      }
+
       callback(event);
       return;
     }
