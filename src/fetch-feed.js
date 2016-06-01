@@ -8,6 +8,9 @@
 // thing is, does it fail by calling request.onerror or does it cause a
 // javascript error? If it is a js error then maybe I need to guard.
 
+// TODO: I think this should always just pass back event and let caller test
+// against it, instead the whole only-defined-event-if-error thing
+
 // TODO: the post-processing where i clean up entries should not be done here,
 // it should be the caller's responsibility, it is not intrinsic to this
 // function's purpose, improper separation of concerns
