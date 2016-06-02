@@ -149,15 +149,15 @@ FeedPoller.onStoreFeed = function(connection, localFeed, remoteFeed, event) {
   // may be type === 'error'?
 
   async.forEach(remoteFeed.entries,
-    FeedPoller.findEntryByLink.bind(null, connection, feed),
+    FeedPoller.findEntryByLink.bind(null, connection, localFeed),
     FeedPoller.onEntriesUpdated.bind(null, connection));
 
 };
 
-//FeedPoller.onEntriesUpdated = function(connection) {
+FeedPoller.onEntriesUpdated = function(connection) {
   // Update the number of unread entries now that the number possibly changed
-//  utils.updateBadgeText(connection);
-//};
+  utils.updateBadgeText(connection);
+};
 
 // For an entry in the feed, check whether an entry with the same link
 // already exists.
