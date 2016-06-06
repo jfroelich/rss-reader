@@ -9,16 +9,20 @@ const FeedPoller = {};
 FeedPoller.start = function() {
   console.log('Starting poll ...');
 
+  // This is a shared object used by various async functions
+  const pollContext = {
+    'pendingFeeds': 0,
+    'connection': null
+  };
+
   // Check if we are online
   if('onLine' in navigator && !navigator.onLine) {
     console.debug('Polling canceled because offline');
-    // TODO: still call onComplete despite early exit?
+    FeedPoller.onComplete(pollContext);
     return;
   }
 
-  const ONLY_POLL_IF_IDLE = localStorage.ONLY_POLL_IF_IDLE;
-
-  if(!ONLY_POLL_IF_IDLE) {
+  if(!localStorage.ONLY_POLL_IF_IDLE) {
     // Skip the idle check and go straight to opening the database
     db.open(onOpenDatabase);
   } else {
@@ -27,18 +31,15 @@ FeedPoller.start = function() {
     chrome.idle.queryState(IDLE_PERIOD_SECONDS, onQueryIdleState);
   }
 
-  // TODO: these conditions can be simplified to eliminate the repetition of
-  // the call to db.open
   function onQueryIdleState(state) {
-    if(ONLY_POLL_IF_IDLE) {
+    if(localStorage.ONLY_POLL_IF_IDLE) {
       if(state === 'locked' || state === 'idle') {
         db.open(onOpenDatabase);
       } else {
         console.debug('Polling canceled because not idle');
-        FeedPoller.onComplete();
+        FeedPoller.onComplete(pollContext);
       }
     } else {
-      // Continue regardless of idle state
       db.open(onOpenDatabase);
     }
   }
@@ -47,58 +48,57 @@ FeedPoller.start = function() {
     // Exit early if there was a database connection error
     if(event.type !== 'success') {
       console.debug(event);
-      FeedPoller.onComplete();
+      FeedPoller.onComplete(pollContext);
       return;
     }
 
-    const connection = event.target.result;
-    FeedPoller.iterateFeeds(connection);
+    pollContext.connection = event.target.result;
+    FeedPoller.iterateFeeds(pollContext);
   }
 };
 
 // Iterate over the feeds in the database, and update each feed.
-// TODO: react appropriately to request error
-FeedPoller.iterateFeeds = function(connection) {
+// TODO: react appropriately to request error?
+FeedPoller.iterateFeeds = function(pollContext) {
+  const connection = pollContext.connection;
   const iterateFeedsTransaction = connection.transaction('feed');
   const feedStore = iterateFeedsTransaction.objectStore('feed');
   const iterateFeedsRequest = feedStore.openCursor();
-  const onSuccess = FeedPoller.onGetNextFeed.bind(iterateFeedsRequest,
-    connection);
-  iterateFeedsRequest.onsuccess = onSuccess;
+  iterateFeedsRequest.onsuccess = FeedPoller.onGetNextFeed.bind(
+    iterateFeedsRequest, pollContext);
 };
 
 // Processes the feed at the current cursor position and then advances the
 // cursor.
-FeedPoller.onGetNextFeed = function(connection, event) {
+FeedPoller.onGetNextFeed = function(pollContext, event) {
   const request = event.target;
   const cursor = request.result;
-
   if(cursor) {
+    // Increment the counter immediately to signal that a feed is now
+    // undergoing an update and that there is at least one update pending
+    pollContext.pendingFeeds++;
+
     const feed = cursor.value;
     const timeout = 10 * 1000;
-    const onFetchFeedBound = FeedPoller.onFetchFeed.bind(null, connection,
+    const onFetchFeedBound = FeedPoller.onFetchFeed.bind(null, pollContext,
       feed);
     fetchFeed(feed.url, timeout, onFetchFeedBound);
-    //FeedPoller.fetchFeed(connection, cursor.value);
     cursor.continue();
   } else {
-    // No more feeds or no feeds found, so theoretically complete
-    // TODO: this is calling onComplete too early. There are
-    // misc additional async things that happen when processing a feed, and
-    // technically it is only complete when each feed has been fully
-    // processed, not just here where iteration has completed. So this is
-    // wrong.
-    // The problem is that cursor.continue is async above, and triggering
-    // a separate request. I want that to happen because I want to process
-    // feeds non-sequentially, concurrently, all at once. This will end up
-    // getting called while some of those requests are still outstanding
-    // or pending or whatever.
+    // If there were no feeds, or all feeds were iterated, continue to
+    // afterNextFeedFetched
+    FeedPoller.afterNextFeedFetched(pollContext);
+  }
+};
 
-    // So how do I solve it? How does each feed handler know if it
-    // the 'last' one if don't know the total number of feeds prior to this?
-    // Maybe I just don't have an onComplete function for now?
-
-    FeedPoller.onComplete();
+// TODO: this needs to be renamed, it isn't just called after fetch, it is
+// called two times: when no feed at cursor found, and each time feed fully
+// processed. Name it something like onMaybePollCompleted
+FeedPoller.afterNextFeedFetched = function(pollContext) {
+  // Temporarily just logging some info, eventually this should do something
+  // like FeedPoller.onComplete does
+  if(pollContext.pendingFeeds === 0) {
+    console.debug('pendingFeeds reached 0');
   }
 };
 
@@ -124,8 +124,15 @@ FeedPoller.onGetNextFeed = function(connection, event) {
 // added a redirect, so we always need to continue to check for it every
 // time.
 
-FeedPoller.onFetchFeed = function(connection, localFeed, errorEvent,
-  remoteFeed, responseURL) {
+// TODO: fetchFeed should use an event object and pass back a custom
+// event object instead of multiple variables. I should just set
+// the properties of that custom event object within fetchFeed. This will
+// greatly simplify the number of variables negotiated, which reduces the
+// number of parameters per function, and provides some abstraction and
+// encapsulation. Also, it stays pretty lightweight.
+
+FeedPoller.onFetchFeed = function(pollContext, localFeed,
+  errorEvent, remoteFeed, responseURL) {
 
   // Exit early if an error occurred while fetching. The event is only
   // defined if there was a fetch error.
@@ -135,48 +142,64 @@ FeedPoller.onFetchFeed = function(connection, localFeed, errorEvent,
     return;
   }
 
-  const onStoreFeedBound = FeedPoller.onStoreFeed.bind(null, connection,
-    localFeed, remoteFeed);
+  const onStoreFeedBound = FeedPoller.onStoreFeed.bind(null,
+    pollContext, localFeed, remoteFeed);
+  const connection = pollContext.connection;
   Feed.put(connection, localFeed, remoteFeed, onStoreFeedBound);
 };
 
-// TODO: stop using the async lib. Do custom async iteration here.
-FeedPoller.onStoreFeed = function(connection, localFeed, remoteFeed, event) {
+FeedPoller.onStoreFeed = function(pollContext, localFeed, remoteFeed, event) {
+
+  // TODO: this technically shouldn't happen until feed fully processed,
+  // which is after entries were processed. I put it here for now because
+  // I am blocked from doing it later until I take care of removing async
+  // dependency
+  pollContext.pendingFeeds--;
+  FeedPoller.afterNextFeedFetched(pollContext);
 
   // NOTE: we can ignore the event object because we know we are doing an
   // update, not an insert, and don't need new id from event.target.result, and
   // otherwise event does not contain anything useful except possibly it
   // may be type === 'error'?
 
-  async.forEach(remoteFeed.entries,
-    FeedPoller.findEntryByLink.bind(null, connection, localFeed),
-    FeedPoller.onEntriesUpdated.bind(null, connection));
+  // TODO: if possible look into having entries also be fetched async with
+  // feeds, so that everything is happening concurrently. It might be that
+  // way now but I have not thought it through and feel like I might be
+  // blocking somewhere for not a good reason
 
+  // TODO: stop using async.forEach here
+  async.forEach(remoteFeed.entries,
+    FeedPoller.findEntryByLink.bind(null, pollContext, localFeed),
+    FeedPoller.onEntriesUpdated.bind(null, pollContext));
 };
 
-FeedPoller.onEntriesUpdated = function(connection) {
+FeedPoller.onEntriesUpdated = function(pollContext) {
+
+  // TODO: if i deprecate async, then i don't think i need this callback
+  // and can just inline this somewhere
+
   // Update the number of unread entries now that the number possibly changed
-  utils.updateBadgeText(connection);
+  utils.updateBadgeText(pollContext.connection);
 };
 
 // For an entry in the feed, check whether an entry with the same link
 // already exists.
-FeedPoller.findEntryByLink = function(connection, feed, entry, callback) {
-  const transaction = connection.transaction('entry');
+// TODO: link URLs should be normalized and the normalized url should be
+// compared.
+FeedPoller.findEntryByLink = function(pollContext, feed, entry, callback) {
+  const transaction = pollContext.connection.transaction('entry');
   const entries = transaction.objectStore('entry');
   const links = entries.index('link');
   const request = links.get(entry.link);
-
-  const onFindEntryBound = FeedPoller.onFindEntry.bind(null, connection, feed,
+  request.onsuccess = FeedPoller.onFindEntry.bind(request, pollContext, feed,
     entry, callback);
-  request.onsuccess = onFindEntryBound;
 };
 
 // If an existing entry was found, then exit early (callback with no args to
 // async.forEach which means continue to the next entry). Otherwise, the entry
 // doesn't exist. Get the full html of the entry. Update the properties of the
 // entry. Then store the entry, and then callback to async.forEach.
-FeedPoller.onFindEntry = function(connection, feed, entry, callback, event) {
+FeedPoller.onFindEntry = function(pollContext, feed, entry, callback, event) {
   const getEntryRequest = event.target;
   const localEntry = getEntryRequest.result;
 
@@ -188,39 +211,22 @@ FeedPoller.onFindEntry = function(connection, feed, entry, callback, event) {
   }
 
   function onAugment(event) {
-    FeedPoller.cascadeFeedProperties(feed, entry);
+    // Propagate feed props to the entry prior to storage
+    entry.feed = feed.id;
+    // Denormalize now to avoid doing the lookup on render
+    entry.feedLink = feed.link;
+    entry.feedTitle = feed.title;
+
+    // Use the feed's date for undated entries
+    if(!entry.pubdate && feed.date) {
+      entry.pubdate = feed.date;
+    }
+
+    const connection = pollContext.connection;
     Entry.put(connection, entry, callback);
   }
 };
 
-// Copy some properties from feed into entry prior to storage
-FeedPoller.cascadeFeedProperties = function(feed, entry) {
-  entry.feed = feed.id;
-
-  // Denormalize now to avoid doing the lookup on render
-  entry.feedLink = feed.link;
-  entry.feedTitle = feed.title;
-
-  // Use the feed's date for undated entries
-  if(!entry.pubdate && feed.date) {
-    entry.pubdate = feed.date;
-  }
-};
-
-// The entire poll completed (requests may still be outstanding however)
-FeedPoller.onComplete = function() {
-  console.log('Polling completed');
-  localStorage.LAST_POLL_DATE_MS = '' + Date.now();
-  if(localStorage.SHOW_NOTIFICATIONS) {
-    const notification = {
-      'type': 'basic',
-      'title': chrome.runtime.getManifest().name,
-      'iconUrl': '/images/rss_icon_trans.gif',
-      'message': 'Updated articles'
-    };
-    chrome.notifications.create('Lucubrate', notification, function() {});
-  }
-};
 
 // TODO: move this into a separate lib?
 // Fetch the full content for the entry
@@ -238,12 +244,16 @@ FeedPoller.augmentEntryContent = function(entry, timeout, callback) {
 // another type of error. I could use a plain javascript object with just the
 // desired relevant properties, or I could research how to create custom
 // events.
+
+// TODO: instead of passing multiple args to callback, pass back a custom
+// event with props
+
 FeedPoller.fetchHTML = function(url, timeout, callback) {
   const request = new XMLHttpRequest();
   request.timeout = timeout;
-  request.ontimeout = onTimeout;
+  request.ontimeout = onError;
   request.onerror = onError;
-  request.onabort = onAbort;
+  request.onabort = onError;
   request.onload = onLoad;
   request.open('GET', url, true);
   request.responseType = 'document';
@@ -252,6 +262,9 @@ FeedPoller.fetchHTML = function(url, timeout, callback) {
   function onLoad(event) {
     let error = null;
     const document = request.responseXML;
+
+    // When is document ever undefined? In case of PDF?
+
     if(!document) {
       error = new Error('Undefined document for url ' + url);
     } else if(!document.documentElement) {
@@ -260,15 +273,7 @@ FeedPoller.fetchHTML = function(url, timeout, callback) {
     callback(error, document, request.responseURL);
   }
 
-  function onTimeout(event) {
-    callback(event, null, request.responseURL);
-  }
-
   function onError(event) {
-    callback(event, null, request.responseURL);
-  }
-
-  function onAbort(event) {
     callback(event, null, request.responseURL);
   }
 };
@@ -327,4 +332,22 @@ FeedPoller.onSetImageDimensions = function(entry, document, callback) {
   }
 
   callback();
+};
+
+
+// The entire poll completed (requests may still be outstanding however)
+// TODO: this needs to eventually be changed, maybe merged with
+// onMaybePollCompleted
+FeedPoller.onComplete = function(pollContext) {
+  console.log('Polling completed');
+  localStorage.LAST_POLL_DATE_MS = '' + Date.now();
+  if(localStorage.SHOW_NOTIFICATIONS) {
+    const notification = {
+      'type': 'basic',
+      'title': chrome.runtime.getManifest().name,
+      'iconUrl': '/images/rss_icon_trans.gif',
+      'message': 'Updated articles'
+    };
+    chrome.notifications.create('Lucubrate', notification, function() {});
+  }
 };
