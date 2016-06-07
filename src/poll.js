@@ -297,8 +297,8 @@ FeedPoller.processEntry = function(pollContext, localFeed, remoteEntry,
 
     // TODO: if this is the sole calling context, move the functionality back
     // here?
-    ImageUtils.filterTrackingImages(document);
-    ImageUtils.transformLazilyLoadedImages(document);
+    FeedPoller.filterTrackingImages(document);
+    FeedPoller.transformLazilyLoadedImages(document);
     URLResolver.resolveURLsInDocument(document, responseURLString);
 
     // Ensure that image dimensions are set in the document
@@ -354,5 +354,116 @@ FeedPoller.processEntry = function(pollContext, localFeed, remoteEntry,
     // Store the entry, and pass along the callback so it will be called
     // when the entry is stored
     Entry.put(pollContext.connection, remoteEntry, callback);
+  }
+};
+
+// Remove images that merely serve to register http requests for website
+// statistics
+FeedPoller.filterTrackingImages = function(document) {
+
+  // TODO: I am not seeing any of the last 4 urls here being filtered. Maybe
+  // I am looking for the wrong thing? I have not seen these occur even
+  // once? Are they just script origins?
+
+  const SELECTORS = [
+    'img[src^="http://b.scorecardresearch.com"]',
+    'img[src^="https://b.scorecardresearch.com"]',
+    'img[src^="http://pagead2.googlesyndication.com"]',
+    'img[src^="https://pagead2.googlesyndication.com"]',
+    'img[src^="http://pubads.g.doubleclick.net"]',
+    'img[src^="https://pubads.g.doubleclick.net"]'
+  ];
+
+  const SELECTOR = SELECTORS.join(',');
+
+  // I only look for tracking images within the body, because I assume
+  // that out-of-body information is removed separately in the domaid
+  // functions.
+  const rootElement = document.body || document.documentElement;
+  const imageNodeList = rootElement.querySelectorAll(SELECTOR);
+  const listLength = imageNodeList.length;
+  for(let i = 0, imageElement; i < listLength; i++) {
+    imageElement = imageNodeList[i];
+    // Tentatively not logging this while I work on other things, it is
+    // causing a lot of spam in the log
+    // console.debug('Removing tracker:', imageElement.outerHTML);
+    imageElement.remove();
+  }
+};
+
+// Modify the src values of images that appear to be lazily loaded.
+// TODO: maybe skip an image if image.closest('picture') ?
+FeedPoller.transformLazilyLoadedImages = function(document) {
+  const bodyElement = document.body;
+  if(!bodyElement) {
+    return;
+  }
+
+  const imageNodeList = bodyElement.querySelectorAll('img');
+  const listLength = imageNodeList.length;
+  for(let i = 0; i < listLength; i++) {
+    FeedPoller.transformLazilyLoadedImage(imageNodeList[i]);
+  }
+};
+
+// TODO: reduce the DRYness of this function
+FeedPoller.transformLazilyLoadedImage = function(image) {
+
+  // TODO: support this case better. There is a problem here because
+  // the tiny image filter is picking this up and removing it.
+  /*
+<img data-thumb="url" data-full-size-image="url" data-lar
+ge-size-image="url" data-trigger-notification="1" data-scalable="fa
+lse" alt="" data-src="url" data-tc-lazyload="deferred" src="url" width=
+"1" height="1">
+  */
+
+  if(!image.hasAttribute('src') && image.hasAttribute('load-src')) {
+    image.setAttribute('src', image.getAttribute('load-src'));
+    return;
+  }
+
+  if(image.hasAttribute('data-src') &&
+    image.classList.contains('lazy-image')) {
+    image.setAttribute('src', image.getAttribute('data-src'));
+    return;
+  }
+
+  if(!image.hasAttribute('src') && image.hasAttribute('data-src')) {
+    image.setAttribute('src', image.getAttribute('data-src'));
+    return;
+  }
+
+  // TODO: responsive design conflicts with the approach this takes,
+  // this needs to be handled instead by the srcset handler?
+  if(!image.hasAttribute('src') &&
+    image.hasAttribute('data-original-desktop')) {
+    image.setAttribute('src', image.getAttribute('data-original-desktop'));
+    return;
+  }
+
+  if(!image.hasAttribute('src') && image.hasAttribute('data-baseurl')) {
+    image.setAttribute('src', image.getAttribute('data-baseurl'));
+    return;
+  }
+
+  if(!image.hasAttribute('src') && image.hasAttribute('data-lazy')) {
+    image.setAttribute('src', image.getAttribute('data-lazy'));
+    return;
+  }
+
+  if(!image.hasAttribute('src') && image.hasAttribute('data-img-src')) {
+    image.setAttribute('src', image.getAttribute('data-img-src'));
+    return;
+  }
+
+  if(!image.hasAttribute('src') && image.hasAttribute('data-original')) {
+    image.setAttribute('src', image.getAttribute('data-original'));
+    return;
+  }
+
+  if(!image.hasAttribute('src') && image.hasAttribute('data-adaptive-img')) {
+    image.setAttribute('src', image.getAttribute('data-adaptive-img'));
+    return;
   }
 };
