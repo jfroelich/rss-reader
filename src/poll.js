@@ -59,6 +59,11 @@ FeedPoller.start = function() {
 
 // Iterate over the feeds in the database, and update each feed.
 // TODO: react appropriately to request error?
+
+// TODO: ok so this problem with this approach is that it is partially blocking
+// i think? Maybe i should be loading the feeds into an array first? Or
+// maybe not. I think all the requests are still concurrent?
+
 FeedPoller.iterateFeeds = function(pollContext) {
   const connection = pollContext.connection;
   const iterateFeedsTransaction = connection.transaction('feed');
@@ -73,32 +78,41 @@ FeedPoller.iterateFeeds = function(pollContext) {
 FeedPoller.onGetNextFeed = function(pollContext, event) {
   const request = event.target;
   const cursor = request.result;
-  if(cursor) {
-    // Increment the counter immediately to signal that a feed is now
-    // undergoing an update and that there is at least one update pending
-    pollContext.pendingFeeds++;
 
-    const feed = cursor.value;
-    const timeout = 10 * 1000;
-    const onFetchFeedBound = FeedPoller.onFetchFeed.bind(null, pollContext,
-      feed);
-    fetchFeed(feed.url, timeout, onFetchFeedBound);
-    cursor.continue();
-  } else {
-    // If there were no feeds, or all feeds were iterated, continue to
-    // afterNextFeedFetched
-    FeedPoller.afterNextFeedFetched(pollContext);
+  if(!cursor) {
+    FeedPoller.onMaybePollCompleted(pollContext);
+    return;
   }
+
+  // Increment the counter immediately to signal that a feed is now
+  // undergoing an update and that there is at least one update pending
+  pollContext.pendingFeeds++;
+
+  const feed = cursor.value;
+  const timeout = 10 * 1000;
+  const onFetchFeedBound = FeedPoller.onFetchFeed.bind(null, pollContext,
+    feed);
+  fetchFeed(feed.url, timeout, onFetchFeedBound);
+  cursor.continue();
 };
 
-// TODO: this needs to be renamed, it isn't just called after fetch, it is
-// called two times: when no feed at cursor found, and each time feed fully
-// processed. Name it something like onMaybePollCompleted
-FeedPoller.afterNextFeedFetched = function(pollContext) {
-  // Temporarily just logging some info, eventually this should do something
-  // like FeedPoller.onComplete does
-  if(pollContext.pendingFeeds === 0) {
-    console.debug('pendingFeeds reached 0');
+FeedPoller.onMaybePollCompleted = function(pollContext) {
+  // If there is still pending work we are not actually done
+  if(pollContext.pendingFeeds) {
+    return;
+  }
+
+  console.log('Polling completed');
+  localStorage.LAST_POLL_DATE_MS = '' + Date.now();
+
+  if(localStorage.SHOW_NOTIFICATIONS) {
+    const notification = {
+      'type': 'basic',
+      'title': chrome.runtime.getManifest().name,
+      'iconUrl': '/images/rss_icon_trans.gif',
+      'message': 'Updated articles'
+    };
+    chrome.notifications.create('Lucubrate', notification, function() {});
   }
 };
 
@@ -148,206 +162,197 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed,
   Feed.put(connection, localFeed, remoteFeed, onStoreFeedBound);
 };
 
-FeedPoller.onStoreFeed = function(pollContext, localFeed, remoteFeed, event) {
 
-  // TODO: this technically shouldn't happen until feed fully processed,
-  // which is after entries were processed. I put it here for now because
-  // I am blocked from doing it later until I take care of removing async
-  // dependency
-  pollContext.pendingFeeds--;
-  FeedPoller.afterNextFeedFetched(pollContext);
+// TODO: if possible look into having entries also be fetched async with
+// feeds, so that everything is happening concurrently. It might be that
+// way now but I have not thought it through and feel like I might be
+// blocking somewhere for not a good reason
+FeedPoller.onStoreFeed = function(pollContext, localFeed, remoteFeed,
+  putEvent) {
 
-  // NOTE: we can ignore the event object because we know we are doing an
-  // update, not an insert, and don't need new id from event.target.result, and
-  // otherwise event does not contain anything useful except possibly it
-  // may be type === 'error'?
+  const entries = remoteFeed.entries;
+  const numEntries = entries ? entries.length : 0;
 
-  // TODO: if possible look into having entries also be fetched async with
-  // feeds, so that everything is happening concurrently. It might be that
-  // way now but I have not thought it through and feel like I might be
-  // blocking somewhere for not a good reason
-
-  // TODO: stop using async.forEach here
-  async.forEach(remoteFeed.entries,
-    FeedPoller.findEntryByLink.bind(null, pollContext, localFeed),
-    FeedPoller.onEntriesUpdated.bind(null, pollContext));
-};
-
-FeedPoller.onEntriesUpdated = function(pollContext) {
-
-  // TODO: if i deprecate async, then i don't think i need this callback
-  // and can just inline this somewhere
-
-  // Update the number of unread entries now that the number possibly changed
-  utils.updateBadgeText(pollContext.connection);
-};
-
-// For an entry in the feed, check whether an entry with the same link
-// already exists.
-// TODO: link URLs should be normalized and the normalized url should be
-// compared.
-FeedPoller.findEntryByLink = function(pollContext, feed, entry, callback) {
-  const transaction = pollContext.connection.transaction('entry');
-  const entries = transaction.objectStore('entry');
-  const links = entries.index('link');
-  const request = links.get(entry.link);
-  request.onsuccess = FeedPoller.onFindEntry.bind(request, pollContext, feed,
-    entry, callback);
-};
-
-// If an existing entry was found, then exit early (callback with no args to
-// async.forEach which means continue to the next entry). Otherwise, the entry
-// doesn't exist. Get the full html of the entry. Update the properties of the
-// entry. Then store the entry, and then callback to async.forEach.
-FeedPoller.onFindEntry = function(pollContext, feed, entry, callback, event) {
-  const getEntryRequest = event.target;
-  const localEntry = getEntryRequest.result;
-
-  if(localEntry) {
-    callback();
-  } else {
-    const timeout = 20 * 1000;
-    FeedPoller.augmentEntryContent(entry, timeout, onAugment);
+  // For each entry, check if it does not already exist in the database,
+  // and if it does not, augment and store it
+  // TODO: should this be using localFeed or remoteFeed? It is kind of
+  // confusing actually why i am using one but not the other, or why I am even
+  // keeping both around here and distinguishing between them.
+  // TODO: what i should be doing is once I update the feed, I should be
+  // getting whatever is the updated object back from Feed.put and then
+  // just referencing and communicating that object.
+  for(let i = 0, remoteEntry; i < numEntries; i++) {
+    remoteEntry = entries[i];
+    FeedPoller.processEntry(pollContext, localFeed, remoteEntry,
+      onEntryProcessed);
   }
 
-  function onAugment(event) {
-    // Propagate feed props to the entry prior to storage
-    entry.feed = feed.id;
-    // Denormalize now to avoid doing the lookup on render
-    entry.feedLink = feed.link;
-    entry.feedTitle = feed.title;
+  let entriesProcessed = 0;
+  function onEntryProcessed() {
+    entriesProcessed++;
 
-    // Use the feed's date for undated entries
-    if(!entry.pubdate && feed.date) {
-      entry.pubdate = feed.date;
+    // NOTE: we increment entriesProcessed even when there are no
+    // entries, which is why I use >= instead of ===
+
+    if(entriesProcessed >= numEntries) {
+      // We finished processing the feed
+      pollContext.pendingFeeds--;
+      FeedPoller.onMaybePollCompleted(pollContext);
+
+      // Update the number of unread entries
+      utils.updateBadgeText(pollContext.connection);
+    }
+  }
+};
+
+FeedPoller.processEntry = function(pollContext, localFeed, remoteEntry,
+  callback) {
+
+  // Processing the entry starts with checking if the entry already exists.
+  // I do this before fetching the full text of the entry in order to minimize
+  // the number of http requests and the impact the app places on 3rd parties.
+
+  // TODO: link URLs should be normalized and the normalized url should be
+  // compared. This should not be using the raw link url.
+  // TODO: this needs to consider both the input url and the post-redirect
+  // url. Both may map to the same resource. I should be checking both
+  // urls somehow. I have not quite figured out how I want to do this
+  // Maybe entries should store a linkURLs array, and then I should have
+  // multi-entry index on it? That way I could do the lookup of an entry
+  // using a single request?
+
+  const transaction = pollContext.connection.transaction('entry');
+  const entryStore = transaction.objectStore('entry');
+  const linkIndex = entryStore.index('link');
+  const getLinkRequest = linkIndex.get(remoteEntry.link);
+  getLinkRequest.onsuccess = getLinkRequestOnSuccess;
+
+  getLinkRequest.onerror = function(event) {
+    console.debug(event);
+    callback();
+  };
+
+  function getLinkRequestOnSuccess(event) {
+    const localEntry = event.target.result;
+
+    // Exit early if the entry exists
+    if(localEntry) {
+      callback();
+      return;
     }
 
-    const connection = pollContext.connection;
-    Entry.put(connection, entry, callback);
+    // Otherwise, the entry does not exist. Fetch its full text.
+    // TODO: check if we should not be considering its full text and if
+    // so just exit early (e.g. don't augment google forums urls)
+
+    const fetchTimeoutMillis = 20 * 1000;
+    const fetchRequest = new XMLHttpRequest();
+    fetchRequest.timeout = fetchTimeoutMillis;
+    fetchRequest.ontimeout = onFetchError;
+    fetchRequest.onerror = onFetchError;
+    fetchRequest.onabort = onFetchError;
+    fetchRequest.onload = onFetchSuccess;
+    fetchRequest.open('GET', remoteEntry.link, true);
+
+    // TODO: what is the default behavior of XMLHttpRequest? If responseType
+    // defaults to document and by default fetches HTML, do we even need to
+    // specify the type? or does specifying the type trigger an error if
+    // the type is not valid, which is what I want
+    fetchRequest.responseType = 'document';
+    fetchRequest.send();
   }
-};
 
+  function onFetchError(event) {
+    console.debug(event);
+    callback();
+  }
 
-// TODO: move this into a separate lib?
-// Fetch the full content for the entry
-FeedPoller.augmentEntryContent = function(entry, timeout, callback) {
-  const onFetchHTMLBound = FeedPoller.onFetchHTML.bind(null, entry, callback);
-  FeedPoller.fetchHTML(entry.link, timeout, onFetchHTMLBound);
-};
-
-// TODO: what is the default behavior of XMLHttpRequest? If responseType
-// defaults to document and by default fetches HTML, do we even need to
-// specify the type?
-// TODO: instead of creating an error object when document is undefined, maybe
-// this should create an event object so that it is minimally consistent with
-// the other types of the first argument when the callback is called due to
-// another type of error. I could use a plain javascript object with just the
-// desired relevant properties, or I could research how to create custom
-// events.
-
-// TODO: instead of passing multiple args to callback, pass back a custom
-// event with props
-
-FeedPoller.fetchHTML = function(url, timeout, callback) {
-  const request = new XMLHttpRequest();
-  request.timeout = timeout;
-  request.ontimeout = onError;
-  request.onerror = onError;
-  request.onabort = onError;
-  request.onload = onLoad;
-  request.open('GET', url, true);
-  request.responseType = 'document';
-  request.send();
-
-  function onLoad(event) {
-    let error = null;
-    const document = request.responseXML;
-
-    // When is document ever undefined? In case of PDF?
+  function onFetchSuccess(event) {
+    const fetchRequest = event.target;
+    const document = fetchRequest.responseXML;
 
     if(!document) {
-      error = new Error('Undefined document for url ' + url);
-    } else if(!document.documentElement) {
-      error = new Error('Undefined document element for url ' + url);
+      console.debug('Undefined document for', remoteEntry.link);
+      callback();
+      return;
     }
-    callback(error, document, request.responseURL);
+
+    if(!document.documentElement) {
+      console.debug('Undefined document element for', remoteEntry.link);
+      callback();
+      return;
+    }
+
+    // TODO: eventually do something with this. The url may have changed
+    // because of redirects. This definitely happens.
+    const responseURLString = fetchRequest.responseURL;
+    if(responseURLString !== remoteEntry.link) {
+      // NOTE: tentatively I am not logging this while I work on other things
+      // because it floods the log
+      // console.debug('Response URL changed from %s to %s', remoteEntry.link,
+      //  responseURLString);
+    }
+
+    // Clean up and process the fetched document
+
+    // TODO: if this is the sole calling context, move the functionality back
+    // here?
+    ImageUtils.filterTrackingImages(document);
+    ImageUtils.transformLazilyLoadedImages(document);
+    URLResolver.resolveURLsInDocument(document, responseURLString);
+
+    // Ensure that image dimensions are set in the document
+    // TODO: if this is the sole calling context, maybe move that code back
+    // into here.
+    ImageUtils.fetchDimensions(document, onSetImageDimensions.bind(null,
+      document));
   }
 
-  function onError(event) {
-    callback(event, null, request.responseURL);
-  }
-};
+  function onSetImageDimensions(remoteEntryDocument) {
 
-// If an error occurred when fetching the full html, exit early with a no-args
-// callback to signal to async.forEach to continue to the next entry.
-// Otherwise, clean up the html. Remove urls, set image sizes, resolve urls.
-FeedPoller.onFetchHTML = function(entry, callback, error, document,
-  responseURL) {
-  if(error) {
-    // This error happens when doing things like trying to fetch a PDF
-    // document, the document is undefined. For now I am disabling this
-    // error message until I focus on this particular feature.
-    // console.debug(error);
-    callback();
-    return;
-  }
+    // Possibly replace the content property of the remoteEntry with the
+    // fetched and cleaned full text.
 
-  // TODO: eventually do something with this?
-  if(responseURL !== entry.link) {
-    // NOTE: tentatively I am not logging this while I work on other things
-    // because it floods the log. But note that this definitely happens,
-    // the responseURL is sometimes different than entry.link
-    //console.debug('Response URL changed from %s to %s', entry.link,
-    //  responseURL);
-  }
-
-  ImageUtils.filterTrackingImages(document);
-  ImageUtils.transformLazilyLoadedImages(document);
-  URLResolver.resolveURLsInDocument(document, responseURL);
-  const onSetDimensions = FeedPoller.onSetImageDimensions.bind(null, entry,
-    document, callback);
-  ImageUtils.fetchDimensions(document, onSetDimensions);
-};
-
-// Upon setting the sizes of images, replace the content property of the entry,
-// and then callback without arguments to signal to async.forEach to continue.
-FeedPoller.onSetImageDimensions = function(entry, document, callback) {
-  const documentElement = document.documentElement;
-  if(documentElement) {
-    const fullDocumentHTMLString = documentElement.outerHTML;
-    if(fullDocumentHTMLString) {
-      // Check for content length. This should reduce the number of empty
-      // articles.
-      // TODO: maybe I should be checking the content of body. In fact if
-      // there is no body element, maybe this shouldn't even be replacing
-      // entry.content at all. Maybe documentElement is the wrong thing
-      // to consider. Maybe I want to check body but use the full content
-      // of documentElement.
-      // Also, maybe I want to use an substitute message.
-      const trimmedString = fullDocumentHTMLString.trim();
-      if(trimmedString) {
-        entry.content = fullDocumentHTMLString;
+    const documentElement = remoteEntryDocument.documentElement;
+    if(documentElement) {
+      const fullDocumentHTMLString = documentElement.outerHTML;
+      if(fullDocumentHTMLString) {
+        // Check for content length. This should reduce the number of empty
+        // articles.
+        // TODO: maybe I should be checking the content of body. In fact if
+        // there is no body element, maybe this shouldn't even be replacing
+        // entry.content at all. Maybe documentElement is the wrong thing
+        // to consider. Maybe I want to check body but use the full content
+        // of documentElement.
+        // Also, maybe I want to use an substitute message.
+        const trimmedFullDocumentHTMLString = fullDocumentHTMLString.trim();
+        if(trimmedFullDocumentHTMLString) {
+          // Now modify the remote entry
+          remoteEntry.content = trimmedFullDocumentHTMLString;
+        }
       }
     }
-  }
 
-  callback();
-};
+    // Prepare the entry for storage.
+    // TODO: is it correct to use localFeed here? Or differentiate between
+    // local and remote?
 
+    // Link the entry to the feed
+    // NOTE: this is one reason I need localFeed i suppose. however I could
+    // still get this from the result of Feed.put
+    remoteEntry.feed = localFeed.id;
+    // Do some denormalization so that lookups do not need to be performed
+    // when the entry is rendered.
+    remoteEntry.feedLink = localFeed.link;
+    remoteEntry.feedTitle = localFeed.title;
 
-// The entire poll completed (requests may still be outstanding however)
-// TODO: this needs to eventually be changed, maybe merged with
-// onMaybePollCompleted
-FeedPoller.onComplete = function(pollContext) {
-  console.log('Polling completed');
-  localStorage.LAST_POLL_DATE_MS = '' + Date.now();
-  if(localStorage.SHOW_NOTIFICATIONS) {
-    const notification = {
-      'type': 'basic',
-      'title': chrome.runtime.getManifest().name,
-      'iconUrl': '/images/rss_icon_trans.gif',
-      'message': 'Updated articles'
-    };
-    chrome.notifications.create('Lucubrate', notification, function() {});
+    // Use the feed's date for undated entries
+    if(!remoteEntry.pubdate && localFeed.date) {
+      remoteEntry.pubdate = localFeed.date;
+    }
+
+    // Store the entry, and pass along the callback so it will be called
+    // when the entry is stored
+    Entry.put(pollContext.connection, remoteEntry, callback);
   }
 };

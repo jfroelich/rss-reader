@@ -15,6 +15,7 @@ Entry.Flags = {
   ARCHIVED: 1
 };
 
+// TODO: this is only ever called by poll.js, maybe just move it there
 // TODO: i can't think of when I ever update instead of just insert entries,
 // so maybe this should just be deprecated and I should just have an insert
 // function instead, and that function should be tailored to ignore the
@@ -106,18 +107,8 @@ Entry.put = function(connection, entry, callback) {
   // check from index constraints is db-delegated and unknown apriori without a
   // separate lookup request, and that any constraint failure causes the entire
   // transaction to fail.
-
   const transaction = connection.transaction('entry', 'readwrite');
-
-  // TODO: deprecate async lib usage in calling context so that this can
-  // just call callback directly by assigning it to transaction.oncomplete
-  // Right now it is wrapped so as to avoid passing callback any arguments
-  // because any argument indicates an error and therefore an iteration
-  // stopping condition when using async.forEach
-  transaction.oncomplete = function transaction_on_complete_wrapper() {
-    callback();
-  };
-
+  transaction.oncomplete = callback;
   const store = transaction.objectStore('entry');
   store.put(storable);
 };
