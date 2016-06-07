@@ -11,7 +11,7 @@ FeedPoller.start = function() {
 
   // This is a shared object used by various async functions
   const pollContext = {
-    'pendingFeeds': 0,
+    'pendingFeedsCount': 0,
     'connection': null
   };
 
@@ -69,36 +69,33 @@ FeedPoller.iterateFeeds = function(pollContext) {
   const iterateFeedsTransaction = connection.transaction('feed');
   const feedStore = iterateFeedsTransaction.objectStore('feed');
   const iterateFeedsRequest = feedStore.openCursor();
-  iterateFeedsRequest.onsuccess = FeedPoller.onGetNextFeed.bind(
-    iterateFeedsRequest, pollContext);
-};
+  iterateFeedsRequest.onsuccess = onSuccess;
 
-// Processes the feed at the current cursor position and then advances the
-// cursor.
-FeedPoller.onGetNextFeed = function(pollContext, event) {
-  const request = event.target;
-  const cursor = request.result;
+  function onSuccess(event) {
+    const request = event.target;
+    const cursor = request.result;
 
-  if(!cursor) {
-    FeedPoller.onMaybePollCompleted(pollContext);
-    return;
+    if(!cursor) {
+      FeedPoller.onMaybePollCompleted(pollContext);
+      return;
+    }
+
+    // Increment the counter immediately to signal that a feed is now
+    // undergoing an update and that there is at least one update pending
+    pollContext.pendingFeedsCount++;
+
+    const feed = cursor.value;
+    const timeout = 10 * 1000;
+    const onFetchFeedBound = FeedPoller.onFetchFeed.bind(null, pollContext,
+      feed);
+    fetchFeed(feed.url, timeout, onFetchFeedBound);
+    cursor.continue();
   }
-
-  // Increment the counter immediately to signal that a feed is now
-  // undergoing an update and that there is at least one update pending
-  pollContext.pendingFeeds++;
-
-  const feed = cursor.value;
-  const timeout = 10 * 1000;
-  const onFetchFeedBound = FeedPoller.onFetchFeed.bind(null, pollContext,
-    feed);
-  fetchFeed(feed.url, timeout, onFetchFeedBound);
-  cursor.continue();
 };
 
 FeedPoller.onMaybePollCompleted = function(pollContext) {
   // If there is still pending work we are not actually done
-  if(pollContext.pendingFeeds) {
+  if(pollContext.pendingFeedsCount) {
     return;
   }
 
@@ -146,15 +143,18 @@ FeedPoller.onMaybePollCompleted = function(pollContext) {
 // encapsulation. Also, it stays pretty lightweight.
 
 FeedPoller.onFetchFeed = function(pollContext, localFeed,
-  errorEvent, remoteFeed, responseURL) {
+  fetchErrorEvent, remoteFeed, responseURL) {
 
   // Exit early if an error occurred while fetching. The event is only
   // defined if there was a fetch error.
-  if(errorEvent) {
-    console.debug('Error fetching:', localFeed.url);
-    console.dir(errorEvent);
+  if(fetchErrorEvent) {
+    console.debug('Error fetching', localFeed.url);
+    console.dir(fetchErrorEvent);
     return;
   }
+
+  // TODO: I think i could change Feed.put to pass back the feed that was
+  // put, so this will eventually need to change.
 
   const onStoreFeedBound = FeedPoller.onStoreFeed.bind(null,
     pollContext, localFeed, remoteFeed);
@@ -196,7 +196,7 @@ FeedPoller.onStoreFeed = function(pollContext, localFeed, remoteFeed,
 
     if(entriesProcessed >= numEntries) {
       // We finished processing the feed
-      pollContext.pendingFeeds--;
+      pollContext.pendingFeedsCount--;
       FeedPoller.onMaybePollCompleted(pollContext);
 
       // Update the number of unread entries
@@ -294,24 +294,19 @@ FeedPoller.processEntry = function(pollContext, localFeed, remoteEntry,
     }
 
     // Clean up and process the fetched document
-
-    // TODO: if this is the sole calling context, move the functionality back
-    // here?
     FeedPoller.filterTrackingImages(document);
     FeedPoller.transformLazilyLoadedImages(document);
     URLResolver.resolveURLsInDocument(document, responseURLString);
-
-    // Ensure that image dimensions are set in the document
-    // TODO: if this is the sole calling context, maybe move that code back
-    // into here.
-    ImageUtils.fetchDimensions(document, onSetImageDimensions.bind(null,
-      document));
+    FeedPoller.fetchImageDimensions(document, onSetImageDimensions);
   }
 
-  function onSetImageDimensions(remoteEntryDocument) {
-
+  function onSetImageDimensions(remoteEntryDocument, fetchStats) {
     // Possibly replace the content property of the remoteEntry with the
     // fetched and cleaned full text.
+
+    // Temp, debugging new setImageDimensions function
+    console.debug('Stats:', fetchStats);
+
 
     const documentElement = remoteEntryDocument.documentElement;
     if(documentElement) {
@@ -354,6 +349,86 @@ FeedPoller.processEntry = function(pollContext, localFeed, remoteEntry,
     // Store the entry, and pass along the callback so it will be called
     // when the entry is stored
     Entry.put(pollContext.connection, remoteEntry, callback);
+  }
+};
+
+FeedPoller.fetchImageDimensions = function(document, callback) {
+
+  const stats = {
+    'numProcessed': 0,
+    'numFetched': 0
+  };
+
+  const rootElement = document.body || document.documentElement;
+  if(!rootElement) {
+    callback(document, stats);
+    return;
+  }
+
+  const imageNodeList = rootElement.getElementsByTagName('img');
+  const numImages = imageNodeList.length;
+  for(let i = 0, imageElement, urlString; i < numImages; i++) {
+    imageElement = imageNodeList[i];
+    urlString = imageElement.getAttribute('src') || '';
+    urlString = urlString.trim();
+
+    stats.numProcessed++;
+
+    if(urlString && !imageElement.width && !isObjectURL(urlString)) {
+      fetchImage(imageElement);
+    } else {
+      onImageProcessed();
+    }
+  }
+
+  // NOTE: I am confident Chrome permits the leading space. I am not so
+  // confident about the trailing space.
+  function isObjectURL(urlString) {
+    return /^\s*data\s*:/i.test(urlString);
+  }
+
+  // Proxy is intentionally created within the local document
+  // context because we know it is live. Chrome will eagerly fetch upon
+  // changing the image element's src property.
+  function fetchImage(imageElement) {
+    stats.numFetched++;
+    const sourceURLString = imageElement.getAttribute('src');
+
+    // temp
+    console.debug('Fetching image', sourceURLString);
+
+    const proxyImageElement = window.document.createElement('img');
+    const boundOnFetchImage = onFetchImage.bind(null, imageElement);
+    proxyImageElement.onload = boundOnFetchImage;
+    proxyImageElement.onerror = boundOnFetchImage;
+    proxyImageElement.src = sourceURLString;
+  }
+
+  function onFetchImage(imageElement, event) {
+    if(event.type === 'load') {
+      const proxyImageElement = event.target;
+
+      // Set the attributes, not the properties. The properties will be set
+      // by setting the attributes. Setting properties will not set the
+      // attributes. If any code does any serialization/deserialization to or
+      // from innerHTML, it would not store the new values if I only set the
+      // properties.
+      imageElement.setAttribute('width', proxyImageElement.width);
+      imageElement.setAttribute('height', proxyImageElement.height);
+    } else {
+
+      // Temp, testing
+      const sourceURLString = imageElement.getAttribute('src');
+      console.debug('Failed to fetch image:', sourceURLString);
+    }
+
+    onImageProcessed();
+  }
+
+  function onImageProcessed() {
+    if(stats.numProcessed === numImages) {
+      callback(document, stats);
+    }
   }
 };
 
