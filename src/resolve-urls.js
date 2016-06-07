@@ -4,6 +4,9 @@
 
 'use strict';
 
+// TODO: this is only ever used by poll.js, maybe I should just integrate
+// it back into poll.js. It doesn't really serve as an independent component.
+
 // TODO: resolve xlink type simple (on any attribute) in xml docs
 // TODO: finish implementing URLResolver.serializeSrcSet
 // TODO: rather than do a separate check for srcset, it should somehow be
@@ -16,10 +19,11 @@
 // all urls are absolute then leaving in base has no effect. it is only the
 // caller in poll.js that is concerned about prepping
 // the document for render and caring about removing base elements
-
 // TODO: i should not even trying to resolve javascript urls, i think, so it
 // may be worthwhile to filter those out of the document before resolving
-// link urls
+// link urls, i noticed that the resolver routinely fails on those urls
+// although i need to test this again after switching to using the native
+// URL object to do the resolution
 
 
 const URLResolver = {};
