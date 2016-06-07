@@ -165,18 +165,3 @@ HTMLUtils.replaceTags = function(inputString, replacementString) {
 
   return outputString;
 };
-
-// Returns a new string where <br>s have been replaced with spaces. This is
-// intended to be rudimentary and fast rather than perfectly accurate. I do
-// not do any heavy-weight html marshalling.
-// TODO: does this mirror Chrome's behavior? Does chrome's parser allow
-// for whitespace preceding the tag name? Maybe this should be stricter.
-// I did some testing, I don't think you can have leading spaces before the
-// tag name. So this shouldn't allow it.
-// TODO: rather than this function existing, would it be nicer if stripTags
-// accepted a list of tags to ignore or to only consider, and then the caller
-// could just pass in br to that function as the only tag to consider
-HTMLUtils.filterBreakruleTags = function(inputString) {
-  const BREAK_RULE_PATTERN = /<\s*br\s*>/gi;
-  return inputString.replace(BREAK_RULE_PATTERN, ' ');
-};

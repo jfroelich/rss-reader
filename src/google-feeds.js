@@ -101,13 +101,32 @@ GoogleFeedsAPI.sanitizeEntry = function(entry) {
   // query terms. We want to retain that, but remove other tags.
 
   if(entry.contentSnippet) {
+    // Even though Google never seems to include these, I like being safe
     entry.contentSnippet = utils.string.filterControlCharacters(
       entry.contentSnippet);
-    entry.contentSnippet = HTMLUtils.filterBreakruleTags(entry.contentSnippet);
+    // We want to keep certain tags but not <br>s
+    entry.contentSnippet = GoogleFeedsAPI.filterBreakruleTags(
+      entry.contentSnippet);
 
     // The snippet contains HTML, so we have to be wary of truncating, so
     // we use HTMLUtils.truncate instead of utils.string.truncate
     entry.contentSnippet = HTMLUtils.truncate(entry.contentSnippet,
       CONTENT_SNIPPET_MAX_LENGTH, '...');
   }
+};
+
+// Returns a new string where <br>s have been replaced with spaces. This is
+// intended to be rudimentary and fast rather than perfectly accurate. I do
+// not do any heavy-weight html marshalling. This is only a helper function
+// for this module. This assumes inputString is always defined.
+// TODO: does this mirror Chrome's behavior? Does chrome's parser allow
+// for whitespace preceding the tag name? Maybe this should be stricter.
+// I did some testing, I don't think you can have leading spaces before the
+// tag name. So this shouldn't allow it.
+// TODO: rather than this function existing, would it be nicer if
+// HTMLUtils.stripTags accepted a list of tags to ignore or to only consider,
+// and then the caller could just pass in br to that function as the only tag
+// to consider
+GoogleFeedsAPI.filterBreakruleTags = function(inputString) {
+  return inputString.replace(/<\s*br\s*>/gi, ' ');
 };
