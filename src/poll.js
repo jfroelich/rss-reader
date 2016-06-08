@@ -4,6 +4,11 @@
 
 'use strict';
 
+// TODO: if possible look into having entries also be fetched async with
+// feeds, so that everything is happening concurrently. It might be that
+// way now but I have not thought it through and feel like I might be
+// blocking somewhere for not a good reason
+
 const FeedPoller = {};
 
 FeedPoller.start = function() {
@@ -17,17 +22,15 @@ FeedPoller.start = function() {
 
   // Check if we are online
   if('onLine' in navigator && !navigator.onLine) {
-    console.debug('Polling canceled because offline');
+    console.log('Polling canceled because offline');
     FeedPoller.onComplete(pollContext);
     return;
   }
 
+  const IDLE_PERIOD_SECONDS = 60;
   if(!localStorage.ONLY_POLL_IF_IDLE) {
-    // Skip the idle check and go straight to opening the database
     db.open(onOpenDatabase);
   } else {
-    // Check if we have been idling for a minute
-    const IDLE_PERIOD_SECONDS = 60;
     chrome.idle.queryState(IDLE_PERIOD_SECONDS, onQueryIdleState);
   }
 
@@ -36,7 +39,7 @@ FeedPoller.start = function() {
       if(state === 'locked' || state === 'idle') {
         db.open(onOpenDatabase);
       } else {
-        console.debug('Polling canceled because not idle');
+        console.log('Polling canceled because not idle');
         FeedPoller.onComplete(pollContext);
       }
     } else {
@@ -45,7 +48,6 @@ FeedPoller.start = function() {
   }
 
   function onOpenDatabase(event) {
-    // Exit early if there was a database connection error
     if(event.type !== 'success') {
       console.debug(event);
       FeedPoller.onComplete(pollContext);
@@ -148,7 +150,6 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed,
   // Exit early if an error occurred while fetching. The event is only
   // defined if there was a fetch error.
   if(fetchErrorEvent) {
-    console.debug('Error fetching', localFeed.url);
     console.dir(fetchErrorEvent);
     return;
   }
@@ -159,17 +160,14 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed,
   // TODO: I think i could change putFeed to pass back the feed that was
   // put, so this will eventually need to change.
 
-  const onStoreFeedBound = FeedPoller.onStoreFeed.bind(null,
+  const onPutFeedBound = FeedPoller.onPutFeed.bind(null,
     pollContext, localFeed, remoteFeed);
   const connection = pollContext.connection;
-  putFeed(connection, localFeed, remoteFeed, onStoreFeedBound);
+  putFeed(connection, localFeed, remoteFeed, onPutFeedBound);
 };
 
-// TODO: if possible look into having entries also be fetched async with
-// feeds, so that everything is happening concurrently. It might be that
-// way now but I have not thought it through and feel like I might be
-// blocking somewhere for not a good reason
-FeedPoller.onStoreFeed = function(pollContext, localFeed, remoteFeed,
+
+FeedPoller.onPutFeed = function(pollContext, localFeed, remoteFeed,
   putEvent) {
 
   const entries = remoteFeed.entries;
@@ -192,58 +190,49 @@ FeedPoller.onStoreFeed = function(pollContext, localFeed, remoteFeed,
   let entriesProcessed = 0;
   function onEntryProcessed() {
     entriesProcessed++;
-
     // NOTE: we increment entriesProcessed even when there are no
     // entries, which is why I use >= instead of ===
-
     if(entriesProcessed >= numEntries) {
-      // We finished processing the feed
       pollContext.pendingFeedsCount--;
       FeedPoller.onMaybePollCompleted(pollContext);
-
-      // Update the number of unread entries
       utils.updateBadgeText(pollContext.connection);
     }
   }
 };
 
+// Processing the entry starts with checking if the entry already exists.
+// I do this before fetching the full text of the entry in order to minimize
+// the number of http requests and the impact the app places on 3rd parties.
+// TODO: link URLs should be normalized and the normalized url should be
+// compared. This should not be using the raw link url.
+// TODO: this needs to consider both the input url and the post-redirect
+// url. Both may map to the same resource. I should be checking both
+// urls somehow. I have not quite figured out how I want to do this
+// Maybe entries should store a linkURLs array, and then I should have
+// multi-entry index on it? That way I could do the lookup of an entry
+// using a single request?
 FeedPoller.processEntry = function(pollContext, localFeed, remoteEntry,
   callback) {
-
-  // Processing the entry starts with checking if the entry already exists.
-  // I do this before fetching the full text of the entry in order to minimize
-  // the number of http requests and the impact the app places on 3rd parties.
-
-  // TODO: link URLs should be normalized and the normalized url should be
-  // compared. This should not be using the raw link url.
-  // TODO: this needs to consider both the input url and the post-redirect
-  // url. Both may map to the same resource. I should be checking both
-  // urls somehow. I have not quite figured out how I want to do this
-  // Maybe entries should store a linkURLs array, and then I should have
-  // multi-entry index on it? That way I could do the lookup of an entry
-  // using a single request?
 
   const transaction = pollContext.connection.transaction('entry');
   const entryStore = transaction.objectStore('entry');
   const linkIndex = entryStore.index('link');
   const getLinkRequest = linkIndex.get(remoteEntry.link);
   getLinkRequest.onsuccess = getLinkRequestOnSuccess;
+  getLinkRequest.onerror = getLinkRequestOnError;
 
-  getLinkRequest.onerror = function(event) {
+  function getLinkRequestOnError(event) {
     console.debug(event);
     callback();
-  };
+  }
 
   function getLinkRequestOnSuccess(event) {
     const localEntry = event.target.result;
-
-    // Exit early if the entry exists
     if(localEntry) {
       callback();
       return;
     }
 
-    // Otherwise, the entry does not exist. Fetch its full text.
     // TODO: check if we should not be considering its full text and if
     // so just exit early (e.g. don't augment google forums urls)
 
@@ -273,14 +262,14 @@ FeedPoller.processEntry = function(pollContext, localFeed, remoteEntry,
     const fetchRequest = event.target;
     const document = fetchRequest.responseXML;
 
+    // Document can be undefined in various cases such as when fetching a PDF
     if(!document) {
-      console.debug('Undefined document for', remoteEntry.link);
       callback();
       return;
     }
 
+    // TODO: if document is defined, can documentElement ever be undefined?
     if(!document.documentElement) {
-      console.debug('Undefined document element for', remoteEntry.link);
       callback();
       return;
     }
@@ -295,22 +284,17 @@ FeedPoller.processEntry = function(pollContext, localFeed, remoteEntry,
       //  responseURLString);
     }
 
-    // Clean up and process the fetched document
     FeedPoller.filterTrackingImages(document);
     FeedPoller.transformLazilyLoadedImages(document);
     URLResolver.resolveURLsInDocument(document, responseURLString);
-    FeedPoller.fetchImageDimensions(document, onSetImageDimensions);
+    FeedPoller.fetchImageDimensions(remoteEntry, document,
+      onSetImageDimensions);
   }
 
-  function onSetImageDimensions(remoteEntryDocument, fetchStats) {
-    // Possibly replace the content property of the remoteEntry with the
-    // fetched and cleaned full text.
-
-    // Temp, debugging new setImageDimensions function
-    console.debug('Stats:', fetchStats);
-
-
-    const documentElement = remoteEntryDocument.documentElement;
+  // Possibly replace the content property of the remoteEntry with the
+  // fetched and cleaned full text.
+  function onSetImageDimensions(remoteEntry, document, fetchStats) {
+    const documentElement = document.documentElement;
     if(documentElement) {
       const fullDocumentHTMLString = documentElement.outerHTML;
       if(fullDocumentHTMLString) {
@@ -324,38 +308,27 @@ FeedPoller.processEntry = function(pollContext, localFeed, remoteEntry,
         // Also, maybe I want to use an substitute message.
         const trimmedFullDocumentHTMLString = fullDocumentHTMLString.trim();
         if(trimmedFullDocumentHTMLString) {
-          // Now modify the remote entry
           remoteEntry.content = trimmedFullDocumentHTMLString;
         }
       }
     }
 
-    // Prepare the entry for storage.
     // TODO: is it correct to use localFeed here? Or differentiate between
     // local and remote?
-
-    // Link the entry to the feed
     // NOTE: this is one reason I need localFeed i suppose. however I could
     // still get this from the result of putFeed
     remoteEntry.feed = localFeed.id;
-    // Do some denormalization so that lookups do not need to be performed
-    // when the entry is rendered.
     remoteEntry.feedLink = localFeed.link;
     remoteEntry.feedTitle = localFeed.title;
-
-    // Use the feed's date for undated entries
     if(!remoteEntry.pubdate && localFeed.date) {
       remoteEntry.pubdate = localFeed.date;
     }
 
-    // Store the entry, and pass along the callback so it will be called
-    // when the entry is stored
     Entry.put(pollContext.connection, remoteEntry, callback);
   }
 };
 
-FeedPoller.fetchImageDimensions = function(document, callback) {
-
+FeedPoller.fetchImageDimensions = function(remoteEntry, document, callback) {
   const stats = {
     'numProcessed': 0,
     'numFetched': 0
@@ -363,27 +336,32 @@ FeedPoller.fetchImageDimensions = function(document, callback) {
 
   const rootElement = document.body || document.documentElement;
   if(!rootElement) {
-    callback(document, stats);
+    callback(remoteEntry, document, stats);
     return;
   }
 
   const imageNodeList = rootElement.getElementsByTagName('img');
   const numImages = imageNodeList.length;
+
+  if(!numImages) {
+    callback(remoteEntry, document, stats);
+    return;
+  }
+
   for(let i = 0, imageElement, urlString; i < numImages; i++) {
     imageElement = imageNodeList[i];
     urlString = imageElement.getAttribute('src') || '';
     urlString = urlString.trim();
-
     stats.numProcessed++;
-
-    if(urlString && !imageElement.width && !isObjectURL(urlString)) {
+    if(urlString && !imageElement.hasAttribute('width') &&
+      !isObjectURL(urlString)) {
       fetchImage(imageElement);
     } else {
       onImageProcessed();
     }
   }
 
-  // NOTE: I am confident Chrome permits the leading space. I am not so
+  // TODO: I am confident Chrome permits the leading space. I am not so
   // confident about the trailing space.
   function isObjectURL(urlString) {
     return /^\s*data\s*:/i.test(urlString);
@@ -392,13 +370,10 @@ FeedPoller.fetchImageDimensions = function(document, callback) {
   // Proxy is intentionally created within the local document
   // context because we know it is live. Chrome will eagerly fetch upon
   // changing the image element's src property.
+  // TODO: somehow avoid using explicit reference to 'window'
   function fetchImage(imageElement) {
     stats.numFetched++;
     const sourceURLString = imageElement.getAttribute('src');
-
-    // temp
-    console.debug('Fetching image', sourceURLString);
-
     const proxyImageElement = window.document.createElement('img');
     const boundOnFetchImage = onFetchImage.bind(null, imageElement);
     proxyImageElement.onload = boundOnFetchImage;
@@ -407,9 +382,8 @@ FeedPoller.fetchImageDimensions = function(document, callback) {
   }
 
   function onFetchImage(imageElement, event) {
+    const proxyImageElement = event.target;
     if(event.type === 'load') {
-      const proxyImageElement = event.target;
-
       // Set the attributes, not the properties. The properties will be set
       // by setting the attributes. Setting properties will not set the
       // attributes. If any code does any serialization/deserialization to or
@@ -417,19 +391,14 @@ FeedPoller.fetchImageDimensions = function(document, callback) {
       // properties.
       imageElement.setAttribute('width', proxyImageElement.width);
       imageElement.setAttribute('height', proxyImageElement.height);
-    } else {
-
-      // Temp, testing
-      const sourceURLString = imageElement.getAttribute('src');
-      console.debug('Failed to fetch image:', sourceURLString);
     }
 
     onImageProcessed();
   }
 
   function onImageProcessed() {
-    if(stats.numProcessed === numImages) {
-      callback(document, stats);
+    if(stats.numProcessed >= numImages) {
+      callback(remoteEntry, document, stats);
     }
   }
 };
