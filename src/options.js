@@ -387,11 +387,15 @@ OptionsPage.populateFeedDetails = function(feedId) {
       return;
     }
 
+    // Lookup the feed by its id
     const connection = event.target.result;
-    Feed.findById(connection, feedId, onFindFeed);
+    const transaction = connection.transaction('feed');
+    const store = transaction.objectStore('feed');
+    const request = store.get(feedId);
+    request.onsuccess = onFindFeedById;
   }
 
-  function onFindFeed(event) {
+  function onFindFeedById(event) {
     const feed = event.target.result;
     if(!feed) {
       // TODO: show an error message?
@@ -778,20 +782,34 @@ OptionsPage.importOPMLButtonOnClick = function(event) {
 
 // TODO: move the helper functions back into this function as nested functions
 OptionsPage.exportOPMLButtonOnClick = function(event) {
-  db.open(onOpen);
+  db.open(onOpenDatabase);
 
-  function onOpen(event) {
+  function onOpenDatabase(event) {
     if(event.type !== 'success') {
       // TODO: visually report the error
       console.debug('Failed to connect to database when exporting opml');
       return;
     }
 
+    // Query for all feeds in the feed store in natural order
     const connection = event.target.result;
-
-    // TODO: stop using Feed.getAll, do the iteration explicitly here
-    Feed.getAll(connection, onGetFeeds);
+    const transaction = connection.transaction('feed');
+    const store = transaction.objectStore('feed');
+    const request = store.openCursor();
+    const feeds = [];
+    request.onsuccess = onGetNextFeed.bind(request, feeds);
   };
+
+  // Append the feed at the cursor to the feeds array
+  function onGetNextFeed(feeds, event) {
+    const cursor = event.target.result;
+    if(cursor) {
+      feeds.push(cursor.value);
+      cursor.continue();
+    } else {
+      onGetFeeds(feeds);
+    }
+  }
 
   function onGetFeeds(feeds) {
     const title = 'Subscriptions';
@@ -827,23 +845,33 @@ OptionsPage.exportOPMLButtonOnClick = function(event) {
 
 OptionsPage.initSubscriptionsSection = function() {
   let feedCount = 0;
-  db.open(onOpen);
+  db.open(onOpenDatabase);
 
-  function onOpen(event) {
+  function onOpenDatabase(event) {
     if(event.type !== 'success') {
-      // TODO: react to this error somehow
+      // TODO: react to error
       console.debug(event);
       return;
     }
 
-    // TODO: stop using Feed.forEach, do the iteration explicitly here
-    Feed.forEach(event.target.result, processFeed, true, onFeedsIterated);
+    const conection = event.target.result;
+    const transaction = connection.transaction('feed');
+    transaction.oncomplete = onFeedsIterated;
+    const store = transaction.objectStore('feed');
+    const index = store.index('title');
+    const request = index.openCursor();
+    request.onsuccess = onGetNextFeed;
   }
 
-  function processFeed(feed) {
-    feedCount++;
-    OptionsPage.appendFeed(feed);
-    OptionsPage.updateFeedCount();
+  function onGetNextFeed(event) {
+    const cursor = event.target.result;
+    if(cursor) {
+      const feed = cursor.value;
+      feedCount++;
+      OptionsPage.appendFeed(feed);
+      OptionsPage.updateFeedCount();
+      cursor.continue();
+    }
   }
 
   function onFeedsIterated() {

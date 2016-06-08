@@ -7,54 +7,6 @@
 // Feed routines
 const Feed = {};
 
-Feed.findById = function(connection, id, callback) {
-  const transaction = connection.transaction('feed');
-  const store = transaction.objectStore('feed');
-  const request = store.get(id);
-  request.onsuccess = callback;
-};
-
-
-// TODO: deprecate, this is a caller responsibility
-Feed.forEach = function(connection, handleFeed, sortByTitle, callback) {
-  const transaction = connection.transaction('feed');
-  transaction.oncomplete = callback;
-  let store = transaction.objectStore('feed');
-  if(sortByTitle) {
-    store = store.index('title');
-  }
-
-  const request = store.openCursor();
-  request.onsuccess = onSuccess;
-
-  function onSuccess(event) {
-    const cursor = event.target.result;
-    if(cursor) {
-      handleFeed(cursor.value);
-      cursor.continue();
-    }
-  }
-};
-
-// TODO: maybe deprecate, this is a caller responsibility
-Feed.getAll = function(connection, callback) {
-  const transaction = connection.transaction('feed');
-  const store = transaction.objectStore('feed');
-  const request = store.openCursor();
-  const feeds = [];
-  request.onsuccess = onSuccess;
-
-  function onSuccess(event) {
-    const cursor = event.target.result;
-    if(cursor) {
-      feeds.push(cursor.value);
-      cursor.continue();
-    } else {
-      callback(feeds);
-    }
-  }
-};
-
 // TODO: check last modified date of the remote xml file to avoid
 // pointless updates?
 // TODO: ensure the date is not beyond the current date?
@@ -111,7 +63,7 @@ Feed.put = function(connection, original, feed, callback) {
     storable.schemeless = utils.url.filterProtocol(storable.url);
   }
 
-  const title = Feed.sanitizeBeforePut(feed.title);
+  const title = sanitizeBeforePut(feed.title);
 
   // NOTE: title is semi-required. It must be defined, although it can be
   // an empty string. It must be defined because of how views query and
@@ -119,12 +71,12 @@ Feed.put = function(connection, original, feed, callback) {
   // ever undefined those feeds would not appear in the title index.
   storable.title = title || '';
 
-  const description = Feed.sanitizeBeforePut(feed.description);
+  const description = sanitizeBeforePut(feed.description);
   if(description) {
     storable.description = description;
   }
 
-  const link = Feed.sanitizeBeforePut(feed.link);
+  const link = sanitizeBeforePut(feed.link);
   if(link) {
     storable.link = link;
   }
@@ -179,15 +131,15 @@ Feed.put = function(connection, original, feed, callback) {
   //request.onerror = function onError(event) {
   //  callback();
   //};
-};
 
-// Prep a string property of an object for storage in indexedDB
-Feed.sanitizeBeforePut = function(value) {
-  if(value) {
-    value = HTMLUtils.replaceTags(value, '');
-    value = utils.string.filterControlCharacters(value);
-    value = value.replace(/\s+/, ' ');
-    value = value.trim();
-    return value;
+  // Prep a string property of an object for storage in indexedDB
+  function sanitizeBeforePut(value) {
+    if(value) {
+      value = HTMLUtils.replaceTags(value, '');
+      value = utils.string.filterControlCharacters(value);
+      value = value.replace(/\s+/, ' ');
+      value = value.trim();
+      return value;
+    }
   }
 };
