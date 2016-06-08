@@ -6,7 +6,7 @@
 const Subscription = {};
 
 // TODO: look into a more native way of creating event objects
-// TODO: use a URL object?
+// TODO: use a URL object instead of a URL string where appropriate?
 // TODO: I could consider a flag passed to fetchFeed that then passes a
 // flag to FeedParser that says to ignore entry information because we
 // are only getting general feed information, this would be a very minor
@@ -14,11 +14,20 @@ const Subscription = {};
 // TODO: not sure but I think this should be using responseURL somehow? I
 // should be using responseURL instead of the input url in the event that it
 // changed? Should fetchFeed be doing that instead of this?
-// NOTE: this does not also add the entries of the feed
+// TODO: shouldn't the feed's url be normalized so that comparison works
+// properly?
+
+// NOTE: this does not also add the entries of the feed, because that would
+// take too long
 Subscription.add = function(connection, urlString, callback) {
   console.debug('Subscribing to', urlString);
 
   const fetchTimeoutMillis = 10 * 1000;
+
+  // TODO: I think fetchFeed should always defined its event, and it should
+  // pass back a single custom event object with various properties. I should
+  // not be simply testing for whether the event is defined, but instead
+  // testing against the event's type property.
   fetchFeed(urlString, fetchTimeoutMillis, onFetchFeed);
 
   function onFetchFeed(fetchEvent, fetchedFeed, responseURL) {
@@ -28,6 +37,8 @@ Subscription.add = function(connection, urlString, callback) {
       console.debug('url changed from %s to %s', urlString, responseURL);
     }
 
+    // fetchEvent is currently only defined if an error occurred when
+    // fetching
     if(fetchEvent) {
       const event = {};
       event.type = 'error';
@@ -46,7 +57,7 @@ Subscription.add = function(connection, urlString, callback) {
     }
 
     const existingFeed = null;
-    Feed.put(connection, existingFeed, fetchedFeed, onPutFeed);
+    putFeed(connection, existingFeed, fetchedFeed, onPutFeed);
   }
 
   function onPutFeed(putEvent) {
@@ -68,8 +79,8 @@ Subscription.add = function(connection, urlString, callback) {
     if(localStorage.SHOW_NOTIFICATIONS) {
       // TODO: I'd like to improve the contents of the notification. I would
       // like to set title but right now I can only get newFeedId from
-      // Feed.put, and I would like to use a better notification title
-      // Maybe Feed.put should be passing along the put feed.
+      // putFeed, and I would like to use a better notification title
+      // Maybe putFeed should be passing along the put feed.
       const notification = {
         'type': 'basic',
         'title': chrome.runtime.getManifest().name,
@@ -88,7 +99,7 @@ Subscription.add = function(connection, urlString, callback) {
     // so that it can avoid another roundtrip back to the database to pull
     // the details of the new feed so it can immediately add it to the
     // displayed feeds list.
-    // So again, I think Feed.put needs to pass back the inserted feed,
+    // So again, I think putFeed needs to pass back the inserted feed,
     // not just the putEvent
 
     const event = {};

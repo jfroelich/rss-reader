@@ -195,7 +195,7 @@ OPML.onFileLoad = function(connection, tracker, callback, event) {
   // Unlike subscriptions, I am not checking for a failure to insert
   // a new feed because a feed with a similar url already exists
   for(let feed of feeds) {
-    Feed.put(connection, null, feed, null);
+    putFeed(connection, null, feed, null);
   }
 
   // TODO: should this be waiting for all storage calls to complete

@@ -153,15 +153,14 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed,
     return;
   }
 
-  // TODO: I think i could change Feed.put to pass back the feed that was
+  // TODO: I think i could change putFeed to pass back the feed that was
   // put, so this will eventually need to change.
 
   const onStoreFeedBound = FeedPoller.onStoreFeed.bind(null,
     pollContext, localFeed, remoteFeed);
   const connection = pollContext.connection;
-  Feed.put(connection, localFeed, remoteFeed, onStoreFeedBound);
+  putFeed(connection, localFeed, remoteFeed, onStoreFeedBound);
 };
-
 
 // TODO: if possible look into having entries also be fetched async with
 // feeds, so that everything is happening concurrently. It might be that
@@ -179,7 +178,7 @@ FeedPoller.onStoreFeed = function(pollContext, localFeed, remoteFeed,
   // confusing actually why i am using one but not the other, or why I am even
   // keeping both around here and distinguishing between them.
   // TODO: what i should be doing is once I update the feed, I should be
-  // getting whatever is the updated object back from Feed.put and then
+  // getting whatever is the updated object back from putFeed and then
   // just referencing and communicating that object.
   for(let i = 0, remoteEntry; i < numEntries; i++) {
     remoteEntry = entries[i];
@@ -334,7 +333,7 @@ FeedPoller.processEntry = function(pollContext, localFeed, remoteEntry,
 
     // Link the entry to the feed
     // NOTE: this is one reason I need localFeed i suppose. however I could
-    // still get this from the result of Feed.put
+    // still get this from the result of putFeed
     remoteEntry.feed = localFeed.id;
     // Do some denormalization so that lookups do not need to be performed
     // when the entry is rendered.

@@ -4,9 +4,6 @@
 
 'use strict';
 
-// Feed routines
-const Feed = {};
-
 // TODO: check last modified date of the remote xml file to avoid
 // pointless updates?
 // TODO: ensure the date is not beyond the current date?
@@ -16,7 +13,7 @@ const Feed = {};
 // NOTE: callback receives an event resulting from either request.onsuccess
 // or onerror. Use event.target.result to get the new id in case event.type
 // equals success.
-Feed.put = function(connection, original, feed, callback) {
+function putFeed(connection, original, feed, callback) {
 
   // Create a storable object from the input feeds by combining together the
   // properties of original and feed into a basic object, and sanitizing
@@ -142,4 +139,4 @@ Feed.put = function(connection, original, feed, callback) {
       return value;
     }
   }
-};
+}
