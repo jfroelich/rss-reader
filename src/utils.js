@@ -312,6 +312,12 @@ utils.url.isURLString = function(inputString) {
   return false;
 };
 
+// TODO: I am confident Chrome permits the leading space. I am not so
+// confident about the trailing space.
+utils.url.isObjectURLString = function(urlString) {
+  return /^\s*data\s*:/i.test(urlString);
+};
+
 // Applies a set of rules to a url string and returns a modified url string
 // Currently this only modifies Google News urls, but I plan to include more
 // TODO: research how to bypass feedproxy given the feedburner changes. Google

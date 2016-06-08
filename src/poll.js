@@ -329,6 +329,9 @@ FeedPoller.processEntry = function(pollContext, localFeed, remoteEntry,
 };
 
 FeedPoller.fetchImageDimensions = function(remoteEntry, document, callback) {
+
+  console.debug('Fetching image dimensions for', remoteEntry.link);
+
   const stats = {
     'numProcessed': 0,
     'numFetched': 0
@@ -336,6 +339,7 @@ FeedPoller.fetchImageDimensions = function(remoteEntry, document, callback) {
 
   const rootElement = document.body || document.documentElement;
   if(!rootElement) {
+    console.debug('No root element in', remoteEntry.link);
     callback(remoteEntry, document, stats);
     return;
   }
@@ -344,27 +348,28 @@ FeedPoller.fetchImageDimensions = function(remoteEntry, document, callback) {
   const numImages = imageNodeList.length;
 
   if(!numImages) {
+    console.debug('No images found in', remoteEntry.link);
     callback(remoteEntry, document, stats);
     return;
   }
+
+  // TODO: not sure about the isObjectURL condition. I suppose an object
+  // url could still not have its width and height attributes set. But
+  // it would have its width and height properties set because those are set
+  // at the time the html is parsed? I need to look into this more.
+  // Maybe calamine could check both attributes and properties, because of
+  // the case of object urls without attributes but with properties?
 
   for(let i = 0, imageElement, urlString; i < numImages; i++) {
     imageElement = imageNodeList[i];
     urlString = imageElement.getAttribute('src') || '';
     urlString = urlString.trim();
-    stats.numProcessed++;
     if(urlString && !imageElement.hasAttribute('width') &&
-      !isObjectURL(urlString)) {
+      !utils.url.isObjectURLString(urlString)) {
       fetchImage(imageElement);
     } else {
-      onImageProcessed();
+      onImageProcessed(imageElement);
     }
-  }
-
-  // TODO: I am confident Chrome permits the leading space. I am not so
-  // confident about the trailing space.
-  function isObjectURL(urlString) {
-    return /^\s*data\s*:/i.test(urlString);
   }
 
   // Proxy is intentionally created within the local document
@@ -384,6 +389,9 @@ FeedPoller.fetchImageDimensions = function(remoteEntry, document, callback) {
   function onFetchImage(imageElement, event) {
     const proxyImageElement = event.target;
     if(event.type === 'load') {
+
+      // console.debug('Fetched image', imageElement.getAttribute('src'));
+
       // Set the attributes, not the properties. The properties will be set
       // by setting the attributes. Setting properties will not set the
       // attributes. If any code does any serialization/deserialization to or
@@ -393,11 +401,26 @@ FeedPoller.fetchImageDimensions = function(remoteEntry, document, callback) {
       imageElement.setAttribute('height', proxyImageElement.height);
     }
 
-    onImageProcessed();
+    onImageProcessed(imageElement);
   }
 
-  function onImageProcessed() {
-    if(stats.numProcessed >= numImages) {
+  // TODO: there is also another bug here, this is somehow happening after
+  // the poll has completed, meaning this is getting called too early because
+  // it shouldn't callback until entirely finished
+  // TODO: similarly there is the bug where I see the processed all images
+  // log statement multiple times.
+  // I may have fixed it by moving numProcessed into here, so that it only
+  // gets incremented in case of fetch after the image has been fetched
+  // and not naively before, because in case of fetch this only gets called
+  // after the image gets fetched. I think this also fixes the processed
+  // all images duplicate log messages bug because the condition is not
+  // repeatedly met whenever all the fetches complete
+
+  function onImageProcessed(imageElement) {
+    stats.numProcessed++;
+    // console.debug('Processed image', imageElement.getAttribute('src'));
+    if(stats.numProcessed === numImages) {
+      console.debug('Processed all images for', remoteEntry.link);
       callback(remoteEntry, document, stats);
     }
   }
