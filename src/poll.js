@@ -153,6 +153,9 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed,
     return;
   }
 
+  // TODO: check last modified date of the remote xml file to avoid
+  // pointless updates?
+
   // TODO: I think i could change putFeed to pass back the feed that was
   // put, so this will eventually need to change.
 

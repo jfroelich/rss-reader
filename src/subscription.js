@@ -19,15 +19,15 @@ const Subscription = {};
 
 // NOTE: this does not also add the entries of the feed, because that would
 // take too long
+// NOTE: you must be online in order to subscribe
 Subscription.add = function(connection, urlString, callback) {
   console.debug('Subscribing to', urlString);
-
-  const fetchTimeoutMillis = 10 * 1000;
 
   // TODO: I think fetchFeed should always defined its event, and it should
   // pass back a single custom event object with various properties. I should
   // not be simply testing for whether the event is defined, but instead
   // testing against the event's type property.
+  const fetchTimeoutMillis = 10 * 1000;
   fetchFeed(urlString, fetchTimeoutMillis, onFetchFeed);
 
   function onFetchFeed(fetchEvent, fetchedFeed, responseURL) {

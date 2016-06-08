@@ -4,33 +4,26 @@
 
 'use strict';
 
-// TODO: check last modified date of the remote xml file to avoid
-// pointless updates?
+// Create a storable object from the input feeds by combining together the
+// properties of current and new feed into a basic object, and then
+// sanitizing the properties of the storable feed, and then storing the
+// storable feed, and then calling the callback.
 // TODO: ensure the date is not beyond the current date?
-// TODO: maybe not modify date updated if not dirty
-// TODO: sanitize html?
-// TODO: rename original to originalFeed, and feed to newFeed
-// NOTE: callback receives an event resulting from either request.onsuccess
-// or onerror. Use event.target.result to get the new id in case event.type
-// equals success.
-function putFeed(connection, original, feed, callback) {
-
-  // Create a storable object from the input feeds by combining together the
-  // properties of original and feed into a basic object, and sanitizing
-  // the properties of the storable object.
-
-  // original represents the feed as it exists prior to this call, it is the
-  // locally stored feed that was loaded and is going to be updated via
-  // replacement.
-  // original may be undefined when adding a new feed, so we have to
-  // test whether it is defined when accessing it.
-
+// TODO: maybe do not modify date updated if no values changed
+// TODO: think more about XSS and where I should be sanitizing these inputs,
+// should it be the responsibility of render, or here before storage. There is
+// an ambiguity then regarding the input formatting, I don't want to mistakenly
+// re-encode encoded html entities and so forth. Maybe just using textContent
+// instead of innerHTML in the render will ensure no problem.
+function putFeed(connection, currentFeed, newFeed, callback) {
   const storable = {};
 
   // Only set the id if we are doing an update. If we are doing an add, the
-  // id is automatically defined by indexedDB's autoincrement
-  if(original) {
-    storable.id = original.id;
+  // id is automatically defined by indexedDB's autoincrement feature
+  // Assume that if id is defined that it is valid.
+  // Assume that if currentFeed is defined that id is defined.
+  if(currentFeed) {
+    storable.id = currentFeed.id;
   }
 
   // url is required so assume it exists
@@ -38,20 +31,24 @@ function putFeed(connection, original, feed, callback) {
   // TODO: this should test and throw
   // TODO: this should also not assume that url is trimmed
   // NOTE: this is used later to derive storable.schemeless
-  storable.url = feed.url;
+  // NOTE: i am using newFeed.url although technically this should be the
+  // same thing as currentFeed.url because it is replacing it and it shouldn't
+  // matter which one I use?
+  storable.url = newFeed.url;
 
   // Store the fetched feed type (e.g. rss or rdf) as a string
-  if('type' in feed) {
-    storable.type = feed.type;
+  // Assume that if type is defined that it is valid
+  if('type' in newFeed) {
+    storable.type = newFeed.type;
   }
 
   // TODO: instead of schemeless, I should be using a fully normalized url
-  // for comparision. I should deprecate this property.
+  // for comparison. I should deprecate this property.
 
   // Derive and store the schemeless url of the feed, which is used to
   // check for dups
-  if(original) {
-    storable.schemeless = original.schemeless;
+  if(currentFeed) {
+    storable.schemeless = currentFeed.schemeless;
   } else {
 
     // TODO: I think filterProtocol can throw. I need to think about how
@@ -60,35 +57,36 @@ function putFeed(connection, original, feed, callback) {
     storable.schemeless = utils.url.filterProtocol(storable.url);
   }
 
-  const title = sanitizeBeforePut(feed.title);
-
   // NOTE: title is semi-required. It must be defined, although it can be
   // an empty string. It must be defined because of how views query and
   // iterate over the feeds in the store using title as an index. If it were
   // ever undefined those feeds would not appear in the title index.
+  // TODO: remove this requirement somehow? Maybe the options page that
+  // retrieves feeds has to manually sort them?
+  const title = sanitizeBeforePut(newFeed.title);
   storable.title = title || '';
 
-  const description = sanitizeBeforePut(feed.description);
+  const description = sanitizeBeforePut(newFeed.description);
   if(description) {
     storable.description = description;
   }
 
-  const link = sanitizeBeforePut(feed.link);
+  const link = sanitizeBeforePut(newFeed.link);
   if(link) {
     storable.link = link;
   }
 
   // Even though date should always be set, this can work in the absence of
   // a value
-  if(feed.date) {
-    storable.date = feed.date;
+  if(newFeed.date) {
+    storable.date = newFeed.date;
   }
 
   // TODO: this property should be renamed so as to be consistent with the
   // names of other date properties
   // NOTE: this is set in fetchFeed to a Date object
-  if(feed.fetchDate) {
-    storable.fetchDate = feed.fetchDate;
+  if(newFeed.fetchDate) {
+    storable.fetchDate = newFeed.fetchDate;
   }
 
   // Set date created and date updated. We only modify date updated if we
@@ -96,19 +94,12 @@ function putFeed(connection, original, feed, callback) {
   // because it has never been updated (note I am not sure if I like this).
   // TODO: use better names, like dateCreated, dateUpdated or dateModified
   // TODO: use Date objects instead of timestamps
-  if(original) {
+  if(currentFeed) {
     storable.updated = Date.now();
-    storable.created = original.created;
+    storable.created = currentFeed.created;
   } else {
     storable.created = Date.now();
   }
-
-  // Put the feed into the feed store, and then callback.
-  // TODO: maybe I don't need to wrap. Maybe onerror and onsucess should just
-  // receive the idb event directly, and they can figure out how to check for
-  // new id. This is at least one less function on the stack that is generally
-  // otherwise pointless, and I don't think it is giving the caller too much
-  // responsibility
 
   const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
@@ -121,22 +112,27 @@ function putFeed(connection, original, feed, callback) {
   request.onsuccess = callback;
   request.onerror = callback;
 
-  //request.onsuccess = function onSuccess(event) {
+  // NOTE: if i switch back to these i have to allow for an undefined callback
+
+  //request.onsuccess = function onPutSuccess(event) {
   //  const newId = event.target.result;
   //  callback(newId);
   //};
-  //request.onerror = function onError(event) {
+  //request.onerror = function onPutError(event) {
   //  callback();
   //};
 
   // Prep a string property of an object for storage in indexedDB
-  function sanitizeBeforePut(value) {
-    if(value) {
-      value = HTMLUtils.replaceTags(value, '');
-      value = utils.string.filterControlCharacters(value);
-      value = value.replace(/\s+/, ' ');
-      value = value.trim();
-      return value;
+  function sanitizeBeforePut(inputString) {
+    let outputString = null;
+    if(inputString) {
+      outputString = inputString;
+      outputString = utils.string.filterControlCharacters(outputString);
+      outputString = HTMLUtils.replaceTags(outputString, '');
+      // Condense whitespace
+      outputString = outputString.replace(/\s+/, ' ');
+      outputString = outputString.trim();
     }
+    return outputString;
   }
 }
