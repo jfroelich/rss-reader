@@ -104,23 +104,21 @@ function putFeed(connection, currentFeed, newFeed, callback) {
   const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.put(storable);
+  if(callback) {
+    request.onsuccess = onPutSuccess;
+    request.onerror = onPutError;
+  }
 
-  // NOTE: callback may be undefined, but that is ok
-  // NOTE: we use request.onsuccess and onerror instead of
-  // transaction.oncomplete because the feed's new id in the case of an add
-  // is defined in event.target.result of onsuccess
-  request.onsuccess = callback;
-  request.onerror = callback;
+  function onPutSuccess(event) {
+    if(!('id' in storable)) {
+      storable.id = event.target.result;
+    }
+    callback(storable, event);
+  }
 
-  // NOTE: if i switch back to these i have to allow for an undefined callback
-
-  //request.onsuccess = function onPutSuccess(event) {
-  //  const newId = event.target.result;
-  //  callback(newId);
-  //};
-  //request.onerror = function onPutError(event) {
-  //  callback();
-  //};
+  function onPutError(event) {
+    callback(storable, event);
+  }
 
   // Prep a string property of an object for storage in indexedDB
   function sanitizeBeforePut(inputString) {

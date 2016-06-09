@@ -188,14 +188,11 @@ OPML.onFileLoad = function(connection, tracker, callback, event) {
     feeds.push(outline);
   }
 
-  // Reduce the number of failed insert attempts before hitting the
-  // the database
+  // Reduce the number of failed put attempts
   feeds = OPML.removeDuplicateFeeds(feeds);
 
-  // Unlike subscriptions, I am not checking for a failure to insert
-  // a new feed because a feed with a similar url already exists
   for(let feed of feeds) {
-    putFeed(connection, null, feed, null);
+    putFeed(connection, null, feed);
   }
 
   // TODO: should this be waiting for all storage calls to complete

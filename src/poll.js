@@ -157,42 +157,32 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed,
   // TODO: check last modified date of the remote xml file to avoid
   // pointless updates?
 
-  // TODO: I think i could change putFeed to pass back the feed that was
-  // put, so this will eventually need to change.
+  const entries = remoteFeed.entries || [];
 
-  const onPutFeedBound = FeedPoller.onPutFeed.bind(null,
-    pollContext, localFeed, remoteFeed);
+  const onPutFeedBound = FeedPoller.onPutFeed.bind(null, pollContext, entries);
   const connection = pollContext.connection;
   putFeed(connection, localFeed, remoteFeed, onPutFeedBound);
 };
 
 
-FeedPoller.onPutFeed = function(pollContext, localFeed, remoteFeed,
-  putEvent) {
+FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
+  let entriesProcessed = 0;
+  const numEntries = entries.length;
 
-  const entries = remoteFeed.entries;
-  const numEntries = entries ? entries.length : 0;
-
-  // For each entry, check if it does not already exist in the database,
-  // and if it does not, augment and store it
-  // TODO: should this be using localFeed or remoteFeed? It is kind of
-  // confusing actually why i am using one but not the other, or why I am even
-  // keeping both around here and distinguishing between them.
-  // TODO: what i should be doing is once I update the feed, I should be
-  // getting whatever is the updated object back from putFeed and then
-  // just referencing and communicating that object.
-  for(let i = 0, remoteEntry; i < numEntries; i++) {
-    remoteEntry = entries[i];
-    FeedPoller.processEntry(pollContext, localFeed, remoteEntry,
-      onEntryProcessed);
+  if(!numEntries) {
+    pollContext.pendingFeedsCount--;
+    FeedPoller.onMaybePollCompleted(pollContext);
+    utils.updateBadgeText(pollContext.connection);
+    return;
   }
 
-  let entriesProcessed = 0;
+  for(let i = 0; i < numEntries; i++) {
+    FeedPoller.processEntry(pollContext, feed, entries[i], onEntryProcessed);
+  }
+
   function onEntryProcessed() {
     entriesProcessed++;
-    // NOTE: we increment entriesProcessed even when there are no
-    // entries, which is why I use >= instead of ===
-    if(entriesProcessed >= numEntries) {
+    if(entriesProcessed === numEntries) {
       pollContext.pendingFeedsCount--;
       FeedPoller.onMaybePollCompleted(pollContext);
       utils.updateBadgeText(pollContext.connection);
@@ -211,13 +201,12 @@ FeedPoller.onPutFeed = function(pollContext, localFeed, remoteFeed,
 // Maybe entries should store a linkURLs array, and then I should have
 // multi-entry index on it? That way I could do the lookup of an entry
 // using a single request?
-FeedPoller.processEntry = function(pollContext, localFeed, remoteEntry,
-  callback) {
+FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
 
   const transaction = pollContext.connection.transaction('entry');
   const entryStore = transaction.objectStore('entry');
   const linkIndex = entryStore.index('link');
-  const getLinkRequest = linkIndex.get(remoteEntry.link);
+  const getLinkRequest = linkIndex.get(entry.link);
   getLinkRequest.onsuccess = getLinkRequestOnSuccess;
   getLinkRequest.onerror = getLinkRequestOnError;
 
@@ -243,7 +232,7 @@ FeedPoller.processEntry = function(pollContext, localFeed, remoteEntry,
     fetchRequest.onerror = onFetchError;
     fetchRequest.onabort = onFetchError;
     fetchRequest.onload = onFetchSuccess;
-    fetchRequest.open('GET', remoteEntry.link, true);
+    fetchRequest.open('GET', entry.link, true);
 
     // TODO: what is the default behavior of XMLHttpRequest? If responseType
     // defaults to document and by default fetches HTML, do we even need to
@@ -277,7 +266,7 @@ FeedPoller.processEntry = function(pollContext, localFeed, remoteEntry,
     // TODO: eventually do something with this. The url may have changed
     // because of redirects. This definitely happens.
     const responseURLString = fetchRequest.responseURL;
-    if(responseURLString !== remoteEntry.link) {
+    if(responseURLString !== entry.link) {
       // NOTE: tentatively I am not logging this while I work on other things
       // because it floods the log
       // console.debug('Response URL changed from %s to %s', remoteEntry.link,
@@ -287,51 +276,45 @@ FeedPoller.processEntry = function(pollContext, localFeed, remoteEntry,
     FeedPoller.filterTrackingImages(document);
     FeedPoller.transformLazilyLoadedImages(document);
     URLResolver.resolveURLsInDocument(document, responseURLString);
-    FeedPoller.fetchImageDimensions(remoteEntry, document,
-      onSetImageDimensions);
+    FeedPoller.fetchImageDimensions(entry, document, onSetImageDimensions);
   }
 
   // Possibly replace the content property of the remoteEntry with the
-  // fetched and cleaned full text.
-  function onSetImageDimensions(remoteEntry, document, fetchStats) {
+  // fetched and cleaned full text, then store the entry.
+  // TODO: maybe I should be checking the content of body. In fact if
+  // there is no body element, maybe this shouldn't even be replacing
+  // entry.content at all. Maybe documentElement is the wrong thing
+  // to consider. Maybe I want to check body but use the full content
+  // of documentElement.
+  // Also, maybe I want to use an substitute message.
+  function onSetImageDimensions(document, fetchStats) {
     const documentElement = document.documentElement;
     if(documentElement) {
       const fullDocumentHTMLString = documentElement.outerHTML;
       if(fullDocumentHTMLString) {
-        // Check for content length. This should reduce the number of empty
-        // articles.
-        // TODO: maybe I should be checking the content of body. In fact if
-        // there is no body element, maybe this shouldn't even be replacing
-        // entry.content at all. Maybe documentElement is the wrong thing
-        // to consider. Maybe I want to check body but use the full content
-        // of documentElement.
-        // Also, maybe I want to use an substitute message.
         const trimmedFullDocumentHTMLString = fullDocumentHTMLString.trim();
         if(trimmedFullDocumentHTMLString) {
-          remoteEntry.content = trimmedFullDocumentHTMLString;
+          entry.content = trimmedFullDocumentHTMLString;
         }
       }
     }
 
-    // TODO: is it correct to use localFeed here? Or differentiate between
-    // local and remote?
-    // NOTE: this is one reason I need localFeed i suppose. however I could
-    // still get this from the result of putFeed
-    remoteEntry.feed = localFeed.id;
-    remoteEntry.feedLink = localFeed.link;
-    remoteEntry.feedTitle = localFeed.title;
-    if(!remoteEntry.pubdate && localFeed.date) {
-      remoteEntry.pubdate = localFeed.date;
+    entry.feed = feed.id;
+    entry.feedLink = feed.link;
+    entry.feedTitle = feed.title;
+    if(!entry.pubdate && feed.date) {
+      entry.pubdate = feed.date;
     }
 
-    Entry.put(pollContext.connection, remoteEntry, callback);
+    Entry.put(pollContext.connection, entry, callback);
   }
 };
 
-FeedPoller.fetchImageDimensions = function(remoteEntry, document, callback) {
+FeedPoller.getHostDocument = function() {
+  return document;
+};
 
-  console.debug('Fetching image dimensions for', remoteEntry.link);
-
+FeedPoller.fetchImageDimensions = function(document, callback) {
   const stats = {
     'numProcessed': 0,
     'numFetched': 0
@@ -339,26 +322,26 @@ FeedPoller.fetchImageDimensions = function(remoteEntry, document, callback) {
 
   const rootElement = document.body || document.documentElement;
   if(!rootElement) {
-    console.debug('No root element in', remoteEntry.link);
-    callback(remoteEntry, document, stats);
+    callback(document, stats);
     return;
   }
 
   const imageNodeList = rootElement.getElementsByTagName('img');
   const numImages = imageNodeList.length;
-
   if(!numImages) {
-    console.debug('No images found in', remoteEntry.link);
-    callback(remoteEntry, document, stats);
+    callback(document, stats);
     return;
   }
 
   // TODO: not sure about the isObjectURL condition. I suppose an object
   // url could still not have its width and height attributes set. But
   // it would have its width and height properties set because those are set
-  // at the time the html is parsed? I need to look into this more.
+  // at the time the html is parsed? I want to be sure that all images have
+  // width and height attributes set. I need to look into this more.
   // Maybe calamine could check both attributes and properties, because of
   // the case of object urls without attributes but with properties?
+  // Maybe for object urls I could just separately process them and
+  // manually set the attributes for them?
 
   for(let i = 0, imageElement, urlString; i < numImages; i++) {
     imageElement = imageNodeList[i];
@@ -374,12 +357,11 @@ FeedPoller.fetchImageDimensions = function(remoteEntry, document, callback) {
 
   // Proxy is intentionally created within the local document
   // context because we know it is live. Chrome will eagerly fetch upon
-  // changing the image element's src property.
-  // TODO: somehow avoid using explicit reference to 'window'
+  // changing the image element's src property because it is live.
   function fetchImage(imageElement) {
-    stats.numFetched++;
     const sourceURLString = imageElement.getAttribute('src');
-    const proxyImageElement = window.document.createElement('img');
+    const hostDocument = FeedPoller.getHostDocument();
+    const proxyImageElement = hostDocument.createElement('img');
     const boundOnFetchImage = onFetchImage.bind(null, imageElement);
     proxyImageElement.onload = boundOnFetchImage;
     proxyImageElement.onerror = boundOnFetchImage;
@@ -387,16 +369,10 @@ FeedPoller.fetchImageDimensions = function(remoteEntry, document, callback) {
   }
 
   function onFetchImage(imageElement, event) {
+    stats.numFetched++;
     const proxyImageElement = event.target;
     if(event.type === 'load') {
-
-      // console.debug('Fetched image', imageElement.getAttribute('src'));
-
-      // Set the attributes, not the properties. The properties will be set
-      // by setting the attributes. Setting properties will not set the
-      // attributes. If any code does any serialization/deserialization to or
-      // from innerHTML, it would not store the new values if I only set the
-      // properties.
+      // Set attributes so that the values persist when serialized
       imageElement.setAttribute('width', proxyImageElement.width);
       imageElement.setAttribute('height', proxyImageElement.height);
     }
@@ -404,51 +380,34 @@ FeedPoller.fetchImageDimensions = function(remoteEntry, document, callback) {
     onImageProcessed(imageElement);
   }
 
-  // TODO: there is also another bug here, this is somehow happening after
-  // the poll has completed, meaning this is getting called too early because
-  // it shouldn't callback until entirely finished
-  // TODO: similarly there is the bug where I see the processed all images
-  // log statement multiple times.
-  // I may have fixed it by moving numProcessed into here, so that it only
-  // gets incremented in case of fetch after the image has been fetched
-  // and not naively before, because in case of fetch this only gets called
-  // after the image gets fetched. I think this also fixes the processed
-  // all images duplicate log messages bug because the condition is not
-  // repeatedly met whenever all the fetches complete
-
   function onImageProcessed(imageElement) {
     stats.numProcessed++;
-    // console.debug('Processed image', imageElement.getAttribute('src'));
     if(stats.numProcessed === numImages) {
-      console.debug('Processed all images for', remoteEntry.link);
-      callback(remoteEntry, document, stats);
+      callback(document, stats);
     }
   }
 };
 
 // Remove images that merely serve to register http requests for website
 // statistics
+// TODO: I am not seeing any of the last 4 urls here being filtered. Maybe
+// I am looking for the wrong thing? I have not seen these occur even
+// once? Are they just script origins?
 FeedPoller.filterTrackingImages = function(document) {
 
-  // TODO: I am not seeing any of the last 4 urls here being filtered. Maybe
-  // I am looking for the wrong thing? I have not seen these occur even
-  // once? Are they just script origins?
+  const rootElement = document.body || document.documentElement;
+  if(!rootElement) {
+    return;
+  }
 
-  const SELECTORS = [
+  const SELECTOR = [
     'img[src^="http://b.scorecardresearch.com"]',
     'img[src^="https://b.scorecardresearch.com"]',
     'img[src^="http://pagead2.googlesyndication.com"]',
     'img[src^="https://pagead2.googlesyndication.com"]',
     'img[src^="http://pubads.g.doubleclick.net"]',
     'img[src^="https://pubads.g.doubleclick.net"]'
-  ];
-
-  const SELECTOR = SELECTORS.join(',');
-
-  // I only look for tracking images within the body, because I assume
-  // that out-of-body information is removed separately in the domaid
-  // functions.
-  const rootElement = document.body || document.documentElement;
+  ].join(',');
   const imageNodeList = rootElement.querySelectorAll(SELECTOR);
   const listLength = imageNodeList.length;
   for(let i = 0, imageElement; i < listLength; i++) {
@@ -463,12 +422,12 @@ FeedPoller.filterTrackingImages = function(document) {
 // Modify the src values of images that appear to be lazily loaded.
 // TODO: maybe skip an image if image.closest('picture') ?
 FeedPoller.transformLazilyLoadedImages = function(document) {
-  const bodyElement = document.body;
-  if(!bodyElement) {
+  const rootElement = document.body || document.documentElement;
+  if(!rootElement) {
     return;
   }
 
-  const imageNodeList = bodyElement.querySelectorAll('img');
+  const imageNodeList = rootElement.querySelectorAll('img');
   const listLength = imageNodeList.length;
   for(let i = 0; i < listLength; i++) {
     FeedPoller.transformLazilyLoadedImage(imageNodeList[i]);
@@ -476,17 +435,13 @@ FeedPoller.transformLazilyLoadedImages = function(document) {
 };
 
 // TODO: reduce the DRYness of this function
+// TODO: support this case better. There is a problem here because
+// the tiny image filter is picking this up and removing it.
+// <img data-thumb="url" data-full-size-image="url" data-lar
+// ge-size-image="url" data-trigger-notification="1" data-scalable="fa
+// lse" alt="" data-src="url" data-tc-lazyload="deferred" src="url" width=
+// "1" height="1">
 FeedPoller.transformLazilyLoadedImage = function(image) {
-
-  // TODO: support this case better. There is a problem here because
-  // the tiny image filter is picking this up and removing it.
-  /*
-<img data-thumb="url" data-full-size-image="url" data-lar
-ge-size-image="url" data-trigger-notification="1" data-scalable="fa
-lse" alt="" data-src="url" data-tc-lazyload="deferred" src="url" width=
-"1" height="1">
-  */
-
   if(!image.hasAttribute('src') && image.hasAttribute('load-src')) {
     image.setAttribute('src', image.getAttribute('load-src'));
     return;

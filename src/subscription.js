@@ -60,7 +60,7 @@ Subscription.add = function(connection, urlString, callback) {
     putFeed(connection, existingFeed, fetchedFeed, onPutFeed);
   }
 
-  function onPutFeed(putEvent) {
+  function onPutFeed(storedFeed, putEvent) {
     if(putEvent.type !== 'success') {
       const event = {};
       event.type = 'error';
@@ -77,40 +77,22 @@ Subscription.add = function(connection, urlString, callback) {
     }
 
     if(localStorage.SHOW_NOTIFICATIONS) {
-      // TODO: I'd like to improve the contents of the notification. I would
-      // like to set title but right now I can only get newFeedId from
-      // putFeed, and I would like to use a better notification title
-      // Maybe putFeed should be passing along the put feed.
+
       const notification = {
         'type': 'basic',
         'title': chrome.runtime.getManifest().name,
         'iconUrl': '/images/rss_icon_trans.gif',
-        'message': 'Subscribed to ' + urlString
+        'message': 'Subscribed to ' + (storedFeed.title || 'Untitled')
       };
       chrome.notifications.create('Lucubrate', notification, function() {});
     }
 
-    // We do not need to affect the unread count because we are not dealing
-    // with entries, just the feed itself.
-
-    // And finally, callback successfully
-
-    // TODO: I think the options page needs more information than this
-    // so that it can avoid another roundtrip back to the database to pull
-    // the details of the new feed so it can immediately add it to the
-    // displayed feeds list.
-    // So again, I think putFeed needs to pass back the inserted feed,
-    // not just the putEvent
-
     const event = {};
     event.type = 'success';
-    event.message = 'Successfully subscribed to ' + urlString;
-
-    // TODO: look into the conventions of how non-standard event properties
-    // are defined? Is it just whatever I want? Is it event.data = {...} ?
-    const newFeedId = putEvent.target.result;
-
-    event.newFeedId = newFeedId;
+    event.message = 'Successfully subscribed to ' +
+      (storedFeed.title || 'Untitled');
+    event.newFeedTitle = storedFeed.title || 'Untitled';
+    event.newFeedId = storedFeed.id;
     callback(event);
   }
 };

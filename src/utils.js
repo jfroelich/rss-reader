@@ -289,14 +289,15 @@ utils.url = {};
 // less characters involved in url comparisons. On the other hand, the more
 // formal specs and such seem to include the '//' as a part of the rest of the
 // url
+// NOTE: i have to be careful about throwing exceptions, i am not sure
+// that all the calling contexts account for that possibility, this could
+// totally mess up some of the async code? So, what should be the behavior in
+// the event the urlString is invalid or is relative which would lead to an
+// exception? Should this just return the original string, along the lines of
+// always consistently returning something and never throwing?
 utils.url.filterProtocol = function(urlString) {
-  // NOTE: i have to be careful about throwing exceptions, i am not sure
-  // that all the calling contexts account for that possibility, this could
-  // totally mess up some of the async code?
-  // So, what should be the behavior in the event the urlString is invalid
-  // or is relative? Should this just return the original string?
   const urlObject = new URL(urlString);
-  // The 2 is for the '//'
+  // Add 2 in order to skip past '//'
   const offset = urlObject.protocol.length + 2;
   return urlObject.href.substr(offset);
 };
@@ -306,9 +307,7 @@ utils.url.isURLString = function(inputString) {
   try {
     new URL(inputString);
     return true;
-  } catch(exception) {
-    // console.debug(exception.message || exception);
-  }
+  } catch(exception) {}
   return false;
 };
 
