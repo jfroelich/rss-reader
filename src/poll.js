@@ -276,7 +276,7 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
     FeedPoller.filterTrackingImages(document);
     FeedPoller.transformLazilyLoadedImages(document);
     URLResolver.resolveURLsInDocument(document, responseURLString);
-    FeedPoller.fetchImageDimensions(entry, document, onSetImageDimensions);
+    FeedPoller.fetchImageDimensions(document, onSetImageDimensions);
   }
 
   // Possibly replace the content property of the remoteEntry with the
