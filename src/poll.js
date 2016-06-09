@@ -149,6 +149,8 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed,
 
   // Exit early if an error occurred while fetching. The event is only
   // defined if there was a fetch error.
+  // TODO: if there was a fetch error, doesn't this still need to call
+  // onMaybePollCompleted and decrement pendingFeedsCount?
   if(fetchErrorEvent) {
     console.dir(fetchErrorEvent);
     return;
@@ -158,17 +160,15 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed,
   // pointless updates?
 
   const entries = remoteFeed.entries || [];
-
   const onPutFeedBound = FeedPoller.onPutFeed.bind(null, pollContext, entries);
   const connection = pollContext.connection;
   putFeed(connection, localFeed, remoteFeed, onPutFeedBound);
 };
 
-
 FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
-  let entriesProcessed = 0;
   const numEntries = entries.length;
 
+  // If the feed has no entries, then we are done processing the feed
   if(!numEntries) {
     pollContext.pendingFeedsCount--;
     FeedPoller.onMaybePollCompleted(pollContext);
@@ -176,10 +176,19 @@ FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
     return;
   }
 
+  // Otherwise, process the feed's entries concurrently
+  // TODO: what if instead of using a counter and a test, I used something
+  // like a stack or queue where I pop as each step of iteration ends, and
+  // then the condition is just whether the collection is empty?
+
   for(let i = 0; i < numEntries; i++) {
     FeedPoller.processEntry(pollContext, feed, entries[i], onEntryProcessed);
   }
 
+  // This is a shared callback used when processing each of the feed's entries,
+  // and which ever one finishes last triggers its end condition that then
+  // means we are done processing the feed.
+  let entriesProcessed = 0;
   function onEntryProcessed() {
     entriesProcessed++;
     if(entriesProcessed === numEntries) {
@@ -190,9 +199,6 @@ FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
   }
 };
 
-// Processing the entry starts with checking if the entry already exists so
-// that this can possibly avoid re-fetching the entry's full content.
-//
 // TODO: link URLs should be normalized and the normalized url should be
 // compared. This should not be using the raw link url.
 // TODO: this needs to consider both the input url and the post-redirect
@@ -203,28 +209,53 @@ FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
 // using a single request?
 FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
 
-  const transaction = pollContext.connection.transaction('entry');
-  const entryStore = transaction.objectStore('entry');
-  const linkIndex = entryStore.index('link');
-  const getLinkRequest = linkIndex.get(entry.link);
-  getLinkRequest.onsuccess = getLinkRequestOnSuccess;
-  getLinkRequest.onerror = getLinkRequestOnError;
+  // Prep the entry for storage
+  entry.feed = feed.id;
+  entry.feedLink = feed.link;
+  entry.feedTitle = feed.title;
+  // TODO: rename pubdate to datePublished
+  // TODO: use Date objects
+  // TODO: rename feed date to something clearer
+  if(!entry.pubdate && feed.date) {
+    entry.pubdate = feed.date;
+  }
 
-  function getLinkRequestOnError(event) {
+  findExistingEntry();
+
+  function findExistingEntry() {
+    const connection = pollContext.connection;
+    const transaction = connection.transaction('entry');
+    const entryStore = transaction.objectStore('entry');
+    const linkIndex = entryStore.index('link');
+    const request = linkIndex.get(entry.link);
+    request.onsuccess = findExistingEntryOnSuccess;
+    request.onerror = findExistingEntryOnError;
+  }
+
+  function findExistingEntryOnError(event) {
     console.debug(event);
     callback();
   }
 
-  function getLinkRequestOnSuccess(event) {
-    const localEntry = event.target.result;
+  function findExistingEntryOnSuccess(event) {
+    const findRequest = event.target;
+    const localEntry = findRequest.result;
+
+    // If a similar entry was found, then we are done
     if(localEntry) {
       callback();
       return;
     }
 
-    // TODO: check if we should not be considering its full text and if
-    // so just exit early (e.g. don't augment google forums urls)
+    if(FeedPoller.shouldNotFetchEntry(entry)) {
+      Entry.put(pollContext.connection, entry, callback);
+      return;
+    }
 
+    fetchEntry();
+  }
+
+  function fetchEntry() {
     const fetchTimeoutMillis = 20 * 1000;
     const fetchRequest = new XMLHttpRequest();
     fetchRequest.timeout = fetchTimeoutMillis;
@@ -235,7 +266,7 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
     fetchRequest.open('GET', entry.link, true);
 
     // TODO: what is the default behavior of XMLHttpRequest? If responseType
-    // defaults to document and by default fetches HTML, do we even need to
+    // defaults to document and by default fetches HTML/XML, do we even need to
     // specify the type? or does specifying the type trigger an error if
     // the type is not valid, which is what I want
     fetchRequest.responseType = 'document';
@@ -243,6 +274,12 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
   }
 
   function onFetchError(event) {
+    // If there was a problem fetching the entry, and it should be
+    // fetched, then I guess I don't want to store it, so just skip it.
+    // TODO: not sure. Maybe I should still be storing it? In fact I think
+    // I should be, and I am not sure why I am not doing this here. This
+    // error just means we can't augment the content, it doesn't mean the
+    // entry should be ignored.
     console.debug(event);
     callback();
   }
@@ -252,13 +289,19 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
     const document = fetchRequest.responseXML;
 
     // Document can be undefined in various cases such as when fetching a PDF
+    // By exiting here, I am not storing the entry, even though I technically
+    // could have. Maybe this is wrong?
+    // TODO: I think maybe this should still store the entry, just without
+    // augmented content.
     if(!document) {
       callback();
       return;
     }
 
     // TODO: if document is defined, can documentElement ever be undefined?
+    // Maybe this test is redundant.
     if(!document.documentElement) {
+      console.debug('Undefined document element for', entry.link);
       callback();
       return;
     }
@@ -267,7 +310,7 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
     // because of redirects. This definitely happens.
     const responseURLString = fetchRequest.responseURL;
     if(responseURLString !== entry.link) {
-      // NOTE: tentatively I am not logging this while I work on other things
+      // Tentatively I am not logging this while I work on other things
       // because it floods the log
       // console.debug('Response URL changed from %s to %s', remoteEntry.link,
       //  responseURLString);
@@ -275,6 +318,8 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
 
     FeedPoller.transformLazilyLoadedImages(document);
     FeedPoller.filterSourcelessImages(document);
+    // TODO: move URLResolver back into poll.js, this is the only place
+    // it is called, and it really isn't a general purpose library.
     URLResolver.resolveURLsInDocument(document, responseURLString);
     FeedPoller.filterTrackingImages(document);
     FeedPoller.fetchImageDimensions(document, onSetImageDimensions);
@@ -300,15 +345,58 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
       }
     }
 
-    entry.feed = feed.id;
-    entry.feedLink = feed.link;
-    entry.feedTitle = feed.title;
-    if(!entry.pubdate && feed.date) {
-      entry.pubdate = feed.date;
-    }
-
     Entry.put(pollContext.connection, entry, callback);
   }
+};
+
+// TODO: break apart into two functions, don't do the PDF check here. Instead
+// this concept should be composed in the calling context.
+FeedPoller.shouldNotFetchEntry = function(entry) {
+  const linkURLString = entry.link;
+  const lowercaseLinkURLString = linkURLString.toLowerCase();
+
+  const blacklist = [
+    'https://productforums.google.com',
+    'https://groups.google.com'
+  ];
+
+  for(let i = 0, len = blacklist.length, origin; i < len; i++) {
+    origin = blacklist[i];
+    if(lowercaseLinkURLString.startsWith(origin)) {
+      console.debug('Excluding', linkURLString);
+      return true;
+    }
+  }
+
+  // This should never throw given the assumption of a valid absolute url
+  // as input, but I don't want the exception to bubble. I would almost
+  // prefer this was done by the caller and this function just accepted
+  // a URL object as input. Or, what would really be ideal, is if entry.link
+  // was a URL object.
+  let linkURL = null;
+  try {
+    linkURL = new URL(linkURLString);
+  } catch(exception) {
+    console.debug(linkURLString, exception);
+    return false;
+  }
+
+  if(FeedPoller.isPDFURL(linkURL)) {
+    console.debug('Excluding', linkURL);
+    return true;
+  }
+
+  // Default to always fetching
+  return false;
+};
+
+// Returns true when the URL's path ends with ".pdf"
+// @param url {URL}
+FeedPoller.isPDFURL = function(url) {
+  // Minimum 5 characters for 'a.pdf', the test reduces the num of
+  // calls to the regexp
+  const path = url.pathname;
+  return path && path.length > 5 && /\.pdf$/i.test(path);
 };
 
 FeedPoller.getHostDocument = function() {
@@ -480,7 +568,11 @@ FeedPoller.transformLazilyLoadedImage = function(image) {
       altSrc = image.getAttribute(name);
       altSrc = altSrc || '';
       altSrc = altSrc.trim();
-      if(altSrc && /:\/\//.test(altSrc)) {
+
+      // NOTE: this happens prior to URL resolution, so I really can't
+      // check if the string looks like a URL
+
+      if(altSrc) {
         before = image.outerHTML;
         image.removeAttribute(name);
         image.setAttribute('src', altSrc);

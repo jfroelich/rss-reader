@@ -143,9 +143,7 @@ URLResolver.resolveURL = function(baseURL, urlString) {
     const url = new URL(urlString, baseURL);
     return url.href;
   } catch(exception) {
-    console.debug('Error:', exception.message);
-    console.debug('baseURL:', baseURL);
-    console.debug('urlString:', urlString);
+    console.debug('Error:', exception.message, baseURL, urlString);
   }
 
   return urlString;
