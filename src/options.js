@@ -944,6 +944,8 @@ OptionsPage.onDOMContentLoaded = function(event) {
   // permission should be permanently defined.
   // TODO: should this be onchange or onclick? I had previously named the
   // function onchange but was listening to onclick
+  // TODO: use the new, more global, navigator.permission check instead of
+  // the extension API ?
   checkboxEnableBackgroundProcessing.onclick =
     checkboxEnableBackgroundProcessingOnClick;
   function checkboxEnableBackgroundProcessingOnClick(event) {
