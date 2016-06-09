@@ -190,9 +190,9 @@ FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
   }
 };
 
-// Processing the entry starts with checking if the entry already exists.
-// I do this before fetching the full text of the entry in order to minimize
-// the number of http requests and the impact the app places on 3rd parties.
+// Processing the entry starts with checking if the entry already exists so
+// that this can possibly avoid re-fetching the entry's full content.
+//
 // TODO: link URLs should be normalized and the normalized url should be
 // compared. This should not be using the raw link url.
 // TODO: this needs to consider both the input url and the post-redirect
@@ -273,9 +273,10 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
       //  responseURLString);
     }
 
-    FeedPoller.filterTrackingImages(document);
     FeedPoller.transformLazilyLoadedImages(document);
+    FeedPoller.filterSourcelessImages(document);
     URLResolver.resolveURLsInDocument(document, responseURLString);
+    FeedPoller.filterTrackingImages(document);
     FeedPoller.fetchImageDimensions(document, onSetImageDimensions);
   }
 
@@ -384,6 +385,26 @@ FeedPoller.fetchImageDimensions = function(document, callback) {
     stats.numProcessed++;
     if(stats.numProcessed === numImages) {
       callback(document, stats);
+    }
+  }
+};
+
+FeedPoller.filterSourcelessImages = function(document) {
+  const imageNodeList = document.querySelectorAll('img');
+  const numImages = imageNodeList.length;
+  for(let i = 0, image, src; i < numImages; i++) {
+    image = imageNodeList[i];
+    src = image.getAttribute('src');
+    if(!src) {
+      console.debug('Removing sourcless image', image.outerHTML);
+      image.remove();
+      break;
+    }
+    src = src.trim();
+    if(!src) {
+      console.debug('Removing sourceless image', image.outerHTML);
+      image.remove();
+      break;
     }
   }
 };
