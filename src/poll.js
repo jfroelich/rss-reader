@@ -492,7 +492,7 @@ FeedPoller.filterSourcelessImages = function(document) {
   const images = document.querySelectorAll('img');
   for(let i = 0, len = images.length, image, src; i < len; i++) {
     image = images[i];
-    if(!(image.getAttribute('src') || '').trim()) {
+    if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
       console.debug('Removing sourcless image', image.outerHTML);
       image.remove();
       break;
