@@ -147,19 +147,43 @@ FeedPoller.onMaybePollCompleted = function(pollContext) {
 FeedPoller.onFetchFeed = function(pollContext, localFeed,
   fetchErrorEvent, remoteFeed, responseURL) {
 
-  // Exit early if an error occurred while fetching. The event is only
-  // defined if there was a fetch error.
-  // TODO: if there was a fetch error, doesn't this still need to call
-  // onMaybePollCompleted and decrement pendingFeedsCount?
+  // If there was a problem fetching the feed, then we are done processing
+  // the feed.
   if(fetchErrorEvent) {
     console.dir(fetchErrorEvent);
+    pollContext.pendingFeedsCount--;
+    FeedPoller.onMaybePollCompleted(pollContext);
     return;
   }
 
   // TODO: check last modified date of the remote xml file to avoid
-  // pointless updates?
+  // pointless updates? in order to do this, I would maybe have to get it from
+  // the response headers, which means I would need to expose that somehow
+  // via the callback from fetchFeed.
 
-  const entries = remoteFeed.entries || [];
+  // After fetching the feed, do some immediate cleanup of the feed's
+  // properties as it pertains to this polling context
+
+  let entries = remoteFeed.entries || [];
+
+  // Removes entries without a link value
+  entries = entries.filter(function(entry) {
+    return entry.link;
+  });
+
+  // Rewrite entry link urls
+  for(let i = 0, len = entries.length; i < len; i++) {
+    entries[i].link = utils.url.rewrite(entries[i].link);
+  }
+
+  // Remove duplicate entries by link
+  const expandedEntries = entries.map(function(entry) {
+    return [entry.link, entry];
+  });
+  const distinctEntriesMap = new Map(expandedEntries);
+  entries = Array.from(distinctEntriesMap.values());
+
+  // Now store the updated feed
   const onPutFeedBound = FeedPoller.onPutFeed.bind(null, pollContext, entries);
   const connection = pollContext.connection;
   putFeed(connection, localFeed, remoteFeed, onPutFeedBound);
@@ -393,7 +417,7 @@ FeedPoller.shouldNotFetchEntry = function(entry) {
 // Returns true when the URL's path ends with ".pdf"
 // @param url {URL}
 FeedPoller.isPDFURL = function(url) {
-  // Minimum 5 characters for 'a.pdf', the test reduces the num of
+  // Minimum 5 characters for 'a.pdf', the length test reduces the num of
   // calls to the regexp
   const path = url.pathname;
   return path && path.length > 5 && /\.pdf$/i.test(path);

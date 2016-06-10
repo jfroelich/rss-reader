@@ -7,20 +7,11 @@
 // NOTE: this does not assume url is defined? It just fails in that case. The
 // thing is, does it fail by calling request.onerror or does it cause a
 // javascript error? If it is a js error then maybe I need to guard.
-
 // TODO: I think this should always just pass back event and let caller test
 // against it, instead the whole only-defined-event-if-error thing
-
-// TODO: the post-processing where i clean up entries should not be done here,
-// it should be the caller's responsibility, it is not intrinsic to this
-// function's purpose, improper separation of concerns
 // TODO: the type of error passed back as first argument to the final callback
 // should be consistent. Perhaps should mimic an event object and use that
 // in all cases
-// TODO: responseURL may be different than requested url, I observed this
-// through logging, this should be handled here or by the caller somehow, right
-// now this sets feed.url to requested url and just passes back responseURL
-// as the third argument to the callback
 // TODO: rename url to urlString, or consider requiring a URL object instead of
 // a string.
 function fetchFeed(url, timeout, callback) {
@@ -76,42 +67,16 @@ function fetchFeed(url, timeout, callback) {
 
     // Set some implicit properties of the fetched feed that pertain to this
     // operation of fetching
-    // NOTE: I am using requested url, not response url, here. I am not sure
-    // if this is what I want to be doing.
+    // TODO: responseURL may be different than requested url, I observed this
+    // through logging, this should be handled here or by the caller somehow
     feed.url = url;
 
     // TODO: this should be named dateFetched to be consistent with naming
     // of other date properties
     feed.fetchDate = new Date();
 
-    // Do some post-fetch processing of the feed that generally always has to
-    // occur in every calling context.
-
-    // Filter empty links
-    feed.entries = feed.entries.filter(getEntryLink);
-
-    // Rewrite links
-    feed.entries.forEach(rewriteEntryLink);
-
-    // Remove duplicate entries by link
-    const expandedEntries = feed.entries.map(expandEntry);
-    const distinctEntriesMap = new Map(expandedEntries);
-    feed.entries = Array.from(distinctEntriesMap.values());
-
     // Using null as the first parameter to callback indicates that no error
     // occurred
     callback(null, feed, request.responseURL);
-  }
-
-  function getEntryLink(entry) {
-    return entry.link;
-  }
-
-  function rewriteEntryLink(entry) {
-    entry.link = utils.url.rewrite(entry.link);
-  }
-
-  function expandEntry(entry) {
-    return [entry.link, entry];
   }
 }
