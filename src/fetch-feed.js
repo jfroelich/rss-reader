@@ -54,14 +54,6 @@ function fetchFeed(urlString, timeout, callback) {
       return;
     }
 
-    // TODO: remove this, I don't think this ever happens when I defer
-    // parsing to XMLHttpRequest
-    const parserError = document.querySelector('parsererror');
-    if(parserError) {
-      console.debug('Parse error:', parserError.outerHTML);
-      parserError.remove();
-    }
-
     // Parse the XMLDocument into a basic feed object
     // TODO: look into what exceptions are thrown by feedparser. Is it
     // an Error object or a string or a mix of things?
