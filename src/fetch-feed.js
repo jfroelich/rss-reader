@@ -15,66 +15,70 @@
 function fetchFeed(urlString, timeout, callback) {
   const request = new XMLHttpRequest();
   request.timeout = timeout;
-  request.onerror = callbackWithErrorEvent;
-  request.ontimeout = callbackWithErrorEvent;
-  request.onabort = callbackWithErrorEvent;
+  request.onerror = onError;
+  request.ontimeout = onError;
+  request.onabort = onError;
   request.onload = onLoad;
   request.open('GET', urlString, true);
   request.responseType = 'document';
   request.send();
 
-  function callbackWithErrorEvent(event) {
-    callback(event, null, event.target.responseURL);
+  function onError(event) {
+    const fetchEvent = {
+      'type': event.type,
+      'feed': null,
+      'requestURLString': urlString,
+      'responseURLString': event.target.responseURL
+    };
+
+    callback(fetchEvent);
   }
 
   function onLoad(event) {
-    const document = request.responseXML;
+    const document = event.target.responseXML;
 
+    const fetchEvent = {
+      'type': event.type,
+      'feed': null,
+      'requestURLString': urlString,
+      'responseURLString': event.target.responseURL
+    };
+
+    // This can happen, for example, when fetching a PDF.
     // TODO: would document or documentElement ever actually be undefined?
     // If an error occurs, wouldn't that mean that onLoad doesn't even
     // get called? I need to look into this more.
-    if(!document) {
-      callback(event, document, request.responseURL);
+    if(!document || !document.documentElement) {
+      fetchEvent.type = 'invaliddocument';
+      callback(fetchEvent);
       return;
     }
 
-    // This can happen, for example, when fetching a PDF.
-    if(!document.documentElement) {
-      callback(event, document, request.responseURL);
-      return;
-    }
-
-    // NOTE: I am not sure this ever happens actually. This happens when
-    // doing it myself with DOMParser.parseFromString, but I think if this
-    // happens in XMLHttpRequest then something else occurs, like a fetch
-    // error? So maybe this is dumb.
+    // TODO: remove this, I don't think this ever happens when I defer
+    // parsing to XMLHttpRequest
     const parserError = document.querySelector('parsererror');
     if(parserError) {
-      console.debug(parserError.outerHTML);
+      console.debug('Parse error:', parserError.outerHTML);
       parserError.remove();
     }
 
     // Parse the XMLDocument into a basic feed object
-    let feed = null;
+    // TODO: look into what exceptions are thrown by feedparser. Is it
+    // an Error object or a string or a mix of things?
+
     try {
-      feed = FeedParser.parse(document);
+      fetchEvent.feed = FeedParser.parse(document);
+      // TODO: responseURL may be different than requested url, I observed this
+      // through logging, this should be handled here or by the caller somehow
+      fetchEvent.feed.url = urlString;
+      // TODO: this should be named dateFetched to be consistent with naming
+      // of other date properties
+      fetchEvent.feed.fetchDate = new Date();
     } catch(exception) {
-      callback(exception, null, request.responseURL);
-      return;
+      fetchEvent.type = 'parseexception';
+      fetchEvent.details = exception;
     }
 
-    // Set some implicit properties of the fetched feed that pertain to this
-    // operation of fetching
-    // TODO: responseURL may be different than requested url, I observed this
-    // through logging, this should be handled here or by the caller somehow
-    feed.url = urlString;
-
-    // TODO: this should be named dateFetched to be consistent with naming
-    // of other date properties
-    feed.fetchDate = new Date();
-
-    // Using null as the first parameter to callback indicates that no error
-    // occurred
-    callback(null, feed, request.responseURL);
+    callback(fetchEvent);
   }
 }

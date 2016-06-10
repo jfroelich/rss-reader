@@ -115,46 +115,28 @@ FeedPoller.onMaybePollCompleted = function(pollContext) {
   }
 };
 
-// TODO: rather than check if event is defined or not, check if event
-// has the proper type (e.g. type === 'load') or whatever it is
-// Right now, event is only defined if there was an error. In the future,
-// I think event should always be defined, it is just that its type is
-// 'load' or whatever for successful fetch.
-// TODO: if I am always passing back event, I can probably get
-// responseURL from the event itself, so I don't need to pass back
-// responseURL as an explicit parameter, I can just use
-// event.target.responseURL
-// TODO: and it shouldn't be called errorEvent then, it should just be
-// an event
-// TODO: I am not even sure how much work fetchFeed should be doing on
-// its own, implicitly. E.g. should it just be fetchXML and then all the
-// post processing happens explicitly, here in the calling context?
-// TODO: just a mental note, I am not yet using responseURL but I planned
-// to use it. Something about how I should be detecting if the feed url is
-// a redirect. I should only be using the post-redirect URL I think? But
-// is that solved as subscribe time as opposed to here? Although any check
-// for update means that after subscribe the source author could have
-// added a redirect, so we always need to continue to check for it every
-// time.
 
-// TODO: fetchFeed should use an event object and pass back a custom
-// event object instead of multiple variables. I should just set
-// the properties of that custom event object within fetchFeed. This will
-// greatly simplify the number of variables negotiated, which reduces the
-// number of parameters per function, and provides some abstraction and
-// encapsulation. Also, it stays pretty lightweight.
-
-FeedPoller.onFetchFeed = function(pollContext, localFeed,
-  fetchErrorEvent, remoteFeed, responseURL) {
+FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
 
   // If there was a problem fetching the feed, then we are done processing
   // the feed.
-  if(fetchErrorEvent) {
-    console.dir(fetchErrorEvent);
+  if(fetchEvent.type !== 'load') {
+    console.dir(fetchEvent);
     pollContext.pendingFeedsCount--;
     FeedPoller.onMaybePollCompleted(pollContext);
     return;
   }
+
+  const remoteFeed = fetchEvent.feed;
+
+  // TODO: I am not yet using responseURL but I plan to use it. Something about
+  // how I should be detecting if the feed url is
+  // a redirect. I should only be using the post-redirect URL I think? But
+  // is that solved as subscribe time as opposed to here? Although any check
+  // for update means that after subscribe the source author could have
+  // added a redirect, so we always need to continue to check for it every
+  // time.
+  const responseURL = fetchEvent.responseURLString;
 
   // TODO: check last modified date of the remote xml file to avoid
   // pointless updates? in order to do this, I would maybe have to get it from

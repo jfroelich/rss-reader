@@ -22,42 +22,27 @@ const Subscription = {};
 // NOTE: you must be online in order to subscribe
 Subscription.add = function(connection, urlString, callback) {
   console.debug('Subscribing to', urlString);
-
-  // TODO: I think fetchFeed should always defined its event, and it should
-  // pass back a single custom event object with various properties. I should
-  // not be simply testing for whether the event is defined, but instead
-  // testing against the event's type property.
   const fetchTimeoutMillis = 10 * 1000;
   fetchFeed(urlString, fetchTimeoutMillis, onFetchFeed);
 
-  function onFetchFeed(fetchEvent, fetchedFeed, responseURL) {
+  function onFetchFeed(fetchEvent) {
 
     // Temp, testing
-    if(responseURL !== urlString) {
-      console.debug('url changed from %s to %s', urlString, responseURL);
+    if(fetchEvent.responseURLString !== urlString) {
+      console.debug(urlString, 'redirected to', fetchEvent.responseURLString);
     }
 
-    // fetchEvent is currently only defined if an error occurred when
-    // fetching
-    if(fetchEvent) {
+    if(fetchEvent.type !== 'load') {
       const event = {};
       event.type = 'error';
-
-      // TODO: not sure I want to just pass back the actual message. I should
-      // look into passing back nicer messages because this is displayed
-      // directly to the user.
-
-      // TODO: check that fetchEvent.message is what I want
-      // This log message is temporary for debugging
+      event.message = 'There was a problem retrieving the feed';
       console.dir(fetchEvent);
-
-      event.message = fetchEvent.message;
       callback(event);
       return;
     }
 
     const existingFeed = null;
-    putFeed(connection, existingFeed, fetchedFeed, onPutFeed);
+    putFeed(connection, existingFeed, fetchEvent.feed, onPutFeed);
   }
 
   function onPutFeed(storedFeed, putEvent) {
@@ -67,9 +52,9 @@ Subscription.add = function(connection, urlString, callback) {
 
       const error = putEvent.target.error;
       if(error && error.name === 'ConstraintError') {
-        event.message = 'You are already subscribed to this feed';
+        event.message = 'You are already subscribed to this feed.';
       } else {
-        event.message = 'There was a problem adding the feed to the database';
+        event.message = 'There was a problem adding the feed to the database.';
       }
 
       callback(event);

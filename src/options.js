@@ -270,8 +270,8 @@ OptionsPage.showSubscriptionPreview = function(url) {
   const fetchFeedTimeout = 10 * 1000;
   fetchFeed(url, fetchFeedTimeout, onFetch);
 
-  function onFetch(event, result) {
-    if(event) {
+  function onFetch(fetchEvent) {
+    if(event.type !== 'load') {
       console.dir(event);
       OptionsPage.hideSubscriptionPreview();
       OptionsPage.showErrorMessage('Unable to fetch' + url);
@@ -282,26 +282,27 @@ OptionsPage.showSubscriptionPreview = function(url) {
       'subscription-preview-load-progress');
     OptionsPage.hideElement(progressElement);
 
+    const feed = fetchEvent.feed;
     const titleElement = document.getElementById('subscription-preview-title');
-    titleElement.textContent = result.title || 'Untitled';
+    titleElement.textContent = feed.title || 'Untitled';
 
     const continueButton = document.getElementById(
       'subscription-preview-continue');
-    continueButton.value = result.url;
+    continueButton.value = feed.url;
 
     const resultsListElement = document.getElementById(
       'subscription-preview-entries');
 
-    if(!result.entries || !result.entries.length) {
+    if(!feed.entries || !feed.entries.length) {
       var item = document.createElement('li');
       item.textContent = 'No previewable entries';
       resultsListElement.appendChild(item);
     }
 
-    const resultLimit = Math.min(5,result.entries.length);
+    const resultLimit = Math.min(5,feed.entries.length);
 
-    for(var i = 0, entry, item, content; i < resultLimit;i++) {
-      entry = result.entries[i];
+    for(let i = 0, entry, item, content; i < resultLimit; i++) {
+      entry = feed.entries[i];
       item = document.createElement('li');
       item.innerHTML = HTMLUtils.replaceTags(entry.title || '', '');
       content = document.createElement('span');
