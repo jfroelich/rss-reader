@@ -78,15 +78,13 @@ function putFeed(connection, currentFeed, newFeed, callback) {
 
   // Even though date should always be set, this can work in the absence of
   // a value
+  // TODO: qualify this date better. What is it? And what type is it?
   if(newFeed.date) {
     storable.date = newFeed.date;
   }
 
-  // TODO: this property should be renamed so as to be consistent with the
-  // names of other date properties
-  // NOTE: this is set in fetchFeed to a Date object
-  if(newFeed.fetchDate) {
-    storable.fetchDate = newFeed.fetchDate;
+  if(newFeed.dateFetched) {
+    storable.dateFetched = newFeed.dateFetched;
   }
 
   // Set date created and date updated. We only modify date updated if we

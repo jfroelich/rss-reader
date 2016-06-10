@@ -44,12 +44,13 @@ function fetchFeed(urlString, timeoutMillis, callback) {
 
     try {
       fetchEvent.feed = FeedParser.parse(document);
+
+      // Introduce url and dateFetched properties into the feed object before
+      // calling back.
       // TODO: responseURL may be different than requested url, I observed this
       // through logging, this should be handled here or by the caller somehow
       fetchEvent.feed.url = urlString;
-      // TODO: this should be named dateFetched to be consistent with naming
-      // of other date properties
-      fetchEvent.feed.fetchDate = new Date();
+      fetchEvent.feed.dateFetched = new Date();
     } catch(exception) {
       fetchEvent.type = 'parseexception';
       fetchEvent.details = exception;
