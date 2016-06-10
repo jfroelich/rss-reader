@@ -302,7 +302,7 @@ utils.url.filterProtocol = function(urlString) {
   return urlObject.href.substr(offset);
 };
 
-// Returns whether the given string looks like a URL
+// Returns whether the given string looks like an absolute URL
 utils.url.isURLString = function(inputString) {
   try {
     new URL(inputString);
@@ -311,10 +311,8 @@ utils.url.isURLString = function(inputString) {
   return false;
 };
 
-// TODO: I am confident Chrome permits the leading space. I am not so
-// confident about the trailing space.
 utils.url.isObjectURLString = function(urlString) {
-  return /^\s*data\s*:/i.test(urlString);
+  return urlString && /^\s*data\s*:/i.test(urlString);
 };
 
 // Applies a set of rules to a url string and returns a modified url string
