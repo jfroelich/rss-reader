@@ -12,16 +12,14 @@
 // TODO: the type of error passed back as first argument to the final callback
 // should be consistent. Perhaps should mimic an event object and use that
 // in all cases
-// TODO: rename url to urlString, or consider requiring a URL object instead of
-// a string.
-function fetchFeed(url, timeout, callback) {
+function fetchFeed(urlString, timeout, callback) {
   const request = new XMLHttpRequest();
   request.timeout = timeout;
   request.onerror = callbackWithErrorEvent;
   request.ontimeout = callbackWithErrorEvent;
   request.onabort = callbackWithErrorEvent;
   request.onload = onLoad;
-  request.open('GET', url, true);
+  request.open('GET', urlString, true);
   request.responseType = 'document';
   request.send();
 
@@ -69,7 +67,7 @@ function fetchFeed(url, timeout, callback) {
     // operation of fetching
     // TODO: responseURL may be different than requested url, I observed this
     // through logging, this should be handled here or by the caller somehow
-    feed.url = url;
+    feed.url = urlString;
 
     // TODO: this should be named dateFetched to be consistent with naming
     // of other date properties
