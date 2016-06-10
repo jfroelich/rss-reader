@@ -399,7 +399,7 @@ FeedPoller.isPDFURL = function(url) {
   return path && path.length > 5 && /\.pdf$/i.test(path);
 };
 
-FeedPoller.getHostDocument = function() {
+FeedPoller.getLiveDocument = function() {
   return document;
 };
 
@@ -409,47 +409,48 @@ FeedPoller.fetchImageDimensions = function(document, callback) {
     'numFetched': 0
   };
 
-  const rootElement = document.body || document.documentElement;
-  if(!rootElement) {
-    callback(document, stats);
-    return;
-  }
-
-  const imageNodeList = rootElement.getElementsByTagName('img');
-  const numImages = imageNodeList.length;
+  const imageCollection = document.getElementsByTagName('img');
+  const numImages = imageCollection.length;
   if(!numImages) {
     callback(document, stats);
     return;
   }
 
-  // TODO: not sure about the isObjectURL condition. I suppose an object
-  // url could still not have its width and height attributes set. But
-  // it would have its width and height properties set because those are set
-  // at the time the html is parsed? I want to be sure that all images have
-  // width and height attributes set. I need to look into this more.
-  // Maybe calamine could check both attributes and properties, because of
-  // the case of object urls without attributes but with properties?
-  // Maybe for object urls I could just separately process them and
-  // manually set the attributes for them?
-
   for(let i = 0, imageElement, urlString; i < numImages; i++) {
-    imageElement = imageNodeList[i];
-    urlString = imageElement.getAttribute('src') || '';
-    urlString = urlString.trim();
-    if(urlString && !imageElement.hasAttribute('width') &&
-      !utils.url.isObjectURLString(urlString)) {
-      fetchImage(imageElement);
-    } else {
-      onImageProcessed(imageElement);
+    imageElement = imageCollection[i];
+
+    if(imageElement.width && !imageElement.hasAttribute('width')) {
+      imageElement.setAttribute('width', imageElement.width);
     }
+
+    if(imageElement.height && !imageElement.hasAttribute('height')) {
+      imageElement.setAttribute('height', imageElement.height);
+    }
+
+    if(imageElement.hasAttribute('width') &&
+      imageElement.hasAttribute('height')) {
+      onImageProcessed(imageElement);
+      continue;
+    }
+
+    urlString = imageElement.getAttribute('src') || '';
+
+    if(utils.url.isObjectURLString(urlString)) {
+      onImageProcessed(imageElement);
+      continue;
+    }
+
+    if(urlString.length < 9 || !/^\s*http/i.test(urlString)) {
+      onImageProcessed(imageElement);
+      continue;
+    }
+
+    fetchImage(imageElement);
   }
 
-  // Proxy is intentionally created within the local document
-  // context because we know it is live. Chrome will eagerly fetch upon
-  // changing the image element's src property because it is live.
   function fetchImage(imageElement) {
     const sourceURLString = imageElement.getAttribute('src');
-    const hostDocument = FeedPoller.getHostDocument();
+    const hostDocument = FeedPoller.getLiveDocument();
     const proxyImageElement = hostDocument.createElement('img');
     const boundOnFetchImage = onFetchImage.bind(null, imageElement);
     proxyImageElement.onload = boundOnFetchImage;
@@ -461,9 +462,13 @@ FeedPoller.fetchImageDimensions = function(document, callback) {
     stats.numFetched++;
     const proxyImageElement = event.target;
     if(event.type === 'load') {
-      // Set attributes so that the values persist when serialized
-      imageElement.setAttribute('width', proxyImageElement.width);
-      imageElement.setAttribute('height', proxyImageElement.height);
+      if(!imageElement.hasAttribute('width')) {
+        imageElement.setAttribute('width', proxyImageElement.width);
+      }
+
+      if(!imageElement.hasAttribute('height')) {
+        imageElement.setAttribute('height', proxyImageElement.height);
+      }
     }
 
     onImageProcessed(imageElement);
@@ -478,19 +483,11 @@ FeedPoller.fetchImageDimensions = function(document, callback) {
 };
 
 FeedPoller.filterSourcelessImages = function(document) {
-  const imageNodeList = document.querySelectorAll('img');
-  const numImages = imageNodeList.length;
-  for(let i = 0, image, src; i < numImages; i++) {
-    image = imageNodeList[i];
-    src = image.getAttribute('src');
-    if(!src) {
+  const images = document.querySelectorAll('img');
+  for(let i = 0, len = images.length, image, src; i < len; i++) {
+    image = images[i];
+    if(!(image.getAttribute('src') || '').trim()) {
       console.debug('Removing sourcless image', image.outerHTML);
-      image.remove();
-      break;
-    }
-    src = src.trim();
-    if(!src) {
-      console.debug('Removing sourceless image', image.outerHTML);
       image.remove();
       break;
     }
@@ -503,12 +500,6 @@ FeedPoller.filterSourcelessImages = function(document) {
 // I am looking for the wrong thing? I have not seen these occur even
 // once? Are they just script origins?
 FeedPoller.filterTrackingImages = function(document) {
-
-  const rootElement = document.body || document.documentElement;
-  if(!rootElement) {
-    return;
-  }
-
   const SELECTOR = [
     'img[src^="http://b.scorecardresearch.com"]',
     'img[src^="https://b.scorecardresearch.com"]',
@@ -517,36 +508,14 @@ FeedPoller.filterTrackingImages = function(document) {
     'img[src^="http://pubads.g.doubleclick.net"]',
     'img[src^="https://pubads.g.doubleclick.net"]'
   ].join(',');
-  const imageNodeList = rootElement.querySelectorAll(SELECTOR);
-  const listLength = imageNodeList.length;
-  for(let i = 0, imageElement; i < listLength; i++) {
-    imageElement = imageNodeList[i];
-    // Tentatively not logging this while I work on other things, it is
-    // causing a lot of spam in the log
-    // console.debug('Removing tracker:', imageElement.outerHTML);
-    imageElement.remove();
+  const images = document.querySelectorAll(SELECTOR);
+  for(let i = 0, len = images.length; i < len; i++) {
+    // console.debug('Removing tracker:', images[i].outerHTML);
+    images[i].remove();
   }
 };
 
-// Modify the src values of images that appear to be lazily loaded.
 FeedPoller.transformLazilyLoadedImages = function(document) {
-  const rootElement = document.body || document.documentElement;
-  if(!rootElement) {
-    return;
-  }
-
-  const imageNodeList = rootElement.querySelectorAll('img');
-  const listLength = imageNodeList.length;
-  for(let i = 0; i < listLength; i++) {
-    FeedPoller.transformLazilyLoadedImage(imageNodeList[i]);
-  }
-};
-
-FeedPoller.transformLazilyLoadedImage = function(image) {
-  const src = (image.getAttribute('src') || '').trim();
-  if(src) {
-    return;
-  }
 
   const NAMES = [
     'load-src',
@@ -556,28 +525,35 @@ FeedPoller.transformLazilyLoadedImage = function(image) {
     'data-lazy',
     'data-img-src',
     'data-original',
-    'data-adaptive-img'
+    'data-adaptive-img',
+    'data-imgsrc',
+    'data-default-src'
   ];
 
-  let before = '';
-
   const numNames = NAMES.length;
-  for(let i = 0, name, altSrc; i < numNames; i++) {
-    name = NAMES[i];
-    if(image.hasAttribute(name)) {
-      altSrc = image.getAttribute(name);
-      altSrc = altSrc || '';
-      altSrc = altSrc.trim();
-
-      // NOTE: this happens prior to URL resolution, so I really can't
-      // check if the string looks like a URL
-
-      if(altSrc) {
-        before = image.outerHTML;
-        image.removeAttribute(name);
-        image.setAttribute('src', altSrc);
-        // console.debug('Transformed', before, 'to', image.outerHTML);
-        break;
+  const images = document.querySelectorAll('img');
+  for(let i = 0, j = 0, len = images.length, image, name, altSrc; i < len;
+    i++) {
+    image = images[i];
+    // Only examine those images without a src attribute value
+    if(!(image.getAttribute('src') || '').trim()) {
+      // Look for alternate source url attributes
+      // There isn't much URL validation I can do because this occurs before
+      // URLs are resolved, so I cannot for example expect all urls to have
+      // a protocol. I can, however, check the value is non-empty and does not
+      // have an inner space. Although perhaps this is overly restrictive
+      // because the browser may tolerate sloppy URLs that contain inner spaces.
+      for(j = 0; j < numNames; j++) {
+        name = NAMES[j];
+        if(image.hasAttribute(name)) {
+          altSrc = (image.getAttribute(name) || '').trim();
+          if(altSrc && !altSrc.includes(' ')) {
+            // console.debug('Lazy load transform', altSrc);
+            image.removeAttribute(name);
+            image.setAttribute('src', altSrc);
+            break;
+          }
+        }
       }
     }
   }
