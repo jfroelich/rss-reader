@@ -4,9 +4,18 @@
 
 'use strict';
 
-
 // TODO: look into whether URL objects can be stored as object properties,
 // as in, do URL objects work with the structured cloning algorithm
+
+// TODO: i think what i want is multiple urls mapping to a single remote
+// resource. so i want feeds and entries each to have a urls array, and
+// i want to create multi-entry indices on these properties, and then i want
+// to use those indices to determine equality. In the array I should store
+// the original url, the rewritten url, and the post-redirect url. Also, I
+// should be normalizing the urls some how, so that protocol is not
+// case-sensitive, so that https feed is recognized as the same as the http
+// version of the feed, so that domain is case insensitive
+
 const db = {};
 
 db.open = function(callback) {
