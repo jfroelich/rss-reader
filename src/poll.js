@@ -261,6 +261,11 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
     fetchEntry();
   }
 
+  // TODO: all the fetch entry stuff probably belongs in its own lib
+  // that is basically one giant async function that abstracts away all
+  // this stuff and just calls back with a document.
+  // And then I should merge resolve-urls into that.
+
   function fetchEntry() {
     const fetchTimeoutMillis = 20 * 1000;
     const fetchRequest = new XMLHttpRequest();

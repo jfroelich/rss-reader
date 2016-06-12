@@ -180,20 +180,19 @@ URLResolver.resolveSrcSet = function(baseURL, element) {
 
 // Returns a string representing serialized descriptors, which is a suitable
 // srcset attribute value for an element
-// TODO: THIS IS INCOMPLETE, because I do not yet include the other dimensions
-// back into the string, and I am getting image errors in the output
+// TODO: THIS IS INCOMPLETE
 // TODO: support d,w,h
+// TODO: i am also seeing something like url 2x or 1.5x, what's "x"? i assume
+// it is something like zoom level (2x is 2 times size)
 URLResolver.serializeSrcSet = function(descriptors) {
   const resolvedDescriptors = [];
   const numDescriptors = descriptors.length;
 
-  // TODO: i am also seeing something like url 2x or 1.5x, what's "x"? i assume
-  // it is something like zoom level (2x is 2 times size)
-
   for(let i = 0, descriptor, newString; i < numDescriptors; i++) {
+    descriptor = descriptors[i];
+
     console.debug('Descriptor:', descriptor);
 
-    descriptor = descriptors[i];
     newString = descriptor.url;
 
     if(descriptor.d) {
