@@ -178,27 +178,24 @@ FeedPoller.testFeedDateLastModifiedChanged = function(localFeed, remoteFeed) {
 
 FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
 
-  // TODO: I would prefer not to modify the entries parameter variable and
-  // instead modify a local variable.
-
-  // Removes entries without a link value
-  entries = entries.filter(function(entry) {
+  // Remove entries without links
+  let entriesWithLinks = entries.filter(function hasLink(entry) {
     return entry.link;
   });
 
-  // Rewrite entry link urls
-  for(let i = 0, len = entries.length; i < len; i++) {
-    entries[i].link = utils.url.rewrite(entries[i].link);
+  // Rewrite entry links
+  for(let i = 0, len = entriesWithLinks.length; i < len; i++) {
+    entriesWithLinks[i].link = utils.url.rewrite(entriesWithLinks[i].link);
   }
 
-  // Remove duplicate entries by link
-  const expandedEntries = entries.map(function(entry) {
+  // Remove duplicates
+  const expandedEntries = entriesWithLinks.map(function createLinkPair(entry) {
     return [entry.link, entry];
   });
   const distinctEntriesMap = new Map(expandedEntries);
-  entries = Array.from(distinctEntriesMap.values());
+  entriesWithLinks = Array.from(distinctEntriesMap.values());
 
-  const numEntries = entries.length;
+  const numEntries = entriesWithLinks.length;
 
   // If the feed has no entries, then we are done processing the feed
   if(!numEntries) {
@@ -214,7 +211,8 @@ FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
   // then the condition is just whether the collection is empty?
 
   for(let i = 0; i < numEntries; i++) {
-    FeedPoller.processEntry(pollContext, feed, entries[i], onEntryProcessed);
+    FeedPoller.processEntry(pollContext, feed, entriesWithLinks[i],
+      onEntryProcessed);
   }
 
   // This is a shared callback used when processing each of the feed's entries,
