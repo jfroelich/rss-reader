@@ -77,9 +77,8 @@ FeedPoller.iterateFeeds = function(pollContext) {
     const request = event.target;
     const cursor = request.result;
 
-    // Skip the feed. Do not increment nor decrement pendingFeedsCount
-    // If there are no feeds at all then pendingFeedsCount is at 0 and
-    // onMaybePollCompleted will still continue past its early exit condition
+    // We either advanced past the last feed or there were no feeds.
+    // pendingFeedsCount is unaffected.
     if(!cursor) {
       FeedPoller.onMaybePollCompleted(pollContext);
       return;
@@ -121,14 +120,6 @@ FeedPoller.onMaybePollCompleted = function(pollContext) {
   }
 };
 
-
-// TODO: I want to look into using fetchEvent.responseURLString and checking
-// if the response url is different than the request url, which generally
-// happens in the event of a redirect. I want to use it when subscribing
-// to check if already subscribed (feed similarity), after normalizing both the
-// requested url and the post-redirect url. I also want to use it in place of
-// the previous requested url so that I don't cause the redirect to happen
-// every single time an update is performed.
 FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
   if(fetchEvent.type !== 'load') {
     pollContext.pendingFeedsCount--;
@@ -143,10 +134,9 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
     return;
   }
 
-  let entries = remoteFeed.entries || [];
-  const onPutFeedBound = FeedPoller.onPutFeed.bind(null, pollContext, entries);
-  const connection = pollContext.connection;
-  putFeed(connection, localFeed, remoteFeed, onPutFeedBound);
+  const onPutFeedBound = FeedPoller.onPutFeed.bind(null, pollContext,
+    remoteFeed.entries || []);
+  putFeed(pollContext.connection, localFeed, remoteFeed, onPutFeedBound);
 };
 
 FeedPoller.testFeedDateLastModifiedIsUnchanged = function(localFeed,
@@ -158,12 +148,16 @@ FeedPoller.testFeedDateLastModifiedIsUnchanged = function(localFeed,
 
 FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
 
-  // Remove entries without links
+  // TODO: rather than create all these intermediate data structures, I
+  // think I can just do conditions in the main loop
+
+  // TODO: I think I should normalize all the entry URLs before comparing them
+  // to each other.
+
   let entriesWithLinks = entries.filter(function hasLink(entry) {
     return entry.link;
   });
 
-  // Rewrite entry links
   for(let i = 0, len = entriesWithLinks.length; i < len; i++) {
     entriesWithLinks[i].link = utils.url.rewrite(entriesWithLinks[i].link);
   }
