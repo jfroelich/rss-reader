@@ -122,28 +122,22 @@ FeedPoller.onMaybePollCompleted = function(pollContext) {
 };
 
 
+// TODO: I want to look into using fetchEvent.responseURLString and checking
+// if the response url is different than the request url, which generally
+// happens in the event of a redirect. I want to use it when subscribing
+// to check if already subscribed (feed similarity), after normalizing both the
+// requested url and the post-redirect url. I also want to use it in place of
+// the previous requested url so that I don't cause the redirect to happen
+// every single time an update is performed.
 FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
-
-  // If there was a problem fetching the feed, then we are done
   if(fetchEvent.type !== 'load') {
-    console.dir(fetchEvent);
     pollContext.pendingFeedsCount--;
     FeedPoller.onMaybePollCompleted(pollContext);
     return;
   }
 
-  // TODO: I am not yet using responseURL but I plan to use it. Something about
-  // how I should be detecting if the feed url is a redirect. I should only be
-  // using the post-redirect URL I think? But
-  // is that solved as subscribe time as opposed to here? Although any check
-  // for update means that after subscribe the source author could have
-  // added a redirect, so we always need to continue to check for it every
-  // time.
-  // const responseURLString = fetchEvent.responseURLString;
-
   const remoteFeed = fetchEvent.feed;
-
-  if(!FeedPoller.testFeedDateLastModifiedChanged(localFeed, remoteFeed)) {
+  if(FeedPoller.testFeedDateLastModifiedIsUnchanged(localFeed, remoteFeed)) {
     pollContext.pendingFeedsCount--;
     FeedPoller.onMaybePollCompleted(pollContext);
     return;
@@ -155,26 +149,12 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
   putFeed(connection, localFeed, remoteFeed, onPutFeedBound);
 };
 
-// TODO: maybe this should be inverted, and only return true if unchanged. That
-// seems better because that is the only non-ambiguous case that requires
-// fewer assumptions. Also, I wouldn't need the extra "!" preceding the sole
-// call to this function.
-FeedPoller.testFeedDateLastModifiedChanged = function(localFeed, remoteFeed) {
-  if(remoteFeed.dateLastModified && localFeed.dateLastModified) {
-    if(localFeed.dateLastModified < remoteFeed.dateLastModified) {
-      // The file changed.
-    } else if(localFeed.dateLastModified > remoteFeed.dateLastModified) {
-      // Unclear. Technically still changed.
-    } else {
-      // Unchanged.
-      return false;
-    }
-  } else {
-    // Unknown. Assume changed.
-  }
-
-  return true;
-}
+FeedPoller.testFeedDateLastModifiedIsUnchanged = function(localFeed,
+  remoteFeed) {
+  const local = localFeed.dateLastModified;
+  const remote = remoteFeed.dateLastModified;
+  return local && remote && local.getTime() === remote.getTime();
+};
 
 FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
 
