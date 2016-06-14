@@ -16,6 +16,13 @@
 // re-encode encoded html entities and so forth. Maybe just using textContent
 // instead of innerHTML in the render will ensure no problem.
 function putFeed(connection, currentFeed, newFeed, callback) {
+
+  // Define a feed object that we will store.
+  // We do not use the actual parameter objects. We don't know all the
+  // misc. properties of those objects and want to avoid storing extraneous
+  // data. It is much easier to selectively copy the properties of interest
+  // into a new object. In addition, I dislike modifying parameters, and we
+  // will be modifying this object.
   const storable = {};
 
   // Only set the id if we are doing an update. If we are doing an add, the
@@ -43,17 +50,15 @@ function putFeed(connection, currentFeed, newFeed, callback) {
   }
 
   // TODO: instead of schemeless, I should be using a fully normalized url
-  // for comparison. I should deprecate this property.
+  // for comparison. I should deprecate the schemeless property.
 
   // Derive and store the schemeless url of the feed, which is used to
   // check for dups
   if(currentFeed) {
     storable.schemeless = currentFeed.schemeless;
   } else {
-
     // TODO: I think filterProtocol can throw. I need to think about how
     // to deal with this expressly.
-
     storable.schemeless = utils.url.filterProtocol(storable.url);
   }
 
@@ -79,12 +84,22 @@ function putFeed(connection, currentFeed, newFeed, callback) {
   // Even though date should always be set, this can work in the absence of
   // a value
   // TODO: qualify this date better. What is it? And what type is it?
+  // Look at the RSS specs again and define this clearly.
   if(newFeed.date) {
     storable.date = newFeed.date;
   }
 
-  if(newFeed.dateFetched) {
+  // The date the feed was last fetched
+  if(newFeed.dateFetched && Object.prototype.toString.call(
+    newFeed.dateFetched) === '[object Date]') {
     storable.dateFetched = newFeed.dateFetched;
+  }
+
+  // The date the feed's remote file was last modified
+  if(newFeed.dateLastModified &&
+    Object.prototype.toString.call(newFeed.dateLastModified) ===
+    '[object Date]') {
+    storable.dateLastModified = newFeed.dateLastModified;
   }
 
   // Set date created and date updated. We only modify date updated if we
@@ -118,14 +133,14 @@ function putFeed(connection, currentFeed, newFeed, callback) {
     callback(storable, event);
   }
 
-  // Prep a string property of an object for storage in indexedDB
+  // Prep a string property of an object for storage
   function sanitizeBeforePut(inputString) {
-    let outputString = null;
+    let outputString = inputString;
     if(inputString) {
-      outputString = inputString;
       outputString = utils.string.filterControlCharacters(outputString);
       outputString = HTMLUtils.replaceTags(outputString, '');
       // Condense whitespace
+      // TODO: maybe this should be a utils function
       outputString = outputString.replace(/\s+/, ' ');
       outputString = outputString.trim();
     }

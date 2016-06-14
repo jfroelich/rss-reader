@@ -21,7 +21,6 @@ function fetchFeed(urlString, timeoutMillis, callback) {
   function onLoad(event) {
     const fetchEvent = {
       'type': event.type,
-      'feed': null,
       'requestURLString': urlString,
       'responseURLString': event.target.responseURL
     };
@@ -41,19 +40,31 @@ function fetchFeed(urlString, timeoutMillis, callback) {
     // Parse the XMLDocument into a basic feed object
     // TODO: look into what exceptions are thrown by feedparser. Is it
     // an Error object or a string or a mix of things?
+    // TODO: responseURL may be different than requested url, I observed this
+    // through logging, this should be handled here or by the caller somehow
 
     try {
       fetchEvent.feed = FeedParser.parse(document);
-
-      // Introduce url and dateFetched properties into the feed object before
-      // calling back.
-      // TODO: responseURL may be different than requested url, I observed this
-      // through logging, this should be handled here or by the caller somehow
-      fetchEvent.feed.url = urlString;
-      fetchEvent.feed.dateFetched = new Date();
     } catch(exception) {
       fetchEvent.type = 'parseexception';
       fetchEvent.details = exception;
+    }
+
+    if(fetchEvent.feed) {
+      // Define the request url property
+      fetchEvent.feed.url = urlString;
+
+      // Define the fetch date property
+      fetchEvent.feed.dateFetched = new Date();
+
+      // Define the last modified date property if available
+      const lastModifiedString = event.target.getResponseHeader(
+        'Last-Modified');
+      if(lastModifiedString) {
+        try {
+          fetchEvent.feed.dateLastModified = new Date(lastModifiedString);
+        } catch(exception) {}
+      }
     }
 
     callback(fetchEvent);
@@ -62,7 +73,6 @@ function fetchFeed(urlString, timeoutMillis, callback) {
   function onError(event) {
     const fetchEvent = {
       'type': event.type,
-      'feed': null,
       'requestURLString': urlString,
       'responseURLString': event.target.responseURL
     };

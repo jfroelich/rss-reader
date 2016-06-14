@@ -77,21 +77,27 @@ FeedPoller.iterateFeeds = function(pollContext) {
     const request = event.target;
     const cursor = request.result;
 
+    // Skip the feed. Do not increment nor decrement pendingFeedsCount
+    // If there are no feeds at all then pendingFeedsCount is at 0 and
+    // onMaybePollCompleted will still continue past its early exit condition
     if(!cursor) {
       FeedPoller.onMaybePollCompleted(pollContext);
       return;
     }
 
-    // Increment the counter immediately to signal that a feed is now
+    // Increment the counter to signal that a feed is now
     // undergoing an update and that there is at least one update pending
     pollContext.pendingFeedsCount++;
 
+    // Async request the next feed, without waiting.
+    cursor.continue();
+
+    // Update the feed, starting with a fetch
     const feed = cursor.value;
     const timeout = 10 * 1000;
     const onFetchFeedBound = FeedPoller.onFetchFeed.bind(null, pollContext,
       feed);
     fetchFeed(feed.url, timeout, onFetchFeedBound);
-    cursor.continue();
   }
 };
 
@@ -118,8 +124,7 @@ FeedPoller.onMaybePollCompleted = function(pollContext) {
 
 FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
 
-  // If there was a problem fetching the feed, then we are done processing
-  // the feed.
+  // If there was a problem fetching the feed, then we are done
   if(fetchEvent.type !== 'load') {
     console.dir(fetchEvent);
     pollContext.pendingFeedsCount--;
@@ -127,26 +132,54 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
     return;
   }
 
-  const remoteFeed = fetchEvent.feed;
-
   // TODO: I am not yet using responseURL but I plan to use it. Something about
-  // how I should be detecting if the feed url is
-  // a redirect. I should only be using the post-redirect URL I think? But
+  // how I should be detecting if the feed url is a redirect. I should only be
+  // using the post-redirect URL I think? But
   // is that solved as subscribe time as opposed to here? Although any check
   // for update means that after subscribe the source author could have
   // added a redirect, so we always need to continue to check for it every
   // time.
-  const responseURL = fetchEvent.responseURLString;
+  // const responseURLString = fetchEvent.responseURLString;
 
-  // TODO: check last modified date of the remote xml file to avoid
-  // pointless updates? in order to do this, I would maybe have to get it from
-  // the response headers, which means I would need to expose that somehow
-  // via the callback from fetchFeed.
+  const remoteFeed = fetchEvent.feed;
 
-  // After fetching the feed, do some immediate cleanup of the feed's
-  // properties as it pertains to this polling context
+  if(!FeedPoller.testFeedDateLastModifiedChanged(localFeed, remoteFeed)) {
+    pollContext.pendingFeedsCount--;
+    FeedPoller.onMaybePollCompleted(pollContext);
+    return;
+  }
 
   let entries = remoteFeed.entries || [];
+  const onPutFeedBound = FeedPoller.onPutFeed.bind(null, pollContext, entries);
+  const connection = pollContext.connection;
+  putFeed(connection, localFeed, remoteFeed, onPutFeedBound);
+};
+
+// TODO: maybe this should be inverted, and only return true if unchanged. That
+// seems better because that is the only non-ambiguous case that requires
+// fewer assumptions. Also, I wouldn't need the extra "!" preceding the sole
+// call to this function.
+FeedPoller.testFeedDateLastModifiedChanged = function(localFeed, remoteFeed) {
+  if(remoteFeed.dateLastModified && localFeed.dateLastModified) {
+    if(localFeed.dateLastModified < remoteFeed.dateLastModified) {
+      // The file changed.
+    } else if(localFeed.dateLastModified > remoteFeed.dateLastModified) {
+      // Unclear. Technically still changed.
+    } else {
+      // Unchanged.
+      return false;
+    }
+  } else {
+    // Unknown. Assume changed.
+  }
+
+  return true;
+}
+
+FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
+
+  // TODO: I would prefer not to modify the entries parameter variable and
+  // instead modify a local variable.
 
   // Removes entries without a link value
   entries = entries.filter(function(entry) {
@@ -165,13 +198,6 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
   const distinctEntriesMap = new Map(expandedEntries);
   entries = Array.from(distinctEntriesMap.values());
 
-  // Now store the updated feed
-  const onPutFeedBound = FeedPoller.onPutFeed.bind(null, pollContext, entries);
-  const connection = pollContext.connection;
-  putFeed(connection, localFeed, remoteFeed, onPutFeedBound);
-};
-
-FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
   const numEntries = entries.length;
 
   // If the feed has no entries, then we are done processing the feed
