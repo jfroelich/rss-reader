@@ -7,23 +7,16 @@ const Subscription = {};
 
 // TODO: look into a more native way of creating event objects
 // TODO: use a URL object instead of a URL string where appropriate?
-// TODO: I could consider a flag passed to fetchFeed that then passes a
-// flag to FeedParser that says to ignore entry information because we
-// are only getting general feed information, this would be a very minor
-// speedup but also it would be self-documenting the use case more clearly.
 // TODO: not sure but I think this should be using responseURL somehow? I
 // should be using responseURL instead of the input url in the event that it
 // changed? Should fetchFeed be doing that instead of this?
 // TODO: shouldn't the feed's url be normalized so that comparison works
 // properly?
-
-// NOTE: this does not also add the entries of the feed, because that would
-// take too long
-// NOTE: you must be online in order to subscribe
 Subscription.add = function(connection, urlString, callback) {
   console.debug('Subscribing to', urlString);
   const fetchTimeoutMillis = 10 * 1000;
-  fetchFeed(urlString, fetchTimeoutMillis, onFetchFeed);
+  const excludeEntries = true;
+  fetchFeed(urlString, fetchTimeoutMillis, excludeEntries, onFetchFeed);
 
   function onFetchFeed(fetchEvent) {
 
