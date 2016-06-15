@@ -59,11 +59,7 @@ FeedPoller.start = function() {
 
 // Iterate over the feeds in the database, and update each feed.
 // TODO: react appropriately to request error?
-
-// TODO: ok so this problem with this approach is that it is partially blocking
-// i think? Maybe i should be loading the feeds into an array first? Or
-// maybe not. I think all the requests are still concurrent?
-
+// TODO: are all the requests concurrent?
 FeedPoller.iterateFeeds = function(pollContext) {
   const connection = pollContext.connection;
   const iterateFeedsTransaction = connection.transaction('feed');
@@ -220,24 +216,37 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
     const findRequest = event.target;
     const localEntry = findRequest.result;
 
-    // If a similar entry was found, then we are done
     if(localEntry) {
       callback();
       return;
     }
 
-    if(FeedPoller.shouldNotFetchEntry(entry)) {
+    // TODO: what is the desired behavior when encountering an invalid URL?
+    // Isn't that in some sense an entry I don't want?
+    let linkURL = null;
+    try {
+      linkURL = new URL(entry.link);
+    } catch(exception) {
+      console.debug(entry.link, exception);
+      Entry.put(pollContext.connection, entry, callback);
+      return;
+    }
+
+    if(FeedPoller.isNoFetchURL(linkURL)) {
+      console.debug('Not fetching blacklisted entry link', linkURL);
+      Entry.put(pollContext.connection, entry, callback);
+      return;
+    }
+
+    const path = linkURL.pathname;
+    if(path && path.length > 5 && /\.pdf$/i.test(path)) {
+      console.debug('Not fetching pdf entry link', linkURL);
       Entry.put(pollContext.connection, entry, callback);
       return;
     }
 
     fetchEntry();
   }
-
-  // TODO: all the fetch entry stuff probably belongs in its own lib
-  // that is basically one giant async function that abstracts away all
-  // this stuff and just calls back with a document.
-  // And then I should merge resolve-urls into that.
 
   function fetchEntry() {
     const fetchTimeoutMillis = 20 * 1000;
@@ -247,64 +256,49 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
     fetchRequest.onerror = onFetchError;
     fetchRequest.onabort = onFetchError;
     fetchRequest.onload = onFetchSuccess;
-    fetchRequest.open('GET', entry.link, true);
-
-    // TODO: what is the default behavior of XMLHttpRequest? If responseType
-    // defaults to document and by default fetches HTML/XML, do we even need to
-    // specify the type? or does specifying the type trigger an error if
-    // the type is not valid, which is what I want
+    const isAsync = true;
+    fetchRequest.open('GET', entry.link, isAsync);
     fetchRequest.responseType = 'document';
     fetchRequest.send();
   }
 
   function onFetchError(event) {
-    // If there was a problem fetching the entry, and it should be
-    // fetched, then I guess I don't want to store it, so just skip it.
-    // TODO: not sure. Maybe I should still be storing it? In fact I think
-    // I should be, and I am not sure why I am not doing this here. This
-    // error just means we can't augment the content, it doesn't mean the
-    // entry should be ignored.
-    console.debug(event);
-    callback();
+    Entry.put(pollContext.connection, entry, callback);
   }
 
   function onFetchSuccess(event) {
     const fetchRequest = event.target;
     const document = fetchRequest.responseXML;
 
-    // Document can be undefined in various cases such as when fetching a PDF
-    // By exiting here, I am not storing the entry, even though I technically
-    // could have. Maybe this is wrong?
-    // TODO: I think maybe this should still store the entry, just without
-    // augmented content.
+    // This happens with non-html content types like pdf
     if(!document) {
-      callback();
+      Entry.put(pollContext.connection, entry, callback);
       return;
     }
 
     // TODO: if document is defined, can documentElement ever be undefined?
-    // Maybe this test is redundant.
     if(!document.documentElement) {
       console.debug('Undefined document element for', entry.link);
-      callback();
+      Entry.put(pollContext.connection, entry, callback);
       return;
     }
 
     // TODO: eventually do something with this. The url may have changed
     // because of redirects. This definitely happens.
-    const responseURLString = fetchRequest.responseURL;
-    if(responseURLString !== entry.link) {
-      // Tentatively I am not logging this while I work on other things
-      // because it floods the log
+    // Tentatively I am not logging this while I work on other things
+    // because it floods the log
+    //const responseURLString = fetchRequest.responseURL;
+    //if(responseURLString !== entry.link) {
       // console.debug('Response URL changed from %s to %s', remoteEntry.link,
       //  responseURLString);
-    }
+    //}
+
+    // TODO: move URLResolver back into poll.js, this is the only place
+    // it is called, and it really isn't a general purpose library.
 
     FeedPoller.transformLazilyLoadedImages(document);
     FeedPoller.filterSourcelessImages(document);
-    // TODO: move URLResolver back into poll.js, this is the only place
-    // it is called, and it really isn't a general purpose library.
-    URLResolver.resolveURLsInDocument(document, responseURLString);
+    URLResolver.resolveURLsInDocument(document, fetchRequest.responseURL);
     FeedPoller.filterTrackingImages(document);
     FeedPoller.fetchImageDimensions(document, onSetImageDimensions);
   }
@@ -333,54 +327,28 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
   }
 };
 
-// TODO: break apart into two functions, don't do the PDF check here. Instead
-// this concept should be composed in the calling context.
-FeedPoller.shouldNotFetchEntry = function(entry) {
-  const linkURLString = entry.link;
-  const lowercaseLinkURLString = linkURLString.toLowerCase();
+// TODO: I am not sure if 'startsWith' is the appropriate condition. Maybe
+// I want to consider parts of the url.
+FeedPoller.isNoFetchURL = function(url) {
+
+  if(Object.prototype.toString.call(url) !== '[object URL]') {
+    return false;
+  }
 
   const blacklist = [
     'https://productforums.google.com',
     'https://groups.google.com'
   ];
 
+  const query = url.href.toLowerCase();
+
   for(let i = 0, len = blacklist.length, origin; i < len; i++) {
     origin = blacklist[i];
-    if(lowercaseLinkURLString.startsWith(origin)) {
-      console.debug('Excluding', linkURLString);
+    if(query.startsWith(origin)) {
       return true;
     }
   }
-
-  // This should never throw given the assumption of a valid absolute url
-  // as input, but I don't want the exception to bubble. I would almost
-  // prefer this was done by the caller and this function just accepted
-  // a URL object as input. Or, what would really be ideal, is if entry.link
-  // was a URL object.
-  let linkURL = null;
-  try {
-    linkURL = new URL(linkURLString);
-  } catch(exception) {
-    console.debug(linkURLString, exception);
-    return false;
-  }
-
-  if(FeedPoller.isPDFURL(linkURL)) {
-    console.debug('Excluding', linkURL);
-    return true;
-  }
-
-  // Default to always fetching
   return false;
-};
-
-// Returns true when the URL's path ends with ".pdf"
-// @param url {URL}
-FeedPoller.isPDFURL = function(url) {
-  // Minimum 5 characters for 'a.pdf', the length test reduces the num of
-  // calls to the regexp
-  const path = url.pathname;
-  return path && path.length > 5 && /\.pdf$/i.test(path);
 };
 
 FeedPoller.getLiveDocument = function() {
@@ -526,7 +494,8 @@ FeedPoller.transformLazilyLoadedImages = function(document) {
       // URLs are resolved, so I cannot for example expect all urls to have
       // a protocol. I can, however, check the value is non-empty and does not
       // have an inner space. Although perhaps this is overly restrictive
-      // because the browser may tolerate sloppy URLs that contain inner spaces.
+      // because the browser may tolerate sloppy URLs that contain inner
+      // spaces.
       for(j = 0; j < numNames; j++) {
         name = NAMES[j];
         if(image.hasAttribute(name)) {
