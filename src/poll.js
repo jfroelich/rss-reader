@@ -4,11 +4,6 @@
 
 'use strict';
 
-// TODO: if possible look into having entries also be fetched async with
-// feeds, so that everything is happening concurrently. It might be that
-// way now but I have not thought it through and feel like I might be
-// blocking somewhere for not a good reason
-
 const FeedPoller = {};
 
 FeedPoller.start = function() {
@@ -137,6 +132,15 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
 };
 
 FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
+
+  if(putEvent.type !== 'success') {
+    console.error(putEvent);
+    pollContext.pendingFeedsCount--;
+    FeedPoller.onMaybePollCompleted(pollContext);
+    return;
+  }
+
+
   const numEntries = entries ? entries.length : 0;
   if(!numEntries) {
     pollContext.pendingFeedsCount--;
@@ -355,6 +359,8 @@ FeedPoller.getLiveDocument = function() {
   return document;
 };
 
+// TODO: think more about how to deal with srcsets if I don't know beforehand
+// which image will be used. This impacts the boilerplate analysis.
 FeedPoller.fetchImageDimensions = function(document, callback) {
   const stats = {
     'numProcessed': 0,
@@ -421,11 +427,18 @@ FeedPoller.fetchImageDimensions = function(document, callback) {
       if(!imageElement.hasAttribute('height')) {
         imageElement.setAttribute('height', proxyImageElement.height);
       }
+    } else {
+      // TODO: if I got an error, consider removing the image element
+      // from the document. Also, don't forget that if I do this I need
+      // to be using a static node list, as in, I need to be using
+      // querySelectorAll and not getElementsByTagName
     }
 
     onImageProcessed(imageElement);
   }
 
+  // TODO: unsure if I need the imageElement argument. I think it is simply a
+  // remnant of some debugging work.
   function onImageProcessed(imageElement) {
     stats.numProcessed++;
     if(stats.numProcessed === numImages) {
