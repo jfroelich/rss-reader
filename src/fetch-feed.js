@@ -6,7 +6,7 @@
 
 // Fetches the XML of a feed and parses it into a feed object
 // TODO: maybe require a URL object as a parameter instead of a string
-function fetchFeed(urlString, timeoutMillis, callback) {
+function fetchFeed(urlString, timeoutMillis, excludeEntries, callback) {
   const request = new XMLHttpRequest();
   request.timeout = timeoutMillis;
   request.onerror = onError;
@@ -44,7 +44,7 @@ function fetchFeed(urlString, timeoutMillis, callback) {
     // through logging, this should be handled here or by the caller somehow
 
     try {
-      fetchEvent.feed = FeedParser.parse(document);
+      fetchEvent.feed = FeedParser.parse(document, excludeEntries);
     } catch(exception) {
       fetchEvent.type = 'parseexception';
       fetchEvent.details = exception;
