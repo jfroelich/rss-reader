@@ -14,16 +14,14 @@ const FeedPoller = {};
 FeedPoller.start = function() {
   console.log('Starting poll ...');
 
-  // This is a shared object used by various async functions
   const pollContext = {
     'pendingFeedsCount': 0,
     'connection': null
   };
 
-  // Check if we are online
   if('onLine' in navigator && !navigator.onLine) {
     console.log('Polling canceled because offline');
-    FeedPoller.onComplete(pollContext);
+    FeedPoller.onMaybePollCompleted(pollContext);
     return;
   }
 
@@ -40,7 +38,7 @@ FeedPoller.start = function() {
         db.open(onOpenDatabase);
       } else {
         console.log('Polling canceled because not idle');
-        FeedPoller.onComplete(pollContext);
+        FeedPoller.onMaybePollCompleted(pollContext);
       }
     } else {
       db.open(onOpenDatabase);
@@ -50,7 +48,7 @@ FeedPoller.start = function() {
   function onOpenDatabase(event) {
     if(event.type !== 'success') {
       console.debug(event);
-      FeedPoller.onComplete(pollContext);
+      FeedPoller.onMaybePollCompleted(pollContext);
       return;
     }
 
@@ -96,7 +94,8 @@ FeedPoller.iterateFeeds = function(pollContext) {
     const timeout = 10 * 1000;
     const onFetchFeedBound = FeedPoller.onFetchFeed.bind(null, pollContext,
       feed);
-    fetchFeed(feed.url, timeout, onFetchFeedBound);
+    const excludeEntries = false;
+    fetchFeed(feed.url, timeout, excludeEntries, onFetchFeedBound);
   }
 };
 
@@ -128,71 +127,47 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
   }
 
   const remoteFeed = fetchEvent.feed;
-  if(FeedPoller.testFeedDateLastModifiedIsUnchanged(localFeed, remoteFeed)) {
+  if(localFeed.dateLastModified && remoteFeed.dateLastModified &&
+    localFeed.dateLastModified.getTime() ===
+    remoteFeed.dateLastModified.getTime()) {
     pollContext.pendingFeedsCount--;
     FeedPoller.onMaybePollCompleted(pollContext);
     return;
   }
 
   const onPutFeedBound = FeedPoller.onPutFeed.bind(null, pollContext,
-    remoteFeed.entries || []);
+    remoteFeed.entries);
   putFeed(pollContext.connection, localFeed, remoteFeed, onPutFeedBound);
 };
 
-FeedPoller.testFeedDateLastModifiedIsUnchanged = function(localFeed,
-  remoteFeed) {
-  const local = localFeed.dateLastModified;
-  const remote = remoteFeed.dateLastModified;
-  return local && remote && local.getTime() === remote.getTime();
-};
-
 FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
-
-  // TODO: rather than create all these intermediate data structures, I
-  // think I can just do conditions in the main loop
-
-  // TODO: I think I should normalize all the entry URLs before comparing them
-  // to each other.
-
-  let entriesWithLinks = entries.filter(function hasLink(entry) {
-    return entry.link;
-  });
-
-  for(let i = 0, len = entriesWithLinks.length; i < len; i++) {
-    entriesWithLinks[i].link = utils.url.rewrite(entriesWithLinks[i].link);
-  }
-
-  // Remove duplicates
-  const expandedEntries = entriesWithLinks.map(function createLinkPair(entry) {
-    return [entry.link, entry];
-  });
-  const distinctEntriesMap = new Map(expandedEntries);
-  entriesWithLinks = Array.from(distinctEntriesMap.values());
-
-  const numEntries = entriesWithLinks.length;
-
-  // If the feed has no entries, then we are done processing the feed
+  const numEntries = entries ? entries.length : 0;
   if(!numEntries) {
     pollContext.pendingFeedsCount--;
     FeedPoller.onMaybePollCompleted(pollContext);
-    utils.updateBadgeText(pollContext.connection);
     return;
   }
 
-  // Otherwise, process the feed's entries concurrently
-  // TODO: what if instead of using a counter and a test, I used something
-  // like a stack or queue where I pop as each step of iteration ends, and
-  // then the condition is just whether the collection is empty?
+  // TODO: normalize entry link URLs before comparing them
 
-  for(let i = 0; i < numEntries; i++) {
-    FeedPoller.processEntry(pollContext, feed, entriesWithLinks[i],
-      onEntryProcessed);
+  const distinctLinks = {};
+  let entriesProcessed = 0;
+  for(let i = 0, entry, linkURLString; i < numEntries; i++) {
+    entry = entries[i];
+    linkURLString = entry.link;
+    if(linkURLString) {
+      linkURLString = utils.url.rewrite(linkURLString);
+      if(linkURLString in distinctLinks) {
+        onEntryProcessed();
+      } else {
+        distinctLinks[linkURLString] = 1;
+        FeedPoller.processEntry(pollContext, feed, entry, onEntryProcessed);
+      }
+    } else {
+      onEntryProcessed();
+    }
   }
 
-  // This is a shared callback used when processing each of the feed's entries,
-  // and which ever one finishes last triggers its end condition that then
-  // means we are done processing the feed.
-  let entriesProcessed = 0;
   function onEntryProcessed() {
     entriesProcessed++;
     if(entriesProcessed === numEntries) {
