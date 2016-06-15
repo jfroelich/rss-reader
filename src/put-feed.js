@@ -23,7 +23,22 @@ function putFeed(connection, currentFeed, newFeed, callback) {
   // data. It is much easier to selectively copy the properties of interest
   // into a new object. In addition, I dislike modifying parameters, and we
   // will be modifying this object.
+
+  // TODO: I am thinking maybe I should use Object.create(null) instead of
+  // the object literal, so that the storable object has no prototype. I am
+  // not sure if it matters. I guess the prototype properties are ignored.
+  // Maybe they are not, I can't tell exactly.
+
   const storable = {};
+
+  // NOTE: ok, so adding this line causes a DataCloneError to occur as a thrown
+  // exception later on when calling store.put(storable). I take this to mean
+  // that URL objects are not serializable in indexedDB.
+  //try {
+  //  storable.testURLObject = new URL(newFeed.url);
+  //} catch(exception) {
+  //  console.debug(exception);
+  //}
 
   // Only set the id if we are doing an update. If we are doing an add, the
   // id is automatically defined by indexedDB's autoincrement feature
@@ -116,7 +131,24 @@ function putFeed(connection, currentFeed, newFeed, callback) {
 
   const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
-  const request = store.put(storable);
+  let request = null;
+
+  // Some testing showed that certain indexedDB errors are thrown as a result
+  // of calling store.put instead of creating events catch by request.onerror,
+  // so I have to use a try catch here.
+
+  try {
+    request = store.put(storable);
+  } catch(exception) {
+    if(callback) {
+      const exceptionEvent = Object.create(null);
+      exceptionEvent.type = 'exception';
+      exceptionEvent.message = exception.message;
+      callback(storable, exceptionEvent);
+    }
+    return;
+  }
+
   if(callback) {
     request.onsuccess = onPutSuccess;
     request.onerror = onPutError;
@@ -130,6 +162,7 @@ function putFeed(connection, currentFeed, newFeed, callback) {
   }
 
   function onPutError(event) {
+    console.debug('Called onPutError');
     callback(storable, event);
   }
 
