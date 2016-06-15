@@ -856,7 +856,7 @@ OptionsPage.initSubscriptionsSection = function() {
       return;
     }
 
-    const conection = event.target.result;
+    const connection = event.target.result;
     const transaction = connection.transaction('feed');
     transaction.oncomplete = onFeedsIterated;
     const store = transaction.objectStore('feed');
