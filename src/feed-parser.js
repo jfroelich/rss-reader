@@ -4,19 +4,21 @@
 
 'use strict';
 
-const FeedParser = {};
-
-// TODO: now that the parser sets the type property, all the other code needs
-// to support it (e.g. save it, update it properly) - this is a general note
-
-// TODO: store URL strings as URL objects
-
 // Lib for unmarshalling an xml document into a feed object. The values stored
 // in the feed object are not sanitized, and should be sanitized later by the
 // caller before rendering/storing
+// TODO: now that the parser sets the type property, all the other code needs
+// to support it (e.g. save it, update it properly) - this is a general note
+// TODO: store URL strings as URL objects
+const FeedParser = {};
 
 // Unmarshall an xml document into a feed object
-FeedParser.parse = function(document) {
+FeedParser.parse = function(document, excludeEntries) {
+
+  if(!document) {
+    throw new Error('Undefined document');
+  }
+
   const documentElement = document.documentElement;
   if(!documentElement) {
     throw new Error('Undefined document element');
@@ -44,8 +46,11 @@ FeedParser.parse = function(document) {
   feed.date = FeedParser.findFeedDate(channel);
   feed.link = FeedParser.findFeedLink(channel);
 
-  const entryElements = FeedParser.findEntries(channel);
-  feed.entries = entryElements.map(FeedParser.createEntryFromElement);
+  if(!excludeEntries) {
+    const entryElements = FeedParser.findEntries(channel);
+    feed.entries = entryElements.map(FeedParser.createEntryFromElement);
+  }
+
   return feed;
 };
 
