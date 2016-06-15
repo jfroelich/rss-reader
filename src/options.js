@@ -245,6 +245,7 @@ OptionsPage.appendFeed = function(feed, insertedSort) {
   }
 };
 
+// TODO: deprecate the ability to preview
 // TODO: use a better name for url param, like urlString, to clarify it is
 // not a URL object
 OptionsPage.showSubscriptionPreview = function(url) {
@@ -254,7 +255,7 @@ OptionsPage.showSubscriptionPreview = function(url) {
     return;
   }
 
-  if(!navigator.onLine) {
+  if('onLine' in navigator && !navigator.onLine) {
     OptionsPage.startSubscription(url);
     return;
   }
@@ -267,8 +268,9 @@ OptionsPage.showSubscriptionPreview = function(url) {
 
   // TODO: check if already subscribed before preview?
 
-  const fetchFeedTimeout = 10 * 1000;
-  fetchFeed(url, fetchFeedTimeout, onFetch);
+  const fetchTimeoutMills = 10 * 1000;
+  const excludeEntries = false;
+  fetchFeed(url, fetchTimeoutMills, excludeEntries, onFetch);
 
   function onFetch(fetchEvent) {
     if(event.type !== 'load') {
@@ -300,7 +302,6 @@ OptionsPage.showSubscriptionPreview = function(url) {
     }
 
     const resultLimit = Math.min(5,feed.entries.length);
-
     for(let i = 0, entry, item, content; i < resultLimit; i++) {
       entry = feed.entries[i];
       item = document.createElement('li');
