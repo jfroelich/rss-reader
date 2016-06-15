@@ -162,7 +162,6 @@ function putFeed(connection, currentFeed, newFeed, callback) {
   }
 
   function onPutError(event) {
-    console.debug('Called onPutError');
     callback(storable, event);
   }
 

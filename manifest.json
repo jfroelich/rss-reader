@@ -20,7 +20,6 @@
       "/src/feed-parser.js",
       "/src/fetch-feed.js",
       "/src/html-utils.js",
-      "/src/normalize-url.js",
       "/src/poll.js",
       "/src/put-feed.js",
       "/src/resolve-urls.js",
