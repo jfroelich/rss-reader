@@ -27,7 +27,7 @@ function fetchFeed(urlString, timeoutMillis, excludeEntries, callback) {
 
     // Document may be undefined when trying to fetch something that is not
     // document, such as PDF file.
-    // TODO: would document or documentElement ever actually be undefined?
+    // TODO: would documentElement ever actually be undefined?
     // If an error occurs, wouldn't that mean that onLoad doesn't even
     // get called? I need to look into this more.
     const document = event.target.responseXML;
