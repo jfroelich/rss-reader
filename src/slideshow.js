@@ -80,6 +80,8 @@ SlideShow.onMessage = function(message) {
     case 'archivedEntry':
       // TODO: react to the archiving of an entry that is read
       // and possibly still loaded into the view
+      // TODO: this should probably be more like 'entryArchiveRequested'
+      // because I think it is still pending at the time the message is sent
       break;
     default:
       // Ignore the message
@@ -168,7 +170,7 @@ SlideShow.markAsRead = function(slide) {
       return;
     }
 
-    const entryId = parseInt(entryAttribute);
+    const entryId = parseInt(entryAttribute, 10);
     const connection = event.target.result;
     Entry.markAsRead(connection, entryId);
   }
@@ -330,7 +332,13 @@ SlideShow.appendSlide = function(entry, isFirst) {
   slide.style.transition = 'left 0.5s ease-in 0s, right 0.5s ease-in';
 
   const title = document.createElement('a');
-  title.setAttribute('href', entry.link);
+
+  if(Object.prototype.toString.call(entry.link) === '[object URL]') {
+    title.setAttribute('href', entry.link.href);
+  } else {
+    title.setAttribute('href', entry.link);
+  }
+
   title.setAttribute('class', 'entry-title');
   title.setAttribute('target','_blank');
   title.setAttribute('title', entry.title || 'Untitled');
@@ -367,8 +375,25 @@ SlideShow.appendSlide = function(entry, isFirst) {
   slide.appendChild(source);
 
   const favIcon = document.createElement('img');
-  const iconSource = utils.getFavIconURLString(entry.feedLink);
-  favIcon.setAttribute('src', iconSource);
+
+  let iconSourceURL = null;
+
+  if(entry.feedLink) {
+    if(Object.prototype.toString.call(entry.feedLink) === '[object URL]') {
+      iconSourceURL = getFavIconURL(entry.feedLink);
+    } else {
+      try {
+        iconSourceURL = getFavIconURL(new URL(entry.feedLink));
+      } catch(exception) {
+        console.debug('Error creating url to get fav icon', exception);
+      }
+    }
+  }
+
+  if(iconSourceURL) {
+    favIcon.setAttribute('src', iconSourceURL.href);
+  }
+
   favIcon.setAttribute('width', '16');
   favIcon.setAttribute('height', '16');
   source.appendChild(favIcon);
@@ -451,8 +476,7 @@ SlideShow.isUnreadEntry = function(entryElement) {
 };
 
 SlideShow.countUnreadSlides = function() {
-  const slides = document.body.querySelectorAll('div[entry]:not([read])');
-  return slides ? slides.length : 0;
+  return document.body.querySelectorAll('div[entry]:not([read])').length;
 };
 
 // If no slides are loaded, or all slides are read, then show the default

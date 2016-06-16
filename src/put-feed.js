@@ -17,28 +17,27 @@
 // instead of innerHTML in the render will ensure no problem.
 function putFeed(connection, currentFeed, newFeed, callback) {
 
-  // Define a feed object that we will store.
-  // We do not use the actual parameter objects. We don't know all the
-  // misc. properties of those objects and want to avoid storing extraneous
-  // data. It is much easier to selectively copy the properties of interest
-  // into a new object. In addition, I dislike modifying parameters, and we
-  // will be modifying this object.
+  // Provide minimal assertions as to behavior
+  // TODO: since I added these, I think the callers might assuming the params
+  // are always defined, i will get NPEs, so I need to have all the call sites
+  // not assume this
 
-  // TODO: I am thinking maybe I should use Object.create(null) instead of
-  // the object literal, so that the storable object has no prototype. I am
-  // not sure if it matters. I guess the prototype properties are ignored.
-  // Maybe they are not, I can't tell exactly.
+  if(!newFeed) {
+    callback(null, {
+      'type': 'undefinednewfeed'
+    });
+    return;
+  }
 
-  const storable = {};
+  if(!newFeed.url) {
+    callback(null, {
+      'type': 'undefinednewfeedurl'
+    });
+    return;
+  }
 
-  // NOTE: ok, so adding this line causes a DataCloneError to occur as a thrown
-  // exception later on when calling store.put(storable). I take this to mean
-  // that URL objects are not serializable in indexedDB.
-  //try {
-  //  storable.testURLObject = new URL(newFeed.url);
-  //} catch(exception) {
-  //  console.debug(exception);
-  //}
+  // Generate a serializable object for storage and to pass to the callback
+  const storable = Object.create(null);
 
   // Only set the id if we are doing an update. If we are doing an add, the
   // id is automatically defined by indexedDB's autoincrement feature
@@ -48,15 +47,37 @@ function putFeed(connection, currentFeed, newFeed, callback) {
     storable.id = currentFeed.id;
   }
 
-  // url is required so assume it exists
-  // TODO: maybe this should not assume, it should test and throw?
-  // TODO: this should test and throw
-  // TODO: this should also not assume that url is trimmed
-  // NOTE: this is used later to derive storable.schemeless
-  // NOTE: i am using newFeed.url although technically this should be the
-  // same thing as currentFeed.url because it is replacing it and it shouldn't
-  // matter which one I use?
-  storable.url = newFeed.url;
+  if(Object.prototype.toString.call(newFeed.url) === '[object URL]') {
+    storable.url = newFeed.url.href;
+  } else {
+    storable.url = newFeed.url;
+  }
+
+  // Setup storable.urls, which contains an array of all the urls that point
+  // to a feed.
+  if(newFeed.urls && newFeed.urls.length) {
+    if(currentFeed && currentFeed.urls) {
+
+      storable.urls = [];
+      // Copy over the old urls
+      // TODO: Use a builtin like slice or concat or push.apply
+      for(let i = 0, len = currentFeed.urls.length; i < len; i++) {
+        storable.urls.push(currentFeed.urls[i]);
+      }
+
+      // Copy over the new urls when they are distinct
+      for(let i = 0, len = newFeed.urls; i < len; i++) {
+        if(currentFeed.urls.indexOf(newFeed.urls[i]) === -1) {
+          storable.urls.push(newFeed.urls[i]);
+        }
+      }
+    } else {
+      storable.urls = newFeed.urls;
+    }
+  } else if(currentFeed && currentFeed.urls && currentFeed.urls.length) {
+    // Retain the current urls even when there are no new ones
+    storable.urls = currentFeed.urls;
+  }
 
   // Store the fetched feed type (e.g. rss or rdf) as a string
   // Assume that if type is defined that it is valid
@@ -64,18 +85,16 @@ function putFeed(connection, currentFeed, newFeed, callback) {
     storable.type = newFeed.type;
   }
 
-  // TODO: instead of schemeless, I should be using a fully normalized url
-  // for comparison. I should deprecate the schemeless property.
-
+  // The 'schemeless' property is deprecated
   // Derive and store the schemeless url of the feed, which is used to
   // check for dups
-  if(currentFeed) {
-    storable.schemeless = currentFeed.schemeless;
-  } else {
+  //if(currentFeed) {
+  //  storable.schemeless = currentFeed.schemeless;
+  //} else {
     // TODO: I think filterProtocol can throw. I need to think about how
     // to deal with this expressly.
-    storable.schemeless = utils.url.filterProtocol(storable.url);
-  }
+  //  storable.schemeless = utils.url.filterProtocol(storable.url);
+  //}
 
   // NOTE: title is semi-required. It must be defined, although it can be
   // an empty string. It must be defined because of how views query and
@@ -91,10 +110,24 @@ function putFeed(connection, currentFeed, newFeed, callback) {
     storable.description = description;
   }
 
-  const link = sanitizeBeforePut(newFeed.link);
-  if(link) {
-    storable.link = link;
+  if(newFeed.link) {
+    if (Object.prototype.toString.call(newFeed.link) === '[object URL]') {
+      storable.link = newFeed.link.href;
+    } else {
+      storable.link = sanitizeBeforePut(newFeed.link);
+    }
+  } else if(currentFeed.link) {
+    if (Object.prototype.toString.call(currentFeed.link) === '[object URL]') {
+      storable.link = currentFeed.link.href;
+    } else {
+      storable.link = currentFeed.link;
+    }
   }
+
+  //const link = sanitizeBeforePut(newFeed.link);
+  //if(link) {
+  //  storable.link = link;
+  //}
 
   // Even though date should always be set, this can work in the absence of
   // a value

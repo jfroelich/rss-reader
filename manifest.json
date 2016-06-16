@@ -23,6 +23,7 @@
       "/src/poll.js",
       "/src/put-feed.js",
       "/src/resolve-urls.js",
+      "/src/rewrite-url.js",
       "/src/utils.js"
     ]
   },

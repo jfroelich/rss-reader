@@ -6,98 +6,18 @@
 
 const utils = {};
 
-// Returns a url string pointing to the favicon associated with the input
-// url string.
-// NOTE: I originally rolled my own thing that did url parsing and
-// looked for a url. I gave up on that and just use Google's own
-// favicon service. I am still considering my own local service.
-// TODO: this doesn't cache, which means every image request is going out,
-// and the browser might cache, but otherwise it is providing tracking
-// information. So maybe this should be async and store a local cache.
-// TODO: I should probably store the post-redirect url as a feed property and
-// query against that property on display, instead of calling this function
-// per article.
-utils.getFavIconURLString = function(urlString) {
-  if(urlString) {
-    return 'http://www.google.com/s2/favicons?domain_url=' +
-      encodeURIComponent(urlString);
-  } else {
-    return '/images/rss_icon_trans.gif';
-  }
-};
-
-utils.array = {};
-
-// Faster than Array.prototype.filter because assumes that the input array
-// is dense, and because it does not support custom binding.
-utils.array.filter = function(inputArray, predicateFunction) {
-  const length = inputArray.length;
-  const outputArray = [];
-  for(let i = 0, item; i < length; i++) {
-    item = inputArray[i];
-    if(predicateFunction(item)) {
-      outputArray.push(item);
-    }
-  }
-  return outputArray;
-};
-
-// Faster than Array.prototype.find because assumes the subject array
-// is dense.
-// The predicate function should be pure, and especially, it should not modify
-// the subject array.
-utils.array.find = function(subjectArray, predicateFunction) {
-  const length = subjectArray.length;
-  for(let i = 0, item; i < length; i++) {
-    item = subjectArray[i];
-    if(predicateFunction(item)) {
-      return item;
-    }
-  }
-};
-
-// Faster than Array.prototype.forEach because assumes dense
-utils.array.forEach = function(subjectArray, callback) {
-  const length = subjectArray.length;
-  for(let i = 0; i < length; i++) {
-    callback(subjectArray[i]);
-  }
-};
-
-// Returns true if the predicate returns true for at least one item of the
-// subject array.
-// This is faster than Array.prototype.some because it assumes the subject
-// array is dense.
-utils.array.some = function(subjectArray, predicateFunction) {
-  const length = subjectArray.length;
-  for(let i = 0; i < length; i++) {
-    if(predicateFunction(subjectArray[i])) {
-      return true;
-    }
-  }
-  return false;
-};
-
-// Updates the unread count of the extension's badge. Connection is optional.
-utils.updateBadgeText = function(connection) {
+// Connection is optional.
+utils.updateBadgeUnreadCount = function(connection) {
   if(connection) {
-    countUnread(connection);
+    countUnreadEntries(connection);
   } else {
     db.open(onConnect);
-  }
-
-  function countUnread(connection) {
-    const transaction = connection.transaction('entry');
-    const store = transaction.objectStore('entry');
-    const index = store.index('readState');
-    const request = index.count(Entry.Flags.UNREAD);
-    request.onsuccess = setText;
   }
 
   function onConnect(event) {
     if(event.type === 'success') {
       const connection = event.target.result;
-      countUnread(connection);
+      countUnreadEntries(connection);
     } else {
       console.debug(event);
       const text = {'text': '?'};
@@ -105,7 +25,15 @@ utils.updateBadgeText = function(connection) {
     }
   }
 
-  function setText(event) {
+  function countUnreadEntries(connection) {
+    const transaction = connection.transaction('entry');
+    const store = transaction.objectStore('entry');
+    const index = store.index('readState');
+    const request = index.count(Entry.Flags.UNREAD);
+    request.onsuccess = onCountUnreadEntriesSuccess;
+  }
+
+  function onCountUnreadEntriesSuccess(event) {
     const request = event.target;
     const count = request.result || 0;
     const text = {'text': '' + count};
@@ -282,6 +210,7 @@ utils.string.normalizeSpaces = function(inputString) {
 
 utils.url = {};
 
+// filterProtocol is now deprecated, will delete soon
 // Returns a substring of the input url string, excluding the protocol and
 // also excluding '://'
 // TODO: Maybe I do not need to exclude the '//'. On the one hand, I know that
@@ -295,14 +224,17 @@ utils.url = {};
 // the event the urlString is invalid or is relative which would lead to an
 // exception? Should this just return the original string, along the lines of
 // always consistently returning something and never throwing?
-utils.url.filterProtocol = function(urlString) {
-  const urlObject = new URL(urlString);
+//utils.url.filterProtocol = function(urlString) {
+//  const urlObject = new URL(urlString);
   // Add 2 in order to skip past '//'
-  const offset = urlObject.protocol.length + 2;
-  return urlObject.href.substr(offset);
-};
+//  const offset = urlObject.protocol.length + 2;
+//  return urlObject.href.substr(offset);
+//};
+
 
 // Returns whether the given string looks like an absolute URL
+// TODO: this is so rudimentary I think I should just inline this wherever
+// it is used
 utils.url.isURLString = function(inputString) {
   try {
     new URL(inputString);
@@ -311,26 +243,7 @@ utils.url.isURLString = function(inputString) {
   return false;
 };
 
+// TODO: this is so rudimentary i should inline this
 utils.url.isObjectURLString = function(urlString) {
   return urlString && /^\s*data\s*:/i.test(urlString);
-};
-
-// Applies a set of rules to a url string and returns a modified url string
-// Currently this only modifies Google News urls, but I plan to include more
-// TODO: research how to bypass feedproxy given the feedburner changes. Google
-// reader was deprecated. Several sites only support feed access via feed burner
-// Feed burner rewrites all urls to filter through feed burner for I guess
-// purposes of link tracking. Figure out how to get past the rewrite. Maybe
-// it involves an async process, maybe it requires traversing a chain of
-// redirects and therefore the whole process should be more abstract
-// TODO: if this becomes complete enough it could merit being its own module,
-// but for now I think it is fine as a misc. utility function
-utils.url.rewrite = function(url) {
-  const GOOGLE_NEWS = /^https?:\/\/news.google.com\/news\/url\?.*url=(.*)/i;
-  const matches = GOOGLE_NEWS.exec(url);
-  if(matches && matches.length === 2 && matches[1]) {
-    return decodeURIComponent(matches[1]);
-  }
-
-  return url;
 };

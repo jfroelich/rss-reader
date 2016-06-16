@@ -200,6 +200,8 @@ OptionsPage.updateFeedCount = function() {
 
 // TODO: rename, where is this appending, and to what? Maybe this should be a
 // member function of some type of feed menu object
+// TODO: this should always use inserted sort, that should be invariant, and
+// so I shouldn't accept a parameter
 OptionsPage.appendFeed = function(feed, insertedSort) {
   const item = document.createElement('li');
   item.setAttribute('sort-key', feed.title);
@@ -212,14 +214,26 @@ OptionsPage.appendFeed = function(feed, insertedSort) {
   item.onclick = OptionsPage.feedListOnItemClick;
 
   var favIconElement = document.createElement('img');
-  favIconElement.src = utils.getFavIconURLString(feed.link);
+
+  if(feed.link) {
+    if(Object.prototype.toString.call(feed.link) === '[object URL]') {
+      favIconElement.src = getFavIconURL(feed.link).href;
+    } else {
+      favIconElement.src = getFavIconURL(new URL(feed.link)).href;
+    }
+  }
+
+
   if(feed.title) {
     favIconElement.title = feed.title;
   }
   item.appendChild(favIconElement);
 
   const title = document.createElement('span');
-  title.textContent = utils.string.truncate(feed.title,300) || 'Untitled';
+
+  // TODO: the title may contain html and other stuff, it needs to be
+  // more properly sanitized
+  title.textContent = utils.string.truncate(feed.title, 300) || 'Untitled';
   item.appendChild(title);
 
   const feedListElement = document.getElementById('feedlist');
@@ -246,15 +260,18 @@ OptionsPage.appendFeed = function(feed, insertedSort) {
 };
 
 // TODO: deprecate the ability to preview
-// TODO: use a better name for url param, like urlString, to clarify it is
-// not a URL object
+// NOTE: this now expects a URL object, not a URL string
 OptionsPage.showSubscriptionPreview = function(url) {
+
   OptionsPage.hideSubscriptionPreview();
+
   if(!localStorage.ENABLE_SUBSCRIBE_PREVIEW) {
     OptionsPage.startSubscription(url);
     return;
   }
 
+  // TODO: this check no longer makes sense, must be online in order to
+  // subscribe because I removed the ability to subscribe while offline
   if('onLine' in navigator && !navigator.onLine) {
     OptionsPage.startSubscription(url);
     return;
@@ -270,12 +287,17 @@ OptionsPage.showSubscriptionPreview = function(url) {
 
   const fetchTimeoutMills = 10 * 1000;
   const excludeEntries = false;
+
+  // NOTE: this passes along a URL object now
+
   fetchFeed(url, fetchTimeoutMills, excludeEntries, onFetch);
 
   function onFetch(fetchEvent) {
     if(event.type !== 'load') {
       console.dir(event);
       OptionsPage.hideSubscriptionPreview();
+      // NOTE: because of concatenate this implicitly converts url to string
+      // which is fine
       OptionsPage.showErrorMessage('Unable to fetch' + url);
       return;
     }
@@ -290,7 +312,11 @@ OptionsPage.showSubscriptionPreview = function(url) {
 
     const continueButton = document.getElementById(
       'subscription-preview-continue');
-    continueButton.value = feed.url;
+    if(Object.prototype.toString.call(feed.url) === '[object URL]') {
+      continueButton.value = feed.url.href;
+    } else {
+      continueButton.value = feed.url;
+    }
 
     const resultsListElement = document.getElementById(
       'subscription-preview-entries');
@@ -319,16 +345,18 @@ OptionsPage.hideSubscriptionPreview = function() {
   OptionsPage.hideElement(previewElement);
   const resultsListElement = document.getElementById(
     'subscription-preview-entries');
-
-  // TODO: create and use dom_clear_element
   while(resultsListElement.firstChild) {
     resultsListElement.firstChild.remove();
   }
 };
 
+// NOTE: This now expects a URL object
 OptionsPage.startSubscription = function(url) {
   OptionsPage.hideSubscriptionPreview();
   OptionsPage.showSubscriptionMonitor();
+
+  // url is an object, because of concatenation it will implicitly be
+  // converted to string which is fine
   OptionsPage.updateSubscriptionMonitorMessage('Subscribing to' + url);
 
   db.open(onOpenDatabase);
@@ -342,6 +370,8 @@ OptionsPage.startSubscription = function(url) {
     }
 
     const connection = event.target.result;
+
+    // NOTE: this now passes along a URL object
     Subscription.add(connection, url, onSubscribe);
   }
 
@@ -353,12 +383,16 @@ OptionsPage.startSubscription = function(url) {
       return;
     }
 
-    // TODO: right now the event does not contain all the info I want,
-    // we only know event.newFeedId
     let addedFeed = {};
     addedFeed.id = event.newFeedId;
-    addedFeed.url = url;
-    addedFeed.title = 'Unknown';
+    addedFeed.title = event.newFeedTitle;
+
+    // NOTE: this is now setting a URL object, not a string, so
+    // appendFeed should expect a URL object
+    // NOTE: actually it looks like appendFeed doesn't even use the url
+    // property, so I am disabling this for now
+    //addedFeed.url = url;
+
 
     OptionsPage.appendFeed(addedFeed, true);
     OptionsPage.updateFeedCount();
@@ -417,9 +451,15 @@ OptionsPage.populateFeedDetails = function(feedId) {
     const titleElement = document.getElementById('details-title');
     titleElement.textContent = title;
 
-    const favIconURL = utils.getFavIconURLString(feed.url);
     const favIconElement = document.getElementById('details-favicon');
-    favIconElement.setAttribute('src', favIconURL);
+    let favIconURL = null;
+    if(Object.prototype.toString.call(feed.url) === '[object URL]') {
+      favIconURL = getFavIconURL(feed.url);
+    } else {
+      favIconURL = getFavIconURL(new URL(feed.url));
+    }
+
+    favIconElement.setAttribute('src', favIconURL.href);
 
     const description = HTMLUtils.replaceTags(feed.description || '', '');
     const descriptionElement = document.getElementById(
@@ -427,23 +467,32 @@ OptionsPage.populateFeedDetails = function(feedId) {
     descriptionElement.textContent = description;
 
     const feedURLElement = document.getElementById('details-feed-url');
-    feedURLElement.textContent = feed.url;
+    if(Object.prototype.toString.call(feed.url) === '[object URL]') {
+      feedURLElement.textContent = feed.url.href;
+    } else {
+      feedURLElement.textContent = feed.url;
+    }
 
     const feedLinkElement = document.getElementById('details-feed-link');
-    feedLinkElement.textContent = feed.link;
+    if(Object.prototype.toString.call(feed.link) === '[object URL]') {
+      feedLinkElement.textContent = feed.link.href;
+    } else {
+      feedLinkElement.textContent = feed.link;
+    }
 
     const unsubscribeButton = document.getElementById('details-unsubscribe');
-    unsubscribeButton.value = feed.id;
+    unsubscribeButton.value = '' + feed.id;
   }
 };
 
 OptionsPage.feedListOnItemClick = function(event) {
   const element = event.currentTarget;
   const feedIdString = element.getAttribute('feed');
-  const feedId = parseInt(feedIdString);
+  const feedId = parseInt(feedIdString, 10);
 
   if(isNaN(feedId)) {
     console.debug('Invalid feed id:', feedIdString);
+    // TODO: react to this error
     return;
   }
 
@@ -507,7 +556,13 @@ OptionsPage.onSubscriptionFormSubmit = function(event) {
     // Start subscribing
     OptionsPage.hideElement(progressElement);
     queryElement.value = '';
-    OptionsPage.showSubscriptionPreview(queryString);
+
+    // TODO: creating the url again feels wasteful, so this probably needs to
+    // be changed. However for now I have to pass along a URL object so I have
+    // to create it here. There is a good chance I don't even need isURLString
+    // and can just do the test here
+
+    OptionsPage.showSubscriptionPreview(new URL(queryString));
   } else {
     // Show search results
     OptionsPage.showElement(progressElement);
@@ -538,34 +593,38 @@ OptionsPage.onDiscoverSubscriptionButtonClick = function(event) {
     return;
   }
 
+
+  // Show subscription preview expects a URL object, so convert
+  let feedURL = null;
+  try {
+    feedURL = new URL(feedURLString);
+  } catch(exception) {
+    console.debug(exception);
+    return;
+  }
+
   // TODO: I plan to deprecate the preview step, so this should probably be
   // making a call directly to the step that starts the subscription process.
-  OptionsPage.showSubscriptionPreview(feedURLString);
+
+  OptionsPage.showSubscriptionPreview(feedURL);
 };
 
-OptionsPage.onDiscoverComplete = function(errorEvent, query, results) {
+OptionsPage.onDiscoverComplete = function(event) {
+
+  const query = event.queryString;
+  const results = event.entries;
+
   const progressElement = document.getElementById('discover-in-progress');
   const noResultsElement = document.getElementById('discover-no-results');
   const resultsList = document.getElementById('discover-results-list');
 
-  // Define an error value if query or results are undefined
-  // TODO: the errorEvent should mimic the type of variable of the parameter
-  // TODO: I should not be modifying the parameter itself, I think that is
-  // a bad convention, so I should be doing something else.
-  // TODO: having no results isn't an error. So this is rather silly.
-  if(!query || !results) {
-    if(!errorEvent) {
-      errorEvent = 'No results';
-    }
-  }
-
   // If an error occurred, hide the progress element and show an error message
   // and exit early.
-  if(errorEvent) {
-    console.debug(errorEvent);
+  if(event.type !== 'load') {
+    console.debug(event);
     OptionsPage.hideElement(progressElement);
     OptionsPage.showErrorMessage(
-      'An error occurred when searching for feeds: ' + errorEvent);
+      'An error occurred when searching for feeds: ' + event);
     return;
   }
 
@@ -612,22 +671,52 @@ OptionsPage.createSearchResult = function(result) {
 
   // Append a subscribe button
   const buttonSubscribe = document.createElement('button');
-  buttonSubscribe.value = result.url;
-  // Give the button a tooltip
-  buttonSubscribe.title = result.url;
+
+  if(Object.prototype.toString.call(result.url) === '[object URL]') {
+    buttonSubscribe.value = result.url.href;
+    // Give the button a tooltip
+    buttonSubscribe.title = result.url.href;
+  } else {
+    buttonSubscribe.value = result.url;
+    // Give the button a tooltip
+    buttonSubscribe.title = result.url;
+  }
+
   buttonSubscribe.textContent = 'Subscribe';
   buttonSubscribe.onclick = OptionsPage.onDiscoverSubscriptionButtonClick;
   item.appendChild(buttonSubscribe);
 
   // Append the feed's favicon
   const imageFavIcon = document.createElement('img');
-  imageFavIcon.setAttribute('src', utils.getFavIconURLString(result.url));
-  imageFavIcon.title = result.link;
+
+  if(Object.prototype.toString.call(result.url) === '[object URL]') {
+    imageFavIcon.setAttribute('src', getFavIconURL(result.url).href);
+  } else {
+    imageFavIcon.setAttribute('src',
+      getFavIconURL(new URL(result.url)).href);
+  }
+
+  if(result.link) {
+    if(Object.prototype.toString.call(result.link) === '[object URL]') {
+      imageFavIcon.title = result.link.href;
+    } else {
+      imageFavIcon.title = result.link;
+    }
+  }
+
   item.appendChild(imageFavIcon);
 
   // Append the feeds title
   const anchorTitle = document.createElement('a');
-  anchorTitle.setAttribute('href', result.link);
+
+  if(result.link) {
+    if(Object.prototype.toString.call(result.link) === '[object URL]') {
+      anchorTitle.setAttribute('href', result.link.href);
+    } else {
+      anchorTitle.setAttribute('href', result.link);
+    }
+  }
+
   anchorTitle.setAttribute('target', '_blank');
   anchorTitle.title = result.title;
   anchorTitle.innerHTML = result.title;
@@ -641,7 +730,13 @@ OptionsPage.createSearchResult = function(result) {
   // Append the feed's url
   const spanURL = document.createElement('span');
   spanURL.setAttribute('class', 'discover-search-result-url');
-  spanURL.textContent = result.url;
+
+  if(Object.prototype.toString.call(result.url) === '[object URL]') {
+    spanURL.textContent = result.url.href;
+  } else {
+    spanURL.textContent = result.url;
+  }
+
   item.appendChild(spanURL);
 
   return item;
@@ -658,6 +753,7 @@ OptionsPage.buttonUnsubscribeOnClick = function(event) {
   // an earlier bug I was experiencing, and probably isn't that necessary, but
   // I think it is harmless for now.
   if(!feedId || isNaN(feedId)) {
+    // TODO: show an error
     console.error('Invalid feed id:', feedIdString);
     return;
   }
@@ -755,34 +851,12 @@ OptionsPage.importOPMLButtonOnClick = function(event) {
     OPML.importFiles(connection, uploader.files, onImportCompleted);
   }
 
-  function onImportCompleted(tracker) {
+  function onImportCompleted() {
     uploader.remove();
-
-    // TODO: remove this after some more testing, this should never happen
-    if(!tracker) {
-      console.debug('OPML import error, undefined stats tracker');
-      return;
-    }
-
-    const errors = tracker.errors;
-
-    if(errors && errors.length) {
-      // TODO: show an error message
-      console.debug('Encountered exceptions when importing: %o', errors);
-    }
-
-    // TODO: show a notification because opml import no longer does this
-    // itself
-    // TODO: the importer should be the one responsible for sending the
-    // notification, not here
-    // TODO: log additional information, like the number of feeds
-    // found and number actually added
-    console.info('Completed opml import, imported %s of %s files',
-      tracker.filesImported, tracker.numFiles);
+    console.info('Completed opml import');
   }
 };
 
-// TODO: move the helper functions back into this function as nested functions
 OptionsPage.exportOPMLButtonOnClick = function(event) {
   db.open(onOpenDatabase);
 
@@ -971,12 +1045,8 @@ OptionsPage.onDOMContentLoaded = function(event) {
   }
 
   const checkboxEnableIdleCheck = document.getElementById('enable-idle-check');
-
-  checkboxEnableIdleCheck.checked = !!localStorage.ONLY_POLL_IF_IDLE;
-
+  checkboxEnableIdleCheck.checked = 'ONLY_POLL_IF_IDLE' in localStorage;
   checkboxEnableIdleCheck.onclick = checkboxEnableIdleCheckOnChange;
-
-  // Either add or remove the permission when checking or unchecking
   function checkboxEnableIdleCheckOnChange(event) {
     if(event.target.checked) {
       localStorage.ONLY_POLL_IF_IDLE = '1';
@@ -989,7 +1059,7 @@ OptionsPage.onDOMContentLoaded = function(event) {
   const checkboxEnableSubscriptionPreview =
     document.getElementById('enable-subscription-preview');
   checkboxEnableSubscriptionPreview.checked =
-    !!localStorage.ENABLE_SUBSCRIBE_PREVIEW;
+    'ENABLE_SUBSCRIBE_PREVIEW' in localStorage;
   checkboxEnableSubscriptionPreview.onchange =
     checkboxEnableSubscriptionPreviewOnChange;
 
@@ -1001,9 +1071,10 @@ OptionsPage.onDOMContentLoaded = function(event) {
     }
   }
 
+  // TODO: deprecate this, url rewriting will always be enabled
   const checkboxEnableURLRewriting = document.getElementById(
     'rewriting-enable');
-  checkboxEnableURLRewriting.checked = !!localStorage.URL_REWRITING_ENABLED;
+  checkboxEnableURLRewriting.checked = 'URL_REWRITING_ENABLED' in localStorage;
   checkboxEnableURLRewriting.onchange = enableURLRewritingCheckboxOnChange;
 
   function enableURLRewritingCheckboxOnChange(event) {
@@ -1035,9 +1106,22 @@ OptionsPage.onDOMContentLoaded = function(event) {
     buttonSubscriptionPreviewContinueOnClick;
 
   function buttonSubscriptionPreviewContinueOnClick(event) {
-    const url = event.currentTarget.value;
+    const urlString = event.currentTarget.value;
     OptionsPage.hideSubscriptionPreview();
-    OptionsPage.startSubscription(url);
+
+    if(!urlString) {
+      console.debug('no url');
+    }
+
+    let feedURL = null;
+    try {
+      feedURL = new URL(urlString);
+    } catch(exception) {
+      console.debug(exception);
+      return;
+    }
+
+    OptionsPage.startSubscription(feedURL);
   }
 
   // Init display settings
@@ -1082,8 +1166,11 @@ OptionsPage.onDOMContentLoaded = function(event) {
   option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
   document.getElementById('select_header_font').appendChild(option);
+
+  // TODO: use a basic for loop
   DisplaySettings.FONT_FAMILIES.forEach(appendHeaderFontOption);
   function appendHeaderFontOption(fontFamily) {
+    // TODO: option should be a local variable
     option = document.createElement('option');
     option.value = fontFamily;
     option.selected = fontFamily === localStorage.HEADER_FONT_FAMILY;
@@ -1105,9 +1192,11 @@ OptionsPage.onDOMContentLoaded = function(event) {
   option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
   menuBodyFont.appendChild(option);
+  // TODO: use a basic for loop
   DisplaySettings.FONT_FAMILIES.forEach(appendBodyFontOption);
 
   function appendBodyFontOption(fontFamily) {
+    // TODO: use a local variable for option
     option = document.createElement('option');
     option.value = fontFamily;
     option.selected = fontFamily === localStorage.BODY_FONT_FAMILY;
@@ -1126,9 +1215,11 @@ OptionsPage.onDOMContentLoaded = function(event) {
 
   const columnCountElement = document.getElementById('column-count');
 
-  [1,2,3].forEach(appendColumnCountOption);
+  // TODO: use a basic for loop here
+  ['1','2','3'].forEach(appendColumnCountOption);
 
   function appendColumnCountOption(columnCount) {
+    // TODO: use a local variable here
     option = document.createElement('option');
     option.value = columnCount;
     option.selected = columnCount === localStorage.COLUMN_COUNT;
@@ -1170,7 +1261,6 @@ OptionsPage.onDOMContentLoaded = function(event) {
   const entryMarginElement = document.getElementById('entry-margin');
   entryMarginElement.value = localStorage.ENTRY_MARGIN || '10';
   entryMarginElement.onchange = entryMarginElementOnChange;
-
   function entryMarginElementOnChange(event) {
     // TODO: why am i defaulting to 10 here?
     localStorage.ENTRY_MARGIN = event.target.value || '10';
@@ -1180,7 +1270,6 @@ OptionsPage.onDOMContentLoaded = function(event) {
   const headerFontSizeElement = document.getElementById('header-font-size');
   headerFontSizeElement.value = localStorage.HEADER_FONT_SIZE || '1';
   headerFontSizeElement.onchange = headerFontSizeOnChange;
-
   function headerFontSizeOnChange(event) {
     localStorage.HEADER_FONT_SIZE = event.target.value || '1';
     chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
@@ -1195,10 +1284,8 @@ OptionsPage.onDOMContentLoaded = function(event) {
   }
 
   const checkboxJustifyText = document.getElementById('justify-text');
-  checkboxJustifyText.checked = (localStorage.JUSTIFY_TEXT === '1') ? true :
-    false;
+  checkboxJustifyText.checked = 'JUSTIFY_TEXT' in localStorage;
   checkboxJustifyText.onchange = justifyTextCheckboxOnChange;
-
   function justifyTextCheckboxOnChange(event) {
     if(event.target.checked) {
       localStorage.JUSTIFY_TEXT = '1';
@@ -1212,7 +1299,6 @@ OptionsPage.onDOMContentLoaded = function(event) {
   const bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
   bodyLineHeightElement.value = (bodyLineHeight / 10).toFixed(2);
   bodyLineHeightElement.oninput = bodyLineHeightSliderOnChange;
-
   function bodyLineHeightSliderOnChange(event) {
     localStorage.BODY_LINE_HEIGHT = event.target.value || '10';
     chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});

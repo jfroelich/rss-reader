@@ -24,7 +24,7 @@ Background.onInstalled = function(event) {
   // the first sign of an installation problem.
   function onConnect(event) {
     const connection = event.target.result;
-    utils.updateBadgeText(connection);
+    utils.updateBadgeUnreadCount(connection);
   }
 };
 
@@ -192,18 +192,22 @@ Background.archiveEntries = function() {
     // as a result of unsubscribing from a feed.
     outputEntry.feed = inputEntry.feed;
 
-    // Maintain link because we still want to represent that the entry already
-    // exists when comparing a new entry to existing entries.
-    outputEntry.link = inputEntry.link;
+    // NOTE: link is no longer maintained. The urls property is used for
+    // comparison instead.
+    //outputEntry.link = inputEntry.link;
 
-    // NOTE: this was previously named archiveDate, some entries currently
-    // exist in my testing storage with the old field and not the new field.
-    // NOTE: this previously used a timestamp instead of a Date object.
-    // TODO: I need to reset the database and then I can delete this comment.
+    // Maintain urls so that the entry stays in the urls index so that it can
+    // continue to be compared against when polling for new entries to
+    // determine if an entry already exists
+    outputEntry.urls = inputEntry.urls;
+
+    // Introduce a new dateArchived field.
+    // NOTE: tentative. This is purely for debugging or reporting at the
+    // moment and is not used by anything I can think of.
     outputEntry.dateArchived = new Date();
 
     // Ensure the new entry is marked as archived so it is not revisited in
-    // future runs
+    // future archive runs
     outputEntry.archiveState = Entry.Flags.ARCHIVED;
 
     return outputEntry;

@@ -4,12 +4,13 @@
 
 'use strict';
 
+
+
 // Lib for unmarshalling an xml document into a feed object. The values stored
 // in the feed object are not sanitized, and should be sanitized later by the
 // caller before rendering/storing
 // TODO: now that the parser sets the type property, all the other code needs
 // to support it (e.g. save it, update it properly) - this is a general note
-// TODO: store URL strings as URL objects
 const FeedParser = {};
 
 // Unmarshall an xml document into a feed object
@@ -43,7 +44,11 @@ FeedParser.parse = function(document, excludeEntries) {
   feed.title = FeedParser.findChildElementText(channel, 'TITLE');
   feed.description = FeedParser.findChildElementText(channel,
     documentElement.matches('feed') ? 'SUBTITLE' : 'DESCRIPTION');
+
+  // TODO: rename this to something clearer
   feed.date = FeedParser.findFeedDate(channel);
+
+  // NOTE: this is now a URL object or undefined/null
   feed.link = FeedParser.findFeedLink(channel);
 
   if(!excludeEntries) {
@@ -79,8 +84,6 @@ FeedParser.findEntries = function(channelElement) {
     entryNodeName = 'ITEM';
   }
 
-  // TODO: this should probably be delegated to some general purpose
-  // dom-find-all or dom-filter-children function
   for(let element = entryParent.firstElementChild; element;
     element = element.nextElementSibling) {
     if(utils.string.equalsIgnoreCase(element.nodeName, entryNodeName)) {
@@ -143,7 +146,10 @@ FeedParser.isLinkWithoutHref = function(element) {
 
 FeedParser.findFeedLink = function(channelElement) {
   const isAtom = channelElement.ownerDocument.documentElement.matches('feed');
-  let linkText, linkElement;
+
+  let linkText = null;
+  let linkElement = null;
+
   if(isAtom) {
     linkElement = FeedParser.findChildElement(channelElement,
       FeedParser.isLinkRelAlternate) ||
@@ -154,7 +160,6 @@ FeedParser.findFeedLink = function(channelElement) {
     if(linkElement) {
       linkText = linkElement.getAttribute('href');
     }
-
   } else {
     linkElement = FeedParser.findChildElement(channelElement,
       FeedParser.isLinkWithoutHref);
@@ -168,19 +173,48 @@ FeedParser.findFeedLink = function(channelElement) {
     }
   }
 
+  // NOTE: new URL tolerates extraneous whitespace so there is no need to trim
+  //if(linkText) {
+  //  return linkText.trim();
+  //}
+
+  // Return a URL object
   if(linkText) {
-    return linkText.trim();
+    try {
+      return new URL(linkText);
+    } catch(exception) {
+      console.debug(exception);
+    }
   }
 };
 
 FeedParser.createEntryFromElement = function(entryElement) {
   const isAtom = entryElement.ownerDocument.documentElement.matches('feed');
-  const result = {};
-  result.title = FeedParser.findChildElementText(entryElement, 'TITLE');
-  result.author = FeedParser.findEntryAuthor(entryElement);
-  result.link = FeedParser.findEntryLink(entryElement);
-  result.pubdate = FeedParser.findEntryDate(entryElement);
-  result.content = FeedParser.findEntryContent(entryElement);
+  const entryObject = Object.create(null);
+  entryObject.title = FeedParser.findChildElementText(entryElement, 'TITLE');
+  entryObject.author = FeedParser.findEntryAuthor(entryElement);
+
+
+
+  // TODO: I think I should be rewriting entry.link urls, and if rewritten,
+  // storing both the original and the rewritten in the urls array.
+  // TODO: I don't even think I should be storing a link property anymore,
+  // I should only use the urls property, and consider the last url in the
+  // list to be the best url to use.
+
+  const entryLinkURLObject = FeedParser.findEntryLink(entryElement);
+  entryObject.link = entryLinkURLObject;
+
+  // Define the 'urls' property, which is an array of the entry's various
+  // urls as strings.
+  entryObject.urls = [];
+
+  if(entryLinkURLObject) {
+    entryObject.urls.push(entryLinkURLObject.href);
+  }
+
+  entryObject.pubdate = FeedParser.findEntryDate(entryElement);
+  entryObject.content = FeedParser.findEntryContent(entryElement);
 
   // NOTE: An enclosure is once per item
   // TODO: i suppose the url resolution processing that happens in other Lib
@@ -191,14 +225,25 @@ FeedParser.createEntryFromElement = function(entryElement) {
   const enclosure = FeedParser.findChildElementByName(entryElement,
     'ENCLOSURE');
   if(enclosure) {
-    result.enclosure = {
-      url: enclosure.getAttribute('url'),
-      length: enclosure.getAttribute('length'),
-      type: enclosure.getAttribute('type')
+    const enclosureURLString = enclosure.getAttribute('url');
+    let enclosureURL = null;
+    if(enclosureURLString) {
+      try {
+        enclosureURL = new URL(enclosureURLString);
+      } catch(exception) {
+        console.debug(exception);
+      }
+    }
+
+    // NOTE: url is now a URL object
+    entryObject.enclosure = {
+      'url': enclosureURL,
+      'length': enclosure.getAttribute('length'),
+      'type': enclosure.getAttribute('type')
     };
   }
 
-  return result;
+  return entryObject;
 };
 
 FeedParser.findEntryAuthor = function(entry) {
@@ -230,10 +275,21 @@ FeedParser.findEntryLink = function(entry) {
     linkText = FeedParser.findChildElementText(entry, 'ORIGLINK') ||
       FeedParser.findChildElementText(entry, 'LINK');
   }
+
+  // NOTE: This now returns a URL object
+  //if(linkText) {
+  //  linkText = linkText.trim();
+  //}
+  //return linkText;
   if(linkText) {
-    linkText = linkText.trim();
+    try {
+      return new URL(linkText);
+    } catch(exception) {
+      console.debug(exception);
+    }
   }
-  return linkText;
+
+  // default return undefined
 };
 
 FeedParser.findEntryDate = function(entry) {

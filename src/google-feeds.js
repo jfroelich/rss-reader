@@ -11,122 +11,121 @@
 const GoogleFeedsAPI = {};
 
 // Sends an async request to Google to search for feeds that correspond to
-// a general text query. Passes the results to the callback. The callback
-// is passed an error argument, the query argument (as modified by Google),
-// and an array of results. The error argument is only defined if an error
-// occurred. If an error occurred, the other arguments may be undefined or null.
-// The results array contains result objects called entries. Each entry is a
-// basic js object containing the string properties url, link, title, and
-// contentSnippet. The title and content snippet may contain basic HTML such as
-// <b></b> around terms that were present in the query.
+// a general text query.
 GoogleFeedsAPI.search = function(queryString, timeoutMillis, callback) {
-  // TODO: use a URL object here
-  const BASE_URL =
+
+  // TODO: use the new URL object to set the queryString parameter using
+  // the URLs methods instead of this manual string manipulation stuff.
+  // I think that will also implicitly call encodeURIComponent for me.
+  const BASE_URL_STRING =
     'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
-  const requestURL = BASE_URL + encodeURIComponent(queryString);
-  const request = new XMLHttpRequest();
-  request.timeout = timeoutMillis;
-  request.onerror = callback;
-  request.ontimeout = callback;
-  request.onabort = callback;
-  request.onload = GoogleFeedsAPI._onLoad.bind(request, callback);
-  request.open('GET', requestURL, true);
-  request.responseType = 'json';
-  request.send();
-};
+  const requestURL = new URL(BASE_URL_STRING +
+    encodeURIComponent(queryString));
 
-// Cleans up the response data before sending it to the callback
-GoogleFeedsAPI._onLoad = function(callback, event) {
-  const request = event.target;
-  const response = request.response;
-  const data = response.responseData;
-
-  if(!data) {
-    callback(response.responseDetails);
-    return;
-  }
-
-  const queryString = data.query || '';
-  let entries = data.entries || [];
-
-  // There is no point to serving up an entry unless it has a URL to which
-  // the user can subscribe.
-  entries = GoogleFeedsAPI.filterEntriesWithoutURLs(entries);
-
-  // I have noticed that the search results occassionally contain multiple
-  // hits for the same url. Only retain the first.
-  entries = GoogleFeedsAPI.filterDuplicateEntries(entries);
-
-  entries.forEach(GoogleFeedsAPI.sanitizeEntry);
-
-  // Callback with null to indicate to no error
-  callback(null, queryString, entries);
-};
-
-GoogleFeedsAPI.filterEntriesWithoutURLs = function(entriesArray) {
-  return entriesArray.filter(GoogleFeedsAPI.getEntryURL);
-};
-
-GoogleFeedsAPI.getEntryURL = function(entry) {
-  return entry.url;
-};
-
-GoogleFeedsAPI.expandEntryByURL = function(entry) {
-  return [entry.url, entry];
-};
-
-GoogleFeedsAPI.filterDuplicateEntries = function(entriesArray) {
-  const expandedEntries = entriesArray.map(GoogleFeedsAPI.expandEntryByURL);
-  const entriesAggregatedByURL = new Map(expandedEntries);
-  const aggregateValues = entriesAggregatedByURL.values();
-  return Array.from(aggregateValues);
-};
-
-GoogleFeedsAPI.sanitizeEntry = function(entry) {
   const TITLE_MAX_LENGTH = 200;
   const CONTENT_SNIPPET_MAX_LENGTH = 400;
 
-  if(entry.title) {
-    entry.title = utils.string.filterControlCharacters(entry.title);
+  const filterControlCharacters = utils.string.filterControlCharacters;
+  const replaceTags = HTMLUtils.replaceTags;
+  const truncateHTML = HTMLUtils.truncate;
 
-    // I don't want any html formatting to remain in the title
-    entry.title = HTMLUtils.replaceTags(entry.title, '');
+  const request = new XMLHttpRequest();
+  request.timeout = timeoutMillis;
+  request.onerror = onResponse;
+  request.ontimeout = onResponse;
+  request.onabort = onResponse;
+  request.onload = onResponse;
+  request.open('GET', requestURL.href, true);
+  request.responseType = 'json';
+  request.send();
 
-    // TODO: this may have an error regarding html entities in the title,
-    // maybe I should only be using HTMLUtils.truncate here.
-    entry.title = utils.string.truncate(entry.title, TITLE_MAX_LENGTH);
+  function onResponse(event) {
+    const request = event.target;
+    const response = request.response;
+    const responseEvent = Object.create(null);
+    responseEvent.type = event.type;
+
+    if(event.type !== 'load') {
+      if(response) {
+        responseEvent.message = response.responesDetails;
+      }
+      callback(responseEvent);
+      return;
+    }
+
+    if(!response) {
+      responseEvent.type = 'noresponse';
+      callback(responseEvent);
+      return;
+    }
+
+    const data = response.responseData;
+
+    if(!data) {
+      responseEvent.type = 'nodata';
+      responseEvent.message = response.responseDetails;
+      callback(responseEvent);
+      return;
+    }
+
+    responseEvent.queryString = data.query || '';
+    responseEvent.entries = [];
+    const entries = data.entries || [];
+    const seenURLs = {};
+    for(let i = 0, len = entries.length, entry, entryURL, normalizedURLString;
+      i < len; i++) {
+      entry = entries[i];
+      if(!entry.url) {
+        continue;
+      }
+
+      entryURL = toURLTrapped(entry.url);
+      if(!entryURL) {
+        continue;
+      }
+
+      normalizedURLString = entryURL.href;
+      if(normalizedURLString in seenURLs) {
+        continue;
+      }
+
+      seenURLs[normalizedURLString] = 1;
+
+      entry.url = entryURL;
+
+      if(entry.title) {
+        entry.title = filterControlCharacters(entry.title);
+        entry.title = replaceTags(entry.title, '');
+        entry.title = utils.string.truncate(entry.title, TITLE_MAX_LENGTH);
+      }
+
+      if(entry.contentSnippet) {
+        entry.contentSnippet = filterControlCharacters(entry.contentSnippet);
+        entry.contentSnippet = filterBreakruleTags(entry.contentSnippet);
+        entry.contentSnippet = truncateHTML(entry.contentSnippet,
+          CONTENT_SNIPPET_MAX_LENGTH, '...');
+      }
+
+      responseEvent.entries.push(entry);
+    }
+
+    callback(responseEvent);
   }
 
-  // The snippet may contain some html formatting, such as <b> tags around
-  // query terms. We want to retain that, but remove other tags.
-
-  if(entry.contentSnippet) {
-    // Even though Google never seems to include these, I like being safe
-    entry.contentSnippet = utils.string.filterControlCharacters(
-      entry.contentSnippet);
-    // We want to keep certain tags but not <br>s
-    entry.contentSnippet = GoogleFeedsAPI.filterBreakruleTags(
-      entry.contentSnippet);
-
-    // The snippet contains HTML, so we have to be wary of truncating, so
-    // we use HTMLUtils.truncate instead of utils.string.truncate
-    entry.contentSnippet = HTMLUtils.truncate(entry.contentSnippet,
-      CONTENT_SNIPPET_MAX_LENGTH, '...');
+  function toURLTrapped(urlString) {
+    try {
+      return new URL(urlString);
+    } catch(exception) {}
   }
-};
 
-// Returns a new string where <br>s have been replaced with spaces. This is
-// intended to be rudimentary and fast rather than perfectly accurate. I do
-// not do any heavy-weight html marshalling. This is only a helper function
-// for this module. This assumes inputString is always defined.
-// TODO: does this mirror Chrome's behavior? Does chrome's parser allow
-// for whitespace preceding the tag name? Maybe this should be stricter.
-// I did some testing, I don't think you can have leading spaces before the
-// tag name. So this shouldn't allow it.
-// TODO: rather than this function existing, would it be nicer if
-// HTMLUtils.stripTags accepted a list of tags to ignore or to only consider,
-// and then the caller could just pass in br to that function as the only tag
-// to consider
-GoogleFeedsAPI.filterBreakruleTags = function(inputString) {
-  return inputString.replace(/<\s*br\s*>/gi, ' ');
+  // Returns a new string where <br>s have been replaced with spaces. This is
+  // intended to be rudimentary and fast rather than perfectly accurate. I do
+  // not do any heavy-weight html marshalling.
+  // TODO: rather than this function existing, would it be nicer if
+  // HTMLUtils.stripTags accepted a list of tags to ignore or to only consider,
+  // and then the caller could just pass in br to that function as the only tag
+  // to consider
+  function filterBreakruleTags(inputString) {
+    return inputString.replace(/<br\s*>/gi, ' ');
+  }
 };

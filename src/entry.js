@@ -4,7 +4,7 @@
 
 'use strict';
 
-// Entry related functions
+// Entry related functionality
 
 const Entry = {};
 
@@ -35,34 +35,51 @@ Entry.Flags = {
 Entry.put = function(connection, entry, callback) {
   const storable = {};
 
-  // id is not defined in entry if we are doing an add
-  if('id' in entry) {
+  if(entry.id) {
     storable.id = entry.id;
   }
 
-  if('feedLink' in entry) {
-    storable.feedLink = entry.feedLink;
+  // TODO: this should be a URL object, somewhere I am forgetting to do this
+  // I think
+
+  if(entry.feedLink) {
+    const feedLinkValueType = Object.prototype.toString.call(entry.feedLink);
+    if(feedLinkValueType === '[object URL]') {
+      // Convert to string because indexedDB cannot store URL objects
+      console.debug('Serializing feed link', entry.feedLink.href);
+      storable.feedLink = entry.feedLink.href;
+    } else {
+      console.debug('Using string feed link', entry.feedLink);
+      storable.feedLink = entry.feedLink;
+    }
   }
 
-  if('feedTitle' in entry) {
+  if(entry.feedTitle) {
     storable.feedTitle = entry.feedTitle;
   }
 
-  if('feed' in entry) {
+  if(entry.feed) {
     storable.feed = entry.feed;
   }
 
-  if('link' in entry && entry.link) {
-    storable.link = entry.link;
+  // Store link url as a string
+  if(entry.link) {
+    storable.link = entry.link.href;
   }
 
+  if(entry.urls && entry.urls.length) {
+    storable.urls = entry.urls;
+  }
+
+  // Cannot use entry.readState as part of condition here, 0 may be one
+  // of its valid values and still mean something is set
   if('readState' in entry) {
     storable.readState = entry.readState;
   } else {
     storable.readState = Entry.Flags.UNREAD;
   }
 
-  if('dateRead' in entry) {
+  if('dateRead' in entry && entry.dateRead) {
     storable.dateRead = entry.dateRead;
   }
 
@@ -77,7 +94,7 @@ Entry.put = function(connection, entry, callback) {
   // TODO: the pubdate field should be named datePublished so as to be
   // consistent with other field names
   // TODO: store a Date object instead of a timestamp
-  if(entry.pubdate) {
+  if('pubdate' in entry && entry.pubdate) {
     const date = new Date(entry.pubdate);
     if(utils.date.isValid(date)) {
       storable.pubdate = date.getTime();
@@ -86,7 +103,7 @@ Entry.put = function(connection, entry, callback) {
 
   // TODO: rename to dateCreated
   // TODO: store a Date object instead of a timestamp
-  if('created' in entry) {
+  if('created' in entry && entry.created) {
     storable.created = entry.created;
   } else {
     storable.created = Date.now();
@@ -137,10 +154,6 @@ Entry.markAsRead = function(connection, entryId) {
     }
 
     entry.readState = Entry.Flags.READ;
-
-    // TODO: double check this is storing a date correctly. Perhaps it is a
-    // bug in Chrome's resource view, but dates show up as "{}"
-
     entry.dateRead = new Date();
 
     // Trigger an update request. Do not wait for it to complete.
@@ -150,7 +163,7 @@ Entry.markAsRead = function(connection, entryId) {
     // it involves a separate read transaction that is implicitly blocked by
     // the current readwrite request, so it still occurs afterward.
     const connection = request.transaction.db;
-    utils.updateBadgeText(connection);
+    utils.updateBadgeUnreadCount(connection);
 
     // Notify listeners that an entry was read.
     // NOTE: this happens async. The entry may not yet be updated.

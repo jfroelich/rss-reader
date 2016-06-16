@@ -5,6 +5,12 @@
 'use strict';
 const Subscription = {};
 
+
+// TODO: options.js now passes along a URL object to this function, so this
+// needs to be rewritten
+
+// TODO: if rewriting, make sure to include both urls in urls property.
+
 // TODO: look into a more native way of creating event objects
 // TODO: use a URL object instead of a URL string where appropriate?
 // TODO: not sure but I think this should be using responseURL somehow? I
@@ -12,18 +18,19 @@ const Subscription = {};
 // changed? Should fetchFeed be doing that instead of this?
 // TODO: shouldn't the feed's url be normalized so that comparison works
 // properly?
-Subscription.add = function(connection, urlString, callback) {
-  console.debug('Subscribing to', urlString);
+Subscription.add = function(connection, url, callback) {
+
+  console.debug('Subscribing to', url.href);
+
   const fetchTimeoutMillis = 10 * 1000;
   const excludeEntries = true;
-  fetchFeed(urlString, fetchTimeoutMillis, excludeEntries, onFetchFeed);
+  fetchFeed(url, fetchTimeoutMillis, excludeEntries, onFetchFeed);
 
   function onFetchFeed(fetchEvent) {
 
-    // Temp, testing
-    if(fetchEvent.responseURLString !== urlString) {
-      console.debug(urlString, 'redirected to', fetchEvent.responseURLString);
-    }
+    // TODO: like in polling consider rewrite, consider redirect
+    // So fetchFeed should be responsible for handling the post-redirect url
+    // and appending it to the feed's url array
 
     if(fetchEvent.type !== 'load') {
       const event = {};
@@ -82,10 +89,9 @@ Subscription.remove = function(feedId, callback) {
   // because this could pretend to be successful otherwise.
   if(!feedId || isNaN(feedId)) {
     const subscriptionEvent = {
-      'type': 'error',
-      'subtype': 'invalid_id',
+      'type': 'invalid_feed_id_error',
       'feedId': feedId,
-      'entriesRemoved': entriesRemoved
+      'entriesRemoved': 0
     };
     callback(subscriptionEvent);
     return;
@@ -98,10 +104,9 @@ Subscription.remove = function(feedId, callback) {
       // TODO: expose some more info about a connection error? What are the
       // props to consider from the indexedDB event?
       const subscriptionEvent = {
-        'type': 'error',
-        'subtype': 'connection_error',
+        'type': 'database_connection_error',
         'feedId': feedId,
-        'entriesRemoved': entriesRemoved
+        'entriesRemoved': 0
       };
 
       callback(subscriptionEvent);
@@ -168,7 +173,7 @@ Subscription.remove = function(feedId, callback) {
 
     // NOTE: This happens after because it is a separate read transaction,
     // despite pending delete requests of the previous transaction
-    utils.updateBadgeText(connection);
+    utils.updateBadgeUnreadCount(connection);
 
     const subscriptionEvent = {
       'type': 'success',

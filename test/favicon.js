@@ -5,7 +5,7 @@ function test_favicon_onload(event) {
   const testInputURL = new URL('http://www.google.com');
   const favIconService = new FavIcon();
 
-  favIconService.getFavIconURLString(testInputURL, function on_get_url(fiURL) {
+  favIconService.getFavIconURL(testInputURL, function on_get_url(fiURL) {
     if(fiURL) {
       console.debug('favicon url:', fiURL);
     }
