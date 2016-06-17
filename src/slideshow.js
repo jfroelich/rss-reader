@@ -91,44 +91,6 @@ SlideShow.onMessage = function(message) {
 
 chrome.runtime.onMessage.addListener(SlideShow.onMessage);
 
-// Attempts to filter publisher information from an article's title.
-// The input data generally looks like 'Article Title - Delimiter - Publisher'.
-// The basic approach involves looking for an end delimiter, and if one is
-// found, checking the approximate number of words following the delimiter,
-// and if the number is less than a given threshold, returning a new string
-// without the final delimiter or any of the words following it. This uses the
-// threshold condition to reduce the chance of confusing the title with the
-// the publisher in the case that there is an early delimiter, based on the
-// assumption that the title is usually longer than the pubisher, or rather,
-// that the publisher's name is generally short.
-//
-// There are probably some great enhancements that could be done, such as not
-// truncating in the event the resulting title would be too short, as in, the
-// the resulting title would not contain enough words. We could also consider
-// comparing the number of words preceding the final delimiter to the number
-// of words trailing the final delimiter. I could also consider trying to
-// remove the publisher when it is present as a prefix, but this seems to be
-// less frequent.
-SlideShow.filterArticleTitle = function(title) {
-  if(!title)
-    return;
-  let index = title.lastIndexOf(' - ');
-  if(index === -1)
-    index = title.lastIndexOf(' | ');
-  if(index === -1)
-    index = title.lastIndexOf(' : ');
-  if(index === -1)
-    return title;
-  const trailingText = title.substring(index + 1);
-  const terms = utils.string.tokenize(trailingText);
-  if(terms.length < 5) {
-    const newTitle = title.substring(0, index).trim();
-    return newTitle;
-  }
-
-  return title;
-};
-
 SlideShow.onUnsubscribe = function(message) {
   const slidesForFeed = document.querySelectorAll(
     'div[feed="'+ message.feed +'"]');
@@ -159,7 +121,8 @@ SlideShow.markAsRead = function(slide) {
   }
 
   slide.setAttribute('read', '');
-  const entryAttribute = slide.getAttribute('entry');
+  const entryIdString = slide.getAttribute('entry');
+  const entryId = parseInt(entryIdString, 10);
 
   db.open(onOpen);
 
@@ -170,16 +133,56 @@ SlideShow.markAsRead = function(slide) {
       return;
     }
 
-    const entryId = parseInt(entryAttribute, 10);
     const connection = event.target.result;
-    Entry.markAsRead(connection, entryId);
+    const transaction = connection.transaction('entry', 'readwrite');
+    const store = transaction.objectStore('entry');
+    const request = store.openCursor(entryId);
+    request.onsuccess = onOpenCursor;
+  }
+
+  function onOpenCursor(event) {
+    const request = event.target;
+    const cursor = request.result;
+
+    if(!cursor) {
+      console.debug('Cursor undefined in markAsRead');
+      return;
+    }
+
+    const entry = cursor.value;
+    if(entry.readState === db.EntryFlags.READ) {
+      console.debug('Attempted to remark a read entry as read:', entry.id);
+      return;
+    }
+
+    entry.readState = db.EntryFlags.READ;
+    entry.dateRead = new Date();
+
+    // Trigger an update request. Do not wait for it to complete.
+    const updateRequest = cursor.update(entry);
+
+    // NOTE: while this occurs concurrently with the update request,
+    // it involves a separate read transaction that is implicitly blocked by
+    // the current readwrite request, so it still occurs afterward.
+    const connection = request.transaction.db;
+    utils.updateBadgeUnreadCount(connection);
+
+    // Notify listeners that an entry was read.
+    // NOTE: this happens async. The entry may not yet be updated.
+    // TODO: maybe I should just use a callback instead of a message?
+    const entryReadMessage = {
+      'type': 'entryRead',
+      'entryId': entry.id
+    };
+    chrome.runtime.sendMessage(entryReadMessage);
   }
 };
 
 SlideShow.maybeAppendSlides = function() {
   const unreadCount = SlideShow.countUnreadSlides();
+
+  // When there are unread slides still present, cancel the append
   if(unreadCount) {
-    // There are still some unread slides loaded, so do not bother appending
     return;
   }
 
@@ -213,8 +216,8 @@ SlideShow.appendSlides = function(oncomplete, isFirst) {
     transaction.oncomplete = oncomplete;
     const entryStore = transaction.objectStore('entry');
     const index = entryStore.index('archiveState-readState');
-    const range = IDBKeyRange.only([Entry.Flags.UNARCHIVED,
-      Entry.Flags.UNREAD]);
+    const range = IDBKeyRange.only([db.EntryFlags.UNARCHIVED,
+      db.EntryFlags.UNREAD]);
     const request = index.openCursor(range);
     request.onsuccess = requestOnSuccess;
   }
@@ -333,11 +336,11 @@ SlideShow.appendSlide = function(entry, isFirst) {
 
   const title = document.createElement('a');
 
-  if(Object.prototype.toString.call(entry.link) === '[object URL]') {
-    title.setAttribute('href', entry.link.href);
-  } else {
-    title.setAttribute('href', entry.link);
-  }
+  // The entry was loaded directly from the database. In this case, entry.link
+  // is a URL string.
+  const entryLinkURLString = entry.link;
+  title.setAttribute('href', entryLinkURLString);
+
 
   title.setAttribute('class', 'entry-title');
   title.setAttribute('target','_blank');
@@ -348,7 +351,7 @@ SlideShow.appendSlide = function(entry, isFirst) {
     // then i don't need to be stripping tags or removing control chars
     // here.
     let titleText = HTMLUtils.replaceTags(entry.title || '', '');
-    titleText = SlideShow.filterArticleTitle(titleText);
+    titleText = filterArticleTitle(titleText);
     titleText = utils.string.truncate(titleText, 300);
     title.textContent = titleText;
   } else {
@@ -374,20 +377,18 @@ SlideShow.appendSlide = function(entry, isFirst) {
   source.setAttribute('class','entrysource');
   slide.appendChild(source);
 
+  // The entry was loaded from the database, in which case entry.feedLink is
+  // a URL string.
   const favIcon = document.createElement('img');
-
   let iconSourceURL = null;
-
   if(entry.feedLink) {
-    if(Object.prototype.toString.call(entry.feedLink) === '[object URL]') {
-      iconSourceURL = getFavIconURL(entry.feedLink);
-    } else {
-      try {
-        iconSourceURL = getFavIconURL(new URL(entry.feedLink));
-      } catch(exception) {
-        console.debug('Error creating url to get fav icon', exception);
-      }
+    try {
+      iconSourceURL = getFavIconURL(new URL(entry.feedLink));
+    } catch(exception) {
+      console.debug('Error creating url to get fav icon', exception);
     }
+  } else {
+    iconSourceURL = DEFAULT_FAV_ICON_URL;
   }
 
   if(iconSourceURL) {

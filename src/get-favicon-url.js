@@ -28,7 +28,8 @@ function getFavIconURL(inputURL) {
     const outputURLString = baseURLString + encodeURIComponent(inputURL.href);
     outputURL = new URL(outputURLString);
   } else {
-    outputURL = DEFAULT_FAV_ICON_URL;
+    // Create a new URL object to maintain immutability
+    outputURL = new URL(DEFAULT_FAV_ICON_URL.href);
   }
 
   return outputURL;

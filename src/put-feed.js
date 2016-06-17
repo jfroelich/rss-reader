@@ -29,9 +29,9 @@ function putFeed(connection, currentFeed, newFeed, callback) {
     return;
   }
 
-  if(!newFeed.url) {
+  if(!newFeed.urls) {
     callback(null, {
-      'type': 'undefinednewfeedurl'
+      'type': 'undefinednewfeedurls'
     });
     return;
   }
@@ -47,54 +47,35 @@ function putFeed(connection, currentFeed, newFeed, callback) {
     storable.id = currentFeed.id;
   }
 
-  if(Object.prototype.toString.call(newFeed.url) === '[object URL]') {
-    storable.url = newFeed.url.href;
-  } else {
-    storable.url = newFeed.url;
-  }
+  // Merge old and new urls together into an array of strings
+  storable.urls = [];
 
-  // Setup storable.urls, which contains an array of all the urls that point
-  // to a feed.
-  if(newFeed.urls && newFeed.urls.length) {
-    if(currentFeed && currentFeed.urls) {
-
-      storable.urls = [];
-      // Copy over the old urls
-      // TODO: Use a builtin like slice or concat or push.apply
-      for(let i = 0, len = currentFeed.urls.length; i < len; i++) {
-        storable.urls.push(currentFeed.urls[i]);
-      }
-
-      // Copy over the new urls when they are distinct
-      for(let i = 0, len = newFeed.urls; i < len; i++) {
-        if(currentFeed.urls.indexOf(newFeed.urls[i]) === -1) {
-          storable.urls.push(newFeed.urls[i]);
-        }
-      }
-    } else {
-      storable.urls = newFeed.urls;
+  // Copy over any of the old urls
+  if(currentFeed) {
+    // NOTE: currentFeed is the feed loaded from the database. Its urls
+    // property contains serialized URL strings
+    // TODO: use push.apply or something like that
+    for(let i = 0, len = currentFeed.urls.length; i < len; i++) {
+      storable.urls.push(currentFeed.urls[i]);
     }
-  } else if(currentFeed && currentFeed.urls && currentFeed.urls.length) {
-    // Retain the current urls even when there are no new ones
-    storable.urls = currentFeed.urls;
   }
+
+  // Copy over the new URLs, maintaining order. newFeed.urls is an array of
+  // URL objects
+  for(let i = 0, len = newFeed.urls.length, urlString; i < len; i++) {
+    urlString = newFeed.urls[i].href;
+    if(storable.urls.indexOf(urlString) === -1) {
+      storable.urls.push(urlString);
+    }
+  }
+
+  // console.debug('Storing feed with urls', storable.urls);
 
   // Store the fetched feed type (e.g. rss or rdf) as a string
   // Assume that if type is defined that it is valid
   if('type' in newFeed) {
     storable.type = newFeed.type;
   }
-
-  // The 'schemeless' property is deprecated
-  // Derive and store the schemeless url of the feed, which is used to
-  // check for dups
-  //if(currentFeed) {
-  //  storable.schemeless = currentFeed.schemeless;
-  //} else {
-    // TODO: I think filterProtocol can throw. I need to think about how
-    // to deal with this expressly.
-  //  storable.schemeless = utils.url.filterProtocol(storable.url);
-  //}
 
   // NOTE: title is semi-required. It must be defined, although it can be
   // an empty string. It must be defined because of how views query and
@@ -110,24 +91,15 @@ function putFeed(connection, currentFeed, newFeed, callback) {
     storable.description = description;
   }
 
-  if(newFeed.link) {
-    if (Object.prototype.toString.call(newFeed.link) === '[object URL]') {
-      storable.link = newFeed.link.href;
-    } else {
-      storable.link = sanitizeBeforePut(newFeed.link);
-    }
-  } else if(currentFeed.link) {
-    if (Object.prototype.toString.call(currentFeed.link) === '[object URL]') {
-      storable.link = currentFeed.link.href;
-    } else {
-      storable.link = currentFeed.link;
-    }
+  // First copy over the existing link url string
+  if(currentFeed.link) {
+    storable.link = currentFeed.link;
   }
 
-  //const link = sanitizeBeforePut(newFeed.link);
-  //if(link) {
-  //  storable.link = link;
-  //}
+  // If defined, overwrite the prior link. newFeed.link is a URL object.
+  if(newFeed.link) {
+    storable.link = newFeed.link.href;
+  }
 
   // Even though date should always be set, this can work in the absence of
   // a value
@@ -137,16 +109,12 @@ function putFeed(connection, currentFeed, newFeed, callback) {
     storable.date = newFeed.date;
   }
 
-  // The date the feed was last fetched
-  if(newFeed.dateFetched && Object.prototype.toString.call(
-    newFeed.dateFetched) === '[object Date]') {
+  if(newFeed.dateFetched) {
     storable.dateFetched = newFeed.dateFetched;
   }
 
   // The date the feed's remote file was last modified
-  if(newFeed.dateLastModified &&
-    Object.prototype.toString.call(newFeed.dateLastModified) ===
-    '[object Date]') {
+  if(newFeed.dateLastModified) {
     storable.dateLastModified = newFeed.dateLastModified;
   }
 

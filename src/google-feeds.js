@@ -91,7 +91,10 @@ GoogleFeedsAPI.search = function(queryString, timeoutMillis, callback) {
 
       seenURLs[normalizedURLString] = 1;
 
+      // Overwrite the url string property as a URL object
       entry.url = entryURL;
+
+      // TODO: provide entry.link as URL object
 
       if(entry.title) {
         entry.title = filterControlCharacters(entry.title);

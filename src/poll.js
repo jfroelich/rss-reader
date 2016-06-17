@@ -77,33 +77,30 @@ FeedPoller.iterateFeeds = function(pollContext) {
     // undergoing an update and that there is at least one update pending
     pollContext.pendingFeedsCount++;
 
-    // Async request the next feed, without waiting.
-    cursor.continue();
-
-    // Update the feed, starting with a fetch
     const feed = cursor.value;
 
-    // Deserialize the URL object because I cannot store URL objects
-    // in indexedDB (I get a DataCloneError). fetchFeed expects a URL object
-    // as a parameter.
-    const requestURLString = feed.url;
-    let requestURL = null;
-    try {
-      requestURL = new URL(requestURLString);
-    } catch(exception) {
-      console.debug('Invalid feed url:', requestURLString);
-      // This should never happen, but if it does, exit early.
-      pollContext.pendingFeedsCount--;
-      FeedPoller.onMaybePollCompleted(pollContext);
-      return;
+    if(!feed.urls || !feed.urls.length) {
+      // TODO: even though this is deprecated, I have to be able to check
+      // old feeds, so temp
+      if(feed.url) {
+        feed.urls = [feed.url];
+      } else {
+        console.debug('No urls for feed', feed);
+        pollContext.pendingFeedsCount--;
+        cursor.continue();
+        return;
+      }
     }
 
+    const requestURLString = feed.urls[feed.urls.length - 1];
+    const requestURL = new URL(requestURLString);
     const timeout = 10 * 1000;
     const onFetchFeedBound = FeedPoller.onFetchFeed.bind(null, pollContext,
       feed);
     const excludeEntries = false;
-
     fetchFeed(requestURL, timeout, excludeEntries, onFetchFeedBound);
+
+    cursor.continue();
   }
 };
 
@@ -144,8 +141,7 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
     localFeed.dateLastModified.getTime() ===
     remoteFeed.dateLastModified.getTime()) {
 
-    console.debug('Skipping unmodified feed', fetchEvent.responseURL.href);
-
+    // console.debug('Skipping unmodified feed', fetchEvent.responseURL.href);
     pollContext.pendingFeedsCount--;
     FeedPoller.onMaybePollCompleted(pollContext);
     return;
@@ -153,12 +149,17 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
 
   // Update the feed's properties in storage and then continue to
   // onPutFeedBound
+  // NOTE: remoteFeed.entries is always defined, even when there are no entries
   const onPutFeedBound = FeedPoller.onPutFeed.bind(null, pollContext,
     remoteFeed.entries);
   putFeed(pollContext.connection, localFeed, remoteFeed, onPutFeedBound);
 };
 
 FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
+
+  // NOTE: feed is now the stored feed, which contains strings not urls
+  // However, entries is still the fetched entries array, which contains
+  // URL objects.
 
   // If there was a problem updating the feed, then exit. Do not process
   // the feed's entries.
@@ -169,7 +170,7 @@ FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
     return;
   }
 
-  const numEntries = entries ? entries.length : 0;
+  const numEntries = entries.length;
 
   // If there are no entries then we are done processing the feed
   if(!numEntries) {
@@ -178,33 +179,44 @@ FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
     return;
   }
 
-  // Process the feed's unique entries (compared by normalized link url).
-  const distinctLinks = {};
+  // Process the fetched feed's entries. Filter out entries without urls
+  // or that share urls.
+  // Entry urls created from fetchFeed are URL objects, not strings.
+  // distinct links is a plain object due to performance issues with sets
+  const distinctLinks = Object.create(null);
   let entriesProcessed = 0;
-  for(let i = 0, entry, linkURL; i < numEntries; i++) {
+  for(let i = 0, j = 0, entry, linkURL, seen = false; i < numEntries; i++) {
     entry = entries[i];
 
-    if(!entry.link) {
+    // If the entry has no URLs, skip the entry
+    if(!entry.urls.length) {
       onEntryProcessed();
       continue;
     }
 
-    if(Object.prototype.toString.call(entry.link) !== '[object URL]') {
-      console.debug('Not a URL:', entry.link);
+    // If any of the entry's URLs have been seen already, skip the entry
+    seen = false;
+    for(j = 0; j < entry.urls.length; j++) {
+      if(entry.urls[j].href in distinctLinks) {
+        seen = true;
+        break;
+      }
+    }
+
+    if(seen) {
       onEntryProcessed();
       continue;
     }
 
-    if(entry.link.href in distinctLinks) {
-      onEntryProcessed();
-      continue;
+    // Add the entry's URLs to the distinctLinks set of normalized URL strings
+    for(j = 0; j < entry.urls.length; j++) {
+      distinctLinks[entry.urls[j].href] = 1;
     }
 
-    distinctLinks[entry.link.href] = 1;
     FeedPoller.processEntry(pollContext, feed, entry, onEntryProcessed);
   }
 
-  function onEntryProcessed() {
+  function onEntryProcessed(optionalAddEntryEvent) {
     entriesProcessed++;
     if(entriesProcessed === numEntries) {
       pollContext.pendingFeedsCount--;
@@ -214,19 +226,9 @@ FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
   }
 };
 
-// TODO: link URLs should be normalized and the normalized url should be
-// compared. This should not be using the raw link url.
-// TODO: this needs to consider both the input url and the post-redirect
-// url. Both may map to the same resource. I should be checking both
-// urls somehow. I have not quite figured out how I want to do this
-// Maybe entries should store a linkURLs array, and then I should have
-// multi-entry index on it? That way I could do the lookup of an entry
-// using a single request?
 FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
 
-  // Prep the entry for storage
-
-  // Set the foreign key
+  // Associate the entry with its feed
   // TODO: rename this to something clearer, like feedId
   entry.feed = feed.id;
 
@@ -243,25 +245,21 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
     entry.pubdate = feed.date;
   }
 
-  findExistingEntry();
+  // TODO: do I want to check if any of the entry's URLs exist, or just its
+  // most recent one?
 
-  function findExistingEntry() {
-    const connection = pollContext.connection;
-    const transaction = connection.transaction('entry');
-    const entryStore = transaction.objectStore('entry');
+  // Check whether an entry with the url already exists. Grab the last url
+  // in the entry's urls array.
+  // The entry object was fetched, so entry.urls contains URL objects
+  const entryURL = entry.urls[entry.urls.length - 1];
 
-    // NOTE: this has changed. The link index was deprecated. Use the urls
-    // index instead.
-    //const linkIndex = entryStore.index('link');
-    //const request = linkIndex.get(entry.link);
-
-    const urlsIndex = entryStore.index('urls');
-    const denormalizedEntryLinkURLString = entry.link.href;
-    const request = urlsIndex.get(denormalizedEntryLinkURLString);
-
-    request.onsuccess = findExistingEntryOnSuccess;
-    request.onerror = findExistingEntryOnError;
-  }
+  const connection = pollContext.connection;
+  const transaction = connection.transaction('entry');
+  const entryStore = transaction.objectStore('entry');
+  const urlsIndex = entryStore.index('urls');
+  const request = urlsIndex.get(entryURL.href);
+  request.onsuccess = findExistingEntryOnSuccess;
+  request.onerror = findExistingEntryOnError;
 
   function findExistingEntryOnError(event) {
     console.debug(event);
@@ -277,25 +275,16 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
       return;
     }
 
-    // TODO: before fetching, I should rewrite the entry's link url using
-    // rewriteURL. Or i should be doing this somewhere, I am not
-    // sure where. maybe the earliest possible, like in fetchFeed or even in
-    // feed parser. or maybe i want to keep feedparser decoupled from
-    // rewriteURL, so i should make a note of that if i do not do it as early
-    // as possible
-    // NOTE: I somehow removed the calls to rewrite the url, I forget where
-    // I was doing this previously, so now URLs are never being rewritten
-
-    if(FeedPoller.isNoFetchURL(entry.link)) {
-      console.debug('Not fetching blacklisted entry link', entry.link.href);
-      Entry.put(pollContext.connection, entry, callback);
+    if(FeedPoller.isNoFetchURL(entryURL)) {
+      // console.debug('Not fetching blacklisted entry link', entryURL.href);
+      FeedPoller.addEntry(pollContext.connection, entry, callback);
       return;
     }
 
-    const path = entry.link.pathname;
+    const path = entryURL.pathname;
     if(path && path.length > 5 && /\.pdf$/i.test(path)) {
-      console.debug('Not fetching pdf entry link', entry.link.href);
-      Entry.put(pollContext.connection, entry, callback);
+      // console.debug('Not fetching pdf entry link', entryURL.href);
+      FeedPoller.addEntry(pollContext.connection, entry, callback);
       return;
     }
 
@@ -307,67 +296,40 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
     fetchRequest.onabort = onFetchEntry;
     fetchRequest.onload = onFetchEntry;
     const doAsyncFetchRequest = true;
-    fetchRequest.open('GET', entry.link.href, doAsyncFetchRequest);
+    fetchRequest.open('GET', entryURL.href, doAsyncFetchRequest);
     fetchRequest.responseType = 'document';
     fetchRequest.send();
   }
 
   function onFetchEntry(event) {
 
+    // TODO: if an entry cannot be fetched, we should still store the entry
+    // somehow so that we do not continually try and refetch the entry or
+    // something like this. At least for some period of time, because the entry
+    // may have just been temporarily unavailable or recently made available
+
     if(event.type !== 'load') {
       console.debug(event);
-      Entry.put(pollContext.connection, entry, callback);
+      FeedPoller.addEntry(pollContext.connection, entry, callback);
       return;
     }
 
     const fetchRequest = event.target;
     const document = fetchRequest.responseXML;
 
-    // This happens with non-html content types like pdf
+    // This happens with non-html content types like pdf. In this case we
+    // still want to add the entry, we just do not augment its content.
     if(!document) {
-      Entry.put(pollContext.connection, entry, callback);
+      FeedPoller.addEntry(pollContext.connection, entry, callback);
       return;
     }
 
-    // Check if the responseURL changed, and if so, add it to the entry's
-    // urls array property as a string, and also replace the entry's link
-    // TODO: I need to also try to rewrite the post-redirect url, and also
-    // then append that to the urls array.
-
-    // the urls array was defined in feed parser. for testing purposes while
-    // i am doing this massive refactoring i am going to double check it is
-    // defined here, although im pretty sure i do this in feed parser.
-    if(!entry.urls) {
-      entry.urls = [];
-      // Store the initial request url, which is the entry's link
-      entry.urls.push(entry.link.href);
-    }
-
-    // Respond to a redirect
-
-    const responseURLString = fetchRequest.responseURL;
-    if(responseURLString) {
-      const responseURL = toURLTrapped(responseURLString);
-      if(responseURL.href !== entry.link.href) {
-        console.debug('Fetch entry redirect', entry.link.href,
-          responseURL.href);
-
-        // Modify entry.link to use the post-redirect URL
-        // TODO: isn't this actually silly? There is no point. I am not sure
-        // I even need a link property. I should just have the urls property.
-        // Whatever is the last item in the urls property is the current link
-        entry.link = responseURL;
-
-        // TODO: do I also need to consider rewriting the post-redirect url
-        // just like i did the prior url?
-
-        // Add the normalized url to the list
-        entry.urls.push(responseURL.href);
-      }
-    } else {
-      // Temp, testing if responseURL is ever undefined. My instinct says
-      // no which means I don't need to check if responseURL is defined above
-      console.debug('Undefined responseURL');
+    // When a redirect occurred, append the
+    // post-redirect URL to the entry's list of URLs.
+    const responseURL = new URL(fetchRequest.responseURL);
+    if(responseURL.href !== entryURL.href) {
+      // console.debug('Entry redirect', entryURL.href, responseURL.href);
+      entry.urls.push(responseURL);
     }
 
     // TODO: move URLResolver back into poll.js, this is the only place
@@ -375,17 +337,9 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
 
     FeedPoller.transformLazilyLoadedImages(document);
     FeedPoller.filterSourcelessImages(document);
-    URLResolver.resolveURLsInDocument(document, responseURLString);
+    URLResolver.resolveURLsInDocument(document, responseURL.href);
     FeedPoller.filterTrackingImages(document);
     FeedPoller.fetchImageDimensions(document, onSetImageDimensions);
-  }
-
-  function toURLTrapped(urlString) {
-    try {
-      return new URL(urlString);
-    } catch(exception) {
-
-    }
   }
 
   // Possibly replace the content property of the remoteEntry with the
@@ -408,29 +362,98 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
       }
     }
 
-    Entry.put(pollContext.connection, entry, callback);
+    FeedPoller.addEntry(pollContext.connection, entry, callback);
   }
 };
 
-// TODO: I am not sure if 'startsWith' is the appropriate condition. Maybe
-// I want to consider parts of the url.
-FeedPoller.isNoFetchURL = function(url) {
+// TODO: make sure pubdate has a consistent value. I am using
+// date.getTime here, but I am not sure I am using the same
+// or similar every where else. Like in poll denormalize
+// TODO: rename pubdate to something clearer, like datePublished or something
+// to that effect.
+// TODO: I should be using Date objects for date values. Not timestamps.
+FeedPoller.addEntry = function(connection, entry, callback) {
+  const storable = Object.create(null);
 
-  // TODO: this is temp while refactoring, probably can remove
-  if(Object.prototype.toString.call(url) !== '[object URL]') {
-    return false;
+  // entry.feedLink is a URL object, so it must be serialized. entry.feedLink
+  // is derived from feed.link earlier, which could be undefined, because
+  // feeds are not required to have a link property (which is not to be
+  // confused with the urls array property)
+  if(entry.feedLink) {
+    storable.feedLink = entry.feedLink.href;
   }
 
+  if(entry.feedTitle) {
+    storable.feedTitle = entry.feedTitle;
+  }
+
+  storable.feed = entry.feed;
+
+  // entry.urls is an array of URL objects. Each must be serialized.
+  storable.urls = [];
+  for(let i = 0, len = entry.urls.length; i < len; i++) {
+    storable.urls.push(entry.urls[i].href);
+  }
+
+  storable.readState = db.EntryFlags.UNREAD;
+  storable.archiveState = db.EntryFlags.UNARCHIVED;
+
+  if(entry.author) {
+    storable.author = entry.author;
+  }
+
+  if(entry.title) {
+    storable.title = entry.title;
+  }
+
+  // TODO: the pubdate field should be named datePublished so as to be
+  // consistent with other field names
+  // TODO: store a Date object instead of a timestamp
+  if(entry.pubdate) {
+    const date = new Date(entry.pubdate);
+    if(utils.date.isValid(date)) {
+      storable.pubdate = date.getTime();
+    }
+  }
+
+  // TODO: rename to dateCreated
+  // TODO: store a Date object instead of a timestamp
+  storable.created = Date.now();
+
+  if(entry.content) {
+    storable.content = entry.content;
+  }
+
+  // Use an isolated transaction for storing an entry. The problem with using a
+  // shared transaction in the case of a batch insert is that the uniqueness
+  // check from index constraints is db-delegated and unknown apriori without a
+  // separate lookup request, and that any constraint failure causes the entire
+  // transaction to fail.
+
+  // TODO: because I am not checking existing of all of an entry's urls, just
+  // its most recent, I am unclear as to whether there is actually a chance
+  // of a ConstraintError, so maybe I should look into testing that. One
+  // concern is also that this might cause a thrown exception instead of
+  // request error event, and I am not currently checking for that.
+
+  const transaction = connection.transaction('entry', 'readwrite');
+  transaction.oncomplete = callback;
+  const store = transaction.objectStore('entry');
+  store.add(storable);
+};
+
+// TODO: rename to be clearer that this deals with entry urls, not feeds
+FeedPoller.isNoFetchURL = function(url) {
   const blacklist = [
-    'https://productforums.google.com',
-    'https://groups.google.com'
+    'productforums.google.com',
+    'groups.google.com',
+    // Forbes uses a Continue page preventing crawling
+    'www.forbes.com',
+    'forbes.com'
   ];
-
-  const query = url.href.toLowerCase();
-
-  for(let i = 0, len = blacklist.length, origin; i < len; i++) {
-    origin = blacklist[i];
-    if(query.startsWith(origin)) {
+  const hostname = url.hostname;
+  for(let i = 0, len = blacklist.length; i < len; i++) {
+    if(blacklist[i] === hostname) {
       return true;
     }
   }
@@ -475,7 +498,8 @@ FeedPoller.fetchImageDimensions = function(document, callback) {
 
     urlString = imageElement.getAttribute('src') || '';
 
-    if(utils.url.isObjectURLString(urlString)) {
+    // Do not fetch object URLs
+    if(urlString && /^\s*data\s*:/i.test(urlString)) {
       onImageProcessed(imageElement);
       continue;
     }
@@ -534,7 +558,7 @@ FeedPoller.filterSourcelessImages = function(document) {
   for(let i = 0, len = images.length, image, src; i < len; i++) {
     image = images[i];
     if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
-      console.debug('Removing sourcless image', image.outerHTML);
+      // console.debug('Removing sourcless image', image.outerHTML);
       image.remove();
       break;
     }

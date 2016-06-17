@@ -144,7 +144,7 @@ OPML.importFiles = function(connection, files, callback) {
     const seenURLs = {};
 
     for(let element = bodyElement.firstElementChild, type, url, urlString,
-      outline, normalizedURLString; element;
+      outline, normalizedURLString, outlineLinkURL; element;
       element = element.nextElementSibling) {
       if(!utils.string.equalsIgnoreCase(element.nodeName, 'OUTLINE')) {
         continue;
@@ -177,11 +177,14 @@ OPML.importFiles = function(connection, files, callback) {
       outline.title = sanitizeString(element.getAttribute('title') ||
         element.getAttribute('text'));
       outline.description = sanitizeString(element.getAttribute('description'));
-      outline.url = url;
-      outline.urls = [normalizedURLString];
 
-      // TODO: maybe this should be a URL object
-      outline.link = sanitizeString(element.getAttribute('htmlUrl'));
+      outline.urls = [url];
+
+      outlineLinkURL = toURLTrapped(
+        sanitizeString(element.getAttribute('htmlUrl')));
+      if(outlineLinkURL) {
+        outline.link = outlineLinkURL;
+      }
 
       // Note this does not wait before continuing which leaves requests
       // pending
@@ -191,6 +194,7 @@ OPML.importFiles = function(connection, files, callback) {
     onFileProcessed();
   }
 
+  // Trap the exception
   function toURLTrapped(urlString) {
     try {
       return new URL(urlString);
@@ -209,7 +213,7 @@ OPML.importFiles = function(connection, files, callback) {
 
   function onFileProcessed() {
     if(filesProcessed === numFiles) {
-      // TODO: show a notification
+      // TODO: show a notification before calling back
       callback();
     }
   }

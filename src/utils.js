@@ -29,7 +29,7 @@ utils.updateBadgeUnreadCount = function(connection) {
     const transaction = connection.transaction('entry');
     const store = transaction.objectStore('entry');
     const index = store.index('readState');
-    const request = index.count(Entry.Flags.UNREAD);
+    const request = index.count(db.EntryFlags.UNREAD);
     request.onsuccess = onCountUnreadEntriesSuccess;
   }
 
@@ -42,7 +42,6 @@ utils.updateBadgeUnreadCount = function(connection) {
 };
 
 utils.fadeElement = function(element, duration, delay, callback) {
-
   const style = element.style;
 
   if(style.display === 'none') {
@@ -169,30 +168,11 @@ utils.string.truncate = function(string, position, extension) {
   return string;
 };
 
-// Split the string into an array of word-like token strings. This is very
-// rudimentary.
-utils.string.tokenize = function(string) {
-  if(!string) {
-    return [];
-  }
-
-  const tokens = string.split(/s+/);
-
-  // Filter zero-length strings
-  const definedTokens = tokens.filter(returnFirst);
-
-  function returnFirst(first) {
-    return first;
-  }
-
-  return definedTokens;
-};
-
+// TODO: match all \s but not \t\r\n, then we do not need
+// to even use a replacement function?
 utils.string.normalizeSpaces = function(inputString) {
   // The old code
   //inputString = inputString.replace(/&nbsp;/ig, ' ');
-  // TODO: match all \s but not \t\r\n, then we do not need
-  // to even use a replacement function?
   return inputString.replace(/\s/g, function getReplacement(match) {
     switch(match) {
       case ' ':
@@ -206,44 +186,4 @@ utils.string.normalizeSpaces = function(inputString) {
         return ' ';
     }
   });
-};
-
-utils.url = {};
-
-// filterProtocol is now deprecated, will delete soon
-// Returns a substring of the input url string, excluding the protocol and
-// also excluding '://'
-// TODO: Maybe I do not need to exclude the '//'. On the one hand, I know that
-// this means 2 less characters stored per field of each entry object, and 2
-// less characters involved in url comparisons. On the other hand, the more
-// formal specs and such seem to include the '//' as a part of the rest of the
-// url
-// NOTE: i have to be careful about throwing exceptions, i am not sure
-// that all the calling contexts account for that possibility, this could
-// totally mess up some of the async code? So, what should be the behavior in
-// the event the urlString is invalid or is relative which would lead to an
-// exception? Should this just return the original string, along the lines of
-// always consistently returning something and never throwing?
-//utils.url.filterProtocol = function(urlString) {
-//  const urlObject = new URL(urlString);
-  // Add 2 in order to skip past '//'
-//  const offset = urlObject.protocol.length + 2;
-//  return urlObject.href.substr(offset);
-//};
-
-
-// Returns whether the given string looks like an absolute URL
-// TODO: this is so rudimentary I think I should just inline this wherever
-// it is used
-utils.url.isURLString = function(inputString) {
-  try {
-    new URL(inputString);
-    return true;
-  } catch(exception) {}
-  return false;
-};
-
-// TODO: this is so rudimentary i should inline this
-utils.url.isObjectURLString = function(urlString) {
-  return urlString && /^\s*data\s*:/i.test(urlString);
 };

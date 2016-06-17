@@ -15,6 +15,14 @@
 
 const db = {};
 
+db.EntryFlags = {
+  UNREAD: 0,
+  READ: 1,
+  UNARCHIVED: 0,
+  ARCHIVED: 1
+};
+
+
 db.open = function(callback) {
   const DB_NAME = 'reader';
   const DB_VERSION = 18;
@@ -55,18 +63,18 @@ db.upgrade = function(event) {
   const feedIndices = feedStore.indexNames;
   const entryIndices = entryStore.indexNames;
 
-  // The schemeless index has been deprecated in favor of the urls index.
-  // NOTE: schemeless imposes a uniqueness constraint so that attempts to
-  // insert duplicate feeds fails
-  //if(!feedIndices.contains('schemeless')) {
-  //  feedStore.createIndex('schemeless', 'schemeless', {'unique': true});
-  //}
+  // Deprecated
   if(feedIndices.contains('schemeless')) {
     feedStore.deleteIndex('schemeless');
   }
 
+  // Deprecated. Use the new urls index
+  if(feedIndices.contains('url')) {
+    feedStore.deleteIndex('url');
+  }
+
   // Create a multi-entry index using the new urls property, which should
-  // be an array of unique strings
+  // be an array of unique strings of normalized urls
   if(!feedIndices.contains('urls')) {
     feedStore.createIndex('urls', 'urls', {
       'multi-entry': true,
@@ -78,12 +86,6 @@ db.upgrade = function(event) {
   // title, this just makes it difficult.
   if(!feedIndices.contains('title')) {
     feedStore.createIndex('title', 'title');
-  }
-
-  // the url index is deprecated. Use the new urls index for finding a feed
-  // by one of its urls.
-  if(feedIndices.contains('url')) {
-    feedStore.deleteIndex('url');
   }
 
   // Deprecated
@@ -105,29 +107,16 @@ db.upgrade = function(event) {
       ['archiveState', 'readState']);
   }
 
-
-  // The link index is deprecated. Use the url index instead.
-  //if(!entryIndices.contains('link')) {
-  //  entryStore.createIndex('link', 'link', {unique: true});
-  //} else {
-  //  const entryLinkIndex = entryStore.index('link');
-  //  if(!entryLinkIndex.unique) {
-  //    entryStore.deleteIndex('link');
-  //    entryStore.createIndex('link', 'link', {unique: true});
-  //  }
-  //}
-
+  // Deprecated. Use the urls index instead.
   if(entryIndices.contains('link')) {
     entryStore.deleteIndex('link');
   }
 
+  // Deprecated. Use the urls index instead.
   if(entryIndices.contains('hash')) {
     entryStore.deleteIndex('hash');
   }
 
-  // New in version 18. For checking if an entry already exists. urls is
-  // an array of unique url strings. Cannot use objects because URL objects
-  // cannot be serialized.
   if(!entryIndices.contains('urls')) {
     entryStore.createIndex('urls', 'urls', {
       'multi-entry': true,
@@ -142,6 +131,8 @@ db.clearEntryStore = function(connection) {
   } else {
     db.open(onOpen);
   }
+
+  return 'Requesting entry store to be cleared.';
 
   function onOpen(event) {
     if(event.type !== 'success') {
@@ -161,10 +152,7 @@ db.clearEntryStore = function(connection) {
   }
 
   function onComplete(event) {
-
     console.log('Cleared entry object store');
-
-    // Also update the number of unread
     utils.updateBadgeUnreadCount(event.target.db);
   }
 };

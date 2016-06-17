@@ -4,15 +4,14 @@
 
 'use strict';
 
-// Background lib for the extension's background page. This registers
-// listeners in global scope, so this file should only be included in the
-// background.
+// Background lib for the extension's background page.
+// This file should only be included in the background.
 
 const Background = {};
 
 // TODO: this is getting called on every background page load. I would
 // prefer it did not. Maybe it is because I am calling addListener every
-// time? How to solve it
+// time?
 // TODO: are there any other settings I should be installing?
 Background.onInstalled = function(event) {
   console.log('Installing extension ...');
@@ -82,7 +81,7 @@ chrome.browserAction.onClicked.addListener(Background.onBadgeClick);
 
 // Archives certain entries
 Background.archiveEntries = function() {
-  console.log('Archiving entries');
+  console.log('Archiving entries...');
 
   // Tracking variables that are shared by the nested helper functions
   // and used to log stats
@@ -113,7 +112,7 @@ Background.archiveEntries = function() {
     transaction.oncomplete = onComplete;
     const store = transaction.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const keyPath = [Entry.Flags.UNARCHIVED, Entry.Flags.READ];
+    const keyPath = [db.EntryFlags.UNARCHIVED, db.EntryFlags.READ];
     const request = index.openCursor(keyPath);
     request.onsuccess = processEntryAtCursor;
   }
@@ -131,86 +130,47 @@ Background.archiveEntries = function() {
       const entry = cursor.value;
       const ageInMillis = Date.now() - entry.created;
       if(ageInMillis > EXPIRES_AFTER_MS) {
-        archiveEntry(entry);
+
+        const archivedEntry = Object.create(null);
+        archivedEntry.id = entry.id;
+        archivedEntry.feed = entry.feed;
+        archivedEntry.urls = entry.urls;
+        archivedEntry.dateArchived = new Date();
+        archivedEntry.archiveState = db.EntryFlags.ARCHIVED;
+
+        // TODO: Do I need to also set readState? Perhaps that is implicit
+        // in archiveState? Moreover, if that is implicit, why am I
+        // using two separate flags instead of just one flag with 3 states? Using
+        // one flag would simplify the index keypath and store one less field in
+        // the entry store (both pre and post archive transform).
+        // I suppose I would also need to think about other things like count
+        // of unread and other areas that use the flag. Maybe I should just be
+        // using one flag.
+        // TODO: if I ever plan to implement a history view where I can see
+        // articles read, I should consider maintaining entry.title so that it can
+        // appear in the history view. Maybe I also want to add in a 'blurb' that
+        // is like HTMLUtils.truncate that shows a bit of the full text of each
+        // entry.
+
+        // Note that IDBCursor.prototype.update is async. I am not waiting for
+        // it to complete here before continuing.
+        cursor.update(archivedEntry);
+
+        // NOTE: this is called prior to the update request completing, meaning
+        // listeners are notified while the request is still pending, and even
+        // if it may somehow be unsuccessful
+        // TODO: use a type like 'archiveEntryRequested' to signal that it is
+        // a pending operation
+        const archiveMessage = {
+          'type': 'archivedEntry',
+          'entryId': entry.id
+        };
+        chrome.runtime.sendMessage(archiveMessage);
+
+        archivedEntryCount++;
       }
       cursor.continue();
     }
-  }
-
-  function archiveEntry(cursor, entry) {
-
-    // This was just for testing, it does seem to work, so commented out
-    // console.debug('Archiving entry', entry.id);
-
-    // TODO: I should probably integrate toArchivableEntry into this function
-    // now that it exists and is the sole caller and given how simple
-    // toArchivableEntry is
-    const newEntry = toArchivableEntry(entry);
-
-    // Note that IDBCursor.prototype.update is async. I am not waiting for
-    // it to complete here before continuing.
-    cursor.update(newEntry);
-    // NOTE: this is called prior to the update request completing, meaning
-    // listeners are notified while the request is still pending, and even if
-    // it may somehow be unsuccessful
-    sendArchiveNotification(entry);
-    archivedEntryCount++;
-  }
-
-  function sendArchiveNotification(entry) {
-    const archiveMessage = {
-      'type': 'archivedEntry',
-      'entryId': entry.id
-    };
-    chrome.runtime.sendMessage(archiveMessage);
-  }
-
-  // Returns an entry object suitable for storage. This contains only those
-  // fields that should persist after archival.
-  // TODO: Do I need to also set readState? Perhaps that is implicit
-  // in archiveState? Moreover, if that is implicit, why am I
-  // using two separate flags instead of just one flag with 3 states? Using
-  // one flag would simplify the index keypath and store one less field in
-  // the entry store (both pre and post archive transform).
-  // I suppose I would also need to think about other things like count
-  // of unread and other areas that use the flag. Maybe I should just be
-  // using one flag.
-
-  // TODO: if I ever plan to implement a history view where I can see articles
-  // read, I should consider maintaining entry.title so that it can appear
-  // in the history view. Maybe I also want to add in a 'blurb' that is
-  // like HTMLUtils.truncate that shows a bit of the full text of each entry.
-
-  function toArchivableEntry(inputEntry) {
-    const outputEntry = {};
-
-    // Maintain id because it is required to uniquely identify and reference
-    // entries in the store.
-    outputEntry.id = inputEntry.id;
-
-    // Maintain feed id because we need to be able to remove archived entries
-    // as a result of unsubscribing from a feed.
-    outputEntry.feed = inputEntry.feed;
-
-    // NOTE: link is no longer maintained. The urls property is used for
-    // comparison instead.
-    //outputEntry.link = inputEntry.link;
-
-    // Maintain urls so that the entry stays in the urls index so that it can
-    // continue to be compared against when polling for new entries to
-    // determine if an entry already exists
-    outputEntry.urls = inputEntry.urls;
-
-    // Introduce a new dateArchived field.
-    // NOTE: tentative. This is purely for debugging or reporting at the
-    // moment and is not used by anything I can think of.
-    outputEntry.dateArchived = new Date();
-
-    // Ensure the new entry is marked as archived so it is not revisited in
-    // future archive runs
-    outputEntry.archiveState = Entry.Flags.ARCHIVED;
-
-    return outputEntry;
   }
 
   function onComplete(event) {
