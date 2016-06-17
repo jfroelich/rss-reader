@@ -248,6 +248,9 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
   // TODO: do I want to check if any of the entry's URLs exist, or just its
   // most recent one?
 
+  // TODO: this isn't working for some reason. The query never matches
+  // any urls in the index.
+
   // Check whether an entry with the url already exists. Grab the last url
   // in the entry's urls array.
   // The entry object was fetched, so entry.urls contains URL objects
@@ -256,7 +259,8 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
   const connection = pollContext.connection;
   const transaction = connection.transaction('entry');
   const entryStore = transaction.objectStore('entry');
-  const urlsIndex = entryStore.index('urls');
+  let urlsIndex = entryStore.index('urls');
+
   const request = urlsIndex.get(entryURL.href);
   request.onsuccess = findExistingEntryOnSuccess;
   request.onerror = findExistingEntryOnError;
@@ -268,22 +272,21 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
 
   function findExistingEntryOnSuccess(event) {
     const findRequest = event.target;
-    const localEntry = findRequest.result;
 
-    if(localEntry) {
+    // If the result is defined then an entry contains the entryURL so it
+    // already exists, in which case this does not re-process the entry.
+    if(findRequest.result) {
       callback();
       return;
     }
 
     if(FeedPoller.isNoFetchURL(entryURL)) {
-      // console.debug('Not fetching blacklisted entry link', entryURL.href);
       FeedPoller.addEntry(pollContext.connection, entry, callback);
       return;
     }
 
     const path = entryURL.pathname;
     if(path && path.length > 5 && /\.pdf$/i.test(path)) {
-      // console.debug('Not fetching pdf entry link', entryURL.href);
       FeedPoller.addEntry(pollContext.connection, entry, callback);
       return;
     }

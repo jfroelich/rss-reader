@@ -25,7 +25,7 @@ db.EntryFlags = {
 
 db.open = function(callback) {
   const DB_NAME = 'reader';
-  const DB_VERSION = 18;
+  const DB_VERSION = 20;
 
   const request = indexedDB.open(DB_NAME, DB_VERSION);
   request.onupgradeneeded = db.upgrade;
@@ -73,11 +73,16 @@ db.upgrade = function(event) {
     feedStore.deleteIndex('url');
   }
 
+  // In 18 I created it incorrectly
+  if(feedIndices.contains('urls')) {
+    feedStore.deleteIndex('urls');
+  }
+
   // Create a multi-entry index using the new urls property, which should
   // be an array of unique strings of normalized urls
   if(!feedIndices.contains('urls')) {
     feedStore.createIndex('urls', 'urls', {
-      'multi-entry': true,
+      'multiEntry': true,
       'unique': true
     });
   }
@@ -117,9 +122,13 @@ db.upgrade = function(event) {
     entryStore.deleteIndex('hash');
   }
 
+  if(entryIndices.contains('urls')) {
+    entryStore.deleteIndex('urls');
+  }
+
   if(!entryIndices.contains('urls')) {
     entryStore.createIndex('urls', 'urls', {
-      'multi-entry': true,
+      'multiEntry': true,
       'unique': true
     });
   }
