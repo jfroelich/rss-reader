@@ -5,7 +5,7 @@
 'use strict';
 
 // Routines for cleaning up nodes in an HTMLDocument
-const DOMAid = {};
+const DOMAid = Object.create(null);
 
 // Applies a series of filters to a document. Modifies the document
 // in place. The filters are applied in a preset order so as to minimize the

@@ -4,7 +4,7 @@
 
 'use strict';
 
-const FeedParser = {};
+const FeedParser = Object.create(null);
 
 FeedParser.parse = function(document, excludeEntries) {
 
@@ -23,8 +23,8 @@ FeedParser.parse = function(document, excludeEntries) {
     throw new Error('Missing channel element');
   }
 
-  const feed = {};
-  
+  const feed = Object.create(null);
+
   feed.type = FeedParser.getFeedType(documentElement);
   feed.title = FeedParser.findChildElementText(channel, 'TITLE');
   feed.description = FeedParser.findChildElementText(channel,

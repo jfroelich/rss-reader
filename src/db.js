@@ -4,16 +4,13 @@
 
 'use strict';
 
-// TODO: i think what i want is multiple urls mapping to a single remote
-// resource. so i want feeds and entries each to have a urls array, and
-// i want to create multi-entry indices on these properties, and then i want
-// to use those indices to determine equality. In the array I should store
-// the original url, the rewritten url, and the post-redirect url. Also, I
-// should be normalizing the urls some how, so that protocol is not
-// case-sensitive, so that https feed is recognized as the same as the http
-// version of the feed, so that domain is case insensitive
+// TODO: now that I think about it, I should move all database related
+// functionality back here, regardless of what it does. That way, any time the
+// database changes, I only have one place to update, which is the single
+// responsibility principle. However, what is the reason to change? What is
+// going to change?
 
-const db = {};
+const db = Object.create(null);
 
 db.EntryFlags = {
   UNREAD: 0,
@@ -21,7 +18,6 @@ db.EntryFlags = {
   UNARCHIVED: 0,
   ARCHIVED: 1
 };
-
 
 db.open = function(callback) {
   const DB_NAME = 'reader';
@@ -73,11 +69,6 @@ db.upgrade = function(event) {
     feedStore.deleteIndex('url');
   }
 
-  // In 18 I created it incorrectly
-  if(feedIndices.contains('urls')) {
-    feedStore.deleteIndex('urls');
-  }
-
   // Create a multi-entry index using the new urls property, which should
   // be an array of unique strings of normalized urls
   if(!feedIndices.contains('urls')) {
@@ -120,10 +111,6 @@ db.upgrade = function(event) {
   // Deprecated. Use the urls index instead.
   if(entryIndices.contains('hash')) {
     entryStore.deleteIndex('hash');
-  }
-
-  if(entryIndices.contains('urls')) {
-    entryStore.deleteIndex('urls');
   }
 
   if(!entryIndices.contains('urls')) {

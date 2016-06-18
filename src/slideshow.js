@@ -8,14 +8,13 @@
 // lag. Instead, create a queue of articles, and refill it periodically on
 // some type of schedule (using setInterval or a re-setTimeout-per-append)
 // Only append during navigation if the queue has not yet refilled.
-
 // TODO: if advancing to next article too quickly, some articles are loaded
 // that were already loaded, leading to duplicate articles. The call to append
 // articles needs to be delayed until scrolling completes or something like
 // that. Actually I think it is because the mark-read is on a diff 'thread'
 // than the update code. The append needs to wait for mark read to complete.
 
-const SlideShow = {};
+const SlideShow = Object.create(null);
 
 SlideShow.currentSlide = null;
 
@@ -334,13 +333,13 @@ SlideShow.appendSlide = function(entry, isFirst) {
   slide.style.bottom = 0;
   slide.style.transition = 'left 0.5s ease-in 0s, right 0.5s ease-in';
 
+  // The entry was loaded directly from the database, so urls are strings.
+  // Grab the most recent link, that is the most current, after redirects
+  // and rewrites
+  const entryLinkURLString = entry.urls[entry.urls.length - 1];
+
   const title = document.createElement('a');
-
-  // The entry was loaded directly from the database. In this case, entry.link
-  // is a URL string.
-  const entryLinkURLString = entry.link;
   title.setAttribute('href', entryLinkURLString);
-
 
   title.setAttribute('class', 'entry-title');
   title.setAttribute('target','_blank');

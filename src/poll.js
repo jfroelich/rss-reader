@@ -4,7 +4,7 @@
 
 'use strict';
 
-const FeedPoller = {};
+const FeedPoller = Object.create(null);
 
 FeedPoller.start = function() {
   console.log('Starting poll ...');
@@ -73,33 +73,29 @@ FeedPoller.iterateFeeds = function(pollContext) {
       return;
     }
 
-    // Increment the counter to signal that a feed is now
-    // undergoing an update and that there is at least one update pending
-    pollContext.pendingFeedsCount++;
-
     const feed = cursor.value;
+    let urls = feed.urls;
 
-    if(!feed.urls || !feed.urls.length) {
-      // TODO: even though this is deprecated, I have to be able to check
-      // old feeds, so temp
+    // Handle older feeds or feeds without urls
+    if(!urls || !urls.length) {
       if(feed.url) {
         feed.urls = [feed.url];
+        urls = feed.urls;
+        delete feed.url;
       } else {
         console.debug('No urls for feed', feed);
-        pollContext.pendingFeedsCount--;
         cursor.continue();
         return;
       }
     }
 
-    const requestURLString = feed.urls[feed.urls.length - 1];
-    const requestURL = new URL(requestURLString);
+    pollContext.pendingFeedsCount++;
+    const requestURL = new URL(urls[urls.length - 1]);
     const timeout = 10 * 1000;
+    const excludeEntries = false;
     const onFetchFeedBound = FeedPoller.onFetchFeed.bind(null, pollContext,
       feed);
-    const excludeEntries = false;
     fetchFeed(requestURL, timeout, excludeEntries, onFetchFeedBound);
-
     cursor.continue();
   }
 };
@@ -126,11 +122,6 @@ FeedPoller.onMaybePollCompleted = function(pollContext) {
 
 FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
   if(fetchEvent.type !== 'load') {
-
-    console.debug('Failed to fetch feed',
-      fetchEvent.responseURL.href,
-      fetchEvent.type);
-
     pollContext.pendingFeedsCount--;
     FeedPoller.onMaybePollCompleted(pollContext);
     return;
@@ -140,19 +131,14 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
   if(localFeed.dateLastModified && remoteFeed.dateLastModified &&
     localFeed.dateLastModified.getTime() ===
     remoteFeed.dateLastModified.getTime()) {
-
-    // console.debug('Skipping unmodified feed', fetchEvent.responseURL.href);
     pollContext.pendingFeedsCount--;
     FeedPoller.onMaybePollCompleted(pollContext);
     return;
   }
 
-  // Update the feed's properties in storage and then continue to
-  // onPutFeedBound
-  // NOTE: remoteFeed.entries is always defined, even when there are no entries
-  const onPutFeedBound = FeedPoller.onPutFeed.bind(null, pollContext,
-    remoteFeed.entries);
-  putFeed(pollContext.connection, localFeed, remoteFeed, onPutFeedBound);
+  const entries = remoteFeed.entries;
+  const onPutFeed = FeedPoller.onPutFeed.bind(null, pollContext, entries);
+  putFeed(pollContext.connection, localFeed, remoteFeed, onPutFeed);
 };
 
 FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
@@ -233,11 +219,13 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
   entry.feed = feed.id;
 
   // Denormalize link and title so that rendering can avoid these lookups
+  // NOTE: feed.link is a URL string, because feed comes from the feed object
+  // that was stored
   entry.feedLink = feed.link;
   entry.feedTitle = feed.title;
 
   // Use the feed's date if the entry's date is not set
-  // TODO: I think this is the responsibility of the parser actually
+  // TODO: move this feature to feed-parser or fetch-feed
   // TODO: rename pubdate to datePublished
   // TODO: use Date objects
   // TODO: rename feed date to something clearer
@@ -248,12 +236,9 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
   // TODO: do I want to check if any of the entry's URLs exist, or just its
   // most recent one?
 
-  // TODO: this isn't working for some reason. The query never matches
-  // any urls in the index.
-
   // Check whether an entry with the url already exists. Grab the last url
-  // in the entry's urls array.
-  // The entry object was fetched, so entry.urls contains URL objects
+  // in the entry's urls array. entry.urls provides URL objects, not strings,
+  // because fetchFeed converts them into URL objects.
   const entryURL = entry.urls[entry.urls.length - 1];
 
   const connection = pollContext.connection;
@@ -261,6 +246,7 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
   const entryStore = transaction.objectStore('entry');
   let urlsIndex = entryStore.index('urls');
 
+  // Getting the href property yields a normalized URL string for comparison
   const request = urlsIndex.get(entryURL.href);
   request.onsuccess = findExistingEntryOnSuccess;
   request.onerror = findExistingEntryOnError;
@@ -273,8 +259,6 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
   function findExistingEntryOnSuccess(event) {
     const findRequest = event.target;
 
-    // If the result is defined then an entry contains the entryURL so it
-    // already exists, in which case this does not re-process the entry.
     if(findRequest.result) {
       callback();
       return;
@@ -305,12 +289,6 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
   }
 
   function onFetchEntry(event) {
-
-    // TODO: if an entry cannot be fetched, we should still store the entry
-    // somehow so that we do not continually try and refetch the entry or
-    // something like this. At least for some period of time, because the entry
-    // may have just been temporarily unavailable or recently made available
-
     if(event.type !== 'load') {
       console.debug(event);
       FeedPoller.addEntry(pollContext.connection, entry, callback);
@@ -319,19 +297,13 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
 
     const fetchRequest = event.target;
     const document = fetchRequest.responseXML;
-
-    // This happens with non-html content types like pdf. In this case we
-    // still want to add the entry, we just do not augment its content.
     if(!document) {
       FeedPoller.addEntry(pollContext.connection, entry, callback);
       return;
     }
 
-    // When a redirect occurred, append the
-    // post-redirect URL to the entry's list of URLs.
     const responseURL = new URL(fetchRequest.responseURL);
     if(responseURL.href !== entryURL.href) {
-      // console.debug('Entry redirect', entryURL.href, responseURL.href);
       entry.urls.push(responseURL);
     }
 
@@ -369,21 +341,16 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
   }
 };
 
-// TODO: make sure pubdate has a consistent value. I am using
-// date.getTime here, but I am not sure I am using the same
-// or similar every where else. Like in poll denormalize
 // TODO: rename pubdate to something clearer, like datePublished or something
 // to that effect.
 // TODO: I should be using Date objects for date values. Not timestamps.
 FeedPoller.addEntry = function(connection, entry, callback) {
   const storable = Object.create(null);
 
-  // entry.feedLink is a URL object, so it must be serialized. entry.feedLink
-  // is derived from feed.link earlier, which could be undefined, because
-  // feeds are not required to have a link property (which is not to be
-  // confused with the urls array property)
+  // entry.feedLink is a URL string, not an object, because it was copied
+  // over from the feed object that was the result of putFeed
   if(entry.feedLink) {
-    storable.feedLink = entry.feedLink.href;
+    storable.feedLink = entry.feedLink;
   }
 
   if(entry.feedTitle) {
@@ -451,6 +418,8 @@ FeedPoller.isNoFetchURL = function(url) {
     'productforums.google.com',
     'groups.google.com',
     // Forbes uses a Continue page preventing crawling
+    // url normalization currently does not do anything with www. prefix so
+    // i have to check both
     'www.forbes.com',
     'forbes.com'
   ];
@@ -609,21 +578,12 @@ FeedPoller.transformLazilyLoadedImages = function(document) {
   for(let i = 0, j = 0, len = images.length, image, name, altSrc; i < len;
     i++) {
     image = images[i];
-    // Only examine those images without a src attribute value
     if(!(image.getAttribute('src') || '').trim()) {
-      // Look for alternate source url attributes
-      // There isn't much URL validation I can do because this occurs before
-      // URLs are resolved, so I cannot for example expect all urls to have
-      // a protocol. I can, however, check the value is non-empty and does not
-      // have an inner space. Although perhaps this is overly restrictive
-      // because the browser may tolerate sloppy URLs that contain inner
-      // spaces.
       for(j = 0; j < numNames; j++) {
         name = NAMES[j];
         if(image.hasAttribute(name)) {
           altSrc = (image.getAttribute(name) || '').trim();
           if(altSrc && !altSrc.includes(' ')) {
-            // console.debug('Lazy load transform', altSrc);
             image.removeAttribute(name);
             image.setAttribute('src', altSrc);
             break;

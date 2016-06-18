@@ -5,7 +5,7 @@
 'use strict';
 
 // Lib for importing and exporting opml files
-const OPML = {};
+const OPML = Object.create(null);
 
 // Creates and returns an opml document with the given title and containing
 // the given feeds as outline elements
@@ -141,7 +141,7 @@ OPML.importFiles = function(connection, files, callback) {
       return;
     }
 
-    const seenURLs = {};
+    const seenURLs = Object.create(null);
 
     for(let element = bodyElement.firstElementChild, type, url, urlString,
       outline, normalizedURLString, outlineLinkURL; element;

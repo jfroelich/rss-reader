@@ -5,7 +5,7 @@
 'use strict';
 
 // HTML-related functionality.
-const HTMLUtils = {};
+const HTMLUtils = Object.create(null);
 
 // Truncates a string containing some html, taking special care not to truncate
 // in the midst of a tag or an html entity.

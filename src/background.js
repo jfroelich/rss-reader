@@ -7,7 +7,7 @@
 // Background lib for the extension's background page.
 // This file should only be included in the background.
 
-const Background = {};
+const Background = Object.create(null);
 
 // TODO: this is getting called on every background page load. I would
 // prefer it did not. Maybe it is because I am calling addListener every

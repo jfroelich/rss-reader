@@ -29,7 +29,7 @@
 
 // TODO: revert to using a namespace object and camel case
 
-const Calamine = {};
+const Calamine = Object.create(null);
 
 Calamine.removeBoilerplate = function(document) {
   //let bestElement = Calamine.findSignature(document);
@@ -239,7 +239,7 @@ Calamine.deriveAttributeBias = function(element) {
 
   // The set of seen token strings. I am using a plain object instead of a
   // Set due to performance issues.
-  var seenTokenSet = {};
+  var seenTokenSet = Object.create(null);
 
   var totalBias = 0;
   var bias = 0;

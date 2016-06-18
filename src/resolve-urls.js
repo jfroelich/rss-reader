@@ -26,7 +26,7 @@
 // URL object to do the resolution
 
 
-const URLResolver = {};
+const URLResolver = Object.create(null);
 
 // Resolves all urls in a document, such as element attribute values
 // TODO: use a clearer name

@@ -17,25 +17,6 @@
 // instead of innerHTML in the render will ensure no problem.
 function putFeed(connection, currentFeed, newFeed, callback) {
 
-  // Provide minimal assertions as to behavior
-  // TODO: since I added these, I think the callers might assuming the params
-  // are always defined, i will get NPEs, so I need to have all the call sites
-  // not assume this
-
-  if(!newFeed) {
-    callback(null, {
-      'type': 'undefinednewfeed'
-    });
-    return;
-  }
-
-  if(!newFeed.urls) {
-    callback(null, {
-      'type': 'undefinednewfeedurls'
-    });
-    return;
-  }
-
   // Generate a serializable object for storage and to pass to the callback
   const storable = Object.create(null);
 

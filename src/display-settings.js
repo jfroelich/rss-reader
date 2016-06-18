@@ -6,7 +6,7 @@
 
 // Style lib
 // TODO: maybe use just one function for both load/change
-const DisplaySettings = {};
+const DisplaySettings = Object.create(null);
 
 DisplaySettings.onMessage = function(message) {
   // Only react to the one message type of interest

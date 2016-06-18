@@ -8,7 +8,7 @@
 // Google formally deprecated this service. Around December 1st, 2015, I
 // first noticed that the queries stopped working. However, I have witnessed
 // the service occassionally work thereafter.
-const GoogleFeedsAPI = {};
+const GoogleFeedsAPI = Object.create(null);
 
 // Sends an async request to Google to search for feeds that correspond to
 // a general text query.
@@ -71,7 +71,7 @@ GoogleFeedsAPI.search = function(queryString, timeoutMillis, callback) {
     responseEvent.queryString = data.query || '';
     responseEvent.entries = [];
     const entries = data.entries || [];
-    const seenURLs = {};
+    const seenURLs = Object.create(null);
     for(let i = 0, len = entries.length, entry, entryURL, normalizedURLString;
       i < len; i++) {
       entry = entries[i];
