@@ -206,7 +206,7 @@ OPML.importFiles = function(connection, files, callback) {
     let outputString = inputString || '';
     if(outputString) {
       outputString = utils.string.filterControlCharacters(outputString);
-      outputString = HTMLUtils.replaceTags(outputString, '');
+      outputString = replaceHTML(outputString, '');
     }
     return outputString.trim();
   }

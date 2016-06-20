@@ -4,6 +4,8 @@
 
 'use strict';
 
+// TOP TODO: ran it and didn't see poll completed, look into this
+
 const FeedPoller = Object.create(null);
 
 FeedPoller.start = function() {

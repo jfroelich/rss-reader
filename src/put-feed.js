@@ -152,7 +152,7 @@ function putFeed(connection, currentFeed, newFeed, callback) {
     let outputString = inputString;
     if(inputString) {
       outputString = utils.string.filterControlCharacters(outputString);
-      outputString = HTMLUtils.replaceTags(outputString, '');
+      outputString = replaceHTML(outputString, '');
       // Condense whitespace
       // TODO: maybe this should be a utils function
       outputString = outputString.replace(/\s+/, ' ');

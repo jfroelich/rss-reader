@@ -26,8 +26,6 @@ GoogleFeedsAPI.search = function(queryString, timeoutMillis, callback) {
   const CONTENT_SNIPPET_MAX_LENGTH = 400;
 
   const filterControlCharacters = utils.string.filterControlCharacters;
-  const replaceTags = HTMLUtils.replaceTags;
-  const truncateHTML = HTMLUtils.truncate;
 
   const request = new XMLHttpRequest();
   request.timeout = timeoutMillis;
@@ -98,14 +96,14 @@ GoogleFeedsAPI.search = function(queryString, timeoutMillis, callback) {
 
       if(entry.title) {
         entry.title = filterControlCharacters(entry.title);
-        entry.title = replaceTags(entry.title, '');
+        entry.title = replaceHTML(entry.title, '');
         entry.title = utils.string.truncate(entry.title, TITLE_MAX_LENGTH);
       }
 
       if(entry.contentSnippet) {
         entry.contentSnippet = filterControlCharacters(entry.contentSnippet);
         entry.contentSnippet = filterBreakruleTags(entry.contentSnippet);
-        entry.contentSnippet = truncateHTML(entry.contentSnippet,
+        entry.contentSnippet = truncateHTMLString(entry.contentSnippet,
           CONTENT_SNIPPET_MAX_LENGTH, '...');
       }
 

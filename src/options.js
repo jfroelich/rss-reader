@@ -209,7 +209,7 @@ OptionsPage.appendFeed = function(feed, insertedSort) {
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
   item.setAttribute('feed', feed.id);
-  item.setAttribute('title', HTMLUtils.replaceTags(feed.description) || '');
+  item.setAttribute('title', replaceHTML(feed.description) || '');
   item.onclick = OptionsPage.feedListOnItemClick;
 
   var favIconElement = document.createElement('img');
@@ -328,9 +328,9 @@ OptionsPage.showSubscriptionPreview = function(url) {
     for(let i = 0, entry, item, content; i < resultLimit; i++) {
       entry = feed.entries[i];
       item = document.createElement('li');
-      item.innerHTML = HTMLUtils.replaceTags(entry.title || '', '');
+      item.innerHTML = replaceHTML(entry.title || '', '');
       content = document.createElement('span');
-      content.innerHTML = HTMLUtils.replaceTags(entry.content || '', '');
+      content.innerHTML = replaceHTML(entry.content || '', '');
       item.appendChild(content);
       resultsListElement.appendChild(item);
     }
@@ -428,7 +428,7 @@ OptionsPage.populateFeedDetails = function(feedId) {
     // TODO: do I need to do additional sanitization here?
 
     let title = feed.title;
-    title = HTMLUtils.replaceTags(title || '', '');
+    title = replaceHTML(title || '', '');
     if(!title) {
       title = 'Untitled';
     }
@@ -445,7 +445,7 @@ OptionsPage.populateFeedDetails = function(feedId) {
     const favIconURL = getFavIconURL(feedURL);
     favIconElement.setAttribute('src', favIconURL.href);
 
-    const description = HTMLUtils.replaceTags(feed.description || '', '');
+    const description = replaceHTML(feed.description || '', '');
     const descriptionElement = document.getElementById(
       'details-feed-description');
     descriptionElement.textContent = description;

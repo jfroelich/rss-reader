@@ -149,7 +149,7 @@ Background.archiveEntries = function() {
         // TODO: if I ever plan to implement a history view where I can see
         // articles read, I should consider maintaining entry.title so that it can
         // appear in the history view. Maybe I also want to add in a 'blurb' that
-        // is like HTMLUtils.truncate that shows a bit of the full text of each
+        // is like truncateHTMLString that shows a bit of the full text of each
         // entry.
 
         // Note that IDBCursor.prototype.update is async. I am not waiting for
