@@ -188,7 +188,7 @@ OPML.importFiles = function(connection, files, callback) {
 
       // Note this does not wait before continuing which leaves requests
       // pending
-      putFeed(connection, null, outline);
+      db.putFeed(connection, null, outline);
     }
 
     onFileProcessed();
