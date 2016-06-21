@@ -76,11 +76,8 @@ SlideShow.onMessage = function(message) {
       console.debug('Reaction to removal of entry %s not yet implemented',
         message.entryId);
       break;
-    case 'archivedEntry':
-      // TODO: react to the archiving of an entry that is read
-      // and possibly still loaded into the view
-      // TODO: this should probably be more like 'entryArchiveRequested'
-      // because I think it is still pending at the time the message is sent
+    case 'archiveEntryRequested':
+      // TODO: react to the request, the entry may be present in the view
       break;
     default:
       // Ignore the message
