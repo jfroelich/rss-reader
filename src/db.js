@@ -4,9 +4,6 @@
 
 'use strict';
 
-// TODO: move all db calls here so that I only need to modify one place when
-// I need to change how data is stored
-
 const db = Object.create(null);
 
 db.EntryFlags = {
@@ -173,7 +170,7 @@ db.openFeedsCursorSortedByTitle = function(connection, callback) {
   request.onsuccess = callback;
 };
 
-db.getFeedById = function(connection, feedId, callback) {
+db.findFeedById = function(connection, feedId, callback) {
   const transaction = connection.transaction('feed');
   const store = transaction.objectStore('feed');
   const request = store.get(feedId);
@@ -224,8 +221,6 @@ db.addEntry = function(connection, entry, callback) {
     request.onerror = callback;
   }
 };
-
-
 
 // TODO: maybe the merge shouldn't happen here, maybe it should be the
 // responsibility of the caller. This should just accept one feed and update
@@ -478,6 +473,8 @@ db.putFeed = function(connection, currentFeed, newFeed, callback) {
   }
 };
 
+// TODO: maybe deprecate and just use the clear button provided by
+// the inspector
 db.clearEntryStore = function(connection) {
   if(connection) {
     clearEntries(connection);

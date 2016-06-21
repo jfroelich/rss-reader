@@ -413,7 +413,7 @@ OptionsPage.populateFeedDetails = function(feedId) {
 
     // Lookup the feed by its id
     const connection = event.target.result;
-    db.getFeedById(connection, feedId, onFindFeedById);
+    db.findFeedById(connection, feedId, onFindFeedById);
   }
 
   function onFindFeedById(event) {
