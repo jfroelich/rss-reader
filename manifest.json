@@ -24,6 +24,7 @@
       "/src/resolve-urls.js",
       "/src/rewrite-url.js",
       "/src/truncate-html-string.js",
+      "/src/update-badge-unread-count.js",
       "/src/utils.js"
     ]
   },

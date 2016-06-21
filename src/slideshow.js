@@ -158,7 +158,7 @@ SlideShow.markAsRead = function(slide) {
     // it involves a separate read transaction that is implicitly blocked by
     // the current readwrite request, so it still occurs afterward.
     const connection = request.transaction.db;
-    utils.updateBadgeUnreadCount(connection);
+    updateBadgeUnreadCount(connection);
 
     // Notify listeners that an entry was read.
     // NOTE: this happens async. The entry may not yet be updated.

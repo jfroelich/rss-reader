@@ -6,35 +6,6 @@
 
 const utils = Object.create(null);
 
-// Connection is optional.
-utils.updateBadgeUnreadCount = function(connection) {
-  if(connection) {
-    db.countUnreadEntries(connection, onCountUnreadEntries);
-  } else {
-    db.open(onConnect);
-  }
-
-  function onConnect(event) {
-    if(event.type === 'success') {
-      const connection = event.target.result;
-      db.countUnreadEntries(connection, onCountUnreadEntries);
-    } else {
-      console.debug(event);
-      chrome.browserAction.setBadgeText({'text': '?'});
-    }
-  }
-
-  function onCountUnreadEntries(event) {
-    if(event.type === 'success') {
-      const count = event.target.result;
-      chrome.browserAction.setBadgeText({'text': '' + count});
-    } else {
-      console.debug(event);
-      chrome.browserAction.setBadgeText({'text': '?'});
-    }
-  }
-};
-
 utils.fadeElement = function(element, duration, delay, callback) {
   const style = element.style;
 

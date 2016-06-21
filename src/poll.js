@@ -208,7 +208,7 @@ FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
     if(entriesProcessed === numEntries) {
       pollContext.pendingFeedsCount--;
       FeedPoller.onMaybePollCompleted(pollContext);
-      utils.updateBadgeUnreadCount(pollContext.connection);
+      updateBadgeUnreadCount(pollContext.connection);
     }
   }
 };

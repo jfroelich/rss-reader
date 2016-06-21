@@ -163,7 +163,7 @@ Subscription.remove = function(feedId, callback) {
 
     // NOTE: This happens after because it is a separate read transaction,
     // despite pending delete requests of the previous transaction
-    utils.updateBadgeUnreadCount(connection);
+    updateBadgeUnreadCount(connection);
 
     const subscriptionEvent = {
       'type': 'success',

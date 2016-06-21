@@ -23,7 +23,7 @@ Background.onInstalled = function(event) {
   // the first sign of an installation problem.
   function onConnect(event) {
     const connection = event.target.result;
-    utils.updateBadgeUnreadCount(connection);
+    updateBadgeUnreadCount(connection);
   }
 };
 
