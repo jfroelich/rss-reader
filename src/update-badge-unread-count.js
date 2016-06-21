@@ -4,21 +4,24 @@
 
 'use strict';
 
-// Connection is optional.
-function updateBadgeUnreadCount(connection) {
+function updateBadgeUnreadCount(connection, callback) {
   if(connection) {
     db.countUnreadEntries(connection, onCountUnreadEntries);
   } else {
-    db.open(onConnect);
+    db.open(onOpenDatabase);
   }
 
-  function onConnect(event) {
+  function onOpenDatabase(event) {
     if(event.type === 'success') {
       const connection = event.target.result;
       db.countUnreadEntries(connection, onCountUnreadEntries);
     } else {
       console.debug(event);
       chrome.browserAction.setBadgeText({'text': '?'});
+
+      if(callback) {
+        callback();
+      }
     }
   }
 
@@ -29,6 +32,10 @@ function updateBadgeUnreadCount(connection) {
     } else {
       console.debug(event);
       chrome.browserAction.setBadgeText({'text': '?'});
+    }
+
+    if(callback) {
+      callback();
     }
   }
 }
