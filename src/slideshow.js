@@ -130,10 +130,7 @@ SlideShow.markAsRead = function(slide) {
     }
 
     const connection = event.target.result;
-    const transaction = connection.transaction('entry', 'readwrite');
-    const store = transaction.objectStore('entry');
-    const request = store.openCursor(entryId);
-    request.onsuccess = onOpenCursor;
+    db.getEntryById(connection, entryId, onOpenCursor);
   }
 
   function onOpenCursor(event) {
@@ -141,13 +138,13 @@ SlideShow.markAsRead = function(slide) {
     const cursor = request.result;
 
     if(!cursor) {
-      console.debug('Cursor undefined in markAsRead');
+      console.debug('No matching entry for', entryId);
       return;
     }
 
     const entry = cursor.value;
     if(entry.readState === db.EntryFlags.READ) {
-      console.debug('Attempted to remark a read entry as read:', entry.id);
+      console.debug('Attempted to remark a read entry as read:', entryId);
       return;
     }
 
@@ -155,7 +152,7 @@ SlideShow.markAsRead = function(slide) {
     entry.dateRead = new Date();
 
     // Trigger an update request. Do not wait for it to complete.
-    const updateRequest = cursor.update(entry);
+    cursor.update(entry);
 
     // NOTE: while this occurs concurrently with the update request,
     // it involves a separate read transaction that is implicitly blocked by
@@ -197,10 +194,9 @@ SlideShow.appendSlides = function(oncomplete, isFirst) {
   const limit = 5;
   const offset = SlideShow.countUnreadSlides();
   let notAdvanced = true;
-  db.open(onOpen);
+  db.open(onOpenDatabase);
 
-  // Load all articles that are unread and unarchived
-  function onOpen(event) {
+  function onOpenDatabase(event) {
     if(event.type !== 'success') {
       // TODO: show an error?
       console.debug(event);
@@ -208,20 +204,16 @@ SlideShow.appendSlides = function(oncomplete, isFirst) {
     }
 
     const connection = event.target.result;
-    const transaction = connection.transaction('entry');
-    transaction.oncomplete = oncomplete;
-    const entryStore = transaction.objectStore('entry');
-    const index = entryStore.index('archiveState-readState');
-    const range = IDBKeyRange.only([db.EntryFlags.UNARCHIVED,
-      db.EntryFlags.UNREAD]);
-    const request = index.openCursor(range);
-    request.onsuccess = requestOnSuccess;
+    db.openUnreadUnarchivedEntryCursor(connection, onOpenCursor);
   }
 
-  function requestOnSuccess(event) {
+  function onOpenCursor(event) {
     const cursor = event.target.result;
 
     if(!cursor) {
+      if(oncomplete) {
+        oncomplete();
+      }
       return;
     }
 

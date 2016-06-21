@@ -49,15 +49,8 @@ function archiveEntries() {
       return;
     }
 
-    // Open a cursor over read, unarchived entries
     const connection = event.target.result;
-    const transaction = connection.transaction('entry', 'readwrite');
-    transaction.oncomplete = onComplete;
-    const store = transaction.objectStore('entry');
-    const index = store.index('archiveState-readState');
-    const keyPath = [db.EntryFlags.UNARCHIVED, db.EntryFlags.READ];
-    const request = index.openCursor(keyPath);
-    request.onsuccess = processEntryAtCursor;
+    db.openReadUnarchivedEntryCursor(connection, handleCursor);
   }
 
   // Check if the entry at the current cursor position should be archived, and
@@ -65,11 +58,12 @@ function archiveEntries() {
   // TODO: access dateCreated once field is renamed
   // TODO: the object will be a Date object once I make other changes so
   // the calculation here needs to change to compare two date objects
-  function processEntryAtCursor(event) {
+  function handleCursor(event) {
     const request = event.target;
     const cursor = request.result;
 
     if(!cursor) {
+      onComplete();
       return;
     }
 
@@ -77,26 +71,33 @@ function archiveEntries() {
     const entry = cursor.value;
     const ageInMillis = Date.now() - entry.created;
     if(ageInMillis > EXPIRES_AFTER_MS) {
-      const archivedEntry = Object.create(null);
-      archivedEntry.id = entry.id;
-      archivedEntry.feed = entry.feed;
-      archivedEntry.urls = entry.urls;
-      archivedEntry.dateArchived = new Date();
-      archivedEntry.archiveState = db.EntryFlags.ARCHIVED;
+      const archivedEntry = getArchivableEntry(entry);
       cursor.update(archivedEntry);
-
-      const archiveMessage = {
-        'type': 'archiveEntryRequested',
-        'entryId': entry.id
-      };
-      chrome.runtime.sendMessage(archiveMessage);
-
+      sendArchiveRequestedMessage(archivedEntry);
       archivedEntryCount++;
     }
     cursor.continue();
   }
 
-  function onComplete(event) {
+  function getArchivableEntry(inputEntry) {
+    const outputEntry = Object.create(null);
+    outputEntry.id = inputEntry.id;
+    outputEntry.feed = inputEntry.feed;
+    outputEntry.urls = inputEntry.urls;
+    outputEntry.dateArchived = new Date();
+    outputEntry.archiveState = db.EntryFlags.ARCHIVED;
+    return outputEntry;
+  }
+
+  function sendArchiveRequestedMessage(entry) {
+    const message = {
+      'type': 'archiveEntryRequested',
+      'entryId': entry.id
+    };
+    chrome.runtime.sendMessage(message);
+  }
+
+  function onComplete() {
     console.log('Archived %s of %s entries', archivedEntryCount,
       processedEntryCount);
   }

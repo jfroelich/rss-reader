@@ -4,11 +4,8 @@
 
 'use strict';
 
-// TODO: now that I think about it, I should move all database related
-// functionality back here, regardless of what it does. That way, any time the
-// database changes, I only have one place to update, which is the single
-// responsibility principle. However, what is the reason to change? What is
-// going to change?
+// TODO: move all db calls here so that I only need to modify one place when
+// I need to change how data is stored
 
 const db = Object.create(null);
 
@@ -20,10 +17,7 @@ db.EntryFlags = {
 };
 
 db.open = function(callback) {
-  const DB_NAME = 'reader';
-  const DB_VERSION = 20;
-
-  const request = indexedDB.open(DB_NAME, DB_VERSION);
+  const request = indexedDB.open('reader', 20);
   request.onupgradeneeded = db.upgrade;
   request.onsuccess = callback;
   request.onerror = callback;
@@ -121,6 +115,210 @@ db.upgrade = function(event) {
   }
 };
 
+db.openReadUnarchivedEntryCursor = function(connection, callback) {
+  const transaction = connection.transaction('entry', 'readwrite');
+  const store = transaction.objectStore('entry');
+  const index = store.index('archiveState-readState');
+  const keyPath = [db.EntryFlags.UNARCHIVED, db.EntryFlags.READ];
+  const request = index.openCursor(keyPath);
+  request.onsuccess = callback;
+  request.onerror = callback;
+};
+
+db.openUnreadUnarchivedEntryCursor = function(connection, callback) {
+  const transaction = connection.transaction('entry');
+  const entryStore = transaction.objectStore('entry');
+  const index = entryStore.index('archiveState-readState');
+  const keyPath = [db.EntryFlags.UNARCHIVED, db.EntryFlags.UNREAD];
+  const request = index.openCursor(keyPath);
+  request.onsuccess = callback;
+  request.onerror = callback;
+};
+
+db.openEntryCursorForFeed = function(connection, feedId, callback) {
+  const transaction = connection.transaction('entry', 'readwrite');
+  const store = transaction.objectStore('entry');
+  const index = store.index('feed');
+  const request = index.openCursor(feedId);
+  request.onsuccess = callback;
+};
+
+// NOTE: even though the count can include archived, I don't think it matters
+// because I am currently assuming an entry can never be unread and archived.
+db.countUnreadEntries = function(connection, callback) {
+  const transaction = connection.transaction('entry');
+  const store = transaction.objectStore('entry');
+  const index = store.index('readState');
+  const request = index.count(db.EntryFlags.UNREAD);
+  request.onsuccess = callback;
+  request.onerror = callback;
+};
+
+db.openFeedsCursor = function(connection, callback) {
+  const transaction = connection.transaction('feed');
+  const feedStore = transaction.objectStore('feed');
+  const request = feedStore.openCursor();
+  request.onsuccess = callback;
+  request.onerror = callback;
+};
+
+// TODO: this requires feeds have a title in order to appear in the index.
+// I would prefer instead to remove this requirement, load all feeds, and
+// sort manually, allowing for untitled feeds. I think? Tentative.
+db.openFeedsCursorSortedByTitle = function(connection, callback) {
+  const transaction = connection.transaction('feed');
+  const store = transaction.objectStore('feed');
+  const index = store.index('title');
+  const request = index.openCursor();
+  request.onsuccess = callback;
+};
+
+db.getFeedById = function(connection, feedId, callback) {
+  const transaction = connection.transaction('feed');
+  const store = transaction.objectStore('feed');
+  const request = store.get(feedId);
+  request.onsuccess = callback;
+  request.onerror = callback;
+};
+
+db.deleteFeedById = function(connection, feedId, callback) {
+  const transaction = connection.transaction('feed', 'readwrite');
+  const store = transaction.objectStore('feed');
+  const request = store.delete(feedId);
+  request.onsuccess = callback;
+};
+
+db.getEntryById = function(connection, entryId, callback) {
+  const transaction = connection.transaction('entry', 'readwrite');
+  const store = transaction.objectStore('entry');
+  const request = store.openCursor(entryId);
+  request.onsuccess = callback;
+  request.onerror = callback;
+};
+
+// Expects a URL object, not a string
+db.findEntryWithURL = function(connection, url, callback) {
+  const transaction = connection.transaction('entry');
+  const entryStore = transaction.objectStore('entry');
+  const urlsIndex = entryStore.index('urls');
+  // Getting the href property yields a normalized URL string for comparison
+  // to other URLs.
+  // We store strings in indexedDB because we cannot store URLs, so we have
+  // to compare by strings.
+  const request = urlsIndex.get(url.href);
+  request.onsuccess = callback;
+  request.onerror = callback;
+};
+
+// Use an isolated transaction for storing an entry. The problem with using a
+// shared transaction in the case of a batch insert is that the uniqueness
+// check from index constraints is db-delegated and unknown apriori without a
+// separate lookup request, and that any constraint failure causes the entire
+// transaction to fail.
+db.addEntry = function(connection, entry, callback) {
+  const transaction = connection.transaction('entry', 'readwrite');
+  const entryStore = transaction.objectStore('entry');
+  const request = entryStore.add(entry);
+  if(callback) {
+    request.onsuccess = callback;
+    request.onerror = callback;
+  }
+};
+
+
+
+// TODO: maybe the merge shouldn't happen here, maybe it should be the
+// responsibility of the caller. This should just accept one feed and update
+// that. It has nothing to do with merging.
+// TODO: so maybe what I should do is define Feed.merge that takes two feed
+// objects and generates a third that is the result of merging the two
+// TODO: also, maybe it shouldn't sanitize.
+// TODO: also, this now expects Feed objects, not simple objects
+// TODO: also, this now uses new fields for dates, and uses date objects
+// TODO: also, this should probably pass a Feed object to the callback,
+// instead of the serialized feed that was put. So I probably want to use the
+// input feed and just set its id if it was an add and pass the input feed
+// to the callback
+// so if i shouldn't be merging in putFeed, instead I should have two functions
+// again, one to add a feed, and one to update. so poll uses update, and
+// subscribe and opmlimport use add
+// If i do that, however, then the only place where I merge is when doing an
+// update. maybe that still makes sense to be separate though.
+// I think before I do this I should do the renaming and retyping of various
+// fields
+db.putFeed2 = function(connection, currentFeed, newFeed, callback) {
+
+  const storable = newFeed.toSerializable();
+
+  let mergedURLs = currentFeed.urls.map(function(url) {
+    return url.href;
+  });
+  for(let i = 0, len = storable.urls.length; i < len; i++) {
+    if(!mergedURLs.includes(storable.urls[i])) {
+      mergedURLs.push(storable.urls[i]);
+    }
+  }
+  storable.urls = mergedURLs;
+
+  if(storable.title) {
+    storable.title = sanitizeString(storable.title);
+  }
+
+  if(storable.description) {
+    storable.description = sanitizeString(storable.description);
+  }
+
+  if(!storable.dateCreated) {
+    storable.dateCreated = new Date();
+  }
+
+  storable.dateUpdated = new Date();
+
+  const transaction = connection.transaction('feed', 'readwrite');
+  const feedStore = transaction.objectStore('feed');
+  let request = null;
+  try {
+    request = feedStore.put(storable);
+  } catch(exception) {
+    if(callback) {
+      const exceptionEvent = Object.create(null);
+      exceptionEvent.type = 'exception';
+      exceptionEvent.message = exception.message;
+      callback(storable, exceptionEvent);
+    }
+    return;
+  }
+
+  if(callback) {
+    request.onsuccess = onPutSuccess;
+    request.onerror = onPutError;
+  }
+
+  function onPutSuccess(event) {
+    if(!storable.id) {
+      storable.id = event.target.result;
+    }
+    callback(storable, event);
+  }
+
+  function onPutError(event) {
+    callback(storable, event);
+  }
+
+  // Prep a string property of an object for storage
+  function sanitizeString(inputString) {
+    let outputString = inputString;
+    if(inputString) {
+      outputString = utils.string.filterControlCharacters(outputString);
+      outputString = replaceHTML(outputString, '');
+      // Condense whitespace
+      // TODO: maybe this should be a utils function
+      outputString = outputString.replace(/\s+/, ' ');
+      outputString = outputString.trim();
+    }
+    return outputString;
+  }
+};
 
 // Create a storable object from the input feeds by combining together the
 // properties of current and new feed into a basic object, and then
@@ -182,10 +380,10 @@ db.putFeed = function(connection, currentFeed, newFeed, callback) {
   // ever undefined those feeds would not appear in the title index.
   // TODO: remove this requirement somehow? Maybe the options page that
   // retrieves feeds has to manually sort them?
-  const title = sanitizeBeforePut(newFeed.title);
+  const title = sanitizeString(newFeed.title);
   storable.title = title || '';
 
-  const description = sanitizeBeforePut(newFeed.description);
+  const description = sanitizeString(newFeed.description);
   if(description) {
     storable.description = description;
   }
@@ -266,7 +464,7 @@ db.putFeed = function(connection, currentFeed, newFeed, callback) {
   }
 
   // Prep a string property of an object for storage
-  function sanitizeBeforePut(inputString) {
+  function sanitizeString(inputString) {
     let outputString = inputString;
     if(inputString) {
       outputString = utils.string.filterControlCharacters(outputString);

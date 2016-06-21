@@ -393,7 +393,10 @@ OptionsPage.startSubscription = function(url) {
 
 // TODO: show num entries, num unread/red, etc
 // TODO: react to connection error, find error
+// NOTE: feedId should be an integer
+
 OptionsPage.populateFeedDetails = function(feedId) {
+
   if(!feedId) {
     console.error('Invalid feedId');
     return;
@@ -410,10 +413,7 @@ OptionsPage.populateFeedDetails = function(feedId) {
 
     // Lookup the feed by its id
     const connection = event.target.result;
-    const transaction = connection.transaction('feed');
-    const store = transaction.objectStore('feed');
-    const request = store.get(feedId);
-    request.onsuccess = onFindFeedById;
+    db.getFeedById(connection, feedId, onFindFeedById);
   }
 
   function onFindFeedById(event) {
@@ -694,6 +694,9 @@ OptionsPage.buttonUnsubscribeOnClick = function(event) {
   // obviously faster and more local to use the callback, so I chose to go with
   // that. I am not entirely confident this is the best decision.
 
+  // TODO: this should probably be responsible for creating the connection and
+  // then passing it to Subscription.remove, not Subscription.remove
+
   Subscription.remove(feedId, OptionsPage.onUnsubscribe);
 
   function onUnsubscribe(event) {
@@ -800,21 +803,17 @@ OptionsPage.exportOPMLButtonOnClick = function(event) {
       return;
     }
 
-    // Query for all feeds in the feed store
     const connection = event.target.result;
-    const transaction = connection.transaction('feed');
-    transaction.oncomplete = onGetFeeds;
-    const store = transaction.objectStore('feed');
-    const request = store.openCursor();
-    request.onsuccess = onGetNextFeed;
+    db.openFeedsCursor(connection, handleCursor);
   };
 
-  // Append the feed at the cursor to the feeds array
-  function onGetNextFeed(event) {
+  function handleCursor(event) {
     const cursor = event.target.result;
     if(cursor) {
       feeds.push(cursor.value);
       cursor.continue();
+    } else {
+      onGetFeeds();
     }
   }
 
@@ -859,15 +858,10 @@ OptionsPage.initSubscriptionsSection = function() {
     }
 
     const connection = event.target.result;
-    const transaction = connection.transaction('feed');
-    transaction.oncomplete = onFeedsIterated;
-    const store = transaction.objectStore('feed');
-    const index = store.index('title');
-    const request = index.openCursor();
-    request.onsuccess = onGetNextFeed;
+    db.openFeedsCursorSortedByTitle(connection, handleCursor);
   }
 
-  function onGetNextFeed(event) {
+  function handleCursor(event) {
     const cursor = event.target.result;
     if(cursor) {
       const feed = cursor.value;
@@ -877,6 +871,8 @@ OptionsPage.initSubscriptionsSection = function() {
       OptionsPage.appendFeed(feed);
       OptionsPage.updateFeedCount();
       cursor.continue();
+    } else {
+      onFeedsIterated();
     }
   }
 

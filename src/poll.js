@@ -57,12 +57,10 @@ FeedPoller.start = function() {
 // Iterate over the feeds in the database, and update each feed.
 // TODO: react appropriately to request error?
 // TODO: are all the requests concurrent?
+// TODO: maybe just make this into a helper function above
 FeedPoller.iterateFeeds = function(pollContext) {
   const connection = pollContext.connection;
-  const iterateFeedsTransaction = connection.transaction('feed');
-  const feedStore = iterateFeedsTransaction.objectStore('feed');
-  const iterateFeedsRequest = feedStore.openCursor();
-  iterateFeedsRequest.onsuccess = onSuccess;
+  db.openFeedsCursor(connection, onSuccess);
 
   function onSuccess(event) {
     const request = event.target;
@@ -243,26 +241,17 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
   // in the entry's urls array. entry.urls provides URL objects, not strings,
   // because fetchFeed converts them into URL objects.
   const entryURL = entry.urls[entry.urls.length - 1];
-
   const connection = pollContext.connection;
-  const transaction = connection.transaction('entry');
-  const entryStore = transaction.objectStore('entry');
-  let urlsIndex = entryStore.index('urls');
+  db.findEntryWithURL(connection, entryURL, onFindEntryWithURL);
 
-  // Getting the href property yields a normalized URL string for comparison
-  const request = urlsIndex.get(entryURL.href);
-  request.onsuccess = findExistingEntryOnSuccess;
-  request.onerror = findExistingEntryOnError;
+  function onFindEntryWithURL(event) {
+    if(event.type !== 'success') {
+      console.debug(event);
+      callback();
+      return;
+    }
 
-  function findExistingEntryOnError(event) {
-    console.debug(event);
-    callback();
-  }
-
-  function findExistingEntryOnSuccess(event) {
-    const findRequest = event.target;
-
-    if(findRequest.result) {
+    if(event.target.result) {
       callback();
       return;
     }
@@ -397,22 +386,7 @@ FeedPoller.addEntry = function(connection, entry, callback) {
     storable.content = entry.content;
   }
 
-  // Use an isolated transaction for storing an entry. The problem with using a
-  // shared transaction in the case of a batch insert is that the uniqueness
-  // check from index constraints is db-delegated and unknown apriori without a
-  // separate lookup request, and that any constraint failure causes the entire
-  // transaction to fail.
-
-  // TODO: because I am not checking existing of all of an entry's urls, just
-  // its most recent, I am unclear as to whether there is actually a chance
-  // of a ConstraintError, so maybe I should look into testing that. One
-  // concern is also that this might cause a thrown exception instead of
-  // request error event, and I am not currently checking for that.
-
-  const transaction = connection.transaction('entry', 'readwrite');
-  transaction.oncomplete = callback;
-  const store = transaction.objectStore('entry');
-  store.add(storable);
+  db.addEntry(connection, storable);
 };
 
 // TODO: rename to be clearer that this deals with entry urls, not feeds

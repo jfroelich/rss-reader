@@ -127,15 +127,8 @@ Subscription.remove = function(feedId, callback) {
     // could
     // even fail, do I want to be deleting the feed or its entries first when
     // using two separate transactions or does the order not matter?
-
-    const connectionRequest = event.target;
-    const connection = connectionRequest.result;
-    const transaction = connection.transaction('entry', 'readwrite');
-    transaction.oncomplete = onRemoveEntries;
-    const store = transaction.objectStore('entry');
-    const index = store.index('feed');
-    const request = index.openCursor(id);
-    request.onsuccess = deleteNextEntry;
+    const connection = event.target.result;
+    db.openEntryCursorForFeed(connection, feedId, deleteNextEntry);
   }
 
   function deleteNextEntry(event) {
@@ -153,17 +146,16 @@ Subscription.remove = function(feedId, callback) {
       // NOTE: Ignores possible transaction rollback
       chrome.runtime.sendMessage(entryDeletedMessage);
       cursor.continue();
+    } else {
+      onRemoveEntries(event);
     }
   }
 
-  function removeFeed(event) {
+  function onRemoveEntries(event) {
     // TODO: double check this is how to get the connection variable from
     // the event
     const connection = event.target.db;
-    const transaction = connection.transaction('feed', 'readwrite');
-    const store = transaction.objectStore('feed');
-    const request = store.delete(feedId);
-    request.onsuccess = onComplete;
+    db.deleteFeedById(connection, feedId, onComplete);
   }
 
   function onComplete(event) {

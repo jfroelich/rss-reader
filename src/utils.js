@@ -4,12 +4,12 @@
 
 'use strict';
 
-const utils = {};
+const utils = Object.create(null);
 
 // Connection is optional.
 utils.updateBadgeUnreadCount = function(connection) {
   if(connection) {
-    countUnreadEntries(connection);
+    db.countUnreadEntries(connection, onCountUnreadEntries);
   } else {
     db.open(onConnect);
   }
@@ -17,27 +17,21 @@ utils.updateBadgeUnreadCount = function(connection) {
   function onConnect(event) {
     if(event.type === 'success') {
       const connection = event.target.result;
-      countUnreadEntries(connection);
+      db.countUnreadEntries(connection, onCountUnreadEntries);
     } else {
       console.debug(event);
-      const text = {'text': '?'};
-      chrome.browserAction.setBadgeText(text);
+      chrome.browserAction.setBadgeText({'text': '?'});
     }
   }
 
-  function countUnreadEntries(connection) {
-    const transaction = connection.transaction('entry');
-    const store = transaction.objectStore('entry');
-    const index = store.index('readState');
-    const request = index.count(db.EntryFlags.UNREAD);
-    request.onsuccess = onCountUnreadEntriesSuccess;
-  }
-
-  function onCountUnreadEntriesSuccess(event) {
-    const request = event.target;
-    const count = request.result || 0;
-    const text = {'text': '' + count};
-    chrome.browserAction.setBadgeText(text);
+  function onCountUnreadEntries(event) {
+    if(event.type === 'success') {
+      const count = event.target.result;
+      chrome.browserAction.setBadgeText({'text': '' + count});
+    } else {
+      console.debug(event);
+      chrome.browserAction.setBadgeText({'text': '?'});
+    }
   }
 };
 
