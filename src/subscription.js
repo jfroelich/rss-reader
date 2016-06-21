@@ -42,7 +42,7 @@ Subscription.add = function(connection, url, callback) {
     }
 
     const existingFeed = null;
-    putFeed(connection, existingFeed, fetchEvent.feed, onPutFeed);
+    db.putFeed(connection, existingFeed, fetchEvent.feed, onPutFeed);
   }
 
   function onPutFeed(storedFeed, putEvent) {

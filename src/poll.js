@@ -139,8 +139,9 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
   }
 
   const entries = remoteFeed.entries;
-  const onPutFeed = FeedPoller.onPutFeed.bind(null, pollContext, entries);
-  putFeed(pollContext.connection, localFeed, remoteFeed, onPutFeed);
+  const onPutFeed = FeedPoller.onPutFeed.bind(null, pollContext,
+    entries);
+  db.putFeed(pollContext.connection, localFeed, remoteFeed, onPutFeed);
 };
 
 FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
@@ -350,7 +351,7 @@ FeedPoller.addEntry = function(connection, entry, callback) {
   const storable = Object.create(null);
 
   // entry.feedLink is a URL string, not an object, because it was copied
-  // over from the feed object that was the result of putFeed
+  // over from the feed object that was the result of db.putFeed
   if(entry.feedLink) {
     storable.feedLink = entry.feedLink;
   }
