@@ -14,12 +14,12 @@
     "persistent": false,
     "scripts": [
       "/lib/parse-srcset.js",
+      "/src/archive-entries.js",
       "/src/background.js",
       "/src/db.js",
       "/src/feed-parser.js",
       "/src/fetch-feed.js",
       "/src/poll.js",
-      "/src/put-feed.js",
       "/src/replace-html.js",
       "/src/resolve-urls.js",
       "/src/rewrite-url.js",
