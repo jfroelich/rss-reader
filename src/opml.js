@@ -128,7 +128,7 @@ OPML.importFiles = function(connection, files, callback) {
       return;
     }
 
-    if(!utils.string.equalsIgnoreCase(docElement.nodeName, 'OPML')) {
+    if(!equalsIgnoreCase(docElement.nodeName, 'OPML')) {
       console.debug('Non-OPML document element');
       onFileProcessed();
       return;
@@ -146,7 +146,7 @@ OPML.importFiles = function(connection, files, callback) {
     for(let element = bodyElement.firstElementChild, type, url, urlString,
       outline, normalizedURLString, outlineLinkURL; element;
       element = element.nextElementSibling) {
-      if(!utils.string.equalsIgnoreCase(element.nodeName, 'OUTLINE')) {
+      if(!equalsIgnoreCase(element.nodeName, 'OUTLINE')) {
         continue;
       }
 
@@ -205,7 +205,7 @@ OPML.importFiles = function(connection, files, callback) {
   function sanitizeString(inputString) {
     let outputString = inputString || '';
     if(outputString) {
-      outputString = utils.string.filterControlCharacters(outputString);
+      outputString = filterControlCharacters(outputString);
       outputString = replaceHTML(outputString, '');
     }
     return outputString.trim();

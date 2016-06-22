@@ -17,8 +17,10 @@
       "/src/alarms.js",
       "/src/archive-entries.js",
       "/src/db.js",
+      "/src/equals-ignore-case.js",
       "/src/feed-parser.js",
       "/src/fetch-feed.js",
+      "/src/filter-control-characters.js",
       "/src/on-badge-click.js",
       "/src/on-installed.js",
       "/src/poll.js",
@@ -26,8 +28,7 @@
       "/src/resolve-urls.js",
       "/src/rewrite-url.js",
       "/src/truncate-html-string.js",
-      "/src/update-badge-unread-count.js",
-      "/src/utils.js"
+      "/src/update-badge-unread-count.js"
     ]
   },
   "options_page": "options.html",

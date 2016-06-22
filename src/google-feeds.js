@@ -25,7 +25,7 @@ GoogleFeedsAPI.search = function(queryString, timeoutMillis, callback) {
   const TITLE_MAX_LENGTH = 200;
   const CONTENT_SNIPPET_MAX_LENGTH = 400;
 
-  const filterControlCharacters = utils.string.filterControlCharacters;
+  const filterControlCharacters = filterControlCharacters;
 
   const request = new XMLHttpRequest();
   request.timeout = timeoutMillis;
@@ -97,7 +97,7 @@ GoogleFeedsAPI.search = function(queryString, timeoutMillis, callback) {
       if(entry.title) {
         entry.title = filterControlCharacters(entry.title);
         entry.title = replaceHTML(entry.title, '');
-        entry.title = utils.string.truncate(entry.title, TITLE_MAX_LENGTH);
+        entry.title = truncateString(entry.title, TITLE_MAX_LENGTH);
       }
 
       if(entry.contentSnippet) {

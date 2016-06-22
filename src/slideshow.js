@@ -340,7 +340,7 @@ SlideShow.appendSlide = function(entry, isFirst) {
     // here.
     let titleText = replaceHTML(entry.title || '', '');
     titleText = filterArticleTitle(titleText);
-    titleText = utils.string.truncate(titleText, 300);
+    titleText = truncateString(titleText, 300);
     title.textContent = titleText;
   } else {
     title.textContent = 'Untitled';
@@ -394,7 +394,7 @@ SlideShow.appendSlide = function(entry, isFirst) {
   const feedTitle = document.createElement('span');
   feedTitle.setAttribute('title',entry.feedLink);
   const entryPubDate = entry.pubdate ?
-    ' on ' + utils.date.format(new Date(entry.pubdate)) : '';
+    ' on ' + formatDate(new Date(entry.pubdate)) : '';
   feedTitle.textContent = (entry.feedTitle || 'Unknown feed') + ' by ' +
     (entry.author || 'Unknown author') + entryPubDate;
   source.appendChild(feedTitle);
@@ -529,7 +529,7 @@ SlideShow.onKeyDown = function(event) {
   if(SlideShow.currentSlide) {
     const delta = SlideShow.SCROLL_DELTAS['' + event.keyCode];
     if(delta) {
-      utils.scrollToY(SlideShow.currentSlide, delta[0],
+      scrollToY(SlideShow.currentSlide, delta[0],
         SlideShow.currentSlide.scrollTop + delta[1]);
       return;
     }

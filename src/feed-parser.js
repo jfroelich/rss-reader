@@ -69,7 +69,7 @@ FeedParser.findEntries = function(channelElement) {
 
   for(let element = entryParent.firstElementChild; element;
     element = element.nextElementSibling) {
-    if(utils.string.equalsIgnoreCase(element.nodeName, entryNodeName)) {
+    if(equalsIgnoreCase(element.nodeName, entryNodeName)) {
       entries.push(element);
     }
   }
@@ -106,22 +106,22 @@ FeedParser.findFeedDate = function(channelElement) {
 
 // TODO: maybe just use element.matches('link[rel="alternate"]')
 FeedParser.isLinkRelAlternate = function(element) {
-  return utils.string.equalsIgnoreCase(element.nodeName, 'LINK') &&
-    utils.string.equalsIgnoreCase(element.getAttribute('rel'), 'ALTERNATE');
+  return equalsIgnoreCase(element.nodeName, 'LINK') &&
+    equalsIgnoreCase(element.getAttribute('rel'), 'ALTERNATE');
 };
 
 FeedParser.isLinkRelSelf = function(element) {
-  return utils.string.equalsIgnoreCase(element.nodeName, 'LINK') &&
-    utils.string.equalsIgnoreCase(element.getAttribute('rel'), 'SELF');
+  return equalsIgnoreCase(element.nodeName, 'LINK') &&
+    equalsIgnoreCase(element.getAttribute('rel'), 'SELF');
 };
 
 FeedParser.isLinkWithHref = function(element) {
-  return utils.string.equalsIgnoreCase(element.nodeName, 'LINK') &&
+  return equalsIgnoreCase(element.nodeName, 'LINK') &&
     element.hasAttribute('href');
 };
 
 FeedParser.isLinkWithoutHref = function(element) {
-  return utils.string.equalsIgnoreCase(element.nodeName, 'LINK') &&
+  return equalsIgnoreCase(element.nodeName, 'LINK') &&
     !element.hasAttribute('href');
 };
 
@@ -316,7 +316,7 @@ FeedParser.findChildElementByName = function(parentElement, nodeName) {
   // I know that we are needlessly uppercasing the name each time here, but
   // I like using the same function call used everywhere where names are tested
   function isNodeNameEqual(element) {
-    return utils.string.equalsIgnoreCase(element.nodeName, nodeName);
+    return equalsIgnoreCase(element.nodeName, nodeName);
   }
 
   return FeedParser.findChildElement(parentElement, isNodeNameEqual);

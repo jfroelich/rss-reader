@@ -373,7 +373,7 @@ FeedPoller.addEntry = function(connection, entry, callback) {
   // TODO: store a Date object instead of a timestamp
   if(entry.pubdate) {
     const date = new Date(entry.pubdate);
-    if(utils.date.isValid(date)) {
+    if(FeedPoller.isValidDate(date)) {
       storable.pubdate = date.getTime();
     }
   }
@@ -387,6 +387,15 @@ FeedPoller.addEntry = function(connection, entry, callback) {
   }
 
   db.addEntry(connection, storable);
+};
+
+// TODO: check whether there is a better way to do this in ES6
+// TODO: compare to other lib implementations, e.g. underscore/lo-dash
+// See http://stackoverflow.com/questions/1353684
+FeedPoller.isValidDate = function(dateObject) {
+  const OBJECT_TO_STRING = Object.prototype.toString;
+  return dateObject && OBJECT_TO_STRING.call(dateObject) === '[object Date]' &&
+    isFinite(dateObject);
 };
 
 // TODO: rename to be clearer that this deals with entry urls, not feeds

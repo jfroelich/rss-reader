@@ -304,7 +304,7 @@ db.putFeed2 = function(connection, currentFeed, newFeed, callback) {
   function sanitizeString(inputString) {
     let outputString = inputString;
     if(inputString) {
-      outputString = utils.string.filterControlCharacters(outputString);
+      outputString = filterControlCharacters(outputString);
       outputString = replaceHTML(outputString, '');
       // Condense whitespace
       // TODO: maybe this should be a utils function
@@ -462,7 +462,7 @@ db.putFeed = function(connection, currentFeed, newFeed, callback) {
   function sanitizeString(inputString) {
     let outputString = inputString;
     if(inputString) {
-      outputString = utils.string.filterControlCharacters(outputString);
+      outputString = filterControlCharacters(outputString);
       outputString = replaceHTML(outputString, '');
       // Condense whitespace
       // TODO: maybe this should be a utils function

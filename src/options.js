@@ -235,7 +235,7 @@ OptionsPage.appendFeed = function(feed, insertedSort) {
 
   // TODO: the title may contain html and other stuff, it needs to be
   // more properly sanitized
-  title.textContent = utils.string.truncate(feed.title, 300) || 'Untitled';
+  title.textContent = truncateString(feed.title, 300) || 'Untitled';
   item.appendChild(title);
 
   const feedListElement = document.getElementById('feedlist');
