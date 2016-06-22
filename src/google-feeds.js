@@ -4,6 +4,8 @@
 
 'use strict';
 
+// TODO: rename this to something like findFeeds, get rid of GoogleFeedsAPI
+
 // Accesses the basic find-feeds functionality of the Google Feeds API.
 // Google formally deprecated this service. Around December 1st, 2015, I
 // first noticed that the queries stopped working. However, I have witnessed

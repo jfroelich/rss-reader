@@ -59,8 +59,11 @@ FeedPoller.start = function() {
 // TODO: are all the requests concurrent?
 // TODO: maybe just make this into a helper function above
 FeedPoller.iterateFeeds = function(pollContext) {
+  console.debug('Iterating feeds');
+
   const connection = pollContext.connection;
   db.openFeedsCursor(connection, onSuccess);
+
 
   function onSuccess(event) {
     const request = event.target;
@@ -69,6 +72,7 @@ FeedPoller.iterateFeeds = function(pollContext) {
     // We either advanced past the last feed or there were no feeds.
     // pendingFeedsCount is unaffected.
     if(!cursor) {
+      console.debug('Iterated all feeds');
       FeedPoller.onMaybePollCompleted(pollContext);
       return;
     }
@@ -121,6 +125,7 @@ FeedPoller.onMaybePollCompleted = function(pollContext) {
 };
 
 FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
+  console.debug('Fetched feed', fetchEvent.responseURL.href);
   if(fetchEvent.type !== 'load') {
     pollContext.pendingFeedsCount--;
     FeedPoller.onMaybePollCompleted(pollContext);
@@ -143,7 +148,7 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
 };
 
 FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
-
+  console.debug('Stored feed', feed.urls[feed.urls.length - 1]);
   // NOTE: feed is now the stored feed, which contains strings not urls
   // However, entries is still the fetched entries array, which contains
   // URL objects.
