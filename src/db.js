@@ -397,6 +397,16 @@ db.putFeed = function(connection, currentFeed, newFeed, callback) {
 };
 
 db.addFeed = function(connection, feed, callback) {
+
+  // Define the date created property here
+  // TODO: do not modify the input feed. Instead, create a storable copy
+  // and copy over the fields from the input.
+  // TODO: note that this uses the new field name
+  feed.dateCreated = new Date();
+
+  // Temporary legacy code, will eventually delete
+  feed.created = Date.now();
+
   const transaction = connection.transaction('feed', 'readwrite');
   const feedStore = transaction.objectStore('feed');
   const request = feedStore.add(feed);
