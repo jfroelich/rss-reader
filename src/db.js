@@ -241,8 +241,7 @@ db.addFeed = function(connection, feed, callback) {
 };
 
 db.updateFeed = function(connection, feed, callback) {
-  // TODO: it is this function's responsibility to set dateUpdated
-  // TODO: maybe do not modify date updated if no values changed
+  feed.dateUpdated = new Date();
 
   const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');

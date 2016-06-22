@@ -173,7 +173,7 @@ FeedPoller.createMergedFeed = function(localFeed, remoteFeed) {
   outputFeed.dateFetched = remoteFeed.dateFetched;
   outputFeed.dateLastModified = remoteFeed.dateLastModified;
   outputFeed.created = localFeed.created;
-  outputFeed.updated = Date.now();
+  outputFeed.dateCreated = localFeed.dateCreated;
   return outputFeed;
 };
 
