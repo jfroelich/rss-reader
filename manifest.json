@@ -21,6 +21,7 @@
       "/src/feed-parser.js",
       "/src/fetch-feed.js",
       "/src/filter-control-characters.js",
+      "/src/filter-sourceless-images.js",
       "/src/filter-tracking-images.js",
       "/src/on-badge-click.js",
       "/src/on-installed.js",
@@ -28,6 +29,7 @@
       "/src/replace-html.js",
       "/src/resolve-urls.js",
       "/src/rewrite-url.js",
+      "/src/set-image-element-dimensions.js",
       "/src/transform-lazily-loaded-images.js",
       "/src/truncate-html-string.js",
       "/src/update-badge-unread-count.js"

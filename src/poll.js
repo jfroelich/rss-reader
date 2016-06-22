@@ -349,10 +349,10 @@ FeedPoller.processEntry = function(context, feed, entry, callback) {
     // it is called, and it really isn't a general purpose library.
 
     transformLazilyLoadedImages(document);
-    FeedPoller.filterSourcelessImages(document);
+    filterSourcelessImages(document);
     URLResolver.resolveURLsInDocument(document, responseURL.href);
     filterTrackingImages(document);
-    FeedPoller.fetchImageDimensions(document, onSetImageDimensions);
+    setImageElementDimensions(document, onSetImageDimensions);
   }
 
   // Possibly replace the content property of the remoteEntry with the
@@ -444,109 +444,4 @@ FeedPoller.isNoFetchEntryURL = function(url) {
     }
   }
   return false;
-};
-
-FeedPoller.getLiveDocument = function() {
-  return document;
-};
-
-// TODO: think more about how to deal with srcsets if I don't know beforehand
-// which image will be used. This impacts the boilerplate analysis.
-FeedPoller.fetchImageDimensions = function(document, callback) {
-  const stats = {
-    'numProcessed': 0,
-    'numFetched': 0
-  };
-
-  const imageCollection = document.getElementsByTagName('img');
-  const numImages = imageCollection.length;
-  if(!numImages) {
-    callback(document, stats);
-    return;
-  }
-
-  for(let i = 0, imageElement, urlString; i < numImages; i++) {
-    imageElement = imageCollection[i];
-
-    if(imageElement.width && !imageElement.hasAttribute('width')) {
-      imageElement.setAttribute('width', imageElement.width);
-    }
-
-    if(imageElement.height && !imageElement.hasAttribute('height')) {
-      imageElement.setAttribute('height', imageElement.height);
-    }
-
-    if(imageElement.hasAttribute('width') &&
-      imageElement.hasAttribute('height')) {
-      onImageProcessed(imageElement);
-      continue;
-    }
-
-    urlString = imageElement.getAttribute('src') || '';
-
-    // Do not fetch object URLs
-    if(urlString && /^\s*data\s*:/i.test(urlString)) {
-      onImageProcessed(imageElement);
-      continue;
-    }
-
-    if(urlString.length < 9 || !/^\s*http/i.test(urlString)) {
-      onImageProcessed(imageElement);
-      continue;
-    }
-
-    fetchImage(imageElement);
-  }
-
-  function fetchImage(imageElement) {
-    const sourceURLString = imageElement.getAttribute('src');
-    const hostDocument = FeedPoller.getLiveDocument();
-    const proxyImageElement = hostDocument.createElement('img');
-    const boundOnFetchImage = onFetchImage.bind(null, imageElement);
-    proxyImageElement.onload = boundOnFetchImage;
-    proxyImageElement.onerror = boundOnFetchImage;
-    proxyImageElement.src = sourceURLString;
-  }
-
-  function onFetchImage(imageElement, event) {
-    stats.numFetched++;
-    const proxyImageElement = event.target;
-    if(event.type === 'load') {
-      if(!imageElement.hasAttribute('width')) {
-        imageElement.setAttribute('width', proxyImageElement.width);
-      }
-
-      if(!imageElement.hasAttribute('height')) {
-        imageElement.setAttribute('height', proxyImageElement.height);
-      }
-    } else {
-      // TODO: if I got an error, consider removing the image element
-      // from the document. Also, don't forget that if I do this I need
-      // to be using a static node list, as in, I need to be using
-      // querySelectorAll and not getElementsByTagName
-    }
-
-    onImageProcessed(imageElement);
-  }
-
-  // TODO: unsure if I need the imageElement argument. I think it is simply a
-  // remnant of some debugging work.
-  function onImageProcessed(imageElement) {
-    stats.numProcessed++;
-    if(stats.numProcessed === numImages) {
-      callback(document, stats);
-    }
-  }
-};
-
-FeedPoller.filterSourcelessImages = function(document) {
-  const images = document.querySelectorAll('img');
-  for(let i = 0, len = images.length, image, src; i < len; i++) {
-    image = images[i];
-    if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
-      // console.debug('Removing sourcless image', image.outerHTML);
-      image.remove();
-      break;
-    }
-  }
 };
