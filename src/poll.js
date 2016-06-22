@@ -349,7 +349,7 @@ FeedPoller.processEntry = function(context, feed, entry, callback) {
     // TODO: move URLResolver back into poll.js, this is the only place
     // it is called, and it really isn't a general purpose library.
 
-    FeedPoller.transformLazilyLoadedImages(document);
+    transformLazilyLoadedImages(document);
     FeedPoller.filterSourcelessImages(document);
     URLResolver.resolveURLsInDocument(document, responseURL.href);
     FeedPoller.filterTrackingImages(document);
@@ -570,41 +570,5 @@ FeedPoller.filterTrackingImages = function(document) {
   for(let i = 0, len = images.length; i < len; i++) {
     // console.debug('Removing tracker image:', images[i].outerHTML);
     images[i].remove();
-  }
-};
-
-FeedPoller.transformLazilyLoadedImages = function(document) {
-
-  const NAMES = [
-    'load-src',
-    'data-src',
-    'data-original-desktop',
-    'data-baseurl',
-    'data-lazy',
-    'data-img-src',
-    'data-original',
-    'data-adaptive-img',
-    'data-imgsrc',
-    'data-default-src'
-  ];
-
-  const numNames = NAMES.length;
-  const images = document.querySelectorAll('img');
-  for(let i = 0, j = 0, len = images.length, image, name, altSrc; i < len;
-    i++) {
-    image = images[i];
-    if(!(image.getAttribute('src') || '').trim()) {
-      for(j = 0; j < numNames; j++) {
-        name = NAMES[j];
-        if(image.hasAttribute(name)) {
-          altSrc = (image.getAttribute(name) || '').trim();
-          if(altSrc && !altSrc.includes(' ')) {
-            image.removeAttribute(name);
-            image.setAttribute('src', altSrc);
-            break;
-          }
-        }
-      }
-    }
   }
 };
