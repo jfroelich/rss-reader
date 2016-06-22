@@ -222,9 +222,17 @@ db.addEntry = function(connection, entry, callback) {
   request.onerror = callback;
 };
 
-// TODO: maybe the merge shouldn't happen here, maybe it should be the
-// responsibility of the caller. This should just accept one feed and update
-// that. It has nothing to do with merging.
+// Create a storable object from the input feeds by combining together the
+// properties of current and new feed into a basic object, and then
+// sanitizing the properties of the storable feed, and then storing the
+// storable feed, and then calling the callback.
+// TODO: ensure the date is not beyond the current date?
+// TODO: maybe do not modify date updated if no values changed
+// TODO: think more about XSS and where I should be sanitizing these inputs,
+// should it be the responsibility of render, or here before storage. There is
+// an ambiguity then regarding the input formatting, I don't want to mistakenly
+// re-encode encoded html entities and so forth. Maybe just using textContent
+// instead of innerHTML in the render will ensure no problem.
 // TODO: so maybe what I should do is define Feed.merge that takes two feed
 // objects and generates a third that is the result of merging the two
 // TODO: also, maybe it shouldn't sanitize.
@@ -241,91 +249,6 @@ db.addEntry = function(connection, entry, callback) {
 // update. maybe that still makes sense to be separate though.
 // I think before I do this I should do the renaming and retyping of various
 // fields
-db.putFeed2 = function(connection, currentFeed, newFeed, callback) {
-
-  const storable = newFeed.toSerializable();
-
-  let mergedURLs = currentFeed.urls.map(function(url) {
-    return url.href;
-  });
-  for(let i = 0, len = storable.urls.length; i < len; i++) {
-    if(!mergedURLs.includes(storable.urls[i])) {
-      mergedURLs.push(storable.urls[i]);
-    }
-  }
-  storable.urls = mergedURLs;
-
-  if(storable.title) {
-    storable.title = sanitizeString(storable.title);
-  }
-
-  if(storable.description) {
-    storable.description = sanitizeString(storable.description);
-  }
-
-  if(!storable.dateCreated) {
-    storable.dateCreated = new Date();
-  }
-
-  storable.dateUpdated = new Date();
-
-  const transaction = connection.transaction('feed', 'readwrite');
-  const feedStore = transaction.objectStore('feed');
-  let request = null;
-  try {
-    request = feedStore.put(storable);
-  } catch(exception) {
-    if(callback) {
-      const exceptionEvent = Object.create(null);
-      exceptionEvent.type = 'exception';
-      exceptionEvent.message = exception.message;
-      callback(storable, exceptionEvent);
-    }
-    return;
-  }
-
-  if(callback) {
-    request.onsuccess = onPutSuccess;
-    request.onerror = onPutError;
-  }
-
-  function onPutSuccess(event) {
-    if(!storable.id) {
-      storable.id = event.target.result;
-    }
-    callback(storable, event);
-  }
-
-  function onPutError(event) {
-    callback(storable, event);
-  }
-
-  // Prep a string property of an object for storage
-  function sanitizeString(inputString) {
-    let outputString = inputString;
-    if(inputString) {
-      outputString = filterControlCharacters(outputString);
-      outputString = replaceHTML(outputString, '');
-      // Condense whitespace
-      // TODO: maybe this should be a utils function
-      outputString = outputString.replace(/\s+/, ' ');
-      outputString = outputString.trim();
-    }
-    return outputString;
-  }
-};
-
-// Create a storable object from the input feeds by combining together the
-// properties of current and new feed into a basic object, and then
-// sanitizing the properties of the storable feed, and then storing the
-// storable feed, and then calling the callback.
-// TODO: ensure the date is not beyond the current date?
-// TODO: maybe do not modify date updated if no values changed
-// TODO: think more about XSS and where I should be sanitizing these inputs,
-// should it be the responsibility of render, or here before storage. There is
-// an ambiguity then regarding the input formatting, I don't want to mistakenly
-// re-encode encoded html entities and so forth. Maybe just using textContent
-// instead of innerHTML in the render will ensure no problem.
 db.putFeed = function(connection, currentFeed, newFeed, callback) {
 
   // Generate a serializable object for storage and to pass to the callback
@@ -471,6 +394,14 @@ db.putFeed = function(connection, currentFeed, newFeed, callback) {
     }
     return outputString;
   }
+};
+
+db.addFeed = function(connection, feed, callback) {
+  const transaction = connection.transaction('feed', 'readwrite');
+  const feedStore = transaction.objectStore('feed');
+  const request = feedStore.add(feed);
+  request.onsuccess = callback;
+  request.onerror = callback;
 };
 
 db.updateFeed = function(connection, feed, callback) {
