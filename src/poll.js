@@ -22,6 +22,15 @@ FeedPoller.start = function() {
     return;
   }
 
+  // NOTE: untested because connection.navigator is undefined
+  // NOTE: dead branch because currently no way to set NO_POLL_METERED
+  if('NO_POLL_METERED' in localStorage && navigator.connection &&
+    navigator.connection.metered) {
+    console.log('Polling canceled on metered connection');
+    FeedPoller.onMaybePollCompleted(pollContext);
+    return;
+  }
+
   const IDLE_PERIOD_SECONDS = 60;
   if(!localStorage.ONLY_POLL_IF_IDLE) {
     db.open(onOpenDatabase);
