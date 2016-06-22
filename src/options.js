@@ -231,15 +231,22 @@ OptionsPage.appendFeed = function(feed, insertedSort) {
   }
   item.appendChild(favIconElement);
 
-  const title = document.createElement('span');
+  const titleElement = document.createElement('span');
+  let feedTitleString = feed.title;
+  if(feedTitleString) {
+    feedTitleString = truncateHTMLString(feedTitleString, 300);
+  }
 
-  // TODO: the title may contain html and other stuff, it needs to be
-  // more properly sanitized
-  title.textContent = truncateString(feed.title, 300) || 'Untitled';
-  item.appendChild(title);
+  if(!feedTitleString) {
+    feedTitleString = 'Untitled';
+  }
+
+  titleElement.textContent = feedTitleString;
+  item.appendChild(titleElement);
 
   const feedListElement = document.getElementById('feedlist');
 
+  // Insert the feed item element into the proper position in the list
   if(insertedSort) {
     const currentItems = feedListElement.childNodes;
     var added = false;

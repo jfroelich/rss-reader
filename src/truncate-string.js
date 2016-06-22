@@ -5,18 +5,27 @@
 'use strict';
 
 // Truncates a string at the given position, and then appends the extension
-// string. An ellipsis is appended if an extension was not specified.
-// TODO: how does one simply truncate without appending? The test below
-// returns false for empty string so i could not use that. maybe something like
-// typeof extension === 'string'?
-// TODO: i just realized the callers of truncateString may be passing
-// in strings with html entities. Those callers should not be using this
-// function, or should resolve entities before using this function.
-function truncateString(string, position, extension) {
-  const ELLIPSIS = '\u2026';
+// string.
+// If the extension is null or undefined, then an ellipsis is appended.
+// If the extension is an empty string, then nothing is appended.
+// If the extension is a string, then the extension is appended.
+// Position is not validated. Position should be a positive integer.
+function truncateString(string, position, optionalExtension) {
+  const ELLIPSIS_CHARACTER = '\u2026';
   if(string && string.length > position) {
-    extension = extension || ELLIPSIS;
-    return string.substr(0, position) + extension;
+    let extensionString = null;
+
+    if(typeof optionalExtension === 'string') {
+      extensionString = optionalExtension;
+    } else {
+      extensionString = ELLIPSIS_CHARACTER;
+    }
+
+    if(extensionString) {
+      return string.substr(0, position) + extensionString;
+    } else {
+      return string.substr(0, position);
+    }
   }
   return string;
 }

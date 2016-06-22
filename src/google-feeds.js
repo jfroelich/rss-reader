@@ -99,7 +99,7 @@ GoogleFeedsAPI.search = function(queryString, timeoutMillis, callback) {
       if(entry.title) {
         entry.title = filterControlCharacters(entry.title);
         entry.title = replaceHTML(entry.title, '');
-        entry.title = truncateString(entry.title, TITLE_MAX_LENGTH);
+        entry.title = truncateHTMLString(entry.title, TITLE_MAX_LENGTH);
       }
 
       if(entry.contentSnippet) {

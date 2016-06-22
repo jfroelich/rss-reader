@@ -340,7 +340,7 @@ SlideShow.appendSlide = function(entry, isFirst) {
     // here.
     let titleText = replaceHTML(entry.title || '', '');
     titleText = filterArticleTitle(titleText);
-    titleText = truncateString(titleText, 300);
+    titleText = truncateHTMLString(titleText, 300);
     title.textContent = titleText;
   } else {
     title.textContent = 'Untitled';
