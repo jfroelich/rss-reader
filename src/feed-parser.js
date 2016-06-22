@@ -299,7 +299,7 @@ FeedParser.findEntryDatePublished = function(entry) {
   }
 
   if(datePublishedString) {
-    datePublishedString = value.trim();
+    datePublishedString = datePublishedString.trim();
   }
 
   if(datePublishedString) {
