@@ -103,13 +103,12 @@ FeedPoller.start = function() {
       return;
     }
 
-    const entries = remoteFeed.entries;
-
-    // TODO: instead of this, do the merge explicitly here and then call
-    // db.updateFeed. Deprecate db.putFeed. Create db.addFeed for other
-    // contexts such as Subscription.add and opml import.
+    // TODO: create db.addFeed for other
+    // contexts such as Subscription.add and opml import so that I can now
+    // fully delete db.putFeed.
 
     const mergedFeed = FeedPoller.createMergedFeed(localFeed, remoteFeed);
+    const entries = remoteFeed.entries;
     const onPutFeed = FeedPoller.onPutFeed.bind(null, context, entries,
       mergedFeed);
     db.updateFeed(context.connection, mergedFeed, onPutFeed);
