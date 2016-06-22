@@ -144,7 +144,7 @@ OPML.importFiles = function(connection, files, callback) {
     const seenURLs = Object.create(null);
 
     for(let element = bodyElement.firstElementChild, type, url, urlString,
-      outline, normalizedURLString, outlineLinkURL; element;
+      feed, outlineLinkURL; element;
       element = element.nextElementSibling) {
       if(!equalsIgnoreCase(element.nodeName, 'OUTLINE')) {
         continue;
@@ -165,33 +165,32 @@ OPML.importFiles = function(connection, files, callback) {
         continue;
       }
 
-      normalizedURLString = url.href;
-
-      if(normalizedURLString in seenURLs) {
+      if(url.href in seenURLs) {
         continue;
       }
-      seenURLs[normalizedURLString] = 1;
+      seenURLs[url.href] = 1;
 
-      outline = Object.create(null);
-      outline.type = type;
-      outline.title = sanitizeString(element.getAttribute('title') ||
+      // Create the feed object that will be stored
+      feed = Object.create(null);
+      feed.urls = [url.href];
+      feed.type = type;
+      feed.title = sanitizeString(element.getAttribute('title') ||
         element.getAttribute('text'));
-      outline.description = sanitizeString(element.getAttribute('description'));
+      feed.description = sanitizeString(element.getAttribute('description'));
 
-      outline.urls = [url];
-
-      outlineLinkURL = toURLTrapped(
-        sanitizeString(element.getAttribute('htmlUrl')));
+      outlineLinkURL = toURLTrapped(element.getAttribute('htmlUrl'));
       if(outlineLinkURL) {
-        outline.link = outlineLinkURL;
+        feed.link = outlineLinkURL.href;
       }
 
-      // Note this does not wait before continuing which leaves requests
-      // pending
-      db.putFeed(connection, null, outline);
+      db.addFeed(connection, feed, onAddFeed);
     }
 
     onFileProcessed();
+  }
+
+  function onAddFeed(event) {
+    // NOOP
   }
 
   // Trap the exception
@@ -201,12 +200,15 @@ OPML.importFiles = function(connection, files, callback) {
     } catch(exception) {}
   }
 
+  // TODO: this overlaps with poll functionality, should probably make a
+  // general purpose function that is shared
   // TODO: consider max length of each field and the behavior when exceeded
   function sanitizeString(inputString) {
     let outputString = inputString || '';
     if(outputString) {
       outputString = filterControlCharacters(outputString);
       outputString = replaceHTML(outputString, '');
+      outputString = outputString.replace(/\s+/, ' ');
     }
     return outputString.trim();
   }

@@ -104,7 +104,7 @@ FeedPoller.start = function() {
     }
 
     // TODO: create db.addFeed for other
-    // contexts such as Subscription.add and opml import so that I can now
+    // contexts such as Subscription.add so that I can now
     // fully delete db.putFeed.
 
     const mergedFeed = FeedPoller.createMergedFeed(localFeed, remoteFeed);

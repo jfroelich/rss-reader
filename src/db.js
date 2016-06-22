@@ -284,8 +284,6 @@ db.putFeed = function(connection, currentFeed, newFeed, callback) {
     }
   }
 
-  // console.debug('Storing feed with urls', storable.urls);
-
   // Store the fetched feed type (e.g. rss or rdf) as a string
   // Assume that if type is defined that it is valid
   if('type' in newFeed) {
