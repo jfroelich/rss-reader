@@ -249,37 +249,3 @@ db.updateFeed = function(connection, feed, callback) {
   request.onsuccess = callback;
   request.onerror = callback;
 };
-
-// TODO: maybe deprecate and just use the clear button provided by
-// the inspector
-db.clearEntryStore = function(connection) {
-  if(connection) {
-    clearEntries(connection);
-  } else {
-    db.open(onOpen);
-  }
-
-  return 'Requesting entry store to be cleared.';
-
-  function onOpen(event) {
-    if(event.type !== 'success') {
-      console.debug(event);
-      return;
-    }
-
-    const connection = event.target.result;
-    clearEntries(connection);
-  }
-
-  function clearEntries(connection) {
-    const transaction = connection.transaction('entry', 'readwrite');
-    transaction.oncomplete = onComplete;
-    const store = transaction.objectStore('entry');
-    store.clear();
-  }
-
-  function onComplete(event) {
-    console.log('Cleared entry object store');
-    updateBadgeUnreadCount(event.target.db);
-  }
-};
