@@ -59,11 +59,9 @@ FeedPoller.start = function() {
 // TODO: are all the requests concurrent?
 // TODO: maybe just make this into a helper function above
 FeedPoller.iterateFeeds = function(pollContext) {
-  console.debug('Iterating feeds');
 
   const connection = pollContext.connection;
   db.openFeedsCursor(connection, onSuccess);
-
 
   function onSuccess(event) {
     const request = event.target;
@@ -72,7 +70,6 @@ FeedPoller.iterateFeeds = function(pollContext) {
     // We either advanced past the last feed or there were no feeds.
     // pendingFeedsCount is unaffected.
     if(!cursor) {
-      console.debug('Iterated all feeds');
       FeedPoller.onMaybePollCompleted(pollContext);
       return;
     }
@@ -125,7 +122,6 @@ FeedPoller.onMaybePollCompleted = function(pollContext) {
 };
 
 FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
-  console.debug('Fetched feed', fetchEvent.responseURL.href);
   if(fetchEvent.type !== 'load') {
     pollContext.pendingFeedsCount--;
     FeedPoller.onMaybePollCompleted(pollContext);
@@ -148,7 +144,6 @@ FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
 };
 
 FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
-  console.debug('Stored feed', feed.urls[feed.urls.length - 1]);
   // NOTE: feed is now the stored feed, which contains strings not urls
   // However, entries is still the fetched entries array, which contains
   // URL objects.
@@ -178,6 +173,7 @@ FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
   const distinctLinks = Object.create(null);
   let entriesProcessed = 0;
   for(let i = 0, j = 0, entry, linkURL, seen = false; i < numEntries; i++) {
+
     entry = entries[i];
 
     // If the entry has no URLs, skip the entry
@@ -210,6 +206,7 @@ FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
 
   function onEntryProcessed(optionalAddEntryEvent) {
     entriesProcessed++;
+
     if(entriesProcessed === numEntries) {
       pollContext.pendingFeedsCount--;
       FeedPoller.onMaybePollCompleted(pollContext);
@@ -251,7 +248,6 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
 
   function onFindEntryWithURL(event) {
     if(event.type !== 'success') {
-      console.debug(event);
       callback();
       return;
     }
@@ -272,7 +268,7 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
       return;
     }
 
-    const fetchTimeoutMillis = 20 * 1000;
+    const fetchTimeoutMillis = 15 * 1000;
     const fetchRequest = new XMLHttpRequest();
     fetchRequest.timeout = fetchTimeoutMillis;
     fetchRequest.ontimeout = onFetchEntry;
@@ -342,6 +338,9 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
 // to that effect.
 // TODO: I should be using Date objects for date values. Not timestamps.
 FeedPoller.addEntry = function(connection, entry, callback) {
+
+  console.debug('Storing entry', entry.urls[entry.urls.length - 1].href);
+
   const storable = Object.create(null);
 
   // entry.feedLink is a URL string, not an object, because it was copied
@@ -391,7 +390,9 @@ FeedPoller.addEntry = function(connection, entry, callback) {
     storable.content = entry.content;
   }
 
-  db.addEntry(connection, storable);
+  // NOTE: I think this was the bug, I wasn't passing the callback to
+  // the new function, so this was never calling back.
+  db.addEntry(connection, storable, callback);
 };
 
 // TODO: check whether there is a better way to do this in ES6

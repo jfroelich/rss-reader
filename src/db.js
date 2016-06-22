@@ -195,6 +195,9 @@ db.getEntryById = function(connection, entryId, callback) {
 
 // Expects a URL object, not a string
 db.findEntryWithURL = function(connection, url, callback) {
+
+  // console.debug('Searching for entry with url', url.href);
+
   const transaction = connection.transaction('entry');
   const entryStore = transaction.objectStore('entry');
   const urlsIndex = entryStore.index('urls');
@@ -213,13 +216,22 @@ db.findEntryWithURL = function(connection, url, callback) {
 // separate lookup request, and that any constraint failure causes the entire
 // transaction to fail.
 db.addEntry = function(connection, entry, callback) {
+  console.debug('Adding entry to entry store',
+    entry.urls[entry.urls.length - 1]);
   const transaction = connection.transaction('entry', 'readwrite');
+  transaction.oncomplete = function(event) {
+    console.debug('Stored entry, calling back');
+    if(callback) {
+      callback(event);
+    }
+  };
+
   const entryStore = transaction.objectStore('entry');
   const request = entryStore.add(entry);
-  if(callback) {
-    request.onsuccess = callback;
-    request.onerror = callback;
-  }
+  //if(callback) {
+    // request.onsuccess = callback;
+    //request.onerror = callback;
+  //}
 };
 
 // TODO: maybe the merge shouldn't happen here, maybe it should be the
