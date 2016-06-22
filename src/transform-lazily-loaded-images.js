@@ -4,7 +4,6 @@
 
 'use strict';
 
-// todo; try using for of to iterate
 function transformLazilyLoadedImages(document) {
 
   const ALTERNATE_ATTRIBUTE_NAMES = [
@@ -20,19 +19,18 @@ function transformLazilyLoadedImages(document) {
     'data-default-src'
   ];
 
-  const numNames = ALTERNATE_ATTRIBUTE_NAMES.length;
   const images = document.querySelectorAll('img');
-  for(let i = 0, j = 0, len = images.length, image, name, altSrc; i < len;
-    i++) {
-    image = images[i];
+
+  for(let image of images) {
     if(!(image.getAttribute('src') || '').trim()) {
-      for(j = 0; j < numNames; j++) {
-        name = ALTERNATE_ATTRIBUTE_NAMES[j];
-        if(image.hasAttribute(name)) {
-          altSrc = (image.getAttribute(name) || '').trim();
-          if(altSrc && !altSrc.includes(' ')) {
-            image.removeAttribute(name);
-            image.setAttribute('src', altSrc);
+      for(let alternateName of ALTERNATE_ATTRIBUTE_NAMES) {
+        if(image.hasAttribute(alternateName)) {
+          const alternateValue = (image.getAttribute(alternateName) ||
+            '').trim();
+          if(alternateValue && !alternateValue.includes(' ')) {
+            console.debug('Modifying lazy image element', image.outerHTML);
+            image.removeAttribute(alternateName);
+            image.setAttribute('src', alternateValue);
             break;
           }
         }
