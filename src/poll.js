@@ -4,21 +4,19 @@
 
 'use strict';
 
-// TOP TODO: ran it and didn't see poll completed, look into this
-
 const FeedPoller = Object.create(null);
 
 FeedPoller.start = function() {
   console.log('Starting poll ...');
 
-  const pollContext = {
+  const context = {
     'pendingFeedsCount': 0,
     'connection': null
   };
 
   if('onLine' in navigator && !navigator.onLine) {
     console.log('Polling canceled because offline');
-    FeedPoller.onMaybePollCompleted(pollContext);
+    FeedPoller.onMaybePollCompleted(context);
     return;
   }
 
@@ -27,12 +25,12 @@ FeedPoller.start = function() {
   if('NO_POLL_METERED' in localStorage && navigator.connection &&
     navigator.connection.metered) {
     console.log('Polling canceled on metered connection');
-    FeedPoller.onMaybePollCompleted(pollContext);
+    FeedPoller.onMaybePollCompleted(context);
     return;
   }
 
-  const IDLE_PERIOD_SECONDS = 60;
   if('ONLY_POLL_IF_IDLE' in localStorage) {
+    const IDLE_PERIOD_SECONDS = 60;
     chrome.idle.queryState(IDLE_PERIOD_SECONDS, onQueryIdleState);
   } else {
     db.open(onOpenDatabase);
@@ -44,7 +42,7 @@ FeedPoller.start = function() {
         db.open(onOpenDatabase);
       } else {
         console.log('Polling canceled because not idle');
-        FeedPoller.onMaybePollCompleted(pollContext);
+        FeedPoller.onMaybePollCompleted(context);
       }
     } else {
       db.open(onOpenDatabase);
@@ -54,65 +52,139 @@ FeedPoller.start = function() {
   function onOpenDatabase(event) {
     if(event.type !== 'success') {
       console.debug(event);
-      FeedPoller.onMaybePollCompleted(pollContext);
+      FeedPoller.onMaybePollCompleted(context);
       return;
     }
 
-    pollContext.connection = event.target.result;
-    FeedPoller.iterateFeeds(pollContext);
+    const connection = event.target.result;
+    context.connection = connection;
+
+    // TODO: load all feeds into an array first, then iterate over the array,
+    // instead of iterating the cursor
+    db.openFeedsCursor(connection, onOpenFeedsCursor);
   }
-};
 
-// Iterate over the feeds in the database, and update each feed.
-// TODO: react appropriately to request error?
-// TODO: are all the requests concurrent?
-// TODO: maybe just make this into a helper function above
-FeedPoller.iterateFeeds = function(pollContext) {
-
-  const connection = pollContext.connection;
-  db.openFeedsCursor(connection, onSuccess);
-
-  function onSuccess(event) {
-    const request = event.target;
-    const cursor = request.result;
-
-    // We either advanced past the last feed or there were no feeds.
-    // pendingFeedsCount is unaffected.
-    if(!cursor) {
-      FeedPoller.onMaybePollCompleted(pollContext);
+  function onOpenFeedsCursor(event) {
+    if(event.type !== 'success') {
+      FeedPoller.onMaybePollCompleted(context);
       return;
     }
 
-    const feed = cursor.value;
-    let urls = feed.urls;
-
-    // Handle older feeds or feeds without urls
-    if(!urls || !urls.length) {
-      if(feed.url) {
-        feed.urls = [feed.url];
-        urls = feed.urls;
-        delete feed.url;
-      } else {
-        console.debug('No urls for feed', feed);
-        cursor.continue();
-        return;
-      }
+    const cursor = event.target.result;
+    if(!cursor) {
+      FeedPoller.onMaybePollCompleted(context);
+      return;
     }
 
-    pollContext.pendingFeedsCount++;
+    context.pendingFeedsCount++;
+    const feed = cursor.value;
+    const urls = feed.urls;
     const requestURL = new URL(urls[urls.length - 1]);
-    const timeout = 10 * 1000;
+    const fetchTimeout = 10 * 1000;
     const excludeEntries = false;
-    const onFetchFeedBound = FeedPoller.onFetchFeed.bind(null, pollContext,
-      feed);
-    fetchFeed(requestURL, timeout, excludeEntries, onFetchFeedBound);
+    const onFetchFeedBound = onFetchFeed.bind(null, feed);
+    fetchFeed(requestURL, fetchTimeout, excludeEntries, onFetchFeedBound);
     cursor.continue();
   }
+
+  function onFetchFeed(localFeed, fetchEvent) {
+    if(fetchEvent.type !== 'load') {
+      context.pendingFeedsCount--;
+      FeedPoller.onMaybePollCompleted(context);
+      return;
+    }
+
+    const remoteFeed = fetchEvent.feed;
+    if(localFeed.dateLastModified && remoteFeed.dateLastModified &&
+      localFeed.dateLastModified.getTime() ===
+      remoteFeed.dateLastModified.getTime()) {
+      context.pendingFeedsCount--;
+      FeedPoller.onMaybePollCompleted(context);
+      return;
+    }
+
+    const entries = remoteFeed.entries;
+
+    // TODO: instead of this, do the merge explicitly here and then call
+    // db.updateFeed. Deprecate db.putFeed. Create db.addFeed for other
+    // contexts such as Subscription.add and opml import.
+
+    const mergedFeed = FeedPoller.createMergedFeed(localFeed, remoteFeed);
+    const onPutFeed = FeedPoller.onPutFeed.bind(null, context, entries,
+      mergedFeed);
+    db.updateFeed(context.connection, mergedFeed, onPutFeed);
+  }
 };
 
-FeedPoller.onMaybePollCompleted = function(pollContext) {
+FeedPoller.createMergedFeed = function(localFeed, remoteFeed) {
+
+  // Prep a string property of an object for storage
+  // TODO: maybe this should be a db function or something
+  // TODO: maybe do the sanitization externally, explicitly
+  function sanitizeString(inputString) {
+    let outputString = inputString;
+    if(inputString) {
+      outputString = filterControlCharacters(outputString);
+      outputString = replaceHTML(outputString, '');
+      // Condense whitespace
+      // TODO: maybe this should be a utils function
+      outputString = outputString.replace(/\s+/, ' ');
+      outputString = outputString.trim();
+    }
+    return outputString;
+  }
+
+  const outputFeed = Object.create(null);
+  outputFeed.id = localFeed.id;
+  outputFeed.type = remoteFeed.type;
+
+  outputFeed.urls = [].concat(localFeed.urls);
+  const remoteURLs = remoteFeed.urls;
+  for(let i = 0, len = remoteURLs.length, urlString; i < len; i++) {
+    urlString = remoteURLs[i].href;
+    if(!outputFeed.urls.includes(urlString)) {
+      outputFeed.urls.push(urlString);
+    }
+  }
+
+  // NOTE: title is semi-required. It must be defined, although it can be
+  // an empty string. It must be defined because of how views query and
+  // iterate over the feeds in the store using title as an index. If it were
+  // ever undefined those feeds would not appear in the title index.
+  // TODO: remove this requirement somehow? Maybe the options page that
+  // retrieves feeds has to manually sort them?
+  const title = sanitizeString(remoteFeed.title) || localFeed.title || '';
+  outputFeed.title = title;
+
+  const description = sanitizeString(remoteFeed.description);
+  if(description) {
+    outputFeed.description = description;
+  } else {
+    outputFeed.description = localFeed.description;
+  }
+
+  if(remoteFeed.link) {
+    outputFeed.link = remoteFeed.link.href;
+  } else {
+    outputFeed.link = localFeed.link;
+  }
+
+  if(remoteFeed.date) {
+    outputFeed.date = remoteFeed.date;
+  } else if(localFeed.date) {
+    outputFeed.date = localFeed.date;
+  }
+
+  outputFeed.dateFetched = remoteFeed.dateFetched;
+  outputFeed.dateLastModified = remoteFeed.dateLastModified;
+  outputFeed.created = localFeed.created;
+  outputFeed.updated = Date.now();
+  return outputFeed;
+};
+
+FeedPoller.onMaybePollCompleted = function(context) {
   // If there is still pending work we are not actually done
-  if(pollContext.pendingFeedsCount) {
+  if(context.pendingFeedsCount) {
     return;
   }
 
@@ -130,39 +202,17 @@ FeedPoller.onMaybePollCompleted = function(pollContext) {
   }
 };
 
-FeedPoller.onFetchFeed = function(pollContext, localFeed, fetchEvent) {
-  if(fetchEvent.type !== 'load') {
-    pollContext.pendingFeedsCount--;
-    FeedPoller.onMaybePollCompleted(pollContext);
-    return;
-  }
+// NOTE: feed is now the stored feed, which contains strings not urls
+// However, entries is still the fetched entries array, which contains
+// URL objects.
+FeedPoller.onPutFeed = function(context, entries, feed, event) {
 
-  const remoteFeed = fetchEvent.feed;
-  if(localFeed.dateLastModified && remoteFeed.dateLastModified &&
-    localFeed.dateLastModified.getTime() ===
-    remoteFeed.dateLastModified.getTime()) {
-    pollContext.pendingFeedsCount--;
-    FeedPoller.onMaybePollCompleted(pollContext);
-    return;
-  }
+  console.debug('Stored feed', feed);
 
-  const entries = remoteFeed.entries;
-  const onPutFeed = FeedPoller.onPutFeed.bind(null, pollContext,
-    entries);
-  db.putFeed(pollContext.connection, localFeed, remoteFeed, onPutFeed);
-};
-
-FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
-  // NOTE: feed is now the stored feed, which contains strings not urls
-  // However, entries is still the fetched entries array, which contains
-  // URL objects.
-
-  // If there was a problem updating the feed, then exit. Do not process
-  // the feed's entries.
-  if(putEvent.type !== 'success') {
-    console.error(putEvent);
-    pollContext.pendingFeedsCount--;
-    FeedPoller.onMaybePollCompleted(pollContext);
+  if(event.type !== 'success') {
+    console.error(event);
+    context.pendingFeedsCount--;
+    FeedPoller.onMaybePollCompleted(context);
     return;
   }
 
@@ -170,28 +220,23 @@ FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
 
   // If there are no entries then we are done processing the feed
   if(!numEntries) {
-    pollContext.pendingFeedsCount--;
-    FeedPoller.onMaybePollCompleted(pollContext);
+    context.pendingFeedsCount--;
+    FeedPoller.onMaybePollCompleted(context);
     return;
   }
 
-  // Process the fetched feed's entries. Filter out entries without urls
-  // or that share urls.
-  // Entry urls created from fetchFeed are URL objects, not strings.
-  // distinct links is a plain object due to performance issues with sets
+  // Process the fetched feed's entries.
   const distinctLinks = Object.create(null);
   let entriesProcessed = 0;
   for(let i = 0, j = 0, entry, linkURL, seen = false; i < numEntries; i++) {
 
     entry = entries[i];
 
-    // If the entry has no URLs, skip the entry
     if(!entry.urls.length) {
       onEntryProcessed();
       continue;
     }
 
-    // If any of the entry's URLs have been seen already, skip the entry
     seen = false;
     for(j = 0; j < entry.urls.length; j++) {
       if(entry.urls[j].href in distinctLinks) {
@@ -205,26 +250,25 @@ FeedPoller.onPutFeed = function(pollContext, entries, feed, putEvent) {
       continue;
     }
 
-    // Add the entry's URLs to the distinctLinks set of normalized URL strings
     for(j = 0; j < entry.urls.length; j++) {
       distinctLinks[entry.urls[j].href] = 1;
     }
 
-    FeedPoller.processEntry(pollContext, feed, entry, onEntryProcessed);
+    FeedPoller.processEntry(context, feed, entry, onEntryProcessed);
   }
 
   function onEntryProcessed(optionalAddEntryEvent) {
     entriesProcessed++;
 
     if(entriesProcessed === numEntries) {
-      pollContext.pendingFeedsCount--;
-      FeedPoller.onMaybePollCompleted(pollContext);
-      updateBadgeUnreadCount(pollContext.connection);
+      context.pendingFeedsCount--;
+      FeedPoller.onMaybePollCompleted(context);
+      updateBadgeUnreadCount(context.connection);
     }
   }
 };
 
-FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
+FeedPoller.processEntry = function(context, feed, entry, callback) {
 
   // Associate the entry with its feed
   // TODO: rename this to something clearer, like feedId
@@ -252,7 +296,7 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
   // in the entry's urls array. entry.urls provides URL objects, not strings,
   // because fetchFeed converts them into URL objects.
   const entryURL = entry.urls[entry.urls.length - 1];
-  const connection = pollContext.connection;
+  const connection = context.connection;
   db.findEntryWithURL(connection, entryURL, onFindEntryWithURL);
 
   function onFindEntryWithURL(event) {
@@ -267,13 +311,13 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
     }
 
     if(FeedPoller.isNoFetchEntryURL(entryURL)) {
-      FeedPoller.addEntry(pollContext.connection, entry, callback);
+      FeedPoller.addEntry(context.connection, entry, callback);
       return;
     }
 
     const path = entryURL.pathname;
     if(path && path.length > 5 && /\.pdf$/i.test(path)) {
-      FeedPoller.addEntry(pollContext.connection, entry, callback);
+      FeedPoller.addEntry(context.connection, entry, callback);
       return;
     }
 
@@ -293,14 +337,14 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
   function onFetchEntry(event) {
     if(event.type !== 'load') {
       console.debug(event);
-      FeedPoller.addEntry(pollContext.connection, entry, callback);
+      FeedPoller.addEntry(context.connection, entry, callback);
       return;
     }
 
     const fetchRequest = event.target;
     const document = fetchRequest.responseXML;
     if(!document) {
-      FeedPoller.addEntry(pollContext.connection, entry, callback);
+      FeedPoller.addEntry(context.connection, entry, callback);
       return;
     }
 
@@ -339,7 +383,7 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
       }
     }
 
-    FeedPoller.addEntry(pollContext.connection, entry, callback);
+    FeedPoller.addEntry(context.connection, entry, callback);
   }
 };
 
