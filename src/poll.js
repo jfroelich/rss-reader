@@ -103,15 +103,11 @@ FeedPoller.start = function() {
       return;
     }
 
-    // TODO: create db.addFeed for other
-    // contexts such as Subscription.add so that I can now
-    // fully delete db.putFeed.
-
     const mergedFeed = FeedPoller.createMergedFeed(localFeed, remoteFeed);
     const entries = remoteFeed.entries;
-    const onPutFeed = FeedPoller.onPutFeed.bind(null, context, entries,
+    const onUpdateFeed = FeedPoller.onUpdateFeed.bind(null, context, entries,
       mergedFeed);
-    db.updateFeed(context.connection, mergedFeed, onPutFeed);
+    db.updateFeed(context.connection, mergedFeed, onUpdateFeed);
   }
 };
 
@@ -204,7 +200,7 @@ FeedPoller.onMaybePollCompleted = function(context) {
 // NOTE: feed is now the stored feed, which contains strings not urls
 // However, entries is still the fetched entries array, which contains
 // URL objects.
-FeedPoller.onPutFeed = function(context, entries, feed, event) {
+FeedPoller.onUpdateFeed = function(context, entries, feed, event) {
 
   console.debug('Stored feed', feed);
 
@@ -392,7 +388,7 @@ FeedPoller.addEntry = function(connection, entry, callback) {
   const storable = Object.create(null);
 
   // entry.feedLink is a URL string, not an object, because it was copied
-  // over from the feed object that was the result of db.putFeed
+  // over from the feed object that was the input to db.updateFeed
   if(entry.feedLink) {
     storable.feedLink = entry.feedLink;
   }
