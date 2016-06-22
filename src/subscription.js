@@ -22,42 +22,84 @@ Subscription.add = function(connection, url, callback) {
       return;
     }
 
-    const existingFeed = null;
-    db.putFeed(connection, existingFeed, fetchEvent.feed, onPutFeed);
+    // Create a storable feed and then call db.addFeed.
+    // TODO: don't forget, addFeed only returns an event, not the stored
+    // object. I have to callback with the object here, and define its id
+    // here.
+
+    const storableFeed = createStorableFeed(fetchEvent.feed);
+    db.addFeed(connection, storableFeed, onAddFeed.bind(null, storableFeed));
   }
 
-  function onPutFeed(storedFeed, putEvent) {
-    if(putEvent.type !== 'success') {
-      const event = Object.create(null);
-      event.type = 'error';
-      const error = putEvent.target.error;
+  function createStorableFeed(inputFeed) {
+    const storable = Object.create(null);
+    storable.urls = inputFeed.urls.map(function(url) {
+      return url.href;
+    });
+
+    storable.type = inputFeed.type;
+    if(inputFeed.link) {
+      storable.link = inputFeed.link.href;
+    }
+
+    storable.title = sanitizeString(inputFeed.title) || '';
+    storable.description = sanitizeString(inputFeed.description);
+    storable.date = inputFeed.date;
+    storable.dateLastModified = inputFeed.dateLastModified;
+    storable.dateFetched = inputFeed.dateFetched;
+    return storable;
+  }
+
+  // Prep a string property of an object for storage
+  function sanitizeString(inputString) {
+    let outputString = inputString;
+    if(inputString) {
+      outputString = filterControlCharacters(outputString);
+      outputString = replaceHTML(outputString, '');
+      // Condense whitespace
+      // TODO: maybe this should be a utils function
+      outputString = outputString.replace(/\s+/, ' ');
+      outputString = outputString.trim();
+    }
+    return outputString;
+  }
+
+  function onAddFeed(addedFeed, event) {
+    if(event.type !== 'success') {
+      const errorEvent = Object.create(null);
+      errorEvent.type = 'error';
+      const error = event.target.error;
       if(error && error.name === 'ConstraintError') {
-        event.message = 'You are already subscribed to this feed.';
+        errorEvent.message = 'You are already subscribed to this feed.';
       } else {
-        event.message = 'There was a problem adding the feed to the database.';
+        errorEvent.message =
+          'There was a problem adding the feed to the database.';
       }
 
-      callback(event);
+      callback(errorEvent);
       return;
     }
+
+    // Define the id, because db.addFeed does not do this for us
+    addedFeed.id = event.target.result;
 
     if(localStorage.SHOW_NOTIFICATIONS) {
       const notification = {
         'type': 'basic',
         'title': chrome.runtime.getManifest().name,
         'iconUrl': '/images/rss_icon_trans.gif',
-        'message': 'Subscribed to ' + (storedFeed.title || 'Untitled')
+        'message': 'Subscribed to ' + (addedFeed.title || 'Untitled')
       };
       chrome.notifications.create('Lucubrate', notification,
         notificationCallback);
     }
 
-    const event = Object.create(null);
-    event.type = 'success';
-    event.message = 'Successfully subscribed to ' +
-      (storedFeed.title || 'Untitled');
-    event.feed = storedFeed;
-    callback(event);
+    const successEvent = Object.create(null);
+    successEvent.type = 'success';
+    successEvent.message = 'Successfully subscribed to ' +
+      (addedFeed.title || 'Untitled');
+    successEvent.feed = addedFeed;
+    callback(successEvent);
   }
 
   // chrome.notifications.create requires some type of callback function
