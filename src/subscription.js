@@ -12,20 +12,14 @@ Subscription.add = function(connection, url, callback) {
   const excludeEntries = true;
   fetchFeed(url, fetchTimeoutMillis, excludeEntries, onFetchFeed);
 
-  function onFetchFeed(fetchEvent) {
-    if(fetchEvent.type !== 'load') {
-      const event = Object.create(null);
-      event.type = 'error';
-      event.message = 'There was a problem retrieving the feed';
-      console.dir(fetchEvent);
-      callback(event);
+  function onFetchFeed(event) {
+    if(event.type !== 'load') {
+      const errorEvent = Object.create(null);
+      errorEvent.type = 'error';
+      errorEvent.message = 'There was a problem retrieving the feed';
+      callback(errorEvent);
       return;
     }
-
-    // Create a storable feed and then call db.addFeed.
-    // TODO: don't forget, addFeed only returns an event, not the stored
-    // object. I have to callback with the object here, and define its id
-    // here.
 
     const storableFeed = createStorableFeed(fetchEvent.feed);
     db.addFeed(connection, storableFeed, onAddFeed.bind(null, storableFeed));
@@ -80,7 +74,7 @@ Subscription.add = function(connection, url, callback) {
       return;
     }
 
-    // Define the id, because db.addFeed does not do this for us
+    // Define the id
     addedFeed.id = event.target.result;
 
     if(localStorage.SHOW_NOTIFICATIONS) {
@@ -98,13 +92,15 @@ Subscription.add = function(connection, url, callback) {
     successEvent.type = 'success';
     successEvent.message = 'Successfully subscribed to ' +
       (addedFeed.title || 'Untitled');
+    // TODO: rather than pass back the whole feed, maybe only pass back
+    // the relevant properties. The idea is to expose as little as possible?
     successEvent.feed = addedFeed;
     callback(successEvent);
   }
 
   // chrome.notifications.create requires some type of callback function
   function notificationCallback() {
-
+    // NOOP
   }
 };
 
