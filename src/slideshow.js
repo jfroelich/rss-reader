@@ -391,13 +391,23 @@ SlideShow.appendSlide = function(entry, isFirst) {
   favIcon.setAttribute('height', '16');
   source.appendChild(favIcon);
 
-  const feedTitle = document.createElement('span');
-  feedTitle.setAttribute('title',entry.feedLink);
-  const entryPubDate = entry.pubdate ?
-    ' on ' + formatDate(new Date(entry.pubdate)) : '';
-  feedTitle.textContent = (entry.feedTitle || 'Unknown feed') + ' by ' +
-    (entry.author || 'Unknown author') + entryPubDate;
-  source.appendChild(feedTitle);
+  const feedTitleElement = document.createElement('span');
+
+  if(entry.feedLink) {
+    feedTitleElement.setAttribute('title', entry.feedLink);
+  }
+
+  const titleTextArray = [];
+  titleTextArray.push(entry.feedTitle || 'Unknown feed');
+  titleTextArray.push(' by ');
+  titleTextArray.push(entry.author || 'Unknown author');
+  if(entry.datePublished) {
+    titleTextArray.push(' on ');
+    titleTextArray.push(formatDate(entry.datePublished));
+  }
+
+  feedTitleElement.textContent = titleTextArray.join('');
+  source.appendChild(feedTitleElement);
 
   const slidesContainer = document.getElementById('slideshow-container');
   slidesContainer.appendChild(slide);
@@ -463,8 +473,7 @@ SlideShow.showPreviousSlide = function() {
   }
 };
 
-// Note this only checks the UI and does not hit the db.
-SlideShow.isUnreadEntry = function(entryElement) {
+SlideShow.isUnreadyEntrySlide = function(entryElement) {
   return !entryElement.hasAttribute('read');
 };
 

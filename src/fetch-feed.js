@@ -4,8 +4,7 @@
 
 'use strict';
 
-// Fetches the XML of a feed and parses it into a feed object
-// TODO: should I be rewriting feed.url as well? Or just entry links?
+// Fetches a remote XML file and parses it into a feed object
 function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
 
   const request = new XMLHttpRequest();
@@ -20,8 +19,6 @@ function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
   request.send();
 
   function onResponse(event) {
-    // TODO: does this ever throw? I don't think so, I think responseURL
-    // is always defined? Test.
     const responseURL = new URL(event.target.responseURL);
     const outputEvent = Object.create(null);
     outputEvent.type = event.type;
@@ -49,12 +46,11 @@ function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
       return;
     }
 
-    // FeedParser does not define the 'urls' property because FeedParser is
-    // not aware of urls. So define it here for the first time, and begin the
-    // list with the requested url.
-    outputEvent.feed.urls = [requestURL];
+    // TODO: what about redirect loops? This would lead to a non-stop growing
+    // of the urls array. Maybe I should check if the new responseURL is not
+    // only not the last url but also not any of the previous.
 
-    // When redirected, append the redirected url
+    outputEvent.feed.urls = [requestURL];
     if(requestURL.href !== responseURL.href) {
       console.debug('Feed redirect', requestURL.href, responseURL.href);
       outputEvent.feed.urls.push(responseURL);

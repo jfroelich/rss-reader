@@ -37,8 +37,15 @@ Subscription.add = function(connection, url, callback) {
     }
 
     storable.title = sanitizeString(inputFeed.title) || '';
-    storable.description = sanitizeString(inputFeed.description);
-    storable.date = inputFeed.date;
+
+    if(inputFeed.description) {
+      storable.description = sanitizeString(inputFeed.description);
+    }
+
+    if(inputFeed.datePublished) {
+      storable.datePublished = inputFeed.datePublished;
+    }
+
     storable.dateLastModified = inputFeed.dateLastModified;
     storable.dateFetched = inputFeed.dateFetched;
     return storable;
@@ -58,6 +65,8 @@ Subscription.add = function(connection, url, callback) {
     return outputString;
   }
 
+  // TODO: rather than pass back the whole feed, maybe only pass back
+  // the relevant properties. The idea is to expose as little as possible?
   function onAddFeed(addedFeed, event) {
     if(event.type !== 'success') {
       const errorEvent = Object.create(null);
@@ -77,25 +86,27 @@ Subscription.add = function(connection, url, callback) {
     // Define the id
     addedFeed.id = event.target.result;
 
-    if(localStorage.SHOW_NOTIFICATIONS) {
-      const notification = {
-        'type': 'basic',
-        'title': chrome.runtime.getManifest().name,
-        'iconUrl': '/images/rss_icon_trans.gif',
-        'message': 'Subscribed to ' + (addedFeed.title || 'Untitled')
-      };
-      chrome.notifications.create('Lucubrate', notification,
-        notificationCallback);
-    }
+    showSubscriptionNotification(addedFeed);
 
     const successEvent = Object.create(null);
     successEvent.type = 'success';
     successEvent.message = 'Successfully subscribed to ' +
       (addedFeed.title || 'Untitled');
-    // TODO: rather than pass back the whole feed, maybe only pass back
-    // the relevant properties. The idea is to expose as little as possible?
     successEvent.feed = addedFeed;
     callback(successEvent);
+  }
+
+  function showSubscriptionNotification(feed) {
+    if('SHOW_NOTIFICATIONS' in localStorage) {
+      const notification = {
+        'type': 'basic',
+        'title': chrome.runtime.getManifest().name,
+        'iconUrl': '/images/rss_icon_trans.gif',
+        'message': 'Subscribed to ' + (feed.title || 'Untitled')
+      };
+      chrome.notifications.create('Lucubrate', notification,
+        notificationCallback);
+    }
   }
 
   // chrome.notifications.create requires some type of callback function
@@ -123,8 +134,6 @@ Subscription.remove = function(feedId, callback) {
 
   function onOpenDatabase(event) {
     if(event.type !== 'success') {
-      // TODO: expose some more info about a connection error? What are the
-      // props to consider from the indexedDB event?
       const subscriptionEvent = {
         'type': 'database_connection_error',
         'feedId': feedId,
@@ -160,33 +169,30 @@ Subscription.remove = function(feedId, callback) {
     const cursor = request.result;
     if(cursor) {
       const entry = cursor.value;
-      // NOTE: async, do not wait
       cursor.delete();
       entriesRemoved++;
-      const entryDeletedMessage = {
-        'type': 'entryDeleteRequestedByUnsubscribe',
-        'entryId': entry.id
-      };
-      // NOTE: Ignores possible transaction rollback
-      chrome.runtime.sendMessage(entryDeletedMessage);
+      sendEntryDeleteRequestedMessage(entry);
       cursor.continue();
     } else {
       onRemoveEntries(event);
     }
   }
 
+  function sendEntryDeleteRequestedMessage(entry) {
+    const message = {
+      'type': 'entryDeleteRequestedByUnsubscribe',
+      'entryId': entry.id
+    };
+    chrome.runtime.sendMessage(message);
+  }
+
   function onRemoveEntries(event) {
-    // TODO: double check this is how to get the connection variable from
-    // the event
     const connection = event.target.db;
     db.deleteFeedById(connection, feedId, onComplete);
   }
 
   function onComplete(event) {
     const connection = event.target.db;
-
-    // NOTE: This happens after because it is a separate read transaction,
-    // despite pending delete requests of the previous transaction
     updateBadgeUnreadCount(connection);
 
     const subscriptionEvent = {

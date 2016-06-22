@@ -466,6 +466,9 @@ OptionsPage.populateFeedDetails = function(feedId) {
     const feedLinkURLString = feed.link;
     feedLinkElement.textContent = feedLinkURLString;
 
+
+    // TODO: show dateLastModified, datePublished, dateCreated, dateUpdated
+
     const unsubscribeButton = document.getElementById('details-unsubscribe');
     unsubscribeButton.value = '' + feed.id;
   }

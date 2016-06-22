@@ -122,49 +122,18 @@ Feed.prototype.toSerializable = function() {
     feed.link = this.linkURL.href;
   }
 
-  if(this.type) {
-    feed.type = this.type;
-  }
-
-  if(this.title) {
-    feed.title = this.title;
-  } else {
-    // NOTE: I don't want to do this but due to how the options page sorts
-    // by title index and the feed will not otherwise appear in the title index
-    // i have to at least provide an empty string. In the future I would like
-    // to remove this.
-    feed.title = '';
-  }
-
-  if(this.description) {
-    feed.description = this.description;
-  }
-
-  if(this.datePublished) {
-    // NOTE: The name is to matchup with the current implementation. I plan
-    // to rename this.
-    // TODO: not sure if the type is correct. I want it to be a Date. Not sure
-    // if I previously used dates. Need to test.
-    feed.date = this.datePublished;
-  }
-
-  if(this.dateCreated) {
-    // TODO: rename and use date
-    feed.created = this.dateCreated.getTime();
-  }
-
-  if(this.dateUpdated) {
-    // TODO: rename and use date
-    feed.updated = this.dateUpdated.getTime();
-  }
-
-  if(this.dateFetched) {
-    feed.dateFetched = this.dateFetched;
-  }
-
-  if(this.dateLastModified) {
-    feed.dateLastModified = this.dateLastModified;
-  }
+  feed.type = this.type;
+  // NOTE: I don't want to do this but due to how the options page sorts
+  // by title index and the feed will not otherwise appear in the title index
+  // i have to at least provide an empty string. In the future I would like
+  // to remove this.
+  feed.title = this.title || '';
+  feed.description = this.description;
+  feed.datePublished = this.datePublished;
+  feed.dateCreated = this.dateCreated;
+  feed.dateUpdated = this.dateUpdated;
+  feed.dateFetched = this.dateFetched;
+  feed.dateLastModified = this.dateLastModified;
 
   return feed;
 };

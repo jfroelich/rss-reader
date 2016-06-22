@@ -30,17 +30,29 @@ FeedParser.parse = function(document, excludeEntries) {
   feed.description = FeedParser.findChildElementText(channel,
     documentElement.matches('feed') ? 'SUBTITLE' : 'DESCRIPTION');
   feed.link = FeedParser.findFeedLink(channel);
-
-  // TODO: rename this to something clearer
-  feed.date = FeedParser.findFeedDate(channel);
+  feed.datePublished = FeedParser.findFeedDatePublished(channel);
 
   if(!excludeEntries) {
     const entryElements = FeedParser.findEntries(channel);
-    feed.entries = entryElements.map(FeedParser.createEntryFromElement);
+    feed.entries = entryElements.map(
+      FeedParser.createEntryFromElement.bind(null, feed.datePublished));
   }
 
   return feed;
 };
+
+/*
+// NOTE: I moved this out of feed poller because it is now this module's
+// responsibility to parse fields into date objects
+// TODO: check whether there is a better way to do this in ES6
+// TODO: compare to other lib implementations, e.g. underscore/lo-dash
+// See http://stackoverflow.com/questions/1353684
+FeedPoller.isValidDate = function(dateObject) {
+  const OBJECT_TO_STRING = Object.prototype.toString;
+  return dateObject && OBJECT_TO_STRING.call(dateObject) === '[object Date]' &&
+    isFinite(dateObject);
+};
+*/
 
 FeedParser.findChannel = function(documentElement) {
   if(documentElement.matches('feed')) {
@@ -93,15 +105,27 @@ FeedParser.getFeedType = function(documentElement) {
   return typeString;
 };
 
-FeedParser.findFeedDate = function(channelElement) {
+FeedParser.findFeedDatePublished = function(channelElement) {
   const isAtom = channelElement.ownerDocument.documentElement.matches('feed');
+  let dateText = null;
   if(isAtom) {
-    return FeedParser.findChildElementText(channelElement, 'UPDATED');
+    dateText = FeedParser.findChildElementText(channelElement, 'UPDATED');
   } else {
-    return FeedParser.findChildElementText(channelElement, 'PUBDATE') ||
+    dateText = FeedParser.findChildElementText(channelElement, 'PUBDATE') ||
       FeedParser.findChildElementText(channelElement, 'LASTBUILDDATE') ||
       FeedParser.findChildElementText(channelElement, 'DATE');
   }
+
+  if(dateText) {
+    try {
+      return new Date(dateText);
+    } catch(exception) {
+      console.debug(exception);
+    }
+  }
+
+  // Fall back to the current date
+  return new Date();
 };
 
 // TODO: maybe just use element.matches('link[rel="alternate"]')
@@ -163,7 +187,7 @@ FeedParser.findFeedLink = function(channelElement) {
   }
 };
 
-FeedParser.createEntryFromElement = function(entryElement) {
+FeedParser.createEntryFromElement = function(feedDatePublished, entryElement) {
   const isAtom = entryElement.ownerDocument.documentElement.matches('feed');
   const entryObject = Object.create(null);
 
@@ -183,11 +207,15 @@ FeedParser.createEntryFromElement = function(entryElement) {
     entryObject.urls.push(entryLinkURL);
   }
 
-  // TODO: use a better name
-  // TODO: parse into a Date
-  const pubdate = FeedParser.findEntryDate(entryElement);
-  if(pubdate) {
-    entryObject.pubdate = pubdate;
+  const entryDatePublished = FeedParser.findEntryDatePublished(entryElement);
+  if(entryDatePublished) {
+    entryObject.datePublished = entryDatePublished;
+  } else if(feedDatePublished) {
+    // Fall back to the feed's date
+    entryObject.datePublished = feedDatePublished;
+  } else {
+    // Fall back to the current date
+    entryObject.datePublished = new Date();
   }
 
   const content = FeedParser.findEntryContent(entryElement);
@@ -258,23 +286,32 @@ FeedParser.findEntryLink = function(entry) {
   }
 };
 
-FeedParser.findEntryDate = function(entry) {
+FeedParser.findEntryDatePublished = function(entry) {
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
-  let value = null;
+  let datePublishedString = null;
 
   if(isAtom) {
-    value = FeedParser.findChildElementText(entry, 'PUBLISHED') ||
-      FeedParser.findChildElementText(entry, 'UPDATED');
+    datePublishedString = FeedParser.findChildElementText(entry,
+      'PUBLISHED') || FeedParser.findChildElementText(entry, 'UPDATED');
   } else {
-    value = FeedParser.findChildElementText(entry, 'PUBDATE') ||
+    datePublishedString = FeedParser.findChildElementText(entry, 'PUBDATE') ||
       FeedParser.findChildElementText(entry, 'DATE');
   }
 
-  if(value) {
-    value = value.trim();
+  if(datePublishedString) {
+    datePublishedString = value.trim();
   }
 
-  return value;
+  if(datePublishedString) {
+    try {
+      return new Date(datePublishedString);
+    } catch(exception) {
+      console.debug(exception);
+    }
+  }
+
+  // Do not fall back to the current date immediately. The feed's date may
+  // be used instead.
 };
 
 FeedParser.findEntryContent = function(entry) {

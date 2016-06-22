@@ -4,6 +4,17 @@
 
 'use strict';
 
+// TODO: rather than simply storing entries, I should be somehow inserting
+// entries into an unread queue, so that it is easy for the view to load
+// entries in an order such as by most recently published, or from oldest or
+// newest. Right now I am stuck with logical storage order, which is
+// limiting. I would rather do this here than at the time of querying for
+// articles to display, because it is too difficult to get the sorting of
+// the articles to work correctly. Although maybe I could just ensure that
+// every entries date published defaults to today, and then use an index
+// on date published, read state, and archive state.
+
+
 const FeedPoller = Object.create(null);
 
 FeedPoller.start = function() {
@@ -164,15 +175,9 @@ FeedPoller.createMergedFeed = function(localFeed, remoteFeed) {
     outputFeed.link = localFeed.link;
   }
 
-  if(remoteFeed.date) {
-    outputFeed.date = remoteFeed.date;
-  } else if(localFeed.date) {
-    outputFeed.date = localFeed.date;
-  }
-
+  outputFeed.datePublished = remoteFeed.datePublished;
   outputFeed.dateFetched = remoteFeed.dateFetched;
   outputFeed.dateLastModified = remoteFeed.dateLastModified;
-  outputFeed.created = localFeed.created;
   outputFeed.dateCreated = localFeed.dateCreated;
   return outputFeed;
 };
@@ -202,6 +207,7 @@ FeedPoller.onMaybePollCompleted = function(context) {
 // URL objects.
 FeedPoller.onUpdateFeed = function(context, entries, feed, event) {
 
+  // temp, debugging
   console.debug('Stored feed', feed);
 
   if(event.type !== 'success') {
@@ -221,6 +227,7 @@ FeedPoller.onUpdateFeed = function(context, entries, feed, event) {
   }
 
   // Process the fetched feed's entries.
+  // TODO: test again using Set for distinctLinks
   const distinctLinks = Object.create(null);
   let entriesProcessed = 0;
   for(let i = 0, j = 0, entry, linkURL, seen = false; i < numEntries; i++) {
@@ -274,15 +281,6 @@ FeedPoller.processEntry = function(context, feed, entry, callback) {
   // that was stored
   entry.feedLink = feed.link;
   entry.feedTitle = feed.title;
-
-  // Use the feed's date if the entry's date is not set
-  // TODO: move this feature to feed-parser or fetch-feed
-  // TODO: rename pubdate to datePublished
-  // TODO: use Date objects
-  // TODO: rename feed date to something clearer
-  if(!entry.pubdate && feed.date) {
-    entry.pubdate = feed.date;
-  }
 
   // TODO: do I want to check if any of the entry's URLs exist, or just its
   // most recent one?
@@ -419,34 +417,15 @@ FeedPoller.addEntry = function(connection, entry, callback) {
     storable.title = entry.title;
   }
 
-  // TODO: the pubdate field should be named datePublished so as to be
-  // consistent with other field names
-  // TODO: store a Date object instead of a timestamp
-  if(entry.pubdate) {
-    const date = new Date(entry.pubdate);
-    if(FeedPoller.isValidDate(date)) {
-      storable.pubdate = date.getTime();
-    }
+  if(entry.datePublished) {
+    storable.datePublished = entry.datePublished;
   }
-
-  // TODO: rename to dateCreated
-  // TODO: store a Date object instead of a timestamp
-  storable.created = Date.now();
 
   if(entry.content) {
     storable.content = entry.content;
   }
 
   db.addEntry(connection, storable, callback);
-};
-
-// TODO: check whether there is a better way to do this in ES6
-// TODO: compare to other lib implementations, e.g. underscore/lo-dash
-// See http://stackoverflow.com/questions/1353684
-FeedPoller.isValidDate = function(dateObject) {
-  const OBJECT_TO_STRING = Object.prototype.toString;
-  return dateObject && OBJECT_TO_STRING.call(dateObject) === '[object Date]' &&
-    isFinite(dateObject);
 };
 
 FeedPoller.isNoFetchEntryURL = function(url) {

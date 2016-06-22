@@ -6,6 +6,13 @@
 
 const db = Object.create(null);
 
+// TODO: i think flags should be revised. I should do
+// UNREAD_UNARCHIVED = 1
+// READ_UNARCHIVED = 2
+// READ_ARCHIVED = 3
+// and use only 1 field. I don't even need a compound index then
+// so this should just be come something like db.EntryState
+
 db.EntryFlags = {
   UNREAD: 0,
   READ: 1,
@@ -209,12 +216,8 @@ db.findEntryWithURL = function(connection, url, callback) {
   request.onerror = callback;
 };
 
-// Use an isolated transaction for storing an entry. The problem with using a
-// shared transaction in the case of a batch insert is that the uniqueness
-// check from index constraints is db-delegated and unknown apriori without a
-// separate lookup request, and that any constraint failure causes the entire
-// transaction to fail.
 db.addEntry = function(connection, entry, callback) {
+  entry.dateCreated = new Date();
   const transaction = connection.transaction('entry', 'readwrite');
   const entryStore = transaction.objectStore('entry');
   const request = entryStore.add(entry);
@@ -222,17 +225,8 @@ db.addEntry = function(connection, entry, callback) {
   request.onerror = callback;
 };
 
-// TODO: do not modify the input feed. Instead, create a storable copy
-// and copy over the fields from the input.
-// TODO: note that this uses the new field name, and the Date type
 db.addFeed = function(connection, feed, callback) {
-
-  // Define the date created property here
   feed.dateCreated = new Date();
-
-  // Temporary legacy code, will eventually delete
-  feed.created = Date.now();
-
   const transaction = connection.transaction('feed', 'readwrite');
   const feedStore = transaction.objectStore('feed');
   const request = feedStore.add(feed);
@@ -242,7 +236,6 @@ db.addFeed = function(connection, feed, callback) {
 
 db.updateFeed = function(connection, feed, callback) {
   feed.dateUpdated = new Date();
-
   const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.put(feed);
