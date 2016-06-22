@@ -54,7 +54,7 @@ OptionsPage.showErrorMessage = function(messageString, shouldFadeIn) {
   if(shouldFadeIn) {
     errorWidgetElement.style.opacity = '0';
     document.body.appendChild(errorWidgetElement);
-    utils.fadeElement(container, 1, 0);
+    fadeElement(container, 1, 0);
   } else {
     errorWidgetElement.style.opacity = '1';
     OptionsPage.showElement(errorWidgetElement);
@@ -127,7 +127,7 @@ OptionsPage.hideSubscriptionMonitor = function(callback, fadeOut) {
   }
 
   if(fadeOut) {
-    utils.fadeElement(monitorElement, 2, 1, removeThenCallCallback);
+    fadeElement(monitorElement, 2, 1, removeThenCallCallback);
   } else {
     removeThenCallCallback();
   }

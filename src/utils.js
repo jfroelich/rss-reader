@@ -6,36 +6,6 @@
 
 const utils = Object.create(null);
 
-utils.fadeElement = function(element, duration, delay, callback) {
-  const style = element.style;
-
-  if(style.display === 'none') {
-    style.display = '';
-    style.opacity = '0';
-  }
-
-  if(!style.opacity) {
-    style.opacity = style.display === 'none' ? '0' : '1';
-  }
-
-  // TODO: why bind here? I moved fadeEnd into this function so I
-  // no longer need to do this
-
-  if(callback) {
-    const fadeEndCallback = fadeEnd.bind(element, callback, element);
-    element.addEventListener('webkitTransitionEnd', fadeEndCallback);
-  }
-
-  // property duration function delay
-  style.transition = 'opacity ' + duration + 's ease ' + delay + 's';
-  style.opacity = style.opacity === '1' ? '0' : '1';
-
-  function fadeEnd(callback, element, event) {
-    event.target.removeEventListener('webkitTransitionEnd', fadeEnd);
-    callback(element);
-  }
-};
-
 // TODO: i do not love the innards of this function, make this easier to read
 utils.scrollToY = function(element, deltaY, targetY) {
   let scrollYStartTimer; // debounce
@@ -43,11 +13,11 @@ utils.scrollToY = function(element, deltaY, targetY) {
   let amountToScroll = 0;
   let amountScrolled = 0;
 
-  return function debounceScrollTo() {
+  function debounce() {
     clearTimeout(scrollYStartTimer);
     clearInterval(scrollYIntervalTimer);
     scrollYStartTimer = setTimeout(startScroll, 5);
-  }();
+  }
 
   function startScroll() {
     amountToScroll = Math.abs(targetY - element.scrollTop);
@@ -57,10 +27,10 @@ utils.scrollToY = function(element, deltaY, targetY) {
       return;
     }
 
-    scrollYIntervalTimer = setInterval(scrollToY, 20);
+    scrollYIntervalTimer = setInterval(doScrollToY, 20);
   }
 
-  function scrollToY() {
+  function doScrollToY() {
     const currentY = element.scrollTop;
     element.scrollTop += deltaY;
     amountScrolled += Math.abs(deltaY);
@@ -68,6 +38,8 @@ utils.scrollToY = function(element, deltaY, targetY) {
       clearInterval(scrollYIntervalTimer);
     }
   }
+
+  return debounce();
 };
 
 utils.date = {};
