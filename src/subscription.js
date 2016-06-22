@@ -6,32 +6,13 @@
 
 const Subscription = Object.create(null);
 
-// TODO: look into a more native way of creating event objects
-// TODO: i should search for both the http and https version of the url
-// when checking if already subscribed. For example, if given an http url,
-// this should search for the http url, then do a second search for the https
-// url. I don't know how to do both in a single request. This will prevent
-// people from being able to subscribe to both the secure and non-secure
-// versions of the feed at the same time. I previously prevented this by not
-// even storing the protocol, but now that I have switched to using
-// normalized urls, and to do the multi-entry thing i want the full url.
-// NOTE: I suppose I also have to do this in opml.js since I do not have a
-// singe point of access for adding a feed. Perhaps I should change the opml
-// import to use this, so that this becomes the single way a feed is added.
-// NOTE: fetchFeed handled the case of modifying the feed's urls array
-// in the event of a redirect, so there is no need to do it here.
-// NOTE: url rewriting only applies to entry urls, not feed urls, so there
-// is no need to rewrite the urls explicitly here
 Subscription.add = function(connection, url, callback) {
-
   console.debug('Subscribing to', url.href);
-
   const fetchTimeoutMillis = 10 * 1000;
   const excludeEntries = true;
   fetchFeed(url, fetchTimeoutMillis, excludeEntries, onFetchFeed);
 
   function onFetchFeed(fetchEvent) {
-
     if(fetchEvent.type !== 'load') {
       const event = Object.create(null);
       event.type = 'error';
@@ -49,7 +30,6 @@ Subscription.add = function(connection, url, callback) {
     if(putEvent.type !== 'success') {
       const event = Object.create(null);
       event.type = 'error';
-
       const error = putEvent.target.error;
       if(error && error.name === 'ConstraintError') {
         event.message = 'You are already subscribed to this feed.';
@@ -68,7 +48,8 @@ Subscription.add = function(connection, url, callback) {
         'iconUrl': '/images/rss_icon_trans.gif',
         'message': 'Subscribed to ' + (storedFeed.title || 'Untitled')
       };
-      chrome.notifications.create('Lucubrate', notification, function() {});
+      chrome.notifications.create('Lucubrate', notification,
+        notificationCallback);
     }
 
     const event = Object.create(null);
@@ -77,6 +58,11 @@ Subscription.add = function(connection, url, callback) {
       (storedFeed.title || 'Untitled');
     event.feed = storedFeed;
     callback(event);
+  }
+
+  // chrome.notifications.create requires some type of callback function
+  function notificationCallback() {
+
   }
 };
 
