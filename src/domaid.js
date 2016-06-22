@@ -105,7 +105,7 @@ DOMAid.filterNoscripts = function(document) {
   const elementNodeList = document.querySelectorAll('noscript');
   const nullReferenceNode = null;
   for(let element of elementNodeList) {
-    DOMAid.unwrap(elementNodeList[i], nullReferenceNode);
+    DOMAid.unwrap(element, nullReferenceNode);
   }
 };
 
@@ -210,7 +210,7 @@ DOMAid.filterConsecutiveHRElements = function(document) {
 DOMAid.filterConsecutiveBRElements = function(document) {
   const elements = document.querySelectorAll('BR');
   for(let element of elements) {
-    let prev = elements[i].previousSibling;
+    let prev = element.previousSibling;
     if(prev && prev.nodeName === 'BR') {
       prev.remove();
     }
@@ -278,7 +278,7 @@ DOMAid.filterAttributes = function(document) {
       }
     } else if(elementName === 'A') {
       for(let j = attributes.length - 1; j > -1; j--) {
-        attributeName = attributes[j].name;
+        let attributeName = attributes[j].name;
         if(attributeName !== 'href' && attributeName !== 'name' &&
           attributeName !== 'title') {
           element.removeAttribute(attributeName);
@@ -286,14 +286,14 @@ DOMAid.filterAttributes = function(document) {
       }
     } else if(elementName === 'IFRAME') {
       for(let j = attributes.length - 1; j > -1; j--) {
-        attributeName = attributes[j].name;
+        let attributeName = attributes[j].name;
         if(attributeName !== 'src') {
           element.removeAttribute(attributeName);
         }
       }
     } else if(elementName === 'IMG') {
       for(let j = attributes.length - 1; j > -1; j--) {
-        attributeName = attributes[j].name;
+        let attributeName = attributes[j].name;
         if(attributeName !== 'src' && attributeName !== 'alt' &&
           attributeName !== 'srcset' && attributeName !== 'title') {
           element.removeAttribute(attributeName);
@@ -380,9 +380,9 @@ DOMAid.condenseWhitespace = function(document) {
 };
 
 // Currently this only removes img elements without a source.
-// Images may be removed by other components
+// Images may be removed by other functions
 DOMAid.filterImages = function(document) {
-  const imageNodeList = document.querySelectorAll('IMG');
+  const imageNodeList = document.querySelectorAll('img');
   for(let imageElement of imageNodeList) {
     if(!imageElement.hasAttribute('src') &&
       !imageElement.hasAttribute('srcset')) {
@@ -392,6 +392,7 @@ DOMAid.filterImages = function(document) {
 };
 
 DOMAid.filterTinyImages = function(document) {
+  const imageNodeList = document.querySelectorAll('img');
   for(let imageElement of imageNodeList) {
     if(imageElement.width < 2 || imageElement.height < 2) {
       imageElement.remove();
