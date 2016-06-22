@@ -193,18 +193,17 @@ db.getEntryById = function(connection, entryId, callback) {
   request.onerror = callback;
 };
 
-// Expects a URL object, not a string
+// Expects a URL object, not a string. This will convert the url to a string
+// and search with the string. Converting the url to a string will normalize
+// the url, in the same way the url was normalized when storing the entry, so
+// that only normalized urls are compared against each other. So, for example,
+// 'http://www.domain.com/page.html' will match
+// 'HTTP://WWW.DOMAIN.COM/page.html'. The second reason is that indexedDB
+// cannot directly store URL objects (for an unknown reason).
 db.findEntryWithURL = function(connection, url, callback) {
-
-  // console.debug('Searching for entry with url', url.href);
-
   const transaction = connection.transaction('entry');
   const entryStore = transaction.objectStore('entry');
   const urlsIndex = entryStore.index('urls');
-  // Getting the href property yields a normalized URL string for comparison
-  // to other URLs.
-  // We store strings in indexedDB because we cannot store URLs, so we have
-  // to compare by strings.
   const request = urlsIndex.get(url.href);
   request.onsuccess = callback;
   request.onerror = callback;
@@ -216,22 +215,11 @@ db.findEntryWithURL = function(connection, url, callback) {
 // separate lookup request, and that any constraint failure causes the entire
 // transaction to fail.
 db.addEntry = function(connection, entry, callback) {
-  console.debug('Adding entry to entry store',
-    entry.urls[entry.urls.length - 1]);
   const transaction = connection.transaction('entry', 'readwrite');
-  transaction.oncomplete = function(event) {
-    console.debug('Stored entry, calling back');
-    if(callback) {
-      callback(event);
-    }
-  };
-
   const entryStore = transaction.objectStore('entry');
   const request = entryStore.add(entry);
-  //if(callback) {
-    // request.onsuccess = callback;
-    //request.onerror = callback;
-  //}
+  request.onsuccess = callback;
+  request.onerror = callback;
 };
 
 // TODO: maybe the merge shouldn't happen here, maybe it should be the

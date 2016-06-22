@@ -257,7 +257,7 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
       return;
     }
 
-    if(FeedPoller.isNoFetchURL(entryURL)) {
+    if(FeedPoller.isNoFetchEntryURL(entryURL)) {
       FeedPoller.addEntry(pollContext.connection, entry, callback);
       return;
     }
@@ -334,13 +334,9 @@ FeedPoller.processEntry = function(pollContext, feed, entry, callback) {
   }
 };
 
-// TODO: rename pubdate to something clearer, like datePublished or something
-// to that effect.
-// TODO: I should be using Date objects for date values. Not timestamps.
+// TODO: eventually this should delegate most of its functionality to
+// Entry.toSerializable
 FeedPoller.addEntry = function(connection, entry, callback) {
-
-  console.debug('Storing entry', entry.urls[entry.urls.length - 1].href);
-
   const storable = Object.create(null);
 
   // entry.feedLink is a URL string, not an object, because it was copied
@@ -353,9 +349,12 @@ FeedPoller.addEntry = function(connection, entry, callback) {
     storable.feedTitle = entry.feedTitle;
   }
 
+  // TODO: rename the property 'feed' to 'feedId'
   storable.feed = entry.feed;
 
-  // entry.urls is an array of URL objects. Each must be serialized.
+  // entry.urls is an array of URL objects. Each must be serialized because
+  // indexedDB cannot store URL objects and because serializing a URL
+  // normalizes the url.
   storable.urls = [];
   for(let i = 0, len = entry.urls.length; i < len; i++) {
     storable.urls.push(entry.urls[i].href);
@@ -390,8 +389,6 @@ FeedPoller.addEntry = function(connection, entry, callback) {
     storable.content = entry.content;
   }
 
-  // NOTE: I think this was the bug, I wasn't passing the callback to
-  // the new function, so this was never calling back.
   db.addEntry(connection, storable, callback);
 };
 
@@ -404,8 +401,7 @@ FeedPoller.isValidDate = function(dateObject) {
     isFinite(dateObject);
 };
 
-// TODO: rename to be clearer that this deals with entry urls, not feeds
-FeedPoller.isNoFetchURL = function(url) {
+FeedPoller.isNoFetchEntryURL = function(url) {
   const blacklist = [
     'productforums.google.com',
     'groups.google.com',
@@ -545,7 +541,7 @@ FeedPoller.filterTrackingImages = function(document) {
   ].join(',');
   const images = document.querySelectorAll(SELECTOR);
   for(let i = 0, len = images.length; i < len; i++) {
-    // console.debug('Removing tracker:', images[i].outerHTML);
+    // console.debug('Removing tracker image:', images[i].outerHTML);
     images[i].remove();
   }
 };
