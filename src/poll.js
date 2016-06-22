@@ -145,6 +145,8 @@ FeedPoller.createMergedFeed = function(localFeed, remoteFeed) {
 
   outputFeed.urls = [].concat(localFeed.urls);
   const remoteURLs = remoteFeed.urls;
+
+  // TODO: use for of
   for(let i = 0, len = remoteURLs.length, urlString; i < len; i++) {
     urlString = remoteURLs[i].href;
     if(!outputFeed.urls.includes(urlString)) {
@@ -177,7 +179,7 @@ FeedPoller.createMergedFeed = function(localFeed, remoteFeed) {
   outputFeed.datePublished = remoteFeed.datePublished;
   outputFeed.dateFetched = remoteFeed.dateFetched;
   outputFeed.dateLastModified = remoteFeed.dateLastModified;
-  outputFeed.dateCreated = localFeed.dateCreated;
+  outputFeed.dateCreated = localFeed.dateCreated || new Date();
   return outputFeed;
 };
 
@@ -205,10 +207,6 @@ FeedPoller.onMaybePollCompleted = function(context) {
 // However, entries is still the fetched entries array, which contains
 // URL objects.
 FeedPoller.onUpdateFeed = function(context, entries, feed, event) {
-
-  // temp, debugging
-  console.debug('Stored feed', feed);
-
   if(event.type !== 'success') {
     console.error(event);
     context.pendingFeedsCount--;
@@ -227,6 +225,7 @@ FeedPoller.onUpdateFeed = function(context, entries, feed, event) {
 
   // Process the fetched feed's entries.
   // TODO: test again using Set for distinctLinks
+  // TODO: use for .. of
   const distinctLinks = Object.create(null);
   let entriesProcessed = 0;
   for(let i = 0, j = 0, entry, linkURL, seen = false; i < numEntries; i++) {
@@ -313,6 +312,8 @@ FeedPoller.processEntry = function(context, feed, entry, callback) {
       return;
     }
 
+    // TODO: create a fetchHTML function, use that instead
+
     const fetchTimeoutMillis = 15 * 1000;
     const fetchRequest = new XMLHttpRequest();
     fetchRequest.timeout = fetchTimeoutMillis;
@@ -344,9 +345,6 @@ FeedPoller.processEntry = function(context, feed, entry, callback) {
     if(responseURL.href !== entryURL.href) {
       entry.urls.push(responseURL);
     }
-
-    // TODO: move URLResolver back into poll.js, this is the only place
-    // it is called, and it really isn't a general purpose library.
 
     transformLazilyLoadedImages(document);
     filterSourcelessImages(document);
