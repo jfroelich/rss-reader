@@ -39,9 +39,8 @@ URLResolver.resolveURLsInDocument = function(document, baseURL) {
 // of this module if used independently requires this behavior.
 URLResolver.removeBaseElements = function(document) {
   const bases = document.querySelectorAll('base');
-  const numBases = bases.length;
-  for(let i = 0; i < numBases; i++) {
-    bases[i].remove();
+  for(let base of bases) {
+    base.remove();
   }
 };
 
@@ -106,6 +105,9 @@ URLResolver.modifyAllURLAttributes = function(document, baseURLString) {
   // resolvable attribute.
   const elements = document.querySelectorAll(URLResolver.ELEMENT_SELECTOR);
   const numElements = elements.length;
+
+  // TODO: use for .. of and locally declared lets
+
   for(let i = 0, element, elementName, attribute, originalURL, resolvedURL;
     i < numElements; i++) {
     element = elements[i];
@@ -187,6 +189,8 @@ URLResolver.resolveSrcSet = function(baseURL, element) {
 URLResolver.serializeSrcSet = function(descriptors) {
   const resolvedDescriptors = [];
   const numDescriptors = descriptors.length;
+
+  // TODO: use for .. of
 
   for(let i = 0, descriptor, newString; i < numDescriptors; i++) {
     descriptor = descriptors[i];

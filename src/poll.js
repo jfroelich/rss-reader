@@ -146,9 +146,8 @@ FeedPoller.createMergedFeed = function(localFeed, remoteFeed) {
   outputFeed.urls = [].concat(localFeed.urls);
   const remoteURLs = remoteFeed.urls;
 
-  // TODO: use for of
-  for(let i = 0, len = remoteURLs.length, urlString; i < len; i++) {
-    urlString = remoteURLs[i].href;
+  for(let url of remoteURLs) {
+    let urlString = url.href;
     if(!outputFeed.urls.includes(urlString)) {
       outputFeed.urls.push(urlString);
     }
@@ -398,9 +397,10 @@ FeedPoller.addEntry = function(connection, entry, callback) {
   // entry.urls is an array of URL objects. Each must be serialized because
   // indexedDB cannot store URL objects and because serializing a URL
   // normalizes the url.
+  // TODO: use Array.prototype.map ?
   storable.urls = [];
-  for(let i = 0, len = entry.urls.length; i < len; i++) {
-    storable.urls.push(entry.urls[i].href);
+  for(let url of entry.urls) {
+    storable.urls.push(url.href);
   }
 
   storable.readState = db.EntryFlags.UNREAD;
@@ -435,9 +435,9 @@ FeedPoller.isNoFetchEntryURL = function(url) {
     'www.forbes.com',
     'forbes.com'
   ];
-  const hostname = url.hostname;
-  for(let i = 0, len = blacklist.length; i < len; i++) {
-    if(blacklist[i] === hostname) {
+  const hostNameString = url.hostname;
+  for(let blacklistedHostNameString of blacklist) {
+    if(blacklistedHostNameString === hostNameString) {
       return true;
     }
   }

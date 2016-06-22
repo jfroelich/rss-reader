@@ -70,13 +70,9 @@ Calamine.deriveTextBias = function(element) {
 // no anchor nesting.
 // TODO: maybe just inline this in the caller.
 Calamine.deriveAnchorLength = function(element) {
-  const anchors = element.querySelectorAll('a[href]');
-  const numAnchors = anchors.length;
   let anchorLength = 0;
-  for(let i = 0, anchor, content; i < numAnchors; i++) {
-    anchor = anchors[i];
-    content = anchor.textContent.trim();
-    anchorLength = anchorLength + content.length;
+  for(let anchor of element.querySelectorAll('a[href]')) {
+    anchorLength = anchorLength + anchor.textContent.trim().length;
   }
 
   return anchorLength;
@@ -250,6 +246,8 @@ Calamine.deriveAttributeBias = function(element) {
   // if i > 0. Because the token will never be in seen in the first iteration.
   // But would that improve the perf? How expensive is 'in'?
 
+  // NOTE: not using for .. of due to performance issues
+
   for(var i = 0; i < tokenArrayLength; i++) {
     token = tokenArray[i];
 
@@ -305,9 +303,9 @@ Calamine.findHighestScoringElement = function(document) {
   let highScore = 0.0;
   let score = 0.0;
 
-  for(let i = 0; i < listLength; i++) {
-    element = elementNodeList[i];
-
+  //for(let i = 0; i < listLength; i++) {
+    //element = elementNodeList[i];
+  for(let element of elementNodeList) {
     score = Calamine.deriveTextBias(element);
 
     if(element.closest(Calamine.LIST_SELECTOR)) {
@@ -371,12 +369,10 @@ Calamine.findSignature = function(document) {
     return;
   }
 
-  const numSignatures = Calamine.SIGNATURES.length;
-
   // If a signature occurs once in a document, then return it. Use whatever
   // signature matches first in the order defined in Calamine.SIGNATURES
-  for(let i = 0, elements; i < numSignatures; i++) {
-    elements = bodyElement.querySelectorAll(Calamine.SIGNATURES[i]);
+  for(let signature of Calamine.SIGNATURES) {
+    const elements = bodyElement.querySelectorAll(signature);
     if(elements.length === 1) {
       return elements[0];
     }
@@ -449,9 +445,7 @@ Calamine.prune = function(document, bestElement) {
   }
   const docElement = document.documentElement;
   const elements = bodyElement.querySelectorAll('*');
-  const numElements = elements.length;
-  for(let i = 0, element; i < numElements; i++) {
-    element = elements[i];
+  for(let element of elements) {
     if(!element.contains(bestElement) && !bestElement.contains(element) &&
       docElement.contains(element)) {
       element.remove();

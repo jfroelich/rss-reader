@@ -102,19 +102,10 @@ DOMAid.insertChildrenBefore = function(parentNode, referenceNode) {
 // within the body is above or below some threshold (which may need to be
 // relative to the total number of elements within the body?)
 DOMAid.filterNoscripts = function(document) {
-  const rootElement = document.body || document.documentElement;
-  // TODO: now that this defaults to document.documentElement, is this check
-  // even required? Is documentElement always defined?
-  if(!rootElement) {
-    return;
-  }
-
-  const elementNodeList = rootElement.querySelectorAll('noscript');
-  const listLength = elementNodeList.length;
-
-  for(let i = 0; i < listLength; i++) {
-    // Explicitly pass null to indicate no reference node use
-    DOMAid.unwrap(elementNodeList[i], null);
+  const elementNodeList = document.querySelectorAll('noscript');
+  const nullReferenceNode = null;
+  for(let element of elementNodeList) {
+    DOMAid.unwrap(elementNodeList[i], nullReferenceNode);
   }
 };
 
@@ -178,16 +169,8 @@ DOMAid.isFormattingAnchor = function(anchorElement) {
 
 // Transform anchors that contain inline script or only serve a formatting role
 DOMAid.filterAnchors = function(document) {
-  const rootElement = document.body || document.documentElement;
-  // TODO: if document.documentElement is never undefined, is this invariant?
-  // Maybe I don't need this check.
-  if(!rootElement) {
-    return;
-  }
-  const anchorNodeList = rootElement.querySelectorAll('a');
-  const numAnchors = anchorNodeList.length;
-  for(let i = 0, anchor; i < numAnchors; i++) {
-    anchor = anchorNodeList[i];
+  const anchorNodeList = document.querySelectorAll('a');
+  for(let anchor of anchorNodeList) {
     if(DOMAid.isFormattingAnchor(anchor) ||
       DOMAid.isJavascriptAnchor(anchor)) {
       DOMAid.unwrap(anchor);
@@ -197,19 +180,11 @@ DOMAid.filterAnchors = function(document) {
 
 // Unwrap lists with only one item.
 DOMAid.filterListElements = function(document) {
-  const bodyElement = document.body;
-  if(!bodyElement) {
-    return;
-  }
-
   const ITEM_ELEMENT_NAMES = {'LI': 1, 'DT': 1, 'DD': 1};
-
-  const listNodeList = bodyElement.querySelectorAll('UL, OL, DL');
-  const nodeListLength = listNodeList.length;
-  for(let i = 0, listElement, itemElement; i < nodeListLength; i++) {
-    listElement = listNodeList[i];
+  const listNodeList = document.querySelectorAll('UL, OL, DL');
+  for(let listElement of listNodeList) {
     if(listElement.childElementCount === 1) {
-      itemElement = listElement.firstElementChild;
+      let itemElement = listElement.firstElementChild;
       if(itemElement.nodeName in ITEM_ELEMENT_NAMES) {
         listElement.parentNode.insertBefore(document.createTextNode(' '),
           listElement);
@@ -223,16 +198,9 @@ DOMAid.filterListElements = function(document) {
 };
 
 DOMAid.filterConsecutiveHRElements = function(document) {
-  const bodyElement = document.body;
-  if(!bodyElement) {
-    return;
-  }
-
-  const elements = bodyElement.querySelectorAll('HR');
-  const numElements = elements.length;
-
-  for(let i = 0, rule, prev; i < numElements; i++) {
-    prev = elements[i].previousSibling;
+  const elements = document.querySelectorAll('HR');
+  for(let element of elements) {
+    let prev = element.previousSibling;
     if(prev && prev.nodeName === 'HR') {
       prev.remove();
     }
@@ -240,16 +208,9 @@ DOMAid.filterConsecutiveHRElements = function(document) {
 };
 
 DOMAid.filterConsecutiveBRElements = function(document) {
-  const bodyElement = document.body;
-  if(!bodyElement) {
-    return;
-  }
-
-  const elements = bodyElement.querySelectorAll('BR');
-  const numElements = elements.length;
-
-  for(let i = 0, prev; i < numElements; i++) {
-    prev = elements[i].previousSibling;
+  const elements = document.querySelectorAll('BR');
+  for(let element of elements) {
+    let prev = elements[i].previousSibling;
     if(prev && prev.nodeName === 'BR') {
       prev.remove();
     }
@@ -265,17 +226,8 @@ DOMAid.replaceBreakRuleElements = function(document) {
     return;
   }
 
-  const bodyElement = document.body;
-  if(!bodyElement) {
-    return;
-  }
-
-  const nodeList = bodyElement.querySelectorAll('BR');
-  const listLength = nodeList.length;
-
-  for(let i = 0, brElement, parent, p; i < listLength; i++) {
-    brElement = nodeList[i];
-
+  const nodeList = document.querySelectorAll('BR');
+  for(let brElement of nodeList) {
     brElement.renameNode('p');
 
     //parent = brElement.parentNode;
@@ -288,17 +240,9 @@ DOMAid.replaceBreakRuleElements = function(document) {
 // NOTE: boilerplate analysis examines figures, so ensure this is not done
 // before it.
 DOMAid.filterFigureElements = function(document) {
-  const bodyElement = document.body;
-  if(!bodyElement) {
-    return;
-  }
-
-  const figures = bodyElement.querySelectorAll('FIGURE');
-  const numFigures = figures.length;
-  for(let i = 0, figure; i < numFigures; i++) {
-    figure = figures[i];
+  const figures = document.querySelectorAll('FIGURE');
+  for(let figure of figures) {
     if(figure.childElementCount === 1) {
-      // console.debug('Unwrapping basic figure:', figure.outerHTML);
       DOMAid.unwrap(figure, null);
     }
   }
@@ -313,27 +257,19 @@ DOMAid.filterFigureElements = function(document) {
 // is intentional because we have to consider everything.
 DOMAid.filterAttributes = function(document) {
   const elements = document.getElementsByTagName('*');
-  const numElements = elements.length;
 
   // Iterate attributes in reverse to avoid issues with mutating a live
   // NodeList during iteration
-  let elementName = null;
-  let attributeName = null;
-  let element = null;
-  let attributes = null;
-  let j = 0;
-
-  for(let i = 0; i < numElements; i++) {
-    element = elements[i];
-    elementName = element.nodeName;
-    attributes = element.attributes;
+  for(let element of elements) {
+    let elementName = element.nodeName;
+    let attributes = element.attributes;
     if(!attributes || !attributes.length) {
       continue;
     }
 
     if(elementName === 'SOURCE') {
-      for(j = attributes.length - 1; j > -1; j--) {
-        attributeName = attributes[j].name;
+      for(let j = attributes.length - 1; j > -1; j--) {
+        let attributeName = attributes[j].name;
         if(attributeName !== 'type' && attributeName !== 'srcset' &&
           attributeName !== 'sizes' && attributeName !== 'media' &&
           attributeName !== 'src') {
@@ -341,7 +277,7 @@ DOMAid.filterAttributes = function(document) {
         }
       }
     } else if(elementName === 'A') {
-      for(j = attributes.length - 1; j > -1; j--) {
+      for(let j = attributes.length - 1; j > -1; j--) {
         attributeName = attributes[j].name;
         if(attributeName !== 'href' && attributeName !== 'name' &&
           attributeName !== 'title') {
@@ -349,14 +285,14 @@ DOMAid.filterAttributes = function(document) {
         }
       }
     } else if(elementName === 'IFRAME') {
-      for(j = attributes.length - 1; j > -1; j--) {
+      for(let j = attributes.length - 1; j > -1; j--) {
         attributeName = attributes[j].name;
         if(attributeName !== 'src') {
           element.removeAttribute(attributeName);
         }
       }
     } else if(elementName === 'IMG') {
-      for(j = attributes.length - 1; j > -1; j--) {
+      for(let j = attributes.length - 1; j > -1; j--) {
         attributeName = attributes[j].name;
         if(attributeName !== 'src' && attributeName !== 'alt' &&
           attributeName !== 'srcset' && attributeName !== 'title') {
@@ -364,7 +300,7 @@ DOMAid.filterAttributes = function(document) {
         }
       }
     } else {
-      for(j = attributes.length - 1; j > -1; j--) {
+      for(let j = attributes.length - 1; j > -1; j--) {
         element.removeAttribute(attributes[j].name);
       }
     }
@@ -391,9 +327,7 @@ DOMAid.BLACKLIST_SELECTOR = DOMAid.BLACKLISTED_ELEMENT_NAMES.join(',');
 DOMAid.filterBlacklistedElements = function(document) {
   const docElement = document.documentElement;
   const elements = document.querySelectorAll(DOMAid.BLACKLIST_SELECTOR);
-  const numElements = elements.length;
-  for(let i = 0, element; i < numElements; i++) {
-    element = elements[i];
+  for(let element of elements) {
     if(docElement.contains(element)) {
       element.remove();
     }
@@ -448,15 +382,8 @@ DOMAid.condenseWhitespace = function(document) {
 // Currently this only removes img elements without a source.
 // Images may be removed by other components
 DOMAid.filterImages = function(document) {
-  const bodyElement = document.body;
-  if(!bodyElement) {
-    return;
-  }
-
-  const imageNodeList = bodyElement.querySelectorAll('IMG');
-  const listLength = imageNodeList.length;
-  for(let i = 0, imageElement; i < listLength; i++) {
-    imageElement = imageNodeList[i];
+  const imageNodeList = document.querySelectorAll('IMG');
+  for(let imageElement of imageNodeList) {
     if(!imageElement.hasAttribute('src') &&
       !imageElement.hasAttribute('srcset')) {
       imageElement.remove();
@@ -465,15 +392,7 @@ DOMAid.filterImages = function(document) {
 };
 
 DOMAid.filterTinyImages = function(document) {
-  const rootElement = document.body || document.documentElement;
-  if(!rootElement) {
-    return;
-  }
-
-  const imageNodeList = rootElement.querySelectorAll('img');
-  const listLength = imageNodeList.length;
-  for(let i = 0, imageElement; i < listLength; i++) {
-    imageElement = imageNodeList[i];
+  for(let imageElement of imageNodeList) {
     if(imageElement.width < 2 || imageElement.height < 2) {
       imageElement.remove();
     }
@@ -497,37 +416,23 @@ DOMAid.filterTinyImages = function(document) {
 // iteration whether the current element is still attached to the document, and
 // avoids removing elements that were detached by virtue of an ancestor being
 // detached in a prior iteration step.
+// Only iterate elements within the body element. This prevents the body
+// element itself and the document element from also being iterated and
+// therefore identified as leaves and therefore removed in the case of an
+// empty document.
+// docElement.contains(docElement) returns true because docElement
+// is an inclusive descendant of docElement as defined in the spec. This is
+// why docElement itself can also be removed if this iterated over all
+// elements and not just those within the body.
 DOMAid.filterLeafElements = function(document) {
-  // A document element is required.
   const docElement = document.documentElement;
-
-  // TODO: is this check even needed?
-  if(!docElement) {
-    return;
-  }
-
-  // TODO: maybe I do not need docElement. Maybe just checking if
-  // bodyElement contains is sufficient.
-
-  // A body element is required.
   const bodyElement = document.body;
   if(!bodyElement) {
     return;
   }
 
-  // Only iterate elements within the body element. This prevents the body
-  // element itself and the document element from also being iterated and
-  // therefore identified as leaves and therefore removed in the case of an
-  // empty document.
-  // docElement.contains(docElement) returns true because docElement
-  // is an inclusive descendant of docElement as defined in the spec. This is
-  // why docElement itself can also be removed if this iterated over all
-  // elements and not just those within the body.
-
   const elements = bodyElement.querySelectorAll('*');
-  const numElements = elements.length;
-  for(let i = 0, element; i < numElements; i++) {
-    element = elements[i];
+  for(let element of elements) {
     if(docElement.contains(element) && DOMAid.isLeafNode(element)) {
       element.remove();
     }
@@ -584,23 +489,13 @@ DOMAid.isLeafNode = function(node) {
 
 // Unwraps single column and single cell tables
 DOMAid.filterTableElements = function(document) {
-  // TODO: restrict to document.body
-  const tables = document.querySelectorAll('TABLE');
-  const tableLength = tables.length;
-
-  let rows = null;
-  let cells = null;
-  let cell = null;
-  let table = null;
-  let rowLength = 0;
-
-  for(let i = 0; i < tableLength; i++) {
-    table = tables[i];
-    rows = table.rows;
-    rowLength = rows.length;
+  const tables = document.querySelectorAll('table');
+  for(let table of tables) {
+    let rows = table.rows;
+    let rowLength = rows.length;
 
     if(rowLength === 1) {
-      cells = rows[0].cells;
+      let cells = rows[0].cells;
       if(cells.length === 1) {
         DOMAid.unwrapSingleCellTable(table);
         continue;
@@ -642,17 +537,12 @@ DOMAid.isSingleColumnTable = function(table) {
 DOMAid.unwrapSingleColumnTable = function(table) {
   const document = table.ownerDocument;
   const tableParent = table.parentNode;
-  const rows = table.rows;
-  const rowLength = rows.length;
-
   tableParent.insertBefore(document.createTextNode(' '), table);
-  for(let rowIndex = 0, colIndex = 0, cells; rowIndex < rowLength;
-    rowIndex++) {
-    cells = rows[rowIndex];
-    for(colIndex = 0; colIndex < cells.length; colIndex++) {
-      DOMAid.insertChildrenBefore(cells[colIndex], table);
+  for(let row of table.rows) {
+    for(let cell of row.cells) {
+      DOMAid.insertChildrenBefore(cell, table);
     }
-    tableParent.insertBefore(document.createElement('P'), table);
+    tableParent.insertBefore(document.createElement('p'), table);
   }
   tableParent.insertBefore(document.createTextNode(' '), table);
   table.remove();
@@ -815,25 +705,18 @@ DOMAid.UNWRAPPABLE_SELECTOR = [
 ].join(',');
 
 DOMAid.filterUnwrappables = function(document) {
-  // Require body. Only examine elements beneath body.
-  const rootElement = document.body || document.documentElement;
-  if(!rootElement) {
-    return;
-  }
-
-  const elements = rootElement.querySelectorAll(DOMAid.UNWRAPPABLE_SELECTOR);
-  const numElements = elements.length;
-  for(let i = 0; i < numElements; i++) {
-    DOMAid.unwrap(elements[i], null);
+  const elements = document.querySelectorAll(DOMAid.UNWRAPPABLE_SELECTOR);
+  const nullReferenceNode = null;
+  for(let element of elements) {
+    DOMAid.unwrap(element, nullReferenceNode);
   }
 };
 
 DOMAid.filterUnwrappablesExperimental = function(document) {
   const elements = document.querySelectorAll(DOMAid.UNWRAPPABLE_SELECTOR);
-  for(let i = 0, len = elements.length, element, shallowest; i < len; i++) {
-    element = elements[i];
+  for(let element of elements) {
     if(!DOMAid.isUnwrappableParent(element)) {
-      shallowest = DOMAid.findShallowestUnwrappableAncestor(element);
+      let shallowest = DOMAid.findShallowestUnwrappableAncestor(element);
       DOMAid.unwrap(element, shallowest);
     }
   }
@@ -946,9 +829,7 @@ DOMAid.filterHiddenElements = function(document) {
   // the chance that the body and document element are removed.
 
   const elements = bodyElement.querySelectorAll(HIDDEN_SELECTOR);
-  const numElements = elements.length;
-  for(let i = 0, element; i < numElements; i++) {
-    element = elements[i];
+  for(let element of elements) {
     if(docElement.contains(element)) {
       DOMAid.unwrap(element);
     }

@@ -53,9 +53,6 @@ function truncateHTMLString(inputString, position, optionalExtensionString) {
     inertDocument.body, NodeFilter.SHOW_TEXT);
   let acceptingAdditionalTextNodes = true;
   let accumulatedLength = 0;
-  let value = null;
-  let valueLength = 0;
-  let remaining = 0;
   let node = textNodeIterator.nextNode();
 
   while(node) {
@@ -66,8 +63,8 @@ function truncateHTMLString(inputString, position, optionalExtensionString) {
     }
 
     // Accessing nodeValue yields a decoded string
-    value = node.nodeValue;
-    valueLength = value.length;
+    let value = node.nodeValue;
+    let valueLength = value.length;
 
     if(accumulatedLength + valueLength >= position) {
       acceptingAdditionalTextNodes = false;
@@ -75,7 +72,7 @@ function truncateHTMLString(inputString, position, optionalExtensionString) {
       // be kept. It is the amount of room remaining based on how many
       // characters we have seen so far and the total amount of characters
       // allowed in the output (excluding tags and using decoded entities).
-      remaining = position - accumulatedLength;
+      let remaining = position - accumulatedLength;
       // Setting nodeValue will implicitly encode the string
       node.nodeValue = value.substr(0, remaining) + extensionString;
     } else {

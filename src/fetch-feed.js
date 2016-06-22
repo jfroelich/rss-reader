@@ -79,12 +79,10 @@ function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
   // so this means other things that access the list will use whatever is
   // last in the list, so those things will use the rewritten url
   function rewriteEntryURLs(entries) {
-    for(let i = 0, len = entries.length, entry, entryURL, rewrittenURL;
-      i < len; i++) {
-      entry = entries[i];
-      entryURL = entry.urls[0];
+    for(let entry of entries) {
+      let entryURL = entry.urls[0];
       if(entryURL) {
-        rewrittenURL = rewriteURL(entryURL);
+        let rewrittenURL = rewriteURL(entryURL);
         if(rewrittenURL.href !== entryURL.href) {
           // console.debug('Rewrite url:', entryURL.href, rewrittenURL.href);
           entry.urls.push(rewrittenURL);

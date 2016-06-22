@@ -72,19 +72,18 @@ GoogleFeedsAPI.search = function(queryString, timeoutMillis, callback) {
     responseEvent.entries = [];
     const entries = data.entries || [];
     const seenURLs = Object.create(null);
-    for(let i = 0, len = entries.length, entry, entryURL, normalizedURLString;
-      i < len; i++) {
-      entry = entries[i];
+
+    for(let entry of entries) {
       if(!entry.url) {
         continue;
       }
 
-      entryURL = toURLTrapped(entry.url);
+      let entryURL = toURLTrapped(entry.url);
       if(!entryURL) {
         continue;
       }
 
-      normalizedURLString = entryURL.href;
+      let normalizedURLString = entryURL.href;
       if(normalizedURLString in seenURLs) {
         continue;
       }

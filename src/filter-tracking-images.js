@@ -19,7 +19,6 @@ function filterTrackingImages(document) {
     'img[src^="https://pubads.g.doubleclick.net"]'
   ].join(',');
   const images = document.querySelectorAll(SELECTOR);
-
   for(let image of images) {
     // console.debug('Removing tracker image:', image.outerHTML);
     image.remove();

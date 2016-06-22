@@ -85,8 +85,8 @@ OPML.importFiles = function(connection, files, callback) {
   reader.onerror = onFileRead;
   const parser = new DOMParser();
 
-  for(let i = 0; i < numFiles; i++) {
-    reader.readAsText(files[i]);
+  for(let file of files) {
+    reader.readAsText(file);
   }
 
   function onFileRead(event) {

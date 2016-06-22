@@ -251,6 +251,7 @@ OptionsPage.appendFeed = function(feed, insertedSort) {
     const currentItems = feedListElement.childNodes;
     var added = false;
 
+    // TODO: use for .. of
     for(var i = 0, len = currentItems.length, currentKey; i < len; i++) {
       currentKey = currentItems[i].getAttribute('sort-key');
       if(indexedDB.cmp(feed.title || '', currentKey || '') < 0) {
@@ -332,6 +333,7 @@ OptionsPage.showSubscriptionPreview = function(url) {
     }
 
     const resultLimit = Math.min(5,feed.entries.length);
+    // TODO: use for .. of
     for(let i = 0, entry, item, content; i < resultLimit; i++) {
       entry = feed.entries[i];
       item = document.createElement('li');
@@ -921,6 +923,7 @@ OptionsPage.onDOMContentLoaded = function(event) {
   // Attach click handlers to feeds in the feed list on the left.
   // TODO: it would probably be easier and more efficient to attach a single
   // click handler that figures out which item was clicked.
+  // TODO: use for .. of
   const navFeedItems = document.querySelectorAll('#navigation-menu li');
   for(let i = 0, len = navFeedItems.length; i < len; i++) {
     navFeedItems[i].onclick = onNavigationMenuFeedItemClick;
@@ -1139,7 +1142,7 @@ OptionsPage.onDOMContentLoaded = function(event) {
 
   const columnCountElement = document.getElementById('column-count');
 
-  // TODO: use a basic for loop here
+  // TODO: use a basic for loop here (or for .. of)
   ['1','2','3'].forEach(appendColumnCountOption);
 
   function appendColumnCountOption(columnCount) {
