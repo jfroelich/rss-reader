@@ -473,6 +473,14 @@ db.putFeed = function(connection, currentFeed, newFeed, callback) {
   }
 };
 
+db.updateFeed = function(connection, feed, callback) {
+  const transaction = connection.transaction('feed', 'readwrite');
+  const store = transaction.objectStore('feed');
+  const request = store.put(feed);
+  request.onsuccess = callback;
+  request.onerror = callback;
+};
+
 // TODO: maybe deprecate and just use the clear button provided by
 // the inspector
 db.clearEntryStore = function(connection) {
