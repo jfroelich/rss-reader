@@ -12,7 +12,7 @@ function filterSourcelessImages(document) {
   const images = document.querySelectorAll('img');
   for(let image of images) {
     if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
-      console.debug('Removing sourcless image', image.outerHTML);
+      // console.debug('Removing sourcless image', image.outerHTML);
       image.remove();
       break;
     }

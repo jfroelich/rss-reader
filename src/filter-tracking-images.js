@@ -21,7 +21,7 @@ function filterTrackingImages(document) {
   const images = document.querySelectorAll(SELECTOR);
 
   for(let image of images) {
-    console.debug('Removing tracker image:', image.outerHTML);
+    // console.debug('Removing tracker image:', image.outerHTML);
     image.remove();
   }
 }

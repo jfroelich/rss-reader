@@ -28,7 +28,7 @@ function transformLazilyLoadedImages(document) {
           const alternateValue = (image.getAttribute(alternateName) ||
             '').trim();
           if(alternateValue && !alternateValue.includes(' ')) {
-            console.debug('Modifying lazy image element', image.outerHTML);
+            // console.debug('Modifying lazy image element', image.outerHTML);
             image.removeAttribute(alternateName);
             image.setAttribute('src', alternateValue);
             break;
