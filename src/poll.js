@@ -32,14 +32,14 @@ FeedPoller.start = function() {
   }
 
   const IDLE_PERIOD_SECONDS = 60;
-  if(!localStorage.ONLY_POLL_IF_IDLE) {
-    db.open(onOpenDatabase);
-  } else {
+  if('ONLY_POLL_IF_IDLE' in localStorage) {
     chrome.idle.queryState(IDLE_PERIOD_SECONDS, onQueryIdleState);
+  } else {
+    db.open(onOpenDatabase);
   }
 
   function onQueryIdleState(state) {
-    if(localStorage.ONLY_POLL_IF_IDLE) {
+    if('ONLY_POLL_IF_IDLE' in localStorage) {
       if(state === 'locked' || state === 'idle') {
         db.open(onOpenDatabase);
       } else {
