@@ -4,21 +4,13 @@
 
 'use strict';
 
-// TODO: rename this to something like findFeeds, get rid of GoogleFeedsAPI
-
 // Accesses the basic find-feeds functionality of the Google Feeds API.
 // Google formally deprecated this service. Around December 1st, 2015, I
 // first noticed that the queries stopped working. However, I have witnessed
 // the service occassionally work thereafter.
-const GoogleFeedsAPI = Object.create(null);
-
 // Sends an async request to Google to search for feeds that correspond to
 // a general text query.
-GoogleFeedsAPI.search = function(queryString, timeoutMillis, callback) {
-
-  // TODO: use the new URL object to set the queryString parameter using
-  // the URLs methods instead of this manual string manipulation stuff.
-  // I think that will also implicitly call encodeURIComponent for me.
+function searchGoogleFeeds(queryString, timeoutMillis, callback) {
   const BASE_URL_STRING =
     'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
   const requestURL = new URL(BASE_URL_STRING +
@@ -26,8 +18,6 @@ GoogleFeedsAPI.search = function(queryString, timeoutMillis, callback) {
 
   const TITLE_MAX_LENGTH = 200;
   const CONTENT_SNIPPET_MAX_LENGTH = 400;
-
-  const filterControlCharacters = filterControlCharacters;
 
   const request = new XMLHttpRequest();
   request.timeout = timeoutMillis;
@@ -130,4 +120,4 @@ GoogleFeedsAPI.search = function(queryString, timeoutMillis, callback) {
   function filterBreakruleTags(inputString) {
     return inputString.replace(/<br\s*>/gi, ' ');
   }
-};
+}
