@@ -550,7 +550,7 @@ OptionsPage.onSubscriptionFormSubmit = function(event) {
   } else {
     // Show search results
     OptionsPage.showElement(progressElement);
-    GoogleFeedsAPI.search(queryString, 5000, OptionsPage.onDiscoverComplete);
+    searchGoogleFeeds(queryString, 5000, OptionsPage.onDiscoverComplete);
   }
 
   // Indicate that the normal form submit behavior should be prevented
@@ -794,7 +794,7 @@ OptionsPage.importOPMLButtonOnClick = function(event) {
     }
 
     const connection = event.target.result;
-    OPML.importFiles(connection, uploader.files, onImportCompleted);
+    importOPMLFiles(connection, uploader.files, onImportCompleted);
   }
 
   function onImportCompleted() {
@@ -831,7 +831,7 @@ OptionsPage.exportOPMLButtonOnClick = function(event) {
 
   function onGetFeeds() {
     const title = 'Subscriptions';
-    const doc = OPML.createDocument(title, feeds);
+    const doc = createOPMLDocument(title, feeds);
     const writer = new XMLSerializer();
     const serializedString = writer.serializeToString(doc);
 
