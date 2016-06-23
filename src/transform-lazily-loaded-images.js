@@ -24,6 +24,8 @@ function transformLazilyLoadedImages(document) {
     'data-default-src'
   ];
 
+  const MINIMAL_VALID_URL_LENGTH = 'http://a'.length;
+
   const images = document.querySelectorAll('img');
   for(let image of images) {
     if(!hasSource(image)) {
@@ -48,7 +50,6 @@ function transformLazilyLoadedImages(document) {
   // contain a space, so in that case I can be positive it isn't a valid
   // alternative.
   // TODO: maybe also test for other invalid characters?
-  const MINIMAL_VALID_URL_LENGTH = 'http://a'.length;
 
   function isMinimallyValidURL(inputString) {
     return inputString.length > MINIMAL_VALID_URL_LENGTH &&
