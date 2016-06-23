@@ -29,6 +29,6 @@ function onInstalled(event) {
   }
 
   return 'Opening database ...';
-};
+}
 
 chrome.runtime.onInstalled.addListener(onInstalled);
