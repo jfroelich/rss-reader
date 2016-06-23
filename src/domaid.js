@@ -94,8 +94,6 @@ DOMAid.insertChildrenBefore = function(parentNode, referenceNode) {
 // embed the entire content in a noscript tag and then use their own scripted
 // unwrapping call to make the content available.
 //
-// TODO: should this be restricting to body? What about noscript elements
-// located outside of body? Should those just be ignored? Or removed?
 // TODO: look into whether I can make a more educated guess about whether
 // to unwrap or to remove. For example, maybe if there is only one noscript
 // tag found, or if the number of elements outside of the node script but
@@ -116,7 +114,6 @@ DOMAid.filterComments = function(document) {
     comment.remove();
   }
 };
-
 
 // TODO: what if both body and frameset are present?
 // TODO: there can be multiple bodies when illformed. Maybe use
