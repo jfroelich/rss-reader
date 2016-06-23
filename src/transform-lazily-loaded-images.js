@@ -4,6 +4,11 @@
 
 'use strict';
 
+// Examines all image elements in the document. If an image does not have a
+// source attribute, then this looks for commonly used attributes to signify
+// a lazily loaded image. A lazily loaded image is one that is later loaded
+// via script. If one is found, this sets the src attribute and removes the
+// alternate attribute.
 function transformLazilyLoadedImages(document) {
 
   const ALTERNATE_ATTRIBUTE_NAMES = [
@@ -20,15 +25,12 @@ function transformLazilyLoadedImages(document) {
   ];
 
   const images = document.querySelectorAll('img');
-
   for(let image of images) {
-    if(!(image.getAttribute('src') || '').trim()) {
+    if(!hasSource(image)) {
       for(let alternateName of ALTERNATE_ATTRIBUTE_NAMES) {
         if(image.hasAttribute(alternateName)) {
-          const alternateValue = (image.getAttribute(alternateName) ||
-            '').trim();
-          if(alternateValue && !alternateValue.includes(' ')) {
-            // console.debug('Modifying lazy image element', image.outerHTML);
+          const alternateValue = image.getAttribute(alternateName);
+          if(alternateValue && isMinimallyValidURL(alternateValue)) {
             image.removeAttribute(alternateName);
             image.setAttribute('src', alternateValue);
             break;
@@ -36,5 +38,25 @@ function transformLazilyLoadedImages(document) {
         }
       }
     }
+  }
+
+  // This does only minimal validation of the content of the alternate
+  // attribute value. I cannot fully validate its url, because the url could be
+  // relative, because this may be called prior to resolving image source urls.
+  // Therefore, the only validation I do is check whether the alternate value
+  // contains an intermediate space. Neither relative nor absolute urls can
+  // contain a space, so in that case I can be positive it isn't a valid
+  // alternative.
+  // TODO: maybe also test for other invalid characters?
+  const MINIMAL_VALID_URL_LENGTH = 'http://a'.length;
+
+  function isMinimallyValidURL(inputString) {
+    return inputString.length > MINIMAL_VALID_URL_LENGTH &&
+      !inputString.trim().includes(' ');
+  }
+
+  function hasSource(imageElement) {
+    return imageElement.hasAttribute('src') ||
+      imageElement.hasAttribute('srcset');
   }
 }
