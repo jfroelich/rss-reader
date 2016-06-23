@@ -4,9 +4,6 @@
 
 'use strict';
 
-// TODO: this is only ever used by poll.js, maybe I should just integrate
-// it back into poll.js. It doesn't really serve as an independent component.
-
 // TODO: resolve xlink type simple (on any attribute) in xml docs
 // TODO: finish implementing URLResolver.serializeSrcSet
 // TODO: rather than do a separate check for srcset, it should somehow be
