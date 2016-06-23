@@ -144,9 +144,8 @@ FeedPoller.createMergedFeed = function(localFeed, remoteFeed) {
   outputFeed.type = remoteFeed.type;
 
   outputFeed.urls = [].concat(localFeed.urls);
-  const remoteURLs = remoteFeed.urls;
 
-  for(let url of remoteURLs) {
+  for(let url of remoteFeed.urls) {
     let urlString = url.href;
     if(!outputFeed.urls.includes(urlString)) {
       outputFeed.urls.push(urlString);
