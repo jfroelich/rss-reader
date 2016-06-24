@@ -4,16 +4,6 @@
 
 'use strict';
 
-// TODO: rather than simply storing entries, I should be somehow inserting
-// entries into an unread queue, so that it is easy for the view to load
-// entries in an order such as by most recently published, or from oldest or
-// newest. Right now I am stuck with logical storage order, which is
-// limiting. I would rather do this here than at the time of querying for
-// articles to display, because it is too difficult to get the sorting of
-// the articles to work correctly. Although maybe I could just ensure that
-// every entries date published defaults to today, and then use an index
-// on date published, read state, and archive state.
-
 const FeedPoller = Object.create(null);
 
 FeedPoller.start = function() {
@@ -114,9 +104,8 @@ FeedPoller.start = function() {
     }
 
     const mergedFeed = FeedPoller.createMergedFeed(localFeed, remoteFeed);
-    const entries = remoteFeed.entries;
-    const onUpdateFeed = FeedPoller.onUpdateFeed.bind(null, context, entries,
-      mergedFeed);
+    const onUpdateFeed = FeedPoller.onUpdateFeed.bind(null, context,
+      remoteFeed.entries, mergedFeed);
     db.updateFeed(context.connection, mergedFeed, onUpdateFeed);
   }
 };
@@ -206,38 +195,35 @@ FeedPoller.onMaybePollCompleted = function(context) {
 // URL objects.
 FeedPoller.onUpdateFeed = function(context, entries, feed, event) {
   if(event.type !== 'success') {
-    console.error(event);
     context.pendingFeedsCount--;
     FeedPoller.onMaybePollCompleted(context);
     return;
   }
 
-  const numEntries = entries.length;
-
-  // If there are no entries then we are done processing the feed
-  if(!numEntries) {
+  if(!entries.length) {
     context.pendingFeedsCount--;
     FeedPoller.onMaybePollCompleted(context);
     return;
   }
 
-  // Process the fetched feed's entries.
-  // TODO: test again using Set for distinctLinks
-  // TODO: use for .. of
-  const distinctLinks = Object.create(null);
+  // Remove entries without links, remove entries with duplicate links,
+  // and then process the remaining entries.
+
+  // I am storing url strings in the set instead of URL objects because it is
+  // not clear how URL objects are compared for equality. Apparently,
+  // new URL('url') !== new URL('url').
+
+  const linkURLSet = new Set();
   let entriesProcessed = 0;
-  for(let i = 0, j = 0, entry, linkURL, seen = false; i < numEntries; i++) {
-
-    entry = entries[i];
-
+  for(let entry of entries) {
     if(!entry.urls.length) {
       onEntryProcessed();
       continue;
     }
 
-    seen = false;
-    for(j = 0; j < entry.urls.length; j++) {
-      if(entry.urls[j].href in distinctLinks) {
+    let seen = false;
+    for(let url of entry.urls) {
+      if(linkURLSet.has(url.href)) {
         seen = true;
         break;
       }
@@ -248,8 +234,8 @@ FeedPoller.onUpdateFeed = function(context, entries, feed, event) {
       continue;
     }
 
-    for(j = 0; j < entry.urls.length; j++) {
-      distinctLinks[entry.urls[j].href] = 1;
+    for(let url of entry.urls) {
+      linkURLSet.add(url.href);
     }
 
     FeedPoller.processEntry(context, feed, entry, onEntryProcessed);
@@ -257,8 +243,7 @@ FeedPoller.onUpdateFeed = function(context, entries, feed, event) {
 
   function onEntryProcessed(optionalAddEntryEvent) {
     entriesProcessed++;
-
-    if(entriesProcessed === numEntries) {
+    if(entriesProcessed === entries.length) {
       context.pendingFeedsCount--;
       FeedPoller.onMaybePollCompleted(context);
       updateBadgeUnreadCount(context.connection);
@@ -381,7 +366,7 @@ FeedPoller.addEntry = function(connection, entry, callback) {
   const storable = Object.create(null);
 
   // entry.feedLink is a URL string, not an object, because it was copied
-  // over from the feed object that was the input to db.updateFeed
+  // over from the serialized feed object that was the input to db.updateFeed
   if(entry.feedLink) {
     storable.feedLink = entry.feedLink;
   }
@@ -393,14 +378,10 @@ FeedPoller.addEntry = function(connection, entry, callback) {
   // TODO: rename the property 'feed' to 'feedId'
   storable.feed = entry.feed;
 
-  // entry.urls is an array of URL objects. Each must be serialized because
-  // indexedDB cannot store URL objects and because serializing a URL
-  // normalizes the url.
-  // TODO: use Array.prototype.map ?
-  storable.urls = [];
-  for(let url of entry.urls) {
-    storable.urls.push(url.href);
-  }
+  // Serialize and normalize the urls
+  storable.urls = entry.urls.map(function(url) {
+    return url.href;
+  });
 
   storable.readState = db.EntryFlags.UNREAD;
   storable.archiveState = db.EntryFlags.UNARCHIVED;
@@ -425,12 +406,16 @@ FeedPoller.addEntry = function(connection, entry, callback) {
 };
 
 FeedPoller.isNoFetchEntryURL = function(url) {
+
+  // url normalization currently does not do anything with www. prefix so
+  // i have to check both
+
+  // Google Groups is javascript rendered.
+  // Forbes uses a Continue page preventing crawling
+
   const blacklist = [
     'productforums.google.com',
     'groups.google.com',
-    // Forbes uses a Continue page preventing crawling
-    // url normalization currently does not do anything with www. prefix so
-    // i have to check both
     'www.forbes.com',
     'forbes.com'
   ];
