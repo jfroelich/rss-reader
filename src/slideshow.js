@@ -273,7 +273,7 @@ SlideShow.appendSlide = function(entry, isFirst) {
   slide.setAttribute('class','entry');
   slide.addEventListener('click', SlideShow.onSlideClick);
 
-  slide.style.position='absolute';
+  slide.style.position = 'absolute';
   slide.style.left = isFirst ? '0%' : '100%';
   slide.style.right = isFirst ? '0%' : '-100%';
   slide.style.overflowX = 'hidden';
@@ -286,18 +286,16 @@ SlideShow.appendSlide = function(entry, isFirst) {
   // and rewrites
   const entryLinkURLString = entry.urls[entry.urls.length - 1];
 
+  // todo: rename title variable
   const title = document.createElement('a');
   title.setAttribute('href', entryLinkURLString);
 
   title.setAttribute('class', 'entry-title');
   title.setAttribute('target','_blank');
+  title.setAttribute('rel', 'noreferrer');
   title.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
-    // TODO: also strip control characters?
-    // TODO: did I do this sanitization earlier, like when storing? if so
-    // then i don't need to be stripping tags or removing control chars
-    // here.
-    let titleText = replaceHTML(entry.title || '', '');
+    let titleText = entry.title;
     titleText = filterArticleTitle(titleText);
     titleText = truncateHTMLString(titleText, 300);
     title.textContent = titleText;
@@ -312,12 +310,12 @@ SlideShow.appendSlide = function(entry, isFirst) {
   content.setAttribute('class', 'entry-content');
 
   const parser = new DOMParser();
-  // TODO: try catch?
   const entryContentDocument = parser.parseFromString(entry.content,
     'text/html');
 
   Calamine.removeBoilerplate(entryContentDocument);
   DOMAid.cleanDocument(entryContentDocument);
+  addNoReferrer(entryContentDocument);
   const entryContentBody = entryContentDocument.body ||
     entryContentDocument.documentElement;
   moveChildNodes(entryContentBody, content);
@@ -331,21 +329,9 @@ SlideShow.appendSlide = function(entry, isFirst) {
   // The entry was loaded from the database, in which case entry.feedLink is
   // a URL string.
   const favIcon = document.createElement('img');
-  let iconSourceURL = null;
-  if(entry.feedLink) {
-    try {
-      iconSourceURL = getFavIconURL(new URL(entry.feedLink));
-    } catch(exception) {
-      console.debug('Error creating url to get fav icon', exception);
-    }
-  } else {
-    iconSourceURL = DEFAULT_FAV_ICON_URL;
-  }
-
-  if(iconSourceURL) {
-    favIcon.setAttribute('src', iconSourceURL.href);
-  }
-
+  let iconSourceURL = SlideShow.toURLTrapped(entry.feedLink);
+  let favIconURL = getFavIconURL(iconSourceURL);
+  favIcon.setAttribute('src', favIconURL.href);
   favIcon.setAttribute('width', '16');
   favIcon.setAttribute('height', '16');
   source.appendChild(favIcon);
@@ -370,6 +356,14 @@ SlideShow.appendSlide = function(entry, isFirst) {
 
   const slidesContainer = document.getElementById('slideshow-container');
   slidesContainer.appendChild(slide);
+};
+
+SlideShow.toURLTrapped = function(urlString) {
+  try {
+    return new URL(urlString);
+  } catch(exception) {
+
+  }
 };
 
 SlideShow.showNextSlide = function() {
