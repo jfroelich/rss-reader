@@ -455,47 +455,47 @@ SlideShow.hideAllUnreadSlides = function() {
   console.warn('hideAllUnreadSlides not implemented');
 };
 
-SlideShow.KEY_CODES = {
-  'SPACE': 32,
-  'PAGE_UP': 33,
-  'PAGE_DOWN': 34,
-  'LEFT': 37,
-  'UP': 38,
-  'RIGHT': 39,
-  'DOWN': 40,
-  'N': 78,
-  'P': 80
-};
-
-SlideShow.SCROLL_DELTAS = {
-  '40': [50, 200],
-  '34': [100, 800],
-  '38': [-50, -200],
-  '33': [-100, -800]
-};
-
 SlideShow.keydownTimer = null;
 
+//event.target is body
+//event.currentTarget is window
 SlideShow.onKeyDown = function(event) {
-  //event.target is body
-  //event.currentTarget is window
+
+  const KEY_CODES = {
+    'SPACE': 32,
+    'PAGE_UP': 33,
+    'PAGE_DOWN': 34,
+    'LEFT': 37,
+    'UP': 38,
+    'RIGHT': 39,
+    'DOWN': 40,
+    'N': 78,
+    'P': 80
+  };
 
   // Prevent the default behavior for certain keys
   switch(event.keyCode) {
-    case SlideShow.KEY_CODES.SPACE:
-    case SlideShow.KEY_CODES.DOWN:
-    case SlideShow.KEY_CODES.PAGE_DOWN:
-    case SlideShow.KEY_CODES.UP:
-    case SlideShow.KEY_CODES.PAGE_UP:
+    case KEY_CODES.SPACE:
+    case KEY_CODES.DOWN:
+    case KEY_CODES.PAGE_DOWN:
+    case KEY_CODES.UP:
+    case KEY_CODES.PAGE_UP:
       event.preventDefault();
       break;
     default:
       break;
   }
 
+  const SCROLL_DELTAS = {
+    '40': [50, 200],
+    '34': [100, 800],
+    '38': [-50, -200],
+    '33': [-100, -800]
+  };
+
   // Scroll the contents of the current slide
   if(SlideShow.currentSlide) {
-    const delta = SlideShow.SCROLL_DELTAS['' + event.keyCode];
+    const delta = SCROLL_DELTAS['' + event.keyCode];
     if(delta) {
       scrollToY(SlideShow.currentSlide, delta[0],
         SlideShow.currentSlide.scrollTop + delta[1]);
@@ -508,14 +508,14 @@ SlideShow.onKeyDown = function(event) {
 
   // React to navigational commands
   switch(event.keyCode) {
-    case SlideShow.KEY_CODES.SPACE:
-    case SlideShow.KEY_CODES.RIGHT:
-    case SlideShow.KEY_CODES.N:
+    case KEY_CODES.SPACE:
+    case KEY_CODES.RIGHT:
+    case KEY_CODES.N:
       clearTimeout(SlideShow.keydownTimer);
       SlideShow.keydownTimer = setTimeout(SlideShow.showNextSlide, 50);
       break;
-    case SlideShow.KEY_CODES.LEFT:
-    case SlideShow.KEY_CODES.P:
+    case KEY_CODES.LEFT:
+    case KEY_CODES.P:
       clearTimeout(SlideShow.keydownTimer);
       SlideShow.keydownTimer = setTimeout(SlideShow.showPreviousSlide, 50);
       break;
