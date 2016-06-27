@@ -5,6 +5,11 @@
 'use strict';
 
 // Remove trimmable nodes from the start and end of the document.
+// TODO: this needs to work more like filterLeafElements, where it considers
+// not just empty nodes, but nodes containing only empty nodes, because those
+// are essentially also trimmable. However, maybe then that is simply
+// redundant with leaves. Right now this ignores leaves. So maybe I am
+// confusing myself.
 function trimDocument(document) {
   const bodyElement = document.body;
   if(!bodyElement) {

@@ -10,7 +10,10 @@
 // accurate.
 function filterSourcelessImages(document) {
   const images = document.querySelectorAll('img');
-  for(let image of images) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let image of images) {
+  for(let i = 0, len = images.length; i < len; i++) {
+    let image = images[i];
     if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
       // console.debug('Removing sourcless image', image.outerHTML);
       image.remove();

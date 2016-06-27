@@ -6,10 +6,8 @@
 
 // Iterates text nodes in a document and condenses consecutive whitespace.
 function condenseTextNodeWhitespace(document) {
-
   const SENSITIVE_ELEMENTS = ['code', 'pre', 'ruby', 'textarea', 'xmp'];
   const SENSITIVE_SELECTOR = SENSITIVE_ELEMENTS.join(',');
-
   const iterator = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_TEXT);
   for(let node = iterator.nextNode(); node; node = iterator.nextNode()) {

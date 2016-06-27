@@ -54,7 +54,10 @@ function filterLeafElements(document) {
   // is an inclusive descendant of docElement as defined in the spec. This is
   // why docElement itself can also be removed if this iterated over all
   // elements and not just those within the body.
-  for(let element of elements) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let element of elements) {
+  for(let i = 0, len = elements.length; i < len; i++) {
+    let element = elements[i];
     if(docElement.contains(element) && isLeafNode(element)) {
       element.remove();
     }

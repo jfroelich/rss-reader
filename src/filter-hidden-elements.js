@@ -62,7 +62,10 @@ function filterHiddenElements(document) {
 
   const docElement = document.documentElement;
   const elements = document.querySelectorAll(HIDDEN_SELECTOR);
-  for(let element of elements) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  // for(let element of elements) {
+  for(let i = 0, len = elements.length; i < len; i++) {
+    let element = elements[i];
     if(element !== docElement && docElement.contains(element)) {
       unwrapElement(element);
     }

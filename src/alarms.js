@@ -8,6 +8,7 @@
 // TODO: there is a strange bug, archiveAlarm is never called
 // Theory 1: something to do with creating the alarm per page load
 // Theory 2: erroneously not persisted, never have page open long enough
+// Theory 3: creating pollAlarm overwrites archiveAlarm (there can only be one)
 function onAlarm(alarm) {
   if(alarm.name === 'archiveAlarm') {
 

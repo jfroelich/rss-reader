@@ -27,9 +27,14 @@ function transformLazilyLoadedImages(document) {
   const MINIMAL_VALID_URL_LENGTH = 'http://a'.length;
 
   const images = document.querySelectorAll('img');
-  for(let image of images) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let image of images) {
+  for(let i = 0, len = images.length; i < len; i++) {
+    let image = images[i];
     if(!hasSource(image)) {
-      for(let alternateName of ALTERNATE_ATTRIBUTE_NAMES) {
+      //for(let alternateName of ALTERNATE_ATTRIBUTE_NAMES) {
+      for(let j = 0, alen = ALTERNATE_ATTRIBUTE_NAMES.length; j < alen; j++) {
+        let alternateName = ALTERNATE_ATTRIBUTE_NAMES[j];
         if(image.hasAttribute(alternateName)) {
           const alternateValue = image.getAttribute(alternateName);
           if(alternateValue && isMinimallyValidURL(alternateValue)) {

@@ -68,10 +68,16 @@ Calamine.deriveTextBias = function(element) {
 // are descendants of the element.
 // This assumes that the HTML is generally well-formed. Specifically it assumes
 // no anchor nesting.
+// NOTE: not using reduce due to poor readability and performance issues
 // TODO: maybe just inline this in the caller.
 Calamine.deriveAnchorLength = function(element) {
+  const anchors = element.querySelectorAll('a[href]');
   let anchorLength = 0;
-  for(let anchor of element.querySelectorAll('a[href]')) {
+
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let anchor of anchors) {
+  for(let i = 0, len = anchors.length; i < len; i++) {
+    let anchor = anchors[i];
     anchorLength = anchorLength + anchor.textContent.trim().length;
   }
 
@@ -299,14 +305,17 @@ Calamine.findHighestScoringElement = function(document) {
   const elementNodeList = bodyElement.querySelectorAll(
     Calamine.CANDIDATE_SELECTOR);
   const listLength = elementNodeList.length;
-  let element = null;
   let highScore = 0.0;
-  let score = 0.0;
 
-  //for(let i = 0; i < listLength; i++) {
-    //element = elementNodeList[i];
-  for(let element of elementNodeList) {
-    score = Calamine.deriveTextBias(element);
+  // NOTE: I am getting a NotOptimized TryCatchStatement when using
+  // for .. of. This makes it difficult to profile so I am not using for
+  // of for the time being.
+  //for(let element of elementNodeList) {
+
+  for(let i = 0, len = elementNodeList.length; i < len; i++) {
+    let element = elementNodeList[i];
+
+    let score = 0.0 + Calamine.deriveTextBias(element);
 
     if(element.closest(Calamine.LIST_SELECTOR)) {
       score -= 200.0;
@@ -371,7 +380,11 @@ Calamine.findSignature = function(document) {
 
   // If a signature occurs once in a document, then return it. Use whatever
   // signature matches first in the order defined in Calamine.SIGNATURES
-  for(let signature of Calamine.SIGNATURES) {
+
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+//  for(let signature of Calamine.SIGNATURES) {
+  for(let i = 0, len = Calamine.SIGNATURES.length; i < len; i++) {
+    let signature = Calamine.SIGNATURES[i];
     const elements = bodyElement.querySelectorAll(signature);
     if(elements.length === 1) {
       return elements[0];
@@ -445,7 +458,11 @@ Calamine.prune = function(document, bestElement) {
   }
   const docElement = document.documentElement;
   const elements = bodyElement.querySelectorAll('*');
-  for(let element of elements) {
+
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let element of elements) {
+  for(let i = 0, len = elements.length; i < len; i++) {
+    let element = elements[i];
     if(!element.contains(bestElement) && !bestElement.contains(element) &&
       docElement.contains(element)) {
       element.remove();

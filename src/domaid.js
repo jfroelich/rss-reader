@@ -13,14 +13,14 @@ const DOMAid = Object.create(null);
 // things like frameset elements.
 DOMAid.cleanDocument = function(document) {
   DOMAid.filterComments(document);
-  DOMAid.replaceFrames(document);
+  DOMAid.filterFrameElements(document);
   DOMAid.filterNoscripts(document);
   DOMAid.filterBlacklistedElements(document);
   filterHiddenElements(document);
   DOMAid.replaceBreakRuleElements(document);
   DOMAid.filterAnchors(document);
   DOMAid.filterTinyImages(document);
-  DOMAid.filterImages(document);
+  DOMAid.filterSourcelessImages(document);
   filterUnwrappableElements(document);
   DOMAid.filterFigureElements(document);
   condenseTextNodeWhitespace(document);
@@ -50,7 +50,10 @@ DOMAid.cleanDocument = function(document) {
 DOMAid.filterNoscripts = function(document) {
   const elementNodeList = document.querySelectorAll('noscript');
   const nullReferenceNode = null;
-  for(let element of elementNodeList) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let element of elementNodeList) {
+  for(let i = 0, len = elementNodeList.length; i < len; i++) {
+    let element = elementNodeList[i];
     unwrapElement(element, nullReferenceNode);
   }
 };
@@ -66,7 +69,7 @@ DOMAid.filterComments = function(document) {
 // TODO: what if both body and frameset are present?
 // TODO: there can be multiple bodies when illformed. Maybe use
 // querySelectorAll and handle multi-body branch differently
-DOMAid.replaceFrames = function(document) {
+DOMAid.filterFrameElements = function(document) {
   const framesetElement = document.body;
   if(!framesetElement || framesetElement.nodeName !== 'FRAMESET') {
     return;
@@ -115,7 +118,10 @@ DOMAid.isFormattingAnchor = function(anchorElement) {
 // Transform anchors that contain inline script or only serve a formatting role
 DOMAid.filterAnchors = function(document) {
   const anchorNodeList = document.querySelectorAll('a');
-  for(let anchor of anchorNodeList) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let anchor of anchorNodeList) {
+  for(let i = 0, len = anchorNodeList.length; i < len; i++) {
+    let anchor = anchorNodeList[i];
     if(DOMAid.isFormattingAnchor(anchor) ||
       DOMAid.isJavascriptAnchor(anchor)) {
       unwrapElement(anchor);
@@ -127,7 +133,10 @@ DOMAid.filterAnchors = function(document) {
 DOMAid.filterListElements = function(document) {
   const ITEM_ELEMENT_NAMES = {'LI': 1, 'DT': 1, 'DD': 1};
   const listNodeList = document.querySelectorAll('UL, OL, DL');
-  for(let listElement of listNodeList) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let listElement of listNodeList) {
+  for(let i = 0, len = listNodeList.length; i < len; i++) {
+    let listElement = listNodeList[i];
     if(listElement.childElementCount === 1) {
       let itemElement = listElement.firstElementChild;
       if(itemElement.nodeName in ITEM_ELEMENT_NAMES) {
@@ -144,7 +153,10 @@ DOMAid.filterListElements = function(document) {
 
 DOMAid.filterConsecutiveHRElements = function(document) {
   const elements = document.querySelectorAll('HR');
-  for(let element of elements) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let element of elements) {
+  for(let i = 0, len = elements.length; i < len; i++) {
+    let element = elements[i];
     let prev = element.previousSibling;
     if(prev && prev.nodeName === 'HR') {
       prev.remove();
@@ -154,7 +166,10 @@ DOMAid.filterConsecutiveHRElements = function(document) {
 
 DOMAid.filterConsecutiveBRElements = function(document) {
   const elements = document.querySelectorAll('BR');
-  for(let element of elements) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let element of elements) {
+  for(let i = 0, len = elements.length; i < len; i++) {
+    let element = elements[i];
     let prev = element.previousSibling;
     if(prev && prev.nodeName === 'BR') {
       prev.remove();
@@ -172,7 +187,10 @@ DOMAid.replaceBreakRuleElements = function(document) {
   }
 
   const nodeList = document.querySelectorAll('BR');
-  for(let brElement of nodeList) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let brElement of nodeList) {
+  for(let i = 0, len = nodeList.length; i < len; i++) {
+    let brElement = nodeList[i];
     brElement.renameNode('p');
 
     //parent = brElement.parentNode;
@@ -186,7 +204,10 @@ DOMAid.replaceBreakRuleElements = function(document) {
 // before it.
 DOMAid.filterFigureElements = function(document) {
   const figures = document.querySelectorAll('FIGURE');
-  for(let figure of figures) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let figure of figures) {
+  for(let i = 0, len = figures.length; i < len; i++) {
+    let figure = figures[i];
     if(figure.childElementCount === 1) {
       unwrapElement(figure, null);
     }
@@ -205,7 +226,10 @@ DOMAid.filterAttributes = function(document) {
 
   // Iterate attributes in reverse to avoid issues with mutating a live
   // NodeList during iteration
-  for(let element of elements) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let element of elements) {
+  for(let i = 0, len = elements.length; i < len; i++) {
+    let element = elements[i];
     let elementName = element.nodeName;
     let attributes = element.attributes;
     if(!attributes || !attributes.length) {
@@ -272,18 +296,22 @@ DOMAid.BLACKLIST_SELECTOR = DOMAid.BLACKLISTED_ELEMENT_NAMES.join(',');
 DOMAid.filterBlacklistedElements = function(document) {
   const docElement = document.documentElement;
   const elements = document.querySelectorAll(DOMAid.BLACKLIST_SELECTOR);
-  for(let element of elements) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  // for(let element of elements) {
+  for(let i = 0, len = elements.length; i < len; i++) {
+    let element = elements[i];
     if(docElement.contains(element)) {
       element.remove();
     }
   }
 };
 
-// Currently this only removes img elements without a source.
-// Images may be removed by other functions
-DOMAid.filterImages = function(document) {
+DOMAid.filterSourcelessImages = function(document) {
   const imageNodeList = document.querySelectorAll('img');
-  for(let imageElement of imageNodeList) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let imageElement of imageNodeList) {
+  for(let i = 0, len = imageNodeList.length; i < len; i++) {
+    let imageElement = imageNodeList[i];
     if(!imageElement.hasAttribute('src') &&
       !imageElement.hasAttribute('srcset')) {
       imageElement.remove();
@@ -293,7 +321,10 @@ DOMAid.filterImages = function(document) {
 
 DOMAid.filterTinyImages = function(document) {
   const imageNodeList = document.querySelectorAll('img');
-  for(let imageElement of imageNodeList) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let imageElement of imageNodeList) {
+  for(let i = 0, len = imageNodeList.length; i < len; i++) {
+    let imageElement = imageNodeList[i];
     if(imageElement.width < 2 || imageElement.height < 2) {
       imageElement.remove();
     }
@@ -303,60 +334,60 @@ DOMAid.filterTinyImages = function(document) {
 // Unwraps single column and single cell tables
 DOMAid.filterTableElements = function(document) {
   const tables = document.querySelectorAll('table');
-  for(let table of tables) {
-    let rows = table.rows;
-    let rowLength = rows.length;
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let table of tables) {
+  for(let i = 0, len = tables.length; i < len; i++) {
+    let table = tables[i];
+    if(isSingleCellTable(table)) {
+      unwrapSingleCellTable(table);
+    } else if(isSingleColumnTable(table)) {
+      unwrapSingleColumnTable(table);
+    }
+  }
 
-    if(rowLength === 1) {
-      let cells = rows[0].cells;
-      if(cells.length === 1) {
-        DOMAid.unwrapSingleCellTable(table);
-        continue;
+  function isSingleCellTable(table) {
+    const rows = table.rows;
+    return rows.length === 1 && rows[0].cells.length === 1;
+  }
+
+  function isSingleColumnTable(table) {
+    const rows = table.rows;
+    const rowLength = rows.length;
+    const upperBound = Math.min(rowLength, 50);
+    for(let i = 0; i < upperBound; i++) {
+      if(rows[i].cells.length > 1) {
+        return false;
       }
     }
 
-    if(DOMAid.isSingleColumnTable(table)) {
-      DOMAid.unwrapSingleColumnTable(table);
-    }
-  }
-};
-
-// TODO: allow for empty rows?
-DOMAid.unwrapSingleCellTable = function(table) {
-  const cell = table.rows[0].cells[0];
-  const document = table.ownerDocument;
-  const tableParent = table.parentNode;
-  tableParent.insertBefore(document.createTextNode(' '), table);
-  insertChildrenBefore(cell, table);
-  tableParent.insertBefore(document.createTextNode(' '), table);
-  table.remove();
-};
-
-// Examines the first 50 rows of a table element and decides whether
-// the table is probably a simple single column table
-DOMAid.isSingleColumnTable = function(table) {
-  const rows = table.rows;
-  const rowLength = rows.length;
-  const upperBound = Math.min(rowLength, 50);
-  for(let i = 0; i < upperBound; i++) {
-    if(rows[i].cells.length > 1) {
-      return false;
-    }
+    return true;
   }
 
-  return true;
-};
-
-DOMAid.unwrapSingleColumnTable = function(table) {
-  const document = table.ownerDocument;
-  const tableParent = table.parentNode;
-  tableParent.insertBefore(document.createTextNode(' '), table);
-  for(let row of table.rows) {
-    for(let cell of row.cells) {
-      insertChildrenBefore(cell, table);
-    }
-    tableParent.insertBefore(document.createElement('p'), table);
+  // TODO: allow for empty rows?
+  function unwrapSingleCellTable(table) {
+    const cell = table.rows[0].cells[0];
+    const tableParent = table.parentNode;
+    tableParent.insertBefore(document.createTextNode(' '), table);
+    insertChildrenBefore(cell, table);
+    tableParent.insertBefore(document.createTextNode(' '), table);
+    table.remove();
   }
-  tableParent.insertBefore(document.createTextNode(' '), table);
-  table.remove();
+
+  function unwrapSingleColumnTable(table) {
+    const tableParent = table.parentNode;
+    tableParent.insertBefore(document.createTextNode(' '), table);
+    // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+    //for(let row of table.rows) {
+    for(let i = 0, len = table.rows.length; i < len; i++) {
+      let row = table.rows[i];
+      //for(let cell of row.cells) {
+      for(let j = 0, clen = row.cells.length; j < clen; j++) {
+        let cell = row.cells[j];
+        insertChildrenBefore(cell, table);
+      }
+      tableParent.insertBefore(document.createElement('p'), table);
+    }
+    tableParent.insertBefore(document.createTextNode(' '), table);
+    table.remove();
+  }
 };

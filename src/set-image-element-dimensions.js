@@ -21,8 +21,10 @@ function setImageElementDimensions(document, callback) {
     return;
   }
 
-  for(let imageElement of imageCollection) {
-
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let imageElement of imageCollection) {
+  for(let i = 0, len = imageCollection.length; i < len; i++) {
+    let imageElement = imageCollection[i];
     if(imageElement.width && !imageElement.hasAttribute('width')) {
       imageElement.setAttribute('width', imageElement.width);
     }

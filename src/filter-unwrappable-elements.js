@@ -16,7 +16,10 @@ function filterUnwrappableElements(document) {
 
   const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
   const nullReferenceNode = null;
-  for(let element of elements) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let element of elements) {
+  for(let i = 0, len = elements.length; i < len; i++) {
+    let element = elements[i];
     unwrapElement(element, nullReferenceNode);
   }
 }
@@ -78,7 +81,10 @@ function filterUnwrappableElementsExperimental(document) {
   const bodyElement = document.body;
 
   const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
-  for(let element of elements) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let element of elements) {
+  for(let i = 0, len = elements.length; i < len; i++) {
+    let element = elements[i];
     if(!isUnwrappableParent(element)) {
       let shallowest = findShallowestUnwrappableAncestor(element);
       unwrapElement(element, shallowest);

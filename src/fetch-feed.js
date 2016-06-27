@@ -78,8 +78,13 @@ function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
   // to the end, this means the rewritten url will come after the original,
   // so this means other things that access the list will use whatever is
   // last in the list, so those things will use the rewritten url
+  // TODO: I am really really not sure this belongs here
   function rewriteEntryURLs(entries) {
-    for(let entry of entries) {
+    // Not using for .. of due to profiling error NotOptimized
+    // TryCatchStatement
+    //for(let entry of entries) {
+    for(let i = 0, len = entries.length; i < len; i++) {
+      let entry = entries[i];
       let entryURL = entry.urls[0];
       if(entryURL) {
         let rewrittenURL = rewriteURL(entryURL);

@@ -19,7 +19,10 @@ function filterTrackingImages(document) {
     'img[src^="https://pubads.g.doubleclick.net"]'
   ].join(',');
   const images = document.querySelectorAll(SELECTOR);
-  for(let image of images) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let image of images) {
+  for(let i = 0, len = images.length; i < len; i++) {
+    let image = images[i];
     // console.debug('Removing tracker image:', image.outerHTML);
     image.remove();
   }

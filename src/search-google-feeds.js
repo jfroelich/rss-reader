@@ -60,10 +60,17 @@ function searchGoogleFeeds(queryString, timeoutMillis, callback) {
 
     responseEvent.queryString = data.query || '';
     responseEvent.entries = [];
+
+    // TODO: move entry processing into a helper function
+
     const entries = data.entries || [];
     const seenURLs = Object.create(null);
 
-    for(let entry of entries) {
+    // Not using for .. of due to profiling error NotOptimized
+    // TryCatchStatement
+    //for(let entry of entries) {
+    for(let i = 0, len = entries.length; i < len; i++) {
+      let entry = entries[i];
       if(!entry.url) {
         continue;
       }

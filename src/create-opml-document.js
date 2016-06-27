@@ -36,7 +36,10 @@ function createOPMLDocument(titleString, feeds) {
   const bodyElement = doc.createElement('BODY');
   documentElement.appendChild(bodyElement);
 
-  for(let feed of feeds) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let feed of feeds) {
+  for(let i = 0, len = feeds.length; i < len; i++) {
+    let feed = feeds[i];
     let outlineElement = doc.createElement('OUTLINE');
     outlineElement.setAttribute('type', feed.type || 'rss');
 

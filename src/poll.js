@@ -112,6 +112,12 @@ FeedPoller.start = function() {
 
 FeedPoller.createMergedFeed = function(localFeed, remoteFeed) {
 
+  // TODO: sanitization isn't the responsibility of merging, this is a mixture
+  // of purposes. separate out into two functions.
+
+  // TODO: sanitization should consider maximum string length.
+  // for enforcing maximum html string length, use truncateHTMLString
+
   // Prep a string property of an object for storage
   // TODO: maybe this should be a db function or something
   // TODO: maybe do the sanitization externally, explicitly
@@ -134,7 +140,10 @@ FeedPoller.createMergedFeed = function(localFeed, remoteFeed) {
 
   outputFeed.urls = [].concat(localFeed.urls);
 
-  for(let url of remoteFeed.urls) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let url of remoteFeed.urls) {
+  for(let i = 0, len = remoteFeed.urls.length; i < len; i++) {
+    let url = remoteFeed.urls[i];
     let urlString = url.href;
     if(!outputFeed.urls.includes(urlString)) {
       outputFeed.urls.push(urlString);
@@ -193,6 +202,7 @@ FeedPoller.onMaybePollCompleted = function(context) {
 // NOTE: feed is now the stored feed, which contains strings not urls
 // However, entries is still the fetched entries array, which contains
 // URL objects.
+// NOTE: because it is the stored feed, it also contains sanitized values
 FeedPoller.onUpdateFeed = function(context, entries, feed, event) {
   if(event.type !== 'success') {
     context.pendingFeedsCount--;
@@ -215,14 +225,19 @@ FeedPoller.onUpdateFeed = function(context, entries, feed, event) {
 
   const linkURLSet = new Set();
   let entriesProcessed = 0;
-  for(let entry of entries) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let entry of entries) {
+  for(let i = 0, len = entries.length; i < len; i++) {
+    let entry = entries[i];
     if(!entry.urls.length) {
       onEntryProcessed();
       continue;
     }
 
     let seen = false;
-    for(let url of entry.urls) {
+    //for(let url of entry.urls) {
+    for(let j = 0, ulen = entry.urls.length; j < ulen; j++) {
+      let url = entry.urls[j];
       if(linkURLSet.has(url.href)) {
         seen = true;
         break;
@@ -234,7 +249,9 @@ FeedPoller.onUpdateFeed = function(context, entries, feed, event) {
       continue;
     }
 
-    for(let url of entry.urls) {
+    //for(let url of entry.urls) {
+    for(let j = 0, ulen = entry.urls.length; j < ulen; j++) {
+      let url = entry.urls[j];
       linkURLSet.add(url.href);
     }
 
@@ -260,6 +277,18 @@ FeedPoller.processEntry = function(context, feed, entry, callback) {
   // Denormalize link and title so that rendering can avoid these lookups
   // NOTE: feed.link is a URL string, because feed comes from the feed object
   // that was stored
+
+  // TODO: I would need to repeatedly sanitize these per entry before storing
+  // the entry, so it would be better to sanitize them here.
+  // There is no need to sanitize feedLink because that went through
+  // the new URL().href transformation. However I do need to sanitize
+  // feed title. Given that I am also storing the updated feed title when
+  // storing the feed, what I should be doing instead is sanitizing the
+  // feed title there when storing the feed and then pass along its sanitized
+  // title.
+  // Actually, if 'feed' is the output of the updateFeed function, then that
+  // means it was sanitized already.
+
   entry.feedLink = feed.link;
   entry.feedTitle = feed.title;
 
@@ -360,6 +389,7 @@ FeedPoller.processEntry = function(context, feed, entry, callback) {
   }
 };
 
+// TODO: entries must be sanitized fully
 // TODO: eventually this should delegate most of its functionality to
 // Entry.toSerializable
 FeedPoller.addEntry = function(connection, entry, callback) {
@@ -367,18 +397,25 @@ FeedPoller.addEntry = function(connection, entry, callback) {
 
   // entry.feedLink is a URL string, not an object, because it was copied
   // over from the serialized feed object that was the input to db.updateFeed
+  // feedLink was previously sanitized, because it was converted to a URL
+  // and back, and if there was a problem with the url it would be undefined
   if(entry.feedLink) {
     storable.feedLink = entry.feedLink;
   }
 
+  // feedTitle was previously sanitized because it was copied over from the
+  // feed object that was sanitized and stored in updateFeed
   if(entry.feedTitle) {
     storable.feedTitle = entry.feedTitle;
   }
 
   // TODO: rename the property 'feed' to 'feedId'
+  // There is no need to sanitize this value because it comes from the
+  // database and is a plain integer.
   storable.feed = entry.feed;
 
   // Serialize and normalize the urls
+  // There is no need to do additional sanitization
   storable.urls = entry.urls.map(function(url) {
     return url.href;
   });
@@ -386,18 +423,39 @@ FeedPoller.addEntry = function(connection, entry, callback) {
   storable.readState = db.EntryFlags.UNREAD;
   storable.archiveState = db.EntryFlags.UNARCHIVED;
 
+  // TODO: sanitize
   if(entry.author) {
+    let authorString = entry.author;
+    authorString = filterControlCharacters(authorString);
+    authorString = replaceHTML(authorString);
+    // TODO: do i need to use truncateHTMLString?
+    // TODO: if i do use truncateString, then i need to include it in
+    // manifest.json
+    //authorString = truncateString(authorString, MAX_AUTHOR_VALUE_LENGTH);
     storable.author = entry.author;
   }
 
+  // TODO: sanitize
   if(entry.title) {
-    storable.title = entry.title;
+    // Prep for storage
+    let entryTitle = entry.title;
+    entryTitle = filterControlCharacters(entryTitle);
+    entryTitle = replaceHTML(entryTitle, '');
+
+    // TODO: enforce a maximum length using truncateHTMLString
+
+    storable.title = entryTitle;
   }
 
   if(entry.datePublished) {
     storable.datePublished = entry.datePublished;
   }
 
+  // TODO: sanitize (partially)
+  // NOTE: I cannot filter out control characters here, because line breaks
+  // are sometimes important.
+  // NOTE: I cannot filter out html, this is supposed to contain html
+  // TODO: enforce a maximum length
   if(entry.content) {
     storable.content = entry.content;
   }
@@ -406,6 +464,13 @@ FeedPoller.addEntry = function(connection, entry, callback) {
 };
 
 FeedPoller.isNoFetchEntryURL = function(url) {
+
+  // TODO: an alternate would be to design a set of policies, which are
+  // basically individual filter functions, and then test all policies
+  // in the calling context of this function in place of this function.
+  // This would make the policies easily extendable, externally configurable
+  // or maybe something loaded from local storage or something like that.
+  // so install sets up the default list, and this just reads it in
 
   // url normalization currently does not do anything with www. prefix so
   // i have to check both
@@ -420,7 +485,10 @@ FeedPoller.isNoFetchEntryURL = function(url) {
     'forbes.com'
   ];
   const hostNameString = url.hostname;
-  for(let blacklistedHostNameString of blacklist) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let blacklistedHostNameString of blacklist) {
+  for(let i = 0, len = blacklist.length; i < len; i++) {
+    let blacklistedHostNameString = blacklist[i];
     if(blacklistedHostNameString === hostNameString) {
       return true;
     }

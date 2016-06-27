@@ -4,6 +4,9 @@
 
 'use strict';
 
+// TODO: rename
+// TODO: change this to just be a global function with nested helpers
+
 // TODO: resolve xlink type simple (on any attribute) in xml docs
 // TODO: finish implementing URLResolver.serializeSrcSet
 // TODO: rather than do a separate check for srcset, it should somehow be
@@ -36,7 +39,10 @@ URLResolver.resolveURLsInDocument = function(document, baseURL) {
 // of this module if used independently requires this behavior.
 URLResolver.removeBaseElements = function(document) {
   const bases = document.querySelectorAll('base');
-  for(let base of bases) {
+  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
+  //for(let base of bases) {
+  for(let i = 0, len = bases.length; i < len; i++) {
+    let base = bases[i];
     base.remove();
   }
 };
