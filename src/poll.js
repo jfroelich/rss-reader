@@ -287,7 +287,7 @@ FeedPoller.processEntry = function(context, feed, entry, callback) {
 
     // Track the redirect
     if(event.responseURL.href !== entryURL.href) {
-      entry.urls.push(responseURL);
+      entry.urls.push(event.responseURL);
     }
 
     // Replace the entry's content

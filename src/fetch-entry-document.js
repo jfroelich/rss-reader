@@ -15,6 +15,7 @@ function fetchEntryDocument(requestURL, timeoutMillis, callback) {
   if(isResistantURL(requestURL)) {
     const event = Object.create(null);
     event.type = 'resistanturl';
+    event.requestURL = requestURL;
     callback(event);
     return;
   }
@@ -24,7 +25,8 @@ function fetchEntryDocument(requestURL, timeoutMillis, callback) {
   if(path && path.length > 5 && /\.pdf$/i.test(path)) {
     const event = Object.create(null);
     event.type = 'pdfurl';
-    callbak(event);
+    event.requestURL = requestURL;
+    callback(event);
     return;
   }
 
