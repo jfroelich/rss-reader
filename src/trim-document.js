@@ -31,6 +31,8 @@ function trimDocument(document) {
     }
   }
 
+  // NOTE: node.nodeName yields uppercase when document is flagged as HTML
+
   function removeStep(startNode, step) {
     let node = startNode;
     while(node && (node.nodeName in TRIMMABLE_VOID_ELEMENT_NAMES ||

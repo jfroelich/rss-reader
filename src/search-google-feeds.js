@@ -4,12 +4,11 @@
 
 'use strict';
 
-// Accesses the basic find-feeds functionality of the Google Feeds API.
+// Sends an async request to Google to search for feeds that correspond to
+// a general text query.
 // Google formally deprecated this service. Around December 1st, 2015, I
 // first noticed that the queries stopped working. However, I have witnessed
 // the service occassionally work thereafter.
-// Sends an async request to Google to search for feeds that correspond to
-// a general text query.
 function searchGoogleFeeds(queryString, timeoutMillis, callback) {
   const BASE_URL_STRING =
     'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
@@ -61,14 +60,9 @@ function searchGoogleFeeds(queryString, timeoutMillis, callback) {
     responseEvent.queryString = data.query || '';
     responseEvent.entries = [];
 
-    // TODO: move entry processing into a helper function
-
     const entries = data.entries || [];
     const seenURLs = Object.create(null);
 
-    // Not using for .. of due to profiling error NotOptimized
-    // TryCatchStatement
-    //for(let entry of entries) {
     for(let i = 0, len = entries.length; i < len; i++) {
       let entry = entries[i];
       if(!entry.url) {
@@ -92,6 +86,7 @@ function searchGoogleFeeds(queryString, timeoutMillis, callback) {
 
       // TODO: provide entry.link as URL object
 
+      // TODO: is entry.title ever undefined?
       if(entry.title) {
         entry.title = filterControlCharacters(entry.title);
         entry.title = replaceHTML(entry.title, '');
@@ -117,9 +112,6 @@ function searchGoogleFeeds(queryString, timeoutMillis, callback) {
     } catch(exception) {}
   }
 
-  // Returns a new string where <br>s have been replaced with spaces. This is
-  // intended to be rudimentary and fast rather than perfectly accurate. I do
-  // not do any heavy-weight html marshalling.
   // TODO: rather than this function existing, would it be nicer if
   // HTMLUtils.stripTags accepted a list of tags to ignore or to only consider,
   // and then the caller could just pass in br to that function as the only tag

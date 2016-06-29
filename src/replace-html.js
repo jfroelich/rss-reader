@@ -8,6 +8,7 @@
 // replacement string. HTML entities remain (except some will be
 // replaced, like &#32; with space).
 // TODO: incorrect output when input contains '<html><body>...</body></html>'
+// TODO: rename this to be clearer as to what is being replaced
 function replaceHTML(inputString, replacementString) {
   let outputString = null;
 

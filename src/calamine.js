@@ -32,16 +32,6 @@
 const Calamine = Object.create(null);
 
 Calamine.removeBoilerplate = function(document) {
-  //let bestElement = Calamine.findSignature(document);
-
-  //if(!bestElement) {
-  //  bestElement = Calamine.findHighestScoringElement(document);
-  //}
-
-  // NOTE: I am tentatively disabling findSignature as I do not think it
-  // works all that well, and I'd like to experience the actual result
-  // for more testing
-
   let bestElement = Calamine.findHighestScoringElement(document);
 
   if(bestElement !== document.documentElement) {
@@ -338,6 +328,7 @@ Calamine.findHighestScoringElement = function(document) {
   return bestElement;
 };
 
+// DEPRECATED
 // NOTE: we cannot use just article, because it screws up on certain pages.
 // This may be a symptom of a larger problem of trying to use a fast path.
 // For example, in https://news.vice.com/article/north-korea-claims-new-
@@ -370,6 +361,7 @@ Calamine.SIGNATURES = [
   '#WNStoryBody'
 ];
 
+// DEPRECATED
 // Looks for the first single occurrence of an element matching
 // one of the signatures
 Calamine.findSignature = function(document) {
@@ -380,9 +372,6 @@ Calamine.findSignature = function(document) {
 
   // If a signature occurs once in a document, then return it. Use whatever
   // signature matches first in the order defined in Calamine.SIGNATURES
-
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-//  for(let signature of Calamine.SIGNATURES) {
   for(let i = 0, len = Calamine.SIGNATURES.length; i < len; i++) {
     let signature = Calamine.SIGNATURES[i];
     const elements = bodyElement.querySelectorAll(signature);
@@ -458,9 +447,6 @@ Calamine.prune = function(document, bestElement) {
   }
   const docElement = document.documentElement;
   const elements = bodyElement.querySelectorAll('*');
-
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let element of elements) {
   for(let i = 0, len = elements.length; i < len; i++) {
     let element = elements[i];
     if(!element.contains(bestElement) && !bestElement.contains(element) &&

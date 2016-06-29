@@ -11,12 +11,14 @@
 // those are removed anyway. I might consider writing a document preprocessor
 // that inlines all styles. As a result of the gimmick, it is less accurate
 // but it is much faster.
+//
 // I cannot use the offsetWidth/offsetHeight tricks like how jQuery does
 // this because that trick only works for live documents. This is designed
 // to work with an inert document such as one produceed by
 // XMLHttpRequest.responseXML or DOMParser or
 // document.implementation.createHTMLDocument. offsetWidth and offsetHeight
 // are 0 for all elements in an inert document.
+//
 // This originally removed elements. Now it just unwraps. This helps avoid
 // an issue with documents that wrap all content in a hidden element and then
 // dynamically unhide the element. For example:
@@ -25,6 +27,7 @@
 // at the bottom of the page that sets the visibility to visible. I also
 // think this is a document produced by Macromedia Dreamweaver, so I think
 // this is not a one-time thing.
+//
 // I have mixed feelings about unwrapping hidden content. There is an ambiguity
 // regarding whether the content is useful. It is either content subject to the
 // un-hide trick, or it is content that is intentionally hidden for some

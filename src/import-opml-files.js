@@ -20,7 +20,6 @@ function importOPMLFiles(connection, files, callback) {
   const parser = new DOMParser();
 
   // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let file of files) {
   for(let i = 0, len = files.length; i < len; i++) {
     let file = files[i];
     reader.readAsText(file);
@@ -58,12 +57,14 @@ function importOPMLFiles(connection, files, callback) {
     }
 
     const docElement = document.documentElement;
+
+    // TODO: I don't think this ever happens, not sure
     if(!docElement) {
       onFileProcessed();
       return;
     }
 
-    if(!equalsIgnoreCase(docElement.nodeName, 'OPML')) {
+    if(docElement.nodeName.toUpperCase() !== 'OPML')) {
       onFileProcessed();
       return;
     }
@@ -74,11 +75,12 @@ function importOPMLFiles(connection, files, callback) {
       return;
     }
 
-    const seenURLs = Object.create(null);
+    //const seenURLs = Object.create(null);
+    const seenURLStringSet = new Set();
 
     for(let element = bodyElement.firstElementChild; element;
       element = element.nextElementSibling) {
-      if(!equalsIgnoreCase(element.nodeName, 'OUTLINE')) {
+      if(element.nodeName.toUpperCase() !== 'OUTLINE')) {
         continue;
       }
 
@@ -97,10 +99,12 @@ function importOPMLFiles(connection, files, callback) {
         continue;
       }
 
-      if(url.href in seenURLs) {
+      //if(url.href in seenURLs) {
+      if(seenURLStringSet.has(url.href)) {
         continue;
       }
-      seenURLs[url.href] = 1;
+      //seenURLs[url.href] = 1;
+      seenURLStringSet.add(url.href);
 
       // Create the feed object that will be stored
       let feed = Object.create(null);
@@ -122,7 +126,11 @@ function importOPMLFiles(connection, files, callback) {
   }
 
   function onAddFeed(event) {
-    // NOOP
+    if(event.type === 'success') {
+      console.debug('Imported feed with new id', event.target.result);
+    } else {
+      console.debug('Import error', event);
+    }
   }
 
   // Trap the exception

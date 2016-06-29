@@ -4,6 +4,19 @@
 
 'use strict';
 
+
+// Certain elements, typically those that are defined as void elements in the
+// spec, can readily appear to be leaves, but should not be considered leaves.
+
+// I am using a plain old object instead of a Set because profiling showed
+// poor performance.
+const NON_LEAF_ELEMENTS = {
+  'AREA': 1, 'AUDIO': 1, 'BASE': 1, 'COL': 1, 'COMMAND': 1, 'BR': 1,
+  'CANVAS': 1, 'COL': 1, 'HR': 1, 'IFRAME': 1, 'IMG': 1, 'INPUT': 1,
+  'KEYGEN': 1, 'META': 1, 'NOBR': 1, 'PARAM': 1, 'PATH': 1, 'SOURCE': 1,
+  'SBG': 1, 'TEXTAREA': 1, 'TRACK': 1, 'VIDEO': 1, 'WBR': 1
+};
+
 // Removes leaf-like elements from the document. An element is a leaf unless
 // it is a named exception, contains a non-whitespace-only text node, or
 // contains at least one non-leaf child element.
@@ -31,19 +44,6 @@ function filterLeafElements(document) {
     return;
   }
 
-  // These elements are never considered leaves, regardless of other criteria.
-  // In general, these elements correspond to 'void' elements that generally
-  // cannot contain child elements.
-  // In an HTML document context, element.nodeName is always uppercase
-  // I am using a plain old object instead of a Set because profiling showed
-  // poor performance.
-  const NON_LEAF_ELEMENTS = {
-    'AREA': 1, 'AUDIO': 1, 'BASE': 1, 'COL': 1, 'COMMAND': 1, 'BR': 1,
-    'CANVAS': 1, 'COL': 1, 'HR': 1, 'IFRAME': 1, 'IMG': 1, 'INPUT': 1,
-    'KEYGEN': 1, 'META': 1, 'NOBR': 1, 'PARAM': 1, 'PATH': 1, 'SOURCE': 1,
-    'SBG': 1, 'TEXTAREA': 1, 'TRACK': 1, 'VIDEO': 1, 'WBR': 1
-  };
-
   // Only iterate elements within the body element. This prevents the body
   // element itself and the document element from also being iterated and
   // therefore identified as leaves and therefore removed in the case of an
@@ -54,17 +54,18 @@ function filterLeafElements(document) {
   // is an inclusive descendant of docElement as defined in the spec. This is
   // why docElement itself can also be removed if this iterated over all
   // elements and not just those within the body.
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let element of elements) {
   for(let i = 0, len = elements.length; i < len; i++) {
     let element = elements[i];
     if(docElement.contains(element) && isLeafNode(element)) {
       element.remove();
     }
   }
+}
 
-  function isLeafNode(node) {
-    if(node.nodeType === Node.ELEMENT_NODE) {
+// Recursive
+function isLeafNode(node) {
+  switch(node.nodeType) {
+    case Node.ELEMENT_NODE:
       if(node.nodeName.toUpperCase() in NON_LEAF_ELEMENTS) {
         return false;
       }
@@ -74,13 +75,14 @@ function filterLeafElements(document) {
           return false;
         }
       }
-
-    } else if(node.nodeType === Node.TEXT_NODE) {
+      break;
+    case Node.TEXT_NODE:
       return !node.nodeValue.trim();
-    } else {
+    case Node.COMMENT_NODE:
+      return true;
+    default:
       return false;
-    }
-
-    return true;
   }
+
+  return true;
 }

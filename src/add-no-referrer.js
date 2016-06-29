@@ -10,12 +10,6 @@
 // http://w3c.github.io/html/links.html#link-type-noreferrer
 function addNoReferrer(document) {
   const anchors = document.querySelectorAll('a');
-
-  // Not using for .. of due to profiling issue:
-  // NotOptimized Reason: TryCatchStatement
-
-  //for(let anchor of anchors) {
-
   for(let i = 0, len = anchors.length; i < len; i++) {
     let anchor = anchors[i];
     anchor.setAttribute('rel', 'noreferrer');

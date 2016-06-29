@@ -7,7 +7,7 @@
 const FeedPoller = Object.create(null);
 
 FeedPoller.start = function() {
-  console.log('Starting poll ...');
+  console.log('Starting poll...');
 
   const context = {
     'pendingFeedsCount': 0,
@@ -137,11 +137,10 @@ FeedPoller.createMergedFeed = function(localFeed, remoteFeed) {
   const outputFeed = Object.create(null);
   outputFeed.id = localFeed.id;
   outputFeed.type = remoteFeed.type;
-
+  // TODO: test using spread operator?
+  // outputFeed.urls = [...localFeed.urls];
   outputFeed.urls = [].concat(localFeed.urls);
 
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let url of remoteFeed.urls) {
   for(let i = 0, len = remoteFeed.urls.length; i < len; i++) {
     let url = remoteFeed.urls[i];
     let urlString = url.href;
@@ -216,45 +215,9 @@ FeedPoller.onUpdateFeed = function(context, entries, feed, event) {
     return;
   }
 
-  // Remove entries without links, remove entries with duplicate links,
-  // and then process the remaining entries.
-
-  // I am storing url strings in the set instead of URL objects because it is
-  // not clear how URL objects are compared for equality. Apparently,
-  // new URL('url') !== new URL('url').
-
-  const linkURLSet = new Set();
   let entriesProcessed = 0;
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let entry of entries) {
   for(let i = 0, len = entries.length; i < len; i++) {
     let entry = entries[i];
-    if(!entry.urls.length) {
-      onEntryProcessed();
-      continue;
-    }
-
-    let seen = false;
-    //for(let url of entry.urls) {
-    for(let j = 0, ulen = entry.urls.length; j < ulen; j++) {
-      let url = entry.urls[j];
-      if(linkURLSet.has(url.href)) {
-        seen = true;
-        break;
-      }
-    }
-
-    if(seen) {
-      onEntryProcessed();
-      continue;
-    }
-
-    //for(let url of entry.urls) {
-    for(let j = 0, ulen = entry.urls.length; j < ulen; j++) {
-      let url = entry.urls[j];
-      linkURLSet.add(url.href);
-    }
-
     FeedPoller.processEntry(context, feed, entry, onEntryProcessed);
   }
 
@@ -268,39 +231,24 @@ FeedPoller.onUpdateFeed = function(context, entries, feed, event) {
   }
 };
 
+// TODO: do I want to check if any of the entry's URLs exist, or just its
+// most recent one?
 FeedPoller.processEntry = function(context, feed, entry, callback) {
 
-  // Associate the entry with its feed
-  // TODO: rename this to something clearer, like feedId
-  entry.feed = feed.id;
+  // If an entry doesn't have a URL, technically I could have allowed it in
+  // a scheme were I display text only entries. But I have decided to not allow
+  // any entry without a url.
+  // TODO: did I already check for this earlier in the pipeline?
+  if(!entry.urls.length) {
+    callback();
+    return;
+  }
 
-  // Denormalize link and title so that rendering can avoid these lookups
-  // NOTE: feed.link is a URL string, because feed comes from the feed object
-  // that was stored
-
-  // TODO: I would need to repeatedly sanitize these per entry before storing
-  // the entry, so it would be better to sanitize them here.
-  // There is no need to sanitize feedLink because that went through
-  // the new URL().href transformation. However I do need to sanitize
-  // feed title. Given that I am also storing the updated feed title when
-  // storing the feed, what I should be doing instead is sanitizing the
-  // feed title there when storing the feed and then pass along its sanitized
-  // title.
-  // Actually, if 'feed' is the output of the updateFeed function, then that
-  // means it was sanitized already.
-
-  entry.feedLink = feed.link;
-  entry.feedTitle = feed.title;
-
-  // TODO: do I want to check if any of the entry's URLs exist, or just its
-  // most recent one?
-
-  // Check whether an entry with the url already exists. Grab the last url
-  // in the entry's urls array. entry.urls provides URL objects, not strings,
-  // because fetchFeed converts them into URL objects.
+  // Grab the last url in the entry's urls array.
+  // entry.urls contains URL objects, not strings
   const entryURL = entry.urls[entry.urls.length - 1];
-  const connection = context.connection;
-  db.findEntryWithURL(connection, entryURL, onFindEntryWithURL);
+
+  db.findEntryWithURL(context.connection, entryURL, onFindEntryWithURL);
 
   function onFindEntryWithURL(event) {
     if(event.type !== 'success') {
@@ -313,76 +261,40 @@ FeedPoller.processEntry = function(context, feed, entry, callback) {
       return;
     }
 
-    if(FeedPoller.isNoFetchEntryURL(entryURL)) {
-      FeedPoller.addEntry(context.connection, entry, callback);
-      return;
-    }
-
-    const path = entryURL.pathname;
-    if(path && path.length > 5 && /\.pdf$/i.test(path)) {
-      FeedPoller.addEntry(context.connection, entry, callback);
-      return;
-    }
-
-    // TODO: create a fetchHTML function, use that instead
-
     const fetchTimeoutMillis = 15 * 1000;
-    const fetchRequest = new XMLHttpRequest();
-    fetchRequest.timeout = fetchTimeoutMillis;
-    fetchRequest.ontimeout = onFetchEntry;
-    fetchRequest.onerror = onFetchEntry;
-    fetchRequest.onabort = onFetchEntry;
-    fetchRequest.onload = onFetchEntry;
-    const doAsyncFetchRequest = true;
-    fetchRequest.open('GET', entryURL.href, doAsyncFetchRequest);
-    fetchRequest.responseType = 'document';
-    fetchRequest.send();
+    fetchEntryDocument(entryURL, fetchTimeoutMillis, onFetchEntryDocument);
   }
 
-  function onFetchEntry(event) {
-    if(event.type !== 'load') {
+  function onFetchEntryDocument(event) {
+
+    // Associate the entry with its feed in preparation for storage
+    // TODO: rename this to something clearer, like feedId
+    entry.feed = feed.id;
+
+    // Denormalize link and title so that rendering can avoid these lookups
+    // NOTE: feed.link is a URL string, because feed comes from the feed object
+    // that was stored
+    // feedLink was sanitized during parseFeed
+    entry.feedLink = feed.link;
+    // feedTitle was sanitized by updatefeed
+    entry.feedTitle = feed.title;
+
+    if(event.type !== 'success') {
       console.debug(event);
       FeedPoller.addEntry(context.connection, entry, callback);
       return;
     }
 
-    const fetchRequest = event.target;
-    const document = fetchRequest.responseXML;
-    if(!document) {
-      FeedPoller.addEntry(context.connection, entry, callback);
-      return;
-    }
-
-    const responseURL = new URL(fetchRequest.responseURL);
-    if(responseURL.href !== entryURL.href) {
+    // Track the redirect
+    if(event.responseURL.href !== entryURL.href) {
       entry.urls.push(responseURL);
     }
 
-    transformLazilyLoadedImages(document);
-    filterSourcelessImages(document);
-    URLResolver.resolveURLsInDocument(document, responseURL.href);
-    filterTrackingImages(document);
-    setImageElementDimensions(document, onSetImageDimensions);
-  }
-
-  // Possibly replace the content property of the remoteEntry with the
-  // fetched and cleaned full text, then store the entry.
-  // TODO: maybe I should be checking the content of body. In fact if
-  // there is no body element, maybe this shouldn't even be replacing
-  // entry.content at all. Maybe documentElement is the wrong thing
-  // to consider. Maybe I want to check body but use the full content
-  // of documentElement.
-  // Also, maybe I want to use an substitute message.
-  function onSetImageDimensions(document, fetchStats) {
-    const documentElement = document.documentElement;
-    if(documentElement) {
-      const fullDocumentHTMLString = documentElement.outerHTML;
-      if(fullDocumentHTMLString) {
-        const trimmedFullDocumentHTMLString = fullDocumentHTMLString.trim();
-        if(trimmedFullDocumentHTMLString) {
-          entry.content = trimmedFullDocumentHTMLString;
-        }
-      }
+    // Replace the entry's content
+    const document = event.responseXML;
+    const contentString = document.documentElement.outerHTML.trim();
+    if(contentString) {
+      entry.content = contentString;
     }
 
     FeedPoller.addEntry(context.connection, entry, callback);
@@ -391,14 +303,14 @@ FeedPoller.processEntry = function(context, feed, entry, callback) {
 
 // TODO: entries must be sanitized fully
 // TODO: eventually this should delegate most of its functionality to
-// Entry.toSerializable
+// Entry.toSerializable, or this should be Entry.add
 FeedPoller.addEntry = function(connection, entry, callback) {
   const storable = Object.create(null);
 
   // entry.feedLink is a URL string, not an object, because it was copied
   // over from the serialized feed object that was the input to db.updateFeed
   // feedLink was previously sanitized, because it was converted to a URL
-  // and back, and if there was a problem with the url it would be undefined
+  // and back to a string
   if(entry.feedLink) {
     storable.feedLink = entry.feedLink;
   }
@@ -410,8 +322,7 @@ FeedPoller.addEntry = function(connection, entry, callback) {
   }
 
   // TODO: rename the property 'feed' to 'feedId'
-  // There is no need to sanitize this value because it comes from the
-  // database and is a plain integer.
+  // feed id is trusted, no need to sanitize
   storable.feed = entry.feed;
 
   // Serialize and normalize the urls
@@ -429,21 +340,20 @@ FeedPoller.addEntry = function(connection, entry, callback) {
     authorString = filterControlCharacters(authorString);
     authorString = replaceHTML(authorString);
     // TODO: do i need to use truncateHTMLString?
+    // Does author ever include html entities? If so, should I strip entities?
+    // Are those entities encoded or decoded or is it always ambiguous?
     // TODO: if i do use truncateString, then i need to include it in
     // manifest.json
     //authorString = truncateString(authorString, MAX_AUTHOR_VALUE_LENGTH);
     storable.author = entry.author;
   }
 
-  // TODO: sanitize
+  // TODO: enforce a maximum length using truncateHTMLString
+  // TODO: condense spaces
   if(entry.title) {
-    // Prep for storage
     let entryTitle = entry.title;
     entryTitle = filterControlCharacters(entryTitle);
     entryTitle = replaceHTML(entryTitle, '');
-
-    // TODO: enforce a maximum length using truncateHTMLString
-
     storable.title = entryTitle;
   }
 
@@ -451,47 +361,11 @@ FeedPoller.addEntry = function(connection, entry, callback) {
     storable.datePublished = entry.datePublished;
   }
 
-  // TODO: sanitize (partially)
-  // NOTE: I cannot filter out control characters here, because line breaks
-  // are sometimes important.
-  // NOTE: I cannot filter out html, this is supposed to contain html
-  // TODO: enforce a maximum length
+  // TODO: filter out non-printable characters other than \r\n\t
+  // TODO: enforce a maximum length (using truncateHTMLString)
   if(entry.content) {
     storable.content = entry.content;
   }
 
   db.addEntry(connection, storable, callback);
-};
-
-FeedPoller.isNoFetchEntryURL = function(url) {
-
-  // TODO: an alternate would be to design a set of policies, which are
-  // basically individual filter functions, and then test all policies
-  // in the calling context of this function in place of this function.
-  // This would make the policies easily extendable, externally configurable
-  // or maybe something loaded from local storage or something like that.
-  // so install sets up the default list, and this just reads it in
-
-  // url normalization currently does not do anything with www. prefix so
-  // i have to check both
-
-  // Google Groups is javascript rendered.
-  // Forbes uses a Continue page preventing crawling
-
-  const blacklist = [
-    'productforums.google.com',
-    'groups.google.com',
-    'www.forbes.com',
-    'forbes.com'
-  ];
-  const hostNameString = url.hostname;
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let blacklistedHostNameString of blacklist) {
-  for(let i = 0, len = blacklist.length; i < len; i++) {
-    let blacklistedHostNameString = blacklist[i];
-    if(blacklistedHostNameString === hostNameString) {
-      return true;
-    }
-  }
-  return false;
 };

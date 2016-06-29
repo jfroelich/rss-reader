@@ -25,7 +25,7 @@ function fadeElement(element, duration, delay, callback) {
   style.opacity = style.opacity === '1' ? '0' : '1';
 
   function onFadeEnd(event) {
-    event.target.removeEventListener('webkitTransitionEnd', fadeEnd);
+    event.target.removeEventListener('webkitTransitionEnd', onFadeEnd);
     callback(element);
   }
 }

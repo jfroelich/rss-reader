@@ -43,7 +43,7 @@ function createOPMLDocument(titleString, feeds) {
     let outlineElement = doc.createElement('OUTLINE');
     outlineElement.setAttribute('type', feed.type || 'rss');
 
-    if(Object.prototype.toString.call(feed.url) === '[object URL]') {
+    if(isURLObject(feed.url)) {
       outlineElement.setAttribute('xmlUrl', feed.url.href);
     } else {
       outlineElement.setAttribute('xmlUrl', feed.url);
@@ -53,8 +53,8 @@ function createOPMLDocument(titleString, feeds) {
     outlineElement.setAttribute('title', feed.title || '');
     outlineElement.setAttribute('description', feed.description || '');
 
-    if('link' in feed && feed.link) {
-      if(Object.prototype.toString.call(feed.link) === '[object URL]') {
+    if(feed.link) {
+      if(isURLObject(feed.link)) {
         outlineElement.setAttribute('htmlUrl', feed.link.href);
       } else {
         outlineElement.setAttribute('htmlUrl', feed.link);
@@ -62,6 +62,10 @@ function createOPMLDocument(titleString, feeds) {
     }
 
     bodyElement.appendChild(outlineElement);
+  }
+
+  function isURLObject(value) {
+    return Object.prototype.toString.call(value) === '[object URL]';
   }
 
   return doc;

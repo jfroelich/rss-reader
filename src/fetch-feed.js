@@ -74,22 +74,16 @@ function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
   }
 
   // For each entry, try to rewrite its url, and if a rewrite occurred,
-  // append the rewritten url to the urls list for that entry. By appending
-  // to the end, this means the rewritten url will come after the original,
-  // so this means other things that access the list will use whatever is
-  // last in the list, so those things will use the rewritten url
+  // append the rewritten url to the urls list for that entry.
   // TODO: I am really really not sure this belongs here
   function rewriteEntryURLs(entries) {
-    // Not using for .. of due to profiling error NotOptimized
-    // TryCatchStatement
-    //for(let entry of entries) {
     for(let i = 0, len = entries.length; i < len; i++) {
       let entry = entries[i];
+      // We know due to the fetch that there is only one value in the array
       let entryURL = entry.urls[0];
       if(entryURL) {
         let rewrittenURL = rewriteURL(entryURL);
         if(rewrittenURL.href !== entryURL.href) {
-          // console.debug('Rewrite url:', entryURL.href, rewrittenURL.href);
           entry.urls.push(rewrittenURL);
         }
       }

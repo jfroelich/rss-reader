@@ -4,6 +4,11 @@
 
 'use strict';
 
+// TODO: consider merging all filters into a single recursive
+// function, this might remove some of the redundancy that happens and some
+// of the issues with non-associativeness of filters. Order shouldn't affect
+// the outcome as much.
+
 // Routines for cleaning up nodes in an HTMLDocument
 const DOMAid = Object.create(null);
 
@@ -12,29 +17,45 @@ const DOMAid = Object.create(null);
 // work done by each sequential step, and to ensure proper handling of
 // things like frameset elements.
 DOMAid.cleanDocument = function(document) {
-  DOMAid.filterComments(document);
+  DOMAid.filterCommentNodes(document);
   DOMAid.filterFrameElements(document);
-  DOMAid.filterNoscripts(document);
+  DOMAid.filterNoscriptElements(document);
   DOMAid.filterBlacklistedElements(document);
   filterHiddenElements(document);
-  DOMAid.replaceBreakRuleElements(document);
-  DOMAid.filterAnchors(document);
-  DOMAid.filterTinyImages(document);
-  DOMAid.filterSourcelessImages(document);
+
+  adjustBlockWithinInlineElements(document);
+
+  DOMAid.replaceBRElements(document);
+  DOMAid.filterAnchorElements(document);
+
+  DOMAid.filterImageElements(document);
+
   filterUnwrappableElements(document);
   DOMAid.filterFigureElements(document);
   condenseTextNodeWhitespace(document);
   DOMAid.filterListElements(document);
-  DOMAid.filterTableElements(document);
+
+  const inspectionRowLimit = 20;
+  filterTableElements(document, inspectionRowLimit);
   filterLeafElements(document);
+  DOMAid.filterMisplacedHRElements(document);
   DOMAid.filterConsecutiveHRElements(document);
 
-  // TODO: deprecate once replaceBreakRuleElements is fixed
+  // TODO: deprecate once replaceBRElements is fixed?
   DOMAid.filterConsecutiveBRElements(document);
   trimDocument(document);
   DOMAid.filterAttributes(document);
 };
 
+DOMAid.filterMisplacedHRElements = function(document) {
+  const hrs = document.querySelectorAll('hr');
+  for(let i = 0, len = hrs.length; i < len; i++) {
+    let hr = hrs[i];
+    if(hr.parentNode.nodeName === 'UL') {
+      hr.remove();
+    }
+  }
+};
 
 // Unwraps <noscript> elements. Although this could be done by
 // filterUnwrappables, I am doing it here because I consider <noscript> to be
@@ -47,7 +68,7 @@ DOMAid.cleanDocument = function(document) {
 // tag found, or if the number of elements outside of the node script but
 // within the body is above or below some threshold (which may need to be
 // relative to the total number of elements within the body?)
-DOMAid.filterNoscripts = function(document) {
+DOMAid.filterNoscriptElements = function(document) {
   const elementNodeList = document.querySelectorAll('noscript');
   const nullReferenceNode = null;
   // Not using for .. of due to profiling error NotOptimized TryCatchStatement
@@ -58,7 +79,7 @@ DOMAid.filterNoscripts = function(document) {
   }
 };
 
-DOMAid.filterComments = function(document) {
+DOMAid.filterCommentNodes = function(document) {
   const it = document.createNodeIterator(document.documentElement,
     NodeFilter.SHOW_COMMENT);
   for(let comment = it.nextNode(); comment; comment = it.nextNode()) {
@@ -92,6 +113,7 @@ DOMAid.filterFrameElements = function(document) {
 };
 
 // Assumes anchorElement is defined.
+// TODO: merge into filter anchors
 DOMAid.isJavascriptAnchor = function(anchorElement) {
   // NOTE: the call to getAttribute is now the slowest part of this function,
   // it is even slower than the regex
@@ -116,12 +138,10 @@ DOMAid.isFormattingAnchor = function(anchorElement) {
 };
 
 // Transform anchors that contain inline script or only serve a formatting role
-DOMAid.filterAnchors = function(document) {
-  const anchorNodeList = document.querySelectorAll('a');
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let anchor of anchorNodeList) {
-  for(let i = 0, len = anchorNodeList.length; i < len; i++) {
-    let anchor = anchorNodeList[i];
+DOMAid.filterAnchorElements = function(document) {
+  const anchors = document.querySelectorAll('a');
+  for(let i = 0, len = anchors.length; i < len; i++) {
+    let anchor = anchors[i];
     if(DOMAid.isFormattingAnchor(anchor) ||
       DOMAid.isJavascriptAnchor(anchor)) {
       unwrapElement(anchor);
@@ -131,15 +151,13 @@ DOMAid.filterAnchors = function(document) {
 
 // Unwrap lists with only one item.
 DOMAid.filterListElements = function(document) {
-  const ITEM_ELEMENT_NAMES = {'LI': 1, 'DT': 1, 'DD': 1};
-  const listNodeList = document.querySelectorAll('UL, OL, DL');
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let listElement of listNodeList) {
-  for(let i = 0, len = listNodeList.length; i < len; i++) {
-    let listElement = listNodeList[i];
+  const ITEM_NAMES = {'LI': 1, 'DT': 1, 'DD': 1};
+  const lists = document.querySelectorAll('UL, OL, DL');
+  for(let i = 0, len = lists.length; i < len; i++) {
+    let listElement = lists[i];
     if(listElement.childElementCount === 1) {
       let itemElement = listElement.firstElementChild;
-      if(itemElement.nodeName in ITEM_ELEMENT_NAMES) {
+      if(itemElement.nodeName in ITEM_NAMES) {
         listElement.parentNode.insertBefore(document.createTextNode(' '),
           listElement);
         insertChildrenBefore(itemElement, listElement);
@@ -151,10 +169,9 @@ DOMAid.filterListElements = function(document) {
   }
 };
 
+// TODO: merge with filterMisplacedHRElements
 DOMAid.filterConsecutiveHRElements = function(document) {
   const elements = document.querySelectorAll('HR');
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let element of elements) {
   for(let i = 0, len = elements.length; i < len; i++) {
     let element = elements[i];
     let prev = element.previousSibling;
@@ -164,10 +181,9 @@ DOMAid.filterConsecutiveHRElements = function(document) {
   }
 };
 
+// TODO: merge with replaceBRElements
 DOMAid.filterConsecutiveBRElements = function(document) {
   const elements = document.querySelectorAll('BR');
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let element of elements) {
   for(let i = 0, len = elements.length; i < len; i++) {
     let element = elements[i];
     let prev = element.previousSibling;
@@ -179,20 +195,14 @@ DOMAid.filterConsecutiveBRElements = function(document) {
 
 // TODO: improve, this is very buggy
 // error case: http://paulgraham.com/procrastination.html
-DOMAid.replaceBreakRuleElements = function(document) {
+// TODO: I think using substrings and insertAdjacentHTML might actually
+// be the simplest solution? Cognitively, at least.
 
-  // NOTE: Due to buggy output this is a NOOP for now
-  if(true) {
-    return;
-  }
-
+DOMAid.replaceBRElements = function(document) {
   const nodeList = document.querySelectorAll('BR');
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let brElement of nodeList) {
   for(let i = 0, len = nodeList.length; i < len; i++) {
-    let brElement = nodeList[i];
-    brElement.renameNode('p');
-
+    //let brElement = nodeList[i];
+    //brElement.renameNode('p');
     //parent = brElement.parentNode;
     //p = document.createElement('P');
     //parent.replaceChild(p, brElement);
@@ -204,8 +214,6 @@ DOMAid.replaceBreakRuleElements = function(document) {
 // before it.
 DOMAid.filterFigureElements = function(document) {
   const figures = document.querySelectorAll('FIGURE');
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let figure of figures) {
   for(let i = 0, len = figures.length; i < len; i++) {
     let figure = figures[i];
     if(figure.childElementCount === 1) {
@@ -226,8 +234,7 @@ DOMAid.filterAttributes = function(document) {
 
   // Iterate attributes in reverse to avoid issues with mutating a live
   // NodeList during iteration
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let element of elements) {
+
   for(let i = 0, len = elements.length; i < len; i++) {
     let element = elements[i];
     let elementName = element.nodeName;
@@ -296,8 +303,6 @@ DOMAid.BLACKLIST_SELECTOR = DOMAid.BLACKLISTED_ELEMENT_NAMES.join(',');
 DOMAid.filterBlacklistedElements = function(document) {
   const docElement = document.documentElement;
   const elements = document.querySelectorAll(DOMAid.BLACKLIST_SELECTOR);
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  // for(let element of elements) {
   for(let i = 0, len = elements.length; i < len; i++) {
     let element = elements[i];
     if(docElement.contains(element)) {
@@ -306,88 +311,23 @@ DOMAid.filterBlacklistedElements = function(document) {
   }
 };
 
-DOMAid.filterSourcelessImages = function(document) {
-  const imageNodeList = document.querySelectorAll('img');
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let imageElement of imageNodeList) {
-  for(let i = 0, len = imageNodeList.length; i < len; i++) {
-    let imageElement = imageNodeList[i];
+DOMAid.filterImageElements = function(document) {
+  const images = document.querySelectorAll('img');
+
+  // Filter sourceless images
+  for(let i = 0, len = images.length; i < len; i++) {
+    let imageElement = images[i];
     if(!imageElement.hasAttribute('src') &&
       !imageElement.hasAttribute('srcset')) {
       imageElement.remove();
     }
   }
-};
 
-DOMAid.filterTinyImages = function(document) {
-  const imageNodeList = document.querySelectorAll('img');
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let imageElement of imageNodeList) {
-  for(let i = 0, len = imageNodeList.length; i < len; i++) {
-    let imageElement = imageNodeList[i];
+  // Filter tiny images
+  for(let i = 0, len = images.length; i < len; i++) {
+    let imageElement = images[i];
     if(imageElement.width < 2 || imageElement.height < 2) {
       imageElement.remove();
     }
-  }
-};
-
-// Unwraps single column and single cell tables
-DOMAid.filterTableElements = function(document) {
-  const tables = document.querySelectorAll('table');
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let table of tables) {
-  for(let i = 0, len = tables.length; i < len; i++) {
-    let table = tables[i];
-    if(isSingleCellTable(table)) {
-      unwrapSingleCellTable(table);
-    } else if(isSingleColumnTable(table)) {
-      unwrapSingleColumnTable(table);
-    }
-  }
-
-  function isSingleCellTable(table) {
-    const rows = table.rows;
-    return rows.length === 1 && rows[0].cells.length === 1;
-  }
-
-  function isSingleColumnTable(table) {
-    const rows = table.rows;
-    const rowLength = rows.length;
-    const upperBound = Math.min(rowLength, 50);
-    for(let i = 0; i < upperBound; i++) {
-      if(rows[i].cells.length > 1) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  // TODO: allow for empty rows?
-  function unwrapSingleCellTable(table) {
-    const cell = table.rows[0].cells[0];
-    const tableParent = table.parentNode;
-    tableParent.insertBefore(document.createTextNode(' '), table);
-    insertChildrenBefore(cell, table);
-    tableParent.insertBefore(document.createTextNode(' '), table);
-    table.remove();
-  }
-
-  function unwrapSingleColumnTable(table) {
-    const tableParent = table.parentNode;
-    tableParent.insertBefore(document.createTextNode(' '), table);
-    // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-    //for(let row of table.rows) {
-    for(let i = 0, len = table.rows.length; i < len; i++) {
-      let row = table.rows[i];
-      //for(let cell of row.cells) {
-      for(let j = 0, clen = row.cells.length; j < clen; j++) {
-        let cell = row.cells[j];
-        insertChildrenBefore(cell, table);
-      }
-      tableParent.insertBefore(document.createElement('p'), table);
-    }
-    tableParent.insertBefore(document.createTextNode(' '), table);
-    table.remove();
   }
 };

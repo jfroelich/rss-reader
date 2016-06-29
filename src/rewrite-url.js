@@ -16,7 +16,6 @@ function rewriteURL(inputURL) {
     const param = decodeURIComponent(matches[1]);
     try {
       outputURL = new URL(param);
-      // console.debug('Rewriting %s as %s', inputURL.href, outputURL.href);
     } catch(exception) {
       console.debug(exception);
     }
