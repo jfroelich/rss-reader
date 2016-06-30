@@ -6,10 +6,17 @@
 
 // Remove images that merely serve to register http requests for website
 // statistics
-// TODO: I am not seeing any of the last 4 urls here being filtered. Maybe
-// I am looking for the wrong thing? I have not seen these occur even
-// once? Are they just script origins?
 function filterTrackingImages(document) {
+  const images = selectTrackingImages(document);
+  for(let i = 0, len = images.length; i < len; i++) {
+    images[i].remove();
+  }
+}
+
+function selectTrackingImages(document) {
+  // TODO: I am not seeing any of the last 4 urls here being filtered. Maybe
+  // I am looking for the wrong thing? I have not seen these occur even
+  // once? Are they just script origins?
   const SELECTOR = [
     'img[src^="http://b.scorecardresearch.com"]',
     'img[src^="https://b.scorecardresearch.com"]',
@@ -18,12 +25,5 @@ function filterTrackingImages(document) {
     'img[src^="http://pubads.g.doubleclick.net"]',
     'img[src^="https://pubads.g.doubleclick.net"]'
   ].join(',');
-  const images = document.querySelectorAll(SELECTOR);
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let image of images) {
-  for(let i = 0, len = images.length; i < len; i++) {
-    let image = images[i];
-    // console.debug('Removing tracker image:', image.outerHTML);
-    image.remove();
-  }
+  return document.querySelectorAll(SELECTOR);
 }
