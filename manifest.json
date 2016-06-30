@@ -28,6 +28,7 @@
       "/src/poll.js",
       "/src/replace-html.js",
       "/src/resolve-document-urls.js",
+      "/src/resolve-url.js",
       "/src/rewrite-url.js",
       "/src/serialize-srcset.js",
       "/src/set-image-element-dimensions.js",

@@ -4,6 +4,35 @@
 
 'use strict';
 
+const URL_ATTRIBUTE_MAP = {
+  'A': 'href',
+  'APPLET': 'codebase',
+  'AREA': 'href',
+  'AUDIO': 'src',
+  'BASE': 'href',
+  'BLOCKQUOTE': 'cite',
+  'BODY': 'background',
+  'BUTTON': 'formaction',
+  'DEL': 'cite',
+  'EMBED': 'src',
+  'FRAME': 'src',
+  'HEAD': 'profile',
+  'HTML': 'manifest',
+  'IFRAME': 'src',
+  'FORM': 'action',
+  'IMG': 'src',
+  'INPUT': 'src',
+  'INS': 'cite',
+  'LINK': 'href',
+  'OBJECT': 'data',
+  'Q': 'cite',
+  'SCRIPT': 'src',
+  'SOURCE': 'src',
+  'TRACK': 'src',
+  'VIDEO': 'src'
+};
+
+
 // Resolves all urls in a document, such as element attribute values
 // TODO: resolve xlink type simple (on any attribute) in xml docs
 // TODO: i should not even trying to resolve javascript urls, i think, so it
@@ -11,87 +40,45 @@
 // link urls, i noticed that the resolver routinely fails on those urls
 // although i need to test this again after switching to using the native
 // URL object to do the resolution
-
+// NOTE: if all urls are absolute I could technically leave base elements
+// in the output. However, I think it is better to compress anyway.
 function resolveDocumentURLs(document, baseURL) {
   filterBaseElements(document);
   resolveElementsWithURLAttributes(document, baseURL);
   resolveElementsWithSrcsetAttributes(document, baseURL);
 }
 
-function resolveElementsWithURLAttributes(document, baseURL) {
-
-  const URL_ATTRIBUTE_MAP = {
-    'A': 'href',
-    'APPLET': 'codebase',
-    'AREA': 'href',
-    'AUDIO': 'src',
-    'BASE': 'href',
-    'BLOCKQUOTE': 'cite',
-    'BODY': 'background',
-    'BUTTON': 'formaction',
-    'DEL': 'cite',
-    'EMBED': 'src',
-    'FRAME': 'src',
-    'HEAD': 'profile',
-    'HTML': 'manifest',
-    'IFRAME': 'src',
-    'FORM': 'action',
-    'IMG': 'src',
-    'INPUT': 'src',
-    'INS': 'cite',
-    'LINK': 'href',
-    'OBJECT': 'data',
-    'Q': 'cite',
-    'SCRIPT': 'src',
-    'SOURCE': 'src',
-    'TRACK': 'src',
-    'VIDEO': 'src'
-  };
-
-  const ELEMENT_SELECTOR = Object.keys(URL_ATTRIBUTE_MAP).map(function (key) {
+function selectElementsWithURLAttributes(document) {
+  const SELECTOR = Object.keys(URL_ATTRIBUTE_MAP).map(function(key) {
     return key + '[' + URL_ATTRIBUTE_MAP[key] +']';
   }).join(', ');
+  return document.querySelectorAll(SELECTOR);
+}
 
-  const elements = document.querySelectorAll(ELEMENT_SELECTOR);
-  const numElements = elements.length;
-
-  for(let i = 0; i < numElements; i++) {
+function resolveElementsWithURLAttributes(document, baseURL) {
+  const elements = selectElementsWithURLAttributes(document);
+  for(let i = 0, len = elements.length; i < len; i++) {
     const element = elements[i];
-    const elementName = element.nodeName;
-    const attributeName = URL_ATTRIBUTE_MAP[elementName];
-    const attributeValue = element.getAttribute(attributeName) || '';
+    const elementName = element.nodeName.toUpperCase();
 
+    const attributeName = URL_ATTRIBUTE_MAP[elementName];
+    if(!attributeName) {
+      continue;
+    }
+
+    const attributeValue = element.getAttribute(attributeName);
     if(!attributeValue) {
       continue;
     }
 
-    if(/^\s*javascript:/i.test(attributeValue)) {
-      console.debug('Not resolving url:', attributeValue);
+    const resolvedURL = resolveURL(attributeValue, baseURL);
+    if(!resolvedURL) {
       continue;
     }
 
-    if(/^\s*data/i.test(attributeValue)) {
-      console.debug('Not resolving url:', attributeValue);
-      continue;
+    if(resolvedURL.href !== attributeValue) {
+      element.setAttribute(attributeName, resolvedURL.href);
     }
-
-
-    let resolvedURLString = resolveURL(attributeValue);
-    if(resolvedURLString && resolvedURLString !== attributeValue) {
-      element.setAttribute(attributeName, resolvedURLString);
-    }
-  }
-
-  function resolveURL(urlString) {
-    try {
-      const url = new URL(urlString, baseURL);
-      return url.href;
-    } catch(exception) {
-      console.debug('Error resolving url', exception.message, baseURL.href,
-        urlString);
-    }
-
-    return urlString;
   }
 }
 
@@ -112,29 +99,19 @@ function resolveElementsWithSrcsetAttributes(document, baseURL) {
     }
 
     for(let j = 0, len = srcset.length; j < len; j++) {
-      resolveDescriptorURL(srcset[i], baseURL);
+      const descriptor = srcset[i];
+      if(descriptor) {
+        const resolvedURL = resolveURL(descriptor.url, baseURL);
+        if(resolvedURL) {
+          descriptor.url = resolvedURL.href;
+        }
+      }
     }
 
     const newSrcsetValue = serializeSrcset(srcset);
     if(newSrcsetValue && newSrcsetValue !== srcsetAttributeValue) {
       element.setAttribute('srcset', newSrcsetValue);
     }
-  }
-}
-
-function resolveDescriptorURL(descriptor, baseURL) {
-
-  if(!descriptor || !descriptor.url) {
-    return;
-  }
-
-  try {
-    const resolvedString = new URL(descriptor.url, baseURL).href;
-    if(resolvedString && resolvedString !== descriptor.url) {
-      descriptor.url = resolvedString;
-    }
-  } catch(exception) {
-    console.debug('Error resolving srcset descriptor url', descriptor.url);
   }
 }
 
