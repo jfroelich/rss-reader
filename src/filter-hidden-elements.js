@@ -40,8 +40,30 @@
 // leave an empty body. As in, if the parent is body, unwrap, otherwise
 // remove.
 
-function filterHiddenElements(document) {
+// Removing nodes that reside in a node already removed is harmless. However,
+// it is a wasted operation, and dom operations are generally expensive.
+// This checks 'contains' so as to avoid removing elements that were already
+// removed in a prior iteration. Nodes are walked in document order
+// because that is how querySelectorAll produces its NodeList content.
+// Therefore descendants are visisted after ancestors. Therefore it is
+// possible to iterate over descendants that reside in an ancestor that was
+// already removed.
+// I would prefer to not even visit such descendants. I suppose I could
+// use a TreeWalker. However, I have found that tree walking is slow.
+// However, maybe it is worth it to experiment again.
 
+function filterHiddenElements(document) {
+  const elements = selectHiddenElements(document);
+  const docElement = document.documentElement;
+  for(let i = 0, len = elements.length; i < len; i++) {
+    let element = elements[i];
+    if(element !== docElement && docElement.contains(element)) {
+      unwrapElement(element);
+    }
+  }
+}
+
+function selectHiddenElements(document) {
   const HIDDEN_SELECTOR = [
     '[style*="display:none"]',
     '[style*="display: none"]',
@@ -51,26 +73,5 @@ function filterHiddenElements(document) {
     '[aria-hidden="true"]'
   ].join(',');
 
-  // Removing nodes that reside in a node already removed is harmless. However,
-  // it is a wasted operation, and dom operations are generally expensive.
-  // This checks 'contains' so as to avoid removing elements that were already
-  // removed in a prior iteration. Nodes are walked in document order
-  // because that is how querySelectorAll produces its NodeList content.
-  // Therefore descendants are visisted after ancestors. Therefore it is
-  // possible to iterate over descendants that reside in an ancestor that was
-  // already removed.
-  // I would prefer to not even visit such descendants. I suppose I could
-  // use a TreeWalker. However, I have found that tree walking is slow.
-  // However, maybe it is worth it to experiment again.
-
-  const docElement = document.documentElement;
-  const elements = document.querySelectorAll(HIDDEN_SELECTOR);
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  // for(let element of elements) {
-  for(let i = 0, len = elements.length; i < len; i++) {
-    let element = elements[i];
-    if(element !== docElement && docElement.contains(element)) {
-      unwrapElement(element);
-    }
-  }
+  return document.querySelectorAll(HIDDEN_SELECTOR);
 }
