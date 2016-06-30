@@ -36,8 +36,6 @@ function createOPMLDocument(titleString, feeds) {
   const bodyElement = doc.createElement('BODY');
   documentElement.appendChild(bodyElement);
 
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let feed of feeds) {
   for(let i = 0, len = feeds.length; i < len; i++) {
     let feed = feeds[i];
     let outlineElement = doc.createElement('OUTLINE');
@@ -64,9 +62,9 @@ function createOPMLDocument(titleString, feeds) {
     bodyElement.appendChild(outlineElement);
   }
 
-  function isURLObject(value) {
-    return Object.prototype.toString.call(value) === '[object URL]';
-  }
-
   return doc;
+}
+
+function isURLObject(value) {
+  return Object.prototype.toString.call(value) === '[object URL]';
 }
