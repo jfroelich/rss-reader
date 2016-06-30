@@ -12,15 +12,12 @@ function filterAnchorElements(document) {
   const anchors = document.querySelectorAll('a');
   for(let i = 0, len = anchors.length; i < len; i++) {
     let anchor = anchors[i];
+    const href = anchor.getAttribute('href');
 
-    if(!anchorElement.hasAttribute('href') &&
-      !anchorElement.hasAttribute('name')) {
+    if(!href && !anchor.hasAttribute('name')) {
       unwrapElement(anchor);
-    } else {
-      const href = anchor.getAttribute('href');
-      if(href && href.length > 11 && /^\s*javascript:/i.test(href)) {
-        unwrapElement(anchor);
-      }
+    } else if(href && href.length > 11 && /^\s*javascript:/i.test(href)) {
+      unwrapElement(anchor);
     }
   }
 }
