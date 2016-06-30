@@ -67,25 +67,25 @@ function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
     }
 
     if(!excludeEntries) {
-      rewriteEntryURLs(outputEvent.feed.entries);
+      fetchFeedRewriteEntryURLs(outputEvent.feed.entries);
     }
 
     callback(outputEvent);
   }
+}
 
-  // For each entry, try to rewrite its url, and if a rewrite occurred,
-  // append the rewritten url to the urls list for that entry.
-  // TODO: I am really really not sure this belongs here
-  function rewriteEntryURLs(entries) {
-    for(let i = 0, len = entries.length; i < len; i++) {
-      let entry = entries[i];
-      // We know due to the fetch that there is only one value in the array
-      let entryURL = entry.urls[0];
-      if(entryURL) {
-        let rewrittenURL = rewriteURL(entryURL);
-        if(rewrittenURL.href !== entryURL.href) {
-          entry.urls.push(rewrittenURL);
-        }
+// For each entry, try to rewrite its url, and if a rewrite occurred,
+// append the rewritten url to the urls list for that entry.
+// TODO: I am really really not sure this belongs here
+function fetchFeedRewriteEntryURLs(entries) {
+  for(let i = 0, len = entries.length; i < len; i++) {
+    let entry = entries[i];
+    // We know due to the fetch that there is only one value in the array
+    let entryURL = entry.urls[0];
+    if(entryURL) {
+      let rewrittenURL = rewriteURL(entryURL);
+      if(rewrittenURL.href !== entryURL.href) {
+        entry.urls.push(rewrittenURL);
       }
     }
   }
