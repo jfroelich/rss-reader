@@ -100,35 +100,35 @@ function archiveEntries() {
     cursor.continue();
   }
 
-  function getDateDifferenceInMilliseconds(date1, date2) {
-    return date1 - date2;
-  }
-
-  function getArchivableEntry(inputEntry) {
-    const outputEntry = Object.create(null);
-    outputEntry.id = inputEntry.id;
-    outputEntry.feed = inputEntry.feed;
-    outputEntry.urls = inputEntry.urls;
-
-    if(inputEntry.dateRead) {
-      outputEntry.dateRead = inputEntry.dateRead;
-    }
-
-    outputEntry.dateArchived = new Date();
-    outputEntry.archiveState = db.EntryFlags.ARCHIVED;
-    return outputEntry;
-  }
-
-  function sendArchiveRequestedMessage(entry) {
-    const message = {
-      'type': 'archiveEntryRequested',
-      'entryId': entry.id
-    };
-    chrome.runtime.sendMessage(message);
-  }
-
   function onComplete() {
     console.log('Archived %s of %s entries', archivedEntryCount,
       processedEntryCount);
   }
+}
+
+function getDateDifferenceInMilliseconds(date1, date2) {
+  return date1 - date2;
+}
+
+function getArchivableEntry(inputEntry) {
+  const outputEntry = Object.create(null);
+  outputEntry.id = inputEntry.id;
+  outputEntry.feed = inputEntry.feed;
+  outputEntry.urls = inputEntry.urls;
+
+  if(inputEntry.dateRead) {
+    outputEntry.dateRead = inputEntry.dateRead;
+  }
+
+  outputEntry.dateArchived = new Date();
+  outputEntry.archiveState = db.EntryFlags.ARCHIVED;
+  return outputEntry;
+}
+
+function sendArchiveRequestedMessage(entry) {
+  const message = {
+    'type': 'archiveEntryRequested',
+    'entryId': entry.id
+  };
+  chrome.runtime.sendMessage(message);
 }
