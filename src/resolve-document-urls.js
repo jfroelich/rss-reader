@@ -59,13 +59,26 @@ function resolveElementsWithURLAttributes(document, baseURL) {
     const element = elements[i];
     const elementName = element.nodeName;
     const attributeName = URL_ATTRIBUTE_MAP[elementName];
-    const originalURL = element.getAttribute(attributeName) || '';
+    const attributeValue = element.getAttribute(attributeName) || '';
 
-    if(originalURL) {
-      let resolvedURLString = resolveURL(originalURL);
-      if(resolvedURLString && resolvedURLString !== originalURL) {
-        element.setAttribute(attributeName, resolvedURLString);
-      }
+    if(!attributeValue) {
+      continue;
+    }
+
+    if(/^\s*javascript:/i.test(attributeValue)) {
+      console.debug('Not resolving url:', attributeValue);
+      continue;
+    }
+
+    if(/^\s*data/i.test(attributeValue)) {
+      console.debug('Not resolving url:', attributeValue);
+      continue;
+    }
+
+
+    let resolvedURLString = resolveURL(attributeValue);
+    if(resolvedURLString && resolvedURLString !== attributeValue) {
+      element.setAttribute(attributeName, resolvedURLString);
     }
   }
 
@@ -110,15 +123,18 @@ function resolveElementsWithSrcsetAttributes(document, baseURL) {
 }
 
 function resolveDescriptorURL(descriptor, baseURL) {
-  if(descriptor.url) {
-    try {
-      const resolvedString = new URL(descriptor.url, baseURL).href;
-      if(resolvedString && resolvedString !== descriptor.url) {
-        descriptor.url = resolvedString;
-      }
-    } catch(exception) {
-      console.debug('Error resolving srcset descriptor url', descriptor.url);
+
+  if(!descriptor || !descriptor.url) {
+    return;
+  }
+
+  try {
+    const resolvedString = new URL(descriptor.url, baseURL).href;
+    if(resolvedString && resolvedString !== descriptor.url) {
+      descriptor.url = resolvedString;
     }
+  } catch(exception) {
+    console.debug('Error resolving srcset descriptor url', descriptor.url);
   }
 }
 
