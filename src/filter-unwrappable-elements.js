@@ -6,6 +6,13 @@
 
 // Unwraps certain elements in a document.
 function filterUnwrappableElements(document) {
+  const elements = selectUnwrappableElements(document);
+  for(let i = 0, len = elements.length; i < len; i++) {
+    unwrapElement(elements[i]);
+  }
+}
+
+function selectUnwrappableElements(document) {
   const UNWRAPPABLE_SELECTOR = [
     'ABBR', 'ACRONYM', 'ARTICLE', 'ASIDE', 'CENTER', 'COLGROUP', 'DATA',
     'DETAILS', 'DIV', 'FOOTER', 'HEADER', 'HELP', 'HGROUP', 'ILAYER',
@@ -14,14 +21,7 @@ function filterUnwrappableElements(document) {
     'LABEL', 'BIG', 'BLINK', 'FONT', 'PLAINTEXT', 'SMALL', 'TT'
   ].join(',');
 
-  const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
-  const nullReferenceNode = null;
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let element of elements) {
-  for(let i = 0, len = elements.length; i < len; i++) {
-    let element = elements[i];
-    unwrapElement(element, nullReferenceNode);
-  }
+  return document.querySelectorAll(UNWRAPPABLE_SELECTOR);
 }
 
 /*
@@ -69,6 +69,17 @@ I do not like how I am repeatedly trimming several text nodes. This feels
 sluggish.
 */
 function filterUnwrappableElementsExperimental(document) {
+  const elements = selectUnwrappableElements(document);
+  for(let i = 0, len = elements.length; i < len; i++) {
+    let element = elements[i];
+    if(!isUnwrappableParent(element)) {
+      let shallowest = findShallowestUnwrappableAncestor(element);
+      unwrapElement(element, shallowest);
+    }
+  }
+}
+
+function isUnwrappableParent(element) {
 
   const UNWRAPPABLE_SELECTOR = [
     'ABBR', 'ACRONYM', 'ARTICLE', 'ASIDE', 'CENTER', 'COLGROUP', 'DATA',
@@ -78,47 +89,33 @@ function filterUnwrappableElementsExperimental(document) {
     'LABEL', 'BIG', 'BLINK', 'FONT', 'PLAINTEXT', 'SMALL', 'TT'
   ].join(',');
 
-  const bodyElement = document.body;
-
-  const elements = document.querySelectorAll(UNWRAPPABLE_SELECTOR);
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let element of elements) {
-  for(let i = 0, len = elements.length; i < len; i++) {
-    let element = elements[i];
-    if(!isUnwrappableParent(element)) {
-      let shallowest = findShallowestUnwrappableAncestor(element);
-      unwrapElement(element, shallowest);
-    }
-  }
-
-  function isUnwrappableParent(element) {
-    let result = element.matches(UNWRAPPABLE_SELECTOR);
-    for(let node = element.firstChild; result && node;
-      node = node.nextSibling) {
-      if(node.nodeType === Node.ELEMENT_NODE) {
-        if(!isUnwrappableParent(node)) {
-          result = false;
-        }
-      } else if(node.nodeType === Node.TEXT_NODE) {
-        if(node.nodeValue.trim()) {
-          result = false;
-        }
+  let result = element.matches(UNWRAPPABLE_SELECTOR);
+  for(let node = element.firstChild; result && node;
+    node = node.nextSibling) {
+    if(node.nodeType === Node.ELEMENT_NODE) {
+      if(!isUnwrappableParent(node)) {
+        result = false;
+      }
+    } else if(node.nodeType === Node.TEXT_NODE) {
+      if(node.nodeValue.trim()) {
+        result = false;
       }
     }
-
-    return result;
   }
 
+  return result;
+}
 
-  function findShallowestUnwrappableAncestor(element) {
-    let shallowest = null;
-    for(let node = element.parentNode; node && isUnwrappableParent(node);
-      node = node.parentNode) {
-      if(node === bodyElement) {
-        break;
-      }
-      shallowest = node;
+
+function findShallowestUnwrappableAncestor(element) {
+  const bodyElement = element.ownerDocument.body;
+  let shallowest = null;
+  for(let node = element.parentNode; node && isUnwrappableParent(node);
+    node = node.parentNode) {
+    if(node === bodyElement) {
+      break;
     }
-    return shallowest;
+    shallowest = node;
   }
+  return shallowest;
 }
