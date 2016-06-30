@@ -29,6 +29,7 @@
       "/src/replace-html.js",
       "/src/resolve-document-urls.js",
       "/src/rewrite-url.js",
+      "/src/serialize-srcset.js",
       "/src/set-image-element-dimensions.js",
       "/src/transform-lazily-loaded-images.js",
       "/src/truncate-html-string.js",
