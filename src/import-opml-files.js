@@ -75,8 +75,9 @@ function importOPMLFiles(connection, files, callback) {
       return;
     }
 
-    //const seenURLs = Object.create(null);
     const seenURLStringSet = new Set();
+
+    // TODO: move the body of this loop into a helper function
 
     for(let element = bodyElement.firstElementChild; element;
       element = element.nextElementSibling) {
@@ -94,7 +95,7 @@ function importOPMLFiles(connection, files, callback) {
         continue;
       }
 
-      let url = toURLTrapped(urlString);
+      let url = importOPMLToURLTrapped(urlString);
       if(!url) {
         continue;
       }
@@ -110,47 +111,20 @@ function importOPMLFiles(connection, files, callback) {
       let feed = Object.create(null);
       feed.urls = [url.href];
       feed.type = type;
-      feed.title = sanitizeString(element.getAttribute('title') ||
+      feed.title = importOPMLSanitizeString(element.getAttribute('title') ||
         element.getAttribute('text'));
-      feed.description = sanitizeString(element.getAttribute('description'));
-
-      let outlineLinkURL = toURLTrapped(element.getAttribute('htmlUrl'));
+      feed.description = importOPMLSanitizeString(
+        element.getAttribute('description'));
+      let outlineLinkURL = importOPMLToURLTrapped(
+        element.getAttribute('htmlUrl'));
       if(outlineLinkURL) {
         feed.link = outlineLinkURL.href;
       }
 
-      db.addFeed(connection, feed, onAddFeed);
+      db.addFeed(connection, feed, importOPMLOnAddFeed);
     }
 
     onFileProcessed();
-  }
-
-  function onAddFeed(event) {
-    if(event.type === 'success') {
-      console.debug('Imported feed with new id', event.target.result);
-    } else {
-      console.debug('Import error', event);
-    }
-  }
-
-  // Trap the exception
-  function toURLTrapped(urlString) {
-    try {
-      return new URL(urlString);
-    } catch(exception) {}
-  }
-
-  // TODO: this overlaps with poll functionality, should probably make a
-  // general purpose function that is shared
-  // TODO: consider max length of each field and the behavior when exceeded
-  function sanitizeString(inputString) {
-    let outputString = inputString || '';
-    if(outputString) {
-      outputString = filterControlCharacters(outputString);
-      outputString = replaceHTML(outputString, '');
-      outputString = outputString.replace(/\s+/, ' ');
-    }
-    return outputString.trim();
   }
 
   function onFileProcessed() {
@@ -158,5 +132,33 @@ function importOPMLFiles(connection, files, callback) {
       // TODO: show a notification before calling back?
       callback();
     }
+  }
+}
+
+// Trap the exception
+function importOPMLToURLTrapped(urlString) {
+  try {
+    return new URL(urlString);
+  } catch(exception) {}
+}
+
+// TODO: this overlaps with poll functionality, should probably make a
+// general purpose function that is shared
+// TODO: consider max length of each field and the behavior when exceeded
+function importOPMLSanitizeString(inputString) {
+  let outputString = inputString || '';
+  if(outputString) {
+    outputString = filterControlCharacters(outputString);
+    outputString = replaceHTML(outputString, '');
+    outputString = outputString.replace(/\s+/, ' ');
+  }
+  return outputString.trim();
+}
+
+function importOPMLOnAddFeed(event) {
+  if(event.type === 'success') {
+    console.debug('Imported feed with new id', event.target.result);
+  } else {
+    console.debug('Import error', event);
   }
 }
