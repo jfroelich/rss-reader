@@ -24,24 +24,6 @@
 // less frequent.
 function filterArticleTitle(title) {
 
-  // TODO: now that i moved tokenize back into this function has a helper,
-  // I probably don't even need to use it as a function, I can just inline
-  // it
-
-  function tokenize(string) {
-    if(!string) {
-      return [];
-    }
-
-    const tokens = string.split(/s+/);
-    const definedTokens = tokens.filter(returnFirst);
-    return definedTokens;
-  }
-
-  function returnFirst(first) {
-    return first;
-  }
-
   if(!title)
     return;
   let index = title.lastIndexOf(' - ');
@@ -51,9 +33,16 @@ function filterArticleTitle(title) {
     index = title.lastIndexOf(' : ');
   if(index === -1)
     return title;
+
   const trailingText = title.substring(index + 1);
-  const terms = tokenize(trailingText);
-  if(terms.length < 5) {
+
+  const tokens = trailingText.split(/\s+/g);
+
+  const definedTokens = tokens.filter(function(tokenString) {
+    return tokenString;
+  });
+
+  if(definedTokens.length < 5) {
     const newTitle = title.substring(0, index).trim();
     return newTitle;
   }
