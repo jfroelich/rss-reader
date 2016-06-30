@@ -9,48 +9,55 @@ function filterTableElements(document, inspectionRowLimit) {
   const tables = document.querySelectorAll('table');
   for(let i = 0, len = tables.length; i < len; i++) {
     const table = tables[i];
-    const rows = table.rows;
-    const numRows = rows.length;
-    const upperBound = Math.min(numRows, inspectionRowLimit);
-    let isSingleColumnTable = true;
-    for(let j = 0; isSingleColumnTable && j < upperBound; j++) {
-      if(!isSingleColumnRowElement(rows[j])) {
-        isSingleColumnTable = false;
-      }
+    if(isSingleColumnTable(table)) {
+      unwrapSingleColumnTable(table);
     }
-
-    if(!isSingleColumnTable) {
-      continue;
-    }
-
-    // Because the above does not guarantee that all rows are single column,
-    // we still iterate all cells per row, even though most of the time this
-    // is just one cell.
-
-    const tableParent = table.parentNode;
-
-    // Pad left to avoid creating adjacent text
-    // TODO: would a single call to insertAdjacentHTML be faster here?
-    // something like
-    // table.insertAdjacentHTML('beforestart', ' ');
-    tableParent.insertBefore(document.createTextNode(' '), table);
-
-    for(let j = 0; j < numRows; j++) {
-      let row = table.rows[j];
-
-      // TODO: if the cell is a leaf node, skip it and do not create
-      // a new paragraph.
-      for(let k = 0, clen = row.cells.length; k < clen; k++) {
-        let cell = row.cells[k];
-        insertChildrenBefore(cell, table);
-      }
-      tableParent.insertBefore(document.createElement('p'), table);
-    }
-
-    // Pad right to avoid creating adjacent text
-    tableParent.insertBefore(document.createTextNode(' '), table);
-    table.remove();
   }
+}
+
+function isSingleColumnTable(table, inspectionRowLimit) {
+  const rows = table.rows;
+  const upperBound = Math.min(rows.length, inspectionRowLimit);
+  for(let j = 0; j < upperBound; j++) {
+    if(!isSingleColumnRowElement(rows[j])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+function unwrapSingleColumnTable(table) {
+  const rows = table.rows;
+  const numRows = rows.length;
+  // Because the above does not guarantee that all rows are single column,
+  // we still iterate all cells per row, even though most of the time this
+  // is just one cell.
+
+  const tableParent = table.parentNode;
+
+  // Pad left to avoid creating adjacent text
+  // TODO: would a single call to insertAdjacentHTML be faster here?
+  // something like
+  // table.insertAdjacentHTML('beforestart', ' ');
+  tableParent.insertBefore(document.createTextNode(' '), table);
+
+  for(let j = 0; j < numRows; j++) {
+    let row = rows[j];
+
+    // TODO: if the cell is a leaf node, skip it and do not create
+    // a new paragraph.
+    for(let k = 0, clen = row.cells.length; k < clen; k++) {
+      let cell = row.cells[k];
+      insertChildrenBefore(cell, table);
+    }
+
+    tableParent.insertBefore(document.createElement('p'), table);
+  }
+
+  // Pad right to avoid creating adjacent text
+  tableParent.insertBefore(document.createTextNode(' '), table);
+  table.remove();
 }
 
 // A row is a single column when it is either empty or contains no more than
