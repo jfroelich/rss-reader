@@ -115,6 +115,22 @@ Subscription.add = function(connection, url, callback) {
   }
 };
 
+// TODO: use a single transaction for both removing entries and for
+// removing the feed? Maybe I should be opening the transaction
+// here on both stores, and then passing around the transaction, not the
+// the connection. Note that if I do this, I cannot use
+// transaction.oncomplete
+// to forward. I have to forward only when cursor is undefined in the
+// iterating function. The question is, does it make sense to use a
+// single transaction or two transactions here? What is the point of a
+// transaction? Do I want this all to be able rollback? A similar strange
+// thing, is that if a rollback occurs, what does that mean to views that
+// already responded to early events sent in progress? In that case I can't
+// actually send out in progress events if I want to roll back properly.
+// The thing is, when would the transaction ever fail? Ever? And if it
+// could
+// even fail, do I want to be deleting the feed or its entries first when
+// using two separate transactions or does the order not matter?
 Subscription.remove = function(feedId, callback) {
   let entriesRemoved = 0;
 
@@ -144,22 +160,6 @@ Subscription.remove = function(feedId, callback) {
       return;
     }
 
-    // TODO: use a single transaction for both removing entries and for
-    // removing the feed? Maybe I should be opening the transaction
-    // here on both stores, and then passing around the transaction, not the
-    // the connection. Note that if I do this, I cannot use
-    // transaction.oncomplete
-    // to forward. I have to forward only when cursor is undefined in the
-    // iterating function. The question is, does it make sense to use a
-    // single transaction or two transactions here? What is the point of a
-    // transaction? Do I want this all to be able rollback? A similar strange
-    // thing, is that if a rollback occurs, what does that mean to views that
-    // already responded to early events sent in progress? In that case I can't
-    // actually send out in progress events if I want to roll back properly.
-    // The thing is, when would the transaction ever fail? Ever? And if it
-    // could
-    // even fail, do I want to be deleting the feed or its entries first when
-    // using two separate transactions or does the order not matter?
     const connection = event.target.result;
     db.openEntryCursorForFeed(connection, feedId, deleteNextEntry);
   }
