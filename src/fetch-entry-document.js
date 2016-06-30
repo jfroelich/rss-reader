@@ -64,8 +64,7 @@ function fetchEntryDocument(requestURL, timeoutMillis, callback) {
 
     transformLazilyLoadedImages(document);
     filterSourcelessImages(document);
-    // TODO: remove URLResolver namespace object
-    resolveDocumentURLs(document, responseURL.href);
+    resolveDocumentURLs(document, responseURL);
     filterTrackingImages(document);
     setImageElementDimensions(document,
       onSetImageDimensions.bind(null, outputEvent));
@@ -102,7 +101,6 @@ function filterSourcelessImages(document) {
 // does not provide viewable content because it is entirely Javascript
 // rendered.
 // Currently this uses a hardcoded blacklist of domains.
-
 // TODO: an alternate would be to design a set of policies, which are
 // basically individual filter functions, and then test all policies
 // in the calling context of this function in place of this function.
