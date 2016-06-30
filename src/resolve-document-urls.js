@@ -5,35 +5,20 @@
 'use strict';
 
 // Resolves all urls in a document, such as element attribute values
-
-// TODO: expect baseURLString to be a URL object and rename it
 // TODO: resolve xlink type simple (on any attribute) in xml docs
-// TODO: finish implementing serializeSrcSet
-// TODO: rather than do a separate check for srcset, it should somehow be
-// in the main map. but then that means we can't use a map because we
-// have dup keys. so maybe the map needs to instead contain arrays of
-// attribute names (similarly, support longdesc in iframe)
-// TODO: look into whether srcset can be anywhere or just in img/source els
-// TODO: maybe do not remove base, maybe that is not this functions role, but
-// some other more general responsibility of calling context. After all, if
-// all urls are absolute then leaving in base has no effect. it is only the
-// caller in poll.js that is concerned about prepping
-// the document for render and caring about removing base elements
 // TODO: i should not even trying to resolve javascript urls, i think, so it
 // may be worthwhile to filter those out of the document before resolving
 // link urls, i noticed that the resolver routinely fails on those urls
 // although i need to test this again after switching to using the native
 // URL object to do the resolution
 
-function resolveDocumentURLs(document, baseURLString) {
+function resolveDocumentURLs(document, baseURL) {
+  filterBaseElements(document);
+  resolveElementsWithURLAttributes(document, baseURL);
+  resolveElementsWithSrcsetAttributes(document, baseURL);
+}
 
-  // Remove base elements. This is redundant with domaid functionality but
-  // I prefer not to assume this happens.
-  const bases = document.querySelectorAll('base');
-  for(let i = 0, len = bases.length; i < len; i++) {
-    let base = bases[i];
-    base.remove();
-  }
+function resolveElementsWithURLAttributes(document, baseURL) {
 
   const URL_ATTRIBUTE_MAP = {
     'A': 'href',
@@ -63,53 +48,24 @@ function resolveDocumentURLs(document, baseURLString) {
     'VIDEO': 'src'
   };
 
-  function generateSelectorPart(key) {
+  const ELEMENT_SELECTOR = Object.keys(URL_ATTRIBUTE_MAP).map(function (key) {
     return key + '[' + URL_ATTRIBUTE_MAP[key] +']';
-  }
+  }).join(', ');
 
-  const ELEMENT_SELECTOR = Object.keys(URL_ATTRIBUTE_MAP).map(
-    generateSelectorPart).join(', ');
-
-  // Create a URL object of the base url string once here.
-  // Assumes baseURLString contains a valid URL
-  const baseURL = new URL(baseURLString);
-
-  // TODO: i want to modify this so that I do not also check for
-  // srcset, I would rather be iterating over all elements, or iterate over
-  // srcset elements separately.
-
-  // NOTE: The selector matches elements with attributes, but it does not
-  // guarantee those attributes have values. Apparently, calling getAttribute
-  // on a matched element (from elName[attName]) can even yield undefined
-  // sometimes, and sometimes empty string, so we need to guard against that
-  // case.
-
-  // Note this is not restricted to elements in the body, because there
-  // are resolvable elements in the head, and <html> itself has a
-  // resolvable attribute.
   const elements = document.querySelectorAll(ELEMENT_SELECTOR);
   const numElements = elements.length;
 
   for(let i = 0; i < numElements; i++) {
-    let element = elements[i];
-    let elementName = element.nodeName;
-    let attribute = URL_ATTRIBUTE_MAP[elementName];
-
-    let originalURL = element.getAttribute(attribute) || '';
-    originalURL = originalURL.trim();
+    const element = elements[i];
+    const elementName = element.nodeName;
+    const attributeName = URL_ATTRIBUTE_MAP[elementName];
+    const originalURL = element.getAttribute(attributeName) || '';
 
     if(originalURL) {
       let resolvedURLString = resolveURL(originalURL);
       if(resolvedURLString && resolvedURLString !== originalURL) {
-        element.setAttribute(attribute, resolvedURLString);
+        element.setAttribute(attributeName, resolvedURLString);
       }
-    }
-
-    // Resolve srcsets
-    if((element.nodeName.toUpperCase() === 'IMG' ||
-      element.nodeName.toUpperCase() === 'SOURCE') &&
-      element.hasAttribute('srcset')) {
-      resolveSrcSet(element);
     }
   }
 
@@ -118,75 +74,57 @@ function resolveDocumentURLs(document, baseURLString) {
       const url = new URL(urlString, baseURL);
       return url.href;
     } catch(exception) {
-      console.debug('Error:', exception.message, baseURL.href, urlString);
+      console.debug('Error resolving url', exception.message, baseURL.href,
+        urlString);
     }
 
     return urlString;
   }
+}
 
-  // Access an element's srcset attribute, parses it into an array of
-  // descriptors, resolves the url for each descriptor, and then composes the
-  // descriptors array back into a string and modifies the element
-  function resolveSrcSet(element) {
-    const source = element.getAttribute('srcset');
-    let descriptors = parseSrcset(source) || [];
-    let numURLsChanged = 0;
-    let resolvedDescriptors = descriptors.map(function transform(descriptor) {
-      const resolvedURL = resolveURL(descriptor.url);
-      let newURL = descriptor.url;
-      if(resolvedURL && resolvedURL !== descriptor.url) {
-        newURL = resolvedURL;
-        numURLsChanged++;
-      }
+function resolveElementsWithSrcsetAttributes(document, baseURL) {
+  const elements = document.querySelectorAll(
+    'img[srcset], source[srcset]');
+  for(let i = 0, len = elements.length; i < len; i++) {
+    const element = elements[i];
+    const srcsetAttributeValue = element.getAttribute('srcset');
 
-      return {
-        url: newURL, d: descriptor.d, w: descriptor.w, h: descriptor.h
-      };
-    });
-
-    if(numURLsChanged === 0) {
-      return;
+    if(!srcsetAttributeValue) {
+      continue;
     }
 
-    const newSrcSet = serializeSrcSet(resolvedDescriptors);
-    console.debug('Changing srcset %s to %s', source, newSrcSet);
-    element.setAttribute('srcset', newSrcSet);
+    const srcset = parseSrcset(srcsetAttributeValue);
+    if(!srcset) {
+      continue;
+    }
+
+    for(let j = 0, len = srcset.length; j < len; j++) {
+      resolveDescriptorURL(srcset[i], baseURL);
+    }
+
+    const newSrcsetValue = serializeSrcset(srcset);
+    if(newSrcsetValue && newSrcsetValue !== srcsetAttributeValue) {
+      element.setAttribute('srcset', newSrcsetValue);
+    }
   }
+}
 
-  // Returns a string representing serialized descriptors, which is a suitable
-  // srcset attribute value for an element
-  // TODO: THIS IS INCOMPLETE
-  // TODO: support d,w,h
-  // TODO: i am also seeing something like url 2x or 1.5x, what's "x"? i assume
-  // it is something like zoom level (2x is 2 times size)
-  function serializeSrcSet(descriptors) {
-    const resolvedDescriptors = [];
-    const numDescriptors = descriptors.length;
-
-    // TODO: use for .. of
-
-    for(let i = 0, descriptor, newString; i < numDescriptors; i++) {
-      descriptor = descriptors[i];
-
-      console.debug('Descriptor:', descriptor);
-
-      newString = descriptor.url;
-
-      if(descriptor.d) {
-        // newString += ' ' + descriptor.d;
+function resolveDescriptorURL(descriptor, baseURL) {
+  if(descriptor.url) {
+    try {
+      const resolvedString = new URL(descriptor.url, baseURL).href;
+      if(resolvedString && resolvedString !== descriptor.url) {
+        descriptor.url = resolvedString;
       }
-
-      if(descriptor.w) {
-        // newString += ' ' + descriptor.w + 'w';
-      }
-
-      if(descriptor.h) {
-        // newString += ' ' + descriptor.h + 'h';
-      }
-
-      resolvedDescriptors.push(newString);
+    } catch(exception) {
+      console.debug('Error resolving srcset descriptor url', descriptor.url);
     }
+  }
+}
 
-    return resolvedDescriptors.join(', ');
+function filterBaseElements(document) {
+  const bases = document.querySelectorAll('base');
+  for(let i = 0, len = bases.length; i < len; i++) {
+    bases[i].remove();
   }
 }
