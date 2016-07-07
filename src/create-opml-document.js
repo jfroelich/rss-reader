@@ -4,65 +4,76 @@
 
 'use strict';
 
-// Creates and returns an opml document with the given title and containing
-// the given feeds as outline elements
-function createOPMLDocument(titleString, feeds) {
-  const doc = document.implementation.createDocument(null, 'OPML', null);
+// Creates and returns an opml document with the given title
+function createOPMLDocument(titleString) {
+  const doc = document.implementation.createDocument(null, 'opml', null);
   const documentElement = doc.documentElement;
   documentElement.setAttribute('version', '2.0');
 
-  const headElement = doc.createElement('HEAD');
+  const headElement = doc.createElement('head');
   documentElement.appendChild(headElement);
 
-  const titleElement = doc.createElement('TITLE');
+  const titleElement = doc.createElement('title');
   titleElement.textContent = titleString || '';
   headElement.appendChild(titleElement);
 
   const nowDate = new Date();
   const nowUTCString = nowDate.toUTCString();
 
-  const dateCreatedElement = doc.createElement('DATECREATED');
+  const dateCreatedElement = doc.createElement('datecreated');
   dateCreatedElement.textContent = nowUTCString;
   headElement.appendChild(dateCreatedElement);
 
-  const dateModifiedElement = doc.createElement('DATEMODIFIED');
+  const dateModifiedElement = doc.createElement('datemodified');
   dateModifiedElement.textContent = nowUTCString;
   headElement.appendChild(dateModifiedElement);
 
-  const docsElement = doc.createElement('DOCS');
+  const docsElement = doc.createElement('docs');
   docsElement.textContent = 'http://dev.opml.org/spec2.html';
   headElement.appendChild(docsElement);
 
-  const bodyElement = doc.createElement('BODY');
+  const bodyElement = doc.createElement('body');
   documentElement.appendChild(bodyElement);
 
-  for(let i = 0, len = feeds.length; i < len; i++) {
-    let feed = feeds[i];
-    let outlineElement = doc.createElement('OUTLINE');
-    outlineElement.setAttribute('type', feed.type || 'rss');
+  return doc;
+}
 
-    if(isURLObject(feed.url)) {
-      outlineElement.setAttribute('xmlUrl', feed.url.href);
-    } else {
-      outlineElement.setAttribute('xmlUrl', feed.url);
-    }
+function appendFeedToOPMLDocument(document, feed) {
 
-    outlineElement.setAttribute('text', feed.title || '');
-    outlineElement.setAttribute('title', feed.title || '');
-    outlineElement.setAttribute('description', feed.description || '');
+  let bodyElement = document.body;
 
-    if(feed.link) {
-      if(isURLObject(feed.link)) {
-        outlineElement.setAttribute('htmlUrl', feed.link.href);
-      } else {
-        outlineElement.setAttribute('htmlUrl', feed.link);
-      }
-    }
-
-    bodyElement.appendChild(outlineElement);
+  if(!bodyElement) {
+    bodyElement = document.createElement('body');
+    document.documentElement.appendChild(bodyElement);
   }
 
-  return doc;
+  let outlineElement = document.createElement('outline');
+  outlineElement.setAttribute('type', feed.type || 'rss');
+
+  if(isURLObject(feed.url)) {
+    outlineElement.setAttribute('xmlUrl', feed.url.href);
+  } else {
+    outlineElement.setAttribute('xmlUrl', feed.url);
+  }
+
+  if(feed.title) {
+    outlineElement.setAttribute('text', feed.title);
+    outlineElement.setAttribute('title', feed.title || '');
+  }
+
+  if(feed.description) {
+    outlineElement.setAttribute('description', feed.description);
+  }
+
+  if(feed.link) {
+    if(isURLObject(feed.link)) {
+      outlineElement.setAttribute('htmlUrl', feed.link.href);
+    } else {
+      outlineElement.setAttribute('htmlUrl', feed.link);
+    }
+  }
+
+  bodyElement.appendChild(outlineElement);
 }
 
 function isURLObject(value) {

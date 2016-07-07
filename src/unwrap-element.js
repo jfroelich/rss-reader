@@ -29,6 +29,7 @@ function unwrapElement(element, referenceNode) {
   const document = element.ownerDocument;
 
   // Pad left if following a text node
+  // TODO: would insertAdjacentHTML be simpler?
   const prevSibling = target.previousSibling;
   if(prevSibling && prevSibling.nodeType === Node.TEXT_NODE) {
     parent.insertBefore(document.createTextNode(' '), target);

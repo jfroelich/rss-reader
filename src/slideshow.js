@@ -75,59 +75,13 @@ SlideShow.markAsRead = function(slide) {
     return;
   }
 
+  // NOTE: using removeAttribute results in a bug, I am not sure why. In other
+  // words, this must retain the attribute.
   slide.setAttribute('read', '');
+
   const entryIdString = slide.getAttribute('entry');
   const entryId = parseInt(entryIdString, 10);
-
-  db.open(onOpen);
-
-  function onOpen(event) {
-    if(event.type !== 'success') {
-      // TODO: react to database error?
-      console.debug(event);
-      return;
-    }
-
-    const connection = event.target.result;
-    db.getEntryById(connection, entryId, onOpenCursor);
-  }
-
-  function onOpenCursor(event) {
-    const request = event.target;
-    const cursor = request.result;
-
-    if(!cursor) {
-      console.debug('No matching entry for', entryId);
-      return;
-    }
-
-    const entry = cursor.value;
-    if(entry.readState === db.EntryFlags.READ) {
-      console.debug('Attempted to remark a read entry as read:', entryId);
-      return;
-    }
-
-    entry.readState = db.EntryFlags.READ;
-    entry.dateRead = new Date();
-
-    // Trigger an update request. Do not wait for it to complete.
-    cursor.update(entry);
-
-    // NOTE: while this occurs concurrently with the update request,
-    // it involves a separate read transaction that is implicitly blocked by
-    // the current readwrite request, so it still occurs afterward.
-    const connection = request.transaction.db;
-    updateBadgeUnreadCount(connection);
-
-    // Notify listeners that an entry was read.
-    // NOTE: this happens async. The entry may not yet be updated.
-    // TODO: maybe I should just use a callback instead of a message?
-    const entryReadMessage = {
-      'type': 'entryRead',
-      'entryId': entry.id
-    };
-    chrome.runtime.sendMessage(entryReadMessage);
-  }
+  markEntryAsRead(entryId);
 };
 
 SlideShow.maybeAppendSlides = function() {

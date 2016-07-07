@@ -41,19 +41,6 @@ FeedParser.parse = function(document, excludeEntries) {
   return feed;
 };
 
-/*
-// NOTE: I moved this out of feed poller because it is now this module's
-// responsibility to parse fields into date objects
-// TODO: check whether there is a better way to do this in ES6
-// TODO: compare to other lib implementations, e.g. underscore/lo-dash
-// See http://stackoverflow.com/questions/1353684
-FeedPoller.isValidDate = function(dateObject) {
-  const OBJECT_TO_STRING = Object.prototype.toString;
-  return dateObject && OBJECT_TO_STRING.call(dateObject) === '[object Date]' &&
-    isFinite(dateObject);
-};
-*/
-
 FeedParser.findChannel = function(documentElement) {
   if(documentElement.matches('feed')) {
     return documentElement;
@@ -81,7 +68,7 @@ FeedParser.findEntries = function(channelElement) {
 
   for(let element = entryParent.firstElementChild; element;
     element = element.nextElementSibling) {
-    if(equalsIgnoreCase(element.nodeName, entryNodeName)) {
+    if(element.nodeName.toUpperCase() === entryNodeName) {
       entries.push(element);
     }
   }
@@ -128,23 +115,22 @@ FeedParser.findFeedDatePublished = function(channelElement) {
   return new Date();
 };
 
-// TODO: maybe just use element.matches('link[rel="alternate"]')
 FeedParser.isLinkRelAlternate = function(element) {
-  return equalsIgnoreCase(element.nodeName, 'LINK') &&
-    equalsIgnoreCase(element.getAttribute('rel'), 'ALTERNATE');
+  return element.matches('link[rel="alternate"]');
 };
 
 FeedParser.isLinkRelSelf = function(element) {
-  return equalsIgnoreCase(element.nodeName, 'LINK') &&
-    equalsIgnoreCase(element.getAttribute('rel'), 'SELF');
+  return element.matches('link[rel="self"]');
 };
 
 FeedParser.isLinkWithHref = function(element) {
-  return equalsIgnoreCase(element.nodeName, 'LINK') &&
-    element.hasAttribute('href');
+  return element.matches('link[href]');
 };
 
 FeedParser.isLinkWithoutHref = function(element) {
+
+  // return element.matches('link:not([href])');
+
   return equalsIgnoreCase(element.nodeName, 'LINK') &&
     !element.hasAttribute('href');
 };

@@ -5,8 +5,7 @@
 'use strict';
 
 // Moves the child nodes from sourceElement to destinationElement. The elements
-// may be in different documents. Internally this uses a DocumentFragment
-// for better performance.
+// may be in different documents.
 function moveChildNodes(sourceElement, destinationElement) {
   const sourceDocument = sourceElement.ownerDocument;
   const fragment = sourceDocument.createDocumentFragment();

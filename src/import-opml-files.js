@@ -64,7 +64,7 @@ function importOPMLFiles(connection, files, callback) {
       return;
     }
 
-    if(docElement.nodeName.toUpperCase() !== 'OPML')) {
+    if(docElement.nodeName.toUpperCase() !== 'OPML') {
       onFileProcessed();
       return;
     }
@@ -81,7 +81,7 @@ function importOPMLFiles(connection, files, callback) {
 
     for(let element = bodyElement.firstElementChild; element;
       element = element.nextElementSibling) {
-      if(element.nodeName.toUpperCase() !== 'OUTLINE')) {
+      if(element.nodeName.toUpperCase() !== 'OUTLINE') {
         continue;
       }
 

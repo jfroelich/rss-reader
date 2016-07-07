@@ -4,11 +4,6 @@
 
 'use strict';
 
-// TODO: consider merging all filters into a single recursive
-// function, this might remove some of the redundancy that happens and some
-// of the issues with non-associativeness of filters. Order shouldn't affect
-// the outcome as much.
-
 // Routines for cleaning up nodes in an HTMLDocument
 const DOMAid = Object.create(null);
 
@@ -22,51 +17,27 @@ DOMAid.cleanDocument = function(document) {
   DOMAid.filterNoscriptElements(document);
   filterBlacklistedElements(document);
   filterHiddenElements(document);
-
   adjustBlockWithinInlineElements(document);
-
-  DOMAid.replaceBRElements(document);
+  filterBRElements(document);
   filterAnchorElements(document);
-
   filterImageElements(document);
-
   filterUnwrappableElements(document);
   DOMAid.filterFigureElements(document);
   condenseTextNodeWhitespace(document);
   filterListElements(document);
 
-  const inspectionRowLimit = 20;
-  filterTableElements(document, inspectionRowLimit);
+  const inspectionTableRowLimit = 20;
+  filterTableElements(document, inspectionTableRowLimit);
   filterLeafElements(document);
-  DOMAid.filterMisplacedHRElements(document);
-  DOMAid.filterConsecutiveHRElements(document);
-
-  // TODO: deprecate once replaceBRElements is fixed?
-  DOMAid.filterConsecutiveBRElements(document);
+  filterHRElements(document);
   trimDocument(document);
   filterElementAttributes(document);
 };
 
-// TODO: this should use the query selector itself to look for the
-// hierarchical relationship, not the code. It is something like
-// 'ul > hr'
-// TODO: technically I probably want to move any elements that are child of
-// list that are not li elements, with the exception maybe for 'form'?
-// TODO: look into naming it something more akin to how its implemented in dom,
-// something like NodeHierarchyError or whatever it is called
-DOMAid.filterMisplacedHRElements = function(document) {
-  const hrs = document.querySelectorAll('hr');
-  for(let i = 0, len = hrs.length; i < len; i++) {
-    let hr = hrs[i];
-    if(hr.parentNode.nodeName.toUpperCase() === 'UL') {
-      hr.remove();
-    }
-  }
-};
 
 // Unwraps <noscript> elements. Although this could be done by
-// filterUnwrappables, I am doing it here because I consider <noscript> to be
-// a special case. This unwraps instead of removes because some documents
+// filterUnwrappableElements, I am doing it here because I consider <noscript>
+// to be a special case. This unwraps instead of removes because some documents
 // embed the entire content in a noscript tag and then use their own scripted
 // unwrapping call to make the content available.
 //
@@ -106,44 +77,6 @@ DOMAid.filterFrameElements = function(document) {
 
   framesetElement.remove();
   document.documentElement.appendChild(bodyElement);
-};
-
-DOMAid.filterConsecutiveHRElements = function(document) {
-  const elements = document.querySelectorAll('HR');
-  for(let i = 0, len = elements.length; i < len; i++) {
-    let element = elements[i];
-    let prev = element.previousSibling;
-    if(prev && prev.nodeName === 'HR') {
-      prev.remove();
-    }
-  }
-};
-
-// TODO: merge with replaceBRElements
-DOMAid.filterConsecutiveBRElements = function(document) {
-  const elements = document.querySelectorAll('BR');
-  for(let i = 0, len = elements.length; i < len; i++) {
-    let element = elements[i];
-    let prev = element.previousSibling;
-    if(prev && prev.nodeName === 'BR') {
-      prev.remove();
-    }
-  }
-};
-
-// TODO: improve, this is very buggy
-// error case: http://paulgraham.com/procrastination.html
-// TODO: I think using substrings and insertAdjacentHTML might actually
-// be the simplest solution? Cognitively, at least.
-DOMAid.replaceBRElements = function(document) {
-  const nodeList = document.querySelectorAll('BR');
-  for(let i = 0, len = nodeList.length; i < len; i++) {
-    //let brElement = nodeList[i];
-    //brElement.renameNode('p');
-    //parent = brElement.parentNode;
-    //p = document.createElement('P');
-    //parent.replaceChild(p, brElement);
-  }
 };
 
 // If a figure has only one child element, then it is useless.

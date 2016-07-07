@@ -114,7 +114,6 @@ OptionsPage.updateSubscriptionMonitorMessage = function(messageString) {
   monitorElement.appendChild(messageElement);
 };
 
-// TODO: rename to fadeOutSubscriptionMonitor to clarify it is async?
 OptionsPage.hideSubscriptionMonitor = function(callback, fadeOut) {
   const monitorElement = document.getElementById(
     'options_subscription_monitor');
@@ -226,7 +225,7 @@ OptionsPage.appendFeed = function(feed, insertedSort) {
     }
   }
 
-  if(feed.title) {
+  if(feed.link && feed.title) {
     favIconElement.title = feed.title;
   }
   item.appendChild(favIconElement);
@@ -383,9 +382,7 @@ OptionsPage.startSubscription = function(url) {
       return;
     }
 
-    // NOTE: the feed in added feed is the serializable feed object, which is
-    // different than the type of field yielded by fetchFeed. For example,
-    // the added feed's urls array contains strings, not URL objects.
+    // NOTE: addedFeed is the stored feed object, so feed.urls contains strings
 
     const addedFeed = event.feed;
     OptionsPage.appendFeed(addedFeed, true);
@@ -725,7 +722,7 @@ OptionsPage.buttonUnsubscribeOnClick = function(event) {
     // I should probably be using a function here. That, or the function I
     // create that removes the feed accepts a feedId parameter and knows how
     // to get it there.
-    // TODO: removing the feed element from the menu should also probably be
+    // TODO: removing the feed element from the menu should probably be
     // more idiomatic and use a function
     const selector = 'feedlist li[feed="' + feedId + '"]';
     const feedElement = document.querySelector(selector);
@@ -766,8 +763,7 @@ OptionsPage.buttonUnsubscribeOnClick = function(event) {
 // popup but no progress bar). The monitor should be hideable. No
 // need to be cancelable.
 // TODO: notify the user if there was an error parsing the OPML
-// TODO: the user needs immediate visual feedback that we are importing
-// the OPML file.
+// TODO: give immediate visual feedback the import started
 // TODO: switch to a different section of the options ui on complete?
 OptionsPage.importOPMLButtonOnClick = function(event) {
   const uploader = document.createElement('input');
@@ -804,58 +800,7 @@ OptionsPage.importOPMLButtonOnClick = function(event) {
 };
 
 OptionsPage.exportOPMLButtonOnClick = function(event) {
-  const feeds = [];
-
-  db.open(onOpenDatabase);
-
-  function onOpenDatabase(event) {
-    if(event.type !== 'success') {
-      // TODO: visually report the error
-      console.debug('Failed to connect to database when exporting opml');
-      return;
-    }
-
-    const connection = event.target.result;
-    db.openFeedsCursor(connection, handleCursor);
-  };
-
-  function handleCursor(event) {
-    const cursor = event.target.result;
-    if(cursor) {
-      feeds.push(cursor.value);
-      cursor.continue();
-    } else {
-      onGetFeeds();
-    }
-  }
-
-  function onGetFeeds() {
-    const title = 'Subscriptions';
-    const doc = createOPMLDocument(title, feeds);
-    const writer = new XMLSerializer();
-    const serializedString = writer.serializeToString(doc);
-
-    const blobFormat = {'type': 'application/xml'};
-    const blob = new Blob([serializedString], blobFormat);
-    const objectURL = URL.createObjectURL(blob);
-
-    const anchor = document.createElement('a');
-    anchor.href = objectURL;
-    const fileName = 'subscriptions.xml';
-    anchor.setAttribute('download', fileName);
-    anchor.style.display = 'none';
-    document.body.appendChild(anchor);
-    anchor.click();
-
-    // Cleanup
-    URL.revokeObjectURL(objectURL);
-    anchor.remove();
-
-    console.debug('Completed exporting %s feeds to opml file %s',
-      doc.querySelectorAll('outline').length, fileName);
-
-    // TODO: show a message? An alert? Something?
-  };
+  exportOPML();
 };
 
 OptionsPage.initSubscriptionsSection = function() {
@@ -868,6 +813,9 @@ OptionsPage.initSubscriptionsSection = function() {
       console.debug(event);
       return;
     }
+
+    // TODO: use getAllFeeds, and design it so it takes a parameter
+    // that indicates sorting preference
 
     const connection = event.target.result;
     db.openFeedsCursorSortedByTitle(connection, handleCursor);
@@ -908,17 +856,6 @@ OptionsPage.onDOMContentLoaded = function(event) {
 
   // Init CSS styles that affect the display preview area
   DisplaySettings.loadStyles();
-
-  // Conditionally show/hide the Allow embeds option in the left menu
-  // TODO: if I am not even supporting the embed option anymore, why
-  // is this still here?
-  const navEmbedItem = document.getElementById('mi-embeds');
-  const isAskPolicy = localStorage.EMBED_POLICY === 'ask';
-  if(isAskPolicy) {
-    OptionsPage.showElement(navEmbedItem);
-  } else {
-    OptionsPage.hideElement(navEmbedItem);
-  }
 
   // Attach click handlers to feeds in the feed list on the left.
   // TODO: it would probably be easier and more efficient to attach a single

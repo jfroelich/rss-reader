@@ -6,31 +6,41 @@
 
 // Returns a string representing serialized descriptors, which is a suitable
 // srcset attribute value for an element
-// TODO: THIS IS INCOMPLETE
-// TODO: support d,w,h, 'x'?
-// TODO: i am also seeing something like url 2x or 1.5x, what's "x"? i assume
-// it is something like zoom level (2x is 2 times size)
+// TODO: This is under development. Untested.
 function serializeSrcset(inputSrcset) {
+  // Will contain an array of descriptor strings
   const newSrcset = [];
 
   for(let i = 0, len = inputSrcset.length; i < len; i++) {
     let descriptor = inputSrcset[i];
-    console.debug('Descriptor:', descriptor);
-    let newString = descriptor.url;
 
+    // String builder
+    let builder = [];
+
+    builder.push(descriptor.url);
+
+    // d is density
     if(descriptor.d) {
-      // newString += ' ' + descriptor.d;
+      builder.push(' ');
+      builder.push(descriptor.d);
+      // d can have the x?
     }
 
+    // w is width
     if(descriptor.w) {
-      // newString += ' ' + descriptor.w + 'w';
+      builder.push(' ');
+      builder.push(descriptor.w);
+      builder.push('w');
     }
 
+    // h is future-compat-h
     if(descriptor.h) {
-      // newString += ' ' + descriptor.h + 'h';
+      builder.push(' ');
+      builder.push(descriptor.h);
+      builder.push('h');
     }
 
-    newSrcset.push(newString);
+    newSrcset.push(builder.join(''));
   }
 
   // NOTE: the space following the comma is important

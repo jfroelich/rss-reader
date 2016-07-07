@@ -36,13 +36,14 @@ function fetchEntryDocument(requestURL, timeoutMillis, callback) {
   fetchRequest.onerror = onResponse;
   fetchRequest.onabort = onResponse;
   fetchRequest.onload = onResponse;
-  const doAsyncFetchRequest = true;
-  fetchRequest.open('GET', requestURL.href, doAsyncFetchRequest);
+  const async = true;
+  fetchRequest.open('GET', requestURL.href, async);
   fetchRequest.responseType = 'document';
   fetchRequest.send();
 
   function onResponse(event) {
     const outputEvent = Object.create(null);
+    outputEvent.requestURL = requestURL;
 
     if(event.type !== 'load') {
       outputEvent.type = event.type;

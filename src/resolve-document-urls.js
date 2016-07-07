@@ -4,6 +4,14 @@
 
 'use strict';
 
+
+// TODO: getting a bug when the input contains elements with a srcset that
+// is invalid.
+// move-child-nodes.js:21 Failed parsing 'srcset' attribute value since it has
+// an unknown descriptor.
+// The bug is probably related to url resolution stuff, this is just where the
+// bug becomes visible
+
 const URL_ATTRIBUTE_MAP = {
   'A': 'href',
   'APPLET': 'codebase',
@@ -32,16 +40,8 @@ const URL_ATTRIBUTE_MAP = {
   'VIDEO': 'src'
 };
 
-
 // Resolves all urls in a document, such as element attribute values
 // TODO: resolve xlink type simple (on any attribute) in xml docs
-// TODO: i should not even trying to resolve javascript urls, i think, so it
-// may be worthwhile to filter those out of the document before resolving
-// link urls, i noticed that the resolver routinely fails on those urls
-// although i need to test this again after switching to using the native
-// URL object to do the resolution
-// NOTE: if all urls are absolute I could technically leave base elements
-// in the output. However, I think it is better to compress anyway.
 function resolveDocumentURLs(document, baseURL) {
   filterBaseElements(document);
   resolveElementsWithURLAttributes(document, baseURL);
@@ -98,7 +98,7 @@ function resolveElementsWithSrcsetAttributes(document, baseURL) {
       continue;
     }
 
-    for(let j = 0, len = srcset.length; j < len; j++) {
+    for(let j = 0, slen = srcset.length; j < slen; j++) {
       const descriptor = srcset[i];
       if(descriptor) {
         const resolvedURL = resolveURL(descriptor.url, baseURL);
@@ -110,6 +110,10 @@ function resolveElementsWithSrcsetAttributes(document, baseURL) {
 
     const newSrcsetValue = serializeSrcset(srcset);
     if(newSrcsetValue && newSrcsetValue !== srcsetAttributeValue) {
+
+      // Temp, debugging
+      console.debug('Resolved %s as %s', srcsetAttributeValue, newSrcsetValue);
+
       element.setAttribute('srcset', newSrcsetValue);
     }
   }
