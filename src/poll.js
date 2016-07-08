@@ -17,7 +17,7 @@ FeedPoller.start = function() {
   if('onLine' in navigator && !navigator.onLine) {
     console.log('Polling canceled because offline');
     FeedPoller.onMaybePollCompleted(context);
-    return;
+    return 'Offline';
   }
 
   // NOTE: untested because connection.navigator is undefined
@@ -26,7 +26,7 @@ FeedPoller.start = function() {
     navigator.connection.metered) {
     console.log('Polling canceled on metered connection');
     FeedPoller.onMaybePollCompleted(context);
-    return;
+    return 'Metered connection';
   }
 
   if('ONLY_POLL_IF_IDLE' in localStorage) {
@@ -108,6 +108,9 @@ FeedPoller.start = function() {
       remoteFeed.entries, mergedFeed);
     db.updateFeed(context.connection, mergedFeed, onUpdateFeed);
   }
+
+  // Show something when called from console
+  return 'Polling started...';
 };
 
 FeedPoller.createMergedFeed = function(localFeed, remoteFeed) {

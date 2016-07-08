@@ -4,13 +4,12 @@
 
 'use strict';
 
-
-// TODO: getting a bug when the input contains elements with a srcset that
-// is invalid.
-// move-child-nodes.js:21 Failed parsing 'srcset' attribute value since it has
-// an unknown descriptor.
-// The bug is probably related to url resolution stuff, this is just where the
-// bug becomes visible
+// TODO: strange bug, getting <a href="#something"></a>
+// and it somehow gets http://#something and then causes
+// resolveURL to log an error message because it isn't a valid url
+// but getAttribute should be returning the raw value?
+// Somehow http:// is prepended to #fragment even though inspecting the
+// attribute value shows only #fragment
 
 const URL_ATTRIBUTE_MAP = {
   'A': 'href',
@@ -87,33 +86,33 @@ function resolveElementsWithSrcsetAttributes(document, baseURL) {
     'img[srcset], source[srcset]');
   for(let i = 0, len = elements.length; i < len; i++) {
     const element = elements[i];
-    const srcsetAttributeValue = element.getAttribute('srcset');
+    const attributeValue = element.getAttribute('srcset');
 
-    if(!srcsetAttributeValue) {
+    if(!attributeValue) {
       continue;
     }
 
-    const srcset = parseSrcset(srcsetAttributeValue);
-    if(!srcset) {
+    const srcset = parseSrcset(attributeValue);
+    if(!srcset || !srcset.length) {
       continue;
     }
 
+    let dirtied = false;
     for(let j = 0, slen = srcset.length; j < slen; j++) {
-      const descriptor = srcset[i];
-      if(descriptor) {
-        const resolvedURL = resolveURL(descriptor.url, baseURL);
-        if(resolvedURL) {
-          descriptor.url = resolvedURL.href;
-        }
+      const descriptor = srcset[j];
+      const resolvedURL = resolveURL(descriptor.url, baseURL);
+      if(resolvedURL && resolvedURL.href !== descriptor.url) {
+        dirtied = true;
+        descriptor.url = resolvedURL.href;
       }
     }
 
+    if(!dirtied) {
+      continue;
+    }
+
     const newSrcsetValue = serializeSrcset(srcset);
-    if(newSrcsetValue && newSrcsetValue !== srcsetAttributeValue) {
-
-      // Temp, debugging
-      console.debug('Resolved %s as %s', srcsetAttributeValue, newSrcsetValue);
-
+    if(newSrcsetValue && newSrcsetValue !== attributeValue) {
       element.setAttribute('srcset', newSrcsetValue);
     }
   }

@@ -10,6 +10,9 @@
 // creating a URL object. When accessing the resulting URL object's href
 // property or calling toString, the resulting string is a normalized form
 // of the input url.
+
+// TODO: if a fragment is purely '\s*#\s*' then return an empty string?
+
 function resolveURL(urlString, baseURL) {
 
   // Guard here, this is largely just for convenience of callers to not need
@@ -17,17 +20,17 @@ function resolveURL(urlString, baseURL) {
   // in this function, even though all later statements tolerate null/undefined
   // I am not guarding against improper type.
   if(!urlString) {
-    return null;
+    return;
   }
 
   // Do not try and resolve inline script
   if(/^\s*javascript:/i.test(urlString)) {
-    return null;
+    return;
   }
 
   // Do not try and resolve object urls
   if(/^\s*data:/i.test(urlString)) {
-    return null;
+    return;
   }
 
   try {
@@ -36,6 +39,4 @@ function resolveURL(urlString, baseURL) {
     console.debug('Error resolving url %s with base %s', urlString,
       baseURL.href);
   }
-
-  return null;
 }
