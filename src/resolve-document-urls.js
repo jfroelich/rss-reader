@@ -4,12 +4,11 @@
 
 'use strict';
 
-// TODO: strange bug, getting <a href="#something"></a>
-// and it somehow gets http://#something and then causes
-// resolveURL to log an error message because it isn't a valid url
-// but getAttribute should be returning the raw value?
-// Somehow http:// is prepended to #fragment even though inspecting the
-// attribute value shows only #fragment
+// TODO: think of what do about the common 'http://#fragment' url value
+// found on various sites
+// TODO: think about what to do about the common '#' url. Usually these are
+// just links back to the top, or have an onclick handler. maybe these should
+// be treated specially by a separate transform.
 
 const URL_ATTRIBUTE_MAP = {
   'A': 'href',
@@ -68,6 +67,17 @@ function resolveElementsWithURLAttributes(document, baseURL) {
     const attributeValue = element.getAttribute(attributeName);
     if(!attributeValue) {
       continue;
+    }
+
+    // todo: this probably belongs in a separate filter pass
+    if(/^\s*https?:\/\/#/i.test(attributeValue)) {
+      console.debug("removing invalid anchor url:", element.outerHTML);
+      element.remove();
+      continue;
+    }
+
+    if(/^\s*#/.test(attributeValue)) {
+      console.debug('Resolving fragment', attributeValue);
     }
 
     const resolvedURL = resolveURL(attributeValue, baseURL);
