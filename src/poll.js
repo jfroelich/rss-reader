@@ -283,7 +283,8 @@ FeedPoller.processEntry = function(context, feed, entry, callback) {
     entry.feedTitle = feed.title;
 
     if(event.type !== 'success') {
-      console.debug(event);
+      console.debug('request error', event.type, event.requestURL.href);
+
       FeedPoller.addEntry(context.connection, entry, callback);
       return;
     }
