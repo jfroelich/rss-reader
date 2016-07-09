@@ -36,6 +36,22 @@ function unwrapSingleColumnTable(table) {
 
   const tableParent = table.parentNode;
 
+  // TODO: rather than insert spaces and paragraphs, create paragraphs
+  // and move cell contents into them, then insert the paragraphs.
+  // -- check if there is only one child that is a paragraph and if so maybe
+  // just use that instead of a new paragraph
+  // note this means i dont think i can use insertChildrenBefore, so i have to
+  // write the lower level moves, or i have to think of how to reorient
+  // the helper function so that is more abstract. i think the issue is that
+  // it isnt as flexible as say insertAdjacentHTML's location parameter. so
+  // maybe i just need an entirely different function. maybe use the
+  // moveChildNodes function, but pass in a new parameter that suppresses
+  // the use of the document fragment and just does the straight appendChild
+  // call per node. Either that, or I should have two functions,
+  // moveChildNodesUsingFragment, and moveChildNodes. or maybe i make a
+  // function accept a parent element, and if i want to use a fragment,
+  // pass that in
+
   // Pad left to avoid creating adjacent text
   // TODO: would a single call to insertAdjacentHTML be faster here?
   // something like
