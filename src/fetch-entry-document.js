@@ -63,16 +63,11 @@ function fetchEntryDocument(requestURL, timeoutMillis, callback) {
     const responseURLString = event.target.responseURL;
     let responseURL = null;
     if(responseURLString) {
-      try {
-        responseURL = new URL(responseURLString);
-      } catch(exception) {
-        console.debug(exception);
-      }
+      responseURL = new URL(responseURLString);
     }
 
     if(responseURL) {
       outputEvent.responseURL = responseURL;
-
     }
 
     transformLazilyLoadedImages(document);
@@ -101,12 +96,9 @@ function fetchEntryDocument(requestURL, timeoutMillis, callback) {
 // accurate.
 function filterSourcelessImages(document) {
   const images = document.querySelectorAll('img');
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let image of images) {
   for(let i = 0, len = images.length; i < len; i++) {
     let image = images[i];
     if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
-      // console.debug('Removing sourcless image', image.outerHTML);
       image.remove();
       break;
     }
