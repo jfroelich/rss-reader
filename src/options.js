@@ -295,9 +295,9 @@ OptionsPage.showSubscriptionPreview = function(url) {
 
   const fetchTimeoutMills = 10 * 1000;
   const excludeEntries = false;
-  fetchFeed(url, fetchTimeoutMills, excludeEntries, onFetch);
+  fetchFeed(url, fetchTimeoutMills, excludeEntries, onFetchFeed);
 
-  function onFetch(fetchEvent) {
+  function onFetchFeed(fetchEvent) {
     if(event.type !== 'load') {
       console.dir(event);
       OptionsPage.hideSubscriptionPreview();
