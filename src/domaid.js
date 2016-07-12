@@ -47,10 +47,9 @@ DOMAid.cleanDocument = function(document) {
 // within the body is above or below some threshold (which may need to be
 // relative to the total number of elements within the body?)
 DOMAid.filterNoscriptElements = function(document) {
-  const elementNodeList = document.querySelectorAll('noscript');
-  const nullReferenceNode = null;
-  for(let i = 0, len = elementNodeList.length; i < len; i++) {
-    unwrapElement(elementNodeList[i], nullReferenceNode);
+  const elements = document.querySelectorAll('noscript');
+  for(let i = 0, len = elements.length; i < len; i++) {
+    unwrapElement(elements[i]);
   }
 };
 
@@ -87,7 +86,7 @@ DOMAid.filterFigureElements = function(document) {
   for(let i = 0, len = figures.length; i < len; i++) {
     let figure = figures[i];
     if(figure.childElementCount === 1) {
-      unwrapElement(figure, null);
+      unwrapElement(figure);
     }
   }
 };
