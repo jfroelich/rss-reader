@@ -60,12 +60,29 @@ function fetchEntryDocument(requestURL, timeoutMillis, callback) {
 
     outputEvent.type = 'success';
 
-    const responseURL = new URL(event.target.responseURL);
-    outputEvent.responseURL = responseURL;
+    const responseURLString = event.target.responseURL;
+    let responseURL = null;
+    if(responseURLString) {
+      try {
+        responseURL = new URL(responseURLString);
+      } catch(exception) {
+        console.debug(exception);
+      }
+    }
+
+    if(responseURL) {
+      outputEvent.responseURL = responseURL;
+
+    }
 
     transformLazilyLoadedImages(document);
     filterSourcelessImages(document);
-    resolveDocumentURLs(document, responseURL);
+    if(responseURL) {
+      resolveDocumentURLs(document, responseURL);
+    } else {
+      resolveDocumentURLs(document, requestURL);
+    }
+
     filterTrackingImages(document);
     setImageElementDimensions(document,
       onSetImageDimensions.bind(null, outputEvent));
