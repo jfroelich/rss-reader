@@ -7,8 +7,7 @@
 
 // Certain elements, typically those that are defined as void elements in the
 // spec, can readily appear to be leaves, but should not be considered leaves.
-
-// I am using a plain old object instead of a Set because profiling showed
+// I am using a plain object instead of a Set because profiling showed
 // poor performance.
 const NON_LEAF_ELEMENTS = {
   'AREA': 1, 'AUDIO': 1, 'BASE': 1, 'COL': 1, 'COMMAND': 1, 'BR': 1,
@@ -36,7 +35,6 @@ const NON_LEAF_ELEMENTS = {
 // TODO: think of a better way to avoid revisiting nodes
 // TODO: figure out a way to avoid re-trimming text nodes. I feel like the
 // bulk of the time is spent doing this.
-
 function filterLeafElements(document) {
   const docElement = document.documentElement;
   const bodyElement = document.body;
@@ -63,6 +61,7 @@ function filterLeafElements(document) {
 }
 
 // Recursive
+// TODO: maybe revert to using localName so I do not need to call toUpperCase
 function isLeafNode(node) {
   switch(node.nodeType) {
     case Node.ELEMENT_NODE:

@@ -5,6 +5,7 @@
 'use strict';
 
 // Unwrap lists with only one item.
+// TODO: is childElementCount wrong? what about <ul><form>...</form></ul> ?
 function filterListElements(document) {
   const ITEM_NAMES = {'LI': 1, 'DT': 1, 'DD': 1};
   const lists = document.querySelectorAll('UL, OL, DL');

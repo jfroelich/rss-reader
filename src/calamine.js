@@ -441,7 +441,7 @@ Calamine.findImageCaption = function(image) {
 // I am not very familiar with compareDocumentPosition yet, that is the
 // only reason I am not using it.
 // TODO: this should be a general purpose function named something like
-// filterDisconnectedNodes
+// filterDisconnectedNodes, and it should be in its own file
 Calamine.prune = function(document, bestElement) {
   const bodyElement = document.body;
   if(!bodyElement) {

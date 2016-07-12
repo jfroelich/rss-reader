@@ -21,7 +21,7 @@ function filterBlacklistedElements(document) {
   ];
   const SELECTOR = ELEMENTS.join(',');
 
-  // This checks for contains to try and reduce the number of remove calls
+  // This checks doc.contains to try and reduce the number of remove calls
 
   const docElement = document.documentElement;
   const elements = document.querySelectorAll(SELECTOR);

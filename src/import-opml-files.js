@@ -19,7 +19,6 @@ function importOPMLFiles(connection, files, callback) {
   reader.onerror = onFileRead;
   const parser = new DOMParser();
 
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
   for(let i = 0, len = files.length; i < len; i++) {
     let file = files[i];
     reader.readAsText(file);

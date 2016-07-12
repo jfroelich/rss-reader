@@ -8,6 +8,8 @@ const FeedParser = Object.create(null);
 
 FeedParser.parse = function(document, excludeEntries) {
 
+  // TODO: i don't think this should guard against this case, it should be
+  // an implicit error.
   if(!document) {
     throw new Error('Undefined document');
   }
