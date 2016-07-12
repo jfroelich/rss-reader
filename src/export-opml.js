@@ -24,10 +24,10 @@ function exportOPML() {
     }
 
     const connection = event.target.result;
-    db.openFeedsCursor(connection, handleCursor);
+    db.openFeedsCursor(connection, onCursorAdvance);
   };
 
-  function handleCursor(event) {
+  function onCursorAdvance(event) {
     const cursor = event.target.result;
     if(cursor) {
       feeds.push(cursor.value);
