@@ -19,38 +19,32 @@ function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
   request.send();
 
   function onResponse(event) {
-    // NOTE: apparently responseURL can be undefined
-    // actually i think it is because i am doing this prior to checking if
-    // event is not load. so maybe the issue is that it can be undefined in
-    // case of timeout or error but not in case of successful load. so instead
-    // of guarding against it i should simply restrict access to responseURL
-    // until after the early exit of checking event type != load.
-    const responseURLString = event.target.responseURL;
-    let responseURL = null;
-
-    if(responseURLString) {
-      try {
-        responseURL = new URL(responseURLString);
-      } catch(parseURLException) {
-        console.debug('error parsing responseURL', parseURLException);
-      }
-    } else {
-      console.debug('No response url for GET ', requestURL.href);
-    }
-
-    const outputEvent = Object.create(null);
-    outputEvent.type = event.type;
-    if(responseURL) {
-      outputEvent.responseURL = responseURL;
-    }
-
     if(event.type !== 'load') {
+
+      // responseURL may be undefined for non-load events
+      if(event.target.responseURL) {
+        try {
+          outputEvent.responseURL = new URL(event.target.responseURL);
+        } catch(urlexception) {
+
+        }
+      }
+
       callback(outputEvent);
       return;
     }
 
+    // Now we know we are dealing with a load event.
+    // responseURL should always be defined for load events. I am not 100%
+    // sure but pretty sure.
+    // responseURL should also always be a valid url, so no need for try/catch
+    const responseURLString = event.target.responseURL;
+    outputEvent.responseURL = new URL(responseURLString);
+
     const document = event.target.responseXML;
-    // This happens when trying to fetch PDFs
+
+    // document may be undefined with a successful load when the content
+    // does not fit the allowed content type, such as with a PDF.
     if(!document) {
       outputEvent.type = 'invaliddocument';
       callback(outputEvent);
@@ -66,13 +60,11 @@ function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
       return;
     }
 
-    // TODO: what about redirect loops? This would lead to a non-stop growing
-    // of the urls array. Maybe I should check if the new responseURL is not
-    // only not the last url but also not any of the previous.
-
+    // Append both the requested url and the response url if different to the
+    // feed's url list. At this point the urls property is undefined, so this
+    // also sets it for the first time.
     outputEvent.feed.urls = [requestURL];
     if(responseURL && responseURL.href !== requestURL.href) {
-      console.debug('Feed redirect', requestURL.href, responseURL.href);
       outputEvent.feed.urls.push(responseURL);
     }
 
@@ -96,7 +88,7 @@ function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
 
 // For each entry, try to rewrite its url, and if a rewrite occurred,
 // append the rewritten url to the urls list for that entry.
-// TODO: I am really really not sure this belongs here
+// TODO: not sure this belongs here
 function fetchFeedRewriteEntryURLs(entries) {
   for(let i = 0, len = entries.length; i < len; i++) {
     let entry = entries[i];
