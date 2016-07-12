@@ -11,7 +11,7 @@
 function filterAnchorElements(document) {
   const anchors = document.querySelectorAll('a');
   for(let i = 0, len = anchors.length; i < len; i++) {
-    let anchor = anchors[i];
+    const anchor = anchors[i];
     const href = anchor.getAttribute('href');
 
     if(!href && !anchor.hasAttribute('name')) {
