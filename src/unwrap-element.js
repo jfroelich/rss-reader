@@ -48,6 +48,8 @@ function unwrapElement(element, referenceNode) {
 }
 
 // Inserts the children of the parentNode before the reference node
+// TODO: this is used in multiple contexts, maybe this should be in its own
+// file.
 function insertChildrenBefore(parentNode, referenceNode) {
   const referenceParent = referenceNode.parentNode;
   for(let node = parentNode.firstChild; node; node = parentNode.firstChild) {

@@ -241,6 +241,7 @@ SlideShow.appendSlide = function(entry, isFirst) {
   const entryLinkURLString = entry.urls[entry.urls.length - 1];
 
   // todo: rename title variable
+
   const title = document.createElement('a');
   title.setAttribute('href', entryLinkURLString);
 
@@ -249,6 +250,12 @@ SlideShow.appendSlide = function(entry, isFirst) {
   title.setAttribute('rel', 'noreferrer');
   title.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
+
+    // TODO: deal with entities appearing in the title. E.g. I am seeing
+    // &amp; in plain text in the displayed title.
+    // Maybe I need to use innerHTML and maybe I also then need to do more
+    // sanitization of the title
+
     let titleText = entry.title;
     titleText = filterArticleTitle(titleText);
     titleText = truncateHTMLString(titleText, 300);

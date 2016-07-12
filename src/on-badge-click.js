@@ -18,7 +18,7 @@ function onBadgeClick() {
     if(tabsArray && tabsArray.length) {
       chrome.tabs.update(tabsArray[0].id, {'active': true});
     } else {
-      // NOTE: the trailing slash is required
+      // The trailing slash is required
       chrome.tabs.query({'url': 'chrome://newtab/'}, onQueryForNewTab);
     }
   }
