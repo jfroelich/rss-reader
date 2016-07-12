@@ -9,18 +9,9 @@ const DEFAULT_FAV_ICON_URL = new URL(
 
 // Returns a url object pointing to the favicon associated with the input
 // url object.
-// NOTE: I originally rolled my own thing that did url parsing and
-// looked for a url. I gave up on that and just use Google's own
-// favicon service. I am still considering my own local service.
-// TODO: this doesn't cache, which means every image request is going out,
-// and the browser might cache, but otherwise it is providing tracking
-// information. Maybe this should use a local cache.
-// TODO: maybe I should perform this lookup async via an HTTP HEAD request
-// and get the post redirect URL and do this during polling, so that I do
-// not hit up google per render. I should store the result as a property of
-// each entry and each feed. The only thing is I need to do this both at
-// subscribe and at poll so i account for changes to favicon?
-
+// This can throw an exception if there is a URL parsing error but in practice
+// this should never happen, so I do not guard against it here. But the caller
+// should be aware.
 function getFavIconURL(inputURL) {
   let outputURL = null;
   if(inputURL) {
