@@ -19,10 +19,30 @@ function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
   request.send();
 
   function onResponse(event) {
-    const responseURL = new URL(event.target.responseURL);
+    // NOTE: apparently responseURL can be undefined
+    // actually i think it is because i am doing this prior to checking if
+    // event is not load. so maybe the issue is that it can be undefined in
+    // case of timeout or error but not in case of successful load. so instead
+    // of guarding against it i should simply restrict access to responseURL
+    // until after the early exit of checking event type != load.
+    const responseURLString = event.target.responseURL;
+    let responseURL = null;
+
+    if(responseURLString) {
+      try {
+        responseURL = new URL(responseURLString);
+      } catch(parseURLException) {
+        console.debug('error parsing responseURL', parseURLException);
+      }
+    } else {
+      console.debug('No response url for GET ', requestURL.href);
+    }
+
     const outputEvent = Object.create(null);
     outputEvent.type = event.type;
-    outputEvent.responseURL = responseURL;
+    if(responseURL) {
+      outputEvent.responseURL = responseURL;
+    }
 
     if(event.type !== 'load') {
       callback(outputEvent);
@@ -51,7 +71,7 @@ function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
     // only not the last url but also not any of the previous.
 
     outputEvent.feed.urls = [requestURL];
-    if(requestURL.href !== responseURL.href) {
+    if(responseURL && responseURL.href !== requestURL.href) {
       console.debug('Feed redirect', requestURL.href, responseURL.href);
       outputEvent.feed.urls.push(responseURL);
     }
