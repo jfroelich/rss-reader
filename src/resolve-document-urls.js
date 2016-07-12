@@ -76,9 +76,9 @@ function resolveElementsWithURLAttributes(document, baseURL) {
       continue;
     }
 
-    if(/^\s*#/.test(attributeValue)) {
-      console.debug('Resolving fragment', attributeValue);
-    }
+    //if(/^\s*#/.test(attributeValue)) {
+    //  console.debug('Resolving fragment', attributeValue);
+    //}
 
     const resolvedURL = resolveURL(attributeValue, baseURL);
     if(!resolvedURL) {
