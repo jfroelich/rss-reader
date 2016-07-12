@@ -13,9 +13,11 @@ function createOPMLDocument(titleString) {
   const headElement = doc.createElement('head');
   documentElement.appendChild(headElement);
 
-  const titleElement = doc.createElement('title');
-  titleElement.textContent = titleString || '';
-  headElement.appendChild(titleElement);
+  if(titleString) {
+    const titleElement = doc.createElement('title');
+    titleElement.textContent = titleString;
+    headElement.appendChild(titleElement);
+  }
 
   const nowDate = new Date();
   const nowUTCString = nowDate.toUTCString();
@@ -32,6 +34,8 @@ function createOPMLDocument(titleString) {
   docsElement.textContent = 'http://dev.opml.org/spec2.html';
   headElement.appendChild(docsElement);
 
+  // TODO: maybe I shouldn't create this here. We don't know if we will be
+  // appending any feeds yet, so it kind of does not need to exist yet.
   const bodyElement = doc.createElement('body');
   documentElement.appendChild(bodyElement);
 
@@ -39,18 +43,12 @@ function createOPMLDocument(titleString) {
 }
 
 function appendFeedToOPMLDocument(document, feed) {
-
-  let bodyElement = document.body;
-
-  if(!bodyElement) {
-    bodyElement = document.createElement('body');
-    document.documentElement.appendChild(bodyElement);
-  }
-
   let outlineElement = document.createElement('outline');
   outlineElement.setAttribute('type', feed.type || 'rss');
 
-  if(isURLObject(feed.url)) {
+  const toString = Object.prototype.toString;
+
+  if(toString.call(feed.url) === '[object URL]') {
     outlineElement.setAttribute('xmlUrl', feed.url.href);
   } else {
     outlineElement.setAttribute('xmlUrl', feed.url);
@@ -66,16 +64,20 @@ function appendFeedToOPMLDocument(document, feed) {
   }
 
   if(feed.link) {
-    if(isURLObject(feed.link)) {
+    if(toString.call(feed.link) === '[object URL]') {
       outlineElement.setAttribute('htmlUrl', feed.link.href);
     } else {
       outlineElement.setAttribute('htmlUrl', feed.link);
     }
   }
 
-  bodyElement.appendChild(outlineElement);
-}
+  let bodyElement = document.body;
 
-function isURLObject(value) {
-  return Object.prototype.toString.call(value) === '[object URL]';
+  // Create the body element if it does not exist
+  if(!bodyElement) {
+    bodyElement = document.createElement('body');
+    document.documentElement.appendChild(bodyElement);
+  }
+
+  bodyElement.appendChild(outlineElement);
 }
