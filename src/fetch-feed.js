@@ -22,12 +22,15 @@ function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
     const outputEvent = Object.create(null);
     outputEvent.type = event.type;
 
+    const responseURLString = event.target.responseURL;
+
+
     if(event.type !== 'load') {
 
       // responseURL may be undefined for non-load events
-      if(event.target.responseURL) {
+      if(responseURLString) {
         try {
-          outputEvent.responseURL = new URL(event.target.responseURL);
+          outputEvent.responseURL = new URL(responseURLString);
         } catch(urlexception) {
 
         }
@@ -38,10 +41,7 @@ function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
     }
 
     // Now we know we are dealing with a load event.
-    // responseURL should always be defined for load events. I am not 100%
-    // sure but pretty sure.
-    // responseURL should also always be a valid url, so no need for try/catch
-    const responseURLString = event.target.responseURL;
+    // responseURL should always be defined and valid
     outputEvent.responseURL = new URL(responseURLString);
 
     const document = event.target.responseXML;
