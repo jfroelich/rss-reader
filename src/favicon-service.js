@@ -5,152 +5,228 @@
 'use strict';
 
 // This is under heavy development. Do not use.
+// Based on spec: https://www.w3.org/TR/html5/links.html#rel-icon
 
-// TODO: review https://developer.mozilla.org/en-US/docs/Mozilla/Tech/
-// XPCOM/Reference/Interface/mozIAsyncFavicons
-// for inspiration
+const FaviconService = Object.create(null);
 
-/*
 
-favicons store schema:
+// TODO: maybe I should make this fully independent of the other database? that
+// way this is basically a standalone module, completely independent, which
+// might be a nice thing. the only issue i can think of is whether multiple
+// databases per local origin are supported by various platforms.
 
-var faviconpairing = {
-  'domainString': 'http://www.example.com/',
-  'faviconURLString': 'http://www.example.com/favicon.ico'
-  'lastFetched': {Date object}
-};
+// TODO: i should handle failure to find icon better. if not in db and cannot
+// find online, then i should mark as missing icon, and later checks should
+// not keep trying to fetch it until after some period of time.
+// TODO: think more about using an expiration date so I can determine when
+// i should try and update an existing pair in the database
+// TODO: maybe have an option to always check for new remote icon and overwrite
+// existing cached pairing.
+// TODO: should i be storing pairs with the url, or just its origin? If just
+// its origin, I should also only query by origin. Think about it more.
+// Maybe I can store both originURLString and documentURLString, and decide
+// at some other point in time?
+// TODO: provide a function that clears the cache
+// TODO: consider making connection optional so callers do not need to be
+// concerned with it. The only case where I think it might be needed is in
+// findIconURLByDocumentURL where the caller may plan to make multiple calls
+// in which case opening a connection per call seems like a waste.
 
-*/
 
-class FaviconService {
-  // Looks up the url of the associated favicon of the domain of the input
-  // url and passes it to the callback. Passes back the default icon if an
-  // error occurred. If the lookup is successful, the cache is updated.
-  static lookup(inputURL, callback) {
+FaviconService.getFavIconURL = function(connection, url, callback) {
 
-    this.findFaviconByDomain(inputURL, onFindByDomain);
+  FaviconService.findIconURLByDocumentURL(connection, url, onFindByURL);
 
-    function onFindByDomain(event) {
-
-      if(event.type !== 'success') {
-        // lookup error, do something like callback early and exit
-        // unfinished
-        return;
-      }
-
-      // The domain exists in the cache, pass the favicon url back
-      if(event.target.result) {
-        callback(match.faviconURLString);
-        return;
-      }
-
-      // The url doesn't exist. Fetch it from google and store it
-      queryGoogleFaviconService(inputURL, onQueryGoogle);
+  function onFindByURL(event) {
+    if(event.type !== 'success') {
+      // Query error
+      console.debug(event);
+      callback();
+      return;
     }
 
-    function onQueryGoogle(responseURL) {
+    const matchingPair = event.target.result;
 
-      if(!responseURL) {
-        // Google didn't return something useful. What do we do?
-        // Unfinished
-        return;
-      }
-
-      // Google found a favicon, store it and also return
-      // TODO: this needs connection from somewhere
-      // Do I wait for insert to complete and then callback or do i just
-      // callback async?
-      cacheLookup(connection, inputURL, responseURL);
-
-
-      callback(responseURL);
+    if(matchingPair && matchingPair.iconURLString) {
+      const iconURLString = matchingPair.iconURLString;
+      const iconURL = new URL(iconURLString);
+      callback(iconURL);
+      return;
     }
-  }
 
-  static cacheLookup(connection, inputURL, responseURL, callback) {
-
-  }
-
-  static findFaviconByDomain(inputURL, callback) {
-
-    const domainString = inputURL.origin;
-
-    db.open(onOpenDatabase);
-    function onOpenDatabase(event) {
-      if(event.type !== 'success') {
-        callback();
-        return;
-      }
-
-      const connection = event.target.result;
-      const tx = connection.transaction('favicons');
-      const store = tx.objectStore('favicons');
-      const domainIndex = store.index('domain');
-      const request = domainIndex.get(domainString);
-      request.onsuccess = callback;
-      request.onerror = callback;
+    // If we are not online, we cannot check
+    if('onLine' in navigator && !navigator.onLine) {
+      console.debug('Offline');
+      callback();
+      return;
     }
-  }
-
-  // Queries Google's favicon service
-  static queryGoogleFaviconService(inputURL, callback) {
-
-    const requestURLString = buildGoogleRequestURL(inputURL);
 
     const request = new XMLHttpRequest();
-    request.timeout = 100;
-    request.onerror = onResponse;
-    request.ontimeout = onResponse;
-    request.onabort = onResponse;
-    request.onload = onResponse;
+    request.timeout = 5000;
+    request.responseType = 'document';
+    request.onerror = onFetchDocument;
+    request.ontimeout = onFetchDocument;
+    request.onabort = onFetchDocument;
+    request.onload = onFetchDocument;
     const async = true;
-    request.open('HEAD', requestURLString, async);
+    request.open('GET', url.href, async);
     request.send();
+  }
 
-    function onResponse(event) {
-
-      if(event.type !== 'load') {
-        callback();
-      }
-
+  function onFetchDocument(event) {
+    if(event.type !== 'load') {
       console.dir(event);
+      callback();
+      return;
+    }
 
-      const responseURLString = event.target.responseURL;
-      const responseURL = new URL(responseURLString);
-      callback(responseURL);
+    const document = event.target.responseXML;
+
+    if(!document) {
+      console.dir(event);
+      callback();
+      return;
+    }
+
+    const responseURL = new URL(event.target.responseURL);
+
+    const linkURL = FaviconService.findFaviconLink(document, responseURL);
+    if(linkURL) {
+
+      // TODO: store the new pair
+
+      callback(linkURL);
+      return;
+    }
+
+    FaviconService.requestFaviconRoot(url, onRequestRoot);
+  }
+
+  function onRequestRoot(iconURL) {
+
+    if(iconURL) {
+
+      // TODO: store the new pair
+
+      callback(iconURL);
+      return;
+    }
+
+    callback();
+  }
+};
+
+FaviconService.findFaviconLink = function(document, baseURL) {
+  const selectors = [
+    'head > link[rel="icon"][href]',
+    'head > link[rel="shortcut icon"][href]',
+    'head > link[rel="apple-touch-icon"][href]',
+    'head > link[rel="apple-touch-icon-precomposed"][href]'
+  ];
+
+  const selectURL = FaviconService.selectURL;
+
+  for(let i = 0, len = selectors.length; i < len; i++) {
+    let linkURL = selectURL(document, baseURL, selectors[i]);
+    if(linkURL) {
+      return linkURL;
+    }
+  }
+};
+
+// Looks at the href attribute value for the element matching the selector.
+// If found, returns the absolute url.
+FaviconService.selectURL = function(document, baseURL, selector) {
+  let element = document.querySelector(selector);
+  if(element) {
+    let href = element.getAttribute('href');
+    if(href && href.trim()) {
+      try {
+        return new URL(href, baseURL);
+      } catch(exception) {
+        console.debug(exception);
+      }
     }
   }
 
-  static buildGoogleRequestURL(inputURL) {
-    const baseURLString = 'http://www.google.com/s2/favicons?domain_url=';
-    return baseURLString + encodeURIComponent(inputURL.href);
-  }
+  return null;
+};
 
-  // Called when indexedDB's version is incremented. Responsible for setting
-  // up the permanent storage and maintaining it.
-  static onDatabaseUpgradeNeeded(event) {
+FaviconService.requestFaviconRoot = function(url, callback) {
+  const request = new XMLHttpRequest();
+  request.timeout = 1000;
+  request.ontimeout = onResponse;
+  request.onerror = onResponse;
+  request.onabort = onResponse;
+  request.onload = onResponse;
+  const async = true;
+  request.open('HEAD', url.origin + '/favicon.ico', async);
+  request.send();
 
-    // Create the table if it does not exist
-    const connection = event.target.result;
-    const storeNames = connection.objectStoreNames;
-    let store = null;
-    if(storeNames.contains('favicons')) {
-      store = event.target.transaction.objectStore('favicons');
-    } else {
-      store = connection.createObjectStore('favicons', {
-        'keyPath': 'id',
-        'autoIncrement': true
-      });
+  function onResponse(event) {
+    if(event.type !== 'load') {
+      callback();
+      return;
     }
 
-    const indices = store.indexNames;
-    // Create the index if it does not exist
-    if(!indices.contains('domain')) {
-      store.createIndex('domain', 'domainString', {
-        'unique': true
-      });
-    }
+    const responseURL = new URL(event.target.responseURL);
+    callback(responseURL);
   }
+};
+
+FaviconService.findIconURLByDocumentURL = function(connection, documentURL,
+  callback) {
+  const transaction = connection.transaction('icon-store');
+  const iconStore = transaction.objectStore('icon-store');
+  const urlIndex = iconStore.index('document-url');
+  const getRequest = urlIndex.get(documentURL.href);
+  getRequest.onsuccess = callback;
+  getRequest.onerror = callback;
+};
+
+FaviconService.addIconPair = function(connection, documentURL, iconURL,
+  callback) {
+
+  const pair = Object.create(null);
+  pair.documentURLString = documentURL.href;
+  pair.iconURLString = iconURL.href;
+
+  const transaction = connection.transaction('icon-store', 'readwrite');
+  const iconStore = transaction.objectStore('icon-store');
+  const addRequest = iconStore.add(pair);
+  addRequest.onsuccess = callback;
+  addRequest.onerror = callback;
+};
+
+FaviconService.onDatabaseUpgradeNeeded = function(event) {
+  const connection = event.target.result;
+  const transaction = event.target.transaction;
+  const stores = connection.objectStoreNames;
+
+  let iconStore = null;
+  if(stores.contains('icon-store')) {
+    iconStore = transaction.objectStore('icon-store');
+  } else {
+    iconStore = connection.createObjectStore('icon-store', {
+      'keyPath': 'id',
+      'autoIncrement': true
+    });
+  }
+
+  const indices = iconStore.indexNames;
+  if(!indices.contains('document-url')) {
+    iconStore.createIndex('document-url', 'documentURLString', {
+      'unique': true
+    });
+  }
+};
+
+
+
+/*
+class FaviconService {
+
+
 
   // Asynchronous. Removes any cached urls from the database. Calls the
   // callback when complete.
@@ -169,3 +245,4 @@ class FaviconService {
     }
   }
 }
+*/
