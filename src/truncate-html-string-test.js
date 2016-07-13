@@ -1,5 +1,5 @@
 
-function test_html_onload(event) {
+function truncateHTMLStringTestOnLoad(event) {
   'use strict';
 
   const input = 'a<p>b</p>c';
@@ -35,4 +35,4 @@ function test_html_onload(event) {
   console.debug('Output:', truncateHTMLString(input7, 2, '...'));
 }
 
-document.addEventListener('DOMContentLoaded', test_html_onload);
+document.addEventListener('DOMContentLoaded', truncateHTMLStringTestOnLoad);
