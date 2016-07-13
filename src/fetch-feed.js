@@ -19,6 +19,9 @@ function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
   request.send();
 
   function onResponse(event) {
+    const outputEvent = Object.create(null);
+    outputEvent.type = event.type;
+
     if(event.type !== 'load') {
 
       // responseURL may be undefined for non-load events
@@ -64,7 +67,8 @@ function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
     // feed's url list. At this point the urls property is undefined, so this
     // also sets it for the first time.
     outputEvent.feed.urls = [requestURL];
-    if(responseURL && responseURL.href !== requestURL.href) {
+    if(outputEvent.responseURL && outputEvent.responseURL.href !==
+      requestURL.href) {
       outputEvent.feed.urls.push(responseURL);
     }
 
