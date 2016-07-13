@@ -13,6 +13,8 @@ const db = Object.create(null);
 // and use only 1 field. I don't even need a compound index then
 // so this should just be come something like db.EntryState
 
+
+
 db.EntryFlags = {
   UNREAD: 0,
   READ: 1,
@@ -40,8 +42,8 @@ db.upgrade = function(event) {
     feedStore = request.transaction.objectStore('feed');
   } else {
     feedStore = connection.createObjectStore('feed', {
-      keyPath: 'id',
-      autoIncrement: true
+      'keyPath': 'id',
+      'autoIncrement': true
     });
   }
 
@@ -49,8 +51,8 @@ db.upgrade = function(event) {
     entryStore = request.transaction.objectStore('entry');
   } else {
     entryStore = connection.createObjectStore('entry', {
-      keyPath: 'id',
-      autoIncrement: true
+      'keyPath': 'id',
+      'autoIncrement': true
     });
   }
 
@@ -118,6 +120,11 @@ db.upgrade = function(event) {
     });
   }
 };
+
+// TODO: rather than store these functions here, these functions belong in
+// the libaries they relate to, I shouldn't have them all here. Or maybe
+// i should have libraries like feedstore, entrystore, and have these functions
+// be members. i need to think more about the single responsibility principle
 
 db.openReadUnarchivedEntryCursor = function(connection, callback) {
   const transaction = connection.transaction('entry', 'readwrite');
