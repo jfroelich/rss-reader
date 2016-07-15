@@ -412,6 +412,11 @@ SlideShow.hideAllUnreadSlides = function() {
 
 SlideShow.keydownTimer = null;
 
+// Handle key presses. Although I would prefer the browser managed the scroll
+// response, there is a strange issue with scrolling down on an article moved
+// into view if I do not explicitly handle it here because it is an inner
+// element that does not I think have focus, so the down arrow otherwise has no
+// effect.
 //event.target is body
 //event.currentTarget is window
 SlideShow.onKeyDown = function(event) {
@@ -442,7 +447,7 @@ SlideShow.onKeyDown = function(event) {
   }
 
   const SCROLL_DELTAS = {
-    '40': [50, 200],
+    '40': [80, 400],
     '34': [100, 800],
     '38': [-50, -200],
     '33': [-100, -800]
