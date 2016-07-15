@@ -1,14 +1,9 @@
 
 'use strict';
 
-const FaviconServiceTest = Object.create(null);
-
-FaviconServiceTest.lookup = function(urlString) {
-  FaviconService.getFavIconURL(new URL(urlString), function(faviconURL) {
-    if(faviconURL) {
-      console.log('favicon url:', faviconURL.href);
-    } else {
-      console.log('could not locate favicon url');
-    }
+function testFaviconServiceLookup(pageURLString) {
+  const service = new FaviconService('test-favicon-service', 5000);
+  service.lookup(new URL(pageURLString), function(iconURL) {
+    console.log(iconURL ? iconURL.href : 'No icon found');
   });
-};
+}
