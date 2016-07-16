@@ -4,21 +4,28 @@
 
 'use strict';
 
-// Both args optional
-function FaviconService(databaseName, fetchTimeoutMillis) {
+function FaviconService(databaseName, fetchTimeoutMillis, isCacheless) {
   this.databaseName = databaseName || 'favicon-service';
   this.databaseVersion = 1;
   this.timeoutMillis = fetchTimeoutMillis;
+  this.isCacheless = isCacheless;
 }
 
-// Resets the cache
-FaviconService.prototype.reset = function(callback) {
+FaviconService.prototype.resetCache = function(callback) {
   console.log('Resetting favicon service cache...');
   this._openDatabase(this._resetOnOpenDatabase.bind(this, callback));
 };
 
-// Looks up the associated icon and passes it to the callback
+// Looks up the associated icon url and passes it to the callback. If no icon
+// is found, passes undefined to the callback.
 FaviconService.prototype.lookup = function(url, callback) {
+
+  if(this.isCacheless) {
+    const connection = null;
+    this._fetchDocument(url, callback, connection);
+    return;
+  }
+
   const onOpenDatabase = this._lookupOnOpenDatabase.bind(this, url, callback);
   this._openDatabase(onOpenDatabase);
 };
@@ -41,26 +48,27 @@ FaviconService.prototype._upgrade = function(event) {
   const transaction = event.target.transaction;
   const stores = connection.objectStoreNames;
 
-  let pairsStore = null;
-  if(stores.contains('url-pairs')) {
-    pairsStore = transaction.objectStore('url-pairs');
+  let cacheStore = null;
+  if(stores.contains('favicon-cache')) {
+    cacheStore = transaction.objectStore('favicon-cache');
   } else {
-    pairsStore = connection.createObjectStore('url-pairs', {
+    cacheStore = connection.createObjectStore('favicon-cache', {
       'keyPath': 'id',
       'autoIncrement': true
     });
   }
 
-  const indices = pairsStore.indexNames;
+  const indices = cacheStore.indexNames;
   if(!indices.contains('page-url')) {
-    pairsStore.createIndex('page-url', 'pageURLString', {
+    cacheStore.createIndex('page-url', 'pageURLString', {
       'unique': true
     });
   }
 };
 
-FaviconService.prototype._addPair(connection, documentURL, iconURL) {
-  const pair = Object.create(null);
+FaviconService.prototype._cacheEntry(connection, documentURL, iconURL) {
+
+  const cacheEntry = Object.create(null);
   let pageURLString = null;
   if(documentURL.hash) {
     const noHash = this._cloneURL(documentURL);
@@ -70,28 +78,29 @@ FaviconService.prototype._addPair(connection, documentURL, iconURL) {
     pageURLString = documentURL.href;
   }
 
-  pair.pageURLString = pageURLString;
-  pair.iconURLString = iconURL.href;
+  cacheEntry.pageURLString = pageURLString;
+  cacheEntry.iconURLString = iconURL.href;
 
-  console.debug('Storing url in favicon service cache: ', JSON.stringify(pair));
+  console.debug('Storing url in favicon service cache: ',
+    JSON.stringify(cacheEntry));
 
-  const transaction = connection.transaction('url-pairs', 'readwrite');
-  const store = transaction.objectStore('url-pairs');
-  store.add(pair);
+  const transaction = connection.transaction('favicon-cache', 'readwrite');
+  const store = transaction.objectStore('favicon-cache');
+  store.add(cacheEntry);
 };
 
-FaviconService.prototype._resetOnOpenDatabase = function(callback,
-  event) {
+FaviconService.prototype._resetOnOpenDatabase = function(callback, event) {
   if(event.type !== 'success') {
     callback(event);
     return;
   }
 
   const connection = event.target.result;
-  const transaction = connection.transaction('url-pairs', 'readwrite');
+  const transaction = connection.transaction('favicon-cache', 'readwrite');
   transaction.oncomplete = callback;
-  const pairsStore = transaction.objectStore('url-pairs');
-  pairsStore.clear();
+  const cacheStore = transaction.objectStore('favicon-cache');
+  cacheStore.clear();
+  connection.close();
 };
 
 FaviconService.prototype._cloneURL = function(url) {
@@ -126,9 +135,9 @@ FaviconService.prototype._lookupOnOpenDatabase = function(url, callback,
     pageURLString);
 
   const connection = event.target.result;
-  const transaction = connection.transaction('url-pairs');
-  const pairsStore = transaction.objectStore('url-pairs');
-  const urlIndex = pairsStore.index('page-url');
+  const transaction = connection.transaction('favicon-cache');
+  const cacheStore = transaction.objectStore('favicon-cache');
+  const urlIndex = cacheStore.index('page-url');
   const getRequest = urlIndex.get(pageURLString);
 
   const onFind = this._onFindByURL.bind(this, url, callback, connection);
@@ -146,27 +155,35 @@ FaviconService.prototype._onFindByURL = function(url, callback,
     return;
   }
 
-  const pair = event.target.result;
+  const cacheEntry = event.target.result;
 
-  if(pair) {
+  if(cacheEntry) {
     connection.close();
-    console.debug('Found favicon in cache:', JSON.stringify(pair));
-    const iconURL = new URL(pair.iconURLString);
+    console.debug('Found favicon in cache:', JSON.stringify(cacheEntry));
+    const iconURL = new URL(cacheEntry.iconURLString);
     callback(iconURL);
     return;
   }
 
   // If we did not find the url in the cache, investigate the page.
+  this._fetchDocument(url, callback, connection);
+};
+
+FaviconService.prototype._fetchDocument = function(url, callback, connection) {
+  console.debug('Favicon service is requesting', url.href);
+
   if('onLine' in navigator && !navigator.onLine) {
-    connection.close();
     console.warn('Cannot lookup favicon while offline');
+
+    // connection may be undefined when caching is disabled
+    if(connection) {
+      connection.close();
+    }
+
     callback();
     return;
   }
 
-  console.debug('Favicon service is requesting', url.href);
-
-  // Request the remote document
   const onFetch = this._onFetchDocument.bind(this, url, callback, connection);
   const isAsync = true;
   const request = new XMLHttpRequest();
@@ -199,6 +216,13 @@ FaviconService.prototype._onFetchDocument = function(url, callback,
 
   const responseURL = new URL(event.target.responseURL);
 
+
+  // TODO: link elements can also have a type attribute that is a string
+  // of the mime type. At the very least I can restrict to certain types or
+  // blacklist some types if a type attribute is present. E.g. I can avoid
+  // a stylesheet if someone used the wrong rel attribute value but the right
+  // type value.
+
   const selectors = [
     'head > link[rel="icon"][href]',
     'head > link[rel="shortcut icon"][href]',
@@ -211,10 +235,19 @@ FaviconService.prototype._onFetchDocument = function(url, callback,
     linkURL = this._selectURL(document, selectors[i], responseURL);
   }
 
+  // TODO: add another fallback here maybe, look at all link urls for the
+  // presence of the word 'favicon' (case insensitive)
+
+  // TODO: if one of the urls is found, is it worth sending out another request
+  // to verify the url is reachable?
   if(linkURL) {
     console.debug('Favicon service found in page icon url', linkURL.href);
-    this._storePair(connection, url, linkURL);
-    connection.close();
+
+    if(!this._isCacheless) {
+      this._cacheEntry(connection, url, linkURL);
+      connection.close();
+    }
+
     callback(linkURL);
     return;
   }
@@ -223,6 +256,13 @@ FaviconService.prototype._onFetchDocument = function(url, callback,
   // in the event of a redirect
   this._findIconInDomainRoot(responseURL, callback, connection);
 };
+
+// TODO: instead of a function specifically for root, this should be a general
+// function for any icon url, which the caller happens to use the path to the
+// root for.
+// TODO: see if while using a HEAD request I can get at the total bytes of the
+// response. Then I can filter by minimum or maximum byte size as another type
+// of way to reduce false positives.
 
 // Searches for the favicon url in the contents of an HTML document, and if
 // found and appears valid (no parsing errors), returns the absolute form of
@@ -269,6 +309,9 @@ FaviconService.prototype._findIconInDomainRoot = function(url, callback,
   console.debug('Favicon service checking for favicon in domain root',
     requestURLString);
 
+  // TODO: is there a way to make this fail when requesting anything other
+  // than an image? Like Accept-Content-Type or whatever?
+
   const request = new XMLHttpRequest();
   request.timeout = this.timeoutMillis;
   request.ontimeout = onFetch;
@@ -283,22 +326,43 @@ FaviconService.prototype._onFetchRootIcon = function(url, callback, connection,
   event) {
 
   if(event.type !== 'load') {
-    connection.close();
 
     // Either a 404 or something else
     console.debug('No icon found in domain root for', url.href);
     console.dir(event);
 
+    if(connection) {
+      connection.close();
+    }
+
     callback();
     return;
   }
+
+  // TODO: look at status code, maybe can restrict to 200?
+
+
+  const type = event.target.getResponseHeader('Content-Type');
+
+  console.debug('Root icon type:', type);
+
+  // Try and avoid a false positive of a 404 page not returning 404
+  //if(type && !type.indexOf('image/')) {
+    // exit early ...
+  //}
 
   const iconURL = new URL(event.target.responseURL);
 
   console.debug('Favicon service found favicon in root', iconURL.href);
 
-  this._addPair(connection, url, iconURL);
-  connection.close();
+  // TODO: this should be caching the domain url, not the page url, right?
+  // In which case before fetching the root I should also be checking the
+  // cache for the domain?
+
+  if(!this.isCacheless) {
+    this._cacheEntry(connection, url, iconURL);
+    connection.close();
+  }
 
   callback(iconURL);
 };
