@@ -2,17 +2,20 @@
 'use strict';
 
 function testFaviconServiceLookup(pageURLString) {
-  const databaseName = 'test-favicon-service';
-  const timeoutMillis = 5000;
 
-  // Leaving as true for now while I test for basic errors and such
-  const isCacheless = true;
+  const service = new FaviconService();
+  service.timeout = 5000;
 
-  const service = new FaviconService(databaseName, timeoutMillis, isCacheless);
+  const dbCache = new FaviconServiceIndexedDBCache('test-favicon-service');
+
+  const dummyCache = new FaviconDummyCache('test-dummy-cache');
+
+  service.cache = dummyCache;
+
   const pageURL = new URL(pageURLString);
   service.lookup(pageURL, onLookup);
 
   function onLookup(iconURL) {
-    console.log(iconURL ? iconURL.href : 'No icon found');
+    console.log(iconURL ? 'Favicon url: ' + iconURL.href : 'No favicon found');
   }
 }
