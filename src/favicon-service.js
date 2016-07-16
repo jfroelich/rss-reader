@@ -22,11 +22,12 @@ FaviconService.prototype.lookup = function(url, callback) {
 FaviconService.prototype._lookupOnConnect = function(url, callback, event) {
   if(event.type !== 'success') {
     console.debug('Cache connection error:', event);
-    callback();
+    // Fallback to looking online without a cache connection
+    this.fetchDocument(url, callback, null);
     return;
   }
 
-  console.debug('Connected to cache');
+  console.debug('Connected to cache', this.cache.name);
   const connection = event.target.connection;
   this.cache.findByPageURL(connection, url,
     this._onFindByURL.bind(this, url, callback, connection));
@@ -62,7 +63,8 @@ FaviconService.prototype.fetchDocument = function(url, callback, connection) {
   if('onLine' in navigator && !navigator.onLine) {
     console.warn('Fetch error: offline');
 
-    // connection may be undefined when caching is disabled
+    // connection may be undefined when caching is disabled or failed to
+    // connect to cache
     if(connection) {
       connection.close();
     }
@@ -129,7 +131,12 @@ FaviconService.prototype._onFetchDocument = function(url, callback, connection,
   if(linkURL) {
     console.debug('Found in page url:', linkURL.href);
 
-    if(this.cache) {
+    // Check both are defined. Cache may be assigned but connection is null
+    // when disconnected.
+    // TODO: instead of checking if defined, maybe require always defined
+    // and actually use the properties (e.g. connection.isConnected or whatever
+    // it is)
+    if(this.cache && connection) {
       this.cache.addEntry(connection, url, linkURL);
       connection.close();
     }
@@ -221,8 +228,9 @@ FaviconService.prototype._onFindIconInDomainRoot = function(url, callback,
     console.debug('No icon found in domain root for', url.href);
     console.dir(event);
 
-    // Connection may be undefined if not caching
-    if(connection) {
+    // Connection may be undefined if not caching or caching but disconnected
+    // from cache
+    if(this.cache && connection) {
       connection.close();
     }
 
@@ -230,26 +238,52 @@ FaviconService.prototype._onFindIconInDomainRoot = function(url, callback,
     return;
   }
 
-  const contentLengthString = event.target.getResponseHeader('Content-Length');
-  console.debug('Icon content length:', contentLengthString);
-
-
-  const type = event.target.getResponseHeader('Content-Type');
-  console.debug('Root icon content type:', type);
-  // Try and avoid a false positive of a 404 page not returning 404
-  //if(type && !type.indexOf('image/')) {
-    // exit early ...
-  //}
 
   const iconURL = new URL(event.target.responseURL);
+  console.debug('Found possible favicon in root', iconURL.href);
 
-  console.debug('Found favicon in root', iconURL.href);
+  const contentLengthString = event.target.getResponseHeader('Content-Length');
+  if(contentLengthString) {
+    let numBytes = 0;
+
+    try {
+      numBytes = parseInt(contentLengthString, 10);
+    } catch(exception) {
+      console.debug('Error parsing content length', contentLengthString);
+    }
+
+    if(numBytes && (numBytes < 50 || numBytes > 10000)) {
+      // Invalid byte size
+      console.debug('Icon content length is out of bounds', numBytes);
+
+      if(this.cache && connection) {
+        connection.close();
+      }
+
+      callback();
+      return;
+    }
+  }
+
+  // Avoid non image mime type
+  const contentType = event.target.getResponseHeader('Content-Type');
+  if(contentType && !/image\//i.test(contentType)) {
+    console.debug('Invalid content type:', contentType);
+
+    if(this.cache && connection) {
+      connection.close();
+    }
+
+    callback();
+    return;
+  }
+
 
   // TODO: this should be caching the domain url, not the page url, right?
   // TODO: i should be checking the cache for the domain root as well before
   // even trying to fetch it.
 
-  if(this.cache) {
+  if(this.cache && connection) {
     this.cache.addEntry(connection, url, iconURL);
     connection.close();
   }
@@ -260,12 +294,14 @@ FaviconService.prototype._onFindIconInDomainRoot = function(url, callback,
 ///////////////////////////////////////////////
 
 function FaviconDummyCache(name) {
-  console.debug('Created dummy cache');
+  console.debug('Created dummy cache with name', name);
+  this.name = name;
 }
 
 FaviconDummyCache.prototype.connect = function(callback) {
   console.debug('Opening connection to dummy cache');
   const event = {};
+  //event.type = 'error';
   event.type = 'success';
   event.target = {};
   event.target.connection = {};
@@ -288,12 +324,7 @@ FaviconDummyCache.prototype.findByPageURL = function(connection, url,
   const event = {};
   event.type = 'success';
   event.target = {};
-  event.target.result = {
-    'pageURLString': 'http://www.google.com/',
-    'iconURLString':
-    'https://www.google.com/images/branding/product/ico/googleg_lodp.ico'
-  };
-
+  event.target.result = null;
   callback(event);
 };
 
@@ -303,16 +334,16 @@ FaviconDummyCache.prototype.addEntry = function(connection, pageURL, iconURL) {
 
 ///////////////////////////////////////////////
 
-function FaviconServiceIndexedDBCache(name) {
-  this.name = name || 'favicon-service-cache';
+function FaviconIDBCache(name) {
+  this.name = name || 'favicon-cache';
   this.version = 1;
 }
 
-FaviconServiceIndexedDBCache.prototype.cloneURL = function(url) {
+FaviconIDBCache.prototype.cloneURL = function(url) {
   return new URL(url.href);
 };
 
-FaviconServiceIndexedDBCache.prototype.connect = function(callback) {
+FaviconIDBCache.prototype.connect = function(callback) {
   console.debug('Connecting to indexedDB database', this.name, this.version);
   const request = indexedDB.open(this.name, this.version);
   request.onupgradeneeded = this.upgrade;
@@ -321,7 +352,7 @@ FaviconServiceIndexedDBCache.prototype.connect = function(callback) {
   request.onblocked = callback;
 };
 
-FaviconServiceIndexedDBCache.prototype.upgrade = function(event) {
+FaviconIDBCache.prototype.upgrade = function(event) {
   console.log('Upgrading indexedDB database', this.name);
 
   const connection = event.target.result;
@@ -346,7 +377,7 @@ FaviconServiceIndexedDBCache.prototype.upgrade = function(event) {
   }
 };
 
-FaviconServiceIndexedDBCache.prototype.reset = function(callback) {
+FaviconIDBCache.prototype.reset = function(callback) {
   console.log('Clearing indexedDB database', this.name);
 
   this.connect(function(event) {
@@ -364,7 +395,7 @@ FaviconServiceIndexedDBCache.prototype.reset = function(callback) {
   });
 };
 
-FaviconServiceIndexedDBCache.prototype.findByPageURL = function(connection,
+FaviconIDBCache.prototype.findByPageURL = function(connection,
   url, callback) {
 
   console.debug('Checking indexedDB for url', url.href);
@@ -386,7 +417,7 @@ FaviconServiceIndexedDBCache.prototype.findByPageURL = function(connection,
   getRequest.onerror = callback;
 };
 
-FaviconServiceIndexedDBCache.prototype.addEntry = function(connection, pageURL,
+FaviconIDBCache.prototype.addEntry = function(connection, pageURL,
   iconURL) {
 
   console.debug('Caching in indexedDB', pageURL.href, iconURL.href);

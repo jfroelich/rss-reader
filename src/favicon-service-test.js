@@ -6,7 +6,7 @@ function testFaviconServiceLookup(pageURLString) {
   const service = new FaviconService();
   service.timeout = 5000;
 
-  const dbCache = new FaviconServiceIndexedDBCache('test-favicon-service');
+  const dbCache = new FaviconIDBCache('test-favicon-service');
 
   const dummyCache = new FaviconDummyCache('test-dummy-cache');
 
