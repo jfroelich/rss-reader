@@ -109,7 +109,7 @@ FaviconService.prototype.fetchDocument = function(context) {
   request.ontimeout = onFetch;
   request.onabort = onFetch;
   request.onload = onFetch;
-  request.open('GET', url.href, isAsync);
+  request.open('GET', context.url.href, isAsync);
   request.send();
 };
 
@@ -307,6 +307,7 @@ FaviconService.prototype._onFindIconInDomainRoot = function(context, event) {
     if(this.cache && context.connection) {
       context.connection.close();
     }
+
     context.callback();
     return;
   }
@@ -344,9 +345,8 @@ FaviconDummyCache.prototype.connect = function(callback) {
   callback(event);
 };
 
-FaviconDummyCache.prototype.findByPageURL = function(connection, url,
-  callback) {
-  console.debug('Finding', url.href);
+FaviconDummyCache.prototype.findByPageURL = function(context, callback) {
+  console.debug('Finding', context.url.href);
   const event = {};
   event.type = 'success';
   event.target = {};
@@ -432,11 +432,10 @@ FaviconIDBCache.prototype.cloneURL = function(url) {
   return new URL(url.href);
 };
 
-FaviconIDBCache.prototype.findByPageURL = function(connection,
-  url, callback) {
+FaviconIDBCache.prototype.findByPageURL = function(context, callback) {
   console.debug('Finding', url.href);
-  let pageURLString = this.normalizeURL(url).href;
-  const transaction = connection.transaction('favicon-cache');
+  let pageURLString = this.normalizeURL(context.url).href;
+  const transaction = context.connection.transaction('favicon-cache');
   const cacheStore = transaction.objectStore('favicon-cache');
   const urlIndex = cacheStore.index('page-url');
   const getRequest = urlIndex.get(pageURLString);
