@@ -348,7 +348,7 @@ SlideShow.showNextSlide = function() {
     // Note this is very sensitive to timing, it has to occur relatively
     // quickly.
     const c = document.getElementById('slideshow-container');
-    while(c.childElementCount > 30 && c.firstChild != SlideShow.currentSlide) {
+    while(c.childElementCount > 10 && c.firstChild != SlideShow.currentSlide) {
       SlideShow.removeSlide(c.firstChild);
     }
 
