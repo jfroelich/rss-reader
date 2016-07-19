@@ -21,7 +21,7 @@ Subscription.add = function(connection, url, callback) {
       return;
     }
 
-    const storableFeed = createStorableFeed(fetchEvent.feed);
+    const storableFeed = createStorableFeed(event.feed);
     db.addFeed(connection, storableFeed, onAddFeed.bind(null, storableFeed));
   }
 

@@ -217,10 +217,10 @@ OptionsPage.appendFeed = function(feed, insertedSort) {
   // I think it could be either one?
   if(feed.link) {
     if(Object.prototype.toString.call(feed.link) === '[object URL]') {
-      console.debug('feed.link is a URL');
+      //console.debug('feed.link is a URL');
       favIconElement.src = getFavIconURL(feed.link).href;
     } else {
-      console.debug('feed.link is a String');
+      // console.debug('feed.link is a String');
       favIconElement.src = getFavIconURL(new URL(feed.link)).href;
     }
   }
