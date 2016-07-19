@@ -4,29 +4,50 @@
 
 'use strict';
 
-// NOTE: under development, not stable
+// NOTE: under heavy development, not stable
 
+// Creates a new instance of the service. Set the cache before calling lookup
+// to cache requests and avoid network overhead and minimize presence.
 function FaviconService() {
+  // The fetch timeout, in milliseconds, optional
   this.timeout = null;
+  // The associated cache, optional
   this.cache = null;
+
+  // The minimum number of bytes of a valid favicon image
   this.minLength = 50;
+
+  // The maximum number of bytes of a valid favicon image
   this.maxLength = 10000;
+
+  // The number of milliseconds before a favicon expires, after which any
+  // associated cache entries will be revalidated.
+  this.expiresAfterMillis = 1000 * 60 * 60 * 24 * 30;
 }
 
-// Looks up the associated icon url and passes it to the callback. If no icon
-// is found, passes undefined to the callback.
-// If forceReload is true, the remote file is rechecked despite being cached.
+// Looks up the icon url associated with the given page url
+// @param url {URL} a page url
+// @param forceReload {boolean} if true, the url is checked despite even if the
+// url is in the cache
+// @param callback {function} called when the lookup completes, passes the
+// corresponding url of the favicon as a URL object, or undefined if no
+// associated favicon was found.
 FaviconService.prototype.lookup = function(url, forceReload, callback) {
 
+  // Create a shared state variable to simplify parameter passing across the
+  // ensuing continuations for performing a lookup.
   const context = {
     'url': url,
     'forceReload': forceReload,
     'callback': callback,
     'connection': null,
-    'entry': null
+    'entry': null,
+    'responseURL': null
   };
 
-
+  // If a cache is assigned, then open a cache connection in order to check if
+  // the url is cached. Otherwise, fallback to looking for the icon in the
+  // page contents.
   if(this.cache) {
     this.cache.connect(this._lookupOnConnect.bind(this, context));
   } else {
@@ -34,72 +55,101 @@ FaviconService.prototype.lookup = function(url, forceReload, callback) {
   }
 };
 
+// Private helper function for lookup.
+// If we successfully connected to the cache, look for the icon in the cache.
+// Otherwise, fallback to looking for the icon in the page contents.
 FaviconService.prototype._lookupOnConnect = function(context, event) {
+  if(event.type === 'success') {
+    console.debug('Connected to', this.cache.name);
+    context.connection = event.target.connection;
 
-  if(event.type !== 'success') {
+    this.cache.findByPageURL(context.connection, context.url,
+      this._onFindByURL.bind(this, context));
+  } else {
     console.debug('Cache connection error:', event);
+    this.fetchDocument(context);
+  }
+};
+
+// Private helper function for lookup that is called as a result of querying
+// the cache.
+FaviconService.prototype._onFindByURL = function(context, event) {
+  // If there was a problem querying the cache, fallback to looking for the
+  // icon in the contents of the page.
+  if(event.type !== 'success') {
+    console.debug('Cache query error', event);
     this.fetchDocument(context);
     return;
   }
 
-  console.debug('Connected to', this.cache.name);
-  context.connection = event.target.connection;
-  this.cache.findByPageURL(context, this._onFindByURL.bind(this, context));
-};
+  // If there was no error, access the cache result, which may be undefined.
+  // Attach the entry to the context so that later continuations can access it.
+  context.entry = event.target.result;
 
-FaviconService.prototype._onFindByURL = function(context, event) {
-
-  if(event.type !== 'success') {
-    console.debug('Cache error', event);
-    context.connection.close();
-    context.callback();
+  // If we did not find an entry in the cache, fallback to looking for the
+  // icon in the page contents.
+  if(!context.entry) {
+    console.debug('Cache miss', context.url.href);
+    this.fetchDocument(context);
     return;
   }
 
-  context.entry = event.target.result;
+  // If entry was defined, we found a cache hit.
+  console.debug('Cache hit', context.url.href, context.entry.iconURLString);
 
-  if(context.entry) {
-    console.debug('Cache hit', context.url.href, context.entry.iconURLString);
-
-    if(context.forceReload) {
-      // We found a cache hit, but still want to check online
-      this.fetchDocument(context);
-    } else {
-      // We found a cache hit, and are done
-      context.connection.close();
-      const iconURL = new URL(context.entry.iconURLString);
-      context.callback(iconURL);
-      return;
-    }
+  // If forcing a reload, then look for the icon in the page contents. The
+  // entry is attached to the context so that we can later decide how to deal
+  // with it.
+  if(context.forceReload) {
+    console.debug('Forcing reload of entry', context.entry);
+    this.fetchDocument(context);
+    return;
   }
 
-  console.debug('Cache miss', context.url.href);
-  this.fetchDocument(context);
+  // If not forcing a reload then check if the entry expired. If it expired,
+  // look for the icon in the page contents. If not expired, callback with the
+  // cached icon url.
+  const dateNow = new Date();
+  const entryAgeInMillis = dateNow.getTime() - entry.dateUpdated.getTime();
+  if(entryAgeInMillis > this.expiresAfterMillis) {
+    console.debug('Cache entry expired', entry);
+    this.fetchDocument(context);
+  } else {
+    context.connection.close();
+    const iconURL = new URL(context.entry.iconURLString);
+    context.callback(iconURL);
+  }
 };
 
+// Private helper for lookup
 FaviconService.prototype.fetchDocument = function(context) {
-
   console.debug('GET', context.url.href);
 
+  // In order to assist with disambiguating whether the icon is temporarily
+  // unreachable or does not exist, check if we are online.
   if('onLine' in navigator && !navigator.onLine) {
     console.warn('Fetch error: offline');
 
+    // If a cache was assigned and a connection was available, then close
+    // the cache connection.
     if(this.cache && context.connection) {
       context.connection.close();
     }
 
     if(context.entry) {
-      // We are offline, but we had a cache hit earlier, so use that
+      // We are offline, but we had a cache hit, so fallback to
+      // calling back with the last known entry
       const iconURL = new URL(context.entry.iconURLString);
       context.callback(iconURL);
     } else {
-      // We are offline, and had a cache miss, callback with nothing
+      // We are offline, and had a cache miss
       context.callback();
     }
 
     return;
   }
 
+  // Send a GET request for an HTML page.
   const onFetch = this._onFetchDocument.bind(this, context);
   const isAsync = true;
   const request = new XMLHttpRequest();
@@ -110,32 +160,113 @@ FaviconService.prototype.fetchDocument = function(context) {
   request.onabort = onFetch;
   request.onload = onFetch;
   request.open('GET', context.url.href, isAsync);
+  // Attempt to cause an error if the response is not an allowed mime type.
+  // I am not sure if this is doing anything.
+  // request.setRequestHeader must be called after request.open
+  request.setRequestHeader('Accept', 'text/html');
   request.send();
 };
 
 FaviconService.prototype._onFetchDocument = function(context, event) {
+  // If a fetch error occurred, then fallback to looking in the domain root.
+  // We cannot check for a redirect here because event.target.responseURL will
+  // be undefined.
+
+  // TODO: if we are doing a forceReload and the page was in the cache and
+  // there was a problem fetching the page, then I think maybe I should be
+  // deleting the entry? Or maybe something like incrementing its failure count
+  // if if the failure count is > 3 or something like that, removing it.
 
   if(event.type !== 'load') {
     console.debug('Fetch error', event.type, context.url.href);
-    this.findIconInDomainRoot(context);
+    this._lookupOrigin(context);
     return;
   }
 
-  const document = event.target.responseXML;
-  if(!document) {
-    console.debug('Fetch error: undefined document for', context.url.href);
-    this.findIconInDomainRoot(context);
-    return;
-  }
-
+  // Get the responseURL. This can help detect if a redirect occurred. The
+  // responseURL is always defined if the response loaded successfully.
   const responseURL = new URL(event.target.responseURL);
 
-  // TODO: link elements can also have a type attribute that is a string
-  // of the mime type. At the very least I can restrict to certain types or
-  // blacklist some types if a type attribute is present. E.g. I can avoid
-  // a stylesheet if someone used the wrong rel attribute value but the right
-  // type value.
+  // Get the response document
+  const document = event.target.responseXML;
+  // The document may be undefined when there was a successful request but
+  // the mime type was incorrect or a parsing error occured. Fallback to
+  // looking in the domain root.
+  if(!document) {
+    console.debug('Undefined document error', context.url.href);
 
+    // If a redirect occurred and a cache is available and we connected to the
+    // cache, then check if the redirected url is cached before falling back
+    // to looking for the domain root. Otherwise, fallback to looking for the
+    // icon in the domain root.
+    if(!context.forceReload && this.cache && context.connection &&
+      responseURL.href !== context.url.href) {
+      this._findCachedRedirectURL(context, responseURL);
+    } else {
+      this._lookupOrigin(context);
+    }
+
+    return;
+  }
+
+  // Search the document contents for a favicon url. Use the responseURL as
+  // the base url for url resolution.
+  const linkURL = this.searchPageForFavicons(document, responseURL);
+
+  // If we did not find an icon in the page, fallback to checking whether a
+  // redirect ocurred. If a cache is available and we are connected to the
+  // cache and a redirect occurred, then check if the redirect is cached.
+  // Otherwise, fallback to looking in the domain root.
+  if(!linkURL) {
+    console.debug('Did not find in page icon url for', context.url.href);
+    if(!context.forceReload && this.cache && context.connection &&
+      responseURL.href !== context.url.href) {
+      this._findCachedRedirectURL(context, responseURL);
+    } else {
+      this._lookupOrigin(context);
+    }
+
+    return;
+  }
+
+
+  // TODO: if one of the urls is found, is it worth sending out another request
+  // to verify the url is reachable?
+
+  console.debug('Found in page url:', linkURL.href);
+
+  // TODO: this may occur after a cache hit with forceReload on, or an expired
+  // entry, meaning that
+  // the add will fail. So instead the add should be a put or an update or
+  // something to that effect. Really all we are doing I think is changing
+  // the entry by further delaying the expiration date. If I am just storing
+  // the fetch/created/updated/whatever date property, then all I am doing
+  // is changing that to the current client time. The current time plus the
+  // cache time is what yields the expiration date. So I all really need to
+  // do is change this time to the current time.
+
+  // I think the way to solve this is to create a new function, cache
+  // .updateEntry that takes the connection and entry and uses put
+
+  if(this.cache && context.connection) {
+    this.cache.addEntry(context.connection, context.url, linkURL);
+
+    // If there was a redirect, then I also want to store or update the
+    // redirect pairing with the same icon.
+    if(responseURL.href !== context.url.href) {
+      this.cache.addEntry(context.connection, responseURL, linkURL);
+    }
+
+    context.connection.close();
+  }
+
+  context.callback(linkURL);
+
+
+
+};
+
+FaviconService.prototype.searchPageForFavicons = function(document, baseURL) {
   const selectors = [
     'head > link[rel="icon"][href]',
     'head > link[rel="shortcut icon"][href]',
@@ -145,60 +276,15 @@ FaviconService.prototype._onFetchDocument = function(context, event) {
 
   let linkURL = null;
   for(let i = 0, len = selectors.length; !linkURL && i < len; i++) {
-    linkURL = this.findURLInPage(document, selectors[i], responseURL);
+    linkURL = this.findURLInPage(document, selectors[i], baseURL);
   }
 
-  // TODO: add another fallback here maybe, look at all link urls for the
-  // presence of the word 'favicon' (case insensitive)
-
-  // TODO: if one of the urls is found, is it worth sending out another request
-  // to verify the url is reachable?
-  if(linkURL) {
-    console.debug('Found in page url:', linkURL.href);
-
-    // Check both are defined. Cache may be assigned but connection is null
-    // when disconnected.
-    // TODO: instead of checking if defined, maybe require always defined
-    // and actually use the properties (e.g. connection.isConnected or whatever
-    // it is)
-
-    // TODO: this may occur after a cache hit with forceReload on, meaning that
-    // the add will fail. So instead the add should be a put or an update or
-    // something to that effect. Really all we are doing I think is changing
-    // delaying the expiration date more.
-
-    if(this.cache && context.connection) {
-      this.cache.addEntry(context.connection, url, linkURL);
-      context.connection.close();
-    }
-
-    context.callback(linkURL);
-    return;
-  }
-
-  console.debug('Did not find in page icon url for', responseURL.href);
-
-  // Look for the icon in the root of the response url, not the input url,
-  // in the event of a redirect
-  // actually that isn't right. we cannot use the redirect url, otherwise all
-  // future find queries fail. however, i should somehow be taking advantage
-  // of the fact that the redirect is now known. like, if the two urls are
-  // different, i should be storing an entry for each, or something like
-  // that.
-  this.findIconInDomainRoot(context);
+  return linkURL;
 };
 
 // Searches for the favicon url in the contents of an HTML document, and if
 // found and appears valid (no parsing errors), returns the absolute form of
 // the url.
-//
-// This expects a base url object because the in document url may be relative.
-// I did not check if whether the fact that urls can be relative is actually
-// true in the spec, but I once observed it in some reference implementation I
-// found. This returns the absolute form of the url. Using a URL object instead
-// of a string also provides url normalization. Creating the url object here
-// also minimizes the scope of the try/catch statement which otherwise causes a
-// deoptimization.
 FaviconService.prototype.findURLInPage = function(document, selector,
   baseURL) {
 
@@ -222,58 +308,119 @@ FaviconService.prototype.findURLInPage = function(document, selector,
   } catch(exception) {}
 };
 
-// Send a HEAD request to check for the favicon.ico file
-// TODO: instead of a function specifically for root, this should be a general
-// function for any icon url, which the caller happens to use the path to the
-// root for.
-FaviconService.prototype.findIconInDomainRoot = function(context) {
+FaviconService.prototype._findCachedRedirectURL = function(context,
+  responseURL) {
 
-  const onFetch = this._onFindIconInDomainRoot.bind(this, context);
-  const isAsync = true;
+  if(context.forceReload) {
+    this._lookupOrigin(context);
+    return;
+  }
 
-  const requestURLString = context.url.origin + '/favicon.ico';
-  console.debug('HEAD', requestURLString);
+  if(!this.cache) {
+    this._lookupOrigin(context);
+    return;
+  }
 
-  const request = new XMLHttpRequest();
-  request.timeout = this.timeout;
-  request.ontimeout = onFetch;
-  request.onerror = onFetch;
-  request.onabort = onFetch;
-  request.onload = onFetch;
-  request.open('HEAD', requestURLString, isAsync);
+  if(!context.connection) {
+    this._lookupOrigin(context);
+    return;
+  }
 
-  //https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html
-  request.setRequestHeader('Accept', 'image/*');
+  this.cache.findByPageURL(context.connection, responseURL,
+    this._onFindCachedRedirectURL.bind(this, context, responseURL));
+};
 
-  request.send();
+FaviconService.prototype._onFindCachedRedirectURL = function(context,
+  responseURL, event) {
+  if(event.type === 'success' && event.target.result) {
+    // TODO: should i be doing something like updating the original url in the
+    // cache so it avoids this lookup next time? like assigning the icon of
+    // the redirect url to the original url?
+    context.connection.close();
+    const iconURL = new URL(event.target.result.iconURLString);
+    context.callback(iconURL);
+  } else {
+    this._lookupOrigin(context);
+  }
 };
 
 
-// TODO: look at status code, maybe can restrict to 200?
-FaviconService.prototype._onFindIconInDomainRoot = function(context, event) {
+FaviconService.prototype._lookupOrigin(context) {
+  const originURL = new URL(context.url.origin);
+  const originIconURL = new URL(context.url.origin + '/favicon.ico');
+
+  // If a cache is available and we are connected to the cache, then look for
+  // the origin in the cache.
+
+  if(this.cache && context.connection) {
+    this.cache.findByPageURL(context.connection, originURL,
+      this._onFindByOriginURL.bind(this, context));
+  } else {
+    this.sendImageHeadRequest(originIconURL,
+      this.onRequestOriginIcon.bind(this, context));
+  }
+};
+
+FaviconService.prototype._onFindByOriginURL = function(context, event) {
+
+  const originIconURL = new URL(context.url.origin + '/favicon.ico');
+
+  if(event.type !== 'success') {
+    this.sendImageHeadRequest(originIconURL,
+      this.onRequestOriginIcon.bind(this, context));
+    return;
+  }
+
+  const entry = event.target.result;
+
+  if(!entry) {
+    this.sendImageHeadRequest(originIconURL,
+      this.onRequestOriginIcon.bind(this, context));
+    return;
+  }
+
+  // Found the origin in the cache
+
+  if(this.cache && context.connection) {
+    connection.close();
+  }
+
+  context.callback(originIconURL);
+};
+
+FaviconService.prototype.sendImageHeadRequest = function(imageURL, callback) {
+  console.debug('HEAD', imageURL.href);
+  const isAsync = true;
+  const request = new XMLHttpRequest();
+  request.timeout = this.timeout;
+  request.ontimeout = callback;
+  request.onerror = callback;
+  request.onabort = callback;
+  request.onload = callback;
+  request.open('HEAD', imageURL.href, isAsync);
+  // Must call after open
+  request.setRequestHeader('Accept', 'image/*');
+  request.send();
+};
+
+FaviconService.prototype.onRequestOriginIcon = function(context, event) {
 
   if(event.type !== 'load') {
     console.debug('HEAD response error', event);
+
+    if(context.entry && context.forceReload && this.cache &&
+      context.connection) {
+      const pageURL = new URL(context.entry.pageURLString);
+      this.cache.deleteByPageURL(pageURL);
+      const originURL = new URL(pageURL.origin);
+      this.cache.deleteByPageURL(originURL);
+    }
 
     if(this.cache && context.connection) {
       context.connection.close();
     }
 
-    // If entry is defined we are in a forceReload context and had a cache hit
-    // so fallback to using the prior value.
-    // TODO: although this might be wrong actually. if we fail to fetch and it
-    // is the same url, that may mean the url no longer exists/is valid?
-    // so what we actually should be doing is removing the entry? even though
-    // we cannot tell the difference between temporarily unavailable and
-    // permanently removed. i think i need another cache function to remove
-    // entries. I should be doing that here I think.
-    if(entry) {
-      const entryIconURL = new URL(entry.iconURLString);
-      context.callback(entryIconURL);
-    } else {
-      context.callback();
-    }
-
+    context.callback();
     return;
   }
 
@@ -312,144 +459,21 @@ FaviconService.prototype._onFindIconInDomainRoot = function(context, event) {
     return;
   }
 
-
   // TODO: this should be caching the domain url, not the page url, right?
   // TODO: i should be checking the cache for the domain root as well before
   // even trying to fetch it.
 
   if(this.cache && context.connection) {
     this.cache.addEntry(context.connection, context.url, iconURL);
+
+    // If there was a redirect when requesting the page HTML then we also
+    // want to store a pairing for that.
+    if(context.responseURL && context.responseURL.href !== context.url.href) {
+      this.cache.addEntry(context.connection, context.responseURL, iconURL);
+    }
+
     context.connection.close();
   }
 
   context.callback(iconURL);
-};
-
-///////////////////////////////////////////////
-
-function FaviconDummyCache(name) {
-  this.name = name;
-}
-
-FaviconDummyCache.prototype.connect = function(callback) {
-  console.debug('Opening connection');
-  const event = {};
-  event.type = 'success';
-  event.target = {};
-  event.target.connection = {};
-
-  event.target.connection.close = function() {
-    console.debug('Closing connection');
-  };
-
-  callback(event);
-};
-
-FaviconDummyCache.prototype.findByPageURL = function(context, callback) {
-  console.debug('Finding', context.url.href);
-  const event = {};
-  event.type = 'success';
-  event.target = {};
-  event.target.result = null;
-  callback(event);
-};
-
-FaviconDummyCache.prototype.addEntry = function(connection, pageURL, iconURL) {
-  console.debug('Caching', pageURL.href, iconURL.href);
-};
-
-///////////////////////////////////////////////
-
-function FaviconIDBCache(name) {
-  this.name = name || 'favicon-cache';
-  this.version = 1;
-}
-
-
-FaviconIDBCache.prototype.connect = function(callback) {
-  console.debug('Connecting to database', this.name, this.version);
-  const request = indexedDB.open(this.name, this.version);
-  request.onupgradeneeded = this.upgrade;
-  request.onsuccess = callback;
-  request.onerror = callback;
-  request.onblocked = callback;
-};
-
-FaviconIDBCache.prototype.upgrade = function(event) {
-  console.log('Upgrading database', this.name);
-
-  const connection = event.target.result;
-  const transaction = event.target.transaction;
-  const stores = connection.objectStoreNames;
-
-  let cacheStore = null;
-  if(stores.contains('favicon-cache')) {
-    cacheStore = transaction.objectStore('favicon-cache');
-  } else {
-    cacheStore = connection.createObjectStore('favicon-cache', {
-      'keyPath': 'id',
-      'autoIncrement': true
-    });
-  }
-
-  const indices = cacheStore.indexNames;
-  if(!indices.contains('page-url')) {
-    cacheStore.createIndex('page-url', 'pageURLString', {
-      'unique': true
-    });
-  }
-};
-
-FaviconIDBCache.prototype.reset = function(callback) {
-  console.log('Clearing database', this.name);
-
-  this.connect(function(event) {
-    if(event.type !== 'success') {
-      callback(event);
-      return;
-    }
-
-    const connection = event.target.result;
-    const transaction = connection.transaction('favicon-cache', 'readwrite');
-    transaction.oncomplete = callback;
-    const store = transaction.objectStore('favicon-cache');
-    store.clear();
-    connection.close();
-  });
-};
-
-// Apply further normalizations to urls. Returns a new url object, does not
-// modify its input.
-FaviconIDBCache.prototype.normalizeURL = function(url) {
-  const outputURL = this.cloneURL(url);
-  if(outputURL.hash) {
-    outputURL.hash = '';
-  }
-  return outputURL;
-};
-
-FaviconIDBCache.prototype.cloneURL = function(url) {
-  return new URL(url.href);
-};
-
-FaviconIDBCache.prototype.findByPageURL = function(context, callback) {
-  console.debug('Finding', url.href);
-  let pageURLString = this.normalizeURL(context.url).href;
-  const transaction = context.connection.transaction('favicon-cache');
-  const cacheStore = transaction.objectStore('favicon-cache');
-  const urlIndex = cacheStore.index('page-url');
-  const getRequest = urlIndex.get(pageURLString);
-  getRequest.onsuccess = callback;
-  getRequest.onerror = callback;
-};
-
-FaviconIDBCache.prototype.addEntry = function(connection, pageURL,
-  iconURL) {
-  console.debug('Caching', pageURL.href, iconURL.href);
-  const entry = Object.create(null);
-  entry.pageURLString = this.normalizeURL(pageURL).href;
-  entry.iconURLString = iconURL.href;
-  const transaction = connection.transaction('favicon-cache', 'readwrite');
-  const store = transaction.objectStore('favicon-cache');
-  store.add(entry);
 };
