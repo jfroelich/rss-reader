@@ -21,18 +21,10 @@ FaviconService.prototype.lookup = function(url, document, callback) {
     'entry': null
   };
 
-  // TODO: Actually, if document is provided i shouldn't even necessarily bother
-  // with connecting to the cache? But don't I want to establish a cache link so
-  // I can store an entry so that lookups are successful later? I think I do
-  // want to always try and connect.
-
   if(this.cache) {
     console.debug('Detected favicon service cache', this.cache.name);
     this.cache.connect(onConnect.bind(this));
   } else if(document) {
-    // The caller provided a pre-fetched document and there is no cache
-    // available. Look for icons in the page using the known url as the base
-    // url before falling back to checking online.
     const iconURL = this.findIconURLInDocument(document, url);
     if(iconURL) {
       console.debug(
@@ -53,11 +45,8 @@ FaviconService.prototype.lookup = function(url, document, callback) {
 
   function onConnect(connection) {
     if(connection) {
-      console.debug('Connected to cache', this.cache.name);
       context.connection = connection;
-
       if(document) {
-        // We connected. Before checking the cache, search the document.
         const iconURL = this.findIconURLInDocument(document, url);
         if(iconURL) {
           console.debug('Found icon in pre-fetched document, caching',
@@ -76,8 +65,6 @@ FaviconService.prototype.lookup = function(url, document, callback) {
           onFindByURL.bind(this));
       }
     } else if(document) {
-      // We failed to connect to the cache, but the caller provided a pre
-      // fetched document. Before trying to fetch it, first check
       const iconURL = this.findIconURLInDocument(document, url);
       if(iconURL) {
         console.debug('Connection error but found icon in prefetched document',
@@ -88,7 +75,6 @@ FaviconService.prototype.lookup = function(url, document, callback) {
         'Connection error, did not find icon in prefetched document, fetching');
         this.fetchDocument(context);
       }
-
     } else {
       console.debug('Cache connection error, falling back to fetch');
       this.fetchDocument(context);
@@ -103,10 +89,6 @@ FaviconService.prototype.lookup = function(url, document, callback) {
       context.callback(iconURL);
     } else {
       console.debug('Did not find non-expired entry for', context.url.href);
-      // We either failed to query, did not find a match, or we may have found
-      // an entry but it was expired. If we found an entry and it was expired,
-      // we still want to store it in the context so that we can still use it
-      // if unable to fetch because we are offline.
       context.entry = entry;
       this.fetchDocument(context);
     }
@@ -135,9 +117,6 @@ FaviconService.prototype.fetchDocument = function(context) {
     }
     return;
   }
-
-  // TODO: for an invalid url, i am getting strange redirect, the ISP is
-  // hijaking dns errors
 
   const boundOnFetch = onFetchPage.bind(this);
   const request = new XMLHttpRequest();
@@ -171,18 +150,14 @@ FaviconService.prototype.fetchDocument = function(context) {
           context.callback(inPageIconURL);
         } else {
           console.debug('No icons in page', context.url.href);
-          // Successful request but no icons found in page
           this.lookupPageResponseURL(context, new URL(responseURL));
         }
       } else {
         console.debug('Undefined document for', context.url.href);
-        // Successful request but undefined document
         this.lookupPageResponseURL(context, new URL(responseURL));
       }
     } else {
       console.debug('Error fetching', context.url.href);
-      // Unsuccesful request
-
       // Ensure this page is no longer in the cache
       // ???? Is this right?
       if(this.cache && context.connection && context.entry) {
@@ -207,6 +182,7 @@ FaviconService.prototype.lookupPageResponseURL = function(context,
   }
 
   function onLookupResponseURL(entry) {
+    console.debug('Finished looking up if redirect url in cache');
     if(entry && !this.isEntryExpired(entry)) {
       console.debug('Redirect cache hit', pageResponseURL.href);
       context.connection.close();
@@ -243,6 +219,7 @@ FaviconService.prototype.findIconURLInDocument = function(document, baseURL) {
 };
 
 FaviconService.prototype.lookupOrigin = function(context, pageResponseURL) {
+
   const originURL = new URL(context.url.origin);
   const originIconURL = new URL(context.url.origin + '/favicon.ico');
 
@@ -252,15 +229,25 @@ FaviconService.prototype.lookupOrigin = function(context, pageResponseURL) {
     this.cache.findByPageURL(context.connection, originURL,
       onLookupOrigin.bind(this));
   } else {
+    console.debug('Not searching cache for origin, requesting icon in origin');
     this.sendImageHeadRequest(originIconURL,
       this.onRequestOrigin.bind(this, context, pageResponseURL));
   }
 
   function onLookupOrigin(entry) {
+    console.debug('Finished looking for origin in cache');
     if(entry && !this.isEntryExpired(entry)) {
+      console.debug('Found origin in cache');
+      const iconURL = new URL(entry.iconURLString);
+
+      if(context.url.href !== context.url.origin) {
+        this.cache.addEntry(context.connection, context.url, iconURL);
+      }
+
       context.connection.close();
-      callback(new URL(entry.iconURLString));
+      context.callback(iconURL);
     } else {
+      console.debug('Did not find origin url in cache, sending HEAD request');
       this.sendImageHeadRequest(originIconURL,
         this.onRequestOrigin.bind(this, context, pageResponseURL));
     }

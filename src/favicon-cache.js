@@ -16,12 +16,12 @@ function FaviconCache(name) {
 FaviconCache.prototype.connect = function(callback) {
   console.debug('Connecting to database', this.name, this.version);
   const request = indexedDB.open(this.name, this.version);
-  request.onupgradeneeded = this.upgrade;
+  request.onupgradeneeded = this.upgrade.bind(this);
 
   request.onsuccess = function(event) {
     console.debug('Connected to favicon cache database', this.name);
     callback(event.target.result);
-  };
+  }.bind(this);
 
   request.onerror = function(event) {
     console.debug('Cache connection error', event);

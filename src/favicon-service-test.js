@@ -1,11 +1,10 @@
 
 'use strict';
 
-const faviconTestCache = new FaviconTestCache('test-dummy-cache');
+const faviconTestCache = new FaviconCache('test-favicon-cache');
 const faviconTestService = new FaviconService();
 faviconTestService.timeout = 5000;
 faviconTestService.cache = faviconTestCache;
-// faviconTestService.expiresAfterMillis = 5;
 
 function testFaviconServiceLookup(pageURLString) {
   faviconTestService.lookup(new URL(pageURLString), null, function(iconURL) {
