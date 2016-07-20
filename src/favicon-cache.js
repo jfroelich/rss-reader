@@ -6,10 +6,7 @@
 
 // Provides caching functionality to FaviconService
 
-// NOTE: under heavy development, unstable
-// TODO: do not use auto increment id. Use page url as keypath.
-
-// Create a new cache instance with the given indexedDB database name
+// Create a new cache instance with the given database name
 function FaviconCache(name) {
   this.name = name || 'favicon-cache';
   this.version = 1;
@@ -28,35 +25,18 @@ FaviconCache.prototype.connect = function(callback) {
 
 // Private helper that handles setting up the database
 FaviconCache.prototype.upgrade = function(event) {
-  console.log('Upgrading database', this.name);
-
+  console.log('Creating or upgrading favicon cache database', this.name);
   const connection = event.target.result;
-  const transaction = event.target.transaction;
-  const stores = connection.objectStoreNames;
-
-  let cacheStore = null;
-  if(stores.contains('favicon-cache')) {
-    cacheStore = transaction.objectStore('favicon-cache');
-  } else {
-    cacheStore = connection.createObjectStore('favicon-cache', {
-      'keyPath': 'id',
-      'autoIncrement': true
-    });
-  }
-
-  const indices = cacheStore.indexNames;
-  if(!indices.contains('page-url')) {
-    cacheStore.createIndex('page-url', 'pageURLString', {
-      'unique': true
+  if(!connection.objectStoreNames.contains('favicon-cache')) {
+    connection.createObjectStore('favicon-cache', {
+      'keyPath': 'pageURLString'
     });
   }
 };
 
-// Clears the contents of the database
-FaviconCache.prototype.reset = function(callback) {
-  console.log('Clearing database', this.name);
-
-  this.connect(function(event) {
+FaviconCache.prototype.clear = function(callback) {
+  console.log('Clearing favicon cache', this.name);
+  this.connect(function onConnectForReset(event) {
     if(event.type !== 'success') {
       callback(event);
       return;
@@ -71,8 +51,8 @@ FaviconCache.prototype.reset = function(callback) {
   });
 };
 
-// Apply further normalizations to urls. Returns a new url object, does not
-// modify its input.
+// Creates a new URL object that is a transformation of the input where the
+// the url has been normalized.
 FaviconCache.prototype.normalizeURL = function(url) {
   const outputURL = this.cloneURL(url);
   if(outputURL.hash) {
@@ -81,50 +61,39 @@ FaviconCache.prototype.normalizeURL = function(url) {
   return outputURL;
 };
 
-// Creates a copy of a URL object
+// Creates a copy of a URL object.
 FaviconCache.prototype.cloneURL = function(url) {
   return new URL(url.href);
 };
 
 // Searches for an entry in the cache that matches the given url. Passes
 // the result of the query as an event to the callback.
-FaviconCache.prototype.findByPageURL = function(connection, url, callback) {
-  console.debug('Finding', url.href);
-  let pageURLString = this.normalizeURL(url).href;
+FaviconCache.prototype.findByPageURL = function(connection, pageURL, callback) {
+  console.debug('Searching favicon cache for', pageURL.href);
+  let pageURLString = this.normalizeURL(pageURL).href;
   const transaction = connection.transaction('favicon-cache');
-  const cacheStore = transaction.objectStore('favicon-cache');
-  const urlIndex = cacheStore.index('page-url');
-  const getRequest = urlIndex.get(pageURLString);
-  getRequest.onsuccess = callback;
-  getRequest.onerror = callback;
+  const store = transaction.objectStore('favicon-cache');
+  const request = store.get(pageURLString);
+  request.onsuccess = callback;
+  request.onerror = callback;
 };
 
-// Adds an entry to the cache
-FaviconCache.prototype.addEntry = function(connection, pageURL,
-  iconURL) {
+FaviconCache.prototype.addEntry = function(connection, pageURL, iconURL) {
   console.debug('Caching', pageURL.href, iconURL.href);
-  const entry = Object.create(null);
-  entry.pageURLString = this.normalizeURL(pageURL).href;
-  entry.iconURLString = iconURL.href;
-  entry.dateUpdated = new Date();
+  const entry = {
+    'pageURLString': this.normalizeURL(pageURL).href,
+    'iconURLString': iconURL.href,
+    'dateUpdated': new Date()
+  };
   const transaction = connection.transaction('favicon-cache', 'readwrite');
   const store = transaction.objectStore('favicon-cache');
-  store.add(entry);
+  store.put(entry);
 };
 
-// Removes an entry from the cache
-// TODO: test, i just wrote this without thinking or testing or anything
 FaviconCache.prototype.deleteByPageURL = function(connection, pageURL) {
   console.debug('Deleting', pageURL.href);
-  let pageURLString = this.normalizeURL(url).href;
+  let pageURLString = this.normalizeURL(pageURL).href;
   const transaction = connection.transaction('favicon-cache');
   const store = transaction.objectStore('favicon-cache');
-  const urlIndex = cacheStore.index('page-url');
-  const getRequest = urlIndex.openCursor(pageURLString);
-  getRequest.onsuccess = function(event) {
-    const cursor = event.target.result;
-    if(cursor && cursor.value) {
-      cursor.delete();
-    }
-  };
+  store.delete(pageURLString);
 };

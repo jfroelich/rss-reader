@@ -1,26 +1,17 @@
 
 'use strict';
 
+const faviconTestCache = new FaviconTestCache('test-dummy-cache');
+const faviconTestService = new FaviconService();
+faviconTestService.timeout = 5000;
+faviconTestService.cache = faviconTestCache;
+// faviconTestService.expiresAfterMillis = 5;
+
 function testFaviconServiceLookup(pageURLString) {
-
-  const service = new FaviconService();
-  service.timeout = 5000;
-
-  //const cache = new FaviconCache('test-favicon-service');
-  const cache = new FaviconTestCache('test-dummy-cache');
-  service.cache = cache;
-
-  const pageURL = new URL(pageURLString);
-  const forceReload = false;
-  service.lookup(pageURL, forceReload, onLookup);
-
-  function onLookup(iconURL) {
+  faviconTestService.lookup(new URL(pageURLString), function(iconURL) {
     console.log(iconURL ? 'Favicon url: ' + iconURL.href : 'No favicon found');
-  }
+  });
 }
-
-// NOTE: does not deal with dups in the same way as other implementation
-// NOTE: does not normalize url fragments
 
 function FaviconTestCache(name) {
   this.name = name;
@@ -28,26 +19,27 @@ function FaviconTestCache(name) {
 }
 
 FaviconTestCache.prototype.connect = function(callback) {
-  console.debug('Opening connection');
-  const event = {};
-  event.type = 'success';
-  event.target = {};
-  event.target.connection = {};
-  event.target.connection.close = function() {
-    console.debug('Closing connection');
+  console.debug('Opening connection to', this.name);
+  const connection = {
+    'close': function() {
+      console.debug('Closing connection');
+    }
   };
+  const request = { 'result': connection };
+  const event = { 'type': 'success', 'target': request };
   callback(event);
 };
 
-FaviconTestCache.prototype.findByPageURL = function(context, callback) {
-  console.debug('Finding', context.url.href);
+FaviconTestCache.prototype.findByPageURL = function(connection, pageURL,
+  callback) {
+  console.debug('Searching cache for', pageURL.href);
   const event = {};
   event.type = 'success';
   event.target = {};
   event.target.result = null;
 
   for(let entry of this.store) {
-    if(entry.pageURLString === context.url.href) {
+    if(entry.pageURLString === pageURL.href) {
       event.target.result = entry;
       break;
     }
@@ -59,11 +51,9 @@ FaviconTestCache.prototype.findByPageURL = function(context, callback) {
 FaviconTestCache.prototype.addEntry = function(connection, pageURL,
   iconURL) {
   console.debug('Caching', pageURL.href, iconURL.href);
-  const entry = {
+  this.store.push({
     'pageURLString': pageURL.href,
     'iconURLString': iconURL.href,
     'dateUpdated': new Date()
-  };
-  const store = connection.store;
-  store.push(entry);
+  });
 };
