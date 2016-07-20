@@ -4,11 +4,11 @@
 const faviconTestCache = new FaviconTestCache('test-dummy-cache');
 const faviconTestService = new FaviconService();
 faviconTestService.timeout = 5000;
-faviconTestService.cache = faviconTestCache;
+// faviconTestService.cache = faviconTestCache;
 // faviconTestService.expiresAfterMillis = 5;
 
 function testFaviconServiceLookup(pageURLString) {
-  faviconTestService.lookup(new URL(pageURLString), function(iconURL) {
+  faviconTestService.lookup(new URL(pageURLString), null, function(iconURL) {
     console.log(iconURL ? 'Favicon url: ' + iconURL.href : 'No favicon found');
   });
 }

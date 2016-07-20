@@ -12,7 +12,7 @@ function FaviconService(cache) {
   this.expiresAfterMillis = 1000 * 60 * 60 * 24 * 30;
 }
 
-FaviconService.prototype.lookup = function(url, callback) {
+FaviconService.prototype.lookup = function(url, document, callback) {
   console.debug('Looking up', url.href);
   const context = {
     'url': url,
@@ -20,11 +20,34 @@ FaviconService.prototype.lookup = function(url, callback) {
     'connection': null,
     'entry': null
   };
+
+  // TODO: Actually, if document is provided i shouldn't even necessarily bother
+  // with connecting to the cache? But don't I want to establish a cache link so
+  // I can store an entry so that lookups are successful later? I think I do
+  // want to always try and connect.
+
   if(this.cache) {
-    console.debug('Detected an associated caching mechanism named',
-      this.cache.name);
+    console.debug('Detected favicon service cache', this.cache.name);
     this.cache.connect(onConnect.bind(this));
+  } else if(document) {
+    // The caller provided a pre-fetched document and there is no cache
+    // available. Look for icons in the page using the known url as the base
+    // url before falling back to checking online.
+    const iconURL = this.searchPageForFavicons(document, url);
+    if(iconURL) {
+      console.debug(
+        'Found favicon in pre-fetched document without available cache',
+        iconURL.href);
+      callback(iconURL);
+    } else {
+      console.debug(
+        'Did not find favicon in pre-fetched document without available cache');
+      this.fetchDocument(context);
+    }
   } else {
+    console.debug(
+      'No cache detected, no pre-fetched document avaialable, ' +
+      'falling back to fetching');
     this.fetchDocument(context);
   }
 
@@ -32,9 +55,44 @@ FaviconService.prototype.lookup = function(url, callback) {
     if(event.type === 'success') {
       console.debug('Connected to cache', this.cache.name);
       context.connection = event.target.result;
-      this.cache.findByPageURL(context.connection, context.url,
-        onFindByURL.bind(this));
+
+      if(document) {
+        // We connected. Before checking the cache, search the document.
+        const iconURL = this.searchPageForFavicons(document, url);
+        if(iconURL) {
+          console.debug('Found icon in pre-fetched document, caching',
+            url.href, iconURL.href);
+          this.cache.addEntry(context.connection, url, iconURL);
+          callback(iconURL);
+        } else {
+          console.debug(
+            'Did not find icon in pre-fetched document, searching cache');
+          this.cache.findByPageURL(context.connection, context.url,
+            onFindByURL.bind(this));
+        }
+      } else {
+        console.debug('No pre-fetched document available, searching cache');
+        this.cache.findByPageURL(context.connection, context.url,
+          onFindByURL.bind(this));
+      }
+
+
+    } else if(document) {
+      // We failed to connect to the cache, but the caller provided a pre
+      // fetched document. Before trying to fetch it, first check
+      const iconURL = this.searchPageForFavicons(document, url);
+      if(iconURL) {
+        console.debug('Connection error but found icon in prefetched document',
+          url.href, iconURL.href);
+        callback(iconURL);
+      } else {
+        console.debug(
+        'Connection error, did not find icon in prefetched document, fetching');
+        this.fetchDocument(context);
+      }
+
     } else {
+      console.debug('Cache connection error, falling back to fetch');
       this.fetchDocument(context);
     }
   }
