@@ -4,7 +4,7 @@
 const faviconTestCache = new FaviconTestCache('test-dummy-cache');
 const faviconTestService = new FaviconService();
 faviconTestService.timeout = 5000;
-// faviconTestService.cache = faviconTestCache;
+faviconTestService.cache = faviconTestCache;
 // faviconTestService.expiresAfterMillis = 5;
 
 function testFaviconServiceLookup(pageURLString) {
@@ -25,27 +25,21 @@ FaviconTestCache.prototype.connect = function(callback) {
       console.debug('Closing connection');
     }
   };
-  const request = { 'result': connection };
-  const event = { 'type': 'success', 'target': request };
-  callback(event);
+  callback(connection);
 };
 
 FaviconTestCache.prototype.findByPageURL = function(connection, pageURL,
   callback) {
   console.debug('Searching cache for', pageURL.href);
-  const event = {};
-  event.type = 'success';
-  event.target = {};
-  event.target.result = null;
-
+  let result;
   for(let entry of this.store) {
     if(entry.pageURLString === pageURL.href) {
-      event.target.result = entry;
+      result = entry;
       break;
     }
   }
 
-  callback(event);
+  callback(result);
 };
 
 FaviconTestCache.prototype.addEntry = function(connection, pageURL,
@@ -56,4 +50,8 @@ FaviconTestCache.prototype.addEntry = function(connection, pageURL,
     'iconURLString': iconURL.href,
     'dateUpdated': new Date()
   });
+};
+
+FaviconTestCache.prototype.deleteByPageURL = function(connection, pageURL) {
+  console.debug('Deleting', pageURL.href);
 };
