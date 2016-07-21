@@ -287,15 +287,14 @@ SlideShow.appendSlide = function(entry, isFirst) {
   source.setAttribute('class','entrysource');
   slide.appendChild(source);
 
-  // The entry was loaded from the database, in which case entry.feedLink is
-  // a URL string.
-  const favIcon = document.createElement('img');
-  let iconSourceURL = SlideShow.toURLTrapped(entry.feedLink);
-  let favIconURL = getFavIconURL(iconSourceURL);
-  favIcon.setAttribute('src', favIconURL.href);
-  favIcon.setAttribute('width', '16');
-  favIcon.setAttribute('height', '16');
-  source.appendChild(favIcon);
+  // Append the favicon image if available
+  if(entry.faviconURLString) {
+    const faviconElement = document.createElement('img');
+    faviconElement.setAttribute('src', entry.faviconURLString);
+    faviconElement.setAttribute('width', '16');
+    faviconElement.setAttribute('height', '16');
+    source.appendChild(faviconElement);
+  }
 
   const feedTitleElement = document.createElement('span');
 
