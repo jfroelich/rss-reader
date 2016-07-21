@@ -5,6 +5,8 @@
 'use strict';
 
 // Provides caching functionality to FaviconService
+const FAVICON_CACHE_DEBUG = false;
+
 
 function FaviconCache(name) {
   this.name = name || 'favicon-cache';
@@ -14,28 +16,43 @@ function FaviconCache(name) {
 // Request a cache connection. Passes the connection to the callback. If an
 // error occurs, passes back undefined.
 FaviconCache.prototype.connect = function(callback) {
-  console.debug('Connecting to database', this.name, this.version);
+  if(FAVICON_CACHE_DEBUG) {
+    console.debug('Connecting to database', this.name, this.version);
+  }
+
   const request = indexedDB.open(this.name, this.version);
   request.onupgradeneeded = this.upgrade.bind(this);
 
   request.onsuccess = function(event) {
-    console.debug('Connected to favicon cache database', this.name);
+    if(FAVICON_CACHE_DEBUG) {
+      console.debug('Connected to favicon cache database', this.name);
+    }
+
     callback(event.target.result);
   }.bind(this);
 
   request.onerror = function(event) {
-    console.debug('Cache connection error', event);
+    if(FAVICON_CACHE_DEBUG) {
+      console.debug('Cache connection error', event);
+    }
+
     callback();
   };
 
   request.onblocked = function(event) {
-    console.debug('Cache connection blocked', event);
+    if(FAVICON_CACHE_DEBUG) {
+      console.debug('Cache connection blocked', event);
+    }
+
     callback();
   };
 };
 
 FaviconCache.prototype.upgrade = function(event) {
-  console.log('Creating or upgrading favicon cache database', this.name);
+  if(FAVICON_CACHE_DEBUG) {
+    console.log('Creating or upgrading favicon cache database', this.name);
+  }
+
   const connection = event.target.result;
   if(!connection.objectStoreNames.contains('favicon-cache')) {
     connection.createObjectStore('favicon-cache', {
@@ -45,7 +62,10 @@ FaviconCache.prototype.upgrade = function(event) {
 };
 
 FaviconCache.prototype.clear = function(callback) {
-  console.log('Clearing favicon cache', this.name);
+  if(FAVICON_CACHE_DEBUG) {
+    console.log('Clearing favicon cache', this.name);
+  }
+
   this.connect(function onConnectForReset(event) {
     if(event.type !== 'success') {
       callback();
@@ -81,7 +101,10 @@ FaviconCache.prototype.cloneURL = function(url) {
 // Searches for an entry in the cache that matches the given url. Passes
 // the result to the callback. If no match or error, passes back undefined.
 FaviconCache.prototype.findByPageURL = function(connection, pageURL, callback) {
-  console.debug('Searching favicon cache for', pageURL.href);
+  if(FAVICON_CACHE_DEBUG) {
+    console.debug('Searching favicon cache for', pageURL.href);
+  }
+
   let pageURLString = this.normalizeURL(pageURL).href;
   const transaction = connection.transaction('favicon-cache');
   const store = transaction.objectStore('favicon-cache');
@@ -95,7 +118,10 @@ FaviconCache.prototype.findByPageURL = function(connection, pageURL, callback) {
 };
 
 FaviconCache.prototype.addEntry = function(connection, pageURL, iconURL) {
-  console.debug('Caching', pageURL.href, iconURL.href);
+  if(FAVICON_CACHE_DEBUG) {
+    console.debug('Caching', pageURL.href, iconURL.href);
+  }
+
   const entry = {
     'pageURLString': this.normalizeURL(pageURL).href,
     'iconURLString': iconURL.href,
@@ -107,7 +133,10 @@ FaviconCache.prototype.addEntry = function(connection, pageURL, iconURL) {
 };
 
 FaviconCache.prototype.deleteByPageURL = function(connection, pageURL) {
-  console.debug('Deleting', pageURL.href);
+  if(FAVICON_CACHE_DEBUG) {
+    console.debug('Deleting', pageURL.href);
+  }
+
   let pageURLString = this.normalizeURL(pageURL).href;
   const transaction = connection.transaction('favicon-cache');
   const store = transaction.objectStore('favicon-cache');
