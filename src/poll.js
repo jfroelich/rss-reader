@@ -105,12 +105,17 @@ FeedPoller.start = function() {
 
     if(remoteFeed.link) {
       const faviconCache = new FaviconCache('favicon-cache');
+      faviconCache.log = new LoggingService();
+      faviconCache.log.level = LoggingService.LEVEL_ERROR;
+
       const faviconService = new FaviconService();
       faviconService.cache = faviconCache;
+      faviconService.log = new LoggingService();
+      faviconService.log.level = LoggingService.LEVEL_ERROR;
+
       const boundOnFetchFavicon = onFetchFavicon.bind(null, localFeed,
         remoteFeed);
       faviconService.lookup(remoteFeed.link, null, boundOnFetchFavicon);
-
     } else {
       onFetchFavicon(localFeed, remoteFeed, null);
     }
