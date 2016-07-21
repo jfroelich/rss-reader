@@ -629,6 +629,11 @@ OptionsPage.onDiscoverComplete = function(event) {
   const faviconService = new FaviconService();
   const faviconCache = new FaviconCache('favicon-cache');
   faviconService.cache = faviconCache;
+
+  // Restrict to 1 second. It is better for now to have search results show
+  // up quickly.
+  faviconService.timeout = 1000;
+
   let faviconResultsProcessed = 0;
   for(let result of results) {
     if(result.link) {
