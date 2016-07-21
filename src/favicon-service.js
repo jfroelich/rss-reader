@@ -4,20 +4,17 @@
 
 'use strict';
 
-const FAVICON_SERVICE_DEBUG = false;
-
 function FaviconService(cache) {
   this.timeout = null;
   this.cache = cache;
   this.minLength = 50;
   this.maxLength = 10000;
   this.expiresAfterMillis = 1000 * 60 * 60 * 24 * 30;
+  this.log = new DummyLoggingService();
 }
 
 FaviconService.prototype.lookup = function(url, document, callback) {
-  if(FAVICON_SERVICE_DEBUG) {
-    console.debug('Looking up', url.href);
-  }
+  this.log.debug('Looking up', url.href);
 
   const context = {
     'url': url,
@@ -27,37 +24,24 @@ FaviconService.prototype.lookup = function(url, document, callback) {
   };
 
   if(this.cache) {
-    if(FAVICON_SERVICE_DEBUG) {
-      console.debug('Detected favicon service cache', this.cache.name);
-    }
-
+    this.log.debug('Detected favicon service cache', this.cache.name);
     this.cache.connect(onConnect.bind(this));
   } else if(document) {
     const iconURL = this.findIconURLInDocument(document, url);
     if(iconURL) {
-
-      if(FAVICON_SERVICE_DEBUG) {
-        console.debug(
-          'Found favicon in pre-fetched document without available cache',
-          iconURL.href);
-      }
-
+      this.log.debug(
+        'Found favicon in pre-fetched document without available cache',
+        iconURL.href);
       callback(iconURL);
     } else {
-      if(FAVICON_SERVICE_DEBUG) {
-        console.debug(
-          'Did not find favicon in pre-fetched document without available cache');
-      }
-
+      this.log.debug(
+        'Did not find favicon in pre-fetched document without available cache');
       this.fetchDocument(context);
     }
   } else {
-    if(FAVICON_SERVICE_DEBUG) {
-      console.debug(
-        'No cache detected, no pre-fetched document available, ' +
-        'falling back to fetching');
-    }
-
+    this.log.debug(
+      'No cache detected, no pre-fetched document available, ' +
+      'falling back to fetching');
     this.fetchDocument(context);
   }
 
@@ -67,67 +51,47 @@ FaviconService.prototype.lookup = function(url, document, callback) {
       if(document) {
         const iconURL = this.findIconURLInDocument(document, url);
         if(iconURL) {
-          if(FAVICON_SERVICE_DEBUG) {
-            console.debug('Found icon in pre-fetched document, caching',
-              url.href, iconURL.href);
-          }
+          this.log.debug('Found icon in pre-fetched document, caching',
+            url.href, iconURL.href);
 
           this.cache.addEntry(connection, url, iconURL);
           callback(iconURL);
         } else {
-          if(FAVICON_SERVICE_DEBUG) {
-            console.debug(
-              'Did not find icon in pre-fetched document, searching cache');
-          }
-
+          this.log.debug(
+            'Did not find icon in pre-fetched document, searching cache');
           this.cache.findByPageURL(connection, context.url,
             onFindByURL.bind(this));
         }
       } else {
-        if(FAVICON_SERVICE_DEBUG) {
-          console.debug('No pre-fetched document available, searching cache');
-        }
-
+        this.log.debug('No pre-fetched document available, searching cache');
         this.cache.findByPageURL(context.connection, context.url,
           onFindByURL.bind(this));
       }
     } else if(document) {
       const iconURL = this.findIconURLInDocument(document, url);
       if(iconURL) {
-        if(FAVICON_SERVICE_DEBUG) {
-          console.debug('Connection error but found icon in prefetched document',
-            url.href, iconURL.href);
-        }
-
+        this.log.debug('Connection error but found icon in prefetched document',
+          url.href, iconURL.href);
         callback(iconURL);
       } else {
-        if(FAVICON_SERVICE_DEBUG) {
-          console.debug(
-          'Connection error, did not find icon in prefetched document, fetching');
-        }
-
+        this.log.debug(
+          'Connection error, did not find icon in prefetched document');
         this.fetchDocument(context);
       }
     } else {
-      if(FAVICON_SERVICE_DEBUG) {
-        console.debug('Cache connection error, falling back to fetch');
-      }
+      this.log.error('Cache connection error, falling back to fetch');
       this.fetchDocument(context);
     }
   }
 
   function onFindByURL(entry) {
     if(entry && !this.isEntryExpired(entry)) {
-      if(FAVICON_SERVICE_DEBUG) {
-        console.debug('Found non-expired entry for', context.url.href);
-      }
+      this.log.debug('Found non-expired entry for', context.url.href);
       context.connection.close();
       const iconURL = new URL(entry.iconURLString);
       context.callback(iconURL);
     } else {
-      if(FAVICON_SERVICE_DEBUG) {
-        console.debug('Did not find non-expired entry for', context.url.href);
-      }
+      this.log.debug('Did not find non-expired entry for', context.url.href);
       context.entry = entry;
       this.fetchDocument(context);
     }
@@ -139,9 +103,7 @@ FaviconService.prototype.isEntryExpired = function(entry) {
 };
 
 FaviconService.prototype.fetchDocument = function(context) {
-  if(FAVICON_SERVICE_DEBUG) {
-    console.debug('Fetching', context.url.href);
-  }
+  this.log.debug('Fetching', context.url.href);
 
   if('onLine' in navigator && !navigator.onLine) {
     if(context.connection) {
@@ -173,9 +135,7 @@ FaviconService.prototype.fetchDocument = function(context) {
   request.send();
 
   function onFetchPage(event) {
-    if(FAVICON_SERVICE_DEBUG) {
-      console.debug('Fetched', context.url.href);
-    }
+    this.log.debug('Fetched', context.url.href);
 
     if(event.type === 'load') {
       const document = event.target.responseXML;
@@ -183,9 +143,7 @@ FaviconService.prototype.fetchDocument = function(context) {
       if(document) {
         const inPageIconURL = this.findIconURLInDocument(document, responseURL);
         if(inPageIconURL) {
-          if(FAVICON_SERVICE_DEBUG) {
-            console.debug('Found icon url in page', inPageIconURL.href);
-          }
+          this.log.debug('Found icon url in page', inPageIconURL.href);
 
           if(this.cache && context.connection) {
             this.cache.addEntry(context.connection, context.url, inPageIconURL);
@@ -197,30 +155,20 @@ FaviconService.prototype.fetchDocument = function(context) {
           }
           context.callback(inPageIconURL);
         } else {
-          if(FAVICON_SERVICE_DEBUG) {
-            console.debug('No icons in page', context.url.href);
-          }
-
+          this.log.debug('No icons in page', context.url.href);
           this.lookupPageResponseURL(context, new URL(responseURL));
         }
       } else {
-        if(FAVICON_SERVICE_DEBUG) {
-          console.debug('Undefined document for', context.url.href);
-        }
-
+        this.log.debug('Undefined document for', context.url.href);
         this.lookupPageResponseURL(context, new URL(responseURL));
       }
     } else {
-      if(FAVICON_SERVICE_DEBUG) {
-        console.debug('Error fetching', context.url.href);
-      }
-
+      this.log.debug('Error fetching', context.url.href);
       // Ensure this page is no longer in the cache
       // TODO: Is this right?
       if(this.cache && context.connection && context.entry) {
         this.cache.deleteByPageURL(context.connection, context.url);
       }
-
       this.lookupOrigin(context, null);
     }
   }
@@ -231,10 +179,7 @@ FaviconService.prototype.lookupPageResponseURL = function(context,
 
   if(this.cache && context.connection && pageResponseURL &&
     pageResponseURL.href !== context.url.href) {
-    if(FAVICON_SERVICE_DEBUG) {
-      console.debug('Redirected, checking cache for', pageResponseURL.href);
-    }
-
+    this.log.debug('Redirected, checking cache for', pageResponseURL.href);
     this.cache.findByPageURL(context.connection, pageResponseURL,
       onLookupResponseURL.bind(this));
   } else {
@@ -242,31 +187,21 @@ FaviconService.prototype.lookupPageResponseURL = function(context,
   }
 
   function onLookupResponseURL(entry) {
-    if(FAVICON_SERVICE_DEBUG) {
-      console.debug('Finished looking up if redirect url in cache');
-    }
+    this.log.debug('Finished looking up if redirect url in cache');
 
     if(entry && !this.isEntryExpired(entry)) {
-      if(FAVICON_SERVICE_DEBUG) {
-        console.debug('Redirect cache hit', pageResponseURL.href);
-      }
-
+      this.log.debug('Redirect cache hit', pageResponseURL.href);
       context.connection.close();
       context.callback(new URL(entry.iconURLString));
     } else {
-      if(FAVICON_SERVICE_DEBUG) {
-        console.debug('Redirect cache miss', pageResponseURL.href);
-      }
-
+      this.log.debug('Redirect cache miss', pageResponseURL.href);
       this.lookupOrigin(context, pageResponseURL);
     }
   }
 };
 
 FaviconService.prototype.findIconURLInDocument = function(document, baseURL) {
-  if(FAVICON_SERVICE_DEBUG) {
-    console.debug('Searching for icon in document with base url', baseURL.href);
-  }
+  this.log.debug('Searching for icon in document with base url', baseURL.href);
 
   const selectors = [
     'head > link[rel="icon"][href]',
@@ -281,16 +216,11 @@ FaviconService.prototype.findIconURLInDocument = function(document, baseURL) {
       const href = element.getAttribute('href');
       if(href) {
         try {
-          if(FAVICON_SERVICE_DEBUG) {
-            console.debug('Matched element', element.outerHTML);
-          }
-
+          this.log.debug('Matched element', element.outerHTML);
           const iconURL = new URL(href, baseURL);
           return iconURL;
         } catch(exception) {
-          if(FAVICON_SERVICE_DEBUG) {
-            console.debug(exception);
-          }
+          this.log.debug(exception);
         }
       }
     }
@@ -304,35 +234,22 @@ FaviconService.prototype.lookupOrigin = function(context, pageResponseURL) {
 
   if(this.cache && context.connection && originURL.href !== context.url.href &&
     (!pageResponseURL || pageResponseURL.href !== originURL.href)) {
-
-    if(FAVICON_SERVICE_DEBUG) {
-      console.debug('Searching cache for origin', originURL.href);
-    }
-
+    this.log.debug('Searching cache for origin', originURL.href);
     this.cache.findByPageURL(context.connection, originURL,
       onLookupOrigin.bind(this));
   } else {
-    if(FAVICON_SERVICE_DEBUG) {
-      console.debug(
-        'Not searching cache for origin, requesting icon in origin');
-    }
-
+    this.log.debug(
+      'Not searching cache for origin, requesting icon in origin');
     this.sendImageHeadRequest(originIconURL,
       this.onRequestOrigin.bind(this, context, pageResponseURL));
   }
 
   function onLookupOrigin(entry) {
-    if(FAVICON_SERVICE_DEBUG) {
-      console.debug('Finished looking for origin in cache');
-    }
+    this.log.debug('Finished looking for origin in cache');
 
     if(entry && !this.isEntryExpired(entry)) {
-      if(FAVICON_SERVICE_DEBUG) {
-        console.debug('Found origin in cache');
-      }
-
+      this.log.debug('Found origin in cache');
       const iconURL = new URL(entry.iconURLString);
-
       if(context.url.href !== context.url.origin) {
         this.cache.addEntry(context.connection, context.url, iconURL);
       }
@@ -340,10 +257,7 @@ FaviconService.prototype.lookupOrigin = function(context, pageResponseURL) {
       context.connection.close();
       context.callback(iconURL);
     } else {
-      if(FAVICON_SERVICE_DEBUG) {
-        console.debug('Did not find origin url in cache, sending HEAD request');
-      }
-
+      this.log.debug('Did not find origin url in cache, sending HEAD request');
       this.sendImageHeadRequest(originIconURL,
         this.onRequestOrigin.bind(this, context, pageResponseURL));
     }
@@ -351,10 +265,7 @@ FaviconService.prototype.lookupOrigin = function(context, pageResponseURL) {
 };
 
 FaviconService.prototype.sendImageHeadRequest = function(imageURL, callback) {
-  if(FAVICON_SERVICE_DEBUG) {
-    console.debug('Sending image head request for', imageURL.href);
-  }
-
+  this.log.debug('Sending image head request for', imageURL.href);
   const request = new XMLHttpRequest();
   request.timeout = this.timeout;
   request.ontimeout = callback;
@@ -369,18 +280,13 @@ FaviconService.prototype.sendImageHeadRequest = function(imageURL, callback) {
 FaviconService.prototype.onRequestOrigin = function(context, pageResponseURL,
   event) {
   const originURL = new URL(context.url.origin);
-  if(FAVICON_SERVICE_DEBUG) {
-    console.debug('Fetched', context.url.origin + '/favicon.ico');
-  }
-
+  this.log.debug('Possibly fetched', context.url.origin + '/favicon.ico');
   const contentLength = event.target.getResponseHeader('Content-Length');
   const contentType = event.target.getResponseHeader('Content-Type');
 
   if(event.type === 'load' && this.isContentLengthInRange(contentLength) &&
     this.isMimeTypeImage(contentType)) {
-
     const iconURL = new URL(event.target.responseURL);
-
     if(this.cache && context.connection) {
       this.cache.addEntry(context.connection, context.url, iconURL);
       if(pageResponseURL && pageResponseURL.href !== context.url.href) {
@@ -398,11 +304,7 @@ FaviconService.prototype.onRequestOrigin = function(context, pageResponseURL,
     }
   } else {
     const originURL = new URL(context.url.origin);
-
-    if(FAVICON_SERVICE_DEBUG) {
-      console.debug('Error fetching', context.url.origin + '/favicon.ico');
-    }
-
+    this.log.debug('Error fetching', context.url.origin + '/favicon.ico');
     if(this.cache && context.connection) {
       this.cache.deleteByPageURL(context.connection, context.url);
       if(pageResponseURL && pageResponseURL.href !== context.url.href) {
@@ -426,9 +328,7 @@ FaviconService.prototype.isContentLengthInRange =
     const numBytes = parseInt(contentLengthString, 10);
     return numBytes >= this.minLength && numBytes <= this.maxLength;
   } catch(exception) {
-    if(FAVICON_SERVICE_DEBUG) {
-      console.debug(exception);
-    }
+    this.log.debug(exception);
   }
 };
 

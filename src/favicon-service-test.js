@@ -1,15 +1,31 @@
 
 'use strict';
 
-const faviconTestCache = new FaviconTestCache('test-favicon-cache');
-const faviconTestService = new FaviconService();
-faviconTestService.timeout = 5000;
-faviconTestService.cache = faviconTestCache;
+let service = null;
+
+window.addEventListener('DOMContentLoaded', function(event) {
+  service = new FaviconService();
+  service.timeout = 5000;
+
+  const cache = new FaviconCache('test-favicon-cache');
+  service.cache = cache;
+
+  const cacheLog = new LoggingService();
+  cacheLog.level = LoggingService.LEVEL_DEBUG;
+  cacheLog.active = false;
+  cache.log = cacheLog;
+
+  const serviceLog = new LoggingService();
+  serviceLog.level = LoggingService.LEVEL_DEBUG;
+  service.log = serviceLog;
+});
 
 function testFaviconServiceLookup(pageURLString) {
-  faviconTestService.lookup(new URL(pageURLString), null, function(iconURL) {
-    console.log(iconURL ? 'Favicon url: ' + iconURL.href : 'No favicon found');
-  });
+  service.lookup(new URL(pageURLString), null, testFaviconServiceOnLookup);
+}
+
+function testFaviconServiceOnLookup(iconURL) {
+  console.log(iconURL ? 'Favicon url: ' + iconURL.href : 'No favicon found');
 }
 
 function FaviconTestCache(name) {
