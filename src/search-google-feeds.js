@@ -4,6 +4,8 @@
 
 'use strict';
 
+// TODO: rename to GoogleFeedsService, and use an object
+
 // Sends an async request to Google to search for feeds that correspond to
 // a general text query.
 // Google formally deprecated this service. Around December 1st, 2015, I
