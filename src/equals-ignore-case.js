@@ -4,6 +4,8 @@
 
 'use strict';
 
+// TODO: fully deprecate, i don't see much value in this function
+
 // Returns whether string1 is equal to string2, case-insensitive
 // Assumes both arguments have the toUpperCase method
 function equalsIgnoreCase(string1, string2) {

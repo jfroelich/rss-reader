@@ -4,6 +4,10 @@
 
 'use strict';
 
+// TODO: fully deprecate and move helper functions into individual files
+// This should just be a function called sanitizeDocument in a file named
+// sanitize-document.js
+
 // Routines for cleaning up nodes in an HTMLDocument
 const DOMAid = Object.create(null);
 
