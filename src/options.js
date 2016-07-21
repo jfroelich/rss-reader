@@ -623,12 +623,64 @@ OptionsPage.onDiscoverComplete = function(event) {
   listItem.textContent = 'Found ' + results.length + ' results.';
   resultsList.appendChild(listItem);
 
-  // Generate an array of result elements to append
-  const resultElements = results.map(OptionsPage.createSearchResult);
 
-  // Append the result elements
-  for(let i = 0, len = resultElements.length; i < len; i++) {
-    resultsList.appendChild(resultElements[i]);
+
+  // Lookup the favicons for the results
+  const faviconService = new FaviconService();
+  const faviconCache = new FaviconCache('favicon-cache');
+  faviconService.cache = faviconCache;
+  let faviconResultsProcessed = 0;
+  for(let result of results) {
+    if(result.link) {
+      let linkURL = null;
+      try {
+        linkURL = new URL(result.link);
+      } catch(exception) {
+
+      }
+      if(linkURL) {
+        faviconService.lookup(linkURL, null,
+          onLookupFavicon.bind(null, result));
+      } else {
+        faviconResultsProcessed++;
+        if(faviconResultsProcessed === results.length) {
+          onAllResultFaviconsProcessed();
+        }
+      }
+
+    } else {
+      faviconResultsProcessed++;
+      if(faviconResultsProcessed === results.length) {
+        onAllResultFaviconsProcessed();
+      }
+    }
+  }
+
+  if(!results.length) {
+    console.debug('No results so favicon processing finished');
+    onAllResultFaviconsProcessed();
+  }
+
+  function onLookupFavicon(result, iconURL) {
+    faviconResultsProcessed++;
+    if(iconURL) {
+      result.faviconURLString = iconURL.href;
+    }
+
+    if(faviconResultsProcessed === results.length) {
+      onAllResultFaviconsProcessed();
+    }
+  }
+
+  function onAllResultFaviconsProcessed() {
+    console.debug('Finished processing favicons for search results');
+    // Generate an array of result elements to append
+    const resultElements = results.map(OptionsPage.createSearchResult);
+
+    // Append the result elements
+    for(let i = 0, len = resultElements.length; i < len; i++) {
+      resultsList.appendChild(resultElements[i]);
+    }
   }
 };
 
@@ -637,9 +689,7 @@ OptionsPage.onDiscoverComplete = function(event) {
 OptionsPage.createSearchResult = function(feedResult) {
   const item = document.createElement('li');
 
-  // NOTE: feedResult.url is a URL object, not a string
-  // TODO: feedResult.link is currently a string, change google-feeds.js to
-  // provide a URL object
+
 
   const buttonSubscribe = document.createElement('button');
   buttonSubscribe.value = feedResult.url.href;
@@ -648,12 +698,16 @@ OptionsPage.createSearchResult = function(feedResult) {
   buttonSubscribe.onclick = OptionsPage.onDiscoverSubscriptionButtonClick;
   item.appendChild(buttonSubscribe);
 
-  const imageFavIcon = document.createElement('img');
-  imageFavIcon.setAttribute('src', getFavIconURL(feedResult.url).href);
-  if(feedResult.link) {
-    imageFavIcon.title = result.link;
+  if(feedResult.faviconURLString) {
+    const faviconElement = document.createElement('img');
+    faviconElement.setAttribute('src', feedResult.faviconURLString);
+    if(feedResult.link) {
+      faviconElement.setAttribute('title', feedResult.link);
+    }
+    faviconElement.setAttribute('width', '16');
+    faviconElement.setAttribute('height', '16');
+    item.appendChild(faviconElement);
   }
-  item.appendChild(imageFavIcon);
 
   // TODO: don't allow for empty href value
   const anchorTitle = document.createElement('a');
