@@ -279,16 +279,18 @@ FaviconService.prototype.findIconURLInDocument = function(document, baseURL) {
     const element = document.querySelector(selector);
     if(element) {
       const href = element.getAttribute('href');
-      try {
-        if(FAVICON_SERVICE_DEBUG) {
-          console.debug('Matched element', element.outerHTML);
-        }
+      if(href) {
+        try {
+          if(FAVICON_SERVICE_DEBUG) {
+            console.debug('Matched element', element.outerHTML);
+          }
 
-        const iconURL = new URL(href, baseURL);
-        return iconURL;
-      } catch(exception) {
-        if(FAVICON_SERVICE_DEBUG) {
-          console.debug(exception);
+          const iconURL = new URL(href, baseURL);
+          return iconURL;
+        } catch(exception) {
+          if(FAVICON_SERVICE_DEBUG) {
+            console.debug(exception);
+          }
         }
       }
     }
