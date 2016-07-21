@@ -6,43 +6,56 @@
 
 class LoggingService {
   constructor() {
-    this.level = LoggingService.LEVEL_LOG;
-    this.active = true;
+    this.level = LoggingService.LEVEL_DEBUG;
   }
 
   debug(...args) {
-    if(this.active && this.level >= LoggingService.LEVEL_DEBUG) {
+    if(this.level > LoggingService.LEVEL_OFF &&
+      this.level < LoggingService.LEVEL_LOG) {
       console.debug.apply(console, args);
     }
   }
 
   log(...args) {
-    if(this.active && this.level >= LoggingService.LEVEL_LOG) {
+    if(this.level > LoggingService.LEVEL_OFF &&
+      this.level < LoggingService.LEVEL_INFO) {
       console.log.apply(console, args);
     }
   }
 
+  info(...args) {
+    if(this.level > LoggingService.LEVEL_OFF &&
+      this.level < LoggingService.LEVEL_WARN) {
+      console.info.apply(console, args);
+    }
+  }
+
   warn(...args) {
-    if(this.active && this.level >= LoggingService.LEVEL_WARN) {
+    if(this.level > LoggingService.LEVEL_OFF &&
+      this.level < LoggingService.LEVEL_ERROR) {
       console.warn.apply(console, args);
     }
   }
 
+  // Show a message for any logging level other than off
   error(...args) {
-    if(this.active) {
+    if(this.level > LoggingService.LEVEL_OFF) {
       console.error.apply(console, args);
     }
   }
 }
 
+LoggingService.LEVEL_OFF = 0;
 LoggingService.LEVEL_DEBUG = 1;
 LoggingService.LEVEL_LOG = 2;
-LoggingService.LEVEL_WARN = 3;
-LoggingService.LEVEL_ERROR = 4;
+LoggingService.LEVEL_INFO = 3;
+LoggingService.LEVEL_WARN = 4;
+LoggingService.LEVEL_ERROR = 5;
 
 class DummyLoggingService extends LoggingService {
-  log () {}
   debug () {}
+  log () {}
+  info() {}
   warn() {}
   error() {}
 }
