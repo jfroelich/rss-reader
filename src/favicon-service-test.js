@@ -12,7 +12,6 @@ window.addEventListener('DOMContentLoaded', function(event) {
 
   const cacheLog = new LoggingService();
   cacheLog.level = LoggingService.LEVEL_DEBUG;
-  cacheLog.active = false;
   cache.log = cacheLog;
 
   const serviceLog = new LoggingService();
