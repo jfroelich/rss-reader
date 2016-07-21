@@ -138,7 +138,7 @@ FaviconCache.prototype.deleteByPageURL = function(connection, pageURL) {
   }
 
   let pageURLString = this.normalizeURL(pageURL).href;
-  const transaction = connection.transaction('favicon-cache');
+  const transaction = connection.transaction('favicon-cache', 'readwrite');
   const store = transaction.objectStore('favicon-cache');
   store.delete(pageURLString);
 };
