@@ -103,30 +103,20 @@ FeedPoller.start = function() {
       return;
     }
 
-    // TODO: before updating the feed, re-fetch its associated favicon and
-    // set the favicon
-
     if(remoteFeed.link) {
       const faviconCache = new FaviconCache('favicon-cache');
       const faviconService = new FaviconService();
       faviconService.cache = faviconCache;
-
-      const boundOnFetchFavicon = onFetchFavicon.bind(null, localFeed, remoteFeed);
-
+      const boundOnFetchFavicon = onFetchFavicon.bind(null, localFeed,
+        remoteFeed);
       faviconService.lookup(remoteFeed.link, null, boundOnFetchFavicon);
 
     } else {
-      // If the feed doesn't have a link, not sure what to do
       onFetchFavicon(localFeed, remoteFeed, null);
     }
-
-
   }
 
-
   function onFetchFavicon(localFeed, remoteFeed, faviconURL) {
-
-    // Set the property of the remoteFeed
     if(faviconURL) {
       remoteFeed.faviconURLString = faviconURL.href;
     }
@@ -136,7 +126,6 @@ FeedPoller.start = function() {
       remoteFeed.entries, mergedFeed);
     db.updateFeed(context.connection, mergedFeed, onUpdateFeed);
   }
-
 
   // Show something when called from console
   return 'Polling started...';
@@ -209,7 +198,7 @@ FeedPoller.createMergedFeed = function(localFeed, remoteFeed) {
   outputFeed.dateCreated = localFeed.dateCreated || new Date();
 
   if(remoteFeed.faviconURLString) {
-    outputFeed.faviconURLString;
+    outputFeed.faviconURLString = remoteFeed.faviconURLString;
   } else if(localFeed.faviconURLString) {
     outputFeed.faviconURLString = localFeed.faviconURLString;
   }
