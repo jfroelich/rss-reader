@@ -211,24 +211,20 @@ OptionsPage.appendFeed = function(feed, insertedSort) {
   item.setAttribute('title', replaceHTML(feed.description) || '');
   item.onclick = OptionsPage.feedListOnItemClick;
 
-  var favIconElement = document.createElement('img');
-
-  // I don't know if this was loaded from database or from fetchFeed, so
-  // I think it could be either one?
-  if(feed.link) {
-    if(Object.prototype.toString.call(feed.link) === '[object URL]') {
-      //console.debug('feed.link is a URL');
-      favIconElement.src = getFavIconURL(feed.link).href;
-    } else {
-      // console.debug('feed.link is a String');
-      favIconElement.src = getFavIconURL(new URL(feed.link)).href;
+  if(feed.faviconURLString) {
+    const faviconElement = document.createElement('img');
+    faviconElement.src = feed.faviconURLString;
+    if(feed.title) {
+      faviconElement.title = feed.title;
     }
-  }
 
-  if(feed.link && feed.title) {
-    favIconElement.title = feed.title;
+    faviconElement.setAttribute('width', '16');
+    faviconElement.setAttribute('height', '16');
+
+    item.appendChild(faviconElement);
+  } else {
+    console.debug('No favicon found for', feed.urls[feed.urls.length - 1]);
   }
-  item.appendChild(favIconElement);
 
   const titleElement = document.createElement('span');
   let feedTitleString = feed.title;
@@ -448,8 +444,7 @@ OptionsPage.populateFeedDetails = function(feedId) {
     const feedURL = new URL(feedURLString);
 
     const favIconElement = document.getElementById('details-favicon');
-    const favIconURL = getFavIconURL(feedURL);
-    favIconElement.setAttribute('src', favIconURL.href);
+    favIconElement.setAttribute('src', feed.faviconURLString || '');
 
     const description = replaceHTML(feed.description || '', '');
     const descriptionElement = document.getElementById(
