@@ -299,13 +299,18 @@ FeedPoller.processEntry = function(context, feed, entry, callback) {
     // TODO: rename this to something clearer, like feedId
     entry.feed = feed.id;
 
-    // Denormalize link and title so that rendering can avoid these lookups
-    // NOTE: feed.link is a URL string, because feed comes from the feed object
-    // that was stored
-    // feedLink was sanitized during parseFeed
-    entry.feedLink = feed.link;
+    // Denormalize favicon url and title so that view can avoid lookups
+
+    if(feed.faviconURLString) {
+      entry.faviconURLString = feed.favionURLString;
+    }
+
+
     // feedTitle was sanitized by updatefeed
-    entry.feedTitle = feed.title;
+    if(feed.title) {
+      entry.feedTitle = feed.title;
+    }
+
 
     if(event.type !== 'success') {
       console.debug('request error', event.type, event.requestURL.href);
@@ -333,6 +338,8 @@ FeedPoller.processEntry = function(context, feed, entry, callback) {
 // TODO: entries must be sanitized fully
 // TODO: eventually this should delegate most of its functionality to
 // Entry.toSerializable, or this should be Entry.add
+// TODO: actually the vast majority of this should be handled by something
+// called FeedCache or FeedStorageService, it should be able to do all of that
 FeedPoller.addEntry = function(connection, entry, callback) {
   const storable = Object.create(null);
 
@@ -340,8 +347,12 @@ FeedPoller.addEntry = function(connection, entry, callback) {
   // over from the serialized feed object that was the input to db.updateFeed
   // feedLink was previously sanitized, because it was converted to a URL
   // and back to a string
-  if(entry.feedLink) {
-    storable.feedLink = entry.feedLink;
+  //if(entry.feedLink) {
+  //  storable.feedLink = entry.feedLink;
+  //}
+
+  if(entry.faviconURLString) {
+    storable.faviconURLString = entry.faviconURLString;
   }
 
   // feedTitle was previously sanitized because it was copied over from the
