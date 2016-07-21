@@ -15,7 +15,7 @@
     "scripts": [
       "/lib/parse-srcset.js",
       "/src/alarms.js",
-      "/src/archive-entries.js",
+      "/src/archive-service.js",
       "/src/db.js",
       "/src/equals-ignore-case.js",
       "/src/favicon-cache.js",
@@ -28,7 +28,7 @@
       "/src/logging-service.js",
       "/src/on-badge-click.js",
       "/src/on-installed.js",
-      "/src/poll.js",
+      "/src/polling-service.js",
       "/src/replace-html.js",
       "/src/resolve-document-urls.js",
       "/src/resolve-url.js",
