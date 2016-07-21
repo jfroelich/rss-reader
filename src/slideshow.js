@@ -328,6 +328,8 @@ SlideShow.toURLTrapped = function(urlString) {
 
 SlideShow.showNextSlide = function() {
 
+  //console.debug('Showing next slide');
+
   // In order to move to the next slide, we want to conditionally load
   // additional slides. Look at the number of unread slides and conditionally
   // append new slides before going to the next slide.
@@ -419,6 +421,8 @@ SlideShow.keydownTimer = null;
 //event.target is body
 //event.currentTarget is window
 SlideShow.onKeyDown = function(event) {
+
+  //console.debug('Key down:', event.code);
 
   const KEY_CODES = {
     'SPACE': 32,
