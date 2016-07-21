@@ -25,6 +25,7 @@
       "/src/fetch-entry-document.js",
       "/src/filter-control-characters.js",
       "/src/filter-tracking-images.js",
+      "/src/logging-service.js",
       "/src/on-badge-click.js",
       "/src/on-installed.js",
       "/src/poll.js",
