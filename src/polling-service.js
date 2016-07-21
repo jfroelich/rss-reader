@@ -4,9 +4,9 @@
 
 'use strict';
 
-const FeedPoller = Object.create(null);
+const PollingService = Object.create(null);
 
-FeedPoller.start = function() {
+PollingService.start = function() {
   console.log('Starting poll...');
 
   const context = {
@@ -14,9 +14,18 @@ FeedPoller.start = function() {
     'connection': null
   };
 
+  const faviconCache = new FaviconCache('favicon-cache');
+  faviconCache.log = new LoggingService();
+  faviconCache.log.level = LoggingService.LEVEL_INFO;
+
+  const faviconService = new FaviconService();
+  faviconService.cache = faviconCache;
+  faviconService.log = new LoggingService();
+  faviconService.log.level = LoggingService.LEVEL_INFO;
+
   if('onLine' in navigator && !navigator.onLine) {
     console.log('Polling canceled because offline');
-    FeedPoller.onMaybePollCompleted(context);
+    PollingService.onMaybePollCompleted(context);
     return 'Offline';
   }
 
@@ -25,7 +34,7 @@ FeedPoller.start = function() {
   if('NO_POLL_METERED' in localStorage && navigator.connection &&
     navigator.connection.metered) {
     console.log('Polling canceled on metered connection');
-    FeedPoller.onMaybePollCompleted(context);
+    PollingService.onMaybePollCompleted(context);
     return 'Metered connection';
   }
 
@@ -42,7 +51,7 @@ FeedPoller.start = function() {
         db.open(onOpenDatabase);
       } else {
         console.log('Polling canceled because not idle');
-        FeedPoller.onMaybePollCompleted(context);
+        PollingService.onMaybePollCompleted(context);
       }
     } else {
       db.open(onOpenDatabase);
@@ -52,7 +61,7 @@ FeedPoller.start = function() {
   function onOpenDatabase(event) {
     if(event.type !== 'success') {
       console.debug(event);
-      FeedPoller.onMaybePollCompleted(context);
+      PollingService.onMaybePollCompleted(context);
       return;
     }
 
@@ -66,13 +75,13 @@ FeedPoller.start = function() {
 
   function onOpenFeedsCursor(event) {
     if(event.type !== 'success') {
-      FeedPoller.onMaybePollCompleted(context);
+      PollingService.onMaybePollCompleted(context);
       return;
     }
 
     const cursor = event.target.result;
     if(!cursor) {
-      FeedPoller.onMaybePollCompleted(context);
+      PollingService.onMaybePollCompleted(context);
       return;
     }
 
@@ -90,7 +99,7 @@ FeedPoller.start = function() {
   function onFetchFeed(localFeed, fetchEvent) {
     if(fetchEvent.type !== 'load') {
       context.pendingFeedsCount--;
-      FeedPoller.onMaybePollCompleted(context);
+      PollingService.onMaybePollCompleted(context);
       return;
     }
 
@@ -99,35 +108,27 @@ FeedPoller.start = function() {
       localFeed.dateLastModified.getTime() ===
       remoteFeed.dateLastModified.getTime()) {
       context.pendingFeedsCount--;
-      FeedPoller.onMaybePollCompleted(context);
+      PollingService.onMaybePollCompleted(context);
       return;
     }
 
     if(remoteFeed.link) {
-      const faviconCache = new FaviconCache('favicon-cache');
-      faviconCache.log = new LoggingService();
-      faviconCache.log.level = LoggingService.LEVEL_ERROR;
-
-      const faviconService = new FaviconService();
-      faviconService.cache = faviconCache;
-      faviconService.log = new LoggingService();
-      faviconService.log.level = LoggingService.LEVEL_ERROR;
-
-      const boundOnFetchFavicon = onFetchFavicon.bind(null, localFeed,
+      const boundOnFetchFavicon = onLookupFavicon.bind(null, localFeed,
         remoteFeed);
+      // remoteFeed.link is a URL object
       faviconService.lookup(remoteFeed.link, null, boundOnFetchFavicon);
     } else {
-      onFetchFavicon(localFeed, remoteFeed, null);
+      onLookupFavicon(localFeed, remoteFeed, null);
     }
   }
 
-  function onFetchFavicon(localFeed, remoteFeed, faviconURL) {
+  function onLookupFavicon(localFeed, remoteFeed, faviconURL) {
     if(faviconURL) {
       remoteFeed.faviconURLString = faviconURL.href;
     }
 
-    const mergedFeed = FeedPoller.createMergedFeed(localFeed, remoteFeed);
-    const onUpdateFeed = FeedPoller.onUpdateFeed.bind(null, context,
+    const mergedFeed = PollingService.createMergedFeed(localFeed, remoteFeed);
+    const onUpdateFeed = PollingService.onUpdateFeed.bind(null, context,
       remoteFeed.entries, mergedFeed);
     db.updateFeed(context.connection, mergedFeed, onUpdateFeed);
   }
@@ -136,7 +137,7 @@ FeedPoller.start = function() {
   return 'Polling started...';
 };
 
-FeedPoller.createMergedFeed = function(localFeed, remoteFeed) {
+PollingService.createMergedFeed = function(localFeed, remoteFeed) {
 
   // TODO: sanitization isn't the responsibility of merging, this is a mixture
   // of purposes. separate out into two functions.
@@ -211,7 +212,7 @@ FeedPoller.createMergedFeed = function(localFeed, remoteFeed) {
   return outputFeed;
 };
 
-FeedPoller.onMaybePollCompleted = function(context) {
+PollingService.onMaybePollCompleted = function(context) {
   // If there is still pending work we are not actually done
   if(context.pendingFeedsCount) {
     return;
@@ -235,30 +236,30 @@ FeedPoller.onMaybePollCompleted = function(context) {
 // However, entries is still the fetched entries array, which contains
 // URL objects.
 // NOTE: because it is the stored feed, it also contains sanitized values
-FeedPoller.onUpdateFeed = function(context, entries, feed, event) {
+PollingService.onUpdateFeed = function(context, entries, feed, event) {
   if(event.type !== 'success') {
     context.pendingFeedsCount--;
-    FeedPoller.onMaybePollCompleted(context);
+    PollingService.onMaybePollCompleted(context);
     return;
   }
 
   if(!entries.length) {
     context.pendingFeedsCount--;
-    FeedPoller.onMaybePollCompleted(context);
+    PollingService.onMaybePollCompleted(context);
     return;
   }
 
   let entriesProcessed = 0;
   for(let i = 0, len = entries.length; i < len; i++) {
     let entry = entries[i];
-    FeedPoller.processEntry(context, feed, entry, onEntryProcessed);
+    PollingService.processEntry(context, feed, entry, onEntryProcessed);
   }
 
   function onEntryProcessed(optionalAddEntryEvent) {
     entriesProcessed++;
     if(entriesProcessed === entries.length) {
       context.pendingFeedsCount--;
-      FeedPoller.onMaybePollCompleted(context);
+      PollingService.onMaybePollCompleted(context);
       updateBadgeUnreadCount(context.connection);
     }
   }
@@ -266,7 +267,7 @@ FeedPoller.onUpdateFeed = function(context, entries, feed, event) {
 
 // TODO: do I want to check if any of the entry's URLs exist, or just its
 // most recent one?
-FeedPoller.processEntry = function(context, feed, entry, callback) {
+PollingService.processEntry = function(context, feed, entry, callback) {
 
   // If an entry doesn't have a URL, technically I could have allowed it in
   // a scheme were I display text only entries. But I have decided to not allow
@@ -280,7 +281,6 @@ FeedPoller.processEntry = function(context, feed, entry, callback) {
   // Grab the last url in the entry's urls array.
   // entry.urls contains URL objects, not strings
   const entryURL = entry.urls[entry.urls.length - 1];
-
   db.findEntryWithURL(context.connection, entryURL, onFindEntryWithURL);
 
   function onFindEntryWithURL(event) {
@@ -320,7 +320,7 @@ FeedPoller.processEntry = function(context, feed, entry, callback) {
     if(event.type !== 'success') {
       console.debug('request error', event.type, event.requestURL.href);
 
-      FeedPoller.addEntry(context.connection, entry, callback);
+      PollingService.addEntry(context.connection, entry, callback);
       return;
     }
 
@@ -336,7 +336,7 @@ FeedPoller.processEntry = function(context, feed, entry, callback) {
       entry.content = contentString;
     }
 
-    FeedPoller.addEntry(context.connection, entry, callback);
+    PollingService.addEntry(context.connection, entry, callback);
   }
 };
 
@@ -345,16 +345,13 @@ FeedPoller.processEntry = function(context, feed, entry, callback) {
 // Entry.toSerializable, or this should be Entry.add
 // TODO: actually the vast majority of this should be handled by something
 // called FeedCache or FeedStorageService, it should be able to do all of that
-FeedPoller.addEntry = function(connection, entry, callback) {
+PollingService.addEntry = function(connection, entry, callback) {
   const storable = Object.create(null);
 
   // entry.feedLink is a URL string, not an object, because it was copied
   // over from the serialized feed object that was the input to db.updateFeed
   // feedLink was previously sanitized, because it was converted to a URL
   // and back to a string
-  //if(entry.feedLink) {
-  //  storable.feedLink = entry.feedLink;
-  //}
 
   if(entry.faviconURLString) {
     storable.faviconURLString = entry.faviconURLString;
