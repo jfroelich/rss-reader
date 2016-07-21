@@ -1,7 +1,7 @@
 
 'use strict';
 
-const faviconTestCache = new FaviconCache('test-favicon-cache');
+const faviconTestCache = new FaviconTestCache('test-favicon-cache');
 const faviconTestService = new FaviconService();
 faviconTestService.timeout = 5000;
 faviconTestService.cache = faviconTestCache;
