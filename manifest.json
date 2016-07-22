@@ -34,7 +34,6 @@
       "/src/resolve-document-urls.js",
       "/src/resolve-url.js",
       "/src/rewrite-url.js",
-      "/src/serialize-srcset.js",
       "/src/transform-lazily-loaded-images.js",
       "/src/truncate-html-string.js",
       "/src/update-badge-unread-count.js"
