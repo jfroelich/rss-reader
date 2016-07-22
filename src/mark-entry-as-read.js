@@ -4,6 +4,9 @@
 
 'use strict';
 
+// TODO: once I create FeedStorageService or whatever it is called, this should
+// just be a member function of that module
+
 function markEntryAsRead(entryId, callback) {
 
   const outputEvent = Object.create(null);
