@@ -6,13 +6,13 @@
 
 class ArchiveService {
   constructor() {
-    this.log = new DummyLoggingService();
-    this.expiresAfterMillis = 10 * 24 * 60 * 60 * 1000;
+    this.log = new LoggingService();
+    const tenDaysInMillis = 10 * 24 * 60 * 60 * 1000;
+    this.expiresAfterMillis = tenDaysInMillis;
   }
 
   start() {
     this.log.log('Running archive service ...');
-
     const context = {
       'numEntriesProcessed': 0,
       'numEntriesChanged': 0,
@@ -28,7 +28,7 @@ class ArchiveService {
   }
 
   onConnect(context, event) {
-    this.log.debug('Connected to database');
+    this.log.debug('Archive service connected to database');
     // Exit early if we failed to connect (e.g. blocked)
     if(event.type !== 'success') {
       this.log.error(event);
@@ -37,12 +37,16 @@ class ArchiveService {
     }
 
     const connection = event.target.result;
-    db.openReadUnarchivedEntryCursor(connection,
-      this.handleCursor.bind(this, context));
+    const transaction = connection.transaction('entry', 'readwrite');
+    const store = transaction.objectStore('entry');
+    const index = store.index('archiveState-readState');
+    const keyPath = [db.EntryFlags.UNARCHIVED, db.EntryFlags.READ];
+    const request = index.openCursor(keyPath);
+    const boundHandleCursor = this.handleCursor.bind(this, context);
+    request.onsuccess = boundHandleCursor;
+    request.onerror = boundHandleCursor;
   }
 
-  // Check if the entry at the current cursor position should be archived, and
-  // if so, archive it, and then proceed to the next entry.
   handleCursor(context, event) {
     const request = event.target;
     const cursor = request.result;
@@ -55,20 +59,20 @@ class ArchiveService {
     context.numEntriesProcessed++;
     const entry = cursor.value;
 
-    this.log.debug('Archive service processing entry with url',
-      entry.urls[entry.urls.length - 1]);
+    const entryURLString = entry.urls[entry.urls.length - 1];
+
+    this.log.debug('Archive service examining', entryURLString);
 
     // Temporary support for legacy entry storage
     if(!entry.dateCreated && entry.created) {
       entry.dateCreated = new Date(entry.created);
-      this.log.debug('Found legacy entry date', entry.created,
+      this.log.debug('Archive service found legacy entry date', entry.created,
         entry.dateCreated);
     }
 
-    let ageInMillis = this.getEntryAge(context, entry);
+    let ageInMillis = this.getEntryAge(context.currentDate, entry);
     if(ageInMillis > this.expiresAfterMillis) {
-      this.log.debug('Archiving entry with url',
-        entry.urls[entry.urls.length - 1]);
+      this.log.debug('Archiving service archiving', entryURLString);
       const archivedEntry = ArchiveService.getArchivableEntry(entry);
       // This is async, we don't wait for it to complete
       cursor.update(archivedEntry);
@@ -81,12 +85,12 @@ class ArchiveService {
   // If we do not know when the entry was created, then assume it is
   // archivable. Fake the age as whatever will always trigger the condition
   // to archive.
-  getEntryAge(context, entry) {
+  getEntryAge(currentDate, entry) {
     let ageInMillis = 0;
     if(entry.dateCreated) {
-      ageInMillis = context.currentDate - entry.dateCreated;
+      ageInMillis = currentDate - entry.dateCreated;
     } else {
-      this.log.debug('Unknown entry date created', entry);
+      this.log.debug('Archive service unknown entry date created', entry);
       ageInMillis = this.expiresAfterMillis + 1;
     }
     return ageInMillis;
@@ -100,7 +104,6 @@ class ArchiveService {
     chrome.runtime.sendMessage(message);
   }
 
-  // Creates the new object to store in place of the older object
   static getArchivableEntry(inputEntry) {
     const outputEntry = {};
     outputEntry.id = inputEntry.id;
