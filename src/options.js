@@ -542,7 +542,12 @@ OptionsPage.onSubscriptionFormSubmit = function(event) {
   } else {
     // Show search results
     OptionsPage.showElement(progressElement);
-    searchGoogleFeeds(queryString, 5000, OptionsPage.onDiscoverComplete);
+
+    const searchService = new GoogleFeedsService();
+    searchService.timeoutInMillis = 5000;
+    searchService.log = new LoggingService(LoggingService.LEVEL_LOG);
+
+    searchService.search(queryString, OptionsPage.onDiscoverComplete);
   }
 
   // Indicate that the normal form submit behavior should be prevented

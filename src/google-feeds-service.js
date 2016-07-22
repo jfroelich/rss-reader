@@ -4,121 +4,122 @@
 
 'use strict';
 
-// TODO: rename to GoogleFeedsService, and use an object
-
-// Sends an async request to Google to search for feeds that correspond to
-// a general text query.
 // Google formally deprecated this service. Around December 1st, 2015, I
 // first noticed that the queries stopped working. However, I have witnessed
 // the service occassionally work thereafter.
-function searchGoogleFeeds(queryString, timeoutMillis, callback) {
-  const BASE_URL_STRING =
-    'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
-  const requestURL = new URL(BASE_URL_STRING +
-    encodeURIComponent(queryString));
 
-  const TITLE_MAX_LENGTH = 200;
-  const CONTENT_SNIPPET_MAX_LENGTH = 400;
+class GoogleFeedsService {
 
-  const request = new XMLHttpRequest();
-  request.timeout = timeoutMillis;
-  request.onerror = onResponse;
-  request.ontimeout = onResponse;
-  request.onabort = onResponse;
-  request.onload = onResponse;
-  request.open('GET', requestURL.href, true);
-  request.responseType = 'json';
-  request.send();
+  constructor() {
+    this.log = new LoggingService();
+    this.timeoutInMillis = 5000;
+    this.baseURLString =
+      'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
+    this.titleMaxLength = 200;
+    this.contentSnippetMaxLength = 400;
+    this.truncateReplacementString = '...';
+  }
 
-  function onResponse(event) {
-    const request = event.target;
-    const response = request.response;
-    const responseEvent = Object.create(null);
-    responseEvent.type = event.type;
+  search(queryString, callback) {
+    const urlString = this.baseURLString + encodeURIComponent(queryString);
+    this.log.debug('GoogleFeedsService: requesting', urlString);
+    const isAsync = true;
+    const boundOnResponse = this.onResponse.bind(this, callback);
+    const request = new XMLHttpRequest();
+    request.timeout = this.timeoutInMillis;
+    request.onerror = boundOnResponse;
+    request.ontimeout = boundOnResponse;
+    request.onabort = boundOnResponse;
+    request.onload = boundOnResponse;
+    request.open('GET', urlString, isAsync);
+    request.responseType = 'json';
+    request.send();
+  }
 
-    if(event.type !== 'load') {
-      if(response) {
-        responseEvent.message = response.responesDetails;
-      }
-      callback(responseEvent);
-      return;
-    }
+  onResponse(callback, event) {
+    this.log.debug('GoogleFeedsService: received response');
+    const responseEvent = {
+      'type': event.type,
+      'status': event.target.status
+    };
 
-    if(!response) {
+    if(!event.target.response) {
+      this.log.error('GoogleFeedsService: response undefined');
       responseEvent.type = 'noresponse';
       callback(responseEvent);
       return;
     }
 
-    const data = response.responseData;
+    if(event.type !== 'load') {
+      this.log.error('GoogleFeedsService: response error',
+        event.target.response.responseDetails);
+      responseEvent.message = event.target.response.responseDetails;
+      callback(responseEvent);
+      return;
+    }
 
+    const data = event.target.response.responseData;
     if(!data) {
-      responseEvent.type = 'nodata';
-      responseEvent.message = response.responseDetails;
+      this.log.error('GoogleFeedsService: undefined data',
+        event.target.response.responseDetails);
+      responseEvent.message = event.target.response.responseDetails;
       callback(responseEvent);
       return;
     }
 
     responseEvent.queryString = data.query || '';
-    responseEvent.entries = [];
+    responseEvent.entries = this.filterEntries(data.entries || []);
+    callback(responseEvent);
+  }
 
-    const entries = data.entries || [];
-    const seenURLs = Object.create(null);
+  filterEntries(entries) {
+    const seenURLs = new Set();
+    const outputEntries = [];
 
-    for(let i = 0, len = entries.length; i < len; i++) {
-      let entry = entries[i];
+    for(let entry of entries) {
       if(!entry.url) {
         continue;
       }
 
-      let entryURL = toURLTrapped(entry.url);
+      let entryURL = this.toURLTrapped(entry.url);
       if(!entryURL) {
         continue;
       }
 
       let normalizedURLString = entryURL.href;
-      if(normalizedURLString in seenURLs) {
+      if(seenURLs.has(normalizedURLString)) {
         continue;
       }
+      seenURLs.add(normalizedURLString);
 
-      seenURLs[normalizedURLString] = 1;
-
-      // Overwrite the url string property as a URL object
       entry.url = entryURL;
 
-      // TODO: provide entry.link as URL object
-
-      // TODO: is entry.title ever undefined?
       if(entry.title) {
         entry.title = filterControlCharacters(entry.title);
         entry.title = replaceHTML(entry.title, '');
-        entry.title = truncateHTMLString(entry.title, TITLE_MAX_LENGTH);
+        entry.title = truncateHTMLString(entry.title, this.titleMaxLength);
       }
 
       if(entry.contentSnippet) {
         entry.contentSnippet = filterControlCharacters(entry.contentSnippet);
-        entry.contentSnippet = filterBreakruleTags(entry.contentSnippet);
+        entry.contentSnippet = this.filterBreakruleTags(entry.contentSnippet);
         entry.contentSnippet = truncateHTMLString(entry.contentSnippet,
-          CONTENT_SNIPPET_MAX_LENGTH, '...');
+          this.contentSnippetMaxLength, this.truncateReplacementString);
       }
 
-      responseEvent.entries.push(entry);
+      outputEntries.push(entry);
     }
 
-    callback(responseEvent);
+    return outputEntries;
   }
 
-  function toURLTrapped(urlString) {
+  toURLTrapped(urlString) {
     try {
       return new URL(urlString);
     } catch(exception) {}
   }
 
-  // TODO: rather than this function existing, would it be nicer if
-  // HTMLUtils.stripTags accepted a list of tags to ignore or to only consider,
-  // and then the caller could just pass in br to that function as the only tag
-  // to consider
-  function filterBreakruleTags(inputString) {
-    return inputString.replace(/<br\s*>/gi, ' ');
+  filterBreakruleTags(inputString) {
+    return inputString && inputString.replace(/<br\s*>/gi, ' ');
   }
 }
