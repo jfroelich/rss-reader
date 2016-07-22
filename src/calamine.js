@@ -14,19 +14,6 @@
 // set of data, where nodes represent pieces of content. Each node is given
 // a score indicating how likely the node contains content. Then the node
 // with the highest score is found, and non-intersecting nodes are removed.
-// TODO: support annotation
-// TODO: deal with titles remaining in content as a special case.
-// TODO: instead of an absolute number, consider treating scores as
-// probabilities
-// TODO: maybe deprecate the fast method. It has too many edge cases. Instead,
-// just heavily bias the signature-matching elements.
-// TODO: maybe return to using identified blocks intead of trying to
-// find the best root. I am getting too many
-// false positives. While the best root is very accurate, there is a lot of
-// junk included along with it.
-// TODO: maybe instead of pruning doc I can append into a fragment and then
-// just return the fragment?
-
 const Calamine = Object.create(null);
 
 Calamine.removeBoilerplate = function(document) {
@@ -56,19 +43,13 @@ Calamine.deriveTextBias = function(element) {
 // are descendants of the element.
 // This assumes that the HTML is generally well-formed. Specifically it assumes
 // no anchor nesting.
-// NOTE: not using reduce due to poor readability and performance issues
-// TODO: maybe just inline this in the caller.
 Calamine.deriveAnchorLength = function(element) {
   const anchors = element.querySelectorAll('a[href]');
   let anchorLength = 0;
-
-  // Not using for .. of due to profiling error NotOptimized TryCatchStatement
-  //for(let anchor of anchors) {
   for(let i = 0, len = anchors.length; i < len; i++) {
     let anchor = anchors[i];
     anchorLength = anchorLength + anchor.textContent.trim().length;
   }
-
   return anchorLength;
 };
 
@@ -130,8 +111,6 @@ Calamine.deriveAncestorBias = function(element) {
 // If one of these tokens is found in an attribute value of an element,
 // these bias the element's boilerplate score. A higher score means that the
 // element is more likely to be content. This list was created empirically.
-// TODO: if I stop using the fast path of find-signature and I return to
-// individually weighting blocks, I should expand this list.
 Calamine.ATTRIBUTE_TOKEN_WEIGHTS = {
   'ad': -500,
   'ads': -500,
@@ -167,27 +146,12 @@ Calamine.ATTRIBUTE_TOKEN_WEIGHTS = {
 
 // Computes a bias for an element based on the values of some of its
 // attributes.
-// TODO: Profiling shows a warning about 'Unsupported use of compound let
-// statement' again. Revert to using var for now. Figure out why.
 Calamine.deriveAttributeBias = function(element) {
-
-  // As much as I would look to organize the statements of this function into
-  // smaller helper functions, this is a hotspot, so I have inlined
-  // everything. Maybe I can return at a later time and try again once V8
-  // stabilizes more.
-  // TODO: maybe id and name do not need to be tokenized. I think the spec
-  // declares that such values should not contain spaces. On the other hand,
-  // what about hyphen or underscore separated terms? If they do not need to
-  // be tokenized they could become the first two entries in the token array.
-  // I guess it is a question of comparing the desired accuracy to the desired
-  // performance.
-
   // Start by merging the element's interesting attribute values into a single
   // string in preparation for tokenization.
   // Accessing attributes by property is faster than using getAttribute. It
   // turns out that getAttribute is horribly slow in Chrome. I have not figured
-  // out why, and I have not figured out a workaround. I forgot to record the
-  // testing or cite here.
+  // out why, and I have not figured out a workaround.
   var valuesArray = [element.id, element.name, element.className];
 
   // Array.prototype.join implicitly filters null/undefined values so we do not
@@ -197,12 +161,10 @@ Calamine.deriveAttributeBias = function(element) {
   // If the element did not have attribute values, then the valuesString
   // variable will only contain whitespace or some negligible token so we exit
   // early to minimize the work done.
+  // TODO: maybe I want to declare total bias before this and return total
+  // bias here so that I am more consistent about the value returned and its
+  // type, so it serves as a better reminder.
   if(valuesString.length < 3) {
-    // TODO: maybe this should return 0 if coercion is the caller's
-    // responsibility.
-    // TODO: maybe I want to declare total bias before this and return total
-    // bias here so that I am more consistent about the value returned and its
-    // type, so it serves as a better reminder.
     return 0.0;
   }
 
@@ -213,10 +175,6 @@ Calamine.deriveAttributeBias = function(element) {
   // scales better with larger strings that the JS engine scales with function
   // calls.
   var lowerCaseValuesString = valuesString.toLowerCase();
-
-  // Tokenize the values into word-like tokens
-  // TODO: why am i even seeing empty strings or whitespace only strings?
-  // Think of a way to write the split that excludes these if possible.
   var tokenArray = lowerCaseValuesString.split(/[\s\-_0-9]+/g);
 
   // Now add up the bias of each distinct token. Previously this was done in
@@ -224,23 +182,11 @@ Calamine.deriveAttributeBias = function(element) {
   // and the second pass summing up the distinct token biases. I seem to get
   // better performance without creating an intermediate array.
 
-  // Avoid calculating loop length per iteration as it is invariant
   var tokenArrayLength = tokenArray.length;
-
-  // The set of seen token strings. I am using a plain object instead of a
-  // Set due to performance issues.
   var seenTokenSet = Object.create(null);
-
   var totalBias = 0;
   var bias = 0;
   var token;
-
-  // TODO: maybe keeping track of the number of tokens added to 'seen' would
-  // help reduce the number of calls to 'in'? Similarly, I could also check
-  // if i > 0. Because the token will never be in seen in the first iteration.
-  // But would that improve the perf? How expensive is 'in'?
-
-  // NOTE: not using for .. of due to performance issues
 
   for(var i = 0; i < tokenArrayLength; i++) {
     token = tokenArray[i];
@@ -250,22 +196,18 @@ Calamine.deriveAttributeBias = function(element) {
       continue;
     }
 
-    // Check if the token is a duplicate
     if(token in seenTokenSet) {
       continue;
     } else {
-      // Let later iterations know of the dup
       seenTokenSet[token] = 1;
     }
 
-    // Adjust total bias if there is a bias for the token
     bias = Calamine.ATTRIBUTE_TOKEN_WEIGHTS[token];
     if(bias) {
       totalBias += bias;
     }
   }
 
-  // TODO: maybe type coercion is responsibility of the caller
   return 0.0 + totalBias;
 };
 
@@ -294,12 +236,6 @@ Calamine.findHighestScoringElement = function(document) {
     Calamine.CANDIDATE_SELECTOR);
   const listLength = elementNodeList.length;
   let highScore = 0.0;
-
-  // NOTE: I am getting a NotOptimized TryCatchStatement when using
-  // for .. of. This makes it difficult to profile so I am not using for
-  // of for the time being.
-  //for(let element of elementNodeList) {
-
   for(let i = 0, len = elementNodeList.length; i < len; i++) {
     let element = elementNodeList[i];
 
@@ -324,59 +260,6 @@ Calamine.findHighestScoringElement = function(document) {
   }
 
   return bestElement;
-};
-
-// DEPRECATED
-// NOTE: we cannot use just article, because it screws up on certain pages.
-// This may be a symptom of a larger problem of trying to use a fast path.
-// For example, in https://news.vice.com/article/north-korea-claims-new-
-// missile-engine-puts-us-within-nuclear-strike-range, it finds
-// the one <article> element that isn't the desired best element.
-// For now I am using this ugly hack to avoid that one error case. I really
-// do not like this and it suggests the entire fast-path thing should be
-// scrapped.
-Calamine.SIGNATURES = [
-  'article:not([class*="ad"])',
-  '.hentry',
-  '.entry-content',
-  '#article',
-  '.articleText',
-  '.articleBody',
-  '#articleBody',
-  '.article_body',
-  '.articleContent',
-  '.full-article',
-  '.repository-content',
-  '[itemprop="articleBody"]',
-  '[role="article"]',
-  'DIV[itemtype="http://schema.org/Article"]',
-  'DIV[itemtype="http://schema.org/BlogPosting"]',
-  'DIV[itemtype="http://schema.org/Blog"]',
-  'DIV[itemtype="http://schema.org/NewsArticle"]',
-  'DIV[itemtype="http://schema.org/TechArticle"]',
-  'DIV[itemtype="http://schema.org/ScholarlyArticle"]',
-  'DIV[itemtype="http://schema.org/WebPage"]',
-  '#WNStoryBody'
-];
-
-// DEPRECATED
-// Looks for the first single occurrence of an element matching
-// one of the signatures
-Calamine.findSignature = function(document) {
-  const bodyElement = document.body;
-  if(!bodyElement) {
-    return;
-  }
-
-  // If a signature occurs once in a document, then return it. Use whatever
-  // signature matches first in the order defined in Calamine.SIGNATURES
-  for(let i = 0, len = Calamine.SIGNATURES.length; i < len; i++) {
-    let signature = Calamine.SIGNATURES[i];
-    const elements = bodyElement.querySelectorAll(signature);
-    if(elements.length === 1) {
-      return elements[0];
-    }
-  }
 };
 
 // Derives a bias for an element based on child images
