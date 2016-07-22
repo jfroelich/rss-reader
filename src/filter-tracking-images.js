@@ -9,6 +9,7 @@
 function filterTrackingImages(document) {
   const images = selectTrackingImages(document);
   for(let i = 0, len = images.length; i < len; i++) {
+    console.debug('Removing', images[i].outerHTML);
     images[i].remove();
   }
 }
@@ -20,10 +21,14 @@ function selectTrackingImages(document) {
   const SELECTOR = [
     'img[src^="http://b.scorecardresearch.com"]',
     'img[src^="https://b.scorecardresearch.com"]',
+    'img[src^="http://sb.scorecardresearch.com"]',
+    'img[src^="https://sb.scorecardresearch.com"]',
     'img[src^="http://pagead2.googlesyndication.com"]',
     'img[src^="https://pagead2.googlesyndication.com"]',
     'img[src^="http://pubads.g.doubleclick.net"]',
-    'img[src^="https://pubads.g.doubleclick.net"]'
+    'img[src^="https://pubads.g.doubleclick.net"]',
+    'img[src^="http://me.effectivemeasure.net"]',
+    'img[src^="https://me.effectivemeasure.net"]'
   ].join(',');
   return document.querySelectorAll(SELECTOR);
 }
