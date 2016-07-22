@@ -8,7 +8,7 @@ class FaviconCache {
   constructor(name) {
     this.name = name || 'favicon-cache';
     this.version = 1;
-    this.log = new DummyLoggingService();
+    this.log = new LoggingService();
   }
 
   // Request a cache connection. Passes the connection to the callback. If an
