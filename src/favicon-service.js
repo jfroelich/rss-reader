@@ -11,7 +11,7 @@ class FaviconService {
     this.minLength = 50;
     this.maxLength = 10000;
     this.expiresAfterMillis = 1000 * 60 * 60 * 24 * 30;
-    this.log = new DummyLoggingService();
+    this.log = new LoggingService();
   }
 
   lookup(url, document, callback) {
@@ -67,7 +67,7 @@ class FaviconService {
           boundOnFindByURL);
       }
     } else if(context.document) {
-      const iconURL = this.findIconURLInDocument(document, url);
+      const iconURL = this.findIconURLInDocument(context.document, url);
       if(iconURL) {
         this.log.error('FaviconService: connection error, found icon in ' +
           'prefetched document', context.url.href, iconURL.href);
@@ -257,16 +257,16 @@ class FaviconService {
   onLookupOrigin(context, redirectURL, entry) {
     const originIconURL = new URL(context.url.origin + '/favicon.ico');
     if(entry && !this.isEntryExpired(entry)) {
-      this.log.debug('FaviconService: found origin in cache');
+      this.log.debug('FaviconService: cache hit', context.url.origin,
+        entry.iconURLString);
       const iconURL = new URL(entry.iconURLString);
       if(context.url.href !== context.url.origin) {
         this.cache.addEntry(context.connection, context.url, iconURL);
       }
-
       context.connection.close();
       context.callback(iconURL);
     } else {
-      this.log.debug('FaviconService: did not find origin in cache');
+      this.log.debug('FaviconService: cache miss', context.url.origin);
       this.sendImageHeadRequest(originIconURL,
         this.onFetchOriginIcon.bind(this, context, redirectURL));
     }
@@ -310,7 +310,7 @@ class FaviconService {
       }
     } else {
       const originURL = new URL(context.url.origin);
-      this.log.debug('FaviconService: fetch error',
+      this.log.debug('FaviconService: fetch error', event.target.status,
         context.url.origin + '/favicon.ico');
       if(context.connection) {
         this.cache.deleteByPageURL(context.connection, context.url);
