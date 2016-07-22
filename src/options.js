@@ -546,8 +546,7 @@ OptionsPage.onSubscriptionFormSubmit = function(event) {
     const searchService = new GoogleFeedsService();
     searchService.timeoutInMillis = 5000;
     searchService.log = new LoggingService(LoggingService.LEVEL_LOG);
-
-    searchService.search(queryString, OptionsPage.onDiscoverComplete);
+    searchService.search(queryString, OptionsPage.onSearchGoogleFeeds);
   }
 
   // Indicate that the normal form submit behavior should be prevented
@@ -582,7 +581,7 @@ OptionsPage.onDiscoverSubscriptionButtonClick = function(event) {
   OptionsPage.showSubscriptionPreview(feedURL);
 };
 
-OptionsPage.onDiscoverComplete = function(event) {
+OptionsPage.onSearchGoogleFeeds = function(event) {
 
   const query = event.queryString;
   const results = event.entries;
@@ -596,26 +595,20 @@ OptionsPage.onDiscoverComplete = function(event) {
   if(event.type !== 'load') {
     console.debug(event);
     OptionsPage.hideElement(progressElement);
-    OptionsPage.showErrorMessage(
-      'An error occurred when searching for feeds: ' + event);
+    OptionsPage.showErrorMessage('An error occurred when searching for feeds',
+      event.message);
     return;
   }
 
   // Searching completed, hide the progress
   OptionsPage.hideElement(progressElement);
-
-  // If there were no search results, hide the results list and show the
-  // no results element and exit early.
-  // TODO: is < 1 really the best test? Wouldn't !results.length be more
-  // appropriate and simpler?
-  if(results.length < 1) {
+  if(!results.length) {
     OptionsPage.hideElement(resultsList);
     OptionsPage.showElement(noResultsElement);
     return;
   }
 
   if(OptionsPage.isElementVisible(resultsList)) {
-    // Clear the previous results
     resultsList.innerHTML = '';
   } else {
     OptionsPage.hideElement(noResultsElement);
@@ -624,19 +617,13 @@ OptionsPage.onDiscoverComplete = function(event) {
 
   // Add an initial count of the number of feeds as one of the feed list items
   const listItem = document.createElement('li');
-  // TODO: consider using Javascript's new template feature here
   listItem.textContent = 'Found ' + results.length + ' results.';
   resultsList.appendChild(listItem);
-
-
 
   // Lookup the favicons for the results
   const faviconService = new FaviconService();
   const faviconCache = new FaviconCache('favicon-cache');
   faviconService.cache = faviconCache;
-
-  // Restrict to 1 second. It is better for now to have search results show
-  // up quickly.
   faviconService.timeout = 1000;
 
   let faviconResultsProcessed = 0;
@@ -698,9 +685,6 @@ OptionsPage.onDiscoverComplete = function(event) {
 // results when searching for feeds.
 OptionsPage.createSearchResult = function(feedResult) {
   const item = document.createElement('li');
-
-
-
   const buttonSubscribe = document.createElement('button');
   buttonSubscribe.value = feedResult.url.href;
   buttonSubscribe.title = feedResult.url.href;
@@ -761,10 +745,8 @@ OptionsPage.buttonUnsubscribeOnClick = function(event) {
   // is sent by the unsubscribe function instead of the callback, but it is
   // obviously faster and more local to use the callback, so I chose to go with
   // that. I am not entirely confident this is the best decision.
-
   // TODO: this should probably be responsible for creating the connection and
   // then passing it to Subscription.remove, not Subscription.remove
-
   Subscription.remove(feedId, OptionsPage.onUnsubscribe);
 
   function onUnsubscribe(event) {
