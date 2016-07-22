@@ -831,7 +831,10 @@ OptionsPage.importOPMLButtonOnClick = function(event) {
     }
 
     const connection = event.target.result;
-    importOPMLFiles(connection, uploader.files, onImportCompleted);
+
+    const importService = new OPMLImportService();
+    importService.log.level = LoggingService.LEVEL_LOG;
+    importService.start(connection, uploader.files, onImportCompleted);
   }
 
   function onImportCompleted() {
@@ -841,7 +844,9 @@ OptionsPage.importOPMLButtonOnClick = function(event) {
 };
 
 OptionsPage.exportOPMLButtonOnClick = function(event) {
-  exportOPML();
+  const exportService = new OPMLExportService();
+  exportService.log.level = LoggingService.LEVEL_LOG;
+  exportService.start('Subscriptions', 'subscriptions.xml');
 };
 
 OptionsPage.initSubscriptionsSection = function() {
@@ -855,7 +860,7 @@ OptionsPage.initSubscriptionsSection = function() {
       return;
     }
 
-    // TODO: use getAllFeeds, and design it so it takes a parameter
+    // TODO: use getFeeds, and design it so it takes a parameter
     // that indicates sorting preference
 
     const connection = event.target.result;
