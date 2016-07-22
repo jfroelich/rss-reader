@@ -5,8 +5,8 @@
 'use strict';
 
 class LoggingService {
-  constructor() {
-    this.level = LoggingService.LEVEL_DEBUG;
+  constructor(level) {
+    this.level = level || LoggingService.LEVEL_OFF;
   }
 
   debug(...args) {
@@ -37,7 +37,6 @@ class LoggingService {
     }
   }
 
-  // Show a message for any logging level other than off
   error(...args) {
     if(this.level > LoggingService.LEVEL_OFF) {
       console.error.apply(console, args);
@@ -51,11 +50,3 @@ LoggingService.LEVEL_LOG = 2;
 LoggingService.LEVEL_INFO = 3;
 LoggingService.LEVEL_WARN = 4;
 LoggingService.LEVEL_ERROR = 5;
-
-class DummyLoggingService extends LoggingService {
-  debug () {}
-  log () {}
-  info() {}
-  warn() {}
-  error() {}
-}
