@@ -22,9 +22,9 @@
       "/src/favicon-service.js",
       "/src/feed-parser.js",
       "/src/fetch-feed.js",
-      "/src/fetch-entry-document.js",
       "/src/filter-control-characters.js",
       "/src/filter-tracking-images.js",
+      "/src/image-dimensions-service.js",
       "/src/logging-service.js",
       "/src/on-badge-click.js",
       "/src/on-installed.js",
@@ -35,7 +35,6 @@
       "/src/resolve-url.js",
       "/src/rewrite-url.js",
       "/src/serialize-srcset.js",
-      "/src/set-image-element-dimensions.js",
       "/src/transform-lazily-loaded-images.js",
       "/src/truncate-html-string.js",
       "/src/update-badge-unread-count.js"
