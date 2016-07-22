@@ -5,25 +5,14 @@
 'use strict';
 
 class PollingService {
-  constructor() {
-
+  constructor(faviconService, imageDimensionsService) {
     this.log = new LoggingService();
-    this.log.level = LoggingService.LEVEL_INFO;
-
-    const faviconCache = new FaviconCache('favicon-cache');
-    faviconCache.log = new LoggingService();
-    faviconCache.log.level = LoggingService.LEVEL_INFO;
-
-    const faviconService = new FaviconService();
-    faviconService.cache = faviconCache;
-    faviconService.log = new LoggingService();
-    faviconService.log.level = LoggingService.LEVEL_INFO;
+    this.idlePeriodInSeconds = 30;
+    this.fetchFeedTimeoutMillis = 10 * 1000;
+    this.fetchEntryTimeoutMillis = 15 * 1000;
 
     this.faviconService = faviconService;
-
-    this.idlePeriodInSeconds = 30;
-    this.fetchFeedTimeout = 10 * 1000;
-    this.fetchEntryTimeoutMillis = 15 * 1000;
+    this.imageDimensionsService = imageDimensionsService;
   }
 
   start() {
@@ -34,17 +23,16 @@ class PollingService {
       'connection': null
     };
 
-    if('onLine' in navigator && !navigator.onLine) {
+    if(this.isOffline()) {
       this.log.debug('Polling canceled because offline');
       this.onMaybePollCompleted(context);
+      return;
     }
 
-    // NOTE: untested because connection.navigator is undefined
-    // NOTE: dead branch because currently no way to set NO_POLL_METERED
-    if('NO_POLL_METERED' in localStorage && navigator.connection &&
-      navigator.connection.metered) {
-      this.log.debug('Polling canceled on metered connection');
-      PollingService.onMaybePollCompleted(context);
+    if(this.isMeteredConnection()) {
+      this.log.debug('Polling canceled because metered connection');
+      this.onMaybePollCompleted(context);
+      return;
     }
 
     if('ONLY_POLL_IF_IDLE' in localStorage) {
@@ -53,6 +41,15 @@ class PollingService {
     } else {
       db.open(this.onOpenDatabase.bind(this, context));
     }
+  }
+
+  isOffline() {
+    return 'onLine' in navigator && !navigator.onLine;
+  }
+
+  isMeteredConnection() {
+    return 'NO_POLL_METERED' in localStorage && navigator.connection &&
+      navigator.connection.metered;
   }
 
   onQueryIdleState(context, idleState) {
@@ -103,7 +100,7 @@ class PollingService {
       requestURL.href);
 
     const excludeEntries = false;
-    fetchFeed(requestURL, this.fetchFeedTimeout, excludeEntries,
+    fetchFeed(requestURL, this.fetchFeedTimeoutMillis, excludeEntries,
       this.onFetchFeed.bind(this, context, feed));
     cursor.continue();
   }
@@ -132,11 +129,16 @@ class PollingService {
       return;
     }
 
-    const prefetchedDocument = null;
-    const faviconStartingURL = remoteFeed.link ? remoteFeed.link :
-      remoteFeed.urls[remoteFeed.urls.length - 1];
-    this.faviconService.lookup(faviconStartingURL, prefetchedDocument,
-      this.onLookupFeedFavicon.bind(this, context, localFeed, remoteFeed));
+
+    if(this.faviconService) {
+      const prefetchedDocument = null;
+      const faviconStartingURL = remoteFeed.link ? remoteFeed.link :
+        remoteFeed.urls[remoteFeed.urls.length - 1];
+      this.faviconService.lookup(faviconStartingURL, prefetchedDocument,
+        this.onLookupFeedFavicon.bind(this, context, localFeed, remoteFeed));
+    } else {
+      this.onLookupFeedFavicon(context, localFeed, remoteFeed, null);
+    }
   }
 
   onLookupFeedFavicon(context, localFeed, remoteFeed, faviconURL) {
@@ -332,8 +334,7 @@ class PollingService {
         return;
       }
 
-      fetchEntryDocument(entryURL, this.fetchEntryTimeoutMillis,
-        boundOnFetchEntryDocument);
+      this.fetchEntryDocument(entryURL, boundOnFetchEntryDocument);
     }
 
     function onFetchEntryDocument(event) {
@@ -446,5 +447,94 @@ class PollingService {
     }
 
     db.addEntry(connection, storable, callback);
+  }
+
+  fetchEntryDocument(requestURL, callback) {
+    this.log.debug('PollingService: fetching', requestURL.href);
+    if(this.isResistantURL(requestURL)) {
+      callback({'type': 'resistanturl', 'requestURL': requestURL});
+      return;
+    }
+
+    const path = requestURL.pathname;
+    if(path && path.length > 5 && /\.pdf$/i.test(path)) {
+      callback({'type': 'pdfurl', 'requestURL': requestURL});
+      return;
+    }
+
+    const boundOnResponse = onResponse.bind(this);
+    const fetchRequest = new XMLHttpRequest();
+    fetchRequest.timeout = this.fetchEntryTimeoutMillis;
+    fetchRequest.ontimeout = boundOnResponse;
+    fetchRequest.onerror = boundOnResponse;
+    fetchRequest.onabort = boundOnResponse;
+    fetchRequest.onload = boundOnResponse;
+    const async = true;
+    fetchRequest.open('GET', requestURL.href, async);
+    fetchRequest.responseType = 'document';
+    fetchRequest.setRequestHeader('Accept', 'text/html');
+    fetchRequest.send();
+
+    function onResponse(event) {
+      const outputEvent = {
+        'requestURL': requestURL
+      };
+
+      if(event.type !== 'load') {
+        outputEvent.type = event.type;
+        callback(outputEvent);
+        return;
+      }
+
+      const document = event.target.responseXML;
+      if(!document) {
+        outputEvent.type = 'undefineddocument';
+        callback(outputEvent);
+        return;
+      }
+
+      outputEvent.type = 'success';
+      const responseURL = new URL(event.target.responseURL);
+      outputEvent.responseURL = responseURL;
+      transformLazilyLoadedImages(document);
+      this.filterSourcelessImages(document);
+      resolveDocumentURLs(document, responseURL);
+      filterTrackingImages(document);
+      if(this.imageDimensionsService) {
+        this.imageDimensionsService.modifyDocument(document,
+          onSetImageDimensions.bind(this, outputEvent));
+      } else {
+        outputEvent.responseXML = document;
+        callback(event);
+      }
+    }
+
+    function onSetImageDimensions(event, document) {
+      event.responseXML = document;
+      callback(event);
+    }
+  }
+
+  filterSourcelessImages(document) {
+    const images = document.querySelectorAll('img');
+    for(let i = 0, len = images.length; i < len; i++) {
+      let image = images[i];
+      if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
+        image.remove();
+        break;
+      }
+    }
+  }
+
+  isResistantURL(url) {
+    const blacklist = [
+      'productforums.google.com',
+      'groups.google.com',
+      'www.forbes.com',
+      'forbes.com'
+    ];
+
+    // hostname getter normalizes url part to lowercase
+    return blacklist.includes(url.hostname);
   }
 }
