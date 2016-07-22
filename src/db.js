@@ -121,21 +121,6 @@ db.upgrade = function(event) {
   }
 };
 
-// TODO: rather than store these functions here, these functions belong in
-// the libaries they relate to, I shouldn't have them all here. Or maybe
-// i should have libraries like feedstore, entrystore, and have these functions
-// be members. i need to think more about the single responsibility principle
-
-db.openReadUnarchivedEntryCursor = function(connection, callback) {
-  const transaction = connection.transaction('entry', 'readwrite');
-  const store = transaction.objectStore('entry');
-  const index = store.index('archiveState-readState');
-  const keyPath = [db.EntryFlags.UNARCHIVED, db.EntryFlags.READ];
-  const request = index.openCursor(keyPath);
-  request.onsuccess = callback;
-  request.onerror = callback;
-};
-
 db.openUnreadUnarchivedEntryCursor = function(connection, callback) {
   const transaction = connection.transaction('entry');
   const entryStore = transaction.objectStore('entry');
