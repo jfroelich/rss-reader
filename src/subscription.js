@@ -7,6 +7,9 @@
 const Subscription = Object.create(null);
 
 Subscription.add = function(connection, url, callback) {
+
+  const feedCache = new FeedCache();
+
   console.debug('Subscribing to', url.href);
   const fetchTimeoutMillis = 10 * 1000;
   const excludeEntries = true;
@@ -22,7 +25,8 @@ Subscription.add = function(connection, url, callback) {
     }
 
     const storableFeed = createStorableFeed(event.feed);
-    db.addFeed(connection, storableFeed, onAddFeed.bind(null, storableFeed));
+    feedCache.addFeed(connection, storableFeed,
+      onAddFeed.bind(null, storableFeed));
   }
 
   function createStorableFeed(inputFeed) {
@@ -132,6 +136,9 @@ Subscription.add = function(connection, url, callback) {
 // even fail, do I want to be deleting the feed or its entries first when
 // using two separate transactions or does the order not matter?
 Subscription.remove = function(feedId, callback) {
+
+  const feedCache = new FeedCache();
+
   let entriesRemoved = 0;
 
   // Although I generally do not guard against invalid inputs, I do so here
@@ -146,7 +153,7 @@ Subscription.remove = function(feedId, callback) {
     return;
   }
 
-  db.open(onOpenDatabase);
+  feedCache.open(onOpenDatabase);
 
   function onOpenDatabase(event) {
     if(event.type !== 'success') {
@@ -161,7 +168,7 @@ Subscription.remove = function(feedId, callback) {
     }
 
     const connection = event.target.result;
-    db.openEntryCursorForFeed(connection, feedId, deleteNextEntry);
+    feedCache.openEntryCursorForFeed(connection, feedId, deleteNextEntry);
   }
 
   function deleteNextEntry(event) {
@@ -188,7 +195,7 @@ Subscription.remove = function(feedId, callback) {
 
   function onRemoveEntries(event) {
     const connection = event.target.db;
-    db.deleteFeedById(connection, feedId, onComplete);
+    feedCache.deleteFeedById(connection, feedId, onComplete);
   }
 
   function onComplete(event) {

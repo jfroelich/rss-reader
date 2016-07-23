@@ -5,16 +5,19 @@
 'use strict';
 
 function updateBadgeUnreadCount(connection, callback) {
+
+  const feedCache = new FeedCache();
+
   if(connection) {
-    db.countUnreadEntries(connection, onCountUnreadEntries);
+    feedCache.countUnreadEntries(connection, onCountUnreadEntries);
   } else {
-    db.open(onOpenDatabase);
+    feedCache.open(onOpenDatabase);
   }
 
   function onOpenDatabase(event) {
     if(event.type === 'success') {
       const connection = event.target.result;
-      db.countUnreadEntries(connection, onCountUnreadEntries);
+      feedCache.countUnreadEntries(connection, onCountUnreadEntries);
     } else {
       console.debug(event);
       chrome.browserAction.setBadgeText({'text': '?'});

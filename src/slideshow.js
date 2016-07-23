@@ -103,11 +103,14 @@ SlideShow.maybeAppendSlides = function() {
 };
 
 SlideShow.appendSlides = function(oncomplete, isFirst) {
+
+  const feedCache = new FeedCache();
+
   let counter = 0;
   const limit = 5;
   const offset = SlideShow.countUnreadSlides();
   let notAdvanced = true;
-  db.open(onOpenDatabase);
+  feedCache.open(onOpenDatabase);
 
   function onOpenDatabase(event) {
     if(event.type !== 'success') {
@@ -117,7 +120,7 @@ SlideShow.appendSlides = function(oncomplete, isFirst) {
     }
 
     const connection = event.target.result;
-    db.openUnreadUnarchivedEntryCursor(connection, onOpenCursor);
+    feedCache.openUnreadUnarchivedEntryCursor(connection, onOpenCursor);
   }
 
   function onOpenCursor(event) {

@@ -9,10 +9,12 @@
 
 function markEntryAsRead(entryId, callback) {
 
+  const cache = new FeedCache();
+
   const outputEvent = Object.create(null);
   outputEvent.entryId = entryId;
 
-  db.open(onOpenDatabase);
+  cache.open(onOpenDatabase);
 
   function onOpenDatabase(event) {
     if(event.type !== 'success') {
@@ -25,7 +27,7 @@ function markEntryAsRead(entryId, callback) {
     }
 
     const connection = event.target.result;
-    db.getEntryById(connection, entryId, onOpenCursor);
+    cache.getEntryById(connection, entryId, onOpenCursor);
   }
 
   function onOpenCursor(event) {
@@ -41,7 +43,7 @@ function markEntryAsRead(entryId, callback) {
     }
 
     const entry = cursor.value;
-    if(entry.readState === db.EntryFlags.READ) {
+    if(entry.readState === FeedCache.EntryFlags.READ) {
       outputEvent.type = 'alreadyreaderror';
       if(callback) {
         callback(outputEvent);
@@ -49,7 +51,7 @@ function markEntryAsRead(entryId, callback) {
       return;
     }
 
-    entry.readState = db.EntryFlags.READ;
+    entry.readState = FeedCache.EntryFlags.READ;
     const dateNow = new Date();
     entry.dateRead = dateNow;
     entry.dateUpdated = dateNow;

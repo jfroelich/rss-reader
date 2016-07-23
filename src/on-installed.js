@@ -9,13 +9,16 @@
 // time?
 // TODO: are there any other settings I should be installing?
 function onInstalled(event) {
-  console.log('Installing extension ...');
-  db.open(onOpenDatabase);
 
-  function onOpenDatabase(event) {
+  const cache = new FeedCache();
+
+  console.log('Installing extension ...');
+  cache.open(onOpenCache);
+
+  function onOpenCache(event) {
 
     if(event.type !== 'success') {
-      console.log('Install error: Unable to connect to indexedDB');
+      console.log('Install error: Unable to connect to cache');
       return;
     }
 

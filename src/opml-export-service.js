@@ -7,6 +7,7 @@
 class OPMLExportService {
   constructor() {
     this.log = new LoggingService();
+    this.cache = new FeedCache();
   }
 
   start(title, fileName) {
@@ -17,7 +18,7 @@ class OPMLExportService {
       'connection': null
     };
 
-    db.open(this.onOpenDatabase.bind(this, context));
+    this.cache.open(this.onOpenDatabase.bind(this, context));
   }
 
   onOpenDatabase(context, event) {
@@ -27,7 +28,7 @@ class OPMLExportService {
     }
 
     context.connection = event.target.result;
-    db.openFeedsCursor(context.connection,
+    this.cache.openFeedsCursor(context.connection,
       this.onCursorAdvance.bind(this, context));
   }
 

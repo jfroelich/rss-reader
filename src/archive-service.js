@@ -9,6 +9,7 @@ class ArchiveService {
     this.log = new LoggingService();
     const tenDaysInMillis = 10 * 24 * 60 * 60 * 1000;
     this.expiresAfterMillis = tenDaysInMillis;
+    this.cache = new FeedCache();
   }
 
   start() {
@@ -19,7 +20,7 @@ class ArchiveService {
       'currentDate': new Date()
     };
 
-    db.open(this.onConnect.bind(this, context));
+    this.cache.open(this.onConnect.bind(this, context));
   }
 
   onComplete(context) {
@@ -40,7 +41,8 @@ class ArchiveService {
     const transaction = connection.transaction('entry', 'readwrite');
     const store = transaction.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const keyPath = [db.EntryFlags.UNARCHIVED, db.EntryFlags.READ];
+    const keyPath = [FeedCache.EntryFlags.UNARCHIVED,
+      FeedCache.EntryFlags.READ];
     const request = index.openCursor(keyPath);
     const boundHandleCursor = this.handleCursor.bind(this, context);
     request.onsuccess = boundHandleCursor;
@@ -110,7 +112,7 @@ class ArchiveService {
     outputEntry.feed = inputEntry.feed;
     outputEntry.urls = inputEntry.urls;
     outputEntry.dateArchived = new Date();
-    outputEntry.archiveState = db.EntryFlags.ARCHIVED;
+    outputEntry.archiveState = FeedCache.EntryFlags.ARCHIVED;
     if(inputEntry.dateRead) {
       outputEntry.dateRead = inputEntry.dateRead;
     }

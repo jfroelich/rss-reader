@@ -11,6 +11,8 @@ class PollingService {
     this.fetchFeedTimeoutMillis = 10 * 1000;
     this.fetchEntryTimeoutMillis = 15 * 1000;
 
+    this.feedCache = new FeedCache();
+
     this.faviconService = faviconService;
     this.imageDimensionsService = imageDimensionsService;
   }
@@ -39,7 +41,7 @@ class PollingService {
       chrome.idle.queryState(this.idlePeriodInSeconds,
         this.onQueryIdleState.bind(this, context));
     } else {
-      db.open(this.onOpenDatabase.bind(this, context));
+      this.feedCache.open(this.onOpenDatabase.bind(this, context));
     }
   }
 
@@ -55,13 +57,13 @@ class PollingService {
   onQueryIdleState(context, idleState) {
     if('ONLY_POLL_IF_IDLE' in localStorage) {
       if(idleState === 'locked' || idleState === 'idle') {
-        db.open(this.onOpenDatabase.bind(this, context));
+        this.feedCache.open(this.onOpenDatabase.bind(this, context));
       } else {
         this.log.debug('Polling canceled because not idle');
         this.onMaybePollCompleted(context);
       }
     } else {
-      db.open(this.onOpenDatabase.bind(this, context));
+      this.feedCache.open(this.onOpenDatabase.bind(this, context));
     }
   }
 
@@ -76,7 +78,8 @@ class PollingService {
 
     const connection = event.target.result;
     context.connection = connection;
-    db.openFeedsCursor(connection, this.onOpenFeedsCursor.bind(this, context));
+    this.feedCache.openFeedsCursor(connection,
+      this.onOpenFeedsCursor.bind(this, context));
   }
 
   onOpenFeedsCursor(context, event) {
@@ -157,7 +160,8 @@ class PollingService {
     const mergedFeed = this.createMergedFeed(localFeed, remoteFeed);
     const boundOnUpdateFeed = this.onUpdateFeed.bind(this, context,
       remoteFeed.entries, mergedFeed);
-    db.updateFeed(context.connection, mergedFeed, boundOnUpdateFeed);
+    this.feedCache.updateFeed(context.connection, mergedFeed,
+      boundOnUpdateFeed);
   }
 
   // TODO: sanitization isn't the responsibility of merging, this is a
@@ -318,7 +322,7 @@ class PollingService {
     // Grab the last url in the entry's urls array.
     // entry.urls contains URL objects, not strings
     const entryURL = entry.urls[entry.urls.length - 1];
-    db.findEntryWithURL(context.connection, entryURL,
+    this.feedCache.findEntryWithURL(context.connection, entryURL,
       onFindEntryWithURL.bind(this));
 
     const boundOnFetchEntryDocument = onFetchEntryDocument.bind(this);
@@ -385,7 +389,7 @@ class PollingService {
     const storable = {};
 
     // entry.feedLink is a URL string, not an object, because it was copied
-    // over from the serialized feed object that was the input to db.updateFeed
+    // over from the serialized feed object that was the input to updateFeed
     // feedLink was previously sanitized, because it was converted to a URL
     // and back to a string
 
@@ -409,8 +413,8 @@ class PollingService {
       return url.href;
     });
 
-    storable.readState = db.EntryFlags.UNREAD;
-    storable.archiveState = db.EntryFlags.UNARCHIVED;
+    storable.readState = FeedCache.EntryFlags.UNREAD;
+    storable.archiveState = FeedCache.EntryFlags.UNARCHIVED;
 
     // TODO: sanitize
     if(entry.author) {
@@ -446,7 +450,7 @@ class PollingService {
       storable.content = entry.content;
     }
 
-    db.addEntry(connection, storable, callback);
+    this.feedCache.addEntry(connection, storable, callback);
   }
 
   fetchEntryDocument(requestURL, callback) {

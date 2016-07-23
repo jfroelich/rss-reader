@@ -356,9 +356,12 @@ OptionsPage.startSubscription = function(url) {
   OptionsPage.hideSubscriptionPreview();
   OptionsPage.showSubscriptionMonitor();
   OptionsPage.updateSubscriptionMonitorMessage('Subscribing to' + url.href);
-  db.open(onOpenDatabase);
 
-  function onOpenDatabase(event) {
+  const feedCache = new FeedCache();
+
+  feedCache.open(onCacheConnect);
+
+  function onCacheConnect(event) {
     if(event.type !== 'success') {
       OptionsPage.hideSubscriptionMonitor(function() {
         OptionsPage.showErrorMessage('Unable to connect to database');
@@ -399,12 +402,14 @@ OptionsPage.startSubscription = function(url) {
 
 OptionsPage.populateFeedDetails = function(feedId) {
 
+  const feedCache = new FeedCache();
+
   if(!feedId) {
     console.error('Invalid feedId');
     return;
   }
 
-  db.open(onOpen);
+  feedCache.open(onOpen);
 
   function onOpen(event) {
     if(event.type !== 'success') {
@@ -415,7 +420,7 @@ OptionsPage.populateFeedDetails = function(feedId) {
 
     // Lookup the feed by its id
     const connection = event.target.result;
-    db.findFeedById(connection, feedId, onFindFeedById);
+    feedCache.findFeedById(connection, feedId, onFindFeedById);
   }
 
   function onFindFeedById(event) {
@@ -821,7 +826,10 @@ OptionsPage.exportOPMLButtonOnClick = function(event) {
 
 OptionsPage.initSubscriptionsSection = function() {
   let feedCount = 0;
-  db.open(onOpenDatabase);
+
+  const feedCache = new FeedCache();
+
+  feedCache.open(onOpenDatabase);
 
   function onOpenDatabase(event) {
     if(event.type !== 'success') {
@@ -834,7 +842,7 @@ OptionsPage.initSubscriptionsSection = function() {
     // that indicates sorting preference
 
     const connection = event.target.result;
-    db.openFeedsCursorSortedByTitle(connection, handleCursor);
+    feedCache.openFeedsCursorSortedByTitle(connection, handleCursor);
   }
 
   function handleCursor(event) {

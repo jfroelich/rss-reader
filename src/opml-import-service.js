@@ -10,6 +10,7 @@ class OPMLImportService {
 
   constructor() {
     this.log = new LoggingService();
+    this.cache = new FeedCache();
   }
 
   start(callback) {
@@ -42,7 +43,7 @@ class OPMLImportService {
       return;
     }
 
-    db.open(this.onOpenDatabase.bind(this, context));
+    this.cache.open(this.onOpenDatabase.bind(this, context));
   }
 
   onOpenDatabase(context, event) {
@@ -80,7 +81,7 @@ class OPMLImportService {
   }
 
   isMimeTypeXML(typeString) {
-    return /^\s*(application|text)\s*\/\s*xml/i.test(typeString);
+    return typeString.toLowerCase().includes('xml');
   }
 
   onFileProcessed(context) {
@@ -201,7 +202,7 @@ class OPMLImportService {
       }
 
       this.log.debug('OPMLImportService: adding feed', url.href);
-      db.addFeed(context.connection, feed, boundOnAddFeed);
+      this.cache.addFeed(context.connection, feed, boundOnAddFeed);
     }
 
     this.onFileProcessed(context);
