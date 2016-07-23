@@ -807,40 +807,10 @@ OptionsPage.buttonUnsubscribeOnClick = function(event) {
 // TODO: give immediate visual feedback the import started
 // TODO: switch to a different section of the options ui on complete?
 OptionsPage.importOPMLButtonOnClick = function(event) {
-  const uploader = document.createElement('input');
-  uploader.setAttribute('type', 'file');
-  OptionsPage.hideElement(uploader);
-  uploader.onchange = onUploaderChange;
-  document.body.appendChild(uploader);
-  uploader.click();
-
-  function onUploaderChange(event) {
-    uploader.removeEventListener('change', onUploaderChange);
-    if(!uploader.files || !uploader.files.length) {
-      onImportCompleted();
-      return;
-    }
-    db.open(onOpen);
-  }
-
-  function onOpen(event) {
-    if(event.type !== 'success') {
-      // TODO: show an error message
-      console.debug(event);
-      return;
-    }
-
-    const connection = event.target.result;
-
-    const importService = new OPMLImportService();
-    importService.log.level = LoggingService.LEVEL_LOG;
-    importService.start(connection, uploader.files, onImportCompleted);
-  }
-
-  function onImportCompleted() {
-    uploader.remove();
-    console.info('Completed opml import');
-  }
+  console.debug('Received import opml button click');
+  const importService = new OPMLImportService();
+  importService.log.level = LoggingService.LEVEL_LOG;
+  importService.start(function() {});
 };
 
 OptionsPage.exportOPMLButtonOnClick = function(event) {

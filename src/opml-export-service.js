@@ -43,6 +43,7 @@ class OPMLExportService {
 
   onGetAllFeeds(context) {
     const opmlDoc = this.createDocument(context.title);
+
     for(let feed of context.feeds) {
       this.appendFeed(opmlDoc, feed);
     }
@@ -94,13 +95,26 @@ class OPMLExportService {
     docsElement.textContent = 'http://dev.opml.org/spec2.html';
     headElement.appendChild(docsElement);
 
+    const bodyElement = doc.createElement('body');
+    doc.documentElement.appendChild(bodyElement);
+
     return doc;
   }
 
   appendFeed(document, feed) {
     let outlineElement = document.createElement('outline');
     outlineElement.setAttribute('type', feed.type || 'rss');
-    outlineElement.setAttribute('xmlUrl', feed.url);
+
+    // Only store the terminal url
+    if(feed.urls && feed.urls.length) {
+      outlineElement.setAttribute('xmlUrl',
+        feed.urls[feed.urls.length - 1]);
+    } else {
+      this.log.debug('OPMLExportService: no urls found for feed',
+        JSON.stringify(feed));
+    }
+
+
     if(feed.title) {
       outlineElement.setAttribute('text', feed.title);
       outlineElement.setAttribute('title', feed.title || '');
@@ -111,12 +125,11 @@ class OPMLExportService {
     if(feed.link) {
       outlineElement.setAttribute('htmlUrl', feed.link);
     }
-
-    let bodyElement = document.body;
-    if(!bodyElement) {
-      bodyElement = document.createElement('body');
-      document.documentElement.appendChild(bodyElement);
+    const bodyElement = document.querySelector('body');
+    if(bodyElement) {
+      bodyElement.appendChild(outlineElement);
+    } else {
+      this.log.error('OPMLExportService: no body element');
     }
-    bodyElement.appendChild(outlineElement);
   }
 }
