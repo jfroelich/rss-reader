@@ -12,23 +12,22 @@ class FeedCache {
     this.log.level = LoggingService.LEVEL_ERROR;
   }
 
-  // todo: instead of passing back event, just pass back connection
   open(callback) {
     this.log.debug('FeedCache: connecting to', this.name);
     const request = indexedDB.open(this.name, this.version);
-    request.onupgradeneeded = this.upgrade.bind(this);
-    request.onsuccess = function(event) {
+    request.addEventListener('upgradeneeded', this.upgrade.bind(this));
+    request.addEventListener('success', (event) => {
       this.log.debug('FeedCache: connected to', this.name);
       callback(event.target.result);
-    }.bind(this);
-    request.onerror = function(event) {
+    });
+    request.addEventListener('error', (event) => {
       this.log.error(event);
       callback();
-    }.bind(this);
-    request.onblocked = function(event) {
+    });
+    request.addEventListener('blocked', (event) => {
       this.log.error(event);
       callback();
-    }.bind(this);
+    });
   }
 
   upgrade(event) {
