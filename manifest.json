@@ -16,6 +16,7 @@
       "/lib/parse-srcset.js",
       "/src/alarms.js",
       "/src/archive-service.js",
+      "/src/badge-update-service.js",
       "/src/equals-ignore-case.js",
       "/src/favicon-cache.js",
       "/src/favicon-service.js",
@@ -35,8 +36,7 @@
       "/src/resolve-url.js",
       "/src/rewrite-url.js",
       "/src/transform-lazily-loaded-images.js",
-      "/src/truncate-html-string.js",
-      "/src/update-badge-unread-count.js"
+      "/src/truncate-html-string.js"
     ]
   },
   "options_page": "options.html",
