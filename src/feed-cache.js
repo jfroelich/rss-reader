@@ -221,11 +221,6 @@ class FeedCache {
   }
 }
 
-// TODO: i think flags should be revised. I should do
-// UNREAD_UNARCHIVED = 1
-// READ_UNARCHIVED = 2
-// READ_ARCHIVED = 3
-// and use only 1 field. I don't even need a compound index
 FeedCache.EntryFlags = {
   UNREAD: 0,
   READ: 1,
