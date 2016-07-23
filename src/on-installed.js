@@ -10,19 +10,7 @@
 // TODO: are there any other settings I should be installing?
 function onInstalled(event) {
   console.log('Installing extension ...');
-  const cache = new FeedCache();
-  cache.open(onOpenCache);
-
-  function onOpenCache(connection) {
-    if(connection) {
-      updateBadgeUnreadCount(connection,
-        onUpdateBadgeUnreadCount.bind(null, connection));
-    }
-  }
-
-  function onUpdateBadgeUnreadCount(connection) {
-    connection.close();
-  }
+  updateBadgeUnreadCount();
 }
 
 chrome.runtime.onInstalled.addListener(onInstalled);

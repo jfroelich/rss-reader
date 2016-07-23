@@ -4,15 +4,10 @@
 
 'use strict';
 
-function updateBadgeUnreadCount(connection, callback) {
+function updateBadgeUnreadCount(callback) {
 
   const feedCache = new FeedCache();
-
-  if(connection) {
-    feedCache.countUnreadEntries(connection, onCountUnreadEntries);
-  } else {
-    feedCache.open(onOpenCache);
-  }
+  feedCache.open(onOpenCache);
 
   function onOpenCache(connection) {
     if(connection) {

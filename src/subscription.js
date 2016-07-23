@@ -195,8 +195,7 @@ Subscription.remove = function(feedId, callback) {
   }
 
   function onComplete(event) {
-    const connection = event.target.db;
-    updateBadgeUnreadCount(connection);
+    updateBadgeUnreadCount();
 
     const subscriptionEvent = {
       'type': 'success',

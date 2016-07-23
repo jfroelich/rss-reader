@@ -295,7 +295,7 @@ class PollingService {
       if(entriesProcessed === entries.length) {
         context.pendingFeedsCount--;
         this.onMaybePollCompleted(context);
-        updateBadgeUnreadCount(context.connection);
+        updateBadgeUnreadCount();
       }
     }
   }

@@ -53,8 +53,7 @@ function markEntryAsRead(entryId, callback) {
 
     cursor.update(entry);
 
-    const connection = request.transaction.db;
-    updateBadgeUnreadCount(connection);
+    updateBadgeUnreadCount();
 
     outputEvent.type = 'success';
     if(callback) {
