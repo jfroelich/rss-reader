@@ -155,20 +155,16 @@ Subscription.remove = function(feedId, callback) {
 
   feedCache.open(onOpenDatabase);
 
-  function onOpenDatabase(event) {
-    if(event.type !== 'success') {
-      const subscriptionEvent = {
-        'type': 'database_connection_error',
+  function onOpenDatabase(connection) {
+    if(connection) {
+      feedCache.openEntryCursorForFeed(connection, feedId, deleteNextEntry);
+    } else {
+      callback({
+        'type': 'connection-error',
         'feedId': feedId,
         'entriesRemoved': 0
-      };
-
-      callback(subscriptionEvent);
-      return;
+      });
     }
-
-    const connection = event.target.result;
-    feedCache.openEntryCursorForFeed(connection, feedId, deleteNextEntry);
   }
 
   function deleteNextEntry(event) {

@@ -357,20 +357,20 @@ OptionsPage.startSubscription = function(url) {
   OptionsPage.showSubscriptionMonitor();
   OptionsPage.updateSubscriptionMonitorMessage('Subscribing to' + url.href);
 
-  const feedCache = new FeedCache();
+  // TODO: it should be responsibility of subscription service to deal
+  // with cache connection, not here
 
+  const feedCache = new FeedCache();
   feedCache.open(onCacheConnect);
 
-  function onCacheConnect(event) {
-    if(event.type !== 'success') {
+  function onCacheConnect(connection) {
+    if(connection) {
+      Subscription.add(connection, url, onSubscribe);
+    } else {
       OptionsPage.hideSubscriptionMonitor(function() {
         OptionsPage.showErrorMessage('Unable to connect to database');
       });
-      return;
     }
-
-    const connection = event.target.result;
-    Subscription.add(connection, url, onSubscribe);
   }
 
   function onSubscribe(event) {
@@ -401,33 +401,28 @@ OptionsPage.startSubscription = function(url) {
 // NOTE: feedId should be an integer
 
 OptionsPage.populateFeedDetails = function(feedId) {
-
-  const feedCache = new FeedCache();
-
   if(!feedId) {
+    const feedCache = new FeedCache();
+    feedCache.open(onOpen);
+  } else {
+    // TODO: show an error message?
     console.error('Invalid feedId');
-    return;
   }
 
-  feedCache.open(onOpen);
-
-  function onOpen(event) {
-    if(event.type !== 'success') {
+  function onOpen(connection) {
+    if(connection) {
+      feedCache.findFeedById(connection, feedId, onFindFeedById);
+    } else {
       // TODO: show an error message?
-      console.debug('Database connection error');
-      return;
+      console.error('Database connection error');
     }
-
-    // Lookup the feed by its id
-    const connection = event.target.result;
-    feedCache.findFeedById(connection, feedId, onFindFeedById);
   }
 
   function onFindFeedById(event) {
     const feed = event.target.result;
     if(!feed) {
       // TODO: show an error message?
-      console.debug('No feed found for feed id:', feedId);
+      console.error('No feed found for feed id:', feedId);
       return;
     }
 
@@ -828,21 +823,17 @@ OptionsPage.initSubscriptionsSection = function() {
   let feedCount = 0;
 
   const feedCache = new FeedCache();
-
   feedCache.open(onOpenDatabase);
 
-  function onOpenDatabase(event) {
-    if(event.type !== 'success') {
+  function onOpenDatabase(connection) {
+    if(connection) {
+      // TODO: use getFeeds, and design it so it takes a parameter
+      // that indicates sorting preference
+      feedCache.openFeedsCursorSortedByTitle(connection, handleCursor);
+    } else {
       // TODO: react to error
       console.debug(event);
-      return;
     }
-
-    // TODO: use getFeeds, and design it so it takes a parameter
-    // that indicates sorting preference
-
-    const connection = event.target.result;
-    feedCache.openFeedsCursorSortedByTitle(connection, handleCursor);
   }
 
   function handleCursor(event) {

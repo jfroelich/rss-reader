@@ -9,15 +9,26 @@ class FeedCache {
     this.name = 'reader';
     this.version = 20;
     this.log = new LoggingService();
+    this.log.level = LoggingService.LEVEL_ERROR;
   }
 
   // todo: instead of passing back event, just pass back connection
   open(callback) {
+    this.log.debug('FeedCache: connecting to', this.name);
     const request = indexedDB.open(this.name, this.version);
     request.onupgradeneeded = this.upgrade.bind(this);
-    request.onsuccess = callback;
-    request.onerror = callback;
-    request.onblocked = callback;
+    request.onsuccess = function(event) {
+      this.log.debug('FeedCache: connected to', this.name);
+      callback(event.target.result);
+    }.bind(this);
+    request.onerror = function(event) {
+      this.log.error(event);
+      callback();
+    }.bind(this);
+    request.onblocked = function(event) {
+      this.log.error(event);
+      callback();
+    }.bind(this);
   }
 
   upgrade(event) {

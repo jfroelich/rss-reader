@@ -21,15 +21,12 @@ class OPMLExportService {
     this.cache.open(this.onOpenDatabase.bind(this, context));
   }
 
-  onOpenDatabase(context, event) {
-    if(event.type !== 'success') {
-      this.log.error('OPMLExportService: connection error');
-      return;
+  onOpenDatabase(context, connection) {
+    if(connection) {
+      context.connection = connection;
+      this.cache.openFeedsCursor(connection,
+        this.onCursorAdvance.bind(this, context));
     }
-
-    context.connection = event.target.result;
-    this.cache.openFeedsCursor(context.connection,
-      this.onCursorAdvance.bind(this, context));
   }
 
   onCursorAdvance(context, event) {

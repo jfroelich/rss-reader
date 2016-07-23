@@ -112,15 +112,13 @@ SlideShow.appendSlides = function(oncomplete, isFirst) {
   let notAdvanced = true;
   feedCache.open(onOpenDatabase);
 
-  function onOpenDatabase(event) {
-    if(event.type !== 'success') {
+  function onOpenDatabase(connection) {
+    if(connection) {
+      feedCache.openUnreadUnarchivedEntryCursor(connection, onOpenCursor);
+    } else {
       // TODO: show an error?
       console.debug(event);
-      return;
     }
-
-    const connection = event.target.result;
-    feedCache.openUnreadUnarchivedEntryCursor(connection, onOpenCursor);
   }
 
   function onOpenCursor(event) {

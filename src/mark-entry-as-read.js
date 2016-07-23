@@ -9,16 +9,12 @@
 
 function markEntryAsRead(entryId, callback) {
 
+  const outputEvent = {'entryId': entryId};
   const cache = new FeedCache();
-
-  const outputEvent = Object.create(null);
-  outputEvent.entryId = entryId;
-
   cache.open(onOpenDatabase);
 
-  function onOpenDatabase(event) {
-    if(event.type !== 'success') {
-      console.debug(event);
+  function onOpenDatabase(connection) {
+    if(!connection) {
       outputEvent.type = 'connectionerror';
       if(callback) {
         callback(outputEvent);
@@ -26,7 +22,6 @@ function markEntryAsRead(entryId, callback) {
       return;
     }
 
-    const connection = event.target.result;
     cache.getEntryById(connection, entryId, onOpenCursor);
   }
 

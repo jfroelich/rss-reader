@@ -28,16 +28,13 @@ class ArchiveService {
       context.numEntriesProcessed);
   }
 
-  onConnect(context, event) {
+  onConnect(context, connection) {
     this.log.debug('Archive service connected to database');
-    // Exit early if we failed to connect (e.g. blocked)
-    if(event.type !== 'success') {
-      this.log.error(event);
+    if(!connection) {
       this.onComplete(context);
       return;
     }
 
-    const connection = event.target.result;
     const transaction = connection.transaction('entry', 'readwrite');
     const store = transaction.objectStore('entry');
     const index = store.index('archiveState-readState');

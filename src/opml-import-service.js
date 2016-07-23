@@ -46,16 +46,15 @@ class OPMLImportService {
     this.cache.open(this.onOpenDatabase.bind(this, context));
   }
 
-  onOpenDatabase(context, event) {
-    if(event.type !== 'success') {
-      this.log.error(event);
+  onOpenDatabase(context, connection) {
+    if(!connection) {
       context.uploader.remove();
       context.callback();
       return;
     }
 
     this.log.debug('OPMLImportService: connected to database');
-    context.connection = event.target.result;
+    context.connection = connection;
 
     for(let file of context.files) {
       this.log.debug('OPMLImportService: processing', file.name);

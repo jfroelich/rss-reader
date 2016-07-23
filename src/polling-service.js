@@ -69,17 +69,14 @@ class PollingService {
 
   // TODO: load all feeds into an array first, then iterate over the array,
   // instead of iterating the cursor
-  onOpenDatabase(context, event) {
-    if(event.type !== 'success') {
-      this.log.error(event);
+  onOpenDatabase(context, connection) {
+    if(connection) {
+      context.connection = connection;
+      this.feedCache.openFeedsCursor(connection,
+        this.onOpenFeedsCursor.bind(this, context));
+    } else {
       this.onMaybePollCompleted(context);
-      return;
     }
-
-    const connection = event.target.result;
-    context.connection = connection;
-    this.feedCache.openFeedsCursor(connection,
-      this.onOpenFeedsCursor.bind(this, context));
   }
 
   onOpenFeedsCursor(context, event) {

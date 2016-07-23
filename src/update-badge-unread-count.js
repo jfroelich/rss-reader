@@ -11,17 +11,14 @@ function updateBadgeUnreadCount(connection, callback) {
   if(connection) {
     feedCache.countUnreadEntries(connection, onCountUnreadEntries);
   } else {
-    feedCache.open(onOpenDatabase);
+    feedCache.open(onOpenCache);
   }
 
-  function onOpenDatabase(event) {
-    if(event.type === 'success') {
-      const connection = event.target.result;
+  function onOpenCache(connection) {
+    if(connection) {
       feedCache.countUnreadEntries(connection, onCountUnreadEntries);
     } else {
-      console.debug(event);
       chrome.browserAction.setBadgeText({'text': '?'});
-
       if(callback) {
         callback();
       }
