@@ -15,6 +15,8 @@ class PollingService {
 
     this.faviconService = faviconService;
     this.imageDimensionsService = imageDimensionsService;
+
+    this.badgeUpdateService = new BadgeUpdateService();
   }
 
   start() {
@@ -295,7 +297,7 @@ class PollingService {
       if(entriesProcessed === entries.length) {
         context.pendingFeedsCount--;
         this.onMaybePollCompleted(context);
-        updateBadgeUnreadCount();
+        this.badgeUpdateService.updateCount();
       }
     }
   }

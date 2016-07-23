@@ -10,6 +10,9 @@
 function markEntryAsRead(entryId, callback) {
 
   const outputEvent = {'entryId': entryId};
+
+  const badgeUpdater = new BadgeUpdateService();
+
   const cache = new FeedCache();
   cache.open(onOpenDatabase);
 
@@ -53,7 +56,7 @@ function markEntryAsRead(entryId, callback) {
 
     cursor.update(entry);
 
-    updateBadgeUnreadCount();
+    badgeUpdater.updateCount();
 
     outputEvent.type = 'success';
     if(callback) {

@@ -10,7 +10,8 @@
 // TODO: are there any other settings I should be installing?
 function onInstalled(event) {
   console.log('Installing extension ...');
-  updateBadgeUnreadCount();
+  const badgeUpdateService = new BadgeUpdateService();
+  badgeUpdateService.updateCount();
 }
 
 chrome.runtime.onInstalled.addListener(onInstalled);

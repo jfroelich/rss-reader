@@ -137,6 +137,8 @@ Subscription.add = function(connection, url, callback) {
 // using two separate transactions or does the order not matter?
 Subscription.remove = function(feedId, callback) {
 
+  const badgeUpdateService = new BadgeUpdateService();
+
   const feedCache = new FeedCache();
 
   let entriesRemoved = 0;
@@ -195,7 +197,7 @@ Subscription.remove = function(feedId, callback) {
   }
 
   function onComplete(event) {
-    updateBadgeUnreadCount();
+    badgeUpdateService.updateCount();
 
     const subscriptionEvent = {
       'type': 'success',

@@ -140,15 +140,6 @@ class FeedCache {
     request.onsuccess = callback;
   }
 
-  countUnreadEntries(connection, callback) {
-    const transaction = connection.transaction('entry');
-    const store = transaction.objectStore('entry');
-    const index = store.index('readState');
-    const request = index.count(FeedCache.EntryFlags.UNREAD);
-    request.onsuccess = callback;
-    request.onerror = callback;
-  }
-
   openFeedsCursor(connection, callback) {
     const transaction = connection.transaction('feed');
     const feedStore = transaction.objectStore('feed');
