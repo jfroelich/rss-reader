@@ -36,9 +36,9 @@
       "/src/replace-html.js",
       "/src/resolve-document-urls.js",
       "/src/resolve-url.js",
-      "/src/rewrite-url.js",
       "/src/transform-lazily-loaded-images.js",
-      "/src/truncate-html-string.js"
+      "/src/truncate-html-string.js",
+      "/src/url-rewriting-service.js"
     ]
   },
   "options_page": "options.html",

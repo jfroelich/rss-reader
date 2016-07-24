@@ -16,6 +16,7 @@ class PollingService {
     this.badgeUpdateService = new BadgeUpdateService();
     this.fetchFeedService = new FeedHttpService();
     this.fetchFeedService.timeoutMillis = 10 * 1000;
+    this.urlRewritingService = new URLRewritingService();
   }
 
   start() {
@@ -93,7 +94,6 @@ class PollingService {
     context.pendingFeedsCount++;
     const feed = cursor.value;
     const requestURL = new URL(Feed.prototype.getURL.call(feed));
-    this.log.debug('PollingService: fetching feed', requestURL.href);
     const excludeEntries = false;
     this.fetchFeedService.fetch(requestURL, excludeEntries,
       this.onFetchFeed.bind(this, context, feed));
@@ -144,10 +144,8 @@ class PollingService {
   rewriteEntryURL(entry) {
     let entryURL = entry.urls[0];
     if(entryURL) {
-      let rewrittenURL = rewriteURL(entryURL);
+      let rewrittenURL = this.urlRewritingService.rewriteURL(entryURL);
       if(rewrittenURL.href !== entryURL.href) {
-        this.log.debug('PollingService: rewriting url', entryURL.href,
-          rewrittenURL.href);
         entry.urls.push(rewrittenURL);
       }
     }

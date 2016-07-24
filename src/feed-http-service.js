@@ -16,7 +16,10 @@ class FeedHttpService {
       excludeEntries, callback);
     const isAsync = true;
     const request = new XMLHttpRequest();
-    request.timeout = this.timeoutMillis;
+    if(this.timeoutMillis) {
+      request.timeout = this.timeoutMillis;
+    }
+
     request.onerror = boundOnResponse;
     request.ontimeout = boundOnResponse;
     request.onabort = boundOnResponse;
