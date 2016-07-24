@@ -93,7 +93,7 @@ class PollingService {
     context.pendingFeedsCount++;
     const feed = cursor.value;
     const requestURL = new URL(Feed.prototype.getURL.call(feed));
-    this.log.debug('PollingService: fetching', requestURL.href);
+    this.log.debug('PollingService: fetching feed', requestURL.href);
     const excludeEntries = false;
     this.fetchFeedService.fetch(requestURL, excludeEntries,
       this.onFetchFeed.bind(this, context, feed));
@@ -104,8 +104,8 @@ class PollingService {
     const feedURLString = Feed.prototype.getURL.call(localFeed);
 
     if(fetchEvent.type !== 'load') {
-      this.log.debug('PollingService: error fetching', feedURLString,
-        fetchEvent);
+      this.log.debug('PollingService: error fetching feed', feedURLString,
+        fetchEvent.type);
       context.pendingFeedsCount--;
       this.onMaybePollCompleted(context);
       return;
@@ -158,35 +158,11 @@ class PollingService {
       remoteFeed.faviconURLString = faviconURL.href;
     }
 
-    const mergedFeed = this.createMergedFeed(localFeed, remoteFeed);
+    const mergedFeed = Feed.prototype.merge.call(localFeed,
+      Feed.prototype.serialize.call(remoteFeed));
+
     this.feedCache.updateFeed(context.connection, mergedFeed,
       this.onUpdateFeed.bind(this, context, remoteFeed.entries));
-  }
-
-  createMergedFeed(localFeed, remoteFeed) {
-    const outputFeed = {};
-    outputFeed.id = localFeed.id;
-    outputFeed.type = remoteFeed.type;
-    outputFeed.urls = [...localFeed.urls];
-
-    for(let url of remoteFeed.urls) {
-      if(!outputFeed.urls.includes(url.href)) {
-        outputFeed.urls.push(url.href);
-      }
-    }
-
-    outputFeed.title = remoteFeed.title;
-    outputFeed.description = remoteFeed.description;
-    if(remoteFeed.link) {
-      outputFeed.link = remoteFeed.link.href;
-    }
-
-    outputFeed.faviconURLString = remoteFeed.faviconURLString;
-    outputFeed.datePublished = remoteFeed.datePublished;
-    outputFeed.dateFetched = remoteFeed.dateFetched;
-    outputFeed.dateLastModified = remoteFeed.dateLastModified;
-    outputFeed.dateCreated = localFeed.dateCreated;
-    return outputFeed;
   }
 
   onMaybePollCompleted(context) {
