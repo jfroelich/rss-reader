@@ -101,30 +101,21 @@ class PollingService {
   }
 
   onFetchFeed(context, localFeed, fetchEvent) {
-    const feedURLString = Feed.prototype.getURL.call(localFeed);
-
     if(fetchEvent.type !== 'load') {
-      this.log.debug('PollingService: error fetching feed', feedURLString,
-        fetchEvent.type);
       context.pendingFeedsCount--;
       this.onMaybePollCompleted(context);
       return;
     }
-
-    this.log.debug('PollingService: fetched feed', feedURLString);
 
     const remoteFeed = fetchEvent.feed;
     if(localFeed.dateLastModified && remoteFeed.dateLastModified &&
       localFeed.dateLastModified.getTime() ===
       remoteFeed.dateLastModified.getTime()) {
-      this.log.debug('PollingService: feed not modified', feedURLString);
+      this.log.debug('PollingService: feed not modified',
+        Feed.prototype.getURL.call(localFeed));
       context.pendingFeedsCount--;
       this.onMaybePollCompleted(context);
       return;
-    }
-
-    for(let entry of remoteFeed.entries) {
-      this.rewriteEntryURL(entry);
     }
 
     if(this.faviconService) {
@@ -141,16 +132,6 @@ class PollingService {
     }
   }
 
-  rewriteEntryURL(entry) {
-    let entryURL = entry.urls[0];
-    if(entryURL) {
-      let rewrittenURL = this.urlRewritingService.rewriteURL(entryURL);
-      if(rewrittenURL.href !== entryURL.href) {
-        entry.urls.push(rewrittenURL);
-      }
-    }
-  }
-
   onLookupFeedFavicon(context, localFeed, remoteFeed, faviconURL) {
     if(faviconURL) {
       remoteFeed.faviconURLString = faviconURL.href;
@@ -158,40 +139,12 @@ class PollingService {
 
     const mergedFeed = Feed.prototype.merge.call(localFeed,
       Feed.prototype.serialize.call(remoteFeed));
-
     this.feedCache.updateFeed(context.connection, mergedFeed,
       this.onUpdateFeed.bind(this, context, remoteFeed.entries));
   }
 
-  onMaybePollCompleted(context) {
-    if(context.pendingFeedsCount) {
-      return;
-    }
-
-    this.log.log('Polling completed');
-
-    if('SHOW_NOTIFICATIONS' in localStorage) {
-      this.showPollCompletedNotification();
-    }
-  }
-
-  showPollCompletedNotification() {
-    const notification = {
-      'type': 'basic',
-      'title': chrome.runtime.getManifest().name,
-      'iconUrl': '/images/rss_icon_trans.gif',
-      'message': 'Updated articles'
-    };
-    chrome.notifications.create('Lucubrate', notification, function() {});
-  }
-
   onUpdateFeed(context, entries, resultType, feed) {
-    if(resultType === 'success') {
-      this.log.debug('PollingService: updated feed',
-        Feed.prototype.getURL.call(feed));
-    } else {
-      this.log.debug('PollingService: error updating feed',
-        Feed.prototype.getURL.call(feed));
+    if(resultType !== 'success') {
       context.pendingFeedsCount--;
       this.onMaybePollCompleted(context);
       return;
@@ -220,15 +173,26 @@ class PollingService {
   }
 
   processEntry(context, feed, entry, callback) {
-    if(Entry.prototype.hasURL.call(entry)) {
-      this.log.debug('PollingService: processing entry',
-        Entry.prototype.getURL.call(entry).href);
-    } else {
+    if(!Entry.prototype.hasURL.call(entry)) {
       this.log.debug('PollingService: entry missing url', entry);
       callback();
       return;
     }
 
+    this.log.debug('PollingService: processing entry',
+      Entry.prototype.getURL.call(entry).href);
+
+    // Rewrite the entry's url. Because it was fetched we know there is
+    // only one.
+    const firstURL = entry.urls[0];
+    if(firstURL) {
+      const rewrittenURL = this.urlRewritingService.rewriteURL(firstURL);
+      if(rewrittenURL.href !== firstURL.href) {
+        entry.urls.push(rewrittenURL);
+      }
+    }
+
+    // Now use the terminal url to lookup
     const entryURL = Entry.prototype.getURL.call(entry);
     this.feedCache.findEntryWithURL(context.connection, entryURL,
       onFindEntryWithURL.bind(this));
@@ -367,5 +331,28 @@ class PollingService {
 
     // hostname getter normalizes url part to lowercase
     return blacklist.includes(url.hostname);
+  }
+
+
+  onMaybePollCompleted(context) {
+    if(context.pendingFeedsCount) {
+      return;
+    }
+
+    this.log.log('Polling completed');
+
+    if('SHOW_NOTIFICATIONS' in localStorage) {
+      this.showPollCompletedNotification();
+    }
+  }
+
+  showPollCompletedNotification() {
+    const notification = {
+      'type': 'basic',
+      'title': chrome.runtime.getManifest().name,
+      'iconUrl': '/images/rss_icon_trans.gif',
+      'message': 'Updated articles'
+    };
+    chrome.notifications.create('Lucubrate', notification, function() {});
   }
 }

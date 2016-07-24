@@ -315,7 +315,8 @@ class FeedCache {
     const request = store.put(storableFeed);
 
     request.onsuccess = function(event) {
-      this.log.debug('FeedCache: updated feed', storableFeed);
+      this.log.debug('FeedCache: updated feed',
+        Feed.prototype.getURL.call(storableFeed));
       callback('success', storableFeed);
     }.bind(this);
 
