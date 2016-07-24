@@ -280,59 +280,48 @@ class FeedCache {
     request.onerror = callback;
   }
 
-  updateFeed(connection, feed, callback) {
-
-    function sanitizeString(inputString) {
-      let outputString = inputString;
-      if(inputString) {
-        outputString = filterControlCharacters(outputString);
-        outputString = replaceHTML(outputString, '');
-        outputString = outputString.replace(/\s+/, ' ');
-        outputString = outputString.trim();
-      }
+  sanitizeString(inputString) {
+    if(inputString) {
+      let outputString = null;
+      outputString = filterControlCharacters(inputString);
+      outputString = replaceHTML(outputString, '');
+      outputString = outputString.replace(/\s+/, ' ');
+      outputString = outputString.trim();
       return outputString;
     }
+  }
 
-    const storable = {};
-    storable.id = feed.id;
-
-    if(feed.type) {
-      storable.type = feed.type;
+  sanitizeFeed(inputFeed) {
+    // Copy to maintain all the fields and also purity/idempotency
+    const cleanFeed = Object.assign({}, inputFeed);
+    if(cleanFeed.title) {
+      cleanFeed.title = this.sanitizeString(cleanFeed.title);
     }
 
-    // clone
-    storable.urls = [...feed.urls];
-
-    storable.title = sanitizeString(feed.title) || '';
-
-    if(feed.description) {
-      storable.description = sanitizeString(feed.description);
+    if(cleanFeed.description) {
+      cleanFeed.description = this.sanitizeString(cleanFeed.description);
     }
 
-    if(feed.link) {
-      storable.link = feed.link;
-    }
+    return cleanFeed;
+  }
 
-    if(feed.faviconURLString) {
-      storable.faviconURLString = feed.faviconURLString;
-    }
-
-    storable.datePublished = feed.datePublished;
-    storable.dateCreated = feed.dateCreated || new Date();
-    storable.dateLastModified = feed.dateLastModified;
-    storable.dateUpdated = new Date();
+  updateFeed(connection, feed, callback) {
+    let storableFeed = Feed.prototype.serialize.call(feed);
+    storableFeed = this.sanitizeFeed(storableFeed);
+    storableFeed.dateUpdated = new Date();
 
     const transaction = connection.transaction('feed', 'readwrite');
     const store = transaction.objectStore('feed');
-    const request = store.put(storable);
+    const request = store.put(storableFeed);
 
     request.onsuccess = function(event) {
-      callback('success', storable);
-    };
+      this.log.debug('FeedCache: updated feed', storableFeed);
+      callback('success', storableFeed);
+    }.bind(this);
 
     request.onerror = function(event) {
       this.log.debug('FeedCache: update feed error', event);
-      callback('error', storable);
+      callback('error', storableFeed);
     }.bind(this);
   }
 }
