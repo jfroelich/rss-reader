@@ -11,9 +11,14 @@ class FaviconCache {
     this.log = new LoggingService();
   }
 
-  // Request a cache connection. Passes the connection to the callback. If an
-  // error occurs, passes back undefined.
   connect(callback) {
+
+    if(!this.name) {
+      this.log.error('FaviconCache: undefined database name');
+      callback();
+      return;
+    }
+
     this.log.debug('FaviconCache: connecting to database', this.name,
       this.version);
 

@@ -5,10 +5,10 @@ let service = null;
 
 window.addEventListener('DOMContentLoaded', function(event) {
   service = new FaviconService();
-  service.log = new LoggingService(LoggingService.LEVEL_DEBUG);
+  service.log.level = LoggingService.LEVEL_DEBUG;
   service.timeout = 5000;
-  service.cache = new FaviconCache('test-favicon-cache');
-  service.cache.log = new LoggingService(LoggingService.LEVEL_DEBUG);
+  service.cache.name = 'test-favicon-cache';
+  service.cache.log.level = LoggingService.LEVEL_DEBUG;
 });
 
 function testFaviconServiceLookup(pageURLString) {

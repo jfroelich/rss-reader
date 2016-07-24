@@ -289,9 +289,11 @@ OptionsPage.showSubscriptionPreview = function(url) {
     'subscription-preview-load-progress');
   OptionsPage.showElement(progressElement);
 
-  const fetchTimeoutMills = 10 * 1000;
   const excludeEntries = false;
-  fetchFeed(url, fetchTimeoutMills, excludeEntries, onFetchFeed);
+  const fetchService = new FeedHttpService();
+  fetchService.log.level = LoggingService.LEVEL_LOG;
+  fetchService.timeoutMillis = 10 * 1000;
+  fetchService.fetch(url, excludeEntries, onFetchFeed);
 
   function onFetchFeed(fetchEvent) {
     if(event.type !== 'load') {
@@ -842,7 +844,7 @@ OptionsPage.initSubscriptionsSection = function() {
       const feed = cursor.value;
       feedCount++;
       // NOTE: this is calling append feed with a feed object loaded directly
-      // from the database, which is diferent than the results of fetchFeed
+      // from the database, which is diferent than the results of fetch
       OptionsPage.appendFeed(feed);
       OptionsPage.updateFeedCount();
       cursor.continue();

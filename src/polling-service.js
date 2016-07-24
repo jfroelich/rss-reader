@@ -5,22 +5,21 @@
 'use strict';
 
 class PollingService {
-  constructor(faviconService, imageDimensionsService) {
+
+  constructor() {
     this.log = new LoggingService();
     this.idlePeriodInSeconds = 30;
-    this.fetchFeedTimeoutMillis = 10 * 1000;
     this.fetchEntryTimeoutMillis = 15 * 1000;
-
     this.feedCache = new FeedCache();
-
-    this.faviconService = faviconService;
-    this.imageDimensionsService = imageDimensionsService;
-
+    this.faviconService = new FaviconService();
+    this.imageDimensionsService = new ImageDimensionsService();
     this.badgeUpdateService = new BadgeUpdateService();
+    this.fetchFeedService = new FeedHttpService();
+    this.fetchFeedService.timeoutMillis = 10 * 1000;
   }
 
   start() {
-    this.log.log('Starting poll ...');
+    this.log.log('PollingService: starting...');
 
     const context = {
       'pendingFeedsCount': 0,
@@ -28,13 +27,13 @@ class PollingService {
     };
 
     if(this.isOffline()) {
-      this.log.debug('Polling canceled because offline');
+      this.log.debug('PollingService: canceled because offline');
       this.onMaybePollCompleted(context);
       return;
     }
 
     if(this.isMeteredConnection()) {
-      this.log.debug('Polling canceled because metered connection');
+      this.log.debug('PollingService: canceled because metered connection');
       this.onMaybePollCompleted(context);
       return;
     }
@@ -69,8 +68,6 @@ class PollingService {
     }
   }
 
-  // TODO: load all feeds into an array first, then iterate over the array,
-  // instead of iterating the cursor
   onOpenDatabase(context, connection) {
     if(connection) {
       context.connection = connection;
@@ -97,28 +94,26 @@ class PollingService {
     const feed = cursor.value;
     const urls = feed.urls;
     const requestURL = new URL(urls[urls.length - 1]);
-
-    this.log.debug('PollingService: loaded feed from database',
-      requestURL.href);
+    this.log.debug('PollingService: loaded feed', requestURL.href);
 
     const excludeEntries = false;
-    fetchFeed(requestURL, this.fetchFeedTimeoutMillis, excludeEntries,
+    this.fetchFeedService.fetch(requestURL, excludeEntries,
       this.onFetchFeed.bind(this, context, feed));
     cursor.continue();
   }
 
   onFetchFeed(context, localFeed, fetchEvent) {
     const feedURLString = localFeed.urls[localFeed.urls.length - 1];
-    this.log.debug('PollingService: fetched feed', feedURLString);
 
     if(fetchEvent.type !== 'load') {
-      this.log.debug('PollingService: error fetching',
-        localFeed.urls[localFeed.urls.length - 1],
+      this.log.debug('PollingService: error fetching', feedURLString,
         fetchEvent);
       context.pendingFeedsCount--;
       this.onMaybePollCompleted(context);
       return;
     }
+
+    this.log.debug('PollingService: fetched feed', feedURLString);
 
     const remoteFeed = fetchEvent.feed;
     if(localFeed.dateLastModified && remoteFeed.dateLastModified &&
@@ -131,6 +126,9 @@ class PollingService {
       return;
     }
 
+    for(let entry of remoteFeed.entries) {
+      this.rewriteEntryURL(entry);
+    }
 
     if(this.faviconService) {
       const prefetchedDocument = null;
@@ -143,41 +141,38 @@ class PollingService {
     }
   }
 
-  onLookupFeedFavicon(context, localFeed, remoteFeed, faviconURL) {
-    this.log.debug('PollingService: fetched favicon',
-      localFeed.urls[localFeed.urls.length - 1],
-      faviconURL ? faviconURL.href : 'No favicon');
+  rewriteEntryURL(entry) {
+    let entryURL = entry.urls[0];
+    if(entryURL) {
+      let rewrittenURL = rewriteURL(entryURL);
+      if(rewrittenURL.href !== entryURL.href) {
+        this.log.debug('PollingService: rewriting url', entryURL.href,
+          rewrittenURL.href);
+        entry.urls.push(rewrittenURL);
+      }
+    }
+  }
 
+  onLookupFeedFavicon(context, localFeed, remoteFeed, faviconURL) {
     if(faviconURL) {
       if(localFeed.faviconURLString !== faviconURL.href) {
-        this.log.debug('PollingService: Changing feed favicon to',
-          faviconURL.href);
+        this.log.debug('PollingService: setting feed favicon',
+          localFeed.urls[localFeed.urls.length - 1], faviconURL.href);
       }
       remoteFeed.faviconURLString = faviconURL.href;
     }
 
     const mergedFeed = this.createMergedFeed(localFeed, remoteFeed);
-    const boundOnUpdateFeed = this.onUpdateFeed.bind(this, context,
-      remoteFeed.entries, mergedFeed);
     this.feedCache.updateFeed(context.connection, mergedFeed,
-      boundOnUpdateFeed);
+      this.onUpdateFeed.bind(this, context, remoteFeed.entries, mergedFeed));
   }
 
-  // TODO: sanitization isn't the responsibility of merging, this is a
-  // mixture of purposes. separate out into two functions.
-  // TODO: sanitization should consider maximum string length.
-  // for enforcing maximum html string length, use truncateHTMLString
-  // TODO: maybe sanitizeString should be a db function or something
-  // TODO: maybe do the sanitization externally, explicitly
   createMergedFeed(localFeed, remoteFeed) {
-    // Prep a string property of an object for storage
     function sanitizeString(inputString) {
       let outputString = inputString;
       if(inputString) {
         outputString = filterControlCharacters(outputString);
         outputString = replaceHTML(outputString, '');
-        // Condense whitespace
-        // TODO: maybe this should be a utils function
         outputString = outputString.replace(/\s+/, ' ');
         outputString = outputString.trim();
       }
@@ -187,8 +182,6 @@ class PollingService {
     const outputFeed = {};
     outputFeed.id = localFeed.id;
     outputFeed.type = remoteFeed.type;
-    // TODO: test using spread operator?
-    // outputFeed.urls = [...localFeed.urls];
     outputFeed.urls = [].concat(localFeed.urls);
 
     for(let i = 0, len = remoteFeed.urls.length; i < len; i++) {
@@ -199,12 +192,6 @@ class PollingService {
       }
     }
 
-    // NOTE: title is semi-required. It must be defined, although it can be
-    // an empty string. It must be defined because of how views query and
-    // iterate over the feeds in the store using title as an index. If it were
-    // ever undefined those feeds would not appear in the title index.
-    // TODO: remove this requirement somehow? Maybe the options page that
-    // retrieves feeds has to manually sort them?
     const title = sanitizeString(remoteFeed.title) || localFeed.title || '';
     outputFeed.title = title;
 
@@ -236,17 +223,13 @@ class PollingService {
   }
 
   onMaybePollCompleted(context) {
-    // If there is still pending work we are not actually done
     if(context.pendingFeedsCount) {
       return;
     }
 
     this.log.log('Polling completed');
 
-    // Not currently in use
-    localStorage.LAST_POLL_DATE_MS = '' + Date.now();
-
-    if(localStorage.SHOW_NOTIFICATIONS) {
+    if('SHOW_NOTIFICATIONS' in localStorage) {
       this.showPollCompletedNotification();
     }
   }
@@ -266,8 +249,6 @@ class PollingService {
   // URL objects.
   // NOTE: because it is the stored feed, it also contains sanitized values
   onUpdateFeed(context, entries, feed, event) {
-
-
     if(event.type === 'success') {
       this.log.debug('PollingService: updated feed',
         feed.urls[feed.urls.length - 1]);
@@ -305,10 +286,6 @@ class PollingService {
   // TODO: do I want to check if any of the entry's URLs exist, or just its
   // most recent one?
   processEntry(context, feed, entry, callback) {
-
-    // If an entry doesn't have a URL, technically I could have allowed it in
-    // a scheme were I display text only entries. But I have decided to not
-    // allow any entry without a url.
     if(entry.urls.length) {
       this.log.debug('PollingService: processing entry',
         entry.urls[entry.urls.length - 1].href);
@@ -318,8 +295,6 @@ class PollingService {
       return;
     }
 
-    // Grab the last url in the entry's urls array.
-    // entry.urls contains URL objects, not strings
     const entryURL = entry.urls[entry.urls.length - 1];
     this.feedCache.findEntryWithURL(context.connection, entryURL,
       onFindEntryWithURL.bind(this));

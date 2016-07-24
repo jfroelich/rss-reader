@@ -13,6 +13,13 @@ class FeedCache {
   }
 
   open(callback) {
+
+    if(!this.name) {
+      this.log.error('FeedCache: undefined database name');
+      callback();
+      return;
+    }
+
     this.log.debug('FeedCache: connecting to', this.name);
     const request = indexedDB.open(this.name, this.version);
     request.addEventListener('upgradeneeded', this.upgrade.bind(this));

@@ -5,9 +5,10 @@
 'use strict';
 
 class FaviconService {
-  constructor(cache) {
+  constructor() {
     this.timeout = null;
-    this.cache = cache;
+    this.cache = new FaviconCache();
+    this.cache.name = 'favicon-cache';
     this.minLength = 50;
     this.maxLength = 10000;
     this.expiresAfterMillis = 1000 * 60 * 60 * 24 * 30;

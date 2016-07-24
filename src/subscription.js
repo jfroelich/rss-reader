@@ -7,13 +7,14 @@
 const Subscription = Object.create(null);
 
 Subscription.add = function(connection, url, callback) {
+  console.debug('Subscribing to', url.href);
 
   const feedCache = new FeedCache();
 
-  console.debug('Subscribing to', url.href);
-  const fetchTimeoutMillis = 10 * 1000;
   const excludeEntries = true;
-  fetchFeed(url, fetchTimeoutMillis, excludeEntries, onFetchFeed);
+  const fetchService = new FeedHttpService();
+  fetchService.timeoutMillis = 10 * 1000;
+  fetchService.fetch(url, excludeEntries, onFetchFeed);
 
   function onFetchFeed(event) {
     if(event.type !== 'load') {

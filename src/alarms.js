@@ -21,19 +21,15 @@ chrome.alarms.get('poll', function(alarm) {
 function onAlarmListener(alarm) {
   console.debug('Received alarm wakeup', alarm.name);
 
-  const log = new LoggingService(LoggingService.LEVEL_LOG);
   const archiveService = new ArchiveService();
-  archiveService.log = log;
+  archiveService.log.level = LoggingService.LEVEL_LOG;
   const faviconCache = new FaviconCache('favicon-cache');
-  faviconCache.log = log;
+  faviconCache.log.level = LoggingService.LEVEL_LOG;
   const faviconService = new FaviconService(faviconCache);
-  faviconService.log = log;
-  const imageDimensionsService = new ImageDimensionsService();
-  imageDimensionsService.log = log;
+  faviconService.log.level = LoggingService.LEVEL_LOG;
   const pollingService = new PollingService();
-  pollingService.log = log;
+  pollingService.log.level = LoggingService.LEVEL_LOG;
   pollingService.faviconService = faviconService;
-  pollingService.imageDimensionsService = imageDimensionsService;
 
   if(alarm.name === 'archive') {
     archiveService.start();
