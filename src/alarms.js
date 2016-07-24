@@ -23,13 +23,10 @@ function onAlarmListener(alarm) {
 
   const archiveService = new ArchiveService();
   archiveService.log.level = LoggingService.LEVEL_LOG;
-  const faviconCache = new FaviconCache('favicon-cache');
-  faviconCache.log.level = LoggingService.LEVEL_LOG;
-  const faviconService = new FaviconService(faviconCache);
-  faviconService.log.level = LoggingService.LEVEL_LOG;
+
   const pollingService = new PollingService();
   pollingService.log.level = LoggingService.LEVEL_LOG;
-  pollingService.faviconService = faviconService;
+  pollingService.faviconService.log.level = LoggingService.LEVEL_LOG;
 
   if(alarm.name === 'archive') {
     archiveService.start();

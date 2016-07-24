@@ -50,20 +50,21 @@ class FaviconService {
     if(connection) {
       context.connection = connection;
       if(context.document) {
-        const iconURL = this.findIconURLInDocument(context.document, url);
+        const iconURL = this.findIconURLInDocument(context.document,
+          context.url);
         if(iconURL) {
-          this.log.debug(
-            'FaviconService: caching icon in prefetched document',
+          this.log.debug('FaviconService: caching from prefetched document',
             context.url.href, iconURL.href);
           this.cache.addEntry(connection, context.url, iconURL);
           context.callback(iconURL);
         } else {
           this.log.debug('FaviconService: did not find icon in prefetched ' +
-            'document, fetching');
+            'document, checking cache');
           this.cache.findByPageURL(connection, context.url, boundOnFindByURL);
         }
       } else {
-        this.log.debug('FaviconService: missing prefetched document');
+        this.log.debug('FaviconService: no prefetched document, checking cache',
+          context.url.href);
         this.cache.findByPageURL(context.connection, context.url,
           boundOnFindByURL);
       }
@@ -75,12 +76,12 @@ class FaviconService {
         context.callback(iconURL);
       } else {
         this.log.error('FaviconService: connection error, did not find ' +
-          'icon in prefetched document');
+          'icon in prefetched document, fetching', context.url.href);
         this.fetchDocument(context);
       }
     } else {
       this.log.error('FaviconService: connection error, missing prefetched ' +
-        'document');
+        'document, fetching', context.url.href);
       this.fetchDocument(context);
     }
   }
@@ -202,6 +203,12 @@ class FaviconService {
   // selector just guarantees the attribute is present, its value could still
   // be empty.
   findIconURLInDocument(document, baseURL) {
+    if(!document.documentElement.localName === 'html') {
+      this.log.debug('FaviconService: cannot search non-html document',
+        baseURL.href);
+      return;
+    }
+
     this.log.debug('FaviconService: searching document', baseURL.href);
     const headElement = document.head;
     if(!headElement) {

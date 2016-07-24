@@ -46,6 +46,8 @@ class FeedHttpService {
       return;
     }
 
+    outputEvent.responseXML = event.target.responseXML;
+
     this.log.debug('FeedHttpService: parsing', requestURL.href);
 
     try {
