@@ -25,8 +25,8 @@
       "/src/feed-cache.js",
       "/src/feed-http-service.js",
       "/src/feed-parser.js",
+      "/src/fetch-html-service.js",
       "/src/filter-control-characters.js",
-      "/src/filter-tracking-images.js",
       "/src/image-dimensions-service.js",
       "/src/logging-service.js",
       "/src/on-badge-click.js",
@@ -34,9 +34,6 @@
       "/src/polling-service.js",
       "/src/polling-service-test.js",
       "/src/replace-html.js",
-      "/src/resolve-document-urls.js",
-      "/src/resolve-url.js",
-      "/src/transform-lazily-loaded-images.js",
       "/src/truncate-html-string.js",
       "/src/url-rewriting-service.js"
     ]

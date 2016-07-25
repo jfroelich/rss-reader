@@ -9,14 +9,14 @@ class PollingService {
   constructor() {
     this.log = new LoggingService();
     this.idlePeriodInSeconds = 30;
-    this.fetchEntryTimeoutMillis = 15 * 1000;
     this.feedCache = new FeedCache();
     this.faviconService = new FaviconService();
-    this.imageDimensionsService = new ImageDimensionsService();
     this.badgeUpdateService = new BadgeUpdateService();
     this.fetchFeedService = new FeedHttpService();
     this.fetchFeedService.timeoutMillis = 10 * 1000;
     this.urlRewritingService = new URLRewritingService();
+    this.fetchHTMLService = new FetchHTMLService();
+    this.fetchHTMLService.timeoutMillis = 10 * 1000;
   }
 
   start() {
@@ -210,7 +210,7 @@ class PollingService {
         return;
       }
 
-      this.fetchEntryDocument(entryURL, boundOnFetchEntryDocument);
+      this.fetchHTMLService.fetch(entryURL, boundOnFetchEntryDocument);
     }
 
     function onFetchEntryDocument(event) {
@@ -225,8 +225,6 @@ class PollingService {
       }
 
       if(event.type !== 'success') {
-        this.log.debug('PollingService: fetch error', event.type,
-          event.requestURL.href);
         this.feedCache.addEntry(context.connection, entry, callback);
         return;
       }
@@ -245,94 +243,6 @@ class PollingService {
       this.feedCache.addEntry(context.connection, entry, callback);
     }
   }
-
-  fetchEntryDocument(requestURL, callback) {
-    this.log.debug('PollingService: fetching', requestURL.href);
-    if(this.isResistantURL(requestURL)) {
-      callback({'type': 'resistanturl', 'requestURL': requestURL});
-      return;
-    }
-
-    const path = requestURL.pathname;
-    if(path && path.length > 5 && /\.pdf$/i.test(path)) {
-      callback({'type': 'pdfurl', 'requestURL': requestURL});
-      return;
-    }
-
-    const boundOnResponse = onResponse.bind(this);
-    const fetchRequest = new XMLHttpRequest();
-    fetchRequest.timeout = this.fetchEntryTimeoutMillis;
-    fetchRequest.ontimeout = boundOnResponse;
-    fetchRequest.onerror = boundOnResponse;
-    fetchRequest.onabort = boundOnResponse;
-    fetchRequest.onload = boundOnResponse;
-    const async = true;
-    fetchRequest.open('GET', requestURL.href, async);
-    fetchRequest.responseType = 'document';
-    fetchRequest.setRequestHeader('Accept', 'text/html');
-    fetchRequest.send();
-
-    function onResponse(event) {
-      const outputEvent = {
-        'requestURL': requestURL
-      };
-
-      if(event.type !== 'load') {
-        outputEvent.type = event.type;
-        callback(outputEvent);
-        return;
-      }
-
-      const document = event.target.responseXML;
-      if(!document) {
-        outputEvent.type = 'undefineddocument';
-        callback(outputEvent);
-        return;
-      }
-
-      outputEvent.type = 'success';
-      const responseURL = new URL(event.target.responseURL);
-      outputEvent.responseURL = responseURL;
-      transformLazilyLoadedImages(document);
-      this.filterSourcelessImages(document);
-      resolveDocumentURLs(document, responseURL);
-      filterTrackingImages(document);
-      if(this.imageDimensionsService) {
-        this.imageDimensionsService.modifyDocument(document,
-          onSetImageDimensions.bind(this, outputEvent));
-      } else {
-        outputEvent.responseXML = document;
-        callback(event);
-      }
-    }
-
-    function onSetImageDimensions(event, document) {
-      event.responseXML = document;
-      callback(event);
-    }
-  }
-
-  filterSourcelessImages(document) {
-    for(let image of document.querySelectorAll('img')) {
-      if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
-        image.remove();
-        break;
-      }
-    }
-  }
-
-  isResistantURL(url) {
-    const blacklist = [
-      'productforums.google.com',
-      'groups.google.com',
-      'www.forbes.com',
-      'forbes.com'
-    ];
-
-    // hostname getter normalizes url part to lowercase
-    return blacklist.includes(url.hostname);
-  }
-
 
   onMaybePollCompleted(context) {
     if(context.pendingFeedsCount) {

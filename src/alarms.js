@@ -27,6 +27,7 @@ function onAlarmListener(alarm) {
   const pollingService = new PollingService();
   pollingService.log.level = LoggingService.LEVEL_LOG;
   pollingService.faviconService.log.level = LoggingService.LEVEL_LOG;
+  pollingService.fetchHTMLService.log.level = LoggingService.LEVEL_DEBUG;
 
   if(alarm.name === 'archive') {
     archiveService.start();
