@@ -197,23 +197,21 @@ class FaviconService {
     }
   }
 
-  // NOTE: that it is important to check if href is defined in the loop because
-  // otherwise this could pass an empty string to new URL which would lead to
-  // creating a valid url that is just the base url itself. The [head] in the
-  // selector just guarantees the attribute is present, its value could still
-  // be empty.
+
   findIconURLInDocument(document, baseURL) {
-    if(!document.documentElement.localName === 'html') {
-      this.log.debug('FaviconService: cannot search non-html document',
-        baseURL.href);
+    if(document.documentElement.localName !== 'html') {
+      this.log.debug('FaviconService: invalid document element', baseURL.href);
+      return;
+    }
+
+
+    const headElement = document.head;
+    if(!headElement) {
+      this.log.debug('FaviconService: no head element detected', baseURL.href);
       return;
     }
 
     this.log.debug('FaviconService: searching document', baseURL.href);
-    const headElement = document.head;
-    if(!headElement) {
-      return;
-    }
 
     const selectors = [
       'link[rel="icon"][href]',
@@ -222,15 +220,20 @@ class FaviconService {
       'link[rel="apple-touch-icon-precomposed"][href]'
     ];
 
+    // NOTE: that it is important to check if href is defined and not empty in
+    // the loop because otherwise this could pass an empty string to new URL
+    // which would lead to creating a valid url that is just the base url
+    // itself.
+
     for(let selector of selectors) {
       const element = headElement.querySelector(selector);
       if(element) {
-        const href = element.getAttribute('href');
+        const href = (element.getAttribute('href') || '').trim();
         if(href) {
           try {
+            const iconURL = new URL(href, baseURL);
             this.log.debug('FaviconService: matched element',
               element.outerHTML);
-            const iconURL = new URL(href, baseURL);
             return iconURL;
           } catch(exception) {
             this.log.debug(exception);
@@ -265,8 +268,16 @@ class FaviconService {
   onLookupOrigin(context, redirectURL, entry) {
     const originIconURL = new URL(context.url.origin + '/favicon.ico');
     if(entry && !this.isEntryExpired(entry)) {
-      this.log.debug('FaviconService: cache hit', context.url.origin,
+      this.log.debug('FaviconService: origin cache hit', context.url.origin,
         entry.iconURLString);
+
+      // The origin already exists, so we need to store a link between the
+      // context.url and the root icon. There could already be a link, but
+      // we only reach here if there is no link the cache or there is a link
+      // in the cache but it expired.
+      // TODO: i should be testing for it (access context.entry), and then
+      // doing an update instead of an add in that case.
+
       const iconURL = new URL(entry.iconURLString);
       if(context.url.href !== context.url.origin) {
         this.cache.addEntry(context.connection, context.url, iconURL);
@@ -274,12 +285,17 @@ class FaviconService {
       context.connection.close();
       context.callback(iconURL);
     } else {
-      this.log.debug('FaviconService: cache miss', context.url.origin);
+      this.log.debug('FaviconService: origin cache miss', context.url.origin);
       this.sendImageHeadRequest(originIconURL,
         this.onFetchOriginIcon.bind(this, context, redirectURL));
     }
   }
 
+  // TODO: this should be handling its callback. This should callback with
+  // the request data. The validation of length and type should be handled here
+  // If there was a fetch error or the headers are invalid, then this should
+  // callback with undefined. The caller should only be checking for whether
+  // the callback received a defined argument.
   sendImageHeadRequest(imageURL, callback) {
     this.log.debug('FaviconService: requesting image', imageURL.href);
     const request = new XMLHttpRequest();
