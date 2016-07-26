@@ -4,8 +4,6 @@
 
 'use strict';
 
-// NOTE: unfinished refactoring
-
 class OPMLImportService {
 
   constructor() {
@@ -33,11 +31,11 @@ class OPMLImportService {
   }
 
   onUploaderChange(context, event) {
-    this.log.debug('OPMLImportService: received files');
+    this.log.debug('OPMLImportService: received uploader change event');
     context.uploader.removeEventListener('change', this.onUploaderChange);
     context.files = context.uploader.files;
     if(!context.files || !context.files.length) {
-      this.log.debug('OPMLImportService: no files found');
+      this.log.debug('OPMLImportService: no files uploaded');
       context.uploader.remove();
       context.callback();
       return;
@@ -66,7 +64,7 @@ class OPMLImportService {
       }
 
       if(!file.size) {
-        this.log.debug('OPMLImportService: skipping 0 sized file', file.name);
+        this.log.debug('OPMLImportService: skipping empty file', file.name);
         this.onFileProcessed(context);
         continue;
       }
@@ -80,7 +78,7 @@ class OPMLImportService {
   }
 
   isMimeTypeXML(typeString) {
-    return typeString.toLowerCase().includes('xml');
+    return typeString && typeString.toLowerCase().includes('xml');
   }
 
   onFileProcessed(context) {
@@ -150,8 +148,6 @@ class OPMLImportService {
       element = element.nextElementSibling) {
 
       if(element.localName !== 'outline') {
-        this.log.debug('OPMLImportService: skipping non outline element',
-          element.outerHTML);
         continue;
       }
 
@@ -182,6 +178,12 @@ class OPMLImportService {
       }
       seenURLStringSet.add(url.href);
 
+      // TODO: this should not be responsible for sanization. Defer that
+      // to cache.addFeed. Because subscription.js also depends on addFeed
+      // I need to make changes to all 3 at once.
+      // TODO: in fact, this should be interacting with the subscription
+      // service, unless i roll that into feed-cache
+
       // Create the feed object that will be stored
       const feed = {};
       feed.urls = [url.href];
@@ -191,7 +193,7 @@ class OPMLImportService {
       feed.description = this.sanitizeString(
         element.getAttribute('description'));
 
-      // NOTE: not all feeds have an associated htmlUrl attribute
+      // Not all feeds have an associated htmlUrl attribute
       const htmlUrlString = element.getAttribute('htmlUrl');
       if(htmlUrlString) {
         let outlineLinkURL = this.toURLTrapped(htmlUrlString);
@@ -200,7 +202,8 @@ class OPMLImportService {
         }
       }
 
-      this.log.debug('OPMLImportService: adding feed', url.href);
+      this.log.debug('OPMLImportService: adding feed', url.href, 'from file',
+        file.name);
       this.cache.addFeed(context.connection, feed, boundOnAddFeed);
     }
 
@@ -219,7 +222,7 @@ class OPMLImportService {
 
   // TODO: this overlaps with poll functionality, should probably make a
   // general purpose function that is shared
-  // TODO: consider max length of each field and the behavior when exceeded
+
   sanitizeString(inputString) {
     let outputString = inputString || '';
     if(outputString) {
@@ -232,8 +235,7 @@ class OPMLImportService {
 
   onAddFeed(context, event) {
     if(event.type === 'success') {
-      this.log.debug('OPMLImportService: added feed id',
-        event.target.result);
+      this.log.debug('OPMLImportService: added feed id', event.target.result);
     } else {
       this.log.error('OPMLImportService: add feed error', event);
     }
