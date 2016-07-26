@@ -256,11 +256,12 @@ SlideShow.appendSlide = function(entry, isFirst) {
     // &amp; in plain text in the displayed title.
     // Maybe I need to use innerHTML and maybe I also then need to do more
     // sanitization of the title
+    // NOTE: tags were removed pre-storage
 
     let titleText = entry.title;
     titleText = filterArticleTitle(titleText);
     titleText = truncateHTMLString(titleText, 300);
-    title.textContent = titleText;
+    title.innerHTML = titleText;
   } else {
     title.textContent = 'Untitled';
   }
