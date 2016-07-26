@@ -228,11 +228,11 @@ class FeedCache {
     storable.readState = FeedCache.EntryFlags.UNREAD;
     storable.archiveState = FeedCache.EntryFlags.UNARCHIVED;
 
-    // TODO: sanitize
+    // TODO: sanitize fully
     if(entry.author) {
       let authorString = entry.author;
       authorString = filterControlCharacters(authorString);
-      authorString = replaceHTML(authorString);
+      authorString = replaceHTML(authorString, '');
       // TODO: do i need to use truncateHTMLString?
       // Does author ever include html entities? If so, should I strip
       // entities?
@@ -244,7 +244,7 @@ class FeedCache {
     }
 
     // TODO: enforce a maximum length using truncateHTMLString
-    // TODO: condense spaces
+    // TODO: condense spaces?
     if(entry.title) {
       let entryTitle = entry.title;
       entryTitle = filterControlCharacters(entryTitle);
@@ -259,7 +259,7 @@ class FeedCache {
     }
 
     // TODO: filter out non-printable characters other than \r\n\t
-    // TODO: enforce a maximum length (using truncateHTMLString)
+    // TODO: enforce a maximum storable length (using truncateHTMLString)
     if(entry.content) {
       storable.content = entry.content;
     }
@@ -271,6 +271,14 @@ class FeedCache {
     request.onerror = callback;
   }
 
+  // TODO: this should be sanitizing the feed's fields, it should not be
+  // the caller's responsibility.
+  // look at what i did for updateFeed and mirror that behavior
+  // TODO: this should be responsible for creating the serialized storable
+  // object. The caller may have set other fields on the input object that
+  // we do not want to store, or may pass in a non-serialized object.
+  // TODO: when sanitizing, consider max length of each field and the
+  // behavior when exceeded
   addFeed(connection, feed, callback) {
     feed.dateCreated = new Date();
     const transaction = connection.transaction('feed', 'readwrite');
