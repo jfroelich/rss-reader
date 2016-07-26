@@ -10,8 +10,11 @@
 // The input string should be encoded, meaning that it should contain
 // character entities.
 //
-// Because entities are decoded then only some are re-encoded, not all entities
-// will remain. For example, &#32; is not re-encoded.
+// This transformation is lossy because of the implementation choice of
+// defering entity encoding to the browser.
+// Because entities are decoded then encoded again, not all entities
+// will remain. For example, &#32; is decoded as a space but that space is not
+// then re-encoded as an entity.
 //
 // NOTE: this accepts full document html and partial fragments of html.
 // However, due to some issues with using the built in dom parsing
