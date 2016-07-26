@@ -5,8 +5,8 @@
 'use strict';
 
 // Corresponds to a feed database object. Because indexedDB cannot store such
-// objects, this is generally only intended to provide prototype members that
-// can correctly operate on objects loaded from the database
+// objects directly, this is only intended to provide prototype members that
+// can correctly operate on serialized objects loaded from the database
 
 function Feed() {}
 
@@ -26,12 +26,12 @@ Feed.prototype.addURL = function(urlString) {
   }
 };
 
-// Returns a new feed merged with another feed. Expects both feeds in
-// serialized form. Fields from the other feed take precedence, so when there
-// is a value in both this and the other feed, the other fields value is what
+// Returns a new feed of this feed merged with another feed. Expects both feeds
+// in serialized form. Fields from the other feed take precedence, so when there
+// is a value in both this and the other feed, the other field's value is what
 // appears in the output. Except for urls, where only distinct urls are kept
 // and the order is this feed's urls then any urls from the other feed not
-// already present. Also except for id, the local feed id if present is
+// already present. Also except for id, this feed's id if present is
 // kept, and the other feed's id is ignored.
 Feed.prototype.merge = function(otherFeed) {
 
@@ -46,10 +46,8 @@ Feed.prototype.merge = function(otherFeed) {
       }
     }
   } else if(otherFeed.urls) {
-    mergedFeed.urls = [];
-    for(let url of otherFeed.urls) {
-      mergedFeed.urls.push(url);
-    }
+    // clone the array, do not simply reference it
+    mergedFeed.urls = [...otherFeed.urls];
   }
 
   if(otherFeed.title) {
@@ -82,7 +80,6 @@ Feed.prototype.merge = function(otherFeed) {
 
   return mergedFeed;
 };
-
 
 // Generates a new basic object suitable for storage in indexedDB from within
 // the context of either adding a new feed or updating an existing feed
