@@ -126,7 +126,7 @@ class FetchHTMLService {
     const images = document.querySelectorAll('img');
     for(let image of images) {
       if(!this.hasSource(image)) {
-        for(let alternateName of ALTERNATE_ATTRIBUTE_NAMES.length) {
+        for(let alternateName of ALTERNATE_ATTRIBUTE_NAMES) {
           if(image.hasAttribute(alternateName)) {
             const alternateValue = image.getAttribute(alternateName);
             if(alternateValue && this.isMinimallyValidURL(alternateValue)) {
@@ -178,7 +178,7 @@ class FetchHTMLService {
       'img[src^="http://me.effectivemeasure.net"]',
       'img[src^="https://me.effectivemeasure.net"]'
     ].join(',');
-    const images = document.querySelectorAll(document);
+    const images = document.querySelectorAll(SELECTOR);
     for(let image of images) {
       this.log.debug('FetchHTMLService: removing tracking image',
         image.outerHTML);
