@@ -69,7 +69,7 @@ class FetchHTMLService {
     this.transformLazilyLoadedImages(document);
     this.filterSourcelessImages(document);
     this.resolveDocumentURLs(document, responseURL);
-    this.filterTrackingImages(document);
+    this.filterTrackingImages(document, responseURL);
     if(this.imageDimensionsService) {
       this.imageDimensionsService.modifyDocument(document,
       this.onSetImageDimensions.bind(this, outputEvent, callback));
@@ -165,7 +165,7 @@ class FetchHTMLService {
   // TODO: I am not seeing any of the last 4 urls here being filtered. Maybe
   // I am looking for the wrong thing? I have not seen these occur even
   // once? Are they just script origins?
-  filterTrackingImages(document) {
+  filterTrackingImages(document, responseURL) {
     const SELECTOR = [
       'img[src^="http://b.scorecardresearch.com"]',
       'img[src^="https://b.scorecardresearch.com"]',
@@ -180,7 +180,8 @@ class FetchHTMLService {
     ].join(',');
     const images = document.querySelectorAll(SELECTOR);
     for(let image of images) {
-      console.debug('Removing tracking image', image.outerHTML);
+      console.debug('Removing tracking image', image.outerHTML, 'from',
+        responseURL.href);
       image.remove();
     }
   }

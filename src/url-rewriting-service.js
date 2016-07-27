@@ -18,7 +18,7 @@ class URLRewritingService {
       const param = decodeURIComponent(matches[1]);
       try {
         outputURL = new URL(param);
-        console.debug('Rewrote url', inputURL.href, outputURL.href);
+        console.debug('Rewrote', inputURL.href, 'as', outputURL.href);
       } catch(exception) {
         console.warn('Error rewriting url', exception);
       }

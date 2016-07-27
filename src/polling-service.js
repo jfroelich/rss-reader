@@ -177,8 +177,6 @@ class PollingService {
       return;
     }
 
-    console.debug('Polling', Entry.prototype.getURL.call(entry).href);
-
     const firstURL = entry.urls[0];
     if(firstURL) {
       const rewrittenURL = this.urlRewritingService.rewriteURL(firstURL);

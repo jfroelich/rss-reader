@@ -13,7 +13,6 @@ class FaviconCache {
 
   connect(callback) {
     console.assert(this.name, 'Undefined database name');
-    console.debug('Connecting to database', this.name);
     const request = indexedDB.open(this.name, this.version);
     request.onupgradeneeded = this.upgrade.bind(this);
 
@@ -85,7 +84,8 @@ class FaviconCache {
     const store = transaction.objectStore('favicon-cache');
     const request = store.get(pageURLString);
     request.onsuccess = function(event) {
-      console.debug('Found entry with url', pageURL.href);
+      console.debug('Found favicon entry', pageURL.href,
+        event.target.result.iconURLString);
       callback(event.target.result);
     };
     request.onerror = function(event) {

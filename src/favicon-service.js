@@ -25,7 +25,6 @@ class FaviconService {
     };
 
     if(this.cache) {
-      console.debug('Detected cache', this.cache.name);
       this.cache.connect(this.onConnect.bind(this, context));
     } else if(document) {
       const iconURL = this.findIconURLInDocument(document, url);
@@ -51,18 +50,13 @@ class FaviconService {
         const iconURL = this.findIconURLInDocument(context.document,
           context.url);
         if(iconURL) {
-          console.debug('Caching from prefetched document',
-            context.url.href, iconURL.href);
-          this.cache.addEntry(connection, context.url, iconURL);
+          this.cache.addEntry(context.connection, context.url, iconURL);
           context.callback(iconURL);
         } else {
-          console.debug(
-            'Did not find icon in prefetched document, checking cache');
-          this.cache.findByPageURL(connection, context.url, boundOnFindByURL);
+          this.cache.findByPageURL(context.connection, context.url,
+            boundOnFindByURL);
         }
       } else {
-        console.debug('No prefetched document, checking cache',
-          context.url.href);
         this.cache.findByPageURL(context.connection, context.url,
           boundOnFindByURL);
       }
@@ -73,20 +67,15 @@ class FaviconService {
           context.url.href, iconURL.href);
         context.callback(iconURL);
       } else {
-        console.error('Connection error, did not find ' +
-          'icon in prefetched document, fetching', context.url.href);
         this.fetchDocument(context);
       }
     } else {
-      console.error('Connection error, missing prefetched ' +
-        'document, fetching', context.url.href);
       this.fetchDocument(context);
     }
   }
 
   onFindByURL(context, entry) {
     if(entry && !this.isEntryExpired(entry)) {
-      console.debug('Cache hit', context.url.href, entry.iconURLString);
       context.connection.close();
       const iconURL = new URL(entry.iconURLString);
       context.callback(iconURL);
