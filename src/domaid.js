@@ -27,6 +27,7 @@ DOMAid.cleanDocument = function(document) {
   filterImageElements(document);
   filterUnwrappableElements(document);
   DOMAid.filterFigureElements(document);
+  DOMAid.filterHairSpaceCharacters(document);
   condenseTextNodeWhitespace(document);
   filterListElements(document);
 
@@ -38,6 +39,19 @@ DOMAid.cleanDocument = function(document) {
   filterElementAttributes(document);
 };
 
+// todo; should be part of some normalize whitespace general function?
+DOMAid.filterHairSpaceCharacters = function(document) {
+  const it = document.createNodeIterator(document.documentElement,
+    NodeFilter.SHOW_TEXT);
+  for(let node = it.nextNode(); node; node = it.nextNode()) {
+    const value = node.nodeValue;
+    const modifiedValue = value.replace(/&(hairsp|#8082|#x200a);/ig, ' ');
+    if(modifiedValue !== value) {
+      console.debug('Replaced hair spaces', value, '=>', modifiedValue);
+      node.nodeValue = modifiedValue;
+    }
+  }
+};
 
 // Unwraps <noscript> elements. Although this could be done by
 // filterUnwrappableElements, I am doing it here because I consider <noscript>
