@@ -271,13 +271,16 @@ class FaviconService {
       this.log.debug('FaviconService: origin cache hit', context.url.origin,
         entry.iconURLString);
 
-      // The origin already exists, so we need to store a link between the
-      // context.url and the root icon. There could already be a link, but
-      // we only reach here if there is no link the cache or there is a link
-      // in the cache but it expired.
-      // TODO: i should be testing for it (access context.entry), and then
-      // doing an update instead of an add in that case.
-
+      // The origin already exists, so we need to store a link between
+      // context.url and the icon url. There could already be an entry, but
+      // we only reach here if there is no entry in the cache or there is an
+      // entry in the cache but it expired. In either case, calling
+      // cache.addEntry executes store.put. If an entry with the same pageURL
+      // exists then that entry will be replaced. If there is no entry with
+      // the same pageURL, then an entry will be added. If replacing the entry,
+      // this essentially just means we are updating its dateUpdated field,
+      // so that future cache lookups will hit because the entry will no longer
+      // be considered expired.
       const iconURL = new URL(entry.iconURLString);
       if(context.url.href !== context.url.origin) {
         this.cache.addEntry(context.connection, context.url, iconURL);
@@ -291,58 +294,32 @@ class FaviconService {
     }
   }
 
-  // TODO: this should be handling its callback. This should callback with
-  // the request data. The validation of length and type should be handled here
-  // If there was a fetch error or the headers are invalid, then this should
-  // callback with undefined. The caller should only be checking for whether
-  // the callback received a defined argument.
-  sendImageHeadRequest(imageURL, callback) {
-    this.log.debug('FaviconService: requesting image', imageURL.href);
-    const request = new XMLHttpRequest();
-    request.timeout = this.timeout;
-    request.ontimeout = callback;
-    request.onerror = callback;
-    request.onabort = callback;
-    request.onload = callback;
-    request.open('HEAD', imageURL.href, true);
-    request.setRequestHeader('Accept', 'image/*');
-    request.send();
-  }
-
-  onFetchOriginIcon(context, redirectURL, event) {
+  onFetchOriginIcon(context, redirectURL, iconURLString) {
     const originURL = new URL(context.url.origin);
-    this.log.debug('FaviconService: fetched',
-      context.url.origin + '/favicon.ico');
-    const contentLength = event.target.getResponseHeader('Content-Length');
-    const contentType = event.target.getResponseHeader('Content-Type');
 
-    if(event.type === 'load' && this.isContentLengthInRange(contentLength) &&
-      this.isMimeTypeImage(contentType)) {
-      const iconURL = new URL(event.target.responseURL);
+    if(iconURLString) {
+      const iconURL = new URL(iconURLString);
       if(context.connection) {
         this.cache.addEntry(context.connection, context.url, iconURL);
         if(redirectURL && redirectURL.href !== context.url.href) {
           this.cache.addEntry(context.connection, redirectURL, iconURL);
         }
-
         if(this.isOriginURLDistinct(context.url, redirectURL, originURL)) {
           this.cache.addEntry(context.connection, originURL, iconURL);
         }
 
         context.connection.close();
-        context.callback(iconURL);
       }
+
+      context.callback(iconURL);
     } else {
-      const originURL = new URL(context.url.origin);
-      this.log.debug('FaviconService: fetch error', event.target.status,
-        context.url.origin + '/favicon.ico');
       if(context.connection) {
         this.cache.deleteByPageURL(context.connection, context.url);
         if(redirectURL && redirectURL.href !== context.url.href) {
           this.cache.deleteByPageURL(context.connection, redirectURL);
         }
 
-        if(originURL.href !== context.url.href) {
+        if(this.isOriginURLDistinct(context.url, redirectURL, originURL)) {
           this.cache.deleteByPageURL(context.connection, originURL);
         }
 
@@ -350,6 +327,34 @@ class FaviconService {
       }
 
       context.callback();
+    }
+  }
+
+  sendImageHeadRequest(imageURL, callback) {
+    this.log.debug('FaviconService: HEAD', imageURL.href);
+    const onResponse = this.onImageHeadResponse.bind(this, imageURL, callback);
+    const request = new XMLHttpRequest();
+    request.timeout = this.timeout;
+    request.ontimeout = onResponse;
+    request.onerror = onResponse;
+    request.onabort = onResponse;
+    request.onload = onResponse;
+    request.open('HEAD', imageURL.href, true);
+    request.setRequestHeader('Accept', 'image/*');
+    request.send();
+  }
+
+  onImageHeadResponse(imageURL, callback, event) {
+    const contentLength = event.target.getResponseHeader('Content-Length');
+    const contentType = event.target.getResponseHeader('Content-Type');
+    if(event.type === 'load' && this.isContentLengthInRange(contentLength) &&
+      this.isMimeTypeImage(contentType)) {
+      this.log.debug('FaviconService: HEAD response success', imageURL.href);
+      callback(event.target.responseURL);
+    } else {
+      this.log.debug('FaviconService: HEAD response error',
+        event.target.status, event.type, imageURL.href);
+      callback();
     }
   }
 
