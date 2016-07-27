@@ -5,26 +5,25 @@
 'use strict';
 
 class FeedCache {
+
   constructor() {
     this.name = 'reader';
     this.version = 20;
-    this.log = new LoggingService();
-    this.log.level = LoggingService.LEVEL_ERROR;
+    this.log = new LoggingService(LoggingService.LEVEL_LOG);
   }
 
   open(callback) {
-
     if(!this.name) {
       this.log.error('FeedCache: undefined database name');
       callback();
       return;
     }
 
-    this.log.debug('FeedCache: connecting to', this.name);
+    this.log.debug('FeedCache: connecting to database', this.name);
     const request = indexedDB.open(this.name, this.version);
     request.addEventListener('upgradeneeded', this.upgrade.bind(this));
     request.addEventListener('success', (event) => {
-      this.log.debug('FeedCache: connected to', this.name);
+      this.log.debug('FeedCache: connected to database', this.name);
       callback(event.target.result);
     });
     request.addEventListener('error', (event) => {
@@ -38,7 +37,8 @@ class FeedCache {
   }
 
   upgrade(event) {
-    this.log.log('Upgrading database from version %s', event.oldVersion);
+    this.log.log('FeedCache: upgrading database from version',
+      event.oldVersion);
 
     const request = event.target;
     const connection = request.result;
@@ -180,6 +180,7 @@ class FeedCache {
   }
 
   getEntryById(connection, entryId, callback) {
+    this.log.debug('FeedCache: getting entry by id', entryId);
     const transaction = connection.transaction('entry', 'readwrite');
     const store = transaction.objectStore('entry');
     const request = store.openCursor(entryId);
@@ -194,6 +195,71 @@ class FeedCache {
     const request = urlsIndex.get(urlObject.href);
     request.onsuccess = callback;
     request.onerror = callback;
+  }
+
+  markEntryAsRead(entryId, callback) {
+    this.log.debug('FeedCache: marking entry %s as read', entryId);
+    this.open(onOpenDatabase.bind(this));
+
+    function onOpenDatabase(connection) {
+      if(!connection) {
+        if(callback) {
+          callback({
+            'type': 'connectionerror',
+            'entryId': entryId
+          });
+        }
+        return;
+      }
+
+      this.getEntryById(connection, entryId, onOpenCursor.bind(this));
+    }
+
+    function onOpenCursor(event) {
+      const cursor = event.target.result;
+      if(!cursor) {
+        if(callback) {
+          callback({
+            'type': 'notfounderror',
+            'entryId': entryId
+          });
+        }
+        return;
+      }
+
+      const entry = cursor.value;
+      if(entry.readState === FeedCache.EntryFlags.READ) {
+        if(callback) {
+          callback({
+            'type': 'alreadyreaderror',
+            'entryId': entryId
+          });
+        }
+        return;
+      }
+
+      entry.readState = FeedCache.EntryFlags.READ;
+      const dateNow = new Date();
+      entry.dateRead = dateNow;
+      entry.dateUpdated = dateNow;
+      cursor.update(entry);
+
+      // Because BadgeUpdateService relies on FeedCache we have a circular
+      // dependency, so I cannot create an instance of BadgeUpdateService in
+      // FeedCache's constructor. So create a new instance here every time.
+      const badgeUpdateService = new BadgeUpdateService();
+      badgeUpdateService.updateCount();
+
+      this.log.log('FeedCache: requested update to mark entry as read',
+        entryId);
+
+      if(callback) {
+        callback({
+          'type': 'success',
+          'entryId': entryId
+        });
+      }
+    }
   }
 
   // TODO: entries must be sanitized fully

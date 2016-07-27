@@ -81,7 +81,9 @@ SlideShow.markAsRead = function(slide) {
 
   const entryIdString = slide.getAttribute('entry');
   const entryId = parseInt(entryIdString, 10);
-  markEntryAsRead(entryId);
+
+  const feedCache = new FeedCache();
+  feedCache.markEntryAsRead(entryId);
 };
 
 SlideShow.maybeAppendSlides = function() {
