@@ -155,6 +155,7 @@ class PollingService {
     }
 
     let entriesProcessed = 0;
+    let entriesAdded = 0;
     const boundOnEntryProcessed = onEntryProcessed.bind(this);
     for(let entry of entries) {
       this.processEntry(context, feed, entry, boundOnEntryProcessed);
@@ -162,10 +163,18 @@ class PollingService {
 
     function onEntryProcessed(optionalAddEntryEvent) {
       entriesProcessed++;
+
+      if(optionalAddEntryEvent && optionalAddEntryEvent.type === 'success') {
+        entriesAdded++;
+      }
+
       if(entriesProcessed === entries.length) {
+        if(entriesAdded) {
+          this.badgeUpdateService.updateCount();
+        }
+
         context.pendingFeedsCount--;
         this.onMaybePollCompleted(context);
-        this.badgeUpdateService.updateCount();
       }
     }
   }
@@ -216,20 +225,22 @@ class PollingService {
         entry.feedTitle = feed.title;
       }
 
-      if(event.type !== 'success') {
-        this.feedCache.addEntry(context.connection, entry, callback);
-        return;
-      }
+      if(event.type === 'success') {
+        // Add the redirect url
+        if(event.responseURL.href !== entryURL.href) {
+          entry.urls.push(event.responseURL);
+        }
 
-      if(event.responseURL.href !== entryURL.href) {
-        entry.urls.push(event.responseURL);
-      }
+        // TODO: also check if the redirect url exists in the cache now that
+        // it is known? Currently addEntry just fails with a ConstraintError
+        // if it exists, maybe that is fine
 
-      // Replace the entry's content
-      const document = event.responseXML;
-      const contentString = document.documentElement.outerHTML.trim();
-      if(contentString) {
-        entry.content = contentString;
+        // Replace the entry's content
+        const document = event.responseXML;
+        const contentString = document.documentElement.outerHTML.trim();
+        if(contentString) {
+          entry.content = contentString;
+        }
       }
 
       this.feedCache.addEntry(context.connection, entry, callback);
