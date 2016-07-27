@@ -92,10 +92,11 @@ class FaviconCache {
     const store = transaction.objectStore('favicon-cache');
     const request = store.get(pageURLString);
     request.onsuccess = function(event) {
+      this.log.debug('FaviconCache: cache hit for', pageURL.href);
       callback(event.target.result);
-    };
+    }.bind(this);
     request.onerror = function(event) {
-      this.log.error('FaviconCache: search error', event);
+      this.log.error('FaviconCache: search error', pageURL.href, event);
       callback();
     }.bind(this);
   }
