@@ -5,6 +5,7 @@
 'use strict';
 
 class FaviconCache {
+
   constructor(name) {
     this.name = name || 'favicon-cache';
     this.version = 1;
@@ -54,22 +55,21 @@ class FaviconCache {
   clear(callback) {
     this.log.debug('FaviconCache: clearing', this.name);
 
-    this.connect(function onConnectForClear(event) {
-      if(event.type !== 'success') {
+    this.connect(function onConnectForClear(connection) {
+      if(!connection) {
         callback();
         return;
       }
 
-      const connection = event.target.result;
       const transaction = connection.transaction('favicon-cache', 'readwrite');
       transaction.oncomplete = function(event) {
         this.log.debug('FaviconCache: cleared', this.name);
         callback();
-      };
+      }.bind(this);
       const store = transaction.objectStore('favicon-cache');
       store.clear();
       connection.close();
-    });
+    }.bind(this));
   }
 
   normalizeURL(url) {
@@ -97,7 +97,7 @@ class FaviconCache {
     request.onerror = function(event) {
       this.log.error('FaviconCache: search error', event);
       callback();
-    };
+    }.bind(this);
   }
 
   addEntry(connection, pageURL, iconURL) {
