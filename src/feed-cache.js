@@ -12,13 +12,10 @@ class FeedCache {
   }
 
   open(callback) {
-    if(!this.name) {
-      console.error('Undefined database name');
-      callback();
-      return;
-    }
+    console.assert(this.name, 'Undefined database name');
+    console.assert(this.version, 'Invalid database version %s', this.version);
 
-    console.debug('Connecting to database', this.name);
+
     const request = indexedDB.open(this.name, this.version);
     request.addEventListener('upgradeneeded', this.upgrade.bind(this));
     request.addEventListener('success', (event) => {

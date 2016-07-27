@@ -78,7 +78,7 @@ class FaviconCache {
   }
 
   findByPageURL(connection, pageURL, callback) {
-    console.debug('Searching for entry with url', pageURL.href);
+    console.debug('Searching favicon cache for entry with url', pageURL.href);
     let pageURLString = this.normalizeURL(pageURL).href;
     const transaction = connection.transaction('favicon-cache');
     const store = transaction.objectStore('favicon-cache');
@@ -89,7 +89,8 @@ class FaviconCache {
       callback(event.target.result);
     };
     request.onerror = function(event) {
-      console.error('Error searching for entry', pageURL.href, event);
+      console.error('Error searching for favicon cache entry', pageURL.href,
+        event);
       callback();
     };
   }
