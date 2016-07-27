@@ -6,7 +6,6 @@
 
 class ImageDimensionsService {
   constructor() {
-    this.log = new LoggingService();
     this.hostDocument = document;
   }
 
@@ -65,7 +64,7 @@ class ImageDimensionsService {
 
   fetchImage(context, image) {
     const sourceURLString = image.getAttribute('src');
-    this.log.debug('ImageDimensionService: fetching', sourceURLString);
+    console.debug('GET', sourceURLString);
     const proxyImage = this.hostDocument.createElement('img');
     const boundOnFetch = this.onFetchImage.bind(this, context, image);
     proxyImage.onload = boundOnFetch;
@@ -78,19 +77,18 @@ class ImageDimensionsService {
     const proxyImage = event.target;
     if(event.type === 'load') {
       if(!image.hasAttribute('width')) {
-        this.log.debug('ImageDimensionService: setting width',
-          image.getAttribute('src'), proxyImage.width);
+        console.debug('Setting image width', image.getAttribute('src'),
+          proxyImage.width);
         image.setAttribute('width', proxyImage.width);
       }
 
       if(!image.hasAttribute('height')) {
-        this.log.debug('ImageDimensionService: setting height',
-          image.getAttribute('src'), proxyImage.height);
+        console.debug('Setting image height', image.getAttribute('src'),
+          proxyImage.height);
         image.setAttribute('height', proxyImage.height);
       }
     } else {
-      this.log.debug('ImageDimensionService: error fetching',
-        image.getAttribute('src'));
+      console.warn('Error fetching', image.getAttribute('src'));
       // TODO: if I got an error, consider removing the image element
       // from the document. Also, don't forget that if I do this I need
       // to be using a static node list, as in, I need to be using

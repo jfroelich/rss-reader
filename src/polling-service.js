@@ -7,7 +7,6 @@
 class PollingService {
 
   constructor() {
-    this.log = new LoggingService();
     this.idlePeriodInSeconds = 30;
     this.feedCache = new FeedCache();
     this.faviconService = new FaviconService();
@@ -20,7 +19,7 @@ class PollingService {
   }
 
   start() {
-    this.log.log('PollingService: starting...');
+    console.log('Checking for new articles...');
 
     const context = {
       'pendingFeedsCount': 0,
@@ -28,13 +27,13 @@ class PollingService {
     };
 
     if(this.isOffline()) {
-      this.log.debug('PollingService: canceled because offline');
+      console.debug('Cannot poll while offline');
       this.onMaybePollCompleted(context);
       return;
     }
 
     if(this.isMeteredConnection()) {
-      this.log.debug('PollingService: canceled because metered connection');
+      console.debug('Cannot poll on metered connection');
       this.onMaybePollCompleted(context);
       return;
     }
@@ -61,7 +60,7 @@ class PollingService {
       if(idleState === 'locked' || idleState === 'idle') {
         this.feedCache.open(this.onOpenDatabase.bind(this, context));
       } else {
-        this.log.debug('Polling canceled because not idle');
+        console.warn('Polling canceled because not idle');
         this.onMaybePollCompleted(context);
       }
     } else {
@@ -111,8 +110,7 @@ class PollingService {
     if(localFeed.dateLastModified && remoteFeed.dateLastModified &&
       localFeed.dateLastModified.getTime() ===
       remoteFeed.dateLastModified.getTime()) {
-      this.log.debug('PollingService: feed not modified',
-        Feed.prototype.getURL.call(localFeed));
+      console.debug('Feed unmodified', Feed.prototype.getURL.call(localFeed));
       context.pendingFeedsCount--;
       this.onMaybePollCompleted(context);
       return;
@@ -174,16 +172,13 @@ class PollingService {
 
   processEntry(context, feed, entry, callback) {
     if(!Entry.prototype.hasURL.call(entry)) {
-      this.log.debug('PollingService: entry missing url', entry);
+      console.warn('Entry missing url', entry);
       callback();
       return;
     }
 
-    this.log.debug('PollingService: processing entry',
-      Entry.prototype.getURL.call(entry).href);
+    console.debug('Polling', Entry.prototype.getURL.call(entry).href);
 
-    // Rewrite the entry's url. Because it was fetched we know there is
-    // only one.
     const firstURL = entry.urls[0];
     if(firstURL) {
       const rewrittenURL = this.urlRewritingService.rewriteURL(firstURL);
@@ -192,7 +187,6 @@ class PollingService {
       }
     }
 
-    // Now use the terminal url to lookup
     const entryURL = Entry.prototype.getURL.call(entry);
     this.feedCache.findEntryWithURL(context.connection, entryURL,
       onFindEntryWithURL.bind(this));
@@ -249,7 +243,7 @@ class PollingService {
       return;
     }
 
-    this.log.log('Polling completed');
+    console.info('Polling completed');
 
     if('SHOW_NOTIFICATIONS' in localStorage) {
       this.showPollCompletedNotification();

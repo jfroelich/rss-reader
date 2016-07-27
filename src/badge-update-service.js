@@ -6,19 +6,18 @@
 
 class BadgeUpdateService {
   constructor() {
-    this.log = new LoggingService();
-    this.log.level = LoggingService.LEVEL_LOG;
     this.cache = new FeedCache();
   }
 
   updateCount(callback) {
-    this.log.debug('BadgeUpdateService: updating count');
+    console.debug('Updating extension badge unread count');
     this.cache.open(this.onOpenCache.bind(this, callback));
   }
 
   onOpenCache(callback, connection) {
     if(connection) {
-      this.log.debug('BadgeUpdateService: counting unread entries');
+      console.debug('Counting unread entries');
+      // TODO: actually I think this belongs in feedcache
       const transaction = connection.transaction('entry');
       const store = transaction.objectStore('entry');
       const index = store.index('readState');
@@ -27,7 +26,6 @@ class BadgeUpdateService {
       request.addEventListener('success', boundOnRequest);
       request.addEventListener('error', boundOnRequest);
     } else {
-      this.log.error('BadgeUpdateService: cache connection error');
       chrome.browserAction.setBadgeText({'text': '?'});
       if(callback) {
         callback();
@@ -38,10 +36,10 @@ class BadgeUpdateService {
   onCountUnreadEntries(callback, event) {
     if(event.type === 'success') {
       const count = event.target.result;
-      this.log.debug('BadgeUpdateService: setting count', count);
+      console.debug('Setting badge text', count);
       chrome.browserAction.setBadgeText({'text': '' + count});
     } else {
-      this.log.error(event);
+      console.error('Error counting unread entries', event);
       chrome.browserAction.setBadgeText({'text': '?'});
     }
 

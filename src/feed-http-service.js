@@ -6,12 +6,13 @@
 
 class FeedHttpService {
   constructor() {
-    this.log = new LoggingService();
-    this.timeoutMillis = null;
+    this.timeoutMillis = 0;
   }
 
   fetch(requestURL, excludeEntries, callback) {
-    this.log.debug('FeedHttpService: fetching', requestURL.href);
+    console.debug('GET', requestURL.href);
+    console.assert(this.timeoutMillis >= 0, 'Invalid timeout specified',
+      this.timeoutMillis);
     const boundOnResponse = this.onResponse.bind(this, requestURL,
       excludeEntries, callback);
     const isAsync = true;
@@ -35,7 +36,7 @@ class FeedHttpService {
     };
 
     if(event.type !== 'load') {
-      this.log.debug('FeedHttpService: error fetching', requestURL.href);
+      console.debug(event.type, event.target.status, requestURL.href);
       callback(outputEvent);
       return;
     }
@@ -43,7 +44,7 @@ class FeedHttpService {
     outputEvent.responseURL = new URL(event.target.responseURL);
     const document = event.target.responseXML;
     if(!document) {
-      this.log.debug('FeedHttpService: undefined document', requestURL.href);
+      console.warn('Undefined document', requestURL.href);
       outputEvent.type = 'invaliddocument';
       callback(outputEvent);
       return;
@@ -51,13 +52,10 @@ class FeedHttpService {
 
     outputEvent.responseXML = event.target.responseXML;
 
-    this.log.debug('FeedHttpService: parsing', requestURL.href);
-
     try {
       outputEvent.feed = FeedParser.parse(document, excludeEntries);
     } catch(exception) {
-      this.log.debug('FeedHttpService: feed parse error', requestURL.href,
-        exception.message);
+      console.warn('Parsing error', requestURL.href, exception.message);
       outputEvent.type = 'parseerror';
       if(exception.message) {
         outputEvent.message = exception.message;
@@ -69,7 +67,7 @@ class FeedHttpService {
 
     outputEvent.feed.urls = [requestURL];
     if(outputEvent.responseURL.href !== requestURL.href) {
-      this.log.debug('FeedHttpService: detected redirect', requestURL.href,
+      console.debug('Detected redirect', requestURL.href,
         outputEvent.responseURL.href);
       outputEvent.feed.urls.push(responseURL);
     }
@@ -82,7 +80,7 @@ class FeedHttpService {
       try {
         outputEvent.feed.dateLastModified = new Date(lastModifiedString);
       } catch(exception) {
-        this.log.debug('FeedHttpService:', exception.message);
+        console.warn('Error parsing last modified header', exception);
       }
     }
 

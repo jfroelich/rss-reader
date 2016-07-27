@@ -9,36 +9,34 @@ class FeedCache {
   constructor() {
     this.name = 'reader';
     this.version = 20;
-    this.log = new LoggingService(LoggingService.LEVEL_LOG);
   }
 
   open(callback) {
     if(!this.name) {
-      this.log.error('FeedCache: undefined database name');
+      console.error('Undefined database name');
       callback();
       return;
     }
 
-    this.log.debug('FeedCache: connecting to database', this.name);
+    console.debug('Connecting to database', this.name);
     const request = indexedDB.open(this.name, this.version);
     request.addEventListener('upgradeneeded', this.upgrade.bind(this));
     request.addEventListener('success', (event) => {
-      this.log.debug('FeedCache: connected to database', this.name);
+      console.debug('Connected to database', this.name);
       callback(event.target.result);
     });
-    request.addEventListener('error', (event) => {
-      this.log.error(event);
+    request.addEventListener('error', function(event) {
+      console.error(event);
       callback();
     });
-    request.addEventListener('blocked', (event) => {
-      this.log.error(event);
+    request.addEventListener('blocked', function(event) {
+      console.warn(event);
       callback();
     });
   }
 
   upgrade(event) {
-    this.log.log('FeedCache: upgrading database from version',
-      event.oldVersion);
+    console.log('Upgrading database from version', event.oldVersion);
 
     const request = event.target;
     const connection = request.result;
@@ -129,6 +127,7 @@ class FeedCache {
   }
 
   openUnreadUnarchivedEntryCursor(connection, callback) {
+    console.debug('Loading unread unarchived entries');
     const transaction = connection.transaction('entry');
     const entryStore = transaction.objectStore('entry');
     const index = entryStore.index('archiveState-readState');
@@ -140,6 +139,7 @@ class FeedCache {
   }
 
   openEntryCursorForFeed(connection, feedId, callback) {
+    console.debug('Loading entries with feed id', feedId);
     const transaction = connection.transaction('entry', 'readwrite');
     const store = transaction.objectStore('entry');
     const index = store.index('feed');
@@ -148,6 +148,7 @@ class FeedCache {
   }
 
   openFeedsCursor(connection, callback) {
+    console.debug('Opening feeds cursor');
     const transaction = connection.transaction('feed');
     const feedStore = transaction.objectStore('feed');
     const request = feedStore.openCursor();
@@ -156,6 +157,7 @@ class FeedCache {
   }
 
   openFeedsCursorSortedByTitle(connection, callback) {
+    console.debug('Opening feeds cursor sorted by title');
     const transaction = connection.transaction('feed');
     const store = transaction.objectStore('feed');
     const index = store.index('title');
@@ -164,6 +166,7 @@ class FeedCache {
   }
 
   findFeedById(connection, feedId, callback) {
+    console.debug('Finding feed with id', feedId);
     const transaction = connection.transaction('feed');
     const store = transaction.objectStore('feed');
     const request = store.get(feedId);
@@ -171,16 +174,16 @@ class FeedCache {
     request.onerror = callback;
   }
 
-  // todo: this should be exclusive to subscription-service
   deleteFeedById(connection, feedId, callback) {
+    console.debug('Deleting feed with id', feedId);
     const transaction = connection.transaction('feed', 'readwrite');
     const store = transaction.objectStore('feed');
     const request = store.delete(feedId);
     request.onsuccess = callback;
   }
 
-  getEntryById(connection, entryId, callback) {
-    this.log.debug('FeedCache: getting entry by id', entryId);
+  findEntryById(connection, entryId, callback) {
+    console.debug('Finding entry with id', entryId);
     const transaction = connection.transaction('entry', 'readwrite');
     const store = transaction.objectStore('entry');
     const request = store.openCursor(entryId);
@@ -189,6 +192,7 @@ class FeedCache {
   }
 
   findEntryWithURL(connection, urlObject, callback) {
+    console.debug('Finding entry with url', urlObject.href);
     const transaction = connection.transaction('entry');
     const entryStore = transaction.objectStore('entry');
     const urlsIndex = entryStore.index('urls');
@@ -198,7 +202,7 @@ class FeedCache {
   }
 
   markEntryAsRead(entryId, callback) {
-    this.log.debug('FeedCache: marking entry %s as read', entryId);
+    console.debug('Marking entry %s as read', entryId);
     this.open(onOpenDatabase.bind(this));
 
     function onOpenDatabase(connection) {
@@ -212,12 +216,13 @@ class FeedCache {
         return;
       }
 
-      this.getEntryById(connection, entryId, onOpenCursor.bind(this));
+      this.findEntryById(connection, entryId, onOpenCursor.bind(this));
     }
 
     function onOpenCursor(event) {
       const cursor = event.target.result;
       if(!cursor) {
+        console.error('No entry found for id %i to mark as read', entryId);
         if(callback) {
           callback({
             'type': 'notfounderror',
@@ -229,6 +234,8 @@ class FeedCache {
 
       const entry = cursor.value;
       if(entry.readState === FeedCache.EntryFlags.READ) {
+        console.error('Attempted to remark read entry with id %i as read',
+          entryId);
         if(callback) {
           callback({
             'type': 'alreadyreaderror',
@@ -250,8 +257,7 @@ class FeedCache {
       const badgeUpdateService = new BadgeUpdateService();
       badgeUpdateService.updateCount();
 
-      this.log.log('FeedCache: requested update to mark entry as read',
-        entryId);
+      console.log('Requested entry with id %i be marked as read', entryId);
 
       if(callback) {
         callback({
@@ -264,9 +270,10 @@ class FeedCache {
 
   // TODO: entries must be sanitized fully
   addEntry(connection, entry, callback) {
-    // Assume entry has url
-    this.log.debug('FeedCache: adding entry',
-      Entry.prototype.getURL.call(entry).href);
+
+    const terminalEntryURL = Entry.prototype.getURL.call(entry);
+    console.assert(terminalEntryURL, 'Entry missing url %O', entry);
+    console.debug('Adding entry', terminalEntryURL.href);
 
     const storable = {};
 
@@ -346,6 +353,7 @@ class FeedCache {
   // TODO: when sanitizing, consider max length of each field and the
   // behavior when exceeded
   addFeed(connection, feed, callback) {
+    console.debug('Storing new feed', feed);
     feed.dateCreated = new Date();
     const transaction = connection.transaction('feed', 'readwrite');
     const feedStore = transaction.objectStore('feed');
@@ -380,6 +388,7 @@ class FeedCache {
   }
 
   updateFeed(connection, feed, callback) {
+    console.debug('Updating feed in storage', feed);
     let storableFeed = Feed.prototype.serialize.call(feed);
     storableFeed = this.sanitizeFeed(storableFeed);
     storableFeed.dateUpdated = new Date();
@@ -389,15 +398,14 @@ class FeedCache {
     const request = store.put(storableFeed);
 
     request.onsuccess = function(event) {
-      this.log.debug('FeedCache: updated feed',
-        Feed.prototype.getURL.call(storableFeed));
+      console.debug('Updated feed', Feed.prototype.getURL.call(storableFeed));
       callback('success', storableFeed);
-    }.bind(this);
+    };
 
     request.onerror = function(event) {
-      this.log.debug('FeedCache: update feed error', event);
+      console.error('Error updating feed', event);
       callback('error', storableFeed);
-    }.bind(this);
+    };
   }
 }
 

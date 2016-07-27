@@ -6,14 +6,13 @@
 
 class ArchiveService {
   constructor() {
-    this.log = new LoggingService();
     const tenDaysInMillis = 10 * 24 * 60 * 60 * 1000;
     this.expiresAfterMillis = tenDaysInMillis;
     this.cache = new FeedCache();
   }
 
   start() {
-    this.log.log('Running archive service ...');
+    console.log('Running archive service...');
     const context = {
       'numEntriesProcessed': 0,
       'numEntriesChanged': 0,
@@ -24,12 +23,11 @@ class ArchiveService {
   }
 
   onComplete(context) {
-    this.log.info('Archived %s of %s entries', context.numEntriesChanged,
+    console.info('Archived %s of %s entries', context.numEntriesChanged,
       context.numEntriesProcessed);
   }
 
   onConnect(context, connection) {
-    this.log.debug('Archive service connected to database');
     if(!connection) {
       this.onComplete(context);
       return;
@@ -58,20 +56,15 @@ class ArchiveService {
     context.numEntriesProcessed++;
     const entry = cursor.value;
 
-    const entryURLString = entry.urls[entry.urls.length - 1];
-
-    this.log.debug('Archive service examining', entryURLString);
-
-    // Temporary support for legacy entry storage
     if(!entry.dateCreated && entry.created) {
+      console.warn('Found legacy entry date', entry.created);
       entry.dateCreated = new Date(entry.created);
-      this.log.debug('Archive service found legacy entry date', entry.created,
-        entry.dateCreated);
+      delete entry.created;
     }
 
-    let ageInMillis = this.getEntryAge(context.currentDate, entry);
+    const ageInMillis = ArchiveService.getEntryAge(context.currentDate, entry);
     if(ageInMillis > this.expiresAfterMillis) {
-      this.log.debug('Archiving service archiving', entryURLString);
+      console.log('Archiving entry', Entry.prototype.getURL.call(entry));
       const archivedEntry = ArchiveService.getArchivableEntry(entry);
       // This is async, we don't wait for it to complete
       cursor.update(archivedEntry);
@@ -81,15 +74,13 @@ class ArchiveService {
     cursor.continue();
   }
 
-  // If we do not know when the entry was created, then assume it is
-  // archivable. Fake the age as whatever will always trigger the condition
-  // to archive.
-  getEntryAge(currentDate, entry) {
+  static getEntryAge(currentDate, entry) {
     let ageInMillis = 0;
     if(entry.dateCreated) {
       ageInMillis = currentDate - entry.dateCreated;
     } else {
-      this.log.debug('Archive service unknown entry date created', entry);
+      console.debug('Unknown entry date created', entry);
+      // Use a fake age that guarantees archival
       ageInMillis = this.expiresAfterMillis + 1;
     }
     return ageInMillis;

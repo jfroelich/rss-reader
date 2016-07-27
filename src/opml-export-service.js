@@ -6,7 +6,6 @@
 
 class OPMLExportService {
   constructor() {
-    this.log = new LoggingService();
     this.cache = new FeedCache();
   }
 
@@ -61,8 +60,8 @@ class OPMLExportService {
     URL.revokeObjectURL(objectURL);
     anchor.remove();
 
-    this.log.debug('Completed exporting %s feeds to opml file %s',
-      context.feeds.length, context.fileName);
+    console.info('Exported %s feeds to opml file %s', context.feeds.length,
+      context.fileName);
   }
 
   createDocument(title) {
@@ -105,13 +104,10 @@ class OPMLExportService {
 
     // Only store the terminal url
     if(feed.urls && feed.urls.length) {
-      outlineElement.setAttribute('xmlUrl',
-        feed.urls[feed.urls.length - 1]);
+      outlineElement.setAttribute('xmlUrl', Feed.prototype.getURL.call(feed));
     } else {
-      this.log.debug('OPMLExportService: no urls found for feed',
-        JSON.stringify(feed));
+      console.error('No urls found for feed', JSON.stringify(feed));
     }
-
 
     if(feed.title) {
       outlineElement.setAttribute('text', feed.title);
@@ -123,11 +119,13 @@ class OPMLExportService {
     if(feed.link) {
       outlineElement.setAttribute('htmlUrl', feed.link);
     }
+
+    // Due to quirks with xml documents, document.body does not work
     const bodyElement = document.querySelector('body');
     if(bodyElement) {
       bodyElement.appendChild(outlineElement);
     } else {
-      this.log.error('OPMLExportService: no body element');
+      console.warn('Append failed, no body element found');
     }
   }
 }

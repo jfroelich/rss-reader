@@ -6,20 +6,22 @@
 
 class FetchHTMLService {
   constructor() {
-    this.log = new LoggingService();
     this.timeoutMillis = 15 * 1000;
     this.imageDimensionsService = new ImageDimensionsService();
   }
 
   fetch(requestURL, callback) {
-    this.log.debug('FetchHTMLService: fetching', requestURL.href);
+    console.debug('GET', requestURL.href);
 
     if(this.isResistantURL(requestURL)) {
+      console.debug('Canceling GET because url is resistant', requestURL.href);
       callback({'type': 'resistanturl', 'requestURL': requestURL});
       return;
     }
 
     if(this.isPDFURL(requestURL)) {
+      console.debug('Canceling GET because url appears as PDF',
+        requestURL.href);
       callback({'type': 'pdfurl', 'requestURL': requestURL});
       return;
     }
@@ -47,8 +49,7 @@ class FetchHTMLService {
     };
 
     if(event.type !== 'load') {
-      this.log.debug('FetchHTMLService: fetch error', requestURL.href,
-        event.type);
+      console.debug(event.type, event.target.status, requestURL.href);
       outputEvent.type = event.type;
       callback(outputEvent);
       return;
@@ -56,7 +57,7 @@ class FetchHTMLService {
 
     const document = event.target.responseXML;
     if(!document) {
-      this.log.debug('FetchHTMLService: undefined document', requestURL.href);
+      console.warn('Undefined document', requestURL.href);
       outputEvent.type = 'undefineddocument';
       callback(outputEvent);
       return;
@@ -132,8 +133,7 @@ class FetchHTMLService {
             if(alternateValue && this.isMinimallyValidURL(alternateValue)) {
               image.removeAttribute(alternateName);
               image.setAttribute('src', alternateValue);
-              this.log.debug('FetchHTMLService: set lazy image src',
-                alternateValue);
+              console.debug('Set lazy image src', alternateValue);
               break;
             }
           }
@@ -180,8 +180,7 @@ class FetchHTMLService {
     ].join(',');
     const images = document.querySelectorAll(SELECTOR);
     for(let image of images) {
-      this.log.debug('FetchHTMLService: removing tracking image',
-        image.outerHTML);
+      console.debug('Removing tracking image', image.outerHTML);
       image.remove();
     }
   }
@@ -257,9 +256,10 @@ class FetchHTMLService {
         continue;
       }
 
-      // todo: this probably belongs in a separate filter pass
+      // TODO: this probably belongs in a separate filter pass
+      // TODO: this should probably be unwrap not remove
       if(/^\s*https?:\/\/#/i.test(attributeValue)) {
-        this.log.debug("removing invalid anchor url:", element.outerHTML);
+        console.debug("Removing invalid anchor", element.outerHTML);
         element.remove();
         continue;
       }
@@ -333,8 +333,7 @@ class FetchHTMLService {
       try {
         return new URL(urlString, baseURL);
       } catch(exception) {
-        this.log.debug('FetchHTMLService: resolveURL error', urlString,
-          baseURL.href);
+        console.warn(urlString, baseURL.href, exception);
       }
     }
   }

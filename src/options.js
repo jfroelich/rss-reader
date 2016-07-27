@@ -291,7 +291,6 @@ OptionsPage.showSubscriptionPreview = function(url) {
 
   const excludeEntries = false;
   const fetchService = new FeedHttpService();
-  fetchService.log.level = LoggingService.LEVEL_LOG;
   fetchService.timeoutMillis = 10 * 1000;
   fetchService.fetch(url, excludeEntries, onFetchFeed);
 
@@ -547,7 +546,6 @@ OptionsPage.onSubscriptionFormSubmit = function(event) {
 
     const searchService = new GoogleFeedsService();
     searchService.timeoutInMillis = 5000;
-    searchService.log = new LoggingService(LoggingService.LEVEL_LOG);
     searchService.search(queryString, OptionsPage.onSearchGoogleFeeds);
   }
 
@@ -809,15 +807,14 @@ OptionsPage.buttonUnsubscribeOnClick = function(event) {
 // TODO: give immediate visual feedback the import started
 // TODO: switch to a different section of the options ui on complete?
 OptionsPage.importOPMLButtonOnClick = function(event) {
-  console.debug('Received import opml button click');
   const importService = new OPMLImportService();
-  importService.log.level = LoggingService.LEVEL_LOG;
+  // TODO: check that import service can handle undefined callback and if
+  // so do not pass a callback here
   importService.start(function() {});
 };
 
 OptionsPage.exportOPMLButtonOnClick = function(event) {
   const exportService = new OPMLExportService();
-  exportService.log.level = LoggingService.LEVEL_LOG;
   exportService.start('Subscriptions', 'subscriptions.xml');
 };
 

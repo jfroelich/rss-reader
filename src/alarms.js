@@ -19,22 +19,17 @@ chrome.alarms.get('poll', function(alarm) {
 });
 
 function onAlarmListener(alarm) {
-  console.debug('Received alarm wakeup', alarm.name);
+  console.debug('Alarm wakeup', alarm.name);
 
   const archiveService = new ArchiveService();
-  archiveService.log.level = LoggingService.LEVEL_LOG;
-
   const pollingService = new PollingService();
-  pollingService.log.level = LoggingService.LEVEL_LOG;
-  pollingService.faviconService.log.level = LoggingService.LEVEL_LOG;
-  pollingService.fetchHTMLService.log.level = LoggingService.LEVEL_DEBUG;
 
   if(alarm.name === 'archive') {
     archiveService.start();
   } else if(alarm.name === 'poll') {
     pollingService.start();
   } else {
-    console.debug('Unknown alarm', alarm.name);
+    console.warn('Unknown alarm', alarm.name);
   }
 }
 

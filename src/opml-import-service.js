@@ -7,12 +7,15 @@
 class OPMLImportService {
 
   constructor() {
-    this.log = new LoggingService();
     this.cache = new FeedCache();
   }
 
   start(callback) {
-    this.log.debug('OPMLImportService: starting import');
+    console.debug('Importing OPML files...');
+
+    // TODO: if context.uploader is defined there is no need to define
+    // context.files
+
     const context = {
       'filesProcessed': 0,
       'files': null,
@@ -31,11 +34,11 @@ class OPMLImportService {
   }
 
   onUploaderChange(context, event) {
-    this.log.debug('OPMLImportService: received uploader change event');
+    console.debug('Received uploader change event');
     context.uploader.removeEventListener('change', this.onUploaderChange);
     context.files = context.uploader.files;
     if(!context.files || !context.files.length) {
-      this.log.debug('OPMLImportService: no files uploaded');
+      console.warn('No files uploaded');
       context.uploader.remove();
       context.callback();
       return;
@@ -51,20 +54,19 @@ class OPMLImportService {
       return;
     }
 
-    this.log.debug('OPMLImportService: connected to database');
+    console.debug('Connected to database');
     context.connection = connection;
 
     for(let file of context.files) {
-      this.log.debug('OPMLImportService: processing', file.name);
+      console.debug('Importing file', file.name);
       if(!this.isMimeTypeXML(file.type)) {
-        this.log.debug('OPMLImportService: skipping file due to mime type',
-          file.name, file.type);
+        console.warn('Invalid mime type', file.name, file.type);
         this.onFileProcessed(context);
         continue;
       }
 
       if(!file.size) {
-        this.log.debug('OPMLImportService: skipping empty file', file.name);
+        console.warn('Empty file', file.name);
         this.onFileProcessed(context);
         continue;
       }
@@ -92,12 +94,10 @@ class OPMLImportService {
 
   onFileRead(context, file, event) {
     if(event.type === 'error') {
-      this.log.error(file.name, event);
+      console.warn(file.name, event);
       this.onFileProcessed(context);
       return;
     }
-
-    this.log.debug('OPMLImportService: parsing', file.name);
 
     const parser = new DOMParser();
     const fileText = event.target.result;
@@ -105,29 +105,26 @@ class OPMLImportService {
     try {
       document = parser.parseFromString(fileText, 'application/xml');
     } catch(exception) {
-      this.log.error(exception);
+      console.warn(exception);
       this.onFileProcessed(context);
       return;
     }
 
     if(!document) {
-      this.log.error('OPMLImportService: undefined document',
-        file.name);
+      console.warn('Undefined document', file.name);
       this.onFileProcessed(context);
       return;
     }
 
     const parserError = document.querySelector('parsererror');
     if(parserError) {
-      this.log.error('OPMLImportService: parse error', file.name,
-        parserError.textContent);
+      console.warn('Parse error', file.name, parserError.textContent);
       this.onFileProcessed(context);
       return;
     }
 
     if(document.documentElement.localName !== 'opml') {
-      this.log.debug('OPMLImportService: not opml', file.name,
-        document.documentElement.nodeName);
+      console.warn('Not <opml>', file.name, document.documentElement.nodeName);
       this.onFileProcessed(context);
       return;
     }
@@ -135,7 +132,7 @@ class OPMLImportService {
     // NOTE: for an unknown reason, document.body doesn't work here
     const bodyElement = document.querySelector('body');
     if(!bodyElement) {
-      this.log.debug('OPMLImportService: no body element', file.name,
+      console.warn('No body element', file.name,
         document.documentElement.outerHTML);
       this.onFileProcessed(context);
       return;
@@ -153,27 +150,24 @@ class OPMLImportService {
 
       let type = element.getAttribute('type');
       if(!type || type.length < 3 || !/rss|rdf|feed/i.test(type)) {
-        this.log.debug('OPMLImportService: skipping outline with type', type);
+        console.warn('Invalid outline type', element.outerHTML);
         continue;
       }
 
       const urlString = (element.getAttribute('xmlUrl') || '').trim();
       if(!urlString) {
-        this.log.debug('OPMLImportService: skipping outline without url',
-          urlString);
+        console.warn('Outline without url', element.outerHTML);
         continue;
       }
 
       let url = this.toURLTrapped(urlString);
       if(!url) {
-        this.log.debug('OPMLImportService: skipping outline due to url error',
-          element.getAttribute('xmlUrl'));
+        console.warn('Invalid outline url', element.outerHTML);
         continue;
       }
 
       if(seenURLStringSet.has(url.href)) {
-        this.log.debug('OPMLImportService: skipping duplicate outline',
-          url.href);
+        console.debug('Skipping duplicate outline', element.outerHTML);
         continue;
       }
       seenURLStringSet.add(url.href);
@@ -202,8 +196,6 @@ class OPMLImportService {
         }
       }
 
-      this.log.debug('OPMLImportService: adding feed', url.href, 'from file',
-        file.name);
       this.cache.addFeed(context.connection, feed, boundOnAddFeed);
     }
 
@@ -214,7 +206,7 @@ class OPMLImportService {
     try {
       return new URL(urlString);
     } catch(exception) {
-      this.log.debug('OPMLImportService:', urlString, exception.message);
+      console.warn(exception);
     }
 
     return null;
@@ -235,9 +227,9 @@ class OPMLImportService {
 
   onAddFeed(context, event) {
     if(event.type === 'success') {
-      this.log.debug('OPMLImportService: added feed id', event.target.result);
+      console.debug('Added feed id', event.target.result);
     } else {
-      this.log.error('OPMLImportService: add feed error', event);
+      console.error('Add feed error', event);
     }
   }
 }

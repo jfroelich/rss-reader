@@ -11,7 +11,6 @@
 class GoogleFeedsService {
 
   constructor() {
-    this.log = new LoggingService();
     this.timeoutInMillis = 5000;
     this.baseURLString =
       'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
@@ -21,10 +20,11 @@ class GoogleFeedsService {
   }
 
   search(queryString, callback) {
+    console.assert(queryString, 'queryString is falsy');
     const urlString = this.baseURLString + encodeURIComponent(queryString);
-    this.log.debug('GoogleFeedsService: requesting', urlString);
+    console.debug('GET', urlString);
     const isAsync = true;
-    const boundOnResponse = this.onResponse.bind(this, callback);
+    const boundOnResponse = this.onResponse.bind(this, urlString, callback);
     const request = new XMLHttpRequest();
     request.timeout = this.timeoutInMillis;
     request.onerror = boundOnResponse;
@@ -36,22 +36,21 @@ class GoogleFeedsService {
     request.send();
   }
 
-  onResponse(callback, event) {
-    this.log.debug('GoogleFeedsService: received response');
+  onResponse(urlString, callback, event) {
     const responseEvent = {
       'type': event.type,
       'status': event.target.status
     };
 
     if(!event.target.response) {
-      this.log.error('GoogleFeedsService: response undefined');
+      console.warn('Response undefined for GET', urlString);
       responseEvent.type = 'noresponse';
       callback(responseEvent);
       return;
     }
 
     if(event.type !== 'load') {
-      this.log.error('GoogleFeedsService: response error',
+      console.warn('GET', urlString, event.type, event.target.status,
         event.target.response.responseDetails);
       responseEvent.message = event.target.response.responseDetails;
       callback(responseEvent);
@@ -60,7 +59,7 @@ class GoogleFeedsService {
 
     const data = event.target.response.responseData;
     if(!data) {
-      this.log.error('GoogleFeedsService: undefined data',
+      console.error('Undefined data for GET', urlString,
         event.target.response.responseDetails);
       responseEvent.message = event.target.response.responseDetails;
       callback(responseEvent);

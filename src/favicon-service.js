@@ -12,11 +12,10 @@ class FaviconService {
     this.minLength = 50;
     this.maxLength = 10000;
     this.expiresAfterMillis = 1000 * 60 * 60 * 24 * 30;
-    this.log = new LoggingService();
   }
 
   lookup(url, document, callback) {
-    this.log.debug('FaviconService: lookup', url.href);
+    console.debug('Looking up favicon for', url.href);
     const context = {
       'url': url,
       'callback': callback,
@@ -26,21 +25,20 @@ class FaviconService {
     };
 
     if(this.cache) {
-      this.log.debug('FaviconService: detected cache', this.cache.name);
+      console.debug('Detected cache', this.cache.name);
       this.cache.connect(this.onConnect.bind(this, context));
     } else if(document) {
       const iconURL = this.findIconURLInDocument(document, url);
       if(iconURL) {
-        this.log.debug('FaviconService: found icon in prefetched document ' +
-          'without cache', iconURL.href);
+        console.debug('Found icon in prefetched document without cache',
+          iconURL.href);
         callback(iconURL);
       } else {
-        this.log.debug('FaviconService: did not find icon in prefetched ' +
-          'document without cache');
+        console.debug('Did not find icon in prefetched document without cache');
         this.fetchDocument(context);
       }
     } else {
-      this.log.debug('FaviconService: no cache or prefetched document');
+      console.debug('No cache or prefetched document, falling back to fetch');
       this.fetchDocument(context);
     }
   }
@@ -53,17 +51,17 @@ class FaviconService {
         const iconURL = this.findIconURLInDocument(context.document,
           context.url);
         if(iconURL) {
-          this.log.debug('FaviconService: caching from prefetched document',
+          console.debug('Caching from prefetched document',
             context.url.href, iconURL.href);
           this.cache.addEntry(connection, context.url, iconURL);
           context.callback(iconURL);
         } else {
-          this.log.debug('FaviconService: did not find icon in prefetched ' +
-            'document, checking cache');
+          console.debug(
+            'Did not find icon in prefetched document, checking cache');
           this.cache.findByPageURL(connection, context.url, boundOnFindByURL);
         }
       } else {
-        this.log.debug('FaviconService: no prefetched document, checking cache',
+        console.debug('No prefetched document, checking cache',
           context.url.href);
         this.cache.findByPageURL(context.connection, context.url,
           boundOnFindByURL);
@@ -71,16 +69,16 @@ class FaviconService {
     } else if(context.document) {
       const iconURL = this.findIconURLInDocument(context.document, url);
       if(iconURL) {
-        this.log.error('FaviconService: connection error, found icon in ' +
-          'prefetched document', context.url.href, iconURL.href);
+        console.error('Connection error, found icon in prefetched document',
+          context.url.href, iconURL.href);
         context.callback(iconURL);
       } else {
-        this.log.error('FaviconService: connection error, did not find ' +
+        console.error('Connection error, did not find ' +
           'icon in prefetched document, fetching', context.url.href);
         this.fetchDocument(context);
       }
     } else {
-      this.log.error('FaviconService: connection error, missing prefetched ' +
+      console.error('Connection error, missing prefetched ' +
         'document, fetching', context.url.href);
       this.fetchDocument(context);
     }
@@ -88,13 +86,12 @@ class FaviconService {
 
   onFindByURL(context, entry) {
     if(entry && !this.isEntryExpired(entry)) {
-      this.log.debug('FaviconService: cache hit', context.url.href,
-        entry.iconURLString);
+      console.debug('Cache hit', context.url.href, entry.iconURLString);
       context.connection.close();
       const iconURL = new URL(entry.iconURLString);
       context.callback(iconURL);
     } else {
-      this.log.debug('FaviconService: cache miss', context.url.href);
+      console.debug('Cache miss', context.url.href);
       context.entry = entry;
       this.fetchDocument(context);
     }
@@ -105,12 +102,13 @@ class FaviconService {
   }
 
   fetchDocument(context) {
-    this.log.debug('FaviconService: fetching', context.url.href);
     if('onLine' in navigator && !navigator.onLine) {
+      console.warn('Offline, unable to fetch %s', context.url.href);
       if(context.connection) {
         context.connection.close();
       }
       if(context.entry) {
+        console.debug('Offline, falling back to expired entry', context.entry);
         context.callback(new URL(context.entry.iconURLString));
       } else {
         context.callback();
@@ -118,6 +116,7 @@ class FaviconService {
       return;
     }
 
+    console.debug('Fetching %s to search for favicons', context.url.href);
     const boundOnFetch = this.onFetchDocument.bind(this, context);
     const request = new XMLHttpRequest();
     request.timeout = this.timeout;
@@ -133,8 +132,7 @@ class FaviconService {
 
   onFetchDocument(context, event) {
     if(event.type !== 'load') {
-      this.log.debug('FaviconService: fetch error', event.status,
-        context.url.href);
+      console.debug(event.status, event.type, context.url.href);
       if(context.connection && context.entry) {
         this.cache.deleteByPageURL(context.connection, context.url);
       }
@@ -146,37 +144,37 @@ class FaviconService {
     const responseURL = new URL(event.target.responseURL);
 
     if(!document) {
-      this.log.debug('FaviconService: undefined document', context.url.href);
+      console.debug('Fetched document is undefined', context.url.href);
       this.lookupRedirectURL(context, new URL(responseURL));
       return;
     }
 
-    this.log.debug('FaviconService: fetched', context.url.href);
-    const inPageIconURL = this.findIconURLInDocument(document, responseURL);
-    if(!inPageIconURL) {
-      this.log.debug('FaviconService: no icons in page', context.url.href);
-      this.lookupRedirectURL(context, new URL(responseURL));
-      return;
-    }
+    console.debug(event.type, event.target.status, context.url.href);
+    const iconURL = this.findIconURLInDocument(document, responseURL);
+    if(iconURL) {
+      console.debug('Found icon in page', context.url.href, iconURL.href);
+      if(context.connection) {
+        this.cache.addEntry(context.connection, context.url, iconURL);
+        if(responseURL.href !== context.url.href) {
+          this.cache.addEntry(context.connection, responseURL,
+            iconURL);
+        }
 
-    this.log.debug('FaviconService: found icon in page', context.url.href,
-      inPageIconURL.href);
-    if(context.connection) {
-      this.cache.addEntry(context.connection, context.url, inPageIconURL);
-      if(responseURL.href !== context.url.href) {
-        this.cache.addEntry(context.connection, responseURL,
-          inPageIconURL);
+        // TODO: I should also add origin url here if it is distinct?
+
+        context.connection.close();
       }
-      context.connection.close();
+      context.callback(iconURL);
+    } else {
+      console.debug('No icons found in page', context.url.href);
+      this.lookupRedirectURL(context, new URL(responseURL));
     }
-    context.callback(inPageIconURL);
   }
 
   lookupRedirectURL(context, redirectURL) {
     if(context.connection && redirectURL &&
       redirectURL.href !== context.url.href) {
-      this.log.debug('FaviconService: checking cache for redirect',
-        redirectURL.href);
+      console.debug('Looking up redirect', redirectURL.href);
       this.cache.findByPageURL(context.connection, redirectURL,
         this.onLookupRedirectURL.bind(this, context, redirectURL));
     } else {
@@ -186,32 +184,29 @@ class FaviconService {
 
   onLookupRedirectURL(context, redirectURL, entry) {
     if(entry && !this.isEntryExpired(entry)) {
-      this.log.debug('FaviconService: redirect cache hit',
-        redirectURL.href);
+      console.debug('Found redirect entry', entry);
       context.connection.close();
       context.callback(new URL(entry.iconURLString));
     } else {
-      this.log.debug('FaviconService: redirect cache miss',
-        redirectURL.href);
+      console.debug('Did not find redirect', redirectURL.href);
       this.lookupOrigin(context, redirectURL);
     }
   }
 
-
   findIconURLInDocument(document, baseURL) {
+    console.debug('Searching for icons in page', baseURL.href);
+
     if(document.documentElement.localName !== 'html') {
-      this.log.debug('FaviconService: invalid document element', baseURL.href);
+      console.debug('Document is not HTML', baseURL.href,
+        document.documentElement.localName);
       return;
     }
-
 
     const headElement = document.head;
     if(!headElement) {
-      this.log.debug('FaviconService: no head element detected', baseURL.href);
+      console.debug('Missing <head>', baseURL.href);
       return;
     }
-
-    this.log.debug('FaviconService: searching document', baseURL.href);
 
     const selectors = [
       'link[rel="icon"][href]',
@@ -232,11 +227,11 @@ class FaviconService {
         if(href) {
           try {
             const iconURL = new URL(href, baseURL);
-            this.log.debug('FaviconService: matched element',
+            console.debug('Found element identifying favicon',
               element.outerHTML);
             return iconURL;
           } catch(exception) {
-            this.log.debug(exception);
+            console.warn(exception);
           }
         }
       }
@@ -251,15 +246,12 @@ class FaviconService {
   lookupOrigin(context, redirectURL) {
     const originURL = new URL(context.url.origin);
     const originIconURL = new URL(context.url.origin + '/favicon.ico');
-
     if(context.connection &&
       this.isOriginURLDistinct(context.url, redirectURL, originURL)) {
-      this.log.debug('FaviconService: searching cache for origin',
-        originURL.href);
+      console.debug('Searching cache for origin', originURL.href);
       this.cache.findByPageURL(context.connection, originURL,
         this.onLookupOrigin.bind(this, context, redirectURL));
     } else {
-      this.log.debug('FaviconService: not searching cache for origin');
       this.sendImageHeadRequest(originIconURL,
         this.onFetchOriginIcon.bind(this, context, redirectURL));
     }
@@ -268,8 +260,7 @@ class FaviconService {
   onLookupOrigin(context, redirectURL, entry) {
     const originIconURL = new URL(context.url.origin + '/favicon.ico');
     if(entry && !this.isEntryExpired(entry)) {
-      this.log.debug('FaviconService: origin cache hit', context.url.origin,
-        entry.iconURLString);
+      console.debug('Found origin entry in cache', entry);
 
       // The origin already exists, so we need to store a link between
       // context.url and the icon url. There could already be an entry, but
@@ -288,7 +279,6 @@ class FaviconService {
       context.connection.close();
       context.callback(iconURL);
     } else {
-      this.log.debug('FaviconService: origin cache miss', context.url.origin);
       this.sendImageHeadRequest(originIconURL,
         this.onFetchOriginIcon.bind(this, context, redirectURL));
     }
@@ -331,7 +321,7 @@ class FaviconService {
   }
 
   sendImageHeadRequest(imageURL, callback) {
-    this.log.debug('FaviconService: HEAD', imageURL.href);
+    console.debug('HEAD', imageURL.href);
     const onResponse = this.onImageHeadResponse.bind(this, imageURL, callback);
     const request = new XMLHttpRequest();
     request.timeout = this.timeout;
@@ -347,13 +337,12 @@ class FaviconService {
   onImageHeadResponse(imageURL, callback, event) {
     const contentLength = event.target.getResponseHeader('Content-Length');
     const contentType = event.target.getResponseHeader('Content-Type');
+    console.debug('HEAD', imageURL.href, event.type, event.target.status,
+      contentType, contentLength);
     if(event.type === 'load' && this.isContentLengthInRange(contentLength) &&
       this.isMimeTypeImage(contentType)) {
-      this.log.debug('FaviconService: HEAD response success', imageURL.href);
       callback(event.target.responseURL);
     } else {
-      this.log.debug('FaviconService: HEAD response error',
-        event.target.status, event.type, imageURL.href);
       callback();
     }
   }
@@ -363,7 +352,7 @@ class FaviconService {
       const numBytes = parseInt(contentLengthString, 10);
       return numBytes >= this.minLength && numBytes <= this.maxLength;
     } catch(exception) {
-      this.log.debug(exception);
+      console.warn(exception);
     }
   }
 

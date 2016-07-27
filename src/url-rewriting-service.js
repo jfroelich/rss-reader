@@ -6,10 +6,6 @@
 
 class URLRewritingService {
 
-  constructor() {
-    this.log = new LoggingService();
-  }
-
   // Applies a set of rules to a url object and returns a modified url object
   // Currently this only modifies Google News urls, but I plan to include more
   // TODO: instead of a regular expression I could consider using the new
@@ -22,9 +18,9 @@ class URLRewritingService {
       const param = decodeURIComponent(matches[1]);
       try {
         outputURL = new URL(param);
-        this.log.debug('URLRewritingService:', inputURL.href, outputURL.href);
+        console.debug('Rewrote url', inputURL.href, outputURL.href);
       } catch(exception) {
-        console.debug(exception);
+        console.warn('Error rewriting url', exception);
       }
     }
 
