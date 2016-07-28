@@ -5,6 +5,7 @@
 'use strict';
 
 class BadgeUpdateService {
+
   constructor() {
     this.cache = new FeedCache();
   }

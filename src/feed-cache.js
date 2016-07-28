@@ -14,19 +14,17 @@ class FeedCache {
   open(callback) {
     console.assert(this.name, 'Undefined database name');
     console.assert(this.version, 'Invalid database version %s', this.version);
-
-
     const request = indexedDB.open(this.name, this.version);
     request.addEventListener('upgradeneeded', this.upgrade.bind(this));
-    request.addEventListener('success', (event) => {
+    request.addEventListener('success', function onConnectSuccess(event) {
       console.debug('Connected to database', this.name);
       callback(event.target.result);
-    });
-    request.addEventListener('error', function(event) {
+    }.bind(this));
+    request.addEventListener('error', function onConnectError(event) {
       console.error(event);
       callback();
     });
-    request.addEventListener('blocked', function(event) {
+    request.addEventListener('blocked', function onConnectBlocked(event) {
       console.warn(event);
       callback();
     });
@@ -394,12 +392,12 @@ class FeedCache {
     const store = transaction.objectStore('feed');
     const request = store.put(storableFeed);
 
-    request.onsuccess = function(event) {
+    request.onsuccess = function onUpdateFeedSuccess(event) {
       console.debug('Updated feed', Feed.prototype.getURL.call(storableFeed));
       callback('success', storableFeed);
     };
 
-    request.onerror = function(event) {
+    request.onerror = function onUpdateFeedError(event) {
       console.error('Error updating feed', event);
       callback('error', storableFeed);
     };
