@@ -7,7 +7,7 @@
 class FetchHTMLService {
   constructor() {
     this.timeoutMillis = 15 * 1000;
-    this.imageDimensionsService = new ImageDimensionsService();
+    this.imageDimensionsService = ImageDimensionsService;
   }
 
   fetch(requestURL, callback) {
@@ -70,13 +70,9 @@ class FetchHTMLService {
     this.filterSourcelessImages(document);
     this.resolveDocumentURLs(document, responseURL);
     this.filterTrackingImages(document, responseURL);
-    if(this.imageDimensionsService) {
-      this.imageDimensionsService.modifyDocument(document,
+
+    fetchImageDimensions(document,
       this.onSetImageDimensions.bind(this, outputEvent, callback));
-    } else {
-      outputEvent.responseXML = document;
-      callback(event);
-    }
   }
 
   onSetImageDimensions(event, callback, document) {
