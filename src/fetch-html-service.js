@@ -72,10 +72,11 @@ class FetchHTMLService {
     this.filterTrackingImages(document, responseURL);
 
     fetchImageDimensions(document,
-      this.onSetImageDimensions.bind(this, outputEvent, callback));
+      this.onSetImageDimensions.bind(this, outputEvent, callback, document));
   }
 
-  onSetImageDimensions(event, callback, document) {
+  onSetImageDimensions(event, callback, document, numFetched) {
+    console.debug('Set dimensions for %i images', numFetched);
     event.responseXML = document;
     callback(event);
   }

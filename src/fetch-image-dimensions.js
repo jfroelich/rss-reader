@@ -22,7 +22,7 @@ function fetchImageDimensions(document, callback) {
   context.numImages = images.length;
 
   if(context.numImages === 0) {
-    callback(document);
+    callback(0);
     return;
   }
 
@@ -38,7 +38,7 @@ function fetchImageDimensions(document, callback) {
 function onImageProcessed(context) {
   context.numProcessed++;
   if(context.numProcessed === context.numImages) {
-    context.callback(context.document);
+    context.callback(context.numFetched);
   }
 }
 
