@@ -5,14 +5,12 @@
 'use strict';
 
 class ImageDimensionsService {
-  constructor() {
-    this.hostDocument = document;
-  }
 
   modifyDocument(document, callback) {
     const context = {
       'numProcessed': 0,
       'numFetched': 0,
+      'numModified': 0,
       'numImages': 0,
       'callback': callback,
       'document': document
@@ -27,32 +25,19 @@ class ImageDimensionsService {
     }
 
     for(let image of images) {
-      if(image.width && !image.hasAttribute('width')) {
-        image.setAttribute('width', image.width);
-      }
-
-      if(image.height && !image.hasAttribute('height')) {
-        image.setAttribute('height', image.height);
-      }
-
-      if(image.hasAttribute('width') && image.hasAttribute('height')) {
+      if(this.shouldFetchImage(image)) {
+        this.fetchImage(context, image);
+      } else {
         this.onImageProcessed(context);
-        continue;
       }
-
-      let urlString = image.getAttribute('src') || '';
-
-      if(!this.isHTTPUrl(urlString)) {
-        this.onImageProcessed(context);
-        continue;
-      }
-
-      this.fetchImage(context, image);
     }
   }
 
-  isHTTPUrl(urlString) {
-    return urlString.length > 8 && /^\s*http/i.test(urlString);
+  shouldFetchImage(image) {
+    const src = image.getAttribute('src');
+    const minSrcLength = 'http://a.gif'.length;
+    return !image.hasAttribute('width') && !image.hasAttribute('height') &&
+      src && src.length > minSrcLength && /^\s*http/i.test(src);
   }
 
   onImageProcessed(context) {
@@ -63,38 +48,20 @@ class ImageDimensionsService {
   }
 
   fetchImage(context, image) {
-    const sourceURLString = image.getAttribute('src');
-    console.debug('GET', sourceURLString);
-    const proxyImage = this.hostDocument.createElement('img');
+    const proxyImage = document.createElement('img');
     const boundOnFetch = this.onFetchImage.bind(this, context, image);
-    proxyImage.onload = boundOnFetch;
-    proxyImage.onerror = boundOnFetch;
-    proxyImage.src = sourceURLString;
+    proxyImage.addEventListener('load', boundOnFetch);
+    proxyImage.addEventListener('error', boundOnFetch);
+    proxyImage.src = image.getAttribute('src');
   }
 
   onFetchImage(context, image, event) {
     context.numFetched++;
-    const proxyImage = event.target;
     if(event.type === 'load') {
-      if(!image.hasAttribute('width')) {
-        console.debug('Setting image width', image.getAttribute('src'),
-          proxyImage.width);
-        image.setAttribute('width', proxyImage.width);
-      }
-
-      if(!image.hasAttribute('height')) {
-        console.debug('Setting image height', image.getAttribute('src'),
-          proxyImage.height);
-        image.setAttribute('height', proxyImage.height);
-      }
-    } else {
-      console.warn('Error fetching', image.getAttribute('src'));
-      // TODO: if I got an error, consider removing the image element
-      // from the document. Also, don't forget that if I do this I need
-      // to be using a static node list, as in, I need to be using
-      // querySelectorAll and not getElementsByTagName
+      image.setAttribute('width', event.target.width);
+      image.setAttribute('height', event.target.height);
+      context.numModified++;
     }
-
     this.onImageProcessed(context);
   }
 }
