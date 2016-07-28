@@ -116,6 +116,13 @@ class PollingService {
       return;
     }
 
+    // TODO: instead of just blindly querying, I should be checking whether
+    // feed.faviconURLString is set. I should also be storing an expired field
+    // in for the favicon in the feed itself. Then I should check that and if
+    // that is expired, only then do i bother with querying the favicon service.
+    // That will avoid the need for favicon service to open a connection and
+    // query for the url.
+
     if(this.faviconService) {
       if(remoteFeed.link) {
         this.faviconService.lookup(remoteFeed.link, null,

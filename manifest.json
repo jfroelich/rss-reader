@@ -26,7 +26,6 @@
       "/src/feed-http-service.js",
       "/src/feed-parser.js",
       "/src/fetch-html-service.js",
-      "/src/fetch-image-dimensions.js",
       "/src/filter-control-characters.js",
       "/src/on-badge-click.js",
       "/src/on-installed.js",

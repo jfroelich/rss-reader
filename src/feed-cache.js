@@ -187,7 +187,7 @@ class FeedCache {
   }
 
   findEntryWithURL(connection, urlObject, callback) {
-    console.debug('Finding entry with url', urlObject.href);
+    // console.debug('Finding entry with url', urlObject.href);
     const transaction = connection.transaction('entry');
     const entryStore = transaction.objectStore('entry');
     const urlsIndex = entryStore.index('urls');
@@ -383,7 +383,7 @@ class FeedCache {
   }
 
   updateFeed(connection, feed, callback) {
-    console.debug('Updating feed in storage', feed);
+    console.debug('Caching feed', feed);
     let storableFeed = Feed.prototype.serialize.call(feed);
     storableFeed = this.sanitizeFeed(storableFeed);
     storableFeed.dateUpdated = new Date();
@@ -393,7 +393,7 @@ class FeedCache {
     const request = store.put(storableFeed);
 
     request.onsuccess = function onUpdateFeedSuccess(event) {
-      console.debug('Updated feed', Feed.prototype.getURL.call(storableFeed));
+      //console.debug('Updated feed', Feed.prototype.getURL.call(storableFeed));
       callback('success', storableFeed);
     };
 
