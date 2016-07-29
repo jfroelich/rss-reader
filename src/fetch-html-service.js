@@ -69,7 +69,7 @@ class FetchHTMLService {
     FetchHTMLService.transformLazilyLoadedImages(document);
     FetchHTMLService.filterSourcelessImages(document);
     DocumentURLResolver.updateDocument(document, outputEvent.responseURL);
-    Lonestar.jamDocumentExperimental(document);
+    Lonestar.jamDocumentRadar(document);
     ImageDimensionsService.updateDocument(document,
       this.onSetImageDimensions.bind(this, outputEvent, callback));
   }
@@ -154,57 +154,33 @@ class FetchHTMLService {
   }
 }
 
+// Telemetry radar disruption
+// TODO: can i just access image.src property to get hostname
+// instead of creating url from attribute value?
+// TODO: restrict to http(s)? (by protocol value)?
 class Lonestar {
-  static jamDocument(document) {
-    const SELECTOR = [
-      'img[src^="http://b.scorecardresearch.com"]',
-      'img[src^="https://b.scorecardresearch.com"]',
-      'img[src^="http://sb.scorecardresearch.com"]',
-      'img[src^="https://sb.scorecardresearch.com"]',
-      'img[src^="http://pagead2.googlesyndication.com"]',
-      'img[src^="https://pagead2.googlesyndication.com"]',
-      'img[src^="http://pubads.g.doubleclick.net"]',
-      'img[src^="https://pubads.g.doubleclick.net"]',
-      'img[src^="http://me.effectivemeasure.net"]',
-      'img[src^="https://me.effectivemeasure.net"]'
-    ].join(',');
-    const images = document.querySelectorAll(SELECTOR);
-    for(let image of images) {
-      console.debug('Raspberried', image.outerHTML);
-      image.remove();
-    }
-  }
-
-  static jamDocumentExperimental(document) {
+  static jamDocumentRadar(document) {
     // Use all lowercase to match hostname getter normalization
     const hosts = new Set([
       'b.scorecardresearch.com',
+      'googleads.g.doubleclick.net',
       'me.effectivemeasure.net',
       'pagead2.googlesyndication.com',
       'pixel.quantserve.com',
+      'pixel.wp.com',
       'pubads.g.doubleclick.net',
       'sb.scorecardresearch.com'
     ]);
 
-    // TODO: can i just access image.src property to get hostname
-    // instead of creating url?
+    const minURLLength = 'http://a.com'.length;
 
     const images = document.querySelectorAll('img[src]');
     for(let image of images) {
       const src = image.getAttribute('src');
       const url = Lonestar.toURLTrapped(src);
-
-      if(url) {
-        console.debug('Lonestar looking up hostname', url.hostname);
-      }
-
-
-      if(url && url.length > 10 && hosts.has(url.hostname)) {
+      if(url && url.length > minURLLength && hosts.has(url.hostname)) {
         console.debug('Raspberried', image.outerHTML);
         image.remove();
-      } else {
-        // Temporary, debugging
-        console.debug('Lonestar ignoring url', src);
       }
     }
   }
@@ -358,38 +334,32 @@ static resolveURL(urlString, baseURL) {
 
 }
 
-
-// Helper class representing a single async function with its own helpers that
-// attempts to asynchronously set the width and height of every image element
-// in the document
 class ImageDimensionsService {
 
+// Asynchronously set the width and height attributes of image elements
 static updateDocument(document, callback) {
-  // Create a shared object to simplify parameter passing, to simplify the
-  // incrementing of primitive integers passed by value, and to allow the
-  // parameter with the name document to this function to be easily
-  // distinguished from the outer scope document of this class in _fetchImage
   const context = {
     'numProcessed': 0,
     'numFetched': 0,
     'numModified': 0,
     'numImages': 0,
     'callback': callback,
-    'document': document
+    'document': document,
+    'didCallback': false
   };
 
   const images = document.getElementsByTagName('img');
   context.numImages = images.length;
   if(context.numImages) {
     for(let image of images) {
-      ImageDimensionsService._fetchImage(context, image);
+      ImageDimensionsService._processImage(context, image);
     }
   } else {
     callback(0);
   }
 }
 
-static _fetchImage(context, image) {
+static _processImage(context, image) {
 
   // Skip images with at least one dimension.
   if(image.width || image.height) {
@@ -397,7 +367,7 @@ static _fetchImage(context, image) {
     return;
   }
 
-  // Skip non-http(s) images
+  // Skip non-http(s) images or images without a src attribute
   const src = image.getAttribute('src');
   const urlMinLen = 'http://a.gif'.length;
   if(!src || src.length < urlMinLen || !/^\s*http/i.test(src)) {
@@ -405,28 +375,38 @@ static _fetchImage(context, image) {
     return;
   }
 
+  // Track the number of fetch calls
   context.numFetched++;
 
   // The document containing the image may be inert, so create a detached image
   // in the local live document and fetch the image via this proxy.
   const proxyImage = document.createElement('img');
-  proxyImage.addEventListener('load', function onProxyImageLoad(event) {
+  proxyImage.addEventListener('load', onProxyImageLoad);
+  proxyImage.addEventListener('error', onProxyImageError);
+  proxyImage.src = src;
+
+  function onProxyImageLoad(event) {
+    event.target.removeEventListener('load', onProxyImageLoad);
     image.setAttribute('width', event.target.width);
     image.setAttribute('height', event.target.height);
     context.numModified++;
     ImageDimensionsService._onImageProcessed(context);
-  });
-  proxyImage.addEventListener('error', function onProxyImageLoad(event) {
-    ImageDimensionsService._onImageProcessed(context);
-  });
+  }
 
-  // Trigger the fetch
-  proxyImage.src = src;
+  function onProxyImageError(event) {
+    event.target.removeEventListener('error', onProxyImageError);
+    ImageDimensionsService._onImageProcessed(context);
+  }
 }
 
 static _onImageProcessed(context) {
+  // This increment should only happen here, because this should only happen
+  // once each call to _processImage completes
   context.numProcessed++;
+
   if(context.numProcessed === context.numImages) {
+    console.assert(!didCallback, 'Multiple callbacks');
+    context.didCallback = true;
     context.callback(context.numModified);
   }
 }
