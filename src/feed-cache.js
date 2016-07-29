@@ -143,7 +143,7 @@ class FeedCache {
   }
 
   openFeedsCursor(connection, callback) {
-    console.debug('Opening feeds cursor');
+    // console.debug('Opening feeds cursor');
     const transaction = connection.transaction('feed');
     const feedStore = transaction.objectStore('feed');
     const request = feedStore.openCursor();
@@ -152,7 +152,7 @@ class FeedCache {
   }
 
   openFeedsCursorSortedByTitle(connection, callback) {
-    console.debug('Opening feeds cursor sorted by title');
+    // console.debug('Opening feeds cursor sorted by title');
     const transaction = connection.transaction('feed');
     const store = transaction.objectStore('feed');
     const index = store.index('title');
@@ -339,14 +339,6 @@ class FeedCache {
     request.onerror = callback;
   }
 
-  // TODO: this should be sanitizing the feed's fields, it should not be
-  // the caller's responsibility.
-  // look at what i did for updateFeed and mirror that behavior
-  // TODO: this should be responsible for creating the serialized storable
-  // object. The caller may have set other fields on the input object that
-  // we do not want to store, or may pass in a non-serialized object.
-  // TODO: when sanitizing, consider max length of each field and the
-  // behavior when exceeded
   addFeed(connection, feed, callback) {
     console.debug('Storing new feed', feed);
     feed.dateCreated = new Date();
@@ -358,14 +350,14 @@ class FeedCache {
   }
 
   sanitizeString(inputString) {
+    let outputString = null;
     if(inputString) {
-      let outputString = null;
       outputString = filterControlCharacters(inputString);
       outputString = replaceHTML(outputString, '');
       outputString = outputString.replace(/\s+/, ' ');
       outputString = outputString.trim();
-      return outputString;
     }
+    return outputString;
   }
 
   sanitizeFeed(inputFeed) {
@@ -383,17 +375,17 @@ class FeedCache {
   }
 
   updateFeed(connection, feed, callback) {
-    console.debug('Caching feed', feed);
     let storableFeed = Feed.prototype.serialize.call(feed);
     storableFeed = this.sanitizeFeed(storableFeed);
     storableFeed.dateUpdated = new Date();
+
+    console.debug('Caching feed', storableFeed);
 
     const transaction = connection.transaction('feed', 'readwrite');
     const store = transaction.objectStore('feed');
     const request = store.put(storableFeed);
 
     request.onsuccess = function onUpdateFeedSuccess(event) {
-      //console.debug('Updated feed', Feed.prototype.getURL.call(storableFeed));
       callback('success', storableFeed);
     };
 
