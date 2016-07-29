@@ -43,8 +43,8 @@ class FetchHTMLService {
     if(event.type !== 'load') {
       console.warn(event.type, event.target.status, requestURL.href);
       callback({
-        'requestURL': requestURL,
-        'type': event.type
+        'type': event.type,
+        'requestURL': requestURL
       });
       return;
     }
@@ -69,12 +69,13 @@ class FetchHTMLService {
     FetchHTMLService.transformLazilyLoadedImages(document);
     FetchHTMLService.filterSourcelessImages(document);
     DocumentURLResolver.updateDocument(document, outputEvent.responseURL);
-    Lonestar.jamDocument(document);
+    Lonestar.jamDocumentExperimental(document);
     ImageDimensionsService.updateDocument(document,
       this.onSetImageDimensions.bind(this, outputEvent, callback));
   }
 
   onSetImageDimensions(event, callback, numImagesModified) {
+    // console.debug('Completed fetch', event.responseURL.href);
     callback(event);
   }
 
@@ -129,7 +130,7 @@ class FetchHTMLService {
               alternateValue)) {
               image.removeAttribute(alternateName);
               image.setAttribute('src', alternateValue);
-              console.debug('Set lazy image src', alternateValue);
+              // console.debug('Set lazy image src', alternateValue);
               break;
             }
           }
@@ -171,6 +172,47 @@ class Lonestar {
     for(let image of images) {
       console.debug('Raspberried', image.outerHTML);
       image.remove();
+    }
+  }
+
+  static jamDocumentExperimental(document) {
+    // Use all lowercase to match hostname getter normalization
+    const hosts = new Set([
+      'b.scorecardresearch.com',
+      'me.effectivemeasure.net',
+      'pagead2.googlesyndication.com',
+      'pixel.quantserve.com',
+      'pubads.g.doubleclick.net',
+      'sb.scorecardresearch.com'
+    ]);
+
+    // TODO: can i just access image.src property to get hostname
+    // instead of creating url?
+
+    const images = document.querySelectorAll('img[src]');
+    for(let image of images) {
+      const src = image.getAttribute('src');
+      const url = Lonestar.toURLTrapped(src);
+
+      if(url) {
+        console.debug('Lonestar looking up hostname', url.hostname);
+      }
+
+
+      if(url && url.length > 10 && hosts.has(url.hostname)) {
+        console.debug('Raspberried', image.outerHTML);
+        image.remove();
+      } else {
+        // Temporary, debugging
+        console.debug('Lonestar ignoring url', src);
+      }
+    }
+  }
+
+  static toURLTrapped(urlString) {
+    try {
+      return new URL(urlString);
+    } catch(exception) {
     }
   }
 }
@@ -236,7 +278,6 @@ static resolveElements(document, baseURL) {
     }
 
     if(/^\s*https?:\/\/#/i.test(attributeValue)) {
-      console.debug("Removing invalid anchor", element.outerHTML);
       element.remove();
       continue;
     }
@@ -349,7 +390,6 @@ static updateDocument(document, callback) {
 }
 
 static _fetchImage(context, image) {
-  context.numProcessed++;
 
   // Skip images with at least one dimension.
   if(image.width || image.height) {
@@ -385,6 +425,7 @@ static _fetchImage(context, image) {
 }
 
 static _onImageProcessed(context) {
+  context.numProcessed++;
   if(context.numProcessed === context.numImages) {
     context.callback(context.numModified);
   }
