@@ -10,7 +10,7 @@ class URLRewritingService {
   // Currently this only modifies Google News urls, but I plan to include more
   // TODO: instead of a regular expression I could consider using the new
   // URL api to access and test against components of the URL
-  rewriteURL(inputURL) {
+  static rewriteURL(inputURL) {
     let outputURL = new URL(inputURL.href);
     const GOOGLE_NEWS = /^https?:\/\/news.google.com\/news\/url\?.*url=(.*)/i;
     const matches = GOOGLE_NEWS.exec(inputURL.href);

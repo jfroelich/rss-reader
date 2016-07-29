@@ -8,12 +8,12 @@
 // <p><a>text</a></p>.
 function adjustBlockWithinInlineElements(document) {
 
-  // NOTE: these lists are incomplete for now, i am hesitant to expand
-  const BLOCK_ELEMENTS = ['blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    'p'];
+  // NOTE: incomplete for now, i am hesitant to expand
+  const BLOCK_ELEMENTS = ['blockquote','h1','h2','h3','h4','h5','h6','p'];
   const BLOCK_SELECTOR = BLOCK_ELEMENTS.join(',');
 
-  // NOTE: Element.prototype.closest expects lowercase selector element names
+  // The closest function expects lowercase selector element names and does
+  // not totally mirror the behavior of querySelector, I am not sure why.
   const INLINE_ELEMENTS = ['a'];
   const INLINE_SELECTOR = INLINE_ELEMENTS.join(',');
 

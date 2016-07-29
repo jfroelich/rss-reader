@@ -13,7 +13,6 @@ constructor() {
   this.badgeUpdateService = new BadgeUpdateService();
   this.fetchFeedService = new FeedHttpService();
   this.fetchFeedService.timeoutMillis = 10 * 1000;
-  this.urlRewritingService = new URLRewritingService();
   this.fetchHTMLService = new FetchHTMLService();
   this.fetchHTMLService.timeoutMillis = 10 * 1000;
 }
@@ -197,7 +196,7 @@ processEntry(context, feed, entry, callback) {
   const entryURL = Entry.prototype.getURL.call(entry);
 
   // Append the rewritten url if rewriting occurred
-  const rewrittenURL = this.urlRewritingService.rewriteURL(entryURL);
+  const rewrittenURL = URLRewritingService.rewriteURL(entryURL);
   if(rewrittenURL.href !== entryURL.href) {
     entry.urls.push(rewrittenURL);
   }

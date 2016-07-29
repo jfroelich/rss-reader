@@ -69,13 +69,12 @@ class FetchHTMLService {
     FetchHTMLService.transformLazilyLoadedImages(document);
     FetchHTMLService.filterSourcelessImages(document);
     DocumentURLResolver.updateDocument(document, outputEvent.responseURL);
-    Lonestar.jamDocumentRadar(document);
+    LoneStarr.jamDocumentRadar(document);
     ImageDimensionsService.updateDocument(document,
       this.onSetImageDimensions.bind(this, outputEvent, callback));
   }
 
   onSetImageDimensions(event, callback, numImagesModified) {
-    // console.debug('Completed fetch', event.responseURL.href);
     callback(event);
   }
 
@@ -158,7 +157,7 @@ class FetchHTMLService {
 // TODO: can i just access image.src property to get hostname
 // instead of creating url from attribute value?
 // TODO: restrict to http(s)? (by protocol value)?
-class Lonestar {
+class LoneStarr {
   static jamDocumentRadar(document) {
     // Use all lowercase to match hostname getter normalization
     const hosts = new Set([
@@ -177,10 +176,12 @@ class Lonestar {
     const images = document.querySelectorAll('img[src]');
     for(let image of images) {
       const src = image.getAttribute('src');
-      const url = Lonestar.toURLTrapped(src);
-      if(url && url.length > minURLLength && hosts.has(url.hostname)) {
-        console.debug('Raspberried', image.outerHTML);
-        image.remove();
+      if(src && src.length > minURLLength) {
+        const url = LoneStarr.toURLTrapped(src);
+        if(url && hosts.has(url.hostname)) {
+          //console.debug('Raspberried', image.outerHTML);
+          image.remove();
+        }
       }
     }
   }
@@ -405,7 +406,7 @@ static _onImageProcessed(context) {
   context.numProcessed++;
 
   if(context.numProcessed === context.numImages) {
-    console.assert(!didCallback, 'Multiple callbacks');
+    console.assert(!context.didCallback, 'Multiple callbacks');
     context.didCallback = true;
     context.callback(context.numModified);
   }
