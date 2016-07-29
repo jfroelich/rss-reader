@@ -19,7 +19,7 @@ class PollingService {
   }
 
   start() {
-    console.log('Checking for new articles...');
+    console.group('Checking for new articles...');
 
     const context = {
       'pendingFeedsCount': 0,
@@ -115,13 +115,6 @@ class PollingService {
       this.onMaybePollCompleted(context);
       return;
     }
-
-    // TODO: instead of just blindly querying, I should be checking whether
-    // feed.faviconURLString is set. I should also be storing an expired field
-    // in for the favicon in the feed itself. Then I should check that and if
-    // that is expired, only then do i bother with querying the favicon service.
-    // That will avoid the need for favicon service to open a connection and
-    // query for the url.
 
     if(this.faviconService) {
       if(remoteFeed.link) {
@@ -233,16 +226,10 @@ class PollingService {
       }
 
       if(event.type === 'success') {
-        // Add the redirect url
         if(event.responseURL.href !== entryURL.href) {
           entry.urls.push(event.responseURL);
         }
 
-        // TODO: also check if the redirect url exists in the cache now that
-        // it is known? Currently addEntry just fails with a ConstraintError
-        // if it exists, maybe that is fine
-
-        // Replace the entry's content
         const document = event.responseXML;
         const contentString = document.documentElement.outerHTML.trim();
         if(contentString) {
@@ -259,11 +246,16 @@ class PollingService {
       return;
     }
 
-    console.info('Polling completed');
-
     if('SHOW_NOTIFICATIONS' in localStorage) {
       this.showPollCompletedNotification();
     }
+
+    if(context.connection) {
+      context.connection.close();
+    }
+
+    console.log('Polling completed');
+    console.groupEnd();
   }
 
   showPollCompletedNotification() {
