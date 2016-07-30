@@ -16,30 +16,23 @@ Subscription.add = function(connection, url, callback) {
   fetchService.fetch(url, excludeEntries, onFetchFeed);
 
   function onFetchFeed(event) {
-    if(event.type !== 'load') {
-      callback({
-        'type': 'fetcherror',
-        'message': 'Fetch error'
-      });
-      return;
+    if(event.type === 'load') {
+      feedCache.addFeed(connection, event.feed, onAddFeed);
+    } else {
+      callback({'type': 'fetcherror'});
     }
-
-    feedCache.addFeed(connection, event.feed, onAddFeed);
   }
 
-  function onAddFeed(eventType, feed) {
-    if(eventType === 'success') {
-      showSubscriptionNotification(feed);
-      callback({
-        'type': 'success',
-        'feed': feed
-      });
+  function onAddFeed(event) {
+    if(event.type === 'success') {
+      notify(event.feed);
+      callback({'type': 'success', 'feed': event.feed});
     } else {
       callback({'type': eventType});
     }
   }
 
-  function showSubscriptionNotification(feed) {
+  function notify(feed) {
     if('SHOW_NOTIFICATIONS' in localStorage) {
       const notification = {
         'type': 'basic',
@@ -47,12 +40,9 @@ Subscription.add = function(connection, url, callback) {
         'iconUrl': '/images/rss_icon_trans.gif',
         'message': 'Subscribed to ' + (feed.title || 'Untitled')
       };
-      chrome.notifications.create('Lucubrate', notification,
-        notificationCallback);
+      chrome.notifications.create('Lucubrate', notification, function() {});
     }
   }
-
-  function notificationCallback() {}
 };
 
 Subscription.remove = function(feedId, callback) {

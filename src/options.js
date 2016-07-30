@@ -352,7 +352,6 @@ OptionsPage.hideSubscriptionPreview = function() {
   }
 };
 
-// NOTE: This now expects a URL object
 OptionsPage.startSubscription = function(url) {
   OptionsPage.hideSubscriptionPreview();
   OptionsPage.showSubscriptionMonitor();

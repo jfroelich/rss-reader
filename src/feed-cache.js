@@ -352,14 +352,13 @@ class FeedCache {
     }
 
     function onAddSuccess(event) {
-      // Define the id property, result of autoincrement
       storableFeed.id = event.target.result;
-      callback('success', storableFeed);
+      callback({'type': 'success', 'feed': storableFeed});
     }
 
     function onAddError(event) {
       console.error('Error adding feed', event);
-      callback(event.target.error.name, storableFeed);
+      callback({'type': event.target.error.name});
     }
   }
 
