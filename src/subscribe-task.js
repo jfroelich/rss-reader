@@ -8,6 +8,8 @@ const SubscribeTask = {};
 
 SubscribeTask.start = function(url, callback) {
   console.assert(url, 'url is required');
+  console.assert('href' in url, 'url should be a URL object');
+
   console.debug('Subscribing to', url.href);
   const context = {};
   context.url = url;
@@ -55,25 +57,19 @@ SubscribeTask.onAddFeed = function(context, event) {
   }
 };
 
-SubscribeTask.showNotification = function(feed) {
-  if('SHOW_NOTIFICATIONS' in localStorage) {
-    const notification = {
-      'type': 'basic',
-      'title': chrome.runtime.getManifest().name,
-      'iconUrl': '/images/rss_icon_trans.gif',
-      'message': 'Subscribed to ' + (feed.title || 'Untitled')
-    };
-    chrome.notifications.create('Lucubrate', notification, function() {});
-  }
-};
-
 SubscribeTask.onComplete = function(context, event) {
   if(context.connection) {
     context.connection.close();
   }
 
-  if(context.didSubscribe) {
-    SubscribeTask.showNotification(event.feed);
+  if(context.didSubscribe && 'SHOW_NOTIFICATIONS' in localStorage) {
+    const notification = {
+      'type': 'basic',
+      'title': chrome.runtime.getManifest().name,
+      'iconUrl': '/images/rss_icon_trans.gif',
+      'message': 'Subscribed to ' + (event.feed.title || 'Untitled')
+    };
+    chrome.notifications.create('Lucubrate', notification, function() {});
   }
 
   if(context.callback) {
