@@ -168,16 +168,14 @@ class OPMLImportService {
       }
       seenURLStringSet.add(url.href);
 
-      // Create the feed object that will be stored
+      // Create the feed object to pass to addFeed
       const feed = {};
       feed.urls = [url.href];
       feed.type = type;
-      feed.title = this.sanitizeString(element.getAttribute('title') ||
-        element.getAttribute('text'));
-      feed.description = this.sanitizeString(
-        element.getAttribute('description'));
+      feed.title = element.getAttribute('title') ||
+        element.getAttribute('text');
+      feed.description = element.getAttribute('description');
 
-      // Not all feeds have an associated htmlUrl attribute
       const htmlUrlString = element.getAttribute('htmlUrl');
       if(htmlUrlString) {
         let outlineLinkURL = this.toURLTrapped(htmlUrlString);
@@ -200,16 +198,6 @@ class OPMLImportService {
     }
 
     return null;
-  }
-
-  sanitizeString(inputString) {
-    let outputString = inputString || '';
-    if(outputString) {
-      outputString = StringUtils.filterControlCharacters(outputString);
-      outputString = StringUtils.replaceHTML(outputString, '');
-      outputString = outputString.replace(/\s+/, ' ');
-    }
-    return outputString.trim();
   }
 
   onAddFeed(context, event) {

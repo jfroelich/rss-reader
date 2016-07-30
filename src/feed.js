@@ -89,25 +89,31 @@ Feed.prototype.serialize = function() {
 
   const outputFeed = {};
 
-  // The id will be defined in the update context but not in the add context
+  // id is optional because it isn't present when adding
   if(this.id) {
+    console.assert(!isNaN(this.id) && this.id > 0, 'invalid feed id %s',
+      this.id);
     outputFeed.id = this.id;
   }
 
   if(this.type) {
+    const allowedTypes = {'feed': 1, 'rss': 1, 'rdf': 1};
+    console.assert(this.type in allowedTypes,
+      'Invalid feed type %s', this.type);
     outputFeed.type = this.type;
   }
 
+  console.assert(this.urls && this.urls.length,
+    'Undefined or empty urls property');
+
   // Convert urls to strings
-  if(this.urls && this.urls.length) {
-    if(Object.prototype.toString.call(this.urls[0]) === '[object URL]') {
-      outputFeed.urls = this.urls.map(function(url) {
-        return url.href;
-      });
-    } else {
-      // clone in order to maintain purity
-      outputFeed.urls = [...this.urls];
-    }
+  if(Object.prototype.toString.call(this.urls[0]) === '[object URL]') {
+    outputFeed.urls = this.urls.map(function urlToString(url) {
+      return url.href;
+    });
+  } else {
+    // clone in order to maintain purity
+    outputFeed.urls = [...this.urls];
   }
 
   if(this.title) {

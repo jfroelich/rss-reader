@@ -24,47 +24,8 @@ Subscription.add = function(connection, url, callback) {
       return;
     }
 
-    const storableFeed = createStorableFeed(event.feed);
-    feedCache.addFeed(connection, storableFeed,
-      onAddFeed.bind(null, storableFeed));
-  }
-
-  function createStorableFeed(inputFeed) {
-    const storable = Object.create(null);
-    storable.urls = inputFeed.urls.map(function(url) {
-      return url.href;
-    });
-
-    storable.type = inputFeed.type;
-    if(inputFeed.link) {
-      storable.link = inputFeed.link.href;
-    }
-
-    storable.title = sanitizeString(inputFeed.title) || '';
-
-    if(inputFeed.description) {
-      storable.description = sanitizeString(inputFeed.description);
-    }
-
-    if(inputFeed.datePublished) {
-      storable.datePublished = inputFeed.datePublished;
-    }
-
-    storable.dateLastModified = inputFeed.dateLastModified;
-    storable.dateFetched = inputFeed.dateFetched;
-    return storable;
-  }
-
-  function sanitizeString(inputString) {
-    let outputString = inputString;
-    if(inputString) {
-      outputString = StringUtils.filterControlCharacters(outputString);
-      outputString = StringUtils.replaceHTML(outputString, '');
-
-      outputString = outputString.replace(/\s+/, ' ');
-      outputString = outputString.trim();
-    }
-    return outputString;
+    const feed = event.feed;
+    feedCache.addFeed(connection, feed, onAddFeed.bind(null, feed));
   }
 
   function onAddFeed(addedFeed, event) {

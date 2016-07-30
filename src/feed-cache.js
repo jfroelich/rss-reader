@@ -334,38 +334,17 @@ class FeedCache {
   }
 
   addFeed(connection, feed, callback) {
-    console.debug('Storing new feed', feed);
-    feed.dateCreated = new Date();
+    let storableFeed = Feed.prototype.serialize.call(feed);
+    storableFeed = this.sanitizeFeed(storableFeed);
+    storableFeed.dateCreated = new Date();
+
+    console.debug('Caching feed', storableFeed);
+
     const transaction = connection.transaction('feed', 'readwrite');
     const feedStore = transaction.objectStore('feed');
-    const request = feedStore.add(feed);
+    const request = feedStore.add(storableFeed);
     request.onsuccess = callback;
     request.onerror = callback;
-  }
-
-  sanitizeString(inputString) {
-    let outputString = null;
-    if(inputString) {
-      outputString = StringUtils.filterControlCharacters(inputString);
-      outputString = StringUtils.replaceHTML(outputString, '');
-      outputString = outputString.replace(/\s+/, ' ');
-      outputString = outputString.trim();
-    }
-    return outputString;
-  }
-
-  sanitizeFeed(inputFeed) {
-    // Copy to maintain all the fields and also purity/idempotency
-    const cleanFeed = Object.assign({}, inputFeed);
-    if(cleanFeed.title) {
-      cleanFeed.title = this.sanitizeString(cleanFeed.title);
-    }
-
-    if(cleanFeed.description) {
-      cleanFeed.description = this.sanitizeString(cleanFeed.description);
-    }
-
-    return cleanFeed;
   }
 
   updateFeed(connection, feed, callback) {
@@ -387,6 +366,31 @@ class FeedCache {
       console.error('Error updating feed', event);
       callback('error', storableFeed);
     };
+  }
+
+  sanitizeFeed(inputFeed) {
+    // Copy to maintain all the fields and also purity/idempotency
+    const cleanFeed = Object.assign({}, inputFeed);
+    if(cleanFeed.title) {
+      cleanFeed.title = this.sanitizeString(cleanFeed.title);
+    }
+
+    if(cleanFeed.description) {
+      cleanFeed.description = this.sanitizeString(cleanFeed.description);
+    }
+
+    return cleanFeed;
+  }
+
+  sanitizeString(inputString) {
+    let outputString = null;
+    if(inputString) {
+      outputString = StringUtils.filterControlCharacters(inputString);
+      outputString = StringUtils.replaceHTML(outputString, '');
+      outputString = outputString.replace(/\s+/, ' ');
+      outputString = outputString.trim();
+    }
+    return outputString;
   }
 }
 
