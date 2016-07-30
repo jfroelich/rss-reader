@@ -6,6 +6,16 @@
 
 const StringUtils = {};
 
+// Removes non-printable characters from a string
+// NOTE: I have only run a few tests
+// http://stackoverflow.com/questions/21284228
+// http://stackoverflow.com/questions/24229262
+StringUtils.filterControlCharacters = function(string) {
+  if(string) {
+    return string.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+  }
+};
+
 // Returns a new string where html elements were replaced with the optional
 // replacement string. HTML entities remain (except some will be
 // replaced, like &#32; with space).

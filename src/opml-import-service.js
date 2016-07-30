@@ -218,7 +218,7 @@ class OPMLImportService {
   sanitizeString(inputString) {
     let outputString = inputString || '';
     if(outputString) {
-      outputString = filterControlCharacters(outputString);
+      outputString = StringUtils.filterControlCharacters(outputString);
       outputString = StringUtils.replaceHTML(outputString, '');
       outputString = outputString.replace(/\s+/, ' ');
     }

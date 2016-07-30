@@ -26,7 +26,6 @@
       "/src/feed-http-service.js",
       "/src/feed-parser.js",
       "/src/fetch-html-service.js",
-      "/src/filter-control-characters.js",
       "/src/polling-service.js",
       "/src/polling-service-test.js",
       "/src/string-utils.js"

@@ -58,7 +58,7 @@ Subscription.add = function(connection, url, callback) {
   function sanitizeString(inputString) {
     let outputString = inputString;
     if(inputString) {
-      outputString = filterControlCharacters(outputString);
+      outputString = StringUtils.filterControlCharacters(outputString);
       outputString = StringUtils.replaceHTML(outputString, '');
 
       outputString = outputString.replace(/\s+/, ' ');

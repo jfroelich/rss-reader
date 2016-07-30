@@ -8,7 +8,7 @@
 // NOTE: I have only run a few tests
 // http://stackoverflow.com/questions/21284228
 // http://stackoverflow.com/questions/24229262
-function filterControlCharacters(string) {
+function StringUtils.filterControlCharacters(string) {
   if(string) {
     return string.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
   }

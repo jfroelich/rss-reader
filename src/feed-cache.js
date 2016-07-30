@@ -299,7 +299,7 @@ class FeedCache {
     // TODO: sanitize fully
     if(entry.author) {
       let authorString = entry.author;
-      authorString = filterControlCharacters(authorString);
+      authorString = StringUtils.filterControlCharacters(authorString);
       authorString = StringUtils.replaceHTML(authorString, '');
       //authorString = truncateHTML(authorString, MAX_AUTHOR_VALUE_LENGTH);
       storable.author = entry.author;
@@ -309,7 +309,7 @@ class FeedCache {
     // TODO: condense spaces?
     if(entry.title) {
       let entryTitle = entry.title;
-      entryTitle = filterControlCharacters(entryTitle);
+      entryTitle = StringUtils.filterControlCharacters(entryTitle);
       entryTitle = StringUtils.replaceHTML(entryTitle, '');
       storable.title = entryTitle;
     }
@@ -346,7 +346,7 @@ class FeedCache {
   sanitizeString(inputString) {
     let outputString = null;
     if(inputString) {
-      outputString = filterControlCharacters(inputString);
+      outputString = StringUtils.filterControlCharacters(inputString);
       outputString = StringUtils.replaceHTML(outputString, '');
       outputString = outputString.replace(/\s+/, ' ');
       outputString = outputString.trim();
