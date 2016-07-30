@@ -315,7 +315,6 @@ Slideshow.countUnreadSlides = function() {
   return document.body.querySelectorAll('div[entry]:not([read])').length;
 };
 
-
 Slideshow.maybeShowAllReadSlide = function() {
   // Not yet implemented
 };
@@ -324,6 +323,40 @@ Slideshow.hideAllUnreadSlides = function() {
   // Not yet implemented
 };
 
+Slideshow.incrementalScrollTo = function(element, deltaY, targetY) {
+  let scrollYStartTimer; // debounce
+  let scrollYIntervalTimer; // incrementally move
+  let amountToScroll = 0;
+  let amountScrolled = 0;
+
+  function debounce() {
+    clearTimeout(scrollYStartTimer);
+    clearInterval(scrollYIntervalTimer);
+    scrollYStartTimer = setTimeout(startScroll, 5);
+  }
+
+  function startScroll() {
+    amountToScroll = Math.abs(targetY - element.scrollTop);
+    amountScrolled = 0;
+
+    if(amountToScroll === 0) {
+      return;
+    }
+
+    scrollYIntervalTimer = setInterval(doScrollToY, 20);
+  }
+
+  function doScrollToY() {
+    const currentY = element.scrollTop;
+    element.scrollTop += deltaY;
+    amountScrolled += Math.abs(deltaY);
+    if(currentY === element.scrollTop || amountScrolled >= amountToScroll) {
+      clearInterval(scrollYIntervalTimer);
+    }
+  }
+
+  return debounce();
+};
 
 Slideshow.KEY_CODES = {
   'SPACE': 32,
@@ -354,7 +387,7 @@ Slideshow.onKeyDown = function(event) {
       event.preventDefault();
       if(Slideshow.currentSlide) {
         const delta = Slideshow.SCROLL_DELTAS['' + event.keyCode];
-        scrollToY(Slideshow.currentSlide, delta[0],
+        Slideshow.incrementalScrollTo(Slideshow.currentSlide, delta[0],
           Slideshow.currentSlide.scrollTop + delta[1]);
       }
       break;
@@ -375,9 +408,6 @@ Slideshow.onKeyDown = function(event) {
   }
 };
 
-// TODO: instead of binding this to window, bind to each slide? That way
-// we don't have to use a global tracking variable like Slideshow.currentSlide,
-// which feels hackish.
 window.addEventListener('keydown', Slideshow.onKeyDown, false);
 
 Slideshow.init = function(event) {
