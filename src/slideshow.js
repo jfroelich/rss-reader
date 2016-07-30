@@ -4,22 +4,22 @@
 
 'use strict';
 
-const SlideShow = Object.create(null);
+const Slideshow = Object.create(null);
 
-SlideShow.currentSlide = null;
+Slideshow.currentSlide = null;
 
-SlideShow.onMessage = function(message) {
+Slideshow.onMessage = function(message) {
   switch(message.type) {
     case 'pollCompleted':
-      SlideShow.maybeAppendSlides();
+      Slideshow.maybeAppendSlides();
       break;
     case 'subscribe':
-      SlideShow.maybeAppendSlides();
+      Slideshow.maybeAppendSlides();
       break;
 
     // NOTE: I believe this was deprecated
     //case 'unsubscribe':
-    //  SlideShow.onUnsubscribe();
+    //  Slideshow.onUnsubscribe();
     //  break;
     case 'entryDeleteRequestedByUnsubscribe':
       console.debug('Reaction to removal of entry %s not yet implemented',
@@ -34,16 +34,16 @@ SlideShow.onMessage = function(message) {
   }
 };
 
-chrome.runtime.onMessage.addListener(SlideShow.onMessage);
+chrome.runtime.onMessage.addListener(Slideshow.onMessage);
 
-SlideShow.onUnsubscribe = function(message) {
+Slideshow.onUnsubscribe = function(message) {
   const slidesForFeed = document.querySelectorAll(
     'div[feed="'+ message.feed +'"]');
   const removedCurrentSlide = Array.prototype.reduce.call(
     slidesForFeed, function removeAndCheck(removedCurrent, slide) {
     // TODO: verify removing all listeners
-    SlideShow.removeSlide(slide);
-    return removedCurrent || (slide === SlideShow.currentSlide);
+    Slideshow.removeSlide(slide);
+    return removedCurrent || (slide === Slideshow.currentSlide);
   }, false);
 
   if(removedCurrentSlide) {
@@ -52,15 +52,15 @@ SlideShow.onUnsubscribe = function(message) {
       ' not update UI');
   }
 
-  SlideShow.maybeShowAllReadSlide();
+  Slideshow.maybeShowAllReadSlide();
 };
 
-SlideShow.removeSlide = function(slideElement) {
-  slideElement.removeEventListener('click', SlideShow.onSlideClick);
+Slideshow.removeSlide = function(slideElement) {
+  slideElement.removeEventListener('click', Slideshow.onSlideClick);
   slideElement.remove();
 };
 
-SlideShow.markAsRead = function(slide) {
+Slideshow.markAsRead = function(slide) {
   if(slide.hasAttribute('read')) {
     return;
   }
@@ -76,8 +76,8 @@ SlideShow.markAsRead = function(slide) {
   feedCache.markEntryAsRead(entryId);
 };
 
-SlideShow.maybeAppendSlides = function() {
-  const unreadCount = SlideShow.countUnreadSlides();
+Slideshow.maybeAppendSlides = function() {
+  const unreadCount = Slideshow.countUnreadSlides();
 
   // When there are unread slides still present, cancel the append
   if(unreadCount) {
@@ -91,16 +91,16 @@ SlideShow.maybeAppendSlides = function() {
   // of whether firstElementChild is defined.
 
   const isFirst = !document.getElementById('slideshow-container').firstChild;
-  SlideShow.appendSlides(SlideShow.hideAllUnreadSlides, isFirst);
+  Slideshow.appendSlides(Slideshow.hideAllUnreadSlides, isFirst);
 };
 
-SlideShow.appendSlides = function(oncomplete, isFirst) {
+Slideshow.appendSlides = function(oncomplete, isFirst) {
 
   const feedCache = new FeedCache();
 
   let counter = 0;
   const limit = 5;
-  const offset = SlideShow.countUnreadSlides();
+  const offset = Slideshow.countUnreadSlides();
   let notAdvanced = true;
   feedCache.open(onOpenDatabase);
 
@@ -129,13 +129,13 @@ SlideShow.appendSlides = function(oncomplete, isFirst) {
       return;
     }
 
-    SlideShow.appendSlide(cursor.value, isFirst);
+    Slideshow.appendSlide(cursor.value, isFirst);
 
     if(isFirst && counter === 0) {
       // TODO: could just directly query for the slide
       // using querySelector, which would match first slide
       // in doc order.
-      SlideShow.currentSlide = document.getElementById(
+      Slideshow.currentSlide = document.getElementById(
         'slideshow-container').firstChild;
       isFirst = false;
     }
@@ -154,7 +154,7 @@ SlideShow.appendSlides = function(oncomplete, isFirst) {
 // setting a target attribute per anchor.
 // NOTE: event.target is what was clicked. event.currentTarget is where the
 // listener is attached.
-SlideShow.onSlideClick = function(event) {
+Slideshow.onSlideClick = function(event) {
   const mouseButtonCode = event.which;
   const LEFT_MOUSE_BUTTON_CODE = 1;
   const MOUSE_WHEEL_BUTTON_CODE = 2;
@@ -188,8 +188,8 @@ SlideShow.onSlideClick = function(event) {
     // NOTE: this means that super-fast extra clicks can retrigger
     // this call.
     //event.currentTarget.removeEventListener('click',
-    //  SlideShow.onSlideClick);
-    SlideShow.markAsRead(event.currentTarget);
+    //  Slideshow.onSlideClick);
+    Slideshow.markAsRead(event.currentTarget);
   }
 
   // Prevent the normal link click behavior
@@ -213,12 +213,12 @@ SlideShow.onSlideClick = function(event) {
 // future. It also emphasizes that scrubbing must be tuned to be fast enough
 // not to cause lag while blocking, because this is synchronous.
 // TODO: use <article> instead of div
-SlideShow.appendSlide = function(entry, isFirst) {
+Slideshow.appendSlide = function(entry, isFirst) {
   const slide = document.createElement('div');
   slide.setAttribute('entry', entry.id);
   slide.setAttribute('feed', entry.feed);
   slide.setAttribute('class','entry');
-  slide.addEventListener('click', SlideShow.onSlideClick);
+  slide.addEventListener('click', Slideshow.onSlideClick);
 
   slide.style.position = 'absolute';
   slide.style.left = isFirst ? '0%' : '100%';
@@ -270,7 +270,7 @@ SlideShow.appendSlide = function(entry, isFirst) {
 
   Calamine.removeBoilerplate(entryContentDocument);
   DOMAid.cleanDocument(entryContentDocument);
-  SlideShow.addNoReferrer(entryContentDocument);
+  Slideshow.addNoReferrer(entryContentDocument);
   const entryContentBody = entryContentDocument.body ||
     entryContentDocument.documentElement;
   moveChildNodes(entryContentBody, content);
@@ -318,7 +318,7 @@ SlideShow.appendSlide = function(entry, isFirst) {
 // https://blog.fastmail.com/2016/06/20/everything-you-could-ever-want-to-know-
 // and-more-about-controlling-the-referer-header/
 // http://w3c.github.io/html/links.html#link-type-noreferrer
-SlideShow.addNoReferrer = function(document) {
+Slideshow.addNoReferrer = function(document) {
   const anchors = document.querySelectorAll('a');
   for(let i = 0, len = anchors.length; i < len; i++) {
     let anchor = anchors[i];
@@ -326,7 +326,7 @@ SlideShow.addNoReferrer = function(document) {
   }
 };
 
-SlideShow.toURLTrapped = function(urlString) {
+Slideshow.toURLTrapped = function(urlString) {
   try {
     return new URL(urlString);
   } catch(exception) {
@@ -334,7 +334,7 @@ SlideShow.toURLTrapped = function(urlString) {
   }
 };
 
-SlideShow.showNextSlide = function() {
+Slideshow.showNextSlide = function() {
 
   //console.debug('Showing next slide');
 
@@ -342,10 +342,10 @@ SlideShow.showNextSlide = function() {
   // additional slides. Look at the number of unread slides and conditionally
   // append new slides before going to the next slide.
 
-  const unreadCount = SlideShow.countUnreadSlides();
+  const unreadCount = Slideshow.countUnreadSlides();
   if(unreadCount < 2) {
     const isFirst = false;
-    SlideShow.appendSlides(onAppendComplete, isFirst);
+    Slideshow.appendSlides(onAppendComplete, isFirst);
   } else {
     // There are still unread slides. Just go to the next one.
     showNext();
@@ -357,19 +357,19 @@ SlideShow.showNextSlide = function() {
     // Note this is very sensitive to timing, it has to occur relatively
     // quickly.
     const c = document.getElementById('slideshow-container');
-    while(c.childElementCount > 10 && c.firstChild != SlideShow.currentSlide) {
-      SlideShow.removeSlide(c.firstChild);
+    while(c.childElementCount > 10 && c.firstChild != Slideshow.currentSlide) {
+      Slideshow.removeSlide(c.firstChild);
     }
 
     showNext();
-    SlideShow.maybeShowAllReadSlide();
+    Slideshow.maybeShowAllReadSlide();
   }
 
   // Move the current slide out of view and mark it as read, and move the
   // next slide into view, and then update the global variable that tracks
   // the current slide.
   function showNext() {
-    const current = SlideShow.currentSlide;
+    const current = Slideshow.currentSlide;
     if(current.nextSibling) {
       current.style.left = '-100%';
       current.style.right = '100%';
@@ -377,37 +377,37 @@ SlideShow.showNextSlide = function() {
       current.nextSibling.style.right = '0px';
       current.scrollTop = 0;
 
-      SlideShow.markAsRead(current);
-      SlideShow.currentSlide = current.nextSibling;
+      Slideshow.markAsRead(current);
+      Slideshow.currentSlide = current.nextSibling;
     }
   }
 };
 
 // Move the current slide out of view to the right, and move the previous
 // slide into view, and then update the current slide.
-SlideShow.showPreviousSlide = function() {
-  const current = SlideShow.currentSlide;
+Slideshow.showPreviousSlide = function() {
+  const current = Slideshow.currentSlide;
   if(current.previousSibling) {
     current.style.left = '100%';
     current.style.right = '-100%';
     current.previousSibling.style.left = '0px';
     current.previousSibling.style.right = '0px';
-    SlideShow.currentSlide = current.previousSibling;
+    Slideshow.currentSlide = current.previousSibling;
   }
 };
 
-SlideShow.isUnreadyEntrySlide = function(entryElement) {
+Slideshow.isUnreadyEntrySlide = function(entryElement) {
   return !entryElement.hasAttribute('read');
 };
 
-SlideShow.countUnreadSlides = function() {
+Slideshow.countUnreadSlides = function() {
   return document.body.querySelectorAll('div[entry]:not([read])').length;
 };
 
 // If no slides are loaded, or all slides are read, then show the default
 // slide.
-SlideShow.maybeShowAllReadSlide = function() {
-  const numUnread = SlideShow.countUnreadSlides();
+Slideshow.maybeShowAllReadSlide = function() {
+  const numUnread = Slideshow.countUnreadSlides();
   if(numUnread) {
     return;
   }
@@ -415,11 +415,11 @@ SlideShow.maybeShowAllReadSlide = function() {
   console.warn('maybeShowAllReadSlide not implemented');
 };
 
-SlideShow.hideAllUnreadSlides = function() {
+Slideshow.hideAllUnreadSlides = function() {
   console.warn('hideAllUnreadSlides not implemented');
 };
 
-SlideShow.keydownTimer = null;
+Slideshow.keydownTimer = null;
 
 // Handle key presses. Although I would prefer the browser managed the scroll
 // response, there is a strange issue with scrolling down on an article moved
@@ -428,7 +428,7 @@ SlideShow.keydownTimer = null;
 // effect.
 //event.target is body
 //event.currentTarget is window
-SlideShow.onKeyDown = function(event) {
+Slideshow.onKeyDown = function(event) {
 
   //console.debug('Key down:', event.code);
 
@@ -465,11 +465,11 @@ SlideShow.onKeyDown = function(event) {
   };
 
   // Scroll the contents of the current slide
-  if(SlideShow.currentSlide) {
+  if(Slideshow.currentSlide) {
     const delta = SCROLL_DELTAS['' + event.keyCode];
     if(delta) {
-      scrollToY(SlideShow.currentSlide, delta[0],
-        SlideShow.currentSlide.scrollTop + delta[1]);
+      scrollToY(Slideshow.currentSlide, delta[0],
+        Slideshow.currentSlide.scrollTop + delta[1]);
       return;
     }
   }
@@ -482,13 +482,13 @@ SlideShow.onKeyDown = function(event) {
     case KEY_CODES.SPACE:
     case KEY_CODES.RIGHT:
     case KEY_CODES.N:
-      clearTimeout(SlideShow.keydownTimer);
-      SlideShow.keydownTimer = setTimeout(SlideShow.showNextSlide, 50);
+      clearTimeout(Slideshow.keydownTimer);
+      Slideshow.keydownTimer = setTimeout(Slideshow.showNextSlide, 50);
       break;
     case KEY_CODES.LEFT:
     case KEY_CODES.P:
-      clearTimeout(SlideShow.keydownTimer);
-      SlideShow.keydownTimer = setTimeout(SlideShow.showPreviousSlide, 50);
+      clearTimeout(Slideshow.keydownTimer);
+      Slideshow.keydownTimer = setTimeout(Slideshow.showPreviousSlide, 50);
       break;
     default:
       break;
@@ -496,14 +496,14 @@ SlideShow.onKeyDown = function(event) {
 };
 
 // TODO: instead of binding this to window, bind to each slide? That way
-// we don't have to use a global tracking variable like SlideShow.currentSlide,
+// we don't have to use a global tracking variable like Slideshow.currentSlide,
 // which feels hackish.
-window.addEventListener('keydown', SlideShow.onKeyDown, false);
+window.addEventListener('keydown', Slideshow.onKeyDown, false);
 
-SlideShow.init = function(event) {
-  document.removeEventListener('DOMContentLoaded', SlideShow.init);
+Slideshow.init = function(event) {
+  document.removeEventListener('DOMContentLoaded', Slideshow.init);
   DisplaySettings.loadStyles();
-  SlideShow.appendSlides(SlideShow.maybeShowAllReadSlide, true);
+  Slideshow.appendSlides(Slideshow.maybeShowAllReadSlide, true);
 };
 
 document.addEventListener('DOMContentLoaded', SlideShow.init);
