@@ -31,8 +31,7 @@
       "/src/on-installed.js",
       "/src/polling-service.js",
       "/src/polling-service-test.js",
-      "/src/string-utils.js",
-      "/src/url-rewriting-service.js"
+      "/src/string-utils.js"
     ]
   },
   "options_page": "options.html",

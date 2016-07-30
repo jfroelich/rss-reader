@@ -196,7 +196,7 @@ processEntry(context, feed, entry, callback) {
   let entryURL = Entry.prototype.getURL.call(entry);
 
   // Append the rewritten url if rewriting occurred
-  const rewrittenURL = URLRewritingService.rewriteURL(entryURL);
+  const rewrittenURL = PollingService.rewriteURL(entryURL);
   if(rewrittenURL.href !== entryURL.href) {
     entry.urls.push(rewrittenURL);
 
@@ -285,6 +285,27 @@ showPollCompletedNotification() {
     'message': 'Updated articles'
   };
   chrome.notifications.create('Lucubrate', notification, function() {});
+}
+
+// Applies a set of rules to a url object and returns a modified url object
+// Currently this only modifies Google News urls, but I plan to include more
+// TODO: instead of a regular expression I could consider using the new
+// URL api to access and test against components of the URL
+static rewriteURL(inputURL) {
+  let outputURL = new URL(inputURL.href);
+  const GOOGLE_NEWS = /^https?:\/\/news.google.com\/news\/url\?.*url=(.*)/i;
+  const matches = GOOGLE_NEWS.exec(inputURL.href);
+  if(matches && matches.length === 2 && matches[1]) {
+    const param = decodeURIComponent(matches[1]);
+    try {
+      outputURL = new URL(param);
+      // console.debug('Rewrote', inputURL.href, 'as', outputURL.href);
+    } catch(exception) {
+      console.warn('Error rewriting url', exception);
+    }
+  }
+
+  return outputURL;
 }
 
 }
