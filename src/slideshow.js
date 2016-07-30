@@ -4,16 +4,6 @@
 
 'use strict';
 
-// TODO: decouple loading of additional content with navigation. It causes
-// lag. Instead, create a queue of articles, and refill it periodically on
-// some type of schedule (using setInterval or a re-setTimeout-per-append)
-// Only append during navigation if the queue has not yet refilled.
-// TODO: if advancing to next article too quickly, some articles are loaded
-// that were already loaded, leading to duplicate articles. The call to append
-// articles needs to be delayed until scrolling completes or something like
-// that. Actually I think it is because the mark-read is on a diff 'thread'
-// than the update code. The append needs to wait for mark read to complete.
-
 const SlideShow = Object.create(null);
 
 SlideShow.currentSlide = null;
@@ -280,7 +270,7 @@ SlideShow.appendSlide = function(entry, isFirst) {
 
   Calamine.removeBoilerplate(entryContentDocument);
   DOMAid.cleanDocument(entryContentDocument);
-  addNoReferrer(entryContentDocument);
+  SlideShow.addNoReferrer(entryContentDocument);
   const entryContentBody = entryContentDocument.body ||
     entryContentDocument.documentElement;
   moveChildNodes(entryContentBody, content);
@@ -320,6 +310,20 @@ SlideShow.appendSlide = function(entry, isFirst) {
 
   const slidesContainer = document.getElementById('slideshow-container');
   slidesContainer.appendChild(slide);
+};
+
+// I would rather do this at the time of storing, but attributes are filtered
+// In order to move it i have to refactor that
+// Current based on the following post:
+// https://blog.fastmail.com/2016/06/20/everything-you-could-ever-want-to-know-
+// and-more-about-controlling-the-referer-header/
+// http://w3c.github.io/html/links.html#link-type-noreferrer
+SlideShow.addNoReferrer = function(document) {
+  const anchors = document.querySelectorAll('a');
+  for(let i = 0, len = anchors.length; i < len; i++) {
+    let anchor = anchors[i];
+    anchor.setAttribute('rel', 'noreferrer');
+  }
 };
 
 SlideShow.toURLTrapped = function(urlString) {
