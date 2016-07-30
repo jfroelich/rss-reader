@@ -13,9 +13,6 @@ class OPMLImportService {
   start(callback) {
     console.debug('Importing OPML files...');
 
-    // TODO: if context.uploader is defined there is no need to define
-    // context.files
-
     const context = {
       'filesProcessed': 0,
       'files': null,
@@ -58,7 +55,7 @@ class OPMLImportService {
     context.connection = connection;
 
     for(let file of context.files) {
-      console.debug('Importing file', file.name);
+      console.debug('Reading file', file.name);
       if(!this.isMimeTypeXML(file.type)) {
         console.warn('Invalid mime type', file.name, file.type);
         this.onFileProcessed(context);
@@ -66,7 +63,7 @@ class OPMLImportService {
       }
 
       if(!file.size) {
-        console.warn('Empty file', file.name);
+        console.warn('The file %s is empty', file.name);
         this.onFileProcessed(context);
         continue;
       }
@@ -111,14 +108,14 @@ class OPMLImportService {
     }
 
     if(!document) {
-      console.warn('Undefined document', file.name);
+      console.warn('Reading file %s resulted in undefined document', file.name);
       this.onFileProcessed(context);
       return;
     }
 
     const parserError = document.querySelector('parsererror');
     if(parserError) {
-      console.warn('Parse error', file.name, parserError.textContent);
+      console.warn('XML parsing error', file.name, parserError.textContent);
       this.onFileProcessed(context);
       return;
     }
@@ -129,7 +126,6 @@ class OPMLImportService {
       return;
     }
 
-    // NOTE: for an unknown reason, document.body doesn't work here
     const bodyElement = document.querySelector('body');
     if(!bodyElement) {
       console.warn('No body element', file.name,
@@ -172,12 +168,6 @@ class OPMLImportService {
       }
       seenURLStringSet.add(url.href);
 
-      // TODO: this should not be responsible for sanization. Defer that
-      // to cache.addFeed. Because subscription.js also depends on addFeed
-      // I need to make changes to all 3 at once.
-      // TODO: in fact, this should be interacting with the subscription
-      // service, unless i roll that into feed-cache
-
       // Create the feed object that will be stored
       const feed = {};
       feed.urls = [url.href];
@@ -211,9 +201,6 @@ class OPMLImportService {
 
     return null;
   }
-
-  // TODO: this overlaps with poll functionality, should probably make a
-  // general purpose function that is shared
 
   sanitizeString(inputString) {
     let outputString = inputString || '';
