@@ -16,44 +16,18 @@ Slideshow.onMessage = function(message) {
     case 'subscribe':
       Slideshow.maybeAppendSlides();
       break;
-
-    // NOTE: I believe this was deprecated
-    //case 'unsubscribe':
-    //  Slideshow.onUnsubscribe();
-    //  break;
     case 'entryDeleteRequestedByUnsubscribe':
-      console.debug('Reaction to removal of entry %s not yet implemented',
-        message.entryId);
+      // Not yet implemented
       break;
     case 'archiveEntryRequested':
-      // TODO: react to the request, the entry may be present in the view
+      // Not yet implemented
       break;
     default:
-      // Ignore the message
       break;
   }
 };
 
 chrome.runtime.onMessage.addListener(Slideshow.onMessage);
-
-Slideshow.onUnsubscribe = function(message) {
-  const slidesForFeed = document.querySelectorAll(
-    'div[feed="'+ message.feed +'"]');
-  const removedCurrentSlide = Array.prototype.reduce.call(
-    slidesForFeed, function removeAndCheck(removedCurrent, slide) {
-    // TODO: verify removing all listeners
-    Slideshow.removeSlide(slide);
-    return removedCurrent || (slide === Slideshow.currentSlide);
-  }, false);
-
-  if(removedCurrentSlide) {
-    // TODO: implement
-    console.warn('Removed current slide as a result of unsubscribing but did'+
-      ' not update UI');
-  }
-
-  Slideshow.maybeShowAllReadSlide();
-};
 
 Slideshow.removeSlide = function(slideElement) {
   slideElement.removeEventListener('click', Slideshow.onSlideClick);
@@ -65,33 +39,19 @@ Slideshow.markAsRead = function(slide) {
     return;
   }
 
-  // NOTE: using removeAttribute results in a bug, I am not sure why. In other
-  // words, this must retain the attribute.
   slide.setAttribute('read', '');
-
   const entryIdString = slide.getAttribute('entry');
   const entryId = parseInt(entryIdString, 10);
-
   const feedCache = new FeedCache();
   feedCache.markEntryAsRead(entryId);
 };
 
 Slideshow.maybeAppendSlides = function() {
-  const unreadCount = Slideshow.countUnreadSlides();
-
-  // When there are unread slides still present, cancel the append
-  if(unreadCount) {
-    return;
+  const count = Slideshow.countUnreadSlides();
+  if(count < 1) {
+    const isFirst = !document.getElementById('slideshow-container').firstChild;
+    Slideshow.appendSlides(Slideshow.hideAllUnreadSlides, isFirst);
   }
-
-  // TODO: we can use querySelector to get the first slide
-  // itself instead of getting the parent container and
-  // checking its children.
-  // TODO: we do not actually need a count here, just a check
-  // of whether firstElementChild is defined.
-
-  const isFirst = !document.getElementById('slideshow-container').firstChild;
-  Slideshow.appendSlides(Slideshow.hideAllUnreadSlides, isFirst);
 };
 
 Slideshow.appendSlides = function(oncomplete, isFirst) {
@@ -108,8 +68,6 @@ Slideshow.appendSlides = function(oncomplete, isFirst) {
     if(connection) {
       feedCache.openUnreadUnarchivedEntryCursor(connection, onOpenCursor);
     } else {
-      // TODO: show an error?
-      console.debug(event);
     }
   }
 
@@ -146,14 +104,6 @@ Slideshow.appendSlides = function(oncomplete, isFirst) {
   }
 };
 
-// TODO: just checking if image parent is in anchor is incorrect
-// The correct condition is if image is a descendant of an anchor, use
-// closest instead of parentNode
-// TODO: this should probably be the handler that determines
-// whether to open an anchor click in a new tab, instead of
-// setting a target attribute per anchor.
-// NOTE: event.target is what was clicked. event.currentTarget is where the
-// listener is attached.
 Slideshow.onSlideClick = function(event) {
   const mouseButtonCode = event.which;
   const LEFT_MOUSE_BUTTON_CODE = 1;
@@ -164,14 +114,6 @@ Slideshow.onSlideClick = function(event) {
     return false;
   }
 
-  // TODO: define event.target using a variable. What does it mean. Does it
-  // mean the dom object to which the listener is attached? Or does it
-  // mean the element that was clicked on? etc.
-
-  // TODO: bug, when clicking on an image in a link, it is still a link
-  // click that should open the link in a new window...
-  // TODO: this should be checking if in anchor axis, not
-  // just immediate parent
   if(event.target.matches('img')) {
     if(!event.target.parentNode.matches('a')) {
       return false;
@@ -205,14 +147,6 @@ Slideshow.onSlideClick = function(event) {
 
 // Add a new slide to the view. If isFirst is true, the slide is immediately
 // visible. Otherwise, the slide is positioned off screen.
-// NOTE: in the current design, fetched content scrubbing is done onLoad
-// instead of onBeforeStore. This is not the best performance. This is done
-// primarily to simplify development. However, it also means we can defer
-// decisions about rendering, which provides a chance to customize the
-// rendering for already stored content and not just content fetched in the
-// future. It also emphasizes that scrubbing must be tuned to be fast enough
-// not to cause lag while blocking, because this is synchronous.
-// TODO: use <article> instead of div
 Slideshow.appendSlide = function(entry, isFirst) {
   const slide = document.createElement('div');
   slide.setAttribute('entry', entry.id);
@@ -228,28 +162,14 @@ Slideshow.appendSlide = function(entry, isFirst) {
   slide.style.bottom = 0;
   slide.style.transition = 'left 0.5s ease-in 0s, right 0.5s ease-in';
 
-  // The entry was loaded directly from the database, so urls are strings.
-  // Grab the most recent link, that is the most current, after redirects
-  // and rewrites
   const entryLinkURLString = Entry.prototype.getURL.call(entry);
-
-  // todo: rename title variable
-
   const title = document.createElement('a');
   title.setAttribute('href', entryLinkURLString);
-
   title.setAttribute('class', 'entry-title');
   title.setAttribute('target','_blank');
   title.setAttribute('rel', 'noreferrer');
   title.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
-
-    // TODO: deal with entities appearing in the title. E.g. I am seeing
-    // &amp; in plain text in the displayed title.
-    // Maybe I need to use innerHTML and maybe I also then need to do more
-    // sanitization of the title
-    // NOTE: tags were removed pre-storage
-
     let titleText = entry.title;
     titleText = filterArticleTitle(titleText);
     titleText = truncateHTMLString(titleText, 300);
@@ -257,10 +177,8 @@ Slideshow.appendSlide = function(entry, isFirst) {
   } else {
     title.textContent = 'Untitled';
   }
-
   slide.appendChild(title);
 
-  // TODO: use section instead of span
   const content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
 
@@ -281,7 +199,6 @@ Slideshow.appendSlide = function(entry, isFirst) {
   source.setAttribute('class','entrysource');
   slide.appendChild(source);
 
-  // Append the favicon image if available
   if(entry.faviconURLString) {
     const faviconElement = document.createElement('img');
     faviconElement.setAttribute('src', entry.faviconURLString);
@@ -291,25 +208,34 @@ Slideshow.appendSlide = function(entry, isFirst) {
   }
 
   const feedTitleElement = document.createElement('span');
-
   if(entry.feedLink) {
     feedTitleElement.setAttribute('title', entry.feedLink);
   }
 
-  const titleTextArray = [];
-  titleTextArray.push(entry.feedTitle || 'Unknown feed');
-  titleTextArray.push(' by ');
-  titleTextArray.push(entry.author || 'Unknown author');
+  const feedTitleStringBuffer = [];
+  feedTitleStringBuffer.push(entry.feedTitle || 'Unknown feed');
+  feedTitleStringBuffer.push(' by ');
+  feedTitleStringBuffer.push(entry.author || 'Unknown author');
   if(entry.datePublished) {
-    titleTextArray.push(' on ');
-    titleTextArray.push(formatDate(entry.datePublished));
+    feedTitleStringBuffer.push(' on ');
+    feedTitleStringBuffer.push(Slideshow.formatDate(entry.datePublished));
   }
 
-  feedTitleElement.textContent = titleTextArray.join('');
+  feedTitleElement.textContent = feedTitleStringBuffer.join('');
   source.appendChild(feedTitleElement);
 
   const slidesContainer = document.getElementById('slideshow-container');
   slidesContainer.appendChild(slide);
+};
+
+Slideshow.formatDate = function(date, optionalDelimiterString) {
+  const datePartsArray = [];
+  if(date) {
+    datePartsArray.push(date.getMonth() + 1);
+    datePartsArray.push(date.getDate());
+    datePartsArray.push(date.getFullYear());
+  }
+  return datePartsArray.join(optionalDelimiterString || '');
 };
 
 // I would rather do this at the time of storing, but attributes are filtered
