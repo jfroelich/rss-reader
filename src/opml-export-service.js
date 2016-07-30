@@ -4,6 +4,9 @@
 
 'use strict';
 
+// TODO: revert to using namespace object and static functions, it is just so
+// much cleaner. I think I hate ES6 class syntax.
+
 class OPMLExportService {
   constructor() {
     this.cache = new FeedCache();
@@ -23,6 +26,7 @@ class OPMLExportService {
   onOpenDatabase(context, connection) {
     if(connection) {
       context.connection = connection;
+      // TODO: this should be a call to a static function
       this.cache.openFeedsCursor(connection,
         this.onCursorAdvance.bind(this, context));
     }
