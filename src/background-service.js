@@ -30,6 +30,8 @@ BackgroundService.onBackgroundPageLoad = function(event) {
   }
 };
 
+BackgroundService.onBackgroundPageLoad();
+
 BackgroundService.onInstalled = function(event) {
   console.log('Installing extension ...');
   const badgeUpdateService = new BadgeUpdateService();
@@ -72,5 +74,3 @@ BackgroundService.onAlarm = function(alarm) {
     console.warn('Unknown alarm', alarm.name);
   }
 };
-
-BackgroundService.onBackgroundPageLoad();
