@@ -33,7 +33,6 @@ StringUtils.replaceHTML = function(inputString, replacementString) {
   return outputString;
 };
 
-
 // Truncates a string containing some html, taking special care not to truncate
 // in the midst of a tag or an html entity. The transformation is lossy as some
 // entities are not re-encoded (e.g. &#32;).
