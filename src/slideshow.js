@@ -231,7 +231,7 @@ SlideShow.appendSlide = function(entry, isFirst) {
   // The entry was loaded directly from the database, so urls are strings.
   // Grab the most recent link, that is the most current, after redirects
   // and rewrites
-  const entryLinkURLString = entry.urls[entry.urls.length - 1];
+  const entryLinkURLString = Entry.prototype.getURL.call(entry);
 
   // todo: rename title variable
 
