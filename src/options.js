@@ -357,7 +357,7 @@ OptionsPage.startSubscription = function(url) {
   OptionsPage.showSubscriptionMonitor();
   OptionsPage.updateSubscriptionMonitorMessage('Subscribing to' + url.href);
 
-  Subscription.add(url, onSubscribe);
+  SubscribeTask.start(url, onSubscribe);
 
   function onSubscribe(event) {
     if(event.type !== 'success') {
@@ -737,9 +737,7 @@ OptionsPage.buttonUnsubscribeOnClick = function(event) {
   // is sent by the unsubscribe function instead of the callback, but it is
   // obviously faster and more local to use the callback, so I chose to go with
   // that. I am not entirely confident this is the best decision.
-  // TODO: this should probably be responsible for creating the connection and
-  // then passing it to Subscription.remove, not Subscription.remove
-  Subscription.remove(feedId, OptionsPage.onUnsubscribe);
+  UnsubscribeTask.start(feedId, OptionsPage.onUnsubscribe);
 
   function onUnsubscribe(event) {
     // If there was some failure to unsubscribe from the feed, react here

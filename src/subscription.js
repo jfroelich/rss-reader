@@ -4,56 +4,58 @@
 
 'use strict';
 
-const Subscription = {};
+const SubscribeTask = {};
 
-Subscription.add = function(url, callback) {
+SubscribeTask.start = function(url, callback) {
+  console.assert(url, 'url is required');
   console.debug('Subscribing to', url.href);
   const context = {};
   context.url = url;
+  context.didSubscribe = false;
   context.callback = callback;
   context.cache = new FeedCache();
-  context.cache.open(Subscription.addOnOpenDatabase.bind(null, context));
+  context.cache.open(SubscribeTask.onOpenCache.bind(null, context));
 };
 
-Subscription.addOnOpenDatabase = function(context, connection) {
+SubscribeTask.onOpenCache = function(context, connection) {
   if(connection) {
     if('onLine' in navigator && !navigator.onLine) {
       const feed = {};
       Feed.prototype.addURL.call(feed, url.href);
       context.cache.addFeed(connection, feed,
-        Subscription.onAddFeed.bind(null, context));
+        SubscribeTask.onAddFeed.bind(null, context));
     } else {
       context.connection = connection;
       const fetchService = new FeedHttpService();
       fetchService.timeoutMillis = 10 * 1000;
       const excludeEntries = true;
       fetchService.fetch(context.url, excludeEntries,
-        Subscription.onFetchFeed.bind(null, context));
+        SubscribeTask.onFetchFeed.bind(null, context));
     }
   } else {
-    context.callback({'type': 'ConnectionError'});
+    SubscribeTask.onComplete(context, {'type': 'ConnectionError'});
   }
 };
 
-Subscription.onFetchFeed = function(context, event) {
+SubscribeTask.onFetchFeed = function(context, event) {
   if(event.type === 'load') {
     context.cache.addFeed(context.connection, event.feed,
-      Subscription.onAddFeed.bind(null, context));
+      SubscribeTask.onAddFeed.bind(null, context));
   } else {
-    context.callback({'type': 'FetchError'});
+    SubscribeTask.onComplete(context, {'type': 'FetchError'});
   }
 };
 
-Subscription.onAddFeed = function(context, event) {
+SubscribeTask.onAddFeed = function(context, event) {
   if(event.type === 'success') {
-    Subscription.showSubscriptionNotification(event.feed);
-    context.callback({'type': 'success', 'feed': event.feed});
+    context.didSubscribe = true;
+    SubscribeTask.onComplete(context, {'type': 'success', 'feed': event.feed});
   } else {
-    context.callback({'type': event.type});
+    SubscribeTask.onComplete(context, {'type': event.type});
   }
 };
 
-Subscription.showSubscriptionNotification = function(feed) {
+SubscribeTask.showNotification = function(feed) {
   if('SHOW_NOTIFICATIONS' in localStorage) {
     const notification = {
       'type': 'basic',
@@ -65,7 +67,23 @@ Subscription.showSubscriptionNotification = function(feed) {
   }
 };
 
-Subscription.remove = function(feedId, callback) {
+SubscribeTask.onComplete = function(context, event) {
+  if(context.connection) {
+    context.connection.close();
+  }
+
+  if(context.didSubscribe) {
+    SubscribeTask.showNotification(event.feed);
+  }
+
+  if(context.callback) {
+    context.callback(event);
+  }
+};
+
+
+const UnubscribeTask = {};
+UnubscribeTask.start = function(feedId, callback) {
   console.assert(feedId && !isNaN(feedId), 'invalid feed id %s', feedId);
 
   const badgeUpdateService = new BadgeUpdateService();
