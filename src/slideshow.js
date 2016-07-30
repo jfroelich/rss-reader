@@ -46,6 +46,33 @@ Slideshow.markAsRead = function(slide) {
   feedCache.markEntryAsRead(entryId);
 };
 
+Slideshow.filterArticleTitle = function(title) {
+  console.assert(title, 'title is required');
+
+  let index = title.lastIndexOf(' - ');
+  if(index === -1)
+    index = title.lastIndexOf(' | ');
+  if(index === -1)
+    index = title.lastIndexOf(' : ');
+  if(index === -1)
+    return title;
+
+  const trailingText = title.substring(index + 1);
+
+  const tokens = trailingText.split(/\s+/g);
+
+  const definedTokens = tokens.filter(function(tokenString) {
+    return tokenString;
+  });
+
+  if(definedTokens.length < 5) {
+    const newTitle = title.substring(0, index).trim();
+    return newTitle;
+  }
+
+  return title;
+};
+
 Slideshow.maybeAppendSlides = function() {
   const count = Slideshow.countUnreadSlides();
   if(count < 1) {
@@ -171,7 +198,7 @@ Slideshow.appendSlide = function(entry, isFirst) {
   title.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
     let titleText = entry.title;
-    titleText = filterArticleTitle(titleText);
+    titleText = Slideshow.filterArticleTitle(titleText);
     titleText = StringUtils.truncateHTML(titleText, 300);
     title.innerHTML = titleText;
   } else {
