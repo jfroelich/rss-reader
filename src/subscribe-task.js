@@ -20,22 +20,23 @@ SubscribeTask.start = function(url, callback) {
 };
 
 SubscribeTask.onOpenCache = function(context, connection) {
-  if(connection) {
-    if('onLine' in navigator && !navigator.onLine) {
-      const feed = {};
-      Feed.prototype.addURL.call(feed, url.href);
-      context.cache.addFeed(connection, feed,
-        SubscribeTask.onAddFeed.bind(null, context));
-    } else {
-      context.connection = connection;
-      const fetchService = new FeedHttpService();
-      fetchService.timeoutMillis = 10 * 1000;
-      const excludeEntries = true;
-      fetchService.fetch(context.url, excludeEntries,
-        SubscribeTask.onFetchFeed.bind(null, context));
-    }
-  } else {
+  if(!connection) {
     SubscribeTask.onComplete(context, {'type': 'ConnectionError'});
+    return;
+  }
+
+  if('onLine' in navigator && !navigator.onLine) {
+    const feed = {};
+    Feed.prototype.addURL.call(feed, url.href);
+    context.cache.addFeed(connection, feed,
+      SubscribeTask.onAddFeed.bind(null, context));
+  } else {
+    context.connection = connection;
+    const fetchService = new FeedHttpService();
+    fetchService.timeoutMillis = 10 * 1000;
+    const excludeEntries = true;
+    fetchService.fetch(context.url, excludeEntries,
+      SubscribeTask.onFetchFeed.bind(null, context));
   }
 };
 

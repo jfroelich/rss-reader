@@ -36,8 +36,8 @@ class ArchiveService {
     const transaction = connection.transaction('entry', 'readwrite');
     const store = transaction.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const keyPath = [FeedCache.EntryFlags.UNARCHIVED,
-      FeedCache.EntryFlags.READ];
+    const keyPath = [Entry.FLAGS.UNARCHIVED,
+      Entry.FLAGS.READ];
     const request = index.openCursor(keyPath);
     const boundHandleCursor = this.handleCursor.bind(this, context);
     request.onsuccess = boundHandleCursor;
@@ -100,7 +100,7 @@ class ArchiveService {
     outputEntry.feed = inputEntry.feed;
     outputEntry.urls = inputEntry.urls;
     outputEntry.dateArchived = new Date();
-    outputEntry.archiveState = FeedCache.EntryFlags.ARCHIVED;
+    outputEntry.archiveState = Entry.FLAGS.ARCHIVED;
     if(inputEntry.dateRead) {
       outputEntry.dateRead = inputEntry.dateRead;
     }

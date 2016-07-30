@@ -18,3 +18,10 @@ Entry.prototype.getURL = function() {
 Entry.prototype.hasURL = function() {
   return this.urls && this.urls.length;
 };
+
+Entry.FLAGS = {
+  UNREAD: 0,
+  READ: 1,
+  UNARCHIVED: 0,
+  ARCHIVED: 1
+};

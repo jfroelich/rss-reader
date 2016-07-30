@@ -22,7 +22,7 @@ class BadgeUpdateService {
       const transaction = connection.transaction('entry');
       const store = transaction.objectStore('entry');
       const index = store.index('readState');
-      const request = index.count(FeedCache.EntryFlags.UNREAD);
+      const request = index.count(Entry.FLAGS.UNREAD);
       const boundOnRequest = this.onCountUnreadEntries.bind(this, callback);
       request.addEventListener('success', boundOnRequest);
       request.addEventListener('error', boundOnRequest);

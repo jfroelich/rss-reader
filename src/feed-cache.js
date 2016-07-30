@@ -126,8 +126,8 @@ class FeedCache {
     const transaction = connection.transaction('entry');
     const entryStore = transaction.objectStore('entry');
     const index = entryStore.index('archiveState-readState');
-    const keyPath = [FeedCache.EntryFlags.UNARCHIVED,
-      FeedCache.EntryFlags.UNREAD];
+    const keyPath = [Entry.FLAGS.UNARCHIVED,
+      Entry.FLAGS.UNREAD];
     const request = index.openCursor(keyPath);
     request.onsuccess = callback;
     request.onerror = callback;
@@ -228,7 +228,7 @@ class FeedCache {
       }
 
       const entry = cursor.value;
-      if(entry.readState === FeedCache.EntryFlags.READ) {
+      if(entry.readState === Entry.FLAGS.READ) {
         console.error('Attempted to remark read entry with id %i as read',
           entryId);
         if(callback) {
@@ -240,7 +240,7 @@ class FeedCache {
         return;
       }
 
-      entry.readState = FeedCache.EntryFlags.READ;
+      entry.readState = Entry.FLAGS.READ;
       const dateNow = new Date();
       entry.dateRead = dateNow;
       entry.dateUpdated = dateNow;
@@ -293,8 +293,8 @@ class FeedCache {
       return url.href;
     });
 
-    storable.readState = FeedCache.EntryFlags.UNREAD;
-    storable.archiveState = FeedCache.EntryFlags.UNARCHIVED;
+    storable.readState = Entry.FLAGS.UNREAD;
+    storable.archiveState = Entry.FLAGS.UNARCHIVED;
 
     // TODO: sanitize fully
     if(entry.author) {
@@ -408,10 +408,3 @@ class FeedCache {
     return outputString;
   }
 }
-
-FeedCache.EntryFlags = {
-  UNREAD: 0,
-  READ: 1,
-  UNARCHIVED: 0,
-  ARCHIVED: 1
-};
