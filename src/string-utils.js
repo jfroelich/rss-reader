@@ -6,17 +6,18 @@
 
 const StringUtils = {};
 
-StringUtils.filterControlCharacters = function(string) {
-  console.assert(string, 'The string argument must be a defined string');
-  return string.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+StringUtils.filterControlCharacters = function(inputString) {
+  console.assert(inputString, 'inputString is required');
+  return inputString.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
 };
 
 // Returns a new string where html elements were replaced with the optional
 // replacement string. HTML entities remain (except some will be
 // replaced, like &#32; with space).
 StringUtils.replaceHTML = function(inputString, replacementString) {
-  let outputString = null;
+  console.assert(inputString, 'inputString is required');
 
+  let outputString = null;
   const doc = document.implementation.createHTMLDocument();
   const bodyElement = doc.body;
   bodyElement.innerHTML = inputString;
@@ -48,7 +49,7 @@ StringUtils.replaceHTML = function(inputString, replacementString) {
 StringUtils.truncateHTML = function(inputString, position,
   optionalDecodedExtensionString) {
 
-  console.assert(inputString, 'inputString should be defined');
+  console.assert(inputString, 'inputString is required');
   console.assert(position >= 0, 'position should be defined positive int');
 
   const ELLIPSIS = '\u2026';
