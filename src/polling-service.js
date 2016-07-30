@@ -183,17 +183,20 @@ onUpdateFeed(context, entries, resultType, feed) {
 }
 
 processEntry(context, feed, entry, callback) {
+
+  let entryURL = Entry.prototype.getURL.call(entry);
+
+  console.assert(entryURL, 'invalid url for entry %O', entry);
+
   // Verify the entry has a url
   // TODO: this should just be an assert because entries without urls should
   // already have been filtered. Or maybe not? Whose responsibility is it to
   // impose the url requirement?
-  if(!Entry.prototype.hasURL.call(entry)) {
+  if(!entryURL) {
     console.warn('Entry missing url', entry);
     callback();
     return;
   }
-
-  let entryURL = Entry.prototype.getURL.call(entry);
 
   // Append the rewritten url if rewriting occurred
   const rewrittenURL = PollingService.rewriteURL(entryURL);
