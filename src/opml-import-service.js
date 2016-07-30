@@ -135,7 +135,6 @@ class OPMLImportService {
     }
 
     const seenURLStringSet = new Set();
-    const boundOnAddFeed = this.onAddFeed.bind(this, context);
 
     for(let element = bodyElement.firstElementChild; element;
       element = element.nextElementSibling) {
@@ -184,7 +183,7 @@ class OPMLImportService {
         }
       }
 
-      this.cache.addFeed(context.connection, feed, boundOnAddFeed);
+      this.cache.addFeed(context.connection, feed, null);
     }
 
     this.onFileProcessed(context);
@@ -198,13 +197,5 @@ class OPMLImportService {
     }
 
     return null;
-  }
-
-  onAddFeed(context, event) {
-    if(event.type === 'success') {
-      console.debug('Added feed id', event.target.result);
-    } else {
-      console.error('Add feed error', event);
-    }
   }
 }

@@ -377,7 +377,13 @@ OptionsPage.startSubscription = function(url) {
   function onSubscribe(event) {
     if(event.type !== 'success') {
       OptionsPage.hideSubscriptionMonitor(function() {
-        OptionsPage.showErrorMessage(event.message);
+        if(event.type === 'ConstraintError') {
+          OptionsPage.showErrorMessage('Already subscribed to that feed');
+        } else if(event.type === 'fetcherror') {
+          OptionsPage.showErrorMessage('Failed to fetch the feed');
+        } else {
+          OptionsPage.showErrorMessage('Error subscribing to feed');
+        }
       });
       return;
     }

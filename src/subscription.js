@@ -18,41 +18,25 @@ Subscription.add = function(connection, url, callback) {
   function onFetchFeed(event) {
     if(event.type !== 'load') {
       callback({
-        'type': 'error',
+        'type': 'fetcherror',
         'message': 'Fetch error'
       });
       return;
     }
 
-    const feed = event.feed;
-    feedCache.addFeed(connection, feed, onAddFeed.bind(null, feed));
+    feedCache.addFeed(connection, event.feed, onAddFeed);
   }
 
-  function onAddFeed(addedFeed, event) {
-    if(event.type !== 'success') {
-      const errorEvent = Object.create(null);
-      errorEvent.type = 'error';
-      const error = event.target.error;
-      if(error && error.name === 'ConstraintError') {
-        errorEvent.message = 'You are already subscribed to this feed.';
-      } else {
-        errorEvent.message =
-          'There was a problem adding the feed to the database.';
-      }
-
-      callback(errorEvent);
-      return;
+  function onAddFeed(eventType, feed) {
+    if(eventType === 'success') {
+      showSubscriptionNotification(feed);
+      callback({
+        'type': 'success',
+        'feed': feed
+      });
+    } else {
+      callback({'type': eventType});
     }
-
-    addedFeed.id = event.target.result;
-    showSubscriptionNotification(addedFeed);
-
-    const successEvent = Object.create(null);
-    successEvent.type = 'success';
-    successEvent.message = 'Successfully subscribed to ' +
-      (addedFeed.title || 'Untitled');
-    successEvent.feed = addedFeed;
-    callback(successEvent);
   }
 
   function showSubscriptionNotification(feed) {

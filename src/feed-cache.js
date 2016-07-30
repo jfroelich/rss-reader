@@ -345,6 +345,22 @@ class FeedCache {
     const request = feedStore.add(storableFeed);
     request.onsuccess = callback;
     request.onerror = callback;
+
+    if(callback) {
+      request.addEventListener('success', onAddSuccess);
+      request.addEventListener('error', onAddError);
+    }
+
+    function onAddSuccess(event) {
+      // Define the id property, result of autoincrement
+      storableFeed.id = event.target.result;
+      callback('success', storableFeed);
+    }
+
+    function onAddError(event) {
+      console.error('Error adding feed', event);
+      callback(event.target.error.name, storableFeed);
+    }
   }
 
   updateFeed(connection, feed, callback) {
@@ -358,11 +374,11 @@ class FeedCache {
     const store = transaction.objectStore('feed');
     const request = store.put(storableFeed);
 
-    request.onsuccess = function onUpdateFeedSuccess(event) {
+    request.onsuccess = function onPutSuccess(event) {
       callback('success', storableFeed);
     };
 
-    request.onerror = function onUpdateFeedError(event) {
+    request.onerror = function onPutError(event) {
       console.error('Error updating feed', event);
       callback('error', storableFeed);
     };

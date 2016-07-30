@@ -9,7 +9,10 @@
 function Entry() {}
 
 Entry.prototype.getURL = function() {
-  return this.urls[this.urls.length - 1];
+  if(this.hasURL()) {
+    return this.urls[this.urls.length - 1];
+  }
+  return null;
 };
 
 Entry.prototype.hasURL = function() {
