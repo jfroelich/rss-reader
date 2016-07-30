@@ -86,56 +86,64 @@ const UnubscribeTask = {};
 UnubscribeTask.start = function(feedId, callback) {
   console.assert(feedId && !isNaN(feedId), 'invalid feed id %s', feedId);
 
-  const badgeUpdateService = new BadgeUpdateService();
-  const feedCache = new FeedCache();
-  let entriesRemoved = 0;
-  feedCache.open(onOpenDatabase);
+  const context = {
+    'feedId': feedId,
+    'entriesRemoved': 0,
+    'callback': callback,
+    'cache': new FeedCache()
+  };
 
-  function onOpenDatabase(connection) {
-    if(connection) {
-      feedCache.openEntryCursorForFeed(connection, feedId, deleteNextEntry);
-    } else {
-      callback({
-        'type': 'connection-error',
-        'feedId': feedId,
-        'entriesRemoved': 0
-      });
-    }
-  }
+  context.cache.open(UnsubscribeTask.onOpenDatabase.bind(null, context));
+};
 
-  function deleteNextEntry(event) {
-    const request = event.target;
-    const cursor = request.result;
-    if(cursor) {
-      const entry = cursor.value;
-      cursor.delete();
-      entriesRemoved++;
-      sendEntryDeleteRequestedMessage(entry);
-      cursor.continue();
-    } else {
-      onRemoveEntries(event);
-    }
-  }
-
-  function sendEntryDeleteRequestedMessage(entry) {
-    const message = {
-      'type': 'entryDeleteRequestedByUnsubscribe',
-      'entryId': entry.id
-    };
-    chrome.runtime.sendMessage(message);
-  }
-
-  function onRemoveEntries(event) {
-    const connection = event.target.db;
-    feedCache.deleteFeedById(connection, feedId, onComplete);
-  }
-
-  function onComplete(event) {
-    badgeUpdateService.updateCount();
-    callback({
-      'type': 'success',
-      'feedId': feedId,
-      'entriesRemoved': entriesRemoved
+UnsubscribeTask.onOpenDatabase = function(context, connection) {
+  if(connection) {
+    context.connection = connection;
+    context.cache.openEntryCursorForFeed(connection, context.feedId,
+      UnsubscribeTask.deleteNextEntry.bind(null, context));
+  } else {
+    context.callback({
+      'type': 'ConnectionError',
+      'feedId': context.feedId,
+      'entriesRemoved': context.entriesRemoved
     });
   }
+};
+
+UnsubscribeTask.deleteNextEntry = function(context, event) {
+  const cursor = event.target.result;
+  if(cursor) {
+    const entry = cursor.value;
+    cursor.delete();
+    context.entriesRemoved++;
+    UnsubscribeTask.sendEntryDeleteRequestedMessage(entry);
+    cursor.continue();
+  } else {
+    UnsubscribeTask.onRemoveEntries(context);
+  }
+};
+
+UnsubscribeTask.sendEntryDeleteRequestedMessage = function(entry) {
+  chrome.runtime.sendMessage({
+    'type': 'entryDeleteRequestedByUnsubscribe',
+    'entryId': entry.id
+  });
+};
+
+UnsubscribeTask.onRemoveEntries = function(context) {
+  context.cache.deleteFeedById(context.connection, context.feedId,
+    UnsubscribeTask.onDeleteFeed.bind(null, context));
+};
+
+UnsubscribeTask.onDeleteFeed = function(context, event) {
+  if(context.entriesRemoved > 0) {
+    const badgeUpdateService = new BadgeUpdateService();
+    badgeUpdateService.updateCount();
+  }
+
+  context.callback({
+    'type': 'success',
+    'feedId': context.feedId,
+    'entriesRemoved': context.entriesRemoved
+  });
 };
