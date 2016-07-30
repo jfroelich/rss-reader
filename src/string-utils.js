@@ -100,17 +100,18 @@ StringUtils.truncateHTML = function(inputString, position,
 // If the extension is an empty string, then nothing is appended.
 // If the extension is a non-empty string, then the extension is appended.
 StringUtils.truncateString = function(string, position, optionalExtension) {
-
+  console.assert(string, 'string is required');
   console.assert(!isNaN(position), 'invalid position %s', position);
 
-  const ELLIPSIS_CHARACTER = '\u2026';
-  if(string && string.length > position) {
+  const ELLIPSIS = '\u2026';
+
+  if(string.length > position) {
     let extensionString = null;
 
     if(typeof optionalExtension === 'string') {
       extensionString = optionalExtension;
     } else {
-      extensionString = ELLIPSIS_CHARACTER;
+      extensionString = ELLIPSIS;
     }
 
     if(extensionString) {

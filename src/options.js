@@ -357,7 +357,7 @@ OptionsPage.startSubscription = function(url) {
   OptionsPage.showSubscriptionMonitor();
   OptionsPage.updateSubscriptionMonitorMessage('Subscribing to' + url.href);
 
-  SubscribeTask.start(url, onSubscribe);
+  subscribe(url, onSubscribe);
 
   function onSubscribe(event) {
     if(event.type !== 'success') {
