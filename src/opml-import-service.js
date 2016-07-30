@@ -219,7 +219,7 @@ class OPMLImportService {
     let outputString = inputString || '';
     if(outputString) {
       outputString = filterControlCharacters(outputString);
-      outputString = replaceHTML(outputString, '');
+      outputString = StringUtils.replaceHTML(outputString, '');
       outputString = outputString.replace(/\s+/, ' ');
     }
     return outputString.trim();

@@ -208,7 +208,7 @@ OptionsPage.appendFeed = function(feed, insertedSort) {
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
   item.setAttribute('feed', feed.id);
-  item.setAttribute('title', replaceHTML(feed.description) || '');
+  item.setAttribute('title', StringUtils.replaceHTML(feed.description) || '');
   item.onclick = OptionsPage.feedListOnItemClick;
 
   if(feed.faviconURLString) {
@@ -229,7 +229,7 @@ OptionsPage.appendFeed = function(feed, insertedSort) {
   const titleElement = document.createElement('span');
   let feedTitleString = feed.title;
   if(feedTitleString) {
-    feedTitleString = truncateHTMLString(feedTitleString, 300);
+    feedTitleString = StringUtils.truncateHTML(feedTitleString, 300);
   }
 
   if(!feedTitleString) {
@@ -333,9 +333,9 @@ OptionsPage.showSubscriptionPreview = function(url) {
     for(let i = 0, entry, item, content; i < resultLimit; i++) {
       entry = feed.entries[i];
       item = document.createElement('li');
-      item.innerHTML = replaceHTML(entry.title || '', '');
+      item.innerHTML = StringUtils.replaceHTML(entry.title || '', '');
       content = document.createElement('span');
-      content.innerHTML = replaceHTML(entry.content || '', '');
+      content.innerHTML = StringUtils.replaceHTML(entry.content || '', '');
       item.appendChild(content);
       resultsListElement.appendChild(item);
     }
@@ -431,7 +431,7 @@ OptionsPage.populateFeedDetails = function(feedId) {
     // TODO: do I need to do additional sanitization here?
 
     let title = feed.title;
-    title = replaceHTML(title || '', '');
+    title = StringUtils.replaceHTML(title || '', '');
     if(!title) {
       title = 'Untitled';
     }
@@ -447,7 +447,7 @@ OptionsPage.populateFeedDetails = function(feedId) {
     const favIconElement = document.getElementById('details-favicon');
     favIconElement.setAttribute('src', feed.faviconURLString || '');
 
-    const description = replaceHTML(feed.description || '', '');
+    const description = StringUtils.replaceHTML(feed.description || '', '');
     const descriptionElement = document.getElementById(
       'details-feed-description');
     descriptionElement.textContent = description;

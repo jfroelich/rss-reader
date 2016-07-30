@@ -300,23 +300,17 @@ class FeedCache {
     if(entry.author) {
       let authorString = entry.author;
       authorString = filterControlCharacters(authorString);
-      authorString = replaceHTML(authorString, '');
-      // TODO: do i need to use truncateHTMLString?
-      // Does author ever include html entities? If so, should I strip
-      // entities?
-      // Are those entities encoded or decoded or is it always ambiguous?
-      // TODO: if i do use truncateString, then i need to include it in
-      // manifest.json
-      //authorString = truncateString(authorString, MAX_AUTHOR_VALUE_LENGTH);
+      authorString = StringUtils.replaceHTML(authorString, '');
+      //authorString = truncateHTML(authorString, MAX_AUTHOR_VALUE_LENGTH);
       storable.author = entry.author;
     }
 
-    // TODO: enforce a maximum length using truncateHTMLString
+    // TODO: enforce a maximum length using StringUtils.truncateHTML
     // TODO: condense spaces?
     if(entry.title) {
       let entryTitle = entry.title;
       entryTitle = filterControlCharacters(entryTitle);
-      entryTitle = replaceHTML(entryTitle, '');
+      entryTitle = StringUtils.replaceHTML(entryTitle, '');
       storable.title = entryTitle;
     }
 
@@ -327,7 +321,7 @@ class FeedCache {
     }
 
     // TODO: filter out non-printable characters other than \r\n\t
-    // TODO: enforce a maximum storable length (using truncateHTMLString)
+    // TODO: enforce a maximum storable length (using StringUtils.truncateHTML)
     if(entry.content) {
       storable.content = entry.content;
     }
@@ -353,7 +347,7 @@ class FeedCache {
     let outputString = null;
     if(inputString) {
       outputString = filterControlCharacters(inputString);
-      outputString = replaceHTML(outputString, '');
+      outputString = StringUtils.replaceHTML(outputString, '');
       outputString = outputString.replace(/\s+/, ' ');
       outputString = outputString.trim();
     }

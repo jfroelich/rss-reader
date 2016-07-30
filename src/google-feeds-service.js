@@ -95,14 +95,14 @@ class GoogleFeedsService {
 
       if(entry.title) {
         entry.title = filterControlCharacters(entry.title);
-        entry.title = replaceHTML(entry.title, '');
-        entry.title = truncateHTMLString(entry.title, this.titleMaxLength);
+        entry.title = StringUtils.replaceHTML(entry.title, '');
+        entry.title = StringUtils.truncateHTML(entry.title, this.titleMaxLength);
       }
 
       if(entry.contentSnippet) {
         entry.contentSnippet = filterControlCharacters(entry.contentSnippet);
         entry.contentSnippet = this.filterBreakruleTags(entry.contentSnippet);
-        entry.contentSnippet = truncateHTMLString(entry.contentSnippet,
+        entry.contentSnippet = StringUtils.truncateHTML(entry.contentSnippet,
           this.contentSnippetMaxLength, this.truncateReplacementString);
       }
 

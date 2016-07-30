@@ -172,7 +172,7 @@ Slideshow.appendSlide = function(entry, isFirst) {
   if(entry.title) {
     let titleText = entry.title;
     titleText = filterArticleTitle(titleText);
-    titleText = truncateHTMLString(titleText, 300);
+    titleText = StringUtils.truncateHTML(titleText, 300);
     title.innerHTML = titleText;
   } else {
     title.textContent = 'Untitled';
@@ -191,7 +191,7 @@ Slideshow.appendSlide = function(entry, isFirst) {
   Slideshow.addNoReferrer(entryContentDocument);
   const entryContentBody = entryContentDocument.body ||
     entryContentDocument.documentElement;
-  moveChildNodes(entryContentBody, content);
+  Slideshow.moveChildNodes(entryContentBody, content);
 
   slide.appendChild(content);
 
@@ -226,6 +226,18 @@ Slideshow.appendSlide = function(entry, isFirst) {
 
   const slidesContainer = document.getElementById('slideshow-container');
   slidesContainer.appendChild(slide);
+};
+
+// Moves the child nodes from sourceElement to destinationElement. The elements
+// may be in different documents.
+Slideshow.moveChildNodes = function(sourceElement, destinationElement) {
+  const sourceDocument = sourceElement.ownerDocument;
+  const fragment = sourceDocument.createDocumentFragment();
+  for(let node = sourceElement.firstChild; node;
+    node = sourceElement.firstChild) {
+    fragment.appendChild(node);
+  }
+  destinationElement.appendChild(fragment);
 };
 
 Slideshow.formatDate = function(date, optionalDelimiterString) {
