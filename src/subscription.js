@@ -6,42 +6,62 @@
 
 const Subscription = {};
 
-Subscription.add = function(connection, url, callback) {
+Subscription.add = function(url, callback) {
   console.debug('Subscribing to', url.href);
+  const context = {};
+  context.url = url;
+  context.callback = callback;
+  context.cache = new FeedCache();
+  context.cache.open(Subscription.addOnOpenDatabase.bind(null, context));
+};
 
-  const feedCache = new FeedCache();
-  const excludeEntries = true;
-  const fetchService = new FeedHttpService();
-  fetchService.timeoutMillis = 10 * 1000;
-  fetchService.fetch(url, excludeEntries, onFetchFeed);
-
-  function onFetchFeed(event) {
-    if(event.type === 'load') {
-      feedCache.addFeed(connection, event.feed, onAddFeed);
+Subscription.addOnOpenDatabase = function(context, connection) {
+  if(connection) {
+    if('onLine' in navigator && !navigator.onLine) {
+      const feed = {};
+      Feed.prototype.addURL.call(feed, url.href);
+      context.cache.addFeed(connection, feed,
+        Subscription.onAddFeed.bind(null, context));
     } else {
-      callback({'type': 'fetcherror'});
+      context.connection = connection;
+      const fetchService = new FeedHttpService();
+      fetchService.timeoutMillis = 10 * 1000;
+      const excludeEntries = true;
+      fetchService.fetch(context.url, excludeEntries,
+        Subscription.onFetchFeed.bind(null, context));
     }
+  } else {
+    context.callback({'type': 'ConnectionError'});
   }
+};
 
-  function onAddFeed(event) {
-    if(event.type === 'success') {
-      notify(event.feed);
-      callback({'type': 'success', 'feed': event.feed});
-    } else {
-      callback({'type': eventType});
-    }
+Subscription.onFetchFeed = function(context, event) {
+  if(event.type === 'load') {
+    context.cache.addFeed(context.connection, event.feed,
+      Subscription.onAddFeed.bind(null, context));
+  } else {
+    context.callback({'type': 'FetchError'});
   }
+};
 
-  function notify(feed) {
-    if('SHOW_NOTIFICATIONS' in localStorage) {
-      const notification = {
-        'type': 'basic',
-        'title': chrome.runtime.getManifest().name,
-        'iconUrl': '/images/rss_icon_trans.gif',
-        'message': 'Subscribed to ' + (feed.title || 'Untitled')
-      };
-      chrome.notifications.create('Lucubrate', notification, function() {});
-    }
+Subscription.onAddFeed = function(context, event) {
+  if(event.type === 'success') {
+    Subscription.showSubscriptionNotification(event.feed);
+    context.callback({'type': 'success', 'feed': event.feed});
+  } else {
+    context.callback({'type': event.type});
+  }
+};
+
+Subscription.showSubscriptionNotification = function(feed) {
+  if('SHOW_NOTIFICATIONS' in localStorage) {
+    const notification = {
+      'type': 'basic',
+      'title': chrome.runtime.getManifest().name,
+      'iconUrl': '/images/rss_icon_trans.gif',
+      'message': 'Subscribed to ' + (feed.title || 'Untitled')
+    };
+    chrome.notifications.create('Lucubrate', notification, function() {});
   }
 };
 

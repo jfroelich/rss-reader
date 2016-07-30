@@ -357,48 +357,35 @@ OptionsPage.startSubscription = function(url) {
   OptionsPage.showSubscriptionMonitor();
   OptionsPage.updateSubscriptionMonitorMessage('Subscribing to' + url.href);
 
-  // TODO: it should be responsibility of subscription service to deal
-  // with cache connection, not here
-
-  const feedCache = new FeedCache();
-  feedCache.open(onCacheConnect);
-
-  function onCacheConnect(connection) {
-    if(connection) {
-      Subscription.add(connection, url, onSubscribe);
-    } else {
-      OptionsPage.hideSubscriptionMonitor(function() {
-        OptionsPage.showErrorMessage('Unable to connect to database');
-      });
-    }
-  }
+  Subscription.add(url, onSubscribe);
 
   function onSubscribe(event) {
     if(event.type !== 'success') {
-      OptionsPage.hideSubscriptionMonitor(function() {
-        if(event.type === 'ConstraintError') {
-          OptionsPage.showErrorMessage('Already subscribed to that feed');
-        } else if(event.type === 'fetcherror') {
-          OptionsPage.showErrorMessage('Failed to fetch the feed');
-        } else {
-          OptionsPage.showErrorMessage('Error subscribing to feed');
-        }
-      });
+      OptionsPage.hideSubscriptionMonitor(showErrorMessage.bind(event.type));
       return;
     }
 
-    // NOTE: addedFeed is the stored feed object, so feed.urls contains strings
-
-    const addedFeed = event.feed;
-    OptionsPage.appendFeed(addedFeed, true);
+    OptionsPage.appendFeed(event.feed, true);
     OptionsPage.updateFeedCount();
-    OptionsPage.updateSubscriptionMonitorMessage('Subscribed to ' + url);
+    OptionsPage.updateSubscriptionMonitorMessage('Subscribed to ' + url.href);
 
     // Hide the sub monitor then switch back to the main feed list
     OptionsPage.hideSubscriptionMonitor(function() {
       const subSection = document.getElementById('mi-subscriptions');
       OptionsPage.showSection(subSection);
     }, true);
+  }
+
+  function showErrorMessage(type) {
+    if(type === 'ConstraintError') {
+      OptionsPage.showErrorMessage('Already subscribed to ' + url.href);
+    } else if(type === 'FetchError') {
+      OptionsPage.showErrorMessage('Failed to fetch ' + url.href);
+    } else if(type === 'ConnectionError') {
+      OptionsPage.showErrorMessage('Unable to connect to database');
+    } else {
+      OptionsPage.showErrorMessage('Unknown error');
+    }
   }
 };
 
