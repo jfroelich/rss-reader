@@ -10,14 +10,14 @@ BackgroundService.onBackgroundPageLoad = function(event) {
   chrome.runtime.onInstalled.addListener(BackgroundService.onInstalled);
   chrome.browserAction.onClicked.addListener(BackgroundService.onBadgeClick);
 
-  chrome.alarms.get('archive', function(alarm) {
+  chrome.alarms.get('archive', function onGetArchiveAlarm(alarm) {
     if(!alarm) {
       console.debug('Creating archive alarm');
       chrome.alarms.create('archive', {'periodInMinutes': 60});
     }
   });
 
-  chrome.alarms.get('poll', function(alarm) {
+  chrome.alarms.get('poll', function onGetPollAlarm(alarm) {
     if(!alarm) {
       console.debug('Creating poll alarm');
       chrome.alarms.create('poll', {'periodInMinutes': 20});
