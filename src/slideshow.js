@@ -238,12 +238,6 @@ Slideshow.formatDate = function(date, optionalDelimiterString) {
   return datePartsArray.join(optionalDelimiterString || '');
 };
 
-// I would rather do this at the time of storing, but attributes are filtered
-// In order to move it i have to refactor that
-// Current based on the following post:
-// https://blog.fastmail.com/2016/06/20/everything-you-could-ever-want-to-know-
-// and-more-about-controlling-the-referer-header/
-// http://w3c.github.io/html/links.html#link-type-noreferrer
 Slideshow.addNoReferrer = function(document) {
   const anchors = document.querySelectorAll('a');
   for(let i = 0, len = anchors.length; i < len; i++) {
@@ -256,24 +250,19 @@ Slideshow.toURLTrapped = function(urlString) {
   try {
     return new URL(urlString);
   } catch(exception) {
-
   }
 };
 
 Slideshow.showNextSlide = function() {
 
-  //console.debug('Showing next slide');
-
   // In order to move to the next slide, we want to conditionally load
   // additional slides. Look at the number of unread slides and conditionally
   // append new slides before going to the next slide.
-
   const unreadCount = Slideshow.countUnreadSlides();
   if(unreadCount < 2) {
     const isFirst = false;
     Slideshow.appendSlides(onAppendComplete, isFirst);
   } else {
-    // There are still unread slides. Just go to the next one.
     showNext();
   }
 
@@ -322,97 +311,62 @@ Slideshow.showPreviousSlide = function() {
   }
 };
 
-Slideshow.isUnreadyEntrySlide = function(entryElement) {
-  return !entryElement.hasAttribute('read');
-};
-
 Slideshow.countUnreadSlides = function() {
   return document.body.querySelectorAll('div[entry]:not([read])').length;
 };
 
-// If no slides are loaded, or all slides are read, then show the default
-// slide.
-Slideshow.maybeShowAllReadSlide = function() {
-  const numUnread = Slideshow.countUnreadSlides();
-  if(numUnread) {
-    return;
-  }
 
-  console.warn('maybeShowAllReadSlide not implemented');
+Slideshow.maybeShowAllReadSlide = function() {
+  // Not yet implemented
 };
 
 Slideshow.hideAllUnreadSlides = function() {
-  console.warn('hideAllUnreadSlides not implemented');
+  // Not yet implemented
 };
 
+
+Slideshow.KEY_CODES = {
+  'SPACE': 32,
+  'PAGE_UP': 33,
+  'PAGE_DOWN': 34,
+  'LEFT': 37,
+  'UP': 38,
+  'RIGHT': 39,
+  'DOWN': 40,
+  'N': 78,
+  'P': 80
+};
+
+Slideshow.SCROLL_DELTAS = {};
+Slideshow.SCROLL_DELTAS['' + Slideshow.KEY_CODES.DOWN] = [80, 400];
+Slideshow.SCROLL_DELTAS['' + Slideshow.KEY_CODES.PAGE_DOWN] = [100, 800];
+Slideshow.SCROLL_DELTAS['' + Slideshow.KEY_CODES.UP] = [-50, -200];
+Slideshow.SCROLL_DELTAS['' + Slideshow.KEY_CODES.PAGE_UP] = [-100, -800];
+
 Slideshow.keydownTimer = null;
-
-// Handle key presses. Although I would prefer the browser managed the scroll
-// response, there is a strange issue with scrolling down on an article moved
-// into view if I do not explicitly handle it here because it is an inner
-// element that does not I think have focus, so the down arrow otherwise has no
-// effect.
-//event.target is body
-//event.currentTarget is window
 Slideshow.onKeyDown = function(event) {
-
-  //console.debug('Key down:', event.code);
-
-  const KEY_CODES = {
-    'SPACE': 32,
-    'PAGE_UP': 33,
-    'PAGE_DOWN': 34,
-    'LEFT': 37,
-    'UP': 38,
-    'RIGHT': 39,
-    'DOWN': 40,
-    'N': 78,
-    'P': 80
-  };
-
-  // Prevent the default behavior for certain keys
+  const CODE = Slideshow.KEY_CODES;
   switch(event.keyCode) {
-    case KEY_CODES.SPACE:
-    case KEY_CODES.DOWN:
-    case KEY_CODES.PAGE_DOWN:
-    case KEY_CODES.UP:
-    case KEY_CODES.PAGE_UP:
+    case CODE.DOWN:
+    case CODE.PAGE_DOWN:
+    case CODE.UP:
+    case CODE.PAGE_UP:
       event.preventDefault();
+      if(Slideshow.currentSlide) {
+        const delta = Slideshow.SCROLL_DELTAS['' + event.keyCode];
+        scrollToY(Slideshow.currentSlide, delta[0],
+          Slideshow.currentSlide.scrollTop + delta[1]);
+      }
       break;
-    default:
-      break;
-  }
-
-  const SCROLL_DELTAS = {
-    '40': [80, 400],
-    '34': [100, 800],
-    '38': [-50, -200],
-    '33': [-100, -800]
-  };
-
-  // Scroll the contents of the current slide
-  if(Slideshow.currentSlide) {
-    const delta = SCROLL_DELTAS['' + event.keyCode];
-    if(delta) {
-      scrollToY(Slideshow.currentSlide, delta[0],
-        Slideshow.currentSlide.scrollTop + delta[1]);
-      return;
-    }
-  }
-
-  // TODO: maybe I should always be clearing both keydown timers? I need to
-  // test more when spamming left right
-
-  // React to navigational commands
-  switch(event.keyCode) {
-    case KEY_CODES.SPACE:
-    case KEY_CODES.RIGHT:
-    case KEY_CODES.N:
+    case CODE.SPACE:
+      event.preventDefault();
+    case CODE.RIGHT:
+    case CODE.N:
       clearTimeout(Slideshow.keydownTimer);
       Slideshow.keydownTimer = setTimeout(Slideshow.showNextSlide, 50);
       break;
-    case KEY_CODES.LEFT:
-    case KEY_CODES.P:
+    case CODE.LEFT:
+    case CODE.P:
       clearTimeout(Slideshow.keydownTimer);
       Slideshow.keydownTimer = setTimeout(Slideshow.showPreviousSlide, 50);
       break;
@@ -432,4 +386,4 @@ Slideshow.init = function(event) {
   Slideshow.appendSlides(Slideshow.maybeShowAllReadSlide, true);
 };
 
-document.addEventListener('DOMContentLoaded', SlideShow.init);
+document.addEventListener('DOMContentLoaded', Slideshow.init);
