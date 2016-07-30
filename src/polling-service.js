@@ -193,12 +193,15 @@ processEntry(context, feed, entry, callback) {
     return;
   }
 
-  const entryURL = Entry.prototype.getURL.call(entry);
+  let entryURL = Entry.prototype.getURL.call(entry);
 
   // Append the rewritten url if rewriting occurred
   const rewrittenURL = URLRewritingService.rewriteURL(entryURL);
   if(rewrittenURL.href !== entryURL.href) {
     entry.urls.push(rewrittenURL);
+
+    // Update entryURL to point to the terminal url in the chain
+    entryURL = rewrittenURL;
   }
 
   // Check whether an entry with the same url exists
