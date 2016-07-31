@@ -16,7 +16,7 @@ Slideshow.onMessage = function(message) {
     case 'subscribe':
       Slideshow.maybeAppendSlides();
       break;
-    case 'entryDeleteRequestedByUnsubscribe':
+    case 'entryDeleteRequested':
       // Not yet implemented
       break;
     case 'archiveEntryRequested':

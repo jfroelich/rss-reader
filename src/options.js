@@ -720,30 +720,14 @@ OptionsPage.createSearchResult = function(feedResult) {
 OptionsPage.buttonUnsubscribeOnClick = function(event) {
   // Start by getting the feed id. Whenevever I load the feed details page,
   // I set the button's value to the feed id, so get it from there.
-  const buttonUnsubscribe = event.target;
-  const feedIdString = buttonUnsubscribe.value;
-  const feedId = parseInt(feedIdString, 10);
-
-  // Verify that we have a valid feed id. This check is largely the result of
-  // an earlier bug I was experiencing, and probably isn't that necessary, but
-  // I think it is harmless for now.
-  if(!feedId || isNaN(feedId)) {
-    // TODO: show an error
-    console.error('Invalid feed id:', feedIdString);
-    return;
-  }
-
-  // NOTE: I have the option of reacting to the cross-window message that
-  // is sent by the unsubscribe function instead of the callback, but it is
-  // obviously faster and more local to use the callback, so I chose to go with
-  // that. I am not entirely confident this is the best decision.
-  UnsubscribeTask.start(feedId, OptionsPage.onUnsubscribe);
+  const feedId = parseInt(event.target.value, 10);
+  unsubscribe(feedId, onUnsubscribe);
 
   function onUnsubscribe(event) {
     // If there was some failure to unsubscribe from the feed, react here
     // and then exit early and do not update the UI
     // TODO: show an error message about how there was a problem unsubscribing
-    if(event.type === 'error') {
+    if(event.type !== 'success') {
       console.debug(event);
       return;
     }

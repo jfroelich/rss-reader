@@ -4,9 +4,7 @@
 
 'use strict';
 
-const UnsubscribeTask = {};
-
-UnsubscribeTask.start = function(feedId, callback) {
+function unsubscribe(feedId, callback) {
   console.assert(feedId && !isNaN(feedId), 'invalid feed id %s', feedId);
   console.debug('Unsubscribing from feed with id', feedId);
 
@@ -17,49 +15,45 @@ UnsubscribeTask.start = function(feedId, callback) {
     'cache': new FeedCache()
   };
 
-  context.cache.open(UnsubscribeTask.onOpenDatabase.bind(null, context));
-};
+  context.cache.open(unsubscribeOnOpenDatabase.bind(null, context));
+}
 
-UnsubscribeTask.onOpenDatabase = function(context, connection) {
+function unsubscribeOnOpenDatabase(context, connection) {
   if(connection) {
     context.connection = connection;
     context.cache.openEntryCursorForFeed(connection, context.feedId,
-      UnsubscribeTask.deleteNextEntry.bind(null, context));
+      unsubscribeDeleteNextEntry.bind(null, context));
   } else {
-    UnsubscribeTask.onComplete(context, 'ConnectionError');
+    unsubscribeOnComplete(context, 'ConnectionError');
   }
-};
+}
 
-UnsubscribeTask.deleteNextEntry = function(context, event) {
+function unsubscribeDeleteNextEntry(context, event) {
   const cursor = event.target.result;
   if(cursor) {
     const entry = cursor.value;
     cursor.delete();
     context.entriesRemoved++;
-    UnsubscribeTask.sendEntryDeleteRequestedMessage(entry);
+    chrome.runtime.sendMessage({
+      'type': 'entryDeleteRequested',
+      'entryId': entry.id
+    });
     cursor.continue();
   } else {
-    UnsubscribeTask.onRemoveEntries(context);
+    unsubscribeOnRemoveEntries(context);
   }
-};
+}
 
-UnsubscribeTask.sendEntryDeleteRequestedMessage = function(entry) {
-  chrome.runtime.sendMessage({
-    'type': 'entryDeleteRequestedByUnsubscribe',
-    'entryId': entry.id
-  });
-};
-
-UnsubscribeTask.onRemoveEntries = function(context) {
+function unsubscribeOnRemoveEntries(context) {
   context.cache.deleteFeedById(context.connection, context.feedId,
-    UnsubscribeTask.onDeleteFeed.bind(null, context));
-};
+    unsubscribeOnDeleteFeed.bind(null, context));
+}
 
-UnsubscribeTask.onDeleteFeed = function(context, event) {
-  UnsubscribeTask.onComplete(context, 'success');
-};
+function unsubscribeOnDeleteFeed(context, event) {
+  unsubscribeOnComplete(context, 'success');
+}
 
-UnsubscribeTask.onComplete = function(context, type) {
+function unsubscribeOnComplete = function(context, type) {
   if(context.entriesRemoved > 0) {
     const badgeUpdateService = new BadgeUpdateService();
     badgeUpdateService.updateCount();
@@ -76,4 +70,4 @@ UnsubscribeTask.onComplete = function(context, type) {
       'entriesRemoved': context.entriesRemoved
     });
   }
-};
+}
