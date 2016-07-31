@@ -229,11 +229,7 @@ class FeedCache {
       entry.dateUpdated = dateNow;
       cursor.update(entry);
 
-      // Because BadgeUpdateService relies on FeedCache we have a circular
-      // dependency, so I cannot create an instance of BadgeUpdateService in
-      // FeedCache's constructor. So create a new instance here every time.
-      const badgeUpdateService = new BadgeUpdateService();
-      badgeUpdateService.updateCount();
+      updateBadgeUnreadCount();
 
       console.log('Requested entry with id %i be marked as read', entryId);
 

@@ -721,6 +721,8 @@ OptionsPage.buttonUnsubscribeOnClick = function(event) {
   // Start by getting the feed id. Whenevever I load the feed details page,
   // I set the button's value to the feed id, so get it from there.
   const feedId = parseInt(event.target.value, 10);
+
+  // Call out to unsubscribe
   unsubscribe(feedId, onUnsubscribe);
 
   function onUnsubscribe(event) {
@@ -742,8 +744,7 @@ OptionsPage.buttonUnsubscribeOnClick = function(event) {
     const selector = 'feedlist li[feed="' + feedId + '"]';
     const feedElement = document.querySelector(selector);
     if(item) {
-      feedElement.removeEventListener('click',
-        OptionsPage.feedListOnItemClick);
+      feedElement.removeEventListener('click', OptionsPage.feedListOnItemClick);
       feedElement.remove();
     }
 

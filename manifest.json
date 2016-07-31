@@ -16,7 +16,6 @@
       "/lib/parse-srcset.js",
       "/src/archive-service.js",
       "/src/background-service.js",
-      "/src/badge-update-service.js",
       "/src/entry.js",
       "/src/equals-ignore-case.js",
       "/src/favicon-cache.js",
@@ -28,7 +27,8 @@
       "/src/fetch-html-service.js",
       "/src/polling-service.js",
       "/src/polling-service-test.js",
-      "/src/string-utils.js"
+      "/src/string-utils.js",
+      "/src/update-badge-unread-count.js"
     ]
   },
   "options_page": "options.html",

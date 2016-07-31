@@ -10,7 +10,7 @@ constructor() {
   this.idlePeriodInSeconds = 30;
   this.feedCache = new FeedCache();
   this.faviconService = new FaviconService();
-  this.badgeUpdateService = new BadgeUpdateService();
+
   this.fetchFeedService = new FeedHttpService();
   this.fetchFeedService.timeoutMillis = 10 * 1000;
   this.fetchHTMLService = new FetchHTMLService();
@@ -173,7 +173,7 @@ onUpdateFeed(context, entries, resultType, feed) {
 
     if(entriesProcessed === entries.length) {
       if(entriesAdded) {
-        this.badgeUpdateService.updateCount();
+        updateBadgeUnreadCount();
       }
 
       context.pendingFeedsCount--;

@@ -10,7 +10,7 @@ function unsubscribe(feedId, callback) {
 
   const context = {
     'feedId': feedId,
-    'entriesRemoved': 0,
+    'deleteRequestCount': 0,
     'callback': callback,
     'cache': new FeedCache()
   };
@@ -36,8 +36,12 @@ function unsubscribeDeleteNextEntry(context, event) {
   const cursor = event.target.result;
   if(cursor) {
     const entry = cursor.value;
+    // Delete the entry at the cursor (async)
     cursor.delete();
-    context.entriesRemoved++;
+    // Track the number of delete requests
+    context.deleteRequestCount++;
+
+    // Async, notify interested 3rd parties the entry will be deleted
     chrome.runtime.sendMessage({
       'type': 'entryDeleteRequested',
       'entryId': entry.id
@@ -60,21 +64,27 @@ function unsubscribeOnDeleteFeed(context, event) {
   unsubscribeOnComplete(context, 'success');
 }
 
-function unsubscribeOnComplete = function(context, type) {
-  if(context.entriesRemoved > 0) {
-    const badgeUpdateService = new BadgeUpdateService();
-    badgeUpdateService.updateCount();
+function unsubscribeOnComplete = function(context, eventType) {
+  console.debug('Requested %i entries to be deleted',
+    context.deleteRequestCount);
+
+  // Unsubscribing may have modified the number of unread articles, so
+  // update the badge. Even though the deletes are async, the transaction used
+  // by updateCount below will wait for those to complete
+  if(context.deleteRequestCount > 0) {
+    updateBadgeUnreadCount();
   }
 
   if(context.connection) {
     context.connection.close();
   }
 
+  // Callback with an event
   if(context.callback) {
     context.callback({
-      'type': type,
+      'type': eventType,
       'feedId': context.feedId,
-      'entriesRemoved': context.entriesRemoved
+      'deleteRequestCount': context.deleteRequestCount
     });
   }
 }

@@ -32,8 +32,7 @@ BackgroundService.onBackgroundPageLoad = function(event) {
 
 BackgroundService.onInstalled = function(event) {
   console.log('Installing extension ...');
-  const badgeUpdateService = new BadgeUpdateService();
-  badgeUpdateService.updateCount();
+  updateBadgeUnreadCount();
 };
 
 BackgroundService.onBadgeClick = function() {
