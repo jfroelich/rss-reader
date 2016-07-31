@@ -18,12 +18,13 @@ function subscribe(url, callback) {
   context.callback = callback;
   context.cache = new FeedCache();
 
+  // Start by opening a database
   context.cache.open(subscribeOnOpenDatabase.bind(null, context));
 }
 
 // subscribe helper
 function subscribeOnOpenDatabase(context, connection) {
-  // Go to exit if failed to connect
+  // Exit early with error
   if(!connection) {
     subscribeOnComplete(context, {'type': 'ConnectionError'});
     return;
@@ -32,7 +33,7 @@ function subscribeOnOpenDatabase(context, connection) {
   if('onLine' in navigator && !navigator.onLine) {
     // Proceed with an offline subscription
     const feed = {};
-    Feed.prototype.addURL.call(feed, url.href);
+    Feed.prototype.addURL.call(feed, context.url.href);
     context.cache.addFeed(connection, feed,
       subscribeOnAddFeed.bind(null, context));
   } else {
@@ -66,6 +67,9 @@ function subscribeOnAddFeed(context, event) {
     context.didSubscribe = true;
     subscribeOnComplete(context, {'type': 'success', 'feed': event.feed});
   } else {
+    // The add can fail for various reasons, such as a database error,
+    // or because of a constraint error (e.g. already subscribed to a feed
+    // with a similar url)
     subscribeOnComplete(context, {'type': event.type});
   }
 }
@@ -78,7 +82,7 @@ function subscribeOnComplete(context, event) {
 
   // Show a notification
   if(context.didSubscribe && 'SHOW_NOTIFICATIONS' in localStorage) {
-    const message = 'Subscribed to ' + (event.feed.title || 'Untitled');
+    const message = 'Subscribed to ' + (event.feed.title || context.url.href);
     const notification = {
       'type': 'basic',
       'title': chrome.runtime.getManifest().name,
@@ -88,7 +92,7 @@ function subscribeOnComplete(context, event) {
     chrome.notifications.create('Lucubrate', notification, function() {});
   }
 
-  // The final callback, which may be undefined because it is optional
+  // Callback if defined with the event
   if(context.callback) {
     context.callback(event);
   }
