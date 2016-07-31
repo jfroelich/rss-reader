@@ -21,8 +21,12 @@ function unsubscribe(feedId, callback) {
 function unsubscribeOnOpenDatabase(context, connection) {
   if(connection) {
     context.connection = connection;
-    context.cache.openEntryCursorForFeed(connection, context.feedId,
-      unsubscribeDeleteNextEntry.bind(null, context));
+    // Open a cursor over the entries for the feed
+    const transaction = connection.transaction('entry', 'readwrite');
+    const store = transaction.objectStore('entry');
+    const index = store.index('feed');
+    const request = index.openCursor(context.feedId);
+    request.onsuccess = unsubscribeDeleteNextEntry.bind(request, context);
   } else {
     unsubscribeOnComplete(context, 'ConnectionError');
   }
@@ -45,8 +49,11 @@ function unsubscribeDeleteNextEntry(context, event) {
 }
 
 function unsubscribeOnRemoveEntries(context) {
-  context.cache.deleteFeedById(context.connection, context.feedId,
-    unsubscribeOnDeleteFeed.bind(null, context));
+  console.debug('Deleting feed with id', context.feedId);
+  const transaction = context.connection.transaction('feed', 'readwrite');
+  const store = transaction.objectStore('feed');
+  const request = store.delete(context.feedId);
+  request.onsuccess = unsubscribeOnDeleteFeed.bind(request, context);
 }
 
 function unsubscribeOnDeleteFeed(context, event) {

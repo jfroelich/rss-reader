@@ -133,15 +133,6 @@ class FeedCache {
     request.onerror = callback;
   }
 
-  openEntryCursorForFeed(connection, feedId, callback) {
-    console.debug('Loading entries with feed id', feedId);
-    const transaction = connection.transaction('entry', 'readwrite');
-    const store = transaction.objectStore('entry');
-    const index = store.index('feed');
-    const request = index.openCursor(feedId);
-    request.onsuccess = callback;
-  }
-
   openFeedsCursor(connection, callback) {
     // console.debug('Opening feeds cursor');
     const transaction = connection.transaction('feed');
@@ -167,14 +158,6 @@ class FeedCache {
     const request = store.get(feedId);
     request.onsuccess = callback;
     request.onerror = callback;
-  }
-
-  deleteFeedById(connection, feedId, callback) {
-    console.debug('Deleting feed with id', feedId);
-    const transaction = connection.transaction('feed', 'readwrite');
-    const store = transaction.objectStore('feed');
-    const request = store.delete(feedId);
-    request.onsuccess = callback;
   }
 
   findEntryById(connection, entryId, callback) {
