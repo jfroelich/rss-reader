@@ -15,8 +15,6 @@ function subscribe(url, callback) {
   context.url = url;
   context.didSubscribe = false;
   context.callback = callback;
-  context.cache = new FeedCache();
-
   openIndexedDB(subscribeOnOpenDatabase.bind(null, context));
 }
 
@@ -32,8 +30,7 @@ function subscribeOnOpenDatabase(context, connection) {
     // Proceed with an offline subscription
     const feed = {};
     Feed.prototype.addURL.call(feed, context.url.href);
-    context.cache.addFeed(connection, feed,
-      subscribeOnAddFeed.bind(null, context));
+    addFeed(connection, feed, subscribeOnAddFeed.bind(null, context));
   } else {
     // Online subscription. Verify the remote file is a feed that exists
     // and get its info
@@ -50,7 +47,7 @@ function subscribeOnOpenDatabase(context, connection) {
 function subscribeOnFetchFeed(context, event) {
   if(event.type === 'load') {
     // Add the feed to the database
-    context.cache.addFeed(context.connection, event.feed,
+    addFeed(context.connection, event.feed,
       subscribeOnAddFeed.bind(null, context));
   } else {
     // Go to exit

@@ -76,34 +76,6 @@ class FeedCache {
     request.onerror = callback;
   }
 
-  addFeed(connection, feed, callback) {
-    let storableFeed = Feed.prototype.serialize.call(feed);
-    storableFeed = Feed.prototype.sanitize.call(storableFeed);
-    storableFeed.dateCreated = new Date();
-
-    console.debug('Caching feed', storableFeed);
-
-    const transaction = connection.transaction('feed', 'readwrite');
-    const feedStore = transaction.objectStore('feed');
-    const request = feedStore.add(storableFeed);
-    request.onsuccess = callback;
-    request.onerror = callback;
-
-    if(callback) {
-      request.addEventListener('success', onAddSuccess);
-      request.addEventListener('error', onAddError);
-    }
-
-    function onAddSuccess(event) {
-      storableFeed.id = event.target.result;
-      callback({'type': 'success', 'feed': storableFeed});
-    }
-
-    function onAddError(event) {
-      console.error('Error adding feed', event);
-      callback({'type': event.target.error.name});
-    }
-  }
 
   updateFeed(connection, feed, callback) {
     let storableFeed = Feed.prototype.serialize.call(feed);

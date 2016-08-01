@@ -183,7 +183,7 @@ class OPMLImportService {
         }
       }
 
-      this.cache.addFeed(context.connection, feed, null);
+      addFeed(context.connection, feed, null);
     }
 
     this.onFileProcessed(context);
