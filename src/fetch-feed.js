@@ -13,19 +13,19 @@ function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
 
   console.debug('GET', requestURL.href);
 
-  const isAsync = true;
   const request = new XMLHttpRequest();
   if(timeoutMillis) {
     request.timeout = timeoutMillis;
   }
 
-  const boundOnResponse = fetchFeedOnResponse.bind(request, requestURL,
+  const onResponse = fetchFeedOnResponse.bind(request, requestURL,
     excludeEntries, callback);
+  request.onerror = onResponse;
+  request.ontimeout = onResponse;
+  request.onabort = onResponse;
+  request.onload = onResponse;
 
-  request.onerror = boundOnResponse;
-  request.ontimeout = boundOnResponse;
-  request.onabort = boundOnResponse;
-  request.onload = boundOnResponse;
+  const isAsync = true;
   request.open('GET', requestURL.href, isAsync);
   request.responseType = 'document';
   request.send();
