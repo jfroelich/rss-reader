@@ -12,7 +12,7 @@ function archiveEntries(expiresAfterMillis) {
   const tenDaysInMillis = 10 * 24 * 60 * 60 * 1000;
 
   const context = {
-    'expiresAfterMillis': expiresAfterMillis || tenDaysInMillis
+    'expiresAfterMillis': expiresAfterMillis || tenDaysInMillis,
     'numEntriesProcessed': 0,
     'numEntriesChanged': 0,
     'currentDate': new Date()
