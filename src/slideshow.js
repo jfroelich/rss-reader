@@ -77,9 +77,6 @@ Slideshow.maybeAppendSlides = function() {
 };
 
 Slideshow.appendSlides = function(oncomplete, isFirst) {
-
-  const feedCache = new FeedCache();
-
   let counter = 0;
   const limit = 5;
   const offset = Slideshow.countUnreadSlides();

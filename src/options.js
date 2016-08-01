@@ -792,8 +792,6 @@ OptionsPage.exportOPMLButtonOnClick = function(event) {
 
 OptionsPage.initSubscriptionsSection = function() {
   let feedCount = 0;
-
-  const feedCache = new FeedCache();
   openIndexedDB(onOpenDatabase);
 
   function onOpenDatabase(connection) {

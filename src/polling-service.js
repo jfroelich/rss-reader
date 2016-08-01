@@ -8,9 +8,7 @@ class PollingService {
 
 constructor() {
   this.idlePeriodInSeconds = 30;
-  this.feedCache = new FeedCache();
   this.faviconService = new FaviconService();
-
   this.fetchFeedService = new FeedHttpService();
   this.fetchFeedService.timeoutMillis = 10 * 1000;
   this.fetchHTMLService = new FetchHTMLService();

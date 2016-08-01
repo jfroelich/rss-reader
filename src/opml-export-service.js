@@ -9,7 +9,6 @@
 
 class OPMLExportService {
   constructor() {
-    this.cache = new FeedCache();
   }
 
   start(title, fileName) {

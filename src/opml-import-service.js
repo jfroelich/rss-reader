@@ -7,7 +7,6 @@
 class OPMLImportService {
 
   constructor() {
-    this.cache = new FeedCache();
   }
 
   start(callback) {
