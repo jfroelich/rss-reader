@@ -8,6 +8,13 @@
 
 function Entry() {}
 
+Entry.FLAGS = {
+  UNREAD: 0,
+  READ: 1,
+  UNARCHIVED: 0,
+  ARCHIVED: 1
+};
+
 Entry.prototype.getURL = function() {
   if(this.urls && this.urls.length) {
     return this.urls[this.urls.length - 1];
@@ -34,9 +41,52 @@ Entry.prototype.archive = function() {
   return outputEntry;
 };
 
-Entry.FLAGS = {
-  UNREAD: 0,
-  READ: 1,
-  UNARCHIVED: 0,
-  ARCHIVED: 1
+Entry.prototype.sanitize = function() {
+  // Assume entry.feedTitle was sanitized elsewhere
+  const outputEntry = Object.assign({}, this);
+
+  // Sanitize the title
+  // TODO: enforce a maximum length using StringUtils.truncateHTML
+  // TODO: condense spaces?
+  if(outputEntry.title) {
+    let title = outputEntry.title;
+    title = StringUtils.filterControlCharacters(title);
+    title = StringUtils.replaceHTML(title, '');
+    outputEntry.title = title;
+  }
+
+  // Sanitize the author
+  // TODO: sanitize fully
+  if(outputEntry.author) {
+    let author = outputEntry.author;
+    author = StringUtils.filterControlCharacters(author);
+    author = StringUtils.replaceHTML(author, '');
+    //author = truncateHTML(author, MAX_AUTHOR_VALUE_LENGTH);
+    outputEntry.author = author;
+  }
+
+  // Sanitize outputEntry.content
+  // TODO: filter out non-printable characters other than \r\n\t
+  // TODO: enforce a maximum storable length (using StringUtils.truncateHTML)
+
+  return outputEntry;
+};
+
+Entry.prototype.serialize = function() {
+  // Clone to ensure purity
+  const outputEntry = Object.assign({}, this);
+
+  // Serialize URL objects
+  if(outputEntry.urls && outputEntry.urls.length) {
+    if(Object.prototype.toString.call(outputEntry.urls[0]) === '[object URL]') {
+      outputEntry.urls = outputEntry.urls.map(function urlToString(url) {
+        return url.href;
+      });
+    }
+  }
+
+  // TODO: delete all keys other than those that I want stored in the event
+  // that there are expando props present in the input object?
+
+  return outputEntry;
 };
