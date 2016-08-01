@@ -130,24 +130,23 @@ class FeedCache {
     // Copy to maintain all the fields and also purity/idempotency
     const cleanFeed = Object.assign({}, inputFeed);
     if(cleanFeed.title) {
-      cleanFeed.title = this.sanitizeString(cleanFeed.title);
+      let title = cleanFeed.title;
+      title = StringUtils.filterControlCharacters(title);
+      title = StringUtils.replaceHTML(title, '');
+      title = title.replace(/\s+/, ' ');
+      title = title.trim();
+      cleanFeed.title = title;
     }
 
     if(cleanFeed.description) {
-      cleanFeed.description = this.sanitizeString(cleanFeed.description);
+      let description = cleanFeed.description;
+      description = StringUtils.filterControlCharacters(description);
+      description = StringUtils.replaceHTML(description, '');
+      description = description.replace(/\s+/, ' ');
+      description = description.trim();
+      cleanFeed.description = description;
     }
 
     return cleanFeed;
-  }
-
-  sanitizeString(inputString) {
-    let outputString = null;
-    if(inputString) {
-      outputString = StringUtils.filterControlCharacters(inputString);
-      outputString = StringUtils.replaceHTML(outputString, '');
-      outputString = outputString.replace(/\s+/, ' ');
-      outputString = outputString.trim();
-    }
-    return outputString;
   }
 }
