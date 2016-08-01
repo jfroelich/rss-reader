@@ -165,3 +165,31 @@ Feed.prototype.serialize = function() {
 
   return outputFeed;
 };
+
+// Creates a new feed suitable for storage
+Feed.prototype.sanitize = function() {
+  // Copy to maintain all the fields and purity
+  const cleanFeed = Object.assign({}, this);
+
+  // Sanitize the feed's title
+  if(cleanFeed.title) {
+    let title = cleanFeed.title;
+    title = StringUtils.filterControlCharacters(title);
+    title = StringUtils.replaceHTML(title, '');
+    title = title.replace(/\s+/, ' ');
+    title = title.trim();
+    cleanFeed.title = title;
+  }
+
+  // Sanitize the feed's description
+  if(cleanFeed.description) {
+    let description = cleanFeed.description;
+    description = StringUtils.filterControlCharacters(description);
+    description = StringUtils.replaceHTML(description, '');
+    description = description.replace(/\s+/, ' ');
+    description = description.trim();
+    cleanFeed.description = description;
+  }
+
+  return cleanFeed;
+};

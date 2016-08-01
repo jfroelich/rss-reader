@@ -78,7 +78,7 @@ class FeedCache {
 
   addFeed(connection, feed, callback) {
     let storableFeed = Feed.prototype.serialize.call(feed);
-    storableFeed = this.sanitizeFeed(storableFeed);
+    storableFeed = Feed.prototype.sanitize.call(storableFeed);
     storableFeed.dateCreated = new Date();
 
     console.debug('Caching feed', storableFeed);
@@ -107,7 +107,7 @@ class FeedCache {
 
   updateFeed(connection, feed, callback) {
     let storableFeed = Feed.prototype.serialize.call(feed);
-    storableFeed = this.sanitizeFeed(storableFeed);
+    storableFeed = Feed.prototype.sanitize.call(storableFeed);
     storableFeed.dateUpdated = new Date();
 
     console.debug('Caching feed', storableFeed);
@@ -124,29 +124,5 @@ class FeedCache {
       console.error('Error updating feed', event);
       callback('error', storableFeed);
     };
-  }
-
-  sanitizeFeed(inputFeed) {
-    // Copy to maintain all the fields and also purity/idempotency
-    const cleanFeed = Object.assign({}, inputFeed);
-    if(cleanFeed.title) {
-      let title = cleanFeed.title;
-      title = StringUtils.filterControlCharacters(title);
-      title = StringUtils.replaceHTML(title, '');
-      title = title.replace(/\s+/, ' ');
-      title = title.trim();
-      cleanFeed.title = title;
-    }
-
-    if(cleanFeed.description) {
-      let description = cleanFeed.description;
-      description = StringUtils.filterControlCharacters(description);
-      description = StringUtils.replaceHTML(description, '');
-      description = description.replace(/\s+/, ' ');
-      description = description.trim();
-      cleanFeed.description = description;
-    }
-
-    return cleanFeed;
   }
 }
