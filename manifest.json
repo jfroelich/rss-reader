@@ -15,7 +15,7 @@
     "scripts": [
       "/lib/parse-srcset.js",
       "/src/archive-entries.js",
-      "/src/background-service.js",
+      "/src/background-page.js",
       "/src/entry.js",
       "/src/equals-ignore-case.js",
       "/src/favicon-cache.js",
