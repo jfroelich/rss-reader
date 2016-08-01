@@ -13,9 +13,6 @@ Slideshow.onMessage = function(message) {
     case 'pollCompleted':
       Slideshow.maybeAppendSlides();
       break;
-    case 'subscribe':
-      Slideshow.maybeAppendSlides();
-      break;
     case 'entryDeleteRequested':
       // Not yet implemented
       break;
