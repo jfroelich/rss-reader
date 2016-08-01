@@ -35,15 +35,10 @@ Slideshow.removeSlide = function(slideElement) {
 };
 
 Slideshow.markAsRead = function(slide) {
-  if(slide.hasAttribute('read')) {
-    return;
+  if(!slide.hasAttribute('read')) {
+    slide.setAttribute('read', '');
+    markEntryAsRead(parseInt(slide.getAttribute('entry'), 10));
   }
-
-  slide.setAttribute('read', '');
-  const entryIdString = slide.getAttribute('entry');
-  const entryId = parseInt(entryIdString, 10);
-  const feedCache = new FeedCache();
-  feedCache.markEntryAsRead(entryId);
 };
 
 Slideshow.filterArticleTitle = function(title) {
@@ -89,12 +84,19 @@ Slideshow.appendSlides = function(oncomplete, isFirst) {
   const limit = 5;
   const offset = Slideshow.countUnreadSlides();
   let notAdvanced = true;
-  feedCache.open(onOpenDatabase);
+  openIndexedDB(onOpenDatabase);
 
   function onOpenDatabase(connection) {
     if(connection) {
-      feedCache.openUnreadUnarchivedEntryCursor(connection, onOpenCursor);
+      const transaction = connection.transaction('entry');
+      const entryStore = transaction.objectStore('entry');
+      const index = entryStore.index('archiveState-readState');
+      const keyPath = [Entry.FLAGS.UNARCHIVED, Entry.FLAGS.UNREAD];
+      const request = index.openCursor(keyPath);
+      request.onsuccess = onOpenCursor;
+      request.onerror = onOpenCursor;
     } else {
+      // TODO: show an error?
     }
   }
 

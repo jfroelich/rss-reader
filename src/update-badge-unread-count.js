@@ -4,14 +4,17 @@
 
 'use strict';
 
+// Sets the text of the extension's icon in the extension toolbar. The callback
+// is called without arguments when the operation completes. The callback is
+// optional.
 function updateBadgeUnreadCount(callback) {
   console.debug('Updating badge unread count');
-  const cache = new FeedCache();
-  cache.open(updateBadgeUnreadCountOnOpenDatabase.bind(this, callback));
+  openIndexedDB(updateBadgeUnreadCountOnOpenDatabase.bind(this, callback));
 }
 
 function updateBadgeUnreadCountOnOpenDatabase(callback, connection) {
   if(connection) {
+    // Count the number of unread entries
     const transaction = connection.transaction('entry');
     const store = transaction.objectStore('entry');
     const index = store.index('readState');
@@ -37,7 +40,7 @@ function updateBadgeUnreadCountOnError(callback, event) {
 }
 
 function updateBadgeUnreadCountOnComplete(callback) {
-  // Callback is optional
+  // Need to check if defined because the callback is optional
   if(callback) {
     callback();
   }

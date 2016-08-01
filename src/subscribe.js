@@ -8,7 +8,6 @@
 function subscribe(url, callback) {
   console.assert(url, 'url is required');
   console.assert('href' in url, 'url should be a URL-like object');
-
   console.debug('Subscribing to', url.href);
 
   // Create a shared context to simplify parameters to continuations
@@ -18,8 +17,7 @@ function subscribe(url, callback) {
   context.callback = callback;
   context.cache = new FeedCache();
 
-  // Start by opening a database
-  context.cache.open(subscribeOnOpenDatabase.bind(null, context));
+  openIndexedDB(subscribeOnOpenDatabase.bind(null, context));
 }
 
 // subscribe helper

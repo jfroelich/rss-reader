@@ -43,7 +43,7 @@ start() {
       this.onQueryIdleState.bind(this, context));
   } else {
     // Skip the idle check and continue
-    this.feedCache.open(this.onOpenDatabase.bind(this, context));
+    openIndexedDB(this.onOpenDatabase.bind(this, context));
   }
 }
 
@@ -59,7 +59,7 @@ static isMeteredConnection() {
 
 onQueryIdleState(context, idleState) {
   if(idleState === 'locked' || idleState === 'idle') {
-    this.feedCache.open(this.onOpenDatabase.bind(this, context));
+    openIndexedDB(this.onOpenDatabase.bind(this, context));
   } else {
     console.debug('Polling canceled because not idle');
     this.onMaybePollCompleted(context);
@@ -69,8 +69,11 @@ onQueryIdleState(context, idleState) {
 onOpenDatabase(context, connection) {
   if(connection) {
     context.connection = connection;
-    this.feedCache.openFeedsCursor(connection,
-      this.onOpenFeedsCursor.bind(this, context));
+    const transaction = connection.transaction('feed');
+    const store = transaction.objectStore('feed');
+    const request = store.openCursor();
+    request.onsuccess = this.onOpenFeedsCursor.bind(this, context);
+    request.onerror = this.onOpenFeedsCursor.bind(this, context);
   } else {
     console.debug('Polling canceled because database connection error');
     this.onMaybePollCompleted(context);
@@ -208,8 +211,12 @@ processEntry(context, feed, entry, callback) {
   }
 
   // Check whether an entry with the same url exists
-  this.feedCache.findEntryWithURL(context.connection, entryURL,
-    onFindEntryWithURL.bind(this));
+  const transaction = context.connection.transaction('entry');
+  const entryStore = transaction.objectStore('entry');
+  const urlsIndex = entryStore.index('urls');
+  const request = urlsIndex.get(entryURL.href);
+  request.onsuccess = onFindEntryWithURL.bind(this);
+  request.onerror = onFindEntryWithURL.bind(this);
 
   const boundOnFetchEntryDocument = onFetchEntryDocument.bind(this);
 
@@ -259,7 +266,7 @@ processEntry(context, feed, entry, callback) {
       }
     }
 
-    this.feedCache.addEntry(context.connection, entry, callback);
+    FeedCache.addEntry(context.connection, entry, callback);
   }
 }
 

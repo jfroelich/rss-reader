@@ -19,7 +19,7 @@ class ArchiveService {
       'currentDate': new Date()
     };
 
-    this.cache.open(this.onConnect.bind(this, context));
+    openIndexedDB(this.onConnect.bind(this, context));
   }
 
   onComplete(context) {

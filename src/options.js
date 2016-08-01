@@ -390,21 +390,18 @@ OptionsPage.startSubscription = function(url) {
 };
 
 // TODO: show num entries, num unread/red, etc
-// TODO: react to connection error, find error
-// NOTE: feedId should be an integer
-
+// TODO: react to errors
 OptionsPage.populateFeedDetails = function(feedId) {
-  if(!feedId) {
-    const feedCache = new FeedCache();
-    feedCache.open(onOpen);
-  } else {
-    // TODO: show an error message?
-    console.error('Invalid feedId');
-  }
+  console.assert(feedId > 0, 'invalid feed id');
 
-  function onOpen(connection) {
+  openIndexedDB(onOpenDatabase);
+  function onOpenDatabase(connection) {
     if(connection) {
-      feedCache.findFeedById(connection, feedId, onFindFeedById);
+      const transaction = connection.transaction('feed');
+      const store = transaction.objectStore('feed');
+      const request = store.get(feedId);
+      request.onsuccess = onFindFeedById;
+      request.onerror = onFindFeedById;
     } else {
       // TODO: show an error message?
       console.error('Database connection error');
@@ -797,13 +794,16 @@ OptionsPage.initSubscriptionsSection = function() {
   let feedCount = 0;
 
   const feedCache = new FeedCache();
-  feedCache.open(onOpenDatabase);
+  openIndexedDB(onOpenDatabase);
 
   function onOpenDatabase(connection) {
     if(connection) {
-      // TODO: use getFeeds, and design it so it takes a parameter
-      // that indicates sorting preference
-      feedCache.openFeedsCursorSortedByTitle(connection, handleCursor);
+      // TODO: load feeds into sorted array?
+      const transaction = connection.transaction('feed');
+      const store = transaction.objectStore('feed');
+      const index = store.index('title');
+      const request = index.openCursor();
+      request.onsuccess = handleCursor;
     } else {
       // TODO: react to error
       console.debug(event);

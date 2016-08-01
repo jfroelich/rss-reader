@@ -11,11 +11,10 @@ function unsubscribe(feedId, callback) {
   const context = {
     'feedId': feedId,
     'deleteRequestCount': 0,
-    'callback': callback,
-    'cache': new FeedCache()
+    'callback': callback
   };
 
-  context.cache.open(unsubscribeOnOpenDatabase.bind(null, context));
+  openIndexedDB(unsubscribeOnOpenDatabase.bind(null, context));
 }
 
 function unsubscribeOnOpenDatabase(context, connection) {

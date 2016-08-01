@@ -20,15 +20,18 @@ class OPMLExportService {
       'connection': null
     };
 
-    this.cache.open(this.onOpenDatabase.bind(this, context));
+    openIndexedDB(this.onOpenDatabase.bind(this, context));
   }
 
   onOpenDatabase(context, connection) {
     if(connection) {
       context.connection = connection;
-      // TODO: this should be a call to a static function
-      this.cache.openFeedsCursor(connection,
-        this.onCursorAdvance.bind(this, context));
+
+      const transaction = connection.transaction('feed');
+      const store = transaction.objectStore('feed');
+      const request = store.openCursor();
+      request.onsuccess = this.onCursorAdvance.bind(this, context);
+      request.onerror = this.onCursorAdvance.bind(this, context);
     }
   }
 

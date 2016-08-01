@@ -41,7 +41,7 @@ class OPMLImportService {
       return;
     }
 
-    this.cache.open(this.onOpenDatabase.bind(this, context));
+    openIndexedDB(this.onOpenDatabase.bind(this, context));
   }
 
   onOpenDatabase(context, connection) {
