@@ -772,10 +772,7 @@ OptionsPage.buttonUnsubscribeOnClick = function(event) {
 // TODO: give immediate visual feedback the import started
 // TODO: switch to a different section of the options ui on complete?
 OptionsPage.importOPMLButtonOnClick = function(event) {
-  const importService = new OPMLImportService();
-  // TODO: check that import service can handle undefined callback and if
-  // so do not pass a callback here
-  importService.start(function() {});
+  importOPML();
 };
 
 OptionsPage.exportOPMLButtonOnClick = function(event) {
