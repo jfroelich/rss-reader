@@ -14,7 +14,7 @@
     "persistent": false,
     "scripts": [
       "/lib/parse-srcset.js",
-      "/src/archive-service.js",
+      "/src/archive-entries.js",
       "/src/background-service.js",
       "/src/entry.js",
       "/src/equals-ignore-case.js",

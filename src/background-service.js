@@ -59,13 +59,10 @@ BackgroundService.onBadgeClick = function() {
 
 BackgroundService.onAlarm = function(alarm) {
   console.debug('Alarm wakeup', alarm.name);
-
-  const archiveService = new ArchiveService();
-  const pollingService = new PollingService();
-
   if(alarm.name === 'archive') {
-    archiveService.start();
+    archiveEntries();
   } else if(alarm.name === 'poll') {
+    const pollingService = new PollingService();
     pollingService.start();
   } else {
     console.warn('Unknown alarm', alarm.name);
