@@ -4,208 +4,191 @@
 
 'use strict';
 
-class FetchHTMLService {
-  constructor() {
-    this.timeoutMillis = 15 * 1000;
+function fetchHTML(requestURL, timeoutMillis, callback) {
+  console.log('GET', requestURL.href);
+
+  if(fetchHTMLIsResistantURL(requestURL)) {
+    callback({'type': 'resistanturl', 'requestURL': requestURL});
+    return;
   }
 
-  fetch(requestURL, callback) {
-    console.log('GET', requestURL.href);
-
-    if(FetchHTMLService.isResistantURL(requestURL)) {
-      callback({'type': 'resistanturl', 'requestURL': requestURL});
-      return;
-    }
-
-    if(FetchHTMLService.pathEndsWithPDF(requestURL)) {
-      callback({'type': 'pdfurl', 'requestURL': requestURL});
-      return;
-    }
-
-    const boundOnFetch = this.onFetch.bind(this, requestURL, callback);
-    const request = new XMLHttpRequest();
-    if(this.timeoutMillis) {
-      request.timeout = this.timeoutMillis;
-    }
-
-    request.ontimeout = boundOnFetch;
-    request.onerror = boundOnFetch;
-    request.onabort = boundOnFetch;
-    request.onload = boundOnFetch;
-    const isAsync = true;
-    request.open('GET', requestURL.href, isAsync);
-    request.responseType = 'document';
-    request.setRequestHeader('Accept', 'text/html');
-    request.send();
+  if(fetchHTMLPathEndsWithPDF(requestURL)) {
+    callback({'type': 'pdfurl', 'requestURL': requestURL});
+    return;
   }
 
-  onFetch(requestURL, callback, event) {
-    if(event.type !== 'load') {
-      console.warn(event.type, event.target.status, requestURL.href);
-      callback({
-        'type': event.type,
-        'requestURL': requestURL
-      });
-      return;
-    }
-
-    const document = event.target.responseXML;
-    if(!document) {
-      console.warn('Undefined document', requestURL.href);
-      callback({
-        'type': 'undefineddocument',
-        'requestURL': requestURL
-      });
-      return;
-    }
-
-    const outputEvent = {
-      'type': 'success',
-      'requestURL': requestURL,
-      'responseXML': document,
-      'responseURL': new URL(event.target.responseURL)
-    };
-
-    FetchHTMLService.transformLazilyLoadedImages(document);
-    FetchHTMLService.filterSourcelessImages(document);
-    DocumentURLResolver.updateDocument(document, outputEvent.responseURL);
-    LoneStarr.jamDocumentRadar(document);
-    ImageDimensionsService.updateDocument(document,
-      this.onSetImageDimensions.bind(this, outputEvent, callback));
+  const request = new XMLHttpRequest();
+  if(timeoutMillis) {
+    request.timeout = timeoutMillis;
   }
 
-  onSetImageDimensions(event, callback, numImagesModified) {
-    callback(event);
+  const onFetch = fetchHTMLOnFetch.bind(request, requestURL, callback);
+  request.ontimeout = onFetch;
+  request.onerror = onFetch;
+  request.onabort = onFetch;
+  request.onload = onFetch;
+  const isAsync = true;
+  request.open('GET', requestURL.href, isAsync);
+  request.responseType = 'document';
+  request.setRequestHeader('Accept', 'text/html');
+  request.send();
+}
+
+function fetchHTMLOnFetch(requestURL, callback, event) {
+  if(event.type !== 'load') {
+    console.warn(event.type, event.target.status, requestURL.href);
+    callback({
+      'type': event.type,
+      'requestURL': requestURL
+    });
+    return;
   }
 
-  static pathEndsWithPDF(url) {
-    const path = url.pathname;
-    const minLen = '/a.pdf'.length;
-    return path && path.length > minLen && /\.pdf$/i.test(path);
+  const document = event.target.responseXML;
+  if(!document) {
+    console.warn('Undefined document', requestURL.href);
+    callback({
+      'type': 'undefineddocument',
+      'requestURL': requestURL
+    });
+    return;
   }
 
-  static filterSourcelessImages(document) {
-    for(let image of document.querySelectorAll('img')) {
-      if(!FetchHTMLService.hasSource(image)) {
-        image.remove();
-      }
+  const outputEvent = {
+    'type': 'success',
+    'requestURL': requestURL,
+    'responseXML': document,
+    'responseURL': new URL(event.target.responseURL)
+  };
+
+  fetchHTMLTransformLazilyLoadedImages(document);
+  fetchHTMLFilterSourcelessImages(document);
+  fetchHTMLResolveURLs(document, event.target.responseURL);
+  fetchHTMLFilterTrackingImages(document);
+  fetchHTMLSetImageDimensions(document,
+    fetchHTMLOnSetImageDimensions.bind(this, outputEvent, callback));
+}
+
+function fetchHTMLOnSetImageDimensions(event, callback, numImagesModified) {
+  callback(event);
+}
+
+function fetchHTMLPathEndsWithPDF(url) {
+  const path = url.pathname;
+  const minLen = '/a.pdf'.length;
+  return path && path.length > minLen && /\.pdf$/i.test(path);
+}
+
+function fetchHTMLFilterSourcelessImages(document) {
+  for(let image of document.querySelectorAll('img')) {
+    if(!fetchHTMLHasSource(image)) {
+      image.remove();
     }
   }
+}
 
-  static isResistantURL(url) {
-    const blacklist = [
-      'productforums.google.com',
-      'groups.google.com',
-      'www.forbes.com',
-      'forbes.com'
-    ];
+function fetchHTMLIsResistantURL(url) {
+  const blacklist = [
+    'productforums.google.com',
+    'groups.google.com',
+    'www.forbes.com',
+    'forbes.com'
+  ];
 
-    // hostname getter normalizes url part to lowercase
-    return blacklist.includes(url.hostname);
-  }
+  // hostname getter normalizes url part to lowercase
+  return blacklist.includes(url.hostname);
+}
 
-  static transformLazilyLoadedImages(document) {
+function fetchHTMLTransformLazilyLoadedImages(document) {
 
-    const ALTERNATE_ATTRIBUTE_NAMES = [
-      'load-src',
-      'data-src',
-      'data-original-desktop',
-      'data-baseurl',
-      'data-lazy',
-      'data-img-src',
-      'data-original',
-      'data-adaptive-img',
-      'data-imgsrc',
-      'data-default-src'
-    ];
+  const LAZY_ATTRIBUTES = [
+    'load-src',
+    'data-src',
+    'data-original-desktop',
+    'data-baseurl',
+    'data-lazy',
+    'data-img-src',
+    'data-original',
+    'data-adaptive-img',
+    'data-imgsrc',
+    'data-default-src'
+  ];
 
-    const images = document.querySelectorAll('img');
-    for(let image of images) {
-      if(!FetchHTMLService.hasSource(image)) {
-        for(let alternateName of ALTERNATE_ATTRIBUTE_NAMES) {
-          if(image.hasAttribute(alternateName)) {
-            const alternateValue = image.getAttribute(alternateName);
-            if(alternateValue && FetchHTMLService.isMinimallyValidURL(
-              alternateValue)) {
-              image.removeAttribute(alternateName);
-              image.setAttribute('src', alternateValue);
-              // console.debug('Set lazy image src', alternateValue);
-              break;
-            }
+  const images = document.querySelectorAll('img');
+  for(let image of images) {
+    if(!fetchHTMLHasSource(image)) {
+      for(let alternateName of LAZY_ATTRIBUTES) {
+        if(image.hasAttribute(alternateName)) {
+          const alternateValue = image.getAttribute(alternateName);
+          if(alternateValue && fetchHTMLIsMinimallyValidURL(alternateValue)) {
+            image.removeAttribute(alternateName);
+            image.setAttribute('src', alternateValue);
+            break;
           }
         }
       }
     }
   }
-
-  static hasSource(imageElement) {
-    return imageElement.hasAttribute('src') ||
-      imageElement.hasAttribute('srcset');
-  }
-
-  // This does only minimal validation of the content of the alternate
-  // attribute value. I cannot fully validate its url, because the url could
-  // be relative, because this is prior to resolving urls.
-  static isMinimallyValidURL(inputString) {
-    const MINIMAL_VALID_URL_LENGTH = 'http://a'.length;
-    return inputString.length > MINIMAL_VALID_URL_LENGTH &&
-      !inputString.trim().includes(' ');
-  }
 }
 
-// Telemetry radar disruption
+function fetchHTMLHasSource(image) {
+  return image.hasAttribute('src') || image.hasAttribute('srcset');
+}
+
+// Only minimal validation. I cannot fully validate its url, because the url
+// could be relative
+function fetchHTMLIsMinimallyValidURL(inputString) {
+  const MINIMAL_VALID_URL_LENGTH = 'http://a'.length;
+  return inputString.length > MINIMAL_VALID_URL_LENGTH &&
+    !inputString.trim().includes(' ');
+}
+
 // TODO: can i just access image.src property to get hostname
 // instead of creating url from attribute value?
 // TODO: restrict to http(s)? (by protocol value)?
-class LoneStarr {
-  static jamDocumentRadar(document) {
-    // Use all lowercase to match hostname getter normalization
-    const hosts = new Set([
-      'b.scorecardresearch.com',
-      'googleads.g.doubleclick.net',
-      'me.effectivemeasure.net',
-      'pagead2.googlesyndication.com',
-      'pixel.quantserve.com',
-      'pixel.wp.com',
-      'pubads.g.doubleclick.net',
-      'sb.scorecardresearch.com'
-    ]);
+function fetchHTMLFilterTrackingImages(document) {
+  // Use all lowercase to match hostname getter normalization
+  const hosts = new Set([
+    'b.scorecardresearch.com',
+    'googleads.g.doubleclick.net',
+    'me.effectivemeasure.net',
+    'pagead2.googlesyndication.com',
+    'pixel.quantserve.com',
+    'pixel.wp.com',
+    'pubads.g.doubleclick.net',
+    'sb.scorecardresearch.com'
+  ]);
 
-    const minURLLength = 'http://a.com'.length;
-
-    const images = document.querySelectorAll('img[src]');
-    for(let image of images) {
-      const src = image.getAttribute('src');
-      if(src && src.length > minURLLength) {
-        const url = LoneStarr.toURLTrapped(src);
-        if(url && hosts.has(url.hostname)) {
-          //console.debug('Raspberried', image.outerHTML);
-          image.remove();
-        }
+  const minURLLength = 'http://a.com'.length;
+  const images = document.querySelectorAll('img[src]');
+  for(let image of images) {
+    const src = image.getAttribute('src');
+    if(src && src.length > minURLLength) {
+      const url = fetchHTMLToURLTrapped(src);
+      if(url && hosts.has(url.hostname)) {
+        image.remove();
       }
-    }
-  }
-
-  static toURLTrapped(urlString) {
-    try {
-      return new URL(urlString);
-    } catch(exception) {
     }
   }
 }
 
-class DocumentURLResolver {
+function fetchHTMLToURLTrapped(urlString) {
+  try {
+    return new URL(urlString);
+  } catch(exception) {
+  }
+}
 
-static updateDocument(document, baseURL) {
+function fetchHTMLResolveURLs(document, baseURL) {
   for(let base of document.querySelectorAll('base')) {
     base.remove();
   }
 
-  DocumentURLResolver.resolveElements(document, baseURL);
-  DocumentURLResolver.resolveSrcsetAttributes(document, baseURL);
+  fetchHTMLResolveElements(document, baseURL);
+  fetchHTMLResolveSrcsets(document, baseURL);
 }
 
-static resolveElements(document, baseURL) {
+function fetchHTMLResolveElements(document, baseURL) {
 
   const URL_ATTRIBUTE_MAP = {
     'A': 'href',
@@ -259,7 +242,7 @@ static resolveElements(document, baseURL) {
       continue;
     }
 
-    const resolvedURL = DocumentURLResolver.resolveURL(attributeValue, baseURL);
+    const resolvedURL = fetchHTMLResolveURL(attributeValue, baseURL);
     // TODO: not equals is weak comparison because it ignores spaces and
     // is case sensitive, maybe make it stronger
     if(resolvedURL && resolvedURL.href !== attributeValue) {
@@ -268,7 +251,7 @@ static resolveElements(document, baseURL) {
   }
 }
 
-static resolveSrcsetAttributes(document, baseURL) {
+function fetchHTMLResolveSrcsets(document, baseURL) {
   const elements = document.querySelectorAll('img[srcset], source[srcset]');
   for(let element of elements) {
     const attributeValue = element.getAttribute('srcset');
@@ -277,8 +260,7 @@ static resolveSrcsetAttributes(document, baseURL) {
       if(srcset && srcset.length) {
         let dirtied = false;
         for(let descriptor of srcset) {
-          const resolvedURL = DocumentURLResolver.resolveURL(descriptor.url,
-            baseURL);
+          const resolvedURL = fetchHTMLResolveURL(descriptor.url, baseURL);
           if(resolvedURL && resolvedURL.href !== descriptor.url) {
             dirtied = true;
             descriptor.url = resolvedURL.href;
@@ -286,8 +268,7 @@ static resolveSrcsetAttributes(document, baseURL) {
         }
 
         if(dirtied) {
-          const newSrcsetValue = DocumentURLResolver.serializeSrcset(
-            srcset);
+          const newSrcsetValue = fetchHTMLSerializeSrcset(srcset);
           if(newSrcsetValue && newSrcsetValue !== attributeValue) {
             element.setAttribute('srcset', newSrcsetValue);
           }
@@ -297,7 +278,7 @@ static resolveSrcsetAttributes(document, baseURL) {
   }
 }
 
-static serializeSrcset(descriptorsArray) {
+function fetchHTMLSerializeSrcset(descriptorsArray) {
   const outputStringBuffer = [];
   for(let descriptor of descriptorsArray) {
     let descriptorStringBuffer = [descriptor.url];
@@ -322,7 +303,8 @@ static serializeSrcset(descriptorsArray) {
   return outputStringBuffer.join(', ');
 }
 
-static resolveURL(urlString, baseURL) {
+
+function fetchHTMLResolveURL(urlString, baseURL) {
   if(urlString && !/^\s*javascript:/i.test(urlString) &&
     !/^\s*data:/i.test(urlString)) {
     try {
@@ -333,12 +315,8 @@ static resolveURL(urlString, baseURL) {
   }
 }
 
-}
-
-class ImageDimensionsService {
-
 // Asynchronously set the width and height attributes of image elements
-static updateDocument(document, callback) {
+function fetchHTMLSetImageDimensions(document, callback) {
   const context = {
     'numProcessed': 0,
     'numFetched': 0,
@@ -353,18 +331,18 @@ static updateDocument(document, callback) {
   context.numImages = images.length;
   if(context.numImages) {
     for(let image of images) {
-      ImageDimensionsService._processImage(context, image);
+      fetchHTMLProcessImage(context, image);
     }
   } else {
     callback(0);
   }
 }
 
-static _processImage(context, image) {
+function fetchHTMLProcessImage(context, image) {
 
   // Skip images with at least one dimension.
   if(image.width || image.height) {
-    ImageDimensionsService._onImageProcessed(context);
+    fetchHTMLOnImageProcessed(context);
     return;
   }
 
@@ -372,7 +350,7 @@ static _processImage(context, image) {
   const src = image.getAttribute('src');
   const urlMinLen = 'http://a.gif'.length;
   if(!src || src.length < urlMinLen || !/^\s*http/i.test(src)) {
-    ImageDimensionsService._onImageProcessed(context);
+    fetchHTMLOnImageProcessed(context);
     return;
   }
 
@@ -391,16 +369,16 @@ static _processImage(context, image) {
     image.setAttribute('width', event.target.width);
     image.setAttribute('height', event.target.height);
     context.numModified++;
-    ImageDimensionsService._onImageProcessed(context);
+    fetchHTMLOnImageProcessed(context);
   }
 
   function onProxyImageError(event) {
     event.target.removeEventListener('error', onProxyImageError);
-    ImageDimensionsService._onImageProcessed(context);
+    fetchHTMLOnImageProcessed(context);
   }
 }
 
-static _onImageProcessed(context) {
+function fetchHTMLOnImageProcessed(context) {
   // This increment should only happen here, because this should only happen
   // once each call to _processImage completes
   context.numProcessed++;
@@ -410,6 +388,4 @@ static _onImageProcessed(context) {
     context.didCallback = true;
     context.callback(context.numModified);
   }
-}
-
 }

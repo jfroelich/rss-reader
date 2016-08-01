@@ -9,8 +9,6 @@ class PollingService {
 constructor() {
   this.idlePeriodInSeconds = 30;
   this.faviconService = new FaviconService();
-  this.fetchHTMLService = new FetchHTMLService();
-  this.fetchHTMLService.timeoutMillis = 10 * 1000;
 }
 
 // Starts the polling process
@@ -246,7 +244,8 @@ processEntry(context, feed, entry, callback) {
     }
 
     // Try and fetch the entry's webpage
-    this.fetchHTMLService.fetch(entryURL, boundOnFetchEntryDocument);
+    const timeoutMillis = 10 * 1000;
+    fetchHTML(entryURL, timeoutMillis, boundOnFetchEntryDocument);
   }
 
   function onFetchEntryDocument(event) {
