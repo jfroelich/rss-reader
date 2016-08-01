@@ -58,7 +58,7 @@ function fetchFeedOnResponse(requestURL, excludeEntries, callback, event) {
 
   // Parse the XML file into a feed-like object
   try {
-    outputEvent.feed = FeedParser.parse(document, excludeEntries);
+    outputEvent.feed = parseFeed(document, excludeEntries);
   } catch(exception) {
     console.warn('Parsing error', requestURL.href, exception.message);
     outputEvent.type = 'ParseError';
