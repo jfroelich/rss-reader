@@ -7,7 +7,6 @@
 // Corresponds to a feed database object. Because indexedDB cannot store such
 // objects directly, this is only intended to provide prototype members that
 // can correctly operate on serialized objects loaded from the database
-
 function Feed() {}
 
 // Gets the terminal url, which is the last url out of the feed's list of urls
@@ -15,16 +14,22 @@ Feed.prototype.getURL = function() {
   return this.urls[this.urls.length - 1];
 };
 
+// Returns true if the feed has an associated url
 Feed.prototype.hasURL = function() {
   return this.urls && this.urls.length;
-}
+};
 
+// Adds the url to the feed (if it is unique from prior urls)
 Feed.prototype.addURL = function(urlString) {
+
+  console.assert(urlString, 'urlString is required');
+
   if(!this.urls) {
     this.urls = [];
   }
 
   // Ensure the url does not already exist
+  // Assume comparing normalized versions of urls
   if(!this.urls.includes(urlString)) {
     this.urls.push(urlString);
   }
