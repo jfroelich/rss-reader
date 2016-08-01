@@ -266,7 +266,7 @@ processEntry(context, feed, entry, callback) {
       }
     }
 
-    FeedCache.addEntry(context.connection, entry, callback);
+    addEntry(context.connection, entry, callback);
   }
 }
 
