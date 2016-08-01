@@ -7,10 +7,9 @@
 function importOPML(callback) {
   console.debug('Importing OPML files...');
 
-  // Create a contex variable for simplified continuation calling
+  // Create a context variable for simplified continuation calling
   const context = {
     'filesProcessed': 0,
-    'files': null,
     'callback': callback,
     'uploader': null
   };
@@ -27,8 +26,8 @@ function importOPML(callback) {
 
 function importOPMLOnUploaderChange(context, event) {
   context.uploader.removeEventListener('change', importOPMLOnUploaderChange);
-  context.files = context.uploader.files;
-  if(!context.files || !context.files.length) {
+  const files = context.uploader.files;
+  if(!files || !files.length) {
     console.warn('No files uploaded');
     importOPMLOnComplete(context);
     return;
@@ -47,7 +46,9 @@ function importOPMLOnOpenDatabase(context, connection) {
   console.debug('importOPML connected to database');
   context.connection = connection;
 
-  for(let file of context.files) {
+  const files = context.uploader.files;
+
+  for(let file of files) {
     console.debug('Importing opml file', file.name);
     if(!importOPMLIsMimeTypeXML(file.type)) {
       console.warn('Invalid mime type', file.name, file.type);
@@ -99,7 +100,7 @@ function importOPMLReadFileOnLoad(context, file, event) {
     return;
   }
 
-  // Check for an embeded error element
+  // Check for an embedded error element
   const parserError = document.querySelector('parsererror');
   if(parserError) {
     console.warn('XML embedded parsing error', file.name,
