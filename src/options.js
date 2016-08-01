@@ -290,9 +290,8 @@ OptionsPage.showSubscriptionPreview = function(url) {
   OptionsPage.showElement(progressElement);
 
   const excludeEntries = false;
-  const fetchService = new FeedHttpService();
-  fetchService.timeoutMillis = 10 * 1000;
-  fetchService.fetch(url, excludeEntries, onFetchFeed);
+  const timeoutMillis = 10 * 1000;
+  fetchService.fetch(url, timeoutMillis, excludeEntries, onFetchFeed);
 
   function onFetchFeed(fetchEvent) {
     if(event.type !== 'load') {

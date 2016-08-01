@@ -9,8 +9,6 @@ class PollingService {
 constructor() {
   this.idlePeriodInSeconds = 30;
   this.faviconService = new FaviconService();
-  this.fetchFeedService = new FeedHttpService();
-  this.fetchFeedService.timeoutMillis = 10 * 1000;
   this.fetchHTMLService = new FetchHTMLService();
   this.fetchHTMLService.timeoutMillis = 10 * 1000;
 }
@@ -95,7 +93,8 @@ onOpenFeedsCursor(context, event) {
   const feed = cursor.value;
   const requestURL = new URL(Feed.prototype.getURL.call(feed));
   const excludeEntries = false;
-  this.fetchFeedService.fetch(requestURL, excludeEntries,
+  const timeoutMillis = 10 * 1000;
+  fetchFeed(requestURL, timeoutMillis, excludeEntries,
     this.onFetchFeed.bind(this, context, feed));
   cursor.continue();
 }

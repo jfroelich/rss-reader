@@ -35,10 +35,9 @@ function subscribeOnOpenDatabase(context, connection) {
     // Online subscription. Verify the remote file is a feed that exists
     // and get its info
     context.connection = connection;
-    const fetchService = new FeedHttpService();
-    fetchService.timeoutMillis = 10 * 1000;
+    const timeoutMillis = 10 * 1000;
     const excludeEntries = true;
-    fetchService.fetch(context.url, excludeEntries,
+    fetchFeed(context.url, timeoutMillis, excludeEntries,
       subscribeOnFetchFeed.bind(null, context));
   }
 }
