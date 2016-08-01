@@ -4,6 +4,9 @@
 
 'use strict';
 
+// Asynchronously fetches an html file and prepares it for local render and
+// storage. URLs are resolved, image dimensions are set, some invalid or
+// unwanted images are removed.
 function fetchHTML(requestURL, timeoutMillis, callback) {
   console.log('GET', requestURL.href);
 
@@ -37,20 +40,14 @@ function fetchHTML(requestURL, timeoutMillis, callback) {
 function fetchHTMLOnFetch(requestURL, callback, event) {
   if(event.type !== 'load') {
     console.warn(event.type, event.target.status, requestURL.href);
-    callback({
-      'type': event.type,
-      'requestURL': requestURL
-    });
+    callback({'type': event.type, 'requestURL': requestURL});
     return;
   }
 
   const document = event.target.responseXML;
   if(!document) {
     console.warn('Undefined document', requestURL.href);
-    callback({
-      'type': 'undefineddocument',
-      'requestURL': requestURL
-    });
+    callback({'type': 'undefineddocument', 'requestURL': requestURL});
     return;
   }
 
@@ -303,7 +300,6 @@ function fetchHTMLSerializeSrcset(descriptorsArray) {
   return outputStringBuffer.join(', ');
 }
 
-
 function fetchHTMLResolveURL(urlString, baseURL) {
   if(urlString && !/^\s*javascript:/i.test(urlString) &&
     !/^\s*data:/i.test(urlString)) {
@@ -339,7 +335,6 @@ function fetchHTMLSetImageDimensions(document, callback) {
 }
 
 function fetchHTMLProcessImage(context, image) {
-
   // Skip images with at least one dimension.
   if(image.width || image.height) {
     fetchHTMLOnImageProcessed(context);
