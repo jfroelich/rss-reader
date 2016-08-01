@@ -23,7 +23,7 @@
       "/src/favicon-service.js",
       "/src/feed.js",
       "/src/fetch-feed.js",
-      "/src/fetch-html-service.js",
+      "/src/fetch-html.js",
       "/src/indexeddb.js",
       "/src/parse-feed.js",
       "/src/polling-service.js",
