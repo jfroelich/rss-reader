@@ -531,10 +531,9 @@ OptionsPage.onSubscriptionFormSubmit = function(event) {
   } else {
     // Show search results
     OptionsPage.showElement(progressElement);
-
-    const searchService = new GoogleFeedsService();
-    searchService.timeoutInMillis = 5000;
-    searchService.search(queryString, OptionsPage.onSearchGoogleFeeds);
+    const timeoutInMillis = 5000;
+    searchGoogleFeeds(queryString, timeoutInMillis,
+      OptionsPage.onSearchGoogleFeeds);
   }
 
   // Indicate that the normal form submit behavior should be prevented
@@ -570,21 +569,18 @@ OptionsPage.onDiscoverSubscriptionButtonClick = function(event) {
 };
 
 OptionsPage.onSearchGoogleFeeds = function(event) {
-
-  const query = event.queryString;
+  const query = event.query;
   const results = event.entries;
-
   const progressElement = document.getElementById('discover-in-progress');
   const noResultsElement = document.getElementById('discover-no-results');
   const resultsList = document.getElementById('discover-results-list');
 
   // If an error occurred, hide the progress element and show an error message
   // and exit early.
-  if(event.type !== 'load') {
+  if(event.type !== 'success') {
     console.debug(event);
     OptionsPage.hideElement(progressElement);
-    OptionsPage.showErrorMessage('An error occurred when searching for feeds',
-      event.message);
+    OptionsPage.showErrorMessage('An error occurred when searching for feeds');
     return;
   }
 
@@ -621,7 +617,6 @@ OptionsPage.onSearchGoogleFeeds = function(event) {
       try {
         linkURL = new URL(result.link);
       } catch(exception) {
-
       }
       if(linkURL) {
         faviconService.lookup(linkURL, null,
@@ -632,7 +627,6 @@ OptionsPage.onSearchGoogleFeeds = function(event) {
           onAllResultFaviconsProcessed();
         }
       }
-
     } else {
       faviconResultsProcessed++;
       if(faviconResultsProcessed === results.length) {
