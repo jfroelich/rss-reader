@@ -17,7 +17,7 @@
       "/src/add-entry.js",
       "/src/add-feed.js",
       "/src/archive-entries.js",
-      "/src/background-page.js",
+      "/src/background.js",
       "/src/entry.js",
       "/src/favicon-cache.js",
       "/src/favicon-service.js",

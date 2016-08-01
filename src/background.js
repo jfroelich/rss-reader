@@ -4,11 +4,11 @@
 
 'use strict';
 
-const BackgroundPage = {};
+const Background = {};
 
-BackgroundPage.onBackgroundPageLoad = function(event) {
-  chrome.runtime.onInstalled.addListener(BackgroundPage.onInstalled);
-  chrome.browserAction.onClicked.addListener(BackgroundPage.onBadgeClick);
+Background.onBackgroundLoad = function(event) {
+  chrome.runtime.onInstalled.addListener(Background.onInstalled);
+  chrome.browserAction.onClicked.addListener(Background.onBadgeClick);
 
   chrome.alarms.get('archive', function onGetArchiveAlarm(alarm) {
     if(!alarm) {
@@ -24,18 +24,18 @@ BackgroundPage.onBackgroundPageLoad = function(event) {
     }
   });
 
-  if(!chrome.alarms.onAlarm.hasListener(BackgroundPage.onAlarm)) {
+  if(!chrome.alarms.onAlarm.hasListener(Background.onAlarm)) {
     console.debug('Binding alarm listener');
-    chrome.alarms.onAlarm.addListener(BackgroundPage.onAlarm);
+    chrome.alarms.onAlarm.addListener(Background.onAlarm);
   }
 };
 
-BackgroundPage.onInstalled = function(event) {
+Background.onInstalled = function(event) {
   console.log('Installing extension ...');
   updateBadgeUnreadCount();
 };
 
-BackgroundPage.onBadgeClick = function() {
+Background.onBadgeClick = function() {
   const VIEW_URL = chrome.extension.getURL('slides.html');
   chrome.tabs.query({'url': VIEW_URL}, onQueryForViewTab);
 
@@ -57,7 +57,7 @@ BackgroundPage.onBadgeClick = function() {
   }
 };
 
-BackgroundPage.onAlarm = function(alarm) {
+Background.onAlarm = function(alarm) {
   console.debug('Alarm wakeup', alarm.name);
   if(alarm.name === 'archive') {
     archiveEntries();
@@ -69,4 +69,4 @@ BackgroundPage.onAlarm = function(alarm) {
   }
 };
 
-BackgroundPage.onBackgroundPageLoad();
+Background.onBackgroundLoad();
