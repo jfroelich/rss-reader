@@ -8,13 +8,13 @@ function openIndexedDB(callback) {
   const name = 'reader';
   const version = 20;
   const request = indexedDB.open(name, version);
-  request.onupgradeneeded = upgradeIndexedDB;
-  request.onsuccess = openIndexedDBOnSuccess.bind(request, callback);
+  request.onupgradeneeded = upgradeIndexedDB.bind(request, name);
+  request.onsuccess = openIndexedDBOnSuccess.bind(request, name, callback);
   request.onerror = openIndexedDBOnError.bind(request, callback);
   request.onblocked = openIndexedDBOnBlocked.bind(request, callback);
 }
 
-function openIndexedDBOnSuccess(callback, event) {
+function openIndexedDBOnSuccess(name, callback, event) {
   console.debug('Connected to database', name);
   callback(event.target.result);
 }
@@ -29,8 +29,8 @@ function openIndexedDBOnBlocked(callback, event) {
   callback();
 }
 
-function upgradeIndexedDB(event) {
-  console.log('Upgrading database from version', event.oldVersion);
+function upgradeIndexedDB(name, event) {
+  console.log('Upgrading database %s from version', name, event.oldVersion);
 
   const request = event.target;
   const connection = request.result;

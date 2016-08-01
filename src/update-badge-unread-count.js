@@ -8,7 +8,6 @@
 // is called without arguments when the operation completes. The callback is
 // optional.
 function updateBadgeUnreadCount(callback) {
-  console.debug('Updating badge unread count');
   openIndexedDB(updateBadgeUnreadCountOnOpenDatabase.bind(this, callback));
 }
 
@@ -29,6 +28,7 @@ function updateBadgeUnreadCountOnOpenDatabase(callback, connection) {
 }
 
 function updateBadgeUnreadCountOnSuccess(callback, event) {
+  console.debug('Updating badge unread count to', event.target.result);
   chrome.browserAction.setBadgeText({'text': '' + event.target.result});
   updateBadgeUnreadCountOnComplete(callback);
 }

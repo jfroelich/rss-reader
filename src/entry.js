@@ -9,7 +9,7 @@
 function Entry() {}
 
 Entry.prototype.getURL = function() {
-  if(this.hasURL()) {
+  if(this.urls && this.urls.length) {
     return this.urls[this.urls.length - 1];
   }
   return null;
