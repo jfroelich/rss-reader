@@ -112,10 +112,10 @@ function exportOPMLAppendFeed(document, feed) {
   outline.setAttribute('type', feed.type || 'rss');
 
   // Only store the terminal url
-  if(feed.urls && feed.urls.length) {
+  if(Feed.prototype.hasURL.call(feed)) {
     outline.setAttribute('xmlUrl', Feed.prototype.getURL.call(feed));
   } else {
-    console.error('No urls found for feed', JSON.stringify(feed));
+    console.error('Feed missing url', JSON.stringify(feed));
   }
 
   if(feed.title) {
@@ -132,7 +132,7 @@ function exportOPMLAppendFeed(document, feed) {
   // Due to quirks with xml documents, document.body does not work
   const bodyElement = document.querySelector('body');
   if(bodyElement) {
-    bodyElement.appendChild(`outline`);
+    bodyElement.appendChild(outline);
   } else {
     console.warn('Append failed, no body element found');
   }

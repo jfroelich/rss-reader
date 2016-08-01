@@ -15,6 +15,10 @@ Feed.prototype.getURL = function() {
   return this.urls[this.urls.length - 1];
 };
 
+Feed.prototype.hasURL = function() {
+  return this.urls && this.urls.length;
+}
+
 Feed.prototype.addURL = function(urlString) {
   if(!this.urls) {
     this.urls = [];
