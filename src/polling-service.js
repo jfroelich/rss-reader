@@ -141,7 +141,7 @@ onLookupFeedFavicon(context, localFeed, remoteFeed, faviconURL) {
   // then store the new feed in the database.
   const mergedFeed = Feed.prototype.merge.call(localFeed,
     Feed.prototype.serialize.call(remoteFeed));
-  this.feedCache.updateFeed(context.connection, mergedFeed,
+  updateFeed(context.connection, mergedFeed,
     this.onUpdateFeed.bind(this, context, remoteFeed.entries));
 }
 

@@ -30,7 +30,8 @@
       "/src/polling-service.js",
       "/src/polling-service-test.js",
       "/src/string-utils.js",
-      "/src/update-badge-unread-count.js"
+      "/src/update-badge-unread-count.js",
+      "/src/update-feed.js"
     ]
   },
   "options_page": "options.html",
