@@ -4,17 +4,7 @@
 
 'use strict';
 
-// Rudimentary lib for filtering boilerplate content from a document. This is
-// essentially a document transformation. Given an input document, analyze
-// the document's content, and then produce a new document where some of the
-// content was filtered. For performance, this modifies the document in place,
-// although I am considering generating a new document instead as a part of an
-// effort to produce a pure function without side effects.
-// The current implementation is pretty simple. The document is viewed as a
-// set of data, where nodes represent pieces of content. Each node is given
-// a score indicating how likely the node contains content. Then the node
-// with the highest score is found, and non-intersecting nodes are removed.
-const Calamine = Object.create(null);
+const Calamine = {};
 
 Calamine.removeBoilerplate = function(document) {
   let bestElement = Calamine.findHighestScoringElement(document);
