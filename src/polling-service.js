@@ -8,7 +8,6 @@ class PollingService {
 
 constructor() {
   this.idlePeriodInSeconds = 30;
-  this.faviconService = new FaviconService();
 }
 
 // Starts the polling process
@@ -118,11 +117,10 @@ onFetchFeed(context, localFeed, fetchEvent) {
 
   // Refresh the feed's favicon.
   if(remoteFeed.link) {
-    this.faviconService.lookup(remoteFeed.link, null,
+    lookupFavicon(remoteFeed.link, null,
       this.onLookupFeedFavicon.bind(this, context, localFeed, remoteFeed));
   } else {
-    this.faviconService.lookup(Feed.prototype.getURL.call(remoteFeed),
-      fetchEvent.responseXML,
+    lookupFavicon(Feed.prototype.getURL.call(remoteFeed), null,
       this.onLookupFeedFavicon.bind(this, context, localFeed, remoteFeed));
   }
 }

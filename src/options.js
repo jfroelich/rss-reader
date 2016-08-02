@@ -605,10 +605,6 @@ OptionsPage.onSearchGoogleFeeds = function(event) {
   resultsList.appendChild(listItem);
 
   // Lookup the favicons for the results
-  const faviconService = new FaviconService();
-  const faviconCache = new FaviconCache('favicon-cache');
-  faviconService.cache = faviconCache;
-  faviconService.timeout = 1000;
 
   let faviconResultsProcessed = 0;
   for(let result of results) {
@@ -619,8 +615,7 @@ OptionsPage.onSearchGoogleFeeds = function(event) {
       } catch(exception) {
       }
       if(linkURL) {
-        faviconService.lookup(linkURL, null,
-          onLookupFavicon.bind(null, result));
+        lookupFavicon(linkURL, null, onLookupFavicon.bind(null, result));
       } else {
         faviconResultsProcessed++;
         if(faviconResultsProcessed === results.length) {
