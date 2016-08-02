@@ -134,7 +134,7 @@ function lookupFaviconFetchDocument(context) {
 
 function lookupFaviconOnFetchDocument(context, event) {
   if(event.type !== 'load') {
-    console.debug(event.status, event.type, context.url.href);
+    console.debug('Error fetching url', event.type, context.url.href);
 
     // If we failed to fetch and the entry was expired, delete the expired
     // entry.
@@ -379,9 +379,13 @@ function lookupFaviconFindEntry(context, url, callback) {
   const store = transaction.objectStore('favicon-cache');
   const request = store.get(pageURLString);
   request.onsuccess = function(event) {
-    console.debug('Found favicon entry', url.href,
-      event.target.result.iconURLString);
-    callback(event.target.result);
+    if(event.target.result) {
+      console.debug('Found favicon entry', url.href,
+        event.target.result.iconURLString);
+      callback(event.target.result);
+    } else {
+      callback();
+    }
   };
   request.onerror = function(event) {
     console.error('Error searching for favicon cache entry', url.href, event);
