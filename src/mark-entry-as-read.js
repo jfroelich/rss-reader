@@ -5,7 +5,7 @@
 'use strict';
 
 function markEntryAsRead(entryId, callback) {
-  console.assert(isFinite(entryId) && entryId > 0,
+  console.assert(typeof entryId === 'number' && isFinite(entryId) && entryId > 0,
     'entryId %s must be a defined positive finite number', entryId);
   console.debug('Marking entry %i as read', entryId);
 
