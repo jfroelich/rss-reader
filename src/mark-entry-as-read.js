@@ -5,45 +5,38 @@
 'use strict';
 
 function markEntryAsRead(entryId, callback) {
-  console.assert(entryId, 'entryId is required');
-  console.debug('Marking entry %s as read', entryId);
+  console.assert(
+    typeof entryId === 'number' && isFinite(entryId) && entryId > 0,
+    'entryId must be a defined positive finite number', entryId);
+  console.debug('Marking entry %i as read', entryId);
 
-  const context = {
-    'entryId': entryId,
-    'callback': callback
-  };
-
+  // Define a context to simplify parameter passing
+  const context = {'entryId': entryId, 'callback': callback};
   openIndexedDB(markEntryAsReadOnOpenDatabase.bind(this, context));
 }
 
 function markEntryAsReadOnOpenDatabase(context, connection) {
   if(!connection) {
-    if(context.callback) {
-      context.callback({
-        'type': 'ConnectionError',
-        'entryId': context.entryId
-      });
-    }
+    markEntryAsReadOnComplete(context, 'ConnectionError');
     return;
   }
 
+  // Cache the connection in the context so that it can be easily closed
+  context.connection = connection;
+
+  // Open a cursor as opposed to using get so that we can use cursor.update
   const transaction = connection.transaction('entry', 'readwrite');
   const store = transaction.objectStore('entry');
   const request = store.openCursor(context.entryId);
-  request.onsuccess = markEntryAsReadOnOpenCursor.bind(null, context);
-  request.onerror = markEntryAsReadOnOpenCursor.bind(null, context);
+  request.onsuccess = markEntryAsReadOpenCursorOnSuccess.bind(null, context);
+  request.onerror = markEntryAsReadOpenCursorOnError.bind(null, context);
 }
 
-function markEntryAsReadOnOpenCursor(context, event) {
+function markEntryAsReadOpenCursorOnSuccess(context, event) {
   const cursor = event.target.result;
   if(!cursor) {
     console.error('No entry found for id %i to mark as read', context.entryId);
-    if(context.callback) {
-      context.callback({
-        'type': 'NotFoundError',
-        'entryId': context.entryId
-      });
-    }
+    markEntryAsReadOnComplete(context, 'NotFoundError');
     return;
   }
 
@@ -51,12 +44,7 @@ function markEntryAsReadOnOpenCursor(context, event) {
   if(entry.readState === Entry.FLAGS.READ) {
     console.error('Attempted to remark read entry with id %i as read',
       context.entryId);
-    if(context.callback) {
-      context.callback({
-        'type': 'AlreadyReadError',
-        'entryId': context.entryId
-      });
-    }
+    markEntryAsReadOnComplete(context, 'AlreadyReadError');
     return;
   }
 
@@ -64,13 +52,32 @@ function markEntryAsReadOnOpenCursor(context, event) {
   const dateNow = new Date();
   entry.dateRead = dateNow;
   entry.dateUpdated = dateNow;
+
+  // Async. Request an update on the same readwrite transaction, and do not
+  // wait for it to complete.
   cursor.update(entry);
 
+  // Async. This call is implicitly blocked by the readwrite transaction used
+  // here, so the count of unread will be affected, even though we do not
+  // wait for cursor.update to complete.
   updateBadgeUnreadCount();
+
+  markEntryAsReadOnComplete(context, 'Success');
+}
+
+function markEntryAsReadOpenCursorOnError(context, event) {
+  console.warn('Error opening cursor when marking entry as read', event);
+  markEntryAsReadOnComplete(context, 'CursorError');
+}
+
+function markEntryAsReadOnComplete(context, eventType) {
+  if(context.connection) {
+    context.connection.close();
+  }
 
   if(context.callback) {
     context.callback({
-      'type': 'success',
+      'type': eventType,
       'entryId': context.entryId
     });
   }
