@@ -52,7 +52,7 @@ function lookupFaviconOpenDatabaseOnBlocked(context, event) {
 }
 
 function lookupFaviconOpenDatabaseOnSuccess(context, event) {
-  console.debug('Connected to database', context.databaseName);
+  // console.debug('Connected to database', context.databaseName);
 
   // Cache the connection in the context for use in other functions
   context.connection = event.target.result;
