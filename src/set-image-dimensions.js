@@ -66,7 +66,7 @@ function setImageDimensionsProcessImage(context, image) {
     return;
   }
 
-  // Skip images with invalid urls
+  // Skip images with invalid src urls
   let srcURL = null;
   try {
     srcURL = new URL(src);
@@ -79,8 +79,6 @@ function setImageDimensionsProcessImage(context, image) {
   // Skip non-http/s images. This usually means object urls.
   // Even though object urls are available and the dimensions of
   // such an image could probably have been set, I am not seeing any properties
-  // preset in the image object in the context of a document created by
-  // XMLHttpRequest or document.implementation or DOMParser.
   if(srcURL.protocol !== 'http:' && srcURL.protocol !== 'https:') {
     setImageDimensionsOnImageProcessed(context);
     return;
@@ -91,17 +89,16 @@ function setImageDimensionsProcessImage(context, image) {
   // context is live, and will eagerly fetch images when the src property is
   // set.
   const proxyImage = new Image();
-  const onFetch = setImageDimensionsOnLoad.bind(proxyImage, context, image);
-  proxyImage.onload = onFetch;
-  proxyImage.onerror = onFetch;
   proxyImage.src = src;
 
   // Check if the proxy is complete. Inferrably, when setting the src property,
   // Chrome also checked whether the image was cached. In this case, the
   // dimensions are already available. Furthermore, the load/error events may
-  // never fire.
+  // never fire. Also, I now no longer even bind the listeners if the proxy
+  // is complete.
   if(proxyImage.complete) {
-    // Inform the load/error callback that the processing already occurred
+    // Inform the load/error callback that the processing already occurred.
+    // Even though I no longer even bind the listeners
     proxyImage.setAttribute('cached', '1');
     image.setAttribute('width', proxyImage.width);
     image.setAttribute('height', proxyImage.height);
@@ -109,12 +106,20 @@ function setImageDimensionsProcessImage(context, image) {
   } else {
     // Track the number of fetch calls. Only increment if not cached.
     context.numFetched++;
+
+    // Attach the listeners. Even though we attach after setting the src, this
+    // should not matter, because the listeners do not have to be already
+    // bound. It is similar to calling then on a fulfilled promise.
+    const onLoad = setImageDimensionsOnLoad.bind(proxyImage, context, image);
+    proxyImage.onload = onLoad;
+    proxyImage.onerror = onLoad;
   }
 }
 
 function setImageDimensionsOnLoad(context, image, event) {
   // This image was already processed, so ignore the event.
   if(event.target.hasAttribute('cached')) {
+    console.debug('Suppressing on load, image was cached');
     return;
   }
 
