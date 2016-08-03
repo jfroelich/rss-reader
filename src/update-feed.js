@@ -9,7 +9,7 @@ function updateFeed(connection, feed, callback) {
   storableFeed = Feed.prototype.sanitize.call(storableFeed);
   storableFeed.dateUpdated = new Date();
 
-  console.debug('Updating feed', storableFeed);
+  console.debug('Updating feed', Feed.prototype.getURL.call(storableFeed));
 
   const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
