@@ -7,11 +7,25 @@
 // Corresponds to a feed database object. Because indexedDB cannot store such
 // objects directly, this is only intended to provide prototype members that
 // can correctly operate on serialized objects loaded from the database
-function Feed() {}
+function Feed() {
+  this.dateCreated = null;
+  this.dateFetched = null;
+  this.dateLastModified = null;
+  this.datePublished = null;
+  this.dateUpdated = null;
+  this.description = null;
+  this.faviconURLString = null;
+  this.link = null;
+  this.title = null;
+  this.type = null;
+  this.urls = null;
+}
 
 // Gets the terminal url, which is the last url out of the feed's list of urls
 Feed.prototype.getURL = function() {
-  return this.urls[this.urls.length - 1];
+  if(Feed.prototype.hasURL.call(this)) {
+    return this.urls[this.urls.length - 1];
+  }
 };
 
 // Returns true if the feed has an associated url
@@ -35,6 +49,10 @@ Feed.prototype.addURL = function(urlString) {
   }
 };
 
+Feed.prototype.clone = function() {
+  return Object.assign({}, this);
+};
+
 // Returns a new feed of this feed merged with another feed. Expects both feeds
 // in serialized form. Fields from the other feed take precedence, so when there
 // is a value in both this and the other feed, the other field's value is what
@@ -44,8 +62,8 @@ Feed.prototype.addURL = function(urlString) {
 // kept, and the other feed's id is ignored.
 Feed.prototype.merge = function(otherFeed) {
 
-  // Clone ourself to maintain purity.
-  const mergedFeed = Object.assign({}, this);
+  // Clone to maintain purity
+  const mergedFeed = Feed.prototype.clone.call(this);
 
   // Merge the url lists of both feeds
   if(mergedFeed.urls && otherFeed.urls) {
@@ -94,6 +112,8 @@ Feed.prototype.merge = function(otherFeed) {
 // the context of either adding a new feed or updating an existing feed
 // Does not sanitize. This merely ensures that only storable
 // values are present in the object.
+// This cannot clone, because that could introduce properties into the object
+// that should not be present, such as misc. expand-object properties.
 Feed.prototype.serialize = function() {
 
   const outputFeed = {};
@@ -180,7 +200,7 @@ Feed.prototype.sanitize = function() {
   // Copy to maintain all the fields and purity
   const cleanFeed = Object.assign({}, this);
 
-  // Sanitize the feed's title
+  // Sanitize title
   if(cleanFeed.title) {
     let title = cleanFeed.title;
     title = StringUtils.filterControlCharacters(title);
@@ -190,7 +210,7 @@ Feed.prototype.sanitize = function() {
     cleanFeed.title = title;
   }
 
-  // Sanitize the feed's description
+  // Sanitize description
   if(cleanFeed.description) {
     let description = cleanFeed.description;
     description = StringUtils.filterControlCharacters(description);
