@@ -15,7 +15,7 @@ function openIndexedDB(callback) {
 }
 
 function openIndexedDBOnSuccess(name, callback, event) {
-  console.debug('Connected to database', name);
+  // console.debug('Connected to database', name);
   callback(event.target.result);
 }
 
