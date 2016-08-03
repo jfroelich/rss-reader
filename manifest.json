@@ -27,6 +27,7 @@
       "/src/parse-feed.js",
       "/src/polling-service.js",
       "/src/polling-service-test.js",
+      "/src/set-image-dimensions.js",
       "/src/string-utils.js",
       "/src/update-badge-unread-count.js",
       "/src/update-feed.js"

@@ -39,6 +39,9 @@ function fetchHTML(requestURL, timeoutMillis, callback) {
 
 function fetchHTMLOnFetch(requestURL, callback, event) {
   if(event.type !== 'load') {
+
+    // TODO: look at event.target.statusText
+
     console.warn(event.type, event.target.status, requestURL.href);
     callback({'type': event.type, 'requestURL': requestURL});
     return;
@@ -62,7 +65,7 @@ function fetchHTMLOnFetch(requestURL, callback, event) {
   fetchHTMLFilterSourcelessImages(document);
   fetchHTMLResolveURLs(document, event.target.responseURL);
   fetchHTMLFilterTrackingImages(document);
-  fetchHTMLSetImageDimensions(document,
+  setImageDimensions(document,
     fetchHTMLOnSetImageDimensions.bind(this, outputEvent, callback));
 }
 
@@ -97,6 +100,15 @@ function fetchHTMLIsResistantURL(url) {
 }
 
 function fetchHTMLTransformLazilyLoadedImages(document) {
+
+/*
+// I see cases like this. Instead of checking for absence of src I should be
+// overwriting maybe?
+<img class="img-responsive svg-fallback js-lazy"
+data-original="http://nodeassets.nbcnews.com/cdnassets/projects/nbcnews-assets
+/footer-logo-msnbc-upper.svg" src="http://sslnodeassets.nbcnews.com/images
+/transparent-placeholder.gif" alt="msnbc">
+*/
 
   const LAZY_ATTRIBUTES = [
     'load-src',
@@ -308,79 +320,5 @@ function fetchHTMLResolveURL(urlString, baseURL) {
     } catch(exception) {
       console.warn(urlString, baseURL.href, exception);
     }
-  }
-}
-
-// Asynchronously set the width and height attributes of image elements
-function fetchHTMLSetImageDimensions(document, callback) {
-  const context = {
-    'numProcessed': 0,
-    'numFetched': 0,
-    'numModified': 0,
-    'numImages': 0,
-    'callback': callback,
-    'document': document,
-    'didCallback': false
-  };
-
-  const images = document.getElementsByTagName('img');
-  context.numImages = images.length;
-  if(context.numImages) {
-    for(let image of images) {
-      fetchHTMLProcessImage(context, image);
-    }
-  } else {
-    callback(0);
-  }
-}
-
-function fetchHTMLProcessImage(context, image) {
-  // Skip images with at least one dimension.
-  if(image.width || image.height) {
-    fetchHTMLOnImageProcessed(context);
-    return;
-  }
-
-  // Skip non-http(s) images or images without a src attribute
-  const src = image.getAttribute('src');
-  const urlMinLen = 'http://a.gif'.length;
-  if(!src || src.length < urlMinLen || !/^\s*http/i.test(src)) {
-    fetchHTMLOnImageProcessed(context);
-    return;
-  }
-
-  // Track the number of fetch calls
-  context.numFetched++;
-
-  // The document containing the image may be inert, so create a detached image
-  // in the local live document and fetch the image via this proxy.
-  const proxyImage = document.createElement('img');
-  proxyImage.addEventListener('load', onProxyImageLoad);
-  proxyImage.addEventListener('error', onProxyImageError);
-  proxyImage.src = src;
-
-  function onProxyImageLoad(event) {
-    event.target.removeEventListener('load', onProxyImageLoad);
-    image.setAttribute('width', event.target.width);
-    image.setAttribute('height', event.target.height);
-    context.numModified++;
-    fetchHTMLOnImageProcessed(context);
-  }
-
-  function onProxyImageError(event) {
-    event.target.removeEventListener('error', onProxyImageError);
-    fetchHTMLOnImageProcessed(context);
-  }
-}
-
-function fetchHTMLOnImageProcessed(context) {
-  // This increment should only happen here, because this should only happen
-  // once each call to _processImage completes
-  context.numProcessed++;
-
-  if(context.numProcessed === context.numImages) {
-    console.assert(!context.didCallback, 'Multiple callbacks');
-    context.didCallback = true;
-    context.callback(context.numModified);
   }
 }
