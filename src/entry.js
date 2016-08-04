@@ -15,6 +15,29 @@ Entry.FLAGS = {
   ARCHIVED: 1
 };
 
+Entry.prototype.addURL = function(url) {
+
+  if(!this.urls) {
+    this.urls = [];
+  }
+
+  if(Object.prototype.toString.call(url) === '[object URL]') {
+    // includes does not work well because URL equality test is funky
+    for(let obj of this.urls) {
+      if(obj.href === url.href) {
+        return;
+      }
+    }
+
+    this.urls.push(url);
+  } else {
+
+    if(!this.urls.includes(url)) {
+      this.urls.push(url);
+    }
+  }
+};
+
 Entry.prototype.getURL = function() {
   if(this.urls && this.urls.length) {
     return this.urls[this.urls.length - 1];

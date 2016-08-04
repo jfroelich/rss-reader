@@ -290,11 +290,8 @@ function pollOnFetchEntryDocument(context, entry, callback, event) {
 
   if(event.type === 'success') {
 
-    // Append the redirect url
-    if(event.responseURL.href !== entryURL.href) {
-      // TODO: use addURL
-      entry.urls.push(event.responseURL);
-    }
+    // Append the redirect url (addURL is responsible for uniqueness)
+    Entry.prototype.addURL.call(entry, event.responseURL);
 
     // Overwrite the entry's context with the fetched content
     const document = event.responseXML;
