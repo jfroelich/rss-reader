@@ -39,10 +39,9 @@ Entry.prototype.addURL = function(url) {
 };
 
 Entry.prototype.getURL = function() {
-  if(this.urls && this.urls.length) {
+  if(Entry.prototype.hasURL.call(this)) {
     return this.urls[this.urls.length - 1];
   }
-  return null;
 };
 
 Entry.prototype.hasURL = function() {
