@@ -4,44 +4,48 @@
 
 'use strict';
 
-// Sets the text of the extension's icon in the extension toolbar. The callback
-// is called without arguments when the operation completes. The callback is
-// optional.
-function updateBadgeUnreadCount(callback) {
-  openIndexedDB(updateBadgeUnreadCountOnOpenDatabase.bind(this, callback));
+// Sets the text of the extension's icon in the extension toolbar to the number
+// of unread entries in the database.
+function updateBadgeUnreadCount(connection) {
+  if(connection) {
+    const shouldClose = false;
+    updateBadgeUnreadCountOnOpenDatabase(shouldClose, connection);
+  } else {
+    const shouldClose = true;
+    openIndexedDB(updateBadgeUnreadCountOnOpenDatabase.bind(null, shouldClose));
+  }
 }
 
-function updateBadgeUnreadCountOnOpenDatabase(callback, connection) {
+function updateBadgeUnreadCountOnOpenDatabase(shouldClose, connection) {
   if(connection) {
     // Count the number of unread entries
     const transaction = connection.transaction('entry');
     const store = transaction.objectStore('entry');
     const index = store.index('readState');
     const request = index.count(Entry.FLAGS.UNREAD);
-    request.onsuccess = updateBadgeUnreadCountOnSuccess.bind(request, callback);
-    request.onerror = updateBadgeUnreadCountOnError.bind(request, callback);
-    connection.close();
+    request.onsuccess = updateBadgeUnreadCountOnSuccess;
+    request.onerror = updateBadgeUnreadCountOnError;
+    if(shouldClose) {
+      connection.close();
+    }
   } else {
     chrome.browserAction.setBadgeText({'text': '?'});
-    updateBadgeUnreadCountOnComplete(callback);
+    updateBadgeUnreadCountOnComplete();
   }
 }
 
-function updateBadgeUnreadCountOnSuccess(callback, event) {
+function updateBadgeUnreadCountOnSuccess(event) {
   console.debug('Updating badge unread count to', event.target.result);
   chrome.browserAction.setBadgeText({'text': '' + event.target.result});
-  updateBadgeUnreadCountOnComplete(callback);
+  updateBadgeUnreadCountOnComplete();
 }
 
-function updateBadgeUnreadCountOnError(callback, event) {
+function updateBadgeUnreadCountOnError(event) {
   console.error('Error counting unread entries', event);
   chrome.browserAction.setBadgeText({'text': '?'});
-  updateBadgeUnreadCountOnComplete(callback);
+  updateBadgeUnreadCountOnComplete();
 }
 
-function updateBadgeUnreadCountOnComplete(callback) {
-  // Need to check if defined because the callback is optional
-  if(callback) {
-    callback();
-  }
+function updateBadgeUnreadCountOnComplete() {
+
 }

@@ -68,13 +68,15 @@ function unsubscribeOnComplete = function(context, eventType) {
     context.deleteRequestCount);
 
   // Unsubscribing may have modified the number of unread articles, so
-  // update the badge. Even though the deletes are async, the transaction used
-  // by updateCount below will wait for those to complete
-  if(context.deleteRequestCount > 0) {
-    updateBadgeUnreadCount();
-  }
-
+  // update the badge. Even though the deletes are async, the readonly
+  // transaction in updateBadgeUnreadCount waits for the pending deletes to
+  // complete
   if(context.connection) {
+
+    if(context.deleteRequestCount) {
+      updateBadgeUnreadCount(context.connection);
+    }
+
     context.connection.close();
   }
 

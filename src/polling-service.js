@@ -169,7 +169,7 @@ onUpdateFeed(context, entries, resultType, feed) {
 
     if(entriesProcessed === entries.length) {
       if(entriesAdded) {
-        updateBadgeUnreadCount();
+        updateBadgeUnreadCount(context.connection);
       }
 
       context.pendingFeedsCount--;
