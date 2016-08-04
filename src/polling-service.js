@@ -39,25 +39,23 @@ start(forceResetLock) {
     return;
   }
 
-  if(PollingService.isMeteredConnection()) {
+  // Cancel the poll if on a metered connection and the no poll metered flag
+  // is set. There currently is no way to set this flag in the UI, and
+  // navigator.connection is still experimental.
+  if('NO_POLL_METERED' in localStorage && navigator && navigator.connection &&
+    navigator.connection.metered) {
     console.debug('Cannot poll on metered connection');
     this.onMaybePollCompleted(context);
     return;
   }
 
+  // Check if idle and possibly cancel the poll or continue with polling
   if('ONLY_POLL_IF_IDLE' in localStorage) {
     chrome.idle.queryState(this.idlePeriodInSeconds,
       this.onQueryIdleState.bind(this, context));
   } else {
-    // Skip the idle check and continue
     openIndexedDB(this.onOpenDatabase.bind(this, context));
   }
-}
-
-static isMeteredConnection() {
-  return navigator && 'connection' in navigator &&
-    'NO_POLL_METERED' in localStorage && navigator.connection &&
-    navigator.connection.metered;
 }
 
 onQueryIdleState(context, idleState) {
