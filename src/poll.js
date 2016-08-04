@@ -208,36 +208,23 @@ function pollOnEntryProcessed(pollContext, feedContext, optionalAddEntryEvent) {
 }
 
 function pollProcessEntry(context, feed, entry, callback) {
-  let entryURL = Entry.prototype.getURL.call(entry);
-  console.assert(entryURL, 'Entry missing url %s', entry);
-
   // Verify the entry has a url
-  // TODO: this should just be an assert because entries without urls should
-  // already have been filtered. Or maybe not? Whose responsibility is it to
-  // impose the url requirement?
-  if(!entryURL) {
+  if(!Entry.prototype.hasURL.call(entry)) {
     console.warn('Entry missing url', entry);
     callback();
     return;
   }
 
-  // Add the rewritten url if rewriting occurred
-  const rewrittenURL = rewriteURL(entryURL);
-  if(rewrittenURL.href !== entryURL.href) {
+  // Rewrite the url
+  Entry.prototype.addURL.call(entry,
+    rewriteURL(Entry.prototype.getURL.call(entry)));
 
-    // TODO: use Entry.prototype.addURL
-    entry.urls.push(rewrittenURL);
-
-    // Update entryURL to point to the new terminal url
-    entryURL = rewrittenURL;
-  }
-
-  // Check whether an entry with the same url exists, using the redirect url
-  // if it differs from the original url.
+  // Check whether an entry with the same url exists
   const transaction = context.connection.transaction('entry');
   const store = transaction.objectStore('entry');
   const index = store.index('urls');
-  const request = index.get(entryURL.href);
+  const keyPath = Entry.prototype.getURL.call(entry).href;
+  const request = index.get(keyPath);
   const onFind = pollOnFindEntryWithURL.bind(null, context, feed, entry,
     callback);
   request.onsuccess = onFind;
