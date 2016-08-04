@@ -4,15 +4,11 @@
 
 'use strict';
 
-class PollingService {
-
-constructor() {
-  this.idlePeriodInSeconds = 30;
-}
-
-// Starts the polling process
-start(forceResetLock) {
-  console.group('Checking for new articles...');
+// Checks for new feeds. If forceResetLock is true, then polling is allowed to
+// continue even if it is locked (because poll is already running, or because
+// poll finished incorrectly).
+function poll(forceResetLock) {
+  console.log('Checking for new articles...');
 
   // Define a shared context for simple passing of shared state to continuations
   const context = {
@@ -23,170 +19,196 @@ start(forceResetLock) {
   // If not forcing a reset of the lock, then check whether the poll is locked
   // and if so then cancel.
   if(!forceResetLock && 'POLL_IS_ACTIVE' in localStorage) {
-    console.debug('Cannot poll while another poll is running');
-    this.onMaybePollCompleted(context);
+    console.warn('Cannot poll while another poll is running');
+    pollOnComplete(context);
   }
 
   // Lock the poll. The value is not important, just the key's presence.
-  // The lock is stored externally because it is not unique to any instance
-  // of the polling service.
+  // The lock is external because it is not unique to the current execution
   localStorage.POLL_IS_ACTIVE = 'true';
 
-  // Cancel the poll if we can check connectivity status and are offline
-  if(navigator && 'onLine' in navigator && !navigator.onLine) {
+  // Cancel the poll if offline
+  if('onLine' in navigator && !navigator.onLine) {
     console.debug('Cannot poll while offline');
-    this.onMaybePollCompleted(context);
+    pollOnComplete(context);
     return;
   }
 
   // Cancel the poll if on a metered connection and the no poll metered flag
   // is set. There currently is no way to set this flag in the UI, and
   // navigator.connection is still experimental.
-  if('NO_POLL_METERED' in localStorage && navigator && navigator.connection &&
+  if('NO_POLL_METERED' in localStorage && navigator.connection &&
     navigator.connection.metered) {
     console.debug('Cannot poll on metered connection');
-    this.onMaybePollCompleted(context);
+    pollOnComplete(context);
     return;
   }
 
   // Check if idle and possibly cancel the poll or continue with polling
   if('ONLY_POLL_IF_IDLE' in localStorage) {
-    chrome.idle.queryState(this.idlePeriodInSeconds,
-      this.onQueryIdleState.bind(this, context));
+    const idlePeriodInSeconds = 30;
+    chrome.idle.queryState(idlePeriodInSeconds,
+      pollOnQueryIdleState.bind(null, context));
   } else {
-    openIndexedDB(this.onOpenDatabase.bind(this, context));
+    openIndexedDB(pollOnOpenDatabase.bind(null, context));
   }
 }
 
-onQueryIdleState(context, idleState) {
-  if(idleState === 'locked' || idleState === 'idle') {
-    openIndexedDB(this.onOpenDatabase.bind(this, context));
+function pollOnQueryIdleState(context, state) {
+  if(state === 'locked' || state === 'idle') {
+    openIndexedDB(pollOnOpenDatabase.bind(null, context));
   } else {
-    console.debug('Polling canceled because not idle');
-    this.onMaybePollCompleted(context);
+    console.debug('Polling canceled because not idle', state);
+    pollOnComplete(context);
   }
 }
 
-onOpenDatabase(context, connection) {
+function pollOnOpenDatabase(context, connection) {
   if(connection) {
+    // Cache the connection in the context for later use
     context.connection = connection;
+
+    // Open a cursor over the feeds
     const transaction = connection.transaction('feed');
     const store = transaction.objectStore('feed');
     const request = store.openCursor();
-    request.onsuccess = this.onOpenFeedsCursor.bind(this, context);
-    request.onerror = this.onOpenFeedsCursor.bind(this, context);
+    const onOpenFeedCursor = pollOnOpenFeedCursor.bind(null, context);
+    request.onsuccess = onOpenFeedCursor;
+    request.onerror = onOpenFeedCursor;
   } else {
-    console.debug('Polling canceled because database connection error');
-    this.onMaybePollCompleted(context);
+    console.warn('Polling canceled because database connection error');
+    pollOnComplete(context);
   }
 }
 
-onOpenFeedsCursor(context, event) {
+function pollOnOpenFeedCursor(context, event) {
   if(event.type !== 'success') {
-    this.onMaybePollCompleted(context);
+    pollOnComplete(context);
     return;
   }
 
   const cursor = event.target.result;
   if(!cursor) {
     // Either no feeds exist or we finished iteration
-    this.onMaybePollCompleted(context);
+    pollOnComplete(context);
     return;
   }
 
+  // Bump the count to indicate a new feed is being polled
   context.pendingFeedsCount++;
+
+  // Fetch the feed
   const feed = cursor.value;
+
+  // This assumea that the feed has a valid url, and should never throw
   const requestURL = new URL(Feed.prototype.getURL.call(feed));
   const excludeEntries = false;
   const timeoutMillis = 10 * 1000;
   fetchFeed(requestURL, timeoutMillis, excludeEntries,
-    this.onFetchFeed.bind(this, context, feed));
+    pollOnFetchFeed.bind(null, context, feed));
+
+  // Advance the to next feed (async)
   cursor.continue();
 }
 
-onFetchFeed(context, localFeed, fetchEvent) {
-  if(fetchEvent.type !== 'load') {
+function pollOnFetchFeed(context, localFeed, event) {
+  // If we failed to fetch the feed then we are done with the feed
+  if(event.type !== 'load') {
     context.pendingFeedsCount--;
-    this.onMaybePollCompleted(context);
+    pollOnComplete(context);
     return;
   }
 
-  const remoteFeed = fetchEvent.feed;
+  const remoteFeed = event.feed;
 
   // Check whether the feed has changed since last fetch
   if(localFeed.dateLastModified && remoteFeed.dateLastModified &&
     localFeed.dateLastModified.getTime() ===
     remoteFeed.dateLastModified.getTime()) {
-    console.debug('Feed unmodified', Feed.prototype.getURL.call(localFeed));
+    // console.debug('Feed unmodified', Feed.prototype.getURL.call(localFeed));
     context.pendingFeedsCount--;
-    this.onMaybePollCompleted(context);
+    pollOnComplete(context);
     return;
   }
 
-  // Refresh the feed's favicon.
-  if(remoteFeed.link) {
-    lookupFavicon(remoteFeed.link, null,
-      this.onLookupFeedFavicon.bind(this, context, localFeed, remoteFeed));
-  } else {
-    lookupFavicon(Feed.prototype.getURL.call(remoteFeed), null,
-      this.onLookupFeedFavicon.bind(this, context, localFeed, remoteFeed));
-  }
+  // Revalidate the feed's favicon. Try and use the url of the associated
+  // website first, then fallback to the url of the xml file.
+  // lookupFavicon expects a URL object. fetchFeed produces a feed-like object
+  // containing URL objects, so we do not need to parse strings into URLs.
+  const onLookup = pollOnLookupFeedFavicon.bind(null, context, localFeed,
+    remoteFeed);
+  const queryURL = remoteFeed.link ? remoteFeed.link :
+    Feed.prototype.getURL.call(remoteFeed);
+  lookupFavicon(queryURL, null, onLookup);
 }
 
-onLookupFeedFavicon(context, localFeed, remoteFeed, faviconURL) {
+function pollOnLookupFeedFavicon(context, localFeed, remoteFeed, faviconURL) {
   if(faviconURL) {
     remoteFeed.faviconURLString = faviconURL.href;
   }
 
   // Synchronize the feed loaded from the database with the fetched feed, and
   // then store the new feed in the database.
+  // Merge requires that both feeds be serialized. localFeed already is because
+  // it was loaded from the database, but the remote feed is not because
+  // parseFeed produces a feed-like object with things like URL objects
   const mergedFeed = Feed.prototype.merge.call(localFeed,
     Feed.prototype.serialize.call(remoteFeed));
   updateFeed(context.connection, mergedFeed,
-    this.onUpdateFeed.bind(this, context, remoteFeed.entries));
+    pollOnUpdateFeed.bind(null, context, remoteFeed.entries));
 }
 
-onUpdateFeed(context, entries, resultType, feed) {
+function pollOnUpdateFeed(context, entries, resultType, feed) {
+  // If something went wrong updating the feed then we are done
   if(resultType !== 'success') {
     context.pendingFeedsCount--;
-    this.onMaybePollCompleted(context);
+    pollOnComplete(context);
     return;
   }
 
   // Now that the feed has been stored, start processing the feed's entries.
-  // If there are no entries then we are finished processing the feed.
+  // If there are no entries then we are finished with the feed.
   if(!entries.length) {
     context.pendingFeedsCount--;
-    this.onMaybePollCompleted(context);
+    pollOnComplete(context);
     return;
   }
 
-  let entriesProcessed = 0;
-  let entriesAdded = 0;
-  const boundOnEntryProcessed = onEntryProcessed.bind(this);
+  // Create a subcontext for processing this feed's entries
+  const feedContext = {
+    'entriesProcessed': 0,
+    'entriesAdded': 0,
+    'numEntries': entries.length
+  };
+
+  const boundOnEntryProcessed = pollOnEntryProcessed.bind(null, context,
+    feedContext);
+
   for(let entry of entries) {
-    this.processEntry(context, feed, entry, boundOnEntryProcessed);
-  }
-
-  function onEntryProcessed(optionalAddEntryEvent) {
-    entriesProcessed++;
-
-    if(optionalAddEntryEvent && optionalAddEntryEvent.type === 'success') {
-      entriesAdded++;
-    }
-
-    if(entriesProcessed === entries.length) {
-      if(entriesAdded) {
-        updateBadgeUnreadCount(context.connection);
-      }
-
-      context.pendingFeedsCount--;
-      this.onMaybePollCompleted(context);
-    }
+    pollProcessEntry(context, feed, entry, boundOnEntryProcessed);
   }
 }
 
-processEntry(context, feed, entry, callback) {
+function pollOnEntryProcessed(context, feedContext, optionalAddEntryEvent) {
+  feedContext.entriesProcessed++;
+
+  if(optionalAddEntryEvent && optionalAddEntryEvent.type === 'success') {
+    feedContext.entriesAdded++;
+  }
+
+  // We are finished processing the feed if we finished processing its entries
+  if(feedContext.entriesProcessed === feedContext.numEntries) {
+    // Only update the badge if we actually added some entries
+    if(feedContext.entriesAdded) {
+      updateBadgeUnreadCount(context.connection);
+    }
+
+    context.pendingFeedsCount--;
+    pollOnComplete(context);
+  }
+}
+
+function pollProcessEntry(context, feed, entry, callback) {
 
   let entryURL = Entry.prototype.getURL.call(entry);
 
@@ -202,24 +224,25 @@ processEntry(context, feed, entry, callback) {
     return;
   }
 
-  // Append the rewritten url if rewriting occurred
-  const rewrittenURL = PollingService.rewriteURL(entryURL);
+  // Add the rewritten url if rewriting occurred
+  const rewrittenURL = pollRewriteURL(entryURL);
   if(rewrittenURL.href !== entryURL.href) {
+
+    // TODO: use Entry.prototype.addURL
     entry.urls.push(rewrittenURL);
 
-    // Update entryURL to point to the terminal url in the chain
+    // Update entryURL to point to the new terminal url
     entryURL = rewrittenURL;
   }
 
   // Check whether an entry with the same url exists
   const transaction = context.connection.transaction('entry');
-  const entryStore = transaction.objectStore('entry');
-  const urlsIndex = entryStore.index('urls');
-  const request = urlsIndex.get(entryURL.href);
-  request.onsuccess = onFindEntryWithURL.bind(this);
-  request.onerror = onFindEntryWithURL.bind(this);
+  const store = transaction.objectStore('entry');
+  const index = store.index('urls');
+  const request = index.get(entryURL.href);
+  request.onsuccess = onFindEntryWithURL;
+  request.onerror = onFindEntryWithURL;
 
-  const boundOnFetchEntryDocument = onFetchEntryDocument.bind(this);
 
   function onFindEntryWithURL(event) {
     // If there was a problem searching for the entry by url, then consider the
@@ -251,16 +274,19 @@ processEntry(context, feed, entry, callback) {
 
     // Try and fetch the entry's webpage
     const timeoutMillis = 10 * 1000;
-    fetchHTML(entryURL, timeoutMillis, boundOnFetchEntryDocument);
+    fetchHTML(entryURL, timeoutMillis, onFetchEntryDocument);
   }
 
   function onFetchEntryDocument(event) {
 
     if(event.type === 'success') {
+
+      // Append the redirect url
       if(event.responseURL.href !== entryURL.href) {
         entry.urls.push(event.responseURL);
       }
 
+      // Overwrite the entry's context
       const document = event.responseXML;
       const contentString = document.documentElement.outerHTML.trim();
       if(contentString) {
@@ -268,19 +294,35 @@ processEntry(context, feed, entry, callback) {
       }
     }
 
+    // Store the entry and callback. This callback will pass back the
+    // callback parameters of addEntry, which is an event defined in addEntry
     addEntry(context.connection, entry, callback);
   }
 }
 
-onMaybePollCompleted(context) {
+
+function pollOnComplete(context) {
+
+  // Every time a feed completes it calls pollOnComplete. However, multiple
+  // feeds are processed concurrently and calls pollOnComplete out of order.
+  // Each time a feed completes it deprecates the pendingFeedsCount. This means
+  // that if pendingFeedsCount is > 0 here, the poll is ongoing.
   if(context.pendingFeedsCount) {
     return;
   }
 
+  // Show a notification
   if('SHOW_NOTIFICATIONS' in localStorage) {
-    this.showPollCompletedNotification();
+    const notification = {
+      'type': 'basic',
+      'title': chrome.runtime.getManifest().name,
+      'iconUrl': '/images/rss_icon_trans.gif',
+      'message': 'Updated articles'
+    };
+    chrome.notifications.create('Lucubrate', notification, function() {});
   }
 
+  // Close out the connection
   if(context.connection) {
     context.connection.close();
   }
@@ -289,24 +331,13 @@ onMaybePollCompleted(context) {
   delete localStorage.POLL_IS_ACTIVE;
 
   console.log('Polling completed');
-  console.groupEnd();
-}
-
-showPollCompletedNotification() {
-  const notification = {
-    'type': 'basic',
-    'title': chrome.runtime.getManifest().name,
-    'iconUrl': '/images/rss_icon_trans.gif',
-    'message': 'Updated articles'
-  };
-  chrome.notifications.create('Lucubrate', notification, function() {});
 }
 
 // Applies a set of rules to a url object and returns a modified url object
 // Currently this only modifies Google News urls, but I plan to include more
 // TODO: instead of a regular expression I could consider using the new
 // URL api to access and test against components of the URL
-static rewriteURL(inputURL) {
+function pollRewriteURL(inputURL) {
   let outputURL = new URL(inputURL.href);
   const GOOGLE_NEWS = /^https?:\/\/news.google.com\/news\/url\?.*url=(.*)/i;
   const matches = GOOGLE_NEWS.exec(inputURL.href);
@@ -321,6 +352,4 @@ static rewriteURL(inputURL) {
   }
 
   return outputURL;
-}
-
 }

@@ -30,6 +30,19 @@ Background.onBackgroundLoad = function(event) {
   }
 };
 
+
+Background.onAlarm = function(alarm) {
+  console.debug('Alarm wakeup', alarm.name);
+  if(alarm.name === 'archive') {
+    archiveEntries();
+  } else if(alarm.name === 'poll') {
+    const forceResetLock = false;
+    poll(forceResetLock);
+  } else {
+    console.warn('Unknown alarm', alarm.name);
+  }
+};
+
 Background.onInstalled = function(event) {
   console.log('Installing extension ...');
   updateBadgeUnreadCount();
@@ -57,16 +70,5 @@ Background.onBadgeClick = function() {
   }
 };
 
-Background.onAlarm = function(alarm) {
-  console.debug('Alarm wakeup', alarm.name);
-  if(alarm.name === 'archive') {
-    archiveEntries();
-  } else if(alarm.name === 'poll') {
-    const pollingService = new PollingService();
-    pollingService.start();
-  } else {
-    console.warn('Unknown alarm', alarm.name);
-  }
-};
 
 Background.onBackgroundLoad();
