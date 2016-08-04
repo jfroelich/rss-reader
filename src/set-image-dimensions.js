@@ -44,13 +44,17 @@ function setImageDimensionsProcessImage(context, image) {
 
   // Check if the dimensions are available from an inline style attribute
   // This will trigger style computation, which is pretty damn slow, but that
-  // shouldn't matter too much given that this is async.
+  // shouldn't matter too much given that this is async. Note that accessing
+  // the style property only looks at the inline style, as desired, which is
+  // different than getComputedStyle, which looks at the inherited properties
+  // too.
 
-  // TODO: possible bug in the case of "style="width: 100%; height: 100%;"
+  // TODO: just because one is set does not mean the other is set
+  // e.g. style="width: 5px;" but no height property
 
   if(image.hasAttribute('style') && (image.style.width || image.style.height)) {
-    console.debug('Inferring dimensions from inline style', image.outerHTML,
-      image.style.width, image.style.height);
+    console.debug('Inferring dimensions from inline style',
+      image.style.width, typeof image.style.width);
     image.setAttribute('width', image.style.width);
     image.setAttribute('height', image.style.height);
     setImageDimensionsOnImageProcessed(context);
