@@ -183,13 +183,12 @@ function pollOnUpdateFeed(context, entries, resultType, feed) {
 
   const boundOnEntryProcessed = pollOnEntryProcessed.bind(null, context,
     feedContext);
-
   for(let entry of entries) {
     pollProcessEntry(context, feed, entry, boundOnEntryProcessed);
   }
 }
 
-function pollOnEntryProcessed(context, feedContext, optionalAddEntryEvent) {
+function pollOnEntryProcessed(pollContext, feedContext, optionalAddEntryEvent) {
   feedContext.entriesProcessed++;
 
   if(optionalAddEntryEvent && optionalAddEntryEvent.type === 'success') {
@@ -200,18 +199,16 @@ function pollOnEntryProcessed(context, feedContext, optionalAddEntryEvent) {
   if(feedContext.entriesProcessed === feedContext.numEntries) {
     // Only update the badge if we actually added some entries
     if(feedContext.entriesAdded) {
-      updateBadgeUnreadCount(context.connection);
+      updateBadgeUnreadCount(pollContext.connection);
     }
 
-    context.pendingFeedsCount--;
-    pollOnComplete(context);
+    pollContext.pendingFeedsCount--;
+    pollOnComplete(pollContext);
   }
 }
 
 function pollProcessEntry(context, feed, entry, callback) {
-
   let entryURL = Entry.prototype.getURL.call(entry);
-
   console.assert(entryURL, 'invalid url for entry %O', entry);
 
   // Verify the entry has a url
@@ -278,7 +275,6 @@ function pollProcessEntry(context, feed, entry, callback) {
   }
 
   function onFetchEntryDocument(event) {
-
     if(event.type === 'success') {
 
       // Append the redirect url
@@ -300,9 +296,7 @@ function pollProcessEntry(context, feed, entry, callback) {
   }
 }
 
-
 function pollOnComplete(context) {
-
   // Every time a feed completes it calls pollOnComplete. However, multiple
   // feeds are processed concurrently and calls pollOnComplete out of order.
   // Each time a feed completes it deprecates the pendingFeedsCount. This means
