@@ -11,13 +11,29 @@ constructor() {
 }
 
 // Starts the polling process
-start() {
+start(forceResetLock) {
   console.group('Checking for new articles...');
 
+  // Define a shared context for simple passing of shared state to continuations
   const context = {
     'pendingFeedsCount': 0,
     'connection': null
   };
+
+  // If not forcing a reset of the lock, then check whether the poll is locked
+  // and if so then cancel.
+  if(!forceResetLock && 'POLL_IS_ACTIVE' in localStorage) {
+    console.debug('Another poll is already active, canceling');
+    this.onMaybePollCompleted(context);
+  }
+
+  // Lock the poll. The value is not important, just the key's presence.
+  // The lock is stored externally because it is not unique to any instance
+  // of the polling service.
+  // If forceResetLock is true, this may be pointless, but still want to ensure
+  // the lock is present.
+  localStorage.POLL_IS_ACTIVE = 'true';
+
 
   if(PollingService.isOffline()) {
     console.debug('Cannot poll while offline');
@@ -276,6 +292,9 @@ onMaybePollCompleted(context) {
   if(context.connection) {
     context.connection.close();
   }
+
+  // Unlock so that the poll can run again
+  delete localStorage.POLL_IS_ACTIVE;
 
   console.log('Polling completed');
   console.groupEnd();
