@@ -264,7 +264,12 @@ function pollProcessEntry(context, feed, entry, callback) {
       entry.faviconURLString = feed.faviconURLString;
     }
 
-    // Propagate the feed's title to the entry
+    // Propagate the feed's title to the entry. This denormalization avoids
+    // the need to query for the feed's title when displaying the entry. The
+    // catch is that if a feed's title later changes, the change is not
+    // reflected in entry's previously stored.
+    // There is no sanitization concern here, because feed.title was sanitized
+    // earlier.
     if(feed.title) {
       entry.feedTitle = feed.title;
     }
