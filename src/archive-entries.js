@@ -5,7 +5,7 @@
 'use strict';
 
 function archiveEntries(expiresAfterMillis) {
-  console.group('Arching entries...');
+  console.log('Arching entries...');
   console.assert(typeof expiresAfterMillis === 'undefined' ||
     (!isNaN(expiresAfterMillis) && expiresAfterMillis > 0),
     'expiresAfterMillis must be a positive integer if provided');
@@ -98,5 +98,4 @@ function archiveEntriesOnComplete(context) {
   } else {
     console.log('Archive completed with no entries processed');
   }
-  console.groupEnd();
 }
