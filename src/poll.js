@@ -209,7 +209,7 @@ function pollOnEntryProcessed(pollContext, feedContext, optionalAddEntryEvent) {
 
 function pollProcessEntry(context, feed, entry, callback) {
   let entryURL = Entry.prototype.getURL.call(entry);
-  console.assert(entryURL, 'invalid url for entry %O', entry);
+  console.assert(entryURL, 'Entry missing url %s', entry);
 
   // Verify the entry has a url
   // TODO: this should just be an assert because entries without urls should
@@ -232,73 +232,81 @@ function pollProcessEntry(context, feed, entry, callback) {
     entryURL = rewrittenURL;
   }
 
-  // Check whether an entry with the same url exists
+  // Check whether an entry with the same url exists, using the redirect url
+  // if it differs from the original url.
   const transaction = context.connection.transaction('entry');
   const store = transaction.objectStore('entry');
   const index = store.index('urls');
   const request = index.get(entryURL.href);
-  request.onsuccess = onFindEntryWithURL;
-  request.onerror = onFindEntryWithURL;
+  const onFind = pollOnFindEntryWithURL.bind(null, context, feed, entry,
+    callback);
+  request.onsuccess = onFind;
+  request.onerror = onFind;
+}
 
-
-  function onFindEntryWithURL(event) {
-    // If there was a problem searching for the entry by url, then consider the
-    // entry as existing and we are finished processing the entry
-    if(event.type !== 'success') {
-      callback();
-      return;
-    }
-
-    // If we found a matching entry then we are finished
-    if(event.target.result) {
-      callback();
-      return;
-    }
-
-    // The entry doesn't exist, so we plan to store it.
-    // Link the entry to its feed
-    entry.feed = feed.id;
-
-    // Propagate the feed's favicon to the entry
-    if(feed.faviconURLString) {
-      entry.faviconURLString = feed.faviconURLString;
-    }
-
-    // Propagate the feed's title to the entry. This denormalization avoids
-    // the need to query for the feed's title when displaying the entry. The
-    // catch is that if a feed's title later changes, the change is not
-    // reflected in entry's previously stored.
-    // There is no sanitization concern here, because feed.title was sanitized
-    // earlier.
-    if(feed.title) {
-      entry.feedTitle = feed.title;
-    }
-
-    // Try and fetch the entry's webpage
-    const timeoutMillis = 10 * 1000;
-    fetchHTML(entryURL, timeoutMillis, onFetchEntryDocument);
+function pollOnFindEntryWithURL(context, feed, entry, callback, event) {
+  // If there was a problem searching for the entry by url, then consider the
+  // entry as existing and we are finished processing the entry
+  if(event.type !== 'success') {
+    callback();
+    return;
   }
 
-  function onFetchEntryDocument(event) {
-    if(event.type === 'success') {
+  // If we found a matching entry then we are finished
+  if(event.target.result) {
+    callback();
+    return;
+  }
 
-      // Append the redirect url
-      if(event.responseURL.href !== entryURL.href) {
-        entry.urls.push(event.responseURL);
-      }
+  // The entry doesn't exist, so we plan to store it.
+  // Link the entry to its feed
+  entry.feed = feed.id;
 
-      // Overwrite the entry's context
-      const document = event.responseXML;
-      const contentString = document.documentElement.outerHTML.trim();
-      if(contentString) {
-        entry.content = contentString;
-      }
+  // Propagate the feed's favicon to the entry
+  if(feed.faviconURLString) {
+    entry.faviconURLString = feed.faviconURLString;
+  }
+
+  // Propagate the feed's title to the entry. This denormalization avoids
+  // the need to query for the feed's title when displaying the entry. The
+  // catch is that if a feed's title later changes, the change is not
+  // reflected in entry's previously stored.
+  // There is no sanitization concern here, because feed.title was sanitized
+  // earlier.
+  if(feed.title) {
+    entry.feedTitle = feed.title;
+  }
+
+  // Try and fetch the entry's webpage
+  const entryURL = Entry.prototype.getURL.call(entry);
+  const timeoutMillis = 10 * 1000;
+  fetchHTML(entryURL, timeoutMillis,
+    pollOnFetchEntryDocument.bind(null, context, entry, callback));
+}
+
+function pollOnFetchEntryDocument(context, entry, callback, event) {
+
+  const entryURL = Entry.prototype.getURL.call(entry);
+
+  if(event.type === 'success') {
+
+    // Append the redirect url
+    if(event.responseURL.href !== entryURL.href) {
+      // TODO: use addURL
+      entry.urls.push(event.responseURL);
     }
 
-    // Store the entry and callback. This callback will pass back the
-    // callback parameters of addEntry, which is an event defined in addEntry
-    addEntry(context.connection, entry, callback);
+    // Overwrite the entry's context with the fetched content
+    const document = event.responseXML;
+    const content = document.documentElement.outerHTML.trim();
+    if(content) {
+      entry.content = content;
+    }
   }
+
+  // Store the entry and callback. This callback will pass back the
+  // callback parameters of addEntry, which is an event defined in addEntry
+  addEntry(context.connection, entry, callback);
 }
 
 function pollOnComplete(context) {
