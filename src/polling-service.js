@@ -23,19 +23,17 @@ start(forceResetLock) {
   // If not forcing a reset of the lock, then check whether the poll is locked
   // and if so then cancel.
   if(!forceResetLock && 'POLL_IS_ACTIVE' in localStorage) {
-    console.debug('Another poll is already active, canceling');
+    console.debug('Cannot poll while another poll is running');
     this.onMaybePollCompleted(context);
   }
 
   // Lock the poll. The value is not important, just the key's presence.
   // The lock is stored externally because it is not unique to any instance
   // of the polling service.
-  // If forceResetLock is true, this may be pointless, but still want to ensure
-  // the lock is present.
   localStorage.POLL_IS_ACTIVE = 'true';
 
-
-  if(PollingService.isOffline()) {
+  // Cancel the poll if we can check connectivity status and are offline
+  if(navigator && 'onLine' in navigator && !navigator.onLine) {
     console.debug('Cannot poll while offline');
     this.onMaybePollCompleted(context);
     return;
@@ -54,10 +52,6 @@ start(forceResetLock) {
     // Skip the idle check and continue
     openIndexedDB(this.onOpenDatabase.bind(this, context));
   }
-}
-
-static isOffline() {
-  return navigator && 'onLine' in navigator && !navigator.onLine;
 }
 
 static isMeteredConnection() {
