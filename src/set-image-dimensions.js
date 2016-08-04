@@ -7,6 +7,8 @@
 // Set the width and height attributes of image elements. Async. Calls back
 // with the number of images modified.
 function setImageDimensions(document, callback) {
+
+  // Define a shared state variable for simpler communication with continuations
   const context = {
     'numProcessed': 0,
     'numFetched': 0,
@@ -20,7 +22,6 @@ function setImageDimensions(document, callback) {
   // Because we are not modifying the set of images, it makes sense to use
   // getElementsByTagName here instead of querySelectorAll, just because of
   // the minor speed boost. This is admittedly a technicality.
-
   const images = document.getElementsByTagName('img');
   context.numImages = images.length;
   if(context.numImages) {
@@ -34,9 +35,7 @@ function setImageDimensions(document, callback) {
 }
 
 function setImageDimensionsProcessImage(context, image) {
-  // Skip images with at least one dimension. Check against the attributes, not
-  // the properties, because the properties may not have been set for some
-  // reason (e.g. inert document context)
+  // Skip images with at least one dimension
   if(image.getAttribute('width') || image.getAttribute('height')) {
     setImageDimensionsOnImageProcessed(context);
     return;
@@ -47,18 +46,29 @@ function setImageDimensionsProcessImage(context, image) {
   // shouldn't matter too much given that this is async. Note that accessing
   // the style property only looks at the inline style, as desired, which is
   // different than getComputedStyle, which looks at the inherited properties
-  // too.
+  // too. Also note that image.style.width yields a string, such as "100%" or
+  // "50px", and this is the value set for the attribute.
+  if(image.hasAttribute('style')) {
+    let inferredFromStyle = false;
 
-  // TODO: just because one is set does not mean the other is set
-  // e.g. style="width: 5px;" but no height property
+    // An image could have one dimension specified but not the other, or both,
+    // or neither. So check against the dimensions individually. If we were
+    // able to set either one, then consider the image processed.
 
-  if(image.hasAttribute('style') && (image.style.width || image.style.height)) {
-    console.debug('Inferring dimensions from inline style',
-      image.style.width, typeof image.style.width);
-    image.setAttribute('width', image.style.width);
-    image.setAttribute('height', image.style.height);
-    setImageDimensionsOnImageProcessed(context);
-    return;
+    if(image.style.width) {
+      image.setAttribute('width', image.style.width);
+      inferredFromStyle = true;
+    }
+
+    if(image.style.height) {
+      image.setAttribute('height', image.style.height);
+      inferredFromStyle = true;
+    }
+
+    if(inferredFromStyle) {
+      setImageDimensionsOnImageProcessed(context);
+      return;
+    }
   }
 
   // Skip images without a src attribute because we cannot load such images.
@@ -81,8 +91,10 @@ function setImageDimensionsProcessImage(context, image) {
   }
 
   // Skip non-http/s images. This usually means object urls.
-  // Even though object urls are available and the dimensions of
-  // such an image could probably have been set, I am not seeing any properties
+  // Even though object urls are immediately available because the data is
+  // embedded right there in the document, it looks like Chrome doesn't eagerly
+  // deserialize such objects. I suppose I could load, but for now I treat
+  // data: urls as not processable.
   if(srcURL.protocol !== 'http:' && srcURL.protocol !== 'https:') {
     setImageDimensionsOnImageProcessed(context);
     return;
@@ -91,19 +103,16 @@ function setImageDimensionsProcessImage(context, image) {
   // Calling new Image creates the image in the current document context,
   // which is different than the document containing the image. The current
   // context is live, and will eagerly fetch images when the src property is
-  // set.
+  // set. The document containing the image is inert, so setting its src would
+  // not have an effect.
   const proxyImage = new Image();
   proxyImage.src = src;
 
   // Check if the proxy is complete. Inferrably, when setting the src property,
   // Chrome also checked whether the image was cached. In this case, the
-  // dimensions are already available. Furthermore, the load/error events may
-  // never fire. Also, I now no longer even bind the listeners if the proxy
-  // is complete.
+  // dimensions are already available, so there is no need to trigger an image
+  // load, and we can return synchronously.
   if(proxyImage.complete) {
-    // Inform the load/error callback that the processing already occurred.
-    // Even though I no longer even bind the listeners
-    proxyImage.setAttribute('cached', '1');
     image.setAttribute('width', proxyImage.width);
     image.setAttribute('height', proxyImage.height);
     setImageDimensionsOnImageProcessed(context);
@@ -111,9 +120,8 @@ function setImageDimensionsProcessImage(context, image) {
     // Track the number of fetch calls. Only increment if not cached.
     context.numFetched++;
 
-    // Attach the listeners. Even though we attach after setting the src, this
-    // should not matter, because the listeners do not have to be already
-    // bound. It is similar to calling then on a fulfilled promise.
+    // Attaching the listeners after changing the src property is no different
+    // than setting them before, because the events are async.
     const onLoad = setImageDimensionsOnLoad.bind(proxyImage, context, image);
     proxyImage.onload = onLoad;
     proxyImage.onerror = onLoad;
@@ -121,12 +129,6 @@ function setImageDimensionsProcessImage(context, image) {
 }
 
 function setImageDimensionsOnLoad(context, image, event) {
-  // This image was already processed, so ignore the event.
-  if(event.target.hasAttribute('cached')) {
-    console.debug('Suppressing on load, image was cached');
-    return;
-  }
-
   if(event.type === 'load') {
     image.setAttribute('width', event.target.width);
     image.setAttribute('height', event.target.height);
@@ -142,6 +144,9 @@ function setImageDimensionsOnImageProcessed(context) {
   context.numProcessed++;
 
   if(context.numProcessed === context.numImages) {
+    // The didCallback logic here is a remnant of an earlier bug that has since
+    // been fixed. It is left here as a reminder of the danger of setting
+    // numProcessed in the wrong place
     console.assert(!context.didCallback, 'Multiple callbacks');
     context.didCallback = true;
     context.callback(context.numModified);
