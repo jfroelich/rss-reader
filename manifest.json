@@ -26,6 +26,7 @@
       "/src/lookup-favicon.js",
       "/src/parse-feed.js",
       "/src/poll.js",
+      "/src/rewrite-url.js",
       "/src/set-image-dimensions.js",
       "/src/string-utils.js",
       "/src/update-badge-unread-count.js",
