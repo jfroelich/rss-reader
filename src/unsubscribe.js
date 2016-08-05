@@ -63,7 +63,7 @@ function unsubscribeOnDeleteFeed(context, event) {
   unsubscribeOnComplete(context, 'success');
 }
 
-function unsubscribeOnComplete = function(context, eventType) {
+function unsubscribeOnComplete(context, eventType) {
   console.debug('Requested %i entries to be deleted',
     context.deleteRequestCount);
 
