@@ -18,6 +18,7 @@
       "/src/add-feed.js",
       "/src/archive-entries.js",
       "/src/background.js",
+      "/src/dom-filters/set-image-dimensions.js",
       "/src/entry.js",
       "/src/feed.js",
       "/src/fetch-feed.js",
@@ -27,7 +28,6 @@
       "/src/parse-feed.js",
       "/src/poll.js",
       "/src/rewrite-url.js",
-      "/src/set-image-dimensions.js",
       "/src/string-utils.js",
       "/src/update-badge-unread-count.js",
       "/src/update-feed.js"
