@@ -50,6 +50,7 @@ function searchGoogleFeedsOnResponse(context, event) {
   // Assert that response is defined
   if(!event.target.response) {
     console.warn('Response undefined for GET', context.urlString);
+    console.dir(event);
     context.callback({'type': 'UndefinedResponseError',
       'status': event.target.status});
     return;
