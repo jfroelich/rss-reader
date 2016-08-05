@@ -425,3 +425,58 @@ function lookupFaviconNormalizeURL(url) {
 function lookupFaviconCloneURL(url) {
   return new URL(url.href);
 }
+
+function compactFaviconCache() {
+  console.debug('Compacting favicon-cache');
+  // TODO: declare a context to track numDeletes
+
+  openIndexedDB(compactFaviconCacheOnOpenDatabase);
+}
+
+function compactFaviconCacheOnOpenDatabase(connection) {
+  if(!connection) {
+    return;
+  }
+
+  const transaction = connection.transaction('favicon-cache');
+  const store = transaction.objectStore('favicon-cache');
+  const request = store.openCursor();
+  request.onsuccess = compactFaviconCacheOpenCursorOnSuccess;
+  request.onerror = compactFaviconCacheOpenCursorOnError;
+}
+
+function compactFaviconCacheOpenCursorOnSuccess(event) {
+
+  const cursor = event.target.result;
+  if(!cursor) {
+    // no entries or all entries iterated
+    // TODO: close connection
+
+    console.log('Finished compacting database favicon-cache');
+    return;
+  }
+
+  const entry = cursor.value;
+
+  // If expired, delete
+  // TODO: this should be shared with lookupFavicon somehow, not duplicated
+  // Maybe via an external parameter? It doesn't need to be the same value but
+  // it should be called in a similar way, and should also share the logic
+  // of lookupFaviconIsEntryExpired
+  // TODO: and maybe I should be creating one date for the call to compact,
+  // not a new date per cursor callback
+  const expiresAfterMillis = 1000 * 60 * 60 * 24 * 30;
+  const age = new Date() - entry.dateUpdated;
+  if(age >= expiresAfterMillis) {
+    console.debug('Deleting favicon entry', entry);
+    cursor.delete();
+  }
+
+  cursor.continue();
+}
+
+
+function compactFaviconCacheOpenCursorOnError(event) {
+  // TODO: close the database connection, need to get it from the event
+  console.error(event);
+}
