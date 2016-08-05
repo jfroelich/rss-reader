@@ -8,17 +8,8 @@
 // storage. URLs are resolved, image dimensions are set, some invalid or
 // unwanted images are removed.
 function fetchHTML(requestURL, timeoutMillis, callback) {
+  console.assert(requestURL && requestURL.href, 'requestURL is required');
   console.log('GET', requestURL.href);
-
-  if(fetchHTMLIsResistantURL(requestURL)) {
-    callback({'type': 'resistanturl', 'requestURL': requestURL});
-    return;
-  }
-
-  if(fetchHTMLPathEndsWithPDF(requestURL)) {
-    callback({'type': 'pdfurl', 'requestURL': requestURL});
-    return;
-  }
 
   const request = new XMLHttpRequest();
   if(timeoutMillis) {
@@ -39,31 +30,29 @@ function fetchHTML(requestURL, timeoutMillis, callback) {
 
 function fetchHTMLOnFetch(requestURL, callback, event) {
   if(event.type !== 'load') {
-
-    // TODO: look at event.target.statusText
-
-    console.warn(event.type, event.target.status, requestURL.href);
-    callback({'type': event.type, 'requestURL': requestURL});
+    console.warn(event.type, event.target.status, event.target.statusText,
+      requestURL.href);
+    callback({'type': 'FetchError', 'requestURL': requestURL});
     return;
   }
 
   const document = event.target.responseXML;
   if(!document) {
     console.warn('Undefined document', requestURL.href);
-    callback({'type': 'undefineddocument', 'requestURL': requestURL});
+    callback({'type': 'UndefinedDocumentError', 'requestURL': requestURL});
     return;
   }
 
   const outputEvent = {
     'type': 'success',
     'requestURL': requestURL,
-    'responseXML': document,
+    'document': document,
     'responseURL': new URL(event.target.responseURL)
   };
 
   fetchHTMLTransformLazilyLoadedImages(document);
   fetchHTMLFilterSourcelessImages(document);
-  fetchHTMLResolveURLs(document, event.target.responseURL);
+  fetchHTMLResolveURLs(document, outputEvent.responseURL);
   fetchHTMLFilterTrackingImages(document);
   setImageDimensions(document,
     fetchHTMLOnSetImageDimensions.bind(this, outputEvent, callback));
@@ -73,30 +62,12 @@ function fetchHTMLOnSetImageDimensions(event, callback, numImagesModified) {
   callback(event);
 }
 
-function fetchHTMLPathEndsWithPDF(url) {
-  const path = url.pathname;
-  const minLen = '/a.pdf'.length;
-  return path && path.length > minLen && /\.pdf$/i.test(path);
-}
-
 function fetchHTMLFilterSourcelessImages(document) {
   for(let image of document.querySelectorAll('img')) {
     if(!fetchHTMLHasSource(image)) {
       image.remove();
     }
   }
-}
-
-function fetchHTMLIsResistantURL(url) {
-  const blacklist = [
-    'productforums.google.com',
-    'groups.google.com',
-    'www.forbes.com',
-    'forbes.com'
-  ];
-
-  // hostname getter normalizes url part to lowercase
-  return blacklist.includes(url.hostname);
 }
 
 function fetchHTMLTransformLazilyLoadedImages(document) {

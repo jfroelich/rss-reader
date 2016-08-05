@@ -232,8 +232,8 @@ function pollProcessEntry(context, feed, entry, callback) {
 }
 
 function pollOnFindEntryWithURL(context, feed, entry, callback, event) {
-  // If there was a problem searching for the entry by url, then consider the
-  // entry as existing and we are finished processing the entry
+  // If there was an error searching for the entry by url, then consider the
+  // find successful and we are finished processing the entry
   if(event.type !== 'success') {
     callback();
     return;
@@ -259,40 +259,54 @@ function pollOnFindEntryWithURL(context, feed, entry, callback, event) {
   // catch is that if a feed's title later changes, the change is not
   // reflected in entry's previously stored.
   // There is no sanitization concern here, because feed.title was sanitized
-  // earlier.
+  // earlier when updating the feed
   if(feed.title) {
     entry.feedTitle = feed.title;
   }
 
-  // Try and fetch the entry's webpage
+  // The next step is to try and fetch the full html of the entry and use that
+  // as its content in place of the original content.
   const entryURL = Entry.prototype.getURL.call(entry);
+
+  // Check that the url does not belong to a domain that obfuscates its content
+  // with things like advertisement interception or full javascript. While these
+  // documents can be fetched, there is no point to doing so.
+  if(pollIsFetchResistantURL(entryURL)) {
+    addEntry(context.connection, entry, callback);
+    return;
+  }
+
+  // Check if the entry url does not point to a PDF. This limits the amount of
+  // networking in the general case, even though the extension isn't a real
+  // indication of the mime type and may have some false positives. Even if
+  // this misses it, responseXML will be undefined in fetchHTML so false
+  // negatives are not too important.
+  const path = entryURL.pathname;
+  const minLen = '/a.pdf'.length;
+  if(path && path.length > minLen && /\.pdf$/i.test(path)) {
+    addEntry(context.connection, entry, callback);
+    return;
+  }
+
+  // Fetch the entry's webpage
+
   const timeoutMillis = 10 * 1000;
   fetchHTML(entryURL, timeoutMillis,
     pollOnFetchEntryDocument.bind(null, context, entry, callback));
 }
 
 function pollOnFetchEntryDocument(context, entry, callback, event) {
-
-  const entryURL = Entry.prototype.getURL.call(entry);
-
   if(event.type === 'success') {
-
-    // Append the redirect url (addURL is responsible for uniqueness)
     Entry.prototype.addURL.call(entry, event.responseURL);
 
-    // temp, looking into dup entries bug
-    console.debug('Entry has %s urls', entry.urls.length, entry.urls);
-
-    // Overwrite the entry's context with the fetched content
-    const document = event.responseXML;
+    // Replace the entry's content with the full html
+    const document = event.document;
     const content = document.documentElement.outerHTML.trim();
     if(content) {
       entry.content = content;
     }
   }
 
-  // Store the entry and callback. This callback will pass back the
-  // callback parameters of addEntry, which is an event defined in addEntry
   addEntry(context.connection, entry, callback);
 }
 
@@ -325,4 +339,17 @@ function pollOnComplete(context) {
   delete localStorage.POLL_IS_ACTIVE;
 
   console.log('Polling completed');
+}
+
+function pollIsFetchResistantURL(url) {
+  console.assert(url && url.hostname, 'invalid url', url);
+  const blacklist = [
+    'productforums.google.com',
+    'groups.google.com',
+    'www.forbes.com',
+    'forbes.com'
+  ];
+
+  // hostname getter normalizes url part to lowercase
+  return blacklist.includes(url.hostname);
 }
