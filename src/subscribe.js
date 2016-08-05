@@ -58,7 +58,7 @@ function subscribeFindFeed(context) {
   // the same url, but its impact is limited. The latter http request will use
   // the cached page, and the latter call will fail with a ConstraintError when
   // trying to add the feed.
-  const transaction = connection.transaction('feed');
+  const transaction = context.connection.transaction('feed');
   const store = transaction.objectStore('feed');
   const index = store.index('urls');
   const request = index.get(context.feed.getURL().toString());
