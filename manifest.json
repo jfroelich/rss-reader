@@ -19,6 +19,7 @@
       "/src/archive-entries.js",
       "/src/background.js",
       "/src/dom-filters/set-image-dimensions.js",
+      "/src/dom-filters/transform-lazy-images.js",
       "/src/entry.js",
       "/src/feed.js",
       "/src/fetch-feed.js",
