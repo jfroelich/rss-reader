@@ -430,15 +430,20 @@ function compactFaviconCache() {
   console.debug('Compacting favicon-cache');
   // TODO: declare a context to track numDeletes
 
-  openIndexedDB(compactFaviconCacheOnOpenDatabase);
+  // TODO: avoid DRY
+  const request = indexedDB.open('favicon-cache', 1);
+  request.onsuccess = compactFaviconCacheOnOpenDatabase;
+  request.onerror = compactFaviconCacheOnOpenDatabase;
+  request.onblocked = compactFaviconCacheOnOpenDatabase;
 }
 
-function compactFaviconCacheOnOpenDatabase(connection) {
+function compactFaviconCacheOnOpenDatabase(event) {
+  const connection = event.target.result;
   if(!connection) {
     return;
   }
 
-  const transaction = connection.transaction('favicon-cache');
+  const transaction = connection.transaction('favicon-cache', 'readwrite');
   const store = transaction.objectStore('favicon-cache');
   const request = store.openCursor();
   request.onsuccess = compactFaviconCacheOpenCursorOnSuccess;
