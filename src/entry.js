@@ -22,17 +22,49 @@ Entry.prototype.addURL = function(url) {
   }
 
   if(Object.prototype.toString.call(url) === '[object URL]') {
-    // includes does not work well because URL equality test is funky
-    for(let obj of this.urls) {
-      if(obj.href === url.href) {
-        return;
+    // TODO: could be called with URL object but urls are strings
+    if(this.urls.length) {
+      //console.debug('Searching for url object in array of url objects');
+      if(Object.prototype.toString.call(this.urls[0]) === '[object URL]') {
+
+        // cannot use includes because URL object equality is funky
+        for(let urlObject of this.urls) {
+          if(urlObject.href === url.href) {
+            return;
+          }
+        }
+      } else {
+        //console.debug('Searching for url object in array of url strings');
+        for(let urlString of this.urls) {
+          if(urlString === url.href) {
+            return;
+          }
+        }
       }
     }
 
+    //console.debug('Appending unique url object', url.href);
     this.urls.push(url);
   } else {
 
-    if(!this.urls.includes(url)) {
+    if(this.urls.length) {
+      if(Object.prototype.toString.call(this.urls[0]) === '[object URL]') {
+        //console.debug('Searching for url string in array of url objects');
+
+        for(let urlObject of this.urls) {
+          if(urlObject.href === url) {
+            return;
+          }
+        }
+
+      } else {
+        //console.debug('Searching for url string in array of url strings');
+        if(this.urls.includes(url)) {
+          return;
+        }
+      }
+
+      //console.debug('Appending unique url string', url);
       this.urls.push(url);
     }
   }
