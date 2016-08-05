@@ -24,6 +24,15 @@ Background.onBackgroundLoad = function(event) {
     }
   });
 
+  chrome.alarms.get('compact-favicons', function(alarm) {
+    if(!alarm) {
+      console.debug('Creating compact-favicons alarm');
+      // TODO: using a very low period for initial testing, eventually this
+      // should be increased to something like one a week
+      chrome.alarms.create('compact-favicons', {'periodInMinutes': 5});
+    }
+  });
+
   if(!chrome.alarms.onAlarm.hasListener(Background.onAlarm)) {
     console.debug('Binding alarm listener');
     chrome.alarms.onAlarm.addListener(Background.onAlarm);
@@ -38,6 +47,8 @@ Background.onAlarm = function(alarm) {
   } else if(alarm.name === 'poll') {
     const forceResetLock = false;
     poll(forceResetLock);
+  } else if(alarm.name === 'compact-favicons') {
+    compactFaviconCache();
   } else {
     console.warn('Unknown alarm', alarm.name);
   }
