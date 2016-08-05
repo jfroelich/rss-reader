@@ -5,9 +5,10 @@
 'use strict';
 
 function unsubscribe(feedId, callback) {
-  console.assert(feedId && !isNaN(feedId), 'invalid feed id %s', feedId);
+  console.assert(feedId && !isNaN(feedId), 'invalid feed id', feedId);
   console.debug('Unsubscribing from feed with id', feedId);
 
+  // Create a shared state for simple parameter passing to continuations
   const context = {
     'feedId': feedId,
     'deleteRequestCount': 0,
@@ -26,12 +27,20 @@ function unsubscribeOnOpenDatabase(context, connection) {
     const index = store.index('feed');
     const request = index.openCursor(context.feedId);
     request.onsuccess = unsubscribeDeleteNextEntry.bind(request, context);
+    request.onerror = unsubscribeDeleteNextEntry.bind(request, context);
   } else {
     unsubscribeOnComplete(context, 'ConnectionError');
   }
 }
 
 function unsubscribeDeleteNextEntry(context, event) {
+
+  if(event.type === 'error') {
+    console.error(event);
+    unsubscribeOnComplete(context, 'DeleteEntryError');
+    return;
+  }
+
   const cursor = event.target.result;
   if(cursor) {
     const entry = cursor.value;
@@ -56,24 +65,32 @@ function unsubscribeOnRemoveEntries(context) {
   const transaction = context.connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.delete(context.feedId);
-  request.onsuccess = unsubscribeOnDeleteFeed.bind(request, context);
+  request.onsuccess = unsubscribeDeleteFeedOnSuccess.bind(request, context);
+  request.onsuccess = unsubscribeDeleteFeedOnError.bind(request, context);
 }
 
-function unsubscribeOnDeleteFeed(context, event) {
+function unsubscribeDeleteFeedOnSuccess(context, event) {
   unsubscribeOnComplete(context, 'success');
 }
 
-function unsubscribeOnComplete(context, eventType) {
-  console.debug('Requested %i entries to be deleted',
-    context.deleteRequestCount);
+function unsubscribeDeleteFeedOnError(context, event) {
+  console.warn('Failed to delete feed with id %i, but may have deleted entries',
+    context.feedId);
+  unsubscribeOnComplete(context, 'DeleteFeedError');
+}
 
-  // Unsubscribing may have modified the number of unread articles, so
-  // update the badge. Even though the deletes are async, the readonly
-  // transaction in updateBadgeUnreadCount waits for the pending deletes to
-  // complete
+function unsubscribeOnComplete(context, eventType) {
+  // Connection may be undefined such as when calling this as a result of
+  // failure to connect
   if(context.connection) {
 
+    // If connected, check if we actually affected the entry store
     if(context.deleteRequestCount) {
+      console.debug('Requested %i entries to be deleted',
+        context.deleteRequestCount);
+
+      // Even though the deletes are async, the readonly transaction in
+      // updateBadgeUnreadCount waits for the pending deletes to complete
       updateBadgeUnreadCount(context.connection);
     }
 
