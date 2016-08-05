@@ -11,10 +11,12 @@ function subscribe(url, callback) {
   console.debug('Subscribing to', url.href);
 
   // Create a shared context to simplify parameters to continuations
-  const context = {};
-  context.url = url;
-  context.didSubscribe = false;
-  context.callback = callback;
+  const context = {
+    'url': url,
+    'didSubscribe': false,
+    'callback': callback
+  };
+
   openIndexedDB(subscribeOnOpenDatabase.bind(null, context));
 }
 
@@ -26,15 +28,17 @@ function subscribeOnOpenDatabase(context, connection) {
     return;
   }
 
+  context.connection = connection;
+
   if('onLine' in navigator && !navigator.onLine) {
     // Proceed with an offline subscription
-    const feed = {};
-    Feed.prototype.addURL.call(feed, context.url.href);
+    // addFeed will serialize, so there is no need to do it here
+    const feed = new Feed();
+    feed.addURL(context.url.href);
     addFeed(connection, feed, subscribeOnAddFeed.bind(null, context));
   } else {
     // Online subscription. Verify the remote file is a feed that exists
     // and get its info
-    context.connection = connection;
     const timeoutMillis = 10 * 1000;
     const excludeEntries = true;
     fetchFeed(context.url, timeoutMillis, excludeEntries,
@@ -86,7 +90,7 @@ function subscribeOnComplete(context, event) {
     chrome.notifications.create('Lucubrate', notification, function() {});
   }
 
-  // Callback if defined with the event
+  // Callback if one was provided
   if(context.callback) {
     context.callback(event);
   }
