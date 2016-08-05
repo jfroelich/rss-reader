@@ -367,7 +367,8 @@ OptionsPage.startSubscription = function(url) {
   // startSubscription should expect a feed object as a parameter.
 
   const feed = new Feed();
-  feed.addURL(url.href);
+  // Append a URL object, not a string, or subscribe will fail
+  feed.addURL(url);
 
   // Pass a null connection, subscribe will connect on demand.
   const connection = null;
