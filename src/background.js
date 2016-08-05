@@ -10,14 +10,14 @@ Background.onBackgroundLoad = function(event) {
   chrome.runtime.onInstalled.addListener(Background.onInstalled);
   chrome.browserAction.onClicked.addListener(Background.onBadgeClick);
 
-  chrome.alarms.get('archive', function onGetArchiveAlarm(alarm) {
+  chrome.alarms.get('archive', function(alarm) {
     if(!alarm) {
       console.debug('Creating archive alarm');
       chrome.alarms.create('archive', {'periodInMinutes': 60});
     }
   });
 
-  chrome.alarms.get('poll', function onGetPollAlarm(alarm) {
+  chrome.alarms.get('poll', function(alarm) {
     if(!alarm) {
       console.debug('Creating poll alarm');
       chrome.alarms.create('poll', {'periodInMinutes': 20});
@@ -27,9 +27,8 @@ Background.onBackgroundLoad = function(event) {
   chrome.alarms.get('compact-favicons', function(alarm) {
     if(!alarm) {
       console.debug('Creating compact-favicons alarm');
-      // TODO: using a very low period for initial testing, eventually this
-      // should be increased to something like one a week
-      chrome.alarms.create('compact-favicons', {'periodInMinutes': 5});
+      chrome.alarms.create('compact-favicons',
+        {'periodInMinutes': 60 * 24 * 7});
     }
   });
 
