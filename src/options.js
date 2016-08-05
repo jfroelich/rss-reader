@@ -363,7 +363,10 @@ OptionsPage.startSubscription = function(url) {
 
   const feed = new Feed();
   feed.addURL(url.href);
-  subscribe(feed, onSubscribe);
+
+  // Pass a null connection, subscribe will connect on demand.
+  const connection = null;
+  subscribe(feed, connection, onSubscribe);
 
   function onSubscribe(event) {
     if(event.type !== 'success') {

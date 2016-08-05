@@ -4,40 +4,46 @@
 
 'use strict';
 
-// Subscribes to the given feed. Callback is optional. If a callback is
-// provided, calls back with an event object.
-function subscribe(feed, callback) {
+// Subscribes to the given feed.
+// Connection is optional. If not provided, then a connection is created.
+// Callback is optional. If a callback is provided, calls back with an event
+
+function subscribe(feed, connection, callback) {
   console.assert(feed, 'feed is required');
 
-  // Create a shared context to simplify parameters to continuations
+  // Create a shared context to simplify passing parameters to continuations
   const context = {
     'feed': feed,
     'didSubscribe': false,
     'callback': callback,
-    'connection': null
+    'connection': connection
   };
 
-  // Start by verifying the feed is subscrible. At a minimum, the feed must
-  // have a url.
+  // Start by verifying the feed. At a minimum, the feed must have a url.
   if(!feed.hasURL()) {
     subscribeOnComplete(context, {'type': 'MissingURLError'});
     return;
   }
 
   console.debug('Subscribing to', feed.getURL().toString());
-  openIndexedDB(subscribeOnOpenDatabase.bind(null, context));
+
+  if(connection) {
+    subscribeFindFeed(context);
+  } else {
+    openIndexedDB(subscribeOnOpenDatabase.bind(null, context));
+  }
 }
 
-// subscribe helper
 function subscribeOnOpenDatabase(context, connection) {
-  // Exit early with error
-  if(!connection) {
+  if(connection) {
+    context.connection = connection;
+    subscribeFindFeed(connection);
+  } else {
     subscribeOnComplete(context, {'type': 'ConnectionError'});
-    return;
   }
+}
 
-  // Cache the connection in the context for reuse in continuations
-  context.connection = connection;
+function subscribeFindFeed(context) {
 
   // Before involving any network overhead, check if already subscribed. This
   // check will implicitly happen again later when inserting the feed into the
