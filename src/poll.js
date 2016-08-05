@@ -280,6 +280,9 @@ function pollOnFetchEntryDocument(context, entry, callback, event) {
     // Append the redirect url (addURL is responsible for uniqueness)
     Entry.prototype.addURL.call(entry, event.responseURL);
 
+    // temp, looking into dup entries bug
+    console.debug('Entry has %s urls', entry.urls.length, entry.urls);
+
     // Overwrite the entry's context with the fetched content
     const document = event.responseXML;
     const content = document.documentElement.outerHTML.trim();
