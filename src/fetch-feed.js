@@ -6,7 +6,9 @@
 
 function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
   console.assert(requestURL, 'requestURL is required');
-  console.assert('href' in requestURL, 'requestURL must be URL like');
+  console.assert(Object.prototype.toString.call(requestURL) === '[object URL]',
+    'requestURL must be URL', requestURL, typeof requestURL,
+    Object.prototype.toString.call(requestURL));
   console.assert(typeof timeoutMillis === 'undefined' ||
     (!isNaN(timeoutMillis) && timeoutMillis >= 0), 'Invalid timeout specified',
     timeoutMillis);
