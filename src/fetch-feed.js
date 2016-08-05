@@ -56,6 +56,8 @@ function fetchFeedOnResponse(requestURL, excludeEntries, callback, event) {
     return;
   }
 
+  // TODO: parseFeed should yield a Feed object
+
   // Parse the XML file into a feed-like object
   try {
     outputEvent.feed = parseFeed(document, excludeEntries);
@@ -70,16 +72,13 @@ function fetchFeedOnResponse(requestURL, excludeEntries, callback, event) {
     return;
   }
 
-  // Define the urls property. The parser does not define it for us because the
-  // parser is not aware of the feed's url.
-  outputEvent.feed.urls = [requestURL];
+  // Set the url. The parser does not define it for us because the
+  // parser is not aware of the feed's url. addURL will lazily create the
+  // appropriate property.
+  Feed.prototype.addURL.call(outputEvent.feed, requestURL);
 
-  // Check for a redirect, and if found, append it to the urls property.
-  if(outputEvent.responseURL.href !== requestURL.href) {
-    console.debug('Detected redirect', requestURL.href,
-      outputEvent.responseURL.href);
-    outputEvent.feed.urls.push(responseURL);
-  }
+  // Set the redirect (addURL implicitly handles uniqueness)
+  Feed.prototype.addURL.call(outputEvent.feed, outputEvent.responseURL);
 
   // Introduce a date fetched property
   outputEvent.feed.dateFetched = new Date();
