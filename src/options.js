@@ -208,7 +208,12 @@ OptionsPage.appendFeed = function(feed, insertedSort) {
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
   item.setAttribute('feed', feed.id);
-  item.setAttribute('title', StringUtils.replaceHTML(feed.description) || '');
+
+  if(feed.description) {
+    item.setAttribute('title',
+      StringUtils.replaceHTML(feed.description, ''));
+  }
+
   item.onclick = OptionsPage.feedListOnItemClick;
 
   if(feed.faviconURLString) {
