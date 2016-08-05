@@ -8,7 +8,8 @@
 // storage. URLs are resolved, image dimensions are set, some invalid or
 // unwanted images are removed.
 function fetchHTML(requestURL, timeoutMillis, callback) {
-  console.assert(requestURL && requestURL.href, 'requestURL is required');
+  console.assert(requestURL && requestURL.href,
+    'requestURL is required and must be a URL object');
   console.log('GET', requestURL.href);
 
   const request = new XMLHttpRequest();
@@ -53,49 +54,13 @@ function fetchHTMLOnFetch(requestURL, callback, event) {
   transformLazyImages(document);
   filterSourcelessImages(document);
   fetchHTMLResolveURLs(document, outputEvent.responseURL);
-  fetchHTMLFilterTrackingImages(document);
+  filterTrackingImages(document);
   setImageDimensions(document,
     fetchHTMLOnSetImageDimensions.bind(this, outputEvent, callback));
 }
 
 function fetchHTMLOnSetImageDimensions(event, callback, numImagesModified) {
   callback(event);
-}
-
-// TODO: can i just access image.src property to get hostname
-// instead of creating url from attribute value?
-// TODO: restrict to http(s)? (by protocol value)?
-function fetchHTMLFilterTrackingImages(document) {
-  // Use all lowercase to match hostname getter normalization
-  const hosts = new Set([
-    'b.scorecardresearch.com',
-    'googleads.g.doubleclick.net',
-    'me.effectivemeasure.net',
-    'pagead2.googlesyndication.com',
-    'pixel.quantserve.com',
-    'pixel.wp.com',
-    'pubads.g.doubleclick.net',
-    'sb.scorecardresearch.com'
-  ]);
-
-  const minURLLength = 'http://a.com'.length;
-  const images = document.querySelectorAll('img[src]');
-  for(let image of images) {
-    const src = image.getAttribute('src');
-    if(src && src.length > minURLLength) {
-      const url = fetchHTMLToURLTrapped(src);
-      if(url && hosts.has(url.hostname)) {
-        image.remove();
-      }
-    }
-  }
-}
-
-function fetchHTMLToURLTrapped(urlString) {
-  try {
-    return new URL(urlString);
-  } catch(exception) {
-  }
 }
 
 function fetchHTMLResolveURLs(document, baseURL) {
