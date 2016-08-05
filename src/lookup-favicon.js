@@ -6,7 +6,7 @@
 
 function lookupFavicon(url, document, callback) {
   console.assert(url && 'href' in url, 'url must be a defined url object');
-  console.debug('Looking up favicon for page', url.href);
+  // console.debug('Looking up favicon for page', url.href);
 
   // Create a variable for simpler sharing of information across continuations
   const context = {
@@ -373,7 +373,7 @@ function lookupFaviconIsMimeTypeImage(mimeType) {
 }
 
 function lookupFaviconFindEntry(context, url, callback) {
-  console.debug('Searching favicon cache for entry with url', url.href);
+  //console.debug('Searching favicon cache for entry with url', url.href);
   const pageURLString = lookupFaviconNormalizeURL(url).href;
   const transaction = context.connection.transaction('favicon-cache');
   const store = transaction.objectStore('favicon-cache');
