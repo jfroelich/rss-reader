@@ -37,14 +37,15 @@ function subscribe(feed, connection, callback) {
 function subscribeOnOpenDatabase(context, connection) {
   if(connection) {
     context.connection = connection;
-    subscribeFindFeed(connection);
+    subscribeFindFeed(context);
   } else {
     subscribeOnComplete(context, {'type': 'ConnectionError'});
   }
 }
 
 function subscribeFindFeed(context) {
-
+  console.debug('Checking if subscribed to feed with url',
+    context.feed.getURL().toString());
   // Before involving any network overhead, check if already subscribed. This
   // check will implicitly happen again later when inserting the feed into the
   // database, so it is partially redundant, but it can reduce the amount of
@@ -53,18 +54,14 @@ function subscribeFindFeed(context) {
   // it is not recommended to have a long running transaction, and the amount of
   // work that has to occur between this exists check and the add request takes
   // a somewhat indefinite period of time, given network latency.
-
   // This does involve a race condition if calling subscribe concurrently on
   // the same url, but its impact is limited. The latter http request will use
   // the cached page, and the latter call will fail with a ConstraintError when
   // trying to add the feed.
-
   const transaction = connection.transaction('feed');
   const store = transaction.objectStore('feed');
   const index = store.index('urls');
-  console.debug('Checking if subscribed to feed with url',
-    feed.getURL().toString());
-  const request = index.get(feed.getURL().toString());
+  const request = index.get(context.feed.getURL().toString());
   request.onsuccess = subscribeFindFeedOnSuccess.bind(null, context);
   request.onerror = subscribeFindFeedOnError.bind(null, context);
 }
@@ -97,7 +94,6 @@ function subscribeFindFeedOnError(context, event) {
   subscribeOnComplete(context, {'type': 'FindQueryError'});
 }
 
-// subscribe helper
 function subscribeOnFetchFeed(context, event) {
   if(event.type === 'load') {
 
@@ -113,7 +109,6 @@ function subscribeOnFetchFeed(context, event) {
   }
 }
 
-// subscribe helper
 function subscribeOnAddFeed(context, event) {
   if(event.type === 'success') {
     // Flag the subscription as successful
@@ -121,13 +116,11 @@ function subscribeOnAddFeed(context, event) {
     subscribeOnComplete(context, {'type': 'success', 'feed': event.feed});
   } else {
     // The add can fail for various reasons, such as a database error,
-    // or because of a constraint error (e.g. already subscribed to a feed
-    // with a similar url)
+    // or because of a constraint error (feed with same url already exists)
     subscribeOnComplete(context, {'type': event.type});
   }
 }
 
-// subscribe helper
 function subscribeOnComplete(context, event) {
   if(context.connection) {
     context.connection.close();
