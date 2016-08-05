@@ -356,7 +356,14 @@ OptionsPage.startSubscription = function(url) {
   OptionsPage.showSubscriptionMonitor();
   OptionsPage.updateSubscriptionMonitorMessage('Subscribing to' + url.href);
 
-  subscribe(url, onSubscribe);
+  // TODO: if subscribing from a discover search result, I already know some
+  // of the feed's other properties, such as its title and link. I should be
+  // passing those along to startSubscription and setting them here. Or
+  // startSubscription should expect a feed object as a parameter.
+
+  const feed = new Feed();
+  feed.addURL(url.href);
+  subscribe(feed, onSubscribe);
 
   function onSubscribe(event) {
     if(event.type !== 'success') {
@@ -366,7 +373,8 @@ OptionsPage.startSubscription = function(url) {
 
     OptionsPage.appendFeed(event.feed, true);
     OptionsPage.updateFeedCount();
-    OptionsPage.updateSubscriptionMonitorMessage('Subscribed to ' + url.href);
+    OptionsPage.updateSubscriptionMonitorMessage(
+      'Subscribed to ' + Feed.prototype.getURL.call(event.feed).toString());
 
     // Hide the sub monitor then switch back to the main feed list
     OptionsPage.hideSubscriptionMonitor(function() {

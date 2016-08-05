@@ -69,7 +69,7 @@ function subscribeFindFeedOnSuccess(context, event) {
   if(event.target.result) {
     console.debug('Already subscribed to',
       Feed.prototype.getURL.call(event.target.result));
-    subscribeOnComplete(context, {'type': 'AlreadySubscribedError'});
+    subscribeOnComplete(context, {'type': 'ConstraintError'});
     return;
   }
 
