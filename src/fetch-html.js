@@ -51,7 +51,7 @@ function fetchHTMLOnFetch(requestURL, callback, event) {
   };
 
   transformLazyImages(document);
-  fetchHTMLFilterSourcelessImages(document);
+  filterSourcelessImages(document);
   fetchHTMLResolveURLs(document, outputEvent.responseURL);
   fetchHTMLFilterTrackingImages(document);
   setImageDimensions(document,
@@ -60,14 +60,6 @@ function fetchHTMLOnFetch(requestURL, callback, event) {
 
 function fetchHTMLOnSetImageDimensions(event, callback, numImagesModified) {
   callback(event);
-}
-
-function fetchHTMLFilterSourcelessImages(document) {
-  for(let image of document.querySelectorAll('img')) {
-    if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
-      image.remove();
-    }
-  }
 }
 
 // TODO: can i just access image.src property to get hostname
