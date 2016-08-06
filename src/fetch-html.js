@@ -4,9 +4,7 @@
 
 'use strict';
 
-// Asynchronously fetches an html file and prepares it for local render and
-// storage. URLs are resolved, image dimensions are set, some invalid or
-// unwanted images are removed.
+// Asynchronously fetches an html file
 function fetchHTML(requestURL, timeoutMillis, callback) {
   console.assert(requestURL && requestURL.href,
     'requestURL is required and must be a URL object');
@@ -46,21 +44,10 @@ function fetchHTMLOnFetch(requestURL, callback, event) {
     return;
   }
 
-  const outputEvent = {
+  callback({
     'type': 'success',
     'requestURL': requestURL,
     'document': document,
     'responseURL': new URL(event.target.responseURL)
-  };
-
-  transformLazyImages(document);
-  filterSourcelessImages(document);
-  resolveDocumentURLs(document, outputEvent.responseURL);
-  filterTrackingImages(document);
-  setImageDimensions(document,
-    fetchHTMLOnSetImageDimensions.bind(this, outputEvent, callback));
-}
-
-function fetchHTMLOnSetImageDimensions(event, callback, numImagesModified) {
-  callback(event);
+  });
 }

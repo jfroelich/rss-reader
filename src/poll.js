@@ -296,15 +296,33 @@ function pollOnFindEntryWithURL(context, feed, entry, callback, event) {
 }
 
 function pollOnFetchEntryDocument(context, entry, callback, event) {
-  if(event.type === 'success') {
-    Entry.prototype.addURL.call(entry, event.responseURL);
 
-    // Replace the entry's content with the full html
-    const document = event.document;
-    const content = document.documentElement.outerHTML.trim();
-    if(content) {
-      entry.content = content;
-    }
+  if(event.type !== 'success') {
+    addEntry(context.connection, entry, callback);
+    return;
+  }
+
+  // We successfully fetched the full text
+  // Add the redirect url
+  Entry.prototype.addURL.call(entry, event.responseURL);
+
+  // Prep the document
+  const document = event.document;
+  transformLazyImages(document);
+  filterSourcelessImages(document);
+  resolveDocumentURLs(document, event.responseURL);
+  filterTrackingImages(document);
+  setImageDimensions(document,
+    pollOnSetImageDimensions.bind(null, context, entry, document, callback));
+}
+
+function pollOnSetImageDimensions(context, entry, document, callback,
+  numImagesModified) {
+
+  // Replace the entry's content with the full html of the modified document
+  const content = document.documentElement.outerHTML.trim();
+  if(content) {
+    entry.content = content;
   }
 
   addEntry(context.connection, entry, callback);
