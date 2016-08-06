@@ -4,10 +4,12 @@
 
 'use strict';
 
+const poll = {};
+
 // Checks for new feeds. If forceResetLock is true, then polling is allowed to
 // continue even if it is locked (because poll is already running, or because
 // poll finished incorrectly).
-function poll(forceResetLock) {
+poll.start = function(forceResetLock) {
   console.log('Checking for new articles...');
 
   // Define a shared context for simple passing of shared state to continuations
@@ -20,7 +22,7 @@ function poll(forceResetLock) {
   // and if so then cancel.
   if(!forceResetLock && 'POLL_IS_ACTIVE' in localStorage) {
     console.warn('Cannot poll while another poll is running');
-    pollOnComplete(context);
+    poll.onComplete(context);
   }
 
   // Lock the poll. The value is not important, just the key's presence.
@@ -30,7 +32,7 @@ function poll(forceResetLock) {
   // Cancel the poll if offline
   if('onLine' in navigator && !navigator.onLine) {
     console.debug('Cannot poll while offline');
-    pollOnComplete(context);
+    poll.onComplete(context);
     return;
   }
 
@@ -40,7 +42,7 @@ function poll(forceResetLock) {
   if('NO_POLL_METERED' in localStorage && navigator.connection &&
     navigator.connection.metered) {
     console.debug('Cannot poll on metered connection');
-    pollOnComplete(context);
+    poll.onComplete(context);
     return;
   }
 
@@ -48,22 +50,22 @@ function poll(forceResetLock) {
   if('ONLY_POLL_IF_IDLE' in localStorage) {
     const idlePeriodInSeconds = 30;
     chrome.idle.queryState(idlePeriodInSeconds,
-      pollOnQueryIdleState.bind(null, context));
+      poll.onQueryIdleState.bind(null, context));
   } else {
-    openIndexedDB(pollOnOpenDatabase.bind(null, context));
+    openIndexedDB(poll.onOpenDatabase.bind(null, context));
   }
-}
+};
 
-function pollOnQueryIdleState(context, state) {
+poll.onQueryIdleState = function(context, state) {
   if(state === 'locked' || state === 'idle') {
-    openIndexedDB(pollOnOpenDatabase.bind(null, context));
+    openIndexedDB(poll.onOpenDatabase.bind(null, context));
   } else {
     console.debug('Polling canceled because not idle', state);
-    pollOnComplete(context);
+    poll.onComplete(context);
   }
-}
+};
 
-function pollOnOpenDatabase(context, connection) {
+poll.onOpenDatabase = function(context, connection) {
   if(connection) {
     // Cache the connection in the context for later use
     context.connection = connection;
@@ -72,25 +74,25 @@ function pollOnOpenDatabase(context, connection) {
     const transaction = connection.transaction('feed');
     const store = transaction.objectStore('feed');
     const request = store.openCursor();
-    const onOpenFeedCursor = pollOnOpenFeedCursor.bind(null, context);
+    const onOpenFeedCursor = poll.onOpenFeedCursor.bind(null, context);
     request.onsuccess = onOpenFeedCursor;
     request.onerror = onOpenFeedCursor;
   } else {
     console.warn('Polling canceled because database connection error');
-    pollOnComplete(context);
+    poll.onComplete(context);
   }
-}
+};
 
-function pollOnOpenFeedCursor(context, event) {
+poll.onOpenFeedCursor = function(context, event) {
   if(event.type !== 'success') {
-    pollOnComplete(context);
+    poll.onComplete(context);
     return;
   }
 
   const cursor = event.target.result;
   if(!cursor) {
     // Either no feeds exist or we finished iteration
-    pollOnComplete(context);
+    poll.onComplete(context);
     return;
   }
 
@@ -105,17 +107,17 @@ function pollOnOpenFeedCursor(context, event) {
   const excludeEntries = false;
   const timeoutMillis = 10 * 1000;
   fetchFeed(requestURL, timeoutMillis, excludeEntries,
-    pollOnFetchFeed.bind(null, context, feed));
+    poll.onFetchFeed.bind(null, context, feed));
 
   // Advance the to next feed (async)
   cursor.continue();
-}
+};
 
-function pollOnFetchFeed(context, localFeed, event) {
+poll.onFetchFeed = function(context, localFeed, event) {
   // If we failed to fetch the feed then we are done with the feed
   if(event.type !== 'load') {
     context.pendingFeedsCount--;
-    pollOnComplete(context);
+    poll.onComplete(context);
     return;
   }
 
@@ -127,7 +129,7 @@ function pollOnFetchFeed(context, localFeed, event) {
     remoteFeed.dateLastModified.getTime()) {
     // console.debug('Feed unmodified', Feed.prototype.getURL.call(localFeed));
     context.pendingFeedsCount--;
-    pollOnComplete(context);
+    poll.onComplete(context);
     return;
   }
 
@@ -135,14 +137,15 @@ function pollOnFetchFeed(context, localFeed, event) {
   // website first, then fallback to the url of the xml file.
   // lookupFavicon expects a URL object. fetchFeed produces a feed-like object
   // containing URL objects, so we do not need to parse strings into URLs.
-  const onLookup = pollOnLookupFeedFavicon.bind(null, context, localFeed,
+  const onLookup = poll.onLookupFeedFavicon.bind(null, context, localFeed,
     remoteFeed);
   const queryURL = remoteFeed.link ? remoteFeed.link :
     Feed.prototype.getURL.call(remoteFeed);
   lookupFavicon(queryURL, null, onLookup);
-}
+};
 
-function pollOnLookupFeedFavicon(context, localFeed, remoteFeed, faviconURL) {
+poll.onLookupFeedFavicon = function(context, localFeed, remoteFeed,
+  faviconURL) {
   if(faviconURL) {
     remoteFeed.faviconURLString = faviconURL.href;
   }
@@ -155,14 +158,14 @@ function pollOnLookupFeedFavicon(context, localFeed, remoteFeed, faviconURL) {
   const mergedFeed = Feed.prototype.merge.call(localFeed,
     Feed.prototype.serialize.call(remoteFeed));
   updateFeed(context.connection, mergedFeed,
-    pollOnUpdateFeed.bind(null, context, remoteFeed.entries));
-}
+    poll.onUpdateFeed.bind(null, context, remoteFeed.entries));
+};
 
-function pollOnUpdateFeed(context, entries, resultType, feed) {
+poll.onUpdateFeed = function(context, entries, resultType, feed) {
   // If something went wrong updating the feed then we are done
   if(resultType !== 'success') {
     context.pendingFeedsCount--;
-    pollOnComplete(context);
+    poll.onComplete(context);
     return;
   }
 
@@ -170,7 +173,7 @@ function pollOnUpdateFeed(context, entries, resultType, feed) {
   // If there are no entries then we are finished with the feed.
   if(!entries.length) {
     context.pendingFeedsCount--;
-    pollOnComplete(context);
+    poll.onComplete(context);
     return;
   }
 
@@ -181,14 +184,15 @@ function pollOnUpdateFeed(context, entries, resultType, feed) {
     'numEntries': entries.length
   };
 
-  const boundOnEntryProcessed = pollOnEntryProcessed.bind(null, context,
+  const boundOnEntryProcessed = poll.onEntryProcessed.bind(null, context,
     feedContext);
   for(let entry of entries) {
-    pollProcessEntry(context, feed, entry, boundOnEntryProcessed);
+    poll.processEntry(context, feed, entry, boundOnEntryProcessed);
   }
-}
+};
 
-function pollOnEntryProcessed(pollContext, feedContext, optionalAddEntryEvent) {
+poll.onEntryProcessed = function(pollContext, feedContext,
+  optionalAddEntryEvent) {
   feedContext.entriesProcessed++;
 
   if(optionalAddEntryEvent && optionalAddEntryEvent.type === 'success') {
@@ -203,11 +207,11 @@ function pollOnEntryProcessed(pollContext, feedContext, optionalAddEntryEvent) {
     }
 
     pollContext.pendingFeedsCount--;
-    pollOnComplete(pollContext);
+    poll.onComplete(pollContext);
   }
-}
+};
 
-function pollProcessEntry(context, feed, entry, callback) {
+poll.processEntry = function(context, feed, entry, callback) {
   // Verify the entry has a url
   if(!Entry.prototype.hasURL.call(entry)) {
     console.warn('Entry missing url', entry);
@@ -225,13 +229,13 @@ function pollProcessEntry(context, feed, entry, callback) {
   const index = store.index('urls');
   const keyPath = Entry.prototype.getURL.call(entry).href;
   const request = index.get(keyPath);
-  const onFind = pollOnFindEntryWithURL.bind(null, context, feed, entry,
+  const onFind = poll.onFindEntryByURL.bind(null, context, feed, entry,
     callback);
   request.onsuccess = onFind;
   request.onerror = onFind;
-}
+};
 
-function pollOnFindEntryWithURL(context, feed, entry, callback, event) {
+poll.onFindEntryByURL = function(context, feed, entry, callback, event) {
   // If there was an error searching for the entry by url, then consider the
   // find successful and we are finished processing the entry
   if(event.type !== 'success') {
@@ -271,7 +275,7 @@ function pollOnFindEntryWithURL(context, feed, entry, callback, event) {
   // Check that the url does not belong to a domain that obfuscates its content
   // with things like advertisement interception or full javascript. While these
   // documents can be fetched, there is no point to doing so.
-  if(pollIsFetchResistantURL(entryURL)) {
+  if(poll.isFetchResistantURL(entryURL)) {
     addEntry(context.connection, entry, callback);
     return;
   }
@@ -292,10 +296,10 @@ function pollOnFindEntryWithURL(context, feed, entry, callback, event) {
 
   const timeoutMillis = 10 * 1000;
   fetchHTML(entryURL, timeoutMillis,
-    pollOnFetchEntryDocument.bind(null, context, entry, callback));
-}
+    poll.onFetchEntry.bind(null, context, entry, callback));
+};
 
-function pollOnFetchEntryDocument(context, entry, callback, event) {
+poll.onFetchEntry = function(context, entry, callback, event) {
 
   if(event.type !== 'success') {
     addEntry(context.connection, entry, callback);
@@ -313,10 +317,10 @@ function pollOnFetchEntryDocument(context, entry, callback, event) {
   resolveDocumentURLs(document, event.responseURL);
   filterTrackingImages(document);
   setImageDimensions(document,
-    pollOnSetImageDimensions.bind(null, context, entry, document, callback));
-}
+    poll.onSetImageDimensions.bind(null, context, entry, document, callback));
+};
 
-function pollOnSetImageDimensions(context, entry, document, callback,
+poll.onSetImageDimensions = function(context, entry, document, callback,
   numImagesModified) {
 
   // Replace the entry's content with the full html of the modified document
@@ -326,11 +330,11 @@ function pollOnSetImageDimensions(context, entry, document, callback,
   }
 
   addEntry(context.connection, entry, callback);
-}
+};
 
-function pollOnComplete(context) {
-  // Every time a feed completes it calls pollOnComplete. However, multiple
-  // feeds are processed concurrently and calls pollOnComplete out of order.
+poll.onComplete = function(context) {
+  // Every time a feed completes it calls poll.onComplete. However, multiple
+  // feeds are processed concurrently and calls poll.onComplete out of order.
   // Each time a feed completes it deprecates the pendingFeedsCount. This means
   // that if pendingFeedsCount is > 0 here, the poll is ongoing.
   if(context.pendingFeedsCount) {
@@ -357,9 +361,9 @@ function pollOnComplete(context) {
   delete localStorage.POLL_IS_ACTIVE;
 
   console.log('Polling completed');
-}
+};
 
-function pollIsFetchResistantURL(url) {
+poll.isFetchResistantURL = function(url) {
   console.assert(url && url.hostname, 'invalid url', url);
   const blacklist = [
     'productforums.google.com',
@@ -370,4 +374,4 @@ function pollIsFetchResistantURL(url) {
 
   // hostname getter normalizes url part to lowercase
   return blacklist.includes(url.hostname);
-}
+};

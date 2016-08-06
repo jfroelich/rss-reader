@@ -45,7 +45,7 @@ Background.onAlarm = function(alarm) {
     archiveEntries();
   } else if(alarm.name === 'poll') {
     const forceResetLock = false;
-    poll(forceResetLock);
+    poll.start(forceResetLock);
   } else if(alarm.name === 'compact-favicons') {
     compactFaviconCache();
   } else {
