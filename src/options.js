@@ -788,7 +788,7 @@ OptionsPage.importOPMLButtonOnClick = function(event) {
 };
 
 OptionsPage.exportOPMLButtonOnClick = function(event) {
-  exportOPML('Subscriptions', 'subscriptions.xml');
+  exportOPML.start('Subscriptions', 'subscriptions.xml');
 };
 
 OptionsPage.initSubscriptionsSection = function() {

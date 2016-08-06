@@ -4,7 +4,9 @@
 
 'use strict';
 
-function exportOPML(title, fileName) {
+const exportOPML = {};
+
+exportOPML.start = function(title, fileName) {
   const context = {
     'title': title || 'Subscriptions',
     'fileName': fileName || 'subscriptions.xml',
@@ -12,45 +14,45 @@ function exportOPML(title, fileName) {
     'connection': null
   };
 
-  openIndexedDB(exportOPMLOnOpenDatabase.bind(null, context));
-}
+  openIndexedDB(exportOPML.onOpenDatabase.bind(null, context));
+};
 
-function exportOPMLOnOpenDatabase(context, connection) {
+exportOPML.onOpenDatabase = function(context, connection) {
   if(connection) {
     context.connection = connection;
     const transaction = connection.transaction('feed');
     const store = transaction.objectStore('feed');
     const request = store.openCursor();
-    request.onsuccess = exportOPMLOpenCursorOnSuccess.bind(request, context);
-    request.onerror = exportOPMLOpenCursorOnError.bind(request, context);
+    request.onsuccess = exportOPML.openCursorOnSuccess.bind(request, context);
+    request.onerror = exportOPML.openCursorOnError.bind(request, context);
   } else {
     console.error('Error connecting to database during opml export');
   }
-}
+};
 
-function exportOPMLOpenCursorOnError(context, event) {
+exportOPML.openCursorOnError = function(context, event) {
   console.error('Error opening feed cursor during opml export');
   if(context.connection) {
     context.connection.close();
   }
-}
+};
 
-function exportOPMLOpenCursorOnSuccess(context, event) {
+exportOPML.openCursorOnSuccess = function(context, event) {
   const cursor = event.target.result;
   if(cursor) {
     context.feeds.push(cursor.value);
     cursor.continue();
   } else {
     context.connection.close();
-    exportOPMLOnGetAllFeeds(context);
+    exportOPML.onGetFeeds(context);
   }
-}
+};
 
-function exportOPMLOnGetAllFeeds(context) {
-  const doc = exportOPMLCreateDocument(context.title);
+exportOPML.onGetFeeds = function(context) {
+  const doc = exportOPML.createDocument(context.title);
 
   for(let feed of context.feeds) {
-    exportOPMLAppendFeed(doc, feed);
+    exportOPML.appendFeed(doc, feed);
   }
 
   const writer = new XMLSerializer();
@@ -71,9 +73,9 @@ function exportOPMLOnGetAllFeeds(context) {
 
   console.log('Exported %s feeds to opml file %s', context.feeds.length,
     context.fileName);
-}
+};
 
-function exportOPMLCreateDocument(title) {
+exportOPML.createDocument = function(title) {
   const doc = document.implementation.createDocument(null, 'opml', null);
   doc.documentElement.setAttribute('version', '2.0');
 
@@ -105,9 +107,9 @@ function exportOPMLCreateDocument(title) {
   doc.documentElement.appendChild(bodyElement);
 
   return doc;
-}
+};
 
-function exportOPMLAppendFeed(document, feed) {
+exportOPML.appendFeed = function(document, feed) {
   let outline = document.createElement('outline');
   outline.setAttribute('type', feed.type || 'rss');
 
@@ -136,4 +138,4 @@ function exportOPMLAppendFeed(document, feed) {
   } else {
     console.warn('Append failed, no body element found');
   }
-}
+};
