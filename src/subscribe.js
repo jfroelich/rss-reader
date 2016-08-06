@@ -4,11 +4,12 @@
 
 'use strict';
 
+const subscribe = {};
+
 // Subscribes to the given feed.
 // Connection is optional. If not provided, then a connection is created.
 // Callback is optional. If a callback is provided, calls back with an event
-
-function subscribe(feed, connection, callback) {
+subscribe.start = function(feed, connection, callback) {
   console.assert(feed, 'feed is required');
 
   // Create a shared context to simplify passing parameters to continuations
@@ -21,29 +22,29 @@ function subscribe(feed, connection, callback) {
 
   // Start by verifying the feed. At a minimum, the feed must have a url.
   if(!feed.hasURL()) {
-    subscribeOnComplete(context, {'type': 'MissingURLError'});
+    subscribe.onComplete(context, {'type': 'MissingURLError'});
     return;
   }
 
   console.debug('Subscribing to', feed.getURL().toString());
 
   if(connection) {
-    subscribeFindFeed(context);
+    subscribe.findFeed(context);
   } else {
-    openIndexedDB(subscribeOnOpenDatabase.bind(null, context));
+    openIndexedDB(subscribe.onOpenDatabase.bind(null, context));
   }
-}
+};
 
-function subscribeOnOpenDatabase(context, connection) {
+subscribe.onOpenDatabase = function(context, connection) {
   if(connection) {
     context.connection = connection;
-    subscribeFindFeed(context);
+    subscribe.findFeed(context);
   } else {
-    subscribeOnComplete(context, {'type': 'ConnectionError'});
+    subscribe.onComplete(context, {'type': 'ConnectionError'});
   }
-}
+};
 
-function subscribeFindFeed(context) {
+subscribe.findFeed = function(context) {
   console.debug('Checking if subscribed to feed with url',
     context.feed.getURL().toString());
   // Before involving any network overhead, check if already subscribed. This
@@ -62,39 +63,39 @@ function subscribeFindFeed(context) {
   const store = transaction.objectStore('feed');
   const index = store.index('urls');
   const request = index.get(context.feed.getURL().toString());
-  request.onsuccess = subscribeFindFeedOnSuccess.bind(null, context);
-  request.onerror = subscribeFindFeedOnError.bind(null, context);
-}
+  request.onsuccess = subscribe.findFeedOnSuccess.bind(null, context);
+  request.onerror = subscribe.findFeedOnError.bind(null, context);
+};
 
-function subscribeFindFeedOnSuccess(context, event) {
+subscribe.findFeedOnSuccess = function(context, event) {
 
   // Callback with an error if already subscribed
   if(event.target.result) {
     console.debug('Already subscribed to',
       Feed.prototype.getURL.call(event.target.result));
-    subscribeOnComplete(context, {'type': 'ConstraintError'});
+    subscribe.onComplete(context, {'type': 'ConstraintError'});
     return;
   }
 
   // Otherwise, continue with the subscription
   if('onLine' in navigator && !navigator.onLine) {
     // Proceed with an offline subscription
-    addFeed(context.connection, feed, subscribeOnAddFeed.bind(null, context));
+    addFeed(context.connection, feed, subscribe.onAddFeed.bind(null, context));
   } else {
     // Online subscription. Verify the remote file is a feed that exists
     // and get its info
     const timeoutMillis = 10 * 1000;
     const excludeEntries = true;
     fetchFeed(context.feed.getURL(), timeoutMillis, excludeEntries,
-      subscribeOnFetchFeed.bind(null, context));
+      subscribe.onFetchFeed.bind(null, context));
   }
-}
+};
 
-function subscribeFindFeedOnError(context, event) {
-  subscribeOnComplete(context, {'type': 'FindQueryError'});
-}
+subscribe.findFeedOnError = function(context, event) {
+  subscribe.onComplete(context, {'type': 'FindQueryError'});
+};
 
-function subscribeOnFetchFeed(context, event) {
+subscribe.onFetchFeed = function(context, event) {
   if(event.type === 'load') {
 
     // TODO: this needs to merge the remote feed with the local feed's
@@ -102,26 +103,26 @@ function subscribeOnFetchFeed(context, event) {
 
     // Add the feed to the database
     addFeed(context.connection, event.feed,
-      subscribeOnAddFeed.bind(null, context));
+      subscribe.onAddFeed.bind(null, context));
   } else {
     // Go to exit
-    subscribeOnComplete(context, {'type': 'FetchError'});
+    subscribe.onComplete(context, {'type': 'FetchError'});
   }
-}
+};
 
-function subscribeOnAddFeed(context, event) {
+subscribe.onAddFeed = function(context, event) {
   if(event.type === 'success') {
     // Flag the subscription as successful
     context.didSubscribe = true;
-    subscribeOnComplete(context, {'type': 'success', 'feed': event.feed});
+    subscribe.onComplete(context, {'type': 'success', 'feed': event.feed});
   } else {
     // The add can fail for various reasons, such as a database error,
     // or because of a constraint error (feed with same url already exists)
-    subscribeOnComplete(context, {'type': event.type});
+    subscribe.onComplete(context, {'type': event.type});
   }
-}
+};
 
-function subscribeOnComplete(context, event) {
+subscribe.onComplete = function(context, event) {
   if(context.connection) {
     context.connection.close();
   }
@@ -143,4 +144,4 @@ function subscribeOnComplete(context, event) {
   if(context.callback) {
     context.callback(event);
   }
-}
+};
