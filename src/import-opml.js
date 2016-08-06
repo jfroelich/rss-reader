@@ -4,7 +4,9 @@
 
 'use strict';
 
-function importOPML(callback) {
+const importOPML = {};
+
+importOPML.start = function(callback) {
   console.debug('Importing OPML files...');
 
   // Create a context variable for simplified continuation calling
@@ -18,28 +20,28 @@ function importOPML(callback) {
   context.uploader = document.createElement('input');
   context.uploader.setAttribute('type', 'file');
   context.uploader.style.display = 'none';
-  context.uploader.onchange = importOPMLOnUploaderChange.bind(this, context);
+  context.uploader.onchange = importOPML.onUploaderChange.bind(this, context);
   const parentElement = document.body || document.documentElement;
   parentElement.appendChild(context.uploader);
   context.uploader.click();
-}
+};
 
-function importOPMLOnUploaderChange(context, event) {
-  context.uploader.removeEventListener('change', importOPMLOnUploaderChange);
+importOPML.onUploaderChange = function(context, event) {
+  context.uploader.removeEventListener('change', importOPML.onUploaderChange);
   const files = context.uploader.files;
   if(!files || !files.length) {
     console.warn('No files uploaded');
-    importOPMLOnComplete(context);
+    importOPML.onComplete(context);
     return;
   }
 
-  openIndexedDB(importOPMLOnOpenDatabase.bind(null, context));
-}
+  openIndexedDB(importOPML.onOpenDatabase.bind(null, context));
+};
 
-function importOPMLOnOpenDatabase(context, connection) {
+importOPML.onOpenDatabase = function(context, connection) {
   if(!connection) {
     console.error('Failed to connect to database during opml import');
-    importOPMLOnComplete(context);
+    importOPML.onComplete(context);
     return;
   }
 
@@ -50,35 +52,35 @@ function importOPMLOnOpenDatabase(context, connection) {
 
   for(let file of files) {
     console.debug('Importing opml file', file.name);
-    if(!importOPMLIsMimeTypeXML(file.type)) {
+    if(!importOPML.isMimeTypeXML(file.type)) {
       console.warn('Invalid mime type', file.name, file.type);
-      importOPMLOnFileProcessed(context, file);
+      importOPML.onFileProcessed(context, file);
       continue;
     }
 
     if(!file.size) {
       console.warn('The file %s is empty', file.name);
-      importOPMLOnFileProcessed(context, file);
+      importOPML.onFileProcessed(context, file);
       continue;
     }
 
     const reader = new FileReader();
-    reader.onload = importOPMLReadFileOnLoad.bind(reader, context, file);
-    reader.onerror = importOPMLReadFileOnError.bind(reader, context, file);
+    reader.onload = importOPML.readFileOnLoad.bind(reader, context, file);
+    reader.onerror = importOPML.readFileOnError.bind(reader, context, file);
     reader.readAsText(file);
   }
-}
+};
 
-function importOPMLIsMimeTypeXML(typeString) {
+importOPML.isMimeTypeXML = function(typeString) {
   return typeString && typeString.toLowerCase().includes('xml');
-}
+};
 
-function importOPMLReadFileOnError(context, file, event) {
+importOPML.readFileOnError = function(context, file, event) {
   console.warn('Error reading file', file.name, event);
-  importOPMLOnFileProcessed(context, file);
-}
+  importOPML.onFileProcessed(context, file);
+};
 
-function importOPMLReadFileOnLoad(context, file, event) {
+importOPML.readFileOnLoad = function(context, file, event) {
   console.debug('Loaded file', file.name);
 
   // Deserialize into an XMLDocument
@@ -89,14 +91,14 @@ function importOPMLReadFileOnLoad(context, file, event) {
     document = parser.parseFromString(fileText, 'application/xml');
   } catch(xmlParseError) {
     console.warn(xmlParseError);
-    importOPMLOnFileProcessed(context, file);
+    importOPML.onFileProcessed(context, file);
     return;
   }
 
   // Check that document is defined
   if(!document) {
     console.warn('Reading file %s resulted in undefined document', file.name);
-    importOPMLOnFileProcessed(context, file);
+    importOPML.onFileProcessed(context, file);
     return;
   }
 
@@ -105,14 +107,14 @@ function importOPMLReadFileOnLoad(context, file, event) {
   if(parserError) {
     console.warn('XML embedded parsing error', file.name,
       parserError.textContent);
-    importOPMLOnFileProcessed(context, file);
+    importOPML.onFileProcessed(context, file);
     return;
   }
 
   // Check the document element
   if(document.documentElement.localName !== 'opml') {
     console.warn('Not <opml>', file.name, document.documentElement.nodeName);
-    importOPMLOnFileProcessed(context, file);
+    importOPML.onFileProcessed(context, file);
     return;
   }
 
@@ -122,7 +124,7 @@ function importOPMLReadFileOnLoad(context, file, event) {
   if(!bodyElement) {
     console.warn('No body element', file.name,
       document.documentElement.outerHTML);
-    importOPMLOnFileProcessed(context, file);
+    importOPML.onFileProcessed(context, file);
     return;
   }
 
@@ -190,10 +192,10 @@ function importOPMLReadFileOnLoad(context, file, event) {
   }
 
   // Consider the file finished, even if addFeed requests are outstanding
-  importOPMLOnFileProcessed(context, file);
-}
+  importOPML.onFileProcessed(context, file);
+};
 
-function importOPMLOnFileProcessed(context, file) {
+importOPML.onFileProcessed = function(context, file) {
   console.debug('Finished importing file', file.name);
   // Track that the file has been processed. This can only be incremented here
   // because sometimes this is called async
@@ -201,11 +203,11 @@ function importOPMLOnFileProcessed(context, file) {
 
   if(context.filesProcessed === context.files.length) {
     console.debug('Finished importing %i files', context.files.length);
-    importOPMLOnComplete(context);
+    importOPML.onComplete(context);
   }
-}
+};
 
-function importOPMLOnComplete(context) {
+importOPML.onComplete = function(context) {
   console.debug('Completed opml import');
 
   if(context.uploader && context.uploader.parentNode) {
@@ -219,4 +221,4 @@ function importOPMLOnComplete(context) {
   if(context.callback) {
     context.callback();
   }
-}
+};
