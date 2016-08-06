@@ -38,11 +38,10 @@ Background.onBackgroundLoad = function(event) {
   }
 };
 
-
 Background.onAlarm = function(alarm) {
   console.debug('Alarm wakeup', alarm.name);
   if(alarm.name === 'archive') {
-    archiveEntries();
+    archive.start();
   } else if(alarm.name === 'poll') {
     const forceResetLock = false;
     poll.start(forceResetLock);

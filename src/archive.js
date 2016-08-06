@@ -4,7 +4,9 @@
 
 'use strict';
 
-function archiveEntries(expiresAfterMillis) {
+const archive = {};
+
+archive.start = function(expiresAfterMillis) {
   console.log('Arching entries...');
   console.assert(typeof expiresAfterMillis === 'undefined' ||
     (!isNaN(expiresAfterMillis) && expiresAfterMillis > 0),
@@ -18,12 +20,12 @@ function archiveEntries(expiresAfterMillis) {
     'currentDate': new Date()
   };
 
-  openIndexedDB(archiveEntriesOnOpenDatabase.bind(null, context));
-}
+  openIndexedDB(archive.onOpenDatabase.bind(null, context));
+};
 
-function archiveEntriesOnOpenDatabase(context, connection) {
+archive.onOpenDatabase = function(context, connection) {
   if(!connection) {
-    archiveEntriesOnComplete(context);
+    archive.onComplete(context);
     return;
   }
 
@@ -34,38 +36,38 @@ function archiveEntriesOnOpenDatabase(context, connection) {
   const index = store.index('archiveState-readState');
   const keyPath = [Entry.FLAGS.UNARCHIVED, Entry.FLAGS.READ];
   const request = index.openCursor(keyPath);
-  request.onsuccess = archiveEntriesOpenCursorOnSuccess.bind(request, context);
-  request.onerror = archiveEntriesOpenCursorOnError.bind(request, context);
-}
+  request.onsuccess = archive.openCursorOnSuccess.bind(request, context);
+  request.onerror = archive.openCursorOnError.bind(request, context);
+};
 
-function archiveEntriesOpenCursorOnSuccess(context, event) {
+archive.openCursorOnSuccess = function(context, event) {
   const cursor = event.target.result;
   if(!cursor) {
-    archiveEntriesOnComplete(context);
+    archive.onComplete(context);
     return;
   }
 
   context.numEntriesProcessed++;
   const entry = cursor.value;
-  const ageInMillis = archiveEntriesGetEntryAge(context, entry);
+  const ageInMillis = archive.getEntryAge(context, entry);
   if(ageInMillis > context.expiresAfterMillis) {
     console.debug('Archiving entry', Entry.prototype.getURL.call(entry));
     const archivedEntry = Entry.prototype.archive.call(entry);
     // Async
     cursor.update(archivedEntry);
     // Async
-    archiveEntriesSendArchiveRequestedMessage(archivedEntry.id);
+    archive.sendMessage(archivedEntry.id);
     context.numEntriesChanged++;
   }
   cursor.continue();
-}
+};
 
-function archiveEntriesOpenCursorOnError(context, event) {
-  console.warn('Error opening cursor over entries', event);
-  archiveEntriesOnComplete(context);
-}
+archive.openCursorOnError = function(context, event) {
+  console.error(event);
+  archive.onComplete(context);
+};
 
-function archiveEntriesGetEntryAge(context, entry) {
+archive.getEntryAge = function(context, entry) {
   let age = 0;
   if(entry.dateCreated) {
     // Subtract the date to get the difference in milliseconds
@@ -78,16 +80,16 @@ function archiveEntriesGetEntryAge(context, entry) {
     age = context.expiresAfterMillis + 1;
   }
   return age;
-}
+};
 
-function archiveEntriesSendArchiveRequestedMessage(entryId) {
+archive.sendMessage = function(entryId) {
   chrome.runtime.sendMessage({
     'type': 'archiveEntryRequested',
     'entryId': entryId
   });
-}
+};
 
-function archiveEntriesOnComplete(context) {
+archive.onComplete = function(context) {
   if(context.connection) {
     context.connection.close();
   }
@@ -98,4 +100,4 @@ function archiveEntriesOnComplete(context) {
   } else {
     console.log('Archive completed with no entries processed');
   }
-}
+};
