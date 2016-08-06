@@ -2,7 +2,7 @@
 'use strict';
 
 function testLookupFavicon(pageURLString) {
-  lookupFavicon(new URL(pageURLString), null, testLookupFaviconOnLookup);
+  favicon.lookup(new URL(pageURLString), null, testLookupFaviconOnLookup);
 }
 
 function testLookupFaviconOnLookup(iconURL) {

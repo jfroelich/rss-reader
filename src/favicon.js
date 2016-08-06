@@ -4,7 +4,10 @@
 
 'use strict';
 
-function lookupFavicon(url, document, callback) {
+const favicon = {};
+
+
+favicon.lookup = function(url, document, callback) {
   console.assert(url && 'href' in url, 'url must be a defined url object');
   // console.debug('Looking up favicon for page', url.href);
 
@@ -25,13 +28,13 @@ function lookupFavicon(url, document, callback) {
   const name = 'favicon-cache';
   const version = 1;
   const request = indexedDB.open(context.databaseName, context.databaseVersion);
-  request.onupgradeneeded = lookupFaviconOnUpgradeNeeded.bind(request, context);
-  request.onsuccess = lookupFaviconOpenDatabaseOnSuccess.bind(request, context);
-  request.onerror = lookupFaviconOpenDatabaseOnError.bind(request, context);
-  request.onblocked = lookupFaviconOpenDatabaseOnBlocked.bind(request, context);
-}
+  request.onupgradeneeded = favicon.onUpgradeNeeded.bind(request, context);
+  request.onsuccess = favicon.openDatabaseOnSuccess.bind(request, context);
+  request.onerror = favicon.openDatabaseOnError.bind(request, context);
+  request.onblocked = favicon.openDatabaseOnBlocked.bind(request, context);
+};
 
-function lookupFaviconOnUpgradeNeeded(context, event) {
+favicon.onUpgradeNeeded = function(context, event) {
   console.log('Creating or upgrading database', context.databaseName);
   const connection = event.target.result;
   if(!connection.objectStoreNames.contains('favicon-cache')) {
@@ -39,19 +42,19 @@ function lookupFaviconOnUpgradeNeeded(context, event) {
       'keyPath': 'pageURLString'
     });
   }
-}
+};
 
-function lookupFaviconOpenDatabaseOnError(context, event) {
-  console.error('Error connecting to database', context.databaseName, event);
+favicon.openDatabaseOnError = function(context, event) {
+  console.error(event);
   context.callback();
-}
+};
 
-function lookupFaviconOpenDatabaseOnBlocked(context, event) {
+favicon.openDatabaseOnBlocked = function(context, event) {
   console.error('Connection to database blocked', context.databaseName, event);
   context.callback();
-}
+};
 
-function lookupFaviconOpenDatabaseOnSuccess(context, event) {
+favicon.openDatabaseOnSuccess = function(context, event) {
   // console.debug('Connected to database', context.databaseName);
 
   // Cache the connection in the context for use in other functions
@@ -60,10 +63,10 @@ function lookupFaviconOpenDatabaseOnSuccess(context, event) {
   // If the caller provided a pre-fetched document, start by looking for the
   // icon in the document.
   if(context.document) {
-    const iconURL = lookupFaviconSearchDocument(context.document, context.url);
+    const iconURL = favicon.searchDocument(context.document, context.url);
     if(iconURL) {
       // Add or update the associated entry in the cache
-      lookupFaviconAddEntry(context, context.url, iconURL);
+      favicon.addEntry(context, context.url, iconURL);
       context.connection.close();
       context.callback(iconURL);
       return;
@@ -72,15 +75,15 @@ function lookupFaviconOpenDatabaseOnSuccess(context, event) {
 
   // If a document was not provided or we didn't find an icon in the page,
   // then search the cache
-  lookupFaviconFindEntry(context, context.url,
-    lookupFaviconOnLookupRequestURL.bind(null, context));
-}
+  favicon.findEntry(context, context.url,
+    favicon.onLookupRequestURL.bind(null, context));
+};
 
-function lookupFaviconOnLookupRequestURL(context, entry) {
+favicon.onLookupRequestURL = function(context, entry) {
   // Cache the entry in the context for later use. It may be undefined.
   context.entry = entry;
 
-  if(entry && !lookupFaviconIsEntryExpired(context, entry)) {
+  if(entry && !favicon.isExpired(context, entry)) {
     // We found an icon in the cache, callback
     context.connection.close();
     const iconURL = new URL(entry.iconURLString);
@@ -88,16 +91,16 @@ function lookupFaviconOnLookupRequestURL(context, entry) {
   } else {
     // We didn't find a non-expired entry in the cache, so fetch the document
     console.debug('Cache miss', context.url.href);
-    lookupFaviconFetchDocument(context);
+    favicon.fetchHTML(context);
   }
-}
+};
 
-function lookupFaviconIsEntryExpired(context, entry) {
+favicon.isExpired = function(context, entry) {
   const age = new Date() - entry.dateUpdated;
   return age >= context.expiresAfterMillis;
-}
+};
 
-function lookupFaviconFetchDocument(context) {
+favicon.fetchHTML = function(context) {
   if('onLine' in navigator && !navigator.onLine) {
     console.warn('Offline, unable to fetch %s', context.url.href);
     if(context.connection) {
@@ -122,7 +125,7 @@ function lookupFaviconFetchDocument(context) {
 
   request.responseType = 'document';
 
-  const onFetch = lookupFaviconOnFetchDocument.bind(request, context);
+  const onFetch = favicon.onFetchHTML.bind(request, context);
   request.onerror = onFetch;
   request.ontimeout = onFetch;
   request.onabort = onFetch;
@@ -130,20 +133,20 @@ function lookupFaviconFetchDocument(context) {
   request.open('GET', context.url.href, true);
   request.setRequestHeader('Accept', 'text/html');
   request.send();
-}
+};
 
-function lookupFaviconOnFetchDocument(context, event) {
+favicon.onFetchHTML = function(context, event) {
   if(event.type !== 'load') {
     console.debug('Error fetching url', event.type, context.url.href);
 
     // If we failed to fetch and the entry was expired, delete the expired
     // entry.
     if(context.entry) {
-      lookupFaviconDeleteEntry(context, context.url);
+      favicon.deleteEntry(context, context.url);
     }
 
     // Skip to searching the cache for the origin url
-    lookupFaviconLookupOrigin(context, null);
+    favicon.lookupOrigin(context, null);
     return;
   }
 
@@ -154,20 +157,20 @@ function lookupFaviconOnFetchDocument(context, event) {
   const responseURL = new URL(event.target.responseURL);
 
   if(!document) {
-    lookupFaviconLookupRedirectURL(context, responseURL);
+    favicon.lookupRedirect(context, responseURL);
     return;
   }
 
   // We successfully fetched the page. Search the page for favicons. Use the
   // responseURL as the baseURL.
-  const iconURL = lookupFaviconSearchDocument(document, responseURL);
+  const iconURL = favicon.searchDocument(document, responseURL);
   if(iconURL) {
     console.debug('Found icon in page', context.url.href, iconURL.href);
-    lookupFaviconAddEntry(context, context.url, iconURL);
+    favicon.addEntry(context, context.url, iconURL);
 
     // Also add an entry for the redirect url if it differs
     if(responseURL.href !== context.url.href) {
-      lookupFaviconAddEntry(context, responseURL, iconURL);
+      favicon.addEntry(context, responseURL, iconURL);
     }
 
     // TODO: I should also add origin url here if it is distinct?
@@ -175,92 +178,92 @@ function lookupFaviconOnFetchDocument(context, event) {
     context.callback(iconURL);
   } else {
     console.debug('No icons found in page', context.url.href);
-    lookupFaviconLookupRedirectURL(context, responseURL);
+    favicon.lookupRedirect(context, responseURL);
   }
-}
+};
 
-function lookupFaviconLookupRedirectURL(context, redirectURL) {
+favicon.lookupRedirect = function(context, redirectURL) {
   // If the redirect url differs from the request url, then search the
   // cache for the redirect url. Otherwise, fallback to searching the cache
   // for the origin.
   if(redirectURL && redirectURL.href !== context.url.href) {
     console.debug('Looking up redirect', redirectURL.href);
-    lookupFaviconFindEntry(context, redirectURL,
-      lookupFaviconOnLookupRedirectURL.bind(null, context, redirectURL));
+    favicon.findEntry(context, redirectURL,
+      favicon.onLookupRedirect.bind(null, context, redirectURL));
   } else {
-    lookupFaviconLookupOrigin(context, redirectURL);
+    favicon.lookupOrigin(context, redirectURL);
   }
-}
+};
 
-function lookupFaviconOnLookupRedirectURL(context, redirectURL, entry) {
-  if(entry && !lookupFaviconIsEntryExpired(context, entry)) {
+favicon.onLookupRedirect = function(context, redirectURL, entry) {
+  if(entry && !favicon.isExpired(context, entry)) {
     console.debug('Found redirect entry in cache', entry);
     // We only reached here if the lookup for the request url failed,
     // so add the request url to the cache as well, using the redirect url
     // icon. The lookup failed because the request url entry expired or because
     // it didn't exist. If the entry expired it will be replaced here.
     const iconURL = new URL(entry.iconURLString);
-    lookupFaviconAddEntry(context, context.url, iconURL);
+    favicon.addEntry(context, context.url, iconURL);
 
     context.connection.close();
     context.callback(iconURL);
   } else {
     console.debug('Did not find redirect url', redirectURL.href);
-    lookupFaviconLookupOrigin(context, redirectURL);
+    favicon.lookupOrigin(context, redirectURL);
   }
-}
+};
 
-function lookupFaviconLookupOrigin(context, redirectURL) {
+favicon.lookupOrigin = function(context, redirectURL) {
   const originURL = new URL(context.url.origin);
   const originIconURL = new URL(context.url.origin + '/favicon.ico');
-  if(lookupFaviconIsOriginURLDistinct(context.url, redirectURL, originURL)) {
+  if(favicon.isOriginDifferent(context.url, redirectURL, originURL)) {
     console.debug('Searching cache for origin', originURL.href);
-    lookupFaviconFindEntry(context, originURL,
-      lookupFaviconOnLookupOrigin.bind(null, context, redirectURL));
+    favicon.findEntry(context, originURL,
+      favicon.onLookupOrigin.bind(null, context, redirectURL));
   } else {
-    lookupFaviconSendImageHeadRequest(originIconURL,
-      lookupFaviconOnFetchOriginIcon.bind(null, context, redirectURL));
+    favicon.requestImageHead(originIconURL,
+      favicon.onFetchOrigin.bind(null, context, redirectURL));
   }
-}
+};
 
-function lookupFaviconOnLookupOrigin(context, redirectURL, entry) {
+favicon.onLookupOrigin = function(context, redirectURL, entry) {
 
-  if(entry && !lookupFaviconIsEntryExpired(context, entry)) {
+  if(entry && !favicon.isExpired(context, entry)) {
     console.debug('Found origin entry in cache', entry);
 
     // Associate the origin's icon with the request url
     const iconURL = new URL(entry.iconURLString);
     if(context.url.href !== context.url.origin) {
-      lookupFaviconAddEntry(context, context.url, iconURL);
+      favicon.addEntry(context, context.url, iconURL);
     }
 
     // Associate the origin's icon with the redirect url
     if(context.url.origin !== redirectURL.href) {
-      lookupFaviconAddEntry(context, redirectURL, iconURL);
+      favicon.addEntry(context, redirectURL, iconURL);
     }
 
     context.connection.close();
     context.callback(iconURL);
   } else {
     const originIconURL = new URL(context.url.origin + '/favicon.ico');
-    lookupFaviconSendImageHeadRequest(originIconURL,
-      lookupFaviconOnFetchOriginIcon.bind(null, context, redirectURL));
+    favicon.requestImageHead(originIconURL,
+      favicon.onFetchOrigin.bind(null, context, redirectURL));
   }
-}
+};
 
-function lookupFaviconOnFetchOriginIcon(context, redirectURL, iconURLString) {
+favicon.onFetchOrigin = function(context, redirectURL, iconURLString) {
   const originURL = new URL(context.url.origin);
 
   if(iconURLString) {
     // If sending a head request yielded a url, associate the urls with the
     // icon in the cache and callback.
     const iconURL = new URL(iconURLString);
-    lookupFaviconAddEntry(context, context.url, iconURL);
+    favicon.addEntry(context, context.url, iconURL);
     if(redirectURL && redirectURL.href !== context.url.href) {
-      lookupFaviconAddEntry(context, redirectURL, iconURL);
+      favicon.addEntry(context, redirectURL, iconURL);
     }
-    if(lookupFaviconIsOriginURLDistinct(context.url, redirectURL, originURL)) {
-      lookupFaviconAddEntry(context, originURL, iconURL);
+    if(favicon.isOriginDifferent(context.url, redirectURL, originURL)) {
+      favicon.addEntry(context, originURL, iconURL);
     }
 
     context.connection.close();
@@ -269,21 +272,21 @@ function lookupFaviconOnFetchOriginIcon(context, redirectURL, iconURLString) {
     // We failed to find anything. Ensure there is nothing in the cache.
     // TODO: what about falling back to expired request entry or redirect entry?
 
-    lookupFaviconDeleteEntry(context, context.url);
+    favicon.deleteEntry(context, context.url);
     if(redirectURL && redirectURL.href !== context.url.href) {
-      lookupFaviconDeleteEntry(context, redirectURL);
+      favicon.deleteEntry(context, redirectURL);
     }
 
-    if(lookupFaviconIsOriginURLDistinct(context.url, redirectURL, originURL)) {
-      lookupFaviconDeleteEntry(context, originURL);
+    if(favicon.isOriginDifferent(context.url, redirectURL, originURL)) {
+      favicon.deleteEntry(context, originURL);
     }
 
     context.connection.close();
     context.callback();
   }
-}
+};
 
-function lookupFaviconSearchDocument(document, baseURL) {
+favicon.searchDocument = function(document, baseURL) {
   console.debug('Searching for icons in page', baseURL.href);
 
   if(document.documentElement.localName !== 'html') {
@@ -323,17 +326,17 @@ function lookupFaviconSearchDocument(document, baseURL) {
       }
     }
   }
-}
+};
 
-function lookupFaviconIsOriginURLDistinct(pageURL, redirectURL, originURL) {
+favicon.isOriginDifferent = function(pageURL, redirectURL, originURL) {
   return originURL.href !== pageURL.href &&
     (!redirectURL || redirectURL.href !== originURL.href);
-}
+};
 
-function lookupFaviconSendImageHeadRequest(imageURL, callback) {
+favicon.requestImageHead = function(imageURL, callback) {
   console.debug('HEAD', imageURL.href);
   const request = new XMLHttpRequest();
-  const onResponse = lookupFaviconOnImageHeadResponse.bind(request, imageURL,
+  const onResponse = favicon.onRequestImageHead.bind(request, imageURL,
     callback);
   request.timeout = 1000;
   request.ontimeout = onResponse;
@@ -343,22 +346,21 @@ function lookupFaviconSendImageHeadRequest(imageURL, callback) {
   request.open('HEAD', imageURL.href, true);
   request.setRequestHeader('Accept', 'image/*');
   request.send();
-}
+};
 
-function lookupFaviconOnImageHeadResponse(imageURL, callback, event) {
+favicon.onRequestImageHead = function(imageURL, callback, event) {
   const contentLength = event.target.getResponseHeader('Content-Length');
   const contentType = event.target.getResponseHeader('Content-Type');
 
-  if(event.type === 'load' &&
-    lookupFaviconIsContentLengthInRange(contentLength) &&
-    lookupFaviconIsMimeTypeImage(contentType)) {
+  if(event.type === 'load' && favicon.isInRange(contentLength) &&
+    favicon.isMimeTypeImage(contentType)) {
     callback(event.target.responseURL);
   } else {
     callback();
   }
-}
+};
 
-function lookupFaviconIsContentLengthInRange(contentLength) {
+favicon.isInRange = function(contentLength) {
   let numBytes = 0;
   try {
     numBytes = parseInt(contentLength, 10);
@@ -366,15 +368,15 @@ function lookupFaviconIsContentLengthInRange(contentLength) {
     console.warn(parseIntError);
   }
   return numBytes >= 50 && numBytes <= 10000;
-}
+};
 
-function lookupFaviconIsMimeTypeImage(mimeType) {
+favicon.isMimeTypeImage = function(mimeType) {
   return /^\s*image\//i.test(mimeType);
-}
+};
 
-function lookupFaviconFindEntry(context, url, callback) {
+favicon.findEntry = function(context, url, callback) {
   //console.debug('Searching favicon cache for entry with url', url.href);
-  const pageURLString = lookupFaviconNormalizeURL(url).href;
+  const pageURLString = favicon.normalizeURL(url).href;
   const transaction = context.connection.transaction('favicon-cache');
   const store = transaction.objectStore('favicon-cache');
   const request = store.get(pageURLString);
@@ -391,11 +393,11 @@ function lookupFaviconFindEntry(context, url, callback) {
     console.error('Error searching for favicon cache entry', url.href, event);
     callback();
   };
-}
+};
 
-function lookupFaviconAddEntry(context, pageURL, iconURL) {
+favicon.addEntry = function(context, pageURL, iconURL) {
   const entry = {
-    'pageURLString': lookupFaviconNormalizeURL(pageURL).href,
+    'pageURLString': favicon.normalizeURL(pageURL).href,
     'iconURLString': iconURL.href,
     'dateUpdated': new Date()
   };
@@ -404,53 +406,54 @@ function lookupFaviconAddEntry(context, pageURL, iconURL) {
     'readwrite');
   const store = transaction.objectStore('favicon-cache');
   store.put(entry);
-}
+};
 
-function lookupFaviconDeleteEntry(context, pageURL) {
+favicon.deleteEntry = function(context, pageURL) {
   console.debug('Deleting entry', pageURL.href);
   const transaction = context.connection.transaction('favicon-cache',
     'readwrite');
   const store = transaction.objectStore('favicon-cache');
-  store.delete(lookupFaviconNormalizeURL(pageURL).href);
-}
+  store.delete(favicon.normalizeURL(pageURL).href);
+};
 
-function lookupFaviconNormalizeURL(url) {
-  const outputURL = lookupFaviconCloneURL(url);
+favicon.normalizeURL = function(url) {
+  const outputURL = favicon.cloneURL(url);
   if(outputURL.hash) {
     outputURL.hash = '';
   }
   return outputURL;
-}
+};
 
-function lookupFaviconCloneURL(url) {
+favicon.cloneURL = function(url) {
   return new URL(url.href);
-}
+};
 
-function compactFaviconCache() {
+favicon.compact = function() {
   console.debug('Compacting favicon-cache');
   // TODO: declare a context to track numDeletes
 
   // TODO: avoid DRY
   const request = indexedDB.open('favicon-cache', 1);
-  request.onsuccess = compactFaviconCacheOnOpenDatabase;
-  request.onerror = compactFaviconCacheOnOpenDatabase;
-  request.onblocked = compactFaviconCacheOnOpenDatabase;
-}
+  request.onsuccess = favicon.compactOnOpenDatabase;
+  request.onerror = favicon.compactOnOpenDatabase;
+  request.onblocked = favicon.compactOnOpenDatabase;
+};
 
-function compactFaviconCacheOnOpenDatabase(event) {
+favicon.compactOnOpenDatabase = function(event) {
   const connection = event.target.result;
   if(!connection) {
+    console.error(event);
     return;
   }
 
   const transaction = connection.transaction('favicon-cache', 'readwrite');
   const store = transaction.objectStore('favicon-cache');
   const request = store.openCursor();
-  request.onsuccess = compactFaviconCacheOpenCursorOnSuccess;
-  request.onerror = compactFaviconCacheOpenCursorOnError;
-}
+  request.onsuccess = favicon.compactOpenCursorOnSuccess;
+  request.onerror = favicon.compactOpenCursorOnError;
+};
 
-function compactFaviconCacheOpenCursorOnSuccess(event) {
+favicon.compactOpenCursorOnSuccess = function(event) {
 
   const cursor = event.target.result;
   if(!cursor) {
@@ -467,7 +470,7 @@ function compactFaviconCacheOpenCursorOnSuccess(event) {
   // TODO: this should be shared with lookupFavicon somehow, not duplicated
   // Maybe via an external parameter? It doesn't need to be the same value but
   // it should be called in a similar way, and should also share the logic
-  // of lookupFaviconIsEntryExpired
+  // of favicon.isExpired
   // TODO: and maybe I should be creating one date for the call to compact,
   // not a new date per cursor callback
   const expiresAfterMillis = 1000 * 60 * 60 * 24 * 30;
@@ -478,10 +481,9 @@ function compactFaviconCacheOpenCursorOnSuccess(event) {
   }
 
   cursor.continue();
-}
+};
 
-
-function compactFaviconCacheOpenCursorOnError(event) {
+favicon.compactOpenCursorOnError = function(event) {
   // TODO: close the database connection, need to get it from the event
   console.error(event);
-}
+};

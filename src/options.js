@@ -632,7 +632,7 @@ OptionsPage.onSearchGoogleFeeds = function(event) {
       } catch(exception) {
       }
       if(linkURL) {
-        lookupFavicon(linkURL, null, onLookupFavicon.bind(null, result));
+        favicon.lookup(linkURL, null, onLookupFavicon.bind(null, result));
       } else {
         faviconResultsProcessed++;
         if(faviconResultsProcessed === results.length) {

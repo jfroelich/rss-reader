@@ -46,7 +46,7 @@ Background.onAlarm = function(alarm) {
     const forceResetLock = false;
     poll.start(forceResetLock);
   } else if(alarm.name === 'compact-favicons') {
-    compactFaviconCache();
+    favicon.compact();
   } else {
     console.warn('Unknown alarm', alarm.name);
   }
