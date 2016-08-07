@@ -725,7 +725,7 @@ OptionsPage.buttonUnsubscribeOnClick = function(event) {
   const feedId = parseInt(event.target.value, 10);
 
   // Call out to unsubscribe
-  unsubscribe(feedId, onUnsubscribe);
+  unsubscribe.start(feedId, onUnsubscribe);
 
   function onUnsubscribe(event) {
     // If there was some failure to unsubscribe from the feed, react here

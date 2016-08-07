@@ -4,7 +4,9 @@
 
 'use strict';
 
-function unsubscribe(feedId, callback) {
+const unsubscribe = {};
+
+unsubscribe.start = function(feedId, callback) {
   console.assert(feedId && !isNaN(feedId), 'invalid feed id', feedId);
   console.debug('Unsubscribing from feed with id', feedId);
 
@@ -15,10 +17,10 @@ function unsubscribe(feedId, callback) {
     'callback': callback
   };
 
-  openIndexedDB(unsubscribeOnOpenDatabase.bind(null, context));
-}
+  openIndexedDB(unsubscribe.onOpenDatabase.bind(null, context));
+};
 
-function unsubscribeOnOpenDatabase(context, connection) {
+unsubscribe.onOpenDatabase = function(context, connection) {
   if(connection) {
     context.connection = connection;
     // Open a cursor over the entries for the feed
@@ -26,18 +28,18 @@ function unsubscribeOnOpenDatabase(context, connection) {
     const store = transaction.objectStore('entry');
     const index = store.index('feed');
     const request = index.openCursor(context.feedId);
-    request.onsuccess = unsubscribeDeleteNextEntry.bind(request, context);
-    request.onerror = unsubscribeDeleteNextEntry.bind(request, context);
+    request.onsuccess = unsubscribe.onOpenCursor.bind(request, context);
+    request.onerror = unsubscribe.onOpenCursor.bind(request, context);
   } else {
-    unsubscribeOnComplete(context, 'ConnectionError');
+    unsubscribe.onComplete(context, 'ConnectionError');
   }
-}
+};
 
-function unsubscribeDeleteNextEntry(context, event) {
+unsubscribe.onOpenCursor = function(context, event) {
 
   if(event.type === 'error') {
     console.error(event);
-    unsubscribeOnComplete(context, 'DeleteEntryError');
+    unsubscribe.onComplete(context, 'DeleteEntryError');
     return;
   }
 
@@ -56,30 +58,30 @@ function unsubscribeDeleteNextEntry(context, event) {
     });
     cursor.continue();
   } else {
-    unsubscribeOnRemoveEntries(context);
+    unsubscribe.onRemoveEntries(context);
   }
-}
+};
 
-function unsubscribeOnRemoveEntries(context) {
+unsubscribe.onRemoveEntries = function(context) {
   console.debug('Deleting feed with id', context.feedId);
   const transaction = context.connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.delete(context.feedId);
-  request.onsuccess = unsubscribeDeleteFeedOnSuccess.bind(request, context);
-  request.onsuccess = unsubscribeDeleteFeedOnError.bind(request, context);
-}
+  request.onsuccess = unsubscribe.deleteFeedOnSuccess.bind(request, context);
+  request.onsuccess = unsubscribe.deleteFeedOnError.bind(request, context);
+};
 
-function unsubscribeDeleteFeedOnSuccess(context, event) {
-  unsubscribeOnComplete(context, 'success');
-}
+unsubscribe.deleteFeedOnSuccess = function(context, event) {
+  unsubscribe.onComplete(context, 'success');
+};
 
-function unsubscribeDeleteFeedOnError(context, event) {
+unsubscribe.deleteFeedOnError(context, event) {
   console.warn('Failed to delete feed with id %i, but may have deleted entries',
     context.feedId);
-  unsubscribeOnComplete(context, 'DeleteFeedError');
-}
+  unsubscribe.onComplete(context, 'DeleteFeedError');
+};
 
-function unsubscribeOnComplete(context, eventType) {
+unsubscribe.onComplete = function(context, eventType) {
   // Connection may be undefined such as when calling this as a result of
   // failure to connect
   if(context.connection) {
@@ -105,4 +107,4 @@ function unsubscribeOnComplete(context, eventType) {
       'deleteRequestCount': context.deleteRequestCount
     });
   }
-}
+};
