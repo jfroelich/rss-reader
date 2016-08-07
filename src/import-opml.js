@@ -11,25 +11,25 @@ importOPML.start = function(callback) {
 
   // Create a context variable for simplified continuation calling
   const context = {
-    'filesProcessed': 0,
+    'numFilesProcessed': 0,
     'callback': callback,
     'uploader': null
   };
 
   // Prompt for file upload
-  context.uploader = document.createElement('input');
-  context.uploader.setAttribute('type', 'file');
-  context.uploader.style.display = 'none';
-  context.uploader.onchange = importOPML.onUploaderChange.bind(this, context);
+  const uploader = document.createElement('input');
+  context.uploader = uploader;
+  uploader.setAttribute('type', 'file');
+  uploader.style.display = 'none';
+  uploader.onchange = importOPML.onUploaderChange.bind(null, context);
   const parentElement = document.body || document.documentElement;
-  parentElement.appendChild(context.uploader);
-  context.uploader.click();
+  parentElement.appendChild(uploader);
+  uploader.click();
 };
 
 importOPML.onUploaderChange = function(context, event) {
   context.uploader.removeEventListener('change', importOPML.onUploaderChange);
-  const files = context.uploader.files;
-  if(!files || !files.length) {
+  if(!context.uploader.files || !context.uploader.files.length) {
     console.warn('No files uploaded');
     importOPML.onComplete(context);
     return;
@@ -39,27 +39,23 @@ importOPML.onUploaderChange = function(context, event) {
 };
 
 importOPML.onOpenDatabase = function(context, connection) {
-  if(!connection) {
-    console.error('Failed to connect to database during opml import');
+  if(connection) {
+    context.connection = connection;
+  } else {
     importOPML.onComplete(context);
     return;
   }
 
-  console.debug('importOPML connected to database');
-  context.connection = connection;
-
-  const files = context.uploader.files;
-
-  for(let file of files) {
+  for(let file of context.uploader.files) {
     console.debug('Importing opml file', file.name);
-    if(!importOPML.isMimeTypeXML(file.type)) {
+    if(file.type && !file.type.toLowerCase().includes('xml')) {
       console.warn('Invalid mime type', file.name, file.type);
       importOPML.onFileProcessed(context, file);
       continue;
     }
 
     if(!file.size) {
-      console.warn('The file %s is empty', file.name);
+      console.warn('Empty file %s', file.name);
       importOPML.onFileProcessed(context, file);
       continue;
     }
@@ -71,12 +67,8 @@ importOPML.onOpenDatabase = function(context, connection) {
   }
 };
 
-importOPML.isMimeTypeXML = function(typeString) {
-  return typeString && typeString.toLowerCase().includes('xml');
-};
-
 importOPML.readFileOnError = function(context, file, event) {
-  console.warn('Error reading file', file.name, event);
+  console.warn(file.name, event);
   importOPML.onFileProcessed(context, file);
 };
 
@@ -95,9 +87,9 @@ importOPML.readFileOnLoad = function(context, file, event) {
     return;
   }
 
-  // Check that document is defined
+  // Ensure document is defined
   if(!document) {
-    console.warn('Reading file %s resulted in undefined document', file.name);
+    console.warn('Undefined document', file.name);
     importOPML.onFileProcessed(context, file);
     return;
   }
@@ -105,41 +97,37 @@ importOPML.readFileOnLoad = function(context, file, event) {
   // Check for an embedded error element
   const parserError = document.querySelector('parsererror');
   if(parserError) {
-    console.warn('XML embedded parsing error', file.name,
-      parserError.textContent);
+    console.warn(file.name, parserError.textContent);
     importOPML.onFileProcessed(context, file);
     return;
   }
 
   // Check the document element
   if(document.documentElement.localName !== 'opml') {
-    console.warn('Not <opml>', file.name, document.documentElement.nodeName);
+    console.warn('Not opml', file.name, document.documentElement.nodeName);
     importOPML.onFileProcessed(context, file);
     return;
   }
 
   // Check that the opml document has a body element
   // Due to quirks with xml, cannot use document.body
-  const bodyElement = document.querySelector('body');
-  if(!bodyElement) {
-    console.warn('No body element', file.name,
-      document.documentElement.outerHTML);
+  const body = document.querySelector('body');
+  if(!body) {
+    console.warn('No body', file.name, document.documentElement.outerHTML);
     importOPML.onFileProcessed(context, file);
     return;
   }
 
   // Add each of the outlines representing feeds in the body
   const seenURLStringSet = new Set();
-  for(let element = bodyElement.firstElementChild; element;
+  for(let element = body.firstElementChild; element;
     element = element.nextElementSibling) {
-
     if(element.localName !== 'outline') {
       continue;
     }
 
-    // Skip outlines with the wrong type
-    // TODO: should type be optional?
-    let type = element.getAttribute('type');
+    // Skip outlines with an unsupported type
+    const type = element.getAttribute('type');
     if(!type || type.length < 3 || !/rss|rdf|feed/i.test(type)) {
       console.warn('Invalid outline type', element.outerHTML);
       continue;
@@ -157,13 +145,13 @@ importOPML.readFileOnLoad = function(context, file, event) {
     try {
       url = new URL(urlString);
     } catch(urlParseException) {
-      console.warn('Outline url is invalid', element.outerHTML);
+      console.warn('Invalid url', element.outerHTML);
       continue;
     }
 
     // Skip duplicate outlines (compared by normalized url)
     if(seenURLStringSet.has(url.href)) {
-      console.debug('Duplicate outline', element.outerHTML);
+      console.debug('Duplicate', element.outerHTML);
       continue;
     }
     seenURLStringSet.add(url.href);
@@ -191,7 +179,7 @@ importOPML.readFileOnLoad = function(context, file, event) {
     addFeed(context.connection, feed, null);
   }
 
-  // Consider the file finished, even if addFeed requests are outstanding
+  // Consider the file finished. addFeed requests are pending
   importOPML.onFileProcessed(context, file);
 };
 
@@ -199,25 +187,28 @@ importOPML.onFileProcessed = function(context, file) {
   console.debug('Finished importing file', file.name);
   // Track that the file has been processed. This can only be incremented here
   // because sometimes this is called async
-  context.filesProcessed++;
+  context.numFilesProcessed++;
 
-  if(context.filesProcessed === context.files.length) {
-    console.debug('Finished importing %i files', context.files.length);
+  if(context.numFilesProcessed === context.files.length) {
+    // Call onComplete. addFeed requests are pending
     importOPML.onComplete(context);
   }
 };
 
 importOPML.onComplete = function(context) {
-  console.debug('Completed opml import');
+  console.debug('Processed %i files', context.files.length);
 
-  if(context.uploader && context.uploader.parentNode) {
+  if(context.uploader) {
     context.uploader.remove();
   }
 
+  // Request the connection be closed once pending addFeed requests complete
   if(context.connection) {
     context.connection.close();
   }
 
+  // Callback, even if addFeed requests are pending, and the connection is
+  // still open.
   if(context.callback) {
     context.callback();
   }
