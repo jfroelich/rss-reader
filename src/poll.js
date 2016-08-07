@@ -340,16 +340,7 @@ poll.onComplete = function(context) {
     return;
   }
 
-  // Show a notification
-  if('SHOW_NOTIFICATIONS' in localStorage) {
-    const notification = {
-      'type': 'basic',
-      'title': chrome.runtime.getManifest().name,
-      'iconUrl': '/images/rss_icon_trans.gif',
-      'message': 'Updated articles'
-    };
-    chrome.notifications.create('Lucubrate', notification, function() {});
-  }
+  notify('Updated articles', 'Completed checking for new articles');
 
   // Close out the connection
   if(context.connection) {
