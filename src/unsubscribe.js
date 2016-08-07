@@ -75,7 +75,7 @@ unsubscribe.deleteFeedOnSuccess = function(context, event) {
   unsubscribe.onComplete(context, 'success');
 };
 
-unsubscribe.deleteFeedOnError(context, event) {
+unsubscribe.deleteFeedOnError = function(context, event) {
   console.warn('Failed to delete feed with id %i, but may have deleted entries',
     context.feedId);
   unsubscribe.onComplete(context, 'DeleteFeedError');
