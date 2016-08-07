@@ -370,9 +370,11 @@ OptionsPage.startSubscription = function(url) {
   // Append a URL object, not a string, or subscribe will fail
   feed.addURL(url);
 
-  // Pass a null connection, subscribe will connect on demand.
-  const connection = null;
-  subscribe.start(feed, connection, onSubscribe);
+  subscribe.start(feed, {
+    'connection': null,
+    'suppressNotifications': false,
+    'callback': onSubscribe
+  });
 
   function onSubscribe(event) {
     if(event.type !== 'success') {

@@ -7,18 +7,18 @@
 const subscribe = {};
 
 // Subscribes to the given feed.
-// Connection is optional. If not provided, then a connection is created.
-// Callback is optional. If a callback is provided, calls back with an event
-// Feed should be a feed object
-subscribe.start = function(feed, connection, callback) {
+// @param feed {Feed} the feed to subscribe to, required
+// @param options {Object} optional, optional callback, connection
+subscribe.start = function(feed, options) {
   console.assert(feed, 'feed is required');
 
   // Create a shared context to simplify passing parameters to continuations
   const context = {
     'feed': feed,
     'didSubscribe': false,
-    'callback': callback,
-    'connection': connection
+    'callback': options ? options.callback : null,
+    'connection': options ? options.connection : null,
+    'suppressNotifications': options ? options.suppressNotifications : false
   };
 
   // Start by verifying the feed. At a minimum, the feed must have a url.
@@ -29,7 +29,7 @@ subscribe.start = function(feed, connection, callback) {
 
   console.debug('Subscribing to', feed.getURL().toString());
 
-  if(connection) {
+  if(context.connection) {
     subscribe.findFeed.call(context);
   } else {
     openIndexedDB(subscribe.onOpenDatabase.bind(context));
@@ -128,20 +128,11 @@ subscribe.onComplete = function(event) {
     this.connection.close();
   }
 
-  // Show a notification
-  if(this.didSubscribe && 'SHOW_NOTIFICATIONS' in localStorage) {
-    const message = 'Subscribed to ' + (event.feed.title ||
-      Feed.prototype.getURL.call(event.feed).toString());
-    const notification = {
-      'type': 'basic',
-      'title': chrome.runtime.getManifest().name,
-      'iconUrl': '/images/rss_icon_trans.gif',
-      'message': message
-    };
-    chrome.notifications.create('Lucubrate', notification, function() {});
+  if(!this.suppressNotifications && this.didSubscribe) {
+    notify('Subscription complete', 'Subscribed to ' + (event.feed.title ||
+      Feed.prototype.getURL.call(event.feed).toString()));
   }
 
-  // Callback if one was provided
   if(this.callback) {
     this.callback(event);
   }
