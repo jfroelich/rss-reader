@@ -4,19 +4,21 @@
 
 'use strict';
 
-function markEntryAsRead(entryId, callback) {
+const markAsRead = {};
+
+markAsRead.start = function(entryId, callback) {
   console.assert(typeof entryId === 'number' && isFinite(entryId) &&
     entryId > 0, 'invalid entryId %s', entryId);
   console.debug('Marking entry %i as read', entryId);
 
   // Define a context to simplify parameter passing
   const context = {'entryId': entryId, 'callback': callback};
-  openIndexedDB(markEntryAsReadOnOpenDatabase.bind(this, context));
-}
+  openIndexedDB(markAsRead.onOpenDatabase.bind(this, context));
+};
 
-function markEntryAsReadOnOpenDatabase(context, connection) {
+markAsRead.onOpenDatabase = function(context, connection) {
   if(!connection) {
-    markEntryAsReadOnComplete(context, 'ConnectionError');
+    markAsRead.onComplete(context, 'ConnectionError');
     return;
   }
 
@@ -27,15 +29,15 @@ function markEntryAsReadOnOpenDatabase(context, connection) {
   const transaction = connection.transaction('entry', 'readwrite');
   const store = transaction.objectStore('entry');
   const request = store.openCursor(context.entryId);
-  request.onsuccess = markEntryAsReadOpenCursorOnSuccess.bind(null, context);
-  request.onerror = markEntryAsReadOpenCursorOnError.bind(null, context);
-}
+  request.onsuccess = markAsRead.openCursorOnSuccess.bind(null, context);
+  request.onerror = markAsRead.openCursorOnError.bind(null, context);
+};
 
-function markEntryAsReadOpenCursorOnSuccess(context, event) {
+markAsRead.openCursorOnSuccess = function(context, event) {
   const cursor = event.target.result;
   if(!cursor) {
     console.error('No entry found for id %i to mark as read', context.entryId);
-    markEntryAsReadOnComplete(context, 'NotFoundError');
+    markAsRead.onComplete(context, 'NotFoundError');
     return;
   }
 
@@ -43,7 +45,7 @@ function markEntryAsReadOpenCursorOnSuccess(context, event) {
   if(entry.readState === Entry.FLAGS.READ) {
     console.error('Attempted to remark read entry with id %i as read',
       context.entryId);
-    markEntryAsReadOnComplete(context, 'AlreadyReadError');
+    markAsRead.onComplete(context, 'AlreadyReadError');
     return;
   }
 
@@ -61,15 +63,15 @@ function markEntryAsReadOpenCursorOnSuccess(context, event) {
   // wait for cursor.update to complete.
   badge.update(context.connection);
 
-  markEntryAsReadOnComplete(context, 'Success');
-}
+  markAsRead.onComplete(context, 'Success');
+};
 
-function markEntryAsReadOpenCursorOnError(context, event) {
+markAsRead.openCursorOnError = function(context, event) {
   console.warn('Error opening cursor when marking entry as read', event);
-  markEntryAsReadOnComplete(context, 'CursorError');
-}
+  markAsRead.onComplete(context, 'CursorError');
+};
 
-function markEntryAsReadOnComplete(context, eventType) {
+markAsRead.onComplete = function(context, eventType) {
   if(context.connection) {
     context.connection.close();
   }
@@ -80,4 +82,4 @@ function markEntryAsReadOnComplete(context, eventType) {
       'entryId': context.entryId
     });
   }
-}
+};

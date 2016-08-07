@@ -34,7 +34,7 @@ Slideshow.removeSlide = function(slideElement) {
 Slideshow.markAsRead = function(slide) {
   if(!slide.hasAttribute('read')) {
     slide.setAttribute('read', '');
-    markEntryAsRead(parseInt(slide.getAttribute('entry'), 10));
+    markAsRead.start(parseInt(slide.getAttribute('entry'), 10));
   }
 };
 
