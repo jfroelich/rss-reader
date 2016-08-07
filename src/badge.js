@@ -4,9 +4,13 @@
 
 'use strict';
 
+const badge = {};
+
 // Sets the text of the extension's icon in the extension toolbar to the number
 // of unread entries in the database.
-function updateBadgeUnreadCount(connection) {
+badge.update = function(connection) {
+
+  // Create a custom context for simpler passing of parameters to continuations
   const context = {
     'shouldClose': !connection,
     'connection': connection,
@@ -14,45 +18,45 @@ function updateBadgeUnreadCount(connection) {
   };
 
   if(connection) {
-    updateBadgeUnreadCountCountUnread.call(context);
+    badge.countUnread.call(context);
   } else {
-    openIndexedDB(updateBadgeUnreadCountOnOpenDatabase.bind(context));
+    openIndexedDB(badge.onOpenDatabase.bind(context));
   }
-}
+};
 
-function updateBadgeUnreadCountOnOpenDatabase(connection) {
+badge.onOpenDatabase = function(connection) {
   if(connection) {
     this.connection = connection;
-    updateBadgeUnreadCountCountUnread.call(this);
+    badge.countUnread.call(this);
   } else {
-    updateBadgeUnreadCountOnComplete.call(this);
+    badge.onComplete.call(this);
   }
-}
+};
 
-function updateBadgeUnreadCountCountUnread() {
+badge.countUnread = function() {
   const transaction = this.connection.transaction('entry');
   const store = transaction.objectStore('entry');
   const index = store.index('readState');
   const request = index.count(Entry.FLAGS.UNREAD);
-  request.onsuccess = updateBadgeUnreadCountOnSuccess.bind(this);
-  request.onerror = updateBadgeUnreadCountOnError.bind(this);
-}
+  request.onsuccess = badge.countOnSuccess.bind(this);
+  request.onerror = badge.countOnError.bind(this);
+};
 
-function updateBadgeUnreadCountOnSuccess(event) {
+badge.countOnSuccess = function(event) {
   // console.debug('count result', event.target.result);
   this.text = '' + event.target.result;
-  updateBadgeUnreadCountOnComplete.call(this);
-}
+  badge.onComplete.call(this);
+};
 
-function updateBadgeUnreadCountOnError(event) {
+badge.countOnError = function(event) {
   console.error(event);
-  updateBadgeUnreadCountOnComplete.call(this);
-}
+  badge.onComplete.call(this);
+};
 
-function updateBadgeUnreadCountOnComplete() {
+badge.onComplete = function() {
   // console.debug('Updating badge unread count to', this.text);
   chrome.browserAction.setBadgeText({'text': this.text});
   if(this.shouldClose && this.connection) {
     this.connection.close();
   }
-}
+};

@@ -54,7 +54,7 @@ Background.onAlarm = function(alarm) {
 
 Background.onInstalled = function(event) {
   console.log('Installing extension ...');
-  updateBadgeUnreadCount();
+  badge.update();
 };
 
 Background.onBadgeClick = function() {

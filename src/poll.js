@@ -202,7 +202,7 @@ poll.onEntryProcessed = function(pollContext, feedContext,
   if(feedContext.entriesProcessed === feedContext.numEntries) {
     // Only update the badge if we actually added some entries
     if(feedContext.entriesAdded) {
-      updateBadgeUnreadCount(pollContext.connection);
+      badge.update(pollContext.connection);
     }
 
     pollContext.pendingFeedsCount--;

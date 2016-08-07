@@ -59,7 +59,7 @@ function markEntryAsReadOpenCursorOnSuccess(context, event) {
   // Async. This call is implicitly blocked by the readwrite transaction used
   // here, so the count of unread will be affected, even though we do not
   // wait for cursor.update to complete.
-  updateBadgeUnreadCount(context.connection);
+  badge.update(context.connection);
 
   markEntryAsReadOnComplete(context, 'Success');
 }

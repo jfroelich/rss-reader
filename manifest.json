@@ -18,6 +18,7 @@
       "/src/add-feed.js",
       "/src/archive.js",
       "/src/background.js",
+      "/src/badge.js",
       "/src/dom-filters/resolve-document-urls.js",
       "/src/dom-filters/set-image-dimensions.js",
       "/src/dom-filters/filter-sourceless-images.js",
@@ -33,7 +34,6 @@
       "/src/poll.js",
       "/src/rewrite-url.js",
       "/src/string-utils.js",
-      "/src/update-badge-unread-count.js",
       "/src/update-feed.js"
     ]
   },

@@ -90,8 +90,8 @@ function unsubscribeOnComplete(context, eventType) {
         context.deleteRequestCount);
 
       // Even though the deletes are async, the readonly transaction in
-      // updateBadgeUnreadCount waits for the pending deletes to complete
-      updateBadgeUnreadCount(context.connection);
+      // badge.update waits for the pending deletes to complete
+      badge.update(context.connection);
     }
 
     context.connection.close();
