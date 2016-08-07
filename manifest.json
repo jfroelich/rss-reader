@@ -30,6 +30,7 @@
       "/src/fetch-feed.js",
       "/src/fetch-html.js",
       "/src/indexeddb.js",
+      "/src/notify.js",
       "/src/parse-feed.js",
       "/src/poll.js",
       "/src/rewrite-url.js",
