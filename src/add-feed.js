@@ -4,21 +4,25 @@
 
 'use strict';
 
+// @param connection {IDBDatabase} an open database connection
+// @param feed {Feed} the feed to add
+// @param callback {Function} optional callback passed the stored object and
+// its post stored auto-incremented id
 function addFeed(connection, feed, callback) {
-  // We can't assume the Feed has been serialized before this call. Fortunately,
-  // serialize is idempotent, so this is relatively harmless. This also serves
-  // the purpose of cloning so that we can freely manipulate the clone without
-  // side effects.
-  let storableFeed = Feed.prototype.serialize.call(feed);
 
   // Ensure that the id property is not present, or this will cause an error
-  // when using store.add
-  if('id' in storableFeed) {
-    console.debug('Stripping id with value "%s" before add feed',
-      storableFeed.id);
-    delete storableFeed.id;
+  // when calling store.add
+  // TODO: maybe this should be an asserted pre-condition?
+  if(feed.id) {
+    if(callback) {
+      callback({'type': 'IdentifiedFeedError'});
+    }
+    return;
   }
 
+  // TODO: this would be easier if I sanitized first, and sanitize returned
+  // a new Feed object, and then I serialized the sanitized object
+  let storableFeed = feed.serialize();
   storableFeed = Feed.prototype.sanitize.call(storableFeed);
   storableFeed.dateCreated = new Date();
 
@@ -42,7 +46,7 @@ function addFeed(connection, feed, callback) {
   }
 
   function onAddError(event) {
-    console.error('Error adding feed', event);
+    console.error(event);
     callback({'type': event.target.error.name});
   }
 }
