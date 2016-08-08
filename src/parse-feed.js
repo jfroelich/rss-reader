@@ -4,7 +4,9 @@
 
 'use strict';
 
-function parseFeed(document, excludeEntries) {
+const FeedParser = {};
+
+FeedParser.parseDocument = function(document, excludeEntries) {
   console.assert(document, 'document is required');
 
   const docElement = document.documentElement;
@@ -12,38 +14,38 @@ function parseFeed(document, excludeEntries) {
     throw new Error('Unsupported document element: ' + docElement.nodeName);
   }
 
-  const channel = parseFeedFindChannel(docElement);
+  const channel = FeedParser.findChannel(docElement);
   if(!channel) {
     throw new Error('Missing channel element');
   }
 
   const feed = {};
 
-  feed.type = parseFeedGetFeedType(docElement);
-  feed.title = parseFeedFindChildElementText(channel, 'title');
-  feed.description = parseFeedFindChildElementText(channel,
+  feed.type = FeedParser.getFeedType(docElement);
+  feed.title = FeedParser.findChildElementText(channel, 'title');
+  feed.description = FeedParser.findChildElementText(channel,
     docElement.matches('feed') ? 'subtitle' : 'description');
-  feed.link = parseFeedFindFeedLink(channel);
-  feed.datePublished = parseFeedFindFeedDatePublished(channel);
+  feed.link = FeedParser.findFeedLink(channel);
+  feed.datePublished = FeedParser.findFeedDatePublished(channel);
 
   if(!excludeEntries) {
-    const entryElements = parseFeedFindEntries(channel);
+    const entryElements = FeedParser.findEntries(channel);
     feed.entries = entryElements.map(
-      parseFeedCreateEntryFromElement.bind(null, feed.datePublished));
+      FeedParser.createEntryFromElement.bind(null, feed.datePublished));
   }
 
   return feed;
-}
+};
 
-function parseFeedFindChannel(documentElement) {
+FeedParser.findChannel = function(documentElement) {
   if(documentElement.matches('feed')) {
     return documentElement;
   } else {
-    return parseFeedFindChildElementByName(documentElement, 'channel');
+    return FeedParser.findChildElementByName(documentElement, 'channel');
   }
-}
+};
 
-function parseFeedFindEntries(channel) {
+FeedParser.findEntries = function(channel) {
   const documentElement = channel.ownerDocument.documentElement;
   const entries = [];
   let entryParent;
@@ -68,9 +70,9 @@ function parseFeedFindEntries(channel) {
   }
 
   return entries;
-}
+};
 
-function parseFeedGetFeedType(documentElement) {
+FeedParser.getFeedType = function(documentElement) {
   let type = null;
   if(documentElement.matches('feed')) {
     type = 'feed';
@@ -80,17 +82,17 @@ function parseFeedGetFeedType(documentElement) {
     type = 'rss';
   }
   return type;
-}
+};
 
-function parseFeedFindFeedDatePublished(channel) {
+FeedParser.findFeedDatePublished = function(channel) {
   const isAtom = channel.ownerDocument.documentElement.matches('feed');
   let dateText = null;
   if(isAtom) {
-    dateText = parseFeedFindChildElementText(channel, 'updated');
+    dateText = FeedParser.findChildElementText(channel, 'updated');
   } else {
-    dateText = parseFeedFindChildElementText(channel, 'pubdate') ||
-      parseFeedFindChildElementText(channel, 'lastbuilddate') ||
-      parseFeedFindChildElementText(channel, 'date');
+    dateText = FeedParser.findChildElementText(channel, 'pubdate') ||
+      FeedParser.findChildElementText(channel, 'lastbuilddate') ||
+      FeedParser.findChildElementText(channel, 'date');
   }
 
   if(dateText) {
@@ -103,47 +105,47 @@ function parseFeedFindFeedDatePublished(channel) {
 
   // Fall back to the current date
   return new Date();
-}
+};
 
-function parseFeedIsLinkRelAlternate(element) {
+FeedParser.isLinkRelAlternate = function(element) {
   return element.matches('link[rel="alternate"]');
-}
+};
 
-function parseFeedIsLinkRelSelf(element) {
+FeedParser.isLinkRelSelf = function(element) {
   return element.matches('link[rel="self"]');
-}
+};
 
-function parseFeedIsLinkWithHref(element) {
+FeedParser.isLinkWithHref = function(element) {
   return element.matches('link[href]');
-}
+};
 
-function parseFeedIsLinkWithoutHref(element) {
+FeedParser.isLinkWithoutHref = function(element) {
   // return element.matches('link:not([href])');
   return element.localName === 'link' && !element.hasAttribute('href');
-}
+};
 
-function parseFeedFindFeedLink(channel) {
+FeedParser.findFeedLink = function(channel) {
   const isAtom = channel.ownerDocument.documentElement.matches('feed');
 
   let linkText = null;
   let linkElement = null;
 
   if(isAtom) {
-    linkElement = parseFeedFindChildElement(channel,
-      parseFeedIsLinkRelAlternate) ||
-      parseFeedFindChildElement(channel, parseFeedIsLinkRelSelf) ||
-      parseFeedFindChildElement(channel, parseFeedIsLinkWithHref);
+    linkElement = FeedParser.findChildElement(channel,
+      FeedParser.isLinkRelAlternate) ||
+      FeedParser.findChildElement(channel, FeedParser.isLinkRelSelf) ||
+      FeedParser.findChildElement(channel, FeedParser.isLinkWithHref);
     if(linkElement) {
       linkText = linkElement.getAttribute('href');
     }
   } else {
-    linkElement = parseFeedFindChildElement(channel,
-      parseFeedIsLinkWithoutHref);
+    linkElement = FeedParser.findChildElement(channel,
+      FeedParser.isLinkWithoutHref);
     if(linkElement) {
       linkText = linkElement.textContent;
     } else {
-      linkElement = parseFeedFindChildElement(channel,
-        parseFeedIsLinkWithHref);
+      linkElement = FeedParser.findChildElement(channel,
+        FeedParser.isLinkWithHref);
       if(linkElement)
         linkText = linkElement.getAttribute('href');
     }
@@ -156,29 +158,29 @@ function parseFeedFindFeedLink(channel) {
       console.debug(exception);
     }
   }
-}
+};
 
-function parseFeedCreateEntryFromElement(feedDatePublished, entryElement) {
+FeedParser.createEntryFromElement = function(feedDatePublished, entryElement) {
   const isAtom = entryElement.ownerDocument.documentElement.matches('feed');
   const entryObject = {};
 
-  const title = parseFeedFindChildElementText(entryElement, 'title');
+  const title = FeedParser.findChildElementText(entryElement, 'title');
   if(title) {
     entryObject.title = title;
   }
 
-  const author = parseFeedFindEntryAuthor(entryElement);
+  const author = FeedParser.findEntryAuthor(entryElement);
   if(author) {
     entryObject.author = author;
   }
 
   entryObject.urls = [];
-  const entryLinkURL = parseFeedFindEntryLink(entryElement);
+  const entryLinkURL = FeedParser.findEntryLink(entryElement);
   if(entryLinkURL) {
     entryObject.urls.push(entryLinkURL);
   }
 
-  const entryDatePublished = parseFeedFindEntryDatePublished(entryElement);
+  const entryDatePublished = FeedParser.findEntryDatePublished(entryElement);
   if(entryDatePublished) {
     entryObject.datePublished = entryDatePublished;
   } else if(feedDatePublished) {
@@ -189,13 +191,13 @@ function parseFeedCreateEntryFromElement(feedDatePublished, entryElement) {
     entryObject.datePublished = new Date();
   }
 
-  const content = parseFeedFindEntryContent(entryElement);
+  const content = FeedParser.findEntryContent(entryElement);
   if(content) {
     entryObject.content = content;
   }
 
   // TODO: move this into a helper function
-  const enclosure = parseFeedFindChildElementByName(entryElement,
+  const enclosure = FeedParser.findChildElementByName(entryElement,
     'enclosure');
   if(enclosure) {
     const enclosureURLString = enclosure.getAttribute('url');
@@ -216,36 +218,36 @@ function parseFeedCreateEntryFromElement(feedDatePublished, entryElement) {
   }
 
   return entryObject;
-}
+};
 
-function parseFeedFindEntryAuthor(entry) {
+FeedParser.findEntryAuthor = function(entry) {
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
   if(isAtom) {
-    const author = parseFeedFindChildElementByName(entry, 'author');
+    const author = FeedParser.findChildElementByName(entry, 'author');
     if(author) {
-      return parseFeedFindChildElementText(author, 'name');
+      return FeedParser.findChildElementText(author, 'name');
     }
   } else {
-    return parseFeedFindChildElementText(entry, 'creator') ||
-      parseFeedFindChildElementText(entry, 'publisher');
+    return FeedParser.findChildElementText(entry, 'creator') ||
+      FeedParser.findChildElementText(entry, 'publisher');
   }
-}
+};
 
-function parseFeedFindEntryLink(entry) {
+FeedParser.findEntryLink = function(entry) {
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
   let linkText;
   let linkElement;
   if(isAtom) {
-    linkElement = parseFeedFindChildElement(entry,
-        parseFeedIsLinkRelAlternate) ||
-      parseFeedFindChildElement(entry, parseFeedIsLinkRelSelf) ||
-      parseFeedFindChildElement(entry, parseFeedIsLinkWithHref);
+    linkElement = FeedParser.findChildElement(entry,
+        FeedParser.isLinkRelAlternate) ||
+      FeedParser.findChildElement(entry, FeedParser.isLinkRelSelf) ||
+      FeedParser.findChildElement(entry, FeedParser.isLinkWithHref);
     if(linkElement) {
       linkText = linkElement.getAttribute('href');
     }
   } else {
-    linkText = parseFeedFindChildElementText(entry, 'origlink') ||
-      parseFeedFindChildElementText(entry, 'link');
+    linkText = FeedParser.findChildElementText(entry, 'origlink') ||
+      FeedParser.findChildElementText(entry, 'link');
   }
 
   if(linkText) {
@@ -255,18 +257,18 @@ function parseFeedFindEntryLink(entry) {
       console.debug(exception);
     }
   }
-}
+};
 
-function parseFeedFindEntryDatePublished(entry) {
+FeedParser.findEntryDatePublished = function(entry) {
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
   let datePublishedString = null;
 
   if(isAtom) {
-    datePublishedString = parseFeedFindChildElementText(entry,
-      'published') || parseFeedFindChildElementText(entry, 'updated');
+    datePublishedString = FeedParser.findChildElementText(entry,
+      'published') || FeedParser.findChildElementText(entry, 'updated');
   } else {
-    datePublishedString = parseFeedFindChildElementText(entry, 'pubdate') ||
-      parseFeedFindChildElementText(entry, 'date');
+    datePublishedString = FeedParser.findChildElementText(entry, 'pubdate') ||
+      FeedParser.findChildElementText(entry, 'date');
   }
 
   if(datePublishedString) {
@@ -282,55 +284,55 @@ function parseFeedFindEntryDatePublished(entry) {
       console.debug(exception);
     }
   }
-}
+};
 
-function parseFeedFindEntryContent(entry) {
+FeedParser.findEntryContent = function(entry) {
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
   let result;
   if(isAtom) {
     // Special handling for some strange issue (CDATA-related?)
-    const content = parseFeedFindChildElementByName(entry, 'content');
+    const content = FeedParser.findChildElementByName(entry, 'content');
     const nodes = content ? content.childNodes : [];
     const map = Array.prototype.map;
-    result = map.call(nodes, parseFeedGetAtomNodeText).join('').trim();
+    result = map.call(nodes, FeedParser.getAtomNodeText).join('').trim();
   } else {
 
-    result = parseFeedFindChildElementText(entry, 'encoded') ||
-      parseFeedFindChildElementText(entry, 'description') ||
-      parseFeedFindChildElementText(entry, 'summary');
+    result = FeedParser.findChildElementText(entry, 'encoded') ||
+      FeedParser.findChildElementText(entry, 'description') ||
+      FeedParser.findChildElementText(entry, 'summary');
   }
   return result;
-}
+};
 
-function parseFeedGetAtomNodeText(node) {
+FeedParser.getAtomNodeText = function(node) {
   return node.nodeType === Node.ELEMENT_NODE ?
     node.innerHTML : node.textContent;
-}
+};
 
-function parseFeedFindChildElement(parentElement, predicate) {
+FeedParser.findChildElement = function(parentElement, predicate) {
   for(let element = parentElement.firstElementChild; element;
     element = element.nextElementSibling) {
     if(predicate(element)) {
       return element;
     }
   }
-}
+};
 
-function parseFeedFindChildElementByName(parentElement, localName) {
+FeedParser.findChildElementByName = function(parentElement, localName) {
 
   function hasLocalName(element) {
     return element.localName === localName;
   }
 
-  return parseFeedFindChildElement(parentElement, hasLocalName);
-}
+  return FeedParser.findChildElement(parentElement, hasLocalName);
+};
 
-function parseFeedFindChildElementText(element, localName) {
-  const childElement = parseFeedFindChildElementByName(element, localName);
+FeedParser.findChildElementText = function(element, localName) {
+  const childElement = FeedParser.findChildElementByName(element, localName);
   if(childElement) {
     const childText = childElement.textContent;
     if(childText) {
       return childText.trim();
     }
   }
-}
+};
