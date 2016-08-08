@@ -19,6 +19,8 @@ function Feed() {
   this.title = null;
   this.type = null;
   this.urls = null;
+
+  this.entries = null;
 }
 
 // Gets the terminal url, which is the last url out of the feed's list of urls
@@ -51,6 +53,18 @@ Feed.prototype.addURL = function(urlString) {
 
 Feed.prototype.clone = function() {
   return Object.assign({}, this);
+};
+
+Feed.prototype.addEntry = function(entry) {
+  if(!this.entries) {
+    this.entries = [];
+  }
+
+  this.entries.push(entry);
+};
+
+Feed.prototype.getEntries = function() {
+  return this.entries;
 };
 
 // Returns a new feed of this feed merged with another feed. Expects both feeds
