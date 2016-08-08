@@ -169,7 +169,8 @@ FeedParser.findFeedLink = function(channel) {
 
 FeedParser.createEntryFromElement = function(feedDatePublished, entryElement) {
   const isAtom = entryElement.ownerDocument.documentElement.matches('feed');
-  const entryObject = {};
+
+  const entryObject = new Entry();
 
   const title = FeedParser.findChildElementText(entryElement, 'title');
   if(title) {
@@ -181,10 +182,10 @@ FeedParser.createEntryFromElement = function(feedDatePublished, entryElement) {
     entryObject.author = author;
   }
 
-  entryObject.urls = [];
+  // Set the link url as the entry's initial url
   const entryLinkURL = FeedParser.findEntryLink(entryElement);
   if(entryLinkURL) {
-    entryObject.urls.push(entryLinkURL);
+    entryObject.addURL(entryLinkURL);
   }
 
   const entryDatePublished = FeedParser.findEntryDatePublished(entryElement);
