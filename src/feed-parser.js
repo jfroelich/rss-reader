@@ -19,7 +19,7 @@ FeedParser.parseDocument = function(document, excludeEntries) {
     throw new Error('Missing channel element');
   }
 
-  const feed = {};
+  const feed = new Feed();
 
   feed.type = FeedParser.getFeedType(docElement);
   feed.title = FeedParser.findChildElementText(channel, 'title');
@@ -30,8 +30,11 @@ FeedParser.parseDocument = function(document, excludeEntries) {
 
   if(!excludeEntries) {
     const entryElements = FeedParser.findEntries(channel);
-    feed.entries = entryElements.map(
+    const entryObjects = entryElements.map(
       FeedParser.createEntryFromElement.bind(null, feed.datePublished));
+    for(let entryObject of entryObjects) {
+      feed.addEntry(entryObject);
+    }
   }
 
   return feed;
@@ -103,6 +106,10 @@ FeedParser.findFeedDatePublished = function(channel) {
     }
   }
 
+  // TODO: actually i should try and represent the feed as is here, this
+  // shouldn't be introducing processing logic, that is a caller responsibility
+  // this also means that passing date published to createEntryFromElement
+  // needs to have that function account for undefined if i remove this
   // Fall back to the current date
   return new Date();
 };
@@ -187,6 +194,8 @@ FeedParser.createEntryFromElement = function(feedDatePublished, entryElement) {
     // Fall back to the feed's date
     entryObject.datePublished = feedDatePublished;
   } else {
+    // TODO: actually i probably shouldn't infer this date and should leave it
+    // as not set
     // Fall back to the current date
     entryObject.datePublished = new Date();
   }
@@ -275,8 +284,6 @@ FeedParser.findEntryDatePublished = function(entry) {
     datePublishedString = datePublishedString.trim();
   }
 
-  // Do not fall back to the current date immediately. The feed's date may
-  // be used instead.
   if(datePublishedString) {
     try {
       return new Date(datePublishedString);
@@ -284,6 +291,10 @@ FeedParser.findEntryDatePublished = function(entry) {
       console.debug(exception);
     }
   }
+
+  // If we did not find a valid date, then return null. Do not return today's
+  // date or infer anything. This only parses the document as is.
+  return null;
 };
 
 FeedParser.findEntryContent = function(entry) {
