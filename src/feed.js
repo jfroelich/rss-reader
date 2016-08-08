@@ -128,6 +128,7 @@ Feed.prototype.merge = function(otherFeed) {
 // values are present in the object.
 // This cannot clone, because that could introduce properties into the object
 // that should not be present, such as misc. expand-object properties.
+// The entries property is excluded.
 Feed.prototype.serialize = function() {
 
   const outputFeed = {};
