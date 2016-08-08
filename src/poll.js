@@ -135,8 +135,7 @@ poll.onFetchFeed = function(context, localFeed, event) {
 
   // Revalidate the feed's favicon. Try and use the url of the associated
   // website first, then fallback to the url of the xml file. The lookup
-  // function expects a URL object. fetchFeed produces a feed-like object
-  // containing URL objects, so we do not need to parse strings into URLs.
+  // function expects a URL object.
   const queryURL = remoteFeed.link ? remoteFeed.link :
     Feed.prototype.getURL.call(remoteFeed);
   favicon.lookup(queryURL, null, poll.onLookupFeedFavicon.bind(null, context,
