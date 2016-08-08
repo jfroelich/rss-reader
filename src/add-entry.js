@@ -7,11 +7,13 @@
 
 function addEntry(connection, entry, callback) {
   console.assert(entry, 'Entry is required');
-  const entryURL = Entry.prototype.getURL.call(entry);
-  console.assert(entryURL, 'Entry missing url');
-  console.debug('Adding entry', entryURL.href);
+  console.assert(entry.getURL(), 'Entry missing url');
+  console.debug('Adding entry', entry.getURL().href);
 
-  let storable = Entry.prototype.serialize.call(entry);
+  // TODO: this would be easier if I called sanitize first and sanitize
+  // returned a new Entry object.
+
+  let storable = entry.serialize();
   storable = Entry.prototype.sanitize.call(storable);
   storable.readState = Entry.FLAGS.UNREAD;
   storable.archiveState = Entry.FLAGS.UNARCHIVED;
