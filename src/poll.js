@@ -133,11 +133,8 @@ poll.onFetchFeed = function(context, localFeed, event) {
     return;
   }
 
-  // Revalidate the feed's favicon. Try and use the url of the associated
-  // website first, then fallback to the url of the xml file. The lookup
-  // function expects a URL object.
-  const queryURL = remoteFeed.link ? remoteFeed.link :
-    Feed.prototype.getURL.call(remoteFeed);
+  // Revalidate the feed's favicon
+  const queryURL = remoteFeed.link ? remoteFeed.link : remoteFeed.getURL();
   favicon.lookup(queryURL, null, poll.onLookupFeedFavicon.bind(null, context,
     localFeed, remoteFeed));
 };
@@ -154,9 +151,9 @@ poll.onLookupFeedFavicon = function(context, localFeed, remoteFeed,
   // it was loaded from the database, but the remote feed is not because
   // parseFeed produces a feed-like object with things like URL objects
   const mergedFeed = Feed.prototype.merge.call(localFeed,
-    Feed.prototype.serialize.call(remoteFeed));
+    remoteFeed.serialize());
   updateFeed(context.connection, mergedFeed,
-    poll.onUpdateFeed.bind(null, context, remoteFeed.entries));
+    poll.onUpdateFeed.bind(null, context, remoteFeed.getEntries()));
 };
 
 poll.onUpdateFeed = function(context, entries, resultType, feed) {
@@ -169,7 +166,7 @@ poll.onUpdateFeed = function(context, entries, resultType, feed) {
 
   // Now that the feed has been stored, start processing the feed's entries.
   // If there are no entries then we are finished with the feed.
-  if(!entries.length) {
+  if(!entries || !entries.length) {
     context.pendingFeedsCount--;
     poll.onComplete(context);
     return;
@@ -211,22 +208,21 @@ poll.onEntryProcessed = function(pollContext, feedContext,
 
 poll.processEntry = function(context, feed, entry, callback) {
   // Verify the entry has a url
-  if(!Entry.prototype.hasURL.call(entry)) {
+  if(!entry.hasURL()) {
     console.warn('Entry missing url', entry);
     callback();
     return;
   }
 
   // Rewrite the url
-  Entry.prototype.addURL.call(entry,
-    rewriteURL(Entry.prototype.getURL.call(entry)));
+  const rewrittenURL = rewriteURL(entry.getURL());
+  entry.addURL(rewrittenURL);
 
   // Check whether an entry with the same url exists
   const transaction = context.connection.transaction('entry');
   const store = transaction.objectStore('entry');
   const index = store.index('urls');
-  const keyPath = Entry.prototype.getURL.call(entry).href;
-  const request = index.get(keyPath);
+  const request = index.get(entry.getURL().href);
   const onFind = poll.onFindEntryByURL.bind(null, context, feed, entry,
     callback);
   request.onsuccess = onFind;
@@ -266,14 +262,13 @@ poll.onFindEntryByURL = function(context, feed, entry, callback, event) {
     entry.feedTitle = feed.title;
   }
 
-  // The next step is to try and fetch the full html of the entry and use that
-  // as its content in place of the original content.
-  const entryURL = Entry.prototype.getURL.call(entry);
-
   // Check that the url does not belong to a domain that obfuscates its content
   // with things like advertisement interception or full javascript. While these
   // documents can be fetched, there is no point to doing so.
-  if(poll.isFetchResistantURL(entryURL)) {
+
+  // TODO: ensure addEntry works with Entry objects
+
+  if(poll.isFetchResistantURL(entry.getURL())) {
     addEntry(context.connection, entry, callback);
     return;
   }
@@ -283,7 +278,7 @@ poll.onFindEntryByURL = function(context, feed, entry, callback, event) {
   // indication of the mime type and may have some false positives. Even if
   // this misses it, responseXML will be undefined in fetchHTML so false
   // negatives are not too important.
-  const path = entryURL.pathname;
+  const path = entry.getURL().pathname;
   const minLen = '/a.pdf'.length;
   if(path && path.length > minLen && /\.pdf$/i.test(path)) {
     addEntry(context.connection, entry, callback);
@@ -293,7 +288,7 @@ poll.onFindEntryByURL = function(context, feed, entry, callback, event) {
   // Fetch the entry's webpage
 
   const timeoutMillis = 10 * 1000;
-  fetchHTML(entryURL, timeoutMillis,
+  fetchHTML(entry.getURL(), timeoutMillis,
     poll.onFetchEntry.bind(null, context, entry, callback));
 };
 
@@ -304,9 +299,8 @@ poll.onFetchEntry = function(context, entry, callback, event) {
     return;
   }
 
-  // We successfully fetched the full text
   // Add the redirect url
-  Entry.prototype.addURL.call(entry, event.responseURL);
+  entry.addURL(event.responseURL);
 
   // Prep the document
   const document = event.document;
