@@ -34,68 +34,55 @@ function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
 }
 
 function fetchFeedOnResponse(requestURL, excludeEntries, callback, event) {
-  const outputEvent = {
-    'type': event.type
-  };
-
   // Check that we got a load response
   if(event.type !== 'load') {
-    console.debug(event.type, event.target.status, requestURL.href);
-    callback({'type': event.type});
+    console.debug(event.type, requestURL.href);
+    callback({'type': event.type, 'requestURL': requestURL});
     return;
   }
-
-  outputEvent.responseURL = new URL(event.target.responseURL);
-  outputEvent.responseXML = event.target.responseXML;
 
   // Check that the document is defined. The document may be undefined when
   // we fetched a file with a mime-type not compatable with the responseType
   // setting of XMLHttpRequest
   const document = event.target.responseXML;
   if(!document) {
-    outputEvent.type = 'UndefinedDocumentError';
-    callback(outputEvent);
+    callback({
+      'type': 'UndefinedDocumentError',
+      'requestURL': requestURL
+    });
     return;
   }
 
-  // TODO: parseFeed should yield a Feed object
-
-  // Parse the XML file into a feed-like object
+  // Parse the XML file into a Feed object
+  let feed = null;
   try {
-    outputEvent.feed = FeedParser.parseDocument(document, excludeEntries);
+    feed = FeedParser.parseDocument(document, excludeEntries);
   } catch(exception) {
-    console.warn('Parsing error', requestURL.href, exception.message);
-    outputEvent.type = 'ParseError';
-    if(exception.message) {
-      outputEvent.message = exception.message;
-    }
-
-    callback(outputEvent);
+    console.warn(exception.message);
+    callback({
+      'type': 'ParseError',
+      'message': exception.message,
+      'requestURL': requestURL
+    });
     return;
   }
 
-  // Set the url. The parser does not define it for us because the
-  // parser is not aware of the feed's url. addURL will lazily create the
-  // appropriate property.
-  Feed.prototype.addURL.call(outputEvent.feed, requestURL);
+  feed.addURL(requestURL);
+  feed.addURL(new URL(event.target.responseURL));
+  feed.dateFetched = new Date();
 
-  // Set the redirect (addURL implicitly handles uniqueness)
-  Feed.prototype.addURL.call(outputEvent.feed, outputEvent.responseURL);
-
-  // Introduce a date fetched property
-  outputEvent.feed.dateFetched = new Date();
-
-  // Introduce a dateLastModified property based on the file's date which is
-  // from the response header.
-  const lastModifiedString = event.target.getResponseHeader(
-    'Last-Modified');
-  if(lastModifiedString) {
+  const lastModified = event.target.getResponseHeader('Last-Modified');
+  if(lastModified) {
     try {
-      outputEvent.feed.dateLastModified = new Date(lastModifiedString);
+      feed.dateLastModified = new Date(lastModified);
     } catch(parseError) {
-      console.warn('Error parsing last modified header', parseError);
+      console.warn(parseError);
     }
   }
 
-  callback(outputEvent);
+  callback({
+    'type': 'load',
+    'feed': feed,
+    'requestURL': requestURL
+  });
 }
