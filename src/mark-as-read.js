@@ -9,11 +9,11 @@ const markAsRead = {};
 markAsRead.start = function(entryId, callback) {
   console.assert(typeof entryId === 'number' && isFinite(entryId) &&
     entryId > 0, 'invalid entryId %s', entryId);
-  console.debug('Marking entry %i as read', entryId);
+  // console.debug('Marking entry %i as read', entryId);
 
   // Define a context to simplify parameter passing
   const context = {'entryId': entryId, 'callback': callback};
-  openIndexedDB(markAsRead.onOpenDatabase.bind(this));
+  openIndexedDB(markAsRead.onOpenDatabase.bind(context));
 };
 
 markAsRead.onOpenDatabase = function(connection) {
