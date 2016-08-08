@@ -165,7 +165,8 @@ poll.onUpdateFeed = function(context, entries, resultType, feed) {
   }
 
   // Now that the feed has been stored, start processing the feed's entries.
-  // If there are no entries then we are finished with the feed.
+  // If there are no entries then we are finished with the feed. This check
+  // avoids an NPE, and ensures we still callback when there are no entries.
   if(!entries || !entries.length) {
     context.pendingFeedsCount--;
     poll.onComplete(context);
