@@ -81,7 +81,7 @@ subscribe.findFeedOnSuccess = function(event) {
   // Otherwise, continue with the subscription
   if('onLine' in navigator && !navigator.onLine) {
     // Proceed with an offline subscription
-    addFeed(this.connection, feed, subscribe.onAddFeed.bind(this));
+    addFeed(this.connection, this.feed, subscribe.onAddFeed.bind(this));
   } else {
     // Online subscription. Verify the remote file is a feed that exists
     // and get its info
@@ -98,6 +98,9 @@ subscribe.findFeedOnError = function(event) {
 
 subscribe.onFetchFeed = function(event) {
   if(event.type === 'load') {
+
+    // NOTE: fetchFeed now yields a Feed object, not a basic object. I have
+    // not tested if addFeed will work like that.
 
     // TODO: this needs to merge the remote feed with the local feed's
     // properties, not just store the remote feed.
