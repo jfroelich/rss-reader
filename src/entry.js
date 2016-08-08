@@ -6,7 +6,20 @@
 
 // Corresponds to an entry database object.
 
-function Entry() {}
+function Entry() {
+  this.feed = null;
+  this.urls = null;
+  this.author = null;
+  this.content = null;
+  this.title = null;
+  this.datePublished = null;
+  this.enclosure = null;
+  this.faviconURLString = null;
+  this.feedTitle = null;
+  this.readState = null;
+  this.archiveState = null;
+  this.dateCreated = null;
+}
 
 Entry.FLAGS = {
   UNREAD: 0,
@@ -130,10 +143,13 @@ Entry.prototype.serialize = function() {
   // Clone to ensure purity
   const outputEntry = Object.assign({}, this);
 
+  // TODO: i have to ensure that I do not serialize id if present as a key
+  // but undefined?
+
   // Serialize URL objects
   if(outputEntry.urls && outputEntry.urls.length) {
     if(Object.prototype.toString.call(outputEntry.urls[0]) === '[object URL]') {
-      outputEntry.urls = outputEntry.urls.map(function urlToString(url) {
+      outputEntry.urls = outputEntry.urls.map(function(url) {
         return url.href;
       });
     }
