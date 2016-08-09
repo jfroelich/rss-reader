@@ -1,4 +1,3 @@
-
 // Copyright 2016 Josh Froelich. All rights reserved.
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
@@ -10,11 +9,7 @@ function addEntry(connection, entry, callback) {
   console.assert(entry.getURL(), 'Entry missing url');
   console.debug('Adding entry', entry.getURL().href);
 
-  // TODO: this would be easier if I called sanitize first and sanitize
-  // returned a new Entry object.
-
-  let storable = entry.serialize();
-  storable = Entry.prototype.sanitize.call(storable);
+  let storable = entry.sanitize().serialize();
   storable.readState = Entry.FLAGS.UNREAD;
   storable.archiveState = Entry.FLAGS.UNARCHIVED;
   storable.dateCreated = new Date();
