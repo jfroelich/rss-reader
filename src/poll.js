@@ -23,6 +23,7 @@ poll.start = function(forceResetLock) {
   if(!forceResetLock && 'POLL_IS_ACTIVE' in localStorage) {
     console.warn('Cannot poll while another poll is running');
     poll.onComplete(context);
+    return;
   }
 
   // Lock the poll. The value is not important, just the key's presence.
