@@ -13,7 +13,7 @@ Background.onBackgroundLoad = function(event) {
   chrome.alarms.get('archive', function(alarm) {
     if(!alarm) {
       console.debug('Creating archive alarm');
-      chrome.alarms.create('archive', {'periodInMinutes': 60});
+      chrome.alarms.create('archive', {'periodInMinutes': 60 * 12});
     }
   });
 
