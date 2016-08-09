@@ -6,7 +6,7 @@
 
 // Corresponds to an entry database object.
 
-function Entry() {
+function Entry(otherEntry) {
   this.feed = null;
   this.urls = null;
   this.author = null;
@@ -19,6 +19,11 @@ function Entry() {
   this.readState = null;
   this.archiveState = null;
   this.dateCreated = null;
+  this.dateArchived = null;
+
+  if(otherEntry) {
+    Object.assign(this, copy);
+  }
 }
 
 Entry.FLAGS = {
@@ -108,43 +113,46 @@ Entry.prototype.archive = function() {
   return outputEntry;
 };
 
+// Returns a new Entry object where the fields have been sanitized
 Entry.prototype.sanitize = function() {
-  // Assume entry.feedTitle was sanitized elsewhere
-  const outputEntry = Object.assign({}, this);
+
+  // Create a clone of this entry
+  const entry = new Entry(this);
 
   // Sanitize the title
   // TODO: enforce a maximum length using StringUtils.truncateHTML
   // TODO: condense spaces?
-  if(outputEntry.title) {
-    let title = outputEntry.title;
+  if(entry.title) {
+    let title = entry.title;
     title = StringUtils.filterControlCharacters(title);
     title = StringUtils.replaceHTML(title, '');
-    outputEntry.title = title;
+    entry.title = title;
   }
 
   // Sanitize the author
   // TODO: sanitize fully
-  if(outputEntry.author) {
-    let author = outputEntry.author;
+  if(entry.author) {
+    let author = entry.author;
     author = StringUtils.filterControlCharacters(author);
     author = StringUtils.replaceHTML(author, '');
     //author = truncateHTML(author, MAX_AUTHOR_VALUE_LENGTH);
-    outputEntry.author = author;
+    entry.author = author;
   }
 
-  // Sanitize outputEntry.content
+  // Sanitize entry.content
   // TODO: filter out non-printable characters other than \r\n\t
   // TODO: enforce a maximum storable length (using StringUtils.truncateHTML)
 
-  return outputEntry;
+  return entry;
 };
 
+// If the caller doesn't want certain fields to appear they need to either
+// remove them from the object before calling serialize or delete the keys
+// of the output object.
 Entry.prototype.serialize = function() {
   // Clone to ensure purity
+  // Clone into a simple object
   const outputEntry = Object.assign({}, this);
-
-  // TODO: i have to ensure that I do not serialize id if present as a key
-  // but undefined?
 
   // Serialize URL objects
   if(outputEntry.urls && outputEntry.urls.length) {
@@ -154,9 +162,6 @@ Entry.prototype.serialize = function() {
       });
     }
   }
-
-  // TODO: delete all keys other than those that I want stored in the event
-  // that there are expando props present in the input object?
 
   return outputEntry;
 };
