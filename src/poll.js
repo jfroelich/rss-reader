@@ -6,6 +6,25 @@
 
 const poll = {};
 
+// Obtain a poll lock by setting a flag in local storage. This uses local
+// storage instead of global scope because the background page that calls out
+// to poll.start occassionally unloads and reloads itself instead of remaining
+// persistently open, which would reset the value of the global scope variable
+// each page load. When polling determines if the poll is locked, it only
+// checks for the presence of the key, and ignores the value, so the value I
+// specify here is unimportant.
+poll.acquireLock = function() {
+  localStorage.POLL_IS_ACTIVE = 'true';
+};
+
+poll.releaseLock = function() {
+  delete localStorage.POLL_IS_ACTIVE;
+};
+
+poll.isLocked = function() {
+  return 'POLL_IS_ACTIVE' in localStorage;
+}
+
 // Checks for new feeds. If forceResetLock is true, then polling is allowed to
 // continue even if it is locked (because poll is already running, or because
 // poll finished incorrectly).
@@ -13,24 +32,20 @@ poll.start = function(forceResetLock) {
   console.log('Checking for new articles...');
 
   // Define a shared context for simple passing of shared state to continuations
-  const context = {
-    'pendingFeedsCount': 0,
-    'connection': null
-  };
+  const context = {'pendingFeedsCount': 0, 'connection': null};
 
-  // If not forcing a reset of the lock, then check whether the poll is locked
-  // and if so then cancel.
-  if(!forceResetLock && 'POLL_IS_ACTIVE' in localStorage) {
+  if(forceResetLock) {
+    poll.releaseLock();
+  }
+
+  if(poll.isLocked()) {
     console.warn('Cannot poll while another poll is running');
     poll.onComplete(context);
     return;
   }
 
-  // Lock the poll. The value is not important, just the key's presence.
-  // The lock is external because it is not unique to the current execution
-  localStorage.POLL_IS_ACTIVE = 'true';
+  poll.acquireLock();
 
-  // Cancel the poll if offline
   if('onLine' in navigator && !navigator.onLine) {
     console.debug('Cannot poll while offline');
     poll.onComplete(context);
@@ -102,8 +117,7 @@ poll.onOpenFeedCursor = function(context, event) {
 
   // Fetch the feed
   const feed = cursor.value;
-
-  // This assumea that the feed has a valid url, and should never throw
+  // This assumes that the feed has a valid url, and should never throw
   const requestURL = new URL(Feed.prototype.getURL.call(feed));
   const excludeEntries = false;
   const timeoutMillis = 10 * 1000;
@@ -196,6 +210,10 @@ poll.onEntryProcessed = function(pollContext, feedContext,
     feedContext.entriesAdded++;
   }
 
+  console.assert(feedContext.entriesProcessed <= feedContext.numEntries,
+    'entriesProcessed greater than numEntries', feedContext.entriesProcessed,
+    feedContext.numEntries);
+
   // We are finished processing the feed if we finished processing its entries
   if(feedContext.entriesProcessed === feedContext.numEntries) {
     // Only update the badge if we actually added some entries
@@ -267,9 +285,6 @@ poll.onFindEntryByURL = function(context, feed, entry, callback, event) {
   // Check that the url does not belong to a domain that obfuscates its content
   // with things like advertisement interception or full javascript. While these
   // documents can be fetched, there is no point to doing so.
-
-  // TODO: ensure addEntry works with Entry objects
-
   if(poll.isFetchResistantURL(entry.getURL())) {
     addEntry(context.connection, entry, callback);
     return;
@@ -288,7 +303,6 @@ poll.onFindEntryByURL = function(context, feed, entry, callback, event) {
   }
 
   // Fetch the entry's webpage
-
   const timeoutMillis = 10 * 1000;
   fetchHTML(entry.getURL(), timeoutMillis,
     poll.onFetchEntry.bind(null, context, entry, callback));
@@ -327,24 +341,30 @@ poll.onSetImageDimensions = function(context, entry, document, callback,
 };
 
 poll.onComplete = function(context) {
-  // Every time a feed completes it calls poll.onComplete. However, multiple
-  // feeds are processed concurrently and calls poll.onComplete out of order.
-  // Each time a feed completes it deprecates the pendingFeedsCount. This means
-  // that if pendingFeedsCount is > 0 here, the poll is ongoing.
+
+  // onComplete is called whenever a feed finishes processing, or when there
+  // were no feeds to process. Feeds are processed concurrently. Each time a
+  // feed starts processing, pendingFeedsCount is incremented. Each time a feed
+  // finishes processing, pendingFeedsCount is decremented.
+  // Check if there are still these outstanding feeds and do not actually
+  // complete the poll in that case.
+
   if(context.pendingFeedsCount) {
     return;
   }
 
   notify('Updated articles', 'Completed checking for new articles');
 
-  // Close out the connection
+  // connection may be undefined when the poll failed to connect and called
+  // onComplete
   if(context.connection) {
     context.connection.close();
   }
 
-  // Unlock so that the poll can run again
-  delete localStorage.POLL_IS_ACTIVE;
+  poll.releaseLock();
 
+  // Calls to badge.update may still be pending so this message might appear out
+  // of order in the console.
   console.log('Polling completed');
 };
 
