@@ -22,7 +22,7 @@ function Entry(otherEntry) {
   this.dateArchived = null;
 
   if(otherEntry) {
-    Object.assign(this, copy);
+    Object.assign(this, otherEntry);
   }
 }
 
