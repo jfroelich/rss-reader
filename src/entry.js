@@ -152,16 +152,15 @@ Entry.prototype.sanitize = function() {
 Entry.prototype.serialize = function() {
   // Clone to ensure purity
   // Clone into a simple object
-  const outputEntry = Object.assign({}, this);
+  const entry = Object.assign({}, this);
 
   // Serialize URL objects
-  if(outputEntry.urls && outputEntry.urls.length) {
-    if(Object.prototype.toString.call(outputEntry.urls[0]) === '[object URL]') {
-      outputEntry.urls = outputEntry.urls.map(function(url) {
-        return url.href;
-      });
-    }
+  if(entry.urls && entry.urls.length &&
+    Object.prototype.toString.call(entry.urls[0]) === '[object URL]') {
+    entry.urls = entry.urls.map(function(url) {
+      return url.href;
+    });
   }
 
-  return outputEntry;
+  return entry;
 };
