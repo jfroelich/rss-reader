@@ -18,6 +18,7 @@ subscribe.start = function(feed, options) {
     'didSubscribe': false,
     'callback': options ? options.callback : null,
     'connection': options ? options.connection : null,
+    'closeConnection': options && options.connection ? false : true,
     'suppressNotifications': options ? options.suppressNotifications : false
   };
 
@@ -146,7 +147,7 @@ subscribe.onAddFeed = function(event) {
 };
 
 subscribe.onComplete = function(event) {
-  if(this.connection) {
+  if(this.closeConnection && this.connection) {
     this.connection.close();
   }
 
