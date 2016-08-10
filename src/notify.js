@@ -12,9 +12,8 @@
 // NOTE: to show in notification center from chrome, toggle flag
 // chrome://flags/#enable-native-notifications
 function notify(title, message) {
-  // TODO: isn't this a strict mode error?
   if(!Notification) {
-    console.debug('Notifications API not available in this context');
+    console.debug('Notifications API not available');
     return;
   }
 
