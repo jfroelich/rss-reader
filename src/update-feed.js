@@ -25,7 +25,7 @@ function updateFeed(connection, feed, callback) {
   }
 
   function onPutSuccess(event) {
-    callback({'type': 'success', 'feed', serializedFeed});
+    callback({'type': 'success', 'feed': serializedFeed});
   }
 
   function onPutError(event) {
