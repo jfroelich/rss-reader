@@ -98,15 +98,10 @@ subscribe.findFeedOnError = function(event) {
 
 subscribe.onFetchFeed = function(event) {
   if(event.type === 'load') {
-
-    // NOTE: fetchFeed now yields a Feed object, not a basic object. I have
-    // not tested if addFeed will work like that.
-
-    // TODO: this needs to merge the remote feed with the local feed's
-    // properties, not just store the remote feed.
-
-    // Add the feed to the database
-    addFeed(this.connection, event.feed,
+    const localFeed = this.feed;
+    const remoteFeed = event.feed;
+    const mergedFeed = localFeed.merge(remoteFeed);
+    addFeed(this.connection, mergedFeed,
       subscribe.onAddFeed.bind(this));
   } else {
     // Go to exit

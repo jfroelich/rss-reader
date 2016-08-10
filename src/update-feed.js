@@ -4,23 +4,32 @@
 
 'use strict';
 
+// @param connection {IDBDatabase} an open database connection
+// @param feed {Feed} the feed to put into the database
+// @param callback {function} optional callback function
+// TODO: pass back the sanitized Feed object, not the serialized feed?
 function updateFeed(connection, feed, callback) {
-  let storableFeed = Feed.prototype.serialize.call(feed);
-  storableFeed = Feed.prototype.sanitize.call(storableFeed);
-  storableFeed.dateUpdated = new Date();
+  console.debug('Updating feed', feed.getURL().href);
 
-  console.debug('Updating feed', Feed.prototype.getURL.call(storableFeed));
+  let sanitizedFeed = feed.sanitize();
+  sanitizedFeed.dateUpdated = new Date();
+  let serializedFeed = sanitizedFeed.serialize();
 
   const transaction = connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
-  const request = store.put(storableFeed);
+  const request = store.put(serializedFeed);
 
-  request.onsuccess = function onPutSuccess(event) {
-    callback('success', storableFeed);
-  };
+  if(callback) {
+    request.onsuccess = onPutSuccess;
+    request.onerror = onPutError;
+  }
 
-  request.onerror = function onPutError(event) {
-    console.error('Error updating feed', event);
-    callback('error', storableFeed);
-  };
+  function onPutSuccess(event) {
+    callback({'type': 'success', 'feed', serializedFeed});
+  }
+
+  function onPutError(event) {
+    console.error(event);
+    callback({'type': 'error'});
+  }
 }

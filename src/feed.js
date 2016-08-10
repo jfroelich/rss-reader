@@ -7,7 +7,9 @@
 // Corresponds to a feed database object. Because indexedDB cannot store such
 // objects directly, this is only intended to provide prototype members that
 // can correctly operate on serialized objects loaded from the database
-function Feed() {
+// @param serializedFeed {Object} a serialized form of a feed object, optional,
+// if set then deserializes the serialized feed into this feed's properties
+function Feed(serializedFeed) {
   this.dateCreated = null;
   this.dateFetched = null;
   this.dateLastModified = null;
@@ -19,9 +21,29 @@ function Feed() {
   this.title = null;
   this.type = null;
   this.urls = null;
-
   this.entries = null;
+
+  if(serializedFeed) {
+    this.deserialize(serializedFeed);
+  }
 }
+
+// Updates this object's properties from the serialized feed parameter
+Feed.prototype.deserialize = function(feed) {
+  Object.assign(this, feed);
+
+  // Deserialize urls. indexedDB cannot store URL objects.
+  // This assumes urls are always valid and never throws.
+  if(feed.urls && feed.urls.length) {
+    this.urls = feed.urls.map(function(urlString) {
+      return new URL(urlString);
+    });
+  }
+
+  if(feed.link) {
+    this.link = new URL(feed.link);
+  }
+};
 
 // Gets the terminal url, which is the last url out of the feed's list of urls
 Feed.prototype.getURL = function() {
@@ -36,6 +58,9 @@ Feed.prototype.hasURL = function() {
 };
 
 // Adds the url to the feed (if it is unique from prior urls)
+// TODO: this needs to be refactored to only accept a URL object, and clone
+// the url when setting, and then refactor merge to use it, and all
+// dependencies
 Feed.prototype.addURL = function(urlString) {
 
   console.assert(urlString, 'urlString is required');
@@ -51,10 +76,6 @@ Feed.prototype.addURL = function(urlString) {
   }
 };
 
-Feed.prototype.clone = function() {
-  return Object.assign({}, this);
-};
-
 Feed.prototype.addEntry = function(entry) {
   if(!this.entries) {
     this.entries = [];
@@ -67,48 +88,30 @@ Feed.prototype.getEntries = function() {
   return this.entries;
 };
 
-// Returns a new feed of this feed merged with another feed. Expects both feeds
-// in serialized form. Fields from the other feed take precedence, so when there
-// is a value in both this and the other feed, the other field's value is what
-// appears in the output. Except for urls, where only distinct urls are kept
-// and the order is this feed's urls then any urls from the other feed not
-// already present. Also except for id, this feed's id if present is
-// kept, and the other feed's id is ignored.
+// Returns a new Feed of this feed merged with another feed. Fields from the
+// other feed take precedence, except for URLs, which are merged to generate a
+// distinct set. No serialization or sanitization occurs.
 Feed.prototype.merge = function(otherFeed) {
 
-  // Clone to maintain purity
-  const mergedFeed = Feed.prototype.clone.call(this);
+  // Clone to maintain purity. No operations here should affect this object or
+  // the otherFeed.
+  const mergedFeed = Object.assign(new Feed(), this);
 
-  // Merge the url lists of both feeds
-  if(mergedFeed.urls && otherFeed.urls) {
-    for(let url of otherFeed.urls) {
-      if(!mergedFeed.urls.includes(url)) {
-        mergedFeed.urls.push(url);
-      }
-    }
-  } else if(otherFeed.urls) {
-    // clone the array, do not simply reference it
-    mergedFeed.urls = [...otherFeed.urls];
-  }
-
-  if(otherFeed.title) {
-    mergedFeed.title = otherFeed.title;
-  }
-
+  // The copy operations are listed mostly in alphabetical order of field name,
+  // there is no logical signifiance
   if(otherFeed.description) {
     mergedFeed.description = otherFeed.description;
   }
 
-  if(otherFeed.link) {
-    mergedFeed.link = otherFeed.link;
+  // TODO: this needs to clone entry objects to ensure purity?
+  // This merely clones the array.
+  if(otherFeed.entries) {
+    mergedFeed.entries = [...otherFeed.entries];
   }
 
-  if(otherFeed.faviconURLString) {
-    mergedFeed.faviconURLString = otherFeed.faviconURLString;
-  }
-
-  if(otherFeed.datePublished) {
-    mergedFeed.datePublished = otherFeed.datePublished;
+  // TODO: do I need to clone dates or are dates immutable?
+  if(otherFeed.dateCreated) {
+    mergedFeed.dateCreated = otherFeed.dateCreated;
   }
 
   if(otherFeed.dateFetched) {
@@ -119,36 +122,92 @@ Feed.prototype.merge = function(otherFeed) {
     mergedFeed.dateLastModified = otherFeed.dateLastModified;
   }
 
+  if(otherFeed.datePublished) {
+    mergedFeed.datePublished = otherFeed.datePublished;
+  }
+
+  if(otherFeed.dateUpdated) {
+    mergedFeed.dateUpdated = otherFeed.dateUpdated;
+  }
+
+  if(otherFeed.faviconURLString) {
+    mergedFeed.faviconURLString = otherFeed.faviconURLString;
+  }
+
+  // TODO: if link is a URL object, shouldn't I be cloning it?
+  if(otherFeed.link) {
+    mergedFeed.link = otherFeed.link;
+  }
+
+  if(otherFeed.title) {
+    mergedFeed.title = otherFeed.title;
+  }
+
+  if(otherFeed.type) {
+    mergedFeed.type = otherFeed.type;
+  }
+
+  // TODO: I should define two methods, addURL and addURLString. addURL
+  // implicitly does the exists check, so there is no need to do it twice here.
+  // In fact this is silly the way I am doing it now.
+  // Also, for addURL, I need to clone.
+  // Or, I should change addURL to expect a URL object. That probably makes
+  // more sense. To do that I need to check all calls to addURL.
+  // Right now this is abusing addURL which expects a string, specifically
+  // the fact that it doesn't check its argument type
+
+  // When copying over a URL, clone it to ensure purity. Otherwise,
+  // setting a property of a URL in otherFeed would set the property
+  // of a URL in the merged feed.
+
+  // Merge the url lists of both feeds. Both arrays should contain URL objects
+  // Ensure uniqueness. At the start of this, mergedFeed contains the url
+  // objects present in this feed.
+  if(mergedFeed.urls && otherFeed.urls) {
+    for(let otherURL of otherFeed.urls) {
+      let exists = false;
+      for(let localURL of mergedFeed.urls) {
+        if(localURL.href === otherURL.href) {
+          exists = true;
+          break;
+        }
+      }
+
+      if(!exists) {
+        mergedFeed.addURL(new URL(otherURL.href));
+      }
+    }
+  } else if(otherFeed.urls) {
+    // Copy over the other feed's urls without doing a lookup.
+    for(let otherURL of otherFeed.urls) {
+      mergedFeed.addURL(new URL(otherURL.href));
+    }
+  }
+
   return mergedFeed;
 };
 
-// Generates a new basic object suitable for storage in indexedDB from within
-// the context of either adding a new feed or updating an existing feed
+// Generates a new basic object suitable for storage in indexedDB.
 // Does not sanitize. This merely ensures that only storable
 // values are present in the object.
-// This cannot clone, because that could introduce properties into the object
-// that should not be present, such as misc. expand-object properties.
 // The entries property is excluded.
 Feed.prototype.serialize = function() {
 
+  // We have to copy over individual properties instead of simply cloning in
+  // order to avoid expando properties. We also want to avoid setting a key when
+  // its value is null or undefined.
   const outputFeed = {};
 
-  // id is optional because it isn't present when adding
+  // id is optional because it isn't present when adding but is when updating
+  // We have to be extra careful not to define it in the case of an add in
+  // order to avoid an error when inserting into the database.
   if(this.id) {
-    console.assert(!isNaN(this.id) && this.id > 0, 'invalid feed id %s',
-      this.id);
     outputFeed.id = this.id;
   }
 
   if(this.type) {
-    const allowedTypes = {'feed': 1, 'rss': 1, 'rdf': 1};
-    console.assert(this.type in allowedTypes,
-      'Invalid feed type %s', this.type);
     outputFeed.type = this.type;
   }
-
-  console.assert(this.urls && this.urls.length,
-    'Undefined or empty urls property');
 
   // Convert urls to strings
   if(Object.prototype.toString.call(this.urls[0]) === '[object URL]') {
@@ -211,29 +270,43 @@ Feed.prototype.serialize = function() {
 };
 
 // Creates a new feed suitable for storage
+// TODO: set upper bound on storable string length using truncateHTMLString
 Feed.prototype.sanitize = function() {
   // Copy to maintain all the fields and purity
-  const cleanFeed = Object.assign({}, this);
+  const feed = Object.assign(new Feed(), this);
 
-  // Sanitize title
-  if(cleanFeed.title) {
-    let title = cleanFeed.title;
+  // If id is defined it should be a positive integer
+  if(feed.id) {
+    console.assert(!isNaN(feed.id), 'nan id', feed.id);
+    console.assert(feed.id > 0, 'non-positive id', feed.id);
+  }
+
+  // If type is defined it should be one of the allowed types
+  if(feed.type) {
+    const allowedTypes = {'feed': 1, 'rss': 1, 'rdf': 1};
+    console.assert(feed.type in allowedTypes, 'invalid type', feed.type);
+  }
+
+  // Sanitize feed title. The title is an HTML string. However, we only want to
+  // allow entities, not tags.
+  if(feed.title) {
+    let title = feed.title;
     title = StringUtils.filterControlCharacters(title);
     title = StringUtils.replaceHTML(title, '');
     title = title.replace(/\s+/, ' ');
     title = title.trim();
-    cleanFeed.title = title;
+    feed.title = title;
   }
 
-  // Sanitize description
-  if(cleanFeed.description) {
-    let description = cleanFeed.description;
+  // Sanitize feed description
+  if(feed.description) {
+    let description = feed.description;
     description = StringUtils.filterControlCharacters(description);
     description = StringUtils.replaceHTML(description, '');
     description = description.replace(/\s+/, ' ');
     description = description.trim();
-    cleanFeed.description = description;
+    feed.description = description;
   }
 
-  return cleanFeed;
+  return feed;
 };

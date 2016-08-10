@@ -154,26 +154,24 @@ poll.onFetchFeed = function(context, localFeed, event) {
     localFeed, remoteFeed));
 };
 
-poll.onLookupFeedFavicon = function(context, localFeed, remoteFeed,
-  faviconURL) {
+poll.onLookupFeedFavicon = function(context, localFeed, remoteFeed,faviconURL) {
   if(faviconURL) {
     remoteFeed.faviconURLString = faviconURL.href;
   }
 
   // Synchronize the feed loaded from the database with the fetched feed, and
-  // then store the new feed in the database.
-  // Merge requires that both feeds be serialized. localFeed already is because
-  // it was loaded from the database, but the remote feed is not because
-  // parseFeed produces a feed-like object with things like URL objects
-  const mergedFeed = Feed.prototype.merge.call(localFeed,
-    remoteFeed.serialize());
+  // then store the modified feed object in the database.
+  const localFeedObject = new Feed(localFeed);
+  const mergedFeed = localFeedObject.merge(remoteFeed);
   updateFeed(context.connection, mergedFeed,
     poll.onUpdateFeed.bind(null, context, remoteFeed.getEntries()));
 };
 
-poll.onUpdateFeed = function(context, entries, resultType, feed) {
+poll.onUpdateFeed = function(context, entries, event) {
+
+
   // If something went wrong updating the feed then we are done
-  if(resultType !== 'success') {
+  if(event.type !== 'success') {
     context.pendingFeedsCount--;
     poll.onComplete(context);
     return;
@@ -188,6 +186,11 @@ poll.onUpdateFeed = function(context, entries, resultType, feed) {
     return;
   }
 
+  // TODO: instead of passing along the feed, just shove it in feed context
+  // and pass along context instead
+  // or just pass along only the relevant fields needed like feedId and title
+  // and faviconURLString
+
   // Create a subcontext for processing this feed's entries
   const feedContext = {
     'entriesProcessed': 0,
@@ -198,31 +201,7 @@ poll.onUpdateFeed = function(context, entries, resultType, feed) {
   const boundOnEntryProcessed = poll.onEntryProcessed.bind(null, context,
     feedContext);
   for(let entry of entries) {
-    poll.processEntry(context, feed, entry, boundOnEntryProcessed);
-  }
-};
-
-poll.onEntryProcessed = function(pollContext, feedContext,
-  optionalAddEntryEvent) {
-  feedContext.entriesProcessed++;
-
-  if(optionalAddEntryEvent && optionalAddEntryEvent.type === 'success') {
-    feedContext.entriesAdded++;
-  }
-
-  console.assert(feedContext.entriesProcessed <= feedContext.numEntries,
-    'entriesProcessed greater than numEntries', feedContext.entriesProcessed,
-    feedContext.numEntries);
-
-  // We are finished processing the feed if we finished processing its entries
-  if(feedContext.entriesProcessed === feedContext.numEntries) {
-    // Only update the badge if we actually added some entries
-    if(feedContext.entriesAdded) {
-      badge.update(pollContext.connection);
-    }
-
-    pollContext.pendingFeedsCount--;
-    poll.onComplete(pollContext);
+    poll.processEntry(context, event.feed, entry, boundOnEntryProcessed);
   }
 };
 
@@ -248,6 +227,8 @@ poll.processEntry = function(context, feed, entry, callback) {
   request.onsuccess = onFind;
   request.onerror = onFind;
 };
+
+
 
 poll.onFindEntryByURL = function(context, feed, entry, callback, event) {
   // If there was an error searching for the entry by url, then consider the
@@ -338,6 +319,29 @@ poll.onSetImageDimensions = function(context, entry, document, callback,
   }
 
   addEntry(context.connection, entry, callback);
+};
+
+poll.onEntryProcessed = function(pollContext, feedContext, event) {
+  feedContext.entriesProcessed++;
+  // If called as a result of addEntry then an event will be available
+  if(event && event.type === 'success') {
+    feedContext.entriesAdded++;
+  }
+
+  console.assert(feedContext.entriesProcessed <= feedContext.numEntries,
+    'entriesProcessed greater than numEntries', feedContext.entriesProcessed,
+    feedContext.numEntries);
+
+  // We are finished processing the feed if we finished processing its entries
+  if(feedContext.entriesProcessed === feedContext.numEntries) {
+    // Only update the badge if we actually added some entries
+    if(feedContext.entriesAdded) {
+      badge.update(pollContext.connection);
+    }
+
+    pollContext.pendingFeedsCount--;
+    poll.onComplete(pollContext);
+  }
 };
 
 poll.onComplete = function(context) {
