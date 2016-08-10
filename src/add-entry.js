@@ -18,5 +18,8 @@ function addEntry(connection, entry, callback) {
   const entryStore = transaction.objectStore('entry');
   const request = entryStore.add(storable);
   request.onsuccess = callback;
-  request.onerror = callback;
+  request.onerror = function(event) {
+    console.error(event.target.error);
+    callback(event);
+  };
 }
