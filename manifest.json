@@ -15,7 +15,6 @@
     "scripts": [
       "/lib/parse-srcset.js",
       "/src/add-entry.js",
-      "/src/add-feed.js",
       "/src/archive.js",
       "/src/background.js",
       "/src/badge.js",
