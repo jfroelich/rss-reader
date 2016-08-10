@@ -34,6 +34,7 @@ Feed.prototype.deserialize = function(feed) {
 
   // Deserialize urls. indexedDB cannot store URL objects.
   // This assumes urls are always valid and never throws.
+  // This assumes the urls are unique and properly ordered.
   if(feed.urls && feed.urls.length) {
     this.urls = feed.urls.map(function(urlString) {
       return new URL(urlString);
@@ -58,22 +59,35 @@ Feed.prototype.hasURL = function() {
 };
 
 // Adds the url to the feed (if it is unique from prior urls)
-// TODO: this needs to be refactored to only accept a URL object, and clone
-// the url when setting, and then refactor merge to use it, and all
-// dependencies
-Feed.prototype.addURL = function(urlString) {
+Feed.prototype.addURL = function(url) {
 
-  console.assert(urlString, 'urlString is required');
+  console.assert(Object.prototype.toString.call(url) === '[object URL]',
+    'url must be a URL object', url);
 
+  // Lazily create the array
   if(!this.urls) {
     this.urls = [];
   }
 
-  // Ensure the url does not already exist
-  // Assume comparing normalized versions of urls
-  if(!this.urls.includes(urlString)) {
-    this.urls.push(urlString);
+  // Search for the url in the existing set. Compare by normalized values.
+  // Converting the URL object to a string implictly normalizes.
+  const urlString = url.href;
+  const matchingURL = this.urls.find(function(urlObj) {
+    return urlObj.href === urlString;
+  });
+
+  if(matchingURL) {
+    return;
   }
+
+  // Clone the url. URL objects are mutable, and we want to make sure that the
+  // side effect of setting a property of the URL object parameter externally
+  // doesn't affect the object stored in the urls array here.
+  const clonedURL = new URL(urlString);
+
+  // Add the unique clone. The set is ordered, so the most recent URL should
+  // be at the end.
+  this.urls.push(clonedURL);
 };
 
 Feed.prototype.addEntry = function(entry) {
@@ -90,7 +104,8 @@ Feed.prototype.getEntries = function() {
 
 // Returns a new Feed of this feed merged with another feed. Fields from the
 // other feed take precedence, except for URLs, which are merged to generate a
-// distinct set. No serialization or sanitization occurs.
+// distinct ordered set, where the other urls appear after this feed's urls.
+// No serialization or sanitization occurs.
 Feed.prototype.merge = function(otherFeed) {
 
   // Clone to maintain purity. No operations here should affect this object or
@@ -134,9 +149,8 @@ Feed.prototype.merge = function(otherFeed) {
     mergedFeed.faviconURLString = otherFeed.faviconURLString;
   }
 
-  // TODO: if link is a URL object, shouldn't I be cloning it?
   if(otherFeed.link) {
-    mergedFeed.link = otherFeed.link;
+    mergedFeed.link = new URL(otherFeed.link.href);
   }
 
   if(otherFeed.title) {
@@ -147,49 +161,15 @@ Feed.prototype.merge = function(otherFeed) {
     mergedFeed.type = otherFeed.type;
   }
 
-  // TODO: I should define two methods, addURL and addURLString. addURL
-  // implicitly does the exists check, so there is no need to do it twice here.
-  // In fact this is silly the way I am doing it now.
-  // Also, for addURL, I need to clone.
-  // Or, I should change addURL to expect a URL object. That probably makes
-  // more sense. To do that I need to check all calls to addURL.
-  // Right now this is abusing addURL which expects a string, specifically
-  // the fact that it doesn't check its argument type
-
-  // When copying over a URL, clone it to ensure purity. Otherwise,
-  // setting a property of a URL in otherFeed would set the property
-  // of a URL in the merged feed.
-
-  // Merge the url lists of both feeds. Both arrays should contain URL objects
-  // Ensure uniqueness. At the start of this, mergedFeed contains the url
-  // objects present in this feed.
-  if(mergedFeed.urls && otherFeed.urls) {
-    for(let otherURL of otherFeed.urls) {
-      let exists = false;
-      for(let localURL of mergedFeed.urls) {
-        if(localURL.href === otherURL.href) {
-          exists = true;
-          break;
-        }
-      }
-
-      if(!exists) {
-        mergedFeed.addURL(new URL(otherURL.href));
-      }
-    }
-  } else if(otherFeed.urls) {
-    // Copy over the other feed's urls without doing a lookup.
-    for(let otherURL of otherFeed.urls) {
-      mergedFeed.addURL(new URL(otherURL.href));
-    }
+  // Merge url objects. addURL will ensure uniqueness/purity.
+  for(let url of otherFeed.urls) {
+    mergedFeed.addURL(url);
   }
 
   return mergedFeed;
 };
 
 // Generates a new basic object suitable for storage in indexedDB.
-// Does not sanitize. This merely ensures that only storable
-// values are present in the object.
 // The entries property is excluded.
 Feed.prototype.serialize = function() {
 
@@ -209,15 +189,10 @@ Feed.prototype.serialize = function() {
     outputFeed.type = this.type;
   }
 
-  // Convert urls to strings
-  if(Object.prototype.toString.call(this.urls[0]) === '[object URL]') {
-    outputFeed.urls = this.urls.map(function urlToString(url) {
-      return url.href;
-    });
-  } else {
-    // clone in order to maintain purity
-    outputFeed.urls = [...this.urls];
-  }
+  // Convert urls to strings, maintaining collection order
+  outputFeed.urls = this.urls.map(function(url) {
+    return url.href;
+  });
 
   if(this.title) {
     outputFeed.title = this.title;
@@ -232,11 +207,8 @@ Feed.prototype.serialize = function() {
   }
 
   if(this.link) {
-    if(Object.prototype.toString.call(this.link) === '[object URL]') {
-      outputFeed.link = this.link.href;
-    } else {
-      outputFeed.link = this.link;
-    }
+    // Convert to a string
+    outputFeed.link = this.link.href;
   }
 
   if(this.faviconURLString) {
