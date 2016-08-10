@@ -67,6 +67,7 @@ function fetchFeedOnResponse(requestURL, excludeEntries, callback, event) {
     return;
   }
 
+  // NOTE: addURL expects a URL object, not a string
   feed.addURL(requestURL);
   feed.addURL(new URL(event.target.responseURL));
   feed.dateFetched = new Date();
