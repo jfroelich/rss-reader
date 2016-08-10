@@ -274,6 +274,9 @@ OptionsPage.appendFeed = function(feed, insertedSort) {
 // TODO: rename url to something like feedURL, it's not just any url
 OptionsPage.showSubscriptionPreview = function(url) {
 
+  console.assert(Object.prototype.toString.call(url) === '[object URL]',
+    'not a URL object', url);
+
   OptionsPage.hideSubscriptionPreview();
 
   if(!localStorage.ENABLE_SUBSCRIBE_PREVIEW) {
@@ -357,6 +360,10 @@ OptionsPage.hideSubscriptionPreview = function() {
 };
 
 OptionsPage.startSubscription = function(url) {
+
+  console.assert(Object.prototype.toString.call(url) === '[object URL]',
+    'not a URL object', url);
+
   OptionsPage.hideSubscriptionPreview();
   OptionsPage.showSubscriptionMonitor();
   OptionsPage.updateSubscriptionMonitorMessage('Subscribing to' + url.href);
@@ -367,7 +374,7 @@ OptionsPage.startSubscription = function(url) {
   // startSubscription should expect a feed object as a parameter.
 
   const feed = new Feed();
-  // Append a URL object, not a string, or subscribe will fail
+
   feed.addURL(url);
 
   subscribe.start(feed, {
@@ -381,6 +388,9 @@ OptionsPage.startSubscription = function(url) {
       OptionsPage.hideSubscriptionMonitor(showErrorMessage.bind(event.type));
       return;
     }
+
+    // TODO: if subscribe.start yields a Feed object instead of a basic
+    // feed, I should just use event.feed.getURL()
 
     OptionsPage.appendFeed(event.feed, true);
     OptionsPage.updateFeedCount();
