@@ -156,30 +156,35 @@ importOPML.readFileOnLoad = function(context, file, event) {
     }
     seenURLStringSet.add(url.href);
 
-    // Create the feed object to pass to addFeed
-    const feed = {};
-    Feed.prototype.addURL.call(feed, url.href);
+    // Create the feed object to pass to subscribe.start
+    const feed = new Feed();
+    feed.addURL(url);
     feed.type = type;
-    feed.title = element.getAttribute('title') || element.getAttribute('text');
+    feed.title = element.getAttribute('title');
+    if(!feed.title) {
+      feed.title = element.getAttribute('text');
+    }
     feed.description = element.getAttribute('description');
 
     const htmlUrlString = element.getAttribute('htmlUrl');
     if(htmlUrlString) {
       let outlineLinkURL = null;
       try {
-        outlineLinkURL = new URL(htmlUrlString);
-        feed.link = outlineLinkURL.href;
+        feed.link = new URL(htmlUrlString);
       } catch(urlParseError) {
-        console.warn('Error parsing outline link', htmlUrlString);
+        console.warn(urlParseError);
       }
     }
 
-    // Request that the feed be added
+    // Subscribe to the feed
     // Async. Do not wait for the request to complete.
-    addFeed(context.connection, feed, null);
+    subscribe.start(feed, {
+      'connection': context.connection,
+      'suppressNotifications': true
+    });
   }
 
-  // Consider the file finished. addFeed requests are pending
+  // Consider the file finished. subscription requests are pending
   importOPML.onFileProcessed(context, file);
 };
 
@@ -190,7 +195,7 @@ importOPML.onFileProcessed = function(context, file) {
   context.numFilesProcessed++;
 
   if(context.numFilesProcessed === context.files.length) {
-    // Call onComplete. addFeed requests are pending
+    // Call onComplete. subscription requests may be pending
     importOPML.onComplete(context);
   }
 };
@@ -202,12 +207,13 @@ importOPML.onComplete = function(context) {
     context.uploader.remove();
   }
 
-  // Request the connection be closed once pending addFeed requests complete
+  // Request the connection be closed once pending subscription requests
+  // complete
   if(context.connection) {
     context.connection.close();
   }
 
-  // Callback, even if addFeed requests are pending, and the connection is
+  // Callback, even if subscription requests are pending, and the connection is
   // still open.
   if(context.callback) {
     context.callback();

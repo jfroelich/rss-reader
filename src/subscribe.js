@@ -98,11 +98,8 @@ subscribe.findFeedOnError = function(event) {
 
 subscribe.onFetchFeed = function(event) {
   if(event.type === 'load') {
-    const localFeed = this.feed;
-    const remoteFeed = event.feed;
-    const mergedFeed = localFeed.merge(remoteFeed);
-    addFeed(this.connection, mergedFeed,
-      subscribe.onAddFeed.bind(this));
+    const mergedFeed = this.feed.merge(event.feed);
+    addFeed(this.connection, mergedFeed, subscribe.onAddFeed.bind(this));
   } else {
     // Go to exit
     subscribe.onComplete.call(this, {'type': 'FetchError'});
