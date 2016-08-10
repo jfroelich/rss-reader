@@ -73,8 +73,7 @@ subscribe.findFeedOnSuccess = function(event) {
 
   // Callback with an error if already subscribed
   if(event.target.result) {
-    console.debug('Already subscribed to',
-      Feed.prototype.getURL.call(event.target.result));
+    console.debug('Already subscribed to', this.feed.getURL().toString());
     subscribe.onComplete.call(this, {'type': 'ConstraintError'});
     return;
   }
@@ -152,6 +151,10 @@ subscribe.onComplete = function(event) {
   }
 
   if(!this.suppressNotifications && this.didSubscribe) {
+
+    // TODO: if addFeed calls back with a Feed object, then I wouldn't need
+    // to use call here
+
     notify('Subscription complete', 'Subscribed to ' + (event.feed.title ||
       Feed.prototype.getURL.call(event.feed).toString()));
   }
