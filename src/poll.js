@@ -115,13 +115,13 @@ poll.onOpenFeedCursor = function(context, event) {
   // Bump the count to indicate a new feed is being polled
   context.pendingFeedsCount++;
 
-  // Fetch the feed
-  const feed = cursor.value;
+  // Deserialize the object at the cursor's current position into a Feed object
+  const feed = new Feed(cursor.value);
+
   // This assumes that the feed has a valid url, and should never throw
-  const requestURL = new URL(Feed.prototype.getURL.call(feed));
   const excludeEntries = false;
   const timeoutMillis = 10 * 1000;
-  fetchFeed(requestURL, timeoutMillis, excludeEntries,
+  fetchFeed(feed.getURL(), timeoutMillis, excludeEntries,
     poll.onFetchFeed.bind(null, context, feed));
 
   // Advance the to next feed (async)
@@ -142,7 +142,7 @@ poll.onFetchFeed = function(context, localFeed, event) {
   if(localFeed.dateLastModified && remoteFeed.dateLastModified &&
     localFeed.dateLastModified.getTime() ===
     remoteFeed.dateLastModified.getTime()) {
-    // console.debug('Feed unmodified', Feed.prototype.getURL.call(localFeed));
+    console.debug('Feed unmodified', localFeed.getURL().toString());
     context.pendingFeedsCount--;
     poll.onComplete(context);
     return;
@@ -154,15 +154,15 @@ poll.onFetchFeed = function(context, localFeed, event) {
     localFeed, remoteFeed));
 };
 
-poll.onLookupFeedFavicon = function(context, localFeed, remoteFeed,faviconURL) {
+poll.onLookupFeedFavicon = function(context, localFeed, remoteFeed,
+  faviconURL) {
   if(faviconURL) {
     remoteFeed.faviconURLString = faviconURL.href;
   }
 
   // Synchronize the feed loaded from the database with the fetched feed, and
   // then store the modified feed object in the database.
-  const localFeedObject = new Feed(localFeed);
-  const mergedFeed = localFeedObject.merge(remoteFeed);
+  const mergedFeed = localFeed.merge(remoteFeed);
   updateFeed(context.connection, mergedFeed,
     poll.onUpdateFeed.bind(null, context, remoteFeed.getEntries()));
 };
