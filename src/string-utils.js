@@ -6,6 +6,7 @@
 
 const StringUtils = {};
 
+// The regex is from somewhere on stackoverflow
 StringUtils.filterControlCharacters = function(inputString) {
   console.assert(inputString, 'inputString is required');
   return inputString.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
