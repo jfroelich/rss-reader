@@ -43,7 +43,6 @@ badge.countUnread = function() {
 };
 
 badge.countOnSuccess = function(event) {
-  // console.debug('count result', event.target.result);
   this.text = '' + event.target.result;
   badge.onComplete.call(this);
 };
@@ -54,7 +53,6 @@ badge.countOnError = function(event) {
 };
 
 badge.onComplete = function() {
-  // console.debug('Updating badge unread count to', this.text);
   chrome.browserAction.setBadgeText({'text': this.text});
   if(this.shouldClose && this.connection) {
     this.connection.close();
