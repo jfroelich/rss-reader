@@ -176,69 +176,67 @@ Feed.prototype.serialize = function() {
   // We have to copy over individual properties instead of simply cloning in
   // order to avoid expando properties. We also want to avoid setting a key when
   // its value is null or undefined.
-  const outputFeed = {};
+  const feed = {};
+
+  // Date objects are mutable, so to ensure purity, date objects are cloned.
+  if(this.dateFetched) {
+    feed.dateFetched = new Date(this.dateFetched.getTime());
+  }
+
+  if(this.datePublished) {
+    feed.datePublished = new Date(this.datePublished.getTime());
+  }
+
+  if(this.dateCreated) {
+    feed.dateCreated = new Date(this.dateCreated.getTime());
+  }
+
+  if(this.dateLastModified) {
+    feed.dateLastModified = new Date(this.dateLastModified.getTime());
+  }
+
+  if(this.dateUpdated) {
+    feed.dateUpdated = new Date(this.dateUpdated.getTime());
+  }
+
+  if(this.description) {
+    feed.description = this.description;
+  }
+
+  if(this.faviconURLString) {
+    feed.faviconURLString = this.faviconURLString;
+  }
 
   // id is optional because it isn't present when adding but is when updating
   // We have to be extra careful not to define it in the case of an add in
   // order to avoid an error when inserting into the database.
   if(this.id) {
-    outputFeed.id = this.id;
+    feed.id = this.id;
   }
 
-  if(this.type) {
-    outputFeed.type = this.type;
+  // Link is a URL object so we must convert it to a string
+  if(this.link) {
+    feed.link = this.link.toString();
   }
-
-  // Convert urls to strings, maintaining collection order
-  outputFeed.urls = this.urls.map(function(url) {
-    return url.href;
-  });
 
   if(this.title) {
-    outputFeed.title = this.title;
+    feed.title = this.title;
   } else {
     // To ensure it is indexed because this is currently required by the
     // view implementation
-    outputFeed.title = '';
+    feed.title = '';
   }
 
-  if(this.description) {
-    outputFeed.description = this.description;
+  if(this.type) {
+    feed.type = this.type;
   }
 
-  if(this.link) {
-    // Convert to a string
-    outputFeed.link = this.link.href;
-  }
+  // Convert urls to strings, maintaining collection order
+  feed.urls = this.urls.map(function(url) {
+    return url.toString();
+  });
 
-  if(this.faviconURLString) {
-    outputFeed.faviconURLString = this.faviconURLString;
-  }
-
-  // TODO: do I need to clone dates to ensure purity?
-  // if things like Date.prototype.setDay or whatever exist, then yes
-
-  if(this.dateFetched) {
-    outputFeed.dateFetched = this.dateFetched;
-  }
-
-  if(this.datePublished) {
-    outputFeed.datePublished = this.datePublished;
-  }
-
-  if(this.dateCreated) {
-    outputFeed.dateCreated = this.dateCreated;
-  }
-
-  if(this.dateLastModified) {
-    outputFeed.dateLastModified = this.dateLastModified;
-  }
-
-  if(this.dateUpdated) {
-    outputFeed.dateUpdated = this.dateUpdated;
-  }
-
-  return outputFeed;
+  return feed;
 };
 
 // Creates a new feed suitable for storage

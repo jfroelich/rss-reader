@@ -196,6 +196,9 @@ OptionsPage.updateFeedCount = function() {
   }
 };
 
+// TODO: this approach doesn't really work, I need to independently sort
+// on load because it should be case-insensitive.
+
 // TODO: rename, where is this appending, and to what? Maybe this should be a
 // member function of some type of feed menu object
 // TODO: this should always use inserted sort, that should be invariant, and
@@ -210,8 +213,7 @@ OptionsPage.appendFeed = function(feed, insertedSort) {
   item.setAttribute('feed', feed.id);
 
   if(feed.description) {
-    item.setAttribute('title',
-      StringUtils.replaceHTML(feed.description, ''));
+    item.setAttribute('title', feed.description);
   }
 
   item.onclick = OptionsPage.feedListOnItemClick;
@@ -225,38 +227,27 @@ OptionsPage.appendFeed = function(feed, insertedSort) {
 
     faviconElement.setAttribute('width', '16');
     faviconElement.setAttribute('height', '16');
-
     item.appendChild(faviconElement);
-  } else {
-    console.debug('No favicon found for', feed.urls[feed.urls.length - 1]);
   }
 
   const titleElement = document.createElement('span');
-  let feedTitleString = feed.title;
-  if(feedTitleString) {
-    feedTitleString = StringUtils.truncateHTML(feedTitleString, 300);
-  }
-
-  if(!feedTitleString) {
-    feedTitleString = 'Untitled';
-  }
-
+  let feedTitleString = feed.title || 'Untitled';
+  feedTitleString = StringUtils.truncateHTML(feedTitleString, 300);
   titleElement.textContent = feedTitleString;
   item.appendChild(titleElement);
 
   const feedListElement = document.getElementById('feedlist');
 
+  const lcTitle = feedTitleString.toLowerCase();
+
   // Insert the feed item element into the proper position in the list
   if(insertedSort) {
-    const currentItems = feedListElement.childNodes;
-    var added = false;
-
-    // TODO: use for .. of
-    for(var i = 0, len = currentItems.length, currentKey; i < len; i++) {
-      currentKey = currentItems[i].getAttribute('sort-key');
-      if(indexedDB.cmp(feed.title || '', currentKey || '') < 0) {
+    let added = false;
+    for(let child of feedListElement.childNodes) {
+      const key = (child.getAttribute('sort-key') || '').toLowerCase();
+      if(indexedDB.cmp(lcTitle, key) < 0) {
+        feedListElement.insertBefore(item, child);
         added = true;
-        feedListElement.insertBefore(item, currentItems[i]);
         break;
       }
     }
@@ -374,9 +365,7 @@ OptionsPage.startSubscription = function(url) {
   // startSubscription should expect a feed object as a parameter.
 
   const feed = new Feed();
-
   feed.addURL(url);
-
   subscribe.start(feed, {
     'connection': null,
     'suppressNotifications': false,
@@ -418,13 +407,19 @@ OptionsPage.startSubscription = function(url) {
 };
 
 // TODO: show num entries, num unread/red, etc
+// TODO: show dateLastModified, datePublished, dateCreated, dateUpdated
 // TODO: react to errors
 OptionsPage.populateFeedDetails = function(feedId) {
-  console.assert(feedId > 0, 'invalid feed id');
+  console.assert(!isNaN(feedId) && feedId > 0, 'invalid feed id', feedId);
+
+  const context = {
+    'connection': null
+  };
 
   openIndexedDB(onOpenDatabase);
   function onOpenDatabase(connection) {
     if(connection) {
+      context.connection = connection;
       const transaction = connection.transaction('feed');
       const store = transaction.objectStore('feed');
       const request = store.get(feedId);
@@ -437,52 +432,61 @@ OptionsPage.populateFeedDetails = function(feedId) {
   }
 
   function onFindFeedById(event) {
-    const feed = event.target.result;
-    if(!feed) {
-      // TODO: show an error message?
-      console.error('No feed found for feed id:', feedId);
+
+    if(event.type !== 'success') {
+      console.error(event);
+      if(context.connection) {
+        context.connection.close();
+      }
+
       return;
     }
 
-    // Display the feed info by updating element properties
-    // TODO: do I need to do additional sanitization here?
-
-    let title = feed.title;
-    title = StringUtils.replaceHTML(title || '', '');
-    if(!title) {
-      title = 'Untitled';
+    if(!event.target.result) {
+      console.error('No feed found with id', feedId);
+      if(context.connection) {
+        context.connection.close();
+      }
+      return;
     }
 
+    // Deserialize the feed
+    const feed = new Feed(event.target.result);
+
     const titleElement = document.getElementById('details-title');
-    titleElement.textContent = title;
+    titleElement.textContent = feed.title || 'Untitled';
 
-    // Because the feed was loaded directly from the database, it contains
-    // strings, not url objects.
-    const feedURLString = feed.urls[feed.urls.length - 1];
-    const feedURL = new URL(feedURLString);
+    const faviconElement = document.getElementById('details-favicon');
+    if(feed.faviconURLString) {
+      faviconElement.setAttribute('src', feed.faviconURLString);
+    } else {
+      faviconElement.removeAttribute('src');
+    }
 
-    const favIconElement = document.getElementById('details-favicon');
-    favIconElement.setAttribute('src', feed.faviconURLString || '');
-
-    const description = StringUtils.replaceHTML(feed.description || '', '');
     const descriptionElement = document.getElementById(
       'details-feed-description');
-    descriptionElement.textContent = description;
+    if(feed.description) {
+      descriptionElement.textContent = feed.description;
+    } else {
+      descriptionElement.textContent = '';
+    }
 
     const feedURLElement = document.getElementById('details-feed-url');
-    feedURLElement.textContent = feedURL.href;
+    feedURLElement.textContent = feed.getURL().toString();
 
     const feedLinkElement = document.getElementById('details-feed-link');
-    // Because the feed was loaded directly from the database, feed.link
-    // is a string
-    const feedLinkURLString = feed.link;
-    feedLinkElement.textContent = feedLinkURLString;
-
-
-    // TODO: show dateLastModified, datePublished, dateCreated, dateUpdated
+    if(feed.link) {
+      feedLinkElement.textContent = feed.link.toString();
+    } else {
+      feedLinkElement.textContent = '';
+    }
 
     const unsubscribeButton = document.getElementById('details-unsubscribe');
     unsubscribeButton.value = '' + feed.id;
+
+    if(context.connection) {
+      context.connection.close();
+    }
   }
 };
 
@@ -732,11 +736,16 @@ OptionsPage.createSearchResult = function(feedResult) {
 };
 
 OptionsPage.buttonUnsubscribeOnClick = function(event) {
+
+  console.debug('Clicked Unsubscribe');
+
   // Start by getting the feed id. Whenevever I load the feed details page,
   // I set the button's value to the feed id, so get it from there.
   const feedId = parseInt(event.target.value, 10);
 
-  // Call out to unsubscribe
+  console.assert(feedId && !isNaN(feedId) && feedId > 0,
+    'invalid feed id', feedId);
+
   unsubscribe.start(feedId, onUnsubscribe);
 
   function onUnsubscribe(event) {
@@ -757,7 +766,7 @@ OptionsPage.buttonUnsubscribeOnClick = function(event) {
     // more idiomatic and use a function
     const selector = 'feedlist li[feed="' + feedId + '"]';
     const feedElement = document.querySelector(selector);
-    if(item) {
+    if(feedElement) {
       feedElement.removeEventListener('click', OptionsPage.feedListOnItemClick);
       feedElement.remove();
     }
