@@ -112,6 +112,12 @@ function subAddFeed(feed, callback) {
   console.assert(!feed.id, 'feed.id is defined', feed.id);
   const sanitizedFeed = feed.sanitize();
   sanitizedFeed.dateCreated = new Date();
+
+  // Manually remove date last modified. Because we are subscribing without
+  // handling entries, we want to prevent the poll from considering the file
+  // unmodified the next time it runs, to ensure that it downloads entries.
+  delete sanitizedFeed.dateLastModified;
+
   const serializedFeed = sanitizedFeed.serialize();
 
   const transaction = this.connection.transaction('feed', 'readwrite');
