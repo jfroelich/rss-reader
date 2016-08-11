@@ -9,13 +9,12 @@ function openIndexedDB(callback) {
   const version = 20;
   const request = indexedDB.open(name, version);
   request.onupgradeneeded = upgradeIndexedDB.bind(request, name);
-  request.onsuccess = openIndexedDBOnSuccess.bind(request, name, callback);
+  request.onsuccess = openIndexedDBOnSuccess.bind(request, callback);
   request.onerror = openIndexedDBOnError.bind(request, callback);
   request.onblocked = openIndexedDBOnBlocked.bind(request, callback);
 }
 
-function openIndexedDBOnSuccess(name, callback, event) {
-  // console.debug('Connected to database', name);
+function openIndexedDBOnSuccess(callback, event) {
   callback(event.target.result);
 }
 
