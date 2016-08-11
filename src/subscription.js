@@ -99,12 +99,19 @@ function subFindFeedOnError(event) {
 }
 
 function subOnFetchFeed(event) {
-  if(event.type === 'load') {
-    const feed = this.feed.merge(event.feed);
-    subAddFeed.call(this, feed, subOnAddFeed.bind(this));
-  } else {
+
+  if(event.type !== 'load') {
     subOnComplete.call(this, {'type': 'FetchError'});
+    return;
   }
+
+  // TODO: instead of adding the feed, this is where I should be looking for
+  // the feed's favicon. We know we are probably online at this point and are
+  // not subscribing while offline, and we know that the feed xml file exists.
+
+
+  const feed = this.feed.merge(event.feed);
+  subAddFeed.call(this, feed, subOnAddFeed.bind(this));
 }
 
 function subAddFeed(feed, callback) {
@@ -157,7 +164,11 @@ function subOnComplete(event) {
   if(!this.suppressNotifications && this.didSubscribe) {
 
     // TODO: if addFeed calls back with a Feed object, then I wouldn't need
-    // to use call here
+    // to use call here. This also means this passes back a Feed object instead
+    // of a basic object, which means I would need to update all callers
+
+    // TODO: the notification should probably use the feed's favicon if
+    // available, and only then fall back
 
     notify('Subscription complete', 'Subscribed to ' + (event.feed.title ||
       Feed.prototype.getURL.call(event.feed).toString()));
