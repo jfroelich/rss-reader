@@ -180,28 +180,28 @@ function unsub(feedId, callback) {
     'callback': callback
   };
 
-  openIndexedDB(unsubOnOpenDatabase.bind(null, context));
+  openIndexedDB(unsubOnOpenDatabase.bind(context));
 }
 
-function unsubOnOpenDatabase(context, connection) {
+function unsubOnOpenDatabase(connection) {
   if(connection) {
-    context.connection = connection;
+    this.connection = connection;
     // Open a cursor over the entries for the feed
     const transaction = connection.transaction('entry', 'readwrite');
     const store = transaction.objectStore('entry');
     const index = store.index('feed');
-    const request = index.openCursor(context.feedId);
-    request.onsuccess = unSubOnOpenCursor.bind(request, context);
-    request.onerror = unSubOnOpenCursor.bind(request, context);
+    const request = index.openCursor(this.feedId);
+    request.onsuccess = unSubOnOpenCursor.bind(this);
+    request.onerror = unSubOnOpenCursor.bind(this);
   } else {
-    unsubOnComplete(context, 'ConnectionError');
+    unsubOnComplete.call(this, 'ConnectionError');
   }
 }
 
-function unSubOnOpenCursor(context, event) {
+function unSubOnOpenCursor(event) {
   if(event.type === 'error') {
     console.error(event);
-    unsubOnComplete(context, 'DeleteEntryError');
+    unsubOnComplete.call(this, 'DeleteEntryError');
     return;
   }
 
@@ -211,7 +211,7 @@ function unSubOnOpenCursor(context, event) {
     // Delete the entry at the cursor (async)
     cursor.delete();
     // Track the number of delete requests
-    context.deleteRequestCount++;
+    this.deleteRequestCount++;
 
     // Async, notify interested 3rd parties the entry will be deleted
     chrome.runtime.sendMessage({
@@ -220,53 +220,47 @@ function unSubOnOpenCursor(context, event) {
     });
     cursor.continue();
   } else {
-    unsubOnRemoveEntries(context);
+    unsubOnRemoveEntries.call(this);
   }
 }
 
-function unsubOnRemoveEntries(context) {
-  console.debug('Deleting feed with id', context.feedId);
-  const transaction = context.connection.transaction('feed', 'readwrite');
+function unsubOnRemoveEntries() {
+  console.debug('Deleting feed with id', this.feedId);
+  const transaction = this.connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
-  const request = store.delete(context.feedId);
-  request.onsuccess = unsubDeleteFeedOnSuccess.bind(request, context);
-  request.onerror = unsubDeleteFeedOnError.bind(request, context);
+  const request = store.delete(this.feedId);
+  request.onsuccess = unsubDeleteFeedOnSuccess.bind(this);
+  request.onerror = unsubDeleteFeedOnError.bind(this);
 }
 
-function unsubDeleteFeedOnSuccess(context, event) {
-  unsubOnComplete(context, 'success');
+function unsubDeleteFeedOnSuccess(event) {
+  unsubOnComplete.call(this, 'success');
 }
 
-function unsubDeleteFeedOnError(context, event) {
-  console.warn('Failed to delete feed with id %i, but may have deleted entries',
-    context.feedId);
-  unsubOnComplete(context, 'DeleteFeedError');
+function unsubDeleteFeedOnError(event) {
+  console.warn(event.target.error);
+  unsubOnComplete.call(this, 'DeleteFeedError');
 }
 
-function unsubOnComplete(context, eventType) {
-  // Connection may be undefined such as when calling this as a result of
-  // failure to connect
-  if(context.connection) {
+function unsubOnComplete(eventType) {
 
-    // If connected, check if we actually affected the entry store
-    if(context.deleteRequestCount) {
+  if(this.connection) {
+    if(this.deleteRequestCount) {
       console.debug('Requested %i entries to be deleted',
-        context.deleteRequestCount);
-
+        this.deleteRequestCount);
       // Even though the deletes are async, the readonly transaction in
       // badge.update waits for the pending deletes to complete
-      badge.update(context.connection);
+      badge.update(this.connection);
     }
 
-    context.connection.close();
+    this.connection.close();
   }
 
-  // Callback with an event
-  if(context.callback) {
-    context.callback({
+  if(this.callback) {
+    this.callback({
       'type': eventType,
-      'feedId': context.feedId,
-      'deleteRequestCount': context.deleteRequestCount
+      'feedId': this.feedId,
+      'deleteRequestCount': this.deleteRequestCount
     });
   }
 }
