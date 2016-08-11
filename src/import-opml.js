@@ -156,7 +156,7 @@ importOPML.readFileOnLoad = function(context, file, event) {
     }
     seenURLStringSet.add(url.href);
 
-    // Create the feed object to pass to subscribe.start
+    // Create the feed object to pass to subscription.add
     const feed = new Feed();
     feed.addURL(url);
     feed.type = type;
@@ -178,7 +178,7 @@ importOPML.readFileOnLoad = function(context, file, event) {
 
     // Subscribe to the feed
     // Async. Do not wait for the request to complete.
-    subscribe.start(feed, {
+    subscription.add(feed, {
       'connection': context.connection,
       'suppressNotifications': true
     });

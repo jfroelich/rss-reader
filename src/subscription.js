@@ -2,14 +2,17 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-'use strict';
+// The subscription module exports a subscription object with two functions,
+// add and remove. subscription.add subscribes to a feed and
+// subscription.remove unsubscribes from a feed.
 
-const subscribe = {};
+(function(exports, Feed, openIndexedDB, fetchFeed, badge) {
+'use strict';
 
 // Subscribes to the given feed.
 // @param feed {Feed} the feed to subscribe to, required
 // @param options {Object} optional, optional callback, connection
-subscribe.start = function(feed, options) {
+function sub(feed, options) {
   console.assert(feed, 'feed is required');
 
   // Create a shared context to simplify passing parameters to continuations
@@ -24,94 +27,92 @@ subscribe.start = function(feed, options) {
 
   // Start by verifying the feed. At a minimum, the feed must have a url.
   if(!feed.hasURL()) {
-    subscribe.onComplete.call(context, {'type': 'MissingURLError'});
+    subOnComplete.call(context, {'type': 'MissingURLError'});
     return;
   }
 
   console.debug('Subscribing to', feed.getURL().toString());
 
   if(context.connection) {
-    subscribe.findFeed.call(context);
+    subFindFeed.call(context);
   } else {
-    openIndexedDB(subscribe.onOpenDatabase.bind(context));
+    openIndexedDB(subOnOpenDatabase.bind(context));
   }
-};
+}
 
-subscribe.onOpenDatabase = function(connection) {
+function subOnOpenDatabase(connection) {
   if(connection) {
     this.connection = connection;
-    subscribe.findFeed.call(this);
+    subFindFeed.call(this);
   } else {
-    subscribe.onComplete.call(this, {'type': 'ConnectionError'});
+    subOnComplete.call(this, {'type': 'ConnectionError'});
   }
-};
+}
 
-subscribe.findFeed = function() {
-  console.debug('Checking if subscribed to feed with url',
-    this.feed.getURL().toString());
-  // Before involving any network overhead, check if already subscribed. This
-  // check will implicitly happen again later when inserting the feed into the
-  // database, so it is partially redundant, but it can reduce the amount of
-  // processing in the common case.
-  // This uses a separate transaction from the eventual add request, because
-  // it is not recommended to have a long running transaction, and the amount of
-  // work that has to occur between this exists check and the add request takes
-  // a somewhat indefinite period of time, given network latency.
-  // This does involve a race condition if calling subscribe concurrently on
-  // the same url, but its impact is limited. The latter http request will use
-  // the cached page, and the latter call will fail with a ConstraintError when
-  // trying to add the feed.
+// Before involving any network overhead, check if already subscribed. This
+// check will implicitly happen again later when inserting the feed into the
+// database, so it is partially redundant, but it can reduce the amount of
+// processing in the common case.
+// This uses a separate transaction from the eventual add request, because
+// it is not recommended to have a long running transaction, and the amount of
+// work that has to occur between this exists check and the add request takes
+// a somewhat indefinite period of time, given network latency.
+// This does involve a race condition if calling subscribe concurrently on
+// the same url, but its impact is limited. The latter http request will use
+// the cached page, and the latter call will fail with a ConstraintError when
+// trying to add the feed.
+function subFindFeed() {
+  const urlString = this.feed.getURL().toString();
+  console.debug('Checking if subscribed to', urlString);
   const transaction = this.connection.transaction('feed');
   const store = transaction.objectStore('feed');
   const index = store.index('urls');
-  const request = index.get(this.feed.getURL().toString());
-  request.onsuccess = subscribe.findFeedOnSuccess.bind(this);
-  request.onerror = subscribe.findFeedOnError.bind(this);
+  const request = index.get(urlString);
+  request.onsuccess = subFindFeedOnSuccess.bind(this);
+  request.onerror = subFindFeedOnError.bind(this);
 };
 
-subscribe.findFeedOnSuccess = function(event) {
+function subFindFeedOnSuccess(event) {
 
   // Callback with an error if already subscribed
   if(event.target.result) {
     console.debug('Already subscribed to', this.feed.getURL().toString());
-    subscribe.onComplete.call(this, {'type': 'ConstraintError'});
+    subOnComplete.call(this, {'type': 'ConstraintError'});
     return;
   }
 
-  // Otherwise, continue with the subscription
   if('onLine' in navigator && !navigator.onLine) {
     // Proceed with an offline subscription
-    subscribe.addFeed.call(this, this.feed, subscribe.onAddFeed.bind(this));
+    subAddFeed.call(this, this.feed, subOnAddFeed.bind(this));
   } else {
     // Online subscription. Verify the remote file is a feed that exists
     // and get its info
     const timeoutMillis = 10 * 1000;
     const excludeEntries = true;
     fetchFeed(this.feed.getURL(), timeoutMillis, excludeEntries,
-      subscribe.onFetchFeed.bind(this));
+      subOnFetchFeed.bind(this));
   }
-};
+}
 
-subscribe.findFeedOnError = function(event) {
-  subscribe.onComplete.call(this, {'type': 'FindQueryError'});
-};
+function subFindFeedOnError(event) {
+  subOnComplete.call(this, {'type': 'FindQueryError'});
+}
 
-subscribe.onFetchFeed = function(event) {
+function subOnFetchFeed(event) {
   if(event.type === 'load') {
     const feed = this.feed.merge(event.feed);
-    subscribe.addFeed.call(this, feed, subscribe.onAddFeed.bind(this));
+    subAddFeed.call(this, feed, subOnAddFeed.bind(this));
   } else {
-    // Go to exit
-    subscribe.onComplete.call(this, {'type': 'FetchError'});
+    subOnComplete.call(this, {'type': 'FetchError'});
   }
-};
+}
 
-subscribe.addFeed = function(feed, callback) {
+function subAddFeed(feed, callback) {
   console.debug('Adding feed', feed);
   console.assert(!feed.id, 'feed.id is defined', feed.id);
-  let sanitizedFeed = feed.sanitize();
+  const sanitizedFeed = feed.sanitize();
   sanitizedFeed.dateCreated = new Date();
-  let serializedFeed = sanitizedFeed.serialize();
+  const serializedFeed = sanitizedFeed.serialize();
 
   const transaction = this.connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
@@ -131,21 +132,18 @@ subscribe.addFeed = function(feed, callback) {
     console.error(event);
     callback({'type': event.target.error.name});
   }
-};
+}
 
-subscribe.onAddFeed = function(event) {
+function subOnAddFeed(event) {
   if(event.type === 'success') {
-    // Flag the subscription as successful
     this.didSubscribe = true;
-    subscribe.onComplete.call(this, {'type': 'success', 'feed': event.feed});
+    subOnComplete.call(this, {'type': 'success', 'feed': event.feed});
   } else {
-    // The add can fail for various reasons, such as a database error,
-    // or because of a constraint error (feed with same url already exists)
-    subscribe.onComplete.call(this, {'type': event.type});
+    subOnComplete.call(this, {'type': event.type});
   }
-};
+}
 
-subscribe.onComplete = function(event) {
+function subOnComplete(event) {
   if(this.closeConnection && this.connection) {
     this.connection.close();
   }
@@ -162,28 +160,24 @@ subscribe.onComplete = function(event) {
   if(this.callback) {
     this.callback(event);
   }
-};
+}
 
-
-
-
-const unsubscribe = {};
-
-unsubscribe.start = function(feedId, callback) {
+function unsub(feedId, callback) {
   console.assert(feedId && !isNaN(feedId), 'invalid feed id', feedId);
   console.debug('Unsubscribing from feed with id', feedId);
 
   // Create a shared state for simple parameter passing to continuations
   const context = {
+    'connection': null,
     'feedId': feedId,
     'deleteRequestCount': 0,
     'callback': callback
   };
 
-  openIndexedDB(unsubscribe.onOpenDatabase.bind(null, context));
-};
+  openIndexedDB(unsubOnOpenDatabase.bind(null, context));
+}
 
-unsubscribe.onOpenDatabase = function(context, connection) {
+function unsubOnOpenDatabase(context, connection) {
   if(connection) {
     context.connection = connection;
     // Open a cursor over the entries for the feed
@@ -191,18 +185,17 @@ unsubscribe.onOpenDatabase = function(context, connection) {
     const store = transaction.objectStore('entry');
     const index = store.index('feed');
     const request = index.openCursor(context.feedId);
-    request.onsuccess = unsubscribe.onOpenCursor.bind(request, context);
-    request.onerror = unsubscribe.onOpenCursor.bind(request, context);
+    request.onsuccess = unSubOnOpenCursor.bind(request, context);
+    request.onerror = unSubOnOpenCursor.bind(request, context);
   } else {
-    unsubscribe.onComplete(context, 'ConnectionError');
+    unsubOnComplete(context, 'ConnectionError');
   }
-};
+}
 
-unsubscribe.onOpenCursor = function(context, event) {
-
+function unSubOnOpenCursor(context, event) {
   if(event.type === 'error') {
     console.error(event);
-    unsubscribe.onComplete(context, 'DeleteEntryError');
+    unsubOnComplete(context, 'DeleteEntryError');
     return;
   }
 
@@ -221,30 +214,30 @@ unsubscribe.onOpenCursor = function(context, event) {
     });
     cursor.continue();
   } else {
-    unsubscribe.onRemoveEntries(context);
+    unsubOnRemoveEntries(context);
   }
-};
+}
 
-unsubscribe.onRemoveEntries = function(context) {
+function unsubOnRemoveEntries(context) {
   console.debug('Deleting feed with id', context.feedId);
   const transaction = context.connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.delete(context.feedId);
-  request.onsuccess = unsubscribe.deleteFeedOnSuccess.bind(request, context);
-  request.onerror = unsubscribe.deleteFeedOnError.bind(request, context);
-};
+  request.onsuccess = unsubDeleteFeedOnSuccess.bind(request, context);
+  request.onerror = unsubDeleteFeedOnError.bind(request, context);
+}
 
-unsubscribe.deleteFeedOnSuccess = function(context, event) {
-  unsubscribe.onComplete(context, 'success');
-};
+function unsubDeleteFeedOnSuccess(context, event) {
+  unsubOnComplete(context, 'success');
+}
 
-unsubscribe.deleteFeedOnError = function(context, event) {
+function unsubDeleteFeedOnError(context, event) {
   console.warn('Failed to delete feed with id %i, but may have deleted entries',
     context.feedId);
-  unsubscribe.onComplete(context, 'DeleteFeedError');
-};
+  unsubOnComplete(context, 'DeleteFeedError');
+}
 
-unsubscribe.onComplete = function(context, eventType) {
+function unsubOnComplete(context, eventType) {
   // Connection may be undefined such as when calling this as a result of
   // failure to connect
   if(context.connection) {
@@ -270,4 +263,10 @@ unsubscribe.onComplete = function(context, eventType) {
       'deleteRequestCount': context.deleteRequestCount
     });
   }
-};
+}
+
+exports.subscription = {};
+exports.subscription.add = sub;
+exports.subscription.remove = unsub;
+
+}(this, Feed, openIndexedDB, fetchFeed, badge));

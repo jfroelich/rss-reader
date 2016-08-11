@@ -366,7 +366,7 @@ OptionsPage.startSubscription = function(url) {
 
   const feed = new Feed();
   feed.addURL(url);
-  subscribe.start(feed, {
+  subscription.add(feed, {
     'connection': null,
     'suppressNotifications': false,
     'callback': onSubscribe
@@ -378,7 +378,7 @@ OptionsPage.startSubscription = function(url) {
       return;
     }
 
-    // TODO: if subscribe.start yields a Feed object instead of a basic
+    // TODO: if subscription.add yields a Feed object instead of a basic
     // feed, I should just use event.feed.getURL()
 
     OptionsPage.appendFeed(event.feed, true);
@@ -736,17 +736,11 @@ OptionsPage.createSearchResult = function(feedResult) {
 };
 
 OptionsPage.buttonUnsubscribeOnClick = function(event) {
-
   console.debug('Clicked Unsubscribe');
-
-  // Start by getting the feed id. Whenevever I load the feed details page,
-  // I set the button's value to the feed id, so get it from there.
   const feedId = parseInt(event.target.value, 10);
-
   console.assert(feedId && !isNaN(feedId) && feedId > 0,
     'invalid feed id', feedId);
-
-  unsubscribe.start(feedId, onUnsubscribe);
+  subscription.remove(feedId, onUnsubscribe);
 
   function onUnsubscribe(event) {
     // If there was some failure to unsubscribe from the feed, react here
