@@ -799,11 +799,11 @@ OptionsPage.buttonUnsubscribeOnClick = function(event) {
 // TODO: give immediate visual feedback the import started
 // TODO: switch to a different section of the options ui on complete?
 OptionsPage.importOPMLButtonOnClick = function(event) {
-  importOPML.start();
+  opml.importFiles();
 };
 
 OptionsPage.exportOPMLButtonOnClick = function(event) {
-  exportOPML.start('Subscriptions', 'subscriptions.xml');
+  opml.exportFile('Subscriptions', 'subscriptions.xml');
 };
 
 OptionsPage.initSubscriptionsSection = function() {

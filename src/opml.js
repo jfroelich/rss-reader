@@ -2,11 +2,10 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+(function(exports, openIndexedDB, subscription, Feed) {
 'use strict';
 
-const importOPML = {};
-
-importOPML.start = function(callback) {
+function imp(callback) {
   console.debug('Importing OPML files...');
 
   // Create a context variable for simplified continuation calling
@@ -21,59 +20,55 @@ importOPML.start = function(callback) {
   context.uploader = uploader;
   uploader.setAttribute('type', 'file');
   uploader.style.display = 'none';
-  uploader.onchange = importOPML.onUploaderChange.bind(null, context);
+  uploader.onchange = impOnUploaderChange.bind(context);
   const parentElement = document.body || document.documentElement;
   parentElement.appendChild(uploader);
   uploader.click();
-};
+}
 
-importOPML.onUploaderChange = function(context, event) {
-  context.uploader.removeEventListener('change', importOPML.onUploaderChange);
-  if(!context.uploader.files || !context.uploader.files.length) {
-    console.warn('No files uploaded');
-    importOPML.onComplete(context);
+function impOnUploaderChange(event) {
+  this.uploader.removeEventListener('change', impOnUploaderChange);
+  if(!this.uploader.files || !this.uploader.files.length) {
+    console.warn('Received change event but no files uploaded');
+    impOnComplete.call(this);
     return;
   }
 
-  openIndexedDB(importOPML.onOpenDatabase.bind(null, context));
-};
+  openIndexedDB(impOnOpenDatabase.bind(this));
+}
 
-importOPML.onOpenDatabase = function(context, connection) {
+function impOnOpenDatabase(connection) {
   if(connection) {
-    context.connection = connection;
+    this.connection = connection;
   } else {
-    importOPML.onComplete(context);
+    impOnComplete.call(this);
     return;
   }
 
-  for(let file of context.uploader.files) {
+  for(let file of this.uploader.files) {
     console.debug('Importing opml file', file.name);
     if(file.type && !file.type.toLowerCase().includes('xml')) {
       console.warn('Invalid mime type', file.name, file.type);
-      importOPML.onFileProcessed(context, file);
-      continue;
-    }
-
-    if(!file.size) {
+      impOnFileProcessed.call(this, file);
+    } else if(!file.size) {
       console.warn('Empty file %s', file.name);
-      importOPML.onFileProcessed(context, file);
-      continue;
+      impOnFileProcessed.call(this, file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = impReadFileOnLoad.bind(this, file);
+      reader.onerror = impReadFileOnError.bind(this, file);
+      reader.readAsText(file);
     }
-
-    const reader = new FileReader();
-    reader.onload = importOPML.readFileOnLoad.bind(reader, context, file);
-    reader.onerror = importOPML.readFileOnError.bind(reader, context, file);
-    reader.readAsText(file);
   }
-};
+}
 
-importOPML.readFileOnError = function(context, file, event) {
+function impReadFileOnError(file, event) {
   console.warn(file.name, event);
-  importOPML.onFileProcessed(context, file);
-};
+  impOnFileProcessed.call(this, file);
+}
 
-importOPML.readFileOnLoad = function(context, file, event) {
-  console.debug('Loaded file', file.name);
+function impReadFileOnLoad(file, event) {
+  console.debug('Parsing the text of file', file.name);
 
   // Deserialize into an XMLDocument
   const parser = new DOMParser();
@@ -83,43 +78,46 @@ importOPML.readFileOnLoad = function(context, file, event) {
     document = parser.parseFromString(fileText, 'application/xml');
   } catch(xmlParseError) {
     console.warn(xmlParseError);
-    importOPML.onFileProcessed(context, file);
+    impOnFileProcessed.call(this, file);
     return;
   }
 
   // Ensure document is defined
   if(!document) {
     console.warn('Undefined document', file.name);
-    importOPML.onFileProcessed(context, file);
+    impOnFileProcessed.call(this, file);
     return;
   }
 
-  // Check for an embedded error element
+  // Check for an embedded error
   const parserError = document.querySelector('parsererror');
   if(parserError) {
     console.warn(file.name, parserError.textContent);
-    importOPML.onFileProcessed(context, file);
+    impOnFileProcessed.call(this, file);
     return;
   }
 
   // Check the document element
   if(document.documentElement.localName !== 'opml') {
     console.warn('Not opml', file.name, document.documentElement.nodeName);
-    importOPML.onFileProcessed(context, file);
+    impOnFileProcessed.call(this, file);
     return;
   }
 
-  // Check that the opml document has a body element
-  // Due to quirks with xml, cannot use document.body
+  // Check that the opml document has a body element. I do not know why
+  // accessing document.body yields undefined, so to work around that, this
+  // uses querySelector. There may be pathological cases such as when there are
+  // multiple body elements where this does not mirror how the browser
+  // identifies a document's body element.
   const body = document.querySelector('body');
   if(!body) {
     console.warn('No body', file.name, document.documentElement.outerHTML);
-    importOPML.onFileProcessed(context, file);
+    impOnFileProcessed.call(this, file);
     return;
   }
 
   // Add each of the outlines representing feeds in the body
-  const seenURLStringSet = new Set();
+  const seenURLs = new Set();
   for(let element = body.firstElementChild; element;
     element = element.nextElementSibling) {
     if(element.localName !== 'outline') {
@@ -150,11 +148,11 @@ importOPML.readFileOnLoad = function(context, file, event) {
     }
 
     // Skip duplicate outlines (compared by normalized url)
-    if(seenURLStringSet.has(url.href)) {
+    if(seenURLs.has(url.href)) {
       console.debug('Duplicate', element.outerHTML);
       continue;
     }
-    seenURLStringSet.add(url.href);
+    seenURLs.add(url.href);
 
     // Create the feed object to pass to subscription.add
     const feed = new Feed();
@@ -177,54 +175,50 @@ importOPML.readFileOnLoad = function(context, file, event) {
     }
 
     // Subscribe to the feed
-    // Async. Do not wait for the request to complete.
+    // Async. Do not wait for the subscription request to complete.
     subscription.add(feed, {
-      'connection': context.connection,
+      'connection': this.connection,
       'suppressNotifications': true
     });
   }
 
   // Consider the file finished. subscription requests are pending
-  importOPML.onFileProcessed(context, file);
-};
+  impOnFileProcessed.call(this, file);
+}
 
-importOPML.onFileProcessed = function(context, file) {
-  console.debug('Finished importing file', file.name);
+function impOnFileProcessed(file) {
+  console.debug('Finished processing file', file.name);
   // Track that the file has been processed. This can only be incremented here
   // because sometimes this is called async
-  context.numFilesProcessed++;
+  this.numFilesProcessed++;
 
-  if(context.numFilesProcessed === context.files.length) {
+  if(this.numFilesProcessed === this.uploader.files.length) {
     // Call onComplete. subscription requests may be pending
-    importOPML.onComplete(context);
+    impOnComplete.call(this);
   }
-};
+}
 
-importOPML.onComplete = function(context) {
-  console.debug('Processed %i files', context.files.length);
+function impOnComplete() {
+  console.debug('Processed %i files', this.uploader.files.length);
 
-  if(context.uploader) {
-    context.uploader.remove();
+  if(this.uploader) {
+    this.uploader.remove();
   }
 
   // Request the connection be closed once pending subscription requests
   // complete
-  if(context.connection) {
-    context.connection.close();
+  if(this.connection) {
+    this.connection.close();
   }
 
   // Callback, even if subscription requests are pending, and the connection is
   // still open.
-  if(context.callback) {
-    context.callback();
+  if(this.callback) {
+    this.callback();
   }
-};
+}
 
-
-
-const exportOPML = {};
-
-exportOPML.start = function(title, fileName) {
+function exp(title, fileName) {
   const context = {
     'title': title || 'Subscriptions',
     'fileName': fileName || 'subscriptions.xml',
@@ -232,68 +226,85 @@ exportOPML.start = function(title, fileName) {
     'connection': null
   };
 
-  openIndexedDB(exportOPML.onOpenDatabase.bind(null, context));
-};
+  openIndexedDB(expOnOpenDatabase.bind(this));
+}
 
-exportOPML.onOpenDatabase = function(context, connection) {
+function expOnOpenDatabase(connection) {
   if(connection) {
-    context.connection = connection;
+    this.connection = connection;
     const transaction = connection.transaction('feed');
     const store = transaction.objectStore('feed');
     const request = store.openCursor();
-    request.onsuccess = exportOPML.openCursorOnSuccess.bind(request, context);
-    request.onerror = exportOPML.openCursorOnError.bind(request, context);
+    request.onsuccess = expOpenCursorOnSuccess.bind(this);
+    request.onerror = expOpenCursorOnError.bind(this);
   } else {
-    console.error('Error connecting to database during opml export');
+    console.error('Connection error');
   }
-};
+}
 
-exportOPML.openCursorOnError = function(context, event) {
-  console.error('Error opening feed cursor during opml export');
-  if(context.connection) {
-    context.connection.close();
+function expOpenCursorOnError(event) {
+  console.error(event.target.error);
+  if(this.connection) {
+    this.connection.close();
   }
-};
+}
 
-exportOPML.openCursorOnSuccess = function(context, event) {
+function expOpenCursorOnSuccess(event) {
   const cursor = event.target.result;
   if(cursor) {
-    context.feeds.push(cursor.value);
+    // Deserialize each object into a Feed object
+    const feed = new Feed(cursor.value);
+    this.feeds.push(feed);
     cursor.continue();
   } else {
-    context.connection.close();
-    exportOPML.onGetFeeds(context);
+    this.connection.close();
+    expOnGetFeeds.call(this);
   }
-};
+}
 
-exportOPML.onGetFeeds = function(context) {
-  const doc = exportOPML.createDocument(context.title);
+function expOnGetFeeds() {
+  // Create an OPML document template
+  const doc = createOPMLDocument(this.title);
 
-  for(let feed of context.feeds) {
-    exportOPML.appendFeed(doc, feed);
+  // Map the feed objects into outline elements
+  const outlines = this.feeds.map(createOutlineFromFeed.bind(null, doc));
+
+  // Get the body element of the template
+  // Assume this always works because it is coming from the template we
+  // created which we know has a body.
+  // This uses querySelector instead of doc.body due because for an unknown
+  // reason doc.body yields undefined.
+  const body = doc.querySelector('body');
+
+  // Append the outlines to the body
+  for(let outline of outlines) {
+    body.appendChild(outline);
   }
 
+  // Create a blob anchor
   const writer = new XMLSerializer();
   const opmlString = writer.serializeToString(doc);
   const blob = new Blob([opmlString], {'type': 'application/xml'});
   const objectURL = URL.createObjectURL(blob);
-
   const anchor = document.createElement('a');
   anchor.href = objectURL;
-  anchor.setAttribute('download', context.fileName);
+  anchor.setAttribute('download', this.fileName);
   anchor.style.display = 'none';
   const parentElement = document.body || document.documentElement;
   parentElement.appendChild(anchor);
+
+  // Trigger the download of the file
   anchor.click();
 
+  // Cleanup
   URL.revokeObjectURL(objectURL);
   anchor.remove();
 
-  console.log('Exported %s feeds to opml file %s', context.feeds.length,
-    context.fileName);
-};
+  console.log('Exported %s feeds to opml file %s', this.feeds.length,
+    this.fileName);
+}
 
-exportOPML.createDocument = function(title) {
+function createOPMLDocument(title) {
   const doc = document.implementation.createDocument(null, 'opml', null);
   doc.documentElement.setAttribute('version', '2.0');
 
@@ -325,35 +336,35 @@ exportOPML.createDocument = function(title) {
   doc.documentElement.appendChild(bodyElement);
 
   return doc;
-};
+}
 
-exportOPML.appendFeed = function(document, feed) {
-  let outline = document.createElement('outline');
-  outline.setAttribute('type', feed.type || 'rss');
+function createOutlineFromFeed(document, feed) {
+  const outline = document.createElement('outline');
 
-  // Only store the terminal url
-  if(Feed.prototype.hasURL.call(feed)) {
-    outline.setAttribute('xmlUrl', Feed.prototype.getURL.call(feed));
-  } else {
-    console.error('Feed missing url', JSON.stringify(feed));
+  if(feed.type) {
+    outline.setAttribute('type', feed.type);
   }
+
+  outline.setAttribute('xmlUrl', feed.getURL().toString());
 
   if(feed.title) {
     outline.setAttribute('text', feed.title);
-    outline.setAttribute('title', feed.title || '');
+    outline.setAttribute('title', feed.title);
   }
+
   if(feed.description) {
     outline.setAttribute('description', feed.description);
   }
+
   if(feed.link) {
-    outline.setAttribute('htmlUrl', feed.link);
+    outline.setAttribute('htmlUrl', feed.link.toString());
   }
 
-  // Due to quirks with xml documents, document.body does not work
-  const bodyElement = document.querySelector('body');
-  if(bodyElement) {
-    bodyElement.appendChild(outline);
-  } else {
-    console.warn('Append failed, no body element found');
-  }
-};
+  return outline;
+}
+
+exports.opml = {};
+exports.opml.importFiles = imp;
+exports.opml.exportFile = exp;
+
+}(this, openIndexedDB, subscription, Feed));
