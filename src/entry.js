@@ -5,7 +5,6 @@
 'use strict';
 
 // Corresponds to an entry database object.
-
 function Entry(otherEntry) {
   this.feed = null;
   this.urls = null;
@@ -146,20 +145,47 @@ Entry.prototype.sanitize = function() {
   return entry;
 };
 
-// If the caller doesn't want certain fields to appear they need to either
-// remove them from the object before calling serialize or delete the keys
-// of the output object.
 Entry.prototype.serialize = function() {
+
+  // TODO: rather than use Object.assign and then delete keys, it would be
+  // better to just selectively copy over defined fields.
+  // First, this is more written code but less evaluated code
+  // Second, this whitelists keys, instead of just checking a few
+
   // Clone to ensure purity
   // Clone into a simple object
   const entry = Object.assign({}, this);
 
   // Serialize URL objects
+  // TODO: this should assume entries are always Entry objects
+  // I need to check that all callers use Entry objects
   if(entry.urls && entry.urls.length &&
     Object.prototype.toString.call(entry.urls[0]) === '[object URL]') {
     entry.urls = entry.urls.map(function(url) {
       return url.href;
     });
+  }
+
+  // Delete keys that are undefined. Assign unfortunately copied over
+  // everything.
+  if(!entry.author) {
+    delete entry.author;
+  }
+
+  if(!entry.title) {
+    delete entry.title;
+  }
+
+  if(!entry.content) {
+    delete entry.content;
+  }
+
+  if(!entry.enclosure) {
+    delete entry.enclosure;
+  }
+
+  if(!entry.dateArchived) {
+    delete entry.dateArchived;
   }
 
   return entry;
