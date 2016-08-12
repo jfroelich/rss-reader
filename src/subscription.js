@@ -120,12 +120,15 @@ function subAddFeed(feed, callback) {
   const sanitizedFeed = feed.sanitize();
   sanitizedFeed.dateCreated = new Date();
 
+  const serializedFeed = sanitizedFeed.serialize();
+
   // Manually remove date last modified. Because we are subscribing without
   // handling entries, we want to prevent the poll from considering the file
   // unmodified the next time it runs, to ensure that it downloads entries.
-  delete sanitizedFeed.dateLastModified;
+  // TODO: maybe it would be better to modify poll's last modified check to
+  // also check if feed was ever polled (e.g. has dateUpdated field set)
+  delete serializedFeed.dateLastModified;
 
-  const serializedFeed = sanitizedFeed.serialize();
 
   const transaction = this.connection.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
