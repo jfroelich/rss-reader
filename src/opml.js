@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-(function(exports, openIndexedDB, Subscription, Feed) {
+(function(exports, Database, Subscription, Feed) {
 'use strict';
 
 function imp(callback) {
@@ -34,7 +34,7 @@ function impOnUploaderChange(event) {
     return;
   }
 
-  openIndexedDB(impOnOpenDatabase.bind(this));
+  Database.open(impOnOpenDatabase.bind(this));
 }
 
 function impOnOpenDatabase(connection) {
@@ -226,7 +226,7 @@ function exp(title, fileName) {
     'connection': null
   };
 
-  openIndexedDB(expOnOpenDatabase.bind(this));
+  Database.open(expOnOpenDatabase.bind(this));
 }
 
 function expOnOpenDatabase(connection) {
@@ -367,4 +367,4 @@ exports.opml = {};
 exports.opml.importFiles = imp;
 exports.opml.exportFile = exp;
 
-}(this, openIndexedDB, Subscription, Feed));
+}(this, Database, Subscription, Feed));

@@ -6,7 +6,7 @@
 // functions, add and remove. Subscription.add subscribes to a feed and
 // Subscription.remove unsubscribes from a feed.
 
-(function(exports, Feed, openIndexedDB, fetchFeed, badge) {
+(function(exports, Feed, Database, fetchFeed, badge) {
 'use strict';
 
 // Subscribes to the given feed.
@@ -16,6 +16,8 @@ function sub(feed, options) {
   console.assert(feed, 'feed is required');
 
   // Create a shared context to simplify passing parameters to continuations
+  // TODO: instead of setting closeConnection here, I should just set it
+  // if connected locally, and init to false here
   const context = {
     'feed': feed,
     'didSubscribe': false,
@@ -36,7 +38,7 @@ function sub(feed, options) {
   if(context.connection) {
     subFindFeed.call(context);
   } else {
-    openIndexedDB(subOnOpenDatabase.bind(context));
+    Database.open(subOnOpenDatabase.bind(context));
   }
 }
 
@@ -194,7 +196,7 @@ function unsub(feedId, callback) {
     'callback': callback
   };
 
-  openIndexedDB(unsubOnOpenDatabase.bind(context));
+  Database.open(unsubOnOpenDatabase.bind(context));
 }
 
 function unsubOnOpenDatabase(connection) {
@@ -283,4 +285,4 @@ exports.Subscription = {};
 exports.Subscription.add = sub;
 exports.Subscription.remove = unsub;
 
-}(this, Feed, openIndexedDB, fetchFeed, badge));
+}(this, Feed, Database, fetchFeed, badge));

@@ -20,7 +20,7 @@ badge.update = function(connection) {
   if(connection) {
     badge.countUnread.call(context);
   } else {
-    openIndexedDB(badge.onOpenDatabase.bind(context));
+    Database.open(badge.onOpenDatabase.bind(context));
   }
 };
 

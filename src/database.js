@@ -2,9 +2,13 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
+// Database module. Exports a Database namespace object.
+(function(exports) {
 'use strict';
 
+
 function openIndexedDB(callback) {
+  // TODO: move name and version into IIFE scope and do not bind
   const name = 'reader';
   const version = 20;
   const request = indexedDB.open(name, version);
@@ -118,3 +122,8 @@ function upgradeIndexedDB(name, event) {
     });
   }
 }
+
+exports.Database = {};
+exports.Database.open = openIndexedDB;
+
+}(this));

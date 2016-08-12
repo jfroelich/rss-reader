@@ -13,7 +13,7 @@ markAsRead.start = function(entryId, callback) {
 
   // Define a context to simplify parameter passing
   const context = {'entryId': entryId, 'callback': callback};
-  openIndexedDB(markAsRead.onOpenDatabase.bind(context));
+  Database.open(markAsRead.onOpenDatabase.bind(context));
 };
 
 markAsRead.onOpenDatabase = function(connection) {

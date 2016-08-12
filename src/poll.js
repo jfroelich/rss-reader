@@ -68,13 +68,13 @@ poll.start = function(forceResetLock) {
     chrome.idle.queryState(idlePeriodInSeconds,
       poll.onQueryIdleState.bind(null, context));
   } else {
-    openIndexedDB(poll.onOpenDatabase.bind(null, context));
+    Database.open(poll.onOpenDatabase.bind(null, context));
   }
 };
 
 poll.onQueryIdleState = function(context, state) {
   if(state === 'locked' || state === 'idle') {
-    openIndexedDB(poll.onOpenDatabase.bind(null, context));
+    Database.open(poll.onOpenDatabase.bind(null, context));
   } else {
     console.debug('Polling canceled because not idle', state);
     poll.onComplete(context);

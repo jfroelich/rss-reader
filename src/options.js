@@ -416,7 +416,7 @@ OptionsPage.populateFeedDetails = function(feedId) {
     'connection': null
   };
 
-  openIndexedDB(onOpenDatabase);
+  Database.open(onOpenDatabase);
   function onOpenDatabase(connection) {
     if(connection) {
       context.connection = connection;
@@ -808,7 +808,7 @@ OptionsPage.exportOPMLButtonOnClick = function(event) {
 
 OptionsPage.initSubscriptionsSection = function() {
   let feedCount = 0;
-  openIndexedDB(onOpenDatabase);
+  Database.open(onOpenDatabase);
 
   function onOpenDatabase(connection) {
     if(connection) {

@@ -20,7 +20,7 @@ archive.start = function(expiresAfterMillis) {
     'currentDate': new Date()
   };
 
-  openIndexedDB(archive.onOpenDatabase.bind(null, context));
+  Database.open(archive.onOpenDatabase.bind(null, context));
 };
 
 archive.onOpenDatabase = function(context, connection) {
