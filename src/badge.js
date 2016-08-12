@@ -4,11 +4,11 @@
 
 'use strict';
 
-const badge = {};
+const Badge = {};
 
 // Sets the text of the extension's icon in the extension toolbar to the number
 // of unread entries in the database.
-badge.update = function(connection) {
+Badge.update = function(connection) {
 
   // Create a custom context for simpler passing of parameters to continuations
   const context = {
@@ -18,41 +18,41 @@ badge.update = function(connection) {
   };
 
   if(connection) {
-    badge.countUnread.call(context);
+    Badge.countUnread.call(context);
   } else {
-    Database.open(badge.onOpenDatabase.bind(context));
+    Database.open(Badge.onOpenDatabase.bind(context));
   }
 };
 
-badge.onOpenDatabase = function(connection) {
+Badge.onOpenDatabase = function(connection) {
   if(connection) {
     this.connection = connection;
-    badge.countUnread.call(this);
+    Badge.countUnread.call(this);
   } else {
-    badge.onComplete.call(this);
+    Badge.onComplete.call(this);
   }
 };
 
-badge.countUnread = function() {
+Badge.countUnread = function() {
   const transaction = this.connection.transaction('entry');
   const store = transaction.objectStore('entry');
   const index = store.index('readState');
   const request = index.count(Entry.FLAGS.UNREAD);
-  request.onsuccess = badge.countOnSuccess.bind(this);
-  request.onerror = badge.countOnError.bind(this);
+  request.onsuccess = Badge.countOnSuccess.bind(this);
+  request.onerror = Badge.countOnError.bind(this);
 };
 
-badge.countOnSuccess = function(event) {
+Badge.countOnSuccess = function(event) {
   this.text = '' + event.target.result;
-  badge.onComplete.call(this);
+  Badge.onComplete.call(this);
 };
 
-badge.countOnError = function(event) {
+Badge.countOnError = function(event) {
   console.error(event);
-  badge.onComplete.call(this);
+  Badge.onComplete.call(this);
 };
 
-badge.onComplete = function() {
+Badge.onComplete = function() {
   chrome.browserAction.setBadgeText({'text': this.text});
   if(this.shouldClose && this.connection) {
     this.connection.close();

@@ -345,7 +345,7 @@ poll.onEntryProcessed = function(pollContext, feedContext, event) {
   if(feedContext.entriesProcessed === feedContext.numEntries) {
     // Only update the badge if we actually added some entries
     if(feedContext.entriesAdded) {
-      badge.update(pollContext.connection);
+      Badge.update(pollContext.connection);
     }
 
     pollContext.pendingFeedsCount--;
@@ -376,8 +376,8 @@ poll.onComplete = function(context) {
 
   poll.releaseLock();
 
-  // Calls to badge.update may still be pending so this message might appear out
-  // of order in the console.
+  // Calls to Badge.update may still be pending so this message might before
+  // the Badge.update logs a message
   console.log('Polling completed');
 };
 
