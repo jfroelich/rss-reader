@@ -4,25 +4,45 @@
 
 'use strict';
 
-// Corresponds to a feed database object. Because indexedDB cannot store such
-// objects directly, this is only intended to provide prototype members that
-// can correctly operate on serialized objects loaded from the database
+// Corresponds to a feed database object. indexedDB cannot store this
+// object directly because it is a function object.
 // @param serializedFeed {Object} a serialized form of a feed object, optional,
 // if set then deserializes the serialized feed into this feed's properties
 function Feed(serializedFeed) {
+  // The date the feed was first stored in the database
   this.dateCreated = null;
+  // The date the feed's remote xml file was last fetched
   this.dateFetched = null;
+  // The last modified header value as a date from the response to fetching
+  // the feed's remote xml file
   this.dateLastModified = null;
+  // The feed's own supposed date published, according to the feed's own
+  // internal xml values
   this.datePublished = null;
+  // The date the feed was last changed in the database
   this.dateUpdated = null;
+  // html string derived from contents of feed, optional
   this.description = null;
+  // url string pointing to the feed's favicon
   this.faviconURLString = null;
+  // url object (not string!) pointing to the feed's associated website url
   this.link = null;
+  // html string derived from contents of feed
   this.title = null;
+  // string, internal feed, represents feed's format (e.g. rss or atom)
   this.type = null;
+  // an array of URL objects. Treat as a set, meaning its values should all be
+  // unique. The set is ordered, meaning it is a sorted set, and is sorted by
+  // insertion order. The urls list maintains a history of the urls of a feed.
+  // For example, if a redirect occurs, then the new url is appended after the
+  // prior url. All feeds should have at least one url.
   this.urls = null;
+  // An optional array of Entry objects from the last fetch
   this.entries = null;
 
+  // If the serializedFeed parameter is defined, then copy over the values of
+  // the  fields from the parameter into this instance's fields' values, and
+  // do any deserialization needed (e.g. convert url strings to URL objects)
   if(serializedFeed) {
     this.deserialize(serializedFeed);
   }
@@ -32,7 +52,8 @@ function Feed(serializedFeed) {
 Feed.prototype.deserialize = function(feed) {
   Object.assign(this, feed);
 
-  // Deserialize urls. indexedDB cannot store URL objects.
+  // Deserialize urls. indexedDB cannot store URL objects, so when loading
+  // an object from the store, we have to convert back from strings to urls.
   // This assumes urls are always valid and never throws.
   // This assumes the urls are unique and properly ordered.
   if(feed.urls && feed.urls.length) {
@@ -239,41 +260,55 @@ Feed.prototype.serialize = function() {
   return feed;
 };
 
-// Creates a new feed suitable for storage
-// TODO: set upper bound on storable string length using truncateHTMLString
+// Creates a new Feed object with cleaned fields. This checks for invalid values
+// and tries to minimize XSS vulnerables in html strings. Values should be
+// sanitized before storage, the view assumes it uses sanitized values.
 Feed.prototype.sanitize = function() {
   // Copy to maintain all the fields and purity
   const feed = Object.assign(new Feed(), this);
 
   // If id is defined it should be a positive integer
   if(feed.id) {
-    console.assert(!isNaN(feed.id), 'nan id', feed.id);
-    console.assert(feed.id > 0, 'non-positive id', feed.id);
+    console.assert(!isNaN(feed.id), 'id is nan', feed.id);
+    console.assert(isFinite(feed.id), 'id not finite', feed.id);
+    console.assert(feed.id > 0, 'id negative or 0', feed.id);
   }
 
   // If type is defined it should be one of the allowed types
+  const allowedTypes = {'feed': 1, 'rss': 1, 'rdf': 1};
   if(feed.type) {
-    const allowedTypes = {'feed': 1, 'rss': 1, 'rdf': 1};
     console.assert(feed.type in allowedTypes, 'invalid type', feed.type);
   }
 
-  // Sanitize feed title. The title is an HTML string. However, we only want to
-  // allow entities, not tags.
+  // Sanitize feed title. title is an HTML string
   if(feed.title) {
     let title = feed.title;
     title = StringUtils.filterControlCharacters(title);
     title = StringUtils.replaceHTML(title, '');
     title = title.replace(/\s+/, ' ');
+    title = StringUtils.truncateHTML(title, 1024, '');
     title = title.trim();
     feed.title = title;
   }
 
-  // Sanitize feed description
+  // Sanitize feed description. description is an HTML string
   if(feed.description) {
     let description = feed.description;
     description = StringUtils.filterControlCharacters(description);
     description = StringUtils.replaceHTML(description, '');
+
+    // Condense and transform whitespace into a single space
     description = description.replace(/\s+/, ' ');
+
+    // Enforce a maximum storable length
+    const lengthBeforeTruncation = description.length;
+    const DESCRIPTION_MAX_LENGTH = 1024 * 10;
+    description = StringUtils.truncateHTML(description,
+      DESCRIPTION_MAX_LENGTH, '');
+    if(lengthBeforeTruncation > description.length) {
+      console.warn('Truncated description', description);
+    }
+
     description = description.trim();
     feed.description = description;
   }
