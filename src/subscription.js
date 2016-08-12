@@ -2,9 +2,9 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-// The subscription module exports a subscription object with two functions,
-// add and remove. subscription.add subscribes to a feed and
-// subscription.remove unsubscribes from a feed.
+// The Subscription module exports a Subscription namespace object with two
+// functions, add and remove. Subscription.add subscribes to a feed and
+// Subscription.remove unsubscribes from a feed.
 
 (function(exports, Feed, openIndexedDB, fetchFeed, badge) {
 'use strict';
@@ -279,8 +279,8 @@ function unsubOnComplete(eventType) {
   }
 }
 
-exports.subscription = {};
-exports.subscription.add = sub;
-exports.subscription.remove = unsub;
+exports.Subscription = {};
+exports.Subscription.add = sub;
+exports.Subscription.remove = unsub;
 
 }(this, Feed, openIndexedDB, fetchFeed, badge));

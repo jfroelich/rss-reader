@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style license
 // that can be found in the LICENSE file
 
-(function(exports, openIndexedDB, subscription, Feed) {
+(function(exports, openIndexedDB, Subscription, Feed) {
 'use strict';
 
 function imp(callback) {
@@ -154,7 +154,7 @@ function impReadFileOnLoad(file, event) {
     }
     seenURLs.add(url.href);
 
-    // Create the feed object to pass to subscription.add
+    // Create a Feed object
     const feed = new Feed();
     feed.addURL(url);
     feed.type = type;
@@ -174,9 +174,9 @@ function impReadFileOnLoad(file, event) {
       }
     }
 
-    // Subscribe to the feed
-    // Async. Do not wait for the subscription request to complete.
-    subscription.add(feed, {
+    // Subscribe to the feed. Async. Do not wait for the subscription request to
+    // complete.
+    Subscription.add(feed, {
       'connection': this.connection,
       'suppressNotifications': true
     });
@@ -367,4 +367,4 @@ exports.opml = {};
 exports.opml.importFiles = imp;
 exports.opml.exportFile = exp;
 
-}(this, openIndexedDB, subscription, Feed));
+}(this, openIndexedDB, Subscription, Feed));

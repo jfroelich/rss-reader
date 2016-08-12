@@ -366,7 +366,7 @@ OptionsPage.startSubscription = function(url) {
 
   const feed = new Feed();
   feed.addURL(url);
-  subscription.add(feed, {
+  Subscription.add(feed, {
     'connection': null,
     'suppressNotifications': false,
     'callback': onSubscribe
@@ -740,7 +740,7 @@ OptionsPage.buttonUnsubscribeOnClick = function(event) {
   const feedId = parseInt(event.target.value, 10);
   console.assert(feedId && !isNaN(feedId) && feedId > 0,
     'invalid feed id', feedId);
-  subscription.remove(feedId, onUnsubscribe);
+  Subscription.remove(feedId, onUnsubscribe);
 
   function onUnsubscribe(event) {
     // If there was some failure to unsubscribe from the feed, react here
