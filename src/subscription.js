@@ -5,7 +5,6 @@
 // The Subscription module exports a Subscription namespace object with two
 // functions, add and remove. Subscription.add subscribes to a feed and
 // Subscription.remove unsubscribes from a feed.
-
 (function(exports, Feed, Database, fetchFeed, badge) {
 'use strict';
 
@@ -16,14 +15,12 @@ function sub(feed, options) {
   console.assert(feed, 'feed is required');
 
   // Create a shared context to simplify passing parameters to continuations
-  // TODO: instead of setting closeConnection here, I should just set it
-  // if connected locally, and init to false here
   const context = {
     'feed': feed,
     'didSubscribe': false,
     'callback': options ? options.callback : null,
     'connection': options ? options.connection : null,
-    'closeConnection': options && options.connection ? false : true,
+    'closeConnection': false,
     'suppressNotifications': options ? options.suppressNotifications : false
   };
 
@@ -45,6 +42,11 @@ function sub(feed, options) {
 function subOnOpenDatabase(connection) {
   if(connection) {
     this.connection = connection;
+
+    // Because we are creating the connection internally, we want to flag
+    // that it should be closed.
+    this.closeConnection = true;
+
     subFindFeed.call(this);
   } else {
     subOnComplete.call(this, {'type': 'ConnectionError'});
