@@ -5,7 +5,7 @@
 // The Subscription module exports a Subscription namespace object with two
 // functions, add and remove. Subscription.add subscribes to a feed and
 // Subscription.remove unsubscribes from a feed.
-(function(exports, Feed, Database, fetchFeed, badge) {
+(function(exports, Feed, Database, fetchFeed, Badge) {
 'use strict';
 
 // Subscribes to the given feed.
@@ -267,8 +267,8 @@ function unsubOnComplete(eventType) {
       console.debug('Requested %i entries to be deleted',
         this.deleteRequestCount);
       // Even though the deletes are async, the readonly transaction in
-      // badge.update waits for the pending deletes to complete
-      badge.update(this.connection);
+      // Badge.update waits for the pending deletes to complete
+      Badge.update(this.connection);
     }
 
     this.connection.close();
@@ -287,4 +287,4 @@ exports.Subscription = {};
 exports.Subscription.add = sub;
 exports.Subscription.remove = unsub;
 
-}(this, Feed, Database, fetchFeed, badge));
+}(this, Feed, Database, fetchFeed, Badge));
