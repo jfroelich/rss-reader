@@ -299,6 +299,15 @@ poll.onFetchEntry = function(context, entry, callback, event) {
   // Add the redirect url
   entry.addURL(event.responseURL);
 
+  // TODO: if we successfully fetched the entry, then before storing it,
+  // we should be trying to set its faviconURL.
+  // - i shouldn't be using the feed's favicon url, that is unrelated
+  // - i should pass along the html of the associated html document. the
+  // lookup should not fetch a second time.
+  // - i should be querying against the redirect url
+
+
+
   // Prep the document
   const document = event.document;
   transformLazyImages(document);
