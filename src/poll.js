@@ -267,7 +267,7 @@ poll.onFindEntryByURL = function(context, feed, entry, callback, event) {
   // with things like advertisement interception or full javascript. While these
   // documents can be fetched, there is no point to doing so.
   if(poll.isFetchResistantURL(entry.getURL())) {
-    addEntry(context.connection, entry, callback);
+    poll.addEntry(context.connection, entry, callback);
     return;
   }
 
@@ -279,7 +279,7 @@ poll.onFindEntryByURL = function(context, feed, entry, callback, event) {
   const path = entry.getURL().pathname;
   const minLen = '/a.pdf'.length;
   if(path && path.length > minLen && /\.pdf$/i.test(path)) {
-    addEntry(context.connection, entry, callback);
+    poll.addEntry(context.connection, entry, callback);
     return;
   }
 
@@ -292,7 +292,7 @@ poll.onFindEntryByURL = function(context, feed, entry, callback, event) {
 poll.onFetchEntry = function(context, entry, callback, event) {
 
   if(event.type !== 'success') {
-    addEntry(context.connection, entry, callback);
+    poll.addEntry(context.connection, entry, callback);
     return;
   }
 
@@ -327,7 +327,27 @@ poll.onSetImageDimensions = function(context, entry, document, callback,
     entry.content = content;
   }
 
-  addEntry(context.connection, entry, callback);
+  poll.addEntry(context.connection, entry, callback);
+};
+
+poll.addEntry = function(connection, entry, callback) {
+  console.assert(entry, 'missing entry');
+  console.assert(entry.getURL(), 'missing url');
+  console.debug('Storing', entry.getURL().toString());
+
+  let storable = entry.sanitize().serialize();
+  storable.readState = Entry.FLAGS.UNREAD;
+  storable.archiveState = Entry.FLAGS.UNARCHIVED;
+  storable.dateCreated = new Date();
+
+  const transaction = connection.transaction('entry', 'readwrite');
+  const entryStore = transaction.objectStore('entry');
+  const request = entryStore.add(storable);
+  request.onsuccess = callback;
+  request.onerror = function(event) {
+    console.error(event.target.error);
+    callback(event);
+  };
 };
 
 poll.onEntryProcessed = function(pollContext, feedContext, event) {

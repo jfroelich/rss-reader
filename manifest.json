@@ -14,7 +14,6 @@
     "persistent": false,
     "scripts": [
       "/lib/parse-srcset.js",
-      "/src/add-entry.js",
       "/src/archive.js",
       "/src/background.js",
       "/src/badge.js",
