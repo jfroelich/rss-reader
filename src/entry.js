@@ -5,7 +5,9 @@
 'use strict';
 
 // Corresponds to an entry database object.
-function Entry(otherEntry) {
+// @param entry {Object} optional serialized entry, if present will deserialize
+// its fields into this instance
+function Entry(entry) {
   this.feed = null;
   this.urls = null;
   this.author = null;
@@ -20,9 +22,14 @@ function Entry(otherEntry) {
   this.dateCreated = null;
   this.dateArchived = null;
 
-  if(otherEntry) {
+  if(entry) {
     // TODO: this needs to fully deserialize urls and such
-    Object.assign(this, otherEntry);
+    Object.assign(this, entry);
+    if(entry.urls) {
+      for(let url of entry.urls) {
+        this.urls.push(new URL(url));
+      }
+    }
   }
 }
 
@@ -117,7 +124,7 @@ Entry.prototype.archive = function() {
 Entry.prototype.sanitize = function() {
 
   // Create a clone of this entry
-  const entry = new Entry(this);
+  const entry = Object.assign(new Entry(), this);
 
   // Sanitize the title
   // TODO: enforce a maximum length using StringUtils.truncateHTML
