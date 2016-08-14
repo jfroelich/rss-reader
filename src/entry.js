@@ -8,35 +8,79 @@
 // @param entry {Object} optional serialized entry, if present will deserialize
 // its fields into this instance
 function Entry(entry) {
-  this.feed = null;
-  this.urls = null;
+  this.archiveState = Entry.FLAGS.UNARCHIVED;
   this.author = null;
   this.content = null;
-  this.title = null;
+  this.dateArchived = null;
+  this.dateCreated = null;
   this.datePublished = null;
+  this.dateRead = null;
   this.enclosure = null;
   this.faviconURLString = null;
   this.feedTitle = null;
-  this.readState = null;
-  this.archiveState = null;
-  this.dateCreated = null;
-  this.dateArchived = null;
+  this.feed = null;
+  this.id = null;
+  this.readState = Entry.FLAGS.UNREAD;
+  this.title = null;
+  this.urls = null;
 
   if(entry) {
-    // Copy over everything
-    Object.assign(this, entry);
-    // Deserialize urls
-    if(entry.urls) {
-      for(let url of entry.urls) {
-        this.urls.push(new URL(url));
-      }
-    }
+    this.deserialize(entry);
+  }
+}
 
-    if(entry.enclosure && entry.enclosure.url) {
+// Copy over everything. This copies values into this instance, it
+// does not return a new instance.
+// I started getting strange errors with Object.assign
+// so now this does manual copying.
+Entry.prototype.deserialize = function(entry) {
+  this.archiveState = entry.archiveState;
+  this.author = entry.author;
+  this.content = entry.content;
+
+  if(entry.dateArchived) {
+    this.dateArchived = new Date(entry.dateArchived.getTime());
+  }
+
+  if(entry.dateCreated) {
+    this.dateCreated = new Date(entry.dateCreated.getTime());
+  }
+
+  if(entry.datePublished) {
+    this.datePublished = new Date(entry.datePublished.getTime());
+  }
+
+  if(entry.dateRead) {
+    this.dateRead = new Date(entry.dateRead.getTime());
+  }
+
+  if(entry.enclosure) {
+    this.enclosure = {
+      'enclosure_length': entry.enclosure.enclosure_length,
+      'type': entry.enclosure.type,
+      'url': null
+    };
+
+    if(entry.enclosure.url) {
       this.enclosure.url = new URL(entry.enclosure.url);
     }
   }
-}
+
+  this.faviconURLString = entry.faviconURLString;
+  this.feed = entry.feed;
+  this.feedTitle = entry.feedTitle;
+  this.id = entry.id;
+  this.readState = entry.readState;
+  this.title = entry.title;
+
+  // Convert strings into URL objects
+  if(entry.urls) {
+    this.urls = [];
+    for(let url of entry.urls) {
+      this.urls.push(new URL(url));
+    }
+  }
+};
 
 Entry.FLAGS = {
   UNREAD: 0,
@@ -110,41 +154,40 @@ Entry.prototype.hasURL = function() {
   return this.urls && this.urls.length;
 };
 
-// Returns the entry in archived form
+// Returns a new Entry instance representing the archived form of this entry
 Entry.prototype.archive = function() {
-  const outputEntry = {};
-  outputEntry.id = this.id;
-  outputEntry.feed = this.feed;
-  outputEntry.urls = [...this.urls];
-  outputEntry.dateArchived = new Date();
-  outputEntry.archiveState = Entry.FLAGS.ARCHIVED;
-  // TODO: do i need to clone date to ensure purity?
+
+  const entry = new Entry();
+  entry.archiveState = Entry.FLAGS.ARCHIVED;
+  entry.dateArchived = new Date();
+
   if(this.dateRead) {
-    outputEntry.dateRead = this.dateRead;
+    entry.dateRead = new Date(this.dateRead.getTime());
   }
-  return outputEntry;
+
+  entry.feed = this.feed;
+  entry.id = this.id;
+  entry.readState = this.readState;
+  if(this.urls) {
+    entry.urls = [];
+    for(let url of this.urls) {
+      entry.urls.push(new URL(url.href));
+    }
+  }
+
+  return entry;
 };
 
 // Returns a new Entry object where the fields have been sanitized
 Entry.prototype.sanitize = function() {
 
-  // Create a clone of this entry
-  const entry = Object.assign(new Entry(), this);
-
-  // Sanitize the title
-  // TODO: enforce a maximum length using StringUtils.truncateHTML
-  // TODO: condense spaces?
-  if(entry.title) {
-    let title = entry.title;
-    title = StringUtils.filterControlCharacters(title);
-    title = StringUtils.replaceHTML(title, '');
-    entry.title = title;
-  }
+  const entry = new Entry();
+  entry.archiveState = this.archiveState;
 
   // Sanitize the author
   // TODO: sanitize fully
-  if(entry.author) {
-    let author = entry.author;
+  if(this.author) {
+    let author = this.author;
     author = StringUtils.filterControlCharacters(author);
     author = StringUtils.replaceHTML(author, '');
     //author = truncateHTML(author, MAX_AUTHOR_VALUE_LENGTH);
@@ -154,52 +197,142 @@ Entry.prototype.sanitize = function() {
   // Sanitize entry.content
   // TODO: filter out non-printable characters other than \r\n\t
   // TODO: enforce a maximum storable length (using StringUtils.truncateHTML)
+  entry.content = this.content;
+
+  entry.id = this.id;
+  entry.feed = this.feed;
+
+  if(this.dateArchived) {
+    entry.dateArchived = new Date(this.dateArchived.getTime());
+  }
+
+  if(this.dateCreated) {
+    entry.dateCreated = new Date(this.dateCreated.getTime());
+  }
+
+  if(this.datePublished) {
+    entry.datePublished = new Date(this.datePublished.getTime());
+  }
+
+  if(this.dateRead) {
+    entry.dateRead = new Date(this.dateRead.getTime());
+  }
+
+  if(this.enclosure) {
+    entry.enclosure = {
+      'enclosure_length': this.enclosure.length,
+      'type': this.enclosure.type,
+      'url': null
+    };
+
+    if(this.enclosure.url) {
+      entry.enclosure.url = new URL(this.enclosure.url.href);
+    }
+  }
+
+  entry.faviconURLString = this.faviconURLString;
+  entry.feedTitle = this.feedTitle;
+  entry.readState = this.readState;
+
+  // Sanitize the title
+  // TODO: enforce a maximum length using StringUtils.truncateHTML
+  // TODO: condense spaces?
+  if(this.title) {
+    let title = this.title;
+    title = StringUtils.filterControlCharacters(title);
+    title = StringUtils.replaceHTML(title, '');
+    entry.title = title;
+  }
+
+  if(this.urls) {
+    entry.urls = [];
+    for(let url of this.urls) {
+      entry.urls.push(new URL(url.href));
+    }
+  }
 
   return entry;
 };
 
+// Creates a basic object suitable for storage in indexedDB. This does not do
+// any sanitization of values. This only sets fields if defined.
 Entry.prototype.serialize = function() {
+  // Create a basic object representing the serialized entry that we will
+  // output
+  const object = {};
 
-  // TODO: rather than use Object.assign and then delete keys, it would be
-  // better to just selectively copy over defined fields.
-  // First, this is more written code but less evaluated code
-  // Second, this whitelists keys, instead of just checking a few
-
-  // Clone to ensure purity
-  // Clone into a simple object
-  const entry = Object.assign({}, this);
-
-  // Serialize URL objects
-  // TODO: this should assume entries are always Entry objects
-  // I need to check that all callers use Entry objects
-  if(entry.urls && entry.urls.length &&
-    Object.prototype.toString.call(entry.urls[0]) === '[object URL]') {
-    entry.urls = entry.urls.map(function(url) {
-      return url.href;
-    });
+  if(typeof this.archiveState === 'number') {
+    object.archiveState = this.archiveState;
   }
 
-  // Delete keys that are undefined. Assign unfortunately copied over
-  // everything.
-  if(!entry.author) {
-    delete entry.author;
+  if(this.author) {
+    object.author = this.author;
   }
 
-  if(!entry.title) {
-    delete entry.title;
+  if(this.content) {
+    object.content = this.content;
   }
 
-  if(!entry.content) {
-    delete entry.content;
+  // Date objects are cloned to ensure purity
+  if(this.dateArchived) {
+    object.dateArchived = new Date(this.dateArchived.getTime());
   }
 
-  if(!entry.enclosure) {
-    delete entry.enclosure;
+  if(this.dateCreated) {
+    object.dateCreated = new Date(this.dateCreated.getTime());
   }
 
-  if(!entry.dateArchived) {
-    delete entry.dateArchived;
+  if(this.datePublished) {
+    object.datePublished = new Date(this.datePublished.getTime());
   }
 
-  return entry;
+  if(this.dateRead) {
+    object.dateRead = new Date(this.dateRead.getTime());
+  }
+
+  if(this.enclosure) {
+    object.enclosure = {};
+    if(this.enclosure.enclosure_length) {
+      object.enclosure.enclosure_length = this.enclosure.enclosure_length;
+    }
+    if(this.enclosure.type) {
+      object.enclosure.type = this.enclosure.type;
+    }
+    if(this.enclosure.url) {
+      object.enclosure.url = this.enclosure.url.toString();
+    }
+  }
+
+  if(this.faviconURLString) {
+    object.faviconURLString = this.faviconURLString;
+  }
+
+  if(this.feedTitle) {
+    object.feedTitle = this.feedTitle;
+  }
+
+  if(typeof this.feed === 'number') {
+    object.feed = this.feed;
+  }
+
+  if(typeof this.id === 'number') {
+    object.id = this.id;
+  }
+
+  if(typeof this.readState === 'number') {
+    object.readState = this.readState;
+  }
+
+  if(this.title) {
+    object.title = this.title;
+  }
+
+  if(this.urls && this.urls.length) {
+    object.urls = [];
+    for(let url of this.urls) {
+      object.urls.push(url.toString());
+    }
+  }
+
+  return object;
 };
