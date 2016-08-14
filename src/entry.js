@@ -23,12 +23,17 @@ function Entry(entry) {
   this.dateArchived = null;
 
   if(entry) {
-    // TODO: this needs to fully deserialize urls and such
+    // Copy over everything
     Object.assign(this, entry);
+    // Deserialize urls
     if(entry.urls) {
       for(let url of entry.urls) {
         this.urls.push(new URL(url));
       }
+    }
+
+    if(entry.enclosure && entry.enclosure.url) {
+      this.enclosure.url = new URL(entry.enclosure.url);
     }
   }
 }
