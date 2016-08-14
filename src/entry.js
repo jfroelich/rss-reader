@@ -21,6 +21,7 @@ function Entry(otherEntry) {
   this.dateArchived = null;
 
   if(otherEntry) {
+    // TODO: this needs to fully deserialize urls and such
     Object.assign(this, otherEntry);
   }
 }

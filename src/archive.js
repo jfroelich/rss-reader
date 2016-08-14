@@ -4,100 +4,108 @@
 
 'use strict';
 
-const archive = {};
+{ // Begin file block scope
 
-archive.start = function(expiresAfterMillis) {
-  console.log('Arching entries...');
-  console.assert(typeof expiresAfterMillis === 'undefined' ||
-    (!isNaN(expiresAfterMillis) && expiresAfterMillis > 0),
-    'expiresAfterMillis must be a positive integer if provided');
-  const tenDaysInMillis = 10 * 24 * 60 * 60 * 1000;
+const tenDaysMillis = 10 * 24 * 60 * 60 * 1000;
+
+// The sole exported function of this file. Iterates over entries in storage
+// and archived any expired entries.
+this.archiveEntries = function(expiresAfterMillis) {
+  console.log('Archiving entries...');
+
+  if(expiresAfterMillis) {
+    console.assert(!isNaN(expiresAfterMillis), 'expires is nan');
+    console.assert(expiresAfterMillis > 0, 'expires is negative');
+  }
 
   const context = {
-    'expiresAfterMillis': expiresAfterMillis || tenDaysInMillis,
+    'expiresAfterMillis': expiresAfterMillis || tenDaysMillis,
     'numEntriesProcessed': 0,
     'numEntriesChanged': 0,
     'currentDate': new Date()
   };
 
-  Database.open(archive.onOpenDatabase.bind(null, context));
+  Database.open(onOpenDatabase.bind(context));
 };
 
-archive.onOpenDatabase = function(context, connection) {
+function onOpenDatabase(connection) {
   if(!connection) {
-    archive.onComplete(context);
+    onComplete.call(this);
     return;
   }
 
-  // Open a cursor over entries not archived and read
-  context.connection = connection;
+  // Open a cursor over entries that are read and unarchived
+  this.connection = connection;
   const transaction = connection.transaction('entry', 'readwrite');
   const store = transaction.objectStore('entry');
   const index = store.index('archiveState-readState');
   const keyPath = [Entry.FLAGS.UNARCHIVED, Entry.FLAGS.READ];
   const request = index.openCursor(keyPath);
-  request.onsuccess = archive.openCursorOnSuccess.bind(request, context);
-  request.onerror = archive.openCursorOnError.bind(request, context);
-};
+  request.onsuccess = openCursorOnSuccess.bind(this);
+  request.onerror = openCursorOnError.bind(this);
+}
 
-archive.openCursorOnSuccess = function(context, event) {
+function openCursorOnSuccess(event) {
   const cursor = event.target.result;
   if(!cursor) {
-    archive.onComplete(context);
+    onComplete.call(this);
     return;
   }
 
-  context.numEntriesProcessed++;
+  this.numEntriesProcessed++;
+
+  // TODO: deserialize entries on load. Blocked on proper implementation
+  // of Entry constructor (deserializing urls)
+
   const entry = cursor.value;
-  const ageInMillis = archive.getEntryAge(context, entry);
-  if(ageInMillis > context.expiresAfterMillis) {
+  const ageInMillis = getEntryAge.call(this, entry);
+  if(ageInMillis > this.expiresAfterMillis) {
     console.debug('Archiving entry', Entry.prototype.getURL.call(entry));
     const archivedEntry = Entry.prototype.archive.call(entry);
-    // Async
     cursor.update(archivedEntry);
-    // Async
-    archive.sendMessage(archivedEntry.id);
-    context.numEntriesChanged++;
+    sendMessage(archivedEntry.id);
+    this.numEntriesChanged++;
   }
   cursor.continue();
-};
+}
 
-archive.openCursorOnError = function(context, event) {
-  console.error(event);
-  archive.onComplete(context);
-};
+function openCursorOnError(event) {
+  console.error(event.target.error);
+  onComplete.call(this);
+}
 
-archive.getEntryAge = function(context, entry) {
+function getEntryAge(entry) {
   let age = 0;
   if(entry.dateCreated) {
+    console.assert(this.currentDate > entry.dateCreated, 'created in future');
     // Subtract the date to get the difference in milliseconds
-    console.assert(context.currentDate > entry.dateCreated,
-      'Entry was created after current date', entry.dateCreated);
-    age = context.currentDate - entry.dateCreated;
+    age = this.currentDate - entry.dateCreated;
   } else {
     // Use a fake age that guarantees archival
-    console.warn('Unknown entry date created', entry);
-    age = context.expiresAfterMillis + 1;
+    console.warn('Faking date created', entry);
+    age = this.expiresAfterMillis + 1;
   }
   return age;
-};
+}
 
-archive.sendMessage = function(entryId) {
+function sendMessage(entryId) {
   chrome.runtime.sendMessage({
     'type': 'archiveEntryRequested',
     'entryId': entryId
   });
-};
+}
 
-archive.onComplete = function(context) {
-  if(context.connection) {
-    context.connection.close();
+function onComplete() {
+  if(this.connection) {
+    this.connection.close();
   }
 
-  if(context.numEntriesProcessed) {
-    console.log('Archived %s of %s entries', context.numEntriesChanged,
-      context.numEntriesProcessed);
-  } else {
-    console.log('Archive completed with no entries processed');
+  console.log('Archive completed');
+
+  if(this.numEntriesProcessed) {
+    console.log('Archived %s of %s entries', this.numEntriesChanged,
+      this.numEntriesProcessed);
   }
-};
+}
+
+} // End file block scope

@@ -41,7 +41,7 @@ Background.onBackgroundLoad = function(event) {
 Background.onAlarm = function(alarm) {
   console.debug('Alarm wakeup', alarm.name);
   if(alarm.name === 'archive') {
-    archive.start();
+    archiveEntries();
   } else if(alarm.name === 'poll') {
     const forceResetLock = false;
     poll.start(forceResetLock);
