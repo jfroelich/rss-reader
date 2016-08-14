@@ -13,17 +13,22 @@ const tenDaysMillis = 10 * 24 * 60 * 60 * 1000;
 this.archiveEntries = function(expiresAfterMillis) {
   console.log('Archiving entries...');
 
-  if(expiresAfterMillis) {
+  if(typeof expiresAfterMillis !== 'undefined') {
     console.assert(!isNaN(expiresAfterMillis), 'expires is nan');
+    console.assert(isFinite(expiresAfterMillis), 'expires not finite');
     console.assert(expiresAfterMillis > 0, 'expires is negative');
   }
 
   const context = {
-    'expiresAfterMillis': expiresAfterMillis || tenDaysMillis,
+    'expiresAfterMillis': tenDaysMillis,
     'numEntriesProcessed': 0,
     'numEntriesChanged': 0,
     'currentDate': new Date()
   };
+
+  if(typeof expiresAfterMillis === 'number') {
+    context.expiresAfterMillis = expiresAfterMillis;
+  }
 
   Database.open(onOpenDatabase.bind(context));
 };
@@ -34,7 +39,6 @@ function onOpenDatabase(connection) {
     return;
   }
 
-  // Open a cursor over entries that are read and unarchived
   this.connection = connection;
   const transaction = connection.transaction('entry', 'readwrite');
   const store = transaction.objectStore('entry');
@@ -54,18 +58,19 @@ function openCursorOnSuccess(event) {
 
   this.numEntriesProcessed++;
 
-  // TODO: deserialize entries on load. Blocked on proper implementation
-  // of Entry constructor (deserializing urls)
+  const entry = new Entry(cursor.value);
+  console.assert(entry.dateCreated, 'missing date created');
+  console.assert(this.currentDate >= entry.dateCreated, 'created in future');
+  const age = this.currentDate - entry.dateCreated;
 
-  const entry = cursor.value;
-  const ageInMillis = getEntryAge.call(this, entry);
-  if(ageInMillis > this.expiresAfterMillis) {
-    console.debug('Archiving entry', Entry.prototype.getURL.call(entry));
-    const archivedEntry = Entry.prototype.archive.call(entry);
-    cursor.update(archivedEntry);
-    sendMessage(archivedEntry.id);
+  if(age > this.expiresAfterMillis) {
+    const archived = entry.archive().serialize();
+    console.debug('Storing', archived);
+    cursor.update(archived);
+    sendArchiveRequestedMessage(entry.id);
     this.numEntriesChanged++;
   }
+
   cursor.continue();
 }
 
@@ -74,21 +79,7 @@ function openCursorOnError(event) {
   onComplete.call(this);
 }
 
-function getEntryAge(entry) {
-  let age = 0;
-  if(entry.dateCreated) {
-    console.assert(this.currentDate > entry.dateCreated, 'created in future');
-    // Subtract the date to get the difference in milliseconds
-    age = this.currentDate - entry.dateCreated;
-  } else {
-    // Use a fake age that guarantees archival
-    console.warn('Faking date created', entry);
-    age = this.expiresAfterMillis + 1;
-  }
-  return age;
-}
-
-function sendMessage(entryId) {
+function sendArchiveRequestedMessage(entryId) {
   chrome.runtime.sendMessage({
     'type': 'archiveEntryRequested',
     'entryId': entryId
@@ -96,15 +87,11 @@ function sendMessage(entryId) {
 }
 
 function onComplete() {
+  console.log('Archived %s of %s entries', this.numEntriesChanged,
+    this.numEntriesProcessed);
+
   if(this.connection) {
     this.connection.close();
-  }
-
-  console.log('Archive completed');
-
-  if(this.numEntriesProcessed) {
-    console.log('Archived %s of %s entries', this.numEntriesChanged,
-      this.numEntriesProcessed);
   }
 }
 
