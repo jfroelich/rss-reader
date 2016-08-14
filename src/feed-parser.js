@@ -222,7 +222,7 @@ FeedParser.createEntryFromElement = function(feedDatePublished, entryElement) {
 
     entryObject.enclosure = {
       'url': enclosureURL,
-      'length': enclosure.getAttribute('length'),
+      'enclosure_length': enclosure.getAttribute('length'),
       'type': enclosure.getAttribute('type')
     };
   }
