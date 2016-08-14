@@ -78,7 +78,7 @@ Slideshow.appendSlides = function(oncomplete, isFirst) {
   const limit = 5;
   const offset = Slideshow.countUnreadSlides();
   let notAdvanced = true;
-  openIndexedDB(onOpenDatabase);
+  Database.open(onOpenDatabase);
 
   function onOpenDatabase(connection) {
     if(connection) {
