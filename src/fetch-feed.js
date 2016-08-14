@@ -58,7 +58,7 @@ function fetchFeedOnResponse(requestURL, excludeEntries, callback, event) {
   try {
     feed = FeedParser.parseDocument(document, excludeEntries);
   } catch(exception) {
-    console.warn(exception.message);
+    console.warn(requestURL.href, exception.message);
     callback({
       'type': 'ParseError',
       'message': exception.message,
