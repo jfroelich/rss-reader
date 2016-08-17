@@ -8,14 +8,12 @@
 
 const DisplaySettings = Object.create(null);
 
-DisplaySettings.onMessage = function(message) {
+chrome.runtime.onMessage.addListener(function(message) {
   // Only react to the one message type of interest
   if(message.type === 'displaySettingsChanged') {
     DisplaySettings.updateStyles();
   }
-};
-
-chrome.runtime.onMessage.addListener(DisplaySettings.onMessage);
+});
 
 // TODO: this is not yet in use, but the idea is to remove prefix
 DisplaySettings.BACKGROUND_BASE_PATH = '/images/';

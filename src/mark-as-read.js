@@ -4,48 +4,41 @@
 
 'use strict';
 
-const markAsRead = {};
+{ // Begin file block scope
 
-markAsRead.start = function(entryId, callback) {
+this.mark_as_read = function(entryId, callback) {
   console.assert(typeof entryId === 'number' && isFinite(entryId) &&
-    entryId > 0, 'invalid entryId %s', entryId);
-  // console.debug('Marking entry %i as read', entryId);
-
-  // Define a context to simplify parameter passing
+    entryId > 0);
   const context = {'entryId': entryId, 'callback': callback};
-  Database.open(markAsRead.onOpenDatabase.bind(context));
+  open_db(on_open_db.bind(context));
 };
 
-markAsRead.onOpenDatabase = function(connection) {
+function on_open_db(connection) {
   if(!connection) {
-    markAsRead.onComplete.call(this, 'ConnectionError');
+    on_complete.call(this, 'ConnectionError');
     return;
   }
 
-  // Cache the connection in the context so that it can be easily closed
   this.connection = connection;
-
-  // Open a cursor as opposed to using get so that we can use cursor.update
-  const transaction = this.connection.transaction('entry', 'readwrite');
+  const transaction = connection.transaction('entry', 'readwrite');
   const store = transaction.objectStore('entry');
   const request = store.openCursor(this.entryId);
-  request.onsuccess = markAsRead.openCursorOnSuccess.bind(this);
-  request.onerror = markAsRead.openCursorOnError.bind(this);
-};
+  request.onsuccess = open_cursor_onsuccess.bind(this);
+  request.onerror = open_cursor_onerror.bind(this);
+}
 
-markAsRead.openCursorOnSuccess = function(event) {
+function open_cursor_onsuccess(event) {
   const cursor = event.target.result;
   if(!cursor) {
-    console.error('No entry found for id %i to mark as read', this.entryId);
-    markAsRead.onComplete.call(this, 'NotFoundError');
+    console.error('No entry found', this.entryId);
+    on_complete.call(this, 'NotFoundError');
     return;
   }
 
   const entry = cursor.value;
   if(entry.readState === Entry.FLAGS.READ) {
-    console.error('Attempted to remark read entry with id %i as read',
-      this.entryId);
-    markAsRead.onComplete.call(this, 'AlreadyReadError');
+    console.error('Already read', this.entryId);
+    on_complete.call(this, 'AlreadyReadError');
     return;
   }
 
@@ -61,17 +54,17 @@ markAsRead.openCursorOnSuccess = function(event) {
   // Async. This call is implicitly blocked by the readwrite transaction used
   // here, so the count of unread will be affected, even though we do not
   // wait for cursor.update to complete.
-  Badge.update(this.connection);
+  update_badge(this.connection);
 
-  markAsRead.onComplete.call(this, 'Success');
-};
+  on_complete.call(this, 'Success');
+}
 
-markAsRead.openCursorOnError = function(event) {
-  console.warn('Error opening cursor when marking entry as read', event);
-  markAsRead.onComplete.call(this, 'CursorError');
-};
+function open_cursor_onerror(event) {
+  console.warn(event.target.error);
+  on_complete.call(this, 'CursorError');
+}
 
-markAsRead.onComplete = function(eventType) {
+function on_complete(eventType) {
   if(this.connection) {
     this.connection.close();
   }
@@ -82,4 +75,6 @@ markAsRead.onComplete = function(eventType) {
       'entryId': this.entryId
     });
   }
-};
+}
+
+} // End file block scope

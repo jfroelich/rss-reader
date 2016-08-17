@@ -188,15 +188,15 @@ Entry.prototype.sanitize = function() {
   // TODO: sanitize fully
   if(this.author) {
     let author = this.author;
-    author = StringUtils.filterControlCharacters(author);
-    author = StringUtils.replaceHTML(author, '');
+    author = filter_control_chars(author);
+    author = replace_html(author, '');
     //author = truncateHTML(author, MAX_AUTHOR_VALUE_LENGTH);
     entry.author = author;
   }
 
   // Sanitize entry.content
   // TODO: filter out non-printable characters other than \r\n\t
-  // TODO: enforce a maximum storable length (using StringUtils.truncateHTML)
+  // TODO: enforce a maximum storable length (using truncate_html)
   entry.content = this.content;
 
   entry.id = this.id;
@@ -235,12 +235,12 @@ Entry.prototype.sanitize = function() {
   entry.readState = this.readState;
 
   // Sanitize the title
-  // TODO: enforce a maximum length using StringUtils.truncateHTML
+  // TODO: enforce a maximum length using truncate_html
   // TODO: condense spaces?
   if(this.title) {
     let title = this.title;
-    title = StringUtils.filterControlCharacters(title);
-    title = StringUtils.replaceHTML(title, '');
+    title = filter_control_chars(title);
+    title = replace_html(title, '');
     entry.title = title;
   }
 

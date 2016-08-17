@@ -4,18 +4,19 @@
 
 'use strict';
 
-// Async. Sends a request to GoogleFeeds API to find urls of feeds matching
-// a textual query. Calls back with an event object.
-// Google formally deprecated this service. Around December 1st, 2015, I
-// first noticed that the queries stopped working. However, I have witnessed
-// the service occassionally work thereafter.
-function searchGoogleFeeds(queryString, timeoutMillis, callback) {
+{ // Begin file block scope
+
+// Sends a request to GoogleFeeds API to find urls of feeds matching
+// a textual query. Calls back with an event object. Google formally deprecated
+// this service. Around December 1st, 2015, I first noticed that the queries
+// stopped working. However, I have witnessed the service occassionally work
+// thereafter.
+this.search_google_feeds = function(queryString, timeoutMillis, callback) {
   console.assert(queryString, 'queryString is required');
   console.assert(typeof timeoutMillis === 'undefined' ||
     (!isNaN(timeoutMillis) && timeoutMillis >= 0),
     'timeoutMillis %s is not a positive integer', timeoutMillis);
 
-  // Create a shared context variable to simplify continuations
   const context = {
     'urlString': null,
     'callback': callback,
@@ -35,18 +36,18 @@ function searchGoogleFeeds(queryString, timeoutMillis, callback) {
   if(timeoutMillis) {
     request.timeout = timeoutMillis;
   }
-  const onResponse = searchGoogleFeedsOnResponse.bind(request, context);
-  request.onerror = onResponse;
-  request.ontimeout = onResponse;
-  request.onabort = onResponse;
-  request.onload = onResponse;
+  const boundOnResponse = on_response.bind(request, context);
+  request.onerror = boundOnResponse;
+  request.ontimeout = boundOnResponse;
+  request.onabort = boundOnResponse;
+  request.onload = boundOnResponse;
   const isAsync = true;
   request.open('GET', urlString, isAsync);
   request.responseType = 'json';
   request.send();
-}
+};
 
-function searchGoogleFeedsOnResponse(context, event) {
+function on_response(context, event) {
   // Assert that response is defined
   if(!event.target.response) {
     console.warn('Response undefined for GET', context.urlString);
@@ -108,18 +109,18 @@ function searchGoogleFeedsOnResponse(context, event) {
 
     // Sanitize the result title
     if(entry.title) {
-      entry.title = StringUtils.filterControlCharacters(entry.title);
-      entry.title = StringUtils.replaceHTML(entry.title, '');
-      entry.title = StringUtils.truncateHTML(entry.title,
+      entry.title = filter_control_chars(entry.title);
+      entry.title = replace_html(entry.title, '');
+      entry.title = truncate_html(entry.title,
         context.titleMaxLength);
     }
 
     // Sanitize the result snippet
     if(entry.contentSnippet) {
-      entry.contentSnippet = StringUtils.filterControlCharacters(
+      entry.contentSnippet = filter_control_chars(
         entry.contentSnippet);
       entry.contentSnippet = entry.contentSnippet.replace(/<br\s*>/gi, ' ');
-      entry.contentSnippet = StringUtils.truncateHTML(entry.contentSnippet,
+      entry.contentSnippet = truncate_html(entry.contentSnippet,
         context.contentSnippetMaxLength, context.truncateReplacementString);
     }
 
@@ -132,3 +133,5 @@ function searchGoogleFeedsOnResponse(context, event) {
     'entries': outputEntries
   });
 }
+
+} // End file block scope

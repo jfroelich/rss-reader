@@ -34,7 +34,7 @@ Slideshow.removeSlide = function(slideElement) {
 Slideshow.markAsRead = function(slide) {
   if(!slide.hasAttribute('read')) {
     slide.setAttribute('read', '');
-    markAsRead.start(parseInt(slide.getAttribute('entry'), 10));
+    mark_as_read(parseInt(slide.getAttribute('entry'), 10));
   }
 };
 
@@ -78,7 +78,7 @@ Slideshow.appendSlides = function(oncomplete, isFirst) {
   const limit = 5;
   const offset = Slideshow.countUnreadSlides();
   let notAdvanced = true;
-  Database.open(onOpenDatabase);
+  open_db(onOpenDatabase);
 
   function onOpenDatabase(connection) {
     if(connection) {
@@ -195,7 +195,7 @@ Slideshow.appendSlide = function(entry, isFirst) {
   if(entry.title) {
     let titleText = entry.title;
     titleText = Slideshow.filterArticleTitle(titleText);
-    titleText = StringUtils.truncateHTML(titleText, 300);
+    titleText = truncate_html(titleText, 300);
     title.innerHTML = titleText;
   } else {
     title.textContent = 'Untitled';
@@ -209,8 +209,8 @@ Slideshow.appendSlide = function(entry, isFirst) {
   const entryContentDocument = parser.parseFromString(entry.content,
     'text/html');
 
-  Calamine.removeBoilerplate(entryContentDocument);
-  DOMAid.cleanDocument(entryContentDocument);
+  filter_boilerplate(entryContentDocument);
+  sanitize_document(entryContentDocument);
   Slideshow.addNoReferrer(entryContentDocument);
   const entryContentBody = entryContentDocument.body ||
     entryContentDocument.documentElement;

@@ -8,9 +8,8 @@
 
 const tenDaysMillis = 10 * 24 * 60 * 60 * 1000;
 
-// The sole exported function of this file. Iterates over entries in storage
-// and archived any expired entries.
-this.archiveEntries = function(expiresAfterMillis) {
+// Iterates over entries in storage and archives older entries
+this.archive_entries = function(expiresAfterMillis) {
   console.log('Archiving entries...');
 
   if(typeof expiresAfterMillis !== 'undefined') {
@@ -21,8 +20,8 @@ this.archiveEntries = function(expiresAfterMillis) {
 
   const context = {
     'expiresAfterMillis': tenDaysMillis,
-    'numEntriesProcessed': 0,
-    'numEntriesChanged': 0,
+    'num_processed': 0,
+    'num_changed': 0,
     'currentDate': new Date()
   };
 
@@ -30,12 +29,12 @@ this.archiveEntries = function(expiresAfterMillis) {
     context.expiresAfterMillis = expiresAfterMillis;
   }
 
-  Database.open(onOpenDatabase.bind(context));
+  open_db(on_open_db.bind(context));
 };
 
-function onOpenDatabase(connection) {
+function on_open_db(connection) {
   if(!connection) {
-    onComplete.call(this);
+    on_complete.call(this);
     return;
   }
 
@@ -45,51 +44,50 @@ function onOpenDatabase(connection) {
   const index = store.index('archiveState-readState');
   const keyPath = [Entry.FLAGS.UNARCHIVED, Entry.FLAGS.READ];
   const request = index.openCursor(keyPath);
-  request.onsuccess = openCursorOnSuccess.bind(this);
-  request.onerror = openCursorOnError.bind(this);
+  request.onsuccess = open_cursor_onsuccess.bind(this);
+  request.onerror = open_cursor_onerror.bind(this);
 }
 
-function openCursorOnSuccess(event) {
+function open_cursor_onsuccess(event) {
   const cursor = event.target.result;
   if(!cursor) {
-    onComplete.call(this);
+    on_complete.call(this);
     return;
   }
 
-  this.numEntriesProcessed++;
+  this.num_processed++;
 
   const entry = new Entry(cursor.value);
-  console.assert(entry.dateCreated, 'missing date created');
-  console.assert(this.currentDate >= entry.dateCreated, 'created in future');
+  console.assert(entry.dateCreated);
+  console.assert(this.currentDate >= entry.dateCreated);
   const age = this.currentDate - entry.dateCreated;
 
   if(age > this.expiresAfterMillis) {
     const archived = entry.archive().serialize();
-    console.debug('Storing', archived);
+    console.debug('Archiving', entry.getURL().toString());
     cursor.update(archived);
-    sendArchiveRequestedMessage(entry.id);
-    this.numEntriesChanged++;
+    send_message(entry.id);
+    this.num_changed++;
   }
 
   cursor.continue();
 }
 
-function openCursorOnError(event) {
+function open_cursor_onerror(event) {
   console.error(event.target.error);
-  onComplete.call(this);
+  on_complete.call(this);
 }
 
-function sendArchiveRequestedMessage(entryId) {
+function send_message(entryId) {
   chrome.runtime.sendMessage({
     'type': 'archiveEntryRequested',
     'entryId': entryId
   });
 }
 
-function onComplete() {
-  console.log('Archived %s of %s entries', this.numEntriesChanged,
-    this.numEntriesProcessed);
-
+function on_complete() {
+  console.log('Archived %s of %s entries', this.num_changed,
+    this.num_processed);
   if(this.connection) {
     this.connection.close();
   }

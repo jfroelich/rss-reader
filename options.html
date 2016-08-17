@@ -4,32 +4,41 @@
 <link rel="shortcut icon" href="/images/rss_icon_trans.gif"/>
 <link rel="stylesheet" href="/common.css"/>
 <link rel="stylesheet" href="/options.css"/>
-<script src="/src/badge.js"></script>
-<script src="/src/database.js"></script>
 <script src="/src/display-settings.js"></script>
 <script src="/src/entry.js"></script>
+<script src="/src/export-opml-file.js"></script>
 <script src="/src/fade-element.js"></script>
 <script src="/src/favicon.js"></script>
 <script src="/src/feed.js"></script>
-<script src="/src/feed-parser.js"></script>
 <script src="/src/fetch-feed.js"></script>
+<script src="/src/filter-control-chars.js"></script>
+<script src="/src/import-opml-files.js"></script>
 <script src="/src/notify.js"></script>
-<script src="/src/opml.js"></script>
+<script src="/src/open-db.js"></script>
 <script src="/src/options.js"></script>
+<script src="/src/parse-feed.js"></script>
+<script src="/src/replace-html.js"></script>
 <script src="/src/search-google-feeds.js"></script>
-<script src="/src/string-utils.js"></script>
-<script src="/src/subscription.js"></script>
+<script src="/src/subscribe.js"></script>
+<script src="/src/truncate-html.js"></script>
+<script src="/src/unsubscribe.js"></script>
+<script src="/src/update-badge.js"></script>
 </head>
 <body>
 <table id="f-it"><tr><td id="nav-cell-container">
 <ul id="navigation-menu">
-<li id="mi-subscriptions" section="section-subscriptions">Subscriptions<span id="subscription-count"></span></li>
-<li id="mi-add-subscription" section="section-add-subscription">Add a subscription</li>
-<li id="mi-general-settings" section="section-general-settings">General settings</li>
-<li id="mi-display-settings" section="section-display-settings">Display settings</li>
+<li id="mi-subscriptions" section="section-subscriptions">Subscriptions
+  <span id="subscription-count"></span></li>
+<li id="mi-add-subscription" section="section-add-subscription">Add a
+  subscription</li>
+<li id="mi-general-settings" section="section-general-settings">General
+  settings</li>
+<li id="mi-display-settings" section="section-display-settings">Display
+  settings</li>
 <li id="mi-backup" section="section-backup">Import/export</li>
 <li id="mi-view-about" section="divabout">About</li>
-<li id="mi-feed-details" section="section-feed-details" style="display:none;">hidden feed details placeholder</li>
+<li id="mi-feed-details" section="section-feed-details" style="display:none;">
+  hidden feed details placeholder</li>
 </ul>
 
 </td><td id="section-layout-container">
@@ -45,7 +54,8 @@
   <table id="general-settings-table">
   <tr>
     <td colspan="2" class="option-text">
-      <input type="checkbox" id="enable-subscription-preview"> Preview articles before subscribing
+      <input type="checkbox" id="enable-subscription-preview"> Preview articles
+      before subscribing
     </td>
   </tr>
   <tr>
@@ -55,8 +65,10 @@
   </tr>
   <tr>
     <td colspan="2" class="option-text">
-      <input type="checkbox" id="enable-background"> Permit this extension to check for
-      updates in the background if the option <em>Continue running background apps when
+      <input type="checkbox" id="enable-background"> Permit this extension to
+      check for
+      updates in the background if the option <em>Continue running background
+        apps when
       Google Chrome is closed</em> is enabled in Chrome's advanced settings.
     </td>
   </tr>
@@ -67,7 +79,8 @@
   </tr>
   <tr>
     <td colspan="2" class="option-text">
-      <input type="checkbox" id="enable-idle-check"> Only check for updates when my computer is idle
+      <input type="checkbox" id="enable-idle-check"> Only check for updates when
+      my computer is idle
     </td>
   </tr>
   </table>
@@ -153,7 +166,8 @@
   <tr>
     <td class="option-text">Headings:</td>
     <td>
-      <select id="select_header_font" style="margin-top:0px;padding-top:0px"></select>
+      <select id="select_header_font" style="margin-top:0px;padding-top:0px">
+      </select>
       <input type="range" id="header-font-size" min="1" max="50" step="1">
     </td>
   </tr>
@@ -167,7 +181,8 @@
   </tr>
   <tr>
     <td class="option-text">Line height:</td>
-    <td><input type="range" id="body-line-height" min="0" max="50" step="1"></td>
+    <td><input type="range" id="body-line-height" min="0" max="50" step="1">
+    </td>
   </tr>
   <tr>
     <td class="option-text">Columns:</td>
@@ -191,10 +206,14 @@
   <h1>About</h1>
   <p class="option-text">Name: <span id="extension-name"></span></p>
   <p class="option-text">Author: <span id="extension-author"></span></p>
-  <p class="option-text">Description: <span id="extension-description"></span></p>
+  <p class="option-text">Description: <span id="extension-description"></span>
+  </p>
   <p class="option-text">Version: <span id="extension-version"></span></p>
-  <p class="option-text">Source code: <a href="https://github.com/jfroelich/rss-reader" target="blank" id="extension-homepage"></a></p>
-  <p class="option-text">See the LICENSE file on GitHub for license, eula, privacy policy, and attributions.</p>
+  <p class="option-text">Source code:
+    <a href="https://github.com/jfroelich/rss-reader" target="blank"
+    id="extension-homepage"></a></p>
+  <p class="option-text">See the LICENSE file on GitHub for license, eula,
+    privacy policy, and attributions.</p>
 </div>
 </td></tr></table>
 </body>

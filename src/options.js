@@ -54,7 +54,7 @@ OptionsPage.showErrorMessage = function(messageString, shouldFadeIn) {
   if(shouldFadeIn) {
     errorWidgetElement.style.opacity = '0';
     document.body.appendChild(errorWidgetElement);
-    fadeElement(container, 1, 0);
+    fade_element(container, 1, 0);
   } else {
     errorWidgetElement.style.opacity = '1';
     OptionsPage.showElement(errorWidgetElement);
@@ -126,7 +126,7 @@ OptionsPage.hideSubscriptionMonitor = function(callback, fadeOut) {
   }
 
   if(fadeOut) {
-    fadeElement(monitorElement, 2, 1, removeThenCallCallback);
+    fade_element(monitorElement, 2, 1, removeThenCallCallback);
   } else {
     removeThenCallCallback();
   }
@@ -232,7 +232,7 @@ OptionsPage.appendFeed = function(feed, insertedSort) {
 
   const titleElement = document.createElement('span');
   let feedTitleString = feed.title || 'Untitled';
-  feedTitleString = StringUtils.truncateHTML(feedTitleString, 300);
+  feedTitleString = truncate_html(feedTitleString, 300);
   titleElement.textContent = feedTitleString;
   item.appendChild(titleElement);
 
@@ -331,9 +331,9 @@ OptionsPage.showSubscriptionPreview = function(url) {
     for(let i = 0, entry, item, content; i < resultLimit; i++) {
       entry = feed.entries[i];
       item = document.createElement('li');
-      item.innerHTML = StringUtils.replaceHTML(entry.title || '', '');
+      item.innerHTML = replace_html(entry.title || '', '');
       content = document.createElement('span');
-      content.innerHTML = StringUtils.replaceHTML(entry.content || '', '');
+      content.innerHTML = replace_html(entry.content || '', '');
       item.appendChild(content);
       resultsListElement.appendChild(item);
     }
@@ -366,11 +366,7 @@ OptionsPage.startSubscription = function(url) {
 
   const feed = new Feed();
   feed.addURL(url);
-  Subscription.add(feed, {
-    'connection': null,
-    'suppressNotifications': false,
-    'callback': onSubscribe
-  });
+  subscribe(feed, {'callback': onSubscribe});
 
   function onSubscribe(event) {
     if(event.type !== 'success') {
@@ -416,7 +412,7 @@ OptionsPage.populateFeedDetails = function(feedId) {
     'connection': null
   };
 
-  Database.open(onOpenDatabase);
+  open_db(onOpenDatabase);
   function onOpenDatabase(connection) {
     if(connection) {
       context.connection = connection;
@@ -565,7 +561,7 @@ OptionsPage.onSubscriptionFormSubmit = function(event) {
     // Show search results
     OptionsPage.showElement(progressElement);
     const timeoutInMillis = 5000;
-    searchGoogleFeeds(queryString, timeoutInMillis,
+    search_google_feeds(queryString, timeoutInMillis,
       OptionsPage.onSearchGoogleFeeds);
   }
 
@@ -648,7 +644,7 @@ OptionsPage.onSearchGoogleFeeds = function(event) {
       } catch(exception) {
       }
       if(linkURL) {
-        favicon.lookup(linkURL, null, onLookupFavicon.bind(null, result));
+        lookup_favicon(linkURL, null, onLookupFavicon.bind(null, result));
       } else {
         faviconResultsProcessed++;
         if(faviconResultsProcessed === results.length) {
@@ -738,9 +734,7 @@ OptionsPage.createSearchResult = function(feedResult) {
 OptionsPage.buttonUnsubscribeOnClick = function(event) {
   console.debug('Clicked Unsubscribe');
   const feedId = parseInt(event.target.value, 10);
-  console.assert(feedId && !isNaN(feedId) && feedId > 0,
-    'invalid feed id', feedId);
-  Subscription.remove(feedId, onUnsubscribe);
+  unsubscribe(feedId, onUnsubscribe);
 
   function onUnsubscribe(event) {
     // If there was some failure to unsubscribe from the feed, react here
@@ -795,20 +789,20 @@ OptionsPage.buttonUnsubscribeOnClick = function(event) {
 // with the immediate visual feedback (like a simple progress monitor
 // popup but no progress bar). The monitor should be hideable. No
 // need to be cancelable.
-// TODO: notify the user if there was an error parsing the OPML
+// TODO: notify the user if there was an error
 // TODO: give immediate visual feedback the import started
 // TODO: switch to a different section of the options ui on complete?
 OptionsPage.importOPMLButtonOnClick = function(event) {
-  opml.importFiles();
+  import_opml_files();
 };
 
 OptionsPage.exportOPMLButtonOnClick = function(event) {
-  opml.exportFile('Subscriptions', 'subscriptions.xml');
+  export_opml_file('Subscriptions', 'subscriptions.xml');
 };
 
 OptionsPage.initSubscriptionsSection = function() {
   let feedCount = 0;
-  Database.open(onOpenDatabase);
+  open_db(onOpenDatabase);
 
   function onOpenDatabase(connection) {
     if(connection) {

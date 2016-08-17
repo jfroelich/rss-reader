@@ -4,71 +4,64 @@
 
 'use strict';
 
-function fetchFeed(requestURL, timeoutMillis, excludeEntries, callback) {
-  console.assert(requestURL, 'requestURL is required');
-  console.assert(Object.prototype.toString.call(requestURL) === '[object URL]',
-    'requestURL must be URL', requestURL, typeof requestURL,
-    Object.prototype.toString.call(requestURL));
+{ // Begin file block scope
+
+this.fetch_feed = function(requestURL, timeoutMillis, excludeEntries,
+  callback) {
+  console.assert(isURL(requestURL));
   console.assert(typeof timeoutMillis === 'undefined' ||
-    (!isNaN(timeoutMillis) && timeoutMillis >= 0), 'Invalid timeout specified',
-    timeoutMillis);
+    (!isNaN(timeoutMillis) && isFinite(timeoutMillis) && timeoutMillis >= 0));
 
   console.debug('GET', requestURL.href);
 
+  const context = {
+    'requestURL': requestURL,
+    'excludeEntries': excludeEntries,
+    'callback': callback
+  };
+
+  const bound_on_response = on_response.bind(context);
+  const async_flag = true;
   const request = new XMLHttpRequest();
-  if(timeoutMillis) {
-    request.timeout = timeoutMillis;
-  }
-
-  const onResponse = fetchFeedOnResponse.bind(request, requestURL,
-    excludeEntries, callback);
-  request.onerror = onResponse;
-  request.ontimeout = onResponse;
-  request.onabort = onResponse;
-  request.onload = onResponse;
-
-  const isAsync = true;
-  request.open('GET', requestURL.href, isAsync);
+  request.timeout = timeoutMillis;
+  request.onerror = bound_on_response;
+  request.ontimeout = bound_on_response;
+  request.onabort = bound_on_response;
+  request.onload = bound_on_response;
+  request.open('GET', requestURL.href, async_flag);
   request.responseType = 'document';
   request.send();
-}
+};
 
-function fetchFeedOnResponse(requestURL, excludeEntries, callback, event) {
+function on_response(event) {
   // Check that we got a load response
   if(event.type !== 'load') {
     console.debug(event.type, requestURL.href);
-    callback({'type': event.type, 'requestURL': requestURL});
+    this.callback({'type': event.type, 'requestURL': this.requestURL});
     return;
   }
 
-  // Check that the document is defined. The document may be undefined when
-  // we fetched a file with a mime-type not compatable with the responseType
-  // setting of XMLHttpRequest
+  // Doc is undefined for pdfs and such
   const document = event.target.responseXML;
   if(!document) {
-    callback({
+    this.callback({
       'type': 'UndefinedDocumentError',
-      'requestURL': requestURL
+      'requestURL': this.requestURL
     });
     return;
   }
 
-  // Parse the XML file into a Feed object
   let feed = null;
   try {
-    feed = FeedParser.parseDocument(document, excludeEntries);
-  } catch(exception) {
-    console.warn(requestURL.href, exception.message);
-    callback({
-      'type': 'ParseError',
-      'message': exception.message,
-      'requestURL': requestURL
-    });
+    feed = parse_feed(document, this.excludeEntries);
+  } catch(error) {
+    console.warn(this.requestURL.href, error.message);
+    this.callback({'type': 'ParseError', 'message': error.message,
+      'requestURL': this.requestURL});
     return;
   }
 
-  // NOTE: addURL expects a URL object, not a string
-  feed.addURL(requestURL);
+  feed.addURL(this.requestURL);
   feed.addURL(new URL(event.target.responseURL));
   feed.dateFetched = new Date();
 
@@ -76,14 +69,15 @@ function fetchFeedOnResponse(requestURL, excludeEntries, callback, event) {
   if(lastModified) {
     try {
       feed.dateLastModified = new Date(lastModified);
-    } catch(parseError) {
-      console.warn(parseError);
+    } catch(error) {
     }
   }
 
-  callback({
-    'type': 'load',
-    'feed': feed,
-    'requestURL': requestURL
-  });
+  this.callback({'type': 'load', 'feed': feed, 'requestURL': this.requestURL});
 }
+
+function isURL(value) {
+  return Object.prototype.toString.call(value) === '[object URL]';
+}
+
+} // End file block scope

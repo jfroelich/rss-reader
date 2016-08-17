@@ -4,50 +4,54 @@
 
 'use strict';
 
-// Asynchronously fetches an html file
-function fetchHTML(requestURL, timeoutMillis, callback) {
-  console.assert(requestURL && requestURL.href,
-    'requestURL is required and must be a URL object');
+{ // Begin file block scope
+
+this.fetch_html = function(requestURL, timeoutMillis, callback) {
+  console.assert(requestURL && requestURL.href);
   console.log('GET', requestURL.href);
 
-  const request = new XMLHttpRequest();
-  if(timeoutMillis) {
-    request.timeout = timeoutMillis;
-  }
+  const context = {
+    'requestURL': requestURL,
+    'callback': callback
+  };
 
-  const onFetch = fetchHTMLOnFetch.bind(request, requestURL, callback);
-  request.ontimeout = onFetch;
-  request.onerror = onFetch;
-  request.onabort = onFetch;
-  request.onload = onFetch;
-  const isAsync = true;
-  request.open('GET', requestURL.href, isAsync);
+  const bound_on_response = on_response.bind(context);
+  const async_flag = true;
+  const request = new XMLHttpRequest();
+  request.timeout = timeoutMillis;
+  request.ontimeout = bound_on_response;
+  request.onerror = bound_on_response;
+  request.onabort = bound_on_response;
+  request.onload = bound_on_response;
+  request.open('GET', requestURL.href, async_flag);
   request.responseType = 'document';
   request.setRequestHeader('Accept', 'text/html');
   request.send();
 }
 
-function fetchHTMLOnFetch(requestURL, callback, event) {
+function on_response(event) {
   if(event.type !== 'load') {
     console.warn(event.type, event.target.status, event.target.statusText,
-      requestURL.href);
-    callback({'type': 'FetchError', 'requestURL': requestURL});
+      this.requestURL.href);
+    this.callback({'type': 'FetchError', 'requestURL': this.requestURL});
     return;
   }
 
-  // When XMLHttpRequest fetches a document that is not an XML/HTML document,
-  // then the load was successful, but document is undefined.
+  // doc is undefined for pdfs and such
   const document = event.target.responseXML;
   if(!document) {
-    console.warn('Undefined document', requestURL.href);
-    callback({'type': 'UndefinedDocumentError', 'requestURL': requestURL});
+    console.warn('Undefined document', this.requestURL.href);
+    this.callback({'type': 'UndefinedDocumentError',
+      'requestURL': this.requestURL});
     return;
   }
 
-  callback({
+  this.callback({
     'type': 'success',
-    'requestURL': requestURL,
+    'requestURL': this.requestURL,
     'document': document,
     'responseURL': new URL(event.target.responseURL)
   });
 }
+
+} // End file block scope

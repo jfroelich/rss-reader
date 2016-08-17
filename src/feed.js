@@ -283,10 +283,10 @@ Feed.prototype.sanitize = function() {
   // Sanitize feed title. title is an HTML string
   if(feed.title) {
     let title = feed.title;
-    title = StringUtils.filterControlCharacters(title);
-    title = StringUtils.replaceHTML(title, '');
+    title = filter_control_chars(title);
+    title = replace_html(title, '');
     title = title.replace(/\s+/, ' ');
-    title = StringUtils.truncateHTML(title, 1024, '');
+    title = truncate_html(title, 1024, '');
     title = title.trim();
     feed.title = title;
   }
@@ -294,8 +294,8 @@ Feed.prototype.sanitize = function() {
   // Sanitize feed description. description is an HTML string
   if(feed.description) {
     let description = feed.description;
-    description = StringUtils.filterControlCharacters(description);
-    description = StringUtils.replaceHTML(description, '');
+    description = filter_control_chars(description);
+    description = replace_html(description, '');
 
     // Condense and transform whitespace into a single space
     description = description.replace(/\s+/, ' ');
@@ -303,7 +303,7 @@ Feed.prototype.sanitize = function() {
     // Enforce a maximum storable length
     const lengthBeforeTruncation = description.length;
     const DESCRIPTION_MAX_LENGTH = 1024 * 10;
-    description = StringUtils.truncateHTML(description,
+    description = truncate_html(description,
       DESCRIPTION_MAX_LENGTH, '');
     if(lengthBeforeTruncation > description.length) {
       console.warn('Truncated description', description);

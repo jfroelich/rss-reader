@@ -8,7 +8,7 @@
 // @param feed {Feed} the feed to put into the database
 // @param callback {function} optional callback function
 // TODO: pass back the sanitized Feed object, not the serialized feed?
-function updateFeed(connection, feed, callback) {
+function update_feed(connection, feed, callback) {
   console.debug('Updating feed', feed.getURL().href);
 
   let sanitizedFeed = feed.sanitize();
