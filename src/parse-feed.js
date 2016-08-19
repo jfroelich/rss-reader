@@ -33,7 +33,7 @@ this.parse_feed = function(document, excludeEntries) {
     const entryObjects = entryElements.map(
       create_entry.bind(null, feed.datePublished));
     for(let entryObject of entryObjects) {
-      feed.addEntry(entryObject);
+      feed.add_entry(entryObject);
     }
   }
 

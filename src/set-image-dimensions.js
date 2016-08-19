@@ -9,27 +9,31 @@
 // Set the width and height attributes of image elements. Calls back
 // with the number of images modified.
 this.set_image_dimensions = function(document, callback) {
+
+  console.assert(document);
+  console.assert(callback);
+
   const context = {
-    'numProcessed': 0,
-    'numFetched': 0,
-    'numModified': 0,
-    'numImages': 0,
+    'num_processed': 0,
+    'num_fetched': 0,
+    'num_modified': 0,
+    'num_images': 0,
     'callback': callback,
     'document': document,
-    'didCallback': false
+    'did_callback': false
   };
 
   // Because we are not modifying the set of images, it makes sense to use
   // a static node list because of the minor speed boost.
   const images = document.getElementsByTagName('img');
-  context.numImages = images.length;
-  if(context.numImages) {
+  context.num_images = images.length;
+  if(context.num_images) {
     for(let image of images) {
       process_img(context, image);
     }
   } else {
     // Ensure we still callback in the case of no images
-    callback(0);
+    callback(context.num_modified);
   }
 };
 
@@ -48,23 +52,21 @@ function process_img(context, image) {
   // too. Also note that image.style.width yields a string, such as "100%" or
   // "50px", and this is the value set for the attribute.
   if(image.hasAttribute('style')) {
-    let inferredFromStyle = false;
-
     // An image could have one dimension specified but not the other, or both,
     // or neither. So check against the dimensions individually. If we were
     // able to set either one, then consider the image processed.
-
+    let inferred_from_style = false;
     if(image.style.width) {
       image.setAttribute('width', image.style.width);
-      inferredFromStyle = true;
+      inferred_from_style = true;
     }
 
     if(image.style.height) {
       image.setAttribute('height', image.style.height);
-      inferredFromStyle = true;
+      inferred_from_style = true;
     }
 
-    if(inferredFromStyle) {
+    if(inferred_from_style) {
       on_process_img(context);
       return;
     }
@@ -80,10 +82,10 @@ function process_img(context, image) {
   }
 
   // Skip images with invalid src urls
-  let srcURL = null;
+  let src_url = null;
   try {
-    srcURL = new URL(src);
-  } catch(urlParseError) {
+    src_url = new URL(src);
+  } catch(error) {
     console.debug('Invalid url', image.outerHTML);
     on_process_img(context);
     return;
@@ -94,7 +96,7 @@ function process_img(context, image) {
   // embedded right there in the document, it looks like Chrome doesn't eagerly
   // deserialize such objects. I suppose I could load, but for now I treat
   // data: urls as not processable.
-  if(srcURL.protocol !== 'http:' && srcURL.protocol !== 'https:') {
+  if(src_url.protocol !== 'http:' && src_url.protocol !== 'https:') {
     on_process_img(context);
     return;
   }
@@ -104,30 +106,37 @@ function process_img(context, image) {
   // context is live, and will eagerly fetch images when the src property is
   // set. The document containing the image is inert, so setting its src would
   // not have an effect.
-  const proxyImage = new Image();
-  proxyImage.src = src;
+  const proxy_img = new Image();
+
+  // This assignment triggers the load
+  proxy_img.src = src;
 
   // Check if the proxy is complete. Inferrably, when setting the src property,
   // Chrome also checked whether the image was cached. In this case, the
-  // dimensions are already available, so there is no need to trigger an image
-  // load, and we can return synchronously.
-  if(proxyImage.complete) {
-    image.setAttribute('width', proxyImage.width);
-    image.setAttribute('height', proxyImage.height);
+  // dimensions are already available, so there is no need to wait for the
+  // load to complete.
+  if(proxy_img.complete) {
+    image.setAttribute('width', proxy_img.width);
+    image.setAttribute('height', proxy_img.height);
     on_process_img(context);
   } else {
-    const bound_on_load = on_load.bind(proxyImage, context, image);
-    proxyImage.onload = bound_on_load;
-    proxyImage.onerror = bound_on_load;
+
+    // If incomplete then bind the listeners. Because the load is async, it is
+    // irrelevant that we bind the listeners after triggering the load, it
+    // will still work.
+
+    const bound_on_load = on_load.bind(proxy_img, context, image);
+    proxy_img.onload = bound_on_load;
+    proxy_img.onerror = bound_on_load;
   }
 }
 
 function on_load(context, image, event) {
-  context.numFetched++;
+  context.num_fetched++;
   if(event.type === 'load') {
     image.setAttribute('width', event.target.width);
     image.setAttribute('height', event.target.height);
-    context.numModified++;
+    context.num_modified++;
   }
 
   on_process_img(context);
@@ -136,15 +145,15 @@ function on_load(context, image, event) {
 function on_process_img(context) {
   // This increment should only happen here, because this should only happen
   // once each call completes, which is sometimes asynchronous.
-  context.numProcessed++;
+  context.num_processed++;
 
-  if(context.numProcessed === context.numImages) {
-    // The didCallback logic here is a remnant of an earlier bug that has since
-    // been fixed. It is left here as a reminder of the danger of setting
-    // numProcessed in the wrong place
-    console.assert(!context.didCallback);
-    context.didCallback = true;
-    context.callback(context.numModified);
+  if(context.num_processed === context.num_images) {
+    // The did_callback logic here is a remnant of an earlier bug that has since
+    // been fixed. It is left here as a reminder of the danger of incrementing
+    // num_processed in the wrong place
+    console.assert(!context.did_callback);
+    context.did_callback = true;
+    context.callback(context.num_modified);
   }
 }
 

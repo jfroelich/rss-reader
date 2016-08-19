@@ -40,8 +40,8 @@ function open_cursor_onerror(event) {
 function open_cursor_onsuccess(event) {
   const cursor = event.target.result;
   if(cursor) {
-    // Deserialize each object into a Feed object
-    const feed = new Feed(cursor.value);
+
+    const feed = deserialize_feed(cursor.value);
     this.feeds.push(feed);
     cursor.continue();
   } else {

@@ -7,26 +7,28 @@
 // @param descriptors {Array} an array of basic descriptor objects such as the
 // one produced by the parseSrcset library
 function serialize_srcset(descriptors) {
-  const outputStringBuffer = [];
+  console.assert(descriptors);
+
+  const output_buffer = [];
   for(let descriptor of descriptors) {
-    let sb = [descriptor.url];
+    let desc_buffer = [descriptor.url];
     if(descriptor.d) {
-      sb.push(' ');
-      sb.push(descriptor.d);
-      sb.push('x');
+      desc_buffer.push(' ');
+      desc_buffer.push(descriptor.d);
+      desc_buffer.push('x');
     } else if(descriptor.w) {
-      sb.push(' ');
-      sb.push(descriptor.w);
-      sb.push('w');
+      desc_buffer.push(' ');
+      desc_buffer.push(descriptor.w);
+      desc_buffer.push('w');
     } else if(descriptor.h) {
-      sb.push(' ');
-      sb.push(descriptor.h);
-      sb.push('h');
+      desc_buffer.push(' ');
+      desc_buffer.push(descriptor.h);
+      desc_buffer.push('h');
     }
 
-    outputStringBuffer.push(sb.join(''));
+    output_buffer.push(desc_buffer.join(''));
   }
 
   // The space is important
-  return outputStringBuffer.join(', ');
+  return output_buffer.join(', ');
 }

@@ -8,19 +8,21 @@
 // Currently this only modifies Google News urls, but I plan to include more
 // TODO: instead of a regular expression I could consider using the new
 // URL api to access and test against components of the URL
-function rewrite_url(inputURL) {
-  let outputURL = new URL(inputURL.href);
+function rewrite_url(input_url) {
+  console.assert(input_url);
+
+  let output_url = new URL(input_url.href);
   const GOOGLE_NEWS = /^https?:\/\/news.google.com\/news\/url\?.*url=(.*)/i;
-  const matches = GOOGLE_NEWS.exec(inputURL.href);
+  const matches = GOOGLE_NEWS.exec(input_url.href);
   if(matches && matches.length === 2 && matches[1]) {
     const param = decodeURIComponent(matches[1]);
     try {
-      outputURL = new URL(param);
-      // console.debug('Rewrote', inputURL.href, 'as', outputURL.href);
+      output_url = new URL(param);
+      // console.debug('Rewrote', input_url.href, 'as', output_url.href);
     } catch(exception) {
       console.warn('Error rewriting url', exception);
     }
   }
 
-  return outputURL;
+  return output_url;
 }

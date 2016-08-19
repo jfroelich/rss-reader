@@ -4,16 +4,19 @@
 
 'use strict';
 
-function filter_hr_elements(document) {
+{ // Begin file block scope
 
-  const selector = [
-    'hr + hr', // consecutive hrs
-    'ul > hr', // hierarchy error
-    'ol > hr' // hierarchy error
-  ].join(',');
+const SELECTOR = [
+  'hr + hr', // consecutive hrs
+  'ul > hr', // hierarchy error
+  'ol > hr' // hierarchy error
+].join(',');
 
-  const elements = document.querySelectorAll(selector);
+this.filter_hr_elements = function(document) {
+  const elements = document.querySelectorAll(SELECTOR);
   for(let i = 0, len = elements.length; i < len; i++) {
     elements[i].remove();
   }
-}
+};
+
+} // End file block scope

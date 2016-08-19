@@ -6,43 +6,46 @@
 
 { // Begin file block scope
 
+const ELLIPSIS = '\u2026';
+
+const BASE_URL_STRING =
+  'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
+
 // Sends a request to GoogleFeeds API to find urls of feeds matching
 // a textual query. Calls back with an event object. Google formally deprecated
 // this service. Around December 1st, 2015, I first noticed that the queries
 // stopped working. However, I have witnessed the service occassionally work
 // thereafter.
-this.search_google_feeds = function(queryString, timeoutMillis, callback) {
-  console.assert(queryString, 'queryString is required');
-  console.assert(typeof timeoutMillis === 'undefined' ||
-    (!isNaN(timeoutMillis) && timeoutMillis >= 0),
-    'timeoutMillis %s is not a positive integer', timeoutMillis);
+// @param query {String}
+// @param timeout_ms {integer}
+// @param callback {function}
+this.search_google_feeds = function(query, timeout_ms, callback) {
+  console.assert(query);
+  console.assert(typeof timeout_ms === 'undefined' ||
+    (!isNaN(timeout_ms) && timeout_ms >= 0));
 
   const context = {
     'urlString': null,
     'callback': callback,
     'titleMaxLength': 200,
     'contentSnippetMaxLength': 400,
-    'truncateReplacementString': '\u2026'
+    'truncateReplacementString': ELLIPSIS
   };
 
-  // Build the request url
-  const baseURLString =
-    'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
-  const urlString = baseURLString + encodeURIComponent(queryString);
+
+  const urlString = BASE_URL_STRING + encodeURIComponent(query);
   console.debug('GET', urlString);
   context.urlString = urlString;
 
+  const async_flag = true;
   const request = new XMLHttpRequest();
-  if(timeoutMillis) {
-    request.timeout = timeoutMillis;
-  }
-  const boundOnResponse = on_response.bind(request, context);
-  request.onerror = boundOnResponse;
-  request.ontimeout = boundOnResponse;
-  request.onabort = boundOnResponse;
-  request.onload = boundOnResponse;
-  const isAsync = true;
-  request.open('GET', urlString, isAsync);
+  request.timeout = timeout_ms;
+  const bound_on_response = on_response.bind(request, context);
+  request.onerror = bound_on_response;
+  request.ontimeout = bound_on_response;
+  request.onabort = bound_on_response;
+  request.onload = bound_on_response;
+  request.open('GET', urlString, async_flag);
   request.responseType = 'json';
   request.send();
 };
@@ -79,33 +82,33 @@ function on_response(context, event) {
 
   // Filter out various results
   // Always callback with an array, even an empty one
-  const outputEntries = [];
+  const output_entries = [];
   // Ensure that entries is defined
-  const inputEntries = data.entries || [];
-  const seenURLs = new Set();
+  const input_entries = data.entries || [];
+  const seen_urls = new Set();
 
-  for(let entry of inputEntries) {
+  for(let entry of input_entries) {
     // Filter results without a url
     if(!entry.url) {
       continue;
     }
 
     // Filter results without a valid url
-    let entryURL = null;
+    let entry_url = null;
     try {
-      entryURL = new URL(entry.url);
-    } catch(urlParseError) {
+      entry_url = new URL(entry.url);
+    } catch(error) {
       continue;
     }
 
     // Filter results with an identical normalized url
-    if(seenURLs.has(entryURL.href)) {
+    if(seen_urls.has(entry_url.href)) {
       continue;
     }
-    seenURLs.add(entryURL.href);
+    seen_urls.add(entry_url.href);
 
     // Store a url object in place of a string
-    entry.url = entryURL;
+    entry.url = entry_url;
 
     // Sanitize the result title
     if(entry.title) {
@@ -124,13 +127,13 @@ function on_response(context, event) {
         context.contentSnippetMaxLength, context.truncateReplacementString);
     }
 
-    outputEntries.push(entry);
+    output_entries.push(entry);
   }
 
   context.callback({
     'type': 'success',
     'query': data.query || '',
-    'entries': outputEntries
+    'entries': output_entries
   });
 }
 

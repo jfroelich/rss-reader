@@ -4,15 +4,20 @@
 
 'use strict';
 
-function is_fetch_resistant(url) {
-  console.assert(url && url.hostname);
-  const blacklist = [
-    'productforums.google.com',
-    'groups.google.com',
-    'www.forbes.com',
-    'forbes.com'
-  ];
+{ // Begin file block scope
 
-  // hostname getter normalizes url part to lowercase
-  return blacklist.includes(url.hostname);
-}
+const HOSTNAMES = [
+  'productforums.google.com',
+  'groups.google.com',
+  'www.forbes.com',
+  'forbes.com'
+];
+
+// hostname getter normalizes url part to lowercase
+this.is_fetch_resistant = function(url) {
+  console.assert(url);
+  console.assert(url.hostname);
+  return HOSTNAMES.includes(url.hostname);
+};
+
+} // End file block scope

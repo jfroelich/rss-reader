@@ -25,12 +25,13 @@ function notify(title, message) {
   // Assume permitted, no need to check
   // If not permitted then the failure is silent, I think that is fine?
 
-  const definedTitle = title || 'Untitled';
-  const definedMessage = message || '';
+  const defined_title = title || 'Untitled';
+  const defined_msg = message || '';
+  const icon_url_string = chrome.extension.getURL('/images/rss_icon_trans.gif');
 
   // Simply instantiating a new Notification object shows it
-  const notification = new Notification(definedTitle, {
-    'body': definedMessage,
-    'icon': chrome.extension.getURL('/images/rss_icon_trans.gif')
+  const notification = new Notification(defined_title, {
+    'body': defined_msg,
+    'icon': icon_url_string
   });
 }

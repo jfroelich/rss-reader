@@ -12,7 +12,6 @@
 // entity codes. The extension string should be decoded, meaning that it should
 // not contain character entries.
 function truncate_html(inputString, position, inputExtension) {
-
   console.assert(inputString, 'inputString is required');
   console.assert(position >= 0, 'position should be defined positive int');
 

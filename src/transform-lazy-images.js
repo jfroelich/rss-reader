@@ -6,9 +6,8 @@
 
 { // Begin file block scope
 
-// TODO: Still see cases like this. Instead of checking for absence of src I
-// should be overwriting maybe?
-// <img class="..." data-original="url" src="url">
+// TODO: Still see cases like this: <img data-original="url" src="url">
+// Instead of checking for absence of src, maybe always overwrite
 
 const LAZY_ATTRIBUTES = [
   'load-src',

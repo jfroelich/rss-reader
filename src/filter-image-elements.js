@@ -9,14 +9,13 @@
 
 function filter_image_elements(document) {
   const images = document.querySelectorAll('img');
-
   for(let i = 0, len = images.length; i < len; i++) {
-    let imageElement = images[i];
-    if(!imageElement.hasAttribute('src') &&
-      !imageElement.hasAttribute('srcset')) {
-      imageElement.remove();
-    } else if(imageElement.width < 2 || imageElement.height < 2) {
-      imageElement.remove();
+    let img = images[i];
+    if(!img.hasAttribute('src') &&
+      !img.hasAttribute('srcset')) {
+      img.remove();
+    } else if(img.width < 2 || img.height < 2) {
+      img.remove();
     }
   }
 }

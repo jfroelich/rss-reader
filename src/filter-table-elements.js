@@ -34,10 +34,10 @@ function is_single_col_table(table, limit) {
 // one non-leaf cell.
 // TODO: the logic here could be simplified. Maybe just use a boolean
 // instead of a counter.
-function is_single_col_row(rowElement) {
-  const cells = rowElement.cells;
+function is_single_col_row(row) {
+  const cells = row.cells;
 
-  let nonEmptyCount = 0;
+  let non_empty_count = 0;
   for(let i = 0, len = cells.length; i < len; i++) {
     let cell = cells[i];
     if(is_leaf_node(cell)) {
@@ -45,12 +45,12 @@ function is_single_col_row(rowElement) {
     } else {
       // If it is a non leaf node, it is no longer a single column row element
       // if this is the 2nd non-leaf found.
-      nonEmptyCount++;
-      if(nonEmptyCount === 1) {
+      non_empty_count++;
+      if(non_empty_count === 1) {
         // This is the first non-leaf. Still could be single column
       } else {
         // This is the second non-leaf. Can't be single column.
-        // console.debug('Not a single column:', rowElement.outerHTML);
+        // console.debug('Not a single column:', row.outerHTML);
         return false;
       }
     }
@@ -64,12 +64,12 @@ function is_single_col_row(rowElement) {
 // is just one cell.
 function unwrap_single_column_table(table) {
   const rows = table.rows;
-  const numRows = rows.length;
-  const tableParent = table.parentNode;
+  const num_rows = rows.length;
+  const table_parent = table.parentNode;
 
-  tableParent.insertBefore(document.createTextNode(' '), table);
+  table_parent.insertBefore(document.createTextNode(' '), table);
 
-  for(let i = 0; i < numRows; i++) {
+  for(let i = 0; i < num_rows; i++) {
     let row = rows[i];
 
     // TODO: if the cell is a leaf node, skip it and do not create
@@ -79,10 +79,10 @@ function unwrap_single_column_table(table) {
       insert_children_before(cell, table);
     }
 
-    tableParent.insertBefore(document.createElement('p'), table);
+    table_parent.insertBefore(document.createElement('p'), table);
   }
 
-  tableParent.insertBefore(document.createTextNode(' '), table);
+  table_parent.insertBefore(document.createTextNode(' '), table);
   table.remove();
 }
 

@@ -446,8 +446,7 @@ OptionsPage.populateFeedDetails = function(feedId) {
       return;
     }
 
-    // Deserialize the feed
-    const feed = new Feed(event.target.result);
+    const feed = deserialize_feed(event.target.result);
 
     const titleElement = document.getElementById('details-title');
     titleElement.textContent = feed.title || 'Untitled';

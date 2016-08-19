@@ -87,7 +87,7 @@ function on_open_feeds_cursor(event) {
 
   this.pendingFeedsCount++;
 
-  const feed = new Feed(cursor.value);
+  const feed = deserialize_feed(cursor.value);
   const excludeEntries = false;
   const timeoutMillis = 10 * 1000;
   fetch_feed(feed.get_url(), timeoutMillis, excludeEntries,
@@ -125,7 +125,7 @@ function on_lookup_feed_favicon(localFeed, remoteFeed, faviconURL) {
 
   // Synchronize the feed loaded from the database with the fetched feed, and
   // then store the modified feed object in the database.
-  const mergedFeed = localFeed.merge(remoteFeed);
+  const mergedFeed = merge_feeds(localFeed, remoteFeed);
   update_feed(this.connection, mergedFeed,
     on_update_feed.bind(this, remoteFeed.getEntries()));
 }

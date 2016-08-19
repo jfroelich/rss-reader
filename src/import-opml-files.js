@@ -10,7 +10,7 @@ this.import_opml_files = function(callback) {
   console.debug('Importing OPML files...');
 
   const context = {
-    'numFilesProcessed': 0,
+    'num_files_processed': 0,
     'callback': callback,
     'uploader': null
   };
@@ -69,10 +69,10 @@ function read_file_onerror(file, event) {
 function read_file_onload(file, event) {
   console.debug('Parsing', file.name);
   const parser = new DOMParser();
-  const fileText = event.target.result;
+  const file_text = event.target.result;
   let document = null;
   try {
-    document = parser.parseFromString(fileText, 'application/xml');
+    document = parser.parseFromString(file_text, 'application/xml');
   } catch(error) {
     console.warn(file.name, error);
     on_file_processed.call(this, file);
@@ -85,9 +85,9 @@ function read_file_onload(file, event) {
     return;
   }
 
-  const parserError = document.querySelector('parsererror');
-  if(parserError) {
-    console.warn(file.name, parserError.textContent);
+  const parser_error = document.querySelector('parsererror');
+  if(parser_error) {
+    console.warn(file.name, parser_error.textContent);
     on_file_processed.call(this, file);
     return;
   }
@@ -107,7 +107,7 @@ function read_file_onload(file, event) {
   }
 
   // Add each of the outlines representing feeds in the body
-  const seenURLs = new Set();
+  const seen_urls = new Set();
   for(let element = body.firstElementChild; element;
     element = element.nextElementSibling) {
     if(element.localName !== 'outline') {
@@ -122,8 +122,8 @@ function read_file_onload(file, event) {
     }
 
     // Skip outlines without a url
-    const urlString = (element.getAttribute('xmlUrl') || '').trim();
-    if(!urlString) {
+    const url_string = (element.getAttribute('xmlUrl') || '').trim();
+    if(!url_string) {
       console.warn('Outline missing url', element.outerHTML);
       continue;
     }
@@ -131,18 +131,18 @@ function read_file_onload(file, event) {
     // Skip outlines without a valid url
     let url = null;
     try {
-      url = new URL(urlString);
-    } catch(urlParseException) {
+      url = new URL(url_string);
+    } catch(error) {
       console.warn('Invalid url', element.outerHTML);
       continue;
     }
 
     // Skip duplicate outlines (compared by normalized url)
-    if(seenURLs.has(url.href)) {
+    if(seen_urls.has(url.href)) {
       console.debug('Duplicate', element.outerHTML);
       continue;
     }
-    seenURLs.add(url.href);
+    seen_urls.add(url.href);
 
     // Create a Feed object
     const feed = new Feed();
@@ -154,13 +154,12 @@ function read_file_onload(file, event) {
     }
     feed.description = element.getAttribute('description');
 
-    const htmlUrlString = element.getAttribute('htmlUrl');
-    if(htmlUrlString) {
-      let outlineLinkURL = null;
+    const html_url_string = element.getAttribute('htmlUrl');
+    if(html_url_string) {
       try {
-        feed.link = new URL(htmlUrlString);
-      } catch(urlParseError) {
-        console.warn(urlParseError);
+        feed.link = new URL(html_url_string);
+      } catch(error) {
+        console.warn(error);
       }
     }
 
@@ -180,9 +179,9 @@ function on_file_processed(file) {
 
   // This can only be incremented here because this function is called either
   // synchronously or asynchronously
-  this.numFilesProcessed++;
+  this.num_files_processed++;
 
-  if(this.numFilesProcessed === this.uploader.files.length) {
+  if(this.num_files_processed === this.uploader.files.length) {
     on_complete.call(this);
   }
 }

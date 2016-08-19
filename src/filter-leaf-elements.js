@@ -25,9 +25,9 @@
 // element itself and the document element from also being iterated and
 // therefore identified as leaves and therefore removed in the case of an
 // empty document.
-// docElement.contains(docElement) returns true because docElement
-// is an inclusive descendant of docElement as defined in the spec. This is
-// why docElement itself can also be removed if this iterated over all
+// doc_element.contains(doc_element) returns true because doc_element
+// is an inclusive descendant of doc_element as defined in the spec. This is
+// why doc_element itself can also be removed if this iterated over all
 // elements and not just those within the body.
 
 // contains is checked first because it is a native method that is faster than
@@ -44,11 +44,11 @@ function filter_leaf_elements(doc) {
     return;
   }
 
-  const docElement = doc.documentElement;
+  const doc_element = doc.documentElement;
   const elements = doc.body.querySelectorAll('*');
   for(let i = 0, len = elements.length; i < len; i++) {
     let element = elements[i];
-    if(docElement.contains(element) && is_leaf_node(element)) {
+    if(doc_element.contains(element) && is_leaf_node(element)) {
       element.remove();
     }
   }

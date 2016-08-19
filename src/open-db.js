@@ -36,44 +36,44 @@ function upgrade(event) {
 
   const request = event.target;
   const connection = request.result;
-  let feedStore = null, entryStore = null;
+  let feed_store = null, entry_store = null;
   const stores = connection.objectStoreNames;
 
   if(stores.contains('feed')) {
-    feedStore = request.transaction.objectStore('feed');
+    feed_store = request.transaction.objectStore('feed');
   } else {
-    feedStore = connection.createObjectStore('feed', {
+    feed_store = connection.createObjectStore('feed', {
       'keyPath': 'id',
       'autoIncrement': true
     });
   }
 
   if(stores.contains('entry')) {
-    entryStore = request.transaction.objectStore('entry');
+    entry_store = request.transaction.objectStore('entry');
   } else {
-    entryStore = connection.createObjectStore('entry', {
+    entry_store = connection.createObjectStore('entry', {
       'keyPath': 'id',
       'autoIncrement': true
     });
   }
 
-  const feedIndices = feedStore.indexNames;
-  const entryIndices = entryStore.indexNames;
+  const feed_indices = feed_store.indexNames;
+  const entry_indices = entry_store.indexNames;
 
   // Deprecated
-  if(feedIndices.contains('schemeless')) {
-    feedStore.deleteIndex('schemeless');
+  if(feed_indices.contains('schemeless')) {
+    feed_store.deleteIndex('schemeless');
   }
 
   // Deprecated. Use the new urls index
-  if(feedIndices.contains('url')) {
-    feedStore.deleteIndex('url');
+  if(feed_indices.contains('url')) {
+    feed_store.deleteIndex('url');
   }
 
   // Create a multi-entry index using the new urls property, which should
   // be an array of unique strings of normalized urls
-  if(!feedIndices.contains('urls')) {
-    feedStore.createIndex('urls', 'urls', {
+  if(!feed_indices.contains('urls')) {
+    feed_store.createIndex('urls', 'urls', {
       'multiEntry': true,
       'unique': true
     });
@@ -81,41 +81,41 @@ function upgrade(event) {
 
   // TODO: deprecate this, have the caller manually sort and stop requiring
   // title, this just makes it difficult.
-  if(!feedIndices.contains('title')) {
-    feedStore.createIndex('title', 'title');
+  if(!feed_indices.contains('title')) {
+    feed_store.createIndex('title', 'title');
   }
 
   // Deprecated
-  if(entryIndices.contains('unread')) {
-    entryStore.deleteIndex('unread');
+  if(entry_indices.contains('unread')) {
+    entry_store.deleteIndex('unread');
   }
 
   // For example, used to count the number of unread entries
-  if(!entryIndices.contains('readState')) {
-    entryStore.createIndex('readState', 'readState');
+  if(!entry_indices.contains('readState')) {
+    entry_store.createIndex('readState', 'readState');
   }
 
-  if(!entryIndices.contains('feed')) {
-    entryStore.createIndex('feed', 'feed');
+  if(!entry_indices.contains('feed')) {
+    entry_store.createIndex('feed', 'feed');
   }
 
-  if(!entryIndices.contains('archiveState-readState')) {
-    entryStore.createIndex('archiveState-readState',
+  if(!entry_indices.contains('archiveState-readState')) {
+    entry_store.createIndex('archiveState-readState',
       ['archiveState', 'readState']);
   }
 
   // Deprecated. Use the urls index instead.
-  if(entryIndices.contains('link')) {
-    entryStore.deleteIndex('link');
+  if(entry_indices.contains('link')) {
+    entry_store.deleteIndex('link');
   }
 
   // Deprecated. Use the urls index instead.
-  if(entryIndices.contains('hash')) {
-    entryStore.deleteIndex('hash');
+  if(entry_indices.contains('hash')) {
+    entry_store.deleteIndex('hash');
   }
 
-  if(!entryIndices.contains('urls')) {
-    entryStore.createIndex('urls', 'urls', {
+  if(!entry_indices.contains('urls')) {
+    entry_store.createIndex('urls', 'urls', {
       'multiEntry': true,
       'unique': true
     });

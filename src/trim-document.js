@@ -6,12 +6,6 @@
 
 { // Begin file block scope
 
-const TRIMMABLE_ELEMENTS = {
-  'br': 1,
-  'hr': 1,
-  'nobr': 1
-};
-
 this.trim_document = function(document) {
   const body = document.body;
   if(!body) {
@@ -26,6 +20,12 @@ this.trim_document = function(document) {
       step(body.lastChild, 'previousSibling');
     }
   }
+};
+
+const TRIMMABLE_ELEMENTS = {
+  'br': 1,
+  'hr': 1,
+  'nobr': 1
 };
 
 function step(startNode, step) {

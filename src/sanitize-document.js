@@ -41,10 +41,10 @@ function filter_hair_spaces(document) {
     NodeFilter.SHOW_TEXT);
   for(let node = it.nextNode(); node; node = it.nextNode()) {
     const value = node.nodeValue;
-    const modifiedValue = value.replace(/&(hairsp|#8082|#x200a);/ig, ' ');
-    if(modifiedValue !== value) {
-      console.debug('Replaced hair spaces', value, '=>', modifiedValue);
-      node.nodeValue = modifiedValue;
+    const modified_val = value.replace(/&(hairsp|#8082|#x200a);/ig, ' ');
+    if(modified_val !== value) {
+      console.debug('Replaced hair spaces', value, '=>', modified_val);
+      node.nodeValue = modified_val;
     }
   }
 }
@@ -71,30 +71,31 @@ function filter_noscripts(document) {
 // TODO: there can be multiple bodies when illformed. Maybe use
 // querySelectorAll and handle multi-body branch differently
 function filter_frames(document) {
-  const framesetElement = document.body;
-  if(!framesetElement || framesetElement.nodeName !== 'FRAMESET') {
+  const frameset = document.body;
+  if(!frameset || frameset.localName !== 'frameset') {
     return;
   }
 
-  const bodyElement = document.createElement('BODY');
-  const noframes = document.querySelector('NOFRAMES');
+  const body = document.createElement('body');
+  const noframes = document.querySelector('noframes');
   if(noframes) {
     for(let node = noframes.firstChild; node; node = noframes.firstChild) {
-      bodyElement.appendChild(node);
+      body.appendChild(node);
     }
   } else {
-    const errorTextNode = document.createTextNode(
+    const error_node = document.createTextNode(
       'Unable to display framed document.');
-    bodyElement.appendChild(errorTextNode);
+    body.appendChild(error_node);
   }
 
-  framesetElement.remove();
-  document.documentElement.appendChild(bodyElement);
+  frameset.remove();
+  document.documentElement.appendChild(body);
 }
 
 // If a figure has only one child element, then it is useless.
 // NOTE: boilerplate analysis examines figures, so ensure this is not done
 // before it.
+// TODO: is it actually useless?
 function filter_figures(document) {
   const figures = document.querySelectorAll('FIGURE');
   for(let i = 0, len = figures.length; i < len; i++) {
