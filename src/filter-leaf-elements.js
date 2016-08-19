@@ -14,6 +14,7 @@
 // innerleaf, it then satisfies the is-leaf condition. Instead, this recognizes
 // this situation, and only removes outerleaf. The cost of doing this is
 // that the is-leaf function is recursive and nested elements are revisited.
+//
 // This still iterates over all of the elements, because using querySelectorAll
 // is faster than walking. As a result, this also checks at each step of the
 // iteration whether the current element is still attached to the document, and
@@ -29,14 +30,21 @@
 // why docElement itself can also be removed if this iterated over all
 // elements and not just those within the body.
 
+// contains is checked first because it is a native method that is faster than
+// is_leaf_node, so this minimizes the calls to is_leaf_node
+
+// This is not currently using for..of to iterate over the node list because of
+// a V8 deoptimization warning (something about a try catch), my guess is that
+// it has to do with how it is desugared
+
 // TODO: think of a better way to avoid revisiting nodes
 
 function filter_leaf_elements(doc) {
-  const docElement = doc.documentElement;
   if(!doc.body) {
     return;
   }
 
+  const docElement = doc.documentElement;
   const elements = doc.body.querySelectorAll('*');
   for(let i = 0, len = elements.length; i < len; i++) {
     let element = elements[i];

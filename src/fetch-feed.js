@@ -61,8 +61,8 @@ function on_response(event) {
     return;
   }
 
-  feed.addURL(this.requestURL);
-  feed.addURL(new URL(event.target.responseURL));
+  feed.add_url(this.requestURL);
+  feed.add_url(new URL(event.target.responseURL));
   feed.dateFetched = new Date();
 
   const lastModified = event.target.getResponseHeader('Last-Modified');

@@ -140,7 +140,7 @@ function create_outline(document, feed) {
     outline.setAttribute('type', feed.type);
   }
 
-  outline.setAttribute('xmlUrl', feed.getURL().toString());
+  outline.setAttribute('xmlUrl', feed.get_url().toString());
 
   if(feed.title) {
     outline.setAttribute('text', feed.title);

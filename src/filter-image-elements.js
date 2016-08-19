@@ -4,6 +4,9 @@
 
 'use strict';
 
+// TODO: break apart into two functions that declare exactly what they do
+// - note that filter-sourceless-images already exists
+
 function filter_image_elements(document) {
   const images = document.querySelectorAll('img');
 

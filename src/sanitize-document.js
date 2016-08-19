@@ -25,7 +25,7 @@ this.sanitize_document = function(document) {
   filter_figures(document);
   filter_hair_spaces(document);
   condense_text_node_whitespace(document);
-  filter_list_elements(document);
+  unwrap_single_item_lists(document);
 
   const limit = 20;
   filter_table_elements(document, limit);

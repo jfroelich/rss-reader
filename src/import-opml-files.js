@@ -146,7 +146,7 @@ function read_file_onload(file, event) {
 
     // Create a Feed object
     const feed = new Feed();
-    feed.addURL(url);
+    feed.add_url(url);
     feed.type = type;
     feed.title = element.getAttribute('title');
     if(!feed.title) {

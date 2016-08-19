@@ -90,7 +90,7 @@ function on_open_feeds_cursor(event) {
   const feed = new Feed(cursor.value);
   const excludeEntries = false;
   const timeoutMillis = 10 * 1000;
-  fetch_feed(feed.getURL(), timeoutMillis, excludeEntries,
+  fetch_feed(feed.get_url(), timeoutMillis, excludeEntries,
     on_fetch_feed.bind(this, feed));
 
   cursor.continue();
@@ -107,13 +107,13 @@ function on_fetch_feed(localFeed, event) {
   if(localFeed.dateLastModified && remoteFeed.dateLastModified &&
     localFeed.dateLastModified.getTime() ===
     remoteFeed.dateLastModified.getTime()) {
-    console.debug('Feed unmodified', localFeed.getURL().toString());
+    console.debug('Feed unmodified', localFeed.get_url().toString());
     this.pendingFeedsCount--;
     on_complete.call(this);
     return;
   }
 
-  const queryURL = remoteFeed.link ? remoteFeed.link : remoteFeed.getURL();
+  const queryURL = remoteFeed.link ? remoteFeed.link : remoteFeed.get_url();
   lookup_favicon(queryURL, null, on_lookup_feed_favicon.bind(this, localFeed,
     remoteFeed));
 }
@@ -161,18 +161,18 @@ function on_update_feed(entries, event) {
 }
 
 function process_entry(feed, entry, callback) {
-  if(!entry.hasURL()) {
+  if(!entry.has_url()) {
     console.warn('Entry missing url', entry);
     callback();
     return;
   }
 
-  entry.addURL(rewrite_url(entry.getURL()));
+  entry.add_url(rewrite_url(entry.get_url()));
 
   const transaction = this.connection.transaction('entry');
   const store = transaction.objectStore('entry');
   const index = store.index('urls');
-  const request = index.get(entry.getURL().href);
+  const request = index.get(entry.get_url().href);
   const on_find = on_find_entry.bind(this, feed, entry, callback);
   request.onsuccess = on_find;
   request.onerror = on_find;
@@ -206,7 +206,7 @@ function on_find_entry(feed, entry, callback, event) {
   // Check that the url does not belong to a domain that obfuscates its content
   // with things like advertisement interception or full javascript. While these
   // documents can be fetched, there is no point to doing so.
-  if(is_fetch_resistant(entry.getURL())) {
+  if(is_fetch_resistant(entry.get_url())) {
     add_entry(this.connection, entry, callback);
     return;
   }
@@ -216,7 +216,7 @@ function on_find_entry(feed, entry, callback, event) {
   // indication of the mime type and may have some false positives. Even if
   // this misses it, responseXML will be undefined in fetch_html so false
   // negatives are not too important.
-  const path = entry.getURL().pathname;
+  const path = entry.get_url().pathname;
   const minLen = '/a.pdf'.length;
   if(path && path.length > minLen && /\.pdf$/i.test(path)) {
     add_entry(this.connection, entry, callback);
@@ -224,7 +224,7 @@ function on_find_entry(feed, entry, callback, event) {
   }
 
   const timeoutMillis = 10 * 1000;
-  fetch_html(entry.getURL(), timeoutMillis,
+  fetch_html(entry.get_url(), timeoutMillis,
     on_fetch_entry.bind(this, entry, callback));
 }
 
@@ -234,7 +234,7 @@ function on_fetch_entry(entry, callback, event) {
     return;
   }
 
-  entry.addURL(event.responseURL);
+  entry.add_url(event.responseURL);
 
   // TODO: if we successfully fetched the entry, then before storing it,
   // we should be trying to set its faviconURL.
@@ -263,10 +263,11 @@ function on_set_image_dimensions(entry, document, callback, numImagesModified) {
 
 function add_entry(connection, entry, callback) {
   console.assert(entry);
-  console.assert(entry.getURL());
-  console.debug('Storing', entry.getURL().toString());
+  console.assert(entry.get_url());
+  console.debug('Storing', entry.get_url().toString());
 
-  let storable = entry.sanitize().serialize();
+  let sanitized = sanitize_entry(entry);
+  let storable = serialize_entry(sanitized);
   storable.readState = Entry.FLAGS.UNREAD;
   storable.archiveState = Entry.FLAGS.UNARCHIVED;
   storable.dateCreated = new Date();

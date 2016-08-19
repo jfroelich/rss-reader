@@ -185,7 +185,7 @@ Slideshow.appendSlide = function(entry, isFirst) {
   slide.style.bottom = 0;
   slide.style.transition = 'left 0.5s ease-in 0s, right 0.5s ease-in';
 
-  const entryLinkURLString = Entry.prototype.getURL.call(entry);
+  const entryLinkURLString = Entry.prototype.get_url.call(entry);
   const title = document.createElement('a');
   title.setAttribute('href', entryLinkURLString);
   title.setAttribute('class', 'entry-title');
@@ -447,7 +447,7 @@ window.addEventListener('keydown', Slideshow.onKeyDown, false);
 
 Slideshow.init = function(event) {
   document.removeEventListener('DOMContentLoaded', Slideshow.init);
-  DisplaySettings.loadStyles();
+  DisplaySettings.load_styles();
   Slideshow.appendSlides(Slideshow.maybeShowAllReadSlide, true);
 };
 

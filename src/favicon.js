@@ -4,10 +4,18 @@
 
 'use strict';
 
+// NOTE: there are two block scopes in this file
 { // Begin lookup_favicon block scope
 
+// Finds the url of the favicon associated with the given document url
+// @param url {URL} - document url to lookup
+// @param document {Document} - optional prefetched document, should be set if
+// available because it potentially avoids network
+// @param callback {function} - callback function passed the favicon url
+// (type URL, not string).
 this.lookup_favicon = function(url, document, callback) {
-  console.assert(url && 'href' in url);
+  console.assert(url);
+  console.assert(url.href);
 
   const context = {
     'url': url,

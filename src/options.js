@@ -365,7 +365,7 @@ OptionsPage.startSubscription = function(url) {
   // startSubscription should expect a feed object as a parameter.
 
   const feed = new Feed();
-  feed.addURL(url);
+  feed.add_url(url);
   subscribe(feed, {'callback': onSubscribe});
 
   function onSubscribe(event) {
@@ -375,12 +375,12 @@ OptionsPage.startSubscription = function(url) {
     }
 
     // TODO: if subscription.add yields a Feed object instead of a basic
-    // feed, I should just use event.feed.getURL()
+    // feed, I should just use event.feed.get_url()
 
     OptionsPage.appendFeed(event.feed, true);
     OptionsPage.updateFeedCount();
     OptionsPage.updateSubscriptionMonitorMessage(
-      'Subscribed to ' + Feed.prototype.getURL.call(event.feed).toString());
+      'Subscribed to ' + Feed.prototype.get_url.call(event.feed).toString());
 
     // Hide the sub monitor then switch back to the main feed list
     OptionsPage.hideSubscriptionMonitor(function() {
@@ -468,7 +468,7 @@ OptionsPage.populateFeedDetails = function(feedId) {
     }
 
     const feedURLElement = document.getElementById('details-feed-url');
-    feedURLElement.textContent = feed.getURL().toString();
+    feedURLElement.textContent = feed.get_url().toString();
 
     const feedLinkElement = document.getElementById('details-feed-link');
     if(feed.link) {
@@ -852,7 +852,7 @@ OptionsPage.onDOMContentLoaded = function(event) {
     OptionsPage.onDOMContentLoaded);
 
   // Init CSS styles that affect the display preview area
-  DisplaySettings.loadStyles();
+  DisplaySettings.load_styles();
 
   // Attach click handlers to feeds in the feed list on the left.
   // TODO: it would probably be easier and more efficient to attach a single

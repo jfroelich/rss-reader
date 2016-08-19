@@ -4,7 +4,7 @@
 
 'use strict';
 
-// Transform anchors that contain inline script or only serve a formatting role
+// Transform anchors that contain inline script or only serve a formatting role.
 // An anchor is a formatting anchor when it serves no other role than being a
 // container. In this context, where formatting information is ignored, it is
 // useless.

@@ -11,8 +11,8 @@
 // and optional open connection
 this.subscribe = function(feed, options) {
   console.assert(feed);
-  console.assert(feed.hasURL());
-  console.log('Subscribing to', feed.getURL().toString());
+  console.assert(feed.has_url());
+  console.log('Subscribing to', feed.get_url().toString());
 
   const context = {
     'feed': feed,
@@ -53,7 +53,7 @@ function on_open_db(connection) {
 // the cached page, and the latter call will fail with a ConstraintError when
 // trying to add the feed.
 function find_feed() {
-  const urlString = this.feed.getURL().toString();
+  const urlString = this.feed.get_url().toString();
   console.debug('Checking if subscribed to', urlString);
   const transaction = this.connection.transaction('feed');
   const store = transaction.objectStore('feed');
@@ -65,7 +65,7 @@ function find_feed() {
 
 function find_feed_onsuccess(event) {
   if(event.target.result) {
-    console.debug('Already subscribed to', this.feed.getURL().toString());
+    console.debug('Already subscribed to', this.feed.get_url().toString());
     on_complete.call(this, {'type': 'ConstraintError'});
     return;
   }
@@ -75,7 +75,7 @@ function find_feed_onsuccess(event) {
   } else {
     const timeoutMillis = 10 * 1000;
     const excludeEntries = true;
-    fetch_feed(this.feed.getURL(), timeoutMillis, excludeEntries,
+    fetch_feed(this.feed.get_url(), timeoutMillis, excludeEntries,
       on_fetch_feed.bind(this));
   }
 }
@@ -157,7 +157,7 @@ function on_complete(event) {
     // available, and only then fall back
 
     notify('Subscription complete', 'Subscribed to ' + (event.feed.title ||
-      Feed.prototype.getURL.call(event.feed).toString()));
+      Feed.prototype.get_url.call(event.feed).toString()));
   }
 
   if(this.callback) {

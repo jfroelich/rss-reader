@@ -9,7 +9,7 @@
 // @param callback {function} optional callback function
 // TODO: pass back the sanitized Feed object, not the serialized feed?
 function update_feed(connection, feed, callback) {
-  console.debug('Updating feed', feed.getURL().href);
+  console.debug('Updating feed', feed.get_url().href);
 
   let sanitizedFeed = feed.sanitize();
   sanitizedFeed.dateUpdated = new Date();

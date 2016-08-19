@@ -11,7 +11,7 @@ const DisplaySettings = Object.create(null);
 chrome.runtime.onMessage.addListener(function(message) {
   // Only react to the one message type of interest
   if(message.type === 'displaySettingsChanged') {
-    DisplaySettings.updateStyles();
+    DisplaySettings.update_styles();
   }
 });
 
@@ -71,7 +71,7 @@ DisplaySettings.FONT_FAMILIES = [
   'Roboto Regular'
 ];
 
-DisplaySettings.findCSSRule = function(sheet, selectorText) {
+DisplaySettings.find_css_rule = function(sheet, selectorText) {
 
   function ruleHasText(rule) {
     return rule.selectorText === selectorText;
@@ -80,12 +80,12 @@ DisplaySettings.findCSSRule = function(sheet, selectorText) {
   return Array.prototype.find.call(sheet.cssRules, ruleHasText);
 };
 
-DisplaySettings.updateStyles = function() {
+DisplaySettings.update_styles = function() {
 
   // Assume a sheet is always available
   const sheet = document.styleSheets[0];
 
-  const entryRule = DisplaySettings.findCSSRule(sheet, 'div.entry');
+  const entryRule = DisplaySettings.find_css_rule(sheet, 'div.entry');
   if(entryRule) {
     if(localStorage.BACKGROUND_IMAGE) {
       entryRule.style.backgroundColor = '';
@@ -104,7 +104,7 @@ DisplaySettings.updateStyles = function() {
     entryRule.style.paddingRight = entryMargin + 'px';
   }
 
-  const titleRule = DisplaySettings.findCSSRule(sheet,
+  const titleRule = DisplaySettings.find_css_rule(sheet,
     'div.entry a.entry-title');
   if(titleRule) {
     titleRule.style.background = '';
@@ -116,7 +116,7 @@ DisplaySettings.updateStyles = function() {
     }
   }
 
-  const contentRule = DisplaySettings.findCSSRule(sheet,
+  const contentRule = DisplaySettings.find_css_rule(sheet,
     'div.entry span.entry-content');
   if(contentRule) {
     contentRule.style.background = '';
@@ -144,7 +144,7 @@ DisplaySettings.updateStyles = function() {
 
 // Dynamically creates new style rules and appends them to the first style
 // sheet. This assumes the first style sheet exists.
-DisplaySettings.loadStyles = function() {
+DisplaySettings.load_styles = function() {
   // Assume a sheet is always available
   const sheet = document.styleSheets[0];
 

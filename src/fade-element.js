@@ -20,7 +20,7 @@ this.fade_element = function(element, duration, delay, callback) {
 
   if(callback) {
     element.addEventListener('webkitTransitionEnd',
-      on_end.bind(null, callback));
+      on_end.bind(element, callback));
   }
 
   // property duration function delay

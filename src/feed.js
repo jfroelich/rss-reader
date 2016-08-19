@@ -68,19 +68,19 @@ Feed.prototype.deserialize = function(feed) {
 };
 
 // Gets the terminal url, which is the last url out of the feed's list of urls
-Feed.prototype.getURL = function() {
-  if(Feed.prototype.hasURL.call(this)) {
+Feed.prototype.get_url = function() {
+  if(Feed.prototype.has_url.call(this)) {
     return this.urls[this.urls.length - 1];
   }
 };
 
 // Returns true if the feed has an associated url
-Feed.prototype.hasURL = function() {
+Feed.prototype.has_url = function() {
   return this.urls && this.urls.length;
 };
 
 // Adds the url to the feed (if it is unique from prior urls)
-Feed.prototype.addURL = function(url) {
+Feed.prototype.add_url = function(url) {
 
   console.assert(Object.prototype.toString.call(url) === '[object URL]',
     'url must be a URL object', url);
@@ -140,12 +140,14 @@ Feed.prototype.merge = function(otherFeed) {
   }
 
   // TODO: this needs to clone entry objects to ensure purity?
-  // This merely clones the array.
+  // This merely clones the array
+  // maybe this shouldn't even be included
+  // which means maybe entries shouldn't even be a feed property
   if(otherFeed.entries) {
     mergedFeed.entries = [...otherFeed.entries];
   }
 
-  // TODO: do I need to clone dates or are dates immutable?
+  // TODO: properly clone dates
   if(otherFeed.dateCreated) {
     mergedFeed.dateCreated = otherFeed.dateCreated;
   }
@@ -182,9 +184,9 @@ Feed.prototype.merge = function(otherFeed) {
     mergedFeed.type = otherFeed.type;
   }
 
-  // Merge url objects. addURL will ensure uniqueness/purity.
+  // Merge url objects. add_url will ensure uniqueness/purity.
   for(let url of otherFeed.urls) {
-    mergedFeed.addURL(url);
+    mergedFeed.add_url(url);
   }
 
   return mergedFeed;
