@@ -73,7 +73,7 @@ function find_feed_onsuccess(event) {
   if('onLine' in navigator && !navigator.onLine) {
     add_feed.call(this, this.feed, on_add_feed.bind(this));
   } else {
-    const timeout_ms = 10 * 1000;
+    const timeout_ms = 0; //10 * 1000;
     const exclude_entries = true;
     fetch_feed(this.feed.get_url(), timeout_ms, exclude_entries,
       on_fetch_feed.bind(this));
@@ -85,7 +85,7 @@ function find_feed_onerror(event) {
 }
 
 function on_fetch_feed(event) {
-  if(event.type !== 'load') {
+  if(event.type !== 'success') {
     on_complete.call(this, {'type': 'FetchError'});
     return;
   }
@@ -93,6 +93,7 @@ function on_fetch_feed(event) {
   // TODO: instead of adding the feed, this is where I should be looking for
   // the feed's favicon. We know we are probably online at this point and are
   // not subscribing while offline, and we know that the feed xml file exists.
+  // Or, instead of this, fetch_feed should be doing it
   const feed = merge_feeds(this.feed, event.feed);
   add_feed.call(this, feed, on_add_feed.bind(this));
 }

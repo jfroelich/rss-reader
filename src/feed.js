@@ -35,8 +35,6 @@ function Feed() {
   // For example, if a redirect occurs, then the new url is appended after the
   // prior url. All feeds should have at least one url.
   this.urls = null;
-  // An optional array of Entry objects from the last fetch
-  this.entries = null;
 }
 
 // Gets the terminal url, which is the last url out of the feed's list of urls
@@ -64,33 +62,21 @@ Feed.prototype.add_url = function(url) {
 
   // Search for the url in the existing set. Compare by normalized values.
   // Converting the URL object to a string implictly normalizes.
-  const urlString = url.href;
-  const matchingURL = this.urls.find(function(urlObj) {
-    return urlObj.href === urlString;
+  const url_string = url.href;
+  const matching_url = this.urls.find(function(url) {
+    return url.href === url_string;
   });
 
-  if(matchingURL) {
+  if(matching_url) {
     return;
   }
 
   // Clone the url. URL objects are mutable, and we want to make sure that the
   // side effect of setting a property of the URL object parameter externally
   // doesn't affect the object stored in the urls array here.
-  const clonedURL = new URL(urlString);
+  const cloned_url = new URL(url_string);
 
   // Add the unique clone. The set is ordered, so the most recent URL should
   // be at the end.
-  this.urls.push(clonedURL);
-};
-
-Feed.prototype.add_entry = function(entry) {
-  if(!this.entries) {
-    this.entries = [];
-  }
-
-  this.entries.push(entry);
-};
-
-Feed.prototype.getEntries = function() {
-  return this.entries;
+  this.urls.push(cloned_url);
 };

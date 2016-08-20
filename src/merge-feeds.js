@@ -8,67 +8,67 @@
 // other feed take precedence, except for URLs, which are merged to generate a
 // distinct ordered set, where the other urls appear after this feed's urls.
 // No serialization or sanitization occurs.
-function merge_feeds(thisFeed, otherFeed) {
+function merge_feeds(this_feed, other_feed) {
 
   // Clone to maintain purity. No operations here should affect this object or
-  // the otherFeed.
-  const mergedFeed = Object.assign(new Feed(), thisFeed);
+  // the other_feed.
+  const merged_feed = Object.assign(new Feed(), this_feed);
 
   // The copy operations are listed mostly in alphabetical order of field name,
   // there is no logical signifiance
-  if(otherFeed.description) {
-    mergedFeed.description = otherFeed.description;
+  if(other_feed.description) {
+    merged_feed.description = other_feed.description;
   }
 
   // TODO: this needs to clone entry objects to ensure purity?
   // This merely clones the array
   // maybe this shouldn't even be included
   // which means maybe entries shouldn't even be a feed property
-  if(otherFeed.entries) {
-    mergedFeed.entries = [...otherFeed.entries];
+  if(other_feed.entries) {
+    merged_feed.entries = [...other_feed.entries];
   }
 
   // TODO: properly clone dates
-  if(otherFeed.dateCreated) {
-    mergedFeed.dateCreated = otherFeed.dateCreated;
+  if(other_feed.dateCreated) {
+    merged_feed.dateCreated = other_feed.dateCreated;
   }
 
-  if(otherFeed.dateFetched) {
-    mergedFeed.dateFetched = otherFeed.dateFetched;
+  if(other_feed.dateFetched) {
+    merged_feed.dateFetched = other_feed.dateFetched;
   }
 
-  if(otherFeed.dateLastModified) {
-    mergedFeed.dateLastModified = otherFeed.dateLastModified;
+  if(other_feed.dateLastModified) {
+    merged_feed.dateLastModified = other_feed.dateLastModified;
   }
 
-  if(otherFeed.datePublished) {
-    mergedFeed.datePublished = otherFeed.datePublished;
+  if(other_feed.datePublished) {
+    merged_feed.datePublished = other_feed.datePublished;
   }
 
-  if(otherFeed.dateUpdated) {
-    mergedFeed.dateUpdated = otherFeed.dateUpdated;
+  if(other_feed.dateUpdated) {
+    merged_feed.dateUpdated = other_feed.dateUpdated;
   }
 
-  if(otherFeed.faviconURLString) {
-    mergedFeed.faviconURLString = otherFeed.faviconURLString;
+  if(other_feed.faviconURLString) {
+    merged_feed.faviconURLString = other_feed.faviconURLString;
   }
 
-  if(otherFeed.link) {
-    mergedFeed.link = new URL(otherFeed.link.href);
+  if(other_feed.link) {
+    merged_feed.link = new URL(other_feed.link.href);
   }
 
-  if(otherFeed.title) {
-    mergedFeed.title = otherFeed.title;
+  if(other_feed.title) {
+    merged_feed.title = other_feed.title;
   }
 
-  if(otherFeed.type) {
-    mergedFeed.type = otherFeed.type;
+  if(other_feed.type) {
+    merged_feed.type = other_feed.type;
   }
 
   // Merge url objects. add_url will ensure uniqueness/purity.
-  for(let url of otherFeed.urls) {
-    mergedFeed.add_url(url);
+  for(let url of other_feed.urls) {
+    merged_feed.add_url(url);
   }
 
-  return mergedFeed;
+  return merged_feed;
 }

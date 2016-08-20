@@ -23,11 +23,11 @@ function filter_blacklisted_elements(document) {
 
   // check contains to try and reduce the number of remove calls
 
-  const docElement = document.documentElement;
+  const doc_el = document.documentElement;
   const elements = document.querySelectorAll(SELECTOR);
   for(let i = 0, len = elements.length; i < len; i++) {
     let element = elements[i];
-    if(docElement.contains(element)) {
+    if(doc_el.contains(element)) {
       element.remove();
     }
   }

@@ -6,6 +6,7 @@
 
 { // Begin file block scope
 
+// Returns an event-like object with properties feed and entries.
 this.parse_feed = function(document, excludeEntries) {
   console.assert(document, 'document is required');
 
@@ -28,16 +29,18 @@ this.parse_feed = function(document, excludeEntries) {
   feed.link = find_feed_link(channel);
   feed.datePublished = find_feed_date_published(channel);
 
+  let entries = [];
   if(!excludeEntries) {
-    const entryElements = find_entries(channel);
-    const entryObjects = entryElements.map(
-      create_entry.bind(null, feed.datePublished));
-    for(let entryObject of entryObjects) {
-      feed.add_entry(entryObject);
+    const entry_els = find_entries(channel);
+    for(let entry of entry_els) {
+      entries.push(create_entry(feed.datePublished, entry));
     }
   }
 
-  return feed;
+  return {
+    'feed': feed,
+    'entries': entries
+  };
 };
 
 function find_channel(documentElement) {
@@ -88,9 +91,9 @@ function get_feed_type(documentElement) {
 }
 
 function find_feed_date_published(channel) {
-  const isAtom = channel.ownerDocument.documentElement.matches('feed');
+  const is_atom = channel.ownerDocument.documentElement.matches('feed');
   let dateText = null;
-  if(isAtom) {
+  if(is_atom) {
     dateText = find_child_element_text(channel, 'updated');
   } else {
     dateText = find_child_element_text(channel, 'pubdate') ||
@@ -132,12 +135,12 @@ function is_link_without_href(element) {
 }
 
 function find_feed_link(channel) {
-  const isAtom = channel.ownerDocument.documentElement.matches('feed');
+  const is_atom = channel.ownerDocument.documentElement.matches('feed');
 
   let linkText = null;
   let linkElement = null;
 
-  if(isAtom) {
+  if(is_atom) {
     linkElement = find_child_element(channel, is_link_rel_alt) ||
       find_child_element(channel, is_link_rel_self) ||
       find_child_element(channel, is_link_with_href);
@@ -164,72 +167,72 @@ function find_feed_link(channel) {
   }
 }
 
-function create_entry(feedDatePublished, entryElement) {
-  const isAtom = entryElement.ownerDocument.documentElement.matches('feed');
+function create_entry(feedDatePublished, entry_el) {
+  const is_atom = entry_el.ownerDocument.documentElement.matches('feed');
 
-  const entryObject = new Entry();
+  const entry = new Entry();
 
-  const title = find_child_element_text(entryElement, 'title');
+  const title = find_child_element_text(entry_el, 'title');
   if(title) {
-    entryObject.title = title;
+    entry.title = title;
   }
 
-  const author = find_entry_author(entryElement);
+  const author = find_entry_author(entry_el);
   if(author) {
-    entryObject.author = author;
+    entry.author = author;
   }
 
   // Set the link url as the entry's initial url
-  const entryLinkURL = find_entry_link(entryElement);
-  if(entryLinkURL) {
-    entryObject.add_url(entryLinkURL);
+  const entry_link_url = find_entry_link(entry_el);
+  if(entry_link_url) {
+    entry.add_url(entry_link_url);
   }
 
-  const entryDatePublished = find_entry_date_published(entryElement);
-  if(entryDatePublished) {
-    entryObject.datePublished = entryDatePublished;
+  const entry_pub_date = find_entry_date_published(entry_el);
+  if(entry_pub_date) {
+    entry.datePublished = entry_pub_date;
   } else if(feedDatePublished) {
     // Fall back to the feed's date
-    entryObject.datePublished = feedDatePublished;
+    entry.datePublished = feedDatePublished;
   } else {
     // TODO: actually i probably shouldn't infer this date and should leave it
     // as not set
     // Fall back to the current date
-    entryObject.datePublished = new Date();
+    entry.datePublished = new Date();
   }
 
-  const content = find_entry_content(entryElement);
+  const content = find_entry_content(entry_el);
   if(content) {
-    entryObject.content = content;
+    entry.content = content;
   }
 
   // TODO: move this into a helper function
-  const enclosure = find_child_element_by_name(entryElement,
+  const enclosure = find_child_element_by_name(entry_el,
     'enclosure');
   if(enclosure) {
-    const enclosureURLString = enclosure.getAttribute('url');
-    let enclosureURL = null;
-    if(enclosureURLString) {
+    const enclosure_url_string = enclosure.getAttribute('url');
+    let enclosure_url = null;
+    if(enclosure_url_string) {
       try {
-        enclosureURL = new URL(enclosureURLString);
+        enclosure_url = new URL(enclosure_url_string);
       } catch(exception) {
         console.debug(exception);
       }
     }
 
-    entryObject.enclosure = {
-      'url': enclosureURL,
+    entry.enclosure = {
+      'url': enclosure_url,
       'enclosure_length': enclosure.getAttribute('length'),
       'type': enclosure.getAttribute('type')
     };
   }
 
-  return entryObject;
+  return entry;
 }
 
 function find_entry_author(entry) {
-  const isAtom = entry.ownerDocument.documentElement.matches('feed');
-  if(isAtom) {
+  const is_atom = entry.ownerDocument.documentElement.matches('feed');
+  if(is_atom) {
     const author = find_child_element_by_name(entry, 'author');
     if(author) {
       return find_child_element_text(author, 'name');
@@ -241,12 +244,11 @@ function find_entry_author(entry) {
 }
 
 function find_entry_link(entry) {
-  const isAtom = entry.ownerDocument.documentElement.matches('feed');
+  const is_atom = entry.ownerDocument.documentElement.matches('feed');
   let linkText;
   let linkElement;
-  if(isAtom) {
-    linkElement = find_child_element(entry,
-        is_link_rel_alt) ||
+  if(is_atom) {
+    linkElement = find_child_element(entry, is_link_rel_alt) ||
       find_child_element(entry, is_link_rel_self) ||
       find_child_element(entry, is_link_with_href);
     if(linkElement) {
@@ -267,10 +269,10 @@ function find_entry_link(entry) {
 }
 
 function find_entry_date_published(entry) {
-  const isAtom = entry.ownerDocument.documentElement.matches('feed');
+  const is_atom = entry.ownerDocument.documentElement.matches('feed');
   let datePublishedString = null;
 
-  if(isAtom) {
+  if(is_atom) {
     datePublishedString = find_child_element_text(entry,
       'published') || find_child_element_text(entry, 'updated');
   } else {
@@ -296,9 +298,9 @@ function find_entry_date_published(entry) {
 }
 
 function find_entry_content(entry) {
-  const isAtom = entry.ownerDocument.documentElement.matches('feed');
+  const is_atom = entry.ownerDocument.documentElement.matches('feed');
   let result;
-  if(isAtom) {
+  if(is_atom) {
     // Special handling for some strange issue (CDATA-related?)
     const content = find_child_element_by_name(entry, 'content');
     const nodes = content ? content.childNodes : [];

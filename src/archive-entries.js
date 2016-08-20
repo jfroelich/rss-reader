@@ -6,27 +6,27 @@
 
 { // Begin file block scope
 
-const TEN_DAYS_MILLIS = 10 * 24 * 60 * 60 * 1000;
+const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
 
 // Iterates over entries in storage and archives older entries
-this.archive_entries = function(expires_after_millis) {
+this.archive_entries = function(expires_after_ms) {
   console.log('Archiving entries...');
 
-  if(typeof expires_after_millis !== 'undefined') {
-    console.assert(!isNaN(expires_after_millis));
-    console.assert(isFinite(expires_after_millis));
-    console.assert(expires_after_millis > 0);
+  if(typeof expires_after_ms !== 'undefined') {
+    console.assert(!isNaN(expires_after_ms));
+    console.assert(isFinite(expires_after_ms));
+    console.assert(expires_after_ms > 0);
   }
 
   const context = {
-    'expires_after_millis': TEN_DAYS_MILLIS,
+    'expires_after_ms': TEN_DAYS_MS,
     'num_processed': 0,
     'num_changed': 0,
-    'currentDate': new Date()
+    'current_date': new Date()
   };
 
-  if(typeof expires_after_millis === 'number') {
-    context.expires_after_millis = expires_after_millis;
+  if(typeof expires_after_ms === 'number') {
+    context.expires_after_ms = expires_after_ms;
   }
 
   open_db(on_open_db.bind(context));
@@ -42,8 +42,8 @@ function on_open_db(connection) {
   const transaction = connection.transaction('entry', 'readwrite');
   const store = transaction.objectStore('entry');
   const index = store.index('archiveState-readState');
-  const keyPath = [Entry.FLAGS.UNARCHIVED, Entry.FLAGS.READ];
-  const request = index.openCursor(keyPath);
+  const key_path = [Entry.FLAGS.UNARCHIVED, Entry.FLAGS.READ];
+  const request = index.openCursor(key_path);
   request.onsuccess = open_cursor_onsuccess.bind(this);
   request.onerror = open_cursor_onerror.bind(this);
 }
@@ -63,10 +63,10 @@ function open_cursor_onsuccess(event) {
 
   const entry = deserialize_entry(cursor.value);
   console.assert(entry.dateCreated);
-  console.assert(this.currentDate >= entry.dateCreated);
-  const age = this.currentDate - entry.dateCreated;
+  console.assert(this.current_date >= entry.dateCreated);
+  const age = this.current_date - entry.dateCreated;
 
-  if(age > this.expires_after_millis) {
+  if(age > this.expires_after_ms) {
     const archived = to_archive_form(entry);
     const serialized = serialize_entry(archived);
     console.debug('Archiving', entry.get_url().toString());
@@ -81,22 +81,22 @@ function open_cursor_onsuccess(event) {
 
 // Returns a new Entry instance representing the archived form of the input
 // entry
-function to_archive_form(inputEntry) {
+function to_archive_form(input_entry) {
   const entry = new Entry();
   entry.archiveState = Entry.FLAGS.ARCHIVED;
   entry.dateArchived = new Date();
 
-  if(inputEntry.dateRead) {
-    entry.dateRead = clone_date(inputEntry.dateRead);
+  if(input_entry.dateRead) {
+    entry.dateRead = clone_date(input_entry.dateRead);
   }
 
-  entry.feed = inputEntry.feed;
-  entry.id = inputEntry.id;
-  entry.readState = inputEntry.readState;
+  entry.feed = input_entry.feed;
+  entry.id = input_entry.id;
+  entry.readState = input_entry.readState;
 
-  if(inputEntry.urls) {
+  if(input_entry.urls) {
     entry.urls = [];
-    for(let url of inputEntry.urls) {
+    for(let url of input_entry.urls) {
       entry.urls.push(clone_url(url));
     }
   }
@@ -117,11 +117,12 @@ function open_cursor_onerror(event) {
   on_complete.call(this);
 }
 
-function send_message(entryId) {
+function send_message(entry_id) {
   // TODO: use postMessage instead of relying on chrome api?
+  // NOTE: the message listener expects "entryId" not "entry_id"
   chrome.runtime.sendMessage({
     'type': 'archiveEntryRequested',
-    'entryId': entryId
+    'entryId': entry_id
   });
 }
 

@@ -8,10 +8,10 @@
 
 // Queries the database for feeds, creates an OPML xml file, and then triggers
 // the download of the file.
-this.export_opml_file = function(title, fileName) {
+this.export_opml_file = function(title, file_name) {
   const context = {
     'title': title || 'Subscriptions',
-    'fileName': fileName || 'subscriptions.xml',
+    'file_name': file_name || 'subscriptions.xml',
     'feeds': [],
     'connection': null
   };
@@ -66,23 +66,23 @@ function on_get_feeds() {
 
   // Create a blob anchor
   const writer = new XMLSerializer();
-  const opmlString = writer.serializeToString(doc);
-  const blob = new Blob([opmlString], {'type': 'application/xml'});
-  const objectURL = URL.createObjectURL(blob);
+  const opml_string = writer.serializeToString(doc);
+  const blob = new Blob([opml_string], {'type': 'application/xml'});
+  const object_url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
-  anchor.href = objectURL;
-  anchor.setAttribute('download', this.fileName);
+  anchor.href = object_url;
+  anchor.setAttribute('download', this.file_name);
   anchor.style.display = 'none';
 
   // Append the anchor to the document containing this script
   // (not to be confused with the xml doc)
-  const parentElement = document.body || document.documentElement;
-  parentElement.appendChild(anchor);
+  const parent_el = document.body || document.documentElement;
+  parent_el.appendChild(anchor);
 
   // Trigger the download of the file
   anchor.click();
 
-  URL.revokeObjectURL(objectURL);
+  URL.revokeObjectURL(object_url);
   anchor.remove();
   on_complete.call(this);
 }
@@ -94,7 +94,7 @@ function on_complete() {
   }
 
   console.log('Exported %s feeds to opml file %s', this.feeds.length,
-    this.fileName);
+    this.file_name);
 }
 
 // Creates a Document object with the given title representing an OPML file
@@ -102,33 +102,32 @@ function create_doc(title) {
   const doc = document.implementation.createDocument(null, 'opml', null);
   doc.documentElement.setAttribute('version', '2.0');
 
-  const headElement = doc.createElement('head');
-  doc.documentElement.appendChild(headElement);
+  const head = doc.createElement('head');
+  doc.documentElement.appendChild(head);
 
   if(title) {
-    const titleElement = doc.createElement('title');
-    titleElement.textContent = title;
-    headElement.appendChild(titleElement);
+    const title_el = doc.createElement('title');
+    title_el.textContent = title;
+    head.appendChild(title_el);
   }
 
-  const nowDate = new Date();
-  const nowUTCString = nowDate.toUTCString();
+  const now_date = new Date();
+  const now_utc = now_date.toUTCString();
 
-  const dateCreatedElement = doc.createElement('datecreated');
-  dateCreatedElement.textContent = nowUTCString;
-  headElement.appendChild(dateCreatedElement);
+  const date_created_el = doc.createElement('datecreated');
+  date_created_el.textContent = now_utc;
+  head.appendChild(date_created_el);
 
-  const dateModifiedElement = doc.createElement('datemodified');
-  dateModifiedElement.textContent = nowUTCString;
-  headElement.appendChild(dateModifiedElement);
+  const date_modified_el = doc.createElement('datemodified');
+  date_modified_el.textContent = now_utc;
+  head.appendChild(date_modified_el);
 
-  const docsElement = doc.createElement('docs');
-  docsElement.textContent = 'http://dev.opml.org/spec2.html';
-  headElement.appendChild(docsElement);
+  const docs_el = doc.createElement('docs');
+  docs_el.textContent = 'http://dev.opml.org/spec2.html';
+  head.appendChild(docs_el);
 
-  const bodyElement = doc.createElement('body');
-  doc.documentElement.appendChild(bodyElement);
-
+  const body = doc.createElement('body');
+  doc.documentElement.appendChild(body);
   return doc;
 }
 

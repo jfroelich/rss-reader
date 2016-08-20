@@ -8,12 +8,12 @@
 // Formats a date object. This is obviously a very dumb implementation that
 // could eventually be improved.
 function format_date(date, delimiter) {
-  const datePartsArray = [];
+  const parts = [];
   if(date) {
     // getMonth is a zero based index
-    datePartsArray.push(date.getMonth() + 1);
-    datePartsArray.push(date.getDate());
-    datePartsArray.push(date.getFullYear());
+    parts.push(date.getMonth() + 1);
+    parts.push(date.getDate());
+    parts.push(date.getFullYear());
   }
-  return datePartsArray.join(delimiter || '');
+  return parts.join(delimiter || '');
 }

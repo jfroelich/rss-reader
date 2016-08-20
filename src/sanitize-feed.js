@@ -12,15 +12,15 @@ function sanitize_feed(inputFeed) {
 
   // If id is defined it should be a positive integer
   if(feed.id) {
-    console.assert(!isNaN(feed.id), 'id is nan', feed.id);
-    console.assert(isFinite(feed.id), 'id not finite', feed.id);
-    console.assert(feed.id > 0, 'id negative or 0', feed.id);
+    console.assert(!isNaN(feed.id));
+    console.assert(isFinite(feed.id));
+    console.assert(feed.id > 0);
   }
 
   // If type is defined it should be one of the allowed types
-  const allowedTypes = {'feed': 1, 'rss': 1, 'rdf': 1};
+  const types = {'feed': 1, 'rss': 1, 'rdf': 1};
   if(feed.type) {
-    console.assert(feed.type in allowedTypes, 'invalid type', feed.type);
+    console.assert(feed.type in types, 'invalid type', feed.type);
   }
 
   // Sanitize feed title. title is an HTML string
@@ -46,8 +46,7 @@ function sanitize_feed(inputFeed) {
     // Enforce a maximum storable length
     const lengthBeforeTruncation = description.length;
     const DESCRIPTION_MAX_LENGTH = 1024 * 10;
-    description = truncate_html(description,
-      DESCRIPTION_MAX_LENGTH, '');
+    description = truncate_html(description, DESCRIPTION_MAX_LENGTH, '');
     if(lengthBeforeTruncation > description.length) {
       console.warn('Truncated description', description);
     }

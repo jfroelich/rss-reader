@@ -24,11 +24,11 @@ this.condense_text_node_whitespace = function(doc) {
     if(value.length > 3 && !node.parentNode.closest(SELECTOR)) {
 
       // This is not an idiomatic function call due to perf
-      let condensedValue = value.replace(/\s{2,}/g, ' ');
+      let condensed_value = value.replace(/\s{2,}/g, ' ');
 
       // Setting node value can be expensive so try and avoid it
-      if(condensedValue !== value) {
-        node.nodeValue = condensedValue;
+      if(condensed_value !== value) {
+        node.nodeValue = condensed_value;
       }
     }
   }

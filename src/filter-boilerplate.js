@@ -7,10 +7,10 @@
 { // Begin file block scope
 
 this.filter_boilerplate = function(document) {
-  let bestElement = find_high_element(document);
+  let best_el = find_high_element(document);
 
-  if(bestElement !== document.documentElement) {
-    prune(document, bestElement);
+  if(best_el !== document.documentElement) {
+    prune(document, best_el);
   }
 };
 
@@ -23,10 +23,10 @@ this.filter_boilerplate = function(document) {
 // See http://www.l3s.de/~kohlschuetter/boilerplate.
 function derive_text_bias(element) {
   const text = element.textContent;
-  const trimmedText = text.trim();
-  const textLength = 0.0 + trimmedText.length;
-  const anchorLength = 0.0 + derive_anchor_len(element);
-  return (0.25 * textLength) - (0.7 * anchorLength);
+  const trimmed_text = text.trim();
+  const text_len = 0.0 + trimmed_text.length;
+  const anchor_len = 0.0 + derive_anchor_len(element);
+  return (0.25 * text_len) - (0.7 * anchor_len);
 }
 
 // Returns the approximate number of characters contained within anchors that
@@ -35,12 +35,12 @@ function derive_text_bias(element) {
 // no anchor nesting.
 function derive_anchor_len(element) {
   const anchors = element.querySelectorAll('a[href]');
-  let anchorLength = 0;
+  let anchor_len = 0;
   for(let i = 0, len = anchors.length; i < len; i++) {
     let anchor = anchors[i];
-    anchorLength = anchorLength + anchor.textContent.trim().length;
+    anchor_len = anchor_len + anchor.textContent.trim().length;
   }
-  return anchorLength;
+  return anchor_len;
 }
 
 // These scores adjust the parent scores of these elements. A parent element
@@ -75,18 +75,18 @@ const ANCESTOR_BIAS = {
 
 // Derives a bias based on child elements
 function derive_ancestor_bias(element) {
-  let totalBias = 0;
+  let total_bias = 0;
   let bias = 0;
 
   // Walk the child elements and sum up each child's bias
-  for(let childElement = element.firstElementChild; childElement;
-    childElement = childElement.nextElementSibling) {
-    bias = ANCESTOR_BIAS[childElement.nodeName];
+  for(let child = element.firstElementChild; child;
+    child = child.nextElementSibling) {
+    bias = ANCESTOR_BIAS[child.nodeName];
 
     // Using += sugar seems to cause deopt issues when using let or const (at
     // least in Chrome 49), hence the expanded syntax.
     if(bias) {
-      totalBias = totalBias + bias;
+      total_bias = total_bias + bias;
     }
   }
 
@@ -95,7 +95,7 @@ function derive_ancestor_bias(element) {
   // other biases are doubles.
   // TODO: maybe the coercion is the responsibility of the caller and not
   // this function's concern?
-  return 0.0 + totalBias;
+  return 0.0 + total_bias;
 }
 
 // If one of these tokens is found in an attribute value of an element,
@@ -137,25 +137,26 @@ const ATTR_TOKEN_WEIGHTS = {
 // Computes a bias for an element based on the values of some of its
 // attributes.
 // using var here due to v8 deopt warnings
+// Unsupported use of phi const or something like this, i can't make sense of it
 function derive_attr_bias(element) {
   // Start by merging the element's interesting attribute values into a single
   // string in preparation for tokenization.
   // Accessing attributes by property is faster than using getAttribute. It
   // turns out that getAttribute is horribly slow in Chrome. I have not figured
   // out why, and I have not figured out a workaround.
-  var valuesArray = [element.id, element.name, element.className];
+  var values_array = [element.id, element.name, element.className];
 
   // Array.prototype.join implicitly filters null/undefined values so we do not
   // need to check if the property values are defined.
-  var valuesString = valuesArray.join(' ');
+  var values_string = values_array.join(' ');
 
-  // If the element did not have attribute values, then the valuesString
+  // If the element did not have attribute values, then the values_string
   // variable will only contain whitespace or some negligible token so we exit
   // early to minimize the work done.
   // TODO: maybe I want to declare total bias before this and return total
   // bias here so that I am more consistent about the value returned and its
   // type, so it serves as a better reminder.
-  if(valuesString.length < 3) {
+  if(values_string.length < 3) {
     return 0.0;
   }
 
@@ -165,41 +166,45 @@ function derive_attr_bias(element) {
   // that for us. Also, this is one function call in contrast to 3. toLowerCase
   // scales better with larger strings that the JS engine scales with function
   // calls.
-  var lowerCaseValuesString = valuesString.toLowerCase();
-  var tokenArray = lowerCaseValuesString.split(/[\s\-_0-9]+/g);
+  var lc_values_string = values_string.toLowerCase();
+  var token_array = lc_values_string.split(/[\s\-_0-9]+/g);
 
   // Now add up the bias of each distinct token. Previously this was done in
   // two passes, with the first pass generating a new array of distinct tokens,
   // and the second pass summing up the distinct token biases. I seem to get
   // better performance without creating an intermediate array.
 
-  var tokenArrayLength = tokenArray.length;
-  var seenTokenSet = Object.create(null);
-  var totalBias = 0;
+  var token_array_len = token_array.length;
+
+  // I use the in operator to test membership which follows the prototype
+  // so i think it makes sense to reduce the scope of the lookup by excluding
+  // the prototype here
+  var seen_tokens = Object.create(null);
+  var total_bias = 0;
   var bias = 0;
   var token;
 
-  for(var i = 0; i < tokenArrayLength; i++) {
-    token = tokenArray[i];
+  for(var i = 0; i < token_array_len; i++) {
+    token = token_array[i];
 
     // Split can yield empty strings for some reason, so skip those.
     if(!token) {
       continue;
     }
 
-    if(token in seenTokenSet) {
+    if(token in seen_tokens) {
       continue;
     } else {
-      seenTokenSet[token] = 1;
+      seen_tokens[token] = 1;
     }
 
     bias = ATTR_TOKEN_WEIGHTS[token];
     if(bias) {
-      totalBias += bias;
+      total_bias += bias;
     }
   }
 
-  return 0.0 + totalBias;
+  return 0.0 + total_bias;
 }
 
 // Only these elements are considered as potential best elements
@@ -216,18 +221,17 @@ function find_high_element(document) {
 
   // Init to documentElement. This ensures we always return something and also
   // sets documentElement as the default best element.
-  let bestElement = document.documentElement;
+  let best_el = document.documentElement;
 
-  const bodyElement = document.body;
-  if(!bodyElement) {
-    return bestElement;
+  const body = document.body;
+  if(!body) {
+    return best_el;
   }
 
-  const elementNodeList = bodyElement.querySelectorAll(CANDIDATE_SELECTOR);
-  const listLength = elementNodeList.length;
-  let highScore = 0.0;
-  for(let i = 0, len = elementNodeList.length; i < len; i++) {
-    let element = elementNodeList[i];
+  const elements = body.querySelectorAll(CANDIDATE_SELECTOR);
+  let high_score = 0.0;
+  for(let i = 0, len = elements.length; i < len; i++) {
+    let element = elements[i];
 
     let score = 0.0 + derive_text_bias(element);
 
@@ -243,19 +247,19 @@ function find_high_element(document) {
     score += derive_img_bias(element);
     score += derive_attr_bias(element);
 
-    if(score > highScore) {
-      bestElement = element;
-      highScore = score;
+    if(score > high_score) {
+      best_el = element;
+      high_score = score;
     }
   }
 
-  return bestElement;
+  return best_el;
 }
 
 // Derives a bias for an element based on child images
 function derive_img_bias(parentElement) {
   let bias = 0.0;
-  let numImages = 0;
+  let num_images = 0;
   let area = 0;
 
   // Walk the child elements, looking for images
@@ -284,13 +288,13 @@ function derive_img_bias(parentElement) {
       bias = bias + 100.0;
     }
 
-    numImages++;
+    num_images++;
   }
 
   // Penalize elements containing multiple images. These are usually
   // carousels.
-  if(numImages > 1) {
-    bias = bias + (-50.0 * (numImages - 1));
+  if(num_images > 1) {
+    bias = bias + (-50.0 * (num_images - 1));
   }
 
   return bias;
@@ -312,16 +316,16 @@ function find_img_caption(image) {
 // only reason I am not using it.
 // TODO: this should be a general purpose function named something like
 // filterNonIntersectingElements, and it should be in its own file
-function prune(document, bestElement) {
+function prune(document, best_el) {
   if(!document.body) {
     return;
   }
-  const docElement = document.documentElement;
+  const doc_el = document.documentElement;
   const elements = document.body.querySelectorAll('*');
   for(let i = 0, len = elements.length; i < len; i++) {
     let element = elements[i];
-    if(!element.contains(bestElement) && !bestElement.contains(element) &&
-      docElement.contains(element)) {
+    if(!element.contains(best_el) && !best_el.contains(element) &&
+      doc_el.contains(element)) {
       element.remove();
     }
   }

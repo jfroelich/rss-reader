@@ -89,19 +89,27 @@ function on_open_feeds_cursor(event) {
 
   const feed = deserialize_feed(cursor.value);
   const excludeEntries = false;
-  const timeoutMillis = 10 * 1000;
-  fetch_feed(feed.get_url(), timeoutMillis, excludeEntries,
+  const timeout_ms = 0; //10 * 1000;
+  fetch_feed(feed.get_url(), timeout_ms, excludeEntries,
     on_fetch_feed.bind(this, feed));
 
   cursor.continue();
 }
 
 function on_fetch_feed(localFeed, event) {
-  if(event.type !== 'load') {
+  if(event.type !== 'success') {
     this.pendingFeedsCount--;
     on_complete.call(this);
     return;
   }
+
+  // TODO: because both subscribe and poll call fetch feed and both need to
+  // do the favicon lookup, then i think that it should be fetch feed's
+  // responsibility?
+  // the thing is, should that even be happening at the same time as fetch,
+  // or does it occur on its own timeline
+
+  // TODO: unmodified shouldn't prevent updating of favicon
 
   const remoteFeed = event.feed;
   if(localFeed.dateLastModified && remoteFeed.dateLastModified &&
@@ -115,10 +123,10 @@ function on_fetch_feed(localFeed, event) {
 
   const queryURL = remoteFeed.link ? remoteFeed.link : remoteFeed.get_url();
   lookup_favicon(queryURL, null, on_lookup_feed_favicon.bind(this, localFeed,
-    remoteFeed));
+    remoteFeed, event.entries));
 }
 
-function on_lookup_feed_favicon(localFeed, remoteFeed, faviconURL) {
+function on_lookup_feed_favicon(localFeed, remoteFeed, entries, faviconURL) {
   if(faviconURL) {
     remoteFeed.faviconURLString = faviconURL.href;
   }
@@ -127,7 +135,7 @@ function on_lookup_feed_favicon(localFeed, remoteFeed, faviconURL) {
   // then store the modified feed object in the database.
   const mergedFeed = merge_feeds(localFeed, remoteFeed);
   update_feed(this.connection, mergedFeed,
-    on_update_feed.bind(this, remoteFeed.getEntries()));
+    on_update_feed.bind(this, entries));
 }
 
 function on_update_feed(entries, event) {
@@ -223,8 +231,8 @@ function on_find_entry(feed, entry, callback, event) {
     return;
   }
 
-  const timeoutMillis = 10 * 1000;
-  fetch_html(entry.get_url(), timeoutMillis,
+  const timeout_ms = 10 * 1000;
+  fetch_html(entry.get_url(), timeout_ms,
     on_fetch_entry.bind(this, entry, callback));
 }
 

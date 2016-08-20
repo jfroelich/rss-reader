@@ -5,7 +5,7 @@
 'use strict';
 
 function filter_article_title(title) {
-  console.assert(title, 'title is required');
+  console.assert(title);
 
   let index = title.lastIndexOf(' - ');
   if(index === -1)
@@ -15,17 +15,18 @@ function filter_article_title(title) {
   if(index === -1)
     return title;
 
-  const trailingText = title.substring(index + 1);
+  const trailing_text = title.substring(index + 1);
 
-  const tokens = trailingText.split(/\s+/g);
+  const tokens = trailing_text.split(/\s+/g);
 
-  const definedTokens = tokens.filter(function(tokenString) {
-    return tokenString;
+  // Split can yield empty strings, filter them
+  const defined_tokens = tokens.filter(function(token) {
+    return token;
   });
 
-  if(definedTokens.length < 5) {
-    const newTitle = title.substring(0, index).trim();
-    return newTitle;
+  if(defined_tokens.length < 5) {
+    const new_title = title.substring(0, index).trim();
+    return new_title;
   }
 
   return title;

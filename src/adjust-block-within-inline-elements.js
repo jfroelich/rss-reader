@@ -15,26 +15,27 @@ const BLOCK_SELECTOR = BLOCK_ELEMENTS.join(',');
 const INLINE_ELEMENTS = ['a'];
 const INLINE_SELECTOR = INLINE_ELEMENTS.join(',');
 
-// Looks for cases like <a><p>text</p></a> and transforms them into
+// Looks for cases such as <a><p>text</p></a> and transforms them into
 // <p><a>text</a></p>.
 this.adjust_block_inline_elements = function(document) {
   const blocks = document.querySelectorAll(BLOCK_SELECTOR);
+
+  // Not using for..of due to V8 deopt warning about try/catch
+
   for(let i = 0, len = blocks.length; i < len; i++) {
-    let blockElement = blocks[i];
-    let inlineAncestorElement = blockElement.closest(INLINE_SELECTOR);
-    if(inlineAncestorElement && inlineAncestorElement.parentNode) {
+    let block = blocks[i];
+    let ancestor = block.closest(INLINE_SELECTOR);
+    if(ancestor && ancestor.parentNode) {
       // Move the block to before the ancestor
-      inlineAncestorElement.parentNode.insertBefore(blockElement,
-        inlineAncestorElement);
+      ancestor.parentNode.insertBefore(block, ancestor);
 
       // Move the block's children into the ancestor.
-      for(let node = blockElement.firstChild; node;
-        node = blockElement.firstChild) {
-        inlineAncestorElement.appendChild(node);
+      for(let node = block.firstChild; node; node = block.firstChild) {
+        ancestor.appendChild(node);
       }
 
       // Move the ancestor into the block
-      blockElement.appendChild(inlineAncestorElement);
+      block.appendChild(ancestor);
     }
   }
 };

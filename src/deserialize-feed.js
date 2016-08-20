@@ -5,23 +5,23 @@
 'use strict';
 
 // Given a serialized input feed, generates a new deserialized output Feed
-function deserialize_feed(inputFeed) {
-  const outputFeed = new Feed();
-  Object.assign(outputFeed, inputFeed);
+function deserialize_feed(input_feed) {
+  const output_feed = new Feed();
+  Object.assign(output_feed, input_feed);
 
   // Deserialize urls. indexedDB cannot store URL objects, so when loading
   // an object from the store, we have to convert back from strings to urls.
   // This assumes urls are always valid and never throws.
   // This assumes the urls are unique and properly ordered.
-  if(inputFeed.urls && inputFeed.urls.length) {
-    outputFeed.urls = inputFeed.urls.map(function(urlString) {
+  if(input_feed.urls && input_feed.urls.length) {
+    output_feed.urls = input_feed.urls.map(function(urlString) {
       return new URL(urlString);
     });
   }
 
-  if(inputFeed.link) {
-    outputFeed.link = new URL(inputFeed.link);
+  if(input_feed.link) {
+    output_feed.link = new URL(input_feed.link);
   }
 
-  return outputFeed;
+  return output_feed;
 }

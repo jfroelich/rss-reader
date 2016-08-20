@@ -17,13 +17,13 @@ function filter_element_attributes(document) {
 
   for(let i = 0, len = elements.length; i < len; i++) {
     let element = elements[i];
-    let elementName = element.nodeName;
+    let el_name = element.nodeName;
     let attributes = element.attributes;
     if(!attributes || !attributes.length) {
       continue;
     }
 
-    if(elementName === 'SOURCE') {
+    if(el_name === 'SOURCE') {
       for(let j = attributes.length - 1; j > -1; j--) {
         let attributeName = attributes[j].name;
         if(attributeName !== 'type' && attributeName !== 'srcset' &&
@@ -32,7 +32,7 @@ function filter_element_attributes(document) {
           element.removeAttribute(attributeName);
         }
       }
-    } else if(elementName === 'A') {
+    } else if(el_name === 'A') {
       for(let j = attributes.length - 1; j > -1; j--) {
         let attributeName = attributes[j].name;
         if(attributeName !== 'href' && attributeName !== 'name' &&
@@ -40,14 +40,14 @@ function filter_element_attributes(document) {
           element.removeAttribute(attributeName);
         }
       }
-    } else if(elementName === 'IFRAME') {
+    } else if(el_name === 'IFRAME') {
       for(let j = attributes.length - 1; j > -1; j--) {
         let attributeName = attributes[j].name;
         if(attributeName !== 'src') {
           element.removeAttribute(attributeName);
         }
       }
-    } else if(elementName === 'IMG') {
+    } else if(el_name === 'IMG') {
       for(let j = attributes.length - 1; j > -1; j--) {
         let attributeName = attributes[j].name;
         if(attributeName !== 'src' && attributeName !== 'alt' &&

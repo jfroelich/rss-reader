@@ -5,7 +5,6 @@
 'use strict';
 
 // Generates a new basic object suitable for storage in indexedDB.
-// The entries property is excluded.
 //
 // @param inputFeed {Feed} the Feed function object to serialize
 // @returns {Object} the serialized feed basic object

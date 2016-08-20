@@ -6,24 +6,24 @@
 
 { // Begin file block scope
 
-this.fetch_html = function(requestURL, timeoutMillis, callback) {
-  console.assert(requestURL && requestURL.href);
-  console.log('GET', requestURL.href);
+this.fetch_html = function(request_url, timeout_ms, callback) {
+  console.assert(request_url && request_url.href);
+  console.log('GET', request_url.href);
 
   const context = {
-    'requestURL': requestURL,
+    'request_url': request_url,
     'callback': callback
   };
 
   const bound_on_response = on_response.bind(context);
   const async_flag = true;
   const request = new XMLHttpRequest();
-  request.timeout = timeoutMillis;
+  request.timeout = timeout_ms;
   request.ontimeout = bound_on_response;
   request.onerror = bound_on_response;
   request.onabort = bound_on_response;
   request.onload = bound_on_response;
-  request.open('GET', requestURL.href, async_flag);
+  request.open('GET', request_url.href, async_flag);
   request.responseType = 'document';
   request.setRequestHeader('Accept', 'text/html');
   request.send();
@@ -32,23 +32,23 @@ this.fetch_html = function(requestURL, timeoutMillis, callback) {
 function on_response(event) {
   if(event.type !== 'load') {
     console.warn(event.type, event.target.status, event.target.statusText,
-      this.requestURL.href);
-    this.callback({'type': 'FetchError', 'requestURL': this.requestURL});
+      this.request_url.href);
+    this.callback({'type': 'FetchError', 'requestURL': this.request_url});
     return;
   }
 
   // doc is undefined for pdfs and such
   const document = event.target.responseXML;
   if(!document) {
-    console.warn('Undefined document', this.requestURL.href);
+    console.warn('Undefined document', this.request_url.href);
     this.callback({'type': 'UndefinedDocumentError',
-      'requestURL': this.requestURL});
+      'requestURL': this.request_url});
     return;
   }
 
   this.callback({
     'type': 'success',
-    'requestURL': this.requestURL,
+    'requestURL': this.request_url,
     'document': document,
     'responseURL': new URL(event.target.responseURL)
   });

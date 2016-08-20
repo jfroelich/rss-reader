@@ -17,7 +17,7 @@ chrome.alarms.get('archive', function(alarm) {
 chrome.alarms.get('poll', function(alarm) {
   if(!alarm) {
     console.debug('Creating poll alarm');
-    chrome.alarms.create('poll', {'periodInMinutes': 20});
+    chrome.alarms.create('poll', {'periodInMinutes': 30});
   }
 });
 
@@ -33,8 +33,8 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
   if(alarm.name === 'archive') {
     archive_entries();
   } else if(alarm.name === 'poll') {
-    const forceResetLock = false;
-    poll_feeds(forceResetLock);
+    const force_reset_lock = false;
+    poll_feeds(force_reset_lock);
   } else if(alarm.name === 'compact-favicons') {
     compact_favicon_cache();
   } else {
