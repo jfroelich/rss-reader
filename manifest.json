@@ -33,6 +33,7 @@
       "/src/on-installed.js",
       "/src/open-db.js",
       "/src/parse-feed.js",
+      "/src/parse-xml.js",
       "/src/poll-feeds.js",
       "/src/replace-html.js",
       "/src/resolve-document-urls.js",
