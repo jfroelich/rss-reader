@@ -31,8 +31,7 @@ this.fetch_html = function(request_url, timeout_ms, callback) {
 
 function on_response(event) {
   if(event.type !== 'load') {
-    console.warn(event.type, event.target.status, event.target.statusText,
-      this.request_url.href);
+    console.warn(event.type, this.request_url.href);
     this.callback({'type': 'FetchError', 'requestURL': this.request_url});
     return;
   }
