@@ -177,10 +177,11 @@ function process_entry(feed, entry, callback) {
 
   entry.add_url(rewrite_url(entry.get_url()));
 
+  let normalized_url = normalize_url(entry.get_url());
   const transaction = this.connection.transaction('entry');
   const store = transaction.objectStore('entry');
   const index = store.index('urls');
-  const request = index.get(entry.get_url().href);
+  const request = index.get(normalized_url.href);
   const on_find = on_find_entry.bind(this, feed, entry, callback);
   request.onsuccess = on_find;
   request.onerror = on_find;
@@ -280,14 +281,22 @@ function add_entry(connection, entry, callback) {
   storable.archiveState = Entry.FLAGS.UNARCHIVED;
   storable.dateCreated = new Date();
 
-  const transaction = connection.transaction('entry', 'readwrite');
-  const entryStore = transaction.objectStore('entry');
-  const request = entryStore.add(storable);
-  request.onsuccess = callback;
-  request.onerror = function(event) {
-    console.error(event.target.error);
-    callback(event);
-  };
+  console.assert(storable.urls && storable.urls.length, storable);
+
+  try {
+    const transaction = connection.transaction('entry', 'readwrite');
+    const entryStore = transaction.objectStore('entry');
+
+    const request = entryStore.add(storable);
+    request.onsuccess = callback;
+    request.onerror = function(event) {
+      console.error(event.target.error, storable.urls);
+      callback(event);
+    };
+  } catch(error) {
+    console.error(storable.urls, error);
+    callback({'type':error});
+  }
 }
 
 function on_entry_processed(feedContext, event) {
@@ -322,6 +331,17 @@ function on_complete() {
 
   release_lock();
   console.log('Polling completed');
+}
+
+function normalize_url(url) {
+  let clone = clone_url(url);
+  // Strip the hash from the clone
+  clone.hash = '';
+  return clone;
+}
+
+function clone_url(url) {
+  return new URL(url.href);
 }
 
 // Obtain a poll lock by setting a flag in local storage. This uses local

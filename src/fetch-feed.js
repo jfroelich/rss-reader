@@ -12,7 +12,7 @@ const ACCEPT_XML = [
   'application/atom+xml',
   'application/xml;q=0.9',
   'text/xml;q=0.8'
-].join(',');
+].join(', ');
 
 // Fetches the xml file at the given url and calls back with an event object
 // with props feed and entries. The feed is a Feed object and entries is an
@@ -47,14 +47,38 @@ this.fetch_feed = function(request_url, timeout_ms, exclude_entries, callback) {
   opts.referrer = 'no-referrer';
   let terminal_url_string, last_modified_string;
 
+  let didCallback = false;
+
+  function doCallback(event) {
+    if(didCallback) {
+      console.warn('Suppressing duplicated callback', request_url.href, event);
+      return;
+    }
+    didCallback = true;
+    callback(event);
+  }
+
+  // I guess then is always called, i need to somehow reject instead of
+  // just return, something like that. But i can't quite tell how to do that
+  // in the fetch api. basically there is no way to early exit if i use
+  // an external then. So I have to always do another nested then with a
+  // new promise. I need to use response.body.then(...) inside the
+  // on_response function.
+
+  let onResponseCalledBack = false;
+
   fetch(request_url.href, opts).then(function on_response(response) {
     if(!response.ok) {
-      return callback({'type': 'network_error'});
+      console.warn(request_url.href, response.status);
+      onResponseCalledBack = true;
+      return doCallback({'type': 'network_error'});
     }
 
     const type = response.headers.get('Content-Type');
     if(!type || !type.toLowerCase().includes('xml')) {
-      return callback({'type': 'invalid_mime_type'});
+      console.warn(request_url.href, 'invalid type', type);
+      onResponseCalledBack = true;
+      return doCallback({'type': 'invalid_mime_type'});
     }
 
     // Not using response.redirected because it doesn't appear to work
@@ -62,12 +86,22 @@ this.fetch_feed = function(request_url, timeout_ms, exclude_entries, callback) {
     last_modified_string = response.headers.get('Last-Modified');
     return response.text();
   }).then(function on_read_full_text_stream(text) {
+
+    if(onResponseCalledBack) {
+      console.warn('on response already did a callback, exiting');
+      return;
+    }
+
+    if(!text) {
+      return doCallback({'type': 'empty_text_error'});
+    }
+
     let parse_event = null;
     try {
       const document = parse_xml(text);
       parse_event = parse_feed(document, exclude_entries);
     } catch(error) {
-      return callback({'type': 'parse_exception'});
+      return doCallback({'type': 'parse_exception'});
     }
 
     const feed = parse_event.feed;
@@ -84,10 +118,14 @@ this.fetch_feed = function(request_url, timeout_ms, exclude_entries, callback) {
       }
     }
 
-    callback({'type': 'success', 'feed': feed, 'entries': parse_event.entries});
+    doCallback({
+      'type': 'success',
+      'feed': feed,
+      'entries': parse_event.entries
+    });
   }).catch(function(error) {
     console.warn(error);
-    callback({'type': 'unknown_error'});
+    doCallback({'type': 'unknown_error'});
   });
 };
 

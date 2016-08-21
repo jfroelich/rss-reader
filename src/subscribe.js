@@ -86,7 +86,16 @@ function find_feed_onerror(event) {
 
 function on_fetch_feed(event) {
   if(event.type !== 'success') {
-    on_complete.call(this, {'type': 'FetchError'});
+
+    console.debug('fetch error type', event.type);
+
+    if(event.type === 'invalid_mime_type') {
+      on_complete.call(this, {'type': 'FetchMimeTypeError'});
+    } else {
+      on_complete.call(this, {'type': 'FetchError'});
+    }
+
+
     return;
   }
 

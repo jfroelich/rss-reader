@@ -346,8 +346,9 @@ function start_subscription(url) {
   subscribe(feed, {'callback': on_subscribe});
 
   function on_subscribe(event) {
+    console.debug('on_subscribe event', event);
     if(event.type !== 'success') {
-      hide_sub_monitor(show_sub_error_msg.bind(event.type));
+      hide_sub_monitor(show_sub_error_msg.bind(null, event.type));
       return;
     }
 
@@ -367,12 +368,18 @@ function start_subscription(url) {
   }
 
   function show_sub_error_msg(type) {
+
+    console.debug('error: showing error with type', type);
+
     if(type === 'ConstraintError') {
       show_error_msg('Already subscribed to ' + url.href);
     } else if(type === 'FetchError') {
       show_error_msg('Failed to fetch ' + url.href);
     } else if(type === 'ConnectionError') {
       show_error_msg('Unable to connect to database');
+    } else if(type === 'FetchMimeTypeError') {
+      show_error_msg('The page at ' + url.href + ' is not an xml feed ' +
+        '(it has the wrong content type)');
     } else {
       show_error_msg('Unknown error');
     }

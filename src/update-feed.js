@@ -18,14 +18,20 @@ this.update_feed = function(connection, feed, callback) {
   sanitized_feed.dateUpdated = new Date();
   let serialized_feed = serialize_feed(sanitized_feed);
 
-  const transaction = connection.transaction('feed', 'readwrite');
-  const store = transaction.objectStore('feed');
-  const request = store.put(serialized_feed);
+  try {
+    const transaction = connection.transaction('feed', 'readwrite');
+    const store = transaction.objectStore('feed');
+    const request = store.put(serialized_feed);
 
-  if(callback) {
-    // TODO: pass back the sanitized object, not the serialized object?
-    request.onsuccess = on_put_success.bind(request, callback, serialized_feed);
-    request.onerror = on_put_error.bind(request, callback, serialized_feed);
+    if(callback) {
+      // TODO: pass back the sanitized object, not the serialized object?
+      request.onsuccess = on_put_success.bind(request, callback,
+        serialized_feed);
+      request.onerror = on_put_error.bind(request, callback, serialized_feed);
+    }
+  } catch(error) {
+    console.error(serialized_feed.urls, error);
+    callback({'type': 'error', 'feed': feed, 'error': error});
   }
 };
 
