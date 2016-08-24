@@ -58,7 +58,9 @@ this.fetch_feed = function(request_url, timeout_ms, exclude_entries, callback) {
     callback(event);
   }
 
-  // I guess then is always called, i need to somehow reject instead of
+  // The bug I've avoided with the hack is the extra callbacks. The then
+  // to read the text is always called, even when i don't want it to be.
+  // I need to somehow reject instead of
   // just return, something like that. But i can't quite tell how to do that
   // in the fetch api. basically there is no way to early exit if i use
   // an external then. So I have to always do another nested then with a
@@ -81,8 +83,11 @@ this.fetch_feed = function(request_url, timeout_ms, exclude_entries, callback) {
       return doCallback({'type': 'invalid_mime_type'});
     }
 
-    // Not using response.redirected because it doesn't appear to work
-    terminal_url_string = response.url;
+    // Only set if a redirect occurred
+    if(didRedirect(request_url, response)) {
+      terminal_url_string = response.url;
+    }
+
     last_modified_string = response.headers.get('Last-Modified');
     return response.text();
   }).then(function on_read_full_text_stream(text) {
@@ -128,5 +133,36 @@ this.fetch_feed = function(request_url, timeout_ms, exclude_entries, callback) {
     doCallback({'type': 'unknown_error'});
   });
 };
+
+// Returns true if a redirect occurred.
+// I tested response.redirected, it was false even when a redirect seemed
+// to occur on Chrome 52. Therefore I am using basic url comparison instead.
+// @param request_url {URL} - the starting url
+// @param response {Response} - the response object produced by calling fetch
+function didRedirect(request_url, response) {
+
+  // response url has not been normalized, or at least, I can't tell because
+  // the spec does not enumerate this fact. request_url has been
+  // normalized because the caller used request_url.href to pass it in.
+  // So we have to convert the respose url to a URL object first, in order to
+  // get its normalized toString/href value.
+  console.assert(request_url);
+  console.assert(response);
+  console.assert(response.url);
+
+  // This assumes that if response.url is defined, it will always be a valid
+  // url so the new URL constructor call here will not throw an exception
+  const response_url = new URL(response.url);
+
+  // We cannot compare URL objects using ===. So compare the serialized form,
+  // which also normalizes.
+
+  // NOTE: this is only partial url normalization. I am not for example
+  // filtering out the hash value. It turns out this is a frequent
+  // reason for why the response url is a different url than the request url,
+  // because it is just the request url without its hash value. This still
+  // counts as a redirect though, as a matter of policy, not fact.
+  return request_url.href !== response_url.href;
+}
 
 } // End file block scope

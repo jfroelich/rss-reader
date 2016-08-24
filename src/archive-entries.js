@@ -6,17 +6,14 @@
 
 { // Begin file block scope
 
+// The default period after which entries become archivable
 const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
 
 // Iterates over entries in storage and archives older entries
+// @param expires_after_ms {number} an entry is archivable if older than this.
+// if not set, a default value of 10 days is used.
 this.archive_entries = function(expires_after_ms) {
   console.log('Archiving entries...');
-
-  if(typeof expires_after_ms !== 'undefined') {
-    console.assert(!isNaN(expires_after_ms));
-    console.assert(isFinite(expires_after_ms));
-    console.assert(expires_after_ms > 0);
-  }
 
   const context = {
     'expires_after_ms': TEN_DAYS_MS,
@@ -25,7 +22,10 @@ this.archive_entries = function(expires_after_ms) {
     'current_date': new Date()
   };
 
-  if(typeof expires_after_ms === 'number') {
+  if(typeof expires_after_ms !== 'undefined') {
+    console.assert(!isNaN(expires_after_ms));
+    console.assert(isFinite(expires_after_ms));
+    console.assert(expires_after_ms > 0);
     context.expires_after_ms = expires_after_ms;
   }
 
@@ -57,9 +57,8 @@ function open_cursor_onsuccess(event) {
 
   this.num_processed++;
 
-  // TODO: maybe deserialization and reserialization is just an extra
-  // hoop and wasted processing. Maybe just work on the serialized object
-  // itself
+  // TODO: maybe the serialization is a waste. Maybe just work on the serialized
+  // object itself and avoid the serialization entirely.
 
   const entry = deserialize_entry(cursor.value);
   console.assert(entry.dateCreated);
