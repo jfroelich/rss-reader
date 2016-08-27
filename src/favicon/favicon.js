@@ -4,10 +4,7 @@
 
 'use strict';
 
-// NOTE: there are two block scopes in this file. I might be changing this by
-// moving the second scope into a separate file
-
-{ // Begin lookup_favicon block scope
+{ // Begin file block scope
 
 // Finds the url of the favicon associated with the given document url
 // @param url {URL} - document url to lookup
@@ -412,68 +409,4 @@ function clone_url(url) {
   return new URL(url.href);
 }
 
-} // End lookup_favicon block scope
-
-{ // Begin compact block scope
-
-this.compact_favicon_cache = function() {
-  console.log('Compacting favicon-cache');
-  // TODO: declare a context to track numDeletes
-
-  // TODO: avoid DRY
-  const request = indexedDB.open('favicon-cache', 1);
-  request.onsuccess = on_open_db;
-  request.onerror = on_open_db;
-  request.onblocked = on_open_db;
-};
-
-function on_open_db(event) {
-  const connection = event.target.result;
-  if(!connection) {
-    console.error(event);
-    return;
-  }
-
-  const transaction = connection.transaction('favicon-cache', 'readwrite');
-  const store = transaction.objectStore('favicon-cache');
-  const request = store.openCursor();
-  request.onsuccess = open_cursor_onsuccess;
-  request.onerror = open_cursor_onerror;
-}
-
-function open_cursor_onsuccess(event) {
-
-  const cursor = event.target.result;
-  if(!cursor) {
-    // no entries or all entries iterated
-    // TODO: close connection
-
-    console.log('Finished compacting database favicon-cache');
-    return;
-  }
-
-  const entry = cursor.value;
-
-  // If expired, delete
-  // TODO: this should be shared with lookupFavicon somehow, not duplicated
-  // Maybe via an external parameter? It doesn't need to be the same value but
-  // it should be called in a similar way, and should also share the logic
-  // of is_expired
-  // TODO: and maybe I should be creating one date for the call to compact,
-  // not a new date per cursor callback
-  const expires_after_ms = 1000 * 60 * 60 * 24 * 30;
-  const age = new Date() - entry.dateUpdated;
-  if(age >= expires_after_ms) {
-    console.debug('Deleting favicon entry', entry);
-    cursor.delete();
-  }
-
-  cursor.continue();
-}
-
-function open_cursor_onerror(event) {
-  // TODO: close the database connection, need to get it from the event
-  console.error(event);
-}
-
-} // End compact block scope
+} // End file block scope

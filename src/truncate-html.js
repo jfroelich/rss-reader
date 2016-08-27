@@ -11,47 +11,44 @@
 // The input string should be encoded, meaning that it should contain character
 // entity codes. The extension string should be decoded, meaning that it should
 // not contain character entries.
-function truncate_html(inputString, position, inputExtension) {
-  console.assert(inputString, 'inputString is required');
-  console.assert(position >= 0, 'position should be defined positive int');
+function truncate_html(input_str, position, input_ext) {
+  console.assert(input_str);
+  console.assert(position >= 0);
 
   const ELLIPSIS = '\u2026';
-  const extension = inputExtension || ELLIPSIS;
+  const extension = input_ext || ELLIPSIS;
 
-  const inertDocument = document.implementation.createHTMLDocument();
-  inertDocument.documentElement.innerHTML = inputString;
+  const inert_doc = document.implementation.createHTMLDocument();
+  inert_doc.documentElement.innerHTML = input_str;
 
-  const iterator = inertDocument.createNodeIterator(inertDocument.body,
-    NodeFilter.SHOW_TEXT);
-  let acceptingAdditionalTextNodes = true;
-  let accumulatedLength = 0;
+  const it = inert_doc.createNodeIterator(inert_doc.body, NodeFilter.SHOW_TEXT);
+  let accepting_text = true;
+  let total_len = 0;
 
-  for(let node = iterator.nextNode(); node; node = iterator.nextNode()) {
-    if(!acceptingAdditionalTextNodes) {
+  for(let node = it.nextNode(); node; node = it.nextNode()) {
+    if(!accepting_text) {
       node.remove();
       continue;
     }
 
     // Accessing nodeValue yields a decoded string
     let value = node.nodeValue;
-    let valueLength = value.length;
-    if(accumulatedLength + valueLength >= position) {
-      acceptingAdditionalTextNodes = false;
-
-      let remaining = position - accumulatedLength;
+    let value_len = value.length;
+    if(total_len + value_len >= position) {
+      accepting_text = false;
+      let remaining = position - total_len;
       // Setting nodeValue will implicitly encode the string
       node.nodeValue = value.substr(0, remaining) + extension;
     } else {
-      accumulatedLength = accumulatedLength + valueLength;
+      total_len = total_len + value_len;
     }
   }
 
   // If the document was an html fragment then exclude the tags implicitly
   // inserted when setting innerHTML
-  const hasHTMLTag = /<html/i.test(inputString);
-  if(hasHTMLTag) {
-    return inertDocument.documentElement.outerHTML;
+  if(/<html/i.test(input_str)) {
+    return inert_doc.documentElement.outerHTML;
   } else {
-    return inertDocument.body.innerHTML;
+    return inert_doc.body.innerHTML;
   }
 }

@@ -34,9 +34,10 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
     archive_entries();
   } else if(alarm.name === 'poll') {
     const force_reset_lock = false;
-    poll_feeds(force_reset_lock);
+    const allow_metered = false;
+    poll_feeds(force_reset_lock, allow_metered);
   } else if(alarm.name === 'compact-favicons') {
-    compact_favicon_cache();
+    compact_favicons();
   } else {
     console.warn('Unknown alarm', alarm.name);
   }

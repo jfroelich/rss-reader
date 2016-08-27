@@ -79,7 +79,6 @@ function open_cursor_onsuccess(event) {
 }
 
 // Returns a new Entry instance representing the archived form of the input
-// entry
 function to_archive_form(input_entry) {
   const entry = new Entry();
   entry.archiveState = Entry.FLAGS.ARCHIVED;

@@ -6,14 +6,14 @@
 
 { // Begin file block scope
 
-// @param forceResetLock {boolean} if true then polling continues even when
+// @param force_reset_lock {boolean} if true then polling continues even when
 // locked
-this.poll_feeds = function(forceResetLock) {
+this.poll_feeds = function(force_reset_lock, allow_metered) {
   console.log('Checking for new articles...');
 
-  const context = {'pendingFeedsCount': 0, 'connection': null};
+  const context = {'num_feeds_pending': 0, 'connection': null};
 
-  if(forceResetLock) {
+  if(force_reset_lock) {
     release_lock();
   }
 
@@ -33,8 +33,8 @@ this.poll_feeds = function(forceResetLock) {
 
   // There currently is no way to set this flag in the UI, and
   // navigator.connection is still experimental.
-  if('NO_POLL_METERED' in localStorage && navigator.connection &&
-    navigator.connection.metered) {
+  if(!allow_metered && 'NO_POLL_METERED' in localStorage &&
+    navigator.connection && navigator.connection.metered) {
     console.debug('Metered connection');
     on_complete.call(context);
     return;
@@ -42,9 +42,8 @@ this.poll_feeds = function(forceResetLock) {
 
   // Check if idle and possibly cancel the poll or continue with polling
   if('ONLY_POLL_IF_IDLE' in localStorage) {
-    const idlePeriodInSeconds = 30;
-    chrome.idle.queryState(idlePeriodInSeconds,
-      on_query_idle.bind(context));
+    const idle_period_secs = 30;
+    chrome.idle.queryState(idle_period_secs, on_query_idle.bind(context));
   } else {
     open_db(on_open_db.bind(context));
   }
@@ -65,40 +64,36 @@ function on_open_db(connection) {
     const transaction = connection.transaction('feed');
     const store = transaction.objectStore('feed');
     const request = store.openCursor();
-    const onOpenFeedCursor = on_open_feeds_cursor.bind(this);
-    request.onsuccess = onOpenFeedCursor;
-    request.onerror = onOpenFeedCursor;
+    request.onsuccess = open_feed_cursor_onsuccess.bind(this);
+    request.onerror = open_feed_cursor_onerror.bind(this);
   } else {
     on_complete.call(this);
   }
 }
 
-function on_open_feeds_cursor(event) {
-  if(event.type !== 'success') {
-    on_complete.call(this);
-    return;
-  }
+function open_feed_cursor_onerror(event) {
+  on_complete.call(this);
+}
 
+function open_feed_cursor_onsuccess(event) {
   const cursor = event.target.result;
   if(!cursor) {
     on_complete.call(this);
     return;
   }
 
-  this.pendingFeedsCount++;
-
+  this.num_feeds_pending++;
   const feed = deserialize_feed(cursor.value);
-  const excludeEntries = false;
-  const timeout_ms = 0; //10 * 1000;
-  fetch_feed(feed.get_url(), timeout_ms, excludeEntries,
+  const exclude_entries_flag = false;
+  const timeout_ms = 0;
+  fetch_feed(feed.get_url(), timeout_ms, exclude_entries_flag,
     on_fetch_feed.bind(this, feed));
-
   cursor.continue();
 }
 
-function on_fetch_feed(localFeed, event) {
+function on_fetch_feed(local_feed, event) {
   if(event.type !== 'success') {
-    this.pendingFeedsCount--;
+    this.num_feeds_pending--;
     on_complete.call(this);
     return;
   }
@@ -111,42 +106,45 @@ function on_fetch_feed(localFeed, event) {
 
   // TODO: unmodified shouldn't prevent updating of favicon
 
-  const remoteFeed = event.feed;
-  if(localFeed.dateLastModified && remoteFeed.dateLastModified &&
-    localFeed.dateLastModified.getTime() ===
-    remoteFeed.dateLastModified.getTime()) {
-    console.debug('Feed unmodified', localFeed.get_url().toString());
-    this.pendingFeedsCount--;
+  const remote_feed = event.feed;
+  if(is_feed_unmodified(local_feed, remote_feed)) {
+    console.debug('Feed unmodified', local_feed.get_url().toString());
+    this.num_feeds_pending--;
     on_complete.call(this);
     return;
   }
 
-  const queryURL = remoteFeed.link ? remoteFeed.link : remoteFeed.get_url();
-  lookup_favicon(queryURL, null, on_lookup_feed_favicon.bind(this, localFeed,
-    remoteFeed, event.entries));
+  const query_url = remote_feed.link ? remote_feed.link : remote_feed.get_url();
+  const bound_on_lookup = on_lookup_feed_favicon.bind(this, local_feed,
+    remote_feed, event.entries);
+  const prefetched_doc = null;
+  lookup_favicon(query_url, prefetched_doc, bound_on_lookup);
 }
 
-function on_lookup_feed_favicon(localFeed, remoteFeed, entries, faviconURL) {
-  if(faviconURL) {
-    remoteFeed.faviconURLString = faviconURL.href;
+function is_feed_unmodified(local_feed, remote_feed) {
+  return local_feed.dateLastModified && remote_feed.dateLastModified &&
+    local_feed.dateLastModified.getTime() ===
+    remote_feed.dateLastModified.getTime()
+}
+
+function on_lookup_feed_favicon(local_feed, remote_feed, entries, favicon_url) {
+  if(favicon_url) {
+    remote_feed.faviconURLString = favicon_url.href;
   }
 
-  // Synchronize the feed loaded from the database with the fetched feed, and
-  // then store the modified feed object in the database.
-  const mergedFeed = merge_feeds(localFeed, remoteFeed);
-  update_feed(this.connection, mergedFeed,
-    on_update_feed.bind(this, entries));
+  const feed = merge_feeds(local_feed, remote_feed);
+  update_feed(this.connection, feed, on_update_feed.bind(this, entries));
 }
 
 function on_update_feed(entries, event) {
   if(event.type !== 'success') {
-    this.pendingFeedsCount--;
+    this.num_feeds_pending--;
     on_complete.call(this);
     return;
   }
 
   if(!entries || !entries.length) {
-    this.pendingFeedsCount--;
+    this.num_feeds_pending--;
     on_complete.call(this);
     return;
   }
@@ -156,15 +154,15 @@ function on_update_feed(entries, event) {
   // or just pass along only the relevant fields needed like feedId and title
   // and faviconURLString
 
-  const feedContext = {
-    'entriesProcessed': 0,
-    'entriesAdded': 0,
-    'numEntries': entries.length
+  const feed_context = {
+    'num_entries_processed': 0,
+    'num_entries_added': 0,
+    'num_entries': entries.length
   };
 
-  const on_processed = on_entry_processed.bind(this, feedContext);
+  const bound_on_entry_processed = on_entry_processed.bind(this, feed_context);
   for(let entry of entries) {
-    process_entry.call(this, event.feed, entry, on_processed);
+    process_entry.call(this, event.feed, entry, bound_on_entry_processed);
   }
 }
 
@@ -177,11 +175,11 @@ function process_entry(feed, entry, callback) {
 
   entry.add_url(rewrite_url(entry.get_url()));
 
-  let normalized_url = normalize_url(entry.get_url());
+  let norm_url = normalize_url(entry.get_url());
   const transaction = this.connection.transaction('entry');
   const store = transaction.objectStore('entry');
   const index = store.index('urls');
-  const request = index.get(normalized_url.href);
+  const request = index.get(norm_url.href);
   const on_find = on_find_entry.bind(this, feed, entry, callback);
   request.onsuccess = on_find;
   request.onerror = on_find;
@@ -226,15 +224,15 @@ function on_find_entry(feed, entry, callback, event) {
   // this misses it, responseXML will be undefined in fetch_html so false
   // negatives are not too important.
   const path = entry.get_url().pathname;
-  const minLen = '/a.pdf'.length;
-  if(path && path.length > minLen && /\.pdf$/i.test(path)) {
+  const min_len = '/a.pdf'.length;
+  if(path && path.length > min_len && /\.pdf$/i.test(path)) {
     add_entry(this.connection, entry, callback);
     return;
   }
 
   const timeout_ms = 10 * 1000;
-  fetch_html(entry.get_url(), timeout_ms,
-    on_fetch_entry.bind(this, entry, callback));
+  const bound_on_fetch_entry = on_fetch_entry.bind(this, entry, callback);
+  fetch_html(entry.get_url(), timeout_ms, bound_on_fetch_entry);
 }
 
 function on_fetch_entry(entry, callback, event) {
@@ -246,7 +244,7 @@ function on_fetch_entry(entry, callback, event) {
   entry.add_url(event.responseURL);
 
   // TODO: if we successfully fetched the entry, then before storing it,
-  // we should be trying to set its faviconURL.
+  // we should be trying to set its favicon_url.
   // - i shouldn't be using the feed's favicon url, that is unrelated
   // - i should pass along the html of the associated html document. the
   // lookup should not fetch a second time.
@@ -276,43 +274,43 @@ function add_entry(connection, entry, callback) {
   console.debug('Storing', entry.get_url().toString());
 
   let sanitized = sanitize_entry(entry);
-  let storable = serialize_entry(sanitized);
-  storable.readState = Entry.FLAGS.UNREAD;
-  storable.archiveState = Entry.FLAGS.UNARCHIVED;
-  storable.dateCreated = new Date();
+  let serialized = serialize_entry(sanitized);
+  serialized.readState = Entry.FLAGS.UNREAD;
+  serialized.archiveState = Entry.FLAGS.UNARCHIVED;
+  serialized.dateCreated = new Date();
 
-  console.assert(storable.urls && storable.urls.length, storable);
+  console.assert(serialized.urls && serialized.urls.length, serialized);
 
   try {
     const transaction = connection.transaction('entry', 'readwrite');
     const entryStore = transaction.objectStore('entry');
-
-    const request = entryStore.add(storable);
+    const request = entryStore.add(serialized);
     request.onsuccess = callback;
     request.onerror = function(event) {
-      console.error(event.target.error, storable.urls);
+      console.error(event.target.error, serialized.urls.join(','));
       callback(event);
     };
   } catch(error) {
-    console.error(storable.urls, error);
+    console.error(serialized.urls, error);
     callback({'type':error});
   }
 }
 
-function on_entry_processed(feedContext, event) {
-  feedContext.entriesProcessed++;
-  console.assert(feedContext.entriesProcessed <= feedContext.numEntries);
+function on_entry_processed(feed_context, event) {
+  feed_context.num_entries_processed++;
+  console.assert(
+    feed_context.num_entries_processed <= feed_context.num_entries);
 
   if(event && event.type === 'success') {
-    feedContext.entriesAdded++;
+    feed_context.num_entries_added++;
   }
 
-  if(feedContext.entriesProcessed === feedContext.numEntries) {
-    if(feedContext.entriesAdded) {
+  if(feed_context.num_entries_processed === feed_context.num_entries) {
+    if(feed_context.num_entries_added) {
       update_badge(this.connection);
     }
 
-    this.pendingFeedsCount--;
+    this.num_feeds_pending--;
     on_complete.call(this);
   }
 }
@@ -320,7 +318,7 @@ function on_entry_processed(feedContext, event) {
 // Called whenever a feed finishes processing, or when there
 // were no feeds to process.
 function on_complete() {
-  if(this.pendingFeedsCount) {
+  if(this.num_feeds_pending) {
     return;
   }
 

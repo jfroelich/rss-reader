@@ -5,34 +5,34 @@
 'use strict';
 
 function smooth_scroll_to(element, deltaY, targetY) {
-  let scrollYStartTimer; // debounce
-  let scrollYIntervalTimer; // incrementally move
-  let amountToScroll = 0;
-  let amountScrolled = 0;
+  let scroll_y_start_timer; // debounce
+  let scroll_y_interval_timer; // incrementally move
+  let amount_to_scroll = 0;
+  let amount_scrolled = 0;
 
   function debounce() {
-    clearTimeout(scrollYStartTimer);
-    clearInterval(scrollYIntervalTimer);
-    scrollYStartTimer = setTimeout(startScroll, 5);
+    clearTimeout(scroll_y_start_timer);
+    clearInterval(scroll_y_interval_timer);
+    scroll_y_start_timer = setTimeout(start_scroll, 5);
   }
 
-  function startScroll() {
-    amountToScroll = Math.abs(targetY - element.scrollTop);
-    amountScrolled = 0;
+  function start_scroll() {
+    amount_to_scroll = Math.abs(targetY - element.scrollTop);
+    amount_scrolled = 0;
 
-    if(amountToScroll === 0) {
+    if(amount_to_scroll === 0) {
       return;
     }
 
-    scrollYIntervalTimer = setInterval(doScrollToY, 20);
+    scroll_y_interval_timer = setInterval(do_scroll_step, 20);
   }
 
-  function doScrollToY() {
-    const currentY = element.scrollTop;
+  function do_scroll_step() {
+    const current_y = element.scrollTop;
     element.scrollTop += deltaY;
-    amountScrolled += Math.abs(deltaY);
-    if(currentY === element.scrollTop || amountScrolled >= amountToScroll) {
-      clearInterval(scrollYIntervalTimer);
+    amount_scrolled += Math.abs(deltaY);
+    if(current_y === element.scrollTop || amount_scrolled >= amount_to_scroll) {
+      clearInterval(scroll_y_interval_timer);
     }
   }
 

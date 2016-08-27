@@ -6,7 +6,7 @@
 
 // Style lib
 
-const DisplaySettings = Object.create(null);
+const DisplaySettings = {};
 
 chrome.runtime.onMessage.addListener(function(message) {
   // Only react to the one message type of interest
@@ -71,13 +71,13 @@ DisplaySettings.FONT_FAMILIES = [
   'Roboto Regular'
 ];
 
-DisplaySettings.find_css_rule = function(sheet, selectorText) {
+DisplaySettings.find_css_rule = function(sheet, selector_text) {
 
-  function ruleHasText(rule) {
-    return rule.selectorText === selectorText;
+  function rule_has_text(rule) {
+    return rule.selectorText === selector_text;
   }
 
-  return Array.prototype.find.call(sheet.cssRules, ruleHasText);
+  return Array.prototype.find.call(sheet.cssRules, rule_has_text);
 };
 
 DisplaySettings.update_styles = function() {
@@ -85,60 +85,60 @@ DisplaySettings.update_styles = function() {
   // Assume a sheet is always available
   const sheet = document.styleSheets[0];
 
-  const entryRule = DisplaySettings.find_css_rule(sheet, 'div.entry');
-  if(entryRule) {
+  const entry_rule = DisplaySettings.find_css_rule(sheet, 'div.entry');
+  if(entry_rule) {
     if(localStorage.BACKGROUND_IMAGE) {
-      entryRule.style.backgroundColor = '';
-      entryRule.style.backgroundImage = 'url(' +
+      entry_rule.style.backgroundColor = '';
+      entry_rule.style.backgroundImage = 'url(' +
         localStorage.BACKGROUND_IMAGE + ')';
     } else if(localStorage.ENTRY_BACKGROUND_COLOR) {
-      entryRule.style.backgroundColor = localStorage.ENTRY_BACKGROUND_COLOR;
-      entryRule.style.backgroundImage = '';
+      entry_rule.style.backgroundColor = localStorage.ENTRY_BACKGROUND_COLOR;
+      entry_rule.style.backgroundImage = '';
     } else {
-      entryRule.style.backgroundColor = '';
-      entryRule.style.backgroundImage = '';
+      entry_rule.style.backgroundColor = '';
+      entry_rule.style.backgroundImage = '';
     }
 
-    const entryMargin = localStorage.ENTRY_MARGIN || '10';
-    entryRule.style.paddingLeft = entryMargin + 'px';
-    entryRule.style.paddingRight = entryMargin + 'px';
+    const entry_margin = localStorage.ENTRY_MARGIN || '10';
+    entry_rule.style.paddingLeft = entry_margin + 'px';
+    entry_rule.style.paddingRight = entry_margin + 'px';
   }
 
-  const titleRule = DisplaySettings.find_css_rule(sheet,
+  const title_rule = DisplaySettings.find_css_rule(sheet,
     'div.entry a.entry-title');
-  if(titleRule) {
-    titleRule.style.background = '';
-    titleRule.style.fontFamily = localStorage.HEADER_FONT_FAMILY;
+  if(title_rule) {
+    title_rule.style.background = '';
+    title_rule.style.fontFamily = localStorage.HEADER_FONT_FAMILY;
     const hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
     if(hfs) {
       const hfsString = (hfs / 10).toFixed(2) + 'em';
-      titleRule.style.fontSize = hfsString;
+      title_rule.style.fontSize = hfsString;
     }
   }
 
-  const contentRule = DisplaySettings.find_css_rule(sheet,
+  const content_rule = DisplaySettings.find_css_rule(sheet,
     'div.entry span.entry-content');
-  if(contentRule) {
-    contentRule.style.background = '';
-    contentRule.style.fontFamily = localStorage.BODY_FONT_FAMILY || 'initial';
+  if(content_rule) {
+    content_rule.style.background = '';
+    content_rule.style.fontFamily = localStorage.BODY_FONT_FAMILY || 'initial';
 
     const bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10);
     if(bfs) {
-      contentRule.style.fontSize = (bfs / 10).toFixed(2) + 'em';
+      content_rule.style.fontSize = (bfs / 10).toFixed(2) + 'em';
     }
 
-    contentRule.style.textAlign = (localStorage.JUSTIFY_TEXT === '1') ?
+    content_rule.style.textAlign = (localStorage.JUSTIFY_TEXT === '1') ?
       'justify' : 'left';
 
-    const bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT, 10) || 10;
-    contentRule.style.lineHeight = (bodyLineHeight / 10).toFixed(2);
-    let columnCount = localStorage.COLUMN_COUNT;
+    const blh = parseInt(localStorage.BODY_LINE_HEIGHT, 10) || 10;
+    content_rule.style.lineHeight = (blh / 10).toFixed(2);
+    let col_count = localStorage.COLUMN_COUNT;
     const VALID_COUNTS = { '1': true, '2': true, '3': true };
-    if(!(columnCount in VALID_COUNTS)) {
-      columnCount = '1';
+    if(!(col_count in VALID_COUNTS)) {
+      col_count = '1';
     }
 
-    contentRule.style.webkitColumnCount = parseInt(columnCount);
+    content_rule.style.webkitColumnCount = parseInt(col_count);
   }
 };
 
@@ -162,10 +162,10 @@ DisplaySettings.load_styles = function() {
 
   buffer.push('margin:0px;');
 
-  const entryMargin = localStorage.ENTRY_MARGIN;
-  if(entryMargin) {
+  const entry_margin = localStorage.ENTRY_MARGIN;
+  if(entry_margin) {
     buffer.push('padding:');
-    buffer.push(entryMargin);
+    buffer.push(entry_margin);
     buffer.push('px;');
   }
 
@@ -181,10 +181,10 @@ DisplaySettings.load_styles = function() {
     buffer.push('em;');
   }
 
-  const headerFontFamily = localStorage.HEADER_FONT_FAMILY;
-  if(headerFontFamily) {
+  const header_font_fam = localStorage.HEADER_FONT_FAMILY;
+  if(header_font_fam) {
     buffer.push('font-family:');
-    buffer.push(headerFontFamily);
+    buffer.push(header_font_fam);
     buffer.push(';');
   }
 
@@ -211,25 +211,25 @@ DisplaySettings.load_styles = function() {
     buffer.push('em;');
   }
 
-  const bodyTextJustify = localStorage.JUSTIFY_TEXT === '1';
-  if(bodyTextJustify) {
+  const body_justify = localStorage.JUSTIFY_TEXT === '1';
+  if(body_justify) {
     buffer.push('text-align: justify;');
   }
 
-  const bodyFontFamily = localStorage.BODY_FONT_FAMILY;
-  if(bodyFontFamily) {
+  const body_font = localStorage.BODY_FONT_FAMILY;
+  if(body_font) {
     buffer.push('font-family:');
-    buffer.push(bodyFontFamily);
+    buffer.push(body_font);
     buffer.push(';');
   }
 
-  let bodyLineHeight = localStorage.BODY_LINE_HEIGHT;
-  if(bodyLineHeight) {
-    bodyLineHeight = parseInt(bodyLineHeight);
-    if(bodyLineHeight) {
+  let blh = localStorage.BODY_LINE_HEIGHT;
+  if(blh) {
+    blh = parseInt(blh);
+    if(blh) {
       // TODO: units?
       buffer.push('line-height:');
-      buffer.push((bodyLineHeight / 10).toFixed(2));
+      buffer.push((blh / 10).toFixed(2));
       buffer.push(';');
     }
   }
@@ -252,10 +252,10 @@ DisplaySettings.load_styles = function() {
   buffer.push('margin:0px;');
 
   // TODO: use this if columns enabled (use 1(none), 2, 3 as options).
-  const columnCount = localStorage.COLUMN_COUNT;
-  if(columnCount === '2' || columnCount === '3') {
+  const col_count = localStorage.COLUMN_COUNT;
+  if(col_count === '2' || col_count === '3') {
     buffer.push('-webkit-column-count:');
-    buffer.push(columnCount);
+    buffer.push(col_count);
     buffer.push(';');
     buffer.push('-webkit-column-gap:30px;');
     buffer.push('-webkit-column-rule:1px outset #AAAAAA;');

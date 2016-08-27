@@ -76,8 +76,8 @@ function on_get_feeds() {
 
   // Append the anchor to the document containing this script
   // (not to be confused with the xml doc)
-  const parent_el = document.body || document.documentElement;
-  parent_el.appendChild(anchor);
+  const parent = document.body || document.documentElement;
+  parent.appendChild(anchor);
 
   // Trigger the download of the file
   anchor.click();

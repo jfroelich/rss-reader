@@ -14,8 +14,8 @@ function deserialize_feed(input_feed) {
   // This assumes urls are always valid and never throws.
   // This assumes the urls are unique and properly ordered.
   if(input_feed.urls && input_feed.urls.length) {
-    output_feed.urls = input_feed.urls.map(function(urlString) {
-      return new URL(urlString);
+    output_feed.urls = input_feed.urls.map(function(url_string) {
+      return new URL(url_string);
     });
   }
 

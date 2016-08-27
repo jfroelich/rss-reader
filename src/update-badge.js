@@ -35,7 +35,13 @@ function count() {
 }
 
 function count_onsuccess(event) {
-  this.text = '' + event.target.result;
+  const count = event.target.result;
+  if(count > 999) {
+    this.text = '1k+';
+  } else {
+    this.text = '' + event.target.result;
+  }
+
   on_complete.call(this);
 }
 

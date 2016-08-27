@@ -12,12 +12,12 @@ this.trim_document = function(document) {
     return;
   }
 
-  const firstChild = body.firstChild;
-  if(firstChild) {
-    step(firstChild, 'nextSibling');
-    const lastChild = body.lastChild;
-    if(lastChild && lastChild !== firstChild) {
-      step(body.lastChild, 'previousSibling');
+  const first_child = body.firstChild;
+  if(first_child) {
+    step(first_child, 'nextSibling');
+    const last_child = body.lastChild;
+    if(last_child && last_child !== first_child) {
+      step(last_child, 'previousSibling');
     }
   }
 };
@@ -28,11 +28,15 @@ const TRIMMABLE_ELEMENTS = {
   'nobr': 1
 };
 
-function step(startNode, step) {
-  let node = startNode;
-  while(node && (node.localName in TRIMMABLE_ELEMENTS ||
-    (node.nodeType === Node.TEXT_NODE && !node.nodeValue.trim()))) {
-    let sibling = node[step];
+function is_trimmable(node) {
+  return node && (node.localName in TRIMMABLE_ELEMENTS ||
+    (node.nodeType === Node.TEXT_NODE && !node.nodeValue.trim()));
+}
+
+function step(start_node, prop_name) {
+  let node = start_node;
+  while(is_trimmable(node)) {
+    let sibling = node[prop_name];
     node.remove();
     node = sibling;
   }

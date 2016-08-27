@@ -12,7 +12,8 @@ function parse_xml(xml_string) {
   console.assert(xml_string);
   const parser = new DOMParser();
   // Allow the possible exception to bubble by not catching it
-  let document = parser.parseFromString(xml_string, 'application/xml');
+  const document = parser.parseFromString(xml_string, 'application/xml');
+  console.assert(document);
 
   // Translate the embedded error back into an exception
   const embedded_error = document.querySelector('parsererror');
@@ -20,6 +21,5 @@ function parse_xml(xml_string) {
     throw new Error(embedded_error.textContent);
   }
 
-  console.assert(document);
   return document;
 }

@@ -26,12 +26,12 @@ this.transform_lazy_images = function(document) {
   const images = document.querySelectorAll('img');
   for(let image of images) {
     if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
-      for(let alternateName of LAZY_ATTRIBUTES) {
-        if(image.hasAttribute(alternateName)) {
-          const alternateValue = image.getAttribute(alternateName);
-          if(alternateValue && is_valid_url(alternateValue)) {
-            image.removeAttribute(alternateName);
-            image.setAttribute('src', alternateValue);
+      for(let alt_name of LAZY_ATTRIBUTES) {
+        if(image.hasAttribute(alt_name)) {
+          const alt_value = image.getAttribute(alt_name);
+          if(alt_value && is_valid_url(alt_value)) {
+            image.removeAttribute(alt_name);
+            image.setAttribute('src', alt_value);
             return;
           }
         }
@@ -44,8 +44,8 @@ this.transform_lazy_images = function(document) {
 // could be relative
 // TODO: i should still match browser behavior though, which might tolerate
 // spaces in urls
-function is_valid_url(inputString) {
-  return !inputString.trim().includes(' ');
+function is_valid_url(input_str) {
+  return !input_str.trim().includes(' ');
 }
 
 } // End file block scope

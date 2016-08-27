@@ -5,33 +5,27 @@
 'use strict';
 
 // Shows a simple desktop notification with the given title and message, if
-// various constraints are met.
-// NOTE: alot of these checks are invariant and could be hoisted but for now
-// I don't think there is a performance issue.
-// NOTE: html is treated as plain text (e.g. <i> renders as <i>).
-// NOTE: to show in notification center from chrome, toggle flag
+// various constraints are met. Message and title are treated as plain text.
+// To show in notification center, toggle flag
 // chrome://flags/#enable-native-notifications
 function notify(title, message) {
   if(!Notification) {
-    console.debug('Notifications API not available');
+    console.warn(
+      'Canceled notification "%s" because Notification API not available',
+      title);
     return;
   }
 
   if(!('SHOW_NOTIFICATIONS' in localStorage)) {
-    console.debug('Notifications disabled in app settings');
+    console.debug(
+      'Canceled notification "%s" because disabled in app settings', title);
     return;
   }
 
-  // Assume permitted, no need to check
-  // If not permitted then the failure is silent, I think that is fine?
-
+  // Fail silently if not permitted
   const defined_title = title || 'Untitled';
   const defined_msg = message || '';
-  const icon_url_string = chrome.extension.getURL('/images/rss_icon_trans.gif');
-
-  // Simply instantiating a new Notification object shows it
-  const notification = new Notification(defined_title, {
-    'body': defined_msg,
-    'icon': icon_url_string
-  });
+  const icon_url = chrome.extension.getURL('/images/rss_icon_trans.gif');
+  // Simply instantiating a notification shows it
+  new Notification(defined_title, {'body': defined_msg, 'icon': icon_url});
 }

@@ -9,17 +9,17 @@
 // ellipsis is appended. If the extension is an empty string, then nothing is
 // appended. If the extension is a non-empty string , then the extension is
 // appended.
-function truncate_string(inputString, position, extension) {
-  console.assert(inputString);
+function truncate_string(input_str, position, extension) {
+  console.assert(input_str);
   console.assert(!isNaN(position));
-  if(inputString.length > position) {
+  if(input_str.length > position) {
     const ELLIPSIS = '\u2026';
     let ext = (typeof extension === 'string') ? extension : ELLIPSIS;
     if(ext) {
-      return inputString.substr(0, position) + ext;
+      return input_str.substr(0, position) + ext;
     } else {
-      return inputString.substr(0, position);
+      return input_str.substr(0, position);
     }
   }
-  return inputString;
+  return input_str;
 }

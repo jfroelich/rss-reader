@@ -15,14 +15,14 @@ this.import_opml_files = function(callback) {
     'uploader': null
   };
 
-  // Prompt for file upload
+  // Prompt for file upload using host doc
   const uploader = document.createElement('input');
   context.uploader = uploader;
   uploader.setAttribute('type', 'file');
   uploader.style.display = 'none';
   uploader.onchange = on_uploader_change.bind(context);
-  const parentElement = document.body || document.documentElement;
-  parentElement.appendChild(uploader);
+  const parent = document.body || document.documentElement;
+  parent.appendChild(uploader);
   uploader.click();
 };
 
@@ -68,45 +68,33 @@ function read_file_onerror(file, event) {
 
 function read_file_onload(file, event) {
   console.debug('Parsing', file.name);
-  const parser = new DOMParser();
+
   const file_text = event.target.result;
-  let document = null;
+  let doc = null;
   try {
-    document = parser.parseFromString(file_text, 'application/xml');
+    doc = parse_xml(file_text);
   } catch(error) {
     console.warn(file.name, error);
     on_file_processed.call(this, file);
     return;
   }
 
-  if(!document) {
-    console.warn(file.name, 'has undefined document');
-    on_file_processed.call(this, file);
-    return;
-  }
-
-  const parser_error = document.querySelector('parsererror');
-  if(parser_error) {
-    console.warn(file.name, parser_error.textContent);
-    on_file_processed.call(this, file);
-    return;
-  }
-
-  if(document.documentElement.localName !== 'opml') {
-    console.warn(file.name, document.documentElement.nodeName, 'is not opml');
+  if(doc.documentElement.localName !== 'opml') {
+    console.warn(file.name, doc.documentElement.nodeName, 'is not opml');
     on_file_processed.call(this, file);
     return;
   }
 
   // Unsure why accessing document.body yields undefined
-  const body = document.querySelector('body');
+  // OPML documents are not required to have a body. This isn't an error,
+  // this just means that there are no outlines to consider.
+  const body = doc.querySelector('body');
   if(!body) {
-    console.warn(file.name, 'is missing a body');
     on_file_processed.call(this, file);
     return;
   }
 
-  // Add each of the outlines representing feeds in the body
+  // Add each of the outlines representing feeds
   const seen_urls = new Set();
   for(let element = body.firstElementChild; element;
     element = element.nextElementSibling) {
@@ -137,7 +125,7 @@ function read_file_onload(file, event) {
       continue;
     }
 
-    // Skip duplicate outlines (compared by normalized url)
+    // Skip duplicate outlines (compared by normalized serialized url)
     if(seen_urls.has(url.href)) {
       console.debug('Duplicate', element.outerHTML);
       continue;
@@ -187,7 +175,7 @@ function on_file_processed(file) {
 }
 
 function on_complete() {
-  console.log('Completed import');
+  console.log('Completed opml import');
 
   if(this.uploader) {
     this.uploader.remove();

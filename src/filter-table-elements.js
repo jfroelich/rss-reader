@@ -36,10 +36,9 @@ function is_single_col_table(table, limit) {
 // instead of a counter.
 function is_single_col_row(row) {
   const cells = row.cells;
-
   let non_empty_count = 0;
   for(let i = 0, len = cells.length; i < len; i++) {
-    let cell = cells[i];
+    const cell = cells[i];
     if(is_leaf_node(cell)) {
       // If it is a leaf node, it could still be a single column row element
     } else {
