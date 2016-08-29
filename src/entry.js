@@ -5,7 +5,8 @@
 'use strict';
 
 // TODO: I plan to deprecate the Entry object because it is anemic. The only
-// exports here will be the flags and some entry related functions
+// exports here will be the flags and some entry related functions. I also
+// plan to avoid serialization. This means urls will all be strings.
 
 // Given an entry object, return the last url in its internal url chain.
 // The returned url will be a URL object for now, but in the future, once I
@@ -19,6 +20,58 @@ function get_entry_terminal_url(entry) {
   console.assert(entry.urls);
   console.assert(entry.urls.length);
   return entry.urls[entry.urls.length - 1];
+}
+
+// Note: untested, under dev. The input this time is a string, and entry.urls
+// should contain strings. Part of a series of changes i am making with plan
+// to avoid having to deserialize and reserialize entries
+// Returns true if the url was added.
+function append_entry_url(entry, url_string) {
+  console.assert(entry);
+  console.assert(url_string);
+
+  // Lazily create the urls property. This is not the caller's responsibility
+  // because it means less boilerplate.
+  if(!('urls' in entry)) {
+    entry.urls = [];
+  }
+
+  // In order to compare the url to existing urls, we need to convert the url
+  // to a URL object. This should never throw. It is the caller's responsibility
+  // to provide a valid url.
+  const url_obj = new URL(url_string);
+
+  // To normalize a value means that a given value could have many valid
+  // realizations, and that given any one of these realizations, to change the
+  // value into a canonical, standard, preferred form. For example, the value
+  // could be uppercase, or mixed case, or lowercase. The preferred form is
+  // lowercase. So normalizing the value means lower casing it.
+
+  // Apply additional url normalizations. Delete the hash
+  // It's possible this should be a function call like normalize_url(url).
+  // Deleting the hash is not really a normalization in the basic sense of
+  // dealing with varied string representations. Here I am removing the hash
+  // because I want to consider a url with a hash and without, which is
+  // otherwise the same url, as the same url.
+  url_obj.hash = '';
+
+  // Now get a normalized url. The process of converting to a url object and
+  // back to a string is what caused the normalization. This built in process
+  // does several things, like remove default ports, lowercase hostname,
+  // lowercase protocol, etc.
+  // Note that .href is synonymous with toString()
+  const normalized_url_str = url_obj.href;
+
+  // Check that the url does not already exist. entry.urls only contains
+  // normalized url strings because only normalized urls are added
+  for(let entry_url_str of entry.urls) {
+    if(entry_url_str === normalized_url_str) {
+      return false;
+    }
+  }
+
+  entry.urls.push(normalized_url_str);
+  return true;
 }
 
 
