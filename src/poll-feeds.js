@@ -98,17 +98,8 @@ function on_fetch_feed(local_feed, event) {
     return;
   }
 
-  // TODO: because both subscribe and poll call fetch feed and both need to
-  // do the favicon lookup, then i think that it should be fetch feed's
-  // responsibility?
-  // the thing is, should that even be happening at the same time as fetch,
-  // or does it occur on its own timeline
-
-  // TODO: unmodified shouldn't prevent updating of favicon
-
   const remote_feed = event.feed;
   if(is_feed_unmodified(local_feed, remote_feed)) {
-    console.debug('Feed unmodified', local_feed.get_url().toString());
     this.num_feeds_pending--;
     on_complete.call(this);
     return;
