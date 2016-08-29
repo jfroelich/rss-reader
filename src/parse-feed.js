@@ -7,30 +7,30 @@
 { // Begin file block scope
 
 // Returns an event-like object with properties feed and entries.
-this.parse_feed = function(document, excludeEntries) {
+this.parse_feed = function(document, exclude_entries) {
   console.assert(document, 'document is required');
 
-  const docElement = document.documentElement;
-  if(!docElement.matches('feed, rss, rdf')) {
-    throw new Error('Unsupported document element: ' + docElement.nodeName);
+  const doc_el = document.documentElement;
+  if(!doc_el.matches('feed, rss, rdf')) {
+    throw new Error('Unsupported document element: ' + doc_el.nodeName);
   }
 
-  const channel = find_channel(docElement);
+  const channel = find_channel(doc_el);
   if(!channel) {
     throw new Error('Missing channel element');
   }
 
   const feed = new Feed();
 
-  feed.type = get_feed_type(docElement);
+  feed.type = get_feed_type(doc_el);
   feed.title = find_child_element_text(channel, 'title');
   feed.description = find_child_element_text(channel,
-    docElement.matches('feed') ? 'subtitle' : 'description');
+    doc_el.matches('feed') ? 'subtitle' : 'description');
   feed.link = find_feed_link(channel);
   feed.datePublished = find_feed_date_published(channel);
 
   let entries = [];
-  if(!excludeEntries) {
+  if(!exclude_entries) {
     const entry_els = find_entries(channel);
     for(let entry of entry_els) {
       entries.push(create_entry(feed.datePublished, entry));
@@ -43,34 +43,34 @@ this.parse_feed = function(document, excludeEntries) {
   };
 };
 
-function find_channel(documentElement) {
-  if(documentElement.matches('feed')) {
-    return documentElement;
+function find_channel(doc_el) {
+  if(doc_el.matches('feed')) {
+    return doc_el;
   } else {
-    return find_child_element_by_name(documentElement, 'channel');
+    return find_child_element_by_name(doc_el, 'channel');
   }
 }
 
 function find_entries(channel) {
-  const documentElement = channel.ownerDocument.documentElement;
+  const doc_el = channel.ownerDocument.documentElement;
   const entries = [];
-  let entryParent;
-  let entryLocalName;
+  let entry_parent;
+  let entry_local_name;
 
-  if(documentElement.matches('feed')) {
-    entryParent = documentElement;
-    entryLocalName = 'entry';
-  } else if(documentElement.matches('rdf')) {
-    entryParent = documentElement;
-    entryLocalName = 'item';
+  if(doc_el.matches('feed')) {
+    entry_parent = doc_el;
+    entry_local_name = 'entry';
+  } else if(doc_el.matches('rdf')) {
+    entry_parent = doc_el;
+    entry_local_name = 'item';
   } else {
-    entryParent = channel;
-    entryLocalName = 'item';
+    entry_parent = channel;
+    entry_local_name = 'item';
   }
 
-  for(let element = entryParent.firstElementChild; element;
+  for(let element = entry_parent.firstElementChild; element;
     element = element.nextElementSibling) {
-    if(element.localName === entryLocalName) {
+    if(element.localName === entry_local_name) {
       entries.push(element);
     }
   }
@@ -78,11 +78,11 @@ function find_entries(channel) {
   return entries;
 }
 
-function get_feed_type(documentElement) {
+function get_feed_type(doc_el) {
   let type = null;
-  if(documentElement.matches('feed')) {
+  if(doc_el.matches('feed')) {
     type = 'feed';
-  } else if(documentElement.matches('rdf')) {
+  } else if(doc_el.matches('rdf')) {
     type = 'rdf';
   } else {
     type = 'rss';
@@ -92,18 +92,18 @@ function get_feed_type(documentElement) {
 
 function find_feed_date_published(channel) {
   const is_atom = channel.ownerDocument.documentElement.matches('feed');
-  let dateText = null;
+  let date_text = null;
   if(is_atom) {
-    dateText = find_child_element_text(channel, 'updated');
+    date_text = find_child_element_text(channel, 'updated');
   } else {
-    dateText = find_child_element_text(channel, 'pubdate') ||
+    date_text = find_child_element_text(channel, 'pubdate') ||
       find_child_element_text(channel, 'lastbuilddate') ||
       find_child_element_text(channel, 'date');
   }
 
-  if(dateText) {
+  if(date_text) {
     try {
-      return new Date(dateText);
+      return new Date(date_text);
     } catch(exception) {
       console.debug(exception);
     }
@@ -130,37 +130,36 @@ function is_link_with_href(element) {
 }
 
 function is_link_without_href(element) {
-  // return element.matches('link:not([href])');
   return element.localName === 'link' && !element.hasAttribute('href');
 }
 
 function find_feed_link(channel) {
   const is_atom = channel.ownerDocument.documentElement.matches('feed');
 
-  let linkText = null;
-  let linkElement = null;
+  let link_text = null;
+  let link_element = null;
 
   if(is_atom) {
-    linkElement = find_child_element(channel, is_link_rel_alt) ||
+    link_element = find_child_element(channel, is_link_rel_alt) ||
       find_child_element(channel, is_link_rel_self) ||
       find_child_element(channel, is_link_with_href);
-    if(linkElement) {
-      linkText = linkElement.getAttribute('href');
+    if(link_element) {
+      link_text = link_element.getAttribute('href');
     }
   } else {
-    linkElement = find_child_element(channel, is_link_without_href);
-    if(linkElement) {
-      linkText = linkElement.textContent;
+    link_element = find_child_element(channel, is_link_without_href);
+    if(link_element) {
+      link_text = link_element.textContent;
     } else {
-      linkElement = find_child_element(channel, is_link_with_href);
-      if(linkElement)
-        linkText = linkElement.getAttribute('href');
+      link_element = find_child_element(channel, is_link_with_href);
+      if(link_element)
+        link_text = link_element.getAttribute('href');
     }
   }
 
-  if(linkText) {
+  if(link_text) {
     try {
-      return new URL(linkText);
+      return new URL(link_text);
     } catch(exception) {
       console.debug(exception);
     }
@@ -245,23 +244,23 @@ function find_entry_author(entry) {
 
 function find_entry_link(entry) {
   const is_atom = entry.ownerDocument.documentElement.matches('feed');
-  let linkText;
-  let linkElement;
+  let link_text;
+  let link_element;
   if(is_atom) {
-    linkElement = find_child_element(entry, is_link_rel_alt) ||
+    link_element = find_child_element(entry, is_link_rel_alt) ||
       find_child_element(entry, is_link_rel_self) ||
       find_child_element(entry, is_link_with_href);
-    if(linkElement) {
-      linkText = linkElement.getAttribute('href');
+    if(link_element) {
+      link_text = link_element.getAttribute('href');
     }
   } else {
-    linkText = find_child_element_text(entry, 'origlink') ||
+    link_text = find_child_element_text(entry, 'origlink') ||
       find_child_element_text(entry, 'link');
   }
 
-  if(linkText) {
+  if(link_text) {
     try {
-      return new URL(linkText);
+      return new URL(link_text);
     } catch(exception) {
       console.debug(exception);
     }
@@ -270,23 +269,23 @@ function find_entry_link(entry) {
 
 function find_entry_date_published(entry) {
   const is_atom = entry.ownerDocument.documentElement.matches('feed');
-  let datePublishedString = null;
+  let date_pub_str = null;
 
   if(is_atom) {
-    datePublishedString = find_child_element_text(entry,
+    date_pub_str = find_child_element_text(entry,
       'published') || find_child_element_text(entry, 'updated');
   } else {
-    datePublishedString = find_child_element_text(entry, 'pubdate') ||
+    date_pub_str = find_child_element_text(entry, 'pubdate') ||
       find_child_element_text(entry, 'date');
   }
 
-  if(datePublishedString) {
-    datePublishedString = datePublishedString.trim();
+  if(date_pub_str) {
+    date_pub_str = date_pub_str.trim();
   }
 
-  if(datePublishedString) {
+  if(date_pub_str) {
     try {
-      return new Date(datePublishedString);
+      return new Date(date_pub_str);
     } catch(exception) {
       console.debug(exception);
     }
@@ -320,8 +319,8 @@ function get_atom_node_text(node) {
     node.innerHTML : node.textContent;
 }
 
-function find_child_element(parentElement, predicate) {
-  for(let element = parentElement.firstElementChild; element;
+function find_child_element(parent_el, predicate) {
+  for(let element = parent_el.firstElementChild; element;
     element = element.nextElementSibling) {
     if(predicate(element)) {
       return element;
@@ -329,19 +328,19 @@ function find_child_element(parentElement, predicate) {
   }
 }
 
-function find_child_element_by_name(parentElement, localName) {
+function find_child_element_by_name(parent_el, local_name) {
 
-  function hasLocalName(element) {
-    return element.localName === localName;
+  function has_local_name(element) {
+    return element.localName === local_name;
   }
 
-  return find_child_element(parentElement, hasLocalName);
+  return find_child_element(parent_el, has_local_name);
 }
 
-function find_child_element_text(element, localName) {
-  const childElement = find_child_element_by_name(element, localName);
-  if(childElement) {
-    const childText = childElement.textContent;
+function find_child_element_text(element, local_name) {
+  const child = find_child_element_by_name(element, local_name);
+  if(child) {
+    const childText = child.textContent;
     if(childText) {
       return childText.trim();
     }

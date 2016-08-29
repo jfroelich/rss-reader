@@ -259,7 +259,7 @@ function on_fetch_entry(entry, callback, event) {
     on_set_image_dimensions.bind(this, entry, document, callback));
 }
 
-function on_set_image_dimensions(entry, document, callback, numImagesModified) {
+function on_set_image_dimensions(entry, document, callback, num_modified) {
   const content = document.documentElement.outerHTML.trim();
   if(content) {
     entry.content = content;
@@ -279,7 +279,9 @@ function add_entry(connection, entry, callback) {
   serialized.archiveState = Entry.FLAGS.UNARCHIVED;
   serialized.dateCreated = new Date();
 
-  console.assert(serialized.urls && serialized.urls.length, serialized);
+  // These asserts belong only in sanitize_entry
+  console.assert(serialized.urls);
+  console.assert(serialized.urls.length);
 
   try {
     const transaction = connection.transaction('entry', 'readwrite');

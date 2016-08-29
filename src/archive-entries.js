@@ -9,37 +9,39 @@
 // The default period after which entries become archivable
 const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
 
-// Iterates over entries in storage and archives older entries
-// @param expires_after_ms {number} an entry is archivable if older than this.
+// Iterates over unarchived entries and archives older read entries
+// @param expires {number} an entry is archivable if older than this.
 // if not set, a default value of 10 days is used.
-this.archive_entries = function(expires_after_ms) {
+this.archive_entries = function(expires) {
   console.log('Archiving entries...');
 
+  // Create a shared context for simple sharing of state across function
+  // invocations.
   const context = {
-    'expires_after_ms': TEN_DAYS_MS,
+    'expires': TEN_DAYS_MS,
     'num_processed': 0,
     'num_changed': 0,
     'current_date': new Date()
   };
 
-  if(typeof expires_after_ms !== 'undefined') {
-    console.assert(!isNaN(expires_after_ms));
-    console.assert(isFinite(expires_after_ms));
-    console.assert(expires_after_ms > 0);
-    context.expires_after_ms = expires_after_ms;
+  if(expires) {
+    console.assert(!isNaN(expires));
+    console.assert(isFinite(expires));
+    console.assert(expires > 0);
+    context.expires = expires;
   }
 
   open_db(on_open_db.bind(context));
 };
 
-function on_open_db(connection) {
-  if(!connection) {
+function on_open_db(db) {
+  if(!db) {
     on_complete.call(this);
     return;
   }
 
-  this.connection = connection;
-  const transaction = connection.transaction('entry', 'readwrite');
+  this.db = db;
+  const transaction = db.transaction('entry', 'readwrite');
   const store = transaction.objectStore('entry');
   const index = store.index('archiveState-readState');
   const key_path = [Entry.FLAGS.UNARCHIVED, Entry.FLAGS.READ];
@@ -50,64 +52,122 @@ function on_open_db(connection) {
 
 function open_cursor_onsuccess(event) {
   const cursor = event.target.result;
+
+  // Either there were no entries, or we advanced the cursor past the end,
+  // in which case the scan is complete.
   if(!cursor) {
     on_complete.call(this);
     return;
   }
 
+  // Keep track of the number of entries visisted by the scan, regardless of
+  // whether the entry will be modified.
   this.num_processed++;
 
-  // TODO: maybe the serialization is a waste. Maybe just work on the serialized
-  // object itself and avoid the serialization entirely.
+  // NOTE: no longer deserializing and reserializing
+  //const entry = deserialize_entry(cursor.value);
 
-  const entry = deserialize_entry(cursor.value);
+  const entry = cursor.value;
+
+  const terminal_url_string = get_entry_terminal_url(entry);
+  // All entries should have a terminal url
+  console.assert(terminal_url_string);
+
+  // All entries stored in the database should have a dateCreated property set.
+  // If not, then this will crash with the call to getTime below.
   console.assert(entry.dateCreated);
-  console.assert(this.current_date >= entry.dateCreated);
+
+  // Entries should never have been created in the future. If so, age will be
+  // negative and the age check below fails, so the entry will remain unarchived
+  // indefinitely.
+  console.assert(entry.dateCreated.getTime() < this.current_date.getTime());
+
+  // Subtracting two dates implicitly yields a difference in milliseconds
   const age = this.current_date - entry.dateCreated;
 
-  if(age > this.expires_after_ms) {
-    const archived = to_archive_form(entry);
-    const serialized = serialize_entry(archived);
-    console.debug('Archiving', entry.get_url().toString());
-    console.assert(serialized.id);
-    cursor.update(serialized);
-    send_message(entry.id);
+  // If the entry is older than the expiration period, then it should be
+  // archived.
+
+  if(age > this.expires) {
+    console.debug('Archiving', terminal_url_string);
+
+    const archived_entry = entry_to_archivable(entry);
+    // Async request that indexedDB replace the old object with the new object
+    cursor.update(archived_entry);
+
+    // Async notify other windows that the entry was archived. This only
+    // exposes id so as to minimize surface area, and to reduce the size of the
+    // message sent. I don't think any listeners need any more information than
+    // this.
+    chrome.runtime.sendMessage({
+      'type': 'archive_entry_pending',
+      'entry_id': entry.id
+    });
+
+    // Track that the entry was archived
     this.num_changed++;
   }
 
   cursor.continue();
 }
 
-// Returns a new Entry instance representing the archived form of the input
-function to_archive_form(input_entry) {
-  const entry = new Entry();
-  entry.archiveState = Entry.FLAGS.ARCHIVED;
-  entry.dateArchived = new Date();
+// Returns a new entry object representing the archived form of the input entry
+function entry_to_archivable(input_entry) {
 
+  console.assert(input_entry);
+
+  // This no longer returns an Entry object. This returns a serialized entry
+  // that is storable. The input entry is expected to also be serialized
+  // Note that using the object literal here means this will have a prototype,
+  // but I don't think it impacts the database too much. I might consider using
+  // Object.create(null) if I ever look into whether this wastes space. I think
+  // tentatively that the structured clone algorithm will implicitly ignore
+  // the object's prototype.
+  const output_entry = {};
+
+  // Flag the entry as archived so that it will not be scanned in the future
+  output_entry.archiveState = Entry.FLAGS.ARCHIVED;
+  // Introduce a new property representing the date the entry was archived.
+  // This is the only place where this property is introduced.
+  output_entry.dateArchived = new Date();
+
+  // There is no need to clone because this function is only ever used in a
+  // known context
+  output_entry.dateCreated = input_entry.dateCreated;
+
+  // Does not assume the entry has been read, so cannot assume that dateRead
+  // is set. If not set then do not create a property with a null value.
   if(input_entry.dateRead) {
-    entry.dateRead = clone_date(input_entry.dateRead);
+    //output_entry.dateRead = clone_date(input_entry.dateRead);
+    // There is no need to clone because this function is only ever used in a
+    // known context.
+    output_entry.dateRead = input_entry.dateRead;
   }
 
-  entry.feed = input_entry.feed;
-  entry.id = input_entry.id;
-  entry.readState = input_entry.readState;
+  // Maintain the feed id so that if the user unsubscribes the archived entry
+  // will still be picked up and deleted.
+  console.assert(input_entry.feed);
+  output_entry.feed = input_entry.feed;
 
-  if(input_entry.urls) {
-    entry.urls = [];
-    for(let url of input_entry.urls) {
-      entry.urls.push(clone_url(url));
-    }
-  }
+  // Maintain the id. This is required in order to put the new object back into
+  // the store using an inline key.
+  output_entry.id = input_entry.id;
 
-  return entry;
-}
+  // Maintain whatever is the current read state. An unread entry can still be
+  // archived if it is too old.
+  output_entry.readState = input_entry.readState;
 
-function clone_date(date) {
-  return new Date(date.getTime());
-}
+  // An input entry should always have at least one url
+  console.assert(input_entry.urls);
+  console.assert(input_entry.urls.length);
 
-function clone_url(url) {
-  return new URL(url.href);
+  // NOTE: there actually is no need to clone, I don't need to ensure purity
+  // here because this is only used in a known context, where I know that the
+  // caller does not do any manipulating to the urs array after calling this
+  //output_entry.urls = shallow_clone_array(input_entry.urls);
+  output_entry.urls = input_entry.urls;
+
+  return output_entry;
 }
 
 function open_cursor_onerror(event) {
@@ -115,21 +175,30 @@ function open_cursor_onerror(event) {
   on_complete.call(this);
 }
 
-function send_message(entry_id) {
-  // TODO: use postMessage instead of relying on chrome api?
-  // NOTE: the message listener expects "entryId" not "entry_id"
-  chrome.runtime.sendMessage({
-    'type': 'archiveEntryRequested',
-    'entryId': entry_id
-  });
-}
-
 function on_complete() {
   console.log('Archived %s of %s entries', this.num_changed,
     this.num_processed);
-  if(this.connection) {
-    this.connection.close();
+  if(this.db) {
+    this.db.close();
   }
 }
+
+// Copies the values of the array into a new array. This is shallow, meaning
+// that there is no guarantee the items in the array are also cloned themselves,
+// just the array itself. If the array contains mutable values then this should
+// not be used because it is subject to side effects.
+// This function is no longer in use.
+
+//function shallow_clone_array(array) {
+  // Assert an array is always provided. Do not assert length.
+//  console.assert(array);
+  // Use the new ES6 spread operator.
+//  return [...array];
+//}
+
+// This function is no longer in use, will delete
+//function clone_date(date) {
+//  return new Date(date.getTime());
+//}
 
 } // End file block scope

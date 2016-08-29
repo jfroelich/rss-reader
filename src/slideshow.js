@@ -11,14 +11,12 @@ let current_slide = null;
 
 chrome.runtime.onMessage.addListener(function(message) {
   switch(message.type) {
-    case 'pollCompleted':
+    case 'poll_completed':
       maybe_append_slides();
       break;
     case 'entryDeleteRequested':
-      // Not yet implemented
       break;
-    case 'archiveEntryRequested':
-      // Not yet implemented
+    case 'archive_entry_pending':
       break;
     default:
       break;

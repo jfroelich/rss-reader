@@ -74,33 +74,33 @@ function hide_error_msg() {
 // a member function. Call it a widget.
 function show_sub_monitor() {
   reset_sub_monitor();
-  const monitor_el = document.createElement('div');
-  monitor_el.setAttribute('id', 'options_subscription_monitor');
-  monitor_el.style.opacity = '1';
-  document.body.appendChild(monitor_el);
-  const progress_el = document.createElement('progress');
-  progress_el.textContent = 'Working...';
-  monitor_el.appendChild(progress_el);
+  const monitor = document.createElement('div');
+  monitor.setAttribute('id', 'options_subscription_monitor');
+  monitor.style.opacity = '1';
+  document.body.appendChild(monitor);
+  const progress = document.createElement('progress');
+  progress.textContent = 'Working...';
+  monitor.appendChild(progress);
 }
 
 function reset_sub_monitor() {
-  const monitor_el = document.getElementById('options_subscription_monitor');
-  if(monitor_el) {
-    monitor_el.remove();
+  const monitor = document.getElementById('options_subscription_monitor');
+  if(monitor) {
+    monitor.remove();
   }
 }
 
 function append_sub_monitor_msg(msg) {
-  const monitor_el = document.getElementById('options_subscription_monitor');
-  console.assert(monitor_el);
+  const monitor = document.getElementById('options_subscription_monitor');
+  console.assert(monitor);
   const msg_el = document.createElement('p');
   msg_el.textContent = msg;
-  monitor_el.appendChild(msg_el);
+  monitor.appendChild(msg_el);
 }
 
 function hide_sub_monitor(callback, fade_out) {
-  const monitor_el = document.getElementById('options_subscription_monitor');
-  if(!monitor_el) {
+  const monitor = document.getElementById('options_subscription_monitor');
+  if(!monitor) {
     if(callback) {
       callback();
       return;
@@ -108,14 +108,14 @@ function hide_sub_monitor(callback, fade_out) {
   }
 
   if(fade_out) {
-    fade_element(monitor_el, 2, 1, remove_then_callback);
+    fade_element(monitor, 2, 1, remove_then_callback);
   } else {
     remove_then_callback();
   }
 
   function remove_then_callback() {
-    if(monitor_el) {
-      monitor_el.remove();
+    if(monitor) {
+      monitor.remove();
     }
 
     if(callback) {
@@ -125,12 +125,7 @@ function hide_sub_monitor(callback, fade_out) {
 }
 
 function show_section(menu_item) {
-  // TODO: maybe do not check for this? Should just fail if I forgot to set it
-  // somewhere.
-  // TODO: maybe use an assert?
-  if(!menu_item) {
-    return;
-  }
+  console.assert(menu_item);
 
   // Do nothing if not switching.
   if(current_menu_item === menu_item) {
@@ -219,7 +214,6 @@ function append_feed(feed, should_sort) {
   item.appendChild(title_el);
 
   const feed_list_el = document.getElementById('feedlist');
-
   const lc_title = feed_title_string.toLowerCase();
 
   // Insert the feed item element into the proper position in the list
@@ -512,9 +506,9 @@ function sub_form_onsubmit(event) {
   }
 
   // Do nothing if subscription in progress
-  const sub_monitor_el = document.getElementById(
+  const monitor = document.getElementById(
     'options_subscription_monitor');
-  if(sub_monitor_el && is_visible(sub_monitor_el)) {
+  if(monitor && is_visible(monitor)) {
     return false;
   }
 
@@ -564,9 +558,9 @@ function btn_search_onclick(event) {
 
   // Ignore future clicks while subscription in progress
   // TODO: use a better element name here.
-  const sub_monitor_el = document.getElementById(
+  const monitor = document.getElementById(
     'options_subscription_monitor');
-  if(sub_monitor_el && is_visible(sub_monitor_el)) {
+  if(monitor && is_visible(monitor)) {
     return;
   }
 

@@ -6,10 +6,11 @@
 
 { // Begin file block scope
 
-this.mark_as_read = function(entryId, callback) {
-  console.assert(typeof entryId === 'number' && isFinite(entryId) &&
-    entryId > 0);
-  const context = {'entryId': entryId, 'callback': callback};
+this.mark_as_read = function(entry_id, callback) {
+  console.assert(typeof entry_id === 'number');
+  console.assert(isFinite(entry_id));
+  console.assert(entry_id > 0);
+  const context = {'entry_id': entry_id, 'callback': callback};
   open_db(on_open_db.bind(context));
 };
 
@@ -22,7 +23,7 @@ function on_open_db(connection) {
   this.connection = connection;
   const transaction = connection.transaction('entry', 'readwrite');
   const store = transaction.objectStore('entry');
-  const request = store.openCursor(this.entryId);
+  const request = store.openCursor(this.entry_id);
   request.onsuccess = open_cursor_onsuccess.bind(this);
   request.onerror = open_cursor_onerror.bind(this);
 }
@@ -30,14 +31,14 @@ function on_open_db(connection) {
 function open_cursor_onsuccess(event) {
   const cursor = event.target.result;
   if(!cursor) {
-    console.error('No entry found', this.entryId);
+    console.error('No entry found', this.entry_id);
     on_complete.call(this, 'NotFoundError');
     return;
   }
 
   const entry = cursor.value;
   if(entry.readState === Entry.FLAGS.READ) {
-    console.error('Already read', this.entryId);
+    console.error('Already read', this.entry_id);
     on_complete.call(this, 'AlreadyReadError');
     return;
   }
@@ -64,15 +65,18 @@ function open_cursor_onerror(event) {
   on_complete.call(this, 'CursorError');
 }
 
-function on_complete(eventType) {
+function on_complete(event_type_str) {
   if(this.connection) {
     this.connection.close();
   }
 
+  // Note the callback event uses camel case because that is currently
+  // what callers expect
+
   if(this.callback) {
     this.callback({
-      'type': eventType,
-      'entryId': this.entryId
+      'type': event_type_str,
+      'entryId': this.entry_id
     });
   }
 }

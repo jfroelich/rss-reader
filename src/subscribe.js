@@ -16,7 +16,7 @@ this.subscribe = function(feed, options) {
 
   const context = {
     'feed': feed,
-    'subbed': false,
+    'did_subscribe': false,
     'callback': options ? options.callback : null,
     'connection': options ? options.connection : null,
     'should_close': false,
@@ -86,15 +86,11 @@ function find_feed_onerror(event) {
 
 function on_fetch_feed(event) {
   if(event.type !== 'success') {
-
-    console.debug('fetch error type', event.type);
-
     if(event.type === 'invalid_mime_type') {
       on_complete.call(this, {'type': 'FetchMimeTypeError'});
     } else {
       on_complete.call(this, {'type': 'FetchError'});
     }
-
 
     return;
   }
@@ -109,11 +105,15 @@ function on_fetch_feed(event) {
 
 function add_feed(feed, callback) {
   console.debug('Adding feed', feed);
-  console.assert(!feed.id, 'feed.id is defined', feed.id);
+  console.assert(!feed.id);
   const sanitized_feed = sanitize_feed(feed);
   sanitized_feed.dateCreated = new Date();
 
   const serialized_feed = serialize_feed(sanitized_feed);
+
+  // TODO: maybe this should be setting the id of the sanitized feed instead of
+  // the serialized feed, and calling back with the sanitized Feed object
+  // instead of the serialized feed object
 
   // Manually remove date last modified. Because we are subscribing without
   // handling entries, we want to prevent the poll from considering the file
@@ -144,7 +144,7 @@ function add_feed(feed, callback) {
 
 function on_add_feed(event) {
   if(event.type === 'success') {
-    this.subbed = true;
+    this.did_subscribe = true;
     on_complete.call(this, {'type': 'success', 'feed': event.feed});
   } else {
     on_complete.call(this, {'type': event.type});
@@ -156,7 +156,7 @@ function on_complete(event) {
     this.connection.close();
   }
 
-  if(!this.no_notify && this.subbed) {
+  if(!this.no_notify && this.did_subscribe) {
     // TODO: if addFeed calls back with a Feed object, then I wouldn't need
     // to use call here. This also means this passes back a Feed object instead
     // of a basic object, which means I would need to update all callers
