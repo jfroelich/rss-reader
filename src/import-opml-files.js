@@ -12,19 +12,20 @@ this.import_opml_files = function(callback) {
   const context = {
     'num_files_processed': 0,
     'callback': callback,
-    'uploader': null
+    'uploader': create_upload_element()
   };
 
-  // Prompt for file upload using host doc
+  context.uploader.onchange = on_uploader_change.bind(context);
+  context.uploader.click();
+};
+
+function create_upload_element() {
   const uploader = document.createElement('input');
-  context.uploader = uploader;
   uploader.setAttribute('type', 'file');
   uploader.style.display = 'none';
-  uploader.onchange = on_uploader_change.bind(context);
-  const parent = document.body || document.documentElement;
-  parent.appendChild(uploader);
-  uploader.click();
-};
+  document.documentElement.appendChild(uploader);
+  return uploader;
+}
 
 function on_uploader_change(event) {
   this.uploader.removeEventListener('change', on_uploader_change);
@@ -43,6 +44,11 @@ function on_open_db(connection) {
     on_complete.call(this);
     return;
   }
+
+  // TODO: use two filter functions and intermediate collections to split up
+  // this loop. This also means i need to define a num_valid_files context
+  // variable to check against in on_file_processed, and I also need to check
+  // for no files present
 
   for(let file of this.uploader.files) {
     console.debug('Importing', file.name);
@@ -69,101 +75,176 @@ function read_file_onerror(file, event) {
 function read_file_onload(file, event) {
   console.debug('Parsing', file.name);
 
-  const file_text = event.target.result;
-  let doc = null;
-  try {
-    doc = parse_xml(file_text);
-  } catch(error) {
-    console.warn(file.name, error);
+  const text = event.target.result;
+  const doc = create_opml_doc_from_text(file, text);
+
+  if(!doc) {
     on_file_processed.call(this, file);
     return;
   }
 
-  if(doc.documentElement.localName !== 'opml') {
-    console.warn(file.name, doc.documentElement.nodeName, 'is not opml');
-    on_file_processed.call(this, file);
-    return;
-  }
+  // Get and preprocess the outlines from the document
 
-  // Unsure why accessing document.body yields undefined
-  // OPML documents are not required to have a body. This isn't an error,
-  // this just means that there are no outlines to consider.
-  const body = doc.querySelector('body');
-  if(!body) {
-    on_file_processed.call(this, file);
-    return;
-  }
+  // TODO: instead of using an array of outline elements, first create simple
+  // objects containing all the relevant properties. Then work off of that.
+  // Once this is done, I only need to convert url strings to URL objects once
+  // in an earlier step, instead of again in each step.
 
-  // Add each of the outlines representing feeds
-  const seen_urls = new Set();
-  for(let element = body.firstElementChild; element;
-    element = element.nextElementSibling) {
-    if(element.localName !== 'outline') {
-      continue;
-    }
+  let outlines = select_outlines(doc);
+  outlines = filter_non_feed_outlines(outlines);
+  outlines = filter_outlines_without_urls(outlines);
+  outlines = filter_outlines_with_invalid_urls(outlines);
+  outlines = filter_duplicate_outlines(outlines);
 
-    // Skip outlines with an unsupported type
-    const type = element.getAttribute('type');
-    if(!type || type.length < 3 || !/rss|rdf|feed/i.test(type)) {
-      console.warn('Invalid outline type', element.outerHTML);
-      continue;
-    }
+  // Create feed objects from the outlines
+  const feeds = outlines.map(create_feed_from_outline(outline));
 
-    // Skip outlines without a url
-    const url_string = (element.getAttribute('xmlUrl') || '').trim();
-    if(!url_string) {
-      console.warn('Outline missing url', element.outerHTML);
-      continue;
-    }
+  // This is invariant to the feed loop
+  const sub_options = {
+    'connection': this.connection,
+    'suppressNotifications': true
+  };
 
-    // Skip outlines without a valid url
-    let url = null;
-    try {
-      url = new URL(url_string);
-    } catch(error) {
-      console.warn('Invalid url', element.outerHTML);
-      continue;
-    }
-
-    // Skip duplicate outlines (compared by normalized serialized url)
-    if(seen_urls.has(url.href)) {
-      console.debug('Duplicate', element.outerHTML);
-      continue;
-    }
-    seen_urls.add(url.href);
-
-    // Create a Feed object
-    const feed = new Feed();
-    feed.add_url(url);
-    feed.type = type;
-    feed.title = element.getAttribute('title');
-    if(!feed.title) {
-      feed.title = element.getAttribute('text');
-    }
-    feed.description = element.getAttribute('description');
-
-    const html_url_string = element.getAttribute('htmlUrl');
-    if(html_url_string) {
-      try {
-        feed.link = new URL(html_url_string);
-      } catch(error) {
-        console.warn(error);
-      }
-    }
-
-    // Async, do not wait for the subscription request to complete
-    subscribe(feed, {
-      'connection': this.connection,
-      'suppressNotifications': true
-    });
+  // queue up sub requests
+  for(let feed of feeds) {
+    subscribe(feed, sub_options);
   }
 
   // Consider the file finished. subscription requests are pending
   on_file_processed.call(this, file);
 }
 
+function create_opml_doc_from_text(file, text) {
+
+  let doc = null;
+  try {
+    doc = parse_xml(text);
+  } catch(error) {
+    console.warn(file.name, error);
+    return null;
+  }
+
+  if(doc.documentElement.localName !== 'opml') {
+    console.warn(file.name, doc.documentElement.nodeName, 'is not opml');
+    return null;
+  }
+
+  return doc;
+}
+
+// Scans the opml document for outline elements
+function select_outlines(doc) {
+  const outlines = [];
+
+  // Unsure why accessing document.body yields undefined. I believe this is
+  // because doc is xml-flagged and something funky is at work. I am trying to
+  // mirror the browser implementation of document.body here, which is the first
+  // body in document order.
+  // Technically should be looking at only the immediate children of the
+  // document element. For now I am being loose in this step.
+  //
+  // OPML documents are not required to have a body. This isn't an error,
+  // this just means that there are no outlines to consider.
+  const body = doc.querySelector('body');
+  if(!body) {
+    return outlines;
+  }
+
+  // This walks explicitly because its too hard to restrict depth on
+  // querySelectorAll and I want to be more strict.
+
+  for(let el = body.firstElementChild; el; el = el.nextElementSibling) {
+    if(el.localName === 'outline') {
+      outlines.append(el);
+    }
+  }
+  return outlines;
+}
+
+// Filters outlines that do not represent feeds according to the type
+// attribute
+function filter_non_feed_outlines(outlines) {
+
+  // The length check here is a bit pedantic, I am trying to reduce the calls
+  // to the regex
+
+  return outlines.filter(function(outline) {
+    const type = outline.getAttribute('type');
+    return type && type.length > 2 && /rss|rdf|feed/i.test(type);
+  });
+}
+
+function filter_outlines_without_urls(outlines) {
+  return outlines.filter(function(outline) {
+    const url = outline.getAttribute('xmlUrl');
+    return url && url.trim();
+  });
+}
+
+function filter_outlines_with_invalid_urls(outlines) {
+  return outlines.filter(function(outline) {
+    try {
+      new URL(outline.getAttribute('xmlUrl'));
+      return true;
+    } catch(error) {}
+    return false;
+  });
+}
+
+function filter_duplicate_outlines(input_outlines) {
+
+  const output_outlines = [];
+  const seen = new Set();
+
+  // TODO: i could probably still use filter here with a closure
+
+  // NOTE: this uses url objects because accessing url.href normalizes the
+  // url for us, and i want to compare the normalized versions of urls
+
+  for(let outline of input_outlines) {
+    // Never throws because caller checked validity in prior function
+    const url = new URL(outline.getAttribute('xmlUrl'));
+
+    // If we haven't seen it yet, add it to the set and the output
+    if(!seen.has(url.href)) {
+      seen.add(url.href);
+      output.push(outline);
+    }
+  }
+
+  return output_outlines;
+}
+
+function create_feed_from_outline(outline) {
+  // Create a Feed object
+  const feed = new Feed();
+
+  // Never throws because checked in prior call
+  const xml_url = new URL(outline.getAttribute('xmlUrl'));
+  feed.add_url(xml_url);
+
+  feed.type = outline.getAttribute('type');
+
+  feed.title = outline.getAttribute('title');
+  if(!feed.title) {
+    feed.title = outline.getAttribute('text');
+  }
+
+  feed.description = outline.getAttribute('description');
+
+  const html_url_string = outline.getAttribute('htmlUrl');
+  if(html_url_string) {
+    try {
+      feed.link = new URL(html_url_string);
+    } catch(error) {
+    }
+  }
+
+  return feed;
+}
+
 function on_file_processed(file) {
-  console.debug('Finished processing', file.name);
+  console.debug('Processed file "%s"', file.name);
 
   // This can only be incremented here because this function is called either
   // synchronously or asynchronously
