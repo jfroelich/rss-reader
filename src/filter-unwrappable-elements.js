@@ -14,11 +14,13 @@ const SELECTOR = [
   'LABEL', 'BIG', 'BLINK', 'FONT', 'PLAINTEXT', 'SMALL', 'TT'
 ].join(',');
 
-this.filter_unwrappable_elements = function(document) {
+function filter_unwrappable_elements(document) {
   const elements = document.querySelectorAll(SELECTOR);
   for(let i = 0, len = elements.length; i < len; i++) {
     unwrap_element(elements[i]);
   }
-};
+}
+
+this.filter_unwrappable_elements = filter_unwrappable_elements;
 
 } // End file block scope

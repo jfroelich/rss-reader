@@ -6,9 +6,8 @@
 
 { // Begin file block scope
 
-this.import_opml_files = function(callback) {
+function import_opml_files(callback) {
   console.debug('Importing OPML files...');
-
   const context = {
     'num_files_processed': 0,
     'callback': callback,
@@ -17,7 +16,7 @@ this.import_opml_files = function(callback) {
 
   context.uploader.onchange = on_uploader_change.bind(context);
   context.uploader.click();
-};
+}
 
 function create_upload_element() {
   const uploader = document.createElement('input');
@@ -77,40 +76,29 @@ function read_file_onload(file, event) {
 
   const text = event.target.result;
   const doc = create_opml_doc_from_text(file, text);
-
   if(!doc) {
     on_file_processed.call(this, file);
     return;
   }
 
-  // Get and preprocess the outlines from the document
-
-  // TODO: instead of using an array of outline elements, first create simple
-  // objects containing all the relevant properties. Then work off of that.
-  // Once this is done, I only need to convert url strings to URL objects once
-  // in an earlier step, instead of again in each step.
-
-  let outlines = select_outlines(doc);
-  outlines = filter_non_feed_outlines(outlines);
-  outlines = filter_outlines_without_urls(outlines);
-  outlines = filter_outlines_with_invalid_urls(outlines);
+  const outline_elements = select_outline_elements(doc);
+  let outlines = outlines.map(create_outline_object);
+  outlines = outlines.filter(outline_has_valid_type);
+  outlines = outlines.filter(outline_has_url);
+  outlines.forEach(deserialize_outline_url);
+  outlines = outlines.filter(outline_has_url_object);
+  // Even though this is caught by subscribe, it is less work if done here
   outlines = filter_duplicate_outlines(outlines);
 
-  // Create feed objects from the outlines
-  const feeds = outlines.map(create_feed_from_outline(outline));
-
-  // This is invariant to the feed loop
-  const sub_options = {
+  const feeds = outlines.map(create_feed_from_outline);
+  const options = {
     'connection': this.connection,
     'suppressNotifications': true
   };
-
-  // queue up sub requests
   for(let feed of feeds) {
-    subscribe(feed, sub_options);
+    subscribe(feed, options);
   }
 
-  // Consider the file finished. subscription requests are pending
   on_file_processed.call(this, file);
 }
 
@@ -133,7 +121,7 @@ function create_opml_doc_from_text(file, text) {
 }
 
 // Scans the opml document for outline elements
-function select_outlines(doc) {
+function select_outline_elements(doc) {
   const outlines = [];
 
   // Unsure why accessing document.body yields undefined. I believe this is
@@ -150,9 +138,7 @@ function select_outlines(doc) {
     return outlines;
   }
 
-  // This walks explicitly because its too hard to restrict depth on
-  // querySelectorAll and I want to be more strict.
-
+  // This is more strict than querySelectorAll
   for(let el = body.firstElementChild; el; el = el.nextElementSibling) {
     if(el.localName === 'outline') {
       outlines.append(el);
@@ -161,54 +147,51 @@ function select_outlines(doc) {
   return outlines;
 }
 
-// Filters outlines that do not represent feeds according to the type
-// attribute
-function filter_non_feed_outlines(outlines) {
+function create_outline_object(element) {
+  console.assert(element);
+  console.assert(element.localName === 'outline');
+  return {
+    'description': outline.getAttribute('description'),
+    'link': outline.getAttribute('htmlUrl'),
+    'text': outline.getAttribute('text'),
+    'title': outline.getAttribute('title'),
+    'type': outline.getAttribute('type'),
+    'url': outline.getAttribute('xmlUrl')
+  };
+}
 
+function outline_has_valid_type(outline) {
+  const type = outline.type;
   // The length check here is a bit pedantic, I am trying to reduce the calls
   // to the regex
-
-  return outlines.filter(function(outline) {
-    const type = outline.getAttribute('type');
-    return type && type.length > 2 && /rss|rdf|feed/i.test(type);
-  });
+  return type && type.length > 2 && /rss|rdf|feed/i.test(type);
 }
 
-function filter_outlines_without_urls(outlines) {
-  return outlines.filter(function(outline) {
-    const url = outline.getAttribute('xmlUrl');
-    return url && url.trim();
-  });
+function outline_has_url(outline) {
+  return outline.url && outline.url.trim();
 }
 
-function filter_outlines_with_invalid_urls(outlines) {
-  return outlines.filter(function(outline) {
-    try {
-      new URL(outline.getAttribute('xmlUrl'));
-      return true;
-    } catch(error) {}
-    return false;
-  });
+function deserialize_outline_url(outline) {
+  try {
+    outline.url_object = new URL(outline.url);
+  } catch(error) {
+  }
+}
+
+function outline_has_url_object(outline) {
+  return 'url_object' in outline;
 }
 
 function filter_duplicate_outlines(input_outlines) {
-
   const output_outlines = [];
-  const seen = new Set();
-
-  // TODO: i could probably still use filter here with a closure
-
-  // NOTE: this uses url objects because accessing url.href normalizes the
-  // url for us, and i want to compare the normalized versions of urls
+  // I don't think there is much value in using a set here
+  const seen = [];
 
   for(let outline of input_outlines) {
-    // Never throws because caller checked validity in prior function
-    const url = new URL(outline.getAttribute('xmlUrl'));
-
-    // If we haven't seen it yet, add it to the set and the output
-    if(!seen.has(url.href)) {
-      seen.add(url.href);
-      output.push(outline);
+    const url = outline.url_object.href;
+    if(!seen.includes(url)) {
+      seen.push(url);
+      output_outlines.push(outline);
     }
   }
 
@@ -216,40 +199,23 @@ function filter_duplicate_outlines(input_outlines) {
 }
 
 function create_feed_from_outline(outline) {
-  // Create a Feed object
   const feed = new Feed();
-
-  // Never throws because checked in prior call
-  const xml_url = new URL(outline.getAttribute('xmlUrl'));
-  feed.add_url(xml_url);
-
-  feed.type = outline.getAttribute('type');
-
-  feed.title = outline.getAttribute('title');
-  if(!feed.title) {
-    feed.title = outline.getAttribute('text');
-  }
-
-  feed.description = outline.getAttribute('description');
-
-  const html_url_string = outline.getAttribute('htmlUrl');
-  if(html_url_string) {
+  feed.add_url(outline.url_object);
+  feed.type = outline.type;
+  feed.title = outline.title || outline.text;
+  feed.description = outline.description;
+  if(outline.link) {
     try {
-      feed.link = new URL(html_url_string);
+      feed.link = new URL(outline.link);
     } catch(error) {
     }
   }
-
   return feed;
 }
 
 function on_file_processed(file) {
   console.debug('Processed file "%s"', file.name);
-
-  // This can only be incremented here because this function is called either
-  // synchronously or asynchronously
   this.num_files_processed++;
-
   if(this.num_files_processed === this.uploader.files.length) {
     on_complete.call(this);
   }
@@ -274,5 +240,7 @@ function on_complete() {
     this.callback();
   }
 }
+
+this.import_opml_files = import_opml_files;
 
 } // End file block scope

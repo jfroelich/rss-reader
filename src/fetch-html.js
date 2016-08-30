@@ -6,7 +6,7 @@
 
 { // Begin file block scope
 
-this.fetch_html = function(request_url, timeout_ms, callback) {
+function fetch_html(request_url, timeout_ms, callback) {
   console.assert(request_url && request_url.href);
   console.log('GET', request_url.href);
 
@@ -52,5 +52,7 @@ function on_response(event) {
     'responseURL': new URL(event.target.responseURL)
   });
 }
+
+this.fetch_html = fetch_html;
 
 } // End file block scope

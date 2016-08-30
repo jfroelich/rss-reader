@@ -6,7 +6,7 @@
 
 { // Begin file block scope
 
-this.fade_element = function(element, duration, delay, callback) {
+function fade_element(element, duration, delay, callback) {
   const style = element.style;
 
   if(style.display === 'none') {
@@ -26,11 +26,13 @@ this.fade_element = function(element, duration, delay, callback) {
   // property duration function delay
   style.transition = 'opacity ' + duration + 's ease ' + delay + 's';
   style.opacity = style.opacity === '1' ? '0' : '1';
-};
+}
 
 function on_end(callback, event) {
   event.target.removeEventListener('webkitTransitionEnd', on_end);
   callback(event.target);
 }
+
+this.fade_element = fade_element;
 
 } // End file block scope

@@ -23,7 +23,7 @@ const INLINE_SELECTOR = INLINE_ELEMENTS.join(',');
 // similar cases. This only looks at the closest inline ancestor. However I
 // don't think it is too important to achieve perfect accuracy here. This is
 // simply an attempt to reduce some ugliness in the view.
-this.adjust_block_inline_elements = function(document) {
+function adjust_block_inline_elements(document) {
   const blocks = document.querySelectorAll(BLOCK_SELECTOR);
   const num_blocks = blocks.length;
   // Not using for..of due to V8 deopt warning about try/catch
@@ -44,6 +44,8 @@ this.adjust_block_inline_elements = function(document) {
       block.appendChild(ancestor);
     }
   }
-};
+}
+
+this.adjust_block_inline_elements = adjust_block_inline_elements;
 
 } // End file block scope

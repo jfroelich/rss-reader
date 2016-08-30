@@ -20,7 +20,7 @@ const HIDDEN_SELECTOR = [
 // The contains check avoids removing nodes in detached subtrees. Elements are
 // unwrapped instead of specifically removed to avoid removing valuable
 // content in the case of documents wrapped in a hidden div or similar.
-this.filter_hidden_elements = function(doc) {
+function filter_hidden_elements(doc) {
   const elements = doc.querySelectorAll(HIDDEN_SELECTOR);
   const doc_el = doc.documentElement;
 
@@ -34,6 +34,8 @@ this.filter_hidden_elements = function(doc) {
       unwrap_element(element);
     }
   }
-};
+}
+
+this.filter_hidden_elements = filter_hidden_elements;
 
 } // End file block scope

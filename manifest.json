@@ -26,6 +26,8 @@
       "/src/filter-control-chars.js",
       "/src/filter-sourceless-images.js",
       "/src/filter-tracking-images.js",
+      "/src/html/replace-html.js",
+      "/src/html/truncate-html.js",
       "/src/is-fetch-resistant.js",
       "/src/merge-feeds.js",
       "/src/notify.js",
@@ -35,7 +37,6 @@
       "/src/parse-feed.js",
       "/src/parse-xml.js",
       "/src/poll-feeds.js",
-      "/src/replace-html.js",
       "/src/resolve-document-urls.js",
       "/src/rewrite-url.js",
       "/src/sanitize-entry.js",
@@ -45,7 +46,6 @@
       "/src/serialize-srcset.js",
       "/src/set-image-dimensions.js",
       "/src/transform-lazy-images.js",
-      "/src/truncate-html.js",
       "/src/update-badge.js",
       "/src/update-feed.js"
     ]

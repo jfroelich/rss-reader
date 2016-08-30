@@ -40,7 +40,6 @@ function open_cursor_onerror(event) {
 function open_cursor_onsuccess(event) {
   const cursor = event.target.result;
   if(cursor) {
-
     const feed = deserialize_feed(cursor.value);
     this.feeds.push(feed);
     cursor.continue();
@@ -59,7 +58,6 @@ function on_get_feeds() {
 
   // I do not know why using doc.body yields undefined
   const body = doc.querySelector('body');
-
   for(let outline of outlines) {
     body.appendChild(outline);
   }

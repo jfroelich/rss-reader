@@ -13,7 +13,6 @@ function filter_anchor_elements(document) {
   for(let i = 0, len = anchors.length; i < len; i++) {
     const anchor = anchors[i];
     const href = anchor.getAttribute('href');
-
     if(!href && !anchor.hasAttribute('name')) {
       unwrap_element(anchor);
     } else if(href && href.length > 11 && /^\s*javascript:/i.test(href)) {

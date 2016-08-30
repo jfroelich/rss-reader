@@ -6,13 +6,10 @@
 
 { // Begin file block scope
 
-this.filter_boilerplate = function(document) {
+function filter_boilerplate(document) {
   let best_el = find_high_element(document);
-
-  if(best_el !== document.documentElement) {
-    prune(document, best_el);
-  }
-};
+  prune(document, best_el);
+}
 
 // Returns a measure indicating whether the element contains boilerplate or
 // content based on its text. Elements with a large amount of text are
@@ -317,6 +314,14 @@ function find_img_caption(image) {
 // TODO: this should be a general purpose function named something like
 // filterNonIntersectingElements, and it should be in its own file
 function prune(document, best_el) {
+
+  console.assert(document);
+  console.assert(best_el);
+
+  if(best_el === document.documentElement) {
+    return;
+  }
+
   if(!document.body) {
     return;
   }
@@ -330,5 +335,7 @@ function prune(document, best_el) {
     }
   }
 }
+
+this.filter_boilerplate = filter_boilerplate;
 
 } // End file block scope

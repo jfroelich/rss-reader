@@ -6,8 +6,8 @@
 
 { // Begin file block scope
 
-// @param limit max n rows to inspect
-this.filter_table_elements = function(document, limit) {
+// @param limit max number of rows to inspect
+function filter_table_elements(document, limit) {
   const tables = document.querySelectorAll('table');
   for(let i = 0, len = tables.length; i < len; i++) {
     const table = tables[i];
@@ -15,7 +15,7 @@ this.filter_table_elements = function(document, limit) {
       unwrap_single_column_table(table);
     }
   }
-};
+}
 
 // A table is a single column unless it has any non-single column rows in
 // the first couple of rows
@@ -66,6 +66,8 @@ function unwrap_single_column_table(table) {
   const num_rows = rows.length;
   const table_parent = table.parentNode;
 
+  // TODO: only pad if adjacent to text node
+
   table_parent.insertBefore(document.createTextNode(' '), table);
 
   for(let i = 0; i < num_rows; i++) {
@@ -84,5 +86,7 @@ function unwrap_single_column_table(table) {
   table_parent.insertBefore(document.createTextNode(' '), table);
   table.remove();
 }
+
+this.filter_table_elements = filter_table_elements;
 
 } // End file block scope

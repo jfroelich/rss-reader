@@ -12,7 +12,7 @@
 
 const SELECTOR = ['code', 'pre', 'ruby', 'textarea', 'xmp'].join(',');
 
-this.condense_text_node_whitespace = function(doc) {
+function condense_text_node_whitespace(doc) {
   const it = doc.createNodeIterator(doc.documentElement, NodeFilter.SHOW_TEXT);
   for(let node = it.nextNode(); node; node = it.nextNode()) {
 
@@ -42,6 +42,8 @@ this.condense_text_node_whitespace = function(doc) {
       }
     }
   }
-};
+}
+
+this.condense_text_node_whitespace = condense_text_node_whitespace;
 
 } // End file block scope

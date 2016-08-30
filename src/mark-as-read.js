@@ -6,13 +6,13 @@
 
 { // Begin file block scope
 
-this.mark_as_read = function(entry_id, callback) {
-  console.assert(typeof entry_id === 'number');
+function mark_as_read(entry_id, callback) {
+  console.assert(!isNaN(entry_id));
   console.assert(isFinite(entry_id));
   console.assert(entry_id > 0);
   const context = {'entry_id': entry_id, 'callback': callback};
   open_db(on_open_db.bind(context));
-};
+}
 
 function on_open_db(connection) {
   if(!connection) {
@@ -80,5 +80,7 @@ function on_complete(event_type_str) {
     });
   }
 }
+
+this.mark_as_read = mark_as_read;
 
 } // End file block scope

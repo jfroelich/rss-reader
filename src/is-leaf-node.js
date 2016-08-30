@@ -24,7 +24,7 @@ const EXCEPTIONS = {
 // it is a named exception, contains a non-whitespace-only text node, or
 // contains at least one non-leaf child element.
 // Recursive
-this.is_leaf_node = function(node) {
+function is_leaf_node(node) {
   switch(node.nodeType) {
     case Node.ELEMENT_NODE:
       if(node.localName in EXCEPTIONS) {
@@ -46,6 +46,8 @@ this.is_leaf_node = function(node) {
   }
 
   return true;
-};
+}
+
+this.is_leaf_node = is_leaf_node;
 
 } // End file block scope

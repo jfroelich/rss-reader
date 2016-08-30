@@ -12,7 +12,7 @@ const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
 // Iterates over unarchived entries and archives older read entries
 // @param expires {number} an entry is archivable if older than this.
 // if not set, a default value of 10 days is used.
-this.archive_entries = function(expires) {
+function archive_entries(expires) {
   console.log('Archiving entries...');
 
   // Create a shared context for simple sharing of state across function
@@ -32,7 +32,7 @@ this.archive_entries = function(expires) {
   }
 
   open_db(on_open_db.bind(context));
-};
+}
 
 function on_open_db(db) {
   if(!db) {
@@ -64,17 +64,9 @@ function open_cursor_onsuccess(event) {
   // whether the entry will be modified.
   this.num_processed++;
 
-  // NOTE: no longer deserializing and reserializing
-  //const entry = deserialize_entry(cursor.value);
-
   const entry = cursor.value;
-
   const terminal_url_string = get_entry_terminal_url(entry);
-  // All entries should have a terminal url
   console.assert(terminal_url_string);
-
-  // All entries stored in the database should have a dateCreated property set.
-  // If not, then this will crash with the call to getTime below.
   console.assert(entry.dateCreated);
 
   // Entries should never have been created in the future. If so, age will be
@@ -138,7 +130,6 @@ function entry_to_archivable(input_entry) {
   // Does not assume the entry has been read, so cannot assume that dateRead
   // is set. If not set then do not create a property with a null value.
   if(input_entry.dateRead) {
-    //output_entry.dateRead = clone_date(input_entry.dateRead);
     // There is no need to clone because this function is only ever used in a
     // known context.
     output_entry.dateRead = input_entry.dateRead;
@@ -183,22 +174,6 @@ function on_complete() {
   }
 }
 
-// Copies the values of the array into a new array. This is shallow, meaning
-// that there is no guarantee the items in the array are also cloned themselves,
-// just the array itself. If the array contains mutable values then this should
-// not be used because it is subject to side effects.
-// This function is no longer in use.
-
-//function shallow_clone_array(array) {
-  // Assert an array is always provided. Do not assert length.
-//  console.assert(array);
-  // Use the new ES6 spread operator.
-//  return [...array];
-//}
-
-// This function is no longer in use, will delete
-//function clone_date(date) {
-//  return new Date(date.getTime());
-//}
+this.archive_entries = archive_entries;
 
 } // End file block scope
