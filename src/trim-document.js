@@ -6,7 +6,7 @@
 
 { // Begin file block scope
 
-this.trim_document = function(document) {
+function trim_document(document) {
   const body = document.body;
   if(!body) {
     return;
@@ -20,7 +20,7 @@ this.trim_document = function(document) {
       step(last_child, 'previousSibling');
     }
   }
-};
+}
 
 const TRIMMABLE_ELEMENTS = {
   'br': 1,
@@ -41,5 +41,7 @@ function step(start_node, prop_name) {
     node = sibling;
   }
 }
+
+this.trim_document = trim_document;
 
 } // End file block scope

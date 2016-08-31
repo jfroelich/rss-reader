@@ -6,26 +6,26 @@
 
 { // Begin file scope
 
-this.update_badge = function(db) {
+function update_badge(db) {
   const context = {'db': db, 'text': '?'};
   if(db) {
-    count.call(context);
+    count_unread.call(context);
   } else {
     open_db(on_open_db.bind(context));
   }
-};
+}
 
 function on_open_db(db) {
   if(db) {
     this.db = db;
     this.shouldClose = true;
-    count.call(this);
+    count_unread.call(this);
   } else {
     on_complete.call(this);
   }
 }
 
-function count() {
+function count_unread() {
   const transaction = this.db.transaction('entry');
   const store = transaction.objectStore('entry');
   const index = store.index('readState');
@@ -56,5 +56,7 @@ function on_complete() {
     this.db.close();
   }
 }
+
+this.update_badge = update_badge;
 
 } // End file scope

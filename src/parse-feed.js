@@ -7,7 +7,7 @@
 { // Begin file block scope
 
 // Returns an event-like object with properties feed and entries.
-this.parse_feed = function(document, exclude_entries) {
+function parse_feed(document, exclude_entries) {
   console.assert(document, 'document is required');
 
   const doc_el = document.documentElement;
@@ -41,7 +41,7 @@ this.parse_feed = function(document, exclude_entries) {
     'feed': feed,
     'entries': entries
   };
-};
+}
 
 function find_channel(doc_el) {
   if(doc_el.matches('feed')) {
@@ -346,5 +346,7 @@ function find_child_element_text(element, local_name) {
     }
   }
 }
+
+this.parse_feed = parse_feed;
 
 } // End file block scope

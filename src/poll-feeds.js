@@ -8,7 +8,9 @@
 
 // @param force_reset_lock {boolean} if true then polling continues even when
 // locked
-this.poll_feeds = function(force_reset_lock, allow_metered) {
+// @param allow_metered {boolean} if true then allow polling to continue on a
+// metered connection
+function poll_feeds(force_reset_lock, allow_metered) {
   console.log('Checking for new articles...');
 
   const context = {'num_feeds_pending': 0, 'connection': null};
@@ -47,7 +49,7 @@ this.poll_feeds = function(force_reset_lock, allow_metered) {
   } else {
     open_db(on_open_db.bind(context));
   }
-};
+}
 
 function on_query_idle(state) {
   if(state === 'locked' || state === 'idle') {
@@ -353,5 +355,7 @@ function release_lock() {
 function is_locked() {
   return 'POLL_IS_ACTIVE' in localStorage;
 }
+
+this.poll_feeds = poll_feeds;
 
 } // End file block scope

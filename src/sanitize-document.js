@@ -6,12 +6,11 @@
 
 { // Begin file block scope
 
-
 // Applies a series of filters to a document. Modifies the document
 // in place. The filters are applied in a preset order so as to minimize the
 // work done by each sequential step, and to ensure proper handling of
 // things like frameset elements.
-this.sanitize_document = function(document) {
+function sanitize_document(document) {
   filter_comment_nodes(document);
   filter_frames(document);
   filter_noscripts(document);
@@ -33,7 +32,7 @@ this.sanitize_document = function(document) {
   filter_hr_elements(document);
   trim_document(document);
   filter_element_attributes(document);
-};
+}
 
 // todo; should be part of some normalize whitespace general function?
 function filter_hair_spaces(document) {
@@ -105,5 +104,7 @@ function filter_figures(document) {
     }
   }
 }
+
+this.sanitize_document = sanitize_document;
 
 } // End file block scope

@@ -9,7 +9,7 @@
 // @param feed {Feed}
 // @param options {Object} optional object containing optional callback
 // and optional open connection
-this.subscribe = function(feed, options) {
+function subscribe(feed, options) {
   console.assert(feed);
   console.assert(feed.has_url());
   console.log('Subscribing to', feed.get_url().toString());
@@ -18,21 +18,21 @@ this.subscribe = function(feed, options) {
     'feed': feed,
     'did_subscribe': false,
     'callback': options ? options.callback : null,
-    'connection': options ? options.connection : null,
+    'db': options ? options.connection : null,
     'should_close': false,
     'no_notify': options ? options.suppressNotifications : false
   };
 
-  if(context.connection) {
+  if(context.db) {
     find_feed.call(context);
   } else {
     open_db(on_open_db.bind(context));
   }
-};
+}
 
-function on_open_db(connection) {
-  if(connection) {
-    this.connection = connection;
+function on_open_db(db) {
+  if(db) {
+    this.db = db;
     this.should_close = true;
     find_feed.call(this);
   } else {
@@ -55,7 +55,7 @@ function on_open_db(connection) {
 function find_feed() {
   const url_string = this.feed.get_url().toString();
   console.debug('Checking if subscribed to', url_string);
-  const transaction = this.connection.transaction('feed');
+  const transaction = this.db.transaction('feed');
   const store = transaction.objectStore('feed');
   const index = store.index('urls');
   const request = index.get(url_string);
@@ -122,7 +122,7 @@ function add_feed(feed, callback) {
   // also check if feed was ever polled (e.g. has dateUpdated field set)
   delete serialized_feed.dateLastModified;
 
-  const transaction = this.connection.transaction('feed', 'readwrite');
+  const transaction = this.db.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.add(serialized_feed);
   if(callback) {
@@ -152,8 +152,8 @@ function on_add_feed(event) {
 }
 
 function on_complete(event) {
-  if(this.should_close && this.connection) {
-    this.connection.close();
+  if(this.should_close && this.db) {
+    this.db.close();
   }
 
   if(!this.no_notify && this.did_subscribe) {
@@ -170,5 +170,7 @@ function on_complete(event) {
     this.callback(event);
   }
 }
+
+this.subscribe = subscribe;
 
 } // End file block scope

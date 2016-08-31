@@ -8,7 +8,7 @@
 
 // Set the width and height attributes of image elements. Calls back
 // with the number of images modified.
-this.set_image_dimensions = function(document, callback) {
+function set_image_dimensions(document, callback) {
 
   console.assert(document);
   console.assert(callback);
@@ -35,7 +35,7 @@ this.set_image_dimensions = function(document, callback) {
     // Ensure we still callback in the case of no images
     callback(context.num_modified);
   }
-};
+}
 
 function process_img(context, image) {
   // Skip images with at least one dimension
@@ -156,5 +156,7 @@ function on_process_img(context) {
     context.callback(context.num_modified);
   }
 }
+
+this.set_image_dimensions = set_image_dimensions;
 
 } // End file block scope

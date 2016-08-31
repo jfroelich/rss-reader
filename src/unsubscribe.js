@@ -6,7 +6,7 @@
 
 { // Begin file block scope
 
-this.unsubscribe = function(feed_id, callback) {
+function unsubscribe(feed_id, callback) {
   console.debug('Unsubscribing from', feed_id);
   console.assert(feed_id);
   console.assert(!isNaN(feed_id));
@@ -19,7 +19,7 @@ this.unsubscribe = function(feed_id, callback) {
   };
 
   open_db(on_open_db.bind(context));
-};
+}
 
 function on_open_db(connection) {
   if(connection) {
@@ -39,14 +39,18 @@ function open_entry_cursor_onsuccess(event) {
   const cursor = event.target.result;
   if(cursor) {
     const entry = cursor.value;
-    cursor.delete(); // async
+
+    // Async
+    cursor.delete();
     this.num_delete_entry_requests++;
 
     // Async
     chrome.runtime.sendMessage({
-      'type': 'entryDeleteRequested',
+      'type': 'delete_entry_requested',
       'entryId': entry.id
     });
+
+    // Async
     cursor.continue();
   } else {
     on_remove_entries.call(this);
@@ -104,5 +108,7 @@ function on_complete(event_type) {
     });
   }
 }
+
+this.unsubscribe = unsubscribe;
 
 } // End file block scope

@@ -9,7 +9,7 @@
 // @param connection {IDBDatabase} an open database connection
 // @param feed {Feed} the Feed instance to put into the database
 // @param callback {function} optional callback function
-this.update_feed = function(connection, feed, callback) {
+function update_feed(connection, feed, callback) {
   console.assert(feed);
   console.assert(feed.get_url());
   console.debug('Updating feed', feed.get_url().toString());
@@ -33,7 +33,7 @@ this.update_feed = function(connection, feed, callback) {
     console.error(serialized_feed.urls, error);
     callback({'type': 'error', 'feed': feed, 'error': error});
   }
-};
+}
 
 function on_put_success(callback, feed, event) {
   callback({'type': 'success', 'feed': feed});
@@ -43,5 +43,7 @@ function on_put_error(callback, feed, event) {
   console.error(event.target.error);
   callback({'type': 'error', 'feed': feed});
 }
+
+this.update_feed = update_feed;
 
 } // End file block scope

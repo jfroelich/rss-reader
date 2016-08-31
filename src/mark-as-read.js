@@ -70,13 +70,10 @@ function on_complete(event_type_str) {
     this.connection.close();
   }
 
-  // Note the callback event uses camel case because that is currently
-  // what callers expect
-
   if(this.callback) {
     this.callback({
       'type': event_type_str,
-      'entryId': this.entry_id
+      'entry_id': this.entry_id
     });
   }
 }

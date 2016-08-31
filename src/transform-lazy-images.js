@@ -22,23 +22,30 @@ const LAZY_ATTRIBUTES = [
   'data-default-src'
 ];
 
-this.transform_lazy_images = function(document) {
+function transform_lazy_images(document) {
   const images = document.querySelectorAll('img');
-  for(let image of images) {
-    if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
-      for(let alt_name of LAZY_ATTRIBUTES) {
-        if(image.hasAttribute(alt_name)) {
-          const alt_value = image.getAttribute(alt_name);
-          if(alt_value && is_valid_url(alt_value)) {
-            image.removeAttribute(alt_name);
-            image.setAttribute('src', alt_value);
-            return;
-          }
-        }
+  for(let img of images) {
+    transform_lazy_img(img);
+  }
+}
+
+function transform_lazy_img(img) {
+
+  if(img.hasAttribute('src') || img.hasAttribute('srcset')) {
+    return;
+  }
+
+  for(let alt_name of LAZY_ATTRIBUTES) {
+    if(img.hasAttribute(alt_name)) {
+      const alt_value = img.getAttribute(alt_name);
+      if(alt_value && is_valid_url(alt_value)) {
+        img.removeAttribute(alt_name);
+        img.setAttribute('src', alt_value);
+        return;
       }
     }
   }
-};
+}
 
 // Only minimal validation. I cannot fully validate its url, because the url
 // could be relative
@@ -47,5 +54,7 @@ this.transform_lazy_images = function(document) {
 function is_valid_url(input_str) {
   return !input_str.trim().includes(' ');
 }
+
+this.transform_lazy_images = transform_lazy_images;
 
 } // End file block scope

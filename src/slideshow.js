@@ -14,7 +14,7 @@ chrome.runtime.onMessage.addListener(function(message) {
     case 'poll_completed':
       maybe_append_slides();
       break;
-    case 'entryDeleteRequested':
+    case 'delete_entry_requested':
       break;
     case 'archive_entry_pending':
       break;

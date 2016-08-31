@@ -9,13 +9,13 @@
 const name = 'reader';
 const version = 20;
 
-this.open_db = function(callback) {
+function open_db(callback) {
   const request = indexedDB.open(name, version);
   request.onupgradeneeded = upgrade;
   request.onsuccess = on_success.bind(request, callback);
   request.onerror = on_error.bind(request, callback);
   request.onblocked = on_blocked.bind(request, callback);
-};
+}
 
 function on_success(callback, event) {
   callback(event.target.result);
@@ -121,5 +121,7 @@ function upgrade(event) {
     });
   }
 }
+
+this.open_db = open_db;
 
 } // End file block scope

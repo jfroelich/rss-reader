@@ -6,15 +6,8 @@
 
 { // Begin file block scope
 
-this.resolve_document_urls = function(document, baseURL) {
-  for(let base of document.querySelectorAll('base')) {
-    base.remove();
-  }
-
-  resolve_elements(document, baseURL);
-  resolve_srcsets(document, baseURL);
-};
-
+// TODO: I should revert to using localName below and the keys in this map
+// should be lower case. This avoids the call to toUpperCase.
 const URL_ATTRIBUTE_MAP = {
   'A': 'href',
   'APPLET': 'codebase',
@@ -47,56 +40,76 @@ const SELECTOR = Object.keys(URL_ATTRIBUTE_MAP).map(function(key) {
   return key + '[' + URL_ATTRIBUTE_MAP[key] +']';
 }).join(',');
 
-function resolve_elements(document, baseURL) {
+function resolve_document_urls(document, base_url) {
+  // Remove base elements so that base elements do not affect the UI
+  const bases = document.querySelectorAll('base');
+  for(let base of bases) {
+    base.remove();
+  }
+
   const elements = document.querySelectorAll(SELECTOR);
   for(let element of elements) {
-    const elementName = element.nodeName.toUpperCase();
+    remove_if_invalid(element);
+  }
 
-    const attributeName = URL_ATTRIBUTE_MAP[elementName];
-    if(!attributeName) {
-      continue;
-    }
+  for(let element of elements) {
+    resolve_element(element, base_url);
+  }
 
-    const attributeValue = element.getAttribute(attributeName);
-    if(!attributeValue) {
-      continue;
-    }
+  resolve_srcsets(document, base_url);
+}
 
-    // Filter a common pathological case
-    if(/^\s*https?:\/\/#/i.test(attributeValue)) {
+function remove_if_invalid(element) {
+  const name = element.nodeName.toUpperCase();
+  const attr = URL_ATTRIBUTE_MAP[name];
+  if(attr) {
+    const value = element.getAttribute(attr);
+    if(/^\s*https?:\/\/#/i.test(value)) {
       element.remove();
-      continue;
-    }
-
-    const resolvedURL = resolve_url(attributeValue, baseURL);
-    // TODO: inequality test is weak because it ignores spaces and
-    // is case sensitive, maybe make it stronger
-    if(resolvedURL && resolvedURL.href !== attributeValue) {
-      element.setAttribute(attributeName, resolvedURL.href);
     }
   }
 }
 
-function resolve_srcsets(document, baseURL) {
+function resolve_element(element, base_url) {
+  const element_name = element.nodeName.toUpperCase();
+  const attr_name = URL_ATTRIBUTE_MAP[element_name];
+  if(!attr_name) {
+    return;
+  }
+
+  const attr_url = element.getAttribute(attr_name);
+  if(!attr_url) {
+    return;
+  }
+
+  const resolved_url = resolve_url(attr_url, base_url);
+  // TODO: inequality test is weak because it ignores spaces and
+  // is case sensitive, maybe make it stronger
+  if(resolved_url && resolved_url.href !== attr_url) {
+    element.setAttribute(attr_name, resolved_url.href);
+  }
+}
+
+function resolve_srcsets(document, base_url) {
   const elements = document.querySelectorAll('img[srcset], source[srcset]');
   for(let element of elements) {
-    const attributeValue = element.getAttribute('srcset');
-    if(attributeValue) {
-      const srcset = parseSrcset(attributeValue);
+    const attr_url = element.getAttribute('srcset');
+    if(attr_url) {
+      const srcset = parseSrcset(attr_url);
       if(srcset && srcset.length) {
         let dirtied = false;
         for(let descriptor of srcset) {
-          const resolvedURL = resolve_url(descriptor.url, baseURL);
-          if(resolvedURL && resolvedURL.href !== descriptor.url) {
+          const resolved_url = resolve_url(descriptor.url, base_url);
+          if(resolved_url && resolved_url.href !== descriptor.url) {
             dirtied = true;
-            descriptor.url = resolvedURL.href;
+            descriptor.url = resolved_url.href;
           }
         }
 
         if(dirtied) {
-          const newSrcsetValue = serialize_srcset(srcset);
-          if(newSrcsetValue && newSrcsetValue !== attributeValue) {
-            element.setAttribute('srcset', newSrcsetValue);
+          const new_srcset_value = serialize_srcset(srcset);
+          if(new_srcset_value && new_srcset_value !== attr_url) {
+            element.setAttribute('srcset', new_srcset_value);
           }
         }
       }
@@ -104,16 +117,17 @@ function resolve_srcsets(document, baseURL) {
   }
 }
 
-function resolve_url(urlString, baseURL) {
-  console.assert(urlString);
-
-  if(!/^\s*javascript:/i.test(urlString) && !/^\s*data:/i.test(urlString)) {
+function resolve_url(url_string, base_url) {
+  console.assert(url_string);
+  if(!/^\s*javascript:/i.test(url_string) && !/^\s*data:/i.test(url_string)) {
     try {
-      return new URL(urlString, baseURL);
+      return new URL(url_string, base_url);
     } catch(error) {
-      console.warn(urlString, baseURL.href, error);
+      console.warn(url_string, base_url.href, error);
     }
   }
 }
+
+this.resolve_document_urls = resolve_document_urls;
 
 } // End file block scope

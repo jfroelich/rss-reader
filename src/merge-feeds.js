@@ -10,8 +10,7 @@
 // other feed take precedence, except for URLs, which are merged to generate a
 // distinct ordered set, where the other urls appear after this feed's urls.
 // No serialization or sanitization occurs.
-this.merge_feeds = function(this_feed, other_feed) {
-
+function merge_feeds(this_feed, other_feed) {
   // Clone to maintain purity. No operations here should affect this object or
   // the other_feed.
   const merged_feed = Object.assign(new Feed(), this_feed);
@@ -64,7 +63,7 @@ this.merge_feeds = function(this_feed, other_feed) {
   }
 
   return merged_feed;
-};
+}
 
 function clone_url(url) {
   return new URL(url.href);
@@ -73,5 +72,7 @@ function clone_url(url) {
 function clone_date(date) {
   return new Date(date.getTime());
 }
+
+this.merge_feeds = merge_feeds;
 
 } // End file block scope

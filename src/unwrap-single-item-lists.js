@@ -7,18 +7,6 @@
 { // Begin file block scope
 
 const LIST_SELECTOR = 'ul, ol, dl';
-
-// Scans for lists in the document that contain only a single item and then
-// replaces a list with the contents of its one item. Whitespace is added to
-// avoid normalization of adjacent text nodes.
-this.unwrap_single_item_lists = function(document) {
-  const lists = document.querySelectorAll(LIST_SELECTOR);
-  // Not using for..of to iterate over lists variable due to V8 deopt warning
-  for(let i = 0, len = lists.length; i < len; i++) {
-    unwrap_single_item_list(document, lists[i]);
-  }
-}
-
 // TODO: should i restrict test for dd to only in dl? maybe it's not too
 // important
 
@@ -26,6 +14,17 @@ this.unwrap_single_item_lists = function(document) {
 // experimenting again
 const ITEM_NAMES = {'li': 1, 'dt': 1, 'dd': 1};
 
+
+// Scans for lists in the document that contain only a single item and then
+// replaces a list with the contents of its one item. Whitespace is added to
+// avoid normalization of adjacent text nodes.
+function unwrap_single_item_lists(document) {
+  const lists = document.querySelectorAll(LIST_SELECTOR);
+  // Not using for..of to iterate over lists variable due to V8 deopt warning
+  for(let i = 0, len = lists.length; i < len; i++) {
+    unwrap_single_item_list(document, lists[i]);
+  }
+}
 
 // TODO: technically lists could have things like <form> and such, maybe
 // what I want to do is instead use list.querySelectorAll(items)? But that is
@@ -98,5 +97,7 @@ function unwrap_single_item_list(document, list) {
 function is_text(node) {
   return node && node.nodeType === Node.TEXT_NODE;
 }
+
+this.unwrap_single_item_lists = unwrap_single_item_lists;
 
 } // End file block scope

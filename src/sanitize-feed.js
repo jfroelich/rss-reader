@@ -6,9 +6,9 @@
 
 // Creates a new Feed object with cleaned fields. This checks for invalid values
 // and tries to minimize XSS vulnerables in html strings.
-function sanitize_feed(inputFeed) {
+function sanitize_feed(input_feed) {
   // Copy to maintain all the fields and purity
-  const feed = Object.assign(new Feed(), inputFeed);
+  const feed = Object.assign(new Feed(), input_feed);
 
   // If id is defined it should be a positive integer
   if(feed.id) {
@@ -44,10 +44,10 @@ function sanitize_feed(inputFeed) {
     description = description.replace(/\s+/, ' ');
 
     // Enforce a maximum storable length
-    const lengthBeforeTruncation = description.length;
+    const pre_trunc_len = description.length;
     const DESCRIPTION_MAX_LENGTH = 1024 * 10;
     description = truncate_html(description, DESCRIPTION_MAX_LENGTH, '');
-    if(lengthBeforeTruncation > description.length) {
+    if(pre_trunc_len > description.length) {
       console.warn('Truncated description', description);
     }
 

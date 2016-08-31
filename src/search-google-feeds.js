@@ -25,17 +25,17 @@ this.search_google_feeds = function(query, timeout_ms, callback) {
     (!isNaN(timeout_ms) && timeout_ms >= 0));
 
   const context = {
-    'urlString': null,
+    'url_str': null,
     'callback': callback,
-    'titleMaxLength': 200,
-    'contentSnippetMaxLength': 400,
-    'truncateReplacementString': ELLIPSIS
+    'title_max_len': 200,
+    'snippet_max_len': 400,
+    'replacement_str': ELLIPSIS
   };
 
 
-  const urlString = BASE_URL_STRING + encodeURIComponent(query);
-  console.debug('GET', urlString);
-  context.urlString = urlString;
+  const url_str = BASE_URL_STRING + encodeURIComponent(query);
+  console.debug('GET', url_str);
+  context.url_str = url_str;
 
   const async_flag = true;
   const request = new XMLHttpRequest();
@@ -45,7 +45,7 @@ this.search_google_feeds = function(query, timeout_ms, callback) {
   request.ontimeout = bound_on_response;
   request.onabort = bound_on_response;
   request.onload = bound_on_response;
-  request.open('GET', urlString, async_flag);
+  request.open('GET', url_str, async_flag);
   request.responseType = 'json';
   request.send();
 };
@@ -53,7 +53,7 @@ this.search_google_feeds = function(query, timeout_ms, callback) {
 function on_response(context, event) {
   // Assert that response is defined
   if(!event.target.response) {
-    console.warn('Response undefined for GET', context.urlString);
+    console.warn('Response undefined for GET', context.url_str);
     console.dir(event);
     context.callback({'type': 'UndefinedResponseError',
       'status': event.target.status});
@@ -62,7 +62,7 @@ function on_response(context, event) {
 
   // Check for a successful response
   if(event.type !== 'load') {
-    console.warn('GET', context.urlString, event.type, event.target.status,
+    console.warn('GET', context.url_str, event.type, event.target.status,
       event.target.response.responseDetails);
     callback({'type': event.type,
       'status': event.target.status,
@@ -73,7 +73,7 @@ function on_response(context, event) {
   // Validate the response data
   const data = event.target.response.responseData;
   if(!data) {
-    console.error('Undefined data for GET', context.urlString,
+    console.error('Undefined data for GET', context.url_str,
       event.target.response.responseDetails);
     callback({'type': 'UndefinedDataError',
       'message': event.target.response.responseDetails});
@@ -115,7 +115,7 @@ function on_response(context, event) {
       entry.title = filter_control_chars(entry.title);
       entry.title = replace_html(entry.title, '');
       entry.title = truncate_html(entry.title,
-        context.titleMaxLength);
+        context.title_max_len);
     }
 
     // Sanitize the result snippet
@@ -124,7 +124,7 @@ function on_response(context, event) {
         entry.contentSnippet);
       entry.contentSnippet = entry.contentSnippet.replace(/<br\s*>/gi, ' ');
       entry.contentSnippet = truncate_html(entry.contentSnippet,
-        context.contentSnippetMaxLength, context.truncateReplacementString);
+        context.snippet_max_len, context.replacement_str);
     }
 
     output_entries.push(entry);
