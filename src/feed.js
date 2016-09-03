@@ -158,10 +158,14 @@ this.update_feed = update_feed;
 { // Begin add_feed block scope
 
 function add_feed(feed, callback) {
+  // Because this feed will be added, it should not have an id
   console.assert(!feed.id);
+  // The feed should have a urls property with at least one url
   console.assert(feed.urls);
   console.assert(feed.urls.length);
+
   console.debug('Adding feed', get_feed_url(feed));
+
   const sanitized_feed = sanitize_feed(feed);
   sanitized_feed.dateCreated = new Date();
   const storable_feed = filter_undef_props(sanitized_feed);

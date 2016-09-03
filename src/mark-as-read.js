@@ -37,13 +37,13 @@ function open_cursor_onsuccess(event) {
   }
 
   const entry = cursor.value;
-  if(entry.readState === Entry.FLAGS.READ) {
+  if(entry.readState === ENTRY_FLAGS.READ) {
     console.error('Already read entry', this.entry_id);
     on_complete.call(this, 'AlreadyReadError');
     return;
   }
 
-  entry.readState = Entry.FLAGS.READ;
+  entry.readState = ENTRY_FLAGS.READ;
   const dateNow = new Date();
   entry.dateRead = dateNow;
   entry.dateUpdated = dateNow;

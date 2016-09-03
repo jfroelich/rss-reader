@@ -4,9 +4,14 @@
 
 'use strict';
 
+const ENTRY_FLAGS = {
+  'UNREAD': 0,
+  'READ': 1,
+  'UNARCHIVED': 0,
+  'ARCHIVED': 1
+};
+
 // Given an entry object, return the last url in its internal url chain.
-// The returned url will be a URL object for now, but in the future, once I
-// stop serialization, the returned url will be a string.
 // This function assumes that entry.urls is always a defined array with at
 // least one value. In general, an entry shouldn't exist without a url, or the
 // caller should never be calling this function at that point. It is the
@@ -55,7 +60,6 @@ function append_entry_url(entry, url_string) {
   // back to a string is what caused the normalization. This built in process
   // does several things, like remove default ports, lowercase hostname,
   // lowercase protocol, etc.
-  // Note that .href is synonymous with toString()
   const normalized_url_str = url_obj.href;
 
   // Check that the url does not already exist. entry.urls only contains
@@ -70,15 +74,7 @@ function append_entry_url(entry, url_string) {
   return true;
 }
 
-const Entry = {};
-Entry.FLAGS = {
-  UNREAD: 0,
-  READ: 1,
-  UNARCHIVED: 0,
-  ARCHIVED: 1
-};
-
-// Returns a new Entry instance where fields have been sanitized. This is a
+// Returns a new entry object where fields have been sanitized. This is a
 // pure function. The input entry is not modified. Object properties of the
 // input are cloned so that future changes to its properties have no effect on
 // the sanitized copy.
@@ -93,7 +89,7 @@ function sanitize_entry(input_entry) {
     let author = output_entry.author;
     author = filter_control_chars(author);
     author = replace_html(author, '');
-    //author = truncateHTML(author, MAX_AUTHOR_VALUE_LENGTH);
+    //author = truncate_html(author, MAX_AUTHOR_VALUE_LENGTH);
     output_entry.author = author;
   }
 
@@ -117,26 +113,31 @@ function sanitize_entry(input_entry) {
 
 { // Begin add_entry block scope
 
-function add_entry(connection, entry, callback) {
+// Add the entry to the database. Sets a few fields such as dateCreated.
+function add_entry(db, entry, callback) {
 
   const entry_url_str = get_entry_url(entry);
 
+  // The entry should be defined
   console.assert(entry);
+  // The entry should have at least one url
   console.assert(entry_url_str);
+
   console.debug('Storing', entry_url_str);
 
   const sanitized_entry = sanitize_entry(entry);
   const storable_entry = filter_undef_props(sanitized_entry);
-  storable_entry.readState = Entry.FLAGS.UNREAD;
-  storable_entry.archiveState = Entry.FLAGS.UNARCHIVED;
+  storable_entry.readState = ENTRY_FLAGS.UNREAD;
+  storable_entry.archiveState = ENTRY_FLAGS.UNARCHIVED;
   storable_entry.dateCreated = new Date();
 
   let tx = null;
   try {
-    tx = connection.transaction('entry', 'readwrite');
+    tx = db.transaction('entry', 'readwrite');
   } catch(error) {
     console.error(entry_url_str, error);
     callback({'type': 'create_tx_error', 'error': error});
+    return;
   }
 
   const store = tx.objectStore('entry');

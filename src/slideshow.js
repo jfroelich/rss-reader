@@ -60,7 +60,7 @@ function append_slides(oncomplete, is_first) {
       const transaction = connection.transaction('entry');
       const entryStore = transaction.objectStore('entry');
       const index = entryStore.index('archiveState-readState');
-      const key_path = [Entry.FLAGS.UNARCHIVED, Entry.FLAGS.UNREAD];
+      const key_path = [ENTRY_FLAGS.UNARCHIVED, ENTRY_FLAGS.UNREAD];
       const request = index.openCursor(key_path);
       request.onsuccess = on_open_cursor;
       request.onerror = on_open_cursor;

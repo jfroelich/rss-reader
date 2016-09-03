@@ -22,14 +22,12 @@
       "/src/feed.js",
       "/src/fetch-feed/fetch-feed.js",
       "/src/fetch-html.js",
-      "/src/filter-control-chars.js",
       "/src/filter-sourceless-images.js",
       "/src/filter-tracking-images.js",
-      "/src/filter-undef-props.js",
       "/src/html/replace-html.js",
       "/src/html/truncate-html.js",
       "/src/is-fetch-resistant.js",
-      "/src/show-desktop-notification.js",
+      "/src/notifications/show-desktop-notification.js",
       "/src/on-badge-click.js",
       "/src/on-installed.js",
       "/src/open-db.js",
@@ -41,7 +39,9 @@
       "/src/serialize-srcset.js",
       "/src/set-image-dimensions.js",
       "/src/transform-lazy-images.js",
-      "/src/update-badge.js"
+      "/src/update-badge.js",
+      "/src/utils/filter-control-chars.js",
+      "/src/utils/filter-undef-props.js"
     ]
   },
   "options_page": "options.html",

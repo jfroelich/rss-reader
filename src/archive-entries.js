@@ -46,7 +46,7 @@ function on_open_db(db) {
   const transaction = db.transaction('entry', 'readwrite');
   const store = transaction.objectStore('entry');
   const index = store.index('archiveState-readState');
-  const key_path = [Entry.FLAGS.UNARCHIVED, Entry.FLAGS.READ];
+  const key_path = [ENTRY_FLAGS.UNARCHIVED, ENTRY_FLAGS.READ];
   const request = index.openCursor(key_path);
   request.onsuccess = open_cursor_onsuccess.bind(this);
   request.onerror = open_cursor_onerror.bind(this);
@@ -115,7 +115,7 @@ function entry_to_archivable(input_entry) {
   const output_entry = {};
 
   // Flag the entry as archived so that it will not be scanned in the future
-  output_entry.archiveState = Entry.FLAGS.ARCHIVED;
+  output_entry.archiveState = ENTRY_FLAGS.ARCHIVED;
   // Introduce a new property representing the date the entry was archived.
   // This is the only place where this property is introduced.
   output_entry.dateArchived = new Date();
