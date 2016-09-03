@@ -7,11 +7,42 @@
 { // Begin file block scope
 
 const SELECTOR = [
-  'ABBR', 'ACRONYM', 'ARTICLE', 'ASIDE', 'CENTER', 'COLGROUP', 'DATA',
-  'DETAILS', 'DIV', 'FOOTER', 'HEADER', 'HELP', 'HGROUP', 'ILAYER',
-  'INSERT', 'LAYER', 'LEGEND', 'MAIN', 'MARK', 'MARQUEE', 'METER',
-  'MULTICOL', 'NOBR', 'SECTION', 'SPAN', 'TBODY', 'TFOOT', 'THEAD', 'FORM',
-  'LABEL', 'BIG', 'BLINK', 'FONT', 'PLAINTEXT', 'SMALL', 'TT'
+  'abbr',
+  'acronym',
+  'article',
+  'aside',
+  'center',
+  'colgroup',
+  'data',
+  'details',
+  'div',
+  'footer',
+  'header',
+  'help',
+  'hgroup',
+  'ilayer',
+  'insert',
+  'layer',
+  'legend',
+  'main',
+  'mark',
+  'marquee',
+  'meter',
+  'multicol',
+  'nobr',
+  'section',
+  'span',
+  'tbody',
+  'tfoot',
+  'thead',
+  'form',
+  'label',
+  'big',
+  'blink',
+  'font',
+  'plaintext',
+  'small',
+  'tt'
 ].join(',');
 
 function filter_unwrappable_elements(document) {

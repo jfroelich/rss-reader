@@ -229,6 +229,7 @@ function on_find_entry(feed, entry, callback, event) {
   // with things like advertisement interception or full javascript. While these
   // documents can be fetched, there is no point to doing so.
   if(is_fetch_resistant(entry_url_obj)) {
+    prepare_local_entry_doc(entry);
     add_entry(this.connection, entry, callback);
     return;
   }
@@ -241,6 +242,7 @@ function on_find_entry(feed, entry, callback, event) {
   const path = entry_url_obj.pathname;
   const min_len = '/a.pdf'.length;
   if(path && path.length > min_len && /\.pdf$/i.test(path)) {
+    prepare_local_entry_doc(entry);
     add_entry(this.connection, entry, callback);
     return;
   }
@@ -252,6 +254,7 @@ function on_find_entry(feed, entry, callback, event) {
 
 function on_fetch_entry(entry, callback, event) {
   if(event.type !== 'success') {
+    prepare_local_entry_doc(entry);
     add_entry(this.connection, entry, callback);
     return;
   }
@@ -270,6 +273,7 @@ function on_fetch_entry(entry, callback, event) {
   // - i should be querying against the redirect url
 
   const doc = event.document;
+
   transform_lazy_images(doc);
   filter_sourceless_images(doc);
   resolve_document_urls(doc, event.responseURL);
@@ -279,12 +283,33 @@ function on_fetch_entry(entry, callback, event) {
 }
 
 function on_set_image_dimensions(entry, document, callback, num_modified) {
-  const content = document.documentElement.outerHTML.trim();
-  if(content) {
-    entry.content = content;
+  console.assert(document);
+  prepare_doc(document);
+  entry.content = document.documentElement.outerHTML.trim();
+  add_entry(this.connection, entry, callback);
+}
+
+function prepare_doc(doc) {
+  filter_boilerplate(doc);
+  sanitize_document(doc);
+  add_no_referrer_to_anchors(doc);
+}
+
+function prepare_local_entry_doc(entry) {
+  if(!entry.content) {
+    return;
   }
 
-  add_entry(this.connection, entry, callback);
+  // Clean the current entry content
+  const parser = new DOMParser();
+  try {
+    const doc = parser.parseFromString(entry.content, 'text/html');
+    console.assert(!doc.querySelector('parsererror'));
+    prepare_doc(doc);
+    entry.content = doc.documentElement.outerHTML.trim();
+  } catch(error) {
+    console.warn(error);
+  }
 }
 
 function on_entry_processed(feed_context, event) {

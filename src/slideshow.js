@@ -185,9 +185,7 @@ function append_slide(entry, is_first) {
 
   const parser = new DOMParser();
   const entry_doc = parser.parseFromString(entry.content, 'text/html');
-  filter_boilerplate(entry_doc);
-  sanitize_document(entry_doc);
-  add_no_referrer_to_anchors(entry_doc);
+  console.assert(!entry_doc.querySelector('parsererror'));
   const entry_body = entry_doc.body || entry_doc.documentElement;
   move_child_nodes(entry_body, content);
   slide.appendChild(content);
