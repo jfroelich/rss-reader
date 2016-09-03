@@ -313,7 +313,7 @@ function on_complete() {
     return;
   }
 
-  notify('Updated articles', 'Completed checking for new articles');
+  show_desktop_notification('Updated articles', 'Completed checking for new articles');
   if(this.connection) {
     this.connection.close();
   }

@@ -138,7 +138,7 @@ function on_complete(event) {
     // TODO: the notification should probably use the feed's favicon if
     // available, and only then fall back
     const display_string = event.feed.title ||  get_feed_url(event.feed);
-    notify('Subscription complete', 'Subscribed to ' + display_string);
+    show_desktop_notification('Subscription complete', 'Subscribed to ' + display_string);
   }
 
   if(this.callback) {

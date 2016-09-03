@@ -87,7 +87,7 @@ function open_cursor_onsuccess(event) {
     // Async request that indexedDB replace the old object with the new object
     cursor.update(archived_entry);
 
-    // Async notify other windows that the entry was archived. This only
+    // Async show_desktop_notification other windows that the entry was archived. This only
     // exposes id so as to minimize surface area, and to reduce the size of the
     // message sent. I don't think any listeners need any more information than
     // this.

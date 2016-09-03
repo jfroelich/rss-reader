@@ -755,12 +755,12 @@ function unsub_btn_onclick(event) {
   }
 }
 
-// TODO: needs to notify the user of a successful
+// TODO: needs to show_desktop_notification the user of a successful
 // import. In the UI and maybe in a notification. Maybe also combine
 // with the immediate visual feedback (like a simple progress monitor
 // popup but no progress bar). The monitor should be hideable. No
 // need to be cancelable.
-// TODO: notify the user if there was an error
+// TODO: show_desktop_notification the user if there was an error
 // TODO: give immediate visual feedback the import started
 // TODO: switch to a different section of the options ui on complete?
 function import_opml_btn_onclick(event) {
