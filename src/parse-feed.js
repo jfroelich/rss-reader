@@ -20,7 +20,7 @@ function parse_feed(document, exclude_entries) {
     throw new Error('Missing channel element');
   }
 
-  const feed = new Feed();
+  const feed = {};
 
   feed.type = get_feed_type(doc_el);
   feed.title = find_child_element_text(channel, 'title');
@@ -159,7 +159,7 @@ function find_feed_link(channel) {
 
   if(link_text) {
     try {
-      return new URL(link_text);
+      return new URL(link_text).href;
     } catch(exception) {
       console.debug(exception);
     }
@@ -169,7 +169,7 @@ function find_feed_link(channel) {
 function create_entry(feedDatePublished, entry_el) {
   const is_atom = entry_el.ownerDocument.documentElement.matches('feed');
 
-  const entry = new Entry();
+  const entry = {};
 
   const title = find_child_element_text(entry_el, 'title');
   if(title) {
@@ -184,7 +184,7 @@ function create_entry(feedDatePublished, entry_el) {
   // Set the link url as the entry's initial url
   const entry_link_url = find_entry_link(entry_el);
   if(entry_link_url) {
-    entry.add_url(entry_link_url);
+    append_entry_url(entry, entry_link_url);
   }
 
   const entry_pub_date = find_entry_date_published(entry_el);
@@ -213,7 +213,7 @@ function create_entry(feedDatePublished, entry_el) {
     let enclosure_url = null;
     if(enclosure_url_string) {
       try {
-        enclosure_url = new URL(enclosure_url_string);
+        enclosure_url = new URL(enclosure_url_string).href;
       } catch(exception) {
         console.debug(exception);
       }
@@ -260,7 +260,7 @@ function find_entry_link(entry) {
 
   if(link_text) {
     try {
-      return new URL(link_text);
+      return new URL(link_text).href;
     } catch(exception) {
       console.debug(exception);
     }

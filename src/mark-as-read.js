@@ -38,7 +38,7 @@ function open_cursor_onsuccess(event) {
 
   const entry = cursor.value;
   if(entry.readState === Entry.FLAGS.READ) {
-    console.error('Already read', this.entry_id);
+    console.error('Already read entry', this.entry_id);
     on_complete.call(this, 'AlreadyReadError');
     return;
   }

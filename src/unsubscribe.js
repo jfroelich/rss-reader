@@ -88,10 +88,8 @@ function on_complete(event_type) {
     if(this.num_delete_entry_requests) {
       console.debug('Requested %i entries to be deleted',
         this.num_delete_entry_requests);
-      // Share the db connection with badge update so it doesn't need to
-      // reconnect. Even though the deletes are pending, the readonly
-      // transaction in update_badge implicitly waits for the pending deletes to
-      // complete
+      // Even though the deletes are pending, the readonly transaction in
+      // update_badge implicitly waits for the pending deletes to complete
       update_badge(this.connection);
     }
 

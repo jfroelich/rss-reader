@@ -4,10 +4,6 @@
 
 'use strict';
 
-// TODO: I plan to deprecate the Entry object because it is anemic. The only
-// exports here will be the flags and some entry related functions. I also
-// plan to avoid serialization. This means urls will all be strings.
-
 // Given an entry object, return the last url in its internal url chain.
 // The returned url will be a URL object for now, but in the future, once I
 // stop serialization, the returned url will be a string.
@@ -15,7 +11,7 @@
 // least one value. In general, an entry shouldn't exist without a url, or the
 // caller should never be calling this function at that point. It is the
 // caller's responsibility to ensure the presence of a url.
-function get_entry_terminal_url(entry) {
+function get_entry_url(entry) {
   console.assert(entry);
   console.assert(entry.urls);
   console.assert(entry.urls.length);
@@ -74,27 +70,7 @@ function append_entry_url(entry, url_string) {
   return true;
 }
 
-
-
-// Corresponds to an deserialized entry database object.
-function Entry() {
-  this.archiveState = Entry.FLAGS.UNARCHIVED;
-  this.author = null;
-  this.content = null;
-  this.dateArchived = null;
-  this.dateCreated = null;
-  this.datePublished = null;
-  this.dateRead = null;
-  this.enclosure = null;
-  this.faviconURLString = null;
-  this.feedTitle = null;
-  this.feed = null;
-  this.id = null;
-  this.readState = Entry.FLAGS.UNREAD;
-  this.title = null;
-  this.urls = null;
-}
-
+const Entry = {};
 Entry.FLAGS = {
   UNREAD: 0,
   READ: 1,
@@ -102,60 +78,78 @@ Entry.FLAGS = {
   ARCHIVED: 1
 };
 
-// TODO: expect url objects only
-Entry.prototype.add_url = function(url) {
+// Returns a new Entry instance where fields have been sanitized. This is a
+// pure function. The input entry is not modified. Object properties of the
+// input are cloned so that future changes to its properties have no effect on
+// the sanitized copy.
+function sanitize_entry(input_entry) {
 
-  if(!this.urls) {
-    this.urls = [];
+  const output_entry = Object.assign({}, input_entry);
+
+  // Sanitize the author html string
+  // TODO: enforce a maximum length using truncate_html
+  // TODO: condense spaces?
+  if(output_entry.author) {
+    let author = output_entry.author;
+    author = filter_control_chars(author);
+    author = replace_html(author, '');
+    //author = truncateHTML(author, MAX_AUTHOR_VALUE_LENGTH);
+    output_entry.author = author;
   }
 
-  if(Object.prototype.toString.call(url) === '[object URL]') {
+  // TODO: Sanitize entry.content
+  // TODO: filter out non-printable characters other than \r\n\t
+  // TODO: enforce a maximum storable length (using truncate_html)
+  // TODO: condense certain spaces? have to be careful about sensitive space
 
-    if(this.urls.length) {
-      if(Object.prototype.toString.call(this.urls[0]) === '[object URL]') {
-
-        // cannot use includes because URL object equality is funky
-        for(let urlObject of this.urls) {
-          if(urlObject.href === url.href) {
-            return;
-          }
-        }
-      } else {
-        for(let urlString of this.urls) {
-          if(urlString === url.href) {
-            return;
-          }
-        }
-      }
-    }
-
-    this.urls.push(url);
-  } else {
-    if(this.urls.length) {
-      if(Object.prototype.toString.call(this.urls[0]) === '[object URL]') {
-        for(let urlObject of this.urls) {
-          if(urlObject.href === url) {
-            return;
-          }
-        }
-
-      } else {
-        if(this.urls.includes(url)) {
-          return;
-        }
-      }
-
-      this.urls.push(url);
-    }
+  // Sanitize the title
+  // TODO: enforce a maximum length using truncate_html
+  // TODO: condense spaces?
+  if(output_entry.title) {
+    let title = output_entry.title;
+    title = filter_control_chars(title);
+    title = replace_html(title, '');
+    output_entry.title = title;
   }
-};
 
-Entry.prototype.get_url = function() {
-  if(Entry.prototype.has_url.call(this)) {
-    return this.urls[this.urls.length - 1];
+  return output_entry;
+}
+
+{ // Begin add_entry block scope
+
+function add_entry(connection, entry, callback) {
+
+  const entry_url_str = get_entry_url(entry);
+
+  console.assert(entry);
+  console.assert(entry_url_str);
+  console.debug('Storing', entry_url_str);
+
+  const sanitized_entry = sanitize_entry(entry);
+  const storable_entry = filter_undef_props(sanitized_entry);
+  storable_entry.readState = Entry.FLAGS.UNREAD;
+  storable_entry.archiveState = Entry.FLAGS.UNARCHIVED;
+  storable_entry.dateCreated = new Date();
+
+  let tx = null;
+  try {
+    tx = connection.transaction('entry', 'readwrite');
+  } catch(error) {
+    console.error(entry_url_str, error);
+    callback({'type': 'create_tx_error', 'error': error});
   }
-};
 
-Entry.prototype.has_url = function() {
-  return this.urls && this.urls.length;
-};
+  const store = tx.objectStore('entry');
+  const request = store.add(storable_entry);
+  request.onsuccess = callback;
+  request.onerror = add_onerror.bind(request, storable_entry, callback);
+}
+
+function add_onerror(entry, callback, event) {
+  console.error(event.target.error, entry.urls.join(','));
+  callback(event);
+}
+
+this.add_entry = add_entry;
+
+} // End add_entry block scope

@@ -40,7 +40,7 @@ function open_cursor_onerror(event) {
 function open_cursor_onsuccess(event) {
   const cursor = event.target.result;
   if(cursor) {
-    const feed = deserialize_feed(cursor.value);
+    const feed = cursor.value;
     this.feeds.push(feed);
     cursor.continue();
   } else {
@@ -129,7 +129,7 @@ function create_doc(title) {
   return doc;
 }
 
-// Creates an outline element from a Feed object
+// Creates an outline element from an object representing a feed
 function create_outline(document, feed) {
   const outline = document.createElement('outline');
 
@@ -137,7 +137,8 @@ function create_outline(document, feed) {
     outline.setAttribute('type', feed.type);
   }
 
-  outline.setAttribute('xmlUrl', feed.get_url().toString());
+  const feed_url = get_feed_url(feed);
+  outline.setAttribute('xmlUrl', feed_url);
 
   if(feed.title) {
     outline.setAttribute('text', feed.title);
@@ -149,7 +150,7 @@ function create_outline(document, feed) {
   }
 
   if(feed.link) {
-    outline.setAttribute('htmlUrl', feed.link.toString());
+    outline.setAttribute('htmlUrl', feed.link);
   }
 
   return outline;

@@ -31,17 +31,21 @@ function fetch_html(request_url, timeout_ms, callback) {
 
 function on_response(event) {
   if(event.type !== 'load') {
-    console.warn(event.type, this.request_url.href);
-    this.callback({'type': 'FetchError', 'requestURL': this.request_url});
+    this.callback({
+      'type': 'FetchError',
+      'requestURL': this.request_url,
+      'status': event.target.status
+    });
     return;
   }
 
   // doc is undefined for pdfs and such
   const document = event.target.responseXML;
   if(!document) {
-    console.warn('Undefined document', this.request_url.href);
-    this.callback({'type': 'UndefinedDocumentError',
-      'requestURL': this.request_url});
+    this.callback({
+      'type': 'UndefinedDocumentError',
+      'requestURL': this.request_url
+    });
     return;
   }
 

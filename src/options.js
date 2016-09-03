@@ -175,7 +175,6 @@ function update_feed_count() {
 
 // TODO: this approach doesn't really work, I need to independently sort
 // on load because it should be case-insensitive.
-
 // TODO: rename, where is this appending, and to what? Maybe this should be a
 // member function of some type of feed menu object
 // TODO: this should always use inserted sort, that should be invariant, and
@@ -236,22 +235,22 @@ function append_feed(feed, should_sort) {
   }
 }
 
+function is_url_object(obj) {
+  return Object.prototype.toString.call(obj) === '[object URL]';
+}
+
 // TODO: deprecate the ability to preview
 // TODO: check if already subscribed before preview?
 // TODO: rename url to something like feed_url, it's not just any url
 function show_sub_preview(url) {
-
-  console.assert(Object.prototype.toString.call(url) === '[object URL]');
-
+  console.assert(is_url_object(url));
   hide_sub_preview();
 
-  if(!localStorage.ENABLE_SUBSCRIBE_PREVIEW) {
+  if(!('ENABLE_SUBSCRIBE_PREVIEW' in localStorage)) {
     start_subscription(url);
     return;
   }
 
-  // TODO: this check no longer makes sense, must be online in order to
-  // subscribe because I removed the ability to subscribe while offline
   if('onLine' in navigator && !navigator.onLine) {
     start_subscription(url);
     return;
@@ -273,7 +272,7 @@ function show_sub_preview(url) {
     if(event.type !== 'success') {
       console.dir(event);
       hide_sub_preview();
-      show_error_msg('Unable to fetch' + url.toString());
+      show_error_msg('Unable to fetch' + url.href);
       return;
     }
 
@@ -289,7 +288,7 @@ function show_sub_preview(url) {
     // list as the button's value.
     const continue_btn = document.getElementById(
       'subscription-preview-continue');
-    continue_btn.value = feed.getURL().href;
+    continue_btn.value = get_feed_url(feed);
 
     const results_list_el = document.getElementById(
       'subscription-preview-entries');
@@ -324,7 +323,7 @@ function hide_sub_preview() {
 }
 
 function start_subscription(url) {
-  console.assert(Object.prototype.toString.call(url) === '[object URL]');
+  console.assert(is_url_object(url));
 
   hide_sub_preview();
   show_sub_monitor();
@@ -335,8 +334,8 @@ function start_subscription(url) {
   // passing those along to startSubscription and setting them here. Or
   // startSubscription should expect a feed object as a parameter.
 
-  const feed = new Feed();
-  feed.add_url(url);
+  const feed = {};
+  append_feed_url(feed, url.href);
   subscribe(feed, {'callback': on_subscribe});
 
   function on_subscribe(event) {
@@ -346,13 +345,10 @@ function start_subscription(url) {
       return;
     }
 
-    // TODO: if subscription.add yields a Feed object instead of a basic
-    // feed, I should just use event.feed.get_url()
-
     append_feed(event.feed, true);
     update_feed_count();
-    append_sub_monitor_msg('Subscribed to ' +
-      Feed.prototype.get_url.call(event.feed).toString());
+    const feed_url = get_feed_url(event.feed);
+    append_sub_monitor_msg('Subscribed to ' + feed_url);
 
     // Hide the sub monitor then switch back to the main feed list
     hide_sub_monitor(function() {
@@ -422,7 +418,7 @@ function populate_feed_info(feed_id) {
       return;
     }
 
-    const feed = deserialize_feed(event.target.result);
+    const feed = event.target.result;
 
     const title_el = document.getElementById('details-title');
     title_el.textContent = feed.title || 'Untitled';
@@ -442,11 +438,11 @@ function populate_feed_info(feed_id) {
     }
 
     const feed_url_el = document.getElementById('details-feed-url');
-    feed_url_el.textContent = feed.get_url().toString();
+    feed_url_el.textContent = get_feed_url(feed);
 
     const feed_link_el = document.getElementById('details-feed-link');
     if(feed.link) {
-      feed_link_el.textContent = feed.link.toString();
+      feed_link_el.textContent = feed.link;
     } else {
       feed_link_el.textContent = '';
     }
@@ -664,7 +660,7 @@ function on_search_google_feeds(event) {
 
 // Creates and returns a search result item to show in the list of search
 // results when searching for feeds.
- function create_search_result(feed_result) {
+function create_search_result(feed_result) {
   const item = document.createElement('li');
   const btn = document.createElement('button');
   btn.value = feed_result.url.href;
@@ -798,8 +794,6 @@ function init_subs_section() {
     if(cursor) {
       const feed = cursor.value;
       feed_count++;
-      // NOTE: this is calling append feed with a feed object loaded directly
-      // from the database, which is diferent than the results of fetch
       append_feed(feed);
       update_feed_count();
       cursor.continue();

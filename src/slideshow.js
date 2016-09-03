@@ -43,9 +43,14 @@ function maybe_append_slides() {
   }
 }
 
+// TODO: even though this is the only place this is called, it really does
+// not belong here. The UI should not be communicating directly with the
+// database. I need to design a paging API for iterating over these entries
+// and the UI should be calling that paging api.
+// TODO: this is a giant function, break it up into smaller functions
 function append_slides(oncomplete, is_first) {
   let counter = 0;
-  const limit = 5;
+  const limit = 3;
   const offset = count_unread_slides();
   let not_advanced = true;
   open_db(on_open_db);
@@ -80,7 +85,9 @@ function append_slides(oncomplete, is_first) {
       return;
     }
 
-    append_slide(cursor.value, is_first);
+    const entry = cursor.value;
+
+    append_slide(entry, is_first);
 
     if(is_first && counter === 0) {
       // TODO: could just directly query for the slide using querySelector,
@@ -139,6 +146,7 @@ function slide_onclick(event) {
 
 // Add a new slide to the view. If is_first is true, the slide is immediately
 // visible. Otherwise, the slide is positioned off screen.
+// TODO: this is a giant function, break it up into smaller functions
 function append_slide(entry, is_first) {
   const slide = document.createElement('div');
   slide.setAttribute('entry', entry.id);
@@ -154,9 +162,8 @@ function append_slide(entry, is_first) {
   slide.style.bottom = 0;
   slide.style.transition = 'left 0.5s ease-in 0s, right 0.5s ease-in';
 
-  const entry_link_url_string = Entry.prototype.get_url.call(entry);
   const title = document.createElement('a');
-  title.setAttribute('href', entry_link_url_string);
+  title.setAttribute('href', get_entry_url(entry));
   title.setAttribute('class', 'entry-title');
   title.setAttribute('target','_blank');
   title.setAttribute('rel', 'noreferrer');
@@ -236,7 +243,7 @@ function show_next_slide() {
     // Note this is very sensitive to timing, it has to occur relatively
     // quickly.
     const c = document.getElementById('slideshow-container');
-    while(c.childElementCount > 10 && c.firstChild != current_slide) {
+    while(c.childElementCount > 6 && c.firstChild != current_slide) {
       remove_slide(c.firstChild);
     }
 

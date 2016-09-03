@@ -15,8 +15,7 @@ const ACCEPT_XML = [
 ].join(', ');
 
 // Fetches the xml file at the given url and calls back with an event object
-// with props feed and entries. The feed is a Feed object and entries is an
-// array of Entry objects.
+// with props feed and entries.
 // Internally this uses the new Fetch api so as to avoid sending cookies,
 // because it is impossible to avoid sending cookies using XMLHttpRequest
 // without some extravagant hack involving intercepting requests and rewriting
@@ -32,8 +31,6 @@ this.fetch_feed = function(request_url, timeout_ms, exclude_entries, callback) {
   // and not a static error
   console.assert(parse_xml);
   console.assert(parse_feed);
-  console.assert(Feed);
-  console.assert(Entry);
 
   console.assert(
     Object.prototype.toString.call(request_url) === '[object URL]');
@@ -124,7 +121,6 @@ this.fetch_feed = function(request_url, timeout_ms, exclude_entries, callback) {
 
     let parse_event = null;
     try {
-
       const document = parse_xml(text);
       parse_event = parse_feed(document, exclude_entries);
     } catch(error) {
@@ -134,9 +130,9 @@ this.fetch_feed = function(request_url, timeout_ms, exclude_entries, callback) {
 
     const feed = parse_event.feed;
     console.assert(parse_event.entries);
-    feed.add_url(request_url);
+    append_feed_url(feed, request_url.href);
     if(terminal_url_string) {
-      feed.add_url(new URL(terminal_url_string));
+      append_feed_url(feed, terminal_url_string);
     }
     feed.dateFetched = new Date();
     if(last_modified_string) {
@@ -160,19 +156,20 @@ this.fetch_feed = function(request_url, timeout_ms, exclude_entries, callback) {
 // @param type {String} the raw header string for 'Content-Type'
 function is_acceptable_content_type(type) {
 
-  // NOTE: type can include charset
-
   // There may not be any value for Content-Type, in which case we can't tell.
   // Default to not acceptable.
   if(!type) {
     return false;
   }
 
+  // The header value may contain the charset. So use a general includes
+  // condition that tolerates its presence. Restrict to xml. However, support
+  // an html fallback for cases where the server responds with the incorrect
+  // mime type.
+
   if(type.toLowerCase().includes('xml')) {
     return true;
   } else if(type.toLowerCase().includes('text/html')) {
-    // This is the fallback, we still support servers that response with
-    // text/html.
     return true;
   }
 

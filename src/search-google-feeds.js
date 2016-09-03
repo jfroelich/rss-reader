@@ -50,90 +50,102 @@ this.search_google_feeds = function(query, timeout_ms, callback) {
   request.send();
 };
 
+function on_undefined_response(context, event) {
+  console.warn('Response undefined for GET', context.url_str);
+  console.dir(event);
+  context.callback({
+    'type': 'UndefinedResponseError',
+    'status': event.target.status
+  });
+}
+
+function on_non_load(context, event) {
+  console.warn('GET', context.url_str, event.type, event.target.status,
+    event.target.response.responseDetails);
+  callback({'type': event.type,
+    'status': event.target.status,
+    'message': event.target.response.responseDetails});
+}
+
+function on_data_undefined(context, event) {
+  console.error('Undefined data for GET', context.url_str,
+    event.target.response.responseDetails);
+  callback({'type': 'UndefinedDataError',
+    'message': event.target.response.responseDetails});
+}
+
+function entry_has_url(entry) {
+  return entry.url;
+}
+
+function deserialize_entry_url(entry) {
+  try {
+    entry.url = new URL(entry.url);
+    return true;
+  } catch(error) {
+    return false;
+  }
+}
+
+function is_entry_unique(seen, entry) {
+  if(entry.url.href in seen) {
+    return false;
+  }
+
+  seen[entry.url.href] = 1;
+  return true;
+}
+
+function sanitize_entry_title(context, entry) {
+  // Sanitize the result title
+  if(entry.title) {
+    entry.title = filter_control_chars(entry.title);
+    entry.title = replace_html(entry.title, '');
+    entry.title = truncate_html(entry.title,
+      context.title_max_len);
+  }
+  return entry;
+}
+
+function sanitize_entry_snippet(context, entry) {
+  if(entry.contentSnippet) {
+    entry.contentSnippet = filter_control_chars(entry.contentSnippet);
+    entry.contentSnippet = entry.contentSnippet.replace(/<br\s*>/gi, ' ');
+    entry.contentSnippet = truncate_html(entry.contentSnippet,
+      context.snippet_max_len, context.replacement_str);
+  }
+  return entry;
+}
+
 function on_response(context, event) {
-  // Assert that response is defined
   if(!event.target.response) {
-    console.warn('Response undefined for GET', context.url_str);
-    console.dir(event);
-    context.callback({'type': 'UndefinedResponseError',
-      'status': event.target.status});
+    on_undefined_response(context, event);
     return;
   }
 
-  // Check for a successful response
   if(event.type !== 'load') {
-    console.warn('GET', context.url_str, event.type, event.target.status,
-      event.target.response.responseDetails);
-    callback({'type': event.type,
-      'status': event.target.status,
-      'message': event.target.response.responseDetails});
+    on_non_load(context, event);
     return;
   }
 
-  // Validate the response data
   const data = event.target.response.responseData;
   if(!data) {
-    console.error('Undefined data for GET', context.url_str,
-      event.target.response.responseDetails);
-    callback({'type': 'UndefinedDataError',
-      'message': event.target.response.responseDetails});
+    on_data_undefined(context, event);
     return;
   }
 
-  // Filter out various results
-  // Always callback with an array, even an empty one
-  const output_entries = [];
-  // Ensure that entries is defined
-  const input_entries = data.entries || [];
-  const seen_urls = new Set();
-
-  for(let entry of input_entries) {
-    // Filter results without a url
-    if(!entry.url) {
-      continue;
-    }
-
-    // Filter results without a valid url
-    let entry_url = null;
-    try {
-      entry_url = new URL(entry.url);
-    } catch(error) {
-      continue;
-    }
-
-    // Filter results with an identical normalized url
-    if(seen_urls.has(entry_url.href)) {
-      continue;
-    }
-    seen_urls.add(entry_url.href);
-
-    // Store a url object in place of a string
-    entry.url = entry_url;
-
-    // Sanitize the result title
-    if(entry.title) {
-      entry.title = filter_control_chars(entry.title);
-      entry.title = replace_html(entry.title, '');
-      entry.title = truncate_html(entry.title,
-        context.title_max_len);
-    }
-
-    // Sanitize the result snippet
-    if(entry.contentSnippet) {
-      entry.contentSnippet = filter_control_chars(
-        entry.contentSnippet);
-      entry.contentSnippet = entry.contentSnippet.replace(/<br\s*>/gi, ' ');
-      entry.contentSnippet = truncate_html(entry.contentSnippet,
-        context.snippet_max_len, context.replacement_str);
-    }
-
-    output_entries.push(entry);
-  }
+  const seen = {};
+  let entries = data.entries || [];
+  entries = entries.filter(entry_has_url);
+  entries = entries.filter(deserialize_entry_url);
+  entries = entries.filter(is_entry_unique.bind(null, seen));
+  entries = entries.map(sanitize_entry_title.bind(null, context));
+  entries = entries.map(sanitize_entry_snippet.bind(null, context));
 
   context.callback({
     'type': 'success',
     'query': data.query || '',
-    'entries': output_entries
+    'entries': entries
   });
 }
 

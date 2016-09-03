@@ -199,14 +199,19 @@ function filter_duplicate_outlines(input_outlines) {
 }
 
 function create_feed_from_outline(outline) {
-  const feed = new Feed();
-  feed.add_url(outline.url_object);
+  const feed = {};
+
+  outline.url_object.hash = '';
+
+  append_feed_url(feed, outline.url_object.href);
   feed.type = outline.type;
   feed.title = outline.title || outline.text;
   feed.description = outline.description;
   if(outline.link) {
     try {
-      feed.link = new URL(outline.link);
+      const link_url = new URL(outline.link);
+      link_url.hash = '';
+      feed.link = link_url.href;
     } catch(error) {
     }
   }

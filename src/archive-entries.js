@@ -9,7 +9,9 @@
 // The default period after which entries become archivable
 const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
 
-// Iterates over unarchived entries and archives older read entries
+// Iterates over entries that have not been archived and have been read, and
+// archives entries that are older. Archiving shrinks the size of the stored
+// entry object in the database.
 // @param expires {number} an entry is archivable if older than this.
 // if not set, a default value of 10 days is used.
 function archive_entries(expires) {
@@ -65,7 +67,7 @@ function open_cursor_onsuccess(event) {
   this.num_processed++;
 
   const entry = cursor.value;
-  const terminal_url_string = get_entry_terminal_url(entry);
+  const terminal_url_string = get_entry_url(entry);
   console.assert(terminal_url_string);
   console.assert(entry.dateCreated);
 
@@ -79,10 +81,8 @@ function open_cursor_onsuccess(event) {
 
   // If the entry is older than the expiration period, then it should be
   // archived.
-
   if(age > this.expires) {
     console.debug('Archiving', terminal_url_string);
-
     const archived_entry = entry_to_archivable(entry);
     // Async request that indexedDB replace the old object with the new object
     cursor.update(archived_entry);
@@ -100,6 +100,7 @@ function open_cursor_onsuccess(event) {
     this.num_changed++;
   }
 
+  // Async advance cursor
   cursor.continue();
 }
 
@@ -108,11 +109,7 @@ function entry_to_archivable(input_entry) {
 
   console.assert(input_entry);
 
-  // This no longer returns an Entry object. This returns a serialized entry
-  // that is storable. The input entry is expected to also be serialized
-  // Note that using the object literal here means this will have a prototype,
-  // but I don't think it impacts the database too much. I might consider using
-  // Object.create(null) if I ever look into whether this wastes space. I think
+  // TODO: consider whether Object.create(null) is better. I think
   // tentatively that the structured clone algorithm will implicitly ignore
   // the object's prototype.
   const output_entry = {};
@@ -155,7 +152,6 @@ function entry_to_archivable(input_entry) {
   // NOTE: there actually is no need to clone, I don't need to ensure purity
   // here because this is only used in a known context, where I know that the
   // caller does not do any manipulating to the urs array after calling this
-  //output_entry.urls = shallow_clone_array(input_entry.urls);
   output_entry.urls = input_entry.urls;
 
   return output_entry;

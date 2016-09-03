@@ -85,11 +85,13 @@ function open_feed_cursor_onsuccess(event) {
   }
 
   this.num_feeds_pending++;
-  const feed = deserialize_feed(cursor.value);
+  const feed = cursor.value;
   const exclude_entries_flag = false;
   const timeout_ms = 0;
-  fetch_feed(feed.get_url(), timeout_ms, exclude_entries_flag,
-    on_fetch_feed.bind(this, feed));
+  const feed_url = get_feed_url(feed);
+  const url_obj = new URL(feed_url);
+  const bound_on_fetch = on_fetch_feed.bind(this, feed);
+  fetch_feed(url_obj, timeout_ms, exclude_entries_flag, bound_on_fetch);
   cursor.continue();
 }
 
@@ -107,7 +109,11 @@ function on_fetch_feed(local_feed, event) {
     return;
   }
 
-  const query_url = remote_feed.link ? remote_feed.link : remote_feed.get_url();
+  const remote_feed_url = get_feed_url(remote_feed);
+  const remote_feed_url_obj = new URL(remote_feed_url);
+
+  const query_url = remote_feed.link ? new URL(remote_feed.link) :
+    remote_feed_url_obj;
   const bound_on_lookup = on_lookup_feed_favicon.bind(this, local_feed,
     remote_feed, event.entries);
   const prefetched_doc = null;
@@ -160,19 +166,32 @@ function on_update_feed(entries, event) {
 }
 
 function process_entry(feed, entry, callback) {
-  if(!entry.has_url()) {
+
+  let entry_terminal_url_str = get_entry_url(entry);
+
+  if(!entry_terminal_url_str) {
     console.warn('Entry missing url', entry);
     callback();
     return;
   }
 
-  entry.add_url(rewrite_url(entry.get_url()));
+  let entry_terminal_url_obj = new URL(entry_terminal_url_str);
+  const rewritten_url_obj = rewrite_url(entry_terminal_url_obj);
 
-  let norm_url = normalize_url(entry.get_url());
+  if(rewritten_url_obj) {
+    append_entry_url(entry, rewritten_url_obj.href);
+  }
+
+  // The terminal url may have changed if it was rewritten and unique
+  entry_terminal_url_str = get_entry_url(entry);
+  entry_terminal_url_obj = new URL(entry_terminal_url_str);
+
+  const normalized_url_obj = normalize_url(entry_terminal_url_obj);
+
   const transaction = this.connection.transaction('entry');
   const store = transaction.objectStore('entry');
   const index = store.index('urls');
-  const request = index.get(norm_url.href);
+  const request = index.get(normalized_url_obj.href);
   const on_find = on_find_entry.bind(this, feed, entry, callback);
   request.onsuccess = on_find;
   request.onerror = on_find;
@@ -203,10 +222,13 @@ function on_find_entry(feed, entry, callback, event) {
     entry.feedTitle = feed.title;
   }
 
+  const entry_url_str = get_entry_url(entry);
+  const entry_url_obj = new URL(entry_url_str);
+
   // Check that the url does not belong to a domain that obfuscates its content
   // with things like advertisement interception or full javascript. While these
   // documents can be fetched, there is no point to doing so.
-  if(is_fetch_resistant(entry.get_url())) {
+  if(is_fetch_resistant(entry_url_obj)) {
     add_entry(this.connection, entry, callback);
     return;
   }
@@ -216,7 +238,7 @@ function on_find_entry(feed, entry, callback, event) {
   // indication of the mime type and may have some false positives. Even if
   // this misses it, responseXML will be undefined in fetch_html so false
   // negatives are not too important.
-  const path = entry.get_url().pathname;
+  const path = entry_url_obj.pathname;
   const min_len = '/a.pdf'.length;
   if(path && path.length > min_len && /\.pdf$/i.test(path)) {
     add_entry(this.connection, entry, callback);
@@ -225,7 +247,7 @@ function on_find_entry(feed, entry, callback, event) {
 
   const timeout_ms = 10 * 1000;
   const bound_on_fetch_entry = on_fetch_entry.bind(this, entry, callback);
-  fetch_html(entry.get_url(), timeout_ms, bound_on_fetch_entry);
+  fetch_html(entry_url_obj, timeout_ms, bound_on_fetch_entry);
 }
 
 function on_fetch_entry(entry, callback, event) {
@@ -234,7 +256,11 @@ function on_fetch_entry(entry, callback, event) {
     return;
   }
 
-  entry.add_url(event.responseURL);
+  // Append the response url in case of a redirect
+  const response_url_str = event.responseURL.href;
+  console.assert(response_url_str);
+  append_entry_url(entry, response_url_str);
+
 
   // TODO: if we successfully fetched the entry, then before storing it,
   // we should be trying to set its favicon_url.
@@ -243,13 +269,13 @@ function on_fetch_entry(entry, callback, event) {
   // lookup should not fetch a second time.
   // - i should be querying against the redirect url
 
-  const document = event.document;
-  transform_lazy_images(document);
-  filter_sourceless_images(document);
-  resolve_document_urls(document, event.responseURL);
-  filter_tracking_images(document);
-  set_image_dimensions(document,
-    on_set_image_dimensions.bind(this, entry, document, callback));
+  const doc = event.document;
+  transform_lazy_images(doc);
+  filter_sourceless_images(doc);
+  resolve_document_urls(doc, event.responseURL);
+  filter_tracking_images(doc);
+  const next = on_set_image_dimensions.bind(this, entry, doc, callback);
+  set_image_dimensions(doc, next);
 }
 
 function on_set_image_dimensions(entry, document, callback, num_modified) {
@@ -261,46 +287,16 @@ function on_set_image_dimensions(entry, document, callback, num_modified) {
   add_entry(this.connection, entry, callback);
 }
 
-function add_entry(connection, entry, callback) {
-  console.assert(entry);
-  console.assert(entry.get_url());
-  console.debug('Storing', entry.get_url().toString());
-
-  let sanitized = sanitize_entry(entry);
-  let serialized = serialize_entry(sanitized);
-  serialized.readState = Entry.FLAGS.UNREAD;
-  serialized.archiveState = Entry.FLAGS.UNARCHIVED;
-  serialized.dateCreated = new Date();
-
-  // These asserts belong only in sanitize_entry
-  console.assert(serialized.urls);
-  console.assert(serialized.urls.length);
-
-  try {
-    const transaction = connection.transaction('entry', 'readwrite');
-    const entryStore = transaction.objectStore('entry');
-    const request = entryStore.add(serialized);
-    request.onsuccess = callback;
-    request.onerror = function(event) {
-      console.error(event.target.error, serialized.urls.join(','));
-      callback(event);
-    };
-  } catch(error) {
-    console.error(serialized.urls, error);
-    callback({'type':error});
-  }
-}
-
 function on_entry_processed(feed_context, event) {
   feed_context.num_entries_processed++;
-  console.assert(
-    feed_context.num_entries_processed <= feed_context.num_entries);
+  const count = feed_context.num_entries_processed;
+  console.assert(count <= feed_context.num_entries);
 
   if(event && event.type === 'success') {
     feed_context.num_entries_added++;
   }
 
-  if(feed_context.num_entries_processed === feed_context.num_entries) {
+  if(count === feed_context.num_entries) {
     if(feed_context.num_entries_added) {
       update_badge(this.connection);
     }
@@ -328,7 +324,7 @@ function on_complete() {
 
 function normalize_url(url) {
   let clone = clone_url(url);
-  // Strip the hash from the clone
+  // Strip the hash
   clone.hash = '';
   return clone;
 }
