@@ -71,6 +71,12 @@ function append_entry_url(entry, url_string) {
   }
 
   entry.urls.push(normalized_url_str);
+
+  // Temp, testing url rewriting new approach
+  //if(entry.urls.length > 1) {
+  //  console.debug('Entry urls:', entry.urls);
+  //}
+
   return true;
 }
 
@@ -123,7 +129,7 @@ function add_entry(db, entry, callback) {
   // The entry should have at least one url
   console.assert(entry_url_str);
 
-  console.debug('Storing', entry_url_str);
+  console.debug('Adding entry', entry_url_str);
 
   const sanitized_entry = sanitize_entry(entry);
   const storable_entry = filter_undef_props(sanitized_entry);
@@ -147,7 +153,9 @@ function add_entry(db, entry, callback) {
 }
 
 function add_onerror(entry, callback, event) {
-  console.error(event.target.error, entry.urls.join(','));
+  // TODO: this appears in the log due to polling, but it shouldn't.
+  // I should have caught all attempts to insert a duplicate entry
+  console.error(event.target.error, get_entry_url(entry));
   callback(event);
 }
 
