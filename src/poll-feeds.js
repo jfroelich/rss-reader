@@ -87,11 +87,10 @@ function open_feed_cursor_onsuccess(event) {
   this.num_feeds_pending++;
   const feed = cursor.value;
   const exclude_entries_flag = false;
-  const timeout_ms = 0;
   const feed_url = get_feed_url(feed);
   const url_obj = new URL(feed_url);
   const bound_on_fetch = on_fetch_feed.bind(this, feed);
-  fetch_feed(url_obj, timeout_ms, exclude_entries_flag, bound_on_fetch);
+  fetch_feed(url_obj, exclude_entries_flag, bound_on_fetch);
   cursor.continue();
 }
 
@@ -108,6 +107,12 @@ function on_fetch_feed(local_feed, event) {
     on_complete.call(this);
     return;
   }
+
+  // TODO: I don't need to be updating the favicon on every single fetch. I
+  // think this can be done on a separate timeline.
+
+  // TODO: this could be more idiomatic with a function. Something like
+  // get_remote_feed_url_to_use_to_find_favicon
 
   const remote_feed_url = get_feed_url(remote_feed);
   const remote_feed_url_obj = new URL(remote_feed_url);
@@ -148,6 +153,9 @@ function on_update_feed(entries, event) {
     return;
   }
 
+  // TODO: I should be filtering duplicate entries, compared by norm url,
+  // somewhere. I somehow lost this functionality, or moved it somewhere
+
   // TODO: instead of passing along the feed, just shove it in feed context
   // and pass along feed context instead
   // or just pass along only the relevant fields needed like feedId and title
@@ -186,7 +194,22 @@ function process_entry(feed, entry, callback) {
   entry_terminal_url_str = get_entry_url(entry);
   entry_terminal_url_obj = new URL(entry_terminal_url_str);
 
+  // TODO: should normalize append the norm url to entry.urls?
+
   const normalized_url_obj = normalize_url(entry_terminal_url_obj);
+
+  // TODO: there is another kind normalization I want to add, I think I have to
+  // add it in several places (which eventually should just be one place),
+  // but the idea is to replace '//' with '/' in path name. Certain feeds some
+  // to use invalid urls
+
+
+  // Temp, testing to see if this was cause of dup call to add_entry
+  // console.debug('Searching for entry:', normalized_url_obj.href);
+
+  // TODO: after some thought, I think it is better to have a separate funciton
+  // called something like find_entry_by_url, and this should call out to that.
+  // It is more idiomatic, and it shortens the code
 
   const transaction = this.connection.transaction('entry');
   const store = transaction.objectStore('entry');
@@ -239,9 +262,7 @@ function on_find_entry(feed, entry, callback, event) {
   // indication of the mime type and may have some false positives. Even if
   // this misses it, responseXML will be undefined in fetch_html so false
   // negatives are not too important.
-  const path = entry_url_obj.pathname;
-  const min_len = '/a.pdf'.length;
-  if(path && path.length > min_len && /\.pdf$/i.test(path)) {
+  if(is_pdf_url(entry_url_obj)) {
     prepare_local_entry_doc(entry);
     add_entry(this.connection, entry, callback);
     return;
@@ -252,6 +273,14 @@ function on_find_entry(feed, entry, callback, event) {
   fetch_html(entry_url_obj, timeout_ms, bound_on_fetch_entry);
 }
 
+function is_pdf_url(url) {
+  // The min len test is here just to reduce regex calls
+  const min_len = '/a.pdf'.length;
+  const path = url.pathname;
+  return path && path.length > min_len && /\.pdf$/i.test(path)
+}
+
+
 function on_fetch_entry(entry, callback, event) {
   if(event.type !== 'success') {
     prepare_local_entry_doc(entry);
@@ -261,6 +290,7 @@ function on_fetch_entry(entry, callback, event) {
 
   // Append the response url in case of a redirect
   const response_url_str = event.responseURL.href;
+  // There should always be a response url, even if no redirect occurred
   console.assert(response_url_str);
   append_entry_url(entry, response_url_str);
 
@@ -273,9 +303,9 @@ function on_fetch_entry(entry, callback, event) {
   // - i should be querying against the redirect url
 
   const doc = event.document;
-
   transform_lazy_images(doc);
   filter_sourceless_images(doc);
+  filter_invalid_anchors(doc);
   resolve_document_urls(doc, event.responseURL);
   filter_tracking_images(doc);
   const next = on_set_image_dimensions.bind(this, entry, doc, callback);
@@ -286,6 +316,21 @@ function on_set_image_dimensions(entry, document, callback, num_modified) {
   console.assert(document);
   prepare_doc(document);
   entry.content = document.documentElement.outerHTML.trim();
+
+  // TODO: it looks like there is a bug where this is sometimes called twice
+  // somehow. It only happens rarely. It isn't the worst case because the
+  // db request just failed with a constraint error. But it is still wrong.
+  // This should only be called once.
+  // It could be that the entry is listed twice in the feed and I am
+  // not properly removing dups somehow.
+  // It could be that its http redirected to https, and then the dup occurs,
+  // because I execute find_entry only against the most recent url
+  // https://medium.com/@virgilgr/tors-branding-pivot-is-going-to-get-someone-
+  // killed-6ee45313b559#.z1vs8xyjz
+  // From the looks of it, it is because of the hash maybe
+  // it could be that the whole feed is getting processed twice?
+  //console.debug('Calling add_entry:', get_entry_url(entry));
+
   add_entry(this.connection, entry, callback);
 }
 
