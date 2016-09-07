@@ -77,12 +77,10 @@ function find_feed_onsuccess(event) {
   if('onLine' in navigator && !navigator.onLine) {
     add_feed.call(this, this.feed, on_add_feed.bind(this));
   } else {
-    const timeout_ms = 0; //10 * 1000;
     const exclude_entries = true;
     const feed_url = get_feed_url(this.feed);
     const feed_url_obj = new URL(feed_url);
-    fetch_feed(feed_url_obj, timeout_ms, exclude_entries,
-      on_fetch_feed.bind(this));
+    fetch_feed(feed_url_obj, exclude_entries, on_fetch_feed.bind(this));
   }
 }
 
