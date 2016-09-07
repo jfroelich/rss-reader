@@ -8,6 +8,10 @@
 
 // TODO: avoid DRY. This has to also connect to the same database as lookup,
 // but I am hardcoding the variables like database name and table names
+// - it was a mistake to merge favicon cache into lookup favicon, it should
+// be separate, then both compact and lookup can easily share the same
+// code, and it reduces the multitude of things that lookup does
+// the negative is that it exposes more globals but maybe that is ok
 
 // Deletes expired entries from the favicon cache
 this.compact_favicons = function() {
