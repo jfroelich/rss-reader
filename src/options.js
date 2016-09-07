@@ -263,10 +263,7 @@ function show_sub_preview(url) {
   show_el(progress_el);
 
   const exclude_entries = false;
-  const timeout_ms = 0; //10 * 1000;
-
-  // TODO: this is wrong
-  fetch_feed(url, timeout_ms, exclude_entries, on_fetch_feed);
+  fetch_feed(url, exclude_entries, on_fetch_feed);
 
   function on_fetch_feed(fetch_event) {
     if(event.type !== 'success') {
