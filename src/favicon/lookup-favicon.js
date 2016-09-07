@@ -83,7 +83,7 @@ function on_find_request_url(context, entry) {
     const icon_url = new URL(entry.iconURLString);
     context.callback(icon_url);
   } else {
-    console.debug('Cache miss', context.url.href);
+    console.debug('MISS', context.url.href);
     fetch_html(context);
   }
 }
@@ -363,8 +363,7 @@ function find_entry(context, url, callback) {
   const request = store.get(page_url_string);
   request.onsuccess = function(event) {
     if(event.target.result) {
-      console.debug('Found favicon entry', url.href,
-        event.target.result.iconURLString);
+      console.debug('HIT', url.href, event.target.result.iconURLString);
       callback(event.target.result);
     } else {
       callback();
