@@ -151,7 +151,7 @@ function on_process_img(context) {
     // The did_callback logic here is a remnant of an earlier bug that has since
     // been fixed. It is left here as a reminder of the danger of incrementing
     // num_processed in the wrong place
-    console.assert(!context.did_callback);
+    console.assert(!context.did_callback, 'duplicate callback');
     context.did_callback = true;
     context.callback(context.num_modified);
   }
