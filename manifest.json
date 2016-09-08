@@ -38,6 +38,7 @@
       "/src/cleandom/unwrap-single-item-lists.js",
       "/src/entry.js",
       "/src/favicon/compact-favicons.js",
+      "/src/favicon/favicon-cache.js",
       "/src/favicon/lookup-favicon.js",
       "/src/feed.js",
       "/src/fetch-feed/fetch-feed.js",

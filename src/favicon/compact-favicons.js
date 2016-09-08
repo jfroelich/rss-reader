@@ -6,72 +6,51 @@
 
 { // Begin file block scope
 
-// TODO: avoid DRY. This has to also connect to the same database as lookup,
-// but I am hardcoding the variables like database name and table names
-// - it was a mistake to merge favicon cache into lookup favicon, it should
-// be separate, then both compact and lookup can easily share the same
-// code, and it reduces the multitude of things that lookup does
-// the negative is that it exposes more globals but maybe that is ok
+// Thirty dates in ms
+const expires = 1000 * 60 * 60 * 24 * 30;
 
 // Deletes expired entries from the favicon cache
-this.compact_favicons = function() {
+// TODO: declare a context to track num_deleted
+function compact_favicons() {
   console.log('Compacting favicon-cache');
-  // TODO: declare a context to track num_deleted
+  favicon_connect(connect_onsuccess, connect_onerror);
+}
 
-  const request = indexedDB.open('favicon-cache', 1);
-  request.onsuccess = open_db_onsuccess;
-  request.onerror = open_db_onerror;
-  request.onblocked = open_db_onblocked;
-};
-
-function open_db_onerror(event) {
+function connect_onerror(event) {
   console.error(event.target.error);
 }
 
-function open_db_onblocked(event) {
-  console.error(event.target.error);
-}
-
-function open_db_onsuccess(event) {
+function connect_onsuccess(event) {
   const db = event.target.result;
-  const transaction = db.transaction('favicon-cache', 'readwrite');
-  const store = transaction.objectStore('favicon-cache');
-  const request = store.openCursor();
-  request.onsuccess = open_cursor_onsuccess;
-  request.onerror = open_cursor_onerror;
+  favicon_open_rw_cursor(db, open_cursor_onsuccess, open_cursor_onerror);
+}
+
+function open_cursor_onerror(event) {
+  console.error(event.target.error);
+  on_complete();
 }
 
 function open_cursor_onsuccess(event) {
   const cursor = event.target.result;
   if(!cursor) {
-    // no entries or all entries iterated
-    // TODO: close connection
-    console.log('Finished compacting favicon-cache');
+    on_complete();
     return;
   }
 
   const entry = cursor.value;
-
-  // If expired, delete
-  // TODO: this should be shared with lookup_favicon somehow, not duplicated
-  // Maybe via an external parameter? It doesn't need to be the same value but
-  // it should be called in a similar way, and should also share the logic
-  // of is_expired
-  // TODO: should be creating one date for the call to compact,
-  // not a new date per cursor callback
-  const expires_after_ms = 1000 * 60 * 60 * 24 * 30;
-  const age = new Date() - entry.dateUpdated;
-  if(age >= expires_after_ms) {
-    console.debug('Deleting favicon entry', entry);
+  if(is_favicon_entry_expired(entry, expires)) {
+    console.debug('Deleting favicon entry', entry.pageURLString);
     cursor.delete();
   }
 
   cursor.continue();
 }
 
-function open_cursor_onerror(event) {
-  // TODO: close the database connection, need to get it from the event
-  console.error(event.target.error);
+// TODO: close connection
+function on_complete() {
+  console.log('Finished compacting favicon-cache');
 }
+
+this.compact_favicons = compact_favicons;
 
 } // End file block scope
