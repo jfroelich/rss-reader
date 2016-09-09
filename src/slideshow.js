@@ -181,36 +181,11 @@ function appendSlide(entry, isFirstSlide) {
   }
   slide.appendChild(title);
 
-  // TODO: I am not sure I need to be parsing entry content and then
-  // copying nodes. I no longer do any extra work to the document before
-  // adding it to the dom. Therefore, I think I can just use innerHTML.
-  // But there is a problem. I only want the body. But I am storing the
-  // full html, which means the doc element is the head. I cannot get to the
-  // body without parsing it out. One thing I could do is store
-  // body.innerHTML. Another thing to keep thinking about is how I am storing
-  // entry content that comes from the feed itself instead of the full page,
-  // I would also need to take care of consistently storing that.
-
-  // Further note: after testing, it looks like the <html><body> tags are
-  // implicitly stripped when setting innerHTML. So there is no need to do
-  // any of the above.
-
-  // TODO: this also means maybe that I can just deprecate
-  // moveChildNodes because this is the only place used
-
   const content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
-
-  //const parser = new DOMParser();
-  //const entry_doc = parser.parseFromString(entry.content, 'text/html');
-  //console.assert(!entry_doc.querySelector('parsererror'));
-  //const entry_body = entry_doc.body || entry_doc.documentElement;
-  //moveChildNodes(entry_body, content);
-
-  // TEMP! Testing. Note this will introduce extra html tags around the body.
+  // <html><body> tags are implicitly stripped when setting innerHTML. There
+  // is no need to do any non-native processing.
   content.innerHTML = entry.content;
-
-
   slide.appendChild(content);
 
   const source = document.createElement('span');
