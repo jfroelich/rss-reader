@@ -4,7 +4,7 @@
 
 'use strict';
 
-function filter_article_title(title) {
+function filterArticleTitle(title) {
   console.assert(title);
 
   let index = title.lastIndexOf(' - ');
@@ -15,16 +15,16 @@ function filter_article_title(title) {
   if(index === -1)
     return title;
 
-  const trailing_text = title.substring(index + 1);
+  const trailingText = title.substring(index + 1);
 
-  const tokens = trailing_text.split(/\s+/g);
+  const tokens = trailingText.split(/\s+/g);
 
   // Split can yield empty strings, filter them
-  const defined_tokens = tokens.filter(function(token) {
+  const definedTokens = tokens.filter(function(token) {
     return token;
   });
 
-  if(defined_tokens.length < 5) {
+  if(definedTokens.length < 5) {
     const new_title = title.substring(0, index).trim();
     return new_title;
   }

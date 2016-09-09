@@ -6,19 +6,20 @@
 
 { // Begin file block scope
 
-function import_opml_files(callback) {
+function importOPMLFiles(callback) {
   console.debug('Importing OPML files...');
+  const uploader = createUploadElement();
   const context = {
-    'num_files_processed': 0,
+    'numFilesProcessed': 0,
     'callback': callback,
-    'uploader': create_upload_element()
+    'uploader': uploader
   };
 
-  context.uploader.onchange = on_uploader_change.bind(context);
-  context.uploader.click();
+  uploader.onchange = onUploaderChange.bind(context);
+  uploader.click();
 }
 
-function create_upload_element() {
+function createUploadElement() {
   const uploader = document.createElement('input');
   uploader.setAttribute('type', 'file');
   uploader.style.display = 'none';
@@ -26,87 +27,87 @@ function create_upload_element() {
   return uploader;
 }
 
-function on_uploader_change(event) {
-  this.uploader.removeEventListener('change', on_uploader_change);
+function onUploaderChange(event) {
+  this.uploader.removeEventListener('change', onUploaderChange);
   if(!this.uploader.files || !this.uploader.files.length) {
-    on_complete.call(this);
+    onComplete.call(this);
     return;
   }
 
-  open_db(on_open_db.bind(this));
+  openDB(onOpenDB.bind(this));
 }
 
-function on_open_db(connection) {
-  if(connection) {
-    this.connection = connection;
+function onOpenDB(db) {
+  if(db) {
+    this.db = db;
   } else {
-    on_complete.call(this);
+    onComplete.call(this);
     return;
   }
 
   // TODO: use two filter functions and intermediate collections to split up
   // this loop. This also means i need to define a num_valid_files context
-  // variable to check against in on_file_processed, and I also need to check
+  // variable to check against in onFileProcessed, and I also need to check
   // for no files present
 
   for(let file of this.uploader.files) {
     console.debug('Importing', file.name);
     if(file.type && !file.type.toLowerCase().includes('xml')) {
       console.warn('Invalid type', file.name, file.type);
-      on_file_processed.call(this, file);
+      onFileProcessed.call(this, file);
     } else if(file.size === 0) {
       console.warn('Invalid size', file.name, file.size);
-      on_file_processed.call(this, file);
+      onFileProcessed.call(this, file);
     } else {
       const reader = new FileReader();
-      reader.onload = read_file_onload.bind(this, file);
-      reader.onerror = read_file_onerror.bind(this, file);
+      reader.onload = fileReaderOnload.bind(this, file);
+      reader.onerror = fileReaderOnerror.bind(this, file);
       reader.readAsText(file);
     }
   }
 }
 
-function read_file_onerror(file, event) {
+function fileReaderOnerror(file, event) {
   console.warn(file.name, event.target.error);
-  on_file_processed.call(this, file);
+  onFileProcessed.call(this, file);
 }
 
-function read_file_onload(file, event) {
+function fileReaderOnload(file, event) {
   console.debug('Parsing', file.name);
 
   const text = event.target.result;
-  const doc = create_opml_doc_from_text(file, text);
+  const doc = createOPMLDocFromText(file, text);
   if(!doc) {
-    on_file_processed.call(this, file);
+    onFileProcessed.call(this, file);
     return;
   }
 
-  const outline_elements = select_outline_elements(doc);
-  let outlines = outlines.map(create_outline_object);
-  outlines = outlines.filter(outline_has_valid_type);
-  outlines = outlines.filter(outline_has_url);
-  outlines.forEach(deserialize_outline_url);
-  outlines = outlines.filter(outline_has_url_object);
+  const outlineElements = selectOutlineElements(doc);
+  let outlines = outlineElements.map(createOutlineObject);
+  outlines = outlines.filter(outlineHasValidType);
+  outlines = outlines.filter(outlineHasURL);
+  outlines.forEach(deserializeOutlineURL);
+  outlines = outlines.filter(outlineHasURLObject);
   // Even though this is caught by subscribe, it is less work if done here
-  outlines = filter_duplicate_outlines(outlines);
+  outlines = filterDuplicateOutlines(outlines);
 
-  const feeds = outlines.map(create_feed_from_outline);
+  const feeds = outlines.map(createFeedFromOutline);
   const options = {
-    'connection': this.connection,
+    'connection': this.db,
     'suppressNotifications': true
   };
   for(let feed of feeds) {
     subscribe(feed, options);
   }
 
-  on_file_processed.call(this, file);
+  onFileProcessed.call(this, file);
 }
 
-function create_opml_doc_from_text(file, text) {
+function createOPMLDocFromText(file, text) {
 
   let doc = null;
   try {
-    doc = parse_xml(text);
+    doc = parseXML(text);
   } catch(error) {
     console.warn(file.name, error);
     return null;
@@ -121,7 +122,7 @@ function create_opml_doc_from_text(file, text) {
 }
 
 // Scans the opml document for outline elements
-function select_outline_elements(doc) {
+function selectOutlineElements(doc) {
   const outlines = [];
 
   // Unsure why accessing document.body yields undefined. I believe this is
@@ -147,7 +148,7 @@ function select_outline_elements(doc) {
   return outlines;
 }
 
-function create_outline_object(element) {
+function createOutlineObject(element) {
   console.assert(element);
   console.assert(element.localName === 'outline');
   return {
@@ -160,73 +161,73 @@ function create_outline_object(element) {
   };
 }
 
-function outline_has_valid_type(outline) {
+function outlineHasValidType(outline) {
   const type = outline.type;
   // The length check here is a bit pedantic, I am trying to reduce the calls
   // to the regex
   return type && type.length > 2 && /rss|rdf|feed/i.test(type);
 }
 
-function outline_has_url(outline) {
+function outlineHasURL(outline) {
   return outline.url && outline.url.trim();
 }
 
-function deserialize_outline_url(outline) {
+function deserializeOutlineURL(outline) {
   try {
-    outline.url_object = new URL(outline.url);
+    outline.urlObject = new URL(outline.url);
   } catch(error) {
   }
 }
 
-function outline_has_url_object(outline) {
-  return 'url_object' in outline;
+function outlineHasURLObject(outline) {
+  return 'urlObject' in outline;
 }
 
-function filter_duplicate_outlines(input_outlines) {
-  const output_outlines = [];
+function filterDuplicateOutlines(inputOutlines) {
+  const outputOutlines = [];
   // I don't think there is much value in using a set here
   const seen = [];
 
-  for(let outline of input_outlines) {
-    const url = outline.url_object.href;
-    if(!seen.includes(url)) {
-      seen.push(url);
-      output_outlines.push(outline);
+  for(let outline of inputOutlines) {
+    const urlString = outline.urlObject.href;
+    if(!seen.includes(urlString)) {
+      seen.push(urlString);
+      outputOutlines.push(outline);
     }
   }
 
-  return output_outlines;
+  return outputOutlines;
 }
 
-function create_feed_from_outline(outline) {
+function createFeedFromOutline(outline) {
   const feed = {};
 
-  outline.url_object.hash = '';
+  outline.urlObject.hash = '';
 
-  append_feed_url(feed, outline.url_object.href);
+  appendFeedURL(feed, outline.urlObject.href);
   feed.type = outline.type;
   feed.title = outline.title || outline.text;
   feed.description = outline.description;
   if(outline.link) {
     try {
-      const link_url = new URL(outline.link);
-      link_url.hash = '';
-      feed.link = link_url.href;
+      const linkURL = new URL(outline.link);
+      linkURL.hash = '';
+      feed.link = linkURL.href;
     } catch(error) {
     }
   }
   return feed;
 }
 
-function on_file_processed(file) {
+function onFileProcessed(file) {
   console.debug('Processed file "%s"', file.name);
-  this.num_files_processed++;
-  if(this.num_files_processed === this.uploader.files.length) {
-    on_complete.call(this);
+  this.numFilesProcessed++;
+  if(this.numFilesProcessed === this.uploader.files.length) {
+    onComplete.call(this);
   }
 }
 
-function on_complete() {
+function onComplete() {
   console.log('Completed opml import');
 
   if(this.uploader) {
@@ -235,8 +236,8 @@ function on_complete() {
 
   // It is perfectly ok to request to close the connection even if requests
   // are outstanding. The operation will defer.
-  if(this.connection) {
-    this.connection.close();
+  if(this.db) {
+    this.db.close();
   }
 
   // Keep in mind that the connection may still be open and requests may still
@@ -246,6 +247,6 @@ function on_complete() {
   }
 }
 
-this.import_opml_files = import_opml_files;
+this.importOPMLFiles = importOPMLFiles;
 
 } // End file block scope

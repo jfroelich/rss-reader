@@ -9,7 +9,8 @@
 // with custom html elements. If I used a whitelist approach, any element
 // not in the whitelist would be removed. The problem is that custom elements
 // wouldn't be in the whitelist, but they easily contain valuable content.
-function filter_blacklisted_elements(document) {
+// TODO: use file block scope, declare elements in outer scope
+function filterBlacklistedElements(document) {
 
   const ELEMENTS = [
     'APPLET', 'AUDIO', 'BASE', 'BASEFONT', 'BGSOUND', 'BUTTON', 'COMMAND',
@@ -23,11 +24,11 @@ function filter_blacklisted_elements(document) {
 
   // check contains to try and reduce the number of remove calls
 
-  const doc_el = document.documentElement;
+  const docEl = document.documentElement;
   const elements = document.querySelectorAll(SELECTOR);
   for(let i = 0, len = elements.length; i < len; i++) {
     let element = elements[i];
-    if(doc_el.contains(element)) {
+    if(docEl.contains(element)) {
       element.remove();
     }
   }

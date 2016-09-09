@@ -9,24 +9,24 @@
 const name = 'reader';
 const version = 20;
 
-function open_db(callback) {
+function openDB(callback) {
   const request = indexedDB.open(name, version);
   request.onupgradeneeded = upgrade;
-  request.onsuccess = on_success.bind(request, callback);
-  request.onerror = on_error.bind(request, callback);
-  request.onblocked = on_blocked.bind(request, callback);
+  request.onsuccess = onSuccess.bind(request, callback);
+  request.onerror = onError.bind(request, callback);
+  request.onblocked = onBlocked.bind(request, callback);
 }
 
-function on_success(callback, event) {
+function onSuccess(callback, event) {
   callback(event.target.result);
 }
 
-function on_error(callback, event) {
+function onError(callback, event) {
   console.error(event);
   callback();
 }
 
-function on_blocked(callback, event) {
+function onBlocked(callback, event) {
   console.warn(event);
   callback();
 }
@@ -36,44 +36,44 @@ function upgrade(event) {
 
   const request = event.target;
   const connection = request.result;
-  let feed_store = null, entry_store = null;
+  let feedStore = null, entryStore = null;
   const stores = connection.objectStoreNames;
 
   if(stores.contains('feed')) {
-    feed_store = request.transaction.objectStore('feed');
+    feedStore = request.transaction.objectStore('feed');
   } else {
-    feed_store = connection.createObjectStore('feed', {
+    feedStore = connection.createObjectStore('feed', {
       'keyPath': 'id',
       'autoIncrement': true
     });
   }
 
   if(stores.contains('entry')) {
-    entry_store = request.transaction.objectStore('entry');
+    entryStore = request.transaction.objectStore('entry');
   } else {
-    entry_store = connection.createObjectStore('entry', {
+    entryStore = connection.createObjectStore('entry', {
       'keyPath': 'id',
       'autoIncrement': true
     });
   }
 
-  const feed_indices = feed_store.indexNames;
-  const entry_indices = entry_store.indexNames;
+  const feedIndexNames = feedStore.indexNames;
+  const entryIndexNames = entryStore.indexNames;
 
   // Deprecated
-  if(feed_indices.contains('schemeless')) {
-    feed_store.deleteIndex('schemeless');
+  if(feedIndexNames.contains('schemeless')) {
+    feedStore.deleteIndex('schemeless');
   }
 
   // Deprecated. Use the new urls index
-  if(feed_indices.contains('url')) {
-    feed_store.deleteIndex('url');
+  if(feedIndexNames.contains('url')) {
+    feedStore.deleteIndex('url');
   }
 
   // Create a multi-entry index using the new urls property, which should
   // be an array of unique strings of normalized urls
-  if(!feed_indices.contains('urls')) {
-    feed_store.createIndex('urls', 'urls', {
+  if(!feedIndexNames.contains('urls')) {
+    feedStore.createIndex('urls', 'urls', {
       'multiEntry': true,
       'unique': true
     });
@@ -81,47 +81,47 @@ function upgrade(event) {
 
   // TODO: deprecate this, have the caller manually sort and stop requiring
   // title, this just makes it difficult.
-  if(!feed_indices.contains('title')) {
-    feed_store.createIndex('title', 'title');
+  if(!feedIndexNames.contains('title')) {
+    feedStore.createIndex('title', 'title');
   }
 
   // Deprecated
-  if(entry_indices.contains('unread')) {
-    entry_store.deleteIndex('unread');
+  if(entryIndexNames.contains('unread')) {
+    entryStore.deleteIndex('unread');
   }
 
   // For example, used to count the number of unread entries
-  if(!entry_indices.contains('readState')) {
-    entry_store.createIndex('readState', 'readState');
+  if(!entryIndexNames.contains('readState')) {
+    entryStore.createIndex('readState', 'readState');
   }
 
-  if(!entry_indices.contains('feed')) {
-    entry_store.createIndex('feed', 'feed');
+  if(!entryIndexNames.contains('feed')) {
+    entryStore.createIndex('feed', 'feed');
   }
 
-  if(!entry_indices.contains('archiveState-readState')) {
-    entry_store.createIndex('archiveState-readState',
+  if(!entryIndexNames.contains('archiveState-readState')) {
+    entryStore.createIndex('archiveState-readState',
       ['archiveState', 'readState']);
   }
 
   // Deprecated. Use the urls index instead.
-  if(entry_indices.contains('link')) {
-    entry_store.deleteIndex('link');
+  if(entryIndexNames.contains('link')) {
+    entryStore.deleteIndex('link');
   }
 
   // Deprecated. Use the urls index instead.
-  if(entry_indices.contains('hash')) {
-    entry_store.deleteIndex('hash');
+  if(entryIndexNames.contains('hash')) {
+    entryStore.deleteIndex('hash');
   }
 
-  if(!entry_indices.contains('urls')) {
-    entry_store.createIndex('urls', 'urls', {
+  if(!entryIndexNames.contains('urls')) {
+    entryStore.createIndex('urls', 'urls', {
       'multiEntry': true,
       'unique': true
     });
   }
 }
 
-this.open_db = open_db;
+this.openDB = openDB;
 
 } // End file block scope

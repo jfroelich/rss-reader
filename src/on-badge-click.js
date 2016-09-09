@@ -8,22 +8,23 @@
 
 const VIEW_URL = chrome.extension.getURL('slides.html');
 
+// The trailing slash is required
+const NEW_TAB_URL = 'chrome://newtab/'
+
 // TODO: is there a way to not do this on every page load?
 chrome.browserAction.onClicked.addListener(function(event) {
-  chrome.tabs.query({'url': VIEW_URL}, on_query_for_view_tab);
+  chrome.tabs.query({'url': VIEW_URL}, onQueryForViewTab);
 });
 
-function on_query_for_view_tab(tabs) {
+function onQueryForViewTab(tabs) {
   if(tabs && tabs.length) {
     chrome.tabs.update(tabs[0].id, {'active': true});
   } else {
-    // trailing slash is required
-    chrome.tabs.query({'url': 'chrome://newtab/'},
-      on_query_for_new_tab);
+    chrome.tabs.query({'url': NEW_TAB_URL}, onQueryForNewTab);
   }
 }
 
-function on_query_for_new_tab(tabs) {
+function onQueryForNewTab(tabs) {
   if(tabs && tabs.length) {
     chrome.tabs.update(tabs[0].id, {'active': true, 'url': VIEW_URL});
   } else {

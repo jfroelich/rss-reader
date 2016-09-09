@@ -12,7 +12,7 @@
 
 const SELECTOR = ['code', 'pre', 'ruby', 'textarea', 'xmp'].join(',');
 
-function condense_text_node_whitespace(doc) {
+function condenseTextNodeWhitespace(doc) {
   const it = doc.createNodeIterator(doc.documentElement, NodeFilter.SHOW_TEXT);
   for(let node = it.nextNode(); node; node = it.nextNode()) {
 
@@ -34,16 +34,16 @@ function condense_text_node_whitespace(doc) {
       // space.
       // TODO: do I want to restrict this to actual spaces and not all
       // whitespace? \s matches a ton of entities.
-      let condensed_value = value.replace(/\s{2,}/g, ' ');
+      let condensedValue = value.replace(/\s{2,}/g, ' ');
 
       // Setting node value can be expensive so try and avoid it
-      if(condensed_value !== value) {
-        node.nodeValue = condensed_value;
+      if(condensedValue !== value) {
+        node.nodeValue = condensedValue;
       }
     }
   }
 }
 
-this.condense_text_node_whitespace = condense_text_node_whitespace;
+this.condenseTextNodeWhitespace = condenseTextNodeWhitespace;
 
 } // End file block scope

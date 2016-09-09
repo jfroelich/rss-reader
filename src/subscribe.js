@@ -14,32 +14,32 @@ function subscribe(feed, options) {
   console.assert(feed.urls);
   console.assert(feed.urls.length);
 
-  const feed_url = get_feed_url(feed);
-  console.log('Subscribing to', feed_url);
+  const feedURL = getFeedURL(feed);
+  console.log('Subscribing to', feedURL);
 
   const context = {
     'feed': feed,
-    'did_subscribe': false,
+    'didSubscribe': false,
     'callback': options ? options.callback : null,
     'db': options ? options.connection : null,
-    'should_close': false,
-    'no_notify': options ? options.suppressNotifications : false
+    'shouldCloseDB': false,
+    'shouldNotNotify': options ? options.suppressNotifications : false
   };
 
   if(context.db) {
-    find_feed.call(context);
+    findFeed.call(context);
   } else {
-    open_db(on_open_db.bind(context));
+    openDB(onOpenDB.bind(context));
   }
 }
 
-function on_open_db(db) {
+function onOpenDB(db) {
   if(db) {
     this.db = db;
-    this.should_close = true;
-    find_feed.call(this);
+    this.shouldCloseDB = true;
+    findFeed.call(this);
   } else {
-    on_complete.call(this, {'type': 'ConnectionError'});
+    onSubscribeComplete.call(this, {'type': 'ConnectionError'});
   }
 }
 
@@ -55,45 +55,48 @@ function on_open_db(db) {
 // the same url, but its impact is limited. The latter http request will use
 // the cached page, and the latter call will fail with a ConstraintError when
 // trying to add the feed.
-function find_feed() {
-  const url_string = get_feed_url(this.feed);
-  console.debug('Checking if subscribed to', url_string);
+function findFeed() {
+
+  // TODO: i should be fully normalizing feed url
+
+  const feedURLString = getFeedURL(this.feed);
+  console.debug('Checking if subscribed to', feedURLString);
   const transaction = this.db.transaction('feed');
   const store = transaction.objectStore('feed');
   const index = store.index('urls');
-  const request = index.get(url_string);
-  request.onsuccess = find_feed_onsuccess.bind(this);
-  request.onerror = find_feed_onerror.bind(this);
+  const request = index.get(feedURLString);
+  request.onsuccess = findFeedOnSuccess.bind(this);
+  request.onerror = findFeedOnError.bind(this);
 }
 
-function find_feed_onsuccess(event) {
+function findFeedOnSuccess(event) {
   if(event.target.result) {
-    const feed_url = get_feed_url(this.feed);
-    console.debug('Already subscribed to', feed_url);
-    on_complete.call(this, {'type': 'ConstraintError'});
+    const feedURL = getFeedURL(this.feed);
+    console.debug('Already subscribed to', feedURL);
+    onSubscribeComplete.call(this, {'type': 'ConstraintError'});
     return;
   }
 
   if('onLine' in navigator && !navigator.onLine) {
-    add_feed.call(this, this.feed, on_add_feed.bind(this));
+    addFeed.call(this, this.feed, onAddFeed.bind(this));
   } else {
-    const exclude_entries = true;
-    const feed_url = get_feed_url(this.feed);
-    const feed_url_obj = new URL(feed_url);
-    fetch_feed(feed_url_obj, exclude_entries, on_fetch_feed.bind(this));
+    const shouldExcludeEntries = true;
+    const feedURL = getFeedURL(this.feed);
+    const feedURLObject = new URL(feedURL);
+    fetchFeed(feedURLObject, shouldExcludeEntries, onFetchFeed.bind(this));
   }
 }
 
-function find_feed_onerror(event) {
-  on_complete.call(this, {'type': 'FindQueryError'});
+function findFeedOnError(event) {
+  onSubscribeComplete.call(this, {'type': 'FindQueryError'});
 }
 
-function on_fetch_feed(event) {
+function onFetchFeed(event) {
   if(event.type !== 'success') {
     if(event.type === 'invalid_mime_type') {
-      on_complete.call(this, {'type': 'FetchMimeTypeError'});
+      onSubscribeComplete.call(this, {'type': 'FetchMimeTypeError'});
     } else {
-      on_complete.call(this, {'type': 'FetchError'});
+      onSubscribeComplete.call(this, {'type': 'FetchError'});
     }
 
     return;
@@ -102,9 +105,9 @@ function on_fetch_feed(event) {
   // TODO: instead of adding the feed, this is where I should be looking for
   // the feed's favicon. We know we are probably online at this point and are
   // not subscribing while offline, and we know that the feed xml file exists.
-  // Or, instead of this, fetch_feed should be doing it
+  // Or, instead of this, fetchFeed should be doing it
 
-  const feed = merge_feeds(this.feed, event.feed);
+  const feed = mergeFeeds(this.feed, event.feed);
 
   // Ensure that the date last modified is not set, so that the next poll will
   // not ignore the file's entries.
@@ -112,31 +115,32 @@ function on_fetch_feed(event) {
   // also check if feed was ever polled (e.g. has dateUpdated field set)
   delete feed.dateLastModified;
 
-  add_feed.call(this, feed, on_add_feed.bind(this));
+  addFeed.call(this, feed, onAddFeed.bind(this));
 }
 
-function on_add_feed(event) {
+function onAddFeed(event) {
   if(event.type === 'success') {
-    this.did_subscribe = true;
-    on_complete.call(this, {'type': 'success', 'feed': event.feed});
+    this.didSubscribe = true;
+    onSubscribeComplete.call(this, {'type': 'success', 'feed': event.feed});
   } else {
-    on_complete.call(this, {'type': event.type});
+    onSubscribeComplete.call(this, {'type': event.type});
   }
 }
 
-function on_complete(event) {
-  if(this.should_close && this.db) {
+function onSubscribeComplete(event) {
+  if(this.shouldCloseDB && this.db) {
     this.db.close();
   }
 
-  if(!this.no_notify && this.did_subscribe) {
+  if(!this.shouldNotNotify && this.didSubscribe) {
     // TODO: if addFeed calls back with a Feed object, then I wouldn't need
     // to use call here. This also means this passes back a Feed object instead
     // of a basic object, which means I would need to update all callers
     // TODO: the notification should probably use the feed's favicon if
     // available, and only then fall back
-    const display_string = event.feed.title ||  get_feed_url(event.feed);
-    show_desktop_notification('Subscription complete', 'Subscribed to ' + display_string);
+    const displayString = event.feed.title ||  getFeedURL(event.feed);
+    const message = 'Subscribed to ' + displayString;
+    showDesktopNotification('Subscription complete', message);
   }
 
   if(this.callback) {

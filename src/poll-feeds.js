@@ -6,105 +6,105 @@
 
 { // Begin file block scope
 
-// @param force_reset_lock {boolean} if true then polling continues even when
+// @param forceResetLock {boolean} if true then polling continues even when
 // locked
-// @param allow_metered {boolean} if true then allow polling to continue on a
-// metered connection
-function poll_feeds(force_reset_lock, allow_metered) {
+// @param allowMeteredConnections {boolean} if true then allow polling to
+// continue on a metered connection
+function pollFeeds(forceResetLock, allowMeteredConnections) {
   console.log('Checking for new articles...');
 
-  const context = {'num_feeds_pending': 0, 'connection': null};
+  const context = {'numFeedsPending': 0, 'connection': null};
 
-  if(force_reset_lock) {
-    release_lock();
+  if(forceResetLock) {
+    releasePollLock();
   }
 
-  if(is_locked()) {
+  if(isPollLocked()) {
     console.warn('Already running');
-    on_complete.call(context);
+    onPollComplete.call(context);
     return;
   }
 
-  acquire_lock();
+  acquirePollLock();
 
   if('onLine' in navigator && !navigator.onLine) {
     console.warn('Offline');
-    on_complete.call(context);
+    onPollComplete.call(context);
     return;
   }
 
   // There currently is no way to set this flag in the UI, and
   // navigator.connection is still experimental.
-  if(!allow_metered && 'NO_POLL_METERED' in localStorage &&
+  if(!allowMeteredConnections && 'NO_POLL_METERED' in localStorage &&
     navigator.connection && navigator.connection.metered) {
     console.debug('Metered connection');
-    on_complete.call(context);
+    onPollComplete.call(context);
     return;
   }
 
   // Check if idle and possibly cancel the poll or continue with polling
   if('ONLY_POLL_IF_IDLE' in localStorage) {
     const idle_period_secs = 30;
-    chrome.idle.queryState(idle_period_secs, on_query_idle.bind(context));
+    chrome.idle.queryState(idle_period_secs, onQueryIdleState.bind(context));
   } else {
-    open_db(on_open_db.bind(context));
+    openDB(onOpenDB.bind(context));
   }
 }
 
-function on_query_idle(state) {
+function onQueryIdleState(state) {
   if(state === 'locked' || state === 'idle') {
-    open_db(on_open_db.bind(this));
+    openDB(onOpenDB.bind(this));
   } else {
     console.debug('Idle state', state);
-    on_complete.call(this);
+    onPollComplete.call(this);
   }
 }
 
-function on_open_db(connection) {
+function onOpenDB(connection) {
   if(connection) {
     this.connection = connection;
-    const transaction = connection.transaction('feed');
-    const store = transaction.objectStore('feed');
+    const tx = connection.transaction('feed');
+    const store = tx.objectStore('feed');
     const request = store.openCursor();
-    request.onsuccess = open_feed_cursor_onsuccess.bind(this);
-    request.onerror = open_feed_cursor_onerror.bind(this);
+    request.onsuccess = openFeedCursorOnSuccess.bind(this);
+    request.onerror = openFeedCursorOnError.bind(this);
   } else {
-    on_complete.call(this);
+    onPollComplete.call(this);
   }
 }
 
-function open_feed_cursor_onerror(event) {
-  on_complete.call(this);
+function openFeedCursorOnError(event) {
+  onPollComplete.call(this);
 }
 
-function open_feed_cursor_onsuccess(event) {
+function openFeedCursorOnSuccess(event) {
   const cursor = event.target.result;
   if(!cursor) {
-    on_complete.call(this);
+    onPollComplete.call(this);
     return;
   }
 
-  this.num_feeds_pending++;
+  this.numFeedsPending++;
   const feed = cursor.value;
-  const exclude_entries_flag = false;
-  const feed_url = get_feed_url(feed);
-  const url_obj = new URL(feed_url);
-  const bound_on_fetch = on_fetch_feed.bind(this, feed);
-  fetch_feed(url_obj, exclude_entries_flag, bound_on_fetch);
+  const shouldExcludeEntries = false;
+  const feedURLString = getFeedURL(feed);
+  const feedURLObject = new URL(feedURLString);
+  const boundOnFetchFeed = onFetchFeed.bind(this, feed);
+  fetchFeed(feedURLObject, shouldExcludeEntries, boundOnFetchFeed);
   cursor.continue();
 }
 
-function on_fetch_feed(local_feed, event) {
+function onFetchFeed(localFeed, event) {
   if(event.type !== 'success') {
-    this.num_feeds_pending--;
-    on_complete.call(this);
+    this.numFeedsPending--;
+    onPollComplete.call(this);
     return;
   }
 
-  const remote_feed = event.feed;
-  if(is_feed_unmodified(local_feed, remote_feed)) {
-    this.num_feeds_pending--;
-    on_complete.call(this);
+  const remoteFeed = event.feed;
+  if(isFeedUnmodified(localFeed, remoteFeed)) {
+    this.numFeedsPending--;
+    onPollComplete.call(this);
     return;
   }
 
@@ -114,42 +114,42 @@ function on_fetch_feed(local_feed, event) {
   // TODO: this could be more idiomatic with a function. Something like
   // get_remote_feed_url_to_use_to_find_favicon
 
-  const remote_feed_url = get_feed_url(remote_feed);
-  const remote_feed_url_obj = new URL(remote_feed_url);
+  const remoteFeedURLString = getFeedURL(remoteFeed);
+  const remoteFeedURLObject = new URL(remoteFeedURLString);
 
-  const query_url = remote_feed.link ? new URL(remote_feed.link) :
-    remote_feed_url_obj;
-  const bound_on_lookup = on_lookup_feed_favicon.bind(this, local_feed,
-    remote_feed, event.entries);
-  const prefetched_doc = null;
-  lookup_favicon(query_url, prefetched_doc, bound_on_lookup);
+  const feedFaviconPageURL = remoteFeed.link ? new URL(remoteFeed.link) :
+    remoteFeedURLObject;
+  const boundOnLookup = onLookupFeedFavicon.bind(this, localFeed, remoteFeed,
+    event.entries);
+  const prefetchedDoc = null;
+  lookupFavicon(feedFaviconPageURL, prefetchedDoc, boundOnLookup);
 }
 
-function is_feed_unmodified(local_feed, remote_feed) {
-  return local_feed.dateLastModified && remote_feed.dateLastModified &&
-    local_feed.dateLastModified.getTime() ===
-    remote_feed.dateLastModified.getTime()
+function isFeedUnmodified(localFeed, remoteFeed) {
+  return localFeed.dateLastModified && remoteFeed.dateLastModified &&
+    localFeed.dateLastModified.getTime() ===
+    remoteFeed.dateLastModified.getTime()
 }
 
-function on_lookup_feed_favicon(local_feed, remote_feed, entries, favicon_url) {
-  if(favicon_url) {
-    remote_feed.faviconURLString = favicon_url.href;
+function onLookupFeedFavicon(localFeed, remoteFeed, entries, faviconURL) {
+  if(faviconURL) {
+    remoteFeed.faviconURLString = faviconURL.href;
   }
 
-  const feed = merge_feeds(local_feed, remote_feed);
-  update_feed(this.connection, feed, on_update_feed.bind(this, entries));
+  const feed = mergeFeeds(localFeed, remoteFeed);
+  updateFeed(this.connection, feed, onUpdateFeed.bind(this, entries));
 }
 
-function on_update_feed(entries, event) {
+function onUpdateFeed(entries, event) {
   if(event.type !== 'success') {
-    this.num_feeds_pending--;
-    on_complete.call(this);
+    this.numFeedsPending--;
+    onPollComplete.call(this);
     return;
   }
 
   if(!entries || !entries.length) {
-    this.num_feeds_pending--;
-    on_complete.call(this);
+    this.numFeedsPending--;
+    onPollComplete.call(this);
     return;
   }
 
@@ -161,42 +161,42 @@ function on_update_feed(entries, event) {
   // or just pass along only the relevant fields needed like feedId and title
   // and faviconURLString
 
-  const feed_context = {
-    'num_entries_processed': 0,
-    'num_entries_added': 0,
-    'num_entries': entries.length
+  const feedContext = {
+    'numEntriesProcessed': 0,
+    'numEntriesAdded': 0,
+    'numEntries': entries.length
   };
 
-  const bound_on_entry_processed = on_entry_processed.bind(this, feed_context);
+  const boundOnEntryProcessed = onEntryProcessed.bind(this, feedContext);
   for(let entry of entries) {
-    process_entry.call(this, event.feed, entry, bound_on_entry_processed);
+    processEntry.call(this, event.feed, entry, boundOnEntryProcessed);
   }
 }
 
-function process_entry(feed, entry, callback) {
+function processEntry(feed, entry, callback) {
 
-  let entry_terminal_url_str = get_entry_url(entry);
+  let entryTerminalURLString = getEntryURL(entry);
 
-  if(!entry_terminal_url_str) {
+  if(!entryTerminalURLString) {
     console.warn('Entry missing url', entry);
     callback();
     return;
   }
 
-  let entry_terminal_url_obj = new URL(entry_terminal_url_str);
-  const rewritten_url_obj = rewrite_url(entry_terminal_url_obj);
+  let entryTerminalURLObject = new URL(entryTerminalURLString);
+  const rewrittenURLObject = rewriteURL(entryTerminalURLObject);
 
-  if(rewritten_url_obj) {
-    append_entry_url(entry, rewritten_url_obj.href);
+  if(rewrittenURLObject) {
+    appendEntryURL(entry, rewrittenURLObject.href);
   }
 
   // The terminal url may have changed if it was rewritten and unique
-  entry_terminal_url_str = get_entry_url(entry);
-  entry_terminal_url_obj = new URL(entry_terminal_url_str);
+  entryTerminalURLString = getEntryURL(entry);
+  entryTerminalURLObject = new URL(entryTerminalURLString);
 
   // TODO: should normalize append the norm url to entry.urls?
 
-  const normalized_url_obj = normalize_url(entry_terminal_url_obj);
+  const normalizedURLObject = normalizeURL(entryTerminalURLObject);
 
   // TODO: there is another kind normalization I want to add, I think I have to
   // add it in several places (which eventually should just be one place),
@@ -204,23 +204,23 @@ function process_entry(feed, entry, callback) {
   // to use invalid urls
 
 
-  // Temp, testing to see if this was cause of dup call to add_entry
-  // console.debug('Searching for entry:', normalized_url_obj.href);
+  // Temp, testing to see if this was cause of dup call to addEntry
+  // console.debug('Searching for entry:', normalizedURLObject.href);
 
   // TODO: after some thought, I think it is better to have a separate funciton
   // called something like find_entry_by_url, and this should call out to that.
   // It is more idiomatic, and it shortens the code
 
-  const transaction = this.connection.transaction('entry');
-  const store = transaction.objectStore('entry');
+  const tx = this.connection.transaction('entry');
+  const store = tx.objectStore('entry');
   const index = store.index('urls');
-  const request = index.get(normalized_url_obj.href);
-  const on_find = on_find_entry.bind(this, feed, entry, callback);
-  request.onsuccess = on_find;
-  request.onerror = on_find;
+  const request = index.get(normalizedURLObject.href);
+  const boundOnFindEntry = onFindEntry.bind(this, feed, entry, callback);
+  request.onsuccess = boundOnFindEntry;
+  request.onerror = boundOnFindEntry;
 }
 
-function on_find_entry(feed, entry, callback, event) {
+function onFindEntry(feed, entry, callback, event) {
   if(event.type !== 'success') {
     callback();
     return;
@@ -245,76 +245,75 @@ function on_find_entry(feed, entry, callback, event) {
     entry.feedTitle = feed.title;
   }
 
-  const entry_url_str = get_entry_url(entry);
-  const entry_url_obj = new URL(entry_url_str);
+  const entryTerminalURLString = getEntryURL(entry);
+  const entryTerminalURLObject = new URL(entryTerminalURLString);
 
   // Check that the url does not belong to a domain that obfuscates its content
   // with things like advertisement interception or full javascript. While these
   // documents can be fetched, there is no point to doing so.
-  if(is_fetch_resistant(entry_url_obj)) {
-    prepare_local_entry_doc(entry);
-    add_entry(this.connection, entry, callback);
+  if(isFetchResistantURL(entryTerminalURLObject)) {
+    prepLocalEntryDoc(entry);
+    addEntry(this.connection, entry, callback);
     return;
   }
 
   // Check if the entry url does not point to a PDF. This limits the amount of
   // networking in the general case, even though the extension isn't a real
   // indication of the mime type and may have some false positives. Even if
-  // this misses it, responseXML will be undefined in fetch_html so false
+  // this misses it, responseXML will be undefined in fetchHTML so false
   // negatives are not too important.
-  if(is_pdf_url(entry_url_obj)) {
-    prepare_local_entry_doc(entry);
-    add_entry(this.connection, entry, callback);
+  if(isPDFURL(entryTerminalURLObject)) {
+    prepLocalEntryDoc(entry);
+    addEntry(this.connection, entry, callback);
     return;
   }
 
-  const timeout_ms = 10 * 1000;
-  const bound_on_fetch_entry = on_fetch_entry.bind(this, entry, callback);
-  fetch_html(entry_url_obj, timeout_ms, bound_on_fetch_entry);
+  const timeoutMs = 10 * 1000;
+  const boundOnFetchEntry = onFetchEntry.bind(this, entry, callback);
+  fetchHTML(entryTerminalURLObject, timeoutMs, boundOnFetchEntry);
 }
 
-function is_pdf_url(url) {
+function isPDFURL(url) {
   // The min len test is here just to reduce regex calls
-  const min_len = '/a.pdf'.length;
+  const minLength = '/a.pdf'.length;
   const path = url.pathname;
-  return path && path.length > min_len && /\.pdf$/i.test(path)
+  return path && path.length > minLength && /\.pdf$/i.test(path)
 }
 
-
-function on_fetch_entry(entry, callback, event) {
+function onFetchEntry(entry, callback, event) {
   if(event.type !== 'success') {
-    prepare_local_entry_doc(entry);
-    add_entry(this.connection, entry, callback);
+    prepLocalEntryDoc(entry);
+    addEntry(this.connection, entry, callback);
     return;
   }
 
   // Append the response url in case of a redirect
-  const response_url_str = event.responseURL.href;
+  const responseURLString = event.responseURL.href;
   // There should always be a response url, even if no redirect occurred
-  console.assert(response_url_str);
-  append_entry_url(entry, response_url_str);
-
+  console.assert(responseURLString);
+  appendEntryURL(entry, responseURLString);
 
   // TODO: if we successfully fetched the entry, then before storing it,
-  // we should be trying to set its favicon_url.
+  // we should be trying to set its faviconURL.
   // - i shouldn't be using the feed's favicon url, that is unrelated
   // - i should pass along the html of the associated html document. the
   // lookup should not fetch a second time.
   // - i should be querying against the redirect url
 
   const doc = event.document;
-  transform_lazy_images(doc);
-  filter_sourceless_images(doc);
-  filter_invalid_anchors(doc);
-  resolve_document_urls(doc, event.responseURL);
-  filter_tracking_images(doc);
-  const next = on_set_image_dimensions.bind(this, entry, doc, callback);
-  set_image_dimensions(doc, next);
+  transformLazyImages(doc);
+  filterSourcelessImages(doc);
+  filterInvalidAnchors(doc);
+  resolveDocumentURLs(doc, event.responseURL);
+  filterTrackingImages(doc);
+  const boundOnSetImageDimensions = onSetImageDimensions.bind(this, entry, doc,
+    callback);
+  setImageDimensions(doc, boundOnSetImageDimensions);
 }
 
-function on_set_image_dimensions(entry, document, callback, num_modified) {
+function onSetImageDimensions(entry, document, callback, numImagesModified) {
   console.assert(document);
-  prepare_doc(document);
+  prepDoc(document);
   entry.content = document.documentElement.outerHTML.trim();
 
   // TODO: it looks like there is a bug where this is sometimes called twice
@@ -329,18 +328,18 @@ function on_set_image_dimensions(entry, document, callback, num_modified) {
   // killed-6ee45313b559#.z1vs8xyjz
   // From the looks of it, it is because of the hash maybe
   // it could be that the whole feed is getting processed twice?
-  //console.debug('Calling add_entry:', get_entry_url(entry));
+  //console.debug('Calling addEntry:', getEntryURL(entry));
 
-  add_entry(this.connection, entry, callback);
+  addEntry(this.connection, entry, callback);
 }
 
-function prepare_doc(doc) {
-  filter_boilerplate(doc);
-  sanitize_document(doc);
-  add_no_referrer_to_anchors(doc);
+function prepDoc(doc) {
+  filterBoilerplate(doc);
+  sanitizeDocument(doc);
+  addNoReferrerToAnchors(doc);
 }
 
-function prepare_local_entry_doc(entry) {
+function prepLocalEntryDoc(entry) {
   if(!entry.content) {
     return;
   }
@@ -350,56 +349,57 @@ function prepare_local_entry_doc(entry) {
   try {
     const doc = parser.parseFromString(entry.content, 'text/html');
     console.assert(!doc.querySelector('parsererror'));
-    prepare_doc(doc);
+    prepDoc(doc);
     entry.content = doc.documentElement.outerHTML.trim();
   } catch(error) {
     console.warn(error);
   }
 }
 
-function on_entry_processed(feed_context, event) {
-  feed_context.num_entries_processed++;
-  const count = feed_context.num_entries_processed;
-  console.assert(count <= feed_context.num_entries);
+function onEntryProcessed(feedContext, event) {
+  feedContext.numEntriesProcessed++;
+  const count = feedContext.numEntriesProcessed;
+  console.assert(count <= feedContext.numEntries);
 
   if(event && event.type === 'success') {
-    feed_context.num_entries_added++;
+    feedContext.numEntriesAdded++;
   }
 
-  if(count === feed_context.num_entries) {
-    if(feed_context.num_entries_added) {
-      update_badge(this.connection);
+  if(count === feedContext.numEntries) {
+    if(feedContext.numEntriesAdded) {
+      updateBadge(this.connection);
     }
 
-    this.num_feeds_pending--;
-    on_complete.call(this);
+    this.numFeedsPending--;
+    onPollComplete.call(this);
   }
 }
 
 // Called whenever a feed finishes processing, or when there
 // were no feeds to process.
-function on_complete() {
-  if(this.num_feeds_pending) {
+function onPollComplete() {
+  if(this.numFeedsPending) {
     return;
   }
 
-  show_desktop_notification('Updated articles', 'Completed checking for new articles');
+  showDesktopNotification('Updated articles',
+    'Completed checking for new articles');
   if(this.connection) {
     this.connection.close();
   }
 
-  release_lock();
+  releasePollLock();
   console.log('Polling completed');
 }
 
-function normalize_url(url) {
-  let clone = clone_url(url);
+function normalizeURL(url) {
+  let clone = cloneURL(url);
   // Strip the hash
   clone.hash = '';
   return clone;
 }
 
-function clone_url(url) {
+function cloneURL(url) {
   return new URL(url.href);
 }
 
@@ -410,18 +410,18 @@ function clone_url(url) {
 // each page load. When polling determines if the poll is locked, it only
 // checks for the presence of the key, and ignores the value, so the value I
 // specify here is unimportant.
-function acquire_lock() {
-  localStorage.POLL_IS_ACTIVE = 'true';
+function acquirePollLock() {
+  localStorage.POLL_IS_ACTIVE = '1';
 }
 
-function release_lock() {
+function releasePollLock() {
   delete localStorage.POLL_IS_ACTIVE;
 }
 
-function is_locked() {
+function isPollLocked() {
   return 'POLL_IS_ACTIVE' in localStorage;
 }
 
-this.poll_feeds = poll_feeds;
+this.pollFeeds = pollFeeds;
 
 } // End file block scope

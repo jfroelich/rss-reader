@@ -9,21 +9,27 @@
 // TODO: removeAttribute just does a lookup of the attribute again. Look
 // into whether there is a simple way to remove an attribute if I already
 // have the attribute node object.
-function filter_element_attributes(document) {
+// TODO: use element.localName and lowercase comparison tests
+function filterElementAttributes(document) {
+
+  // Use getElementsByTagName here over querySelectorAll because we are not
+  // removing elements from the HTMLCollection and get a marginal perf benefit
   const elements = document.getElementsByTagName('*');
 
-  // Iterate attributes in reverse to avoid issues with mutating a live
-  // NodeList during iteration
+  // element.attributes yields a live NodeList. Therefore each attribute removal
+  // shortens the list. If we cache the length of the list upfront, then we
+  // could iterate past the end of the list as we iterate. Therefore, iterate
+  // in reverse to avoid the issue.
 
   for(let i = 0, len = elements.length; i < len; i++) {
     let element = elements[i];
-    let el_name = element.nodeName;
+    let elementName = element.nodeName;
     let attributes = element.attributes;
     if(!attributes || !attributes.length) {
       continue;
     }
 
-    if(el_name === 'SOURCE') {
+    if(elementName === 'SOURCE') {
       for(let j = attributes.length - 1; j > -1; j--) {
         let attributeName = attributes[j].name;
         if(attributeName !== 'type' && attributeName !== 'srcset' &&
@@ -32,7 +38,7 @@ function filter_element_attributes(document) {
           element.removeAttribute(attributeName);
         }
       }
-    } else if(el_name === 'A') {
+    } else if(elementName === 'A') {
       for(let j = attributes.length - 1; j > -1; j--) {
         let attributeName = attributes[j].name;
         if(attributeName !== 'href' && attributeName !== 'name' &&
@@ -40,14 +46,14 @@ function filter_element_attributes(document) {
           element.removeAttribute(attributeName);
         }
       }
-    } else if(el_name === 'IFRAME') {
+    } else if(elementName === 'IFRAME') {
       for(let j = attributes.length - 1; j > -1; j--) {
         let attributeName = attributes[j].name;
         if(attributeName !== 'src') {
           element.removeAttribute(attributeName);
         }
       }
-    } else if(el_name === 'IMG') {
+    } else if(elementName === 'IMG') {
       for(let j = attributes.length - 1; j > -1; j--) {
         let attributeName = attributes[j].name;
         if(attributeName !== 'src' && attributeName !== 'alt' &&

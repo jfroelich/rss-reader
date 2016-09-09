@@ -6,6 +6,8 @@
 
 { // Begin file block scope
 
+// TODO: rename file to is-fetch-resistant-url.js
+
 const HOSTNAMES = [
   'productforums.google.com',
   'groups.google.com',
@@ -14,10 +16,12 @@ const HOSTNAMES = [
 ];
 
 // hostname getter normalizes url part to lowercase
-this.is_fetch_resistant = function(url) {
+function isFetchResistantURL(url) {
   console.assert(url);
   console.assert(url.hostname);
   return HOSTNAMES.includes(url.hostname);
-};
+}
+
+this.isFetchResistantURL = isFetchResistantURL;
 
 } // End file block scope

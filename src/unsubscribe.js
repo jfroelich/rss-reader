@@ -6,91 +6,93 @@
 
 { // Begin file block scope
 
-function unsubscribe(feed_id, callback) {
-  console.debug('Unsubscribing from', feed_id);
-  console.assert(feed_id);
-  console.assert(!isNaN(feed_id));
+function unsubscribe(feedId, callback) {
+  console.debug('Unsubscribing from', feedId);
+
+  console.assert(feedId);
+  console.assert(!isNaN(feedId));
+  console.assert(isFinite(feedId));
+  console.assert(feedId > 0);
 
   const context = {
     'connection': null,
-    'feed_id': feed_id,
-    'num_delete_entry_requests': 0,
+    'feedId': feedId,
+    'numDeleteEntryRequests': 0,
     'callback': callback
   };
 
-  open_db(on_open_db.bind(context));
+  openDB(onOpenDB.bind(context));
 }
 
-function on_open_db(connection) {
+function onOpenDB(connection) {
   if(connection) {
     this.connection = connection;
-    const transaction = connection.transaction('entry', 'readwrite');
-    const store = transaction.objectStore('entry');
+    const tx = connection.transaction('entry', 'readwrite');
+    const store = tx.objectStore('entry');
     const index = store.index('feed');
-    const request = index.openCursor(this.feed_id);
-    request.onsuccess = open_entry_cursor_onsuccess.bind(this);
-    request.onerror = open_entry_cursor_onerror.bind(this);
+    const request = index.openCursor(this.feedId);
+    request.onsuccess = openEntryCursorOnSuccess.bind(this);
+    request.onerror = openEntryCursorOnError.bind(this);
   } else {
-    on_complete.call(this, 'ConnectionError');
+    onUnsubscribeComplete.call(this, 'ConnectionError');
   }
 }
 
-function open_entry_cursor_onsuccess(event) {
+function openEntryCursorOnSuccess(event) {
   const cursor = event.target.result;
   if(cursor) {
     const entry = cursor.value;
 
     // Async
     cursor.delete();
-    this.num_delete_entry_requests++;
+    this.numDeleteEntryRequests++;
 
     // Async
     chrome.runtime.sendMessage({
-      'type': 'delete_entry_requested',
+      'type': 'deleteEntryRequested',
       'entryId': entry.id
     });
 
     // Async
     cursor.continue();
   } else {
-    on_remove_entries.call(this);
+    onRemoveEntries.call(this);
   }
 }
 
-function open_entry_cursor_onerror(event) {
+function openEntryCursorOnError(event) {
   console.error(event.target.error);
-  on_complete.call(this, 'DeleteEntryError');
+  onUnsubscribeComplete.call(this, 'DeleteEntryError');
 }
 
-function on_remove_entries() {
-  console.debug('Deleting feed', this.feed_id);
-  const transaction = this.connection.transaction('feed', 'readwrite');
-  const store = transaction.objectStore('feed');
-  const request = store.delete(this.feed_id);
-  request.onsuccess = delete_feed_onsuccess.bind(this);
-  request.onerror = delete_feed_onerror.bind(this);
+function onRemoveEntries() {
+  console.debug('Deleting feed', this.feedId);
+  const tx = this.connection.transaction('feed', 'readwrite');
+  const store = tx.objectStore('feed');
+  const request = store.delete(this.feedId);
+  request.onsuccess = deleteFeedOnSuccess.bind(this);
+  request.onerror = deleteFeedOnError.bind(this);
 }
 
-function delete_feed_onsuccess(event) {
-  on_complete.call(this, 'success');
+function deleteFeedOnSuccess(event) {
+  onUnsubscribeComplete.call(this, 'success');
 }
 
-function delete_feed_onerror(event) {
-  console.warn(event.target.error);
-  on_complete.call(this, 'DeleteFeedError');
+function deleteFeedOnError(event) {
+  console.error(event.target.error);
+  onUnsubscribeComplete.call(this, 'DeleteFeedError');
 }
 
-function on_complete(event_type) {
-
+function onUnsubscribeComplete(eventType) {
   console.log('Unsubscribed');
 
   if(this.connection) {
-    if(this.num_delete_entry_requests) {
+    if(this.numDeleteEntryRequests) {
       console.debug('Requested %i entries to be deleted',
-        this.num_delete_entry_requests);
+        this.numDeleteEntryRequests);
       // Even though the deletes are pending, the readonly transaction in
-      // update_badge implicitly waits for the pending deletes to complete
-      update_badge(this.connection);
+      // updateBadge implicitly waits for the pending deletes to complete
+      updateBadge(this.connection);
     }
 
     this.connection.close();
@@ -100,9 +102,9 @@ function on_complete(event_type) {
     // Has to callback using "feedId" because callers assume that property
     // name. Same thing with "deleteRequestCount"
     this.callback({
-      'type': event_type,
-      'feedId': this.feed_id,
-      'deleteRequestCount': this.num_delete_entry_requests
+      'type': eventType,
+      'feedId': this.feedId,
+      'deleteRequestCount': this.numDeleteEntryRequests
     });
   }
 }

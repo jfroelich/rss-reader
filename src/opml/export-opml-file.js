@@ -8,52 +8,52 @@
 
 // Queries the database for feeds, creates an OPML xml file, and then triggers
 // the download of the file.
-this.export_opml_file = function(title, file_name) {
+function exportOPMLFile(title, fileName) {
   const context = {
     'title': title || 'Subscriptions',
-    'file_name': file_name || 'subscriptions.xml',
+    'fileName': fileName || 'subscriptions.xml',
     'feeds': [],
-    'connection': null
+    'db': null
   };
 
-  open_db(on_open_db.bind(this));
-};
+  openDB(onOpenDB.bind(this));
+}
 
-function on_open_db(connection) {
-  if(connection) {
-    this.connection = connection;
-    const transaction = connection.transaction('feed');
-    const store = transaction.objectStore('feed');
+function onOpenDB(db) {
+  if(db) {
+    this.db = db;
+    const tx = db.transaction('feed');
+    const store = tx.objectStore('feed');
     const request = store.openCursor();
-    request.onsuccess = open_cursor_onsuccess.bind(this);
-    request.onerror = open_cursor_onerror.bind(this);
+    request.onsuccess = openCursorOnsuccess.bind(this);
+    request.onerror = openCursorOnerror.bind(this);
   } else {
-    on_complete.call(this);
+    onComplete.call(this);
   }
 }
 
-function open_cursor_onerror(event) {
+function openCursorOnerror(event) {
   console.error(event.target.error);
-  on_complete.call(this);
+  onComplete.call(this);
 }
 
-function open_cursor_onsuccess(event) {
+function openCursorOnsuccess(event) {
   const cursor = event.target.result;
   if(cursor) {
     const feed = cursor.value;
     this.feeds.push(feed);
     cursor.continue();
   } else {
-    on_get_feeds.call(this);
+    onGetFeeds.call(this);
   }
 }
 
-function on_get_feeds() {
-  const doc = create_doc(this.title);
+function onGetFeeds() {
+  const doc = createDoc(this.title);
 
   const outlines = [];
   for(let feed of this.feeds) {
-    outlines.push(create_outline(doc, feed));
+    outlines.push(createOutline(doc, feed));
   }
 
   // I do not know why using doc.body yields undefined
@@ -64,12 +64,12 @@ function on_get_feeds() {
 
   // Create a blob anchor
   const writer = new XMLSerializer();
-  const opml_string = writer.serializeToString(doc);
-  const blob = new Blob([opml_string], {'type': 'application/xml'});
-  const object_url = URL.createObjectURL(blob);
+  const opmlString = writer.serializeToString(doc);
+  const blob = new Blob([opmlString], {'type': 'application/xml'});
+  const objectURL = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
-  anchor.href = object_url;
-  anchor.setAttribute('download', this.file_name);
+  anchor.href = objectURL;
+  anchor.setAttribute('download', this.fileName);
   anchor.style.display = 'none';
 
   // Append the anchor to the document containing this script
@@ -80,23 +80,23 @@ function on_get_feeds() {
   // Trigger the download of the file
   anchor.click();
 
-  URL.revokeObjectURL(object_url);
+  URL.revokeObjectURL(objectURL);
   anchor.remove();
-  on_complete.call(this);
+  onComplete.call(this);
 }
 
-function on_complete() {
+function onComplete() {
 
-  if(this.connection) {
-    this.connection.close();
+  if(this.db) {
+    this.db.close();
   }
 
   console.log('Exported %s feeds to opml file %s', this.feeds.length,
-    this.file_name);
+    this.fileName);
 }
 
 // Creates a Document object with the given title representing an OPML file
-function create_doc(title) {
+function createDoc(title) {
   const doc = document.implementation.createDocument(null, 'opml', null);
   doc.documentElement.setAttribute('version', '2.0');
 
@@ -104,25 +104,25 @@ function create_doc(title) {
   doc.documentElement.appendChild(head);
 
   if(title) {
-    const title_el = doc.createElement('title');
-    title_el.textContent = title;
-    head.appendChild(title_el);
+    const titleEl = doc.createElement('title');
+    titleEl.textContent = title;
+    head.appendChild(titleEl);
   }
 
-  const now_date = new Date();
-  const now_utc = now_date.toUTCString();
+  const nowDate = new Date();
+  const nowDateUTCString = nowDate.toUTCString();
 
-  const date_created_el = doc.createElement('datecreated');
-  date_created_el.textContent = now_utc;
-  head.appendChild(date_created_el);
+  const dateCreatedEl = doc.createElement('datecreated');
+  dateCreatedEl.textContent = nowDateUTCString;
+  head.appendChild(dateCreatedEl);
 
-  const date_modified_el = doc.createElement('datemodified');
-  date_modified_el.textContent = now_utc;
-  head.appendChild(date_modified_el);
+  const dateModifiedEl = doc.createElement('datemodified');
+  dateModifiedEl.textContent = nowDateUTCString;
+  head.appendChild(dateModifiedEl);
 
-  const docs_el = doc.createElement('docs');
-  docs_el.textContent = 'http://dev.opml.org/spec2.html';
-  head.appendChild(docs_el);
+  const docsEl = doc.createElement('docs');
+  docsEl.textContent = 'http://dev.opml.org/spec2.html';
+  head.appendChild(docsEl);
 
   const body = doc.createElement('body');
   doc.documentElement.appendChild(body);
@@ -130,15 +130,15 @@ function create_doc(title) {
 }
 
 // Creates an outline element from an object representing a feed
-function create_outline(document, feed) {
+function createOutline(document, feed) {
   const outline = document.createElement('outline');
 
   if(feed.type) {
     outline.setAttribute('type', feed.type);
   }
 
-  const feed_url = get_feed_url(feed);
-  outline.setAttribute('xmlUrl', feed_url);
+  const feedURL = getFeedURL(feed);
+  outline.setAttribute('xmlUrl', feedURL);
 
   if(feed.title) {
     outline.setAttribute('text', feed.title);
@@ -155,5 +155,7 @@ function create_outline(document, feed) {
 
   return outline;
 }
+
+this.exportOPMLFile = exportOPMLFile;
 
 } // End file block scope

@@ -6,18 +6,18 @@
 
 { // Begin file block scope
 
-function trim_document(document) {
+function trimDocument(document) {
   const body = document.body;
   if(!body) {
     return;
   }
 
-  const first_child = body.firstChild;
-  if(first_child) {
-    step(first_child, 'nextSibling');
-    const last_child = body.lastChild;
-    if(last_child && last_child !== first_child) {
-      step(last_child, 'previousSibling');
+  const firstChild = body.firstChild;
+  if(firstChild) {
+    step(firstChild, 'nextSibling');
+    const lastChild = body.lastChild;
+    if(lastChild && lastChild !== firstChild) {
+      step(lastChild, 'previousSibling');
     }
   }
 }
@@ -28,20 +28,20 @@ const TRIMMABLE_ELEMENTS = {
   'nobr': 1
 };
 
-function is_trimmable(node) {
+function isTrimmable(node) {
   return node && (node.localName in TRIMMABLE_ELEMENTS ||
     (node.nodeType === Node.TEXT_NODE && !node.nodeValue.trim()));
 }
 
 function step(start_node, prop_name) {
   let node = start_node;
-  while(is_trimmable(node)) {
+  while(isTrimmable(node)) {
     let sibling = node[prop_name];
     node.remove();
     node = sibling;
   }
 }
 
-this.trim_document = trim_document;
+this.trimDocument = trimDocument;
 
 } // End file block scope

@@ -8,7 +8,7 @@
 // has at least one url.
 // @param feed {Object} the feed object to inspect
 // @return {String} a url string
-function get_feed_url(feed) {
+function getFeedURL(feed) {
   console.assert(feed);
   console.assert(feed.urls);
   console.assert(feed.urls.length);
@@ -19,7 +19,7 @@ function get_feed_url(feed) {
 // @param feed {Object} the feed to modify
 // @param url {string} the url to append
 // @return {boolean} true if url appended
-function append_feed_url(feed, url) {
+function appendFeedURL(feed, url) {
   console.assert(feed);
   console.assert(url);
 
@@ -34,25 +34,25 @@ function append_feed_url(feed, url) {
   // a string, and then apply any non-native normalizations.
   // It is the caller's responsibility here to provide a valid url.
   // This can throw but shouldn't.
-  const url_obj = new URL(url);
-  url_obj.hash = '';
-  const normal_url = url_obj.href;
+  const urlObject = new URL(url);
+  urlObject.hash = '';
+  const normalizedURLString = urlObject.href;
 
   // Assume that all urls from feed.urls are already normalized
-  for(let feed_url of feed.urls) {
-    if(feed_url === normal_url) {
+  for(let feedURL of feed.urls) {
+    if(feedURL === normalizedURLString) {
       return false;
     }
   }
 
-  feed.urls.push(normal_url);
+  feed.urls.push(normalizedURLString);
   return true;
 }
 
 // Returns a new object that has been sanitized. This checks for invalid values
 // and tries to minimize XSS vulnerables in html strings.
 // This currently only does asserts in some cases, not actual validation.
-function sanitize_feed(input_feed) {
+function sanitizeFeed(input_feed) {
   // Clone to maintain purity
   const feed = Object.assign({}, input_feed);
 
@@ -74,10 +74,10 @@ function sanitize_feed(input_feed) {
   // Sanitize feed title. title is an HTML string
   if(feed.title) {
     let title = feed.title;
-    title = filter_control_chars(title);
-    title = replace_html(title, '');
+    title = filterControlCharacters(title);
+    title = replaceHTML(title, '');
     title = title.replace(/\s+/, ' ');
-    title = truncate_html(title, 1024, '');
+    title = truncateHTML(title, 1024, '');
     title = title.trim();
     feed.title = title;
   }
@@ -85,8 +85,8 @@ function sanitize_feed(input_feed) {
   // Sanitize feed description. description is an HTML string
   if(feed.description) {
     let description = feed.description;
-    description = filter_control_chars(description);
-    description = replace_html(description, '');
+    description = filterControlCharacters(description);
+    description = replaceHTML(description, '');
 
     // Condense and transform whitespace into a single space
     description = description.replace(/\s+/, ' ');
@@ -94,7 +94,7 @@ function sanitize_feed(input_feed) {
     // Enforce a maximum storable length
     const pre_trunc_len = description.length;
     const DESCRIPTION_MAX_LENGTH = 1024 * 10;
-    description = truncate_html(description, DESCRIPTION_MAX_LENGTH, '');
+    description = truncateHTML(description, DESCRIPTION_MAX_LENGTH, '');
     if(pre_trunc_len > description.length) {
       console.warn('Truncated description', description);
     }
@@ -106,104 +106,104 @@ function sanitize_feed(input_feed) {
   return feed;
 }
 
-{ // Begin update_feed block scope
+{ // Begin updateFeed block scope
 
 // @param connection {IDBDatabase} an open database connection
 // @param feed {Feed} the Feed instance to put into the database
 // @param callback {function} optional callback function
-function update_feed(db, feed, callback) {
+function updateFeed(db, feed, callback) {
   console.assert(feed);
-  const feed_url = get_feed_url(feed);
-  console.assert(feed_url);
-  console.debug('Updating feed', feed_url);
+  const feedURL = getFeedURL(feed);
+  console.assert(feedURL);
+  console.debug('Updating feed', feedURL);
 
-  const sanitized_feed = sanitize_feed(feed);
-  sanitized_feed.dateUpdated = new Date();
-  const storable_feed = filter_undef_props(sanitized_feed);
+  const sanitizedFeed = sanitizeFeed(feed);
+  sanitizedFeed.dateUpdated = new Date();
+  const storableFeed = filterUndefProps(sanitizedFeed);
 
   // Creating a new transaction can throw an exception if the database is in the
   // process of closing. That happens because of errors elsewhere in the code.
-  // But those errors should not prevent update_feed from calling back with an
+  // But those errors should not prevent updateFeed from calling back with an
   // error. So catch the exception.
   let tx = null;
   try {
     tx = db.transaction('feed', 'readwrite');
   } catch(error) {
-    console.error(storable_feed.urls, error);
+    console.error(storableFeed.urls, error);
     callback({'type': 'error', 'feed': feed, 'error': error});
     return;
   }
 
   const store = tx.objectStore('feed');
-  const request = store.put(storable_feed);
+  const request = store.put(storableFeed);
   if(callback) {
-    request.onsuccess = put_onsuccess.bind(request, callback, storable_feed);
-    request.onerror = put_onerror.bind(request, callback, storable_feed);
+    request.onsuccess = putOnsuccess.bind(request, callback, storableFeed);
+    request.onerror = putOnerror.bind(request, callback, storableFeed);
   }
 }
 
-function put_onsuccess(callback, feed, event) {
+function putOnsuccess(callback, feed, event) {
   callback({'type': 'success', 'feed': feed});
 }
 
-function put_onerror(callback, feed, event) {
+function putOnerror(callback, feed, event) {
   console.error(event.target.error);
   callback({'type': 'error', 'feed': feed});
 }
 
-this.update_feed = update_feed;
+this.updateFeed = updateFeed;
 
-} // End update_feed block scope
+} // End updateFeed block scope
 
-{ // Begin add_feed block scope
+{ // Begin addFeed block scope
 
-function add_feed(feed, callback) {
+function addFeed(feed, callback) {
   // Because this feed will be added, it should not have an id
   console.assert(!feed.id);
   // The feed should have a urls property with at least one url
   console.assert(feed.urls);
   console.assert(feed.urls.length);
 
-  console.debug('Adding feed', get_feed_url(feed));
+  console.debug('Adding feed', getFeedURL(feed));
 
-  const sanitized_feed = sanitize_feed(feed);
-  sanitized_feed.dateCreated = new Date();
-  const storable_feed = filter_undef_props(sanitized_feed);
+  const sanitizedFeed = sanitizeFeed(feed);
+  sanitizedFeed.dateCreated = new Date();
+  const storableFeed = filterUndefProps(sanitizedFeed);
   const transaction = this.db.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
-  const request = store.add(storable_feed);
+  const request = store.add(storableFeed);
   if(callback) {
-    request.onsuccess = add_onsuccess.bind(request, storable_feed, callback);
-    request.onerror = add_onerror.bind(request, storable_feed, callback);
+    request.onsuccess = addOnsuccess.bind(request, storableFeed, callback);
+    request.onerror = addOnerror.bind(request, storableFeed, callback);
   }
 }
 
-function add_onsuccess(feed, callback, event) {
+function addOnsuccess(feed, callback, event) {
   const new_auto_incremented_id = event.target.result;
   feed.id = new_auto_incremented_id;
   callback({'type': 'success', 'feed': feed});
 }
 
-function add_onerror(feed, callback, event) {
+function addOnerror(feed, callback, event) {
   console.error(event.target.error);
   callback({'type': event.target.error.name});
 }
 
-this.add_feed = add_feed;
+this.addFeed = addFeed;
 
-} // End add_feed block scope
+} // End addFeed block scope
 
 // Returns a new object of the old feed merged with the new feed. Fields from
 // the new feed take precedence, except for URLs, which are merged to generate
 // a distinct ordered set of oldest to newest url.
-function merge_feeds(old_feed, new_feed) {
-  const merged_feed = Object.assign({}, old_feed, new_feed);
+function mergeFeeds(oldFeed, newFeed) {
+  const mergedFeed = Object.assign({}, oldFeed, newFeed);
 
   // Re-merge the urls. Use spread operator to clone for purity.
-  merged_feed.urls = [...old_feed.urls];
-  for(let url of new_feed.urls) {
-    append_feed_url(merged_feed, url);
+  mergedFeed.urls = [...oldFeed.urls];
+  for(let url of newFeed.urls) {
+    appendFeedURL(mergedFeed, url);
   }
 
-  return merged_feed;
+  return mergedFeed;
 }

@@ -11,44 +11,44 @@
 // The input string should be encoded, meaning that it should contain character
 // entity codes. The extension string should be decoded, meaning that it should
 // not contain character entries.
-function truncate_html(input_str, position, input_ext) {
-  console.assert(input_str);
+function truncateHTML(inputString, position, inputExtension) {
+  console.assert(inputString);
   console.assert(position >= 0);
 
   const ELLIPSIS = '\u2026';
-  const extension = input_ext || ELLIPSIS;
+  const extension = inputExtension || ELLIPSIS;
 
-  const inert_doc = document.implementation.createHTMLDocument();
-  inert_doc.documentElement.innerHTML = input_str;
+  const inertDoc = document.implementation.createHTMLDocument();
+  inertDoc.documentElement.innerHTML = inputString;
 
-  const it = inert_doc.createNodeIterator(inert_doc.body, NodeFilter.SHOW_TEXT);
-  let accepting_text = true;
-  let total_len = 0;
+  const it = inertDoc.createNodeIterator(inertDoc.body, NodeFilter.SHOW_TEXT);
+  let acceptingText = true;
+  let totalLength = 0;
 
   for(let node = it.nextNode(); node; node = it.nextNode()) {
-    if(!accepting_text) {
+    if(!acceptingText) {
       node.remove();
       continue;
     }
 
     // Accessing nodeValue yields a decoded string
     let value = node.nodeValue;
-    let value_len = value.length;
-    if(total_len + value_len >= position) {
-      accepting_text = false;
-      let remaining = position - total_len;
+    let valueLength = value.length;
+    if(totalLength + valueLength >= position) {
+      acceptingText = false;
+      let remaining = position - totalLength;
       // Setting nodeValue will implicitly encode the string
       node.nodeValue = value.substr(0, remaining) + extension;
     } else {
-      total_len = total_len + value_len;
+      totalLength = totalLength + valueLength;
     }
   }
 
   // If the document was an html fragment then exclude the tags implicitly
   // inserted when setting innerHTML
-  if(/<html/i.test(input_str)) {
-    return inert_doc.documentElement.outerHTML;
+  if(/<html/i.test(inputString)) {
+    return inertDoc.documentElement.outerHTML;
   } else {
-    return inert_doc.body.innerHTML;
+    return inertDoc.body.innerHTML;
   }
 }

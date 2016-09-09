@@ -45,13 +45,13 @@ const SELECTOR = [
   'tt'
 ].join(',');
 
-function filter_unwrappable_elements(document) {
+function filterUnwrappableElements(document) { 
   const elements = document.querySelectorAll(SELECTOR);
   for(let i = 0, len = elements.length; i < len; i++) {
-    unwrap_element(elements[i]);
+    unwrapElement(elements[i]);
   }
 }
 
-this.filter_unwrappable_elements = filter_unwrappable_elements;
+this.filterUnwrappableElements = filterUnwrappableElements;
 
 } // End file block scope

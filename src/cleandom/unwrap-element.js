@@ -12,7 +12,7 @@
 // becomes adjacent as a result of removing the element.
 // This is not optimized to work on a live document. The element, and the
 // reference node if defined, should be located within an inert document.
-function unwrap_element(element, referenceNode) {
+function unwrapElement(element, referenceNode) {
   const target = referenceNode || element;
   const parent = target.parentNode;
   console.assert(parent);
@@ -22,7 +22,7 @@ function unwrap_element(element, referenceNode) {
     parent.insertBefore(document.createTextNode(' '), target);
   }
 
-  insert_children_before(element, target);
+  insertChildrenBefore(element, target);
 
   const nextSibling = target.nextSibling;
   if(nextSibling && nextSibling.nodeType === Node.TEXT_NODE) {
@@ -33,7 +33,7 @@ function unwrap_element(element, referenceNode) {
 }
 
 // Inserts the children of the parentNode before the reference node
-function insert_children_before(parentNode, referenceNode) {
+function insertChildrenBefore(parentNode, referenceNode) {
   const referenceParent = referenceNode.parentNode;
   for(let node = parentNode.firstChild; node; node = parentNode.firstChild) {
     referenceParent.insertBefore(node, referenceNode);

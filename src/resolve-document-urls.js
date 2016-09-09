@@ -34,16 +34,16 @@ const URL_ATTRIBUTE_MAP = {
   'video': 'src'
 };
 
-function build_selector_part(key) {
+function buildSelectorPart(key) {
   return key + '[' + URL_ATTRIBUTE_MAP[key] +']';
 }
 
 const SELECTOR = Object.keys(URL_ATTRIBUTE_MAP).map(
-  build_selector_part).join(',');
+  buildSelectorPart).join(',');
 
-function resolve_document_urls(document, base_url) {
+function resolveDocumentURLs(document, baseURL) {
   console.assert(document);
-  console.assert(base_url);
+  console.assert(baseURL);
 
   // Remove base elements. There is actually no need to do this, because this
   // is done when sanitizing the document, and because all relative urls are
@@ -64,54 +64,54 @@ function resolve_document_urls(document, base_url) {
   // Resolve element attribute urls
   const elements = document.querySelectorAll(SELECTOR);
   for(let element of elements) {
-    resolve_mapped_attr(element, base_url);
+    resolveMappedAttr(element, baseURL);
   }
 
-  const srcset_selector = 'img[srcset], source[srcset]';
-  const srcset_els = document.querySelectorAll(srcset_selector);
-  for(let element of srcset_els) {
-    resolve_srcset_attr(element, base_url);
+  const srcsetSelector = 'img[srcset], source[srcset]';
+  const srcsetElements = document.querySelectorAll(srcsetSelector);
+  for(let element of srcsetElements) {
+    resolveSrcsetAttr(element, baseURL);
   }
 }
 
-function resolve_mapped_attr(element, base_url) {
+function resolveMappedAttr(element, baseURL) {
   // Unfortunately we do not know which attribute to use, so look it up again
-  const element_name = element.localName;
-  const attr_name = URL_ATTRIBUTE_MAP[element_name];
-  if(!attr_name) {
+  const elementName = element.localName;
+  const attrName = URL_ATTRIBUTE_MAP[elementName];
+  if(!attrName) {
     return;
   }
 
-  const attr_url = element.getAttribute(attr_name);
-  if(!attr_url) {
+  const attrURL = element.getAttribute(attrName);
+  if(!attrURL) {
     return;
   }
 
-  const resolved_url = resolve_url(attr_url, base_url);
+  const resolvedURL = resolveURL(attrURL, baseURL);
   // TODO: inequality test is weak because it does not ignore spaces and
   // is case sensitive and also does not consider normalization changes, maybe
   // make it weaker? Maybe it isn't too important to avoid a call to
   // setAttribute
-  if(resolved_url && resolved_url.href !== attr_url) {
-    element.setAttribute(attr_name, resolved_url.href);
+  if(resolvedURL && resolvedURL.href !== attrURL) {
+    element.setAttribute(attrName, resolvedURL.href);
   }
 }
 
-function resolve_srcset_attr(element, base_url) {
+function resolveSrcsetAttr(element, baseURL) {
   console.assert(element);
-  console.assert(base_url);
+  console.assert(baseURL);
 
-  const attr_url = element.getAttribute('srcset');
+  const attrURL = element.getAttribute('srcset');
 
   // The element has the attribute, but it may not have a value. parseSrcset
   // requires a value or it throws (??). Because parseSrcset is a 3rd party
   // API the check has merit.
-  if(!attr_url) {
+  if(!attrURL) {
     return;
   }
 
   console.assert(parseSrcset);
-  const srcset = parseSrcset(attr_url);
+  const srcset = parseSrcset(attrURL);
 
   // The parseSrcset function may fail to parse (??)
   // TODO: maybe I should be asserting definedness of srcset
@@ -122,35 +122,35 @@ function resolve_srcset_attr(element, base_url) {
   // Iterate over the descriptors and resolve each descriptor's url.
   let dirtied = false;
   for(let descriptor of srcset) {
-    const resolved_url = resolve_url(descriptor.url, base_url);
-    if(resolved_url && resolved_url.href !== descriptor.url) {
+    const resolvedURL = resolveURL(descriptor.url, baseURL);
+    if(resolvedURL && resolvedURL.href !== descriptor.url) {
       dirtied = true;
-      descriptor.url = resolved_url.href;
+      descriptor.url = resolvedURL.href;
     }
   }
 
   // If at least one descriptor was modified, then reserialize and overwrite
   // the attribute value. It is possible that all of the descriptors were
   // already absolute, so using the dirtied check saves on the call to
-  // serialize_srcset and setAttribute
+  // serializeSrcset and setAttribute
   if(dirtied) {
-    const new_srcset_value = serialize_srcset(srcset);
-    if(new_srcset_value) {
-      element.setAttribute('srcset', new_srcset_value);
+    const newSrcsetValue = serializeSrcset(srcset);
+    if(newSrcsetValue) {
+      element.setAttribute('srcset', newSrcsetValue);
     }
   }
 }
 
 // Returns a resolved URL object
-function resolve_url(url_string, base_url_object) {
-  console.assert(url_string);
-  console.assert(base_url_object);
+function resolveURL(urlString, baseURLObject) {
+  console.assert(urlString);
+  console.assert(baseURLObject);
 
-  if(is_javascript_url(url_string)) {
+  if(isJavascriptURL(urlString)) {
     return;
   }
 
-  if(is_object_url(url_string)) {
+  if(isObjectURL(urlString)) {
     return;
   }
 
@@ -160,9 +160,9 @@ function resolve_url(url_string, base_url_object) {
   // Also, by minimizing the scope of the try/catch this avoids spreading the
   // deopt it causes to the caller fns
   try {
-    return new URL(url_string, base_url_object);
+    return new URL(urlString, baseURLObject);
   } catch(error) {
-    console.warn(url_string, base_url_object.href, error);
+    console.warn(urlString, baseURLObject.href, error);
   }
 }
 
@@ -172,16 +172,16 @@ function resolve_url(url_string, base_url_object) {
 // Not to be confused with distinguishing between url strings and url objects,
 // this checks if the string looks like an object url
 // The test function tolerates nulls, so no asserts.
-function is_object_url(url_string) {
-  return /^\s*data:/i.test(url_string);
+function isObjectURL(urlString) {
+  return /^\s*data:/i.test(urlString);
 }
 
 // Returns true if the url looks like inline javascript
 // The test function tolerates nulls, so no asserts.
-function is_javascript_url(url_string) {
-  return /^\s*javascript:/i.test(url_string);
+function isJavascriptURL(urlString) {
+  return /^\s*javascript:/i.test(urlString);
 }
 
-this.resolve_document_urls = resolve_document_urls;
+this.resolveDocumentURLs = resolveDocumentURLs;
 
 } // End file block scope

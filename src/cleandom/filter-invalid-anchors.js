@@ -7,12 +7,12 @@
 { // Begin file block scope
 
 // Filters various anchors from the document.
+// @param doc {Document}
 // TODO: should this be unwrapping instead of removing?
-function filter_invalid_anchors(doc) {
-  console.assert(doc);
+function filterInvalidAnchors(doc) {
   const anchors = doc.querySelectorAll('a');
   for(let anchor of anchors) {
-    if(is_invalid_anchor(anchor)) {
+    if(isInvalidAnchor(anchor)) {
       anchor.remove();
     }
   }
@@ -20,12 +20,12 @@ function filter_invalid_anchors(doc) {
 
 // Eventually this could look for other invalid patterns, but currently I am
 // only focusing on one. I think it is related to a Macromedia template.
-function is_invalid_anchor(anchor) {
+function isInvalidAnchor(anchor) {
   console.assert(anchor);
   const href = anchor.getAttribute('href');
   return href && /^\s*https?:\/\/#/i.test(href);
 }
 
-this.filter_invalid_anchors = filter_invalid_anchors;
+this.filterInvalidAnchors = filterInvalidAnchors;
 
 } // End file block scope

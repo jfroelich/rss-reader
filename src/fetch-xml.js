@@ -21,26 +21,26 @@ const ACCEPT_XML_HEADER_VALUE = [
 // in the fetch api. basically there is no way to early exit if i use
 // an external then. So I have to always do another nested then with a
 // new promise. I need to use response.body.then(...) inside the
-// on_response function.
+// onResponse function.
 
 // Fetches the xml file at the given url and calls back with an event object
-// @param request_url {URL} the url of the feed to fetch
+// @param requestURL {URL} the url of the feed to fetch
 // @param callback {function} called when fetch completes
-this.fetch_xml = function(request_url, callback) {
+function fetchXML(requestURL, callback) {
 
   // These dependencies only appear in a try/catch, so I am explicitly
   // asserting them, because otherwise the result looks like a parse exception
   // and not a static error. I do not assert them until within this function,
   // as a global assert could be evaluated before the other files were loaded
-  console.assert(parse_xml);
+  console.assert(parseXML);
 
   // Should always be called with a URL object
-  console.assert(is_url_object(request_url));
+  console.assert(isURLObject(requestURL));
 
   // Callback is required
   console.assert(callback);
 
-  console.debug('GET', request_url.href);
+  console.debug('GET', requestURL.href);
 
   // Setup the fetch options
   const opts = {};
@@ -54,68 +54,68 @@ this.fetch_xml = function(request_url, callback) {
   opts.cache = 'default';
   opts.redirect = 'follow';
   opts.referrer = 'no-referrer';
-  let terminal_url_string;
-  let did_callback = false;
-  let on_response_called_back = false;
-  let response_content_type = null;
-  let last_modified_date = null;
-  let last_modified_string = null;
+  let terminalURLString;
+  let didCallback = false;
+  let onResponseCalledBack = false;
+  let responseContentType = null;
+  let lastModifiedDate = null;
+  let lastModifiedString = null;
 
-  function do_callback(event) {
-    if(did_callback) {
-      console.warn('Suppressing duplicated callback', request_url.href, event);
+  function doCallback(event) {
+    if(didCallback) {
+      console.warn('Suppressing duplicated callback', requestURL.href, event);
       return;
     }
-    did_callback = true;
+    didCallback = true;
     callback(event);
   }
 
-  fetch(request_url.href, opts).then(function on_response(response) {
+  fetch(requestURL.href, opts).then(function onResponse(response) {
     if(!response.ok) {
-      console.warn(request_url.href, response.status);
-      on_response_called_back = true;
-      return do_callback({
+      console.warn(requestURL.href, response.status);
+      onResponseCalledBack = true;
+      return doCallback({
         'type': 'network_error',
         'status': response.status
       });
     }
 
-    const content_type = response.headers.get('Content-Type');
-    if(!is_acceptable_content_type(content_type)) {
-      console.warn(request_url.href, 'invalid type', content_type);
-      on_response_called_back = true;
-      return do_callback({
+    const contentType = response.headers.get('Content-Type');
+    if(!isAcceptableContentType(contentType)) {
+      console.warn(requestURL.href, 'invalid type', contentType);
+      onResponseCalledBack = true;
+      return doCallback({
         'type': 'invalid_mime_type',
-        'content_type': content_type
+        'contentType': contentType
       });
     }
 
-    // NOTE: tentatively always setting response url, may deprecate did_redirect
-    //if(did_redirect(request_url, response)) {
-      terminal_url_string = response.url;
+    // NOTE: tentatively always setting response url, may deprecate didRedirect
+    //if(didRedirect(requestURL, response)) {
+      terminalURLString = response.url;
     //}
 
-    last_modified_string = response.headers.get('Last-Modified');
+    lastModifiedString = response.headers.get('Last-Modified');
 
     // Fallback to using the Date field
     // TODO: not sure if this is right, testing
-    if(!last_modified_string) {
-      last_modified_string = response.headers.get('Date');
+    if(!lastModifiedString) {
+      lastModifiedString = response.headers.get('Date');
     }
 
-    if(last_modified_string) {
+    if(lastModifiedString) {
       try {
-        last_modified_date = new Date(last_modified_string);
+        lastModifiedDate = new Date(lastModifiedString);
       } catch(error) {
         console.warn(error);
       }
     }
 
     return response.text();
-  }).then(function on_read_full_text_stream(text) {
+  }).then(function onReadFullTextStream(text) {
 
     // Part of the hack with exiting a promise early
-    if(on_response_called_back) {
+    if(onResponseCalledBack) {
       console.warn('on response already did a callback, exiting');
       return;
     }
@@ -123,10 +123,10 @@ this.fetch_xml = function(request_url, callback) {
     // Parse the text into a Document object
     let document = null;
     try {
-      document = parse_xml(text);
+      document = parseXML(text);
     } catch(error) {
       console.warn(error);
-      return do_callback({
+      return doCallback({
         'type': 'parse_exception',
         'error_object': error,
         'response_text': text
@@ -136,21 +136,21 @@ this.fetch_xml = function(request_url, callback) {
     const successEvent = {
       'type': 'success',
       'document': document,
-      'response_url_string': terminal_url_string,
-      'last_modified_date': last_modified_date
+      'responseURLString': terminalURLString,
+      'lastModifiedDate': lastModifiedDate
     };
-    do_callback(successEvent);
+    doCallback(successEvent);
   }).catch(function(error) {
     console.warn(error);
-    do_callback({
+    doCallback({
       'type': 'unknown_error'
     });
   });
-};
+}
 
 // Checks the request header value and returns true if xml or html
 // @param type {String} the raw header string for 'Content-Type'
-function is_acceptable_content_type(type) {
+function isAcceptableContentType(type) {
 
   // Treat missing content type as unacceptable
   if(!type) {
@@ -161,25 +161,25 @@ function is_acceptable_content_type(type) {
   // condition that tolerates its presence.
   // Restrict to xml. However, support an html fallback for cases where the
   // server responded with the incorrect mime type.
-  const lc_type = type.toLowerCase();
-  if(lc_type.includes('xml')) {
+  const lcType = type.toLowerCase();
+  if(lcType.includes('xml')) {
     return true;
-  } else if(lc_type.includes('text/html')) {
+  } else if(lcType.includes('text/html')) {
     return true;
   }
 
   return false;
 }
 
-function is_url_object(value) {
+function isURLObject(value) {
   return Object.prototype.toString.call(value) === '[object URL]';
 }
 
 // Returns true if a redirect occurred.
-// @param request_url {URL} - the starting url
+// @param requestURL {URL} - the starting url
 // @param response {Response} - the response object produced by calling fetch
-function did_redirect(request_url, response) {
-  console.assert(request_url);
+function didRedirect(requestURL, response) {
+  console.assert(requestURL);
   console.assert(response);
 
   // Assume that response.url is always defined (and valid)
@@ -190,7 +190,7 @@ function did_redirect(request_url, response) {
   // the request url. I have to convert response url to a URL object in order
   // to normalize it, because I am not sure whether Chrome does this for me.
 
-  const response_url = new URL(response.url);
+  const responseURL = new URL(response.url);
 
   // We cannot compare URL objects using the exact equality operator, so compare
   // the string forms of both urls.
@@ -200,8 +200,8 @@ function did_redirect(request_url, response) {
   // creating the response url, even though no redirect occurred. However, this
   // can still be considered a redirect (for now).
   // The reason that I allow this inaccuracy for now is because of external
-  // knowledge that this will be called by fetch_feed, which will append the
-  // url to the feed object using append_feed_url, which will recognize that
+  // knowledge that this will be called by fetchFeed, which will append the
+  // url to the feed object using appendFeedURL, which will recognize that
   // the new url is not different than the old one when not considering the
   // hash, and therefore silently ignore it. I don't love this but this is how
   // it is working for now.
@@ -214,7 +214,9 @@ function did_redirect(request_url, response) {
   // Maybe the better approach is to just output the response url and not care
   // about redirect logic here, and let the caller do comparisons
 
-  return request_url.href !== response_url.href;
+  return requestURL.href !== responseURL.href;
 }
+
+this.fetchXML = fetchXML;
 
 } // End file block scope

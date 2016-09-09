@@ -7,23 +7,23 @@
 { // Begin file block scope
 
 // @param limit max number of rows to inspect
-function filter_table_elements(document, limit) {
+function filterTableElements(document, limit) {
   const tables = document.querySelectorAll('table');
   for(let i = 0, len = tables.length; i < len; i++) {
     const table = tables[i];
-    if(is_single_col_table(table, limit)) {
-      unwrap_single_column_table(table);
+    if(isSingleColTable(table, limit)) {
+      unwrapSingleColTable(table);
     }
   }
 }
 
 // A table is a single column unless it has any non-single column rows in
 // the first couple of rows
-function is_single_col_table(table, limit) {
+function isSingleColTable(table, limit) {
   const rows = table.rows;
   const upper = Math.min(rows.length, limit);
   for(let i = 0; i < upper; i++) {
-    if(!is_single_col_row(rows[i])) {
+    if(!isSingleColRow(rows[i])) {
       return false;
     }
   }
@@ -34,18 +34,18 @@ function is_single_col_table(table, limit) {
 // one non-leaf cell.
 // TODO: the logic here could be simplified. Maybe just use a boolean
 // instead of a counter.
-function is_single_col_row(row) {
+function isSingleColRow(row) {
   const cells = row.cells;
-  let non_empty_count = 0;
+  let nonEmptyCount = 0;
   for(let i = 0, len = cells.length; i < len; i++) {
     const cell = cells[i];
-    if(is_leaf_node(cell)) {
+    if(isLeafNode(cell)) {
       // If it is a leaf node, it could still be a single column row element
     } else {
       // If it is a non leaf node, it is no longer a single column row element
       // if this is the 2nd non-leaf found.
-      non_empty_count++;
-      if(non_empty_count === 1) {
+      nonEmptyCount++;
+      if(nonEmptyCount === 1) {
         // This is the first non-leaf. Still could be single column
       } else {
         // This is the second non-leaf. Can't be single column.
@@ -58,35 +58,35 @@ function is_single_col_row(row) {
   return true;
 }
 
-// is_single_col_table does not guarantee that all rows are single column, so
+// isSingleColTable does not guarantee that all rows are single column, so
 // we still iterate all cells per row, even though most of the time this
 // is just one cell.
-function unwrap_single_column_table(table) {
+function unwrapSingleColTable(table) {
   const rows = table.rows;
-  const num_rows = rows.length;
-  const table_parent = table.parentNode;
+  const numRows = rows.length;
+  const tableParent = table.parentNode;
 
   // TODO: only pad if adjacent to text node
 
-  table_parent.insertBefore(document.createTextNode(' '), table);
+  tableParent.insertBefore(document.createTextNode(' '), table);
 
-  for(let i = 0; i < num_rows; i++) {
-    let row = rows[i];
+  for(let i = 0; i < numRows; i++) {
+    const row = rows[i];
 
     // TODO: if the cell is a leaf node, skip it and do not create
     // a new paragraph.
     for(let k = 0, clen = row.cells.length; k < clen; k++) {
-      let cell = row.cells[k];
-      insert_children_before(cell, table);
+      const cell = row.cells[k];
+      insertChildrenBefore(cell, table);
     }
 
-    table_parent.insertBefore(document.createElement('p'), table);
+    tableParent.insertBefore(document.createElement('p'), table);
   }
 
-  table_parent.insertBefore(document.createTextNode(' '), table);
+  tableParent.insertBefore(document.createTextNode(' '), table);
   table.remove();
 }
 
-this.filter_table_elements = filter_table_elements;
+this.filterTableElements = filterTableElements;
 
 } // End file block scope

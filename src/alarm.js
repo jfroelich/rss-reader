@@ -31,13 +31,13 @@ chrome.alarms.get('compact-favicons', function(alarm) {
 chrome.alarms.onAlarm.addListener(function(alarm) {
   console.debug('Alarm wakeup', alarm.name);
   if(alarm.name === 'archive') {
-    archive_entries();
+    archiveEntries();
   } else if(alarm.name === 'poll') {
-    const force_reset_lock = false;
-    const allow_metered = false;
-    poll_feeds(force_reset_lock, allow_metered);
+    const forceResetLock = false;
+    const allowMeteredConnections = false;
+    pollFeeds(forceResetLock, allowMeteredConnections);
   } else if(alarm.name === 'compact-favicons') {
-    compact_favicons();
+    compactFavicons();
   } else {
     console.warn('Unknown alarm', alarm.name);
   }

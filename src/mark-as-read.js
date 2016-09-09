@@ -6,40 +6,42 @@
 
 { // Begin file block scope
 
-function mark_as_read(entry_id, callback) {
-  console.assert(!isNaN(entry_id));
-  console.assert(isFinite(entry_id));
-  console.assert(entry_id > 0);
-  const context = {'entry_id': entry_id, 'callback': callback};
-  open_db(on_open_db.bind(context));
+// TODO: rename file to mark-entry-as-read.js
+
+function markEntryAsRead(entryId, callback) {
+  console.assert(!isNaN(entryId));
+  console.assert(isFinite(entryId));
+  console.assert(entryId > 0);
+  const context = {'entryId': entryId, 'callback': callback};
+  openDB(onOpenDB.bind(context));
 }
 
-function on_open_db(connection) {
-  if(!connection) {
-    on_complete.call(this, 'ConnectionError');
+function onOpenDB(db) {
+  if(!db) {
+    onComplete.call(this, 'ConnectionError');
     return;
   }
 
-  this.connection = connection;
-  const transaction = connection.transaction('entry', 'readwrite');
-  const store = transaction.objectStore('entry');
-  const request = store.openCursor(this.entry_id);
-  request.onsuccess = open_cursor_onsuccess.bind(this);
-  request.onerror = open_cursor_onerror.bind(this);
+  this.db = db;
+  const tx = db.transaction('entry', 'readwrite');
+  const store = tx.objectStore('entry');
+  const request = store.openCursor(this.entryId);
+  request.onsuccess = openCursorOnsuccess.bind(this);
+  request.onerror = openCursorOnerror.bind(this);
 }
 
-function open_cursor_onsuccess(event) {
+function openCursorOnsuccess(event) {
   const cursor = event.target.result;
   if(!cursor) {
-    console.error('No entry found', this.entry_id);
-    on_complete.call(this, 'NotFoundError');
+    console.error('No entry found', this.entryId);
+    onComplete.call(this, 'NotFoundError');
     return;
   }
 
   const entry = cursor.value;
   if(entry.readState === ENTRY_FLAGS.READ) {
-    console.error('Already read entry', this.entry_id);
-    on_complete.call(this, 'AlreadyReadError');
+    console.error('Already read entry', this.entryId);
+    onComplete.call(this, 'AlreadyReadError');
     return;
   }
 
@@ -55,29 +57,28 @@ function open_cursor_onsuccess(event) {
   // Async. This call is implicitly blocked by the readwrite transaction used
   // here, so the count of unread will be affected, even though we do not
   // wait for cursor.update to complete.
-  update_badge(this.connection);
-
-  on_complete.call(this, 'Success');
+  updateBadge(this.db);
+  onComplete.call(this, 'Success');
 }
 
-function open_cursor_onerror(event) {
+function openCursorOnerror(event) {
   console.warn(event.target.error);
-  on_complete.call(this, 'CursorError');
+  onComplete.call(this, 'CursorError');
 }
 
-function on_complete(event_type_str) {
-  if(this.connection) {
-    this.connection.close();
+function onComplete(eventType) {
+  if(this.db) {
+    this.db.close();
   }
 
   if(this.callback) {
     this.callback({
-      'type': event_type_str,
-      'entry_id': this.entry_id
+      'type': eventType,
+      'entryId': this.entryId
     });
   }
 }
 
-this.mark_as_read = mark_as_read;
+this.markEntryAsRead = markEntryAsRead;
 
 } // End file block scope

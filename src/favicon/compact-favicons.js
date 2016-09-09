@@ -11,34 +11,34 @@ const expires = 1000 * 60 * 60 * 24 * 30;
 
 // Deletes expired entries from the favicon cache
 // TODO: declare a context to track num_deleted
-function compact_favicons() {
+function compactFavicons() {
   console.log('Compacting favicon-cache');
-  favicon_connect(connect_onsuccess, connect_onerror);
+  faviconConnect(connectOnsuccess, connectOnerror);
 }
 
-function connect_onerror(event) {
+function connectOnerror(event) {
   console.error(event.target.error);
 }
 
-function connect_onsuccess(event) {
+function connectOnsuccess(event) {
   const db = event.target.result;
-  favicon_open_rw_cursor(db, open_cursor_onsuccess, open_cursor_onerror);
+  faviconOpenRWCursor(db, openCursorOnsuccess, openCursorOnerror);
 }
 
-function open_cursor_onerror(event) {
+function openCursorOnerror(event) {
   console.error(event.target.error);
-  on_complete();
+  onComplete();
 }
 
-function open_cursor_onsuccess(event) {
+function openCursorOnsuccess(event) {
   const cursor = event.target.result;
   if(!cursor) {
-    on_complete();
+    onComplete();
     return;
   }
 
   const entry = cursor.value;
-  if(is_favicon_entry_expired(entry, expires)) {
+  if(isFaviconEntryExpired(entry, expires)) {
     console.debug('Deleting favicon entry', entry.pageURLString);
     cursor.delete();
   }
@@ -47,10 +47,10 @@ function open_cursor_onsuccess(event) {
 }
 
 // TODO: close connection
-function on_complete() {
+function onComplete() {
   console.log('Finished compacting favicon-cache');
 }
 
-this.compact_favicons = compact_favicons;
+this.compactFavicons = compactFavicons;
 
 } // End file block scope

@@ -22,25 +22,25 @@ const LAZY_ATTRIBUTES = [
   'data-default-src'
 ];
 
-function transform_lazy_images(document) {
-  const images = document.querySelectorAll('img');
+function transformLazyImages(doc) {
+  const images = doc.querySelectorAll('img');
   for(let img of images) {
-    transform_lazy_img(img);
+    transformLazyImage(img);
   }
 }
 
-function transform_lazy_img(img) {
+function transformLazyImage(img) {
 
   if(img.hasAttribute('src') || img.hasAttribute('srcset')) {
     return;
   }
 
-  for(let alt_name of LAZY_ATTRIBUTES) {
-    if(img.hasAttribute(alt_name)) {
-      const alt_value = img.getAttribute(alt_name);
-      if(alt_value && is_valid_url(alt_value)) {
-        img.removeAttribute(alt_name);
-        img.setAttribute('src', alt_value);
+  for(let altName of LAZY_ATTRIBUTES) {
+    if(img.hasAttribute(altName)) {
+      const altValue = img.getAttribute(altName);
+      if(altValue && isValidURL(altValue)) {
+        img.removeAttribute(altName);
+        img.setAttribute('src', altValue);
         return;
       }
     }
@@ -51,10 +51,10 @@ function transform_lazy_img(img) {
 // could be relative
 // TODO: i should still match browser behavior though, which might tolerate
 // spaces in urls
-function is_valid_url(input_str) {
-  return !input_str.trim().includes(' ');
+function isValidURL(inputString) {
+  return !inputString.trim().includes(' ');
 }
 
-this.transform_lazy_images = transform_lazy_images;
+this.transformLazyImages = transformLazyImages;
 
 } // End file block scope

@@ -8,15 +8,16 @@
 // An anchor is a formatting anchor when it serves no other role than being a
 // container. In this context, where formatting information is ignored, it is
 // useless.
-function filter_anchor_elements(document) {
+// TODO: rename to something like filterAnchors
+function filterAnchorElements(document) {
   const anchors = document.querySelectorAll('a');
   for(let i = 0, len = anchors.length; i < len; i++) {
     const anchor = anchors[i];
     const href = anchor.getAttribute('href');
     if(!href && !anchor.hasAttribute('name')) {
-      unwrap_element(anchor);
+      unwrapElement(anchor);
     } else if(href && href.length > 11 && /^\s*javascript:/i.test(href)) {
-      unwrap_element(anchor);
+      unwrapElement(anchor);
     }
   }
 }

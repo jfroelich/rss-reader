@@ -11,8 +11,7 @@
 
 // Certain elements, typically those that are defined as void elements in the
 // spec, can readily appear to be leaves, but should not be considered leaves.
-// I am using a plain object instead of a Set because profiling showed
-// poor performance.
+// I am using a plain object instead of a Set for performance.
 const EXCEPTIONS = {
   'area': 1, 'audio': 1, 'base': 1, 'col': 1, 'command': 1, 'br': 1,
   'canvas': 1, 'col': 1, 'hr': 1, 'iframe': 1, 'img': 1, 'input': 1,
@@ -20,11 +19,10 @@ const EXCEPTIONS = {
   'sbg': 1, 'textarea': 1, 'track': 1, 'video': 1, 'wbr': 1
 };
 
-//An element is a leaf unless
-// it is a named exception, contains a non-whitespace-only text node, or
-// contains at least one non-leaf child element.
-// Recursive
-function is_leaf_node(node) {
+// An element is a leaf unless it is a named exception, contains a
+// non-whitespace-only text node, or contains at least one non-leaf child
+// element. This is a recursive function.
+function isLeafNode(node) {
   switch(node.nodeType) {
     case Node.ELEMENT_NODE:
       if(node.localName in EXCEPTIONS) {
@@ -32,7 +30,7 @@ function is_leaf_node(node) {
       }
 
       for(let child = node.firstChild; child; child = child.nextSibling) {
-        if(!is_leaf_node(child)) {
+        if(!isLeafNode(child)) {
           return false;
         }
       }
@@ -48,6 +46,6 @@ function is_leaf_node(node) {
   return true;
 }
 
-this.is_leaf_node = is_leaf_node;
+this.isLeafNode = isLeafNode;
 
 } // End file block scope

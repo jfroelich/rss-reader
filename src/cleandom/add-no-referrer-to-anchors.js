@@ -6,7 +6,7 @@
 
 // Walks the document and appends a no referrer attribute to anchors.
 // TODO: document the effect of doing this
-function add_no_referrer_to_anchors(document) {
+function addNoReferrerToAnchors(document) {
   const anchors = document.querySelectorAll('a');
   for(let anchor of anchors) {
     anchor.setAttribute('rel', 'noreferrer');

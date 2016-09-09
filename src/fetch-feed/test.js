@@ -1,9 +1,8 @@
 'use strict';
 
-function test_fetch_feed(url_string) {
-  fetch_feed(new URL(url_string), false, test_on_fetch);
-}
-
-function test_on_fetch(event) {
-  console.dir(event);
+function testFetchFeed(urlString) {
+  const excludeEntries = false;
+  fetchFeed(new URL(urlString), excludeEntries, function(event) {
+    console.dir(event);
+  });
 }

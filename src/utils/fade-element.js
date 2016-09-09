@@ -6,7 +6,7 @@
 
 { // Begin file block scope
 
-function fade_element(element, duration, delay, callback) {
+function fadeElement(element, duration, delay, callback) {
   const style = element.style;
 
   if(style.display === 'none') {
@@ -20,7 +20,7 @@ function fade_element(element, duration, delay, callback) {
 
   if(callback) {
     element.addEventListener('webkitTransitionEnd',
-      on_end.bind(element, callback));
+      onTransitionEnd.bind(element, callback));
   }
 
   // property duration function delay
@@ -28,11 +28,11 @@ function fade_element(element, duration, delay, callback) {
   style.opacity = style.opacity === '1' ? '0' : '1';
 }
 
-function on_end(callback, event) {
-  event.target.removeEventListener('webkitTransitionEnd', on_end);
+function onTransitionEnd(callback, event) {
+  event.target.removeEventListener('webkitTransitionEnd', onTransitionEnd);
   callback(event.target);
 }
 
-this.fade_element = fade_element;
+this.fadeElement = fadeElement;
 
 } // End file block scope

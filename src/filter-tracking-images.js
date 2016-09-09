@@ -33,12 +33,12 @@ const MIN_LEN = 'http://a.tld/a'.length;
 // TODO: is min length the right condition? Maybe just check for space after
 // trim, or not even check min length?
 
-function filter_tracking_images(document) {
-  const images = document.querySelectorAll('img[src]');
+function filterTrackingImages(doc) {
+  const images = doc.querySelectorAll('img[src]');
   for(let image of images) {
     const src = image.getAttribute('src');
     if(src && src.length > MIN_LEN) {
-      const url = str_to_url(src);
+      const url = parseURLNoRaise(src);
       if(url && HOSTS.has(url.hostname)) {
         image.remove();
       }
@@ -46,10 +46,10 @@ function filter_tracking_images(document) {
   }
 }
 
-function str_to_url(url_str) {
-  try { return new URL(url_str); } catch(error) {}
+function parseURLNoRaise(urlString) {
+  try { return new URL(urlString); } catch(error) {}
 }
 
-this.filter_tracking_images = filter_tracking_images;
+this.filterTrackingImages = filterTrackingImages;
 
 } // End file block scope

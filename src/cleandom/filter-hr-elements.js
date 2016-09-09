@@ -12,13 +12,13 @@ const SELECTOR = [
   'ol > hr' // hierarchy error
 ].join(',');
 
-function filter_hr_elements(document) {
+function filterHRElements(document) {
   const elements = document.querySelectorAll(SELECTOR);
   for(let i = 0, len = elements.length; i < len; i++) {
     elements[i].remove();
   }
 }
 
-this.filter_hr_elements = filter_hr_elements;
+this.filterHRElements = filterHRElements;
 
 } // End file block scope

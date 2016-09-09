@@ -4,7 +4,7 @@
 
 'use strict';
 
-function filter_br_elements(document) {
+function filterBRElements(document) {
   const elements = document.querySelectorAll('br + br');
   for(let i = 0, len = elements.length; i < len; i++) {
     elements[i].remove();

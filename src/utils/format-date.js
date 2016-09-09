@@ -7,7 +7,7 @@
 
 // Formats a date object. This is obviously a very dumb implementation that
 // could eventually be improved.
-function format_date(date, delimiter) {
+function formatDate(date, delimiter) { 
   const parts = [];
   if(date) {
     // getMonth is a zero based index

@@ -14,15 +14,14 @@ const LIST_SELECTOR = 'ul, ol, dl';
 // experimenting again
 const ITEM_NAMES = {'li': 1, 'dt': 1, 'dd': 1};
 
-
 // Scans for lists in the document that contain only a single item and then
 // replaces a list with the contents of its one item. Whitespace is added to
 // avoid normalization of adjacent text nodes.
-function unwrap_single_item_lists(document) {
+function unwrapSingleItemLists(document) {
   const lists = document.querySelectorAll(LIST_SELECTOR);
   // Not using for..of to iterate over lists variable due to V8 deopt warning
   for(let i = 0, len = lists.length; i < len; i++) {
-    unwrap_single_item_list(document, lists[i]);
+    unwrapSingleItemList(document, lists[i]);
   }
 }
 
@@ -33,7 +32,7 @@ function unwrap_single_item_lists(document) {
 // walk somehow of all descendants not in other list items. Right now I am just
 // going to leave this as an unsupported case. I suppose what I could do is look
 // into how the browser identifies child items of a list.
-function unwrap_single_item_list(document, list) {
+function unwrapSingleItemList(document, list) {
 
   // Scan to and get the first child element
   const item = list.firstElementChild;
@@ -62,7 +61,7 @@ function unwrap_single_item_list(document, list) {
   // If the item is empty, then we are just going to remove the list.
   // If the list splits text nodes, then replace the list with a space.
   if(!item.firstChild) {
-    if(is_text(list.previousSibling) && is_text(list.nextSibling)) {
+    if(isText(list.previousSibling) && isText(list.nextSibling)) {
       list.parentNode.replaceChild(document.createTextNode(' '), list);
     } else {
       list.remove();
@@ -73,19 +72,19 @@ function unwrap_single_item_list(document, list) {
 
   // If the node preceding the list is a text node, and the first child of the
   // item is a text node, then insert a space preceding the list.
-  if(is_text(list.previousSibling) && is_text(item.firstChild)) {
+  if(isText(list.previousSibling) && isText(item.firstChild)) {
     list.parentNode.insertBefore(document.createTextNode(' '), list);
   }
 
   // Move the item's child nodes to before the list node
   // TODO: maybe this operation is so simple I don't need to have the
   // dependency here?
-  insert_children_before(item, list);
+  insertChildrenBefore(item, list);
 
   // If the node following the list is a text node, and the last child of
   // the item was a text node, then insert a space. At this point the list's
   // previous sibling is what was formerly the last child of the item.
-  if(is_text(list.nextSibling) &&  is_text(list.previousSibling)) {
+  if(isText(list.nextSibling) &&  isText(list.previousSibling)) {
     list.parentNode.insertBefore(document.createTextNode(' '), list);
   }
 
@@ -94,10 +93,10 @@ function unwrap_single_item_list(document, list) {
   list.remove();
 }
 
-function is_text(node) {
+function isText(node) {
   return node && node.nodeType === Node.TEXT_NODE;
 }
 
-this.unwrap_single_item_lists = unwrap_single_item_lists;
+this.unwrapSingleItemLists = unwrapSingleItemLists;
 
 } // End file block scope

@@ -6,40 +6,40 @@
 
 { // Begin file block scope
 
-// Global to file, track the current slide element
-let current_slide = null;
+let currentSlideElement = null;
 
 chrome.runtime.onMessage.addListener(function(message) {
   switch(message.type) {
-    case 'poll_completed':
-      maybe_append_slides();
+    case 'pollCompleted':
+      maybeAppendSlides();
       break;
-    case 'delete_entry_requested':
+    case 'deleteEntryRequested':
       break;
-    case 'archive_entry_pending':
+    case 'archiveEntryPending':
       break;
     default:
       break;
   }
 });
 
-function remove_slide(slide) {
-  slide.removeEventListener('click', slide_onclick);
+function removeSlide(slide) {
+  slide.removeEventListener('click', slideOnClick);
   slide.remove();
 }
 
-function mark_slide_read(slide) {
+function markSlideAsRead(slide) {
   if(!slide.hasAttribute('read')) {
     slide.setAttribute('read', '');
-    mark_as_read(parseInt(slide.getAttribute('entry'), 10));
+    markEntryAsRead(parseInt(slide.getAttribute('entry'), 10));
   }
 }
 
-function maybe_append_slides() {
-  const count = count_unread_slides();
+function maybeAppendSlides() {
+  const count = countUnreadSlides();
   if(count < 1) {
-    const is_first = !document.getElementById('slideshow-container').firstChild;
-    append_slides(hide_unread_slides, is_first);
+    const isFirstSlide = !document.getElementById(
+      'slideshow-container').firstChild;
+    appendSlides(hideUnreadSlides, isFirstSlide);
   }
 }
 
@@ -48,52 +48,53 @@ function maybe_append_slides() {
 // database. I need to design a paging API for iterating over these entries
 // and the UI should be calling that paging api.
 // TODO: this is a giant function, break it up into smaller functions
-function append_slides(oncomplete, is_first) {
+function appendSlides(onAppendComplete, isFirstSlide) {
   let counter = 0;
   const limit = 3;
-  const offset = count_unread_slides();
-  let not_advanced = true;
-  open_db(on_open_db);
+  const offset = countUnreadSlides();
+  let isNotAdvanced = true;
+  openDB(onOpenDB);
 
-  function on_open_db(connection) {
+  function onOpenDB(connection) {
     if(connection) {
       const transaction = connection.transaction('entry');
       const entryStore = transaction.objectStore('entry');
       const index = entryStore.index('archiveState-readState');
       const key_path = [ENTRY_FLAGS.UNARCHIVED, ENTRY_FLAGS.UNREAD];
       const request = index.openCursor(key_path);
-      request.onsuccess = on_open_cursor;
-      request.onerror = on_open_cursor;
+      request.onsuccess = onOpenCursor;
+      request.onerror = onOpenCursor;
     } else {
       // TODO: show an error?
     }
   }
 
-  function on_open_cursor(event) {
+  function onOpenCursor(event) {
     const cursor = event.target.result;
 
     if(!cursor) {
-      if(oncomplete) {
-        oncomplete();
+      if(onAppendComplete) {
+        onAppendComplete();
       }
       return;
     }
 
-    if(not_advanced && offset) {
-      not_advanced = false;
+    if(isNotAdvanced && offset) {
+      isNotAdvanced = false;
       cursor.advance(offset);
       return;
     }
 
     const entry = cursor.value;
 
-    append_slide(entry, is_first);
+    appendSlide(entry, isFirstSlide);
 
-    if(is_first && counter === 0) {
+    if(isFirstSlide && counter === 0) {
       // TODO: could just directly query for the slide using querySelector,
       // which would match first slide in doc order.
-      current_slide = document.getElementById('slideshow-container').firstChild;
-      is_first = false;
+      currentSlideElement = document.getElementById(
+        'slideshow-container').firstChild;
+      isFirstSlide = false;
     }
 
     if(++counter < limit) {
@@ -105,7 +106,7 @@ function append_slides(oncomplete, is_first) {
 const LEFT_MOUSE_BUTTON_CODE = 1;
 const MOUSE_WHEEL_BUTTON_CODE = 2;
 
-function slide_onclick(event) {
+function slideOnClick(event) {
   const button_code = event.which;
 
   // Only react to left clicks
@@ -129,8 +130,8 @@ function slide_onclick(event) {
     // NOTE: this means that super-fast extra clicks can retrigger
     // this call.
     //event.currentTarget.removeEventListener('click',
-    //  slide_onclick);
-    mark_slide_read(event.currentTarget);
+    //  slideOnClick);
+    markSlideAsRead(event.currentTarget);
   }
 
   // Prevent the normal link click behavior
@@ -144,37 +145,37 @@ function slide_onclick(event) {
   return false;
 }
 
-// Add a new slide to the view. If is_first is true, the slide is immediately
-// visible. Otherwise, the slide is positioned off screen.
+// Add a new slide to the view. If isFirstSlide is true, the slide is
+// immediately visible. Otherwise, the slide is positioned off screen.
 // TODO: this is a giant function, break it up into smaller functions
-function append_slide(entry, is_first) {
+function appendSlide(entry, isFirstSlide) {
   const slide = document.createElement('div');
   slide.setAttribute('entry', entry.id);
   slide.setAttribute('feed', entry.feed);
   slide.setAttribute('class','entry');
-  slide.addEventListener('click', slide_onclick);
+  slide.addEventListener('click', slideOnClick);
 
   slide.style.position = 'absolute';
-  slide.style.left = is_first ? '0%' : '100%';
-  slide.style.right = is_first ? '0%' : '-100%';
+  slide.style.left = isFirstSlide ? '0%' : '100%';
+  slide.style.right = isFirstSlide ? '0%' : '-100%';
   slide.style.overflowX = 'hidden';
   slide.style.top = 0;
   slide.style.bottom = 0;
   slide.style.transition = 'left 0.5s ease-in 0s, right 0.5s ease-in';
 
   const title = document.createElement('a');
-  title.setAttribute('href', get_entry_url(entry));
+  title.setAttribute('href', getEntryURL(entry));
   title.setAttribute('class', 'entry-title');
   title.setAttribute('target','_blank');
   title.setAttribute('rel', 'noreferrer');
   title.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
-    let title_text = entry.title;
-    title_text = filter_article_title(title_text);
+    let titleText = entry.title;
+    titleText = filterArticleTitle(titleText);
     // Max displayable length. This is different than max storable length,
     // it could be shorter or longer.
-    title_text = truncate_html(title_text, 300);
-    title.innerHTML = title_text;
+    titleText = truncateHTML(titleText, 300);
+    title.innerHTML = titleText;
   } else {
     title.textContent = 'Untitled';
   }
@@ -195,7 +196,7 @@ function append_slide(entry, is_first) {
   // any of the above.
 
   // TODO: this also means maybe that I can just deprecate
-  // move_child_nodes because this is the only place used
+  // moveChildNodes because this is the only place used
 
   const content = document.createElement('span');
   content.setAttribute('class', 'entry-content');
@@ -204,7 +205,7 @@ function append_slide(entry, is_first) {
   //const entry_doc = parser.parseFromString(entry.content, 'text/html');
   //console.assert(!entry_doc.querySelector('parsererror'));
   //const entry_body = entry_doc.body || entry_doc.documentElement;
-  //move_child_nodes(entry_body, content);
+  //moveChildNodes(entry_body, content);
 
   // TEMP! Testing. Note this will introduce extra html tags around the body.
   content.innerHTML = entry.content;
@@ -217,65 +218,65 @@ function append_slide(entry, is_first) {
   slide.appendChild(source);
 
   if(entry.faviconURLString) {
-    const favicon_element = document.createElement('img');
-    favicon_element.setAttribute('src', entry.faviconURLString);
-    favicon_element.setAttribute('width', '16');
-    favicon_element.setAttribute('height', '16');
-    source.appendChild(favicon_element);
+    const faviconElement = document.createElement('img');
+    faviconElement.setAttribute('src', entry.faviconURLString);
+    faviconElement.setAttribute('width', '16');
+    faviconElement.setAttribute('height', '16');
+    source.appendChild(faviconElement);
   }
 
-  const feed_title_element = document.createElement('span');
+  const feedTitleElement = document.createElement('span');
   if(entry.feedLink) {
-    feed_title_element.setAttribute('title', entry.feedLink);
+    feedTitleElement.setAttribute('title', entry.feedLink);
   }
 
-  const feed_title_buffer = [];
-  feed_title_buffer.push(entry.feedTitle || 'Unknown feed');
-  feed_title_buffer.push(' by ');
-  feed_title_buffer.push(entry.author || 'Unknown author');
+  const feedTitleBuffer = [];
+  feedTitleBuffer.push(entry.feedTitle || 'Unknown feed');
+  feedTitleBuffer.push(' by ');
+  feedTitleBuffer.push(entry.author || 'Unknown author');
   if(entry.datePublished) {
-    feed_title_buffer.push(' on ');
-    feed_title_buffer.push(format_date(entry.datePublished));
+    feedTitleBuffer.push(' on ');
+    feedTitleBuffer.push(formatDate(entry.datePublished));
   }
 
-  feed_title_element.textContent = feed_title_buffer.join('');
-  source.appendChild(feed_title_element);
+  feedTitleElement.textContent = feedTitleBuffer.join('');
+  source.appendChild(feedTitleElement);
 
   const container = document.getElementById('slideshow-container');
   container.appendChild(slide);
 }
 
-function show_next_slide() {
+function gotoNextSlide() {
   // In order to move to the next slide, we want to conditionally load
   // additional slides. Look at the number of unread slides and conditionally
   // append new slides before going to the next slide.
-  const unread_count = count_unread_slides();
-  if(unread_count < 2) {
-    const is_first = false;
-    append_slides(append_oncomplete, is_first);
+  const unreadCount = countUnreadSlides();
+  if(unreadCount < 2) {
+    const isFirstSlide = false;
+    appendSlides(onAppendComplete, isFirstSlide);
   } else {
-    show_next();
+    showNext();
   }
 
-  function append_oncomplete() {
+  function onAppendComplete() {
     // Before navigating, cleanup some of the old slides so that we do not
     // display too many slides at once.
     // Note this is very sensitive to timing, it has to occur relatively
     // quickly.
     const c = document.getElementById('slideshow-container');
-    while(c.childElementCount > 6 && c.firstChild != current_slide) {
-      remove_slide(c.firstChild);
+    while(c.childElementCount > 6 && c.firstChild != currentSlideElement) {
+      removeSlide(c.firstChild);
     }
 
-    show_next();
-    maybe_show_all_read_slide();
+    showNext();
+    maybeShowAllReadSlide();
   }
 
   // Move the current slide out of view and mark it as read, and move the
   // next slide into view, and then update the global variable that tracks
   // the current slide.
-  function show_next() {
-    const current = current_slide;
+  function showNext() {
+    const current = currentSlideElement;
     if(current.nextSibling) {
       current.style.left = '-100%';
       current.style.right = '100%';
@@ -283,34 +284,34 @@ function show_next_slide() {
       current.nextSibling.style.right = '0px';
       current.scrollTop = 0;
 
-      mark_slide_read(current);
-      current_slide = current.nextSibling;
+      markSlideAsRead(current);
+      currentSlideElement = current.nextSibling;
     }
   }
 }
 
 // Move the current slide out of view to the right, and move the previous
 // slide into view, and then update the current slide.
-function show_prev_slide() {
-  const current = current_slide;
+function gotoPreviousSlide() {
+  const current = currentSlideElement;
   if(current.previousSibling) {
     current.style.left = '100%';
     current.style.right = '-100%';
     current.previousSibling.style.left = '0px';
     current.previousSibling.style.right = '0px';
-    current_slide = current.previousSibling;
+    currentSlideElement = current.previousSibling;
   }
 }
 
-function count_unread_slides() {
+function countUnreadSlides() {
   return document.body.querySelectorAll('div[entry]:not([read])').length;
 }
 
-function maybe_show_all_read_slide() {
+function maybeShowAllReadSlide() {
   // Not yet implemented
 }
 
-function hide_unread_slides() {
+function hideUnreadSlides() {
   // Not yet implemented
 }
 
@@ -332,7 +333,7 @@ SCROLL_DELTAS['' + KEY_CODES.PAGE_DOWN] = [100, 800];
 SCROLL_DELTAS['' + KEY_CODES.UP] = [-50, -200];
 SCROLL_DELTAS['' + KEY_CODES.PAGE_UP] = [-100, -800];
 
-let key_down_timer_id = null;
+let keyDownTimerId = null;
 
 function on_key_down(event) {
   switch(event.keyCode) {
@@ -341,37 +342,39 @@ function on_key_down(event) {
     case KEY_CODES.UP:
     case KEY_CODES.PAGE_UP:
       event.preventDefault();
-      if(current_slide) {
+      if(currentSlideElement) {
         const delta = SCROLL_DELTAS['' + event.keyCode];
-        smooth_scroll_to(current_slide, delta[0],
-          current_slide.scrollTop + delta[1]);
+        smoothScrollTo(currentSlideElement, delta[0],
+          currentSlideElement.scrollTop + delta[1]);
       }
       break;
     case KEY_CODES.SPACE:
       event.preventDefault();
     case KEY_CODES.RIGHT:
     case KEY_CODES.N:
-      clearTimeout(key_down_timer_id);
-      key_down_timer_id = setTimeout(show_next_slide, 50);
+      clearTimeout(keyDownTimerId);
+      keyDownTimerId = setTimeout(gotoNextSlide, 50);
       break;
     case KEY_CODES.LEFT:
     case KEY_CODES.P:
-      clearTimeout(key_down_timer_id);
-      key_down_timer_id = setTimeout(show_prev_slide, 50);
+      clearTimeout(keyDownTimerId);
+      keyDownTimerId = setTimeout(gotoPreviousSlide, 50);
       break;
     default:
       break;
   }
 }
 
+// I am expressly using window here to make it clear where the listener is
+// attached
 window.addEventListener('keydown', on_key_down, false);
 
-function init(event) {
-  document.removeEventListener('DOMContentLoaded', init);
-  DisplaySettings.load_styles();
-  append_slides(maybe_show_all_read_slide, true);
+function initSlides(event) {
+  document.removeEventListener('DOMContentLoaded', initSlides);
+  DisplaySettings.loadStyles();
+  appendSlides(maybeShowAllReadSlide, true);
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', initSlides);
 
 } // End file block scope

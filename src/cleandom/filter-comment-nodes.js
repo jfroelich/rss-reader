@@ -4,7 +4,7 @@
 
 'use strict';
 
-function filter_comment_nodes(doc) {
+function filterCommentNodes(doc) {
   const it = doc.createNodeIterator(doc.documentElement,
     NodeFilter.SHOW_COMMENT);
   for(let node = it.nextNode(); node; node = it.nextNode()) {

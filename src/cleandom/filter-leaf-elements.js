@@ -5,19 +5,25 @@
 'use strict';
 
 // Removes leaf-like elements from the document
-function filter_leaf_elements(doc) {
-  if(!doc.body) {
+function filterLeafElements(doc) {
+
+  const body = doc.body;
+
+  // Ensure the body is set. This works within body only to avoid blanking the
+  // entire document if body is a leaf. If there is no body then there is
+  // nothing to do.
+  if(!body) {
     return;
   }
 
-  const doc_element = doc.documentElement;
-  const elements = doc.body.querySelectorAll('*');
+  const docElement = doc.documentElement;
+  const elements = body.querySelectorAll('*');
 
   // Not using for..of due to V8 deopt warning about try/catch
 
   for(let i = 0, len = elements.length; i < len; i++) {
     let element = elements[i];
-    if(doc_element.contains(element) && is_leaf_node(element)) {
+    if(docElement.contains(element) && isLeafNode(element)) {
       element.remove();
     }
   }

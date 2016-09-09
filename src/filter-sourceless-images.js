@@ -4,8 +4,9 @@
 
 'use strict';
 
-function filter_sourceless_images(document) {
-  for(let image of document.querySelectorAll('img')) {
+function filterSourcelessImages(document) {
+  const images = document.querySelectorAll('img');
+  for(let image of images) {
     if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
       image.remove();
     }

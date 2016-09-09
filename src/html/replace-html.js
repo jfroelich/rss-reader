@@ -7,7 +7,7 @@
 // Returns a new string where html elements were replaced with the optional
 // replacement string. HTML entities remain (except some will be
 // replaced, like &#32; with space).
-function replace_html(inputString, replacementString) {
+function replaceHTML(inputString, replacementString) {
   console.assert(inputString);
 
   let outputString = null;
