@@ -1,5 +1,5 @@
-A simple Chrome extension for viewing RSS feeds.
-
-Namespace lucu is short for lucubrate - to study by lamplight late into the night.
+A simple Chrome extension for viewing RSS feeds. This is mostly a fun project
+where I experiment with new Javascript features, test my knowledge, and keep
+myself from getting too rusty.
 
 MIT licensed.

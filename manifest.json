@@ -2,13 +2,13 @@
   "version": "3",
   "manifest_version": 2,
   "minimum_chrome_version" : "47",
-  "name": "Lucubrate",
-  "author": "Joshua Froelich",
+  "name": "Josh's RSS Reader",
+  "author": "Josh Froelich",
   "homepage_url": "https://github.com/jfroelich/rss-reader",
-  "description": "Reading by artificial light late into the night",
+  "description": "A simple RSS reader extension for Chrome",
   "browser_action": {
     "default_icon": "/images/rss_icon_trans.png",
-    "default_title": "Lucubrate"
+    "default_title": "Josh's RSS Reader"
   },
   "background": {
     "persistent": false,
