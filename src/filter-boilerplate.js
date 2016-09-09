@@ -7,7 +7,7 @@
 { // Begin file block scope
 
 function filter_boilerplate(document) {
-  let best_el = find_high_element(document);
+  const best_el = find_high_element(document);
   prune(document, best_el);
 }
 
@@ -32,9 +32,10 @@ function derive_text_bias(element) {
 // no anchor nesting.
 function derive_anchor_len(element) {
   const anchors = element.querySelectorAll('a[href]');
+  const num_anchors = anchors.length;
   let anchor_len = 0;
-  for(let i = 0, len = anchors.length; i < len; i++) {
-    let anchor = anchors[i];
+  for(let i = 0; i < num_anchors; i++) {
+    const anchor = anchors[i];
     anchor_len = anchor_len + anchor.textContent.trim().length;
   }
   return anchor_len;
@@ -73,26 +74,19 @@ const ANCESTOR_BIAS = {
 // Derives a bias based on child elements
 function derive_ancestor_bias(element) {
   let total_bias = 0;
-  let bias = 0;
 
-  // Walk the child elements and sum up each child's bias
   for(let child = element.firstElementChild; child;
     child = child.nextElementSibling) {
-    bias = ANCESTOR_BIAS[child.nodeName];
+    const bias = ANCESTOR_BIAS[child.nodeName];
 
-    // Using += sugar seems to cause deopt issues when using let or const (at
+    // Using += seems to cause deopt issues when using let or const (at
     // least in Chrome 49), hence the expanded syntax.
     if(bias) {
       total_bias = total_bias + bias;
     }
   }
 
-  // Return a double (or is it long? whatever) so that type coercion is
-  // explicit. Externally, scores when aggregated are doubles because certain
-  // other biases are doubles.
-  // TODO: maybe the coercion is the responsibility of the caller and not
-  // this function's concern?
-  return 0.0 + total_bias;
+  return total_bias;
 }
 
 // If one of these tokens is found in an attribute value of an element,
@@ -133,8 +127,8 @@ const ATTR_TOKEN_WEIGHTS = {
 
 // Computes a bias for an element based on the values of some of its
 // attributes.
-// using var here due to v8 deopt warnings
-// Unsupported use of phi const or something like this, i can't make sense of it
+// NOTE: using var here due to v8 deopt warnings - Unsupported use of phi const
+// or something like this, i can't make sense of it
 function derive_attr_bias(element) {
   // Start by merging the element's interesting attribute values into a single
   // string in preparation for tokenization.
@@ -175,7 +169,7 @@ function derive_attr_bias(element) {
 
   // I use the in operator to test membership which follows the prototype
   // so i think it makes sense to reduce the scope of the lookup by excluding
-  // the prototype here
+  // the prototype here (???)
   var seen_tokens = Object.create(null);
   var total_bias = 0;
   var bias = 0;
@@ -240,7 +234,7 @@ function find_high_element(document) {
       score -= 500.0;
     }
 
-    score += derive_ancestor_bias(element);
+    score += 0.0 + derive_ancestor_bias(element);
     score += derive_img_bias(element);
     score += derive_attr_bias(element);
 
@@ -262,7 +256,7 @@ function derive_img_bias(parentElement) {
   // Walk the child elements, looking for images
   for(let element = parentElement.firstElementChild; element;
     element = element.nextElementSibling) {
-    if(element.nodeName !== 'IMG') {
+    if(element.localName !== 'img') {
       continue;
     }
 
