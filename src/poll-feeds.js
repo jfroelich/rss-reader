@@ -44,8 +44,8 @@ function pollFeeds(forceResetLock, allowMeteredConnections) {
 
   // Check if idle and possibly cancel the poll or continue with polling
   if('ONLY_POLL_IF_IDLE' in localStorage) {
-    const idle_period_secs = 30;
-    chrome.idle.queryState(idle_period_secs, onQueryIdleState.bind(context));
+    const idlePeriodSecs = 30;
+    chrome.idle.queryState(idlePeriodSecs, onQueryIdleState.bind(context));
   } else {
     openDB(onOpenDB.bind(context));
   }
@@ -108,6 +108,11 @@ function onFetchFeed(localFeed, event) {
     return;
   }
 
+  // TODO: I should probably do the feed merge prior to lookup up the favicon,
+  // then I do need to pass around both feeds to continuations. This is the
+  // terminal point where both feeds need to be considered separately, so it
+  // makes the most sense to do it here, not later.
+
   // TODO: I don't need to be updating the favicon on every single fetch. I
   // think this can be done on a separate timeline.
 
@@ -126,6 +131,19 @@ function onFetchFeed(localFeed, event) {
 }
 
 function isFeedUnmodified(localFeed, remoteFeed) {
+
+  // dateUpdated represents the date the feed was last stored in the database
+  // as a result of calling updateFeed. It is not set as a result of calling
+  // addFeed. When subscribing to a new feed, only the feed's properties are
+  // stored, and not its entries, so that the subscription process is fast. As a
+  // result, we always want to poll its entries. Therefore, we need to look at
+  // whether dateUpdated has been set to avoid the issue where the entries are
+  // never processed during the time period after subscribing where the feed
+  // file was not modified.
+  if(!localFeed.dateUpdated) {
+    retrun false;
+  }
+
   return localFeed.dateLastModified && remoteFeed.dateLastModified &&
     localFeed.dateLastModified.getTime() ===
     remoteFeed.dateLastModified.getTime()
