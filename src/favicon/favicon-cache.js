@@ -6,13 +6,6 @@
 
 { // Begin file block scope
 
-// TODO: this will be used by both compact and lookup
-// - move lookup stuff that belongs here to here, and update lookup to use
-// this instead
-// - change compact to use this instead
-// - export multiple individual functions, not a class
-// - update script includes in UI files
-
 const DB_NAME = 'favicon-cache';
 const DB_VERSION = 1;
 
@@ -59,8 +52,8 @@ function findEntryOnerror(url, callback, event) {
 }
 
 function addEntry(db, page_url, icon_url) {
-  const pageURLString = normalizeURL(page_url).href;
   const entry = Object.create(null);
+  const pageURLString = normalizeURL(page_url).href;
   entry.pageURLString = pageURLString;
   entry.iconURLString = icon_url.href;
   entry.dateUpdated = new Date();
