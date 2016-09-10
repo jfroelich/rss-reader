@@ -6,29 +6,29 @@
 
 { // Begin file block scope
 
-const VIEW_URL = chrome.extension.getURL('slides.html');
+const viewURL = chrome.extension.getURL('slideshow.html');
 
 // The trailing slash is required
-const NEW_TAB_URL = 'chrome://newtab/'
+const newTabURL = 'chrome://newtab/'
 
 // TODO: is there a way to not do this on every page load?
 chrome.browserAction.onClicked.addListener(function(event) {
-  chrome.tabs.query({'url': VIEW_URL}, onQueryForViewTab);
+  chrome.tabs.query({'url': viewURL}, onQueryForViewTab);
 });
 
 function onQueryForViewTab(tabs) {
   if(tabs && tabs.length) {
     chrome.tabs.update(tabs[0].id, {'active': true});
   } else {
-    chrome.tabs.query({'url': NEW_TAB_URL}, onQueryForNewTab);
+    chrome.tabs.query({'url': newTabURL}, onQueryForNewTab);
   }
 }
 
 function onQueryForNewTab(tabs) {
   if(tabs && tabs.length) {
-    chrome.tabs.update(tabs[0].id, {'active': true, 'url': VIEW_URL});
+    chrome.tabs.update(tabs[0].id, {'active': true, 'url': viewURL});
   } else {
-    chrome.tabs.create({'url': VIEW_URL});
+    chrome.tabs.create({'url': viewURL});
   }
 }
 
