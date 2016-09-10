@@ -10,25 +10,31 @@
 // @param options {Object} optional object containing optional callback
 // and optional open connection
 function subscribe(feed, options) {
-  console.assert(feed);
-  console.assert(feed.urls);
-  console.assert(feed.urls.length);
-
-  const feedURL = getFeedURL(feed);
-  console.log('Subscribing to', feedURL);
+  const feedURLString = getFeedURL(feed);
+  if(!feedURLString) {
+    throw new TypeError('feed should always have at least one url');
+  }
+  console.log('Subscribing to', feedURLString);
 
   const context = {
     'feed': feed,
     'didSubscribe': false,
-    'callback': options ? options.callback : null,
-    'db': options ? options.connection : null,
     'shouldCloseDB': false,
-    'shouldNotNotify': options ? options.suppressNotifications : false
+    'shouldNotify': true
   };
+
+  if(options) {
+    context.callback = options.callback;
+    if(options.suppressNotifications) {
+      context.shouldNotify = false;
+    }
+    context.db = options.connection;
+  }
 
   if(context.db) {
     findFeed.call(context);
   } else {
+    context.shouldCloseDB = true;
     openDB(onOpenDB.bind(context));
   }
 }
@@ -36,7 +42,6 @@ function subscribe(feed, options) {
 function onOpenDB(db) {
   if(db) {
     this.db = db;
-    this.shouldCloseDB = true;
     findFeed.call(this);
   } else {
     onSubscribeComplete.call(this, {'type': 'ConnectionError'});
@@ -70,21 +75,25 @@ function findFeed() {
 }
 
 function findFeedOnSuccess(event) {
+  const feedURL = getFeedURL(this.feed);
+
+  // Cannot resubscribe to an existing feed
   if(event.target.result) {
-    const feedURL = getFeedURL(this.feed);
     console.debug('Already subscribed to', feedURL);
     onSubscribeComplete.call(this, {'type': 'ConstraintError'});
     return;
   }
 
+  // Subscribe while offline
   if('onLine' in navigator && !navigator.onLine) {
-    addFeed.call(this, this.feed, onAddFeed.bind(this));
-  } else {
-    const shouldExcludeEntries = true;
-    const feedURL = getFeedURL(this.feed);
-    const feedURLObject = new URL(feedURL);
-    fetchFeed(feedURLObject, shouldExcludeEntries, onFetchFeed.bind(this));
+    addFeed.call(this.db, this.feed, onAddFeed.bind(this));
+    return;
   }
+
+  // Proceed with online subscription
+  const shouldExcludeEntries = true;
+  const feedURLObject = new URL(feedURL);
+  fetchFeed(feedURLObject, shouldExcludeEntries, onFetchFeed.bind(this));
 }
 
 function findFeedOnError(event) {
@@ -93,7 +102,7 @@ function findFeedOnError(event) {
 
 function onFetchFeed(event) {
   if(event.type !== 'success') {
-    if(event.type === 'invalid_mime_type') {
+    if(event.type === 'InvalidMimeType') {
       onSubscribeComplete.call(this, {'type': 'FetchMimeTypeError'});
     } else {
       onSubscribeComplete.call(this, {'type': 'FetchError'});
@@ -102,20 +111,19 @@ function onFetchFeed(event) {
     return;
   }
 
-  // TODO: instead of adding the feed, this is where I should be looking for
-  // the feed's favicon. We know we are probably online at this point and are
-  // not subscribing while offline, and we know that the feed xml file exists.
-  // Or, instead of this, fetchFeed should be doing it
+  this.feed = mergeFeeds(this.feed, event.feed);
+  const urlString = this.feed.link ? this.feed.link : getFeedURL(this.feed);
+  const urlObject = new URL(urlString);
+  const prefetchedDoc = null;
+  lookupFavicon(urlObject, prefetchedDoc, onLookupFavicon.bind(this));
+}
 
-  const feed = mergeFeeds(this.feed, event.feed);
+function onLookupFavicon(iconURLObject) {
+  if(iconURLObject) {
+    this.feed.faviconURLString = iconURLObject.href;
+  }
 
-  // Ensure that the date last modified is not set, so that the next poll will
-  // not ignore the file's entries.
-  // TODO: maybe it would be better to modify poll's last modified check to
-  // also check if feed was ever polled (e.g. has dateUpdated field set)
-  delete feed.dateLastModified;
-
-  addFeed.call(this, feed, onAddFeed.bind(this));
+  addFeed.call(this.db, this.feed, onAddFeed.bind(this));
 }
 
 function onAddFeed(event) {
@@ -132,15 +140,12 @@ function onSubscribeComplete(event) {
     this.db.close();
   }
 
-  if(!this.shouldNotNotify && this.didSubscribe) {
-    // TODO: if addFeed calls back with a Feed object, then I wouldn't need
-    // to use call here. This also means this passes back a Feed object instead
-    // of a basic object, which means I would need to update all callers
-    // TODO: the notification should probably use the feed's favicon if
-    // available, and only then fall back
-    const displayString = event.feed.title ||  getFeedURL(event.feed);
+  if(this.shouldNotify && this.didSubscribe) {
+    const feed = event.feed; // Use the feed object that was added
+    const displayString = feed.title ||  getFeedURL(feed);
     const message = 'Subscribed to ' + displayString;
-    showDesktopNotification('Subscription complete', message);
+    showDesktopNotification('Subscription complete', message,
+      feed.faviconURLString);
   }
 
   if(this.callback) {
