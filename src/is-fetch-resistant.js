@@ -8,7 +8,7 @@
 
 // TODO: rename file to is-fetch-resistant-url.js
 
-const HOSTNAMES = [
+const hostNames = [
   'productforums.google.com',
   'groups.google.com',
   'www.forbes.com',
@@ -19,7 +19,7 @@ const HOSTNAMES = [
 function isFetchResistantURL(url) {
   console.assert(url);
   console.assert(url.hostname);
-  return HOSTNAMES.includes(url.hostname);
+  return hostNames.includes(url.hostname);
 }
 
 this.isFetchResistantURL = isFetchResistantURL;

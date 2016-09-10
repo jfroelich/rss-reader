@@ -6,7 +6,7 @@
 
 { // Begin file block scope
 
-const URL_ATTRIBUTE_MAP = {
+const urlAttrMap = {
   'a': 'href',
   'applet': 'codebase',
   'area': 'href',
@@ -35,10 +35,10 @@ const URL_ATTRIBUTE_MAP = {
 };
 
 function buildSelectorPart(key) {
-  return key + '[' + URL_ATTRIBUTE_MAP[key] +']';
+  return key + '[' + urlAttrMap[key] +']';
 }
 
-const SELECTOR = Object.keys(URL_ATTRIBUTE_MAP).map(
+const selector = Object.keys(urlAttrMap).map(
   buildSelectorPart).join(',');
 
 function resolveDocumentURLs(document, baseURL) {
@@ -62,7 +62,7 @@ function resolveDocumentURLs(document, baseURL) {
   }
 
   // Resolve element attribute urls
-  const elements = document.querySelectorAll(SELECTOR);
+  const elements = document.querySelectorAll(selector);
   for(let element of elements) {
     resolveMappedAttr(element, baseURL);
   }
@@ -77,7 +77,7 @@ function resolveDocumentURLs(document, baseURL) {
 function resolveMappedAttr(element, baseURL) {
   // Unfortunately we do not know which attribute to use, so look it up again
   const elementName = element.localName;
-  const attrName = URL_ATTRIBUTE_MAP[elementName];
+  const attrName = urlAttrMap[elementName];
   if(!attrName) {
     return;
   }

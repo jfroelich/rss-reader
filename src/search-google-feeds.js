@@ -9,9 +9,9 @@
 // TODO: switch to using fetch API
 // TODO: use separate response event handlers
 
-const ELLIPSIS = '\u2026';
+const ellipsis = '\u2026';
 
-const BASE_URL_STRING =
+const baseURLString =
   'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
 
 // Sends a request to GoogleFeeds API to find urls of feeds matching
@@ -35,13 +35,13 @@ function searchGoogleFeeds(query, timeoutMs, callback) {
     'callback': callback,
     'titleMaxLength': 200,
     'snippetMaxLength': 400,
-    'replacementString': ELLIPSIS
+    'replacementString': ellipsis
   };
 
-  const urlString = BASE_URL_STRING + encodeURIComponent(query);
-  console.debug('GET', urlString);
+  const urlString = baseURLString + encodeURIComponent(query);
   context.urlString = urlString;
 
+  console.debug('GET', urlString);
   const isAsync = true;
   const request = new XMLHttpRequest();
   request.timeout = timeoutMs;

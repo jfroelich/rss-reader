@@ -6,8 +6,8 @@
 
 { // Begin file block scope
 
-// The default period after which entries become archivable
-const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
+// Ten days
+const defaultExpiresMs = 10 * 24 * 60 * 60 * 1000;
 
 // Iterates over entries that have not been archived and have been read, and
 // archives entries that are older. Archiving shrinks the size of the stored
@@ -20,7 +20,7 @@ function archiveEntries(expires) {
   // Create a shared context for simple sharing of state across function
   // invocations.
   const context = {
-    'expires': TEN_DAYS_MS,
+    'expires': defaultExpiresMs,
     'numEntriesProcessed': 0,
     'num_changed': 0,
     'current_date': new Date()
@@ -46,7 +46,7 @@ function onOpenDB(db) {
   const tx = db.transaction('entry', 'readwrite');
   const store = tx.objectStore('entry');
   const index = store.index('archiveState-readState');
-  const keyPath = [ENTRY_FLAGS.UNARCHIVED, ENTRY_FLAGS.READ];
+  const keyPath = [EntryFlags.UNARCHIVED, EntryFlags.READ];
   const request = index.openCursor(keyPath);
   request.onsuccess = openCursorOnsuccess.bind(this);
   request.onerror = openCursorOnerror.bind(this);
@@ -115,7 +115,7 @@ function entryToArchivable(inputEntry) {
   const outputEntry = {};
 
   // Flag the entry as archived so that it will not be scanned in the future
-  outputEntry.archiveState = ENTRY_FLAGS.ARCHIVED;
+  outputEntry.archiveState = EntryFlags.ARCHIVED;
   // Introduce a new property representing the date the entry was archived.
   // This is the only place where this property is introduced.
   outputEntry.dateArchived = new Date();

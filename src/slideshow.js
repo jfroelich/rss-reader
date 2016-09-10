@@ -52,6 +52,8 @@ function appendSlides(onAppendComplete, isFirstSlide) {
   let counter = 0;
   const limit = 3;
   const offset = countUnreadSlides();
+
+  // TODO: invert this, and the condition where it is used, to isAdvanced
   let isNotAdvanced = true;
   openDB(onOpenDB);
 
@@ -60,7 +62,7 @@ function appendSlides(onAppendComplete, isFirstSlide) {
       const transaction = connection.transaction('entry');
       const entryStore = transaction.objectStore('entry');
       const index = entryStore.index('archiveState-readState');
-      const key_path = [ENTRY_FLAGS.UNARCHIVED, ENTRY_FLAGS.UNREAD];
+      const key_path = [EntryFlags.UNARCHIVED, EntryFlags.UNREAD];
       const request = index.openCursor(key_path);
       request.onsuccess = onOpenCursor;
       request.onerror = onOpenCursor;
@@ -103,14 +105,14 @@ function appendSlides(onAppendComplete, isFirstSlide) {
   }
 }
 
-const LEFT_MOUSE_BUTTON_CODE = 1;
-const MOUSE_WHEEL_BUTTON_CODE = 2;
+const leftMouseButtonCode = 1;
+const mouseWheelButtonCode = 2;
 
 function slideOnClick(event) {
   const button_code = event.which;
 
   // Only react to left clicks
-  if(button_code !== LEFT_MOUSE_BUTTON_CODE) {
+  if(button_code !== leftMouseButtonCode) {
     return false;
   }
 
@@ -290,7 +292,7 @@ function hideUnreadSlides() {
   // Not yet implemented
 }
 
-const KEY_CODES = {
+const keyCodes = {
   'SPACE': 32,
   'PAGE_UP': 33,
   'PAGE_DOWN': 34,
@@ -302,36 +304,36 @@ const KEY_CODES = {
   'P': 80
 };
 
-const SCROLL_DELTAS = {};
-SCROLL_DELTAS['' + KEY_CODES.DOWN] = [80, 400];
-SCROLL_DELTAS['' + KEY_CODES.PAGE_DOWN] = [100, 800];
-SCROLL_DELTAS['' + KEY_CODES.UP] = [-50, -200];
-SCROLL_DELTAS['' + KEY_CODES.PAGE_UP] = [-100, -800];
+const scrollDeltas = {};
+scrollDeltas['' + keyCodes.DOWN] = [80, 400];
+scrollDeltas['' + keyCodes.PAGE_DOWN] = [100, 800];
+scrollDeltas['' + keyCodes.UP] = [-50, -200];
+scrollDeltas['' + keyCodes.PAGE_UP] = [-100, -800];
 
 let keyDownTimerId = null;
 
 function on_key_down(event) {
   switch(event.keyCode) {
-    case KEY_CODES.DOWN:
-    case KEY_CODES.PAGE_DOWN:
-    case KEY_CODES.UP:
-    case KEY_CODES.PAGE_UP:
+    case keyCodes.DOWN:
+    case keyCodes.PAGE_DOWN:
+    case keyCodes.UP:
+    case keyCodes.PAGE_UP:
       event.preventDefault();
       if(currentSlideElement) {
-        const delta = SCROLL_DELTAS['' + event.keyCode];
+        const delta = scrollDeltas['' + event.keyCode];
         smoothScrollTo(currentSlideElement, delta[0],
           currentSlideElement.scrollTop + delta[1]);
       }
       break;
-    case KEY_CODES.SPACE:
+    case keyCodes.SPACE:
       event.preventDefault();
-    case KEY_CODES.RIGHT:
-    case KEY_CODES.N:
+    case keyCodes.RIGHT:
+    case keyCodes.N:
       clearTimeout(keyDownTimerId);
       keyDownTimerId = setTimeout(gotoNextSlide, 50);
       break;
-    case KEY_CODES.LEFT:
-    case KEY_CODES.P:
+    case keyCodes.LEFT:
+    case keyCodes.P:
       clearTimeout(keyDownTimerId);
       keyDownTimerId = setTimeout(gotoPreviousSlide, 50);
       break;

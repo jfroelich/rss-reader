@@ -6,8 +6,8 @@
 
 { // Begin file block scope
 
-// Thirty days in milliseconds
-const DEFAULT_EXPIRATION = 1000 * 60 * 60 * 24 * 30;
+// Thirty days
+const defaultExpiresMs = 1000 * 60 * 60 * 24 * 30;
 
 // Finds the url of the favicon associated with the given document url
 // @param url {URL} - document url to lookup
@@ -22,7 +22,7 @@ function lookupFavicon(url, document, callback) {
 
   const context = {
     'url': url,
-    'expires': DEFAULT_EXPIRATION,
+    'expires': defaultExpiresMs,
     'callback': callback,
     'document': document,
     'db': null,
@@ -325,7 +325,7 @@ function lookupFaviconOnComplete(iconURLObject) {
   this.callback(iconURLObject);
 }
 
-const SELECTORS = [
+const iconSelectors = [
   'link[rel="icon"][href]',
   'link[rel="shortcut icon"][href]',
   'link[rel="apple-touch-icon"][href]',
@@ -339,7 +339,7 @@ function searchDocument(doc, baseURLObject) {
   }
 
   // TODO: validate the url exists by sending a HEAD request for matches?
-  for(let selector of SELECTORS) {
+  for(let selector of iconSelectors) {
     const iconURL = match_selector(doc, selector, baseURLObject);
     if(iconURL) {
       return iconURL;
@@ -415,11 +415,11 @@ function onRequestImageHead(imgURLObject, callback, event) {
   callback(event.target.responseURL);
 }
 
-const MIN_CONTENT_LEN = 49;
-const MAX_CONTENT_LEN = 10001;
+const minContentLength = 49;
+const maxContentLength = 10001;
 
 function isContentLengthInRange(lenInt) {
-  return lenInt > MIN_CONTENT_LEN && lenInt < MAX_CONTENT_LEN;
+  return lenInt > minContentLength && lenInt < maxContentLength;
 }
 
 function getContentLength(response) {

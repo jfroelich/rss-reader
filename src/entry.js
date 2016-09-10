@@ -4,7 +4,7 @@
 
 'use strict';
 
-const ENTRY_FLAGS = {
+const EntryFlags = {
   'UNREAD': 0,
   'READ': 1,
   'UNARCHIVED': 0,
@@ -133,8 +133,8 @@ function addEntry(db, entry, callback) {
 
   const sanitizedEntry = sanitizeEntry(entry);
   const storableEntry = filterUndefProps(sanitizedEntry);
-  storableEntry.readState = ENTRY_FLAGS.UNREAD;
-  storableEntry.archiveState = ENTRY_FLAGS.UNARCHIVED;
+  storableEntry.readState = EntryFlags.UNREAD;
+  storableEntry.archiveState = EntryFlags.UNARCHIVED;
   storableEntry.dateCreated = new Date();
 
   let tx = null;

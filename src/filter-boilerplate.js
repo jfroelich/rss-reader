@@ -50,7 +50,9 @@ function deriveAnchorLength(element) {
 // Ancestor bias contributes very little to an element's total bias in
 // comparision to some of the other biases. The most help comes when there is
 // a clear container element of multiple paragraphs.
-const ANCESTOR_BIAS = {
+
+// TODO: switch back to lowercase and use node.localName to lookup
+const ancestorBiasMap = {
   'A': -5,
   'ASIDE': -50,
   'BLOCKQUOTE': 20,
@@ -77,7 +79,7 @@ function deriveAncestorBias(element) {
 
   for(let child = element.firstElementChild; child;
     child = child.nextElementSibling) {
-    const bias = ANCESTOR_BIAS[child.nodeName];
+    const bias = ancestorBiasMap[child.nodeName];
 
     // Using += seems to cause deopt issues when using let or const (at
     // least in Chrome 49), hence the expanded syntax.
@@ -92,7 +94,7 @@ function deriveAncestorBias(element) {
 // If one of these tokens is found in an attribute value of an element,
 // these bias the element's boilerplate score. A higher score means that the
 // element is more likely to be content. This list was created empirically.
-const ATTR_TOKEN_WEIGHTS = {
+const attrTokenWeights = {
   'ad': -500,
   'ads': -500,
   'advert': -500,
@@ -189,7 +191,7 @@ function deriveAttrBias(element) {
       seenTokens[token] = 1;
     }
 
-    bias = ATTR_TOKEN_WEIGHTS[token];
+    bias = attrTokenWeights[token];
     if(bias) {
       totalBias += bias;
     }
@@ -199,12 +201,12 @@ function deriveAttrBias(element) {
 }
 
 // Only these elements are considered as potential best elements
-const CANDIDATE_SELECTOR = [
+const candidateSelector = [
   'ARTICLE', 'CONTENT', 'DIV', 'LAYER', 'MAIN', 'SECTION', 'SPAN', 'TD'
 ].join(',');
 
-const LIST_SELECTOR = 'LI, OL, UL, DD, DL, DT';
-const NAV_SELECTOR = 'ASIDE, HEADER, FOOTER, NAV, MENU, MENUITEM';
+const listSelector = 'LI, OL, UL, DD, DL, DT';
+const navSelector = 'ASIDE, HEADER, FOOTER, NAV, MENU, MENUITEM';
 
 // Scores each of the candidate elements and returns the one with the highest
 // score
@@ -219,18 +221,18 @@ function findHighScoringElement(document) {
     return bestElement;
   }
 
-  const elements = body.querySelectorAll(CANDIDATE_SELECTOR);
+  const elements = body.querySelectorAll(candidateSelector);
   let highScore = 0.0;
   for(let i = 0, len = elements.length; i < len; i++) {
     let element = elements[i];
 
     let score = 0.0 + deriveTextBias(element);
 
-    if(element.closest(LIST_SELECTOR)) {
+    if(element.closest(listSelector)) {
       score -= 200.0;
     }
 
-    if(element.closest(NAV_SELECTOR)) {
+    if(element.closest(navSelector)) {
       score -= 500.0;
     }
 

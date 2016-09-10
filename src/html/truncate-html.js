@@ -15,8 +15,8 @@ function truncateHTML(inputString, position, inputExtension) {
   console.assert(inputString);
   console.assert(position >= 0);
 
-  const ELLIPSIS = '\u2026';
-  const extension = inputExtension || ELLIPSIS;
+  const ellipsis = '\u2026';
+  const extension = inputExtension || ellipsis;
 
   const inertDoc = document.implementation.createHTMLDocument();
   inertDoc.documentElement.innerHTML = inputString;

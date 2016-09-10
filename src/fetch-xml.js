@@ -6,7 +6,7 @@
 
 { // Begin file block scope
 
-const ACCEPT_XML_HEADER_VALUE = [
+const acceptXMLHeaderValue = [
   'application/rss+xml',
   'application/rdf+xml',
   'application/atom+xml',
@@ -49,7 +49,7 @@ function fetchXML(requestURL, callback) {
   // the fetch api.
   opts.credentials = 'omit';
   opts.method = 'GET';
-  opts.headers = {'Accept': ACCEPT_XML_HEADER_VALUE};
+  opts.headers = {'Accept': acceptXMLHeaderValue};
   opts.mode = 'cors';
   opts.cache = 'default';
   opts.redirect = 'follow';
@@ -85,7 +85,7 @@ function fetchXML(requestURL, callback) {
       console.warn(requestURL.href, 'invalid type', contentType);
       onResponseCalledBack = true;
       return doCallback({
-        'type': 'invalid_mime_type',
+        'type': 'InvalidMimeType',
         'contentType': contentType
       });
     }

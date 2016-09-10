@@ -10,7 +10,7 @@
 // change it, I don't have to change the code
 
 // Use all lowercase to match hostname getter normalization
-const HOSTS = new Set([
+const hostNames = new Set([
   'b.scorecardresearch.com',
   'googleads.g.doubleclick.net',
   'me.effectivemeasure.net',
@@ -21,8 +21,7 @@ const HOSTS = new Set([
   'sb.scorecardresearch.com'
 ]);
 
-// Approximate minimum length of a valid url
-const MIN_LEN = 'http://a.tld/a'.length;
+const minValidURLLength = 'http://a.tld/a'.length;
 
 // TODO: can i just access image.src property to get hostname
 // instead of creating url from attribute value? I know that anchor.href
@@ -37,9 +36,9 @@ function filterTrackingImages(doc) {
   const images = doc.querySelectorAll('img[src]');
   for(let image of images) {
     const src = image.getAttribute('src');
-    if(src && src.length > MIN_LEN) {
+    if(src && src.length > minValidURLLength) {
       const url = parseURLNoRaise(src);
-      if(url && HOSTS.has(url.hostname)) {
+      if(url && hostNames.has(url.hostname)) {
         image.remove();
       }
     }
