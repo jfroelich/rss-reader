@@ -157,19 +157,23 @@ this.updateFeed = updateFeed;
 
 { // Begin addFeed block scope
 
-function addFeed(feed, callback) {
-  // Because this feed will be added, it should not have an id
-  console.assert(!feed.id);
-  // The feed should have a urls property with at least one url
-  console.assert(feed.urls);
-  console.assert(feed.urls.length);
+function addFeed(db, feed, callback) {
 
-  console.debug('Adding feed', getFeedURL(feed));
+  if('id' in feed) {
+    throw new Error('feed should never have an id property');
+  }
+
+  const urlString = getFeedURL(feed);
+  if(!urlString) {
+    throw new Error('feed should always have at least one url');
+  }
+
+  console.debug('Adding feed', urlString);
 
   const sanitizedFeed = sanitizeFeed(feed);
   sanitizedFeed.dateCreated = new Date();
   const storableFeed = filterUndefProps(sanitizedFeed);
-  const transaction = this.db.transaction('feed', 'readwrite');
+  const transaction = db.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.add(storableFeed);
   if(callback) {
@@ -179,8 +183,7 @@ function addFeed(feed, callback) {
 }
 
 function addOnsuccess(feed, callback, event) {
-  const new_auto_incremented_id = event.target.result;
-  feed.id = new_auto_incremented_id;
+  feed.id = event.target.result;
   callback({'type': 'success', 'feed': feed});
 }
 
