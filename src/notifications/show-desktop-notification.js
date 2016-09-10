@@ -6,23 +6,24 @@
 
 { // Begin file block scope
 
-const iconURLString = chrome.extension.getURL('/images/rss_icon_trans.gif');
+const defaultIconURLString = chrome.extension.getURL(
+  '/images/rss_icon_trans.gif');
 
 // Shows a simple desktop notification with the given title and message.
 // Message and title are interpreted as plain text.
 // Fails silently if not permitted
-function showDesktopNotification(title, message) {
+function showDesktopNotification(title, message, iconURLString) {
   if(!('SHOW_NOTIFICATIONS' in localStorage)) {
-    console.debug( 'Suppressed notification:', title || 'Untitled');
+    console.debug('Suppressed notification:', title || 'Untitled');
     return;
   }
 
-  const definedTitle = title || 'Untitled';
-  const definedMessage = message || '';
-  const details = {'body': definedMessage, 'icon': iconURLString};
+  const details = {};
+  details.body = message || '';
+  details.icon = iconURLString || defaultIconURLString;
 
   // Creating a notification shows it
-  new Notification(definedTitle, details);
+  new Notification(title || 'Untitled', details);
 }
 
 function noop() {}
