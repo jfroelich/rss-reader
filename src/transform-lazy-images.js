@@ -9,7 +9,7 @@
 // TODO: Still see cases like this: <img data-original="url" src="url">
 // Instead of checking for absence of src, maybe always overwrite
 
-const LAZY_ATTRIBUTES = [
+const lazyAttrs = [
   'load-src',
   'data-src',
   'data-original-desktop',
@@ -35,7 +35,7 @@ function transformLazyImage(img) {
     return;
   }
 
-  for(let altName of LAZY_ATTRIBUTES) {
+  for(let altName of lazyAttrs) {
     if(img.hasAttribute(altName)) {
       const altValue = img.getAttribute(altName);
       if(altValue && isValidURL(altValue)) {

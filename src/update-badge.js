@@ -29,7 +29,7 @@ function countUnreadEntries() {
   const tx = this.db.transaction('entry');
   const store = tx.objectStore('entry');
   const index = store.index('readState');
-  const request = index.count(ENTRY_FLAGS.UNREAD);
+  const request = index.count(EntryFlags.UNREAD);
   request.onsuccess = count_onsuccess.bind(this);
   request.onerror = count_onerror.bind(this);
 }
