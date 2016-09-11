@@ -62,7 +62,7 @@ function openCursorOnsuccess(event) {
 }
 
 function openCursorOnerror(event) {
-  console.warn(event.target.error);
+  console.error(event.target.error);
   onComplete.call(this, 'CursorError');
 }
 

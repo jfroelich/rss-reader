@@ -12,10 +12,6 @@ const EntryFlags = {
 };
 
 // Given an entry object, return the last url in its internal url chain.
-// This function assumes that entry.urls is always a defined array with at
-// least one value. In general, an entry shouldn't exist without a url, or the
-// caller should never be calling this function at that point. It is the
-// caller's responsibility to ensure the presence of a url.
 function getEntryURL(entry) {
   console.assert(entry);
   console.assert(entry.urls);
@@ -23,22 +19,18 @@ function getEntryURL(entry) {
   return entry.urls[entry.urls.length - 1];
 }
 
-// Note: untested, under dev. The input this time is a string, and entry.urls
-// should contain strings. Part of a series of changes i am making with plan
-// to avoid having to deserialize and reserialize entries
 // Returns true if the url was added.
 function appendEntryURL(entry, urlString) {
   console.assert(entry);
   console.assert(urlString);
 
-  // Lazily create the urls property. This is not the caller's responsibility
-  // because it means less boilerplate.
+  // Lazily create the urls property.
   if(!('urls' in entry)) {
     entry.urls = [];
   }
 
   // In order to compare the url to existing urls, we need to convert the url
-  // to a URL object. This should never throw. It is the caller's responsibility
+  // to a URL object. It is the caller's responsibility
   // to provide a valid url.
   const urlObject = new URL(urlString);
 
@@ -71,12 +63,6 @@ function appendEntryURL(entry, urlString) {
   }
 
   entry.urls.push(normalizedURLString);
-
-  // Temp, testing url rewriting new approach
-  //if(entry.urls.length > 1) {
-  //  console.debug('Entry urls:', entry.urls);
-  //}
-
   return true;
 }
 
@@ -117,22 +103,20 @@ function sanitizeEntry(inputEntry) {
   return outputEntry;
 }
 
+// TODO: instead of separate scopes, consider a single file scope, and
+// exporting everything. This will be more consistent with other files.
 { // Begin addEntry block scope
 
-// Add the entry to the database. Sets a few fields such as dateCreated.
+// Add the entry to the database.
 function addEntry(db, entry, callback) {
-
   const entryURLString = getEntryURL(entry);
-
-  // The entry should be defined
-  console.assert(entry);
-  // The entry should have at least one url
   console.assert(entryURLString);
-
   console.debug('Adding entry', entryURLString);
 
   const sanitizedEntry = sanitizeEntry(entry);
   const storableEntry = filterUndefProps(sanitizedEntry);
+
+  // Set fields that only happen on creation
   storableEntry.readState = EntryFlags.UNREAD;
   storableEntry.archiveState = EntryFlags.UNARCHIVED;
   storableEntry.dateCreated = new Date();
@@ -142,7 +126,7 @@ function addEntry(db, entry, callback) {
     tx = db.transaction('entry', 'readwrite');
   } catch(error) {
     console.error(entryURLString, error);
-    callback({'type': 'create_tx_error', 'error': error});
+    callback({'type': 'TransactionError', 'error': error});
     return;
   }
 
@@ -153,8 +137,6 @@ function addEntry(db, entry, callback) {
 }
 
 function addOnerror(entry, callback, event) {
-  // TODO: this appears in the log due to polling, but it shouldn't.
-  // I should have caught all attempts to insert a duplicate entry
   console.error(event.target.error, getEntryURL(entry));
   callback(event);
 }

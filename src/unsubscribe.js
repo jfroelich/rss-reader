@@ -15,7 +15,7 @@ function unsubscribe(feedId, callback) {
   console.assert(feedId > 0);
 
   const context = {
-    'connection': null,
+    'db': null,
     'feedId': feedId,
     'numDeleteEntryRequests': 0,
     'callback': callback
@@ -24,10 +24,10 @@ function unsubscribe(feedId, callback) {
   openDB(onOpenDB.bind(context));
 }
 
-function onOpenDB(connection) {
-  if(connection) {
-    this.connection = connection;
-    const tx = connection.transaction('entry', 'readwrite');
+function onOpenDB(db) {
+  if(db) {
+    this.db = db;
+    const tx = db.transaction('entry', 'readwrite');
     const store = tx.objectStore('entry');
     const index = store.index('feed');
     const request = index.openCursor(this.feedId);
@@ -67,7 +67,7 @@ function openEntryCursorOnError(event) {
 
 function onRemoveEntries() {
   console.debug('Deleting feed', this.feedId);
-  const tx = this.connection.transaction('feed', 'readwrite');
+  const tx = this.db.transaction('feed', 'readwrite');
   const store = tx.objectStore('feed');
   const request = store.delete(this.feedId);
   request.onsuccess = deleteFeedOnSuccess.bind(this);
@@ -86,21 +86,19 @@ function deleteFeedOnError(event) {
 function onUnsubscribeComplete(eventType) {
   console.log('Unsubscribed');
 
-  if(this.connection) {
+  if(this.db) {
     if(this.numDeleteEntryRequests) {
       console.debug('Requested %i entries to be deleted',
         this.numDeleteEntryRequests);
       // Even though the deletes are pending, the readonly transaction in
       // updateBadge implicitly waits for the pending deletes to complete
-      updateBadge(this.connection);
+      updateBadge(this.db);
     }
 
-    this.connection.close();
+    this.db.close();
   }
 
   if(this.callback) {
-    // Has to callback using "feedId" because callers assume that property
-    // name. Same thing with "deleteRequestCount"
     this.callback({
       'type': eventType,
       'feedId': this.feedId,

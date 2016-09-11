@@ -8,8 +8,6 @@
 
 // Returns an event-like object with properties feed and entries.
 function parseFeed(doc, shouldExcludeEntries) {
-  console.assert(doc, 'document is required');
-
   const docElement = doc.documentElement;
   if(!docElement.matches('feed, rss, rdf')) {
     throw new Error('Unsupported document element: ' + docElement.nodeName);
@@ -21,7 +19,6 @@ function parseFeed(doc, shouldExcludeEntries) {
   }
 
   const feed = {};
-
   feed.type = getFeedType(docElement);
   feed.title = findChildElementText(channel, 'title');
   feed.description = findChildElementText(channel,
@@ -329,12 +326,10 @@ function findChildElement(parentElement, predicate) {
 }
 
 function findChildElementByName(parentElement, localName) {
-
-  function hasLocalName(element) {
+  console.assert(localName);
+  return findChildElement(parentElement, function(element) {
     return element.localName === localName;
-  }
-
-  return findChildElement(parentElement, hasLocalName);
+  });
 }
 
 function findChildElementText(element, localName) {

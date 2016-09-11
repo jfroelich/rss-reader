@@ -16,7 +16,7 @@ function exportOPMLFile(title, fileName) {
     'db': null
   };
 
-  openDB(onOpenDB.bind(this));
+  openDB(onOpenDB.bind(context));
 }
 
 function onOpenDB(db) {
@@ -25,19 +25,19 @@ function onOpenDB(db) {
     const tx = db.transaction('feed');
     const store = tx.objectStore('feed');
     const request = store.openCursor();
-    request.onsuccess = openCursorOnsuccess.bind(this);
-    request.onerror = openCursorOnerror.bind(this);
+    request.onsuccess = openCursorOnSuccess.bind(this);
+    request.onerror = openCursorOnError.bind(this);
   } else {
     onComplete.call(this);
   }
 }
 
-function openCursorOnerror(event) {
+function openCursorOnError(event) {
   console.error(event.target.error);
   onComplete.call(this);
 }
 
-function openCursorOnsuccess(event) {
+function openCursorOnSuccess(event) {
   const cursor = event.target.result;
   if(cursor) {
     const feed = cursor.value;
@@ -56,7 +56,8 @@ function onGetFeeds() {
     outlines.push(createOutline(doc, feed));
   }
 
-  // I do not know why using doc.body yields undefined
+  // Append the outlines to the body
+  // doc.body is sometimes undefined, but querySelector is not
   const body = doc.querySelector('body');
   for(let outline of outlines) {
     body.appendChild(outline);
@@ -73,7 +74,6 @@ function onGetFeeds() {
   anchor.style.display = 'none';
 
   // Append the anchor to the document containing this script
-  // (not to be confused with the xml doc)
   const parent = document.body || document.documentElement;
   parent.appendChild(anchor);
 
@@ -86,13 +86,10 @@ function onGetFeeds() {
 }
 
 function onComplete() {
-
   if(this.db) {
     this.db.close();
   }
-
-  console.log('Exported %s feeds to opml file %s', this.feeds.length,
-    this.fileName);
+  console.log('Exported %s feeds to %s', this.feeds.length, this.fileName);
 }
 
 // Creates a Document object with the given title representing an OPML file
@@ -130,14 +127,15 @@ function createDoc(title) {
 }
 
 // Creates an outline element from an object representing a feed
-function createOutline(document, feed) {
-  const outline = document.createElement('outline');
+function createOutline(doc, feed) {
+  const outline = doc.createElement('outline');
 
   if(feed.type) {
     outline.setAttribute('type', feed.type);
   }
 
   const feedURL = getFeedURL(feed);
+  console.assert(feedURL);
   outline.setAttribute('xmlUrl', feedURL);
 
   if(feed.title) {

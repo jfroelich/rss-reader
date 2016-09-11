@@ -86,7 +86,7 @@ function findFeedOnSuccess(event) {
 
   // Subscribe while offline
   if('onLine' in navigator && !navigator.onLine) {
-    addFeed.call(this.db, this.feed, onAddFeed.bind(this));
+    addFeed(this.db, this.feed, onAddFeed.bind(this));
     return;
   }
 
@@ -123,7 +123,7 @@ function onLookupFavicon(iconURLObject) {
     this.feed.faviconURLString = iconURLObject.href;
   }
 
-  addFeed.call(this.db, this.feed, onAddFeed.bind(this));
+  addFeed(this.db, this.feed, onAddFeed.bind(this));
 }
 
 function onAddFeed(event) {
@@ -141,7 +141,9 @@ function onSubscribeComplete(event) {
   }
 
   if(this.shouldNotify && this.didSubscribe) {
-    const feed = event.feed; // Use the feed object that was added
+    // Use the feed object that was added, not this.feed, because the added
+    // feed has been sanitized
+    const feed = event.feed;
     const displayString = feed.title ||  getFeedURL(feed);
     const message = 'Subscribed to ' + displayString;
     showDesktopNotification('Subscription complete', message,

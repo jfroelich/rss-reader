@@ -9,7 +9,6 @@
 // Set the width and height attributes of image elements. Calls back
 // with the number of images modified.
 function setImageDimensions(doc, callback) {
-
   console.assert(doc);
   console.assert(callback);
 
@@ -23,24 +22,22 @@ function setImageDimensions(doc, callback) {
     'didCallback': false
   };
 
-  // Because we are not modifying the set of images, it makes sense to use
-  // a static node list because of the minor speed boost.
   const images = doc.getElementsByTagName('img');
+  if(!images.length) {
+    onComplete.call(context);
+    return;
+  }
+
   context.numImages = images.length;
-  if(context.numImages) {
-    for(let image of images) {
-      processImage(context, image);
-    }
-  } else {
-    // Ensure we still callback in the case of no images
-    callback(context.numImagesModified);
+  for(let image of images) {
+    processImage.call(context, image);
   }
 }
 
-function processImage(context, image) {
+function processImage(image) {
   // Skip images with at least one dimension
   if(image.getAttribute('width') || image.getAttribute('height')) {
-    onProcessImage(context);
+    onProcessImage.call(this);
     return;
   }
 
@@ -67,7 +64,7 @@ function processImage(context, image) {
     }
 
     if(didInferFromStyle) {
-      onProcessImage(context);
+      onProcessImage.call(this);
       return;
     }
   }
@@ -77,7 +74,7 @@ function processImage(context, image) {
   // probably removed, but it doesn't hurt to redundantly check here.
   const src = image.getAttribute('src');
   if(!src) {
-    onProcessImage(context);
+    onProcessImage.call(this);
     return;
   }
 
@@ -87,7 +84,7 @@ function processImage(context, image) {
     srcURL = new URL(src);
   } catch(error) {
     console.debug('Invalid url', image.outerHTML);
-    onProcessImage(context);
+    onProcessImage.call(this);
     return;
   }
 
@@ -97,7 +94,7 @@ function processImage(context, image) {
   // deserialize such objects. I suppose I could load, but for now I treat
   // data: urls as not processable.
   if(srcURL.protocol !== 'http:' && srcURL.protocol !== 'https:') {
-    onProcessImage(context);
+    onProcessImage.call(this);
     return;
   }
 
@@ -107,8 +104,6 @@ function processImage(context, image) {
   // set. The document containing the image is inert, so setting its src would
   // not have an effect.
   const proxyImage = new Image();
-
-  // This assignment triggers the load
   proxyImage.src = src;
 
   // Check if the proxy is complete. Inferrably, when setting the src property,
@@ -118,7 +113,7 @@ function processImage(context, image) {
   if(proxyImage.complete) {
     image.setAttribute('width', proxyImage.width);
     image.setAttribute('height', proxyImage.height);
-    onProcessImage(context);
+    onProcessImage.call(this);
   } else {
 
     // If incomplete then bind the listeners. Because the load is async, it is
@@ -128,36 +123,39 @@ function processImage(context, image) {
     // TODO: go back to using two separate listener functions, I think it is
     // clearer
 
-    const boundOnLoad = proxyImageOnLoad.bind(proxyImage, context, image);
+    const boundOnLoad = proxyImageOnLoad.bind(this, image);
     proxyImage.onload = boundOnLoad;
     proxyImage.onerror = boundOnLoad;
   }
 }
 
-function proxyImageOnLoad(context, image, event) {
-  context.numImagesFetched++;
+function proxyImageOnLoad(image, event) {
+  this.numImagesFetched++;
   if(event.type === 'load') {
     image.setAttribute('width', event.target.width);
     image.setAttribute('height', event.target.height);
-    context.numImagesModified++;
+    this.numImagesModified++;
   }
 
-  onProcessImage(context);
+  onProcessImage.call(this);
 }
 
-function onProcessImage(context) {
+function onProcessImage() {
   // This increment should only happen here, because this should only happen
   // once each call completes, which is sometimes asynchronous.
-  context.numImagesProcessed++;
-
-  if(context.numImagesProcessed === context.numImages) {
-    // The didCallback logic here is a remnant of an earlier bug that has since
-    // been fixed. It is left here as a reminder of the danger of incrementing
-    // numImagesProcessed in the wrong place
-    console.assert(!context.didCallback, 'duplicate callback');
-    context.didCallback = true;
-    context.callback(context.numImagesModified);
+  this.numImagesProcessed++;
+  if(this.numImagesProcessed === this.numImages) {
+    onComplete.call(this);
   }
+}
+
+function onComplete() {
+  // The didCallback logic here is a remnant of an earlier bug that has since
+  // been fixed. It is left here as a reminder of the danger of incrementing
+  // numImagesProcessed in the wrong place
+  console.assert(!this.didCallback, 'duplicate callback');
+  this.didCallback = true;
+  this.callback(this.numImagesModified);
 }
 
 this.setImageDimensions = setImageDimensions;

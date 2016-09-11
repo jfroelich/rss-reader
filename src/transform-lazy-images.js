@@ -30,7 +30,6 @@ function transformLazyImages(doc) {
 }
 
 function transformLazyImage(img) {
-
   if(img.hasAttribute('src') || img.hasAttribute('srcset')) {
     return;
   }

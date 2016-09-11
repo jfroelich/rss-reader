@@ -17,16 +17,7 @@
 // like removing hash, is just another kind of rule.
 function rewriteURL(inputURLObject) {
 
-  // NOTE: it is not clearly documented, but it looks like
-  // URLSearchParams.get implicitly decodes the parameter value, so
-  // there is no need to use decodeURIComponent. For example, "%3A" appears
-  // as "/".
-
-
-  // The input parameter should always be defined
-  console.assert(inputURLObject);
-  // This is relaxed because it is faster than using toString check
-  console.assert('href' in inputURLObject);
+  // NOTE: searchParams.get implicitly decodes
 
   // Rewrite Google News links
   if(inputURLObject.hostname === 'news.google.com' &&

@@ -336,7 +336,6 @@ function startSubscription(url) {
   subscribe(feed, {'callback': on_subscribe});
 
   function on_subscribe(event) {
-    console.debug('on_subscribe event', event);
     if(event.type !== 'success') {
       hideSubMonitor(showSubErrorMsg.bind(null, event.type));
       return;

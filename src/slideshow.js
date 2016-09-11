@@ -312,7 +312,7 @@ scrollDeltas['' + keyCodes.PAGE_UP] = [-100, -800];
 
 let keyDownTimerId = null;
 
-function on_key_down(event) {
+function onKeyDown(event) {
   switch(event.keyCode) {
     case keyCodes.DOWN:
     case keyCodes.PAGE_DOWN:
@@ -344,7 +344,7 @@ function on_key_down(event) {
 
 // I am expressly using window here to make it clear where the listener is
 // attached
-window.addEventListener('keydown', on_key_down, false);
+window.addEventListener('keydown', onKeyDown, false);
 
 function initSlides(event) {
   document.removeEventListener('DOMContentLoaded', initSlides);

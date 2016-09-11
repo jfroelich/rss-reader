@@ -158,6 +158,6 @@ function onResponse(context, event) {
   });
 }
 
-this.searchGoogleFeeds = this.searchGoogleFeeds;
+this.searchGoogleFeeds = searchGoogleFeeds;
 
 } // End file block scope

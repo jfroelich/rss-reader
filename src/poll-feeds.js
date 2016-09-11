@@ -141,7 +141,7 @@ function isFeedUnmodified(localFeed, remoteFeed) {
   // never processed during the time period after subscribing where the feed
   // file was not modified.
   if(!localFeed.dateUpdated) {
-    retrun false;
+    return false;
   }
 
   return localFeed.dateLastModified && remoteFeed.dateLastModified &&
