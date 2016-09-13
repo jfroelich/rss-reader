@@ -47,6 +47,7 @@
       "/src/filter-boilerplate.js",
       "/src/filter-sourceless-images.js",
       "/src/filter-tracking-images.js",
+      "/src/find-entries-by-urls.js",
       "/src/html/replace-html.js",
       "/src/html/truncate-html.js",
       "/src/is-fetch-resistant.js",

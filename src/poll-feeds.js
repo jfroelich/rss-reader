@@ -109,7 +109,7 @@ function onFetchFeed(localFeed, event) {
   }
 
   // TODO: I should probably do the feed merge prior to lookup up the favicon,
-  // then I do need to pass around both feeds to continuations. This is the
+  // then I do not need to pass around both feeds to continuations. This is the
   // terminal point where both feeds need to be considered separately, so it
   // makes the most sense to do it here, not later.
 
@@ -159,17 +159,27 @@ function onLookupFeedFavicon(localFeed, remoteFeed, entries, faviconURL) {
 }
 
 function onUpdateFeed(entries, event) {
+  // If we failed to update the feed, then do not even bother updating its
+  // entries. Something is seriously wrong. Perhaps this should even be a
+  // fatal error.
   if(event.type !== 'success') {
     this.numFeedsPending--;
     onPollComplete.call(this);
     return;
   }
 
-  if(!entries || !entries.length) {
+  console.assert(entries);
+
+  // TODO: should this check occur earlier?
+  if(!entries.length) {
     this.numFeedsPending--;
     onPollComplete.call(this);
     return;
   }
+
+  // TODO: filter out entries without urls, and then check again against num
+  // remaining.
+
 
   // TODO: I should be filtering duplicate entries, compared by norm url,
   // somewhere. I somehow lost this functionality, or moved it somewhere
@@ -192,59 +202,38 @@ function onUpdateFeed(entries, event) {
 }
 
 function processEntry(feed, entry, callback) {
+  const entryTerminalURLString = getEntryURL(entry);
 
-  let entryTerminalURLString = getEntryURL(entry);
-
+  // I would prefer this to be an assert, but I think this is the first place
+  // where this is validated, and this isn't a fatal error. It just means we
+  // parsed the entry from the feed but failed to find a url for it, so we
+  // cannot store it, because we require entries have urls.
+  // Perhaps what I would rather do is some type of earlier filter of entries
+  // without urls, so that this can just be an assert, and so that the
+  // responsibility of who does this is explicit
   if(!entryTerminalURLString) {
     console.warn('Entry missing url', entry);
     callback();
     return;
   }
 
-  let entryTerminalURLObject = new URL(entryTerminalURLString);
+  // Rewrite the entry url
+  const entryTerminalURLObject = new URL(entryTerminalURLString);
   const rewrittenURLObject = rewriteURL(entryTerminalURLObject);
-
   if(rewrittenURLObject) {
     appendEntryURL(entry, rewrittenURLObject.href);
   }
 
-  // The terminal url may have changed if it was rewritten and unique
-  entryTerminalURLString = getEntryURL(entry);
-  entryTerminalURLObject = new URL(entryTerminalURLString);
-
-  // TODO: should normalize append the norm url to entry.urls?
-
-  const normalizedURLObject = normalizeURL(entryTerminalURLObject);
-
-  // TODO: there is another kind normalization I want to add, I think I have to
-  // add it in several places (which eventually should just be one place),
-  // but the idea is to replace '//' with '/' in path name. Certain feeds some
-  // to use invalid urls
-
-
-  // Temp, testing to see if this was cause of dup call to addEntry
-  // console.debug('Searching for entry:', normalizedURLObject.href);
-
-  // TODO: after some thought, I think it is better to have a separate funciton
-  // called something like find_entry_by_url, and this should call out to that.
-  // It is more idiomatic, and it shortens the code
-
-  const tx = this.connection.transaction('entry');
-  const store = tx.objectStore('entry');
-  const index = store.index('urls');
-  const request = index.get(normalizedURLObject.href);
-  const boundOnFindEntry = onFindEntry.bind(this, feed, entry, callback);
-  request.onsuccess = boundOnFindEntry;
-  request.onerror = boundOnFindEntry;
+  // Check if the entry already exists. Check against all of its urls
+  const matchLimit = 1;
+  findEntriesByURLs(this.connection, entry.urls, matchLimit,
+    onFindMatchingEntries.bind(this, feed, entry, callback));
 }
 
-function onFindEntry(feed, entry, callback, event) {
-  if(event.type !== 'success') {
-    callback();
-    return;
-  }
-
-  if(event.target.result) {
+function onFindMatchingEntries(feed, entry, callback, matches) {
+  // The entry already exists if there was at least one match
+  if(matches.length) {
+    // console.debug('Found matching entries', matches.length);
     callback();
     return;
   }
@@ -268,7 +257,8 @@ function onFindEntry(feed, entry, callback, event) {
 
   // Check that the url does not belong to a domain that obfuscates its content
   // with things like advertisement interception or full javascript. While these
-  // documents can be fetched, there is no point to doing so.
+  // documents can be fetched, there is no point to doing so. We still want to
+  // store the entry, but we just do not try and augment its content.
   if(isFetchResistantURL(entryTerminalURLObject)) {
     prepLocalEntryDoc(entry);
     addEntry(this.connection, entry, callback);
@@ -313,6 +303,7 @@ function onFetchEntry(entry, callback, event) {
 
   // TODO: if we successfully fetched the entry, then before storing it,
   // we should be trying to set its faviconURL.
+  // TODO: actually maybe this should be happening whether we fetch or not
   // - i shouldn't be using the feed's favicon url, that is unrelated
   // - i should pass along the html of the associated html document. the
   // lookup should not fetch a second time.
@@ -333,21 +324,6 @@ function onSetImageDimensions(entry, document, callback, numImagesModified) {
   console.assert(document);
   prepDoc(document);
   entry.content = document.documentElement.outerHTML.trim();
-
-  // TODO: it looks like there is a bug where this is sometimes called twice
-  // somehow. It only happens rarely. It isn't the worst case because the
-  // db request just failed with a constraint error. But it is still wrong.
-  // This should only be called once.
-  // It could be that the entry is listed twice in the feed and I am
-  // not properly removing dups somehow.
-  // It could be that its http redirected to https, and then the dup occurs,
-  // because I execute find_entry only against the most recent url
-  // https://medium.com/@virgilgr/tors-branding-pivot-is-going-to-get-someone-
-  // killed-6ee45313b559#.z1vs8xyjz
-  // From the looks of it, it is because of the hash maybe
-  // it could be that the whole feed is getting processed twice?
-  //console.debug('Calling addEntry:', getEntryURL(entry));
-
   addEntry(this.connection, entry, callback);
 }
 
@@ -408,17 +384,6 @@ function onPollComplete() {
 
   releasePollLock();
   console.log('Polling completed');
-}
-
-function normalizeURL(url) {
-  let clone = cloneURL(url);
-  // Strip the hash
-  clone.hash = '';
-  return clone;
-}
-
-function cloneURL(url) {
-  return new URL(url.href);
 }
 
 // Obtain a poll lock by setting a flag in local storage. This uses local
