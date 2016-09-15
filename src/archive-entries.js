@@ -48,11 +48,11 @@ function onOpenDB(db) {
   const index = store.index('archiveState-readState');
   const keyPath = [EntryFlags.UNARCHIVED, EntryFlags.READ];
   const request = index.openCursor(keyPath);
-  request.onsuccess = openCursorOnsuccess.bind(this);
-  request.onerror = openCursorOnerror.bind(this);
+  request.onsuccess = openCursorOnSuccess.bind(this);
+  request.onerror = openCursorOnError.bind(this);
 }
 
-function openCursorOnsuccess(event) {
+function openCursorOnSuccess(event) {
   const cursor = event.target.result;
 
   // Either there were no entries, or we advanced the cursor past the end,
@@ -157,7 +157,7 @@ function entryToArchivable(inputEntry) {
   return outputEntry;
 }
 
-function openCursorOnerror(event) {
+function openCursorOnError(event) {
   console.error(event.target.error);
   onComplete.call(this);
 }

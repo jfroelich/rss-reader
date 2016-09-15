@@ -48,17 +48,13 @@ function onAbort(event) {
   });
 }
 
-function onDocumentUndefined(event) {
-  this.callback({
-    'type': 'UndefinedDocumentError'
-  });
-}
-
 function onLoad(event) {
   // doc is undefined for pdfs and such
   const document = event.target.responseXML;
   if(!document) {
-    onDocumentUndefined(event);
+    this.callback({
+      'type': 'UndefinedDocumentError'
+    });
     return;
   }
 

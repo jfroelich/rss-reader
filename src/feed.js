@@ -78,7 +78,6 @@ function sanitizeFeed(input_feed) {
     title = replaceHTML(title, '');
     title = title.replace(/\s+/, ' ');
     title = truncateHTML(title, 1024, '');
-    title = title.trim();
     feed.title = title;
   }
 
@@ -93,13 +92,12 @@ function sanitizeFeed(input_feed) {
 
     // Enforce a maximum storable length
     const pre_trunc_len = description.length;
-    const DESCRIPTION_MAX_LENGTH = 1024 * 10;
-    description = truncateHTML(description, DESCRIPTION_MAX_LENGTH, '');
+    const descMaxLength = 1024 * 10;
+    description = truncateHTML(description, descMaxLength, '');
     if(pre_trunc_len > description.length) {
       console.warn('Truncated description', description);
     }
 
-    description = description.trim();
     feed.description = description;
   }
 

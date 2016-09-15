@@ -50,7 +50,7 @@
       "/src/find-entries-by-urls.js",
       "/src/html/replace-html.js",
       "/src/html/truncate-html.js",
-      "/src/is-fetch-resistant.js",
+      "/src/is-fetch-resistant-url.js",
       "/src/notifications/show-desktop-notification.js",
       "/src/on-badge-click.js",
       "/src/on-installed.js",

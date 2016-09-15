@@ -30,11 +30,11 @@ function countUnreadEntries() {
   const store = tx.objectStore('entry');
   const index = store.index('readState');
   const request = index.count(EntryFlags.UNREAD);
-  request.onsuccess = count_onsuccess.bind(this);
-  request.onerror = count_onerror.bind(this);
+  request.onsuccess = countOnSuccess.bind(this);
+  request.onerror = countOnError.bind(this);
 }
 
-function count_onsuccess(event) {
+function countOnSuccess(event) {
   const count = event.target.result;
   if(count > 999) {
     this.text = '1k+';
@@ -45,7 +45,7 @@ function count_onsuccess(event) {
   onUpdateBadgeComplete.call(this);
 }
 
-function count_onerror(event) {
+function countOnError(event) {
   console.error(event.target.error);
   onUpdateBadgeComplete.call(this);
 }

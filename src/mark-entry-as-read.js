@@ -6,8 +6,6 @@
 
 { // Begin file block scope
 
-// TODO: rename file to mark-entry-as-read.js
-
 function markEntryAsRead(entryId, callback) {
   console.assert(!isNaN(entryId));
   console.assert(isFinite(entryId));
@@ -26,11 +24,11 @@ function onOpenDB(db) {
   const tx = db.transaction('entry', 'readwrite');
   const store = tx.objectStore('entry');
   const request = store.openCursor(this.entryId);
-  request.onsuccess = openCursorOnsuccess.bind(this);
-  request.onerror = openCursorOnerror.bind(this);
+  request.onsuccess = openCursorOnSuccess.bind(this);
+  request.onerror = openCursorOnError.bind(this);
 }
 
-function openCursorOnsuccess(event) {
+function openCursorOnSuccess(event) {
   const cursor = event.target.result;
   if(!cursor) {
     console.error('No entry found', this.entryId);
@@ -61,7 +59,7 @@ function openCursorOnsuccess(event) {
   onComplete.call(this, 'Success');
 }
 
-function openCursorOnerror(event) {
+function openCursorOnError(event) {
   console.error(event.target.error);
   onComplete.call(this, 'CursorError');
 }
@@ -72,10 +70,7 @@ function onComplete(eventType) {
   }
 
   if(this.callback) {
-    this.callback({
-      'type': eventType,
-      'entryId': this.entryId
-    });
+    this.callback({'type': eventType, 'entryId': this.entryId});
   }
 }
 

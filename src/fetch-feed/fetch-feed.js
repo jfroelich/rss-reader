@@ -39,10 +39,8 @@ function fetchFeed(requestURL, excludeEntries, callback) {
     const feed = parseResult.feed;
     const entries = parseResult.entries;
 
+    // Set the request and response urls
     appendFeedURL(feed, requestURL.href);
-
-    // Possibly add the response url if a redirect occurred, the url is defined,
-    // and it differs
     if(event.responseURLString) {
       appendFeedURL(feed, event.responseURLString);
     }
@@ -55,7 +53,6 @@ function fetchFeed(requestURL, excludeEntries, callback) {
       'feed': feed,
       'entries': entries
     };
-
     callback(successEvent);
   });
 }

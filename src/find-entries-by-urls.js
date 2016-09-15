@@ -42,19 +42,13 @@ function findEntriesByURLs(db, urls, matchLimit, callback) {
 
   const tx = db.transaction('entry');
   const store = tx.objectStore('entry');
-  context.index = store.index('urls');
+  const index = store.index('urls');
   for(let url of urls) {
-    findEntriesWithURL.call(context, url);
+    const normalizedURLString = normalizeEntryURLString(url);
+    const request = index.openCursor(normalizedURLString);
+    request.onsuccess = openCursorOnSuccess.bind(context);
+    request.onerror = openCursorOnError.bind(context);
   }
-}
-
-function findEntriesWithURL(urlString) {
-  const urlObject = new URL(urlString);
-  urlObject.hash = '';
-  const normalizedURLString = urlObject.href;
-  const request = this.index.openCursor(normalizedURLString);
-  request.onsuccess = openCursorOnSuccess.bind(this);
-  request.onerror = openCursorOnError.bind(this);
 }
 
 function openCursorOnSuccess(event) {

@@ -6,9 +6,6 @@
 
 { // Begin file block scope
 
-// TODO: Still see cases like this: <img data-original="url" src="url">
-// Instead of checking for absence of src, maybe always overwrite
-
 const lazyAttrs = [
   'load-src',
   'data-src',
@@ -46,10 +43,7 @@ function transformLazyImage(img) {
   }
 }
 
-// Only minimal validation. I cannot fully validate its url, because the url
-// could be relative
-// TODO: i should still match browser behavior though, which might tolerate
-// spaces in urls
+// Only minimal validation against possibly relative urls
 function isValidURL(inputString) {
   return !inputString.trim().includes(' ');
 }

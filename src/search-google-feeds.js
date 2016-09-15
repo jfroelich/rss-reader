@@ -6,8 +6,7 @@
 
 { // Begin file block scope
 
-// TODO: switch to using fetch API
-// TODO: use separate response event handlers
+// TODO: use new Fetch api
 
 const ellipsis = '\u2026';
 
@@ -33,9 +32,10 @@ function searchGoogleFeeds(query, timeoutMs, callback) {
   const context = {
     'urlString': null,
     'callback': callback,
+    'seen': {},
     'titleMaxLength': 200,
     'snippetMaxLength': 400,
-    'replacementString': ellipsis
+    'replacement': ellipsis
   };
 
   const urlString = baseURLString + encodeURIComponent(query);
@@ -45,45 +45,68 @@ function searchGoogleFeeds(query, timeoutMs, callback) {
   const isAsync = true;
   const request = new XMLHttpRequest();
   request.timeout = timeoutMs;
-  const boundOnResponse = onResponse.bind(request, context);
-  request.onerror = boundOnResponse;
-  request.ontimeout = boundOnResponse;
-  request.onabort = boundOnResponse;
-  request.onload = boundOnResponse;
+  request.onerror = onRequestError.bind(context);
+  request.ontimeout = onRequestTimeout.bind(context);
+  request.onabort = onRequestAbort.bind(context);
+  request.onload = onRequestLoad.bind(context);
   request.open('GET', urlString, isAsync);
   request.responseType = 'json';
   request.send();
 }
 
-function onUndefinedResponse(context, event) {
-  console.warn('Response undefined for GET', context.urlString);
-  console.dir(event);
-  context.callback({
-    'type': 'UndefinedResponseError',
-    'status': event.target.status
-  });
+function onRequestLoad(event) {
+  const response = event.target.response;
+  if(!response) {
+    console.error('Response undefined');
+    this.callback({'type': 'UndefinedResponseError'});
+    return;
+  }
+
+  const data = response.responseData;
+  if(!data) {
+    console.error('Missing response data');
+    this.callback({'type': 'UndefinedDataError'});
+    return;
+  }
+
+  let entries = data.entries || [];
+  entries = entries.filter(entryHasURL);
+  entries = entries.filter(setAndParseURL);
+  entries = entries.filter(isEntryUnique, this);
+  entries = entries.map(sanitizeTitle, this);
+  entries = entries.map(sanitizeSnippet, this);
+
+  const query = data.query || '';
+  this.callback({'type': 'success', 'query': query, 'entries': entries});
 }
 
-function onNonLoad(context, event) {
-  console.warn('GET', context.urlString, event.type, event.target.status,
-    event.target.response.responseDetails);
-  callback({'type': event.type,
-    'status': event.target.status,
-    'message': event.target.response.responseDetails});
+function onRequestError(event) {
+  console.warn('Request error', this.urlString);
+  const outputEvent = {};
+  outputEvent.type = event.type;
+  outputEvent.status = event.target.status;
+  if(event.target.response) {
+    outputEvent.message = event.target.response.responseDetails;
+  }
+
+  this.callback(outputEvent);
 }
 
-function onResponseDataUndefined(context, event) {
-  console.error('Undefined data for GET', context.urlString,
-    event.target.response.responseDetails);
-  callback({'type': 'UndefinedDataError',
-    'message': event.target.response.responseDetails});
+function onRequestAbort(event) {
+  console.warn('Aborted request', this.urlString);
+  this.callback({'type': event.type});
+}
+
+function onRequestTimeout(event) {
+  console.warn('Request timed out', this.urlString);
+  this.callback({'type': event.type});
 }
 
 function entryHasURL(entry) {
   return entry.url;
 }
 
-function deserializeEntryURL(entry) {
+function setAndParseURL(entry) {
   try {
     entry.url = new URL(entry.url);
     return true;
@@ -92,70 +115,37 @@ function deserializeEntryURL(entry) {
   }
 }
 
-function isEntryUnique(seen, entry) {
-  if(entry.url.href in seen) {
+function isEntryUnique(entry) {
+  if(entry.url.href in this.seen) {
     return false;
   }
 
-  seen[entry.url.href] = 1;
+  this.seen[entry.url.href] = 1;
   return true;
 }
 
-function sanitizeEntryTitle(context, entry) {
-  // Sanitize the result title
+function sanitizeTitle(entry) {
   if(entry.title) {
     entry.title = filterControlCharacters(entry.title);
     entry.title = replaceHTML(entry.title, '');
-    entry.title = truncateHTML(entry.title,
-      context.titleMaxLength);
+    entry.title = truncateHTML(entry.title, this.titleMaxLength);
   }
   return entry;
 }
 
-function replaceBRElements(inputString) {
+function replaceBRs(inputString) {
   return inputString.replace(/<br\s*>/gi, ' ');
 }
 
-function sanitizeEntrySnippet(context, entry) {
+function sanitizeSnippet(entry) {
   if(entry.contentSnippet) {
-    entry.contentSnippet = filterControlCharacters(entry.contentSnippet);
-    entry.contentSnippet = replaceBRElements(entry.contentSnippet);
-    entry.contentSnippet = truncateHTML(entry.contentSnippet,
-      context.snippetMaxLength, context.replacementString);
+    let snippet = entry.contentSnippet;
+    snippet = filterControlCharacters(snippet);
+    snippet = replaceBRs(snippet);
+    snippet = truncateHTML(snippet, this.snippetMaxLength, this.replacement);
+    entry.contentSnippet = snippet;
   }
   return entry;
-}
-
-function onResponse(context, event) {
-  if(!event.target.response) {
-    onUndefinedResponse(context, event);
-    return;
-  }
-
-  if(event.type !== 'load') {
-    onNonLoad(context, event);
-    return;
-  }
-
-  const data = event.target.response.responseData;
-  if(!data) {
-    onResponseDataUndefined(context, event);
-    return;
-  }
-
-  const seen = {};
-  let entries = data.entries || [];
-  entries = entries.filter(entryHasURL);
-  entries = entries.filter(deserializeEntryURL);
-  entries = entries.filter(isEntryUnique.bind(null, seen));
-  entries = entries.map(sanitizeEntryTitle.bind(null, context));
-  entries = entries.map(sanitizeEntrySnippet.bind(null, context));
-
-  context.callback({
-    'type': 'success',
-    'query': data.query || '',
-    'entries': entries
-  });
 }
 
 this.searchGoogleFeeds = searchGoogleFeeds;

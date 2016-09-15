@@ -141,8 +141,7 @@ function onSubscribeComplete(event) {
   }
 
   if(this.shouldNotify && this.didSubscribe) {
-    // Use the feed object that was added, not this.feed, because the added
-    // feed has been sanitized
+    // Use the sanitized feed object
     const feed = event.feed;
     const displayString = feed.title ||  getFeedURL(feed);
     const message = 'Subscribed to ' + displayString;

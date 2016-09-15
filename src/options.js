@@ -240,8 +240,6 @@ function isURLObject(obj) {
 }
 
 // TODO: deprecate the ability to preview
-// TODO: check if already subscribed before preview?
-// TODO: rename url to something like feedURL, it's not just any url
 function showSubPreview(url) {
   console.assert(isURLObject(url));
   hideSubPreview();

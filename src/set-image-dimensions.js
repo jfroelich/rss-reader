@@ -9,9 +9,6 @@
 // Set the width and height attributes of image elements. Calls back
 // with the number of images modified.
 function setImageDimensions(doc, callback) {
-  console.assert(doc);
-  console.assert(callback);
-
   const context = {
     'numImagesProcessed': 0,
     'numImagesFetched': 0,

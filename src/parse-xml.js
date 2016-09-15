@@ -13,12 +13,9 @@ function parseXML(inputString) {
   const parser = new DOMParser();
   // Allow the possible exception to bubble by not catching it
   const document = parser.parseFromString(inputString, 'application/xml');
-
-  // If an error did not occur then these should always be defined
   console.assert(document);
   console.assert(document.documentElement);
 
-  // Translate the embedded error back into an exception
   const embeddedErrorElement = document.querySelector('parsererror');
   if(embeddedErrorElement) {
     throw new Error(embeddedErrorElement.textContent);

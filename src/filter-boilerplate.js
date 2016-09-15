@@ -129,8 +129,7 @@ const attrTokenWeights = {
 
 // Computes a bias for an element based on the values of some of its
 // attributes.
-// NOTE: using var here due to v8 deopt warnings - Unsupported use of phi const
-// or something like this, i can't make sense of it
+// NOTE: using var due to v8 deopt warnings - Unsupported use of phi const
 function deriveAttrBias(element) {
   // Start by merging the element's interesting attribute values into a single
   // string in preparation for tokenization.
