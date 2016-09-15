@@ -67,8 +67,7 @@ function processImage(image) {
   }
 
   // Skip images without a src attribute because we cannot load such images.
-  // These images should probably already have been processed elsewhere and
-  // probably removed, but it doesn't hurt to redundantly check here.
+  // This check is probably redundant but do this anyway.
   const src = image.getAttribute('src');
   if(!src) {
     onProcessImage.call(this);

@@ -30,22 +30,37 @@ function filterTrackingImages(doc) {
   }
 }
 
-const minValidURLLength = 'http://a.tld/a'.length;
-
-// TODO: restrict to http(s)? (by protocol value)?
 function isTrackingImage(image) {
-  const src = image.getAttribute('src');
+  let src = image.getAttribute('src');
 
+  // Assert attribute exists
   if(!src) {
     return false;
   }
 
-  // TODO: is min length the right condition? Maybe just check for space after
-  // trim, or not even check min length?
+  // Assert non-empty string after trim
+  src = src.trim();
+  if(!src) {
+    return false;
+  }
+
+  // Assert an approximate minimum length
+  const minValidURLLength = 'http://a.d/a'.length;
   if(src.length < minValidURLLength) {
     return false;
   }
 
+  // Assert no intermediate spaces (we trimmed above)
+  if(src.includes(' ')) {
+    return false;
+  }
+
+  // Assert acceptable protocol (http or https). No leading spaces (trimmed)
+  if(!/^https?:/i.test(src)) {
+    return false;
+  }
+
+  // Assert general url validity by checking for a parse error
   let url;
   try {
     url = new URL(src);
@@ -53,8 +68,8 @@ function isTrackingImage(image) {
     return false;
   }
 
-  const normalizedLowercaseHostname = url.hostname;
-  return hostNames.includes(normalizedLowercaseHostname);
+  // Do the lookup using the normalized lowercase value
+  return hostNames.includes(url.hostname);
 }
 
 this.filterTrackingImages = filterTrackingImages;

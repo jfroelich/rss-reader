@@ -126,9 +126,11 @@ function isEntryUnique(entry) {
 
 function sanitizeTitle(entry) {
   if(entry.title) {
-    entry.title = filterControlCharacters(entry.title);
-    entry.title = replaceHTML(entry.title, '');
-    entry.title = truncateHTML(entry.title, this.titleMaxLength);
+    let title = entry.title;
+    title = filterControlCharacters(title);
+    title = replaceHTML(title, '');
+    title = truncateHTML(title, this.titleMaxLength);
+    entry.title = title;
   }
   return entry;
 }
