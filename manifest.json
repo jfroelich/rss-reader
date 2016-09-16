@@ -16,7 +16,7 @@
       "/lib/parse-srcset.js",
       "/src/alarm.js",
       "/src/archive-entries.js",
-      "/src/cleandom/cleandom.js",
+      "/src/cleandom.js",
       "/src/entry.js",
       "/src/favicon/compact-favicons.js",
       "/src/favicon/favicon-cache.js",
