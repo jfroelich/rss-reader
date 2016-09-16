@@ -312,7 +312,7 @@ function onFetchEntry(entry, callback, event) {
   const doc = event.document;
   transformLazyImages(doc);
   filterSourcelessImages(doc);
-  filterInvalidAnchors(doc);
+  cleandom.filterInvalidAnchors(doc);
   resolveDocumentURLs(doc, event.responseURL);
   filterTrackingImages(doc);
   const boundOnSetImageDimensions = onSetImageDimensions.bind(this, entry, doc,
@@ -329,8 +329,8 @@ function onSetImageDimensions(entry, document, callback, numImagesModified) {
 
 function prepDoc(doc) {
   filterBoilerplate(doc);
-  sanitizeDocument(doc);
-  addNoReferrerToAnchors(doc);
+  cleandom.cleanDoc(doc);
+  cleandom.addNoReferrer(doc);
 }
 
 function prepLocalEntryDoc(entry) {
