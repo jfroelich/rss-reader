@@ -72,6 +72,7 @@ function isTrackingImage(image) {
   return hostNames.includes(url.hostname);
 }
 
-this.filterTrackingImages = filterTrackingImages;
+var rdr = rdr || {};
+rdr.filterTrackingImages = filterTrackingImages;
 
 } // End file block scope

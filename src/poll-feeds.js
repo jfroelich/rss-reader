@@ -47,13 +47,13 @@ function pollFeeds(forceResetLock, allowMeteredConnections) {
     const idlePeriodSecs = 30;
     chrome.idle.queryState(idlePeriodSecs, onQueryIdleState.bind(context));
   } else {
-    openDB(onOpenDB.bind(context));
+    rdr.openDB(onOpenDB.bind(context));
   }
 }
 
 function onQueryIdleState(state) {
   if(state === 'locked' || state === 'idle') {
-    openDB(onOpenDB.bind(this));
+    rdr.openDB(onOpenDB.bind(this));
   } else {
     console.debug('Idle state', state);
     onPollComplete.call(this);
@@ -87,10 +87,10 @@ function openFeedCursorOnSuccess(event) {
   this.numFeedsPending++;
   const feed = cursor.value;
   const shouldExcludeEntries = false;
-  const feedURLString = getFeedURL(feed);
+  const feedURLString = rdr.feed.getURL(feed);
   const feedURLObject = new URL(feedURLString);
   const boundOnFetchFeed = onFetchFeed.bind(this, feed);
-  fetchFeed(feedURLObject, shouldExcludeEntries, boundOnFetchFeed);
+  rdr.feed.fetch(feedURLObject, shouldExcludeEntries, boundOnFetchFeed);
   cursor.continue();
 }
 
@@ -119,7 +119,7 @@ function onFetchFeed(localFeed, event) {
   // TODO: this could be more idiomatic with a function. Something like
   // get_remote_feed_url_to_use_to_find_favicon
 
-  const remoteFeedURLString = getFeedURL(remoteFeed);
+  const remoteFeedURLString = rdr.feed.getURL(remoteFeed);
   const remoteFeedURLObject = new URL(remoteFeedURLString);
 
   const feedFaviconPageURL = remoteFeed.link ? new URL(remoteFeed.link) :
@@ -127,14 +127,14 @@ function onFetchFeed(localFeed, event) {
   const boundOnLookup = onLookupFeedFavicon.bind(this, localFeed, remoteFeed,
     event.entries);
   const prefetchedDoc = null;
-  lookupFavicon(feedFaviconPageURL, prefetchedDoc, boundOnLookup);
+  rdr.favicon.lookup(feedFaviconPageURL, prefetchedDoc, boundOnLookup);
 }
 
 function isFeedUnmodified(localFeed, remoteFeed) {
 
   // dateUpdated represents the date the feed was last stored in the database
-  // as a result of calling updateFeed. It is not set as a result of calling
-  // addFeed. When subscribing to a new feed, only the feed's properties are
+  // as a result of calling rdr.feed.update. It is not set as a result of calling
+  // rdr.feed.add. When subscribing to a new feed, only the feed's properties are
   // stored, and not its entries, so that the subscription process is fast. As a
   // result, we always want to poll its entries. Therefore, we need to look at
   // whether dateUpdated has been set to avoid the issue where the entries are
@@ -154,8 +154,8 @@ function onLookupFeedFavicon(localFeed, remoteFeed, entries, faviconURL) {
     remoteFeed.faviconURLString = faviconURL.href;
   }
 
-  const feed = mergeFeeds(localFeed, remoteFeed);
-  updateFeed(this.connection, feed, onUpdateFeed.bind(this, entries));
+  const feed = rdr.feed.merge(localFeed, remoteFeed);
+  rdr.feed.update(this.connection, feed, onUpdateFeed.bind(this, entries));
 }
 
 function onUpdateFeed(entries, event) {
@@ -202,7 +202,7 @@ function onUpdateFeed(entries, event) {
 }
 
 function processEntry(feed, entry, callback) {
-  const entryTerminalURLString = getEntryURL(entry);
+  const entryTerminalURLString = rdr.entry.getURL(entry);
 
   // I would prefer this to be an assert, but I think this is the first place
   // where this is validated, and this isn't a fatal error. It just means we
@@ -219,14 +219,14 @@ function processEntry(feed, entry, callback) {
 
   // Rewrite the entry url
   const entryTerminalURLObject = new URL(entryTerminalURLString);
-  const rewrittenURLObject = rewriteURL(entryTerminalURLObject);
+  const rewrittenURLObject = rdr.rewriteURL(entryTerminalURLObject);
   if(rewrittenURLObject) {
-    appendEntryURL(entry, rewrittenURLObject.href);
+    rdr.entry.addURL(entry, rewrittenURLObject.href);
   }
 
   // Check if the entry already exists. Check against all of its urls
   const matchLimit = 1;
-  findEntriesByURLs(this.connection, entry.urls, matchLimit,
+  rdr.findEntriesByURLs(this.connection, entry.urls, matchLimit,
     onFindMatchingEntries.bind(this, feed, entry, callback));
 }
 
@@ -252,33 +252,33 @@ function onFindMatchingEntries(feed, entry, callback, matches) {
     entry.feedTitle = feed.title;
   }
 
-  const entryTerminalURLString = getEntryURL(entry);
+  const entryTerminalURLString = rdr.entry.getURL(entry);
   const entryTerminalURLObject = new URL(entryTerminalURLString);
 
   // Check that the url does not belong to a domain that obfuscates its content
   // with things like advertisement interception or full javascript. While these
   // documents can be fetched, there is no point to doing so. We still want to
   // store the entry, but we just do not try and augment its content.
-  if(isFetchResistantURL(entryTerminalURLObject)) {
+  if(rdr.isFetchResistantURL(entryTerminalURLObject)) {
     prepLocalEntryDoc(entry);
-    addEntry(this.connection, entry, callback);
+    rdr.entry.add(this.connection, entry, callback);
     return;
   }
 
   // Check if the entry url does not point to a PDF. This limits the amount of
   // networking in the general case, even though the extension isn't a real
   // indication of the mime type and may have some false positives. Even if
-  // this misses it, responseXML will be undefined in fetchHTML so false
+  // this misses it, responseXML will be undefined in rdr.fetchHTML so false
   // negatives are not too important.
   if(isPDFURL(entryTerminalURLObject)) {
     prepLocalEntryDoc(entry);
-    addEntry(this.connection, entry, callback);
+    rdr.entry.add(this.connection, entry, callback);
     return;
   }
 
   const timeoutMs = 10 * 1000;
   const boundOnFetchEntry = onFetchEntry.bind(this, entry, callback);
-  fetchHTML(entryTerminalURLObject, timeoutMs, boundOnFetchEntry);
+  rdr.fetchHTML(entryTerminalURLObject, timeoutMs, boundOnFetchEntry);
 }
 
 function isPDFURL(url) {
@@ -291,7 +291,7 @@ function isPDFURL(url) {
 function onFetchEntry(entry, callback, event) {
   if(event.type !== 'success') {
     prepLocalEntryDoc(entry);
-    addEntry(this.connection, entry, callback);
+    rdr.entry.add(this.connection, entry, callback);
     return;
   }
 
@@ -299,7 +299,7 @@ function onFetchEntry(entry, callback, event) {
   const responseURLString = event.responseURL.href;
   // There should always be a response url, even if no redirect occurred
   console.assert(responseURLString);
-  appendEntryURL(entry, responseURLString);
+  rdr.entry.addURL(entry, responseURLString);
 
   // TODO: if we successfully fetched the entry, then before storing it,
   // we should be trying to set its faviconURL.
@@ -310,25 +310,25 @@ function onFetchEntry(entry, callback, event) {
   // - i should be querying against the redirect url
 
   const doc = event.document;
-  transformLazyImages(doc);
-  filterSourcelessImages(doc);
+  rdr.transformLazyImages(doc);
+  cleandom.filterSourcelessImages(doc);
   cleandom.filterInvalidAnchors(doc);
-  resolveDocumentURLs(doc, event.responseURL);
-  filterTrackingImages(doc);
+  rdr.resolveDocumentURLs(doc, event.responseURL);
+  rdr.filterTrackingImages(doc);
   const boundOnSetImageDimensions = onSetImageDimensions.bind(this, entry, doc,
     callback);
-  setImageDimensions(doc, boundOnSetImageDimensions);
+  rdr.setImageDimensions(doc, boundOnSetImageDimensions);
 }
 
 function onSetImageDimensions(entry, document, callback, numImagesModified) {
   console.assert(document);
   prepDoc(document);
   entry.content = document.documentElement.outerHTML.trim();
-  addEntry(this.connection, entry, callback);
+  rdr.entry.add(this.connection, entry, callback);
 }
 
 function prepDoc(doc) {
-  filterBoilerplate(doc);
+  rdr.filterBoilerplate(doc);
   cleandom.cleanDoc(doc);
   cleandom.addNoReferrer(doc);
 }
@@ -361,7 +361,7 @@ function onEntryProcessed(feedContext, event) {
 
   if(count === feedContext.numEntries) {
     if(feedContext.numEntriesAdded) {
-      updateBadge(this.connection);
+      rdr.updateBadge(this.connection);
     }
 
     this.numFeedsPending--;
@@ -376,7 +376,7 @@ function onPollComplete() {
     return;
   }
 
-  showDesktopNotification('Updated articles',
+  rdr.showDesktopNotification('Updated articles',
     'Completed checking for new articles');
   if(this.connection) {
     this.connection.close();
@@ -405,6 +405,7 @@ function isPollLocked() {
   return 'POLL_IS_ACTIVE' in localStorage;
 }
 
-this.pollFeeds = pollFeeds;
+var rdr = rdr || {};
+rdr.pollFeeds = pollFeeds;
 
 } // End file block scope

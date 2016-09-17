@@ -4,7 +4,8 @@
 
 'use strict';
 
-function smoothScrollTo(element, deltaY, targetY) {
+var rdr = rdr || {};
+rdr.smoothScrollTo = function(element, deltaY, targetY) {
   let scrollYStartTimer; // debounce
   let scrollYIntervalTimer; // incrementally move
   let amountToScroll = 0;
@@ -37,4 +38,4 @@ function smoothScrollTo(element, deltaY, targetY) {
   }
 
   return debounce();
-}
+};

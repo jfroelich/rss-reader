@@ -4,6 +4,8 @@
 
 'use strict';
 
+
+
 { // Begin file block scope
 
 const defaultIconURLString = chrome.extension.getURL(
@@ -28,11 +30,12 @@ function showDesktopNotification(title, message, iconURLString) {
 
 function noop() {}
 
+var rdr = rdr || {};
 if(Notification) {
-  this.showDesktopNotification = showDesktopNotification;
+  rdr.showDesktopNotification = showDesktopNotification;
 } else {
-  console.warn('Notifications are not supported');
-  this.showDesktopNotification = noop;
+  console.warn('Notifications not supported');
+  rdr.showDesktopNotification = noop;
 }
 
 } // End file block scope

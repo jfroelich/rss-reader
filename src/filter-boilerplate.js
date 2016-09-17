@@ -4,6 +4,8 @@
 
 'use strict';
 
+
+
 { // Begin file block scope
 
 function filterBoilerplate(document) {
@@ -331,6 +333,8 @@ function prune(document, bestElement) {
   }
 }
 
-this.filterBoilerplate = filterBoilerplate;
+var rdr = rdr || {};
+
+rdr.filterBoilerplate = filterBoilerplate;
 
 } // End file block scope

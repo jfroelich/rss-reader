@@ -21,7 +21,7 @@ function unsubscribe(feedId, callback) {
     'callback': callback
   };
 
-  openDB(onOpenDB.bind(context));
+  rdr.openDB(onOpenDB.bind(context));
 }
 
 function onOpenDB(db) {
@@ -91,8 +91,8 @@ function onUnsubscribeComplete(eventType) {
       console.debug('Requested %i entries to be deleted',
         this.numDeleteEntryRequests);
       // Even though the deletes are pending, the readonly transaction in
-      // updateBadge implicitly waits for the pending deletes to complete
-      updateBadge(this.db);
+      // rdr.updateBadge implicitly waits for the pending deletes to complete
+      rdr.updateBadge(this.db);
     }
 
     this.db.close();
@@ -107,6 +107,7 @@ function onUnsubscribeComplete(eventType) {
   }
 }
 
-this.unsubscribe = unsubscribe;
+var rdr = rdr || {};
+rdr.unsubscribe = unsubscribe;
 
 } // End file block scope

@@ -65,6 +65,7 @@ function onLoad(event) {
   });
 }
 
-this.fetchHTML = fetchHTML;
+var rdr = rdr || {};
+rdr.fetchHTML = fetchHTML;
 
 } // End file block scope

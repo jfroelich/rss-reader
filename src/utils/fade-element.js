@@ -33,6 +33,7 @@ function onTransitionEnd(callback, event) {
   callback(event.target);
 }
 
-this.fadeElement = fadeElement;
+var rdr = rdr || {};
+rdr.fadeElement = fadeElement;
 
 } // End file block scope

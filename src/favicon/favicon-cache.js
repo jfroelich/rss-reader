@@ -71,7 +71,7 @@ function deleteEntry(db, page_url) {
   store.delete(pageURLString);
 }
 
-function openRWCursor(db, onsuccess, onerror) {
+function openCursor(db, onsuccess, onerror) {
   const tx = db.transaction('favicon-cache', 'readwrite');
   const store = tx.objectStore('favicon-cache');
   const request = store.openCursor();
@@ -91,10 +91,12 @@ function cloneURL(url) {
   return new URL(url.href);
 }
 
-this.faviconConnect = connect;
-this.faviconFindEntry = findEntry;
-this.faviconAddEntry = addEntry;
-this.faviconDeleteEntry = deleteEntry;
-this.faviconOpenRWCursor = openRWCursor;
+var rdr = rdr || {};
+rdr.faviconCache = {};
+rdr.faviconCache.connect = connect;
+rdr.faviconCache.findEntry = findEntry;
+rdr.faviconCache.addEntry = addEntry;
+rdr.faviconCache.deleteEntry = deleteEntry;
+rdr.faviconCache.openCursor = openCursor;
 
 } // End file block scope

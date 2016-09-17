@@ -4,10 +4,11 @@
 
 'use strict';
 
+var rdr = rdr || {};
 
 // Formats a date object. This is obviously a very dumb implementation that
 // could eventually be improved.
-function formatDate(date, delimiter) { 
+rdr.formatDate = function(date, delimiter) {
   const parts = [];
   if(date) {
     // getMonth is a zero based index
@@ -16,4 +17,4 @@ function formatDate(date, delimiter) {
     parts.push(date.getFullYear());
   }
   return parts.join(delimiter || '');
-}
+};

@@ -2,7 +2,7 @@
 
 function testFetchFeed(urlString) {
   const excludeEntries = false;
-  fetchFeed(new URL(urlString), excludeEntries, function(event) {
+  rdr.feed.fetch(new URL(urlString), excludeEntries, function(event) {
     console.dir(event);
   });
 }

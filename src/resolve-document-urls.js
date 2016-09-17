@@ -132,9 +132,9 @@ function resolveSrcsetAttr(element, baseURL) {
   // If at least one descriptor was modified, then reserialize and overwrite
   // the attribute value. It is possible that all of the descriptors were
   // already absolute, so using the dirtied check saves on the call to
-  // serializeSrcset and setAttribute
+  // rdr.serializeSrcset and setAttribute
   if(dirtied) {
-    const newSrcsetValue = serializeSrcset(srcset);
+    const newSrcsetValue = rdr.serializeSrcset(srcset);
     if(newSrcsetValue) {
       element.setAttribute('srcset', newSrcsetValue);
     }
@@ -182,6 +182,7 @@ function isJavascriptURL(urlString) {
   return /^\s*javascript:/i.test(urlString);
 }
 
-this.resolveDocumentURLs = resolveDocumentURLs;
+var rdr = rdr || {};
+rdr.resolveDocumentURLs = resolveDocumentURLs;
 
 } // End file block scope

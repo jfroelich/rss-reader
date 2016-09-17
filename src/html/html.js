@@ -4,14 +4,44 @@
 
 'use strict';
 
+var rdr = rdr || {};
+rdr.html = rdr.html || {};
+
+// Returns a new string where html elements were replaced with the optional
+// replacement string. HTML entities remain (except some will be
+// replaced, like &#32; with space).
+rdr.html.replaceTags = function(inputString, repString) {
+  console.assert(inputString);
+
+  let outputString = null;
+  const doc = document.implementation.createHTMLDocument();
+  const bodyElement = doc.body;
+  bodyElement.innerHTML = inputString;
+
+  if(repString) {
+    const it = doc.createNodeIterator(bodyElement, NodeFilter.SHOW_TEXT);
+    let node = it.nextNode();
+    const buffer = [];
+    while(node) {
+      buffer.push(node.nodeValue);
+      node = it.nextNode();
+    }
+
+    outputString = buffer.join(repString);
+  } else {
+    outputString = bodyElement.textContent;
+  }
+
+  return outputString;
+};
+
 // Truncates a string containing some html, taking special care not to truncate
 // in the midst of a tag or an html entity. The transformation is lossy as some
 // entities are not re-encoded (e.g. &#32;).
-//
 // The input string should be encoded, meaning that it should contain character
 // entity codes. The extension string should be decoded, meaning that it should
 // not contain character entries.
-function truncateHTML(inputString, position, inputExtension) {
+rdr.html.truncate = function(inputString, position, inputExtension) {
   console.assert(inputString);
   console.assert(position >= 0);
 
@@ -51,4 +81,4 @@ function truncateHTML(inputString, position, inputExtension) {
   } else {
     return inertDoc.body.innerHTML;
   }
-}
+};

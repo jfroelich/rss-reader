@@ -30,7 +30,8 @@ function lookupFavicon(url, document, callback) {
     'timeout': null
   };
 
-  faviconConnect(connectOnsuccess.bind(context), connectOnerror.bind(context));
+  rdr.faviconCache.connect(connectOnsuccess.bind(context),
+    connectOnerror.bind(context));
 }
 
 function connectOnsuccess(event) {
@@ -44,13 +45,13 @@ function connectOnsuccess(event) {
   if(this.document) {
     const iconURL = searchDocument(this.document, this.url);
     if(iconURL) {
-      faviconAddEntry(this.db, this.url, iconURL);
+      rdr.faviconCache.addEntry(this.db, this.url, iconURL);
       lookupFaviconOnComplete.call(this, iconURL);
       return;
     }
   }
 
-  faviconFindEntry(this.db, this.url, onFindRequestURL.bind(this));
+  rdr.faviconCache.findEntry(this.db, this.url, onFindRequestURL.bind(this));
 }
 
 function connectOnerror(event) {
@@ -144,7 +145,7 @@ function fetchHTMLOnerror(event) {
   // entry from the cache. If the url is looked up again, then it will skip the
   // cache lookup and go straight to the fetch and possibly recreate itself.
   if(this.entry) {
-    faviconDeleteEntry(this.db, this.url);
+    rdr.faviconCache.addEntry(this.db, this.url);
   }
 
   // Fallback to looking up the origin. Cannot use response url.
@@ -164,7 +165,7 @@ function fetchHTMLOntimeout(event) {
 
 function fetchHTMLOnsuccess(event) {
   console.assert(event.type === 'load');
-
+  const addEntry = rdr.faviconCache.addEntry;
   // If the fetch was successful then the redirect url will be defined and
   // will be valid. If no redirect occurred, then it will be equal to the
   // request url.
@@ -189,12 +190,12 @@ function fetchHTMLOnsuccess(event) {
     console.debug('Found icon in page', this.url.href, iconURL.href);
 
     // Cache an entry for the request url
-    faviconAddEntry(this.db, this.url, iconURL);
+    addEntry(this.db, this.url, iconURL);
 
     // Cache an entry for the redirect url if it is different than the request
     // url
     if(responseURL.href !== this.url.href) {
-      faviconAddEntry(this.db, responseURL, iconURL);
+      addEntry(this.db, responseURL, iconURL);
     }
 
     // An origin entry may exist, but leave it alone. The origin is the fallback
@@ -217,7 +218,7 @@ function lookupRedirectURL(redirectURL) {
   // for the origin.
   if(redirectURL && redirectURL.href !== this.url.href) {
     const onLookup = onLookupRedirectURL.bind(this, redirectURL);
-    faviconFindEntry(this.db, redirectURL, onLookup);
+    rdr.faviconCache.findEntry(this.db, redirectURL, onLookup);
   } else {
     lookupOriginURL.call(this, redirectURL);
   }
@@ -232,7 +233,7 @@ function onLookupRedirectURL(redirectURL, entry) {
     // it didn't exist or possibly because there was no icon found in the page.
     // If the entry expired it will be replaced here.
     const iconURL = new URL(entry.iconURLString);
-    faviconAddEntry(this.db, this.url, iconURL);
+    rdr.faviconCache.addEntry(this.db, this.url, iconURL);
 
     // We don't need to re-add the redirect url here. We are done.
     // We don't modify the origin entry if it exists here, because per-page
@@ -249,30 +250,29 @@ function onLookupRedirectURL(redirectURL, entry) {
 function lookupOriginURL(redirectURL) {
   const originURL = new URL(this.url.origin);
   const originIconURL = new URL(this.url.origin + '/favicon.ico');
-
+  const findEntry = rdr.faviconCache.findEntry;
   // If the origin url is distinct from the request and response urls, then
   // lookup the origin in the cache. Otherwise, fallback to fetching the
   // the favicon url in the domain root.
   if(isOriginDiff(this.url, redirectURL, originURL)) {
-    faviconFindEntry(this.db, originURL,
-      onLookupOriginURL.bind(this, redirectURL));
+    findEntry(this.db, originURL, onLookupOriginURL.bind(this, redirectURL));
   } else {
-    sendImageHeadRequest(originIconURL,
-      onFetchOrigin.bind(this, redirectURL));
+    sendImageHeadRequest(originIconURL, onFetchOrigin.bind(this, redirectURL));
   }
 }
 
 function onLookupOriginURL(redirectURL, entry) {
+  const addEntry = rdr.faviconCache.addEntry;
   if(entry && !isEntryExpired(entry, this.expires)) {
     // Associate the origin's icon with the request url if it differs
     const iconURL = new URL(entry.iconURLString);
     if(this.url.href !== this.url.origin) {
-      faviconAddEntry(this.db, this.url, iconURL);
+      addEntry(this.db, this.url, iconURL);
     }
 
     // Associate the origin's icon with the redirect url if it differs
     if(this.url.origin !== redirectURL.href) {
-      faviconAddEntry(this.db, redirectURL, iconURL);
+      addEntry(this.db, redirectURL, iconURL);
     }
 
     lookupFaviconOnComplete.call(this, iconURL);
@@ -283,34 +283,36 @@ function onLookupOriginURL(redirectURL, entry) {
   }
 }
 
-// redirectURL is the redirect url of the request url given to lookupFavicon,
+// redirectURL is the redirect url of the request url given to rdr.favicon.lookup,
 // it is not to be confused with the possible redirect that occured from the
 // head request for the image.
 function onFetchOrigin(redirectURL, iconURLString) {
   const originURL = new URL(this.url.origin);
+  const addEntry = rdr.faviconCache.addEntry;
+  const deleteEntry = rdr.faviconCache.deleteEntry;
 
   if(iconURLString) {
     // If sending a head request yielded a response, associate the urls with the
     // icon in the cache and callback.
     const iconURL = new URL(iconURLString);
-    faviconAddEntry(this.db, this.url, iconURL);
+    addEntry(this.db, this.url, iconURL);
     if(redirectURL && redirectURL.href !== this.url.href) {
-      faviconAddEntry(this.db, redirectURL, iconURL);
+      addEntry(this.db, redirectURL, iconURL);
     }
     if(isOriginDiff(this.url, redirectURL, originURL)) {
-      faviconAddEntry(this.db, originURL, iconURL);
+      addEntry(this.db, originURL, iconURL);
     }
 
     lookupFaviconOnComplete.call(this, iconURL);
   } else {
     // We failed to find anything. Ensure there is nothing in the cache.
-    faviconDeleteEntry(this.db, this.url);
+    deleteEntry(this.db, this.url);
     if(redirectURL && redirectURL.href !== this.url.href) {
-      faviconDeleteEntry(this.db, redirectURL);
+      deleteEntry(this.db, redirectURL);
     }
 
     if(isOriginDiff(this.url, redirectURL, originURL)) {
-      faviconDeleteEntry(this.db, originURL);
+      deleteEntry(this.db, originURL);
     }
 
     lookupFaviconOnComplete.call(this);
@@ -340,7 +342,7 @@ function searchDocument(doc, baseURLObject) {
 
   // TODO: validate the url exists by sending a HEAD request for matches?
   for(let selector of iconSelectors) {
-    const iconURL = match_selector(doc, selector, baseURLObject);
+    const iconURL = matchSelector(doc, selector, baseURLObject);
     if(iconURL) {
       return iconURL;
     }
@@ -350,7 +352,7 @@ function searchDocument(doc, baseURLObject) {
 // Look for a specific favicon in the contents of a document
 // In addition to being idiomatic, this localizes the try/catch scope so as
 // to avoid a larger deopt.
-function match_selector(ancestor, selector, baseURLObject) {
+function matchSelector(ancestor, selector, baseURLObject) {
   const element = ancestor.querySelector(selector);
   if(!element) {
     return;
@@ -381,8 +383,7 @@ function sendImageHeadRequest(imgURLObject, callback) {
   console.debug('HEAD', imgURLObject.href);
   const request = new XMLHttpRequest();
   const isAsync = true;
-  const onResponse = onRequestImageHead.bind(request, imgURLObject,
-    callback);
+  const onResponse = onRequestImageHead.bind(request, imgURLObject, callback);
   request.timeout = 1000;
   request.ontimeout = onResponse;
   request.onerror = onResponse;
@@ -439,7 +440,9 @@ function isImageMimeType(type) {
   return type && /^\s*image\//i.test(type);
 }
 
-this.lookupFavicon = lookupFavicon;
-this.isFaviconEntryExpired = isEntryExpired;
+var rdr = rdr || {};
+rdr.favicon = rdr.favicon || {};
+rdr.favicon.lookup = lookupFavicon;
+rdr.favicon.isEntryExpired = isEntryExpired;
 
 } // End file block scope

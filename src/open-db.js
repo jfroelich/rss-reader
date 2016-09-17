@@ -122,6 +122,7 @@ function upgrade(event) {
   }
 }
 
-this.openDB = openDB;
+var rdr = rdr || {};
+rdr.openDB = openDB;
 
 } // End file block scope

@@ -4,6 +4,8 @@
 
 'use strict';
 
+var rdr = rdr || {};
+
 const cleandom = {};
 
 cleandom.cleanDoc = function(doc) {
@@ -23,8 +25,7 @@ cleandom.cleanDoc = function(doc) {
   cleandom.filterHairspaces(doc);
   cleandom.condenseWhitespace(doc);
   cleandom.unwrapSingleItemLists(doc);
-  const inspectionRowLimit = 20;
-  cleandom.filterTables(doc, inspectionRowLimit);
+  cleandom.filterTables(doc, 20);
   cleandom.filterLeaves(doc);
   cleandom.filterHRs(doc);
   cleandom.trimDoc(doc);
@@ -60,18 +61,15 @@ cleandom.adjustBlockInlineElements = function(doc) {
   }
 };
 
-cleandom.sensitiveSelector = [
-  'code', 'pre', 'ruby', 'textarea', 'xmp'].join(',');
-
 cleandom.condenseWhitespace = function(doc) {
+  const selector = 'code, pre, ruby, textarea, xmp';
   const it = doc.createNodeIterator(doc.documentElement, NodeFilter.SHOW_TEXT);
-  for(let node = it.nextNode(); node; node = it.nextNode()) {
-    const value = node.nodeValue;
-    if(value.length > 3 &&
-      !node.parentNode.closest(cleandom.sensitiveSelector)) {
+  for(let n = it.nextNode(); n; n = it.nextNode()) {
+    const value = n.nodeValue;
+    if(value.length > 3 && !n.parentNode.closest(selector)) {
       const condensed = value.replace(/\s{2,}/g, ' ');
-      if(condensed !== value) {
-        node.nodeValue = condensed;
+      if(condensed.length !== value.length) {
+        n.nodeValue = condensed;
       }
     }
   }
@@ -366,8 +364,6 @@ cleandom.isLeaf = function(node) {
   return true;
 };
 
-
-
 cleandom.filterHairspaces = function(doc) {
   const it = doc.createNodeIterator(doc.documentElement,
     NodeFilter.SHOW_TEXT);
@@ -453,14 +449,6 @@ cleandom.trimStep = function(startNode, propName) {
   }
 };
 
-// Moves the element's child nodes into the element's parent, preceding the
-// element, and then removes the element. If a reference node is defined, this
-// instead moves the element's child nodes into the parent of the reference
-// node, and then removes the reference node.
-// Padding is added around the child nodes to avoid issues with text that
-// becomes adjacent as a result of removing the element.
-// This is not optimized to work on a live document. The element, and the
-// reference node if defined, should be located within an inert document.
 cleandom.unwrap = function(element, referenceNode) {
   const target = referenceNode || element;
   const parent = target.parentNode;

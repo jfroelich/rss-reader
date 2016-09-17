@@ -11,7 +11,7 @@ function updateBadge(db) {
   if(db) {
     countUnreadEntries.call(context);
   } else {
-    openDB(onOpenDB.bind(context));
+    rdr.openDB(onOpenDB.bind(context));
   }
 }
 
@@ -29,7 +29,7 @@ function countUnreadEntries() {
   const tx = this.db.transaction('entry');
   const store = tx.objectStore('entry');
   const index = store.index('readState');
-  const request = index.count(EntryFlags.UNREAD);
+  const request = index.count(rdr.entry.flags.UNREAD);
   request.onsuccess = countOnSuccess.bind(this);
   request.onerror = countOnError.bind(this);
 }
@@ -57,6 +57,7 @@ function onUpdateBadgeComplete() {
   }
 }
 
-this.updateBadge = updateBadge;
+var rdr = rdr || {};
+rdr.updateBadge = updateBadge;
 
 } // End file scope

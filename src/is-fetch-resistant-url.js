@@ -4,6 +4,8 @@
 
 'use strict';
 
+
+
 { // Begin file block scope
 
 const hostNames = [
@@ -20,6 +22,7 @@ function isFetchResistantURL(url) {
   return hostNames.includes(url.hostname);
 }
 
-this.isFetchResistantURL = isFetchResistantURL;
+var rdr = rdr || {};
+rdr.isFetchResistantURL = isFetchResistantURL;
 
 } // End file block scope

@@ -4,6 +4,8 @@
 
 'use strict';
 
+var rdr = rdr || {};
+
 // TODO: is there a way to not check alarms per page load
 // TODO: is there a way to not rebind onalarm per page load
 
@@ -31,13 +33,13 @@ chrome.alarms.get('compact-favicons', function(alarm) {
 chrome.alarms.onAlarm.addListener(function(alarm) {
   console.debug('Alarm wakeup', alarm.name);
   if(alarm.name === 'archive') {
-    archiveEntries();
+    rdr.archiveEntries();
   } else if(alarm.name === 'poll') {
     const forceResetLock = false;
     const allowMeteredConnections = false;
-    pollFeeds(forceResetLock, allowMeteredConnections);
+    rdr.pollFeeds(forceResetLock, allowMeteredConnections);
   } else if(alarm.name === 'compact-favicons') {
-    compactFavicons();
+    rdr.favicon.compact();
   } else {
     console.warn('Unknown alarm', alarm.name);
   }

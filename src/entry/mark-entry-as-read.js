@@ -4,6 +4,8 @@
 
 'use strict';
 
+var rdr = rdr || {};
+
 { // Begin file block scope
 
 function markEntryAsRead(entryId, callback) {
@@ -11,7 +13,7 @@ function markEntryAsRead(entryId, callback) {
   console.assert(isFinite(entryId));
   console.assert(entryId > 0);
   const context = {'entryId': entryId, 'callback': callback};
-  openDB(onOpenDB.bind(context));
+  rdr.openDB(onOpenDB.bind(context));
 }
 
 function onOpenDB(db) {
@@ -37,13 +39,13 @@ function openCursorOnSuccess(event) {
   }
 
   const entry = cursor.value;
-  if(entry.readState === EntryFlags.READ) {
+  if(entry.readState === rdr.entry.flags.READ) {
     console.error('Already read entry', this.entryId);
     onComplete.call(this, 'AlreadyReadError');
     return;
   }
 
-  entry.readState = EntryFlags.READ;
+  entry.readState = rdr.entry.flags.READ;
   const dateNow = new Date();
   entry.dateRead = dateNow;
   entry.dateUpdated = dateNow;
@@ -55,7 +57,7 @@ function openCursorOnSuccess(event) {
   // Async. This call is implicitly blocked by the readwrite transaction used
   // here, so the count of unread will be affected, even though we do not
   // wait for cursor.update to complete.
-  updateBadge(this.db);
+  rdr.updateBadge(this.db);
   onComplete.call(this, 'Success');
 }
 

@@ -4,8 +4,10 @@
 
 'use strict';
 
+var rdr = rdr || {};
+
 // Applies a set of rules to a url object and returns a modified url object
-function rewriteURL(inputURLObject) {
+rdr.rewriteURL = function(inputURLObject) {
   // Rewrite Google News links
   if(inputURLObject.hostname === 'news.google.com' &&
     inputURLObject.pathname === '/news/url') {
@@ -20,4 +22,4 @@ function rewriteURL(inputURLObject) {
       }
     }
   }
-}
+};

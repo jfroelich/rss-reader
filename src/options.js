@@ -48,7 +48,7 @@ function showErrorMsg(msg, shouldFadeIn) {
   if(shouldFadeIn) {
     errorElement.style.opacity = '0';
     document.body.appendChild(errorElement);
-    fadeElement(container, 1, 0);
+    rdr.fadeElement(container, 1, 0);
   } else {
     errorElement.style.opacity = '1';
     showElement(errorElement);
@@ -108,7 +108,7 @@ function hideSubMonitor(callback, shouldFadeOut) {
   }
 
   if(shouldFadeOut) {
-    fadeElement(monitor, 2, 1, removeThenCallback);
+    rdr.fadeElement(monitor, 2, 1, removeThenCallback);
   } else {
     removeThenCallback();
   }
@@ -208,7 +208,7 @@ function appendFeed(feed, shouldInsertInOrder) {
 
   const titleElement = document.createElement('span');
   let feed_title_string = feed.title || 'Untitled';
-  feed_title_string = truncateHTML(feed_title_string, 300);
+  feed_title_string = rdr.html.truncate(feed_title_string, 300);
   titleElement.textContent = feed_title_string;
   item.appendChild(titleElement);
 
@@ -261,7 +261,7 @@ function showSubPreview(url) {
   showElement(progressElement);
 
   const shouldExcludeEntries = false;
-  fetchFeed(url, shouldExcludeEntries, onFetchFeed);
+  rdr.feed.fetch(url, shouldExcludeEntries, onFetchFeed);
 
   function onFetchFeed(fetchEvent) {
     if(event.type !== 'success') {
@@ -283,7 +283,7 @@ function showSubPreview(url) {
     // list as the button's value.
     const continueButton = document.getElementById(
       'subscription-preview-continue');
-    continueButton.value = getFeedURL(feed);
+    continueButton.value = rdr.feed.getURL(feed);
 
     const resultsListElement = document.getElementById(
       'subscription-preview-entries');
@@ -294,13 +294,15 @@ function showSubPreview(url) {
       resultsListElement.appendChild(item);
     }
 
+    // TODO: if tags are replaced by searchGoogleFeeds then I don't need
+    // to do it here
     const limit = Math.min(5, fetchEvent.entries.length);
     for(let i = 0; i < limit; i++) {
       const entry = fetchEvent.entries[i];
       const item = document.createElement('li');
-      item.innerHTML = replaceHTML(entry.title || '', '');
+      item.innerHTML = rdr.html.replaceTags(entry.title || '', '');
       const content = document.createElement('span');
-      content.innerHTML = replaceHTML(entry.content || '', '');
+      content.innerHTML = entry.content || '';
       item.appendChild(content);
       resultsListElement.appendChild(item);
     }
@@ -330,8 +332,8 @@ function startSubscription(url) {
   // startSubscription should expect a feed object as a parameter.
 
   const feed = {};
-  appendFeedURL(feed, url.href);
-  subscribe(feed, {'callback': on_subscribe});
+  rdr.feed.addURL(feed, url.href);
+  rdr.subscribe(feed, {'callback': on_subscribe});
 
   function on_subscribe(event) {
     if(event.type !== 'success') {
@@ -341,7 +343,7 @@ function startSubscription(url) {
 
     appendFeed(event.feed, true);
     updateFeedCount();
-    const feedURL = getFeedURL(event.feed);
+    const feedURL = rdr.feed.getURL(event.feed);
     appendSubMonitorMsg('Subscribed to ' + feedURL);
 
     // Hide the sub monitor then switch back to the main feed list
@@ -379,7 +381,7 @@ function populateFeedInfo(feedId) {
 
   const context = {'db': null};
 
-  openDB(onOpenDB);
+  rdr.openDB(onOpenDB);
   function onOpenDB(db) {
     if(db) {
       context.db = db;
@@ -432,7 +434,7 @@ function populateFeedInfo(feedId) {
     }
 
     const feedURLElement = document.getElementById('details-feed-url');
-    feedURLElement.textContent = getFeedURL(feed);
+    feedURLElement.textContent = rdr.feed.getURL(feed);
 
     const feedLinkElement = document.getElementById('details-feed-link');
     if(feed.link) {
@@ -523,13 +525,11 @@ function subFormOnSubmit(event) {
     queryElement.value = '';
     showSubPreview(url);
   } else {
-    // Show search results
     showElement(progressElement);
     const timeoutMs = 5000;
-    searchGoogleFeeds(queryString, timeoutMs, onSearchGoogleFeeds);
+    rdr.searchGoogleFeeds(queryString, timeoutMs, onSearchGoogleFeeds);
   }
 
-  // Indicate that the normal form submit behavior should be prevented
   return false;
 }
 
@@ -596,7 +596,9 @@ function onSearchGoogleFeeds(event) {
   itemElement.textContent = 'Found ' + results.length + ' results.';
   resultsElement.appendChild(itemElement);
 
-  // Lookup the favicons for the results
+  // Lookup the favicons for the results.
+  // TODO: this should be the responsibility of searchGoogleFeeds and not
+  // options. This is way too much logic in the UI I think
 
   let numFaviconsProcessed = 0;
   for(let result of results) {
@@ -607,7 +609,7 @@ function onSearchGoogleFeeds(event) {
       } catch(exception) {
       }
       if(linkURL) {
-        lookupFavicon(linkURL, null, onLookupFavicon.bind(null, result));
+        rdr.favicon.lookup(linkURL, null, onLookupFavicon.bind(null, result));
       } else {
         numFaviconsProcessed++;
         if(numFaviconsProcessed === results.length) {
@@ -696,7 +698,7 @@ function createSearchResultElement(feed) {
 function unsubButtonOnClick(event) {
   console.debug('Clicked Unsubscribe');
   const feedId = parseInt(event.target.value, 10);
-  unsubscribe(feedId, onUnsubscribe);
+  rdr.unsubscribe(feedId, onUnsubscribe);
 
   function onUnsubscribe(event) {
     // If there was some failure to unsubscribe from the feed, react here
@@ -746,25 +748,25 @@ function unsubButtonOnClick(event) {
   }
 }
 
-// TODO: needs to showDesktopNotification the user of a successful
+// TODO: needs to notify the user of a successful
 // import. In the UI and maybe in a notification. Maybe also combine
 // with the immediate visual feedback (like a simple progress monitor
 // popup but no progress bar). The monitor should be hideable. No
 // need to be cancelable.
-// TODO: showDesktopNotification the user if there was an error
+// TODO: notify the user if there was an error
 // TODO: give immediate visual feedback the import started
 // TODO: switch to a different section of the options ui on complete?
 function importOPMLButtonOnClick(event) {
-  importOPMLFiles();
+  rdr.opml.importFiles();
 }
 
 function exportOPMLButtonOnClick(event) {
-  exportOPMLFile('Subscriptions', 'subscriptions.xml');
+  rdr.opml.exportFile('Subscriptions', 'subscriptions.xml');
 }
 
 function initSubsSection() {
   let feedCount = 0;
-  openDB(onOpenDB);
+  rdr.openDB(onOpenDB);
 
   function onOpenDB(db) {
     if(db) {

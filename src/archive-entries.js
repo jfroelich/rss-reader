@@ -33,7 +33,7 @@ function archiveEntries(expires) {
     context.expires = expires;
   }
 
-  openDB(onOpenDB.bind(context));
+  rdr.openDB(onOpenDB.bind(context));
 }
 
 function onOpenDB(db) {
@@ -46,7 +46,7 @@ function onOpenDB(db) {
   const tx = db.transaction('entry', 'readwrite');
   const store = tx.objectStore('entry');
   const index = store.index('archiveState-readState');
-  const keyPath = [EntryFlags.UNARCHIVED, EntryFlags.READ];
+  const keyPath = [rdr.entry.flags.UNARCHIVED, rdr.entry.flags.READ];
   const request = index.openCursor(keyPath);
   request.onsuccess = openCursorOnSuccess.bind(this);
   request.onerror = openCursorOnError.bind(this);
@@ -67,7 +67,7 @@ function openCursorOnSuccess(event) {
   this.numEntriesProcessed++;
 
   const entry = cursor.value;
-  const terminalURLString = getEntryURL(entry);
+  const terminalURLString = rdr.entry.getURL(entry);
   console.assert(terminalURLString);
   console.assert(entry.dateCreated);
 
@@ -87,7 +87,7 @@ function openCursorOnSuccess(event) {
     // Async request that indexedDB replace the old object with the new object
     cursor.update(archivedEntry);
 
-    // Async showDesktopNotification other windows that the entry was archived. This only
+    // Async notify other windows that the entry was archived. This only
     // exposes id so as to minimize surface area, and to reduce the size of the
     // message sent. I don't think any listeners need any more information than
     // this.
@@ -115,7 +115,7 @@ function entryToArchivable(inputEntry) {
   const outputEntry = {};
 
   // Flag the entry as archived so that it will not be scanned in the future
-  outputEntry.archiveState = EntryFlags.ARCHIVED;
+  outputEntry.archiveState = rdr.entry.flags.ARCHIVED;
   // Introduce a new property representing the date the entry was archived.
   // This is the only place where this property is introduced.
   outputEntry.dateArchived = new Date();
@@ -170,6 +170,7 @@ function onComplete() {
   }
 }
 
-this.archiveEntries = archiveEntries;
+var rdr = rdr || {};
+rdr.archiveEntries = archiveEntries;
 
 } // End file block scope

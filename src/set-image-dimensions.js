@@ -154,6 +154,7 @@ function onComplete() {
   this.callback(this.numImagesModified);
 }
 
-this.setImageDimensions = setImageDimensions;
+var rdr = rdr || {};
+rdr.setImageDimensions = setImageDimensions;
 
 } // End file block scope

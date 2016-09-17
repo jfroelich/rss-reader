@@ -55,14 +55,14 @@ function appendSlides(onAppendComplete, isFirstSlide) {
 
   // TODO: invert this, and the condition where it is used, to isAdvanced
   let isNotAdvanced = true;
-  openDB(onOpenDB);
+  rdr.openDB(onOpenDB);
 
   function onOpenDB(connection) {
     if(connection) {
       const transaction = connection.transaction('entry');
       const entryStore = transaction.objectStore('entry');
       const index = entryStore.index('archiveState-readState');
-      const key_path = [EntryFlags.UNARCHIVED, EntryFlags.UNREAD];
+      const key_path = [rdr.entry.flags.UNARCHIVED, rdr.entry.flags.UNREAD];
       const request = index.openCursor(key_path);
       request.onsuccess = onOpenCursor;
       request.onerror = onOpenCursor;
@@ -105,6 +105,100 @@ function appendSlides(onAppendComplete, isFirstSlide) {
   }
 }
 
+
+// Add a new slide to the view. If isFirstSlide is true, the slide is
+// immediately visible. Otherwise, the slide is positioned off screen.
+function appendSlide(entry, isFirstSlide) {
+  const slide = document.createElement('div');
+  slide.setAttribute('entry', entry.id);
+  slide.setAttribute('feed', entry.feed);
+  slide.setAttribute('class','entry');
+  slide.addEventListener('click', slideOnClick);
+  slide.style.position = 'absolute';
+  slide.style.left = isFirstSlide ? '0%' : '100%';
+  slide.style.right = isFirstSlide ? '0%' : '-100%';
+  slide.style.overflowX = 'hidden';
+  slide.style.top = 0;
+  slide.style.bottom = 0;
+  slide.style.transition = 'left 0.5s ease-in 0s, right 0.5s ease-in';
+
+  const title = createEntryTitle(entry);
+  slide.appendChild(title);
+
+  const content = createEntryContent(entry);
+  slide.appendChild(content);
+
+  const source = createFeedSource(entry);
+  slide.appendChild(source);
+  const container = document.getElementById('slideshow-container');
+  container.appendChild(slide);
+}
+
+function createEntryTitle(entry) {
+  const title = document.createElement('a');
+  title.setAttribute('href', rdr.entry.getURL(entry));
+  title.setAttribute('class', 'entry-title');
+  title.setAttribute('target','_blank');
+  title.setAttribute('rel', 'noreferrer');
+  title.setAttribute('title', entry.title || 'Untitled');
+  if(entry.title) {
+    title.setAttribute('title', entry.title);
+    let titleText = entry.title;
+    titleText = rdr.entry.filterTitle(titleText);
+    titleText = rdr.html.truncate(titleText, 300);
+    title.innerHTML = titleText;
+  } else {
+    title.setAttribute('title', 'Untitled');
+    title.textContent = 'Untitled';
+  }
+
+  return title;
+}
+
+function createEntryContent(entry) {
+  const content = document.createElement('span');
+  content.setAttribute('class', 'entry-content');
+
+  // This is the slowest line. Is there anyway to speed this up?
+  // <html><body> will be implicitly stripped
+  content.innerHTML = entry.content;
+
+  return content;
+}
+
+function createFeedSource(entry) {
+  const source = document.createElement('span');
+  source.setAttribute('class','entrysource');
+
+  if(entry.faviconURLString) {
+    const faviconElement = document.createElement('img');
+    faviconElement.setAttribute('src', entry.faviconURLString);
+    faviconElement.setAttribute('width', '16');
+    faviconElement.setAttribute('height', '16');
+    source.appendChild(faviconElement);
+  }
+
+  const titleElement = document.createElement('span');
+  if(entry.feedLink) {
+    titleElement.setAttribute('title', entry.feedLink);
+  }
+
+  const buffer = [];
+  buffer.push(entry.feedTitle || 'Unknown feed');
+  buffer.push(' by ');
+  buffer.push(entry.author || 'Unknown author');
+  if(entry.datePublished) {
+    buffer.push(' on ');
+    buffer.push(rdr.formatDate(entry.datePublished));
+  }
+
+  titleElement.textContent = buffer.join('');
+  source.appendChild(titleElement);
+
+  return source;
+}
+
+
 const leftMouseButtonCode = 1;
 const mouseWheelButtonCode = 2;
 
@@ -145,82 +239,6 @@ function slideOnClick(event) {
   });
 
   return false;
-}
-
-// Add a new slide to the view. If isFirstSlide is true, the slide is
-// immediately visible. Otherwise, the slide is positioned off screen.
-// TODO: this is a giant function, break it up into smaller functions
-function appendSlide(entry, isFirstSlide) {
-  const slide = document.createElement('div');
-  slide.setAttribute('entry', entry.id);
-  slide.setAttribute('feed', entry.feed);
-  slide.setAttribute('class','entry');
-  slide.addEventListener('click', slideOnClick);
-
-  slide.style.position = 'absolute';
-  slide.style.left = isFirstSlide ? '0%' : '100%';
-  slide.style.right = isFirstSlide ? '0%' : '-100%';
-  slide.style.overflowX = 'hidden';
-  slide.style.top = 0;
-  slide.style.bottom = 0;
-  slide.style.transition = 'left 0.5s ease-in 0s, right 0.5s ease-in';
-
-  const title = document.createElement('a');
-  title.setAttribute('href', getEntryURL(entry));
-  title.setAttribute('class', 'entry-title');
-  title.setAttribute('target','_blank');
-  title.setAttribute('rel', 'noreferrer');
-  title.setAttribute('title', entry.title || 'Untitled');
-  if(entry.title) {
-    let titleText = entry.title;
-    titleText = filterArticleTitle(titleText);
-    // Max displayable length. This is different than max storable length,
-    // it could be shorter or longer.
-    titleText = truncateHTML(titleText, 300);
-    title.innerHTML = titleText;
-  } else {
-    title.textContent = 'Untitled';
-  }
-  slide.appendChild(title);
-
-  const content = document.createElement('span');
-  content.setAttribute('class', 'entry-content');
-  // <html><body> tags are implicitly stripped when setting innerHTML. There
-  // is no need to do any non-native processing.
-  content.innerHTML = entry.content;
-  slide.appendChild(content);
-
-  const source = document.createElement('span');
-  source.setAttribute('class','entrysource');
-  slide.appendChild(source);
-
-  if(entry.faviconURLString) {
-    const faviconElement = document.createElement('img');
-    faviconElement.setAttribute('src', entry.faviconURLString);
-    faviconElement.setAttribute('width', '16');
-    faviconElement.setAttribute('height', '16');
-    source.appendChild(faviconElement);
-  }
-
-  const feedTitleElement = document.createElement('span');
-  if(entry.feedLink) {
-    feedTitleElement.setAttribute('title', entry.feedLink);
-  }
-
-  const feedTitleBuffer = [];
-  feedTitleBuffer.push(entry.feedTitle || 'Unknown feed');
-  feedTitleBuffer.push(' by ');
-  feedTitleBuffer.push(entry.author || 'Unknown author');
-  if(entry.datePublished) {
-    feedTitleBuffer.push(' on ');
-    feedTitleBuffer.push(formatDate(entry.datePublished));
-  }
-
-  feedTitleElement.textContent = feedTitleBuffer.join('');
-  source.appendChild(feedTitleElement);
-
-  const container = document.getElementById('slideshow-container');
-  container.appendChild(slide);
 }
 
 function gotoNextSlide() {
@@ -321,7 +339,7 @@ function onKeyDown(event) {
       event.preventDefault();
       if(currentSlideElement) {
         const delta = scrollDeltas['' + event.keyCode];
-        smoothScrollTo(currentSlideElement, delta[0],
+        rdr.smoothScrollTo(currentSlideElement, delta[0],
           currentSlideElement.scrollTop + delta[1]);
       }
       break;

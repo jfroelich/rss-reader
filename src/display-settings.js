@@ -4,6 +4,8 @@
 
 'use strict';
 
+var rdr = rdr || {};
+
 // Style lib
 
 const DisplaySettings = {};

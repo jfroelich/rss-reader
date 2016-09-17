@@ -6,7 +6,7 @@
 
 { // Begin file block scope
 
-const EntryFlags = {
+const flags = {
   'UNREAD': 0,
   'READ': 1,
   'UNARCHIVED': 0,
@@ -14,7 +14,7 @@ const EntryFlags = {
 };
 
 // Given an entry object, return the last url in its internal url chain.
-function getEntryURL(entry) {
+function getURL(entry) {
   console.assert(entry);
   console.assert(entry.urls);
   console.assert(entry.urls.length);
@@ -22,12 +22,12 @@ function getEntryURL(entry) {
 }
 
 // Returns true if the url was added.
-function appendEntryURL(entry, urlString) {
+function addURL(entry, urlString) {
   if(!entry.urls) {
     entry.urls = [];
   }
 
-  const normalizedURLString = normalizeEntryURLString(urlString);
+  const normalizedURLString = rdr.entry.normalizeURL(urlString);
   if(entry.urls.includes(normalizedURLString)) {
     return false;
   }
@@ -37,7 +37,7 @@ function appendEntryURL(entry, urlString) {
 }
 
 // Convert the url to a normal form.
-function normalizeEntryURLString(urlString) {
+function normalizeURL(urlString) {
   // Assume this never throws
   const urlObject = new URL(urlString);
   urlObject.hash = '';
@@ -60,10 +60,10 @@ function sanitizeEntry(inputEntry) {
 
   if(outputEntry.author) {
     let author = outputEntry.author;
-    author = filterControlCharacters(author);
-    author = replaceHTML(author, '');
+    author = rdr.filterControlChars(author);
+    author = rdr.html.replaceTags(author, '');
     author = condenseWhitespace(author);
-    author = truncateHTML(author, authorMaxLength);
+    author = rdr.html.truncate(author, authorMaxLength);
     outputEntry.author = author;
   }
 
@@ -72,16 +72,16 @@ function sanitizeEntry(inputEntry) {
   // TODO: filter out non-printable characters other than \r\n\t
   if(outputEntry.content) {
     let content = outputEntry.content;
-    content = truncateHTML(content, contentMaxLength);
+    content = rdr.html.truncate(content, contentMaxLength);
     outputEntry.content = content;
   }
 
   if(outputEntry.title) {
     let title = outputEntry.title;
-    title = filterControlCharacters(title);
-    title = replaceHTML(title, '');
+    title = rdr.filterControlChars(title);
+    title = rdr.html.replaceTags(title, '');
     title = condenseWhitespace(title);
-    title = truncateHTML(title, titleMaxLength);
+    title = rdr.html.truncate(title, titleMaxLength);
     outputEntry.title = title;
   }
 
@@ -90,16 +90,16 @@ function sanitizeEntry(inputEntry) {
 
 // Add the entry to the database.
 function addEntry(db, entry, callback) {
-  const entryURLString = getEntryURL(entry);
+  const entryURLString = rdr.entry.getURL(entry);
   console.assert(entryURLString);
   console.debug('Adding entry', entryURLString);
 
   const sanitizedEntry = sanitizeEntry(entry);
-  const storableEntry = filterUndefProps(sanitizedEntry);
+  const storableEntry = rdr.filterUndefProps(sanitizedEntry);
 
   // Set fields that only happen on creation
-  storableEntry.readState = EntryFlags.UNREAD;
-  storableEntry.archiveState = EntryFlags.UNARCHIVED;
+  storableEntry.readState = rdr.entry.flags.UNREAD;
+  storableEntry.archiveState = rdr.entry.flags.UNARCHIVED;
   storableEntry.dateCreated = new Date();
 
   // Trap a possible exception with creating the transaction
@@ -119,14 +119,44 @@ function addEntry(db, entry, callback) {
 }
 
 function addEntryOnError(entry, callback, event) {
-  console.error(event.target.error, getEntryURL(entry));
+  console.error(event.target.error, rdr.entry.getURL(entry));
   callback(event);
 }
 
-this.EntryFlags = EntryFlags;
-this.getEntryURL = getEntryURL;
-this.appendEntryURL = appendEntryURL;
-this.normalizeEntryURLString = normalizeEntryURLString;
-this.addEntry = addEntry;
+var rdr = rdr || {};
+rdr.entry = rdr.entry || {};
+rdr.entry.flags = flags;
+rdr.entry.getURL = getURL;
+rdr.entry.addURL = addURL;
+rdr.entry.normalizeURL = normalizeURL;
+rdr.entry.add = addEntry;
+
+rdr.entry.filterTitle = function(title) {
+  console.assert(title);
+
+  let index = title.lastIndexOf(' - ');
+  if(index === -1)
+    index = title.lastIndexOf(' | ');
+  if(index === -1)
+    index = title.lastIndexOf(' : ');
+  if(index === -1)
+    return title;
+
+  const trailingText = title.substring(index + 1);
+
+  const tokens = trailingText.split(/\s+/g);
+
+  // Split can yield empty strings, filter them
+  const definedTokens = tokens.filter(function(token) {
+    return token;
+  });
+
+  if(definedTokens.length < 5) {
+    const new_title = title.substring(0, index).trim();
+    return new_title;
+  }
+
+  return title;
+};
 
 } // End file block scope

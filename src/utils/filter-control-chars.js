@@ -4,10 +4,11 @@
 
 'use strict';
 
+var rdr = rdr || {};
+
 // Returns a new string where certain non-printable characters have been
 // removed.
 // TODO: The regex is from somewhere on stackoverflow, note it
-function filterControlCharacters(inputString) { 
-  console.assert(inputString);
+rdr.filterControlChars = function(inputString) {
   return inputString.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
-}
+};

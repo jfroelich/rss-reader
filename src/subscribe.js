@@ -10,7 +10,7 @@
 // @param options {Object} optional object containing optional callback
 // and optional open connection
 function subscribe(feed, options) {
-  const feedURLString = getFeedURL(feed);
+  const feedURLString = rdr.feed.getURL(feed);
   if(!feedURLString) {
     throw new TypeError('feed should always have at least one url');
   }
@@ -35,7 +35,7 @@ function subscribe(feed, options) {
     findFeed.call(context);
   } else {
     context.shouldCloseDB = true;
-    openDB(onOpenDB.bind(context));
+    rdr.openDB(onOpenDB.bind(context));
   }
 }
 
@@ -64,7 +64,7 @@ function findFeed() {
 
   // TODO: i should be fully normalizing feed url
 
-  const feedURLString = getFeedURL(this.feed);
+  const feedURLString = rdr.feed.getURL(this.feed);
   console.debug('Checking if subscribed to', feedURLString);
   const transaction = this.db.transaction('feed');
   const store = transaction.objectStore('feed');
@@ -75,7 +75,7 @@ function findFeed() {
 }
 
 function findFeedOnSuccess(event) {
-  const feedURL = getFeedURL(this.feed);
+  const feedURL = rdr.feed.getURL(this.feed);
 
   // Cannot resubscribe to an existing feed
   if(event.target.result) {
@@ -86,14 +86,14 @@ function findFeedOnSuccess(event) {
 
   // Subscribe while offline
   if('onLine' in navigator && !navigator.onLine) {
-    addFeed(this.db, this.feed, onAddFeed.bind(this));
+    rdr.feed.add(this.db, this.feed, onAddFeed.bind(this));
     return;
   }
 
   // Proceed with online subscription
   const shouldExcludeEntries = true;
   const feedURLObject = new URL(feedURL);
-  fetchFeed(feedURLObject, shouldExcludeEntries, onFetchFeed.bind(this));
+  rdr.feed.fetch(feedURLObject, shouldExcludeEntries, onFetchFeed.bind(this));
 }
 
 function findFeedOnError(event) {
@@ -111,11 +111,12 @@ function onFetchFeed(event) {
     return;
   }
 
-  this.feed = mergeFeeds(this.feed, event.feed);
-  const urlString = this.feed.link ? this.feed.link : getFeedURL(this.feed);
+  this.feed = rdr.feed.merge(this.feed, event.feed);
+  const urlString = this.feed.link ? this.feed.link :
+    rdr.feed.getURL(this.feed);
   const urlObject = new URL(urlString);
   const prefetchedDoc = null;
-  lookupFavicon(urlObject, prefetchedDoc, onLookupFavicon.bind(this));
+  rdr.favicon.lookup(urlObject, prefetchedDoc, onLookupFavicon.bind(this));
 }
 
 function onLookupFavicon(iconURLObject) {
@@ -123,7 +124,7 @@ function onLookupFavicon(iconURLObject) {
     this.feed.faviconURLString = iconURLObject.href;
   }
 
-  addFeed(this.db, this.feed, onAddFeed.bind(this));
+  rdr.feed.add(this.db, this.feed, onAddFeed.bind(this));
 }
 
 function onAddFeed(event) {
@@ -143,9 +144,9 @@ function onSubscribeComplete(event) {
   if(this.shouldNotify && this.didSubscribe) {
     // Use the sanitized feed object
     const feed = event.feed;
-    const displayString = feed.title ||  getFeedURL(feed);
+    const displayString = feed.title ||  rdr.feed.getURL(feed);
     const message = 'Subscribed to ' + displayString;
-    showDesktopNotification('Subscription complete', message,
+    rdr.showDesktopNotification('Subscription complete', message,
       feed.faviconURLString);
   }
 
@@ -154,6 +155,7 @@ function onSubscribeComplete(event) {
   }
 }
 
-this.subscribe = subscribe;
+var rdr = rdr || {};
+rdr.subscribe = subscribe;
 
 } // End file block scope

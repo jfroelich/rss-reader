@@ -4,29 +4,24 @@
 
 'use strict';
 
+var rdr = rdr || {};
+
 // NOTE: this is shallow. If a property is an object, its fields are not
 // affected.
 // TODO: do I even want to restrict to own props?
-// TODO: should I be using Object.create(null) instead of {} ?
 // TODO: because i test for null, maybe rename to filter_empty_props
 // TODO: what is better/faster? typeof or === undefined keyword?
 // TODO: should clone be an option? like a flag, only clone if needed
 // TODO: test how assign clones dates and url objects?
 
-function filterUndefProps(obj) {
-
-  // Assume always defined
+rdr.filterUndefProps = function(obj) {
   console.assert(obj);
-
   // Clone the object to ensure purity. Assume the input is immutable.
   const clone = Object.assign({}, obj);
-
   // Alias the native hasOwnProperty in case the object's hasOwnProperty is
   // tainted
   const hasOwnProperty = Object.prototype.hasOwnProperty;
-
   const undef = void(0);
-
   for(let prop in clone) {
     if(hasOwnProperty.call(clone, prop)) {
       if(clone[prop] === undef || clone[prop] === null) {
@@ -36,4 +31,4 @@ function filterUndefProps(obj) {
   }
 
   return clone;
-}
+};

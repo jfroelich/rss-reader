@@ -1,4 +1,4 @@
 
 function showDesktopNotificationTest(title) {
-  showDesktopNotification(title, 'message body');
+  rdr.showDesktopNotification(title, 'message body');
 }

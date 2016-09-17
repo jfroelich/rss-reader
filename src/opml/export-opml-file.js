@@ -8,7 +8,7 @@
 
 // Queries the database for feeds, creates an OPML xml file, and then triggers
 // the download of the file.
-function exportOPMLFile(title, fileName) {
+function exportFile(title, fileName) {
   const context = {
     'title': title || 'Subscriptions',
     'fileName': fileName || 'subscriptions.xml',
@@ -16,7 +16,7 @@ function exportOPMLFile(title, fileName) {
     'db': null
   };
 
-  openDB(onOpenDB.bind(context));
+  rdr.openDB(onOpenDB.bind(context));
 }
 
 function onOpenDB(db) {
@@ -134,7 +134,7 @@ function createOutline(doc, feed) {
     outline.setAttribute('type', feed.type);
   }
 
-  const feedURL = getFeedURL(feed);
+  const feedURL = rdr.feed.getURL(feed);
   console.assert(feedURL);
   outline.setAttribute('xmlUrl', feedURL);
 
@@ -154,6 +154,8 @@ function createOutline(doc, feed) {
   return outline;
 }
 
-this.exportOPMLFile = exportOPMLFile;
+var rdr = rdr || {};
+rdr.opml = rdr.opml || {};
+rdr.opml.exportFile = exportFile;
 
 } // End file block scope

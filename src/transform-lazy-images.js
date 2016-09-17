@@ -48,6 +48,7 @@ function isValidURL(inputString) {
   return !inputString.trim().includes(' ');
 }
 
-this.transformLazyImages = transformLazyImages;
+var rdr = rdr || {};
+rdr.transformLazyImages = transformLazyImages;
 
 } // End file block scope

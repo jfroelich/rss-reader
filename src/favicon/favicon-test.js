@@ -2,7 +2,7 @@
 'use strict';
 
 function testLookupFavicon(urlString) {
-  lookupFavicon(new URL(urlString), null, function(iconURLObject) {
-    console.log(iconURLObject ? iconURLObject.href : 'Not found');
+  rdr.favicon.lookup(new URL(urlString), null, function(url) {
+    console.log(iconURLObject ? url.href : 'Not found');
   });
 }

@@ -6,7 +6,7 @@
 
 { // Begin file block scope
 
-function importOPMLFiles(callback) {
+function importFiles(callback) {
   console.debug('Importing OPML files...');
   const uploader = createUploadElement();
   const context = {
@@ -35,7 +35,7 @@ function onUploaderChange(event) {
     return;
   }
 
-  openDB(onOpenDB.bind(this));
+  rdr.openDB(onOpenDB.bind(this));
 }
 
 function onOpenDB(db) {
@@ -93,7 +93,7 @@ function fileReaderOnload(file, event) {
   outlines = outlines.filter(outlineHasURL);
   outlines.forEach(deserializeOutlineURL);
   outlines = outlines.filter(outlineHasURLObject);
-  // Even though this is caught by subscribe, which calls out to addFeed, which
+  // Even though this is caught by subscribe, which calls out to rdr.feed.add, which
   // produces a ConstraintError on the urls index in the case of a duplicate, it
   // is less work if done here
   outlines = filterDuplicateOutlines(outlines);
@@ -104,17 +104,16 @@ function fileReaderOnload(file, event) {
     'suppressNotifications': true
   };
   for(let feed of feeds) {
-    subscribe(feed, subOptions);
+    rdr.subscribe(feed, subOptions);
   }
 
   onFileProcessed.call(this, file);
 }
 
 function createOPMLDocFromText(file, text) {
-
   let doc = null;
   try {
-    doc = parseXML(text);
+    doc = rdr.parseXML(text);
   } catch(error) {
     console.warn(file.name, error);
     return null;
@@ -204,7 +203,7 @@ function filterDuplicateOutlines(inputOutlines) {
 
 function createFeedFromOutline(outline) {
   const feed = {};
-  appendFeedURL(feed, outline.urlObject.href);
+  rdr.feed.addURL(feed, outline.urlObject.href);
   feed.type = outline.type;
   feed.title = outline.title || outline.text;
   feed.description = outline.description;
@@ -234,8 +233,7 @@ function onComplete() {
     this.uploader.remove();
   }
 
-  // Async. This merely requests the connection to close once pending requests
-  // complete.
+  // Async. Request the connection to close once pending requests complete.
   if(this.db) {
     this.db.close();
   }
@@ -246,6 +244,8 @@ function onComplete() {
   }
 }
 
-this.importOPMLFiles = importOPMLFiles;
+var rdr = rdr || {};
+rdr.opml = rdr.opml || {};
+rdr.opml.importFiles = importFiles;
 
 } // End file block scope

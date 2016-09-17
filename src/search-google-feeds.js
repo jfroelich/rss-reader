@@ -127,9 +127,9 @@ function isEntryUnique(entry) {
 function sanitizeTitle(entry) {
   if(entry.title) {
     let title = entry.title;
-    title = filterControlCharacters(title);
-    title = replaceHTML(title, '');
-    title = truncateHTML(title, this.titleMaxLength);
+    title = rdr.filterControlChars(title);
+    title = rdr.html.replaceTags(title, '');
+    title = rdr.html.truncate(title, this.titleMaxLength);
     entry.title = title;
   }
   return entry;
@@ -142,14 +142,15 @@ function replaceBRs(inputString) {
 function sanitizeSnippet(entry) {
   if(entry.contentSnippet) {
     let snippet = entry.contentSnippet;
-    snippet = filterControlCharacters(snippet);
+    snippet = rdr.filterControlChars(snippet);
     snippet = replaceBRs(snippet);
-    snippet = truncateHTML(snippet, this.snippetMaxLength, this.replacement);
+    snippet = rdr.html.truncate(snippet, this.snippetMaxLength, this.replacement);
     entry.contentSnippet = snippet;
   }
   return entry;
 }
 
-this.searchGoogleFeeds = searchGoogleFeeds;
+var rdr = rdr || {};
+rdr.searchGoogleFeeds = searchGoogleFeeds;
 
 } // End file block scope

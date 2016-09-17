@@ -181,7 +181,7 @@ function createEntry(feedDatePublished, entryElement) {
   // Set the link url as the entry's initial url
   const entryLinkURL = findEntryLink(entryElement);
   if(entryLinkURL) {
-    appendEntryURL(entry, entryLinkURL);
+    rdr.entry.addURL(entry, entryLinkURL);
   }
 
   const entryDatePublished = findEntryDatePublished(entryElement);
@@ -342,6 +342,7 @@ function findChildElementText(element, localName) {
   }
 }
 
-this.parseFeed = parseFeed;
+var rdr = rdr || {};
+rdr.parseFeed = parseFeed;
 
 } // End file block scope

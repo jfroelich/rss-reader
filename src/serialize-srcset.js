@@ -4,9 +4,11 @@
 
 'use strict';
 
+var rdr = rdr || {};
+
 // @param descriptors {Array} an array of basic descriptor objects such as the
 // one produced by the parseSrcset library
-function serializeSrcset(descriptors) {
+rdr.serializeSrcset = function(descriptors) {
   console.assert(descriptors);
 
   const outputBuffer = [];
@@ -31,4 +33,4 @@ function serializeSrcset(descriptors) {
 
   // The space is important
   return outputBuffer.join(', ');
-}
+};

@@ -27,8 +27,6 @@ const acceptXMLHeaderValue = [
 // @param requestURL {URL} the url of the feed to fetch
 // @param callback {function} called when fetch completes
 function fetchXML(requestURL, callback) {
-  // This dependency only appears in a try/catch, so explicitly assert
-  console.assert(parseXML);
   console.assert(isURLObject(requestURL));
   console.debug('GET', requestURL.href);
 
@@ -96,6 +94,8 @@ function fetchXML(requestURL, callback) {
       return;
     }
 
+    const parseXML = rdr.parseXML;
+
     // Parse the text into a Document object
     let document = null;
     try {
@@ -153,6 +153,7 @@ function isURLObject(value) {
   return Object.prototype.toString.call(value) === '[object URL]';
 }
 
-this.fetchXML = fetchXML;
+var rdr = rdr || {};
+rdr.fetchXML = fetchXML;
 
 } // End file block scope

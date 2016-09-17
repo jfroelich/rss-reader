@@ -4,22 +4,25 @@
 
 'use strict';
 
+var rdr = rdr || {};
+rdr.feed = rdr.feed || {};
+
 // Gets the last url from the feed's urls. This expects that the feed always
 // has at least one url.
 // @param feed {Object} the feed object to inspect
 // @return {String} a url string
-function getFeedURL(feed) {
+rdr.feed.getURL = function(feed) {
   console.assert(feed);
   console.assert(feed.urls);
   console.assert(feed.urls.length);
   return feed.urls[feed.urls.length - 1];
-}
+};
 
 // Append the url to the feed
 // @param feed {Object} the feed to modify
 // @param url {string} the url to append
 // @return {boolean} true if url appended
-function appendFeedURL(feed, url) {
+rdr.feed.addURL = function(feed, url) {
   console.assert(feed);
   console.assert(url);
 
@@ -47,12 +50,12 @@ function appendFeedURL(feed, url) {
 
   feed.urls.push(normalizedURLString);
   return true;
-}
+};
 
 // Returns a new object that has been sanitized. This checks for invalid values
 // and tries to minimize XSS vulnerables in html strings.
 // This currently only does asserts in some cases, not actual validation.
-function sanitizeFeed(input_feed) {
+rdr.feed.sanitize = function(input_feed) {
   // Clone to maintain purity
   const feed = Object.assign({}, input_feed);
 
@@ -74,18 +77,18 @@ function sanitizeFeed(input_feed) {
   // Sanitize feed title. title is an HTML string
   if(feed.title) {
     let title = feed.title;
-    title = filterControlCharacters(title);
-    title = replaceHTML(title, '');
+    title = rdr.filterControlChars(title);
+    title = rdr.html.replaceTags(title, '');
     title = title.replace(/\s+/, ' ');
-    title = truncateHTML(title, 1024, '');
+    title = rdr.html.truncate(title, 1024, '');
     feed.title = title;
   }
 
   // Sanitize feed description. description is an HTML string
   if(feed.description) {
     let description = feed.description;
-    description = filterControlCharacters(description);
-    description = replaceHTML(description, '');
+    description = rdr.filterControlChars(description);
+    description = rdr.html.replaceTags(description, '');
 
     // Condense and transform whitespace into a single space
     description = description.replace(/\s+/, ' ');
@@ -93,7 +96,7 @@ function sanitizeFeed(input_feed) {
     // Enforce a maximum storable length
     const pre_trunc_len = description.length;
     const descMaxLength = 1024 * 10;
-    description = truncateHTML(description, descMaxLength, '');
+    description = rdr.html.truncate(description, descMaxLength, '');
     if(pre_trunc_len > description.length) {
       console.warn('Truncated description', description);
     }
@@ -102,26 +105,26 @@ function sanitizeFeed(input_feed) {
   }
 
   return feed;
-}
+};
 
-{ // Begin updateFeed block scope
+{ // Begin update block scope
 
 // @param connection {IDBDatabase} an open database connection
 // @param feed {Feed} the Feed instance to put into the database
 // @param callback {function} optional callback function
-function updateFeed(db, feed, callback) {
+function update(db, feed, callback) {
   console.assert(feed);
-  const feedURL = getFeedURL(feed);
+  const feedURL = rdr.feed.getURL(feed);
   console.assert(feedURL);
   console.debug('Updating feed', feedURL);
 
-  const sanitizedFeed = sanitizeFeed(feed);
+  const sanitizedFeed = rdr.feed.sanitize(feed);
   sanitizedFeed.dateUpdated = new Date();
-  const storableFeed = filterUndefProps(sanitizedFeed);
+  const storableFeed = rdr.filterUndefProps(sanitizedFeed);
 
   // Creating a new transaction can throw an exception if the database is in the
   // process of closing. That happens because of errors elsewhere in the code.
-  // But those errors should not prevent updateFeed from calling back with an
+  // But those errors should not prevent rdr.feed.update from calling back with an
   // error. So catch the exception.
   let tx = null;
   try {
@@ -149,28 +152,28 @@ function putOnerror(callback, feed, event) {
   callback({'type': 'error', 'feed': feed});
 }
 
-this.updateFeed = updateFeed;
+rdr.feed.update = update;
 
-} // End updateFeed block scope
+} // End update block scope
 
-{ // Begin addFeed block scope
+{ // Begin add block scope
 
-function addFeed(db, feed, callback) {
+function add(db, feed, callback) {
 
   if('id' in feed) {
     throw new Error('feed should never have an id property');
   }
 
-  const urlString = getFeedURL(feed);
+  const urlString = rdr.feed.getURL(feed);
   if(!urlString) {
     throw new Error('feed should always have at least one url');
   }
 
   console.debug('Adding feed', urlString);
 
-  const sanitizedFeed = sanitizeFeed(feed);
+  const sanitizedFeed = rdr.feed.sanitize(feed);
   sanitizedFeed.dateCreated = new Date();
-  const storableFeed = filterUndefProps(sanitizedFeed);
+  const storableFeed = rdr.filterUndefProps(sanitizedFeed);
   const transaction = db.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.add(storableFeed);
@@ -190,21 +193,21 @@ function addOnerror(feed, callback, event) {
   callback({'type': event.target.error.name});
 }
 
-this.addFeed = addFeed;
+rdr.feed.add = add;
 
-} // End addFeed block scope
+} // End add block scope
 
 // Returns a new object of the old feed merged with the new feed. Fields from
 // the new feed take precedence, except for URLs, which are merged to generate
 // a distinct ordered set of oldest to newest url.
-function mergeFeeds(oldFeed, newFeed) {
+rdr.feed.merge = function(oldFeed, newFeed) {
   const mergedFeed = Object.assign({}, oldFeed, newFeed);
 
   // Re-merge the urls. Use spread operator to clone for purity.
   mergedFeed.urls = [...oldFeed.urls];
   for(let url of newFeed.urls) {
-    appendFeedURL(mergedFeed, url);
+    rdr.feed.addURL(mergedFeed, url);
   }
 
   return mergedFeed;
-}
+};
