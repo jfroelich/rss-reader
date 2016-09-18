@@ -4,8 +4,6 @@
 
 'use strict';
 
-var rdr = rdr || {};
-
 { // Begin file block scope
 
 function markEntryAsRead(entryId, callback) {
@@ -76,6 +74,7 @@ function onComplete(eventType) {
   }
 }
 
-this.markEntryAsRead = markEntryAsRead;
+var rdr = rdr || {};
+rdr.markEntryAsRead = markEntryAsRead;
 
 } // End file block scope
