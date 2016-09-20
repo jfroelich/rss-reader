@@ -115,8 +115,9 @@ function onFetchFeed(event) {
   const urlString = this.feed.link ? this.feed.link :
     rdr.feed.getURL(this.feed);
   const urlObject = new URL(urlString);
-  const prefetchedDoc = null;
-  rdr.favicon.lookup(urlObject, prefetchedDoc, onLookupFavicon.bind(this));
+  const doc = null;
+  const verbose = false;
+  rdr.favicon.lookup(urlObject, doc, verbose, onLookupFavicon.bind(this));
 }
 
 function onLookupFavicon(iconURLObject) {

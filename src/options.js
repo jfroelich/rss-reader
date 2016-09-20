@@ -609,7 +609,10 @@ function onSearchGoogleFeeds(event) {
       } catch(exception) {
       }
       if(linkURL) {
-        rdr.favicon.lookup(linkURL, null, onLookupFavicon.bind(null, result));
+        const doc = null;
+        const verbose = false;
+        rdr.favicon.lookup(linkURL, doc, verbose,
+          onLookupFavicon.bind(null, result));
       } else {
         numFaviconsProcessed++;
         if(numFaviconsProcessed === results.length) {

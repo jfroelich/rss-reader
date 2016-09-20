@@ -87,10 +87,10 @@ function openFeedCursorOnSuccess(event) {
   this.numFeedsPending++;
   const feed = cursor.value;
   const shouldExcludeEntries = false;
-  const feedURLString = rdr.feed.getURL(feed);
-  const feedURLObject = new URL(feedURLString);
+  const urlString = rdr.feed.getURL(feed);
+  const urlObject = new URL(urlString);
   const boundOnFetchFeed = onFetchFeed.bind(this, feed);
-  rdr.feed.fetch(feedURLObject, shouldExcludeEntries, boundOnFetchFeed);
+  rdr.feed.fetch(urlObject, shouldExcludeEntries, boundOnFetchFeed);
   cursor.continue();
 }
 
@@ -108,26 +108,21 @@ function onFetchFeed(localFeed, event) {
     return;
   }
 
-  // TODO: I should probably do the feed merge prior to lookup up the favicon,
+  // TODO: I should probably do the merge prior to lookup up the favicon,
   // then I do not need to pass around both feeds to continuations. This is the
   // terminal point where both feeds need to be considered separately, so it
   // makes the most sense to do it here, not later.
 
-  // TODO: I don't need to be updating the favicon on every single fetch. I
-  // think this can be done on a separate timeline.
-
-  // TODO: this could be more idiomatic with a function. Something like
-  // get_remote_feed_url_to_use_to_find_favicon
-
   const remoteFeedURLString = rdr.feed.getURL(remoteFeed);
   const remoteFeedURLObject = new URL(remoteFeedURLString);
 
-  const feedFaviconPageURL = remoteFeed.link ? new URL(remoteFeed.link) :
+  const pageURL = remoteFeed.link ? new URL(remoteFeed.link) :
     remoteFeedURLObject;
   const boundOnLookup = onLookupFeedFavicon.bind(this, localFeed, remoteFeed,
     event.entries);
-  const prefetchedDoc = null;
-  rdr.favicon.lookup(feedFaviconPageURL, prefetchedDoc, boundOnLookup);
+  const doc = null;
+  const verbose = false;
+  rdr.favicon.lookup(pageURL, doc, verbose, boundOnLookup);
 }
 
 function isFeedUnmodified(localFeed, remoteFeed) {
@@ -338,7 +333,6 @@ function prepLocalEntryDoc(entry) {
     return;
   }
 
-  // Clean the current entry content
   const parser = new DOMParser();
   try {
     const doc = parser.parseFromString(entry.content, 'text/html');

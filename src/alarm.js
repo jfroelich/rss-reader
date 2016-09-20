@@ -39,7 +39,8 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
     const allowMeteredConnections = false;
     rdr.pollFeeds(forceResetLock, allowMeteredConnections);
   } else if(alarm.name === 'compact-favicons') {
-    rdr.favicon.compact();
+    const verbose = false;
+    rdr.favicon.compact.start(verbose, rdr.favicon.cache.expires);
   } else {
     console.warn('Unknown alarm', alarm.name);
   }
