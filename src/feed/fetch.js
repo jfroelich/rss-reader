@@ -4,28 +4,29 @@
 
 'use strict';
 
-{ // Begin file block scope
+var rdr = rdr || {};
+rdr.feed = rdr.feed || {};
 
 // Fetches the feed at the given url and calls back with an event object
 // with props feed and entries.
 // @param requestURL {URL} the url of the feed to fetch
 // @param excludeEntries {boolean} whether to parse entry data
 // @param callback {function} called when fetch completes
-function fetchImpl(requestURL, excludeEntries, callback) {
-  console.assert(isURLObject(requestURL));
+rdr.feed.fetch = function(requestURL, excludeEntries, callback) {
+  console.assert(rdr.feed.isURLObject(requestURL));
+  const fetchXML = rdr.xml.fetch;
+  const onFetch = rdr.feed._onFetchXML.bind(null, requestURL, excludeEntries,
+    callback);
+  fetchXML(requestURL, onFetch);
+};
 
-  rdr.fetchXML(requestURL,
-    onFetchXML.bind(null, requestURL, excludeEntries, callback));
-}
-
-function onFetchXML(requestURL, excludeEntries, callback, event) {
+rdr.feed._onFetchXML = function(requestURL, excludeEntries, callback, event) {
+  const parseFeed = rdr.feed.parse;
   if(event.type !== 'success') {
     callback({'type': event.type});
     return;
   }
 
-  console.assert(event.document);
-  const parseFeed = rdr.parseFeed;
   let parseResult = null;
   try {
     parseResult = parseFeed(event.document, excludeEntries);
@@ -53,14 +54,8 @@ function onFetchXML(requestURL, excludeEntries, callback, event) {
     'entries': entries
   };
   callback(successEvent);
-}
+};
 
-function isURLObject(value) {
+rdr.feed.isURLObject = function(value) {
   return Object.prototype.toString.call(value) === '[object URL]';
-}
-
-var rdr = rdr || {};
-rdr.feed = rdr.feed || {};
-rdr.feed.fetch = fetchImpl;
-
-} // End file block scope
+};

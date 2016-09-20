@@ -343,6 +343,7 @@ function findChildElementText(element, localName) {
 }
 
 var rdr = rdr || {};
-rdr.parseFeed = parseFeed;
+rdr.feed = rdr.feed || {};
+rdr.feed.parse = parseFeed;
 
 } // End file block scope

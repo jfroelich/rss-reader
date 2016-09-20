@@ -33,7 +33,8 @@ chrome.alarms.get('compact-favicons', function(alarm) {
 chrome.alarms.onAlarm.addListener(function(alarm) {
   console.debug('Alarm wakeup', alarm.name);
   if(alarm.name === 'archive') {
-    rdr.archiveEntries();
+    const verbose = false;
+    rdr.entry.archive.start(verbose);
   } else if(alarm.name === 'poll') {
     const forceResetLock = false;
     const allowMeteredConnections = false;

@@ -81,7 +81,7 @@ function fileReaderOnload(file, event) {
   console.debug('Loaded', file.name);
 
   const text = event.target.result;
-  const doc = createOPMLDocFromText(file, text);
+  const doc = parseOPML(file, text);
   if(!doc) {
     onFileProcessed.call(this, file);
     return;
@@ -110,10 +110,11 @@ function fileReaderOnload(file, event) {
   onFileProcessed.call(this, file);
 }
 
-function createOPMLDocFromText(file, text) {
+function parseOPML(file, text) {
   let doc = null;
+  const parse = rdr.xml.parse;
   try {
-    doc = rdr.parseXML(text);
+    doc = parse(text);
   } catch(error) {
     console.warn(file.name, error);
     return null;

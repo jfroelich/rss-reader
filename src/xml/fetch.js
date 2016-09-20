@@ -4,9 +4,10 @@
 
 'use strict';
 
-{ // Begin file block scope
+var rdr = rdr || {};
+rdr.xml = rdr.xml || {};
 
-const acceptXMLHeaderValue = [
+rdr.xml.acceptHeader = [
   'application/rss+xml',
   'application/rdf+xml',
   'application/atom+xml',
@@ -14,6 +15,9 @@ const acceptXMLHeaderValue = [
   'text/xml;q=0.8'
 ].join(', ');
 
+// Fetches the xml file at the given url and calls back with an event object
+// @param requestURL {URL} the url of the feed to fetch
+// @param callback {function} called when fetch completes
 // TODO: the bug I've avoided with the hack is the extra callbacks. The 'then'
 // to read the text is always called, even when i don't want it to be.
 // I need to somehow reject instead of just return, something like that. But
@@ -22,19 +26,15 @@ const acceptXMLHeaderValue = [
 // an external then. So I have to always do another nested then with a
 // new promise. I need to use response.body.then(...) inside the
 // onResponse function.
-
-// Fetches the xml file at the given url and calls back with an event object
-// @param requestURL {URL} the url of the feed to fetch
-// @param callback {function} called when fetch completes
-function fetchXML(requestURL, callback) {
-  console.assert(isURLObject(requestURL));
+rdr.xml.fetch = function(requestURL, callback) {
+  console.assert(rdr.xml.isURLObject(requestURL));
   console.debug('GET', requestURL.href);
 
   const opts = {};
   // Using 'omit' is the whole reason this uses the Fetch api
   opts.credentials = 'omit';
   opts.method = 'GET';
-  opts.headers = {'Accept': acceptXMLHeaderValue};
+  opts.headers = {'Accept': rdr.xml.acceptHeader};
   opts.mode = 'cors';
   opts.cache = 'default';
   opts.redirect = 'follow';
@@ -66,7 +66,7 @@ function fetchXML(requestURL, callback) {
     }
 
     const contentType = response.headers.get('Content-Type');
-    if(!isAcceptableContentType(contentType)) {
+    if(!rdr.xml.isAcceptedType(contentType)) {
       console.warn(requestURL.href, 'invalid type', contentType);
       onResponseCalledBack = true;
       return doCallback({
@@ -94,12 +94,11 @@ function fetchXML(requestURL, callback) {
       return;
     }
 
-    const parseXML = rdr.parseXML;
-
     // Parse the text into a Document object
+    const parse = rdr.xml.parse;
     let document = null;
     try {
-      document = parseXML(text);
+      document = parse(text);
     } catch(error) {
       console.warn(error);
       return doCallback({
@@ -124,11 +123,11 @@ function fetchXML(requestURL, callback) {
       'type': 'unknown_error'
     });
   });
-}
+};
 
 // Checks the request header value and returns true if xml or html
 // @param type {String} the raw header string for 'Content-Type'
-function isAcceptableContentType(type) {
+rdr.xml.isAcceptedType = function(type) {
 
   // Treat missing content type as unacceptable
   if(!type) {
@@ -147,13 +146,8 @@ function isAcceptableContentType(type) {
   }
 
   return false;
-}
+};
 
-function isURLObject(value) {
+rdr.xml.isURLObject = function(value) {
   return Object.prototype.toString.call(value) === '[object URL]';
-}
-
-var rdr = rdr || {};
-rdr.fetchXML = fetchXML;
-
-} // End file block scope
+};

@@ -4,26 +4,31 @@
 
 'use strict';
 
-{ // Begin file block scope
+var rdr = rdr || {};
+rdr.entry = rdr.entry || {};
+rdr.entry.archive = {};
 
-// Ten days
-const defaultExpiresMs = 10 * 24 * 60 * 60 * 1000;
+// Ten days in ms
+rdr.entry.archive.defaultExpiresMs = 10 * 24 * 60 * 60 * 1000;
 
 // Iterates over entries that have not been archived and have been read, and
 // archives entries that are older. Archiving shrinks the size of the stored
 // entry object in the database.
-// @param expires {number} an entry is archivable if older than this.
-// if not set, a default value of 10 days is used.
-function archiveEntries(expires) {
-  console.log('Archiving entries...');
+// @param expires {number} an entry is archivable if older than this, in ms,
+// and if not set, a default value of 10 days in ms is used.
+rdr.entry.archive.start = function(verbose, expires) {
+  if(verbose) {
+    console.log('Archiving entries...');
+  }
 
   // Create a shared context for simple sharing of state across function
   // invocations.
   const context = {
-    'expires': defaultExpiresMs,
+    'expires': rdr.entry.archive.defaultExpiresMs,
     'numEntriesProcessed': 0,
     'num_changed': 0,
-    'current_date': new Date()
+    'current_date': new Date(),
+    'verbose': verbose
   };
 
   if(expires) {
@@ -33,12 +38,12 @@ function archiveEntries(expires) {
     context.expires = expires;
   }
 
-  rdr.openDB(onOpenDB.bind(context));
-}
+  rdr.openDB(rdr.entry.archive._onOpenDB.bind(context));
+};
 
-function onOpenDB(db) {
+rdr.entry.archive._onOpenDB = function(db) {
   if(!db) {
-    onComplete.call(this);
+    rdr.entry.archive._onComplete.call(this);
     return;
   }
 
@@ -48,17 +53,17 @@ function onOpenDB(db) {
   const index = store.index('archiveState-readState');
   const keyPath = [rdr.entry.flags.UNARCHIVED, rdr.entry.flags.READ];
   const request = index.openCursor(keyPath);
-  request.onsuccess = openCursorOnSuccess.bind(this);
-  request.onerror = openCursorOnError.bind(this);
-}
+  request.onsuccess = rdr.entry.archive._openCursorOnSuccess.bind(this);
+  request.onerror = rdr.entry.archive._openCursorOnError.bind(this);
+};
 
-function openCursorOnSuccess(event) {
+rdr.entry.archive._openCursorOnSuccess = function(event) {
   const cursor = event.target.result;
 
   // Either there were no entries, or we advanced the cursor past the end,
   // in which case the scan is complete.
   if(!cursor) {
-    onComplete.call(this);
+    rdr.entry.archive._onComplete.call(this);
     return;
   }
 
@@ -82,8 +87,11 @@ function openCursorOnSuccess(event) {
   // If the entry is older than the expiration period, then it should be
   // archived.
   if(age > this.expires) {
-    console.debug('Archiving', terminalURLString);
-    const archivedEntry = entryToArchivable(entry);
+    if(this.verbose) {
+      console.debug('Archiving', terminalURLString);
+    }
+
+    const archivedEntry = rdr.entry.archive._toArchiveForm(entry);
     // Async request that indexedDB replace the old object with the new object
     cursor.update(archivedEntry);
 
@@ -102,12 +110,10 @@ function openCursorOnSuccess(event) {
 
   // Async advance cursor
   cursor.continue();
-}
+};
 
 // Returns a new entry object representing the archived form of the input entry
-function entryToArchivable(inputEntry) {
-
-  console.assert(inputEntry);
+rdr.entry.archive._toArchiveForm = function(inputEntry) {
 
   // TODO: consider whether Object.create(null) is better. I think
   // tentatively that the structured clone algorithm will implicitly ignore
@@ -155,22 +161,20 @@ function entryToArchivable(inputEntry) {
   outputEntry.urls = inputEntry.urls;
 
   return outputEntry;
-}
+};
 
-function openCursorOnError(event) {
+rdr.entry.archive._openCursorOnError = function(event) {
   console.error(event.target.error);
-  onComplete.call(this);
-}
+  rdr.entry.archive._onComplete.call(this);
+};
 
-function onComplete() {
-  console.log('Archived %s of %s entries', this.num_changed,
-    this.numEntriesProcessed);
+rdr.entry.archive._onComplete = function() {
+  if(this.verbose) {
+    console.log('Archived %s of %s entries', this.num_changed,
+      this.numEntriesProcessed);
+  }
+
   if(this.db) {
     this.db.close();
   }
-}
-
-var rdr = rdr || {};
-rdr.archiveEntries = archiveEntries;
-
-} // End file block scope
+};

@@ -5,12 +5,13 @@
 'use strict';
 
 var rdr = rdr || {};
+rdr.xml = rdr.xml || {};
 
 // Parses the given xml string into a Document object. Throws an exception if a
 // parsing error occurs
 // @param inputString {String}
 // @returns {Document}
-rdr.parseXML = function(inputString) {
+rdr.xml.parse = function(inputString) {
   console.assert(inputString);
   const parser = new DOMParser();
   // Allow the possible exception to bubble by not catching it
