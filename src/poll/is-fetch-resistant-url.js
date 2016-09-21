@@ -4,25 +4,19 @@
 
 'use strict';
 
+var rdr = rdr || {};
+rdr.poll = rdr.poll || {};
 
-
-{ // Begin file block scope
-
-const hostNames = [
+rdr.poll.resistantHosts = [
   'productforums.google.com',
   'groups.google.com',
   'www.forbes.com',
   'forbes.com'
 ];
 
-function isFetchResistantURL(url) {
+rdr.poll.isFetchResistantURL = function(url) {
   console.assert(url);
   console.assert(url.hostname);
   // hostname getter normalizes to lowercase
-  return hostNames.includes(url.hostname);
-}
-
-var rdr = rdr || {};
-rdr.isFetchResistantURL = isFetchResistantURL;
-
-} // End file block scope
+  return rdr.poll.resistantHosts.includes(url.hostname);
+};

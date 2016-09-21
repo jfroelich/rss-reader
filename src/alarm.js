@@ -38,7 +38,8 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
   } else if(alarm.name === 'poll') {
     const forceResetLock = false;
     const allowMeteredConnections = false;
-    rdr.pollFeeds(forceResetLock, allowMeteredConnections);
+    const verbose = true; // in dev
+    rdr.poll.start(verbose, forceResetLock, allowMeteredConnections);
   } else if(alarm.name === 'compact-favicons') {
     const verbose = false;
     rdr.favicon.compact.start(verbose, rdr.favicon.cache.expires);

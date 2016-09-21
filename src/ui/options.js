@@ -760,7 +760,8 @@ function unsubButtonOnClick(event) {
 // TODO: give immediate visual feedback the import started
 // TODO: switch to a different section of the options ui on complete?
 function importOPMLButtonOnClick(event) {
-  rdr.opml.import.start();
+  const verbose = false;
+  rdr.opml.import.start(verbose);
 }
 
 function exportOPMLButtonOnClick(event) {

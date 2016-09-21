@@ -4,32 +4,47 @@
 
 'use strict';
 
-{ // Begin file block scope
+// TODO: add verbose parameter
+
+var rdr = rdr || {};
+rdr.poll = rdr.poll || {};
 
 // @param forceResetLock {boolean} if true then polling continues even when
 // locked
 // @param allowMeteredConnections {boolean} if true then allow polling to
 // continue on a metered connection
-function pollFeeds(forceResetLock, allowMeteredConnections) {
-  console.log('Checking for new articles...');
-
-  const context = {'numFeedsPending': 0, 'connection': null};
-
-  if(forceResetLock) {
-    releasePollLock();
+rdr.poll.start = function(verbose, forceResetLock, allowMeteredConnections) {
+  if(verbose) {
+    console.log('Checking for new articles...');
   }
 
-  if(isPollLocked()) {
-    console.warn('Already running');
-    onPollComplete.call(context);
+
+  const context = {
+    'numFeedsPending': 0,
+    'connection': null,
+    'verbose': verbose
+  };
+
+  if(forceResetLock) {
+    rdr.poll.releaseLock();
+  }
+
+  if(!rdr.poll.acquireLock()) {
+    if(verbose) {
+      console.warn('Poll is locked');
+    }
+
+    rdr.poll.onComplete.call(context);
     return;
   }
 
-  acquirePollLock();
 
   if('onLine' in navigator && !navigator.onLine) {
-    console.warn('Offline');
-    onPollComplete.call(context);
+    if(verbose) {
+      console.warn('Offline');
+    }
+
+    rdr.poll.onComplete.call(context);
     return;
   }
 
@@ -37,50 +52,65 @@ function pollFeeds(forceResetLock, allowMeteredConnections) {
   // navigator.connection is still experimental.
   if(!allowMeteredConnections && 'NO_POLL_METERED' in localStorage &&
     navigator.connection && navigator.connection.metered) {
-    console.debug('Metered connection');
-    onPollComplete.call(context);
+    if(verbose) {
+      console.debug('Metered connection');
+    }
+
+    rdr.poll.onComplete.call(context);
     return;
   }
 
   // Check if idle and possibly cancel the poll or continue with polling
   if('ONLY_POLL_IF_IDLE' in localStorage) {
     const idlePeriodSecs = 30;
-    chrome.idle.queryState(idlePeriodSecs, onQueryIdleState.bind(context));
+    chrome.idle.queryState(idlePeriodSecs,
+      rdr.poll.onQueryIdleState.bind(context));
   } else {
-    rdr.openDB(onOpenDB.bind(context));
+    rdr.openDB(rdr.poll.onOpenDB.bind(context));
   }
-}
+};
 
-function onQueryIdleState(state) {
+rdr.poll.onQueryIdleState = function(state) {
   if(state === 'locked' || state === 'idle') {
-    rdr.openDB(onOpenDB.bind(this));
+    rdr.openDB(rdr.poll.onOpenDB.bind(this));
   } else {
-    console.debug('Idle state', state);
-    onPollComplete.call(this);
+    if(this.verbose) {
+      console.debug('Idle state', state);
+    }
+
+    rdr.poll.onComplete.call(this);
   }
-}
+};
 
-function onOpenDB(connection) {
-  if(connection) {
-    this.connection = connection;
-    const tx = connection.transaction('feed');
-    const store = tx.objectStore('feed');
-    const request = store.openCursor();
-    request.onsuccess = openFeedCursorOnSuccess.bind(this);
-    request.onerror = openFeedCursorOnError.bind(this);
-  } else {
-    onPollComplete.call(this);
+rdr.poll.onOpenDB = function(db) {
+
+  if(!db) {
+    if(this.verbose) {
+      console.warn('Failed to connect to database');
+    }
+    rdr.poll.onComplete.call(this);
+    return;
   }
-}
 
-function openFeedCursorOnError(event) {
-  onPollComplete.call(this);
-}
+  // TODO: this should call out to something like rdr.feed.getAll
 
-function openFeedCursorOnSuccess(event) {
+  this.connection = db;
+  const tx = db.transaction('feed');
+  const store = tx.objectStore('feed');
+  const request = store.openCursor();
+  request.onsuccess = rdr.poll.openFeedCursorOnSuccess.bind(this);
+  request.onerror = rdr.poll.openFeedCursorOnError.bind(this);
+
+};
+
+rdr.poll.openFeedCursorOnError = function(event) {
+  rdr.poll.onComplete.call(this);
+};
+
+rdr.poll.openFeedCursorOnSuccess = function(event) {
   const cursor = event.target.result;
   if(!cursor) {
-    onPollComplete.call(this);
+    rdr.poll.onComplete.call(this);
     return;
   }
 
@@ -89,22 +119,25 @@ function openFeedCursorOnSuccess(event) {
   const shouldExcludeEntries = false;
   const urlString = rdr.feed.getURL(feed);
   const urlObject = new URL(urlString);
-  const boundOnFetchFeed = onFetchFeed.bind(this, feed);
+  const boundOnFetchFeed = rdr.poll.onFetchFeed.bind(this, feed);
   rdr.feed.fetch(urlObject, shouldExcludeEntries, boundOnFetchFeed);
   cursor.continue();
-}
+};
 
-function onFetchFeed(localFeed, event) {
+rdr.poll.onFetchFeed = function(localFeed, event) {
   if(event.type !== 'success') {
     this.numFeedsPending--;
-    onPollComplete.call(this);
+    rdr.poll.onComplete.call(this);
     return;
   }
 
   const remoteFeed = event.feed;
-  if(isFeedUnmodified(localFeed, remoteFeed)) {
+  if(rdr.poll.isFeedUnmodified(localFeed, remoteFeed)) {
+    if(this.verbose) {
+      console.debug('Feed not modified', rdr.feed.getURL(remoteFeed));
+    }
     this.numFeedsPending--;
-    onPollComplete.call(this);
+    rdr.poll.onComplete.call(this);
     return;
   }
 
@@ -118,23 +151,22 @@ function onFetchFeed(localFeed, event) {
 
   const pageURL = remoteFeed.link ? new URL(remoteFeed.link) :
     remoteFeedURLObject;
-  const boundOnLookup = onLookupFeedFavicon.bind(this, localFeed, remoteFeed,
-    event.entries);
+  const boundOnLookup = rdr.poll.onLookupFeedIcon.bind(this, localFeed,
+    remoteFeed, event.entries);
   const doc = null;
-  const verbose = false;
-  rdr.favicon.lookup(pageURL, doc, verbose, boundOnLookup);
-}
+  rdr.favicon.lookup(pageURL, doc, this.verbose, boundOnLookup);
+};
 
-function isFeedUnmodified(localFeed, remoteFeed) {
+rdr.poll.isFeedUnmodified = function(localFeed, remoteFeed) {
 
   // dateUpdated represents the date the feed was last stored in the database
-  // as a result of calling rdr.feed.update. It is not set as a result of calling
-  // rdr.feed.add. When subscribing to a new feed, only the feed's properties are
-  // stored, and not its entries, so that the subscription process is fast. As a
-  // result, we always want to poll its entries. Therefore, we need to look at
-  // whether dateUpdated has been set to avoid the issue where the entries are
-  // never processed during the time period after subscribing where the feed
-  // file was not modified.
+  // as a result of calling rdr.feed.update. It is not set as a result of
+  // calling rdr.feed.add. When subscribing to a new feed, only the feed's
+  // properties are stored, and not its entries, so that the subscription
+  // process is fast. As a result, we always want to poll its entries.
+  // Therefore, we need to look at whether dateUpdated has been set to avoid the
+  // issue where the entries are never processed during the time period after
+  // subscribing where the feed file was not modified.
   if(!localFeed.dateUpdated) {
     return false;
   }
@@ -142,24 +174,26 @@ function isFeedUnmodified(localFeed, remoteFeed) {
   return localFeed.dateLastModified && remoteFeed.dateLastModified &&
     localFeed.dateLastModified.getTime() ===
     remoteFeed.dateLastModified.getTime()
-}
+};
 
-function onLookupFeedFavicon(localFeed, remoteFeed, entries, faviconURL) {
+rdr.poll.onLookupFeedIcon = function(localFeed, remoteFeed, entries,
+  faviconURL) {
   if(faviconURL) {
     remoteFeed.faviconURLString = faviconURL.href;
   }
 
   const feed = rdr.feed.merge(localFeed, remoteFeed);
-  rdr.feed.update(this.connection, feed, onUpdateFeed.bind(this, entries));
-}
+  rdr.feed.update(this.connection, feed,
+    rdr.poll.onUpdateFeed.bind(this, entries));
+};
 
-function onUpdateFeed(entries, event) {
+rdr.poll.onUpdateFeed = function(entries, event) {
   // If we failed to update the feed, then do not even bother updating its
   // entries. Something is seriously wrong. Perhaps this should even be a
   // fatal error.
   if(event.type !== 'success') {
     this.numFeedsPending--;
-    onPollComplete.call(this);
+    rdr.poll.onComplete.call(this);
     return;
   }
 
@@ -168,14 +202,12 @@ function onUpdateFeed(entries, event) {
   // TODO: should this check occur earlier?
   if(!entries.length) {
     this.numFeedsPending--;
-    onPollComplete.call(this);
+    rdr.poll.onComplete.call(this);
     return;
   }
 
   // TODO: filter out entries without urls, and then check again against num
   // remaining.
-
-
   // TODO: I should be filtering duplicate entries, compared by norm url,
   // somewhere. I somehow lost this functionality, or moved it somewhere
 
@@ -190,13 +222,14 @@ function onUpdateFeed(entries, event) {
     'numEntries': entries.length
   };
 
-  const boundOnEntryProcessed = onEntryProcessed.bind(this, feedContext);
+  const boundOnEntryProcessed = rdr.poll.onEntryProcessed.bind(this,
+    feedContext);
   for(let entry of entries) {
-    processEntry.call(this, event.feed, entry, boundOnEntryProcessed);
+    rdr.poll.processEntry.call(this, event.feed, entry, boundOnEntryProcessed);
   }
-}
+};
 
-function processEntry(feed, entry, callback) {
+rdr.poll.processEntry = function(feed, entry, callback) {
   const entryTerminalURLString = rdr.entry.getURL(entry);
 
   // I would prefer this to be an assert, but I think this is the first place
@@ -207,7 +240,10 @@ function processEntry(feed, entry, callback) {
   // without urls, so that this can just be an assert, and so that the
   // responsibility of who does this is explicit
   if(!entryTerminalURLString) {
-    console.warn('Entry missing url', entry);
+    if(this.verbose) {
+      console.warn('Entry missing url', entry);
+    }
+
     callback();
     return;
   }
@@ -222,13 +258,15 @@ function processEntry(feed, entry, callback) {
   // Check if the entry already exists. Check against all of its urls
   const matchLimit = 1;
   rdr.entry.findByURLs(this.connection, entry.urls, matchLimit,
-    onFindMatchingEntries.bind(this, feed, entry, callback));
-}
+    rdr.poll.onFindEntry.bind(this, feed, entry, callback));
+};
 
-function onFindMatchingEntries(feed, entry, callback, matches) {
+rdr.poll.onFindEntry = function(feed, entry, callback, matches) {
   // The entry already exists if there was at least one match
   if(matches.length) {
-    // console.debug('Found matching entries', matches.length);
+    if(this.verbose) {
+      // console.debug('Found matching entries', matches.length);
+    }
     callback();
     return;
   }
@@ -254,8 +292,8 @@ function onFindMatchingEntries(feed, entry, callback, matches) {
   // with things like advertisement interception or full javascript. While these
   // documents can be fetched, there is no point to doing so. We still want to
   // store the entry, but we just do not try and augment its content.
-  if(rdr.isFetchResistantURL(entryTerminalURLObject)) {
-    prepLocalEntryDoc(entry);
+  if(rdr.poll.isFetchResistantURL(entryTerminalURLObject)) {
+    rdr.poll.prepLocalDoc(entry);
     rdr.entry.add(this.connection, entry, callback);
     return;
   }
@@ -265,28 +303,28 @@ function onFindMatchingEntries(feed, entry, callback, matches) {
   // indication of the mime type and may have some false positives. Even if
   // this misses it, responseXML will be undefined in fetchHTML.start so false
   // negatives are not too important.
-  if(isPDFURL(entryTerminalURLObject)) {
-    prepLocalEntryDoc(entry);
+  if(rdr.poll.isPDFURL(entryTerminalURLObject)) {
+    rdr.poll.prepLocalDoc(entry);
     rdr.entry.add(this.connection, entry, callback);
     return;
   }
 
   const timeoutMs = 10 * 1000;
-  const boundOnFetchEntry = onFetchEntry.bind(this, entry, callback);
+  const boundOnFetchEntry = rdr.poll.onFetchEntry.bind(this, entry, callback);
   rdr.poll.fetchHTML.start(entryTerminalURLObject, timeoutMs,
     boundOnFetchEntry);
-}
+};
 
-function isPDFURL(url) {
+rdr.poll.isPDFURL = function(url) {
   // The min len test is here just to reduce regex calls
   const minLength = '/a.pdf'.length;
   const path = url.pathname;
   return path && path.length > minLength && /\.pdf$/i.test(path)
-}
+};
 
-function onFetchEntry(entry, callback, event) {
+rdr.poll.onFetchEntry = function(entry, callback, event) {
   if(event.type !== 'success') {
-    prepLocalEntryDoc(entry);
+    rdr.poll.prepLocalDoc(entry);
     rdr.entry.add(this.connection, entry, callback);
     return;
   }
@@ -311,25 +349,26 @@ function onFetchEntry(entry, callback, event) {
   cleandom.filterInvalidAnchors(doc);
   rdr.resolveDocumentURLs(doc, event.responseURL);
   rdr.poll.filterTrackingImages(doc);
-  const boundOnSetImageDimensions = onSetImageDimensions.bind(this, entry, doc,
-    callback);
+  const boundOnSetImageDimensions = rdr.poll.onSetImageDimensions.bind(this,
+    entry, doc, callback);
   rdr.setImageDimensions(doc, boundOnSetImageDimensions);
-}
+};
 
-function onSetImageDimensions(entry, document, callback, numImagesModified) {
+rdr.poll.onSetImageDimensions = function(entry, document, callback,
+  numImagesModified) {
   console.assert(document);
-  prepDoc(document);
+  rdr.poll.prepDoc(document);
   entry.content = document.documentElement.outerHTML.trim();
   rdr.entry.add(this.connection, entry, callback);
-}
+};
 
-function prepDoc(doc) {
+rdr.poll.prepDoc = function(doc) {
   rdr.filterBoilerplate(doc);
   cleandom.cleanDoc(doc);
   cleandom.addNoReferrer(doc);
-}
+};
 
-function prepLocalEntryDoc(entry) {
+rdr.poll.prepLocalDoc = function(entry) {
   if(!entry.content) {
     return;
   }
@@ -338,14 +377,13 @@ function prepLocalEntryDoc(entry) {
   try {
     const doc = parser.parseFromString(entry.content, 'text/html');
     console.assert(!doc.querySelector('parsererror'));
-    prepDoc(doc);
+    rdr.poll.prepDoc(doc);
     entry.content = doc.documentElement.outerHTML.trim();
   } catch(error) {
-    console.warn(error);
   }
-}
+};
 
-function onEntryProcessed(feedContext, event) {
+rdr.poll.onEntryProcessed = function(feedContext, event) {
   feedContext.numEntriesProcessed++;
   const count = feedContext.numEntriesProcessed;
   console.assert(count <= feedContext.numEntries);
@@ -360,15 +398,20 @@ function onEntryProcessed(feedContext, event) {
     }
 
     this.numFeedsPending--;
-    onPollComplete.call(this);
+    rdr.poll.onComplete.call(this);
   }
-}
+};
 
 // Called whenever a feed finishes processing, or when there
 // were no feeds to process.
-function onPollComplete() {
+rdr.poll.onComplete = function() {
   if(this.numFeedsPending) {
     return;
+  }
+
+
+  if(this.verbose) {
+    console.log('Polling completed');
   }
 
   rdr.notifications.show('Updated articles',
@@ -377,30 +420,22 @@ function onPollComplete() {
     this.connection.close();
   }
 
-  releasePollLock();
-  console.log('Polling completed');
-}
+  rdr.poll.releaseLock();
+};
 
 // Obtain a poll lock by setting a flag in local storage. This uses local
 // storage instead of global scope because the background page that calls out
 // to poll.start occassionally unloads and reloads itself instead of remaining
-// persistently open, which would reset the value of the global scope variable
-// each page load. When polling determines if the poll is locked, it only
-// checks for the presence of the key, and ignores the value, so the value I
-// specify here is unimportant.
-function acquirePollLock() {
+// persistently open, which resets the value of a global variable.
+rdr.poll.acquireLock = function() {
+  if('POLL_IS_ACTIVE' in localStorage) {
+    return false;
+  }
+
   localStorage.POLL_IS_ACTIVE = '1';
-}
+  return true;
+};
 
-function releasePollLock() {
+rdr.poll.releaseLock = function() {
   delete localStorage.POLL_IS_ACTIVE;
-}
-
-function isPollLocked() {
-  return 'POLL_IS_ACTIVE' in localStorage;
-}
-
-var rdr = rdr || {};
-rdr.pollFeeds = pollFeeds;
-
-} // End file block scope
+};

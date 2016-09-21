@@ -6,6 +6,7 @@
 
 var rdr = rdr || {};
 rdr.poll = rdr.poll || {};
+rdr.poll.fetchHTML = {};
 
 rdr.poll.fetchHTML.start = function(requestURL, timeoutMs, callback) {
   console.assert(requestURL);
