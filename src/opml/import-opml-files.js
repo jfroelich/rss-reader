@@ -4,51 +4,54 @@
 
 'use strict';
 
-{ // Begin file block scope
+var rdr = rdr || {};
+rdr.opml = rdr.opml || {};
+rdr.opml.import = {};
 
-function importFiles(callback) {
+// Prompts for files to upload, then uploads xml files
+rdr.opml.import.start = function(callback) {
   console.debug('Importing OPML files...');
-  const uploader = createUploadElement();
+  const uploader = rdr.opml.import.createUploadElement();
   const context = {
     'numFilesProcessed': 0,
     'callback': callback,
     'uploader': uploader
   };
 
-  uploader.onchange = onUploaderChange.bind(context);
+  uploader.onchange = rdr.opml.import.onUploaderChange.bind(context);
   uploader.click();
-}
+};
 
-function createUploadElement() {
-  // Create the uploader in the context of the document containing this script
+// Create the uploader in the context of the document containing this script
+rdr.opml.import.createUploadElement = function() {
   const uploader = document.createElement('input');
   uploader.setAttribute('type', 'file');
   uploader.style.display = 'none';
   document.documentElement.appendChild(uploader);
   return uploader;
-}
+};
 
-function onUploaderChange(event) {
-  this.uploader.removeEventListener('change', onUploaderChange);
+rdr.opml.import.onUploaderChange = function(event) {
+  this.uploader.removeEventListener('change', rdr.opml.import.onUploaderChange);
   if(!this.uploader.files || !this.uploader.files.length) {
-    onComplete.call(this);
+    rdr.opml.import.onComplete.call(this);
     return;
   }
 
-  rdr.openDB(onOpenDB.bind(this));
-}
+  rdr.openDB(rdr.opml.import.onOpenDB.bind(this));
+};
 
-function onOpenDB(db) {
+rdr.opml.import.onOpenDB = function(db) {
   if(db) {
     this.db = db;
   } else {
-    onComplete.call(this);
+    rdr.opml.import.onComplete.call(this);
     return;
   }
 
   // TODO: use two filter functions and intermediate collections to split up
   // this loop. This also means i need to define a numValidFiles context
-  // variable to check against in onFileProcessed, and I also need to check
+  // variable to check against in rdr.opml.import.onFileProcessed, and I also need to check
   // for no files present
 
   // NOTE: it is important to do the filters before trying to load, because
@@ -59,58 +62,58 @@ function onOpenDB(db) {
     console.debug('Loading', file.name);
     if(file.type && !file.type.toLowerCase().includes('xml')) {
       console.warn('Invalid type', file.name, file.type);
-      onFileProcessed.call(this, file);
+      rdr.opml.import.onFileProcessed.call(this, file);
     } else if(file.size === 0) {
       console.warn('Empty file', file.name);
-      onFileProcessed.call(this, file);
+      rdr.opml.import.onFileProcessed.call(this, file);
     } else {
       const reader = new FileReader();
-      reader.onload = fileReaderOnload.bind(this, file);
-      reader.onerror = fileReaderOnerror.bind(this, file);
+      reader.onload = rdr.opml.import.fileReaderOnload.bind(this, file);
+      reader.onerror = rdr.opml.import.fileReaderOnerror.bind(this, file);
       reader.readAsText(file);
     }
   }
-}
+};
 
-function fileReaderOnerror(file, event) {
+rdr.opml.import.fileReaderOnerror = function(file, event) {
   console.warn(file.name, event.target.error);
-  onFileProcessed.call(this, file);
-}
+  rdr.opml.import.onFileProcessed.call(this, file);
+};
 
-function fileReaderOnload(file, event) {
+rdr.opml.import.fileReaderOnload = function(file, event) {
   console.debug('Loaded', file.name);
 
   const text = event.target.result;
-  const doc = parseOPML(file, text);
+  const doc = rdr.opml.import.parseOPML(file, text);
   if(!doc) {
-    onFileProcessed.call(this, file);
+    rdr.opml.import.onFileProcessed.call(this, file);
     return;
   }
 
-  const outlineElements = selectOutlineElements(doc);
-  let outlines = outlineElements.map(createOutlineObject);
-  outlines = outlines.filter(outlineHasValidType);
-  outlines = outlines.filter(outlineHasURL);
-  outlines.forEach(deserializeOutlineURL);
-  outlines = outlines.filter(outlineHasURLObject);
+  const outlineElements = rdr.opml.import.selectOutlineElements(doc);
+  let outlines = outlineElements.map(rdr.opml.import.createOutlineObject);
+  outlines = outlines.filter(rdr.opml.import.outlineHasValidType);
+  outlines = outlines.filter(rdr.opml.import.outlineHasURL);
+  outlines.forEach(rdr.opml.import.deserializeOutlineURL);
+  outlines = outlines.filter(rdr.opml.import.outlineHasURLObject);
   // Even though this is caught by subscribe, which calls out to rdr.feed.add, which
   // produces a ConstraintError on the urls index in the case of a duplicate, it
   // is less work if done here
-  outlines = filterDuplicateOutlines(outlines);
+  outlines = rdr.opml.import.filterDuplicateOutlines(outlines);
 
-  const feeds = outlines.map(createFeedFromOutline);
+  const feeds = outlines.map(rdr.opml.import.createFeedFromOutline);
   const subOptions = {
     'connection': this.db,
     'suppressNotifications': true
   };
   for(let feed of feeds) {
-    rdr.subscribe(feed, subOptions);
+    rdr.feed.subscribe.start(feed, subOptions);
   }
 
-  onFileProcessed.call(this, file);
-}
+  rdr.opml.import.onFileProcessed.call(this, file);
+};
 
-function parseOPML(file, text) {
+rdr.opml.import.parseOPML = function(file, text) {
   let doc = null;
   const parse = rdr.xml.parse;
   try {
@@ -126,10 +129,10 @@ function parseOPML(file, text) {
   }
 
   return doc;
-}
+};
 
 // Scans the opml document for outline elements
-function selectOutlineElements(doc) {
+rdr.opml.import.selectOutlineElements = function(doc) {
   const outlines = [];
 
   // OPML documents are not required to have a body. This isn't an error,
@@ -147,9 +150,9 @@ function selectOutlineElements(doc) {
     }
   }
   return outlines;
-}
+};
 
-function createOutlineObject(element) {
+rdr.opml.import.createOutlineObject = function(element) {
   console.assert(element);
   console.assert(element.localName === 'outline');
   return {
@@ -160,33 +163,33 @@ function createOutlineObject(element) {
     'type': outline.getAttribute('type'),
     'url': outline.getAttribute('xmlUrl')
   };
-}
+};
 
-function outlineHasValidType(outline) {
+rdr.opml.import.outlineHasValidType = function(outline) {
   const type = outline.type;
   // The length check here is a bit pedantic, I am trying to reduce the calls
   // to the regex
   return type && type.length > 2 && /rss|rdf|feed/i.test(type);
-}
+};
 
-function outlineHasURL(outline) {
+rdr.opml.import.outlineHasURL = function(outline) {
   return outline.url && outline.url.trim();
-}
+};
 
-function deserializeOutlineURL(outline) {
+rdr.opml.import.deserializeOutlineURL = function(outline) {
   try {
     outline.urlObject = new URL(outline.url);
     // Apply additional normalization
     outline.urlObject.hash = '';
   } catch(error) {
   }
-}
+};
 
-function outlineHasURLObject(outline) {
+rdr.opml.import.outlineHasURLObject = function(outline) {
   return 'urlObject' in outline;
-}
+};
 
-function filterDuplicateOutlines(inputOutlines) {
+rdr.opml.import.filterDuplicateOutlines = function(inputOutlines) {
   const outputOutlines = [];
   // I don't think there is much value in using a set here
   const seen = [];
@@ -200,9 +203,9 @@ function filterDuplicateOutlines(inputOutlines) {
   }
 
   return outputOutlines;
-}
+};
 
-function createFeedFromOutline(outline) {
+rdr.opml.import.createFeedFromOutline = function(outline) {
   const feed = {};
   rdr.feed.addURL(feed, outline.urlObject.href);
   feed.type = outline.type;
@@ -217,17 +220,17 @@ function createFeedFromOutline(outline) {
     }
   }
   return feed;
-}
+};
 
-function onFileProcessed(file) {
+rdr.opml.import.onFileProcessed = function(file) {
   console.debug('Processed file "', file.name, '"');
   this.numFilesProcessed++;
   if(this.numFilesProcessed === this.uploader.files.length) {
-    onComplete.call(this);
+    rdr.opml.import.onComplete.call(this);
   }
-}
+};
 
-function onComplete() {
+rdr.opml.import.onComplete = function() {
   console.log('Completed opml import');
 
   if(this.uploader) {
@@ -243,10 +246,4 @@ function onComplete() {
   if(this.callback) {
     this.callback();
   }
-}
-
-var rdr = rdr || {};
-rdr.opml = rdr.opml || {};
-rdr.opml.importFiles = importFiles;
-
-} // End file block scope
+};

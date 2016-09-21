@@ -4,7 +4,6 @@
 
 'use strict';
 
-
 var rdr = rdr || {};
 rdr.favicon = rdr.favicon || {};
 

@@ -333,7 +333,7 @@ function startSubscription(url) {
 
   const feed = {};
   rdr.feed.addURL(feed, url.href);
-  rdr.subscribe(feed, {'callback': on_subscribe});
+  rdr.feed.subscribe.start(feed, {'callback': on_subscribe});
 
   function on_subscribe(event) {
     if(event.type !== 'success') {
@@ -701,7 +701,7 @@ function createSearchResultElement(feed) {
 function unsubButtonOnClick(event) {
   console.debug('Clicked Unsubscribe');
   const feedId = parseInt(event.target.value, 10);
-  rdr.unsubscribe(feedId, onUnsubscribe);
+  rdr.feed.unsubscribe.start(feedId, onUnsubscribe);
 
   function onUnsubscribe(event) {
     // If there was some failure to unsubscribe from the feed, react here
@@ -760,11 +760,11 @@ function unsubButtonOnClick(event) {
 // TODO: give immediate visual feedback the import started
 // TODO: switch to a different section of the options ui on complete?
 function importOPMLButtonOnClick(event) {
-  rdr.opml.importFiles();
+  rdr.opml.import.start();
 }
 
 function exportOPMLButtonOnClick(event) {
-  rdr.opml.exportFile('Subscriptions', 'subscriptions.xml');
+  rdr.opml.export.start('Subscriptions', 'subscriptions.xml');
 }
 
 function initSubsSection() {

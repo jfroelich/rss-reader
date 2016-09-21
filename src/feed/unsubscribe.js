@@ -4,9 +4,11 @@
 
 'use strict';
 
-{ // Begin file block scope
+var rdr = rdr || {};
+rdr.feed = rdr.feed || {};
+rdr.feed.unsubscribe = {};
 
-function unsubscribe(feedId, callback) {
+rdr.feed.unsubscribe.start = function(feedId, callback) {
   console.debug('Unsubscribing from', feedId);
 
   console.assert(feedId);
@@ -21,24 +23,25 @@ function unsubscribe(feedId, callback) {
     'callback': callback
   };
 
-  rdr.openDB(onOpenDB.bind(context));
-}
+  rdr.openDB(rdr.feed.unsubscribe.onOpenDB.bind(context));
+};
 
-function onOpenDB(db) {
+rdr.feed.unsubscribe.onOpenDB = function(db) {
   if(db) {
     this.db = db;
     const tx = db.transaction('entry', 'readwrite');
     const store = tx.objectStore('entry');
     const index = store.index('feed');
     const request = index.openCursor(this.feedId);
-    request.onsuccess = openEntryCursorOnSuccess.bind(this);
-    request.onerror = openEntryCursorOnError.bind(this);
+    request.onsuccess = rdr.feed.unsubscribe.openEntryCursorOnSuccess.bind(
+      this);
+    request.onerror = rdr.feed.unsubscribe.openEntryCursorOnError.bind(this);
   } else {
-    onUnsubscribeComplete.call(this, 'ConnectionError');
+    rdr.feed.unsubscribe.onComplete.call(this, 'ConnectionError');
   }
-}
+};
 
-function openEntryCursorOnSuccess(event) {
+rdr.feed.unsubscribe.openEntryCursorOnSuccess = function(event) {
   const cursor = event.target.result;
   if(cursor) {
     const entry = cursor.value;
@@ -56,34 +59,34 @@ function openEntryCursorOnSuccess(event) {
     // Async
     cursor.continue();
   } else {
-    onRemoveEntries.call(this);
+    rdr.feed.unsubscribe.onRemoveEntries.call(this);
   }
-}
+};
 
-function openEntryCursorOnError(event) {
+rdr.feed.unsubscribe.openEntryCursorOnError = function(event) {
   console.error(event.target.error);
-  onUnsubscribeComplete.call(this, 'DeleteEntryError');
-}
+  rdr.feed.unsubscribe.onComplete.call(this, 'DeleteEntryError');
+};
 
-function onRemoveEntries() {
+rdr.feed.unsubscribe.onRemoveEntries = function() {
   console.debug('Deleting feed', this.feedId);
   const tx = this.db.transaction('feed', 'readwrite');
   const store = tx.objectStore('feed');
   const request = store.delete(this.feedId);
-  request.onsuccess = deleteFeedOnSuccess.bind(this);
-  request.onerror = deleteFeedOnError.bind(this);
-}
+  request.onsuccess = rdr.feed.unsubscribe.deleteFeedOnSuccess.bind(this);
+  request.onerror = rdr.feed.unsubscribe.deleteFeedOnError.bind(this);
+};
 
-function deleteFeedOnSuccess(event) {
-  onUnsubscribeComplete.call(this, 'success');
-}
+rdr.feed.unsubscribe.deleteFeedOnSuccess = function(event) {
+  rdr.feed.unsubscribe.onComplete.call(this, 'success');
+};
 
-function deleteFeedOnError(event) {
+rdr.feed.unsubscribe.deleteFeedOnError = function(event) {
   console.error(event.target.error);
-  onUnsubscribeComplete.call(this, 'DeleteFeedError');
-}
+  rdr.feed.unsubscribe.onComplete.call(this, 'DeleteFeedError');
+};
 
-function onUnsubscribeComplete(eventType) {
+rdr.feed.unsubscribe.onComplete = function(eventType) {
   console.log('Unsubscribed');
 
   if(this.db) {
@@ -91,8 +94,8 @@ function onUnsubscribeComplete(eventType) {
       console.debug('Requested %i entries to be deleted',
         this.numDeleteEntryRequests);
       // Even though the deletes are pending, the readonly transaction in
-      // rdr.updateBadge implicitly waits for the pending deletes to complete
-      rdr.updateBadge(this.db);
+      // rdr.badge.update.start implicitly waits for the pending deletes to complete
+      rdr.badge.update.start(this.db);
     }
 
     this.db.close();
@@ -105,9 +108,4 @@ function onUnsubscribeComplete(eventType) {
       'deleteRequestCount': this.numDeleteEntryRequests
     });
   }
-}
-
-var rdr = rdr || {};
-rdr.unsubscribe = unsubscribe;
-
-} // End file block scope
+};

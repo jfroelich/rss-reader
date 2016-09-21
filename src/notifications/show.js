@@ -4,17 +4,23 @@
 
 'use strict';
 
+var rdr = rdr || {};
+rdr.notifications = {};
 
-
-{ // Begin file block scope
-
-const defaultIconURLString = chrome.extension.getURL(
+rdr.notifications.defaultIcon = chrome.extension.getURL(
   '/images/rss_icon_trans.gif');
 
 // Shows a simple desktop notification with the given title and message.
 // Message and title are interpreted as plain text.
 // Fails silently if not permitted
-function showDesktopNotification(title, message, iconURLString) {
+rdr.notifications.show = function(title, message, iconURLString) {
+
+  // This could be optimized but there is no need
+  if(!Notification) {
+    console.debug('Notifications are not supported');
+    return;
+  }
+
   if(!('SHOW_NOTIFICATIONS' in localStorage)) {
     console.debug('Suppressed notification:', title || 'Untitled');
     return;
@@ -22,20 +28,8 @@ function showDesktopNotification(title, message, iconURLString) {
 
   const details = {};
   details.body = message || '';
-  details.icon = iconURLString || defaultIconURLString;
+  details.icon = iconURLString || rdr.notifications.defaultIcon;
 
-  // Creating a notification shows it
+  // Instantiating a notification implicitly shows it
   new Notification(title || 'Untitled', details);
-}
-
-function noop() {}
-
-var rdr = rdr || {};
-if(Notification) {
-  rdr.showDesktopNotification = showDesktopNotification;
-} else {
-  console.warn('Notifications not supported');
-  rdr.showDesktopNotification = noop;
-}
-
-} // End file block scope
+};

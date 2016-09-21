@@ -4,12 +4,14 @@
 
 'use strict';
 
-{ // Begin file block scope
+var rdr = rdr || {};
+rdr.feed = rdr.feed || {};
+rdr.feed.subscribe = {};
 
 // @param feed a basic object representing a feed
 // @param options {Object} optional object containing optional callback
 // and optional open connection
-function subscribe(feed, options) {
+rdr.feed.subscribe.start = function(feed, options) {
   const feedURLString = rdr.feed.getURL(feed);
   if(!feedURLString) {
     throw new TypeError('feed should always have at least one url');
@@ -32,35 +34,29 @@ function subscribe(feed, options) {
   }
 
   if(context.db) {
-    findFeed.call(context);
+    rdr.feed.subscribe.findFeed.call(context);
   } else {
     context.shouldCloseDB = true;
-    rdr.openDB(onOpenDB.bind(context));
+    rdr.openDB(rdr.feed.subscribe.onOpenDB.bind(context));
   }
-}
+};
 
-function onOpenDB(db) {
+rdr.feed.subscribe.onOpenDB = function(db) {
   if(db) {
     this.db = db;
-    findFeed.call(this);
+    rdr.feed.subscribe.findFeed.call(this);
   } else {
-    onSubscribeComplete.call(this, {'type': 'ConnectionError'});
+    rdr.feed.subscribe.onComplete.call(this, {'type': 'ConnectionError'});
   }
-}
+};
 
-// Before involving any network overhead, check if already subscribed. This
-// check will implicitly happen again later when inserting the feed into the
-// database, so it is partially redundant, but it can reduce the amount of
-// processing in the common case.
-// This uses a separate transaction from the eventual add request, because
-// it is not recommended to have a long running transaction, and the amount of
-// work that has to occur between this exists check and the add request takes
-// a somewhat indefinite period of time, given network latency.
-// This does involve a race condition if calling subscribe concurrently on
+// Before involving any network overhead, check if already subscribed.
+// This uses a separate transaction from the eventual add request.
+// This involves a race condition if calling subscribe concurrently on
 // the same url, but its impact is limited. The latter http request will use
 // the cached page, and the latter call will fail with a ConstraintError when
 // trying to add the feed.
-function findFeed() {
+rdr.feed.subscribe.findFeed = function() {
 
   // TODO: i should be fully normalizing feed url
 
@@ -70,42 +66,43 @@ function findFeed() {
   const store = transaction.objectStore('feed');
   const index = store.index('urls');
   const request = index.get(feedURLString);
-  request.onsuccess = findFeedOnSuccess.bind(this);
-  request.onerror = findFeedOnError.bind(this);
-}
+  request.onsuccess = rdr.feed.subscribe.findFeedOnSuccess.bind(this);
+  request.onerror = rdr.feed.subscribe.findFeedOnError.bind(this);
+};
 
-function findFeedOnSuccess(event) {
+rdr.feed.subscribe.findFeedOnSuccess = function(event) {
   const feedURL = rdr.feed.getURL(this.feed);
 
   // Cannot resubscribe to an existing feed
   if(event.target.result) {
     console.debug('Already subscribed to', feedURL);
-    onSubscribeComplete.call(this, {'type': 'ConstraintError'});
+    rdr.feed.subscribe.onComplete.call(this, {'type': 'ConstraintError'});
     return;
   }
 
   // Subscribe while offline
   if('onLine' in navigator && !navigator.onLine) {
-    rdr.feed.add(this.db, this.feed, onAddFeed.bind(this));
+    rdr.feed.add(this.db, this.feed, rdr.feed.subscribe.onAddFeed.bind(this));
     return;
   }
 
   // Proceed with online subscription
   const shouldExcludeEntries = true;
   const feedURLObject = new URL(feedURL);
-  rdr.feed.fetch(feedURLObject, shouldExcludeEntries, onFetchFeed.bind(this));
-}
+  rdr.feed.fetch(feedURLObject, shouldExcludeEntries,
+    rdr.feed.subscribe.onFetchFeed.bind(this));
+};
 
-function findFeedOnError(event) {
-  onSubscribeComplete.call(this, {'type': 'FindQueryError'});
-}
+rdr.feed.subscribe.findFeedOnError = function(event) {
+  rdr.feed.subscribe.onComplete.call(this, {'type': 'FindQueryError'});
+};
 
-function onFetchFeed(event) {
+rdr.feed.subscribe.onFetchFeed = function(event) {
   if(event.type !== 'success') {
     if(event.type === 'InvalidMimeType') {
-      onSubscribeComplete.call(this, {'type': 'FetchMimeTypeError'});
+      rdr.feed.subscribe.onComplete.call(this, {'type': 'FetchMimeTypeError'});
     } else {
-      onSubscribeComplete.call(this, {'type': 'FetchError'});
+      rdr.feed.subscribe.onComplete.call(this, {'type': 'FetchError'});
     }
 
     return;
@@ -117,46 +114,43 @@ function onFetchFeed(event) {
   const urlObject = new URL(urlString);
   const doc = null;
   const verbose = false;
-  rdr.favicon.lookup(urlObject, doc, verbose, onLookupFavicon.bind(this));
-}
+  rdr.favicon.lookup(urlObject, doc, verbose,
+    rdr.feed.subscribe.onLookupFavicon.bind(this));
+};
 
-function onLookupFavicon(iconURLObject) {
+rdr.feed.subscribe.onLookupFavicon = function(iconURLObject) {
   if(iconURLObject) {
     this.feed.faviconURLString = iconURLObject.href;
   }
 
-  rdr.feed.add(this.db, this.feed, onAddFeed.bind(this));
-}
+  rdr.feed.add(this.db, this.feed, rdr.feed.subscribe.onAddFeed.bind(this));
+};
 
-function onAddFeed(event) {
+rdr.feed.subscribe.onAddFeed = function(event) {
   if(event.type === 'success') {
     this.didSubscribe = true;
-    onSubscribeComplete.call(this, {'type': 'success', 'feed': event.feed});
+    rdr.feed.subscribe.onComplete.call(this,
+      {'type': 'success', 'feed': event.feed});
   } else {
-    onSubscribeComplete.call(this, {'type': event.type});
+    rdr.feed.subscribe.onComplete.call(this, {'type': event.type});
   }
-}
+};
 
-function onSubscribeComplete(event) {
+rdr.feed.subscribe.onComplete = function(event) {
   if(this.shouldCloseDB && this.db) {
     this.db.close();
   }
 
   if(this.shouldNotify && this.didSubscribe) {
-    // Use the sanitized feed object
+    // Use the sanitized feed object in place of the input object
     const feed = event.feed;
     const displayString = feed.title ||  rdr.feed.getURL(feed);
     const message = 'Subscribed to ' + displayString;
-    rdr.showDesktopNotification('Subscription complete', message,
+    rdr.notifications.show('Subscription complete', message,
       feed.faviconURLString);
   }
 
   if(this.callback) {
     this.callback(event);
   }
-}
-
-var rdr = rdr || {};
-rdr.subscribe = subscribe;
-
-} // End file block scope
+};

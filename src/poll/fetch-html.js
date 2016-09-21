@@ -4,9 +4,10 @@
 
 'use strict';
 
-{ // Begin file block scope
+var rdr = rdr || {};
+rdr.poll = rdr.poll || {};
 
-function fetchHTML(requestURL, timeoutMs, callback) {
+rdr.poll.fetchHTML.start = function(requestURL, timeoutMs, callback) {
   console.assert(requestURL);
   console.assert(requestURL.href);
   console.log('GET', requestURL.href);
@@ -19,36 +20,36 @@ function fetchHTML(requestURL, timeoutMs, callback) {
   const isAsync = true;
   const request = new XMLHttpRequest();
   request.timeout = timeoutMs;
-  request.ontimeout = onTimeout.bind(context);
-  request.onerror = onError.bind(context);
-  request.onabort = onAbort.bind(context);
-  request.onload = onLoad.bind(context);
+  request.ontimeout = rdr.poll.fetchHTML.onTimeout.bind(context);
+  request.onerror = rdr.poll.fetchHTML.onError.bind(context);
+  request.onabort = rdr.poll.fetchHTML.onAbort.bind(context);
+  request.onload = rdr.poll.fetchHTML.onLoad.bind(context);
   request.open('GET', requestURL.href, isAsync);
   request.responseType = 'document';
   request.setRequestHeader('Accept', 'text/html');
   request.send();
-}
+};
 
-function onError(event) {
+rdr.poll.fetchHTML.onError = function(event) {
   this.callback({
     'type': 'FetchError',
     'status': event.target.status
   });
-}
+};
 
-function onTimeout(event) {
+rdr.poll.fetchHTML.onTimeout = function(event) {
   this.callback({
     'type': 'TimeoutError'
   });
-}
+};
 
-function onAbort(event) {
+rdr.poll.fetchHTML.onAbort = function(event) {
   this.callback({
     'type': 'AbortError'
   });
-}
+};
 
-function onLoad(event) {
+rdr.poll.fetchHTML.onLoad = function(event) {
   // doc is undefined for pdfs and such
   const document = event.target.responseXML;
   if(!document) {
@@ -63,9 +64,4 @@ function onLoad(event) {
     'document': document,
     'responseURL': new URL(event.target.responseURL)
   });
-}
-
-var rdr = rdr || {};
-rdr.fetchHTML = fetchHTML;
-
-} // End file block scope
+};

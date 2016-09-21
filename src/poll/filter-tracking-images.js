@@ -4,12 +4,13 @@
 
 'use strict';
 
-{ // Begin file block scope
-
 // TODO: hosts should be defined externally so that if i want to
 // change it, I don't have to change the code
 
-const hostNames = [
+var rdr = rdr || {};
+rdr.poll = rdr.poll || {};
+
+rdr.poll.trackingHostNames = [
   'ad.doubleclick.net',
   'b.scorecardresearch.com',
   'googleads.g.doubleclick.net',
@@ -21,24 +22,21 @@ const hostNames = [
   'sb.scorecardresearch.com'
 ];
 
-function filterTrackingImages(doc) {
+rdr.poll.filterTrackingImages = function(doc) {
   const images = doc.querySelectorAll('img[src]');
   for(let image of images) {
-    if(isTrackingImage(image)) {
+    if(rdr.poll.isTrackingImage(image)) {
       image.remove();
     }
   }
-}
+};
 
-function isTrackingImage(image) {
+rdr.poll.isTrackingImage = function(image) {
   let src = image.getAttribute('src');
-
-  // Assert attribute exists
   if(!src) {
     return false;
   }
 
-  // Assert non-empty string after trim
   src = src.trim();
   if(!src) {
     return false;
@@ -55,12 +53,10 @@ function isTrackingImage(image) {
     return false;
   }
 
-  // Assert acceptable protocol (http or https). No leading spaces (trimmed)
   if(!/^https?:/i.test(src)) {
     return false;
   }
 
-  // Assert general url validity by checking for a parse error
   let url;
   try {
     url = new URL(src);
@@ -68,11 +64,5 @@ function isTrackingImage(image) {
     return false;
   }
 
-  // Do the lookup using the normalized lowercase value
-  return hostNames.includes(url.hostname);
-}
-
-var rdr = rdr || {};
-rdr.filterTrackingImages = filterTrackingImages;
-
-} // End file block scope
+  return rdr.poll.trackingHostNames.includes(url.hostname);
+};

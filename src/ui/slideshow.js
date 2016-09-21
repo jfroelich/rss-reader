@@ -30,7 +30,7 @@ function removeSlide(slide) {
 function markSlideAsRead(slide) {
   if(!slide.hasAttribute('read')) {
     slide.setAttribute('read', '');
-    rdr.markEntryAsRead(parseInt(slide.getAttribute('entry'), 10));
+    rdr.entry.markAsRead(parseInt(slide.getAttribute('entry'), 10));
   }
 }
 

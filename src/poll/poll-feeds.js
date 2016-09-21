@@ -221,7 +221,7 @@ function processEntry(feed, entry, callback) {
 
   // Check if the entry already exists. Check against all of its urls
   const matchLimit = 1;
-  rdr.findEntriesByURLs(this.connection, entry.urls, matchLimit,
+  rdr.entry.findByURLs(this.connection, entry.urls, matchLimit,
     onFindMatchingEntries.bind(this, feed, entry, callback));
 }
 
@@ -263,7 +263,7 @@ function onFindMatchingEntries(feed, entry, callback, matches) {
   // Check if the entry url does not point to a PDF. This limits the amount of
   // networking in the general case, even though the extension isn't a real
   // indication of the mime type and may have some false positives. Even if
-  // this misses it, responseXML will be undefined in rdr.fetchHTML so false
+  // this misses it, responseXML will be undefined in fetchHTML.start so false
   // negatives are not too important.
   if(isPDFURL(entryTerminalURLObject)) {
     prepLocalEntryDoc(entry);
@@ -273,7 +273,8 @@ function onFindMatchingEntries(feed, entry, callback, matches) {
 
   const timeoutMs = 10 * 1000;
   const boundOnFetchEntry = onFetchEntry.bind(this, entry, callback);
-  rdr.fetchHTML(entryTerminalURLObject, timeoutMs, boundOnFetchEntry);
+  rdr.poll.fetchHTML.start(entryTerminalURLObject, timeoutMs,
+    boundOnFetchEntry);
 }
 
 function isPDFURL(url) {
@@ -309,7 +310,7 @@ function onFetchEntry(entry, callback, event) {
   cleandom.filterSourcelessImages(doc);
   cleandom.filterInvalidAnchors(doc);
   rdr.resolveDocumentURLs(doc, event.responseURL);
-  rdr.filterTrackingImages(doc);
+  rdr.poll.filterTrackingImages(doc);
   const boundOnSetImageDimensions = onSetImageDimensions.bind(this, entry, doc,
     callback);
   rdr.setImageDimensions(doc, boundOnSetImageDimensions);
@@ -355,7 +356,7 @@ function onEntryProcessed(feedContext, event) {
 
   if(count === feedContext.numEntries) {
     if(feedContext.numEntriesAdded) {
-      rdr.updateBadge(this.connection);
+      rdr.badge.update.start(this.connection);
     }
 
     this.numFeedsPending--;
@@ -370,7 +371,7 @@ function onPollComplete() {
     return;
   }
 
-  rdr.showDesktopNotification('Updated articles',
+  rdr.notifications.show('Updated articles',
     'Completed checking for new articles');
   if(this.connection) {
     this.connection.close();

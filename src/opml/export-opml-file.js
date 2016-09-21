@@ -4,11 +4,16 @@
 
 'use strict';
 
-{ // Begin file block scope
+var rdr = rdr || {};
+rdr.opml = rdr.opml || {};
+rdr.opml.export = {};
 
 // Queries the database for feeds, creates an OPML xml file, and then triggers
 // the download of the file.
-function exportFile(title, fileName) {
+// @param title {String} title tag value
+// @param fileName {String} name of generated file
+// TODO: maybe add a verbose flag
+rdr.opml.export.start = function exportFile(title, fileName) {
   const context = {
     'title': title || 'Subscriptions',
     'fileName': fileName || 'subscriptions.xml',
@@ -16,44 +21,49 @@ function exportFile(title, fileName) {
     'db': null
   };
 
-  rdr.openDB(onOpenDB.bind(context));
-}
+  rdr.openDB(rdr.opml.export.onOpenDB.bind(context));
+};
 
-function onOpenDB(db) {
-  if(db) {
-    this.db = db;
-    const tx = db.transaction('feed');
-    const store = tx.objectStore('feed');
-    const request = store.openCursor();
-    request.onsuccess = openCursorOnSuccess.bind(this);
-    request.onerror = openCursorOnError.bind(this);
-  } else {
-    onComplete.call(this);
+rdr.opml.export.onOpenDB = function(db) {
+
+  if(!db) {
+    rdr.opml.export.onComplete.call(this);
+    return;
   }
-}
 
-function openCursorOnError(event) {
+  // TODO: there should be a call instead to something like
+  // rdr.feed.getAll(callback with array).
+
+  this.db = db;
+  const tx = db.transaction('feed');
+  const store = tx.objectStore('feed');
+  const request = store.openCursor();
+  request.onsuccess = rdr.opml.export.openCursorOnSuccess.bind(this);
+  request.onerror = rdr.opml.export.openCursorOnError.bind(this);
+};
+
+rdr.opml.export.openCursorOnError = function(event) {
   console.error(event.target.error);
-  onComplete.call(this);
-}
+  rdr.opml.export.onComplete.call(this);
+};
 
-function openCursorOnSuccess(event) {
+rdr.opml.export.openCursorOnSuccess = function(event) {
   const cursor = event.target.result;
   if(cursor) {
     const feed = cursor.value;
     this.feeds.push(feed);
     cursor.continue();
   } else {
-    onGetFeeds.call(this);
+    rdr.opml.export.onGetFeeds.call(this);
   }
-}
+};
 
-function onGetFeeds() {
-  const doc = createDoc(this.title);
+rdr.opml.export.onGetFeeds = function() {
+  const doc = rdr.opml.export.createDoc(this.title);
 
   const outlines = [];
   for(let feed of this.feeds) {
-    outlines.push(createOutline(doc, feed));
+    outlines.push(rdr.opml.export.createOutline(doc, feed));
   }
 
   // Append the outlines to the body
@@ -82,18 +92,18 @@ function onGetFeeds() {
 
   URL.revokeObjectURL(objectURL);
   anchor.remove();
-  onComplete.call(this);
-}
+  rdr.opml.export.onComplete.call(this);
+};
 
-function onComplete() {
+rdr.opml.export.onComplete = function() {
   if(this.db) {
     this.db.close();
   }
   console.log('Exported %s feeds to %s', this.feeds.length, this.fileName);
-}
+};
 
 // Creates a Document object with the given title representing an OPML file
-function createDoc(title) {
+rdr.opml.export.createDoc = function(title) {
   const doc = document.implementation.createDocument(null, 'opml', null);
   doc.documentElement.setAttribute('version', '2.0');
 
@@ -124,10 +134,10 @@ function createDoc(title) {
   const body = doc.createElement('body');
   doc.documentElement.appendChild(body);
   return doc;
-}
+};
 
 // Creates an outline element from an object representing a feed
-function createOutline(doc, feed) {
+rdr.opml.export.createOutline = function(doc, feed) {
   const outline = doc.createElement('outline');
 
   if(feed.type) {
@@ -152,10 +162,4 @@ function createOutline(doc, feed) {
   }
 
   return outline;
-}
-
-var rdr = rdr || {};
-rdr.opml = rdr.opml || {};
-rdr.opml.exportFile = exportFile;
-
-} // End file block scope
+};

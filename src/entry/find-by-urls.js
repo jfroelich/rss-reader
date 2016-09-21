@@ -13,7 +13,6 @@
 // just to check if an entry exists. If I use a keyCursor then maybe idb is
 // smart enough to skip the deserialization of the full entry.
 
-
 // TODO: it doesn't actually make sense to always lookup all urls here.
 // Right now I merely stop appending matches, but I still continue to perform
 // all lookups. It would be better to not even continue to do lookups if I
@@ -24,7 +23,8 @@
 // performance benefit to doing them in parallel. If all entries are going
 // to be iterated, then the same amount of work has to occur.
 
-{ // Begin file block scope
+var rdr = rdr || {};
+rdr.entry = rdr.entry || {};
 
 // Searches the entry store for entries that contain at least one of the urls
 // and then calls back with an array of matching entries.
@@ -35,9 +35,7 @@
 // @param db {IDBDatabase} an open database connection
 // @param urls {Array} an array of url strings to search with
 // @param callback {function} a callback function
-function findEntriesByURLs(db, urls, matchLimit, callback) {
-
-  // The urls parameter should be a defined array and it should never be empty
+rdr.entry.findByURLs = function(db, urls, matchLimit, callback) {
   console.assert(urls.length);
 
   const context = {};
@@ -49,7 +47,6 @@ function findEntriesByURLs(db, urls, matchLimit, callback) {
   context.reachedMatchLimit = false;
 
   if(matchLimit) {
-    // If matchLimit is defined, it should be a finite positive integer
     console.assert(isFinite(matchLimit));
     console.assert(matchLimit > 0);
     context.matchLimit = matchLimit;
@@ -61,12 +58,12 @@ function findEntriesByURLs(db, urls, matchLimit, callback) {
   for(let url of urls) {
     const normalizedURLString = rdr.entry.normalizeURL(url);
     const request = index.openCursor(normalizedURLString);
-    request.onsuccess = openCursorOnSuccess.bind(context);
-    request.onerror = openCursorOnError.bind(context);
+    request.onsuccess = rdr.entry._findOpenCursorOnSuccess.bind(context);
+    request.onerror = rdr.entry._findOpenCursorOnError.bind(context);
   }
-}
+};
 
-function openCursorOnSuccess(event) {
+rdr.entry._findOpenCursorOnSuccess = function(event) {
   // Before processing, check if a limit was reached. The limit may have been
   // reached by another cursor because urls are processed concurrently. If
   // already reached then do nothing. This will always be false in the case of
@@ -91,7 +88,7 @@ function openCursorOnSuccess(event) {
     // Now check if we finished processing all urls. This will be true for the
     // first time if the current url is the last url to resolve its lookup
     if(this.numURLsProcessed >= this.numURLs) {
-      onComplete.call(this);
+      rdr.entry._findOnComplete.call(this);
     }
 
     // We are finished with the current url, and we may also be finished with
@@ -109,22 +106,23 @@ function openCursorOnSuccess(event) {
   if(this.matchLimit && this.matches.length >= this.matchLimit) {
     // Let any future success event handlers know to stop advancing
     this.reachedMatchLimit = true;
-    onComplete.call(this);
+    rdr.entry._findOnComplete.call(this);
     return;
   }
 
   cursor.continue();
-}
+};
 
-function openCursorOnError(event) {
+rdr.entry._findOpenCursorOnError = function(event) {
   console.error(event.target.error);
   this.numURLsProcessed++;
   if(!this.reachedMatchLimit && this.numURLsProcessed >= this.numURLs) {
-    onComplete.call(this);
+    rdr.entry._findOnComplete.call(this);
   }
-}
+};
 
-function onComplete() {
+rdr.entry._findOnComplete = function() {
+  console.assert('didCallback' in this);
   if(this.didCallback) {
     console.error('Duplicate callback!');
     return;
@@ -132,9 +130,4 @@ function onComplete() {
 
   this.didCallback = true;
   this.callback(this.matches);
-}
-
-var rdr = rdr || {};
-rdr.findEntriesByURLs = findEntriesByURLs;
-
-} // End file block scope
+};
