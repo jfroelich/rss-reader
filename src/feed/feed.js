@@ -64,7 +64,7 @@ rdr.feed.sanitize = function(inputFeed) {
 
   if(feed.title) {
     let title = feed.title;
-    title = rdr.filterControlChars(title);
+    title = rdr.utils.filterControlChars(title);
     title = rdr.html.replaceTags(title, '');
     title = title.replace(/\s+/, ' ');
     const titleMaxStoreLength = 1024;
@@ -74,7 +74,7 @@ rdr.feed.sanitize = function(inputFeed) {
 
   if(feed.description) {
     let description = feed.description;
-    description = rdr.filterControlChars(description);
+    description = rdr.utils.filterControlChars(description);
     description = rdr.html.replaceTags(description, '');
     description = description.replace(/\s+/, ' ');
     const preTruncLen = description.length;
@@ -101,7 +101,7 @@ rdr.feed.update = function(db, feed, callback) {
 
   const sanitizedFeed = rdr.feed.sanitize(feed);
   sanitizedFeed.dateUpdated = new Date();
-  const storableFeed = rdr.filterUndefProps(sanitizedFeed);
+  const storableFeed = rdr.utils.filterEmptyProps(sanitizedFeed);
 
   // Creating a new transaction can throw an exception if the database is in the
   // process of closing. That happens because of errors elsewhere in the code.
@@ -150,7 +150,7 @@ rdr.feed.add = function(db, feed, callback) {
 
   const sanitizedFeed = rdr.feed.sanitize(feed);
   sanitizedFeed.dateCreated = new Date();
-  const storableFeed = rdr.filterUndefProps(sanitizedFeed);
+  const storableFeed = rdr.utils.filterEmptyProps(sanitizedFeed);
   const transaction = db.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
   const request = store.add(storableFeed);

@@ -49,7 +49,7 @@ rdr.opml.import.onUploaderChange = function(event) {
     return;
   }
 
-  rdr.openDB(rdr.opml.import.onOpenDB.bind(this));
+  rdr.db.open(rdr.opml.import.onOpenDB.bind(this));
 };
 
 rdr.opml.import.onOpenDB = function(db) {

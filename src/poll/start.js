@@ -4,11 +4,10 @@
 
 'use strict';
 
-// TODO: add verbose parameter
-
 var rdr = rdr || {};
 rdr.poll = rdr.poll || {};
 
+// @param verbose {boolean} if true, logs messages to console
 // @param forceResetLock {boolean} if true then polling continues even when
 // locked
 // @param allowMeteredConnections {boolean} if true then allow polling to
@@ -17,7 +16,6 @@ rdr.poll.start = function(verbose, forceResetLock, allowMeteredConnections) {
   if(verbose) {
     console.log('Checking for new articles...');
   }
-
 
   const context = {
     'numFeedsPending': 0,
@@ -66,13 +64,13 @@ rdr.poll.start = function(verbose, forceResetLock, allowMeteredConnections) {
     chrome.idle.queryState(idlePeriodSecs,
       rdr.poll.onQueryIdleState.bind(context));
   } else {
-    rdr.openDB(rdr.poll.onOpenDB.bind(context));
+    rdr.db.open(rdr.poll.onOpenDB.bind(context));
   }
 };
 
 rdr.poll.onQueryIdleState = function(state) {
   if(state === 'locked' || state === 'idle') {
-    rdr.openDB(rdr.poll.onOpenDB.bind(this));
+    rdr.db.open(rdr.poll.onOpenDB.bind(this));
   } else {
     if(this.verbose) {
       console.debug('Idle state', state);
@@ -344,14 +342,13 @@ rdr.poll.onFetchEntry = function(entry, callback, event) {
   // - i should be querying against the redirect url
 
   const doc = event.document;
-  rdr.transformLazyImages(doc);
-  cleandom.filterSourcelessImages(doc);
-  cleandom.filterInvalidAnchors(doc);
-  rdr.resolveDocumentURLs(doc, event.responseURL);
-  rdr.poll.filterTrackingImages(doc);
-  const boundOnSetImageDimensions = rdr.poll.onSetImageDimensions.bind(this,
-    entry, doc, callback);
-  rdr.setImageDimensions(doc, boundOnSetImageDimensions);
+  rdr.poll.lazyimg.updateImages(doc);
+  rdr.cleandom.filterSourcelessImages(doc);
+  rdr.cleandom.filterInvalidAnchors(doc);
+  rdr.poll.resolve.start(doc, event.responseURL);
+  rdr.poll.tracking.filterImages(doc);
+  const cb = rdr.poll.onSetImageDimensions.bind(this, entry, doc, callback);
+  rdr.poll.imgdims.updateImages(doc, cb);
 };
 
 rdr.poll.onSetImageDimensions = function(entry, document, callback,
@@ -363,9 +360,9 @@ rdr.poll.onSetImageDimensions = function(entry, document, callback,
 };
 
 rdr.poll.prepDoc = function(doc) {
-  rdr.filterBoilerplate(doc);
-  cleandom.cleanDoc(doc);
-  cleandom.addNoReferrer(doc);
+  rdr.bp.filter(doc);
+  rdr.cleandom.cleanDoc(doc);
+  rdr.cleandom.addNoReferrer(doc);
 };
 
 rdr.poll.prepLocalDoc = function(entry) {

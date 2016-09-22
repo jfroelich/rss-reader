@@ -23,7 +23,7 @@ rdr.feed.unsubscribe.start = function(feedId, callback) {
     'callback': callback
   };
 
-  rdr.openDB(rdr.feed.unsubscribe.onOpenDB.bind(context));
+  rdr.db.open(rdr.feed.unsubscribe.onOpenDB.bind(context));
 };
 
 rdr.feed.unsubscribe.onOpenDB = function(db) {

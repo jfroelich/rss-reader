@@ -4,9 +4,11 @@
 
 'use strict';
 
-{ // Begin file block scope
+var rdr = rdr || {};
+rdr.poll = rdr.poll || {};
+rdr.poll.lazyimg = {};
 
-const lazyAttrs = [
+rdr.poll.lazyimg.attrs = [
   'load-src',
   'data-src',
   'data-original-desktop',
@@ -19,36 +21,31 @@ const lazyAttrs = [
   'data-default-src'
 ];
 
-function transformLazyImages(doc) {
+rdr.poll.lazyimg.updateImages = function(doc) {
   const images = doc.querySelectorAll('img');
   for(let img of images) {
-    transformLazyImage(img);
+    rdr.poll.lazyimg.transform(img);
   }
-}
+};
 
-function transformLazyImage(img) {
+rdr.poll.lazyimg.transform = function(img) {
   if(img.hasAttribute('src') || img.hasAttribute('srcset')) {
     return;
   }
 
-  for(let altName of lazyAttrs) {
+  for(let altName of rdr.poll.lazyimg.attrs) {
     if(img.hasAttribute(altName)) {
       const altValue = img.getAttribute(altName);
-      if(altValue && isValidURL(altValue)) {
+      if(altValue && rdr.poll.lazyimg.isValidURL(altValue)) {
         img.removeAttribute(altName);
         img.setAttribute('src', altValue);
         return;
       }
     }
   }
-}
+};
 
 // Only minimal validation against possibly relative urls
-function isValidURL(inputString) {
-  return !inputString.trim().includes(' ');
-}
-
-var rdr = rdr || {};
-rdr.transformLazyImages = transformLazyImages;
-
-} // End file block scope
+rdr.poll.lazyimg.isValidURL = function(str) {
+  return !str.trim().includes(' ');
+};

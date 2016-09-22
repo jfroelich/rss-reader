@@ -48,7 +48,7 @@ function showErrorMsg(msg, shouldFadeIn) {
   if(shouldFadeIn) {
     errorElement.style.opacity = '0';
     document.body.appendChild(errorElement);
-    rdr.fadeElement(container, 1, 0);
+    rdr.utils.fade(container, 1, 0);
   } else {
     errorElement.style.opacity = '1';
     showElement(errorElement);
@@ -108,7 +108,7 @@ function hideSubMonitor(callback, shouldFadeOut) {
   }
 
   if(shouldFadeOut) {
-    rdr.fadeElement(monitor, 2, 1, removeThenCallback);
+    rdr.utils.fade(monitor, 2, 1, removeThenCallback);
   } else {
     removeThenCallback();
   }
@@ -381,7 +381,7 @@ function populateFeedInfo(feedId) {
 
   const context = {'db': null};
 
-  rdr.openDB(onOpenDB);
+  rdr.db.open(onOpenDB);
   function onOpenDB(db) {
     if(db) {
       context.db = db;
@@ -527,7 +527,7 @@ function subFormOnSubmit(event) {
   } else {
     showElement(progressElement);
     const timeoutMs = 5000;
-    rdr.searchGoogleFeeds(queryString, timeoutMs, onSearchGoogleFeeds);
+    rdr.googleFeeds.search(queryString, timeoutMs, onSearchGoogleFeeds);
   }
 
   return false;
@@ -770,7 +770,7 @@ function exportOPMLButtonOnClick(event) {
 
 function initSubsSection() {
   let feedCount = 0;
-  rdr.openDB(onOpenDB);
+  rdr.db.open(onOpenDB);
 
   function onOpenDB(db) {
     if(db) {

@@ -38,7 +38,7 @@ rdr.entry.archive.start = function(verbose, expires) {
     context.expires = expires;
   }
 
-  rdr.openDB(rdr.entry.archive._onOpenDB.bind(context));
+  rdr.db.open(rdr.entry.archive._onOpenDB.bind(context));
 };
 
 rdr.entry.archive._onOpenDB = function(db) {

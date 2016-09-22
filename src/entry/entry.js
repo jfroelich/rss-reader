@@ -46,7 +46,7 @@ rdr.entry.add = function(db, entry, callback) {
   console.debug('Adding entry', entryURLString);
 
   const sanitizedEntry = rdr.entry._sanitize(entry);
-  const storableEntry = rdr.filterUndefProps(sanitizedEntry);
+  const storableEntry = rdr.utils.filterEmptyProps(sanitizedEntry);
 
   // Set fields that only happen on creation
   storableEntry.readState = rdr.entry.flags.UNREAD;
@@ -89,7 +89,7 @@ rdr.entry._sanitize = function(inputEntry) {
 
   if(outputEntry.author) {
     let author = outputEntry.author;
-    author = rdr.filterControlChars(author);
+    author = rdr.utils.filterControlChars(author);
     author = rdr.html.replaceTags(author, '');
     author = rdr.entry._condenseSpaces(author);
     author = rdr.html.truncate(author, authorMaxLength);
@@ -107,7 +107,7 @@ rdr.entry._sanitize = function(inputEntry) {
 
   if(outputEntry.title) {
     let title = outputEntry.title;
-    title = rdr.filterControlChars(title);
+    title = rdr.utils.filterControlChars(title);
     title = rdr.html.replaceTags(title, '');
     title = rdr.entry._condenseSpaces(title);
     title = rdr.html.truncate(title, titleMaxLength);

@@ -4,35 +4,37 @@
 
 'use strict';
 
-{ // Begin file block scope
+var rdr = rdr || {};
+rdr.db = {};
 
-const name = 'reader';
-const version = 20;
+rdr.db.name = 'reader';
+rdr.db.version = 20;
 
-function openDB(callback) {
-  const request = indexedDB.open(name, version);
-  request.onupgradeneeded = upgrade;
-  request.onsuccess = onSuccess.bind(request, callback);
-  request.onerror = onError.bind(request, callback);
-  request.onblocked = onBlocked.bind(request, callback);
-}
+rdr.db.open = function(callback) {
+  const request = indexedDB.open(rdr.db.name, rdr.db.version);
+  request.onupgradeneeded = rdr.db._onUpgradeNeeded;
+  request.onsuccess = rdr.db._onSuccess.bind(request, callback);
+  request.onerror = rdr.db._onError.bind(request, callback);
+  request.onblocked = rdr.db._onBlocked.bind(request, callback);
+};
 
-function onSuccess(callback, event) {
+rdr.db._onSuccess = function(callback, event) {
   callback(event.target.result);
-}
+};
 
-function onError(callback, event) {
+rdr.db._onError = function(callback, event) {
   console.error(event);
   callback();
-}
+};
 
-function onBlocked(callback, event) {
+rdr.db._onBlocked = function(callback, event) {
   console.warn(event);
   callback();
-}
+};
 
-function upgrade(event) {
-  console.log('Upgrading database %s from version', name, event.oldVersion);
+rdr.db._onUpgradeNeeded = function(event) {
+  console.log('Upgrading database %s from rdr.db.version', rdr.db.name,
+    event.oldVersion);
 
   const request = event.target;
   const connection = request.result;
@@ -120,9 +122,4 @@ function upgrade(event) {
       'unique': true
     });
   }
-}
-
-var rdr = rdr || {};
-rdr.openDB = openDB;
-
-} // End file block scope
+};

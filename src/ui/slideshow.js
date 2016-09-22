@@ -55,7 +55,7 @@ function appendSlides(onAppendComplete, isFirstSlide) {
 
   // TODO: invert this, and the condition where it is used, to isAdvanced
   let isNotAdvanced = true;
-  rdr.openDB(onOpenDB);
+  rdr.db.open(onOpenDB);
 
   function onOpenDB(connection) {
     if(connection) {
@@ -189,7 +189,7 @@ function createFeedSource(entry) {
   buffer.push(entry.author || 'Unknown author');
   if(entry.datePublished) {
     buffer.push(' on ');
-    buffer.push(rdr.formatDate(entry.datePublished));
+    buffer.push(rdr.utils.formatDate(entry.datePublished));
   }
 
   titleElement.textContent = buffer.join('');
@@ -339,7 +339,7 @@ function onKeyDown(event) {
       event.preventDefault();
       if(currentSlideElement) {
         const delta = scrollDeltas['' + event.keyCode];
-        rdr.smoothScrollTo(currentSlideElement, delta[0],
+        rdr.utils.scrollTo(currentSlideElement, delta[0],
           currentSlideElement.scrollTop + delta[1]);
       }
       break;

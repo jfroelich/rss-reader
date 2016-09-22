@@ -19,7 +19,7 @@ rdr.badge.update.start = function(db) {
   if(db) {
     rdr.badge.update._countUnread.call(context);
   } else {
-    rdr.openDB(rdr.badge.update._onOpenDB.bind(context));
+    rdr.db.open(rdr.badge.update._onOpenDB.bind(context));
   }
 };
 

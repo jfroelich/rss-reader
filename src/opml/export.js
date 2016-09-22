@@ -21,7 +21,7 @@ rdr.opml.export.start = function exportFile(title, fileName) {
     'db': null
   };
 
-  rdr.openDB(rdr.opml.export.onOpenDB.bind(context));
+  rdr.db.open(rdr.opml.export.onOpenDB.bind(context));
 };
 
 rdr.opml.export.onOpenDB = function(db) {

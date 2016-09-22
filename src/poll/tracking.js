@@ -9,8 +9,9 @@
 
 var rdr = rdr || {};
 rdr.poll = rdr.poll || {};
+rdr.poll.tracking = {};
 
-rdr.poll.trackingHostNames = [
+rdr.poll.tracking.hosts = [
   'ad.doubleclick.net',
   'b.scorecardresearch.com',
   'googleads.g.doubleclick.net',
@@ -22,16 +23,16 @@ rdr.poll.trackingHostNames = [
   'sb.scorecardresearch.com'
 ];
 
-rdr.poll.filterTrackingImages = function(doc) {
+rdr.poll.tracking.filterImages = function(doc) {
   const images = doc.querySelectorAll('img[src]');
   for(let image of images) {
-    if(rdr.poll.isTrackingImage(image)) {
+    if(rdr.poll.tracking.isTracker(image)) {
       image.remove();
     }
   }
 };
 
-rdr.poll.isTrackingImage = function(image) {
+rdr.poll.tracking.hasCandidateURL = function(image) {
   let src = image.getAttribute('src');
   if(!src) {
     return false;
@@ -48,7 +49,7 @@ rdr.poll.isTrackingImage = function(image) {
     return false;
   }
 
-  // Assert no intermediate spaces (we trimmed above)
+  // Assert no intermediate spaces
   if(src.includes(' ')) {
     return false;
   }
@@ -56,7 +57,15 @@ rdr.poll.isTrackingImage = function(image) {
   if(!/^https?:/i.test(src)) {
     return false;
   }
+  return true;
+};
 
+rdr.poll.tracking.isTracker = function(image) {
+  if(!rdr.poll.tracking.hasCandidateURL(image)) {
+    return false;
+  }
+
+  const src = image.getAttribute('src');
   let url;
   try {
     url = new URL(src);
@@ -64,5 +73,5 @@ rdr.poll.isTrackingImage = function(image) {
     return false;
   }
 
-  return rdr.poll.trackingHostNames.includes(url.hostname);
+  return rdr.poll.tracking.hosts.includes(url.hostname);
 };

@@ -11,7 +11,7 @@ rdr.entry.markAsRead = function(entryId, callback) {
   console.assert(isFinite(entryId));
   console.assert(entryId > 0);
   const context = {'entryId': entryId, 'callback': callback};
-  rdr.openDB(rdr.entry.markOnOpenDB.bind(context));
+  rdr.db.open(rdr.entry.markOnOpenDB.bind(context));
 };
 
 rdr.entry.markOnOpenDB = function(db) {

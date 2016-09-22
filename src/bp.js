@@ -4,14 +4,16 @@
 
 'use strict';
 
+var rdr = rdr || {};
 
+// Boilerplate filtering lib
+rdr.bp = {};
 
-{ // Begin file block scope
-
-function filterBoilerplate(document) {
-  const bestElement = findHighScoringElement(document);
-  prune(document, bestElement);
-}
+// Filters boilerplate from the document
+rdr.bp.filter = function(doc) {
+  const bestElement = rdr.bp.findHighScoreElement(doc);
+  rdr.bp.prune(doc, bestElement);
+};
 
 // Returns a measure indicating whether the element contains boilerplate or
 // content based on its text. Elements with a large amount of text are
@@ -20,19 +22,19 @@ function filterBoilerplate(document) {
 // The metric is adapted from the paper:
 // "Boilerplate Detection using Shallow Text Features".
 // See http://www.l3s.de/~kohlschuetter/boilerplate.
-function deriveTextBias(element) {
+rdr.bp.deriveTextBias = function(element) {
   const text = element.textContent;
   const trimmedText = text.trim();
   const textLength = 0.0 + trimmedText.length;
-  const anchorLength = 0.0 + deriveAnchorLength(element);
+  const anchorLength = 0.0 + rdr.bp.deriveAnchorLen(element);
   return (0.25 * textLength) - (0.7 * anchorLength);
-}
+};
 
 // Returns the approximate number of characters contained within anchors that
 // are descendants of the element.
 // This assumes that the HTML is generally well-formed. Specifically it assumes
 // no anchor nesting.
-function deriveAnchorLength(element) {
+rdr.bp.deriveAnchorLen = function(element) {
   const anchors = element.querySelectorAll('a[href]');
   const numAnchors = anchors.length;
   let anchorLength = 0;
@@ -41,7 +43,7 @@ function deriveAnchorLength(element) {
     anchorLength = anchorLength + anchor.textContent.trim().length;
   }
   return anchorLength;
-}
+};
 
 // These scores adjust the parent scores of these elements. A parent element
 // is more likely to be the best element or a content element when it contains
@@ -52,9 +54,8 @@ function deriveAnchorLength(element) {
 // Ancestor bias contributes very little to an element's total bias in
 // comparision to some of the other biases. The most help comes when there is
 // a clear container element of multiple paragraphs.
-
 // TODO: switch back to lowercase and use node.localName to lookup
-const ancestorBiasMap = {
+rdr.bp.ancestorBiasMap = {
   'A': -5,
   'ASIDE': -50,
   'BLOCKQUOTE': 20,
@@ -75,28 +76,23 @@ const ancestorBiasMap = {
   'UL': -20
 };
 
-// Derives a bias based on child elements
-function deriveAncestorBias(element) {
+rdr.bp.deriveAncestorBias = function(element) {
   let totalBias = 0;
-
   for(let child = element.firstElementChild; child;
     child = child.nextElementSibling) {
-    const bias = ancestorBiasMap[child.nodeName];
-
-    // Using += seems to cause deopt issues when using let or const (at
-    // least in Chrome 49), hence the expanded syntax.
+    const bias = rdr.bp.ancestorBiasMap[child.nodeName];
     if(bias) {
       totalBias = totalBias + bias;
     }
   }
 
   return totalBias;
-}
+};
 
 // If one of these tokens is found in an attribute value of an element,
 // these bias the element's boilerplate score. A higher score means that the
 // element is more likely to be content. This list was created empirically.
-const attrTokenWeights = {
+rdr.bp.attrTokenWeights = {
   'ad': -500,
   'ads': -500,
   'advert': -500,
@@ -132,7 +128,7 @@ const attrTokenWeights = {
 // Computes a bias for an element based on the values of some of its
 // attributes.
 // NOTE: using var due to v8 deopt warnings - Unsupported use of phi const
-function deriveAttrBias(element) {
+rdr.bp.deriveAttrBias = function(element) {
   // Start by merging the element's interesting attribute values into a single
   // string in preparation for tokenization.
   // Accessing attributes by property is faster than using getAttribute. It
@@ -192,26 +188,26 @@ function deriveAttrBias(element) {
       seenTokens[token] = 1;
     }
 
-    bias = attrTokenWeights[token];
+    bias = rdr.bp.attrTokenWeights[token];
     if(bias) {
       totalBias += bias;
     }
   }
 
   return 0.0 + totalBias;
-}
+};
 
 // Only these elements are considered as potential best elements
-const candidateSelector = [
+rdr.bp.candidateSelector = [
   'ARTICLE', 'CONTENT', 'DIV', 'LAYER', 'MAIN', 'SECTION', 'SPAN', 'TD'
 ].join(',');
 
-const listSelector = 'LI, OL, UL, DD, DL, DT';
-const navSelector = 'ASIDE, HEADER, FOOTER, NAV, MENU, MENUITEM';
+rdr.bp.listSelector = 'LI, OL, UL, DD, DL, DT';
+rdr.bp.navSelector = 'ASIDE, HEADER, FOOTER, NAV, MENU, MENUITEM';
 
 // Scores each of the candidate elements and returns the one with the highest
 // score
-function findHighScoringElement(document) {
+rdr.bp.findHighScoreElement = function(document) {
 
   // Init to documentElement. This ensures we always return something and also
   // sets documentElement as the default best element.
@@ -222,24 +218,24 @@ function findHighScoringElement(document) {
     return bestElement;
   }
 
-  const elements = body.querySelectorAll(candidateSelector);
+  const elements = body.querySelectorAll(rdr.bp.candidateSelector);
   let highScore = 0.0;
   for(let i = 0, len = elements.length; i < len; i++) {
     let element = elements[i];
 
-    let score = 0.0 + deriveTextBias(element);
+    let score = 0.0 + rdr.bp.deriveTextBias(element);
 
-    if(element.closest(listSelector)) {
+    if(element.closest(rdr.bp.listSelector)) {
       score -= 200.0;
     }
 
-    if(element.closest(navSelector)) {
+    if(element.closest(rdr.bp.navSelector)) {
       score -= 500.0;
     }
 
-    score += 0.0 + deriveAncestorBias(element);
-    score += deriveImgBias(element);
-    score += deriveAttrBias(element);
+    score += 0.0 + rdr.bp.deriveAncestorBias(element);
+    score += rdr.bp.deriveImgBias(element);
+    score += rdr.bp.deriveAttrBias(element);
 
     if(score > highScore) {
       bestElement = element;
@@ -248,10 +244,9 @@ function findHighScoringElement(document) {
   }
 
   return bestElement;
-}
+};
 
-// Derives a bias for an element based on child images
-function deriveImgBias(parentElement) {
+rdr.bp.deriveImgBias = function(parentElement) {
   let bias = 0.0;
   let numImages = 0;
   let area = 0;
@@ -278,7 +273,7 @@ function deriveImgBias(parentElement) {
       bias = bias + 30.0;
     }
 
-    if(findImgCaption(element)) {
+    if(rdr.bp.findCaption(element)) {
       bias = bias + 100.0;
     }
 
@@ -292,12 +287,12 @@ function deriveImgBias(parentElement) {
   }
 
   return bias;
-}
+};
 
-function findImgCaption(image) {
+rdr.bp.findCaption = function(image) {
   const figure = image.closest('figure');
   return figure ? figure.querySelector('FIGCAPTION') : null;
-}
+};
 
 // Remove elements that do not intersect with the best element
 // In order to reduce the number of removals, this uses a contains check
@@ -308,9 +303,7 @@ function findImgCaption(image) {
 // call to compareDocumentPosition and then check against its result.
 // I am not very familiar with compareDocumentPosition yet, that is the
 // only reason I am not using it.
-// TODO: this should be a general purpose function named something like
-// filterNonIntersectingElements, and it should be in its own file
-function prune(document, bestElement) {
+rdr.bp.prune = function(document, bestElement) {
 
   console.assert(document);
   console.assert(bestElement);
@@ -331,10 +324,4 @@ function prune(document, bestElement) {
       element.remove();
     }
   }
-}
-
-var rdr = rdr || {};
-
-rdr.filterBoilerplate = filterBoilerplate;
-
-} // End file block scope
+};

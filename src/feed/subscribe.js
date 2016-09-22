@@ -37,7 +37,7 @@ rdr.feed.subscribe.start = function(feed, options) {
     rdr.feed.subscribe.findFeed.call(context);
   } else {
     context.shouldCloseDB = true;
-    rdr.openDB(rdr.feed.subscribe.onOpenDB.bind(context));
+    rdr.db.open(rdr.feed.subscribe.onOpenDB.bind(context));
   }
 };
 

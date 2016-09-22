@@ -4,9 +4,11 @@
 
 'use strict';
 
-{ // Begin file block scope
+var rdr = rdr || {};
+rdr.poll = rdr.poll || {};
+rdr.poll.resolve = {};
 
-const urlAttrMap = {
+rdr.poll.resolve.urlAttrMap = {
   'a': 'href',
   'applet': 'codebase',
   'area': 'href',
@@ -34,15 +36,15 @@ const urlAttrMap = {
   'video': 'src'
 };
 
-function buildSelectorPart(key) {
-  return key + '[' + urlAttrMap[key] +']';
-}
+rdr.poll.resolve.buildSelectorPart = function(key) {
+  return key + '[' + rdr.poll.resolve.urlAttrMap[key] +']';
+};
 
-const selector = Object.keys(urlAttrMap).map(
-  buildSelectorPart).join(',');
+rdr.poll.resolve.selector = Object.keys(
+  rdr.poll.resolve.urlAttrMap).map(
+    rdr.poll.resolve.buildSelectorPart).join(',');
 
-function resolveDocumentURLs(document, baseURL) {
-  console.assert(document);
+rdr.poll.resolve.start = function(document, baseURL) {
   console.assert(baseURL);
 
   // Remove base elements. There is actually no need to do this, because this
@@ -61,23 +63,20 @@ function resolveDocumentURLs(document, baseURL) {
     base.remove();
   }
 
-  // Resolve element attribute urls
-  const elements = document.querySelectorAll(selector);
+  const elements = document.querySelectorAll(rdr.poll.resolve.selector);
   for(let element of elements) {
-    resolveMappedAttr(element, baseURL);
+    rdr.poll.resolve.resolveMappedAttr(element, baseURL);
   }
 
-  const srcsetSelector = 'img[srcset], source[srcset]';
-  const srcsetElements = document.querySelectorAll(srcsetSelector);
-  for(let element of srcsetElements) {
-    resolveSrcsetAttr(element, baseURL);
+  const srcsets = document.querySelectorAll('img[srcset], source[srcset]');
+  for(let element of srcsets) {
+    rdr.poll.resolve.resolveSrcsetAttr(element, baseURL);
   }
-}
+};
 
-function resolveMappedAttr(element, baseURL) {
-  // Unfortunately we do not know which attribute to use, so look it up again
+rdr.poll.resolve.resolveMappedAttr = function(element, baseURL) {
   const elementName = element.localName;
-  const attrName = urlAttrMap[elementName];
+  const attrName = rdr.poll.resolve.urlAttrMap[elementName];
   if(!attrName) {
     return;
   }
@@ -87,7 +86,7 @@ function resolveMappedAttr(element, baseURL) {
     return;
   }
 
-  const resolvedURL = resolveURL(attrURL, baseURL);
+  const resolvedURL = rdr.poll.resolve.resolveURL(attrURL, baseURL);
   // TODO: inequality test is weak because it does not ignore spaces and
   // is case sensitive and also does not consider normalization changes, maybe
   // make it weaker? Maybe it isn't too important to avoid a call to
@@ -95,12 +94,9 @@ function resolveMappedAttr(element, baseURL) {
   if(resolvedURL && resolvedURL.href !== attrURL) {
     element.setAttribute(attrName, resolvedURL.href);
   }
-}
+};
 
-function resolveSrcsetAttr(element, baseURL) {
-  console.assert(element);
-  console.assert(baseURL);
-
+rdr.poll.resolve.resolveSrcsetAttr = function(element, baseURL) {
   const attrURL = element.getAttribute('srcset');
 
   // The element has the attribute, but it may not have a value. parseSrcset
@@ -119,70 +115,48 @@ function resolveSrcsetAttr(element, baseURL) {
     return;
   }
 
-  // Iterate over the descriptors and resolve each descriptor's url.
   let dirtied = false;
   for(let descriptor of srcset) {
-    const resolvedURL = resolveURL(descriptor.url, baseURL);
+    const resolvedURL = rdr.poll.resolve.resolveURL(descriptor.url,
+      baseURL);
     if(resolvedURL && resolvedURL.href !== descriptor.url) {
       dirtied = true;
       descriptor.url = resolvedURL.href;
     }
   }
 
-  // If at least one descriptor was modified, then reserialize and overwrite
-  // the attribute value. It is possible that all of the descriptors were
-  // already absolute, so using the dirtied check saves on the call to
-  // rdr.serializeSrcset and setAttribute
   if(dirtied) {
-    const newSrcsetValue = rdr.serializeSrcset(srcset);
+    const newSrcsetValue = rdr.utils.serializeSrcset(srcset);
     if(newSrcsetValue) {
       element.setAttribute('srcset', newSrcsetValue);
     }
   }
-}
+};
 
 // Returns a resolved URL object
-function resolveURL(urlString, baseURLObject) {
+rdr.poll.resolve.resolveURL = function(urlString, baseURLObject) {
   console.assert(urlString);
   console.assert(baseURLObject);
 
-  if(isJavascriptURL(urlString)) {
+  if(rdr.poll.resolve.isJavascriptURL(urlString)) {
     return;
   }
 
-  if(isObjectURL(urlString)) {
+  if(rdr.poll.resolve.isObjectURL(urlString)) {
     return;
   }
 
-  // Do not throw. Just catch the exception and suppress it.
-  // If an exception occurs this falls through to the implict return, which
-  // means the function will return undefined.
-  // Also, by minimizing the scope of the try/catch this avoids spreading the
-  // deopt it causes to the caller fns
   try {
     return new URL(urlString, baseURLObject);
   } catch(error) {
     console.warn(urlString, baseURLObject.href, error);
   }
-}
+};
 
-// Even though the regexs are defined within the functions here, I believe
-// V8 and the like are smart enough to precompile once.
-
-// Not to be confused with distinguishing between url strings and url objects,
-// this checks if the string looks like an object url
-// The test function tolerates nulls, so no asserts.
-function isObjectURL(urlString) {
+rdr.poll.resolve.isObjectURL = function(urlString) {
   return /^\s*data:/i.test(urlString);
-}
+};
 
-// Returns true if the url looks like inline javascript
-// The test function tolerates nulls, so no asserts.
-function isJavascriptURL(urlString) {
+rdr.poll.resolve.isJavascriptURL = function(urlString) {
   return /^\s*javascript:/i.test(urlString);
-}
-
-var rdr = rdr || {};
-rdr.resolveDocumentURLs = resolveDocumentURLs;
-
-} // End file block scope
+};

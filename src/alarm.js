@@ -4,8 +4,6 @@
 
 'use strict';
 
-var rdr = rdr || {};
-
 // TODO: is there a way to not check alarms per page load
 // TODO: is there a way to not rebind onalarm per page load
 
