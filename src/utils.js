@@ -7,6 +7,10 @@
 var rdr = rdr || {};
 rdr.utils = {};
 
+rdr.utils.condenseSpaces = function(inputString) {
+  return inputString.replace(/\s{2,}/g, ' ');
+};
+
 rdr.utils.fade = function(element, duration, delay, callback) {
   const style = element.style;
 

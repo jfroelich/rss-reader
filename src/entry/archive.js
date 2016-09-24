@@ -59,16 +59,11 @@ rdr.entry.archive._onOpenDB = function(db) {
 
 rdr.entry.archive._openCursorOnSuccess = function(event) {
   const cursor = event.target.result;
-
-  // Either there were no entries, or we advanced the cursor past the end,
-  // in which case the scan is complete.
   if(!cursor) {
     rdr.entry.archive._onComplete.call(this);
     return;
   }
 
-  // Keep track of the number of entries visisted by the scan, regardless of
-  // whether the entry will be modified.
   this.numEntriesProcessed++;
 
   const entry = cursor.value;
@@ -114,10 +109,6 @@ rdr.entry.archive._openCursorOnSuccess = function(event) {
 
 // Returns a new entry object representing the archived form of the input entry
 rdr.entry.archive._toArchiveForm = function(inputEntry) {
-
-  // TODO: consider whether Object.create(null) is better. I think
-  // tentatively that the structured clone algorithm will implicitly ignore
-  // the object's prototype.
   const outputEntry = {};
 
   // Flag the entry as archived so that it will not be scanned in the future

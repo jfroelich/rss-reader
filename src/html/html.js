@@ -62,11 +62,11 @@ rdr.html.truncate = function(inputString, position, inputExtension) {
     }
 
     // Accessing nodeValue yields a decoded string
-    let value = node.nodeValue;
-    let valueLength = value.length;
+    const value = node.nodeValue;
+    const valueLength = value.length;
     if(totalLength + valueLength >= position) {
       acceptingText = false;
-      let remaining = position - totalLength;
+      const remaining = position - totalLength;
       // Setting nodeValue will implicitly encode the string
       node.nodeValue = value.substr(0, remaining) + extension;
     } else {

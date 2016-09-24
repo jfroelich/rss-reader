@@ -4,6 +4,10 @@
 
 'use strict';
 
+// TODO: rename to exists.js, create rdr.entry.exists function that checks
+// whether an entry exists for a given set of urls
+
+
 // TODO: profiling shows this is one of the slowest functions of the
 // backend polling process. It is probably the length of time it takes to do
 // the index lookup. Maybe there is a way to speed it up. Maybe part of the

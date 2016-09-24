@@ -74,10 +74,6 @@ rdr.entry._addOnError = function(entry, callback, event) {
   callback(event);
 };
 
-rdr.entry._condenseSpaces = function(inputString) {
-  return inputString.replace(/\s{2,}/g, ' ');
-};
-
 // Returns a new entry object where fields have been sanitized
 // TODO: ensure dates are not in the future, and not too old?
 rdr.entry._sanitize = function(inputEntry) {
@@ -91,7 +87,7 @@ rdr.entry._sanitize = function(inputEntry) {
     let author = outputEntry.author;
     author = rdr.utils.filterControlChars(author);
     author = rdr.html.replaceTags(author, '');
-    author = rdr.entry._condenseSpaces(author);
+    author = rdr.utils.condenseSpaces(author);
     author = rdr.html.truncate(author, authorMaxLength);
     outputEntry.author = author;
   }
@@ -109,7 +105,7 @@ rdr.entry._sanitize = function(inputEntry) {
     let title = outputEntry.title;
     title = rdr.utils.filterControlChars(title);
     title = rdr.html.replaceTags(title, '');
-    title = rdr.entry._condenseSpaces(title);
+    title = rdr.utils.condenseSpaces(title);
     title = rdr.html.truncate(title, titleMaxLength);
     outputEntry.title = title;
   }
@@ -129,7 +125,6 @@ rdr.entry.filterTitle = function(title) {
     return title;
 
   const trailingText = title.substring(index + 1);
-
   const tokens = trailingText.split(/\s+/g);
 
   // Split can yield empty strings, filter them
@@ -138,8 +133,8 @@ rdr.entry.filterTitle = function(title) {
   });
 
   if(definedTokens.length < 5) {
-    const new_title = title.substring(0, index).trim();
-    return new_title;
+    const newTitle = title.substring(0, index).trim();
+    return newTitle;
   }
 
   return title;

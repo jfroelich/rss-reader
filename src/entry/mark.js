@@ -6,17 +6,20 @@
 
 var rdr = rdr || {};
 rdr.entry = rdr.entry || {};
-rdr.entry.markAsRead = function(entryId, callback) {
+rdr.entry.mark = {};
+
+// Async mark an entry as read in storage and then callback
+rdr.entry.mark.start = function(entryId, callback) {
   console.assert(!isNaN(entryId));
   console.assert(isFinite(entryId));
   console.assert(entryId > 0);
   const context = {'entryId': entryId, 'callback': callback};
-  rdr.db.open(rdr.entry.markOnOpenDB.bind(context));
+  rdr.db.open(rdr.entry.mark.onOpenDB.bind(context));
 };
 
-rdr.entry.markOnOpenDB = function(db) {
+rdr.entry.mark.onOpenDB = function(db) {
   if(!db) {
-    rdr.entry.markOnComplete.call(this, 'ConnectionError');
+    rdr.entry.mark.onComplete.call(this, 'ConnectionError');
     return;
   }
 
@@ -24,22 +27,22 @@ rdr.entry.markOnOpenDB = function(db) {
   const tx = db.transaction('entry', 'readwrite');
   const store = tx.objectStore('entry');
   const request = store.openCursor(this.entryId);
-  request.onsuccess = rdr.entry.markOpenCursorOnSuccess.bind(this);
-  request.onerror = rdr.entry.markOpenCursorOnError.bind(this);
+  request.onsuccess = rdr.entry.mark.openCursorOnSuccess.bind(this);
+  request.onerror = rdr.entry.mark.openCursorOnError.bind(this);
 };
 
-rdr.entry.markOpenCursorOnSuccess = function(event) {
+rdr.entry.mark.openCursorOnSuccess = function(event) {
   const cursor = event.target.result;
   if(!cursor) {
     console.error('No entry found', this.entryId);
-    rdr.entry.markOnComplete.call(this, 'NotFoundError');
+    rdr.entry.mark.onComplete.call(this, 'NotFoundError');
     return;
   }
 
   const entry = cursor.value;
   if(entry.readState === rdr.entry.flags.READ) {
     console.error('Already read entry', this.entryId);
-    rdr.entry.markOnComplete.call(this, 'AlreadyReadError');
+    rdr.entry.mark.onComplete.call(this, 'AlreadyReadError');
     return;
   }
 
@@ -52,24 +55,26 @@ rdr.entry.markOpenCursorOnSuccess = function(event) {
   // wait for it to complete.
   cursor.update(entry);
 
-  // Async. This call is implicitly blocked by the readwrite transaction used
-  // here, so the count of unread will be affected, even though we do not
-  // wait for cursor.update to complete.
+  // Async. The badge update is implicitly blocked by the readwrite transaction,
+  // but will happen eventually
   rdr.badge.update.start(this.db);
-  rdr.entry.markOnComplete.call(this, 'Success');
+  rdr.entry.mark.onComplete.call(this, 'Success');
 };
 
-rdr.entry.markOpenCursorOnError = function(event) {
+rdr.entry.mark.openCursorOnError = function(event) {
   console.error(event.target.error);
-  rdr.entry.markOnComplete.call(this, 'CursorError');
+  rdr.entry.mark.onComplete.call(this, 'CursorError');
 };
 
-rdr.entry.markOnComplete = function(eventType) {
+rdr.entry.mark.onComplete = function(type) {
+  // The close request will complete once the cursor update completes and the
+  // badge update completes.
   if(this.db) {
     this.db.close();
   }
 
+  // Note this calls back while requests are outstanding
   if(this.callback) {
-    this.callback({'type': eventType, 'entryId': this.entryId});
+    this.callback({'type': type, 'entryId': this.entryId});
   }
 };

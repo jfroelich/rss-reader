@@ -6,6 +6,12 @@
 
 // TODO: is there a way to not check alarms per page load
 // TODO: is there a way to not rebind onalarm per page load
+// TODO: create a graceful way to rename/remove alarms. Right now if I stop
+// using an alarm it remains silently peristent somewhere in chrome.alarms
+// implementation state, indefinitely.
+// TODO: is there a way to use multiple listeners, so that each alarm system
+// can be self registered by the thing that needs it, so I don't have to do
+// all the binding here?
 
 chrome.alarms.get('archive', function(alarm) {
   if(!alarm) {

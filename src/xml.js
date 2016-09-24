@@ -7,6 +7,23 @@
 var rdr = rdr || {};
 rdr.xml = {};
 
+// Parses the given xml string into a Document object. Throws an exception if a
+// parsing error occurs
+rdr.xml.parse = function(inputString) {
+  console.assert(inputString);
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(inputString, 'application/xml');
+  console.assert(doc);
+  console.assert(doc.documentElement);
+
+  const error = doc.querySelector('parsererror');
+  if(error) {
+    throw new Error(error.textContent);
+  }
+
+  return doc;
+};
+
 rdr.xml.acceptHeader = [
   'application/rss+xml',
   'application/rdf+xml',
@@ -150,22 +167,4 @@ rdr.xml.isAcceptedType = function(type) {
 
 rdr.xml.isURLObject = function(value) {
   return Object.prototype.toString.call(value) === '[object URL]';
-};
-
-// Parses the given xml string into a Document object. Throws an exception if a
-// parsing error occurs
-rdr.xml.parse = function(inputString) {
-  console.assert(inputString);
-  const parser = new DOMParser();
-  // Allow the possible exception to bubble by not catching it
-  const document = parser.parseFromString(inputString, 'application/xml');
-  console.assert(document);
-  console.assert(document.documentElement);
-
-  const embeddedErrorElement = document.querySelector('parsererror');
-  if(embeddedErrorElement) {
-    throw new Error(embeddedErrorElement.textContent);
-  }
-
-  return document;
 };

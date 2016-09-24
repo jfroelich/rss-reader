@@ -764,8 +764,12 @@ function importOPMLButtonOnClick(event) {
   rdr.opml.import.start(verbose);
 }
 
+// TODO: also needs to give visual feedback
 function exportOPMLButtonOnClick(event) {
-  rdr.opml.export.start('Subscriptions', 'subscriptions.xml');
+  const verbose = false;
+  const title = 'Subscriptions';
+  const fileName = 'subscriptions.xml';
+  rdr.opml.export.start(title, fileName, verbose);
 }
 
 function initSubsSection() {

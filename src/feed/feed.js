@@ -172,6 +172,37 @@ rdr.feed._addOnError = function(feed, callback, event) {
   callback({'type': event.target.error.name});
 };
 
+rdr.feed.getAll = function(db, callback) {
+  const feeds = [];
+  let didCallback = false;
+  const tx = db.transaction('feed');
+  const store = tx.objectStore('feed');
+  const request = store.openCursor();
+  request.onsuccess = function(event) {
+    const cursor = event.target.result;
+    if(!cursor) {
+      onComplete();
+      return;
+    }
+
+    feeds.push(cursor.value);
+    cursor.continue();
+  };
+  request.onerror = function(event) {
+    console.error(event.target.error);
+    onComplete();
+  };
+
+  function onComplete() {
+    if(didCallback) {
+      console.error('Duplicate callback');
+      return;
+    }
+    didCallback = true;
+    callback(feeds);
+  }
+};
+
 // Returns a new object of the old feed merged with the new feed. Fields from
 // the new feed take precedence, except for URLs, which are merged to generate
 // a distinct ordered set of oldest to newest url.
