@@ -8,7 +8,6 @@
 
 const viewURL = chrome.extension.getURL('slideshow.html');
 
-// The trailing slash is required
 const newTabURL = 'chrome://newtab/';
 
 // TODO: is there a way to not do this on every page load?

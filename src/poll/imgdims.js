@@ -102,10 +102,13 @@ rdr.poll.imgdims.onProcessed = function() {
   }
 };
 
-// The didCallback logic here is a remnant of an earlier bug that has since
-// been fixed
 rdr.poll.imgdims.onComplete = function() {
-  console.assert(!this.didCallback);
+
+  // remnant of a fixed bug
+  if(this.didCallback) {
+    throw new Error('duplicated callback');
+  }
+
   this.didCallback = true;
   this.callback(this.numModified);
 };

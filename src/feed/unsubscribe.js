@@ -8,22 +8,22 @@ var rdr = rdr || {};
 rdr.feed = rdr.feed || {};
 rdr.feed.unsubscribe = {};
 
+// TODO: add verbose parameter
+
 rdr.feed.unsubscribe.start = function(feedId, callback) {
   console.debug('Unsubscribing from', feedId);
 
-  console.assert(feedId);
-  console.assert(!isNaN(feedId));
-  console.assert(isFinite(feedId));
-  console.assert(feedId > 0);
+  if(!Number.isInteger(feedId) || feedId < 1) {
+    throw new TypeError('invalid feed id: ' + feedId);
+  }
 
-  const context = {
-    'db': null,
+  const ctx = {
     'feedId': feedId,
     'numDeleteEntryRequests': 0,
     'callback': callback
   };
 
-  rdr.db.open(rdr.feed.unsubscribe.onOpenDB.bind(context));
+  rdr.db.open(rdr.feed.unsubscribe.onOpenDB.bind(ctx));
 };
 
 rdr.feed.unsubscribe.onOpenDB = function(db) {

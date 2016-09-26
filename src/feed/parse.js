@@ -316,7 +316,10 @@ rdr.feed._findChildElement = function(parentElement, predicate) {
 };
 
 rdr.feed._findChildElementByName = function(parentElement, localName) {
-  console.assert(localName);
+  if(typeof localName !== 'string') {
+    throw new TypeError('localName is not a string');
+  }
+
   return rdr.feed._findChildElement(parentElement, function(element) {
     return element.localName === localName;
   });

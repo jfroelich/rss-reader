@@ -11,7 +11,10 @@ rdr.html = rdr.html || {};
 // replacement string. HTML entities remain (except some will be
 // replaced, like &#32; with space).
 rdr.html.replaceTags = function(inputString, repString) {
-  console.assert(inputString);
+
+  if(typeof inputString !== 'string') {
+    throw new TypeError('inputString must be a string');
+  }
 
   let outputString = null;
   const doc = document.implementation.createHTMLDocument();
@@ -42,8 +45,14 @@ rdr.html.replaceTags = function(inputString, repString) {
 // entity codes. The extension string should be decoded, meaning that it should
 // not contain character entries.
 rdr.html.truncate = function(inputString, position, inputExtension) {
-  console.assert(inputString);
-  console.assert(position >= 0);
+
+  if(typeof inputString !== 'string') {
+    throw new TypeError('inputString must be a string');
+  }
+
+  if(!Number.isInteger(position) || position < 0) {
+    throw new TypeError('invalid position: ' + position);
+  }
 
   const ellipsis = '\u2026';
   const extension = inputExtension || ellipsis;

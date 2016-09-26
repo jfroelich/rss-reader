@@ -8,23 +8,29 @@ var rdr = rdr || {};
 rdr.poll = rdr.poll || {};
 rdr.poll.fetchHTML = {};
 
-rdr.poll.fetchHTML.start = function(requestURL, timeoutMs, callback) {
-  console.assert(requestURL);
-  console.assert(requestURL.href);
-  console.log('GET', requestURL.href);
+rdr.poll.fetchHTML.start = function(requestURL, timeoutMs, callback, verbose) {
 
-  const context = {
+  if(!rdr.utils.isURLObject(requestURL)) {
+    throw new TypeError('invalid requestURL param: ' + requestURL);
+  }
+
+  if(verbose) {
+    console.log('GET', requestURL.href);
+  }
+
+  const ctx = {
     'requestURL': requestURL,
-    'callback': callback
+    'callback': callback,
+    'verbose': verbose
   };
 
   const isAsync = true;
   const request = new XMLHttpRequest();
   request.timeout = timeoutMs;
-  request.ontimeout = rdr.poll.fetchHTML.onTimeout.bind(context);
-  request.onerror = rdr.poll.fetchHTML.onError.bind(context);
-  request.onabort = rdr.poll.fetchHTML.onAbort.bind(context);
-  request.onload = rdr.poll.fetchHTML.onLoad.bind(context);
+  request.ontimeout = rdr.poll.fetchHTML.onTimeout.bind(ctx);
+  request.onerror = rdr.poll.fetchHTML.onError.bind(ctx);
+  request.onabort = rdr.poll.fetchHTML.onAbort.bind(ctx);
+  request.onload = rdr.poll.fetchHTML.onLoad.bind(ctx);
   request.open('GET', requestURL.href, isAsync);
   request.responseType = 'document';
   request.setRequestHeader('Accept', 'text/html');

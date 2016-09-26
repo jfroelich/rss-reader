@@ -6,8 +6,6 @@
 
 // TODO: rename to exists.js, create rdr.entry.exists function that checks
 // whether an entry exists for a given set of urls
-
-
 // TODO: profiling shows this is one of the slowest functions of the
 // backend polling process. It is probably the length of time it takes to do
 // the index lookup. Maybe there is a way to speed it up. Maybe part of the
@@ -16,7 +14,6 @@
 // calling context where this function is called is in polling, and that is
 // just to check if an entry exists. If I use a keyCursor then maybe idb is
 // smart enough to skip the deserialization of the full entry.
-
 // TODO: it doesn't actually make sense to always lookup all urls here.
 // Right now I merely stop appending matches, but I still continue to perform
 // all lookups. It would be better to not even continue to do lookups if I
@@ -34,27 +31,30 @@ rdr.entry = rdr.entry || {};
 // and then calls back with an array of matching entries.
 // The callback function's context is not rebound.
 // Input urls are not validated. Duplicate urls will be searched twice. Invalid
-// syntax causes an uncaught exception.
+// urls cause an uncaught exception.
 // Input urls are normalized.
 // @param db {IDBDatabase} an open database connection
 // @param urls {Array} an array of url strings to search with
 // @param callback {function} a callback function
 rdr.entry.findByURLs = function(db, urls, matchLimit, callback) {
-  console.assert(urls.length);
-
-  const context = {};
-  context.didCallback = false;
-  context.matches = [];
-  context.numURLs = urls.length;
-  context.callback = callback;
-  context.numURLsProcessed = 0;
-  context.reachedMatchLimit = false;
-
-  if(matchLimit) {
-    console.assert(isFinite(matchLimit));
-    console.assert(matchLimit > 0);
-    context.matchLimit = matchLimit;
+  if(!urls.length) {
+    throw new Error('at least one url is required');
   }
+
+  if(typeof matchLimit === 'number') {
+    if(!Number.isInteger(matchLimit) || matchLimit < 1) {
+      throw new TypeError('invalid matchLimit param: ' + matchLimit);
+    }
+  }
+
+  const ctx = {};
+  ctx.didCallback = false;
+  ctx.matches = [];
+  ctx.numURLs = urls.length;
+  ctx.callback = callback;
+  ctx.numURLsProcessed = 0;
+  ctx.matchLimit = matchLimit || 0;
+  ctx.reachedMatchLimit = false;
 
   const tx = db.transaction('entry');
   const store = tx.objectStore('entry');
@@ -62,8 +62,8 @@ rdr.entry.findByURLs = function(db, urls, matchLimit, callback) {
   for(let url of urls) {
     const normalizedURLString = rdr.entry.normalizeURL(url);
     const request = index.openCursor(normalizedURLString);
-    request.onsuccess = rdr.entry._findOpenCursorOnSuccess.bind(context);
-    request.onerror = rdr.entry._findOpenCursorOnError.bind(context);
+    request.onsuccess = rdr.entry._findOpenCursorOnSuccess.bind(ctx);
+    request.onerror = rdr.entry._findOpenCursorOnError.bind(ctx);
   }
 };
 
@@ -126,10 +126,8 @@ rdr.entry._findOpenCursorOnError = function(event) {
 };
 
 rdr.entry._findOnComplete = function() {
-  console.assert('didCallback' in this);
   if(this.didCallback) {
-    console.error('Duplicate callback!');
-    return;
+    throw new Error('duplicated callback');
   }
 
   this.didCallback = true;

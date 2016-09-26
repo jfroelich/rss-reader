@@ -12,9 +12,10 @@ rdr.feed = rdr.feed || {};
 // @param feed {Object} the feed object to inspect
 // @return {String} a url string
 rdr.feed.getURL = function(feed) {
-  console.assert(feed);
-  console.assert(feed.urls);
-  console.assert(feed.urls.length);
+  if(!feed.urls.length) {
+    throw new Error('feed missing url');
+  }
+
   return feed.urls[feed.urls.length - 1];
 };
 
@@ -23,14 +24,10 @@ rdr.feed.getURL = function(feed) {
 // @param url {string} the url to append
 // @return {boolean} true if url appended
 rdr.feed.addURL = function(feed, url) {
-  console.assert(feed);
-  console.assert(url);
-
   if(!('urls' in feed)) {
     feed.urls = [];
   }
 
-  // This can throw but shouldn't.
   const urlObject = new URL(url);
   urlObject.hash = '';
   const normalizedURLString = urlObject.href;
@@ -52,14 +49,20 @@ rdr.feed.sanitize = function(inputFeed) {
   const feed = Object.assign({}, inputFeed);
 
   if(feed.id) {
-    console.assert(!isNaN(feed.id));
-    console.assert(isFinite(feed.id));
-    console.assert(feed.id > 0);
+
+    if(!Number.isInteger(feed.id) || feed.id < 1) {
+      throw new Error('invalid feed id: ' + feed.id);
+    }
+
   }
 
   const types = {'feed': 1, 'rss': 1, 'rdf': 1};
   if(feed.type) {
-    console.assert(feed.type in types, 'invalid type', feed.type);
+
+    if(!(feed.type in types)) {
+      throw new Error('invalid feed type: ' + feed.type);
+    }
+
   }
 
   if(feed.title) {
@@ -94,113 +97,104 @@ rdr.feed.sanitize = function(inputFeed) {
 // @param feed {Feed} the feed object to store
 // @param callback {function} optional callback function
 rdr.feed.update = function(db, feed, callback) {
-  console.assert(feed.id);
-  const feedURL = rdr.feed.getURL(feed);
-  console.assert(feedURL);
-  console.debug('Updating feed', feedURL);
-
-  const sanitizedFeed = rdr.feed.sanitize(feed);
-  sanitizedFeed.dateUpdated = new Date();
-  const storableFeed = rdr.utils.filterEmptyProps(sanitizedFeed);
-
-  // Creating a new transaction can throw an exception if the database is in the
-  // process of closing. That happens because of errors elsewhere in the code.
-  // But those errors should not prevent rdr.feed.update from calling back with
-  // an error. So catch the exception.
-  let tx = null;
-  try {
-    tx = db.transaction('feed', 'readwrite');
-  } catch(error) {
-    console.error(storableFeed.urls, error);
-    callback({'type': 'error', 'feed': feed, 'error': error});
-    return;
+  if(!feed.id) {
+    throw new Error('Attempted to update a feed without a valid id');
   }
 
+  if(!rdr.feed.getURL(feed)) {
+    throw new Error('Attempted to update a feed without a url');
+  }
+
+  const ctx = {'feed': feed, 'callback': callback};
+  ctx.feed = rdr.feed.sanitize(ctx.feed);
+  ctx.feed.dateUpdated = new Date();
+  ctx.feed = rdr.utils.filterEmptyProps(ctx.feed);
+  const tx = db.transaction('feed', 'readwrite');
   const store = tx.objectStore('feed');
-  const request = store.put(storableFeed);
+  const request = store.put(ctx.feed);
   if(callback) {
-    request.onsuccess = rdr.feed._updatePutOnSuccess.bind(request, callback,
-      storableFeed);
-    request.onerror = rdr.feed._updatePutOnError.bind(request, callback,
-      storableFeed);
+    request.onsuccess = rdr.feed._updatePutOnSuccess.bind(ctx);
+    request.onerror = rdr.feed._updatePutOnError.bind(ctx);
   }
 };
 
-rdr.feed._updatePutOnSuccess = function(callback, feed, event) {
-  callback({'type': 'success', 'feed': feed});
+rdr.feed._updatePutOnSuccess = function(event) {
+  this.callback({'type': 'success', 'feed': this.feed});
 };
 
-rdr.feed._updatePutOnError = function(callback, feed, event) {
+rdr.feed._updatePutOnError = function(event) {
   console.error(event.target.error);
-  callback({'type': 'error', 'feed': feed});
+  this.callback({'type': 'error', 'feed': this.feed});
 };
 
 rdr.feed.add = function(db, feed, callback) {
-
   if('id' in feed) {
-    throw new Error('feed should never have an id property');
+    throw new Error('Attempted to add a feed with an id property');
   }
 
-  const urlString = rdr.feed.getURL(feed);
-  if(!urlString) {
-    throw new Error('feed should always have at least one url');
+  if(!rdr.feed.getURL(feed)) {
+    throw new Error('Attempted to add a feed without a url');
   }
 
-  console.debug('Adding feed', urlString);
-
-  const sanitizedFeed = rdr.feed.sanitize(feed);
-  sanitizedFeed.dateCreated = new Date();
-  const storableFeed = rdr.utils.filterEmptyProps(sanitizedFeed);
+  const ctx = {'feed': feed, 'callback': callback};
+  ctx.feed = rdr.feed.sanitize(ctx.feed);
+  ctx.feed.dateCreated = new Date();
+  ctx.feed = rdr.utils.filterEmptyProps(ctx.feed);
   const transaction = db.transaction('feed', 'readwrite');
   const store = transaction.objectStore('feed');
-  const request = store.add(storableFeed);
+  const request = store.add(ctx.feed);
   if(callback) {
-    request.onsuccess = rdr.feed._addOnSuccess.bind(request, storableFeed,
-      callback);
-    request.onerror = rdr.feed._addOnError.bind(request, storableFeed,
-      callback);
+    request.onsuccess = rdr.feed._addOnSuccess.bind(ctx);
+    request.onerror = rdr.feed._addOnError.bind(ctx);
   }
 }
 
-rdr.feed._addOnSuccess = function(feed, callback, event) {
-  feed.id = event.target.result;
-  callback({'type': 'success', 'feed': feed});
+rdr.feed._addOnSuccess = function(event) {
+  this.feed.id = event.target.result;
+  this.callback({'type': 'success', 'feed': this.feed});
 };
 
-rdr.feed._addOnError = function(feed, callback, event) {
+rdr.feed._addOnError = function(event) {
   console.error(event.target.error);
-  callback({'type': event.target.error.name});
+  this.callback({'type': 'error'});
 };
 
 rdr.feed.getAll = function(db, callback) {
-  const feeds = [];
-  let didCallback = false;
+  const ctx = {
+    'callback': callback,
+    'didCallback': false,
+    'feeds': []
+  };
   const tx = db.transaction('feed');
   const store = tx.objectStore('feed');
   const request = store.openCursor();
-  request.onsuccess = function(event) {
-    const cursor = event.target.result;
-    if(!cursor) {
-      onComplete();
-      return;
-    }
+  request.onsuccess = rdr.feed._getAllOnSuccess.bind(ctx);
+  request.onerror = rdr.feed._getAllOnError.bind(ctx);
+};
 
-    feeds.push(cursor.value);
-    cursor.continue();
-  };
-  request.onerror = function(event) {
-    console.error(event.target.error);
-    onComplete();
-  };
-
-  function onComplete() {
-    if(didCallback) {
-      console.error('Duplicate callback');
-      return;
-    }
-    didCallback = true;
-    callback(feeds);
+rdr.feed._getAllOnSuccess = function(event) {
+  const cursor = event.target.result;
+  if(!cursor) {
+    rdr.feed._getAllOnComplete.call(this);
+    return;
   }
+
+  this.feeds.push(cursor.value);
+  cursor.continue();
+};
+
+rdr.feed._getAllOnError = function(event) {
+  console.error(event.target.error);
+  rdr.feed._getAllOnComplete.call(this);
+};
+
+rdr.feed._getAllOnComplete = function() {
+  if(this.didCallback) {
+    throw new Error('duplicated callback');
+  }
+
+  this.didCallback = true;
+  this.callback(this.feeds);
 };
 
 // Returns a new object of the old feed merged with the new feed. Fields from

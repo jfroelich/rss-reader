@@ -92,7 +92,11 @@ function resetSubMonitor() {
 
 function appendSubMonitorMsg(msg) {
   const monitor = document.getElementById('options_subscription_monitor');
-  console.assert(monitor);
+
+  if(!monitor) {
+    throw new Error('Could not find options_subscription_monitor');
+  }
+
   const msgElement = document.createElement('p');
   msgElement.textContent = msg;
   monitor.appendChild(msgElement);
@@ -125,7 +129,9 @@ function hideSubMonitor(callback, shouldFadeOut) {
 }
 
 function showSection(menuItem) {
-  console.assert(menuItem);
+  if(!menuItem) {
+    throw new TypeError('missing menuItem');
+  }
 
   // Do nothing if not switching.
   if(currentMenuItem === menuItem) {
@@ -235,13 +241,13 @@ function appendFeed(feed, shouldInsertInOrder) {
   }
 }
 
-function isURLObject(obj) {
-  return Object.prototype.toString.call(obj) === '[object URL]';
-}
-
 // TODO: deprecate the ability to preview
 function showSubPreview(url) {
-  console.assert(isURLObject(url));
+  if(!rdr.utils.isURLObject(url)) {
+    throw new Error('url should be a URL');
+  }
+
+
   hideSubPreview();
 
   if(!('ENABLE_SUBSCRIBE_PREVIEW' in localStorage)) {
@@ -320,7 +326,9 @@ function hideSubPreview() {
 }
 
 function startSubscription(url) {
-  console.assert(isURLObject(url));
+  if(!rdr.utils.isURLObject(url)) {
+    throw new TypeError('invalid url param: ' + url);
+  }
 
   hideSubPreview();
   showSubMonitor();
@@ -376,8 +384,11 @@ function startSubscription(url) {
 // TODO: show dateLastModified, datePublished, dateCreated, dateUpdated
 // TODO: react to errors
 function populateFeedInfo(feedId) {
-  console.assert(!isNaN(feedId));
-  console.assert(feedId > 0);
+
+  if(!Number.isInteger(feedId) || feedId < 1) {
+    throw new TypeError('invalid feed id param: ' + feedId);
+  }
+
 
   const context = {'db': null};
 

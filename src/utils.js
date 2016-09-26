@@ -13,7 +13,6 @@ rdr.utils.condenseSpaces = function(inputString) {
 
 rdr.utils.fade = function(element, duration, delay, callback) {
   const style = element.style;
-
   if(style.display === 'none') {
     style.display = '';
     style.opacity = '0';
@@ -38,37 +37,29 @@ rdr.utils._fadeOnEnd = function(callback, event) {
   callback(event.target);
 };
 
-// Returns a new string where certain non-printable characters have been
-// removed.
-// TODO: The regex is from somewhere on stackoverflow, note it
+// Returns a new string where Unicode Cc-class characters have been removed
+// Adapted from http://stackoverflow.com/questions/4324790
 rdr.utils.filterControlChars = function(inputString) {
   return inputString.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
 };
 
-// NOTE: this is shallow. If a property is an object, its fields are not
-// affected.
-// TODO: do I even want to restrict to own props?
-// TODO: what is better/faster? typeof or === undefined keyword?
-// TODO: should clone be an option? like a flag, only clone if needed
-// TODO: test how assign clones dates and url objects?
-
+// A rudimentary process. Ignores prototype, deep objects, getters, etc.
+// The output is a new object that is a copy of the input object. Not actually
+// pure because property values are copied by reference.
+// A value is empty if it is null, undefined, or an empty string
 rdr.utils.filterEmptyProps = function(obj) {
-  console.assert(obj);
-  // Clone the object to ensure purity. Assume the input is immutable.
-  const clone = Object.assign({}, obj);
-  // Alias the native hasOwnProperty in case the object's hasOwnProperty is
-  // tainted
-  const hasOwnProperty = Object.prototype.hasOwnProperty;
+  const copy = {};
+  const hasOwn = Object.prototype.hasOwnProperty;
   const undef = void(0);
-  for(let prop in clone) {
-    if(hasOwnProperty.call(clone, prop)) {
-      if(clone[prop] === undef || clone[prop] === null) {
-        delete clone[prop];
+  for(let prop in obj) {
+    if(hasOwn.call(obj, prop)) {
+      const value = obj[prop];
+      if(value !== undef && value !== null && value !== '') {
+        copy[prop] = value;
       }
     }
   }
-
-  return clone;
+  return copy;
 };
 
 // Formats a date object. This is obviously a very dumb implementation that
@@ -84,33 +75,32 @@ rdr.utils.formatDate = function(date, delimiter) {
   return parts.join(delimiter || '');
 };
 
+rdr.utils.isURLObject = function(val) {
+  return Object.prototype.toString.call(val) === '[object URL]';
+};
+
 // @param descriptors {Array} an array of basic descriptor objects such as the
 // one produced by the parseSrcset library
 rdr.utils.serializeSrcset = function(descriptors) {
-  console.assert(descriptors);
-
-  const outputBuffer = [];
+  const output = [];
   for(let descriptor of descriptors) {
-    let descBuffer = [descriptor.url];
+    let buf = [descriptor.url];
     if(descriptor.d) {
-      descBuffer.push(' ');
-      descBuffer.push(descriptor.d);
-      descBuffer.push('x');
+      buf.push(' ');
+      buf.push(descriptor.d);
+      buf.push('x');
     } else if(descriptor.w) {
-      descBuffer.push(' ');
-      descBuffer.push(descriptor.w);
-      descBuffer.push('w');
+      buf.push(' ');
+      buf.push(descriptor.w);
+      buf.push('w');
     } else if(descriptor.h) {
-      descBuffer.push(' ');
-      descBuffer.push(descriptor.h);
-      descBuffer.push('h');
+      buf.push(' ');
+      buf.push(descriptor.h);
+      buf.push('h');
     }
-
-    outputBuffer.push(descBuffer.join(''));
+    output.push(buf.join(''));
   }
-
-  // The space is important
-  return outputBuffer.join(', ');
+  return output.join(', ');
 };
 
 rdr.utils.scrollTo = function(element, deltaY, targetY) {

@@ -22,15 +22,16 @@ rdr.googleFeeds.ellipsis = '\u2026';
 // @param callback {function}
 rdr.googleFeeds.search = function(query, timeoutMs, callback) {
 
-  // Worth guarding so as to avoid a pointless network call
-  if(!rdr.googleFeeds.isValidQuery(query)) {
-    throw new Error('query must be a string');
+  // search should never be called without a query string
+  if(typeof query !== 'string') {
+    throw new TypeError('query must be a string');
   }
 
+  // If a timeout is specified, it should be a positive integer
   if(timeoutMs) {
-    console.assert(!isNaN(timeoutMs));
-    console.assert(isFinite(timeoutMs));
-    console.assert(timeoutMs >= 0);
+    if(!Number.isInteger(timeoutMs) || timeoutMs < 0) {
+      throw new TypeError('invalid timeoutMs param: ' + timeoutMs);
+    }
   }
 
   const context = {
@@ -51,10 +52,6 @@ rdr.googleFeeds.search = function(query, timeoutMs, callback) {
   request.open('GET', urlString, isAsync);
   request.responseType = 'json';
   request.send();
-};
-
-rdr.googleFeeds.isValidQuery = function(query) {
-  return query && typeof query === 'string';
 };
 
 rdr.googleFeeds.baseURLString = 'https://ajax.googleapis.com/ajax/services/' +

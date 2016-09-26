@@ -9,11 +9,14 @@ rdr.entry = rdr.entry || {};
 rdr.entry.mark = {};
 
 // Async mark an entry as read in storage and then callback
-rdr.entry.mark.start = function(entryId, callback) {
-  console.assert(!isNaN(entryId));
-  console.assert(isFinite(entryId));
-  console.assert(entryId > 0);
-  const context = {'entryId': entryId, 'callback': callback};
+rdr.entry.mark.start = function(id, callback) {
+
+  if(!Number.isInteger(id) || id < 1) {
+    // TODO: use the new ES6 string template feature
+    throw new Error('invalid entry id: ' + id);
+  }
+
+  const context = {'id': id, 'callback': callback};
   rdr.db.open(rdr.entry.mark.onOpenDB.bind(context));
 };
 
@@ -26,7 +29,7 @@ rdr.entry.mark.onOpenDB = function(db) {
   this.db = db;
   const tx = db.transaction('entry', 'readwrite');
   const store = tx.objectStore('entry');
-  const request = store.openCursor(this.entryId);
+  const request = store.openCursor(this.id);
   request.onsuccess = rdr.entry.mark.openCursorOnSuccess.bind(this);
   request.onerror = rdr.entry.mark.openCursorOnError.bind(this);
 };
@@ -34,14 +37,14 @@ rdr.entry.mark.onOpenDB = function(db) {
 rdr.entry.mark.openCursorOnSuccess = function(event) {
   const cursor = event.target.result;
   if(!cursor) {
-    console.error('No entry found', this.entryId);
+    console.error('No entry found', this.id);
     rdr.entry.mark.onComplete.call(this, 'NotFoundError');
     return;
   }
 
   const entry = cursor.value;
   if(entry.readState === rdr.entry.flags.READ) {
-    console.error('Already read entry', this.entryId);
+    console.error('Already read entry', this.id);
     rdr.entry.mark.onComplete.call(this, 'AlreadyReadError');
     return;
   }
@@ -75,6 +78,6 @@ rdr.entry.mark.onComplete = function(type) {
 
   // Note this calls back while requests are outstanding
   if(this.callback) {
-    this.callback({'type': type, 'entryId': this.entryId});
+    this.callback({'type': type});
   }
 };

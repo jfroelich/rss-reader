@@ -12,27 +12,42 @@ rdr.feed = rdr.feed || {};
 // @param requestURL {URL} the url of the feed to fetch
 // @param excludeEntries {boolean} whether to parse entry data
 // @param callback {function} called when fetch completes
-rdr.feed.fetch = function(requestURL, excludeEntries, callback) {
-  console.assert(rdr.feed.isURLObject(requestURL));
-  const fetchXML = rdr.xml.fetch;
-  const onFetch = rdr.feed._onFetchXML.bind(null, requestURL, excludeEntries,
-    callback);
-  fetchXML(requestURL, onFetch);
+rdr.feed.fetch = function(requestURL, excludeEntries, callback, verbose) {
+  if(!rdr.utils.isURLObject(requestURL)) {
+    throw new TypeError('requestURL must be a URL');
+  }
+
+  // We don't want to mistake this error with a non-fatal parse error later
+  if(!rdr.feed.parse) {
+    throw new ReferenceError('Missing dependency rdr.feed.parse');
+  }
+
+  const ctx = {
+    'requestURL': requestURL,
+    'excludeEntries': excludeEntries,
+    'callback': callback,
+    'verbose': verbose
+  };
+
+  rdr.xml.fetch(requestURL, rdr.feed._onFetchXML.bind(ctx), verbose);
 };
 
-rdr.feed._onFetchXML = function(requestURL, excludeEntries, callback, event) {
-  const parseFeed = rdr.feed.parse;
+rdr.feed._onFetchXML = function(event) {
+
   if(event.type !== 'success') {
-    callback({'type': event.type});
+    this.callback({'type': event.type});
     return;
   }
 
   let parseResult = null;
   try {
-    parseResult = parseFeed(event.document, excludeEntries);
+    parseResult = rdr.feed.parse(event.document, this.excludeEntries);
   } catch(error) {
-    console.warn(error);
-    callback({'type': 'feed_parse_error'});
+    if(this.verbose) {
+      console.warn(error);
+    }
+
+    this.callback({'type': 'ParseError'});
     return;
   }
 
@@ -40,7 +55,7 @@ rdr.feed._onFetchXML = function(requestURL, excludeEntries, callback, event) {
   const entries = parseResult.entries;
 
   // Set the request and response urls
-  rdr.feed.addURL(feed, requestURL.href);
+  rdr.feed.addURL(feed, this.requestURL.href);
   if(event.responseURLString) {
     rdr.feed.addURL(feed, event.responseURLString);
   }
@@ -53,9 +68,5 @@ rdr.feed._onFetchXML = function(requestURL, excludeEntries, callback, event) {
     'feed': feed,
     'entries': entries
   };
-  callback(successEvent);
-};
-
-rdr.feed.isURLObject = function(value) {
-  return Object.prototype.toString.call(value) === '[object URL]';
+  this.callback(successEvent);
 };

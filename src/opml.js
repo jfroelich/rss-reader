@@ -9,11 +9,17 @@ rdr.opml = {};
 rdr.opml.export = {};
 rdr.opml.import = {};
 
-// Parses the text into an opml document
 rdr.opml.parse = function(inputString) {
-  console.assert(rdr.xml.parse);
+  if(!rdr.xml.parse) {
+    throw new ReferenceError('missing dependency rdr.xml.parse');
+  }
+
   const doc = rdr.xml.parse(inputString);
-  console.assert(doc);
+
+  if(!doc) {
+    throw new Error('rdr.xml.parse did not yield a document');
+  }
+
   const rootName = doc.documentElement.localName;
   if(rootName !== 'opml') {
     throw new Error('Invalid document element: ' + rootName);
@@ -21,7 +27,6 @@ rdr.opml.parse = function(inputString) {
   return doc;
 };
 
-// Creates a generic opml document
 rdr.opml.createDoc = function(title) {
   const doc = document.implementation.createDocument(null, 'opml', null);
   doc.documentElement.setAttribute('version', '2.0');
@@ -145,7 +150,11 @@ rdr.opml.export.createOutline = function(doc, feed) {
   }
 
   const feedURL = rdr.feed.getURL(feed);
-  console.assert(feedURL);
+
+  if(!feedURL) {
+    throw new Error('feed is missing url: ' + JSON.stringify(feed));
+  }
+
   outline.setAttribute('xmlUrl', feedURL);
 
   if(feed.title) {
@@ -232,7 +241,10 @@ rdr.opml.import.onOpenDB = function(db) {
 rdr.opml.import.filterNonXMLFiles = function(files) {
   const output = [];
   for(let file of files) {
-    console.assert(file.type);
+    if(!file.type) {
+      throw new Error('file has no type');
+    }
+
     if(file.type.toLowerCase().includes('xml')) {
       output.push(file);
     }
@@ -350,8 +362,14 @@ rdr.opml.import.selectOutlineElements = function(doc) {
 };
 
 rdr.opml.import.createOutlineObject = function(element) {
-  console.assert(element);
-  console.assert(element.localName === 'outline');
+  if(!element) {
+    throw new TypeError('element param must be an element');
+  }
+
+  if(element.localName !== 'outline') {
+    throw new TypeError('element is not an outline: ' + element.outerHTML);
+  }
+
   return {
     'description': outline.getAttribute('description'),
     'link': outline.getAttribute('htmlUrl'),

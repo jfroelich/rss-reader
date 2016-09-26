@@ -19,7 +19,7 @@ rdr.poll.start = function(verbose, forceResetLock, allowMeteredConnections) {
 
   const context = {
     'numFeedsPending': 0,
-    'connection': null,
+    'db': null,
     'verbose': verbose
   };
 
@@ -46,8 +46,7 @@ rdr.poll.start = function(verbose, forceResetLock, allowMeteredConnections) {
     return;
   }
 
-  // There currently is no way to set this flag in the UI, and
-  // navigator.connection is still experimental.
+  // This is experimental
   if(!allowMeteredConnections && 'NO_POLL_METERED' in localStorage &&
     navigator.connection && navigator.connection.metered) {
     if(verbose) {
@@ -58,7 +57,6 @@ rdr.poll.start = function(verbose, forceResetLock, allowMeteredConnections) {
     return;
   }
 
-  // Check if idle and possibly cancel the poll or continue with polling
   if('ONLY_POLL_IF_IDLE' in localStorage) {
     const idlePeriodSecs = 30;
     chrome.idle.queryState(idlePeriodSecs,
@@ -75,13 +73,11 @@ rdr.poll.onQueryIdleState = function(state) {
     if(this.verbose) {
       console.debug('Idle state', state);
     }
-
     rdr.poll.onComplete.call(this);
   }
 };
 
 rdr.poll.onOpenDB = function(db) {
-
   if(!db) {
     if(this.verbose) {
       console.warn('Failed to connect to database');
@@ -90,36 +86,23 @@ rdr.poll.onOpenDB = function(db) {
     return;
   }
 
-  // TODO: this should call out to something like rdr.feed.getAll
-
-  this.connection = db;
-  const tx = db.transaction('feed');
-  const store = tx.objectStore('feed');
-  const request = store.openCursor();
-  request.onsuccess = rdr.poll.openFeedCursorOnSuccess.bind(this);
-  request.onerror = rdr.poll.openFeedCursorOnError.bind(this);
-
+  this.db = db;
+  rdr.feed.getAll(this.db, rdr.poll.onGetAllFeeds.bind(this));
 };
 
-rdr.poll.openFeedCursorOnError = function(event) {
-  rdr.poll.onComplete.call(this);
-};
+rdr.poll.onGetAllFeeds = function(feeds) {
 
-rdr.poll.openFeedCursorOnSuccess = function(event) {
-  const cursor = event.target.result;
-  if(!cursor) {
+  if(!feeds.length) {
     rdr.poll.onComplete.call(this);
     return;
   }
 
-  this.numFeedsPending++;
-  const feed = cursor.value;
+  this.numFeedsPending = feeds.length;
   const shouldExcludeEntries = false;
-  const urlString = rdr.feed.getURL(feed);
-  const urlObject = new URL(urlString);
-  const boundOnFetchFeed = rdr.poll.onFetchFeed.bind(this, feed);
-  rdr.feed.fetch(urlObject, shouldExcludeEntries, boundOnFetchFeed);
-  cursor.continue();
+  for(let feed of feeds) {
+    rdr.feed.fetch(new URL(rdr.feed.getURL(feed)), shouldExcludeEntries,
+      rdr.poll.onFetchFeed.bind(this, feed), this.verbose);
+  }
 };
 
 rdr.poll.onFetchFeed = function(localFeed, event) {
@@ -181,7 +164,7 @@ rdr.poll.onLookupFeedIcon = function(localFeed, remoteFeed, entries,
   }
 
   const feed = rdr.feed.merge(localFeed, remoteFeed);
-  rdr.feed.update(this.connection, feed,
+  rdr.feed.update(this.db, feed,
     rdr.poll.onUpdateFeed.bind(this, entries));
 };
 
@@ -195,7 +178,9 @@ rdr.poll.onUpdateFeed = function(entries, event) {
     return;
   }
 
-  console.assert(entries);
+  if(!entries) {
+    throw new TypeError('missing entries param');
+  }
 
   // TODO: should this check occur earlier?
   if(!entries.length) {
@@ -255,7 +240,7 @@ rdr.poll.processEntry = function(feed, entry, callback) {
 
   // Check if the entry already exists. Check against all of its urls
   const matchLimit = 1;
-  rdr.entry.findByURLs(this.connection, entry.urls, matchLimit,
+  rdr.entry.findByURLs(this.db, entry.urls, matchLimit,
     rdr.poll.onFindEntry.bind(this, feed, entry, callback));
 };
 
@@ -292,7 +277,7 @@ rdr.poll.onFindEntry = function(feed, entry, callback, matches) {
   // store the entry, but we just do not try and augment its content.
   if(rdr.poll.isFetchResistantURL(entryTerminalURLObject)) {
     rdr.poll.prepLocalDoc(entry);
-    rdr.entry.add(this.connection, entry, callback);
+    rdr.entry.add(this.db, entry, callback);
     return;
   }
 
@@ -303,14 +288,14 @@ rdr.poll.onFindEntry = function(feed, entry, callback, matches) {
   // negatives are not too important.
   if(rdr.poll.isPDFURL(entryTerminalURLObject)) {
     rdr.poll.prepLocalDoc(entry);
-    rdr.entry.add(this.connection, entry, callback);
+    rdr.entry.add(this.db, entry, callback);
     return;
   }
 
   const timeoutMs = 10 * 1000;
   const boundOnFetchEntry = rdr.poll.onFetchEntry.bind(this, entry, callback);
   rdr.poll.fetchHTML.start(entryTerminalURLObject, timeoutMs,
-    boundOnFetchEntry);
+    boundOnFetchEntry, this.verbose);
 };
 
 rdr.poll.isPDFURL = function(url) {
@@ -323,14 +308,18 @@ rdr.poll.isPDFURL = function(url) {
 rdr.poll.onFetchEntry = function(entry, callback, event) {
   if(event.type !== 'success') {
     rdr.poll.prepLocalDoc(entry);
-    rdr.entry.add(this.connection, entry, callback);
+    rdr.entry.add(this.db, entry, callback);
     return;
   }
 
   // Append the response url in case of a redirect
   const responseURLString = event.responseURL.href;
+
   // There should always be a response url, even if no redirect occurred
-  console.assert(responseURLString);
+  if(!responseURLString) {
+    throw new Error('missing response url');
+  }
+
   rdr.entry.addURL(entry, responseURLString);
 
   // TODO: if we successfully fetched the entry, then before storing it,
@@ -353,10 +342,14 @@ rdr.poll.onFetchEntry = function(entry, callback, event) {
 
 rdr.poll.onSetImageDimensions = function(entry, document, callback,
   numImagesModified) {
-  console.assert(document);
+
+  if(!document) {
+    throw new TypeError('mising document param');
+  }
+
   rdr.poll.prepDoc(document);
   entry.content = document.documentElement.outerHTML.trim();
-  rdr.entry.add(this.connection, entry, callback);
+  rdr.entry.add(this.db, entry, callback);
 };
 
 rdr.poll.prepDoc = function(doc) {
@@ -373,7 +366,12 @@ rdr.poll.prepLocalDoc = function(entry) {
   const parser = new DOMParser();
   try {
     const doc = parser.parseFromString(entry.content, 'text/html');
-    console.assert(!doc.querySelector('parsererror'));
+
+    if(doc.querySelector('parsererror')) {
+      entry.content = 'Cannot show document due to parsing error';
+      return;
+    }
+
     rdr.poll.prepDoc(doc);
     entry.content = doc.documentElement.outerHTML.trim();
   } catch(error) {
@@ -383,7 +381,12 @@ rdr.poll.prepLocalDoc = function(entry) {
 rdr.poll.onEntryProcessed = function(feedContext, event) {
   feedContext.numEntriesProcessed++;
   const count = feedContext.numEntriesProcessed;
-  console.assert(count <= feedContext.numEntries);
+
+  if(count > feedContext.numEntries) {
+    throw new Error('count ' + count + ' is greater than numEntries ' +
+      numEntries);
+  }
+
 
   if(event && event.type === 'success') {
     feedContext.numEntriesAdded++;
@@ -391,7 +394,7 @@ rdr.poll.onEntryProcessed = function(feedContext, event) {
 
   if(count === feedContext.numEntries) {
     if(feedContext.numEntriesAdded) {
-      rdr.badge.update.start(this.connection);
+      rdr.badge.update.start(this.db);
     }
 
     this.numFeedsPending--;
@@ -413,8 +416,8 @@ rdr.poll.onComplete = function() {
 
   rdr.notifications.show('Updated articles',
     'Completed checking for new articles');
-  if(this.connection) {
-    this.connection.close();
+  if(this.db) {
+    this.db.close();
   }
 
   rdr.poll.releaseLock();

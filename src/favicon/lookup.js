@@ -14,9 +14,13 @@ rdr.favicon = rdr.favicon || {};
 // @param callback {function} callback function passed the favicon url
 // (type URL).
 rdr.favicon.lookup = function(url, doc, verbose, callback) {
-  console.assert(url);
-  console.assert(url.href);
-  console.assert(callback);
+  if(!rdr.utils.isURLObject(url)) {
+    throw new TypeError('invalid url parameter: ' + url);
+  }
+
+  if(!callback) {
+    throw new TypeError('callback must be a function');
+  }
 
   const context = {
     'url': url,
@@ -30,7 +34,7 @@ rdr.favicon.lookup = function(url, doc, verbose, callback) {
   };
 
   if(verbose) {
-    console.debug('Looking up favicon for', url.href);
+    console.debug('lookup', url.href);
   }
 
   rdr.favicon.cache.connect(rdr.favicon._connectOnSuccess.bind(context),
@@ -400,7 +404,7 @@ rdr.favicon._onLookupComplete = function(iconURLObject) {
   if(this.db) {
 
     if(this.verbose) {
-      console.debug('Requesting database connection to close');
+      console.debug('Requesting favicon cache db to close');
     }
 
     this.db.close();

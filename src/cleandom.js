@@ -238,7 +238,6 @@ rdr.cleandom.filterInvalidAnchors = function(doc) {
 };
 
 rdr.cleandom.isInvalidAnchor = function(anchor) {
-  console.assert(anchor);
   const href = anchor.getAttribute('href');
   return href && /^\s*https?:\/\/#/i.test(href);
 };
@@ -452,7 +451,11 @@ rdr.cleandom.trimStep = function(startNode, propName) {
 rdr.cleandom.unwrap = function(element, referenceNode) {
   const target = referenceNode || element;
   const parent = target.parentNode;
-  console.assert(parent);
+
+  if(!parent) {
+    throw new Error('Cannot unwrap without a parent');
+  }
+
   const doc = element.ownerDocument;
   const prevSibling = target.previousSibling;
   if(prevSibling && prevSibling.nodeType === Node.TEXT_NODE) {
@@ -478,7 +481,6 @@ rdr.cleandom.insertChildrenBefore = function(parentNode, referenceNode) {
 
 rdr.cleandom.listSelector = 'ul, ol, dl';
 rdr.cleandom.listItemNames = {'li': 1, 'dt': 1, 'dd': 1};
-
 rdr.cleandom.unwrapSingleItemLists = function(doc) {
   const lists = doc.querySelectorAll(rdr.cleandom.listSelector);
   for(let list of lists) {

@@ -10,11 +10,21 @@ rdr.xml = {};
 // Parses the given xml string into a Document object. Throws an exception if a
 // parsing error occurs
 rdr.xml.parse = function(inputString) {
-  console.assert(inputString);
+
+  if(typeof inputString !== 'string') {
+    throw new Error('invalid inputString param: ' + inputString);
+  }
+
   const parser = new DOMParser();
   const doc = parser.parseFromString(inputString, 'application/xml');
-  console.assert(doc);
-  console.assert(doc.documentElement);
+
+  if(!doc) {
+    throw new Error('parseFromString did not produce a document');
+  }
+
+  if(!doc.documentElement) {
+    throw new Error('doc is missing documentElement');
+  }
 
   const error = doc.querySelector('parsererror');
   if(error) {
@@ -43,9 +53,14 @@ rdr.xml.acceptHeader = [
 // an external then. So I have to always do another nested then with a
 // new promise. I need to use response.body.then(...) inside the
 // onResponse function.
-rdr.xml.fetch = function(requestURL, callback) {
-  console.assert(rdr.xml.isURLObject(requestURL));
-  console.debug('GET', requestURL.href);
+rdr.xml.fetch = function(requestURL, callback, verbose) {
+  if(!rdr.utils.isURLObject(requestURL)) {
+    throw new TypeError('requestURL must be a URL');
+  }
+
+  if(verbose) {
+    console.debug('GET', requestURL.href);
+  }
 
   const opts = {};
   // Using 'omit' is the whole reason this uses the Fetch api
@@ -145,16 +160,13 @@ rdr.xml.fetch = function(requestURL, callback) {
 // Checks the request header value and returns true if xml or html
 // @param type {String} the raw header string for 'Content-Type'
 rdr.xml.isAcceptedType = function(type) {
-
   // Treat missing content type as unacceptable
   if(!type) {
     return false;
   }
 
-  // The header value may contain the charset. So use a general includes
-  // condition that tolerates its presence.
-  // Restrict to xml. However, support an html fallback for cases where the
-  // server responded with the incorrect mime type.
+  // The header value may contain the charset so use a more general test.
+  // Restrict to xml but allow for html for non-conforming responses
   const lcType = type.toLowerCase();
   if(lcType.includes('xml')) {
     return true;
@@ -163,8 +175,4 @@ rdr.xml.isAcceptedType = function(type) {
   }
 
   return false;
-};
-
-rdr.xml.isURLObject = function(value) {
-  return Object.prototype.toString.call(value) === '[object URL]';
 };

@@ -305,8 +305,9 @@ rdr.bp.findCaption = function(image) {
 // only reason I am not using it.
 rdr.bp.prune = function(document, bestElement) {
 
-  console.assert(document);
-  console.assert(bestElement);
+  if(!bestElement) {
+    throw new ReferenceError('bestElement should always be defined');
+  }
 
   if(bestElement === document.documentElement) {
     return;

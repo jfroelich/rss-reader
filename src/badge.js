@@ -4,9 +4,6 @@
 
 'use strict';
 
-console.assert(chrome);
-console.assert(chrome.browserAction);
-
 var rdr = rdr || {};
 rdr.badge = rdr.badge || {};
 rdr.badge.update = {};

@@ -15,7 +15,11 @@ rdr.entry.flags = {
 
 // Given an entry object, return the last url in its internal url chain.
 rdr.entry.getURL = function(entry) {
-  console.assert(entry.urls.length);
+
+  if(!entry.urls.length) {
+    throw new Error('entry missing url');
+  }
+
   return entry.urls[entry.urls.length - 1];
 };
 
@@ -41,28 +45,17 @@ rdr.entry.normalizeURL = function(urlString) {
 };
 
 rdr.entry.add = function(db, entry, callback) {
-  const entryURLString = rdr.entry.getURL(entry);
-  console.assert(entryURLString);
-  console.debug('Adding entry', entryURLString);
+  if(!rdr.entry.getURL(entry)) {
+    throw new Error('tried to add entry without a url');
+  }
 
   const sanitizedEntry = rdr.entry._sanitize(entry);
   const storableEntry = rdr.utils.filterEmptyProps(sanitizedEntry);
 
-  // Set fields that only happen on creation
   storableEntry.readState = rdr.entry.flags.UNREAD;
   storableEntry.archiveState = rdr.entry.flags.UNARCHIVED;
   storableEntry.dateCreated = new Date();
-
-  // Trap a possible exception with creating the transaction
-  let tx = null;
-  try {
-    tx = db.transaction('entry', 'readwrite');
-  } catch(error) {
-    console.error(entryURLString, error);
-    callback({'type': 'TransactionError', 'error': error});
-    return;
-  }
-
+  const tx = db.transaction('entry', 'readwrite');
   const store = tx.objectStore('entry');
   const request = store.add(storableEntry);
   request.onsuccess = callback;
@@ -114,8 +107,6 @@ rdr.entry._sanitize = function(inputEntry) {
 };
 
 rdr.entry.filterTitle = function(title) {
-  console.assert(title);
-
   let index = title.lastIndexOf(' - ');
   if(index === -1)
     index = title.lastIndexOf(' | ');

@@ -12,23 +12,23 @@ rdr.favicon.compact = {};
 // @param expires {Number} entry max age in ms
 // @param versbose {boolean} if true, logs additional messages
 rdr.favicon.compact.start = function(verbose, expires) {
-  const context = {};
-  context.verbose = verbose;
-  if(typeof expires !== 'undefined') {
-    console.assert(isFinite(expires));
-    console.assert(expires > 0);
-    context.expires = expires;
-  } else {
-    context.expires = rdr.favicon.cache.expires;
+
+  if(typeof expires === 'number' &&
+    (!Number.isInteger(expires) || expires < 1)) {
+    throw new TypeError('invalid expires param: ' + expires);
   }
 
+  const ctx = {};
+  ctx.verbose = verbose;
+  ctx.expires = expires ? expires : rdr.favicon.cache.expires;
+
   if(verbose) {
-    console.log('Compacting favicon cache, max age:', context.expires);
+    console.log('Compacting favicon cache, max age:', ctx.expires);
   }
 
   rdr.favicon.cache.connect(
-    rdr.favicon.compact._connectOnSuccess.bind(context),
-    rdr.favicon.compact._connectOnError.bind(context));
+    rdr.favicon.compact._connectOnSuccess.bind(ctx),
+    rdr.favicon.compact._connectOnError.bind(ctx));
 };
 
 rdr.favicon.compact._connectOnSuccess = function(event) {

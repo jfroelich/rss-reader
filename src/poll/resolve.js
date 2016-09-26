@@ -44,8 +44,15 @@ rdr.poll.resolve.selector = Object.keys(
   rdr.poll.resolve.urlAttrMap).map(
     rdr.poll.resolve.buildSelectorPart).join(',');
 
+// TODO: add verbose param
 rdr.poll.resolve.start = function(document, baseURL) {
-  console.assert(baseURL);
+  if(!rdr.utils.isURLObject(baseURL)) {
+    throw new TypeError('invalid baseURL param: ' + baseURL);
+  }
+
+  if(!parseSrcset) {
+    throw new ReferenceError('missing parseSrcset dependency');
+  }
 
   // Remove base elements. There is actually no need to do this, because this
   // is done when sanitizing the document, and because all relative urls are
@@ -97,6 +104,10 @@ rdr.poll.resolve.resolveMappedAttr = function(element, baseURL) {
 };
 
 rdr.poll.resolve.resolveSrcsetAttr = function(element, baseURL) {
+
+
+
+
   const attrURL = element.getAttribute('srcset');
 
   // The element has the attribute, but it may not have a value. parseSrcset
@@ -106,7 +117,6 @@ rdr.poll.resolve.resolveSrcsetAttr = function(element, baseURL) {
     return;
   }
 
-  console.assert(parseSrcset);
   const srcset = parseSrcset(attrURL);
 
   // The parseSrcset function may fail to parse (??)
@@ -135,8 +145,13 @@ rdr.poll.resolve.resolveSrcsetAttr = function(element, baseURL) {
 
 // Returns a resolved URL object
 rdr.poll.resolve.resolveURL = function(urlString, baseURLObject) {
-  console.assert(urlString);
-  console.assert(baseURLObject);
+  if(typeof urlString !== 'string') {
+    throw new TypeError('invalid urlString param: ' + urlString);
+  }
+
+  if(!rdr.utils.isURLObject(baseURLObject)) {
+    throw new TypeError('invalid baseURLObject param: ' + baseURLObject);
+  }
 
   if(rdr.poll.resolve.isJavascriptURL(urlString)) {
     return;

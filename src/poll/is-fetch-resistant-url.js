@@ -15,8 +15,11 @@ rdr.poll.resistantHosts = [
 ];
 
 rdr.poll.isFetchResistantURL = function(url) {
-  console.assert(url);
-  console.assert(url.hostname);
+
+  if(!rdr.utils.isURLObject(url)) {
+    throw new TypeError('invalid url param: ' + url);
+  }
+
   // hostname getter normalizes to lowercase
   return rdr.poll.resistantHosts.includes(url.hostname);
 };
