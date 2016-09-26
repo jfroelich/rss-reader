@@ -90,8 +90,17 @@ rdr.entry.archive._openCursorOnSuccess = function(event) {
       console.debug('Archiving', rdr.entry.getURL(entry));
     }
     this.numEntriesModified++;
-    cursor.update(rdr.entry.archive.asArchivable(entry));
-    chrome.runtime.sendMessage({'type': 'archiveEntryPending', 'id': entry.id});
+    const asArchived = rdr.entry.archive.asArchivable(entry);
+
+    if(this.verbose) {
+      console.debug('Compressed entry size from %s to %s',
+        rdr.utils.sizeof(entry), rdr.utils.sizeof(asArchived));
+    }
+
+    cursor.update(asArchived);
+
+    const message = {'type': 'archiveEntryPending', 'id': entry.id};
+    chrome.runtime.sendMessage(message);
   }
 
   cursor.continue();

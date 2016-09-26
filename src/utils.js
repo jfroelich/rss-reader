@@ -137,3 +137,93 @@ rdr.utils.scrollTo = function(element, deltaY, targetY) {
 
   return debounce();
 };
+
+// Yields the approximate size of an object in bytes. This should only be used
+// for basic testing because it is hilariously inaccurate.
+// Adapted from http://stackoverflow.com/questions/1248302
+// Does not work on most built-ins (dom, XMLHttpRequest, NodeList, etc)
+// Stops measuring after 10000 values visited.
+rdr.utils.sizeof = function(object) {
+  const seen = [];// Track visited to avoid infinite recursion
+
+  // Rather than using functional recursion, use a variable length stack that
+  // we grow as we visit nested objects. Never tested but presumably this is
+  // a perf benefit. The stack starts with the input object.
+  // NOTE: the array may end up containing mixed value types. It will be deopted
+  // if it is even optimized in the first place.
+  const stack = [object];
+
+  // Hardcoded aliases, possibly a very minor perf benefit
+  const hasOwn = Object.prototype.hasOwnProperty;
+  const toString = Object.prototype.toString;
+
+  let size = 0;
+  // Upper bound to prevent long processing
+  let maxIterations = 10000;
+
+  while(stack.length && maxIterations--) {
+    const value = stack.pop();
+
+    // This could be handled later in the switch but I assume it's faster to
+    // do it here. Note that typeof null === 'object'.
+    if(value === null) {
+      continue;
+    }
+
+    switch(typeof value) {
+      case 'undefined':
+        // Treat undefined as 0
+        break;
+      case 'boolean':
+        size += 4;
+        break;
+      case 'string':
+        // 2 bytes per character
+        size += value.length * 2;
+        break;
+      case 'number':
+        size += 8;
+        break;
+      case 'function':
+        size += 2 * value.toString().length;
+        break;
+      case 'object':
+        if(seen.indexOf(value) === -1) {
+          seen.push(value);
+          if(ArrayBuffer.isView(value)) {
+            // Shortcut straight to an accurate byte size for views
+            size += value.length;
+          } else if(Array.isArray(value)) {
+            // Iterate over arrays differently than general objects
+            for(let i = 0, len = value.length; i < len; i++) {
+              stack.push(value[i]);
+            }
+          } else {
+            const toStringOutput = toString.call(value);
+            if(toStringOutput === '[object Date]') {
+              // special branch for dates because no enumerable own props
+              // Just a guess, as its internal ms value is a number
+              size += 8;
+            } else if(toStringOutput === '[object URL]') {
+              // special branch for URL objects because no props
+              // Just a guess
+              size += 2 * value.href.length;
+            } else {
+              for(let prop in value) {
+                if(hasOwn.call(value, prop)) {
+                  size += prop.length * 2; // size of property name as string
+                  stack.push(value[prop]);
+                }
+              }
+            }
+          }
+        }
+        break;
+      default:
+        // ignore the value
+        break;
+    }
+  }
+
+  return size;
+};
