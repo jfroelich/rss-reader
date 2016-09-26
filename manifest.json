@@ -28,6 +28,7 @@
       "/src/feed/feed.js",
       "/src/feed/fetch.js",
       "/src/feed/parse.js",
+      "/src/healthcheck.js",
       "/src/html/html.js",
       "/src/notifications/show.js",
       "/src/on-badge-click.js",
