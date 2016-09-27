@@ -7,24 +7,8 @@
 var rdr = rdr || {};
 rdr.refreshIcons = {};
 
-// TODO: once this is implemented, decouple the icon lookup for feeds in
-// polling
-
-/*
-How this should work:
-
-- connect to feeds db
-- get all feeds
-- for each feed, lookup its favicon
-- if its icon changed, or was never set, then update the feed
-
-
-*/
-
-// Scan for icons in the favicon cache that should be refreshed and then update
-// the feeds database accordingly
+// Refresh the favicon for feeds
 rdr.refreshIcons.start = function(verbose) {
-
   if(verbose) {
     console.debug('Refreshing feed favicons...');
   }
@@ -49,11 +33,11 @@ rdr.refreshIcons._onOpenDB = function(db) {
   }
 
   this.db = db;
-
   rdr.feed.getAll(db, rdr.refreshIcons._onGetAllFeeds.bind(this));
 };
 
 rdr.refreshIcons._onGetAllFeeds = function(feeds) {
+  // This will be decremented as each feed is processed
   this.pendingCount = feeds.length;
   if(!this.pendingCount) {
     if(this.verbose) {
@@ -69,6 +53,7 @@ rdr.refreshIcons._onGetAllFeeds = function(feeds) {
   }
 };
 
+// Lookup the favicon for a feed
 rdr.refreshIcons._lookup = function(feed) {
 
   // Get the lookup url for the feed. Prefer the link because it is a
@@ -89,7 +74,6 @@ rdr.refreshIcons._lookup = function(feed) {
 };
 
 rdr.refreshIcons._onLookup = function(feed, faviconURL) {
-
   if(faviconURL) {
     if(!feed.faviconURLString || feed.faviconURLString !== faviconURL.href) {
       if(this.verbose) {
@@ -100,34 +84,33 @@ rdr.refreshIcons._onLookup = function(feed, faviconURL) {
       feed.faviconURLString = faviconURL.href;
       feed.dateUpdated = new Date();
 
-      // async
-      rdr.refreshIcons._updateFeed.call(this, feed);
+      // async, does not wait for put request to complete
+      const tx = this.db.transaction('feed', 'readwrite');
+      const store = tx.objectStore('feed');
+      const request = store.put(feed);
+
+      // Only bother to listen if logging
+      if(this.verbose) {
+        request.onsuccess = rdr.refreshIcons._onPutSuccess.bind(this, feed);
+        request.onerror = rdr.refreshIcons._onPutError.bind(this, feed);
+      }
+
     }
   }
 
+  // The feed has been processed. If pendingCount reaches 0 then done
   this.pendingCount--;
   if(!this.pendingCount) {
     rdr.refreshIcons._onComplete.call(this);
   }
 };
 
-rdr.refreshIcons._updateFeed = function(feed) {
-
-  if(this.verbose) {
-    console.debug('Putting feed', rdr.feed.getURL(feed));
-  }
-
-  const tx = this.db.transaction('feed', 'readwrite');
-  const store = tx.objectStore('feed');
-  const request = store.put(feed);
-  request.onerror = rdr.refreshIcons._onPutError.bind(this, feed);
+rdr.refreshIcons._onPutSuccess = function(feed, event) {
+  console.debug('Finished updating feed', rdr.feed.getURL(feed));
 };
 
+// Treat database put errors as non-fatal
 rdr.refreshIcons._onPutError = function(feed, event) {
-  if(this.verbose) {
-    console.error('Error putting feed', rdr.feed.getURL(feed));
-  }
-
   console.error(event.target.error);
 };
 
@@ -136,9 +119,11 @@ rdr.refreshIcons._onComplete = function() {
     if(this.verbose) {
       console.debug('Requesting database connection to close');
     }
+    // The close will occur once the pending txs resolve
     this.db.close();
   }
 
+  // This may occur in the log prior to pending requests resolving
   if(this.verbose) {
     console.log('Finished refreshing feed favicons');
   }
