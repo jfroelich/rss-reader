@@ -37,6 +37,15 @@ chrome.alarms.get('compact-favicons', function(alarm) {
   }
 });
 
+chrome.alarms.get('refresh-feed-favicons', function(alarm) {
+  if(!alarm) {
+    console.debug('Creating refresh-feed-favicons alarm');
+    // Run bi-weekly
+    chrome.alarms.create('refresh-feed-favicons',
+      {'periodInMinutes': 60 * 24 * 7 * 2});
+  }
+});
+
 chrome.alarms.get('healthcheck', function(alarm) {
   if(!alarm) {
     console.debug('Creating healthcheck alarm');

@@ -40,6 +40,7 @@
       "/src/poll/resolve.js",
       "/src/poll/start.js",
       "/src/poll/tracking.js",
+      "/src/refresh-icons.js",
       "/src/rewrite-url.js",
       "/src/utils.js",
       "/src/xml.js"

@@ -91,7 +91,6 @@ rdr.poll.onOpenDB = function(db) {
 };
 
 rdr.poll.onGetAllFeeds = function(feeds) {
-
   if(!feeds.length) {
     rdr.poll.onComplete.call(this);
     return;
@@ -113,59 +112,28 @@ rdr.poll.onFetchFeed = function(localFeed, event) {
   }
 
   const remoteFeed = event.feed;
-  if(rdr.poll.isFeedUnmodified(localFeed, remoteFeed)) {
+
+  // If the feed has updated in the past, then check if it has been modified.
+  // dateUpdated is not set for newly added feeds.
+  if(localFeed.dateUpdated &&
+    rdr.poll.isFeedUnmodified(localFeed, remoteFeed)) {
     if(this.verbose) {
-      console.debug('Feed not modified', rdr.feed.getURL(remoteFeed));
+      console.debug('file not modified', rdr.feed.getURL(remoteFeed));
     }
     this.numFeedsPending--;
     rdr.poll.onComplete.call(this);
     return;
   }
 
-  // TODO: I should probably do the merge prior to lookup up the favicon,
-  // then I do not need to pass around both feeds to continuations. This is the
-  // terminal point where both feeds need to be considered separately, so it
-  // makes the most sense to do it here, not later.
-
-  const remoteFeedURLString = rdr.feed.getURL(remoteFeed);
-  const remoteFeedURLObject = new URL(remoteFeedURLString);
-
-  const pageURL = remoteFeed.link ? new URL(remoteFeed.link) :
-    remoteFeedURLObject;
-  const boundOnLookup = rdr.poll.onLookupFeedIcon.bind(this, localFeed,
-    remoteFeed, event.entries);
-  const doc = null;
-  rdr.favicon.lookup(pageURL, doc, this.verbose, boundOnLookup);
+  const feed = rdr.feed.merge(localFeed, remoteFeed);
+  rdr.feed.update(this.db, feed,
+    rdr.poll.onUpdateFeed.bind(this, event.entries));
 };
 
 rdr.poll.isFeedUnmodified = function(localFeed, remoteFeed) {
-
-  // dateUpdated represents the date the feed was last stored in the database
-  // as a result of calling rdr.feed.update. It is not set as a result of
-  // calling rdr.feed.add. When subscribing to a new feed, only the feed's
-  // properties are stored, and not its entries, so that the subscription
-  // process is fast. As a result, we always want to poll its entries.
-  // Therefore, we need to look at whether dateUpdated has been set to avoid the
-  // issue where the entries are never processed during the time period after
-  // subscribing where the feed file was not modified.
-  if(!localFeed.dateUpdated) {
-    return false;
-  }
-
   return localFeed.dateLastModified && remoteFeed.dateLastModified &&
     localFeed.dateLastModified.getTime() ===
     remoteFeed.dateLastModified.getTime()
-};
-
-rdr.poll.onLookupFeedIcon = function(localFeed, remoteFeed, entries,
-  faviconURL) {
-  if(faviconURL) {
-    remoteFeed.faviconURLString = faviconURL.href;
-  }
-
-  const feed = rdr.feed.merge(localFeed, remoteFeed);
-  rdr.feed.update(this.db, feed,
-    rdr.poll.onUpdateFeed.bind(this, entries));
 };
 
 rdr.poll.onUpdateFeed = function(entries, event) {

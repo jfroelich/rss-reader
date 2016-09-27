@@ -13,6 +13,8 @@ rdr.favicon = rdr.favicon || {};
 // available because it potentially avoids network
 // @param callback {function} callback function passed the favicon url
 // (type URL).
+// TODO: maybe accept something like a FaviconQuery object instance as input,
+// to abstract the parameters and simplify calling this
 rdr.favicon.lookup = function(url, doc, verbose, callback) {
   if(!rdr.utils.isURLObject(url)) {
     throw new TypeError('invalid url parameter: ' + url);
@@ -207,7 +209,6 @@ rdr.favicon._fetchDocumentOnTimeout = function(event) {
 };
 
 rdr.favicon._fetchDocumentOnSuccess = function(event) {
-
   if(this.verbose) {
     console.debug('Fetched document at', this.url.href);
   }

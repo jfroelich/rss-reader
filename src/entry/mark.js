@@ -8,9 +8,8 @@ var rdr = rdr || {};
 rdr.entry = rdr.entry || {};
 rdr.entry.mark = {};
 
-// Async mark an entry as read in storage and then callback
+// Async, mark an entry as read in storage and then callback
 rdr.entry.mark.start = function(id, callback) {
-
   if(!Number.isInteger(id) || id < 1) {
     // TODO: use the new ES6 string template feature
     throw new Error('invalid entry id: ' + id);
@@ -53,14 +52,8 @@ rdr.entry.mark.openCursorOnSuccess = function(event) {
   const dateNow = new Date();
   entry.dateRead = dateNow;
   entry.dateUpdated = dateNow;
-
-  // Async. Request an update on the same readwrite transaction, and do not
-  // wait for it to complete.
-  cursor.update(entry);
-
-  // Async. The badge update is implicitly blocked by the readwrite transaction,
-  // but will happen eventually
-  rdr.badge.update.start(this.db);
+  cursor.update(entry); // async
+  rdr.badge.update.start(this.db);// async
   rdr.entry.mark.onComplete.call(this, 'Success');
 };
 
@@ -70,13 +63,10 @@ rdr.entry.mark.openCursorOnError = function(event) {
 };
 
 rdr.entry.mark.onComplete = function(type) {
-  // The close request will complete once the cursor update completes and the
-  // badge update completes.
   if(this.db) {
     this.db.close();
   }
 
-  // Note this calls back while requests are outstanding
   if(this.callback) {
     this.callback({'type': type});
   }
