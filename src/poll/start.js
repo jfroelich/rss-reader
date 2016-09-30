@@ -62,13 +62,17 @@ rdr.poll.start = function(verbose, forceResetLock, allowMeteredConnections) {
     chrome.idle.queryState(idlePeriodSecs,
       rdr.poll.onQueryIdleState.bind(context));
   } else {
-    rdr.db.open(rdr.poll.onOpenDB.bind(context));
+    const dbService = new FeedDbService();
+    dbService.open(rdr.poll.openDBOnSuccess.bind(context),
+      rdr.poll.openDBOnError.bind(context));
   }
 };
 
 rdr.poll.onQueryIdleState = function(state) {
   if(state === 'locked' || state === 'idle') {
-    rdr.db.open(rdr.poll.onOpenDB.bind(this));
+    const dbService = new FeedDbService();
+    dbService.open(rdr.poll.openDBOnSuccess.bind(this),
+      rdr.poll.openDBOnError.bind(this));
   } else {
     if(this.verbose) {
       console.debug('Idle state', state);
@@ -77,17 +81,14 @@ rdr.poll.onQueryIdleState = function(state) {
   }
 };
 
-rdr.poll.onOpenDB = function(db) {
-  if(!db) {
-    if(this.verbose) {
-      console.warn('Failed to connect to database');
-    }
-    rdr.poll.onComplete.call(this);
-    return;
-  }
-
-  this.db = db;
+rdr.poll.openDBOnSuccess = function(event) {
+  this.db = event.target.result;
   rdr.feed.getAll(this.db, rdr.poll.onGetAllFeeds.bind(this));
+};
+
+rdr.poll.openDBOnError = function(event) {
+  console.error(event.target.error);
+  rdr.poll.onComplete.call(this);
 };
 
 rdr.poll.onGetAllFeeds = function(feeds) {

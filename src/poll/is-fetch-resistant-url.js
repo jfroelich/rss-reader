@@ -4,6 +4,8 @@
 
 'use strict';
 
+// TODO: split up into interstitial.js and scripted.js or something like this
+
 var rdr = rdr || {};
 rdr.poll = rdr.poll || {};
 

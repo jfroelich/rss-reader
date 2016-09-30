@@ -29,29 +29,26 @@ rdr.healthcheck.start = function(verbose) {
     'completedOrphanScan': false,
     'completedEntriesMissingURLsScan': false
   };
-
-  rdr.db.open(rdr.healthcheck._onOpenDB.bind(ctx));
+  const dbService = new FeedDbService();
+  dbService.open(rdr.healthcheck._openDBOnSuccess.bind(ctx),
+    rdr.healthcheck._openDBOnError.bind(ctx));
 };
 
-rdr.healthcheck._onOpenDB = function(db) {
-
-  if(!db) {
-    if(this.verbose) {
-      console.error('Failed to connect to database');
-    }
-
-    this.completedOrphanScan = true;
-    rdr.healthcheck._onComplete.call(this);
-    return;
-  }
-
+rdr.healthcheck._openDBOnSuccess = function(event) {
   if(this.verbose) {
     console.debug('Connected to database');
   }
 
-  this.db = db;
+  this.db = event.target.result;
   rdr.healthcheck.orphan.scan.call(this);
   rdr.healthcheck.missurls.scan.call(this);
+};
+
+rdr.healthcheck._openDBOnError = function(event) {
+  console.error(event.target.error);
+  this.completedOrphanScan = true;
+  this.completedEntriesMissingURLsScan = true;
+  rdr.healthcheck._onComplete.call(this);
 };
 
 rdr.healthcheck.orphan = {};

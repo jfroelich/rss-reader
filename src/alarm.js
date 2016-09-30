@@ -57,16 +57,16 @@ chrome.alarms.get('healthcheck', function(alarm) {
 chrome.alarms.onAlarm.addListener(function(alarm) {
   console.debug('Alarm wakeup', alarm.name);
   if(alarm.name === 'archive') {
-    const verbose = false;
-    rdr.entry.archive.start(verbose);
+    const archiveService = new EntryArchiveService();
+    archiveService.start();
   } else if(alarm.name === 'poll') {
     const forceResetLock = false;
     const allowMeteredConnections = false;
     const verbose = false;
     rdr.poll.start(verbose, forceResetLock, allowMeteredConnections);
   } else if(alarm.name === 'compact-favicons') {
-    const verbose = false;
-    rdr.favicon.compact.start(verbose, rdr.favicon.cache.expires);
+    const compactService = new FaviconCompactService();
+    compactService.start();
   } else if(alarm.name === 'healthcheck') {
     const verbose = false;
     rdr.healthcheck.start(verbose);

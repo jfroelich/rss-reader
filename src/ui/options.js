@@ -389,22 +389,21 @@ function populateFeedInfo(feedId) {
     throw new TypeError('invalid feed id param: ' + feedId);
   }
 
-
   const context = {'db': null};
+  const dbService = new FeedDbService();
+  dbService.open(openDBOnSuccess, openDBOnError);
+  function openDBOnSuccess(event) {
+    context.db = event.target.result;
+    const transaction = context.db.transaction('feed');
+    const store = transaction.objectStore('feed');
+    const request = store.get(feedId);
+    request.onsuccess = onFindFeed;
+    request.onerror = onFindFeed;
+  }
 
-  rdr.db.open(onOpenDB);
-  function onOpenDB(db) {
-    if(db) {
-      context.db = db;
-      const transaction = db.transaction('feed');
-      const store = transaction.objectStore('feed');
-      const request = store.get(feedId);
-      request.onsuccess = onFindFeed;
-      request.onerror = onFindFeed;
-    } else {
-      // TODO: show an error message?
-      console.error('Database connection error');
-    }
+  function openDBOnError(event) {
+    // TODO: show an error message?
+    console.error(event.target.error);
   }
 
   function onFindFeed(event) {
@@ -621,9 +620,8 @@ function onSearchGoogleFeeds(event) {
       }
       if(linkURL) {
         const doc = null;
-        const verbose = false;
-        rdr.favicon.lookup(linkURL, doc, verbose,
-          onLookupFavicon.bind(null, result));
+        const faviconService = new FaviconService();
+        faviconService.lookup(linkURL, doc, onLookupFavicon.bind(null, result));
       } else {
         numFaviconsProcessed++;
         if(numFaviconsProcessed === results.length) {
@@ -785,20 +783,22 @@ function exportOPMLButtonOnClick(event) {
 
 function initSubsSection() {
   let feedCount = 0;
-  rdr.db.open(onOpenDB);
+  const dbService = new FeedDbService();
+  dbService.open(openDBOnSuccess, openDBOnError);
 
-  function onOpenDB(db) {
-    if(db) {
-      // TODO: load feeds into sorted array?
-      const tx = db.transaction('feed');
-      const store = tx.objectStore('feed');
-      const index = store.index('title');
-      const request = index.openCursor();
-      request.onsuccess = openCursorOnSuccess;
-    } else {
-      // TODO: react to error
-      console.debug(event);
-    }
+  // TODO: load feeds into sorted array? use rdr.feeds.getAll
+  function openDBOnSuccess(event) {
+    const db = event.target.result;
+    const tx = db.transaction('feed');
+    const store = tx.objectStore('feed');
+    const index = store.index('title');
+    const request = index.openCursor();
+    request.onsuccess = openCursorOnSuccess;
+  }
+
+  function openDBOnError(event) {
+    // TODO: react to error
+    console.error(event.target.error);
   }
 
   function openCursorOnSuccess(event) {

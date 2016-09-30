@@ -71,21 +71,23 @@ rdr.opml.export.start = function(title, fileName, verbose, callback) {
     'db': null,
     'verbose': verbose
   };
-  rdr.db.open(rdr.opml.export.onOpenDB.bind(context));
+  const dbService = new FeedDbService();
+  dbService.open(rdr.opml.export.openDBOnSuccess.bind(context),
+    rdr.opml.export.openDBOnError.bind(context));
 };
 
-rdr.opml.export.onOpenDB = function(db) {
-  if(!db) {
-    rdr.opml.export.onComplete.call(this);
-    return;
-  }
-
+rdr.opml.export.openDBOnSuccess = function(event) {
   if(this.verbose) {
     console.debug('Connected to database');
   }
 
-  this.db = db;
-  rdr.feed.getAll(db, rdr.opml.export.onGetFeeds.bind(this));
+  this.db = event.target.result;
+  rdr.feed.getAll(this.db, rdr.opml.export.onGetFeeds.bind(this));
+};
+
+rdr.opml.export.openDBOnError = function(event) {
+  console.error(event.target.error);
+  rdr.opml.export.onComplete.call(this);
 };
 
 rdr.opml.export.onGetFeeds = function(feeds) {
@@ -211,21 +213,14 @@ rdr.opml.import.onUploaderChange = function(event) {
     rdr.opml.import.onComplete.call(this);
     return;
   }
-  rdr.db.open(rdr.opml.import.onOpenDB.bind(this));
+  const dbService = new FeedDbService();
+  dbService.open(rdr.opml.import.openDBOnSuccess.bind(this),
+    rdr.opml.import.openDBOnError.bind(this));
 };
 
-rdr.opml.import.onOpenDB = function(db) {
+rdr.opml.import.openDBOnSuccess = function(event) {
   const prefix = rdr.opml.import;
-
-  if(!db) {
-    if(this.verbose) {
-      console.debug('Failed to connect to db');
-    }
-    prefix.onComplete.call(this);
-    return;
-  }
-
-  this.db = db;
+  this.db = event.target.result;
   this.files = prefix.filterNonXMLFiles(this.files);
   this.files = prefix.filterEmptyFiles(this.files);
 
@@ -236,6 +231,11 @@ rdr.opml.import.onOpenDB = function(db) {
     reader.onerror = prefix.readerOnError.bind(this, file);
     reader.readAsText(file);
   }
+};
+
+rdr.opml.import.openDBOnError = function(event) {
+  console.error(event.target.error);
+  rdr.opml.import.onComplete.call(this);
 };
 
 rdr.opml.import.filterNonXMLFiles = function(files) {

@@ -18,22 +18,19 @@ rdr.refreshIcons.start = function(verbose) {
     'pendingCount': 0
   };
 
-  rdr.db.open(rdr.refreshIcons._onOpenDB.bind(ctx));
+  const dbService = new FeedDbService();
+  dbService.open(rdr.refreshIcons._openDBOnSuccess.bind(ctx),
+    rdr.refreshIcons._openDBOnError.bind(ctx));
 };
 
-rdr.refreshIcons._onOpenDB = function(db) {
+rdr.refreshIcons._openDBOnSuccess = function(event) {
+  this.db = event.target.result;
+  rdr.feed.getAll(this.db, rdr.refreshIcons._onGetAllFeeds.bind(this));
+};
 
-  if(!db) {
-    if(this.verbose) {
-      console.error('Failed to connect to database');
-    }
-
-    rdr.refreshIcons._onComplete.call(this);
-    return;
-  }
-
-  this.db = db;
-  rdr.feed.getAll(db, rdr.refreshIcons._onGetAllFeeds.bind(this));
+rdr.refreshIcons._openDBOnError = function(event) {
+  console.error(event.target.error);
+  rdr.refreshIcons._onComplete.call(this);
 };
 
 rdr.refreshIcons._onGetAllFeeds = function(feeds) {
@@ -69,7 +66,8 @@ rdr.refreshIcons._lookup = function(feed) {
   }
 
   const doc = null;
-  rdr.favicon.lookup(lookupURL, doc, this.verbose,
+  const faviconService = new faviconService();
+  faviconService.lookup(lookupURL, doc,
     rdr.refreshIcons._onLookup.bind(this, feed));
 };
 
@@ -89,12 +87,11 @@ rdr.refreshIcons._onLookup = function(feed, faviconURL) {
       const store = tx.objectStore('feed');
       const request = store.put(feed);
 
-      // Only bother to listen if logging
+      // Only listen if logging
       if(this.verbose) {
         request.onsuccess = rdr.refreshIcons._onPutSuccess.bind(this, feed);
         request.onerror = rdr.refreshIcons._onPutError.bind(this, feed);
       }
-
     }
   }
 
@@ -106,7 +103,7 @@ rdr.refreshIcons._onLookup = function(feed, faviconURL) {
 };
 
 rdr.refreshIcons._onPutSuccess = function(feed, event) {
-  console.debug('Finished updating feed', rdr.feed.getURL(feed));
+  console.debug('Updated feed', rdr.feed.getURL(feed));
 };
 
 // Treat database put errors as non-fatal

@@ -55,19 +55,29 @@ function appendSlides(onAppendComplete, isFirstSlide) {
 
   // TODO: invert this, and the condition where it is used, to isAdvanced
   let isNotAdvanced = true;
-  rdr.db.open(onOpenDB);
 
-  function onOpenDB(connection) {
-    if(connection) {
-      const transaction = connection.transaction('entry');
-      const entryStore = transaction.objectStore('entry');
-      const index = entryStore.index('archiveState-readState');
-      const key_path = [rdr.entry.flags.UNARCHIVED, rdr.entry.flags.UNREAD];
-      const request = index.openCursor(key_path);
-      request.onsuccess = onOpenCursor;
-      request.onerror = onOpenCursor;
-    } else {
-      // TODO: show an error?
+  const dbService = new FeedDbService();
+  dbService.open(openDBOnSuccess, openDBOnError);
+
+  function openDBOnSuccess(event) {
+    const conn = event.target.result;
+    const tx = conn.transaction('entry');
+    const store = tx.objectStore('entry');
+    const index = store.index('archiveState-readState');
+    const key_path = [rdr.entry.flags.UNARCHIVED, rdr.entry.flags.UNREAD];
+    const request = index.openCursor(key_path);
+    request.onsuccess = onOpenCursor;
+    request.onerror = openCursorOnError;
+  }
+
+  function openDBOnError(event) {
+    // TODO: show an error?
+  }
+
+  function openCursorOnError(event) {
+    // TODO: show an error?
+    if(onAppendComplete) {
+      onAppendComplete();
     }
   }
 

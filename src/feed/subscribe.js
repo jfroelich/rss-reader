@@ -37,17 +37,19 @@ rdr.feed.subscribe.start = function(feed, options) {
     rdr.feed.subscribe.findFeed.call(context);
   } else {
     context.shouldCloseDB = true;
-    rdr.db.open(rdr.feed.subscribe.onOpenDB.bind(context));
+    const dbService = new FeedDbService();
+    dbService.open(rdr.feed.subscribe.openDBOnSuccess.bind(context),
+      rdr.feed.subscribe.openDBOnError.bind(context));
   }
 };
 
-rdr.feed.subscribe.onOpenDB = function(db) {
-  if(db) {
-    this.db = db;
-    rdr.feed.subscribe.findFeed.call(this);
-  } else {
-    rdr.feed.subscribe.onComplete.call(this, {'type': 'ConnectionError'});
-  }
+rdr.feed.subscribe.openDBOnSuccess = function(event) {
+  this.db = event.target.result;
+  rdr.feed.subscribe.findFeed.call(this);
+};
+
+rdr.feed.subscribe.openDBOnError = function(event) {
+  rdr.feed.subscribe.onComplete.call(this, {'type': 'ConnectionError'});
 };
 
 // Before involving any network overhead, check if already subscribed.
@@ -114,7 +116,9 @@ rdr.feed.subscribe.onFetchFeed = function(event) {
   const urlObject = new URL(urlString);
   const doc = null;
   const verbose = false;
-  rdr.favicon.lookup(urlObject, doc, verbose,
+
+  const faviconService = new FaviconService();
+  faviconService.lookup(urlObject, doc,
     rdr.feed.subscribe.onLookupFavicon.bind(this));
 };
 

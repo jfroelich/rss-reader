@@ -10,24 +10,27 @@ rdr.badge.update = {};
 
 // Sets the text of the extension's badge to the current number of unread
 // entries
-// @param db {Database} optional, an open database connection
+// @param db {IDBDatabase} optional, an open database connection
 rdr.badge.update.start = function(db) {
   const context = {'db': db, 'text': '?'};
   if(db) {
     rdr.badge.update._countUnread.call(context);
   } else {
-    rdr.db.open(rdr.badge.update._onOpenDB.bind(context));
+    const dbService = new FeedDbService();
+    dbService.open(
+      rdr.badge.update._openDBOnSuccess.bind(context),
+      rdr.badge.update._openDBOnError.bind(context));
   }
 };
 
-rdr.badge.update._onOpenDB = function(db) {
-  if(db) {
-    this.db = db;
-    this.shouldCloseDB = true;
-    rdr.badge.update._countUnread.call(this);
-  } else {
-    rdr.badge.update._onComplete.call(this);
-  }
+rdr.badge.update._openDBOnSuccess = function(event) {
+  this.db = event.target.result;
+  this.shouldCloseDB = true;
+  rdr.badge.update._countUnread.call(this);
+};
+
+rdr.badge.update._openDBOnError = function(event) {
+  rdr.badge.update._onComplete.call(this);
 };
 
 rdr.badge.update._countUnread = function() {

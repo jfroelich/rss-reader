@@ -4,47 +4,39 @@
 
 'use strict';
 
-var rdr = rdr || {};
-rdr.db = {};
+function FeedDbService() {
+  this.name = 'reader';
+  this.version = 20;
+  this.verbose = false;
+}
 
-rdr.db.name = 'reader';
-rdr.db.version = 20;
+FeedDbService.prototype.open = function(onSuccess, onError) {
+  if(this.verbose) {
+    console.log('Connecting to', this.name, 'version', this.version);
+  }
 
-rdr.db.open = function(callback) {
-  const request = indexedDB.open(rdr.db.name, rdr.db.version);
-  request.onupgradeneeded = rdr.db._onUpgradeNeeded;
-  request.onsuccess = rdr.db._onSuccess.bind(request, callback);
-  request.onerror = rdr.db._onError.bind(request, callback);
-  request.onblocked = rdr.db._onBlocked.bind(request, callback);
+  const request = indexedDB.open(this.name, this.version);
+  request.onupgradeneeded = this._upgrade.bind(this);
+  request.onsuccess = onSuccess;
+  request.onerror = onError;
+  request.onblocked = onError;
 };
 
-rdr.db._onSuccess = function(callback, event) {
-  callback(event.target.result);
-};
-
-rdr.db._onError = function(callback, event) {
-  console.error(event);
-  callback();
-};
-
-rdr.db._onBlocked = function(callback, event) {
-  console.warn(event);
-  callback();
-};
-
-rdr.db._onUpgradeNeeded = function(event) {
-  console.log('Upgrading database %s from rdr.db.version', rdr.db.name,
-    event.oldVersion);
+FeedDbService.prototype._upgrade = function(event) {
+  if(this.verbose) {
+    console.log('Upgrading database %s to version %s from version', this.name,
+      this.version, event.oldVersion);
+  }
 
   const request = event.target;
-  const connection = request.result;
+  const db = request.result;
   let feedStore = null, entryStore = null;
-  const stores = connection.objectStoreNames;
+  const stores = db.objectStoreNames;
 
   if(stores.contains('feed')) {
     feedStore = request.transaction.objectStore('feed');
   } else {
-    feedStore = connection.createObjectStore('feed', {
+    feedStore = db.createObjectStore('feed', {
       'keyPath': 'id',
       'autoIncrement': true
     });
@@ -53,7 +45,7 @@ rdr.db._onUpgradeNeeded = function(event) {
   if(stores.contains('entry')) {
     entryStore = request.transaction.objectStore('entry');
   } else {
-    entryStore = connection.createObjectStore('entry', {
+    entryStore = db.createObjectStore('entry', {
       'keyPath': 'id',
       'autoIncrement': true
     });
@@ -122,4 +114,14 @@ rdr.db._onUpgradeNeeded = function(event) {
       'unique': true
     });
   }
+};
+
+// Requests the database to eventually be deleted, returns the request object
+FeedDbService.prototype.delete = function() {
+
+  if(this.verbose) {
+    console.log('Deleting database', this.name);
+  }
+
+  return indexedDB.deleteDatabase(this.name);
 };

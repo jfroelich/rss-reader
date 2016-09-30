@@ -23,22 +23,23 @@ rdr.feed.unsubscribe.start = function(feedId, callback) {
     'callback': callback
   };
 
-  rdr.db.open(rdr.feed.unsubscribe.onOpenDB.bind(ctx));
+  const dbService = new FeedDbService();
+  dbService.open(rdr.feed.unsubscribe.openDBOnSuccess.bind(ctx),
+    rdr.feed.unsubscribe.openDBOnError.bind(ctx));
 };
 
-rdr.feed.unsubscribe.onOpenDB = function(db) {
-  if(db) {
-    this.db = db;
-    const tx = db.transaction('entry', 'readwrite');
-    const store = tx.objectStore('entry');
-    const index = store.index('feed');
-    const request = index.openCursor(this.feedId);
-    request.onsuccess = rdr.feed.unsubscribe.openEntryCursorOnSuccess.bind(
-      this);
-    request.onerror = rdr.feed.unsubscribe.openEntryCursorOnError.bind(this);
-  } else {
-    rdr.feed.unsubscribe.onComplete.call(this, 'ConnectionError');
-  }
+rdr.feed.unsubscribe.openDBOnSuccess = function(event) {
+  this.db = event.target.result;
+  const tx = this.db.transaction('entry', 'readwrite');
+  const store = tx.objectStore('entry');
+  const index = store.index('feed');
+  const request = index.openCursor(this.feedId);
+  request.onsuccess = rdr.feed.unsubscribe.openEntryCursorOnSuccess.bind(this);
+  request.onerror = rdr.feed.unsubscribe.openEntryCursorOnError.bind(this);
+};
+
+rdr.feed.unsubscribe.openDBOnError = function(event) {
+  rdr.feed.unsubscribe.onComplete.call(this, 'ConnectionError');
 };
 
 rdr.feed.unsubscribe.openEntryCursorOnSuccess = function(event) {

@@ -15,36 +15,38 @@ rdr.entry.mark.start = function(id, callback) {
     throw new Error('invalid entry id: ' + id);
   }
 
-  const context = {'id': id, 'callback': callback};
-  rdr.db.open(rdr.entry.mark.onOpenDB.bind(context));
+  const ctx = {'id': id, 'callback': callback};
+  const dbService = new FeedDbService();
+  dbService.open(rdr.entry.mark._openDBOnSuccess.bind(ctx),
+    rdr.entry.mark._openDBOnError.bind(ctx));
 };
 
-rdr.entry.mark.onOpenDB = function(db) {
-  if(!db) {
-    rdr.entry.mark.onComplete.call(this, 'ConnectionError');
-    return;
-  }
-
+rdr.entry.mark._openDBOnSuccess = function(event) {
+  const db = event.target.result;
   this.db = db;
   const tx = db.transaction('entry', 'readwrite');
   const store = tx.objectStore('entry');
   const request = store.openCursor(this.id);
-  request.onsuccess = rdr.entry.mark.openCursorOnSuccess.bind(this);
-  request.onerror = rdr.entry.mark.openCursorOnError.bind(this);
+  request.onsuccess = rdr.entry.mark._openCursorOnSuccess.bind(this);
+  request.onerror = rdr.entry.mark._openCursorOnError.bind(this);
 };
 
-rdr.entry.mark.openCursorOnSuccess = function(event) {
+rdr.entry.mark._openDBOnError = function(event) {
+  rdr.entry.mark._onComplete.call(this, 'ConnectionError');
+};
+
+rdr.entry.mark._openCursorOnSuccess = function(event) {
   const cursor = event.target.result;
   if(!cursor) {
     console.error('No entry found', this.id);
-    rdr.entry.mark.onComplete.call(this, 'NotFoundError');
+    rdr.entry.mark._onComplete.call(this, 'NotFoundError');
     return;
   }
 
   const entry = cursor.value;
   if(entry.readState === rdr.entry.flags.READ) {
     console.error('Already read entry', this.id);
-    rdr.entry.mark.onComplete.call(this, 'AlreadyReadError');
+    rdr.entry.mark._onComplete.call(this, 'AlreadyReadError');
     return;
   }
 
@@ -54,15 +56,15 @@ rdr.entry.mark.openCursorOnSuccess = function(event) {
   entry.dateUpdated = dateNow;
   cursor.update(entry); // async
   rdr.badge.update.start(this.db);// async
-  rdr.entry.mark.onComplete.call(this, 'Success');
+  rdr.entry.mark._onComplete.call(this, 'Success');
 };
 
-rdr.entry.mark.openCursorOnError = function(event) {
+rdr.entry.mark._openCursorOnError = function(event) {
   console.error(event.target.error);
-  rdr.entry.mark.onComplete.call(this, 'CursorError');
+  rdr.entry.mark._onComplete.call(this, 'CursorError');
 };
 
-rdr.entry.mark.onComplete = function(type) {
+rdr.entry.mark._onComplete = function(type) {
   if(this.db) {
     this.db.close();
   }
