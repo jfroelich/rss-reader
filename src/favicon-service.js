@@ -111,7 +111,7 @@ FaviconCache.prototype.cloneURL = function(url) {
 function FaviconService() {
   this.cache = new FaviconCache();
   this.verbose = false;
-  this.timeout = null;//ms before giving up fetch request
+  this.timeout = null;
   this.maxAge = this.cache.defaultMaxAge;
 }
 
@@ -288,7 +288,6 @@ FaviconService.prototype._lookupRedirectURL = function(ctx, redirectURL) {
     if(this.verbose) {
       console.debug('Searching cache for redirect url', redirectURL.href);
     }
-
     const onLookup = this._onLookupRedirectURL.bind(this, ctx, redirectURL);
     this.cache.find(ctx.db, redirectURL, onLookup);
   } else {
@@ -303,7 +302,6 @@ FaviconService.prototype._onLookupRedirectURL = function(ctx, redirectURL,
       console.debug('Found non expired redirect url entry in cache',
         redirectURL.href);
     }
-
     const iconURL = new URL(entry.iconURLString);
     this.cache.add(ctx.db, ctx.url, iconURL);
     this._onLookupComplete(ctx, iconURL);
@@ -319,7 +317,6 @@ FaviconService.prototype._lookupOriginURL = function(ctx, redirectURL) {
     if(this.verbose) {
       console.debug('Searching cache for origin url', originURL.href);
     }
-
     this.cache.find(ctx.db, originURL,
       this._onLookupOriginURL.bind(this, ctx, redirectURL));
   } else {
@@ -361,9 +358,6 @@ FaviconService.prototype._onFetchRootIcon = function(ctx, redirectURL,
     if(this.verbose) {
       console.debug('Found icon at domain root', iconURLString);
     }
-
-    // If sending a head request yielded a valid icon, associate the urls with
-    // the icon in the cache and callback.
     const iconURL = new URL(iconURLString);
     this.cache.add(ctx.db, ctx.url, iconURL);
     if(redirectURL && redirectURL.href !== ctx.url.href) {
@@ -372,22 +366,18 @@ FaviconService.prototype._onFetchRootIcon = function(ctx, redirectURL,
     if(this.isOriginDiff(ctx.url, redirectURL, originURL)) {
       this.cache.add(ctx.db, originURL, iconURL);
     }
-
     this._onLookupComplete(ctx, iconURL);
   } else {
     if(this.verbose) {
       console.debug('FULL-FAIL', ctx.url.href);
     }
-
     this.cache.remove(ctx.db, ctx.url);
     if(redirectURL && redirectURL.href !== ctx.url.href) {
       this.cache.remove(ctx.db, redirectURL);
     }
-
     if(this.isOriginDiff(ctx.url, redirectURL, originURL)) {
       this.cache.remove(ctx.db, originURL);
     }
-
     this._onLookupComplete(ctx);
   }
 };
@@ -445,7 +435,6 @@ FaviconService.prototype.matchSelector = function(ancestor, selector, baseURL) {
   }
 };
 
-// Note that redirectURL may be undefined
 FaviconService.prototype.isOriginDiff = function(pageURL, redirectURL,
   originURL) {
   return originURL.href !== pageURL.href &&

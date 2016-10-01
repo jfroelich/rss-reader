@@ -341,9 +341,11 @@ function startSubscription(url) {
 
   const feed = {};
   rdr.feed.addURL(feed, url.href);
-  rdr.feed.subscribe.start(feed, {'callback': on_subscribe});
 
-  function on_subscribe(event) {
+  const subService = new SubscriptionService();
+  subService.start(feed, {'callback': onSubscribe});
+
+  function onSubscribe(event) {
     if(event.type !== 'success') {
       hideSubMonitor(showSubErrorMsg.bind(null, event.type));
       return;
@@ -485,6 +487,8 @@ function feedListItemOnClick(event) {
   window.scrollTo(0,0);
 }
 
+// TODO: Suppress resubmits if last query was a search and the
+// query did not change?
 function subFormOnSubmit(event) {
   // Prevent normal form submission behavior
   event.preventDefault();
@@ -497,9 +501,6 @@ function subFormOnSubmit(event) {
   if(!queryString) {
     return false;
   }
-
-  // TODO: Suppress resubmits if last query was a search and the
-  // query did not change
 
   // Do nothing if searching in progress
   const progressElement = document.getElementById('discover-in-progress');
@@ -531,13 +532,12 @@ function subFormOnSubmit(event) {
 
   // If it is a URL, subscribe, otherwise, search
   if(url) {
-    hideElement(progressElement);
     queryElement.value = '';
     showSubPreview(url);
   } else {
     showElement(progressElement);
-    const timeoutMs = 5000;
-    rdr.googleFeeds.search(queryString, timeoutMs, onSearchGoogleFeeds);
+    const searchService = new GoogleFeedsService();
+    searchService.search(queryString, onSearchGoogleFeeds);
   }
 
   return false;
@@ -570,6 +570,9 @@ function subscribeButtonOnClick(event) {
   showSubPreview(feedURL);
 }
 
+// TODO: favicon resolution is too slow. Display the results immediately using
+// a default favicon. Then, in a separate non-blocking interruptable task,
+// try and replace the default icon with the proper icon.
 function onSearchGoogleFeeds(event) {
   const query = event.query;
   const results = event.entries;
@@ -710,7 +713,9 @@ function createSearchResultElement(feed) {
 function unsubButtonOnClick(event) {
   console.debug('Clicked Unsubscribe');
   const feedId = parseInt(event.target.value, 10);
-  rdr.feed.unsubscribe.start(feedId, onUnsubscribe);
+
+  const unsubService = new UnsubscribeService();
+  unsubService.start(feedId, onUnsubscribe);
 
   function onUnsubscribe(event) {
     // If there was some failure to unsubscribe from the feed, react here
@@ -766,19 +771,22 @@ function unsubButtonOnClick(event) {
 // popup but no progress bar). The monitor should be hideable. No
 // need to be cancelable.
 // TODO: notify the user if there was an error
+// - in order to do this, ompl-import-service needs to callback with any
+// errors that occurred, and also callback when no errors occurred so this can
+// tell the difference
 // TODO: give immediate visual feedback the import started
 // TODO: switch to a different section of the options ui on complete?
 function importOPMLButtonOnClick(event) {
-  const verbose = false;
-  rdr.opml.import.start(verbose);
+  const service = new OPMLImportService();
+  service.start();
 }
 
 // TODO: also needs to give visual feedback
 function exportOPMLButtonOnClick(event) {
-  const verbose = false;
   const title = 'Subscriptions';
   const fileName = 'subscriptions.xml';
-  rdr.opml.export.start(title, fileName, verbose);
+  const service = new OPMLExportService();
+  service.start(title, fileName);
 }
 
 function initSubsSection() {

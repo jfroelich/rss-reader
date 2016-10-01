@@ -363,7 +363,8 @@ rdr.poll.onEntryProcessed = function(feedContext, event) {
 
   if(count === feedContext.numEntries) {
     if(feedContext.numEntriesAdded) {
-      rdr.badge.update.start(this.db);
+      const badgeService = new BadgeUpdateService();
+      badgeService.start(this.db);
     }
 
     this.numFeedsPending--;

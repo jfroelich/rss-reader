@@ -55,7 +55,10 @@ rdr.entry.mark._openCursorOnSuccess = function(event) {
   entry.dateRead = dateNow;
   entry.dateUpdated = dateNow;
   cursor.update(entry); // async
-  rdr.badge.update.start(this.db);// async
+
+  const badgeService = new BadgeUpdateService();
+  badgeService.start(this.db);// async
+
   rdr.entry.mark._onComplete.call(this, 'Success');
 };
 

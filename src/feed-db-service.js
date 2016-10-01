@@ -4,6 +4,8 @@
 
 'use strict';
 
+// TODO: think of a better name
+
 function FeedDbService() {
   this.name = 'reader';
   this.version = 20;
