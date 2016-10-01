@@ -5,7 +5,7 @@
 'use strict';
 
 function OPMLExportService() {
-  this.verbose = false;
+  this.log = new LoggingService();
   this.dbService = new FeedDbService();
 
   // TODO: i would rather this be a reference to something like a
@@ -16,9 +16,7 @@ function OPMLExportService() {
 
 // Load feeds from the database and export them to an opml file
 OPMLExportService.prototype.start = function(title, fileName, callback) {
-  if(this.verbose) {
-    console.log('Starting opml export');
-  }
+  this.log.log('Starting opml export');
 
   const ctx = {
     'callback': callback,
@@ -30,10 +28,7 @@ OPMLExportService.prototype.start = function(title, fileName, callback) {
 };
 
 OPMLExportService.prototype._openDBOnSuccess = function(ctx, event) {
-  if(this.verbose) {
-    console.debug('Connected to database');
-  }
-
+  this.log.debug('Connected to database');
   const db = event.target.result;
   this.getFeeds(db, this._onGetFeeds.bind(this, ctx));
   // As long as we call this after initiating the tx in getFeeds, it does not
@@ -48,10 +43,7 @@ OPMLExportService.prototype._openDBOnError = function(ctx, event) {
 };
 
 OPMLExportService.prototype._onGetFeeds = function(ctx, feeds) {
-  if(this.verbose) {
-    console.debug('Loaded %s feeds from database', feeds.length);
-  }
-
+  this.log.debug('Loaded %s feeds from database', feeds.length);
   const doc = this._createDoc(ctx.title);
   const outlines = [];
   for(let feed of feeds) {
@@ -63,10 +55,6 @@ OPMLExportService.prototype._onGetFeeds = function(ctx, feeds) {
   const body = doc.querySelector('body');
   for(let outline of outlines) {
     body.appendChild(outline);
-  }
-
-  if(this.verbose) {
-    console.dir(doc);
   }
 
   const writer = new XMLSerializer();
@@ -86,10 +74,7 @@ OPMLExportService.prototype._onGetFeeds = function(ctx, feeds) {
 };
 
 OPMLExportService.prototype._onComplete = function(ctx) {
-  if(this.verbose) {
-    console.log('Completed export');
-  }
-
+  this.log.log('Completed export');
   if(ctx.callback) {
     ctx.callback();
   }

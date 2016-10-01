@@ -8,6 +8,26 @@ function LoggingService() {
   this.enabled = false;
 }
 
-LoggingService.prototype.log = function(args) {
+LoggingService.prototype.debug = function() {
+  if(this.enabled) {
+    console.debug(...arguments);
+  }
+};
 
+LoggingService.prototype.log = function() {
+  if(this.enabled) {
+    console.log(...arguments);
+  }
+};
+
+LoggingService.prototype.error = function() {
+  if(this.enabled) {
+    console.error(...arguments);
+  }
+};
+
+LoggingService.prototype.warn = function() {
+  if(this.enabled) {
+    console.warn(...arguments);
+  }
 };

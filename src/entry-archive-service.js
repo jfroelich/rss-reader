@@ -10,7 +10,7 @@ function EntryArchiveService() {
   this.getEntryURL = rdr.entry.getURL;
   this.dbService = new FeedDbService();
   this.sendMessage = chrome.runtime.sendMessage;
-  this.verbose = false;
+  this.log = new LoggingService();
   this.currentDate = new Date();
   this.maxAge = 10 * 24 * 60 * 60 * 1000;// 10 days in ms
   this.numEntriesProcessed = 0;
@@ -26,10 +26,7 @@ EntryArchiveService.prototype.start = function() {
     throw new Error('invalid maxAge ' + this.maxAge);
   }
 
-  if(this.verbose) {
-    console.log('Starting entry archive service, maxAge is', this.maxAge);
-  }
-
+  this.log.log('Starting entry archive service, maxAge is', this.maxAge);
   this.dbService.open(this._openDBOnSuccess.bind(this),
     this._openDBOnError.bind(this));
 };
@@ -83,10 +80,13 @@ EntryArchiveService.prototype._openCursorOnSuccess = function(event) {
   this.numEntriesModified++;
   const compactedEntry = this.compact(entry);
 
-  if(this.verbose) {
-    console.debug('Compacted %s (age %s, before %s, after %s)',
-      this.getEntryURL(entry), age, this.sizeof(entry),
-      this.sizeof(compactedEntry));
+  // We kind of break demeter here because we want to avoid sizeof cost in
+  // tbe normal case
+  if(this.log.enabled) {
+    const beforeSize = this.sizeof(entry);
+    const afterSize = this.sizeof(compactedEntry);
+    this.log.debug('Compacted %s (age %s, before %s, after %s)',
+      this.getEntryURL(entry), age, beforeSize, afterSize);
   }
 
   cursor.update(compactedEntry);
@@ -100,7 +100,7 @@ EntryArchiveService.prototype._openCursorOnSuccess = function(event) {
 };
 
 EntryArchiveService.prototype._openCursorOnError = function(event) {
-  console.error(event.target.error);
+  this.log.error(event.target.error);
 };
 
 // This is impure
@@ -120,11 +120,8 @@ EntryArchiveService.prototype.compact = function(entry) {
 };
 
 EntryArchiveService.prototype._onTxComplete = function(event) {
-  if(this.verbose) {
-    console.log('Archive service completed (scanned %s, compacted %s)',
-      this.numEntriesProcessed, this.numEntriesModified);
-  }
-
+  this.log.log('Archive service completed (scanned %s, compacted %s)',
+    this.numEntriesProcessed, this.numEntriesModified);
   if(this.callback) {
     this.callback();
   }

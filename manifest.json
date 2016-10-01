@@ -28,6 +28,7 @@
       "/src/feed/parse.js",
       "/src/healthcheck.js",
       "/src/html/html.js",
+      "/src/logging-service.js",
       "/src/notifications/show.js",
       "/src/on-badge-click.js",
       "/src/on-installed.js",
@@ -38,7 +39,7 @@
       "/src/poll/resolve.js",
       "/src/poll/start.js",
       "/src/poll/tracking.js",
-      "/src/refresh-icons.js",
+      "/src/refresh-feed-icons-service.js",
       "/src/rewrite-url.js",
       "/src/utils.js",
       "/src/xml.js"

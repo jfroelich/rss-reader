@@ -5,7 +5,7 @@
 'use strict';
 
 function UnsubscribeService() {
-  this.verbose = false;
+  this.log = new LoggingService();
   this.dbService = new FeedDbService();
   this.badgeService = new BadgeUpdateService();
 }
@@ -16,9 +16,7 @@ UnsubscribeService.prototype.start = function(feedId, callback) {
     throw new TypeError('invalid feed id: ' + feedId);
   }
 
-  if(this.verbose) {
-    console.debug('Unsubscribing from', feedId);
-  }
+  this.log.log('Unsubscribing from', feedId);
 
   const ctx = {
     'feedId': feedId,
@@ -72,10 +70,7 @@ UnsubscribeService.prototype.openEntryCursorOnError = function(ctx, event) {
 };
 
 UnsubscribeService.prototype.onRemoveEntries = function(ctx) {
-  if(this.verbose) {
-    console.debug('Deleting feed', this.feedId);
-  }
-
+  this.log.log('Deleting feed', this.feedId);
   const tx = ctx.db.transaction('feed', 'readwrite');
   const store = tx.objectStore('feed');
   const request = store.delete(ctx.feedId);
@@ -93,9 +88,7 @@ UnsubscribeService.prototype.deleteFeedOnError = function(event) {
 };
 
 UnsubscribeService.prototype._onComplete = function(ctx, eventType) {
-  if(this.verbose) {
-    console.log('Unsubscribed');
-  }
+  this.log.log('Unsubscribed');
 
   if(ctx.db) {
     if(ctx.numDeleteEntryRequests) {

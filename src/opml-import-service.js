@@ -6,7 +6,7 @@
 
 function OPMLImportService() {
   this.parseXML = rdr.xml.parse;
-  this.verbose = false;
+  this.log = new LoggingService();
   this.dbService = new FeedDbService();
   this.subService = new SubscriptionService();
   this.addFeedURL = rdr.feed.addURL;
@@ -32,9 +32,7 @@ OPMLImportService.prototype.parseFromString = function(str) {
 // @param callback {function} optional, called when process completes without
 // arguments
 OPMLImportService.prototype.start = function(callback) {
-  if(this.verbose) {
-    console.debug('Importing OPML files...');
-  }
+  this.log.log('Importing OPML files...');
 
   // Create the uploader in the context of the document containing this script
   const uploader = document.createElement('input');
@@ -109,18 +107,14 @@ OPMLImportService.prototype._filterEmptyFiles = function(files) {
 };
 
 OPMLImportService.prototype._readerOnLoad = function(ctx, file, event) {
-  if(this.verbose) {
-    console.debug('Loaded', file.name);
-  }
+  this.log.log('Loaded file', file.name);
 
   const text = event.target.result;
   let doc;
   try {
     doc = this.parseFromString(text);
   } catch(error) {
-    if(this.verbose) {
-      console.warn(file.name, error);
-    }
+    this.log.warn(file.name, error);
     this._onFileProcessed(ctx, file);
     return;
   }
@@ -155,10 +149,7 @@ OPMLImportService.prototype._readerOnError = function(ctx, file, event) {
 };
 
 OPMLImportService.prototype._onFileProcessed = function(ctx, file) {
-  if(this.verbose) {
-    console.debug('Processed file "', file.name, '"');
-  }
-
+  this.log.debug('Processed file "', file.name, '"');
   ctx.numFilesProcessed++;
   // Compare against this.files, not uploader.files, because we have filtered
   // out some files before processing
@@ -168,18 +159,13 @@ OPMLImportService.prototype._onFileProcessed = function(ctx, file) {
 };
 
 OPMLImportService.prototype._onComplete = function(ctx) {
-  if(this.verbose) {
-    console.log('Completed opml import');
-  }
-
+  this.log.log('Completed opml import');
   if(ctx.uploader) {
     ctx.uploader.remove();
   }
-
   if(ctx.db) {
     ctx.db.close();
   }
-
   if(ctx.callback) {
     ctx.callback();
   }

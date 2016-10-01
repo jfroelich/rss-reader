@@ -12,7 +12,7 @@ function test() {
   const db = new FeedDbService();
   db.name = 'test-entry-archive-service';
   db.version = 1;
-  db.verbose = true;
+  db.log.enabled = true;
 
   const archiveService = new EntryArchiveService();
 
@@ -24,7 +24,7 @@ function test() {
   archiveService.entryFlags = {};
 
   // Show debug info in console
-  archiveService.verbose = true;
+  archiveService.log.enabled = true;
 
   // Replace the default instance (the real data instance) with our test
   // instance. The test db will be implicitly created when the archive runs
@@ -43,10 +43,6 @@ function test() {
   };
 
   // Create and insert some test data
-  
-
-
-
 
   //archiveService.start();
 }

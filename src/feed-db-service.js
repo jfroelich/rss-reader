@@ -9,14 +9,11 @@
 function FeedDbService() {
   this.name = 'reader';
   this.version = 20;
-  this.verbose = false;
+  this.log = new LoggingService();
 }
 
 FeedDbService.prototype.open = function(onSuccess, onError) {
-  if(this.verbose) {
-    console.log('Connecting to', this.name, 'version', this.version);
-  }
-
+  this.log.log('Connecting to', this.name, 'version', this.version);
   const request = indexedDB.open(this.name, this.version);
   request.onupgradeneeded = this._upgrade.bind(this);
   request.onsuccess = onSuccess;
@@ -25,10 +22,8 @@ FeedDbService.prototype.open = function(onSuccess, onError) {
 };
 
 FeedDbService.prototype._upgrade = function(event) {
-  if(this.verbose) {
-    console.log('Upgrading database %s to version %s from version', this.name,
+  this.log.log('Upgrading database %s to version %s from version', this.name,
       this.version, event.oldVersion);
-  }
 
   const request = event.target;
   const db = request.result;
@@ -120,10 +115,6 @@ FeedDbService.prototype._upgrade = function(event) {
 
 // Requests the database to eventually be deleted, returns the request object
 FeedDbService.prototype.delete = function() {
-
-  if(this.verbose) {
-    console.log('Deleting database', this.name);
-  }
-
+  this.log.log('Deleting database', this.name);
   return indexedDB.deleteDatabase(this.name);
 };

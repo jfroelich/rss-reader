@@ -6,7 +6,7 @@
 
 // Provides simple access to some of Google's Feed APIs
 function GoogleFeedsService() {
-  this.verbose = false;
+  this.log = new LoggingService();
   this.replacement = '\u2026';
   this.titleMaxLength = 200;
   this.snippetMaxLength = 400;
@@ -34,22 +34,15 @@ GoogleFeedsService.prototype.search = function(query, callback) {
 
   const base = 'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
   const url = base + encodeURIComponent(query);
-  if(this.verbose) {
-    console.log('GET', url);
-  }
-
+  this.log.log('GET', url);
   fetch(url, this.fetchOptions).then(this.onFetch.bind(this, callback)).catch(
     this.onFetchError.bind(this, callback));
 };
 
 GoogleFeedsService.prototype.onFetch = function(callback, response) {
   if(!response.ok) {
-    if(this.verbose) {
-      console.log('Response status:', response.responseStatus);
-      console.log('Response details:', response.responseDetails);
-      console.dir(response);
-    }
-
+    this.log.log('Response status:', response.responseStatus);
+    this.log.log('Response details:', response.responseDetails);
     callback({'type': 'error'});
     return;
   }
@@ -58,9 +51,7 @@ GoogleFeedsService.prototype.onFetch = function(callback, response) {
 };
 
 GoogleFeedsService.prototype.onFetchError = function(callback, error) {
-  if(this.verbose) {
-    console.error(error);
-  }
+  this.log.error(error);
   callback({'type': 'error'});
 };
 
@@ -69,18 +60,14 @@ GoogleFeedsService.prototype.onReadText = function(callback, text) {
   try {
     result = JSON.parse(text);
   } catch(error) {
-    if(this.verbose) {
-      console.error(error);
-    }
+    this.log.error(error);
     callback({'type': 'error'});
     return;
   }
 
   const data = result.responseData;
   if(!data) {
-    if(this.verbose) {
-      console.error('Missing response data');
-    }
+    this.log.error('Missing response data');
     callback({'type': 'error'});
     return;
   }

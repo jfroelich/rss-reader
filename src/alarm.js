@@ -37,11 +37,11 @@ chrome.alarms.get('compact-favicons', function(alarm) {
   }
 });
 
-chrome.alarms.get('refresh-feed-favicons', function(alarm) {
+chrome.alarms.get('refresh-feed-icons', function(alarm) {
   if(!alarm) {
-    console.debug('Creating refresh-feed-favicons alarm');
+    console.debug('Creating refresh-feed-icons alarm');
     // Run bi-weekly
-    chrome.alarms.create('refresh-feed-favicons',
+    chrome.alarms.create('refresh-feed-icons',
       {'periodInMinutes': 60 * 24 * 7 * 2});
   }
 });
@@ -65,8 +65,11 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
     const verbose = false;
     rdr.poll.start(verbose, forceResetLock, allowMeteredConnections);
   } else if(alarm.name === 'compact-favicons') {
-    const compactService = new FaviconCompactService();
+    const compactService = new CompactFaviconsService();
     compactService.start();
+  } else if(alarm.name === 'refresh-feed-icons') {
+    const refreshService = new RefreshFeedIconsService();
+    refreshService.start();
   } else if(alarm.name === 'healthcheck') {
     const verbose = false;
     rdr.healthcheck.start(verbose);

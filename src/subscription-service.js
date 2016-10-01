@@ -7,7 +7,7 @@
 function SubscriptionService() {
   this.dbService = new FeedDbService();
   this.iconService = new FaviconService();
-  this.verbose = false;
+  this.log = new LoggingService();
   this.getFeedURL = rdr.feed.getURL;
   this.addFeed = rdr.feed.add;
   this.fetchFeed = rdr.feed.fetch;
@@ -24,9 +24,7 @@ SubscriptionService.prototype.start = function(feed, options) {
     throw new TypeError('missing url');
   }
 
-  if(this.verbose) {
-    console.log('Subscribing to', feedURLString);
-  }
+  this.log.log('Subscribing to', feedURLString);
 
   const ctx = {
     'feed': feed,
@@ -53,17 +51,13 @@ SubscriptionService.prototype.start = function(feed, options) {
 };
 
 SubscriptionService.prototype._openDBOnSuccess = function(ctx, event) {
-  if(this.verbose) {
-    console.log('Connected to database');
-  }
+  this.log.log('Connected to database');
   ctx.db = event.target.result;
   this._findFeed(ctx);
 };
 
 SubscriptionService.prototype._openDBOnError = function(ctx, event) {
-  if(this.verbose) {
-    console.error(event.target.error);
-  }
+  this.log.error(event.target.error);
   this.onComplete(ctx, {'type': 'ConnectionError'});
 };
 
@@ -76,11 +70,7 @@ SubscriptionService.prototype._openDBOnError = function(ctx, event) {
   // TODO: i should be fully normalizing feed url
 SubscriptionService.prototype._findFeed = function(ctx) {
   const feedURLString = this.getFeedURL(ctx.feed);
-
-  if(this.verbose) {
-    console.debug('Checking if subscribed to', feedURLString);
-  }
-
+  this.log.log('Checking if subscribed to', feedURLString);
   const tx = ctx.db.transaction('feed');
   const store = tx.objectStore('feed');
   const index = store.index('urls');
@@ -114,14 +104,13 @@ SubscriptionService.prototype._findFeedOnSuccess = function(ctx, event) {
 };
 
 SubscriptionService.prototype._findFeedOnError = function(ctx, event) {
-  if(this.verbose) {
-    console.error(event.target.error);
-  }
+  this.log.error(event.target.error);
   this._onComplete(ctx, {'type': 'FindQueryError'});
 };
 
 SubscriptionService.prototype._onFetchFeed = function(ctx, event) {
   if(event.type !== 'success') {
+    this.log.log('fetch error');
     if(event.type === 'InvalidMimeType') {
       this._onComplete(ctx, {'type': 'FetchMimeTypeError'});
     } else {
@@ -131,17 +120,15 @@ SubscriptionService.prototype._onFetchFeed = function(ctx, event) {
   }
 
   ctx.feed = this.mergeFeeds(ctx.feed, event.feed);
-
   const urlString = ctx.feed.link ? ctx.feed.link : this.getFeedURL(this.feed);
   const urlObject = new URL(urlString);
   const doc = null;
-  this.iconService.lookup(urlObject, doc,
-    this._onLookupFavicon.bind(this, ctx));
+  this.iconService.lookup(urlObject, doc, this._onLookupIcon.bind(this, ctx));
 };
 
-SubscriptionService.prototype._onLookupFavicon = function(ctx, iconURLObject) {
-  if(iconURLObject) {
-    ctx.feed.faviconURLString = iconURLObject.href;
+SubscriptionService.prototype._onLookupIcon = function(ctx, iconURL) {
+  if(iconURL) {
+    ctx.feed.faviconURLString = iconURL.href;
   }
 
   this.addFeed(ctx.db, ctx.feed, this._onAddFeed.bind(this, ctx));
@@ -149,6 +136,7 @@ SubscriptionService.prototype._onLookupFavicon = function(ctx, iconURLObject) {
 
 SubscriptionService.prototype._onAddFeed = function(ctx, event) {
   if(event.type === 'success') {
+    this.log.log('stored new feed');
     ctx.didSubscribe = true;
     this._onComplete(ctx, {'type': 'success', 'feed': event.feed});
   } else {
@@ -158,6 +146,7 @@ SubscriptionService.prototype._onAddFeed = function(ctx, event) {
 
 SubscriptionService.prototype._onComplete = function(ctx, event) {
   if(ctx.shouldCloseDB && ctx.db) {
+    this.log.log('requesting database to close');
     ctx.db.close();
   }
 
