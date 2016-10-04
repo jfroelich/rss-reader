@@ -29,8 +29,8 @@ rdr.healthcheck.start = function(verbose) {
     'completedOrphanScan': false,
     'completedEntriesMissingURLsScan': false
   };
-  const dbService = new FeedDbService();
-  dbService.open(rdr.healthcheck._openDBOnSuccess.bind(ctx),
+  const openDBTask = new OpenFeedDbTask();
+  openDBTask.open(rdr.healthcheck._openDBOnSuccess.bind(ctx),
     rdr.healthcheck._openDBOnError.bind(ctx));
 };
 

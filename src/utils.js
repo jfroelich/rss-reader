@@ -148,17 +148,19 @@ rdr.utils.sizeof = function(object) {
 
   // Rather than using functional recursion, use a variable length stack that
   // we grow as we visit nested objects. Never tested but presumably this is
-  // a perf benefit. The stack starts with the input object.
+  // a perf benefit. This may no longer be the case in environments that have
+  // optimized recursion.
+  // The stack starts with the input object.
   // NOTE: the array may end up containing mixed value types. It will be deopted
   // if it is even optimized in the first place.
   const stack = [object];
 
-  // Hardcoded aliases, possibly a very minor perf benefit
+  // Alias these once outside of the loop, possibly a minor perf benefit
   const hasOwn = Object.prototype.hasOwnProperty;
   const toString = Object.prototype.toString;
 
   let size = 0;
-  // Upper bound to prevent long processing
+  // Upper bound to halt long processing
   let maxIterations = 10000;
 
   while(stack.length && maxIterations--) {
@@ -220,7 +222,7 @@ rdr.utils.sizeof = function(object) {
         }
         break;
       default:
-        // ignore the value
+        // ignore the value's contribution to total size
         break;
     }
   }
