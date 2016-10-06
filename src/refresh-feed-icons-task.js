@@ -11,7 +11,7 @@ function RefreshFeedIconsTask() {
   this.openDBTask = new OpenFeedDbTask();
   this.lookupTask = new LookupFaviconTask();
   this.getAllFeedsTask = new GetAllFeedsTask();
-  this.getFeedURL = rdr.feed.getURL;
+  this.Feed = Feed;
 }
 
 // Refresh the favicon for stored feeds
@@ -46,7 +46,7 @@ RefreshFeedIconsTask.prototype._onGetAllFeeds = function(ctx, feeds) {
 };
 
 RefreshFeedIconsTask.prototype._lookup = function(ctx, feed) {
-  this.log.debug('Checking', this.getFeedURL(feed));
+  this.log.debug('Checking', this.Feed.getURL(feed));
   // Get the lookup url for the feed. Prefer the link because it is a website
   // associated with the feed. Otherwise fall back to using the domain of the
   // url to the feed's xml file. None of the parsing should throw.
@@ -54,7 +54,7 @@ RefreshFeedIconsTask.prototype._lookup = function(ctx, feed) {
   if(feed.link) {
     lookupURL = new URL(feed.link);
   } else {
-    const feedURL = new URL(this.getFeedURL(feed));
+    const feedURL = new URL(this.Feed.getURL(feed));
     lookupURL = new URL(feedURL.origin);
   }
 
@@ -64,13 +64,13 @@ RefreshFeedIconsTask.prototype._lookup = function(ctx, feed) {
 
 RefreshFeedIconsTask.prototype._onLookup = function(ctx, feed, iconURL) {
 
-  this.log.debug('lookup result', this.getFeedURL(feed), iconURL ?
+  this.log.debug('lookup result', this.Feed.getURL(feed), iconURL ?
     iconURL.href: 'no icon');
 
   if(iconURL) {
     if(!feed.faviconURLString || feed.faviconURLString !== iconURL.href) {
 
-      this.log.debug('Setting feed %s favicon to %s', this.getFeedURL(feed),
+      this.log.debug('Setting feed %s favicon to %s', this.Feed.getURL(feed),
         iconURL.href);
       feed.faviconURLString = iconURL.href;
       feed.dateUpdated = new Date();
@@ -95,7 +95,7 @@ RefreshFeedIconsTask.prototype._onLookup = function(ctx, feed, iconURL) {
 };
 
 RefreshFeedIconsTask.prototype._onPutSuccess = function(ctx, feed, event) {
-  this.log.debug('Updated feed', this.getFeedURL(feed));
+  this.log.debug('Updated feed', this.Feed.getURL(feed));
 };
 
 // Treat database put errors as non-fatal

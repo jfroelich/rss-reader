@@ -48,7 +48,7 @@ function showErrorMsg(msg, shouldFadeIn) {
   if(shouldFadeIn) {
     errorElement.style.opacity = '0';
     document.body.appendChild(errorElement);
-    rdr.utils.fade(container, 1, 0);
+    ReaderUtils.fadeElement(container, 1, 0);
   } else {
     errorElement.style.opacity = '1';
     showElement(errorElement);
@@ -112,7 +112,7 @@ function hideSubMonitor(callback, shouldFadeOut) {
   }
 
   if(shouldFadeOut) {
-    rdr.utils.fade(monitor, 2, 1, removeThenCallback);
+    ReaderUtils.fadeElement(monitor, 2, 1, removeThenCallback);
   } else {
     removeThenCallback();
   }
@@ -243,7 +243,7 @@ function appendFeed(feed, shouldInsertInOrder) {
 
 // TODO: deprecate the ability to preview
 function showSubPreview(url) {
-  if(!rdr.utils.isURLObject(url)) {
+  if(!ReaderUtils.isURLObject(url)) {
     throw new Error('url should be a URL');
   }
 
@@ -290,7 +290,7 @@ function showSubPreview(url) {
     // list as the button's value.
     const continueButton = document.getElementById(
       'subscription-preview-continue');
-    continueButton.value = rdr.feed.getURL(feed);
+    continueButton.value = Feed.getURL(feed);
 
     const resultsListElement = document.getElementById(
       'subscription-preview-entries');
@@ -327,7 +327,7 @@ function hideSubPreview() {
 }
 
 function startSubscription(url) {
-  if(!rdr.utils.isURLObject(url)) {
+  if(!ReaderUtils.isURLObject(url)) {
     throw new TypeError('invalid url param: ' + url);
   }
 
@@ -341,7 +341,7 @@ function startSubscription(url) {
   // startSubscription should expect a feed object as a parameter.
 
   const feed = {};
-  rdr.feed.addURL(feed, url.href);
+  Feed.addURL(feed, url.href);
 
   const subTask = new SubscribeTask();
   subTask.start(feed, {'callback': onSubscribe});
@@ -354,7 +354,7 @@ function startSubscription(url) {
 
     appendFeed(event.feed, true);
     updateFeedCount();
-    const feedURL = rdr.feed.getURL(event.feed);
+    const feedURL = Feed.getURL(event.feed);
     appendSubMonitorMsg('Subscribed to ' + feedURL);
 
     // Hide the sub monitor then switch back to the main feed list
@@ -447,7 +447,7 @@ function populateFeedInfo(feedId) {
     }
 
     const feedURLElement = document.getElementById('details-feed-url');
-    feedURLElement.textContent = rdr.feed.getURL(feed);
+    feedURLElement.textContent = Feed.getURL(feed);
 
     const feedLinkElement = document.getElementById('details-feed-link');
     if(feed.link) {

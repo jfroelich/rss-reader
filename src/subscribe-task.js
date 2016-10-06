@@ -9,10 +9,9 @@ function SubscribeTask() {
   this.openDBTask = new OpenFeedDbTask();
   this.lookupTask = new LookupFaviconTask();
   this.log = new LoggingService();
-  this.getFeedURL = rdr.feed.getURL;
-  this.addFeed = rdr.feed.add;
+  this.Feed = Feed;
+  this.addFeedTask = new AddFeedTask();
   this.fetchFeedTask = new FetchFeedTask();
-  this.mergeFeeds = rdr.feed.merge;
   this.showNotification = rdr.notifications.show;
 }
 
@@ -21,7 +20,7 @@ function SubscribeTask() {
 // @param options {Object} optional object containing optional callback
 // and optional open connection
 SubscribeTask.prototype.start = function(feed, options) {
-  const feedURLString = this.getFeedURL(feed);
+  const feedURLString = this.Feed.getURL(feed);
   if(!feedURLString) {
     throw new TypeError('missing url');
   }
@@ -71,7 +70,7 @@ SubscribeTask.prototype._openDBOnError = function(ctx, event) {
 // trying to add the feed.
 // TODO: i should be fully normalizing feed url
 SubscribeTask.prototype._findFeed = function(ctx) {
-  const feedURLString = this.getFeedURL(ctx.feed);
+  const feedURLString = this.Feed.getURL(ctx.feed);
   this.log.log('Checking if subscribed to', feedURLString);
   const tx = ctx.db.transaction('feed');
   const store = tx.objectStore('feed');
@@ -82,7 +81,7 @@ SubscribeTask.prototype._findFeed = function(ctx) {
 };
 
 SubscribeTask.prototype._findFeedOnSuccess = function(ctx, event) {
-  const feedURL = this.getFeedURL(this.feed);
+  const feedURL = this.Feed.getURL(this.feed);
 
   // Cannot resubscribe to an existing feed
   if(event.target.result) {
@@ -93,7 +92,7 @@ SubscribeTask.prototype._findFeedOnSuccess = function(ctx, event) {
 
   // Subscribe while offline
   if('onLine' in navigator && !navigator.onLine) {
-    this.addFeed(ctx.db, ctx.feed, this._onAddFeed.bind(this, ctx));
+    this.addFeedTask.start(ctx.db, ctx.feed, this._onAddFeed.bind(this, ctx));
     return;
   }
 
@@ -120,8 +119,8 @@ SubscribeTask.prototype._onFetchFeed = function(ctx, event) {
     return;
   }
 
-  ctx.feed = this.mergeFeeds(ctx.feed, event.feed);
-  const urlString = ctx.feed.link ? ctx.feed.link : this.getFeedURL(this.feed);
+  ctx.feed = this.Feed.merge(ctx.feed, event.feed);
+  const urlString = ctx.feed.link ? ctx.feed.link : this.Feed.getURL(this.feed);
   const urlObject = new URL(urlString);
   const doc = null;
   this.lookupTask.start(urlObject, doc, this._onLookupIcon.bind(this, ctx));
@@ -132,7 +131,7 @@ SubscribeTask.prototype._onLookupIcon = function(ctx, iconURL) {
     ctx.feed.faviconURLString = iconURL.href;
   }
 
-  this.addFeed(ctx.db, ctx.feed, this._onAddFeed.bind(this, ctx));
+  this.addFeedTask.start(ctx.db, ctx.feed, this._onAddFeed.bind(this, ctx));
 };
 
 SubscribeTask.prototype._onAddFeed = function(ctx, event) {
@@ -154,7 +153,7 @@ SubscribeTask.prototype._onComplete = function(ctx, event) {
   if(ctx.shouldNotify && ctx.didSubscribe) {
     // Grab data from the sanitized feed instead of the input
     const feed = event.feed;
-    const displayString = feed.title ||  this.getFeedURL(feed);
+    const displayString = feed.title ||  this.Feed.getURL(feed);
     const message = 'Subscribed to ' + displayString;
     this.showNotification('Subscription complete', message,
       feed.faviconURLString);

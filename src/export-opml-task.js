@@ -8,13 +8,12 @@ function ExportOPMLTask() {
   this.log = new LoggingService();
   this.openDBTask = new OpenFeedDbTask();
   this.getAllFeedsTask = new GetAllFeedsTask();
-  this.getFeedURL = rdr.get.getURL;
+  this.Feed = Feed;
 }
 
 // Load feeds from the database and export them to an opml file
 ExportOPMLTask.prototype.start = function(title, fileName, callback) {
   this.log.log('Starting opml export');
-
   const ctx = {
     'callback': callback,
     'title': title || 'Subscriptions',
@@ -28,9 +27,6 @@ ExportOPMLTask.prototype._openDBOnSuccess = function(ctx, event) {
   this.log.debug('Connected to database');
   const db = event.target.result;
   this.getAllFeedsTask.start(db, this._onGetFeeds.bind(this, ctx));
-  // As long as we call this after initiating the tx in getAllFeeds, it does not
-  // matter that we call this before the tx resolves, this simply queues the
-  // conn to close once no txs are outstanding.
   db.close();
 };
 
@@ -85,7 +81,7 @@ ExportOPMLTask.prototype._createOutline = function(doc, feed) {
     outline.setAttribute('type', feed.type);
   }
 
-  const feedURL = this.getFeedURL(feed);
+  const feedURL = this.Feed.getURL(feed);
 
   // This should never happen. A feed loaded from the database should always
   // have a url. This exception is not caught in the calling context, it is

@@ -46,7 +46,7 @@ rdr.poll.resolve.selector = Object.keys(
 
 // TODO: add verbose param
 rdr.poll.resolve.start = function(document, baseURL) {
-  if(!rdr.utils.isURLObject(baseURL)) {
+  if(!ReaderUtils.isURLObject(baseURL)) {
     throw new TypeError('invalid baseURL param: ' + baseURL);
   }
 
@@ -136,7 +136,7 @@ rdr.poll.resolve.resolveSrcsetAttr = function(element, baseURL) {
   }
 
   if(dirtied) {
-    const newSrcsetValue = rdr.utils.serializeSrcset(srcset);
+    const newSrcsetValue = ReaderUtils.serializeSrcset(srcset);
     if(newSrcsetValue) {
       element.setAttribute('srcset', newSrcsetValue);
     }
@@ -149,7 +149,7 @@ rdr.poll.resolve.resolveURL = function(urlString, baseURLObject) {
     throw new TypeError('invalid urlString param: ' + urlString);
   }
 
-  if(!rdr.utils.isURLObject(baseURLObject)) {
+  if(!ReaderUtils.isURLObject(baseURLObject)) {
     throw new TypeError('invalid baseURLObject param: ' + baseURLObject);
   }
 

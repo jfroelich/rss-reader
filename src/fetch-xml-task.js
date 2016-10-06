@@ -34,7 +34,16 @@ FetchXMLTask.prototype.accepts = [
 ].join(', ');
 
 FetchXMLTask.prototype.start = function(requestURL, callback) {
-  this.log.log('GET', requestURL.href);
+  const log = this.log;
+
+  if(!log) {
+    console.debug('LoggingService?', LoggingService);
+    return callback({
+      'type': 'badlog'
+    });
+  }
+
+  log.log('GET', requestURL.href);
 
   const opts = {};
   // Using 'omit' is the whole reason this uses the Fetch api
@@ -54,7 +63,7 @@ FetchXMLTask.prototype.start = function(requestURL, callback) {
 
   function doCallback(event) {
     if(didCallback) {
-      this.log.warn('Suppressing duplicated callback', requestURL.href, event);
+      log.warn('Suppressing duplicated callback', requestURL.href, event);
       return;
     }
     didCallback = true;
@@ -66,7 +75,7 @@ FetchXMLTask.prototype.start = function(requestURL, callback) {
 
   fetch(requestURL.href, opts).then(function onResponse(response) {
     if(!response.ok) {
-      this.log.warn(requestURL.href, response.status);
+      log.warn(requestURL.href, response.status);
       onResponseCalledBack = true;
       return doCallback({
         'type': 'network_error',
@@ -76,7 +85,7 @@ FetchXMLTask.prototype.start = function(requestURL, callback) {
 
     const contentType = response.headers.get('Content-Type');
     if(!isAcceptedType(contentType)) {
-      this.log.warn(requestURL.href, 'invalid type', contentType);
+      log.warn(requestURL.href, 'invalid type', contentType);
       onResponseCalledBack = true;
       return doCallback({
         'type': 'InvalidMimeType',
@@ -99,7 +108,7 @@ FetchXMLTask.prototype.start = function(requestURL, callback) {
 
     // Part of the hack with exiting a promise early
     if(onResponseCalledBack) {
-      this.log.warn('on response already did a callback, exiting');
+      log.warn('on response already did a callback, exiting');
       return;
     }
 
@@ -126,7 +135,7 @@ FetchXMLTask.prototype.start = function(requestURL, callback) {
   }).catch(function(error) {
     // If lost net, this shows up as a TypeError
     // with message like TypeError: Failed to fetch <url>
-    this.log.warn(error, requestURL.href);
+    log.warn(error, requestURL.href);
     doCallback({
       'type': 'unknown_error'
     });

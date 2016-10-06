@@ -4,42 +4,57 @@
 
 'use strict';
 
-function UpdateFeedTask() {
-  this.log = new LoggingService();
-  this.sanitizeFeed = rdr.feed.sanitize;
-  this.filterEmptyProps = rdr.utils.filterEmptyProps;
-  this.getFeedURL = rdr.feed.getURL;
-}
+{
 
-UpdateFeedTask.prototype.start = function(db, feed, callback) {
-  if(!feed.id) {
-    throw new Error('Attempted to update a feed without a valid id');
+function updateFeed(db, feed, callback, deps) {
+
+  // this is buggy
+/*
+  deps = deps || {};
+
+
+  const LoggingService = deps.LoggingService || LoggingService;
+  const Feed = deps.Feed || Feed;
+  const ReaderUtils = deps.ReaderUtils || ReaderUtils;
+
+  if(!LoggingService || !Feed || !ReaderUtils) {
+    throw new Error('missing deps');
   }
 
-  if(!this.getFeedURL(feed)) {
-    throw new Error('Attempted to update a feed without a url');
+*/
+
+  // worth guarding to avoid accidentally adding
+  if(!('id' in feed)) {
+    throw new Error('missing id');
   }
 
-  this.log.log('updating feed', this.getFeedURL(feed));
-
-  const ctx = {'feed': feed, 'callback': callback};
-  ctx.feed = this.sanitizeFeed(ctx.feed);
-  ctx.feed.dateUpdated = new Date();
-  ctx.feed = this.filterEmptyProps(ctx.feed);
+  const log = new LoggingService();
+  log.enabled = true; // temporary
+  log.log('Updating feed', Feed.getURL(feed));
+  let storable = Feed.sanitize(feed);
+  storable.dateUpdated = new Date();
+  storable = ReaderUtils.filterEmptyProps(storable);
   const tx = db.transaction('feed', 'readwrite');
   const store = tx.objectStore('feed');
-  const request = store.put(ctx.feed);
+  const request = store.put(storable);
+  request.onsuccess = onSuccess.bind(null, Feed, log, storable, callback);
+  request.onerror = onError.bind(null, Feed, log, storable, callback);
+}
+
+function onSuccess(Feed, log, feed, callback, event) {
+  log.debug('Stored feed', Feed.getURL(feed));
   if(callback) {
-    request.onsuccess = this._putOnSuccess.bind(this, ctx);
-    request.onerror = this._putOnError.bind(this, ctx);
+    callback({'type': 'success', 'feed': feed});
   }
 }
 
-UpdateFeedTask.prototype._putOnSuccess = function(ctx, event) {
-  ctx.callback({'type': 'success', 'feed': ctx.feed});
-};
+function onError(Feed, log, feed, callback, event) {
+  log.error('Error storing feed', Feed.getURL(feed), event.target.error);
+  if(callback) {
+    callback({'type': 'error', 'feed': feed});
+  }
+}
 
-UpdateFeedTask.prototype._putOnError = function(ctx, event) {
-  this.log.error(event.target.error);
-  ctx.callback({'type': 'error', 'feed': ctx.feed});
-};
+this.updateFeed = updateFeed;
+
+}

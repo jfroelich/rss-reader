@@ -14,6 +14,7 @@
     "persistent": false,
     "scripts": [
       "/lib/parse-srcset.js",
+      "/src/add-entry-task.js",
       "/src/alarm.js",
       "/src/archive-entries-task.js",
       "/src/bp.js",

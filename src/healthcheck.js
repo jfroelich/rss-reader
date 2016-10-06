@@ -13,6 +13,11 @@ rdr.healthcheck = {};
 // TODO: add check for entries missing dateCreated
 // TODO: add check for entries with dateCreated in future
 
+// TODO: the orphan check needs to be improved, it should also validate that
+// an entry's feed id points to a real feed. I need to load an array of feed
+// ids first, then walk entries and check for any entries that are missing a
+// feed id, or do not point to a feed id in the set of known feed ids
+
 // Scans storage for issues and attempts to resolve them. This can be called
 // from the console or run on a schedule.
 // @param verbose {boolean} whether to log info to console

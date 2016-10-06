@@ -179,7 +179,7 @@ rdr.feed._createEntry = function(feedDatePublished, entryElement) {
   // Set the link url as the entry's initial url
   const entryLinkURL = rdr.feed._findEntryLink(entryElement);
   if(entryLinkURL) {
-    rdr.entry.addURL(entry, entryLinkURL);
+    Entry.addURL(entry, entryLinkURL);
   }
 
   const entryDatePublished = rdr.feed._findEntryDatePublished(entryElement);

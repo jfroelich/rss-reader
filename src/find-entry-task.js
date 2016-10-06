@@ -22,6 +22,12 @@
 // performance benefit to doing them in parallel. If all entries are going
 // to be iterated, then the same amount of work has to occur.
 
+// TODO: maybe I should reverse the urls array, so that the most recent
+// url in the input is searched first, based on the assumption that redirect
+// urls are more likely to be found, leading to an earlier exit and fewer
+// cursor moves, and the assumption that the input is usually the sorted array
+// of a new entry
+
 // Searches the entry store for entries that contain at least one of the urls
 // and then calls back with an array of matching entries.
 // The callback function's context is not rebound.
@@ -30,7 +36,7 @@
 // Input urls are normalized.
 function FindEntryTask() {
   this.log = new LoggingService();
-  this.normalizeEntryURL = rdr.entry.normalizeURL;
+  this.Entry = Entry;
 }
 
 FindEntryTask.prototype.start = function(db, urls, matchLimit, callback) {
@@ -51,7 +57,7 @@ FindEntryTask.prototype.start = function(db, urls, matchLimit, callback) {
   const store = tx.objectStore('entry');
   const index = store.index('urls');
   for(let url of urls) {
-    const normalizedURLString = this.normalizeEntryURL(url);
+    const normalizedURLString = this.Entry.normalizeURL(url);
     const request = index.openCursor(normalizedURLString);
     request.onsuccess = this._openCursorOnSuccess.bind(this, ctx);
     request.onerror = this._openCursorOnError.bind(this, ctx);

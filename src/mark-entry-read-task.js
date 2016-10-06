@@ -8,7 +8,7 @@
 function MarkEntryReadTask() {
   this.log = new LoggingService();
   this.openDbTask = new OpenFeedDbTask();
-  this.entryFlags = rdr.entry.flags;
+  this.entryFlags = Entry.flags;
   this.updateBadgeTask = new UpdateBadgeTask();
 }
 
@@ -30,6 +30,8 @@ MarkEntryReadTask.prototype._openDBOnSuccess = function(ctx, event) {
   const db = event.target.result;
 
   // TODO: maybe I can just close db here, instead of putting in context
+  // even though I call cursor.update later, I believe that keeps the
+  // transaction active long enough to not let the close request intervene.
   ctx.db = db;
   const tx = db.transaction('entry', 'readwrite');
   const store = tx.objectStore('entry');

@@ -6,8 +6,9 @@
 
 function UpdateBadgeTask() {
   this.openDBTask = new OpenFeedDbTask();
-  this.entryFlags = rdr.entry.flags;
+  this.entryFlags = Entry.flags;
   this.log = new LoggingService();
+  this.setBadgeText = chrome.browserAction.setBadgeText;
 }
 
 // Sets the text of the extension's badge to the current number of unread
@@ -42,6 +43,9 @@ UpdateBadgeTask.prototype._countUnread = function(ctx) {
   const request = index.count(this.entryFlags.UNREAD);
   request.onsuccess = this._countOnSuccess.bind(this, ctx);
   request.onerror = this._countOnError.bind(this, ctx);
+  if(ctx.shouldCloseDB) {
+    ctx.db.close();
+  }
 };
 
 UpdateBadgeTask.prototype._countOnSuccess = function(ctx, event) {
@@ -63,9 +67,5 @@ UpdateBadgeTask.prototype._countOnError = function(ctx, event) {
 
 UpdateBadgeTask.prototype._onComplete = function(ctx) {
   this.log.log('Setting badge text to', ctx.text);
-  chrome.browserAction.setBadgeText({'text': ctx.text});
-  if(ctx.shouldCloseDB && ctx.db) {
-    this.log.log('Requesting database connection to close');
-    ctx.db.close();
-  }
+  this.setBadgeText({'text': ctx.text});
 };

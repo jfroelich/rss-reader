@@ -15,12 +15,11 @@ function PollFeedsTask() {
   this.findEntryTask = new FindEntryTask();
   this.fetchHTMLTask = new FetchHTMLTask();
   this.setImageDimensionsTask = new SetImageDimensionsTask();
-  this.updateFeedTask = new UpdateFeedTask();
-  this.getFeedURL = rdr.feed.getURL;
-  this.mergeFeeds = rdr.feed.merge;
-  this.getEntryURL = rdr.entry.getURL;
-  this.addEntryURL = rdr.entry.addURL;
-  this.addEntry = rdr.entry.add;
+  this.updateFeed = updateFeed;
+  this.addEntryTask = new AddEntryTask();
+
+  this.Feed = Feed;
+  this.Entry = Entry;
   this.rewriteURL = rdr.rewriteURL;
 }
 
@@ -95,20 +94,20 @@ PollFeedsTask.prototype.onGetAllFeeds = function(ctx, feeds) {
   ctx.numFeedsPending = feeds.length;
   const shouldExcludeEntries = false;
   for(let feed of feeds) {
-    this.fetchFeedTask.start(new URL(this.getFeedURL(feed)),
+    this.fetchFeedTask.start(new URL(this.Feed.getURL(feed)),
       shouldExcludeEntries, this.onFetchFeed.bind(this, ctx, feed));
   }
 };
 
 PollFeedsTask.prototype.onFetchFeed = function(ctx, localFeed, event) {
   if(event.type !== 'success') {
-    this.log.debug('failed to fetch', this.getFeedURL(localFeed));
+    this.log.debug('failed to fetch', this.Feed.getURL(localFeed));
     ctx.numFeedsPending--;
     this.onComplete(ctx);
     return;
   }
 
-  this.log.debug('fetched', this.getFeedURL(localFeed));
+  this.log.debug('fetched', this.Feed.getURL(localFeed));
 
   const remoteFeed = event.feed;
 
@@ -116,15 +115,15 @@ PollFeedsTask.prototype.onFetchFeed = function(ctx, localFeed, event) {
   // dateUpdated is not set for newly added feeds.
   if(localFeed.dateUpdated && this.isFeedUnmodified(localFeed, remoteFeed)) {
     this.log.debug('remote feed file not modified since last visit',
-      this.getFeedURL(remoteFeed));
+      this.Feed.getURL(remoteFeed));
     ctx.numFeedsPending--;
     this.onComplete(ctx);
     return;
   }
 
-  const feed = this.mergeFeeds(localFeed, remoteFeed);
-  this.log.debug('Updating', this.getFeedURL(feed));
-  this.updateFeedTask.start(ctx.db, feed,
+  const feed = this.Feed.merge(localFeed, remoteFeed);
+  this.log.debug('Updating', this.Feed.getURL(feed));
+  this.updateFeed(ctx.db, feed,
     this.onUpdateFeed.bind(this, ctx, event.entries));
 };
 
@@ -174,7 +173,7 @@ PollFeedsTask.prototype.onUpdateFeed = function(ctx, entries, event) {
 };
 
 PollFeedsTask.prototype.processEntry = function(ctx, feed, entry, callback) {
-  const entryTerminalURLString = this.getEntryURL(entry);
+  const entryTerminalURLString = this.Entry.getURL(entry);
 
   // I would prefer this to be an assert, but I think this is the first place
   // where this is validated, and this isn't a fatal error. It just means we
@@ -193,7 +192,7 @@ PollFeedsTask.prototype.processEntry = function(ctx, feed, entry, callback) {
   const entryTerminalURLObject = new URL(entryTerminalURLString);
   const rewrittenURLObject = this.rewriteURL(entryTerminalURLObject);
   if(rewrittenURLObject) {
-    this.addEntryURL(entry, rewrittenURLObject.href);
+    this.Entry.addURL(entry, rewrittenURLObject.href);
   }
 
   // Check if the entry already exists. Check against all of its urls
@@ -228,7 +227,7 @@ PollFeedsTask.prototype.onFindEntry = function(ctx, feed, entry, callback,
     entry.feedTitle = feed.title;
   }
 
-  const entryTerminalURLString = this.getEntryURL(entry);
+  const entryTerminalURLString = this.Entry.getURL(entry);
   const entryTerminalURLObject = new URL(entryTerminalURLString);
 
   // Check that the url does not belong to a domain that obfuscates its content
@@ -237,7 +236,7 @@ PollFeedsTask.prototype.onFindEntry = function(ctx, feed, entry, callback,
   // store the entry, but we just do not try and augment its content.
   if(rdr.poll.isFetchResistantURL(entryTerminalURLObject)) {
     this.prepLocalDoc(entry);
-    this.addEntry(ctx.db, entry, callback);
+    this.addEntryTask.start(ctx.db, entry, callback);
     return;
   }
 
@@ -247,7 +246,7 @@ PollFeedsTask.prototype.onFindEntry = function(ctx, feed, entry, callback,
   // this misses it, false negatives are not too important.
   if(this.isPDFURL(entryTerminalURLObject)) {
     this.prepLocalDoc(entry);
-    this.addEntry(ctx.db, entry, callback);
+    this.addEntryTask.start(ctx.db, entry, callback);
     return;
   }
 
@@ -271,7 +270,7 @@ PollFeedsTask.prototype.isPDFURL = function(url) {
 PollFeedsTask.prototype.onFetchEntry = function(ctx, entry, callback, event) {
   if(event.type !== 'success') {
     this.prepLocalDoc(entry);
-    this.addEntry(ctx.db, entry, callback);
+    this.addEntryTask.start(ctx.db, entry, callback);
     return;
   }
 
@@ -283,7 +282,7 @@ PollFeedsTask.prototype.onFetchEntry = function(ctx, entry, callback, event) {
     throw new Error('missing response url');
   }
 
-  this.addEntryURL(entry, responseURLString);
+  this.Entry.addURL(entry, responseURLString);
 
   // TODO: if we successfully fetched the entry, then before storing it,
   // we should be trying to set its faviconURL.
@@ -312,7 +311,7 @@ PollFeedsTask.prototype.onSetImageDimensions = function(ctx, entry, document,
 
   this.prepDoc(document);
   entry.content = document.documentElement.outerHTML.trim();
-  this.addEntry(ctx.db, entry, callback);
+  this.addEntryTask.start(ctx.db, entry, callback);
 };
 
 PollFeedsTask.prototype.prepDoc = function(doc) {

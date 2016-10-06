@@ -4,6 +4,9 @@
 
 'use strict';
 
+// TODO: rename to CustomConsole
+// appear like it is typeof console, and can work as a drop in replacement
+
 function LoggingService() {
   this.enabled = false;
 }

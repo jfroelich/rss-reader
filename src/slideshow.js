@@ -66,7 +66,7 @@ function appendSlides(onAppendComplete, isFirstSlide) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const key_path = [rdr.entry.flags.UNARCHIVED, rdr.entry.flags.UNREAD];
+    const key_path = [Entry.flags.UNARCHIVED, Entry.flags.UNREAD];
     const request = index.openCursor(key_path);
     request.onsuccess = onOpenCursor;
     request.onerror = openCursorOnError;
@@ -148,7 +148,7 @@ function appendSlide(entry, isFirstSlide) {
 
 function createEntryTitle(entry) {
   const title = document.createElement('a');
-  title.setAttribute('href', rdr.entry.getURL(entry));
+  title.setAttribute('href', Entry.getURL(entry));
   title.setAttribute('class', 'entry-title');
   title.setAttribute('target','_blank');
   title.setAttribute('rel', 'noreferrer');
@@ -156,7 +156,7 @@ function createEntryTitle(entry) {
   if(entry.title) {
     title.setAttribute('title', entry.title);
     let titleText = entry.title;
-    titleText = rdr.entry.filterTitle(titleText);
+    titleText = Entry.filterTitle(titleText);
     titleText = rdr.html.truncate(titleText, 300);
     title.innerHTML = titleText;
   } else {
@@ -201,7 +201,7 @@ function createFeedSource(entry) {
   buffer.push(entry.author || 'Unknown author');
   if(entry.datePublished) {
     buffer.push(' on ');
-    buffer.push(rdr.utils.formatDate(entry.datePublished));
+    buffer.push(ReaderUtils.formatDate(entry.datePublished));
   }
 
   titleElement.textContent = buffer.join('');
@@ -351,7 +351,7 @@ function onKeyDown(event) {
       event.preventDefault();
       if(currentSlideElement) {
         const delta = scrollDeltas['' + event.keyCode];
-        rdr.utils.scrollTo(currentSlideElement, delta[0],
+        ReaderUtils.smoothScrollTo(currentSlideElement, delta[0],
           currentSlideElement.scrollTop + delta[1]);
       }
       break;

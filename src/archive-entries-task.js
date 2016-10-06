@@ -5,9 +5,8 @@
 'use strict';
 
 function ArchiveEntriesTask() {
-  this.sizeof = rdr.utils.sizeof;
-  this.entryFlags = rdr.entry.flags;
-  this.getEntryURL = rdr.entry.getURL;
+  this.sizeof = ReaderUtils.sizeof;
+  this.Entry = Entry;
   this.openDBTask = new OpenFeedDbTask();
   this.sendMessage = chrome.runtime.sendMessage;
   this.log = new LoggingService();
@@ -42,7 +41,7 @@ ArchiveEntriesTask.prototype._openDBOnSuccess = function(event) {
   tx.oncomplete = this._onComplete.bind(this);
   const store = tx.objectStore('entry');
   const index = store.index('archiveState-readState');
-  const keyPath = [this.entryFlags.UNARCHIVED, this.entryFlags.READ];
+  const keyPath = [this.Entry.flags.UNARCHIVED, this.Entry.flags.READ];
   const request = index.openCursor(keyPath);
   request.onsuccess = this._openCursorOnSuccess.bind(this);
   request.onerror = this._openCursorOnError.bind(this);
@@ -86,7 +85,7 @@ ArchiveEntriesTask.prototype._openCursorOnSuccess = function(event) {
     const beforeSize = this.sizeof(entry);
     const afterSize = this.sizeof(compactedEntry);
     this.log.debug('Compacted %s (age %s, before %s, after %s)',
-      this.getEntryURL(entry), age, beforeSize, afterSize);
+      this.Entry.getURL(entry), age, beforeSize, afterSize);
   }
 
   cursor.update(compactedEntry);
@@ -106,7 +105,7 @@ ArchiveEntriesTask.prototype._openCursorOnError = function(event) {
 // Impure, returns a new compacted object
 ArchiveEntriesTask.prototype.compact = function(entry) {
   const output = {};
-  output.archiveState = this.entryFlags.ARCHIVED;
+  output.archiveState = this.Entry.flags.ARCHIVED;
   output.dateArchived = this.currentDate;
   output.dateCreated = entry.dateCreated;
   if(entry.dateRead) {

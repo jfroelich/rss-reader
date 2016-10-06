@@ -4,14 +4,13 @@
 
 'use strict';
 
-var rdr = rdr || {};
-rdr.utils = {};
+const ReaderUtils = {};
 
-rdr.utils.condenseSpaces = function(inputString) {
+ReaderUtils.condenseWhitespace = function(inputString) {
   return inputString.replace(/\s{2,}/g, ' ');
 };
 
-rdr.utils.fade = function(element, duration, delay, callback) {
+ReaderUtils.fadeElement = function(element, duration, delay, callback) {
   const style = element.style;
   if(style.display === 'none') {
     style.display = '';
@@ -24,7 +23,7 @@ rdr.utils.fade = function(element, duration, delay, callback) {
 
   if(callback) {
     element.addEventListener('webkitTransitionEnd',
-      rdr.utils._fadeOnEnd.bind(element, callback));
+      ReaderUtils._onFadeEnd.bind(element, callback));
   }
 
   // property duration function delay
@@ -32,14 +31,15 @@ rdr.utils.fade = function(element, duration, delay, callback) {
   style.opacity = style.opacity === '1' ? '0' : '1';
 };
 
-rdr.utils._fadeOnEnd = function(callback, event) {
-  event.target.removeEventListener('webkitTransitionEnd', rdr.utils._fadeOnEnd);
+ReaderUtils._onFadeEnd = function(callback, event) {
+  event.target.removeEventListener('webkitTransitionEnd',
+    ReaderUtils._onFadeEnd);
   callback(event.target);
 };
 
 // Returns a new string where Unicode Cc-class characters have been removed
 // Adapted from http://stackoverflow.com/questions/4324790
-rdr.utils.filterControlChars = function(inputString) {
+ReaderUtils.filterControlChars = function(inputString) {
   return inputString.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
 };
 
@@ -47,7 +47,7 @@ rdr.utils.filterControlChars = function(inputString) {
 // The output is a new object that is a copy of the input object. Not actually
 // pure because property values are copied by reference.
 // A value is empty if it is null, undefined, or an empty string
-rdr.utils.filterEmptyProps = function(obj) {
+ReaderUtils.filterEmptyProps = function(obj) {
   const copy = {};
   const hasOwn = Object.prototype.hasOwnProperty;
   const undef = void(0);
@@ -64,7 +64,7 @@ rdr.utils.filterEmptyProps = function(obj) {
 
 // Formats a date object. This is obviously a very dumb implementation that
 // could eventually be improved.
-rdr.utils.formatDate = function(date, delimiter) {
+ReaderUtils.formatDate = function(date, delimiter) {
   const parts = [];
   if(date) {
     // getMonth is a zero based index
@@ -75,13 +75,13 @@ rdr.utils.formatDate = function(date, delimiter) {
   return parts.join(delimiter || '');
 };
 
-rdr.utils.isURLObject = function(val) {
+ReaderUtils.isURLObject = function(val) {
   return Object.prototype.toString.call(val) === '[object URL]';
 };
 
 // @param descriptors {Array} an array of basic descriptor objects such as the
 // one produced by the parseSrcset library
-rdr.utils.serializeSrcset = function(descriptors) {
+ReaderUtils.serializeSrcset = function(descriptors) {
   const output = [];
   for(let descriptor of descriptors) {
     let buf = [descriptor.url];
@@ -103,7 +103,7 @@ rdr.utils.serializeSrcset = function(descriptors) {
   return output.join(', ');
 };
 
-rdr.utils.scrollTo = function(element, deltaY, targetY) {
+ReaderUtils.smoothScrollTo = function(element, deltaY, targetY) {
   let scrollYStartTimer; // debounce
   let scrollYIntervalTimer; // incrementally move
   let amountToScroll = 0;
@@ -138,36 +138,20 @@ rdr.utils.scrollTo = function(element, deltaY, targetY) {
   return debounce();
 };
 
-// Yields the approximate size of an object in bytes. This should only be used
+// Calculates the approximate size of a value in bytes. This should only be used
 // for basic testing because it is hilariously inaccurate.
 // Adapted from http://stackoverflow.com/questions/1248302
-// Does not work on most built-ins (dom, XMLHttpRequest, NodeList, etc)
-// Stops measuring after 10000 values visited.
-rdr.utils.sizeof = function(object) {
+// Generally does not work on built-ins (dom, XMLHttpRequest, NodeList, etc)
+ReaderUtils.sizeof = function(object) {
   const seen = [];// Track visited to avoid infinite recursion
-
-  // Rather than using functional recursion, use a variable length stack that
-  // we grow as we visit nested objects. Never tested but presumably this is
-  // a perf benefit. This may no longer be the case in environments that have
-  // optimized recursion.
-  // The stack starts with the input object.
-  // NOTE: the array may end up containing mixed value types. It will be deopted
-  // if it is even optimized in the first place.
   const stack = [object];
-
-  // Alias these once outside of the loop, possibly a minor perf benefit
   const hasOwn = Object.prototype.hasOwnProperty;
   const toString = Object.prototype.toString;
-
   let size = 0;
-  // Upper bound to halt long processing
-  let maxIterations = 10000;
-
-  while(stack.length && maxIterations--) {
+  while(stack.length) {
     const value = stack.pop();
 
-    // This could be handled later in the switch but I assume it's faster to
-    // do it here. Note that typeof null === 'object'.
+    // NOTE: typeof null === 'object'
     if(value === null) {
       continue;
     }

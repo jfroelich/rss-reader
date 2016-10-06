@@ -7,10 +7,11 @@
 // API for fetching a feed. Calls back with the fetched feed
 function FetchFeedTask() {
   this.log = new LoggingService();
-  this.isURLObject = rdr.utils.isURLObject;
+  this.isURLObject = ReaderUtils.isURLObject;
   this.parseFeed = rdr.feed.parse;
   this.fetchXMLTask = new FetchXMLTask();
-  this.addFeedURL = rdr.feed.addURL;
+
+  this.Feed = Feed;
 }
 
 FetchFeedTask.prototype.start = function(requestURL, excludeEntries, callback) {
@@ -43,14 +44,13 @@ FetchFeedTask.prototype._onFetchXML = function(ctx, event) {
 
   // Set the feed's intial url to the request url. parseFeed is not aware of
   // the feed's url, so it is this task's responsibility.
-  this.addFeedURL(feed, ctx.requestURL.href);
+  this.Feed.addURL(feed, ctx.requestURL.href);
 
-  // If a response url is available, append the response url. addFeedURL
-  // takes care of avoiding adding a duplicate and normalization. Again,
+  // If a response url is available, append the response url.
   // parseFeed is not aware of a feed's urls, so it is this task's
   // responsibility.
   if(event.responseURLString) {
-    this.addFeedURL(feed, event.responseURLString);
+    this.Feed.addURL(feed, event.responseURLString);
   }
 
   // The fetch task introduces this property.

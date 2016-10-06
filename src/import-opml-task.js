@@ -11,7 +11,8 @@ function ImportOPMLTask() {
   this.log = new LoggingService();
   this.openDBTask = new OpenFeedDbTask();
   this.subTask = new SubscribeTask();
-  this.addFeedURL = rdr.feed.addURL;
+
+  this.Feed = Feed;
 }
 
 ImportOPMLTask.prototype.parseFromString = function(str) {
@@ -240,7 +241,7 @@ ImportOPMLTask.prototype.filterDuplicateOutlines = function(inputOutlines) {
 
 ImportOPMLTask.prototype.createFeedFromOutline = function(outline) {
   const feed = {};
-  this.addFeedURL(feed, outline.urlObject.href);
+  this.Feed.addURL(feed, outline.urlObject.href);
   feed.type = outline.type;
   feed.title = outline.title || outline.text;
   feed.description = outline.description;

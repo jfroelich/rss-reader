@@ -10,7 +10,7 @@ function SearchGoogleFeedsTask() {
   this.replacement = '\u2026';
   this.titleMaxLength = 200;
   this.snippetMaxLength = 400;
-  this.filterControlChars = rdr.utils.filterControlChars;
+  this.filterControlChars = ReaderUtils.filterControlChars;
   this.replaceTags = rdr.html.replaceTags;
   this.truncate = rdr.html.truncate;
 
