@@ -10,7 +10,7 @@ function SubscribeTask() {
   this.lookupTask = new LookupFaviconTask();
   this.log = new LoggingService();
   this.Feed = Feed;
-  this.addFeedTask = new AddFeedTask();
+  this.addFeed = addFeed;
   this.fetchFeedTask = new FetchFeedTask();
   this.showNotification = rdr.notifications.show;
 }
@@ -92,7 +92,7 @@ SubscribeTask.prototype._findFeedOnSuccess = function(ctx, event) {
 
   // Subscribe while offline
   if('onLine' in navigator && !navigator.onLine) {
-    this.addFeedTask.start(ctx.db, ctx.feed, this._onAddFeed.bind(this, ctx));
+    this.addFeed(ctx.db, ctx.feed, this._onAddFeed.bind(this, ctx));
     return;
   }
 
@@ -131,7 +131,7 @@ SubscribeTask.prototype._onLookupIcon = function(ctx, iconURL) {
     ctx.feed.faviconURLString = iconURL.href;
   }
 
-  this.addFeedTask.start(ctx.db, ctx.feed, this._onAddFeed.bind(this, ctx));
+  this.addFeed(ctx.db, ctx.feed, this._onAddFeed.bind(this, ctx));
 };
 
 SubscribeTask.prototype._onAddFeed = function(ctx, event) {

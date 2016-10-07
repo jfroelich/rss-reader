@@ -14,7 +14,7 @@
     "persistent": false,
     "scripts": [
       "/lib/parse-srcset.js",
-      "/src/add-entry-task.js",
+      "/src/add-entry.js",
       "/src/alarm.js",
       "/src/archive-entries-task.js",
       "/src/bp.js",
@@ -23,6 +23,7 @@
       "/src/entry.js",
       "/src/favicon-cache.js",
       "/src/feed.js",
+      "/src/feed-parser.js",
       "/src/fetch-feed-task.js",
       "/src/fetch-xml-task.js",
       "/src/fetch-html-task.js",
@@ -37,7 +38,6 @@
       "/src/on-badge-click.js",
       "/src/on-installed.js",
       "/src/open-feed-db-task.js",
-      "/src/parse-feed.js",
       "/src/poll-feeds-task.js",
       "/src/refresh-feed-icons-task.js",
       "/src/resolve.js",
@@ -46,7 +46,7 @@
       "/src/show-notification.js",
       "/src/tracking.js",
       "/src/update-badge-task.js",
-      "/src/update-feed-task.js",
+      "/src/update-feed.js",
       "/src/utils.js",
       "/src/xml.js"
     ]

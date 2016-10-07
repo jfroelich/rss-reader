@@ -4,35 +4,35 @@
 
 'use strict';
 
-var rdr = rdr || {};
-rdr.feed = rdr.feed || {};
+const FeedParser = {};
+
 
 // Returns an event-like object with properties feed and entries. Throws an
 // error if parsing failed
-rdr.feed.parse = function(doc, shouldExcludeEntries) {
+FeedParser.parse = function(doc, shouldExcludeEntries) {
   const docElement = doc.documentElement;
   if(!docElement.matches('feed, rss, rdf')) {
     throw new Error('Unsupported document element: ' + docElement.nodeName);
   }
 
-  const channel = rdr.feed._findChannel(docElement);
+  const channel = FeedParser._findChannel(docElement);
   if(!channel) {
     throw new Error('Missing channel element');
   }
 
   const feed = {};
-  feed.type = rdr.feed._getFeedType(docElement);
-  feed.title = rdr.feed._findChildElementText(channel, 'title');
-  feed.description = rdr.feed._findChildElementText(channel,
+  feed.type = FeedParser.getFeedType(docElement);
+  feed.title = FeedParser.findChildText(channel, 'title');
+  feed.description = FeedParser.findChildText(channel,
     docElement.matches('feed') ? 'subtitle' : 'description');
-  feed.link = rdr.feed._findFeedLink(channel);
-  feed.datePublished = rdr.feed._findFeedDatePublished(channel);
+  feed.link = FeedParser.getFeedLink(channel);
+  feed.datePublished = FeedParser.findPubDate(channel);
 
   let entries = [];
   if(!shouldExcludeEntries) {
-    const entryElements = rdr.feed._findEntries(channel);
+    const entryElements = FeedParser.findEntries(channel);
     for(let entry of entryElements) {
-      entries.push(rdr.feed._createEntry(feed.datePublished, entry));
+      entries.push(FeedParser.createEntry(feed.datePublished, entry));
     }
   }
 
@@ -42,15 +42,15 @@ rdr.feed.parse = function(doc, shouldExcludeEntries) {
   };
 };
 
-rdr.feed._findChannel = function(docElement) {
+FeedParser._findChannel = function(docElement) {
   if(docElement.matches('feed')) {
     return docElement;
   } else {
-    return rdr.feed._findChildElementByName(docElement, 'channel');
+    return FeedParser.findChildByName(docElement, 'channel');
   }
 };
 
-rdr.feed._findEntries = function(channel) {
+FeedParser.findEntries = function(channel) {
   const docElement = channel.ownerDocument.documentElement;
   const entries = [];
   let parent;
@@ -76,7 +76,7 @@ rdr.feed._findEntries = function(channel) {
   return entries;
 };
 
-rdr.feed._getFeedType = function(docElement) {
+FeedParser.getFeedType = function(docElement) {
   let type = null;
   if(docElement.matches('feed')) {
     type = 'feed';
@@ -88,15 +88,15 @@ rdr.feed._getFeedType = function(docElement) {
   return type;
 };
 
-rdr.feed._findFeedDatePublished = function(channel) {
+FeedParser.findPubDate = function(channel) {
   const isAtom = channel.ownerDocument.documentElement.matches('feed');
   let dateText = null;
   if(isAtom) {
-    dateText = rdr.feed._findChildElementText(channel, 'updated');
+    dateText = FeedParser.findChildText(channel, 'updated');
   } else {
-    dateText = rdr.feed._findChildElementText(channel, 'pubdate') ||
-      rdr.feed._findChildElementText(channel, 'lastbuilddate') ||
-      rdr.feed._findChildElementText(channel, 'date');
+    dateText = FeedParser.findChildText(channel, 'pubdate') ||
+      FeedParser.findChildText(channel, 'lastbuilddate') ||
+      FeedParser.findChildText(channel, 'date');
   }
 
   if(dateText) {
@@ -110,43 +110,43 @@ rdr.feed._findFeedDatePublished = function(channel) {
   return new Date();
 };
 
-rdr.feed._isLinkRelAlt = function(element) {
+FeedParser.isLinkRelAlt = function(element) {
   return element.matches('link[rel="alternate"]');
 };
 
-rdr.feed._isLinkRelSelf = function(element) {
+FeedParser.isLinkRelSelf = function(element) {
   return element.matches('link[rel="self"]');
 };
 
-rdr.feed._isLinkWithHref = function(element) {
+FeedParser.isLinkWithHref = function(element) {
   return element.matches('link[href]');
 };
 
-rdr.feed._isLinkWithoutHref = function(element) {
+FeedParser.isLinkWithoutHref = function(element) {
   return element.localName === 'link' && !element.hasAttribute('href');
 };
 
-rdr.feed._findFeedLink = function(channel) {
+FeedParser.getFeedLink = function(channel) {
   const isAtom = channel.ownerDocument.documentElement.matches('feed');
 
   let linkText = null;
   let linkElement = null;
 
   if(isAtom) {
-    linkElement = rdr.feed._findChildElement(channel, rdr.feed._isLinkRelAlt) ||
-      rdr.feed._findChildElement(channel, rdr.feed._isLinkRelSelf) ||
-      rdr.feed._findChildElement(channel, rdr.feed._isLinkWithHref);
+    linkElement = FeedParser.findChild(channel, FeedParser.isLinkRelAlt) ||
+      FeedParser.findChild(channel, FeedParser.isLinkRelSelf) ||
+      FeedParser.findChild(channel, FeedParser.isLinkWithHref);
     if(linkElement) {
       linkText = linkElement.getAttribute('href');
     }
   } else {
-    linkElement = rdr.feed._findChildElement(channel,
-      rdr.feed._isLinkWithoutHref);
+    linkElement = FeedParser.findChild(channel,
+      FeedParser.isLinkWithoutHref);
     if(linkElement) {
       linkText = linkElement.textContent;
     } else {
-      linkElement = rdr.feed._findChildElement(channel,
-        rdr.feed._isLinkWithHref);
+      linkElement = FeedParser.findChild(channel,
+        FeedParser.isLinkWithHref);
       if(linkElement)
         linkText = linkElement.getAttribute('href');
     }
@@ -161,28 +161,28 @@ rdr.feed._findFeedLink = function(channel) {
   }
 };
 
-rdr.feed._createEntry = function(feedDatePublished, entryElement) {
+FeedParser.createEntry = function(feedDatePublished, entryElement) {
   const isAtom = entryElement.ownerDocument.documentElement.matches('feed');
 
   const entry = {};
 
-  const title = rdr.feed._findChildElementText(entryElement, 'title');
+  const title = FeedParser.findChildText(entryElement, 'title');
   if(title) {
     entry.title = title;
   }
 
-  const author = rdr.feed._findEntryAuthor(entryElement);
+  const author = FeedParser.findEntryAuthor(entryElement);
   if(author) {
     entry.author = author;
   }
 
   // Set the link url as the entry's initial url
-  const entryLinkURL = rdr.feed._findEntryLink(entryElement);
+  const entryLinkURL = FeedParser.findEntryLink(entryElement);
   if(entryLinkURL) {
     Entry.addURL(entry, entryLinkURL);
   }
 
-  const entryDatePublished = rdr.feed._findEntryDatePublished(entryElement);
+  const entryDatePublished = FeedParser.findEntryPubDate(entryElement);
   if(entryDatePublished) {
     entry.datePublished = entryDatePublished;
   } else if(feedDatePublished) {
@@ -192,12 +192,12 @@ rdr.feed._createEntry = function(feedDatePublished, entryElement) {
     entry.datePublished = new Date();
   }
 
-  const content = rdr.feed._findEntryContent(entryElement);
+  const content = FeedParser.findEntryContent(entryElement);
   if(content) {
     entry.content = content;
   }
 
-  const enclosure = rdr.feed._findChildElementByName(entryElement, 'enclosure');
+  const enclosure = FeedParser.findChildByName(entryElement, 'enclosure');
   if(enclosure) {
     const enclosureURLString = enclosure.getAttribute('url');
     let enclosureURL = null;
@@ -219,33 +219,39 @@ rdr.feed._createEntry = function(feedDatePublished, entryElement) {
   return entry;
 };
 
-rdr.feed._findEntryAuthor = function(entry) {
-  const isAtom = entry.ownerDocument.documentElement.matches('feed');
-  if(isAtom) {
-    const author = rdr.feed._findChildElementByName(entry, 'author');
-    if(author) {
-      return rdr.feed._findChildElementText(author, 'name');
+FeedParser.findEntryAuthor = function(entry) {
+  const authorEl = FeedParser.findChildByName(entry, 'author');
+  if(authorEl) {
+    const nameText = FeedParser.findChildText(authorEl, 'name');
+    if(nameText) {
+      return nameText;
     }
-  } else {
-    return rdr.feed._findChildElementText(entry, 'creator') ||
-      rdr.feed._findChildElementText(entry, 'publisher');
   }
+
+  // In atom it is "dc:creator" but querySelector uses localName and ignores
+  // qualified name so just search by localName
+  const creator = FeedParser.findChildText(entry, 'creator');
+  if(creator) {
+    return creator;
+  }
+
+  return FeedParser.findChildText(entry, 'publisher');
 };
 
-rdr.feed._findEntryLink = function(entry) {
+FeedParser.findEntryLink = function(entry) {
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
   let linkText;
   let linkElement;
   if(isAtom) {
-    linkElement = rdr.feed._findChildElement(entry, rdr.feed._isLinkRelAlt) ||
-      rdr.feed._findChildElement(entry, rdr.feed._isLinkRelSelf) ||
-      rdr.feed._findChildElement(entry, rdr.feed._isLinkWithHref);
+    linkElement = FeedParser.findChild(entry, FeedParser.isLinkRelAlt) ||
+      FeedParser.findChild(entry, FeedParser.isLinkRelSelf) ||
+      FeedParser.findChild(entry, FeedParser.isLinkWithHref);
     if(linkElement) {
       linkText = linkElement.getAttribute('href');
     }
   } else {
-    linkText = rdr.feed._findChildElementText(entry, 'origlink') ||
-      rdr.feed._findChildElementText(entry, 'link');
+    linkText = FeedParser.findChildText(entry, 'origlink') ||
+      FeedParser.findChildText(entry, 'link');
   }
 
   if(linkText) {
@@ -257,25 +263,25 @@ rdr.feed._findEntryLink = function(entry) {
   }
 };
 
-rdr.feed._findEntryDatePublished = function(entry) {
+FeedParser.findEntryPubDate = function(entry) {
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
-  let datePublishedString = null;
+  let pubDateStr = null;
 
   if(isAtom) {
-    datePublishedString = rdr.feed._findChildElementText(entry, 'published') ||
-      rdr.feed._findChildElementText(entry, 'updated');
+    pubDateStr = FeedParser.findChildText(entry, 'published') ||
+      FeedParser.findChildText(entry, 'updated');
   } else {
-    datePublishedString = rdr.feed._findChildElementText(entry, 'pubdate') ||
-      rdr.feed._findChildElementText(entry, 'date');
+    pubDateStr = FeedParser.findChildText(entry, 'pubdate') ||
+      FeedParser.findChildText(entry, 'date');
   }
 
-  if(datePublishedString) {
-    datePublishedString = datePublishedString.trim();
+  if(pubDateStr) {
+    pubDateStr = pubDateStr.trim();
   }
 
-  if(datePublishedString) {
+  if(pubDateStr) {
     try {
-      return new Date(datePublishedString);
+      return new Date(pubDateStr);
     } catch(exception) {
       console.debug(exception);
     }
@@ -284,29 +290,29 @@ rdr.feed._findEntryDatePublished = function(entry) {
   return null;
 };
 
-rdr.feed._findEntryContent = function(entry) {
+FeedParser.findEntryContent = function(entry) {
   const isAtom = entry.ownerDocument.documentElement.matches('feed');
   let result;
   if(isAtom) {
-    const content = rdr.feed._findChildElementByName(entry, 'content');
+    const content = FeedParser.findChildByName(entry, 'content');
     const nodes = content ? content.childNodes : [];
     const map = Array.prototype.map;
-    result = map.call(nodes, rdr.feed._getAtomNodeText).join('').trim();
+    result = map.call(nodes, FeedParser.getAtomNodeText).join('').trim();
   } else {
 
-    result = rdr.feed._findChildElementText(entry, 'encoded') ||
-      rdr.feed._findChildElementText(entry, 'description') ||
-      rdr.feed._findChildElementText(entry, 'summary');
+    result = FeedParser.findChildText(entry, 'encoded') ||
+      FeedParser.findChildText(entry, 'description') ||
+      FeedParser.findChildText(entry, 'summary');
   }
   return result;
 };
 
-rdr.feed._getAtomNodeText = function(node) {
+FeedParser.getAtomNodeText = function(node) {
   return node.nodeType === Node.ELEMENT_NODE ?
     node.innerHTML : node.textContent;
 };
 
-rdr.feed._findChildElement = function(parentElement, predicate) {
+FeedParser.findChild = function(parentElement, predicate) {
   for(let element = parentElement.firstElementChild; element;
     element = element.nextElementSibling) {
     if(predicate(element)) {
@@ -315,18 +321,18 @@ rdr.feed._findChildElement = function(parentElement, predicate) {
   }
 };
 
-rdr.feed._findChildElementByName = function(parentElement, localName) {
+FeedParser.findChildByName = function(parentElement, localName) {
   if(typeof localName !== 'string') {
     throw new TypeError('localName is not a string');
   }
 
-  return rdr.feed._findChildElement(parentElement, function(element) {
+  return FeedParser.findChild(parentElement, function(element) {
     return element.localName === localName;
   });
 };
 
-rdr.feed._findChildElementText = function(element, localName) {
-  const child = rdr.feed._findChildElementByName(element, localName);
+FeedParser.findChildText = function(element, localName) {
+  const child = FeedParser.findChildByName(element, localName);
   if(child) {
     const childText = child.textContent;
     if(childText) {

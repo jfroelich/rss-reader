@@ -16,8 +16,7 @@ function PollFeedsTask() {
   this.fetchHTMLTask = new FetchHTMLTask();
   this.setImageDimensionsTask = new SetImageDimensionsTask();
   this.updateFeed = updateFeed;
-  this.addEntryTask = new AddEntryTask();
-
+  this.addEntry = addEntry;
   this.Feed = Feed;
   this.Entry = Entry;
   this.rewriteURL = rdr.rewriteURL;
@@ -236,7 +235,7 @@ PollFeedsTask.prototype.onFindEntry = function(ctx, feed, entry, callback,
   // store the entry, but we just do not try and augment its content.
   if(rdr.poll.isFetchResistantURL(entryTerminalURLObject)) {
     this.prepLocalDoc(entry);
-    this.addEntryTask.start(ctx.db, entry, callback);
+    this.addEntry(ctx.db, entry, callback);
     return;
   }
 
@@ -246,7 +245,7 @@ PollFeedsTask.prototype.onFindEntry = function(ctx, feed, entry, callback,
   // this misses it, false negatives are not too important.
   if(this.isPDFURL(entryTerminalURLObject)) {
     this.prepLocalDoc(entry);
-    this.addEntryTask.start(ctx.db, entry, callback);
+    this.addEntry(ctx.db, entry, callback);
     return;
   }
 
@@ -270,7 +269,7 @@ PollFeedsTask.prototype.isPDFURL = function(url) {
 PollFeedsTask.prototype.onFetchEntry = function(ctx, entry, callback, event) {
   if(event.type !== 'success') {
     this.prepLocalDoc(entry);
-    this.addEntryTask.start(ctx.db, entry, callback);
+    this.addEntry(ctx.db, entry, callback);
     return;
   }
 
@@ -311,7 +310,7 @@ PollFeedsTask.prototype.onSetImageDimensions = function(ctx, entry, document,
 
   this.prepDoc(document);
   entry.content = document.documentElement.outerHTML.trim();
-  this.addEntryTask.start(ctx.db, entry, callback);
+  this.addEntry(ctx.db, entry, callback);
 };
 
 PollFeedsTask.prototype.prepDoc = function(doc) {

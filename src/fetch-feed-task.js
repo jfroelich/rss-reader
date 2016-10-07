@@ -8,7 +8,7 @@
 function FetchFeedTask() {
   this.log = new LoggingService();
   this.isURLObject = ReaderUtils.isURLObject;
-  this.parseFeed = rdr.feed.parse;
+  this.parseFeed = FeedParser.parse;
   this.fetchXMLTask = new FetchXMLTask();
 
   this.Feed = Feed;
