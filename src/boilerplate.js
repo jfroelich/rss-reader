@@ -4,15 +4,11 @@
 
 'use strict';
 
-var rdr = rdr || {};
+const Boilerplate = {};
 
-// Boilerplate filtering lib
-rdr.bp = {};
-
-// Filters boilerplate from the document
-rdr.bp.filter = function(doc) {
-  const bestElement = rdr.bp.findHighScoreElement(doc);
-  rdr.bp.prune(doc, bestElement);
+Boilerplate.filter = function(doc) {
+  const bestElement = Boilerplate.findHighScoreElement(doc);
+  Boilerplate.prune(doc, bestElement);
 };
 
 // Returns a measure indicating whether the element contains boilerplate or
@@ -22,11 +18,11 @@ rdr.bp.filter = function(doc) {
 // The metric is adapted from the paper:
 // "Boilerplate Detection using Shallow Text Features".
 // See http://www.l3s.de/~kohlschuetter/boilerplate.
-rdr.bp.deriveTextBias = function(element) {
+Boilerplate.deriveTextBias = function(element) {
   const text = element.textContent;
   const trimmedText = text.trim();
   const textLength = 0.0 + trimmedText.length;
-  const anchorLength = 0.0 + rdr.bp.deriveAnchorLen(element);
+  const anchorLength = 0.0 + Boilerplate.deriveAnchorLen(element);
   return (0.25 * textLength) - (0.7 * anchorLength);
 };
 
@@ -34,7 +30,7 @@ rdr.bp.deriveTextBias = function(element) {
 // are descendants of the element.
 // This assumes that the HTML is generally well-formed. Specifically it assumes
 // no anchor nesting.
-rdr.bp.deriveAnchorLen = function(element) {
+Boilerplate.deriveAnchorLen = function(element) {
   const anchors = element.querySelectorAll('a[href]');
   const numAnchors = anchors.length;
   let anchorLength = 0;
@@ -55,7 +51,7 @@ rdr.bp.deriveAnchorLen = function(element) {
 // comparision to some of the other biases. The most help comes when there is
 // a clear container element of multiple paragraphs.
 // TODO: switch back to lowercase and use node.localName to lookup
-rdr.bp.ancestorBiasMap = {
+Boilerplate.ancestorBiasMap = {
   'A': -5,
   'ASIDE': -50,
   'BLOCKQUOTE': 20,
@@ -76,11 +72,11 @@ rdr.bp.ancestorBiasMap = {
   'UL': -20
 };
 
-rdr.bp.deriveAncestorBias = function(element) {
+Boilerplate.deriveAncestorBias = function(element) {
   let totalBias = 0;
   for(let child = element.firstElementChild; child;
     child = child.nextElementSibling) {
-    const bias = rdr.bp.ancestorBiasMap[child.nodeName];
+    const bias = Boilerplate.ancestorBiasMap[child.nodeName];
     if(bias) {
       totalBias = totalBias + bias;
     }
@@ -92,7 +88,7 @@ rdr.bp.deriveAncestorBias = function(element) {
 // If one of these tokens is found in an attribute value of an element,
 // these bias the element's boilerplate score. A higher score means that the
 // element is more likely to be content. This list was created empirically.
-rdr.bp.attrTokenWeights = {
+Boilerplate.attrTokenWeights = {
   'ad': -500,
   'ads': -500,
   'advert': -500,
@@ -128,7 +124,7 @@ rdr.bp.attrTokenWeights = {
 // Computes a bias for an element based on the values of some of its
 // attributes.
 // NOTE: using var due to v8 deopt warnings - Unsupported use of phi const
-rdr.bp.deriveAttrBias = function(element) {
+Boilerplate.deriveAttrBias = function(element) {
   // Start by merging the element's interesting attribute values into a single
   // string in preparation for tokenization.
   // Accessing attributes by property is faster than using getAttribute. It
@@ -188,7 +184,7 @@ rdr.bp.deriveAttrBias = function(element) {
       seenTokens[token] = 1;
     }
 
-    bias = rdr.bp.attrTokenWeights[token];
+    bias = Boilerplate.attrTokenWeights[token];
     if(bias) {
       totalBias += bias;
     }
@@ -198,16 +194,16 @@ rdr.bp.deriveAttrBias = function(element) {
 };
 
 // Only these elements are considered as potential best elements
-rdr.bp.candidateSelector = [
+Boilerplate.candidateSelector = [
   'ARTICLE', 'CONTENT', 'DIV', 'LAYER', 'MAIN', 'SECTION', 'SPAN', 'TD'
 ].join(',');
 
-rdr.bp.listSelector = 'LI, OL, UL, DD, DL, DT';
-rdr.bp.navSelector = 'ASIDE, HEADER, FOOTER, NAV, MENU, MENUITEM';
+Boilerplate.listSelector = 'LI, OL, UL, DD, DL, DT';
+Boilerplate.navSelector = 'ASIDE, HEADER, FOOTER, NAV, MENU, MENUITEM';
 
 // Scores each of the candidate elements and returns the one with the highest
 // score
-rdr.bp.findHighScoreElement = function(document) {
+Boilerplate.findHighScoreElement = function(document) {
 
   // Init to documentElement. This ensures we always return something and also
   // sets documentElement as the default best element.
@@ -218,24 +214,24 @@ rdr.bp.findHighScoreElement = function(document) {
     return bestElement;
   }
 
-  const elements = body.querySelectorAll(rdr.bp.candidateSelector);
+  const elements = body.querySelectorAll(Boilerplate.candidateSelector);
   let highScore = 0.0;
   for(let i = 0, len = elements.length; i < len; i++) {
     let element = elements[i];
 
-    let score = 0.0 + rdr.bp.deriveTextBias(element);
+    let score = 0.0 + Boilerplate.deriveTextBias(element);
 
-    if(element.closest(rdr.bp.listSelector)) {
+    if(element.closest(Boilerplate.listSelector)) {
       score -= 200.0;
     }
 
-    if(element.closest(rdr.bp.navSelector)) {
+    if(element.closest(Boilerplate.navSelector)) {
       score -= 500.0;
     }
 
-    score += 0.0 + rdr.bp.deriveAncestorBias(element);
-    score += rdr.bp.deriveImgBias(element);
-    score += rdr.bp.deriveAttrBias(element);
+    score += 0.0 + Boilerplate.deriveAncestorBias(element);
+    score += Boilerplate.deriveImgBias(element);
+    score += Boilerplate.deriveAttrBias(element);
 
     if(score > highScore) {
       bestElement = element;
@@ -246,7 +242,7 @@ rdr.bp.findHighScoreElement = function(document) {
   return bestElement;
 };
 
-rdr.bp.deriveImgBias = function(parentElement) {
+Boilerplate.deriveImgBias = function(parentElement) {
   let bias = 0.0;
   let numImages = 0;
   let area = 0;
@@ -273,7 +269,7 @@ rdr.bp.deriveImgBias = function(parentElement) {
       bias = bias + 30.0;
     }
 
-    if(rdr.bp.findCaption(element)) {
+    if(Boilerplate.findCaption(element)) {
       bias = bias + 100.0;
     }
 
@@ -289,7 +285,7 @@ rdr.bp.deriveImgBias = function(parentElement) {
   return bias;
 };
 
-rdr.bp.findCaption = function(image) {
+Boilerplate.findCaption = function(image) {
   const figure = image.closest('figure');
   return figure ? figure.querySelector('FIGCAPTION') : null;
 };
@@ -303,7 +299,7 @@ rdr.bp.findCaption = function(image) {
 // call to compareDocumentPosition and then check against its result.
 // I am not very familiar with compareDocumentPosition yet, that is the
 // only reason I am not using it.
-rdr.bp.prune = function(document, bestElement) {
+Boilerplate.prune = function(document, bestElement) {
 
   if(!bestElement) {
     throw new ReferenceError('bestElement should always be defined');

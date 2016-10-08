@@ -4,10 +4,7 @@
 
 'use strict';
 
-var rdr = rdr || {};
-
 // Style lib
-
 const DisplaySettings = {};
 
 chrome.runtime.onMessage.addListener(function(message) {

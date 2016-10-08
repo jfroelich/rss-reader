@@ -6,7 +6,7 @@
 
 function UnsubscribeTask() {
   this.log = new LoggingService();
-  this.openDBTask = new OpenFeedDbTask();
+  this.openDBTask = new FeedDb();
   this.badgeTask = new UpdateBadgeTask();
 }
 

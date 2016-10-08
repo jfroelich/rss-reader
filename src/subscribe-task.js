@@ -6,7 +6,7 @@
 
 // Subscribe to a new feed
 function SubscribeTask() {
-  this.openDBTask = new OpenFeedDbTask();
+  this.openDBTask = new FeedDb();
   this.lookupTask = new LookupFaviconTask();
   this.log = new LoggingService();
   this.Feed = Feed;
@@ -92,7 +92,7 @@ SubscribeTask.prototype._findFeedOnSuccess = function(ctx, event) {
 
   // Subscribe while offline
   if('onLine' in navigator && !navigator.onLine) {
-    this.addFeed(ctx.db, ctx.feed, this._onAddFeed.bind(this, ctx));
+    this.addFeed(ctx.db, ctx.feed, false, this._onAddFeed.bind(this, ctx));
     return;
   }
 
@@ -131,7 +131,7 @@ SubscribeTask.prototype._onLookupIcon = function(ctx, iconURL) {
     ctx.feed.faviconURLString = iconURL.href;
   }
 
-  this.addFeed(ctx.db, ctx.feed, this._onAddFeed.bind(this, ctx));
+  this.addFeed(ctx.db, ctx.feed, false, this._onAddFeed.bind(this, ctx));
 };
 
 SubscribeTask.prototype._onAddFeed = function(ctx, event) {

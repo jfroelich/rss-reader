@@ -6,31 +6,25 @@
 
 {
 
-function addEntry(db, entry, callback) {
-  const $this = this || {};
-  const $LoggingService = $this.LoggingService || LoggingService;
-  const $Entry = $this.Entry || Entry;
-  const $ReaderUtils = $this.ReaderUtils || ReaderUtils;
-
-  // TODO: how to easily set log.enabled to true externally?
-
-  const log = new $LoggingService();
-  const entryURL = $Entry.getURL(entry);
+function addEntry(conn, entry, verbose, callback) {
+  const log = new LoggingService();
+  log.enabled = verbose;
+  const entryURL = Entry.getURL(entry);
   log.log('adding entry', entryURL);
-  const sanitized = $Entry.sanitize(entry);
-  const storable = $ReaderUtils.filterEmptyProps(sanitized);
-  storable.readState = $Entry.flags.UNREAD;
-  storable.archiveState = $Entry.flags.UNARCHIVED;
+  const sanitized = Entry.sanitize(entry);
+  const storable = ReaderUtils.filterEmptyProps(sanitized);
+  storable.readState = Entry.flags.UNREAD;
+  storable.archiveState = Entry.flags.UNARCHIVED;
   storable.dateCreated = new Date();
-  const tx = db.transaction('entry', 'readwrite');
+  const tx = conn.transaction('entry', 'readwrite');
   const store = tx.objectStore('entry');
   const request = store.add(storable);
   request.onsuccess = callback;
-  request.onerror = onError.bind(null, $Entry, log, storable, callback);
+  request.onerror = onError.bind(null, log, storable, callback);
 }
 
-function onError($Entry, log, entry, callback, event) {
-  log.error($Entry.getURL(entry), event.target.error);
+function onError(log, entry, callback, event) {
+  log.error(Entry.getURL(entry), event.target.error);
   callback(event);
 }
 

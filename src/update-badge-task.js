@@ -5,7 +5,7 @@
 'use strict';
 
 function UpdateBadgeTask() {
-  this.openDBTask = new OpenFeedDbTask();
+  this.openDBTask = new FeedDb();
   this.entryFlags = Entry.flags;
   this.log = new LoggingService();
   this.setBadgeText = chrome.browserAction.setBadgeText;

@@ -6,7 +6,7 @@
 
 function ExportOPMLTask() {
   this.log = new LoggingService();
-  this.openDBTask = new OpenFeedDbTask();
+  this.openDBTask = new FeedDb();
   this.getAllFeedsTask = new GetAllFeedsTask();
   this.Feed = Feed;
 }

@@ -1,6 +1,6 @@
 
 function test() {
-  const service = new OpenFeedDbTask();
+  const service = new FeedDb();
   service.name = 'test-feed-db-service';
   service.version = 1;
   service.log.enabled = true;

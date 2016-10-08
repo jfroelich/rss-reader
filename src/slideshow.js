@@ -58,7 +58,7 @@ function appendSlides(onAppendComplete, isFirstSlide) {
   // TODO: invert this, and the condition where it is used, to isAdvanced
   let isNotAdvanced = true;
 
-  const openDBTask = new OpenFeedDbTask();
+  const openDBTask = new FeedDb();
   openDBTask.open(openDBOnSuccess, openDBOnError);
 
   function openDBOnSuccess(event) {

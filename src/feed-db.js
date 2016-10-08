@@ -6,13 +6,13 @@
 
 // TODO: think of a better name
 
-function OpenFeedDbTask() {
+function FeedDb() {
   this.name = 'reader';
   this.version = 20;
   this.log = new LoggingService();
 }
 
-OpenFeedDbTask.prototype.open = function(onSuccess, onError) {
+FeedDb.prototype.open = function(onSuccess, onError) {
   this.log.log('Connecting to', this.name, 'version', this.version);
   const request = indexedDB.open(this.name, this.version);
   request.onupgradeneeded = this._upgrade.bind(this);
@@ -21,7 +21,7 @@ OpenFeedDbTask.prototype.open = function(onSuccess, onError) {
   request.onblocked = onError;
 };
 
-OpenFeedDbTask.prototype._upgrade = function(event) {
+FeedDb.prototype._upgrade = function(event) {
   this.log.log('Upgrading database %s to version %s from version', this.name,
       this.version, event.oldVersion);
 
@@ -114,7 +114,7 @@ OpenFeedDbTask.prototype._upgrade = function(event) {
 };
 
 // Requests the database to eventually be deleted, returns the request object
-OpenFeedDbTask.prototype.delete = function() {
+FeedDb.prototype.delete = function() {
   this.log.log('Deleting database', this.name);
   return indexedDB.deleteDatabase(this.name);
 };

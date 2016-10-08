@@ -4,7 +4,6 @@
 
 'use strict';
 
-
 const Entry = {};
 
 Entry.flags = {

@@ -6,42 +6,36 @@
 
 {
 
-function addFeed(db, feed, callback) {
-  const $this = this || {};
-  const $LoggingService = $this.LoggingService || LoggingService;
-  const $Feed = $this.Feed || Feed;
-  const $ReaderUtils = $this.ReaderUtils || ReaderUtils;
-
-  const log = new $LoggingService();
-
+function addFeed(conn, feed, verbose, callback) {
+  // Although this error is safely handled by the database, it should never
+  // occur
   if('id' in feed) {
-    throw new Error('should never have id property');
+    throw new TypeError('feed has id');
   }
 
-  log.log('Adding feed', $Feed.getURL(feed));
-  let storable = $Feed.sanitize(feed);
+  const log = new LoggingService();
+  log.enabled = verbose;
+  log.log('Adding feed', Feed.getURL(feed));
+  let storable = Feed.sanitize(feed);
   storable.dateCreated = new Date();
-  storable = $ReaderUtils.filterEmptyProps(storable);
-  const transaction = db.transaction('feed', 'readwrite');
-  const store = transaction.objectStore('feed');
+  storable = ReaderUtils.filterEmptyProps(storable);
+  const tx = conn.transaction('feed', 'readwrite');
+  const store = tx.objectStore('feed');
   const request = store.add(storable);
-  request.onsuccess = onSuccess.bind(null, $Feed, log, feed, callback);
-  request.onerror = onError.bind(null, $Feed, log, feed, callback);
+  request.onsuccess = onSuccess.bind(null, log, feed, callback);
+  request.onerror = onError.bind(null, log, feed, callback);
 }
 
-function onSuccess($Feed, log, feed, callback, event) {
-  log.debug('Added feed', $Feed.getURL(feed));
-  // Grab the auto-incremented id
+function onSuccess(log, feed, callback, event) {
   feed.id = event.target.result;
-  log.debug('New feed id', feed.id);
+  log.debug('Added feed %s with new %s', Feed.getURL(feed), feed.id);
   callback({'type': 'success', 'feed': feed});
 }
 
-function onError($Feed, log, feed, callback, event) {
-  log.error('Error adding feed', $Feed.getURL(feed), event.target.error);
+function onError(log, feed, callback, event) {
+  log.error('Error adding feed', Feed.getURL(feed), event.target.error);
   callback({'type': 'error'});
 }
-
 
 this.addFeed = addFeed;
 

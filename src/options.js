@@ -393,7 +393,7 @@ function populateFeedInfo(feedId) {
   }
 
   const context = {'db': null};
-  const openDBTask = new OpenFeedDbTask();
+  const openDBTask = new FeedDb();
   openDBTask.open(openDBOnSuccess, openDBOnError);
   function openDBOnSuccess(event) {
     context.db = event.target.result;
@@ -792,7 +792,7 @@ function exportOPMLButtonOnClick(event) {
 
 function initSubsSection() {
   let feedCount = 0;
-  const openDBTask = new OpenFeedDbTask();
+  const openDBTask = new FeedDb();
   openDBTask.open(openDBOnSuccess, openDBOnError);
 
   // TODO: load feeds into sorted array? use rdr.feeds.getAll

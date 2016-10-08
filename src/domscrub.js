@@ -4,53 +4,51 @@
 
 'use strict';
 
-var rdr = rdr || {};
-rdr.cleandom = {};
+const DOMScrub = {};
 
-rdr.cleandom.cleanDoc = function(doc) {
-  rdr.cleandom.filterComments(doc);
-  rdr.cleandom.filterFrames(doc);
-  rdr.cleandom.filterNoscripts(doc);
-  rdr.cleandom.filterBlacklistedElements(doc);
-  rdr.cleandom.filterHidden(doc);
-  rdr.cleandom.adjustBlockInlineElements(doc);
-  rdr.cleandom.filterBreaks(doc);
-  rdr.cleandom.unwrapScriptAnchors(doc);
-  rdr.cleandom.unwrapFormattingAnchors(doc);
-  rdr.cleandom.filterSmallImages(doc);
-  rdr.cleandom.filterSourcelessImages(doc);
-  rdr.cleandom.filterUnwrappables(doc);
-  rdr.cleandom.filterFigures(doc);
-  rdr.cleandom.filterHairspaces(doc);
-  rdr.cleandom.condenseWhitespace(doc);
-  rdr.cleandom.unwrapSingleItemLists(doc);
-  rdr.cleandom.filterTables(doc, 20);
-  rdr.cleandom.filterLeaves(doc);
-  rdr.cleandom.filterHRs(doc);
-  rdr.cleandom.trimDoc(doc);
-  rdr.cleandom.filterAttributes(doc);
+DOMScrub.cleanDoc = function(doc) {
+  DOMScrub.filterComments(doc);
+  DOMScrub.filterFrames(doc);
+  DOMScrub.filterNoscripts(doc);
+  DOMScrub.filterBlacklistedElements(doc);
+  DOMScrub.filterHidden(doc);
+  DOMScrub.adjustBlockInlineElements(doc);
+  DOMScrub.filterBreaks(doc);
+  DOMScrub.unwrapScriptAnchors(doc);
+  DOMScrub.unwrapFormattingAnchors(doc);
+  DOMScrub.filterSmallImages(doc);
+  DOMScrub.filterSourcelessImages(doc);
+  DOMScrub.filterUnwrappables(doc);
+  DOMScrub.filterFigures(doc);
+  DOMScrub.filterHairspaces(doc);
+  DOMScrub.condenseWhitespace(doc);
+  DOMScrub.unwrapSingleItemLists(doc);
+  DOMScrub.filterTables(doc, 20);
+  DOMScrub.filterLeaves(doc);
+  DOMScrub.filterHRs(doc);
+  DOMScrub.trimDoc(doc);
+  DOMScrub.filterAttributes(doc);
 };
 
-rdr.cleandom.addNoReferrer = function(doc) {
+DOMScrub.addNoReferrer = function(doc) {
   const anchors = doc.querySelectorAll('a');
   for(let anchor of anchors) {
     anchor.setAttribute('rel', 'noreferrer');
   }
 };
 
-rdr.cleandom.blockElements = ['blockquote', 'h1', 'h2', 'h3', 'h4',
-  'h5', 'h6','p'];
-rdr.cleandom.blockSelector = rdr.cleandom.blockElements.join(',');
-rdr.cleandom.inlineInBlockElements = ['a'];
-rdr.cleandom.inlineInBlockSelector =
-  rdr.cleandom.inlineInBlockElements.join(',');
+DOMScrub.blockElements = ['blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6','p'];
+DOMScrub.blockSelector = DOMScrub.blockElements.join(',');
+DOMScrub.inlineInBlockElements = ['a'];
+DOMScrub.inlineInBlockSelector =
+  DOMScrub.inlineInBlockElements.join(',');
 
 // Looks for cases such as <a><p>text</p></a> and transforms them into
 // <p><a>text</a></p>.
-rdr.cleandom.adjustBlockInlineElements = function(doc) {
-  const blocks = doc.querySelectorAll(rdr.cleandom.blockSelector);
+DOMScrub.adjustBlockInlineElements = function(doc) {
+  const blocks = doc.querySelectorAll(DOMScrub.blockSelector);
   for(let block of blocks) {
-    const ancestor = block.closest(rdr.cleandom.inlineInBlockSelector);
+    const ancestor = block.closest(DOMScrub.inlineInBlockSelector);
     if(ancestor && ancestor.parentNode) {
       ancestor.parentNode.insertBefore(block, ancestor);
       for(let node = block.firstChild; node; node = block.firstChild) {
@@ -61,7 +59,7 @@ rdr.cleandom.adjustBlockInlineElements = function(doc) {
   }
 };
 
-rdr.cleandom.condenseWhitespace = function(doc) {
+DOMScrub.condenseWhitespace = function(doc) {
   const selector = 'code, pre, ruby, textarea, xmp';
   const it = doc.createNodeIterator(doc.documentElement, NodeFilter.SHOW_TEXT);
   for(let n = it.nextNode(); n; n = it.nextNode()) {
@@ -75,26 +73,26 @@ rdr.cleandom.condenseWhitespace = function(doc) {
   }
 };
 
-rdr.cleandom.unwrapScriptAnchors = function(doc) {
+DOMScrub.unwrapScriptAnchors = function(doc) {
   const anchors = doc.querySelectorAll('a');
   for(let anchor of anchors) {
     const url = anchor.getAttribute('href');
     if(url && url.length > 11 && /^\s*javascript:/i.test(url)) {
-      rdr.cleandom.unwrap(anchor);
+      DOMScrub.unwrap(anchor);
     }
   }
 };
 
-rdr.cleandom.unwrapFormattingAnchors = function(doc) {
+DOMScrub.unwrapFormattingAnchors = function(doc) {
   const anchors = doc.querySelectorAll('a');
   for(let anchor of anchors) {
     if(!anchor.hasAttribute('href') && !anchor.hasAttribute('name')) {
-      rdr.cleandom.unwrap(anchor);
+      DOMScrub.unwrap(anchor);
     }
   }
 };
 
-rdr.cleandom.blacklistElements = [
+DOMScrub.blacklistElements = [
   'APPLET', 'AUDIO', 'BASE', 'BASEFONT', 'BGSOUND', 'BUTTON', 'COMMAND',
   'DATALIST', 'DIALOG', 'EMBED', 'FIELDSET', 'FRAME', 'FRAMESET', 'HEAD',
   'IFRAME', 'INPUT', 'ISINDEX', 'LINK', 'MATH', 'META',
@@ -102,11 +100,11 @@ rdr.cleandom.blacklistElements = [
   'SCRIPT', 'SELECT', 'SPACER', 'STYLE', 'SVG', 'TEXTAREA', 'TITLE',
   'VIDEO', 'XMP'
 ];
-rdr.cleandom.blacklistSelector = rdr.cleandom.blacklistElements.join(',');
+DOMScrub.blacklistSelector = DOMScrub.blacklistElements.join(',');
 
-rdr.cleandom.filterBlacklistedElements = function(doc) {
+DOMScrub.filterBlacklistedElements = function(doc) {
   const de = doc.documentElement;
-  const elements = doc.querySelectorAll(rdr.cleandom.blacklistSelector);
+  const elements = doc.querySelectorAll(DOMScrub.blacklistSelector);
   for(let element of elements) {
     if(de.contains(element)) {
       element.remove();
@@ -114,14 +112,14 @@ rdr.cleandom.filterBlacklistedElements = function(doc) {
   }
 };
 
-rdr.cleandom.filterBreaks = function(doc) {
+DOMScrub.filterBreaks = function(doc) {
   const elements = doc.querySelectorAll('br + br');
   for(let element of elements) {
     element.remove();
   }
 };
 
-rdr.cleandom.filterComments = function(doc) {
+DOMScrub.filterComments = function(doc) {
   const rootNode = doc.documentElement;
   const it = doc.createNodeIterator(rootNode, NodeFilter.SHOW_COMMENT);
   for(let node = it.nextNode(); node; node = it.nextNode()) {
@@ -129,7 +127,7 @@ rdr.cleandom.filterComments = function(doc) {
   }
 };
 
-rdr.cleandom.filterAttributes = function(doc) {
+DOMScrub.filterAttributes = function(doc) {
   const elements = doc.getElementsByTagName('*');
   for(let element of elements) {
     let elementName = element.localName;
@@ -178,7 +176,7 @@ rdr.cleandom.filterAttributes = function(doc) {
   }
 };
 
-rdr.cleandom.hiddenSelector = [
+DOMScrub.hiddenSelector = [
   '[style*="display:none"]',
   '[style*="display: none"]',
   '[style*="visibility:hidden"]',
@@ -187,30 +185,30 @@ rdr.cleandom.hiddenSelector = [
   '[aria-hidden="true"]'
 ].join(',');
 
-rdr.cleandom.filterHidden = function(doc) {
-  const elements = doc.querySelectorAll(rdr.cleandom.hiddenSelector);
+DOMScrub.filterHidden = function(doc) {
+  const elements = doc.querySelectorAll(DOMScrub.hiddenSelector);
   const de = doc.documentElement;
   for(let element of elements) {
     if(element !== de && de.contains(element)) {
-      rdr.cleandom.unwrap(element);
+      DOMScrub.unwrap(element);
     }
   }
 };
 
-rdr.cleandom.hrSelector = [
+DOMScrub.hrSelector = [
   'hr + hr', // consecutive hrs
   'ul > hr', // hierarchy error
   'ol > hr' // hierarchy error
 ].join(',');
 
-rdr.cleandom.filterHRs = function(doc) {
-  const elements = doc.querySelectorAll(rdr.cleandom.hrSelector);
+DOMScrub.filterHRs = function(doc) {
+  const elements = doc.querySelectorAll(DOMScrub.hrSelector);
   for(let element of elements) {
     element.remove();
   }
 };
 
-rdr.cleandom.filterSmallImages = function(doc) {
+DOMScrub.filterSmallImages = function(doc) {
   const images = doc.querySelectorAll('img');
   for(let img of images) {
     if(img.width < 2 || img.height < 2) {
@@ -219,7 +217,7 @@ rdr.cleandom.filterSmallImages = function(doc) {
   }
 };
 
-rdr.cleandom.filterSourcelessImages = function(doc) {
+DOMScrub.filterSourcelessImages = function(doc) {
   const images = doc.querySelectorAll('img');
   for(let img of images) {
     if(!img.hasAttribute('src') && !img.hasAttribute('srcset')) {
@@ -228,21 +226,21 @@ rdr.cleandom.filterSourcelessImages = function(doc) {
   }
 };
 
-rdr.cleandom.filterInvalidAnchors = function(doc) {
+DOMScrub.filterInvalidAnchors = function(doc) {
   const anchors = doc.querySelectorAll('a');
   for(let anchor of anchors) {
-    if(rdr.cleandom.isInvalidAnchor(anchor)) {
+    if(DOMScrub.isInvalidAnchor(anchor)) {
       anchor.remove();
     }
   }
 };
 
-rdr.cleandom.isInvalidAnchor = function(anchor) {
+DOMScrub.isInvalidAnchor = function(anchor) {
   const href = anchor.getAttribute('href');
   return href && /^\s*https?:\/\/#/i.test(href);
 };
 
-rdr.cleandom.filterLeaves = function(doc) {
+DOMScrub.filterLeaves = function(doc) {
   const body = doc.body;
   if(!body) {
     return;
@@ -251,39 +249,39 @@ rdr.cleandom.filterLeaves = function(doc) {
   const de = doc.documentElement;
   const elements = body.querySelectorAll('*');
   for(let element of elements) {
-    if(de.contains(element) && rdr.cleandom.isLeaf(element)) {
+    if(de.contains(element) && DOMScrub.isLeaf(element)) {
       element.remove();
     }
   }
 };
 
-rdr.cleandom.filterTables = function(doc, limit) {
+DOMScrub.filterTables = function(doc, limit) {
   const tables = doc.querySelectorAll('table');
   for(let i = 0, len = tables.length; i < len; i++) {
     const table = tables[i];
-    if(rdr.cleandom.isSingleColTable(table, limit)) {
-      rdr.cleandom.unwrapSingleColTable(table);
+    if(DOMScrub.isSingleColTable(table, limit)) {
+      DOMScrub.unwrapSingleColTable(table);
     }
   }
 };
 
-rdr.cleandom.isSingleColTable = function(table, limit) {
+DOMScrub.isSingleColTable = function(table, limit) {
   const rows = table.rows;
   const upper = Math.min(rows.length, limit);
   for(let i = 0; i < upper; i++) {
-    if(!rdr.cleandom.isSingleColRow(rows[i])) {
+    if(!DOMScrub.isSingleColRow(rows[i])) {
       return false;
     }
   }
   return true;
 };
 
-rdr.cleandom.isSingleColRow = function(row) {
+DOMScrub.isSingleColRow = function(row) {
   const cells = row.cells;
   let nonEmptyCount = 0;
   for(let i = 0, len = cells.length; i < len; i++) {
     const cell = cells[i];
-    if(!rdr.cleandom.isLeaf(cell)) {
+    if(!DOMScrub.isLeaf(cell)) {
       if(++nonEmptyCount > 1) {
         return false;
       }
@@ -295,7 +293,7 @@ rdr.cleandom.isSingleColRow = function(row) {
 
 // TODO: only pad if adjacent to text
 // TODO: can i use for..of over table.rows?
-rdr.cleandom.unwrapSingleColTable = function(table) {
+DOMScrub.unwrapSingleColTable = function(table) {
   const rows = table.rows;
   const numRows = rows.length;
   const parent = table.parentNode;
@@ -307,7 +305,7 @@ rdr.cleandom.unwrapSingleColTable = function(table) {
     // TODO: if the cell is a leaf, skip it and do not add a paragraph
     for(let k = 0, clen = row.cells.length; k < clen; k++) {
       const cell = row.cells[k];
-      rdr.cleandom.insertChildrenBefore(cell, table);
+      DOMScrub.insertChildrenBefore(cell, table);
     }
 
     parent.insertBefore(doc.createElement('p'), table);
@@ -317,7 +315,7 @@ rdr.cleandom.unwrapSingleColTable = function(table) {
   table.remove();
 };
 
-rdr.cleandom.unwrappableSelector = [
+DOMScrub.unwrappableSelector = [
   'abbr', 'acronym', 'article', 'aside', 'center', 'colgroup', 'data',
   'details', 'div', 'footer', 'header', 'help', 'hgroup', 'ilayer', 'insert',
   'layer', 'legend', 'main', 'mark', 'marquee', 'meter', 'multicol', 'nobr',
@@ -325,29 +323,29 @@ rdr.cleandom.unwrappableSelector = [
   'blink', 'font', 'plaintext', 'small', 'tt'
 ].join(',');
 
-rdr.cleandom.filterUnwrappables = function(doc) {
-  const elements = doc.querySelectorAll(rdr.cleandom.unwrappableSelector);
+DOMScrub.filterUnwrappables = function(doc) {
+  const elements = doc.querySelectorAll(DOMScrub.unwrappableSelector);
   for(let element of elements) {
-    rdr.cleandom.unwrap(element);
+    DOMScrub.unwrap(element);
   }
 };
 
-rdr.cleandom.leafExceptions = {
+DOMScrub.leafExceptions = {
   'area': 1, 'audio': 1, 'base': 1, 'col': 1, 'command': 1, 'br': 1,
   'canvas': 1, 'col': 1, 'hr': 1, 'iframe': 1, 'img': 1, 'input': 1,
   'keygen': 1, 'meta': 1, 'nobr': 1, 'param': 1, 'path': 1, 'source': 1,
   'sbg': 1, 'textarea': 1, 'track': 1, 'video': 1, 'wbr': 1
 };
 
-rdr.cleandom.isLeaf = function(node) {
+DOMScrub.isLeaf = function(node) {
   switch(node.nodeType) {
     case Node.ELEMENT_NODE:
-      if(node.localName in rdr.cleandom.leafExceptions) {
+      if(node.localName in DOMScrub.leafExceptions) {
         return false;
       }
 
       for(let child = node.firstChild; child; child = child.nextSibling) {
-        if(!rdr.cleandom.isLeaf(child)) {
+        if(!DOMScrub.isLeaf(child)) {
           return false;
         }
       }
@@ -363,7 +361,7 @@ rdr.cleandom.isLeaf = function(node) {
   return true;
 };
 
-rdr.cleandom.filterHairspaces = function(doc) {
+DOMScrub.filterHairspaces = function(doc) {
   const it = doc.createNodeIterator(doc.documentElement,
     NodeFilter.SHOW_TEXT);
   for(let node = it.nextNode(); node; node = it.nextNode()) {
@@ -375,14 +373,14 @@ rdr.cleandom.filterHairspaces = function(doc) {
   }
 };
 
-rdr.cleandom.filterNoscripts = function(doc) {
+DOMScrub.filterNoscripts = function(doc) {
   const elements = doc.querySelectorAll('noscript');
   for(let element of elements) {
-    rdr.cleandom.unwrap(element);
+    DOMScrub.unwrap(element);
   }
 };
 
-rdr.cleandom.filterFrames = function(doc) {
+DOMScrub.filterFrames = function(doc) {
   const frameset = doc.body;
   if(!frameset || frameset.localName !== 'frameset') {
     return;
@@ -403,16 +401,16 @@ rdr.cleandom.filterFrames = function(doc) {
   doc.documentElement.appendChild(body);
 };
 
-rdr.cleandom.filterFigures = function(doc) {
+DOMScrub.filterFigures = function(doc) {
   const figures = doc.querySelectorAll('FIGURE');
   for(let figure of figures) {
     if(figure.childElementCount === 1) {
-      rdr.cleandom.unwrap(figure);
+      DOMScrub.unwrap(figure);
     }
   }
 };
 
-rdr.cleandom.trimDoc = function(doc) {
+DOMScrub.trimDoc = function(doc) {
   const body = doc.body;
   if(!body) {
     return;
@@ -420,35 +418,35 @@ rdr.cleandom.trimDoc = function(doc) {
 
   const firstChild = body.firstChild;
   if(firstChild) {
-    rdr.cleandom.trimStep(firstChild, 'nextSibling');
+    DOMScrub.trimStep(firstChild, 'nextSibling');
     const lastChild = body.lastChild;
     if(lastChild && lastChild !== firstChild) {
-      rdr.cleandom.trimStep(lastChild, 'previousSibling');
+      DOMScrub.trimStep(lastChild, 'previousSibling');
     }
   }
 };
 
-rdr.cleandom.trimmableElements = {
+DOMScrub.trimmableElements = {
   'br': 1,
   'hr': 1,
   'nobr': 1
 };
 
-rdr.cleandom.canTrim = function(node) {
-  return node && (node.localName in rdr.cleandom.trimmableElements ||
+DOMScrub.canTrim = function(node) {
+  return node && (node.localName in DOMScrub.trimmableElements ||
     (node.nodeType === Node.TEXT_NODE && !node.nodeValue.trim()));
 };
 
-rdr.cleandom.trimStep = function(startNode, propName) {
+DOMScrub.trimStep = function(startNode, propName) {
   let node = startNode;
-  while(rdr.cleandom.canTrim(node)) {
+  while(DOMScrub.canTrim(node)) {
     let sibling = node[propName];
     node.remove();
     node = sibling;
   }
 };
 
-rdr.cleandom.unwrap = function(element, referenceNode) {
+DOMScrub.unwrap = function(element, referenceNode) {
   const target = referenceNode || element;
   const parent = target.parentNode;
 
@@ -462,7 +460,7 @@ rdr.cleandom.unwrap = function(element, referenceNode) {
     parent.insertBefore(doc.createTextNode(' '), target);
   }
 
-  rdr.cleandom.insertChildrenBefore(element, target);
+  DOMScrub.insertChildrenBefore(element, target);
 
   const nextSibling = target.nextSibling;
   if(nextSibling && nextSibling.nodeType === Node.TEXT_NODE) {
@@ -472,23 +470,23 @@ rdr.cleandom.unwrap = function(element, referenceNode) {
   target.remove();
 };
 
-rdr.cleandom.insertChildrenBefore = function(parentNode, referenceNode) {
+DOMScrub.insertChildrenBefore = function(parentNode, referenceNode) {
   const refParent = referenceNode.parentNode;
   for(let node = parentNode.firstChild; node; node = parentNode.firstChild) {
     refParent.insertBefore(node, referenceNode);
   }
 };
 
-rdr.cleandom.listSelector = 'ul, ol, dl';
-rdr.cleandom.listItemNames = {'li': 1, 'dt': 1, 'dd': 1};
-rdr.cleandom.unwrapSingleItemLists = function(doc) {
-  const lists = doc.querySelectorAll(rdr.cleandom.listSelector);
+DOMScrub.listSelector = 'ul, ol, dl';
+DOMScrub.listItemNames = {'li': 1, 'dt': 1, 'dd': 1};
+DOMScrub.unwrapSingleItemLists = function(doc) {
+  const lists = doc.querySelectorAll(DOMScrub.listSelector);
   for(let list of lists) {
-    rdr.cleandom.unwrapSingleItemList(doc, list);
+    DOMScrub.unwrapSingleItemList(doc, list);
   }
 };
 
-rdr.cleandom.unwrapSingleItemList = function(doc, list) {
+DOMScrub.unwrapSingleItemList = function(doc, list) {
   const item = list.firstElementChild;
   if(!item) {
     return;
@@ -498,13 +496,13 @@ rdr.cleandom.unwrapSingleItemList = function(doc, list) {
     return;
   }
 
-  if(!(item.localName in rdr.cleandom.listItemNames)) {
+  if(!(item.localName in DOMScrub.listItemNames)) {
     return;
   }
 
   if(!item.firstChild) {
-    if(rdr.cleandom.isText(list.previousSibling) &&
-      rdr.cleandom.isText(list.nextSibling)) {
+    if(DOMScrub.isText(list.previousSibling) &&
+      DOMScrub.isText(list.nextSibling)) {
       list.parentNode.replaceChild(doc.createTextNode(' '), list);
     } else {
       list.remove();
@@ -513,21 +511,21 @@ rdr.cleandom.unwrapSingleItemList = function(doc, list) {
     return;
   }
 
-  if(rdr.cleandom.isText(list.previousSibling) &&
-    rdr.cleandom.isText(item.firstChild)) {
+  if(DOMScrub.isText(list.previousSibling) &&
+    DOMScrub.isText(item.firstChild)) {
     list.parentNode.insertBefore(doc.createTextNode(' '), list);
   }
 
-  rdr.cleandom.insertChildrenBefore(item, list);
+  DOMScrub.insertChildrenBefore(item, list);
 
-  if(rdr.cleandom.isText(list.nextSibling) &&
-    rdr.cleandom.isText(list.previousSibling)) {
+  if(DOMScrub.isText(list.nextSibling) &&
+    DOMScrub.isText(list.previousSibling)) {
     list.parentNode.insertBefore(doc.createTextNode(' '), list);
   }
 
   list.remove();
 };
 
-rdr.cleandom.isText = function(node) {
+DOMScrub.isText = function(node) {
   return node && node.nodeType === Node.TEXT_NODE;
 };

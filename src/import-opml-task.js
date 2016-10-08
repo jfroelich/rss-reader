@@ -9,7 +9,7 @@
 function ImportOPMLTask() {
   this.parseXML = rdr.xml.parse;
   this.log = new LoggingService();
-  this.openDBTask = new OpenFeedDbTask();
+  this.openDBTask = new FeedDb();
   this.subTask = new SubscribeTask();
 
   this.Feed = Feed;

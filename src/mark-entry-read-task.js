@@ -7,7 +7,7 @@
 // Async, mark an entry as read in storage and then callback
 function MarkEntryReadTask() {
   this.log = new LoggingService();
-  this.openDbTask = new OpenFeedDbTask();
+  this.openDbTask = new FeedDb();
   this.entryFlags = Entry.flags;
   this.updateBadgeTask = new UpdateBadgeTask();
 }

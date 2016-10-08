@@ -8,7 +8,7 @@
 
 function RefreshFeedIconsTask() {
   this.log = new LoggingService();
-  this.openDBTask = new OpenFeedDbTask();
+  this.openDBTask = new FeedDb();
   this.lookupTask = new LookupFaviconTask();
   this.getAllFeedsTask = new GetAllFeedsTask();
   this.Feed = Feed;

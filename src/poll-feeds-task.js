@@ -8,7 +8,7 @@
 
 function PollFeedsTask() {
   this.log = new LoggingService();
-  this.openDBTask = new OpenFeedDbTask();
+  this.openDBTask = new FeedDb();
   this.updateBadgeTask = new UpdateBadgeTask();
   this.getAllFeedsTask = new GetAllFeedsTask();
   this.fetchFeedTask = new FetchFeedTask();
@@ -235,7 +235,7 @@ PollFeedsTask.prototype.onFindEntry = function(ctx, feed, entry, callback,
   // store the entry, but we just do not try and augment its content.
   if(rdr.poll.isFetchResistantURL(entryTerminalURLObject)) {
     this.prepLocalDoc(entry);
-    this.addEntry(ctx.db, entry, callback);
+    this.addEntry(ctx.db, entry, false, callback);
     return;
   }
 
@@ -245,7 +245,7 @@ PollFeedsTask.prototype.onFindEntry = function(ctx, feed, entry, callback,
   // this misses it, false negatives are not too important.
   if(this.isPDFURL(entryTerminalURLObject)) {
     this.prepLocalDoc(entry);
-    this.addEntry(ctx.db, entry, callback);
+    this.addEntry(ctx.db, entry, false, callback);
     return;
   }
 
@@ -269,7 +269,7 @@ PollFeedsTask.prototype.isPDFURL = function(url) {
 PollFeedsTask.prototype.onFetchEntry = function(ctx, entry, callback, event) {
   if(event.type !== 'success') {
     this.prepLocalDoc(entry);
-    this.addEntry(ctx.db, entry, callback);
+    this.addEntry(ctx.db, entry, false, callback);
     return;
   }
 
@@ -293,8 +293,8 @@ PollFeedsTask.prototype.onFetchEntry = function(ctx, entry, callback, event) {
 
   const doc = event.document;
   rdr.poll.lazyimg.updateImages(doc);
-  rdr.cleandom.filterSourcelessImages(doc);
-  rdr.cleandom.filterInvalidAnchors(doc);
+  DOMScrub.filterSourcelessImages(doc);
+  DOMScrub.filterInvalidAnchors(doc);
   rdr.poll.resolve.start(doc, event.responseURL);
   rdr.poll.tracking.filterImages(doc);
   const cb = this.onSetImageDimensions.bind(this, ctx, entry, doc, callback);
@@ -310,13 +310,13 @@ PollFeedsTask.prototype.onSetImageDimensions = function(ctx, entry, document,
 
   this.prepDoc(document);
   entry.content = document.documentElement.outerHTML.trim();
-  this.addEntry(ctx.db, entry, callback);
+  this.addEntry(ctx.db, entry, false, callback);
 };
 
 PollFeedsTask.prototype.prepDoc = function(doc) {
-  rdr.bp.filter(doc);
-  rdr.cleandom.cleanDoc(doc);
-  rdr.cleandom.addNoReferrer(doc);
+  Boilerplate.filter(doc);
+  DOMScrub.cleanDoc(doc);
+  DOMScrub.addNoReferrer(doc);
 };
 
 PollFeedsTask.prototype.prepLocalDoc = function(entry) {
