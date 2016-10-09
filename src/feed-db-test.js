@@ -1,3 +1,4 @@
+// See license.md
 
 function test() {
   const service = new FeedDb();

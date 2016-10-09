@@ -1,6 +1,4 @@
-// Copyright 2016 Josh Froelich. All rights reserved.
-// Use of this source code is governed by a MIT-style license
-// that can be found in the LICENSE file
+// See license.md
 
 'use strict';
 
@@ -30,9 +28,11 @@ function removeSlide(slide) {
 function markSlideAsRead(slide) {
   if(!slide.hasAttribute('read')) {
     slide.setAttribute('read', '');
-    const task = new MarkEntryReadTask();
+
     const id = parseInt(slide.getAttribute('entry'), 10);
-    task.start(id);
+    const verbose = false;
+    const callback = null;
+    markEntryRead(id, verbose, callback);
   }
 }
 

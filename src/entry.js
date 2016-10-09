@@ -1,6 +1,4 @@
-// Copyright 2016 Josh Froelich. All rights reserved.
-// Use of this source code is governed by a MIT-style license
-// that can be found in the LICENSE file
+// See license.md
 
 'use strict';
 
@@ -37,6 +35,9 @@ Entry.addURL = function(entry, urlString) {
   entry.urls.push(normalizedURLString);
   return true;
 };
+
+// TODO: maybe fix urls like this, look for pathname starting with '//'?
+// http://us.battle.net//hearthstone/en/blog/20303037
 
 Entry.normalizeURL = function(urlString) {
   const urlObject = new URL(urlString);

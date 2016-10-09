@@ -1,8 +1,11 @@
-// Copyright 2016 Josh Froelich. All rights reserved.
-// Use of this source code is governed by a MIT-style license
-// that can be found in the LICENSE file
+// See license.md
 
 'use strict';
+
+// TODO: maybe use a single property with 4 values instead of two separate
+// properties for read state and archive state. This will speed up the query
+// TODO: if I want a history view, I probably need to retain title and
+// favicon
 
 {
 
@@ -101,6 +104,7 @@ function openCursorOnError(event) {
   this.log.error(event.target.error);
 }
 
+// TODO: should this be forcing articles to be considered read?
 function compact(entry) {
   const output = {};
   output.archiveState = Entry.flags.ARCHIVED;

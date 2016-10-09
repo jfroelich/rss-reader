@@ -1,6 +1,4 @@
-// Copyright 2016 Josh Froelich. All rights reserved.
-// Use of this source code is governed by a MIT-`style` license
-// that can be found in the LICENSE file
+// See license.md
 
 'use strict';
 
@@ -266,9 +264,9 @@ function showSubPreview(url) {
     'subscription-preview-load-progress');
   showElement(progressElement);
 
-  const fetchFeedTask = new FetchFeedTask();
-  const shouldExcludeEntries = false;
-  fetchFeedTask.start(url, shouldExcludeEntries, onFetchFeed);
+  const excludeEntries = false;
+  const verbose = false;
+  fetchFeed(url, excludeEntries, verbose, onFetchFeed);
 
   function onFetchFeed(fetchEvent) {
     if(event.type !== 'success') {
@@ -343,8 +341,10 @@ function startSubscription(url) {
   const feed = {};
   Feed.addURL(feed, url.href);
 
-  const subTask = new SubscribeTask();
-  subTask.start(feed, {'callback': onSubscribe});
+  const conn = null;
+  const verbose = false;
+  const suppressNotifications = false;
+  subTask.start(conn, feed, suppressNotifications, verbose, onSubscribe);
 
   function onSubscribe(event) {
     if(event.type !== 'success') {
@@ -537,8 +537,8 @@ function subFormOnSubmit(event) {
     showSubPreview(url);
   } else {
     showElement(progressElement);
-    const task = new SearchGoogleFeedsTask();
-    task.start(queryString, onSearchGoogleFeeds);
+    const verbose = true;
+    searchGoogleFeeds(queryString, verbose, onSearchGoogleFeeds);
   }
 
   return false;
@@ -623,9 +623,11 @@ function onSearchGoogleFeeds(event) {
       } catch(exception) {
       }
       if(linkURL) {
+        const cache = new FaviconCache();
+        const verbose = false;
         const doc = null;
-        const task = new LookupFaviconTask();
-        task.start(linkURL, doc, onLookupFavicon.bind(null, result));
+        lookupFavicon(cache, linkURL, doc, verbose,
+          onLookupFavicon.bind(null, result));
       } else {
         numFaviconsProcessed++;
         if(numFaviconsProcessed === results.length) {
@@ -782,12 +784,14 @@ function importOPMLButtonOnClick(event) {
   task.start();
 }
 
-// TODO: also needs to give visual feedback
+// TODO: visual feedback
 function exportOPMLButtonOnClick(event) {
+  const db = new FeedDb();
   const title = 'Subscriptions';
-  const fileName = 'subscriptions.xml';
-  const task = new ExportOPMLTask();
-  task.start(title, fileName);
+  const fileName = 'subs.xml';
+  const verbose = false;
+  const callback = null;
+  exportOPML(db, title, fileName, verbose, callback);
 }
 
 function initSubsSection() {

@@ -1,6 +1,4 @@
-// Copyright 2016 Josh Froelich. All rights reserved.
-// Use of this source code is governed by a MIT-style license
-// that can be found in the LICENSE file
+// See license.md
 
 'use strict';
 
@@ -63,16 +61,17 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
     const db = new FeedDb();
     archiveEntries(db, age, verbose, callback);
   } else if(alarm.name === 'poll') {
-    const task = new PollFeedsTask();
     const forceResetLock = false;
     const allowMeteredConnections = false;
-    task.start(forceResetLock, allowMeteredConnections);
-  } else if(alarm.name === 'compact-favicons') {
     const verbose = false;
-    compactFavicons(verbose);
+    pollFeeds(forceResetLock, allowMeteredConnections, verbose);
+  } else if(alarm.name === 'compact-favicons') {
+    const cache = new FaviconCache();
+    const verbose = false;
+    compactFavicons(cache, verbose);
   } else if(alarm.name === 'refresh-feed-icons') {
-    const task = new RefreshFeedIconsTask();
-    task.start();
+    const verbose = false;
+    refreshFeedIcons(verbose);
   } else if(alarm.name === 'healthcheck') {
     const verbose = false;
     rdr.healthcheck.start(verbose);

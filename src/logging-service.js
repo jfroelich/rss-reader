@@ -1,11 +1,12 @@
-// Copyright 2016 Josh Froelich. All rights reserved.
-// Use of this source code is governed by a MIT-style license
-// that can be found in the LICENSE file
+// See license.md
 
 'use strict';
 
 // TODO: rename to CustomConsole
 // appear like it is typeof console, and can work as a drop in replacement
+
+// TODO: the problem with this is that it obfuscates which file printed the
+// the message, everything now comes from logging service, so maybe deprecate
 
 function LoggingService() {
   this.enabled = false;

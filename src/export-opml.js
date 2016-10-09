@@ -1,46 +1,42 @@
-// Copyright 2016 Josh Froelich. All rights reserved.
-// Use of this source code is governed by a MIT-style license
-// that can be found in the LICENSE file
+// See license.md
 
 'use strict';
 
-function ExportOPMLTask() {
-  this.log = new LoggingService();
-  this.openDBTask = new FeedDb();
-  this.getAllFeedsTask = new GetAllFeedsTask();
-  this.Feed = Feed;
-}
+{
 
-// Load feeds from the database and export them to an opml file
-ExportOPMLTask.prototype.start = function(title, fileName, callback) {
-  this.log.log('Starting opml export');
+function exportOPML(db, title, fileName, verbose, callback) {
+  const log = new LoggingService();
+  log.enabled = verbose;
+  log.log('Exporting opml file...');
   const ctx = {
     'callback': callback,
     'title': title || 'Subscriptions',
-    'fileName': fileName || 'subscriptions.xml'
+    'fileName': fileName || 'subs.xml',
+    'log': log
   };
-  this.openDBTask.open(this._openDBOnSuccess.bind(this, ctx),
-    this._openDBOnError.bind(this, ctx));
-};
+  db.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
+}
 
-ExportOPMLTask.prototype._openDBOnSuccess = function(ctx, event) {
+function openDBOnSuccess(event) {
   this.log.debug('Connected to database');
-  const db = event.target.result;
-  this.getAllFeedsTask.start(db, this._onGetFeeds.bind(this, ctx));
-  db.close();
-};
+  const conn = event.target.result;
+  const verbose = false;
+  getAllFeeds(conn, verbose, onGetFeeds.bind(this));
+  conn.close();
+}
 
-ExportOPMLTask.prototype._openDBOnError = function(ctx, event) {
+function openDBOnError(event) {
   this.log.error(event.target.error);
-  this._onComplete(ctx);
-};
+  onComplete.call(this);
+}
 
-ExportOPMLTask.prototype._onGetFeeds = function(ctx, feeds) {
+function onGetFeeds(feeds) {
   this.log.debug('Loaded %s feeds from database', feeds.length);
-  const doc = this._createDoc(ctx.title);
+  const doc = createDoc(this.title);
   const outlines = [];
   for(let feed of feeds) {
-    outlines.push(this._createOutline(doc, feed));
+    const outline = createOutline(doc, feed);
+    outlines.push(outline);
   }
 
   // Append the outlines to the body
@@ -60,28 +56,29 @@ ExportOPMLTask.prototype._onGetFeeds = function(ctx, feeds) {
   anchor.style.display = 'none';
   const parent = document.body || document.documentElement;
   parent.appendChild(anchor);
+  this.log.debug('Triggering download of opml file');
   anchor.click();
   URL.revokeObjectURL(objectURL);
   anchor.remove();
-  this._onComplete(ctx);
-};
+  onComplete.call(this);
+}
 
-ExportOPMLTask.prototype._onComplete = function(ctx) {
+function onComplete() {
   this.log.log('Completed export');
-  if(ctx.callback) {
-    ctx.callback();
+  if(this.callback) {
+    this.callback();
   }
-};
+}
 
 // Creates an outline element from an object representing a feed
-ExportOPMLTask.prototype._createOutline = function(doc, feed) {
+function createOutline(doc, feed) {
   const outline = doc.createElement('outline');
 
   if(feed.type) {
     outline.setAttribute('type', feed.type);
   }
 
-  const feedURL = this.Feed.getURL(feed);
+  const feedURL = Feed.getURL(feed);
 
   // This should never happen. A feed loaded from the database should always
   // have a url. This exception is not caught in the calling context, it is
@@ -106,9 +103,9 @@ ExportOPMLTask.prototype._createOutline = function(doc, feed) {
   }
 
   return outline;
-};
+}
 
-ExportOPMLTask.prototype._createDoc = function(title) {
+function createDoc(title) {
   const doc = document.implementation.createDocument(null, 'opml', null);
   doc.documentElement.setAttribute('version', '2.0');
   const head = doc.createElement('head');
@@ -132,4 +129,8 @@ ExportOPMLTask.prototype._createDoc = function(title) {
   const body = doc.createElement('body');
   doc.documentElement.appendChild(body);
   return doc;
-};
+}
+
+this.exportOPML = exportOPML;
+
+}

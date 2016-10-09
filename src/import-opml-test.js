@@ -1,3 +1,4 @@
+// See license.md
 
 // TODO: create a basic test
 // 1. create a fake database,
@@ -23,6 +24,7 @@
 // an array of file objects and import does not prompt. If not set, import
 // will block and prompt.
 // - there is a separate issue here, can i even create File objects?
+
 
 function test() {
 

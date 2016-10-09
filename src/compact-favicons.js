@@ -1,15 +1,10 @@
-// Copyright 2016 Josh Froelich. All rights reserved.
-// Use of this source code is governed by a MIT-style license
-// that can be found in the LICENSE file
+// See license.md
 
 'use strict';
 
 {
 
-// TODO: for this to be testable, cache must be a parameter
-
-function compactFavicons(verbose) {
-  const cache = new FaviconCache();
+function compactFavicons(cache, verbose) {
   const log = new LoggingService();
   log.enabled = verbose;
   log.log('Compacting favicon cache, max age:', cache.maxAge);
@@ -50,13 +45,18 @@ function openCursorOnSuccess(event) {
   if(this.cache.isExpired(entry, this.maxAge)) {
     this.log.debug('Deleting', entry.pageURLString);
     this.numDeleted++;
-    cursor.delete();
+    const deleteRequest = cursor.delete();
+    deleteRequest.onsuccess = deleteOnSuccess.bind(this, entry.pageURLString);
   } else {
     this.log.debug('Retaining', entry.pageURLString,
       new Date() - entry.dateUpdated);
   }
 
   cursor.continue();
+}
+
+function deleteOnSuccess(url, event) {
+  this.log.debug('Deleted entry with url', url);
 }
 
 function openCursorOnError(event) {
@@ -70,7 +70,7 @@ function onComplete() {
     this.db.close();
   }
 
-  this.log.log('Completed compacting favicon cache, deleted %s entries',
+  this.log.log('Compacted favicon cache, deleted %s entries',
     this.numDeleted);
 }
 

@@ -1,3 +1,4 @@
+// See license.md
 
 function search(query) {
   const task = new SearchGoogleFeedsTask();

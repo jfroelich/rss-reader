@@ -1,6 +1,4 @@
-// Copyright 2016 Josh Froelich. All rights reserved.
-// Use of this source code is governed by a MIT-style license
-// that can be found in the LICENSE file
+// See license.md
 
 'use strict';
 
@@ -17,39 +15,36 @@
 // an external then. So I have to always do another nested then with a
 // new promise. I need to use response.body.then(...) inside the
 // onResponse function.
+
+// I think this fixes it:
 // what if i throw in case of error inside the then? will that skip to the final
 // onerror and only callback once? maybe then its ok to chain?
 
-function FetchXMLTask() {
-  this.log = new LoggingService();
-  this.parseXML = rdr.xml.parse;
-}
+{
 
-FetchXMLTask.prototype.accepts = [
-  'application/rss+xml',
-  'application/rdf+xml',
-  'application/atom+xml',
-  'application/xml;q=0.9',
-  'text/xml;q=0.8'
-].join(', ');
+function fetchXML(requestURL, verbose, callback) {
 
-FetchXMLTask.prototype.start = function(requestURL, callback) {
-  const log = this.log;
-
-  if(!log) {
-    console.debug('LoggingService?', LoggingService);
-    return callback({
-      'type': 'badlog'
-    });
+  // Guard because otherwise it appears as a parse exception
+  if(!rdr.xml.parse) {
+    throw new ReferenceError('missing dependency rdr.xml.parse');
   }
 
-  log.log('GET', requestURL.href);
+  const log = new LoggingService();
+  log.enabled = verbose;
+  log.log('GET', requestURL.toString());
+
+  const accepts = [
+    'application/rss+xml',
+    'application/rdf+xml',
+    'application/atom+xml',
+    'application/xml;q=0.9',
+    'text/xml;q=0.8'
+  ].join(', ');
 
   const opts = {};
-  // Using 'omit' is the whole reason this uses the Fetch api
-  opts.credentials = 'omit';
+  opts.credentials = 'omit';// no cookies
   opts.method = 'GET';
-  opts.headers = {'Accept': this.accepts};
+  opts.headers = {'Accept': accepts};
   opts.mode = 'cors';
   opts.cache = 'default';
   opts.redirect = 'follow';
@@ -67,11 +62,9 @@ FetchXMLTask.prototype.start = function(requestURL, callback) {
       return;
     }
     didCallback = true;
+    log.debug('callback event', event);
     callback(event);
   }
-
-  const isAcceptedType = this.isAcceptedType;
-  const parseXML = this.parseXML;
 
   fetch(requestURL.href, opts).then(function onResponse(response) {
     if(!response.ok) {
@@ -104,7 +97,8 @@ FetchXMLTask.prototype.start = function(requestURL, callback) {
     }
 
     return response.text();
-  }).then(function onReadFullTextStream(text) {
+  }).then(function(text) {
+    log.debug('read in text of', requestURL.toString());
 
     // Part of the hack with exiting a promise early
     if(onResponseCalledBack) {
@@ -115,7 +109,7 @@ FetchXMLTask.prototype.start = function(requestURL, callback) {
     // Parse the text into a Document object
     let document = null;
     try {
-      document = parseXML(text);
+      document = rdr.xml.parse(text);
     } catch(error) {
       console.warn(error);
       return doCallback({
@@ -140,11 +134,11 @@ FetchXMLTask.prototype.start = function(requestURL, callback) {
       'type': 'unknown_error'
     });
   });
-};
+}
 
 // Checks the request header value and returns true if xml or html
 // @param type {String} the raw header string for 'Content-Type'
-FetchXMLTask.prototype.isAcceptedType = function(type) {
+function isAcceptedType(type) {
   // Treat missing content type as unacceptable
   if(!type) {
     return false;
@@ -152,12 +146,10 @@ FetchXMLTask.prototype.isAcceptedType = function(type) {
 
   // The header value may contain the charset so use a more general test.
   // Restrict to xml but allow for html for non-conforming responses
-  const lcType = type.toLowerCase();
-  if(lcType.includes('xml')) {
-    return true;
-  } else if(lcType.includes('text/html')) {
-    return true;
-  }
+  const str = type.toLowerCase();
+  return str.includes('xml') || str.includes('text/html');
+}
 
-  return false;
-};
+this.fetchXML = fetchXML;
+
+}

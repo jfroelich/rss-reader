@@ -1,16 +1,13 @@
-// Copyright 2016 Josh Froelich. All rights reserved.
-// Use of this source code is governed by a MIT-style license
-// that can be found in the LICENSE file
+// See license.md
 
 'use strict';
 
-// Set the width and height attributes of image elements. Calls back
-// with the number of images modified. Async.
-function SetImageDimensionsTask() {
-  this.log = new LoggingService();
-}
+{
 
-SetImageDimensionsTask.prototype.start = function(doc, callback) {
+function setImageDimensions(doc, verbose, callback) {
+  const log = new LoggingService();
+  log.enabled = verbose;
+
   const ctx = {
     'numProcessed': 0,
     'numFetched': 0,
@@ -18,43 +15,44 @@ SetImageDimensionsTask.prototype.start = function(doc, callback) {
     'numImages': 0,
     'callback': callback,
     'doc': doc,
-    'didCallback': false
+    'didCallback': false,
+    'log': log
   };
 
   const images = doc.getElementsByTagName('img');
   if(!images.length) {
-    this.onComplete(ctx);
+    onComplete.call(ctx);
     return;
   }
 
   ctx.numImages = images.length;
   for(let image of images) {
-    this.processImage(ctx, image);
+    processImage.call(ctx, image);
   }
-};
+}
 
-SetImageDimensionsTask.prototype.processImage = function(ctx, image) {
+function processImage(image) {
   if(image.getAttribute('width') || image.getAttribute('height')) {
-    return this.onProcessed(ctx);
+    return onProcessed.call(this);
   }
 
-  if(this.inferFromStyle(image)) {
-    ctx.numModified++;
-    return this.onProcessed(ctx);
+  if(inferFromStyle(image)) {
+    this.numModified++;
+    return onProcessed.call(this);
   }
 
   const src = image.getAttribute('src');
   if(!src) {
-    return this.onProcessed(ctx);
+    return onProcessed.call(this);
   }
 
-  const srcURL = this.parseURLNoRaise(src);
+  const srcURL = parseURLNoRaise(src);
   if(!srcURL) {
-    return this.onProcessed(ctx);
+    return onProcessed.call(this);
   }
 
   if(srcURL.protocol !== 'http:' && srcURL.protocol !== 'https:') {
-    return this.onProcessed(ctx);
+    return onProcessed.call(this);
   }
 
   // Calling new Image creates the image in the current document context,
@@ -67,48 +65,48 @@ SetImageDimensionsTask.prototype.processImage = function(ctx, image) {
 
   // If completed (cached) then use the available dimensions
   if(proxy.complete) {
-    ctx.numModified++;
+    this.numModified++;
     image.setAttribute('width', proxy.width);
     image.setAttribute('height', proxy.height);
-    return this.onProcessed(ctx);
+    return onProcessed.call(this);
   }
 
   // If incomplete then listen for response
-  proxy.onload = this.onLoad.bind(this, ctx, image);
-  proxy.onerror = this.onError.bind(this, ctx, image);
+  proxy.onload = onLoad.bind(this, image);
+  proxy.onerror = onError.bind(this, image);
 };
 
-SetImageDimensionsTask.prototype.onError = function(ctx, image, event) {
-  ctx.numFetched++;
-  this.onProcessed(ctx);
-};
+function onError(image, event) {
+  this.numFetched++;
+  onProcessed.call(this);
+}
 
-SetImageDimensionsTask.prototype.onLoad = function(ctx, image, event) {
-  ctx.numFetched++;
+function onLoad(image, event) {
+  this.numFetched++;
   image.setAttribute('width', event.target.width);
   image.setAttribute('height', event.target.height);
-  ctx.numModified++;
-  this.onProcessed(ctx);
-};
+  this.numModified++;
+  onProcessed.call(this);
+}
 
-SetImageDimensionsTask.prototype.onProcessed = function(ctx) {
+function onProcessed() {
   // This increment should only happen here, because this should only happen
   // once each call completes, which is sometimes asynchronous.
-  ctx.numProcessed++;
-  if(ctx.numProcessed === ctx.numImages) {
-    this.onComplete(ctx);
+  this.numProcessed++;
+  if(this.numProcessed === this.numImages) {
+    onComplete.call(this);
   }
-};
+}
 
-SetImageDimensionsTask.prototype.onComplete = function(ctx) {
+function onComplete() {
   // remnant of a fixed bug
-  if(ctx.didCallback) {
+  if(this.didCallback) {
     throw new Error('duplicated callback');
   }
 
-  ctx.didCallback = true;
-  ctx.callback(ctx.numModified);
-};
+  this.didCallback = true;
+  this.callback(this.numModified);
+}
 
 // Check if the dimensions are available from an inline style attribute
 // This will trigger style computation, which is pretty damn slow, but that
@@ -117,7 +115,7 @@ SetImageDimensionsTask.prototype.onComplete = function(ctx) {
 // different than getComputedStyle, which looks at the inherited properties
 // too. Also note that image.style.width yields a string, such as "100%" or
 // "50px", and this is the value set for the attribute.
-SetImageDimensionsTask.prototype.inferFromStyle = function(image) {
+function inferFromStyle(image) {
   let dirtied = false;
   if(image.hasAttribute('style')) {
     if(image.style.width) {
@@ -130,13 +128,14 @@ SetImageDimensionsTask.prototype.inferFromStyle = function(image) {
     }
   }
   return dirtied;
-};
+}
 
-SetImageDimensionsTask.prototype.parseURLNoRaise = function(urlString) {
+function parseURLNoRaise(urlString) {
   let urlObject = null;
-  try {
-    urlObject = new URL(urlString);
-  } catch(error) {
-  }
+  try { urlObject = new URL(urlString); } catch(error) {}
   return urlObject;
-};
+}
+
+this.setImageDimensions = setImageDimensions;
+
+}

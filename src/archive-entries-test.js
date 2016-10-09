@@ -1,3 +1,4 @@
+// See license.md
 
 // TODO: insert test data, then run archive, make assertions about the
 // state of the database, then delete the database
