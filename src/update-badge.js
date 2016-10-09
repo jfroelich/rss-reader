@@ -9,7 +9,7 @@ function updateBadge(conn, verbose) {
   log.enabled = verbose;
 
   log.log('Updating badge unread count');
-  const ctx = {'conn': conn, 'text': '?'};
+  const ctx = {'conn': conn, 'text': '?', 'log': log};
   if(conn) {
     countUnread.call(ctx);
   } else {
