@@ -2,23 +2,13 @@
 
 'use strict';
 
-// Fetches the xml file at the given url and calls back with an event object
-// @param requestURL {URL} the url of the feed to fetch
-// @param callback {function} called when fetch completes
-// TODO: this needs a ton of cleanup
-
-// TODO: the bug I've avoided with the hack is the extra callbacks. The 'then'
-// to read the text is always called, even when i don't want it to be.
-// I need to somehow reject instead of just return, something like that. But
-// I can't quite tell how to do that
-// in the fetch api. basically there is no way to early exit if i use
-// an external then. So I have to always do another nested then with a
-// new promise. I need to use response.body.then(...) inside the
-// onResponse function.
-
-// I think this fixes it:
-// what if i throw in case of error inside the then? will that skip to the final
-// onerror and only callback once? maybe then its ok to chain?
+/*
+TODO:
+- use promises correctly
+- no nested functions
+- experiment with throwing errors in first promise, maybe this fixes the promise
+issue
+*/
 
 {
 
@@ -40,6 +30,8 @@ function fetchXML(requestURL, verbose, callback) {
     'application/xml;q=0.9',
     'text/xml;q=0.8'
   ].join(', ');
+
+  // https://developer.mozilla.org/en-US/docs/Web/API/Request/Request
 
   const opts = {};
   opts.credentials = 'omit';// no cookies

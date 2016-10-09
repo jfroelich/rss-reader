@@ -2,6 +2,11 @@
 
 'use strict';
 
+/*
+TODO: remove subscription preview
+TODO: resolve searchGoogleFeeds favicons after displaying results, async
+*/
+
 { // Begin file block scope
 
 let currentMenuItem = null;
@@ -607,6 +612,7 @@ function onSearchGoogleFeeds(event) {
 
   // Add an initial count of the number of feeds as one of the feed list items
   const itemElement = document.createElement('li');
+  // TODO: use string template
   itemElement.textContent = 'Found ' + results.length + ' results.';
   resultsElement.appendChild(itemElement);
 
@@ -713,59 +719,55 @@ function createSearchResultElement(feed) {
   return item;
 }
 
+function removeFeedFromFeedList(feedId) {
+  // TODO: use string template
+  const selector = '#feedlist li[feed="' + feedId + '"]';
+  const feedElement = document.querySelector(selector);
+
+  if(!feedElement) {
+    throw new Error('did not find feed element for feed id', feedId);
+  }
+
+  feedElement.removeEventListener('click', feedListItemOnClick);
+  feedElement.remove();
+
+  // Upon removing the feed, update the displayed number of feeds.
+  updateFeedCount();
+
+  // Upon removing the feed, update the state of the feed list.
+  // If the feed list has no items, hide it and show a message instead
+  const feedList = document.getElementById('feedlist');
+  const noFeeds = document.getElementById('nosubscriptions');
+  if(!feedList.childElementCount) {
+    hideElement(feedList);
+    showElement(noFeeds);
+  }
+}
+
+
 function unsubButtonOnClick(event) {
-  console.debug('Clicked Unsubscribe');
+  console.debug('Clicked unsubscribe');
   const feedId = parseInt(event.target.value, 10);
 
-  const unsubTask = new UnsubscribeTask();
-  unsubTask.start(feedId, onUnsubscribe);
-
-  function onUnsubscribe(event) {
-    // If there was some failure to unsubscribe from the feed, react here
-    // and then exit early and do not update the UI
-    // TODO: show an error message about how there was a problem unsubscribing
-    if(event.type !== 'success') {
-      console.debug(event);
-      return;
-    }
-
-    // Remove the feed from the subscription list
-    // TODO: getting the feed element from the menu should be more idiomatic,
-    // I should probably be using a function here. That, or the function I
-    // create that removes the feed accepts a feedId parameter and knows how
-    // to get it there.
-    // TODO: removing the feed element from the menu should probably be
-    // more idiomatic and use a function
-    const selector = 'feedlist li[feed="' + feedId + '"]';
-    const feedElement = document.querySelector(selector);
-    if(feedElement) {
-      feedElement.removeEventListener('click', feedListItemOnClick);
-      feedElement.remove();
-    }
-
-    // Upon removing the feed, update the displayed number of feeds.
-    // TODO: this should probably be baked into the function that removes the
-    // feed or some function that handles changes to the feed list, so that
-    // I do not need to call it explicitly and do not risk forgetting not to
-    // call it.
-    updateFeedCount();
-
-    // Upon removing the feed, update the state of the feed list.
-    // If the feed list has no items, hide it and show a message instead
-    // TODO: this should probably also be baked into the function that removes
-    // the feed from the feed list and not the responsibility of the
-    // unsubscribe function.
-    const feedListElement = document.getElementById('feedlist');
-    const noFeedsElement = document.getElementById('nosubscriptions');
-    if(feedListElement.childElementCount === 0) {
-      hideElement(feedListElement);
-      showElement(noFeedsElement);
-    }
-
-    // Switch back to the main view
-    const subsSection = document.getElementById('mi-subscriptions');
-    showSection(subsSection);
+  if(!Number.isInteger(feedId)) {
+    throw new TypeError('invalid feed id', event.target.value);
   }
+
+  const verbose = false;
+  unsubscribe(feedId, verbose, onUnsubscribeCompleted.bind(null, feedId));
+}
+
+// TODO: provide visual feedback on success or error
+function onUnsubscribeCompleted(feedId, event) {
+  console.debug('Unsubscribe completed using feed id', feedId);
+  if(event.type !== 'success') {
+    console.debug(event);
+    return;
+  }
+
+  removeFeedFromFeedList(feedId);
+  const subsSection = document.getElementById('mi-subscriptions');
+  showSection(subsSection);
 }
 
 // TODO: needs to notify the user of a successful
@@ -777,11 +779,11 @@ function unsubButtonOnClick(event) {
 // - in order to do this, ompl-import-service needs to callback with any
 // errors that occurred, and also callback when no errors occurred so this can
 // tell the difference
-// TODO: give immediate visual feedback the import started
 // TODO: switch to a different section of the options ui on complete?
 function importOPMLButtonOnClick(event) {
-  const task = new ImportOPMLTask();
-  task.start();
+  const db = new FeedDb();
+  const verbose = false;
+  importOPML(db, verbose);
 }
 
 // TODO: visual feedback
@@ -794,12 +796,13 @@ function exportOPMLButtonOnClick(event) {
   exportOPML(db, title, fileName, verbose, callback);
 }
 
+// TODO: use getAllFeeds and then sort manually, to avoid the defined title
+// requirement (and deprecate title index)
 function initSubsSection() {
   let feedCount = 0;
   const openDBTask = new FeedDb();
   openDBTask.open(openDBOnSuccess, openDBOnError);
 
-  // TODO: load feeds into sorted array? use rdr.feeds.getAll
   function openDBOnSuccess(event) {
     const db = event.target.result;
     const tx = db.transaction('feed');

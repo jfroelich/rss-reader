@@ -2,6 +2,8 @@
 
 'use strict';
 
+// To show in notification center, toggle flag
+// chrome://flags/#enable-native-notifications
 var rdr = rdr || {};
 rdr.notifications = {};
 

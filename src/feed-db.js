@@ -2,7 +2,11 @@
 
 'use strict';
 
-// TODO: think of a better name
+/*
+TODO:
+- revert _upgrade to using a version migration approach
+*/
+
 
 function FeedDb() {
   this.name = 'reader';

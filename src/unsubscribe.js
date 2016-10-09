@@ -5,98 +5,99 @@
 {
 
 function unsubscribe(feedId, verbose, callback) {
-  const log = new LoggingService();
-  log.enabled = verbose;
-  // Strongly assert here because otherwise the process completes without an
-  // error but does not find a feed
   if(!Number.isInteger(feedId) || feedId < 1) {
     throw new TypeError('invalid feed id' + feedId);
   }
 
+  const log = new LoggingService();
+  log.enabled = verbose;
   log.log('Unsubscribing from', feedId);
 
   const ctx = {
     'feedId': feedId,
     'numDeleteEntryRequests': 0,
     'callback': callback,
-    'log': log
+    'log': log,
+    'didDeleteFeed': false
   };
 
-  const feedDb = new FeedDb();
-  feedDb.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
+  const db = new FeedDb();
+  db.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
 }
 
 function openDBOnSuccess(event) {
+  this.log.debug('Connected to database');
   this.conn = event.target.result;
-  const tx = this.conn.transaction('entry', 'readwrite');
-  const store = tx.objectStore('entry');
-  const index = store.index('feed');
-  const request = index.openCursor(this.feedId);
-  request.onsuccess = openEntryCursorOnSuccess.bind(this);
-  request.onerror = openEntryCursorOnError.bind(this);
+
+  const tx = this.conn.transaction(['feed', 'entry'], 'readwrite');
+  tx.oncomplete = onComplete.bind(this);
+
+  this.log.debug('Deleting feed', this.feedId);
+  const feedStore = tx.objectStore('feed');
+  const deleteFeedRequest = feedStore.delete(this.feedId);
+  deleteFeedRequest.onsuccess = deleteFeedOnSuccess.bind(this);
+  deleteFeedRequest.onerror = deleteFeedOnError.bind(this);
+
+  const entryStore = tx.objectStore('entry');
+  const feedIndex = entryStore.index('feed');
+  const openCursorRequest = feedIndex.openCursor(this.feedId);
+  openCursorRequest.onsuccess = openEntryCursorOnSuccess.bind(this);
+  openCursorRequest.onerror = openEntryCursorOnError.bind(this);
 }
 
 function openDBOnError(event) {
-  onComplete.call(this, 'ConnectionError');
+  onComplete.call(this);
+}
+
+function deleteFeedOnSuccess(event) {
+  this.didDeleteFeed = true;
+  this.log.debug('Deleted feed', this.feedId);
+}
+
+function deleteFeedOnError(event) {
+  this.log.error(event.target.error);
 }
 
 function openEntryCursorOnSuccess(event) {
   const cursor = event.target.result;
   if(cursor) {
     const entry = cursor.value;
-    cursor.delete();// async
+    this.log.debug('Deleting entry', entry.id, Entry.getURL(entry));
+    cursor.delete();
     this.numDeleteEntryRequests++;
     chrome.runtime.sendMessage({'type': 'deleteEntryRequested',
-      'entryId': entry.id});// async
-    cursor.continue();// async
-  } else {
-    onRemoveEntries.call(this);
+      'id': entry.id});
+    cursor.continue();
   }
 }
 
 function openEntryCursorOnError(event) {
   this.log.error(event.target.error);
-  onComplete.call(this, 'DeleteEntryError');
 }
 
-function onRemoveEntries() {
-  this.log.log('Deleting feed', this.feedId);
-  const tx = this.conn.transaction('feed', 'readwrite');
-  const store = tx.objectStore('feed');
-  const request = store.delete(this.feedId);
-  request.onsuccess = deleteFeedOnSuccess.bind(this);
-  request.onerror = deleteFeedOnError.bind(this);
-}
-
-function deleteFeedOnSuccess(event) {
-  onComplete.call(this, 'success');
-};
-
-function deleteFeedOnError(event) {
-  this.log.error(event.target.error);
-  onComplete.call(this, 'DeleteFeedError');
-}
-
-function onComplete(eventType) {
-  this.log.log('Unsubscribed');
+function onComplete(event) {
+  this.log.log('Completed unsubscribe');
 
   if(this.conn) {
     if(this.numDeleteEntryRequests) {
-      console.debug('Requested %i entries to be deleted',
+      this.log.debug('Requested %i entries to be deleted',
         this.numDeleteEntryRequests);
       const verbose = false;
       updateBadge(this.conn, verbose);
     }
 
+    this.log.debug('Requesting database connection close');
     this.conn.close();
   }
 
   if(this.callback) {
-    this.callback({
-      'type': eventType,
-      'feedId': this.feedId,
+    const type = this.didDeleteFeed ? 'success' : 'error';
+    const outputEvent = {
+      'type': type,
       'deleteRequestCount': this.numDeleteEntryRequests
-    });
+    };
+    this.log.debug('calling back with', outputEvent);
+    this.callback(outputEvent);
   }
 }
 

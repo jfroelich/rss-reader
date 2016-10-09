@@ -94,9 +94,18 @@ function onFetchFeed(event) {
     return;
   }
 
+  // TODO: before merging and looking up favicon and adding, check if the user
+  // is already subscribed to the redirected url
+
+
   this.feed = Feed.merge(this.feed, event.feed);
 
   const cache = new FaviconCache();
+
+  // TODO: if falling back to feed url instead of link, use origin, because
+  // we know that feed is just an xml file, this reduces the hoops that
+  // lookupFavicon jumps through internally
+
   const urlString = this.feed.link ? this.feed.link : Feed.getURL(this.feed);
   const urlObject = new URL(urlString);
   const doc = null;

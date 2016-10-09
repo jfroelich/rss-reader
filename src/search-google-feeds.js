@@ -2,11 +2,8 @@
 
 'use strict';
 
-//SearchGoogleFeedsTask(query, callback)
-
 {
 
-// Provides simple access to some of Google's Feed APIs
 function searchGoogleFeeds(query, verbose, callback) {
 
   if(typeof callback !== 'function') {

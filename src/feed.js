@@ -2,11 +2,14 @@
 
 'use strict';
 
+/*
+- remove the defined title requirement, have options manually sort feeds instead
+of using the title index
+*/
+
 const Feed = {};
 
 Feed.getURL = function(feed) {
-  // implicitly throws an error if feed is undefined
-  // implicitly throws an error if feed.urls is undefined
   if(!feed.urls.length) {
     throw new Error('feed missing url');
   }

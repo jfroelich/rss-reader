@@ -9,6 +9,7 @@ var rdr = rdr || {};
 rdr.poll = rdr.poll || {};
 rdr.poll.tracking = {};
 
+
 rdr.poll.tracking.hosts = [
   'ad.doubleclick.net',
   'b.scorecardresearch.com',

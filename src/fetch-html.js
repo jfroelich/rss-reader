@@ -2,8 +2,10 @@
 
 'use strict';
 
-// TODO: use new fetch API internally to suppress credentials and reduce
-// request size
+/*
+TODO:
+- use new fetch API
+*/
 
 {
 

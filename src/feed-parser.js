@@ -1,9 +1,20 @@
 // See license.md
 
+/*
+TODO:
+- do not require entries to have urls, that is some other modules responsibility
+- support <media:thumbnail url="imgurl" /> (atom)
+- do not introduce fallback dates, if date is not set then do not use
+- do not cascade feed date to entry date
+- add helper for entry enclosure instead of how it is inlined
+- figure out the atom text node issue (cdata related?)
+- setup testing
+*/
+
+
 'use strict';
 
 const FeedParser = {};
-
 
 // Returns an event-like object with properties feed and entries. Throws an
 // error if parsing failed

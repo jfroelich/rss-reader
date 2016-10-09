@@ -2,9 +2,13 @@
 
 'use strict';
 
+/*
+TODO: should this buffer all files before opening connection?
+*/
+
 {
 
-function importOPML(verbose) {
+function importOPML(db, verbose) {
 
   // This dep is only found in a try/catch for a diff exception
   if(!rdr.xml.parse) {
@@ -27,7 +31,8 @@ function importOPML(verbose) {
     'callback': callback,
     'uploader': uploader,
     'files': null,
-    'log': log
+    'log': log,
+    'db': db
   };
   uploader.onchange = onUploaderChange.bind(ctx);
   uploader.click();
@@ -54,8 +59,7 @@ function onUploaderChange(event) {
     return;
   }
 
-  const openDBTask = new FeedDb();
-  openDBTask.open(openDBOnSuccess.bind(this), openDBOnError.bind(this));
+  this.db.open(openDBOnSuccess.bind(this), openDBOnError.bind(this));
 }
 
 function openDBOnSuccess(event) {

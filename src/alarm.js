@@ -74,7 +74,7 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
     refreshFeedIcons(verbose);
   } else if(alarm.name === 'healthcheck') {
     const verbose = false;
-    rdr.healthcheck.start(verbose);
+    HealthCheck.start(verbose);
   } else {
     console.warn('Unknown alarm', alarm.name);
   }

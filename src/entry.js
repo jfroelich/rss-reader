@@ -1,5 +1,15 @@
 // See license.md
 
+/*
+TODO:
+- maybe entry should have just single state like UNREAD_UNARCHIVED,
+READ_ARCHIVED, etc
+- issue with normalizing entry urs. https://hack.ether.camp/idea/path
+redirects to https://hack.ether.camp/#/idea/path which normalizes to
+https://hack.ether.camp/. Stripping hash screws this up.
+- for urls with path containing '//', replace with '/'
+*/
+
 'use strict';
 
 const Entry = {};
@@ -20,6 +30,9 @@ Entry.getURL = function(entry) {
 
   return entry.urls[entry.urls.length - 1];
 };
+
+// TODO: allow for initial url to be added without full normalization so that
+// normalized url is just later in the chain?
 
 // Returns true if the url was added.
 Entry.addURL = function(entry, urlString) {

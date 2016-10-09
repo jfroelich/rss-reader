@@ -2,6 +2,12 @@
 
 'use strict';
 
+/*
+- date file modified should probably be passed back as an event property and
+not set on the feed. it is a property of the response that i happen to shove
+into a feed
+*/
+
 {
 
 function fetchFeed(requestURL, excludeEntries, verbose, callback) {

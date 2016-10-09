@@ -2,6 +2,10 @@
 
 'use strict';
 
+/*
+TODO: maybe replaceTags should accept a whitelist of tags to keep
+*/
+
 var rdr = rdr || {};
 rdr.html = {};
 

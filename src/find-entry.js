@@ -2,26 +2,30 @@
 
 'use strict';
 
-// TODO: profiling shows this is one of the slowest functions of the
-// backend polling process. It is probably the length of time it takes to do
-// the index lookup. Maybe there is a way to speed it up. Maybe part of the
-// issue is that I am deserializing entries, and it would be faster to use
-// a keyed cursor and just return entry ids. After all, I know that the one
-// calling context where this function is called is in polling, and that is
-// just to check if an entry exists. If I use a keyCursor then maybe idb is
-// smart enough to skip the deserialization of the full entry.
-// TODO: it doesn't actually make sense to always lookup all urls here.
-// Right now I merely stop appending matches, but I still continue to perform
-// all lookups. It would be better to not even continue to do lookups if I
-// reached the limit. Therefore I shouldn't be using a for loop. I should be
-// using continuation calling to reach the end, and at each async step,
-// deciding whether to do the next step or end. It is all serial in the end,
-// because even though the lookups are async, I don't think there is any
-// performance benefit to doing them in parallel. If all entries are going
-// to be iterated, then the same amount of work has to occur.
-// Well, there is a benefit to doing concurrent reads. The issue is that I think
-// it actually takes longer to call any request after the first.
-// Or maybe the reads are fast than this is hanging on some external tx
+/*
+TODO: profiling shows this is one of the slowest functions of the
+backend polling process. It is probably the length of time it takes to do
+the index lookup. Maybe there is a way to speed it up. Maybe part of the
+issue is that I am deserializing entries, and it would be faster to use
+a keyed cursor and just return entry ids. After all, I know that the one
+calling context where this function is called is in polling, and that is
+just to check if an entry exists. If I use a keyCursor then maybe idb is
+smart enough to skip the deserialization of the full entry.
+
+TODO: it doesn't actually make sense to always lookup all urls here.
+Right now I merely stop appending matches, but I still continue to perform
+all lookups. It would be better to not even continue to do lookups if I
+reached the limit. Therefore I shouldn't be using a for loop. I should be
+using continuation calling to reach the end, and at each async step,
+deciding whether to do the next step or end. It is all serial in the end,
+because even though the lookups are async, I don't think there is any
+performance benefit to doing them in parallel. If all entries are going
+to be iterated, then the same amount of work has to occur.
+Well, there is a benefit to doing concurrent reads. The issue is that I think
+it actually takes longer to call any request after the first.
+Or maybe the reads are fast than this is hanging on some external tx
+*/
+
 
 {
 

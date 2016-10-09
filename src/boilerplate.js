@@ -1,5 +1,14 @@
 // See license.md
 
+/*
+TODO:
+- reintroduce support for annotating elements
+- filter in-document titles
+- consider scoring on a scale, or use probability
+- revert to blocks instead of best element
+- review justText thesis
+*/
+
 'use strict';
 
 const Boilerplate = {};

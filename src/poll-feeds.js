@@ -2,6 +2,23 @@
 
 'use strict';
 
+/*
+- experiment with webworker?
+- if repeatedly fail to fetch feed mark it as inactive, don't poll against
+inactive feeds
+- customizable update schedules per feed
+- backoff per feed if poll did not find updated content
+- de-activation of feeds with 404s
+- de-activation of too much time elapsed since feed had new articles
+- only poll if feed is active
+- store feed de-activated reason code
+- store feed de-activated date
+- some concept of throttling updates
+- configurable polling schedule, per poll (all feeds) or per maybe per feed
+- maybe improve the content of the notification, like show number of articles
+added or something
+*/
+
 {
 
 function pollFeeds(forceResetLock, allowMetered, verbose) {

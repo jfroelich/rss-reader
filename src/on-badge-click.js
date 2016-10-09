@@ -10,6 +10,7 @@ const newTabURL = 'chrome://newtab/';
 
 // TODO: is there a way to not do this on every page load?
 chrome.browserAction.onClicked.addListener(function(event) {
+  // NOTE: query requires 'tabs' permission
   chrome.tabs.query({'url': viewURL}, onQueryForViewTab);
 });
 

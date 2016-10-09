@@ -27,5 +27,7 @@
 
 
 function test() {
-
+  const db = new FeedDb();
+  db.name = 'test-opml-import';
+  db.version = 1;
 }
