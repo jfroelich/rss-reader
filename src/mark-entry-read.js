@@ -17,8 +17,8 @@ function markEntryRead(id, verbose, callback) {
   log.debug('Mark entry %s as read', id);
 
   const ctx = {'id': id, 'callback': callback, 'log': log};
-  const openDbTask = new openDbTask();
-  openDbTask.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
+  const feedDb = new FeedDb();
+  feedDb.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
 }
 
 function openDBOnSuccess(event) {
