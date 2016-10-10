@@ -13,14 +13,10 @@ https://hack.ether.camp/. Stripping hash screws this up.
 'use strict';
 
 const Entry = {};
-
-// TODO: no need for flags, store props directly on Entry
-Entry.flags = {
-  'UNREAD': 0,
-  'READ': 1,
-  'UNARCHIVED': 0,
-  'ARCHIVED': 1
-};
+Entry.UNREAD = 0;
+Entry.READ = 1;
+Entry.UNARCHIVED = 0;
+Entry.ARCHIVED = 1;
 
 // Given an entry object, return the last url in its internal url chain.
 Entry.getURL = function(entry) {

@@ -65,8 +65,8 @@ function appendSlides(onAppendComplete, isFirstSlide) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const key_path = [Entry.flags.UNARCHIVED, Entry.flags.UNREAD];
-    const request = index.openCursor(key_path);
+    const keyPath = [Entry.UNARCHIVED, Entry.UNREAD];
+    const request = index.openCursor(keyPath);
     request.onsuccess = onOpenCursor;
     request.onerror = openCursorOnError;
   }

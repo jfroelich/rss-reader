@@ -45,7 +45,7 @@ function openDBOnSuccess(event) {
   tx.oncomplete = onComplete.bind(this);
   const store = tx.objectStore('entry');
   const index = store.index('archiveState-readState');
-  const keyPath = [Entry.flags.UNARCHIVED, Entry.flags.READ];
+  const keyPath = [Entry.UNARCHIVED, Entry.READ];
   const request = index.openCursor(keyPath);
   request.onsuccess = openCursorOnSuccess.bind(this);
   request.onerror = openCursorOnError.bind(this);
@@ -105,7 +105,7 @@ function openCursorOnError(event) {
 // TODO: should this be forcing articles to be considered read?
 function compact(entry) {
   const output = {};
-  output.archiveState = Entry.flags.ARCHIVED;
+  output.archiveState = Entry.ARCHIVED;
   output.dateArchived = this.currentDate;
   output.dateCreated = entry.dateCreated;
   if(entry.dateRead) {
