@@ -2,30 +2,32 @@
 
 'use strict';
 
-function FeedCache(log) {
+class FeedCache {
+
+constructor(log) {
   this.log = log || SilentConsole;
 }
 
-FeedCache.prototype.addEntry = function(conn, entry, callback) {
+addEntry(conn, entry, callback) {
   this.log.log('Adding entry', Entry.getURL(entry));
   const sanitized = Entry.sanitize(entry);
   const storable = ReaderUtils.filterEmptyProps(sanitized);
-  storable.readState = Entry.flags.UNREAD;
-  storable.archiveState = Entry.flags.UNARCHIVED;
+  storable.readState = Entry.UNREAD;
+  storable.archiveState = Entry.UNARCHIVED;
   storable.dateCreated = new Date();
   const tx = conn.transaction('entry', 'readwrite');
   const store = tx.objectStore('entry');
   const request = store.add(storable);
   request.onsuccess = callback;
   request.onerror = this._addEntryOnError.bind(this, storable, callback);
-};
+}
 
-FeedCache.prototype._addEntryOnError = function(entry, callback, event) {
+_addEntryOnError(entry, callback, event) {
   this.log.error(Entry.getURL(entry), event.target.error);
   callback(event);
-};
+}
 
-FeedCache.prototype.addFeed = function(conn, feed, callback) {
+addFeed(conn, feed, callback) {
   if('id' in feed) {
     throw new TypeError('cannot add feed with id');
   }
@@ -39,18 +41,18 @@ FeedCache.prototype.addFeed = function(conn, feed, callback) {
   const request = store.add(storable);
   request.onsuccess = this._addFeedOnSuccess.bind(this, feed, callback);
   request.onerror = this._addFeedOnError.bind(this, feed, callback);
-};
+}
 
-FeedCache.prototype._addFeedOnSuccess = function(feed, callback, event) {
+_addFeedOnSuccess(feed, callback, event) {
   feed.id = event.target.result;
   this.log.debug('Added feed %s with new %s', Feed.getURL(feed), feed.id);
   callback({'type': 'success', 'feed': feed});
-};
+}
 
-FeedCache.prototype._addFeedOnError = function(feed, callback, event) {
+_addFeedOnError(feed, callback, event) {
   this.log.error('Error adding feed', Feed.getURL(feed), event.target.error);
   callback({'type': 'error'});
-};
+}
 
 /*
 TODO: profiling shows this is one of the slowest functions of the
@@ -76,8 +78,7 @@ it actually takes longer to call any request after the first.
 Or maybe the reads are fast than this is hanging on some external tx
 */
 
-FeedCache.prototype.findEntry = function(conn, urls, limit, callback) {
-
+findEntry(conn, urls, limit, callback) {
   if(!urls.length) {
     throw new Error('at least one url is required');
   }
@@ -116,9 +117,9 @@ FeedCache.prototype.findEntry = function(conn, urls, limit, callback) {
     request.onsuccess = this._findEntryOpenCursorOnSuccess.bind(this, ctx);
     request.onerror = this.log.error;
   }
-};
+}
 
-FeedCache.prototype._findEntryOpenCursorOnSuccess = function(ctx, event) {
+_findEntryOpenCursorOnSuccess(ctx, event) {
   if(ctx.reachedLimit) {
     this.log.debug('ignoring entry because limit reached');
     return;
@@ -143,14 +144,14 @@ FeedCache.prototype._findEntryOpenCursorOnSuccess = function(ctx, event) {
   }
 
   cursor.continue();
-};
+}
 
-FeedCache.prototype._findEntryOnComplete = function(ctx, event) {
+_findEntryOnComplete(ctx, event) {
   this.log.log('Found %s matches', ctx.matches.length);
   ctx.callback(ctx.matches);
-};
+}
 
-FeedCache.prototype.updateFeed = function(conn, feed, callback) {
+updateFeed(conn, feed, callback) {
   if(!('id' in feed)) {
     throw new TypeError('missing id');
   }
@@ -164,23 +165,23 @@ FeedCache.prototype.updateFeed = function(conn, feed, callback) {
   const request = store.put(storable);
   request.onsuccess = this._updateFeedOnSuccess.bind(this, storable, callback);
   request.onerror = this._updateFeedOnError.bind(this, storable, callback);
-};
+}
 
-FeedCache.prototype._updateFeedOnSuccess = function(feed, callback, event) {
+_updateFeedOnSuccess(feed, callback, event) {
   this.log.debug('Updated feed', Feed.getURL(feed));
   if(callback) {
     callback({'type': 'success', 'feed': feed});
   }
-};
+}
 
-FeedCache.prototype._updateFeedOnError = function(feed, callback, event) {
+_updateFeedOnError(feed, callback, event) {
   this.log.error('Error updating feed', Feed.getURL(feed), event.target.error);
   if(callback) {
     callback({'type': 'error', 'feed': feed});
   }
-};
+}
 
-FeedCache.prototype.getAllFeeds = function(conn, callback) {
+getAllFeeds(conn, callback) {
   this.log.log('Getting all feeds');
   const feeds = [];
   const tx = conn.transaction('feed');
@@ -189,9 +190,9 @@ FeedCache.prototype.getAllFeeds = function(conn, callback) {
   const request = store.openCursor();
   request.onsuccess = this._getAllFeedsOpenCursorOnSuccess.bind(this, feeds);
   request.onerror = this.log.error;
-};
+}
 
-FeedCache.prototype._getAllFeedsOpenCursorOnSuccess = function(feeds, event) {
+_getAllFeedsOpenCursorOnSuccess(feeds, event) {
   const cursor = event.target.result;
   if(cursor) {
     const feed = cursor.value;
@@ -199,34 +200,34 @@ FeedCache.prototype._getAllFeedsOpenCursorOnSuccess = function(feeds, event) {
     feeds.push(feed);
     cursor.continue();
   }
-};
+}
 
-FeedCache.prototype._getAllFeedsOnComplete = function(feeds, callback, event) {
+_getAllFeedsOnComplete(feeds, callback, event) {
   this.log.log('Completed getting all feeds');
   callback(feeds);
-};
+}
 
-FeedCache.prototype.countUnread = function(conn, callback) {
+countUnread(conn, callback) {
   this.log.debug('Counting unread entries');
   const tx = conn.transaction('entry');
   const store = tx.objectStore('entry');
   const index = store.index('readState');
-  const request = index.count(Entry.flags.UNREAD);
+  const request = index.count(Entry.UNREAD);
   request.onsuccess = this._countUnreadOnSuccess.bind(this, callback);
   request.onerror = this._countUnreadOnError.bind(this, callback);
-};
+}
 
-FeedCache.prototype._countUnreadOnSuccess = function(callback, event) {
+_countUnreadOnSuccess(callback, event) {
   const count = event.target.result;
   callback(count);
-};
+}
 
-FeedCache.prototype._countUnreadOnError = function(callback, event) {
+_countUnreadOnError(callback, event) {
   this.log.error(event.target.error);
   callback(-1);// 0 would be ambiguous
-};
+}
 
-FeedCache.prototype.markEntryRead = function(id, callback) {
+markEntryRead(id, callback) {
   // TODO: use string template for error text
   if(!Number.isInteger(id) || id < 1) {
     throw new Error('invalid entry id: ' + id);
@@ -236,10 +237,10 @@ FeedCache.prototype.markEntryRead = function(id, callback) {
   const ctx = {'id': id, 'callback': callback};
   const feedDb = new FeedDb();
   feedDb.open(this._merodbos.bind(this, ctx), this._merodboe.bind(this, ctx));
-};
+}
 
 // Mark entry read open database on success
-FeedCache.prototype._merodbos = function(ctx, event) {
+_merodbos(ctx, event) {
   this.log.debug('Connected to database to mark entry as read');
   const conn = event.target.result;
   ctx.conn = conn;
@@ -248,16 +249,16 @@ FeedCache.prototype._merodbos = function(ctx, event) {
   const request = store.openCursor(ctx.id);
   request.onsuccess = this._merocos.bind(this, ctx);
   request.onerror = this._merocoe.bind(this, ctx);
-};
+}
 
 // Mark entry read open database on error
-FeedCache.prototype._merodboe = function(ctx, event) {
+_merodboe(ctx, event) {
   this.log.debug(event.target.error);
   this._meroc(ctx, 'ConnectionError');
-};
+}
 
 // Mark entry read open cursor on success
-FeedCache.prototype._merocos = function(ctx, event) {
+_merocos(ctx, event) {
   const cursor = event.target.result;
   if(!cursor) {
     this.log.error('No entry found with id', ctx.id);
@@ -266,7 +267,7 @@ FeedCache.prototype._merocos = function(ctx, event) {
   }
 
   const entry = cursor.value;
-  if(entry.readState === Entry.flags.READ) {
+  if(entry.readState === Entry.READ) {
     this.log.error('Already read entry with id', entry.id);
     this._meroc(ctx, 'AlreadyReadError');
     return;
@@ -274,7 +275,7 @@ FeedCache.prototype._merocos = function(ctx, event) {
 
   this.log.debug('Updating entry', entry.id);
 
-  entry.readState = Entry.flags.READ;
+  entry.readState = Entry.READ;
   const dateNow = new Date();
   entry.dateRead = dateNow;
   entry.dateUpdated = dateNow;
@@ -282,16 +283,16 @@ FeedCache.prototype._merocos = function(ctx, event) {
 
   updateBadge(ctx.conn, SilentConsole);
   this._meroc(ctx, 'Success');
-};
+}
 
 // Mark entry read open cursor on error
-FeedCache.prototype._merocoe = function(ctx, event) {
+_merocoe(ctx, event) {
   this.log.error(event.target.error);
   this._meroc(ctx, 'CursorError');
-};
+}
 
 // Mark entry read on complete
-FeedCache.prototype._meroc = function(ctx, type) {
+_meroc(ctx, type) {
   this.log.log('Completed marking entry as read');
   if(ctx.conn) {
     this.log.debug('Requesting database to close');
@@ -302,4 +303,6 @@ FeedCache.prototype._meroc = function(ctx, type) {
     this.log.debug('Calling back with type', type);
     ctx.callback({'type': type});
   }
-};
+}
+
+} // End class FeedCache
