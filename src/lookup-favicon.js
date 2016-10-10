@@ -5,10 +5,8 @@
 {
 
 function lookupFavicon(cache, url, doc, verbose, callback) {
-  const log = new LoggingService();
-  log.enabled = verbose;
-
-  log.log('Lookup', url.toString());
+  const log = verbose ? console : SilentConsole;
+  log.log('Lookup favicon', url.toString());
   const ctx = {
     'cache': cache,
     'url': url,

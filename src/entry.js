@@ -14,6 +14,7 @@ https://hack.ether.camp/. Stripping hash screws this up.
 
 const Entry = {};
 
+// TODO: no need for flags, store props directly on Entry
 Entry.flags = {
   'UNREAD': 0,
   'READ': 1,

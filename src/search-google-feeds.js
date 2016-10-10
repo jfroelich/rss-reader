@@ -10,8 +10,7 @@ function searchGoogleFeeds(query, verbose, callback) {
     throw new TypeError('callback must be a function');
   }
 
-  const log = new LoggingService();
-  log.enabled = verbose;
+  const log = verbose ? console : SilentConsole;
 
   const ctx = {};
   ctx.log = log;

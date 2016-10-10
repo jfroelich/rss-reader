@@ -11,15 +11,11 @@ into a feed
 {
 
 function fetchFeed(requestURL, excludeEntries, verbose, callback) {
-
-  // Guard because only seen in try/catch for different exception type that
-  // is otherwise non-fatal
   if(!FeedParser) {
-    throw new ReferenceError('missing dep FeedParser');
+    throw new ReferenceError('missing FeedParser');
   }
 
-  const log = new LoggingService();
-  log.verbose = verbose;
+  const log = verbose ? console : SilentConsole;
   log.log('GET', requestURL.toString());
 
   const ctx = {

@@ -223,7 +223,7 @@ ul#navigation-menu li.navigation-item-selected {
 
 #discover-results-list li img {
   margin-right:6px;
-  /* The favIcon service sometimes sends back non-16x16 images. Force the scale */
+  /* The favIcon lookup sometimes sends back non-16x16 images. Force the scale */
   max-width:16px;
 }
 

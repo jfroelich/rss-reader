@@ -9,8 +9,7 @@ function unsubscribe(feedId, verbose, callback) {
     throw new TypeError('invalid feed id' + feedId);
   }
 
-  const log = new LoggingService();
-  log.enabled = verbose;
+  const log = verbose ? console : SilentConsole;
   log.log('Unsubscribing from', feedId);
 
   const ctx = {

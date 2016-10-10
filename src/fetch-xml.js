@@ -19,8 +19,7 @@ function fetchXML(requestURL, verbose, callback) {
     throw new ReferenceError('missing dependency rdr.xml.parse');
   }
 
-  const log = new LoggingService();
-  log.enabled = verbose;
+  const log = verbose ? console : SilentConsole;
   log.log('GET', requestURL.toString());
 
   const accepts = [

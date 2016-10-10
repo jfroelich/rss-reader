@@ -5,8 +5,7 @@
 {
 
 function exportOPML(db, title, fileName, verbose, callback) {
-  const log = new LoggingService();
-  log.enabled = verbose;
+  const log = verbose ? console : SilentConsole;
   log.log('Exporting opml file...');
   const ctx = {
     'callback': callback,

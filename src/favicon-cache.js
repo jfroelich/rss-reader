@@ -7,7 +7,7 @@ function FaviconCache() {
   this.name = 'favicon-cache';
   this.version = 1;
   this.maxAge = 1000 * 60 * 60 * 24 * 30;
-  this.log = new LoggingService();
+  this.log = SilentConsole;
 }
 
 FaviconCache.prototype.connect = function(onSuccess, onError) {

@@ -3,13 +3,11 @@
 'use strict';
 
 function FeedCache(verbose) {
-  this.log = new LoggingService();
-  this.log.enabled = verbose;
+  this.log = verbose ? console : SilentConsole;
 }
 
 FeedCache.prototype.addEntry = function(conn, entry, callback) {
-  const entryURL = Entry.getURL(entry);
-  this.log.log('adding entry', entryURL);
+  this.log.log('Adding entry', Entry.getURL(entry));
   const sanitized = Entry.sanitize(entry);
   const storable = ReaderUtils.filterEmptyProps(sanitized);
   storable.readState = Entry.flags.UNREAD;

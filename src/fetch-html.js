@@ -10,8 +10,7 @@ TODO:
 {
 
 function fetchHTML(requestURL, verbose, callback) {
-  const log = new LoggingService();
-  log.enabled = verbose;
+  const log = verbose ? console : SilentConsole;
   log.log('GET', requestURL.toString());
   const ctx = {
     'requestURL': requestURL,

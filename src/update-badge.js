@@ -5,8 +5,7 @@
 {
 
 function updateBadge(conn, verbose) {
-  const log = new LoggingService();
-  log.enabled = verbose;
+  const log = verbose ? console : SilentConsole;
   log.log('Updating badge unread count');
 
   const db = new FeedDb();
@@ -23,8 +22,8 @@ function updateBadge(conn, verbose) {
 function openDBOnSuccess(event) {
   this.log.log('Connected to database');
   this.conn = event.target.result;
-  this.shouldCloseDB = true;
   this.cache.countUnread(this.conn, onCountUnread.bind(this));
+  this.conn.close();
 }
 
 function openDBOnError(event) {

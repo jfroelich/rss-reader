@@ -7,7 +7,7 @@
 
 function test(urlString) {
   const cache = new FaviconCache();
-  cache.log.enabled = true;
+  cache.log = console;
 
   const url = new URL(urlString);
   const doc = null;

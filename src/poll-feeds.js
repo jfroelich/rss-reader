@@ -22,9 +22,7 @@ added or something
 {
 
 function pollFeeds(forceResetLock, allowMetered, verbose) {
-  const log = new LoggingService();
-  log.enabled = verbose;
-
+  const log = verbose ? console : SilentConsole;
   log.log('Checking for new articles...');
   const ctx = {
     'numFeedsPending': 0,

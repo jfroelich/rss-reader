@@ -23,25 +23,23 @@ function archiveEntries(db, age, verbose, callback) {
     age = defaultMaxAge;
   }
 
-  const log = new LoggingService();
-  log.enabled = verbose;
-  log.log('Starting archive service with age', age);
-
-  const context = {
+  const ctx = {
     'numEntriesProcessed': 0,
     'numEntriesModified': 0,
     'age': age,
-    'log': log,
     'db': db,
     'currentDate': new Date(),
-    'callback': callback
+    'callback': callback,
+    'log': verbose ? console : SilentConsole
   };
 
-  db.open(openDBOnSuccess.bind(context), openDBOnError.bind(context));
+  ctx.log.log('Archiving entries with age', age);
+  db.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
 }
 
 function openDBOnSuccess(event) {
   this.log.debug('Connected to database', this.db.name);
+
   const conn = event.target.result;
   const tx = conn.transaction('entry', 'readwrite');
   tx.oncomplete = onComplete.bind(this);
@@ -87,7 +85,7 @@ function openCursorOnSuccess(event) {
   this.numEntriesModified++;
   const compactedEntry = compact.call(this, entry);
 
-  if(this.log.enabled) {
+  if(this.log !== SilentConsole) {
     const beforeSize = ReaderUtils.sizeof(entry);
     const afterSize = ReaderUtils.sizeof(compactedEntry);
     this.log.debug('Compacted %s (age %s, before %s, after %s)',
@@ -121,9 +119,8 @@ function compact(entry) {
 }
 
 function onComplete(event) {
-  this.log.log('Archive service completed (scanned %s, compacted %s)',
+  this.log.log('archiveEntries completed (scanned %s, compacted %s)',
     this.numEntriesProcessed, this.numEntriesModified);
-
   if(this.callback) {
     this.callback();
   }

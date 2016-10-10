@@ -5,13 +5,12 @@
 {
 
 function compactFavicons(cache, verbose) {
-  const log = new LoggingService();
-  log.enabled = verbose;
-  log.log('Compacting favicon cache, max age:', cache.maxAge);
-
   if(!Number.isInteger(cache.maxAge)) {
-    throw new TypeError('invalid maxAge value');
+    throw new TypeError('invalid maxAge');
   }
+
+  const log = verbose ? console : SilentConsole;
+  log.log('Compacting favicon cache, max age:', cache.maxAge);
 
   const ctx = {
     'cache': cache,
@@ -19,7 +18,6 @@ function compactFavicons(cache, verbose) {
     'log': log,
     'numDeleted': 0
   };
-
   cache.connect(connectOnSuccess.bind(ctx), connectOnError.bind(ctx));
 }
 

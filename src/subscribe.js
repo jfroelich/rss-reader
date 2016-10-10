@@ -9,8 +9,7 @@ function subscribe(conn, feed, suppressNotifications, verbose, callback) {
     throw new TypeError('feed missing url');
   }
 
-  const log = new LoggingService();
-  log.enabled = verbose;
+  const log = verbose ? console : SilentConsole;
   log.log('Subscribing to', Feed.getURL(feed));
 
   const ctx = {

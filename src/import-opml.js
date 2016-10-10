@@ -15,8 +15,7 @@ function importOPML(db, verbose) {
     throw new ReferenceError('missing rdr.xml.parse dep');
   }
 
-  const log = new LoggingService();
-  log.enabled = verbose;
+  const log = verbose ? console : SilentConsole;
   log.log('Starting opml import');
 
   // Create the uploader in the context of the document

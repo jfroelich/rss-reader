@@ -775,7 +775,7 @@ function onUnsubscribeCompleted(feedId, event) {
 // popup but no progress bar). The monitor should be hideable. No
 // need to be cancelable.
 // TODO: notify the user if there was an error
-// - in order to do this, ompl-import-service needs to callback with any
+// - in order to do this, importOPML needs to callback with any
 // errors that occurred, and also callback when no errors occurred so this can
 // tell the difference
 // TODO: switch to a different section of the options ui on complete?

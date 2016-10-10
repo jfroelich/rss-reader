@@ -3,7 +3,7 @@
 'use strict';
 
 /*
-TODO: use LoggingService
+TODO: use log
 TODO: it might be easier to just have an entryHealth scan that does all
 the various things to entries instead of a separate scan per problem
 I should do this before implementing the entry.dateCreated fixing

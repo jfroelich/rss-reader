@@ -1,9 +1,10 @@
 // See license.md
 
 function search(query) {
-  const task = new SearchGoogleFeedsTask();
-  task.log.enabled = true;
-  task.start(query, function onSearch(event) {
+  const verbose = true;
+  const callback = function(event) {
     console.dir(event);
-  });
+  };
+
+  searchGoogleFeeds(query, verbose, callback);
 }

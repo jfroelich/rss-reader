@@ -5,13 +5,11 @@
 {
 
 function refreshFeedIcons(verbose) {
-  const log = new LoggingService();
-  log.enabled = verbose;
-
+  const log = verbose ? console : SilentConsole;
   log.log('Refreshing feed favicons...');
   const ctx = {'pendingCount': 0, 'log': log};
-  const openDBTask = new FeedDb();
-  openDBTask.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
+  const db = new FeedDb();
+  db.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
 }
 
 function openDBOnSuccess(event) {
@@ -74,7 +72,7 @@ function onLookup(feed, iconURL) {
       const request = store.put(feed);
 
       // Only listen if logging
-      if(this.log.enabled) {
+      if(this.log !== SilentConsole) {
         request.onsuccess = onPutSuccess.bind(this, feed);
         request.onerror = onPutError.bind(this, feed);
       }

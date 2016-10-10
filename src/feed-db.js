@@ -11,7 +11,7 @@ TODO:
 function FeedDb() {
   this.name = 'reader';
   this.version = 20;
-  this.log = new LoggingService();
+  this.log = SilentConsole;
 }
 
 FeedDb.prototype.open = function(onSuccess, onError) {

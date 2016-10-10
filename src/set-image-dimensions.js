@@ -5,8 +5,10 @@
 {
 
 function setImageDimensions(doc, verbose, callback) {
-  const log = new LoggingService();
-  log.enabled = verbose;
+  const log = verbose ? console : SilentConsole;
+
+  // TODO: print baseURI or something more informative
+  log.log('Setting image dimensions for document');
 
   const ctx = {
     'numProcessed': 0,
