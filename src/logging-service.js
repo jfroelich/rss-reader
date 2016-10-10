@@ -2,11 +2,8 @@
 
 'use strict';
 
-// TODO: rename to CustomConsole
-// appear like it is typeof console, and can work as a drop in replacement
-
-// TODO: the problem with this is that it obfuscates which file printed the
-// the message, everything now comes from logging service, so maybe deprecate
+// TODO: deprecate, the problem is that it obfuscates the stack trace of errors
+// and  the source of messages
 
 function LoggingService() {
   this.enabled = false;

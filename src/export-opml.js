@@ -20,8 +20,10 @@ function exportOPML(db, title, fileName, verbose, callback) {
 function openDBOnSuccess(event) {
   this.log.debug('Connected to database');
   const conn = event.target.result;
+
   const verbose = false;
-  getAllFeeds(conn, verbose, onGetFeeds.bind(this));
+  const feedCache = new FeedCache(verbose);
+  feedCache.getAllFeeds(conn, onGetFeeds.bind(this));
   conn.close();
 }
 

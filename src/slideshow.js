@@ -28,11 +28,11 @@ function removeSlide(slide) {
 function markSlideAsRead(slide) {
   if(!slide.hasAttribute('read')) {
     slide.setAttribute('read', '');
-
     const id = parseInt(slide.getAttribute('entry'), 10);
     const verbose = false;
     const callback = null;
-    markEntryRead(id, verbose, callback);
+    const feedCache = new FeedCache(verbose);
+    feedCache.markEntryRead(id, callback);
   }
 }
 

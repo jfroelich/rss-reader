@@ -14,7 +14,6 @@
     "persistent": false,
     "scripts": [
       "/lib/parse-srcset.js",
-      "/src/add-entry.js",
       "/src/alarm.js",
       "/src/archive-entries.js",
       "/src/boilerplate.js",
@@ -23,13 +22,12 @@
       "/src/entry.js",
       "/src/favicon-cache.js",
       "/src/feed.js",
+      "/src/feed-cache.js",
       "/src/feed-db.js",
       "/src/feed-parser.js",
       "/src/fetch-feed.js",
       "/src/fetch-html.js",
       "/src/fetch-xml.js",
-      "/src/find-entry.js",
-      "/src/get-all-feeds.js",
       "/src/healthcheck.js",
       "/src/html.js",
       "/src/is-fetch-resistant-url.js",
@@ -46,7 +44,6 @@
       "/src/show-notification.js",
       "/src/tracking.js",
       "/src/update-badge.js",
-      "/src/update-feed.js",
       "/src/utils.js",
       "/src/xml.js"
     ]

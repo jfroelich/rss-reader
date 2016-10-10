@@ -20,7 +20,8 @@ function subscribe(conn, feed, suppressNotifications, verbose, callback) {
     'log': log,
     'suppressNotifications': suppressNotifications,
     'callback': callback,
-    'conn': conn
+    'conn': conn,
+    'feedCache': new FeedCache()
   };
 
   if(conn) {
@@ -67,7 +68,7 @@ function findFeedOnSuccess(event) {
 
   // Subscribe while offline
   if('onLine' in navigator && !navigator.onLine) {
-    addFeed(this.conn, this.feed, false, onAddFeed.bind(this));
+    this.feedCache.addFeed(this.conn, this.feed, onAddFeed.bind(this));
     return;
   }
 
@@ -118,7 +119,7 @@ function onLookupIcon(iconURL) {
     this.feed.faviconURLString = iconURL.href;
   }
 
-  addFeed(this.conn, this.feed, false, onAddFeed.bind(this));
+  this.feedCache.addFeed(this.conn, this.feed, onAddFeed.bind(this));
 }
 
 function onAddFeed(event) {

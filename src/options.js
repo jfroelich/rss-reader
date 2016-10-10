@@ -725,7 +725,7 @@ function removeFeedFromFeedList(feedId) {
   const feedElement = document.querySelector(selector);
 
   if(!feedElement) {
-    throw new Error('did not find feed element for feed id', feedId);
+    throw new Error('did not find feed element for feed id ' + feedId);
   }
 
   feedElement.removeEventListener('click', feedListItemOnClick);
@@ -743,7 +743,6 @@ function removeFeedFromFeedList(feedId) {
     showElement(noFeeds);
   }
 }
-
 
 function unsubButtonOnClick(event) {
   console.debug('Clicked unsubscribe');

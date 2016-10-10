@@ -17,7 +17,8 @@ function refreshFeedIcons(verbose) {
 function openDBOnSuccess(event) {
   this.conn = event.target.result;
   const verbose = false;
-  getAllFeeds(this.conn, verbose, onGetAllFeeds.bind(this));
+  const feedCache = new FeedCache(verbose);
+  feedCache.getAllFeeds(this.conn, onGetAllFeeds.bind(this));
 }
 
 function openDBOnError(event) {

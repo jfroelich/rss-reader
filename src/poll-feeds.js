@@ -26,7 +26,11 @@ function pollFeeds(forceResetLock, allowMetered, verbose) {
   log.enabled = verbose;
 
   log.log('Checking for new articles...');
-  const ctx = {'numFeedsPending': 0, 'log': log};
+  const ctx = {
+    'numFeedsPending': 0,
+    'log': log,
+    'cache': new FeedCache()
+  };
 
   if(!acquireLock.call(ctx, forceResetLock)) {
     log.warn('Poll is locked');
@@ -71,8 +75,7 @@ function onQueryIdleState(state) {
 function openDBOnSuccess(event) {
   this.log.debug('Connected to feed database');
   this.conn = event.target.result;
-  const verbose = false;
-  getAllFeeds(this.conn, verbose, onGetAllFeeds.bind(this));
+  this.cache.getAllFeeds(this.conn, onGetAllFeeds.bind(this));
 }
 
 function openDBOnError(event) {
@@ -122,7 +125,8 @@ function onFetchFeed(localFeed, event) {
   const feed = Feed.merge(localFeed, remoteFeed);
   this.log.debug('Updating', Feed.getURL(feed));
   const verbose = false;
-  updateFeed(this.conn, feed, verbose, onUpdateFeed.bind(this, event.entries));
+  this.cache.updateFeed(this.conn, feed,
+    onUpdateFeed.bind(this, event.entries));
 }
 
 function isFeedUnmodified(localFeed, remoteFeed) {
@@ -193,8 +197,7 @@ function processEntry(feed, entry, callback) {
   }
 
   const limit = 1;
-  const verbose = false;
-  findEntry(this.conn, entry.urls, limit, verbose,
+  this.cache.findEntry(this.conn, entry.urls, limit,
     onFindEntry.bind(this, feed, entry, callback));
 }
 
@@ -228,7 +231,7 @@ function onFindEntry(feed, entry, callback, matches) {
   // store the entry, but we just do not try and augment its content.
   if(rdr.poll.isFetchResistantURL(entryTerminalURLObject)) {
     prepLocalDoc(entry);
-    addEntry(this.conn, entry, false, callback);
+    this.cache.addEntry(this.conn, entry, callback);
     return;
   }
 
@@ -238,7 +241,7 @@ function onFindEntry(feed, entry, callback, matches) {
   // this misses it, false negatives are not too important.
   if(isPDFURL(entryTerminalURLObject)) {
     prepLocalDoc(entry);
-    addEntry(this.conn, entry, false, callback);
+    this.cache.addEntry(this.conn, entry, callback);
     return;
   }
 
@@ -262,7 +265,7 @@ function isPDFURL(url) {
 function onFetchEntry(entry, callback, event) {
   if(event.type !== 'success') {
     prepLocalDoc(entry);
-    addEntry(this.conn, entry, false, callback);
+    this.cache.addEntry(this.conn, entry, callback);
     return;
   }
 
@@ -297,14 +300,13 @@ function onFetchEntry(entry, callback, event) {
 }
 
 function onSetImageDimensions(entry, document, callback, numImagesModified) {
-
   if(!document) {
     throw new TypeError('mising document param');
   }
 
   prepDoc(document);
   entry.content = document.documentElement.outerHTML.trim();
-  addEntry(this.conn, entry, false, callback);
+  this.cache.addEntry(this.conn, entry, callback);
 }
 
 function prepDoc(doc) {

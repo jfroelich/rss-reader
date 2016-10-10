@@ -7,13 +7,15 @@
 function updateBadge(conn, verbose) {
   const log = new LoggingService();
   log.enabled = verbose;
-
   log.log('Updating badge unread count');
-  const ctx = {'conn': conn, 'text': '?', 'log': log};
+
+  const db = new FeedDb();
+  const cache = new FeedCache(false);
+
+  const ctx = {'conn': conn, 'text': '?', 'log': log, 'cache': cache};
   if(conn) {
-    countUnread.call(ctx);
+    cache.countUnread(conn, onCountUnread.bind(ctx));
   } else {
-    const db = new FeedDb();
     db.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
   }
 }
@@ -22,39 +24,24 @@ function openDBOnSuccess(event) {
   this.log.log('Connected to database');
   this.conn = event.target.result;
   this.shouldCloseDB = true;
-  countUnread.call(this);
+  this.cache.countUnread(this.conn, onCountUnread.bind(this));
 }
 
 function openDBOnError(event) {
   this.log.error(event.target.error);
+  this.text = 'ERR';
   onComplete.call(this);
 }
 
-function countUnread() {
-  const tx = this.conn.transaction('entry');
-  const store = tx.objectStore('entry');
-  const index = store.index('readState');
-  const request = index.count(Entry.flags.UNREAD);
-  request.onsuccess = countOnSuccess.bind(this);
-  request.onerror = countOnError.bind(this);
-  if(this.shouldCloseDB) {
-    this.conn.close();
-  }
-}
-
-function countOnSuccess(event) {
-  const count = event.target.result;
+function onCountUnread(count) {
   this.log.log('Counted %s unread entries', count);
   if(count > 999) {
     this.text = '1k+';
+  } else if(count < 0) {
+    this.text = 'ERR';
   } else {
-    this.text = '' + event.target.result;
+    this.text = '' + count;
   }
-  onComplete.call(this);
-}
-
-function countOnError(event) {
-  this.log.error(event.target.error);
   onComplete.call(this);
 }
 
