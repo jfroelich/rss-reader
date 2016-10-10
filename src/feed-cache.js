@@ -223,8 +223,7 @@ FeedCache.prototype._countUnreadOnSuccess = function(callback, event) {
 
 FeedCache.prototype._countUnreadOnError = function(callback, event) {
   this.log.error(event.target.error);
-  // Calling back with 0 would be ambiguous
-  callback(-1);
+  callback(-1);// 0 would be ambiguous
 };
 
 FeedCache.prototype.markEntryRead = function(id, callback) {
@@ -233,7 +232,7 @@ FeedCache.prototype.markEntryRead = function(id, callback) {
     throw new Error('invalid entry id: ' + id);
   }
 
-  this.log.debug('Mark entry %s as read', id);
+  this.log.debug('Starting to mark entry %s as read', id);
   const ctx = {'id': id, 'callback': callback};
   const feedDb = new FeedDb();
   feedDb.open(this._merodbos.bind(this, ctx), this._merodboe.bind(this, ctx));
@@ -241,7 +240,7 @@ FeedCache.prototype.markEntryRead = function(id, callback) {
 
 // Mark entry read open database on success
 FeedCache.prototype._merodbos = function(ctx, event) {
-  this.log.debug('connected to database to mark entry as read');
+  this.log.debug('Connected to database to mark entry as read');
   const conn = event.target.result;
   ctx.conn = conn;
   const tx = conn.transaction('entry', 'readwrite');
@@ -261,14 +260,14 @@ FeedCache.prototype._merodboe = function(ctx, event) {
 FeedCache.prototype._merocos = function(ctx, event) {
   const cursor = event.target.result;
   if(!cursor) {
-    this.log.error('no entry found with id', ctx.id);
+    this.log.error('No entry found with id', ctx.id);
     this._meroc(ctx, 'NotFoundError');
     return;
   }
 
   const entry = cursor.value;
   if(entry.readState === Entry.flags.READ) {
-    this.log.error('already read entry with id', entry.id);
+    this.log.error('Already read entry with id', entry.id);
     this._meroc(ctx, 'AlreadyReadError');
     return;
   }
@@ -293,14 +292,14 @@ FeedCache.prototype._merocoe = function(ctx, event) {
 
 // Mark entry read on complete
 FeedCache.prototype._meroc = function(ctx, type) {
-  this.log.log('completed marking entry as read');
+  this.log.log('Completed marking entry as read');
   if(ctx.conn) {
-    this.log.debug('requesting database to close');
+    this.log.debug('Requesting database to close');
     ctx.conn.close();
   }
 
   if(ctx.callback) {
-    this.log.debug('calling back with type', type);
+    this.log.debug('Calling back with type', type);
     ctx.callback({'type': type});
   }
 };
