@@ -4,14 +4,12 @@
 
 {
 
-function compactFavicons(cache, verbose) {
+function compactFavicons(cache, log) {
   if(!Number.isInteger(cache.maxAge)) {
     throw new TypeError('invalid maxAge');
   }
 
-  const log = verbose ? console : SilentConsole;
   log.log('Compacting favicon cache, max age:', cache.maxAge);
-
   const ctx = {
     'cache': cache,
     'maxAge': cache.defaultMaxAge,

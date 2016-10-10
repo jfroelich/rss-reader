@@ -4,8 +4,7 @@
 
 {
 
-function refreshFeedIcons(verbose) {
-  const log = verbose ? console : SilentConsole;
+function refreshFeedIcons(log) {
   log.log('Refreshing feed favicons...');
   const ctx = {'pendingCount': 0, 'log': log};
   const db = new FeedDb();
@@ -13,9 +12,9 @@ function refreshFeedIcons(verbose) {
 }
 
 function openDBOnSuccess(event) {
+  this.log.log('Connected to database');
   this.conn = event.target.result;
-  const verbose = false;
-  const feedCache = new FeedCache(verbose);
+  const feedCache = new FeedCache(SilentConsole);
   feedCache.getAllFeeds(this.conn, onGetAllFeeds.bind(this));
 }
 
@@ -48,10 +47,9 @@ function lookup(feed) {
     lookupURL = new URL(feedURL.origin);
   }
 
-  const cache = new FaviconCache();
-  const verbose = false;
+  const iconCache = new FaviconCache();
   const doc = null;
-  lookupFavicon(cache, lookupURL, doc, verbose,
+  lookupFavicon(iconCache, lookupURL, doc, SilentConsole,
     onLookup.bind(this, feed));
 }
 

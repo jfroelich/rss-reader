@@ -4,8 +4,7 @@
 
 {
 
-function exportOPML(db, title, fileName, verbose, callback) {
-  const log = verbose ? console : SilentConsole;
+function exportOPML(db, title, fileName, log, callback) {
   log.log('Exporting opml file...');
   const ctx = {
     'callback': callback,
@@ -19,10 +18,8 @@ function exportOPML(db, title, fileName, verbose, callback) {
 function openDBOnSuccess(event) {
   this.log.debug('Connected to database');
   const conn = event.target.result;
-
-  const verbose = false;
-  const feedCache = new FeedCache(verbose);
-  feedCache.getAllFeeds(conn, onGetFeeds.bind(this));
+  const cache = new FeedCache(SilentConsole);
+  cache.getAllFeeds(conn, onGetFeeds.bind(this));
   conn.close();
 }
 

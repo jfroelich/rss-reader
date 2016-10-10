@@ -4,12 +4,11 @@
 
 {
 
-function unsubscribe(feedId, verbose, callback) {
+function unsubscribe(feedId, log, callback) {
   if(!Number.isInteger(feedId) || feedId < 1) {
     throw new TypeError('invalid feed id' + feedId);
   }
 
-  const log = verbose ? console : SilentConsole;
   log.log('Unsubscribing from', feedId);
 
   const ctx = {
@@ -81,8 +80,7 @@ function onComplete(event) {
     if(this.numDeleteEntryRequests) {
       this.log.debug('Requested %i entries to be deleted',
         this.numDeleteEntryRequests);
-      const verbose = false;
-      updateBadge(this.conn, verbose);
+      updateBadge(this.conn, SilentConsole);
     }
 
     this.log.debug('Requesting database connection close');

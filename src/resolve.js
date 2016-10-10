@@ -42,7 +42,7 @@ rdr.poll.resolve.selector = Object.keys(
   rdr.poll.resolve.urlAttrMap).map(
     rdr.poll.resolve.buildSelectorPart).join(',');
 
-// TODO: add verbose param
+// TODO: add log param
 rdr.poll.resolve.start = function(document, baseURL) {
   if(!ReaderUtils.isURLObject(baseURL)) {
     throw new TypeError('invalid baseURL param: ' + baseURL);
@@ -102,10 +102,6 @@ rdr.poll.resolve.resolveMappedAttr = function(element, baseURL) {
 };
 
 rdr.poll.resolve.resolveSrcsetAttr = function(element, baseURL) {
-
-
-
-
   const attrURL = element.getAttribute('srcset');
 
   // The element has the attribute, but it may not have a value. parseSrcset

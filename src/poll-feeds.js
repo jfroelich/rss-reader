@@ -21,8 +21,7 @@ added or something
 
 {
 
-function pollFeeds(forceResetLock, allowMetered, verbose) {
-  const log = verbose ? console : SilentConsole;
+function pollFeeds(forceResetLock, allowMetered, log) {
   log.log('Checking for new articles...');
   const ctx = {
     'numFeedsPending': 0,
@@ -90,10 +89,9 @@ function onGetAllFeeds(feeds) {
 
   this.numFeedsPending = feeds.length;
   const excludeEntries = false;
-  const verbose = false;
   for(let feed of feeds) {
     const requestURL = new URL(Feed.getURL(feed));
-    fetchFeed(requestURL, excludeEntries, verbose,
+    fetchFeed(requestURL, excludeEntries, SilentConsole,
       onFetchFeed.bind(this, feed));
   }
 }
@@ -122,7 +120,6 @@ function onFetchFeed(localFeed, event) {
 
   const feed = Feed.merge(localFeed, remoteFeed);
   this.log.debug('Updating', Feed.getURL(feed));
-  const verbose = false;
   this.cache.updateFeed(this.conn, feed,
     onUpdateFeed.bind(this, event.entries));
 }
@@ -243,8 +240,8 @@ function onFindEntry(feed, entry, callback, matches) {
     return;
   }
 
-  const verbose = false;
-  fetchHTML(entryTerminalURLObject, verbose,
+
+  fetchHTML(entryTerminalURLObject, SilentConsole,
     onFetchEntry.bind(this, entry, callback));
 }
 
@@ -291,9 +288,7 @@ function onFetchEntry(entry, callback, event) {
   DOMScrub.filterInvalidAnchors(doc);
   rdr.poll.resolve.start(doc, event.responseURL);
   rdr.poll.tracking.filterImages(doc);
-
-  const verbose = false;
-  setImageDimensions(doc, verbose,
+  setImageDimensions(doc, SilentConsole,
     onSetImageDimensions.bind(this, entry, doc, callback));
 }
 
@@ -348,8 +343,7 @@ function onEntryProcessed(feedContext, event) {
 
   if(count === feedContext.numEntries) {
     if(feedContext.numEntriesAdded) {
-      const verbose = false;
-      updateBadge(this.conn, verbose);
+      updateBadge(this.conn, SilentConsole);
     }
 
     this.numFeedsPending--;

@@ -4,8 +4,8 @@
 
 {
 
-function lookupFavicon(cache, url, doc, verbose, callback) {
-  const log = verbose ? console : SilentConsole;
+function lookupFavicon(cache, url, doc, log, callback) {
+  log = log || SilentConsole;
   log.log('Lookup favicon', url.toString());
   const ctx = {
     'cache': cache,

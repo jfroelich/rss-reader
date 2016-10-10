@@ -12,14 +12,12 @@ issue
 
 {
 
-function fetchXML(requestURL, verbose, callback) {
+function fetchXML(requestURL, log, callback) {
 
-  // Guard because otherwise it appears as a parse exception
   if(!rdr.xml.parse) {
     throw new ReferenceError('missing dependency rdr.xml.parse');
   }
 
-  const log = verbose ? console : SilentConsole;
   log.log('GET', requestURL.toString());
 
   const accepts = [

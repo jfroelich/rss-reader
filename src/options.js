@@ -270,8 +270,7 @@ function showSubPreview(url) {
   showElement(progressElement);
 
   const excludeEntries = false;
-  const verbose = false;
-  fetchFeed(url, excludeEntries, verbose, onFetchFeed);
+  fetchFeed(url, excludeEntries, SilentConsole, onFetchFeed);
 
   function onFetchFeed(fetchEvent) {
     if(event.type !== 'success') {
@@ -347,9 +346,8 @@ function startSubscription(url) {
   Feed.addURL(feed, url.href);
 
   const conn = null;
-  const verbose = false;
   const suppressNotifications = false;
-  subTask.start(conn, feed, suppressNotifications, verbose, onSubscribe);
+  subTask.start(conn, feed, suppressNotifications, SilentConsole, onSubscribe);
 
   function onSubscribe(event) {
     if(event.type !== 'success') {
@@ -542,8 +540,7 @@ function subFormOnSubmit(event) {
     showSubPreview(url);
   } else {
     showElement(progressElement);
-    const verbose = true;
-    searchGoogleFeeds(queryString, verbose, onSearchGoogleFeeds);
+    searchGoogleFeeds(queryString, SilentConsole, onSearchGoogleFeeds);
   }
 
   return false;
@@ -630,9 +627,8 @@ function onSearchGoogleFeeds(event) {
       }
       if(linkURL) {
         const cache = new FaviconCache();
-        const verbose = false;
         const doc = null;
-        lookupFavicon(cache, linkURL, doc, verbose,
+        lookupFavicon(cache, linkURL, doc, SilentConsole,
           onLookupFavicon.bind(null, result));
       } else {
         numFaviconsProcessed++;
@@ -752,8 +748,7 @@ function unsubButtonOnClick(event) {
     throw new TypeError('invalid feed id', event.target.value);
   }
 
-  const verbose = false;
-  unsubscribe(feedId, verbose, onUnsubscribeCompleted.bind(null, feedId));
+  unsubscribe(feedId, SilentConsole, onUnsubscribeCompleted.bind(null, feedId));
 }
 
 // TODO: provide visual feedback on success or error
@@ -781,8 +776,7 @@ function onUnsubscribeCompleted(feedId, event) {
 // TODO: switch to a different section of the options ui on complete?
 function importOPMLButtonOnClick(event) {
   const db = new FeedDb();
-  const verbose = false;
-  importOPML(db, verbose);
+  importOPML(db, SilentConsole);
 }
 
 // TODO: visual feedback
@@ -790,9 +784,8 @@ function exportOPMLButtonOnClick(event) {
   const db = new FeedDb();
   const title = 'Subscriptions';
   const fileName = 'subs.xml';
-  const verbose = false;
   const callback = null;
-  exportOPML(db, title, fileName, verbose, callback);
+  exportOPML(db, title, fileName, SilentConsole, callback);
 }
 
 // TODO: use getAllFeeds and then sort manually, to avoid the defined title

@@ -9,8 +9,7 @@ TODO:
 
 {
 
-function fetchHTML(requestURL, verbose, callback) {
-  const log = verbose ? console : SilentConsole;
+function fetchHTML(requestURL, log, callback) {
   log.log('GET', requestURL.toString());
   const ctx = {
     'requestURL': requestURL,

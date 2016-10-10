@@ -14,8 +14,7 @@ function test() {
   // then test assertions
 
   const age = 10;// test using 10ms
-  const verbose = true;
-  archiveEntries(db, age, verbose, onArchive);
+  archiveEntries(db, age, console, onArchive);
 
   function onArchive() {
     db.delete();

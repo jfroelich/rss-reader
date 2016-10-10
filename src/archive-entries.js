@@ -9,7 +9,7 @@
 
 {
 
-function archiveEntries(db, age, verbose, callback) {
+function archiveEntries(db, age, log, callback) {
   const defaultMaxAge = 10 * 24 * 60 * 60 * 1000;// 10 days in ms
 
   if(typeof age !== 'undefined') {
@@ -30,7 +30,7 @@ function archiveEntries(db, age, verbose, callback) {
     'db': db,
     'currentDate': new Date(),
     'callback': callback,
-    'log': verbose ? console : SilentConsole
+    'log': log || SilentConsole
   };
 
   ctx.log.log('Archiving entries with age', age);

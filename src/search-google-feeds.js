@@ -4,16 +4,14 @@
 
 {
 
-function searchGoogleFeeds(query, verbose, callback) {
+function searchGoogleFeeds(query, log, callback) {
 
   if(typeof callback !== 'function') {
-    throw new TypeError('callback must be a function');
+    throw new TypeError('callback not a function');
   }
 
-  const log = verbose ? console : SilentConsole;
-
   const ctx = {};
-  ctx.log = log;
+  ctx.log = log || SilentConsole;
   ctx.replacement = '\u2026';
   ctx.titleMaxLength = 200;
   ctx.snippetMaxLength = 400;
@@ -31,7 +29,7 @@ function searchGoogleFeeds(query, verbose, callback) {
 
   const base = 'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
   const url = base + encodeURIComponent(query);
-  log.log('GET', url);
+  ctx.log.log('GET', url);
   fetch(url, opts).then(onFetch.bind(ctx)).catch(onFetchError.bind(ctx));
 }
 

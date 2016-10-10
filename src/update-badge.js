@@ -4,12 +4,12 @@
 
 {
 
-function updateBadge(conn, verbose) {
-  const log = verbose ? console : SilentConsole;
+function updateBadge(conn, log) {
+  log = log || SilentConsole;
   log.log('Updating badge unread count');
 
-  const db = new FeedDb();
-  const cache = new FeedCache(false);
+  const db = new FeedDb(SilentConsole);
+  const cache = new FeedCache(SilentConsole);
 
   const ctx = {'conn': conn, 'text': '?', 'log': log, 'cache': cache};
   if(conn) {

@@ -8,14 +8,13 @@ TODO: should this buffer all files before opening connection?
 
 {
 
-function importOPML(db, verbose) {
+function importOPML(db, log) {
 
-  // This dep is only found in a try/catch for a diff exception
   if(!rdr.xml.parse) {
     throw new ReferenceError('missing rdr.xml.parse dep');
   }
 
-  const log = verbose ? console : SilentConsole;
+  log = log || SilentConsole;
   log.log('Starting opml import');
 
   // Create the uploader in the context of the document
@@ -131,12 +130,10 @@ function readerOnLoad(file, event) {
 
   const feeds = outlines.map(createFeedFromOutline);
 
-  const conn = this.db;
   const suppressNotifications = true;
-  const verbose = false;
   const callback = null;
   for(let feed of feeds) {
-    subscribe(conn, feed, suppressNotifications, verbose, callback);
+    subscribe(this.db, feed, suppressNotifications, SilentConsole, callback);
   }
 
   onFileProcessed.call(this, file);

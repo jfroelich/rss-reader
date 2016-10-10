@@ -57,24 +57,19 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
   if(alarm.name === 'archive') {
     const age = 10 * 24 * 60 * 60 * 1000;// 10 days in ms
     const callback = null;
-    const verbose = false;
     const db = new FeedDb();
-    archiveEntries(db, age, verbose, callback);
+    archiveEntries(db, age, SilentConsole, callback);
   } else if(alarm.name === 'poll') {
     const forceResetLock = false;
     const allowMeteredConnections = false;
-    const verbose = false;
-    pollFeeds(forceResetLock, allowMeteredConnections, verbose);
+    pollFeeds(forceResetLock, allowMeteredConnections, SilentConsole);
   } else if(alarm.name === 'compact-favicons') {
     const cache = new FaviconCache();
-    const verbose = false;
-    compactFavicons(cache, verbose);
+    compactFavicons(cache, SilentConsole);
   } else if(alarm.name === 'refresh-feed-icons') {
-    const verbose = false;
-    refreshFeedIcons(verbose);
+    refreshFeedIcons(SilentConsole);
   } else if(alarm.name === 'healthcheck') {
-    const verbose = false;
-    HealthCheck.start(verbose);
+    HealthCheck.start(SilentConsole);
   } else {
     console.warn('Unknown alarm', alarm.name);
   }

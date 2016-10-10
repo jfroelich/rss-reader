@@ -4,9 +4,7 @@
 
 {
 
-function setImageDimensions(doc, verbose, callback) {
-  const log = verbose ? console : SilentConsole;
-
+function setImageDimensions(doc, log, callback) {
   // TODO: print baseURI or something more informative
   log.log('Setting image dimensions for document');
 

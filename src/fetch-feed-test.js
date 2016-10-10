@@ -5,8 +5,7 @@
 function test(urlString) {
   const requestURL = new URL(urlString);
   const excludeEntries = false;
-  const verbose = true;
-  fetchFeed(requestURL, excludeEntries, verbose, function(event) {
+  fetchFeed(requestURL, excludeEntries, console, function(event) {
     console.dir(event);
   });
 }

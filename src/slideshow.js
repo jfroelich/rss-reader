@@ -29,9 +29,8 @@ function markSlideAsRead(slide) {
   if(!slide.hasAttribute('read')) {
     slide.setAttribute('read', '');
     const id = parseInt(slide.getAttribute('entry'), 10);
-    const verbose = false;
     const callback = null;
-    const feedCache = new FeedCache(verbose);
+    const feedCache = new FeedCache(SilentConsole);
     feedCache.markEntryRead(id, callback);
   }
 }

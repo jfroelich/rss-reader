@@ -2,8 +2,8 @@
 
 'use strict';
 
-function FeedCache(verbose) {
-  this.log = verbose ? console : SilentConsole;
+function FeedCache(log) {
+  this.log = log || SilentConsole;
 }
 
 FeedCache.prototype.addEntry = function(conn, entry, callback) {
@@ -281,8 +281,7 @@ FeedCache.prototype._merocos = function(ctx, event) {
   entry.dateUpdated = dateNow;
   cursor.update(entry);
 
-  const verbose = false;
-  updateBadge(ctx.conn, verbose);
+  updateBadge(ctx.conn, SilentConsole);
   this._meroc(ctx, 'Success');
 };
 

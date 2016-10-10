@@ -11,10 +11,9 @@ function test(urlString) {
 
   const url = new URL(urlString);
   const doc = null;
-  const verbose = true;
   const callback = function(url) {
     console.log('Output:', url ? url.href : null);
   };
 
-  lookupFavicon(cache, url, doc, verbose, callback);
+  lookupFavicon(cache, url, doc, console, callback);
 }

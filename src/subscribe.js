@@ -4,12 +4,12 @@
 
 {
 
-function subscribe(conn, feed, suppressNotifications, verbose, callback) {
+function subscribe(conn, feed, suppressNotifications, log, callback) {
   if(!Feed.getURL(feed)) {
     throw new TypeError('feed missing url');
   }
 
-  const log = verbose ? console : SilentConsole;
+  log = log || SilentConsole;
   log.log('Subscribing to', Feed.getURL(feed));
 
   const ctx = {
@@ -74,8 +74,7 @@ function findFeedOnSuccess(event) {
   // Proceed with online subscription
   const requestURL = new URL(feedURL);
   const excludeEntries = true;
-  const verbose = false;
-  fetchFeed(requestURL, excludeEntries, verbose, onFetchFeed.bind(this));
+  fetchFeed(requestURL, excludeEntries, SilentConsole, onFetchFeed.bind(this));
 }
 
 function findFeedOnError(event) {
@@ -109,8 +108,7 @@ function onFetchFeed(event) {
   const urlString = this.feed.link ? this.feed.link : Feed.getURL(this.feed);
   const urlObject = new URL(urlString);
   const doc = null;
-  const verbose = false;
-  lookupFavicon(cache, urlObject, doc, verbose, onLookupIcon.bind(this));
+  lookupFavicon(cache, urlObject, doc, SilentConsole, onLookupIcon.bind(this));
 }
 
 function onLookupIcon(iconURL) {

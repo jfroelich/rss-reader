@@ -10,23 +10,20 @@ into a feed
 
 {
 
-function fetchFeed(requestURL, excludeEntries, verbose, callback) {
+function fetchFeed(requestURL, excludeEntries, log, callback) {
   if(!FeedParser) {
     throw new ReferenceError('missing FeedParser');
   }
-
-  const log = verbose ? console : SilentConsole;
-  log.log('GET', requestURL.toString());
 
   const ctx = {
     'requestURL': requestURL,
     'excludeEntries': excludeEntries,
     'callback': callback,
-    'log': log
+    'log': log || SilentConsole
   };
 
-  const fetchXMLVerbose = false;
-  fetchXML(requestURL, fetchXMLVerbose, onFetchXML.bind(ctx));
+  ctx.log.log('GET', requestURL.toString());
+  fetchXML(requestURL, SilentConsole, onFetchXML.bind(ctx));
 }
 
 function onFetchXML(event) {

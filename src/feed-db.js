@@ -2,16 +2,12 @@
 
 'use strict';
 
-/*
-TODO:
-- revert _upgrade to using a version migration approach
-*/
+// TODO: revert upgrade to using a version migration approach
 
-
-function FeedDb() {
+function FeedDb(log) {
   this.name = 'reader';
   this.version = 20;
-  this.log = SilentConsole;
+  this.log = log || SilentConsole;
 }
 
 FeedDb.prototype.open = function(onSuccess, onError) {

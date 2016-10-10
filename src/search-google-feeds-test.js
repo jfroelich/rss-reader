@@ -1,10 +1,7 @@
 // See license.md
 
-function search(query) {
-  const verbose = true;
-  const callback = function(event) {
+function test(query) {
+  searchGoogleFeeds(query, console, function(event) {
     console.dir(event);
-  };
-
-  searchGoogleFeeds(query, verbose, callback);
+  });
 }
