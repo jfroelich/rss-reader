@@ -48,12 +48,16 @@ function onResponse(response) {
     return;
   }
 
+  // Try to not accept invalid mime types
   const type = response.headers.get('Content-Type');
   this.log.debug('Type:', type);
-  if(!isAcceptedType(type)) {
-    this.log.debug(requestURL.href, 'invalid type', type);
-    this.callback({'type': 'typeerror'});
-    return;
+  if(type) {
+    const normType = type.toLowerCase();
+    if(!normType.includes('xml') && normType.includes('text/html')) {
+      this.log.debug(requestURL.href, 'invalid type', type);
+      this.callback({'type': 'typeerror'});
+      return;
+    }
   }
 
   this.responseURL = response.url;
@@ -97,20 +101,6 @@ function onReadText(text) {
 function onError(error) {
   this.log.debug(this.requestURL.href, error);
   this.callback({'type': 'error'});
-}
-
-// Checks the request header value and returns true if xml or html
-// @param type {String} the raw header string for 'Content-Type'
-function isAcceptedType(type) {
-  // Treat missing content type as unacceptable
-  if(!type) {
-    return false;
-  }
-
-  // The header value may contain the charset so use a more general test.
-  // Restrict to xml but allow for html for non-conforming responses
-  const str = type.toLowerCase();
-  return str.includes('xml') || str.includes('text/html');
 }
 
 this.fetchXML = fetchXML;

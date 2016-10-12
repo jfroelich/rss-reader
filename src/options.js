@@ -768,7 +768,9 @@ function onUnsubscribeCompleted(feedId, event) {
 // TODO: switch to a different section of the options ui on complete?
 function importOPMLButtonOnClick(event) {
   const db = new FeedDb();
-  importOPML(db, SilentConsole);
+  const log = SilentConsole;
+  const callback = null;
+  importOPML(db, log, callback);
 }
 
 // TODO: visual feedback

@@ -2,11 +2,6 @@
 
 'use strict';
 
-// TODO: maybe use a single property with 4 values instead of two separate
-// properties for read state and archive state. This will speed up the query
-// TODO: if I want a history view, I probably need to retain title and
-// favicon
-
 {
 
 function archiveEntries(db, age, log, callback) {
@@ -39,7 +34,6 @@ function archiveEntries(db, age, log, callback) {
 
 function openDBOnSuccess(event) {
   this.log.debug('Connected to database', this.db.name);
-
   const conn = event.target.result;
   const tx = conn.transaction('entry', 'readwrite');
   tx.oncomplete = onComplete.bind(this);
@@ -49,7 +43,7 @@ function openDBOnSuccess(event) {
   const request = index.openCursor(keyPath);
   request.onsuccess = openCursorOnSuccess.bind(this);
   request.onerror = openCursorOnError.bind(this);
-  conn.close(); // implicitly waits till tx completes
+  conn.close();
 }
 
 function openDBOnError(event) {
@@ -67,24 +61,22 @@ function openCursorOnSuccess(event) {
   const entry = cursor.value;
 
   if(!entry.dateCreated) {
-    this.log.debug('Entry is missing dateCreated');
+    this.log.debug('Entry missing dateCreated', entry);
     return cursor.continue();
   }
 
-  // Age will be negative if the entry was somehow created in the future.
-  // If age is negative then the following test always fails.
-  const age = this.currentDate - entry.dateCreated;// in ms
+  const age = this.currentDate - entry.dateCreated;
 
   // An entry should be archived if its age is greater than age. Otherwise,
-  // ignore it.
-  if(age <= this.age) {
+  // ignore it. This also ignores entries somehow containing a future date
+  if(age < this.age) {
     return cursor.continue();
   }
 
   this.numEntriesModified++;
   const compactedEntry = compact.call(this, entry);
 
-  if(this.log !== SilentConsole) {
+  if(this.log === console) {
     const beforeSize = sizeof(entry);
     const afterSize = sizeof(compactedEntry);
     this.log.debug('Compacted %s (age %s, before %s, after %s)',

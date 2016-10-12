@@ -65,13 +65,14 @@ add(conn, pageURL, iconURL) {
   entry.pageURLString = this.normalizeURL(pageURL).href;
   entry.iconURLString = iconURL.href;
   entry.dateUpdated = new Date();
-  this.log.debug('Adding', entry);
+  this.log.debug('Adding favicon entry', entry);
   const tx = conn.transaction('favicon-cache', 'readwrite');
   const store = tx.objectStore('favicon-cache');
   store.put(entry);
 }
 
 remove(conn, pageURL) {
+  this.log.debug('Removing favicon entry with page url', pageURL.href);
   const pageURLString = this.normalizeURL(pageURL).href;
   this.log.debug('Removing if exists', pageURLString);
   const tx = conn.transaction('favicon-cache', 'readwrite');
@@ -80,11 +81,13 @@ remove(conn, pageURL) {
 }
 
 openCursor(conn, onSuccess, onError) {
+  this.log.debug('Opening cursor over all favicon entries');
   const tx = conn.transaction('favicon-cache', 'readwrite');
   const store = tx.objectStore('favicon-cache');
   const request = store.openCursor();
   request.onsuccess = onSuccess;
   request.onerror = onError;
+  return tx;
 }
 
 normalizeURL(url) {

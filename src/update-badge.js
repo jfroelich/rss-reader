@@ -11,7 +11,14 @@ function updateBadge(conn, log) {
   const db = new FeedDb(log);
   const cache = new FeedCache(log);
 
-  const ctx = {'conn': conn, 'text': '?', 'log': log, 'cache': cache, 'db': db};
+  const ctx = {
+    'conn': conn,
+    'text': '?',
+    'log': log,
+    'cache': cache,
+    'db': db
+  };
+
   if(conn) {
     cache.countUnread(conn, onCountUnread.bind(ctx));
   } else {

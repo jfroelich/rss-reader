@@ -8,6 +8,11 @@ READ_ARCHIVED, etc
 redirects to https://hack.ether.camp/#/idea/path which normalizes to
 https://hack.ether.camp/. Stripping hash screws this up.
 - for urls with path containing '//', replace with '/'
+
+TODO: maybe use a single property with 4 values instead of two separate
+properties for read state and archive state. This will speed up archive and
+similar queries
+
 */
 
 'use strict';
