@@ -6,7 +6,7 @@
 
 {
 
-function importOPML(db, log) {
+function importOPML(db, log, callback) {
   if(!parseXML) {
     throw new ReferenceError('parseXML');
   }
@@ -18,6 +18,7 @@ function importOPML(db, log) {
   // containing this script
   const uploader = document.createElement('input');
   uploader.setAttribute('type', 'file');
+  uploader.setAttribute('accept', 'application/xml');
   uploader.style.display = 'none';
   document.documentElement.appendChild(uploader);
 
@@ -31,6 +32,7 @@ function importOPML(db, log) {
   };
   uploader.onchange = onUploaderChange.bind(ctx);
   uploader.click();
+  log.debug('Clicked uploader');
 }
 
 function parseFromString(str) {
