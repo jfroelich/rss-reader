@@ -6,25 +6,25 @@
 
 function unsubscribe(feedId, log, callback) {
   if(!Number.isInteger(feedId) || feedId < 1) {
-    throw new TypeError('invalid feed id' + feedId);
+    throw new TypeError(`Invalid feed id ${feedId}`);
   }
 
-  log.log('Unsubscribing from', feedId);
+  log.log('Unsubscribing from feed with id', feedId);
 
   const ctx = {
     'feedId': feedId,
     'numDeleteEntryRequests': 0,
     'callback': callback,
     'log': log,
-    'didDeleteFeed': false
+    'didDeleteFeed': false,
+    'db': new FeedDb(log)
   };
 
-  const db = new FeedDb();
-  db.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
+  ctx.db.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
 }
 
 function openDBOnSuccess(event) {
-  this.log.debug('Connected to database');
+  this.log.debug('Connected to database', this.db.name);
   this.conn = event.target.result;
 
   const tx = this.conn.transaction(['feed', 'entry'], 'readwrite');

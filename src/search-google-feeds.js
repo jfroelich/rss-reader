@@ -5,9 +5,12 @@
 {
 
 function searchGoogleFeeds(query, log, callback) {
+  if(typeof query !== 'string' || !query.trim().length) {
+    throw new Error('Invalid query: ' + query);
+  }
 
   if(typeof callback !== 'function') {
-    throw new TypeError('callback not a function');
+    throw new TypeError('Invalid callback');
   }
 
   const ctx = {};
@@ -109,19 +112,24 @@ function filterDups(entries) {
 }
 
 function sanitizeTitle(entry) {
-  let title = entry.title || '';
-  title = ReaderUtils.filterControlChars(title);
-  title = rdr.html.replaceTags(title, '');
-  title = rdr.html.truncate(title, this.titleMaxLength);
-  entry.title = title;
+  let title = entry.title;
+  if(title) {
+    title = filterControlChars(title);
+    title = replaceTags(title, '');
+    title = truncateHTML(title, this.titleMaxLength);
+    entry.title = title;
+  }
 }
 
 function sanitizeSnippet(entry) {
-  let snippet = entry.contentSnippet || '';
-  snippet = ReaderUtils.filterControlChars(snippet);
-  snippet = replaceBRs(snippet);
-  snippet = rdr.html.truncate(snippet, this.snippetMaxLength, this.replacement);
-  entry.contentSnippet = snippet;
+  let snippet = entry.contentSnippet;
+  if(snippet) {
+    snippet = filterControlChars(snippet);
+    snippet = replaceBRs(snippet);
+    snippet = truncateHTML(snippet, this.snippetMaxLength,
+      this.replacement);
+    entry.contentSnippet = snippet;
+  }
 }
 
 function replaceBRs(str) {

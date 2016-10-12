@@ -2,23 +2,14 @@
 
 'use strict';
 
-/*
-TODO:
-- use promises correctly
-- no nested functions
-- experiment with throwing errors in first promise, maybe this fixes the promise
-issue
-*/
-
 {
 
 function fetchXML(requestURL, log, callback) {
-
-  if(!rdr.xml.parse) {
-    throw new ReferenceError('missing dependency rdr.xml.parse');
+  if(!parseXML) {
+    throw new ReferenceError('parseXML');
   }
 
-  log.log('GET', requestURL.toString());
+  log.log('Fetching XML file', requestURL.toString());
 
   const accepts = [
     'application/rss+xml',
@@ -28,8 +19,6 @@ function fetchXML(requestURL, log, callback) {
     'text/xml;q=0.8'
   ].join(', ');
 
-  // https://developer.mozilla.org/en-US/docs/Web/API/Request/Request
-
   const opts = {};
   opts.credentials = 'omit';// no cookies
   opts.method = 'GET';
@@ -38,91 +27,76 @@ function fetchXML(requestURL, log, callback) {
   opts.cache = 'default';
   opts.redirect = 'follow';
   opts.referrer = 'no-referrer';
-  let terminalURLString;
-  let didCallback = false;
-  let onResponseCalledBack = false;
-  let responseContentType = null;
-  let lastModifiedDate = null;
-  let lastModifiedString = null;
 
-  function doCallback(event) {
-    if(didCallback) {
-      log.warn('Suppressing duplicated callback', requestURL.href, event);
-      return;
-    }
-    didCallback = true;
-    log.debug('callback event', event);
-    callback(event);
+  const ctx = {};
+  ctx.callback = callback;
+  ctx.requestURL = requestURL;
+  ctx.log = log;
+  ctx.lastModifiedDate = null;
+  ctx.responseURL = null;
+
+  fetch(requestURL.href, opts).then(onResponse.bind(ctx)).catch(
+    onError.bind(ctx));
+}
+
+function onResponse(response) {
+  this.log.debug('Status:', response.status);
+
+  if(!response.ok) {
+    this.log.debug('Not OK');
+    this.callback({'type': 'neterr'});
+    return;
   }
 
-  fetch(requestURL.href, opts).then(function onResponse(response) {
-    if(!response.ok) {
-      log.warn(requestURL.href, response.status);
-      onResponseCalledBack = true;
-      return doCallback({
-        'type': 'network_error',
-        'status': response.status
-      });
-    }
+  const type = response.headers.get('Content-Type');
+  this.log.debug('Type:', type);
+  if(!isAcceptedType(type)) {
+    this.log.debug(requestURL.href, 'invalid type', type);
+    this.callback({'type': 'typeerror'});
+    return;
+  }
 
-    const contentType = response.headers.get('Content-Type');
-    if(!isAcceptedType(contentType)) {
-      log.warn(requestURL.href, 'invalid type', contentType);
-      onResponseCalledBack = true;
-      return doCallback({
-        'type': 'InvalidMimeType',
-        'contentType': contentType
-      });
-    }
-
-    terminalURLString = response.url;
-    lastModifiedString = response.headers.get('Last-Modified');
-    if(lastModifiedString) {
-      try {
-        lastModifiedDate = new Date(lastModifiedString);
-      } catch(error) {
-        console.warn(error);
-      }
-    }
-
-    return response.text();
-  }).then(function(text) {
-    log.debug('read in text of', requestURL.toString());
-
-    // Part of the hack with exiting a promise early
-    if(onResponseCalledBack) {
-      log.warn('on response already did a callback, exiting');
-      return;
-    }
-
-    // Parse the text into a Document object
-    let document = null;
+  this.responseURL = response.url;
+  const lastModified = response.headers.get('Last-Modified');
+  if(lastModified) {
+    this.log.debug('Last modified:', lastModified);
     try {
-      document = rdr.xml.parse(text);
+      this.lastModifiedDate = new Date(lastModified);
     } catch(error) {
-      console.warn(error);
-      return doCallback({
-        'type': 'parse_exception',
-        'error_object': error,
-        'response_text': text
-      });
+      this.log.warn(error);
     }
+  }
 
-    const successEvent = {
-      'type': 'success',
-      'document': document,
-      'responseURLString': terminalURLString,
-      'lastModifiedDate': lastModifiedDate
-    };
-    doCallback(successEvent);
-  }).catch(function(error) {
-    // If lost net, this shows up as a TypeError
-    // with message like TypeError: Failed to fetch <url>
-    log.warn(error, requestURL.href);
-    doCallback({
-      'type': 'unknown_error'
-    });
-  });
+  response.text().then(onReadText.bind(this));
+}
+
+function onReadText(text) {
+  this.log.debug('Character count:', text.length);
+
+  let doc = null;
+  try {
+    doc = parseXML(text);
+  } catch(error) {
+    this.log.debug(this.requestURL.href, error);
+    this.callback({'type': 'parsererror', 'error': error});
+    return;
+  }
+
+  this.log.debug('Document element:', doc.documentElement.nodeName);
+
+  const event = {
+    'type': 'success',
+    'document': doc,
+    'responseURLString': this.responseURL,
+    'lastModifiedDate': this.lastModifiedDate
+  };
+  this.log.debug('Success event:', event);
+  this.callback(event);
+}
+
+function onError(error) {
+  this.log.debug(this.requestURL.href, error);
+  this.callback({'type': 'error'});
 }
 
 // Checks the request header value and returns true if xml or html

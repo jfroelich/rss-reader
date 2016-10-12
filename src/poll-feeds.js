@@ -26,7 +26,7 @@ function pollFeeds(forceResetLock, allowMetered, log) {
   const ctx = {
     'numFeedsPending': 0,
     'log': log,
-    'cache': new FeedCache()
+    'cache': new FeedCache(log)
   };
 
   if(!acquireLock.call(ctx, forceResetLock)) {
@@ -54,16 +54,16 @@ function pollFeeds(forceResetLock, allowMetered, log) {
     const idlePeriodSecs = 30;
     chrome.idle.queryState(idlePeriodSecs, onQueryIdleState.bind(ctx));
   } else {
-    const feedDb = new FeedDb();
-    feedDb.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
+    const db = new FeedDb(log);
+    db.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
   }
 }
 
 function onQueryIdleState(state) {
   this.log.debug('idle state:', state);
   if(state === 'locked' || state === 'idle') {
-    const feedDb = new FeedDb();
-    feedDb.open(openDBOnSuccess.bind(this), openDBOnError.bind(this));
+    const db = new FeedDb(this.log);
+    db.open(openDBOnSuccess.bind(this), openDBOnError.bind(this));
   } else {
     onComplete.call(this);
   }
@@ -81,7 +81,6 @@ function openDBOnError(event) {
 }
 
 function onGetAllFeeds(feeds) {
-  this.log.debug('loaded %s feeds from database', feeds.length);
   if(!feeds.length) {
     onComplete.call(this);
     return;
@@ -91,35 +90,31 @@ function onGetAllFeeds(feeds) {
   const excludeEntries = false;
   for(let feed of feeds) {
     const requestURL = new URL(Feed.getURL(feed));
-    fetchFeed(requestURL, excludeEntries, SilentConsole,
+    fetchFeed(requestURL, excludeEntries, this.log,
       onFetchFeed.bind(this, feed));
   }
 }
 
 function onFetchFeed(localFeed, event) {
   if(event.type !== 'success') {
-    this.log.debug('failed to fetch', Feed.getURL(localFeed));
+    this.log.debug('Failed to fetch feed', Feed.getURL(localFeed));
     this.numFeedsPending--;
     onComplete.call(this);
     return;
   }
-
-  this.log.debug('fetched', Feed.getURL(localFeed));
 
   const remoteFeed = event.feed;
 
   // If the feed has updated in the past, then check if it has been modified.
   // dateUpdated is not set for newly added feeds.
   if(localFeed.dateUpdated && isFeedUnmodified(localFeed, remoteFeed)) {
-    this.log.debug('remote feed file not modified since last visit',
-      Feed.getURL(remoteFeed));
+    this.log.debug('Feed not modified', Feed.getURL(remoteFeed));
     this.numFeedsPending--;
     onComplete.call(this);
     return;
   }
 
   const feed = Feed.merge(localFeed, remoteFeed);
-  this.log.debug('Updating', Feed.getURL(feed));
   this.cache.updateFeed(this.conn, feed,
     onUpdateFeed.bind(this, event.entries));
 }
@@ -186,7 +181,7 @@ function processEntry(feed, entry, callback) {
 
   // Rewrite the entry url
   const entryTerminalURLObject = new URL(entryTerminalURLString);
-  const rewrittenURLObject = rdr.rewriteURL(entryTerminalURLObject);
+  const rewrittenURLObject = rewriteURL(entryTerminalURLObject);
   if(rewrittenURLObject) {
     Entry.addURL(entry, rewrittenURLObject.href);
   }
@@ -287,8 +282,8 @@ function onFetchEntry(entry, callback, event) {
   DOMScrub.filterSourcelessImages(doc);
   DOMScrub.filterInvalidAnchors(doc);
   rdr.poll.resolve.start(doc, event.responseURL);
-  rdr.poll.tracking.filterImages(doc);
-  setImageDimensions(doc, SilentConsole,
+  filterTrackingImages(doc);
+  setImageDimensions(doc, this.log,
     onSetImageDimensions.bind(this, entry, doc, callback));
 }
 
@@ -333,8 +328,7 @@ function onEntryProcessed(feedContext, event) {
   const count = feedContext.numEntriesProcessed;
 
   if(count > feedContext.numEntries) {
-    throw new Error('count ' + count + ' is greater than numEntries ' +
-      numEntries);
+    throw new Error(`count ${count} > numEntries ${numEntries}`);
   }
 
   if(event && event.type === 'success') {
@@ -357,7 +351,7 @@ function onComplete() {
   }
 
   this.log.log('Polling completed');
-  rdr.notifications.show('Updated articles',
+  showNotification('Updated articles',
     'Completed checking for new articles');
   if(this.conn) {
     this.conn.close();
@@ -377,18 +371,18 @@ function acquireLock(forceResetLock) {
   }
 
   if('POLL_FEEDS_ACTIVE' in localStorage) {
-    this.log.debug('failed to acquire lock, the lock is already present');
+    this.log.debug('Failed to acquire lock, the lock is already present');
     return false;
   }
 
-  this.log.debug('acquiring poll lock');
+  this.log.debug('Acquiring poll lock');
   localStorage.POLL_FEEDS_ACTIVE = '1';
   return true;
 }
 
 function releaseLock() {
   if('POLL_FEEDS_ACTIVE' in localStorage) {
-    this.log.debug('releasing poll lock');
+    this.log.debug('Releasing poll lock');
     delete localStorage.POLL_FEEDS_ACTIVE;
   }
 }

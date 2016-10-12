@@ -35,18 +35,14 @@ DOMScrub.addNoReferrer = function(doc) {
   }
 };
 
-DOMScrub.blockElements = ['blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6','p'];
-DOMScrub.blockSelector = DOMScrub.blockElements.join(',');
-DOMScrub.inlineInBlockElements = ['a'];
-DOMScrub.inlineInBlockSelector =
-  DOMScrub.inlineInBlockElements.join(',');
-
 // Looks for cases such as <a><p>text</p></a> and transforms them into
 // <p><a>text</a></p>.
 DOMScrub.adjustBlockInlineElements = function(doc) {
-  const blocks = doc.querySelectorAll(DOMScrub.blockSelector);
+  const blockSelector = 'blockquote, h1, h2, h3, h4, h5, h6, p';
+  const inlineInBlockSelector = 'a';
+  const blocks = doc.querySelectorAll(blockSelector);
   for(let block of blocks) {
-    const ancestor = block.closest(DOMScrub.inlineInBlockSelector);
+    const ancestor = block.closest(inlineInBlockSelector);
     if(ancestor && ancestor.parentNode) {
       ancestor.parentNode.insertBefore(block, ancestor);
       for(let node = block.firstChild; node; node = block.firstChild) {

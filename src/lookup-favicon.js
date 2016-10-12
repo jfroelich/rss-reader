@@ -205,7 +205,7 @@ function onFetchRootIcon(redirectURL, iconURLString) {
     }
     onLookupComplete.call(this, iconURL);
   } else {
-    this.log.debug('FULL-FAIL', this.url.href);
+    this.log.debug('Lookup fully failed', this.url.href);
     this.cache.remove(this.conn, this.url);
     if(redirectURL && redirectURL.href !== this.url.href) {
       this.cache.remove(this.conn, redirectURL);

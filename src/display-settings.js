@@ -6,14 +6,10 @@
 const DisplaySettings = {};
 
 chrome.runtime.onMessage.addListener(function(message) {
-  // Only react to the one message type of interest
   if(message.type === 'displaySettingsChanged') {
     DisplaySettings.updateStyles();
   }
 });
-
-// TODO: this is not yet in use, but the idea is to remove prefix
-DisplaySettings.BACKGROUND_BASE_PATH = '/images/';
 
 // TODO: remove some of these backgrounds, I kind of went overboard, some of
 // these are useless
@@ -86,8 +82,7 @@ DisplaySettings.updateStyles = function() {
   if(entryRule) {
     if(localStorage.BACKGROUND_IMAGE) {
       entryRule.style.backgroundColor = '';
-      entryRule.style.backgroundImage = 'url(' +
-        localStorage.BACKGROUND_IMAGE + ')';
+      entryRule.style.backgroundImage = `url(${localStorage.BACKGROUND_IMAGE})`;
     } else if(localStorage.ENTRY_BACKGROUND_COLOR) {
       entryRule.style.backgroundColor = localStorage.ENTRY_BACKGROUND_COLOR;
       entryRule.style.backgroundImage = '';
@@ -97,8 +92,8 @@ DisplaySettings.updateStyles = function() {
     }
 
     const entryMargin = localStorage.ENTRY_MARGIN || '10';
-    entryRule.style.paddingLeft = entryMargin + 'px';
-    entryRule.style.paddingRight = entryMargin + 'px';
+    entryRule.style.paddingLeft = `${entryMargin}px`;
+    entryRule.style.paddingRight = `${entryMargin}px`;
   }
 
   const titleRule = DisplaySettings.findCSSRule(sheet,
@@ -108,8 +103,7 @@ DisplaySettings.updateStyles = function() {
     titleRule.style.fontFamily = localStorage.HEADER_FONT_FAMILY;
     const hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
     if(hfs) {
-      const hfsString = (hfs / 10).toFixed(2) + 'em';
-      titleRule.style.fontSize = hfsString;
+      titleRule.style.fontSize = (hfs / 10).toFixed(2) + 'em';
     }
   }
 
@@ -135,35 +129,27 @@ DisplaySettings.updateStyles = function() {
       colCount = '1';
     }
 
-    contentRule.style.webkitColumnCount = parseInt(colCount);
+    contentRule.style.webkitColumnCount = colCount;
   }
 };
 
 // Dynamically creates new style rules and appends them to the first style
 // sheet. This assumes the first style sheet exists.
 DisplaySettings.loadStyles = function() {
-  // Assume a sheet is always available
   const sheet = document.styleSheets[0];
-
   let buffer = [];
 
   if(localStorage.BACKGROUND_IMAGE) {
-    buffer.push('background:url(');
-    buffer.push(localStorage.BACKGROUND_IMAGE);
-    buffer.push(');');
+    buffer.push(`background: url(${localStorage.BACKGROUND_IMAGE});`);
   } else if(localStorage.ENTRY_BACKGROUND_COLOR) {
-    buffer.push('background:');
-    buffer.push(localStorage.ENTRY_BACKGROUND_COLOR);
-    buffer.push(';');
+    buffer.push(`background: ${localStorage.ENTRY_BACKGROUND_COLOR};`);
   }
 
   buffer.push('margin:0px;');
 
   const entryMargin = localStorage.ENTRY_MARGIN;
   if(entryMargin) {
-    buffer.push('padding:');
-    buffer.push(entryMargin);
-    buffer.push('px;');
+    buffer.push(`padding:${entryMargin}px;`);
   }
 
   sheet.addRule('div.entry', buffer.join(''));
@@ -173,16 +159,12 @@ DisplaySettings.loadStyles = function() {
 
   const hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10);
   if(hfs) {
-    buffer.push('font-size:');
-    buffer.push((hfs / 10).toFixed(2));
-    buffer.push('em;');
+    buffer.push(`font-size: ${(hfs / 10).toFixed(2)}em;`);
   }
 
-  const header_font_fam = localStorage.HEADER_FONT_FAMILY;
-  if(header_font_fam) {
-    buffer.push('font-family:');
-    buffer.push(header_font_fam);
-    buffer.push(';');
+  const headerFontFam = localStorage.HEADER_FONT_FAMILY;
+  if(headerFontFam) {
+    buffer.push(`font-family:${headerFontFam};`);
   }
 
   buffer.push('letter-spacing:-0.03em;');
@@ -200,24 +182,19 @@ DisplaySettings.loadStyles = function() {
   // Reset the buffer
   buffer = [];
 
-
   const bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10);
   if(bfs) {
-    buffer.push('font-size:');
-    buffer.push((bfs / 10).toFixed(2));
-    buffer.push('em;');
+    buffer.push(`font-size: ${(bfs / 10).toFixed(2)}em;`);
   }
 
-  const body_justify = localStorage.JUSTIFY_TEXT === '1';
-  if(body_justify) {
+  const bodyJustify = localStorage.JUSTIFY_TEXT === '1';
+  if(bodyJustify) {
     buffer.push('text-align: justify;');
   }
 
-  const body_font = localStorage.BODY_FONT_FAMILY;
-  if(body_font) {
-    buffer.push('font-family:');
-    buffer.push(body_font);
-    buffer.push(';');
+  const bodyFont = localStorage.BODY_FONT_FAMILY;
+  if(bodyFont) {
+    buffer.push(`font-family:${bodyFont};`);
   }
 
   let blh = localStorage.BODY_LINE_HEIGHT;
@@ -225,9 +202,7 @@ DisplaySettings.loadStyles = function() {
     blh = parseInt(blh);
     if(blh) {
       // TODO: units?
-      buffer.push('line-height:');
-      buffer.push((blh / 10).toFixed(2));
-      buffer.push(';');
+      buffer.push(`line-height: ${(blh / 10).toFixed(2)};`);
     }
   }
 
@@ -251,14 +226,10 @@ DisplaySettings.loadStyles = function() {
   // TODO: use this if columns enabled (use 1(none), 2, 3 as options).
   const colCount = localStorage.COLUMN_COUNT;
   if(colCount === '2' || colCount === '3') {
-    buffer.push('-webkit-column-count:');
-    buffer.push(colCount);
-    buffer.push(';');
+    buffer.push(`-webkit-column-count: ${colCount};`);
     buffer.push('-webkit-column-gap:30px;');
     buffer.push('-webkit-column-rule:1px outset #AAAAAA;');
   }
 
   sheet.addRule('div.entry span.entry-content', buffer.join(''));
-
-  // Reminder: if adding another rule, reset the buffer variable
 };

@@ -156,7 +156,7 @@ function createEntryTitle(entry) {
     title.setAttribute('title', entry.title);
     let titleText = entry.title;
     titleText = Entry.filterTitle(titleText);
-    titleText = rdr.html.truncate(titleText, 300);
+    titleText = truncateHTML(titleText, 300);
     title.innerHTML = titleText;
   } else {
     title.setAttribute('title', 'Untitled');
@@ -200,7 +200,7 @@ function createFeedSource(entry) {
   buffer.push(entry.author || 'Unknown author');
   if(entry.datePublished) {
     buffer.push(' on ');
-    buffer.push(ReaderUtils.formatDate(entry.datePublished));
+    buffer.push(formatDate(entry.datePublished));
   }
 
   titleElement.textContent = buffer.join('');
@@ -350,7 +350,7 @@ function onKeyDown(event) {
       event.preventDefault();
       if(currentSlideElement) {
         const delta = scrollDeltas['' + event.keyCode];
-        ReaderUtils.smoothScrollTo(currentSlideElement, delta[0],
+        smoothScroll(currentSlideElement, delta[0],
           currentSlideElement.scrollTop + delta[1]);
       }
       break;

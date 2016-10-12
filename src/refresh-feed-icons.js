@@ -47,7 +47,7 @@ function lookup(feed) {
     lookupURL = new URL(feedURL.origin);
   }
 
-  const iconCache = new FaviconCache();
+  const iconCache = new FaviconCache(SilentConsole);
   const doc = null;
   lookupFavicon(iconCache, lookupURL, doc, SilentConsole,
     onLookup.bind(this, feed));
@@ -64,7 +64,11 @@ function onLookup(feed, iconURL) {
         iconURL.href);
       feed.faviconURLString = iconURL.href;
       feed.dateUpdated = new Date();
-      // async, does not wait for put request to complete
+
+      // TODO: delegate to FeedCache.putFeed, move .dateUpdated setting
+      // into it. Then maybe think about how to use updateFeed instead, maybe
+      // pass in a flag to skip sanitize/filter, or maybe have updateFeed call
+      // putFeed but updateFeed does extra stuff
       const tx = this.conn.transaction('feed', 'readwrite');
       const store = tx.objectStore('feed');
       const request = store.put(feed);

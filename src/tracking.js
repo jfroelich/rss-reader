@@ -5,12 +5,9 @@
 // TODO: hosts should be defined externally so that if i want to
 // change it, I don't have to change the code
 
-var rdr = rdr || {};
-rdr.poll = rdr.poll || {};
-rdr.poll.tracking = {};
+{
 
-
-rdr.poll.tracking.hosts = [
+const hosts = [
   'ad.doubleclick.net',
   'b.scorecardresearch.com',
   'googleads.g.doubleclick.net',
@@ -22,16 +19,16 @@ rdr.poll.tracking.hosts = [
   'sb.scorecardresearch.com'
 ];
 
-rdr.poll.tracking.filterImages = function(doc) {
+function filterTrackingImages(doc) {
   const images = doc.querySelectorAll('img[src]');
   for(let image of images) {
-    if(rdr.poll.tracking.isTracker(image)) {
+    if(isTrackingImage(image)) {
       image.remove();
     }
   }
-};
+}
 
-rdr.poll.tracking.hasCandidateURL = function(image) {
+function hasCandidateURL(image) {
   let src = image.getAttribute('src');
   if(!src) {
     return false;
@@ -42,13 +39,11 @@ rdr.poll.tracking.hasCandidateURL = function(image) {
     return false;
   }
 
-  // Assert an approximate minimum length
-  const minValidURLLength = 'http://a.d/a'.length;
-  if(src.length < minValidURLLength) {
+  const minlen = 'http://a.d/a'.length;
+  if(src.length < minlen) {
     return false;
   }
 
-  // Assert no intermediate spaces
   if(src.includes(' ')) {
     return false;
   }
@@ -57,10 +52,10 @@ rdr.poll.tracking.hasCandidateURL = function(image) {
     return false;
   }
   return true;
-};
+}
 
-rdr.poll.tracking.isTracker = function(image) {
-  if(!rdr.poll.tracking.hasCandidateURL(image)) {
+function isTrackingImage(image) {
+  if(!hasCandidateURL(image)) {
     return false;
   }
 
@@ -72,5 +67,9 @@ rdr.poll.tracking.isTracker = function(image) {
     return false;
   }
 
-  return rdr.poll.tracking.hosts.includes(url.hostname);
-};
+  return hosts.includes(url.hostname);
+}
+
+this.filterTrackingImages = filterTrackingImages;
+
+}

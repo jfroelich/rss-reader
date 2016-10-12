@@ -7,6 +7,7 @@ TODO:
 - consider scoring on a scale, or use probability
 - revert to blocks instead of best element
 - review justText thesis
+- consider ES6 class
 */
 
 'use strict';

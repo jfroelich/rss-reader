@@ -56,25 +56,20 @@ function findFeed() {
 }
 
 function findFeedOnSuccess(event) {
-  const feedURL = Feed.getURL(this.feed);
-
-  // Cannot resubscribe to an existing feed
   if(event.target.result) {
-    console.debug('Already subscribed to', feedURL);
+    console.debug('Already subscribed to', Feed.getURL(this.feed));
     onComplete.call(this, {'type': 'ConstraintError'});
     return;
   }
 
-  // Subscribe while offline
   if('onLine' in navigator && !navigator.onLine) {
     this.feedCache.addFeed(this.conn, this.feed, onAddFeed.bind(this));
     return;
   }
 
-  // Proceed with online subscription
-  const requestURL = new URL(feedURL);
+  const requestURL = new URL(Feed.getURL(this.feed));
   const excludeEntries = true;
-  fetchFeed(requestURL, excludeEntries, SilentConsole, onFetchFeed.bind(this));
+  fetchFeed(requestURL, excludeEntries, this.log, onFetchFeed.bind(this));
 }
 
 function findFeedOnError(event) {
@@ -84,7 +79,7 @@ function findFeedOnError(event) {
 
 function onFetchFeed(event) {
   if(event.type !== 'success') {
-    this.log.log('fetch error');
+    this.log.log('Fetch error type', event.type);
     if(event.type === 'InvalidMimeType') {
       onComplete.call(this, {'type': 'FetchMimeTypeError'});
     } else {
@@ -95,20 +90,16 @@ function onFetchFeed(event) {
 
   // TODO: before merging and looking up favicon and adding, check if the user
   // is already subscribed to the redirected url
-
-
-  this.feed = Feed.merge(this.feed, event.feed);
-
-  const cache = new FaviconCache();
-
   // TODO: if falling back to feed url instead of link, use origin, because
   // we know that feed is just an xml file, this reduces the hoops that
   // lookupFavicon jumps through internally
 
+  this.feed = Feed.merge(this.feed, event.feed);
+  const iconCache = new FaviconCache(this.log);
   const urlString = this.feed.link ? this.feed.link : Feed.getURL(this.feed);
   const urlObject = new URL(urlString);
   const doc = null;
-  lookupFavicon(cache, urlObject, doc, SilentConsole, onLookupIcon.bind(this));
+  lookupFavicon(iconCache, urlObject, doc, this.log, onLookupIcon.bind(this));
 }
 
 function onLookupIcon(iconURL) {
@@ -121,7 +112,7 @@ function onLookupIcon(iconURL) {
 
 function onAddFeed(event) {
   if(event.type === 'success') {
-    this.log.log('stored new feed');
+    this.log.log('Successfully Stored new feed');
     this.didSubscribe = true;
     onComplete.call(this, {'type': 'success', 'feed': event.feed});
   } else {
@@ -131,7 +122,7 @@ function onAddFeed(event) {
 
 function onComplete(event) {
   if(this.shouldCloseDB && this.conn) {
-    this.log.log('requesting database to close');
+    this.log.log('Requesting database to close');
     this.conn.close();
   }
 
@@ -140,7 +131,7 @@ function onComplete(event) {
     const feed = event.feed;
     const displayString = feed.title ||  Feed.getURL(feed);
     const message = 'Subscribed to ' + displayString;
-    rdr.notifications.show('Subscription complete', message,
+    showNotification('Subscription complete', message,
       feed.faviconURLString);
   }
 

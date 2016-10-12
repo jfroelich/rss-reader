@@ -51,7 +51,7 @@ function showErrorMsg(msg, shouldFadeIn) {
   if(shouldFadeIn) {
     errorElement.style.opacity = '0';
     document.body.appendChild(errorElement);
-    ReaderUtils.fadeElement(container, 1, 0);
+    fadeElement(container, 1, 0);
   } else {
     errorElement.style.opacity = '1';
     showElement(errorElement);
@@ -115,7 +115,7 @@ function hideSubMonitor(callback, shouldFadeOut) {
   }
 
   if(shouldFadeOut) {
-    ReaderUtils.fadeElement(monitor, 2, 1, removeThenCallback);
+    fadeElement(monitor, 2, 1, removeThenCallback);
   } else {
     removeThenCallback();
   }
@@ -178,7 +178,7 @@ function updateFeedCount() {
   if(count > 1000) {
     feedCountElement.textContent = ' (999+)';
   } else {
-    feedCountElement.textContent = ' (' + count + ')';
+    feedCountElement.textContent = ` (${count})`;
   }
 }
 
@@ -216,13 +216,13 @@ function appendFeed(feed, shouldInsertInOrder) {
   }
 
   const titleElement = document.createElement('span');
-  let feed_title_string = feed.title || 'Untitled';
-  feed_title_string = rdr.html.truncate(feed_title_string, 300);
-  titleElement.textContent = feed_title_string;
+  let feedTitleStr = feed.title || 'Untitled';
+  feedTitleStr = truncateHTML(feedTitleStr, 300);
+  titleElement.textContent = feedTitleStr;
   item.appendChild(titleElement);
 
   const feedListElement = document.getElementById('feedlist');
-  const lcTitleString = feed_title_string.toLowerCase();
+  const lcTitleString = feedTitleStr.toLowerCase();
 
   // Insert the feed item element into the proper position in the list
   if(shouldInsertInOrder) {
@@ -246,8 +246,8 @@ function appendFeed(feed, shouldInsertInOrder) {
 
 // TODO: deprecate the ability to preview
 function showSubPreview(url) {
-  if(!ReaderUtils.isURLObject(url)) {
-    throw new Error('url should be a URL');
+  if(!isURLObject(url)) {
+    throw new Error('url is not a URL object');
   }
 
 
@@ -276,7 +276,7 @@ function showSubPreview(url) {
     if(event.type !== 'success') {
       console.dir(event);
       hideSubPreview();
-      showErrorMsg('Unable to fetch' + url.href);
+      showErrorMsg('Unable to fetch ' + url.href);
       return;
     }
 
@@ -309,7 +309,7 @@ function showSubPreview(url) {
     for(let i = 0; i < limit; i++) {
       const entry = fetchEvent.entries[i];
       const item = document.createElement('li');
-      item.innerHTML = rdr.html.replaceTags(entry.title || '', '');
+      item.innerHTML = replaceTags(entry.title || '', '');
       const content = document.createElement('span');
       content.innerHTML = entry.content || '';
       item.appendChild(content);
@@ -329,7 +329,7 @@ function hideSubPreview() {
 }
 
 function startSubscription(url) {
-  if(!ReaderUtils.isURLObject(url)) {
+  if(!isURLObject(url)) {
     throw new TypeError('invalid url param: ' + url);
   }
 
@@ -378,8 +378,7 @@ function startSubscription(url) {
     } else if(type === 'ConnectionError') {
       showErrorMsg('Unable to connect to database');
     } else if(type === 'FetchMimeTypeError') {
-      showErrorMsg('The page at ' + url.href + ' is not an xml feed ' +
-        '(it has the wrong content type)');
+      showErrorMsg(`${url.href} is not xml`);
     } else {
       showErrorMsg('Unknown error');
     }
@@ -392,7 +391,7 @@ function startSubscription(url) {
 function populateFeedInfo(feedId) {
 
   if(!Number.isInteger(feedId) || feedId < 1) {
-    throw new TypeError('invalid feed id param: ' + feedId);
+    throw new TypeError(`invalid feed id param: ${feedId}`);
   }
 
   const context = {'db': null};
@@ -453,11 +452,7 @@ function populateFeedInfo(feedId) {
     feedURLElement.textContent = Feed.getURL(feed);
 
     const feedLinkElement = document.getElementById('details-feed-link');
-    if(feed.link) {
-      feedLinkElement.textContent = feed.link;
-    } else {
-      feedLinkElement.textContent = '';
-    }
+    feedLinkElement.textContent = feed.link || '';
 
     const unsubButton = document.getElementById('details-unsubscribe');
     unsubButton.value = '' + feed.id;
@@ -609,8 +604,7 @@ function onSearchGoogleFeeds(event) {
 
   // Add an initial count of the number of feeds as one of the feed list items
   const itemElement = document.createElement('li');
-  // TODO: use string template
-  itemElement.textContent = 'Found ' + results.length + ' results.';
+  itemElement.textContent = `Found ${results.length} results.`;
   resultsElement.appendChild(itemElement);
 
   // Lookup the favicons for the results.
@@ -626,7 +620,7 @@ function onSearchGoogleFeeds(event) {
       } catch(exception) {
       }
       if(linkURL) {
-        const cache = new FaviconCache();
+        const cache = new FaviconCache(SilentConsole);
         const doc = null;
         lookupFavicon(cache, linkURL, doc, SilentConsole,
           onLookupFavicon.bind(null, result));
@@ -716,12 +710,10 @@ function createSearchResultElement(feed) {
 }
 
 function removeFeedFromFeedList(feedId) {
-  // TODO: use string template
-  const selector = '#feedlist li[feed="' + feedId + '"]';
-  const feedElement = document.querySelector(selector);
+  const feedElement = document.querySelector(`#feedlist li[feed="${feedId}"]`);
 
   if(!feedElement) {
-    throw new Error('did not find feed element for feed id ' + feedId);
+    throw new Error(`Did not find feed element for feed id ${feedId}`);
   }
 
   feedElement.removeEventListener('click', feedListItemOnClick);
@@ -1108,9 +1100,8 @@ function onDOMContentLoaded(event) {
 
   const colCountElement = document.getElementById('column-count');
 
-  // TODO: use a basic for loop here (or for .. of)
-  ['1','2','3'].forEach(appendColCount);
-  function appendColCount(columnCount) {
+  const colCounts = ['1', '2', '3'];
+  for(let columnCount of colCounts) {
     option = document.createElement('option');
     option.value = columnCount;
     option.selected = columnCount === localStorage.COLUMN_COUNT;

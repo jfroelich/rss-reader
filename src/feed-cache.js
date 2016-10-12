@@ -11,7 +11,7 @@ constructor(log) {
 addEntry(conn, entry, callback) {
   this.log.log('Adding entry', Entry.getURL(entry));
   const sanitized = Entry.sanitize(entry);
-  const storable = ReaderUtils.filterEmptyProps(sanitized);
+  const storable = filterEmptyProps(sanitized);
   storable.readState = Entry.UNREAD;
   storable.archiveState = Entry.UNARCHIVED;
   storable.dateCreated = new Date();
@@ -29,13 +29,13 @@ _addEntryOnError(entry, callback, event) {
 
 addFeed(conn, feed, callback) {
   if('id' in feed) {
-    throw new TypeError('cannot add feed with id');
+    throw new TypeError('Cannot add feed with id property');
   }
 
   this.log.log('Adding feed', Feed.getURL(feed));
   let storable = Feed.sanitize(feed);
   storable.dateCreated = new Date();
-  storable = ReaderUtils.filterEmptyProps(storable);
+  storable = filterEmptyProps(storable);
   const tx = conn.transaction('feed', 'readwrite');
   const store = tx.objectStore('feed');
   const request = store.add(storable);
@@ -80,12 +80,13 @@ Or maybe the reads are fast than this is hanging on some external tx
 
 findEntry(conn, urls, limit, callback) {
   if(!urls.length) {
-    throw new Error('at least one url is required');
+    throw new Error('At least one url is required');
   }
 
-  this.log.log('find entries with urls', urls);
+  this.log.log('Find entry', urls);
 
   const ctx = {};
+  ctx.urls = urls;
   ctx.didCallback = false;
   ctx.matches = [];
   ctx.callback = callback;
@@ -121,24 +122,20 @@ findEntry(conn, urls, limit, callback) {
 
 _findEntryOpenCursorOnSuccess(ctx, event) {
   if(ctx.reachedLimit) {
-    this.log.debug('ignoring entry because limit reached');
     return;
   }
 
   const cursor = event.target.result;
   if(!cursor) {
-    this.log.debug('undefined cursor');
     return;
   }
 
   const entry = cursor.value;
 
-  this.log.debug('appending match', Entry.getURL(entry));
   // TODO: avoid pushing dups
   ctx.matches.push(entry);
 
   if(ctx.limit && ctx.matches.length >= ctx.limit) {
-    this.log.debug('reached limit');
     ctx.reachedLimit = true;
     return;
   }
@@ -147,19 +144,20 @@ _findEntryOpenCursorOnSuccess(ctx, event) {
 }
 
 _findEntryOnComplete(ctx, event) {
-  this.log.log('Found %s matches', ctx.matches.length);
+  this.log.log('Found %s entries for [%s]', ctx.matches.length,
+    ctx.urls.join(','));
   ctx.callback(ctx.matches);
 }
 
 updateFeed(conn, feed, callback) {
   if(!('id' in feed)) {
-    throw new TypeError('missing id');
+    throw new TypeError('Feed missing id');
   }
 
   this.log.log('Updating feed', Feed.getURL(feed));
   let storable = Feed.sanitize(feed);
   storable.dateUpdated = new Date();
-  storable = ReaderUtils.filterEmptyProps(storable);
+  storable = filterEmptyProps(storable);
   const tx = conn.transaction('feed', 'readwrite');
   const store = tx.objectStore('feed');
   const request = store.put(storable);
@@ -182,7 +180,7 @@ _updateFeedOnError(feed, callback, event) {
 }
 
 getAllFeeds(conn, callback) {
-  this.log.log('Getting all feeds');
+  this.log.log('Opening cursor over feed store');
   const feeds = [];
   const tx = conn.transaction('feed');
   tx.oncomplete = this._getAllFeedsOnComplete.bind(this, feeds, callback);
@@ -196,14 +194,13 @@ _getAllFeedsOpenCursorOnSuccess(feeds, event) {
   const cursor = event.target.result;
   if(cursor) {
     const feed = cursor.value;
-    this.log.debug('Appending feed', Feed.getURL(feed));
     feeds.push(feed);
     cursor.continue();
   }
 }
 
 _getAllFeedsOnComplete(feeds, callback, event) {
-  this.log.log('Completed getting all feeds');
+  this.log.log('Loaded %s feeds', feeds.length);
   callback(feeds);
 }
 
@@ -228,9 +225,8 @@ _countUnreadOnError(callback, event) {
 }
 
 markEntryRead(id, callback) {
-  // TODO: use string template for error text
   if(!Number.isInteger(id) || id < 1) {
-    throw new Error('invalid entry id: ' + id);
+    throw new Error(`invalid entry id ${id}`);
   }
 
   this.log.debug('Starting to mark entry %s as read', id);
@@ -293,7 +289,7 @@ _merocoe(ctx, event) {
 
 // Mark entry read on complete
 _meroc(ctx, type) {
-  this.log.log('Completed marking entry as read');
+  this.log.log('Completed marking entry %s as read', this.id);
   if(ctx.conn) {
     this.log.debug('Requesting database to close');
     ctx.conn.close();

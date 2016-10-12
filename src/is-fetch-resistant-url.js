@@ -16,7 +16,7 @@ rdr.poll.resistantHosts = [
 
 rdr.poll.isFetchResistantURL = function(url) {
 
-  if(!ReaderUtils.isURLObject(url)) {
+  if(!isURLObject(url)) {
     throw new TypeError('invalid url param: ' + url);
   }
 

@@ -62,9 +62,10 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
   } else if(alarm.name === 'poll') {
     const forceResetLock = false;
     const allowMeteredConnections = false;
-    pollFeeds(forceResetLock, allowMeteredConnections, SilentConsole);
+    const log = console;// SilentConsole;
+    pollFeeds(forceResetLock, allowMeteredConnections, log);
   } else if(alarm.name === 'compact-favicons') {
-    const cache = new FaviconCache();
+    const cache = new FaviconCache(SilentConsole);
     compactFavicons(cache, SilentConsole);
   } else if(alarm.name === 'refresh-feed-icons') {
     refreshFeedIcons(SilentConsole);

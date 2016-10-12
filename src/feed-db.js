@@ -11,7 +11,7 @@ function FeedDb(log) {
 }
 
 FeedDb.prototype.open = function(onSuccess, onError) {
-  this.log.log('Connecting to', this.name, 'version', this.version);
+  this.log.log('Connecting to database', this.name, this.version);
   const request = indexedDB.open(this.name, this.version);
   request.onupgradeneeded = this._upgrade.bind(this);
   request.onsuccess = onSuccess;

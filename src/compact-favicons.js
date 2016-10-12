@@ -6,7 +6,7 @@
 
 function compactFavicons(cache, log) {
   if(!Number.isInteger(cache.maxAge)) {
-    throw new TypeError('invalid maxAge');
+    throw new TypeError(`invalid maxAge ${cache.maxAge}`);
   }
 
   log.log('Compacting favicon cache, max age:', cache.maxAge);

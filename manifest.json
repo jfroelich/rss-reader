@@ -35,6 +35,7 @@
       "/src/lookup-favicon.js",
       "/src/on-badge-click.js",
       "/src/on-installed.js",
+      "/src/parse-xml.js",
       "/src/poll-feeds.js",
       "/src/refresh-feed-icons.js",
       "/src/resolve.js",
@@ -42,10 +43,10 @@
       "/src/set-image-dimensions.js",
       "/src/show-notification.js",
       "/src/silent-console.js",
+      "/src/sizeof.js",
       "/src/tracking.js",
       "/src/update-badge.js",
-      "/src/utils.js",
-      "/src/xml.js"
+      "/src/utils.js"
     ]
   },
   "options_page": "options.html",

@@ -6,9 +6,7 @@
 // using the real cache by default
 
 function test(urlString) {
-  const cache = new FaviconCache();
-  cache.log = console;
-
+  const cache = new FaviconCache(console);
   const url = new URL(urlString);
   const doc = null;
   const callback = function(url) {

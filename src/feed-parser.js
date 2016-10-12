@@ -11,7 +11,6 @@ TODO:
 - setup testing
 */
 
-
 'use strict';
 
 const FeedParser = {};
@@ -21,7 +20,7 @@ const FeedParser = {};
 FeedParser.parse = function(doc, shouldExcludeEntries) {
   const docElement = doc.documentElement;
   if(!docElement.matches('feed, rss, rdf')) {
-    throw new Error('Unsupported document element: ' + docElement.nodeName);
+    throw new Error(`Unsupported document element: ${docElement.nodeName}`);
   }
 
   const channel = FeedParser._findChannel(docElement);

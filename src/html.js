@@ -6,16 +6,13 @@
 TODO: maybe replaceTags should accept a whitelist of tags to keep
 */
 
-var rdr = rdr || {};
-rdr.html = {};
-
 // Returns a new string where html elements were replaced with the optional
 // replacement string. HTML entities remain (except some will be
 // replaced, like &#32; with space).
-rdr.html.replaceTags = function(inputString, repString) {
+function replaceTags(inputString, repString) {
 
   if(typeof inputString !== 'string') {
-    throw new TypeError('inputString must be a string');
+    throw new TypeError('inputString not a string');
   }
 
   let outputString = null;
@@ -38,7 +35,7 @@ rdr.html.replaceTags = function(inputString, repString) {
   }
 
   return outputString;
-};
+}
 
 // Truncates a string containing some html, taking special care not to truncate
 // in the midst of a tag or an html entity. The transformation is lossy as some
@@ -46,14 +43,14 @@ rdr.html.replaceTags = function(inputString, repString) {
 // The input string should be encoded, meaning that it should contain character
 // entity codes. The extension string should be decoded, meaning that it should
 // not contain character entries.
-rdr.html.truncate = function(inputString, position, inputExtension) {
+function truncateHTML(inputString, position, inputExtension) {
 
   if(typeof inputString !== 'string') {
-    throw new TypeError('inputString must be a string');
+    throw new TypeError('inputString not a string');
   }
 
   if(!Number.isInteger(position) || position < 0) {
-    throw new TypeError('invalid position: ' + position);
+    throw new TypeError(`invalid position: ${position}`);
   }
 
   const ellipsis = '\u2026';
@@ -92,4 +89,4 @@ rdr.html.truncate = function(inputString, position, inputExtension) {
   } else {
     return inertDoc.body.innerHTML;
   }
-};
+}

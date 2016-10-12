@@ -8,10 +8,10 @@ function updateBadge(conn, log) {
   log = log || SilentConsole;
   log.log('Updating badge unread count');
 
-  const db = new FeedDb(SilentConsole);
-  const cache = new FeedCache(SilentConsole);
+  const db = new FeedDb(log);
+  const cache = new FeedCache(log);
 
-  const ctx = {'conn': conn, 'text': '?', 'log': log, 'cache': cache};
+  const ctx = {'conn': conn, 'text': '?', 'log': log, 'cache': cache, 'db': db};
   if(conn) {
     cache.countUnread(conn, onCountUnread.bind(ctx));
   } else {
@@ -20,7 +20,7 @@ function updateBadge(conn, log) {
 }
 
 function openDBOnSuccess(event) {
-  this.log.log('Connected to database');
+  this.log.log('Connected to database %s to update badge', this.db.name);
   this.conn = event.target.result;
   this.cache.countUnread(this.conn, onCountUnread.bind(this));
   this.conn.close();

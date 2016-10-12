@@ -22,7 +22,7 @@ Entry.ARCHIVED = 1;
 Entry.getURL = function(entry) {
 
   if(!entry.urls.length) {
-    throw new Error('entry missing url');
+    throw new Error('Entry missing url');
   }
 
   return entry.urls[entry.urls.length - 1];
@@ -67,10 +67,10 @@ Entry.sanitize = function(inputEntry) {
 
   if(outputEntry.author) {
     let author = outputEntry.author;
-    author = ReaderUtils.filterControlChars(author);
-    author = rdr.html.replaceTags(author, '');
-    author = ReaderUtils.condenseWhitespace(author);
-    author = rdr.html.truncate(author, authorMaxLength);
+    author = filterControlChars(author);
+    author = replaceTags(author, '');
+    author = condenseWhitespace(author);
+    author = truncateHTML(author, authorMaxLength);
     outputEntry.author = author;
   }
 
@@ -79,16 +79,16 @@ Entry.sanitize = function(inputEntry) {
   // TODO: filter out non-printable characters other than \r\n\t
   if(outputEntry.content) {
     let content = outputEntry.content;
-    content = rdr.html.truncate(content, contentMaxLength);
+    content = truncateHTML(content, contentMaxLength);
     outputEntry.content = content;
   }
 
   if(outputEntry.title) {
     let title = outputEntry.title;
-    title = ReaderUtils.filterControlChars(title);
-    title = rdr.html.replaceTags(title, '');
-    title = ReaderUtils.condenseWhitespace(title);
-    title = rdr.html.truncate(title, titleMaxLength);
+    title = filterControlChars(title);
+    title = replaceTags(title, '');
+    title = condenseWhitespace(title);
+    title = truncateHTML(title, titleMaxLength);
     outputEntry.title = title;
   }
 

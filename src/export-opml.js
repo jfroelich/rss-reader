@@ -5,20 +5,20 @@
 {
 
 function exportOPML(db, title, fileName, log, callback) {
-  log.log('Exporting opml file...');
   const ctx = {
     'callback': callback,
     'title': title || 'Subscriptions',
     'fileName': fileName || 'subs.xml',
     'log': log
   };
+  log.log('Exporting opml file', ctx.fileName);
   db.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
 }
 
 function openDBOnSuccess(event) {
   this.log.debug('Connected to database');
   const conn = event.target.result;
-  const cache = new FeedCache(SilentConsole);
+  const cache = new FeedCache(this.log);
   cache.getAllFeeds(conn, onGetFeeds.bind(this));
   conn.close();
 }
@@ -77,12 +77,8 @@ function createOutline(doc, feed) {
   }
 
   const feedURL = Feed.getURL(feed);
-
-  // This should never happen. A feed loaded from the database should always
-  // have a url. This exception is not caught in the calling context, it is
-  // intended to be fatal-like.
   if(!feedURL) {
-    throw new Error('missing url: ' + JSON.stringify(feed));
+    throw new Error(`Feed missing url ${JSON.stringify(feed)}`);
   }
 
   outline.setAttribute('xmlUrl', feedURL);

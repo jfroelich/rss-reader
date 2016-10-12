@@ -2,17 +2,11 @@
 
 'use strict';
 
-/*
-- date file modified should probably be passed back as an event property and
-not set on the feed. it is a property of the response that i happen to shove
-into a feed
-*/
-
 {
 
 function fetchFeed(requestURL, excludeEntries, log, callback) {
   if(!FeedParser) {
-    throw new ReferenceError('missing FeedParser');
+    throw new ReferenceError('Missing FeedParser');
   }
 
   const ctx = {
@@ -22,7 +16,7 @@ function fetchFeed(requestURL, excludeEntries, log, callback) {
     'log': log || SilentConsole
   };
 
-  ctx.log.log('GET', requestURL.toString());
+  ctx.log.log('Fetching feed', requestURL.toString());
   fetchXML(requestURL, SilentConsole, onFetchXML.bind(ctx));
 }
 
@@ -50,6 +44,8 @@ function onFetchXML(event) {
 
   feed.dateFetched = new Date();
   feed.dateLastModified = event.lastModifiedDate;
+
+  this.log.debug('Fetched feed', Feed.getURL(feed));
 
   const successEvent = {};
   successEvent.type = 'success';

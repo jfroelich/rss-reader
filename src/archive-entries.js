@@ -60,7 +60,6 @@ function openDBOnError(event) {
 function openCursorOnSuccess(event) {
   const cursor = event.target.result;
   if(!cursor) {
-    this.log.debug('Cursor is undefined');
     return;
   }
 
@@ -86,8 +85,8 @@ function openCursorOnSuccess(event) {
   const compactedEntry = compact.call(this, entry);
 
   if(this.log !== SilentConsole) {
-    const beforeSize = ReaderUtils.sizeof(entry);
-    const afterSize = ReaderUtils.sizeof(compactedEntry);
+    const beforeSize = sizeof(entry);
+    const afterSize = sizeof(compactedEntry);
     this.log.debug('Compacted %s (age %s, before %s, after %s)',
       Entry.getURL(entry), age, beforeSize, afterSize);
   }

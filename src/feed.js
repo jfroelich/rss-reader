@@ -11,7 +11,7 @@ const Feed = {};
 
 Feed.getURL = function(feed) {
   if(!feed.urls.length) {
-    throw new Error('feed missing url');
+    throw new Error('Feed missing url');
   }
 
   return feed.urls[feed.urls.length - 1];
@@ -42,35 +42,35 @@ Feed.sanitize = function(inputFeed) {
 
   if(feed.id) {
     if(!Number.isInteger(feed.id) || feed.id < 1) {
-      throw new Error('invalid feed id: ' + feed.id);
+      throw new Error(`Invalid feed id: ${feed.id}`);
     }
   }
 
   const types = {'feed': 1, 'rss': 1, 'rdf': 1};
   if(feed.type) {
     if(!(feed.type in types)) {
-      throw new Error('invalid feed type: ' + feed.type);
+      throw new Error(`Invalid feed type: ${feed.type}`);
     }
   }
 
   if(feed.title) {
     let title = feed.title;
-    title = ReaderUtils.filterControlChars(title);
-    title = rdr.html.replaceTags(title, '');
+    title = filterControlChars(title);
+    title = replaceTags(title, '');
     title = title.replace(/\s+/, ' ');
     const titleMaxStoreLength = 1024;
-    title = rdr.html.truncate(title, titleMaxStoreLength, '');
+    title = truncateHTML(title, titleMaxStoreLength, '');
     feed.title = title;
   }
 
   if(feed.description) {
     let description = feed.description;
-    description = ReaderUtils.filterControlChars(description);
-    description = rdr.html.replaceTags(description, '');
+    description = filterControlChars(description);
+    description = replaceTags(description, '');
     description = description.replace(/\s+/, ' ');
     const preTruncLen = description.length;
     const descMaxLength = 1024 * 10;
-    description = rdr.html.truncate(description, descMaxLength, '');
+    description = truncateHTML(description, descMaxLength, '');
     if(preTruncLen > description.length) {
       console.warn('Truncated description', description);
     }

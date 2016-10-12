@@ -2,16 +2,13 @@
 
 'use strict';
 
-/*
-TODO: should this buffer all files before opening connection?
-*/
+// TODO: buffer all files before opening connection?
 
 {
 
 function importOPML(db, log) {
-
-  if(!rdr.xml.parse) {
-    throw new ReferenceError('missing rdr.xml.parse dep');
+  if(!parseXML) {
+    throw new ReferenceError('parseXML');
   }
 
   log = log || SilentConsole;
@@ -37,9 +34,9 @@ function importOPML(db, log) {
 }
 
 function parseFromString(str) {
-  const doc = rdr.xml.parse(str);
+  const doc = parseXML(str);
   if(!doc) {
-    throw new Error('parse did not yield a document');
+    throw new Error('parseXML did not yield a document');
   }
   const rootName = doc.documentElement.localName;
   if(rootName !== 'opml') {

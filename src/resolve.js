@@ -35,7 +35,7 @@ rdr.poll.resolve.urlAttrMap = {
 };
 
 rdr.poll.resolve.buildSelectorPart = function(key) {
-  return key + '[' + rdr.poll.resolve.urlAttrMap[key] +']';
+  return `${key}[${rdr.poll.resolve.urlAttrMap[key]}]`;
 };
 
 rdr.poll.resolve.selector = Object.keys(
@@ -44,25 +44,14 @@ rdr.poll.resolve.selector = Object.keys(
 
 // TODO: add log param
 rdr.poll.resolve.start = function(document, baseURL) {
-  if(!ReaderUtils.isURLObject(baseURL)) {
-    throw new TypeError('invalid baseURL param: ' + baseURL);
-  }
-
   if(!parseSrcset) {
-    throw new ReferenceError('missing parseSrcset dependency');
+    throw new ReferenceError('parseSrcset');
   }
 
-  // Remove base elements. There is actually no need to do this, because this
-  // is done when sanitizing the document, and because all relative urls are
-  // made absolute. However, I am doing this now for sanity reasons, and may
-  // remove this behavior in the future. I am also not sure if this is the
-  // responsibility of this function.
-  // Also, there is a deeper issue of whether a page author is using base
-  // intentionally. That could throw off this entire approach because it
-  // conflicts with using a custom base url. This uses a custom base largely
-  // so I can take advantage of using the redirect url from the page fetch,
-  // so that I am not doing additional redirects per link click or 404s on
-  // embedded images
+  if(!isURLObject(baseURL)) {
+    throw new TypeError('Invalid baseURL: ' + baseURL);
+  }
+
   const bases = document.querySelectorAll('base');
   for(let base of bases) {
     base.remove();
@@ -130,7 +119,7 @@ rdr.poll.resolve.resolveSrcsetAttr = function(element, baseURL) {
   }
 
   if(dirtied) {
-    const newSrcsetValue = ReaderUtils.serializeSrcset(srcset);
+    const newSrcsetValue = serializeSrcset(srcset);
     if(newSrcsetValue) {
       element.setAttribute('srcset', newSrcsetValue);
     }
@@ -140,11 +129,11 @@ rdr.poll.resolve.resolveSrcsetAttr = function(element, baseURL) {
 // Returns a resolved URL object
 rdr.poll.resolve.resolveURL = function(urlString, baseURLObject) {
   if(typeof urlString !== 'string') {
-    throw new TypeError('invalid urlString param: ' + urlString);
+    throw new TypeError('Invalid urlString: ' + urlString);
   }
 
-  if(!ReaderUtils.isURLObject(baseURLObject)) {
-    throw new TypeError('invalid baseURLObject param: ' + baseURLObject);
+  if(!isURLObject(baseURLObject)) {
+    throw new TypeError('Invalid baseURLObject: ' + baseURLObject);
   }
 
   if(rdr.poll.resolve.isJavascriptURL(urlString)) {
@@ -169,3 +158,28 @@ rdr.poll.resolve.isObjectURL = function(urlString) {
 rdr.poll.resolve.isJavascriptURL = function(urlString) {
   return /^\s*javascript:/i.test(urlString);
 };
+
+
+// @param descriptors {Array} an array of basic descriptor objects such as the
+// one produced by the parseSrcset library
+function serializeSrcset(descriptors) {
+  const output = [];
+  for(let descriptor of descriptors) {
+    let buf = [descriptor.url];
+    if(descriptor.d) {
+      buf.push(' ');
+      buf.push(descriptor.d);
+      buf.push('x');
+    } else if(descriptor.w) {
+      buf.push(' ');
+      buf.push(descriptor.w);
+      buf.push('w');
+    } else if(descriptor.h) {
+      buf.push(' ');
+      buf.push(descriptor.h);
+      buf.push('h');
+    }
+    output.push(buf.join(''));
+  }
+  return output.join(', ');
+}

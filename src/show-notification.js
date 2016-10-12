@@ -2,20 +2,13 @@
 
 'use strict';
 
-// To show in notification center, toggle flag
-// chrome://flags/#enable-native-notifications
-var rdr = rdr || {};
-rdr.notifications = {};
-
-rdr.notifications.defaultIcon = chrome.extension.getURL(
-  '/images/rss_icon_trans.gif');
-
 // Shows a simple desktop notification with the given title and message.
 // Message and title are interpreted as plain text.
-// Fails silently if not permitted
-rdr.notifications.show = function(title, message, iconURLString) {
+// Fails silently if not permitted.
+// To show in notification center, toggle flag
+// chrome://flags/#enable-native-notifications
 
-  // This could be optimized but there is no need
+function showNotification(title, message, iconURLString) {
   if(!Notification) {
     console.debug('Notifications are not supported');
     return;
@@ -26,10 +19,11 @@ rdr.notifications.show = function(title, message, iconURLString) {
     return;
   }
 
+  const defaultIcon = chrome.extension.getURL('/images/rss_icon_trans.gif');
   const details = {};
   details.body = message || '';
-  details.icon = iconURLString || rdr.notifications.defaultIcon;
+  details.icon = iconURLString || defaultIcon;
 
-  // Instantiating a notification implicitly shows it
+  // Instantiation is now a verb I guess
   new Notification(title || 'Untitled', details);
-};
+}
