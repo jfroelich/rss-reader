@@ -8,11 +8,8 @@ function archiveEntries(db, age, log, callback) {
   const defaultMaxAge = 10 * 24 * 60 * 60 * 1000;// 10 days in ms
 
   if(typeof age !== 'undefined') {
-    if(!Number.isInteger(age)) {
-      throw new TypeError('age not an integer');
-    }
-    if(age < 0) {
-      throw new TypeError('age not positive');
+    if(!Number.isInteger(age) || age < 0) {
+      throw new TypeError();
     }
   } else {
     age = defaultMaxAge;

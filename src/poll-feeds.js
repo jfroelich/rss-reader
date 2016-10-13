@@ -2,22 +2,12 @@
 
 'use strict';
 
-/*
-- experiment with webworker?
-- if repeatedly fail to fetch feed mark it as inactive, don't poll against
-inactive feeds
-- customizable update schedules per feed
-- backoff per feed if poll did not find updated content
-- de-activation of feeds with 404s
-- de-activation of too much time elapsed since feed had new articles
-- only poll if feed is active
-- store feed de-activated reason code
-- store feed de-activated date
-- some concept of throttling updates
-- configurable polling schedule, per poll (all feeds) or per maybe per feed
-- maybe improve the content of the notification, like show number of articles
-added or something
-*/
+// TODO: use a single favicon cache connection for favicon lookups
+// TODO: add is-active feed functionality, do not poll in-active feeds
+// TODO: deactivate unreachable feeds
+// TODO: deactivate feeds not changed for a long time
+// TODO: store deactivation reason in feed
+// TODO: store deactivation date
 
 {
 
@@ -165,13 +155,6 @@ function onUpdateFeed(entries, event) {
 function processEntry(feed, entry, callback) {
   const url = Entry.getURL(entry);
 
-  // I would prefer this to be an assert, but I think this is the first place
-  // where this is validated, and this isn't a fatal error. It just means we
-  // parsed the entry from the feed but failed to find a url for it, so we
-  // cannot store it, because we require entries have urls.
-  // Perhaps what I would rather do is some type of earlier filter of entries
-  // without urls, so that this can just be an assert, and so that the
-  // responsibility of who does this is explicit
   if(!url) {
     this.log.warn('Entry missing url', entry);
     callback();

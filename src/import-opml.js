@@ -2,8 +2,6 @@
 
 'use strict';
 
-// TODO: buffer all files before opening connection?
-
 {
 
 function importOPML(feedDb, log, callback) {
