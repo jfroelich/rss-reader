@@ -6,7 +6,7 @@
 
 function fetchFeed(requestURL, excludeEntries, log, callback) {
   if(!FeedParser) {
-    throw new ReferenceError('Missing FeedParser');
+    throw new ReferenceError();
   }
 
   const ctx = {
@@ -17,7 +17,7 @@ function fetchFeed(requestURL, excludeEntries, log, callback) {
   };
 
   ctx.log.log('Fetching feed', requestURL.toString());
-  fetchXML(requestURL, SilentConsole, onFetchXML.bind(ctx));
+  fetchXML(requestURL, log, onFetchXML.bind(ctx));
 }
 
 function onFetchXML(event) {

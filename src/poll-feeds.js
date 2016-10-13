@@ -89,9 +89,8 @@ function onGetAllFeeds(feeds) {
   this.numFeedsPending = feeds.length;
   const excludeEntries = false;
   for(let feed of feeds) {
-    const requestURL = new URL(Feed.getURL(feed));
-    fetchFeed(requestURL, excludeEntries, this.log,
-      onFetchFeed.bind(this, feed));
+    const url = new URL(Feed.getURL(feed));
+    fetchFeed(url, excludeEntries, this.log, onFetchFeed.bind(this, feed));
   }
 }
 
@@ -164,7 +163,7 @@ function onUpdateFeed(entries, event) {
 }
 
 function processEntry(feed, entry, callback) {
-  const entryTerminalURLString = Entry.getURL(entry);
+  const url = Entry.getURL(entry);
 
   // I would prefer this to be an assert, but I think this is the first place
   // where this is validated, and this isn't a fatal error. It just means we
@@ -173,17 +172,15 @@ function processEntry(feed, entry, callback) {
   // Perhaps what I would rather do is some type of earlier filter of entries
   // without urls, so that this can just be an assert, and so that the
   // responsibility of who does this is explicit
-  if(!entryTerminalURLString) {
+  if(!url) {
     this.log.warn('Entry missing url', entry);
     callback();
     return;
   }
 
-  // Rewrite the entry url
-  const entryTerminalURLObject = new URL(entryTerminalURLString);
-  const rewrittenURLObject = rewriteURL(entryTerminalURLObject);
-  if(rewrittenURLObject) {
-    Entry.addURL(entry, rewrittenURLObject.href);
+  const rewrittenURL = rewriteURL(new URL(url));
+  if(rewrittenURL) {
+    Entry.addURL(entry, rewrittenURL.href);
   }
 
   const limit = 1;
@@ -192,8 +189,6 @@ function processEntry(feed, entry, callback) {
 }
 
 function onFindEntry(feed, entry, callback, matches) {
-
-  // The entry already exists if there was at least one match
   if(matches.length) {
     callback();
     return;
@@ -206,38 +201,19 @@ function onFindEntry(feed, entry, callback, matches) {
     entry.faviconURLString = feed.faviconURLString;
   }
 
-  // This denormalization avoids the need to query for the feed's title when
-  // displaying the entry. Assume feed.title was sanitized.
   if(feed.title) {
     entry.feedTitle = feed.title;
   }
 
-  const entryTerminalURLString = Entry.getURL(entry);
-  const entryTerminalURLObject = new URL(entryTerminalURLString);
-
-  // Check that the url does not belong to a domain that obfuscates its content
-  // with things like advertisement interception or full javascript. While these
-  // documents can be fetched, there is no point to doing so. We still want to
-  // store the entry, but we just do not try and augment its content.
-  if(rdr.poll.isFetchResistantURL(entryTerminalURLObject)) {
+  const url = new URL(Entry.getURL(entry));
+  if(isInterstitialURL(url) || isScriptGeneratedContent(url) ||
+    isPDFURL(url)) {
     prepLocalDoc(entry);
     this.cache.addEntry(this.conn, entry, callback);
     return;
   }
 
-  // Check if the entry url points to a PDF. This limits the amount of
-  // networking in the general case, even though the extension isn't a real
-  // indication of the mime type and may have some false positives. Even if
-  // this misses it, false negatives are not too important.
-  if(isPDFURL(entryTerminalURLObject)) {
-    prepLocalDoc(entry);
-    this.cache.addEntry(this.conn, entry, callback);
-    return;
-  }
-
-
-  fetchHTML(entryTerminalURLObject, SilentConsole,
-    onFetchEntry.bind(this, entry, callback));
+  fetchHTML(url, this.log, onFetchEntry.bind(this, entry, callback));
 }
 
 function isPDFURL(url) {
@@ -278,7 +254,7 @@ function onFetchEntry(entry, callback, event) {
   // - i should be querying against the redirect url
 
   const doc = event.document;
-  rdr.poll.lazyimg.updateImages(doc);
+  transformLazyImages(doc);
   DOMScrub.filterSourcelessImages(doc);
   DOMScrub.filterInvalidAnchors(doc);
   rdr.poll.resolve.start(doc, event.responseURL);
@@ -337,7 +313,7 @@ function onEntryProcessed(feedContext, event) {
 
   if(count === feedContext.numEntries) {
     if(feedContext.numEntriesAdded) {
-      updateBadge(this.conn, SilentConsole);
+      updateBadge(this.conn, this.log);
     }
 
     this.numFeedsPending--;

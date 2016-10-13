@@ -75,7 +75,8 @@ function onResponse(response) {
 }
 
 function onReadText(text) {
-  this.log.debug('Character count:', text.length);
+  this.log.debug('Read text of %s (%s characters)', this.requestURL.href,
+    text.length);
 
   let doc = null;
   try {
@@ -94,7 +95,6 @@ function onReadText(text) {
     'responseURLString': this.responseURL,
     'lastModifiedDate': this.lastModifiedDate
   };
-  this.log.debug('Success event:', event);
   this.callback(event);
 }
 

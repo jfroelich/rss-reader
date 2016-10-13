@@ -2,11 +2,20 @@
 
 'use strict';
 
-var rdr = rdr || {};
-rdr.poll = rdr.poll || {};
-rdr.poll.lazyimg = {};
+// TODO: Still see cases like this: <img data-original="url" src="url">
+// Instead of checking for absence of src, maybe always overwrite
+// TODO: browser may tolerate spaces in urls?
 
-rdr.poll.lazyimg.attrs = [
+{
+
+function transformLazyImages(doc) {
+  const images = doc.querySelectorAll('img');
+  for(let img of images) {
+    transformImage(img);
+  }
+}
+
+const attrs = [
   'load-src',
   'data-src',
   'data-original-desktop',
@@ -19,31 +28,28 @@ rdr.poll.lazyimg.attrs = [
   'data-default-src'
 ];
 
-rdr.poll.lazyimg.updateImages = function(doc) {
-  const images = doc.querySelectorAll('img');
-  for(let img of images) {
-    rdr.poll.lazyimg.transform(img);
-  }
-};
-
-rdr.poll.lazyimg.transform = function(img) {
+function transformImage(img) {
   if(img.hasAttribute('src') || img.hasAttribute('srcset')) {
     return;
   }
 
-  for(let altName of rdr.poll.lazyimg.attrs) {
+  for(let altName of attrs) {
     if(img.hasAttribute(altName)) {
       const altValue = img.getAttribute(altName);
-      if(altValue && rdr.poll.lazyimg.isValidURL(altValue)) {
+      if(altValue && isValidURL(altValue)) {
         img.removeAttribute(altName);
         img.setAttribute('src', altValue);
         return;
       }
     }
   }
-};
+}
 
 // Only minimal validation against possibly relative urls
-rdr.poll.lazyimg.isValidURL = function(str) {
+function isValidURL(str) {
   return !str.trim().includes(' ');
-};
+}
+
+this.transformLazyImages = transformLazyImages;
+
+}
