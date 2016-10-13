@@ -330,7 +330,7 @@ function hideSubPreview() {
 
 function startSubscription(url) {
   if(!isURLObject(url)) {
-    throw new TypeError('invalid url param: ' + url);
+    throw new TypeError();
   }
 
   hideSubPreview();
@@ -345,43 +345,49 @@ function startSubscription(url) {
   const feed = {};
   Feed.addURL(feed, url.href);
 
-  const conn = null;
+  const feedDbConn = null;
   const suppressNotifications = false;
-  subTask.start(conn, feed, suppressNotifications, SilentConsole, onSubscribe);
+  const iconCacheConn = null;
+  const log = console; //SilentConsole;
+  subscribe(feedDbConn, iconCacheConn, feed, suppressNotifications,
+    log, startSubscriptionOnSubscribe.bind(null, url));
+}
 
-  function onSubscribe(event) {
-    if(event.type !== 'success') {
-      hideSubMonitor(showSubErrorMsg.bind(null, event.type));
-      return;
-    }
-
-    appendFeed(event.feed, true);
-    updateFeedCount();
-    const feedURL = Feed.getURL(event.feed);
-    appendSubMonitorMsg('Subscribed to ' + feedURL);
-
-    // Hide the sub monitor then switch back to the main feed list
-    hideSubMonitor(function() {
-      const subElement = document.getElementById('mi-subscriptions');
-      showSection(subElement);
-    }, true);
+function startSubscriptionOnSubscribe(url, event) {
+  if(event.type !== 'success') {
+    const fadeOut = false;
+    hideSubMonitor(startSubscriptionShowErrorMessage.bind(null, url,
+      event.type), fadeOut);
+    return;
   }
 
-  function showSubErrorMsg(type) {
+  appendFeed(event.feed, true);
+  updateFeedCount();
+  const feedURL = Feed.getURL(event.feed);
+  appendSubMonitorMsg('Subscribed to ' + feedURL);
 
-    console.debug('error: showing error with type', type);
+  // Hide the sub monitor then switch back to the main feed list
+  const fadeOut = true;
+  hideSubMonitor(function() {
+    const subElement = document.getElementById('mi-subscriptions');
+    showSection(subElement);
+  }, fadeOut);
+}
 
-    if(type === 'ConstraintError') {
-      showErrorMsg('Already subscribed to ' + url.href);
-    } else if(type === 'FetchError') {
-      showErrorMsg('Failed to fetch ' + url.href);
-    } else if(type === 'ConnectionError') {
-      showErrorMsg('Unable to connect to database');
-    } else if(type === 'FetchMimeTypeError') {
-      showErrorMsg(`${url.href} is not xml`);
-    } else {
-      showErrorMsg('Unknown error');
-    }
+function startSubscriptionShowErrorMessage(url, type) {
+
+  console.debug('Error: showing error with type', type);
+
+  if(type === 'ConstraintError') {
+    showErrorMsg('Already subscribed to ' + url.href);
+  } else if(type === 'FetchError') {
+    showErrorMsg('Failed to fetch ' + url.href);
+  } else if(type === 'ConnectionError') {
+    showErrorMsg('Unable to connect to database');
+  } else if(type === 'FetchMimeTypeError') {
+    showErrorMsg(`${url.href} is not xml`);
+  } else {
+    showErrorMsg('Unknown error');
   }
 }
 
@@ -608,8 +614,8 @@ function onSearchGoogleFeeds(event) {
   resultsElement.appendChild(itemElement);
 
   // Lookup the favicons for the results.
-  // TODO: this should be the responsibility of searchGoogleFeeds and not
-  // options. This is way too much logic in the UI I think
+  // TODO: this should be creating one conn and sharing it across lookups
+  // now that lookupFavicon accepts a conn parameter
 
   let numFaviconsProcessed = 0;
   for(let result of results) {
@@ -621,8 +627,9 @@ function onSearchGoogleFeeds(event) {
       }
       if(linkURL) {
         const cache = new FaviconCache(SilentConsole);
+        const conn = null;
         const doc = null;
-        lookupFavicon(cache, linkURL, doc, SilentConsole,
+        lookupFavicon(cache, conn, linkURL, doc, SilentConsole,
           onLookupFavicon.bind(null, result));
       } else {
         numFaviconsProcessed++;
@@ -740,7 +747,8 @@ function unsubButtonOnClick(event) {
     throw new TypeError('invalid feed id', event.target.value);
   }
 
-  unsubscribe(feedId, SilentConsole, onUnsubscribeCompleted.bind(null, feedId));
+  const log = console; //SilentConsole;
+  unsubscribe(feedId, log, onUnsubscribeCompleted.bind(null, feedId));
 }
 
 // TODO: provide visual feedback on success or error

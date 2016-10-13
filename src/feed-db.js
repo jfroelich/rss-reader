@@ -2,6 +2,7 @@
 
 'use strict';
 
+// TODO: merge with feed-cache
 // TODO: revert upgrade to using a version migration approach
 
 function FeedDb(log) {

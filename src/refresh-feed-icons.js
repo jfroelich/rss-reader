@@ -2,20 +2,31 @@
 
 'use strict';
 
+// TODO: open faviconcache conn once then share across lookups
+
 {
 
 function refreshFeedIcons(log) {
   log.log('Refreshing feed favicons...');
-  const ctx = {'pendingCount': 0, 'log': log};
-  const db = new FeedDb();
-  db.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
+  const ctx = {
+    'pendingCount': 0,
+    'numFeedsModified': 0,
+    'log': log,
+    'conn': null,
+    'feedDb': new FeedDb(log),
+    'feedCache': new FeedCache(log),
+    'iconCache': new FaviconCache(log),
+    'iconCacheConn': null
+  };
+  ctx.feedDb.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
 }
 
 function openDBOnSuccess(event) {
-  this.log.log('Connected to database');
+  this.log.debug('Connected to database', this.feedDb.name);
   this.conn = event.target.result;
-  const feedCache = new FeedCache(SilentConsole);
-  feedCache.getAllFeeds(this.conn, onGetAllFeeds.bind(this));
+
+  this.iconCache.connect(iconCacheConnectOnSuccess.bind(this),
+    iconCacheConnectOnError.bind(this));
 }
 
 function openDBOnError(event) {
@@ -23,22 +34,30 @@ function openDBOnError(event) {
   onComplete.call(this);
 }
 
+function iconCacheConnectOnSuccess(event) {
+  this.log.debug('Connected to favicon cache');
+  this.iconCacheConn = event.target.result;
+  this.feedCache.getAllFeeds(this.conn, onGetAllFeeds.bind(this));
+}
+
+function iconCacheConnectOnError(event) {
+  this.log.error(event.target.error);
+  onComplete.call(this);
+}
+
 function onGetAllFeeds(feeds) {
-  this.pendingCount = feeds.length;
-  if(!this.pendingCount) {
-    this.log.log('No feeds found');
+  if(!feeds.length) {
     onComplete.call(this);
     return;
   }
 
+  this.pendingCount = feeds.length;
   for(let feed of feeds) {
     lookup.call(this, feed);
   }
 }
 
 function lookup(feed) {
-  this.log.debug('Checking', Feed.getURL(feed));
-
   let lookupURL = null;
   if(feed.link) {
     lookupURL = new URL(feed.link);
@@ -47,64 +66,55 @@ function lookup(feed) {
     lookupURL = new URL(feedURL.origin);
   }
 
-  const iconCache = new FaviconCache(SilentConsole);
+  this.log.debug('Looking up favicon for feed %s using url %s',
+    Feed.getURL(feed), lookupURL.href);
+
   const doc = null;
-  lookupFavicon(iconCache, lookupURL, doc, SilentConsole,
+  lookupFavicon(this.iconCache, this.iconCacheConn, lookupURL, doc, this.log,
     onLookup.bind(this, feed));
 }
 
 function onLookup(feed, iconURL) {
-  this.log.debug('lookup result', Feed.getURL(feed), iconURL ?
+  this.log.debug('lookupFavicon result for feed', Feed.getURL(feed), iconURL ?
     iconURL.href: 'no icon');
 
   if(iconURL) {
     if(!feed.faviconURLString || feed.faviconURLString !== iconURL.href) {
-
       this.log.debug('Setting feed %s favicon to %s', Feed.getURL(feed),
         iconURL.href);
+      this.numFeedsModified++;
       feed.faviconURLString = iconURL.href;
-      feed.dateUpdated = new Date();
-
-      // TODO: delegate to FeedCache.putFeed, move .dateUpdated setting
-      // into it. Then maybe think about how to use updateFeed instead, maybe
-      // pass in a flag to skip sanitize/filter, or maybe have updateFeed call
-      // putFeed but updateFeed does extra stuff
-      const tx = this.conn.transaction('feed', 'readwrite');
-      const store = tx.objectStore('feed');
-      const request = store.put(feed);
-
-      // Only listen if logging
-      if(this.log !== SilentConsole) {
-        request.onsuccess = onPutSuccess.bind(this, feed);
-        request.onerror = onPutError.bind(this, feed);
-      }
+      this.feedCache.putFeed(this.conn, feed, onPutFeed.bind(this));
     }
   }
 
-  // The feed has been processed. If pendingCount reaches 0 then done
   this.pendingCount--;
   if(!this.pendingCount) {
     onComplete.call(this);
   }
 }
 
-function onPutSuccess(feed, event) {
-  this.log.debug('Updated feed', Feed.getURL(feed));
-}
-
-// Treat database put errors as non-fatal
-function onPutError(feed, event) {
-  this.log.error(event.target.error);
+function onPutFeed(type, feed) {
+  if(type === 'success') {
+    this.log.debug('Updated feed', Feed.getURL(feed));
+  }
 }
 
 function onComplete() {
+  if(this.iconCacheConn) {
+    this.log.debug('Closing icon cache connection');
+    this.iconCacheConn.close();
+  }
+
   if(this.conn) {
-    this.log.debug('Requesting database connection to close');
+    this.log.debug('Requesting %s database connection to close',
+      this.feedDb.name);
     this.conn.close();
   }
 
   // This may occur in the log prior to pending requests resolving
-  this.log.log('Finished refreshing feed favicons');
+  this.log.log('Finished refreshing feed favicons, modified',
+    this.numFeedsModified, 'feeds');
 }
 
 this.refreshFeedIcons = refreshFeedIcons;

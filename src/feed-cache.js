@@ -45,13 +45,36 @@ addFeed(conn, feed, callback) {
 
 _addFeedOnSuccess(feed, callback, event) {
   feed.id = event.target.result;
-  this.log.debug('Added feed %s with new %s', Feed.getURL(feed), feed.id);
+  this.log.debug('Added feed %s with new id %s', Feed.getURL(feed), feed.id);
   callback({'type': 'success', 'feed': feed});
 }
 
 _addFeedOnError(feed, callback, event) {
   this.log.error('Error adding feed', Feed.getURL(feed), event.target.error);
   callback({'type': 'error'});
+}
+
+// Calls back with whether the db contains a feed with the given url
+// TODO: normalize feed url?
+hasFeedURL(conn, url, callback) {
+  this.log.debug('Checking for feed with url', url);
+  const tx = conn.transaction('feed');
+  const store = tx.objectStore('feed');
+  const index = store.index('urls');
+  const request = index.get(url);
+  request.onsuccess = this._hasFeedURLOnSuccess.bind(this, url, callback);
+  request.onerror = this._hasFeedURLOnError.bind(this, url, callback);
+}
+
+_hasFeedURLOnSuccess(url, callback, event) {
+  const feed = event.target.result;
+  this.log.debug('Found feed with url %s? %s', url, !!feed);
+  callback(!!feed);
+}
+
+_hasFeedURLOnError(url, callback, event) {
+  this.log.debug(event.target.error);
+  callback(false);
 }
 
 // Assumes urls are normalized
@@ -112,6 +135,31 @@ _findEntryOnComplete(ctx, event) {
   this.log.log('Found %s entries for [%s]', ctx.matches.length,
     ctx.urls.join(','));
   ctx.callback(ctx.matches);
+}
+
+putFeed(conn, feed, callback) {
+  feed.dateUpdated = new Date();
+
+  const tx = conn.transaction('feed', 'readwrite');
+  const store = tx.objectStore('feed');
+  const request = store.put(feed);
+  request.onsuccess = this._putFeedOnSuccess.bind(this, feed, callback);
+  request.onerror = this._putFeedOnError.bind(this, feed, callback);
+  return tx;
+}
+
+_putFeedOnSuccess(feed, callback, event) {
+  this.log.debug('Successfully put feed', Feed.getURL(feed));
+  if(!('id' in feed)) {
+    this.log.debug('Setting put feed new id to', event.target.result);
+    feed.id = event.target.result;
+  }
+  callback('success', feed);
+}
+
+_putFeedOnError(feed, callback, event) {
+  this.log.debug('Error putting feed', Feed.getURL(feed), event.target.error);
+  callback('error');
 }
 
 updateFeed(conn, feed, callback) {

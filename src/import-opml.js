@@ -6,7 +6,7 @@
 
 {
 
-function importOPML(db, log, callback) {
+function importOPML(feedDb, log, callback) {
   if(!parseXML) {
     throw new ReferenceError('parseXML');
   }
@@ -28,7 +28,10 @@ function importOPML(db, log, callback) {
     'uploader': uploader,
     'files': null,
     'log': log,
-    'db': db
+    'feedDb': feedDb,
+    'feedDbConn': null,
+    'iconCacheConn': null,
+    'iconCache': new FaviconCache(log)
   };
   uploader.onchange = onUploaderChange.bind(ctx);
   uploader.click();
@@ -51,18 +54,36 @@ function onUploaderChange(event) {
   this.uploader.removeEventListener('change', onUploaderChange);
 
   this.files = [...this.uploader.files];
-  if(!this.files || !this.files.length) {
+  this.files = filterNonXMLFiles(this.files);
+  this.files = filterEmptyFiles(this.files);
+
+  if(!this.files.length) {
     onComplete.call(this);
     return;
   }
 
-  this.db.open(openDBOnSuccess.bind(this), openDBOnError.bind(this));
+  this.feedDb.open(openDBOnSuccess.bind(this), openDBOnError.bind(this));
 }
 
 function openDBOnSuccess(event) {
-  this.db = event.target.result;
-  this.files = filterNonXMLFiles(this.files);
-  this.files = filterEmptyFiles(this.files);
+  this.log.debug('Connected to database');
+  this.feedDbConn = event.target.result;
+
+  // TODO: open a connection to favicon cache here, store it in context, then
+  // continue.
+  this.iconCache.connect(iconCacheConnectOnSuccess.bind(this),
+    iconCacheConnectOnError.bind(this));
+}
+
+function openDBOnError(event) {
+  this.log.error(event.target.error);
+  onComplete.call(this);
+}
+
+function iconCacheConnectOnSuccess(event) {
+  this.log.debug('Connected to database', this.iconCache.name);
+
+  this.iconCacheConn = event.target.result;
 
   for(let file of this.files) {
     this.log.debug('Loading', file.name);
@@ -73,7 +94,7 @@ function openDBOnSuccess(event) {
   }
 }
 
-function openDBOnError(event) {
+function iconCacheConnectOnError(event) {
   this.log.error(event.target.error);
   onComplete.call(this);
 }
@@ -81,11 +102,6 @@ function openDBOnError(event) {
 function filterNonXMLFiles(files) {
   const output = [];
   for(let file of files) {
-    // All files should have a type
-    if(!file.type) {
-      throw new Error('file has no type');
-    }
-
     if(file.type.toLowerCase().includes('xml')) {
       output.push(file);
     }
@@ -131,8 +147,10 @@ function readerOnLoad(file, event) {
 
   const suppressNotifications = true;
   const callback = null;
+
   for(let feed of feeds) {
-    subscribe(this.db, feed, suppressNotifications, SilentConsole, callback);
+    subscribe(this.feedDbConn, this.iconCacheConn, feed, suppressNotifications,
+      this.log, callback);
   }
 
   onFileProcessed.call(this, file);
@@ -158,8 +176,13 @@ function onComplete() {
   if(this.uploader) {
     this.uploader.remove();
   }
-  if(this.db) {
-    this.db.close();
+  if(this.feedDbConn) {
+    this.log.debug('Closing feed cache database connection');
+    this.feedDbConn.close();
+  }
+  if(this.iconCacheConn) {
+    this.log.debug('Closing icon cache database connection');
+    this.iconCacheConn.close();
   }
   if(this.callback) {
     this.callback();

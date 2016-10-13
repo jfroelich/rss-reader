@@ -2,9 +2,17 @@
 
 'use strict';
 
+// TODO: maybe lookup favicon needs to accept an optional cache connection so
+// that refreshFeedIcons does not open a connection for each lookup. However the
+// problem with using two parameters is there is no constraint that the conn
+// belongs to the cache. Or maybe it isn't a problem.
+// Also so that poll-feeds can share across entry lookups once that is added
+// Possibly also for import opml because it subs n-feeds each of which need
+// to do a lookup (which means subscribe also would need the param though)
+
 {
 
-function lookupFavicon(cache, url, doc, log, callback) {
+function lookupFavicon(cache, conn, url, doc, log, callback) {
   log = log || SilentConsole;
   log.log('Lookup favicon', url.toString());
   const ctx = {
@@ -12,18 +20,22 @@ function lookupFavicon(cache, url, doc, log, callback) {
     'url': url,
     'callback': callback,
     'doc': doc,
-    'conn': null,
+    'conn': conn,
+    'shouldCloseConn': false,
     'entry': null,
     'log': log,
     'maxAge': cache.defaultMaxAge
   };
 
-  cache.connect(connectOnSuccess.bind(ctx), connectOnError.bind(ctx));
+  if(conn) {
+    log.debug('Lookup using provided connection');
+    startLookup.call(ctx);
+  } else {
+    cache.connect(connectOnSuccess.bind(ctx), connectOnError.bind(ctx));
+  }
 }
 
-function connectOnSuccess(event) {
-  this.log.log('Connected to favicon cache');
-  this.conn = event.target.result;
+function startLookup() {
   if(this.doc) {
     const iconURL = searchDocument.call(this, this.doc, this.url);
     if(iconURL) {
@@ -35,6 +47,13 @@ function connectOnSuccess(event) {
   }
 
   this.cache.find(this.conn, this.url, onFindRequestURL.bind(this));
+}
+
+function connectOnSuccess(event) {
+  this.log.log('Connected to database', this.cache.name);
+  this.conn = event.target.result;
+  this.shouldCloseConn = true;
+  startLookup.call(this);
 }
 
 function connectOnError(event) {
@@ -218,7 +237,7 @@ function onFetchRootIcon(redirectURL, iconURLString) {
 }
 
 function onLookupComplete(iconURLObject) {
-  if(this.conn) {
+  if(this.shouldCloseConn && this.conn) {
     this.log.debug('Requesting database to close');
     this.conn.close();
   }
@@ -236,7 +255,7 @@ const iconSelectors = [
 function searchDocument(doc, baseURLObject) {
   if(doc.documentElement.localName !== 'html' || !doc.head) {
     this.log.debug('Document is not html or missing <head>',
-        doc.documentElement.outerHTML);
+        doc.documentElement.nodeName);
     return;
   }
 

@@ -37,7 +37,7 @@ isExpired(entry, maxAge) {
 }
 
 find(conn, url, callback) {
-  this.log.log('FIND', url.href);
+  this.log.log('Checking favicon cache for page url', url.href);
   const pageURLString = this.normalizeURL(url).href;
   const tx = conn.transaction('favicon-cache');
   const store = tx.objectStore('favicon-cache');
@@ -47,12 +47,14 @@ find(conn, url, callback) {
 }
 
 _findOnSuccess(url, callback, event) {
-  if(event.target.result) {
-    this.log.log('HIT', url.href, event.target.result.iconURLString);
+  const result = event.target.result;
+  if(result) {
+    this.log.log('Found icon url %s in cache for url %s', result.iconURLString,
+      url.href);
   } else {
-    this.log.log('MISS', url.href);
+    this.log.log('Did not find icon in cache for url', url.href);
   }
-  callback(event.target.result);
+  callback(result);
 }
 
 _findOnError(url, callback, event) {

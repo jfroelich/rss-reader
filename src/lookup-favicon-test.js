@@ -7,11 +7,12 @@
 
 function test(urlString) {
   const cache = new FaviconCache(console);
+  const conn = null;
   const url = new URL(urlString);
   const doc = null;
   const callback = function(url) {
     console.log('Output:', url ? url.href : null);
   };
 
-  lookupFavicon(cache, url, doc, console, callback);
+  lookupFavicon(cache, conn, url, doc, console, callback);
 }

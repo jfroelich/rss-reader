@@ -55,14 +55,14 @@ chrome.alarms.get('healthcheck', function(alarm) {
 chrome.alarms.onAlarm.addListener(function(alarm) {
   console.debug('Alarm wakeup', alarm.name);
   if(alarm.name === 'archive') {
-    const age = 10 * 24 * 60 * 60 * 1000;// 10 days in ms
+    const age = 1 * 24 * 60 * 60 * 1000;// 1 day in ms
     const callback = null;
-    const db = new FeedDb();
+    const db = new FeedDb(SilentConsole);
     archiveEntries(db, age, SilentConsole, callback);
   } else if(alarm.name === 'poll') {
     const forceResetLock = false;
     const allowMeteredConnections = false;
-    const log = console;// SilentConsole;
+    const log = SilentConsole;
     pollFeeds(forceResetLock, allowMeteredConnections, log);
   } else if(alarm.name === 'compact-favicons') {
     const cache = new FaviconCache(SilentConsole);

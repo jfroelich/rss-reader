@@ -4,9 +4,11 @@
 
 {
 
-function subscribe(conn, feed, suppressNotifications, log, callback) {
+function subscribe(feedDbConn, iconCacheConn, feed, suppressNotifications, log,
+  callback) {
+
   if(!Feed.getURL(feed)) {
-    throw new TypeError('feed missing url');
+    throw new TypeError();
   }
 
   log = log || SilentConsole;
@@ -19,23 +21,28 @@ function subscribe(conn, feed, suppressNotifications, log, callback) {
     'log': log,
     'suppressNotifications': suppressNotifications,
     'callback': callback,
-    'conn': conn,
-    'feedCache': new FeedCache()
+    'feedDbConn': feedDbConn,
+    'iconCacheConn': iconCacheConn,
+    'feedCache': new FeedCache(log),
+    'feedDb': new FeedDb(log)
   };
 
-  if(conn) {
-    findFeed.call(ctx);
+  if(feedDbConn) {
+    log.debug('Checking if subscribed using provided connection');
+    ctx.feedCache.hasFeedURL(feedDbConn, Feed.getURL(feed),
+      onFindFeed.bind(ctx));
   } else {
-    ctx.shouldCloseDB = true;
-    const feedDb = new FeedDb();
-    feedDb.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
+    ctx.feedDb.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
   }
 }
 
 function openDBOnSuccess(event) {
-  this.log.log('Connected to database');
-  this.conn = event.target.result;
-  findFeed.call(this);
+  this.log.log('Connected to database', this.feedDb.name);
+  this.feedDbConn = event.target.result;
+  this.shouldCloseDB = true;
+  this.log.debug('Checking if subscribed using on demand connection');
+  this.feedCache.hasFeedURL(this.feedDbConn, Feed.getURL(this.feed),
+    onFindFeed.bind(this));
 }
 
 function openDBOnError(event) {
@@ -43,38 +50,21 @@ function openDBOnError(event) {
   onComplete.call(this, {'type': 'ConnectionError'});
 }
 
-// TODO: normalize feed url
-function findFeed() {
-  const feedURLString = Feed.getURL(this.feed);
-  this.log.log('Checking if subscribed to', feedURLString);
-  const tx = this.conn.transaction('feed');
-  const store = tx.objectStore('feed');
-  const index = store.index('urls');
-  const request = index.get(feedURLString);
-  request.onsuccess = findFeedOnSuccess.bind(this);
-  request.onerror = findFeedOnError.bind(this);
-}
-
-function findFeedOnSuccess(event) {
-  if(event.target.result) {
+function onFindFeed(didFind, event) {
+  if(didFind) {
     console.debug('Already subscribed to', Feed.getURL(this.feed));
     onComplete.call(this, {'type': 'ConstraintError'});
     return;
   }
 
   if('onLine' in navigator && !navigator.onLine) {
-    this.feedCache.addFeed(this.conn, this.feed, onAddFeed.bind(this));
+    this.feedCache.addFeed(this.feedDbConn, this.feed, onAddFeed.bind(this));
     return;
   }
 
   const requestURL = new URL(Feed.getURL(this.feed));
   const excludeEntries = true;
   fetchFeed(requestURL, excludeEntries, this.log, onFetchFeed.bind(this));
-}
-
-function findFeedOnError(event) {
-  this.log.error(event.target.error);
-  onComplete.call(this, {'type': 'FindQueryError'});
 }
 
 function onFetchFeed(event) {
@@ -89,17 +79,23 @@ function onFetchFeed(event) {
   }
 
   // TODO: before merging and looking up favicon and adding, check if the user
-  // is already subscribed to the redirected url
-  // TODO: if falling back to feed url instead of link, use origin, because
-  // we know that feed is just an xml file, this reduces the hoops that
-  // lookupFavicon jumps through internally
+  // is already subscribed to the redirected url, if a redirect occurred
 
   this.feed = Feed.merge(this.feed, event.feed);
   const iconCache = new FaviconCache(this.log);
-  const urlString = this.feed.link ? this.feed.link : Feed.getURL(this.feed);
-  const urlObject = new URL(urlString);
+
+  let url = null;
+  if(this.feed.link) {
+    url = new URL(this.feed.link);
+  } else {
+    const feedURL = new URL(Feed.getURL(this.feed));
+    // We know the actual url is not a webpage, but its origin probably is
+    url = new URL(feedURL.origin);
+  }
+
   const doc = null;
-  lookupFavicon(iconCache, urlObject, doc, this.log, onLookupIcon.bind(this));
+  lookupFavicon(iconCache, this.iconCacheConn, url, doc, this.log,
+    onLookupIcon.bind(this));
 }
 
 function onLookupIcon(iconURL) {
@@ -107,12 +103,12 @@ function onLookupIcon(iconURL) {
     this.feed.faviconURLString = iconURL.href;
   }
 
-  this.feedCache.addFeed(this.conn, this.feed, onAddFeed.bind(this));
+  this.feedCache.addFeed(this.feedDbConn, this.feed, onAddFeed.bind(this));
 }
 
 function onAddFeed(event) {
   if(event.type === 'success') {
-    this.log.log('Successfully Stored new feed');
+    this.log.log('Successfully stored new feed');
     this.didSubscribe = true;
     onComplete.call(this, {'type': 'success', 'feed': event.feed});
   } else {
@@ -121,9 +117,9 @@ function onAddFeed(event) {
 }
 
 function onComplete(event) {
-  if(this.shouldCloseDB && this.conn) {
-    this.log.log('Requesting database to close');
-    this.conn.close();
+  if(this.shouldCloseDB && this.feedDbConn) {
+    this.log.log('Requesting database %s to close', this.feedDb.name);
+    this.feedDbConn.close();
   }
 
   if(!this.suppressNotifications && this.didSubscribe) {
