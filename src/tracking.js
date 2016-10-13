@@ -4,6 +4,9 @@
 
 // TODO: hosts should be defined externally so that if i want to
 // change it, I don't have to change the code
+// TODO: I am not seeing any of the last 4 urls here being filtered. Maybe
+// I am looking for the wrong thing? I have not seen these occur even
+// once? Are they just script origins?
 
 {
 

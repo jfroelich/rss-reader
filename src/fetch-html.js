@@ -2,11 +2,7 @@
 
 'use strict';
 
-/*
-TODO:
-- use new fetch API
-*/
-
+// TODO: use the fetch API
 {
 
 function fetchHTML(requestURL, log, callback) {

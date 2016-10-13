@@ -2,10 +2,9 @@
 
 'use strict';
 
-{ // Begin file block scope
+{
 
 const viewURL = chrome.extension.getURL('slideshow.html');
-
 const newTabURL = 'chrome://newtab/';
 
 // TODO: is there a way to not do this on every page load?
@@ -30,4 +29,4 @@ function onQueryForNewTab(tabs) {
   }
 }
 
-} // End file block scope
+}

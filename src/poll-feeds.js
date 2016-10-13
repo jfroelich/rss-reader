@@ -257,7 +257,7 @@ function onFetchEntry(entry, callback, event) {
   transformLazyImages(doc);
   DOMScrub.filterSourcelessImages(doc);
   DOMScrub.filterInvalidAnchors(doc);
-  rdr.poll.resolve.start(doc, event.responseURL);
+  resolveDocument(doc, this.log, event.responseURL);
   filterTrackingImages(doc);
   setImageDimensions(doc, this.log,
     onSetImageDimensions.bind(this, entry, doc, callback));
