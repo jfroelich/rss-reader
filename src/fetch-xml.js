@@ -53,7 +53,7 @@ function onResponse(response) {
   this.log.debug('Type:', type);
   if(type) {
     const normType = type.toLowerCase();
-    if(!normType.includes('xml') && normType.includes('text/html')) {
+    if(!normType.includes('xml') && !normType.includes('text/html')) {
       this.log.debug(requestURL.href, 'invalid type', type);
       this.callback({'type': 'typeerror'});
       return;
