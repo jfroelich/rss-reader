@@ -2,8 +2,6 @@
 
 'use strict';
 
-// TODO: open faviconcache conn once then share across lookups
-
 {
 
 function refreshFeedIcons(log) {
@@ -24,7 +22,6 @@ function refreshFeedIcons(log) {
 function openDBOnSuccess(event) {
   this.log.debug('Connected to database', this.feedDb.name);
   this.conn = event.target.result;
-
   this.iconCache.connect(iconCacheConnectOnSuccess.bind(this),
     iconCacheConnectOnError.bind(this));
 }

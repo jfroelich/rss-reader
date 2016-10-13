@@ -7,7 +7,7 @@ function parseXML(str) {
   const doc = parser.parseFromString(str, 'application/xml');
 
   if(!doc) {
-    throw new Error('parseFromString did not produce a document');
+    throw new Error('Missing document');
   }
 
   if(!doc.documentElement) {

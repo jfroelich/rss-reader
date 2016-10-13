@@ -2,12 +2,10 @@
 
 'use strict';
 
-/*
-TODO: remove subscription preview
-TODO: resolve searchGoogleFeeds favicons after displaying results, async
-*/
+// TODO: remove subscription preview
+// TODO: resolve searchGoogleFeeds favicons after displaying results, async
 
-{ // Begin file block scope
+{
 
 let currentMenuItem = null;
 let currentSection = null;
@@ -1168,4 +1166,4 @@ function onDOMContentLoaded(event) {
 
 document.addEventListener('DOMContentLoaded', onDOMContentLoaded);
 
-} // End file block scope
+}

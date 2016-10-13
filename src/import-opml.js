@@ -36,7 +36,7 @@ function importOPML(feedDb, log, callback) {
   log.debug('Clicked uploader');
 }
 
-function parseFromString(str) {
+function parseOPML(str) {
   const doc = parseXML(str);
   if(!doc) {
     throw new Error('parseXML did not yield a document');
@@ -64,11 +64,8 @@ function onUploaderChange(event) {
 }
 
 function openDBOnSuccess(event) {
-  this.log.debug('Connected to database');
+  this.log.debug('Connected to database', this.feedDb.name);
   this.feedDbConn = event.target.result;
-
-  // TODO: open a connection to favicon cache here, store it in context, then
-  // continue.
   this.iconCache.connect(iconCacheConnectOnSuccess.bind(this),
     iconCacheConnectOnError.bind(this));
 }
@@ -80,11 +77,9 @@ function openDBOnError(event) {
 
 function iconCacheConnectOnSuccess(event) {
   this.log.debug('Connected to database', this.iconCache.name);
-
   this.iconCacheConn = event.target.result;
-
   for(let file of this.files) {
-    this.log.debug('Loading', file.name);
+    this.log.debug('Loading file', file.name);
     const reader = new FileReader();
     reader.onload = readerOnLoad.bind(this, file);
     reader.onerror = readerOnError.bind(this, file);
@@ -123,7 +118,7 @@ function readerOnLoad(file, event) {
   const text = event.target.result;
   let doc;
   try {
-    doc = parseFromString(text);
+    doc = parseOPML(text);
   } catch(error) {
     this.log.warn(file.name, error);
     onFileProcessed.call(this, file);
@@ -136,16 +131,11 @@ function readerOnLoad(file, event) {
   outlines = outlines.filter(outlineHasURL);
   outlines.forEach(deserializeOutlineURL);
   outlines = outlines.filter(outlineHasURLObject);
-
-  // It is probably faster to reduce the number of subscribe errors that will
-  // occur here rather than during
   outlines = filterDuplicateOutlines(outlines);
 
   const feeds = outlines.map(createFeedFromOutline);
-
   const suppressNotifications = true;
   const callback = null;
-
   for(let feed of feeds) {
     subscribe(this.feedDbConn, this.iconCacheConn, feed, suppressNotifications,
       this.log, callback);
@@ -162,8 +152,6 @@ function readerOnError(file, event) {
 function onFileProcessed(file) {
   this.log.debug('Processed file "', file.name, '"');
   this.numFilesProcessed++;
-  // Compare against this.files, not uploader.files, because we have filtered
-  // out some files before processing
   if(this.numFilesProcessed === this.files.length) {
     onComplete.call(this);
   }

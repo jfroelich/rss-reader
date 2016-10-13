@@ -2,13 +2,10 @@
 
 'use strict';
 
-/*
-TODO: maybe replaceTags should accept a whitelist of tags to keep
-*/
-
 // Returns a new string where html elements were replaced with the optional
 // replacement string. HTML entities remain (except some will be
 // replaced, like &#32; with space).
+// TODO: maybe accept a whitelist of tags to keep
 function replaceTags(inputString, repString) {
 
   if(typeof inputString !== 'string') {
