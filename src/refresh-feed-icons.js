@@ -16,18 +16,17 @@ function refreshFeedIcons(log) {
     'iconCache': new FaviconCache(log),
     'iconCacheConn': null
   };
-  ctx.feedDb.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
+  ctx.feedDb.connect(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
 }
 
-function openDBOnSuccess(event) {
+function openDBOnSuccess(conn) {
   this.log.debug('Connected to database', this.feedDb.name);
-  this.conn = event.target.result;
+  this.conn = conn;
   this.iconCache.connect(iconCacheConnectOnSuccess.bind(this),
     iconCacheConnectOnError.bind(this));
 }
 
-function openDBOnError(event) {
-  this.log.error(event.target.error);
+function openDBOnError() {
   onComplete.call(this);
 }
 
@@ -109,7 +108,6 @@ function onComplete() {
     this.conn.close();
   }
 
-  // This may occur in the log prior to pending requests resolving
   this.log.log('Finished refreshing feed favicons, modified',
     this.numFeedsModified, 'feeds');
 }

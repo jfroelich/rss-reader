@@ -9,6 +9,10 @@
 // TODO: store deactivation reason in feed
 // TODO: store deactivation date
 
+// TODO: maybe I should have a crawler module, put all the fetch things
+// into it, then move this into the module. This would maybe properly
+// aggregate functionality together
+
 {
 
 function pollFeeds(forceResetLock, allowMetered, log) {
@@ -45,7 +49,7 @@ function pollFeeds(forceResetLock, allowMetered, log) {
     chrome.idle.queryState(idlePeriodSecs, onQueryIdleState.bind(ctx));
   } else {
     const db = new FeedDb(log);
-    db.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
+    db.connect(openDBOnSuccess.bind(ctx), onComplete.bind(ctx));
   }
 }
 
@@ -53,21 +57,16 @@ function onQueryIdleState(state) {
   this.log.debug('idle state:', state);
   if(state === 'locked' || state === 'idle') {
     const db = new FeedDb(this.log);
-    db.open(openDBOnSuccess.bind(this), openDBOnError.bind(this));
+    db.connect(openDBOnSuccess.bind(this), onComplete.bind(this));
   } else {
     onComplete.call(this);
   }
 }
 
-function openDBOnSuccess(event) {
+function openDBOnSuccess(conn) {
   this.log.debug('Connected to feed database');
-  this.conn = event.target.result;
-  this.cache.getAllFeeds(this.conn, onGetAllFeeds.bind(this));
-}
-
-function openDBOnError(event) {
-  this.log.error(event.target.error);
-  onComplete.call(this);
+  this.conn = conn;
+  this.cache.getAllFeeds(conn, onGetAllFeeds.bind(this));
 }
 
 function onGetAllFeeds(feeds) {
@@ -189,26 +188,46 @@ function onFindEntry(feed, entry, callback, matches) {
   }
 
   const url = new URL(Entry.getURL(entry));
-  if(isInterstitialURL(url) || isScriptGeneratedContent(url) ||
-    isPDFURL(url)) {
+
+  if(isInterstitialURL(url)) {
+    entry.content =
+      'This content for this article is blocked by an advertisement.';
+    prepLocalDoc(entry);
+    this.cache.addEntry(this.conn, entry, callback);
+    return;
+  }
+
+  if(isScriptGeneratedContent(url)) {
+    entry.content = 'The content for this article cannot be viewed because ' +
+      'it is dynamically generated.';
+    prepLocalDoc(entry);
+    this.cache.addEntry(this.conn, entry, callback);
+    return;
+  }
+
+  if(isPaywallURL(url)) {
+    entry.content = 'This content for this article is behind a paywall.';
+    prepLocalDoc(entry);
+    this.cache.addEntry(this.conn, entry, callback);
+    return;
+  }
+
+  if(isRequiresCookiesURL(url)) {
+    entry.content = 'This content for this article cannot be viewed because ' +
+      'the website requires tracking information.';
+    prepLocalDoc(entry);
+    this.cache.addEntry(this.conn, entry, callback);
+    return;
+  }
+
+  if(MimeUtils.isNonHTMLURL(url)) {
+    entry.content = 'This article is not a basic web page (e.g. a PDF).';
     prepLocalDoc(entry);
     this.cache.addEntry(this.conn, entry, callback);
     return;
   }
 
   fetchHTML(url, this.log, onFetchEntry.bind(this, entry, callback));
-}
-
-function isPDFURL(url) {
-  // The min len test is here just to reduce regex calls
-  const minLength = '/a.pdf'.length;
-  const path = url.pathname;
-  // TODO: maybe path.toLowerCase().endsWith is simpler, maybe even faster
-  // Is it faster to lowercase the string or to search case insensitively, or
-  // is this microoptimization that is dumb
-  // Does the path (which excludes the '?' and trailing text) end with
-  // '.pdf', case insensitive
-  return path && path.length > minLength && /\.pdf$/i.test(path)
 }
 
 function onFetchEntry(entry, callback, event) {

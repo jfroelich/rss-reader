@@ -20,12 +20,12 @@ function unsubscribe(feedId, log, callback) {
     'db': new FeedDb(log)
   };
 
-  ctx.db.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
+  ctx.db.connect(openDBOnSuccess.bind(ctx), onComplete.bind(ctx));
 }
 
-function openDBOnSuccess(event) {
+function openDBOnSuccess(conn) {
   this.log.debug('Connected to database', this.db.name);
-  this.conn = event.target.result;
+  this.conn = conn;
 
   const tx = this.conn.transaction(['feed', 'entry'], 'readwrite');
   tx.oncomplete = onComplete.bind(this);
@@ -41,10 +41,6 @@ function openDBOnSuccess(event) {
   const openCursorRequest = feedIndex.openCursor(this.feedId);
   openCursorRequest.onsuccess = openEntryCursorOnSuccess.bind(this);
   openCursorRequest.onerror = openEntryCursorOnError.bind(this);
-}
-
-function openDBOnError(event) {
-  onComplete.call(this);
 }
 
 function deleteFeedOnSuccess(event) {

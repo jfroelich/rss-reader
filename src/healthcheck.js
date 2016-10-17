@@ -28,19 +28,18 @@ HealthCheck.start = function(log) {
     'completedEntriesMissingURLsScan': false
   };
   const db = new FeedDb();
-  db.open(HealthCheck._openDBOnSuccess.bind(ctx),
+  db.connect(HealthCheck._openDBOnSuccess.bind(ctx),
     HealthCheck._openDBOnError.bind(ctx));
 };
 
-HealthCheck._openDBOnSuccess = function(event) {
+HealthCheck._openDBOnSuccess = function(conn) {
   this.log.debug('Connected to database');
-  this.db = event.target.result;
+  this.db = conn;
   HealthCheck.orphan.scan.call(this);
   HealthCheck.missurls.scan.call(this);
 };
 
-HealthCheck._openDBOnError = function(event) {
-  this.log.error(event.target.error);
+HealthCheck._openDBOnError = function() {
   this.completedOrphanScan = true;
   this.completedEntriesMissingURLsScan = true;
   HealthCheck._onComplete.call(this);

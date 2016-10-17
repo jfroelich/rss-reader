@@ -9,6 +9,8 @@ TODO:
 - add helper for entry enclosure instead of how it is inlined
 - figure out the atom text node issue (cdata related?)
 - setup testing
+- do not filter out entries missing links, that is some other modules
+responsibility
 */
 
 'use strict';

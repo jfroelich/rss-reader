@@ -57,11 +57,10 @@ function appendSlides(onAppendComplete, isFirstSlide) {
   // TODO: invert this, and the condition where it is used, to isAdvanced
   let isNotAdvanced = true;
 
-  const openDBTask = new FeedDb();
-  openDBTask.open(openDBOnSuccess, openDBOnError);
+  const db = new FeedDb();
+  db.connect(openDBOnSuccess, openDBOnError);
 
-  function openDBOnSuccess(event) {
-    const conn = event.target.result;
+  function openDBOnSuccess(conn) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
@@ -71,7 +70,7 @@ function appendSlides(onAppendComplete, isFirstSlide) {
     request.onerror = openCursorOnError;
   }
 
-  function openDBOnError(event) {
+  function openDBOnError() {
     // TODO: show an error?
   }
 

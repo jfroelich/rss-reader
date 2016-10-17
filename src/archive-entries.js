@@ -26,12 +26,11 @@ function archiveEntries(db, age, log, callback) {
   };
 
   ctx.log.log('Archiving entries with age', age);
-  db.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
+  db.connect(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
 }
 
-function openDBOnSuccess(event) {
+function openDBOnSuccess(conn) {
   this.log.debug('Connected to database', this.db.name);
-  const conn = event.target.result;
   const tx = conn.transaction('entry', 'readwrite');
   tx.oncomplete = onComplete.bind(this);
   const store = tx.objectStore('entry');
@@ -43,9 +42,8 @@ function openDBOnSuccess(event) {
   conn.close();
 }
 
-function openDBOnError(event) {
-  this.log.error(event.target.error);
-  onComplete.call(this, null);
+function openDBOnError() {
+  onComplete.call(this);
 }
 
 function openCursorOnSuccess(event) {

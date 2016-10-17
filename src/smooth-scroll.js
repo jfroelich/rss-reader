@@ -11,10 +11,10 @@ function smoothScroll(element, deltaY, targetY) {
   function debounce() {
     clearTimeout(scrollYStartTimer);
     clearInterval(scrollYIntervalTimer);
-    scrollYStartTimer = setTimeout(start_scroll, 5);
+    scrollYStartTimer = setTimeout(startScroll, 5);
   }
 
-  function start_scroll() {
+  function startScroll() {
     amountToScroll = Math.abs(targetY - element.scrollTop);
     amountScrolled = 0;
 
@@ -22,10 +22,10 @@ function smoothScroll(element, deltaY, targetY) {
       return;
     }
 
-    scrollYIntervalTimer = setInterval(do_scroll_step, 20);
+    scrollYIntervalTimer = setInterval(doScrollStep, 20);
   }
 
-  function do_scroll_step() {
+  function doScrollStep() {
     const currentY = element.scrollTop;
     element.scrollTop += deltaY;
     amountScrolled += Math.abs(deltaY);

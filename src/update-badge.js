@@ -22,19 +22,17 @@ function updateBadge(conn, log) {
   if(conn) {
     cache.countUnread(conn, onCountUnread.bind(ctx));
   } else {
-    db.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
+    db.connect(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
   }
 }
 
-function openDBOnSuccess(event) {
+function openDBOnSuccess(conn) {
   this.log.log('Connected to database %s to update badge', this.db.name);
-  this.conn = event.target.result;
-  this.cache.countUnread(this.conn, onCountUnread.bind(this));
-  this.conn.close();
+  this.cache.countUnread(conn, onCountUnread.bind(this));
+  conn.close();
 }
 
-function openDBOnError(event) {
-  this.log.error(event.target.error);
+function openDBOnError() {
   this.text = 'ERR';
   onComplete.call(this);
 }

@@ -244,14 +244,13 @@ markEntryRead(id, callback) {
 
   this.log.debug('Starting to mark entry %s as read', id);
   const ctx = {'id': id, 'callback': callback};
-  const feedDb = new FeedDb();
-  feedDb.open(this._merodbos.bind(this, ctx), this._merodboe.bind(this, ctx));
+  const db = new FeedDb();
+  db.connect(this._merodbos.bind(this, ctx), this._merodboe.bind(this, ctx));
 }
 
 // Mark entry read open database on success
-_merodbos(ctx, event) {
+_merodbos(ctx, conn) {
   this.log.debug('Connected to database to mark entry as read');
-  const conn = event.target.result;
   ctx.conn = conn;
   const tx = conn.transaction('entry', 'readwrite');
   const store = tx.objectStore('entry');
@@ -261,8 +260,7 @@ _merodbos(ctx, event) {
 }
 
 // Mark entry read open database on error
-_merodboe(ctx, event) {
-  this.log.debug(event.target.error);
+_merodboe(ctx) {
   this._meroc(ctx, 'ConnectionError');
 }
 

@@ -7,6 +7,7 @@
 // TODO: I am not seeing any of the last 4 urls here being filtered. Maybe
 // I am looking for the wrong thing? I have not seen these occur even
 // once? Are they just script origins?
+// TODO: reintroduce logging
 
 {
 

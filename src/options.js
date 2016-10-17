@@ -3,7 +3,7 @@
 'use strict';
 
 // TODO: remove subscription preview
-// TODO: resolve searchGoogleFeeds favicons after displaying results, async
+// TODO: lookup favicons after displaying searchGoogleFeeds results, async
 
 {
 
@@ -244,7 +244,7 @@ function appendFeed(feed, shouldInsertInOrder) {
 
 // TODO: deprecate the ability to preview
 function showSubPreview(url) {
-  if(!isURLObject(url)) {
+  if(!URLUtils.isURLObject(url)) {
     throw new Error('url is not a URL object');
   }
 
@@ -327,7 +327,7 @@ function hideSubPreview() {
 }
 
 function startSubscription(url) {
-  if(!isURLObject(url)) {
+  if(!URLUtils.isURLObject(url)) {
     throw new TypeError();
   }
 
@@ -582,8 +582,6 @@ function onSearchGoogleFeeds(event) {
   const noResultsElement = document.getElementById('discover-no-results');
   const resultsElement = document.getElementById('discover-results-list');
 
-  // If an error occurred, hide the progress element and show an error message
-  // and exit early.
   if(event.type !== 'success') {
     console.debug(event);
     hideElement(progressElement);
@@ -591,7 +589,6 @@ function onSearchGoogleFeeds(event) {
     return;
   }
 
-  // Searching completed, hide the progress
   hideElement(progressElement);
   if(!results.length) {
     hideElement(resultsElement);
@@ -606,14 +603,16 @@ function onSearchGoogleFeeds(event) {
     showElement(resultsElement);
   }
 
-  // Add an initial count of the number of feeds as one of the feed list items
   const itemElement = document.createElement('li');
   itemElement.textContent = `Found ${results.length} results.`;
   resultsElement.appendChild(itemElement);
 
   // Lookup the favicons for the results.
+
   // TODO: this should be creating one conn and sharing it across lookups
   // now that lookupFavicon accepts a conn parameter
+  // TODO: this should defer looking up favicons until after the results
+  // have been displayed
 
   let numFaviconsProcessed = 0;
   for(let result of results) {
@@ -792,21 +791,20 @@ function exportOPMLButtonOnClick(event) {
 // requirement (and deprecate title index)
 function initSubsSection() {
   let feedCount = 0;
-  const openDBTask = new FeedDb();
-  openDBTask.open(openDBOnSuccess, openDBOnError);
+  const db = new FeedDb();
+  db.connect(openDBOnSuccess, openDBOnError);
 
-  function openDBOnSuccess(event) {
-    const db = event.target.result;
-    const tx = db.transaction('feed');
+  function openDBOnSuccess(conn) {
+    const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
     const index = store.index('title');
     const request = index.openCursor();
     request.onsuccess = openCursorOnSuccess;
+    conn.close();
   }
 
-  function openDBOnError(event) {
+  function openDBOnError() {
     // TODO: react to error
-    console.error(event.target.error);
   }
 
   function openCursorOnSuccess(event) {
@@ -886,15 +884,15 @@ function enablePreviewCheckboxOnChange(event) {
 }
 
 function previewContinueButtonOnClick(event) {
-  const url_string = event.currentTarget.value;
+  const urlString = event.currentTarget.value;
   hideSubPreview();
 
-  if(!url_string) {
+  if(!urlString) {
     console.debug('no url');
     return;
   }
 
-  const feedURL = new URL(url_string);
+  const feedURL = new URL(urlString);
   startSubscription(feedURL);
 }
 
@@ -979,7 +977,6 @@ function bodyLineHeightElementOnInput(event) {
 }
 
 function onDOMContentLoaded(event) {
-  // Avoid attempts to re-init
   document.removeEventListener('DOMContentLoaded', onDOMContentLoaded);
 
   // Init CSS styles that affect the display preview area

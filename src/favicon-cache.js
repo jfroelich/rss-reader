@@ -12,6 +12,8 @@ constructor(log) {
   this.log = log || SilentConsole;
 }
 
+// TODO: need to properly react to blocked event similar to FeedDb
+
 connect(onSuccess, onError) {
   this.log.log('Connecting to database', this.name, 'version', this.version);
   const request = indexedDB.open(this.name, this.version);

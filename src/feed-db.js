@@ -11,16 +11,38 @@ function FeedDb(log) {
   this.log = log || SilentConsole;
 }
 
-FeedDb.prototype.open = function(onSuccess, onError) {
+FeedDb.prototype.connect = function(onSuccess, onError) {
   this.log.log('Connecting to database', this.name, this.version);
+
   const request = indexedDB.open(this.name, this.version);
-  request.onupgradeneeded = this._upgrade.bind(this);
-  request.onsuccess = onSuccess;
-  request.onerror = onError;
-  request.onblocked = onError;
+  const context = {'wasBlocked': false};
+  request.onupgradeneeded = this._upgrade.bind(this, context);
+  request.onsuccess = function(event) {
+    if(!context.wasBlocked) {
+      onSuccess(event.target.result);
+    }
+  };
+  request.onerror = function(event) {
+    this.log.debug(event.target.error);
+    onError();
+  };
+
+  request.onblocked = function(event) {
+    this.log.debug(event.target.error);
+    context.wasBlocked = true;
+    onError();
+  };
 };
 
-FeedDb.prototype._upgrade = function(event) {
+FeedDb.prototype._upgrade = function(context, event) {
+
+  // Treat a prior block event as an error
+  // See http://stackoverflow.com/questions/40032008
+  if(context.wasBlocked) {
+    event.target.transaction.abort();
+    return;
+  }
+
   this.log.log('Upgrading database %s to version %s from version', this.name,
       this.version, event.oldVersion);
 

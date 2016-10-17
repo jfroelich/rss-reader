@@ -5,7 +5,7 @@
 {
 
 function setImageDimensions(doc, log, callback) {
-  // TODO: print baseURI or something more informative
+  // TODO: log baseURI
   log.log('Setting image dimensions for document');
 
   const ctx = {
@@ -74,7 +74,7 @@ function processImage(image) {
   // If incomplete then listen for response
   proxy.onload = onLoad.bind(this, image);
   proxy.onerror = onError.bind(this, image);
-};
+}
 
 function onError(image, event) {
   this.numFetched++;

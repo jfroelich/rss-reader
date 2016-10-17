@@ -43,7 +43,3 @@ function formatDate(date, delimiter) {
   }
   return parts.join(delimiter || '/');
 }
-
-function isURLObject(val) {
-  return Object.prototype.toString.call(val) === '[object URL]';
-}

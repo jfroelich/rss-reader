@@ -12,19 +12,17 @@ function exportOPML(db, title, fileName, log, callback) {
     'log': log
   };
   log.log('Exporting opml file', ctx.fileName);
-  db.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
+  db.connect(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
 }
 
-function openDBOnSuccess(event) {
+function openDBOnSuccess(conn) {
   this.log.debug('Connected to database');
-  const conn = event.target.result;
   const cache = new FeedCache(this.log);
   cache.getAllFeeds(conn, onGetFeeds.bind(this));
   conn.close();
 }
 
-function openDBOnError(event) {
-  this.log.error(event.target.error);
+function openDBOnError() {
   onComplete.call(this);
 }
 

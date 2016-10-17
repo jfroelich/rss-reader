@@ -2,14 +2,6 @@
 
 'use strict';
 
-// TODO: maybe lookup favicon needs to accept an optional cache connection so
-// that refreshFeedIcons does not open a connection for each lookup. However the
-// problem with using two parameters is there is no constraint that the conn
-// belongs to the cache. Or maybe it isn't a problem.
-// Also so that poll-feeds can share across entry lookups once that is added
-// Possibly also for import opml because it subs n-feeds each of which need
-// to do a lookup (which means subscribe also would need the param though)
-
 {
 
 function lookupFavicon(cache, conn, url, doc, log, callback) {
@@ -117,12 +109,12 @@ function fetchDocumentOnError(event) {
     this.cache.remove(this.conn, this.url);
   }
   lookupOriginURL.call(this);
-};
+}
 
 function fetchDocumentOnTimeout(event) {
   this.log.debug(event.type, this.url.href);
   lookupOriginURL.call(this);
-};
+}
 
 function fetchDocumentOnSuccess(event) {
   this.log.debug('GOT', this.url.href);

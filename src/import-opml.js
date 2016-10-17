@@ -60,19 +60,14 @@ function onUploaderChange(event) {
     return;
   }
 
-  this.feedDb.open(openDBOnSuccess.bind(this), openDBOnError.bind(this));
+  this.feedDb.connect(openDBOnSuccess.bind(this), onComplete.bind(this));
 }
 
-function openDBOnSuccess(event) {
+function openDBOnSuccess(conn) {
   this.log.debug('Connected to database', this.feedDb.name);
-  this.feedDbConn = event.target.result;
+  this.feedDbConn = conn;
   this.iconCache.connect(iconCacheConnectOnSuccess.bind(this),
     iconCacheConnectOnError.bind(this));
-}
-
-function openDBOnError(event) {
-  this.log.error(event.target.error);
-  onComplete.call(this);
 }
 
 function iconCacheConnectOnSuccess(event) {

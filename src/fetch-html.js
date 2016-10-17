@@ -2,63 +2,70 @@
 
 'use strict';
 
-// TODO: use the fetch API
 {
 
 function fetchHTML(requestURL, log, callback) {
-  log.log('GET', requestURL.toString());
+  log.log('Fetching html of url', requestURL.href);
   const ctx = {
     'requestURL': requestURL,
+    'responseURL': null,
     'callback': callback,
     'log': log
   };
 
-  const request = new XMLHttpRequest();
-  request.ontimeout = onTimeout.bind(ctx);
-  request.onerror = onError.bind(ctx);
-  request.onabort = onAbort.bind(ctx);
-  request.onload = onLoad.bind(ctx);
-  const isAsync = true;
-  request.open('GET', requestURL.toString(), isAsync);
-  request.responseType = 'document';
-  request.setRequestHeader('Accept', 'text/html');
-  request.send();
+  const opts = {};
+  opts.credentials = 'omit';
+  opts.method = 'GET';
+  opts.headers = {'Accept': 'text/html'};
+  opts.mode = 'cors';
+  opts.cache = 'default';
+  opts.redirect = 'follow';
+  opts.referrer = 'no-referrer';
+
+  const boundOnResponse = onResponse.bind(ctx);
+  const boundOnError = onError.bind(ctx);
+  fetch(requestURL.href, opts).then(boundOnResponse).catch(boundOnError);
 }
 
-function onAbort(event) {
-  this.log.debug('Aborted request', this.requestURL.toString());
-  this.callback({'type': 'AbortError'});
+function onResponse(response) {
+  this.log.debug('Response status:', response.status);
+  if(!response.ok) {
+    this.callback({'type': 'error'});
+    return;
+  }
+  this.responseURL = new URL(response.url);
+  response.text().then(onReadText.bind(this));
 }
 
-function onError(event) {
-  this.log.debug('Request error', this.requestURL.toString(),
-    event.target.error);
-  this.callback({'type': 'FetchError', 'status': event.target.status});
-}
+function onReadText(text) {
+  this.log.debug('Response text length:', text.length);
 
-function onTimeout(event) {
-  this.log.debug('Request timed out', this.requestURL.toString());
-  this.callback({'type': 'TimeoutError'});
-}
-
-function onLoad(event) {
-  this.log.debug('Loaded', this.requestURL.toString(), event.target.status);
-  // doc is undefined for non-html
-  const document = event.target.responseXML;
-  if(!document) {
-    return this.callback({'type': 'UndefinedDocumentError'});
+  let doc = null;
+  const parser = new DOMParser();
+  try {
+    doc = parser.parseFromString(text, 'text/html');
+  } catch(error) {
+    this.callback({'type': 'parseerror'});
+    return;
   }
 
-  const responseURL = new URL(event.target.responseURL);
-  if(!responseURL) {
-    throw new Error('missing response url');
+  if(!doc || !doc.documentElement) {
+    this.callback({'type': 'parseerror'});
+    return;
   }
 
-  this.callback({
-    'type': 'success',
-    'document': document,
-    'responseURL': responseURL
-  });
+  if(doc.documentElement.localName !== 'html') {
+    this.callback({'type': 'parseerror'});
+    return;
+  }
+
+  this.callback({'type': 'success', 'document': doc,
+    'responseURL': this.responseURL});
+}
+
+function onError(error) {
+  this.log.debug(error);
+  this.callback({'type': 'error'});
 }
 
 this.fetchHTML = fetchHTML;

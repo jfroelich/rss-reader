@@ -3,7 +3,7 @@
 'use strict';
 
 function isInterstitialURL(url) {
-  if(!isURLObject(url)) {
+  if(!URLUtils.isURLObject(url)) {
     throw new TypeError();
   }
 

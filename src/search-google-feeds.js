@@ -6,11 +6,11 @@
 
 function searchGoogleFeeds(query, log, callback) {
   if(typeof query !== 'string' || !query.trim().length) {
-    throw new Error('Invalid query: ' + query);
+    throw new Error();
   }
 
   if(typeof callback !== 'function') {
-    throw new TypeError('Invalid callback');
+    throw new TypeError();
   }
 
   const ctx = {};

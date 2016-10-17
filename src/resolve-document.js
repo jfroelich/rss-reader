@@ -44,8 +44,8 @@ function resolveDocument(doc, log, baseURL) {
     throw new ReferenceError();
   }
 
-  if(!isURLObject(baseURL)) {
-    throw new TypeError('baseURL is not a URL');
+  if(!URLUtils.isURLObject(baseURL)) {
+    throw new TypeError();
   }
 
   const bases = doc.querySelectorAll('base');
@@ -76,7 +76,7 @@ function resolveMappedAttr(element, baseURL) {
     return;
   }
 
-  const resolvedURL = resolveURL(attrURL, baseURL);
+  const resolvedURL = URLUtils.resolve(attrURL, baseURL);
   if(resolvedURL && resolvedURL.href !== attrURL) {
     element.setAttribute(attrName, resolvedURL.href);
   }
@@ -100,7 +100,7 @@ function resolveSrcsetAttr(element, baseURL) {
 
   let dirtied = false;
   for(let descriptor of srcset) {
-    const resolvedURL = resolveURL(descriptor.url, baseURL);
+    const resolvedURL = URLUtils.resolve(descriptor.url, baseURL);
     if(resolvedURL && resolvedURL.href !== descriptor.url) {
       dirtied = true;
       descriptor.url = resolvedURL.href;
@@ -113,34 +113,6 @@ function resolveSrcsetAttr(element, baseURL) {
       element.setAttribute('srcset', newSrcsetValue);
     }
   }
-}
-
-function resolveURL(urlString, baseURL) {
-  if(typeof urlString !== 'string') {
-    throw new TypeError();
-  }
-
-  if(isJavascriptURL(urlString)) {
-    return;
-  }
-
-  if(isObjectURL(urlString)) {
-    return;
-  }
-
-  try {
-    return new URL(urlString, baseURL);
-  } catch(error) {
-    console.warn(urlString, baseURL.href, error);
-  }
-}
-
-function isObjectURL(urlString) {
-  return /^\s*data:/i.test(urlString);
-}
-
-function isJavascriptURL(urlString) {
-  return /^\s*javascript:/i.test(urlString);
 }
 
 // @param descriptors {Array} an array of basic descriptor objects such as the

@@ -14,7 +14,6 @@
 chrome.alarms.get('archive', function(alarm) {
   if(!alarm) {
     console.debug('Creating archive alarm');
-    // Run daily
     chrome.alarms.create('archive', {'periodInMinutes': 60 * 12});
   }
 });
@@ -22,7 +21,6 @@ chrome.alarms.get('archive', function(alarm) {
 chrome.alarms.get('poll', function(alarm) {
   if(!alarm) {
     console.debug('Creating poll alarm');
-    // Every half hour
     chrome.alarms.create('poll', {'periodInMinutes': 30});
   }
 });
@@ -30,7 +28,6 @@ chrome.alarms.get('poll', function(alarm) {
 chrome.alarms.get('compact-favicons', function(alarm) {
   if(!alarm) {
     console.debug('Creating compact-favicons alarm');
-    // Weekly
     chrome.alarms.create('compact-favicons', {'periodInMinutes': 60 * 24 * 7});
   }
 });
@@ -38,7 +35,6 @@ chrome.alarms.get('compact-favicons', function(alarm) {
 chrome.alarms.get('refresh-feed-icons', function(alarm) {
   if(!alarm) {
     console.debug('Creating refresh-feed-icons alarm');
-    // Run bi-weekly
     chrome.alarms.create('refresh-feed-icons',
       {'periodInMinutes': 60 * 24 * 7 * 2});
   }
@@ -47,7 +43,6 @@ chrome.alarms.get('refresh-feed-icons', function(alarm) {
 chrome.alarms.get('healthcheck', function(alarm) {
   if(!alarm) {
     console.debug('Creating healthcheck alarm');
-    // Run weekly
     chrome.alarms.create('healthcheck', {'periodInMinutes': 60 * 24 * 7});
   }
 });
