@@ -2,8 +2,8 @@
 
 'use strict';
 
-function isInterstitialURL(url) {
-  if(!URLUtils.isURLObject(url)) {
+function is_interstitial_url(url) {
+  if(!is_url_object(url)) {
     throw new TypeError();
   }
 

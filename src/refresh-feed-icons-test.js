@@ -1,4 +1,4 @@
 
 function test() {
-  refreshFeedIcons(console);
+  refresh_feed_icons(console);
 }

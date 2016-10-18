@@ -6,19 +6,17 @@
 // replacement string. HTML entities remain (except some will be
 // replaced, like &#32; with space).
 // TODO: maybe accept a whitelist of tags to keep
-function replaceTags(inputString, repString) {
+function replace_tags(input_str, rep_str) {
+  if(typeof input_str !== 'string')
+    throw new TypeError();
 
-  if(typeof inputString !== 'string') {
-    throw new TypeError('inputString not a string');
-  }
-
-  let outputString = null;
+  let output_str = null;
   const doc = document.implementation.createHTMLDocument();
-  const bodyElement = doc.body;
-  bodyElement.innerHTML = inputString;
+  const body_element = doc.body;
+  body_element.innerHTML = input_str;
 
-  if(repString) {
-    const it = doc.createNodeIterator(bodyElement, NodeFilter.SHOW_TEXT);
+  if(rep_str) {
+    const it = doc.createNodeIterator(body_element, NodeFilter.SHOW_TEXT);
     let node = it.nextNode();
     const buffer = [];
     while(node) {
@@ -26,12 +24,12 @@ function replaceTags(inputString, repString) {
       node = it.nextNode();
     }
 
-    outputString = buffer.join(repString);
+    output_str = buffer.join(rep_str);
   } else {
-    outputString = bodyElement.textContent;
+    output_str = body_element.textContent;
   }
 
-  return outputString;
+  return output_str;
 }
 
 // Truncates a string containing some html, taking special care not to truncate
@@ -40,50 +38,47 @@ function replaceTags(inputString, repString) {
 // The input string should be encoded, meaning that it should contain character
 // entity codes. The extension string should be decoded, meaning that it should
 // not contain character entries.
-function truncateHTML(inputString, position, inputExtension) {
+function truncate_html(input_str, position, input_ext) {
 
-  if(typeof inputString !== 'string') {
-    throw new TypeError('inputString not a string');
-  }
-
-  if(!Number.isInteger(position) || position < 0) {
-    throw new TypeError(`invalid position: ${position}`);
-  }
+  if(typeof input_str !== 'string')
+    throw new TypeError();
+  if(!Number.isInteger(position) || position < 0)
+    throw new TypeError();
 
   const ellipsis = '\u2026';
-  const extension = inputExtension || ellipsis;
+  const extension = input_ext || ellipsis;
 
-  const inertDoc = document.implementation.createHTMLDocument();
-  inertDoc.documentElement.innerHTML = inputString;
+  const inert_doc = document.implementation.createHTMLDocument();
+  inert_doc.documentElement.innerHTML = input_str;
 
-  const it = inertDoc.createNodeIterator(inertDoc.body, NodeFilter.SHOW_TEXT);
-  let acceptingText = true;
-  let totalLength = 0;
+  const it = inert_doc.createNodeIterator(inert_doc.body, NodeFilter.SHOW_TEXT);
+  let accepting_text = true;
+  let total_len = 0;
 
   for(let node = it.nextNode(); node; node = it.nextNode()) {
-    if(!acceptingText) {
+    if(!accepting_text) {
       node.remove();
       continue;
     }
 
     // Accessing nodeValue yields a decoded string
     const value = node.nodeValue;
-    const valueLength = value.length;
-    if(totalLength + valueLength >= position) {
-      acceptingText = false;
-      const remaining = position - totalLength;
+    const value_len = value.length;
+    if(total_len + value_len >= position) {
+      accepting_text = false;
+      const remaining = position - total_len;
       // Setting nodeValue will implicitly encode the string
       node.nodeValue = value.substr(0, remaining) + extension;
     } else {
-      totalLength = totalLength + valueLength;
+      total_len = total_len + value_len;
     }
   }
 
   // If the document was an html fragment then exclude the tags implicitly
   // inserted when setting innerHTML
-  if(/<html/i.test(inputString)) {
-    return inertDoc.documentElement.outerHTML;
+  if(/<html/i.test(input_str)) {
+    return inert_doc.documentElement.outerHTML;
   } else {
-    return inertDoc.body.innerHTML;
+    return inert_doc.body.innerHTML;
   }
 }

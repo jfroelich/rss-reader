@@ -8,7 +8,7 @@
 // To show in notification center, toggle flag
 // chrome://flags/#enable-native-notifications
 
-function showNotification(title, message, iconURLString) {
+function show_notification(title, message, icon_url) {
   if(!Notification) {
     console.debug('Notifications are not supported');
     return;
@@ -19,10 +19,10 @@ function showNotification(title, message, iconURLString) {
     return;
   }
 
-  const defaultIcon = chrome.extension.getURL('/images/rss_icon_trans.gif');
+  const default_icon = chrome.extension.getURL('/images/rss_icon_trans.gif');
   const details = {};
   details.body = message || '';
-  details.icon = iconURLString || defaultIcon;
+  details.icon = icon_url || default_icon;
 
   // Instantiation is now a verb I guess
   new Notification(title || 'Untitled', details);

@@ -5,12 +5,12 @@
 // Calculates the approximate size of a value in bytes. This should only be used
 // for basic testing because it is hilariously inaccurate.
 // Adapted from http://stackoverflow.com/questions/1248302
-// Generally does not work on built-ins (dom, XMLHttpRequest, NodeList, etc)
+// Generally does not work on built-ins (dom, XMLHttpRequest, etc)
 function sizeof(object) {
-  const seen = [];// Track visited to avoid infinite recursion
+  const seen = [];
   const stack = [object];
-  const hasOwn = Object.prototype.hasOwnProperty;
-  const toString = Object.prototype.toString;
+  const has_own = Object.prototype.hasOwnProperty;
+  const to_string = Object.prototype.to_string;
   let size = 0;
   while(stack.length) {
     const value = stack.pop();
@@ -33,7 +33,7 @@ function sizeof(object) {
         size += 8;
         break;
       case 'function':
-        size += 2 * value.toString().length;
+        size += 2 * value.to_string().length;
         break;
       case 'object':
         if(seen.indexOf(value) === -1) {
@@ -41,18 +41,16 @@ function sizeof(object) {
           if(ArrayBuffer.isView(value)) {
             size += value.length;
           } else if(Array.isArray(value)) {
-            for(let i = 0, len = value.length; i < len; i++) {
-              stack.push(value[i]);
-            }
+            stack.push(...value);
           } else {
-            const toStringOutput = toString.call(value);
-            if(toStringOutput === '[object Date]') {
+            const to_string_output = to_string.call(value);
+            if(to_string_output === '[object Date]') {
               size += 8;// guess
-            } else if(toStringOutput === '[object URL]') {
+            } else if(to_string_output === '[object URL]') {
               size += 2 * value.href.length;// guess
             } else {
               for(let prop in value) {
-                if(hasOwn.call(value, prop)) {
+                if(has_own.call(value, prop)) {
                   size += prop.length * 2;// prop name
                   stack.push(value[prop]);
                 }

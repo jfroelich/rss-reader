@@ -23,48 +23,44 @@ const hosts = [
   'sb.scorecardresearch.com'
 ];
 
-function filterTrackingImages(doc) {
+function filter_tracking_images(doc) {
   const images = doc.querySelectorAll('img[src]');
   for(let image of images) {
-    if(isTrackingImage(image)) {
+    if(is_tracking_img(image)) {
       image.remove();
     }
   }
 }
 
-function hasCandidateURL(image) {
+function has_candidate_url(image) {
   let src = image.getAttribute('src');
-  if(!src) {
+  if(!src)
     return false;
-  }
 
   src = src.trim();
-  if(!src) {
+  if(!src)
     return false;
-  }
 
   const minlen = 'http://a.d/a'.length;
-  if(src.length < minlen) {
+  if(src.length < minlen)
     return false;
-  }
 
-  if(src.includes(' ')) {
+  if(src.includes(' '))
     return false;
-  }
 
-  if(!/^https?:/i.test(src)) {
+  if(!/^https?:/i.test(src))
     return false;
-  }
+
   return true;
 }
 
-function isTrackingImage(image) {
-  if(!hasCandidateURL(image)) {
+function is_tracking_img(image) {
+  if(!has_candidate_url(image)) {
     return false;
   }
 
   const src = image.getAttribute('src');
-  let url;
+  let url = null;
   try {
     url = new URL(src);
   } catch(error) {
@@ -74,6 +70,6 @@ function isTrackingImage(image) {
   return hosts.includes(url.hostname);
 }
 
-this.filterTrackingImages = filterTrackingImages;
+this.filter_tracking_images = filter_tracking_images;
 
 }

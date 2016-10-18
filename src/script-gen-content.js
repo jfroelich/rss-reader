@@ -2,11 +2,9 @@
 
 'use strict';
 
-function isScriptGeneratedContent(url) {
-  if(!URLUtils.isURLObject(url)) {
+function is_script_generated_content(url) {
+  if(!is_url_object(url))
     throw new TypeError();
-  }
-
   const hosts = [
     'productforums.google.com',
     'groups.google.com'

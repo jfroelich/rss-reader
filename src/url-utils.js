@@ -6,7 +6,7 @@ class URLUtils {
 
   // @param url {URL}
   // @returns {String} lowercase extension
-  static getExtension(url) {
+  static get_url_extension(url) {
     const path = url.pathname;
     const lastDot = path.lastIndexOf('.');
     if(lastDot !== -1) {
@@ -25,12 +25,12 @@ class URLUtils {
       throw new TypeError();
     }
 
-    if(!URLUtils.isURLObject(baseURL)) {
+    if(!is_url_object(baseURL)) {
       throw new TypeError();
     }
 
-    if(URLUtils.hasJavascriptProtocol(urlString) ||
-      URLUtils.hasDataProtocol(urlString)) {
+    if(URLUtils.url_has_js_protocol(urlString) ||
+      URLUtils.url_has_data_protocol(urlString)) {
       return null;
     }
 
@@ -43,16 +43,16 @@ class URLUtils {
     return null;
   }
 
-  // TODO: does this belong in ObjectUtils?
-  static isURLObject(value) {
-    return Object.prototype.toString.call(value) === '[object URL]';
-  }
-
-  static hasDataProtocol(urlString) {
+  static url_has_data_protocol(urlString) {
     return /^\s*data:/i.test(urlString);
   }
 
-  static hasJavascriptProtocol(urlString) {
+  static url_has_js_protocol(urlString) {
     return /^\s*javascript:/i.test(urlString);
   }
+}
+
+// TODO: ObjectUtils
+function is_url_object(value) {
+  return Object.prototype.toString.call(value) === '[object URL]';
 }

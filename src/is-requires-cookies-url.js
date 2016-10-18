@@ -4,7 +4,7 @@
 
 // These websites do not display an article's content unless cookies are
 // provided.
-function isRequiresCookiesURL(url) {
+function is_requires_cookies_url(url) {
   const hosts = ['www.heraldsun.com.au'];
   return hosts.includes(url.hostname);
 }

@@ -4,79 +4,79 @@
 
 {
 
-function unsubscribe(feedId, log, callback) {
-  if(!Number.isInteger(feedId) || feedId < 1) {
-    throw new TypeError(`Invalid feed id ${feedId}`);
+function unsubscribe(feed_id, log, callback) {
+  if(!Number.isInteger(feed_id) || feed_id < 1) {
+    throw new TypeError(`Invalid feed id ${feed_id}`);
   }
 
-  log.log('Unsubscribing from feed with id', feedId);
+  log.log('Unsubscribing from feed with id', feed_id);
 
   const ctx = {
-    'feedId': feedId,
-    'numDeleteEntryRequests': 0,
+    'feed_id': feed_id,
+    'num_entries_deleted': 0,
     'callback': callback,
     'log': log,
-    'didDeleteFeed': false,
+    'did_delete_feed': false,
     'db': new FeedDb(log)
   };
 
-  ctx.db.connect(openDBOnSuccess.bind(ctx), onComplete.bind(ctx));
+  ctx.db.connect(connect_on_success.bind(ctx), on_complete.bind(ctx));
 }
 
-function openDBOnSuccess(conn) {
+function connect_on_success(conn) {
   this.log.debug('Connected to database', this.db.name);
   this.conn = conn;
 
   const tx = this.conn.transaction(['feed', 'entry'], 'readwrite');
-  tx.oncomplete = onComplete.bind(this);
+  tx.oncomplete = on_complete.bind(this);
 
-  this.log.debug('Deleting feed', this.feedId);
-  const feedStore = tx.objectStore('feed');
-  const deleteFeedRequest = feedStore.delete(this.feedId);
-  deleteFeedRequest.onsuccess = deleteFeedOnSuccess.bind(this);
-  deleteFeedRequest.onerror = deleteFeedOnError.bind(this);
+  this.log.debug('Deleting feed', this.feed_id);
+  const feed_store = tx.objectStore('feed');
+  const delete_feed_request = feed_store.delete(this.feed_id);
+  delete_feed_request.onsuccess = delete_feed_on_success.bind(this);
+  delete_feed_request.onerror = delete_feed_on_error.bind(this);
 
-  const entryStore = tx.objectStore('entry');
-  const feedIndex = entryStore.index('feed');
-  const openCursorRequest = feedIndex.openCursor(this.feedId);
-  openCursorRequest.onsuccess = openEntryCursorOnSuccess.bind(this);
-  openCursorRequest.onerror = openEntryCursorOnError.bind(this);
+  const entry_store = tx.objectStore('entry');
+  const feed_index = entry_store.index('feed');
+  const open_cursor_request = feed_index.openCursor(this.feed_id);
+  open_cursor_request.onsuccess = open_entry_cursor_on_success.bind(this);
+  open_cursor_request.onerror = open_entry_cursor_on_error.bind(this);
 }
 
-function deleteFeedOnSuccess(event) {
-  this.didDeleteFeed = true;
-  this.log.debug('Deleted feed', this.feedId);
+function delete_feed_on_success(event) {
+  this.did_delete_feed = true;
+  this.log.debug('Deleted feed', this.feed_id);
 }
 
-function deleteFeedOnError(event) {
+function delete_feed_on_error(event) {
   this.log.error(event.target.error);
 }
 
-function openEntryCursorOnSuccess(event) {
+function open_entry_cursor_on_success(event) {
   const cursor = event.target.result;
   if(cursor) {
     const entry = cursor.value;
-    this.log.debug('Deleting entry', entry.id, Entry.getURL(entry));
+    this.log.debug('Deleting entry', entry.id, get_entry_url(entry));
     cursor.delete();
-    this.numDeleteEntryRequests++;
+    this.num_entries_deleted++;
     chrome.runtime.sendMessage({'type': 'deleteEntryRequested',
       'id': entry.id});
     cursor.continue();
   }
 }
 
-function openEntryCursorOnError(event) {
+function open_entry_cursor_on_error(event) {
   this.log.error(event.target.error);
 }
 
-function onComplete(event) {
+function on_complete(event) {
   this.log.log('Completed unsubscribe');
 
   if(this.conn) {
-    if(this.numDeleteEntryRequests) {
+    if(this.num_entries_deleted) {
       this.log.debug('Requested %i entries to be deleted',
-        this.numDeleteEntryRequests);
-      updateBadge(this.conn, SilentConsole);
+        this.num_entries_deleted);
+      update_badge(this.conn, SilentConsole);
     }
 
     this.log.debug('Requesting database connection close');
@@ -84,13 +84,13 @@ function onComplete(event) {
   }
 
   if(this.callback) {
-    const type = this.didDeleteFeed ? 'success' : 'error';
-    const outputEvent = {
+    const type = this.did_delete_feed ? 'success' : 'error';
+    const output_event = {
       'type': type,
-      'deleteRequestCount': this.numDeleteEntryRequests
+      'deleteRequestCount': this.num_entries_deleted
     };
-    this.log.debug('calling back with', outputEvent);
-    this.callback(outputEvent);
+    this.log.debug('calling back with', output_event);
+    this.callback(output_event);
   }
 }
 

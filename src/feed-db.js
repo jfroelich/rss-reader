@@ -4,6 +4,7 @@
 
 // TODO: merge with feed-cache
 // TODO: revert upgrade to using a version migration approach
+// TODO: just use global functions, no need for class
 
 function FeedDb(log) {
   this.name = 'reader';
@@ -15,10 +16,10 @@ FeedDb.prototype.connect = function(onSuccess, onError) {
   this.log.log('Connecting to database', this.name, this.version);
 
   const request = indexedDB.open(this.name, this.version);
-  const context = {'wasBlocked': false};
+  const context = {'was_blocked': false};
   request.onupgradeneeded = this._upgrade.bind(this, context);
   request.onsuccess = function(event) {
-    if(!context.wasBlocked) {
+    if(!context.was_blocked) {
       onSuccess(event.target.result);
     }
   };
@@ -29,7 +30,7 @@ FeedDb.prototype.connect = function(onSuccess, onError) {
 
   request.onblocked = function(event) {
     this.log.debug(event.target.error);
-    context.wasBlocked = true;
+    context.was_blocked = true;
     onError();
   };
 };
@@ -38,7 +39,7 @@ FeedDb.prototype._upgrade = function(context, event) {
 
   // Treat a prior block event as an error
   // See http://stackoverflow.com/questions/40032008
-  if(context.wasBlocked) {
+  if(context.was_blocked) {
     event.target.transaction.abort();
     return;
   }
@@ -48,44 +49,44 @@ FeedDb.prototype._upgrade = function(context, event) {
 
   const request = event.target;
   const db = request.result;
-  let feedStore = null, entryStore = null;
+  let feed_store = null, entry_store = null;
   const stores = db.objectStoreNames;
 
   if(stores.contains('feed')) {
-    feedStore = request.transaction.objectStore('feed');
+    feed_store = request.transaction.objectStore('feed');
   } else {
-    feedStore = db.createObjectStore('feed', {
+    feed_store = db.createObjectStore('feed', {
       'keyPath': 'id',
       'autoIncrement': true
     });
   }
 
   if(stores.contains('entry')) {
-    entryStore = request.transaction.objectStore('entry');
+    entry_store = request.transaction.objectStore('entry');
   } else {
-    entryStore = db.createObjectStore('entry', {
+    entry_store = db.createObjectStore('entry', {
       'keyPath': 'id',
       'autoIncrement': true
     });
   }
 
-  const feedIndexNames = feedStore.indexNames;
-  const entryIndexNames = entryStore.indexNames;
+  const feed_indices = feed_store.indexNames;
+  const entry_indices = entry_store.indexNames;
 
   // Deprecated
-  if(feedIndexNames.contains('schemeless')) {
-    feedStore.deleteIndex('schemeless');
+  if(feed_indices.contains('schemeless')) {
+    feed_store.deleteIndex('schemeless');
   }
 
   // Deprecated. Use the new urls index
-  if(feedIndexNames.contains('url')) {
-    feedStore.deleteIndex('url');
+  if(feed_indices.contains('url')) {
+    feed_store.deleteIndex('url');
   }
 
   // Create a multi-entry index using the new urls property, which should
   // be an array of unique strings of normalized urls
-  if(!feedIndexNames.contains('urls')) {
-    feedStore.createIndex('urls', 'urls', {
+  if(!feed_indices.contains('urls')) {
+    feed_store.createIndex('urls', 'urls', {
       'multiEntry': true,
       'unique': true
     });
@@ -93,47 +94,48 @@ FeedDb.prototype._upgrade = function(context, event) {
 
   // TODO: deprecate this, have the caller manually sort and stop requiring
   // title, this just makes it difficult.
-  if(!feedIndexNames.contains('title')) {
-    feedStore.createIndex('title', 'title');
+  if(!feed_indices.contains('title')) {
+    feed_store.createIndex('title', 'title');
   }
 
   // Deprecated
-  if(entryIndexNames.contains('unread')) {
-    entryStore.deleteIndex('unread');
+  if(entry_indices.contains('unread')) {
+    entry_store.deleteIndex('unread');
   }
 
   // For example, used to count the number of unread entries
-  if(!entryIndexNames.contains('readState')) {
-    entryStore.createIndex('readState', 'readState');
+  if(!entry_indices.contains('readState')) {
+    entry_store.createIndex('readState', 'readState');
   }
 
-  if(!entryIndexNames.contains('feed')) {
-    entryStore.createIndex('feed', 'feed');
+  if(!entry_indices.contains('feed')) {
+    entry_store.createIndex('feed', 'feed');
   }
 
-  if(!entryIndexNames.contains('archiveState-readState')) {
-    entryStore.createIndex('archiveState-readState',
+  if(!entry_indices.contains('archiveState-readState')) {
+    entry_store.createIndex('archiveState-readState',
       ['archiveState', 'readState']);
   }
 
   // Deprecated. Use the urls index instead.
-  if(entryIndexNames.contains('link')) {
-    entryStore.deleteIndex('link');
+  if(entry_indices.contains('link')) {
+    entry_store.deleteIndex('link');
   }
 
   // Deprecated. Use the urls index instead.
-  if(entryIndexNames.contains('hash')) {
-    entryStore.deleteIndex('hash');
+  if(entry_indices.contains('hash')) {
+    entry_store.deleteIndex('hash');
   }
 
-  if(!entryIndexNames.contains('urls')) {
-    entryStore.createIndex('urls', 'urls', {
+  if(!entry_indices.contains('urls')) {
+    entry_store.createIndex('urls', 'urls', {
       'multiEntry': true,
       'unique': true
     });
   }
 };
 
+// TODO: deprecate, caller can do this, this is superfluous
 // Requests the database to eventually be deleted, returns the request object
 FeedDb.prototype.delete = function() {
   this.log.log('Deleting database', this.name);

@@ -4,11 +4,11 @@
 
 {
 
-function fetchHTML(requestURL, log, callback) {
-  log.log('Fetching html of url', requestURL.href);
+function fetch_html(req_url, log, callback) {
+  log.log('Fetching html of url', req_url.href);
   const ctx = {
-    'requestURL': requestURL,
-    'responseURL': null,
+    'req_url': req_url,
+    'response_url': null,
     'callback': callback,
     'log': log
   };
@@ -22,22 +22,22 @@ function fetchHTML(requestURL, log, callback) {
   opts.redirect = 'follow';
   opts.referrer = 'no-referrer';
 
-  const boundOnResponse = onResponse.bind(ctx);
-  const boundOnError = onError.bind(ctx);
-  fetch(requestURL.href, opts).then(boundOnResponse).catch(boundOnError);
+  const bound_on_response = on_response.bind(ctx);
+  const bound_on_error = on_error.bind(ctx);
+  fetch(req_url.href, opts).then(bound_on_response).catch(bound_on_error);
 }
 
-function onResponse(response) {
+function on_response(response) {
   this.log.debug('Response status:', response.status);
   if(!response.ok) {
     this.callback({'type': 'error'});
     return;
   }
-  this.responseURL = new URL(response.url);
-  response.text().then(onReadText.bind(this));
+  this.response_url = new URL(response.url);
+  response.text().then(on_read_text.bind(this));
 }
 
-function onReadText(text) {
+function on_read_text(text) {
   this.log.debug('Response text length:', text.length);
 
   let doc = null;
@@ -60,14 +60,14 @@ function onReadText(text) {
   }
 
   this.callback({'type': 'success', 'document': doc,
-    'responseURL': this.responseURL});
+    'responseURL': this.response_url});
 }
 
-function onError(error) {
+function on_error(error) {
   this.log.debug(error);
   this.callback({'type': 'error'});
 }
 
-this.fetchHTML = fetchHTML;
+this.fetch_html = fetch_html;
 
 }

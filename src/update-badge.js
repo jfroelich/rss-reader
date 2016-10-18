@@ -4,7 +4,7 @@
 
 {
 
-function updateBadge(conn, log) {
+function update_badge(conn, log) {
   log = log || SilentConsole;
   log.log('Updating badge unread count');
 
@@ -20,24 +20,24 @@ function updateBadge(conn, log) {
   };
 
   if(conn) {
-    cache.countUnread(conn, onCountUnread.bind(ctx));
+    cache.count_unread_entries(conn, on_count_unread.bind(ctx));
   } else {
-    db.connect(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
+    db.connect(connect_on_success.bind(ctx), connect_on_error.bind(ctx));
   }
 }
 
-function openDBOnSuccess(conn) {
+function connect_on_success(conn) {
   this.log.log('Connected to database %s to update badge', this.db.name);
-  this.cache.countUnread(conn, onCountUnread.bind(this));
+  this.cache.count_unread_entries(conn, on_count_unread.bind(this));
   conn.close();
 }
 
-function openDBOnError() {
+function connect_on_error() {
   this.text = 'ERR';
   onComplete.call(this);
 }
 
-function onCountUnread(count) {
+function on_count_unread(count) {
   this.log.log('Counted %s unread entries', count);
   if(count > 999) {
     this.text = '1k+';
@@ -54,6 +54,6 @@ function onComplete() {
   chrome.browserAction.setBadgeText({'text': this.text});
 }
 
-this.updateBadge = updateBadge;
+this.update_badge = update_badge;
 
 }

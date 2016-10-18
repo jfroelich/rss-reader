@@ -2,37 +2,38 @@
 
 'use strict';
 
-function smoothScroll(element, deltaY, targetY) {
-  let scrollYStartTimer; // debounce
-  let scrollYIntervalTimer; // incrementally move
-  let amountToScroll = 0;
-  let amountScrolled = 0;
+{
 
-  function debounce() {
-    clearTimeout(scrollYStartTimer);
-    clearInterval(scrollYIntervalTimer);
-    scrollYStartTimer = setTimeout(startScroll, 5);
-  }
+// TODO: go back to using initial setTimeout because this is bad when
+// holding down button
 
-  function startScroll() {
-    amountToScroll = Math.abs(targetY - element.scrollTop);
-    amountScrolled = 0;
+let scroll_active = false;
+function smooth_scroll(element, dy, targetY) {
+  if(scroll_active)
+    return;
+  if(dy < 0 && element.scrollTop === 0)
+    return;
 
-    if(amountToScroll === 0) {
-      return;
+  scroll_active = true;
+  const abs_dy = Math.abs(dy);
+  let distance = Math.abs(targetY - element.scrollTop);
+  let id = setInterval(function modifyScrollTop() {
+    if(distance < abs_dy) {
+      clearInterval(id);
+      scroll_active = false;
+    } else {
+      const before = element.scrollTop;
+      element.scrollTop += dy;
+      if(element.scrollTop === before) {
+        clearInterval(id);
+        scroll_active = false;
+      } else {
+        distance -= Math.abs(element.scrollTop - before);
+      }
     }
+  }, 20);
+}
 
-    scrollYIntervalTimer = setInterval(doScrollStep, 20);
-  }
+this.smooth_scroll = smooth_scroll;
 
-  function doScrollStep() {
-    const currentY = element.scrollTop;
-    element.scrollTop += deltaY;
-    amountScrolled += Math.abs(deltaY);
-    if(currentY === element.scrollTop || amountScrolled >= amountToScroll) {
-      clearInterval(scrollYIntervalTimer);
-    }
-  }
-
-  return debounce();
 }

@@ -4,12 +4,12 @@
 
 {
 
-function fetchXML(requestURL, log, callback) {
-  if(!parseXML) {
-    throw new ReferenceError('parseXML');
+function fetch_xml(req_url, log, callback) {
+  if(!parse_xml) {
+    throw new ReferenceError();
   }
 
-  log.log('Fetching XML file', requestURL.toString());
+  log.log('Fetching XML file', req_url.toString());
 
   const accepts = [
     'application/rss+xml',
@@ -30,16 +30,16 @@ function fetchXML(requestURL, log, callback) {
 
   const ctx = {};
   ctx.callback = callback;
-  ctx.requestURL = requestURL;
+  ctx.req_url = req_url;
   ctx.log = log;
-  ctx.lastModifiedDate = null;
-  ctx.responseURL = null;
+  ctx.last_modified_date = null;
+  ctx.response_url = null;
 
-  fetch(requestURL.href, opts).then(onResponse.bind(ctx)).catch(
-    onError.bind(ctx));
+  fetch(req_url.href, opts).then(on_response.bind(ctx)).catch(
+    on_error.bind(ctx));
 }
 
-function onResponse(response) {
+function on_response(response) {
   this.log.debug('Status:', response.status);
 
   if(!response.ok) {
@@ -52,37 +52,37 @@ function onResponse(response) {
   const type = response.headers.get('Content-Type');
   this.log.debug('Type:', type);
   if(type) {
-    const normType = type.toLowerCase();
-    if(!normType.includes('xml') && !normType.includes('text/html')) {
-      this.log.debug(requestURL.href, 'invalid type', type);
+    const norm_type = type.toLowerCase();
+    if(!norm_type.includes('xml') && !norm_type.includes('text/html')) {
+      this.log.debug(req_url.href, 'invalid type', type);
       this.callback({'type': 'typeerror'});
       return;
     }
   }
 
-  this.responseURL = response.url;
-  const lastModified = response.headers.get('Last-Modified');
-  if(lastModified) {
-    this.log.debug('Last modified:', lastModified);
+  this.response_url = response.url;
+  const last_mod = response.headers.get('Last-Modified');
+  if(last_mod) {
+    this.log.debug('Last modified:', last_mod);
     try {
-      this.lastModifiedDate = new Date(lastModified);
+      this.last_modified_date = new Date(last_mod);
     } catch(error) {
       this.log.warn(error);
     }
   }
 
-  response.text().then(onReadText.bind(this));
+  response.text().then(on_read_text.bind(this));
 }
 
-function onReadText(text) {
-  this.log.debug('Read text of %s (%s characters)', this.requestURL.href,
+function on_read_text(text) {
+  this.log.debug('Read text of %s (%s characters)', this.req_url.href,
     text.length);
 
   let doc = null;
   try {
-    doc = parseXML(text);
+    doc = parse_xml(text);
   } catch(error) {
-    this.log.debug(this.requestURL.href, error);
+    this.log.debug(this.req_url.href, error);
     this.callback({'type': 'parsererror', 'error': error});
     return;
   }
@@ -92,17 +92,17 @@ function onReadText(text) {
   const event = {
     'type': 'success',
     'document': doc,
-    'responseURLString': this.responseURL,
-    'lastModifiedDate': this.lastModifiedDate
+    'responseURLString': this.response_url,
+    'lastModifiedDate': this.last_modified_date
   };
   this.callback(event);
 }
 
-function onError(error) {
-  this.log.debug(this.requestURL.href, error);
+function on_error(error) {
+  this.log.debug(this.req_url.href, error);
   this.callback({'type': 'error'});
 }
 
-this.fetchXML = fetchXML;
+this.fetch_xml = fetch_xml;
 
 }

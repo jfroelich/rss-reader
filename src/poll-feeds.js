@@ -4,7 +4,7 @@
 
 // TODO: use a single favicon cache connection for favicon lookups
 // TODO: add is-active feed functionality, do not poll in-active feeds
-// TODO: deactivate unreachable feeds
+// TODO: deactivate unreachable feeds after x failures
 // TODO: deactivate feeds not changed for a long time
 // TODO: store deactivation reason in feed
 // TODO: store deactivation date
@@ -15,117 +15,117 @@
 
 {
 
-function pollFeeds(forceResetLock, allowMetered, log) {
+function poll_feeds(force_reset_lock, allow_metered, log) {
   log.log('Checking for new articles...');
   const ctx = {
-    'numFeedsPending': 0,
+    'num_feeds_pending': 0,
     'log': log,
     'cache': new FeedCache(log)
   };
 
-  if(!acquireLock.call(ctx, forceResetLock)) {
+  if(!acquire_lock.call(ctx, force_reset_lock)) {
     log.warn('Poll is locked');
-    onComplete.call(ctx);
+    on_complete.call(ctx);
     return;
   }
 
   if('onLine' in navigator && !navigator.onLine) {
     log.warn('canceling poll as offline');
-    onComplete.call(ctx);
+    on_complete.call(ctx);
     return;
   }
 
   // This is experimental
-  if(!allowMetered && 'NO_POLL_METERED' in localStorage &&
+  if(!allow_metered && 'NO_POLL_METERED' in localStorage &&
     navigator.connection && navigator.connection.metered) {
     log.debug('canceling poll as on metered connection');
-    onComplete.call(ctx);
+    on_complete.call(ctx);
     return;
   }
 
   if('ONLY_POLL_IF_IDLE' in localStorage) {
     log.debug('checking idle state');
-    const idlePeriodSecs = 30;
-    chrome.idle.queryState(idlePeriodSecs, onQueryIdleState.bind(ctx));
+    const idle_period_secs = 30;
+    chrome.idle.queryState(idle_period_secs, on_query_idle_state.bind(ctx));
   } else {
     const db = new FeedDb(log);
-    db.connect(openDBOnSuccess.bind(ctx), onComplete.bind(ctx));
+    db.connect(connect_on_success.bind(ctx), on_complete.bind(ctx));
   }
 }
 
-function onQueryIdleState(state) {
+function on_query_idle_state(state) {
   this.log.debug('idle state:', state);
   if(state === 'locked' || state === 'idle') {
     const db = new FeedDb(this.log);
-    db.connect(openDBOnSuccess.bind(this), onComplete.bind(this));
+    db.connect(connect_on_success.bind(this), on_complete.bind(this));
   } else {
-    onComplete.call(this);
+    on_complete.call(this);
   }
 }
 
-function openDBOnSuccess(conn) {
+function connect_on_success(conn) {
   this.log.debug('Connected to feed database');
   this.conn = conn;
-  this.cache.getAllFeeds(conn, onGetAllFeeds.bind(this));
+  this.cache.get_all_feeds(conn, on_get_feeds.bind(this));
 }
 
-function onGetAllFeeds(feeds) {
+function on_get_feeds(feeds) {
   if(!feeds.length) {
-    onComplete.call(this);
+    on_complete.call(this);
     return;
   }
 
-  this.numFeedsPending = feeds.length;
-  const excludeEntries = false;
+  this.num_feeds_pending = feeds.length;
+  const exclude_entries = false;
   for(let feed of feeds) {
-    const url = new URL(Feed.getURL(feed));
-    fetchFeed(url, excludeEntries, this.log, onFetchFeed.bind(this, feed));
+    const url = new URL(get_feed_url(feed));
+    fetch_feed(url, exclude_entries, this.log, on_fetch_feed.bind(this, feed));
   }
 }
 
-function onFetchFeed(localFeed, event) {
+function on_fetch_feed(local_feed, event) {
   if(event.type !== 'success') {
-    this.log.debug('Failed to fetch feed', Feed.getURL(localFeed));
-    this.numFeedsPending--;
-    onComplete.call(this);
+    this.log.debug('Failed to fetch feed', get_feed_url(local_feed));
+    this.num_feeds_pending--;
+    on_complete.call(this);
     return;
   }
 
-  const remoteFeed = event.feed;
+  const remote_feed = event.feed;
 
   // If the feed has updated in the past, then check if it has been modified.
   // dateUpdated is not set for newly added feeds.
-  if(localFeed.dateUpdated && isFeedUnmodified(localFeed, remoteFeed)) {
-    this.log.debug('Feed not modified', Feed.getURL(remoteFeed));
-    this.numFeedsPending--;
-    onComplete.call(this);
+  if(local_feed.dateUpdated && is_feed_unmodified(local_feed, remote_feed)) {
+    this.log.debug('Feed not modified', get_feed_url(remote_feed));
+    this.num_feeds_pending--;
+    on_complete.call(this);
     return;
   }
 
-  const feed = Feed.merge(localFeed, remoteFeed);
-  this.cache.updateFeed(this.conn, feed,
-    onUpdateFeed.bind(this, event.entries));
+  const feed = merge_feeds(local_feed, remote_feed);
+  this.cache.update_feed(this.conn, feed,
+    on_update_feed.bind(this, event.entries));
 }
 
-function isFeedUnmodified(localFeed, remoteFeed) {
-  return localFeed.dateLastModified && remoteFeed.dateLastModified &&
-    localFeed.dateLastModified.getTime() ===
-    remoteFeed.dateLastModified.getTime()
+function is_feed_unmodified(local_feed, remote_feed) {
+  return local_feed.dateLastModified && remote_feed.dateLastModified &&
+    local_feed.dateLastModified.getTime() ===
+    remote_feed.dateLastModified.getTime()
 }
 
-function onUpdateFeed(entries, event) {
+function on_update_feed(entries, event) {
   // If we failed to update the feed, then do not even bother updating its
   // entries. Something is seriously wrong. Perhaps this should even be a
   // fatal error.
   if(event.type !== 'success') {
-    this.numFeedsPending--;
-    onComplete.call(this);
+    this.num_feeds_pending--;
+    on_complete.call(this);
     return;
   }
 
   if(!entries.length) {
-    this.numFeedsPending--;
-    onComplete.call(this);
+    this.num_feeds_pending--;
+    on_complete.call(this);
     return;
   }
 
@@ -139,20 +139,20 @@ function onUpdateFeed(entries, event) {
   // or just pass along only the relevant fields needed like feedId and title
   // and faviconURLString
 
-  const feedContext = {
-    'numEntriesProcessed': 0,
-    'numEntriesAdded': 0,
-    'numEntries': entries.length
+  const feed_ctx = {
+    'num_entries_processed': 0,
+    'num_entries_added': 0,
+    'num_entries': entries.length
   };
 
-  const boundOnEntryProcessed = onEntryProcessed.bind(this, feedContext);
+  const bound_on_entry_processed = on_entry_processed.bind(this, feed_ctx);
   for(let entry of entries) {
-    processEntry.call(this, event.feed, entry, boundOnEntryProcessed);
+    process_entry.call(this, event.feed, entry, bound_on_entry_processed);
   }
 }
 
-function processEntry(feed, entry, callback) {
-  const url = Entry.getURL(entry);
+function process_entry(feed, entry, callback) {
+  const url = get_entry_url(entry);
 
   if(!url) {
     this.log.warn('Entry missing url', entry);
@@ -160,17 +160,17 @@ function processEntry(feed, entry, callback) {
     return;
   }
 
-  const rewrittenURL = rewriteURL(new URL(url));
-  if(rewrittenURL) {
-    Entry.addURL(entry, rewrittenURL.href);
+  const rewritten_url = rewrite_url(new URL(url));
+  if(rewritten_url) {
+    add_entry_url(entry, rewritten_url.href);
   }
 
   const limit = 1;
-  this.cache.findEntry(this.conn, entry.urls, limit,
-    onFindEntry.bind(this, feed, entry, callback));
+  this.cache.find_entry(this.conn, entry.urls, limit,
+    on_find_entry.bind(this, feed, entry, callback));
 }
 
-function onFindEntry(feed, entry, callback, matches) {
+function on_find_entry(feed, entry, callback, matches) {
   if(matches.length) {
     callback();
     return;
@@ -179,73 +179,65 @@ function onFindEntry(feed, entry, callback, matches) {
   entry.feed = feed.id;
 
   // TODO: I should be looking up the entry's own favicon
-  if(feed.faviconURLString) {
+  if(feed.faviconURLString)
     entry.faviconURLString = feed.faviconURLString;
-  }
 
-  if(feed.title) {
+  if(feed.title)
     entry.feedTitle = feed.title;
-  }
 
-  const url = new URL(Entry.getURL(entry));
-
-  if(isInterstitialURL(url)) {
+  const url = new URL(get_entry_url(entry));
+  if(is_interstitial_url(url)) {
     entry.content =
       'This content for this article is blocked by an advertisement.';
-    prepLocalDoc(entry);
-    this.cache.addEntry(this.conn, entry, callback);
+    prep_local_doc(entry);
+    this.cache.add_entry(this.conn, entry, callback);
     return;
   }
 
-  if(isScriptGeneratedContent(url)) {
+  if(is_script_generated_content(url)) {
     entry.content = 'The content for this article cannot be viewed because ' +
       'it is dynamically generated.';
-    prepLocalDoc(entry);
-    this.cache.addEntry(this.conn, entry, callback);
+    prep_local_doc(entry);
+    this.cache.add_entry(this.conn, entry, callback);
     return;
   }
 
-  if(isPaywallURL(url)) {
+  if(is_paywall_url(url)) {
     entry.content = 'This content for this article is behind a paywall.';
-    prepLocalDoc(entry);
-    this.cache.addEntry(this.conn, entry, callback);
+    prep_local_doc(entry);
+    this.cache.add_entry(this.conn, entry, callback);
     return;
   }
 
-  if(isRequiresCookiesURL(url)) {
+  if(is_requires_cookies_url(url)) {
     entry.content = 'This content for this article cannot be viewed because ' +
       'the website requires tracking information.';
-    prepLocalDoc(entry);
-    this.cache.addEntry(this.conn, entry, callback);
+    prep_local_doc(entry);
+    this.cache.add_entry(this.conn, entry, callback);
     return;
   }
 
-  if(MimeUtils.isNonHTMLURL(url)) {
+  if(MimeUtils.is_non_html_url(url)) {
     entry.content = 'This article is not a basic web page (e.g. a PDF).';
-    prepLocalDoc(entry);
-    this.cache.addEntry(this.conn, entry, callback);
+    prep_local_doc(entry);
+    this.cache.add_entry(this.conn, entry, callback);
     return;
   }
 
-  fetchHTML(url, this.log, onFetchEntry.bind(this, entry, callback));
+  fetch_html(url, this.log, on_fetch_entry.bind(this, entry, callback));
 }
 
-function onFetchEntry(entry, callback, event) {
+function on_fetch_entry(entry, callback, event) {
   if(event.type !== 'success') {
-    prepLocalDoc(entry);
-    this.cache.addEntry(this.conn, entry, callback);
+    prep_local_doc(entry);
+    this.cache.add_entry(this.conn, entry, callback);
     return;
   }
 
-  // Append the response url in case of a redirect
-  const responseURLString = event.responseURL.href;
-
-  // There should always be a response url, even if no redirect occurred
-  if(!responseURLString) {
-    throw new Error('missing response url');
-  }
-
-  Entry.addURL(entry, responseURLString);
+  const response_url_str = event.responseURL.href;
+  if(!response_url_str)
+    throw new Error();
+  add_entry_url(entry, response_url_str);
 
   // TODO: if we successfully fetched the entry, then before storing it,
   // we should be trying to set its faviconURL.
@@ -256,97 +248,89 @@ function onFetchEntry(entry, callback, event) {
   // - i should be querying against the redirect url
 
   const doc = event.document;
-  transformLazyImages(doc);
-  DOMScrub.filterSourcelessImages(doc);
-  DOMScrub.filterInvalidAnchors(doc);
-  resolveDocument(doc, this.log, event.responseURL);
-  filterTrackingImages(doc);
-  setImageDimensions(doc, this.log,
-    onSetImageDimensions.bind(this, entry, doc, callback));
+  transform_lazy_images(doc);
+  filter_sourceless_images(doc);
+  filter_invalid_anchors(doc);
+  resolve_doc(doc, this.log, event.responseURL);
+  filter_tracking_images(doc);
+  set_image_dimensions(doc, this.log,
+    on_set_image_dimensions.bind(this, entry, doc, callback));
 }
 
-function onSetImageDimensions(entry, document, callback, numImagesModified) {
-  if(!document) {
-    throw new TypeError('mising document param');
-  }
-
-  prepDoc(document);
-  entry.content = document.documentElement.outerHTML.trim();
-  this.cache.addEntry(this.conn, entry, callback);
+function on_set_image_dimensions(entry, doc, callback, num_modified) {
+  prep_doc(doc);
+  entry.content = doc.documentElement.outerHTML.trim();
+  this.cache.add_entry(this.conn, entry, callback);
 }
 
-function prepDoc(doc) {
-  Boilerplate.filter(doc);
-  DOMScrub.cleanDoc(doc);
-  DOMScrub.addNoReferrer(doc);
+function prep_doc(doc) {
+  filter_boilerplate(doc);
+  scrub_dom(doc);
+  add_no_referrer(doc);
 }
 
-function prepLocalDoc(entry) {
-  if(!entry.content) {
+function prep_local_doc(entry) {
+  if(!entry.content)
     return;
-  }
 
   const parser = new DOMParser();
   try {
     const doc = parser.parseFromString(entry.content, 'text/html');
-
     if(doc.querySelector('parsererror')) {
       entry.content = 'Cannot show document due to parsing error';
       return;
     }
 
-    prepDoc(doc);
+    prep_doc(doc);
     entry.content = doc.documentElement.outerHTML.trim();
   } catch(error) {
   }
 }
 
-function onEntryProcessed(feedContext, event) {
-  feedContext.numEntriesProcessed++;
-  const count = feedContext.numEntriesProcessed;
+function on_entry_processed(feed_ctx, event) {
+  feed_ctx.num_entries_processed++;
+  const count = feed_ctx.num_entries_processed;
 
-  if(count > feedContext.numEntries) {
-    throw new Error(`count ${count} > numEntries ${numEntries}`);
+  if(count > feed_ctx.num_entries) {
+    throw new Error(`count ${count} > num_entries ${num_entries}`);
   }
 
   if(event && event.type === 'success') {
-    feedContext.numEntriesAdded++;
+    feed_ctx.num_entries_added++;
   }
 
-  if(count === feedContext.numEntries) {
-    if(feedContext.numEntriesAdded) {
-      updateBadge(this.conn, this.log);
+  if(count === feed_ctx.num_entries) {
+    if(feed_ctx.num_entries_added) {
+      update_badge(this.conn, this.log);
     }
 
-    this.numFeedsPending--;
-    onComplete.call(this);
+    this.num_feeds_pending--;
+    on_complete.call(this);
   }
 }
 
-function onComplete() {
-  if(this.numFeedsPending) {
+function on_complete() {
+  if(this.num_feeds_pending) {
     return;
   }
 
   this.log.log('Polling completed');
-  showNotification('Updated articles',
+  show_notification('Updated articles',
     'Completed checking for new articles');
   if(this.conn) {
     this.conn.close();
   }
 
-  releaseLock.call(this);
+  release_lock.call(this);
 }
 
 // Obtain a poll lock by setting a flag in local storage. This uses local
 // storage instead of global scope because the background page that calls out
 // to poll.start occassionally unloads and reloads itself instead of remaining
 // persistently open, which resets the value of a global variable.
-function acquireLock(forceResetLock) {
-
-  if(forceResetLock) {
-    releaseLock.call(this);
-  }
+function acquire_lock(force_reset_lock) {
+  if(force_reset_lock)
+    release_lock.call(this);
 
   if('POLL_FEEDS_ACTIVE' in localStorage) {
     this.log.debug('Failed to acquire lock, the lock is already present');
@@ -358,13 +342,13 @@ function acquireLock(forceResetLock) {
   return true;
 }
 
-function releaseLock() {
+function release_lock() {
   if('POLL_FEEDS_ACTIVE' in localStorage) {
     this.log.debug('Releasing poll lock');
     delete localStorage.POLL_FEEDS_ACTIVE;
   }
 }
 
-this.pollFeeds = pollFeeds;
+this.poll_feeds = poll_feeds;
 
 }

@@ -4,5 +4,5 @@
 
 function test() {
   const cache = new FaviconCache(console);
-  compactFavicons(cache, console);
+  compact_favicons(cache, console);
 }

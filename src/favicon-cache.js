@@ -8,19 +8,19 @@ class FaviconCache {
 constructor(log) {
   this.name = 'favicon-cache';
   this.version = 1;
-  this.maxAge = 1000 * 60 * 60 * 24 * 30;
+  this.max_age = 1000 * 60 * 60 * 24 * 30;
   this.log = log || SilentConsole;
 }
 
 // TODO: need to properly react to blocked event similar to FeedDb
 
-connect(onSuccess, onError) {
+connect(on_success, on_error) {
   this.log.log('Connecting to database', this.name, 'version', this.version);
   const request = indexedDB.open(this.name, this.version);
   request.onupgradeneeded = this._upgrade.bind(this);
-  request.onsuccess = onSuccess;
-  request.onerror = onError;
-  request.onblocked = onError;
+  request.onsuccess = on_success;
+  request.onerror = on_error;
+  request.onblocked = on_error;
 }
 
 _upgrade(event) {
@@ -33,22 +33,22 @@ _upgrade(event) {
   }
 }
 
-isExpired(entry, maxAge) {
+is_expired(entry, max_age) {
   const entryAge = new Date() - entry.dateUpdated;
-  return entryAge >= maxAge;
+  return entryAge >= max_age;
 }
 
 find(conn, url, callback) {
   this.log.log('Checking favicon cache for page url', url.href);
-  const pageURLString = this.normalizeURL(url).href;
+  const page_url = this.normalize_url(url).href;
   const tx = conn.transaction('favicon-cache');
   const store = tx.objectStore('favicon-cache');
-  const request = store.get(pageURLString);
-  request.onsuccess = this._findOnSuccess.bind(this, url, callback);
-  request.onerror = this._findOnError.bind(this, url, callback);
+  const request = store.get(page_url);
+  request.onsuccess = this._find_on_success.bind(this, url, callback);
+  request.onerror = this._find_on_error.bind(this, url, callback);
 }
 
-_findOnSuccess(url, callback, event) {
+_find_on_success(url, callback, event) {
   const result = event.target.result;
   if(result) {
     this.log.log('Found icon url %s in cache for url %s', result.iconURLString,
@@ -59,14 +59,14 @@ _findOnSuccess(url, callback, event) {
   callback(result);
 }
 
-_findOnError(url, callback, event) {
+_find_on_error(url, callback, event) {
   this.log.error(url.href, event.target.error);
   callback();
 }
 
 add(conn, pageURL, iconURL) {
   const entry = {};
-  entry.pageURLString = this.normalizeURL(pageURL).href;
+  entry.pageURLString = this.normalize_url(pageURL).href;
   entry.iconURLString = iconURL.href;
   entry.dateUpdated = new Date();
   this.log.debug('Adding favicon entry', entry);
@@ -77,30 +77,30 @@ add(conn, pageURL, iconURL) {
 
 remove(conn, pageURL) {
   this.log.debug('Removing favicon entry with page url', pageURL.href);
-  const pageURLString = this.normalizeURL(pageURL).href;
-  this.log.debug('Removing if exists', pageURLString);
+  const page_url = this.normalize_url(pageURL).href;
+  this.log.debug('Removing if exists', page_url);
   const tx = conn.transaction('favicon-cache', 'readwrite');
   const store = tx.objectStore('favicon-cache');
-  store.delete(pageURLString);
+  store.delete(page_url);
 }
 
-openCursor(conn, onSuccess, onError) {
+open_cursor(conn, on_success, on_error) {
   this.log.debug('Opening cursor over all favicon entries');
   const tx = conn.transaction('favicon-cache', 'readwrite');
   const store = tx.objectStore('favicon-cache');
   const request = store.openCursor();
-  request.onsuccess = onSuccess;
-  request.onerror = onError;
+  request.onsuccess = on_success;
+  request.onerror = on_error;
   return tx;
 }
 
-normalizeURL(url) {
-  const clone = this.cloneURL(url);
+normalize_url(url) {
+  const clone = this.clone_url(url);
   clone.hash = '';
   return clone;
 }
 
-cloneURL(url) {
+clone_url(url) {
   return new URL(url.href);
 }
 

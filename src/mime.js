@@ -6,21 +6,21 @@ class MimeUtils {
 
   // TODO: js is application/javascript, but maybe should allow
   // TODO: does this actually not belong here?
-  static isNonHTMLURL(url) {
-    const badTypes = ['application', 'audio', 'image', 'video'];
-    const ext = URLUtils.getExtension(url);
+  static is_non_html_url(url) {
+    const bad_types = ['application', 'audio', 'image', 'video'];
+    const ext = URLUtils.get_url_extension(url);
     if(ext) {
-      const type = MimeUtils.extensionMap[ext];
+      const type = MimeUtils.extension_map[ext];
       if(type) {
-        const superType = type.substring(0, type.indexOf('/'));
-        return badTypes.includes(superType);
+        const super_type = type.substring(0, type.indexOf('/'));
+        return bad_types.includes(super_type);
       }
     }
     return false;
   }
 }
 
-MimeUtils.extensionMap = {
+MimeUtils.extension_map = {
   'ai':   'application/postscript',
   'aif':  'audio/aiff',
   'atom': 'application/atom+xml',

@@ -11,12 +11,12 @@ TODO:
 
 'use strict';
 
-const Boilerplate = {};
+{
 
-Boilerplate.filter = function(doc) {
-  const bestElement = Boilerplate.findHighScoreElement(doc);
-  Boilerplate.prune(doc, bestElement);
-};
+function filter_boilerplate(doc) {
+  const best_element = find_high_score_element(doc);
+  prune(doc, best_element);
+}
 
 // Returns a measure indicating whether the element contains boilerplate or
 // content based on its text. Elements with a large amount of text are
@@ -25,28 +25,26 @@ Boilerplate.filter = function(doc) {
 // The metric is adapted from the paper:
 // "Boilerplate Detection using Shallow Text Features".
 // See http://www.l3s.de/~kohlschuetter/boilerplate.
-Boilerplate.deriveTextBias = function(element) {
+function derive_text_bias(element) {
   const text = element.textContent;
-  const trimmedText = text.trim();
-  const textLength = 0.0 + trimmedText.length;
-  const anchorLength = 0.0 + Boilerplate.deriveAnchorLen(element);
-  return (0.25 * textLength) - (0.7 * anchorLength);
-};
+  const trimmed_text = text.trim();
+  const text_len = 0.0 + trimmed_text.length;
+  const anchor_len = 0.0 + derive_anchor_len(element);
+  return (0.25 * text_len) - (0.7 * anchor_len);
+}
 
 // Returns the approximate number of characters contained within anchors that
 // are descendants of the element.
 // This assumes that the HTML is generally well-formed. Specifically it assumes
 // no anchor nesting.
-Boilerplate.deriveAnchorLen = function(element) {
+function derive_anchor_len(element) {
+  let anchor_len = 0;
   const anchors = element.querySelectorAll('a[href]');
-  const numAnchors = anchors.length;
-  let anchorLength = 0;
-  for(let i = 0; i < numAnchors; i++) {
-    const anchor = anchors[i];
-    anchorLength = anchorLength + anchor.textContent.trim().length;
+  for(let anchor of anchors) {
+    anchor_len = anchor_len + anchor.textContent.trim().length;
   }
-  return anchorLength;
-};
+  return anchor_len;
+}
 
 // These scores adjust the parent scores of these elements. A parent element
 // is more likely to be the best element or a content element when it contains
@@ -58,7 +56,7 @@ Boilerplate.deriveAnchorLen = function(element) {
 // comparision to some of the other biases. The most help comes when there is
 // a clear container element of multiple paragraphs.
 // TODO: switch back to lowercase and use node.localName to lookup
-Boilerplate.ancestorBiasMap = {
+const ancestor_bias_map = {
   'A': -5,
   'ASIDE': -50,
   'BLOCKQUOTE': 20,
@@ -79,23 +77,23 @@ Boilerplate.ancestorBiasMap = {
   'UL': -20
 };
 
-Boilerplate.deriveAncestorBias = function(element) {
-  let totalBias = 0;
+function derive_ancestor_bias(element) {
+  let total_bias = 0;
   for(let child = element.firstElementChild; child;
     child = child.nextElementSibling) {
-    const bias = Boilerplate.ancestorBiasMap[child.nodeName];
+    const bias = ancestor_bias_map[child.nodeName];
     if(bias) {
-      totalBias = totalBias + bias;
+      total_bias = total_bias + bias;
     }
   }
 
-  return totalBias;
-};
+  return total_bias;
+}
 
 // If one of these tokens is found in an attribute value of an element,
 // these bias the element's boilerplate score. A higher score means that the
 // element is more likely to be content. This list was created empirically.
-Boilerplate.attrTokenWeights = {
+const attr_token_weights = {
   'ad': -500,
   'ads': -500,
   'advert': -500,
@@ -131,25 +129,25 @@ Boilerplate.attrTokenWeights = {
 // Computes a bias for an element based on the values of some of its
 // attributes.
 // NOTE: using var due to v8 deopt warnings - Unsupported use of phi const
-Boilerplate.deriveAttrBias = function(element) {
+function derive_attr_bias(element) {
   // Start by merging the element's interesting attribute values into a single
   // string in preparation for tokenization.
   // Accessing attributes by property is faster than using getAttribute. It
   // turns out that getAttribute is horribly slow in Chrome. I have not figured
   // out why, and I have not figured out a workaround.
-  var valuesArray = [element.id, element.name, element.className];
+  var vals_array = [element.id, element.name, element.className];
 
   // Array.prototype.join implicitly filters null/undefined values so we do not
   // need to check if the property values are defined.
-  var valuesString = valuesArray.join(' ');
+  var vals_str = vals_array.join(' ');
 
-  // If the element did not have attribute values, then the valuesString
+  // If the element did not have attribute values, then the vals_str
   // variable will only contain whitespace or some negligible token so we exit
   // early to minimize the work done.
   // TODO: maybe I want to declare total bias before this and return total
   // bias here so that I am more consistent about the value returned and its
   // type, so it serves as a better reminder.
-  if(valuesString.length < 3) {
+  if(vals_str.length < 3) {
     return 0.0;
   }
 
@@ -159,115 +157,108 @@ Boilerplate.deriveAttrBias = function(element) {
   // that for us. Also, this is one function call in contrast to 3. toLowerCase
   // scales better with larger strings that the JS engine scales with function
   // calls.
-  var lcValuesString = valuesString.toLowerCase();
-  var tokenArray = lcValuesString.split(/[\s\-_0-9]+/g);
+  var lc_vals_str = vals_str.toLowerCase();
+  var token_array = lc_vals_str.split(/[\s\-_0-9]+/g);
 
   // Now add up the bias of each distinct token. Previously this was done in
   // two passes, with the first pass generating a new array of distinct tokens,
   // and the second pass summing up the distinct token biases. I seem to get
   // better performance without creating an intermediate array.
 
-  var tokenArrayLength = tokenArray.length;
+  var token_array_len = token_array.length;
 
   // I use the in operator to test membership which follows the prototype
   // so i think it makes sense to reduce the scope of the lookup by excluding
   // the prototype here (???)
-  var seenTokens = Object.create(null);
-  var totalBias = 0;
+  var seen_tokens = Object.create(null);
+  var total_bias = 0;
   var bias = 0;
   var token;
 
-  for(var i = 0; i < tokenArrayLength; i++) {
-    token = tokenArray[i];
+  for(var i = 0; i < token_array_len; i++) {
+    token = token_array[i];
 
     // Split can yield empty strings for some reason, so skip those.
     if(!token) {
       continue;
     }
 
-    if(token in seenTokens) {
+    if(token in seen_tokens) {
       continue;
     } else {
-      seenTokens[token] = 1;
+      seen_tokens[token] = 1;
     }
 
-    bias = Boilerplate.attrTokenWeights[token];
+    bias = attr_token_weights[token];
     if(bias) {
-      totalBias += bias;
+      total_bias += bias;
     }
   }
 
-  return 0.0 + totalBias;
-};
+  return 0.0 + total_bias;
+}
 
-// Only these elements are considered as potential best elements
-Boilerplate.candidateSelector = [
-  'ARTICLE', 'CONTENT', 'DIV', 'LAYER', 'MAIN', 'SECTION', 'SPAN', 'TD'
-].join(',');
 
-Boilerplate.listSelector = 'LI, OL, UL, DD, DL, DT';
-Boilerplate.navSelector = 'ASIDE, HEADER, FOOTER, NAV, MENU, MENUITEM';
-
-// Scores each of the candidate elements and returns the one with the highest
-// score
-Boilerplate.findHighScoreElement = function(document) {
+function find_high_score_element(doc) {
+  const candidate_selector =
+    'ARTICLE, CONTENT, DIV, LAYER, MAIN, SECTION, SPAN, TD';
+  const list_selector = 'LI, OL, UL, DD, DL, DT';
+  const nav_selector = 'ASIDE, HEADER, FOOTER, NAV, MENU, MENUITEM';
 
   // Init to documentElement. This ensures we always return something and also
   // sets documentElement as the default best element.
-  let bestElement = document.documentElement;
+  let best_element = doc.documentElement;
 
-  const body = document.body;
+  const body = doc.body;
   if(!body) {
-    return bestElement;
+    return best_element;
   }
 
-  const elements = body.querySelectorAll(Boilerplate.candidateSelector);
-  let highScore = 0.0;
+  const elements = body.querySelectorAll(candidate_selector);
+  let high_score = 0.0;
   for(let i = 0, len = elements.length; i < len; i++) {
     let element = elements[i];
+    let score = 0.0 + derive_text_bias(element);
 
-    let score = 0.0 + Boilerplate.deriveTextBias(element);
-
-    if(element.closest(Boilerplate.listSelector)) {
+    if(element.closest(list_selector)) {
       score -= 200.0;
     }
 
-    if(element.closest(Boilerplate.navSelector)) {
+    if(element.closest(nav_selector)) {
       score -= 500.0;
     }
 
-    score += 0.0 + Boilerplate.deriveAncestorBias(element);
-    score += Boilerplate.deriveImgBias(element);
-    score += Boilerplate.deriveAttrBias(element);
+    score += 0.0 + derive_ancestor_bias(element);
+    score += derive_img_bias(element);
+    score += derive_attr_bias(element);
 
-    if(score > highScore) {
-      bestElement = element;
-      highScore = score;
+    if(score > high_score) {
+      best_element = element;
+      high_score = score;
     }
   }
 
-  return bestElement;
-};
+  return best_element;
+}
 
-Boilerplate.deriveImgBias = function(parentElement) {
+function derive_img_bias(parent_element) {
   let bias = 0.0;
-  let numImages = 0;
+  let num_imgs = 0;
   let area = 0;
 
-  // Walk the child elements, looking for images
-  for(let element = parentElement.firstElementChild; element;
+  for(let element = parent_element.firstElementChild; element;
     element = element.nextElementSibling) {
     if(element.localName !== 'img') {
       continue;
     }
 
-    // Increase bias for containing a large image
+    // Increase score for containing a large image
     area = element.width * element.height;
     if(area) {
       bias = bias + (0.0015 * Math.min(100000.0, area));
     }
 
-    // Increase bias for containing descriptive information
+    // Increase score for containing descriptive information
     if(element.getAttribute('alt')) {
       bias = bias + 20.0;
     }
@@ -276,56 +267,51 @@ Boilerplate.deriveImgBias = function(parentElement) {
       bias = bias + 30.0;
     }
 
-    if(Boilerplate.findCaption(element)) {
+    if(find_caption(element)) {
       bias = bias + 100.0;
     }
 
-    numImages++;
+    num_imgs++;
   }
 
-  // Penalize elements containing multiple images. These are usually
-  // carousels.
-  if(numImages > 1) {
-    bias = bias + (-50.0 * (numImages - 1));
+  // Penalize carousels
+  if(num_imgs > 1) {
+    bias = bias + (-50.0 * (num_imgs - 1));
   }
 
   return bias;
-};
+}
 
-Boilerplate.findCaption = function(image) {
+function find_caption(image) {
   const figure = image.closest('figure');
   return figure ? figure.querySelector('FIGCAPTION') : null;
-};
+}
 
 // Remove elements that do not intersect with the best element
 // In order to reduce the number of removals, this uses a contains check
 // to avoid removing elements that exist in the static node list but
 // are descendants of elements removed in a previous iteration. The
 // assumption is that this yields better performance.
-// TODO: instead of doing multiple calls to contains, I think I can use one
-// call to compareDocumentPosition and then check against its result.
-// I am not very familiar with compareDocumentPosition yet, that is the
-// only reason I am not using it.
-Boilerplate.prune = function(document, bestElement) {
-
-  if(!bestElement) {
-    throw new ReferenceError('bestElement should always be defined');
-  }
-
-  if(bestElement === document.documentElement) {
+// TODO: use compareDocumentPosition instead of multiple contains calls
+function prune(doc, best_element) {
+  if(!best_element)
+    throw new TypeError();
+  if(best_element === doc.documentElement)
     return;
-  }
-
-  if(!document.body) {
+  if(!doc.body)
     return;
-  }
-  const docElement = document.documentElement;
-  const elements = document.body.querySelectorAll('*');
-  for(let i = 0, len = elements.length; i < len; i++) {
-    let element = elements[i];
-    if(!element.contains(bestElement) && !bestElement.contains(element) &&
-      docElement.contains(element)) {
+
+  const doc_element = doc.documentElement;
+  const elements = doc.body.querySelectorAll('*');
+  for(let element of elements) {
+    if(!element.contains(best_element) &&
+      !best_element.contains(element) &&
+      doc_element.contains(element)) {
       element.remove();
     }
   }
-};
+}
+
+this.filter_boilerplate = filter_boilerplate;
+
+}

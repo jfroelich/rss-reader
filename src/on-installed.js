@@ -8,5 +8,5 @@ chrome.runtime.onInstalled.addListener(function(event) {
 
   // This is also the first database call, which triggers database setup
   const conn = null;
-  updateBadge(conn, SilentConsole);
+  update_badge(conn, SilentConsole);
 });

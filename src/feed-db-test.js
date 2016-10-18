@@ -5,28 +5,28 @@ function test() {
   db.name = 'test-feed-db';
   db.version = 1;
   db.log = console;
-  db.connect(openOnSuccess, openOnError);
+  db.connect(connect_on_success, connect_on_error);
 
-  function openOnSuccess(conn) {
+  function connect_on_success(conn) {
     console.log('Successfully opened database', db.name);
     console.log('Requesting database %s to close eventually', db.name);
     conn.close();
     const request = db.delete();
-    request.onsuccess = deleteOnSuccess;
-    request.onerror = deleteOnError;
+    request.onsuccess = delete_on_success;
+    request.onerror = delete_on_error;
   }
 
-  function openOnError() {
+  function connect_on_error() {
     const request = db.delete();
-    request.onsuccess = deleteOnSuccess;
-    request.onerror = deleteOnError;
+    request.onsuccess = delete_on_success;
+    request.onerror = delete_on_error;
   }
 
-  function deleteOnSuccess(event) {
+  function delete_on_success(event) {
     console.log('Deleted database', db.name);
   }
 
-  function deleteOnError(event) {
+  function delete_on_error(event) {
     console.error(event.target.error);
   }
 }

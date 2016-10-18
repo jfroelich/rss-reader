@@ -4,7 +4,7 @@
 
 {
 
-function refreshFeedIcons(log) {
+function refresh_feed_icons(log) {
   log.log('Refreshing feed favicons...');
   const ctx = {
     'pendingCount': 0,
@@ -31,9 +31,9 @@ function openDBOnError() {
 }
 
 function iconCacheConnectOnSuccess(event) {
-  this.log.debug('Connected to favicon cache');
+  this.log.debug('Connected to database', this.iconCache.name);
   this.iconCacheConn = event.target.result;
-  this.feedCache.getAllFeeds(this.conn, onGetAllFeeds.bind(this));
+  this.feedCache.get_all_feeds(this.conn, onGetAllFeeds.bind(this));
 }
 
 function iconCacheConnectOnError(event) {
@@ -58,60 +58,52 @@ function lookup(feed) {
   if(feed.link) {
     lookupURL = new URL(feed.link);
   } else {
-    const feedURL = new URL(Feed.getURL(feed));
+    const feedURL = new URL(get_feed_url(feed));
     lookupURL = new URL(feedURL.origin);
   }
 
   this.log.debug('Looking up favicon for feed %s using url %s',
-    Feed.getURL(feed), lookupURL.href);
+    get_feed_url(feed), lookupURL.href);
 
   const doc = null;
-  lookupFavicon(this.iconCache, this.iconCacheConn, lookupURL, doc, this.log,
+  lookup_favicon(this.iconCache, this.iconCacheConn, lookupURL, doc, this.log,
     onLookup.bind(this, feed));
 }
 
 function onLookup(feed, iconURL) {
-  this.log.debug('lookupFavicon result for feed', Feed.getURL(feed), iconURL ?
+  this.log.debug('lookup_favicon result for feed', get_feed_url(feed), iconURL ?
     iconURL.href: 'no icon');
 
   if(iconURL) {
     if(!feed.faviconURLString || feed.faviconURLString !== iconURL.href) {
-      this.log.debug('Setting feed %s favicon to %s', Feed.getURL(feed),
+      this.log.debug('Setting feed %s favicon to %s', get_feed_url(feed),
         iconURL.href);
       this.numFeedsModified++;
       feed.faviconURLString = iconURL.href;
-      this.feedCache.putFeed(this.conn, feed, onPutFeed.bind(this));
+      this.feedCache.put_feed(this.conn, feed, onPutFeed.bind(this));
     }
   }
 
   this.pendingCount--;
-  if(!this.pendingCount) {
+  if(!this.pendingCount)
     onComplete.call(this);
-  }
 }
 
 function onPutFeed(type, feed) {
   if(type === 'success') {
-    this.log.debug('Updated feed', Feed.getURL(feed));
+    this.log.debug('Updated feed', get_feed_url(feed));
   }
 }
 
 function onComplete() {
-  if(this.iconCacheConn) {
-    this.log.debug('Closing icon cache connection');
+  if(this.iconCacheConn)
     this.iconCacheConn.close();
-  }
-
-  if(this.conn) {
-    this.log.debug('Requesting %s database connection to close',
-      this.feedDb.name);
+  if(this.conn)
     this.conn.close();
-  }
-
-  this.log.log('Finished refreshing feed favicons, modified',
+  this.log.log('Refreshed favicons, modified',
     this.numFeedsModified, 'feeds');
 }
 
-this.refreshFeedIcons = refreshFeedIcons;
+this.refresh_feed_icons = refresh_feed_icons;
 
 }

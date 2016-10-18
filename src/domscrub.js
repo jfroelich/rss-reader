@@ -2,47 +2,49 @@
 
 'use strict';
 
-const DOMScrub = {};
+// For sanitizing the contents of a document
 
-DOMScrub.cleanDoc = function(doc) {
-  DOMScrub.filterComments(doc);
-  DOMScrub.filterFrames(doc);
-  DOMScrub.filterNoscripts(doc);
-  DOMScrub.filterBlacklistedElements(doc);
-  DOMScrub.filterHidden(doc);
-  DOMScrub.adjustBlockInlineElements(doc);
-  DOMScrub.filterBreaks(doc);
-  DOMScrub.unwrapScriptAnchors(doc);
-  DOMScrub.unwrapFormattingAnchors(doc);
-  DOMScrub.filterSmallImages(doc);
-  DOMScrub.filterSourcelessImages(doc);
-  DOMScrub.filterUnwrappables(doc);
-  DOMScrub.filterFigures(doc);
-  DOMScrub.filterHairspaces(doc);
-  DOMScrub.condenseWhitespace(doc);
-  DOMScrub.unwrapSingleItemLists(doc);
-  DOMScrub.filterTables(doc, 20);
-  DOMScrub.filterLeaves(doc);
-  DOMScrub.filterHRs(doc);
-  DOMScrub.trimDoc(doc);
-  DOMScrub.filterAttributes(doc);
+{
+
+function scrub_dom(doc) {
+  filter_comments(doc);
+  filter_frames(doc);
+  filter_noscripts(doc);
+  filter_blacklist(doc);
+  filter_hidden(doc);
+  adjust_block_inlines(doc);
+  filter_breaks(doc);
+  filter_script_anchors(doc);
+  filter_format_anchors(doc);
+  filter_small_images(doc);
+  filter_sourceless_images(doc);
+  filter_unwrappables(doc);
+  filter_figures(doc);
+  filter_hairs(doc);
+  condense_node_whitespace(doc);
+  filter_single_item_lists(doc);
+  filter_tables(doc, 20);
+  filter_leaves(doc);
+  filter_hrs(doc);
+  trim_doc(doc);
+  filter_attrs(doc);
 };
 
-DOMScrub.addNoReferrer = function(doc) {
+function add_no_referrer(doc) {
   const anchors = doc.querySelectorAll('a');
   for(let anchor of anchors) {
     anchor.setAttribute('rel', 'noreferrer');
   }
-};
+}
 
 // Looks for cases such as <a><p>text</p></a> and transforms them into
 // <p><a>text</a></p>.
-DOMScrub.adjustBlockInlineElements = function(doc) {
-  const blockSelector = 'blockquote, h1, h2, h3, h4, h5, h6, p';
-  const inlineInBlockSelector = 'a';
-  const blocks = doc.querySelectorAll(blockSelector);
+function adjust_block_inlines(doc) {
+  const block_selector = 'blockquote, h1, h2, h3, h4, h5, h6, p';
+  const inline_block_selector = 'a';
+  const blocks = doc.querySelectorAll(block_selector);
   for(let block of blocks) {
-    const ancestor = block.closest(inlineInBlockSelector);
+    const ancestor = block.closest(inline_block_selector);
     if(ancestor && ancestor.parentNode) {
       ancestor.parentNode.insertBefore(block, ancestor);
       for(let node = block.firstChild; node; node = block.firstChild) {
@@ -51,115 +53,115 @@ DOMScrub.adjustBlockInlineElements = function(doc) {
       block.appendChild(ancestor);
     }
   }
-};
+}
 
-DOMScrub.condenseWhitespace = function(doc) {
-  const selector = 'code, pre, ruby, textarea, xmp';
+function condense_node_whitespace(doc) {
+  const ws_sensitive = 'code, pre, ruby, textarea, xmp';
   const it = doc.createNodeIterator(doc.documentElement, NodeFilter.SHOW_TEXT);
   for(let n = it.nextNode(); n; n = it.nextNode()) {
     const value = n.nodeValue;
-    if(value.length > 3 && !n.parentNode.closest(selector)) {
+    if(value.length > 3 && !n.parentNode.closest(ws_sensitive)) {
       const condensed = value.replace(/\s{2,}/g, ' ');
       if(condensed.length !== value.length) {
         n.nodeValue = condensed;
       }
     }
   }
-};
+}
 
-DOMScrub.unwrapScriptAnchors = function(doc) {
+function filter_script_anchors(doc) {
   const anchors = doc.querySelectorAll('a');
   for(let anchor of anchors) {
     const url = anchor.getAttribute('href');
     if(url && url.length > 11 && /^\s*javascript:/i.test(url)) {
-      DOMScrub.unwrap(anchor);
+      unwrap(anchor);
     }
   }
-};
+}
 
-DOMScrub.unwrapFormattingAnchors = function(doc) {
+function filter_format_anchors(doc) {
   const anchors = doc.querySelectorAll('a');
   for(let anchor of anchors) {
     if(!anchor.hasAttribute('href') && !anchor.hasAttribute('name')) {
-      DOMScrub.unwrap(anchor);
+      unwrap(anchor);
     }
   }
-};
+}
 
-DOMScrub.blacklistElements = [
-  'APPLET', 'AUDIO', 'BASE', 'BASEFONT', 'BGSOUND', 'BUTTON', 'COMMAND',
-  'DATALIST', 'DIALOG', 'EMBED', 'FIELDSET', 'FRAME', 'FRAMESET', 'HEAD',
-  'IFRAME', 'INPUT', 'ISINDEX', 'LINK', 'MATH', 'META',
-  'OBJECT', 'OUTPUT', 'OPTGROUP', 'OPTION', 'PARAM', 'PATH', 'PROGRESS',
-  'SCRIPT', 'SELECT', 'SPACER', 'STYLE', 'SVG', 'TEXTAREA', 'TITLE',
-  'VIDEO', 'XMP'
+const blacklist = [
+  'applet', 'audio', 'base', 'basefont', 'bgsound', 'button', 'command',
+  'datalist', 'dialog', 'embed', 'fieldset', 'frame', 'frameset', 'head',
+  'iframe', 'input', 'isindex', 'link', 'math', 'meta',
+  'object', 'output', 'optgroup', 'option', 'param', 'path', 'progress',
+  'script', 'select', 'spacer', 'style', 'svg', 'textarea', 'title',
+  'video', 'xmp'
 ];
-DOMScrub.blacklistSelector = DOMScrub.blacklistElements.join(',');
+const blacklist_selector = blacklist.join(',');
 
-DOMScrub.filterBlacklistedElements = function(doc) {
-  const de = doc.documentElement;
-  const elements = doc.querySelectorAll(DOMScrub.blacklistSelector);
+function filter_blacklist(doc) {
+  const doc_element = doc.documentElement;
+  const elements = doc.querySelectorAll(blacklist_selector);
   for(let element of elements) {
-    if(de.contains(element)) {
+    if(doc_element.contains(element)) {
       element.remove();
     }
   }
-};
+}
 
-DOMScrub.filterBreaks = function(doc) {
+function filter_breaks(doc) {
   const elements = doc.querySelectorAll('br + br');
   for(let element of elements) {
     element.remove();
   }
-};
+}
 
-DOMScrub.filterComments = function(doc) {
-  const rootNode = doc.documentElement;
-  const it = doc.createNodeIterator(rootNode, NodeFilter.SHOW_COMMENT);
+function filter_comments(doc) {
+  const doc_element = doc.documentElement;
+  const it = doc.createNodeIterator(doc_element, NodeFilter.SHOW_COMMENT);
   for(let node = it.nextNode(); node; node = it.nextNode()) {
     node.remove();
   }
-};
+}
 
-DOMScrub.filterAttributes = function(doc) {
+function filter_attrs(doc) {
   const elements = doc.getElementsByTagName('*');
   for(let element of elements) {
-    let elementName = element.localName;
+    let el_name = element.localName;
     let attributes = element.attributes;
     if(!attributes || !attributes.length) {
       continue;
     }
 
-    if(elementName === 'source') {
+    if(el_name === 'source') {
       for(let i = attributes.length - 1; i > -1; i--) {
-        let attributeName = attributes[i].name;
-        if(attributeName !== 'type' && attributeName !== 'srcset' &&
-          attributeName !== 'sizes' && attributeName !== 'media' &&
-          attributeName !== 'src') {
-          element.removeAttribute(attributeName);
+        let attr_name = attributes[i].name;
+        if(attr_name !== 'type' && attr_name !== 'srcset' &&
+          attr_name !== 'sizes' && attr_name !== 'media' &&
+          attr_name !== 'src') {
+          element.removeAttribute(attr_name);
         }
       }
-    } else if(elementName === 'a') {
+    } else if(el_name === 'a') {
       for(let i = attributes.length - 1; i > -1; i--) {
-        let attributeName = attributes[i].name;
-        if(attributeName !== 'href' && attributeName !== 'name' &&
-          attributeName !== 'title') {
-          element.removeAttribute(attributeName);
+        let attr_name = attributes[i].name;
+        if(attr_name !== 'href' && attr_name !== 'name' &&
+          attr_name !== 'title') {
+          element.removeAttribute(attr_name);
         }
       }
-    } else if(elementName === 'iframe') {
+    } else if(el_name === 'iframe') {
       for(let i = attributes.length - 1; i > -1; i--) {
-        let attributeName = attributes[i].name;
-        if(attributeName !== 'src') {
-          element.removeAttribute(attributeName);
+        let attr_name = attributes[i].name;
+        if(attr_name !== 'src') {
+          element.removeAttribute(attr_name);
         }
       }
-    } else if(elementName === 'img') {
+    } else if(el_name === 'img') {
       for(let i = attributes.length - 1; i > -1; i--) {
-        let attributeName = attributes[i].name;
-        if(attributeName !== 'src' && attributeName !== 'alt' &&
-          attributeName !== 'srcset' && attributeName !== 'title') {
-          element.removeAttribute(attributeName);
+        let attr_name = attributes[i].name;
+        if(attr_name !== 'src' && attr_name !== 'alt' &&
+          attr_name !== 'srcset' && attr_name !== 'title') {
+          element.removeAttribute(attr_name);
         }
       }
     } else {
@@ -168,9 +170,9 @@ DOMScrub.filterAttributes = function(doc) {
       }
     }
   }
-};
+}
 
-DOMScrub.hiddenSelector = [
+const hidden_selector = [
   '[style*="display:none"]',
   '[style*="display: none"]',
   '[style*="visibility:hidden"]',
@@ -179,127 +181,126 @@ DOMScrub.hiddenSelector = [
   '[aria-hidden="true"]'
 ].join(',');
 
-DOMScrub.filterHidden = function(doc) {
-  const elements = doc.querySelectorAll(DOMScrub.hiddenSelector);
-  const de = doc.documentElement;
+function filter_hidden(doc) {
+  const elements = doc.querySelectorAll(hidden_selector);
+  const doc_element = doc.documentElement;
   for(let element of elements) {
-    if(element !== de && de.contains(element)) {
-      DOMScrub.unwrap(element);
+    if(element !== doc_element && doc_element.contains(element)) {
+      unwrap(element);
     }
   }
-};
+}
 
-DOMScrub.hrSelector = [
+const hr_selector = [
   'hr + hr', // consecutive hrs
   'ul > hr', // hierarchy error
   'ol > hr' // hierarchy error
 ].join(',');
 
-DOMScrub.filterHRs = function(doc) {
-  const elements = doc.querySelectorAll(DOMScrub.hrSelector);
+function filter_hrs(doc) {
+  const elements = doc.querySelectorAll(hr_selector);
   for(let element of elements) {
     element.remove();
   }
-};
+}
 
-DOMScrub.filterSmallImages = function(doc) {
+function filter_small_images(doc) {
   const images = doc.querySelectorAll('img');
   for(let img of images) {
     if(img.width < 2 || img.height < 2) {
       img.remove();
     }
   }
-};
+}
 
-DOMScrub.filterSourcelessImages = function(doc) {
+function filter_sourceless_images(doc) {
   const images = doc.querySelectorAll('img');
   for(let img of images) {
     if(!img.hasAttribute('src') && !img.hasAttribute('srcset')) {
       img.remove();
     }
   }
-};
+}
 
-DOMScrub.filterInvalidAnchors = function(doc) {
+function filter_invalid_anchors(doc) {
   const anchors = doc.querySelectorAll('a');
   for(let anchor of anchors) {
-    if(DOMScrub.isInvalidAnchor(anchor)) {
+    if(is_invalid_anchor(anchor)) {
       anchor.remove();
     }
   }
-};
+}
 
-DOMScrub.isInvalidAnchor = function(anchor) {
+function is_invalid_anchor(anchor) {
   const href = anchor.getAttribute('href');
   return href && /^\s*https?:\/\/#/i.test(href);
-};
+}
 
-DOMScrub.filterLeaves = function(doc) {
-  const body = doc.body;
-  if(!body) {
+function filter_leaves(doc) {
+  if(!doc.body)
     return;
-  }
 
-  const de = doc.documentElement;
-  const elements = body.querySelectorAll('*');
+  const doc_element = doc.documentElement;
+  const elements = doc.body.querySelectorAll('*');
   for(let element of elements) {
-    if(de.contains(element) && DOMScrub.isLeaf(element)) {
+    if(doc_element.contains(element) && is_leaf(element)) {
       element.remove();
     }
   }
-};
+}
 
-DOMScrub.filterTables = function(doc, limit) {
+function filter_tables(doc, limit) {
   const tables = doc.querySelectorAll('table');
   for(let i = 0, len = tables.length; i < len; i++) {
     const table = tables[i];
-    if(DOMScrub.isSingleColTable(table, limit)) {
-      DOMScrub.unwrapSingleColTable(table);
+    if(is_single_col_table(table, limit)) {
+      unwrap_single_col_table(table);
     }
   }
-};
+}
 
-DOMScrub.isSingleColTable = function(table, limit) {
+function is_single_col_table(table, limit) {
   const rows = table.rows;
   const upper = Math.min(rows.length, limit);
   for(let i = 0; i < upper; i++) {
-    if(!DOMScrub.isSingleColRow(rows[i])) {
+    if(!is_single_col_row(rows[i])) {
       return false;
     }
   }
   return true;
-};
+}
 
-DOMScrub.isSingleColRow = function(row) {
+// TODO: for .. of?
+function is_single_col_row(row) {
   const cells = row.cells;
-  let nonEmptyCount = 0;
+  let num_non_empty = 0;
   for(let i = 0, len = cells.length; i < len; i++) {
     const cell = cells[i];
-    if(!DOMScrub.isLeaf(cell)) {
-      if(++nonEmptyCount > 1) {
+    if(!is_leaf(cell)) {
+      if(++num_non_empty > 1) {
         return false;
       }
     }
   }
 
   return true;
-};
+}
 
 // TODO: only pad if adjacent to text
 // TODO: can i use for..of over table.rows?
-DOMScrub.unwrapSingleColTable = function(table) {
+function unwrap_single_col_table(table) {
   const rows = table.rows;
-  const numRows = rows.length;
+  const num_rows = rows.length;
   const parent = table.parentNode;
   const doc = table.ownerDocument;
 
   parent.insertBefore(doc.createTextNode(' '), table);
-  for(let i = 0; i < numRows; i++) {
+  for(let i = 0; i < num_rows; i++) {
     const row = rows[i];
     // TODO: if the cell is a leaf, skip it and do not add a paragraph
     for(let k = 0, clen = row.cells.length; k < clen; k++) {
       const cell = row.cells[k];
-      DOMScrub.insertChildrenBefore(cell, table);
+      insert_children_before(cell, table);
     }
 
     parent.insertBefore(doc.createElement('p'), table);
@@ -307,9 +308,9 @@ DOMScrub.unwrapSingleColTable = function(table) {
 
   parent.insertBefore(doc.createTextNode(' '), table);
   table.remove();
-};
+}
 
-DOMScrub.unwrappableSelector = [
+const unwrappable_selector = [
   'abbr', 'acronym', 'article', 'aside', 'center', 'colgroup', 'data',
   'details', 'div', 'footer', 'header', 'help', 'hgroup', 'ilayer', 'insert',
   'layer', 'legend', 'main', 'mark', 'marquee', 'meter', 'multicol', 'nobr',
@@ -317,29 +318,29 @@ DOMScrub.unwrappableSelector = [
   'blink', 'font', 'plaintext', 'small', 'tt'
 ].join(',');
 
-DOMScrub.filterUnwrappables = function(doc) {
-  const elements = doc.querySelectorAll(DOMScrub.unwrappableSelector);
+function filter_unwrappables(doc) {
+  const elements = doc.querySelectorAll(unwrappable_selector);
   for(let element of elements) {
-    DOMScrub.unwrap(element);
+    unwrap(element);
   }
+}
+
+const leaf_exceptions = {
+  'area': 0, 'audio': 0, 'base': 0, 'col': 0, 'command': 0, 'br': 0,
+  'canvas': 0, 'col': 0, 'hr': 0, 'iframe': 0, 'img': 0, 'input': 0,
+  'keygen': 0, 'meta': 0, 'nobr': 0, 'param': 0, 'path': 0, 'source': 0,
+  'sbg': 0, 'textarea': 0, 'track': 0, 'video': 0, 'wbr': 0
 };
 
-DOMScrub.leafExceptions = {
-  'area': 1, 'audio': 1, 'base': 1, 'col': 1, 'command': 1, 'br': 1,
-  'canvas': 1, 'col': 1, 'hr': 1, 'iframe': 1, 'img': 1, 'input': 1,
-  'keygen': 1, 'meta': 1, 'nobr': 1, 'param': 1, 'path': 1, 'source': 1,
-  'sbg': 1, 'textarea': 1, 'track': 1, 'video': 1, 'wbr': 1
-};
-
-DOMScrub.isLeaf = function(node) {
+function is_leaf(node) {
   switch(node.nodeType) {
     case Node.ELEMENT_NODE:
-      if(node.localName in DOMScrub.leafExceptions) {
+      if(node.localName in leaf_exceptions) {
         return false;
       }
 
       for(let child = node.firstChild; child; child = child.nextSibling) {
-        if(!DOMScrub.isLeaf(child)) {
+        if(!is_leaf(child)) {
           return false;
         }
       }
@@ -353,28 +354,28 @@ DOMScrub.isLeaf = function(node) {
   }
 
   return true;
-};
+}
 
-DOMScrub.filterHairspaces = function(doc) {
+function filter_hairs(doc) {
   const it = doc.createNodeIterator(doc.documentElement,
     NodeFilter.SHOW_TEXT);
   for(let node = it.nextNode(); node; node = it.nextNode()) {
     const value = node.nodeValue;
-    const modifiedValue = value.replace(/&(hairsp|#8082|#x200a);/ig, ' ');
-    if(modifiedValue !== value) {
-      node.nodeValue = modifiedValue;
+    const modified = value.replace(/&(hairsp|#8082|#x200a);/ig, ' ');
+    if(modified.length !== value.length) {
+      node.nodeValue = modified;
     }
   }
-};
+}
 
-DOMScrub.filterNoscripts = function(doc) {
+function filter_noscripts(doc) {
   const elements = doc.querySelectorAll('noscript');
   for(let element of elements) {
-    DOMScrub.unwrap(element);
+    unwrap(element);
   }
-};
+}
 
-DOMScrub.filterFrames = function(doc) {
+function filter_frames(doc) {
   const frameset = doc.body;
   if(!frameset || frameset.localName !== 'frameset') {
     return;
@@ -387,61 +388,57 @@ DOMScrub.filterFrames = function(doc) {
       body.appendChild(node);
     }
   } else {
-    const error_node = doc.createTextNode('Unable to display framed document.');
-    body.appendChild(error_node);
+    const error = doc.createTextNode('Unable to display framed document.');
+    body.appendChild(error);
   }
 
   frameset.remove();
   doc.documentElement.appendChild(body);
-};
+}
 
-DOMScrub.filterFigures = function(doc) {
-  const figures = doc.querySelectorAll('FIGURE');
+function filter_figures(doc) {
+  const figures = doc.querySelectorAll('figure');
   for(let figure of figures) {
     if(figure.childElementCount === 1) {
-      DOMScrub.unwrap(figure);
+      unwrap(figure);
     }
   }
-};
+}
 
-DOMScrub.trimDoc = function(doc) {
+function trim_doc(doc) {
   const body = doc.body;
   if(!body) {
     return;
   }
 
-  const firstChild = body.firstChild;
-  if(firstChild) {
-    DOMScrub.trimStep(firstChild, 'nextSibling');
-    const lastChild = body.lastChild;
-    if(lastChild && lastChild !== firstChild) {
-      DOMScrub.trimStep(lastChild, 'previousSibling');
+  const first_child = body.firstChild;
+  if(first_child) {
+    trim_step(first_child, 'nextSibling');
+    const last_child = body.lastChild;
+    if(last_child && last_child !== first_child) {
+      trim_step(last_child, 'previousSibling');
     }
   }
-};
+}
 
-DOMScrub.trimmableElements = {
-  'br': 1,
-  'hr': 1,
-  'nobr': 1
-};
+const trimmable_elements = {'br': 0, 'hr': 0, 'nobr': 0};
 
-DOMScrub.canTrim = function(node) {
-  return node && (node.localName in DOMScrub.trimmableElements ||
+function can_trim(node) {
+  return node && (node.localName in trimmable_elements ||
     (node.nodeType === Node.TEXT_NODE && !node.nodeValue.trim()));
-};
+}
 
-DOMScrub.trimStep = function(startNode, propName) {
-  let node = startNode;
-  while(DOMScrub.canTrim(node)) {
-    let sibling = node[propName];
+function trim_step(start_node, prop_name) {
+  let node = start_node;
+  while(can_trim(node)) {
+    let sibling = node[prop_name];
     node.remove();
     node = sibling;
   }
-};
+}
 
-DOMScrub.unwrap = function(element, referenceNode) {
-  const target = referenceNode || element;
+function unwrap(element, ref_node) {
+  const target = ref_node || element;
   const parent = target.parentNode;
 
   if(!parent) {
@@ -449,38 +446,39 @@ DOMScrub.unwrap = function(element, referenceNode) {
   }
 
   const doc = element.ownerDocument;
-  const prevSibling = target.previousSibling;
-  if(prevSibling && prevSibling.nodeType === Node.TEXT_NODE) {
+  const prev_sib = target.previousSibling;
+  if(prev_sib && prev_sib.nodeType === Node.TEXT_NODE) {
     parent.insertBefore(doc.createTextNode(' '), target);
   }
 
-  DOMScrub.insertChildrenBefore(element, target);
+  insert_children_before(element, target);
 
-  const nextSibling = target.nextSibling;
-  if(nextSibling && nextSibling.nodeType === Node.TEXT_NODE) {
+  const next_sib = target.nextSibling;
+  if(next_sib && next_sib.nodeType === Node.TEXT_NODE) {
     parent.insertBefore(doc.createTextNode(' '), target);
   }
 
   target.remove();
-};
+}
 
-DOMScrub.insertChildrenBefore = function(parentNode, referenceNode) {
-  const refParent = referenceNode.parentNode;
-  for(let node = parentNode.firstChild; node; node = parentNode.firstChild) {
-    refParent.insertBefore(node, referenceNode);
+function insert_children_before(parent_node, ref_node) {
+  const ref_parent = ref_node.parentNode;
+  for(let node = parent_node.firstChild; node; node = parent_node.firstChild) {
+    ref_parent.insertBefore(node, ref_node);
   }
-};
+}
 
-DOMScrub.listSelector = 'ul, ol, dl';
-DOMScrub.listItemNames = {'li': 1, 'dt': 1, 'dd': 1};
-DOMScrub.unwrapSingleItemLists = function(doc) {
-  const lists = doc.querySelectorAll(DOMScrub.listSelector);
+function filter_single_item_lists(doc) {
+  const list_selector = 'ul, ol, dl';
+  const lists = doc.querySelectorAll(list_selector);
   for(let list of lists) {
-    DOMScrub.unwrapSingleItemList(doc, list);
+    unwrap_single_item_list(doc, list);
   }
-};
+}
 
-DOMScrub.unwrapSingleItemList = function(doc, list) {
+const list_item_names = {'li': 0, 'dt': 0, 'dd': 0};
+
+function unwrap_single_item_list(doc, list) {
   const item = list.firstElementChild;
   if(!item) {
     return;
@@ -490,13 +488,13 @@ DOMScrub.unwrapSingleItemList = function(doc, list) {
     return;
   }
 
-  if(!(item.localName in DOMScrub.listItemNames)) {
+  if(!(item.localName in list_item_names)) {
     return;
   }
 
   if(!item.firstChild) {
-    if(DOMScrub.isText(list.previousSibling) &&
-      DOMScrub.isText(list.nextSibling)) {
+    if(is_text_node(list.previousSibling) &&
+      is_text_node(list.nextSibling)) {
       list.parentNode.replaceChild(doc.createTextNode(' '), list);
     } else {
       list.remove();
@@ -505,21 +503,28 @@ DOMScrub.unwrapSingleItemList = function(doc, list) {
     return;
   }
 
-  if(DOMScrub.isText(list.previousSibling) &&
-    DOMScrub.isText(item.firstChild)) {
+  if(is_text_node(list.previousSibling) &&
+    is_text_node(item.firstChild)) {
     list.parentNode.insertBefore(doc.createTextNode(' '), list);
   }
 
-  DOMScrub.insertChildrenBefore(item, list);
+  insert_children_before(item, list);
 
-  if(DOMScrub.isText(list.nextSibling) &&
-    DOMScrub.isText(list.previousSibling)) {
+  if(is_text_node(list.nextSibling) &&
+    is_text_node(list.previousSibling)) {
     list.parentNode.insertBefore(doc.createTextNode(' '), list);
   }
 
   list.remove();
-};
+}
 
-DOMScrub.isText = function(node) {
+function is_text_node(node) {
   return node && node.nodeType === Node.TEXT_NODE;
-};
+}
+
+this.scrub_dom = scrub_dom;
+this.add_no_referrer = add_no_referrer;
+this.filter_sourceless_images = filter_sourceless_images;
+this.filter_invalid_anchors = filter_invalid_anchors;
+
+}

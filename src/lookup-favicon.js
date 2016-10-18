@@ -2,9 +2,11 @@
 
 'use strict';
 
+// TODO: use fetch in fetch_doc over XMLHttpRequest
+
 {
 
-function lookupFavicon(cache, conn, url, doc, log, callback) {
+function lookup_favicon(cache, conn, url, doc, log, callback) {
   log = log || SilentConsole;
   log.log('Lookup favicon', url.toString());
   const ctx = {
@@ -13,238 +15,234 @@ function lookupFavicon(cache, conn, url, doc, log, callback) {
     'callback': callback,
     'doc': doc,
     'conn': conn,
-    'shouldCloseConn': false,
+    'should_close_conn': false,
     'entry': null,
     'log': log,
-    'maxAge': cache.defaultMaxAge
+    'max_age': cache.max_age
   };
 
   if(conn) {
     log.debug('Lookup using provided connection');
-    startLookup.call(ctx);
+    start_lookup.call(ctx);
   } else {
-    cache.connect(connectOnSuccess.bind(ctx), connectOnError.bind(ctx));
+    cache.connect(connect_on_success.bind(ctx), connect_on_error.bind(ctx));
   }
 }
 
-function startLookup() {
+function start_lookup() {
   if(this.doc) {
-    const iconURL = searchDocument.call(this, this.doc, this.url);
-    if(iconURL) {
-      this.log.log('Found icon in prefetched doc', iconURL.href);
-      this.cache.add(this.conn, this.url, iconURL);
-      onLookupComplete.call(this, iconURL);
+    const icon_url = search_doc.call(this, this.doc, this.url);
+    if(icon_url) {
+      this.log.log('Found icon in prefetched doc', icon_url.href);
+      this.cache.add(this.conn, this.url, icon_url);
+      on_lookup_complete.call(this, icon_url);
       return;
     }
   }
 
-  this.cache.find(this.conn, this.url, onFindRequestURL.bind(this));
+  this.cache.find(this.conn, this.url, on_find_req_url.bind(this));
 }
 
-function connectOnSuccess(event) {
+function connect_on_success(event) {
   this.log.log('Connected to database', this.cache.name);
   this.conn = event.target.result;
-  this.shouldCloseConn = true;
-  startLookup.call(this);
+  this.should_close_conn = true;
+  start_lookup.call(this);
 }
 
-function connectOnError(event) {
+function connect_on_error(event) {
   this.log.error(event.target.error);
-  let iconURL;
+  let icon_url;
   if(this.doc) {
-    iconURL = searchDocument.call(this, this.doc, this.url);
+    icon_url = search_doc.call(this, this.doc, this.url);
   }
-  onLookupComplete.call(this, iconURL);
+  on_lookup_complete.call(this, icon_url);
 }
 
-function onFindRequestURL(entry) {
+function on_find_req_url(entry) {
   if(!entry) {
-    fetchDocument.call(this);
+    fetch_doc.call(this);
     return;
   }
 
   this.entry = entry;
-  if(this.cache.isExpired(entry, this.maxAge)) {
+  if(this.cache.is_expired(entry, this.max_age)) {
     this.log.log('HIT (expired)', this.url.href);
-    fetchDocument.call(this);
+    fetch_doc.call(this);
     return;
   }
 
-  const iconURL = new URL(entry.iconURLString);
-  onLookupComplete.call(this, iconURL);
+  const icon_url = new URL(entry.iconURLString);
+  on_lookup_complete.call(this, icon_url);
 }
 
-function fetchDocument() {
+function fetch_doc() {
   if('onLine' in navigator && !navigator.onLine) {
     this.log.debug('Offline');
-    let iconURL;
+    let icon_url;
     if(this.entry) {
-      iconURL = new URL(this.entry.iconURLString);
+      icon_url = new URL(this.entry.iconURLString);
     }
-    onLookupComplete.call(this, iconURL);
+    on_lookup_complete.call(this, icon_url);
     return;
   }
 
   this.log.log('GET', this.url.href);
-  const isAsync = true;
+  const is_async = true;
   const request = new XMLHttpRequest();
   request.responseType = 'document';
-  request.onerror = fetchDocumentOnError.bind(this);
-  request.ontimeout = fetchDocumentOnTimeout.bind(this);
-  request.onabort = fetchDocumentOnAbort.bind(this);
-  request.onload = fetchDocumentOnSuccess.bind(this);
-  request.open('GET', this.url.href, isAsync);
+  request.onerror = fetch_doc_on_error.bind(this);
+  request.ontimeout = fetch_doc_on_timeout.bind(this);
+  request.onabort = fetch_doc_on_abort.bind(this);
+  request.onload = fetch_doc_on_success.bind(this);
+  request.open('GET', this.url.href, is_async);
   request.setRequestHeader('Accept', 'text/html');
   request.send();
 }
 
-function fetchDocumentOnAbort(event) {
+function fetch_doc_on_abort(event) {
   this.log.error(event.type, this.url.href);
-  onLookupComplete.call(this);
+  on_lookup_complete.call(this);
 }
 
-function fetchDocumentOnError(event) {
+function fetch_doc_on_error(event) {
   this.log.error(event.type, this.url.href);
-  if(this.entry) {
+  if(this.entry)
     this.cache.remove(this.conn, this.url);
-  }
-  lookupOriginURL.call(this);
+  lookup_origin_url.call(this);
 }
 
-function fetchDocumentOnTimeout(event) {
+function fetch_doc_on_timeout(event) {
   this.log.debug(event.type, this.url.href);
-  lookupOriginURL.call(this);
+  lookup_origin_url.call(this);
 }
 
-function fetchDocumentOnSuccess(event) {
+function fetch_doc_on_success(event) {
   this.log.debug('GOT', this.url.href);
-  const responseURL = new URL(event.target.responseURL);
-  if(responseURL.href !== this.url.href) {
-    this.log.debug('REDIRECT', this.url.href, '>', responseURL.href);
+  const response_url = new URL(event.target.responseURL);
+  if(response_url.href !== this.url.href) {
+    this.log.debug('REDIRECT', this.url.href, '>', response_url.href);
   }
 
   const doc = event.target.responseXML;
   if(!doc) {
     this.log.debug('Undefined document', this.url.href);
-    lookupRedirectURL.call(this, responseURL);
+    lookup_redirect_url.call(this, response_url);
     return;
   }
 
-  const iconURL = searchDocument.call(this, doc, responseURL);
-  if(iconURL) {
-    this.log.debug('Found icon in page', this.url.href, iconURL.href);
-    this.cache.add(this.conn, this.url, iconURL);
-    if(responseURL.href !== this.url.href) {
-      this.cache.add(this.conn, responseURL, iconURL);
+  const icon_url = search_doc.call(this, doc, response_url);
+  if(icon_url) {
+    this.log.debug('Found icon in page', this.url.href, icon_url.href);
+    this.cache.add(this.conn, this.url, icon_url);
+    if(response_url.href !== this.url.href) {
+      this.cache.add(this.conn, response_url, icon_url);
     }
 
-    onLookupComplete.call(this, iconURL);
+    on_lookup_complete.call(this, icon_url);
   } else {
     this.log.debug('No icon in fetched document', this.url.href);
-    lookupRedirectURL.call(this, responseURL);
+    lookup_redirect_url.call(this, response_url);
   }
 }
 
-function lookupRedirectURL(redirectURL) {
-  if(redirectURL && redirectURL.href !== this.url.href) {
-    this.log.debug('Searching cache for redirect url', redirectURL.href);
-    const onLookup = onLookupRedirectURL.bind(this, redirectURL);
-    this.cache.find(this.conn, redirectURL, onLookup);
+function lookup_redirect_url(redirect_url) {
+  if(redirect_url && redirect_url.href !== this.url.href) {
+    this.log.debug('Searching cache for redirect url', redirect_url.href);
+    this.cache.find(this.conn, redirect_url,
+      on_lookup_redirect_url.bind(this, redirect_url));
   } else {
-    lookupOriginURL.call(this, redirectURL);
+    lookup_origin_url.call(this, redirect_url);
   }
 }
 
-function onLookupRedirectURL(redirectURL, entry) {
-  if(entry && !this.cache.isExpired(entry, this.maxAge)) {
+function on_lookup_redirect_url(redirect_url, entry) {
+  if(entry && !this.cache.is_expired(entry, this.max_age)) {
     this.log.debug('Found non expired redirect url entry in cache',
-      redirectURL.href);
-    const iconURL = new URL(entry.iconURLString);
-    this.cache.add(this.conn, this.url, iconURL);
-    onLookupComplete.call(this, iconURL);
+      redirect_url.href);
+    const icon_url = new URL(entry.iconURLString);
+    this.cache.add(this.conn, this.url, icon_url);
+    on_lookup_complete.call(this, icon_url);
   } else {
-    lookupOriginURL.call(this, redirectURL);
+    lookup_origin_url.call(this, redirect_url);
   }
 }
 
-function lookupOriginURL(redirectURL) {
-  const originURL = new URL(this.url.origin);
-  const originIconURL = new URL(this.url.origin + '/favicon.ico');
-  if(isOriginDiff(this.url, redirectURL, originURL)) {
-    this.log.debug('Searching cache for origin url', originURL.href);
-    this.cache.find(this.conn, originURL,
-      onLookupOriginURL.bind(this, redirectURL));
+function lookup_origin_url(redirect_url) {
+  const origin_url = new URL(this.url.origin);
+  const origin_icon_url = new URL(this.url.origin + '/favicon.ico');
+  if(is_origin_diff(this.url, redirect_url, origin_url)) {
+    this.log.debug('Searching cache for origin url', origin_url.href);
+    this.cache.find(this.conn, origin_url,
+      on_lookup_origin_url.bind(this, redirect_url));
   } else {
-    sendImageHeadRequest.call(this, originIconURL,
-      onFetchRootIcon.bind(this, redirectURL));
+    send_img_head_request.call(this, origin_icon_url,
+      on_fetch_root_icon.bind(this, redirect_url));
   }
 }
 
-function onLookupOriginURL(redirectURL, entry) {
-  if(entry && !this.cache.isExpired(entry, this.maxAge)) {
+function on_lookup_origin_url(redirect_url, entry) {
+  if(entry && !this.cache.is_expired(entry, this.max_age)) {
     this.log.debug('Found non-expired origin entry in cache',
       entry.pageURLString, entry.iconURLString);
-    const iconURL = new URL(entry.iconURLString);
+    const icon_url = new URL(entry.iconURLString);
     if(this.url.href !== this.url.origin) {
-      this.cache.add(this.conn, this.url, iconURL);
+      this.cache.add(this.conn, this.url, icon_url);
     }
 
-    if(this.url.origin !== redirectURL.href) {
-      this.cache.add(this.conn, redirectURL, iconURL);
+    if(this.url.origin !== redirect_url.href) {
+      this.cache.add(this.conn, redirect_url, icon_url);
     }
 
-    onLookupComplete.call(this, iconURL);
+    on_lookup_complete.call(this, icon_url);
   } else {
-    const originIconURL = new URL(this.url.origin + '/favicon.ico');
-    sendImageHeadRequest.call(this, originIconURL,
-      onFetchRootIcon.bind(this, redirectURL));
+    const origin_icon_url = new URL(this.url.origin + '/favicon.ico');
+    send_img_head_request.call(this, origin_icon_url,
+      on_fetch_root_icon.bind(this, redirect_url));
   }
 }
 
-function onFetchRootIcon(redirectURL, iconURLString) {
-  const originURL = new URL(this.url.origin);
+function on_fetch_root_icon(redirect_url, icon_url_str) {
+  const origin_url = new URL(this.url.origin);
 
-  if(iconURLString) {
-    this.log.debug('Found icon at domain root', iconURLString);
-    const iconURL = new URL(iconURLString);
-    this.cache.add(this.conn, this.url, iconURL);
-    if(redirectURL && redirectURL.href !== this.url.href) {
-      this.cache.add(this.conn, redirectURL, iconURL);
+  if(icon_url_str) {
+    this.log.debug('Found icon at domain root', icon_url_str);
+    const icon_url = new URL(icon_url_str);
+    this.cache.add(this.conn, this.url, icon_url);
+    if(redirect_url && redirect_url.href !== this.url.href) {
+      this.cache.add(this.conn, redirect_url, icon_url);
     }
-    if(isOriginDiff(this.url, redirectURL, originURL)) {
-      this.cache.add(this.conn, originURL, iconURL);
+    if(is_origin_diff(this.url, redirect_url, origin_url)) {
+      this.cache.add(this.conn, origin_url, icon_url);
     }
-    onLookupComplete.call(this, iconURL);
+    on_lookup_complete.call(this, icon_url);
   } else {
     this.log.debug('Lookup fully failed', this.url.href);
     this.cache.remove(this.conn, this.url);
-    if(redirectURL && redirectURL.href !== this.url.href) {
-      this.cache.remove(this.conn, redirectURL);
+    if(redirect_url && redirect_url.href !== this.url.href) {
+      this.cache.remove(this.conn, redirect_url);
     }
-    if(isOriginDiff(this.url, redirectURL, originURL)) {
-      this.cache.remove(this.conn, originURL);
+    if(is_origin_diff(this.url, redirect_url, origin_url)) {
+      this.cache.remove(this.conn, origin_url);
     }
-    onLookupComplete.call(this);
+    on_lookup_complete.call(this);
   }
 }
 
-function onLookupComplete(iconURLObject) {
-  if(this.shouldCloseConn && this.conn) {
-    this.log.debug('Requesting database to close');
+function on_lookup_complete(iconURLObject) {
+  if(this.should_close_conn && this.conn)
     this.conn.close();
-  }
-
   this.callback(iconURLObject);
 }
 
-const iconSelectors = [
+const icon_selectors = [
   'link[rel="icon"][href]',
   'link[rel="shortcut icon"][href]',
   'link[rel="apple-touch-icon"][href]',
   'link[rel="apple-touch-icon-precomposed"][href]'
 ];
 
-function searchDocument(doc, baseURLObject) {
+function search_doc(doc, base_url_obj) {
   if(doc.documentElement.localName !== 'html' || !doc.head) {
     this.log.debug('Document is not html or missing <head>',
         doc.documentElement.nodeName);
@@ -252,64 +250,62 @@ function searchDocument(doc, baseURLObject) {
   }
 
   // TODO: validate the url exists by sending a HEAD request for matches?
-  for(let selector of iconSelectors) {
-    const iconURL = matchSelector.call(this, doc, selector, baseURLObject);
-    if(iconURL) {
-      return iconURL;
+  for(let selector of icon_selectors) {
+    const icon_url = match_selector.call(this, doc, selector, base_url_obj);
+    if(icon_url) {
+      return icon_url;
     }
   }
 }
 
-function matchSelector(ancestor, selector, baseURL) {
+function match_selector(ancestor, selector, base_url) {
   const element = ancestor.querySelector(selector);
-  if(!element) {
+  if(!element)
     return;
-  }
   const href = (element.getAttribute('href') || '').trim();
-  if(!href) {
+  if(!href)
     return;
-  }
   try {
-    return new URL(href, baseURL);
+    return new URL(href, base_url);
   } catch(error) {
     this.log.debug(error);
   }
 }
 
-function isOriginDiff(pageURL, redirectURL, originURL) {
-  return originURL.href !== pageURL.href &&
-    (!redirectURL || redirectURL.href !== originURL.href);
+function is_origin_diff(page_url, redirect_url, origin_url) {
+  return origin_url.href !== page_url.href &&
+    (!redirect_url || redirect_url.href !== origin_url.href);
 }
 
-function sendImageHeadRequest(imgURL, callback) {
+function send_img_head_request(img_url, callback) {
   const request = new XMLHttpRequest();
-  const isAsync = true;
-  const onResponse = onRequestImageHead.bind(this, imgURL, callback);
+  const is_async = true;
+  const on_response = on_img_head_response.bind(this, img_url, callback);
   request.timeout = 1000;
-  request.ontimeout = onResponse;
-  request.onerror = onResponse;
-  request.onabort = onResponse;
-  request.onload = onResponse;
-  request.open('HEAD', imgURL.href, isAsync);
+  request.ontimeout = on_response;
+  request.onerror = on_response;
+  request.onabort = on_response;
+  request.onload = on_response;
+  request.open('HEAD', img_url.href, is_async);
   request.setRequestHeader('Accept', 'image/*');
   request.send();
 }
 
-function onRequestImageHead(imgURL, callback, event) {
+function on_img_head_response(img_url, callback, event) {
   if(event.type !== 'load') {
     callback();
     return;
   }
 
   const response = event.target;
-  const size = getImageSize(response);
-  if(!isImageFileSizeInRange(size)) {
+  const size = get_response_size(response);
+  if(!is_response_size_in_range(size)) {
     callback();
     return;
   }
 
   const type = response.getResponseHeader('Content-Type');
-  if(type && !isImageMimeType(type)) {
+  if(type && !is_response_type_img(type)) {
     callback();
     return;
   }
@@ -317,31 +313,31 @@ function onRequestImageHead(imgURL, callback, event) {
   callback(event.target.responseURL);
 }
 
-const minImageSize = 49;
-const maxImageSize = 10001;
+const min_img_response_size = 49;
+const max_img_response_size = 10001;
 
-function isImageFileSizeInRange(size) {
-  return size > minImageSize && size < maxImageSize;
+function is_response_size_in_range(size) {
+  return size > min_img_response_size && size < max_img_response_size;
 }
 
-function getImageSize(response) {
-  const lenString = response.getResponseHeader('Content-Length');
-  let lenInt = 0;
-  if(lenString) {
+function get_response_size(response) {
+  const len_str = response.getResponseHeader('Content-Length');
+  let len_int = 0;
+  if(len_str) {
     try {
-      lenInt = parseInt(lenString, 10);
+      len_int = parseInt(len_str, 10);
     } catch(error) {
       // console.debug(error);
     }
   }
 
-  return lenInt;
+  return len_int;
 }
 
-function isImageMimeType(type) {
+function is_response_type_img(type) {
   return /^\s*image\//i.test(type);
 }
 
-this.lookupFavicon = lookupFavicon;
+this.lookup_favicon = lookup_favicon;
 
 }

@@ -1,11 +1,8 @@
 
-function test(urlString) {
-
-  const requestURL = new URL(urlString);
-  const log = console;
+function test(url_str) {
+  const req_url = new URL(url_str);
   const callback = function(event) {
     console.dir(event);
   }
-
-  fetchHTML(requestURL, log, callback);
+  fetch_html(req_url, console, callback);
 }

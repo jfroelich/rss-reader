@@ -1,7 +1,7 @@
 // See license.md
 
 function test(query) {
-  searchGoogleFeeds(query, console, function(event) {
+  search_google_feeds(query, console, function(event) {
     console.dir(event);
   });
 }

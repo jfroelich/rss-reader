@@ -8,10 +8,10 @@
 
 {
 
-function transformLazyImages(doc) {
+function transform_lazy_images(doc) {
   const images = doc.querySelectorAll('img');
   for(let img of images) {
-    transformImage(img);
+    transform_img(img);
   }
 }
 
@@ -28,28 +28,25 @@ const attrs = [
   'data-default-src'
 ];
 
-function transformImage(img) {
-  if(img.hasAttribute('src') || img.hasAttribute('srcset')) {
+function transform_img(img) {
+  if(img.hasAttribute('src') || img.hasAttribute('srcset'))
     return;
-  }
 
-  for(let altName of attrs) {
-    if(img.hasAttribute(altName)) {
-      const altValue = img.getAttribute(altName);
-      if(altValue && isValidURL(altValue)) {
-        img.removeAttribute(altName);
-        img.setAttribute('src', altValue);
+  // the space check is a minimal validation, urls may be relative
+  // TODO: maybe use a regex and \s
+
+  for(let alt_name of attrs) {
+    if(img.hasAttribute(alt_name)) {
+      const alt_val = img.getAttribute(alt_name);
+      if(alt_val && !alt_val.trim().includes(' ')) {
+        img.removeAttribute(alt_name);
+        img.setAttribute('src', alt_val);
         return;
       }
     }
   }
 }
 
-// Only minimal validation against possibly relative urls
-function isValidURL(str) {
-  return !str.trim().includes(' ');
-}
-
-this.transformLazyImages = transformLazyImages;
+this.transform_lazy_images = transform_lazy_images;
 
 }

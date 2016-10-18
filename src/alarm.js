@@ -53,17 +53,17 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
     const age = 1 * 24 * 60 * 60 * 1000;// 1 day in ms
     const callback = null;
     const db = new FeedDb(SilentConsole);
-    archiveEntries(db, age, SilentConsole, callback);
+    archive_entries(db, age, SilentConsole, callback);
   } else if(alarm.name === 'poll') {
-    const forceResetLock = false;
-    const allowMeteredConnections = false;
+    const force_reset_lock = false;
+    const allow_metered = false;
     const log = SilentConsole;
-    pollFeeds(forceResetLock, allowMeteredConnections, log);
+    poll_feeds(force_reset_lock, allow_metered, log);
   } else if(alarm.name === 'compact-favicons') {
     const cache = new FaviconCache(SilentConsole);
-    compactFavicons(cache, SilentConsole);
+    compact_favicons(cache, SilentConsole);
   } else if(alarm.name === 'refresh-feed-icons') {
-    refreshFeedIcons(SilentConsole);
+    refresh_feed_icons(SilentConsole);
   } else if(alarm.name === 'healthcheck') {
     HealthCheck.start(SilentConsole);
   } else {

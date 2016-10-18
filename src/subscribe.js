@@ -4,76 +4,77 @@
 
 {
 
-function subscribe(feedDbConn, iconCacheConn, feed, suppressNotifications, log,
+function subscribe(feed_db_conn, icon_cache_conn, feed, suppress_notifs, log,
   callback) {
 
-  if(!Feed.getURL(feed)) {
+  if(!get_feed_url(feed))
     throw new TypeError();
-  }
 
   log = log || SilentConsole;
-  log.log('Subscribing to', Feed.getURL(feed));
+  log.log('Subscribing to', get_feed_url(feed));
 
   const ctx = {
     'feed': feed,
-    'didSubscribe': false,
-    'shouldCloseDB': false,
+    'did_subscribe': false,
+    'should_close': false,
     'log': log,
-    'suppressNotifications': suppressNotifications,
+    'suppress_notifs': suppress_notifs,
     'callback': callback,
-    'feedDbConn': feedDbConn,
-    'iconCacheConn': iconCacheConn,
-    'feedCache': new FeedCache(log),
-    'feedDb': new FeedDb(log)
+    'feed_db_conn': feed_db_conn,
+    'icon_cache_conn': icon_cache_conn,
+    'feed_cache': new FeedCache(log),
+    'feed_db': new FeedDb(log)
   };
 
-  if(feedDbConn) {
+  if(feed_db_conn) {
     log.debug('Checking if subscribed using provided connection');
-    ctx.feedCache.hasFeedURL(feedDbConn, Feed.getURL(feed),
-      onFindFeed.bind(ctx));
+    ctx.feed_cache.has_feed_url(feed_db_conn, get_feed_url(feed),
+      on_find_feed.bind(ctx));
   } else {
-    ctx.feedDb.open(openDBOnSuccess.bind(ctx), openDBOnError.bind(ctx));
+    ctx.feed_db.open(feed_db_connect_on_success.bind(ctx),
+      feed_db_connect_on_error.bind(ctx));
   }
 }
 
-function openDBOnSuccess(event) {
-  this.log.log('Connected to database', this.feedDb.name);
-  this.feedDbConn = event.target.result;
-  this.shouldCloseDB = true;
+function feed_db_connect_on_success(event) {
+  this.log.log('Connected to database', this.feed_db.name);
+  this.feed_db_conn = event.target.result;
+  this.should_close = true;
   this.log.debug('Checking if subscribed using on demand connection');
-  this.feedCache.hasFeedURL(this.feedDbConn, Feed.getURL(this.feed),
-    onFindFeed.bind(this));
+  this.feed_cache.has_feed_url(this.feed_db_conn, get_feed_url(this.feed),
+    on_find_feed.bind(this));
 }
 
-function openDBOnError(event) {
+function feed_db_connect_on_error(event) {
   this.log.error(event.target.error);
-  onComplete.call(this, {'type': 'ConnectionError'});
+  on_complete.call(this, {'type': 'ConnectionError'});
 }
 
-function onFindFeed(didFind, event) {
-  if(didFind) {
-    console.debug('Already subscribed to', Feed.getURL(this.feed));
-    onComplete.call(this, {'type': 'ConstraintError'});
+function on_find_feed(found, event) {
+  if(found) {
+    console.debug('Already subscribed to', get_feed_url(this.feed));
+    on_complete.call(this, {'type': 'ConstraintError'});
     return;
   }
 
   if('onLine' in navigator && !navigator.onLine) {
-    this.feedCache.addFeed(this.feedDbConn, this.feed, onAddFeed.bind(this));
+    this.feed_cache.add_feed(this.feed_db_conn, this.feed,
+      on_add_feed.bind(this));
     return;
   }
 
-  const requestURL = new URL(Feed.getURL(this.feed));
-  const excludeEntries = true;
-  fetchFeed(requestURL, excludeEntries, this.log, onFetchFeed.bind(this));
+  const req_url = new URL(get_feed_url(this.feed));
+  const exclude_entries = true;
+  fetch_feed(req_url, exclude_entries, this.log, on_fetch_feed.bind(this));
 }
 
-function onFetchFeed(event) {
+function on_fetch_feed(event) {
   if(event.type !== 'success') {
     this.log.log('Fetch error type', event.type);
     if(event.type === 'InvalidMimeType') {
-      onComplete.call(this, {'type': 'FetchMimeTypeError'});
+      on_complete.call(this, {'type': 'FetchMimeTypeError'});
     } else {
-      onComplete.call(this, {'type': 'FetchError'});
+      on_complete.call(this, {'type': 'FetchError'});
     }
     return;
   }
@@ -81,59 +82,57 @@ function onFetchFeed(event) {
   // TODO: before merging and looking up favicon and adding, check if the user
   // is already subscribed to the redirected url, if a redirect occurred
 
-  this.feed = Feed.merge(this.feed, event.feed);
-  const iconCache = new FaviconCache(this.log);
+  this.feed = merge_feeds(this.feed, event.feed);
+  const icon_cache = new FaviconCache(this.log);
 
   let url = null;
   if(this.feed.link) {
     url = new URL(this.feed.link);
   } else {
-    const feedURL = new URL(Feed.getURL(this.feed));
+    const feed_url = new URL(get_feed_url(this.feed));
     // We know the actual url is not a webpage, but its origin probably is
-    url = new URL(feedURL.origin);
+    url = new URL(feed_url.origin);
   }
 
   const doc = null;
-  lookupFavicon(iconCache, this.iconCacheConn, url, doc, this.log,
-    onLookupIcon.bind(this));
+  lookup_favicon(icon_cache, this.icon_cache_conn, url, doc, this.log,
+    on_lookup_icon.bind(this));
 }
 
-function onLookupIcon(iconURL) {
-  if(iconURL) {
-    this.feed.faviconURLString = iconURL.href;
-  }
-
-  this.feedCache.addFeed(this.feedDbConn, this.feed, onAddFeed.bind(this));
+function on_lookup_icon(icon_url) {
+  if(icon_url)
+    this.feed.faviconURLString = icon_url.href;
+  this.feed_cache.add_feed(this.feed_db_conn, this.feed,
+    on_add_feed.bind(this));
 }
 
-function onAddFeed(event) {
+function on_add_feed(event) {
   if(event.type === 'success') {
     this.log.log('Successfully stored new feed');
-    this.didSubscribe = true;
-    onComplete.call(this, {'type': 'success', 'feed': event.feed});
+    this.did_subscribe = true;
+    on_complete.call(this, {'type': 'success', 'feed': event.feed});
   } else {
-    onComplete.call(this, {'type': event.type});
+    on_complete.call(this, {'type': event.type});
   }
 }
 
-function onComplete(event) {
-  if(this.shouldCloseDB && this.feedDbConn) {
-    this.log.log('Requesting database %s to close', this.feedDb.name);
-    this.feedDbConn.close();
+function on_complete(event) {
+  if(this.should_close && this.feed_db_conn) {
+    this.log.log('Requesting database %s to close', this.feed_db.name);
+    this.feed_db_conn.close();
   }
 
-  if(!this.suppressNotifications && this.didSubscribe) {
+  if(!this.suppress_notifs && this.did_subscribe) {
     // Grab data from the sanitized feed instead of the input
     const feed = event.feed;
-    const displayString = feed.title ||  Feed.getURL(feed);
-    const message = 'Subscribed to ' + displayString;
-    showNotification('Subscription complete', message,
+    const feed_name = feed.title || get_feed_url(feed);
+    const message = 'Subscribed to ' + feed_name;
+    show_notification('Subscription complete', message,
       feed.faviconURLString);
   }
 
-  if(this.callback) {
+  if(this.callback)
     this.callback(event);
-  }
 }
 
 this.subscribe = subscribe;

@@ -4,50 +4,51 @@
 
 {
 
-function compactFavicons(cache, log) {
-  if(!Number.isInteger(cache.maxAge)) {
-    throw new TypeError(`invalid maxAge ${cache.maxAge}`);
+function compact_favicons(cache, log) {
+  if(!Number.isInteger(cache.max_age)) {
+    throw new TypeError(`invalid max_age ${cache.max_age}`);
   }
 
-  log.log('Compacting favicon cache, max age:', cache.maxAge);
+  log.log('Compacting favicon cache, max age:', cache.max_age);
   const ctx = {
     'cache': cache,
-    'maxAge': cache.defaultMaxAge,
+    'max_age': cache.defaultMaxAge,
     'log': log,
-    'numDeleted': 0,
-    'numVisited': 0
+    'num_deleted': 0,
+    'num_scanned': 0
   };
-  cache.connect(connectOnSuccess.bind(ctx), connectOnError.bind(ctx));
+  cache.connect(connect_on_success.bind(ctx), connect_on_error.bind(ctx));
 }
 
-function connectOnSuccess(event) {
+function connect_on_success(event) {
   this.log.debug('Connected to database');
   const conn = event.target.result;
-  const tx = this.cache.openCursor(conn, openCursorOnSuccess.bind(this),
-    openCursorOnError.bind(this));
-  tx.oncomplete = onComplete.bind(this);
+  const tx = this.cache.open_cursor(conn, open_cursor_on_success.bind(this),
+    open_cursor_on_error.bind(this));
+  tx.oncomplete = on_complete.bind(this);
   conn.close();
 }
 
-function connectOnError(event) {
+function connect_on_error(event) {
   this.log.error(event.target.error);
-  onComplete.call(this);
+  on_complete.call(this);
 }
 
-function openCursorOnSuccess(event) {
+function open_cursor_on_success(event) {
   const cursor = event.target.result;
   if(!cursor) {
     return;
   }
 
-  this.numVisited++;
+  this.num_scanned++;
 
   const entry = cursor.value;
-  if(this.cache.isExpired(entry, this.maxAge)) {
+  if(this.cache.is_expired(entry, this.max_age)) {
     this.log.debug('Deleting favicon entry', entry.pageURLString);
-    this.numDeleted++;
-    const deleteRequest = cursor.delete();
-    deleteRequest.onsuccess = deleteOnSuccess.bind(this, entry.pageURLString);
+    this.num_deleted++;
+    const delete_request = cursor.delete();
+    delete_request.onsuccess = delete_on_success.bind(this,
+      entry.pageURLString);
   } else {
     this.log.debug('Retaining favicon entry', entry.pageURLString,
       new Date() - entry.dateUpdated);
@@ -56,19 +57,19 @@ function openCursorOnSuccess(event) {
   cursor.continue();
 }
 
-function deleteOnSuccess(url, event) {
+function delete_on_success(url, event) {
   this.log.debug('Deleted favicon entry with url', url);
 }
 
-function openCursorOnError(event) {
+function open_cursor_on_error(event) {
   this.log.error(event.target.error);
 }
 
-function onComplete(event) {
+function on_complete(event) {
   this.log.log('Compacted favicon cache, scanned %s, deleted %s',
-    this.numVisited, this.numDeleted);
+    this.num_scanned, this.num_deleted);
 }
 
-this.compactFavicons = compactFavicons;
+this.compact_favicons = compact_favicons;
 
 }

@@ -4,7 +4,7 @@
 
 {
 
-const urlAttrMap = {
+const attr_map = {
   'a': 'href',
   'applet': 'codebase',
   'area': 'href',
@@ -32,22 +32,19 @@ const urlAttrMap = {
   'video': 'src'
 };
 
-function buildSelectorPart(key) {
-  return `${key}[${urlAttrMap[key]}]`;
+function build_selector_part(key) {
+  return `${key}[${attr_map[key]}]`;
 }
 
-const selector = Object.keys(urlAttrMap).map(buildSelectorPart).join(',');
+const selector = Object.keys(attr_map).map(build_selector_part).join(',');
 
-function resolveDocument(doc, log, baseURL) {
-  log.log('Resolving document urls to base', baseURL.href);
-  if(!parseSrcset) {
+function resolve_doc(doc, log, base_url) {
+  if(!parseSrcset)
     throw new ReferenceError();
-  }
-
-  if(!URLUtils.isURLObject(baseURL)) {
+  if(!is_url_object(base_url))
     throw new TypeError();
-  }
 
+  log.log('Resolving document urls to base', base_url.href);
   const bases = doc.querySelectorAll('base');
   for(let base of bases) {
     base.remove();
@@ -55,43 +52,43 @@ function resolveDocument(doc, log, baseURL) {
 
   const elements = doc.querySelectorAll(selector);
   for(let element of elements) {
-    resolveMappedAttr(element, baseURL);
+    resolve_mapped_attr(element, base_url);
   }
 
   const srcsetEls = doc.querySelectorAll('img[srcset], source[srcset]');
   for(let element of srcsetEls) {
-    resolveSrcsetAttr(element, baseURL);
+    resolve_srcset_attr(element, base_url);
   }
 }
 
-function resolveMappedAttr(element, baseURL) {
-  const elementName = element.localName;
-  const attrName = urlAttrMap[elementName];
-  if(!attrName) {
+function resolve_mapped_attr(element, base_url) {
+  const element_name = element.localName;
+  const attr_name = attr_map[element_name];
+  if(!attr_name) {
     return;
   }
 
-  const attrURL = element.getAttribute(attrName);
-  if(!attrURL) {
+  const attr_url = element.getAttribute(attr_name);
+  if(!attr_url) {
     return;
   }
 
-  const resolvedURL = URLUtils.resolve(attrURL, baseURL);
-  if(resolvedURL && resolvedURL.href !== attrURL) {
-    element.setAttribute(attrName, resolvedURL.href);
+  const resolved_url = URLUtils.resolve(attr_url, base_url);
+  if(resolved_url && resolved_url.href !== attr_url) {
+    element.setAttribute(attr_name, resolved_url.href);
   }
 }
 
-function resolveSrcsetAttr(element, baseURL) {
-  const attrURL = element.getAttribute('srcset');
+function resolve_srcset_attr(element, base_url) {
+  const attr_url = element.getAttribute('srcset');
 
   // The element has the attribute, but it may not have a value. parseSrcset
   // requires a value or it throws (??).
-  if(!attrURL) {
+  if(!attr_url) {
     return;
   }
 
-  const srcset = parseSrcset(attrURL);
+  const srcset = parseSrcset(attr_url);
 
   // The parseSrcset function may fail to parse (??)
   if(!srcset || !srcset.length) {
@@ -100,24 +97,24 @@ function resolveSrcsetAttr(element, baseURL) {
 
   let dirtied = false;
   for(let descriptor of srcset) {
-    const resolvedURL = URLUtils.resolve(descriptor.url, baseURL);
-    if(resolvedURL && resolvedURL.href !== descriptor.url) {
+    const resolved_url = URLUtils.resolve(descriptor.url, base_url);
+    if(resolved_url && resolved_url.href !== descriptor.url) {
       dirtied = true;
-      descriptor.url = resolvedURL.href;
+      descriptor.url = resolved_url.href;
     }
   }
 
   if(dirtied) {
-    const newSrcsetValue = serializeSrcset(srcset);
-    if(newSrcsetValue) {
-      element.setAttribute('srcset', newSrcsetValue);
+    const new_srcset_val = serialize_srcset(srcset);
+    if(new_srcset_val) {
+      element.setAttribute('srcset', new_srcset_val);
     }
   }
 }
 
 // @param descriptors {Array} an array of basic descriptor objects such as the
 // one produced by the parseSrcset library
-function serializeSrcset(descriptors) {
+function serialize_srcset(descriptors) {
   const output = [];
   for(let descriptor of descriptors) {
     let buf = [descriptor.url];
@@ -139,6 +136,6 @@ function serializeSrcset(descriptors) {
   return output.join(', ');
 }
 
-this.resolveDocument = resolveDocument;
+this.resolve_doc = resolve_doc;
 
 }

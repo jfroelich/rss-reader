@@ -22,27 +22,27 @@ HealthCheck.start = function(log) {
 
   const ctx = {
     'log': log,
-    'numOrphansDeleted': 0,
-    'numEntriesMissingURLsDeleted': 0,
-    'completedOrphanScan': false,
-    'completedEntriesMissingURLsScan': false
+    'num_orphans_deleted': 0,
+    'num_entries_missing_urls_deleted': 0,
+    'completed_orphan_scan': false,
+    'completed_entries_missing_urls_scan': false
   };
-  const db = new FeedDb();
-  db.connect(HealthCheck._openDBOnSuccess.bind(ctx),
-    HealthCheck._openDBOnError.bind(ctx));
+  const db = new FeedDb(log);
+  db.connect(HealthCheck._connect_on_success.bind(ctx),
+    HealthCheck._connect_on_error.bind(ctx));
 };
 
-HealthCheck._openDBOnSuccess = function(conn) {
+HealthCheck._connect_on_success = function(conn) {
   this.log.debug('Connected to database');
   this.db = conn;
   HealthCheck.orphan.scan.call(this);
   HealthCheck.missurls.scan.call(this);
 };
 
-HealthCheck._openDBOnError = function() {
-  this.completedOrphanScan = true;
-  this.completedEntriesMissingURLsScan = true;
-  HealthCheck._onComplete.call(this);
+HealthCheck._connect_on_error = function() {
+  this.completed_orphan_scan = true;
+  this.completed_entries_missing_urls_scan = true;
+  HealthCheck._on_complete.call(this);
 };
 
 HealthCheck.orphan = {};
@@ -50,41 +50,39 @@ HealthCheck.orphan = {};
 HealthCheck.orphan.scan = function() {
   this.log.debug('Scanning for orphaned entries...');
   const tx = this.db.transaction('entry', 'readwrite');
-  tx.oncomplete = HealthCheck.orphan._onComplete.bind(this);
+  tx.oncomplete = HealthCheck.orphan._on_complete.bind(this);
   const store = tx.objectStore('entry');
   const request = store.openCursor();
-  request.onsuccess = HealthCheck.orphan._openCursorOnSuccess.bind(this);
-  request.onerror = HealthCheck.orphan._openCursorOnError.bind(this);
+  request.onsuccess = HealthCheck.orphan._open_cursor_on_success.bind(this);
+  request.onerror = HealthCheck.orphan._open_cursor_on_error.bind(this);
 };
 
-HealthCheck.orphan._openCursorOnSuccess = function(event) {
+HealthCheck.orphan._open_cursor_on_success = function(event) {
   const cursor = event.target.result;
-  if(!cursor) {
+  if(!cursor)
     return;
-  }
 
   const entry = cursor.value;
-
   // An entry without a feed id is an orphan
   if(!entry.feed) {
     this.log.debug('Deleting orphaned entry:', entry);
-    this.numOrphansDeleted++;
+    this.num_orphans_deleted++;
     cursor.delete();
   }
 
   cursor.continue();
 };
 
-HealthCheck.orphan._openCursorOnError = function(event) {
+HealthCheck.orphan._open_cursor_on_error = function(event) {
   this.log.error(event.target.error);
-  HealthCheck.orphan._onComplete.call(this);
+  HealthCheck.orphan._on_complete.call(this);
 };
 
-HealthCheck.orphan._onComplete = function(event) {
+HealthCheck.orphan._on_complete = function(event) {
   this.log.debug('Completed orphan scan');
-  this.log.debug('Deleted %s orphaned entries', this.numOrphansDeleted);
-  this.completedOrphanScan = true;
-  HealthCheck._onComplete.call(this);
+  this.log.debug('Deleted %s orphaned entries', this.num_orphans_deleted);
+  this.completed_orphan_scan = true;
+  HealthCheck._on_complete.call(this);
 };
 
 HealthCheck.missurls = {};
@@ -92,50 +90,49 @@ HealthCheck.missurls = {};
 HealthCheck.missurls.scan = function() {
   this.log.debug('Scanning for entries missing urls...');
   const tx = this.db.transaction('entry', 'readwrite');
-  tx.oncomplete = HealthCheck.missurls._onComplete.bind(this);
+  tx.oncomplete = HealthCheck.missurls._on_complete.bind(this);
   const store = tx.objectStore('entry');
   const request = store.openCursor();
-  request.onsuccess = HealthCheck.missurls._openCursorOnSuccess.bind(this);
-  request.onerror = HealthCheck.missurls._openCursorOnError.bind(this);
+  request.onsuccess = HealthCheck.missurls._open_cursor_on_success.bind(this);
+  request.onerror = HealthCheck.missurls._open_cursor_on_error.bind(this);
 };
 
-HealthCheck.missurls._openCursorOnSuccess = function(event) {
+HealthCheck.missurls._open_cursor_on_success = function(event) {
   const cursor = event.target.result;
-  if(!cursor) {
+  if(!cursor)
     return;
-  }
 
   const entry = cursor.value;
   if(!entry.urls || !entry.urls.length) {
     this.log.debug('Deleting entry without urls:', entry);
-    this.numEntriesMissingURLsDeleted++;
+    this.num_entries_missing_urls_deleted++;
     cursor.delete();
   }
   cursor.continue();
 };
 
-HealthCheck.missurls._openCursorOnError = function(event) {
+HealthCheck.missurls._open_cursor_on_error = function(event) {
   this.log.error(event.target.error);
-  HealthCheck.missurls._onComplete.call(this);
+  HealthCheck.missurls._on_complete.call(this);
 };
 
-HealthCheck.missurls._onComplete = function(event) {
+HealthCheck.missurls._on_complete = function(event) {
   this.log.debug('Completed scan for entries missing urls');
   this.log.debug('Deleted %s entries missing urls',
-    this.numEntriesMissingURLsDeleted);
-  this.completedEntriesMissingURLsScan = true;
-  HealthCheck._onComplete.call(this);
+    this.num_entries_missing_urls_deleted);
+  this.completed_entries_missing_urls_scan = true;
+  HealthCheck._on_complete.call(this);
 };
 
-HealthCheck._onComplete = function(event) {
-  // _onComplete is called when each of the separate checks completes, but the
+HealthCheck._on_complete = function(event) {
+  // _on_complete is called when each of the separate checks completes, but the
   // overall process is not complete until every check completes. If any of the
   // checks are incomplete then exit.
-  if(!this.completedOrphanScan) {
+  if(!this.completed_orphan_scan) {
     return;
   }
 
-  if(!this.completedEntriesMissingURLsScan) {
+  if(!this.completed_entries_missing_urls_scan) {
     return;
   }
 

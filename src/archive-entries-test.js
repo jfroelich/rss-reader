@@ -13,9 +13,9 @@ function test() {
   // then test assertions
 
   const age = 10;// test using 10ms
-  archiveEntries(db, age, console, onArchive);
+  archive_entries(db, age, console, on_archive_complete);
 
-  function onArchive() {
+  function on_archive_complete() {
     db.delete();
   }
 }

@@ -2,7 +2,7 @@
 
 'use strict';
 
-function fadeElement(element, duration, delay, callback) {
+function fade_element(element, duration, delay, callback) {
   const style = element.style;
   if(style.display === 'none') {
     style.display = '';
@@ -14,16 +14,16 @@ function fadeElement(element, duration, delay, callback) {
   }
 
   if(callback) {
-    element.addEventListener('webkitTransitionEnd',
-      _onFadeEnd.bind(element, callback));
+    element.addEventListener('webkitTransitionEnd', on_fade_end);
   }
 
-  // property duration function delay
+  // transition params: property duration function delay
   style.transition = `'opacity ${duration}s ease ${delay}s'`;
   style.opacity = style.opacity === '1' ? '0' : '1';
 
-  function _onFadeEnd(callback, event) {
-    event.target.removeEventListener('webkitTransitionEnd', _onFadeEnd);
-    callback(event.target);
+  function on_fade_end(event) {
+    element.removeEventListener('webkitTransitionEnd', on_fade_end);
+    // TODO: why callback with element?
+    callback(element);
   }
 }

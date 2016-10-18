@@ -7,7 +7,7 @@ const DisplaySettings = {};
 
 chrome.runtime.onMessage.addListener(function(message) {
   if(message.type === 'displaySettingsChanged') {
-    DisplaySettings.updateStyles();
+    DisplaySettings.update_styles();
   }
 });
 
@@ -64,78 +64,79 @@ DisplaySettings.FONT_FAMILIES = [
   'Roboto Regular'
 ];
 
-DisplaySettings.findCSSRule = function(sheet, selectorText) {
+DisplaySettings.find_css_rule = function(sheet, selectorText) {
 
-  function ruleHasText(rule) {
+  function rule_has_text(rule) {
     return rule.selectorText === selectorText;
   }
 
-  return Array.prototype.find.call(sheet.cssRules, ruleHasText);
+  return Array.prototype.find.call(sheet.cssRules, rule_has_text);
 };
 
-DisplaySettings.updateStyles = function() {
+DisplaySettings.update_styles = function() {
 
   // Assume a sheet is always available
   const sheet = document.styleSheets[0];
 
-  const entryRule = DisplaySettings.findCSSRule(sheet, 'div.entry');
-  if(entryRule) {
+  const entry_rule = DisplaySettings.find_css_rule(sheet, 'div.entry');
+  if(entry_rule) {
     if(localStorage.BACKGROUND_IMAGE) {
-      entryRule.style.backgroundColor = '';
-      entryRule.style.backgroundImage = `url(${localStorage.BACKGROUND_IMAGE})`;
+      entry_rule.style.backgroundColor = '';
+      entry_rule.style.backgroundImage =
+        `url(${localStorage.BACKGROUND_IMAGE})`;
     } else if(localStorage.ENTRY_BACKGROUND_COLOR) {
-      entryRule.style.backgroundColor = localStorage.ENTRY_BACKGROUND_COLOR;
-      entryRule.style.backgroundImage = '';
+      entry_rule.style.backgroundColor = localStorage.ENTRY_BACKGROUND_COLOR;
+      entry_rule.style.backgroundImage = '';
     } else {
-      entryRule.style.backgroundColor = '';
-      entryRule.style.backgroundImage = '';
+      entry_rule.style.backgroundColor = '';
+      entry_rule.style.backgroundImage = '';
     }
 
-    const entryMargin = localStorage.ENTRY_MARGIN || '10';
-    entryRule.style.paddingLeft = `${entryMargin}px`;
-    entryRule.style.paddingRight = `${entryMargin}px`;
+    const entry_margin = localStorage.ENTRY_MARGIN || '10';
+    entry_rule.style.paddingLeft = `${entry_margin}px`;
+    entry_rule.style.paddingRight = `${entry_margin}px`;
   }
 
-  const titleRule = DisplaySettings.findCSSRule(sheet,
+  const title_rule = DisplaySettings.find_css_rule(sheet,
     'div.entry a.entry-title');
-  if(titleRule) {
-    titleRule.style.background = '';
-    titleRule.style.fontFamily = localStorage.HEADER_FONT_FAMILY;
+  if(title_rule) {
+    title_rule.style.background = '';
+    title_rule.style.fontFamily = localStorage.HEADER_FONT_FAMILY;
     const hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10) || 0;
     if(hfs) {
-      titleRule.style.fontSize = (hfs / 10).toFixed(2) + 'em';
+      title_rule.style.fontSize = (hfs / 10).toFixed(2) + 'em';
     }
   }
 
-  const contentRule = DisplaySettings.findCSSRule(sheet,
+  const content_rule = DisplaySettings.find_css_rule(sheet,
     'div.entry span.entry-content');
-  if(contentRule) {
-    contentRule.style.background = '';
-    contentRule.style.fontFamily = localStorage.BODY_FONT_FAMILY || 'initial';
+  if(content_rule) {
+    content_rule.style.background = '';
+    content_rule.style.fontFamily = localStorage.BODY_FONT_FAMILY || 'initial';
 
     const bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10);
     if(bfs) {
-      contentRule.style.fontSize = (bfs / 10).toFixed(2) + 'em';
+      content_rule.style.fontSize = (bfs / 10).toFixed(2) + 'em';
     }
 
-    contentRule.style.textAlign = (localStorage.JUSTIFY_TEXT === '1') ?
+    content_rule.style.textAlign = (localStorage.JUSTIFY_TEXT === '1') ?
       'justify' : 'left';
 
     const blh = parseInt(localStorage.BODY_LINE_HEIGHT, 10) || 10;
-    contentRule.style.lineHeight = (blh / 10).toFixed(2);
-    let colCount = localStorage.COLUMN_COUNT;
+    content_rule.style.lineHeight = (blh / 10).toFixed(2);
+    let col_count = localStorage.COLUMN_COUNT;
     const VALID_COUNTS = { '1': true, '2': true, '3': true };
-    if(!(colCount in VALID_COUNTS)) {
-      colCount = '1';
+    if(!(col_count in VALID_COUNTS)) {
+      col_count = '1';
     }
 
-    contentRule.style.webkitColumnCount = colCount;
+    content_rule.style.webkitColumnCount = col_count;
   }
 };
 
 // Dynamically creates new style rules and appends them to the first style
 // sheet. This assumes the first style sheet exists.
-DisplaySettings.loadStyles = function() {
+DisplaySettings.load_styles = function() {
   const sheet = document.styleSheets[0];
   let buffer = [];
 
@@ -147,9 +148,9 @@ DisplaySettings.loadStyles = function() {
 
   buffer.push('margin:0px;');
 
-  const entryMargin = localStorage.ENTRY_MARGIN;
-  if(entryMargin) {
-    buffer.push(`padding:${entryMargin}px;`);
+  const entry_margin = localStorage.ENTRY_MARGIN;
+  if(entry_margin) {
+    buffer.push(`padding:${entry_margin}px;`);
   }
 
   sheet.addRule('div.entry', buffer.join(''));
@@ -162,9 +163,9 @@ DisplaySettings.loadStyles = function() {
     buffer.push(`font-size: ${(hfs / 10).toFixed(2)}em;`);
   }
 
-  const headerFontFam = localStorage.HEADER_FONT_FAMILY;
-  if(headerFontFam) {
-    buffer.push(`font-family:${headerFontFam};`);
+  const header_font_fam = localStorage.HEADER_FONT_FAMILY;
+  if(header_font_fam) {
+    buffer.push(`font-family:${header_font_fam};`);
   }
 
   buffer.push('letter-spacing:-0.03em;');
@@ -187,14 +188,14 @@ DisplaySettings.loadStyles = function() {
     buffer.push(`font-size: ${(bfs / 10).toFixed(2)}em;`);
   }
 
-  const bodyJustify = localStorage.JUSTIFY_TEXT === '1';
-  if(bodyJustify) {
+  const body_justify = localStorage.JUSTIFY_TEXT === '1';
+  if(body_justify) {
     buffer.push('text-align: justify;');
   }
 
-  const bodyFont = localStorage.BODY_FONT_FAMILY;
-  if(bodyFont) {
-    buffer.push(`font-family:${bodyFont};`);
+  const body_font = localStorage.BODY_FONT_FAMILY;
+  if(body_font) {
+    buffer.push(`font-family:${body_font};`);
   }
 
   let blh = localStorage.BODY_LINE_HEIGHT;
@@ -224,9 +225,9 @@ DisplaySettings.loadStyles = function() {
   buffer.push('margin:0px;');
 
   // TODO: use this if columns enabled (use 1(none), 2, 3 as options).
-  const colCount = localStorage.COLUMN_COUNT;
-  if(colCount === '2' || colCount === '3') {
-    buffer.push(`-webkit-column-count: ${colCount};`);
+  const col_count = localStorage.COLUMN_COUNT;
+  if(col_count === '2' || col_count === '3') {
+    buffer.push(`-webkit-column-count: ${col_count};`);
     buffer.push('-webkit-column-gap:30px;');
     buffer.push('-webkit-column-rule:1px outset #AAAAAA;');
   }

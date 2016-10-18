@@ -4,55 +4,52 @@
 
 {
 
-function setImageDimensions(doc, log, callback) {
+function set_image_dimensions(doc, log, callback) {
   // TODO: log baseURI
   log.log('Setting image dimensions for document');
 
   const ctx = {
-    'numProcessed': 0,
-    'numFetched': 0,
-    'numModified': 0,
-    'numImages': 0,
+    'num_processed': 0,
+    'num_fetched': 0,
+    'num_modified': 0,
+    'num_imgs': 0,
     'callback': callback,
     'doc': doc,
-    'didCallback': false,
+    'did_callback': false,
     'log': log
   };
 
   const images = doc.getElementsByTagName('img');
   if(!images.length) {
-    onComplete.call(ctx);
+    on_complete.call(ctx);
     return;
   }
 
-  ctx.numImages = images.length;
+  ctx.num_imgs = images.length;
   for(let image of images) {
-    processImage.call(ctx, image);
+    process_img.call(ctx, image);
   }
 }
 
-function processImage(image) {
-  if(image.getAttribute('width') || image.getAttribute('height')) {
-    return onProcessed.call(this);
-  }
+function process_img(image) {
+  if(image.getAttribute('width') || image.getAttribute('height'))
+    return on_processed.call(this);
 
-  if(inferFromStyle(image)) {
-    this.numModified++;
-    return onProcessed.call(this);
+  if(infer_from_style(image)) {
+    this.num_modified++;
+    return on_processed.call(this);
   }
 
   const src = image.getAttribute('src');
-  if(!src) {
-    return onProcessed.call(this);
-  }
+  if(!src)
+    return on_processed.call(this);
 
-  const srcURL = parseURLNoRaise(src);
-  if(!srcURL) {
-    return onProcessed.call(this);
-  }
+  const src_url = parse_url_no_raise(src);
+  if(!src_url)
+    return on_processed.call(this);
 
-  if(srcURL.protocol !== 'http:' && srcURL.protocol !== 'https:') {
-    return onProcessed.call(this);
+  if(src_url.protocol !== 'http:' && src_url.protocol !== 'https:') {
+    return on_processed.call(this);
   }
 
   // Calling new Image creates the image in the current document context,
@@ -65,47 +62,45 @@ function processImage(image) {
 
   // If completed (cached) then use the available dimensions
   if(proxy.complete) {
-    this.numModified++;
+    this.num_modified++;
     image.setAttribute('width', proxy.width);
     image.setAttribute('height', proxy.height);
-    return onProcessed.call(this);
+    return on_processed.call(this);
   }
 
   // If incomplete then listen for response
-  proxy.onload = onLoad.bind(this, image);
-  proxy.onerror = onError.bind(this, image);
+  proxy.onload = on_load.bind(this, image);
+  proxy.onerror = on_error.bind(this, image);
 }
 
-function onError(image, event) {
-  this.numFetched++;
-  onProcessed.call(this);
+function on_error(image, event) {
+  this.num_fetched++;
+  on_processed.call(this);
 }
 
-function onLoad(image, event) {
-  this.numFetched++;
+function on_load(image, event) {
+  this.num_fetched++;
   image.setAttribute('width', event.target.width);
   image.setAttribute('height', event.target.height);
-  this.numModified++;
-  onProcessed.call(this);
+  this.num_modified++;
+  on_processed.call(this);
 }
 
-function onProcessed() {
+function on_processed() {
   // This increment should only happen here, because this should only happen
   // once each call completes, which is sometimes asynchronous.
-  this.numProcessed++;
-  if(this.numProcessed === this.numImages) {
-    onComplete.call(this);
+  this.num_processed++;
+  if(this.num_processed === this.num_imgs) {
+    on_complete.call(this);
   }
 }
 
-function onComplete() {
-  // remnant of a fixed bug
-  if(this.didCallback) {
-    throw new Error('duplicated callback');
-  }
-
-  this.didCallback = true;
-  this.callback(this.numModified);
+function on_complete() {
+  // remnant of a fixed bug, left as reminder
+  if(this.did_callback)
+    throw new Error();
+  this.did_callback = true;
+  this.callback(this.num_modified);
 }
 
 // Check if the dimensions are available from an inline style attribute
@@ -115,7 +110,7 @@ function onComplete() {
 // different than getComputedStyle, which looks at the inherited properties
 // too. Also note that image.style.width yields a string, such as "100%" or
 // "50px", and this is the value set for the attribute.
-function inferFromStyle(image) {
+function infer_from_style(image) {
   let dirtied = false;
   if(image.hasAttribute('style')) {
     if(image.style.width) {
@@ -130,12 +125,12 @@ function inferFromStyle(image) {
   return dirtied;
 }
 
-function parseURLNoRaise(urlString) {
-  let urlObject = null;
-  try { urlObject = new URL(urlString); } catch(error) {}
-  return urlObject;
+function parse_url_no_raise(url_str) {
+  let url_obj = null;
+  try { url_obj = new URL(url_str); } catch(error) {}
+  return url_obj;
 }
 
-this.setImageDimensions = setImageDimensions;
+this.set_image_dimensions = set_image_dimensions;
 
 }

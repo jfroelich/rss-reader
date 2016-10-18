@@ -4,59 +4,52 @@
 
 {
 
-function fetchFeed(requestURL, excludeEntries, log, callback) {
-  if(!FeedParser) {
+function fetch_feed(req_url, exclude_entries, log, callback) {
+  if(!parse_feed) {
     throw new ReferenceError();
   }
 
   const ctx = {
-    'requestURL': requestURL,
-    'excludeEntries': excludeEntries,
+    'req_url': req_url,
+    'exclude_entries': exclude_entries,
     'callback': callback,
     'log': log || SilentConsole
   };
 
-  ctx.log.log('Fetching feed', requestURL.toString());
-  fetchXML(requestURL, log, onFetchXML.bind(ctx));
+  fetch_xml(req_url, log, on_fetch_xml.bind(ctx));
 }
 
-function onFetchXML(event) {
+function on_fetch_xml(event) {
   if(event.type !== 'success') {
     this.callback({'type': event.type});
     return;
   }
 
-  let parseResult = null;
+  let result = null;
   try {
-    parseResult = FeedParser.parse(event.document, this.excludeEntries);
+    result = parse_feed(event.document, this.exclude_entries);
   } catch(error) {
     this.log.warn(error);
     this.callback({'type': 'ParseError'});
     return;
   }
 
-  const feed = parseResult.feed;
-
-  Feed.addURL(feed, this.requestURL.toString());
-  if(event.responseURLString) {
-    Feed.addURL(feed, event.responseURLString);
-  }
+  const feed = result.feed;
+  add_feed_url(feed, this.req_url.toString());
+  if(event.responseURLString)
+    add_feed_url(feed, event.responseURLString);
 
   feed.dateFetched = new Date();
   feed.dateLastModified = event.lastModifiedDate;
-
-  this.log.debug('Fetched feed', Feed.getURL(feed));
-
-  const successEvent = {};
-  successEvent.type = 'success';
-  successEvent.feed = feed;
-  if(!this.excludeEntries) {
-    successEvent.entries = parseResult.entries;
-  }
-
-  this.callback(successEvent);
+  this.log.debug('Fetched feed', get_feed_url(feed));
+  const success_event = {};
+  success_event.type = 'success';
+  success_event.feed = feed;
+  if(!this.exclude_entries)
+    success_event.entries = result.entries;
+  this.callback(success_event);
 }
 
-this.fetchFeed = fetchFeed;
+this.fetch_feed = fetch_feed;
 
 }

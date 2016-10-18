@@ -4,10 +4,9 @@
 
 {
 
-function importOPML(feedDb, log, callback) {
-  if(!parseXML) {
-    throw new ReferenceError('parseXML');
-  }
+function import_opml(feed_db, log, callback) {
+  if(!parse_xml)
+    throw new ReferenceError();
 
   log = log || SilentConsole;
   log.log('Starting opml import');
@@ -21,73 +20,71 @@ function importOPML(feedDb, log, callback) {
   document.documentElement.appendChild(uploader);
 
   const ctx = {
-    'numFilesProcessed': 0,
+    'num_files_processed': 0,
     'callback': callback,
     'uploader': uploader,
     'files': null,
     'log': log,
-    'feedDb': feedDb,
-    'feedDbConn': null,
-    'iconCacheConn': null,
-    'iconCache': new FaviconCache(log)
+    'feed_db': feed_db,
+    'feed_db_conn': null,
+    'icon_cache_conn': null,
+    'icon_cache': new FaviconCache(log)
   };
-  uploader.onchange = onUploaderChange.bind(ctx);
+  uploader.onchange = uploader_on_change.bind(ctx);
   uploader.click();
   log.debug('Clicked uploader');
 }
 
-function parseOPML(str) {
-  const doc = parseXML(str);
-  if(!doc) {
-    throw new Error('parseXML did not yield a document');
-  }
-  const rootName = doc.documentElement.localName;
-  if(rootName !== 'opml') {
-    throw new Error('Invalid document element: ' + rootName);
-  }
+function parse_opml(str) {
+  const doc = parse_xml(str);
+  if(!doc)
+    throw new Error('parse_xml did not yield a document');
+  const root_name = doc.documentElement.localName;
+  if(root_name !== 'opml')
+    throw new Error('Invalid document element: ' + root_name);
   return doc;
 }
 
-function onUploaderChange(event) {
-  this.uploader.removeEventListener('change', onUploaderChange);
+function uploader_on_change(event) {
+  this.uploader.removeEventListener('change', uploader_on_change);
 
   this.files = [...this.uploader.files];
-  this.files = filterNonXMLFiles(this.files);
-  this.files = filterEmptyFiles(this.files);
-
+  this.files = filter_non_xml_files(this.files);
+  this.files = filter_empty_files(this.files);
   if(!this.files.length) {
-    onComplete.call(this);
+    on_complete.call(this);
     return;
   }
 
-  this.feedDb.connect(openDBOnSuccess.bind(this), onComplete.bind(this));
+  this.feed_db.connect(feed_db_connect_on_success.bind(this),
+    on_complete.bind(this));
 }
 
-function openDBOnSuccess(conn) {
-  this.log.debug('Connected to database', this.feedDb.name);
-  this.feedDbConn = conn;
-  this.iconCache.connect(iconCacheConnectOnSuccess.bind(this),
-    iconCacheConnectOnError.bind(this));
+function feed_db_connect_on_success(conn) {
+  this.log.debug('Connected to database', this.feed_db.name);
+  this.feed_db_conn = conn;
+  this.icon_cache.connect(icon_db_connect_on_success.bind(this),
+    icon_db_connect_on_error.bind(this));
 }
 
-function iconCacheConnectOnSuccess(event) {
-  this.log.debug('Connected to database', this.iconCache.name);
-  this.iconCacheConn = event.target.result;
+function icon_db_connect_on_success(event) {
+  this.log.debug('Connected to database', this.icon_cache.name);
+  this.icon_cache_conn = event.target.result;
   for(let file of this.files) {
     this.log.debug('Loading file', file.name);
     const reader = new FileReader();
-    reader.onload = readerOnLoad.bind(this, file);
-    reader.onerror = readerOnError.bind(this, file);
+    reader.onload = reader_on_load.bind(this, file);
+    reader.onerror = reader_on_error.bind(this, file);
     reader.readAsText(file);
   }
 }
 
-function iconCacheConnectOnError(event) {
+function icon_db_connect_on_error(event) {
   this.log.error(event.target.error);
-  onComplete.call(this);
+  on_complete.call(this);
 }
 
-function filterNonXMLFiles(files) {
+function filter_non_xml_files(files) {
   const output = [];
   for(let file of files) {
     if(file.type.toLowerCase().includes('xml')) {
@@ -97,7 +94,7 @@ function filterNonXMLFiles(files) {
   return output;
 }
 
-function filterEmptyFiles(files) {
+function filter_empty_files(files) {
   const output = [];
   for(let file of files) {
     if(file.size > 0) {
@@ -107,88 +104,84 @@ function filterEmptyFiles(files) {
   return output;
 }
 
-function readerOnLoad(file, event) {
+function reader_on_load(file, event) {
   this.log.log('Loaded file', file.name);
 
   const text = event.target.result;
-  let doc;
+  let doc = null;
   try {
-    doc = parseOPML(text);
+    doc = parse_opml(text);
   } catch(error) {
     this.log.warn(file.name, error);
-    onFileProcessed.call(this, file);
+    on_file_processed.call(this, file);
     return;
   }
 
-  const outlineElements = selectOutlineElements(doc);
-  let outlines = outlineElements.map(createOutlineObject);
-  outlines = outlines.filter(outlineHasValidType);
-  outlines = outlines.filter(outlineHasURL);
-  outlines.forEach(deserializeOutlineURL);
-  outlines = outlines.filter(outlineHasURLObject);
-  outlines = filterDuplicateOutlines(outlines);
+  const outline_els = select_outline_elements(doc);
+  let outlines = outline_els.map(create_outline_obj);
+  outlines = outlines.filter(outline_has_valid_type);
+  outlines = outlines.filter(outline_has_url);
+  outlines.forEach(deserialize_outline_url);
+  outlines = outlines.filter(outline_has_url_obj);
+  outlines = filter_dup_outlines(outlines);
 
-  const feeds = outlines.map(createFeedFromOutline);
-  const suppressNotifications = true;
-  const callback = null;
+  const feeds = outlines.map(outline_to_feed);
+  const suppress_notifs = true;
+  const on_subscribe_callback = null;
   for(let feed of feeds) {
-    subscribe(this.feedDbConn, this.iconCacheConn, feed, suppressNotifications,
-      this.log, callback);
+    subscribe(this.feed_db_conn, this.icon_cache_conn, feed, suppress_notifs,
+      this.log, on_subscribe_callback);
   }
 
-  onFileProcessed.call(this, file);
+  on_file_processed.call(this, file);
 }
 
-function readerOnError(file, event) {
+function reader_on_error(file, event) {
   this.log.warn(file.name, event.target.error);
-  onFileProcessed.call(this, file);
+  on_file_processed.call(this, file);
 }
 
-function onFileProcessed(file) {
+function on_file_processed(file) {
   this.log.debug('Processed file "', file.name, '"');
-  this.numFilesProcessed++;
-  if(this.numFilesProcessed === this.files.length) {
-    onComplete.call(this);
+  this.num_files_processed++;
+  if(this.num_files_processed === this.files.length) {
+    on_complete.call(this);
   }
 }
 
-function onComplete() {
+function on_complete() {
   this.log.log('Completed opml import');
   if(this.uploader) {
     this.uploader.remove();
   }
-  if(this.feedDbConn) {
+  if(this.feed_db_conn) {
     this.log.debug('Closing feed cache database connection');
-    this.feedDbConn.close();
+    this.feed_db_conn.close();
   }
-  if(this.iconCacheConn) {
+  if(this.icon_cache_conn) {
     this.log.debug('Closing icon cache database connection');
-    this.iconCacheConn.close();
+    this.icon_cache_conn.close();
   }
   if(this.callback) {
     this.callback();
   }
 }
 
-function selectOutlineElements(doc) {
+function select_outline_elements(doc) {
   const outlines = [];
-
-  // This is using querySelector because doc.body is undefined, not sure why.
+  // doc.body is undefined, not sure why
   const body = doc.querySelector('body');
-  if(!body) {
+  if(!body)
     return outlines;
-  }
 
-  // Look at immediate children
   for(let el = body.firstElementChild; el; el = el.nextElementSibling) {
-    if(el.localName === 'outline') {
+    if(el.localName === 'outline')
       outlines.append(el);
-    }
   }
   return outlines;
 }
 
-function createOutlineObject(element) {
+function create_outline_obj(element) {
   return {
     'description': outline.getAttribute('description'),
     'link': outline.getAttribute('htmlUrl'),
@@ -199,31 +192,31 @@ function createOutlineObject(element) {
   };
 }
 
-function outlineHasValidType(outline) {
+function outline_has_valid_type(outline) {
   const type = outline.type;
   return type && type.length > 2 && /rss|rdf|feed/i.test(type);
 }
 
-function outlineHasURL(outline) {
+function outline_has_url(outline) {
   return outline.url && outline.url.trim();
 }
 
-function deserializeOutlineURL(outline) {
+function deserialize_outline_url(outline) {
   try {
-    outline.urlObject = new URL(outline.url);
-    outline.urlObject.hash = '';
+    outline.url_obj = new URL(outline.url);
+    outline.url_obj.hash = '';
   } catch(error) {
   }
 }
 
-function outlineHasURLObject(outline) {
-  return 'urlObject' in outline;
+function outline_has_url_obj(outline) {
+  return 'url_obj' in outline;
 }
 
-function filterDuplicateOutlines(outlines) {
+function filter_dup_outlines(outlines) {
   const output = [];
   for(let outline of outlines) {
-    const urlString = outline.urlObject.href;
+    const urlString = outline.url_obj.href;
     if(!output.includes(urlString)) {
       output.push(outline);
     }
@@ -232,9 +225,9 @@ function filterDuplicateOutlines(outlines) {
   return output;
 }
 
-function createFeedFromOutline(outline) {
+function outline_to_feed(outline) {
   const feed = {};
-  Feed.addURL(feed, outline.urlObject.href);
+  add_feed_url(feed, outline.url_obj.href);
   feed.type = outline.type;
   feed.title = outline.title || outline.text;
   feed.description = outline.description;
@@ -249,6 +242,6 @@ function createFeedFromOutline(outline) {
   return feed;
 }
 
-this.importOPML = importOPML;
+this.import_opml = import_opml;
 
 }
