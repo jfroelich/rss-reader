@@ -24,6 +24,8 @@ this.archive_entries = function(db, max_age, log, callback) {
   db.connect(connect_on_success.bind(ctx), connect_on_error.bind(ctx));
 };
 
+// TODO: move this to a general open cursor function in feed-cache.js
+
 function connect_on_success(conn) {
   // TODO: get db name from conn?
   this.log.debug('Connected to database', this.db.name);
