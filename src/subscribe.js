@@ -21,14 +21,13 @@ function subscribe(feed_db_conn, icon_cache_conn, feed, suppress_notifs, log,
     'suppress_notifs': suppress_notifs,
     'callback': callback,
     'feed_db_conn': feed_db_conn,
-    'icon_cache_conn': icon_cache_conn,
-    'feed_cache': new FeedCache(log),
+    'icon_cache_conn': icon_cache_conn
     'feed_db': new FeedDb(log)
   };
 
   if(feed_db_conn) {
     log.debug('Checking if subscribed using provided connection');
-    ctx.feed_cache.has_feed_url(feed_db_conn, get_feed_url(feed),
+    db_has_feed_url(log, feed_db_conn, get_feed_url(feed),
       on_find_feed.bind(ctx));
   } else {
     ctx.feed_db.open(feed_db_connect_on_success.bind(ctx),
@@ -41,7 +40,7 @@ function feed_db_connect_on_success(event) {
   this.feed_db_conn = event.target.result;
   this.should_close = true;
   this.log.debug('Checking if subscribed using on demand connection');
-  this.feed_cache.has_feed_url(this.feed_db_conn, get_feed_url(this.feed),
+  db_has_feed_url(this.log, this.feed_db_conn, get_feed_url(this.feed),
     on_find_feed.bind(this));
 }
 
@@ -58,7 +57,7 @@ function on_find_feed(found, event) {
   }
 
   if('onLine' in navigator && !navigator.onLine) {
-    this.feed_cache.add_feed(this.feed_db_conn, this.feed,
+    db_add_feed(this.log, this.feed_db_conn, this.feed,
       on_add_feed.bind(this));
     return;
   }
@@ -102,8 +101,7 @@ function on_fetch_feed(event) {
 function on_lookup_icon(icon_url) {
   if(icon_url)
     this.feed.faviconURLString = icon_url.href;
-  this.feed_cache.add_feed(this.feed_db_conn, this.feed,
-    on_add_feed.bind(this));
+  db_add_feed(this.log, this.feed_db_conn, this.feed, on_add_feed.bind(this));
 }
 
 function on_add_feed(event) {

@@ -4,12 +4,10 @@
 
 {
 
-function archive_entries(db, max_age, log, callback) {
-  if(typeof max_age !== 'undefined' && max_age !== null) {
-    if(!Number.isInteger(max_age) || max_age < 0) {
-      throw new TypeError();
-    }
-  }
+this.archive_entries = function(db, max_age, log, callback) {
+  if(typeof max_age !== 'undefined' &&
+    (!Number.isInteger(max_age) || max_age < 0))
+    throw new TypeError();
 
   const default_max_age = 10 * 24 * 60 * 60 * 1000;// 10 days in ms
   const ctx = {
@@ -23,10 +21,11 @@ function archive_entries(db, max_age, log, callback) {
   };
 
   ctx.log.log('Archiving entries with max_age', ctx.max_age);
-  db.connect(open_db_on_success.bind(ctx), open_db_on_error.bind(ctx));
-}
+  db.connect(connect_on_success.bind(ctx), connect_on_error.bind(ctx));
+};
 
-function open_db_on_success(conn) {
+function connect_on_success(conn) {
+  // TODO: get db name from conn?
   this.log.debug('Connected to database', this.db.name);
   const tx = conn.transaction('entry', 'readwrite');
   tx.oncomplete = on_complete.bind(this);
@@ -39,7 +38,7 @@ function open_db_on_success(conn) {
   conn.close();
 }
 
-function open_db_on_error() {
+function connect_on_error() {
   on_complete.call(this);
 }
 
@@ -49,11 +48,11 @@ function open_cursor_on_success(event) {
     return;
   const entry = cursor.value;
   const age = this.current_date - entry.dateCreated;
-  if(should_archive(age, this.max_age)) {
+  if(age > this.max_age) {
     this.num_modified++;
-    const compacted_entry = compact_entry.call(this, entry);
-    log_size.call(this, entry, compacted_entry, age);
-    cursor.update(compacted_entry);
+    const compacted = compact_entry.call(this, entry);
+    log_size.call(this, entry, compacted, age);
+    cursor.update(compacted);
     send_message(entry);
   }
   this.num_scanned++;
@@ -65,16 +64,9 @@ function send_message(entry) {
   chrome.runtime.send_message(message);
 }
 
-function should_archive(entry_age, max_age) {
-  return entry_age > max_age;
-}
-
 function log_size(entry, compacted_entry, age) {
-  // sizeof is expensive
-  if(this.log !== console) {
-    return;
-  }
-
+  if(this.log !== console)
+    return; // sizeof is expensive
   const before = sizeof(entry);
   const after = sizeof(compacted_entry);
   this.log.debug('Compacted entry %s (age %s, before %s, after %s)',
@@ -107,7 +99,5 @@ function on_complete(event) {
     this.callback();
   }
 }
-
-this.archive_entries = archive_entries;
 
 }

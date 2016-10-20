@@ -19,8 +19,7 @@ function poll_feeds(force_reset_lock, allow_metered, log) {
   log.log('Checking for new articles...');
   const ctx = {
     'num_feeds_pending': 0,
-    'log': log,
-    'cache': new FeedCache(log)
+    'log': log
   };
 
   if(!acquire_lock.call(ctx, force_reset_lock)) {
@@ -66,7 +65,7 @@ function on_query_idle_state(state) {
 function connect_on_success(conn) {
   this.log.debug('Connected to feed database');
   this.conn = conn;
-  this.cache.get_all_feeds(conn, on_get_feeds.bind(this));
+  db_get_all_feeds(this.log, conn, on_get_feeds.bind(this));
 }
 
 function on_get_feeds(feeds) {
@@ -103,7 +102,7 @@ function on_fetch_feed(local_feed, event) {
   }
 
   const feed = merge_feeds(local_feed, remote_feed);
-  this.cache.update_feed(this.conn, feed,
+  db_update_feed(this.log, this.conn, feed,
     on_update_feed.bind(this, event.entries));
 }
 
@@ -166,7 +165,7 @@ function process_entry(feed, entry, callback) {
   }
 
   const limit = 1;
-  this.cache.find_entry(this.conn, entry.urls, limit,
+  db_find_entry(this.log, this.conn, entry.urls, limit,
     on_find_entry.bind(this, feed, entry, callback));
 }
 
@@ -190,7 +189,7 @@ function on_find_entry(feed, entry, callback, matches) {
     entry.content =
       'This content for this article is blocked by an advertisement.';
     prep_local_doc(entry);
-    this.cache.add_entry(this.conn, entry, callback);
+    db_add_entry(this.log, this.conn, entry, callback);
     return;
   }
 
@@ -198,14 +197,14 @@ function on_find_entry(feed, entry, callback, matches) {
     entry.content = 'The content for this article cannot be viewed because ' +
       'it is dynamically generated.';
     prep_local_doc(entry);
-    this.cache.add_entry(this.conn, entry, callback);
+    db_add_entry(this.log, this.conn, entry, callback);
     return;
   }
 
   if(is_paywall_url(url)) {
     entry.content = 'This content for this article is behind a paywall.';
     prep_local_doc(entry);
-    this.cache.add_entry(this.conn, entry, callback);
+    db_add_entry(this.log, this.conn, entry, callback);
     return;
   }
 
@@ -213,14 +212,14 @@ function on_find_entry(feed, entry, callback, matches) {
     entry.content = 'This content for this article cannot be viewed because ' +
       'the website requires tracking information.';
     prep_local_doc(entry);
-    this.cache.add_entry(this.conn, entry, callback);
+    db_add_entry(this.log, this.conn, entry, callback);
     return;
   }
 
   if(MimeUtils.is_non_html_url(url)) {
     entry.content = 'This article is not a basic web page (e.g. a PDF).';
     prep_local_doc(entry);
-    this.cache.add_entry(this.conn, entry, callback);
+    db_add_entry(this.log, this.conn, entry, callback);
     return;
   }
 
@@ -230,7 +229,7 @@ function on_find_entry(feed, entry, callback, matches) {
 function on_fetch_entry(entry, callback, event) {
   if(event.type !== 'success') {
     prep_local_doc(entry);
-    this.cache.add_entry(this.conn, entry, callback);
+    db_add_entry(this.log, this.conn, entry, callback);
     return;
   }
 
@@ -260,7 +259,7 @@ function on_fetch_entry(entry, callback, event) {
 function on_set_image_dimensions(entry, doc, callback, num_modified) {
   prep_doc(doc);
   entry.content = doc.documentElement.outerHTML.trim();
-  this.cache.add_entry(this.conn, entry, callback);
+  db_add_entry(this.log, this.conn, entry, callback);
 }
 
 function prep_doc(doc) {

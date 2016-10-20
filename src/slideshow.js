@@ -30,9 +30,7 @@ function mark_slide_read(slide) {
   if(!slide.hasAttribute('read')) {
     slide.setAttribute('read', '');
     const id = parseInt(slide.getAttribute('entry'), 10);
-    const callback = null;
-    const feed_cache = new FeedCache(SilentConsole);
-    feed_cache.mark_entry_read(id, callback);
+    db_mark_entry_read(SilentConsole, id);
   }
 }
 

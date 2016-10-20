@@ -10,8 +10,7 @@ function export_opml(db, title, file_name, log, callback) {
     'title': title || 'Subscriptions',
     'file_name': file_name || 'subs.xml',
     'log': log,
-    'db': db,
-    'cache': new FeedCache(log)
+    'db': db
   };
   log.log('Exporting opml file', ctx.file_name);
   db.connect(connect_on_success.bind(ctx), connect_on_error.bind(ctx));
@@ -19,7 +18,7 @@ function export_opml(db, title, file_name, log, callback) {
 
 function connect_on_success(conn) {
   this.log.debug('Connected to database', this.db.name);
-  this.cache.get_all_feeds(conn, on_get_feeds.bind(this));
+  db_get_all_feeds(this.log, conn, on_get_feeds.bind(this));
   conn.close();
 }
 

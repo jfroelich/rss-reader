@@ -5,30 +5,23 @@
 {
 
 function update_badge(conn, log) {
-  log = log || SilentConsole;
-  log.log('Updating badge unread count');
-
-  const db = new FeedDb(log);
-  const cache = new FeedCache(log);
-
+  const db = new FeedDb(log || SilentConsole);
   const ctx = {
     'conn': conn,
     'text': '?',
-    'log': log,
-    'cache': cache,
+    'log': log || SilentConsole,
     'db': db
   };
-
-  if(conn) {
-    cache.count_unread_entries(conn, on_count_unread.bind(ctx));
-  } else {
+  ctx.log.log('Updating badge unread count');
+  if(conn)
+    db_count_unread_entries(ctx.log, conn, on_count_unread.bind(ctx));
+  else
     db.connect(connect_on_success.bind(ctx), connect_on_error.bind(ctx));
-  }
 }
 
 function connect_on_success(conn) {
   this.log.log('Connected to database %s to update badge', this.db.name);
-  this.cache.count_unread_entries(conn, on_count_unread.bind(this));
+  db_count_unread_entries(this.log, conn, on_count_unread.bind(this));
   conn.close();
 }
 

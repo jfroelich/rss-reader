@@ -763,7 +763,7 @@ function export_opml_btn_on_click(event) {
   export_opml(db, title, file_name, SilentConsole, callback);
 }
 
-// TODO: use get_all_feeds and then sort manually, to avoid the defined title
+// TODO: use db_get_all_feeds and then sort manually, to avoid the defined title
 // requirement (and deprecate title index)
 function init_subs_section() {
   let feedCount = 0;
