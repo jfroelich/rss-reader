@@ -7,6 +7,5 @@ function test(url_str) {
   const callback = function(event) {
     console.log('Test completed');
   };
-
   fetch_xml(url, console, callback);
 }

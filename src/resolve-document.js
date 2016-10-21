@@ -64,37 +64,26 @@ function resolve_doc(doc, log, base_url) {
 function resolve_mapped_attr(element, base_url) {
   const element_name = element.localName;
   const attr_name = attr_map[element_name];
-  if(!attr_name) {
+  if(!attr_name)
     return;
-  }
-
   const attr_url = element.getAttribute(attr_name);
-  if(!attr_url) {
+  if(!attr_url)
     return;
-  }
-
   const resolved_url = URLUtils.resolve(attr_url, base_url);
-  if(resolved_url && resolved_url.href !== attr_url) {
+  if(resolved_url && resolved_url.href !== attr_url)
     element.setAttribute(attr_name, resolved_url.href);
-  }
 }
 
 function resolve_srcset_attr(element, base_url) {
   const attr_url = element.getAttribute('srcset');
-
   // The element has the attribute, but it may not have a value. parseSrcset
   // requires a value or it throws (??).
-  if(!attr_url) {
+  if(!attr_url)
     return;
-  }
-
   const srcset = parseSrcset(attr_url);
-
   // The parseSrcset function may fail to parse (??)
-  if(!srcset || !srcset.length) {
+  if(!srcset || !srcset.length)
     return;
-  }
-
   let dirtied = false;
   for(let descriptor of srcset) {
     const resolved_url = URLUtils.resolve(descriptor.url, base_url);
@@ -106,9 +95,8 @@ function resolve_srcset_attr(element, base_url) {
 
   if(dirtied) {
     const new_srcset_val = serialize_srcset(srcset);
-    if(new_srcset_val) {
+    if(new_srcset_val)
       element.setAttribute('srcset', new_srcset_val);
-    }
   }
 }
 

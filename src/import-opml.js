@@ -87,9 +87,8 @@ function icon_db_connect_on_error(event) {
 function filter_non_xml_files(files) {
   const output = [];
   for(let file of files) {
-    if(file.type.toLowerCase().includes('xml')) {
+    if(file.type.toLowerCase().includes('xml'))
       output.push(file);
-    }
   }
   return output;
 }
@@ -97,9 +96,8 @@ function filter_non_xml_files(files) {
 function filter_empty_files(files) {
   const output = [];
   for(let file of files) {
-    if(file.size > 0) {
+    if(file.size > 0)
       output.push(file);
-    }
   }
   return output;
 }
@@ -124,7 +122,6 @@ function reader_on_load(file, event) {
   outlines.forEach(deserialize_outline_url);
   outlines = outlines.filter(outline_has_url_obj);
   outlines = filter_dup_outlines(outlines);
-
   const feeds = outlines.map(outline_to_feed);
   const suppress_notifs = true;
   const on_subscribe_callback = null;
@@ -144,16 +141,14 @@ function reader_on_error(file, event) {
 function on_file_processed(file) {
   this.log.debug('Processed file "', file.name, '"');
   this.num_files_processed++;
-  if(this.num_files_processed === this.files.length) {
+  if(this.num_files_processed === this.files.length)
     on_complete.call(this);
-  }
 }
 
 function on_complete() {
   this.log.log('Completed opml import');
-  if(this.uploader) {
+  if(this.uploader)
     this.uploader.remove();
-  }
   if(this.feed_db_conn) {
     this.log.debug('Closing feed cache database connection');
     this.feed_db_conn.close();
@@ -162,9 +157,8 @@ function on_complete() {
     this.log.debug('Closing icon cache database connection');
     this.icon_cache_conn.close();
   }
-  if(this.callback) {
+  if(this.callback)
     this.callback();
-  }
 }
 
 function select_outline_elements(doc) {
@@ -173,7 +167,6 @@ function select_outline_elements(doc) {
   const body = doc.querySelector('body');
   if(!body)
     return outlines;
-
   for(let el = body.firstElementChild; el; el = el.nextElementSibling) {
     if(el.localName === 'outline')
       outlines.append(el);
@@ -216,12 +209,9 @@ function outline_has_url_obj(outline) {
 function filter_dup_outlines(outlines) {
   const output = [];
   for(let outline of outlines) {
-    const urlString = outline.url_obj.href;
-    if(!output.includes(urlString)) {
+    if(!output.includes(outline.url_obj.href))
       output.push(outline);
-    }
   }
-
   return output;
 }
 

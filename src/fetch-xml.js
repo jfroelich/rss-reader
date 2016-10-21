@@ -5,12 +5,9 @@
 {
 
 function fetch_xml(req_url, log, callback) {
-  if(!parse_xml) {
+  if(!parse_xml)
     throw new ReferenceError();
-  }
-
   log.log('Fetching XML file', req_url.toString());
-
   const accepts = [
     'application/rss+xml',
     'application/rdf+xml',
@@ -34,14 +31,12 @@ function fetch_xml(req_url, log, callback) {
   ctx.log = log;
   ctx.last_modified_date = null;
   ctx.response_url = null;
-
   fetch(req_url.href, opts).then(on_response.bind(ctx)).catch(
     on_error.bind(ctx));
 }
 
 function on_response(response) {
   this.log.debug('Status:', response.status);
-
   if(!response.ok) {
     this.log.debug('Not OK');
     this.callback({'type': 'neterr'});
@@ -77,7 +72,6 @@ function on_response(response) {
 function on_read_text(text) {
   this.log.debug('Read text of %s (%s characters)', this.req_url.href,
     text.length);
-
   let doc = null;
   try {
     doc = parse_xml(text);
@@ -88,7 +82,6 @@ function on_read_text(text) {
   }
 
   this.log.debug('Document element:', doc.documentElement.nodeName);
-
   const event = {
     'type': 'success',
     'document': doc,

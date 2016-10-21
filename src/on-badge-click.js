@@ -14,19 +14,17 @@ chrome.browserAction.onClicked.addListener(function(event) {
 });
 
 function on_query_for_view_tab(tabs) {
-  if(tabs && tabs.length) {
+  if(tabs && tabs.length)
     chrome.tabs.update(tabs[0].id, {'active': true});
-  } else {
+  else
     chrome.tabs.query({'url': newtab_url}, on_query_for_new_tab);
-  }
 }
 
 function on_query_for_new_tab(tabs) {
-  if(tabs && tabs.length) {
+  if(tabs && tabs.length)
     chrome.tabs.update(tabs[0].id, {'active': true, 'url': view_url});
-  } else {
+  else
     chrome.tabs.create({'url': view_url});
-  }
 }
 
 }

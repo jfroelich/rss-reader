@@ -7,7 +7,6 @@
 function set_image_dimensions(doc, log, callback) {
   // TODO: log baseURI
   log.log('Setting image dimensions for document');
-
   const ctx = {
     'num_processed': 0,
     'num_fetched': 0,
@@ -18,7 +17,6 @@ function set_image_dimensions(doc, log, callback) {
     'did_callback': false,
     'log': log
   };
-
   const images = doc.getElementsByTagName('img');
   if(!images.length) {
     on_complete.call(ctx);
@@ -43,14 +41,11 @@ function process_img(image) {
   const src = image.getAttribute('src');
   if(!src)
     return on_processed.call(this);
-
   const src_url = parse_url_no_raise(src);
   if(!src_url)
     return on_processed.call(this);
-
-  if(src_url.protocol !== 'http:' && src_url.protocol !== 'https:') {
+  if(src_url.protocol !== 'http:' && src_url.protocol !== 'https:')
     return on_processed.call(this);
-  }
 
   // Calling new Image creates the image in the current document context,
   // which is different than the document containing the image. The current

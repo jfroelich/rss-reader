@@ -5,26 +5,20 @@
 {
 
 function fetch_feed(req_url, exclude_entries, log, callback) {
-  if(!parse_feed) {
+  if(!parse_feed)
     throw new ReferenceError();
-  }
-
   const ctx = {
     'req_url': req_url,
     'exclude_entries': exclude_entries,
     'callback': callback,
     'log': log || SilentConsole
   };
-
   fetch_xml(req_url, log, on_fetch_xml.bind(ctx));
 }
 
 function on_fetch_xml(event) {
-  if(event.type !== 'success') {
-    this.callback({'type': event.type});
-    return;
-  }
-
+  if(event.type !== 'success')
+    return this.callback({'type': event.type});
   let result = null;
   try {
     result = parse_feed(event.document, this.exclude_entries);
@@ -38,7 +32,6 @@ function on_fetch_xml(event) {
   add_feed_url(feed, this.req_url.toString());
   if(event.responseURLString)
     add_feed_url(feed, event.responseURLString);
-
   feed.dateFetched = new Date();
   feed.dateLastModified = event.lastModifiedDate;
   this.log.debug('Fetched feed', get_feed_url(feed));

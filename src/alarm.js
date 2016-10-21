@@ -57,8 +57,9 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
   } else if(alarm.name === 'poll') {
     const force_reset_lock = false;
     const allow_metered = false;
+    const ignore_idle_state = false;
     const log = SilentConsole;
-    poll_feeds(force_reset_lock, allow_metered, log);
+    poll_feeds(force_reset_lock, allow_metered, ignore_idle_state, log);
   } else if(alarm.name === 'compact-favicons') {
     const cache = new FaviconCache(SilentConsole);
     compact_favicons(cache, SilentConsole);

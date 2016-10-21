@@ -62,9 +62,8 @@ function condense_node_whitespace(doc) {
     const value = n.nodeValue;
     if(value.length > 3 && !n.parentNode.closest(ws_sensitive)) {
       const condensed = value.replace(/\s{2,}/g, ' ');
-      if(condensed.length !== value.length) {
+      if(condensed.length !== value.length)
         n.nodeValue = condensed;
-      }
     }
   }
 }
@@ -73,18 +72,16 @@ function filter_script_anchors(doc) {
   const anchors = doc.querySelectorAll('a');
   for(let anchor of anchors) {
     const url = anchor.getAttribute('href');
-    if(url && url.length > 11 && /^\s*javascript:/i.test(url)) {
+    if(url && url.length > 11 && /^\s*javascript:/i.test(url))
       unwrap(anchor);
-    }
   }
 }
 
 function filter_format_anchors(doc) {
   const anchors = doc.querySelectorAll('a');
   for(let anchor of anchors) {
-    if(!anchor.hasAttribute('href') && !anchor.hasAttribute('name')) {
+    if(!anchor.hasAttribute('href') && !anchor.hasAttribute('name'))
       unwrap(anchor);
-    }
   }
 }
 
@@ -102,9 +99,8 @@ function filter_blacklist(doc) {
   const doc_element = doc.documentElement;
   const elements = doc.querySelectorAll(blacklist_selector);
   for(let element of elements) {
-    if(doc_element.contains(element)) {
+    if(doc_element.contains(element))
       element.remove();
-    }
   }
 }
 
@@ -128,9 +124,8 @@ function filter_attrs(doc) {
   for(let element of elements) {
     let el_name = element.localName;
     let attributes = element.attributes;
-    if(!attributes || !attributes.length) {
+    if(!attributes || !attributes.length)
       continue;
-    }
 
     if(el_name === 'source') {
       for(let i = attributes.length - 1; i > -1; i--) {
@@ -185,9 +180,8 @@ function filter_hidden(doc) {
   const elements = doc.querySelectorAll(hidden_selector);
   const doc_element = doc.documentElement;
   for(let element of elements) {
-    if(element !== doc_element && doc_element.contains(element)) {
+    if(element !== doc_element && doc_element.contains(element))
       unwrap(element);
-    }
   }
 }
 
@@ -207,27 +201,24 @@ function filter_hrs(doc) {
 function filter_small_images(doc) {
   const images = doc.querySelectorAll('img');
   for(let img of images) {
-    if(img.width < 2 || img.height < 2) {
+    if(img.width < 2 || img.height < 2)
       img.remove();
-    }
   }
 }
 
 function filter_sourceless_images(doc) {
   const images = doc.querySelectorAll('img');
   for(let img of images) {
-    if(!img.hasAttribute('src') && !img.hasAttribute('srcset')) {
+    if(!img.hasAttribute('src') && !img.hasAttribute('srcset'))
       img.remove();
-    }
   }
 }
 
 function filter_invalid_anchors(doc) {
   const anchors = doc.querySelectorAll('a');
   for(let anchor of anchors) {
-    if(is_invalid_anchor(anchor)) {
+    if(is_invalid_anchor(anchor))
       anchor.remove();
-    }
   }
 }
 
@@ -243,9 +234,8 @@ function filter_leaves(doc) {
   const doc_element = doc.documentElement;
   const elements = doc.body.querySelectorAll('*');
   for(let element of elements) {
-    if(doc_element.contains(element) && is_leaf(element)) {
+    if(doc_element.contains(element) && is_leaf(element))
       element.remove();
-    }
   }
 }
 
@@ -253,9 +243,8 @@ function filter_tables(doc, limit) {
   const tables = doc.querySelectorAll('table');
   for(let i = 0, len = tables.length; i < len; i++) {
     const table = tables[i];
-    if(is_single_col_table(table, limit)) {
+    if(is_single_col_table(table, limit))
       unwrap_single_col_table(table);
-    }
   }
 }
 
@@ -263,9 +252,8 @@ function is_single_col_table(table, limit) {
   const rows = table.rows;
   const upper = Math.min(rows.length, limit);
   for(let i = 0; i < upper; i++) {
-    if(!is_single_col_row(rows[i])) {
+    if(!is_single_col_row(rows[i]))
       return false;
-    }
   }
   return true;
 }
@@ -277,9 +265,8 @@ function is_single_col_row(row) {
   for(let i = 0, len = cells.length; i < len; i++) {
     const cell = cells[i];
     if(!is_leaf(cell)) {
-      if(++num_non_empty > 1) {
+      if(++num_non_empty > 1)
         return false;
-      }
     }
   }
 
@@ -335,14 +322,11 @@ const leaf_exceptions = {
 function is_leaf(node) {
   switch(node.nodeType) {
     case Node.ELEMENT_NODE:
-      if(node.localName in leaf_exceptions) {
+      if(node.localName in leaf_exceptions)
         return false;
-      }
-
       for(let child = node.firstChild; child; child = child.nextSibling) {
-        if(!is_leaf(child)) {
+        if(!is_leaf(child))
           return false;
-        }
       }
       break;
     case Node.TEXT_NODE:
@@ -362,9 +346,8 @@ function filter_hairs(doc) {
   for(let node = it.nextNode(); node; node = it.nextNode()) {
     const value = node.nodeValue;
     const modified = value.replace(/&(hairsp|#8082|#x200a);/ig, ' ');
-    if(modified.length !== value.length) {
+    if(modified.length !== value.length)
       node.nodeValue = modified;
-    }
   }
 }
 
@@ -377,9 +360,8 @@ function filter_noscripts(doc) {
 
 function filter_frames(doc) {
   const frameset = doc.body;
-  if(!frameset || frameset.localName !== 'frameset') {
+  if(!frameset || frameset.localName !== 'frameset')
     return;
-  }
 
   const body = doc.createElement('body');
   const noframes = doc.querySelector('noframes');
@@ -399,25 +381,22 @@ function filter_frames(doc) {
 function filter_figures(doc) {
   const figures = doc.querySelectorAll('figure');
   for(let figure of figures) {
-    if(figure.childElementCount === 1) {
+    if(figure.childElementCount === 1)
       unwrap(figure);
-    }
   }
 }
 
 function trim_doc(doc) {
   const body = doc.body;
-  if(!body) {
+  if(!body)
     return;
-  }
 
   const first_child = body.firstChild;
   if(first_child) {
     trim_step(first_child, 'nextSibling');
     const last_child = body.lastChild;
-    if(last_child && last_child !== first_child) {
+    if(last_child && last_child !== first_child)
       trim_step(last_child, 'previousSibling');
-    }
   }
 }
 
@@ -440,24 +419,16 @@ function trim_step(start_node, prop_name) {
 function unwrap(element, ref_node) {
   const target = ref_node || element;
   const parent = target.parentNode;
-
-  if(!parent) {
-    throw new Error('Cannot unwrap without a parent');
-  }
-
+  if(!parent)
+    throw new TypeError();
   const doc = element.ownerDocument;
   const prev_sib = target.previousSibling;
-  if(prev_sib && prev_sib.nodeType === Node.TEXT_NODE) {
+  if(prev_sib && prev_sib.nodeType === Node.TEXT_NODE)
     parent.insertBefore(doc.createTextNode(' '), target);
-  }
-
   insert_children_before(element, target);
-
   const next_sib = target.nextSibling;
-  if(next_sib && next_sib.nodeType === Node.TEXT_NODE) {
+  if(next_sib && next_sib.nodeType === Node.TEXT_NODE)
     parent.insertBefore(doc.createTextNode(' '), target);
-  }
-
   target.remove();
 }
 
@@ -480,17 +451,12 @@ const list_item_names = {'li': 0, 'dt': 0, 'dd': 0};
 
 function unwrap_single_item_list(doc, list) {
   const item = list.firstElementChild;
-  if(!item) {
+  if(!item)
     return;
-  }
-
-  if(item.nextElementSibling) {
+  if(item.nextElementSibling)
     return;
-  }
-
-  if(!(item.localName in list_item_names)) {
+  if(!(item.localName in list_item_names))
     return;
-  }
 
   if(!item.firstChild) {
     if(is_text_node(list.previousSibling) &&
@@ -511,9 +477,8 @@ function unwrap_single_item_list(doc, list) {
   insert_children_before(item, list);
 
   if(is_text_node(list.nextSibling) &&
-    is_text_node(list.previousSibling)) {
+    is_text_node(list.previousSibling))
     list.parentNode.insertBefore(doc.createTextNode(' '), list);
-  }
 
   list.remove();
 }

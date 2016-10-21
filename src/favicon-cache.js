@@ -50,12 +50,11 @@ find(conn, url, callback) {
 
 _find_on_success(url, callback, event) {
   const result = event.target.result;
-  if(result) {
-    this.log.log('Found icon url %s in cache for url %s', result.iconURLString,
-      url.href);
-  } else {
+  if(result)
+    this.log.log('Found icon url %s in cache for url %s',
+      result.iconURLString, url.href);
+  else
     this.log.log('Did not find icon in cache for url', url.href);
-  }
   callback(result);
 }
 

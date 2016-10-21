@@ -15,7 +15,7 @@
 
 {
 
-function poll_feeds(force_reset_lock, allow_metered, log) {
+function poll_feeds(force_reset_lock, ignore_idle_state, allow_metered, log) {
   log.log('Checking for new articles...');
   const ctx = {
     'num_feeds_pending': 0,
@@ -29,7 +29,7 @@ function poll_feeds(force_reset_lock, allow_metered, log) {
   }
 
   if('onLine' in navigator && !navigator.onLine) {
-    log.warn('canceling poll as offline');
+    log.warn('Canceling poll as offline');
     on_complete.call(ctx);
     return;
   }
@@ -37,13 +37,13 @@ function poll_feeds(force_reset_lock, allow_metered, log) {
   // This is experimental
   if(!allow_metered && 'NO_POLL_METERED' in localStorage &&
     navigator.connection && navigator.connection.metered) {
-    log.debug('canceling poll as on metered connection');
+    log.debug('Canceling poll as on metered connection');
     on_complete.call(ctx);
     return;
   }
 
-  if('ONLY_POLL_IF_IDLE' in localStorage) {
-    log.debug('checking idle state');
+  if(!ignore_idle_state && 'ONLY_POLL_IF_IDLE' in localStorage) {
+    log.debug('Checking idle state');
     const idle_period_secs = 30;
     chrome.idle.queryState(idle_period_secs, on_query_idle_state.bind(ctx));
   } else {
@@ -137,7 +137,6 @@ function on_update_feed(entries, event) {
   // and pass along feed ctx instead
   // or just pass along only the relevant fields needed like feedId and title
   // and faviconURLString
-
   const feed_ctx = {
     'num_entries_processed': 0,
     'num_entries_added': 0,
@@ -152,7 +151,6 @@ function on_update_feed(entries, event) {
 
 function process_entry(feed, entry, callback) {
   const url = get_entry_url(entry);
-
   if(!url) {
     this.log.warn('Entry missing url', entry);
     callback();
@@ -160,10 +158,8 @@ function process_entry(feed, entry, callback) {
   }
 
   const rewritten_url = rewrite_url(new URL(url));
-  if(rewritten_url) {
+  if(rewritten_url)
     add_entry_url(entry, rewritten_url.href);
-  }
-
   const limit = 1;
   db_find_entry(this.log, this.conn, entry.urls, limit,
     on_find_entry.bind(this, feed, entry, callback));
@@ -271,7 +267,6 @@ function prep_doc(doc) {
 function prep_local_doc(entry) {
   if(!entry.content)
     return;
-
   const parser = new DOMParser();
   try {
     const doc = parser.parseFromString(entry.content, 'text/html');
@@ -289,37 +284,25 @@ function prep_local_doc(entry) {
 function on_entry_processed(feed_ctx, event) {
   feed_ctx.num_entries_processed++;
   const count = feed_ctx.num_entries_processed;
-
-  if(count > feed_ctx.num_entries) {
+  if(count > feed_ctx.num_entries)
     throw new Error(`count ${count} > num_entries ${num_entries}`);
-  }
-
-  if(event && event.type === 'success') {
+  if(event && event.type === 'success')
     feed_ctx.num_entries_added++;
-  }
-
   if(count === feed_ctx.num_entries) {
-    if(feed_ctx.num_entries_added) {
+    if(feed_ctx.num_entries_added)
       update_badge(this.conn, this.log);
-    }
-
     this.num_feeds_pending--;
     on_complete.call(this);
   }
 }
 
 function on_complete() {
-  if(this.num_feeds_pending) {
+  if(this.num_feeds_pending)
     return;
-  }
-
   this.log.log('Polling completed');
-  show_notification('Updated articles',
-    'Completed checking for new articles');
-  if(this.conn) {
+  show_notification('Updated articles', 'Completed checking for new articles');
+  if(this.conn)
     this.conn.close();
-  }
-
   release_lock.call(this);
 }
 
@@ -330,12 +313,10 @@ function on_complete() {
 function acquire_lock(force_reset_lock) {
   if(force_reset_lock)
     release_lock.call(this);
-
   if('POLL_FEEDS_ACTIVE' in localStorage) {
     this.log.debug('Failed to acquire lock, the lock is already present');
     return false;
   }
-
   this.log.debug('Acquiring poll lock');
   localStorage.POLL_FEEDS_ACTIVE = '1';
   return true;

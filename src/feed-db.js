@@ -19,9 +19,8 @@ FeedDb.prototype.connect = function(onSuccess, onError) {
   const context = {'was_blocked': false};
   request.onupgradeneeded = this._upgrade.bind(this, context);
   request.onsuccess = function(event) {
-    if(!context.was_blocked) {
+    if(!context.was_blocked)
       onSuccess(event.target.result);
-    }
   };
   request.onerror = function(event) {
     this.log.debug(event.target.error);
@@ -44,8 +43,9 @@ FeedDb.prototype._upgrade = function(context, event) {
     return;
   }
 
+  // TODO: access name from conn
   this.log.log('Upgrading database %s to version %s from version', this.name,
-      this.version, event.oldVersion);
+    this.version, event.oldVersion);
 
   const request = event.target;
   const db = request.result;
@@ -74,65 +74,53 @@ FeedDb.prototype._upgrade = function(context, event) {
   const entry_indices = entry_store.indexNames;
 
   // Deprecated
-  if(feed_indices.contains('schemeless')) {
+  if(feed_indices.contains('schemeless'))
     feed_store.deleteIndex('schemeless');
-  }
-
   // Deprecated. Use the new urls index
-  if(feed_indices.contains('url')) {
+  if(feed_indices.contains('url'))
     feed_store.deleteIndex('url');
-  }
 
   // Create a multi-entry index using the new urls property, which should
   // be an array of unique strings of normalized urls
-  if(!feed_indices.contains('urls')) {
+  if(!feed_indices.contains('urls'))
     feed_store.createIndex('urls', 'urls', {
       'multiEntry': true,
       'unique': true
     });
-  }
 
   // TODO: deprecate this, have the caller manually sort and stop requiring
   // title, this just makes it difficult.
-  if(!feed_indices.contains('title')) {
+  if(!feed_indices.contains('title'))
     feed_store.createIndex('title', 'title');
-  }
 
   // Deprecated
-  if(entry_indices.contains('unread')) {
+  if(entry_indices.contains('unread'))
     entry_store.deleteIndex('unread');
-  }
 
   // For example, used to count the number of unread entries
-  if(!entry_indices.contains('readState')) {
+  if(!entry_indices.contains('readState'))
     entry_store.createIndex('readState', 'readState');
-  }
 
-  if(!entry_indices.contains('feed')) {
+  if(!entry_indices.contains('feed'))
     entry_store.createIndex('feed', 'feed');
-  }
 
-  if(!entry_indices.contains('archiveState-readState')) {
+  if(!entry_indices.contains('archiveState-readState'))
     entry_store.createIndex('archiveState-readState',
       ['archiveState', 'readState']);
-  }
 
   // Deprecated. Use the urls index instead.
-  if(entry_indices.contains('link')) {
+  if(entry_indices.contains('link'))
     entry_store.deleteIndex('link');
-  }
 
   // Deprecated. Use the urls index instead.
-  if(entry_indices.contains('hash')) {
+  if(entry_indices.contains('hash'))
     entry_store.deleteIndex('hash');
-  }
 
-  if(!entry_indices.contains('urls')) {
+  if(!entry_indices.contains('urls'))
     entry_store.createIndex('urls', 'urls', {
       'multiEntry': true,
       'unique': true
     });
-  }
 };
 
 // TODO: deprecate, caller can do this, this is superfluous

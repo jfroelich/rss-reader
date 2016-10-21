@@ -2,11 +2,6 @@
 
 'use strict';
 
-/*
-- remove the defined title requirement, have options manually sort feeds instead
-of using the title index
-*/
-
 function get_feed_url(feed) {
   if(!feed.urls.length)
     throw new TypeError();

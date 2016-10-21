@@ -5,12 +5,9 @@
 {
 
 function unsubscribe(feed_id, log, callback) {
-  if(!Number.isInteger(feed_id) || feed_id < 1) {
+  if(!Number.isInteger(feed_id) || feed_id < 1)
     throw new TypeError(`Invalid feed id ${feed_id}`);
-  }
-
   log.log('Unsubscribing from feed with id', feed_id);
-
   const ctx = {
     'feed_id': feed_id,
     'num_entries_deleted': 0,
@@ -19,7 +16,6 @@ function unsubscribe(feed_id, log, callback) {
     'did_delete_feed': false,
     'db': new FeedDb(log)
   };
-
   ctx.db.connect(connect_on_success.bind(ctx), on_complete.bind(ctx));
 }
 
@@ -29,13 +25,11 @@ function connect_on_success(conn) {
 
   const tx = this.conn.transaction(['feed', 'entry'], 'readwrite');
   tx.oncomplete = on_complete.bind(this);
-
   this.log.debug('Deleting feed', this.feed_id);
   const feed_store = tx.objectStore('feed');
   const delete_feed_request = feed_store.delete(this.feed_id);
   delete_feed_request.onsuccess = delete_feed_on_success.bind(this);
   delete_feed_request.onerror = delete_feed_on_error.bind(this);
-
   const entry_store = tx.objectStore('entry');
   const feed_index = entry_store.index('feed');
   const open_cursor_request = feed_index.openCursor(this.feed_id);

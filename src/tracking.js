@@ -36,29 +36,22 @@ function has_candidate_url(image) {
   let src = image.getAttribute('src');
   if(!src)
     return false;
-
   src = src.trim();
   if(!src)
     return false;
-
   const minlen = 'http://a.d/a'.length;
   if(src.length < minlen)
     return false;
-
   if(src.includes(' '))
     return false;
-
   if(!/^https?:/i.test(src))
     return false;
-
   return true;
 }
 
 function is_tracking_img(image) {
-  if(!has_candidate_url(image)) {
+  if(!has_candidate_url(image))
     return false;
-  }
-
   const src = image.getAttribute('src');
   let url = null;
   try {
@@ -66,7 +59,6 @@ function is_tracking_img(image) {
   } catch(error) {
     return false;
   }
-
   return hosts.includes(url.hostname);
 }
 

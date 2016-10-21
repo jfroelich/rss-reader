@@ -67,27 +67,20 @@ function on_complete() {
 // Creates an outline element from an object representing a feed
 function create_outline(doc, feed) {
   const outline = doc.createElement('outline');
-
   if(feed.type)
     outline.setAttribute('type', feed.type);
-
   const feed_url = get_feed_url(feed);
   if(!feed_url)
     throw new TypeError();
-
   outline.setAttribute('xmlUrl', feed_url);
-
   if(feed.title) {
     outline.setAttribute('text', feed.title);
     outline.setAttribute('title', feed.title);
   }
-
   if(feed.description)
     outline.setAttribute('description', feed.description);
-
   if(feed.link)
     outline.setAttribute('htmlUrl', feed.link);
-
   return outline;
 }
 

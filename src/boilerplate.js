@@ -82,9 +82,8 @@ function derive_ancestor_bias(element) {
   for(let child = element.firstElementChild; child;
     child = child.nextElementSibling) {
     const bias = ancestor_bias_map[child.nodeName];
-    if(bias) {
+    if(bias)
       total_bias = total_bias + bias;
-    }
   }
 
   return total_bias;
@@ -147,9 +146,8 @@ function derive_attr_bias(element) {
   // TODO: maybe I want to declare total bias before this and return total
   // bias here so that I am more consistent about the value returned and its
   // type, so it serves as a better reminder.
-  if(vals_str.length < 3) {
+  if(vals_str.length < 3)
     return 0.0;
-  }
 
   // Lowercase the values in one pass. Even though toLowerCase now has to
   // consider extra spaces in its input because it occurs after the join, we
@@ -179,20 +177,17 @@ function derive_attr_bias(element) {
     token = token_array[i];
 
     // Split can yield empty strings for some reason, so skip those.
-    if(!token) {
+    if(!token)
       continue;
-    }
 
-    if(token in seen_tokens) {
+    if(token in seen_tokens)
       continue;
-    } else {
+    else
       seen_tokens[token] = 1;
-    }
 
     bias = attr_token_weights[token];
-    if(bias) {
+    if(bias)
       total_bias += bias;
-    }
   }
 
   return 0.0 + total_bias;
@@ -210,28 +205,20 @@ function find_high_score_element(doc) {
   let best_element = doc.documentElement;
 
   const body = doc.body;
-  if(!body) {
+  if(!body)
     return best_element;
-  }
-
   const elements = body.querySelectorAll(candidate_selector);
   let high_score = 0.0;
   for(let i = 0, len = elements.length; i < len; i++) {
     let element = elements[i];
     let score = 0.0 + derive_text_bias(element);
-
-    if(element.closest(list_selector)) {
+    if(element.closest(list_selector))
       score -= 200.0;
-    }
-
-    if(element.closest(nav_selector)) {
+    if(element.closest(nav_selector))
       score -= 500.0;
-    }
-
     score += 0.0 + derive_ancestor_bias(element);
     score += derive_img_bias(element);
     score += derive_attr_bias(element);
-
     if(score > high_score) {
       best_element = element;
       high_score = score;
@@ -248,37 +235,27 @@ function derive_img_bias(parent_element) {
 
   for(let element = parent_element.firstElementChild; element;
     element = element.nextElementSibling) {
-    if(element.localName !== 'img') {
+    if(element.localName !== 'img')
       continue;
-    }
 
     // Increase score for containing a large image
     area = element.width * element.height;
-    if(area) {
+    if(area)
       bias = bias + (0.0015 * Math.min(100000.0, area));
-    }
 
     // Increase score for containing descriptive information
-    if(element.getAttribute('alt')) {
+    if(element.getAttribute('alt'))
       bias = bias + 20.0;
-    }
-
-    if(element.getAttribute('title')) {
+    if(element.getAttribute('title'))
       bias = bias + 30.0;
-    }
-
-    if(find_caption(element)) {
+    if(find_caption(element))
       bias = bias + 100.0;
-    }
-
     num_imgs++;
   }
 
   // Penalize carousels
-  if(num_imgs > 1) {
+  if(num_imgs > 1)
     bias = bias + (-50.0 * (num_imgs - 1));
-  }
-
   return bias;
 }
 

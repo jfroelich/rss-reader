@@ -13,6 +13,5 @@ function test(url_str) {
   const callback = function(url) {
     console.log('Output:', url ? url.href : null);
   };
-
   lookup_favicon(cache, conn, url, doc, console, callback);
 }

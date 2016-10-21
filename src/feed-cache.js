@@ -5,17 +5,17 @@
 // TODO: merge feed-db.js
 // TODO: merge feed.js
 // TODO: maybe merge add/put entry into one function
-
 // TODO: maybe entry states should be in a single property instead of
 // two props, like UNREAD_UNARCHIVED
-
 // TODO: fix issue with normalizing entry urls
 // https://hack.ether.camp/idea/path redirects to
 // https://hack.ether.camp/#/idea/path which normalizes to
 // https://hack.ether.camp/. Stripping hash screws this up.
-
 // TODO: for entry urls with path containing '//', replace with '/'
 // e.g. http://us.battle.net//hearthstone/en/blog/20303037
+// TODO: remove the defined title requirement, have options manually sort feeds
+// instead of using the title index, deprecate the title index, stop ensuring
+// title is an empty string
 
 {
 
@@ -180,7 +180,8 @@ this.db_find_entry = function(log, conn, urls, limit, callback) {
   ctx.reached_limit = false;
 
   const tx = conn.transaction('entry');
-  tx.oncomplete = find_entry_on_complete.bind(tx, log, urls, ctx.matches);
+  tx.oncomplete = find_entry_on_complete.bind(tx, log, urls, ctx.matches,
+    ctx.callback);
   const store = tx.objectStore('entry');
   const index = store.index('urls');
 
@@ -210,9 +211,9 @@ function find_entry_open_cursor_on_success(ctx, event) {
   cursor.continue();
 }
 
-function find_entry_on_complete(log, urls, matches, event) {
+function find_entry_on_complete(log, urls, matches, callback, event) {
   log.log('Found %s entries for [%s]', matches.length, urls.join(','));
-  ctx.callback(matches);
+  callback(matches);
 }
 
 this.db_put_feed = function(log, conn, feed, callback) {

@@ -42,7 +42,6 @@ function filter_article_title(title) {
     index = title.lastIndexOf(' : ');
   if(index === -1)
     return title;
-
   // todo: should this be +3 given the spaces wrapping the delim?
   const tail = title.substring(index + 1);
   const num_terms = tail.split(/\s+/g).filter((w) => w).length;
@@ -90,14 +89,12 @@ function append_slides(append_on_complete, is_first_slide) {
 
   function open_cursor_on_error(event) {
     // TODO: show an error?
-    if(append_on_complete) {
+    if(append_on_complete)
       append_on_complete();
-    }
   }
 
   function open_cursor_on_success(event) {
     const cursor = event.target.result;
-
     if(!cursor) {
       if(append_on_complete)
         append_on_complete();
@@ -145,10 +142,8 @@ function append_slide(entry, is_first_slide) {
 
   const title = create_article_title(entry);
   slide.appendChild(title);
-
   const content = create_article_content(entry);
   slide.appendChild(content);
-
   const source = create_feed_source(entry);
   slide.appendChild(source);
   const container = document.getElementById('slideshow-container');
@@ -210,10 +205,8 @@ function create_feed_source(entry) {
     buffer.push(' on ');
     buffer.push(format_date(entry.datePublished));
   }
-
   title_element.textContent = buffer.join('');
   source.appendChild(title_element);
-
   return source;
 }
 
@@ -225,38 +218,28 @@ function slide_on_click(event) {
   const button_code = event.which;
 
   // Only react to left clicks
-  if(button_code !== left_mouse_btn_code) {
+  if(button_code !== left_mouse_btn_code)
     return false;
-  }
 
   if(event.target.matches('img')) {
-    if(!event.target.parentNode.matches('a')) {
+    if(!event.target.parentNode.matches('a'))
       return false;
-    }
-  } else if(!event.target.matches('a')) {
+  } else if(!event.target.matches('a'))
     return false;
-  }
 
-  if(!event.currentTarget.hasAttribute('read')) {
     // We cannot remove the listener here because there may be additional
     // clicks on other links that we still want to capture. So we have to
     // defer until slide removal. So we just need to ensure that
     // currentTarget has not already been read.
-    // NOTE: this means that super-fast extra clicks can retrigger
-    // this call.
-    //event.currentTarget.removeEventListener('click',
-    //  slide_on_click);
+  if(!event.currentTarget.hasAttribute('read')) {
     mark_slide_read(event.currentTarget);
   }
 
-  // Prevent the normal link click behavior
   event.preventDefault();
-
   chrome.tabs.create({
     'active': true,
     'url': event.target.getAttribute('href')
   });
-
   return false;
 }
 

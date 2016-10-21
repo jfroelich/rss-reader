@@ -27,8 +27,7 @@ this.archive_entries = function(db, max_age, log, callback) {
 // TODO: move this to a general open cursor function in feed-cache.js
 
 function connect_on_success(conn) {
-  // TODO: get db name from conn?
-  this.log.debug('Connected to database', this.db.name);
+  this.log.debug('Connected to database', conn.name);
   const tx = conn.transaction('entry', 'readwrite');
   tx.oncomplete = on_complete.bind(this);
   const store = tx.objectStore('entry');
@@ -84,9 +83,8 @@ function compact_entry(entry) {
   output.archiveState = ENTRY_ARCHIVED;
   output.dateArchived = this.current_date;
   output.dateCreated = entry.dateCreated;
-  if(entry.dateRead) {
+  if(entry.dateRead)
     output.dateRead = entry.dateRead;
-  }
   output.feed = entry.feed;
   output.id = entry.id;
   output.readState = entry.readState;
@@ -97,9 +95,8 @@ function compact_entry(entry) {
 function on_complete(event) {
   this.log.log('Archive entries completed (scanned %s, compacted %s)',
     this.num_scanned, this.num_modified);
-  if(this.callback) {
+  if(this.callback)
     this.callback();
-  }
 }
 
 }

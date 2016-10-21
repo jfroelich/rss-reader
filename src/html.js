@@ -39,7 +39,6 @@ function replace_tags(input_str, rep_str) {
 // entity codes. The extension string should be decoded, meaning that it should
 // not contain character entries.
 function truncate_html(input_str, position, input_ext) {
-
   if(typeof input_str !== 'string')
     throw new TypeError();
   if(!Number.isInteger(position) || position < 0)
@@ -47,10 +46,8 @@ function truncate_html(input_str, position, input_ext) {
 
   const ellipsis = '\u2026';
   const extension = input_ext || ellipsis;
-
   const inert_doc = document.implementation.createHTMLDocument();
   inert_doc.documentElement.innerHTML = input_str;
-
   const it = inert_doc.createNodeIterator(inert_doc.body, NodeFilter.SHOW_TEXT);
   let accepting_text = true;
   let total_len = 0;
@@ -76,9 +73,8 @@ function truncate_html(input_str, position, input_ext) {
 
   // If the document was an html fragment then exclude the tags implicitly
   // inserted when setting innerHTML
-  if(/<html/i.test(input_str)) {
+  if(/<html/i.test(input_str))
     return inert_doc.documentElement.outerHTML;
-  } else {
+  else
     return inert_doc.body.innerHTML;
-  }
 }

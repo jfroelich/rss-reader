@@ -53,9 +53,8 @@ function connect_on_success(event) {
 function connect_on_error(event) {
   this.log.error(event.target.error);
   let icon_url;
-  if(this.doc) {
+  if(this.doc)
     icon_url = search_doc.call(this, this.doc, this.url);
-  }
   on_lookup_complete.call(this, icon_url);
 }
 
@@ -120,9 +119,8 @@ function fetch_doc_on_timeout(event) {
 function fetch_doc_on_success(event) {
   this.log.debug('GOT', this.url.href);
   const response_url = new URL(event.target.responseURL);
-  if(response_url.href !== this.url.href) {
+  if(response_url.href !== this.url.href)
     this.log.debug('REDIRECT', this.url.href, '>', response_url.href);
-  }
 
   const doc = event.target.responseXML;
   if(!doc) {
@@ -135,10 +133,8 @@ function fetch_doc_on_success(event) {
   if(icon_url) {
     this.log.debug('Found icon in page', this.url.href, icon_url.href);
     this.cache.add(this.conn, this.url, icon_url);
-    if(response_url.href !== this.url.href) {
+    if(response_url.href !== this.url.href)
       this.cache.add(this.conn, response_url, icon_url);
-    }
-
     on_lookup_complete.call(this, icon_url);
   } else {
     this.log.debug('No icon in fetched document', this.url.href);
@@ -186,14 +182,10 @@ function on_lookup_origin_url(redirect_url, entry) {
     this.log.debug('Found non-expired origin entry in cache',
       entry.pageURLString, entry.iconURLString);
     const icon_url = new URL(entry.iconURLString);
-    if(this.url.href !== this.url.origin) {
+    if(this.url.href !== this.url.origin)
       this.cache.add(this.conn, this.url, icon_url);
-    }
-
-    if(this.url.origin !== redirect_url.href) {
+    if(this.url.origin !== redirect_url.href)
       this.cache.add(this.conn, redirect_url, icon_url);
-    }
-
     on_lookup_complete.call(this, icon_url);
   } else {
     const origin_icon_url = new URL(this.url.origin + '/favicon.ico');
@@ -204,27 +196,22 @@ function on_lookup_origin_url(redirect_url, entry) {
 
 function on_fetch_root_icon(redirect_url, icon_url_str) {
   const origin_url = new URL(this.url.origin);
-
   if(icon_url_str) {
     this.log.debug('Found icon at domain root', icon_url_str);
     const icon_url = new URL(icon_url_str);
     this.cache.add(this.conn, this.url, icon_url);
-    if(redirect_url && redirect_url.href !== this.url.href) {
+    if(redirect_url && redirect_url.href !== this.url.href)
       this.cache.add(this.conn, redirect_url, icon_url);
-    }
-    if(is_origin_diff(this.url, redirect_url, origin_url)) {
+    if(is_origin_diff(this.url, redirect_url, origin_url))
       this.cache.add(this.conn, origin_url, icon_url);
-    }
     on_lookup_complete.call(this, icon_url);
   } else {
     this.log.debug('Lookup fully failed', this.url.href);
     this.cache.remove(this.conn, this.url);
-    if(redirect_url && redirect_url.href !== this.url.href) {
+    if(redirect_url && redirect_url.href !== this.url.href)
       this.cache.remove(this.conn, redirect_url);
-    }
-    if(is_origin_diff(this.url, redirect_url, origin_url)) {
+    if(is_origin_diff(this.url, redirect_url, origin_url))
       this.cache.remove(this.conn, origin_url);
-    }
     on_lookup_complete.call(this);
   }
 }
@@ -252,9 +239,8 @@ function search_doc(doc, base_url_obj) {
   // TODO: validate the url exists by sending a HEAD request for matches?
   for(let selector of icon_selectors) {
     const icon_url = match_selector.call(this, doc, selector, base_url_obj);
-    if(icon_url) {
+    if(icon_url)
       return icon_url;
-    }
   }
 }
 
@@ -263,6 +249,7 @@ function match_selector(ancestor, selector, base_url) {
   if(!element)
     return;
   const href = (element.getAttribute('href') || '').trim();
+  // without this check the URL constructor would not throw
   if(!href)
     return;
   try {
@@ -327,10 +314,8 @@ function get_response_size(response) {
     try {
       len_int = parseInt(len_str, 10);
     } catch(error) {
-      // console.debug(error);
     }
   }
-
   return len_int;
 }
 

@@ -12,28 +12,21 @@ class URLUtils {
     if(lastDot !== -1) {
       const ext = path.substring(lastDot + 1);
       const len = ext.length;
-      if(len > 0 && len < 5) {
+      if(len > 0 && len < 5)
         return ext.toLowerCase();
-      }
     }
   }
 
   // @param urlString {String}
   // @param baseURL {URL}
   static resolve(urlString, baseURL) {
-    if(typeof urlString !== 'string') {
+    if(typeof urlString !== 'string')
       throw new TypeError();
-    }
-
-    if(!is_url_object(baseURL)) {
+    if(!is_url_object(baseURL))
       throw new TypeError();
-    }
-
     if(URLUtils.url_has_js_protocol(urlString) ||
-      URLUtils.url_has_data_protocol(urlString)) {
+      URLUtils.url_has_data_protocol(urlString))
       return null;
-    }
-
     try {
       return new URL(urlString, baseURL);
     } catch(error) {

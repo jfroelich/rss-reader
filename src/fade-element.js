@@ -9,13 +9,11 @@ function fade_element(element, duration, delay, callback) {
     style.opacity = '0';
   }
 
-  if(!style.opacity) {
+  if(!style.opacity)
     style.opacity = style.display === 'none' ? '0' : '1';
-  }
 
-  if(callback) {
+  if(callback)
     element.addEventListener('webkitTransitionEnd', on_fade_end);
-  }
 
   // transition params: property duration function delay
   style.transition = `'opacity ${duration}s ease ${delay}s'`;

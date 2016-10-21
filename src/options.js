@@ -63,9 +63,8 @@ function hide_err_msg() {
   const err_msg = document.getElementById('options_error_message');
   if(err_msg) {
     const dismiss_btn = document.getElementById('options_dismiss_error_button');
-    if(dismiss_btn) {
+    if(dismiss_btn)
       dismiss_btn.removeEventListener('click', hide_err_msg);
-    }
     err_msg.remove();
   }
 }
@@ -108,11 +107,10 @@ function hide_sub_monitor(callback, should_fade_out) {
     }
   }
 
-  if(should_fade_out) {
+  if(should_fade_out)
     fade_element(monitor, 2, 1, remove_then_callback);
-  } else {
+  else
     remove_then_callback();
-  }
 
   function remove_then_callback() {
     if(monitor)
@@ -125,29 +123,22 @@ function hide_sub_monitor(callback, should_fade_out) {
 function show_section(menu_item) {
   if(!menu_item)
     throw new TypeError();
-
   // Do nothing if not switching.
   if(current_menu_item === menu_item)
     return;
-
   // Make the previous item appear de-selected
   if(current_menu_item)
     remove_class(current_menu_item, 'navigation-item-selected');
-
   // Hide the old section
   if(current_section)
     hide_element(current_section);
-
   // Make the new item appear selected
   add_class(menu_item, 'navigation-item-selected');
-
   // Show the new section
   const section_id = menu_item.getAttribute('section');
   const section_element = document.getElementById(section_id);
-  if(section_element) {
+  if(section_element)
     show_element(section_element);
-  }
-
   // Update the global tracking vars
   current_menu_item = menu_item;
   current_section = section_element;
@@ -162,11 +153,11 @@ function update_feed_count() {
   const feed_list = document.getElementById('feedlist');
   const feed_count_element = document.getElementById('subscription-count');
   const count = feed_list.childElementCount;
-  if(count > 1000) {
+  // TODO: use ternary
+  if(count > 1000)
     feed_count_element.textContent = ' (999+)';
-  } else {
+  else
     feed_count_element.textContent = ` (${count})`;
-  }
 }
 
 // TODO: this approach doesn't really work, I need to independently sort
@@ -183,20 +174,15 @@ function append_feed(feed, should_insert_in_order) {
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
   item.setAttribute('feed', feed.id);
-
-  if(feed.description) {
+  if(feed.description)
     item.setAttribute('title', feed.description);
-  }
-
   item.onclick = feed_list_item_on_click;
 
   if(feed.faviconURLString) {
     const favicon_element = document.createElement('img');
     favicon_element.src = feed.faviconURLString;
-    if(feed.title) {
+    if(feed.title)
       favicon_element.title = feed.title;
-    }
-
     favicon_element.setAttribute('width', '16');
     favicon_element.setAttribute('height', '16');
     item.appendChild(favicon_element);
@@ -207,7 +193,6 @@ function append_feed(feed, should_insert_in_order) {
   feedTitleStr = truncate_html(feedTitleStr, 300);
   title_element.textContent = feedTitleStr;
   item.appendChild(title_element);
-
   const feed_list = document.getElementById('feedlist');
   const lc_title_str = feedTitleStr.toLowerCase();
 
@@ -223,9 +208,8 @@ function append_feed(feed, should_insert_in_order) {
       }
     }
 
-    if(!added) {
+    if(!added)
       feed_list.appendChild(item);
-    }
   } else {
     feed_list.appendChild(item);
   }
@@ -233,12 +217,9 @@ function append_feed(feed, should_insert_in_order) {
 
 // TODO: deprecate the ability to preview
 function show_sub_preview(url) {
-  if(!is_url_object(url)) {
+  if(!is_url_object(url))
     throw new TypeError();
-  }
-
   hide_sub_preview();
-
   if(!('ENABLE_SUBSCRIBE_PREVIEW' in localStorage)) {
     start_subscription(url);
     return;
@@ -254,7 +235,6 @@ function show_sub_preview(url) {
   const progress_element = document.getElementById(
     'subscription-preview-load-progress');
   show_element(progress_element);
-
   const exclude_entries = false;
   fetch_feed(url, exclude_entries, SilentConsole, on_fetch_feed);
 
@@ -315,22 +295,17 @@ function hide_sub_preview() {
 }
 
 function start_subscription(url) {
-  if(!is_url_object(url)) {
+  if(!is_url_object(url))
     throw new TypeError();
-  }
-
   hide_sub_preview();
   show_sub_monitor();
   append_sub_monitor_msg('Subscribing to' + url.href);
-
   // TODO: if subscribing from a discover search result, I already know some
   // of the feed's other properties, such as its title and link. I should be
   // passing those along to start_subscription and setting them here. Or
   // start_subscription should expect a feed object as a parameter.
-
   const feed = {};
   add_feed_url(feed, url.href);
-
   const feed_db_conn = null;
   const suppress_notifs = false;
   const icon_cache_conn = null;
@@ -360,9 +335,7 @@ function start_subscription_on_subscribe(url, event) {
 }
 
 function start_subscription_show_err_msg(url, type) {
-
   console.debug('Error: showing error with type', type);
-
   if(type === 'ConstraintError') {
     show_err_msg('Already subscribed to ' + url.href);
   } else if(type === 'FetchError') {
@@ -424,28 +397,23 @@ function populate_feed_info(feed_id) {
     title_element.textContent = feed.title || 'Untitled';
 
     const favicon_element = document.getElementById('details-favicon');
-    if(feed.faviconURLString) {
+    if(feed.faviconURLString)
       favicon_element.setAttribute('src', feed.faviconURLString);
-    } else {
+    else
       favicon_element.removeAttribute('src');
-    }
 
     const desc_element = document.getElementById('details-feed-description');
-    if(feed.description) {
+    if(feed.description)
       desc_element.textContent = feed.description;
-    } else {
+    else
       desc_element.textContent = '';
-    }
 
     const feed_url_element = document.getElementById('details-feed-url');
     feed_url_element.textContent = get_feed_url(feed);
-
     const feed_link_element = document.getElementById('details-feed-link');
     feed_link_element.textContent = feed.link || '';
-
     const unsub_btn = document.getElementById('details-unsubscribe');
     unsub_btn.value = '' + feed.id;
-
     if(context.db)
       context.db.close();
   }
@@ -512,7 +480,8 @@ function sub_form_on_submit(event) {
   let url = null;
   try {
     url = new URL(query_str);
-  } catch(exception) {}
+  } catch(exception) {
+  }
 
   // If it is a URL, subscribe, otherwise, search
   if(url) {
@@ -532,19 +501,15 @@ function subscribe_btn_on_click(event) {
 
   // TODO: this will always be defined, so this check isn't necessary, but I
   // tentatively leaving it in here
-  if(!feed_url_str) {
+  if(!feed_url_str)
     return;
-  }
-
   // TODO: Ignore future clicks if an error was displayed?
 
   // Ignore future clicks while subscription in progress
   // TODO: use a better element name here.
   const monitor = document.getElementById('options_subscription_monitor');
-  if(monitor && is_visible(monitor)) {
+  if(monitor && is_visible(monitor))
     return;
-  }
-
   // Show subscription preview expects a URL object, so convert. This can
   // throw but never should so I do not use try/catch.
   const feed_url = new URL(feed_url_str);
@@ -617,9 +582,8 @@ function on_search_google_feeds(event) {
       }
     } else {
       num_icons_processed++;
-      if(num_icons_processed === results.length) {
+      if(num_icons_processed === results.length)
         on_icons_processed();
-      }
     }
   }
 
@@ -630,20 +594,16 @@ function on_search_google_feeds(event) {
 
   function on_lookup_favicon(result, iconURL) {
     num_icons_processed++;
-    if(iconURL) {
+    if(iconURL)
       result.faviconURLString = iconURL.href;
-    }
-
-    if(num_icons_processed === results.length) {
+    if(num_icons_processed === results.length)
       on_icons_processed();
-    }
   }
 
   function on_icons_processed() {
     console.debug('Finished processing favicons for search results');
     // Generate an array of result elements to append
     const result_elements = results.map(create_search_result_element);
-
     // Append the result elements
     for(let i = 0, len = result_elements.length; i < len; i++) {
       results_element.appendChild(result_elements[i]);
@@ -700,13 +660,10 @@ function remove_feed_from_feed_list(feed_id) {
 
   if(!feed_element)
     throw new Error();
-
   feed_element.removeEventListener('click', feed_list_item_on_click);
   feed_element.remove();
-
   // Upon removing the feed, update the displayed number of feeds.
   update_feed_count();
-
   // Upon removing the feed, update the state of the feed list.
   // If the feed list has no items, hide it and show a message instead
   const feed_list = document.getElementById('feedlist');
@@ -732,7 +689,6 @@ function unsubscribe_on_complete(feed_id, event) {
     console.debug(event);
     return;
   }
-
   remove_feed_from_feed_list(feed_id);
   const subs_section = document.getElementById('mi-subscriptions');
   show_section(subs_section);
@@ -833,9 +789,9 @@ function enable_bg_process_checkbox_on_click(event) {
   else {
     chrome.permissions.remove({'permissions': ['background']}, noop);
   }
-
-  function noop() {}
 }
+
+function noop() {}
 
 function enable_bg_process_on_check_perm(permitted) {
   const checkbox = document.getElementById('enable-background');

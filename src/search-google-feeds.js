@@ -9,7 +9,6 @@ function search_google_feeds(query, log, callback) {
     throw new TypeError();
   if(typeof callback !== 'function')
     throw new TypeError();
-
   const ctx = {};
   ctx.log = log || SilentConsole;
   ctx.replacement = '\u2026';
@@ -26,7 +25,6 @@ function search_google_feeds(query, log, callback) {
     'redirect': 'follow',
     'referrer': 'no-referrer'
   };
-
   const base = 'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
   const url = base + encodeURIComponent(query);
   ctx.log.log('GET', url);
@@ -82,9 +80,8 @@ function on_read_txt(text) {
 function filter_entries_without_urls(entries) {
   const output = [];
   for(let entry of entries) {
-    if(entry.url) {
+    if(entry.url)
       output.push(entry);
-    }
   }
   return output;
 }

@@ -105,13 +105,12 @@ function find_feed_date(channel) {
       find_child_text(channel, 'date');
   }
 
-  if(date_text) {
+  if(date_text)
     try {
       return new Date(date_text);
     } catch(exception) {
       console.debug(exception);
     }
-  }
 
   return new Date();
 }
@@ -142,35 +141,31 @@ function find_feed_link(channel) {
     link_element = find_child(channel, is_link_rel_alt) ||
       find_child(channel, is_link_rel_self) ||
       find_child(channel, is_link_with_href);
-    if(link_element) {
+    if(link_element)
       link_text = link_element.getAttribute('href');
-    }
   } else {
     link_element = find_child(channel,
       is_link_without_href);
     if(link_element) {
       link_text = link_element.textContent;
     } else {
-      link_element = find_child(channel,
-        is_link_with_href);
+      link_element = find_child(channel, is_link_with_href);
       if(link_element)
         link_text = link_element.getAttribute('href');
     }
   }
 
-  if(link_text) {
+  if(link_text)
     try {
       return new URL(link_text).href;
     } catch(error) {
       console.debug(error);
     }
-  }
 }
 
 function create_entry(feed_date, entry_element) {
   const is_atom = entry_element.ownerDocument.documentElement.matches('feed');
   const entry = {};
-
   const title = find_child_text(entry_element, 'title');
   if(title)
     entry.title = title;
@@ -181,36 +176,32 @@ function create_entry(feed_date, entry_element) {
 
   // Set the link url as the entry's initial url
   const entry_link_url = find_entry_link(entry_element);
-  if(entry_link_url) {
+  if(entry_link_url)
     add_entry_url(entry, entry_link_url);
-  }
 
   const entry_date = find_entry_date(entry_element);
-  if(entry_date) {
+  if(entry_date)
     entry.datePublished = entry_date;
-  } else if(feed_date) {
+  else if(feed_date)
     // Fall back to the feed's date
     entry.datePublished = feed_date;
-  } else {
+  else
     entry.datePublished = new Date();
-  }
 
   const content = find_entry_content(entry_element);
-  if(content) {
+  if(content)
     entry.content = content;
-  }
 
   const enclosure = find_child_by_name(entry_element, 'enclosure');
   if(enclosure) {
     const enc_url_str = enclosure.getAttribute('url');
     let enc_url = null;
-    if(enc_url_str) {
+    if(enc_url_str)
       try {
         enc_url = new URL(enc_url_str).href;
       } catch(exception) {
         console.debug(exception);
       }
-    }
 
     entry.enclosure = {
       'url': enc_url,
@@ -246,46 +237,39 @@ function find_entry_link(entry) {
     link_element = find_child(entry, is_link_rel_alt) ||
       find_child(entry, is_link_rel_self) ||
       find_child(entry, is_link_with_href);
-    if(link_element) {
+    if(link_element)
       link_text = link_element.getAttribute('href');
-    }
   } else {
     link_text = find_child_text(entry, 'origlink') ||
       find_child_text(entry, 'link');
   }
 
-  if(link_text) {
+  if(link_text)
     try {
       return new URL(link_text).href;
     } catch(error) {
       console.debug(error);
     }
-  }
 }
 
 function find_entry_date(entry) {
   const is_atom = entry.ownerDocument.documentElement.matches('feed');
   let date_str = null;
 
-  if(is_atom) {
+  if(is_atom)
     date_str = find_child_text(entry, 'published') ||
       find_child_text(entry, 'updated');
-  } else {
+  else
     date_str = find_child_text(entry, 'pubdate') ||
       find_child_text(entry, 'date');
-  }
-
   if(date_str)
     date_str = date_str.trim();
-
-  if(date_str) {
+  if(date_str)
     try {
       return new Date(date_str);
     } catch(exception) {
       console.debug(exception);
     }
-  }
-
   return null;
 }
 

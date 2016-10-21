@@ -16,9 +16,8 @@ function sizeof(object) {
     const value = stack.pop();
 
     // NOTE: typeof null === 'object'
-    if(value === null) {
+    if(value === null)
       continue;
-    }
 
     switch(typeof value) {
       case 'undefined':

@@ -128,13 +128,11 @@ HealthCheck._on_complete = function(event) {
   // _on_complete is called when each of the separate checks completes, but the
   // overall process is not complete until every check completes. If any of the
   // checks are incomplete then exit.
-  if(!this.completed_orphan_scan) {
+  if(!this.completed_orphan_scan)
     return;
-  }
 
-  if(!this.completed_entries_missing_urls_scan) {
+  if(!this.completed_entries_missing_urls_scan)
     return;
-  }
 
   if(this.db) {
     this.log.debug('Requesting database connection to be closed');

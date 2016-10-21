@@ -4,7 +4,6 @@
 
 document.addEventListener('DOMContentLoaded', function(event) {
   const ext = '...';
-
   const input1 = 'a<p>b</p>c';
   console.debug(input1, '=>', truncate_html(input1, 2, ext));
   const input2 = `<html><head><title>new title</title></head><body>${input1}

@@ -6,9 +6,8 @@
 const DisplaySettings = {};
 
 chrome.runtime.onMessage.addListener(function(message) {
-  if(message.type === 'displaySettingsChanged') {
+  if(message.type === 'displaySettingsChanged')
     DisplaySettings.update_styles();
-  }
 });
 
 // TODO: remove some of these backgrounds, I kind of went overboard, some of
@@ -115,9 +114,8 @@ DisplaySettings.update_styles = function() {
     content_rule.style.fontFamily = localStorage.BODY_FONT_FAMILY || 'initial';
 
     const bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10);
-    if(bfs) {
+    if(bfs)
       content_rule.style.fontSize = (bfs / 10).toFixed(2) + 'em';
-    }
 
     content_rule.style.textAlign = (localStorage.JUSTIFY_TEXT === '1') ?
       'justify' : 'left';
@@ -126,10 +124,8 @@ DisplaySettings.update_styles = function() {
     content_rule.style.lineHeight = (blh / 10).toFixed(2);
     let col_count = localStorage.COLUMN_COUNT;
     const VALID_COUNTS = { '1': true, '2': true, '3': true };
-    if(!(col_count in VALID_COUNTS)) {
+    if(!(col_count in VALID_COUNTS))
       col_count = '1';
-    }
-
     content_rule.style.webkitColumnCount = col_count;
   }
 };
@@ -140,18 +136,15 @@ DisplaySettings.load_styles = function() {
   const sheet = document.styleSheets[0];
   let buffer = [];
 
-  if(localStorage.BACKGROUND_IMAGE) {
+  if(localStorage.BACKGROUND_IMAGE)
     buffer.push(`background: url(${localStorage.BACKGROUND_IMAGE});`);
-  } else if(localStorage.ENTRY_BACKGROUND_COLOR) {
+  else if(localStorage.ENTRY_BACKGROUND_COLOR)
     buffer.push(`background: ${localStorage.ENTRY_BACKGROUND_COLOR};`);
-  }
-
   buffer.push('margin:0px;');
 
   const entry_margin = localStorage.ENTRY_MARGIN;
-  if(entry_margin) {
+  if(entry_margin)
     buffer.push(`padding:${entry_margin}px;`);
-  }
 
   sheet.addRule('div.entry', buffer.join(''));
 
@@ -159,14 +152,12 @@ DisplaySettings.load_styles = function() {
   buffer = [];
 
   const hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10);
-  if(hfs) {
+  if(hfs)
     buffer.push(`font-size: ${(hfs / 10).toFixed(2)}em;`);
-  }
 
   const header_font_fam = localStorage.HEADER_FONT_FAMILY;
-  if(header_font_fam) {
+  if(header_font_fam)
     buffer.push(`font-family:${header_font_fam};`);
-  }
 
   buffer.push('letter-spacing:-0.03em;');
   buffer.push('color:rgba(50, 50, 50, 0.9);');
@@ -184,27 +175,23 @@ DisplaySettings.load_styles = function() {
   buffer = [];
 
   const bfs = parseInt(localStorage.BODY_FONT_SIZE || '0', 10);
-  if(bfs) {
+  if(bfs)
     buffer.push(`font-size: ${(bfs / 10).toFixed(2)}em;`);
-  }
 
   const body_justify = localStorage.JUSTIFY_TEXT === '1';
-  if(body_justify) {
+  if(body_justify)
     buffer.push('text-align: justify;');
-  }
 
   const body_font = localStorage.BODY_FONT_FAMILY;
-  if(body_font) {
+  if(body_font)
     buffer.push(`font-family:${body_font};`);
-  }
 
   let blh = localStorage.BODY_LINE_HEIGHT;
   if(blh) {
     blh = parseInt(blh);
-    if(blh) {
+    if(blh)
       // TODO: units?
       buffer.push(`line-height: ${(blh / 10).toFixed(2)};`);
-    }
   }
 
   buffer.push('vertical-align:text-top;');

@@ -89,7 +89,6 @@ function on_lookup_favicon_url(feed, icon_url) {
     on_complete.call(this);
 }
 
-
 function on_complete() {
   if(this.icon_cache_conn)
     this.icon_cache_conn.close();

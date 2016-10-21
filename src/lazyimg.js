@@ -31,10 +31,8 @@ const attrs = [
 function transform_img(img) {
   if(img.hasAttribute('src') || img.hasAttribute('srcset'))
     return;
-
   // the space check is a minimal validation, urls may be relative
   // TODO: maybe use a regex and \s
-
   for(let alt_name of attrs) {
     if(img.hasAttribute(alt_name)) {
       const alt_val = img.getAttribute(alt_name);
