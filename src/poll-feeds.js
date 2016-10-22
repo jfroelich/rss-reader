@@ -63,7 +63,7 @@ function on_query_idle_state(state) {
 }
 
 function connect_on_success(conn) {
-  this.log.debug('Connected to feed database');
+  this.log.debug('Connected to database', conn.name);
   this.conn = conn;
   db_get_all_feeds(this.log, conn, on_get_feeds.bind(this));
 }

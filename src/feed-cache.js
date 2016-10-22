@@ -3,7 +3,7 @@
 'use strict';
 
 // TODO: merge feed-db.js
-// TODO: merge feed.js
+// TODO: add/update feed should delegate to put feed
 // TODO: maybe merge add/put entry into one function
 // TODO: maybe entry states should be in a single property instead of
 // two props, like UNREAD_UNARCHIVED
@@ -17,45 +17,113 @@
 // instead of using the title index, deprecate the title index, stop ensuring
 // title is an empty string
 
-{
-
-// Global entry states
-this.ENTRY_UNREAD = 0;
-this.ENTRY_READ = 1;
-this.ENTRY_UNARCHIVED = 0;
-this.ENTRY_ARCHIVED = 1;
-
-// Given an entry object, return the last url in its internal url chain.
-this.get_entry_url = function(entry) {
-  if(!entry.urls.length) {
+function get_feed_url(feed) {
+  if(!feed.urls.length)
     throw new TypeError();
-  }
+  return feed.urls[feed.urls.length - 1];
+}
 
-  return entry.urls[entry.urls.length - 1];
-};
+function add_feed_url(feed, url) {
+  if(!('urls' in feed))
+    feed.urls = [];
 
-// TODO: should normalization just be appended as another url to the chain,
-// so that normalization is treated like a step similar to redirect/rewrite?
-this.add_entry_url = function(entry, url_str) {
-  if(!entry.urls) {
-    entry.urls = [];
-  }
-
-  const norm = normalize_entry_url(url_str);
-  if(entry.urls.includes(norm)) {
+  const norm_url = normalize_feed_url(url);
+  if(feed.urls.includes(norm_url)) {
     return false;
   }
 
-  entry.urls.push(norm);
+  feed.urls.push(norm_url);
   return true;
-};
+}
 
-// TODO: does this need to be public?
-this.normalize_entry_url = function(url_str) {
+function normalize_feed_url(url_str) {
   const url_obj = new URL(url_str);
   url_obj.hash = '';
   return url_obj.href;
-};
+}
+
+function sanitize_feed(input_feed) {
+  const feed = Object.assign({}, input_feed);
+
+  if(feed.id) {
+    if(!Number.isInteger(feed.id) || feed.id < 1)
+      throw new TypeError();
+  }
+
+  const types = {'feed': 1, 'rss': 1, 'rdf': 1};
+  if(feed.type && !(feed.type in types))
+    throw new TypeError();
+
+  if(feed.title) {
+    let title = feed.title;
+    title = filter_control_chars(title);
+    title = replace_tags(title, '');
+    title = title.replace(/\s+/, ' ');
+    const title_max_len = 1024;
+    title = truncate_html(title, title_max_len, '');
+    feed.title = title;
+  }
+
+  if(feed.description) {
+    let description = feed.description;
+    description = filter_control_chars(description);
+    description = replace_tags(description, '');
+    description = description.replace(/\s+/, ' ');
+    const before_len = description.length;
+    const desc_max_len = 1024 * 10;
+    description = truncate_html(description, desc_max_len, '');
+    if(before_len > description.length) {
+      console.warn('Truncated description', description);
+    }
+
+    feed.description = description;
+  }
+
+  return feed;
+}
+
+// Returns a new object of the old feed merged with the new feed. Fields from
+// the new feed take precedence, except for URLs, which are merged to generate
+// a distinct ordered set of oldest to newest url. Impure.
+function merge_feeds(old_feed, new_feed) {
+  const merged = Object.assign({}, old_feed, new_feed);
+  merged.urls = [...old_feed.urls];
+  for(let url of new_feed.urls) {
+    add_feed_url(merged, url);
+  }
+  return merged;
+}
+
+const ENTRY_UNREAD = 0;
+const ENTRY_READ = 1;
+const ENTRY_UNARCHIVED = 0;
+const ENTRY_ARCHIVED = 1;
+
+// Get the last url in an entry's internal url list
+function get_entry_url(entry) {
+  if(!entry.urls.length)
+    throw new TypeError();
+  return entry.urls[entry.urls.length - 1];
+}
+
+// TODO: should normalization just be appended as another url to the chain,
+// so that normalization is treated like a step similar to redirect/rewrite?
+function add_entry_url(entry, url_str) {
+  if(!entry.urls)
+    entry.urls = [];
+  const norm = normalize_entry_url(url_str);
+  if(entry.urls.includes(norm))
+    return false;
+  entry.urls.push(norm);
+  return true;
+}
+
+// TODO: does this need to be public?
+function normalize_entry_url(url_str) {
+  const url_obj = new URL(url_str);
+  url_obj.hash = '';
+  return url_obj.href;
+}
 
 // Returns a new entry object where fields have been sanitized. Impure
 // TODO: ensure dates are not in the future, and not too old? Should this be
@@ -64,7 +132,6 @@ function sanitize_entry(input_entry) {
   const author_max_len = 200;
   const title_max_len = 1000;
   const content_max_len = 50000;
-
   const output_entry = Object.assign({}, input_entry);
 
   if(output_entry.author) {
@@ -96,7 +163,7 @@ function sanitize_entry(input_entry) {
   return output_entry;
 }
 
-this.db_add_entry = function(log, conn, entry, callback) {
+function db_add_entry(log, conn, entry, callback) {
   if('id' in entry)
     throw new TypeError();
   log.log('Adding entry', get_entry_url(entry));
@@ -108,16 +175,17 @@ this.db_add_entry = function(log, conn, entry, callback) {
   const tx = conn.transaction('entry', 'readwrite');
   const store = tx.objectStore('entry');
   const request = store.add(storable);
-  request.onsuccess = callback;
-  request.onerror = add_entry_on_error.bind(request, log, storable, callback);
-};
-
-function add_entry_on_error(log, entry, callback, event) {
-  log.error(event.target.error);
-  callback(event);
+  request.onsuccess = function(event) {
+    log.debug('Stored entry', get_entry_url(storable));
+    callback(event);
+  };
+  request.onerror = function(event) {
+    log.error(event.target.error);
+    callback(event);
+  };
 }
 
-this.db_add_feed = function(log, conn, feed, callback) {
+function db_add_feed(log, conn, feed, callback) {
   if('id' in feed)
     throw new TypeError();
   log.log('Adding feed', get_feed_url(feed));
@@ -127,123 +195,101 @@ this.db_add_feed = function(log, conn, feed, callback) {
   const tx = conn.transaction('feed', 'readwrite');
   const store = tx.objectStore('feed');
   const request = store.add(storable);
-  request.onsuccess = add_feed_on_success.bind(request, log, feed, callback);
-  request.onerror = add_feed_on_error.bind(request, log, feed, callback);
-};
-
-function add_feed_on_success(log, feed, callback, event) {
-  feed.id = event.target.result;
-  log.debug('Added feed %s with new id %s', get_feed_url(feed), feed.id);
-  callback({'type': 'success', 'feed': feed});
+  request.onsuccess = function(event) {
+    storable.id = event.target.result;
+    log.debug('Added feed %s with new id %s', get_feed_url(storable),
+      storable.id);
+    callback({'type': 'success', 'feed': storable});
+  };
+  request.onerror = function(event) {
+    log.error(event.target.error);
+    callback({'type': 'error'});
+  };
 }
 
-function add_feed_on_error(log, feed, callback, event) {
-  log.error(event.target.error);
-  callback({'type': 'error'});
-}
-
-// Calls back with whether the db contains a feed with the given url
-// TODO: rename to db_contains_feed_url
 // TODO: normalize feed url?
-this.db_has_feed_url = function(log, conn, url, callback) {
+function db_contains_feed_url(log, conn, url, callback) {
   log.debug('Checking for feed with url', url);
+  let didFindFeed = false;
   const tx = conn.transaction('feed');
   const store = tx.objectStore('feed');
   const index = store.index('urls');
   const request = index.get(url);
-  request.onsuccess = has_feed_url_on_success.bind(request, log, url, callback);
-  request.onerror = has_feed_url_on_error.bind(request, log, url, callback);
-};
-
-function has_feed_url_on_success(log, url, callback, event) {
-  const feed = event.target.result;
-  log.debug('Found feed with url %s? %s', url, !!feed);
-  callback(!!feed);
-}
-
-function has_feed_url_on_error(log, url, callback, event) {
-  log.debug(event.target.error);
-  callback(false);
+  request.onsuccess = function(event) {
+    const feed = event.target.result;
+    didFindFeed = !!feed;
+    log.debug('Found feed with url %s? %s', url, didFindFeed);
+    callback(didFindFeed);
+  };
+  request.onerror = function(event) {
+    log.debug(event.target.error);
+    callback(didFindFeed);
+  };
 }
 
 // Assumes urls are normalized
-this.db_find_entry = function(log, conn, urls, limit, callback) {
+function db_find_entry(log, conn, urls, limit, callback) {
   if(!urls.length)
     throw new TypeError();
-
   log.log('Find entry', urls);
-
-  const ctx = {};
-  ctx.matches = [];
-  ctx.callback = callback;
-  ctx.limit = limit || 0;
-  ctx.reached_limit = false;
+  const matches = [];
+  let reached_limit = false;
 
   const tx = conn.transaction('entry');
-  tx.oncomplete = find_entry_on_complete.bind(tx, log, urls, ctx.matches,
-    ctx.callback);
+  tx.oncomplete = function(event) {
+    log.log('Found %d entries for %o', matches.length, urls);
+    callback(matches);
+  };
   const store = tx.objectStore('entry');
   const index = store.index('urls');
 
   // Iterate in reverse to increase the chance of an earlier exit
   // TODO: this only would matter if we search the urls sequentially, but
-  // we currently search concurrently
+  // we currently search concurrently, so maybe this is stupid
   for(let i = urls.length - 1; i > -1; i--) {
     const request = index.openCursor(urls[i]);
-    request.onsuccess = find_entry_open_cursor_on_success.bind(request, ctx);
+    request.onsuccess = on_success;
     request.onerror = log.error;
   }
-};
 
-function find_entry_open_cursor_on_success(ctx, event) {
-  if(ctx.reached_limit)
-    return;
-  const cursor = event.target.result;
-  if(!cursor)
-    return;
-  const entry = cursor.value;
   // TODO: avoid pushing dups?
-  ctx.matches.push(entry);
-  if(ctx.limit && ctx.matches.length >= ctx.limit) {
-    ctx.reached_limit = true;
-    return;
+  // TODO: >= or > ?
+  function on_success(event) {
+    const cursor = event.target.result;
+    if(cursor && !reached_limit) {
+      matches.push(cursor.value);
+      reached_limit = limit && matches.length >= limit;
+      if(!reached_limit)
+        cursor.continue();
+    }
   }
-  cursor.continue();
 }
 
-function find_entry_on_complete(log, urls, matches, callback, event) {
-  log.log('Found %s entries for [%s]', matches.length, urls.join(','));
-  callback(matches);
-}
-
-this.db_put_feed = function(log, conn, feed, callback) {
+function db_put_feed(log, conn, feed, callback) {
   log.debug('Putting feed', get_feed_url(feed));
   feed.dateUpdated = new Date();
   const tx = conn.transaction('feed', 'readwrite');
   const store = tx.objectStore('feed');
   const request = store.put(feed);
-  request.onsuccess = put_feed_on_success.bind(request, log, feed, callback);
-  request.onerror = put_feed_on_error.bind(request, log, feed, callback);
+  request.onsuccess = function(event) {
+    log.debug('Successfully put feed', get_feed_url(feed));
+    if(!('id' in feed)) {
+      log.debug('New feed id', event.target.result);
+      feed.id = event.target.result;
+    }
+    // TODO: no need to pass back feed
+    if(callback)
+      callback('success', feed);
+  };
+  request.onerror = function(event) {
+    log.debug(event.target.error);
+    if(callback)
+      callback('error');
+  };
   return tx;
-};
-
-function put_feed_on_success(log, feed, callback, event) {
-  log.debug('Successfully put feed', get_feed_url(feed));
-  if(!('id' in feed)) {
-    log.debug('New feed id', event.target.result);
-    feed.id = event.target.result;
-  }
-  if(callback)
-    callback('success', feed);
 }
 
-function put_feed_on_error(log, feed, callback, event) {
-  log.debug(event.target.error);
-  if(callback)
-    callback('error');
-}
-
-this.db_update_feed = function(log, conn, feed, callback) {
+function db_update_feed(log, conn, feed, callback) {
   if(!('id' in feed))
     throw new TypeError();
   log.log('Updating feed', get_feed_url(feed));
@@ -253,131 +299,113 @@ this.db_update_feed = function(log, conn, feed, callback) {
   const tx = conn.transaction('feed', 'readwrite');
   const store = tx.objectStore('feed');
   const request = store.put(storable);
-  request.onsuccess = update_feed_on_success.bind(request, log, storable,
-    callback);
-  request.onerror = update_feed_on_error.bind(request, log, storable, callback);
+  request.onsuccess = function(event) {
+    log.debug('Updated feed', get_feed_url(storable));
+    if(callback)
+      callback({'type': 'success', 'feed': storable});
+  };
+  request.onerror = function(event) {
+    log.error(event.target.error);
+    if(callback)
+      callback({'type': 'error', 'feed': storable});
+  };
 }
 
-function update_feed_on_success(log, feed, callback, event) {
-  log.debug('Updated feed', get_feed_url(feed));
-  if(callback)
-    callback({'type': 'success', 'feed': feed});
-}
-
-function update_feed_on_error(log, feed, callback, event) {
-  log.error(event.target.error);
-  if(callback)
-    callback({'type': 'error', 'feed': feed});
-}
-
-this.db_get_all_feeds = function(log, conn, callback) {
+function db_get_all_feeds(log, conn, callback) {
   log.log('Opening cursor over feed store');
   const feeds = [];
   const tx = conn.transaction('feed');
-  tx.oncomplete = get_all_feeds_on_complete.bind(tx, log, feeds, callback);
+  tx.oncomplete = function(event) {
+    log.log('Loaded %s feeds', feeds.length);
+    callback(feeds);
+  };
   const store = tx.objectStore('feed');
   const request = store.openCursor();
-  request.onsuccess = get_all_feeds_open_cursor_on_success.bind(request, feeds);
+  request.onsuccess = function(event) {
+    const cursor = event.target.result;
+    if(cursor) {
+      feeds.push(cursor.value);
+      cursor.continue();
+    }
+  };
   request.onerror = log.error;
-};
-
-function get_all_feeds_open_cursor_on_success(feeds, event) {
-  const cursor = event.target.result;
-  if(cursor) {
-    feeds.push(cursor.value);
-    cursor.continue();
-  }
 }
 
-function get_all_feeds_on_complete(log, feeds, callback, event) {
-  log.log('Loaded %s feeds', feeds.length);
-  callback(feeds);
-}
-
-this.db_count_unread_entries = function(log, conn, callback) {
+function db_count_unread_entries(log, conn, callback) {
   log.debug('Counting unread entries');
   const tx = conn.transaction('entry');
   const store = tx.objectStore('entry');
   const index = store.index('readState');
   const request = index.count(ENTRY_UNREAD);
-  request.onsuccess = count_unread_entries_on_success.bind(request, callback);
-  request.onerror = count_unread_entries_on_error.bind(request, log, callback);
-};
-
-function count_unread_entries_on_success(callback, event) {
-  const count = event.target.result;
-  callback(count);
+  request.onsuccess = function(event) {
+    callback(event.target.result);
+  };
+  request.onerror = function(event) {
+    log.error(event.target.error);
+    callback(-1);// 0 would be ambiguous
+  };
 }
 
-function count_unread_entries_on_error(log, callback, event) {
-  log.error(event.target.error);
-  callback(-1);// 0 would be ambiguous
-}
-
-this.db_mark_entry_read = function(log, id, callback) {
+function db_mark_entry_read(log, id, callback) {
   if(!Number.isInteger(id) || id < 1)
     throw new TypeError();
+  log.debug('Marking entry %s as read', id);
+  const db = new FeedDb(log);
+  db.connect(connect_on_success, connect_on_error);
 
-  log.debug('Starting to mark entry %s as read', id);
-  const ctx = {'id': id, 'callback': callback, 'log': log};
-  const db = new FeedDb();
-  // TODO: bind to ctx instead of as param
-  db.connect(mark_entry_read_connect_on_success.bind(null, ctx),
-    mark_entry_read_connect_on_error.bind(null, ctx));
-};
-
-function mark_entry_read_connect_on_success(ctx, conn) {
-  ctx.log.debug('Connected to database to mark entry as read');
-  ctx.conn = conn;
-  const tx = conn.transaction('entry', 'readwrite');
-  const store = tx.objectStore('entry');
-  const request = store.openCursor(ctx.id);
-  request.onsuccess = mark_entry_read_open_cursor_on_success.bind(request, ctx);
-  request.onerror = mark_entry_read_open_cursor_on_error.bind(request, ctx);
-}
-
-function mark_entry_read_connect_on_error(ctx) {
-  mark_entry_read_on_complete(ctx, 'ConnectionError');
-}
-
-function mark_entry_read_open_cursor_on_success(ctx, event) {
-  const cursor = event.target.result;
-  if(!cursor) {
-    ctx.log.error('No entry found with id', ctx.id);
-    mark_entry_read_on_complete(ctx, 'NotFoundError');
-    return;
+  function connect_on_success(conn) {
+    log.debug('Connected to database', conn.name);
+    const tx = conn.transaction('entry', 'readwrite');
+    const store = tx.objectStore('entry');
+    const request = store.openCursor(id);
+    request.onsuccess = open_cursor_on_success;
+    request.onerror = open_cursor_on_error;
   }
 
-  const entry = cursor.value;
-  if(entry.readState === ENTRY_READ) {
-    ctx.log.error('Already read entry with id', entry.id);
-    mark_entry_read_on_complete(ctx, 'AlreadyReadError');
-    return;
+  function connect_on_error(event) {
+    on_complete(event, 'ConnectionError');
   }
 
-  ctx.log.debug('Updating entry', entry.id);
+  function open_cursor_on_success(event) {
+    const cursor = event.target.result;
+    if(!cursor) {
+      log.error('No entry found with id', id);
+      on_complete(event, 'NotFoundError');
+      return;
+    }
 
-  entry.readState = ENTRY_READ;
-  const current_date = new Date();
-  entry.dateRead = current_date;
-  entry.dateUpdated = current_date;
-  cursor.update(entry);
+    const entry = cursor.value;
+    log.debug('Found entry', get_entry_url(entry));
+    if(entry.readState === ENTRY_READ) {
+      log.error('Already read entry with id', entry.id);
+      on_complete(event, 'AlreadyReadError');
+      return;
+    }
 
-  update_badge(ctx.conn, ctx.log);
-  mark_entry_read_on_complete(ctx, 'Success');
-}
+    log.debug('Updating entry', entry.id);
+    entry.readState = ENTRY_READ;
+    const current_date = new Date();
+    entry.dateRead = current_date;
+    entry.dateUpdated = current_date;
+    cursor.update(entry);
+    const conn = event.target.transaction.db;
+    update_badge(conn, log);
+    on_complete(event, 'Success');
+  }
 
-function mark_entry_read_open_cursor_on_error(ctx, event) {
-  ctx.log.error(event.target.error);
-  mark_entry_read_on_complete(ctx, 'CursorError');
-}
+  function open_cursor_on_error(event) {
+    log.error(event.target.error);
+    on_complete(event, 'CursorError');
+  }
 
-function mark_entry_read_on_complete(ctx, type) {
-  ctx.log.log('Completed marking entry %s as read', ctx.id);
-  if(ctx.conn)
-    ctx.conn.close();
-  if(ctx.callback)
-    ctx.callback({'type': type});
-}
-
+  function on_complete(event, type) {
+    log.log('Completed marking entry %s as read', id);
+    const conn = event.target.transaction.db;
+    if(conn) {
+      log.debug('Closing connection to database', conn.name);
+      conn.close();
+    }
+    if(callback)
+      callback(type);
+  }
 }

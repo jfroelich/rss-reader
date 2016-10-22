@@ -20,7 +20,6 @@
       "/src/compact-favicons.js",
       "/src/domscrub.js",
       "/src/favicon-cache.js",
-      "/src/feed.js",
       "/src/feed-cache.js",
       "/src/feed-db.js",
       "/src/feed-parser.js",

@@ -13,7 +13,7 @@ function scrub_dom(doc) {
   filter_blacklist(doc);
   filter_hidden(doc);
   adjust_block_inlines(doc);
-  filter_breaks(doc);
+  filter_brs(doc);
   filter_script_anchors(doc);
   filter_format_anchors(doc);
   filter_small_images(doc);
@@ -104,7 +104,7 @@ function filter_blacklist(doc) {
   }
 }
 
-function filter_breaks(doc) {
+function filter_brs(doc) {
   const elements = doc.querySelectorAll('br + br');
   for(let element of elements) {
     element.remove();
@@ -319,6 +319,7 @@ const leaf_exceptions = {
   'sbg': 0, 'textarea': 0, 'track': 0, 'video': 0, 'wbr': 0
 };
 
+// Recursive
 function is_leaf(node) {
   switch(node.nodeType) {
     case Node.ELEMENT_NODE:
@@ -387,14 +388,12 @@ function filter_figures(doc) {
 }
 
 function trim_doc(doc) {
-  const body = doc.body;
-  if(!body)
+  if(!doc.body)
     return;
-
-  const first_child = body.firstChild;
+  const first_child = doc.body.firstChild;
   if(first_child) {
     trim_step(first_child, 'nextSibling');
-    const last_child = body.lastChild;
+    const last_child = doc.body.lastChild;
     if(last_child && last_child !== first_child)
       trim_step(last_child, 'previousSibling');
   }
@@ -407,10 +406,10 @@ function can_trim(node) {
     (node.nodeType === Node.TEXT_NODE && !node.nodeValue.trim()));
 }
 
-function trim_step(start_node, prop_name) {
+function trim_step(start_node, edge) {
   let node = start_node;
   while(can_trim(node)) {
-    let sibling = node[prop_name];
+    let sibling = node[edge];
     node.remove();
     node = sibling;
   }
@@ -440,8 +439,7 @@ function insert_children_before(parent_node, ref_node) {
 }
 
 function filter_single_item_lists(doc) {
-  const list_selector = 'ul, ol, dl';
-  const lists = doc.querySelectorAll(list_selector);
+  const lists = doc.querySelectorAll('ul, ol, dl');
   for(let list of lists) {
     unwrap_single_item_list(doc, list);
   }
@@ -449,37 +447,63 @@ function filter_single_item_lists(doc) {
 
 const list_item_names = {'li': 0, 'dt': 0, 'dd': 0};
 
+// Unwraps single item or empty list elements
 function unwrap_single_item_list(doc, list) {
-  const item = list.firstElementChild;
-  if(!item)
+  const list_parent = list.parentNode;
+  if(!list_parent)
     return;
+
+  const item = list.firstElementChild;
+
+  // If the list has no child elements then move its child nodes out of the
+  // list and remove it
+  if(!item) {
+    // If it is just <list>...<item/>...<list> then remove
+    if(!list.firstChild) {
+      list.remove();
+      return;
+    }
+    // The list has no child elements, but the list has one or more child
+    // nodes. Move the nodes to before the list. Add padding if needed.
+    if(is_text_node(list.previousSibling))
+      list_parent.insertBefore(doc.createTextNode(' '), list);
+    for(let node = list.firstChild; node; node = list.firstChild) {
+      list_parent.insertBefore(node, list);
+    }
+    if(is_text_node(list.nextSibling))
+      list_parent.insertBefore(doc.createTextNode(' '), list);
+    list.remove();
+    return;
+  }
+
+  // If the list has more than one child element then leave the list as is
   if(item.nextElementSibling)
     return;
+  // If the list's only child element isn't one of the correct types, ignore it
   if(!(item.localName in list_item_names))
     return;
 
+  // If the list has one child element of the correct type, and that child
+  // element has no inner content, then remove the list. This will also remove
+  // any non-element nodes within the list outside of the child element.
   if(!item.firstChild) {
-    if(is_text_node(list.previousSibling) &&
-      is_text_node(list.nextSibling)) {
-      list.parentNode.replaceChild(doc.createTextNode(' '), list);
-    } else {
+    // If removing the list, avoid the possible merging of adjacent text nodes
+    if(is_text_node(list.previousSibling) && is_text_node(list.nextSibling))
+      list_parent.replaceChild(doc.createTextNode(' '), list);
+    else
       list.remove();
-    }
-
     return;
   }
 
+  // The list has one child element with one or more child nodes. Move the
+  // child nodes to before the list and then remove it. Add padding if needed.
   if(is_text_node(list.previousSibling) &&
-    is_text_node(item.firstChild)) {
-    list.parentNode.insertBefore(doc.createTextNode(' '), list);
-  }
-
+    is_text_node(item.firstChild))
+    list_parent.insertBefore(doc.createTextNode(' '), list);
   insert_children_before(item, list);
-
   if(is_text_node(list.nextSibling) &&
     is_text_node(list.previousSibling))
-    list.parentNode.insertBefore(doc.createTextNode(' '), list);
-
+    list_parent.insertBefore(doc.createTextNode(' '), list);
   list.remove();
 }
 

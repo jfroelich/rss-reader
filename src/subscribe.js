@@ -4,15 +4,11 @@
 
 {
 
-function subscribe(feed_db_conn, icon_cache_conn, feed, suppress_notifs, log,
-  callback) {
-
+function subscribe(feed_db_conn, icon_cache_conn, feed, suppress_notifs,
+  log = SilentConsole, callback) {
   if(!get_feed_url(feed))
     throw new TypeError();
-
-  log = log || SilentConsole;
   log.log('Subscribing to', get_feed_url(feed));
-
   const ctx = {
     'feed': feed,
     'did_subscribe': false,
@@ -27,7 +23,7 @@ function subscribe(feed_db_conn, icon_cache_conn, feed, suppress_notifs, log,
 
   if(feed_db_conn) {
     log.debug('Checking if subscribed using provided connection');
-    db_has_feed_url(log, feed_db_conn, get_feed_url(feed),
+    db_contains_feed_url(log, feed_db_conn, get_feed_url(feed),
       on_find_feed.bind(ctx));
   } else {
     ctx.feed_db.open(feed_db_connect_on_success.bind(ctx),
@@ -40,7 +36,7 @@ function feed_db_connect_on_success(event) {
   this.feed_db_conn = event.target.result;
   this.should_close = true;
   this.log.debug('Checking if subscribed using on demand connection');
-  db_has_feed_url(this.log, this.feed_db_conn, get_feed_url(this.feed),
+  db_contains_feed_url(this.log, this.feed_db_conn, get_feed_url(this.feed),
     on_find_feed.bind(this));
 }
 
@@ -116,7 +112,7 @@ function on_add_feed(event) {
 
 function on_complete(event) {
   if(this.should_close && this.feed_db_conn) {
-    this.log.log('Requesting database %s to close', this.feed_db.name);
+    this.log.log('Requesting database %s to close', this.feed_db_conn.name);
     this.feed_db_conn.close();
   }
 

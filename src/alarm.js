@@ -21,7 +21,7 @@ chrome.alarms.get('archive', function(alarm) {
 chrome.alarms.get('poll', function(alarm) {
   if(!alarm) {
     console.debug('Creating poll alarm');
-    chrome.alarms.create('poll', {'periodInMinutes': 30});
+    chrome.alarms.create('poll', {'periodInMinutes': 60});
   }
 });
 
