@@ -2,47 +2,37 @@
 
 'use strict';
 
-{
+function fetch_feed(req_url, exclude_entries = false, log = SilentConsole) {
+  return new Promise(function(resolve, reject) {
+    if(!parse_feed)
+      reject(new ReferenceError());
 
-function fetch_feed(req_url, exclude_entries, log, callback) {
-  if(!parse_feed)
-    throw new ReferenceError();
-  const ctx = {
-    'req_url': req_url,
-    'exclude_entries': exclude_entries,
-    'callback': callback,
-    'log': log || SilentConsole
-  };
-  fetch_xml(req_url, log, on_fetch_xml.bind(ctx));
-}
+    fetch_xml(req_url, log, on_fetch_xml);
 
-function on_fetch_xml(event) {
-  if(event.type !== 'success')
-    return this.callback({'type': event.type});
-  let result = null;
-  try {
-    result = parse_feed(event.document, this.exclude_entries);
-  } catch(error) {
-    this.log.warn(error);
-    this.callback({'type': 'ParseError'});
-    return;
-  }
+    function on_fetch_xml(event) {
+      if(event.type !== 'success')
+        reject(new Error(event.type));
 
-  const feed = result.feed;
-  add_feed_url(feed, this.req_url.toString());
-  if(event.responseURLString)
-    add_feed_url(feed, event.responseURLString);
-  feed.dateFetched = new Date();
-  feed.dateLastModified = event.lastModifiedDate;
-  this.log.debug('Fetched feed', get_feed_url(feed));
-  const success_event = {};
-  success_event.type = 'success';
-  success_event.feed = feed;
-  if(!this.exclude_entries)
-    success_event.entries = result.entries;
-  this.callback(success_event);
-}
+      let result = null;
+      try {
+        result = parse_feed(event.document, exclude_entries);
+      } catch(error) {
+        reject(error);
+        return;
+      }
 
-this.fetch_feed = fetch_feed;
-
+      const feed = result.feed;
+      add_feed_url(feed, req_url.href);
+      if(event.responseURLString)
+        add_feed_url(feed, event.responseURLString);
+      feed.dateFetched = new Date();
+      feed.dateLastModified = event.lastModifiedDate;
+      log.debug('Fetched feed', get_feed_url(feed));
+      const output = {};
+      output.feed = feed;
+      if(!exclude_entries)
+        output.entries = result.entries;
+      resolve(output);
+    }
+  });
 }

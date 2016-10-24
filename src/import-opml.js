@@ -4,11 +4,10 @@
 
 {
 
-function import_opml(feed_db, log, callback) {
+function import_opml(db_target, log = SilentConsole, callback) {
   if(!parse_xml)
     throw new ReferenceError();
 
-  log = log || SilentConsole;
   log.log('Starting opml import');
 
   // Create the uploader in the context of the document
@@ -25,7 +24,7 @@ function import_opml(feed_db, log, callback) {
     'uploader': uploader,
     'files': null,
     'log': log,
-    'feed_db': feed_db,
+    'feed_db_target': db_target,
     'feed_db_conn': null,
     'icon_cache_conn': null,
     'icon_cache': new FaviconCache(log)
@@ -56,8 +55,9 @@ function uploader_on_change(event) {
     return;
   }
 
-  this.feed_db.connect(feed_db_connect_on_success.bind(this),
-    on_complete.bind(this));
+  const connectPromise = db_connect(feed_db_target, this.log);
+  connectPromise.then(feed_db_connect_on_success.bind(this));
+  connectPromise.catch(on_complete.bind(this));
 }
 
 function feed_db_connect_on_success(conn) {
@@ -145,7 +145,7 @@ function on_file_processed(file) {
     on_complete.call(this);
 }
 
-function on_complete() {
+function on_complete(error) {
   this.log.log('Completed opml import');
   if(this.uploader)
     this.uploader.remove();

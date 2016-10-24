@@ -16,8 +16,7 @@ feed id, or do not point to a feed id in the set of known feed ids
 
 const HealthCheck = {};
 
-HealthCheck.start = function(log) {
-  log = log || SilentConsole;
+HealthCheck.start = function(log = SilentConsole) {
   log.debug('Starting healthcheck...');
 
   const ctx = {
@@ -27,19 +26,20 @@ HealthCheck.start = function(log) {
     'completed_orphan_scan': false,
     'completed_entries_missing_urls_scan': false
   };
-  const db = new FeedDb(log);
-  db.connect(HealthCheck._connect_on_success.bind(ctx),
-    HealthCheck._connect_on_error.bind(ctx));
+
+  const connectPromise = db_connect(undefined, log);
+  connectPromise.then(HealthCheck._connect_on_success.bind(ctx));
+  connectPromise.catch(HealthCheck._connect_on_error.bind(ctx));
 };
 
 HealthCheck._connect_on_success = function(conn) {
   this.log.debug('Connected to database');
-  this.db = conn;
+  this.conn = conn;
   HealthCheck.orphan.scan.call(this);
   HealthCheck.missurls.scan.call(this);
 };
 
-HealthCheck._connect_on_error = function() {
+HealthCheck._connect_on_error = function(error) {
   this.completed_orphan_scan = true;
   this.completed_entries_missing_urls_scan = true;
   HealthCheck._on_complete.call(this);
@@ -49,7 +49,7 @@ HealthCheck.orphan = {};
 
 HealthCheck.orphan.scan = function() {
   this.log.debug('Scanning for orphaned entries...');
-  const tx = this.db.transaction('entry', 'readwrite');
+  const tx = this.conn.transaction('entry', 'readwrite');
   tx.oncomplete = HealthCheck.orphan._on_complete.bind(this);
   const store = tx.objectStore('entry');
   const request = store.openCursor();
@@ -89,7 +89,7 @@ HealthCheck.missurls = {};
 
 HealthCheck.missurls.scan = function() {
   this.log.debug('Scanning for entries missing urls...');
-  const tx = this.db.transaction('entry', 'readwrite');
+  const tx = this.conn.transaction('entry', 'readwrite');
   tx.oncomplete = HealthCheck.missurls._on_complete.bind(this);
   const store = tx.objectStore('entry');
   const request = store.openCursor();
@@ -134,9 +134,9 @@ HealthCheck._on_complete = function(event) {
   if(!this.completed_entries_missing_urls_scan)
     return;
 
-  if(this.db) {
+  if(this.conn) {
     this.log.debug('Requesting database connection to be closed');
-    this.db.close();
+    this.conn.close();
   }
 
   this.log.debug('Completed health check');

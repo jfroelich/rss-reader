@@ -12,15 +12,15 @@ constructor(log) {
   this.log = log || SilentConsole;
 }
 
-// TODO: need to properly react to blocked event similar to FeedDb
-
 connect(on_success, on_error) {
   this.log.log('Connecting to database', this.name, 'version', this.version);
   const request = indexedDB.open(this.name, this.version);
   request.onupgradeneeded = this._upgrade.bind(this);
   request.onsuccess = on_success;
   request.onerror = on_error;
-  request.onblocked = on_error;
+  request.onblocked = function(event) {
+    console.warn('waiting indefinitely while blocked');
+  };
 }
 
 _upgrade(event) {

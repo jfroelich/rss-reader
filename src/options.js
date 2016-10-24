@@ -53,7 +53,7 @@ function show_err_msg(msg, should_fade_in) {
   if(should_fade_in) {
     error_element.style.opacity = '0';
     document.body.appendChild(error_element);
-    fade_element(container, 1, 0);
+    fade_element(container, 1,0).then(function(){});
   } else {
     error_element.style.opacity = '1';
     show_element(error_element);
@@ -102,22 +102,17 @@ function append_sub_monitor_msg(msg) {
 
 function hide_sub_monitor(callback, should_fade_out) {
   const monitor = document.getElementById('submon');
+  callback = callback || function(){};
   if(!monitor) {
-    if(callback) {
+    callback();
+  } else if(should_fade_out) {
+    fade_element(monitor, 2, 1).then(function() {
+      monitor.remove();
       callback();
-      return;
-    }
-  }
-
-  if(should_fade_out)
-    fade_element(monitor, 2, 1, remove_then_callback);
-  else
-    remove_then_callback();
-
-  function remove_then_callback() {
+    });
+  } else {
     monitor.remove();
-    if(callback)
-      callback();
+    callback();
   }
 }
 
@@ -236,22 +231,19 @@ function show_sub_preview(url) {
   const progress_element = document.getElementById(
     'subscription-preview-load-progress');
   show_element(progress_element);
-  const exclude_entries = false;
-  fetch_feed(url, exclude_entries, SilentConsole, on_fetch_feed);
 
-  function on_fetch_feed(fetch_event) {
-    if(event.type !== 'success') {
-      console.dir(event);
-      hide_sub_preview();
-      show_err_msg('Unable to fetch ' + url.href);
-      return;
-    }
+  fetch_feed(url).then(on_fetch_feed).catch(function(error) {
+    console.log(error);
+    hide_sub_preview();
+    show_err_msg('Unable to fetch ' + url.href);
+  });
 
+  function on_fetch_feed(fetch_output) {
     const progress_element = document.getElementById(
       'subscription-preview-load-progress');
     hide_element(progress_element);
 
-    const feed = fetch_event.feed;
+    const feed = fetch_output.feed;
     const title_element = document.getElementById('subscription-preview-title');
     title_element.textContent = feed.title || 'Untitled';
 
@@ -264,17 +256,20 @@ function show_sub_preview(url) {
     const results_list_element = document.getElementById(
       'subscription-preview-entries');
 
-    if(!fetch_event.entries.length) {
+    if(!fetch_output.entries.length) {
       let item = document.createElement('li');
       item.textContent = 'No previewable entries';
       results_list_element.appendChild(item);
     }
 
+    // TODO: use for..of. Because I want to limit, I need to
+    // slice or take or whatever
+
     // TODO: if tags are replaced by search_google_feeds then I don't need
     // to do it here
-    const limit = Math.min(5, fetch_event.entries.length);
+    const limit = Math.min(5, fetch_output.entries.length);
     for(let i = 0; i < limit; i++) {
-      const entry = fetch_event.entries[i];
+      const entry = fetch_output.entries[i];
       const item = document.createElement('li');
       item.innerHTML = replace_tags(entry.title || '', '');
       const content = document.createElement('span');
@@ -358,8 +353,10 @@ function populate_feed_info(feed_id) {
     throw new TypeError();
 
   const context = {'db': null};
-  const feed_db = new FeedDb();
-  feed_db.connect(connect_on_success, connect_on_error);
+
+  const connectPromise = db_connect();
+  connectPromise.then(connect_on_success);
+  connectPromise.catch(connect_on_error);
 
   // TODO: use something from feed-cache.js to do this query
   // TODO: enque db close after query, and remove later close calls
@@ -373,9 +370,9 @@ function populate_feed_info(feed_id) {
     request.onerror = on_find_feed;
   }
 
-  function connect_on_error(event) {
+  function connect_on_error(error) {
     // TODO: show an error message?
-    console.error(event.target.error);
+    console.error(error);
   }
 
   function on_find_feed(event) {
@@ -706,27 +703,28 @@ function unsubscribe_on_complete(feed_id, event) {
 // tell the difference
 // TODO: switch to a different section of the options ui on complete?
 function import_opml_btn_on_click(event) {
-  const db = new FeedDb();
   const callback = null;
-  import_opml(db, SilentConsole, callback);
+  import_opml(DB_DEFAULT_TARGET, SilentConsole, callback);
 }
 
 // TODO: visual feedback
 function export_opml_btn_on_click(event) {
-  const db = new FeedDb();
   const title = 'Subscriptions';
   const file_name = 'subs.xml';
   const callback = null;
-  export_opml(db, title, file_name, SilentConsole, callback);
+  export_opml(DB_DEFAULT_TARGET, title, file_name, SilentConsole, callback);
 }
 
 // TODO: use db_get_all_feeds and then sort manually, to avoid the defined title
 // requirement (and deprecate title index)
 function init_subs_section() {
   let feedCount = 0;
-  const db = new FeedDb();
-  db.connect(connect_on_success, connect_on_error);
 
+  const connectPromise = db_connect();
+  connectPromise.then(connect_on_success);
+  connectPromise.catch(connect_on_error);
+
+  // TODO: this should be calling to a function in feed-cache.js
   function connect_on_success(conn) {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -736,7 +734,7 @@ function init_subs_section() {
     conn.close();
   }
 
-  function connect_on_error() {
+  function connect_on_error(error) {
     // TODO: react to error
   }
 

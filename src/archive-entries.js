@@ -11,7 +11,7 @@
 
 {
 
-this.archive_entries = function(db, max_age, log, callback) {
+this.archive_entries = function(db_target, max_age, log, callback) {
   if(typeof max_age !== 'undefined' &&
     (!Number.isInteger(max_age) || max_age < 0))
     throw new TypeError();
@@ -21,7 +21,6 @@ this.archive_entries = function(db, max_age, log, callback) {
     'num_scanned': 0,
     'num_modified': 0,
     'max_age': max_age || default_max_age,
-    'db': db,
     'current_date': new Date(),
     'callback': callback,
     'log': log || SilentConsole
@@ -29,7 +28,10 @@ this.archive_entries = function(db, max_age, log, callback) {
 
   ctx.dbChannel = new BroadcastChannel('db');
   ctx.log.log('Archiving entries with max_age', ctx.max_age);
-  db.connect(connect_on_success.bind(ctx), connect_on_error.bind(ctx));
+
+  let promise = db_connect(db_target, log);
+  promise.then(connect_on_success.bind(ctx));
+  promise.catch(connect_on_error.bind(ctx));
 };
 
 function connect_on_success(conn) {

@@ -17,8 +17,7 @@ function subscribe(feed_db_conn, icon_cache_conn, feed, suppress_notifs,
     'suppress_notifs': suppress_notifs,
     'callback': callback,
     'feed_db_conn': feed_db_conn,
-    'icon_cache_conn': icon_cache_conn,
-    'feed_db': new FeedDb(log)
+    'icon_cache_conn': icon_cache_conn
   };
 
   if(feed_db_conn) {
@@ -26,8 +25,9 @@ function subscribe(feed_db_conn, icon_cache_conn, feed, suppress_notifs,
     db_contains_feed_url(log, feed_db_conn, get_feed_url(feed),
       on_find_feed.bind(ctx));
   } else {
-    ctx.feed_db.connect(feed_db_connect_on_success.bind(ctx),
-      feed_db_connect_on_error.bind(ctx));
+    const connectPromise = db_connect(undefined, log);
+    connectPromise.then(feed_db_connect_on_success.bind(ctx));
+    connectPromise.catch(feed_db_connect_on_error.bind(ctx));
   }
 }
 
@@ -40,8 +40,8 @@ function feed_db_connect_on_success(conn) {
     on_find_feed.bind(this));
 }
 
-function feed_db_connect_on_error(event) {
-  this.log.error(event.target.error);
+function feed_db_connect_on_error(error) {
+  this.log.error(error);
   on_complete.call(this, {'type': 'ConnectionError'});
 }
 
@@ -60,23 +60,18 @@ function on_find_feed(found, event) {
 
   const req_url = new URL(get_feed_url(this.feed));
   const exclude_entries = true;
-  fetch_feed(req_url, exclude_entries, this.log, on_fetch_feed.bind(this));
+  fetch_feed(req_url, exclude_entries, this.log).then(
+    on_fetch_feed.bind(this)).catch(fetch_feed_on_error.bind(this));
 }
 
+function fetch_feed_on_error(error) {
+  log.log(error);
+  on_complete.call(this, error.message);
+}
+
+// TODO: before merging and looking up favicon and adding, check if the user
+// is already subscribed to the redirected url, if a redirect occurred
 function on_fetch_feed(event) {
-  if(event.type !== 'success') {
-    this.log.log('Fetch error type', event.type);
-    if(event.type === 'InvalidMimeType') {
-      on_complete.call(this, {'type': 'FetchMimeTypeError'});
-    } else {
-      on_complete.call(this, {'type': 'FetchError'});
-    }
-    return;
-  }
-
-  // TODO: before merging and looking up favicon and adding, check if the user
-  // is already subscribed to the redirected url, if a redirect occurred
-
   this.feed = merge_feeds(this.feed, event.feed);
   const icon_cache = new FaviconCache(this.log);
 

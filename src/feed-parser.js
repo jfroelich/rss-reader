@@ -21,6 +21,10 @@ responsibility
 // Returns an event-like object with properties feed and entries. Throws an
 // error if parsing failed
 function parse_feed(doc, should_exclude_entries) {
+
+  if(!doc)
+    throw new Error('Undefined document');
+
   const doc_element = doc.documentElement;
   if(!doc_element.matches('feed, rss, rdf'))
     throw new Error(`Unsupported document element: ${doc_element.nodeName}`);

@@ -11,22 +11,23 @@ function refresh_feed_icons(log) {
     'num_feeds_modified': 0,
     'log': log,
     'conn': null,
-    'feed_db': new FeedDb(log),
     'icon_cache': new FaviconCache(log),
     'icon_cache_conn': null
   };
-  ctx.feed_db.connect(feed_db_connect_on_success.bind(ctx),
-    feed_db_connect_on_error.bind(ctx));
+
+  const connectPromise = db_connect(undefined, log);
+  connectPromise.then(feed_db_connect_on_success.bind(ctx));
+  connectPromise.catch(feed_db_connect_on_error.bind(ctx));
 }
 
 function feed_db_connect_on_success(conn) {
-  this.log.debug('Connected to database', this.feed_db.name);
+  this.log.debug('Connected to database', conn.name);
   this.conn = conn;
   this.icon_cache.connect(icon_cache_connect_on_success.bind(this),
     icon_cache_connect_on_error.bind(this));
 }
 
-function feed_db_connect_on_error() {
+function feed_db_connect_on_error(error) {
   on_complete.call(this);
 }
 

@@ -5,7 +5,7 @@
 // 2. create a fake opml.
 // 3. import the opml file into the database
 // 4. assert the database has the proper data
-
+// 5. delete the database once finished
 
 // TODO: Do a separate test that handles invalid opml
 // TODO: Do a separate test that handles multiple files
@@ -14,8 +14,6 @@
 // In order to do the above I need to refactor several things
 // I need to refactor subscribe so that it can be easily mocked so that the
 // import can complete using a fake subscription process
-// I have already refactored FeedDb so that it can easily point
-// to a differently named database
 
 // TODO: i need to refactor how the function 'prompts' for files. I don't want
 // the test to prompt for files, I want to be able to just specify some fake
@@ -27,7 +25,8 @@
 
 
 function test() {
-  const db = new FeedDb();
-  db.name = 'test-opml-import';
-  db.version = 1;
+  const testDbTarget = {
+    'name': 'test-opml-import',
+    'version': 1
+  };
 }

@@ -2,7 +2,6 @@
 
 'use strict';
 
-// TODO: merge feed-db.js? use new db_connect promise function
 // TODO: add/update feed should delegate to put feed
 // TODO: maybe merge add/put entry into one function
 // TODO: maybe entry states should be in a single property instead of
@@ -15,12 +14,15 @@
 // instead of using the title index, deprecate the title index, stop ensuring
 // title is an empty string
 
-function db_connect(log = SilentConsole) {
-  const DB_NAME = 'reader';
-  const DB_VERSION = 20;
+const DB_DEFAULT_TARGET = {
+  'name': 'reader',
+  'version': 20
+};
+
+function db_connect(target = DB_DEFAULT_TARGET, log = SilentConsole) {
   return new Promise(function(resolve, reject) {
-    log.log('Connecting to database', DB_NAME, DB_VERSION);
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    log.log('Connecting to database', target.name, target.version);
+    const request = indexedDB.open(target.name, target.version);
     request.onupgradeneeded = db_upgrade.bind(null, log);
     request.onsuccess = function(event) {
       const conn = event.target.result;
@@ -36,8 +38,96 @@ function db_connect(log = SilentConsole) {
   });
 }
 
+// TODO: revert upgrade to using a version migration approach
+// NOTE: untested after switch to promise
 function db_upgrade(log, event) {
-  throw new Error('not yet implemented');
+  const conn = event.target.result;
+  const tx = event.target.transaction;
+  let feed_store = null, entry_store = null;
+  const stores = conn.objectStoreNames;
+
+  // TODO: verify event.version is the field i want
+  console.dir(event);
+  log.log('Upgrading database %s to version %s from version', conn.name,
+    event.version, event.oldVersion);
+
+  if(stores.contains('feed')) {
+    feed_store = tx.objectStore('feed');
+  } else {
+    feed_store = conn.createObjectStore('feed', {
+      'keyPath': 'id',
+      'autoIncrement': true
+    });
+  }
+
+  if(stores.contains('entry')) {
+    entry_store = tx.objectStore('entry');
+  } else {
+    entry_store = conn.createObjectStore('entry', {
+      'keyPath': 'id',
+      'autoIncrement': true
+    });
+  }
+
+  const feed_indices = feed_store.indexNames;
+  const entry_indices = entry_store.indexNames;
+
+  // Deprecated
+  if(feed_indices.contains('schemeless'))
+    feed_store.deleteIndex('schemeless');
+  // Deprecated. Use the new urls index
+  if(feed_indices.contains('url'))
+    feed_store.deleteIndex('url');
+
+  // Create a multi-entry index using the new urls property, which should
+  // be an array of unique strings of normalized urls
+  if(!feed_indices.contains('urls'))
+    feed_store.createIndex('urls', 'urls', {
+      'multiEntry': true,
+      'unique': true
+    });
+
+  // TODO: deprecate this, have the caller manually sort and stop requiring
+  // title, this just makes it difficult.
+  if(!feed_indices.contains('title'))
+    feed_store.createIndex('title', 'title');
+
+  // Deprecated
+  if(entry_indices.contains('unread'))
+    entry_store.deleteIndex('unread');
+
+  // For example, used to count the number of unread entries
+  if(!entry_indices.contains('readState'))
+    entry_store.createIndex('readState', 'readState');
+
+  if(!entry_indices.contains('feed'))
+    entry_store.createIndex('feed', 'feed');
+
+  if(!entry_indices.contains('archiveState-readState'))
+    entry_store.createIndex('archiveState-readState',
+      ['archiveState', 'readState']);
+
+  // Deprecated. Use the urls index instead.
+  if(entry_indices.contains('link'))
+    entry_store.deleteIndex('link');
+
+  // Deprecated. Use the urls index instead.
+  if(entry_indices.contains('hash'))
+    entry_store.deleteIndex('hash');
+
+  if(!entry_indices.contains('urls'))
+    entry_store.createIndex('urls', 'urls', {
+      'multiEntry': true,
+      'unique': true
+    });
+}
+
+function db_delete(name) {
+  return new Promise(function(resolve, reject) {
+    const request = indexedDB.deleteDatabase(name);
+    request.onsuccess = resolve;
+    request.onerror = reject;
+  });
 }
 
 const ENTRY_UNREAD = 0;
@@ -191,6 +281,7 @@ function sanitize_entry(input_entry) {
   return output_entry;
 }
 
+// TODO: promisify
 function db_add_entry(log, conn, entry, callback) {
   if('id' in entry)
     throw new TypeError();
@@ -213,6 +304,7 @@ function db_add_entry(log, conn, entry, callback) {
   };
 }
 
+// TODO: promisify
 function db_add_feed(log, conn, feed, callback) {
   if('id' in feed)
     throw new TypeError();
@@ -235,6 +327,7 @@ function db_add_feed(log, conn, feed, callback) {
   };
 }
 
+// TODO: promisify
 // TODO: normalize feed url?
 function db_contains_feed_url(log, conn, url, callback) {
   log.debug('Checking for feed with url', url);
@@ -255,6 +348,7 @@ function db_contains_feed_url(log, conn, url, callback) {
   };
 }
 
+// TODO: promisify
 // Assumes urls are normalized
 function db_find_entry(log, conn, urls, limit, callback) {
   if(!urls.length)
@@ -293,6 +387,7 @@ function db_find_entry(log, conn, urls, limit, callback) {
   }
 }
 
+// TODO: promisify
 function db_put_feed(log, conn, feed, callback) {
   log.debug('Putting feed', get_feed_url(feed));
   feed.dateUpdated = new Date();
@@ -317,6 +412,7 @@ function db_put_feed(log, conn, feed, callback) {
   return tx;
 }
 
+// TODO: promisify
 function db_update_feed(log, conn, feed, callback) {
   if(!('id' in feed))
     throw new TypeError();
@@ -339,6 +435,7 @@ function db_update_feed(log, conn, feed, callback) {
   };
 }
 
+// TODO: rewrite as Promise
 function db_get_all_feeds(log, conn, callback) {
   log.log('Opening cursor over feed store');
   const feeds = [];
@@ -359,6 +456,7 @@ function db_get_all_feeds(log, conn, callback) {
   request.onerror = log.error;
 }
 
+// TODO: promisify
 function db_count_unread_entries(log, conn, callback) {
   log.debug('Counting unread entries');
   const tx = conn.transaction('entry');
@@ -374,12 +472,15 @@ function db_count_unread_entries(log, conn, callback) {
   };
 }
 
+// TODO: promisify
 function db_mark_entry_read(log, id, callback) {
   if(!Number.isInteger(id) || id < 1)
     throw new TypeError();
   log.debug('Marking entry %s as read', id);
-  const db = new FeedDb(log);
-  db.connect(connect_on_success, connect_on_error);
+
+  db_connect(undefined, log).then(
+    connect_on_success).catch(
+    connect_on_error);
 
   function connect_on_success(conn) {
     log.debug('Connected to database', conn.name);
@@ -390,7 +491,7 @@ function db_mark_entry_read(log, id, callback) {
     request.onerror = open_cursor_on_error;
   }
 
-  function connect_on_error(event) {
+  function connect_on_error(error) {
     on_complete(event, 'ConnectionError');
   }
 

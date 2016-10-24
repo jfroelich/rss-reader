@@ -68,7 +68,7 @@ function append_slides(append_on_complete, is_first_slide) {
 
   // TODO: invert this, and the condition where it is used, to isAdvanced
   let is_not_advanced = true;
-  let promise = db_connect(console);
+  let promise = db_connect(undefined, console);
   promise.then(connect_on_success);
   promise.catch(on_error);
 

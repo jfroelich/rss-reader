@@ -13,17 +13,18 @@ function unsubscribe(feed_id, log, callback) {
     'num_entries_deleted': 0,
     'callback': callback,
     'log': log,
-    'did_delete_feed': false,
-    'db': new FeedDb(log)
+    'did_delete_feed': false
   };
 
   ctx.dbChannel = new BroadcastChannel('db');
 
-  ctx.db.connect(connect_on_success.bind(ctx), on_complete.bind(ctx));
+  const connectPromise = db_connect(undefined, log);
+  connectPromise.then(connect_on_success.bind(ctx));
+  connectPromise.catch(on_complete.bind(ctx));
 }
 
 function connect_on_success(conn) {
-  this.log.debug('Connected to database', this.db.name);
+  this.log.debug('Connected to database', conn.name);
   this.conn = conn;
 
   const tx = this.conn.transaction(['feed', 'entry'], 'readwrite');

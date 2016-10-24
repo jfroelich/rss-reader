@@ -52,10 +52,9 @@ chrome.alarms.get('healthcheck', function(alarm) {
 chrome.alarms.onAlarm.addListener(function(alarm) {
   console.debug('Alarm wakeup', alarm.name);
   if(alarm.name === 'archive') {
-    const age = 1 * 24 * 60 * 60 * 1000;// 1 day in ms
+    const maxAge = 1 * 24 * 60 * 60 * 1000;// 1 day in ms
     const callback = null;
-    const db = new FeedDb(SilentConsole);
-    archive_entries(db, age, SilentConsole, callback);
+    archive_entries(DB_DEFAULT_TARGET, maxAge, SilentConsole, callback);
   } else if(alarm.name === 'poll') {
     const force_reset_lock = false;
     const allow_metered = false;

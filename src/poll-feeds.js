@@ -45,29 +45,39 @@ function poll_feeds(force_reset_lock, ignore_idle_state, allow_metered,
   }
 
   if(!ignore_idle_state && 'ONLY_POLL_IF_IDLE' in localStorage) {
-    log.debug('Checking idle state');
     const idle_period_secs = 30;
-    chrome.idle.queryState(idle_period_secs, on_query_idle_state.bind(ctx));
+    query_idle_state(idle_period_secs).then(on_query_idle_state.bind(ctx));
   } else {
-    const db = new FeedDb(log);
-    db.connect(connect_on_success.bind(ctx), on_complete.bind(ctx));
+    db_connect(undefined, log).then(connect_on_success.bind(ctx)).catch(
+      connect_on_error.bind(ctx));
   }
+}
+
+function query_idle_state(idle_period_secs, log) {
+  return new Promise(function(resolve, reject) {
+    log.debug('Checking idle state with idle period (in seconds)',
+      idle_period_secs);
+    chrome.idle.queryState(idle_period_secs, resolve);
+  });
 }
 
 function on_query_idle_state(state) {
   this.log.debug('idle state:', state);
   if(state === 'locked' || state === 'idle') {
-    const db = new FeedDb(this.log);
-    db.connect(connect_on_success.bind(this), on_complete.bind(this));
+    db_connect(undefined, this.log).then(connect_on_success.bind(this)).catch(
+      connect_on_error.bind(this));
   } else {
     on_complete.call(this);
   }
 }
 
 function connect_on_success(conn) {
-  this.log.debug('Connected to database', conn.name);
   this.conn = conn;
   db_get_all_feeds(this.log, conn, on_get_feeds.bind(this));
+}
+
+function connect_on_error(error) {
+  on_complete.call(this);
 }
 
 function on_get_feeds(feeds) {
@@ -77,22 +87,26 @@ function on_get_feeds(feeds) {
   }
 
   this.num_feeds_pending = feeds.length;
-  const exclude_entries = false;
+
+  // So this won't really work like before, I guess I need to use
+  // Promise.all
+
   for(let feed of feeds) {
     const url = new URL(get_feed_url(feed));
-    fetch_feed(url, exclude_entries, this.log, on_fetch_feed.bind(this, feed));
+    fetch_feed(url, false, this.log).then(
+      on_fetch_feed.bind(this, feed)).catch(
+      fetch_feed_on_error.bind(this));
   }
 }
 
-function on_fetch_feed(local_feed, event) {
-  if(event.type !== 'success') {
-    this.log.debug('Failed to fetch feed', get_feed_url(local_feed));
-    this.num_feeds_pending--;
-    on_complete.call(this);
-    return;
-  }
+function fetch_feed_on_error(error) {
+  this.log.debug(error);
+  this.num_feeds_pending--;
+  on_complete.call(this);
+}
 
-  const remote_feed = event.feed;
+function on_fetch_feed(local_feed, fetch_output) {
+  const remote_feed = fetch_output.feed;
 
   // If the feed has updated in the past, then check if it has been modified.
   // dateUpdated is not set for newly added feeds, so checking it avoids the
@@ -108,7 +122,7 @@ function on_fetch_feed(local_feed, event) {
 
   const feed = merge_feeds(local_feed, remote_feed);
   db_update_feed(this.log, this.conn, feed,
-    on_update_feed.bind(this, event.entries));
+    on_update_feed.bind(this, fetch_output.entries));
 }
 
 function is_feed_unmodified(local_feed, remote_feed) {
