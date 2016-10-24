@@ -7,19 +7,27 @@
 // Reference to element
 let current_slide = null;
 
-chrome.runtime.onMessage.addListener(function(message) {
-  switch(message.type) {
-    case 'pollCompleted':
-      maybe_append_slides();
-      break;
-    case 'deleteEntryRequested':
-      break;
-    case 'archive_entry_request':
-      break;
-    default:
-      break;
+// Leave the db channel open for as long as the page is open
+const dbChannel = new BroadcastChannel('db');
+dbChannel.onmessage = function(event) {
+  if(event.data.type === 'archive_entry_request') {
+    console.log('Received archive entry request message, not yet implemented');
+  } else if(event.data.type === 'delete_entry_request') {
+    console.log('Received entry delete request message, not yet implemented');
   }
-});
+};
+
+const pollChannel = new BroadcastChannel('poll');
+pollChannel.onmessage = function(event) {
+  if(event.data === 'completed') {
+    const count = count_unread_slides();
+    if(count < 1) {
+      const is_first_slide = !document.getElementById(
+        'slideshow-container').firstChild;
+      append_slides(hide_unread_slides, is_first_slide);
+    }
+  }
+};
 
 function remove_slide(slide) {
   slide.removeEventListener('click', slide_on_click);
@@ -48,20 +56,11 @@ function filter_article_title(title) {
   return num_terms < 5 ? title.substring(0, index).trim() : title;
 }
 
-function maybe_append_slides() {
-  const count = count_unread_slides();
-  if(count < 1) {
-    const is_first_slide = !document.getElementById(
-      'slideshow-container').firstChild;
-    append_slides(hide_unread_slides, is_first_slide);
-  }
-}
-
 // TODO: even though this is the only place this is called, it really does
 // not belong here. The UI should not be communicating directly with the
 // database. I need to design a paging API for iterating over these entries
 // and the UI should be calling that paging api.
-// TODO: this is a giant function, break it up into smaller functions
+// TODO: close connection
 function append_slides(append_on_complete, is_first_slide) {
   let counter = 0;
   const limit = 3;
@@ -69,9 +68,9 @@ function append_slides(append_on_complete, is_first_slide) {
 
   // TODO: invert this, and the condition where it is used, to isAdvanced
   let is_not_advanced = true;
-
-  const db = new FeedDb();
-  db.connect(connect_on_success, connect_on_error);
+  let promise = db_connect(console);
+  promise.then(connect_on_success);
+  promise.catch(on_error);
 
   function connect_on_success(conn) {
     const tx = conn.transaction('entry');
@@ -81,10 +80,14 @@ function append_slides(append_on_complete, is_first_slide) {
     const request = index.openCursor(keyPath);
     request.onsuccess = open_cursor_on_success;
     request.onerror = open_cursor_on_error;
+    conn.close();
   }
 
-  function connect_on_error() {
-    // TODO: show an error?
+  function on_error(error) {
+    // TODO: show an error
+    console.log('promise error', error);
+    if(append_on_complete)
+      append_on_complete();
   }
 
   function open_cursor_on_error(event) {

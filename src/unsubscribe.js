@@ -16,6 +16,9 @@ function unsubscribe(feed_id, log, callback) {
     'did_delete_feed': false,
     'db': new FeedDb(log)
   };
+
+  ctx.dbChannel = new BroadcastChannel('db');
+
   ctx.db.connect(connect_on_success.bind(ctx), on_complete.bind(ctx));
 }
 
@@ -53,8 +56,10 @@ function open_entry_cursor_on_success(event) {
     this.log.debug('Deleting entry', entry.id, get_entry_url(entry));
     cursor.delete();
     this.num_entries_deleted++;
-    chrome.runtime.sendMessage({'type': 'deleteEntryRequested',
-      'id': entry.id});
+
+    this.dbChannel.postMessage(
+      {'type': 'delete_entry_request', 'id': entry.id});
+
     cursor.continue();
   }
 }
@@ -70,10 +75,10 @@ function on_complete(event) {
     if(this.num_entries_deleted) {
       this.log.debug('Requested %i entries to be deleted',
         this.num_entries_deleted);
-      update_badge(this.conn, SilentConsole);
+      update_badge(this.conn, this.log);
     }
 
-    this.log.debug('Requesting database connection close');
+    this.log.debug('Closing database', conn.name);
     this.conn.close();
   }
 
@@ -83,7 +88,6 @@ function on_complete(event) {
       'type': type,
       'deleteRequestCount': this.num_entries_deleted
     };
-    this.log.debug('calling back with', output_event);
     this.callback(output_event);
   }
 }

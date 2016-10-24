@@ -2,7 +2,7 @@
 
 'use strict';
 
-// TODO: merge feed-db.js
+// TODO: merge feed-db.js? use new db_connect promise function
 // TODO: add/update feed should delegate to put feed
 // TODO: maybe merge add/put entry into one function
 // TODO: maybe entry states should be in a single property instead of
@@ -11,11 +11,39 @@
 // https://hack.ether.camp/idea/path redirects to
 // https://hack.ether.camp/#/idea/path which normalizes to
 // https://hack.ether.camp/. Stripping hash screws this up.
-// TODO: for entry urls with path containing '//', replace with '/'
-// e.g. http://us.battle.net//hearthstone/en/blog/20303037
 // TODO: remove the defined title requirement, have options manually sort feeds
 // instead of using the title index, deprecate the title index, stop ensuring
 // title is an empty string
+
+function db_connect(log = SilentConsole) {
+  const DB_NAME = 'reader';
+  const DB_VERSION = 20;
+  return new Promise(function(resolve, reject) {
+    log.log('Connecting to database', DB_NAME, DB_VERSION);
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = db_upgrade.bind(null, log);
+    request.onsuccess = function(event) {
+      const conn = event.target.result;
+      log.debug('Connected to database', conn.name);
+      resolve(conn);
+    };
+    request.onerror = function(event) {
+      reject(event.target.error);
+    };
+    request.onblocked = function(event) {
+      log.debug('open is blocked, waiting indefinitely');
+    };
+  });
+}
+
+function db_upgrade(log, event) {
+  throw new Error('not yet implemented');
+}
+
+const ENTRY_UNREAD = 0;
+const ENTRY_READ = 1;
+const ENTRY_UNARCHIVED = 0;
+const ENTRY_ARCHIVED = 1;
 
 function get_feed_url(feed) {
   if(!feed.urls.length)
@@ -94,10 +122,6 @@ function merge_feeds(old_feed, new_feed) {
   return merged;
 }
 
-const ENTRY_UNREAD = 0;
-const ENTRY_READ = 1;
-const ENTRY_UNARCHIVED = 0;
-const ENTRY_ARCHIVED = 1;
 
 // Get the last url in an entry's internal url list
 function get_entry_url(entry) {
@@ -118,10 +142,14 @@ function add_entry_url(entry, url_str) {
   return true;
 }
 
-// TODO: does this need to be public?
 function normalize_entry_url(url_str) {
   const url_obj = new URL(url_str);
   url_obj.hash = '';
+
+  // Fix a common error case
+  if(url_obj.pathname.startsWith('//'))
+    url_obj.pathname = url_obj.pathname.substring(1);
+
   return url_obj.href;
 }
 

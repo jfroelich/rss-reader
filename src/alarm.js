@@ -4,9 +4,11 @@
 
 // TODO: is there a way to not check alarms per page load
 // TODO: is there a way to not rebind onalarm per page load
+// TODO: is there a non chrome specific way to do alarms? setInterval would
+// not allow the page to unload
 // TODO: create a graceful way to rename/remove alarms. Right now if I stop
 // using an alarm it remains silently peristent somewhere in chrome.alarms
-// implementation state, indefinitely.
+// internal state, indefinitely.
 // TODO: is there a way to use multiple listeners, so that each alarm system
 // can be self registered by the thing that needs it, so I don't have to do
 // all the binding here? I'd rather divide up this file
@@ -58,8 +60,10 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
     const force_reset_lock = false;
     const allow_metered = false;
     const ignore_idle_state = false;
+    const skip_unmodified_guard = false;
     const log = SilentConsole;
-    poll_feeds(force_reset_lock, allow_metered, ignore_idle_state, log);
+    poll_feeds(force_reset_lock, allow_metered, ignore_idle_state,
+      skip_unmodified_guard, log);
   } else if(alarm.name === 'compact-favicons') {
     const cache = new FaviconCache(SilentConsole);
     compact_favicons(cache, SilentConsole);

@@ -2,6 +2,13 @@
 
 'use strict';
 
+// TODO: delegate the opening of a cursor over the entries to a function
+// in feed-cache.js? The problem is that the abstraction is ridiculously
+// thin. I need callbacks for oncomplete, onsuccess, and onerror, and I
+// need to use readwrite mode instead of readonly, and an index and keypath
+// parameter. So really the function needs to be incredibly specific to only
+// this particular use. Which makes it difficult to justify moving it.
+
 {
 
 this.archive_entries = function(db, max_age, log, callback) {
@@ -20,11 +27,10 @@ this.archive_entries = function(db, max_age, log, callback) {
     'log': log || SilentConsole
   };
 
+  ctx.dbChannel = new BroadcastChannel('db');
   ctx.log.log('Archiving entries with max_age', ctx.max_age);
   db.connect(connect_on_success.bind(ctx), connect_on_error.bind(ctx));
 };
-
-// TODO: move this to a general open cursor function in feed-cache.js
 
 function connect_on_success(conn) {
   this.log.debug('Connected to database', conn.name);
@@ -45,16 +51,20 @@ function connect_on_error() {
 
 function open_cursor_on_success(event) {
   const cursor = event.target.result;
-  if(!cursor)
+  if(!cursor) {
+    this.log.debug('cursor undefined');
     return;
+  }
+
   const entry = cursor.value;
   const age = this.current_date - entry.dateCreated;
+  this.log.debug('Visiting', get_entry_url(entry));
   if(age > this.max_age) {
     this.num_modified++;
     const compacted = compact_entry.call(this, entry);
     log_size.call(this, entry, compacted, age);
     cursor.update(compacted);
-    send_message(entry);
+    send_message.call(this, entry);
   }
   this.num_scanned++;
   cursor.continue();
@@ -62,7 +72,7 @@ function open_cursor_on_success(event) {
 
 function send_message(entry) {
   const message = {'type': 'archive_entry_request', 'id': entry.id};
-  chrome.runtime.send_message(message);
+  this.dbChannel.postMessage(message);
 }
 
 function log_size(entry, compacted_entry, age) {
@@ -95,6 +105,7 @@ function compact_entry(entry) {
 function on_complete(event) {
   this.log.log('Archive entries completed (scanned %s, compacted %s)',
     this.num_scanned, this.num_modified);
+  this.dbChannel.close();
   if(this.callback)
     this.callback();
 }

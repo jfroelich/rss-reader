@@ -3,12 +3,17 @@
 'use strict';
 
 // Style lib
-const DisplaySettings = {};
 
-chrome.runtime.onMessage.addListener(function(message) {
-  if(message.type === 'displaySettingsChanged')
+// NOTE: this never closes until the page closes because it needs to wait
+// indefinitely for new messages while the page is open
+const settingsChannel = new BroadcastChannel('settings');
+settingsChannel.onmessage = function(event) {
+  if(event.data === 'changed') {
     DisplaySettings.update_styles();
-});
+  }
+};
+
+const DisplaySettings = {};
 
 // TODO: remove some of these backgrounds, I kind of went overboard, some of
 // these are useless

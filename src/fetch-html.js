@@ -27,6 +27,10 @@ function fetch_html(req_url, log, callback) {
   fetch(req_url.href, opts).then(bound_on_response).catch(bound_on_error);
 }
 
+// TODO: look into possible bug, response.status===404 does mean response.ok
+// is false, but I am acting like it is? Because I am seeing that the response
+// text is being read in case of a 404 (i think)
+
 function on_response(response) {
   this.log.debug('Response status:', response.status);
   if(!response.ok) {

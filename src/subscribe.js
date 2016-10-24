@@ -17,7 +17,7 @@ function subscribe(feed_db_conn, icon_cache_conn, feed, suppress_notifs,
     'suppress_notifs': suppress_notifs,
     'callback': callback,
     'feed_db_conn': feed_db_conn,
-    'icon_cache_conn': icon_cache_conn
+    'icon_cache_conn': icon_cache_conn,
     'feed_db': new FeedDb(log)
   };
 
@@ -26,14 +26,14 @@ function subscribe(feed_db_conn, icon_cache_conn, feed, suppress_notifs,
     db_contains_feed_url(log, feed_db_conn, get_feed_url(feed),
       on_find_feed.bind(ctx));
   } else {
-    ctx.feed_db.open(feed_db_connect_on_success.bind(ctx),
+    ctx.feed_db.connect(feed_db_connect_on_success.bind(ctx),
       feed_db_connect_on_error.bind(ctx));
   }
 }
 
-function feed_db_connect_on_success(event) {
-  this.log.log('Connected to database', this.feed_db.name);
-  this.feed_db_conn = event.target.result;
+function feed_db_connect_on_success(conn) {
+  this.log.log('Connected to database', conn.name);
+  this.feed_db_conn = conn;
   this.should_close = true;
   this.log.debug('Checking if subscribed using on demand connection');
   db_contains_feed_url(this.log, this.feed_db_conn, get_feed_url(this.feed),

@@ -7,6 +7,10 @@
 
 {
 
+// Leave open until the options page closes. I could create a channel object
+// each time I want to send a message here but this is simpler
+const optionsSettingsChannel = new BroadcastChannel('settings');
+
 let current_menu_item = null;
 let current_section = null;
 
@@ -73,9 +77,13 @@ function hide_err_msg() {
 // TODO: maybe make an OptionsSubscriptionMonitor class and have this just be
 // a member function. Call it a widget.
 function show_sub_monitor() {
-  reset_sub_monitor();
-  const monitor = document.createElement('div');
-  monitor.setAttribute('id', 'options_subscription_monitor');
+
+  let monitor = document.getElementById('submon');
+  if(monitor)
+    monitor.remove();
+
+  monitor = document.createElement('div');
+  monitor.setAttribute('id', 'submon');
   monitor.style.opacity = '1';
   document.body.appendChild(monitor);
   const progress = document.createElement('progress');
@@ -83,14 +91,8 @@ function show_sub_monitor() {
   monitor.appendChild(progress);
 }
 
-function reset_sub_monitor() {
-  const monitor = document.getElementById('options_subscription_monitor');
-  if(monitor)
-    monitor.remove();
-}
-
 function append_sub_monitor_msg(msg) {
-  const monitor = document.getElementById('options_subscription_monitor');
+  const monitor = document.getElementById('submon');
   if(!monitor)
     throw new Error();
   const msg_element = document.createElement('p');
@@ -99,7 +101,7 @@ function append_sub_monitor_msg(msg) {
 }
 
 function hide_sub_monitor(callback, should_fade_out) {
-  const monitor = document.getElementById('options_subscription_monitor');
+  const monitor = document.getElementById('submon');
   if(!monitor) {
     if(callback) {
       callback();
@@ -113,8 +115,7 @@ function hide_sub_monitor(callback, should_fade_out) {
     remove_then_callback();
 
   function remove_then_callback() {
-    if(monitor)
-      monitor.remove();
+    monitor.remove();
     if(callback)
       callback();
   }
@@ -299,7 +300,7 @@ function start_subscription(url) {
     throw new TypeError();
   hide_sub_preview();
   show_sub_monitor();
-  append_sub_monitor_msg('Subscribing to' + url.href);
+  append_sub_monitor_msg(`Subscribing to ${url.href}`);
   // TODO: if subscribing from a discover search result, I already know some
   // of the feed's other properties, such as its title and link. I should be
   // passing those along to start_subscription and setting them here. Or
@@ -314,8 +315,8 @@ function start_subscription(url) {
 }
 
 function start_subscription_on_subscribe(url, event) {
+  let fade_out = false;
   if(event.type !== 'success') {
-    const fade_out = false;
     hide_sub_monitor(start_subscription_show_err_msg.bind(null, url,
       event.type), fade_out);
     return;
@@ -324,10 +325,10 @@ function start_subscription_on_subscribe(url, event) {
   append_feed(event.feed, true);
   update_feed_count();
   const feed_url = get_feed_url(event.feed);
-  append_sub_monitor_msg('Subscribed to ' + feed_url);
+  append_sub_monitor_msg(`Subscribed to ${feed_url}`);
 
   // Hide the sub monitor then switch back to the main feed list
-  const fade_out = true;
+  fade_out = true;
   hide_sub_monitor(function() {
     const sub_element = document.getElementById('mi-subscriptions');
     show_section(sub_element);
@@ -358,13 +359,13 @@ function populate_feed_info(feed_id) {
 
   const context = {'db': null};
   const feed_db = new FeedDb();
-  feed_db.open(connect_on_success, connect_on_error);
+  feed_db.connect(connect_on_success, connect_on_error);
 
   // TODO: use something from feed-cache.js to do this query
   // TODO: enque db close after query, and remove later close calls
 
-  function connect_on_success(event) {
-    context.db = event.target.result;
+  function connect_on_success(conn) {
+    context.db = conn;
     const transaction = context.db.transaction('feed');
     const store = transaction.objectStore('feed');
     const request = store.get(feed_id);
@@ -462,7 +463,7 @@ function sub_form_on_submit(event) {
     return false;
 
   // Do nothing if subscription in progress
-  const monitor = document.getElementById('options_subscription_monitor');
+  const monitor = document.getElementById('submon');
   if(monitor && is_visible(monitor))
     return false;
 
@@ -507,7 +508,7 @@ function subscribe_btn_on_click(event) {
 
   // Ignore future clicks while subscription in progress
   // TODO: use a better element name here.
-  const monitor = document.getElementById('options_subscription_monitor');
+  const monitor = document.getElementById('submon');
   if(monitor && is_visible(monitor))
     return;
   // Show subscription preview expects a URL object, so convert. This can
@@ -830,8 +831,7 @@ function enable_bg_img_menu_on_change(event) {
     localStorage.BACKGROUND_IMAGE = event.target.value;
   else
     delete localStorage.BACKGROUND_IMAGE;
-
-  chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+  optionsSettingsChannel.postMessage('changed');
 }
 
 function header_font_menu_on_change(event){
@@ -840,7 +840,7 @@ function header_font_menu_on_change(event){
     localStorage.HEADER_FONT_FAMILY = selected_option;
   else
     delete localStorage.HEADER_FONT_FAMILY;
-  chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+  optionsSettingsChannel.postMessage('changed');
 }
 
 function body_font_menu_on_change(event) {
@@ -848,7 +848,8 @@ function body_font_menu_on_change(event) {
     localStorage.BODY_FONT_FAMILY = event.target.value;
   else
     delete localStorage.BODY_FONT_FAMILY;
-  chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+
+  optionsSettingsChannel.postMessage('changed');
 }
 
 function col_count_menu_on_change(event) {
@@ -856,7 +857,7 @@ function col_count_menu_on_change(event) {
     localStorage.COLUMN_COUNT = event.target.value;
   else
     delete localStorage.COLUMN_COUNT;
-  chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+  optionsSettingsChannel.postMessage('changed');
 }
 
 function entry_bg_color_on_input() {
@@ -866,23 +867,24 @@ function entry_bg_color_on_input() {
     localStorage.ENTRY_BACKGROUND_COLOR = value;
   else
     delete localStorage.ENTRY_BACKGROUND_COLOR;
-  chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+  optionsSettingsChannel.postMessage('changed');
 }
 
 function entry_margin_on_change(event) {
   // TODO: why am i defaulting to 10 here?
   localStorage.ENTRY_MARGIN = event.target.value || '10';
-  chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+
+  optionsSettingsChannel.postMessage('changed');
 }
 
 function header_font_size_on_change(event) {
   localStorage.HEADER_FONT_SIZE = event.target.value || '1';
-  chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+  optionsSettingsChannel.postMessage('changed');
 }
 
 function body_font_size_on_change(event) {
   localStorage.BODY_FONT_SIZE = event.target.value || '1';
-  chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+  optionsSettingsChannel.postMessage('changed');
 }
 
 function justify_checkbox_on_change(event) {
@@ -890,12 +892,12 @@ function justify_checkbox_on_change(event) {
     localStorage.JUSTIFY_TEXT = '1';
   else
     delete localStorage.JUSTIFY_TEXT;
-  chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+  optionsSettingsChannel.postMessage('changed');
 }
 
 function body_height_on_input(event) {
   localStorage.BODY_LINE_HEIGHT = event.target.value || '10';
-  chrome.runtime.sendMessage({'type': 'displaySettingsChanged'});
+  optionsSettingsChannel.postMessage('changed');
 }
 
 function on_dom_loaded(event) {

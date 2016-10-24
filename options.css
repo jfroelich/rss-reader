@@ -326,7 +326,7 @@ ul#navigation-menu li.navigation-item-selected {
 
 
 /***************************** SUBSCRIPTION MONITOR ***********/
-#options_subscription_monitor {
+#submon {
   display:block;
   background-color: #ffffff;
   color: #000000;

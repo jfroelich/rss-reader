@@ -15,11 +15,13 @@
 
 {
 
-function poll_feeds(force_reset_lock, ignore_idle_state, allow_metered, log) {
+function poll_feeds(force_reset_lock, ignore_idle_state, allow_metered,
+  skip_unmodified_guard, log) {
   log.log('Checking for new articles...');
   const ctx = {
     'num_feeds_pending': 0,
-    'log': log
+    'log': log,
+    'skip_unmodified_guard': skip_unmodified_guard
   };
 
   if(!acquire_lock.call(ctx, force_reset_lock)) {
@@ -93,8 +95,11 @@ function on_fetch_feed(local_feed, event) {
   const remote_feed = event.feed;
 
   // If the feed has updated in the past, then check if it has been modified.
-  // dateUpdated is not set for newly added feeds.
-  if(local_feed.dateUpdated && is_feed_unmodified(local_feed, remote_feed)) {
+  // dateUpdated is not set for newly added feeds, so checking it avoids the
+  // case where a newly subscribed feed is skipped because it was not modified
+  // from the time of the inital subscribe.
+  if(!this.skip_unmodified_guard && local_feed.dateUpdated &&
+    is_feed_unmodified(local_feed, remote_feed)) {
     this.log.debug('Feed not modified', get_feed_url(remote_feed));
     this.num_feeds_pending--;
     on_complete.call(this);
@@ -300,6 +305,11 @@ function on_complete() {
   if(this.num_feeds_pending)
     return;
   this.log.log('Polling completed');
+
+  const pollChannel = new BroadcastChannel('poll');
+  pollChannel.postMessage('completed');
+  pollChannel.close();
+
   show_notification('Updated articles', 'Completed checking for new articles');
   if(this.conn)
     this.conn.close();
