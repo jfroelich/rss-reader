@@ -2,6 +2,10 @@
 
 'use strict';
 
+// TODO: change to promise
+// TODO: change to async
+
+
 {
 
 function set_image_dimensions(doc, log, callback) {

@@ -72,12 +72,12 @@ function lookup(feed) {
     get_feed_url(feed), lookup_url.href);
 
   const doc = null;
-  lookup_favicon(this.icon_cache, this.icon_cache_conn, lookup_url, doc,
-    this.log, on_lookup_favicon_url.bind(this, feed));
+  favicon_lookup(this.icon_cache, this.icon_cache_conn, lookup_url, doc,
+    this.log, on_favicon_lookup_url.bind(this, feed));
 }
 
-function on_lookup_favicon_url(feed, icon_url) {
-  this.log.debug('lookup_favicon result for feed', get_feed_url(feed),
+function on_favicon_lookup_url(feed, icon_url) {
+  this.log.debug('favicon_lookup result for feed', get_feed_url(feed),
     icon_url ? icon_url.href : 'no icon');
 
   if(icon_url) {

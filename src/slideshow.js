@@ -34,23 +34,17 @@ function remove_slide(slide) {
   slide.remove();
 }
 
-function mark_slide_read(slide) {
-  if(!slide.hasAttribute('read')) {
-    slide.setAttribute('read', '');
-    const id = parseInt(slide.getAttribute('entry'), 10);
-    db_mark_entry_read(id, SilentConsole).then(
-      mark_entry_read_on_success).catch(mark_entry_read_on_error);
+async function mark_slide_read(slide) {
+  if(slide.hasAttribute('read'))
+    return;
+  slide.setAttribute('read', '');
+  const id = parseInt(slide.getAttribute('entry'), 10);
+  try {
+    const result = await db_mark_entry_read(id, console);
+  } catch(error) {
+    console.debug(error);
   }
 }
-
-function mark_entry_read_on_success() {
-  console.debug('Successfully marked entry as read');
-}
-
-function mark_entry_read_on_error(error) {
-  console.debug(error);
-}
-
 
 function filter_article_title(title) {
   let index = title.lastIndexOf(' - ');
@@ -70,41 +64,37 @@ function filter_article_title(title) {
 // not belong here. The UI should not be communicating directly with the
 // database. I need to design a paging API for iterating over these entries
 // and the UI should be calling that paging api.
-// TODO: close connection
-function append_slides(append_on_complete, is_first_slide) {
+// TODO: full convert to async
+// TODO: this also needs to return a promise so that callers can use
+// async await syntax
+async function append_slides(append_on_complete, is_first_slide) {
   let counter = 0;
   const limit = 3;
   const offset = count_unread_slides();
 
-  // TODO: invert this, and the condition where it is used, to isAdvanced
+  // TODO: invert this, and the condition where it is used, to is_advanced
   let is_not_advanced = true;
-  let promise = db_connect(undefined, console);
-  promise.then(connect_on_success);
-  promise.catch(on_error);
 
-  function connect_on_success(conn) {
-    const tx = conn.transaction('entry');
-    const store = tx.objectStore('entry');
-    const index = store.index('archiveState-readState');
-    const keyPath = [ENTRY_UNARCHIVED, ENTRY_UNREAD];
-    const request = index.openCursor(keyPath);
-    request.onsuccess = open_cursor_on_success;
-    request.onerror = open_cursor_on_error;
-    conn.close();
+  let conn = null;
+  try {
+    conn = await db_connect(undefined, console);
+  } catch(error) {
+    console.debug(error);
+    return;
   }
 
-  function on_error(error) {
-    // TODO: show an error
-    console.log('promise error', error);
-    if(append_on_complete)
-      append_on_complete();
-  }
-
-  function open_cursor_on_error(event) {
+  const tx = conn.transaction('entry');
+  const store = tx.objectStore('entry');
+  const index = store.index('archiveState-readState');
+  const keyPath = [ENTRY_UNARCHIVED, ENTRY_UNREAD];
+  const request = index.openCursor(keyPath);
+  request.onsuccess = open_cursor_on_success;
+  request.onerror = function(event) {
     // TODO: show an error?
     if(append_on_complete)
       append_on_complete();
-  }
+  };
+  conn.close();
 
   function open_cursor_on_success(event) {
     const cursor = event.target.result;

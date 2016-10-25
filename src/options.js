@@ -53,7 +53,7 @@ function show_err_msg(msg, should_fade_in) {
   if(should_fade_in) {
     error_element.style.opacity = '0';
     document.body.appendChild(error_element);
-    fade_element(container, 1,0).then(function(){});
+    fade_element(container, 1,0);
   } else {
     error_element.style.opacity = '1';
     show_element(error_element);
@@ -100,20 +100,21 @@ function append_sub_monitor_msg(msg) {
   monitor.appendChild(msg_element);
 }
 
-function hide_sub_monitor(callback, should_fade_out) {
+async function hide_sub_monitor(callback, fade) {
   const monitor = document.getElementById('submon');
-  callback = callback || function(){};
-  if(!monitor) {
-    callback();
-  } else if(should_fade_out) {
-    fade_element(monitor, 2, 1).then(function() {
-      monitor.remove();
-      callback();
-    });
-  } else {
+  if(monitor) {
+    if(fade) {
+      try {
+        await fade_element(monitor, 2, 1);
+      } catch(error) {
+        console.log(error);
+      }
+    }
     monitor.remove();
-    callback();
   }
+
+  if(callback)
+    callback();
 }
 
 function show_section(menu_item) {
@@ -554,7 +555,7 @@ function on_search_google_feeds(event) {
   // Lookup the favicons for the results.
 
   // TODO: this should be creating one conn and sharing it across lookups
-  // now that lookup_favicon accepts a conn parameter
+  // now that favicon_lookup accepts a conn parameter
   // TODO: this should defer looking up favicons until after the results
   // have been displayed
 
@@ -570,8 +571,8 @@ function on_search_google_feeds(event) {
         const cache = new FaviconCache(SilentConsole);
         const conn = null;
         const doc = null;
-        lookup_favicon(cache, conn, link_url, doc, SilentConsole,
-          on_lookup_favicon.bind(null, result));
+        favicon_lookup(cache, conn, link_url, doc, SilentConsole,
+          on_favicon_lookup.bind(null, result));
       } else {
         num_icons_processed++;
         if(num_icons_processed === results.length) {
@@ -590,7 +591,7 @@ function on_search_google_feeds(event) {
     on_icons_processed();
   }
 
-  function on_lookup_favicon(result, iconURL) {
+  function on_favicon_lookup(result, iconURL) {
     num_icons_processed++;
     if(iconURL)
       result.faviconURLString = iconURL.href;

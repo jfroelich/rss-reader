@@ -53,10 +53,8 @@ function poll_feeds(force_reset_lock, ignore_idle_state, allow_metered,
   }
 }
 
-function query_idle_state(idle_period_secs, log) {
+function query_idle_state(idle_period_secs) {
   return new Promise(function(resolve, reject) {
-    log.debug('Checking idle state with idle period (in seconds)',
-      idle_period_secs);
     chrome.idle.queryState(idle_period_secs, resolve);
   });
 }

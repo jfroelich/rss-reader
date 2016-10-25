@@ -2,70 +2,30 @@
 
 'use strict';
 
-{
+// TODO: it would be nice to use cursor.delete, but I need to learn how to
+// use a cursor together with promises, it is funky
+// TODO: test
 
-this.compact_favicons = function(cache, log = SilentConsole) {
-  if(!Number.isInteger(cache.max_age))
-    throw new TypeError();
+function compact_favicons(db_target, log = SilentConsole) {
+  return new Promise(async function(resolve, reject) {
+    log.log('Compacting favicon cache');
+    let num_deleted = 0;
+    try {
+      const conn = await favicon_db_connect(db_target, log);
+      const entries = await favicon_db_get_entries(conn, log);
 
-  log.log('Compacting favicon cache using max age', cache.max_age);
-  const ctx = {
-    'cache': cache,
-    'max_age': cache.max_age,
-    'log': log,
-    'num_deleted': 0,
-    'num_scanned': 0
-  };
-  cache.connect(connect_on_success.bind(ctx), connect_on_error.bind(ctx));
-};
-
-function connect_on_success(event) {
-  const conn = event.target.result;
-  this.log.debug('Connected to database', conn.name);
-  const tx = this.cache.open_cursor(conn, open_cursor_on_success.bind(this),
-    open_cursor_on_error.bind(null, this.log));
-  tx.oncomplete = on_complete.bind(this);
-  conn.close();
-}
-
-function connect_on_error(event) {
-  this.log.error(event.target.error);
-  on_complete.call(this);
-}
-
-function open_cursor_on_success(event) {
-  const cursor = event.target.result;
-  if(!cursor)
-    return;
-
-  this.num_scanned++;
-
-  const entry = cursor.value;
-  if(this.cache.is_expired(entry, this.max_age)) {
-    this.log.debug('Deleting favicon entry', entry.pageURLString);
-    this.num_deleted++;
-    const delete_request = cursor.delete();
-    delete_request.onsuccess = delete_on_success.bind(delete_request, this.log,
-      entry.pageURLString);
-  } else {
-    this.log.debug('Retaining favicon entry', entry.pageURLString,
-      new Date() - entry.dateUpdated);
-  }
-
-  cursor.continue();
-}
-
-function delete_on_success(log, url, event) {
-  log.debug('Deleted favicon entry with url', url);
-}
-
-function open_cursor_on_error(log, event) {
-  log.error(event.target.error);
-}
-
-function on_complete(event) {
-  this.log.log('Compacted favicon cache, scanned %s, deleted %s',
-    this.num_scanned, this.num_deleted);
-}
-
+      for(let entry of entries) {
+        if(favicon_entry_is_expired(entry, FAVICON_DEFAULT_MAX_AGE)) {
+          let result = await favicon_db_remove_entry(conn, log,
+            entry.pageURLString);
+          num_deleted++;
+        }
+      }
+      log.debug('Deleted %d favicon entries', num_deleted);
+      resolve(num_deleted);
+      conn.close();
+    } catch(error) {
+      reject(error);
+    }
+  });
 }

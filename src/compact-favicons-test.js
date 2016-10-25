@@ -2,7 +2,12 @@
 
 'use strict';
 
-function test() {
-  const cache = new FaviconCache(console);
-  compact_favicons(cache, console);
+async function test() {
+  let db_target;
+  let log = console;
+  try {
+    let num_deleted = await compact_favicons(db_target, log);
+  } catch(error) {
+    log.debug(error);
+  }
 }
