@@ -32,7 +32,6 @@ function subscribe(feed_db_conn, icon_cache_conn, feed, suppress_notifs,
 }
 
 function feed_db_connect_on_success(conn) {
-  this.log.log('Connected to database', conn.name);
   this.feed_db_conn = conn;
   this.should_close = true;
   db_contains_feed_url(this.log, this.feed_db_conn,
@@ -120,11 +119,17 @@ function on_complete(event) {
 
   if(!this.suppress_notifs && this.did_subscribe) {
     // Grab data from the sanitized feed instead of the input
+    // TODO: I am not sure if event.feed is still defined after the change
+    // to using promises, something is wonky here now
     const feed = event.feed;
-    const feed_name = feed.title || get_feed_url(feed);
-    const message = 'Subscribed to ' + feed_name;
-    show_notification('Subscription complete', message,
-      feed.faviconURLString);
+
+    if(feed) {
+      const feed_name = feed ? (feed.title || get_feed_url(feed)) :
+        'unknown title';
+      const message = 'Subscribed to ' + feed_name;
+      show_notification('Subscription complete', message,
+        feed.faviconURLString);
+    }
   }
 
   if(this.callback)

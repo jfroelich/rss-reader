@@ -18,9 +18,9 @@ function unsubscribe(feed_id, log, callback) {
 
   ctx.dbChannel = new BroadcastChannel('db');
 
-  const connectPromise = db_connect(undefined, log);
-  connectPromise.then(connect_on_success.bind(ctx));
-  connectPromise.catch(on_complete.bind(ctx));
+  const connectPromise = db_connect(undefined, log).then(
+    connect_on_success.bind(ctx)).catch(
+      on_complete.bind(ctx));
 }
 
 function connect_on_success(conn) {
@@ -79,7 +79,7 @@ function on_complete(event) {
       update_badge(this.conn, this.log);
     }
 
-    this.log.debug('Closing database', conn.name);
+    this.log.debug('Closing database', this.conn.name);
     this.conn.close();
   }
 
