@@ -21,7 +21,9 @@ function export_opml(db_target, title, file_name, log = SilentConsole,
 
 function connect_on_success(conn) {
   this.log.debug('Connected to database', conn.name);
-  db_get_all_feeds(this.log, conn, on_get_feeds.bind(this));
+  db_get_all_feeds(this.log, conn).then(
+    get_feeds_on_success.bind(this)).catch(
+      get_feeds_on_error);
   conn.close();
 }
 
@@ -29,7 +31,11 @@ function connect_on_error() {
   on_complete.call(this);
 }
 
-function on_get_feeds(feeds) {
+function get_feeds_on_error(error) {
+  on_complete.call(this);
+}
+
+function get_feeds_on_success(feeds) {
   this.log.debug('Loaded %s feeds', feeds.length);
   const doc = create_opml_doc(this.title);
   const outlines = [];

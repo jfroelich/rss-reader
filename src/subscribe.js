@@ -21,13 +21,13 @@ function subscribe(feed_db_conn, icon_cache_conn, feed, suppress_notifs,
   };
 
   if(feed_db_conn) {
-    log.debug('Checking if subscribed using provided connection');
-    db_contains_feed_url(log, feed_db_conn, get_feed_url(feed),
-      on_find_feed.bind(ctx));
+    db_contains_feed_url(log, feed_db_conn, get_feed_url(feed)).then(
+      contains_feed_on_success.bind(ctx)).catch(
+        contains_feed_on_error.bind(ctx));
   } else {
-    const connectPromise = db_connect(undefined, log);
-    connectPromise.then(feed_db_connect_on_success.bind(ctx));
-    connectPromise.catch(feed_db_connect_on_error.bind(ctx));
+    db_connect(undefined, log).then(
+      feed_db_connect_on_success.bind(ctx)).catch(
+        feed_db_connect_on_error.bind(ctx));
   }
 }
 
@@ -35,9 +35,10 @@ function feed_db_connect_on_success(conn) {
   this.log.log('Connected to database', conn.name);
   this.feed_db_conn = conn;
   this.should_close = true;
-  this.log.debug('Checking if subscribed using on demand connection');
-  db_contains_feed_url(this.log, this.feed_db_conn, get_feed_url(this.feed),
-    on_find_feed.bind(this));
+  db_contains_feed_url(this.log, this.feed_db_conn,
+    get_feed_url(this.feed)).then(
+      contains_feed_on_success.bind(this)).catch(
+        contains_feed_on_error.bind(this));
 }
 
 function feed_db_connect_on_error(error) {
@@ -45,7 +46,11 @@ function feed_db_connect_on_error(error) {
   on_complete.call(this, {'type': 'ConnectionError'});
 }
 
-function on_find_feed(found, event) {
+function contains_feed_on_error(error) {
+  on_complete.call(this, {'type': error.message});
+}
+
+function contains_feed_on_success(found, event) {
   if(found) {
     console.debug('Already subscribed to', get_feed_url(this.feed));
     on_complete.call(this, {'type': 'ConstraintError'});
@@ -53,8 +58,8 @@ function on_find_feed(found, event) {
   }
 
   if('onLine' in navigator && !navigator.onLine) {
-    db_add_feed(this.log, this.feed_db_conn, this.feed,
-      on_add_feed.bind(this));
+    db_add_feed(this.log, this.feed_db_conn, this.feed).then(
+      add_feed_on_success.bind(this)).catch(add_feed_on_error.bind(this));
     return;
   }
 
@@ -92,17 +97,19 @@ function on_fetch_feed(event) {
 function on_lookup_icon(icon_url) {
   if(icon_url)
     this.feed.faviconURLString = icon_url.href;
-  db_add_feed(this.log, this.feed_db_conn, this.feed, on_add_feed.bind(this));
+  db_add_feed(this.log, this.feed_db_conn, this.feed).then(
+    add_feed_on_success.bind(this)).catch(
+    add_feed_on_error.bind(this));
 }
 
-function on_add_feed(event) {
-  if(event.type === 'success') {
-    this.log.log('Successfully stored new feed');
-    this.did_subscribe = true;
-    on_complete.call(this, {'type': 'success', 'feed': event.feed});
-  } else {
-    on_complete.call(this, {'type': event.type});
-  }
+function add_feed_on_success(event) {
+  this.log.log('Successfully stored new feed');
+  this.did_subscribe = true;
+  on_complete.call(this, {'type': 'success', 'feed': event.feed});
+}
+
+function add_feed_on_error(error) {
+  on_complete.call(this, {'type': error.message});
 }
 
 function on_complete(event) {

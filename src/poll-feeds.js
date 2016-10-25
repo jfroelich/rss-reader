@@ -73,14 +73,19 @@ function on_query_idle_state(state) {
 
 function connect_on_success(conn) {
   this.conn = conn;
-  db_get_all_feeds(this.log, conn, on_get_feeds.bind(this));
+  db_get_all_feeds(this.log, conn).then(
+    get_feeds_on_success.bind(this)).catch(get_feeds_on_error);
 }
 
 function connect_on_error(error) {
   on_complete.call(this);
 }
 
-function on_get_feeds(feeds) {
+function get_feeds_on_error(error) {
+  on_complete.call(this);
+}
+
+function get_feeds_on_success(feeds) {
   if(!feeds.length) {
     on_complete.call(this);
     return;
@@ -121,8 +126,9 @@ function on_fetch_feed(local_feed, fetch_output) {
   }
 
   const feed = merge_feeds(local_feed, remote_feed);
-  db_update_feed(this.log, this.conn, feed,
-    on_update_feed.bind(this, fetch_output.entries));
+  db_update_feed(this.log, this.conn, feed).then(
+    update_feed_on_success.bind(this, fetch_output.entries)).catch(
+      update_feed_on_error.bind(this));
 }
 
 function is_feed_unmodified(local_feed, remote_feed) {
@@ -131,16 +137,12 @@ function is_feed_unmodified(local_feed, remote_feed) {
     remote_feed.dateLastModified.getTime()
 }
 
-function on_update_feed(entries, event) {
-  // If we failed to update the feed, then do not even bother updating its
-  // entries. Something is seriously wrong. Perhaps this should even be a
-  // fatal error.
-  if(event.type !== 'success') {
-    this.num_feeds_pending--;
-    on_complete.call(this);
-    return;
-  }
+function update_feed_on_error(error) {
+  this.num_feeds_pending--;
+  on_complete.call(this);
+}
 
+function update_feed_on_success(entries, feed) {
   if(!entries.length) {
     this.num_feeds_pending--;
     on_complete.call(this);
@@ -164,7 +166,7 @@ function on_update_feed(entries, event) {
 
   const bound_on_entry_processed = on_entry_processed.bind(this, feed_ctx);
   for(let entry of entries) {
-    process_entry.call(this, event.feed, entry, bound_on_entry_processed);
+    process_entry.call(this, feed, entry, bound_on_entry_processed);
   }
 }
 
@@ -180,11 +182,16 @@ function process_entry(feed, entry, callback) {
   if(rewritten_url)
     add_entry_url(entry, rewritten_url.href);
   const limit = 1;
-  db_find_entry(this.log, this.conn, entry.urls, limit,
-    on_find_entry.bind(this, feed, entry, callback));
+  db_find_entry(this.log, this.conn, entry.urls, limit).then(
+    find_entry_on_success.bind(this, feed, entry, callback)).catch(
+      find_entry_on_error.bind(this, callback));
 }
 
-function on_find_entry(feed, entry, callback, matches) {
+function find_entry_on_error(callback, error) {
+  callback();
+}
+
+function find_entry_on_success(feed, entry, callback, matches) {
   if(matches.length) {
     callback();
     return;
@@ -204,7 +211,7 @@ function on_find_entry(feed, entry, callback, matches) {
     entry.content =
       'This content for this article is blocked by an advertisement.';
     prep_local_doc(entry);
-    db_add_entry(this.log, this.conn, entry, callback);
+    db_add_entry(this.log, this.conn, entry).then(callback).catch(callback);
     return;
   }
 
@@ -212,14 +219,14 @@ function on_find_entry(feed, entry, callback, matches) {
     entry.content = 'The content for this article cannot be viewed because ' +
       'it is dynamically generated.';
     prep_local_doc(entry);
-    db_add_entry(this.log, this.conn, entry, callback);
+    db_add_entry(this.log, this.conn, entry).then(callback).catch(callback);
     return;
   }
 
   if(is_paywall_url(url)) {
     entry.content = 'This content for this article is behind a paywall.';
     prep_local_doc(entry);
-    db_add_entry(this.log, this.conn, entry, callback);
+    db_add_entry(this.log, this.conn, entry).then(callback).catch(callback);
     return;
   }
 
@@ -227,14 +234,14 @@ function on_find_entry(feed, entry, callback, matches) {
     entry.content = 'This content for this article cannot be viewed because ' +
       'the website requires tracking information.';
     prep_local_doc(entry);
-    db_add_entry(this.log, this.conn, entry, callback);
+    db_add_entry(this.log, this.conn, entry).then(callback).catch(callback);
     return;
   }
 
   if(MimeUtils.is_non_html_url(url)) {
     entry.content = 'This article is not a basic web page (e.g. a PDF).';
     prep_local_doc(entry);
-    db_add_entry(this.log, this.conn, entry, callback);
+    db_add_entry(this.log, this.conn, entry).then(callback).catch(callback);
     return;
   }
 
@@ -244,7 +251,7 @@ function on_find_entry(feed, entry, callback, matches) {
 function on_fetch_entry(entry, callback, event) {
   if(event.type !== 'success') {
     prep_local_doc(entry);
-    db_add_entry(this.log, this.conn, entry, callback);
+    db_add_entry(this.log, this.conn, entry).then(callback).catch(callback);
     return;
   }
 
@@ -274,7 +281,7 @@ function on_fetch_entry(entry, callback, event) {
 function on_set_image_dimensions(entry, doc, callback, num_modified) {
   prep_doc(doc);
   entry.content = doc.documentElement.outerHTML.trim();
-  db_add_entry(this.log, this.conn, entry, callback);
+  db_add_entry(this.log, this.conn, entry).then(callback).catch(callback);
 }
 
 function prep_doc(doc) {

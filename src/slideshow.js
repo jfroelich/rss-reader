@@ -38,9 +38,19 @@ function mark_slide_read(slide) {
   if(!slide.hasAttribute('read')) {
     slide.setAttribute('read', '');
     const id = parseInt(slide.getAttribute('entry'), 10);
-    db_mark_entry_read(SilentConsole, id);
+    db_mark_entry_read(id, SilentConsole).then(
+      mark_entry_read_on_success).catch(mark_entry_read_on_error);
   }
 }
+
+function mark_entry_read_on_success() {
+  console.debug('Successfully marked entry as read');
+}
+
+function mark_entry_read_on_error(error) {
+  console.debug(error);
+}
+
 
 function filter_article_title(title) {
   let index = title.lastIndexOf(' - ');

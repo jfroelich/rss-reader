@@ -34,15 +34,20 @@ function feed_db_connect_on_error(error) {
 function icon_cache_connect_on_success(event) {
   this.log.debug('Connected to database', this.icon_cache.name);
   this.icon_cache_conn = event.target.result;
-  db_get_all_feeds(this.log, this.conn, on_get_all_feeds.bind(this));
+  db_get_all_feeds(this.log, this.conn).then(
+    get_feeds_on_success.bind(this)).catch(get_feeds_on_error.bind(this));
 }
 
 function icon_cache_connect_on_error(event) {
-  this.log.error(event.target.error);
+  this.log.debug(event.target.error);
   on_complete.call(this);
 }
 
-function on_get_all_feeds(feeds) {
+function get_feeds_on_error(error) {
+  on_complete.call(this);
+}
+
+function get_feeds_on_success(feeds) {
   if(!feeds.length) {
     on_complete.call(this);
     return;
@@ -81,13 +86,23 @@ function on_lookup_favicon_url(feed, icon_url) {
         icon_url.href);
       this.num_feeds_modified++;
       feed.faviconURLString = icon_url.href;
-      db_put_feed(this.log, this.conn, feed);
+      db_put_feed(this.log, this.conn, feed).then(
+        put_feed_on_success).catch(
+          put_feed_on_error);
     }
   }
 
   this.pending_count--;
   if(!this.pending_count)
     on_complete.call(this);
+}
+
+function put_feed_on_success(feed) {
+  // noop
+}
+
+function put_feed_on_error(error) {
+  // noop
 }
 
 function on_complete() {

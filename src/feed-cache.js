@@ -23,7 +23,7 @@ function db_connect(target = DB_DEFAULT_TARGET, log = SilentConsole) {
   return new Promise(function(resolve, reject) {
     log.log('Connecting to database', target.name, target.version);
     const request = indexedDB.open(target.name, target.version);
-    request.onupgradeneeded = db_upgrade.bind(null, log);
+    request.onupgradeneeded = db_upgrade.bind(undefined, log);
     request.onsuccess = function(event) {
       const conn = event.target.result;
       log.debug('Connected to database', conn.name);
@@ -33,7 +33,7 @@ function db_connect(target = DB_DEFAULT_TARGET, log = SilentConsole) {
       reject(event.target.error);
     };
     request.onblocked = function(event) {
-      log.debug('open is blocked, waiting indefinitely');
+      log.debug('db_connect blocked, waiting indefinitely');
     };
   });
 }
@@ -46,7 +46,6 @@ function db_upgrade(log, event) {
   let feed_store = null, entry_store = null;
   const stores = conn.objectStoreNames;
 
-  // TODO: verify event.version is the field i want
   console.dir(event);
   log.log('Upgrading database %s to version %s from version', conn.name,
     event.version, event.oldVersion);
@@ -281,260 +280,266 @@ function sanitize_entry(input_entry) {
   return output_entry;
 }
 
-// TODO: promisify
-function db_add_entry(log, conn, entry, callback) {
-  if('id' in entry)
-    throw new TypeError();
-  log.log('Adding entry', get_entry_url(entry));
-  const sanitized = sanitize_entry(entry);
-  const storable = filter_empty_props(sanitized);
-  storable.readState = ENTRY_UNREAD;
-  storable.archiveState = ENTRY_UNARCHIVED;
-  storable.dateCreated = new Date();
-  const tx = conn.transaction('entry', 'readwrite');
-  const store = tx.objectStore('entry');
-  const request = store.add(storable);
-  request.onsuccess = function(event) {
-    log.debug('Stored entry', get_entry_url(storable));
-    callback(event);
-  };
-  request.onerror = function(event) {
-    log.error(event.target.error);
-    callback(event);
-  };
-}
-
-// TODO: promisify
-function db_add_feed(log, conn, feed, callback) {
-  if('id' in feed)
-    throw new TypeError();
-  log.log('Adding feed', get_feed_url(feed));
-  let storable = sanitize_feed(feed);
-  storable.dateCreated = new Date();
-  storable = filter_empty_props(storable);
-  const tx = conn.transaction('feed', 'readwrite');
-  const store = tx.objectStore('feed');
-  const request = store.add(storable);
-  request.onsuccess = function(event) {
-    storable.id = event.target.result;
-    log.debug('Added feed %s with new id %s', get_feed_url(storable),
-      storable.id);
-    callback({'type': 'success', 'feed': storable});
-  };
-  request.onerror = function(event) {
-    log.error(event.target.error);
-    callback({'type': 'error'});
-  };
-}
-
-// TODO: promisify
-// TODO: normalize feed url?
-function db_contains_feed_url(log, conn, url, callback) {
-  log.debug('Checking for feed with url', url);
-  let didFindFeed = false;
-  const tx = conn.transaction('feed');
-  const store = tx.objectStore('feed');
-  const index = store.index('urls');
-  const request = index.get(url);
-  request.onsuccess = function(event) {
-    const feed = event.target.result;
-    didFindFeed = !!feed;
-    log.debug('Found feed with url %s? %s', url, didFindFeed);
-    callback(didFindFeed);
-  };
-  request.onerror = function(event) {
-    log.debug(event.target.error);
-    callback(didFindFeed);
-  };
-}
-
-// TODO: promisify
-// Assumes urls are normalized
-function db_find_entry(log, conn, urls, limit, callback) {
-  if(!urls.length)
-    throw new TypeError();
-  log.log('Find entry', urls);
-  const matches = [];
-  let reached_limit = false;
-
-  const tx = conn.transaction('entry');
-  tx.oncomplete = function(event) {
-    log.log('Found %d entries for %o', matches.length, urls);
-    callback(matches);
-  };
-  const store = tx.objectStore('entry');
-  const index = store.index('urls');
-
-  // Iterate in reverse to increase the chance of an earlier exit
-  // TODO: this only would matter if we search the urls sequentially, but
-  // we currently search concurrently, so maybe this is stupid
-  for(let i = urls.length - 1; i > -1; i--) {
-    const request = index.openCursor(urls[i]);
-    request.onsuccess = on_success;
-    request.onerror = log.error;
-  }
-
-  // TODO: avoid pushing dups?
-  // TODO: >= or > ?
-  function on_success(event) {
-    const cursor = event.target.result;
-    if(cursor && !reached_limit) {
-      matches.push(cursor.value);
-      reached_limit = limit && matches.length >= limit;
-      if(!reached_limit)
-        cursor.continue();
+function db_add_entry(log, conn, entry) {
+  return new Promise(function(resolve, reject) {
+    if('id' in entry) {
+      reject(new TypeError());
+      return;
     }
-  }
-}
 
-// TODO: promisify
-function db_put_feed(log, conn, feed, callback) {
-  log.debug('Putting feed', get_feed_url(feed));
-  feed.dateUpdated = new Date();
-  const tx = conn.transaction('feed', 'readwrite');
-  const store = tx.objectStore('feed');
-  const request = store.put(feed);
-  request.onsuccess = function(event) {
-    log.debug('Successfully put feed', get_feed_url(feed));
-    if(!('id' in feed)) {
-      log.debug('New feed id', event.target.result);
-      feed.id = event.target.result;
-    }
-    // TODO: no need to pass back feed
-    if(callback)
-      callback('success', feed);
-  };
-  request.onerror = function(event) {
-    log.debug(event.target.error);
-    if(callback)
-      callback('error');
-  };
-  return tx;
-}
-
-// TODO: promisify
-function db_update_feed(log, conn, feed, callback) {
-  if(!('id' in feed))
-    throw new TypeError();
-  log.log('Updating feed', get_feed_url(feed));
-  let storable = sanitize_feed(feed);
-  storable.dateUpdated = new Date();
-  storable = filter_empty_props(storable);
-  const tx = conn.transaction('feed', 'readwrite');
-  const store = tx.objectStore('feed');
-  const request = store.put(storable);
-  request.onsuccess = function(event) {
-    log.debug('Updated feed', get_feed_url(storable));
-    if(callback)
-      callback({'type': 'success', 'feed': storable});
-  };
-  request.onerror = function(event) {
-    log.error(event.target.error);
-    if(callback)
-      callback({'type': 'error', 'feed': storable});
-  };
-}
-
-// TODO: rewrite as Promise
-function db_get_all_feeds(log, conn, callback) {
-  log.log('Opening cursor over feed store');
-  const feeds = [];
-  const tx = conn.transaction('feed');
-  tx.oncomplete = function(event) {
-    log.log('Loaded %s feeds', feeds.length);
-    callback(feeds);
-  };
-  const store = tx.objectStore('feed');
-  const request = store.openCursor();
-  request.onsuccess = function(event) {
-    const cursor = event.target.result;
-    if(cursor) {
-      feeds.push(cursor.value);
-      cursor.continue();
-    }
-  };
-  request.onerror = log.error;
-}
-
-// TODO: promisify
-function db_count_unread_entries(log, conn, callback) {
-  log.debug('Counting unread entries');
-  const tx = conn.transaction('entry');
-  const store = tx.objectStore('entry');
-  const index = store.index('readState');
-  const request = index.count(ENTRY_UNREAD);
-  request.onsuccess = function(event) {
-    callback(event.target.result);
-  };
-  request.onerror = function(event) {
-    log.error(event.target.error);
-    callback(-1);// 0 would be ambiguous
-  };
-}
-
-// TODO: promisify
-function db_mark_entry_read(log, id, callback) {
-  if(!Number.isInteger(id) || id < 1)
-    throw new TypeError();
-  log.debug('Marking entry %s as read', id);
-
-  db_connect(undefined, log).then(
-    connect_on_success).catch(
-    connect_on_error);
-
-  function connect_on_success(conn) {
-    log.debug('Connected to database', conn.name);
+    log.log('Adding entry', get_entry_url(entry));
+    const sanitized = sanitize_entry(entry);
+    const storable = filter_empty_props(sanitized);
+    storable.readState = ENTRY_UNREAD;
+    storable.archiveState = ENTRY_UNARCHIVED;
+    storable.dateCreated = new Date();
     const tx = conn.transaction('entry', 'readwrite');
     const store = tx.objectStore('entry');
-    const request = store.openCursor(id);
-    request.onsuccess = open_cursor_on_success;
-    request.onerror = open_cursor_on_error;
-  }
+    const request = store.add(storable);
+    request.onsuccess = function(event) {
+      log.debug('Stored entry', get_entry_url(storable));
+      resolve(event);
+    };
+    request.onerror = function(event) {
+      log.error(event.target.error);
+      reject(event.target.error);
+    };
+  });
+}
 
-  function connect_on_error(error) {
-    on_complete(event, 'ConnectionError');
-  }
-
-  function open_cursor_on_success(event) {
-    const cursor = event.target.result;
-    if(!cursor) {
-      log.error('No entry found with id', id);
-      on_complete(event, 'NotFoundError');
+function db_add_feed(log, conn, feed) {
+  return new Promise(function(resolve, reject) {
+    if('id' in feed) {
+      reject(new TypeError());
       return;
     }
 
-    const entry = cursor.value;
-    log.debug('Found entry', get_entry_url(entry));
-    if(entry.readState === ENTRY_READ) {
-      log.error('Already read entry with id', entry.id);
-      on_complete(event, 'AlreadyReadError');
+    log.log('Adding feed', get_feed_url(feed));
+    let storable = sanitize_feed(feed);
+    storable.dateCreated = new Date();
+    storable = filter_empty_props(storable);
+    const tx = conn.transaction('feed', 'readwrite');
+    const store = tx.objectStore('feed');
+    const request = store.add(storable);
+    request.onsuccess = function(event) {
+      storable.id = event.target.result;
+      log.debug('Added feed %s with new id %s', get_feed_url(storable),
+        storable.id);
+      resolve(storable);
+    };
+    request.onerror = function(event) {
+      log.debug(event.target.error);
+      reject(event.target.error);
+    };
+  });
+}
+
+// TODO: normalize feed url?
+function db_contains_feed_url(log, conn, url) {
+  return new Promise(function(resolve, reject) {
+    log.debug('Checking for feed with url', url);
+    const tx = conn.transaction('feed');
+    const store = tx.objectStore('feed');
+    const index = store.index('urls');
+    const request = index.get(url);
+    request.onsuccess = function(event) {
+      resolve(!!event.target.result);
+    };
+    request.onerror = function(event) {
+      log.debug(event.target.error);
+      reject(event.target.error);
+    };
+  });
+}
+
+// Assumes urls are normalized
+function db_find_entry(log, conn, urls, limit) {
+  return new Promise(function(resolve, reject) {
+    if(!urls.length) {
+      reject(new TypeError());
       return;
     }
 
-    log.debug('Updating entry', entry.id);
-    entry.readState = ENTRY_READ;
-    const current_date = new Date();
-    entry.dateRead = current_date;
-    entry.dateUpdated = current_date;
-    cursor.update(entry);
-    const conn = event.target.transaction.db;
-    update_badge(conn, log);
-    on_complete(event, 'Success');
-  }
+    log.log('Find entry', urls);
+    const matches = [];
+    let reached_limit = false;
 
-  function open_cursor_on_error(event) {
-    log.error(event.target.error);
-    on_complete(event, 'CursorError');
-  }
+    const tx = conn.transaction('entry');
+    tx.oncomplete = function(event) {
+      log.log('Found %d entries for %o', matches.length, urls);
+      resolve(matches);
+    };
+    const store = tx.objectStore('entry');
+    const index = store.index('urls');
 
-  function on_complete(event, type) {
-    log.log('Completed marking entry %s as read', id);
-    const conn = event.target.transaction.db;
-    if(conn) {
-      log.debug('Closing connection to database', conn.name);
+    // Iterate in reverse to increase the chance of an earlier exit
+    // TODO: this only would matter if we search the urls sequentially, but
+    // we currently search concurrently, so maybe this is stupid
+    for(let i = urls.length - 1; i > -1; i--) {
+      const request = index.openCursor(urls[i]);
+      request.onsuccess = on_success;
+      request.onerror = log.error;
+    }
+
+    // TODO: avoid pushing dups?
+    // TODO: >= or > ?
+    function on_success(event) {
+      const cursor = event.target.result;
+      if(cursor && !reached_limit) {
+        matches.push(cursor.value);
+        reached_limit = limit && matches.length >= limit;
+        if(!reached_limit)
+          cursor.continue();
+      }
+    }
+  });
+}
+
+function db_put_feed(log, conn, feed) {
+  return new Promise(function(resolve, reject) {
+    log.debug('Putting feed', get_feed_url(feed));
+    feed.dateUpdated = new Date();
+    const tx = conn.transaction('feed', 'readwrite');
+    const store = tx.objectStore('feed');
+    const request = store.put(feed);
+    request.onsuccess = function(event) {
+      log.debug('Successfully put feed', get_feed_url(feed));
+      if(!('id' in feed)) {
+        log.debug('New feed id', event.target.result);
+        feed.id = event.target.result;
+      }
+      // TODO: no need to pass back feed?
+      resolve(feed);
+    };
+    request.onerror = function(event) {
+      log.debug(event.target.error);
+      reject(event.target.error);
+    };
+  });
+}
+
+function db_update_feed(log, conn, feed) {
+  return new Promise(function(resolve, reject) {
+    if(!('id' in feed)) {
+      reject(new TypeError());
+      return;
+    }
+
+    log.log('Updating feed', get_feed_url(feed));
+    let storable = sanitize_feed(feed);
+    storable.dateUpdated = new Date();
+    storable = filter_empty_props(storable);
+    const tx = conn.transaction('feed', 'readwrite');
+    const store = tx.objectStore('feed');
+    const request = store.put(storable);
+    request.onsuccess = function(event) {
+      log.debug('Updated feed', get_feed_url(storable));
+      resolve(storable);
+    };
+    request.onerror = function(event) {
+      log.error(event.target.error);
+      reject(event.target.error);
+    };
+  });
+}
+
+function db_get_all_feeds(log, conn) {
+  return new Promise(function(resolve, reject) {
+    log.log('Opening cursor over feed store');
+    const feeds = [];
+    const tx = conn.transaction('feed');
+    tx.oncomplete = function(event) {
+      log.log('Loaded %s feeds', feeds.length);
+      resolve(feeds);
+    };
+    const store = tx.objectStore('feed');
+    const request = store.openCursor();
+    request.onsuccess = function(event) {
+      const cursor = event.target.result;
+      if(cursor) {
+        feeds.push(cursor.value);
+        cursor.continue();
+      }
+    };
+    request.onerror = function(event) {
+      log.debug(event.target.error);
+      reject(event.target.error);
+    };
+  });
+}
+
+function db_count_unread_entries(log, conn) {
+  return new Promise(function(resolve, reject) {
+    log.debug('Counting unread entries');
+    const tx = conn.transaction('entry');
+    const store = tx.objectStore('entry');
+    const index = store.index('readState');
+    const request = index.count(ENTRY_UNREAD);
+    request.onsuccess = function(event) {
+      log.debug('Counted %d unread entries', event.target.result);
+      resolve(event.target.result);
+    };
+    request.onerror = function(event) {
+      log.error(event.target.error);
+      reject(event.target.error);
+    };
+  });
+}
+
+function db_mark_entry_read(id, log) {
+  return new Promise(function(resolve, reject) {
+    log.debug('Marking entry %s as read', id);
+    if(!Number.isInteger(id) || id < 1) {
+      reject(new TypeError());
+      return;
+    }
+
+    db_connect(undefined, log).then(
+      connect_on_success).catch(
+        reject);
+
+    function connect_on_success(conn) {
+      log.debug('Connected to database', conn.name);
+      const tx = conn.transaction('entry', 'readwrite');
+      const store = tx.objectStore('entry');
+      const request = store.openCursor(id);
+      request.onsuccess = open_cursor_on_success;
+      request.onerror = open_cursor_on_error;
+    }
+
+    function open_cursor_on_success(event) {
+      const cursor = event.target.result;
+      const conn = event.target.transaction.db;
+      if(!cursor) {
+        log.error('No entry found with id', id);
+        reject(new Error('No entry found'));
+        conn.close();
+        return;
+      }
+
+      const entry = cursor.value;
+      log.debug('Found entry', get_entry_url(entry));
+      if(entry.readState === ENTRY_READ) {
+        log.error('Already read entry with id', entry.id);
+        reject(new Error('Already read entry'));
+        conn.close();
+        return;
+      }
+
+      log.debug('Updating entry', entry.id);
+      entry.readState = ENTRY_READ;
+      const current_date = new Date();
+      entry.dateRead = current_date;
+      entry.dateUpdated = current_date;
+      cursor.update(entry);
+      update_badge(conn, log);
       conn.close();
+      resolve();
     }
-    if(callback)
-      callback(type);
-  }
+
+    function open_cursor_on_error(event) {
+      log.error(event.target.error);
+      reject(event.target.error);
+    }
+  });
 }
