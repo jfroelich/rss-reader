@@ -2,39 +2,63 @@
 
 'use strict';
 
-// TODO: return a promise
-// TODO: use async
+// TODO: maybe this should accept conn instead of db_target and require caller
+// to open/close conn, then maybe it is simpler to test
 
-{
+function import_opml(db_target, files, log = SilentConsole) {
+  return new Promise(import_opml_impl.bind(undefined, db_target, files, log));
+}
 
-function import_opml(db_target, log = SilentConsole, callback) {
-  if(!parse_xml)
-    throw new ReferenceError();
-
+async function import_opml_impl(db_target, files, log, resolve, reject) {
   log.log('Starting opml import');
 
-  // Create the uploader in the context of the document
-  // containing this script
-  const uploader = document.createElement('input');
-  uploader.setAttribute('type', 'file');
-  uploader.setAttribute('accept', 'application/xml');
-  uploader.style.display = 'none';
-  document.documentElement.appendChild(uploader);
+  files = Array.prototype.filter.call(files,
+    (file) => file.type.toLowerCase().includes('xml'));
+  files = Array.prototype.filter.call(files, (file) => file.size > 0);
 
-  const ctx = {
-    'num_files_processed': 0,
-    'callback': callback,
-    'uploader': uploader,
-    'files': null,
-    'log': log,
-    'feed_db_target': db_target,
-    'feed_db_conn': null,
-    'icon_cache_conn': null,
-    'icon_cache': new FaviconCache(log)
-  };
-  uploader.onchange = uploader_on_change.bind(ctx);
-  uploader.click();
-  log.debug('Clicked uploader');
+  if(!files.length) {
+    resolve();
+    return;
+  }
+
+  let feed_conn, icon_conn;
+  const suppress_subscribe_notif = true;
+
+  try {
+    feed_conn = await db_connect(db_target, log);
+    icon_conn = await favicon_connect(undefined, log);
+
+    for(let file of files) {
+      const text = await read_file_as_text(file);
+      const doc = parse_opml(text);
+      const outline_elements = select_outline_elements(doc);
+      let outlines = outline_elements.map(create_outline_obj);
+      outlines = outlines.filter(outline_has_valid_type);
+      outlines = outlines.filter(outline_has_url);
+      outlines.forEach(deserialize_outline_url);
+      outlines = outlines.filter(outline_has_url_obj);
+      outlines = filter_dup_outlines(outlines);
+      const feeds = outlines.map(outline_to_feed);
+      for(let feed of feeds) {
+        // TODO: subscribe isn't actually a promise yet
+        log.debug('subscribe placeholder', feed);
+        //subscribe(feed_conn, icon_conn, feed, suppress_subscribe_notif, log);
+      }
+    }
+    log.debug('Import completed');
+    resolve();
+  } catch(error) {
+    reject(error);
+  } finally {
+    if(feed_conn) {
+      log.debug('Closing database', feed_conn.name);
+      feed_conn.close();
+    }
+    if(icon_conn) {
+      log.debug('Closing database', icon_conn.name);
+      icon_conn.close();
+    }
+  }
 }
 
 function parse_opml(str) {
@@ -47,121 +71,17 @@ function parse_opml(str) {
   return doc;
 }
 
-function uploader_on_change(event) {
-  this.uploader.removeEventListener('change', uploader_on_change);
-
-  this.files = [...this.uploader.files];
-  this.files = filter_non_xml_files(this.files);
-  this.files = filter_empty_files(this.files);
-  if(!this.files.length) {
-    on_complete.call(this);
-    return;
-  }
-
-  db_connect(feed_db_target, this.log).then(
-    feed_db_connect_on_success.bind(this)).catch(
-      on_complete.bind(this));
-}
-
-function feed_db_connect_on_success(conn) {
-  this.log.debug('Connected to database', this.feed_db.name);
-  this.feed_db_conn = conn;
-  this.icon_cache.connect(icon_db_connect_on_success.bind(this),
-    icon_db_connect_on_error.bind(this));
-}
-
-function icon_db_connect_on_success(event) {
-  this.log.debug('Connected to database', this.icon_cache.name);
-  this.icon_cache_conn = event.target.result;
-  for(let file of this.files) {
-    this.log.debug('Loading file', file.name);
+function read_file_as_text(file) {
+  return new Promise(function(resolve, reject) {
     const reader = new FileReader();
-    reader.onload = reader_on_load.bind(this, file);
-    reader.onerror = reader_on_error.bind(this, file);
+    reader.onload = function(event) {
+      resolve(event.target.result);
+    };
+    reader.onerror = function(event) {
+      reject(event.target.error);
+    };
     reader.readAsText(file);
-  }
-}
-
-function icon_db_connect_on_error(event) {
-  this.log.error(event.target.error);
-  on_complete.call(this);
-}
-
-function filter_non_xml_files(files) {
-  const output = [];
-  for(let file of files) {
-    if(file.type.toLowerCase().includes('xml'))
-      output.push(file);
-  }
-  return output;
-}
-
-function filter_empty_files(files) {
-  const output = [];
-  for(let file of files) {
-    if(file.size > 0)
-      output.push(file);
-  }
-  return output;
-}
-
-function reader_on_load(file, event) {
-  this.log.log('Loaded file', file.name);
-
-  const text = event.target.result;
-  let doc = null;
-  try {
-    doc = parse_opml(text);
-  } catch(error) {
-    this.log.warn(file.name, error);
-    on_file_processed.call(this, file);
-    return;
-  }
-
-  const outline_els = select_outline_elements(doc);
-  let outlines = outline_els.map(create_outline_obj);
-  outlines = outlines.filter(outline_has_valid_type);
-  outlines = outlines.filter(outline_has_url);
-  outlines.forEach(deserialize_outline_url);
-  outlines = outlines.filter(outline_has_url_obj);
-  outlines = filter_dup_outlines(outlines);
-  const feeds = outlines.map(outline_to_feed);
-  const suppress_notifs = true;
-  const on_subscribe_callback = null;
-  for(let feed of feeds) {
-    subscribe(this.feed_db_conn, this.icon_cache_conn, feed, suppress_notifs,
-      this.log, on_subscribe_callback);
-  }
-
-  on_file_processed.call(this, file);
-}
-
-function reader_on_error(file, event) {
-  this.log.warn(file.name, event.target.error);
-  on_file_processed.call(this, file);
-}
-
-function on_file_processed(file) {
-  this.log.debug('Processed file "', file.name, '"');
-  this.num_files_processed++;
-  if(this.num_files_processed === this.files.length)
-    on_complete.call(this);
-}
-
-function on_complete(error) {
-  this.log.log('Completed opml import');
-  if(this.uploader)
-    this.uploader.remove();
-  if(this.feed_db_conn) {
-    this.log.debug('Closing feed cache database connection');
-    this.feed_db_conn.close();
-  }
-  if(this.icon_cache_conn) {
-    this.log.debug('Closing icon cache database connection');
-    this.icon_cache_conn.close();
-  }
-  if(this.callback)
-    this.callback();
+  });
 }
 
 function select_outline_elements(doc) {
@@ -172,25 +92,25 @@ function select_outline_elements(doc) {
     return outlines;
   for(let el = body.firstElementChild; el; el = el.nextElementSibling) {
     if(el.localName === 'outline')
-      outlines.append(el);
+      outlines.push(el);
   }
   return outlines;
 }
 
 function create_outline_obj(element) {
   return {
-    'description': outline.getAttribute('description'),
-    'link': outline.getAttribute('htmlUrl'),
-    'text': outline.getAttribute('text'),
-    'title': outline.getAttribute('title'),
-    'type': outline.getAttribute('type'),
-    'url': outline.getAttribute('xmlUrl')
+    'description': element.getAttribute('description'),
+    'link': element.getAttribute('htmlUrl'),
+    'text': element.getAttribute('text'),
+    'title': element.getAttribute('title'),
+    'type': element.getAttribute('type'),
+    'url': element.getAttribute('xmlUrl')
   };
 }
 
 function outline_has_valid_type(outline) {
-  const type = outline.type;
-  return type && type.length > 2 && /rss|rdf|feed/i.test(type);
+  return outline.type && outline.type.length > 2 &&
+    /rss|rdf|feed/i.test(outline.type);
 }
 
 function outline_has_url(outline) {
@@ -211,9 +131,12 @@ function outline_has_url_obj(outline) {
 
 function filter_dup_outlines(outlines) {
   const output = [];
+  const seen_urls = [];
   for(let outline of outlines) {
-    if(!output.includes(outline.url_obj.href))
+    if(!seen_urls.includes(outline.url_obj.href)) {
+      seen_urls.push(outline.url_obj.href);
       output.push(outline);
+    }
   }
   return output;
 }
@@ -233,8 +156,4 @@ function outline_to_feed(outline) {
     }
   }
   return feed;
-}
-
-this.import_opml = import_opml;
-
 }

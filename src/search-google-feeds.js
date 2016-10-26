@@ -5,21 +5,21 @@
 // TODO: return a promise
 // TODO: use async
 
-{
+function search_google_feeds(query, log = SilentConsole) {
+  return new Promise(search_google_feeds_impl.bind(undefined, query, log));
+}
 
-function search_google_feeds(query, log, callback) {
-  if(typeof query !== 'string' || !query.trim().length)
-    throw new TypeError();
-  if(typeof callback !== 'function')
-    throw new TypeError();
-  const ctx = {};
-  ctx.log = log || SilentConsole;
-  ctx.replacement = '\u2026';
-  ctx.title_max_len = 200;
-  ctx.snippet_max_len = 400;
-  ctx.callback = callback;
+async function search_google_feeds_impl(query, log, resolve, reject) {
+  if(typeof query !== 'string' || !query.trim().length) {
+    reject(new TypeError());
+    return;
+  }
 
-  const opts = {
+  const replacement = '\u2026';
+  const title_max_len = 200;
+  const snippet_max_len = 400;
+
+  const fetch_opts = {
     'credentials': 'omit',
     'method': 'GET',
     'headers': {'Accept': 'application/json'},
@@ -28,111 +28,76 @@ function search_google_feeds(query, log, callback) {
     'redirect': 'follow',
     'referrer': 'no-referrer'
   };
+
   const base = 'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
   const url = base + encodeURIComponent(query);
-  ctx.log.log('GET', url);
-  fetch(url, opts).then(on_fetch.bind(ctx)).catch(on_fetch_err.bind(ctx));
-}
 
-function on_fetch(response) {
-  if(!response.ok) {
-    this.log.log('Response status:', response.responseStatus);
-    this.log.log('Response details:', response.responseDetails);
-    this.callback({'type': 'error'});
-    return;
-  }
-
-  response.text().then(on_read_txt.bind(this));
-}
-
-function on_fetch_err(error) {
-  this.log.error(error);
-  this.callback({'type': 'error'});
-}
-
-function on_read_txt(text) {
-  let result = null;
   try {
-    result = JSON.parse(text);
-  } catch(error) {
-    this.log.error(error);
-    this.callback({'type': 'error'});
-    return;
-  }
+    let response = await fetch(url, fetch_opts);
 
-  const data = result.responseData;
-  if(!data) {
-    this.log.error('Missing response data');
-    this.callback({'type': 'error'});
-    return;
-  }
-
-  const query = data.query || '';
-  let entries = data.entries || [];
-  entries = filter_entries_without_urls(entries);
-  parse_entry_urls(entries);
-  // Filter again to catch parse failures
-  entries = filter_entries_without_urls(entries);
-  entries = filter_dup_entries(entries);
-
-  entries.forEach(sanitize_title, this);
-  entries.forEach(sanitize_snippet, this);
-  this.callback({'type': 'success', 'query': query, 'entries': entries});
-}
-
-function filter_entries_without_urls(entries) {
-  const output = [];
-  for(let entry of entries) {
-    if(entry.url)
-      output.push(entry);
-  }
-  return output;
-}
-
-function parse_entry_urls(entries) {
-  for(let entry of entries) {
-    try {
-      entry.url = new URL(entry.url);
-    } catch(error) {}
-  }
-}
-
-function filter_dup_entries(entries) {
-  const output = [], seen = [];
-  for(let entry of entries) {
-    if(!seen.includes(entry.url.href)) {
-      seen.push(entry.url.href);
-      output.push(entry);
+    if(!response.ok) {
+      reject(new Error(response.responseDetails));
+      return;
     }
+
+    const text = await response.text();
+    const result = JSON.parse(text);
+    const data = result.responseData;
+    if(!data) {
+      reject(new Error('undefined response data'));
+      return;
+    }
+
+    const query = data.query || '';
+    const response_entries = data.entries || [];
+    const entries_with_urls = [];
+
+    for(let entry of response_entries) {
+      if(entry.url)
+        entries_with_urls.push(entry);
+    }
+
+    const entries_with_valid_url_objects = [];
+    for(let entry of entries_with_urls) {
+      try {
+        const url_obj = new URL(entry.url);
+        entry.url = url_obj;
+        entries_with_valid_url_objects.push(entry);
+      } catch(error) {}
+    }
+
+    const distinct_entries = [];
+    const seen_urls = [];
+    for(let entry of entries_with_valid_url_objects) {
+      if(!seen_urls.includes(entry.url.href)) {
+        seen_urls.push(entry.url.href);
+        distinct_entries.push(entry);
+      }
+    }
+
+    // Sanitize title
+    for(let entry of distinct_entries) {
+      let title = entry.title;
+      if(title) {
+        title = filter_control_chars(title);
+        title = replace_tags(title, '');
+        title = truncate_html(title, title_max_len);
+        entry.title = title;
+      }
+    }
+
+    for(let entry of distinct_entries) {
+      let snippet = entry.contentSnippet;
+      if(snippet) {
+        snippet = filter_control_chars(snippet);
+        snippet = snippet.replace(/<br\s*>/gi, ' ');
+        snippet = truncate_html(snippet, snippet_max_len, replacement);
+        entry.contentSnippet = snippet;
+      }
+    }
+
+    resolve({'query': query, 'entries': distinct_entries});
+  } catch(error) {
+    reject(error);
   }
-  return output;
-}
-
-function sanitize_title(entry) {
-  let title = entry.title;
-  if(title) {
-    title = filter_control_chars(title);
-    title = replace_tags(title, '');
-    title = truncate_html(title, this.title_max_len);
-    entry.title = title;
-  }
-}
-
-function sanitize_snippet(entry) {
-  let snippet = entry.contentSnippet;
-  if(snippet) {
-    snippet = filter_control_chars(snippet);
-    snippet = replace_brs(snippet);
-    snippet = truncate_html(snippet, this.snippet_max_len,
-      this.replacement);
-    entry.contentSnippet = snippet;
-  }
-}
-
-function replace_brs(str) {
-  return str.replace(/<br\s*>/gi, ' ');
-}
-
-this.search_google_feeds = search_google_feeds;
-
 }

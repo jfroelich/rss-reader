@@ -249,7 +249,7 @@ function find_entry_on_success(feed, entry, callback, matches) {
   fetch_html(url, this.log, on_fetch_entry.bind(this, entry, callback));
 }
 
-function on_fetch_entry(entry, callback, event) {
+async function on_fetch_entry(entry, callback, event) {
   if(event.type !== 'success') {
     prep_local_doc(entry);
     db_add_entry(this.log, this.conn, entry).then(callback).catch(callback);
@@ -275,11 +275,14 @@ function on_fetch_entry(entry, callback, event) {
   filter_invalid_anchors(doc);
   resolve_doc(doc, this.log, event.responseURL);
   filter_tracking_images(doc);
-  set_image_dimensions(doc, this.log,
-    on_set_image_dimensions.bind(this, entry, doc, callback));
-}
 
-function on_set_image_dimensions(entry, doc, callback, num_modified) {
+  try {
+    let num_modified = await set_image_dimensions(doc, this.log);
+    this.log.debug('Modified %s images in', num_modified, event.responseURL);
+  } catch(error) {
+    log.debug(error);
+  }
+
   prep_doc(doc);
   entry.content = doc.documentElement.outerHTML.trim();
   db_add_entry(this.log, this.conn, entry).then(callback).catch(callback);

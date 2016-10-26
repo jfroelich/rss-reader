@@ -2,29 +2,26 @@
 
 'use strict';
 
-{
-
-const view_url = chrome.extension.getURL('slideshow.html');
-const newtab_url = 'chrome://newtab/';
+function query_tabs_by_url(url) {
+  return new Promise(function(resolve, reject) {
+    // NOTE: query requires 'tabs' permission
+    chrome.tabs.query({'url': url}, resolve);
+  });
+}
 
 // TODO: is there a way to not do this on every page load?
-chrome.browserAction.onClicked.addListener(function(event) {
-  // NOTE: query requires 'tabs' permission
-  chrome.tabs.query({'url': view_url}, on_query_for_view_tab);
-});
-
-function on_query_for_view_tab(tabs) {
-  if(tabs && tabs.length)
+chrome.browserAction.onClicked.addListener(async function(event) {
+  const view_url = chrome.extension.getURL('slideshow.html');
+  const newtab_url = 'chrome://newtab/';
+  let tabs = await query_tabs_by_url(view_url);
+  if(tabs && tabs.length) {
     chrome.tabs.update(tabs[0].id, {'active': true});
-  else
-    chrome.tabs.query({'url': newtab_url}, on_query_for_new_tab);
-}
-
-function on_query_for_new_tab(tabs) {
-  if(tabs && tabs.length)
+    return;
+  }
+  tabs = await query_tabs_by_url(newtab_url);
+  if(tabs && tabs.length) {
     chrome.tabs.update(tabs[0].id, {'active': true, 'url': view_url});
-  else
+  } else {
     chrome.tabs.create({'url': view_url});
-}
-
-}
+  }
+});

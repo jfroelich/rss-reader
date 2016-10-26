@@ -40,7 +40,7 @@ async function mark_slide_read(slide) {
   slide.setAttribute('read', '');
   const id = parseInt(slide.getAttribute('entry'), 10);
   try {
-    db_mark_entry_read(id, console);
+    db_mark_entry_read(id);
   } catch(error) {
     console.debug(error);
   }

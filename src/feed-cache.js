@@ -20,22 +20,24 @@ const DB_DEFAULT_TARGET = {
 };
 
 function db_connect(target = DB_DEFAULT_TARGET, log = SilentConsole) {
-  return new Promise(function(resolve, reject) {
-    log.log('Connecting to database', target.name, target.version);
-    const request = indexedDB.open(target.name, target.version);
-    request.onupgradeneeded = db_upgrade.bind(undefined, log);
-    request.onsuccess = function(event) {
-      const conn = event.target.result;
-      log.debug('Connected to database', conn.name);
-      resolve(conn);
-    };
-    request.onerror = function(event) {
-      reject(event.target.error);
-    };
-    request.onblocked = function(event) {
-      log.debug('db_connect blocked, waiting indefinitely');
-    };
-  });
+  return new Promise(db_connect_impl.bind(undefined, target, log));
+}
+
+function db_connect_impl(target, log, resolve, reject) {
+  log.log('Connecting to database', target.name, target.version);
+  const request = indexedDB.open(target.name, target.version);
+  request.onupgradeneeded = db_upgrade.bind(request, log);
+  request.onsuccess = function(event) {
+    const conn = event.target.result;
+    log.debug('Connected to database', conn.name);
+    resolve(conn);
+  };
+  request.onerror = function(event) {
+    reject(event.target.error);
+  };
+  request.onblocked = function(event) {
+    log.debug('connection blocked, waiting indefinitely');
+  };
 }
 
 // TODO: revert upgrade to using a version migration approach
@@ -124,8 +126,12 @@ function db_upgrade(log, event) {
 function db_delete(name) {
   return new Promise(function(resolve, reject) {
     const request = indexedDB.deleteDatabase(name);
-    request.onsuccess = resolve;
-    request.onerror = reject;
+    request.onsuccess = function(event) {
+      resolve();
+    };
+    request.onerror = function(event) {
+      reject(event.target.error);
+    };
   });
 }
 
@@ -335,6 +341,7 @@ function db_add_feed(log, conn, feed) {
 }
 
 // TODO: normalize feed url?
+// TODO: move log to last arg
 function db_contains_feed_url(log, conn, url) {
   return new Promise(function(resolve, reject) {
     log.debug('Checking for feed with url', url);
@@ -360,13 +367,13 @@ function db_find_entry(log, conn, urls, limit) {
       return;
     }
 
-    log.log('Find entry', urls);
+    //log.log('Find entry', urls);
     const matches = [];
     let reached_limit = false;
 
     const tx = conn.transaction('entry');
     tx.oncomplete = function(event) {
-      log.log('Found %d entries for %o', matches.length, urls);
+      //log.log('Found %d entries for %o', matches.length, urls);
       resolve(matches);
     };
     const store = tx.objectStore('entry');
@@ -395,6 +402,7 @@ function db_find_entry(log, conn, urls, limit) {
   });
 }
 
+// TODO: move conn to first argument
 function db_put_feed(log, conn, feed) {
   return new Promise(function(resolve, reject) {
     log.debug('Putting feed', get_feed_url(feed));
@@ -443,6 +451,8 @@ function db_update_feed(log, conn, feed) {
   });
 }
 
+// TODO: use native getAll
+// TODO: reverse argument order
 function db_get_all_feeds(log, conn) {
   return new Promise(function(resolve, reject) {
     log.log('Opening cursor over feed store');
@@ -468,78 +478,86 @@ function db_get_all_feeds(log, conn) {
   });
 }
 
-function db_count_unread_entries(log, conn) {
-  return new Promise(function(resolve, reject) {
-    log.debug('Counting unread entries');
-    const tx = conn.transaction('entry');
-    const store = tx.objectStore('entry');
-    const index = store.index('readState');
-    const request = index.count(ENTRY_UNREAD);
-    request.onsuccess = function(event) {
-      log.debug('Counted %d unread entries', event.target.result);
-      resolve(event.target.result);
-    };
-    request.onerror = function(event) {
-      log.error(event.target.error);
-      reject(event.target.error);
-    };
-  });
+// TODO: reverse argument order
+function db_count_unread_entries(log = SilentConsole, conn) {
+  return new Promise(db_count_unread_entries_impl.bind(undefined, log, conn));
 }
 
-function db_mark_entry_read(id, log) {
-  return new Promise(function(resolve, reject) {
-    log.debug('Marking entry %s as read', id);
-    if(!Number.isInteger(id) || id < 1) {
-      reject(new TypeError());
+function db_count_unread_entries_impl(log, conn, resolve, reject) {
+  log.debug('Counting unread entries');
+  const tx = conn.transaction('entry');
+  const store = tx.objectStore('entry');
+  const index = store.index('readState');
+  const request = index.count(ENTRY_UNREAD);
+  request.onsuccess = function(event) {
+    log.debug('Counted %d unread entries', event.target.result);
+    resolve(event.target.result);
+  };
+  request.onerror = function(event) {
+    log.error(event.target.error);
+    reject(event.target.error);
+  };
+}
+
+// TODO: require the caller to pass in conn now that it is easier to do with
+// async
+function db_mark_entry_read(id, log = SilentConsole) {
+  return new Promise(db_mark_entry_read_impl.bind(undefined, id, log));
+}
+
+// TODO: convert to async once I figure out how to make the cursor promise
+function db_mark_entry_read_impl(id, log, resolve, reject) {
+  log.debug('Marking entry %s as read', id);
+  if(!Number.isInteger(id) || id < 1) {
+    reject(new TypeError());
+    return;
+  }
+
+  db_connect(undefined, log).then(
+    connect_on_success).catch(
+      reject);
+
+  function connect_on_success(conn) {
+    log.debug('Connected to database', conn.name);
+    const tx = conn.transaction('entry', 'readwrite');
+    const store = tx.objectStore('entry');
+    const request = store.openCursor(id);
+    request.onsuccess = open_cursor_on_success;
+    request.onerror = open_cursor_on_error;
+  }
+
+  function open_cursor_on_success(event) {
+    const cursor = event.target.result;
+    const conn = event.target.transaction.db;
+    if(!cursor) {
+      log.error('No entry found with id', id);
+      reject(new Error('No entry found'));
+      conn.close();
       return;
     }
 
-    db_connect(undefined, log).then(
-      connect_on_success).catch(
-        reject);
-
-    function connect_on_success(conn) {
-      log.debug('Connected to database', conn.name);
-      const tx = conn.transaction('entry', 'readwrite');
-      const store = tx.objectStore('entry');
-      const request = store.openCursor(id);
-      request.onsuccess = open_cursor_on_success;
-      request.onerror = open_cursor_on_error;
-    }
-
-    function open_cursor_on_success(event) {
-      const cursor = event.target.result;
-      const conn = event.target.transaction.db;
-      if(!cursor) {
-        log.error('No entry found with id', id);
-        reject(new Error('No entry found'));
-        conn.close();
-        return;
-      }
-
-      const entry = cursor.value;
-      log.debug('Found entry', get_entry_url(entry));
-      if(entry.readState === ENTRY_READ) {
-        log.error('Already read entry with id', entry.id);
-        reject(new Error('Already read entry'));
-        conn.close();
-        return;
-      }
-
-      log.debug('Updating entry', entry.id);
-      entry.readState = ENTRY_READ;
-      const current_date = new Date();
-      entry.dateRead = current_date;
-      entry.dateUpdated = current_date;
-      cursor.update(entry);
-      update_badge(conn, log);
+    const entry = cursor.value;
+    log.debug('Found entry', get_entry_url(entry));
+    if(entry.readState === ENTRY_READ) {
+      log.error('Already read entry with id', entry.id);
+      reject(new Error('Already read entry'));
       conn.close();
-      resolve();
+      return;
     }
 
-    function open_cursor_on_error(event) {
-      log.error(event.target.error);
-      reject(event.target.error);
-    }
-  });
+    log.debug('Updating entry', entry.id);
+    entry.readState = ENTRY_READ;
+    const current_date = new Date();
+    entry.dateRead = current_date;
+    entry.dateUpdated = current_date;
+    cursor.update(entry);
+    update_badge(conn, log);
+    conn.close();
+    resolve();
+  }
+
+  function open_cursor_on_error(event) {
+    log.error(event.target.error);
+    reject(event.target.error);
+  }
 }

@@ -442,6 +442,7 @@ function feed_list_item_on_click(event) {
   window.scrollTo(0,0);
 }
 
+// TODO: make async
 // TODO: Suppress resubmits if last query was a search and the
 // query did not change?
 function sub_form_on_submit(event) {
@@ -489,48 +490,21 @@ function sub_form_on_submit(event) {
     show_sub_preview(url);
   } else {
     show_element(progress_element);
-    search_google_feeds(query_str, console, on_search_google_feeds);
+    search_google_feeds(query_str).then(
+      on_search_google_feeds).catch(function(error) {
+      console.debug(error);
+    })
   }
 
   return false;
 }
 
-function subscribe_btn_on_click(event) {
-  const button = event.target;
-  const feed_url_str = button.value;
-
-  // TODO: this will always be defined, so this check isn't necessary, but I
-  // tentatively leaving it in here
-  if(!feed_url_str)
-    return;
-  // TODO: Ignore future clicks if an error was displayed?
-
-  // Ignore future clicks while subscription in progress
-  // TODO: use a better element name here.
-  const monitor = document.getElementById('submon');
-  if(monitor && is_visible(monitor))
-    return;
-  // Show subscription preview expects a URL object, so convert. This can
-  // throw but never should so I do not use try/catch.
-  const feed_url = new URL(feed_url_str);
-  // TODO: I plan to deprecate the preview step, so this should probably be
-  // making a call directly to the step that starts the subscription process.
-  show_sub_preview(feed_url);
-}
-
-async function on_search_google_feeds(event) {
-  const query = event.query;
-  const results = event.entries;
+async function on_search_google_feeds(result) {
+  const query = result.query;
+  const results = result.entries;
   const progress_element = document.getElementById('discover-in-progress');
   const no_results_element = document.getElementById('discover-no-results');
   const results_element = document.getElementById('discover-results-list');
-
-  if(event.type !== 'success') {
-    console.debug(event);
-    hide_element(progress_element);
-    show_err_msg('An error occurred when searching for feeds');
-    return;
-  }
 
   hide_element(progress_element);
   if(!results.length) {
@@ -623,6 +597,30 @@ function create_search_result_element(feed) {
   return item;
 }
 
+
+function subscribe_btn_on_click(event) {
+  const button = event.target;
+  const feed_url_str = button.value;
+
+  // TODO: this will always be defined, so this check isn't necessary, but I
+  // tentatively leaving it in here
+  if(!feed_url_str)
+    return;
+  // TODO: Ignore future clicks if an error was displayed?
+
+  // Ignore future clicks while subscription in progress
+  // TODO: use a better element name here.
+  const monitor = document.getElementById('submon');
+  if(monitor && is_visible(monitor))
+    return;
+  // Show subscription preview expects a URL object, so convert. This can
+  // throw but never should so I do not use try/catch.
+  const feed_url = new URL(feed_url_str);
+  // TODO: I plan to deprecate the preview step, so this should probably be
+  // making a call directly to the step that starts the subscription process.
+  show_sub_preview(feed_url);
+}
+
 function remove_feed_from_feed_list(feed_id) {
   const feed_element = document.querySelector(
     `#feedlist li[feed="${feed_id}"]`);
@@ -643,24 +641,33 @@ function remove_feed_from_feed_list(feed_id) {
   }
 }
 
-function unsubscribe_btn_on_click(event) {
+async function unsubscribe_btn_on_click(event) {
   console.debug('Clicked unsubscribe');
   const feed_id = parseInt(event.target.value, 10);
   if(!Number.isInteger(feed_id))
     throw new TypeError();
-  unsubscribe(feed_id, console, unsubscribe_on_complete.bind(null, feed_id));
+  try {
+    let num_deleted = await unsubscribe(feed_id, console);
+    console.debug('Unsubscribed from feed id', feed_id);
+    remove_feed_from_feed_list(feed_id);
+    const subs_section = document.getElementById('mi-subscriptions');
+    show_section(subs_section);
+  } catch(error) {
+    // TODO: show an error
+    console.debug(error);
+  }
 }
 
-// TODO: provide visual feedback on success or error
-function unsubscribe_on_complete(feed_id, event) {
-  console.debug('Unsubscribe completed using feed id', feed_id);
-  if(event.type !== 'success') {
-    console.debug(event);
-    return;
-  }
-  remove_feed_from_feed_list(feed_id);
-  const subs_section = document.getElementById('mi-subscriptions');
-  show_section(subs_section);
+// NOTE: there is no need to append uploader.
+// NOTE: There is no way to detect cancel event
+function import_opml_btn_on_click(event) {
+  const uploader = document.createElement('input');
+  uploader.setAttribute('type', 'file');
+  uploader.setAttribute('accept', 'application/xml');
+  // Bind uploader because event.target is undefined in listener
+  uploader.onchange = import_opml_input_on_change.bind(undefined, uploader);
+  // Interestingly, I can trigger a click on a detached element
+  uploader.click();
 }
 
 // TODO: needs to notify the user of a successful
@@ -668,15 +675,18 @@ function unsubscribe_on_complete(feed_id, event) {
 // with the immediate visual feedback (like a simple progress monitor
 // popup but no progress bar). The monitor should be hideable. No
 // need to be cancelable.
+// TODO: after import the feeds list needs to be refreshed
 // TODO: notify the user if there was an error
-// - in order to do this, import_opml needs to callback with any
-// errors that occurred, and also callback when no errors occurred so this can
-// tell the difference
 // TODO: switch to a different section of the options ui on complete?
-function import_opml_btn_on_click(event) {
-  const callback = null;
-  import_opml(DB_DEFAULT_TARGET, SilentConsole, callback);
+async function import_opml_input_on_change(uploader, event) {
+  uploader.removeEventListener('change', import_opml_input_on_change);
+  try {
+    let result = await import_opml(undefined, uploader.files, console);
+  } catch(error) {
+    console.debug(error);
+  }
 }
+
 
 // TODO: visual feedback
 function export_opml_btn_on_click(event) {

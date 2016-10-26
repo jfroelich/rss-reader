@@ -43,7 +43,7 @@ async function subscribe(feed_conn, icon_conn, feed, suppress_notifs,
       return;
     }
 
-    const req_url = new URL(get_feed_url(this.feed));
+    const req_url = new URL(get_feed_url(feed));
     const exclude_entries = true;
     let fetch_event = await fetch_feed(req_url, exclude_entries, log);
     let merged = merge_feeds(feed, fetch_event.feed);

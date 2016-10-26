@@ -1,7 +1,10 @@
 // See license.md
 
-function test(query) {
-  search_google_feeds(query, console, function(event) {
-    console.dir(event);
-  });
+async function test(query) {
+  try {
+    let result = await search_google_feeds(query, console);
+    console.dir(result);
+  } catch(error) {
+    console.debug(error);
+  }
 }
