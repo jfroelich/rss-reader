@@ -2,6 +2,9 @@
 
 'use strict';
 
+// TODO: return a promise
+// TODO: use async
+
 {
 
 function fetch_xml(req_url, log, callback) {

@@ -517,10 +517,7 @@ function subscribe_btn_on_click(event) {
   show_sub_preview(feed_url);
 }
 
-// TODO: favicon resolution is too slow. Display the results immediately using
-// a default favicon. Then, in a separate non-blocking interruptable task,
-// try and replace the default icon with the proper icon.
-function on_search_google_feeds(event) {
+async function on_search_google_feeds(event) {
   const query = event.query;
   const results = event.entries;
   const progress_element = document.getElementById('discover-in-progress');
@@ -549,64 +546,36 @@ function on_search_google_feeds(event) {
   }
 
   const item_element = document.createElement('li');
-  item_element.textContent = `Found ${results.length} results.`;
+  item_element.textContent = `Found ${results.length} feeds.`;
   results_element.appendChild(item_element);
 
-  // Lookup the favicons for the results.
+  // TODO: favicon resolution is too slow. Display the results immediately
+  // using a placeholder. Then, in a separate non-blocking
+  // task, try and replace the default icon with the proper icon.
 
-  // TODO: this should be creating one conn and sharing it across lookups
-  // now that favicon_lookup accepts a conn parameter
-  // TODO: this should defer looking up favicons until after the results
-  // have been displayed
-
-  let num_icons_processed = 0;
-  for(let result of results) {
-    if(result.link) {
-      let link_url = null;
-      try {
-        link_url = new URL(result.link);
-      } catch(exception) {
-      }
-      if(link_url) {
-        const cache = new FaviconCache(SilentConsole);
-        const conn = null;
-        const doc = null;
-        favicon_lookup(cache, conn, link_url, doc, SilentConsole,
-          on_favicon_lookup.bind(null, result));
-      } else {
-        num_icons_processed++;
-        if(num_icons_processed === results.length) {
-          on_icons_processed();
-        }
-      }
-    } else {
-      num_icons_processed++;
-      if(num_icons_processed === results.length)
-        on_icons_processed();
+  let db_target, conn, doc, icon_url, link_url;
+  try {
+    conn = await favicon_connect(db_target, console);
+    for(let result of results) {
+      if(!result.link)
+        continue;
+      link_url = new URL(result.link);
+      icon_url = await favicon_lookup(db_target, conn, link_url, doc,
+        console);
+      if(icon_url)
+        result.faviconURLString = icon_url.href;
     }
+  } catch(error) {
+    log.debug(error);
+  } finally {
+    if(conn)
+      conn.close();
   }
 
-  if(!results.length) {
-    console.debug('No results so favicon processing finished');
-    on_icons_processed();
-  }
-
-  function on_favicon_lookup(result, iconURL) {
-    num_icons_processed++;
-    if(iconURL)
-      result.faviconURLString = iconURL.href;
-    if(num_icons_processed === results.length)
-      on_icons_processed();
-  }
-
-  function on_icons_processed() {
-    console.debug('Finished processing favicons for search results');
-    // Generate an array of result elements to append
-    const result_elements = results.map(create_search_result_element);
-    // Append the result elements
-    for(let i = 0, len = result_elements.length; i < len; i++) {
-      results_element.appendChild(result_elements[i]);
-    }
+  const result_elements = results.map(create_search_result_element);
+  // Append the result elements
+  for(let i = 0, len = result_elements.length; i < len; i++) {
+    results_element.appendChild(result_elements[i]);
   }
 }
 

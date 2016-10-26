@@ -70,7 +70,7 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
       console.debug(error);
     }
   } else if(alarm.name === 'refresh-feed-icons') {
-    refresh_feed_icons(SilentConsole);
+    let result = await refresh_feed_icons();
   } else if(alarm.name === 'healthcheck') {
     HealthCheck.start(SilentConsole);
   } else {

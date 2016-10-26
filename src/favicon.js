@@ -2,24 +2,24 @@
 
 'use strict';
 
-// TODO: now i need to update all call sites of favicon_lookup to not use
-// a cache object
-// TODO: merge compact-favicons here
-// TODO: maybe a favicon namespace object would be better
+// TODO: lookup should no longer accept db_target and connect on demand,
+// require caller to pass in conn. This allow easy testing on diff db, and
+// fewer params, and is better now that calling externally is easier
+// TODO: connect should just accept name, version, no need to wrap in object
+// TODO: look into decoupling silent-console so that this has no deps
 
-const FAVICON_DB_DEFAULT_TARGET = {
+const FAVICON_DEFAULT_DB = {
   'name': 'favicon-cache',
   'version': 1
 };
 
 const FAVICON_DEFAULT_MAX_AGE = 1000 * 60 * 60 * 24 * 30;
 
-function favicon_db_connect(target = FAVICON_DB_DEFAULT_TARGET,
-  log = SilentConsole) {
+function favicon_connect(target = FAVICON_DEFAULT_DB, log = SilentConsole) {
   return new Promise(function(resolve, reject) {
     log.log('Connecting to database', target.name, 'version', target.version);
     const request = indexedDB.open(target.name, target.version);
-    request.onupgradeneeded = favicon_db_upgrade.bind(request, log);
+    request.onupgradeneeded = favicon_upgrade.bind(request, log);
     request.onsuccess = function(event) {
       const conn = event.target.result;
       log.debug('Connected to database', conn.name);
@@ -34,7 +34,7 @@ function favicon_db_connect(target = FAVICON_DB_DEFAULT_TARGET,
   });
 }
 
-function favicon_db_upgrade(log, event) {
+function favicon_upgrade(log, event) {
   const conn = event.target.result;
   log.log('Creating or upgrading database', conn.name);
   if(!conn.objectStoreNames.contains('favicon-cache')) {
@@ -44,12 +44,12 @@ function favicon_db_upgrade(log, event) {
   }
 }
 
-function favicon_entry_is_expired(entry, max_age) {
+function favicon_is_expired(entry, max_age) {
   const age = new Date() - entry.dateUpdated;
   return age >= max_age;
 }
 
-function favicon_db_find_entry(conn, log, url) {
+function favicon_find_entry(conn, log, url) {
   return new Promise(function(resolve, reject) {
     log.log('Checking favicon cache for page url', url.href);
     const page_url = favicon_normalize_url(url).href;
@@ -58,7 +58,7 @@ function favicon_db_find_entry(conn, log, url) {
     const request = store.get(page_url);
     request.onsuccess = function(event) {
       const entry = event.target.result;
-      log.debug('find result', entry);
+      log.debug('Result', entry ? entry.iconURLString : 'null');
       resolve(entry);
     };
     request.onerror = function(event) {
@@ -68,7 +68,7 @@ function favicon_db_find_entry(conn, log, url) {
   });
 }
 
-function favicon_db_add_entry(conn, log, page_url, icon_url) {
+function favicon_add_entry(conn, log, page_url, icon_url) {
   return new Promise(function(resolve, reject) {
     const entry = {};
     entry.pageURLString = favicon_normalize_url(page_url).href;
@@ -87,7 +87,7 @@ function favicon_db_add_entry(conn, log, page_url, icon_url) {
   });
 }
 
-function favicon_db_remove_entry(conn, log, page_url) {
+function favicon_remove_entry(conn, log, page_url) {
   return new Promise(function(resolve, reject) {
     log.debug('Removing favicon entry with page url', page_url.href);
     const norm_url = favicon_normalize_url(page_url).href;
@@ -101,7 +101,8 @@ function favicon_db_remove_entry(conn, log, page_url) {
   });
 }
 
-function favicon_db_get_entries(conn, log) {
+// TODO: use getAll
+function favicon_get_entries(conn, log) {
   return new Promise(function(resolve, reject) {
     const entries = [];
     log.debug('Getting all favicon entries');
@@ -131,10 +132,10 @@ function favicon_normalize_url(url) {
   return clone;
 }
 
-function favicon_lookup(db_target = FAVICON_DB_DEFAULT_TARGET, conn, url, doc,
+function favicon_lookup(db_target = FAVICON_DEFAULT_DB, conn, url, doc,
   log = SilentConsole) {
-  return new Promise(
-    favicon_lookup_impl.bind(null, db_target, conn, url, doc, log));
+  return new Promise(favicon_lookup_impl.bind(null, db_target, conn, url,
+    doc, log));
 }
 
 // todo: if finally always evaluates even if return then i do not need the
@@ -145,7 +146,7 @@ async function favicon_lookup_impl(db_target, conn, url, doc, log, resolve,
   let should_close_conn = false;
   try {
     if(!conn) {
-      conn = await favicon_db_connect(db_target, log);
+      conn = await favicon_connect(db_target, log);
       should_close_conn = true;
     }
 
@@ -153,7 +154,7 @@ async function favicon_lookup_impl(db_target, conn, url, doc, log, resolve,
       const icon_url = favicon_search_doc(doc, url);
       if(icon_url) {
         log.debug('Found icon in prefetched doc', icon_url.href);
-        favicon_db_add_entry(conn, log, url, icon_url);
+        favicon_add_entry(conn, log, url, icon_url);
         if(should_close_conn)
           conn.close();
         resolve(icon_url);
@@ -161,9 +162,9 @@ async function favicon_lookup_impl(db_target, conn, url, doc, log, resolve,
       }
     }
 
-    let entry = await favicon_db_find_entry(conn, log, url);
+    let entry = await favicon_find_entry(conn, log, url);
     if(entry) {
-      if(!favicon_entry_is_expired(entry, FAVICON_DEFAULT_MAX_AGE)) {
+      if(!favicon_is_expired(entry, FAVICON_DEFAULT_MAX_AGE)) {
         if(should_close_conn)
           conn.close();
         resolve(new URL(entry.iconURLString));
@@ -188,15 +189,15 @@ async function favicon_lookup_impl(db_target, conn, url, doc, log, resolve,
       response_url = new URL(fetch_result.responseURL);
     } catch(fetch_error) {
       log.debug('Error fetching', url.href, fetch_error);
-      favicon_db_remove_entry(conn, log, url);
+      favicon_remove_entry(conn, log, url);
     }
 
     if(fetched_doc) {
       const icon_url = favicon_search_doc(fetched_doc, url);
       if(icon_url) {
-        favicon_db_add_entry(conn, log, url, icon_url);
+        favicon_add_entry(conn, log, url, icon_url);
         if(url.href !== response_url.href)
-          favicon_db_add_entry(conn, log, response_url, icon_url);
+          favicon_add_entry(conn, log, response_url, icon_url);
         if(should_close_conn)
           conn.close();
         resolve(icon_url);
@@ -206,11 +207,10 @@ async function favicon_lookup_impl(db_target, conn, url, doc, log, resolve,
 
     if(response_url && response_url.href !== url.href) {
       log.debug('Falling back to checking cache for redirect url');
-      let redirect_entry = await favicon_db_find_entry(conn, log,
+      let redirect_entry = await favicon_find_entry(conn, log,
         response_url);
       if(redirect_entry &&
-        !favicon_entry_is_expired(redirect_entry,
-          FAVICON_DEFAULT_MAX_AGE)) {
+        !favicon_is_expired(redirect_entry, FAVICON_DEFAULT_MAX_AGE)) {
         if(should_close_conn)
           conn.close();
         resolve(new URL(redirect_entry.iconURLString));
@@ -221,14 +221,14 @@ async function favicon_lookup_impl(db_target, conn, url, doc, log, resolve,
     const origin_url = new URL(url.origin);
     if(origin_url.href !== url.href &&
       (!response_url || origin_url.href !== response_url.href)) {
-      let origin_entry = await favicon_db_find_entry(conn, log, origin_url);
-      if(origin_entry && !favicon_entry_is_expired(origin_entry,
+      let origin_entry = await favicon_find_entry(conn, log, origin_url);
+      if(origin_entry && !favicon_is_expired(origin_entry,
         FAVICON_DEFAULT_MAX_AGE)) {
         const icon_url = new URL(entry.iconURLString);
-        favicon_db_add_entry(conn, log, url, icon_url);
+        favicon_add_entry(conn, log, url, icon_url);
         if(response_url)
-          favicon_db_add_entry(conn, log, response_url, icon_url);
-        favicon_db_add_entry(conn, log, origin_url, icon_url);
+          favicon_add_entry(conn, log, response_url, icon_url);
+        favicon_add_entry(conn, log, origin_url, icon_url);
         if(should_close_conn)
           conn.close();
         resolve(icon_url);
@@ -250,12 +250,12 @@ async function favicon_lookup_impl(db_target, conn, url, doc, log, resolve,
         const type = image_response.getResponseHeader('Content-Type');
         if(favicon_is_response_type_img(type)) {
           let image_response_url = new URL(image_response.responseURL);
-          favicon_db_add_entry(conn, log, url, image_response_url);
+          favicon_add_entry(conn, log, url, image_response_url);
           if(response_url && url.href !== response_url.href)
-            favicon_db_add_entry(conn, log, response_url, image_response_url);
+            favicon_add_entry(conn, log, response_url, image_response_url);
           if(origin_url.href !== url.href &&
             (!response_url || response_url.href !== origin_url.href))
-            favicon_db_add_entry(conn, log, origin_url, image_response_url);
+            favicon_add_entry(conn, log, origin_url, image_response_url);
           if(should_close_conn)
             conn.close();
           resolve(image_response_url);
@@ -265,12 +265,12 @@ async function favicon_lookup_impl(db_target, conn, url, doc, log, resolve,
     }
 
     // Lookups and fetches failed, ensure cache is cleared
-    favicon_db_remove_entry(conn, log, url);
+    favicon_remove_entry(conn, log, url);
     if(response_url && response_url.href !== url.href)
-      favicon_db_remove_entry(conn, log, response_url);
+      favicon_remove_entry(conn, log, response_url);
     if(origin_url.href !== url.href &&
       (!response_url || origin_url.href !== response_url.href))
-      favicon_db_remove_entry(conn, log, origin_url);
+      favicon_remove_entry(conn, log, origin_url);
     if(should_close_conn)
       conn.close();
     resolve();
@@ -379,12 +379,45 @@ function favicon_get_response_size(response) {
 }
 
 function favicon_is_response_size_in_range(size) {
-  const favicon_min_img_response_size = 49;
-  const favicon_max_img_response_size = 10001;
-  return size > favicon_min_img_response_size &&
-    size < favicon_max_img_response_size;
+  const min_size = 49;
+  const max_size = 10001;
+  return size > min_size && size < max_size;
 }
 
 function favicon_is_response_type_img(type) {
   return /^\s*image\//i.test(type);
+}
+
+
+// TODO: just accept name,version as params
+// TODO: accept a conn instead of db_target, require caller to connect/close,
+// now that it is easier
+// TODO: test
+function compact_favicons(db_target, log = SilentConsole) {
+  return new Promise(compact_favicons_impl.bind(undefined, db_target, log));
+}
+
+// TODO: it would be nice to use cursor.delete, but I need to learn how to
+// use a cursor together with promises, it is funky
+async function compact_favicons_impl(db_target, log, resolve, reject) {
+  log.log('Compacting favicons');
+  let num_deleted = 0;
+  let conn = null;
+  try {
+    conn = await favicon_connect(db_target, log);
+    const entries = await favicon_get_entries(conn, log);
+    for(let entry of entries) {
+      if(favicon_is_expired(entry, FAVICON_DEFAULT_MAX_AGE)) {
+        favicon_remove_entry(conn, log, entry.pageURLString);
+        num_deleted++;
+      }
+    }
+    log.debug('Deleted %d favicon entries', num_deleted);
+    resolve(num_deleted);
+  } catch(error) {
+    reject(error);
+  } finally {
+    if(conn)
+      conn.close():
+  }
 }

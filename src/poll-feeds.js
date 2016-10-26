@@ -2,6 +2,8 @@
 
 'use strict';
 
+// TODO: return a promise
+// TODO: use async
 // TODO: use a single favicon cache connection for favicon lookups
 // TODO: add is-active feed functionality, do not poll in-active feeds
 // TODO: deactivate unreachable feeds after x failures

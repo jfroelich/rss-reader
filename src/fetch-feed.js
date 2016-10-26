@@ -2,6 +2,8 @@
 
 'use strict';
 
+// TODO: use async
+
 function fetch_feed(req_url, exclude_entries = false, log = SilentConsole) {
   return new Promise(function(resolve, reject) {
     if(!parse_feed)

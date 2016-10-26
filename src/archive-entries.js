@@ -2,6 +2,9 @@
 
 'use strict';
 
+// TODO: return a promise
+// TODO: use async
+
 // TODO: delegate the opening of a cursor over the entries to a function
 // in feed-cache.js? The problem is that the abstraction is ridiculously
 // thin. I need callbacks for oncomplete, onsuccess, and onerror, and I

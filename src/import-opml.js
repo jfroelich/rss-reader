@@ -2,6 +2,9 @@
 
 'use strict';
 
+// TODO: return a promise
+// TODO: use async
+
 {
 
 function import_opml(db_target, log = SilentConsole, callback) {

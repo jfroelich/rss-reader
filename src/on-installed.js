@@ -7,5 +7,5 @@ chrome.runtime.onInstalled.addListener(function(event) {
   console.log('Installing extension ...');
   // This is also the first database call, which triggers database setup
   const conn = null;
-  update_badge(conn, SilentConsole);
+  update_badge(conn);
 });

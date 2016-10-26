@@ -2,6 +2,9 @@
 
 'use strict';
 
+// TODO: return a promise
+// TODO: use async
+
 {
 
 function export_opml(db_target, title, file_name, log = SilentConsole,

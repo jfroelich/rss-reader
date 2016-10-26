@@ -2,6 +2,9 @@
 
 'use strict';
 
+// TODO: return a promise
+// TODO: use async
+
 {
 
 function search_google_feeds(query, log, callback) {
