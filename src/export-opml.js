@@ -4,6 +4,7 @@
 
 // TODO: return a promise
 // TODO: use async
+// TODO: do not connect in here, require the caller to pass in conn
 
 {
 
@@ -17,9 +18,9 @@ function export_opml(db_target, title, file_name, log = SilentConsole,
   };
   log.log('Exporting opml file', ctx.file_name);
 
-  const connectPromise = db_connect(db_target, log);
-  connectPromise.then(connect_on_success.bind(ctx));
-  connectPromise.catch(connect_on_error.bind(ctx));
+  db_connect(db_target, log).then(
+    connect_on_success.bind(ctx)).catch(
+      connect_on_error.bind(ctx));
 }
 
 function connect_on_success(conn) {

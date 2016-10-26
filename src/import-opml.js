@@ -58,9 +58,9 @@ function uploader_on_change(event) {
     return;
   }
 
-  const connectPromise = db_connect(feed_db_target, this.log);
-  connectPromise.then(feed_db_connect_on_success.bind(this));
-  connectPromise.catch(on_complete.bind(this));
+  db_connect(feed_db_target, this.log).then(
+    feed_db_connect_on_success.bind(this)).catch(
+      on_complete.bind(this));
 }
 
 function feed_db_connect_on_success(conn) {

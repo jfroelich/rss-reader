@@ -2,10 +2,12 @@
 
 'use strict';
 
-function test(url_str) {
+async function test(url_str) {
   const url = new URL(url_str);
-  const callback = function(event) {
-    console.log('Test completed');
-  };
-  fetch_xml(url, console, callback);
+  try {
+    let result = await fetch_xml(url, console);
+    console.dir(result);
+  } catch(error) {
+    console.debug(error);
+  }
 }

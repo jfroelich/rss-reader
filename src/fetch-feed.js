@@ -2,39 +2,31 @@
 
 'use strict';
 
-// TODO: use async
+// TODO: test without try/catch, learn more about how promises work with
+// uncaught exceptions
 
-function fetch_feed(req_url, exclude_entries = false, log = SilentConsole) {
-  return new Promise(function(resolve, reject) {
-    if(!parse_feed)
-      reject(new ReferenceError());
+function fetch_feed(url, exclude_entries = false, log = SilentConsole) {
+  return new Promise(fetch_feed_impl.bind(undefined, url,
+    exclude_entries, log));
+}
 
-    fetch_xml(req_url, log, on_fetch_xml);
-
-    function on_fetch_xml(event) {
-      if(event.type !== 'success')
-        reject(new Error(event.type));
-
-      let result = null;
-      try {
-        result = parse_feed(event.document, exclude_entries);
-      } catch(error) {
-        reject(error);
-        return;
-      }
-
-      const feed = result.feed;
-      add_feed_url(feed, req_url.href);
-      if(event.responseURLString)
-        add_feed_url(feed, event.responseURLString);
-      feed.dateFetched = new Date();
-      feed.dateLastModified = event.lastModifiedDate;
-      log.debug('Fetched feed', get_feed_url(feed));
-      const output = {};
-      output.feed = feed;
-      if(!exclude_entries)
-        output.entries = result.entries;
-      resolve(output);
-    }
-  });
+async function fetch_feed_impl(url, exclude_entries, log, resolve, reject) {
+  try {
+    const fetch_result = await fetch_xml(url, log);
+    const parse_result = parse_feed(fetch_result.document, exclude_entries);
+    const feed = parse_result.feed;
+    add_feed_url(feed, url.href);
+    log.debug('Fetched feed', get_feed_url(feed));
+    if(fetch_result.responseURLString)
+      add_feed_url(feed, fetch_result.responseURLString);
+    feed.dateFetched = new Date();
+    feed.dateLastModified = fetch_result.lastModifiedDate;
+    const output = {};
+    output.feed = feed;
+    if(!exclude_entries)
+      output.entries = parse_result.entries;
+    resolve(output);
+  } catch(error) {
+    reject(error);
+  }
 }

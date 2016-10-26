@@ -94,7 +94,8 @@ function get_feeds_on_success(feeds) {
   this.num_feeds_pending = feeds.length;
 
   // So this won't really work like before, I guess I need to use
-  // Promise.all
+  // Promise.all?
+  // TODO: use async
 
   for(let feed of feeds) {
     const url = new URL(get_feed_url(feed));

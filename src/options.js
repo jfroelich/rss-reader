@@ -212,6 +212,7 @@ function append_feed(feed, should_insert_in_order) {
   }
 }
 
+// TODO: use async
 // TODO: deprecate the ability to preview
 function show_sub_preview(url) {
   if(!is_url_object(url))

@@ -2,13 +2,13 @@
 
 'use strict';
 
-function test(url_str) {
-  const req_url = new URL(url_str);
+async function test(url_str) {
+  const url = new URL(url_str);
   const ex_ents = false;
-  const promise = fetch_feed(req_url, ex_ents, console);
-  promise.then(function(event) {
-    console.log('then:', event);
-  }).catch(function(error) {
-    console.log('catch:', error);
-  });
+  try {
+    let fetch_result = await fetch_feed(url, ex_ents, console);
+    console.dir(fetch_result);
+  } catch(error) {
+    console.debug(error);
+  }
 }

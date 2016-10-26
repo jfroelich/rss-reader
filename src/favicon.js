@@ -418,6 +418,6 @@ async function compact_favicons_impl(db_target, log, resolve, reject) {
     reject(error);
   } finally {
     if(conn)
-      conn.close():
+      conn.close();
   }
 }
