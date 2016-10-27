@@ -1,8 +1,12 @@
 
-function test(url_str) {
-  const req_url = new URL(url_str);
-  const callback = function(event) {
-    console.dir(event);
+'use strict';
+
+async function test(url_str) {
+  const url = new URL(url_str);
+  try {
+    let doc = await fetch_html(url, console);
+    console.log(doc);
+  } catch(error) {
+    console.debug(error);
   }
-  fetch_html(req_url, console, callback);
 }

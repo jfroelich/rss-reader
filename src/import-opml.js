@@ -41,9 +41,13 @@ async function import_opml_impl(db_target, files, log, resolve, reject) {
       outlines = filter_dup_outlines(outlines);
       const feeds = outlines.map(outline_to_feed);
       for(let feed of feeds) {
-        // TODO: subscribe isn't actually a promise yet
-        log.debug('subscribe placeholder', feed);
-        //subscribe(feed_conn, icon_conn, feed, suppress_subscribe_notif, log);
+        // Allow for individual subscriptions to fail
+        try {
+          await subscribe(feed_conn, icon_conn, feed, suppress_subscribe_notif,
+            log);
+        } catch(error) {
+          log.debug(error);
+        }
       }
     }
     log.debug('Import completed');

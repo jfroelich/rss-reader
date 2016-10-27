@@ -292,7 +292,7 @@ function hide_sub_preview() {
   }
 }
 
-function start_subscription(url) {
+async function start_subscription(url) {
   if(!is_url_object(url))
     throw new TypeError();
   hide_sub_preview();
@@ -307,44 +307,32 @@ function start_subscription(url) {
   const feed_db_conn = null;
   const suppress_notifs = false;
   const icon_cache_conn = null;
-  subscribe(feed_db_conn, icon_cache_conn, feed, suppress_notifs,
-    console, start_subscription_on_subscribe.bind(null, url));
-}
-
-function start_subscription_on_subscribe(url, event) {
   let fade_out = false;
-  if(event.type !== 'success') {
+  try {
+    let subbed_feed = await subscribe(feed_db_conn, icon_cache_conn, feed,
+      suppress_notifs, console);
+
+    append_feed(subbed_feed, true);
+    update_feed_count();
+    const feed_url = get_feed_url(subbed_feed);
+    append_sub_monitor_msg(`Subscribed to ${feed_url}`);
+
+    // Hide the sub monitor then switch back to the main feed list
+    fade_out = true;
+    hide_sub_monitor(function() {
+      const sub_element = document.getElementById('mi-subscriptions');
+      show_section(sub_element);
+    }, fade_out);
+  } catch(error) {
+    console.debug(error);
     hide_sub_monitor(start_subscription_show_err_msg.bind(null, url,
-      event.type), fade_out);
-    return;
+      error), fade_out);
   }
-
-  append_feed(event.feed, true);
-  update_feed_count();
-  const feed_url = get_feed_url(event.feed);
-  append_sub_monitor_msg(`Subscribed to ${feed_url}`);
-
-  // Hide the sub monitor then switch back to the main feed list
-  fade_out = true;
-  hide_sub_monitor(function() {
-    const sub_element = document.getElementById('mi-subscriptions');
-    show_section(sub_element);
-  }, fade_out);
 }
 
-function start_subscription_show_err_msg(url, type) {
-  console.debug('Error: showing error with type', type);
-  if(type === 'ConstraintError') {
-    show_err_msg('Already subscribed to ' + url.href);
-  } else if(type === 'FetchError') {
-    show_err_msg('Failed to fetch ' + url.href);
-  } else if(type === 'ConnectionError') {
-    show_err_msg('Unable to connect to database');
-  } else if(type === 'FetchMimeTypeError') {
-    show_err_msg(`${url.href} is not xml`);
-  } else {
-    show_err_msg('Unknown error');
-  }
+function start_subscription_show_err_msg(url, error) {
+  console.debug('Error: showing error with type', error);
+  show_err_msg('Unknown error: ' + error.message);
 }
 
 // TODO: show num entries, num unread/red, etc

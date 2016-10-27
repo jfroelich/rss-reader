@@ -5,17 +5,12 @@
 // TODO: return a promise
 // TODO: use async
 
-{
+function fetch_html(url, log = SilentConsole) {
+  return new Promise(fetch_html_impl.bind(undefined, url, log));
+}
 
-function fetch_html(req_url, log, callback) {
-  log.log('Fetching html of url', req_url.href);
-  const ctx = {
-    'req_url': req_url,
-    'response_url': null,
-    'callback': callback,
-    'log': log
-  };
-
+async function fetch_html_impl(url, log, resolve, reject) {
+  log.log('Fetching html of url', url.href);
   const opts = {};
   opts.credentials = 'omit';
   opts.method = 'GET';
@@ -25,56 +20,21 @@ function fetch_html(req_url, log, callback) {
   opts.redirect = 'follow';
   opts.referrer = 'no-referrer';
 
-  const bound_on_response = on_response.bind(ctx);
-  const bound_on_error = on_error.bind(ctx);
-  fetch(req_url.href, opts).then(bound_on_response).catch(bound_on_error);
-}
-
-// TODO: look into possible bug, response.status===404 does mean response.ok
-// is false, but I am acting like it is? Because I am seeing that the response
-// text is being read in case of a 404 (i think)
-
-function on_response(response) {
-  this.log.debug('Response status:', response.status);
-  if(!response.ok) {
-    this.callback({'type': 'error'});
-    return;
-  }
-  this.response_url = new URL(response.url);
-  response.text().then(on_read_text.bind(this));
-}
-
-function on_read_text(text) {
-  this.log.debug('Response text length:', text.length);
-
-  let doc = null;
-  const parser = new DOMParser();
   try {
-    doc = parser.parseFromString(text, 'text/html');
+    let response = await fetch(url.href, opts);
+    if(!response.ok)
+      throw new Error(response.status);
+    log.debug('Fetched', url.href);
+    const text = await response.text();
+    log.debug('Read text of %s (%d chars)', url.href, text.length);
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, 'text/html');
+    if(!doc || !doc.documentElement ||
+      doc.documentElement.localName !== 'html')
+      throw new Error('not html');
+    log.debug('Parsed doc of', url.href);
+    resolve({'document': doc, 'response_url_str': response.url});
   } catch(error) {
-    this.callback({'type': 'parseerror'});
-    return;
+    reject(error);
   }
-
-  if(!doc || !doc.documentElement) {
-    this.callback({'type': 'parseerror'});
-    return;
-  }
-
-  if(doc.documentElement.localName !== 'html') {
-    this.callback({'type': 'parseerror'});
-    return;
-  }
-
-  this.callback({'type': 'success', 'document': doc,
-    'responseURL': this.response_url});
-}
-
-function on_error(error) {
-  this.log.debug(error);
-  this.callback({'type': 'error'});
-}
-
-this.fetch_html = fetch_html;
-
 }

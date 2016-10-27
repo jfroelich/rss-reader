@@ -2,19 +2,22 @@
 
 'use strict';
 
-// TODO: convert to promise so that callers can use async await
 // TODO: before merging and looking up favicon and adding, check if
 // is already subscribed to the redirected url, if a redirect occurred
-// TODO: when converting to a promise I probably do not need to callback with
-// an event, just with the subscribed feed, as errors will be otherwise caught
 // TODO: maybe this shouldn't connect to db on demand because of how simpler
-// it is now, it should require an active feed_conn and an active icon_conn
+// it is now, it should require an active feed_conn
 
-async function subscribe(feed_conn, icon_conn, feed, suppress_notifs,
-  log = SilentConsole, callback) {
+function subscribe(feed_conn, icon_conn, feed, suppress_notifs,
+  log = SilentConsole) {
+  return new Promise(
+    subscribe_impl.bind(undefined, feed_conn, icon_conn, feed,
+    suppress_notifs, log));
+}
+
+async function subscribe_impl(feed_conn, icon_conn, feed, suppress_notifs, log,
+  resolve, reject) {
 
   log.log('Subscribing to', get_feed_url(feed));
-  callback = callback || function(){};
   let should_close = false;
 
   try {
@@ -23,13 +26,11 @@ async function subscribe(feed_conn, icon_conn, feed, suppress_notifs,
       should_close = true;
     }
 
-    // Check if already subscribed
-    const found = await db_contains_feed_url(log, feed_conn,
-      get_feed_url(feed));
+    const found = await db_contains_feed_url(log, feed_conn,get_feed_url(feed));
     if(found) {
       if(should_close)
         feed_conn.close();
-      callback({'type': 'already_subscribed'});
+      reject(new Error('Already subscribed'));
       return;
     }
 
@@ -39,7 +40,7 @@ async function subscribe(feed_conn, icon_conn, feed, suppress_notifs,
       let result = await db_add_feed(log, feed_conn, feed);
       if(should_close)
         feed_conn.close();
-      callback({'type': 'success', 'feed': feed});
+      resolve(feed);
       return;
     }
 
@@ -72,10 +73,9 @@ async function subscribe(feed_conn, icon_conn, feed, suppress_notifs,
       show_notification('Subscription complete', message,
         merged.faviconURLString);
     }
-
-    callback({'type': 'success', 'feed': added_feed});
+    resolve(added_feed);
   } catch(error) {
-    console.log(error);
-    callback({'type': error.message});
+    log.debug(error);
+    reject(error);
   }
 }

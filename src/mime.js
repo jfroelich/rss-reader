@@ -6,13 +6,15 @@ class MimeUtils {
 
   // TODO: this function belongs in poll
   // maybe the only thing in the file should be a function like
-  // guess_mime_type(url)
+  // guess_mime_type(url), and the caller should have its own list of
+  // bad_super_types
+  // or maybe in url-utils
 
   // TODO: js is application/javascript, but maybe should allow
   // TODO: does this actually not belong here?
   static is_non_html_url(url) {
     const bad_super_types = ['application', 'audio', 'image', 'video'];
-    const ext = URLUtils.get_url_extension(url);
+    const ext = get_url_extension(url);
     if(ext) {
       const type = MimeUtils.extension_map[ext];
       if(type) {

@@ -69,7 +69,7 @@ function resolve_mapped_attr(element, base_url) {
   const attr_url = element.getAttribute(attr_name);
   if(!attr_url)
     return;
-  const resolved_url = URLUtils.resolve(attr_url, base_url);
+  const resolved_url = resolve_url(attr_url, base_url);
   if(resolved_url && resolved_url.href !== attr_url)
     element.setAttribute(attr_name, resolved_url.href);
 }
@@ -86,7 +86,7 @@ function resolve_srcset_attr(element, base_url) {
     return;
   let dirtied = false;
   for(let descriptor of srcset) {
-    const resolved_url = URLUtils.resolve(descriptor.url, base_url);
+    const resolved_url = resolve_url(descriptor.url, base_url);
     if(resolved_url && resolved_url.href !== descriptor.url) {
       dirtied = true;
       descriptor.url = resolved_url.href;

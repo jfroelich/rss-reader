@@ -4,6 +4,7 @@
 
 // TODO: return a promise
 // TODO: use async
+// TODO: move several of the helpers back into this file
 // TODO: use a single favicon cache connection for favicon lookups
 // TODO: add is-active feed functionality, do not poll in-active feeds
 // TODO: deactivate unreachable feeds after x failures
@@ -192,7 +193,7 @@ function find_entry_on_error(callback, error) {
   callback();
 }
 
-function find_entry_on_success(feed, entry, callback, matches) {
+async function find_entry_on_success(feed, entry, callback, matches) {
   if(matches.length) {
     callback();
     return;
@@ -246,46 +247,34 @@ function find_entry_on_success(feed, entry, callback, matches) {
     return;
   }
 
-  fetch_html(url, this.log, on_fetch_entry.bind(this, entry, callback));
-}
-
-async function on_fetch_entry(entry, callback, event) {
-  if(event.type !== 'success') {
-    prep_local_doc(entry);
-    db_add_entry(this.log, this.conn, entry).then(callback).catch(callback);
-    return;
-  }
-
-  const response_url_str = event.responseURL.href;
-  if(!response_url_str)
-    throw new Error();
-  add_entry_url(entry, response_url_str);
-
-  // TODO: if we successfully fetched the entry, then before storing it,
-  // we should be trying to set its faviconURL.
-  // TODO: actually maybe this should be happening whether we fetch or not
-  // - i shouldn't be using the feed's favicon url, that is unrelated
-  // - i should pass along the html of the associated html document. the
-  // lookup should not fetch a second time.
-  // - i should be querying against the redirect url
-
-  const doc = event.document;
-  transform_lazy_images(doc);
-  filter_sourceless_images(doc);
-  filter_invalid_anchors(doc);
-  resolve_doc(doc, this.log, event.responseURL);
-  filter_tracking_images(doc);
-
   try {
+    let fetch_event = await fetch_html(url, this.log);
+    let response_url_str = fetch_event.response_url_str;
+    add_entry_url(entry, response_url_str);
+    // TODO: if we successfully fetched the entry, then before storing it,
+    // we should be trying to set its faviconURL.
+    // TODO: actually maybe this should be happening whether we fetch or not
+    // - i shouldn't be using the feed's favicon url, that is unrelated
+    // - i should pass along the html of the associated html document. the
+    // lookup should not fetch a second time.
+    // - i should be querying against the redirect url
+
+    const doc = event.document;
+    transform_lazy_images(doc);
+    filter_sourceless_images(doc);
+    filter_invalid_anchors(doc);
+    resolve_doc(doc, this.log, event.responseURL);
+    filter_tracking_images(doc);
+
     let num_modified = await set_image_dimensions(doc, this.log);
     this.log.debug('Modified %s images in', num_modified,
       event.responseURL.href);
+    prep_doc(doc);
+    entry.content = doc.documentElement.outerHTML.trim();
   } catch(error) {
-    log.debug(error);
+    prep_local_doc(entry);
   }
 
-  prep_doc(doc);
-  entry.content = doc.documentElement.outerHTML.trim();
   db_add_entry(this.log, this.conn, entry).then(callback).catch(callback);
 }
 
