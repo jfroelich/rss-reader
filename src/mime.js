@@ -4,16 +4,20 @@
 
 class MimeUtils {
 
+  // TODO: this function belongs in poll
+  // maybe the only thing in the file should be a function like
+  // guess_mime_type(url)
+
   // TODO: js is application/javascript, but maybe should allow
   // TODO: does this actually not belong here?
   static is_non_html_url(url) {
-    const bad_types = ['application', 'audio', 'image', 'video'];
+    const bad_super_types = ['application', 'audio', 'image', 'video'];
     const ext = URLUtils.get_url_extension(url);
     if(ext) {
       const type = MimeUtils.extension_map[ext];
       if(type) {
         const super_type = type.substring(0, type.indexOf('/'));
-        return bad_types.includes(super_type);
+        return bad_super_types.includes(super_type);
       }
     }
     return false;

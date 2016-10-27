@@ -73,7 +73,7 @@ function on_query_idle_state(state) {
 
 function connect_on_success(conn) {
   this.conn = conn;
-  db_get_all_feeds(this.log, conn).then(
+  db_get_all_feeds(conn, this.log).then(
     get_feeds_on_success.bind(this)).catch(get_feeds_on_error);
 }
 
@@ -278,7 +278,8 @@ async function on_fetch_entry(entry, callback, event) {
 
   try {
     let num_modified = await set_image_dimensions(doc, this.log);
-    this.log.debug('Modified %s images in', num_modified, event.responseURL);
+    this.log.debug('Modified %s images in', num_modified,
+      event.responseURL.href);
   } catch(error) {
     log.debug(error);
   }

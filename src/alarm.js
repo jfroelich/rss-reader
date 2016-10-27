@@ -52,9 +52,11 @@ chrome.alarms.get('healthcheck', function(alarm) {
 chrome.alarms.onAlarm.addListener(async function(alarm) {
   console.debug('Alarm wakeup', alarm.name);
   if(alarm.name === 'archive') {
-    const maxAge = 1 * 24 * 60 * 60 * 1000;// 1 day in ms
-    const callback = null;
-    archive_entries(DB_DEFAULT_TARGET, maxAge, SilentConsole, callback);
+    try {
+      await archive_entries();
+    } catch(error) {
+      console.debug(error);
+    }
   } else if(alarm.name === 'poll') {
     const force_reset_lock = false;
     const allow_metered = false;
@@ -65,7 +67,7 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
       skip_unmodified_guard, log);
   } else if(alarm.name === 'compact-favicons') {
     try {
-      let num_deleted = await compact_favicons(undefined, SilentConsole);
+      await compact_favicons(undefined, SilentConsole);
     } catch(error) {
       console.debug(error);
     }

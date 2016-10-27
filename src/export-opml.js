@@ -2,102 +2,11 @@
 
 'use strict';
 
-// TODO: return a promise
-// TODO: use async
-// TODO: do not connect in here, require the caller to pass in conn
+function export_opml(feeds = [], title = 'Subscriptions',
+  file_name = 'subs.xml', log = SilentConsole) {
+  log.log('Exporting %d feeds to opml file', feeds.length, file_name);
 
-{
-
-function export_opml(db_target, title, file_name, log = SilentConsole,
-  callback) {
-  const ctx = {
-    'callback': callback,
-    'title': title || 'Subscriptions',
-    'file_name': file_name || 'subs.xml',
-    'log': log
-  };
-  log.log('Exporting opml file', ctx.file_name);
-
-  db_connect(db_target, log).then(
-    connect_on_success.bind(ctx)).catch(
-      connect_on_error.bind(ctx));
-}
-
-function connect_on_success(conn) {
-  this.log.debug('Connected to database', conn.name);
-  db_get_all_feeds(this.log, conn).then(
-    get_feeds_on_success.bind(this)).catch(
-      get_feeds_on_error);
-  conn.close();
-}
-
-function connect_on_error() {
-  on_complete.call(this);
-}
-
-function get_feeds_on_error(error) {
-  on_complete.call(this);
-}
-
-function get_feeds_on_success(feeds) {
-  this.log.debug('Loaded %s feeds', feeds.length);
-  const doc = create_opml_doc(this.title);
-  const outlines = [];
-  for(let feed of feeds) {
-    const outline = create_outline(doc, feed);
-    outlines.push(outline);
-  }
-
-  // unsure why doc.body is sometimes undefined
-  const body = doc.querySelector('body');
-  for(let outline of outlines) {
-    body.appendChild(outline);
-  }
-
-  const writer = new XMLSerializer();
-  const opml_str = writer.serializeToString(doc);
-  const blob = new Blob([opml_str], {'type': 'application/xml'});
-  const obj_url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = obj_url;
-  anchor.setAttribute('download', this.file_name);
-  anchor.style.display = 'none';
-  const parent = document.body || document.documentElement;
-  parent.appendChild(anchor);
-  this.log.debug('Triggering download of opml file');
-  anchor.click();
-  URL.revokeObjectURL(obj_url);
-  anchor.remove();
-  on_complete.call(this);
-}
-
-function on_complete() {
-  this.log.log('Completed export');
-  if(this.callback)
-    this.callback();
-}
-
-// Creates an outline element from an object representing a feed
-function create_outline(doc, feed) {
-  const outline = doc.createElement('outline');
-  if(feed.type)
-    outline.setAttribute('type', feed.type);
-  const feed_url = get_feed_url(feed);
-  if(!feed_url)
-    throw new TypeError();
-  outline.setAttribute('xmlUrl', feed_url);
-  if(feed.title) {
-    outline.setAttribute('text', feed.title);
-    outline.setAttribute('title', feed.title);
-  }
-  if(feed.description)
-    outline.setAttribute('description', feed.description);
-  if(feed.link)
-    outline.setAttribute('htmlUrl', feed.link);
-  return outline;
-}
-
-function create_opml_doc(title) {
+  // Create the opml document
   const doc = document.implementation.createDocument(null, 'opml', null);
   doc.documentElement.setAttribute('version', '2.0');
   const head = doc.createElement('head');
@@ -120,9 +29,35 @@ function create_opml_doc(title) {
   head.appendChild(docs);
   const body = doc.createElement('body');
   doc.documentElement.appendChild(body);
-  return doc;
-}
 
-this.export_opml = export_opml;
+  // Map feeds to outline elements and append them to the document
+  for(let feed of feeds) {
+    const outline = doc.createElement('outline');
+    if(feed.type)
+      outline.setAttribute('type', feed.type);
+    const feed_url = get_feed_url(feed);
+    outline.setAttribute('xmlUrl', feed_url);
+    if(feed.title) {
+      outline.setAttribute('text', feed.title);
+      outline.setAttribute('title', feed.title);
+    }
+    if(feed.description)
+      outline.setAttribute('description', feed.description);
+    if(feed.link)
+      outline.setAttribute('htmlUrl', feed.link);
+    log.debug('Appending outline', outline);
+    body.appendChild(outline);
+  }
 
+  // Create an object url and trigger its download
+  const writer = new XMLSerializer();
+  const opml_str = writer.serializeToString(doc);
+  const blob = new Blob([opml_str], {'type': 'application/xml'});
+  const obj_url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = obj_url;
+  anchor.setAttribute('download', file_name);
+  log.debug('Triggering file download');
+  anchor.click();
+  URL.revokeObjectURL(obj_url);
 }

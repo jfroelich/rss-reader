@@ -2,22 +2,20 @@
 
 // TODO: insert test data, then run archive, make assertions about the
 // state of the database, then delete the database
+// TODO: i need to insert test entries, then run the archive,
+// then test assertions
 
-function test() {
-  const fakeDbTarget = {
+async function test() {
+  const target = {
     'name': 'test-archive-entries',
     'version': 1
   };
 
-  // TODO: i need to insert test entries, then run the archive,
-  // then test assertions
-  const maxAge = 10;// test using 10ms
-  archive_entries(fakeDbTarget, maxAge, console, on_archive_complete);
-
-  function on_archive_complete() {
-    const request = indexedDB.deleteDatabase(fakeDbTarget.name);
-    request.onsuccess = function(event) {
-      console.log('Deleted database', fakeDbTarget.name);
-    };
+  const max_age = 10;
+  try {
+    const num_modified = await archive_entries(target, max_age, console);
+    await db_delete(target.name);
+  } catch(error) {
+    console.debug(error);
   }
 }

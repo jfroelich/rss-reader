@@ -452,8 +452,7 @@ function db_update_feed(log, conn, feed) {
 }
 
 // TODO: use native getAll
-// TODO: reverse argument order
-function db_get_all_feeds(log, conn) {
+function db_get_all_feeds(conn, log = SilentConsole) {
   return new Promise(function(resolve, reject) {
     log.log('Opening cursor over feed store');
     const feeds = [];

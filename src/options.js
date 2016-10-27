@@ -360,7 +360,7 @@ function populate_feed_info(feed_id) {
   connectPromise.then(connect_on_success);
   connectPromise.catch(connect_on_error);
 
-  // TODO: use something from feed-cache.js to do this query
+  // TODO: use something from db.js to do this query
   // TODO: enque db close after query, and remove later close calls
 
   function connect_on_success(conn) {
@@ -687,25 +687,35 @@ async function import_opml_input_on_change(uploader, event) {
   }
 }
 
-
 // TODO: visual feedback
-function export_opml_btn_on_click(event) {
+async function export_opml_btn_on_click(event) {
+  console.debug('Clicked export opml button');
   const title = 'Subscriptions';
   const file_name = 'subs.xml';
-  const callback = null;
-  export_opml(DB_DEFAULT_TARGET, title, file_name, SilentConsole, callback);
+  let conn, feeds;
+  try {
+    conn = await db_connect();
+    feeds = await db_get_all_feeds(conn);
+  } catch(error) {
+    console.debug(error);
+  } finally {
+    if(conn)
+      conn.close();
+  }
+
+  if(feeds)
+    export_opml(feeds, title, file_name);
 }
 
+// TODO: asyncify
 // TODO: use db_get_all_feeds and then sort manually, to avoid the defined title
 // requirement (and deprecate title index)
 function init_subs_section() {
   let feedCount = 0;
 
-  const connectPromise = db_connect();
-  connectPromise.then(connect_on_success);
-  connectPromise.catch(connect_on_error);
+  db_connect().then(connect_on_success).catch(connect_on_error);
 
-  // TODO: this should be calling to a function in feed-cache.js
+  // TODO: this should be calling to a function in db.js
   function connect_on_success(conn) {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');

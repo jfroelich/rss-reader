@@ -13,7 +13,7 @@ async function refresh_feed_icons_impl(log, resolve, reject) {
   try {
     feed_db_conn = await db_connect(undefined, log);
     icon_db_conn = await favicon_connect(undefined, log);
-    const feeds = await db_get_all_feeds(log, feed_db_conn);
+    const feeds = await db_get_all_feeds(feed_db_conn, log);
     for(let feed of feeds) {
       const lookup_url = get_lookup_url(feed);
       log.debug('Feed lookup url', get_feed_url(feed), lookup_url.href);

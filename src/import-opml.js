@@ -3,7 +3,8 @@
 'use strict';
 
 // TODO: maybe this should accept conn instead of db_target and require caller
-// to open/close conn, then maybe it is simpler to test
+// to open/close conn, it is more decoupled and easier to mock deps
+// TODO: cleanup some of the helper fns
 
 function import_opml(db_target, files, log = SilentConsole) {
   return new Promise(import_opml_impl.bind(undefined, db_target, files, log));
