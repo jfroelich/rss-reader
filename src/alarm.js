@@ -63,8 +63,12 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
     const ignore_idle_state = false;
     const skip_unmodified_guard = false;
     const log = SilentConsole;
-    poll_feeds(force_reset_lock, allow_metered, ignore_idle_state,
-      skip_unmodified_guard, log);
+    try {
+      poll_feeds(force_reset_lock, allow_metered, ignore_idle_state,
+        skip_unmodified_guard, log);
+    } catch(error) {
+      console.debug(error);
+    }
   } else if(alarm.name === 'compact-favicons') {
     try {
       await compact_favicons(undefined, SilentConsole);
