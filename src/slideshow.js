@@ -7,8 +7,8 @@
 // Reference to element
 let current_slide = null;
 
-const dbChannel = new BroadcastChannel('db');
-dbChannel.onmessage = function(event) {
+const db_chan = new BroadcastChannel('db');
+db_chan.onmessage = function(event) {
   if(event.data.type === 'archive_entry_request') {
     console.log('Received archive entry request message, not yet implemented');
   } else if(event.data.type === 'delete_entry_request') {
@@ -16,8 +16,8 @@ dbChannel.onmessage = function(event) {
   }
 };
 
-const pollChannel = new BroadcastChannel('poll');
-pollChannel.onmessage = function(event) {
+const poll_chan = new BroadcastChannel('poll');
+poll_chan.onmessage = function(event) {
   if(event.data === 'completed') {
     console.debug('Received poll completed message, maybe appending slides');
     const count = count_unread_slides();
@@ -44,10 +44,6 @@ function append_slides() {
   return new Promise(append_slides_impl);
 }
 
-// TODO: even though this is the only place this is called, it really does
-// not belong here. The UI should not be communicating directly with the
-// database. I need to design a paging API for iterating over these entries
-// and the UI should be calling that paging api.
 // TODO: require caller to establish conn, do not do it here
 // TODO: visual feedback on error
 async function append_slides_impl(resolve, reject) {
@@ -201,13 +197,12 @@ function slide_on_click(event) {
   return false;
 }
 
-// TODO: the cleanup should take place _after_ navigation so as to limit jank
-// TODO: marking the current slide as read should take place after navigation
-// so as to limit perceivable lag
-// TODO: this is connecting twice now, mark_slide_read should share conn
+// TODO: this is connecting twice now, I want to be using only a single conn
+// for both append slides and mark_slide_read
+// TODO: there is some minor annoyance, that in the case of append, this
+// does the animation super fast
 async function show_next_slide() {
-
-  const current_slide_before_shift = current_slide;
+  const old_slide = current_slide;
 
   // Conditionally append more slides
   const unread_count = count_unread_slides();
@@ -219,25 +214,21 @@ async function show_next_slide() {
     }
   }
 
-  // Move the current slide out of view and mark it as read, and move the
-  // next slide into view
   if(current_slide.nextSibling) {
-    // Move the current slide out of view
     current_slide.style.left = '-100%';
     current_slide.style.right = '100%';
-    // Move the next slide into view
     current_slide.nextSibling.style.left = '0px';
     current_slide.nextSibling.style.right = '0px';
-    // Reset the current slide's scroll position
     current_slide.scrollTop = 0;
     current_slide = current_slide.nextSibling;
   }
 
-  mark_slide_read(current_slide_before_shift);
+  mark_slide_read(old_slide);
 
-  // Shrink the number of loaded slides
-  const c = document.getElementById('slideshow-container');
-  while(c.childElementCount > 6 && c.firstChild != current_slide) {
+  // Shrink the number of slides
+  const container = document.getElementById('slideshow-container');
+  while(container.childElementCount > 6 &&
+    container.firstChild !== current_slide) {
     remove_slide(c.firstChild);
   }
 }
