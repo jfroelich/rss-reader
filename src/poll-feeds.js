@@ -35,10 +35,10 @@ async function poll_feeds_impl(force_reset_lock, ignore_idle_state,
     return;
   }
 
-  // This is experimental
+  // navigator.connection is experimental
   if(!allow_metered && 'NO_POLL_METERED' in localStorage &&
     navigator.connection && navigator.connection.metered) {
-    reject(new Error('polling disabled on metered'));
+    reject(new Error('metered connection'));
     return;
   }
 
@@ -46,8 +46,11 @@ async function poll_feeds_impl(force_reset_lock, ignore_idle_state,
     const idle_period_secs = 30;
     try {
       const state = await query_idle_state(idle_period_secs);
-      if(state !== 'locked' && state !== 'idle')
-        throw new Error('cannot poll while not idle');
+      if(state !== 'locked' && state !== 'idle') {
+        reject(new Error('cannot poll while not idle'));
+        return;
+      }
+
     } catch(error) {
       reject(error);
       return;
@@ -290,7 +293,7 @@ function is_script_generated_content(url) {
 }
 
 function is_requires_cookies_url(url) {
-  const hosts = ['www.heraldsun.com.au'];
+  const hosts = ['www.heraldsun.com.au', 'ripe73.ripe.net'];
   return hosts.includes(url.hostname);
 }
 

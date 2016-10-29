@@ -498,6 +498,45 @@ function db_count_unread_entries_impl(log, conn, resolve, reject) {
   };
 }
 
+function db_get_unarchived_unread_entries(conn, offset, limit,
+  log = SilentConsole) {
+  return new Promise(db_get_unarchived_unread_entries_impl.bind(undefined,
+    conn, offset, limit, log));
+}
+
+function db_get_unarchived_unread_entries_impl(conn, offset, limit, log,
+  resolve, reject) {
+
+  const entries = [];
+  let counter = 0;
+  let advanced = false;
+  const tx = conn.transaction('entry');
+  tx.oncomplete = function(event) {
+    resolve(entries);
+  };
+  const store = tx.objectStore('entry');
+  const index = store.index('archiveState-readState');
+  const keyPath = [ENTRY_UNARCHIVED, ENTRY_UNREAD];
+  const request = index.openCursor(keyPath);
+  request.onsuccess = function(event) {
+    const cursor = event.target.result;
+    if(!cursor)
+      return;
+    if(offset && !advanced) {
+      advanced = true;
+      log.debug('Advancing cursor by', offset);
+      cursor.advance(offset);
+      return;
+    }
+    entries.push(cursor.value);
+    if(limit > 0 && ++counter < limit)
+      cursor.continue();
+  };
+  request.onerror = function(event) {
+    reject(event.target.error);
+  };
+}
+
 // TODO: require the caller to pass in conn now that it is easier to do with
 // async
 function db_mark_entry_read(id, log = SilentConsole) {
