@@ -229,7 +229,7 @@ async function show_next_slide() {
   const container = document.getElementById('slideshow-container');
   while(container.childElementCount > 6 &&
     container.firstChild !== current_slide) {
-    remove_slide(c.firstChild);
+    remove_slide(container.firstChild);
   }
 }
 
@@ -303,7 +303,7 @@ window.addEventListener('keydown', on_key_down, false);
 
 function init_slides(event) {
   document.removeEventListener('DOMContentLoaded', init_slides);
-  DisplaySettings.load_styles();
+  display_load_styles();
   append_slides();
 }
 

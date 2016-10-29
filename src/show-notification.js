@@ -7,7 +7,6 @@
 // Fails silently if not permitted.
 // To show in notification center, toggle flag
 // chrome://flags/#enable-native-notifications
-
 function show_notification(title, message, icon_url) {
   if(!Notification) {
     console.debug('Notifications are not supported');

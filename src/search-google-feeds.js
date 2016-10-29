@@ -2,9 +2,6 @@
 
 'use strict';
 
-// TODO: return a promise
-// TODO: use async
-
 function search_google_feeds(query, log = SilentConsole) {
   return new Promise(search_google_feeds_impl.bind(undefined, query, log));
 }

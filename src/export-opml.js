@@ -4,7 +4,7 @@
 
 function export_opml(feeds = [], title = 'Subscriptions',
   file_name = 'subs.xml', log = SilentConsole) {
-  log.log('Exporting %d feeds to opml file', feeds.length, file_name);
+  log.log('Exporting %d feeds to file', feeds.length, file_name);
 
   // Create the opml document
   const doc = document.implementation.createDocument(null, 'opml', null);

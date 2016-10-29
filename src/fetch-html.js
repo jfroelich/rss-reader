@@ -2,12 +2,12 @@
 
 'use strict';
 
-// TODO: return a promise
-// TODO: use async
-
 function fetch_html(url, log = SilentConsole) {
   return new Promise(fetch_html_impl.bind(undefined, url, log));
 }
+
+// TODO: i don't love how this returns an event, maybe break up the function
+// into separate parts? maybe require the caller to handle the text
 
 async function fetch_html_impl(url, log, resolve, reject) {
   log.log('Fetching html of url', url.href);
@@ -22,19 +22,43 @@ async function fetch_html_impl(url, log, resolve, reject) {
 
   try {
     let response = await fetch(url.href, opts);
-    if(!response.ok)
-      throw new Error(response.status);
-    log.debug('Fetched', url.href);
+    log.debug('Got response for url', url.href);
+
+    // We didn't get a network error, but may still get other types of errors
+    // like a 404
+    if(!response.ok) {
+      log.debug('Response not ok', url.href, response.status,
+        response.statusText);
+      reject(new Error(response.status));
+      return;
+    }
+
+    // Using an accept header isn't enough. At least avoid the case where the
+    // mime type is known
+    let content_type = response.headers.get('Content-Type');
+    if(content_type) {
+      content_type = content_type.toLowerCase();
+      if(!content_type.includes('text/html')) {
+        log.debug('Invalid mime type', url.href, content_type);
+        reject(new Error('invalid mime type ' + content_type));
+        return;
+      }
+    }
+
     const text = await response.text();
-    log.debug('Read text of %s (%d chars)', url.href, text.length);
+    log.debug('Read response text', url.href, text.length);
     const parser = new DOMParser();
     const doc = parser.parseFromString(text, 'text/html');
     if(!doc || !doc.documentElement ||
-      doc.documentElement.localName !== 'html')
-      throw new Error('not html');
-    log.debug('Parsed doc of', url.href);
+      doc.documentElement.localName !== 'html') {
+      log.debug('Text is not valid html', url.href, text.substring(0, 100));
+      reject(new Error('not html'));
+      return;
+    }
+
     resolve({'document': doc, 'response_url_str': response.url});
   } catch(error) {
+    log.debug(error);
     reject(error);
   }
 }

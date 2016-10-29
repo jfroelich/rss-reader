@@ -2,12 +2,12 @@
 
 'use strict';
 
-const default_archive_max_age = 1 * 24 * 60 * 60 * 1000; // 1 day in ms
+const archive_default_entry_max_age = 1 * 24 * 60 * 60 * 1000; // 1 day in ms
 
 // TODO: require a conn, require caller to open/close and provide conn, do not
 // do it here. This seems like better dep inj.
 
-function archive_entries(db_target, max_age = default_archive_max_age,
+function archive_entries(db_target, max_age = archive_default_entry_max_age,
   log = SilentConsole) {
   return new Promise(archive_entries_impl.bind(undefined, db_target, max_age,
     log));

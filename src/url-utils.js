@@ -3,7 +3,7 @@
 'use strict';
 
 // A mapping between common file extensions and mime types
-const file_ext_to_mime_type_map = {
+const ext_to_mime_type_map = {
   'ai':   'application/postscript',
   'aif':  'audio/aiff',
   'atom': 'application/atom+xml',
@@ -67,7 +67,7 @@ const file_ext_to_mime_type_map = {
 function guess_mime_type_from_url(url_obj) {
   const ext = get_url_extension(url_obj);
   if(ext)
-    return file_ext_to_mime_type_map[ext];
+    return ext_to_mime_type_map[ext];
 }
 
 // @param url {URL}
@@ -99,14 +99,12 @@ function resolve_url(url_str, base_url) {
     throw new TypeError();
   if(url_has_js_protocol(url_str) ||
     url_has_data_protocol(url_str))
-    return null;
+    return;
   try {
     return new URL(url_str, base_url);
   } catch(error) {
     console.warn(error);
   }
-
-  return null;
 }
 
 function url_has_data_protocol(url_str) {

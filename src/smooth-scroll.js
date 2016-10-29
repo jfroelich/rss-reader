@@ -2,38 +2,30 @@
 
 'use strict';
 
-{
-
 // TODO: go back to using initial setTimeout because this is bad when
 // holding down button
-
-let scroll_active = false;
-function smooth_scroll(element, dy, targetY) {
-  if(scroll_active)
+let smooth_scroll_is_active = false;
+function smooth_scroll(element, dy, target_y) {
+  if(smooth_scroll_is_active)
     return;
   if(dy < 0 && element.scrollTop === 0)
     return;
-
-  scroll_active = true;
+  smooth_scroll_is_active = true;
   const abs_dy = Math.abs(dy);
-  let distance = Math.abs(targetY - element.scrollTop);
-  let id = setInterval(function modifyScrollTop() {
+  let distance = Math.abs(target_y - element.scrollTop);
+  let interval_id = setInterval(function modify_scroll_top() {
     if(distance < abs_dy) {
-      clearInterval(id);
-      scroll_active = false;
+      clearInterval(interval_id);
+      smooth_scroll_is_active = false;
     } else {
       const before = element.scrollTop;
       element.scrollTop += dy;
       if(element.scrollTop === before) {
-        clearInterval(id);
-        scroll_active = false;
+        clearInterval(interval_id);
+        smooth_scroll_is_active = false;
       } else {
         distance -= Math.abs(element.scrollTop - before);
       }
     }
   }, 20);
-}
-
-this.smooth_scroll = smooth_scroll;
-
 }

@@ -22,7 +22,6 @@ async function update_badge_impl(conn, log, resolve, reject) {
       internal_conn.close();
     text = count > 999 ? '1k+' : '' + count;
     log.debug('Setting badge text to', text);
-
     resolve();
   } catch(error) {
     log.debug(error);

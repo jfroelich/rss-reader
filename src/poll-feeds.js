@@ -185,7 +185,7 @@ async function poll_entry_impl(conn, feed, entry, log, resolve) {
 
     const url_obj = new URL(get_entry_url(entry));
 
-    if(is_interstitial_url(url_obj)) {
+    if(config.interstitial_hosts.includes(url_obj.hostname)) {
       entry.content =
         'This content for this article is blocked by an advertisement.';
       await db_add_entry(log, conn, entry);
@@ -193,7 +193,7 @@ async function poll_entry_impl(conn, feed, entry, log, resolve) {
       return;
     }
 
-    if(is_script_generated_content(url_obj)) {
+    if(config.script_generated_hosts.includes(url_obj.hostname)) {
       entry.content = 'The content for this article cannot be viewed because ' +
         'it is dynamically generated.';
       await db_add_entry(log, conn, entry);
@@ -201,14 +201,14 @@ async function poll_entry_impl(conn, feed, entry, log, resolve) {
       return;
     }
 
-    if(is_paywall_url(url_obj)) {
+    if(config.paywall_hosts.includes(url_obj.hostname)) {
       entry.content = 'This content for this article is behind a paywall.';
       await db_add_entry(log, conn, entry);
       resolve();
       return;
     }
 
-    if(is_requires_cookies_url(url_obj)) {
+    if(config.requires_cookies_hosts.includes(url_obj.hostname)) {
       entry.content = 'This content for this article cannot be viewed ' +
         'because the website requires tracking information.';
       await db_add_entry(log, conn, entry);
@@ -216,7 +216,7 @@ async function poll_entry_impl(conn, feed, entry, log, resolve) {
       return;
     }
 
-    if(is_non_html_url(url_obj)) {
+    if(poll_guess_if_non_html(url_obj)) {
       entry.content = 'This article is not a basic web page (e.g. a PDF).';
       await db_add_entry(log, conn, entry);
       resolve();
@@ -227,7 +227,7 @@ async function poll_entry_impl(conn, feed, entry, log, resolve) {
     try {
       fetch_event = await fetch_html(url_obj, log);
     } catch(error) {
-      prep_local_doc(entry);
+      poll_prep_local_doc(entry);
       await db_add_entry(log, conn, entry);
       resolve();
       return;
@@ -240,9 +240,9 @@ async function poll_entry_impl(conn, feed, entry, log, resolve) {
     filter_sourceless_images(doc);
     filter_invalid_anchors(doc);
     resolve_doc(doc, log, new URL(response_url_str));
-    filter_tracking_images(doc);
+    filter_tracking_images(doc, config.tracking_hosts, log);
     await set_image_dimensions(doc, log);
-    prep_doc(doc);
+    poll_prep_doc(doc);
     entry.content = doc.documentElement.outerHTML.trim();
     await db_add_entry(log, conn, entry);
     resolve();
@@ -252,7 +252,7 @@ async function poll_entry_impl(conn, feed, entry, log, resolve) {
   }
 }
 
-function prep_local_doc(entry) {
+function poll_prep_local_doc(entry) {
   if(!entry.content)
     return;
   const parser = new DOMParser();
@@ -263,51 +263,23 @@ function prep_local_doc(entry) {
       return;
     }
 
-    prep_doc(doc);
+    poll_prep_doc(doc);
     entry.content = doc.documentElement.outerHTML.trim();
   } catch(error) {
   }
 }
 
-function prep_doc(doc) {
+function poll_prep_doc(doc) {
   filter_boilerplate(doc);
   scrub_dom(doc);
   add_no_referrer(doc);
 }
 
-function is_non_html_url(url) {
+function poll_guess_if_non_html(url) {
   const bad_super_types = ['application', 'audio', 'image', 'video'];
   const type = guess_mime_type_from_url(url);
   if(type) {
     const super_type = type.substring(0, type.indexOf('/'));
     return bad_super_types.includes(super_type);
   }
-}
-
-function is_script_generated_content(url) {
-  const hosts = [
-    'productforums.google.com',
-    'groups.google.com'
-  ];
-  return hosts.includes(url.hostname);
-}
-
-function is_requires_cookies_url(url) {
-  const hosts = ['www.heraldsun.com.au', 'ripe73.ripe.net'];
-  return hosts.includes(url.hostname);
-}
-
-function is_interstitial_url(url) {
-  const hosts = [
-    'www.forbes.com',
-    'forbes.com'
-  ];
-  return hosts.includes(url.hostname);
-}
-
-// TODO: this eventually needs to be extendable, so that I can easily change
-// the rules without changing the code
-function is_paywall_url(url) {
-  const hostname = url.hostname;
-  return hostname.endsWith('nytimes.com');
 }

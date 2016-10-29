@@ -4,85 +4,24 @@
 
 // Style lib
 
-// NOTE: this never closes until the page closes because it needs to wait
-// indefinitely for new messages while the page is open
-const settingsChannel = new BroadcastChannel('settings');
-settingsChannel.onmessage = function(event) {
+const display_settings_chan = new BroadcastChannel('settings');
+display_settings_chan.onmessage = function(event) {
   if(event.data === 'changed') {
-    DisplaySettings.update_styles();
+    display_update_styles();
   }
 };
 
-const DisplaySettings = {};
+function find_css_rule(sheet, selectorText) {
+  return Array.prototype.find.call(sheet.cssRules,(rule) =>
+    rule.selectorText === selectorText);
+}
 
-// TODO: remove some of these backgrounds, I kind of went overboard, some of
-// these are useless
-DisplaySettings.BACKGROUND_IMAGE_PATHS = [
-  '/images/bgfons-paper_texture318.jpg',
-  '/images/CCXXXXXXI_by_aqueous.jpg',
-  '/images/paper-backgrounds-vintage-white.jpg',
-  '/images/pickering-texturetastic-gray.png',
-  '/images/reusage-recycled-paper-white-first.png',
-  '/images/subtle-patterns-beige-paper.png',
-  '/images/subtle-patterns-cream-paper.png',
-  '/images/subtle-patterns-exclusive-paper.png',
-  '/images/subtle-patterns-groove-paper.png',
-  '/images/subtle-patterns-handmade-paper.png',
-  '/images/subtle-patterns-paper-1.png',
-  '/images/subtle-patterns-paper-2.png',
-  '/images/subtle-patterns-paper.png',
-  '/images/subtle-patterns-rice-paper-2.png',
-  '/images/subtle-patterns-rice-paper-3.png',
-  '/images/subtle-patterns-soft-wallpaper.png',
-  '/images/subtle-patterns-white-wall.png',
-  '/images/subtle-patterns-witewall-3.png',
-  '/images/thomas-zucx-noise-lines.png'
-];
-
-// TODO: remove support for some of these fonts that are not very readable
-DisplaySettings.FONT_FAMILIES = [
-  'ArchivoNarrow-Regular',
-  'Arial, sans-serif',
-  'Calibri',
-  'Calibri Light',
-  'Cambria',
-  'CartoGothicStd',
-  //http://jaydorsey.com/free-traffic-font/
-  //Clearly Different is released under the SIL Open Font License (OFL) 1.1.
-  //Based on http://mutcd.fhwa.dot.gov/pdfs/clearviewspacingia5.pdf
-  'Clearly Different',
-  /* By John Stracke, Released under the OFL. Downloaded from his website */
-  'Essays1743',
-  // Downloaded free font from fontpalace.com, unknown author
-  'FeltTip',
-  'Georgia',
-  'Montserrat',
-  'MS Sans Serif',
-  'News Cycle, sans-serif',
-  'Noto Sans',
-  'Open Sans Regular',
-  'PathwayGothicOne',
-  'PlayfairDisplaySC',
-  'Raleway, sans-serif',
-  // http://www.google.com/design/spec/resources/roboto-font.html
-  'Roboto Regular'
-];
-
-DisplaySettings.find_css_rule = function(sheet, selectorText) {
-
-  function rule_has_text(rule) {
-    return rule.selectorText === selectorText;
-  }
-
-  return Array.prototype.find.call(sheet.cssRules, rule_has_text);
-};
-
-DisplaySettings.update_styles = function() {
+function display_update_styles() {
 
   // Assume a sheet is always available
   const sheet = document.styleSheets[0];
 
-  const entry_rule = DisplaySettings.find_css_rule(sheet, 'div.entry');
+  const entry_rule = find_css_rule(sheet, 'div.entry');
   if(entry_rule) {
     if(localStorage.BACKGROUND_IMAGE) {
       entry_rule.style.backgroundColor = '';
@@ -101,7 +40,7 @@ DisplaySettings.update_styles = function() {
     entry_rule.style.paddingRight = `${entry_margin}px`;
   }
 
-  const title_rule = DisplaySettings.find_css_rule(sheet,
+  const title_rule = find_css_rule(sheet,
     'div.entry a.entry-title');
   if(title_rule) {
     title_rule.style.background = '';
@@ -112,7 +51,7 @@ DisplaySettings.update_styles = function() {
     }
   }
 
-  const content_rule = DisplaySettings.find_css_rule(sheet,
+  const content_rule = find_css_rule(sheet,
     'div.entry span.entry-content');
   if(content_rule) {
     content_rule.style.background = '';
@@ -133,11 +72,10 @@ DisplaySettings.update_styles = function() {
       col_count = '1';
     content_rule.style.webkitColumnCount = col_count;
   }
-};
+}
 
-// Dynamically creates new style rules and appends them to the first style
-// sheet. This assumes the first style sheet exists.
-DisplaySettings.load_styles = function() {
+// Dynamically creates new style rules and appends them to the first sheet
+function display_load_styles() {
   const sheet = document.styleSheets[0];
   let buffer = [];
 
@@ -146,14 +84,11 @@ DisplaySettings.load_styles = function() {
   else if(localStorage.ENTRY_BACKGROUND_COLOR)
     buffer.push(`background: ${localStorage.ENTRY_BACKGROUND_COLOR};`);
   buffer.push('margin:0px;');
-
   const entry_margin = localStorage.ENTRY_MARGIN;
   if(entry_margin)
     buffer.push(`padding:${entry_margin}px;`);
-
   sheet.addRule('div.entry', buffer.join(''));
 
-  // Reset the buffer.
   buffer = [];
 
   const hfs = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10);
@@ -200,16 +135,8 @@ DisplaySettings.load_styles = function() {
   }
 
   buffer.push('vertical-align:text-top;');
-  //buffer.push('letter-spacing:-0.03em;');
-  //buffer.push('word-spacing:-0.5em;');
   buffer.push('display:block;');
   buffer.push('word-wrap:break-word;');
-
-  // buffer.push('white-space: normal;');
-  // Actually this screws it up, now it is breaking everything instead of
-  // wrapping, so only apply it to td
-  // buffer.push('word-break: break-all;');
-
   buffer.push('padding-top:20px;');
   buffer.push('padding-right:0px;');
   buffer.push('padding-left:0px;');
@@ -225,4 +152,4 @@ DisplaySettings.load_styles = function() {
   }
 
   sheet.addRule('div.entry span.entry-content', buffer.join(''));
-};
+}

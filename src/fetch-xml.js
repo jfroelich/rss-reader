@@ -6,8 +6,6 @@ function fetch_xml(url, log = SilentConsole) {
   return new Promise(fetch_xml_impl.bind(undefined, url, log));
 }
 
-// TODO: check that 404 produces !response.ok, otherwise I need to
-// check status code
 async function fetch_xml_impl(url, log, resolve, reject) {
   log.log('Fetching', url.href);
   const accepts = [
@@ -30,9 +28,8 @@ async function fetch_xml_impl(url, log, resolve, reject) {
   try {
     let response = await fetch(url.href, opts);
 
-    // TODO: is there a specific error property to reject with?
     if(!response.ok) {
-      reject(new Error('net error'));
+      reject(new Error(response.statusText));
       return;
     }
 

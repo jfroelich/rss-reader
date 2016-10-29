@@ -8,8 +8,7 @@
 // two props, like UNREAD_UNARCHIVED
 // TODO: remove the defined feed title requirement, have options manually sort
 // feeds instead of using the title index, deprecate the title index, stop
-// ensuring title is an empty string
-
+// ensuring title is an empty string. note: i partly did some of this
 
 const DB_DEFAULT_TARGET = {
   'name': 'reader',

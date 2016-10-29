@@ -2,9 +2,6 @@
 
 'use strict';
 
-// TODO: test without try/catch, learn more about how promises work with
-// uncaught exceptions
-
 function fetch_feed(url, exclude_entries = false, log = SilentConsole) {
   return new Promise(fetch_feed_impl.bind(undefined, url,
     exclude_entries, log));

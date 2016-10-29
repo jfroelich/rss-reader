@@ -783,7 +783,7 @@ function on_dom_loaded(event) {
   document.removeEventListener('DOMContentLoaded', on_dom_loaded);
 
   // Init CSS styles that affect the display preview area
-  DisplaySettings.load_styles();
+  display_load_styles();
 
   // Attach click handlers to feeds in the feed list on the left.
   // TODO: it would probably be easier and more efficient to attach a single
@@ -855,7 +855,7 @@ function on_dom_loaded(event) {
   // Load bgimages menu
   const current_bg_image_path = localStorage.BACKGROUND_IMAGE;
   const bg_img_path_offset = '/images/'.length;
-  for(let path of DisplaySettings.BACKGROUND_IMAGE_PATHS) {
+  for(let path of config.bg_img_paths) {
     let path_option = document.createElement('option');
     path_option.value = path;
     path_option.textContent = path.substring(bg_img_path_offset);
@@ -870,7 +870,7 @@ function on_dom_loaded(event) {
   option.textContent = 'Use Chrome font settings';
   header_font_menu.appendChild(option);
   const selected_hf = localStorage.HEADER_FONT_FAMILY;
-  for(let ff of DisplaySettings.FONT_FAMILIES) {
+  for(let ff of config.font_families) {
     let ff_option = document.createElement('option');
     ff_option.value = ff;
     ff_option.selected = ff === selected_hf;
@@ -885,7 +885,7 @@ function on_dom_loaded(event) {
   option.textContent = 'Use Chrome font settings';
   body_font_menu.appendChild(option);
   const current_bff = localStorage.BODY_FONT_FAMILY;
-  for(let bff of DisplaySettings.FONT_FAMILIES) {
+  for(let bff of config.font_families) {
     let bff_option = document.createElement('option');
     bff_option.value = bff;
     bff_option.selected = bff === current_bff;
