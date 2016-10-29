@@ -3,14 +3,11 @@
 'use strict';
 
 // TODO: remove subscription preview
-// TODO: lookup favicons after displaying search_google_feeds results, async
+// TODO: lookup favicons after displaying search results, not before
 
 {
 
-// Leave open until the options page closes. I could create a channel object
-// each time I want to send a message here but this is simpler
-const optionsSettingsChannel = new BroadcastChannel('settings');
-
+const settings_chan = new BroadcastChannel('settings');
 let current_menu_item = null;
 let current_section = null;
 
@@ -98,23 +95,6 @@ function append_sub_monitor_msg(msg) {
   const msg_element = document.createElement('p');
   msg_element.textContent = msg;
   monitor.appendChild(msg_element);
-}
-
-async function hide_sub_monitor(callback, fade) {
-  const monitor = document.getElementById('submon');
-  if(monitor) {
-    if(fade) {
-      try {
-        await fade_element(monitor, 2, 1);
-      } catch(error) {
-        console.log(error);
-      }
-    }
-    monitor.remove();
-  }
-
-  if(callback)
-    callback();
 }
 
 function show_section(menu_item) {
@@ -212,9 +192,8 @@ function append_feed(feed, should_insert_in_order) {
   }
 }
 
-// TODO: use async
 // TODO: deprecate the ability to preview
-function show_sub_preview(url) {
+async function show_sub_preview(url) {
   if(!is_url_object(url))
     throw new TypeError();
   hide_sub_preview();
@@ -231,22 +210,18 @@ function show_sub_preview(url) {
   const preview_element = document.getElementById('subscription-preview');
   show_element(preview_element);
   const progress_element = document.getElementById(
-    'subscription-preview-load-progress');
+    'sub-preview-load-progress');
   show_element(progress_element);
 
-  fetch_feed(url).then(on_fetch_feed).catch(function(error) {
-    console.log(error);
-    hide_sub_preview();
-    show_err_msg('Unable to fetch ' + url.href);
-  });
-
-  function on_fetch_feed(fetch_output) {
+  try {
+    let fetch_output = fetch_feed(url);
     const progress_element = document.getElementById(
-      'subscription-preview-load-progress');
+      'sub-preview-load-progress');
     hide_element(progress_element);
 
     const feed = fetch_output.feed;
     const title_element = document.getElementById('subscription-preview-title');
+    // TODO: what about HTML in title
     title_element.textContent = feed.title || 'Untitled';
 
     // Fetch feed generates an array of URL objects. Use the last one in the
@@ -266,7 +241,6 @@ function show_sub_preview(url) {
 
     // TODO: use for..of. Because I want to limit, I need to
     // slice or take or whatever
-
     // TODO: if tags are replaced by search_google_feeds then I don't need
     // to do it here
     const limit = Math.min(5, fetch_output.entries.length);
@@ -279,6 +253,10 @@ function show_sub_preview(url) {
       item.appendChild(content);
       results_list_element.appendChild(item);
     }
+  } catch(error) {
+    console.log(error);
+    hide_sub_preview();
+    show_err_msg('Unable to fetch ' + url.href);
   }
 }
 
@@ -292,16 +270,16 @@ function hide_sub_preview() {
   }
 }
 
+// TODO: if subscribing from a discover search result, I already know some
+// of the feed's other properties, such as its title and link. I should be
+// passing those along to start_subscription and setting them here. Or
+// start_subscription should expect a feed object as a parameter.
 async function start_subscription(url) {
   if(!is_url_object(url))
     throw new TypeError();
   hide_sub_preview();
   show_sub_monitor();
   append_sub_monitor_msg(`Subscribing to ${url.href}`);
-  // TODO: if subscribing from a discover search result, I already know some
-  // of the feed's other properties, such as its title and link. I should be
-  // passing those along to start_subscription and setting them here. Or
-  // start_subscription should expect a feed object as a parameter.
   const feed = {};
   add_feed_url(feed, url.href);
   const feed_db_conn = null;
@@ -311,129 +289,79 @@ async function start_subscription(url) {
   try {
     let subbed_feed = await subscribe(feed_db_conn, icon_cache_conn, feed,
       suppress_notifs, console);
-
     append_feed(subbed_feed, true);
     update_feed_count();
     const feed_url = get_feed_url(subbed_feed);
     append_sub_monitor_msg(`Subscribed to ${feed_url}`);
 
-    // Hide the sub monitor then switch back to the main feed list
-    fade_out = true;
-    hide_sub_monitor(function() {
-      const sub_element = document.getElementById('mi-subscriptions');
-      show_section(sub_element);
-    }, fade_out);
+    const monitor = document.getElementById('submon');
+    await fade_element(monitor, 2, 1);
+    monitor.remove();
+
+    const subs_section = document.getElementById('subs-list-section');
+    show_section(subs_section);
   } catch(error) {
     console.debug(error);
-    hide_sub_monitor(start_subscription_show_err_msg.bind(null, url,
-      error), fade_out);
   }
-}
-
-function start_subscription_show_err_msg(url, error) {
-  console.debug('Error: showing error with type', error);
-  show_err_msg('Unknown error: ' + error.message);
 }
 
 // TODO: show num entries, num unread/red, etc
 // TODO: show dateLastModified, datePublished, dateCreated, dateUpdated
 // TODO: react to errors
-function populate_feed_info(feed_id) {
+async function feed_list_item_on_click(event) {
+  const feed_id = parseInt(event.currentTarget.getAttribute('feed'), 10);
   if(!Number.isInteger(feed_id) || feed_id < 1)
     throw new TypeError();
 
-  const context = {'db': null};
-
-  const connectPromise = db_connect();
-  connectPromise.then(connect_on_success);
-  connectPromise.catch(connect_on_error);
-
-  // TODO: use something from db.js to do this query
-  // TODO: enque db close after query, and remove later close calls
-
-  function connect_on_success(conn) {
-    context.db = conn;
-    const transaction = context.db.transaction('feed');
-    const store = transaction.objectStore('feed');
-    const request = store.get(feed_id);
-    request.onsuccess = on_find_feed;
-    request.onerror = on_find_feed;
+  // TODO: should this even catch?
+  let conn, feed;
+  try {
+    conn = await db_connect(undefined, console);
+    feed = await db_find_feed_by_id(conn, feed_id, console);
+  } catch(error) {
+    console.debug(error);
+  } finally {
+    if(conn)
+      conn.close();
   }
 
-  function connect_on_error(error) {
-    // TODO: show an error message?
-    console.error(error);
-  }
-
-  function on_find_feed(event) {
-    if(event.type !== 'success') {
-      console.error(event);
-      if(context.db)
-        context.db.close();
-      return;
-    }
-
-    if(!event.target.result) {
-      console.error('No feed found with id', feed_id);
-      if(context.db)
-        context.db.close();
-      return;
-    }
-
-    const feed = event.target.result;
-    const title_element = document.getElementById('details-title');
-    title_element.textContent = feed.title || 'Untitled';
-
-    const favicon_element = document.getElementById('details-favicon');
-    if(feed.faviconURLString)
-      favicon_element.setAttribute('src', feed.faviconURLString);
-    else
-      favicon_element.removeAttribute('src');
-
-    const desc_element = document.getElementById('details-feed-description');
-    if(feed.description)
-      desc_element.textContent = feed.description;
-    else
-      desc_element.textContent = '';
-
-    const feed_url_element = document.getElementById('details-feed-url');
-    feed_url_element.textContent = get_feed_url(feed);
-    const feed_link_element = document.getElementById('details-feed-link');
-    feed_link_element.textContent = feed.link || '';
-    const unsub_btn = document.getElementById('details-unsubscribe');
-    unsub_btn.value = '' + feed.id;
-    if(context.db)
-      context.db.close();
-  }
-}
-
-function feed_list_item_on_click(event) {
-  const element = event.currentTarget;
-  const feed_id_str = element.getAttribute('feed');
-  const feed_id = parseInt(feed_id_str, 10);
-
-  // TODO: change to an assert
-  if(isNaN(feed_id)) {
-    console.debug('Invalid feed id:', feed_id_str);
-    // TODO: react to this error
+  // TODO: should this throw?
+  if(!feed) {
+    console.error('No feed found with id', feed_id);
     return;
   }
 
-  populate_feed_info(feed_id);
-  // TODO: These calls should really be in an async callback
-  // passed to populate_feed_info
+  const title_element = document.getElementById('details-title');
+  title_element.textContent = feed.title || 'Untitled';
+  const favicon_element = document.getElementById('details-favicon');
+  if(feed.faviconURLString)
+    favicon_element.setAttribute('src', feed.faviconURLString);
+  else
+    favicon_element.removeAttribute('src');
+  const desc_element = document.getElementById('details-feed-description');
+  if(feed.description)
+    desc_element.textContent = feed.description;
+  else
+    desc_element.textContent = '';
+
+  const feed_url_element = document.getElementById('details-feed-url');
+  feed_url_element.textContent = get_feed_url(feed);
+  const feed_link_element = document.getElementById('details-feed-link');
+  feed_link_element.textContent = feed.link || '';
+  const unsub_btn = document.getElementById('details-unsubscribe');
+  unsub_btn.value = '' + feed.id;
+
   const details_element = document.getElementById('mi-feed-details');
   show_section(details_element);
-
-  // Ensure the details are visible. If scrolled down when viewing large
-  // list of feeds, it would otherwise not be immediately visible.
-  window.scrollTo(0,0);
+  window.scrollTo(0,0);// long list may obscure details otherwise
 }
 
-// TODO: make async
+// TODO: favicon resolution is too slow. Display the results immediately
+// using a placeholder. Then, in a separate non-blocking
+// task, try and replace the default icon with the proper icon.
 // TODO: Suppress resubmits if last query was a search and the
 // query did not change?
-function sub_form_on_submit(event) {
+async function sub_form_on_submit(event) {
   // Prevent normal form submission behavior
   event.preventDefault();
 
@@ -472,52 +400,46 @@ function sub_form_on_submit(event) {
   } catch(exception) {
   }
 
-  // If it is a URL, subscribe, otherwise, search
+
+
+  // If it is a URL, subscribe
   if(url) {
     query_element.value = '';
     show_sub_preview(url);
-  } else {
-    show_element(progress_element);
-    search_google_feeds(query_str).then(
-      on_search_google_feeds).catch(function(error) {
-      console.debug(error);
-    })
+    return false;
   }
 
-  return false;
-}
+  // Search for feeds
+  show_element(progress_element);
 
-async function on_search_google_feeds(result) {
-  const query = result.query;
-  const results = result.entries;
-  const progress_element = document.getElementById('discover-in-progress');
-  const no_results_element = document.getElementById('discover-no-results');
-  const results_element = document.getElementById('discover-results-list');
+  let db_target, conn, doc, icon_url, link_url, results;
 
-  hide_element(progress_element);
-  if(!results.length) {
-    hide_element(results_element);
-    show_element(no_results_element);
-    return;
-  }
-
-  if(is_visible(results_element)) {
-    results_element.innerHTML = '';
-  } else {
-    hide_element(no_results_element);
-    show_element(results_element);
-  }
-
-  const item_element = document.createElement('li');
-  item_element.textContent = `Found ${results.length} feeds.`;
-  results_element.appendChild(item_element);
-
-  // TODO: favicon resolution is too slow. Display the results immediately
-  // using a placeholder. Then, in a separate non-blocking
-  // task, try and replace the default icon with the proper icon.
-
-  let db_target, conn, doc, icon_url, link_url;
   try {
+    let sgf_output = await search_google_feeds(query_str);
+    const query = sgf_output.query;
+    results = sgf_output.entries;
+    const progress_element = document.getElementById('discover-in-progress');
+    const no_results_element = document.getElementById('discover-no-results');
+    const results_element = document.getElementById('discover-results-list');
+
+    hide_element(progress_element);
+    if(!results.length) {
+      hide_element(results_element);
+      show_element(no_results_element);
+      return;
+    }
+
+    if(is_visible(results_element)) {
+      results_element.innerHTML = '';
+    } else {
+      hide_element(no_results_element);
+      show_element(results_element);
+    }
+
+    const item_element = document.createElement('li');
+    item_element.textContent = `Found ${results.length} feeds.`;
+    results_element.appendChild(item_element);
+
     conn = await favicon_connect(db_target, console);
     for(let result of results) {
       if(!result.link)
@@ -529,17 +451,19 @@ async function on_search_google_feeds(result) {
         result.faviconURLString = icon_url.href;
     }
   } catch(error) {
-    log.debug(error);
+    console.debug(error);
   } finally {
     if(conn)
       conn.close();
   }
 
   const result_elements = results.map(create_search_result_element);
-  // Append the result elements
   for(let i = 0, len = result_elements.length; i < len; i++) {
     results_element.appendChild(result_elements[i]);
   }
+
+  // Signal no submit
+  return false;
 }
 
 // Creates and returns a search result item to show in the list of search
@@ -622,7 +546,7 @@ function remove_feed_from_feed_list(feed_id) {
   // Upon removing the feed, update the state of the feed list.
   // If the feed list has no items, hide it and show a message instead
   const feed_list = document.getElementById('feedlist');
-  const no_feeds_element = document.getElementById('nosubscriptions');
+  const no_feeds_element = document.getElementById('nosubs');
   if(!feed_list.childElementCount) {
     hide_element(feed_list);
     show_element(no_feeds_element);
@@ -638,24 +562,12 @@ async function unsubscribe_btn_on_click(event) {
     let num_deleted = await unsubscribe(feed_id, console);
     console.debug('Unsubscribed from feed id', feed_id);
     remove_feed_from_feed_list(feed_id);
-    const subs_section = document.getElementById('mi-subscriptions');
+    const subs_section = document.getElementById('subs-list-section');
     show_section(subs_section);
   } catch(error) {
     // TODO: show an error
     console.debug(error);
   }
-}
-
-// NOTE: there is no need to append uploader.
-// NOTE: There is no way to detect cancel event
-function import_opml_btn_on_click(event) {
-  const uploader = document.createElement('input');
-  uploader.setAttribute('type', 'file');
-  uploader.setAttribute('accept', 'application/xml');
-  // Bind uploader because event.target is undefined in listener
-  uploader.onchange = import_opml_input_on_change.bind(undefined, uploader);
-  // Interestingly, I can trigger a click on a detached element
-  uploader.click();
 }
 
 // TODO: needs to notify the user of a successful
@@ -666,13 +578,20 @@ function import_opml_btn_on_click(event) {
 // TODO: after import the feeds list needs to be refreshed
 // TODO: notify the user if there was an error
 // TODO: switch to a different section of the options ui on complete?
-async function import_opml_input_on_change(uploader, event) {
-  uploader.removeEventListener('change', import_opml_input_on_change);
-  try {
-    let result = await import_opml(undefined, uploader.files, console);
-  } catch(error) {
-    console.debug(error);
-  }
+
+function import_opml_btn_on_click(event) {
+  const uploader = document.createElement('input');
+  uploader.setAttribute('type', 'file');
+  uploader.setAttribute('accept', 'application/xml');
+  uploader.onchange = async function on_change(event) {
+    uploader.removeEventListener('change', on_change);
+    try {
+      await import_opml(undefined, uploader.files, console);
+    } catch(error) {
+      console.debug(error);
+    }
+  };
+  uploader.click();
 }
 
 // TODO: visual feedback
@@ -695,56 +614,39 @@ async function export_opml_btn_on_click(event) {
     export_opml(feeds, title, file_name);
 }
 
-// TODO: asyncify
-// TODO: use db_get_all_feeds and then sort manually, to avoid the defined title
-// requirement (and deprecate title index)
-function init_subs_section() {
-  let feedCount = 0;
+// TODO: sort feeds alphabetically
+// TODO: react to errors
+async function init_subs_section() {
+  const no_feeds_element = document.getElementById('nosubs');
+  const feed_list = document.getElementById('feedlist');
+  let conn, feeds;
 
-  db_connect().then(connect_on_success).catch(connect_on_error);
-
-  // TODO: this should be calling to a function in db.js
-  function connect_on_success(conn) {
-    const tx = conn.transaction('feed');
-    const store = tx.objectStore('feed');
-    const index = store.index('title');
-    const request = index.openCursor();
-    request.onsuccess = open_cursor_on_success;
-    conn.close();
+  try {
+    conn = await db_connect();
+    feeds = await db_get_all_feeds(conn);
+  } catch(error) {
+    console.debug(error);
+    return;
+  } finally {
+    if(conn)
+      conn.close();
   }
 
-  function connect_on_error(error) {
-    // TODO: react to error
+  for(let feed of feeds) {
+    append_feed(feed);
+    update_feed_count();
   }
 
-  function open_cursor_on_success(event) {
-    const cursor = event.target.result;
-    if(cursor) {
-      const feed = cursor.value;
-      feedCount++;
-      append_feed(feed);
-      update_feed_count();
-      cursor.continue();
-    } else {
-      on_feeds_iterated();
-    }
-  }
-
-  function on_feeds_iterated() {
-    const no_feeds_element = document.getElementById('nosubscriptions');
-    const feed_list = document.getElementById('feedlist');
-    if(feedCount === 0) {
-      show_element(no_feeds_element);
-      hide_element(feed_list);
-    } else {
-      hide_element(no_feeds_element);
-      show_element(feed_list);
-    }
+  if(!feeds.length) {
+    show_element(no_feeds_element);
+    hide_element(feed_list);
+  } else {
+    hide_element(no_feeds_element);
+    show_element(feed_list);
   }
 }
 
-// Upon clicking a feed in the feed list, switch to showing the details
-// of that feed
+
 // Use currentTarget instead of event.target as some of the menu items have a
 // nested element that is the desired target
 // TODO: rather than comment, use a local variable here to clarify why
@@ -808,7 +710,7 @@ function enable_bg_img_menu_on_change(event) {
     localStorage.BACKGROUND_IMAGE = event.target.value;
   else
     delete localStorage.BACKGROUND_IMAGE;
-  optionsSettingsChannel.postMessage('changed');
+  settings_chan.postMessage('changed');
 }
 
 function header_font_menu_on_change(event){
@@ -817,7 +719,7 @@ function header_font_menu_on_change(event){
     localStorage.HEADER_FONT_FAMILY = selected_option;
   else
     delete localStorage.HEADER_FONT_FAMILY;
-  optionsSettingsChannel.postMessage('changed');
+  settings_chan.postMessage('changed');
 }
 
 function body_font_menu_on_change(event) {
@@ -826,7 +728,7 @@ function body_font_menu_on_change(event) {
   else
     delete localStorage.BODY_FONT_FAMILY;
 
-  optionsSettingsChannel.postMessage('changed');
+  settings_chan.postMessage('changed');
 }
 
 function col_count_menu_on_change(event) {
@@ -834,7 +736,7 @@ function col_count_menu_on_change(event) {
     localStorage.COLUMN_COUNT = event.target.value;
   else
     delete localStorage.COLUMN_COUNT;
-  optionsSettingsChannel.postMessage('changed');
+  settings_chan.postMessage('changed');
 }
 
 function entry_bg_color_on_input() {
@@ -844,24 +746,24 @@ function entry_bg_color_on_input() {
     localStorage.ENTRY_BACKGROUND_COLOR = value;
   else
     delete localStorage.ENTRY_BACKGROUND_COLOR;
-  optionsSettingsChannel.postMessage('changed');
+  settings_chan.postMessage('changed');
 }
 
 function entry_margin_on_change(event) {
   // TODO: why am i defaulting to 10 here?
   localStorage.ENTRY_MARGIN = event.target.value || '10';
 
-  optionsSettingsChannel.postMessage('changed');
+  settings_chan.postMessage('changed');
 }
 
 function header_font_size_on_change(event) {
   localStorage.HEADER_FONT_SIZE = event.target.value || '1';
-  optionsSettingsChannel.postMessage('changed');
+  settings_chan.postMessage('changed');
 }
 
 function body_font_size_on_change(event) {
   localStorage.BODY_FONT_SIZE = event.target.value || '1';
-  optionsSettingsChannel.postMessage('changed');
+  settings_chan.postMessage('changed');
 }
 
 function justify_checkbox_on_change(event) {
@@ -869,12 +771,12 @@ function justify_checkbox_on_change(event) {
     localStorage.JUSTIFY_TEXT = '1';
   else
     delete localStorage.JUSTIFY_TEXT;
-  optionsSettingsChannel.postMessage('changed');
+  settings_chan.postMessage('changed');
 }
 
 function body_height_on_input(event) {
   localStorage.BODY_LINE_HEIGHT = event.target.value || '10';
-  optionsSettingsChannel.postMessage('changed');
+  settings_chan.postMessage('changed');
 }
 
 function on_dom_loaded(event) {
@@ -886,10 +788,9 @@ function on_dom_loaded(event) {
   // Attach click handlers to feeds in the feed list on the left.
   // TODO: it would probably be easier and more efficient to attach a single
   // click handler that figures out which item was clicked.
-  // TODO: use for .. of
   const nav_feed_items = document.querySelectorAll('#navigation-menu li');
-  for(let i = 0, len = nav_feed_items.length; i < len; i++) {
-    nav_feed_items[i].onclick = nav_item_on_click;
+  for(let item of nav_feed_items) {
+    item.onclick = nav_item_on_click;
   }
 
   // Setup the Enable Notifications checkbox in the General Settings section
@@ -921,7 +822,6 @@ function on_dom_loaded(event) {
   enable_preview_checkbox.checked = 'ENABLE_SUBSCRIBE_PREVIEW' in localStorage;
   enable_preview_checkbox.onchange = enable_preview_checkbox_on_change;
 
-  // Init the opml import/export buttons
   const export_opml_btn = document.getElementById('button-export-opml');
   export_opml_btn.onclick = export_opml_btn_on_click;
   const import_opml_btn = document.getElementById('button-import-opml');
@@ -952,56 +852,46 @@ function on_dom_loaded(event) {
   option.textContent = 'Use background color';
   bg_img_menu.appendChild(option);
 
-  // Load and append the various background images into the menu. Set the
-  // selected option.
-  // TODO: this shouldn't read from the local storage variable per call
-  // TODO: use a basic for loop, or for..of
-  DisplaySettings.BACKGROUND_IMAGE_PATHS.forEach(append_bg_img);
-  function append_bg_img(path) {
-    // TODO: option should be a local variable
-    option = document.createElement('option');
-    option.value = path;
-    option.textContent = path.substring('/images/'.length);
-    option.selected = localStorage.BACKGROUND_IMAGE === path;
-    bg_img_menu.appendChild(option);
+  // Load bgimages menu
+  const current_bg_image_path = localStorage.BACKGROUND_IMAGE;
+  const bg_img_path_offset = '/images/'.length;
+  for(let path of DisplaySettings.BACKGROUND_IMAGE_PATHS) {
+    let path_option = document.createElement('option');
+    path_option.value = path;
+    path_option.textContent = path.substring(bg_img_path_offset);
+    path_option.selected = current_bg_image_path === path;
+    bg_img_menu.appendChild(path_option);
   }
 
-  // Setup the header font menu
+  // Setup header font menu
   const header_font_menu = document.getElementById('select_header_font');
+  header_font_menu.onchange = header_font_menu_on_change;
   option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
-  document.getElementById('select_header_font').appendChild(option);
-
-  // TODO: use a basic for loop, or for..of
-  DisplaySettings.FONT_FAMILIES.forEach(append_header_font);
-  function append_header_font(fontFamily) {
-    // TODO: option should be a local variable
-    option = document.createElement('option');
-    option.value = fontFamily;
-    option.selected = fontFamily === localStorage.HEADER_FONT_FAMILY;
-    option.textContent = fontFamily;
-    document.getElementById('select_header_font').appendChild(option);
+  header_font_menu.appendChild(option);
+  const selected_hf = localStorage.HEADER_FONT_FAMILY;
+  for(let ff of DisplaySettings.FONT_FAMILIES) {
+    let ff_option = document.createElement('option');
+    ff_option.value = ff;
+    ff_option.selected = ff === selected_hf;
+    ff_option.textContent = ff;
+    header_font_menu.appendChild(ff_option);
   }
-
-  header_font_menu.onchange = header_font_menu_on_change;
 
   // Setup the body font menu
   const body_font_menu = document.getElementById('select_body_font');
+  body_font_menu.onchange = body_font_menu_on_change;
   option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
   body_font_menu.appendChild(option);
-
-  // TODO: use a basic for loop, or for..of
-  DisplaySettings.FONT_FAMILIES.forEach(append_body_font);
-  function append_body_font(fontFamily) {
-    // TODO: use a local variable for option
-    option = document.createElement('option');
-    option.value = fontFamily;
-    option.selected = fontFamily === localStorage.BODY_FONT_FAMILY;
-    option.textContent = fontFamily;
-    body_font_menu.appendChild(option);
+  const current_bff = localStorage.BODY_FONT_FAMILY;
+  for(let bff of DisplaySettings.FONT_FAMILIES) {
+    let bff_option = document.createElement('option');
+    bff_option.value = bff;
+    bff_option.selected = bff === current_bff;
+    bff_option.textContent = bff;
+    body_font_menu.appendChild(bff_option);
   }
-  body_font_menu.onchange = body_font_menu_on_change;
 
   const col_count_element = document.getElementById('column-count');
   const col_counts = ['1', '2', '3'];
@@ -1019,7 +909,6 @@ function on_dom_loaded(event) {
   bg_color_element.value = localStorage.ENTRY_BACKGROUND_COLOR || '';
   bg_color_element.oninput = entry_bg_color_on_input;
 
-  // Setup the entry margin slider element
   const margin_element = document.getElementById('entry-margin');
   margin_element.value = localStorage.ENTRY_MARGIN || '10';
   margin_element.onchange = entry_margin_on_change;
@@ -1041,7 +930,6 @@ function on_dom_loaded(event) {
   body_height_element.value = (line_height_int / 10).toFixed(2);
   body_height_element.oninput = body_height_on_input;
 
-  // Init the about section
   const manifest = chrome.runtime.getManifest();
   const ext_name_element = document.getElementById('extension-name');
   ext_name_element.textContent = manifest.name;
@@ -1054,8 +942,7 @@ function on_dom_loaded(event) {
   const ext_homepage_element = document.getElementById('extension-homepage');
   ext_homepage_element.textContent = manifest.homepage_url;
 
-  // Initially show the subscriptions list
-  const subs_section = document.getElementById('mi-subscriptions');
+  const subs_section = document.getElementById('subs-list-section');
   show_section(subs_section);
 }
 

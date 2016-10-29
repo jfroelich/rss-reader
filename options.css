@@ -150,7 +150,7 @@ ul#navigation-menu li.navigation-item-selected {
   display:none;
 }
 
-#subscription-preview-load-progress {
+#sub-preview-load-progress {
 
   /*-webkit-appearance: none;
   appearance: none;
@@ -286,7 +286,7 @@ ul#navigation-menu li.navigation-item-selected {
    margin-right: 8px;
 }
 
-#nosubscriptions {
+#nosubs {
   display: none;
 }
 
