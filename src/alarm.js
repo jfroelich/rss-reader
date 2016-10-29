@@ -64,7 +64,8 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
     const skip_unmodified_guard = false;
     const log = SilentConsole;
     try {
-      poll_feeds(force_reset_lock, allow_metered, ignore_idle_state,
+      // NOTE: must await or errors not caught
+      await poll_feeds(force_reset_lock, allow_metered, ignore_idle_state,
         skip_unmodified_guard, log);
     } catch(error) {
       console.debug(error);
@@ -76,7 +77,11 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
       console.debug(error);
     }
   } else if(alarm.name === 'refresh-feed-icons') {
-    let result = await refresh_feed_icons();
+    try {
+      let result = await refresh_feed_icons();
+    } catch(error) {
+      console.debug(error);
+    }
   } else if(alarm.name === 'healthcheck') {
     HealthCheck.start(SilentConsole);
   } else {
