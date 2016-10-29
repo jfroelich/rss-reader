@@ -6,13 +6,10 @@
 // TODO: maybe merge add/put entry into one function
 // TODO: maybe entry states should be in a single property instead of
 // two props, like UNREAD_UNARCHIVED
-// TODO: fix issue with normalizing entry urls
-// https://hack.ether.camp/idea/path redirects to
-// https://hack.ether.camp/#/idea/path which normalizes to
-// https://hack.ether.camp/. Stripping hash screws this up.
-// TODO: remove the defined title requirement, have options manually sort feeds
-// instead of using the title index, deprecate the title index, stop ensuring
-// title is an empty string
+// TODO: remove the defined feed title requirement, have options manually sort
+// feeds instead of using the title index, deprecate the title index, stop
+// ensuring title is an empty string
+
 
 const DB_DEFAULT_TARGET = {
   'name': 'reader',
@@ -354,6 +351,23 @@ function db_contains_feed_url(log, conn, url) {
     };
     request.onerror = function(event) {
       log.debug(event.target.error);
+      reject(event.target.error);
+    };
+  });
+}
+
+function db_find_feed_by_id(conn, id, log = SilentConsole) {
+  return new Promise(function(resolve, reject) {
+    log.debug('Finding feed by id', id);
+    const tx = conn.transaction('feed');
+    const store = tx.objectStore('feed');
+    const request = store.get(id);
+    request.onsuccess = function(event) {
+      const feed = event.target.result;
+      log.debug('Find result', feed);
+      resolve(feed);
+    };
+    request.onerror = function(event) {
       reject(event.target.error);
     };
   });
