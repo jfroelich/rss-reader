@@ -40,8 +40,7 @@ async function search_google_feeds_impl(query, log, resolve, reject) {
       return;
     }
 
-    const text = await response.text();
-    const result = JSON.parse(text);
+    const result = await response.json();
     const data = result.responseData;
     if(!data) {
       reject(new Error('undefined response data'));
