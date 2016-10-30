@@ -2,8 +2,6 @@
 
 'use strict';
 
-// Style lib
-
 const display_settings_chan = new BroadcastChannel('settings');
 display_settings_chan.onmessage = function(event) {
   if(event.data === 'changed') {
@@ -11,9 +9,9 @@ display_settings_chan.onmessage = function(event) {
   }
 };
 
-function find_css_rule(sheet, selectorText) {
+function find_css_rule(sheet, selector_text) {
   return Array.prototype.find.call(sheet.cssRules,(rule) =>
-    rule.selectorText === selectorText);
+    rule.selectorText === selector_text);
 }
 
 function display_update_styles() {

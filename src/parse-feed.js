@@ -2,7 +2,6 @@
 
 /*
 TODO:
-- rename to parse-feed.js
 - do not require entries to have urls, that is some other modules responsibility
 - support <media:thumbnail url="imgurl" /> (atom)
 - do not introduce fallback dates, if date is not set then do not use
@@ -10,8 +9,8 @@ TODO:
 - add helper for entry enclosure instead of how it is inlined
 - figure out the atom text node issue (cdata related?)
 - setup testing
-- do not filter out entries missing links, that is some other modules
-responsibility
+- maybe deprecate the should_exclude_entries flag, I am not sure the perf gain
+is worth the extra parameter
 */
 
 'use strict';
@@ -41,6 +40,7 @@ function parse_feed(doc, should_exclude_entries) {
   feed.link = find_feed_link(channel);
   feed.datePublished = find_feed_date(channel);
 
+  // Guarantee that entries is at least a defined array
   let entries = [];
   if(!should_exclude_entries) {
     const entryElements = find_entries(channel);

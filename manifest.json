@@ -21,7 +21,7 @@
       "/src/db.js",
       "/src/domscrub.js",
       "/src/favicon.js",
-      "/src/feed-parser.js",
+      "/src/parse-feed.js",
       "/src/fetch-feed.js",
       "/src/fetch-html.js",
       "/src/fetch-xml.js",
@@ -40,7 +40,6 @@
       "/src/silent-console.js",
       "/src/tracking.js",
       "/src/update-badge.js",
-      "/src/url-utils.js",
       "/src/utils.js"
     ]
   },

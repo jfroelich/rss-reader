@@ -7,7 +7,7 @@ function fetch_xml(url, log = SilentConsole) {
 }
 
 async function fetch_xml_impl(url, log, resolve, reject) {
-  log.log('Fetching', url.href);
+  log.log('Fetching xml', url.href);
   const accepts = [
     'application/rss+xml',
     'application/rdf+xml',
@@ -45,14 +45,21 @@ async function fetch_xml_impl(url, log, resolve, reject) {
 
     let last_mod_date;
     const last_mod_str = response.headers.get('Last-Modified');
-    if(last_mod_str)
-      last_mod_date = new Date(last_mod_str);
+    if(last_mod_str) {
+      // Separately catch a date parsing error because this should not cause a
+      // rejection
+      try {
+        last_mod_date = new Date(last_mod_str);
+      } catch(error) {
+      }
+    }
+
     const text = await response.text();
     const doc = parse_xml(text);
     const result = {};
     result.document = doc;
-    result.responseURLString = response.url;
-    result.lastModifiedDate = last_mod_date;
+    result.response_url_str = response.url;
+    result.last_modified_date = last_mod_date;
     resolve(result);
   } catch(error) {
     reject(error);

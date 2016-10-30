@@ -12,47 +12,45 @@
 // TODO: maybe I should have a crawler module, put all the fetch things
 // into it, then move this into the module. This would maybe properly
 // aggregate functionality together
-// TODO: there are so many flags, use an options variable
-// TODO: use Promise.all so that feeds are processed concurrently
 
-function poll_feeds(force_reset_lock, ignore_idle_state, allow_metered,
-  skip_unmodified_guard, log = SilentConsole) {
-  return new Promise(poll_feeds_impl.bind(undefined, force_reset_lock,
-    ignore_idle_state, allow_metered, skip_unmodified_guard, log));
+// TODO: after fetching feed, feed update is awaited, which blocks the
+// poll_feed promise from resolving, when in fact I am not sure it needs
+// to do that. I think fetching and updating are separate things that can
+// occur concurrently. Rather, updating has to happen after fetching, but it
+// does not need to happen before doing other work like processing entries
+
+function poll_feeds(options = {}) {
+  return new Promise(poll_feeds_impl.bind(undefined, options));
 }
 
-async function poll_feeds_impl(force_reset_lock, ignore_idle_state,
-  allow_metered, skip_unmodified_guard, log, resolve, reject) {
+async function poll_feeds_impl(options, resolve, reject) {
+  const log = options.log || SilentConsole;
   log.log('Checking for new articles...');
 
-  if(!poll_acquire_lock(force_reset_lock, log)) {
+  if(!poll_acquire_lock(options.force_reset_lock, log)) {
     reject(new Error('locked'));
     return;
   }
 
   if('onLine' in navigator && !navigator.onLine) {
+    poll_release_lock(log);
     reject(new Error('offline'));
     return;
   }
 
   // navigator.connection is experimental
-  if(!allow_metered && 'NO_POLL_METERED' in localStorage &&
+  if(!options.allow_metered && 'NO_POLL_METERED' in localStorage &&
     navigator.connection && navigator.connection.metered) {
+    poll_release_lock(log);
     reject(new Error('metered connection'));
     return;
   }
 
-  if(!ignore_idle_state && 'ONLY_POLL_IF_IDLE' in localStorage) {
-    const idle_period_secs = 30;
-    try {
-      const state = await query_idle_state(idle_period_secs);
-      if(state !== 'locked' && state !== 'idle') {
-        reject(new Error('cannot poll while not idle'));
-        return;
-      }
-
-    } catch(error) {
-      reject(error);
+  if(!options.ignore_idle_state && 'ONLY_POLL_IF_IDLE' in localStorage) {
+    const state = await query_idle_state(config.poll_feeds_idle_period_secs);
+    if(state !== 'locked' && state !== 'idle') {
+      poll_release_lock(log);
+      reject(new Error('not idle, state is ' + state));
       return;
     }
   }
@@ -61,28 +59,30 @@ async function poll_feeds_impl(force_reset_lock, ignore_idle_state,
   try {
     conn = await db_connect(undefined, log);
     const feeds = await db_get_all_feeds(conn, log);
-    const promises = feeds.map((feed) => poll_feed(conn, feed,
-      skip_unmodified_guard, log));
-    await Promise.all(promises);
+    const pf_promises = feeds.map((feed) => poll_feed(conn, feed,
+      options.skip_unmodified_guard, log));
+    await Promise.all(pf_promises);
     log.debug('Polling completed');
     const chan = new BroadcastChannel('poll');
     chan.postMessage('completed');
     chan.close();
     show_notification('Updated articles',
       'Completed checking for new articles');
-    release_lock(log);
     resolve();
   } catch(error) {
     reject(error);
   } finally {
-    if(conn)
+    poll_release_lock(log);
+    if(conn) {
+      log.debug('Closing database', conn.name);
       conn.close();
+    }
   }
 }
 
 function poll_acquire_lock(force_reset_lock, log) {
   if(force_reset_lock)
-    release_lock(log);
+    poll_release_lock(log);
   if('POLL_FEEDS_ACTIVE' in localStorage) {
     log.debug('Failed to acquire lock, the lock is already present');
     return false;
@@ -92,17 +92,11 @@ function poll_acquire_lock(force_reset_lock, log) {
   return true;
 }
 
-function release_lock(log = SilentConsole) {
+function poll_release_lock(log) {
   if('POLL_FEEDS_ACTIVE' in localStorage) {
     log.debug('Releasing poll lock');
     delete localStorage.POLL_FEEDS_ACTIVE;
   }
-}
-
-function query_idle_state(idle_period_secs) {
-  return new Promise(function(resolve) {
-    chrome.idle.queryState(idle_period_secs, resolve);
-  });
 }
 
 function poll_feed(conn, feed, skip_unmodified_guard, log) {
@@ -121,7 +115,7 @@ async function poll_feed_impl(conn, feed, skip_unmodified_guard, log, resolve) {
     // The dateUpdated check allows for newly subscribed feeds to never to be
     // considered unmodified
     if(!skip_unmodified_guard && feed.dateUpdated &&
-      feed_is_unmodified(feed, remote_feed)) {
+      poll_feed_is_unmodified(feed, remote_feed)) {
       log.debug('Feed not modified', url.href);
       resolve();
       return;
@@ -131,23 +125,28 @@ async function poll_feed_impl(conn, feed, skip_unmodified_guard, log, resolve) {
     const stored_feed = await db_update_feed(log, conn, merged_feed);
     const entries = fetch_result.entries;
     // TODO: filter out entries without urls, and then check again against num
-    // remaining.
+    // remaining. I could do this check per poll_entry promise though, maybe
+    // there is no need for an extra preprocessing loop. Also, once I do this
+    // I can remove the entry-has-url guarantee from fetch-feed and
+    // parse-feed. The thing is that if I want to do filter dups I have to
+    // pre-filter entries without urls
     // TODO: I should be filtering duplicate entries, compared by norm url,
     // somewhere. I somehow lost this functionality, or moved it somewhere
     const promises = entries.map((entry) => poll_entry(conn, feed, entry, log));
-    await Promise.all(promises);
+    const results = await Promise.all(promises);
+    const num_entries_added = results.reduce((sum, r) => r ? sum + 1 : sum, 0);
+    if(num_entries_added)
+      await update_badge(conn, log);
 
-    // TODO: only do this if entries were inserted
-    await update_badge(conn, log);
     resolve();
   } catch(error) {
     log.debug(error);
-    // Always resolve because of Promise.all fail fast behavior
     resolve(error);
   }
 }
 
-function feed_is_unmodified(f1, f2) {
+// TODO: maybe inline this again
+function poll_feed_is_unmodified(f1, f2) {
   return f1.dateLastModified && f2.dateLastModified &&
     f1.dateLastModified.getTime() === f2.dateLastModified.getTime();
 }
@@ -159,7 +158,9 @@ function poll_entry(conn, feed, entry, log) {
 // TODO: I should be looking up the entry's own favicon instead of inheriting
 // from feed, do it after fetching the entry so I can possibly use the prepped
 // document
-// TODO: i should checking if the redirect url exists
+// TODO: i should checking if the redirect url exists after fetching and before
+// adding (if I even fetched)
+// Resolve with true if entry was added, false if not added
 
 async function poll_entry_impl(conn, feed, entry, log, resolve) {
   try {
@@ -172,7 +173,7 @@ async function poll_entry_impl(conn, feed, entry, log, resolve) {
     const find_limit = 1;
     const matches = await db_find_entry(log, conn, entry.urls, find_limit);
     if(matches.length) {
-      resolve();
+      resolve(false);
       return;
     }
 
@@ -189,7 +190,7 @@ async function poll_entry_impl(conn, feed, entry, log, resolve) {
       entry.content =
         'This content for this article is blocked by an advertisement.';
       await db_add_entry(log, conn, entry);
-      resolve();
+      resolve(true);
       return;
     }
 
@@ -197,14 +198,14 @@ async function poll_entry_impl(conn, feed, entry, log, resolve) {
       entry.content = 'The content for this article cannot be viewed because ' +
         'it is dynamically generated.';
       await db_add_entry(log, conn, entry);
-      resolve();
+      resolve(true);
       return;
     }
 
     if(config.paywall_hosts.includes(url_obj.hostname)) {
       entry.content = 'This content for this article is behind a paywall.';
       await db_add_entry(log, conn, entry);
-      resolve();
+      resolve(true);
       return;
     }
 
@@ -212,14 +213,14 @@ async function poll_entry_impl(conn, feed, entry, log, resolve) {
       entry.content = 'This content for this article cannot be viewed ' +
         'because the website requires tracking information.';
       await db_add_entry(log, conn, entry);
-      resolve();
+      resolve(true);
       return;
     }
 
-    if(poll_guess_if_non_html(url_obj)) {
+    if(guess_if_url_is_non_html(url_obj)) {
       entry.content = 'This article is not a basic web page (e.g. a PDF).';
       await db_add_entry(log, conn, entry);
-      resolve();
+      resolve(true);
       return;
     }
 
@@ -229,7 +230,7 @@ async function poll_entry_impl(conn, feed, entry, log, resolve) {
     } catch(error) {
       poll_prep_local_doc(entry);
       await db_add_entry(log, conn, entry);
-      resolve();
+      resolve(true);
       return;
     }
 
@@ -241,14 +242,14 @@ async function poll_entry_impl(conn, feed, entry, log, resolve) {
     filter_invalid_anchors(doc);
     resolve_doc(doc, log, new URL(response_url_str));
     filter_tracking_images(doc, config.tracking_hosts, log);
-    await set_image_dimensions(doc, log);
+    const num_images_modified = await set_image_dimensions(doc, log);
     poll_prep_doc(doc);
     entry.content = doc.documentElement.outerHTML.trim();
     await db_add_entry(log, conn, entry);
-    resolve();
+    resolve(true);
   } catch(error) {
     log.debug(error);
-    resolve(error); // Always resolve because of Promise.all
+    resolve(false); // Always resolve because of Promise.all
   }
 }
 
@@ -273,13 +274,4 @@ function poll_prep_doc(doc) {
   filter_boilerplate(doc);
   scrub_dom(doc);
   add_no_referrer(doc);
-}
-
-function poll_guess_if_non_html(url) {
-  const bad_super_types = ['application', 'audio', 'image', 'video'];
-  const type = guess_mime_type_from_url(url);
-  if(type) {
-    const super_type = type.substring(0, type.indexOf('/'));
-    return bad_super_types.includes(super_type);
-  }
 }

@@ -58,15 +58,8 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
       console.debug(error);
     }
   } else if(alarm.name === 'poll') {
-    const force_reset_lock = false;
-    const allow_metered = false;
-    const ignore_idle_state = false;
-    const skip_unmodified_guard = false;
-    const log = SilentConsole;
     try {
-      // NOTE: must await or errors not caught
-      await poll_feeds(force_reset_lock, allow_metered, ignore_idle_state,
-        skip_unmodified_guard, log);
+      await poll_feeds();
     } catch(error) {
       console.debug(error);
     }

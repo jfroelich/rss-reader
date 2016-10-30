@@ -7,15 +7,19 @@ function rewrite_url(input_url_obj) {
   // Rewrite Google News links
   if(input_url_obj.hostname === 'news.google.com' &&
     input_url_obj.pathname === '/news/url') {
-    // NOTE: searchParams.get implicitly decodes
     const param = input_url_obj.searchParams.get('url');
     if(param) {
       try {
-        const output_url_obj = new URL(param);
-        return output_url_obj;
+        return new URL(param);
       } catch(error) {
         console.warn(error);
       }
+    }
+  } else if(input_url_obj.hostname === 'techcrunch.com') {
+    if(input_url_obj.searchParams.has('ncid')) {
+      const output_url = new URL(input_url_obj.href);
+      output_url.searchParams.delete('ncid');
+      return output_url;
     }
   }
 }

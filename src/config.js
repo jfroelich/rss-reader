@@ -1,5 +1,11 @@
+// See license.md
+
+'use strict';
 
 const config = {};
+
+// How many seconds must elapse before checking idle state yields idle result
+config.poll_feeds_idle_period_secs = 30;
 
 // TODO: remove some of these backgrounds, I went overboard
 config.bg_img_paths = [
@@ -55,7 +61,8 @@ config.font_families = [
 ];
 
 config.paywall_hosts = [
-  'nytimes.com'
+  'www.nytimes.com',
+  'myaccount.nytimes.com'
 ];
 
 config.interstitial_hosts = [
