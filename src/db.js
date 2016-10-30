@@ -372,8 +372,10 @@ function db_find_feed_by_id(conn, id, log = SilentConsole) {
   });
 }
 
+// TODO: change to something like db_contains_entry that does not need a
+// limit parameter and just yields a boolean
 // Assumes urls are normalized
-function db_find_entry(log, conn, urls, limit) {
+function db_find_entry(conn, urls, limit, log) {
   return new Promise(function(resolve, reject) {
     if(!urls.length) {
       reject(new TypeError());
@@ -415,10 +417,9 @@ function db_find_entry(log, conn, urls, limit) {
   });
 }
 
-// TODO: move conn to first argument
-function db_put_feed(log, conn, feed) {
+function db_put_feed(conn, feed, log) {
   return new Promise(function(resolve, reject) {
-    log.debug('Putting feed', get_feed_url(feed));
+    log.debug('Storing feed %s in database %s', get_feed_url(feed), conn.name);
     feed.dateUpdated = new Date();
     const tx = conn.transaction('feed', 'readwrite');
     const store = tx.objectStore('feed');
@@ -434,31 +435,6 @@ function db_put_feed(log, conn, feed) {
     };
     request.onerror = function(event) {
       log.debug(event.target.error);
-      reject(event.target.error);
-    };
-  });
-}
-
-function db_update_feed(log, conn, feed) {
-  return new Promise(function(resolve, reject) {
-    if(!('id' in feed)) {
-      reject(new TypeError());
-      return;
-    }
-
-    log.log('Updating feed', get_feed_url(feed));
-    let storable = sanitize_feed(feed);
-    storable.dateUpdated = new Date();
-    storable = filter_empty_props(storable);
-    const tx = conn.transaction('feed', 'readwrite');
-    const store = tx.objectStore('feed');
-    const request = store.put(storable);
-    request.onsuccess = function(event) {
-      log.debug('Updated feed', get_feed_url(storable));
-      resolve(storable);
-    };
-    request.onerror = function(event) {
-      log.error(event.target.error);
       reject(event.target.error);
     };
   });
