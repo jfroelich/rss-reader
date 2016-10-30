@@ -58,7 +58,8 @@ function favicon_find_entry(conn, log, url) {
     const request = store.get(page_url);
     request.onsuccess = function(event) {
       const entry = event.target.result;
-      log.debug('Result', entry ? entry.iconURLString : 'null');
+      log.debug('favicon cache lookup result for url', page_url, 'is',
+        entry ? entry.iconURLString : 'null');
       resolve(entry);
     };
     request.onerror = function(event) {
@@ -132,6 +133,11 @@ function favicon_normalize_url(url) {
   return clone;
 }
 
+// TODO: do not accept a default target. Instead, do not connect on demand
+// and require caller to provide an active connection.
+// This will also improve the referential integrity between db_target and
+// conn, which currently isn't enforced
+// TODO: maybe drop support for prefetched doc, there is a cache anyway
 function favicon_lookup(db_target = FAVICON_DEFAULT_DB, conn, url, doc,
   log = SilentConsole) {
   return new Promise(favicon_lookup_impl.bind(null, db_target, conn, url,
@@ -207,8 +213,7 @@ async function favicon_lookup_impl(db_target, conn, url, doc, log, resolve,
 
     if(response_url && response_url.href !== url.href) {
       log.debug('Falling back to checking cache for redirect url');
-      let redirect_entry = await favicon_find_entry(conn, log,
-        response_url);
+      let redirect_entry = await favicon_find_entry(conn, log, response_url);
       if(redirect_entry &&
         !favicon_is_expired(redirect_entry, FAVICON_DEFAULT_MAX_AGE)) {
         if(should_close_conn)
@@ -224,7 +229,7 @@ async function favicon_lookup_impl(db_target, conn, url, doc, log, resolve,
       let origin_entry = await favicon_find_entry(conn, log, origin_url);
       if(origin_entry && !favicon_is_expired(origin_entry,
         FAVICON_DEFAULT_MAX_AGE)) {
-        const icon_url = new URL(entry.iconURLString);
+        const icon_url = new URL(origin_entry.iconURLString);
         favicon_add_entry(conn, log, url, icon_url);
         if(response_url)
           favicon_add_entry(conn, log, response_url, icon_url);
