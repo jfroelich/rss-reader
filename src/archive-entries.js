@@ -20,11 +20,11 @@ async function archive_entries_impl(db_target, max_age, log, resolve, reject) {
     return;
   }
 
-  let num_modified = 0;
-  let num_scanned = 0;
+  log.log('Archiving entries older than %d ms', max_age);
+  let num_modified = 0, num_scanned = 0;
   const current_date = new Date();
   const chan = new BroadcastChannel('db');
-  log.log('Archiving entries older than %d ms', max_age);
+  log.debug('Opened broadcast channel', chan.name);
   let conn;
 
   try {
@@ -32,12 +32,24 @@ async function archive_entries_impl(db_target, max_age, log, resolve, reject) {
     const tx = conn.transaction('entry', 'readwrite');
     tx.onabort = function(event) {
       reject(event.target.error);
+      if(conn) {
+        log.debug('Closing database', conn.name);
+        conn.close();
+      }
+      log.debug('Closing broadcast channel', chan.name);
+      chan.close();
     };
 
     tx.oncomplete = function(event) {
       log.log('Archive entries completed (scanned %s, compacted %s)',
         num_scanned, num_modified);
       resolve(num_modified);
+      if(conn) {
+        log.debug('Closing database', conn.name);
+        conn.close();
+      }
+      log.debug('Closing broadcast channel', chan.name);
+      chan.close();
     };
 
     const store = tx.objectStore('entry');
@@ -84,9 +96,5 @@ async function archive_entries_impl(db_target, max_age, log, resolve, reject) {
     };
   } catch(error) {
     reject(error);
-  } finally {
-    chan.close();
-    if(conn)
-      conn.close();
   }
 }
