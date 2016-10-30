@@ -24,7 +24,7 @@ async function refresh_feed_icons_impl(log, resolve, reject) {
       if(!feed.faviconURLString || feed.faviconURLString !== icon_url.href) {
         num_modified++;
         feed.faviconURLString = icon_url.href;
-        db_put_feed(log, feed_db_conn, feed);
+        db_put_feed(feed_db_conn, feed, log);
       }
     }
     log.log('Completed refreshing feed favicons. Modified %d', num_modified);
