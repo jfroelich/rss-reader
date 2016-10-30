@@ -60,6 +60,21 @@ config.font_families = [
   'Roboto Regular'
 ];
 
+// Functionality that deals with html images will look for these attributes
+// containing an alternate url when an image is missing a src
+config.lazy_image_attr_names = [
+  'load-src',
+  'data-src',
+  'data-original-desktop',
+  'data-baseurl',
+  'data-lazy',
+  'data-img-src',
+  'data-original',
+  'data-adaptive-img',
+  'data-imgsrc',
+  'data-default-src'
+];
+
 config.paywall_hosts = [
   'www.nytimes.com',
   'myaccount.nytimes.com'
