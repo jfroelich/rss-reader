@@ -2,22 +2,15 @@
 
 'use strict';
 
+// TODO: remove the entry-has-url guarantee from fetch-feed and
+// parse-feed.
+
 // TODO: move tracking back into this file
-// TODO: use a single favicon cache connection for favicon lookups
 // TODO: add is-active feed functionality, do not poll in-active feeds
 // TODO: deactivate unreachable feeds after x failures
 // TODO: deactivate feeds not changed for a long time
 // TODO: store deactivation reason in feed
 // TODO: store deactivation date
-// TODO: maybe I should have a crawler module, put all the fetch things
-// into it, then move this into the module. This would maybe properly
-// aggregate functionality together
-
-// TODO: after fetching feed, feed update is awaited, which blocks the
-// poll_feed promise from resolving, when in fact I am not sure it needs
-// to do that. I think fetching and updating are separate things that can
-// occur concurrently. Rather, updating has to happen after fetching, but it
-// does not need to happen before doing other work like processing entries
 
 function poll_feeds(options = {}) {
   return new Promise(poll_feeds_impl.bind(undefined, options));
@@ -55,28 +48,33 @@ async function poll_feeds_impl(options, resolve, reject) {
     }
   }
 
-  let conn = null;
+  let conn, icon_conn;
   try {
     conn = await db_connect(undefined, log);
+    icon_conn = await favicon_connect(undefined, log);
     const feeds = await db_get_all_feeds(conn, log);
-    const pf_promises = feeds.map((feed) => poll_feed(conn, feed,
+    const pf_promises = feeds.map((feed) => poll_feed(conn, icon_conn, feed,
       options.skip_unmodified_guard, log));
     await Promise.all(pf_promises);
-    log.debug('Polling completed');
     const chan = new BroadcastChannel('poll');
     chan.postMessage('completed');
     chan.close();
     show_notification('Updated articles',
       'Completed checking for new articles');
     resolve();
-  } catch(error) {
-    reject(error);
-  } finally {
     poll_release_lock(log);
+
     if(conn) {
       log.debug('Closing database', conn.name);
       conn.close();
     }
+    if(icon_conn) {
+      log.debug('Closing database', icon_conn.name);
+      icon_conn.close();
+    }
+    log.debug('Polling completed');
+  } catch(error) {
+    reject(error);
   }
 }
 
@@ -99,15 +97,15 @@ function poll_release_lock(log) {
   }
 }
 
-function poll_feed(conn, feed, skip_unmodified_guard, log) {
-  return new Promise(poll_feed_impl.bind(undefined, conn, feed,
+function poll_feed(conn, icon_conn, feed, skip_unmodified_guard, log) {
+  return new Promise(poll_feed_impl.bind(undefined, conn, icon_conn, feed,
     skip_unmodified_guard, log));
 }
 
-async function poll_feed_impl(conn, feed, skip_unmodified_guard, log, resolve) {
+async function poll_feed_impl(conn, icon_conn, feed, skip_unmodified_guard,
+  log, resolve) {
 
   try {
-    // log.debug('Processing feed', get_feed_url(feed));
     const exclude_entries = false;
     const url = new URL(get_feed_url(feed));
     let fetch_result = await fetch_feed(url, exclude_entries, log);
@@ -121,18 +119,27 @@ async function poll_feed_impl(conn, feed, skip_unmodified_guard, log, resolve) {
       return;
     }
 
+    // Merge the local properties with the remote properties, favoring the
+    // remote properties
     const merged_feed = merge_feeds(feed, remote_feed);
-    const stored_feed = await db_update_feed(log, conn, merged_feed);
-    const entries = fetch_result.entries;
-    // TODO: filter out entries without urls, and then check again against num
-    // remaining. I could do this check per poll_entry promise though, maybe
-    // there is no need for an extra preprocessing loop. Also, once I do this
-    // I can remove the entry-has-url guarantee from fetch-feed and
-    // parse-feed. The thing is that if I want to do filter dups I have to
-    // pre-filter entries without urls
-    // TODO: I should be filtering duplicate entries, compared by norm url,
-    // somewhere. I somehow lost this functionality, or moved it somewhere
-    const promises = entries.map((entry) => poll_entry(conn, feed, entry, log));
+
+    // TODO: rather than await db_put_feed, it is technically non-blocking
+    // against poll_entry, it could just be another one of the promises
+    // involved in the promises collection below that is input to Promise.all
+    // I think it is quite simple. push the update call into the promises array,
+    // then pop it after Promise.all resolves and before reducing the other
+    // promises
+    // TODO: first test changes of deprecating db_update_feed
+
+    let storable_feed = sanitize_feed(merged_feed);
+    storable_feed = filter_empty_props(storable_feed);
+
+    const stored_feed = await db_put_feed(conn, storable_feed, log);
+    let entries = fetch_result.entries;
+    entries = poll_filter_dup_entries(entries, log);
+    const promises = entries.map((entry) => poll_entry(conn, icon_conn,
+      storable_feed, entry, log));
+
     const results = await Promise.all(promises);
     const num_entries_added = results.reduce((sum, r) => r ? sum + 1 : sum, 0);
     if(num_entries_added)
@@ -151,42 +158,93 @@ function poll_feed_is_unmodified(f1, f2) {
     f1.dateLastModified.getTime() === f2.dateLastModified.getTime();
 }
 
-function poll_entry(conn, feed, entry, log) {
-  return new Promise(poll_entry_impl.bind(undefined, conn, feed, entry, log));
+// Favors entries earlier in the list
+// TODO: is there maybe a better way, like favor the most content or most recent
+function poll_filter_dup_entries(entries, log) {
+  const output = [];
+  const seen_urls = [];
+
+  for(let entry of entries) {
+    // Pass along entries without urls to output
+    if(!entry.urls || !entry.urls.length) {
+      output.push(entry);
+      continue;
+    }
+
+    let found = false;
+    for(let url of entry.urls) {
+      if(seen_urls.includes(url)) {
+        found = true;
+      }
+    }
+
+    if(found) {
+      //log.debug('Excluding duplicate entry', entry);
+    } else {
+      output.push(entry);
+      seen_urls.push(...entry.urls);
+    }
+  }
+
+  return output;
 }
 
-// TODO: I should be looking up the entry's own favicon instead of inheriting
-// from feed, do it after fetching the entry so I can possibly use the prepped
-// document
-// TODO: i should checking if the redirect url exists after fetching and before
-// adding (if I even fetched)
-// Resolve with true if entry was added, false if not added
+function poll_entry(conn, icon_conn, feed, entry, log) {
+  return new Promise(poll_entry_impl.bind(undefined, conn, icon_conn, feed,
+    entry, log));
+}
 
-async function poll_entry_impl(conn, feed, entry, log, resolve) {
+// Resolve with true if entry was added, false if not added
+async function poll_entry_impl(conn, icon_conn, feed, entry, log, resolve) {
+
+  // While some reader apps tolerate entries without urls, this app requires
+  // them because links are used for comparison
+  // Do not assume the entry has a url. It is this fn's responsibility to guard
+  // against this constraint. Even though it could be checked earlier,
+  // the earlier processes are not concerned with whether entries have urls
+  if(!entry.urls || !entry.urls.length) {
+    resolve(false);
+    return;
+  }
+
   try {
+    // Rewrite the entry's url
     let url = get_entry_url(entry);
-    //log.debug('Processing entry', url);
     const rewritten_url = rewrite_url(new URL(url));
     if(rewritten_url)
       add_entry_url(entry, rewritten_url.href);
 
+    // Check if the entry exists
     const find_limit = 1;
-    const matches = await db_find_entry(log, conn, entry.urls, find_limit);
+    const matches = await db_find_entry(conn, entry.urls, find_limit, log);
     if(matches.length) {
       resolve(false);
       return;
     }
 
-    // Cascade feed properties (denormalize) for faster rendering
+    // Create a url object to use for looking up the favicon and for fetching
+    const request_url = new URL(get_entry_url(entry));
+
+    // Cascade feed properties to the entry for faster rendering
     entry.feed = feed.id;
-    if(feed.faviconURLString)
-      entry.faviconURLString = feed.faviconURLString;
     if(feed.title)
       entry.feedTitle = feed.title;
 
-    const url_obj = new URL(get_entry_url(entry));
+    // Set the entry's favicon url
 
-    if(config.interstitial_hosts.includes(url_obj.hostname)) {
+    // TODO: do I need an extra try/catch or does this only reject on error?
+
+    const prefetched_doc = null;
+    let icon_url = await favicon_lookup(undefined, icon_conn, request_url,
+      prefetched_doc, log);
+    if(icon_url)
+      entry.faviconURLString = icon_url.href;
+    else if(feed.faviconURLString)
+      entry.faviconURLString = feed.faviconURLString;
+
+    // Replace the entry's content with full text. Before fetching, check
+    // if the entry should not be fetched
+    if(config.interstitial_hosts.includes(request_url.hostname)) {
       entry.content =
         'This content for this article is blocked by an advertisement.';
       await db_add_entry(log, conn, entry);
@@ -194,7 +252,7 @@ async function poll_entry_impl(conn, feed, entry, log, resolve) {
       return;
     }
 
-    if(config.script_generated_hosts.includes(url_obj.hostname)) {
+    if(config.script_generated_hosts.includes(request_url.hostname)) {
       entry.content = 'The content for this article cannot be viewed because ' +
         'it is dynamically generated.';
       await db_add_entry(log, conn, entry);
@@ -202,14 +260,14 @@ async function poll_entry_impl(conn, feed, entry, log, resolve) {
       return;
     }
 
-    if(config.paywall_hosts.includes(url_obj.hostname)) {
+    if(config.paywall_hosts.includes(request_url.hostname)) {
       entry.content = 'This content for this article is behind a paywall.';
       await db_add_entry(log, conn, entry);
       resolve(true);
       return;
     }
 
-    if(config.requires_cookies_hosts.includes(url_obj.hostname)) {
+    if(config.requires_cookies_hosts.includes(request_url.hostname)) {
       entry.content = 'This content for this article cannot be viewed ' +
         'because the website requires tracking information.';
       await db_add_entry(log, conn, entry);
@@ -217,27 +275,49 @@ async function poll_entry_impl(conn, feed, entry, log, resolve) {
       return;
     }
 
-    if(guess_if_url_is_non_html(url_obj)) {
+    if(guess_if_url_is_non_html(request_url)) {
       entry.content = 'This article is not a basic web page (e.g. a PDF).';
       await db_add_entry(log, conn, entry);
       resolve(true);
       return;
     }
 
+    // If there is no reason not to fetch, then fetch
     let fetch_event;
     try {
-      fetch_event = await fetch_html(url_obj, log);
+      fetch_event = await fetch_html(request_url, log);
     } catch(error) {
+      // If the fetch failed then fallback to the in-feed content
       poll_prep_local_doc(entry);
       await db_add_entry(log, conn, entry);
       resolve(true);
       return;
     }
 
+    // Now that we have fetched successfully, the response url is available.
+    // Add it to the entry's url list.
+    // Note that there is no shortcut to getting the response url. This means
+    // that services like feedproxy.google.com and bit.ly must be interacted
+    // with in order to get the next url. These services intentinally
+    // obfucscate the url and are impossible to bypass.
     let response_url_str = fetch_event.response_url_str;
-    add_entry_url(entry, response_url_str);
+    let did_add_response_url = add_entry_url(entry, response_url_str);
+
+    // If we added the response url, then that means it was distinct from the
+    // prior urls, which means one or more redirects occured. Now that the
+    // response url is known, and a redirect occurred, check for a match
+    if(did_add_response_url) {
+      const redirect_matches = await db_find_entry(conn,
+        [get_entry_url(entry)], find_limit, log);
+      if(redirect_matches.length) {
+        resolve(false);
+        return;
+      }
+    }
+
+    // It is a new entry and we have its full html. Cleanup the html
     const doc = fetch_event.document;
-    transform_lazy_images(doc);
+    poll_transform_lazy_images(doc, log);
     filter_sourceless_images(doc);
     filter_invalid_anchors(doc);
     resolve_doc(doc, log, new URL(response_url_str));
@@ -274,4 +354,30 @@ function poll_prep_doc(doc) {
   filter_boilerplate(doc);
   scrub_dom(doc);
   add_no_referrer(doc);
+}
+
+// the space check is a minimal validation, urls may be relative
+// TODO: maybe use a regex and \s
+// TODO: does the browser tolerate spaces in urls?
+function poll_transform_lazy_images(doc, log = SilentConsole) {
+  let num_modified = 0;
+  const images = doc.querySelectorAll('img');
+  for(let img of images) {
+    if(img.hasAttribute('src') || img.hasAttribute('srcset'))
+      continue;
+    for(let alt_name of config.lazy_image_attr_names) {
+      if(img.hasAttribute(alt_name)) {
+        const url = img.getAttribute(alt_name);
+        if(url && !url.trim().includes(' ')) {
+          const before_html = img.outerHTML;
+          img.removeAttribute(alt_name);
+          img.setAttribute('src', url);
+          //log.debug(before_html, 'transformed', img.outerHTML);
+          num_modified++;
+          break;
+        }
+      }
+    }
+  }
+  return num_modified;
 }
