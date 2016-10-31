@@ -8,9 +8,10 @@ TODO:
 - add helper for entry enclosure instead of how it is inlined
 - figure out the atom text node issue (cdata related?)
 - setup testing
-- maybe rename, this does not parse from text, it parses from a doc.
+- maybe rename, this does not parse from text, it unmarshals from a doc.
 -- on the other hand, i no longer get a doc when using the fetch api, maybe
 -- this should accept text as input?
+- maybe return [feed,entries] so i can use new expanding ES6 syntax thing
 */
 
 'use strict';
@@ -19,34 +20,29 @@ TODO:
 
 // Returns an event-like object with properties feed and entries. Throws an
 // error if parsing failed
+// @param doc {Document} an XML document
 function parse_feed(doc) {
+  if(!doc.documentElement.matches('feed, rss, rdf'))
+    throw new Error(
+      `Unsupported document element ${doc.documentElement.nodeName}`);
 
-  if(!doc)
-    throw new Error('Undefined document');
-
-  const doc_element = doc.documentElement;
-  if(!doc_element.matches('feed, rss, rdf'))
-    throw new Error(`Unsupported document element: ${doc_element.nodeName}`);
-
-  const channel = find_channel(doc_element);
+  const channel = find_channel(doc.documentElement);
   if(!channel)
     throw new Error('Missing channel element');
 
   const feed = {};
-  feed.type = find_feed_type(doc_element);
+  feed.type = find_feed_type(doc.documentElement);
   feed.title = find_child_text(channel, 'title');
   feed.description = find_child_text(channel,
-    doc_element.matches('feed') ? 'subtitle' : 'description');
+    doc.documentElement.matches('feed') ? 'subtitle' : 'description');
   feed.link = find_feed_link(channel);
   feed.datePublished = find_feed_date(channel);
 
-  // Guarantee that entries is at least a defined array
   const entries = [];
-  const entryElements = find_entries(channel);
-  for(let entry of entryElements) {
+  const entry_els = find_entries(channel);
+  for(let entry of entry_els) {
     entries.push(create_entry(feed.datePublished, entry));
   }
-
 
   return {
     'feed': feed,
@@ -224,8 +220,7 @@ function find_entry_author(entry) {
       return author_name;
   }
 
-  // In atom it is "dc:creator" but querySelector uses localName and ignores
-  // qualified name so just search by localName
+  // In atom it is "dc:creator" but querySelector uses localName
   const creator = find_child_text(entry, 'creator');
   if(creator)
     return creator;

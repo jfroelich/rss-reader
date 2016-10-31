@@ -54,10 +54,10 @@ function fetch_feed(url, log = SilentConsole) {
     } catch(error) {
     }
 
-    let text, doc, parse_result;
+    let parse_result;
     try {
-      text = await response.text();
-      doc = parse_xml(text);
+      const text = await response.text();
+      const doc = parse_xml(text);
       parse_result = parse_feed(doc);
     } catch(error) {
       reject(error);

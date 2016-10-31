@@ -173,9 +173,7 @@ function poll_filter_dup_entries(entries, log) {
       }
     }
 
-    if(found) {
-      //log.debug('Excluding duplicate entry', entry);
-    } else {
+    if(!found) {
       output.push(entry);
       seen_urls.push(...entry.urls);
     }
