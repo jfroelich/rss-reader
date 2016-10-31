@@ -2,14 +2,11 @@
 
 'use strict';
 
-// TODO: remove support for exclude_entries, it isn't much value and is
-// annoying to use as an extra param everywhere
-
 // Resolves with a basic object with properties feed and entries
 // feed is a feed object. entries is an array of entry objects, that is always
 // defined but may be zero length.
 // This does not guarantee that entries have urls
-function fetch_feed(url, exclude_entries = false, log = SilentConsole) {
+function fetch_feed(url, log = SilentConsole) {
   return new Promise(async function impl(resolve, reject) {
     log.log('Fetching feed', url.href);
     const accepts = [
@@ -61,7 +58,7 @@ function fetch_feed(url, exclude_entries = false, log = SilentConsole) {
     try {
       text = await response.text();
       doc = parse_xml(text);
-      parse_result = parse_feed(doc, exclude_entries);
+      parse_result = parse_feed(doc);
     } catch(error) {
       reject(error);
       return;

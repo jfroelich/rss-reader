@@ -8,8 +8,9 @@ TODO:
 - add helper for entry enclosure instead of how it is inlined
 - figure out the atom text node issue (cdata related?)
 - setup testing
-- maybe deprecate the should_exclude_entries flag, I am not sure the perf gain
-is worth the extra parameter
+- maybe rename, this does not parse from text, it parses from a doc.
+-- on the other hand, i no longer get a doc when using the fetch api, maybe
+-- this should accept text as input?
 */
 
 'use strict';
@@ -18,7 +19,7 @@ is worth the extra parameter
 
 // Returns an event-like object with properties feed and entries. Throws an
 // error if parsing failed
-function parse_feed(doc, should_exclude_entries) {
+function parse_feed(doc) {
 
   if(!doc)
     throw new Error('Undefined document');
@@ -40,13 +41,12 @@ function parse_feed(doc, should_exclude_entries) {
   feed.datePublished = find_feed_date(channel);
 
   // Guarantee that entries is at least a defined array
-  let entries = [];
-  if(!should_exclude_entries) {
-    const entryElements = find_entries(channel);
-    for(let entry of entryElements) {
-      entries.push(create_entry(feed.datePublished, entry));
-    }
+  const entries = [];
+  const entryElements = find_entries(channel);
+  for(let entry of entryElements) {
+    entries.push(create_entry(feed.datePublished, entry));
   }
+
 
   return {
     'feed': feed,

@@ -103,10 +103,9 @@ async function poll_feed_impl(conn, icon_conn, feed, skip_unmodified_guard,
   log, resolve) {
 
   try {
-    const exclude_entries = false;
     const url = new URL(get_feed_url(feed));
-    let fetch_result = await fetch_feed(url, exclude_entries, log);
-    let remote_feed = fetch_result.feed;
+    const fetch_result = await fetch_feed(url, log);
+    const remote_feed = fetch_result.feed;
     // The dateUpdated check allows for newly subscribed feeds to never to be
     // considered unmodified
     if(!skip_unmodified_guard && feed.dateUpdated &&

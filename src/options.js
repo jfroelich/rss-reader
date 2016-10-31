@@ -214,7 +214,7 @@ async function show_sub_preview(url) {
   show_element(progress_element);
 
   try {
-    let fetch_output = fetch_feed(url);
+    let fetch_output = fetch_feed(url, console);
     const progress_element = document.getElementById(
       'sub-preview-load-progress');
     hide_element(progress_element);
