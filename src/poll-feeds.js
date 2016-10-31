@@ -122,33 +122,32 @@ async function poll_feed_impl(conn, icon_conn, feed, skip_unmodified_guard,
     // Merge the local properties with the remote properties, favoring the
     // remote properties
     const merged_feed = merge_feeds(feed, remote_feed);
-
-    // TODO: rather than await db_put_feed, it is technically non-blocking
-    // against poll_entry, it could just be another one of the promises
-    // involved in the promises collection below that is input to Promise.all
-    // I think it is quite simple. push the update call into the promises array,
-    // then pop it after Promise.all resolves and before reducing the other
-    // promises
-    // TODO: first test changes of deprecating db_update_feed
-
+    // Prep the feed for storage
     let storable_feed = sanitize_feed(merged_feed);
     storable_feed = filter_empty_props(storable_feed);
-
-    const stored_feed = await db_put_feed(conn, storable_feed, log);
+    // Put the feed, keep a reference to the promise
+    const put_feed_promise = db_put_feed(conn, storable_feed, log);
     let entries = fetch_result.entries;
     entries = poll_filter_dup_entries(entries, log);
     const promises = entries.map((entry) => poll_entry(conn, icon_conn,
       storable_feed, entry, log));
-
+    promises.push(put_feed_promise);
     const results = await Promise.all(promises);
+    results.pop();// remove put_feed_promise
     const num_entries_added = results.reduce((sum, r) => r ? sum + 1 : sum, 0);
-    if(num_entries_added)
+
+    // TODO: I would rather not await this. I really need to look into how try
+    // catch works around a non-awaited promised. Maybe one solution is to just
+    // use .catch for now? what about premature calling of conn.close though?
+    // Don't I have to await?
+    if(num_entries_added) {
       await update_badge(conn, log);
+    }
 
     resolve();
   } catch(error) {
     log.debug(error);
-    resolve(error);
+    resolve(error);// avoid Promise.all fail fast
   }
 }
 
