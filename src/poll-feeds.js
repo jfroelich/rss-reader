@@ -2,9 +2,6 @@
 
 'use strict';
 
-// TODO: remove the entry-has-url guarantee from fetch-feed and
-// parse-feed.
-
 // TODO: move tracking back into this file
 // TODO: add is-active feed functionality, do not poll in-active feeds
 // TODO: deactivate unreachable feeds after x failures
@@ -197,7 +194,7 @@ function poll_entry(conn, icon_conn, feed, entry, log) {
 async function poll_entry_impl(conn, icon_conn, feed, entry, log, resolve) {
 
   // While some reader apps tolerate entries without urls, this app requires
-  // them because links are used for comparison
+  // them because links are used as GUIDs
   // Do not assume the entry has a url. It is this fn's responsibility to guard
   // against this constraint. Even though it could be checked earlier,
   // the earlier processes are not concerned with whether entries have urls
@@ -230,9 +227,6 @@ async function poll_entry_impl(conn, icon_conn, feed, entry, log, resolve) {
       entry.feedTitle = feed.title;
 
     // Set the entry's favicon url
-
-    // TODO: do I need an extra try/catch or does this only reject on error?
-
     const prefetched_doc = null;
     let icon_url = await favicon_lookup(undefined, icon_conn, request_url,
       prefetched_doc, log);
@@ -294,17 +288,10 @@ async function poll_entry_impl(conn, icon_conn, feed, entry, log, resolve) {
     }
 
     // Now that we have fetched successfully, the response url is available.
-    // Add it to the entry's url list.
-    // Note that there is no shortcut to getting the response url. This means
-    // that services like feedproxy.google.com and bit.ly must be interacted
-    // with in order to get the next url. These services intentinally
-    // obfucscate the url and are impossible to bypass.
-    let response_url_str = fetch_event.response_url_str;
-    let did_add_response_url = add_entry_url(entry, response_url_str);
+    const did_add_response_url = add_entry_url(entry,
+      fetch_event.response_url_str);
 
-    // If we added the response url, then that means it was distinct from the
-    // prior urls, which means one or more redirects occured. Now that the
-    // response url is known, and a redirect occurred, check for a match
+    // Check if an entry with the response url exists
     if(did_add_response_url) {
       const redirect_matches = await db_find_entry(conn,
         [get_entry_url(entry)], find_limit, log);
@@ -319,7 +306,7 @@ async function poll_entry_impl(conn, icon_conn, feed, entry, log, resolve) {
     poll_transform_lazy_images(doc, log);
     filter_sourceless_images(doc);
     filter_invalid_anchors(doc);
-    resolve_doc(doc, log, new URL(response_url_str));
+    resolve_doc(doc, log, new URL(get_entry_url(entry)));
     filter_tracking_images(doc, config.tracking_hosts, log);
     const num_images_modified = await set_image_dimensions(doc, log);
     poll_prep_doc(doc);

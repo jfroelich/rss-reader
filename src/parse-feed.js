@@ -2,7 +2,6 @@
 
 /*
 TODO:
-- do not require entries to have urls, that is some other modules responsibility
 - support <media:thumbnail url="imgurl" /> (atom)
 - do not introduce fallback dates, if date is not set then do not use
 - do not cascade feed date to entry date
@@ -235,25 +234,16 @@ function find_entry_author(entry) {
 
 function find_entry_link(entry) {
   const is_atom = entry.ownerDocument.documentElement.matches('feed');
-  let link_text;
-  let link_element;
   if(is_atom) {
-    link_element = find_child(entry, is_link_rel_alt) ||
+    const link_element = find_child(entry, is_link_rel_alt) ||
       find_child(entry, is_link_rel_self) ||
       find_child(entry, is_link_with_href);
     if(link_element)
-      link_text = link_element.getAttribute('href');
+      return link_element.getAttribute('href');
   } else {
-    link_text = find_child_text(entry, 'origlink') ||
+    return find_child_text(entry, 'origlink') ||
       find_child_text(entry, 'link');
   }
-
-  if(link_text)
-    try {
-      return new URL(link_text).href;
-    } catch(error) {
-      console.debug(error);
-    }
 }
 
 function find_entry_date(entry) {
