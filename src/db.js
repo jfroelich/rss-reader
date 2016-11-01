@@ -2,6 +2,8 @@
 
 'use strict';
 
+// TODO: name anonymous functions for simpler debugging
+
 // TODO: add/update feed should delegate to put feed
 // TODO: maybe merge add/put entry into one function
 // TODO: maybe entry states should be in a single property instead of
@@ -10,31 +12,37 @@
 // feeds instead of using the title index, deprecate the title index, stop
 // ensuring title is an empty string. note: i partly did some of this
 
-const DB_DEFAULT_TARGET = {
-  'name': 'reader',
-  'version': 20
-};
+const ENTRY_UNREAD = 0;
+const ENTRY_READ = 1;
+const ENTRY_UNARCHIVED = 0;
+const ENTRY_ARCHIVED = 1;
 
-function db_connect(target = DB_DEFAULT_TARGET, log = SilentConsole) {
-  return new Promise(db_connect_impl.bind(undefined, target, log));
-}
+function db_connect(name = config.db_name, version = config.db_version,
+  log = SilentConsole) {
 
-function db_connect_impl(target, log, resolve, reject) {
-  log.log('Connecting to database', target.name, target.version);
-  const request = indexedDB.open(target.name, target.version);
-  request.onupgradeneeded = db_upgrade.bind(request, log);
-  request.onsuccess = function(event) {
-    const conn = event.target.result;
-    log.debug('Connected to database', conn.name);
-    resolve(conn);
-  };
-  request.onerror = function(event) {
-    reject(event.target.error);
-  };
-  request.onblocked = function(event) {
+  function db_connect_impl(resolve, reject) {
+    log.log('Connecting to database', name, version);
+    const request = indexedDB.open(name, version);
+    request.onupgradeneeded = db_upgrade.bind(request, log);
+    request.onsuccess = function db_connect_onsuccess(event) {
+      const conn = event.target.result;
+      log.debug('Connected to database', conn.name);
+      resolve(conn);
+    };
+    request.onerror = function db_connect_on_error(event) {
+      reject(event.target.error);
+    };
+    request.onblocked = db_connect_onblocked;
+  }
+
+  function db_connect_onblocked(event) {
     log.debug('connection blocked, waiting indefinitely');
-  };
+  }
+
+  return new Promise(db_connect_impl);
+
 }
+
 
 // TODO: revert upgrade to using a version migration approach
 // NOTE: untested after switch to promise
@@ -120,21 +128,18 @@ function db_upgrade(log, event) {
 }
 
 function db_delete(name) {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function db_delete_impl(resolve, reject) {
     const request = indexedDB.deleteDatabase(name);
-    request.onsuccess = function(event) {
+    request.onsuccess = function db_delete_onsuccess(event) {
       resolve();
     };
-    request.onerror = function(event) {
+    request.onerror = function db_delete_onerror(event) {
       reject(event.target.error);
     };
   });
 }
 
-const ENTRY_UNREAD = 0;
-const ENTRY_READ = 1;
-const ENTRY_UNARCHIVED = 0;
-const ENTRY_ARCHIVED = 1;
+
 
 function get_feed_url(feed) {
   if(!feed.urls.length)
@@ -310,7 +315,7 @@ function db_add_entry(log, conn, entry) {
 }
 
 function db_add_feed(log, conn, feed) {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function db_add_feed_impl(resolve, reject) {
     if('id' in feed) {
       reject(new TypeError());
       return;
@@ -323,13 +328,13 @@ function db_add_feed(log, conn, feed) {
     const tx = conn.transaction('feed', 'readwrite');
     const store = tx.objectStore('feed');
     const request = store.add(storable);
-    request.onsuccess = function(event) {
+    request.onsuccess = function db_add_feed_onsuccess(event) {
       storable.id = event.target.result;
       log.debug('Added feed %s with new id %s', get_feed_url(storable),
         storable.id);
       resolve(storable);
     };
-    request.onerror = function(event) {
+    request.onerror = function db_add_feed_onerror(event) {
       log.debug(event.target.error);
       reject(event.target.error);
     };
@@ -339,16 +344,16 @@ function db_add_feed(log, conn, feed) {
 // TODO: normalize feed url?
 // TODO: move log to last arg
 function db_contains_feed_url(log, conn, url) {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function db_contains_feed_url_impl(resolve, reject) {
     log.debug('Checking for feed with url', url);
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
     const index = store.index('urls');
     const request = index.get(url);
-    request.onsuccess = function(event) {
+    request.onsuccess = function db_contains_feed_url_onsuccess(event) {
       resolve(!!event.target.result);
     };
-    request.onerror = function(event) {
+    request.onerror = function db_contains_feed_url_onerror(event) {
       log.debug(event.target.error);
       reject(event.target.error);
     };
@@ -356,75 +361,80 @@ function db_contains_feed_url(log, conn, url) {
 }
 
 function db_find_feed_by_id(conn, id, log = SilentConsole) {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function db_find_feed_by_id_impl(resolve, reject) {
     log.debug('Finding feed by id', id);
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
     const request = store.get(id);
-    request.onsuccess = function(event) {
+    request.onsuccess = function db_find_feed_by_id_onsuccess(event) {
       const feed = event.target.result;
       log.debug('Find result', feed);
       resolve(feed);
     };
-    request.onerror = function(event) {
+    request.onerror = function db_find_feed_by_id_onerror(event) {
       reject(event.target.error);
     };
   });
 }
 
-// TODO: change to something like db_contains_entry that does not need a
-// limit parameter and just yields a boolean
-// Assumes urls are normalized
-function db_find_entry(conn, urls, limit, log) {
-  return new Promise(function(resolve, reject) {
-    if(!urls.length) {
+// @param conn {IDBDatabase}
+// @param urls {Array<String>} valid normalized entry urls
+function db_contains_entry(conn, urls, log) {
+  return new Promise(function contains_impl(resolve, reject) {
+    // This is an actual error because it should never happen
+    if(!urls || !urls.length) {
       reject(new TypeError());
       return;
     }
-
-    //log.log('Find entry', urls);
-    const matches = [];
-    let reached_limit = false;
-
+    let did_resolve = false;
     const tx = conn.transaction('entry');
-    tx.oncomplete = function(event) {
-      //log.log('Found %d entries for %o', matches.length, urls);
-      resolve(matches);
+
+    // TODO: this may have a built in timeout that I can skip if I track
+    // num urls processed myself, let the last onsuccess handler to meet the
+    // num processed === urls.length condition to do the final resolve
+    // or maybe better, use a promise for each request that accepts the same
+    // tx, then use await Promise.all on the promises? But I still do not
+    // short-circuit in the manner I want? But maybe that doesn't matter
+    // because I am not shortcircuiting now anyway
+
+    tx.oncomplete = function tx_oncomplete(event) {
+      if(!did_resolve)
+        resolve(false);
     };
+
     const store = tx.objectStore('entry');
     const index = store.index('urls');
-
-    // Iterate in reverse to increase the chance of an earlier exit
-    // TODO: this only would matter if we search the urls sequentially, but
-    // we currently search concurrently, so maybe this is stupid
-    for(let i = urls.length - 1; i > -1; i--) {
-      const request = index.openCursor(urls[i]);
-      request.onsuccess = on_success;
-      request.onerror = log.error;
+    for(let url of urls) {
+      const request = index.openKeyCursor(url);
+      request.onsuccess = open_key_cursor_onsuccess;
     }
 
-    // TODO: avoid pushing dups?
-    // TODO: >= or > ?
-    function on_success(event) {
+    function open_key_cursor_onsuccess(event) {
+      if(did_resolve)
+        return;
       const cursor = event.target.result;
-      if(cursor && !reached_limit) {
-        matches.push(cursor.value);
-        reached_limit = limit && matches.length >= limit;
-        if(!reached_limit)
-          cursor.continue();
+      if(!cursor) {
+        return;
       }
+
+      // TODO: would tx.abort cancel the other requests without an exception?
+
+      // if cursor is defined, then cursor.key is defined, but there is no need
+      // to access it
+      did_resolve = true;
+      resolve(true);
     }
   });
 }
 
 function db_put_feed(conn, feed, log) {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function db_put_feed_impl(resolve, reject) {
     log.debug('Storing feed %s in database %s', get_feed_url(feed), conn.name);
     feed.dateUpdated = new Date();
     const tx = conn.transaction('feed', 'readwrite');
     const store = tx.objectStore('feed');
     const request = store.put(feed);
-    request.onsuccess = function(event) {
+    request.onsuccess = function db_put_feed_onsuccess(event) {
       log.debug('Successfully put feed', get_feed_url(feed));
       if(!('id' in feed)) {
         log.debug('New feed id', event.target.result);
@@ -433,7 +443,7 @@ function db_put_feed(conn, feed, log) {
       // TODO: no need to pass back feed?
       resolve(feed);
     };
-    request.onerror = function(event) {
+    request.onerror = function db_put_feed_onerror(event) {
       log.debug(event.target.error);
       reject(event.target.error);
     };
@@ -442,24 +452,24 @@ function db_put_feed(conn, feed, log) {
 
 // TODO: use native getAll
 function db_get_all_feeds(conn, log = SilentConsole) {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function db_get_all_feeds_impl(resolve, reject) {
     log.log('Opening cursor over feed store');
     const feeds = [];
     const tx = conn.transaction('feed');
-    tx.oncomplete = function(event) {
+    tx.oncomplete = function db_get_all_feeds_txcomplete(event) {
       log.log('Loaded %s feeds', feeds.length);
       resolve(feeds);
     };
     const store = tx.objectStore('feed');
     const request = store.openCursor();
-    request.onsuccess = function(event) {
+    request.onsuccess = function db_get_all_feeds_onsuccess(event) {
       const cursor = event.target.result;
       if(cursor) {
         feeds.push(cursor.value);
         cursor.continue();
       }
     };
-    request.onerror = function(event) {
+    request.onerror = function db_get_all_feeds_onerror(event) {
       log.debug(event.target.error);
       reject(event.target.error);
     };
@@ -468,71 +478,68 @@ function db_get_all_feeds(conn, log = SilentConsole) {
 
 // TODO: reverse argument order
 function db_count_unread_entries(log = SilentConsole, conn) {
-  return new Promise(db_count_unread_entries_impl.bind(undefined, log, conn));
-}
-
-function db_count_unread_entries_impl(log, conn, resolve, reject) {
-  log.debug('Counting unread entries');
-  const tx = conn.transaction('entry');
-  const store = tx.objectStore('entry');
-  const index = store.index('readState');
-  const request = index.count(ENTRY_UNREAD);
-  request.onsuccess = function(event) {
-    log.debug('Counted %d unread entries', event.target.result);
-    resolve(event.target.result);
-  };
-  request.onerror = function(event) {
-    log.error(event.target.error);
-    reject(event.target.error);
-  };
+  return new Promise(function db_count_unread_entries_impl(resolve, reject) {
+    log.debug('Counting unread entries');
+    const tx = conn.transaction('entry');
+    const store = tx.objectStore('entry');
+    const index = store.index('readState');
+    const request = index.count(ENTRY_UNREAD);
+    request.onsuccess = function db_count_unread_entries_onsuccess(event) {
+      log.debug('Counted %d unread entries', event.target.result);
+      resolve(event.target.result);
+    };
+    request.onerror = function db_count_unread_entries_onerror(event) {
+      log.error(event.target.error);
+      reject(event.target.error);
+    };
+  });
 }
 
 function db_get_unarchived_unread_entries(conn, offset, limit,
   log = SilentConsole) {
-  return new Promise(db_get_unarchived_unread_entries_impl.bind(undefined,
-    conn, offset, limit, log));
+  return new Promise(function db_get_unarchived_unread_entries_impl(resolve,
+    reject) {
+
+    const entries = [];
+    let counter = 0;
+    let advanced = false;
+    const tx = conn.transaction('entry');
+    tx.oncomplete = function(event) {
+      resolve(entries);
+    };
+    const store = tx.objectStore('entry');
+    const index = store.index('archiveState-readState');
+    const keyPath = [ENTRY_UNARCHIVED, ENTRY_UNREAD];
+    const request = index.openCursor(keyPath);
+    request.onsuccess = function db_get_unarchived_unread_entries_onsuccess(
+      event) {
+      const cursor = event.target.result;
+      if(!cursor)
+        return;
+      if(offset && !advanced) {
+        advanced = true;
+        log.debug('Advancing cursor by', offset);
+        cursor.advance(offset);
+        return;
+      }
+      entries.push(cursor.value);
+      if(limit > 0 && ++counter < limit)
+        cursor.continue();
+    };
+    request.onerror = function db_get_unarchived_unread_entries_onerror(event) {
+      reject(event.target.error);
+    };
+  });
 }
 
-function db_get_unarchived_unread_entries_impl(conn, offset, limit, log,
-  resolve, reject) {
 
-  const entries = [];
-  let counter = 0;
-  let advanced = false;
-  const tx = conn.transaction('entry');
-  tx.oncomplete = function(event) {
-    resolve(entries);
-  };
-  const store = tx.objectStore('entry');
-  const index = store.index('archiveState-readState');
-  const keyPath = [ENTRY_UNARCHIVED, ENTRY_UNREAD];
-  const request = index.openCursor(keyPath);
-  request.onsuccess = function(event) {
-    const cursor = event.target.result;
-    if(!cursor)
-      return;
-    if(offset && !advanced) {
-      advanced = true;
-      log.debug('Advancing cursor by', offset);
-      cursor.advance(offset);
-      return;
-    }
-    entries.push(cursor.value);
-    if(limit > 0 && ++counter < limit)
-      cursor.continue();
-  };
-  request.onerror = function(event) {
-    reject(event.target.error);
-  };
-}
-
+// TODO: convert to async, do not use bind
 // TODO: require the caller to pass in conn now that it is easier to do with
 // async
 function db_mark_entry_read(id, log = SilentConsole) {
   return new Promise(db_mark_entry_read_impl.bind(undefined, id, log));
 }
 
-// TODO: convert to async once I figure out how to make the cursor promise
 function db_mark_entry_read_impl(id, log, resolve, reject) {
   log.debug('Marking entry %s as read', id);
   if(!Number.isInteger(id) || id < 1) {
@@ -540,7 +547,7 @@ function db_mark_entry_read_impl(id, log, resolve, reject) {
     return;
   }
 
-  db_connect(undefined, log).then(
+  db_connect(undefined, undefined, log).then(
     connect_on_success).catch(
       reject);
 

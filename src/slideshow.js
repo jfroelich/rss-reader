@@ -39,30 +39,26 @@ function mark_slide_read(slide) {
   db_mark_entry_read(id);
 }
 
+// TODO: require caller to establish conn, do not do it here?
+// TODO: visual feedback on error
 // Resolves to number appended
 function append_slides() {
-  return new Promise(append_slides_impl);
-}
-
-// TODO: require caller to establish conn, do not do it here
-// TODO: visual feedback on error
-async function append_slides_impl(resolve, reject) {
-  let conn = null;
-  try {
-    conn = await db_connect();
+  return new Promise(async function append_slides_impl(resolve, reject) {
     const limit = 3;
     const offset = count_unread_slides();
-    const entries = await db_get_unarchived_unread_entries(conn, offset, limit);
-    for(let entry of entries)
-      append_slide(entry);
-    resolve(entries.length);
-  } catch(error) {
-    console.debug(error);
-    reject(error);
-  } finally {
-    if(conn)
+    try {
+      const conn = await db_connect();
+      const entries = await db_get_unarchived_unread_entries(conn, offset,
+        limit);
       conn.close();
-  }
+      for(let entry of entries)
+        append_slide(entry);
+      resolve(entries.length);
+    } catch(error) {
+      console.debug(error);
+      reject(error);
+    }
+  });
 }
 
 // Add a new slide to the view.
@@ -176,24 +172,17 @@ function filter_article_title(title) {
 }
 
 function slide_on_click(event) {
-  // TODO: will this suppress right click too? I don't want that
-  event.preventDefault();
-
   const left_mouse_btn_code = 1;
-  // TODO: i may need to use event.currentTarget, i think target is just where
-  // listener is bound?
-  if(event.which === left_mouse_btn_code && event.currentTarget.matches('a')) {
-    console.debug('left clicked on link in current slide', event.target);
-
-    mark_slide_read(current_slide);
-    chrome.tabs.create({
-      'active': true,
-      'url': event.target.getAttribute('href')
-    });
-  } else {
-    console.debug('Click event unhandled', event);
-  }
-
+  if(event.which !== left_mouse_btn_code)
+    return true;
+  const anchor = event.target.closest('a');
+  if(!anchor)
+    return true;
+  if(!anchor.hasAttribute('href'))
+    return true;
+  chrome.tabs.create({'active': true, 'url': anchor.getAttribute('href')});
+  mark_slide_read(current_slide);
+  event.preventDefault();
   return false;
 }
 
@@ -206,9 +195,10 @@ async function show_next_slide() {
 
   // Conditionally append more slides
   const unread_count = count_unread_slides();
+  let num_appended = 0;
   if(unread_count < 2) {
     try {
-      await append_slides();
+      num_appended = await append_slides();
     } catch(error) {
       console.debug(error);
     }
@@ -221,15 +211,18 @@ async function show_next_slide() {
     current_slide.nextSibling.style.right = '0px';
     current_slide.scrollTop = 0;
     current_slide = current_slide.nextSibling;
+
+    // Only mark the current slide read if actually navigating
+    mark_slide_read(old_slide);
   }
 
-  mark_slide_read(old_slide);
-
   // Shrink the number of slides
-  const container = document.getElementById('slideshow-container');
-  while(container.childElementCount > 6 &&
-    container.firstChild !== current_slide) {
-    remove_slide(container.firstChild);
+  if(num_appended > 0) {
+    const container = document.getElementById('slideshow-container');
+    while(container.childElementCount > 6 &&
+      container.firstChild !== current_slide) {
+      remove_slide(container.firstChild);
+    }
   }
 }
 
@@ -299,15 +292,14 @@ function on_key_down(event) {
   }
 }
 
-window.addEventListener('keydown', on_key_down, false);
+window.addEventListener('keydown', on_key_down);
 
 function init_slides(event) {
-  document.removeEventListener('DOMContentLoaded', init_slides);
   display_load_styles();
   append_slides();
 }
 
 // TODO: look into the {once:true} thing
-document.addEventListener('DOMContentLoaded', init_slides);
+document.addEventListener('DOMContentLoaded', init_slides, {'once': true});
 
 } // End file block scope

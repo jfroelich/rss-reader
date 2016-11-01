@@ -4,6 +4,9 @@
 
 const config = {};
 
+config.db_name = 'reader';
+config.db_version = 20;
+
 // How many seconds must elapse before checking idle state yields idle result
 config.poll_feeds_idle_period_secs = 30;
 

@@ -4,50 +4,32 @@
 
 const archive_default_entry_max_age = 1 * 24 * 60 * 60 * 1000; // 1 day in ms
 
-// TODO: require a conn, require caller to open/close and provide conn, do not
-// do it here. This seems like better dep inj.
-
-function archive_entries(db_target, max_age = archive_default_entry_max_age,
+function archive_entries(conn, max_age = archive_default_entry_max_age,
   log = SilentConsole) {
-  return new Promise(archive_entries_impl.bind(undefined, db_target, max_age,
-    log));
-}
+  return new Promise(function archive_impl(resolve, reject) {
+    if(typeof max_age !== 'undefined' &&
+      (!Number.isInteger(max_age) || max_age < 0)) {
+      reject(new TypeError());
+      return;
+    }
 
-async function archive_entries_impl(db_target, max_age, log, resolve, reject) {
-  if(typeof max_age !== 'undefined' &&
-    (!Number.isInteger(max_age) || max_age < 0)) {
-    reject(new TypeError());
-    return;
-  }
+    log.log('Archiving entries older than %d ms', max_age);
+    let num_modified = 0, num_scanned = 0;
+    const current_date = new Date();
+    const chan = new BroadcastChannel('db');
+    log.debug('Opened broadcast channel', chan.name);
 
-  log.log('Archiving entries older than %d ms', max_age);
-  let num_modified = 0, num_scanned = 0;
-  const current_date = new Date();
-  const chan = new BroadcastChannel('db');
-  log.debug('Opened broadcast channel', chan.name);
-  let conn;
-
-  try {
-    conn = await db_connect(db_target, log);
     const tx = conn.transaction('entry', 'readwrite');
     tx.onabort = function(event) {
       reject(event.target.error);
-      if(conn) {
-        log.debug('Closing database', conn.name);
-        conn.close();
-      }
       log.debug('Closing broadcast channel', chan.name);
       chan.close();
     };
 
     tx.oncomplete = function(event) {
-      log.log('Archive entries completed (scanned %s, compacted %s)',
+      log.log('Archive entries completed (scanned %d, compacted %d)',
         num_scanned, num_modified);
       resolve(num_modified);
-      if(conn) {
-        log.debug('Closing database', conn.name);
-        conn.close();
-      }
       log.debug('Closing broadcast channel', chan.name);
       chan.close();
     };
@@ -85,16 +67,21 @@ async function archive_entries_impl(db_target, max_age, log, resolve, reject) {
             get_entry_url(entry), age, before, after);
         }
 
+        // This is async. The promise may resolve before this resolves.
+        // However, conn.close allows for pending requests to resolve.
         cursor.update(compacted);
         chan.postMessage({'type': 'archive_entry_request', 'id': entry.id});
       }
       num_scanned++;
       cursor.continue();
     };
+
     request.onerror = function(event) {
-      throw event.target.error;
+      // TODO: this aborts, right? double check
+      // the issue is this might double reject
+      // just going to not reject here for now and assume
+      // tx.onabort is called
+      log.debug(event.target.error);
     };
-  } catch(error) {
-    reject(error);
-  }
+  });
 }

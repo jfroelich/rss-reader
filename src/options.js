@@ -316,7 +316,7 @@ async function feed_list_item_on_click(event) {
   // TODO: should this even catch?
   let conn, feed;
   try {
-    conn = await db_connect(undefined, console);
+    conn = await db_connect(undefined, undefined, console);
     feed = await db_find_feed_by_id(conn, feed_id, console);
   } catch(error) {
     console.debug(error);
@@ -601,7 +601,7 @@ async function export_opml_btn_on_click(event) {
   const file_name = 'subs.xml';
   let conn, feeds;
   try {
-    conn = await db_connect();
+    conn = await db_connect(undefined, undefined, console);
     feeds = await db_get_all_feeds(conn);
   } catch(error) {
     console.debug(error);
@@ -622,7 +622,7 @@ async function init_subs_section() {
   let conn, feeds;
 
   try {
-    conn = await db_connect();
+    conn = await db_connect(undefined, undefined, console);
     feeds = await db_get_all_feeds(conn);
   } catch(error) {
     console.debug(error);
@@ -780,7 +780,6 @@ function body_height_on_input(event) {
 }
 
 function on_dom_loaded(event) {
-  document.removeEventListener('DOMContentLoaded', on_dom_loaded);
 
   // Init CSS styles that affect the display preview area
   display_load_styles();
@@ -946,6 +945,6 @@ function on_dom_loaded(event) {
   show_section(subs_section);
 }
 
-document.addEventListener('DOMContentLoaded', on_dom_loaded);
+document.addEventListener('DOMContentLoaded', on_dom_loaded, {'once': true});
 
 }

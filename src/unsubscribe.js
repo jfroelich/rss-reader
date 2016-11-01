@@ -18,7 +18,7 @@ async function unsubscribe_impl(feed_id, log, resolve, reject) {
   log.log('Unsubscribing from feed with id', feed_id);
   let conn = null;
   try {
-    conn = await db_connect(undefined, log);
+    conn = await db_connect(undefined, undefined, log);
     let ndeleted = await db_delete_feed_and_entries(conn, feed_id, log);
     log.debug('Deleted %d entries with feed id', ndeleted, feed_id);
     resolve(ndeleted);

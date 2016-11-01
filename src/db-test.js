@@ -1,38 +1,24 @@
 // See license.md
 
-function test() {
-
-  const test_target = {
-    'name': 'test-feed-db',
-    'version': 1
-  };
-
-  const connectPromise = db_connect(test_target, console);
-  connectPromise.then(connect_on_success);
-  connectPromise.catch(connect_on_error);
-
-  function connect_on_success(conn) {
+async function test() {
+  const db_name = 'test-feed-db';
+  let conn;
+  try {
+    conn = await db_connect(db_name, 1, console)
     console.log('Successfully opened database', conn.name);
     console.log('Requesting database %s to close eventually', conn.name);
     conn.close();
-    const request = indexedDB.deleteDatabase(conn.name);
-    request.onsuccess = delete_on_success;
-    request.onerror = delete_on_error;
+  } catch(error) {
+    console.log(error);
   }
 
-  function connect_on_error(error) {
-    const request = indexedDB.deleteDatabase(test_target.name);
-    request.onsuccess = delete_on_success;
-    request.onerror = delete_on_error;
-  }
-
-  function delete_on_success(event) {
-    console.log('Deleted database', db.name);
-  }
-
-  function delete_on_error(event) {
-    console.error(event.target.error);
+  if(conn) {
+    try {
+      console.log('Deleting database', conn.name);
+      await db_delete(conn.name);
+      console.log('Deleted database', conn.name);
+    } catch(error) {
+      console.log(error);
+    }
   }
 }
-
-window.addEventListener('DOMContentLoaded', test);

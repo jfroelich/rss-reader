@@ -2,6 +2,8 @@
 
 'use strict';
 
+// TODO: research why so much idle time, it is almost like fetch processing
+// is not concurrent
 // TODO: move tracking back into this file
 // TODO: add is-active feed functionality, do not poll in-active feeds
 // TODO: deactivate unreachable feeds after x failures
@@ -10,70 +12,80 @@
 // TODO: store deactivation date
 
 function poll_feeds(options = {}) {
-  return new Promise(poll_feeds_impl.bind(undefined, options));
-}
+  return new Promise(async function poll_feeds_impl(resolve, reject) {
+    const log = options.log || SilentConsole;
+    log.log('Checking for new articles...');
 
-async function poll_feeds_impl(options, resolve, reject) {
-  const log = options.log || SilentConsole;
-  log.log('Checking for new articles...');
-
-  if(!poll_acquire_lock(options.force_reset_lock, log)) {
-    reject(new Error('locked'));
-    return;
-  }
-
-  if('onLine' in navigator && !navigator.onLine) {
-    poll_release_lock(log);
-    reject(new Error('offline'));
-    return;
-  }
-
-  // navigator.connection is experimental
-  if(!options.allow_metered && 'NO_POLL_METERED' in localStorage &&
-    navigator.connection && navigator.connection.metered) {
-    poll_release_lock(log);
-    reject(new Error('metered connection'));
-    return;
-  }
-
-  if(!options.ignore_idle_state && 'ONLY_POLL_IF_IDLE' in localStorage) {
-    const state = await query_idle_state(config.poll_feeds_idle_period_secs);
-    if(state !== 'locked' && state !== 'idle') {
-      poll_release_lock(log);
-      reject(new Error('not idle, state is ' + state));
+    // TODO: this is not necessarily an error
+    if(!poll_acquire_lock(options.force_reset_lock, log)) {
+      reject(new Error('locked'));
       return;
     }
-  }
 
-  let conn, icon_conn;
-  try {
-    conn = await db_connect(undefined, log);
-    icon_conn = await favicon_connect(undefined, log);
-    const feeds = await db_get_all_feeds(conn, log);
-    const pf_promises = feeds.map((feed) => poll_feed(conn, icon_conn, feed,
-      options.skip_unmodified_guard, log));
-    await Promise.all(pf_promises);
-    const chan = new BroadcastChannel('poll');
-    chan.postMessage('completed');
-    chan.close();
-    show_notification('Updated articles',
-      'Completed checking for new articles');
-    resolve();
-    poll_release_lock(log);
+    // TODO: is this an error or just an alternate resolution?
+    if('onLine' in navigator && !navigator.onLine) {
+      poll_release_lock(log);
+      reject(new Error('offline'));
+      return;
+    }
 
-    if(conn) {
-      log.debug('Closing database', conn.name);
-      conn.close();
+    // navigator.connection is experimental
+    if(!options.allow_metered && 'NO_POLL_METERED' in localStorage &&
+      navigator.connection && navigator.connection.metered) {
+      poll_release_lock(log);
+      reject(new Error('metered connection'));
+      return;
     }
-    if(icon_conn) {
-      log.debug('Closing database', icon_conn.name);
-      icon_conn.close();
+
+    if(!options.ignore_idle_state && 'ONLY_POLL_IF_IDLE' in localStorage) {
+      const state = await query_idle_state(config.poll_feeds_idle_period_secs);
+      if(state !== 'locked' && state !== 'idle') {
+        poll_release_lock(log);
+        reject(new Error('not idle, state is ' + state));
+        return;
+      }
     }
-    log.debug('Polling completed');
-  } catch(error) {
-    reject(error);
-  }
+
+    try {
+      const conn = await db_connect(undefined, undefined, log);
+      const icon_conn = await favicon_connect(undefined, log);
+      const feeds = await db_get_all_feeds(conn, log);
+      const pf_promises = feeds.map((feed) => poll_feed(conn, icon_conn, feed,
+        options.skip_unmodified_guard, log));
+      const pf_results = await Promise.all(pf_promises);
+      const num_entries_added = pf_results.reduce((sum,r)=> sum+r, 0);
+
+      if(num_entries_added > 0) {
+
+        // Must await to avoid calling on closed conn
+        await update_badge(conn, log);
+
+        const chan = new BroadcastChannel('poll');
+        chan.postMessage('completed');
+        chan.close();
+      }
+
+      show_notification('Updated articles',
+        'Added ' + num_entries_added + ' new articles');
+      resolve();
+
+      poll_release_lock(log);
+
+      if(conn) {
+        log.debug('Closing database', conn.name);
+        conn.close();
+      }
+      if(icon_conn) {
+        log.debug('Closing database', icon_conn.name);
+        icon_conn.close();
+      }
+      log.debug('Polling completed');
+    } catch(error) {
+      reject(error);
+    }
+  });
 }
+
 
 function poll_acquire_lock(force_reset_lock, log) {
   if(force_reset_lock)
@@ -95,56 +107,43 @@ function poll_release_lock(log) {
 }
 
 function poll_feed(conn, icon_conn, feed, skip_unmodified_guard, log) {
-  return new Promise(poll_feed_impl.bind(undefined, conn, icon_conn, feed,
-    skip_unmodified_guard, log));
-}
+  return new Promise(async function poll_feed_impl(resolve) {
+    let num_entries_added = 0;
+    try {
+      const url = new URL(get_feed_url(feed));
+      const fetch_result = await fetch_feed(url, log);
+      const remote_feed = fetch_result.feed;
+      // The dateUpdated check allows for newly subscribed feeds to never to be
+      // considered unmodified
+      if(!skip_unmodified_guard && feed.dateUpdated &&
+        poll_feed_is_unmodified(feed, remote_feed)) {
+        log.debug('Feed not modified', url.href);
+        resolve(num_entries_added);
+        return;
+      }
 
-async function poll_feed_impl(conn, icon_conn, feed, skip_unmodified_guard,
-  log, resolve) {
-
-  try {
-    const url = new URL(get_feed_url(feed));
-    const fetch_result = await fetch_feed(url, log);
-    const remote_feed = fetch_result.feed;
-    // The dateUpdated check allows for newly subscribed feeds to never to be
-    // considered unmodified
-    if(!skip_unmodified_guard && feed.dateUpdated &&
-      poll_feed_is_unmodified(feed, remote_feed)) {
-      log.debug('Feed not modified', url.href);
-      resolve();
-      return;
+      // Merge the local properties with the remote properties, favoring the
+      // remote properties
+      const merged_feed = merge_feeds(feed, remote_feed);
+      // Prep the feed for storage
+      let storable_feed = sanitize_feed(merged_feed);
+      storable_feed = filter_empty_props(storable_feed);
+      // Put the feed, keep a reference to the promise
+      const put_feed_promise = db_put_feed(conn, storable_feed, log);
+      let entries = fetch_result.entries;
+      entries = poll_filter_dup_entries(entries, log);
+      const promises = entries.map((entry) => poll_entry(conn, icon_conn,
+        storable_feed, entry, log));
+      promises.push(put_feed_promise);
+      const results = await Promise.all(promises);
+      results.pop();// remove put_feed_promise
+      num_entries_added = results.reduce((sum, r) => r ? sum + 1 : sum, 0);
+      resolve(num_entries_added);
+    } catch(error) {
+      log.debug(error);
+      resolve(num_entries_added);// avoid Promise.all fail fast
     }
-
-    // Merge the local properties with the remote properties, favoring the
-    // remote properties
-    const merged_feed = merge_feeds(feed, remote_feed);
-    // Prep the feed for storage
-    let storable_feed = sanitize_feed(merged_feed);
-    storable_feed = filter_empty_props(storable_feed);
-    // Put the feed, keep a reference to the promise
-    const put_feed_promise = db_put_feed(conn, storable_feed, log);
-    let entries = fetch_result.entries;
-    entries = poll_filter_dup_entries(entries, log);
-    const promises = entries.map((entry) => poll_entry(conn, icon_conn,
-      storable_feed, entry, log));
-    promises.push(put_feed_promise);
-    const results = await Promise.all(promises);
-    results.pop();// remove put_feed_promise
-    const num_entries_added = results.reduce((sum, r) => r ? sum + 1 : sum, 0);
-
-    // TODO: I would rather not await this. I really need to look into how try
-    // catch works around a non-awaited promised. Maybe one solution is to just
-    // use .catch for now? what about premature calling of conn.close though?
-    // Don't I have to await?
-    if(num_entries_added) {
-      await update_badge(conn, log);
-    }
-
-    resolve();
-  } catch(error) {
-    log.debug(error);
-    resolve(error);// avoid Promise.all fail fast
-  }
+  });
 }
 
 // TODO: maybe inline this again
@@ -208,9 +207,8 @@ async function poll_entry_impl(conn, icon_conn, feed, entry, log, resolve) {
       add_entry_url(entry, rewritten_url.href);
 
     // Check if the entry exists
-    const find_limit = 1;
-    const matches = await db_find_entry(conn, entry.urls, find_limit, log);
-    if(matches.length) {
+    const entry_exists = await db_contains_entry(conn, entry.urls, log);
+    if(entry_exists) {
       resolve(false);
       return;
     }
@@ -265,7 +263,7 @@ async function poll_entry_impl(conn, icon_conn, feed, entry, log, resolve) {
       return;
     }
 
-    if(guess_if_url_is_non_html(request_url)) {
+    if(sniff_mime_non_html(request_url)) {
       entry.content = 'This article is not a basic web page (e.g. a PDF).';
       await db_add_entry(log, conn, entry);
       resolve(true);
@@ -290,9 +288,9 @@ async function poll_entry_impl(conn, icon_conn, feed, entry, log, resolve) {
 
     // Check if an entry with the response url exists
     if(did_add_response_url) {
-      const redirect_matches = await db_find_entry(conn,
-        [get_entry_url(entry)], find_limit, log);
-      if(redirect_matches.length) {
+      const redirect_exists = await db_contains_entry(conn,
+        [get_entry_url(entry)], log);
+      if(redirect_exists) {
         resolve(false);
         return;
       }

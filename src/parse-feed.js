@@ -12,6 +12,8 @@ TODO:
 -- on the other hand, i no longer get a doc when using the fetch api, maybe
 -- this should accept text as input?
 - maybe return [feed,entries] so i can use new expanding ES6 syntax thing
+- walking children seems to be slower than querySelector, revert to using it,
+but think of a way to maintain strictness
 */
 
 'use strict';

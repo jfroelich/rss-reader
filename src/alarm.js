@@ -53,7 +53,9 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
   console.debug('Alarm wakeup', alarm.name);
   if(alarm.name === 'archive') {
     try {
-      await archive_entries();
+      const conn = db_connect();
+      await archive_entries(conn);
+      conn.close();
     } catch(error) {
       console.debug(error);
     }

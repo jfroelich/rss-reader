@@ -2,8 +2,9 @@
 
 'use strict';
 
-// TODO: maybe this should accept conn instead of db_target and require caller
+// TODO: this should accept conn instead of db_target and require caller
 // to open/close conn, it is more decoupled and easier to mock deps
+// NOTE: db_target is no longer used
 // TODO: cleanup some of the helper fns
 
 function import_opml(db_target, files, log = SilentConsole) {
@@ -26,7 +27,7 @@ async function import_opml_impl(db_target, files, log, resolve, reject) {
   const suppress_subscribe_notif = true;
 
   try {
-    feed_conn = await db_connect(db_target, log);
+    feed_conn = await db_connect(undefined, undefined, log);
     icon_conn = await favicon_connect(undefined, log);
 
     for(let file of files) {

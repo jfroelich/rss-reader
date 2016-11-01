@@ -22,7 +22,7 @@ async function subscribe_impl(feed_conn, icon_conn, feed, suppress_notifs, log,
 
   try {
     if(!feed_conn) {
-      feed_conn = await db_connect(undefined, log);
+      feed_conn = await db_connect(undefined, undefined, log);
       should_close = true;
     }
 

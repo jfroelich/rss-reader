@@ -7,7 +7,7 @@
 // defined but may be zero length.
 // This does not guarantee that entries have urls
 function fetch_feed(url, log = SilentConsole) {
-  return new Promise(async function impl(resolve, reject) {
+  return new Promise(async function fetch_feed_impl(resolve, reject) {
     log.log('Fetching feed', url.href);
     const accepts = [
       'application/rss+xml',
@@ -64,16 +64,11 @@ function fetch_feed(url, log = SilentConsole) {
       return;
     }
 
-    const feed = parse_result.feed;
-    add_feed_url(feed, url.href);
+    add_feed_url(parse_result.feed, url.href);
     if(response.url)
-      add_feed_url(feed, response.url);
-    feed.dateFetched = new Date();
-    feed.dateLastModified = last_mod_date;
-    const output = {};
-    output.feed = feed;
-    if(!exclude_entries)
-      output.entries = parse_result.entries;
-    resolve(output);
+      add_feed_url(parse_result.feed, response.url);
+    parse_result.feed.dateFetched = new Date();
+    parse_result.feed.dateLastModified = last_mod_date;
+    resolve(parse_result);
   });
 }

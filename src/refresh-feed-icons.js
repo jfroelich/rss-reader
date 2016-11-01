@@ -11,7 +11,7 @@ async function refresh_feed_icons_impl(log, resolve, reject) {
   let feed_db_conn, icon_db_conn, icon_db_target, prefetched_doc;
   let num_modified = 0;
   try {
-    feed_db_conn = await db_connect(undefined, log);
+    feed_db_conn = await db_connect(undefined, undefined, log);
     icon_db_conn = await favicon_connect(undefined, log);
     const feeds = await db_get_all_feeds(feed_db_conn, log);
     for(let feed of feeds) {

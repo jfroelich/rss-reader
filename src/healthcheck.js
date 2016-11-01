@@ -27,9 +27,9 @@ HealthCheck.start = function(log = SilentConsole) {
     'completed_entries_missing_urls_scan': false
   };
 
-  const connectPromise = db_connect(undefined, log);
-  connectPromise.then(HealthCheck._connect_on_success.bind(ctx));
-  connectPromise.catch(HealthCheck._connect_on_error.bind(ctx));
+  db_connect(undefined, undefined, log).then(
+    HealthCheck._connect_on_success.bind(ctx)).catch(
+      HealthCheck._connect_on_error.bind(ctx));
 };
 
 HealthCheck._connect_on_success = function(conn) {

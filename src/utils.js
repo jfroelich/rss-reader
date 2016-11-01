@@ -63,27 +63,25 @@ const ext_to_mime_type_map = {
 };
 
 // Given a url, try and guess the mime type of the url by looking at the
-// filename extension
-function guess_mime_type_from_url(url_obj) {
-  const ext = get_url_extension(url_obj);
-  if(ext)
-    return ext_to_mime_type_map[ext];
+// filename extension. This does no inspection of content
+function sniff_mime_type(path) {
+  const ext = get_url_extension(path);
+  if(!ext) return;
+  return ext_to_mime_type_map[ext];
 }
 
-// @param url {URL}
+// TODO: properly handle 'foo.'
+// @param path {string} path of a url (should have leading /)
 // @returns {String} lowercase extension
-function get_url_extension(url) {
-  const path = url.pathname;
-
-  // must have at least '/a.b'
-  if(path.length < 4)
+function get_url_extension(path) {
+  if(!path)
     return;
-
+  const min_len_for_path_with_ext = '/a.b'.length;
+  if(path.length < min_len_for_path_with_ext)
+    return;
   const last_dot = path.lastIndexOf('.');
   if(last_dot === -1)
     return;
-
-  // TODO: what about 'foo.', will this throw?
   const ext = path.substring(last_dot + 1);
   const len = ext.length;
   if(len > 0 && len < 5 && /[a-z]/i.test(ext))
@@ -119,9 +117,12 @@ function is_url_object(value) {
   return Object.prototype.toString.call(value) === '[object URL]';
 }
 
-function guess_if_url_is_non_html(url) {
+// TODO: should this take a path string instead? it kind of makes sense because
+// it only deals with the path and not the rest of the url. it does increase
+// caller boilerplate though?
+function sniff_mime_non_html(url) {
   const bad_super_types = ['application', 'audio', 'image', 'video'];
-  const type = guess_mime_type_from_url(url);
+  const type = sniff_mime_type(url.pathname);
   if(type) {
     const super_type = type.substring(0, type.indexOf('/'));
     return bad_super_types.includes(super_type);
@@ -152,13 +153,11 @@ function filter_control_chars(str) {
 function filter_empty_props(obj) {
   const copy = {};
   const has_own = Object.prototype.hasOwnProperty;
-  const undef = void(0);
   for(let prop in obj) {
     if(has_own.call(obj, prop)) {
       const value = obj[prop];
-      if(value !== undef && value !== null && value !== '') {
+      if(value !== undefined && value !== null && value !== '')
         copy[prop] = value;
-      }
     }
   }
   return copy;

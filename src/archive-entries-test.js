@@ -6,14 +6,11 @@
 // then test assertions
 
 async function test() {
-  const target = {
-    'name': 'test-archive-entries',
-    'version': 1
-  };
-
   const max_age = 10;
   try {
-    const num_modified = await archive_entries(target, max_age, console);
+    const conn = await db_connect('test-archive-entries', 1, log);
+    const num_modified = await archive_entries(conn, max_age, console);
+    conn.close();
     await db_delete(target.name);
   } catch(error) {
     console.debug(error);
