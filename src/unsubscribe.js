@@ -5,6 +5,8 @@
 // TODO: require the caller to connect, accept a conn parameter
 // then merge db_delete_feed_and_entries into unsubscribe
 
+// TODO: maybe organize into sub promises, get more function reuse
+
 function unsubscribe(feed_id, log = SilentConsole) {
   return new Promise(unsubscribe_impl.bind(undefined, feed_id, log));
 }

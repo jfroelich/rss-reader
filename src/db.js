@@ -480,19 +480,18 @@ function db_get_all_feeds(conn, log = SilentConsole) {
   });
 }
 
-// TODO: reverse argument order
-function db_count_unread_entries(log = SilentConsole, conn) {
-  return new Promise(function db_count_unread_entries_impl(resolve, reject) {
+function db_count_unread_entries(conn, log = SilentConsole) {
+  return new Promise(function count_impl(resolve, reject) {
     log.debug('Counting unread entries');
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('readState');
     const request = index.count(ENTRY_UNREAD);
-    request.onsuccess = function db_count_unread_entries_onsuccess(event) {
+    request.onsuccess = function onsuccess(event) {
       log.debug('Counted %d unread entries', event.target.result);
       resolve(event.target.result);
     };
-    request.onerror = function db_count_unread_entries_onerror(event) {
+    request.onerror = function onerror(event) {
       log.error(event.target.error);
       reject(event.target.error);
     };

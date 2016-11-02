@@ -2,6 +2,16 @@
 
 'use strict';
 
+// Resolves with an array of tabs
+// @param url {String} the url of the tab searched for
+function query_tabs_by_url(url) {
+  return new Promise(function query_tabs_impl(resolve) {
+    // NOTE: chrome.tabs.query requires 'tabs' permission in manifest
+    // or this doesn't work
+    chrome.tabs.query({'url': url}, resolve);
+  });
+}
+
 // A mapping between common file extensions and mime types
 const ext_to_mime_type_map = {
   'ai':   'application/postscript',
@@ -95,22 +105,19 @@ function resolve_url(url_str, base_url) {
     throw new TypeError();
   if(!is_url_object(base_url))
     throw new TypeError();
-  if(url_has_js_protocol(url_str) ||
-    url_has_data_protocol(url_str))
+  // TODO: use a single regex for speed? Or maybe get the protocol,
+  // normalize it, and check against a list of bad protocols?
+  // TODO: or if it has any protocol, then just return the url as is?
+  // - but that would still require a call to new URL
+  if(/^\s*javascript:/i.test(url_str) ||
+    /^\s*data:/i.test(url_str) ||
+    /^\s*mailto:/i.test(url_str))
     return;
   try {
     return new URL(url_str, base_url);
   } catch(error) {
     console.warn(url_str, base_url.href, error);
   }
-}
-
-function url_has_data_protocol(url_str) {
-  return /^\s*data:/i.test(url_str);
-}
-
-function url_has_js_protocol(url_str) {
-  return /^\s*javascript:/i.test(url_str);
 }
 
 function is_url_object(value) {

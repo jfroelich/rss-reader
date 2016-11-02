@@ -5,10 +5,9 @@
 // TODO: use a test db instead of the real db (and delete at end of test)
 
 async function test_lookup(url_str) {
-  const url = new URL(url_str);
-  let db_name, db_version;
   try {
-    const conn = await favicon_connect(db_name, db_version, console);
+    const url = new URL(url_str);
+    const conn = await favicon_connect(undefined, undefined, console);
     const icon = await favicon_lookup(conn, url, console);
     conn.close();
     console.debug('Result:', icon ? icon.href : 'null');
