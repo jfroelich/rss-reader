@@ -11,6 +11,13 @@
 // TODO: store deactivation reason in feed
 // TODO: store deactivation date
 
+// TODO: maybe poll feeds itself does not need to be a promise, because it
+// should never be called concurrently? I mean, it could be called concurrently
+// with other promises that do different things, but I would never run two
+// or more poll_feeds promises concurrently. Right now it is a promise simply
+// because it originally had a callback parameter. But this was before async
+// came along, and that was the only way to know the poll had resolved.
+
 function poll_feeds(options = {}) {
   return new Promise(async function poll_feeds_impl(resolve, reject) {
     const log = options.log || SilentConsole;
@@ -46,9 +53,25 @@ function poll_feeds(options = {}) {
       }
     }
 
+    // Get database connections. This blocks here because everything else
+    // depends on both of these being available
+    let conn, icon_conn;
     try {
-      const conn = await db_connect(undefined, undefined, log);
-      const icon_conn = await favicon_connect(undefined, log);
+      [conn, icon_conn] = await Promise.all([
+        db_connect(undefined, undefined, log),
+        favicon_connect(undefined, undefined, log)
+      ]);
+    } catch(error) {
+      poll_release_lock(log);
+      if(conn)
+        conn.close();
+      if(icon_conn)
+        icon_conn.close();
+      reject(error);
+      return;
+    }
+
+    try {
       const feeds = await db_get_all_feeds(conn, log);
       const pf_promises = feeds.map((feed) => poll_feed(conn, icon_conn, feed,
         options.skip_unmodified_guard, log));
@@ -56,10 +79,8 @@ function poll_feeds(options = {}) {
       const num_entries_added = pf_results.reduce((sum,r)=> sum+r, 0);
 
       if(num_entries_added > 0) {
-
-        // Must await to avoid calling on closed conn
+        // Must await to avoid calling on closed conn (??)
         await update_badge(conn, log);
-
         const chan = new BroadcastChannel('poll');
         chan.postMessage('completed');
         chan.close();
@@ -68,21 +89,17 @@ function poll_feeds(options = {}) {
       show_notification('Updated articles',
         'Added ' + num_entries_added + ' new articles');
       resolve();
-
-      poll_release_lock(log);
-
-      if(conn) {
-        log.debug('Closing database', conn.name);
-        conn.close();
-      }
-      if(icon_conn) {
-        log.debug('Closing database', icon_conn.name);
-        icon_conn.close();
-      }
-      log.debug('Polling completed');
     } catch(error) {
       reject(error);
     }
+
+    // Cleanup
+    poll_release_lock(log);
+    log.debug('Closing database', conn.name);
+    conn.close();
+    log.debug('Closing database', icon_conn.name);
+    icon_conn.close();
+    log.debug('Polling completed');
   });
 }
 
@@ -222,9 +239,7 @@ async function poll_entry_impl(conn, icon_conn, feed, entry, log, resolve) {
       entry.feedTitle = feed.title;
 
     // Set the entry's favicon url
-    const prefetched_doc = null;
-    let icon_url = await favicon_lookup(undefined, icon_conn, request_url,
-      prefetched_doc, log);
+    let icon_url = await favicon_lookup(icon_conn, request_url, log);
     if(icon_url)
       entry.faviconURLString = icon_url.href;
     else if(feed.faviconURLString)

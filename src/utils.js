@@ -182,7 +182,7 @@ function sizeof(object) {
   const seen = [];
   const stack = [object];
   const has_own = Object.prototype.hasOwnProperty;
-  const to_string = Object.prototype.to_string;
+  const to_string = Object.prototype.toString;
   let size = 0;
   while(stack.length) {
     const value = stack.pop();

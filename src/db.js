@@ -17,6 +17,11 @@ const ENTRY_READ = 1;
 const ENTRY_UNARCHIVED = 0;
 const ENTRY_ARCHIVED = 1;
 
+// TODO: if 99% of use cases involve the default name and version, it would
+// make more sense to have log as the first parameter, because I could use
+// db_connect(console) in most places. The only time I do not use the global
+// config defaults is in a test context.
+
 function db_connect(name = config.db_name, version = config.db_version,
   log = SilentConsole) {
 
@@ -418,7 +423,6 @@ function db_contains_entry(conn, urls, log) {
       }
 
       // TODO: would tx.abort cancel the other requests without an exception?
-
       // if cursor is defined, then cursor.key is defined, but there is no need
       // to access it
       did_resolve = true;
@@ -495,11 +499,19 @@ function db_count_unread_entries(log = SilentConsole, conn) {
   });
 }
 
+
+// TODO: i would like to have a more general get_entries function that accepts
+// some more general query, then I do not have a different function for each
+// query. For now it is fine.
+// TODO: what I can do now is use getAll, passing in a count parameter as an
+// upper limit, and then using slice or unshift or something to advance.
+// getAll is a perf increase because it is a single request, and that savings
+// outweights the wasted deserialization cost of reloading entries that will
+// be discarded (sliced out)
 function db_get_unarchived_unread_entries(conn, offset, limit,
   log = SilentConsole) {
   return new Promise(function db_get_unarchived_unread_entries_impl(resolve,
     reject) {
-
     const entries = [];
     let counter = 0;
     let advanced = false;
@@ -511,8 +523,7 @@ function db_get_unarchived_unread_entries(conn, offset, limit,
     const index = store.index('archiveState-readState');
     const keyPath = [ENTRY_UNARCHIVED, ENTRY_UNREAD];
     const request = index.openCursor(keyPath);
-    request.onsuccess = function db_get_unarchived_unread_entries_onsuccess(
-      event) {
+    request.onsuccess = function onsuccess(event) {
       const cursor = event.target.result;
       if(!cursor)
         return;
@@ -526,72 +537,102 @@ function db_get_unarchived_unread_entries(conn, offset, limit,
       if(limit > 0 && ++counter < limit)
         cursor.continue();
     };
-    request.onerror = function db_get_unarchived_unread_entries_onerror(event) {
+    request.onerror = function onerror(event) {
       reject(event.target.error);
     };
   });
 }
 
+// TODO: is this really a db function, or something higher level. It clearly
+// doesn't belong right in the ui, but it is somewhere in between
+function db_mark_entry_read(conn, id, log = SilentConsole) {
+  if(!Number.isInteger(id) || id < 1)
+    throw new TypeError(`Invalid entry id ${id}`);
 
-// TODO: convert to async, do not use bind
-// TODO: require the caller to pass in conn now that it is easier to do with
-// async
-function db_mark_entry_read(id, log = SilentConsole) {
-  return new Promise(db_mark_entry_read_impl.bind(undefined, id, log));
+  return new Promise(async function mark_impl(resolve, reject) {
+    log.debug('Marking entry %s as read', id);
+    // Use one shared rw transaction for both the get and the put
+    const tx = conn.transaction('entry', 'readwrite');
+
+    // Get the corresponding entry object
+    let entry;
+    try {
+      entry = await db_find_entry_by_id(tx, id, log);
+    } catch(error) {
+      reject(error);
+      return;
+    }
+
+    // If the entry isn't found, then something really went wrong somewhere,
+    // so consider this an error
+    if(!entry) {
+      reject(new Error(`No entry found with id ${id}`));
+      return;
+    }
+
+    // If the entry was already read, then the reasoning about the state of
+    // the system went wrong somewhere in the calling context, so consider
+    // this an error
+    if(entry.readState === ENTRY_READ) {
+      reject(new Error(`Already read entry with id ${id}`));
+      return;
+    }
+
+    // Mutate the loaded entry object
+    entry.readState = ENTRY_READ;
+    entry.dateRead = new Date();
+
+    try {
+      // Overwrite the entry. This must be awaited so that the update badge
+      // call only happens after.
+      await db_put_entry(tx, entry, log);
+      // Update the unread count. This must be awaited (I think) because
+      // otherwise the conn is closed too soon?
+      await update_badge(conn, log);
+      resolve();
+    } catch(error) {
+      reject(error);
+    }
+  });
 }
 
-function db_mark_entry_read_impl(id, log, resolve, reject) {
-  log.debug('Marking entry %s as read', id);
-  if(!Number.isInteger(id) || id < 1) {
-    reject(new TypeError());
-    return;
-  }
+// Resolves when the entry has been stored
+// If entry.id is not set this will result in adding. If adding and auto-inc,
+// then this resolves with the new entry id.
+// Interally will set dateUpdated before the put. This will also set the
+// property on the input object, so this is a side effect, this fn is impure.
+// @param tx {IDBTransaction} the tx should include entry store and be rw
+function db_put_entry(tx, entry, log = SilentConsole) {
+  return new Promise(function put_impl(resolve, reject) {
+    log.debug('Putting entry with id', entry.id);
+    entry.dateUpdated = new Date();
+    const request = tx.objectStore('entry').put(entry);
+    request.onsuccess = function onsuccess(event) {
+      log.debug('Put entry with id', entry.id);
+      resolve(event.target.result);
+    };
+    request.onerror = function onerror(event) {
+      log.debug(event.target.error);
+      reject(event.target.error);
+    };
+  });
+}
 
-  db_connect(undefined, undefined, log).then(
-    connect_on_success).catch(
-      reject);
-
-  function connect_on_success(conn) {
-    log.debug('Connected to database', conn.name);
-    const tx = conn.transaction('entry', 'readwrite');
+// Resolves with an entry object, or undefined if no entry was found.
+// Rejects when an error occurred.
+function db_find_entry_by_id(tx, id, log = SilentConsole) {
+  return new Promise(function find_impl(resolve, reject) {
+    log.debug('Finding entry by id', id);
     const store = tx.objectStore('entry');
-    const request = store.openCursor(id);
-    request.onsuccess = open_cursor_on_success;
-    request.onerror = open_cursor_on_error;
-  }
-
-  function open_cursor_on_success(event) {
-    const cursor = event.target.result;
-    const conn = event.target.transaction.db;
-    if(!cursor) {
-      log.error('No entry found with id', id);
-      reject(new Error('No entry found'));
-      conn.close();
-      return;
-    }
-
-    const entry = cursor.value;
-    log.debug('Found entry', get_entry_url(entry));
-    if(entry.readState === ENTRY_READ) {
-      log.error('Already read entry with id', entry.id);
-      reject(new Error('Already read entry'));
-      conn.close();
-      return;
-    }
-
-    log.debug('Updating entry', entry.id);
-    entry.readState = ENTRY_READ;
-    const current_date = new Date();
-    entry.dateRead = current_date;
-    entry.dateUpdated = current_date;
-    cursor.update(entry);
-    update_badge(conn, log);
-    conn.close();
-    resolve();
-  }
-
-  function open_cursor_on_error(event) {
-    log.error(event.target.error);
-    reject(event.target.error);
-  }
+    const request = store.get(id);
+    request.onsuccess = function onsuccess(event) {
+      const entry = event.target.result;
+      if(entry)
+        log.debug('Found entry %s with id', get_entry_url(entry), id);
+      resolve(entry);
+    };
+    request.onerror = function onerror(event) {
+      reject(event.target.error);
+    };
+  });
 }

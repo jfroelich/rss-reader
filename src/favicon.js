@@ -6,19 +6,30 @@
 // require caller to pass in conn. This allow easy testing on diff db, and
 // fewer params, and is better now that calling externally is easier
 // TODO: connect should just accept name, version, no need to wrap in object
-// TODO: look into decoupling silent-console so that this has no deps
+// TODO: look into decoupling silent-console so that this has no deps, maybe
+// accept console as input and have each debug use if(console)
 
-const FAVICON_DEFAULT_DB = {
-  'name': 'favicon-cache',
-  'version': 1
-};
+// TODO: maybe lookup should accept a string and return a string, it simplifies
+// things. it can still use URL internally where needed
 
+// food for thought: why have some of the helper functions return promises,
+// when in fact these could be async calls that block until return, and just
+// return the output. from the outside the functions just look like sync
+// functions. for example, why not have favicon_connect just return a conn?
+// why return a promise? every single call to favicon_connect awaits it,
+// because there is no concern about concurrency, about calling while also
+// doing other work
+
+const FAVICON_DB_NAME = 'favicon-cache';
+const FAVICON_DB_VERSION = 1;
 const FAVICON_DEFAULT_MAX_AGE = 1000 * 60 * 60 * 24 * 30;
 
-function favicon_connect(target = FAVICON_DEFAULT_DB, log = SilentConsole) {
+function favicon_connect(name = FAVICON_DB_NAME, version = FAVICON_DB_VERSION,
+  log = SilentConsole) {
+
   return new Promise(function(resolve, reject) {
-    log.log('Connecting to database', target.name, 'version', target.version);
-    const request = indexedDB.open(target.name, target.version);
+    log.log('Connecting to database', name, 'version', version);
+    const request = indexedDB.open(name, version);
     request.onupgradeneeded = favicon_upgrade.bind(request, log);
     request.onsuccess = function(event) {
       const conn = event.target.result;
@@ -29,7 +40,7 @@ function favicon_connect(target = FAVICON_DEFAULT_DB, log = SilentConsole) {
       reject(event.target.error);
     };
     request.onblocked = function(event) {
-      console.warn('waiting indefinitely while blocked');
+      console.warn('favicon_connect waiting indefinitely while blocked');
     };
   });
 }
@@ -44,8 +55,9 @@ function favicon_upgrade(log, event) {
   }
 }
 
-function favicon_is_expired(entry, max_age) {
-  const age = new Date() - entry.dateUpdated;
+function favicon_is_expired(entry, current_date,
+  max_age = FAVICON_DEFAULT_MAX_AGE) {
+  const age = current_date - entry.dateUpdated;
   return age >= max_age;
 }
 
@@ -88,40 +100,16 @@ function favicon_add_entry(conn, log, page_url, icon_url) {
   });
 }
 
-function favicon_remove_entry(conn, log, page_url) {
+function favicon_remove_entry(tx, page_url, log) {
   return new Promise(function(resolve, reject) {
     log.debug('Removing favicon entry with page url', page_url.href);
     const norm_url = favicon_normalize_url(page_url).href;
-    const tx = conn.transaction('favicon-cache', 'readwrite');
     const store = tx.objectStore('favicon-cache');
     const request = store.delete(norm_url);
-    request.onsuccess = resolve;
-    request.onerror = function(event) {
-      reject(event.target.error);
-    };
-  });
-}
-
-// TODO: use getAll
-function favicon_get_entries(conn, log) {
-  return new Promise(function(resolve, reject) {
-    const entries = [];
-    log.debug('Getting all favicon entries');
-    const tx = conn.transaction('favicon-cache');
-    const store = tx.objectStore('favicon-cache');
-    const request = store.openCursor();
     request.onsuccess = function(event) {
-      const cursor = event.target.result;
-      if(cursor) {
-        entries.push(cursor.value);
-        cursor.continue();
-      } else {
-        log.debug('Got %d favicon entries', entries.length);
-        resolve(entries);
-      }
+      resolve();
     };
     request.onerror = function(event) {
-      log.debug(event.target.error);
       reject(event.target.error);
     };
   });
@@ -133,159 +121,122 @@ function favicon_normalize_url(url) {
   return clone;
 }
 
-// TODO: do not accept a default target. Instead, do not connect on demand
-// and require caller to provide an active connection.
-// This will also improve the referential integrity between db_target and
-// conn, which currently isn't enforced
-// TODO: maybe drop support for prefetched doc, there is a cache anyway
-function favicon_lookup(db_target = FAVICON_DEFAULT_DB, conn, url, doc,
-  log = SilentConsole) {
-  return new Promise(favicon_lookup_impl.bind(null, db_target, conn, url,
-    doc, log));
-}
+// TODO: break up the big try/catch into smaller ones to handle error cases
+// separately and reduce indentation and not wrap non-error statements
+// TODO: look more into whether I always need to await a promise within a
+// try/catch
+function favicon_lookup(conn, url, log = SilentConsole) {
+  return new Promise(async function lookup_impl(resolve, reject) {
+    log.log('Looking up favicon for url', url.href);
+    const current_date = new Date();
 
-// todo: if finally always evaluates even if return then i do not need the
-// close db calls at each return
-async function favicon_lookup_impl(db_target, conn, url, doc, log, resolve,
-  reject) {
-  log.log('Looking up favicon for url', url.href);
-  let should_close_conn = false;
-  try {
-    if(!conn) {
-      conn = await favicon_connect(db_target, log);
-      should_close_conn = true;
-    }
-
-    if(doc) {
-      const icon_url = favicon_search_doc(doc, url);
-      if(icon_url) {
-        log.debug('Found icon in prefetched doc', icon_url.href);
-        favicon_add_entry(conn, log, url, icon_url);
-        if(should_close_conn)
-          conn.close();
-        resolve(icon_url);
-        return;
-      }
-    }
-
-    let entry = await favicon_find_entry(conn, log, url);
-    if(entry) {
-      if(!favicon_is_expired(entry, FAVICON_DEFAULT_MAX_AGE)) {
-        if(should_close_conn)
-          conn.close();
+    try {
+      let entry = await favicon_find_entry(conn, log, url);
+      if(entry  && !favicon_is_expired(entry, current_date)) {
         resolve(new URL(entry.iconURLString));
         return;
       }
-    }
 
-    // Check if offline
-    if('onLine' in navigator && !navigator.onLine) {
-      if(should_close_conn)
-        conn.close();
-      resolve();
-      return;
-    }
-
-    let fetch_result = null;
-    let fetched_doc = null;
-    let response_url = null;
-    try {
-      fetch_result = await favicon_fetch_doc(url, log);
-      fetched_doc = fetch_result.responseXML;
-      response_url = new URL(fetch_result.responseURL);
-    } catch(fetch_error) {
-      log.debug('Error fetching', url.href, fetch_error);
-      favicon_remove_entry(conn, log, url);
-    }
-
-    if(fetched_doc) {
-      const icon_url = favicon_search_doc(fetched_doc, url);
-      if(icon_url) {
-        favicon_add_entry(conn, log, url, icon_url);
-        if(url.href !== response_url.href)
-          favicon_add_entry(conn, log, response_url, icon_url);
-        if(should_close_conn)
-          conn.close();
-        resolve(icon_url);
+      // Check if offline
+      if('onLine' in navigator && !navigator.onLine) {
+        // TODO: should this reject?
+        resolve();
         return;
       }
-    }
 
-    if(response_url && response_url.href !== url.href) {
-      log.debug('Falling back to checking cache for redirect url');
-      let redirect_entry = await favicon_find_entry(conn, log, response_url);
-      if(redirect_entry &&
-        !favicon_is_expired(redirect_entry, FAVICON_DEFAULT_MAX_AGE)) {
-        if(should_close_conn)
-          conn.close();
-        resolve(new URL(redirect_entry.iconURLString));
-        return;
+      let fetch_result = null;
+      let fetched_doc = null;
+      let response_url = null;
+      try {
+        fetch_result = await favicon_fetch_doc(url, log);
+        fetched_doc = fetch_result.responseXML;
+        response_url = new URL(fetch_result.responseURL);
+      } catch(fetch_error) {
+        log.debug('Error fetching', url.href, fetch_error);
+        const tx = conn.transaction('favicon-cache', 'readwrite');
+        await favicon_remove_entry(tx, url, log);
       }
-    }
 
-    const origin_url = new URL(url.origin);
-    if(origin_url.href !== url.href &&
-      (!response_url || origin_url.href !== response_url.href)) {
-      let origin_entry = await favicon_find_entry(conn, log, origin_url);
-      if(origin_entry && !favicon_is_expired(origin_entry,
-        FAVICON_DEFAULT_MAX_AGE)) {
-        const icon_url = new URL(origin_entry.iconURLString);
-        favicon_add_entry(conn, log, url, icon_url);
-        if(response_url)
-          favicon_add_entry(conn, log, response_url, icon_url);
-        favicon_add_entry(conn, log, origin_url, icon_url);
-        if(should_close_conn)
-          conn.close();
-        resolve(icon_url);
-        return;
-      }
-    }
-
-    const origin_icon_url = new URL(url.origin + '/favicon.ico');
-    let image_response = null;
-    try {
-      image_response = await favicon_request_image(origin_icon_url);
-    } catch(fetch_error) {
-      // log.debug(fetch_error);
-    }
-
-    if(image_response) {
-      const size = favicon_get_response_size(image_response);
-      if(favicon_is_response_size_in_range(size)) {
-        const type = image_response.getResponseHeader('Content-Type');
-        if(favicon_is_response_type_img(type)) {
-          let image_response_url = new URL(image_response.responseURL);
-          favicon_add_entry(conn, log, url, image_response_url);
-          if(response_url && url.href !== response_url.href)
-            favicon_add_entry(conn, log, response_url, image_response_url);
-          if(origin_url.href !== url.href &&
-            (!response_url || response_url.href !== origin_url.href))
-            favicon_add_entry(conn, log, origin_url, image_response_url);
-          if(should_close_conn)
-            conn.close();
-          resolve(image_response_url);
+      if(fetched_doc) {
+        const icon_url = favicon_search_doc(fetched_doc, url);
+        if(icon_url) {
+          await favicon_add_entry(conn, log, url, icon_url);
+          if(url.href !== response_url.href)
+            await favicon_add_entry(conn, log, response_url, icon_url);
+          resolve(icon_url);
           return;
         }
       }
-    }
 
-    // Lookups and fetches failed, ensure cache is cleared
-    favicon_remove_entry(conn, log, url);
-    if(response_url && response_url.href !== url.href)
-      favicon_remove_entry(conn, log, response_url);
-    if(origin_url.href !== url.href &&
-      (!response_url || origin_url.href !== response_url.href))
-      favicon_remove_entry(conn, log, origin_url);
-    if(should_close_conn)
-      conn.close();
-    resolve();
-  } catch(error) {
-    reject(error);
-  } finally {
-    if(conn && should_close_conn)
-      conn.close();
-  }
+      if(response_url && response_url.href !== url.href) {
+        log.debug('Falling back to checking cache for redirect url');
+        let redirect_entry = await favicon_find_entry(conn, log, response_url);
+        if(redirect_entry &&
+          !favicon_is_expired(redirect_entry, current_date)) {
+          resolve(new URL(redirect_entry.iconURLString));
+          return;
+        }
+      }
+
+      const origin_url = new URL(url.origin);
+      if(origin_url.href !== url.href &&
+        (!response_url || origin_url.href !== response_url.href)) {
+        let origin_entry = await favicon_find_entry(conn, log, origin_url);
+        if(origin_entry && !favicon_is_expired(origin_entry, current_date)) {
+          const icon_url = new URL(origin_entry.iconURLString);
+          await favicon_add_entry(conn, log, url, icon_url);
+          if(response_url)
+            await favicon_add_entry(conn, log, response_url, icon_url);
+          await favicon_add_entry(conn, log, origin_url, icon_url);
+          resolve(icon_url);
+          return;
+        }
+      }
+
+      const origin_icon_url = new URL(url.origin + '/favicon.ico');
+      let image_response = null;
+      try {
+        image_response = await favicon_request_image(origin_icon_url);
+      } catch(fetch_error) {
+        // log.debug(fetch_error);
+      }
+
+      if(image_response) {
+        const size = favicon_get_response_size(image_response);
+        if(favicon_is_response_size_in_range(size)) {
+          const type = image_response.getResponseHeader('Content-Type');
+          if(favicon_is_response_type_img(type)) {
+            let image_response_url = new URL(image_response.responseURL);
+            await favicon_add_entry(conn, log, url, image_response_url);
+            if(response_url && url.href !== response_url.href)
+              await favicon_add_entry(conn, log, response_url,
+                image_response_url);
+            if(origin_url.href !== url.href &&
+              (!response_url || response_url.href !== origin_url.href))
+              await favicon_add_entry(conn, log, origin_url,
+                image_response_url);
+            resolve(image_response_url);
+            return;
+          }
+        }
+      }
+
+      // Lookups and fetches failed, ensure cache is cleared
+      const tx = conn.transaction('favicon-cache', 'readwrite');
+      await favicon_remove_entry(tx, url, log);
+      if(response_url && response_url.href !== url.href)
+        await favicon_remove_entry(tx, response_url, log);
+      if(origin_url.href !== url.href &&
+        (!response_url || origin_url.href !== response_url.href))
+        await favicon_remove_entry(tx, origin_url, log);
+      resolve();
+    } catch(error) {
+      reject(error);
+    }
+  });
 }
+
+
 
 const favicon_selectors = [
   'link[rel="icon"][href]',
@@ -393,36 +344,65 @@ function favicon_is_response_type_img(type) {
   return /^\s*image\//i.test(type);
 }
 
+function compact_favicons(conn, log = SilentConsole) {
+  return new Promise(async function compact_impl(resolve, reject) {
+    log.log('Compacting favicons in database', conn.name);
 
-// TODO: just accept name,version as params
-// TODO: accept a conn instead of db_target, require caller to connect/close,
-// now that it is easier
-// TODO: test
-function compact_favicons(db_target, log = SilentConsole) {
-  return new Promise(compact_favicons_impl.bind(undefined, db_target, log));
+    // Create a single transaction to share among all requests
+    const tx = conn.transaction('favicon-cache', 'readwrite');
+
+    // Load an array of all entries in the database
+    let entries;
+    try {
+      entries = await favicon_get_entries(tx, log);
+    } catch(error) {
+      reject(error);
+      return;
+    }
+
+    // Get a subset of expired entries. Use the same date, the call time of this
+    // function, for determining whether an entry is expired
+    const current_date = new Date();
+    const expired_entries = entries.filter((entry) =>
+      favicon_is_expired(entry, current_date));
+
+    log.debug('Found %d expired entries', expired_entries.length);
+
+    // Issue individual remove entry requests concurrently, and store the
+    // remove promises in an array
+    let remove_promises;
+    try {
+      remove_promises = expired_entries.map((entry) =>
+        favicon_remove_entry(tx, new URL(entry.pageURLString), log));
+    } catch(error) {
+      reject(error);
+      return;
+    }
+
+    // Wait for all the promises to resolve
+    const resolutions = await Promise.all(remove_promises);
+    log.debug('Deleted %d favicon entries', resolutions.length);
+    resolve(resolutions.length);
+  });
 }
 
-// TODO: it would be nice to use cursor.delete, but I need to learn how to
-// use a cursor together with promises, it is funky
-async function compact_favicons_impl(db_target, log, resolve, reject) {
-  log.log('Compacting favicons');
-  let num_deleted = 0;
-  let conn = null;
-  try {
-    conn = await favicon_connect(db_target, log);
-    const entries = await favicon_get_entries(conn, log);
-    for(let entry of entries) {
-      if(favicon_is_expired(entry, FAVICON_DEFAULT_MAX_AGE)) {
-        favicon_remove_entry(conn, log, entry.pageURLString);
-        num_deleted++;
-      }
-    }
-    log.debug('Deleted %d favicon entries', num_deleted);
-    resolve(num_deleted);
-  } catch(error) {
-    reject(error);
-  } finally {
-    if(conn)
-      conn.close();
-  }
+// Using the provided transaction, returns a promise that resolves to an array
+// of all favicon entries in the database
+function favicon_get_entries(tx, log) {
+  return new Promise(function(resolve, reject) {
+    log.debug('Getting all favicon entries from database', tx.db.name);
+    const store = tx.objectStore('favicon-cache');
+    const request = store.getAll();
+    request.onsuccess = function(event) {
+      // TODO: do I need the ||[] or is result guaranteed defined? I need to
+      // test on an empty database
+      const entries = event.target.result || [];
+      log.debug('Got %d entries from database %s', entries.length, tx.db.name);
+      resolve(entries);
+    };
+    request.onerror = function(event) {
+      log.debug(event.target.error);
+      reject(event.target.error);
+    };
+  });
 }

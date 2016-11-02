@@ -2,24 +2,6 @@
 
 'use strict';
 
-/*
-Debug line printed as result of calling fetch_html: Response not ok
-http://daringfireball.net/linked/2016/10/31/intel-mbp-ram 406 Not Acceptable.
-This also occurred in line 345 in favicon.js
-
-This messages shows up in the console when visiting the page:
-
-A Parser-blocking, cross-origin script,
-http://connect.decknetwork.net/deckDF_js.php?1477969301611, is invoked via
-document.write. This may be blocked by the browser if the device has poor
-network connectivity. See https://www.chromestatus.com/feature/5718547946799104
-for more details.
-(anonymous) @ intel-mbp-ram:112
-
-This is on Chrome 55, which I believe just mentioned something about this
-happening.
-*/
-
 // TODO: i don't love how this returns an event, maybe break up the function
 // into separate parts? maybe require the caller to handle the text
 
@@ -28,7 +10,6 @@ happening.
 // --- maybe it also checks response.ok to conflate net errors with 404s
 // is_html_response returns whether the response is the correct content type
 // or maybe is merged with fetch_html
-
 // get_response_as_html reads the text of the response and returns a doc
 // But all this really does is make the caller use more boilerplate, that they
 // must always use...
@@ -55,6 +36,10 @@ function fetch_html(url, log = SilentConsole) {
           response.statusText);
         reject(new Error(response.status));
         return;
+      }
+
+      if(response.status !== 200) {
+        console.debug(url.href, response.status, response.statusText);
       }
 
       // Using an accept header isn't enough. At least avoid the case where the

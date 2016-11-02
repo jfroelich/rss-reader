@@ -68,7 +68,8 @@ function fetch_feed(url, log = SilentConsole) {
     if(response.url)
       add_feed_url(parse_result.feed, response.url);
     parse_result.feed.dateFetched = new Date();
-    parse_result.feed.dateLastModified = last_mod_date;
+    if(last_mod_date)
+      parse_result.feed.dateLastModified = last_mod_date;
     resolve(parse_result);
   });
 }

@@ -31,12 +31,21 @@ function remove_slide(slide) {
   slide.remove();
 }
 
-function mark_slide_read(slide) {
+// TODO: visual feedback in event of an error?
+async function mark_slide_read(slide) {
   if(slide.hasAttribute('read'))
     return;
   slide.setAttribute('read', '');
-  const id = parseInt(slide.getAttribute('entry'), 10);
-  db_mark_entry_read(id);
+  const entry_id = parseInt(slide.getAttribute('entry'), 10);
+  let conn;
+  try {
+    conn = await db_connect();
+    await db_mark_entry_read(conn, entry_id);
+  } catch(error) {
+    console.debug(error);
+  }
+  if(conn)
+    conn.close();
 }
 
 // TODO: require caller to establish conn, do not do it here?

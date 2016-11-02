@@ -412,7 +412,7 @@ async function sub_form_on_submit(event) {
   // Search for feeds
   show_element(progress_element);
 
-  let db_target, conn, doc, icon_url, link_url, results;
+  let icon_url, link_url, results;
 
   try {
     let sgf_output = await search_google_feeds(query_str);
@@ -440,21 +440,18 @@ async function sub_form_on_submit(event) {
     item_element.textContent = `Found ${results.length} feeds.`;
     results_element.appendChild(item_element);
 
-    conn = await favicon_connect(db_target, console);
+    const conn = await favicon_connect(undefined, undefined, console);
     for(let result of results) {
       if(!result.link)
         continue;
       link_url = new URL(result.link);
-      icon_url = await favicon_lookup(db_target, conn, link_url, doc,
-        console);
+      icon_url = await favicon_lookup(conn, link_url, console);
       if(icon_url)
         result.faviconURLString = icon_url.href;
     }
+    conn.close();
   } catch(error) {
     console.debug(error);
-  } finally {
-    if(conn)
-      conn.close();
   }
 
   const result_elements = results.map(create_search_result_element);

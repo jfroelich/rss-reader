@@ -53,7 +53,7 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
   console.debug('Alarm wakeup', alarm.name);
   if(alarm.name === 'archive') {
     try {
-      const conn = db_connect();
+      const conn = await db_connect();
       await archive_entries(conn);
       conn.close();
     } catch(error) {
@@ -61,13 +61,15 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
     }
   } else if(alarm.name === 'poll') {
     try {
-      await poll_feeds();
+      await poll_feeds({'log': console});
     } catch(error) {
       console.debug(error);
     }
   } else if(alarm.name === 'compact-favicons') {
     try {
-      await compact_favicons(undefined, SilentConsole);
+      const conn = await favicon_connect();
+      let num_deleted = await compact_favicons(conn);
+      conn.close();
     } catch(error) {
       console.debug(error);
     }

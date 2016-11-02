@@ -28,7 +28,7 @@ async function import_opml_impl(db_target, files, log, resolve, reject) {
 
   try {
     feed_conn = await db_connect(undefined, undefined, log);
-    icon_conn = await favicon_connect(undefined, log);
+    icon_conn = await favicon_connect(undefined, undefined, log);
 
     for(let file of files) {
       const text = await read_file_as_text(file);
