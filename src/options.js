@@ -282,12 +282,13 @@ async function start_subscription(url) {
   append_sub_monitor_msg(`Subscribing to ${url.href}`);
   const feed = {};
   add_feed_url(feed, url.href);
-  const feed_db_conn = null;
   const suppress_notifs = false;
   const icon_cache_conn = null;
   let fade_out = false;
   try {
-    let subbed_feed = await subscribe(feed_db_conn, icon_cache_conn, feed,
+    const feed_conn = await db_connect(undefined, undefined, console);
+    const icon_conn = await favicon_connect(undefined, undefined, console);
+    let subbed_feed = await subscribe(feed_conn, icon_conn, feed,
       suppress_notifs, console);
     append_feed(subbed_feed, true);
     update_feed_count();
@@ -300,6 +301,8 @@ async function start_subscription(url) {
 
     const subs_section = document.getElementById('subs-list-section');
     show_section(subs_section);
+    feed_conn.close();
+    icon_conn.close();
   } catch(error) {
     console.debug(error);
   }
@@ -373,6 +376,8 @@ async function sub_form_on_submit(event) {
   if(!query_str)
     return false;
 
+  const no_results_element = document.getElementById('discover-no-results');
+
   // Do nothing if searching in progress
   const progress_element = document.getElementById('discover-in-progress');
   if(is_visible(progress_element))
@@ -385,9 +390,7 @@ async function sub_form_on_submit(event) {
 
   // Clear the previous results list
   const results_list_element = document.getElementById('discover-results-list');
-  while(results_list_element.firstChild) {
-    results_list_element.firstChild.remove();
-  }
+  results_list_element.innerHTML  = '';
 
   // Ensure the no-results-found message, if present from a prior search,
   // is hidden. This should never happen because we exit early if it is still
@@ -399,8 +402,6 @@ async function sub_form_on_submit(event) {
     url = new URL(query_str);
   } catch(exception) {
   }
-
-
 
   // If it is a URL, subscribe
   if(url) {
@@ -418,28 +419,24 @@ async function sub_form_on_submit(event) {
     let sgf_output = await search_google_feeds(query_str);
     const query = sgf_output.query;
     results = sgf_output.entries;
-    const progress_element = document.getElementById('discover-in-progress');
-    const no_results_element = document.getElementById('discover-no-results');
-    const results_element = document.getElementById('discover-results-list');
 
     hide_element(progress_element);
     if(!results.length) {
-      hide_element(results_element);
+      hide_element(results_list_element);
       show_element(no_results_element);
       return;
     }
 
-    if(is_visible(results_element)) {
-      results_element.innerHTML = '';
+    if(is_visible(results_list_element)) {
+      results_list_element.innerHTML = '';
     } else {
       hide_element(no_results_element);
-      show_element(results_element);
+      show_element(results_list_element);
     }
 
     const item_element = document.createElement('li');
     item_element.textContent = `Found ${results.length} feeds.`;
-    results_element.appendChild(item_element);
-
+    results_list_element.appendChild(item_element);
     const conn = await favicon_connect(undefined, undefined, console);
     for(let result of results) {
       if(!result.link)
@@ -454,9 +451,11 @@ async function sub_form_on_submit(event) {
     console.debug(error);
   }
 
-  const result_elements = results.map(create_search_result_element);
-  for(let i = 0, len = result_elements.length; i < len; i++) {
-    results_element.appendChild(result_elements[i]);
+  if(results) {
+    const elements = results.map(create_search_result_element);
+    for(let element of elements) {
+      results_list_element.appendChild(element);
+    }
   }
 
   // Signal no submit
@@ -553,10 +552,12 @@ function remove_feed_from_feed_list(feed_id) {
 async function unsubscribe_btn_on_click(event) {
   console.debug('Clicked unsubscribe');
   const feed_id = parseInt(event.target.value, 10);
-  if(!Number.isInteger(feed_id))
-    throw new TypeError();
+  if(!Number.isInteger(feed_id) || feed_id < 1)
+    throw new TypeError(`Invalid feed id ${event.target.value}`);
   try {
-    let num_deleted = await unsubscribe(feed_id, console);
+    const conn = await db_connect(undefined, undefined, console);
+    let num_deleted = await unsubscribe(conn, feed_id, console);
+    conn.close();
     console.debug('Unsubscribed from feed id', feed_id);
     remove_feed_from_feed_list(feed_id);
     const subs_section = document.getElementById('subs-list-section');

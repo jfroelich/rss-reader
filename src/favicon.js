@@ -33,7 +33,7 @@
 
 const FAVICON_DB_NAME = 'favicon-cache';
 const FAVICON_DB_VERSION = 1;
-const FAVICON_DEFAULT_MAX_AGE = 1000 * 60 * 60 * 24 * 30;
+const FAVICON_MAX_AGE = 1000 * 60 * 60 * 24 * 30;
 
 // If fetching domain root favicon it must fall within these byte limits
 const FAVICON_MIN_IMAGE_SIZE = 49;
@@ -56,7 +56,7 @@ function favicon_lookup(conn, url, log = SilentConsole) {
     // because later steps depends on it.
     let entry;
     try {
-      entry = await favicon_find_entry(conn, url, log);
+      entry = await favicon_find_entry(conn, url.href, log);
     } catch(error) {
       // If there was some technical error then reject
       reject(error);
@@ -90,7 +90,7 @@ function favicon_lookup(conn, url, log = SilentConsole) {
     if(entry && !fetch_result) {
       const tx = conn.transaction('favicon-cache', 'readwrite');
       try {
-        await favicon_remove_entry(tx, url, log);
+        await favicon_remove_entry(tx, url.href, log);
       } catch(error) {
         reject(error);
         return;
@@ -126,15 +126,12 @@ function favicon_lookup(conn, url, log = SilentConsole) {
     // If we found an in page icon, update the cache and resolve
     // TODO: can also store origin in cache if it distinct? would need to move
     // some origin url code upward
-    // TODO: can maybe just use uniq_urls.map()? but it is strings
     if(in_doc_icon_url) {
       log.debug('Found favicon <link>', url.href, in_doc_icon_url.href);
       const tx = conn.transaction('favicon-cache', 'readwrite');
-      const proms = [];
       try {
-        proms.push(favicon_add_entry(tx, url, in_doc_icon_url, log));
-        if(uniq_urls.length > 1)
-          proms.push(favicon_add_entry(tx, response_url, in_doc_icon_url, log));
+        const proms = uniq_urls.map((url) => favicon_add_entry(tx, url,
+          in_doc_icon_url.href, log));
         await Promise.all(proms);
       } catch(error) {
         reject(error);
@@ -149,7 +146,7 @@ function favicon_lookup(conn, url, log = SilentConsole) {
     let redirect_entry;
     if(uniq_urls.length > 1) {
       try {
-        redirect_entry = await favicon_find_entry(conn, response_url, log);
+        redirect_entry = await favicon_find_entry(conn, response_url.href, log);
       } catch(error) {
         reject(error);
         return;
@@ -168,29 +165,26 @@ function favicon_lookup(conn, url, log = SilentConsole) {
     if(!uniq_urls.includes(origin_url.href)) {
       uniq_urls.push(origin_url.href);
       try {
-        origin_entry = await favicon_find_entry(conn, origin_url, log);
+        origin_entry = await favicon_find_entry(conn, origin_url.href, log);
       } catch(error) {
         reject(error);
         return;
       }
     }
 
-    // If we found an origin entry, resolve with that. Also add or replace the
-    // other entries
+    // If we found an origin entry, resolve with that
     if(origin_entry && !favicon_is_expired(origin_entry, current_date)) {
       const icon_url = new URL(origin_entry.iconURLString);
       const tx = conn.transaction('favicon-cache', 'readwrite');
-      const proms = [];
       try {
-        proms.push(favicon_add_entry(tx, url, icon_url, log));
-        if(uniq_urls.includes(response_url.href))
-          proms.push(favicon_add_entry(tx, response_url, icon_url, log));
+        let proms = uniq_urls.filter((url)=> url !== origin_url.href);
+        proms = proms.map((url) => favicon_add_entry(tx, url, icon_url.href,
+          log));
         await Promise.all(proms);
       } catch(error) {
         reject(error);
         return;
       }
-
       resolve(icon_url);
       return;
     }
@@ -215,15 +209,10 @@ function favicon_lookup(conn, url, log = SilentConsole) {
       /^\s*image\//i.test(image_type)) {
       const image_url = new URL(image_response.responseURL);
       const tx = conn.transaction('favicon-cache', 'readwrite');
-      // TODO: can just map uniq_urls? but it is strings
       const proms = [];
       try {
-        proms.push(favicon_add_entry(tx, url, image_url, log));
-        if(response_url && url.href !== response_url.href)
-          proms.push(favicon_add_entry(tx, response_url, image_url, log));
-        if(origin_url.href !== url.href &&
-          (!response_url || response_url.href !== origin_url.href))
-          proms.push(favicon_add_entry(tx, origin_url, image_url, log));
+        const proms = uniq_urls.map((url) => favicon_add_entry(tx, url,
+          image_url.href, log));
         await Promise.all(proms);
         resolve(image_url);
         return;
@@ -237,19 +226,14 @@ function favicon_lookup(conn, url, log = SilentConsole) {
     const proms = [];
     try {
       const tx = conn.transaction('favicon-cache', 'readwrite');
-      if(entry)
-        proms.push(favicon_remove_entry(tx, url, log));
-      if(redirect_entry)
-        proms.push(favicon_remove_entry(tx, response_url, log));
-      if(origin_entry)
-        proms.push(favicon_remove_entry(tx, origin_url, log));
+      const proms = uniq_urls.map((url) => favicon_remove_entry(tx, url, log));
       await Promise.all(proms);
     } catch(error) {
       reject(error);
       return;
     }
 
-    // Resolve with nothing
+    // Failed to find favicon
     resolve();
   });
 }
@@ -285,57 +269,61 @@ function favicon_upgrade(log, event) {
   }
 }
 
-function favicon_is_expired(entry, current_date,
-  max_age = FAVICON_DEFAULT_MAX_AGE) {
+function favicon_is_expired(entry, current_date, max_age = FAVICON_MAX_AGE) {
   const age = current_date - entry.dateUpdated;
-  return age >= max_age;
+  return age > max_age;
 }
 
+// @param conn {IDBDatabase}
+// @param url {String}
+// @param log {console}
 function favicon_find_entry(conn, url, log) {
   return new Promise(function(resolve, reject) {
-    log.log('Checking favicon cache for page url', url.href);
-    const page_url = url.href;
+    log.log('Checking favicon cache for page url', url);
     const tx = conn.transaction('favicon-cache');
     const store = tx.objectStore('favicon-cache');
-    const request = store.get(page_url);
-    request.onsuccess = function(event) {
+    const request = store.get(url);
+    request.onsuccess = function onsuccess(event) {
       const entry = event.target.result;
       if(entry)
-        log.debug('Favicon cache hit', page_url, entry.iconURLString);
+        log.debug('Favicon cache hit', url, entry.iconURLString);
       resolve(entry);
     };
-    request.onerror = function(event) {
+    request.onerror = function onerror(event) {
       log.debug(event.target.error);
       reject(event.target.error);
     };
   });
 }
 
+// @param tx {IDBTransaction}
+// @param page_url {String}
+// @param icon_url {String}
+// @param log {console}
 function favicon_add_entry(tx, page_url, icon_url, log) {
   return new Promise(function(resolve, reject) {
-    const entry = {
-      'pageURLString': page_url.href,
-      'iconURLString': icon_url.href,
-      'dateUpdated': new Date()
-    };
+    const entry = {'pageURLString': page_url, 'iconURLString': icon_url,
+      'dateUpdated': new Date()};
     log.debug('Adding favicon entry for', entry.pageURLString);
     const store = tx.objectStore('favicon-cache');
     const request = store.put(entry);
-    request.onsuccess = function(event) { resolve(); };
-    request.onerror = function(event) { reject(event.target.error); };
+    request.onsuccess = function onsuccess(event) { resolve(); };
+    request.onerror = function onerror(event) { reject(event.target.error); };
   });
 }
 
+// @param tx {IDBTransaction}
+// @param page_url {String}
+// @param log {console-like}
 function favicon_remove_entry(tx, page_url, log) {
   return new Promise(function(resolve, reject) {
-    log.debug('Removing favicon entry with page url', page_url.href);
-    const norm_url = page_url.href;
+    log.debug('Removing favicon entry', page_url);
     const store = tx.objectStore('favicon-cache');
-    const request = store.delete(norm_url);
-    request.onsuccess = function(event) {
+    const request = store.delete(page_url);
+    request.onsuccess = function onsuccess(event) {
       resolve();
     };
-    request.onerror = function(event) {
+    request.onerror = function onerror(event) {
       reject(event.target.error);
     };
   });
@@ -450,7 +438,7 @@ function compact_favicons(conn, log = SilentConsole) {
     let remove_promises;
     try {
       remove_promises = expired_entries.map((entry) =>
-        favicon_remove_entry(tx, new URL(entry.pageURLString), log));
+        favicon_remove_entry(tx, entry.pageURLString, log));
     } catch(error) {
       reject(error);
       return;

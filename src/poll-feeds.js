@@ -250,7 +250,7 @@ async function poll_entry_impl(conn, icon_conn, feed, entry, log, resolve) {
     if(config.interstitial_hosts.includes(request_url.hostname)) {
       entry.content =
         'This content for this article is blocked by an advertisement.';
-      await db_add_entry(log, conn, entry);
+      await db_add_entry(conn, entry, log);
       resolve(true);
       return;
     }
@@ -258,14 +258,14 @@ async function poll_entry_impl(conn, icon_conn, feed, entry, log, resolve) {
     if(config.script_generated_hosts.includes(request_url.hostname)) {
       entry.content = 'The content for this article cannot be viewed because ' +
         'it is dynamically generated.';
-      await db_add_entry(log, conn, entry);
+      await db_add_entry(conn, entry, log);
       resolve(true);
       return;
     }
 
     if(config.paywall_hosts.includes(request_url.hostname)) {
       entry.content = 'This content for this article is behind a paywall.';
-      await db_add_entry(log, conn, entry);
+      await db_add_entry(conn, entry, log);
       resolve(true);
       return;
     }
@@ -273,14 +273,14 @@ async function poll_entry_impl(conn, icon_conn, feed, entry, log, resolve) {
     if(config.requires_cookies_hosts.includes(request_url.hostname)) {
       entry.content = 'This content for this article cannot be viewed ' +
         'because the website requires tracking information.';
-      await db_add_entry(log, conn, entry);
+      await db_add_entry(conn, entry, log);
       resolve(true);
       return;
     }
 
     if(sniff_mime_non_html(request_url)) {
       entry.content = 'This article is not a basic web page (e.g. a PDF).';
-      await db_add_entry(log, conn, entry);
+      await db_add_entry(conn, entry, log);
       resolve(true);
       return;
     }
@@ -292,7 +292,7 @@ async function poll_entry_impl(conn, icon_conn, feed, entry, log, resolve) {
     } catch(error) {
       // If the fetch failed then fallback to the in-feed content
       poll_prep_local_doc(entry);
-      await db_add_entry(log, conn, entry);
+      await db_add_entry(conn, entry, log);
       resolve(true);
       return;
     }
@@ -321,7 +321,7 @@ async function poll_entry_impl(conn, icon_conn, feed, entry, log, resolve) {
     const num_images_modified = await set_image_dimensions(doc, log);
     poll_prep_doc(doc);
     entry.content = doc.documentElement.outerHTML.trim();
-    await db_add_entry(log, conn, entry);
+    await db_add_entry(conn, entry, log);
     resolve(true);
   } catch(error) {
     log.debug(error);

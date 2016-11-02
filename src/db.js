@@ -25,27 +25,28 @@ const ENTRY_ARCHIVED = 1;
 function db_connect(name = config.db_name, version = config.db_version,
   log = SilentConsole) {
 
-  function db_connect_impl(resolve, reject) {
+  // idb allows empty string, but I think this leads to confusion, so do
+  // not allow unnamed database
+  if(!name.length) {
+    throw new TypeError();
+  }
+
+  return new Promise(function connect_impl(resolve, reject) {
     log.log('Connecting to database', name, version);
     const request = indexedDB.open(name, version);
     request.onupgradeneeded = db_upgrade.bind(request, log);
-    request.onsuccess = function db_connect_onsuccess(event) {
+    request.onsuccess = function onsuccess(event) {
       const conn = event.target.result;
       log.debug('Connected to database', conn.name);
       resolve(conn);
     };
-    request.onerror = function db_connect_on_error(event) {
+    request.onerror = function onerror(event) {
       reject(event.target.error);
     };
-    request.onblocked = db_connect_onblocked;
-  }
-
-  function db_connect_onblocked(event) {
-    log.debug('connection blocked, waiting indefinitely');
-  }
-
-  return new Promise(db_connect_impl);
-
+    request.onblocked = function onblocked(event) {
+      log.warn('db connection request blocked, waiting indefinitely');
+    };
+  });
 }
 
 
@@ -133,12 +134,12 @@ function db_upgrade(log, event) {
 }
 
 function db_delete(name) {
-  return new Promise(function db_delete_impl(resolve, reject) {
+  return new Promise(function delete_impl(resolve, reject) {
     const request = indexedDB.deleteDatabase(name);
-    request.onsuccess = function db_delete_onsuccess(event) {
+    request.onsuccess = function delete_onsuccess(event) {
       resolve();
     };
-    request.onerror = function db_delete_onerror(event) {
+    request.onerror = function delete_onerror(event) {
       reject(event.target.error);
     };
   });
@@ -248,6 +249,8 @@ function normalize_entry_url(url_str) {
   url_obj.hash = '';
 
   // Fix a common error case
+  // TODO: maybe undo this fix, it is an actual error after all
+  // or do this only in rewrite, it does not belong here
   if(url_obj.pathname.startsWith('//'))
     url_obj.pathname = url_obj.pathname.substring(1);
 
@@ -292,7 +295,58 @@ function sanitize_entry(input_entry) {
   return output_entry;
 }
 
-function db_add_entry(log, conn, entry) {
+
+function db_delete_feed(tx, id, log) {
+  return new Promise(function(resolve, reject) {
+    log.debug('Deleting feed', id);
+    const store = tx.objectStore('feed');
+    const request = store.delete(id);
+    request.onsuccess = function(event) {
+      resolve();
+    };
+    request.onerror = function(event) {
+      reject(event.target.error);
+    }
+  });
+}
+
+function db_get_entry_ids_for_feed(tx, id, log) {
+  return new Promise(function(resolve, reject) {
+    const store = tx.objectStore('entry');
+    const index = store.index('feed');
+    const request = index.getAllKeys(id);
+    request.onsuccess = function onsuccess(event) {
+      const ids = event.target.result;
+      log.debug('Loaded %d entry ids with feed id', ids.length, id);
+      resolve(ids);
+    };
+    request.onerror = function onerror(event) {
+      reject(event.target.error);
+    };
+  });
+}
+
+// @param tx {IDBTransaction}
+// @param id {int}
+// @param chan {BroadcastChannel}
+// @param log {console}
+function db_delete_entry(tx, id, chan, log) {
+  return new Promise(function(resolve, reject) {
+    log.debug('Deleting entry with id', id);
+    const store = tx.objectStore('entry');
+    const request = store.delete(id);
+    request.onsuccess = function onsuccess(event) {
+      log.debug('Deleted entry with id', id);
+      chan.postMessage({'type': 'delete_entry_request', 'id': entry.id});
+      resolve();
+    };
+    request.onsuccess = function onerror(event) {
+      reject(event.target.error);
+    };
+  });
+}
+
+function db_add_entry(conn, entry, log) {
   return new Promise(function(resolve, reject) {
     if('id' in entry) {
       reject(new TypeError());
