@@ -2,6 +2,11 @@
 
 /*
 TODO:
+- make standalone, independent of feed and entry object things, require the
+caller to deal with converting into whatever format it wants. this should just
+do one thing and do it well
+- similarly, it should just return one object, not a feed and array of entries
+- the thing returned should be some kind of basic parsed-feed-object
 - support <media:thumbnail url="imgurl" /> (atom)
 - do not introduce fallback dates, if date is not set then do not use
 - do not cascade feed date to entry date

@@ -168,7 +168,8 @@ function add_feed_url(feed, url) {
 
 function normalize_feed_url(url_str) {
   const url_obj = new URL(url_str);
-  url_obj.hash = '';
+  // # can be used to identify a different url
+  //url_obj.hash = '';
   return url_obj.href;
 }
 

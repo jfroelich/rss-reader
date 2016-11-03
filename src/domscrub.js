@@ -2,7 +2,7 @@
 
 'use strict';
 
-// For sanitizing the contents of a document
+// Module for sanitizing the contents of a document
 
 {
 
@@ -95,6 +95,7 @@ const blacklist = [
 ];
 const blacklist_selector = blacklist.join(',');
 
+// This does not use a whitelist in order to support custom entities
 function filter_blacklist(doc) {
   const doc_element = doc.documentElement;
   const elements = doc.querySelectorAll(blacklist_selector);
@@ -319,7 +320,9 @@ const leaf_exceptions = {
   'sbg': 0, 'textarea': 0, 'track': 0, 'video': 0, 'wbr': 0
 };
 
-// Recursive
+// An element is a leaf unless it is a named exception, contains a
+// non-whitespace-only text node, or contains at least one non-leaf child
+// element. This is a recursive function.
 function is_leaf(node) {
   switch(node.nodeType) {
     case Node.ELEMENT_NODE:

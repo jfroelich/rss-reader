@@ -18,6 +18,8 @@
 // because it originally had a callback parameter. But this was before async
 // came along, and that was the only way to know the poll had resolved.
 
+var poll_lock = false;
+
 function poll_feeds(options = {}) {
   return new Promise(async function poll_feeds_impl(resolve, reject) {
     const log = options.log || SilentConsole;
@@ -107,19 +109,19 @@ function poll_feeds(options = {}) {
 function poll_acquire_lock(force_reset_lock, log) {
   if(force_reset_lock)
     poll_release_lock(log);
-  if('POLL_FEEDS_ACTIVE' in localStorage) {
+  if(poll_lock) {
     log.debug('Failed to acquire lock, the lock is already present');
     return false;
   }
   log.debug('Acquiring poll lock');
-  localStorage.POLL_FEEDS_ACTIVE = '1';
+  poll_lock = true;
   return true;
 }
 
 function poll_release_lock(log) {
-  if('POLL_FEEDS_ACTIVE' in localStorage) {
+  if(poll_lock) {
     log.debug('Releasing poll lock');
-    delete localStorage.POLL_FEEDS_ACTIVE;
+    poll_lock = false;
   }
 }
 

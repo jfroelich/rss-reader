@@ -28,7 +28,7 @@ function fetch_html(url, log = SilentConsole) {
     opts.referrer = 'no-referrer';
 
     try {
-      let response = await fetch(url.href, opts);
+      const response = await fetch(url.href, opts);
       log.debug('Fetched html', url.href);
 
       if(!response.ok) {

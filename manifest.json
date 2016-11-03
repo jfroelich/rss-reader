@@ -14,14 +14,15 @@
     "persistent": false,
     "scripts": [
       "/lib/parse-srcset.js",
+      "/modules/boilerplate/boilerplate.js",
+      "/modules/favicon/favicon.js",
+      "/modules/notification/notification.js",
       "/src/archive-entries.js",
       "/src/background.js",
       "/src/badge.js",
-      "/src/boilerplate.js",
       "/src/config.js",
       "/src/db.js",
       "/src/domscrub.js",
-      "/src/favicon.js",
       "/src/parse-feed.js",
       "/src/fetch-feed.js",
       "/src/fetch-html.js",
@@ -33,7 +34,6 @@
       "/src/resolve-document.js",
       "/src/rewrite.js",
       "/src/set-image-dimensions.js",
-      "/src/show-notification.js",
       "/src/silent-console.js",
       "/src/utils.js"
     ]

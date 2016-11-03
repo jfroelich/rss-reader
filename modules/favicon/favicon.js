@@ -15,7 +15,7 @@ favicon.console = {
 
 // Icon byte size limits
 favicon.min_size = 49;
-favicon.max_size = 10001;
+favicon.max_size = 10 * 1024 + 1;
 
 // Given a url, lookup the associated favicon url. Tries to follow the spec by
 // first checking for the icon in the page, then checking in the domain root.
@@ -29,6 +29,13 @@ favicon.lookup = function(conn, url, log = favicon.console) {
     log.log('Looking up favicon for url', url.href);
 
     const uniq_urls = [url.href];
+    const current_date = new Date();
+    const selectors = [
+      'link[rel="icon"][href]',
+      'link[rel="shortcut icon"][href]',
+      'link[rel="apple-touch-icon"][href]',
+      'link[rel="apple-touch-icon-precomposed"][href]'
+    ];
 
     // Lookup the url in the cache
     let entry;
@@ -40,14 +47,13 @@ favicon.lookup = function(conn, url, log = favicon.console) {
     }
 
     // If the url is in the cache, and has not expired, then resolve to it
-    const current_date = new Date();
     if(entry && !favicon.is_expired(entry, current_date)) {
       resolve(entry.iconURLString);
       return;
     }
 
-    // Check if we are online in order to fetch. If not, there is nothing to do.
-    // This aids in distinguishing from certain fetch errors.
+    // Check if we are online in order to fetch.
+    // This helps distinguish from certain fetch errors.
     if('onLine' in navigator && !navigator.onLine) {
       resolve();
       return;
@@ -60,7 +66,7 @@ favicon.lookup = function(conn, url, log = favicon.console) {
     } catch(error) {
     }
 
-    // If the fetch redirected, keep track of the redirected url too
+    // If redirected, track the redirected url
     if(response_url) {
       response_url = new URL(response_url);
       if(response_url.href !== url.href)
@@ -79,15 +85,9 @@ favicon.lookup = function(conn, url, log = favicon.console) {
       }
     }
 
-    const selectors = [
-      'link[rel="icon"][href]',
-      'link[rel="shortcut icon"][href]',
-      'link[rel="apple-touch-icon"][href]',
-      'link[rel="apple-touch-icon-precomposed"][href]'
-    ];
-
     // If the document is valid, then search for links in the head, and
     // ensure the links are absolute. Use the first valid link found.
+    // TODO: use a single querySelectorAll?
     let doc_icon_url;
     let base_url = response_url ? response_url : url;
     if(doc && doc.documentElement.localName === 'html' && doc.head) {
@@ -173,11 +173,10 @@ favicon.lookup = function(conn, url, log = favicon.console) {
     } catch(error) {
     }
 
-    // If the fetch did not error, and the icon is in range, then resolve to it
+    // If fetched and size is in range, then resolve to it
     if(image_response_url && image_size > favicon.min_size &&
       image_size < favicon.max_size) {
       const tx = conn.transaction('favicon-cache', 'readwrite');
-      const proms = [];
       try {
         // Map the icon to the distinct urls in the cache
         const proms = uniq_urls.map((url) => favicon.add(tx, url,
@@ -199,7 +198,6 @@ favicon.lookup = function(conn, url, log = favicon.console) {
       expired_urls.push(redirect_entry.pageURLString);
     if(origin_entry)
       expired_urls.push(origin_entry.pageURLString);
-
     if(expired_urls.length) {
       try {
         const tx = conn.transaction('favicon-cache', 'readwrite');
@@ -450,10 +448,9 @@ favicon.compact = function(conn, log = favicon.console) {
   return new Promise(async function compact_impl(resolve, reject) {
     log.log('Compacting favicons in database', conn.name);
 
-    // Create a single transaction to share among all requests
     const tx = conn.transaction('favicon-cache', 'readwrite');
 
-    // Load an array of all entries in the database
+    // Load all entries
     let entries;
     try {
       entries = await favicon.get_all(tx, log);
