@@ -35,8 +35,8 @@
       "/modules/misc/set-image-dimensions.js",
       "/modules/misc/silent-console.js",
       "/modules/misc/utils.js",
-      "/third-party/parse-srcset.js",
-      "/modules/notification/notification.js"
+      "/modules/notification/notification.js",
+      "/modules/third-party/parse-srcset.js"
     ]
   },
   "options_page": "options.html",
