@@ -287,7 +287,7 @@ async function start_subscription(url) {
   let fade_out = false;
   try {
     const feed_conn = await db_connect(undefined, undefined, console);
-    const icon_conn = await favicon_connect(undefined, undefined, console);
+    const icon_conn = await favicon.connect(undefined, undefined, console);
     let subbed_feed = await subscribe(feed_conn, icon_conn, feed,
       suppress_notifs, console);
     append_feed(subbed_feed, true);
@@ -437,14 +437,13 @@ async function sub_form_on_submit(event) {
     const item_element = document.createElement('li');
     item_element.textContent = `Found ${results.length} feeds.`;
     results_list_element.appendChild(item_element);
-    const conn = await favicon_connect(undefined, undefined, console);
+    const conn = await favicon.connect(undefined, undefined, console);
     for(let result of results) {
       if(!result.link)
         continue;
       link_url = new URL(result.link);
-      icon_url = await favicon_lookup(conn, link_url, console);
-      if(icon_url)
-        result.faviconURLString = icon_url.href;
+      icon_url = await favicon.lookup(conn, link_url, console);
+      result.faviconURLString = icon_url;
     }
     conn.close();
   } catch(error) {

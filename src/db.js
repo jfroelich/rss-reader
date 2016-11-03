@@ -342,6 +342,8 @@ function db_delete_entry(tx, id, chan, log) {
   });
 }
 
+// TODO: deprecate in favor of put, and after moving sanitization and
+// default props out, maybe make a helper function in pollfeeds that does this
 function db_add_entry(conn, entry, log) {
   return new Promise(function(resolve, reject) {
     if('id' in entry) {
@@ -397,8 +399,7 @@ function db_add_feed(log, conn, feed) {
 }
 
 // TODO: normalize feed url?
-// TODO: move log to last arg
-function db_contains_feed_url(log, conn, url) {
+function db_contains_feed_url(conn, url, log) {
   return new Promise(function db_contains_feed_url_impl(resolve, reject) {
     log.debug('Checking for feed with url', url);
     const tx = conn.transaction('feed');
@@ -435,48 +436,30 @@ function db_find_feed_by_id(conn, id, log = SilentConsole) {
 // @param conn {IDBDatabase}
 // @param urls {Array<String>} valid normalized entry urls
 function db_contains_entry(conn, urls, log) {
+  if(!urls || !urls.length)
+    throw new TypeError();
+
   return new Promise(function contains_impl(resolve, reject) {
-    // This is an actual error because it should never happen
-    if(!urls || !urls.length) {
-      reject(new TypeError());
-      return;
-    }
-    let did_resolve = false;
+    const keys = [];
     const tx = conn.transaction('entry');
-
-    // TODO: this may have a built in timeout that I can skip if I track
-    // num urls processed myself, let the last onsuccess handler to meet the
-    // num processed === urls.length condition to do the final resolve
-    // or maybe better, use a promise for each request that accepts the same
-    // tx, then use await Promise.all on the promises? But I still do not
-    // short-circuit in the manner I want? But maybe that doesn't matter
-    // because I am not shortcircuiting now anyway
-
     tx.oncomplete = function tx_oncomplete(event) {
-      if(!did_resolve)
-        resolve(false);
+      resolve(keys.length ? true : false);
+    };
+    tx.onabort = function tx_onabort(event) {
+      reject(event.target.error);
     };
 
     const store = tx.objectStore('entry');
     const index = store.index('urls');
     for(let url of urls) {
-      const request = index.openKeyCursor(url);
-      request.onsuccess = open_key_cursor_onsuccess;
+      const request = index.getKey(url);
+      request.onsuccess = get_key_onsuccess;
     }
 
-    function open_key_cursor_onsuccess(event) {
-      if(did_resolve)
-        return;
-      const cursor = event.target.result;
-      if(!cursor) {
-        return;
-      }
-
-      // TODO: would tx.abort cancel the other requests without an exception?
-      // if cursor is defined, then cursor.key is defined, but there is no need
-      // to access it
-      did_resolve = true;
-      resolve(true);
+    function get_key_onsuccess(event) {
+      const key = event.target.result;
+      if(key)
+        keys.push(key);
     }
   });
 }

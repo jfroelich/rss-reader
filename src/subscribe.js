@@ -11,8 +11,8 @@ function subscribe(feed_conn, icon_conn, feed, suppress_notifs,
     log.log('Subscribing to', get_feed_url(feed));
 
     try {
-      const found = await db_contains_feed_url(log, feed_conn,
-        get_feed_url(feed));
+      const found = await db_contains_feed_url(feed_conn, get_feed_url(feed),
+        log);
       if(found) {
         reject(new Error('Already subscribed'));
         return;
@@ -38,9 +38,8 @@ function subscribe(feed_conn, icon_conn, feed, suppress_notifs,
         url = new URL(feed_url.origin);
       }
 
-      const icon_url = await favicon_lookup(icon_conn, url, log);
-      if(icon_url)
-        merged.faviconURLString = icon_url.href;
+      const icon_url = await favicon.lookup(icon_conn, url, log);
+      merged.faviconURLString = icon_url;
 
       const added_feed = await db_add_feed(log, feed_conn, merged);
       if(!suppress_notifs) {

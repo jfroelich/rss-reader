@@ -59,7 +59,7 @@ function poll_feeds(options = {}) {
     try {
       [conn, icon_conn] = await Promise.all([
         db_connect(undefined, undefined, log),
-        favicon_connect(undefined, undefined, log)
+        favicon.connect(undefined, undefined, log)
       ]);
     } catch(error) {
       poll_release_lock(log);
@@ -236,11 +236,8 @@ function poll_entry(conn, icon_conn, feed, entry, log) {
         entry.feedTitle = feed.title;
 
       // Set the entry's favicon url
-      let icon_url = await favicon_lookup(icon_conn, request_url, log);
-      if(icon_url)
-        entry.faviconURLString = icon_url.href;
-      else if(feed.faviconURLString)
-        entry.faviconURLString = feed.faviconURLString;
+      let icon_url = await favicon.lookup(icon_conn, request_url, log);
+      entry.faviconURLString = icon_url || feed.faviconURLString;
 
       // Replace the entry's content with full text. Before fetching, check
       // if the entry should not be fetched

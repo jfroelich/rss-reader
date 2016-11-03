@@ -8,17 +8,16 @@ function refresh_feed_icons(log = SilentConsole) {
     let num_modified = 0;
     try {
       const feed_conn = await db_connect(undefined, undefined, log);
-      const icon_conn = await favicon_connect(undefined, undefined, log);
+      const icon_conn = await favicon.connect(undefined, undefined, log);
       const feeds = await db_get_all_feeds(feed_conn, log);
       for(let feed of feeds) {
         const lookup_url = get_lookup_url(feed);
-        log.debug('Feed lookup url', get_feed_url(feed), lookup_url.href);
-        const icon_url = await favicon_lookup(icon_conn, lookup_url, log);
+        const icon_url = await favicon.lookup(icon_conn, lookup_url, log);
         if(!icon_url)
           continue;
-        if(!feed.faviconURLString || feed.faviconURLString !== icon_url.href) {
+        if(!feed.faviconURLString || feed.faviconURLString !== icon_url) {
           num_modified++;
-          feed.faviconURLString = icon_url.href;
+          feed.faviconURLString = icon_url;
           await db_put_feed(feed_conn, feed, log);
         }
       }
