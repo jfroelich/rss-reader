@@ -38,10 +38,6 @@ function fetch_html(url, log = SilentConsole) {
         return;
       }
 
-      if(response.status !== 200) {
-        console.debug(url.href, response.status, response.statusText);
-      }
-
       // Using an accept header isn't enough. At least avoid the case where the
       // mime type is known
       let content_type = response.headers.get('Content-Type');
@@ -58,8 +54,7 @@ function fetch_html(url, log = SilentConsole) {
       log.debug('Read response text', url.href, text.length);
       const parser = new DOMParser();
       const doc = parser.parseFromString(text, 'text/html');
-      if(!doc || !doc.documentElement ||
-        doc.documentElement.localName !== 'html') {
+      if(!doc.documentElement || doc.documentElement.localName !== 'html') {
         log.debug('Text is not valid html', url.href, text.substring(0, 100));
         reject(new Error('not html'));
         return;

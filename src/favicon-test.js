@@ -4,15 +4,15 @@
 
 // TODO: use a test db instead of the real db (and delete at end of test)
 
-async function test_lookup(url_str) {
+async function test_lookup(url_str, log = console) {
   try {
     const url = new URL(url_str);
-    const conn = await favicon_connect(undefined, undefined, console);
-    const icon = await favicon_lookup(conn, url, console);
+    const conn = await favicon_connect(undefined, undefined, log);
+    const icon = await favicon_lookup(conn, url, log);
     conn.close();
-    console.debug('Result:', icon ? icon.href : 'null');
+    log.debug('Result:', icon ? icon.href : 'null');
   } catch(error) {
-    console.log(error);
+    log.log(error);
   }
 }
 

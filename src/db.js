@@ -244,16 +244,12 @@ function add_entry_url(entry, url_str) {
   return true;
 }
 
+
+// NOTE: hash cannot be removed because it sometimes identifies different
+// urls because some sites use hash like a search param
+// NOTE: this throws if url is invalid
 function normalize_entry_url(url_str) {
   const url_obj = new URL(url_str);
-  url_obj.hash = '';
-
-  // Fix a common error case
-  // TODO: maybe undo this fix, it is an actual error after all
-  // or do this only in rewrite, it does not belong here
-  if(url_obj.pathname.startsWith('//'))
-    url_obj.pathname = url_obj.pathname.substring(1);
-
   return url_obj.href;
 }
 
@@ -641,7 +637,7 @@ function db_mark_entry_read(conn, id, log = SilentConsole) {
       await db_put_entry(tx, entry, log);
       // Update the unread count. This must be awaited (I think) because
       // otherwise the conn is closed too soon?
-      await update_badge(conn, log);
+      await badge_update_text(conn, log);
       resolve();
     } catch(error) {
       reject(error);

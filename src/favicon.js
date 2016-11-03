@@ -78,16 +78,21 @@ function favicon_lookup(conn, url, log = SilentConsole) {
       return;
     }
 
-    // We are online. Attempt to fetch
-    // TODO: this should be using the new fetch api
-    let fetch_result = null;
+    // Fetch the html of the url and the redirect url
+    let doc, response_url;
     try {
-      fetch_result = await favicon_fetch_doc(url, log);
+      [doc, response_url] = await favicon_fetch_doc(url.href, log);
     } catch(error) {
     }
 
+    if(response_url) {
+      response_url = new URL(response_url);
+      if(response_url.href !== url.href)
+        uniq_urls.push(response_url.href);
+    }
+
     // If the fetch failed but we have an entry, remove it
-    if(entry && !fetch_result) {
+    if(entry && !doc) {
       const tx = conn.transaction('favicon-cache', 'readwrite');
       try {
         await favicon_remove_entry(tx, url.href, log);
@@ -95,14 +100,6 @@ function favicon_lookup(conn, url, log = SilentConsole) {
         reject(error);
         return;
       }
-    }
-
-    let doc, response_url;
-    if(fetch_result) {
-      doc = fetch_result.responseXML;
-      response_url = new URL(fetch_result.responseURL);
-      if(response_url.href !== url.href)
-        uniq_urls.push(response_url.href);
     }
 
     const selectors = [
@@ -191,23 +188,16 @@ function favicon_lookup(conn, url, log = SilentConsole) {
 
     // Nothing is in the icon cache, and could not find in page. Fall back to
     // checking for image in domain root
-    const origin_icon_url = new URL(url.origin + '/favicon.ico');
-    let image_response;
+    let image_size, image_response_url;
     try {
-      image_response = await favicon_request_image(origin_icon_url, log);
+      [image_size, image_response_url] = await favicon_request_image(
+        url.origin + '/favicon.ico', log);
     } catch(error) {
     }
 
-    let image_size, image_type;
-    if(image_response) {
-      image_size = favicon_get_response_size(image_response);
-      image_type = image_response.getResponseHeader('Content-Type');
-    }
-
-    if(image_response && image_size > FAVICON_MIN_IMAGE_SIZE &&
-      image_size < FAVICON_MAX_IMAGE_SIZE &&
-      /^\s*image\//i.test(image_type)) {
-      const image_url = new URL(image_response.responseURL);
+    if(image_response_url && image_size > FAVICON_MIN_IMAGE_SIZE &&
+      image_size < FAVICON_MAX_IMAGE_SIZE) {
+      const image_url = new URL(image_response_url);
       const tx = conn.transaction('favicon-cache', 'readwrite');
       const proms = [];
       try {
@@ -343,71 +333,111 @@ function favicon_match_selector(ancestor, selector, base_url) {
   }
 }
 
-// TODO: use fetch api
-// TODO: maybe even inline because I can await fetch
+// TODO: maybe I can avoid parsing and just search raw text for
+// <link> tags, the accuracy loss may be ok given the speed boost
+// TODO: use streaming text api, stop reading on includes('</head>')
 function favicon_fetch_doc(url, log) {
-  return new Promise(function(resolve, reject) {
-    log.debug('Fetching', url.href);
-    const request = new XMLHttpRequest();
-    request.responseType = 'document';
-    request.onerror = function(event) {
-      reject(event.target.error);
-    };
-    request.ontimeout = function(event) {
-      reject(event.target.error);
-    };
-    request.onabort = function(event) {
-      reject(event.target.error);
-    };
-    request.onload = function(event) {
-      log.debug('Fetched', url.href);
-      resolve(event.target);
-    };
-    request.open('GET', url.href, true);
-    request.setRequestHeader('Accept', 'text/html');
-    request.send();
-  });
-}
+  return new Promise(async function(resolve, reject) {
+    log.debug('Fetching', url);
 
-// TODO: use fetch api
-// TODO: actually the caller could use the fetch api directly, this would
-// avoid the need to have a promise or another function
-function favicon_request_image(image_url, log) {
-  return new Promise(function(resolve, reject) {
-    log.debug('Fetching', image_url.href);
-    const request = new XMLHttpRequest();
-    request.timeout = 1000;
-    request.ontimeout = function(event) {
-      reject(new Error('timeout'));
-    };
-    request.onabort = function(event) {
-      reject(new Error('abort'));
-    };
-    request.onerror = function(event) {
-      reject(new Error('error'));
-    };
-    request.onload = function(event) {
-      log.debug('Fetched', image_url.href);
-      resolve(event.target);
-    };
-    request.open('HEAD', image_url.href, true);
-    request.setRequestHeader('Accept', 'image/*');
-    request.send();
-  });
-}
+    const opts = {};
+    opts.credentials = 'omit';
+    opts.method = 'GET';
+    opts.headers = {'Accept': 'text/html'};
+    opts.mode = 'cors';
+    opts.cache = 'default';
+    opts.redirect = 'follow';
+    opts.referrer = 'no-referrer';
 
-// TODO: inline
-function favicon_get_response_size(response) {
-  const len_str = response.getResponseHeader('Content-Length');
-  let len_int = 0;
-  if(len_str) {
+    let response;
     try {
-      len_int = parseInt(len_str, 10);
+      response = await fetch(url, opts);
+    } catch(error) {
+      reject(error);
+      return;
+    }
+
+    if(!response.ok) {
+      reject(new Error(response.status));
+      return;
+    }
+
+    let type = response.headers.get('Content-Type');
+    if(!/^\s*text\/html/i.test(type)) {
+      reject(new Error(`Invalid response type ${type} for ${url}`));
+      return;
+    }
+
+    let text;
+    try {
+      text = await response.text();
+    } catch(error) {
+      reject(error);
+      return;
+    }
+
+    const parser = new DOMParser();
+    let doc;
+    try {
+      doc = parser.parseFromString(text, 'text/html');
+    } catch(error) {
+      reject(error);
+      return;
+    }
+
+    if(!doc.documentElement || doc.documentElement.localName !== 'html') {
+      reject(new Error('Invalid html'));
+      return;
+    }
+    log.debug('Fetched html document', url, text.length);
+    resolve([doc, response.url]);
+  });
+}
+
+function favicon_request_image(image_url, log) {
+  return new Promise(async function(resolve, reject) {
+    log.debug('Fetching', image_url);
+    const opts = {};
+    opts.credentials = 'omit';
+    opts.method = 'HEAD';
+
+    // TODO: limit to image mime types
+    //opts.headers = {'Accept': ''};
+
+    opts.mode = 'cors';
+    opts.cache = 'default';
+    opts.redirect = 'follow';
+    opts.referrer = 'no-referrer';
+
+    let response;
+    try {
+      response = await fetch(image_url, opts);
+    } catch(error) {
+      reject(error);
+      return;
+    }
+
+    if(!response.ok) {
+      reject(new Error(response.status + ' ' + response.statusText));
+      return;
+    }
+
+    const type = response.headers.get('Content-Type');
+    if(!/^\s*image\//i.test(type)) {
+      reject(new Error(`Invalid response type ${type}`));
+      return;
+    }
+
+    let size = 0;
+    try {
+      size = parseInt(response.headers.get('Content-Length'), 10);
     } catch(error) {
     }
-  }
-  return len_int;
+
+    resolve([size, response.url]);
+  });
 }
+
 
 function compact_favicons(conn, log = SilentConsole) {
   return new Promise(async function compact_impl(resolve, reject) {

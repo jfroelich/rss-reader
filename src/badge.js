@@ -2,9 +2,8 @@
 
 'use strict';
 
-function update_badge(conn, log = SilentConsole) {
+function badge_update_text(conn, log = SilentConsole) {
   return new Promise(async function update_impl(resolve, reject) {
-    log.log('Updating badge unread count using database', conn.name);
     try {
       const count = await db_count_unread_entries(conn, log);
       const text = count > 999 ? '1k+' : '' + count;

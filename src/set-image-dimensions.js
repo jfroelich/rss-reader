@@ -26,9 +26,7 @@ function set_image_dimensions(doc, log) {
 // Resolves with image because in the case of racing the link between and image
 // and its fetched dimensions would be unclear, because order of resolution
 // is not serial.
-// TODO: eventually look into using fetch and getting the binary, then deriving
-// the size from the binary, this way there are no cookies and junk. Does
-// a normal image request include cookie header?
+// TODO: Does a normal image request include cookie header?
 function get_image_dimensions(image, log) {
   return new Promise(function(resolve) {
     // If the image has known dimensions then resolve immediately
@@ -89,9 +87,6 @@ function get_image_dimensions(image, log) {
       return;
     }
 
-    // Because fetching is async it is irrelevant as to whether this attaches
-    // event listeners before or after triggering the fetch. If already fetched
-    // the events are still fired after the listeners have been attached.
     proxy.onload = function(event) {
       resolve({
         'image': image,

@@ -2,17 +2,16 @@
 
 'use strict';
 
-const archive_default_entry_max_age = 1 * 24 * 60 * 60 * 1000; // 1 day in ms
+// TODO: use getAll, process entries in parallel using shared tx
 
-function archive_entries(conn, max_age = archive_default_entry_max_age,
+function archive_entries(conn, max_age = config.archive_default_entry_max_age,
   log = SilentConsole) {
-  return new Promise(function archive_impl(resolve, reject) {
-    if(typeof max_age !== 'undefined' &&
-      (!Number.isInteger(max_age) || max_age < 0)) {
-      reject(new TypeError());
-      return;
-    }
 
+  if(typeof max_age !== 'undefined' &&
+    (!Number.isInteger(max_age) || max_age < 0))
+    throw new TypeError();
+
+  return new Promise(function archive_impl(resolve, reject) {
     log.log('Archiving entries older than %d ms', max_age);
     let num_modified = 0, num_scanned = 0;
     const current_date = new Date();
@@ -77,10 +76,6 @@ function archive_entries(conn, max_age = archive_default_entry_max_age,
     };
 
     request.onerror = function(event) {
-      // TODO: this aborts, right? double check
-      // the issue is this might double reject
-      // just going to not reject here for now and assume
-      // tx.onabort is called
       log.debug(event.target.error);
     };
   });

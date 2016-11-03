@@ -93,7 +93,7 @@ chrome.runtime.onInstalled.addListener(async function oninstall(event) {
   let conn;
   try {
     conn = await db_connect();
-    update_badge(conn);
+    badge_update_text(conn);
   } catch(error) {
     console.debug(error);
   }
