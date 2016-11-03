@@ -9,7 +9,7 @@ let current_slide = null;
 
 const db_chan = new BroadcastChannel('db');
 db_chan.onmessage = function(event) {
-  if(event.data.type === 'archive_entry_request') {
+  if(event.data.type === 'archive_entry') {
     console.log('Received archive entry request message, not yet implemented');
   } else if(event.data.type === 'delete_entry_request') {
     console.log('Received entry delete request message, not yet implemented');

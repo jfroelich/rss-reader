@@ -444,10 +444,13 @@ favicon.fetch_image = function(image_url, log) {
 // Deletes expired entries from the favicon cache database
 // @param conn {IDBDatabase}
 // @param log {console}
+// TODO: could this be rewritten so that I query for only expired entries
+// rather than filter in memory?
 favicon.compact = function(conn, log = favicon.console) {
   return new Promise(async function compact_impl(resolve, reject) {
     log.log('Compacting favicons in database', conn.name);
 
+    const current_date = new Date();
     const tx = conn.transaction('favicon-cache', 'readwrite');
 
     // Load all entries
@@ -459,28 +462,22 @@ favicon.compact = function(conn, log = favicon.console) {
       return;
     }
 
-    // Get a subset of expired entries. Use the the call time of this
-    // function, for determining whether an entry is expired
-    const current_date = new Date();
+    // Get only those entries that are expired
     const expired_entries = entries.filter((entry) =>
       favicon.is_expired(entry, current_date));
 
-    log.debug('Found %d expired entries', expired_entries.length);
-
-    // Issue individual remove entry requests concurrently, and store the
-    // remove promises in an array
-    let remove_promises, resolutions;
+    // Concurrently remove expired entries
     try {
-      remove_promises = expired_entries.map((entry) =>
+      const proms = expired_entries.map((entry) =>
         favicon.remove(tx, entry.pageURLString, log));
-      resolutions = await Promise.all(remove_promises);
+      await Promise.all(proms);
     } catch(error) {
       reject(error);
       return;
     }
 
-    log.debug('Deleted %d favicon entries', resolutions.length);
-    resolve(resolutions.length);
+    log.debug('Deleted %d favicon entries', expired_entries.length);
+    resolve(expired_entries.length);
   });
 };
 
@@ -489,16 +486,16 @@ favicon.compact = function(conn, log = favicon.console) {
 // @param tx {IDBTransaction}
 // @param log {console}
 favicon.get_all = function(tx, log) {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function get_all_impl(resolve, reject) {
     log.debug('Getting all favicon entries from database', tx.db.name);
     const store = tx.objectStore('favicon-cache');
     const request = store.getAll();
-    request.onsuccess = function(event) {
+    request.onsuccess = function onsuccess(event) {
       const entries = event.target.result || [];
       log.debug('Got %d entries from database %s', entries.length, tx.db.name);
       resolve(entries);
     };
-    request.onerror = function(event) {
+    request.onerror = function onerror(event) {
       log.debug(event.target.error);
       reject(event.target.error);
     };

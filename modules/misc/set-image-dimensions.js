@@ -23,9 +23,6 @@ function set_image_dimensions(doc, log) {
 
 // This always resolves so that this function can be conveniently used together
 // with Promise.all, which otherwise would fail fast on the first error.
-// Resolves with image because in the case of racing the link between and image
-// and its fetched dimensions would be unclear, because order of resolution
-// is not serial.
 // TODO: Does a normal image request include cookie header?
 function get_image_dimensions(image, log) {
   return new Promise(function(resolve) {

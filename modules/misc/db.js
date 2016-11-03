@@ -532,15 +532,25 @@ function db_count_unread_entries(conn, log = SilentConsole) {
   });
 }
 
+function db_get_unarchived_read_entries(tx, log) {
+  return new Promise(function(resolve, reject) {
+    log.debug('Getting all unarchived read entries in database', tx.db.name);
+    const store = tx.objectStore('entry');
+    const index = store.index('archiveState-readState');
+    const key_path = [ENTRY_UNARCHIVED, ENTRY_READ];
+    const request = index.getAll(key_path);
+    request.onsuccess = function onsuccess(event) {
+      resolve(event.target.result);
+    };
+    request.onerror = function onerror(event) {
+      log.debug(event.target.error);
+      reject(event.target.error);
+    };
+  });
+}
 
-// TODO: i would like to have a more general get_entries function that accepts
-// some more general query, then I do not have a different function for each
-// query. For now it is fine.
-// TODO: what I can do now is use getAll, passing in a count parameter as an
-// upper limit, and then using slice or unshift or something to advance.
-// getAll is a perf increase because it is a single request, and that savings
-// outweights the wasted deserialization cost of reloading entries that will
-// be discarded (sliced out)
+// TODO: use getAll, passing in a count parameter as an upper limit, and
+// then using slice or unshift or something to advance.
 function db_get_unarchived_unread_entries(conn, offset, limit,
   log = SilentConsole) {
   return new Promise(function db_get_unarchived_unread_entries_impl(resolve,
@@ -584,7 +594,7 @@ function db_mark_entry_read(conn, id, log = SilentConsole) {
 
   return new Promise(async function mark_impl(resolve, reject) {
     log.debug('Marking entry %s as read', id);
-    // Use one shared rw transaction for both the get and the put
+    // Use one transaction for both the get and the put
     const tx = conn.transaction('entry', 'readwrite');
 
     // Get the corresponding entry object
@@ -596,16 +606,14 @@ function db_mark_entry_read(conn, id, log = SilentConsole) {
       return;
     }
 
-    // If the entry isn't found, then something really went wrong somewhere,
-    // so consider this an error
+    // Attempting to mark a non-existant entry is an error
     if(!entry) {
       reject(new Error(`No entry found with id ${id}`));
       return;
     }
 
     // If the entry was already read, then the reasoning about the state of
-    // the system went wrong somewhere in the calling context, so consider
-    // this an error
+    // the system is wrong, so consider this an error
     if(entry.readState === ENTRY_READ) {
       reject(new Error(`Already read entry with id ${id}`));
       return;
@@ -616,11 +624,10 @@ function db_mark_entry_read(conn, id, log = SilentConsole) {
     entry.dateRead = new Date();
 
     try {
-      // Overwrite the entry. This must be awaited so that the update badge
-      // call only happens after.
       await db_put_entry(tx, entry, log);
-      // Update the unread count. This must be awaited (I think) because
-      // otherwise the conn is closed too soon?
+
+      // TODO: maybe this should just send an entry updated message to
+      // a db channel, have badge_update_text react to messages
       await badge_update_text(conn, log);
       resolve();
     } catch(error) {
@@ -629,11 +636,9 @@ function db_mark_entry_read(conn, id, log = SilentConsole) {
   });
 }
 
-// Resolves when the entry has been stored
-// If entry.id is not set this will result in adding. If adding and auto-inc,
-// then this resolves with the new entry id.
-// Interally will set dateUpdated before the put. This will also set the
-// property on the input object, so this is a side effect, this fn is impure.
+// Resolves when the entry has been stored to the result of the request
+// If entry.id is not set this will result in adding
+// Sets dateUpdated before put. Impure.
 // @param tx {IDBTransaction} the tx should include entry store and be rw
 function db_put_entry(tx, entry, log = SilentConsole) {
   return new Promise(function put_impl(resolve, reject) {

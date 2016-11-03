@@ -1,5 +1,5 @@
-// Unmodified, downloaded from:
-// https://github.com/albell/parse-srcset/blob/master/src/parse-srcset.js
+// Downloaded from:
+// https://github.com/albell/parse-srcset/blob/master/modules/misc/parse-srcset.js
 
 /**
  * Srcset Parser
