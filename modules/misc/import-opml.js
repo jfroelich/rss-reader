@@ -6,65 +6,46 @@
 // to open/close conn, it is more decoupled and easier to mock deps
 // NOTE: db_target is no longer used
 // TODO: cleanup some of the helper fns
+// TODO: return successful subscriptions count
+async function import_opml(db_target, files, log = SilentConsole) {
 
-function import_opml(db_target, files, log = SilentConsole) {
-  return new Promise(import_opml_impl.bind(undefined, db_target, files, log));
-}
-
-async function import_opml_impl(db_target, files, log, resolve, reject) {
   log.log('Starting opml import');
-
   files = Array.prototype.filter.call(files,
     (file) => file.type.toLowerCase().includes('xml'));
   files = Array.prototype.filter.call(files, (file) => file.size > 0);
 
-  if(!files.length) {
-    resolve();
+  if(!files.length)
     return;
-  }
 
-  let feed_conn, icon_conn;
   const suppress_subscribe_notif = true;
+  const feed_conn = await db_connect(undefined, undefined, log);
+  const icon_conn = await favicon.connect(undefined, undefined, log);
 
-  try {
-    feed_conn = await db_connect(undefined, undefined, log);
-    icon_conn = await favicon.connect(undefined, undefined, log);
-
-    for(let file of files) {
-      const text = await read_file_as_text(file);
-      const doc = parse_opml(text);
-      const outline_elements = select_outline_elements(doc);
-      let outlines = outline_elements.map(create_outline_obj);
-      outlines = outlines.filter(outline_has_valid_type);
-      outlines = outlines.filter(outline_has_url);
-      outlines.forEach(deserialize_outline_url);
-      outlines = outlines.filter(outline_has_url_obj);
-      outlines = filter_dup_outlines(outlines);
-      const feeds = outlines.map(outline_to_feed);
-      for(let feed of feeds) {
-        // Allow for individual subscriptions to fail
-        try {
-          await subscribe(feed_conn, icon_conn, feed, suppress_subscribe_notif,
-            log);
-        } catch(error) {
-          log.debug(error);
-        }
+  for(let file of files) {
+    const text = await read_file_as_text(file);
+    const doc = parse_opml(text);
+    const outline_elements = select_outline_elements(doc);
+    let outlines = outline_elements.map(create_outline_obj);
+    outlines = outlines.filter(outline_has_valid_type);
+    outlines = outlines.filter(outline_has_url);
+    outlines.forEach(deserialize_outline_url);
+    outlines = outlines.filter(outline_has_url_obj);
+    outlines = filter_dup_outlines(outlines);
+    const feeds = outlines.map(outline_to_feed);
+    for(let feed of feeds) {
+      // Allow for individual subscriptions to fail
+      try {
+        await subscribe(feed_conn, icon_conn, feed, suppress_subscribe_notif,
+          log);
+      } catch(error) {
+        log.debug(error);
       }
     }
-    log.debug('Import completed');
-    resolve();
-  } catch(error) {
-    reject(error);
-  } finally {
-    if(feed_conn) {
-      log.debug('Closing database', feed_conn.name);
-      feed_conn.close();
-    }
-    if(icon_conn) {
-      log.debug('Closing database', icon_conn.name);
-      icon_conn.close();
-    }
   }
+
+  feed_conn.close();
+  icon_conn.close();
+  log.debug('Import completed');
 }
 
 function parse_opml(str) {
@@ -77,16 +58,17 @@ function parse_opml(str) {
   return doc;
 }
 
+// TODO: is there a promisified Reader?
 function read_file_as_text(file) {
   return new Promise(function(resolve, reject) {
     const reader = new FileReader();
+    reader.readAsText(file);
     reader.onload = function(event) {
       resolve(event.target.result);
     };
     reader.onerror = function(event) {
       reject(event.target.error);
     };
-    reader.readAsText(file);
   });
 }
 

@@ -2,19 +2,10 @@
 
 'use strict';
 
-function badge_update_text(conn, log = SilentConsole) {
-  return new Promise(async function update_impl(resolve, reject) {
-    try {
-      const count = await db_count_unread_entries(conn, log);
-      const text = count > 999 ? '1k+' : '' + count;
-      chrome.browserAction.setBadgeText({'text': text});
-      resolve();
-    } catch(error) {
-      log.debug(error);
-      chrome.browserAction.setBadgeText({'text': 'ERR'});
-      reject(error);
-    }
-  });
+async function badge_update_text(conn, log = SilentConsole) {
+  const count = await db_count_unread_entries(conn, log);
+  const text = count > 999 ? '1k+' : '' + count;
+  chrome.browserAction.setBadgeText({'text': text});
 }
 
 async function badge_onclick(event) {

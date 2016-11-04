@@ -553,8 +553,7 @@ function db_get_unarchived_read_entries(tx, log) {
 // then using slice or unshift or something to advance.
 function db_get_unarchived_unread_entries(conn, offset, limit,
   log = SilentConsole) {
-  return new Promise(function db_get_unarchived_unread_entries_impl(resolve,
-    reject) {
+  return new Promise(function impl(resolve, reject) {
     const entries = [];
     let counter = 0;
     let advanced = false;
@@ -588,52 +587,20 @@ function db_get_unarchived_unread_entries(conn, offset, limit,
 
 // TODO: is this really a db function, or something higher level. It clearly
 // doesn't belong right in the ui, but it is somewhere in between
-function db_mark_entry_read(conn, id, log = SilentConsole) {
+async function db_mark_entry_read(conn, id, log = SilentConsole) {
   if(!Number.isInteger(id) || id < 1)
     throw new TypeError(`Invalid entry id ${id}`);
-
-  return new Promise(async function mark_impl(resolve, reject) {
-    log.debug('Marking entry %s as read', id);
-    // Use one transaction for both the get and the put
-    const tx = conn.transaction('entry', 'readwrite');
-
-    // Get the corresponding entry object
-    let entry;
-    try {
-      entry = await db_find_entry_by_id(tx, id, log);
-    } catch(error) {
-      reject(error);
-      return;
-    }
-
-    // Attempting to mark a non-existant entry is an error
-    if(!entry) {
-      reject(new Error(`No entry found with id ${id}`));
-      return;
-    }
-
-    // If the entry was already read, then the reasoning about the state of
-    // the system is wrong, so consider this an error
-    if(entry.readState === ENTRY_READ) {
-      reject(new Error(`Already read entry with id ${id}`));
-      return;
-    }
-
-    // Mutate the loaded entry object
-    entry.readState = ENTRY_READ;
-    entry.dateRead = new Date();
-
-    try {
-      await db_put_entry(tx, entry, log);
-
-      // TODO: maybe this should just send an entry updated message to
-      // a db channel, have badge_update_text react to messages
-      await badge_update_text(conn, log);
-      resolve();
-    } catch(error) {
-      reject(error);
-    }
-  });
+  log.debug('Marking entry %s as read', id);
+  const tx = conn.transaction('entry', 'readwrite');
+  const entry = await db_find_entry_by_id(tx, id, log);
+  if(!entry)
+    throw new Error(`No entry found with id ${id}`);
+  if(entry.readState === ENTRY_READ)
+    throw new Error(`Already read entry with id ${id}`);
+  entry.readState = ENTRY_READ;
+  entry.dateRead = new Date();
+  await db_put_entry(tx, entry, log);
+  await badge_update_text(conn, log);
 }
 
 // Resolves when the entry has been stored to the result of the request

@@ -24,195 +24,144 @@ favicon.max_size = 10 * 1024 + 1;
 // @param log {console}
 // @returns {Promise} a promise that resolves to the icon url string or
 // undefined
-favicon.lookup = function(conn, url, log = favicon.console) {
-  return new Promise(async function lookup_impl(resolve, reject) {
-    log.log('Looking up favicon for url', url.href);
+favicon.lookup = async function(conn, url, log = favicon.console) {
 
-    const uniq_urls = [url.href];
-    const current_date = new Date();
-    const selectors = [
-      'link[rel="icon"][href]',
-      'link[rel="shortcut icon"][href]',
-      'link[rel="apple-touch-icon"][href]',
-      'link[rel="apple-touch-icon-precomposed"][href]'
-    ];
+  log.log('Looking up favicon for url', url.href);
 
-    // Lookup the url in the cache
-    let entry;
-    try {
-      entry = await favicon.find(conn, url.href, log);
-    } catch(error) {
-      reject(error);
-      return;
+  const uniq_urls = [url.href];
+  const current_date = new Date();
+  const selectors = [
+    'link[rel="icon"][href]',
+    'link[rel="shortcut icon"][href]',
+    'link[rel="apple-touch-icon"][href]',
+    'link[rel="apple-touch-icon-precomposed"][href]'
+  ];
+
+  // Lookup the url in the cache
+  const entry = await favicon.find(conn, url.href, log);
+
+  if(entry && !favicon.is_expired(entry, current_date))
+    return entry.iconURLString;
+
+  // Check if we are online in order to fetch.
+  // This helps distinguish from certain fetch errors.
+  if('onLine' in navigator && !navigator.onLine)
+    return;
+
+  // Fetch the html of the url
+  let doc, response_url;
+  try {
+    [doc, response_url] = await favicon.fetch_doc(url.href, log);
+  } catch(error) {
+    // This error should not cause the lookup to implicitly reject
+  }
+
+  // If redirected, track the redirected url
+  if(response_url) {
+    response_url = new URL(response_url);
+    if(response_url.href !== url.href)
+      uniq_urls.push(response_url.href);
+  }
+
+  // If the fetch failed but we have an entry, remove it because it is no
+  // longer valid
+  if(entry && !doc) {
+    const tx = conn.transaction('favicon-cache', 'readwrite');
+    await favicon.remove(tx, url.href, log);
+  }
+
+  // If the document is valid, then search for links in the head, and
+  // ensure the links are absolute. Use the first valid link found.
+  // TODO: use a single querySelectorAll?
+  let doc_icon_url;
+  let base_url = response_url ? response_url : url;
+  if(doc && doc.documentElement.localName === 'html' && doc.head) {
+    for(let selector of selectors) {
+      doc_icon_url = favicon.match(doc.head, selector, base_url);
+      if(doc_icon_url)
+        break;
     }
+  }
 
-    // If the url is in the cache, and has not expired, then resolve to it
-    if(entry && !favicon.is_expired(entry, current_date)) {
-      resolve(entry.iconURLString);
-      return;
-    }
+  // If we found an in page icon, update the cache and resolve
+  // TODO: can also store origin in cache if it distinct? would need to move
+  // some origin url code upward
+  if(doc_icon_url) {
+    log.debug('Found favicon <link>', url.href, doc_icon_url.href);
+    const tx = conn.transaction('favicon-cache', 'readwrite');
+    const proms = uniq_urls.map((url) => favicon.add(tx, url,
+      doc_icon_url.href, log));
+    await Promise.all(proms);
+    return doc_icon_url.href;
+  }
 
-    // Check if we are online in order to fetch.
-    // This helps distinguish from certain fetch errors.
-    if('onLine' in navigator && !navigator.onLine) {
-      resolve();
-      return;
-    }
+  // If redirected to different url, check cache for redirect
+  let redirect_entry;
+  if(uniq_urls.length > 1) {
+    redirect_entry = await favicon.find(conn, response_url.href, log);
+  }
 
-    // Fetch the html of the url
-    let doc, response_url;
-    try {
-      [doc, response_url] = await favicon.fetch_doc(url.href, log);
-    } catch(error) {
-    }
+  // If the redirect url is in the cache, then resolve with that
+  if(redirect_entry && !favicon.is_expired(redirect_entry, current_date)) {
+    return redirect_entry.iconURLString;
+  }
 
-    // If redirected, track the redirected url
-    if(response_url) {
-      response_url = new URL(response_url);
-      if(response_url.href !== url.href)
-        uniq_urls.push(response_url.href);
-    }
+  // Next, try checking if the origin url is in the cache if it is different
+  let origin_entry;
+  if(!uniq_urls.includes(url.origin)) {
+    uniq_urls.push(url.origin);
+    origin_entry = await favicon.find(conn, url.origin, log);
+  }
 
-    // If the fetch failed but we have an entry, remove it because it is no
-    // longer valid
-    if(entry && !doc) {
-      const tx = conn.transaction('favicon-cache', 'readwrite');
-      try {
-        await favicon.remove(tx, url.href, log);
-      } catch(error) {
-        reject(error);
-        return;
-      }
-    }
+  // If we found an origin entry, resolve with that
+  if(origin_entry && !favicon.is_expired(origin_entry, current_date)) {
+    const tx = conn.transaction('favicon-cache', 'readwrite');
+    // Do not re-add the origin entry
+    let proms = uniq_urls.filter((url)=> url !== url.origin);
+    // Do add the url and possible redirect url, because those failed
+    proms = proms.map((url) => favicon.add(tx, url,
+      origin_entry.iconURLString, log));
+    await Promise.all(proms);
+    return origin_entry.iconURLString;
+  }
 
-    // If the document is valid, then search for links in the head, and
-    // ensure the links are absolute. Use the first valid link found.
-    // TODO: use a single querySelectorAll?
-    let doc_icon_url;
-    let base_url = response_url ? response_url : url;
-    if(doc && doc.documentElement.localName === 'html' && doc.head) {
-      for(let selector of selectors) {
-        doc_icon_url = favicon.match(doc.head, selector, base_url);
-        if(doc_icon_url)
-          break;
-      }
-    }
+  // Nothing is in the icon cache, and could not find in page. Fall back to
+  // checking for image in domain root
+  let image_size, image_response_url;
+  try {
+    [image_size, image_response_url] = await favicon.fetch_image(
+      url.origin + '/favicon.ico', log);
+  } catch(error) {
+    // This error should not cause the lookup to reject
+  }
 
-    // If we found an in page icon, update the cache and resolve
-    // TODO: can also store origin in cache if it distinct? would need to move
-    // some origin url code upward
-    if(doc_icon_url) {
-      log.debug('Found favicon <link>', url.href, doc_icon_url.href);
-      const tx = conn.transaction('favicon-cache', 'readwrite');
-      try {
-        const proms = uniq_urls.map((url) => favicon.add(tx, url,
-          doc_icon_url.href, log));
-        await Promise.all(proms);
-      } catch(error) {
-        reject(error);
-        return;
-      }
+  // If fetched and size is in range, then resolve to it
+  if(image_response_url && image_size > favicon.min_size &&
+    image_size < favicon.max_size) {
+    const tx = conn.transaction('favicon-cache', 'readwrite');
+    // Map the icon to the distinct urls in the cache
+    const proms = uniq_urls.map((url) => favicon.add(tx, url,
+      image_response_url, log));
+    await Promise.all(proms);
+    return image_response_url;
+  }
 
-      resolve(doc_icon_url.href);
-      return;
-    }
+  // Remove any expired entries from the cache
+  const expired_urls = [];
+  if(entry)
+    expired_urls.push(entry.pageURLString);
+  if(redirect_entry)
+    expired_urls.push(redirect_entry.pageURLString);
+  if(origin_entry)
+    expired_urls.push(origin_entry.pageURLString);
+  if(expired_urls.length) {
+    const tx = conn.transaction('favicon-cache', 'readwrite');
+    const proms = expired_urls.map((url) =>
+      favicon.remove(tx, url, log));
+    await Promise.all(proms);
+  }
 
-    // If redirected to different url, check cache for redirect
-    let redirect_entry;
-    if(uniq_urls.length > 1) {
-      try {
-        redirect_entry = await favicon.find(conn, response_url.href, log);
-      } catch(error) {
-        reject(error);
-        return;
-      }
-    }
-
-    // If the redirect url is in the cache, then resolve with that
-    if(redirect_entry && !favicon.is_expired(redirect_entry, current_date)) {
-      resolve(redirect_entry.iconURLString);
-      return;
-    }
-
-    // Next, try checking if the origin url is in the cache if it is different
-    let origin_entry;
-    if(!uniq_urls.includes(url.origin)) {
-      uniq_urls.push(url.origin);
-      try {
-        origin_entry = await favicon.find(conn, url.origin, log);
-      } catch(error) {
-        reject(error);
-        return;
-      }
-    }
-
-    // If we found an origin entry, resolve with that
-    if(origin_entry && !favicon.is_expired(origin_entry, current_date)) {
-      const tx = conn.transaction('favicon-cache', 'readwrite');
-      try {
-        // Do not re-add the origin entry
-        let proms = uniq_urls.filter((url)=> url !== url.origin);
-        // Do add the url and possible redirect url, because those failed
-        proms = proms.map((url) => favicon.add(tx, url,
-          origin_entry.iconURLString, log));
-        await Promise.all(proms);
-      } catch(error) {
-        reject(error);
-        return;
-      }
-      resolve(origin_entry.iconURLString);
-      return;
-    }
-
-    // Nothing is in the icon cache, and could not find in page. Fall back to
-    // checking for image in domain root
-    let image_size, image_response_url;
-    try {
-      [image_size, image_response_url] = await favicon.fetch_image(
-        url.origin + '/favicon.ico', log);
-    } catch(error) {
-    }
-
-    // If fetched and size is in range, then resolve to it
-    if(image_response_url && image_size > favicon.min_size &&
-      image_size < favicon.max_size) {
-      const tx = conn.transaction('favicon-cache', 'readwrite');
-      try {
-        // Map the icon to the distinct urls in the cache
-        const proms = uniq_urls.map((url) => favicon.add(tx, url,
-          image_response_url, log));
-        await Promise.all(proms);
-        resolve(image_response_url);
-        return;
-      } catch(error) {
-        reject(error);
-        return;
-      }
-    }
-
-    // Remove any expired entries from the cache
-    const expired_urls = [];
-    if(entry)
-      expired_urls.push(entry.pageURLString);
-    if(redirect_entry)
-      expired_urls.push(redirect_entry.pageURLString);
-    if(origin_entry)
-      expired_urls.push(origin_entry.pageURLString);
-    if(expired_urls.length) {
-      try {
-        const tx = conn.transaction('favicon-cache', 'readwrite');
-        const proms = expired_urls.map((url) =>
-          favicon.remove(tx, url, log));
-        await Promise.all(proms);
-      } catch(error) {
-        reject(error);
-        return;
-      }
-    }
-
-    // Failed to find favicon
-    resolve();
-  });
+  // Failed to find favicon. Return undefined
 };
 
 // Connect to the favicon cache database. If name or version are not provided
@@ -339,60 +288,34 @@ favicon.match = function(ancestor, selector, base_url) {
 // TODO: maybe I can avoid parsing and just search raw text for
 // <link> tags, the accuracy loss may be ok given the speed boost
 // TODO: use streaming text api, stop reading on includes('</head>')
-favicon.fetch_doc = function(url, log) {
-  return new Promise(async function(resolve, reject) {
-    log.debug('Fetching', url);
-    const opts = {};
-    opts.credentials = 'omit';
-    opts.method = 'GET';
-    opts.headers = {'Accept': 'text/html'};
-    opts.mode = 'cors';
-    opts.cache = 'default';
-    opts.redirect = 'follow';
-    opts.referrer = 'no-referrer';
-    let response;
-    try {
-      response = await fetch(url, opts);
-    } catch(error) {
-      reject(error);
-      return;
-    }
+favicon.fetch_doc = async function(url, log) {
 
-    if(!response.ok) {
-      reject(new Error(response.status));
-      return;
-    }
+  log.debug('Fetching', url);
+  const opts = {};
+  opts.credentials = 'omit';
+  opts.method = 'GET';
+  opts.headers = {'Accept': 'text/html'};
+  opts.mode = 'cors';
+  opts.cache = 'default';
+  opts.redirect = 'follow';
+  opts.referrer = 'no-referrer';
 
-    let type = response.headers.get('Content-Type');
-    if(!/^\s*text\/html/i.test(type)) {
-      reject(new Error(`Invalid response type ${type} for ${url}`));
-      return;
-    }
+  const response = await fetch(url, opts);
+  if(!response.ok)
+    throw new Error(response.status);
 
-    let text;
-    try {
-      text = await response.text();
-    } catch(error) {
-      reject(error);
-      return;
-    }
+  const type = response.headers.get('Content-Type');
+  if(!/^\s*text\/html/i.test(type))
+    throw new Error(`Invalid response type ${type} for ${url}`);
 
-    const parser = new DOMParser();
-    let doc;
-    try {
-      doc = parser.parseFromString(text, 'text/html');
-    } catch(error) {
-      reject(error);
-      return;
-    }
+  const text = await response.text();
 
-    if(!doc.documentElement || doc.documentElement.localName !== 'html') {
-      reject(new Error('Invalid html'));
-      return;
-    }
-    log.debug('Fetched html document', url, text.length);
-    resolve([doc, response.url]);
-  });
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(text, 'text/html');
+  if(doc.documentElement.localName !== 'html')
+    throw new Error('Invalid html');
+  log.debug('Fetched html document', url, text.length);
+  return [doc, response.url];
 };
 
 // Sends a HEAD request for the given image
@@ -400,45 +323,33 @@ favicon.fetch_doc = function(url, log) {
 // @param log {console}
 // @returns {Promise}
 // TODO: set proper Accept header
-favicon.fetch_image = function(image_url, log) {
-  return new Promise(async function(resolve, reject) {
-    log.debug('Fetching', image_url);
-    const opts = {};
-    opts.credentials = 'omit';
-    opts.method = 'HEAD';
-    //opts.headers = {'Accept': ''};
-    opts.mode = 'cors';
-    opts.cache = 'default';
-    opts.redirect = 'follow';
-    opts.referrer = 'no-referrer';
+favicon.fetch_image = async function(image_url, log) {
 
-    let response;
-    try {
-      response = await fetch(image_url, opts);
-    } catch(error) {
-      reject(error);
-      return;
-    }
+  log.debug('Fetching', image_url);
+  const opts = {};
+  opts.credentials = 'omit';
+  opts.method = 'HEAD';
+  //opts.headers = {'Accept': ''};
+  opts.mode = 'cors';
+  opts.cache = 'default';
+  opts.redirect = 'follow';
+  opts.referrer = 'no-referrer';
 
-    if(!response.ok) {
-      reject(new Error(response.status + ' ' + response.statusText));
-      return;
-    }
+  const response = await fetch(image_url, opts);
+  if(!response.ok)
+    throw new Error(response.status + ' ' + response.statusText);
 
-    const type = response.headers.get('Content-Type');
-    if(!/^\s*image\//i.test(type)) {
-      reject(new Error(`Invalid response type ${type}`));
-      return;
-    }
+  const type = response.headers.get('Content-Type');
+  if(!/^\s*image\//i.test(type))
+    throw new Error(`Invalid response type ${type}`);
 
-    let size = 0;
-    try {
-      size = parseInt(response.headers.get('Content-Length'), 10);
-    } catch(error) {
-    }
+  let size = 0;
+  try {
+    size = parseInt(response.headers.get('Content-Length'), 10);
+  } catch(error) {
+  }
 
-    resolve([size, response.url]);
-  });
+  return [size, response.url];
 };
 
 // Deletes expired entries from the favicon cache database
@@ -446,39 +357,18 @@ favicon.fetch_image = function(image_url, log) {
 // @param log {console}
 // TODO: could this be rewritten so that I query for only expired entries
 // rather than filter in memory?
-favicon.compact = function(conn, log = favicon.console) {
-  return new Promise(async function compact_impl(resolve, reject) {
-    log.log('Compacting favicons in database', conn.name);
-
-    const current_date = new Date();
-    const tx = conn.transaction('favicon-cache', 'readwrite');
-
-    // Load all entries
-    let entries;
-    try {
-      entries = await favicon.get_all(tx, log);
-    } catch(error) {
-      reject(error);
-      return;
-    }
-
-    // Get only those entries that are expired
-    const expired_entries = entries.filter((entry) =>
-      favicon.is_expired(entry, current_date));
-
-    // Concurrently remove expired entries
-    try {
-      const proms = expired_entries.map((entry) =>
-        favicon.remove(tx, entry.pageURLString, log));
-      await Promise.all(proms);
-    } catch(error) {
-      reject(error);
-      return;
-    }
-
-    log.debug('Deleted %d favicon entries', expired_entries.length);
-    resolve(expired_entries.length);
-  });
+favicon.compact = async function(conn, log = favicon.console) {
+  log.log('Compacting favicons in database', conn.name);
+  const current_date = new Date();
+  const tx = conn.transaction('favicon-cache', 'readwrite');
+  const entries = await favicon.get_all(tx, log);
+  const expired_entries = entries.filter((entry) =>
+    favicon.is_expired(entry, current_date));
+  const proms = expired_entries.map((entry) =>
+    favicon.remove(tx, entry.pageURLString, log));
+  await Promise.all(proms);
+  log.debug('Deleted %d favicon entries', expired_entries.length);
+  return expired_entries.length;
 };
 
 // Using the provided transaction, returns a promise that resolves to an array

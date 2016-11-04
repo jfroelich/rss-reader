@@ -193,25 +193,25 @@ function derive_attr_bias(element) {
   return 0.0 + total_bias;
 }
 
-
+// NOTE: using var due to V8 deopt warning "unsupported compound let statement"
 function find_high_score_element(doc) {
-  const candidate_selector =
+  var candidate_selector =
     'ARTICLE, CONTENT, DIV, LAYER, MAIN, SECTION, SPAN, TD';
-  const list_selector = 'LI, OL, UL, DD, DL, DT';
-  const nav_selector = 'ASIDE, HEADER, FOOTER, NAV, MENU, MENUITEM';
+  var list_selector = 'LI, OL, UL, DD, DL, DT';
+  var nav_selector = 'ASIDE, HEADER, FOOTER, NAV, MENU, MENUITEM';
 
   // Init to documentElement. This ensures we always return something and also
   // sets documentElement as the default best element.
-  let best_element = doc.documentElement;
+  var best_element = doc.documentElement;
 
-  const body = doc.body;
+  var body = doc.body;
   if(!body)
     return best_element;
-  const elements = body.querySelectorAll(candidate_selector);
-  let high_score = 0.0;
-  for(let i = 0, len = elements.length; i < len; i++) {
-    let element = elements[i];
-    let score = 0.0 + derive_text_bias(element);
+  var elements = body.querySelectorAll(candidate_selector);
+  var high_score = 0.0;
+  for(var i = 0, len = elements.length; i < len; i++) {
+    var element = elements[i];
+    var score = 0.0 + derive_text_bias(element);
     if(element.closest(list_selector))
       score -= 200.0;
     if(element.closest(nav_selector))

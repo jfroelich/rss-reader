@@ -504,7 +504,6 @@ function create_search_result_element(feed) {
   return item;
 }
 
-
 function subscribe_btn_on_click(event) {
   const button = event.target;
   const feed_url_str = button.value;

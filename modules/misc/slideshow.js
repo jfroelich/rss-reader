@@ -37,37 +37,22 @@ async function mark_slide_read(slide) {
     return;
   slide.setAttribute('read', '');
   const entry_id = parseInt(slide.getAttribute('entry'), 10);
-  let conn;
-  try {
-    conn = await db_connect();
-    await db_mark_entry_read(conn, entry_id);
-  } catch(error) {
-    console.debug(error);
-  }
-  if(conn)
-    conn.close();
+  let conn = await db_connect();
+  await db_mark_entry_read(conn, entry_id);
+  conn.close();
 }
 
 // TODO: require caller to establish conn, do not do it here?
 // TODO: visual feedback on error
-// Resolves to number appended
-function append_slides() {
-  return new Promise(async function append_slides_impl(resolve, reject) {
-    const limit = 3;
-    const offset = count_unread_slides();
-    try {
-      const conn = await db_connect();
-      const entries = await db_get_unarchived_unread_entries(conn, offset,
-        limit);
-      conn.close();
-      for(let entry of entries)
-        append_slide(entry);
-      resolve(entries.length);
-    } catch(error) {
-      console.debug(error);
-      reject(error);
-    }
-  });
+async function append_slides() {
+  const limit = 3;
+  const offset = count_unread_slides();
+  const conn = await db_connect();
+  const entries = await db_get_unarchived_unread_entries(conn, offset, limit);
+  conn.close();
+  for(let entry of entries)
+    append_slide(entry);
+  return entries.length;
 }
 
 // Add a new slide to the view.
@@ -199,19 +184,15 @@ function slide_on_click(event) {
 // for both append slides and mark_slide_read
 // TODO: there is some minor annoyance, that in the case of append, this
 // does the animation super fast
+// TODO: visual feedback on error
 async function show_next_slide() {
   const old_slide = current_slide;
 
   // Conditionally append more slides
   const unread_count = count_unread_slides();
   let num_appended = 0;
-  if(unread_count < 2) {
-    try {
-      num_appended = await append_slides();
-    } catch(error) {
-      console.debug(error);
-    }
-  }
+  if(unread_count < 2)
+    num_appended = await append_slides();
 
   if(current_slide.nextSibling) {
     current_slide.style.left = '-100%';
@@ -221,8 +202,7 @@ async function show_next_slide() {
     current_slide.scrollTop = 0;
     current_slide = current_slide.nextSibling;
 
-    // Only mark the current slide read if actually navigating
-    mark_slide_read(old_slide);
+    await mark_slide_read(old_slide);
   }
 
   // Shrink the number of slides

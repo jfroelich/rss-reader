@@ -3,6 +3,7 @@
 'use strict';
 
 /*
+TODO: asyncify/promisify
 TODO: divide this module into separate modules. design one module that scans
 entries looking for errors
 

@@ -38,17 +38,18 @@ function replace_tags(input_str, rep_str) {
 // The input string should be encoded, meaning that it should contain character
 // entity codes. The extension string should be decoded, meaning that it should
 // not contain character entries.
+// NOTE: using var due to deopt warning "unsupported phi use of const", c55
 function truncate_html(input_str, position, input_ext) {
   if(typeof input_str !== 'string')
     throw new TypeError();
   if(!Number.isInteger(position) || position < 0)
     throw new TypeError();
 
-  const ellipsis = '\u2026';
-  const extension = input_ext || ellipsis;
-  const inert_doc = document.implementation.createHTMLDocument();
+  var ellipsis = '\u2026';
+  var extension = input_ext || ellipsis;
+  var inert_doc = document.implementation.createHTMLDocument();
   inert_doc.documentElement.innerHTML = input_str;
-  const it = inert_doc.createNodeIterator(inert_doc.body, NodeFilter.SHOW_TEXT);
+  var it = inert_doc.createNodeIterator(inert_doc.body, NodeFilter.SHOW_TEXT);
   let accepting_text = true;
   let total_len = 0;
 
@@ -59,11 +60,11 @@ function truncate_html(input_str, position, input_ext) {
     }
 
     // Accessing nodeValue yields a decoded string
-    const value = node.nodeValue;
-    const value_len = value.length;
+    var value = node.nodeValue;
+    var value_len = value.length;
     if(total_len + value_len >= position) {
       accepting_text = false;
-      const remaining = position - total_len;
+      var remaining = position - total_len;
       // Setting nodeValue will implicitly encode the string
       node.nodeValue = value.substr(0, remaining) + extension;
     } else {

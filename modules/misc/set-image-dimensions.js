@@ -2,28 +2,22 @@
 
 'use strict';
 
-function set_image_dimensions(doc, log) {
-  return new Promise(async function impl(resolve) {
-    const map = Array.prototype.map;
-    const images = doc.getElementsByTagName('img');
-    const promises = map.call(images, (image) =>
-      get_image_dimensions(image, log));
-    let results = await Promise.all(promises);
-    let num_modified = 0;
-    for(let dims of results) {
-      if('w' in dims && !dims.known) {
-        dims.image.setAttribute('width', dims.w);
-        dims.image.setAttribute('height', dims.h);
-        num_modified++;
-      }
-    }
-    resolve(num_modified);
-  });
+async function set_image_dimensions(doc, log) {
+  const map = Array.prototype.map;
+  const images = doc.getElementsByTagName('img');
+  const proms = map.call(images, (img) => get_image_dimensions(img, log));
+  let results = await Promise.all(proms);
+  results = results.filter((r) => 'w' in r && !r.known);
+  for(let r of results) {
+    r.image.setAttribute('width', r.w);
+    r.image.setAttribute('height', r.h);
+  }
+  return results.length;
 }
 
-// This always resolves so that this function can be conveniently used together
-// with Promise.all, which otherwise would fail fast on the first error.
+// Always resolves because Promise.all is failfast
 // TODO: Does a normal image request include cookie header?
+// TODO: make async, as that returns a promise and simplifies things?
 function get_image_dimensions(image, log) {
   return new Promise(function(resolve) {
     // If the image has known dimensions then resolve immediately

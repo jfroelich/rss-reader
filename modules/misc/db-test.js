@@ -7,9 +7,11 @@ async function test() {
     conn = await db_connect(db_name, 1, console)
     console.log('Successfully opened database', conn.name);
     console.log('Requesting database %s to close eventually', conn.name);
-    conn.close();
   } catch(error) {
     console.log(error);
+  } finally {
+    if(conn)
+      conn.close();
   }
 
   if(conn) {

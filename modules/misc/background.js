@@ -20,28 +20,33 @@ function get_alarm(alarm_name) {
 }
 
 async function create_alarms() {
-  if(!get_alarm('archive')) {
+  let alarm = await get_alarm('archive');
+  if(!alarm) {
     console.debug('Creating archive alarm');
     chrome.alarms.create('archive', {'periodInMinutes': 60 * 12});
   }
 
-  if(!get_alarm('poll')) {
+  alarm = await get_alarm('poll');
+  if(!alarm) {
     console.debug('Creating poll alarm');
     chrome.alarms.create('poll', {'periodInMinutes': 60});
   }
 
-  if(!get_alarm('compact-favicons')) {
+  alarm = await get_alarm('compact-favicons');
+  if(!alarm) {
     console.debug('Creating compact-favicons alarm');
     chrome.alarms.create('compact-favicons', {'periodInMinutes': 60 * 24 * 7});
   }
 
-  if(!get_alarm('refresh-feed-icons')) {
+  alarm = await get_alarm('refresh-feed-icons');
+  if(!alarm) {
     console.debug('Creating refresh-feed-icons alarm');
     chrome.alarms.create('refresh-feed-icons',
       {'periodInMinutes': 60 * 24 * 7 * 2});
   }
 
-  if(!get_alarm('healthcheck')) {
+  alarm = await get_alarm('healthcheck');
+  if(!alarm) {
     console.debug('Creating healthcheck alarm');
     chrome.alarms.create('healthcheck', {'periodInMinutes': 60 * 24 * 7});
   }

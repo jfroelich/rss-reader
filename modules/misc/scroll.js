@@ -4,6 +4,7 @@
 
 // TODO: go back to using initial setTimeout because this is bad when
 // holding down button
+// TODO: use promises
 let smooth_scroll_is_active = false;
 function smooth_scroll(element, dy, target_y) {
   if(smooth_scroll_is_active)

@@ -7,12 +7,15 @@
 const cli = {};
 
 cli.archive_entries = async function() {
+  let conn;
   try {
-    const conn = await db_connect(undefined, undefined, console);
-    const num_modified = await archive_entries(conn, undefined, console);
-    conn.close();
+    conn = await db_connect(undefined, undefined, console);
+    const n = await archive_entries(conn, undefined, console);
   } catch(error) {
     console.debug(error);
+  } finally {
+    if(conn)
+      conn.close();
   }
 };
 
