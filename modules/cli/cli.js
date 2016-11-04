@@ -23,7 +23,6 @@ cli.poll_feeds = async function() {
   try {
     await poll_feeds({
       'ignore_idle_state': 1,
-      'force_reset_lock': 1,
       'skip_unmodified_guard': 1,
       'log': console
     });

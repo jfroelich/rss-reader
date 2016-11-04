@@ -2,14 +2,6 @@
 
 'use strict';
 
-// TODO: move these notes to github issues
-// TODO: research why so much idle time, it is almost like fetch processing
-// is not concurrent
-// TODO: add is-active feed functionality, do not poll in-active feeds
-// TODO: deactivate unreachable feeds after x failures
-// TODO: deactivate feeds not changed for a long time
-// TODO: store deactivation reason in feed
-// TODO: store deactivation date
 // TODO: require a minimum amount of time to elapse before checking a feed
 // again, as a throttling mechanism
 
@@ -93,9 +85,22 @@ async function poll_feed(conn, icon_conn, feed, skip_unmodified_guard, log) {
   const put_feed_promise = db_put_feed(conn, storable_feed, log);
   let entries = fetch_result.entries;
   // TODO: inline these
-  entries = entries.filter(poll_entry_has_url);
+  entries = entries.filter((entry) => entry.urls && entry.urls.length);
   entries = entries.filter(poll_entry_has_valid_url);
   entries = poll_filter_dup_entries(entries, log);
+
+  // Set each entry's foreign feed key
+  for(let entry of entries) {
+    entry.feed = storable_feed.id;
+  }
+
+  // Denormalize title so that it does not need to be resolved in view
+  if(feed.title) {
+    for(let entry of entries) {
+      entry.feedTitle = storable_feed.title;
+    }
+  }
+
   const promises = entries.map((entry) => poll_entry(conn, icon_conn,
     storable_feed, entry, log));
   promises.push(put_feed_promise);
@@ -134,10 +139,6 @@ function poll_filter_dup_entries(entries, log) {
   return output;
 }
 
-function poll_entry_has_url(entry) {
-  return entry.urls && entry.urls.length;
-}
-
 function poll_entry_has_valid_url(entry) {
   const url = entry.urls[0];
   let url_obj;
@@ -150,76 +151,60 @@ function poll_entry_has_valid_url(entry) {
 // Resolve with true if entry was added, false if not added
 async function poll_entry(conn, icon_conn, feed, entry, log) {
   let url = get_entry_url(entry);
+
+  // Rewrite the url
   const rewritten_url = rewrite_url(new URL(url));
   if(rewritten_url)
     add_entry_url(entry, rewritten_url.href);
 
+  // Check if either the in-feed url or the rewritten url exist in the
+  // database
   const entry_exists = await db_contains_entry(conn, entry.urls, log);
   if(entry_exists)
     return false;
 
+  // Check if the entry should not be fetched.
   const request_url = new URL(get_entry_url(entry));
-
-  // TODO: maybe do this in caller using for of
-  entry.feed = feed.id;
-  if(feed.title)
-    entry.feedTitle = feed.title;
-
-  // TODO: double check lookup onlyerrors when a real error occurs
-  const icon_url = await favicon.lookup(icon_conn, request_url, log);
-  entry.faviconURLString = icon_url || feed.faviconURLString;
-
-  // Replace the entry's content with full text. Before fetching, check
-  // if the entry should not be fetched
-  if(config.interstitial_hosts.includes(request_url.hostname)) {
-    entry.content =
-      'This content for this article is blocked by an advertisement.';
+  const reason = poll_get_no_fetch_reason(request_url);
+  if(reason) {
+    // If not fetching then do favicon resolution using the original url.
+    const icon_url = await favicon.lookup(icon_conn, request_url, log);
+    entry.faviconURLString = icon_url || feed.faviconURLString;
+    entry.content = POLL_NO_FETCH_REASON[reason];
     await db_add_entry(conn, entry, log);
     return true;
   }
 
-  if(config.script_generated_hosts.includes(request_url.hostname)) {
-    entry.content = 'The content for this article cannot be viewed because ' +
-      'it is dynamically generated.';
-    await db_add_entry(conn, entry, log);
-    return true;
-  }
-
-  if(config.paywall_hosts.includes(request_url.hostname)) {
-    entry.content = 'This content for this article is behind a paywall.';
-    await db_add_entry(conn, entry, log);
-    return true;
-  }
-
-  if(config.requires_cookies_hosts.includes(request_url.hostname)) {
-    entry.content = 'This content for this article cannot be viewed ' +
-      'because the website requires tracking information.';
-    await db_add_entry(conn, entry, log);
-    return true;
-  }
-
-  if(sniff_mime_non_html(request_url)) {
-    entry.content = 'This article is not a basic web page (e.g. a PDF).';
-    await db_add_entry(conn, entry, log);
-    return true;
-  }
-
-  // Trap fetch errors, those are not programming errors
   let fetch_event;
   try {
     fetch_event = await fetch_html(request_url, log);
   } catch(error) {
     // If the fetch failed then fallback to the in-feed content
+    // TODO: pass along a hint to skip the page fetch
+    const icon_url = await favicon.lookup(icon_conn, request_url, log);
+    entry.faviconURLString = icon_url || feed.faviconURLString;
     poll_prep_local_doc(entry);
     await db_add_entry(conn, entry, log);
     return true;
   }
 
-  // Now that we have fetched successfully, the response url is available.
-  const redirected = add_entry_url(entry, fetch_event.response_url_str);
+  const redirected = poll_did_redirect(entry.urls, fetch_event.url);
+  if(redirected) {
+    const rexists = await db_contains_entry(conn, [fetch_event.url], log);
+    if(rexists)
+      return false;
+    add_entry_url(entry, fetch_event.url);
+  }
 
-  if(redirected && await db_contains_entry(conn, [get_entry_url(entry)], log))
-    return false;
+  let lookup_url;
+  if(redirected) {
+    lookup_url = new URL(fetch_event.url);
+  } else {
+    lookup_url = request_url;
+  }
+
+  const icon_url = await favicon.lookup(icon_conn, lookup_url, log);
+  entry.faviconURLString = icon_url || feed.faviconURLString;
 
   // Cleanup the html
   const doc = fetch_event.document;
@@ -233,6 +218,45 @@ async function poll_entry(conn, icon_conn, feed, entry, log) {
   entry.content = doc.documentElement.outerHTML.trim();
   await db_add_entry(conn, entry, log);
   return true;
+}
+
+// To determine where there was a redirect, compare the response url to the
+// entry's current urls, ignoring the hash. The response url will
+// never have a hash, so we just need to strip the hash from the entry's
+// other urls
+function poll_did_redirect(urls, response_url) {
+  if(!response_url)
+    return false;
+  const norm_urls = urls.map((url) => {
+    const norm = new URL(url);
+    norm.hash = '';
+    return norm.href;
+  });
+  return !norm_urls.includes(response_url);
+}
+
+const POLL_NO_FETCH_REASON = {
+  'interstitial':
+    'This content for this article is blocked by an advertisement.',
+  'script_generated': 'The content for this article cannot be viewed because ' +
+    'it is dynamically generated.',
+  'paywall': 'This content for this article is behind a paywall.',
+  'cookies': 'This content for this article cannot be viewed ' +
+    'because the website requires tracking information.',
+  'not_html': 'This article is not a basic web page (e.g. a PDF).'
+}
+
+function poll_get_no_fetch_reason(url) {
+  if(config.interstitial_hosts.includes(url.hostname))
+    return POLL_NO_FETCH_REASON.interstitial;
+  if(config.script_generated_hosts.includes(url.hostname))
+    return POLL_NO_FETCH_REASON.script_generated;
+  if(config.paywall_hosts.includes(url.hostname))
+    return POLL_NO_FETCH_REASON.paywall;
+  if(config.requires_cookies_hosts.includes(url.hostname))
+    return POLL_NO_FETCH_REASON.cookies;
+  if(sniff_mime_non_html(url))
+    return POLL_NO_FETCH_REASON.not_html;
 }
 
 function poll_prep_local_doc(entry) {
@@ -274,7 +298,6 @@ function poll_transform_lazy_images(doc, log = SilentConsole) {
           const before_html = img.outerHTML;
           img.removeAttribute(alt_name);
           img.setAttribute('src', url);
-          //log.debug(before_html, 'transformed', img.outerHTML);
           num_modified++;
           break;
         }

@@ -22,10 +22,15 @@ async function fetch_html(url, log = SilentConsole) {
   const text = await response.text();
   log.debug('Read response text', url.href, text.length);
   const parser = new DOMParser();
+
+  // TODO: parseFromString might be the slowest part of the entire polling
+  // process. Look into how to improve this performance.
+  // Maybe set an upper bound on text size like 5m characters
+  // Maybe use a streaming API somehow so it can be exit early
+
   const doc = parser.parseFromString(text, 'text/html');
   if(doc.documentElement.localName !== 'html')
     throw new Error('Invalid html ' + url.href);
-  // TODO: rename to 'response_url' or just 'url'
   // TODO: maybe return an array for destructuring or learn about obj destr
-  return {'document': doc, 'response_url_str': response.url};
+  return {'document': doc, 'url': response.url};
 }

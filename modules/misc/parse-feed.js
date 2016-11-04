@@ -2,23 +2,30 @@
 
 /*
 TODO:
-- make standalone, independent of feed and entry object things, require the
+
+- make standalone, independent of feed and entry objects, require the
 caller to deal with converting into whatever format it wants. this should just
-do one thing and do it well
+do one thing
 - similarly, it should just return one object, not a feed and array of entries
 - the thing returned should be some kind of basic parsed-feed-object
+
 - support <media:thumbnail url="imgurl" /> (atom)
 - do not introduce fallback dates, if date is not set then do not use
 - do not cascade feed date to entry date
 - add helper for entry enclosure instead of how it is inlined
 - figure out the atom text node issue (cdata related?)
 - setup testing
+
 - maybe rename, this does not parse from text, it unmarshals from a doc.
 -- on the other hand, i no longer get a doc when using the fetch api, maybe
 -- this should accept text as input?
-- maybe return [feed,entries] so i can use new expanding ES6 syntax thing
+
+- maybe return [feed,entries] so i can use destructuring
+
 - walking children seems to be slower than querySelector, revert to using it,
 but think of a way to maintain strictness
+-- will get a nominal perf benefit, this is not crucial
+
 */
 
 'use strict';

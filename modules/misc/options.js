@@ -415,46 +415,43 @@ async function sub_form_on_submit(event) {
 
   let icon_url, link_url, results;
 
+  let sgf_output;
+
   try {
-    let sgf_output = await search_google_feeds(query_str);
-    const query = sgf_output.query;
-    results = sgf_output.entries;
-
+    sgf_output = await search_google_feeds(query_str);
     hide_element(progress_element);
-    if(!results.length) {
-      hide_element(results_list_element);
-      show_element(no_results_element);
-      return;
-    }
-
-    if(is_visible(results_list_element)) {
-      results_list_element.innerHTML = '';
-    } else {
-      hide_element(no_results_element);
-      show_element(results_list_element);
-    }
-
-    const item_element = document.createElement('li');
-    item_element.textContent = `Found ${results.length} feeds.`;
-    results_list_element.appendChild(item_element);
-    const conn = await favicon.connect(undefined, undefined, console);
-    for(let result of results) {
-      if(!result.link)
-        continue;
-      link_url = new URL(result.link);
-      icon_url = await favicon.lookup(conn, link_url, console);
-      result.faviconURLString = icon_url;
-    }
-    conn.close();
   } catch(error) {
+    hide_element(progress_element);
     console.debug(error);
+    return false;
   }
 
-  if(results) {
-    const elements = results.map(create_search_result_element);
-    for(let element of elements) {
-      results_list_element.appendChild(element);
-    }
+  if(!sgf_output.entries.length) {
+    hide_element(results_list_element);
+    show_element(no_results_element);
+    return false;
+  }
+
+  results = sgf_output.entries;
+  show_element(results_list_element);
+  hide_element(no_results_element);
+  
+  const item_element = document.createElement('li');
+  item_element.textContent = `Found ${results.length} feeds.`;
+  results_list_element.appendChild(item_element);
+  const conn = await favicon.connect(undefined, undefined, console);
+  for(let result of results) {
+    if(!result.link)
+      continue;
+    link_url = new URL(result.link);
+    icon_url = await favicon.lookup(conn, link_url, console);
+    result.faviconURLString = icon_url;
+  }
+  conn.close();
+
+  const elements = results.map(create_search_result_element);
+  for(let element of elements) {
+    results_list_element.appendChild(element);
   }
 
   // Signal no submit

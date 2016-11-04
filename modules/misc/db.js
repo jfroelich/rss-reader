@@ -167,10 +167,8 @@ function add_feed_url(feed, url) {
 }
 
 function normalize_feed_url(url_str) {
-  const url_obj = new URL(url_str);
-  // # can be used to identify a different url
-  //url_obj.hash = '';
-  return url_obj.href;
+  const url = new URL(url_str);
+  return url.href;
 }
 
 function sanitize_feed(input_feed) {
@@ -233,25 +231,14 @@ function get_entry_url(entry) {
   return entry.urls[entry.urls.length - 1];
 }
 
-// TODO: should normalization just be appended as another url to the chain,
-// so that normalization is treated like a step similar to redirect/rewrite?
 function add_entry_url(entry, url_str) {
   if(!entry.urls)
     entry.urls = [];
-  const norm = normalize_entry_url(url_str);
-  if(entry.urls.includes(norm))
+  const normalized_url = new URL(url_str);
+  if(entry.urls.includes(normalized_url.href))
     return false;
-  entry.urls.push(norm);
+  entry.urls.push(normalized_url.href);
   return true;
-}
-
-
-// NOTE: hash cannot be removed because it sometimes identifies different
-// urls because some sites use hash like a search param
-// NOTE: this throws if url is invalid
-function normalize_entry_url(url_str) {
-  const url_obj = new URL(url_str);
-  return url_obj.href;
 }
 
 // Returns a new entry object where fields have been sanitized. Impure
@@ -352,7 +339,7 @@ function db_add_entry(conn, entry, log) {
       return;
     }
 
-    log.log('Adding entry', get_entry_url(entry));
+    log.log('Adding entry with urls [%s]', entry.urls.join(', '));
     const sanitized = sanitize_entry(entry);
     const storable = filter_empty_props(sanitized);
     storable.readState = ENTRY_UNREAD;

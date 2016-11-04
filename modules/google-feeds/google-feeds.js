@@ -28,7 +28,7 @@ async function search_google_feeds(query, log = SilentConsole) {
     throw new Error(response.status);
   const result = await response.json();
   const data = result.responseData;
-  const query = data.query || '';
+  const response_query = data.query || '';
   const response_entries = data.entries || [];
   const entries_with_urls = [];
 
@@ -78,5 +78,5 @@ async function search_google_feeds(query, log = SilentConsole) {
 
   // TODO: return array for easier destructuring? or can objects easily
   // be destructured?
-  return {'query': query, 'entries': distinct_entries};
+  return {'query': response_query, 'entries': distinct_entries};
 }
