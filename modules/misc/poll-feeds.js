@@ -24,7 +24,6 @@ async function poll_feeds(options = {}) {
   if(!options.ignore_idle_state && 'ONLY_POLL_IF_IDLE' in localStorage) {
     const state = await query_idle_state(config.poll_feeds_idle_period_secs);
     if(state !== 'locked' && state !== 'idle') {
-      poll_release_lock(log);
       log.debug('polling canceled due to idle requirement');
       return;
     }
@@ -36,24 +35,25 @@ async function poll_feeds(options = {}) {
   ]);
 
   const feeds = await db_get_all_feeds(conn, log);
-  const pf_promises = feeds.map((feed) => poll_feed(conn, icon_conn, feed,
+  const promises = feeds.map((feed) => poll_feed(conn, icon_conn, feed,
     options.skip_unmodified_guard, log));
-  const pf_results = await Promise.all(pf_promises);
-  const num_entries_added = pf_results.reduce((sum,r)=> sum+r, 0);
+  const resolutions = await Promise.all(promises);
+  const num_entries_added = resolutions.reduce((sum, added) => sum + added, 0);
 
   if(num_entries_added > 0) {
     await badge_update_text(conn, log);
     const chan = new BroadcastChannel('poll');
     chan.postMessage('completed');
     chan.close();
-  }
 
-  show_notification('Updated articles',
-    'Added ' + num_entries_added + ' new articles');
+    show_notification('Updated articles',
+      'Added ' + num_entries_added + ' new articles');
+  }
 
   conn.close();
   icon_conn.close();
   log.debug('Polling completed');
+  return num_entries_added;
 }
 
 async function poll_feed(conn, icon_conn, feed, skip_unmodified_guard, log) {
@@ -65,36 +65,34 @@ async function poll_feed(conn, icon_conn, feed, skip_unmodified_guard, log) {
   try {
     fetch_result = await fetch_feed(url, log);
   } catch(error) {
-    return;
+    return 0;
   }
 
   const remote_feed = fetch_result.feed;
   if(!skip_unmodified_guard && feed.dateUpdated &&
-    poll_feed_is_unmodified(feed, remote_feed)) {
+    feed.dateLastModified && remote_feed.dateLastModified &&
+    feed.dateLastModified.getTime() ===
+    remote_feed.dateLastModified.getTime()) {
     log.debug('Feed not modified', url.href);
     return num_entries_added;
   }
 
-  // Merge the local properties with the remote properties, favoring the
-  // remote properties
   const merged_feed = merge_feeds(feed, remote_feed);
-  // Prep the feed for storage
   let storable_feed = sanitize_feed(merged_feed);
   storable_feed = filter_empty_props(storable_feed);
-
-  const put_feed_promise = db_put_feed(conn, storable_feed, log);
   let entries = fetch_result.entries;
-  // TODO: inline these
   entries = entries.filter((entry) => entry.urls && entry.urls.length);
-  entries = entries.filter(poll_entry_has_valid_url);
+  entries = entries.filter(function has_valid_url(entry) {
+    const url = entry.urls[0];
+    let url_obj;
+    try { url_obj = new URL(url); } catch(error) { return false; }
+    if(url_obj.pathname.startsWith('//')) return false;// hack for bad feed
+    return true;
+  });
+
   entries = poll_filter_dup_entries(entries, log);
+  entries.forEach((entry) => entry.feed = feed.id);
 
-  // Set each entry's foreign feed key
-  for(let entry of entries) {
-    entry.feed = storable_feed.id;
-  }
-
-  // Denormalize title so that it does not need to be resolved in view
   if(feed.title) {
     for(let entry of entries) {
       entry.feedTitle = storable_feed.title;
@@ -103,17 +101,12 @@ async function poll_feed(conn, icon_conn, feed, skip_unmodified_guard, log) {
 
   const promises = entries.map((entry) => poll_entry(conn, icon_conn,
     storable_feed, entry, log));
-  promises.push(put_feed_promise);
+  promises.push(db_put_feed(conn, storable_feed, log));
   const results = await Promise.all(promises);
   results.pop();// remove put_feed_promise
   return results.reduce((sum, r) => r ? sum + 1 : sum, 0);
 }
 
-// TODO: maybe inline this again
-function poll_feed_is_unmodified(f1, f2) {
-  return f1.dateLastModified && f2.dateLastModified &&
-    f1.dateLastModified.getTime() === f2.dateLastModified.getTime();
-}
 
 // Favors entries earlier in the list
 // TODO: is there maybe a better way, like favor the most content or most recent
@@ -139,75 +132,46 @@ function poll_filter_dup_entries(entries, log) {
   return output;
 }
 
-function poll_entry_has_valid_url(entry) {
-  const url = entry.urls[0];
-  let url_obj;
-  try { url_obj = new URL(url); } catch(error) { return false; }
-  // Avoid a common error case
-  if(url_obj.pathname.startsWith('//')) return false;
-  return true;
-}
-
 // Resolve with true if entry was added, false if not added
 async function poll_entry(conn, icon_conn, feed, entry, log) {
-  let url = get_entry_url(entry);
-
-  // Rewrite the url
-  const rewritten_url = rewrite_url(new URL(url));
+  const rewritten_url = rewrite_url(get_entry_url(entry));
   if(rewritten_url)
-    add_entry_url(entry, rewritten_url.href);
-
-  // Check if either the in-feed url or the rewritten url exist in the
-  // database
-  const entry_exists = await db_contains_entry(conn, entry.urls, log);
-  if(entry_exists)
+    add_entry_url(entry, rewritten_url);
+  if(await db_contains_entry(conn, entry.urls, log))
     return false;
-
-  // Check if the entry should not be fetched.
   const request_url = new URL(get_entry_url(entry));
   const reason = poll_get_no_fetch_reason(request_url);
   if(reason) {
-    // If not fetching then do favicon resolution using the original url.
     const icon_url = await favicon.lookup(icon_conn, request_url, log);
     entry.faviconURLString = icon_url || feed.faviconURLString;
     entry.content = POLL_NO_FETCH_REASON[reason];
-    await db_add_entry(conn, entry, log);
-    return true;
+    return await poll_add_entry(conn, entry, log);
   }
 
-  let fetch_event;
+  let doc, response_url;
   try {
-    fetch_event = await fetch_html(request_url, log);
+    [doc, response_url] = await fetch_html(request_url.href, log);
   } catch(error) {
     // If the fetch failed then fallback to the in-feed content
-    // TODO: pass along a hint to skip the page fetch
+    // TODO: pass along a hint to skip the page fetch?
     const icon_url = await favicon.lookup(icon_conn, request_url, log);
     entry.faviconURLString = icon_url || feed.faviconURLString;
     poll_prep_local_doc(entry);
-    await db_add_entry(conn, entry, log);
-    return true;
+    return await poll_add_entry(conn, entry, log);
   }
 
-  const redirected = poll_did_redirect(entry.urls, fetch_event.url);
+  const redirected = poll_did_redirect(entry.urls, response_url);
   if(redirected) {
-    const rexists = await db_contains_entry(conn, [fetch_event.url], log);
+    const rexists = await db_contains_entry(conn, [response_url], log);
     if(rexists)
       return false;
-    add_entry_url(entry, fetch_event.url);
+    add_entry_url(entry, response_url);
   }
 
-  let lookup_url;
-  if(redirected) {
-    lookup_url = new URL(fetch_event.url);
-  } else {
-    lookup_url = request_url;
-  }
-
+  const lookup_url = redirected ? new URL(response_url) : request_url;
   const icon_url = await favicon.lookup(icon_conn, lookup_url, log);
   entry.faviconURLString = icon_url || feed.faviconURLString;
 
-  // Cleanup the html
-  const doc = fetch_event.document;
   poll_transform_lazy_images(doc, log);
   filter_sourceless_images(doc);
   filter_invalid_anchors(doc);
@@ -216,8 +180,19 @@ async function poll_entry(conn, icon_conn, feed, entry, log) {
   const num_images_modified = await set_image_dimensions(doc, log);
   poll_prep_doc(doc);
   entry.content = doc.documentElement.outerHTML.trim();
-  await db_add_entry(conn, entry, log);
-  return true;
+  return await poll_add_entry(conn, entry, log);
+}
+
+// Translate add rejections into resolutions so that poll_entry does not
+// reject in the event of an error
+async function poll_add_entry(conn, entry, log) {
+  try {
+    let result = await db_add_entry(conn, entry, log);
+    return true;
+  } catch(error) {
+    log.debug('Muted error while adding entry', error);
+  }
+  return false;
 }
 
 // To determine where there was a redirect, compare the response url to the
@@ -226,7 +201,7 @@ async function poll_entry(conn, icon_conn, feed, entry, log) {
 // other urls
 function poll_did_redirect(urls, response_url) {
   if(!response_url)
-    return false;
+    throw new TypeError('response_url is undefined');
   const norm_urls = urls.map((url) => {
     const norm = new URL(url);
     norm.hash = '';
@@ -306,15 +281,6 @@ function poll_transform_lazy_images(doc, log = SilentConsole) {
   }
   return num_modified;
 }
-
-
-// TODO: <img height="1" width="1" alt="" style="display:none"
-// src="https://www.facebook.com/tr?id=619966238105738&amp;ev=PixelInitialized">
-// - side note, this was revealed as non-html, I think from noscript
-// <img src="http://dbg52463.moatads.com/?a=033f43a2ddba4ba592b52109d2ccf5ed"
-// style="display:none;">
-// <img src="http://d5i9o0tpq9sa1.cloudfront.net/
-// ?a=033f43a2ddba4ba592b52109d2ccf5ed" style="display:none;">
 
 // TODO: maybe I need to use array of regexes instead of simple strings array
 // and iterate over the array instead of using array.includes(str)

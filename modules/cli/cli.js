@@ -7,26 +7,15 @@
 const cli = {};
 
 cli.archive_entries = async function() {
-  let conn;
-  try {
-    conn = await db_connect(undefined, undefined, console);
-    const n = await archive_entries(conn, undefined, console);
-  } catch(error) {
-    console.debug(error);
-  } finally {
-    if(conn)
-      conn.close();
-  }
+  const conn = await db_connect(undefined, undefined, console);
+  const num_archived = await archive_entries(conn, undefined, console);
+  conn.close();
 };
 
 cli.poll_feeds = async function() {
-  try {
-    await poll_feeds({
-      'ignore_idle_state': 1,
-      'skip_unmodified_guard': 1,
-      'log': console
-    });
-  } catch(error) {
-    console.debug(error);
-  }
+  const num_added = await poll_feeds({
+    'ignore_idle_state': 1,
+    'skip_unmodified_guard': 1,
+    'log': console
+  });
 };

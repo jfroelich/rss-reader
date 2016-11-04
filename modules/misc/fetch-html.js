@@ -3,7 +3,7 @@
 'use strict';
 
 async function fetch_html(url, log = SilentConsole) {
-  log.log('Fetching html', url.href);
+  log.log('Fetching html', url);
   const opts = {};
   opts.credentials = 'omit';
   opts.method = 'GET';
@@ -12,15 +12,15 @@ async function fetch_html(url, log = SilentConsole) {
   opts.cache = 'default';
   opts.redirect = 'follow';
   opts.referrer = 'no-referrer';
-  const response = await fetch(url.href, opts);
-  log.debug('Fetched html', url.href);
+  const response = await fetch(url, opts);
+  log.debug('Fetched html', url);
   if(!response.ok)
     throw new Error(response.status + ' ' + response.statusText);
   const type = (response.headers.get('Content-Type') || '').toLowerCase();
   if(!type.includes('text/html'))
     throw new Error('Invalid mime type ' + content_type);
   const text = await response.text();
-  log.debug('Read response text', url.href, text.length);
+  log.debug('Read response text', url, text.length);
   const parser = new DOMParser();
 
   // TODO: parseFromString might be the slowest part of the entire polling
@@ -30,7 +30,6 @@ async function fetch_html(url, log = SilentConsole) {
 
   const doc = parser.parseFromString(text, 'text/html');
   if(doc.documentElement.localName !== 'html')
-    throw new Error('Invalid html ' + url.href);
-  // TODO: maybe return an array for destructuring or learn about obj destr
-  return {'document': doc, 'url': response.url};
+    throw new Error('Invalid html ' + url);
+  return [doc, response.url];
 }

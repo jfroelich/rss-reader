@@ -212,7 +212,7 @@ favicon.is_expired = function(entry, current_date, max_age = favicon.max_age) {
 // @param log {console}
 favicon.find = function(conn, url, log) {
   return new Promise(function(resolve, reject) {
-    log.log('Checking favicon cache for page url', url);
+    log.log('Searching for entry', url);
     const tx = conn.transaction('favicon-cache');
     const store = tx.objectStore('favicon-cache');
     const request = store.get(url);
@@ -238,7 +238,7 @@ favicon.add = function(tx, page_url, icon_url, log) {
   return new Promise(function(resolve, reject) {
     const entry = {'pageURLString': page_url, 'iconURLString': icon_url,
       'dateUpdated': new Date()};
-    log.debug('Adding favicon entry for', entry.pageURLString);
+    log.debug('Adding favicon entry', entry.pageURLString);
     const store = tx.objectStore('favicon-cache');
     const request = store.put(entry);
     request.onsuccess = function onsuccess(event) { resolve(); };
@@ -289,7 +289,6 @@ favicon.match = function(ancestor, selector, base_url) {
 // <link> tags, the accuracy loss may be ok given the speed boost
 // TODO: use streaming text api, stop reading on includes('</head>')
 favicon.fetch_doc = async function(url, log) {
-
   log.debug('Fetching', url);
   const opts = {};
   opts.credentials = 'omit';
@@ -299,17 +298,13 @@ favicon.fetch_doc = async function(url, log) {
   opts.cache = 'default';
   opts.redirect = 'follow';
   opts.referrer = 'no-referrer';
-
   const response = await fetch(url, opts);
   if(!response.ok)
     throw new Error(response.status);
-
   const type = response.headers.get('Content-Type');
   if(!/^\s*text\/html/i.test(type))
     throw new Error(`Invalid response type ${type} for ${url}`);
-
   const text = await response.text();
-
   const parser = new DOMParser();
   const doc = parser.parseFromString(text, 'text/html');
   if(doc.documentElement.localName !== 'html')
@@ -323,9 +318,9 @@ favicon.fetch_doc = async function(url, log) {
 // @param log {console}
 // @returns {Promise}
 // TODO: set proper Accept header
-favicon.fetch_image = async function(image_url, log) {
+favicon.fetch_image = async function(url, log) {
 
-  log.debug('Fetching', image_url);
+  log.debug('Fetching', url);
   const opts = {};
   opts.credentials = 'omit';
   opts.method = 'HEAD';
@@ -335,7 +330,7 @@ favicon.fetch_image = async function(image_url, log) {
   opts.redirect = 'follow';
   opts.referrer = 'no-referrer';
 
-  const response = await fetch(image_url, opts);
+  const response = await fetch(url, opts);
   if(!response.ok)
     throw new Error(response.status + ' ' + response.statusText);
 
@@ -366,7 +361,7 @@ favicon.compact = async function(conn, log = favicon.console) {
     favicon.is_expired(entry, current_date));
   const proms = expired_entries.map((entry) =>
     favicon.remove(tx, entry.pageURLString, log));
-  await Promise.all(proms);
+  const resolutions = await Promise.all(proms);
   log.debug('Deleted %d favicon entries', expired_entries.length);
   return expired_entries.length;
 };
