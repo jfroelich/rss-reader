@@ -1,33 +1,5 @@
 // See license.md
 
-/*
-TODO:
-
-- make standalone, independent of feed and entry objects, require the
-caller to deal with converting into whatever format it wants. this should just
-do one thing
-- similarly, it should just return one object, not a feed and array of entries
-- the thing returned should be some kind of basic parsed-feed-object
-
-- support <media:thumbnail url="imgurl" /> (atom)
-- do not introduce fallback dates, if date is not set then do not use
-- do not cascade feed date to entry date
-- add helper for entry enclosure instead of how it is inlined
-- figure out the atom text node issue (cdata related?)
-- setup testing
-
-- maybe rename, this does not parse from text, it unmarshals from a doc.
--- on the other hand, i no longer get a doc when using the fetch api, maybe
--- this should accept text as input?
-
-- maybe return [feed,entries] so i can use destructuring
-
-- walking children seems to be slower than querySelector, revert to using it,
-but think of a way to maintain strictness
--- will get a nominal perf benefit, this is not crucial
-
-*/
-
 'use strict';
 
 {
@@ -46,14 +18,15 @@ function parse_feed(doc) {
 
   const feed = {};
   feed.type = find_feed_type(doc.documentElement);
-  feed.title = find_child_text(channel, 'title');
-  feed.description = find_child_text(channel,
-    doc.documentElement.matches('feed') ? 'subtitle' : 'description');
+  feed.title = find_feed_title(channel);
+  feed.description = find_feed_description(doc, channel);
   feed.link = find_feed_link(channel);
   feed.datePublished = find_feed_date(channel);
 
-  const entries = [];
   const entry_els = find_entries(channel);
+
+  // TODO: change to map, remove datePublished param
+  const entries = [];
   for(let entry of entry_els) {
     entries.push(create_entry(feed.datePublished, entry));
   }
@@ -62,6 +35,15 @@ function parse_feed(doc) {
     'feed': feed,
     'entries': entries
   };
+}
+
+function find_feed_title(channel) {
+  return find_child_text(channel, 'title');
+}
+
+function find_feed_description(doc, channel) {
+  return find_child_text(channel,
+    doc.documentElement.matches('feed') ? 'subtitle' : 'description');
 }
 
 function find_channel(doc_element) {

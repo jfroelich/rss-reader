@@ -2,10 +2,9 @@
 
 'use strict';
 
-// TODO: require a minimum amount of time to elapse before checking a feed
-// again, as a throttling mechanism
+const poll = {};
 
-async function poll_feeds(options = {}) {
+poll.run = async function(options = {}) {
   const log = options.log || SilentConsole;
   log.log('Checking for new articles...');
 
@@ -34,8 +33,22 @@ async function poll_feeds(options = {}) {
     favicon.connect(undefined, undefined, log)
   ]);
 
-  const feeds = await db_get_all_feeds(conn, log);
-  const promises = feeds.map((feed) => poll_feed(conn, icon_conn, feed,
+  let feeds = await db_get_all_feeds(conn, log);
+
+  if(!options.ignore_recent_poll_guard) {
+    const current_date = new Date();
+    feeds = feeds.filter((feed) => {
+      if(!feed.dateFetched)
+        return true;
+      const age = current_date - feed.dateFetched;//ms
+      const old_enough = age > config.min_time_since_last_poll;
+      if(!old_enough)
+        log.debug('Feed polled too recently', get_feed_url(feed));
+      return old_enough;
+    });
+  }
+
+  const promises = feeds.map((feed) => poll.process_feed(conn, icon_conn, feed,
     options.skip_unmodified_guard, log));
   const resolutions = await Promise.all(promises);
   const num_entries_added = resolutions.reduce((sum, added) => sum + added, 0);
@@ -54,9 +67,11 @@ async function poll_feeds(options = {}) {
   icon_conn.close();
   log.debug('Polling completed');
   return num_entries_added;
-}
+};
 
-async function poll_feed(conn, icon_conn, feed, skip_unmodified_guard, log) {
+poll.process_feed = async function(conn, icon_conn, feed, skip_unmodified_guard,
+  log) {
+
   let num_entries_added = 0;
   const url = new URL(get_feed_url(feed));
 
@@ -90,7 +105,7 @@ async function poll_feed(conn, icon_conn, feed, skip_unmodified_guard, log) {
     return true;
   });
 
-  entries = poll_filter_dup_entries(entries, log);
+  entries = poll.filter_dup_entries(entries, log);
   entries.forEach((entry) => entry.feed = feed.id);
 
   if(feed.title) {
@@ -99,18 +114,18 @@ async function poll_feed(conn, icon_conn, feed, skip_unmodified_guard, log) {
     }
   }
 
-  const promises = entries.map((entry) => poll_entry(conn, icon_conn,
+  const promises = entries.map((entry) => poll.process_entry(conn, icon_conn,
     storable_feed, entry, log));
   promises.push(db_put_feed(conn, storable_feed, log));
   const results = await Promise.all(promises);
   results.pop();// remove put_feed_promise
   return results.reduce((sum, r) => r ? sum + 1 : sum, 0);
-}
+};
 
 
 // Favors entries earlier in the list
 // TODO: is there maybe a better way, like favor the most content or most recent
-function poll_filter_dup_entries(entries, log) {
+poll.filter_dup_entries = function(entries, log) {
   const output = [];
   const seen_urls = [];
 
@@ -130,37 +145,38 @@ function poll_filter_dup_entries(entries, log) {
   }
 
   return output;
-}
+};
 
 // Resolve with true if entry was added, false if not added
-async function poll_entry(conn, icon_conn, feed, entry, log) {
+poll.process_entry = async function(conn, icon_conn, feed, entry, log) {
   const rewritten_url = rewrite_url(get_entry_url(entry));
   if(rewritten_url)
     add_entry_url(entry, rewritten_url);
   if(await db_contains_entry(conn, entry.urls, log))
     return false;
   const request_url = new URL(get_entry_url(entry));
-  const reason = poll_get_no_fetch_reason(request_url);
+  const reason = poll.derive_no_fetch_reason(request_url);
   if(reason) {
     const icon_url = await favicon.lookup(icon_conn, request_url, log);
     entry.faviconURLString = icon_url || feed.faviconURLString;
-    entry.content = POLL_NO_FETCH_REASON[reason];
-    return await poll_add_entry(conn, entry, log);
+    entry.content = poll.no_fetch_reasons[reason];
+    return await poll.add_entry(conn, entry, log);
   }
 
   let doc, response_url;
   try {
     [doc, response_url] = await fetch_html(request_url.href, log);
   } catch(error) {
+    log.debug('Fetch html error', error);
     // If the fetch failed then fallback to the in-feed content
     // TODO: pass along a hint to skip the page fetch?
     const icon_url = await favicon.lookup(icon_conn, request_url, log);
     entry.faviconURLString = icon_url || feed.faviconURLString;
-    poll_prep_local_doc(entry);
-    return await poll_add_entry(conn, entry, log);
+    poll.prep_local_entry(entry);
+    return await poll.add_entry(conn, entry, log);
   }
 
-  const redirected = poll_did_redirect(entry.urls, response_url);
+  const redirected = poll.did_redirect(entry.urls, response_url);
   if(redirected) {
     const rexists = await db_contains_entry(conn, [response_url], log);
     if(rexists)
@@ -172,20 +188,20 @@ async function poll_entry(conn, icon_conn, feed, entry, log) {
   const icon_url = await favicon.lookup(icon_conn, lookup_url, log);
   entry.faviconURLString = icon_url || feed.faviconURLString;
 
-  poll_transform_lazy_images(doc, log);
+  poll.transform_lazy_images(doc, log);
   filter_sourceless_images(doc);
   filter_invalid_anchors(doc);
   resolve_doc(doc, log, new URL(get_entry_url(entry)));
-  filter_tracking_images(doc, config.tracking_hosts, log);
+  poll.filter_tracking_images(doc, config.tracking_hosts, log);
   const num_images_modified = await set_image_dimensions(doc, log);
-  poll_prep_doc(doc);
+  poll.prep_doc(doc);
   entry.content = doc.documentElement.outerHTML.trim();
-  return await poll_add_entry(conn, entry, log);
-}
+  return await poll.add_entry(conn, entry, log);
+};
 
-// Translate add rejections into resolutions so that poll_entry does not
+// Translate add rejections into resolutions so that poll.process_entry does not
 // reject in the event of an error
-async function poll_add_entry(conn, entry, log) {
+poll.add_entry = async function(conn, entry, log) {
   try {
     let result = await db_add_entry(conn, entry, log);
     return true;
@@ -193,13 +209,13 @@ async function poll_add_entry(conn, entry, log) {
     log.debug('Muted error while adding entry', error);
   }
   return false;
-}
+};
 
 // To determine where there was a redirect, compare the response url to the
 // entry's current urls, ignoring the hash. The response url will
 // never have a hash, so we just need to strip the hash from the entry's
 // other urls
-function poll_did_redirect(urls, response_url) {
+poll.did_redirect = function(urls, response_url) {
   if(!response_url)
     throw new TypeError('response_url is undefined');
   const norm_urls = urls.map((url) => {
@@ -208,9 +224,9 @@ function poll_did_redirect(urls, response_url) {
     return norm.href;
   });
   return !norm_urls.includes(response_url);
-}
+};
 
-const POLL_NO_FETCH_REASON = {
+poll.no_fetch_reasons = {
   'interstitial':
     'This content for this article is blocked by an advertisement.',
   'script_generated': 'The content for this article cannot be viewed because ' +
@@ -219,48 +235,54 @@ const POLL_NO_FETCH_REASON = {
   'cookies': 'This content for this article cannot be viewed ' +
     'because the website requires tracking information.',
   'not_html': 'This article is not a basic web page (e.g. a PDF).'
-}
+};
 
-function poll_get_no_fetch_reason(url) {
+poll.derive_no_fetch_reason = function(url) {
   if(config.interstitial_hosts.includes(url.hostname))
-    return POLL_NO_FETCH_REASON.interstitial;
+    return poll.no_fetch_reasons.interstitial;
   if(config.script_generated_hosts.includes(url.hostname))
-    return POLL_NO_FETCH_REASON.script_generated;
+    return poll.no_fetch_reasons.script_generated;
   if(config.paywall_hosts.includes(url.hostname))
-    return POLL_NO_FETCH_REASON.paywall;
+    return poll.no_fetch_reasons.paywall;
   if(config.requires_cookies_hosts.includes(url.hostname))
-    return POLL_NO_FETCH_REASON.cookies;
+    return poll.no_fetch_reasons.cookies;
   if(sniff_mime_non_html(url))
-    return POLL_NO_FETCH_REASON.not_html;
-}
+    return poll.no_fetch_reasons.not_html;
+  return null;
+};
 
-function poll_prep_local_doc(entry) {
+poll.prep_local_entry = function(entry) {
   if(!entry.content)
     return;
   const parser = new DOMParser();
-  try {
-    const doc = parser.parseFromString(entry.content, 'text/html');
-    if(doc.querySelector('parsererror')) {
-      entry.content = 'Cannot show document due to parsing error';
-      return;
-    }
+  let doc;
 
-    poll_prep_doc(doc);
-    entry.content = doc.documentElement.outerHTML.trim();
+  try {
+    doc = parser.parseFromString(entry.content, 'text/html');
   } catch(error) {
   }
-}
 
-function poll_prep_doc(doc) {
+  if(!doc || doc.querySelector('parsererror')) {
+    entry.content = 'Cannot show document due to parsing error';
+    return;
+  }
+
+  poll.prep_doc(doc);
+  const content = doc.documentElement.outerHTML.trim();
+  if(content)
+    entry.content = content;
+};
+
+poll.prep_doc = function(doc) {
   filter_boilerplate(doc);
   scrub_dom(doc);
   add_no_referrer(doc);
-}
+};
 
 // the space check is a minimal validation, urls may be relative
 // TODO: maybe use a regex and \s
 // TODO: does the browser tolerate spaces in urls?
-function poll_transform_lazy_images(doc, log = SilentConsole) {
+poll.transform_lazy_images = function(doc, log = SilentConsole) {
   let num_modified = 0;
   const images = doc.querySelectorAll('img');
   for(let img of images) {
@@ -280,7 +302,7 @@ function poll_transform_lazy_images(doc, log = SilentConsole) {
     }
   }
   return num_modified;
-}
+};
 
 // TODO: maybe I need to use array of regexes instead of simple strings array
 // and iterate over the array instead of using array.includes(str)
@@ -290,7 +312,7 @@ function poll_transform_lazy_images(doc, log = SilentConsole) {
 // NOTE: this should be called before image dimensions are checked, because
 // checking image dimensions requires fetching images, which defeats the
 // purpose of avoiding fetching
-function filter_tracking_images(doc, hosts, log) {
+poll.filter_tracking_images = function(doc, hosts, log) {
   const min_valid_url_len = 3; // 1char hostname . 1char domain
   const images = doc.querySelectorAll('img[src]');
   let src, url;
@@ -310,4 +332,4 @@ function filter_tracking_images(doc, hosts, log) {
     if(hosts.includes(url.hostname))
       image.remove();
   }
-}
+};

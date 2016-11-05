@@ -49,6 +49,7 @@ async function archive_entries(conn,
   chan.close();
 
   // Replace archivable entries with compacted entries in the database
+  // If there is any failure, the entire transaction will abort
   const proms = compacted_entries.map((entry) =>
     db_put_entry(tx, entry, log));
   await Promise.all(proms);

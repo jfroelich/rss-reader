@@ -10,6 +10,9 @@ config.db_version = 20;
 // How many seconds must elapse before checking idle state yields idle result
 config.poll_feeds_idle_period_secs = 30;
 
+// How many ms must elapse before a feed is not ignored when polling
+config.min_time_since_last_poll = 5 * 60 * 1000;//ms
+
 // 1 day in ms
 config.archive_default_entry_max_age = 1 * 24 * 60 * 60 * 1000;
 

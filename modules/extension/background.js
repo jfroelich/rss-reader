@@ -66,7 +66,7 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
     }
   } else if(alarm.name === 'poll') {
     try {
-      await poll_feeds({'log': console});
+      await poll.run({'log': console});
     } catch(error) {
       console.debug(error);
     }
