@@ -12,91 +12,10 @@ function query_tabs_by_url(url) {
   });
 }
 
-// A mapping between common file extensions and mime types
-const ext_to_mime_type_map = {
-  'ai':   'application/postscript',
-  'aif':  'audio/aiff',
-  'atom': 'application/atom+xml',
-  'avi':  'video/avi',
-  'bin':  'application/octet-stream',
-  'bmp':  'image/bmp',
-  'c':    'text/plain',
-  'cc':   'text/plain',
-  'cgi':  'text/hml',
-  'class':'application/java',
-  'cpp':  'text/plain',
-  'css':  'text/css',
-  'doc':  'application/msword',
-  'docx':
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'exe':  'application/octet-stream',
-  'flac': 'audio/flac',
-  'fli':  'video/fli',
-  'gif':  'image/gif',
-  'gz':   'application/x-gzip',
-  'h':    'text/plain',
-  'htm':  'text/html',
-  'html': 'text/html',
-  'ico':  'image/x-icon',
-  'java': 'text/plain',
-  'jpg':  'image/jpg',
-  'js':   'application/javascript',
-  'json': 'application/json',
-  'jsp':  'text/html',
-  'log':  'text/plain',
-  'md':   'text/plain',
-  'midi': 'audio/midi',
-  'mov':  'video/quicktime',
-  'mp2':  'audio/mpeg', // can also be video
-  'mp3':  'audio/mpeg3', // can also be video
-  'mpg':  'audio/mpeg', // can also be video
-  'ogg':  'audio/ogg',
-  'ogv':  'video/ovg',
-  'pdf':  'application/pdf',
-  'php':  'text/html',
-  'pl':   'text/html',
-  'png':  'image/png',
-  'pps':  'application/vnd.ms-powerpoint',
-  'ppt':  'application/vnd.ms-powerpoint',
-  'pptx':
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  'rar':  'application/octet-stream',
-  'rss':  'application/rss+xml',
-  'svg':  'image/svg+xml',
-  'swf':  'application/x-shockwave-flash',
-  'tiff': 'image/tiff',
-  'wav':  'audio/wav',
-  'xls':  'application/vnd.ms-excel',
-  'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'xml':  'application/xml',
-  'zip':  'application/zip'
-};
-
-// Given a url, try and guess the mime type of the url by looking at the
-// filename extension. This does no inspection of content
-function sniff_mime_type(path) {
-  const ext = get_url_extension(path);
-  if(!ext) return;
-  return ext_to_mime_type_map[ext];
-}
 
 // TODO: properly handle 'foo.'
 // @param path {string} path of a url (should have leading /)
-// @returns {String} lowercase extension
-function get_url_extension(path) {
-  if(!path)
-    return;
-  const min_len_for_path_with_ext = '/a.b'.length;
-  if(path.length < min_len_for_path_with_ext)
-    return;
-  const last_dot = path.lastIndexOf('.');
-  if(last_dot === -1)
-    return;
-  const ext = path.substring(last_dot + 1);
-  const len = ext.length;
-  if(len > 0 && len < 5 && /[a-z]/i.test(ext))
-    return ext.toLowerCase();
-}
+
 
 // @param url_str {String}
 // @param base_url {URL}
@@ -122,18 +41,6 @@ function resolve_url(url_str, base_url) {
 
 function is_url_object(value) {
   return Object.prototype.toString.call(value) === '[object URL]';
-}
-
-// TODO: should this take a path string instead? it kind of makes sense because
-// it only deals with the path and not the rest of the url. it does increase
-// caller boilerplate though?
-function sniff_mime_non_html(url) {
-  const bad_super_types = ['application', 'audio', 'image', 'video'];
-  const type = sniff_mime_type(url.pathname);
-  if(type) {
-    const super_type = type.substring(0, type.indexOf('/'));
-    return bad_super_types.includes(super_type);
-  }
 }
 
 function query_idle_state(idle_period_secs) {

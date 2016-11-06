@@ -122,7 +122,6 @@ poll.process_feed = async function(conn, icon_conn, feed, skip_unmodified_guard,
   return results.reduce((sum, r) => r ? sum + 1 : sum, 0);
 };
 
-
 // Favors entries earlier in the list
 // TODO: is there maybe a better way, like favor the most content or most recent
 poll.filter_dup_entries = function(entries, log) {
@@ -246,7 +245,7 @@ poll.derive_no_fetch_reason = function(url) {
     return poll.no_fetch_reasons.paywall;
   if(config.requires_cookies_hosts.includes(url.hostname))
     return poll.no_fetch_reasons.cookies;
-  if(sniff_mime_non_html(url))
+  if(mime.sniff_non_html(url.pathname))
     return poll.no_fetch_reasons.not_html;
   return null;
 };
@@ -306,7 +305,6 @@ poll.transform_lazy_images = function(doc, log = SilentConsole) {
 
 // TODO: maybe I need to use array of regexes instead of simple strings array
 // and iterate over the array instead of using array.includes(str)
-
 // NOTE: this should only be called after img src urls have been resolved,
 // because it assumes that all image src urls are absolute.
 // NOTE: this should be called before image dimensions are checked, because
