@@ -228,7 +228,7 @@ async function show_sub_preview(url) {
     // list as the button's value.
     const continue_btn = document.getElementById(
       'subscription-preview-continue');
-    continue_btn.value = get_feed_url(feed);
+    continue_btn.value = Feed.getURL(feed);
 
     const results_list_element = document.getElementById(
       'subscription-preview-entries');
@@ -281,7 +281,7 @@ async function start_subscription(url) {
   show_sub_monitor();
   append_sub_monitor_msg(`Subscribing to ${url.href}`);
   const feed = {};
-  add_feed_url(feed, url.href);
+  Feed.addURL(feed, url.href);
   const suppress_notifs = false;
   const icon_cache_conn = null;
   let fade_out = false;
@@ -292,7 +292,7 @@ async function start_subscription(url) {
       suppress_notifs, console);
     append_feed(subbed_feed, true);
     update_feed_count();
-    const feed_url = get_feed_url(subbed_feed);
+    const feed_url = Feed.getURL(subbed_feed);
     append_sub_monitor_msg(`Subscribed to ${feed_url}`);
 
     const monitor = document.getElementById('submon');
@@ -348,7 +348,7 @@ async function feed_list_item_on_click(event) {
     desc_element.textContent = '';
 
   const feed_url_element = document.getElementById('details-feed-url');
-  feed_url_element.textContent = get_feed_url(feed);
+  feed_url_element.textContent = Feed.getURL(feed);
   const feed_link_element = document.getElementById('details-feed-link');
   feed_link_element.textContent = feed.link || '';
   const unsub_btn = document.getElementById('details-unsubscribe');

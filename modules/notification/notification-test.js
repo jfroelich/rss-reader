@@ -1,5 +1,5 @@
 // See license.md
 
 function test(title) {
-  show_notification(title, 'message body');
+  DesktopNotification.show(title, 'message body');
 }

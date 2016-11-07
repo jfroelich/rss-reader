@@ -16,6 +16,8 @@
       "/modules/archive/archive-entries.js",
       "/modules/boilerplate/boilerplate.js",
       "/modules/common/config.js",
+      "/modules/common/entry.js",
+      "/modules/common/feed.js",
       "/modules/common/html.js",
       "/modules/common/mime.js",
       "/modules/common/parse-xml.js",

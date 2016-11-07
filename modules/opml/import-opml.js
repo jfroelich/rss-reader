@@ -134,7 +134,7 @@ function filter_dup_outlines(outlines) {
 
 function outline_to_feed(outline) {
   const feed = {};
-  add_feed_url(feed, outline.url_obj.href);
+  Feed.addURL(feed, outline.url_obj.href);
   feed.type = outline.type;
   feed.title = outline.title || outline.text;
   feed.description = outline.description;

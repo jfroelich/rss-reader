@@ -6,8 +6,8 @@
 async function subscribe(store, icon_conn, feed, suppress_notifs,
   log = SilentConsole) {
 
-  log.log('Subscribing to', get_feed_url(feed));
-  if(await store.containsFeedURL(get_feed_url(feed)))
+  log.log('Subscribing to', Feed.getURL(feed));
+  if(await store.containsFeedURL(Feed.getURL(feed)))
     return;
 
   if('onLine' in navigator && !navigator.onLine) {
@@ -15,7 +15,7 @@ async function subscribe(store, icon_conn, feed, suppress_notifs,
     return await store.addFeed(feed);
   }
 
-  const req_url = new URL(get_feed_url(feed));
+  const req_url = new URL(Feed.getURL(feed));
   let fetch_event;
   try {
     fetch_event = await fetch_feed(req_url, log);
@@ -23,13 +23,13 @@ async function subscribe(store, icon_conn, feed, suppress_notifs,
     return;
   }
 
-  const merged = merge_feeds(feed, fetch_event.feed);
+  const merged = Feed.merge(feed, fetch_event.feed);
 
   let url;
   if(merged.link) {
     url = new URL(merged.link);
   } else {
-    const feed_url = new URL(get_feed_url(merged));
+    const feed_url = new URL(Feed.getURL(merged));
     url = new URL(feed_url.origin);
   }
 
@@ -42,9 +42,9 @@ async function subscribe(store, icon_conn, feed, suppress_notifs,
 
   const added_feed = await store.addFeed(merged);
   if(!suppress_notifs) {
-    const feed_name = added_feed.title || get_feed_url(added_feed);
+    const feed_name = added_feed.title || Feed.getURL(added_feed);
     const message = 'Subscribed to ' + feed_name;
-    show_notification('Subscription complete', message,
+    DesktopNotification.show('Subscription complete', message,
       merged.faviconURLString);
   }
   return added_feed;

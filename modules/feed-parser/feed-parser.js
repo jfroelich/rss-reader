@@ -172,7 +172,7 @@ function create_entry(feed_date, entry_element) {
   // Set the link url as the entry's initial url
   const entry_link_url = find_entry_link(entry_element);
   if(entry_link_url)
-    add_entry_url(entry, entry_link_url);
+    Entry.addURL(entry, entry_link_url);
 
   const entry_date = find_entry_date(entry_element);
   if(entry_date)

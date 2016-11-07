@@ -94,7 +94,7 @@ function append_slide(entry) {
 
 function create_article_title(entry) {
   const title = document.createElement('a');
-  title.setAttribute('href', get_entry_url(entry));
+  title.setAttribute('href', Entry.getURL(entry));
   title.setAttribute('class', 'entry-title');
   title.setAttribute('target','_blank');
   title.setAttribute('rel', 'noreferrer');

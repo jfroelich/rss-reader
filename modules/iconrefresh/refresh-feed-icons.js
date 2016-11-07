@@ -31,7 +31,7 @@ async function refresh_feed_icons(log = SilentConsole) {
     if(feed.link) {
       url = new URL(feed.link);
     } else {
-      const feed_url = get_feed_url(feed);
+      const feed_url = Feed.getURL(feed);
       url = new URL(new URL(feed_url).origin);
     }
     return url;

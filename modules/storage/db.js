@@ -9,8 +9,6 @@
 // TODO: remove the defined feed title requirement, have options manually sort
 // feeds instead of using the title index, deprecate the title index, stop
 // ensuring title is an empty string. note: i partly did some of this
-// TODO: mark as read belongs in controllers
-// TODO: non-storage stuff like entry flags and such does not belong here
 
 // Wraps an opened IDBDatabase instance to provide storage related functions
 class ReaderStorage {
@@ -194,16 +192,16 @@ class ReaderStorage {
       if('id' in entry)
         return reject(new TypeError());
       this.log.log('Adding entry with urls [%s]', entry.urls.join(', '));
-      const sanitized = sanitize_entry(entry);
+      const sanitized = Entry.sanitize(entry);
       const storable = filter_empty_props(sanitized);
-      storable.readState = ENTRY_UNREAD;
-      storable.archiveState = ENTRY_UNARCHIVED;
+      storable.readState = Entry.UNREAD;
+      storable.archiveState = Entry.UNARCHIVED;
       storable.dateCreated = new Date();
       const tx = this.conn.transaction('entry', 'readwrite');
       const store = tx.objectStore('entry');
       const request = store.add(storable);
       request.onsuccess = (event) => {
-        this.log.debug('Stored entry', get_entry_url(storable));
+        this.log.debug('Stored entry', Entry.getURL(storable));
         resolve(event);
       };
       request.onerror = (event) => reject(event.target.error);
@@ -215,8 +213,8 @@ class ReaderStorage {
     return new Promise((resolve, reject) => {
       if('id' in feed)
         return reject(new TypeError());
-      this.log.log('Adding feed', get_feed_url(feed));
-      let storable = sanitize_feed(feed);
+      this.log.log('Adding feed', Feed.getURL(feed));
+      let storable = Feed.sanitize(feed);
       storable = filter_empty_props(storable);
       storable.dateCreated = new Date();
       const tx = this.conn.transaction('feed', 'readwrite');
@@ -224,7 +222,7 @@ class ReaderStorage {
       const request = store.add(storable);
       request.onsuccess = (event) => {
         storable.id = event.target.result;
-        this.log.debug('Added feed %s with new id %s', get_feed_url(storable),
+        this.log.debug('Added feed %s with new id %s', Feed.getURL(storable),
           storable.id);
         resolve(storable);
       };
@@ -263,43 +261,32 @@ class ReaderStorage {
     });
   }
 
-  // TODO: deprecate, use individual searches for a single url, and
-  // let caller race if they want. note i think in poll there is no need to
-  // do this all at once
-  // @param conn {IDBDatabase}
-  // @param urls {Array<String>} valid normalized entry urls
-  containsAnyEntryURLs(urls) {
+  // Resolves with a boolean indicating whether an entry with the given url
+  // was found in storage
+  // @param url {String}
+  containsEntryURL(url) {
     return new Promise((resolve, reject) => {
-      if(!urls || !urls.length)
-        return reject(new TypeError('invalid urls argument'));
-      const keys = [];
+      if(typeof url !== 'string')
+        return reject(new TypeError('invalid url argument'));
       const tx = this.conn.transaction('entry');
-      tx.oncomplete = () => resolve(keys.length ? true : false);
-      tx.onabort = (event) => reject(event.target.error);
       const store = tx.objectStore('entry');
       const index = store.index('urls');
-      for(let url of urls) {
-        const request = index.getKey(url);
-        request.onsuccess = onsuccess;
-      }
-
-      function onsuccess(event) {
-        const key = event.target.result;
-        if(key)
-          keys.push(key);
-      }
+      const request = index.getKey(url);
+      request.onsuccess = () => resolve(!!request.result);
+      request.onerror = () => reject(request.error);
     });
   }
 
+  // @param feed {Object}
   putFeed(feed) {
     return new Promise((resolve, reject) => {
-      this.log.debug('Storing feed %s', get_feed_url(feed));
+      this.log.debug('Storing feed %s', Feed.getURL(feed));
       feed.dateUpdated = new Date();
       const tx = this.conn.transaction('feed', 'readwrite');
       const store = tx.objectStore('feed');
       const request = store.put(feed);
       request.onsuccess = (event) => {
-        this.log.debug('Successfully put feed', get_feed_url(feed));
+        this.log.debug('Successfully put feed', Feed.getURL(feed));
         if(!('id' in feed)) {
           this.log.debug('New feed id', event.target.result);
           feed.id = event.target.result;
@@ -342,7 +329,7 @@ class ReaderStorage {
       const tx = this.conn.transaction('entry');
       const store = tx.objectStore('entry');
       const index = store.index('readState');
-      const request = index.count(ENTRY_UNREAD);
+      const request = index.count(Entry.UNREAD);
       request.onsuccess = (event) => {
         this.log.debug('Counted %d unread entries', request.result);
         resolve(request.result);
@@ -359,7 +346,7 @@ class ReaderStorage {
       this.log.debug('Getting unarchived read entries');
       const store = tx.objectStore('entry');
       const index = store.index('archiveState-readState');
-      const key_path = [ENTRY_UNARCHIVED, ENTRY_READ];
+      const key_path = [Entry.UNARCHIVED, Entry.READ];
       const request = index.getAll(key_path);
       request.onsuccess = () => resolve(request.result);
       request.onerror = (event) => {
@@ -380,7 +367,7 @@ class ReaderStorage {
       tx.oncomplete = (event) => resolve(entries);
       const store = tx.objectStore('entry');
       const index = store.index('archiveState-readState');
-      const keyPath = [ENTRY_UNARCHIVED, ENTRY_UNREAD];
+      const keyPath = [Entry.UNARCHIVED, Entry.UNREAD];
       const request = index.openCursor(keyPath);
       request.onsuccess = (event) => {
         const cursor = event.target.result;
@@ -429,7 +416,7 @@ class ReaderStorage {
       request.onsuccess = (event) => {
         const entry = event.target.result;
         if(entry)
-          this.log.debug('Found entry %s with id', get_entry_url(entry), id);
+          this.log.debug('Found entry %s with id', Entry.getURL(entry), id);
         resolve(entry);
       };
       request.onerror = () => reject(request.error);
@@ -443,159 +430,4 @@ class ReaderStorage {
       request.onerror = () => reject(request.error);
     });
   }
-}
-
-// TODO: move to controllers
-async function db_mark_entry_read(store, id, log = SilentConsole) {
-  if(!Number.isInteger(id) || id < 1)
-    throw new TypeError(`Invalid entry id ${id}`);
-  log.debug('Marking entry %s as read', id);
-  const tx = store.conn.transaction('entry', 'readwrite');
-  const entry = await store.findEntryById(tx, id);
-  if(!entry)
-    throw new Error(`No entry found with id ${id}`);
-  if(entry.readState === ENTRY_READ)
-    throw new Error(`Already read entry with id ${id}`);
-  entry.readState = ENTRY_READ;
-  entry.dateRead = new Date();
-  await store.putEntry(tx, entry);
-  await badge_update_text(store, log);
-}
-
-const ENTRY_UNREAD = 0;
-const ENTRY_READ = 1;
-const ENTRY_UNARCHIVED = 0;
-const ENTRY_ARCHIVED = 1;
-
-
-
-function get_feed_url(feed) {
-  if(!feed.urls.length)
-    throw new TypeError();
-  return feed.urls[feed.urls.length - 1];
-}
-
-function add_feed_url(feed, url) {
-  if(!('urls' in feed))
-    feed.urls = [];
-
-  const norm_url = normalize_feed_url(url);
-  if(feed.urls.includes(norm_url)) {
-    return false;
-  }
-
-  feed.urls.push(norm_url);
-  return true;
-}
-
-function normalize_feed_url(url_str) {
-  const url = new URL(url_str);
-  return url.href;
-}
-
-function sanitize_feed(input_feed) {
-  const feed = Object.assign({}, input_feed);
-
-  if(feed.id) {
-    if(!Number.isInteger(feed.id) || feed.id < 1)
-      throw new TypeError();
-  }
-
-  const types = {'feed': 1, 'rss': 1, 'rdf': 1};
-  if(feed.type && !(feed.type in types))
-    throw new TypeError();
-
-  if(feed.title) {
-    let title = feed.title;
-    title = filter_control_chars(title);
-    title = replace_tags(title, '');
-    title = title.replace(/\s+/, ' ');
-    const title_max_len = 1024;
-    title = truncate_html(title, title_max_len, '');
-    feed.title = title;
-  }
-
-  if(feed.description) {
-    let description = feed.description;
-    description = filter_control_chars(description);
-    description = replace_tags(description, '');
-    description = description.replace(/\s+/, ' ');
-    const before_len = description.length;
-    const desc_max_len = 1024 * 10;
-    description = truncate_html(description, desc_max_len, '');
-    if(before_len > description.length) {
-      console.warn('Truncated description', description);
-    }
-
-    feed.description = description;
-  }
-
-  return feed;
-}
-
-// Returns a new object of the old feed merged with the new feed. Fields from
-// the new feed take precedence, except for URLs, which are merged to generate
-// a distinct ordered set of oldest to newest url. Impure.
-function merge_feeds(old_feed, new_feed) {
-  const merged = Object.assign({}, old_feed, new_feed);
-  merged.urls = [...old_feed.urls];
-  for(let url of new_feed.urls) {
-    add_feed_url(merged, url);
-  }
-  return merged;
-}
-
-// Get the last url in an entry's internal url list
-function get_entry_url(entry) {
-  if(!entry.urls.length)
-    throw new TypeError();
-  return entry.urls[entry.urls.length - 1];
-}
-
-function add_entry_url(entry, url_str) {
-  if(!entry.urls)
-    entry.urls = [];
-  const normalized_url = new URL(url_str);
-  if(entry.urls.includes(normalized_url.href))
-    return false;
-  entry.urls.push(normalized_url.href);
-  return true;
-}
-
-// Returns a new entry object where fields have been sanitized. Impure
-// TODO: ensure dates are not in the future, and not too old? Should this be
-// a separate function like validate_entry
-function sanitize_entry(input_entry) {
-  const author_max_len = 200;
-  const title_max_len = 1000;
-  const content_max_len = 50000;
-  const output_entry = Object.assign({}, input_entry);
-
-  if(output_entry.author) {
-    let author = output_entry.author;
-    author = filter_control_chars(author);
-    author = replace_tags(author, '');
-    author = condense_whitespace(author);
-    author = truncate_html(author, author_max_len);
-    output_entry.author = author;
-  }
-
-  // Condensing node whitespace is handled separately
-  // TODO: filter out non-printable characters other than \r\n\t
-  if(output_entry.content) {
-    let content = output_entry.content;
-    content = truncate_html(content, content_max_len);
-    output_entry.content = content;
-  }
-
-  if(output_entry.title) {
-    let title = output_entry.title;
-    title = filter_control_chars(title);
-    title = replace_tags(title, '');
-    title = condense_whitespace(title);
-    title = truncate_html(title, title_max_len);
-    output_entry.title = title;
-  }
-
-  return output_entry;
 }

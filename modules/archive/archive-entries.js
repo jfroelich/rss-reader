@@ -23,10 +23,10 @@ async function archive_entries(store,
 
   // Compact the archivable entries
   // TODO: reimplement compact as a simple property whitelist filter?
-  // Would still need to set the ENTRY_ARCHIVED flag
+  // Would still need to set the Entry.ARCHIVED flag
   const compacted_entries = archivable_entries.map(function compact(entry) {
     const compacted = {
-      'archiveState': ENTRY_ARCHIVED,
+      'archiveState': Entry.ARCHIVED,
       'dateArchived': current_date,
       'dateCreated': entry.dateCreated,
       'dateRead': entry.dateRead,

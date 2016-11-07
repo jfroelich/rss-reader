@@ -43,7 +43,7 @@ poll.run = async function(options = {}) {
       const age = current_date - feed.dateFetched;//ms
       const old_enough = age > config.min_time_since_last_poll;
       if(!old_enough)
-        log.debug('Feed polled too recently', get_feed_url(feed));
+        log.debug('Feed polled too recently', Feed.getURL(feed));
       return old_enough;
     });
   }
@@ -59,7 +59,7 @@ poll.run = async function(options = {}) {
     chan.postMessage('completed');
     chan.close();
 
-    show_notification('Updated articles',
+    DesktopNotification.show('Updated articles',
       'Added ' + num_entries_added + ' new articles');
   }
 
@@ -73,7 +73,7 @@ poll.process_feed = async function(feed_store, icon_conn, feed,
   skip_unmodified_guard, log) {
 
   let num_entries_added = 0;
-  const url = new URL(get_feed_url(feed));
+  const url = new URL(Feed.getURL(feed));
 
   // A fetch error is not an exception
   let fetch_result;
@@ -92,8 +92,8 @@ poll.process_feed = async function(feed_store, icon_conn, feed,
     return num_entries_added;
   }
 
-  const merged_feed = merge_feeds(feed, remote_feed);
-  let storable_feed = sanitize_feed(merged_feed);
+  const merged_feed = Feed.merge(feed, remote_feed);
+  let storable_feed = Feed.sanitize(merged_feed);
   storable_feed = filter_empty_props(storable_feed);
   let entries = fetch_result.entries;
   entries = entries.filter((entry) => entry.urls && entry.urls.length);
@@ -146,12 +146,19 @@ poll.filter_dup_entries = function(entries, log) {
 
 // Resolve with true if entry was added, false if not added
 poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
-  const rewritten_url = rewrite_url(get_entry_url(entry));
-  if(rewritten_url)
-    add_entry_url(entry, rewritten_url);
-  if(await feed_store.containsAnyEntryURLs(entry.urls))
+  // First check if the entry's original url exists
+  if(await feed_store.containsEntryURL(entry.urls[0]))
     return false;
-  const request_url = new URL(get_entry_url(entry));
+
+  // Rewrite. If rewritten then check if rewritten url exists
+  const rewritten_url = rewrite_url(Entry.getURL(entry));
+  if(rewritten_url) {
+    Entry.addURL(entry, rewritten_url);
+    if(await feed_store.containsEntryURL(Entry.getURL(entry)))
+      return false;
+  }
+
+  const request_url = new URL(Entry.getURL(entry));
   const reason = poll.derive_no_fetch_reason(request_url);
   if(reason) {
     const icon_url = await favicon.lookup(icon_conn, request_url, log);
@@ -175,9 +182,9 @@ poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
 
   const redirected = poll.did_redirect(entry.urls, response_url);
   if(redirected) {
-    if(await feed_store.containsAnyEntryURLs([response_url]))
+    if(await feed_store.containsEntryURL(response_url))
       return false;
-    add_entry_url(entry, response_url);
+    Entry.addURL(entry, response_url);
   }
 
   const lookup_url = redirected ? new URL(response_url) : request_url;
@@ -187,7 +194,7 @@ poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
   poll.transform_lazy_images(doc, log);
   filter_sourceless_images(doc);
   filter_invalid_anchors(doc);
-  resolve_doc(doc, log, new URL(get_entry_url(entry)));
+  resolve_doc(doc, log, new URL(Entry.getURL(entry)));
   poll.filter_tracking_images(doc, config.tracking_hosts, log);
   const num_images_modified = await set_image_dimensions(doc, log);
   poll.prep_doc(doc);

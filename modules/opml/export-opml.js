@@ -35,7 +35,7 @@ function export_opml(feeds = [], title = 'Subscriptions',
     const outline = doc.createElement('outline');
     if(feed.type)
       outline.setAttribute('type', feed.type);
-    const feed_url = get_feed_url(feed);
+    const feed_url = Feed.getURL(feed);
     outline.setAttribute('xmlUrl', feed_url);
     if(feed.title) {
       outline.setAttribute('text', feed.title);

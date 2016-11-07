@@ -43,9 +43,9 @@ async function fetch_feed(url, log = SilentConsole) {
   const text = await response.text();
   const doc = parse_xml(text);
   const parse_result = parse_feed(doc);
-  add_feed_url(parse_result.feed, url.href);
+  Feed.addURL(parse_result.feed, url.href);
   if(response.url)
-    add_feed_url(parse_result.feed, response.url);
+    Feed.addURL(parse_result.feed, response.url);
   parse_result.feed.dateFetched = new Date();
   if(last_mod_date)
     parse_result.feed.dateLastModified = last_mod_date;
