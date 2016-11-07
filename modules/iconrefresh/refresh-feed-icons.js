@@ -6,9 +6,9 @@ async function refresh_feed_icons(log = SilentConsole) {
   log.log('Refreshing feed favicons...');
   let num_modified = 0;
 
-  const feed_conn = await db_connect(undefined, undefined, log);
+  const feed_store = await ReaderStorage.connect(log);
   const icon_conn = await favicon.connect(undefined, undefined, log);
-  const feeds = await db_get_all_feeds(feed_conn, log);
+  const feeds = await feed_store.getFeeds();
   for(let feed of feeds) {
     const lookup_url = get_lookup_url(feed);
     const icon_url = await favicon.lookup(icon_conn, lookup_url, log);
@@ -17,12 +17,12 @@ async function refresh_feed_icons(log = SilentConsole) {
     if(!feed.faviconURLString || feed.faviconURLString !== icon_url) {
       num_modified++;
       feed.faviconURLString = icon_url;
-      await db_put_feed(feed_conn, feed, log);
+      await feed_store.putFeed(feed);
     }
   }
   log.log('Completed refreshing feed favicons. Modified %d', num_modified);
 
-  feed_conn.close();
+  feed_store.disconnect();
   icon_conn.close();
 
   // TODO: inline

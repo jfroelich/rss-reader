@@ -3,17 +3,16 @@
 'use strict';
 
 // TODO: if redirected on fetch, check for reedirect url contained in db
-async function subscribe(feed_conn, icon_conn, feed, suppress_notifs,
+async function subscribe(store, icon_conn, feed, suppress_notifs,
   log = SilentConsole) {
 
   log.log('Subscribing to', get_feed_url(feed));
-  const found = await db_contains_feed_url(feed_conn, get_feed_url(feed), log);
-  if(found)
+  if(await store.containsFeedURL(get_feed_url(feed)))
     return;
 
   if('onLine' in navigator && !navigator.onLine) {
     log.debug('Offline subscription');
-    return await db_add_feed(log, feed_conn, feed);
+    return await store.addFeed(feed);
   }
 
   const req_url = new URL(get_feed_url(feed));
@@ -41,7 +40,7 @@ async function subscribe(feed_conn, icon_conn, feed, suppress_notifs,
     // Ignore
   }
 
-  const added_feed = await db_add_feed(log, feed_conn, merged);
+  const added_feed = await store.addFeed(merged);
   if(!suppress_notifs) {
     const feed_name = added_feed.title || get_feed_url(added_feed);
     const message = 'Subscribed to ' + feed_name;
@@ -51,15 +50,15 @@ async function subscribe(feed_conn, icon_conn, feed, suppress_notifs,
   return added_feed;
 }
 
-async function unsubscribe(conn, feed_id, log = SilentConsole) {
+async function unsubscribe(store, feed_id, log = SilentConsole) {
   if(!Number.isInteger(feed_id) || feed_id < 1)
-    throw new TypeError();
-  log.log('Unsubscribing from feed with id', feed_id);
-  const tx = conn.transaction(['feed', 'entry'], 'readwrite');
-  const ids = await db_get_entry_ids_for_feed(tx, feed_id, log);
+    throw new TypeError('invalid feed id');
+  log.log('Unsubscribing from feed', feed_id);
+  const tx = store.conn.transaction(['feed', 'entry'], 'readwrite');
+  const ids = await store.getFeedEntryIds(tx, feed_id);
   const chan = new BroadcastChannel('db');
-  const proms = ids.map((id) => db_delete_entry(tx, id, chan, log));
-  proms.push(db_delete_feed(tx, feed_id, log));
+  const proms = ids.map((id) => store.removeEntry(tx, id, chan));
+  proms.push(store.removeFeed(tx, feed_id));
   await Promise.all(proms);
   chan.close();
   return ids.length;

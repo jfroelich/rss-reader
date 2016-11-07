@@ -28,12 +28,12 @@ poll.run = async function(options = {}) {
     }
   }
 
-  const [conn, icon_conn] = await Promise.all([
-    db_connect(undefined, undefined, log),
+  const [feed_store, icon_conn] = await Promise.all([
+    ReaderStorage.connect(log),
     favicon.connect(undefined, undefined, log)
   ]);
 
-  let feeds = await db_get_all_feeds(conn, log);
+  let feeds = await feed_store.getFeeds();
 
   if(!options.ignore_recent_poll_guard) {
     const current_date = new Date();
@@ -48,13 +48,13 @@ poll.run = async function(options = {}) {
     });
   }
 
-  const promises = feeds.map((feed) => poll.process_feed(conn, icon_conn, feed,
-    options.skip_unmodified_guard, log));
+  const promises = feeds.map((feed) => poll.process_feed(feed_store,
+    icon_conn, feed, options.skip_unmodified_guard, log));
   const resolutions = await Promise.all(promises);
   const num_entries_added = resolutions.reduce((sum, added) => sum + added, 0);
 
   if(num_entries_added > 0) {
-    await badge_update_text(conn, log);
+    await badge_update_text(feed_store, log);
     const chan = new BroadcastChannel('poll');
     chan.postMessage('completed');
     chan.close();
@@ -63,14 +63,14 @@ poll.run = async function(options = {}) {
       'Added ' + num_entries_added + ' new articles');
   }
 
-  conn.close();
+  feed_store.disconnect();
   icon_conn.close();
   log.debug('Polling completed');
   return num_entries_added;
 };
 
-poll.process_feed = async function(conn, icon_conn, feed, skip_unmodified_guard,
-  log) {
+poll.process_feed = async function(feed_store, icon_conn, feed,
+  skip_unmodified_guard, log) {
 
   let num_entries_added = 0;
   const url = new URL(get_feed_url(feed));
@@ -108,17 +108,15 @@ poll.process_feed = async function(conn, icon_conn, feed, skip_unmodified_guard,
   entries = poll.filter_dup_entries(entries, log);
   entries.forEach((entry) => entry.feed = feed.id);
 
-  if(feed.title) {
-    for(let entry of entries) {
-      entry.feedTitle = storable_feed.title;
-    }
+  for(let entry of entries) {
+    entry.feedTitle = storable_feed.title;
   }
 
-  const promises = entries.map((entry) => poll.process_entry(conn, icon_conn,
-    storable_feed, entry, log));
-  promises.push(db_put_feed(conn, storable_feed, log));
+  const promises = entries.map((entry) => poll.process_entry(feed_store,
+    icon_conn, storable_feed, entry, log));
+  promises.push(feed_store.putFeed(storable_feed));
   const results = await Promise.all(promises);
-  results.pop();// remove put_feed_promise
+  results.pop();// remove putFeed promise before reduce
   return results.reduce((sum, r) => r ? sum + 1 : sum, 0);
 };
 
@@ -147,11 +145,11 @@ poll.filter_dup_entries = function(entries, log) {
 };
 
 // Resolve with true if entry was added, false if not added
-poll.process_entry = async function(conn, icon_conn, feed, entry, log) {
+poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
   const rewritten_url = rewrite_url(get_entry_url(entry));
   if(rewritten_url)
     add_entry_url(entry, rewritten_url);
-  if(await db_contains_entry(conn, entry.urls, log))
+  if(await feed_store.containsAnyEntryURLs(entry.urls))
     return false;
   const request_url = new URL(get_entry_url(entry));
   const reason = poll.derive_no_fetch_reason(request_url);
@@ -159,7 +157,7 @@ poll.process_entry = async function(conn, icon_conn, feed, entry, log) {
     const icon_url = await favicon.lookup(icon_conn, request_url, log);
     entry.faviconURLString = icon_url || feed.faviconURLString;
     entry.content = poll.no_fetch_reasons[reason];
-    return await poll.add_entry(conn, entry, log);
+    return await poll.add_entry(feed_store, entry, log);
   }
 
   let doc, response_url;
@@ -172,13 +170,12 @@ poll.process_entry = async function(conn, icon_conn, feed, entry, log) {
     const icon_url = await favicon.lookup(icon_conn, request_url, log);
     entry.faviconURLString = icon_url || feed.faviconURLString;
     poll.prep_local_entry(entry);
-    return await poll.add_entry(conn, entry, log);
+    return await poll.add_entry(feed_store, entry, log);
   }
 
   const redirected = poll.did_redirect(entry.urls, response_url);
   if(redirected) {
-    const rexists = await db_contains_entry(conn, [response_url], log);
-    if(rexists)
+    if(await feed_store.containsAnyEntryURLs([response_url]))
       return false;
     add_entry_url(entry, response_url);
   }
@@ -195,14 +192,14 @@ poll.process_entry = async function(conn, icon_conn, feed, entry, log) {
   const num_images_modified = await set_image_dimensions(doc, log);
   poll.prep_doc(doc);
   entry.content = doc.documentElement.outerHTML.trim();
-  return await poll.add_entry(conn, entry, log);
+  return await poll.add_entry(feed_store, entry, log);
 };
 
 // Translate add rejections into resolutions so that poll.process_entry does not
 // reject in the event of an error
-poll.add_entry = async function(conn, entry, log) {
+poll.add_entry = async function(store, entry, log) {
   try {
-    let result = await db_add_entry(conn, entry, log);
+    let result = await store.addEntry(entry);
     return true;
   } catch(error) {
     log.debug('Muted error while adding entry', error);
@@ -281,7 +278,7 @@ poll.prep_doc = function(doc) {
 // the space check is a minimal validation, urls may be relative
 // TODO: maybe use a regex and \s
 // TODO: does the browser tolerate spaces in urls?
-poll.transform_lazy_images = function(doc, log = SilentConsole) {
+poll.transform_lazy_images = function(doc, log) {
   let num_modified = 0;
   const images = doc.querySelectorAll('img');
   for(let img of images) {

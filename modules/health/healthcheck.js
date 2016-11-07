@@ -28,14 +28,15 @@ HealthCheck.start = function(log = SilentConsole) {
     'completed_entries_missing_urls_scan': false
   };
 
-  db_connect(undefined, undefined, log).then(
+  ReaderStorage.connect(log).then(
     HealthCheck._connect_on_success.bind(ctx)).catch(
       HealthCheck._connect_on_error.bind(ctx));
+
 };
 
-HealthCheck._connect_on_success = function(conn) {
+HealthCheck._connect_on_success = function(store) {
   this.log.debug('Connected to database');
-  this.conn = conn;
+  this.conn = store.conn;
   HealthCheck.orphan.scan.call(this);
   HealthCheck.missurls.scan.call(this);
 };

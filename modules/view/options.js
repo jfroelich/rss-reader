@@ -286,9 +286,9 @@ async function start_subscription(url) {
   const icon_cache_conn = null;
   let fade_out = false;
   try {
-    const feed_conn = await db_connect(undefined, undefined, console);
+    const feed_store = await ReaderStorage.connect(console);
     const icon_conn = await favicon.connect(undefined, undefined, console);
-    let subbed_feed = await subscribe(feed_conn, icon_conn, feed,
+    let subbed_feed = await subscribe(feed_store, icon_conn, feed,
       suppress_notifs, console);
     append_feed(subbed_feed, true);
     update_feed_count();
@@ -301,7 +301,7 @@ async function start_subscription(url) {
 
     const subs_section = document.getElementById('subs-list-section');
     show_section(subs_section);
-    feed_conn.close();
+    feed_store.disconnect();
     icon_conn.close();
   } catch(error) {
     console.debug(error);
@@ -317,15 +317,15 @@ async function feed_list_item_on_click(event) {
     throw new TypeError();
 
   // TODO: should this even catch?
-  let conn, feed;
+  let store, feed;
   try {
-    conn = await db_connect(undefined, undefined, console);
-    feed = await db_find_feed_by_id(conn, feed_id, console);
+    store = await ReaderStorage.connect(console);
+    feed = await store.findFeedById(feed_id);
   } catch(error) {
     console.debug(error);
   } finally {
-    if(conn)
-      conn.close();
+    if(store)
+      store.disconnect();
   }
 
   // TODO: should this throw?
@@ -435,7 +435,7 @@ async function sub_form_on_submit(event) {
   results = sgf_output.entries;
   show_element(results_list_element);
   hide_element(no_results_element);
-  
+
   const item_element = document.createElement('li');
   item_element.textContent = `Found ${results.length} feeds.`;
   results_list_element.appendChild(item_element);
@@ -550,9 +550,9 @@ async function unsubscribe_btn_on_click(event) {
   if(!Number.isInteger(feed_id) || feed_id < 1)
     throw new TypeError(`Invalid feed id ${event.target.value}`);
   try {
-    const conn = await db_connect(undefined, undefined, console);
-    let num_deleted = await unsubscribe(conn, feed_id, console);
-    conn.close();
+    const feed_store = await ReaderStorage.connect(console);
+    let num_deleted = await unsubscribe(feed_store, feed_id, console);
+    feed_store.disconnect();
     console.debug('Unsubscribed from feed id', feed_id);
     remove_feed_from_feed_list(feed_id);
     const subs_section = document.getElementById('subs-list-section');
@@ -592,15 +592,15 @@ async function export_opml_btn_on_click(event) {
   console.debug('Clicked export opml button');
   const title = 'Subscriptions';
   const file_name = 'subs.xml';
-  let conn, feeds;
+  let feed_store, feeds;
   try {
-    conn = await db_connect(undefined, undefined, console);
-    feeds = await db_get_all_feeds(conn);
+    feed_store = await ReaderStorage.connect(console);
+    feeds = await feed_store.getFeeds();
   } catch(error) {
     console.debug(error);
   } finally {
-    if(conn)
-      conn.close();
+    if(feed_store)
+      feed_store.disconnect();
   }
 
   if(feeds)
@@ -612,17 +612,19 @@ async function export_opml_btn_on_click(event) {
 async function init_subs_section() {
   const no_feeds_element = document.getElementById('nosubs');
   const feed_list = document.getElementById('feedlist');
-  let conn, feeds;
-
+  let feed_store, feeds;
   try {
-    conn = await db_connect(undefined, undefined, console);
-    feeds = await db_get_all_feeds(conn);
+    feed_store = await ReaderStorage.connect(console);
+    feeds = await feed_store.getFeeds();
   } catch(error) {
     console.debug(error);
-    return;
   } finally {
-    if(conn)
-      conn.close();
+    if(feed_store)
+      feed_store.disconnect();
+  }
+
+  if(!feeds) {
+    return;
   }
 
   for(let feed of feeds) {

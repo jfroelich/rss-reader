@@ -2,8 +2,8 @@
 
 'use strict';
 
-async function badge_update_text(conn, log = SilentConsole) {
-  const count = await db_count_unread_entries(conn, log);
+async function badge_update_text(store, log = SilentConsole) {
+  const count = await store.countUnreadEntries();
   const text = count > 999 ? '1k+' : '' + count;
   chrome.browserAction.setBadgeText({'text': text});
 }

@@ -7,9 +7,9 @@
 const cli = {};
 
 cli.archive_entries = async function() {
-  const conn = await db_connect(undefined, undefined, console);
-  const num_archived = await archive_entries(conn, undefined, console);
-  conn.close();
+  const store = ReaderStorage.connect(console);
+  const num_archived = await archive_entries(store, undefined, console);
+  store.close();
 };
 
 cli.poll = async function() {

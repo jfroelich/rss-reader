@@ -18,8 +18,11 @@ async function import_opml(db_target, files, log = SilentConsole) {
     return;
 
   const suppress_subscribe_notif = true;
-  const feed_conn = await db_connect(undefined, undefined, log);
+  const feed_store = await ReaderStorage.connect(log);
   const icon_conn = await favicon.connect(undefined, undefined, log);
+
+  // TODO: wrap subscribe in a local async function that traps the error,
+  // then use promise.all here
 
   for(let file of files) {
     const text = await read_file_as_text(file);
@@ -35,15 +38,15 @@ async function import_opml(db_target, files, log = SilentConsole) {
     for(let feed of feeds) {
       // Allow for individual subscriptions to fail
       try {
-        await subscribe(feed_conn, icon_conn, feed, suppress_subscribe_notif,
-          log);
+        await subscribe(feed_store, icon_conn, feed,
+          suppress_subscribe_notif, log);
       } catch(error) {
         log.debug(error);
       }
     }
   }
 
-  feed_conn.close();
+  feed_store.disconnect();
   icon_conn.close();
   log.debug('Import completed');
 }

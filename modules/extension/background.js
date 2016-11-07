@@ -57,12 +57,15 @@ create_alarms();
 chrome.alarms.onAlarm.addListener(async function(alarm) {
   console.debug('Alarm wakeup', alarm.name);
   if(alarm.name === 'archive') {
+    let store;
     try {
-      const conn = await db_connect();
-      await archive_entries(conn);
-      conn.close();
+      store = await ReaderStorage.connect();
+      await archive_entries(store);
     } catch(error) {
       console.debug(error);
+    } finally {
+      if(store)
+        store.disconnect();
     }
   } else if(alarm.name === 'poll') {
     try {
@@ -93,17 +96,14 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
 
 chrome.runtime.onInstalled.addListener(async function oninstall(event) {
   console.log('Installing extension ...');
-
   // The initial connect will also trigger database creation/upgrade
-  let conn;
   try {
-    conn = await db_connect();
-    badge_update_text(conn);
+    const store = await ReaderStorage.connect(console);
+    badge_update_text(store);
+    store.disconnect();
   } catch(error) {
     console.debug(error);
   }
-  if(conn)
-    conn.close();
 });
 
 // Must wait for dom to load because badge_onclick is in a separate js file

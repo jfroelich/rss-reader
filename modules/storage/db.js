@@ -2,8 +2,6 @@
 
 'use strict';
 
-// TODO: name anonymous functions for simpler debugging
-
 // TODO: add/update feed should delegate to put feed
 // TODO: maybe merge add/put entry into one function
 // TODO: maybe entry states should be in a single property instead of
@@ -11,139 +9,463 @@
 // TODO: remove the defined feed title requirement, have options manually sort
 // feeds instead of using the title index, deprecate the title index, stop
 // ensuring title is an empty string. note: i partly did some of this
+// TODO: mark as read belongs in controllers
+// TODO: non-storage stuff like entry flags and such does not belong here
+
+// Wraps an opened IDBDatabase instance to provide storage related functions
+class ReaderStorage {
+
+  constructor(log = SilentConsole) {
+    this.log = log;
+  }
+
+  // Get the database name
+  get name() {
+    return this.conn.name;
+  }
+
+  // Close the database connection
+  disconnect() {
+    if(this.conn) {
+      this.log.debug('Closing database', this.conn.name);
+      this.conn.close();
+    } else {
+      console.warn('conn is undefined');
+    }
+  }
+
+  // Returns a promise that resolves to a new ReaderStorage instance with an
+  // active connection. Use this factory method instead of the constructor
+  static connect(log = SilentConsole, name = config.db_name,
+    version = config.db_version) {
+    return new Promise((resolve, reject) => {
+      if(!name.length)
+        throw new TypeError('name is an empty string');
+      const store = new ReaderStorage(log);
+      store.log.log('Connecting to database', name);
+      const request = indexedDB.open(name, version);
+      request.onupgradeneeded = store._onupgradeneeded;
+      request.onsuccess = function onsuccess(event) {
+        store.conn = event.target.result;
+        store.log.log('Connected to database', store.name);
+        resolve(store);
+      };
+      request.onerror = (event) => reject(event.target.error);
+      request.onblocked = (event) =>
+        store.log.log('Waiting on blocked connection...');
+    });
+  }
+
+  // TODO: revert upgrade to using a version migration approach
+  _onupgradeneeded(event) {
+    const conn = event.target.result;
+    const tx = event.target.transaction;
+    let feed_store = null, entry_store = null;
+    const stores = conn.objectStoreNames;
+
+    console.dir(event);
+    this.log.log('Upgrading database %s to version %s from version', conn.name,
+      event.version, event.oldVersion);
+
+    if(stores.contains('feed')) {
+      feed_store = tx.objectStore('feed');
+    } else {
+      feed_store = conn.createObjectStore('feed', {
+        'keyPath': 'id',
+        'autoIncrement': true
+      });
+    }
+
+    if(stores.contains('entry')) {
+      entry_store = tx.objectStore('entry');
+    } else {
+      entry_store = conn.createObjectStore('entry', {
+        'keyPath': 'id',
+        'autoIncrement': true
+      });
+    }
+
+    const feed_indices = feed_store.indexNames;
+    const entry_indices = entry_store.indexNames;
+
+    // Deprecated
+    if(feed_indices.contains('schemeless'))
+      feed_store.deleteIndex('schemeless');
+    // Deprecated. Use the new urls index
+    if(feed_indices.contains('url'))
+      feed_store.deleteIndex('url');
+
+    // Create a multi-entry index using the new urls property, which should
+    // be an array of unique strings of normalized urls
+    if(!feed_indices.contains('urls'))
+      feed_store.createIndex('urls', 'urls', {
+        'multiEntry': true,
+        'unique': true
+      });
+
+    // TODO: deprecate this, have the caller manually sort and stop requiring
+    // title, this just makes it difficult.
+    if(!feed_indices.contains('title'))
+      feed_store.createIndex('title', 'title');
+
+    // Deprecated
+    if(entry_indices.contains('unread'))
+      entry_store.deleteIndex('unread');
+
+    // For example, used to count the number of unread entries
+    if(!entry_indices.contains('readState'))
+      entry_store.createIndex('readState', 'readState');
+
+    if(!entry_indices.contains('feed'))
+      entry_store.createIndex('feed', 'feed');
+
+    if(!entry_indices.contains('archiveState-readState'))
+      entry_store.createIndex('archiveState-readState',
+        ['archiveState', 'readState']);
+
+    // Deprecated. Use the urls index instead.
+    if(entry_indices.contains('link'))
+      entry_store.deleteIndex('link');
+
+    // Deprecated. Use the urls index instead.
+    if(entry_indices.contains('hash'))
+      entry_store.deleteIndex('hash');
+
+    if(!entry_indices.contains('urls')) {
+      entry_store.createIndex('urls', 'urls', {
+        'multiEntry': true,
+        'unique': true
+      });
+    }
+  }
+
+  removeFeed(tx, id) {
+    return new Promise((resolve, reject) => {
+      this.log.debug('Deleting feed', id);
+      const store = tx.objectStore('feed');
+      const request = store.delete(id);
+      request.onsuccess = (event) => {
+        this.log.debug('Deleted feed with id', id);
+        resolve();
+      };
+      request.onerror = (event) => reject(event.target.error);
+    });
+  }
+
+  getFeedEntryIds(tx, id) {
+    return new Promise((resolve, reject) => {
+      const store = tx.objectStore('entry');
+      const index = store.index('feed');
+      const request = index.getAllKeys(id);
+      request.onsuccess = (event) => {
+        const ids = event.target.result;
+        this.log.debug('Loaded %d entry ids with feed id', ids.length, id);
+        resolve(ids);
+      };
+      request.onerror = (event) => reject(event.target.error);
+    });
+  }
+
+  //db_delete_entry
+  // @param tx {IDBTransaction}
+  // @param id {int}
+  // @param chan {BroadcastChannel}
+  // @param log {console}
+  removeEntry(tx, id, chan) {
+    return new Promise((resolve, reject) => {
+      this.log.debug('Deleting entry', id);
+      const store = tx.objectStore('entry');
+      const request = store.delete(id);
+      request.onsuccess = (event) => {
+        this.log.debug('Deleted entry with id', id);
+        chan.postMessage({'type': 'delete_entry_request', 'id': entry.id});
+        resolve();
+      };
+      request.onsuccess = (event) => reject(event.target.error);
+    });
+  }
+
+  // TODO: deprecate in favor of put, and after moving sanitization and
+  // default props out, maybe make a helper function in pollfeeds that does this
+  // TODO: ensure entries added by put, if not have id, have unread flag
+  // and date created
+  addEntry(entry) {
+    return new Promise((resolve, reject) => {
+      if('id' in entry)
+        return reject(new TypeError());
+      this.log.log('Adding entry with urls [%s]', entry.urls.join(', '));
+      const sanitized = sanitize_entry(entry);
+      const storable = filter_empty_props(sanitized);
+      storable.readState = ENTRY_UNREAD;
+      storable.archiveState = ENTRY_UNARCHIVED;
+      storable.dateCreated = new Date();
+      const tx = this.conn.transaction('entry', 'readwrite');
+      const store = tx.objectStore('entry');
+      const request = store.add(storable);
+      request.onsuccess = (event) => {
+        this.log.debug('Stored entry', get_entry_url(storable));
+        resolve(event);
+      };
+      request.onerror = (event) => reject(event.target.error);
+    });
+  }
+
+  // TODO: move obj prep to caller, use put logic, rename to putFeed
+  addFeed(feed) {
+    return new Promise((resolve, reject) => {
+      if('id' in feed)
+        return reject(new TypeError());
+      this.log.log('Adding feed', get_feed_url(feed));
+      let storable = sanitize_feed(feed);
+      storable = filter_empty_props(storable);
+      storable.dateCreated = new Date();
+      const tx = this.conn.transaction('feed', 'readwrite');
+      const store = tx.objectStore('feed');
+      const request = store.add(storable);
+      request.onsuccess = (event) => {
+        storable.id = event.target.result;
+        this.log.debug('Added feed %s with new id %s', get_feed_url(storable),
+          storable.id);
+        resolve(storable);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // @param url {String}
+  containsFeedURL(url) {
+    return new Promise((resolve, reject) => {
+      this.log.debug('Checking for feed with url', url);
+      const tx = this.conn.transaction('feed');
+      const store = tx.objectStore('feed');
+      const index = store.index('urls');
+      const request = index.getKey(url);
+      request.onsuccess = (event) => resolve(!!event.target.result);
+      request.onerror = (event) => reject(event.target.error);
+    });
+  }
+
+  // @param id {Number} feed id, positive integer
+  findFeedById(id) {
+    return new Promise((resolve, reject) => {
+      if(!Number.isInteger(id) || id < 1)
+        return reject(new TypeError('invalid feed id ' + id));
+      this.log.debug('Finding feed by id', id);
+      const tx = this.conn.transaction('feed');
+      const store = tx.objectStore('feed');
+      const request = store.get(id);
+      request.onsuccess = (event) => {
+        const feed = event.target.result;
+        this.log.debug('Find result', feed);
+        resolve(feed);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // TODO: deprecate, use individual searches for a single url, and
+  // let caller race if they want. note i think in poll there is no need to
+  // do this all at once
+  // @param conn {IDBDatabase}
+  // @param urls {Array<String>} valid normalized entry urls
+  containsAnyEntryURLs(urls) {
+    return new Promise((resolve, reject) => {
+      if(!urls || !urls.length)
+        return reject(new TypeError('invalid urls argument'));
+      const keys = [];
+      const tx = this.conn.transaction('entry');
+      tx.oncomplete = () => resolve(keys.length ? true : false);
+      tx.onabort = (event) => reject(event.target.error);
+      const store = tx.objectStore('entry');
+      const index = store.index('urls');
+      for(let url of urls) {
+        const request = index.getKey(url);
+        request.onsuccess = onsuccess;
+      }
+
+      function onsuccess(event) {
+        const key = event.target.result;
+        if(key)
+          keys.push(key);
+      }
+    });
+  }
+
+  putFeed(feed) {
+    return new Promise((resolve, reject) => {
+      this.log.debug('Storing feed %s', get_feed_url(feed));
+      feed.dateUpdated = new Date();
+      const tx = this.conn.transaction('feed', 'readwrite');
+      const store = tx.objectStore('feed');
+      const request = store.put(feed);
+      request.onsuccess = (event) => {
+        this.log.debug('Successfully put feed', get_feed_url(feed));
+        if(!('id' in feed)) {
+          this.log.debug('New feed id', event.target.result);
+          feed.id = event.target.result;
+        }
+        resolve(feed);
+      };
+      request.onerror = (event) => reject(event.target.error);
+    });
+  }
+
+  // TODO: use native getAll
+  getFeeds() {
+    return new Promise((resolve, reject) => {
+      this.log.log('Opening cursor over feed store');
+      const feeds = [];
+      const tx = this.conn.transaction('feed');
+      tx.oncomplete = (event) => {
+        this.log.log('Loaded %s feeds', feeds.length);
+        resolve(feeds);
+      };
+      const store = tx.objectStore('feed');
+      const request = store.openCursor();
+      request.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if(cursor) {
+          feeds.push(cursor.value);
+          cursor.continue();
+        }
+      };
+      request.onerror = (event) => {
+        this.log.debug(event.target.error);
+        reject(event.target.error);
+      };
+    });
+  }
+
+  countUnreadEntries() {
+    return new Promise((resolve, reject) => {
+      this.log.debug('Counting unread entries');
+      const tx = this.conn.transaction('entry');
+      const store = tx.objectStore('entry');
+      const index = store.index('readState');
+      const request = index.count(ENTRY_UNREAD);
+      request.onsuccess = (event) => {
+        this.log.debug('Counted %d unread entries', request.result);
+        resolve(request.result);
+      };
+      request.onerror = (event) => {
+        this.log.error(event.target.error);
+        reject(event.target.error);
+      };
+    });
+  }
+
+  getUnarchivedReadEntries(tx) {
+    return new Promise((resolve, reject) => {
+      this.log.debug('Getting unarchived read entries');
+      const store = tx.objectStore('entry');
+      const index = store.index('archiveState-readState');
+      const key_path = [ENTRY_UNARCHIVED, ENTRY_READ];
+      const request = index.getAll(key_path);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = (event) => {
+        this.log.debug(event.target.error);
+        reject(event.target.error);
+      };
+    });
+  }
+
+  // TODO: use getAll, passing in a count parameter as an upper limit, and
+  // then using slice or unshift or something to advance.
+  getUnarchivedUnreadEntries(offset, limit) {
+    return new Promise((resolve, reject) => {
+      const entries = [];
+      let counter = 0;
+      let advanced = false;
+      const tx = this.conn.transaction('entry');
+      tx.oncomplete = (event) => resolve(entries);
+      const store = tx.objectStore('entry');
+      const index = store.index('archiveState-readState');
+      const keyPath = [ENTRY_UNARCHIVED, ENTRY_UNREAD];
+      const request = index.openCursor(keyPath);
+      request.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if(!cursor)
+          return;
+        if(offset && !advanced) {
+          advanced = true;
+          this.log.debug('Advancing cursor by', offset);
+          cursor.advance(offset);
+          return;
+        }
+        entries.push(cursor.value);
+        if(limit > 0 && ++counter < limit)
+          cursor.continue();
+      };
+      request.onerror = (event) => reject(event.target.error);
+    });
+  }
+
+  //db_put_entry
+  // Resolves when the entry has been stored to the result of the request
+  // If entry.id is not set this will result in adding
+  // Sets dateUpdated before put. Impure.
+  // @param tx {IDBTransaction} the tx should include entry store and be rw
+  putEntry(tx, entry) {
+    return new Promise((resolve, reject) => {
+      this.log.debug('Putting entry with id', entry.id);
+      entry.dateUpdated = new Date();
+      const request = tx.objectStore('entry').put(entry);
+      request.onsuccess = (event) => {
+        this.log.debug('Put entry with id', entry.id);
+        resolve(event.target.result);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  //db_find_entry_by_id
+  // Resolves with an entry object, or undefined if no entry was found.
+  // Rejects when an error occurred.
+  findEntryById(tx, id) {
+    return new Promise((resolve, reject) => {
+      this.log.debug('Finding entry by id', id);
+      const store = tx.objectStore('entry');
+      const request = store.get(id);
+      request.onsuccess = (event) => {
+        const entry = event.target.result;
+        if(entry)
+          this.log.debug('Found entry %s with id', get_entry_url(entry), id);
+        resolve(entry);
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  static removeDatabase(name) {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.deleteDatabase(name);
+      request.onsuccess = resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+}
+
+// TODO: move to controllers
+async function db_mark_entry_read(store, id, log = SilentConsole) {
+  if(!Number.isInteger(id) || id < 1)
+    throw new TypeError(`Invalid entry id ${id}`);
+  log.debug('Marking entry %s as read', id);
+  const tx = store.conn.transaction('entry', 'readwrite');
+  const entry = await store.findEntryById(tx, id);
+  if(!entry)
+    throw new Error(`No entry found with id ${id}`);
+  if(entry.readState === ENTRY_READ)
+    throw new Error(`Already read entry with id ${id}`);
+  entry.readState = ENTRY_READ;
+  entry.dateRead = new Date();
+  await store.putEntry(tx, entry);
+  await badge_update_text(store, log);
+}
 
 const ENTRY_UNREAD = 0;
 const ENTRY_READ = 1;
 const ENTRY_UNARCHIVED = 0;
 const ENTRY_ARCHIVED = 1;
-
-// TODO: if 99% of use cases involve the default name and version, it would
-// make more sense to have log as the first parameter, because I could use
-// db_connect(console) in most places. The only time I do not use the global
-// config defaults is in a test context.
-
-function db_connect(name = config.db_name, version = config.db_version,
-  log = SilentConsole) {
-
-  // idb allows empty string, but I think this leads to confusion, so do
-  // not allow unnamed database
-  if(!name.length) {
-    throw new TypeError();
-  }
-
-  return new Promise(function connect_impl(resolve, reject) {
-    log.log('Connecting to database', name, version);
-    const request = indexedDB.open(name, version);
-    request.onupgradeneeded = db_upgrade.bind(request, log);
-    request.onsuccess = function onsuccess(event) {
-      const conn = event.target.result;
-      log.debug('Connected to database', conn.name);
-      resolve(conn);
-    };
-    request.onerror = function onerror(event) {
-      reject(event.target.error);
-    };
-    request.onblocked = function onblocked(event) {
-      log.warn('db connection request blocked, waiting indefinitely');
-    };
-  });
-}
-
-
-// TODO: revert upgrade to using a version migration approach
-// NOTE: untested after switch to promise
-function db_upgrade(log, event) {
-  const conn = event.target.result;
-  const tx = event.target.transaction;
-  let feed_store = null, entry_store = null;
-  const stores = conn.objectStoreNames;
-
-  console.dir(event);
-  log.log('Upgrading database %s to version %s from version', conn.name,
-    event.version, event.oldVersion);
-
-  if(stores.contains('feed')) {
-    feed_store = tx.objectStore('feed');
-  } else {
-    feed_store = conn.createObjectStore('feed', {
-      'keyPath': 'id',
-      'autoIncrement': true
-    });
-  }
-
-  if(stores.contains('entry')) {
-    entry_store = tx.objectStore('entry');
-  } else {
-    entry_store = conn.createObjectStore('entry', {
-      'keyPath': 'id',
-      'autoIncrement': true
-    });
-  }
-
-  const feed_indices = feed_store.indexNames;
-  const entry_indices = entry_store.indexNames;
-
-  // Deprecated
-  if(feed_indices.contains('schemeless'))
-    feed_store.deleteIndex('schemeless');
-  // Deprecated. Use the new urls index
-  if(feed_indices.contains('url'))
-    feed_store.deleteIndex('url');
-
-  // Create a multi-entry index using the new urls property, which should
-  // be an array of unique strings of normalized urls
-  if(!feed_indices.contains('urls'))
-    feed_store.createIndex('urls', 'urls', {
-      'multiEntry': true,
-      'unique': true
-    });
-
-  // TODO: deprecate this, have the caller manually sort and stop requiring
-  // title, this just makes it difficult.
-  if(!feed_indices.contains('title'))
-    feed_store.createIndex('title', 'title');
-
-  // Deprecated
-  if(entry_indices.contains('unread'))
-    entry_store.deleteIndex('unread');
-
-  // For example, used to count the number of unread entries
-  if(!entry_indices.contains('readState'))
-    entry_store.createIndex('readState', 'readState');
-
-  if(!entry_indices.contains('feed'))
-    entry_store.createIndex('feed', 'feed');
-
-  if(!entry_indices.contains('archiveState-readState'))
-    entry_store.createIndex('archiveState-readState',
-      ['archiveState', 'readState']);
-
-  // Deprecated. Use the urls index instead.
-  if(entry_indices.contains('link'))
-    entry_store.deleteIndex('link');
-
-  // Deprecated. Use the urls index instead.
-  if(entry_indices.contains('hash'))
-    entry_store.deleteIndex('hash');
-
-  if(!entry_indices.contains('urls'))
-    entry_store.createIndex('urls', 'urls', {
-      'multiEntry': true,
-      'unique': true
-    });
-}
-
-function db_delete(name) {
-  return new Promise(function delete_impl(resolve, reject) {
-    const request = indexedDB.deleteDatabase(name);
-    request.onsuccess = function delete_onsuccess(event) {
-      resolve();
-    };
-    request.onerror = function delete_onerror(event) {
-      reject(event.target.error);
-    };
-  });
-}
 
 
 
@@ -223,7 +545,6 @@ function merge_feeds(old_feed, new_feed) {
   return merged;
 }
 
-
 // Get the last url in an entry's internal url list
 function get_entry_url(entry) {
   if(!entry.urls.length)
@@ -277,354 +598,4 @@ function sanitize_entry(input_entry) {
   }
 
   return output_entry;
-}
-
-
-function db_delete_feed(tx, id, log) {
-  return new Promise(function(resolve, reject) {
-    log.debug('Deleting feed', id);
-    const store = tx.objectStore('feed');
-    const request = store.delete(id);
-    request.onsuccess = function(event) {
-      resolve();
-    };
-    request.onerror = function(event) {
-      reject(event.target.error);
-    }
-  });
-}
-
-function db_get_entry_ids_for_feed(tx, id, log) {
-  return new Promise(function(resolve, reject) {
-    const store = tx.objectStore('entry');
-    const index = store.index('feed');
-    const request = index.getAllKeys(id);
-    request.onsuccess = function onsuccess(event) {
-      const ids = event.target.result;
-      log.debug('Loaded %d entry ids with feed id', ids.length, id);
-      resolve(ids);
-    };
-    request.onerror = function onerror(event) {
-      reject(event.target.error);
-    };
-  });
-}
-
-// @param tx {IDBTransaction}
-// @param id {int}
-// @param chan {BroadcastChannel}
-// @param log {console}
-function db_delete_entry(tx, id, chan, log) {
-  return new Promise(function(resolve, reject) {
-    log.debug('Deleting entry with id', id);
-    const store = tx.objectStore('entry');
-    const request = store.delete(id);
-    request.onsuccess = function onsuccess(event) {
-      log.debug('Deleted entry with id', id);
-      chan.postMessage({'type': 'delete_entry_request', 'id': entry.id});
-      resolve();
-    };
-    request.onsuccess = function onerror(event) {
-      reject(event.target.error);
-    };
-  });
-}
-
-// TODO: deprecate in favor of put, and after moving sanitization and
-// default props out, maybe make a helper function in pollfeeds that does this
-function db_add_entry(conn, entry, log) {
-  return new Promise(function(resolve, reject) {
-    if('id' in entry) {
-      reject(new TypeError());
-      return;
-    }
-
-    log.log('Adding entry with urls [%s]', entry.urls.join(', '));
-    const sanitized = sanitize_entry(entry);
-    const storable = filter_empty_props(sanitized);
-    storable.readState = ENTRY_UNREAD;
-    storable.archiveState = ENTRY_UNARCHIVED;
-    storable.dateCreated = new Date();
-    const tx = conn.transaction('entry', 'readwrite');
-    const store = tx.objectStore('entry');
-    const request = store.add(storable);
-    request.onsuccess = function(event) {
-      log.debug('Stored entry', get_entry_url(storable));
-      resolve(event);
-    };
-    request.onerror = function(event) {
-      log.error(event.target.error);
-      reject(event.target.error);
-    };
-  });
-}
-
-function db_add_feed(log, conn, feed) {
-  return new Promise(function db_add_feed_impl(resolve, reject) {
-    if('id' in feed) {
-      reject(new TypeError());
-      return;
-    }
-
-    log.log('Adding feed', get_feed_url(feed));
-    let storable = sanitize_feed(feed);
-    storable.dateCreated = new Date();
-    storable = filter_empty_props(storable);
-    const tx = conn.transaction('feed', 'readwrite');
-    const store = tx.objectStore('feed');
-    const request = store.add(storable);
-    request.onsuccess = function db_add_feed_onsuccess(event) {
-      storable.id = event.target.result;
-      log.debug('Added feed %s with new id %s', get_feed_url(storable),
-        storable.id);
-      resolve(storable);
-    };
-    request.onerror = function db_add_feed_onerror(event) {
-      log.debug(event.target.error);
-      reject(event.target.error);
-    };
-  });
-}
-
-// TODO: normalize feed url?
-function db_contains_feed_url(conn, url, log) {
-  return new Promise(function db_contains_feed_url_impl(resolve, reject) {
-    log.debug('Checking for feed with url', url);
-    const tx = conn.transaction('feed');
-    const store = tx.objectStore('feed');
-    const index = store.index('urls');
-    const request = index.get(url);
-    request.onsuccess = function db_contains_feed_url_onsuccess(event) {
-      resolve(!!event.target.result);
-    };
-    request.onerror = function db_contains_feed_url_onerror(event) {
-      log.debug(event.target.error);
-      reject(event.target.error);
-    };
-  });
-}
-
-function db_find_feed_by_id(conn, id, log = SilentConsole) {
-  return new Promise(function db_find_feed_by_id_impl(resolve, reject) {
-    log.debug('Finding feed by id', id);
-    const tx = conn.transaction('feed');
-    const store = tx.objectStore('feed');
-    const request = store.get(id);
-    request.onsuccess = function db_find_feed_by_id_onsuccess(event) {
-      const feed = event.target.result;
-      log.debug('Find result', feed);
-      resolve(feed);
-    };
-    request.onerror = function db_find_feed_by_id_onerror(event) {
-      reject(event.target.error);
-    };
-  });
-}
-
-// @param conn {IDBDatabase}
-// @param urls {Array<String>} valid normalized entry urls
-function db_contains_entry(conn, urls, log) {
-  if(!urls || !urls.length)
-    throw new TypeError();
-
-  return new Promise(function contains_impl(resolve, reject) {
-    const keys = [];
-    const tx = conn.transaction('entry');
-    tx.oncomplete = function tx_oncomplete(event) {
-      resolve(keys.length ? true : false);
-    };
-    tx.onabort = function tx_onabort(event) {
-      reject(event.target.error);
-    };
-
-    const store = tx.objectStore('entry');
-    const index = store.index('urls');
-    for(let url of urls) {
-      const request = index.getKey(url);
-      request.onsuccess = get_key_onsuccess;
-    }
-
-    function get_key_onsuccess(event) {
-      const key = event.target.result;
-      if(key)
-        keys.push(key);
-    }
-  });
-}
-
-function db_put_feed(conn, feed, log) {
-  return new Promise(function db_put_feed_impl(resolve, reject) {
-    log.debug('Storing feed %s in database %s', get_feed_url(feed), conn.name);
-    feed.dateUpdated = new Date();
-    const tx = conn.transaction('feed', 'readwrite');
-    const store = tx.objectStore('feed');
-    const request = store.put(feed);
-    request.onsuccess = function db_put_feed_onsuccess(event) {
-      log.debug('Successfully put feed', get_feed_url(feed));
-      if(!('id' in feed)) {
-        log.debug('New feed id', event.target.result);
-        feed.id = event.target.result;
-      }
-      // TODO: no need to pass back feed?
-      resolve(feed);
-    };
-    request.onerror = function db_put_feed_onerror(event) {
-      log.debug(event.target.error);
-      reject(event.target.error);
-    };
-  });
-}
-
-// TODO: use native getAll
-function db_get_all_feeds(conn, log = SilentConsole) {
-  return new Promise(function db_get_all_feeds_impl(resolve, reject) {
-    log.log('Opening cursor over feed store');
-    const feeds = [];
-    const tx = conn.transaction('feed');
-    tx.oncomplete = function db_get_all_feeds_txcomplete(event) {
-      log.log('Loaded %s feeds', feeds.length);
-      resolve(feeds);
-    };
-    const store = tx.objectStore('feed');
-    const request = store.openCursor();
-    request.onsuccess = function db_get_all_feeds_onsuccess(event) {
-      const cursor = event.target.result;
-      if(cursor) {
-        feeds.push(cursor.value);
-        cursor.continue();
-      }
-    };
-    request.onerror = function db_get_all_feeds_onerror(event) {
-      log.debug(event.target.error);
-      reject(event.target.error);
-    };
-  });
-}
-
-function db_count_unread_entries(conn, log = SilentConsole) {
-  return new Promise(function count_impl(resolve, reject) {
-    log.debug('Counting unread entries');
-    const tx = conn.transaction('entry');
-    const store = tx.objectStore('entry');
-    const index = store.index('readState');
-    const request = index.count(ENTRY_UNREAD);
-    request.onsuccess = function onsuccess(event) {
-      log.debug('Counted %d unread entries', event.target.result);
-      resolve(event.target.result);
-    };
-    request.onerror = function onerror(event) {
-      log.error(event.target.error);
-      reject(event.target.error);
-    };
-  });
-}
-
-function db_get_unarchived_read_entries(tx, log) {
-  return new Promise(function(resolve, reject) {
-    log.debug('Getting all unarchived read entries in database', tx.db.name);
-    const store = tx.objectStore('entry');
-    const index = store.index('archiveState-readState');
-    const key_path = [ENTRY_UNARCHIVED, ENTRY_READ];
-    const request = index.getAll(key_path);
-    request.onsuccess = function onsuccess(event) {
-      resolve(event.target.result);
-    };
-    request.onerror = function onerror(event) {
-      log.debug(event.target.error);
-      reject(event.target.error);
-    };
-  });
-}
-
-// TODO: use getAll, passing in a count parameter as an upper limit, and
-// then using slice or unshift or something to advance.
-function db_get_unarchived_unread_entries(conn, offset, limit,
-  log = SilentConsole) {
-  return new Promise(function impl(resolve, reject) {
-    const entries = [];
-    let counter = 0;
-    let advanced = false;
-    const tx = conn.transaction('entry');
-    tx.oncomplete = function(event) {
-      resolve(entries);
-    };
-    const store = tx.objectStore('entry');
-    const index = store.index('archiveState-readState');
-    const keyPath = [ENTRY_UNARCHIVED, ENTRY_UNREAD];
-    const request = index.openCursor(keyPath);
-    request.onsuccess = function onsuccess(event) {
-      const cursor = event.target.result;
-      if(!cursor)
-        return;
-      if(offset && !advanced) {
-        advanced = true;
-        log.debug('Advancing cursor by', offset);
-        cursor.advance(offset);
-        return;
-      }
-      entries.push(cursor.value);
-      if(limit > 0 && ++counter < limit)
-        cursor.continue();
-    };
-    request.onerror = function onerror(event) {
-      reject(event.target.error);
-    };
-  });
-}
-
-// TODO: is this really a db function, or something higher level. It clearly
-// doesn't belong right in the ui, but it is somewhere in between
-async function db_mark_entry_read(conn, id, log = SilentConsole) {
-  if(!Number.isInteger(id) || id < 1)
-    throw new TypeError(`Invalid entry id ${id}`);
-  log.debug('Marking entry %s as read', id);
-  const tx = conn.transaction('entry', 'readwrite');
-  const entry = await db_find_entry_by_id(tx, id, log);
-  if(!entry)
-    throw new Error(`No entry found with id ${id}`);
-  if(entry.readState === ENTRY_READ)
-    throw new Error(`Already read entry with id ${id}`);
-  entry.readState = ENTRY_READ;
-  entry.dateRead = new Date();
-  await db_put_entry(tx, entry, log);
-  await badge_update_text(conn, log);
-}
-
-// Resolves when the entry has been stored to the result of the request
-// If entry.id is not set this will result in adding
-// Sets dateUpdated before put. Impure.
-// @param tx {IDBTransaction} the tx should include entry store and be rw
-function db_put_entry(tx, entry, log = SilentConsole) {
-  return new Promise(function put_impl(resolve, reject) {
-    log.debug('Putting entry with id', entry.id);
-    entry.dateUpdated = new Date();
-    const request = tx.objectStore('entry').put(entry);
-    request.onsuccess = function onsuccess(event) {
-      log.debug('Put entry with id', entry.id);
-      resolve(event.target.result);
-    };
-    request.onerror = function onerror(event) {
-      log.debug(event.target.error);
-      reject(event.target.error);
-    };
-  });
-}
-
-// Resolves with an entry object, or undefined if no entry was found.
-// Rejects when an error occurred.
-function db_find_entry_by_id(tx, id, log = SilentConsole) {
-  return new Promise(function find_impl(resolve, reject) {
-    log.debug('Finding entry by id', id);
-    const store = tx.objectStore('entry');
-    const request = store.get(id);
-    request.onsuccess = function onsuccess(event) {
-      const entry = event.target.result;
-      if(entry)
-        log.debug('Found entry %s with id', get_entry_url(entry), id);
-      resolve(entry);
-    };
-    request.onerror = function onerror(event) {
-      reject(event.target.error);
-    };
-  });
 }

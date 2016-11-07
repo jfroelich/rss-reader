@@ -37,9 +37,9 @@ async function mark_slide_read(slide) {
     return;
   slide.setAttribute('read', '');
   const entry_id = parseInt(slide.getAttribute('entry'), 10);
-  let conn = await db_connect();
-  await db_mark_entry_read(conn, entry_id);
-  conn.close();
+  const store = await ReaderStorage.connect();
+  await db_mark_entry_read(store, entry_id);
+  store.disconnect();
 }
 
 // TODO: require caller to establish conn, do not do it here?
@@ -47,9 +47,9 @@ async function mark_slide_read(slide) {
 async function append_slides() {
   const limit = 3;
   const offset = count_unread_slides();
-  const conn = await db_connect();
-  const entries = await db_get_unarchived_unread_entries(conn, offset, limit);
-  conn.close();
+  const store = await ReaderStorage.connect();
+  const entries = await store.getUnarchivedUnreadEntries(offset, limit);
+  store.disconnect();
   for(let entry of entries)
     append_slide(entry);
   return entries.length;
