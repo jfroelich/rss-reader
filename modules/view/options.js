@@ -627,6 +627,13 @@ async function init_subs_section() {
     return;
   }
 
+  // Sort the feeds by title in memory using indexedDB.cmp
+  feeds.sort(function(a, b) {
+    const atitle = a.title ? a.title.toLowerCase() : '';
+    const btitle = b.title ? b.title.toLowerCase() : '';
+    return indexedDB.cmp(atitle, btitle);
+  });
+
   for(let feed of feeds) {
     append_feed(feed);
     update_feed_count();

@@ -4,55 +4,48 @@
 
 async function archive_entries(store,
   max_age = config.archive_default_entry_max_age, log = SilentConsole) {
-
   if(!Number.isInteger(max_age) || max_age < 0)
     throw new TypeError();
-
   log.log('Archiving entries older than %dms', max_age);
-
-  // Load all unarchived read entries
-  const tx = store.conn.transaction('entry', 'readwrite');
-  const entries = await store.getUnarchivedReadEntries(tx);
+  const entries = await store.getUnarchivedReadEntries();
   log.debug('Loaded %d entries', entries.length);
-
-  // Get archivable entries
   const current_date = new Date();
   const archivable_entries = entries.filter((entry) =>
     current_date - entry.dateCreated > max_age);
   log.debug('Archiving %d entries', archivable_entries.length);
 
-  // Compact the archivable entries
-  // TODO: reimplement compact as a simple property whitelist filter?
-  // Would still need to set the Entry.ARCHIVED flag
-  const compacted_entries = archivable_entries.map(function compact(entry) {
-    const compacted = {
-      'archiveState': Entry.ARCHIVED,
-      'dateArchived': current_date,
-      'dateCreated': entry.dateCreated,
-      'dateRead': entry.dateRead,
-      'feed': entry.feed,
-      'id': entry.id,
-      'readState': entry.readState,
-      'urls': entry.urls
-    };
+  const retained = {
+    'dateCreated': undefined,
+    'dateRead': undefined,
+    'feed': undefined,
+    'id': undefined,
+    'readState': undefined,
+    'urls': undefined
+  };
 
-    if(log === console)
-      log.debug(sizeof(entry), 'bytes compacted to', sizeof(compacted));
+  function should_retain(obj, prop) {
+    return prop in retained;
+  }
 
+  const compacted_entries = archivable_entries.map((entry) => {
+    const compacted = filter_object(entry, should_retain);
+    compacted.archiveState = Entry.ARCHIVED;
+    compacted.dateArchived = current_date;
     return compacted;
   });
 
-  // Notify others of the pending entry updates
+  if(log === console) {
+    for(let i = 0, len = archivable_entries.length; i < len; i++) {
+      log.debug(sizeof(archivable_entries[i]), 'compacted to',
+        sizeof(compacted_entries[i]));
+    }
+  }
+
+  const put_resolutions = await store.putAllEntries(compacted_entries);
+  const archived_ids = compacted_entries.map((entry) => entry.id);
   const chan = new BroadcastChannel('db');
-  compacted_entries.forEach((entry) =>
-    chan.postMessage({'type': 'archive_entry', 'id': entry.id}));
+  chan.postMessage({'type': 'archived_entries', 'entry_ids': archived_ids})
   chan.close();
-
-  // Replace archivable entries with compacted entries in the database
-  // If there is any failure, the entire transaction will abort
-  const proms = compacted_entries.map((entry) => store.putEntry(tx, entry));
-  await Promise.all(proms);
-
   log.log('Archive entries completed (scanned %d, compacted %d)',
     entries.length, archivable_entries.length);
   return archivable_entries.length;

@@ -3,19 +3,14 @@
 'use strict';
 
 // Resolves with an array of tabs
+// NOTE: chrome.tabs.query requires 'tabs' permission in manifest
+// or this doesn't work
 // @param url {String} the url of the tab searched for
 function query_tabs_by_url(url) {
   return new Promise(function query_tabs_impl(resolve) {
-    // NOTE: chrome.tabs.query requires 'tabs' permission in manifest
-    // or this doesn't work
     chrome.tabs.query({'url': url}, resolve);
   });
 }
-
-
-// TODO: properly handle 'foo.'
-// @param path {string} path of a url (should have leading /)
-
 
 // @param url_str {String}
 // @param base_url {URL}
@@ -67,11 +62,24 @@ function filter_control_chars(str) {
 function filter_empty_props(obj) {
   const copy = {};
   const has_own = Object.prototype.hasOwnProperty;
+
   for(let prop in obj) {
     if(has_own.call(obj, prop)) {
       const value = obj[prop];
       if(value !== undefined && value !== null && value !== '')
         copy[prop] = value;
+    }
+  }
+  return copy;
+}
+
+// Creates a new object only containing properties where predicate returns true.
+// Predicate is given props obj and prop name
+function filter_object(obj, predicate) {
+  const copy = {};
+  for(let prop in obj) {
+    if(predicate(obj, prop)) {
+      copy[prop] = obj[prop];
     }
   }
   return copy;

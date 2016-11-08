@@ -313,7 +313,7 @@ favicon.fetch_doc = async function(url, log) {
   return [doc, response.url];
 };
 
-// Sends a HEAD request for the given image
+// Sends a HEAD request for the given image. Ignores response body.
 // @param image_url {String}
 // @param log {console}
 // @returns {Promise}

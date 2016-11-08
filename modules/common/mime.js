@@ -84,6 +84,8 @@ mime.sniff_path = function(path) {
   return mime.ext_map[ext];
 };
 
+
+// TODO: properly handle 'foo.'
 // Returns a file's extension. Some extensions are ignored because this must
 // differentiate between paths containing periods and file names, but this
 // favors reducing false positives (returning an extension that is not one) even
@@ -92,7 +94,7 @@ mime.sniff_path = function(path) {
 // that are of any concern. The cost of returning the wrong extension is greater
 // than not returning the correct extension because this is a factor of deciding
 // whether to filter content.
-// @param path {String} path to analyze
+// @param path {String} path to analyze (should have leading /)
 // @returns {String} lowercase extension or undefined
 mime.get_extension = function(path) {
   const max_ext_len = 6;

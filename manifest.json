@@ -38,7 +38,7 @@
       "/modules/poll/resolve-document.js",
       "/modules/poll/rewrite.js",
       "/modules/poll/set-image-dimensions.js",
-      "/modules/storage/db.js",
+      "/modules/storage/reader-storage.js",
       "/modules/third-party/parse-srcset.js"
     ]
   },

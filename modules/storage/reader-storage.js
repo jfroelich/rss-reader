@@ -17,18 +17,17 @@ class ReaderStorage {
     this.log = log;
   }
 
-  // Get the database name
   get name() {
     return this.conn.name;
   }
 
-  // Close the database connection
+  // Request the database connection to eventually close
   disconnect() {
     if(this.conn) {
-      this.log.debug('Closing database', this.conn.name);
+      this.log.debug('Closing connection to database', this.conn.name);
       this.conn.close();
     } else {
-      console.warn('conn is undefined');
+      console.warn('this.conn is undefined');
     }
   }
 
@@ -40,7 +39,7 @@ class ReaderStorage {
       if(!name.length)
         throw new TypeError('name is an empty string');
       const store = new ReaderStorage(log);
-      store.log.log('Connecting to database', name);
+      store.log.log('Connecting to database', name, 'version',version);
       const request = indexedDB.open(name, version);
       request.onupgradeneeded = store._onupgradeneeded;
       request.onsuccess = function onsuccess(event) {
@@ -86,49 +85,32 @@ class ReaderStorage {
     const feed_indices = feed_store.indexNames;
     const entry_indices = entry_store.indexNames;
 
-    // Deprecated
     if(feed_indices.contains('schemeless'))
       feed_store.deleteIndex('schemeless');
-    // Deprecated. Use the new urls index
     if(feed_indices.contains('url'))
       feed_store.deleteIndex('url');
 
-    // Create a multi-entry index using the new urls property, which should
-    // be an array of unique strings of normalized urls
     if(!feed_indices.contains('urls'))
       feed_store.createIndex('urls', 'urls', {
         'multiEntry': true,
         'unique': true
       });
 
-    // TODO: deprecate this, have the caller manually sort and stop requiring
-    // title, this just makes it difficult.
     if(!feed_indices.contains('title'))
       feed_store.createIndex('title', 'title');
-
-    // Deprecated
     if(entry_indices.contains('unread'))
       entry_store.deleteIndex('unread');
-
-    // For example, used to count the number of unread entries
     if(!entry_indices.contains('readState'))
       entry_store.createIndex('readState', 'readState');
-
     if(!entry_indices.contains('feed'))
       entry_store.createIndex('feed', 'feed');
-
     if(!entry_indices.contains('archiveState-readState'))
       entry_store.createIndex('archiveState-readState',
         ['archiveState', 'readState']);
-
-    // Deprecated. Use the urls index instead.
     if(entry_indices.contains('link'))
       entry_store.deleteIndex('link');
-
-    // Deprecated. Use the urls index instead.
     if(entry_indices.contains('hash'))
       entry_store.deleteIndex('hash');
-
     if(!entry_indices.contains('urls')) {
       entry_store.createIndex('urls', 'urls', {
         'multiEntry': true,
@@ -164,7 +146,6 @@ class ReaderStorage {
     });
   }
 
-  //db_delete_entry
   // @param tx {IDBTransaction}
   // @param id {int}
   // @param chan {BroadcastChannel}
@@ -277,6 +258,8 @@ class ReaderStorage {
     });
   }
 
+  // Adds or overwrites a feed in storage. Resolves with the stored feed. If
+  // adding then the generated id is set on the input feed object.
   // @param feed {Object}
   putFeed(feed) {
     return new Promise((resolve, reject) => {
@@ -297,29 +280,17 @@ class ReaderStorage {
     });
   }
 
-  // TODO: use native getAll
+  // Resolves with an array of all feeds in storage
   getFeeds() {
     return new Promise((resolve, reject) => {
-      this.log.log('Opening cursor over feed store');
-      const feeds = [];
       const tx = this.conn.transaction('feed');
-      tx.oncomplete = (event) => {
-        this.log.log('Loaded %s feeds', feeds.length);
-        resolve(feeds);
-      };
       const store = tx.objectStore('feed');
-      const request = store.openCursor();
-      request.onsuccess = (event) => {
-        const cursor = event.target.result;
-        if(cursor) {
-          feeds.push(cursor.value);
-          cursor.continue();
-        }
-      };
-      request.onerror = (event) => {
-        this.log.debug(event.target.error);
-        reject(event.target.error);
-      };
+      const request = store.getAll();
+      request.onsuccess = () => {
+        this.log.debug('Loaded %d feeds from database', request.result.length);
+        resolve(request.result);
+      }
+      request.onerror = () => reject(request.error);
     });
   }
 
@@ -334,16 +305,14 @@ class ReaderStorage {
         this.log.debug('Counted %d unread entries', request.result);
         resolve(request.result);
       };
-      request.onerror = (event) => {
-        this.log.error(event.target.error);
-        reject(event.target.error);
-      };
+      request.onerror = () => reject(request.error);
     });
   }
 
-  getUnarchivedReadEntries(tx) {
+  getUnarchivedReadEntries() {
     return new Promise((resolve, reject) => {
       this.log.debug('Getting unarchived read entries');
+      const tx = this.conn.transaction('entry');
       const store = tx.objectStore('entry');
       const index = store.index('archiveState-readState');
       const key_path = [Entry.UNARCHIVED, Entry.READ];
@@ -356,8 +325,18 @@ class ReaderStorage {
     });
   }
 
+  // Promise.all is failfast so this aborts if any one entry fails
+  // TODO: is there really a need to use a shared transaction?
+  async putAllEntries(entries) {
+    this.log.debug('Putting %d entries', entries.length);
+    const tx = this.conn.transaction('entry', 'readwrite');
+    const proms = entries.map((entry) => this.putEntry(tx, entry));
+    return await Promise.all(proms);
+  }
+
   // TODO: use getAll, passing in a count parameter as an upper limit, and
   // then using slice or unshift or something to advance.
+  // TODO: internally the parameter to getAll might be (offset+limit)
   getUnarchivedUnreadEntries(offset, limit) {
     return new Promise((resolve, reject) => {
       const entries = [];
@@ -387,7 +366,6 @@ class ReaderStorage {
     });
   }
 
-  //db_put_entry
   // Resolves when the entry has been stored to the result of the request
   // If entry.id is not set this will result in adding
   // Sets dateUpdated before put. Impure.
@@ -405,7 +383,6 @@ class ReaderStorage {
     });
   }
 
-  //db_find_entry_by_id
   // Resolves with an entry object, or undefined if no entry was found.
   // Rejects when an error occurred.
   findEntryById(tx, id) {
