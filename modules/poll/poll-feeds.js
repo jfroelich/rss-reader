@@ -74,16 +74,18 @@ poll.process_feed = async function(feed_store, icon_conn, feed,
 
   let num_entries_added = 0;
   const url = new URL(Feed.getURL(feed));
-
-  // A fetch error is not an exception
-  let fetch_result;
+  const fetch_timeout = 5000;
+  let remote_feed, entries;
   try {
-    fetch_result = await fetch_feed(url, log);
+    ({remote_feed = feed, entries} =
+      await fetch_feed(url.href, fetch_timeout, log));
   } catch(error) {
+    // A fetch error is not an exception
+    // TODO: maybe it should be, and this should be wrapped in another promise
+    // that always resolves
     return 0;
   }
 
-  const remote_feed = fetch_result.feed;
   if(!skip_unmodified_guard && feed.dateUpdated &&
     feed.dateLastModified && remote_feed.dateLastModified &&
     feed.dateLastModified.getTime() ===
@@ -95,7 +97,7 @@ poll.process_feed = async function(feed_store, icon_conn, feed,
   const merged_feed = Feed.merge(feed, remote_feed);
   let storable_feed = Feed.sanitize(merged_feed);
   storable_feed = filter_empty_props(storable_feed);
-  let entries = fetch_result.entries;
+
   entries = entries.filter((entry) => entry.urls && entry.urls.length);
   entries = entries.filter(function has_valid_url(entry) {
     const url = entry.urls[0];
@@ -144,6 +146,10 @@ poll.filter_dup_entries = function(entries, log) {
   return output;
 };
 
+// TODO: instead of trying to not reject in case of an error, maybe this should
+// reject, and I use a wrapping function than translates rejections into
+// negative resolutions
+
 // Resolve with true if entry was added, false if not added
 poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
   // First check if the entry's original url exists
@@ -153,14 +159,18 @@ poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
   // Rewrite. If rewritten then check if rewritten url exists
   const rewritten_url = rewrite_url(Entry.getURL(entry));
   if(rewritten_url) {
-    Entry.addURL(entry, rewritten_url);
-    if(await feed_store.containsEntryURL(Entry.getURL(entry)))
+    if(await feed_store.containsEntryURL(rewritten_url))
       return false;
+    Entry.addURL(entry, rewritten_url);
   }
 
   const request_url = new URL(Entry.getURL(entry));
   const reason = poll.derive_no_fetch_reason(request_url);
   if(reason) {
+
+    // Temp, debugging 'undefined' in theweek.com article content
+    console.debug('No fetch reason:', reason, request_url.href);
+
     const icon_url = await favicon.lookup(icon_conn, request_url, log);
     entry.faviconURLString = icon_url || feed.faviconURLString;
     entry.content = poll.no_fetch_reasons[reason];
@@ -169,7 +179,9 @@ poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
 
   let doc, response_url;
   try {
-    [doc, response_url] = await fetch_html(request_url.href, log);
+    const timeout = 5000;
+    // The parens are needed for non-declaration object destructuring
+    ({doc, response_url} = await fetch_html(request_url.href, timeout, log));
   } catch(error) {
     log.debug('Fetch html error', error);
     // If the fetch failed then fallback to the in-feed content

@@ -213,8 +213,12 @@ async function show_sub_preview(url) {
     'sub-preview-load-progress');
   show_element(progress_element);
 
+  // TODO: do less in the try block
+
   try {
-    let fetch_output = fetch_feed(url, console);
+    // TODO: use destructuring
+    const fetch_timeout = 5000;
+    let fetch_output = fetch_feed(url.href, fetch_timeout, console);
     const progress_element = document.getElementById(
       'sub-preview-load-progress');
     hide_element(progress_element);

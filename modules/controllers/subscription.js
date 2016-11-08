@@ -6,8 +6,10 @@
 async function subscribe(store, icon_conn, feed, suppress_notifs,
   log = SilentConsole) {
 
-  log.log('Subscribing to', Feed.getURL(feed));
-  if(await store.containsFeedURL(Feed.getURL(feed)))
+  const url = Feed.getURL(feed);
+
+  log.log('Subscribing to', url);
+  if(await store.containsFeedURL(url))
     return;
 
   if('onLine' in navigator && !navigator.onLine) {
@@ -15,29 +17,35 @@ async function subscribe(store, icon_conn, feed, suppress_notifs,
     return await store.addFeed(feed);
   }
 
-  const req_url = new URL(Feed.getURL(feed));
-  let fetch_event;
+  // TODO: this should be a parameter
+  const fetch_timeout = 2000;
+  let remote_feed;
   try {
-    fetch_event = await fetch_feed(req_url, log);
+    // Destructure ignoring entries
+    ({remote_feed} = await fetch_feed(url, fetch_timeout, log));
   } catch(error) {
+    // Fatal
+    console.warn(error);
     return;
   }
 
-  const merged = Feed.merge(feed, fetch_event.feed);
+  const merged = Feed.merge(feed, remote_feed);
 
-  let url;
+  // TODO: this should be a function in feed.js
+  let lookup_url;
   if(merged.link) {
-    url = new URL(merged.link);
+    lookup_url = new URL(merged.link);
   } else {
     const feed_url = new URL(Feed.getURL(merged));
-    url = new URL(feed_url.origin);
+    lookup_url = new URL(feed_url.origin);
   }
 
   try {
-    const icon_url = await favicon.lookup(icon_conn, url, log);
+    const icon_url = await favicon.lookup(icon_conn, lookup_url, log);
     merged.faviconURLString = icon_url;
   } catch(error) {
-    // Ignore
+    // Non-fatal
+    console.warn(error);
   }
 
   const added_feed = await store.addFeed(merged);

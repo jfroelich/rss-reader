@@ -5,14 +5,17 @@
 // TODO: use a test db instead of the real db (and delete at end of test)
 
 async function test_lookup(url_str, log) {
+  const url = new URL(url_str);
+  let conn;
   try {
-    const url = new URL(url_str);
-    const conn = await favicon.connect(undefined, undefined, log);
+    conn = await favicon.connect(undefined, undefined, log);
     const icon = await favicon.lookup(conn, url, log);
-    conn.close();
     console.debug('Result:', icon);
   } catch(error) {
     console.log(error);
+  } finally {
+    if(conn)
+      conn.close();
   }
 }
 

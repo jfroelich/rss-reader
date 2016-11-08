@@ -2,9 +2,13 @@
 
 'use strict';
 
+// TODO: use object namespace or class, e.g. FeedParser
+// maybe even extend from DOMParser? that might be pointless
+// TODO: accept a string as input maybe and do parsing from string
+
 {
 
-// Returns an event-like object with properties feed and entries. Throws an
+// Returns an object with properties 'feed' and 'entries'. Throws an
 // error if parsing failed
 // @param doc {Document} an XML document
 function parse_feed(doc) {

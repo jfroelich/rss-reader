@@ -5,49 +5,63 @@
 // Resolves with a basic object with properties feed and entries
 // feed is a feed object. entries is an array of entry objects, that is always
 // defined but may be zero length.
-// This does not guarantee that entries have urls
-async function fetch_feed(url, log = SilentConsole) {
-
-  log.log('Fetching feed', url.href);
+async function fetch_feed(url, timeout = 0, log = SilentConsole) {
+  if(typeof url !== 'string' || !url.length)
+    throw new TypeError(`Invalid url ${url}`);
+  log.log('GET', url);
   const accepts = [
     'application/rss+xml',
     'application/rdf+xml',
     'application/atom+xml',
     'application/xml;q=0.9',
     'text/xml;q=0.8'
-  ].join(', ');
+  ].join(',');
 
-  const fetch_opts = {};
-  fetch_opts.credentials = 'omit';// no cookies
-  fetch_opts.method = 'GET';
-  fetch_opts.headers = {'Accept': accepts};
-  fetch_opts.mode = 'cors';
-  fetch_opts.cache = 'default';
-  fetch_opts.redirect = 'follow';
-  fetch_opts.referrer = 'no-referrer';
+  const options = {};
+  options.credentials = 'omit';// no cookies
+  options.method = 'GET';
+  options.headers = {'Accept': accepts};
+  options.mode = 'cors';
+  options.cache = 'default';
+  options.redirect = 'follow';
+  options.referrer = 'no-referrer';
 
-  const response = await fetch(url.href, fetch_opts);
+  // Race timeout with fetch
+  const promises = [fetch(url, options)];
+  if(timeout)
+    promises.push(fetch_timeout(timeout));
+  const response = await Promise.race(promises);
+
+  // Treat non-network errors as an error
   if(!response.ok)
-    throw new Error(response.statusText);
-
+    throw new Error(`${response.status} ${response.statusText} ${url}`);
+  // Treat 204 No content as error
+  if(response.status === 204)
+    throw new Error(`${response.status} ${response.statusText} ${url}`);
+  // Treat unacceptable content type as error
+  // Allow for xml served as html
+  // TODO: be stricter here?
   const type = (response.headers.get('Content-Type') || '').toLowerCase();
   if(!type.includes('xml') && !type.includes('text/html'))
-    throw new Error('Invalid content type ' + type);
+    throw new Error(`Invalid content type ${type} ${url}`);
 
-  let last_mod_date;
-  try {
-    last_mod_date = new Date(response.headers.get('Last-Modified'));
-  } catch(error) {
-  }
-
+  log.debug(`Response ${response.status} ${response.statusText} ${url}`);
   const text = await response.text();
   const doc = parse_xml(text);
-  const parse_result = parse_feed(doc);
-  Feed.addURL(parse_result.feed, url.href);
-  if(response.url)
-    Feed.addURL(parse_result.feed, response.url);
-  parse_result.feed.dateFetched = new Date();
-  if(last_mod_date)
-    parse_result.feed.dateLastModified = last_mod_date;
-  return parse_result;
+  const {feed, entries} = parse_feed(doc);
+  Feed.addURL(feed, url);
+  Feed.addURL(feed, response.url);
+  feed.dateFetched = new Date();
+  const modified_header = response.headers.get('Last-Modified');
+  if(modified_header) {
+    try {
+      feed.dateLastModified = new Date(modified_header);
+    } catch(error) {
+    }
+  }
+
+  return {
+    'feed': feed,
+    'entries': entries
+  };
 }
