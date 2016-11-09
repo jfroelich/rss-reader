@@ -62,10 +62,7 @@ function fetch_image_element(url) {
       return resolve(image);
     image.onload = (event) => resolve(image);
     image.onerror = function(event) {
-      // TODO: reject with an Error object, I don't think image.error is valid,
-      // I am setting 'undefined' in log
-      console.dir(event);
-      reject(image.error);
+      reject(new Error(`Failed to load image ${url}`));
     };
   });
 }

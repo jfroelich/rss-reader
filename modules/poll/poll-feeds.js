@@ -165,10 +165,20 @@ poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
   }
 
   const request_url = new URL(Entry.getURL(entry));
+
+  // TODO: i think i should be doing this here, prior to knowing the
+  // redirect url
+  //const icon_url = await favicon.lookup(icon_conn, request_url, log);
+  //entry.faviconURLString = icon_url || feed.faviconURLString;
+
   const reason = poll.derive_no_fetch_reason(request_url);
   if(reason) {
 
     // Temp, debugging 'undefined' in theweek.com article content
+    // Note: I think this is fixed, derive_no_fetch_reason was returning
+    // the object vaue and not just the key, so below I was setting
+    // entry.content to the result of looking up the value instead of the key
+    // now derive_no_fetch_reason returns the key
     console.debug('No fetch reason:', reason, request_url.href);
 
     const icon_url = await favicon.lookup(icon_conn, request_url, log);
@@ -221,6 +231,8 @@ poll.add_entry = async function(store, entry, log) {
     let result = await store.addEntry(entry);
     return true;
   } catch(error) {
+    // While I looked up all the urls, something could concurrently alter
+    // the store so I could get a constraint error here, that I want to ignore
     log.debug('Muted error while adding entry', error);
   }
   return false;
@@ -254,15 +266,15 @@ poll.no_fetch_reasons = {
 
 poll.derive_no_fetch_reason = function(url) {
   if(config.interstitial_hosts.includes(url.hostname))
-    return poll.no_fetch_reasons.interstitial;
+    return 'interstitial';
   if(config.script_generated_hosts.includes(url.hostname))
-    return poll.no_fetch_reasons.script_generated;
+    return 'script_generated';
   if(config.paywall_hosts.includes(url.hostname))
-    return poll.no_fetch_reasons.paywall;
+    return 'paywall';
   if(config.requires_cookies_hosts.includes(url.hostname))
-    return poll.no_fetch_reasons.cookies;
+    return 'cookies';
   if(mime.sniff_non_html(url.pathname))
-    return poll.no_fetch_reasons.not_html;
+    return 'not_html';
   return null;
 };
 
