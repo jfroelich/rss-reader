@@ -2,81 +2,66 @@
 
 'use strict';
 
-async function search_google_feeds(query, log = SilentConsole) {
-  if(typeof query !== 'string' || !query.trim().length)
-    throw new TypeError();
+// Provides a feed search service
+class GoogleFeeds {
 
-  const replacement = '\u2026';
-  const title_max_len = 200;
-  const snippet_max_len = 400;
+  // Sends a search request to Google, parses the response, and yields a two
+  // property object consisting of query and entries. query is a formatted HTML
+  // string. entries is an array. entries may be empty but is always defined.
+  // entries contains search result basic objects with the properties url,
+  // title, link, and contentSnippet.
+  // Throws an exception if an error occurs when fetching the results.
+  // @param query {String} a search string using Google search syntax
+  // @param timeout {Number} a positive integer, optional
+  static async search(query, timeout = 0) {
+    this._assert_valid_query(query);
+    const url = this._build_request_url(query);
+    const options = this._build_request_options();
 
-  const fetch_opts = {
-    'credentials': 'omit',
-    'method': 'GET',
-    'headers': {'Accept': 'application/json'},
-    'mode': 'cors',
-    'cache': 'default',
-    'redirect': 'follow',
-    'referrer': 'no-referrer'
-  };
-
-  const base = 'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
-  const url = base + encodeURIComponent(query);
-  const response = await fetch(url, fetch_opts);
-
-  if(!response.ok)
-    throw new Error(response.status);
-  const result = await response.json();
-  const data = result.responseData;
-  const response_query = data.query || '';
-  const response_entries = data.entries || [];
-  const entries_with_urls = [];
-
-  for(let entry of response_entries) {
-    if(entry.url)
-      entries_with_urls.push(entry);
+    // There is no built in way to cancel/timeout in the new fetch api.
+    const promises = [fetch(url, options)];
+    if(timeout)
+      promises.push(this._fetch_timeout_promise(timeout));
+    const response = await Promise.race(promises);
+    this._assert_valid_response(response);
+    const result = await response.json();
+    const data = result.responseData;
+    return {'query': data.query || '', 'entries': data.entries || []};
   }
 
-  const entries_with_valid_url_objects = [];
-  for(let entry of entries_with_urls) {
-    try {
-      const url_obj = new URL(entry.url);
-      entry.url = url_obj;
-      entries_with_valid_url_objects.push(entry);
-    } catch(error) {}
+  static _build_request_options() {
+    const accept_header = 'application/json,text/javascript;q=0.9';
+    return {
+      'credentials': 'omit',
+      'method': 'GET',
+      'headers': {'Accept': accept_header},
+      'mode': 'cors',
+      'cache': 'default',
+      'redirect': 'follow',
+      'referrer': 'no-referrer'
+    };
   }
 
-  const distinct_entries = [];
-  const seen_urls = [];
-  for(let entry of entries_with_valid_url_objects) {
-    if(!seen_urls.includes(entry.url.href)) {
-      seen_urls.push(entry.url.href);
-      distinct_entries.push(entry);
-    }
+  static _assert_valid_query(query) {
+    if(typeof query !== 'string' || !query.trim().length)
+      throw new TypeError('invalid query ' + query);
   }
 
-  // Sanitize title
-  for(let entry of distinct_entries) {
-    let title = entry.title;
-    if(title) {
-      title = filter_control_chars(title);
-      title = replace_tags(title, '');
-      title = truncate_html(title, title_max_len);
-      entry.title = title;
-    }
+  // TODO: use URL and URL.searchParams instead here?
+  static _build_request_url(query) {
+    const base = 'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
+    return base + encodeURIComponent(query);
   }
 
-  for(let entry of distinct_entries) {
-    let snippet = entry.contentSnippet;
-    if(snippet) {
-      snippet = filter_control_chars(snippet);
-      snippet = snippet.replace(/<br\s*>/gi, ' ');
-      snippet = truncate_html(snippet, snippet_max_len, replacement);
-      entry.contentSnippet = snippet;
-    }
+  static _assert_valid_response(response) {
+    if(!response.ok)
+      throw new Error(`${response.status} ${response.statusText}`);
+    if(response.status === 204) // No content
+      throw new Error(`${response.status} ${response.statusText}`);
   }
 
-  // TODO: return array for easier destructuring? or can objects easily
-  // be destructured?
-  return {'query': response_query, 'entries': distinct_entries};
+  static _fetch_timeout_promise(timeout) {
+    return new Promise((resolve) => setTimeout(resolve, timeout,
+      new Response('', {'status': 524, 'statusText': 'Timed out'})));
+  }
 }

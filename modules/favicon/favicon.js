@@ -353,11 +353,18 @@ favicon.request_image_head = async function(url, timeout, log) {
   // Treat invalid content type as error
   // Treat unknown content type as valid
   // TODO: maybe be more restrictive about allowed content type
+
+  // image/vnd.microsoft.icon
+  // image/png
+  // image/x-icon
+  // image/webp
+
   const content_type = response.headers.get('Content-Type');
   log.debug('Content-Type', content_type, url);
   if(content_type && !/^\s*image\//i.test(content_type))
     throw new Error(`Invalid response type ${content_type}`);
 
+  // Content-Length appears to be undefined for 304 or served from cache
   const content_length = response.headers.get('Content-Length');
   log.debug('Content-Length', content_length);
 

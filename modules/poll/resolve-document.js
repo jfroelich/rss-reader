@@ -124,6 +124,31 @@ function serialize_srcset(descriptors) {
   return output.join(', ');
 }
 
+
+// @param url_str {String}
+// @param base_url {URL}
+function resolve_url(url_str, base_url) {
+  if(typeof url_str !== 'string')
+    throw new TypeError();
+  if(!is_url_object(base_url))
+    throw new TypeError();
+  // TODO: use a single regex for speed? Or maybe get the protocol,
+  // normalize it, and check against a list of bad protocols?
+  // TODO: or if it has any protocol, then just return the url as is?
+  // - but that would still require a call to new URL
+  if(/^\s*javascript:/i.test(url_str) ||
+    /^\s*data:/i.test(url_str) ||
+    /^\s*mailto:/i.test(url_str))
+    return;
+  try {
+    return new URL(url_str, base_url);
+  } catch(error) {
+    console.warn(url_str, base_url.href, error);
+  }
+}
+
 this.resolve_doc = resolve_doc;
+
+
 
 }

@@ -245,7 +245,7 @@ async function show_sub_preview(url) {
 
     // TODO: use for..of. Because I want to limit, I need to
     // slice or take or whatever
-    // TODO: if tags are replaced by search_google_feeds then I don't need
+    // TODO: if tags are replaced by GoogleFeeds.search then I don't need
     // to do it here
     const limit = Math.min(5, fetch_output.entries.length);
     for(let i = 0; i < limit; i++) {
@@ -417,12 +417,10 @@ async function sub_form_on_submit(event) {
   // Search for feeds
   show_element(progress_element);
 
-  let icon_url, link_url, results;
-
-  let sgf_output;
-
+  let icon_url, link_url, entries, query;
+  const search_timeout = 5000;
   try {
-    sgf_output = await search_google_feeds(query_str);
+    ({query, entries} = await GoogleFeeds.search(query_str, search_timeout));
     hide_element(progress_element);
   } catch(error) {
     hide_element(progress_element);
@@ -430,21 +428,67 @@ async function sub_form_on_submit(event) {
     return false;
   }
 
-  if(!sgf_output.entries.length) {
+  // Filter entries without urls
+  entries = entries.filter((entry) => entry.url);
+
+  // Convert to URL objects
+  entries = entries.filter((entry) => {
+    try {
+      entry.url = new URL(entry.url);
+      return true;
+    } catch(error) {
+      return false;
+    }
+  });
+
+  // Filter duplicates
+  const distinct_urls = [];
+  entries = entries.filter((entry) => {
+    if(distinct_urls.includes(entry.url.href))
+      return false;
+    distinct_urls.push(entry.url.href);
+    return true;
+  });
+
+  // Sanitize title
+  const title_max_len = 200;
+  entries.forEach((entry) => {
+    let title = entry.title;
+    if(title) {
+      title = filter_control_chars(title);
+      title = replace_tags(title, '');
+      title = truncate_html(title, title_max_len);
+      entry.title = title;
+    }
+  });
+
+  // Sanitize content snippet
+  const replacement = '\u2026';
+  const snippet_max_len = 400;
+  entries.forEach((entry) => {
+    let snippet = entry.contentSnippet;
+    if(snippet) {
+      snippet = filter_control_chars(snippet);
+      snippet = snippet.replace(/<br\s*>/gi, ' ');
+      snippet = truncate_html(snippet, snippet_max_len, replacement);
+      entry.contentSnippet = snippet;
+    }
+  });
+
+  if(!entries.length) {
     hide_element(results_list_element);
     show_element(no_results_element);
     return false;
   }
 
-  results = sgf_output.entries;
   show_element(results_list_element);
   hide_element(no_results_element);
 
   const item_element = document.createElement('li');
-  item_element.textContent = `Found ${results.length} feeds.`;
+  item_element.textContent = `Found ${entries.length} feeds.`;
   results_list_element.appendChild(item_element);
   const conn = await favicon.connect(undefined, undefined, console);
-  for(let result of results) {
+  for(let result of entries) {
     if(!result.link)
       continue;
     link_url = new URL(result.link);
@@ -453,13 +497,9 @@ async function sub_form_on_submit(event) {
   }
   conn.close();
 
-  const elements = results.map(create_search_result_element);
-  for(let element of elements) {
-    results_list_element.appendChild(element);
-  }
-
-  // Signal no submit
-  return false;
+  const elements = entries.map(create_search_result_element);
+  elements.forEach((el) => results_list_element.appendChild(el));
+  return false;// Signal no submit
 }
 
 // Creates and returns a search result item to show in the list of search

@@ -2,75 +2,8 @@
 
 'use strict';
 
-// TODO: maybe move set_timeout_promise and fetch_timeout into a separate file
-// so that favicon can reference only this file instead of all of utils
-
-// Resolves after the specified number of ms has elapsed.
-// Browsers set a lower bound on timeouts. Generally, even if a timeout is less
-// than about 15ms, it implicitly waits.
-// See http://www.adequatelygood.com/Minimum-Timer-Intervals-in-JavaScript.html
-// setTimeout appears to treat an invalid timeout parameter as equivalent to 0,
-// but this considers an invalid parameter an error.
-// TODO: is throwing immediately better than eventually rejecting?
-// @param timeout_ms {Number} an integer >= 0
-// @param value {any} the value to resolve with
-function set_timeout_promise(timeout_ms, value) {
-  return new Promise(function(resolve, reject) {
-    if(!Number.isInteger(timeout_ms) || timeout_ms < 0)
-      return reject(new TypeError(`Invalid timeout parameter ${timeout_ms}`));
-    setTimeout(resolve, timeout_ms, value);
-  });
-}
-
-// Resolves with a fake 524 timed out response after timeout_ms milliseconds.
-// 524 is a non-standard Cloudflare code that seems to be the most appropriate.
-async function fetch_timeout(timeout_ms) {
-  const body = '';
-  const init = {'status': 524, 'statusText': 'A Timeout Occurred'};
-  const response = new Response(body, init);
-  return await set_timeout_promise(timeout_ms, response);
-}
-
-// Resolves with an array of tabs
-// NOTE: chrome.tabs.query requires 'tabs' permission in manifest
-// or this doesn't work
-// @param url {String} the url of the tab searched for
-function query_tabs_by_url(url) {
-  return new Promise(function query_tabs_impl(resolve) {
-    chrome.tabs.query({'url': url}, resolve);
-  });
-}
-
-// @param url_str {String}
-// @param base_url {URL}
-function resolve_url(url_str, base_url) {
-  if(typeof url_str !== 'string')
-    throw new TypeError();
-  if(!is_url_object(base_url))
-    throw new TypeError();
-  // TODO: use a single regex for speed? Or maybe get the protocol,
-  // normalize it, and check against a list of bad protocols?
-  // TODO: or if it has any protocol, then just return the url as is?
-  // - but that would still require a call to new URL
-  if(/^\s*javascript:/i.test(url_str) ||
-    /^\s*data:/i.test(url_str) ||
-    /^\s*mailto:/i.test(url_str))
-    return;
-  try {
-    return new URL(url_str, base_url);
-  } catch(error) {
-    console.warn(url_str, base_url.href, error);
-  }
-}
-
 function is_url_object(value) {
   return Object.prototype.toString.call(value) === '[object URL]';
-}
-
-function query_idle_state(idle_period_secs) {
-  return new Promise(function(resolve) {
-    chrome.idle.queryState(idle_period_secs, resolve);
-  });
 }
 
 function condense_whitespace(str) {
@@ -88,6 +21,7 @@ function filter_control_chars(str) {
 // Returns a new object that is a copy of the input less empty properties. A
 // property is empty if it s null, undefined, or an empty string. Ignores
 // prototype, deep objects, getters, etc. Impure.
+// TODO: use filter_object
 function filter_empty_props(obj) {
   const copy = {};
   const has_own = Object.prototype.hasOwnProperty;
@@ -188,6 +122,9 @@ function sizeof(object) {
 
   return size;
 }
+
+// TODO: even though this is a utility, it isn't actually shared. There is only
+// one place that uses it. Move to fade-element.js in view module
 
 function fade_element(element, duration, delay) {
   return new Promise(function(resolve, reject) {
