@@ -86,7 +86,8 @@ config.lazy_image_attr_names = [
 
 config.paywall_hosts = [
   'www.nytimes.com',
-  'myaccount.nytimes.com'
+  'myaccount.nytimes.com',
+  'open.blogs.nytimes.com'
 ];
 
 config.interstitial_hosts = [
