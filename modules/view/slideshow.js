@@ -58,8 +58,12 @@ async function append_slides() {
 // Add a new slide to the view.
 function append_slide(entry) {
   const container = document.getElementById('slideshow-container');
-
   const slide = document.createElement('div');
+
+  // tabindex must be explicitly defined on a div in order for div.focus() to
+  // affect the active element
+  slide.setAttribute('tabindex', '-1');
+
   slide.setAttribute('entry', entry.id);
   slide.setAttribute('feed', entry.feed);
   slide.setAttribute('class','entry');
@@ -75,8 +79,8 @@ function append_slide(entry) {
   }
 
   slide.style.overflowX = 'hidden';
-  slide.style.top = 0;
-  slide.style.bottom = 0;
+  slide.style.top = '0';
+  slide.style.bottom = '0';
   slide.style.transition = 'left 0.5s ease-in 0s, right 0.5s ease-in';
 
   const title = create_article_title(entry);
@@ -88,8 +92,12 @@ function append_slide(entry) {
 
   container.appendChild(slide);
 
-  if(container.childElementCount === 1)
+  // TODO: this might be wrong if multiple unread slides are initially appended
+  // I need to ensure current_slide is always set. Where do I do this?
+  if(container.childElementCount === 1) {
     current_slide = slide;
+    current_slide.focus();
+  }
 }
 
 function create_article_title(entry) {
@@ -202,6 +210,10 @@ async function show_next_slide() {
     current_slide.scrollTop = 0;
     current_slide = current_slide.nextSibling;
 
+    // Change the active element to the new current slide, so that scrolling
+    // using keyboard keys still works
+    current_slide.focus();
+
     await mark_slide_read(old_slide);
   }
 
@@ -218,70 +230,36 @@ async function show_next_slide() {
 // Move the current slide out of view to the right, and move the previous
 // slide into view, and then update the current slide.
 function show_prev_slide() {
-  if(current_slide.previousSibling) {
-    current_slide.style.left = '100%';
-    current_slide.style.right = '-100%';
-    current_slide.previousSibling.style.left = '0px';
-    current_slide.previousSibling.style.right = '0px';
-    current_slide = current_slide.previousSibling;
-  }
+  const prev = current_slide.previousSibling;
+  if(!prev)
+    return;
+  current_slide.style.left = '100%';
+  current_slide.style.right = '-100%';
+  prev.style.left = '0px';
+  prev.style.right = '0px';
+  current_slide = prev;
+
+  // Change the active element to the new current slide, so that scrolling
+  // using keyboard keys still works
+  current_slide.focus();
 }
 
 function count_unread_slides() {
   return document.body.querySelectorAll('div[entry]:not([read])').length;
 }
 
-const key_codes = {
-  'SPACE': 32,
-  'PAGE_UP': 33,
-  'PAGE_DOWN': 34,
-  'LEFT': 37,
-  'UP': 38,
-  'RIGHT': 39,
-  'DOWN': 40,
-  'N': 78,
-  'P': 80
-};
-
 let keydown_timer = null;
-
-function on_key_down(event) {
-  switch(event.keyCode) {
-    case key_codes.DOWN:
-    case key_codes.PAGE_DOWN:
-    case key_codes.UP:
-    case key_codes.PAGE_UP:
-      event.preventDefault();
-      if(current_slide) {
-        const deltas = {};
-        deltas['' + key_codes.DOWN] = [80, 400];
-        deltas['' + key_codes.PAGE_DOWN] = [100, 800];
-        deltas['' + key_codes.UP] = [-50, -200];
-        deltas['' + key_codes.PAGE_UP] = [-100, -800];
-        const delta = deltas['' + event.keyCode];
-        smooth_scroll(current_slide, delta[0],
-          current_slide.scrollTop + delta[1]);
-      }
-      break;
-    case key_codes.SPACE:
-      event.preventDefault();
-    case key_codes.RIGHT:
-    case key_codes.N:
-      clearTimeout(keydown_timer);
-      // TODO: what about setImmediate instead? Or animationFrame?
-      keydown_timer = setTimeout(show_next_slide, 0);
-      break;
-    case key_codes.LEFT:
-    case key_codes.P:
-      clearTimeout(keydown_timer);
-      keydown_timer = setTimeout(show_prev_slide, 0);
-      break;
-    default:
-      break;
+window.addEventListener('keydown', function(event) {
+  const LEFT = 37, RIGHT = 39, N = 78, P = 80;
+  const code = event.keyCode;
+  if(code === RIGHT || code === N) {
+    clearTimeout(keydown_timer);
+    keydown_timer = setTimeout(show_next_slide, 0);
+  } else if(code === LEFT || code === P) {
+    clearTimeout(keydown_timer);
+    keydown_timer = setTimeout(show_prev_slide, 0);
   }
-}
-
-window.addEventListener('keydown', on_key_down);
+});
 
 function init_slides(event) {
   display_load_styles();
