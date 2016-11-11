@@ -30,7 +30,7 @@ poll.run = async function(options = {}) {
 
   const [feed_store, icon_conn] = await Promise.all([
     ReaderStorage.connect(log),
-    favicon.connect(undefined, undefined, log)
+    Favicon.connect()
   ]);
 
   let feeds = await feed_store.getFeeds();
@@ -90,7 +90,8 @@ poll.process_feed = async function(feed_store, icon_conn, feed,
     feed.dateLastModified && remote_feed.dateLastModified &&
     feed.dateLastModified.getTime() ===
     remote_feed.dateLastModified.getTime()) {
-    log.debug('Feed not modified', url.href);
+    log.debug('Feed not modified', url.href, feed.dateLastModified,
+      remote_feed.dateLastModified);
     return num_entries_added;
   }
 
@@ -168,7 +169,7 @@ poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
 
   // TODO: i think i should be doing this here, prior to knowing the
   // redirect url
-  //const icon_url = await favicon.lookup(icon_conn, request_url, log);
+  //const icon_url = await Favicon.lookup(icon_conn, request_url, log);
   //entry.faviconURLString = icon_url || feed.faviconURLString;
 
   const reason = poll.derive_no_fetch_reason(request_url);
@@ -181,7 +182,7 @@ poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
     // now derive_no_fetch_reason returns the key
     console.debug('No fetch reason:', reason, request_url.href);
 
-    const icon_url = await favicon.lookup(icon_conn, request_url, log);
+    const icon_url = await Favicon.lookup(icon_conn, request_url, log);
     entry.faviconURLString = icon_url || feed.faviconURLString;
     entry.content = poll.no_fetch_reasons[reason];
     return await poll.add_entry(feed_store, entry, log);
@@ -196,7 +197,7 @@ poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
     log.debug('Fetch html error', error);
     // If the fetch failed then fallback to the in-feed content
     // TODO: pass along a hint to skip the page fetch?
-    const icon_url = await favicon.lookup(icon_conn, request_url, log);
+    const icon_url = await Favicon.lookup(icon_conn, request_url, log);
     entry.faviconURLString = icon_url || feed.faviconURLString;
     poll.prep_local_entry(entry);
     return await poll.add_entry(feed_store, entry, log);
@@ -210,7 +211,7 @@ poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
   }
 
   const lookup_url = redirected ? new URL(response_url) : request_url;
-  const icon_url = await favicon.lookup(icon_conn, lookup_url, log);
+  const icon_url = await Favicon.lookup(icon_conn, lookup_url, log);
   entry.faviconURLString = icon_url || feed.faviconURLString;
 
   poll.transform_lazy_images(doc, log);
@@ -218,7 +219,10 @@ poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
   filter_invalid_anchors(doc);
   resolve_doc(doc, log, new URL(Entry.getURL(entry)));
   poll.filter_tracking_images(doc, config.tracking_hosts, log);
-  const num_images_modified = await set_image_dimensions(doc, log);
+
+  const fetch_image_timeout = 4000;
+  const num_images_modified =
+    await DocumentLayout.setDocumentImageDimensions(doc, fetch_image_timeout);
   poll.prep_doc(doc);
   entry.content = doc.documentElement.outerHTML.trim();
   return await poll.add_entry(feed_store, entry, log);

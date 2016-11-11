@@ -7,11 +7,11 @@ async function refresh_feed_icons(log = SilentConsole) {
   let num_modified = 0;
 
   const feed_store = await ReaderStorage.connect(log);
-  const icon_conn = await favicon.connect(undefined, undefined, log);
+  const icon_conn = await Favicon.connect();
   const feeds = await feed_store.getFeeds();
   for(let feed of feeds) {
     const lookup_url = get_lookup_url(feed);
-    const icon_url = await favicon.lookup(icon_conn, lookup_url, log);
+    const icon_url = await Favicon.lookup(icon_conn, lookup_url, log);
     if(!icon_url)
       continue;
     if(!feed.faviconURLString || feed.faviconURLString !== icon_url) {

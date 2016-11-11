@@ -41,11 +41,11 @@ async function subscribe(store, icon_conn, feed, suppress_notifs,
   }
 
   try {
-    const icon_url = await favicon.lookup(icon_conn, lookup_url, log);
+    const icon_url = await Favicon.lookup(icon_conn, lookup_url, log);
     merged.faviconURLString = icon_url;
   } catch(error) {
     // Non-fatal
-    console.warn(error);
+    log.warn(error);
   }
 
   const added_feed = await store.addFeed(merged);

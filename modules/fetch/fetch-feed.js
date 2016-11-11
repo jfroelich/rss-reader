@@ -60,8 +60,5 @@ async function fetch_feed(url, timeout = 0, log = SilentConsole) {
     }
   }
 
-  return {
-    'feed': feed,
-    'entries': entries
-  };
+  return {'feed': feed, 'entries': entries};
 }

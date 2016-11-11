@@ -113,5 +113,6 @@ config.tracking_hosts = [
   'pixel.quantserve.com',
   'pixel.wp.com',
   'pubads.g.doubleclick.net',
-  'sb.scorecardresearch.com'
+  'sb.scorecardresearch.com',
+  'stats.bbc.co.uk'
 ];

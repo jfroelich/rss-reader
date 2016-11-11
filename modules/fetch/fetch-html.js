@@ -2,11 +2,6 @@
 
 'use strict';
 
-// TODO: parseFromString might be the slowest part of the entire polling
-// process. Look into how to improve this performance.
-// Maybe set an upper bound on text size like 5m characters
-// Maybe use a streaming API somehow so it can be exit early
-
 // Returns a Document object or throws an error. When a timeout occurs, the
 // fetch is not canceled, but this still rejects early.
 async function fetch_html(url, timeout = 0, log = SilentConsole) {
@@ -25,7 +20,7 @@ async function fetch_html(url, timeout = 0, log = SilentConsole) {
     promises.push(fetch_timeout(timeout));
   const response = await Promise.race(promises);
 
-  // Treat unwanted response code as error
+  // Treat unwanted response codes as errors
   if(!response.ok)
     throw new Error(`${response.status} ${response.statusText} ${url}`);
   // Treat empty responses as an error
@@ -40,9 +35,11 @@ async function fetch_html(url, timeout = 0, log = SilentConsole) {
   const text = await response.text();
   if(!text.length)
     throw new Error(`${response.status} ${response.statusText} ${url}`);
-  log.debug('Response text length', text.length, url);
 
-  // Bubble-up parse exceptions
+  // For some reason the implementers of the new fetch API did not provide a
+  // native reader for HTML, so we have to do the parsing by hand.
+  // By not catching a parse exception in this async context it becomes a
+  // rejection of the async function as intended.
   const parser = new DOMParser();
   const doc = parser.parseFromString(text, 'text/html');
   if(doc.documentElement.localName !== 'html')

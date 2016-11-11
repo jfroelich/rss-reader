@@ -19,7 +19,7 @@ async function import_opml(db_target, files, log = SilentConsole) {
 
   const suppress_subscribe_notif = true;
   const feed_store = await ReaderStorage.connect(log);
-  const icon_conn = await favicon.connect(undefined, undefined, log);
+  const icon_conn = await Favicon.connect();
 
   // TODO: wrap subscribe in a local async function that traps the error,
   // then use promise.all here

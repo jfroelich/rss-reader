@@ -8,8 +8,8 @@ async function test_lookup(url_str, log) {
   const url = new URL(url_str);
   let conn;
   try {
-    conn = await favicon.connect(undefined, undefined, log);
-    const icon = await favicon.lookup(conn, url, log);
+    conn = await Favicon.connect();
+    const icon = await Favicon.lookup(conn, url, log);
     console.debug('Result:', icon);
   } catch(error) {
     console.log(error);
@@ -21,8 +21,8 @@ async function test_lookup(url_str, log) {
 
 async function test_compact() {
   try {
-    const conn = await favicon.connect(undefined, undefined, console);
-    let num_deleted = await favicon.compact(conn, console);
+    const conn = await Favicon.connect();
+    let num_deleted = await Favicon.compact(conn, console);
     conn.close();
   } catch(error) {
     console.debug(error);

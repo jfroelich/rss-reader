@@ -36,10 +36,10 @@
       "/modules/health/healthcheck.js",
       "/modules/iconrefresh/refresh-feed-icons.js",
       "/modules/notification/notification.js",
+      "/modules/poll/document-layout.js",
       "/modules/poll/poll-feeds.js",
       "/modules/poll/resolve-document.js",
       "/modules/poll/rewrite.js",
-      "/modules/poll/set-image-dimensions.js",
       "/modules/storage/reader-storage.js",
       "/modules/third-party/parse-srcset.js"
     ]

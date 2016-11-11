@@ -75,8 +75,8 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
     }
   } else if(alarm.name === 'compact-favicons') {
     try {
-      const conn = await favicon.connect();
-      let num_deleted = await favicon.compact(conn);
+      const conn = await Favicon.connect();
+      let num_deleted = await Favicon.compact(conn);
       conn.close();
     } catch(error) {
       console.debug(error);
