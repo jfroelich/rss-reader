@@ -108,7 +108,7 @@ poll.process_feed = async function(feed_store, icon_conn, feed,
     return true;
   });
 
-  entries = poll.filter_dup_entries(entries, log);
+  entries = poll.filter_dup_entries(entries);
   entries.forEach((entry) => entry.feed = feed.id);
 
   for(let entry of entries) {
@@ -125,7 +125,7 @@ poll.process_feed = async function(feed_store, icon_conn, feed,
 
 // Favors entries earlier in the list
 // TODO: is there maybe a better way, like favor the most content or most recent
-poll.filter_dup_entries = function(entries, log) {
+poll.filter_dup_entries = function(entries) {
   const output = [];
   const seen_urls = [];
 
@@ -167,23 +167,11 @@ poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
 
   const request_url = new URL(Entry.getURL(entry));
 
-  // TODO: i think i should be doing this here, prior to knowing the
-  // redirect url
-  //const icon_url = await Favicon.lookup(icon_conn, request_url, log);
-  //entry.faviconURLString = icon_url || feed.faviconURLString;
+  const icon_url = await Favicon.lookup(icon_conn, request_url, log);
+  entry.faviconURLString = icon_url || feed.faviconURLString;
 
   const reason = poll.derive_no_fetch_reason(request_url);
   if(reason) {
-
-    // Temp, debugging 'undefined' in theweek.com article content
-    // Note: I think this is fixed, derive_no_fetch_reason was returning
-    // the object vaue and not just the key, so below I was setting
-    // entry.content to the result of looking up the value instead of the key
-    // now derive_no_fetch_reason returns the key
-    console.debug('No fetch reason:', reason, request_url.href);
-
-    const icon_url = await Favicon.lookup(icon_conn, request_url, log);
-    entry.faviconURLString = icon_url || feed.faviconURLString;
     entry.content = poll.no_fetch_reasons[reason];
     return await poll.add_entry(feed_store, entry, log);
   }
@@ -191,14 +179,9 @@ poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
   let doc, response_url;
   try {
     const timeout = 5000;
-    // The parens are needed for non-declaration object destructuring
     ({doc, response_url} = await fetch_html(request_url.href, timeout, log));
   } catch(error) {
     log.debug('Fetch html error', error);
-    // If the fetch failed then fallback to the in-feed content
-    // TODO: pass along a hint to skip the page fetch?
-    const icon_url = await Favicon.lookup(icon_conn, request_url, log);
-    entry.faviconURLString = icon_url || feed.faviconURLString;
     poll.prep_local_entry(entry);
     return await poll.add_entry(feed_store, entry, log);
   }
@@ -210,14 +193,10 @@ poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
     Entry.addURL(entry, response_url);
   }
 
-  const lookup_url = redirected ? new URL(response_url) : request_url;
-  const icon_url = await Favicon.lookup(icon_conn, lookup_url, log);
-  entry.faviconURLString = icon_url || feed.faviconURLString;
-
-  poll.transform_lazy_images(doc, log);
+  poll.transform_lazy_images(doc);
   filter_sourceless_images(doc);
   filter_invalid_anchors(doc);
-  resolve_doc(doc, log, new URL(Entry.getURL(entry)));
+  resolve_doc(doc, new URL(Entry.getURL(entry)));
   poll.filter_tracking_images(doc, config.tracking_hosts, log);
 
   const fetch_image_timeout = 4000;
@@ -313,7 +292,7 @@ poll.prep_doc = function(doc) {
 // the space check is a minimal validation, urls may be relative
 // TODO: maybe use a regex and \s
 // TODO: does the browser tolerate spaces in urls?
-poll.transform_lazy_images = function(doc, log) {
+poll.transform_lazy_images = function(doc) {
   let num_modified = 0;
   const images = doc.querySelectorAll('img');
   for(let img of images) {
@@ -323,7 +302,7 @@ poll.transform_lazy_images = function(doc, log) {
       if(img.hasAttribute(alt_name)) {
         const url = img.getAttribute(alt_name);
         if(url && !url.trim().includes(' ')) {
-          const before_html = img.outerHTML;
+          // const before_html = img.outerHTML;
           img.removeAttribute(alt_name);
           img.setAttribute('src', url);
           num_modified++;

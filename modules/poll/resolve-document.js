@@ -38,13 +38,12 @@ function build_selector_part(key) {
 
 const selector = Object.keys(attr_map).map(build_selector_part).join(',');
 
-function resolve_doc(doc, log, base_url) {
+function resolve_doc(doc, base_url) {
   if(!parseSrcset)
     throw new ReferenceError();
   if(!is_url_object(base_url))
     throw new TypeError();
 
-  log.log('Resolving document urls to base', base_url.href);
   const bases = doc.querySelectorAll('base');
   for(let base of bases) {
     base.remove();
@@ -80,8 +79,14 @@ function resolve_srcset_attr(element, base_url) {
   // requires a value or it throws (??).
   if(!attr_url)
     return;
-  const srcset = parseSrcset(attr_url);
-  // The parseSrcset function may fail to parse (??)
+  let srcset;
+  try {
+    srcset = parseSrcset(attr_url);
+  } catch(error) {
+    console.warn(error);
+    return;
+  }
+
   if(!srcset || !srcset.length)
     return;
   let dirtied = false;

@@ -47,8 +47,39 @@ async function fetch_feed(url, timeout = 0, log = SilentConsole) {
 
   log.debug(`Response ${response.status} ${response.statusText} ${url}`);
   const text = await response.text();
-  const doc = parse_xml(text);
-  const {feed, entries} = parse_feed(doc);
+
+  const parsed_feed = FeedParser.parseFromString(text);
+
+  // Split the parsed feed into a feed object and an entries array
+  const entries = parsed_feed.entries;
+  const feed = parsed_feed;
+  delete feed.entries;
+
+  // Supply a default date for the feed
+  feed.datePublished = feed.datePublished || new Date();
+
+  // Normalize the feed's link value
+  if(feed.link) {
+    try {
+      feed.link = new URL(feed.link).href;
+    } catch(error) {
+      console.warn(error);
+      delete feed.link;
+    }
+  }
+
+  // Suppy a default date for entries
+  entries.filter((e)=> !e.datePublished).forEach((e) =>
+    e.datePublished = feed.datePublished);
+
+  // Convert entry.link into entry.urls array
+  entries.forEach((e) => {
+    if(!e.link) return;
+    Entry.addURL(e, e.link);
+    delete e.link;
+  });
+
+
   Feed.addURL(feed, url);
   Feed.addURL(feed, response.url);
   feed.dateFetched = new Date();

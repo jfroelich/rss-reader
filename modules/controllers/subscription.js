@@ -32,6 +32,8 @@ async function subscribe(store, icon_conn, feed, suppress_notifs,
   const merged = Feed.merge(feed, remote_feed);
 
   // TODO: this should be a function in feed.js
+  // TODO: there is no longer a guarantee that feed.link is a valid url, this
+  // needs a try/catch
   let lookup_url;
   if(merged.link) {
     lookup_url = new URL(merged.link);

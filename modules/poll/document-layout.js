@@ -72,9 +72,7 @@ class DocumentLayout {
       proxy = await Promise.race(promises);
       return {'image': image, 'w': proxy.width, 'h': proxy.height};
     } catch(error) {
-
-      // Temp, debugging new timeout functionality
-      console.debug(url.href, error);
+      // console.warn(url.href, error);
     }
   }
 

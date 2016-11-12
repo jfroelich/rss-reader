@@ -26,6 +26,8 @@ async function refresh_feed_icons(log = SilentConsole) {
   icon_conn.close();
 
   // TODO: inline
+  // TODO: there is no longer a guarantee that feed.link contains a valid
+  // url, need a try/catch
   function get_lookup_url(feed) {
     let url = null;
     if(feed.link) {
