@@ -615,18 +615,21 @@ async function unsubscribe_btn_on_click(event) {
 // need to be cancelable.
 // TODO: after import the feeds list needs to be refreshed
 // TODO: notify the user if there was an error
-// TODO: switch to a different section of the options ui on complete?
-
 function import_opml_btn_on_click(event) {
   const uploader = document.createElement('input');
   uploader.setAttribute('type', 'file');
   uploader.setAttribute('accept', 'application/xml');
   uploader.onchange = async function on_change(event) {
     uploader.removeEventListener('change', on_change);
+    let db;
     try {
-      await import_opml(undefined, uploader.files, console);
+      db = await ReaderStorage.connect(console);
+      await OPMLImporter.importFiles(db, uploader.files, console);
     } catch(error) {
       console.debug(error);
+    } finally {
+      if(db)
+        db.disconnect();
     }
   };
   uploader.click();

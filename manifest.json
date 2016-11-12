@@ -20,7 +20,6 @@
       "/modules/common/feed.js",
       "/modules/common/html.js",
       "/modules/common/mime.js",
-      "/modules/common/parse-xml.js",
       "/modules/common/silent-console.js",
       "/modules/common/utils.js",
       "/modules/controllers/remove-entries-missing-urls.js",

@@ -194,6 +194,13 @@ function slide_on_click(event) {
 // does the animation super fast
 // TODO: visual feedback on error
 async function show_next_slide() {
+
+  // If slide count is 0, current_slide may be undefined
+  if(!current_slide) {
+    console.warn('No current slide');
+    return;
+  }
+
   const old_slide = current_slide;
 
   // Conditionally append more slides
@@ -230,6 +237,12 @@ async function show_next_slide() {
 // Move the current slide out of view to the right, and move the previous
 // slide into view, and then update the current slide.
 function show_prev_slide() {
+
+  if(!current_slide) {
+    console.warn('No current slide');
+    return;
+  }
+
   const prev = current_slide.previousSibling;
   if(!prev)
     return;

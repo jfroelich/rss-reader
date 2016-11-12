@@ -43,9 +43,7 @@ async function fetch_feed(url, timeout = 0, log = SilentConsole) {
   if(!type.includes('xml') && !type.includes('text/html'))
     throw new Error(`Invalid content type ${type} ${url}`);
 
-  log.debug(`Response ${response.status} ${response.statusText} ${url}`);
   const text = await response.text();
-
   const parsed_feed = FeedParser.parseFromString(text);
 
   // Split the parsed feed into a feed object and an entries array

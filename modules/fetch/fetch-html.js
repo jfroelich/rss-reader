@@ -31,7 +31,6 @@ async function fetch_html(url, timeout = 0, log = SilentConsole) {
   if(!type.includes('text/html'))
     throw new Error(`Invalid mime type ${type} ${url}`);
 
-  log.debug('GOT', response.status, response.statusText, url);
   const text = await response.text();
   if(!text.length)
     throw new Error(`${response.status} ${response.statusText} ${url}`);

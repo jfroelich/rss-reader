@@ -12,11 +12,11 @@ cli.archive_entries = async function() {
   store.disconnect();
 };
 
-cli.poll = async function() {
+cli.poll = async function(disable_log) {
   const num_added = await poll.run({
     'ignore_idle_state': 1,
     'skip_unmodified_guard': 1,
     'ignore_recent_poll_guard': 1,
-    'log': console
+    'log': disable_log ? undefined : console
   });
 };

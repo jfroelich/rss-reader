@@ -147,41 +147,39 @@ poll.filter_dup_entries = function(entries) {
   return output;
 };
 
+// Rewrite the url and append it to the entry's url list if it is different
+poll.rewrite_entry_url = function(entry) {
+  const url = Entry.getURL(entry);
+  const rewritten_url = rewrite_url(url);
+  const before_append_length = entry.urls.length;
+  if(rewritten_url)
+    Entry.addURL(entry, rewritten_url);
+  return entry.urls.length > before_append_length;
+};
+
+// Resolve with true if entry was added, false if not added
 // TODO: instead of trying to not reject in case of an error, maybe this should
 // reject, and I use a wrapping function than translates rejections into
 // negative resolutions
-
-// Resolve with true if entry was added, false if not added
 poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
-  // First check if the entry's original url exists
+  const rewritten = poll.rewrite_entry_url(entry);
+  if(poll.should_exclude_entry(entry))
+    return false;
   if(await feed_store.containsEntryURL(entry.urls[0]))
     return false;
-
-  // Rewrite. If rewritten then check if rewritten url exists
-  const rewritten_url = rewrite_url(Entry.getURL(entry));
-  if(rewritten_url) {
-    if(await feed_store.containsEntryURL(rewritten_url))
-      return false;
-    Entry.addURL(entry, rewritten_url);
-  }
+  if(rewritten && await feed_store.containsEntryURL(Entry.getURL(entry)))
+    return false;
 
   const request_url = new URL(Entry.getURL(entry));
-
   const icon_url = await Favicon.lookup(icon_conn, request_url, log);
   entry.faviconURLString = icon_url || feed.faviconURLString;
-
-  const reason = poll.derive_no_fetch_reason(request_url);
-  if(reason) {
-    entry.content = poll.no_fetch_reasons[reason];
-    return await poll.add_entry(feed_store, entry, log);
-  }
 
   let doc, response_url;
   try {
     const timeout = 5000;
     ({doc, response_url} = await fetch_html(request_url.href, timeout, log));
   } catch(error) {
-    log.debug('Fetch html error', error);
+    log.warn(error);
     poll.prep_local_entry(entry);
     return await poll.add_entry(feed_store, entry, log);
   }
@@ -207,16 +205,13 @@ poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
   return await poll.add_entry(feed_store, entry, log);
 };
 
-// Translate add rejections into resolutions so that poll.process_entry does not
-// reject in the event of an error
+// Suppress errors so that Promise.all fully iterates
 poll.add_entry = async function(store, entry, log) {
   try {
     let result = await store.addEntry(entry);
     return true;
   } catch(error) {
-    // While I looked up all the urls, something could concurrently alter
-    // the store so I could get a constraint error here, that I want to ignore
-    log.debug('Muted error while adding entry', error);
+    log.warn(error);
   }
   return false;
 };
@@ -236,30 +231,24 @@ poll.did_redirect = function(urls, response_url) {
   return !norm_urls.includes(response_url);
 };
 
-poll.no_fetch_reasons = {
-  'interstitial':
-    'This content for this article is blocked by an advertisement.',
-  'script_generated': 'The content for this article cannot be viewed because ' +
-    'it is dynamically generated.',
-  'paywall': 'This content for this article is behind a paywall.',
-  'cookies': 'This content for this article cannot be viewed ' +
-    'because the website requires tracking information.',
-  'not_html': 'This article is not a basic web page (e.g. a PDF).'
+poll.should_exclude_entry = function(entry) {
+  const url = new URL(Entry.getURL(entry));
+  const hostname = url.hostname;
+  const pathname = url.pathname;
+  if(config.interstitial_hosts.includes(hostname))
+    return true;
+  if(config.script_generated_hosts.includes(hostname))
+    return true;
+  if(config.paywall_hosts.includes(hostname))
+    return true;
+  if(config.requires_cookies_hosts.includes(hostname))
+    return true;
+  if(mime.sniff_non_html(pathname))
+    return true;
+  return false;
 };
 
-poll.derive_no_fetch_reason = function(url) {
-  if(config.interstitial_hosts.includes(url.hostname))
-    return 'interstitial';
-  if(config.script_generated_hosts.includes(url.hostname))
-    return 'script_generated';
-  if(config.paywall_hosts.includes(url.hostname))
-    return 'paywall';
-  if(config.requires_cookies_hosts.includes(url.hostname))
-    return 'cookies';
-  if(mime.sniff_non_html(url.pathname))
-    return 'not_html';
-  return null;
-};
+
 
 poll.prep_local_entry = function(entry) {
   if(!entry.content)

@@ -182,7 +182,7 @@ class ReaderStorage {
     return new Promise((resolve, reject) => {
       if('id' in entry)
         return reject(new TypeError());
-      this.log.log('Adding entry with urls [%s]', entry.urls.join(', '));
+      this.log.log('Storing entry', entry.urls);
       const sanitized = Entry.sanitize(entry);
       const storable = filter_empty_props(sanitized);
       storable.readState = Entry.UNREAD;
@@ -191,11 +191,8 @@ class ReaderStorage {
       const tx = this.conn.transaction('entry', 'readwrite');
       const store = tx.objectStore('entry');
       const request = store.add(storable);
-      request.onsuccess = (event) => {
-        this.log.debug('Stored entry', Entry.getURL(storable));
-        resolve(event);
-      };
-      request.onerror = (event) => reject(event.target.error);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
     });
   }
 
@@ -268,6 +265,9 @@ class ReaderStorage {
     });
   }
 
+  // TODO: probably resolving with just new id is sufficient here now that this
+  // no longer is responsible for sanitization, because it means the caller has
+  // the sanitized values already
   // Adds or overwrites a feed in storage. Resolves with the stored feed. If
   // adding then the generated id is set on the input feed object.
   // @param feed {Object}
@@ -279,11 +279,7 @@ class ReaderStorage {
       const store = tx.objectStore('feed');
       const request = store.put(feed);
       request.onsuccess = (event) => {
-        this.log.debug('Successfully put feed', Feed.getURL(feed));
-        if(!('id' in feed)) {
-          this.log.debug('New feed id', event.target.result);
-          feed.id = event.target.result;
-        }
+        feed.id = feed.id || event.target.result;
         resolve(feed);
       };
       request.onerror = (event) => reject(event.target.error);

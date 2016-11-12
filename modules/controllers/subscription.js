@@ -2,15 +2,21 @@
 
 'use strict';
 
+// TODO: just do something like class FeedController {} ?
+
+// Returns the feed that was added if successful, or undefined/null if problem,
+// or throws error
+// TODO: this needs some revision, i think it should be throwing errors?
 // TODO: if redirected on fetch, check for reedirect url contained in db
 async function subscribe(store, icon_conn, feed, suppress_notifs,
   log = SilentConsole) {
 
   const url = Feed.getURL(feed);
-
   log.log('Subscribing to', url);
-  if(await store.containsFeedURL(url))
+  if(await store.containsFeedURL(url)) {
+    log.warn('Subscription failed, already subscribed to feed with url', url);
     return;
+  }
 
   if('onLine' in navigator && !navigator.onLine) {
     log.debug('Offline subscription');
@@ -21,8 +27,7 @@ async function subscribe(store, icon_conn, feed, suppress_notifs,
   const fetch_timeout = 2000;
   let remote_feed;
   try {
-    // Destructure ignoring entries
-    ({remote_feed} = await fetch_feed(url, fetch_timeout, log));
+    ({remote_feed = feed} = await fetch_feed(url, fetch_timeout, log));
   } catch(error) {
     // Fatal
     console.warn(error);

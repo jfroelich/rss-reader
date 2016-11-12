@@ -2,149 +2,200 @@
 
 'use strict';
 
-// TODO: this should accept conn instead of db_target and require caller
-// to open/close conn, it is more decoupled and easier to mock deps
-// NOTE: db_target is no longer used
-// TODO: cleanup some of the helper fns
 // TODO: return successful subscriptions count
-async function import_opml(db_target, files, log = SilentConsole) {
 
-  log.log('Starting opml import');
-  files = Array.prototype.filter.call(files,
-    (file) => file.type.toLowerCase().includes('xml'));
-  files = Array.prototype.filter.call(files, (file) => file.size > 0);
+class OPMLImporter {
 
-  if(!files.length)
-    return;
+  // @param db {ReaderStorage} a connected instance of ReaderStorage
+  // @param files {FileList} - file list such as from input element
+  // @param log {console} a console-like object
+  static async importFiles(db, files, log = OPMLImporterLog) {
+    log.log('Starting opml import');
 
-  const suppress_subscribe_notif = true;
-  const feed_store = await ReaderStorage.connect(log);
-  const icon_conn = await Favicon.connect();
+    if(!files || !('length' in files))
+      throw new TypeError('Invalid files parameter ' + files);
 
-  // TODO: wrap subscribe in a local async function that traps the error,
-  // then use promise.all here
-
-  for(let file of files) {
-    const text = await read_file_as_text(file);
-    const doc = parse_opml(text);
-    const outline_elements = select_outline_elements(doc);
-    let outlines = outline_elements.map(create_outline_obj);
-    outlines = outlines.filter(outline_has_valid_type);
-    outlines = outlines.filter(outline_has_url);
-    outlines.forEach(deserialize_outline_url);
-    outlines = outlines.filter(outline_has_url_obj);
-    outlines = filter_dup_outlines(outlines);
-    const feeds = outlines.map(outline_to_feed);
-    for(let feed of feeds) {
-      // Allow for individual subscriptions to fail
-      try {
-        await subscribe(feed_store, icon_conn, feed,
-          suppress_subscribe_notif, log);
-      } catch(error) {
-        log.debug(error);
-      }
-    }
-  }
-
-  feed_store.disconnect();
-  icon_conn.close();
-  log.debug('Import completed');
-}
-
-function parse_opml(str) {
-  const doc = parse_xml(str);
-  if(!doc)
-    throw new Error('parse_xml did not yield a document');
-  const root_name = doc.documentElement.localName;
-  if(root_name !== 'opml')
-    throw new Error('Invalid document element: ' + root_name);
-  return doc;
-}
-
-// TODO: is there a promisified Reader?
-function read_file_as_text(file) {
-  return new Promise(function(resolve, reject) {
-    const reader = new FileReader();
-    reader.readAsText(file);
-    reader.onload = function(event) {
-      resolve(event.target.result);
-    };
-    reader.onerror = function(event) {
-      reject(event.target.error);
-    };
-  });
-}
-
-function select_outline_elements(doc) {
-  const outlines = [];
-  // doc.body is undefined, not sure why
-  const body = doc.querySelector('body');
-  if(!body)
-    return outlines;
-  for(let el = body.firstElementChild; el; el = el.nextElementSibling) {
-    if(el.localName === 'outline')
-      outlines.push(el);
-  }
-  return outlines;
-}
-
-function create_outline_obj(element) {
-  return {
-    'description': element.getAttribute('description'),
-    'link': element.getAttribute('htmlUrl'),
-    'text': element.getAttribute('text'),
-    'title': element.getAttribute('title'),
-    'type': element.getAttribute('type'),
-    'url': element.getAttribute('xmlUrl')
-  };
-}
-
-function outline_has_valid_type(outline) {
-  return outline.type && outline.type.length > 2 &&
-    /rss|rdf|feed/i.test(outline.type);
-}
-
-function outline_has_url(outline) {
-  return outline.url && outline.url.trim();
-}
-
-function deserialize_outline_url(outline) {
-  try {
-    outline.url_obj = new URL(outline.url);
-    outline.url_obj.hash = '';
-  } catch(error) {
-  }
-}
-
-function outline_has_url_obj(outline) {
-  return 'url_obj' in outline;
-}
-
-function filter_dup_outlines(outlines) {
-  const output = [];
-  const seen_urls = [];
-  for(let outline of outlines) {
-    if(!seen_urls.includes(outline.url_obj.href)) {
-      seen_urls.push(outline.url_obj.href);
-      output.push(outline);
-    }
-  }
-  return output;
-}
-
-function outline_to_feed(outline) {
-  const feed = {};
-  Feed.addURL(feed, outline.url_obj.href);
-  feed.type = outline.type;
-  feed.title = outline.title || outline.text;
-  feed.description = outline.description;
-  if(outline.link) {
+    let iconConn;
+    let numSubs = 0;
     try {
-      const linkURL = new URL(outline.link);
-      linkURL.hash = '';
-      feed.link = linkURL.href;
-    } catch(error) {
+      iconConn = await Favicon.connect();
+      const filesArray = [...files];
+      const proms = filesArray.map(
+        (file) => this.importFileNoRaise(db, iconConn, file, log), this);
+      const resolutions = await Promise.all(proms);
+      numSubs = resolutions.reduce((n, c) => n + c, 0);
+    } finally {
+      if(iconConn)
+        iconConn.close();
     }
+
+    log.debug('Import completed, subscribed to %d feeds', numSubs);
   }
-  return feed;
+
+  // Returns number of feeds subscribed
+  // Suppresses errors to avoid Promise.all failfast behavior
+  static async importFileNoRaise(db, iconConn, file, log) {
+    try {
+      return await this.importFile(db, iconConn, file, log);
+    } catch(error) {
+      log.warn(error);
+    }
+    return 0;
+  }
+
+  // Returns number of feeds subscribed
+  static async importFile(db, iconConn, file, log) {
+    log.debug('Importing OPML file "%s", byte size %d, mime type "%s"',
+      file.name, file.size, file.type);
+    if(file.size < 1) {
+      log.warn('Not importing file %s because it has size %d',
+        file.name, file.size);
+      return 0;
+    }
+
+    const fileType = this.normalizeFileType(file.type);
+    if(!this.isSupportedFileType(fileType)) {
+      log.warn('Not importing file %s because invalid file type',
+        file.name, file.type);
+      return 0;
+    }
+
+    const text = await this.readFileAsText(file);
+    log.debug('Read %d characters of file %s', text.length, file.name);
+    const doc = this.parseFromString(text);
+    let outlines = this.selectOutlines(doc);
+    log.debug('Found %d outline elements in file %s',
+      outlines.length, file.name);
+
+    // Map outline elements to basic outline objects
+    outlines = outlines.map((o) => {
+      return {
+        'description': o.getAttribute('description'),
+        'link': o.getAttribute('htmlUrl'),
+        'text': o.getAttribute('text'),
+        'title': o.getAttribute('title'),
+        'type': o.getAttribute('type'),
+        'url': o.getAttribute('xmlUrl')
+      };
+    });
+
+    outlines = outlines.filter((o) => /rss|rdf|feed/i.test(o.type));
+    outlines = outlines.filter((o) => o.url);
+    outlines = outlines.filter((o) => {
+      try {
+        const url = new URL(o.url);
+        o.url = url.href;
+        return true;
+      } catch(error) {
+        log.warn(error);
+      }
+      return false;
+    });
+
+    // Filter duplicates, favoring earlier in document order
+    const uniqueURLs = [];
+    outlines = outlines.filter((o) => {
+      if(!uniqueURLs.includes(o.url)) {
+        uniqueURLs.push(o.url);
+        return true;
+      }
+      return false;
+    });
+
+    // Normalize outline link urls
+    outlines.forEach((o) => {
+      if(o.link) {
+        try {
+          const url = new URL(o.link);
+          o.link = url.href;
+        } catch(error) {
+          log.warn(error);
+          o.link = undefined;
+        }
+      }
+    });
+
+    const feeds = outlines.map((o) => {
+      const feed = {
+        'type': o.type,
+        'urls': [],
+        'title': o.title || o.text,
+        'description': o.description,
+        'link': o.link
+      };
+      Feed.addURL(feed, o.url);
+      return feed;
+    });
+
+    log.debug('Attempting to subscribe to %d feeds from OPML file %s',
+      feeds.length, file.name);
+    const proms = feeds.map((feed) => this.subscribe(db, iconConn, feed, log));
+    const resolutions = await Promise.all(proms);
+    return resolutions.reduce((n, result) => result ? n + 1 : n, 0);
+  }
+
+  // Returns the result of subscribe, which is the added feed object, or null
+  // if an error occurs
+  static async subscribe(db, iconConn, feed, log) {
+    const suppressNotif = true;
+    try {
+      return await subscribe(db, iconConn, feed, suppressNotif, log);
+    } catch(error) {
+      log.warn(error);
+    }
+    return null;
+  }
+
+  static isSupportedFileType(typeString) {
+    const supportedTypes = {
+      'text/xml': undefined,
+      'application/xml': undefined
+    };
+    return typeString in supportedTypes;
+  }
+
+  static normalizeFileType(typeString) {
+    let output = typeString || '';
+    return output.trim().toLowerCase();
+  }
+
+  static parseFromString(str) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(str, 'application/xml');
+    const error = doc.querySelector('parsererror');
+    if(error)
+      throw new Error(error.textContent);
+    const root_name = doc.documentElement.localName;
+    if(root_name !== 'opml')
+      throw new Error(`Invalid document element: ${root_name}`);
+    return doc;
+  }
+
+  static readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsText(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+    });
+  }
+
+  static selectOutlines(doc) {
+    const body = doc.querySelector('body');
+    if(!body)
+      return [];
+    const outlines = [];
+    for(let el = body.firstElementChild; el; el = el.nextElementSibling) {
+      if(el.localName.toLowerCase() === 'outline')
+        outlines.push(el);
+    }
+    return outlines;
+  }
+}
+
+class OPMLImporterLog {
+  static log(){}
+  static debug(){}
+  static warn(){}
+  static error(){}
 }
