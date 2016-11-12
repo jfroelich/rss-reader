@@ -60,6 +60,7 @@ class GoogleFeeds {
       throw new Error(`${response.status} ${response.statusText}`);
   }
 
+  // TODO: just reject after x ms with an Error
   static _fetch_timeout_promise(timeout) {
     return new Promise((resolve) => setTimeout(resolve, timeout,
       new Response('', {'status': 524, 'statusText': 'Timed out'})));

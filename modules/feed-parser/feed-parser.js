@@ -2,10 +2,6 @@
 
 'use strict';
 
-// TODO: fully decouple from everything. This means I should not care about how
-// this output is consumed. I should only care about correctness of output here
-// and repeatability, reusability, and testability.
-
 class FeedParser {
 
   // Parses the input string into a feed object and an entries object

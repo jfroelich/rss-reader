@@ -3,8 +3,6 @@
 'use strict';
 
 // Resolves with a basic object with properties feed and entries
-// feed is a feed object. entries is an array of entry objects, that is always
-// defined but may be zero length.
 async function fetch_feed(url, timeout = 0, log = SilentConsole) {
   if(typeof url !== 'string' || !url.length)
     throw new TypeError(`Invalid url ${url}`);
@@ -78,7 +76,6 @@ async function fetch_feed(url, timeout = 0, log = SilentConsole) {
     Entry.addURL(e, e.link);
     delete e.link;
   });
-
 
   Feed.addURL(feed, url);
   Feed.addURL(feed, response.url);

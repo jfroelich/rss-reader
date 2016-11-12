@@ -19,6 +19,13 @@ function set_timeout_promise(timeout_ms, value) {
   });
 }
 
+// TODO: i don't love how this is a dependency everywhere when it is so
+// simple. Inline this everywhere to reduce coupling
+
+// TODO: i think it would be much simpler to just reject with a Timed out error
+// after x ms. No need to create a response. When used with Promise.race, the
+// rejection can still win.
+
 // Resolves with a fake 524 timed out response after timeout_ms milliseconds.
 // 524 is a non-standard Cloudflare code that seems to be the most appropriate.
 async function fetch_timeout(timeout_ms) {

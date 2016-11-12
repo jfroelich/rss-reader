@@ -238,6 +238,7 @@ class Favicon {
     return null;
   }
 
+  // TODO: just reject with an error
   // After a delay, resolve with a Response representing a timed out request
   static fetchTimeout(timeout) {
     return new Promise((resolve) => {

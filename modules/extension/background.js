@@ -45,10 +45,18 @@ async function create_alarms() {
       {'periodInMinutes': 60 * 24 * 7 * 2});
   }
 
-  alarm = await get_alarm('healthcheck');
+  alarm = await get_alarm('remove-orphan-entries');
   if(!alarm) {
-    console.debug('Creating healthcheck alarm');
-    chrome.alarms.create('healthcheck', {'periodInMinutes': 60 * 24 * 7});
+    console.debug('Creating remove-orphan-entries alarm');
+    chrome.alarms.create('remove-orphan-entries',
+      {'periodInMinutes': 60 * 24 * 7});
+  }
+
+  alarm = await get_alarm('remove-entries-missing-urls');
+  if(!alarm) {
+    console.debug('Creating remove-entries-missing-urls alarm');
+    chrome.alarms.create('remove-entries-missing-urls',
+      {'periodInMinutes': 60 * 24 * 7});
   }
 }
 

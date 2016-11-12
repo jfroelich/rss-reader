@@ -146,6 +146,16 @@ class ReaderStorage {
     });
   }
 
+  getFeedIds() {
+    return new Promise((resolve, reject) => {
+      const tx = this.conn.transaction('feed');
+      const store = tx.objectStore('feed');
+      const request = store.getAllKeys();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
   // @param tx {IDBTransaction}
   // @param id {int}
   // @param chan {BroadcastChannel}
@@ -290,6 +300,16 @@ class ReaderStorage {
         this.log.debug('Loaded %d feeds from database', request.result.length);
         resolve(request.result);
       }
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  getEntries() {
+    return new Promise((resolve, reject) => {
+      const tx = this.conn.transaction('entry');
+      const store = tx.objectStore('entry');
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
   }
