@@ -10,7 +10,7 @@ class cli {
     const db = new FeedDb();
     db.log = console;
     try {
-      db.connect();
+      await db.connect();
       await archive_entries(db, undefined, console);
     } finally {
       if(db)

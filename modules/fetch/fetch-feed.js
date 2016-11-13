@@ -78,11 +78,13 @@ async function fetch_feed(url, timeout = 0, log = SilentConsole) {
   Feed.addURL(feed, url);
   Feed.addURL(feed, response.url);
   feed.dateFetched = new Date();
+
   const modified_header = response.headers.get('Last-Modified');
   if(modified_header) {
     try {
       feed.dateLastModified = new Date(modified_header);
     } catch(error) {
+      log.warn(error);
     }
   }
 

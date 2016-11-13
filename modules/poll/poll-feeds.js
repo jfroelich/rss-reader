@@ -2,6 +2,10 @@
 
 'use strict';
 
+// TODO: revert to using a class, I don't need to pass around as many variables
+// like db connections, and can setup property injection, and more easily
+// decouple SilentConsole
+
 const poll = {};
 
 poll.run = async function(options = {}) {
@@ -72,53 +76,68 @@ poll.run = async function(options = {}) {
   return num_entries_added;
 };
 
-poll.process_feed = async function(feedDb, icon_conn, feed,
+// TODO: maybe this should bubble fetch errors upward, and this should be
+// wrapped in another promise that always resolves
+
+poll.process_feed = async function(feedDb, icon_conn, localFeed,
   skip_unmodified_guard, log) {
 
   let num_entries_added = 0;
-  const url = new URL(Feed.getURL(feed));
+  const url = new URL(Feed.getURL(localFeed));
   const fetch_timeout = 5000;
-  let remote_feed, entries;
+  let remote_feed, remote_entries;
   try {
-    ({remote_feed = feed, entries} =
-      await fetch_feed(url.href, fetch_timeout, log));
+    // I am using this long form destructuring because this was previously
+    // the source of a bug. fetch_feed produces an object with a property titled
+    // 'feed' which was the same name as the feed parameter to process_feed,
+    // which resulted in 'feed' getting overwritten. Now the function param
+    // is named localFeed for clarity.
+    const {feed, entries} = await fetch_feed(url.href, fetch_timeout, log);
+    remote_feed = feed;
+    remote_entries = entries;
   } catch(error) {
-    // A fetch error is not an exception
-    // TODO: maybe it should be, and this should be wrapped in another promise
-    // that always resolves
+    log.warn(error);
     return 0;
   }
 
-  if(!skip_unmodified_guard && feed.dateUpdated &&
-    feed.dateLastModified && remote_feed.dateLastModified &&
-    feed.dateLastModified.getTime() ===
-    remote_feed.dateLastModified.getTime()) {
-    log.debug('Feed not modified', url.href, feed.dateLastModified,
+  if(!skip_unmodified_guard && localFeed.dateUpdated &&
+    localFeed.dateLastModified && remote_feed.dateLastModified &&
+    (localFeed.dateLastModified.getTime() ===
+    remote_feed.dateLastModified.getTime())) {
+    log.debug('Feed not modified', url.href, localFeed.dateLastModified,
       remote_feed.dateLastModified);
     return num_entries_added;
   }
 
-  const merged_feed = Feed.merge(feed, remote_feed);
+  const merged_feed = Feed.merge(localFeed, remote_feed);
   let storable_feed = Feed.sanitize(merged_feed);
   storable_feed = filter_empty_props(storable_feed);
 
-  entries = entries.filter((entry) => entry.urls && entry.urls.length);
-  entries = entries.filter(function has_valid_url(entry) {
-    const url = entry.urls[0];
+  // Filter entries missing urls
+  remote_entries = remote_entries.filter((e) => e.urls && e.urls.length);
+
+  // Filter entries with invalid urls
+  remote_entries = remote_entries.filter((e) => {
+    const url = e.urls[0];
     let url_obj;
-    try { url_obj = new URL(url); } catch(error) { return false; }
+    try {
+      url_obj = new URL(url);
+    } catch(error) {
+      log.warn(error);
+      return false;
+    }
     if(url_obj.pathname.startsWith('//')) return false;// hack for bad feed
     return true;
   });
 
-  entries = poll.filter_dup_entries(entries);
-  entries.forEach((entry) => entry.feed = feed.id);
+  remote_entries = poll.filter_dup_entries(remote_entries);
+  remote_entries.forEach((e) => e.feed = localFeed.id);
 
-  for(let entry of entries) {
+  for(let entry of remote_entries) {
     entry.feedTitle = storable_feed.title;
   }
 
-  const promises = entries.map((entry) => poll.process_entry(feedDb,
+  const promises = remote_entries.map((entry) => poll.process_entry(feedDb,
     icon_conn, storable_feed, entry, log));
   promises.push(feedDb.putFeed(storable_feed));
   const results = await Promise.all(promises);

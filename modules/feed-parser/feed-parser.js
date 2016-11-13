@@ -193,9 +193,9 @@ class FeedParser {
     const docElement = entry.ownerDocument.documentElement;
     let linkText;
     if(docElement.localName.toLowerCase() === 'feed') {
-      let link = this.findChild(entry, isLinkRelAlt);
-      link = link || this.findChild(entry, isLinkRelSelf);
-      link = link || this.findChild(entry, isLinkWithHref);
+      let link = this.findChild(entry, this.isLinkRelAlt);
+      link = link || this.findChild(entry, this.isLinkRelSelf);
+      link = link || this.findChild(entry, this.isLinkWithHref);
       linkText = link ? link.getAttribute('href') : undefined;
     } else {
       linkText = this.findChildText(entry, 'origlink');

@@ -2,6 +2,7 @@
 
 'use strict';
 
+// TODO: move these todos to github issues
 // TODO: is there a way to not re-register things on every page load?
 // TODO: is there a way to not rebind onalarm per page load
 // TODO: is there a non chrome specific way to do alarms? setInterval would
@@ -101,16 +102,14 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
   }
 });
 
-chrome.runtime.onInstalled.addListener(async function oninstall(event) {
+chrome.runtime.onInstalled.addListener(async function(event) {
   console.log('Installing extension ...');
-
   const db = new FeedDb();
-  db.log = console;
 
-  // The initial connect will also trigger database creation/upgrade
   try {
-    db = await db.connect();
-    badge_update_text(db);
+    // Generally, connect also triggers database upgrade
+    await db.connect();
+    await badge_update_text(db);
   } catch(error) {
     console.debug(error);
   } finally {

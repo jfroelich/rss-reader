@@ -2,7 +2,7 @@
 
 'use strict';
 
-// TODO: create issues for these todos
+// TODO: create github issues for these todos
 // TODO: add/update feed should delegate to put feed
 // TODO: maybe merge add/put entry into one function
 // TODO: maybe entry states should be in a single property instead of
@@ -10,15 +10,13 @@
 // TODO: remove the defined feed title requirement, have options manually sort
 // feeds instead of using the title index, deprecate the title index, stop
 // ensuring title is an empty string. note: i partly did some of this
-// TODO: I don't think this needs logging functionality
-
+// TODO: I don't think this needs logging functionality??
 // TODO: I have mixed feelings about this. It isn't purpose aligned, it has poor
 // coherency. I need to review SRP here. Yes, it is nice to have a single
 // abstraction around the db. But not for the queries really. Even though they
 // all share the conn parameter, and are db related.
 // I should be designing modules around their purpose. The task is to clearly
 // define what are the purposes. I don't have a clear idea.
-
 
 // Wraps an opened IDBDatabase instance to provide storage related functions
 class FeedDb {
@@ -58,7 +56,7 @@ class FeedDb {
       request.onsuccess = () => {
         this.conn = request.result;
         this.log.log('Connected to database', this.conn.name);
-        resolve();
+        resolve(this.conn);
       };
       request.onerror = () => reject(request.error);
       request.onblocked = (event) =>
@@ -145,17 +143,17 @@ class FeedDb {
     });
   }
 
-  getFeedEntryIds(tx, id) {
+  getFeedEntryIds(tx, feedId) {
     return new Promise((resolve, reject) => {
       const store = tx.objectStore('entry');
       const index = store.index('feed');
-      const request = index.getAllKeys(id);
+      const request = index.getAllKeys(feedId);
       request.onsuccess = (event) => {
-        const ids = event.target.result;
-        this.log.debug('Loaded %d entry ids with feed id', ids.length, id);
+        const ids = request.result || [];
+        this.log.debug('Loaded %d entry ids with feed id', ids.length, feedId);
         resolve(ids);
       };
-      request.onerror = (event) => reject(event.target.error);
+      request.onerror = () => reject(request.error);
     });
   }
 
@@ -178,12 +176,12 @@ class FeedDb {
       this.log.debug('Deleting entry', id);
       const store = tx.objectStore('entry');
       const request = store.delete(id);
-      request.onsuccess = (event) => {
-        this.log.debug('Deleted entry with id', id);
-        chan.postMessage({'type': 'delete_entry_request', 'id': entry.id});
+      request.onsuccess = () => {
         resolve();
+        this.log.debug('Deleted entry with id', id);
+        chan.postMessage({'type': 'entryDeleted', 'id': id});
       };
-      request.onsuccess = (event) => reject(event.target.error);
+      request.onerror = () => reject(request.error);
     });
   }
 
