@@ -219,6 +219,7 @@ poll.process_entry = async function(feedDb, icon_conn, feed, entry, log) {
   resolve_doc(doc, new URL(Entry.getURL(entry)));
   poll.filter_tracking_images(doc, config.tracking_hosts, log);
 
+  // TODO: this should be externally configurable
   const fetch_image_timeout = 4000;
   const num_images_modified =
     await DocumentLayout.setDocumentImageDimensions(doc, fetch_image_timeout);
@@ -233,7 +234,7 @@ poll.add_entry = async function(store, entry, log) {
     let result = await store.addEntry(entry);
     return true;
   } catch(error) {
-    log.warn(error);
+    log.warn(error, Entry.getURL(entry));
   }
   return false;
 };

@@ -55,7 +55,7 @@ class FeedParser {
   }
 
   static findChannel(docElement) {
-    if(docElement.matches('feed'))
+    if(docElement.localName.toLowerCase() === 'feed')
       return docElement;
     else
       return this.findChildByName(docElement, 'channel');
@@ -64,22 +64,23 @@ class FeedParser {
   static findEntries(channel) {
     const docElement = channel.ownerDocument.documentElement;
     const entries = [];
-    let parent;
-    let name;
+    let parent, name;
 
-    if(docElement.matches('feed')) {
+    if(docElement.localName.toLowerCase() === 'feed') {
       parent = docElement;
       name = 'entry';
-    } else if(docElement.matches('rdf')) {
+    } else if(docElement.localName.toLowerCase() === 'rdf') {
       parent = docElement;
       name = 'item';
-    } else {
+    } else if(docElement.localName.toLowerCase() === 'rss') {
       parent = channel;
       name = 'item';
+    } else {
+      throw new Error(`Unsupported document element ${docElement.nodeName}`);
     }
 
     for(let e = parent.firstElementChild; e; e = e.nextElementSibling) {
-      if(e.localName === name)
+      if(e.localName.toLowerCase() === name)
         entries.push(e);
     }
 
@@ -114,9 +115,9 @@ class FeedParser {
     const docElement = channel.ownerDocument.documentElement;
     let linkText, linkElement;
     if(docElement.localName.toLowerCase() === 'feed') {
-      linkElement = this.findChild(channel, this.isLinkRelAlt) ||
-        this.findChild(channel, this.isLinkRelSelf) ||
-        this.findChild(channel, this.isLinkWithHref);
+      linkElement = this.findChild(channel, this.isLinkRelAlt);
+      linkElement = linkElement || this.findChild(channel, this.isLinkRelSelf);
+      linkElement = linkElement || this.findChild(channel, this.isLinkWithHref);
       if(linkElement)
         linkText = linkElement.getAttribute('href');
     } else {
@@ -225,7 +226,7 @@ class FeedParser {
   static findEntryContent(entry) {
     const docElement = entry.ownerDocument.documentElement;
     let result;
-    if(docElement.matches('feed')) {
+    if(docElement.localName.toLowerCase() === 'feed') {
       const content = this.findChildByName(entry, 'content');
       const nodes = content ? content.childNodes : [];
       const map = Array.prototype.map;

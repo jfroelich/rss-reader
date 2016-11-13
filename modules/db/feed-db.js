@@ -33,14 +33,9 @@ class FeedDb {
     this.version = config.db_version;
   }
 
-  // Request the database connection to eventually close
   close() {
-    if(this.conn) {
-      this.log.debug('Closing connection to database', this.conn.name);
+    if(this.conn)
       this.conn.close();
-    } else {
-      console.warn('this.conn is undefined');
-    }
   }
 
   connect() {
@@ -49,17 +44,14 @@ class FeedDb {
         throw new TypeError('Invalid database name');
       if(!Number.isInteger(this.version))
         throw new TypeError('Invalid database version')
-      this.log.log('Connecting to database', this.name, 'version',
-        this.version);
       const request = indexedDB.open(this.name, this.version);
       request.onupgradeneeded = this.upgrade.bind(this);
       request.onsuccess = () => {
         this.conn = request.result;
-        this.log.log('Connected to database', this.conn.name);
         resolve(this.conn);
       };
       request.onerror = () => reject(request.error);
-      request.onblocked = (event) =>
+      request.onblocked = () =>
         this.log.warn('Waiting on blocked connection...');
     });
   }
@@ -132,14 +124,10 @@ class FeedDb {
 
   removeFeed(tx, id) {
     return new Promise((resolve, reject) => {
-      this.log.debug('Deleting feed', id);
       const store = tx.objectStore('feed');
       const request = store.delete(id);
-      request.onsuccess = (event) => {
-        this.log.debug('Deleted feed with id', id);
-        resolve();
-      };
-      request.onerror = (event) => reject(event.target.error);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
     });
   }
 
@@ -148,11 +136,7 @@ class FeedDb {
       const store = tx.objectStore('entry');
       const index = store.index('feed');
       const request = index.getAllKeys(feedId);
-      request.onsuccess = (event) => {
-        const ids = request.result || [];
-        this.log.debug('Loaded %d entry ids with feed id', ids.length, feedId);
-        resolve(ids);
-      };
+      request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
   }
@@ -170,15 +154,12 @@ class FeedDb {
   // @param tx {IDBTransaction}
   // @param id {int}
   // @param chan {BroadcastChannel}
-  // @param log {console}
   removeEntry(tx, id, chan) {
     return new Promise((resolve, reject) => {
-      this.log.debug('Deleting entry', id);
       const store = tx.objectStore('entry');
       const request = store.delete(id);
       request.onsuccess = () => {
         resolve();
-        this.log.debug('Deleted entry with id', id);
         chan.postMessage({'type': 'entryDeleted', 'id': id});
       };
       request.onerror = () => reject(request.error);
@@ -193,7 +174,6 @@ class FeedDb {
     return new Promise((resolve, reject) => {
       if('id' in entry)
         return reject(new TypeError());
-      this.log.log('Storing entry', entry.urls);
       const sanitized = Entry.sanitize(entry);
       const storable = filter_empty_props(sanitized);
       storable.readState = Entry.UNREAD;
@@ -212,17 +192,14 @@ class FeedDb {
     return new Promise((resolve, reject) => {
       if('id' in feed)
         return reject(new TypeError());
-      this.log.log('Adding feed', Feed.getURL(feed));
       let storable = Feed.sanitize(feed);
       storable = filter_empty_props(storable);
       storable.dateCreated = new Date();
       const tx = this.conn.transaction('feed', 'readwrite');
       const store = tx.objectStore('feed');
       const request = store.add(storable);
-      request.onsuccess = (event) => {
-        storable.id = event.target.result;
-        this.log.debug('Added feed %s with new id %s', Feed.getURL(storable),
-          storable.id);
+      request.onsuccess = () => {
+        storable.id = request.result;
         resolve(storable);
       };
       request.onerror = () => reject(request.error);
@@ -232,13 +209,12 @@ class FeedDb {
   // @param url {String}
   containsFeedURL(url) {
     return new Promise((resolve, reject) => {
-      this.log.debug('Checking for feed with url', url);
       const tx = this.conn.transaction('feed');
       const store = tx.objectStore('feed');
       const index = store.index('urls');
       const request = index.getKey(url);
-      request.onsuccess = (event) => resolve(!!event.target.result);
-      request.onerror = (event) => reject(event.target.error);
+      request.onsuccess = () => resolve(!!request.result);
+      request.onerror = () => reject(request.error);
     });
   }
 
@@ -246,16 +222,11 @@ class FeedDb {
   findFeedById(id) {
     return new Promise((resolve, reject) => {
       if(!Number.isInteger(id) || id < 1)
-        return reject(new TypeError('invalid feed id ' + id));
-      this.log.debug('Finding feed by id', id);
+        return reject(new TypeError('Invalid feed id ' + id));
       const tx = this.conn.transaction('feed');
       const store = tx.objectStore('feed');
       const request = store.get(id);
-      request.onsuccess = (event) => {
-        const feed = event.target.result;
-        this.log.debug('Find result', feed);
-        resolve(feed);
-      };
+      request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
   }
@@ -266,7 +237,7 @@ class FeedDb {
   containsEntryURL(url) {
     return new Promise((resolve, reject) => {
       if(typeof url !== 'string')
-        return reject(new TypeError('invalid url argument'));
+        return reject(new TypeError('Invalid url argument'));
       const tx = this.conn.transaction('entry');
       const store = tx.objectStore('entry');
       const index = store.index('urls');
@@ -284,29 +255,24 @@ class FeedDb {
   // @param feed {Object}
   putFeed(feed) {
     return new Promise((resolve, reject) => {
-      this.log.debug('Storing feed %s', Feed.getURL(feed));
       feed.dateUpdated = new Date();
       const tx = this.conn.transaction('feed', 'readwrite');
       const store = tx.objectStore('feed');
       const request = store.put(feed);
-      request.onsuccess = (event) => {
-        feed.id = feed.id || event.target.result;
+      request.onsuccess = () => {
+        feed.id = feed.id || request.result;
         resolve(feed);
       };
-      request.onerror = (event) => reject(event.target.error);
+      request.onerror = () => reject(request.error);
     });
   }
 
-  // Resolves with an array of all feeds in storage
   getFeeds() {
     return new Promise((resolve, reject) => {
       const tx = this.conn.transaction('feed');
       const store = tx.objectStore('feed');
       const request = store.getAll();
-      request.onsuccess = () => {
-        this.log.debug('Loaded %d feeds from database', request.result.length);
-        resolve(request.result);
-      }
+      request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
   }
@@ -323,39 +289,29 @@ class FeedDb {
 
   countUnreadEntries() {
     return new Promise((resolve, reject) => {
-      this.log.debug('Counting unread entries');
       const tx = this.conn.transaction('entry');
       const store = tx.objectStore('entry');
       const index = store.index('readState');
       const request = index.count(Entry.UNREAD);
-      request.onsuccess = (event) => {
-        this.log.debug('Counted %d unread entries', request.result);
-        resolve(request.result);
-      };
+      request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
   }
 
   getUnarchivedReadEntries() {
     return new Promise((resolve, reject) => {
-      this.log.debug('Getting unarchived read entries');
       const tx = this.conn.transaction('entry');
       const store = tx.objectStore('entry');
       const index = store.index('archiveState-readState');
       const key_path = [Entry.UNARCHIVED, Entry.READ];
       const request = index.getAll(key_path);
       request.onsuccess = () => resolve(request.result);
-      request.onerror = (event) => {
-        this.log.debug(event.target.error);
-        reject(event.target.error);
-      };
+      request.onerror = () => reject(request.error);
     });
   }
 
   // Promise.all is failfast so this aborts if any one entry fails
-  // TODO: is there really a need to use a shared transaction?
   async putAllEntries(entries) {
-    this.log.debug('Putting %d entries', entries.length);
     const tx = this.conn.transaction('entry', 'readwrite');
     const proms = entries.map((entry) => this.putEntry(tx, entry));
     return await Promise.all(proms);
@@ -389,7 +345,7 @@ class FeedDb {
         if(limit > 0 && ++counter < limit)
           cursor.continue();
       };
-      request.onerror = (event) => reject(event.target.error);
+      request.onerror = () => reject(request.error);
     });
   }
 
@@ -399,13 +355,9 @@ class FeedDb {
   // @param tx {IDBTransaction} the tx should include entry store and be rw
   putEntry(tx, entry) {
     return new Promise((resolve, reject) => {
-      this.log.debug('Putting entry with id', entry.id);
       entry.dateUpdated = new Date();
       const request = tx.objectStore('entry').put(entry);
-      request.onsuccess = (event) => {
-        this.log.debug('Put entry with id', entry.id);
-        resolve(event.target.result);
-      };
+      request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
   }
@@ -414,15 +366,8 @@ class FeedDb {
   // Rejects when an error occurred.
   findEntryById(tx, id) {
     return new Promise((resolve, reject) => {
-      this.log.debug('Finding entry by id', id);
-      const store = tx.objectStore('entry');
-      const request = store.get(id);
-      request.onsuccess = (event) => {
-        const entry = event.target.result;
-        if(entry)
-          this.log.debug('Found entry %s with id', Entry.getURL(entry), id);
-        resolve(entry);
-      };
+      const request = tx.objectStore('entry').get(id);
+      request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
   }
@@ -430,7 +375,7 @@ class FeedDb {
   static removeDatabase(name) {
     return new Promise((resolve, reject) => {
       const request = indexedDB.deleteDatabase(name);
-      request.onsuccess = resolve();
+      request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
   }

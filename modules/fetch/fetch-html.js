@@ -4,8 +4,11 @@
 
 // Returns a Document object or throws an error. When a timeout occurs, the
 // fetch is not canceled, but this still rejects early.
-async function fetch_html(url, timeout = 0, log = SilentConsole) {
-  log.log('GET', url);
+async function fetch_html(url, timeout = 0, log) {
+
+  log = log || {'log': function(){}};
+
+  log.debug('GET', url);
   const opts = {};
   opts.credentials = 'omit';
   opts.method = 'GET';
@@ -16,8 +19,18 @@ async function fetch_html(url, timeout = 0, log = SilentConsole) {
   opts.referrer = 'no-referrer';
 
   const promises = [fetch(url, opts)];
-  if(timeout)
-    promises.push(fetch_timeout(timeout));
+
+  // Temp, delete once tested, trying to avoid dependencies
+  // also delete fetch-utils include
+  //if(timeout)
+    //promises.push(fetch_timeout(timeout));
+
+  if(timeout) {
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(reject, timeout, new Error('Request timed out ' + url)));
+    promises.push(timeoutPromise);
+  }
+
   const response = await Promise.race(promises);
 
   // Treat unwanted response codes as errors
@@ -35,11 +48,8 @@ async function fetch_html(url, timeout = 0, log = SilentConsole) {
   if(!text.length)
     throw new Error(`${response.status} ${response.statusText} ${url}`);
 
-  // For some reason the implementers of the new fetch API did not provide a
-  // native reader for HTML, so we have to do the parsing by hand.
-  // By not catching a parse exception in this async context it becomes a
-  // rejection of the async function as intended.
   const parser = new DOMParser();
+  // A parse error will become a rejection
   const doc = parser.parseFromString(text, 'text/html');
   if(doc.documentElement.localName !== 'html')
     throw new Error(

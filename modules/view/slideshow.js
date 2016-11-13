@@ -273,18 +273,32 @@ function count_unread_slides() {
   return document.body.querySelectorAll('div[entry]:not([read])').length;
 }
 
-let keydown_timer = null;
+let nav_keydown_timer = null;
 window.addEventListener('keydown', function(event) {
-  const LEFT = 37, RIGHT = 39, N = 78, P = 80;
+  // Redefine space from page down to navigate next
+  const LEFT = 37, RIGHT = 39, N = 78, P = 80, SPACE = 32;
   const code = event.keyCode;
-  if(code === RIGHT || code === N) {
-    clearTimeout(keydown_timer);
-    keydown_timer = setTimeout(show_next_slide, 0);
+  if(code === RIGHT || code === N || code === SPACE) {
+    cancelIdleCallback(nav_keydown_timer);
+    nav_keydown_timer = requestIdleCallback(show_next_slide);
   } else if(code === LEFT || code === P) {
-    clearTimeout(keydown_timer);
-    keydown_timer = setTimeout(show_prev_slide, 0);
+    cancelIdleCallback(nav_keydown_timer);
+    nav_keydown_timer = requestIdleCallback(show_prev_slide);
   }
 });
+
+// Override built in keyboard scrolling
+let scroll_callback_handle;
+window.addEventListener('keydown', function(ev) {
+  const DOWN = 40, UP = 38, ae = document.activeElement;
+  if(ev.keyCode !== DOWN && ev.keyCode !== UP) return;
+  if(!ae) return;
+  ev.preventDefault();
+  cancelIdleCallback(scroll_callback_handle);
+  scroll_callback_handle = requestIdleCallback(() =>
+    ae.scrollTop += ev.keyCode === UP ? -200 : 200);
+});
+
 
 function init_slides(event) {
   display_load_styles();
