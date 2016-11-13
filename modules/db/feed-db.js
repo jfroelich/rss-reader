@@ -35,10 +35,6 @@ class FeedDb {
     this.version = config.db_version;
   }
 
-  get name() {
-    return this.conn.name;
-  }
-
   // Request the database connection to eventually close
   close() {
     if(this.conn) {
