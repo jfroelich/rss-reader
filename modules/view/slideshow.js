@@ -5,6 +5,7 @@
 { // Begin file block scope
 
 // Reference to element
+// TODO: maybe document.activeElement is sufficient
 let current_slide = null;
 
 const db_chan = new BroadcastChannel('db');
@@ -299,13 +300,9 @@ window.addEventListener('keydown', function(ev) {
     ae.scrollTop += ev.keyCode === UP ? -200 : 200);
 });
 
-
-function init_slides(event) {
+document.addEventListener('DOMContentLoaded', function(event) {
   display_load_styles();
   append_slides();
-}
-
-// TODO: look into the {once:true} thing
-document.addEventListener('DOMContentLoaded', init_slides, {'once': true});
+}, {'once': true});
 
 } // End file block scope
