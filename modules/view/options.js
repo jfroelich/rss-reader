@@ -282,42 +282,39 @@ function hide_sub_preview() {
 async function start_subscription(url) {
   if(!is_url_object(url))
     throw new TypeError();
+
   hide_sub_preview();
   show_sub_monitor();
   append_sub_monitor_msg(`Subscribing to ${url.href}`);
+
   const feed = {};
   Feed.addURL(feed, url.href);
-
-  let fade_out = false;
-
-  const feedDb = new FeedDb();
-  feedDb.log = console;
 
   const subService = new SubscriptionService();
   subService.log = console;
   subService.feedDb = feedDb;
-
+  let subbed_feed;
   try {
-    await feedDb.connect();
-    subService.iconConn = await Favicon.connect();
-    let subbed_feed = await subService.subscribe(feed);
-    append_feed(subbed_feed, true);
-    update_feed_count();
-    const feed_url = Feed.getURL(subbed_feed);
-    append_sub_monitor_msg(`Subscribed to ${feed_url}`);
-
-    const monitor = document.getElementById('submon');
-    await fade_element(monitor, 2, 1);
-    monitor.remove();
-    const subs_section = document.getElementById('subs-list-section');
-    show_section(subs_section);
+    await subService.connect();
+    subbed_feed = await subService.subscribe(feed);
   } catch(error) {
     console.debug(error);
   } finally {
-    feedDb.close();
-    if(subService.iconConn)
-      subService.iconConn.close();
+    subService.close();
   }
+
+  if(!subbed_feed)
+    return;
+
+  append_feed(subbed_feed, true);
+  update_feed_count();
+  const feed_url = Feed.getURL(subbed_feed);
+  append_sub_monitor_msg(`Subscribed to ${feed_url}`);
+  const monitor = document.getElementById('submon');
+  await fade_element(monitor, 2, 1);
+  monitor.remove();
+  const subs_section = document.getElementById('subs-list-section');
+  show_section(subs_section);
 }
 
 // TODO: show num entries, num unread/red, etc
@@ -498,15 +495,19 @@ async function sub_form_on_submit(event) {
   const item_element = document.createElement('li');
   item_element.textContent = `Found ${entries.length} feeds.`;
   results_list_element.appendChild(item_element);
-  const conn = await Favicon.connect();
+
+  const fs = new FaviconService();
+  fs.log = console;// tmp, debug
+
+  await fs.connect();
   for(let result of entries) {
     if(!result.link)
       continue;
     link_url = new URL(result.link);
-    icon_url = await Favicon.lookup(conn, link_url, console);
+    icon_url = await fs.lookup(link_url);
     result.faviconURLString = icon_url;
   }
-  conn.close();
+  fs.close();
 
   const elements = entries.map(create_search_result_element);
   elements.forEach((el) => results_list_element.appendChild(el));

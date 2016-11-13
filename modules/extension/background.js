@@ -82,12 +82,14 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
       console.debug(error);
     }
   } else if(alarm.name === 'compact-favicons') {
+    const fs = new FaviconService();
     try {
-      const conn = await Favicon.connect();
-      let num_deleted = await Favicon.compact(conn);
-      conn.close();
+      await fs.connect();
+      await fs.compact();
     } catch(error) {
-      console.debug(error);
+      console.warn(error);
+    } finally {
+      fs.close();
     }
   } else if(alarm.name === 'refresh-feed-icons') {
     try {

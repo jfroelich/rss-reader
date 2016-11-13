@@ -9,13 +9,18 @@ async function refresh_feed_icons(log = SilentConsole) {
   const feedDb = new FeedDb();
   feedDb.log = log;
 
+  const fs = new FaviconService();
+  fs.log = log;
+  fs.cache.log = log;
 
-  await feedDb.connect();
-  const icon_conn = await Favicon.connect();
+  // TODO: use try finally
+
+  await Promise.all([feedDb.connect(), fs.connect()]);
+
   const feeds = await feedDb.getFeeds();
   for(let feed of feeds) {
     const lookup_url = get_lookup_url(feed);
-    const icon_url = await Favicon.lookup(icon_conn, lookup_url, log);
+    const icon_url = await fs.lookup(lookup_url);
     if(!icon_url)
       continue;
     if(!feed.faviconURLString || feed.faviconURLString !== icon_url) {
@@ -27,7 +32,7 @@ async function refresh_feed_icons(log = SilentConsole) {
   log.log('Completed refreshing feed favicons. Modified %d', num_modified);
 
   feedDb.close();
-  icon_conn.close();
+  fs.close();
 
   // TODO: inline
   // TODO: there is no longer a guarantee that feed.link contains a valid

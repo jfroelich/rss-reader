@@ -35,11 +35,11 @@ poll.run = async function(options = {}) {
   const feedDb = new FeedDb();
   feedDb.log = log;
 
-  const [_, icon_conn] = await Promise.all([
-    feedDb.connect(),
-    Favicon.connect()
-  ]);
+  const fs = new FaviconService();
+  fs.log = log;
+  fs.cache.log = log;
 
+  await Promise.all([feedDb.connect(), fs.connect()]);
   let feeds = await feedDb.getFeeds();
 
   if(!options.ignore_recent_poll_guard) {
@@ -55,8 +55,8 @@ poll.run = async function(options = {}) {
     });
   }
 
-  const promises = feeds.map((feed) => poll.process_feed(feedDb,
-    icon_conn, feed, options.skip_unmodified_guard, log));
+  const promises = feeds.map((feed) => poll.process_feed(feedDb, fs, feed,
+    options.skip_unmodified_guard, log));
   const resolutions = await Promise.all(promises);
   const num_entries_added = resolutions.reduce((sum, added) => sum + added, 0);
 
@@ -71,7 +71,7 @@ poll.run = async function(options = {}) {
   }
 
   feedDb.close();
-  icon_conn.close();
+  fs.close();
   log.debug('Polling completed');
   return num_entries_added;
 };
@@ -79,7 +79,7 @@ poll.run = async function(options = {}) {
 // TODO: maybe this should bubble fetch errors upward, and this should be
 // wrapped in another promise that always resolves
 
-poll.process_feed = async function(feedDb, icon_conn, localFeed,
+poll.process_feed = async function(feedDb, fs, localFeed,
   skip_unmodified_guard, log) {
 
   let num_entries_added = 0;
@@ -137,8 +137,8 @@ poll.process_feed = async function(feedDb, icon_conn, localFeed,
     entry.feedTitle = storable_feed.title;
   }
 
-  const promises = remote_entries.map((entry) => poll.process_entry(feedDb,
-    icon_conn, storable_feed, entry, log));
+  const promises = remote_entries.map((entry) => poll.process_entry(feedDb, fs,
+    storable_feed, entry, log));
   promises.push(feedDb.putFeed(storable_feed));
   const results = await Promise.all(promises);
   results.pop();// remove putFeed promise before reduce
@@ -183,7 +183,7 @@ poll.rewrite_entry_url = function(entry) {
 // TODO: instead of trying to not reject in case of an error, maybe this should
 // reject, and I use a wrapping function than translates rejections into
 // negative resolutions
-poll.process_entry = async function(feedDb, icon_conn, feed, entry, log) {
+poll.process_entry = async function(feedDb, fs, feed, entry, log) {
   const rewritten = poll.rewrite_entry_url(entry);
   if(poll.should_exclude_entry(entry))
     return false;
@@ -193,7 +193,7 @@ poll.process_entry = async function(feedDb, icon_conn, feed, entry, log) {
     return false;
 
   const request_url = new URL(Entry.getURL(entry));
-  const icon_url = await Favicon.lookup(icon_conn, request_url, log);
+  const icon_url = await fs.lookup(request_url);
   entry.faviconURLString = icon_url || feed.faviconURLString;
 
   let doc, response_url;

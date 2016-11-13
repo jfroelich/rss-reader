@@ -14,23 +14,17 @@ class SubscriptionService {
 
     this.suppressNotifications = false;
     this.feedDb = new FeedDb();
-    this.iconConn = null;
+    this.faviconService = new FaviconService();
     this.fetchTimeout = 2000;
   }
 
   async connect() {
-    await this.feedDb.connect();
-    this.iconConn = await Favicon.connect();
+    await Promise.all([this.feedDb.connect(), this.faviconService.connect()]);
   }
 
   close() {
     this.feedDb.close();
-
-    if(this.iconConn) {
-      this.iconConn.close();
-    } else {
-      this.log.warn('close partly failed, this.iconConn is undefined');
-    }
+    this.faviconService.close();
   }
 
   // Returns the feed that was added if successful, or undefined/null if problem,
@@ -71,7 +65,7 @@ class SubscriptionService {
     // TODO: this should be a function in feed.js
     // TODO: there is no longer a guarantee that feed.link is a valid url, this
     // needs a try/catch if a url parse error is non-fatal. That or I should
-    // revise Favicon.lookup to accept a string as input
+    // revise FaviconService.lookup to accept a string as input
     let lookupURL;
     if(mergedFeed.link) {
       lookupURL = new URL(mergedFeed.link);
@@ -80,10 +74,10 @@ class SubscriptionService {
       lookupURL = new URL(feedURL.origin);
     }
 
-    // Favicon lookup errors are not fatal with respect to subscribing so
+    // FaviconService lookup errors are not fatal with respect to subscribing so
     // just log a warning
     try {
-      const icon_url = await Favicon.lookup(this.iconConn, lookupURL, this.log);
+      const icon_url = await this.faviconService.lookup(lookupURL);
       mergedFeed.faviconURLString = icon_url;
     } catch(error) {
       this.log.warn(error);

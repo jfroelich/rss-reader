@@ -6,25 +6,28 @@
 
 async function test_lookup(url_str, log) {
   const url = new URL(url_str);
-  let conn;
+  const fs = new FaviconService();
+  fs.log = log;
+  fs.cache.log = log;
+
   try {
-    conn = await Favicon.connect();
-    const icon = await Favicon.lookup(conn, url, log);
-    console.debug('Result:', icon);
+    await fs.connect();
+    console.debug(await fs.lookup(url));
   } catch(error) {
-    console.log(error);
+    console.warn(error);
   } finally {
-    if(conn)
-      conn.close();
+    fs.close();
   }
 }
 
 async function test_compact() {
+  const fs = new FaviconService();
   try {
-    const conn = await Favicon.connect();
-    let num_deleted = await Favicon.compact(conn, console);
-    conn.close();
+    await fs.connect();
+    await fs.compact();
   } catch(error) {
-    console.debug(error);
+    console.warn(error);
+  } finally {
+    fs.close();
   }
 }
