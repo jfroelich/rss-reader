@@ -25,6 +25,7 @@
       "/modules/controllers/remove-entries-missing-urls.js",
       "/modules/controllers/remove-orphan-entries.js",
       "/modules/cli/cli.js",
+      "/modules/db/feed-db.js",
       "/modules/domscrub/domscrub.js",
       "/modules/extension/background.js",
       "/modules/extension/badge.js",
@@ -40,7 +41,6 @@
       "/modules/poll/poll-feeds.js",
       "/modules/poll/resolve-document.js",
       "/modules/poll/rewrite.js",
-      "/modules/storage/reader-storage.js",
       "/modules/third-party/parse-srcset.js"
     ]
   },

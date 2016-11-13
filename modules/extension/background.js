@@ -65,15 +65,14 @@ create_alarms();
 chrome.alarms.onAlarm.addListener(async function(alarm) {
   console.debug('Alarm wakeup', alarm.name);
   if(alarm.name === 'archive') {
-    let store;
+    const db = new FeedDb();
     try {
-      store = await ReaderStorage.connect();
-      await archive_entries(store);
+      await db.connect();
+      await archive_entries(db);
     } catch(error) {
-      console.debug(error);
+      console.warn(error);
     } finally {
-      if(store)
-        store.disconnect();
+      db.close();
     }
   } else if(alarm.name === 'poll') {
     try {
@@ -104,13 +103,18 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
 
 chrome.runtime.onInstalled.addListener(async function oninstall(event) {
   console.log('Installing extension ...');
+
+  const db = new FeedDb();
+  db.log = console;
+
   // The initial connect will also trigger database creation/upgrade
   try {
-    const store = await ReaderStorage.connect(console);
-    badge_update_text(store);
-    store.disconnect();
+    db = await db.connect();
+    badge_update_text(db);
   } catch(error) {
     console.debug(error);
+  } finally {
+    db.close();
   }
 });
 

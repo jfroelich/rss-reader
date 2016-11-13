@@ -290,10 +290,14 @@ async function start_subscription(url) {
   const suppress_notifs = false;
   const icon_cache_conn = null;
   let fade_out = false;
+
+  const feedDb = new FeedDb();
+  feedDb.log = console;
+  let icon_conn;
   try {
-    const feed_store = await ReaderStorage.connect(console);
-    const icon_conn = await Favicon.connect();
-    let subbed_feed = await subscribe(feed_store, icon_conn, feed,
+    await feedDb.connect();
+    icon_conn = await Favicon.connect();
+    let subbed_feed = await subscribe(feedDb, icon_conn, feed,
       suppress_notifs, console);
     append_feed(subbed_feed, true);
     update_feed_count();
@@ -303,34 +307,38 @@ async function start_subscription(url) {
     const monitor = document.getElementById('submon');
     await fade_element(monitor, 2, 1);
     monitor.remove();
-
     const subs_section = document.getElementById('subs-list-section');
     show_section(subs_section);
-    feed_store.disconnect();
-    icon_conn.close();
   } catch(error) {
     console.debug(error);
+  } finally {
+    feedDb.close();
+    if(icon_conn)
+      icon_conn.close();
   }
 }
 
 // TODO: show num entries, num unread/red, etc
 // TODO: show dateLastModified, datePublished, dateCreated, dateUpdated
 // TODO: react to errors
+// TODO: should this even catch?
 async function feed_list_item_on_click(event) {
+
+  const feedDb = new FeedDb();
+  feedDb.log = console;
+
   const feed_id = parseInt(event.currentTarget.getAttribute('feed'), 10);
   if(!Number.isInteger(feed_id) || feed_id < 1)
     throw new TypeError();
 
-  // TODO: should this even catch?
-  let store, feed;
+  let feed;
   try {
-    store = await ReaderStorage.connect(console);
-    feed = await store.findFeedById(feed_id);
+    await feedDb.connect();
+    feed = await feedDb.findFeedById(feed_id);
   } catch(error) {
-    console.debug(error);
+    console.warn(error);
   } finally {
-    if(store)
-      store.disconnect();
+    feedDb.close();
   }
 
   // TODO: should this throw?
@@ -594,10 +602,14 @@ async function unsubscribe_btn_on_click(event) {
   const feed_id = parseInt(event.target.value, 10);
   if(!Number.isInteger(feed_id) || feed_id < 1)
     throw new TypeError(`Invalid feed id ${event.target.value}`);
+
+  const feedDb = new FeedDb();
+  feedDb.log = console;
+
   try {
-    const feed_store = await ReaderStorage.connect(console);
-    let num_deleted = await unsubscribe(feed_store, feed_id, console);
-    feed_store.disconnect();
+    await feedDb.connect();
+    let num_deleted = await unsubscribe(feedDb, feed_id, console);
+    feedDb.close();
     console.debug('Unsubscribed from feed id', feed_id);
     remove_feed_from_feed_list(feed_id);
     const subs_section = document.getElementById('subs-list-section');
@@ -605,6 +617,8 @@ async function unsubscribe_btn_on_click(event) {
   } catch(error) {
     // TODO: show an error
     console.debug(error);
+  } finally {
+    feedDb.close();
   }
 }
 
@@ -621,15 +635,29 @@ function import_opml_btn_on_click(event) {
   uploader.setAttribute('accept', 'application/xml');
   uploader.onchange = async function on_change(event) {
     uploader.removeEventListener('change', on_change);
-    let db;
+
+    // TODO: the only part of the importer that cares about the db is
+    // the subscription process. So really, I need subscribe to be a class,
+    // set db as a property of it, then set subscribe class as property of
+    // importer, and also remove feedDb property from importer.
+
+    // This way the importer only knows that it needs to use the
+    // SubscribeService class, which is more appropriate DI and law of demeter
+
+    const feedDb = new FeedDb();
+    feedDb.log = console;
+
+    const importer = new OPMLImporter();
+    importer.log = console;
+    importer.feedDb = feedDb;
+
     try {
-      db = await ReaderStorage.connect(console);
-      await OPMLImporter.importFiles(db, uploader.files, console);
+      await feedDb.connect();
+      await importer.importFiles(uploader.files);
     } catch(error) {
       console.debug(error);
     } finally {
-      if(db)
-        db.disconnect();
+      feedDb.close();
     }
   };
   uploader.click();
@@ -640,15 +668,18 @@ async function export_opml_btn_on_click(event) {
   console.debug('Clicked export opml button');
   const title = 'Subscriptions';
   const file_name = 'subs.xml';
-  let feed_store, feeds;
+
+  const feedDb = new FeedDb();
+  feedDb.log = console;
+
+  let feeds;
   try {
-    feed_store = await ReaderStorage.connect(console);
-    feeds = await feed_store.getFeeds();
+    await feedDb.connect();
+    feeds = await feedDb.getFeeds();
   } catch(error) {
-    console.debug(error);
+    console.warn(error);
   } finally {
-    if(feed_store)
-      feed_store.disconnect();
+    feedDb.close();
   }
 
   if(feeds)
@@ -660,20 +691,22 @@ async function export_opml_btn_on_click(event) {
 async function init_subs_section() {
   const no_feeds_element = document.getElementById('nosubs');
   const feed_list = document.getElementById('feedlist');
-  let feed_store, feeds;
+
+  const feedDb = new FeedDb();
+  feedDb.log = console;
+
+  let feeds;
   try {
-    feed_store = await ReaderStorage.connect(console);
-    feeds = await feed_store.getFeeds();
+    await feedDb.connect();
+    feeds = await feedDb.getFeeds();
   } catch(error) {
     console.debug(error);
   } finally {
-    if(feed_store)
-      feed_store.disconnect();
+    feedDb.close();
   }
 
-  if(!feeds) {
+  if(!feeds)
     return;
-  }
 
   // Sort the feeds by title in memory using indexedDB.cmp
   feeds.sort(function(a, b) {

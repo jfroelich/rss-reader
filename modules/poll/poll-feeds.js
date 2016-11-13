@@ -28,12 +28,15 @@ poll.run = async function(options = {}) {
     }
   }
 
-  const [feed_store, icon_conn] = await Promise.all([
-    ReaderStorage.connect(log),
+  const feedDb = new FeedDb();
+  feedDb.log = log;
+
+  const [_, icon_conn] = await Promise.all([
+    feedDb.connect(),
     Favicon.connect()
   ]);
 
-  let feeds = await feed_store.getFeeds();
+  let feeds = await feedDb.getFeeds();
 
   if(!options.ignore_recent_poll_guard) {
     const current_date = new Date();
@@ -48,13 +51,13 @@ poll.run = async function(options = {}) {
     });
   }
 
-  const promises = feeds.map((feed) => poll.process_feed(feed_store,
+  const promises = feeds.map((feed) => poll.process_feed(feedDb,
     icon_conn, feed, options.skip_unmodified_guard, log));
   const resolutions = await Promise.all(promises);
   const num_entries_added = resolutions.reduce((sum, added) => sum + added, 0);
 
   if(num_entries_added > 0) {
-    await badge_update_text(feed_store, log);
+    await badge_update_text(feedDb, log);
     const chan = new BroadcastChannel('poll');
     chan.postMessage('completed');
     chan.close();
@@ -63,13 +66,13 @@ poll.run = async function(options = {}) {
       'Added ' + num_entries_added + ' new articles');
   }
 
-  feed_store.disconnect();
+  feedDb.close();
   icon_conn.close();
   log.debug('Polling completed');
   return num_entries_added;
 };
 
-poll.process_feed = async function(feed_store, icon_conn, feed,
+poll.process_feed = async function(feedDb, icon_conn, feed,
   skip_unmodified_guard, log) {
 
   let num_entries_added = 0;
@@ -115,9 +118,9 @@ poll.process_feed = async function(feed_store, icon_conn, feed,
     entry.feedTitle = storable_feed.title;
   }
 
-  const promises = entries.map((entry) => poll.process_entry(feed_store,
+  const promises = entries.map((entry) => poll.process_entry(feedDb,
     icon_conn, storable_feed, entry, log));
-  promises.push(feed_store.putFeed(storable_feed));
+  promises.push(feedDb.putFeed(storable_feed));
   const results = await Promise.all(promises);
   results.pop();// remove putFeed promise before reduce
   return results.reduce((sum, r) => r ? sum + 1 : sum, 0);
@@ -161,13 +164,13 @@ poll.rewrite_entry_url = function(entry) {
 // TODO: instead of trying to not reject in case of an error, maybe this should
 // reject, and I use a wrapping function than translates rejections into
 // negative resolutions
-poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
+poll.process_entry = async function(feedDb, icon_conn, feed, entry, log) {
   const rewritten = poll.rewrite_entry_url(entry);
   if(poll.should_exclude_entry(entry))
     return false;
-  if(await feed_store.containsEntryURL(entry.urls[0]))
+  if(await feedDb.containsEntryURL(entry.urls[0]))
     return false;
-  if(rewritten && await feed_store.containsEntryURL(Entry.getURL(entry)))
+  if(rewritten && await feedDb.containsEntryURL(Entry.getURL(entry)))
     return false;
 
   const request_url = new URL(Entry.getURL(entry));
@@ -181,12 +184,12 @@ poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
   } catch(error) {
     log.warn(error);
     poll.prep_local_entry(entry);
-    return await poll.add_entry(feed_store, entry, log);
+    return await poll.add_entry(feedDb, entry, log);
   }
 
   const redirected = poll.did_redirect(entry.urls, response_url);
   if(redirected) {
-    if(await feed_store.containsEntryURL(response_url))
+    if(await feedDb.containsEntryURL(response_url))
       return false;
     Entry.addURL(entry, response_url);
   }
@@ -202,7 +205,7 @@ poll.process_entry = async function(feed_store, icon_conn, feed, entry, log) {
     await DocumentLayout.setDocumentImageDimensions(doc, fetch_image_timeout);
   poll.prep_doc(doc);
   entry.content = doc.documentElement.outerHTML.trim();
-  return await poll.add_entry(feed_store, entry, log);
+  return await poll.add_entry(feedDb, entry, log);
 };
 
 // Suppress errors so that Promise.all fully iterates

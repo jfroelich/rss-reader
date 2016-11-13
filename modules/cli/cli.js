@@ -4,19 +4,26 @@
 
 // Command line interface module. For performing operations from the console,
 // with logging to console.
-const cli = {};
 
-cli.archive_entries = async function() {
-  const store = await ReaderStorage.connect(console);
-  const num_archived = await archive_entries(store, undefined, console);
-  store.disconnect();
-};
+class cli {
+  static async archiveEntries() {
+    const db = new FeedDb();
+    db.log = console;
+    try {
+      db.connect();
+      await archive_entries(db, undefined, console);
+    } finally {
+      if(db)
+        db.close();
+    }
+  }
 
-cli.poll = async function(disable_log) {
-  const num_added = await poll.run({
-    'ignore_idle_state': 1,
-    'skip_unmodified_guard': 1,
-    'ignore_recent_poll_guard': 1,
-    'log': disable_log ? undefined : console
-  });
-};
+  static async pollFeeds(nolog) {
+    await poll.run({
+      'ignore_idle_state': 1,
+      'skip_unmodified_guard': 1,
+      'ignore_recent_poll_guard': 1,
+      'log': nolog ? undefined : console
+    });
+  }
+}

@@ -2,6 +2,7 @@
 
 'use strict';
 
+// TODO: create issues for these todos
 // TODO: add/update feed should delegate to put feed
 // TODO: maybe merge add/put entry into one function
 // TODO: maybe entry states should be in a single property instead of
@@ -9,12 +10,29 @@
 // TODO: remove the defined feed title requirement, have options manually sort
 // feeds instead of using the title index, deprecate the title index, stop
 // ensuring title is an empty string. note: i partly did some of this
+// TODO: I don't think this needs logging functionality
+
+// TODO: I have mixed feelings about this. It isn't purpose aligned, it has poor
+// coherency. I need to review SRP here. Yes, it is nice to have a single
+// abstraction around the db. But not for the queries really. Even though they
+// all share the conn parameter, and are db related.
+// I should be designing modules around their purpose. The task is to clearly
+// define what are the purposes. I don't have a clear idea.
+
 
 // Wraps an opened IDBDatabase instance to provide storage related functions
-class ReaderStorage {
+class FeedDb {
 
-  constructor(log = SilentConsole) {
-    this.log = log;
+  constructor() {
+    this.log = {
+      'log': function(){},
+      'debug': function(){},
+      'warn': function(){},
+      'error': function(){}
+    };
+    this.conn = null;
+    this.name = config.db_name;
+    this.version = config.db_version;
   }
 
   get name() {
@@ -22,7 +40,7 @@ class ReaderStorage {
   }
 
   // Request the database connection to eventually close
-  disconnect() {
+  close() {
     if(this.conn) {
       this.log.debug('Closing connection to database', this.conn.name);
       this.conn.close();
@@ -31,30 +49,29 @@ class ReaderStorage {
     }
   }
 
-  // Returns a promise that resolves to a new ReaderStorage instance with an
-  // active connection. Use this factory method instead of the constructor
-  static connect(log = SilentConsole, name = config.db_name,
-    version = config.db_version) {
+  connect() {
     return new Promise((resolve, reject) => {
-      if(!name.length)
-        throw new TypeError('name is an empty string');
-      const store = new ReaderStorage(log);
-      store.log.log('Connecting to database', name, 'version',version);
-      const request = indexedDB.open(name, version);
-      request.onupgradeneeded = store._onupgradeneeded;
-      request.onsuccess = function onsuccess(event) {
-        store.conn = event.target.result;
-        store.log.log('Connected to database', store.name);
-        resolve(store);
+      if(!this.name)
+        throw new TypeError('Invalid database name');
+      if(!Number.isInteger(this.version))
+        throw new TypeError('Invalid database version')
+      this.log.log('Connecting to database', this.name, 'version',
+        this.version);
+      const request = indexedDB.open(this.name, this.version);
+      request.onupgradeneeded = this.upgrade.bind(this);
+      request.onsuccess = () => {
+        this.conn = request.result;
+        this.log.log('Connected to database', this.conn.name);
+        resolve();
       };
-      request.onerror = (event) => reject(event.target.error);
+      request.onerror = () => reject(request.error);
       request.onblocked = (event) =>
-        store.log.log('Waiting on blocked connection...');
+        this.log.warn('Waiting on blocked connection...');
     });
   }
 
   // TODO: revert upgrade to using a version migration approach
-  _onupgradeneeded(event) {
+  upgrade(event) {
     const conn = event.target.result;
     const tx = event.target.transaction;
     let feed_store = null, entry_store = null;

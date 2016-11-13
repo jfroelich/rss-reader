@@ -7,17 +7,21 @@
 async function test() {
   const max_age = 10;
   let close_called = false;
+  const db = new FeedDb();
+  db.name = 'test-archive-entries';
+  db.version = 1;
+  db.log = console;
+
   try {
-    const store = ReaderStorage.connect('test-archive-entries', 1);
-    store.log = console;
-    const num_modified = await archive_entries(store, max_age, console);
-    store.disconnect();
+    await db.connect();    
+    const num_modified = await archive_entries(db, max_age, console);
+    db.close();
     close_called = true;
-    await ReaderStorage.removeDatabase(target.name);
+    await FeedDb.removeDatabase(target.name);
   } catch(error) {
     console.debug(error);
   } finally {
-    if(!close_called && store)
-      store.disconnect();
+    if(!close_called && db)
+      db.close();
   }
 }
