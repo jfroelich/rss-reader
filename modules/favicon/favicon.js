@@ -6,9 +6,9 @@ class FaviconCache {
 
   constructor() {
     this.name = 'favicon-cache';
-    this.version = 1;
+    this.version = 2;
     this.conn = null;
-    this.maxAge = 1000 * 60 * 60 * 24 * 30;// 30 days default
+    this.maxAge = 1000 * 60 * 60 * 24 * 30;// 30d in ms default
   }
 
   isExpired(entry, currentDate) {
@@ -19,7 +19,7 @@ class FaviconCache {
   connect() {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.name, this.version);
-      request.onupgradeneeded = this._upgrade;
+      request.onupgradeneeded = this.upgrade;
       request.onsuccess = () => resolve(this.conn = request.result);
       request.onerror = () => reject(request.error);
       request.onblocked = () => console.warn('Connection blocked');
@@ -33,16 +33,26 @@ class FaviconCache {
       console.warn('this.conn undefined');
   }
 
-  _upgrade(event) {
+  upgrade(event) {
     const conn = event.target.result;
-    if(!conn.objectStoreNames.contains('favicon-cache')) {
-      conn.createObjectStore('favicon-cache', {
+    const tx = event.target.transaction;
+
+    let faviconCacheStore;
+    if(!event.oldVersion || event.oldVersion < 1) {
+      console.debug('Creating favicon-cache object store');
+      faviconCacheStore = conn.createObjectStore('favicon-cache', {
         'keyPath': 'pageURLString'
       });
+    } else {
+      faviconCacheStore = tx.objectStore('favicon-cache');
+    }
+
+    if(event.oldVersion < 2) {
+      console.debug('Created index on dateUpdated');
+      faviconCacheStore.createIndex('dateUpdated', 'dateUpdated');
     }
   }
 
-  // @param url {String}
   find(url) {
     return new Promise((resolve, reject) => {
       const tx = this.conn.transaction('favicon-cache');
@@ -54,12 +64,9 @@ class FaviconCache {
   }
 
   // Adds or replaces an entry in the cache
-  // @param tx {IDBTransaction}
-  // @param page_url {String}
-  // @param icon_url {String}
-  add(tx, page_url, icon_url) {
+  put(tx, pageURL, iconURL) {
     return new Promise((resolve, reject) => {
-      const entry = {'pageURLString': page_url, 'iconURLString': icon_url,
+      const entry = {'pageURLString': pageURL, 'iconURLString': iconURL,
         'dateUpdated': new Date()};
       const store = tx.objectStore('favicon-cache');
       const request = store.put(entry);
@@ -68,49 +75,74 @@ class FaviconCache {
     });
   }
 
-  // Removes an entry from the cache database
-  // @param tx {IDBTransaction}
-  // @param page_url {String}
-  remove(tx, page_url) {
+  remove(tx, pageURL) {
     return new Promise((resolve, reject) => {
       const store = tx.objectStore('favicon-cache');
-      const request = store.delete(page_url);
+      const request = store.delete(pageURL);
       request.onsuccess = resolve;
       request.onerror = () => reject(request.error);
     });
   }
 
-  // Using the provided transaction, returns a promise that resolves to an array
-  // of all favicon entries in the database
-  // @param tx {IDBTransaction}
-  // @param log {console}
-  getAll(tx) {
+  getAll() {
     return new Promise((resolve, reject) => {
+      const tx = this.conn.transaction('favicon-cache');
       const store = tx.objectStore('favicon-cache');
       const request = store.getAll();
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
   }
+
+  getAllExpired() {
+    return new Promise((resolve, reject) => {
+      let cutoffTime = Date.now() - this.maxAge;
+      cutoffTime = cutoffTime < 0 ? 0 : cutoffTime;
+      const tx = this.conn.transaction('favicon-cache');
+      const store = tx.objectStore('favicon-cache');
+      const index = store.index('dateUpdated');
+      const range = IDBKeyRange.upperBound(new Date(cutoffTime));
+      const request = index.getAll(range);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => resolve(request.error);
+    });
+  }
+
+  // Returns an array of the results of remove entry calls
+  // @param urls {Array<String>} page urls to remove
+  async removeAll(urls) {
+    // Concurrently issue remove requests using a shared transaction
+    const tx = this.conn.transaction('favicon-cache', 'readwrite');
+    const proms = urls.map((url) => this.remove(tx, url));
+    return await Promise.all(proms);
+  }
+
+  async compact() {
+    const expiredEntries = await this.getAllExpired();
+    console.debug('Found %d expired entries', expiredEntries.length);
+    const expiredURLs = expiredEntries.map((e) => e.pageURLString);
+    const resolutions = await this.removeAll(expiredURLs);
+    return resolutions.length;
+  }
 }
 
 class FaviconService {
 
   constructor() {
-
     this.cache = new FaviconCache();
 
+    // By default send messages to nowhere
     this.log = {
       'debug': function(){},
       'log': function(){},
       'warn': function(){}
     };
 
-    // Byte size limits
+    // Byte size ends points for images
     this.minSize = 49;
     this.maxSize = 10 * 1024 + 1;
 
-    this.fetchHTMLTimeout = 500;
+    this.fetchHTMLTimeout = 1000;
     this.fetchImageTimeout = 100;
   }
 
@@ -136,32 +168,26 @@ class FaviconService {
     if(entry && !this.cache.isExpired(entry, currentDate))
       return entry.iconURLString;
 
-    // Check if we are online in order to fetch.
-    // This helps distinguish network errors from 404s.
+    // If we did not find a cached entry, or if we found a cached entry but it
+    // is expired, then plan on fetching. Before fetching, check if we are
+    // offline so as to distinguish offline from other fetch errors.
     if('onLine' in navigator && !navigator.onLine)
       return;
 
     // Fetch the html of the url. Fetch errors are non-fatal.
-    let doc, responseURL;
+    let doc, responseURL, redirected = false;
     try {
-      ({doc, responseURL} = await this.fetchDocument(url.href));
-    } catch(error) {
-      this.log.warn(error);
-    }
-
-    // If redirected, track the redirected url
-    if(responseURL) {
+      ({doc, responseURL, redirected} = await this.fetchDocument(url.href));
       responseURL = new URL(responseURL);
-
-      // TODO: this comparison isn't sufficient. The hash needs to be ignored
-      // because response.url will be different merely because hash is stripped
-      // but in reality no redirect occurred
-      if(responseURL.href !== url.href)
-        uniqURLs.push(responseURL.href);
+    } catch(error) {
+      this.log.warn(error, url.href);
     }
 
-    // If the fetch failed but we have an entry, remove it because it is no
-    // longer valid
+    // If redirected, add the normalized response url to unique urls
+    if(redirected)
+      uniqURLs.push(responseURL.href);
+
+    // If the fetch failed but we have an expired entry, remove it
     if(entry && !doc) {
       const tx = this.cache.conn.transaction('favicon-cache', 'readwrite');
       await this.cache.remove(tx, url.href);
@@ -177,7 +203,7 @@ class FaviconService {
       'link[rel="apple-touch-icon-precomposed"][href]'
     ];
     let docIconURL;
-    const baseURL = responseURL ? responseURL : url;
+    const baseURL = redirected ? responseURL : url;
     if(doc && doc.head) {
       for(let selector of selectors) {
         docIconURL = this.match(doc.head, selector, baseURL);
@@ -192,18 +218,19 @@ class FaviconService {
     if(docIconURL) {
       this.log.debug('Found favicon <link>', url.href, docIconURL.href);
       const tx = this.cache.conn.transaction('favicon-cache', 'readwrite');
-      const proms = uniqURLs.map((url) => this.cache.add(tx, url,
+      const proms = uniqURLs.map((url) => this.cache.put(tx, url,
         docIconURL.href));
       await Promise.all(proms);
       return docIconURL.href;
     }
 
-    // If redirected to different url, check cache for redirect
+    // If redirected, check cache for redirect
     let redirectEntry;
-    if(uniqURLs.length > 1)
+    if(redirected)
       redirectEntry = await this.cache.find(responseURL.href);
 
-    // If the redirect url is in the cache, then resolve with that
+    // If redirected and the redirect url is in the cache and not expired,
+    // then done
     if(redirectEntry && !this.cache.isExpired(redirectEntry, currentDate))
       return redirectEntry.iconURLString;
 
@@ -215,23 +242,27 @@ class FaviconService {
       originEntry = await this.cache.find(url.origin);
     }
 
-    // If we found an origin entry, resolve with that
+    // If we found an origin entry, resolve with that. Before returning, add the
+    // url and the response url (if redirected) to the cache
     if(originEntry && !this.cache.isExpired(originEntry, currentDate)) {
+      const iconURL = originEntry.iconURLString;
       const tx = this.cache.conn.transaction('favicon-cache', 'readwrite');
-      // Do not re-add the origin entry
-      let proms = uniqURLs.filter((url)=> url !== url.origin);
-      // Do add the url and possible redirect url, because those failed
-      proms = proms.map((url) => this.cache.add(tx, url,
-        originEntry.iconURLString));
-      await Promise.all(proms);
-      return originEntry.iconURLString;
+      if(redirected) {
+        const urls = [url.href, responseURL.href];
+        const proms = proms.map((url) => this.cache.put(tx, url, iconURL));
+        await Promise.all(proms);
+      } else {
+        await this.cache.put(tx, url.href, iconURL);
+      }
+
+      return iconURL;
     }
 
     // Fall back to checking domain root
     let imageSize, imageResponseURL;
     try {
-      ({imageSize, imageResponseURL} = await this.fetchImageHead(
-        url.origin + '/favicon.ico'));
+      const rootImageURL = url.origin + '/favicon.ico';
+      ({imageSize, imageResponseURL} = await this.fetchImageHead(rootImageURL));
     } catch(error) {
     }
 
@@ -241,13 +272,13 @@ class FaviconService {
     // If fetched and size is in range, then resolve to it
     if(imageResponseURL && sizeInRange) {
       const tx = this.cache.conn.transaction('favicon-cache', 'readwrite');
-      const proms = uniqURLs.map((url) => this.cache.add(tx, url,
+      const proms = uniqURLs.map((url) => this.cache.put(tx, url,
         imageResponseURL));
       await Promise.all(proms);
       return imageResponseURL;
     }
 
-    // Remove expired entries
+    // Remove entries we know that exist but are expired
     const expiredURLs = [];
     if(entry)
       expiredURLs.push(entry.pageURLString);
@@ -255,19 +286,7 @@ class FaviconService {
       expiredURLs.push(redirectEntry.pageURLString);
     if(originEntry)
       expiredURLs.push(originEntry.pageURLString);
-    if(expiredURLs.length) {
-
-      // TODO: actually I don't really need to share a tx here, the requests
-      // are independent. I can simplify cache.remove
-
-      // TODO: if anything, I should be calling cache.removeAll and give it
-      // an array of urls
-
-      const tx = this.cache.conn.transaction('favicon-cache', 'readwrite');
-      const proms = expiredURLs.map((url) => this.cache.remove(tx, url));
-      await Promise.all(proms);
-    }
-
+    await this.cache.removeAll(expiredURLs);
     return null;
   }
 
@@ -333,7 +352,15 @@ class FaviconService {
     const doc = parser.parseFromString(text, 'text/html');
     if(doc.documentElement.localName.toLowerCase() !== 'html')
       throw new Error(`Invalid document element ${url}`);
-    return {'doc': doc, 'responseURL': response.url};
+
+    // Determine if a redirect occurred. Compare after removing the hash,
+    // because the case where response url differs from the request url only
+    // because of the hash is not actually a redirect.
+    const urlo = new URL(url);
+    urlo.hash = '';
+    const redirected = urlo.href !== response.url;
+
+    return {'doc': doc, 'responseURL': response.url, 'redirected': redirected};
   }
 
   // Sends a HEAD request for the given image. Ignores response body.
@@ -381,21 +408,5 @@ class FaviconService {
     }
 
     return {'imageSize:': lenInt, 'imageResponseURL': response.url};
-  }
-
-  // Deletes expired entries from the favicon cache database
-  // @param conn {IDBDatabase}
-  // @param log {console}
-  // TODO: query for only expired entries rather than filter in memory
-  async compact(conn) {
-    const currentDate = new Date();
-    const tx = this.cache.conn.transaction('favicon-cache', 'readwrite');
-    const entries = await this.cache.getAll(tx, log);
-    const expiredEntries = entries.filter((e) =>
-      this.cache.isExpired(e, currentDate));
-    const proms = expiredEntries.map((e) =>
-      this.cache.remove(tx, e.pageURLString));
-    const resolutions = await Promise.all(proms);
-    return expiredEntries.length;
   }
 }
