@@ -216,10 +216,13 @@ async function show_sub_preview(url) {
 
   // TODO: do less in the try block
 
+  const loader = new ResourceLoader();
+  loader.log = console;
+
   try {
-    // TODO: use destructuring
+    // TODO: use destructuring here
     const fetch_timeout = 5000;
-    let fetch_output = fetch_feed(url.href, fetch_timeout, console);
+    let fetch_output = await loader.fetchFeed(url.href, fetch_timeout);
     const progress_element = document.getElementById(
       'sub-preview-load-progress');
     hide_element(progress_element);

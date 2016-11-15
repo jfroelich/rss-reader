@@ -86,13 +86,17 @@ poll.process_feed = async function(feedDb, fs, localFeed,
   const url = new URL(Feed.getURL(localFeed));
   const fetch_timeout = 5000;
   let remote_feed, remote_entries;
+
+  const loader = new ResourceLoader();
+  loader.log = log;
+
+  // TODO: should this be fatal? Maybe, and it should be wrapped in a no-raise
+  // caller func. This function itself should not care about how it is used,
+  // so it should not care that Promise.all is failfast. So this should be
+  // fatal, as in, this should not be using a try/catch.
+
   try {
-    // I am using this long form destructuring because this was previously
-    // the source of a bug. fetch_feed produces an object with a property titled
-    // 'feed' which was the same name as the feed parameter to process_feed,
-    // which resulted in 'feed' getting overwritten. Now the function param
-    // is named localFeed for clarity.
-    const {feed, entries} = await fetch_feed(url.href, fetch_timeout, log);
+    const {feed, entries} = await loader.fetchFeed(url.href, fetch_timeout);
     remote_feed = feed;
     remote_entries = entries;
   } catch(error) {
@@ -192,14 +196,21 @@ poll.process_entry = async function(feedDb, fs, feed, entry, log) {
   if(rewritten && await feedDb.containsEntryURL(Entry.getURL(entry)))
     return false;
 
+  // TODO: actually this really shouldn't be done until after I have tried to
+  // obtain the response url, becaus this ends up trying to find favicons for
+  // proxies and other urls that redirect
+
   const request_url = new URL(Entry.getURL(entry));
   const icon_url = await fs.lookup(request_url);
   entry.faviconURLString = icon_url || feed.faviconURLString;
 
+  const loader = new ResourceLoader();
+  loader.log = log;
+
   let doc, response_url;
+  const timeout = 5000;
   try {
-    const timeout = 5000;
-    ({doc, response_url} = await fetch_html(request_url.href, timeout, log));
+    ({doc, response_url} = await loader.fetchHTML(request_url.href, timeout));
   } catch(error) {
     log.warn(error);
     poll.prep_local_entry(entry);

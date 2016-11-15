@@ -51,10 +51,12 @@ class SubscriptionService {
     // TODO: why catch and return? I think I should allow this error to bubble
     // here. Might just be a remnant of when I was getting comforable with
     // async fns
-    // Is fetching is a fatal error or not, when online (???)
+    // Is fetching a fatal error or not, when online (???)
+
+    const loader = new ResourceLoader();
+    loader.log = this.log;
     try {
-      ({remoteFeed = feed} = await fetch_feed(url, this.fetch_timeout,
-        this.log));
+      ({remoteFeed = feed} = await loader.fetchFeed(url, this.fetch_timeout));
     } catch(error) {
       this.log.warn(error);
       return;

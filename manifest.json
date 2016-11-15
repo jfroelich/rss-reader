@@ -32,15 +32,13 @@
       "/modules/extension/extension-utils.js",
       "/modules/favicon/favicon.js",
       "/modules/feed-parser/feed-parser.js",
-      "/modules/fetch/fetch-feed.js",
-      "/modules/fetch/fetch-html.js",
-      "/modules/fetch/fetch-utils.js",
       "/modules/iconrefresh/refresh-feed-icons.js",
       "/modules/notification/notification.js",
       "/modules/poll/document-layout.js",
       "/modules/poll/poll-feeds.js",
       "/modules/poll/resolve-document.js",
       "/modules/poll/rewrite.js",
+      "/modules/resource-loader/resource-loader.js",
       "/modules/third-party/parse-srcset.js"
     ]
   },
