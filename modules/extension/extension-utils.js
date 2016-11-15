@@ -22,9 +22,3 @@ function query_tabs_by_url(url) {
     });
   });
 }
-
-function query_idle_state(idle_period_secs) {
-  return new Promise(function(resolve) {
-    chrome.idle.queryState(idle_period_secs, resolve);
-  });
-}

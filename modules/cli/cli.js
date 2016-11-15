@@ -19,11 +19,18 @@ class cli {
   }
 
   static async pollFeeds(nolog) {
-    await poll.run({
-      'ignore_idle_state': 1,
-      'skip_unmodified_guard': 1,
-      'ignore_recent_poll_guard': 1,
-      'log': nolog ? undefined : console
-    });
+    const service = new PollingService();
+    service.ignoreIdleState = true;
+    service.ignoreModifiedCheck = true;
+    service.ignoreRecencyCheck = true;
+
+    if(!nolog) {
+      service.log = console;
+      service.db.log = console;
+      service.fs.log = console;
+      service.loader.log = console;
+    }
+
+    await service.pollFeeds();
   }
 }

@@ -2,366 +2,378 @@
 
 'use strict';
 
-// TODO: revert to using a class, I don't need to pass around as many variables
-// like db connections, and can setup property injection, and more easily
-// decouple SilentConsole
+class PollingService {
+  constructor() {
+    this.log = {
+      'log': function(){},
+      'warn': function(){},
+      'debug': function(){},
+      'error': function(){}
+    };
 
-const poll = {};
+    this.allowMetered = true;
+    this.ignoreIdleState = false;
+    this.ignoreRecencyCheck = false;
+    this.ignoreModifiedCheck = false;
 
-poll.run = async function(options = {}) {
-  const log = options.log || SilentConsole;
-  log.log('Checking for new articles...');
+    // Must idle for this many seconds before considered idle
+    this.idlePeriod = 30;
 
-  if('onLine' in navigator && !navigator.onLine) {
-    log.debug('polling canceled because offline');
-    return;
+    // Period (ms) during which feeds considered recently polled
+    this.recencyPeriod = 5 * 60 * 1000;
+
+    // How many ms before feed fetch is considered timed out
+    this.fetchFeedTimeout = 5000;
+    // How many ms before html fetch is considered timed out
+    this.fetchHTMLTimeout = 5000;
+
+    this.fetchImageTimeout = 3000;
+
+    this.db = new FeedDb();
+    this.fs = new FaviconService();
+    this.loader = new ResourceLoader();
   }
 
-  // experimental
-  if(!options.allow_metered && 'NO_POLL_METERED' in localStorage &&
-    navigator.connection && navigator.connection.metered) {
-    log.debug('polling canceled due to metered connection');
-    return;
-  }
-
-  if(!options.ignore_idle_state && 'ONLY_POLL_IF_IDLE' in localStorage) {
-    const state = await query_idle_state(config.poll_feeds_idle_period_secs);
-    if(state !== 'locked' && state !== 'idle') {
-      log.debug('polling canceled due to idle requirement');
-      return;
-    }
-  }
-
-  const feedDb = new FeedDb();
-  feedDb.log = log;
-
-  const fs = new FaviconService();
-  fs.log = log;
-  fs.cache.log = log;
-
-  await Promise.all([feedDb.connect(), fs.connect()]);
-  let feeds = await feedDb.getFeeds();
-
-  if(!options.ignore_recent_poll_guard) {
-    const current_date = new Date();
-    feeds = feeds.filter((feed) => {
-      if(!feed.dateFetched)
-        return true;
-      const age = current_date - feed.dateFetched;//ms
-      const old_enough = age > config.min_time_since_last_poll;
-      if(!old_enough)
-        log.debug('Feed polled too recently', Feed.getURL(feed));
-      return old_enough;
+  queryIdleState(idleSecs) {
+    return new Promise(function(resolve) {
+      chrome.idle.queryState(idleSecs, resolve);
     });
   }
 
-  const promises = feeds.map((feed) => poll.process_feed(feedDb, fs, feed,
-    options.skip_unmodified_guard, log));
-  const resolutions = await Promise.all(promises);
-  const num_entries_added = resolutions.reduce((sum, added) => sum + added, 0);
+  async pollFeeds() {
+    this.log.log('Checking for new articles...');
 
-  if(num_entries_added > 0) {
-    await badge_update_text(feedDb, log);
-    const chan = new BroadcastChannel('poll');
-    chan.postMessage('completed');
-    chan.close();
-
-    DesktopNotification.show('Updated articles',
-      'Added ' + num_entries_added + ' new articles');
-  }
-
-  feedDb.close();
-  fs.close();
-  log.debug('Polling completed');
-  return num_entries_added;
-};
-
-// TODO: maybe this should bubble fetch errors upward, and this should be
-// wrapped in another promise that always resolves
-
-poll.process_feed = async function(feedDb, fs, localFeed,
-  skip_unmodified_guard, log) {
-
-  let num_entries_added = 0;
-  const url = new URL(Feed.getURL(localFeed));
-  const fetch_timeout = 5000;
-  let remote_feed, remote_entries;
-
-  const loader = new ResourceLoader();
-  loader.log = log;
-
-  // TODO: should this be fatal? Maybe, and it should be wrapped in a no-raise
-  // caller func. This function itself should not care about how it is used,
-  // so it should not care that Promise.all is failfast. So this should be
-  // fatal, as in, this should not be using a try/catch.
-
-  try {
-    const {feed, entries} = await loader.fetchFeed(url.href, fetch_timeout);
-    remote_feed = feed;
-    remote_entries = entries;
-  } catch(error) {
-    log.warn(error);
-    return 0;
-  }
-
-  if(!skip_unmodified_guard && localFeed.dateUpdated &&
-    localFeed.dateLastModified && remote_feed.dateLastModified &&
-    (localFeed.dateLastModified.getTime() ===
-    remote_feed.dateLastModified.getTime())) {
-    log.debug('Feed not modified', url.href, localFeed.dateLastModified,
-      remote_feed.dateLastModified);
-    return num_entries_added;
-  }
-
-  const merged_feed = Feed.merge(localFeed, remote_feed);
-  let storable_feed = Feed.sanitize(merged_feed);
-  storable_feed = filter_empty_props(storable_feed);
-
-  // Filter entries missing urls
-  remote_entries = remote_entries.filter((e) => e.urls && e.urls.length);
-
-  // Filter entries with invalid urls
-  remote_entries = remote_entries.filter((e) => {
-    const url = e.urls[0];
-    let url_obj;
-    try {
-      url_obj = new URL(url);
-    } catch(error) {
-      log.warn(error);
-      return false;
+    if('onLine' in navigator && !navigator.onLine) {
+      this.log.debug('Polling canceled because offline');
+      return;
     }
-    if(url_obj.pathname.startsWith('//')) return false;// hack for bad feed
-    return true;
-  });
 
-  remote_entries = poll.filter_dup_entries(remote_entries);
-  remote_entries.forEach((e) => e.feed = localFeed.id);
+    // experimental
+    if(!this.allowMetered && 'NO_POLL_METERED' in localStorage &&
+      navigator.connection && navigator.connection.metered) {
+      this.log.debug('Polling canceled due to metered connection');
+      return;
+    }
 
-  for(let entry of remote_entries) {
-    entry.feedTitle = storable_feed.title;
-  }
-
-  const promises = remote_entries.map((entry) => poll.process_entry(feedDb, fs,
-    storable_feed, entry, log));
-  promises.push(feedDb.putFeed(storable_feed));
-  const results = await Promise.all(promises);
-  results.pop();// remove putFeed promise before reduce
-  return results.reduce((sum, r) => r ? sum + 1 : sum, 0);
-};
-
-// Favors entries earlier in the list
-// TODO: is there maybe a better way, like favor the most content or most recent
-poll.filter_dup_entries = function(entries) {
-  const output = [];
-  const seen_urls = [];
-
-  for(let entry of entries) {
-    let found = false;
-    for(let url of entry.urls) {
-      if(seen_urls.includes(url)) {
-        found = true;
-        break;
+    if(!this.ignoreIdleState && 'ONLY_POLL_IF_IDLE' in localStorage) {
+      const state = await this.queryIdleState(this.idlePeriod);
+      if(state !== 'locked' && state !== 'idle') {
+        this.log.debug('Polling canceled due to idle requirement');
+        return;
       }
     }
 
-    if(!found) {
-      output.push(entry);
-      seen_urls.push(...entry.urls);
+    await Promise.all([this.db.connect(), this.fs.connect()]);
+    let feeds = await this.db.getFeeds();
+
+    if(!this.ignoreRecencyCheck) {
+      const currentDate = new Date();
+      feeds = feeds.filter((feed) => {
+        if(!feed.dateFetched)
+          return true; // Retain feeds never fetched
+        const timeSincePolled = currentDate - feed.dateFetched;//ms
+        const isRecent = timeSincePolled < this.recencyPeriod;
+        if(isRecent)
+          this.log.debug('Feed polled too recently', Feed.getURL(feed));
+        return !isRecent; // Only retain feeds that are not recent
+      });
     }
+
+    const promises = feeds.map((feed) => this.processFeedNoRaise(feed));
+    const resolutions = await Promise.all(promises);
+    const numAdded = resolutions.reduce((sum, added) => sum + added, 0);
+
+    if(numAdded) {
+      await badge_update_text(this.db, this.log);
+
+      const chan = new BroadcastChannel('poll');
+      chan.postMessage('completed');
+      chan.close();
+
+      DesktopNotification.show('Updated articles',
+        'Added ' + numAdded + ' new articles');
+    }
+
+    this.db.close();
+    this.fs.close();
+    this.log.debug('Polling completed');
+    return numAdded;
   }
 
-  return output;
-};
-
-// Rewrite the url and append it to the entry's url list if it is different
-poll.rewrite_entry_url = function(entry) {
-  const url = Entry.getURL(entry);
-  const rewritten_url = rewrite_url(url);
-  const before_append_length = entry.urls.length;
-  if(rewritten_url)
-    Entry.addURL(entry, rewritten_url);
-  return entry.urls.length > before_append_length;
-};
-
-// Resolve with true if entry was added, false if not added
-// TODO: instead of trying to not reject in case of an error, maybe this should
-// reject, and I use a wrapping function than translates rejections into
-// negative resolutions
-poll.process_entry = async function(feedDb, fs, feed, entry, log) {
-  const rewritten = poll.rewrite_entry_url(entry);
-  if(poll.should_exclude_entry(entry))
-    return false;
-  if(await feedDb.containsEntryURL(entry.urls[0]))
-    return false;
-  if(rewritten && await feedDb.containsEntryURL(Entry.getURL(entry)))
-    return false;
-
-  // TODO: actually this really shouldn't be done until after I have tried to
-  // obtain the response url, becaus this ends up trying to find favicons for
-  // proxies and other urls that redirect
-
-  const request_url = new URL(Entry.getURL(entry));
-  const icon_url = await fs.lookup(request_url);
-  entry.faviconURLString = icon_url || feed.faviconURLString;
-
-  const loader = new ResourceLoader();
-  loader.log = log;
-
-  let doc, response_url;
-  const timeout = 5000;
-  try {
-    ({doc, response_url} = await loader.fetchHTML(request_url.href, timeout));
-  } catch(error) {
-    log.warn(error);
-    poll.prep_local_entry(entry);
-    return await poll.add_entry(feedDb, entry, log);
+  // Suppresses processFeed exceptions to avoid Promise.all fail fast behavior
+  async processFeedNoRaise(feed) {
+    let numEntriesAdded = 0;
+    try {
+      numEntriesAdded = await this.processFeed(feed);
+    } catch(error) {
+      this.log.warn(error);
+    }
+    this.log.debug('Added %d entries from feed', numEntriesAdded,
+      Feed.getURL(feed));
+    return numEntriesAdded;
   }
 
-  const redirected = poll.did_redirect(entry.urls, response_url);
-  if(redirected) {
-    if(await feedDb.containsEntryURL(response_url))
+  entryURLIsValid(entry) {
+    const url = entry.urls[0];
+    let urlo;
+    try {
+      urlo = new URL(url);
+    } catch(error) {
+      this.log.warn(error);
       return false;
-    Entry.addURL(entry, response_url);
+    }
+
+    // hack for bad feed
+    if(urlo.pathname.startsWith('//'))
+      return false;
+    return true;
   }
 
-  poll.transform_lazy_images(doc);
-  filter_sourceless_images(doc);
-  filter_invalid_anchors(doc);
-  resolve_doc(doc, new URL(Entry.getURL(entry)));
-  poll.filter_tracking_images(doc, config.tracking_hosts, log);
-
-  // TODO: this should be externally configurable
-  const fetch_image_timeout = 4000;
-  const num_images_modified =
-    await DocumentLayout.setDocumentImageDimensions(doc, fetch_image_timeout);
-  poll.prep_doc(doc);
-  entry.content = doc.documentElement.outerHTML.trim();
-  return await poll.add_entry(feedDb, entry, log);
-};
-
-// Suppress errors so that Promise.all fully iterates
-poll.add_entry = async function(store, entry, log) {
-  try {
-    let result = await store.addEntry(entry);
-    return true;
-  } catch(error) {
-    log.warn(error, Entry.getURL(entry));
-  }
-  return false;
-};
-
-// To determine where there was a redirect, compare the response url to the
-// entry's current urls, ignoring the hash. The response url will
-// never have a hash, so we just need to strip the hash from the entry's
-// other urls
-poll.did_redirect = function(urls, response_url) {
-  if(!response_url)
-    throw new TypeError('response_url is undefined');
-  const norm_urls = urls.map((url) => {
-    const norm = new URL(url);
-    norm.hash = '';
-    return norm.href;
-  });
-  return !norm_urls.includes(response_url);
-};
-
-poll.should_exclude_entry = function(entry) {
-  const url = new URL(Entry.getURL(entry));
-  const hostname = url.hostname;
-  const pathname = url.pathname;
-  if(config.interstitial_hosts.includes(hostname))
-    return true;
-  if(config.script_generated_hosts.includes(hostname))
-    return true;
-  if(config.paywall_hosts.includes(hostname))
-    return true;
-  if(config.requires_cookies_hosts.includes(hostname))
-    return true;
-  if(mime.sniff_non_html(pathname))
-    return true;
-  return false;
-};
-
-
-
-poll.prep_local_entry = function(entry) {
-  if(!entry.content)
-    return;
-  const parser = new DOMParser();
-  let doc;
-
-  try {
-    doc = parser.parseFromString(entry.content, 'text/html');
-  } catch(error) {
+  entryHasURL(entry) {
+    return entry.urls && entry.urls.length;
   }
 
-  if(!doc || doc.querySelector('parsererror')) {
-    entry.content = 'Cannot show document due to parsing error';
-    return;
+  isFeedUnmodified(local, remote) {
+    return local.dateUpdated && local.dateLastModified &&
+      remote.dateLastModified && local.dateLastModified.getTime() ===
+        remote.dateLastModified.getTime();
   }
 
-  poll.prep_doc(doc);
-  const content = doc.documentElement.outerHTML.trim();
-  if(content)
-    entry.content = content;
-};
+  filterDupEntries(entries) {
+    const output = [];
+    const seenURLs = [];
 
-poll.prep_doc = function(doc) {
-  filter_boilerplate(doc);
-  scrub_dom(doc);
-  add_no_referrer(doc);
-};
-
-// the space check is a minimal validation, urls may be relative
-// TODO: maybe use a regex and \s
-// TODO: does the browser tolerate spaces in urls?
-poll.transform_lazy_images = function(doc) {
-  let num_modified = 0;
-  const images = doc.querySelectorAll('img');
-  for(let img of images) {
-    if(img.hasAttribute('src') || img.hasAttribute('srcset'))
-      continue;
-    for(let alt_name of config.lazy_image_attr_names) {
-      if(img.hasAttribute(alt_name)) {
-        const url = img.getAttribute(alt_name);
-        if(url && !url.trim().includes(' ')) {
-          // const before_html = img.outerHTML;
-          img.removeAttribute(alt_name);
-          img.setAttribute('src', url);
-          num_modified++;
+    for(let entry of entries) {
+      let found = false;
+      for(let url of entry.urls) {
+        if(seenURLs.includes(url)) {
+          found = true;
           break;
         }
       }
-    }
-  }
-  return num_modified;
-};
 
-// TODO: maybe I need to use array of regexes instead of simple strings array
-// and iterate over the array instead of using array.includes(str)
-// NOTE: this should only be called after img src urls have been resolved,
-// because it assumes that all image src urls are absolute.
-// NOTE: this should be called before image dimensions are checked, because
-// checking image dimensions requires fetching images, which defeats the
-// purpose of avoiding fetching
-poll.filter_tracking_images = function(doc, hosts, log) {
-  const min_valid_url_len = 3; // 1char hostname . 1char domain
-  const images = doc.querySelectorAll('img[src]');
-  let src, url;
-  for(let image of images) {
-    src = image.getAttribute('src');
-    if(!src) continue;
-    src = src.trim();
-    if(!src) continue;
-    if(src.length < min_valid_url_len) continue;
-    if(src.includes(' ')) continue;
-    if(!/^https?:/i.test(src)) continue;
-    try {
-      url = new URL(src);
-    } catch(error) {
-      continue;
+      if(!found) {
+        output.push(entry);
+        seenURLs.push(...entry.urls);
+      }
     }
-    if(hosts.includes(url.hostname))
-      image.remove();
+
+    return output;
   }
-};
+
+  async processFeed(localFeed) {
+    let numAdded = 0;
+    const url = Feed.getURL(localFeed);
+
+    // Explicit assignment due to strange destructuring rename behavior
+    const {feed, entries} = await this.loader.fetchFeed(url,
+      this.fetchFeedTimeout);
+    const remoteFeed = feed;
+    let remoteEntries = entries;
+
+    if(!this.ignoreModifiedCheck &&
+      this.isFeedUnmodified(localFeed, remoteFeed)) {
+      this.log.debug('Feed not modified', url,
+        localFeed.dateLastModified,
+        remoteFeed.dateLastModified);
+      return numAdded;
+    }
+
+    const mergedFeed = Feed.merge(localFeed, remoteFeed);
+    let storableFeed = Feed.sanitize(mergedFeed);
+    storableFeed = filter_empty_props(storableFeed);
+
+    remoteEntries = remoteEntries.filter(this.entryHasURL);
+    remoteEntries = remoteEntries.filter(this.entryURLIsValid);
+    remoteEntries = this.filterDupEntries(remoteEntries);
+    remoteEntries.forEach((e) => e.feed = localFeed.id);
+    remoteEntries.forEach((e) => e.feedTitle = storableFeed.title);
+
+    // TODO: why pass feed? Maybe it isn't needed by processEntry? Can't I just
+    // do any delegation of props now, so that processEntry does not need to
+    // have any knowledge of the feed?
+    const promises = remoteEntries.map((entry) => this.processEntry(
+      storableFeed, entry));
+    promises.push(this.db.putFeed(storableFeed));
+    const resolutions = await Promise.all(promises);
+    resolutions.pop();// remove putFeed promise
+    return resolutions.reduce((sum, r) => r ? sum + 1 : sum, 0);
+  }
+
+  // Rewrites the entries url and attempts to append the url to the entry.
+  // Returns true if the rewritten url was appended.
+  rewriteEntryURL(entry) {
+    const url = Entry.getURL(entry);
+    const rewrittenURL = rewrite_url(url);
+    const beforeAppendLen = entry.urls.length;
+    if(rewrittenURL)
+      Entry.addURL(entry, rewrittenURL);
+    return entry.urls.length > beforeAppendLen;
+  }
+
+  // Resolve with true if entry was added, false if not added
+  // TODO: instead of trying to not reject in case of an error, maybe this should
+  // reject, and I use a wrapping function than translates rejections into
+  // negative resolutions
+  // TODO: favicon lookup should be deferred until after fetch to avoid
+  // lookup up intermediate urls when possible
+  async processEntry(feed, entry) {
+    const didRewrite = this.rewriteEntryURL(entry);
+
+    if(this.shouldExcludeEntry(entry))
+      return false;
+    if(await this.db.containsEntryURL(entry.urls[0]))
+      return false;
+    if(didRewrite && await this.db.containsEntryURL(Entry.getURL(entry)))
+      return false;
+
+    const lookupURL = new URL(Entry.getURL(entry));
+    const iconURL = await this.fs.lookup(lookupURL);
+    entry.faviconURLString = iconURL || feed.faviconURLString;
+
+    // Must use _ because of destructuring name match requirement
+    let doc, response_url;
+    try {
+      ({doc, response_url} = await this.loader.fetchHTML(lookupURL.href,
+        this.fetchHTMLTimeout));
+    } catch(error) {
+      this.log.warn(error);
+      this.prepLocalEntry(entry);
+      return await this.addEntry(entry);
+    }
+
+    const didRedirect = this.didRedirect(entry.urls, response_url);
+    if(didRedirect) {
+      if(await this.db.containsEntryURL(response_url))
+        return false;
+      Entry.addURL(entry, response_url);
+    }
+
+    this.transformLazyImages(doc);
+    filter_sourceless_images(doc);
+    filter_invalid_anchors(doc);
+    resolve_doc(doc, new URL(Entry.getURL(entry)));
+    this.filterTrackingImages(doc, config.tracking_hosts);
+
+    await DocumentLayout.setDocumentImageDimensions(doc,
+      this.fetchImageTimeout);
+    this.prepDoc(doc);
+    entry.content = doc.documentElement.outerHTML.trim();
+    return await this.addEntry(entry);
+  }
+
+  shouldExcludeEntry(entry) {
+    const url = new URL(Entry.getURL(entry));
+    const hostname = url.hostname;
+    const pathname = url.pathname;
+    if(config.interstitial_hosts.includes(hostname))
+      return true;
+    if(config.script_generated_hosts.includes(hostname))
+      return true;
+    if(config.paywall_hosts.includes(hostname))
+      return true;
+    if(config.requires_cookies_hosts.includes(hostname))
+      return true;
+    if(mime.sniff_non_html(pathname))
+      return true;
+    return false;
+  }
+
+  async addEntry(entry) {
+    try {
+      let result = await this.db.addEntry(entry);
+      return true;
+    } catch(error) {
+      this.log.warn(error, Entry.getURL(entry));
+    }
+    return false;
+  }
+
+  stripURLHash(url) {
+    const output = new URL(url);
+    output.hash = '';
+    return output.href;
+  }
+
+  // To determine where there was a redirect, compare the response url to the
+  // entry's current urls, ignoring the hash. The response url will
+  // never have a hash, so we just need to strip the hash from the entry's
+  // other urls
+  didRedirect(urls, response_url) {
+    if(!response_url)
+      throw new TypeError();
+    const normURLs = urls.map(this.stripURLHash);
+    return !normURLs.includes(response_url);
+  }
+
+  prepLocalEntry(entry) {
+    if(!entry.content)
+      return;
+    const parser = new DOMParser();
+    let doc;
+    try {
+      doc = parser.parseFromString(entry.content, 'text/html');
+    } catch(error) {
+      this.log.warn(error);
+    }
+
+    if(!doc || doc.querySelector('parsererror')) {
+      entry.content = 'Cannot show document due to parsing error';
+      return;
+    }
+
+    this.prepDoc(doc);
+    const content = doc.documentElement.outerHTML.trim();
+    if(content)
+      entry.content = content;
+  }
+
+  prepDoc(doc) {
+    filter_boilerplate(doc);
+    scrub_dom(doc);
+    add_no_referrer(doc);
+  }
+
+  transformLazyImages(doc) {
+    let numModified = 0;
+    const images = doc.querySelectorAll('img');
+    for(let img of images) {
+      if(img.hasAttribute('src') || img.hasAttribute('srcset'))
+        continue;
+      for(let altName of config.lazy_image_attr_names) {
+        if(img.hasAttribute(altName)) {
+          const url = img.getAttribute(altName);
+          if(url && !url.trim().includes(' ')) {
+            img.removeAttribute(altName);
+            img.setAttribute('src', url);
+            numModified++;
+            break;
+          }
+        }
+      }
+    }
+    return numModified;
+  }
+
+  filterTrackingImages(doc, hosts) {
+    const minValidURLLen = 3; // 1char hostname . 1char domain
+    const images = doc.querySelectorAll('img[src]');
+    let src, url;
+    for(let image of images) {
+      src = image.getAttribute('src');
+      if(!src) continue;
+      src = src.trim();
+      if(!src) continue;
+      if(src.length < minValidURLLen) continue;
+      if(src.includes(' ')) continue;
+      if(!/^https?:/i.test(src)) continue;
+      try {
+        url = new URL(src);
+      } catch(error) {
+        continue;
+      }
+      if(hosts.includes(url.hostname))
+        image.remove();
+    }
+  }
+}

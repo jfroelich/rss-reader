@@ -76,10 +76,12 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
       db.close();
     }
   } else if(alarm.name === 'poll') {
+    const pollService = new PollingService();
+    pollService.log = console;
     try {
-      await poll.run({'log': console});
+      await pollService.pollFeeds();
     } catch(error) {
-      console.debug(error);
+      console.warn(error);
     }
   } else if(alarm.name === 'compact-favicons') {
     const fc = new FaviconCache();

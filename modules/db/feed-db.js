@@ -34,8 +34,12 @@ class FeedDb {
   }
 
   close() {
-    if(this.conn)
+    if(this.conn) {
+      this.log.debug('Closing', this.conn.name);
       this.conn.close();
+    } else {
+      this.log.warn('Connection is undefined');
+    }
   }
 
   connect() {
@@ -48,6 +52,7 @@ class FeedDb {
       request.onupgradeneeded = this.upgrade.bind(this);
       request.onsuccess = () => {
         this.conn = request.result;
+        this.log.debug('Connected to', this.conn.name);
         resolve(this.conn);
       };
       request.onerror = () => reject(request.error);
