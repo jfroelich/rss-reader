@@ -40,6 +40,16 @@ class PollingService {
     });
   }
 
+  isFeedNotRecent(feed) {
+    if(!feed.dateFetched)
+      return true; // Retain feeds never fetched
+    const timeSincePolled = new Date() - feed.dateFetched;//diff in ms
+    const isRecent = timeSincePolled < this.recencyPeriod;
+    if(isRecent)
+      this.log.debug('Feed polled too recently', Feed.getURL(feed));
+    return !isRecent; // Only retain feeds that are not recent
+  }
+
   async pollFeeds() {
     this.log.log('Checking for new articles...');
 
@@ -63,39 +73,31 @@ class PollingService {
       }
     }
 
-    await Promise.all([this.db.connect(), this.fs.connect()]);
-    let feeds = await this.db.getFeeds();
+    let numAdded = 0;
 
-    if(!this.ignoreRecencyCheck) {
-      const currentDate = new Date();
-      feeds = feeds.filter((feed) => {
-        if(!feed.dateFetched)
-          return true; // Retain feeds never fetched
-        const timeSincePolled = currentDate - feed.dateFetched;//ms
-        const isRecent = timeSincePolled < this.recencyPeriod;
-        if(isRecent)
-          this.log.debug('Feed polled too recently', Feed.getURL(feed));
-        return !isRecent; // Only retain feeds that are not recent
-      });
+    try {
+      await Promise.all([this.db.connect(), this.fs.connect()]);
+      let feeds = await this.db.getFeeds();
+      if(!this.ignoreRecencyCheck)
+        feeds = feeds.filter(this.isFeedNotRecent, this);
+      const promises = feeds.map(this.processFeedNoRaise, this);
+      const resolutions = await Promise.all(promises);
+      numAdded = resolutions.reduce((sum, added) => sum + added, 0);
+      if(numAdded)
+        await Badge.updateUnreadCount(this.db);
+    } finally {
+      this.db.close();
+      this.fs.close();
     }
 
-    const promises = feeds.map((feed) => this.processFeedNoRaise(feed));
-    const resolutions = await Promise.all(promises);
-    const numAdded = resolutions.reduce((sum, added) => sum + added, 0);
-
-    if(numAdded) {
-      await badge_update_text(this.db, this.log);
-
-      const chan = new BroadcastChannel('poll');
-      chan.postMessage('completed');
-      chan.close();
-
+    if(numAdded)
       DesktopNotification.show('Updated articles',
-        'Added ' + numAdded + ' new articles');
-    }
+        `Added ${numAdded} new articles`);
 
-    this.db.close();
-    this.fs.close();
+    const chan = new BroadcastChannel('poll');
+    chan.postMessage('completed');
+    chan.close();
+
     this.log.debug('Polling completed');
     return numAdded;
   }
@@ -108,8 +110,6 @@ class PollingService {
     } catch(error) {
       this.log.warn(error);
     }
-    this.log.debug('Added %d entries from feed', numEntriesAdded,
-      Feed.getURL(feed));
     return numEntriesAdded;
   }
 

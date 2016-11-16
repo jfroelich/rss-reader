@@ -2,39 +2,47 @@
 
 'use strict';
 
-// Provides a feed search service
+// Provides a way of searching for feeds to subscribe to using Google search
+// Google formally deprecated this service in 2015 but apparently it is still
+// working.
 class GoogleFeeds {
 
-  // Sends a search request to Google, parses the response, and yields a two
-  // property object consisting of query and entries. query is a formatted HTML
+  // Sends a search request to Google and yields a resulting object consisting
+  // the properties 'query' and 'entries'. query is a formatted HTML
   // string. entries is an array. entries may be empty but is always defined.
   // entries contains search result basic objects with the properties url,
-  // title, link, and contentSnippet.
-  // Throws an exception if an error occurs when fetching the results.
+  // title, link, and contentSnippet, which are all strings.
   // @param query {String} a search string using Google search syntax
   // @param timeout {Number} a positive integer, optional
   static async search(query, timeout = 0) {
-    this._assert_valid_query(query);
-    const url = this._build_request_url(query);
-    const options = this._build_request_options();
-
-    // There is no built in way to cancel/timeout in the new fetch api.
-    const promises = [fetch(url, options)];
-    if(timeout)
-      promises.push(this._fetch_timeout_promise(timeout));
-    const response = await Promise.race(promises);
-    this._assert_valid_response(response);
+    this.assertValidQuery(query);
+    const url = this.buildRequestURL(query);
+    const options = this.buildRequestOptions();
+    const response = await this.fetch(url, options, timeout);
+    this.assertValidResponse(response);
     const result = await response.json();
     const data = result.responseData;
     return {'query': data.query || '', 'entries': data.entries || []};
   }
 
-  static _build_request_options() {
-    const accept_header = 'application/json,text/javascript;q=0.9';
+  async fetch(url, options, timeout) {
+    let response;
+    if(timeout) {
+      const promises = [];
+      promises.push(fetch(url, options));
+      promises.push(this.fetchTimeout(timeout));
+      response = await Promise.race(promises);
+    } else {
+      response = await fetch(url, options);
+    }
+    return response;
+  }
+
+  static buildRequestOptions() {
     return {
       'credentials': 'omit',
       'method': 'GET',
-      'headers': {'Accept': accept_header},
+      'headers': {'Accept': 'application/json,text/javascript;q=0.9'},
       'mode': 'cors',
       'cache': 'default',
       'redirect': 'follow',
@@ -42,27 +50,25 @@ class GoogleFeeds {
     };
   }
 
-  static _assert_valid_query(query) {
+  static assertValidQuery(query) {
     if(typeof query !== 'string' || !query.trim().length)
-      throw new TypeError('invalid query ' + query);
+      throw new TypeError('Invalid query ' + query);
   }
 
-  // TODO: use URL and URL.searchParams instead here?
-  static _build_request_url(query) {
+  static buildRequestURL(query) {
     const base = 'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
     return base + encodeURIComponent(query);
   }
 
-  static _assert_valid_response(response) {
+  static assertValidResponse(response) {
     if(!response.ok)
       throw new Error(`${response.status} ${response.statusText}`);
     if(response.status === 204) // No content
       throw new Error(`${response.status} ${response.statusText}`);
   }
 
-  // TODO: just reject after x ms with an Error
-  static _fetch_timeout_promise(timeout) {
-    return new Promise((resolve) => setTimeout(resolve, timeout,
-      new Response('', {'status': 524, 'statusText': 'Timed out'})));
+  static fetchTimeout(timeout) {
+    return new Promise((resolve, reject) =>
+      setTimeout(reject, timeout, new Error('Request timed out')));
   }
 }

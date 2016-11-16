@@ -113,7 +113,7 @@ chrome.runtime.onInstalled.addListener(async function(event) {
   try {
     // Generally, connect also triggers database upgrade
     await db.connect();
-    await badge_update_text(db);
+    await Badge.updateUnreadCount(db);
   } catch(error) {
     console.debug(error);
   } finally {
@@ -121,9 +121,9 @@ chrome.runtime.onInstalled.addListener(async function(event) {
   }
 });
 
-// Must wait for dom to load because badge_onclick is in a separate js file
+// Must wait for dom to load because Badge.onClick is in a separate js file
 function on_bg_loaded() {
-  chrome.browserAction.onClicked.addListener(badge_onclick);
+  chrome.browserAction.onClicked.addListener(Badge.onClick);
 }
 
 document.addEventListener('DOMContentLoaded', on_bg_loaded, {'once': true});
