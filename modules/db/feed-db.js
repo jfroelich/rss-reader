@@ -2,13 +2,11 @@
 
 'use strict';
 
-// TODO: create github issues for these todos
-// TODO: add/update feed should delegate to put feed
-// TODO: maybe merge add/put entry into one function
+// TODO: deprecate the title index
+// TODO: rename to something like ReaderDb
 
-// TODO: remove the defined feed title requirement, have options manually sort
-// feeds instead of using the title index, deprecate the title index, stop
-// ensuring title is an empty string. note: i partly did some of this
+// TODO: expose conn instead of keeping it as an instance variable, and
+// deprecate FeedDb.close
 
 // Wraps an opened IDBDatabase instance to provide storage related functions
 class FeedDb {

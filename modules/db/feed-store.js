@@ -3,6 +3,9 @@
 'use strict';
 
 // A data access layer object for feed objects
+// TODO: add/update feed should delegate to put feed
+// TODO: maybe merge add/put entry into one function
+
 
 class FeedStore {
 
