@@ -7,7 +7,11 @@ async function archive_entries(store,
   if(!Number.isInteger(max_age) || max_age < 0)
     throw new TypeError();
   log.log('Archiving entries older than %dms', max_age);
-  const entries = await store.getUnarchivedReadEntries();
+
+  const entryStore = new entryStore();
+  entryStore.conn = store.conn;
+
+  const entries = await entryStore.getUnarchivedRead();
   log.debug('Loaded %d entries', entries.length);
   const current_date = new Date();
   const archivable_entries = entries.filter((entry) =>
@@ -41,7 +45,7 @@ async function archive_entries(store,
     }
   }
 
-  const put_resolutions = await store.putAllEntries(compacted_entries);
+  const put_resolutions = await entryStore.putAll(compacted_entries);
   const archived_ids = compacted_entries.map((entry) => entry.id);
   const chan = new BroadcastChannel('db');
   chan.postMessage({'type': 'archived_entries', 'entry_ids': archived_ids})

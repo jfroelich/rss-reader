@@ -33,17 +33,29 @@ class SubscriptionService {
   // TODO: if redirected on fetch, check for redirect url contained in db
   // TODO: just do something like class FeedController {} ?
   async subscribe(feed) {
+
+    // TODO: this is sloppy, just refactoring for now
+    // TODO: because I need to do extra things to a feed before adding it,
+    // maybe I need some other layer that does this, and that layer should
+    // encapsulate feedstore
+    const feedStore = new FeedStore();
+    feedStore.conn = this.feedDb.conn;
+
+
     const url = Feed.getURL(feed);
     this.log.log('Subscribing to feed with url', url);
-    if(await this.feedDb.containsFeedURL(url)) {
+    if(await feedStore.containsURL(url)) {
       this.log.warn('Subscription failed, already subscribed to feed with url',
         url);
       return;
     }
 
+
+
+
     if('onLine' in navigator && !navigator.onLine) {
       this.log.debug('Proceeding with offline subscription');
-      return await this.feedDb.addFeed(feed);
+      return await feedStore.add(feed);
     }
 
     let remoteFeed;
@@ -85,11 +97,11 @@ class SubscriptionService {
       this.log.warn(error);
     }
 
-    // TODO: once I move the feed prep work out of add feed, then addFeed
+    // TODO: once I move the feed prep work out of add feed, then feedStore.add
     // just needs to return the new id. I can set the id here and then return
     // the feed. I may not even need to return the feed.
 
-    const addedFeed = await this.feedDb.addFeed(mergedFeed);
+    const addedFeed = await feedStore.add(mergedFeed);
     if(!this.suppressNotifications) {
       const feedName = addedFeed.title || Feed.getURL(addedFeed);
       const message = 'Subscribed to ' + feedName;
@@ -100,18 +112,25 @@ class SubscriptionService {
   }
 
   async unsubscribe(feedId) {
+
+    // TODO: these would be better as instance properties
+    const feedStore = new FeedStore();
+    const entryStore = new EntryStore();
+
+    // TODO: this is sloppy
+    entryStore.conn = this.feedDb.conn;
+
     if(!Number.isInteger(feedId) || feedId < 1)
       throw new TypeError('Invalid feed id ' + feedId);
     this.log.log('Unsubscribing from feed', feedId);
     const tx = this.feedDb.conn.transaction(['feed', 'entry'], 'readwrite');
-    const ids = await this.feedDb.getFeedEntryIds(tx, feedId);
+    const ids = await entryStore.getIds(tx, feedId);
     this.log.debug('Preparing to remove %d entries', ids.length);
     const chan = new BroadcastChannel('db');
-    const proms = ids.map((entryId) =>
-      this.feedDb.removeEntry(tx, entryId, chan));
-    proms.push(this.feedDb.removeFeed(tx, feedId));
+    const proms = ids.map((entryId) => entryStore.remove(tx, entryId, chan));
+    proms.push(feedStore.remove(tx, feedId));
     await Promise.all(proms);
-    chan.close();
+    chan.close();// TODO: this needs to be in a try/finally block
     this.log.debug('Unsubscribed from feed id', feedId);
     this.log.debug('Deleted %d entries', ids.length);
     return ids.length;

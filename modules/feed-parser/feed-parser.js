@@ -4,7 +4,7 @@
 
 class FeedParser {
 
-  // Parses the input string into a feed object and an entries object
+  // Parses the input string into a feed object
   // @param string {String} the text to parse
   // @returns {Object} an object representing the parsed feed and its entries
   static parseFromString(string) {

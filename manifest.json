@@ -26,6 +26,8 @@
       "/modules/controllers/remove-orphan-entries.js",
       "/modules/cli/cli.js",
       "/modules/db/feed-db.js",
+      "/modules/db/entry-store.js",
+      "/modules/db/feed-store.js",
       "/modules/domscrub/domscrub.js",
       "/modules/extension/background.js",
       "/modules/extension/badge.js",

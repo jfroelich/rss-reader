@@ -54,11 +54,16 @@ async function append_slides() {
   const limit = 3;
   const offset = count_unread_slides();
 
+
   const db = new FeedDb();
+
+  const entryStore = new EntryStore();
+
   let entries = [];
   try {
     await db.connect();
-    entries = await db.getUnarchivedUnreadEntries(offset, limit);
+    entryStore.conn = db.conn;
+    entries = await entryStore.getUnarchivedUnread(offset, limit);
   } finally {
     db.close();
   }
@@ -279,10 +284,13 @@ window.addEventListener('keydown', function(event) {
   // Redefine space from page down to navigate next
   const LEFT = 37, RIGHT = 39, N = 78, P = 80, SPACE = 32;
   const code = event.keyCode;
+
   if(code === RIGHT || code === N || code === SPACE) {
+    event.preventDefault();
     cancelIdleCallback(nav_keydown_timer);
     nav_keydown_timer = requestIdleCallback(show_next_slide);
   } else if(code === LEFT || code === P) {
+    event.preventDefault();
     cancelIdleCallback(nav_keydown_timer);
     nav_keydown_timer = requestIdleCallback(show_prev_slide);
   }

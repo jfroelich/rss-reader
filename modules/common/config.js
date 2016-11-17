@@ -4,9 +4,6 @@
 
 const config = {};
 
-config.db_name = 'reader';
-config.db_version = 20;
-
 // 1 day in ms
 config.archive_default_entry_max_age = 1 * 24 * 60 * 60 * 1000;
 

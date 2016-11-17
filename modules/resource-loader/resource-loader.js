@@ -158,7 +158,11 @@ class ResourceLoader {
   }
 
   assertResponseTypeIsHTML(url, response) {
-    const type = (response.headers.get('Content-Type') || '').toLowerCase();
+    let type = response.headers.get('Content-Type');
+    type = type || '';
+    type = type.trim();
+    type = type.toLowerCase();
+
     if(!type.includes('text/html'))
       throw new Error(`Invalid mime type ${type} ${url}`);
   }
@@ -179,7 +183,6 @@ class ResourceLoader {
     const docElement = doc.documentElement;
     if(docElement.localName.toLowerCase() !== 'html')
       throw new Error(`Invalid document element ${docElement.nodeName} ${url}`);
-
     return {
       'doc': doc,
       'response_url': response.url

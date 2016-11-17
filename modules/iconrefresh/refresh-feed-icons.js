@@ -9,6 +9,8 @@ async function refresh_feed_icons(log = SilentConsole) {
   const feedDb = new FeedDb();
   feedDb.log = log;
 
+  const feedStore = new FeedStore();
+
   const fs = new FaviconService();
   fs.log = log;
   fs.cache.log = log;
@@ -17,7 +19,9 @@ async function refresh_feed_icons(log = SilentConsole) {
 
   await Promise.all([feedDb.connect(), fs.connect()]);
 
-  const feeds = await feedDb.getFeeds();
+  feedStore.conn = feedDb.conn;
+
+  const feeds = await feedStore.getAll();
   for(let feed of feeds) {
     const lookup_url = get_lookup_url(feed);
     const icon_url = await fs.lookup(lookup_url);
@@ -26,7 +30,7 @@ async function refresh_feed_icons(log = SilentConsole) {
     if(!feed.faviconURLString || feed.faviconURLString !== icon_url) {
       num_modified++;
       feed.faviconURLString = icon_url;
-      await feedDb.putFeed(feed);
+      await feedStore.put(feed);
     }
   }
   log.log('Completed refreshing feed favicons. Modified %d', num_modified);

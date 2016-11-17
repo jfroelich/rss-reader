@@ -46,6 +46,7 @@ async function create_alarms() {
       {'periodInMinutes': 60 * 24 * 7 * 2});
   }
 
+  // TODO: add to handler
   alarm = await get_alarm('remove-orphan-entries');
   if(!alarm) {
     console.debug('Creating remove-orphan-entries alarm');
@@ -53,6 +54,7 @@ async function create_alarms() {
       {'periodInMinutes': 60 * 24 * 7});
   }
 
+  // TODO: add to handler
   alarm = await get_alarm('remove-entries-missing-urls');
   if(!alarm) {
     console.debug('Creating remove-entries-missing-urls alarm');
@@ -99,8 +101,6 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
     } catch(error) {
       console.debug(error);
     }
-  } else if(alarm.name === 'healthcheck') {
-    HealthCheck.start(SilentConsole);
   } else {
     console.warn('Unknown alarm', alarm.name);
   }

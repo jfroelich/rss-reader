@@ -75,9 +75,13 @@ class PollingService {
 
     let numAdded = 0;
 
+    const feedStore = new FeedStore();
+
+
     try {
       await Promise.all([this.db.connect(), this.fs.connect()]);
-      let feeds = await this.db.getFeeds();
+      feedStore.conn = this.db.conn;
+      let feeds = await feedStore.getAll();
       if(!this.ignoreRecencyCheck)
         feeds = feeds.filter(this.isFeedNotRecent, this);
       const promises = feeds.map(this.processFeedNoRaise, this);
@@ -189,14 +193,17 @@ class PollingService {
     remoteEntries.forEach((e) => e.feed = localFeed.id);
     remoteEntries.forEach((e) => e.feedTitle = storableFeed.title);
 
+    const feedStore = new FeedStore();
+    feedStore.conn = this.db.conn;
+
     // TODO: why pass feed? Maybe it isn't needed by processEntry? Can't I just
     // do any delegation of props now, so that processEntry does not need to
     // have any knowledge of the feed?
     const promises = remoteEntries.map((entry) => this.processEntry(
       storableFeed, entry));
-    promises.push(this.db.putFeed(storableFeed));
+    promises.push(feedStore.put(storableFeed));
     const resolutions = await Promise.all(promises);
-    resolutions.pop();// remove putFeed promise
+    resolutions.pop();// remove feedStore.put promise
     return resolutions.reduce((sum, r) => r ? sum + 1 : sum, 0);
   }
 
@@ -218,23 +225,30 @@ class PollingService {
   // TODO: favicon lookup should be deferred until after fetch to avoid
   // lookup up intermediate urls when possible
   async processEntry(feed, entry) {
+
+    // TODO: this should be an instance property
+    const entryStore = new EntryStore();
+    entryStore.conn = this.db.conn;
+
     const didRewrite = this.rewriteEntryURL(entry);
+
 
     if(this.shouldExcludeEntry(entry))
       return false;
-    if(await this.db.containsEntryURL(entry.urls[0]))
+    if(await entryStore.containsURL(entry.urls[0]))
       return false;
-    if(didRewrite && await this.db.containsEntryURL(Entry.getURL(entry)))
+    if(didRewrite && await entryStore.containsURL(Entry.getURL(entry)))
       return false;
 
     const lookupURL = new URL(Entry.getURL(entry));
     const iconURL = await this.fs.lookup(lookupURL);
     entry.faviconURLString = iconURL || feed.faviconURLString;
 
-    // Must use _ because of destructuring name match requirement
+    // TODO: rename response_url to responseURL
+
     let doc, response_url;
     try {
-      ({doc, response_url} = await this.loader.fetchHTML(lookupURL.href,
+      ({doc, response_url} = await this.loader.fetchHTML(Entry.getURL(entry),
         this.fetchHTMLTimeout));
     } catch(error) {
       this.log.warn(error);
@@ -244,7 +258,7 @@ class PollingService {
 
     const didRedirect = this.didRedirect(entry.urls, response_url);
     if(didRedirect) {
-      if(await this.db.containsEntryURL(response_url))
+      if(await entryStore.containsURL(response_url))
         return false;
       Entry.addURL(entry, response_url);
     }
@@ -280,8 +294,14 @@ class PollingService {
   }
 
   async addEntry(entry) {
+
+    // TODO: this is sloppy, entryStore should be instance prop created once
+    // not every call. This is temporary refactoring stage
+    const entryStore = new EntryStore();
+    entryStore.conn = this.db.conn;
+
     try {
-      let result = await this.db.addEntry(entry);
+      let result = await entryStore.add(entry);
       return true;
     } catch(error) {
       this.log.warn(error, Entry.getURL(entry));

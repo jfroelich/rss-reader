@@ -40,7 +40,11 @@ class DesktopNotification {
       try {
         const winObject = window.open();
         winObject.close();
-        window.focus();
+
+        // TODO: Not sure if this line is needed, it is causing Chrome to
+        // 'flash'
+        //window.focus();
+
       } catch(error) {
         console.warn(error);
       }

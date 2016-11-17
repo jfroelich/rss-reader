@@ -3,8 +3,14 @@
 'use strict';
 
 class Badge {
+
+  // TODO: the parameter to this should be the entry store, not the db
   static async updateUnreadCount(db) {
-    const count = await db.countUnreadEntries();
+
+    const entryStore = new EntryStore();
+    entryStore.conn = db.conn;
+
+    const count = await entryStore.countUnread();
     const text = count > 999 ? '1k+' : '' + count;
     chrome.browserAction.setBadgeText({'text': text});
   }

@@ -326,8 +326,11 @@ async function start_subscription(url) {
 // TODO: should this even catch?
 async function feed_list_item_on_click(event) {
 
+
   const feedDb = new FeedDb();
   feedDb.log = console;
+
+  const feedStore = new FeedStore();
 
   const feed_id = parseInt(event.currentTarget.getAttribute('feed'), 10);
   if(!Number.isInteger(feed_id) || feed_id < 1)
@@ -336,7 +339,8 @@ async function feed_list_item_on_click(event) {
   let feed;
   try {
     await feedDb.connect();
-    feed = await feedDb.findFeedById(feed_id);
+    feedStore.conn = feedDb.conn;
+    feed = await feedStore.findById(feed_id);
   } catch(error) {
     console.warn(error);
   } finally {
@@ -670,10 +674,13 @@ async function export_opml_btn_on_click(event) {
   const feedDb = new FeedDb();
   feedDb.log = console;
 
+  const feedStore = new FeedStore();
+
   let feeds;
   try {
     await feedDb.connect();
-    feeds = await feedDb.getFeeds();
+    feedStore.conn = feedDb.conn;
+    feeds = await feedStore.getAll();
   } catch(error) {
     console.warn(error);
   } finally {
@@ -693,10 +700,13 @@ async function init_subs_section() {
   const feedDb = new FeedDb();
   feedDb.log = console;
 
+  const feedStore = new FeedStore();
+
   let feeds;
   try {
     await feedDb.connect();
-    feeds = await feedDb.getFeeds();
+    feedStore.conn = feedDb.conn;
+    feeds = await feedStore.getAll();
   } catch(error) {
     console.debug(error);
   } finally {

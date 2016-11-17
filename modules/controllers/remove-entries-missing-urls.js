@@ -7,14 +7,18 @@ async function remove_entries_missing_urls(log) {
   db.log = log;
   const chan = new BroadcastChannel('db');
 
+  const entryStore = new EntryStore();
+
   try {
     await db.connect();
-    const entries = await db.getEntries();
+    entryStore.conn = db.conn;
+
+    const entries = await entyStore.getAll();
     log.debug('Loaded %d entries', entries.length);
     const orphans = entries.filter((e) => !e.urls || !e.urls.length);
     log.debug('Found %d entries missing urls', orphans.length);
     const tx = db.conn.transaction('entry', 'readwrite');
-    const proms = orphans.map((e) => db.removeEntry(tx, e.id, chan));
+    const proms = orphans.map((e) => entryStore.remove(tx, e.id, chan));
     await Promise.all(proms);
     log.debug('Deleted %d entries', orphans.length);
   } catch(error) {

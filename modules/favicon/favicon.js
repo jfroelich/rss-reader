@@ -48,7 +48,6 @@ class FaviconCache {
     }
 
     if(event.oldVersion < 2) {
-      console.debug('Created index on dateUpdated');
       faviconCacheStore.createIndex('dateUpdated', 'dateUpdated');
     }
   }
@@ -108,10 +107,10 @@ class FaviconCache {
     });
   }
 
+  // Concurrently issue remove requests using a shared transaction
   // Returns an array of the results of remove entry calls
   // @param urls {Array<String>} page urls to remove
   async removeAll(urls) {
-    // Concurrently issue remove requests using a shared transaction
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
     const proms = urls.map((url) => this.remove(tx, url));
     return await Promise.all(proms);
@@ -119,7 +118,6 @@ class FaviconCache {
 
   async compact() {
     const expiredEntries = await this.getAllExpired();
-    console.debug('Found %d expired entries', expiredEntries.length);
     const expiredURLs = expiredEntries.map((e) => e.pageURLString);
     const resolutions = await this.removeAll(expiredURLs);
     return resolutions.length;
@@ -131,17 +129,19 @@ class FaviconService {
   constructor() {
     this.cache = new FaviconCache();
 
-    // By default send messages to nowhere
+    // By default send log messages to nowhere
     this.log = {
       'debug': function(){},
       'log': function(){},
-      'warn': function(){}
+      'warn': function(){},
+      'error': function(){}
     };
 
     // Byte size ends points for images
     this.minSize = 49;
     this.maxSize = 10 * 1024 + 1;
 
+    // Default timeouts for fetching
     this.fetchHTMLTimeout = 1000;
     this.fetchImageTimeout = 100;
   }
@@ -183,7 +183,7 @@ class FaviconService {
       this.log.warn(error, url.href);
     }
 
-    // If redirected, add the normalized response url to unique urls
+    // If redirected, add the response url to unique urls
     if(redirected)
       uniqURLs.push(responseURL.href);
 
@@ -193,24 +193,8 @@ class FaviconService {
       await this.cache.remove(tx, url.href);
     }
 
-    // If the document is valid, then search for links in the head, and
-    // ensure the links are absolute. Use the first valid link found.
-    // TODO: use a single querySelectorAll?
-    const selectors = [
-      'link[rel="icon"][href]',
-      'link[rel="shortcut icon"][href]',
-      'link[rel="apple-touch-icon"][href]',
-      'link[rel="apple-touch-icon-precomposed"][href]'
-    ];
-    let docIconURL;
-    const baseURL = redirected ? responseURL : url;
-    if(doc && doc.head) {
-      for(let selector of selectors) {
-        docIconURL = this.match(doc.head, selector, baseURL);
-        if(docIconURL)
-          break;
-      }
-    }
+    const baseURLObject = redirected ? responseURL : url;
+    const docIconURL = this.findIconInDocument(doc, baseURLObject);
 
     // If we found an in page icon, update the cache and resolve
     // TODO: can also store origin in cache if it distinct? would need to move
@@ -224,26 +208,26 @@ class FaviconService {
       return docIconURL.href;
     }
 
-    // If redirected, check cache for redirect
+    // If we did not find an in page icon, and we redirected, check cache for
+    // redirect
     let redirectEntry;
     if(redirected)
       redirectEntry = await this.cache.find(responseURL.href);
 
-    // If redirected and the redirect url is in the cache and not expired,
-    // then done
+    // If the redirect exists and is not expired, then resolve
     if(redirectEntry && !this.cache.isExpired(redirectEntry, currentDate))
       return redirectEntry.iconURLString;
 
-    // Next, try checking if the origin url is in the cache if it is different
-    // from the other urls
+    // If the origin is different from the request url and the redirect url,
+    // then check the cache for the origin
     let originEntry;
     if(!uniqURLs.includes(url.origin)) {
       uniqURLs.push(url.origin);
       originEntry = await this.cache.find(url.origin);
     }
 
-    // If we found an origin entry, resolve with that. Before returning, add the
-    // url and the response url (if redirected) to the cache
+    // If an origin entry exists and is not expired, then update entries for the
+    // other urls and resolve
     if(originEntry && !this.cache.isExpired(originEntry, currentDate)) {
       const iconURL = originEntry.iconURLString;
       const tx = this.cache.conn.transaction('favicon-cache', 'readwrite');
@@ -259,11 +243,12 @@ class FaviconService {
     }
 
     // Fall back to checking domain root
+    const rootImageURL = url.origin + '/favicon.ico';
     let imageSize, imageResponseURL;
     try {
-      const rootImageURL = url.origin + '/favicon.ico';
       ({imageSize, imageResponseURL} = await this.fetchImageHead(rootImageURL));
     } catch(error) {
+      this.log.warn(error);
     }
 
     const sizeInRange = imageSize === -1 ||
@@ -290,56 +275,91 @@ class FaviconService {
     return null;
   }
 
+  // Search for icon links in the document, and ensure the links are absolute.
+  // Use the first valid link found.
+  // TODO: use querySelectorAll?
+  findIconInDocument(doc, baseURLObject) {
+    const selectors = [
+      'link[rel="icon"][href]',
+      'link[rel="shortcut icon"][href]',
+      'link[rel="apple-touch-icon"][href]',
+      'link[rel="apple-touch-icon-precomposed"][href]'
+    ];
+    let docIconURL;
+
+    if(!doc || !doc.head)
+      return undefined;
+
+    for(let selector of selectors) {
+      docIconURL = this.match(doc.head, selector, baseURLObject);
+      if(docIconURL)
+        return docIconURL;
+    }
+
+    return undefined;
+  }
+
   // Looks for a <link> tag within an ancestor element
   // @param ancestor {Element}
   // @param selector {String}
-  // @param baseURL {URL}
-  match(ancestor, selector, baseURL) {
+  // @param baseURLObject {URL}
+  match(ancestor, selector, baseURLObject) {
     const element = ancestor.querySelector(selector);
     if(!element)
       return;
     const href = (element.getAttribute('href') || '').trim();
-    // Without this check the URL constructor would not throw
+    // Without this check the URL constructor creates a clone of the base url
     if(!href)
       return;
     try {
-      return new URL(href, baseURL);
+      return new URL(href, baseURLObject);
     } catch(error) {
-      console.warn(error);
+      this.log.warn(error);
     }
     return null;
   }
 
-  fetchTimeout(timeout) {
-    return new Promise((_, reject) => {
-      setTimeout(reject, timeout, new Error('Request timed out'));
+  // Rejects after a timeout
+  fetchTimeout(url, timeout) {
+    return new Promise((resolve, reject) => {
+      setTimeout(reject, timeout, new Error(`Request timed out ${url}`));
     });
   }
 
-  // Fetches the html of the given url
+  // Race a timeout against a fetch. fetch does not support timeout (yet?).
+  // A timeout will not cancel/abort the fetch, but will ignore it.
+  // A timeout rejection results in this throwing an uncaught error
+  async fetch(url, options, timeout) {
+    let response;
+    if(timeout) {
+      const promises = [
+        fetch(url, options),
+        this.fetchTimeout(url, timeout)
+      ];
+      response = await Promise.race(promises);
+    } else {
+      response = await fetch(url, opts);
+    }
+    return response;
+  }
+
+  // Fetches the html Document for the given url
   // @param url {String}
   // TODO: maybe I can avoid parsing and just search raw text for
   // <link> tags, the accuracy loss may be ok given the speed boost
   // TODO: use streaming text api, stop reading on </head>
   async fetchDocument(url) {
-    const opts = {};
-    opts.credentials = 'omit';
-    opts.method = 'GET';
-    opts.headers = {'Accept': 'text/html'};
-    opts.mode = 'cors';
-    opts.cache = 'default';
-    opts.redirect = 'follow';
-    opts.referrer = 'no-referrer';
+    const opts = {
+      'credentials': 'omit',
+      'method': 'get',
+      'headers': {'Accept': 'text/html'},
+      'mode': 'cors',
+      'cache': 'default',
+      'redirect': 'follow',
+      'referrer': 'no-referrer'
+    };
 
-    let response;
-    if(this.fetchHTMLTimeout) {
-      const promises = [fetch(url, opts),
-        this.fetchTimeout(this.fetchHTMLTimeout)];
-      response = await Promise.race(promises);
-    } else {
-      response = await fetch(url, opts);
-    }
-
+    const response = await this.fetch(url, opts, this.fetchHTMLTimeout);
     if(!response.ok)
       throw new Error(`${response.status} ${response.statusText} ${url}`);
     if(response.status === 204)
@@ -364,10 +384,10 @@ class FaviconService {
   }
 
   // Sends a HEAD request for the given image. Ignores response body.
-  // @param image_url {String}
+  // @param url {String}
   // @returns {Promise}
-  // Treat invalid content typeHeader as error
-  // Treat unknown content typeHeader as valid
+  // Treat invalid content type as error
+  // Treat unknown content type as valid
   // TODO: maybe be more restrictive about allowed content typeHeader
   // image/vnd.microsoft.icon
   // image/png
@@ -383,16 +403,7 @@ class FaviconService {
     opts.redirect = 'follow';
     opts.referrer = 'no-referrer';
 
-    let response;
-    if(this.fetchImageTimeout) {
-      const promises = [fetch(url, opts),
-        this.fetchTimeout(this.fetchImageTimeout)];
-      response = await Promise.race(promises);
-    } else {
-      response = await fetch(url, opts);
-    }
-
-    // Treat non-network errors as fatal errors
+    const response = await this.fetch(url, opts, this.fetchImageTimeout);
     if(!response.ok)
       throw new Error(`${response.status} ${response.statusText} ${url}`);
     const typeHeader = response.headers.get('Content-Type');
@@ -404,6 +415,7 @@ class FaviconService {
       try {
         lenInt = parseInt(lenHeader, 10);
       } catch(error) {
+        this.log.warn(error);
       }
     }
 
