@@ -4,8 +4,8 @@
 
 class EntryStore {
 
-  constructor() {
-
+  constructor(conn) {
+    this.conn = conn;
   }
 
   // TODO: tx can't be exposed, this is a leaky abstraction?
@@ -62,7 +62,6 @@ class EntryStore {
           return;
         if(offset && !advanced) {
           advanced = true;
-          this.log.debug('Advancing cursor by', offset);
           cursor.advance(offset);
           return;
         }

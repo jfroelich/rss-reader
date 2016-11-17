@@ -1,4 +1,7 @@
 
+// TODO: maybe entry states should be in a single property instead of
+// two props, like UNREAD_UNARCHIVED
+
 class Entry {
 
   // Get the last url in an entry's internal url list
