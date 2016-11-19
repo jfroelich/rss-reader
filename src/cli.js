@@ -29,7 +29,6 @@ class cli {
     if(!nolog) {
       service.log = console;
       service.fs.log = console;
-      service.loader.log = console;
     }
 
     await service.pollFeeds();

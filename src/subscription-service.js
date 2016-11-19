@@ -13,14 +13,14 @@ class SubscriptionService {
     };
 
     this.suppressNotifications = false;
-    this.feedDb = new ReaderDb();
+    this.readerDb = new ReaderDb();
     this.faviconService = new FaviconService();
     this.fetchTimeout = 2000;
     this.readerConn = null;
   }
 
   async connect() {
-    const connectionsArray = await Promise.all([this.feedDb.connect(),
+    const connectionsArray = await Promise.all([this.readerDb.connect(),
       this.faviconService.connect()]);
     this.readerConn = connectionsArray[0];
   }
@@ -54,9 +54,6 @@ class SubscriptionService {
       return;
     }
 
-
-
-
     if('onLine' in navigator && !navigator.onLine) {
       this.log.debug('Proceeding with offline subscription');
       return await feedStore.add(feed);
@@ -68,11 +65,9 @@ class SubscriptionService {
     // here. Might just be a remnant of when I was getting comforable with
     // async fns
     // Is fetching a fatal error or not, when online (???)
-
-    const loader = new ResourceLoader();
-    loader.log = this.log;
     try {
-      ({remoteFeed = feed} = await loader.fetchFeed(url, this.fetch_timeout));
+      ({remoteFeed = feed} = await ResourceLoader.fetchFeed(url,
+        this.fetch_timeout));
     } catch(error) {
       this.log.warn(error);
       return;

@@ -128,7 +128,7 @@ class EntryStore {
       if('id' in entry)
         return reject(new TypeError());
       const sanitized = Entry.sanitize(entry);
-      const storable = filter_empty_props(sanitized);
+      const storable = ObjectUtils.filterEmptyProps(sanitized);
       storable.readState = Entry.UNREAD;
       storable.archiveState = Entry.UNARCHIVED;
       storable.dateCreated = new Date();

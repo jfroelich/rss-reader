@@ -41,7 +41,7 @@ class Feed {
 
     if(feed.title) {
       let title = feed.title;
-      title = filter_control_chars(title);
+      title = StringUtils.filterControlChars(title);
       title = replace_tags(title, '');
       title = title.replace(/\s+/, ' ');
       const title_max_len = 1024;
@@ -51,7 +51,7 @@ class Feed {
 
     if(feed.description) {
       let description = feed.description;
-      description = filter_control_chars(description);
+      description = StringUtils.filterControlChars(description);
       description = replace_tags(description, '');
       description = description.replace(/\s+/, ' ');
       const before_len = description.length;

@@ -41,19 +41,13 @@ async function mark_slide_read(slide) {
     return;
 
   const entryId = parseInt(slide.getAttribute('entry'), 10);
-  const readerDb = new ReaderDb();
-  const entryStore = new EntryStore();
-  const entryControl = new EntryController(entryStore);
-  let conn;
-
+  const entryController = new EntryController();
   try {
-    conn = await readerDb.connect();
-    entryStore.conn = conn;
-    await entryControl.markRead(entryId);
+    await entryController.connect();
+    await entryController.markRead(entryId);
     slide.setAttribute('read', '');
   } finally {
-    if(conn)
-      conn.close();
+    entryController.close();
   }
 }
 
@@ -180,7 +174,7 @@ function create_feed_source(entry) {
   buffer.push(entry.author || 'Unknown author');
   if(entry.datePublished) {
     buffer.push(' on ');
-    buffer.push(format_date(entry.datePublished));
+    buffer.push(DateUtils.format(entry.datePublished));
   }
   title_element.textContent = buffer.join('');
   source.appendChild(title_element);

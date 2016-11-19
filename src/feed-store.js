@@ -53,7 +53,7 @@ class FeedStore {
       if('id' in feed)
         return reject(new TypeError());
       let storable = Feed.sanitize(feed);
-      storable = filter_empty_props(storable);
+      storable = ObjectUtils.filterEmptyProps(storable);
       storable.dateCreated = new Date();
       const tx = this.conn.transaction('feed', 'readwrite');
       const store = tx.objectStore('feed');

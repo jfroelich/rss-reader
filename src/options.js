@@ -51,7 +51,7 @@ function show_err_msg(msg, should_fade_in) {
   if(should_fade_in) {
     error_element.style.opacity = '0';
     document.body.appendChild(error_element);
-    fade_element(container, 1,0);
+    ElementUtils.fade(container, 1,0);
   } else {
     error_element.style.opacity = '1';
     show_element(error_element);
@@ -195,7 +195,7 @@ function append_feed(feed, should_insert_in_order) {
 
 // TODO: deprecate the ability to preview
 async function show_sub_preview(url) {
-  if(!is_url_object(url))
+  if(!ObjectUtils.isURL(url))
     throw new TypeError();
   hide_sub_preview();
   if(!('ENABLE_SUBSCRIBE_PREVIEW' in localStorage)) {
@@ -216,13 +216,10 @@ async function show_sub_preview(url) {
 
   // TODO: do less in the try block
 
-  const loader = new ResourceLoader();
-  loader.log = console;
-
   try {
     // TODO: use destructuring here
     const fetch_timeout = 5000;
-    let fetch_output = await loader.fetchFeed(url.href, fetch_timeout);
+    let fetch_output = await ResourceLoader.fetchFeed(url.href, fetch_timeout);
     const progress_element = document.getElementById(
       'sub-preview-load-progress');
     hide_element(progress_element);
@@ -283,7 +280,7 @@ function hide_sub_preview() {
 // passing those along to start_subscription and setting them here. Or
 // start_subscription should expect a feed object as a parameter.
 async function start_subscription(url) {
-  if(!is_url_object(url))
+  if(!ObjectUtils.isURL(url))
     throw new TypeError();
 
   hide_sub_preview();
@@ -295,7 +292,6 @@ async function start_subscription(url) {
 
   const subService = new SubscriptionService();
   subService.log = console;
-  subService.readerDb = readerDb;
   let subbed_feed;
   try {
     await subService.connect();
@@ -314,7 +310,7 @@ async function start_subscription(url) {
   const feed_url = Feed.getURL(subbed_feed);
   append_sub_monitor_msg(`Subscribed to ${feed_url}`);
   const monitor = document.getElementById('submon');
-  await fade_element(monitor, 2, 1);
+  await ElementUtils.fade(monitor, 2, 1);
   monitor.remove();
   const subs_section = document.getElementById('subs-list-section');
   show_section(subs_section);
@@ -471,7 +467,7 @@ async function sub_form_on_submit(event) {
   entries.forEach((entry) => {
     let title = entry.title;
     if(title) {
-      title = filter_control_chars(title);
+      title = StringUtils.filterControlChars(title);
       title = replace_tags(title, '');
       title = truncate_html(title, title_max_len);
       entry.title = title;
@@ -484,7 +480,7 @@ async function sub_form_on_submit(event) {
   entries.forEach((entry) => {
     let snippet = entry.contentSnippet;
     if(snippet) {
-      snippet = filter_control_chars(snippet);
+      snippet = StringUtils.filterControlChars(snippet);
       snippet = snippet.replace(/<br\s*>/gi, ' ');
       snippet = truncate_html(snippet, snippet_max_len, replacement);
       entry.contentSnippet = snippet;

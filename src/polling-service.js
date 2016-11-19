@@ -32,7 +32,6 @@ class PollingService {
     this.db = new ReaderDb();
     this.readerConn = null;
     this.fs = new FaviconService();
-    this.loader = new ResourceLoader();
   }
 
   queryIdleState(idleSecs) {
@@ -173,7 +172,7 @@ class PollingService {
     const url = Feed.getURL(localFeed);
 
     // Explicit assignment due to strange destructuring rename behavior
-    const {feed, entries} = await this.loader.fetchFeed(url,
+    const {feed, entries} = await ResourceLoader.fetchFeed(url,
       this.fetchFeedTimeout);
     const remoteFeed = feed;
     let remoteEntries = entries;
@@ -188,7 +187,7 @@ class PollingService {
 
     const mergedFeed = Feed.merge(localFeed, remoteFeed);
     let storableFeed = Feed.sanitize(mergedFeed);
-    storableFeed = filter_empty_props(storableFeed);
+    storableFeed = ObjectUtils.filterEmptyProps(storableFeed);
 
     remoteEntries = remoteEntries.filter(this.entryHasURL);
     remoteEntries = remoteEntries.filter(this.entryURLIsValid);
@@ -252,7 +251,7 @@ class PollingService {
 
     let doc, response_url;
     try {
-      ({doc, response_url} = await this.loader.fetchHTML(Entry.getURL(entry),
+      ({doc, response_url} = await ResourceLoader.fetchHTML(Entry.getURL(entry),
         this.fetchHTMLTimeout));
     } catch(error) {
       this.log.warn(error);
@@ -292,7 +291,7 @@ class PollingService {
       return true;
     if(config.requires_cookies_hosts.includes(hostname))
       return true;
-    if(mime.sniff_non_html(pathname))
+    if(Mime.sniffNonHTML(pathname))
       return true;
     return false;
   }

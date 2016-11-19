@@ -32,9 +32,9 @@ class Entry {
 
     if(output_entry.author) {
       let author = output_entry.author;
-      author = filter_control_chars(author);
+      author = StringUtils.filterControlChars(author);
       author = replace_tags(author, '');
-      author = condense_whitespace(author);
+      author = StringUtils.condenseWhitespace(author);
       author = truncate_html(author, author_max_len);
       output_entry.author = author;
     }
@@ -49,9 +49,9 @@ class Entry {
 
     if(output_entry.title) {
       let title = output_entry.title;
-      title = filter_control_chars(title);
+      title = StringUtils.filterControlChars(title);
       title = replace_tags(title, '');
-      title = condense_whitespace(title);
+      title = StringUtils.condenseWhitespace(title);
       title = truncate_html(title, title_max_len);
       output_entry.title = title;
     }

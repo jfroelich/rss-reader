@@ -25,7 +25,7 @@ class GoogleFeeds {
     return {'query': data.query || '', 'entries': data.entries || []};
   }
 
-  async fetch(url, options, timeout) {
+  static async fetch(url, options, timeout) {
     let response;
     if(timeout) {
       const promises = [];

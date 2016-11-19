@@ -2,6 +2,14 @@
 
 'use strict';
 
+// TODO: convert to class
+// TODO: use camel case
+// TODO: use helper functions
+// TODO: decouple config
+// TODO: decouple SilentConsole
+// TODO: removing as much logging as possible
+// TODO: maybe move into some kind of entry controller object
+
 async function archive_entries(conn,
   max_age = config.archive_default_entry_max_age, log = SilentConsole) {
   if(!Number.isInteger(max_age) || max_age < 0)
@@ -16,7 +24,7 @@ async function archive_entries(conn,
     current_date - entry.dateCreated > max_age);
   log.debug('Archiving %d entries', archivable_entries.length);
 
-  const retained = {
+  const compactedProps = {
     'dateCreated': undefined,
     'dateRead': undefined,
     'feed': undefined,
@@ -25,12 +33,12 @@ async function archive_entries(conn,
     'urls': undefined
   };
 
-  function should_retain(obj, prop) {
-    return prop in retained;
+  function isCompactedProp(obj, prop) {
+    return prop in compactedProps;
   }
 
   const compacted_entries = archivable_entries.map((entry) => {
-    const compacted = filter_object(entry, should_retain);
+    const compacted = ObjectUtils.filter(entry, isCompactedProp);
     compacted.archiveState = Entry.ARCHIVED;
     compacted.dateArchived = current_date;
     return compacted;
@@ -38,8 +46,8 @@ async function archive_entries(conn,
 
   if(log === console) {
     for(let i = 0, len = archivable_entries.length; i < len; i++) {
-      log.debug(sizeof(archivable_entries[i]), 'compacted to',
-        sizeof(compacted_entries[i]));
+      log.debug(ObjectUtils.sizeof(archivable_entries[i]), 'compacted to',
+        ObjectUtils.sizeof(compacted_entries[i]));
     }
   }
 

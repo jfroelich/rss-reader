@@ -41,7 +41,7 @@ const selector = Object.keys(attr_map).map(build_selector_part).join(',');
 function resolve_doc(doc, base_url) {
   if(!parseSrcset)
     throw new ReferenceError();
-  if(!is_url_object(base_url))
+  if(!ObjectUtils.isURL(base_url))
     throw new TypeError();
 
   const bases = doc.querySelectorAll('base');
@@ -135,7 +135,7 @@ function serialize_srcset(descriptors) {
 function resolve_url(url_str, base_url) {
   if(typeof url_str !== 'string')
     throw new TypeError();
-  if(!is_url_object(base_url))
+  if(!ObjectUtils.isURL(base_url))
     throw new TypeError();
   // TODO: use a single regex for speed? Or maybe get the protocol,
   // normalize it, and check against a list of bad protocols?

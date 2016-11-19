@@ -2,10 +2,53 @@
 
 'use strict';
 
-const mime = {};
+class Mime {
+
+  // Guess if the url path is not an html mime type
+  static sniffNonHTML(path) {
+    const nonHTMLSuperTypes = ['application', 'audio', 'image', 'video'];
+    const type = Mime.sniffPath(path);
+    if(type) {
+      const superType = type.substring(0, type.indexOf('/'));
+      return nonHTMLSuperTypes.includes(superType);
+    }
+  }
+
+  // Guess the mime type of the url path by looking at the filename extension
+  static sniffPath(path) {
+    const ext = Mime.getExtension(path);
+    if(ext)
+      return Mime.mapping[ext];
+  }
+
+  // TODO: properly handle 'foo.'
+  // Returns a file's extension. Some extensions are ignored because this must
+  // differentiate between paths containing periods and file names, but this
+  // favors reducing false positives (returning an extension that is not one) even
+  // if there are false negatives (failing to return an extension when there is
+  // one). The majority of inputs will pass, it is only the pathological cases
+  // that are of any concern. The cost of returning the wrong extension is greater
+  // than not returning the correct extension because this is a factor of deciding
+  // whether to filter content.
+  // @param path {String} path to analyze (should have leading /)
+  // @returns {String} lowercase extension or undefined
+  static getExtension(path) {
+    const maxExtLen = 6;
+    const minPathLen = '/a.b'.length;
+    if(!path || path.length < minPathLen)
+      return;
+    const lastDotPos = path.lastIndexOf('.');
+    if(lastDotPos !== -1) {
+      const ext = path.substring(lastDotPos + 1);
+      const len = ext.length;
+      if(len > 0 && len < maxExtLen && /[a-z]/i.test(ext))
+        return ext.toLowerCase();
+    }
+  }
+}
 
 // A mapping between common file extensions and mime types
-mime.ext_map = {
+Mime.mapping = {
   'ai':   'application/postscript',
   'aif':  'audio/aiff',
   'atom': 'application/atom+xml',
@@ -62,50 +105,4 @@ mime.ext_map = {
   'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'xml':  'application/xml',
   'zip':  'application/zip'
-};
-
-// Return true if sniffing the path suggests that the url does not refer to
-// an html document. This merely looks at the characters in the path, not the
-// content of the referenced resource.
-mime.sniff_non_html = function(path) {
-  const bad_super_types = ['application', 'audio', 'image', 'video'];
-  const type = mime.sniff_path(path);
-  if(type) {
-    const super_type = type.substring(0, type.indexOf('/'));
-    return bad_super_types.includes(super_type);
-  }
-};
-
-// Given a url, try and guess the mime type of the url by looking at the
-// filename extension. This does no inspection of content
-mime.sniff_path = function(path) {
-  const ext = mime.get_extension(path);
-  if(!ext) return;
-  return mime.ext_map[ext];
-};
-
-
-// TODO: properly handle 'foo.'
-// Returns a file's extension. Some extensions are ignored because this must
-// differentiate between paths containing periods and file names, but this
-// favors reducing false positives (returning an extension that is not one) even
-// if there are false negatives (failing to return an extension when there is
-// one). The majority of inputs will pass, it is only the pathological cases
-// that are of any concern. The cost of returning the wrong extension is greater
-// than not returning the correct extension because this is a factor of deciding
-// whether to filter content.
-// @param path {String} path to analyze (should have leading /)
-// @returns {String} lowercase extension or undefined
-mime.get_extension = function(path) {
-  const max_ext_len = 6;
-  const min_path_len = '/a.b'.length;
-  if(!path || path.length < min_path_len)
-    return;
-  const last_dot = path.lastIndexOf('.');
-  if(last_dot !== -1) {
-    const ext = path.substring(last_dot + 1);
-    const len = ext.length;
-    if(len > 0 && len < max_ext_len && /[a-z]/i.test(ext))
-      return ext.toLowerCase();
-  }
 };

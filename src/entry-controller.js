@@ -5,15 +5,24 @@
 class EntryController {
 
   constructor(entryStore) {
-    this.entryStore = entryStore;
+    this.entryStore = entryStore || new EntryStore();
+  }
+
+  async connect() {
+    const readerDb = new ReaderDb();
+    const conn = await readerDb.connect();
+    this.entryStore.conn = conn;
+    return conn;
+  }
+
+  close() {
+    if(this.entryStore.conn)
+      this.entryStore.conn.close();
   }
 
   async markRead(id) {
-    console.debug('Marking entry %s as read', id);
-
     if(!Number.isInteger(id) || id < 1)
       throw new TypeError(`Invalid entry id ${id}`);
-
     const entry = await this.entryStore.findById(id);
     if(!entry)
       throw new Error(`No entry found with id ${id}`);
