@@ -2,6 +2,8 @@
 
 'use strict';
 
+// TODO: convert to class
+
 {
 
 function filter_boilerplate(doc) {
@@ -10,9 +12,7 @@ function filter_boilerplate(doc) {
 }
 
 // Returns a measure indicating whether the element contains boilerplate or
-// content based on its text. Elements with a large amount of text are
-// generally more likely to be content. Elements with a small amount of text
-// contained within anchors are more likely to be content.
+// content based on its text.
 // The metric is adapted from the paper:
 // "Boilerplate Detection using Shallow Text Features".
 // See http://www.l3s.de/~kohlschuetter/boilerplate.

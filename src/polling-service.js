@@ -274,7 +274,7 @@ class PollingService {
 
     await DocumentLayout.setDocumentImageDimensions(doc,
       this.fetchImageTimeout);
-    this.prepDoc(doc);
+    this.prepDoc(Entry.getURL(entry), doc);
     entry.content = doc.documentElement.outerHTML.trim();
     return await this.addEntry(entry);
   }
@@ -319,9 +319,7 @@ class PollingService {
   }
 
   // To determine where there was a redirect, compare the response url to the
-  // entry's current urls, ignoring the hash. The response url will
-  // never have a hash, so we just need to strip the hash from the entry's
-  // other urls
+  // entry's current urls, ignoring the hash.
   didRedirect(urls, response_url) {
     if(!response_url)
       throw new TypeError();
@@ -345,13 +343,16 @@ class PollingService {
       return;
     }
 
-    this.prepDoc(doc);
+    this.prepDoc(Entry.getURL(entry), doc);
     const content = doc.documentElement.outerHTML.trim();
     if(content)
       entry.content = content;
   }
 
-  prepDoc(doc) {
+  prepDoc(urlString, doc) {
+
+    BP_TEMPLATE_FILTER.prune(urlString, doc);
+
     filter_boilerplate(doc);
     scrub_dom(doc);
     add_no_referrer(doc);

@@ -9,6 +9,10 @@ class EntryController {
   }
 
   async connect() {
+
+    // TODO: EntryController should not have any knowledge
+    // of ReaderDb, just EntryStore. Law of demeter issue.
+
     const readerDb = new ReaderDb();
     const conn = await readerDb.connect();
     this.entryStore.conn = conn;

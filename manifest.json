@@ -37,6 +37,8 @@
       "/src/resource-loader.js",
       "/src/rewrite.js",
       "/src/silent-console.js",
+      "/src/template-filter.js",
+      "/src/template-filters.js",
       "/src/utils.js",
       "/third-party/parse-srcset.js"
     ]

@@ -128,8 +128,13 @@ class SubscriptionService {
     const chan = new BroadcastChannel('db');
     const proms = ids.map((entryId) => entryStore.remove(tx, entryId, chan));
     proms.push(feedStore.remove(tx, feedId));
-    await Promise.all(proms);
-    chan.close();// TODO: this needs to be in a try/finally block
+
+    try {
+      await Promise.all(proms);
+    } finally {
+      chan.close();
+    }
+
     this.log.debug('Unsubscribed from feed id', feedId);
     this.log.debug('Deleted %d entries', ids.length);
     return ids.length;
