@@ -32,6 +32,8 @@ class PollingService {
     this.db = new ReaderDb();
     this.readerConn = null;
     this.fs = new FaviconService();
+
+    this.bpFilter = new BoilerplateFilter();
   }
 
   queryIdleState(idleSecs) {
@@ -350,10 +352,8 @@ class PollingService {
   }
 
   prepDoc(urlString, doc) {
-
     BP_TEMPLATE_FILTER.prune(urlString, doc);
-
-    filter_boilerplate(doc);
+    this.bpFilter.filterDocument(doc);
     scrub_dom(doc);
     add_no_referrer(doc);
   }
