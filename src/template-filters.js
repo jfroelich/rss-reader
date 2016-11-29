@@ -5,6 +5,7 @@
 // A global singleton used by polling. Overlaps with BoilerplateFilter
 const BP_TEMPLATE_FILTER = new TemplateFilter();
 
+// TODO: blanking the page sometimes
 BP_TEMPLATE_FILTER.add('www.washingtonpost.com', ['header#wp-header',
   'div.top-sharebar-wrapper',
   'div.newsletter-inline-unit',

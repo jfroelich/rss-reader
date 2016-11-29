@@ -7,12 +7,12 @@ class TemplateFilter {
     this.templates = {};
   }
 
+  // Note that newSelectors is not cloned
   add(hostname, newSelectors) {
     const oldSelectors = this.templates[hostname];
     if(oldSelectors) {
       this.templates[hostname] = oldSelectors.concat(newSelectors);
     } else {
-      // NOTE: impure for better perf
       this.templates[hostname] = newSelectors;
     }
   }
@@ -22,12 +22,11 @@ class TemplateFilter {
     return this.templates[urlo.hostname];
   }
 
-  // NOTE: logging is temp while monitoring new functionality
-
   prune(urlString, doc) {
     const selectors = this.findSelectors(urlString);
     if(!selectors)
       return;
+    // NOTE: temp while evaluating new functionality
     console.debug('Applying template filter to', urlString);
     const selector = selectors.join(',');
     const elements = doc.querySelectorAll(selector);
