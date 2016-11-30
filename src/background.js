@@ -68,15 +68,17 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
   console.debug('Alarm wakeup', alarm.name);
   if(alarm.name === 'archive') {
     const db = new ReaderDb();
-    let conn;
+    const entryStore = new EntryStore();
+    const archiver = new EntryArchiver();
+    archiver.entryStore = entryStore;
     try {
-      conn = await db.connect();
-      await archive_entries(conn);
+      entryStore.conn = await db.connect();
+      await archiver.archive();
     } catch(error) {
       console.warn(error);
     } finally {
-      if(conn)
-        conn.close();
+      if(entryStore.conn)
+        entryStore.conn.close();
     }
   } else if(alarm.name === 'poll') {
     const pollService = new PollingService();

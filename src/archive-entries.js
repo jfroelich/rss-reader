@@ -2,61 +2,77 @@
 
 'use strict';
 
-// TODO: convert to class
-// TODO: use camel case
-// TODO: use helper functions
-// TODO: decouple config
-// TODO: decouple SilentConsole
-// TODO: removing as much logging as possible
-// TODO: maybe move into some kind of entry controller object
+class EntryArchiver {
+  constructor() {
+    this.maxAge = 1 * 24 * 60 * 60 * 1000;// 1 day in ms
+    this.verbose = false;
+    this.entryStore = null;
 
-async function archive_entries(conn,
-  max_age = config.archive_default_entry_max_age, log = SilentConsole) {
-  if(!Number.isInteger(max_age) || max_age < 0)
-    throw new TypeError();
-  log.log('Archiving entries older than %d ms', max_age);
-
-  const entryStore = new EntryStore(conn);
-  const entries = await entryStore.getUnarchivedRead();
-  log.debug('Loaded %d entries', entries.length);
-  const current_date = new Date();
-  const archivable_entries = entries.filter((entry) =>
-    current_date - entry.dateCreated > max_age);
-  log.debug('Archiving %d entries', archivable_entries.length);
-
-  const compactedProps = {
-    'dateCreated': undefined,
-    'dateRead': undefined,
-    'feed': undefined,
-    'id': undefined,
-    'readState': undefined,
-    'urls': undefined
-  };
-
-  function isCompactedProp(obj, prop) {
-    return prop in compactedProps;
+    // Which props are retained
+    this.compactedProps = {
+      'dateCreated': undefined,
+      'dateRead': undefined,
+      'feed': undefined,
+      'id': undefined,
+      'readState': undefined,
+      'urls': undefined
+    };
   }
 
-  const compacted_entries = archivable_entries.map((entry) => {
-    const compacted = ObjectUtils.filter(entry, isCompactedProp);
-    compacted.archiveState = Entry.ARCHIVED;
-    compacted.dateArchived = current_date;
-    return compacted;
-  });
+  async archive() {
+    if(!Number.isInteger(this.maxAge) || this.maxAge < 0)
+      throw new TypeError();
+    if(this.verbose)
+      console.log('Archiving entries older than %d ms', this.maxAge);
+    const entries = await this.entryStore.getUnarchivedRead();
+    if(this.verbose)
+      console.debug('Loaded %d entries', entries.length);
+    const currentDate = new Date();
 
-  if(log === console) {
-    for(let i = 0, len = archivable_entries.length; i < len; i++) {
-      log.debug(ObjectUtils.sizeof(archivable_entries[i]), 'compacted to',
-        ObjectUtils.sizeof(compacted_entries[i]));
+    const archivableEntries = entries.filter((entry) =>
+      currentDate - entry.dateCreated > this.maxAge);
+    if(this.verbose)
+      console.debug('Archiving %d entries', archivableEntries.length);
+
+    const compactedEntries = archivableEntries.map((entry) => {
+      const compacted = ObjectUtils.filter(entry,
+        this.isCompactedProp.bind(this));
+      compacted.archiveState = Entry.ARCHIVED;
+      compacted.dateArchived = currentDate;
+      return compacted;
+    });
+
+    if(this.verbose) {
+      for(let i = 0, len = archivableEntries.length; i < len; i++) {
+        const before = ObjectUtils.sizeof(archivableEntries[i]);
+        const after = ObjectUtils.sizeof(compactedEntries[i]);
+        console.debug(before, 'compacted to', after);
+      }
     }
+
+    const resolutions = await this.entryStore.putAll(compactedEntries);
+
+    this.dispatchArchiveEvent(compactedEntries);
+
+    if(this.verbose)
+      console.log('Archive entries completed (scanned %d, compacted %d)',
+        entries.length, archivableEntries.length);
+    return archivableEntries.length;
   }
 
-  const put_resolutions = await entryStore.putAll(compacted_entries);
-  const archived_ids = compacted_entries.map((entry) => entry.id);
-  const chan = new BroadcastChannel('db');
-  chan.postMessage({'type': 'archived_entries', 'entry_ids': archived_ids})
-  chan.close();
-  log.log('Archive entries completed (scanned %d, compacted %d)',
-    entries.length, archivable_entries.length);
-  return archivable_entries.length;
+  dispatchArchiveEvent(entries) {
+    const ids = entries.map(this.getId);
+
+    const chan = new BroadcastChannel('db');
+    chan.postMessage({'type': 'archivedEntries', 'ids': ids})
+    chan.close();
+  }
+
+  getId(entry) {
+    return entry.id;
+  }
+
+  isCompactedProp(obj, prop) {
+    return prop in this.compactedProps;
+  }
 }

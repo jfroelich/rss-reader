@@ -26,8 +26,6 @@ class TemplateFilter {
     const selectors = this.findSelectors(urlString);
     if(!selectors)
       return;
-    // NOTE: temp while evaluating new functionality
-    console.debug('Applying template filter to', urlString);
     const selector = selectors.join(',');
     const elements = doc.querySelectorAll(selector);
     for(let element of elements) {

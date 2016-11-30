@@ -5,6 +5,7 @@
 // TODO: create issues for these todos and delete them here
 // TODO: remove subscription preview
 // TODO: lookup favicons after displaying search results, not before
+// TODO: listen for poll events, feed information may have updated
 
 {
 

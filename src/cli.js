@@ -6,17 +6,21 @@
 // with logging to console.
 
 class cli {
+
   static async archiveEntries() {
-    // TODO: archive_entries should just accept a connected entry store
-    // instance as input, not the db conn itself
     const db = new ReaderDb();
-    let conn;
+    const es = new EntryStore();
+
+    const ea = new EntryArchiver();
+    ea.entryStore = es;
+    ea.verbose = true;
+
     try {
-      conn = await db.connect();
-      await archive_entries(conn, undefined, console);
+      es.conn = await db.connect();
+      await ea.archive();
     } finally {
-      if(conn)
-        conn.close();
+      if(es.conn)
+        es.conn.close();
     }
   }
 
