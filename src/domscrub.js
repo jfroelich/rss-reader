@@ -4,519 +4,519 @@
 
 // Module for sanitizing the contents of a document
 
-{
+class DOMScrubber {
 
-function scrub_dom(doc) {
-  filter_comments(doc);
-  filter_frames(doc);
-  filter_noscripts(doc);
-  filter_blacklist(doc);
-  filter_hidden(doc);
-  adjust_block_inlines(doc);
-  filter_brs(doc);
-  filter_script_anchors(doc);
-  filter_format_anchors(doc);
-  filter_small_images(doc);
-  filter_sourceless_images(doc);
-  filter_unwrappables(doc);
-  filter_figures(doc);
-  filter_hairs(doc);
-  condense_node_whitespace(doc);
-  filter_single_item_lists(doc);
-  filter_tables(doc, 20);
-  filter_leaves(doc);
-  filter_hrs(doc);
-  trim_doc(doc);
-  filter_attrs(doc);
-};
-
-function add_no_referrer(doc) {
-  const anchors = doc.querySelectorAll('a');
-  for(let anchor of anchors) {
-    anchor.setAttribute('rel', 'noreferrer');
+  constructor() {
+    this.blacklist = [
+      'applet', 'audio', 'base', 'basefont', 'bgsound', 'button', 'command',
+      'datalist', 'dialog', 'embed', 'fieldset', 'frame', 'frameset', 'head',
+      'iframe', 'input', 'isindex', 'link', 'math', 'meta',
+      'object', 'output', 'optgroup', 'option', 'param', 'path', 'progress',
+      'script', 'select', 'spacer', 'style', 'svg', 'textarea', 'title',
+      'video', 'xmp'
+    ];
+    this.blacklistSelector = this.blacklist.join(',');
   }
-}
 
-// Looks for cases such as <a><p>text</p></a> and transforms them into
-// <p><a>text</a></p>.
-function adjust_block_inlines(doc) {
-  const block_selector = 'blockquote, h1, h2, h3, h4, h5, h6, p';
-  const inline_block_selector = 'a';
-  const blocks = doc.querySelectorAll(block_selector);
-  for(let block of blocks) {
-    const ancestor = block.closest(inline_block_selector);
-    if(ancestor && ancestor.parentNode) {
-      ancestor.parentNode.insertBefore(block, ancestor);
-      for(let node = block.firstChild; node; node = block.firstChild) {
-        ancestor.appendChild(node);
+  scrub(doc) {
+    this.filterComments(doc);
+    this.filterFrames(doc);
+    this.filterNoscripts(doc);
+    this.filterBlacklist(doc);
+    this.filterHidden(doc);
+    this.adjustBlockInlines(doc);
+    this.filterBRs(doc);
+    this.filterScriptAnchors(doc);
+    this.filterFormatAnchors(doc);
+    this.filterSmallImages(doc, 2);
+    DOMScrubber.filterSourcelessImages(doc);
+    this.filterUnwrappables(doc);
+    this.filterFigures(doc);
+    this.filterHairs(doc);
+    this.condenseNodeWhitespace(doc);
+    this.filterSingleItemLists(doc);
+    this.filterTables(doc, 20);
+    this.filterLeaves(doc);
+    this.filterHRs(doc);
+    this.trimDoc(doc);
+    this.filterAttributes(doc);
+  }
+
+  static addNoReferrer(doc) {
+    const anchors = doc.querySelectorAll('a');
+    for(let anchor of anchors) {
+      anchor.setAttribute('rel', 'noreferrer');
+    }
+  }
+
+  // Looks for cases such as <a><p>text</p></a> and transforms them into
+  // <p><a>text</a></p>.
+  adjustBlockInlines(doc) {
+    const blockSelector = 'blockquote, h1, h2, h3, h4, h5, h6, p';
+    const inlineSelector = 'a';
+    const blocks = doc.querySelectorAll(blockSelector);
+    for(let block of blocks) {
+      const ancestor = block.closest(inlineSelector);
+      if(ancestor && ancestor.parentNode) {
+        ancestor.parentNode.insertBefore(block, ancestor);
+        for(let node = block.firstChild; node; node = block.firstChild) {
+          ancestor.appendChild(node);
+        }
+        block.appendChild(ancestor);
       }
-      block.appendChild(ancestor);
     }
   }
-}
 
-function condense_node_whitespace(doc) {
-  const ws_sensitive = 'code, pre, ruby, textarea, xmp';
-  const it = doc.createNodeIterator(doc.documentElement, NodeFilter.SHOW_TEXT);
-  for(let n = it.nextNode(); n; n = it.nextNode()) {
-    const value = n.nodeValue;
-    if(value.length > 3 && !n.parentNode.closest(ws_sensitive)) {
-      const condensed = value.replace(/\s{2,}/g, ' ');
-      if(condensed.length !== value.length)
-        n.nodeValue = condensed;
+  condenseNodeWhitespace(doc) {
+    const it = doc.createNodeIterator(doc.documentElement,
+      NodeFilter.SHOW_TEXT);
+    for(let node = it.nextNode(); node; node = it.nextNode()) {
+      const value = node.nodeValue;
+      if(value.length > 3 && !this.isSensitiveDescendant(node)) {
+        const condensed = this.condenseWhitespace(value);
+        if(condensed.length !== value.length)
+          node.nodeValue = condensed;
+      }
     }
   }
-}
 
-function filter_script_anchors(doc) {
-  const anchors = doc.querySelectorAll('a');
-  for(let anchor of anchors) {
-    const url = anchor.getAttribute('href');
-    if(url && url.length > 11 && /^\s*javascript:/i.test(url))
-      unwrap(anchor);
+  condenseWhitespace(nodeValue) {
+    return nodeValue.replace(/\s{2,}/g, ' ');
   }
-}
 
-function filter_format_anchors(doc) {
-  const anchors = doc.querySelectorAll('a');
-  for(let anchor of anchors) {
-    if(!anchor.hasAttribute('href') && !anchor.hasAttribute('name'))
-      unwrap(anchor);
+  // Returns true if the node lies within a whitespace sensitive element
+  isSensitiveDescendant(textNode) {
+    return textNode.parentNode.closest('code, pre, ruby, textarea, xmp');
   }
-}
 
-const blacklist = [
-  'applet', 'audio', 'base', 'basefont', 'bgsound', 'button', 'command',
-  'datalist', 'dialog', 'embed', 'fieldset', 'frame', 'frameset', 'head',
-  'iframe', 'input', 'isindex', 'link', 'math', 'meta',
-  'object', 'output', 'optgroup', 'option', 'param', 'path', 'progress',
-  'script', 'select', 'spacer', 'style', 'svg', 'textarea', 'title',
-  'video', 'xmp'
-];
-const blacklist_selector = blacklist.join(',');
+  filterScriptAnchors(doc) {
+    const anchors = doc.querySelectorAll('a');
+    for(let anchor of anchors) {
+      if(this.isScriptURL(anchor.getAttribute('href')))
+        this.unwrap(anchor);
+    }
+  }
 
-// This does not use a whitelist in order to support custom entities
-function filter_blacklist(doc) {
-  const doc_element = doc.documentElement;
-  const elements = doc.querySelectorAll(blacklist_selector);
-  for(let element of elements) {
-    if(doc_element.contains(element))
+  isScriptURL(urlString) {
+    return urlString && urlString.length > 11 &&
+      /^\s*javascript:/i.test(urlString);
+  }
+
+  filterFormatAnchors(doc) {
+    const anchors = doc.querySelectorAll('a');
+    for(let anchor of anchors) {
+      if(!anchor.hasAttribute('href') && !anchor.hasAttribute('name'))
+        this.unwrap(anchor);
+    }
+  }
+
+  filterBlacklist(doc) {
+    const docElement = doc.documentElement;
+    const elements = doc.querySelectorAll(this.blacklistSelector);
+    for(let element of elements) {
+      if(docElement.contains(element))
+        element.remove();
+    }
+  }
+
+  filterBRs(doc) {
+    const elements = doc.querySelectorAll('br + br');
+    for(let element of elements) {
       element.remove();
+    }
   }
-}
 
-function filter_brs(doc) {
-  const elements = doc.querySelectorAll('br + br');
-  for(let element of elements) {
-    element.remove();
+  filterComments(doc) {
+    const docElement = doc.documentElement;
+    const it = doc.createNodeIterator(docElement, NodeFilter.SHOW_COMMENT);
+    for(let node = it.nextNode(); node; node = it.nextNode()) {
+      node.remove();
+    }
   }
-}
 
-function filter_comments(doc) {
-  const doc_element = doc.documentElement;
-  const it = doc.createNodeIterator(doc_element, NodeFilter.SHOW_COMMENT);
-  for(let node = it.nextNode(); node; node = it.nextNode()) {
-    node.remove();
-  }
-}
+  filterFrames(doc) {
+    const frameset = doc.body;
+    if(!frameset || frameset.localName !== 'frameset')
+      return;
 
-function filter_attrs(doc) {
-  const elements = doc.getElementsByTagName('*');
-  for(let element of elements) {
-    let el_name = element.localName;
-    let attributes = element.attributes;
-    if(!attributes || !attributes.length)
-      continue;
-
-    if(el_name === 'source') {
-      for(let i = attributes.length - 1; i > -1; i--) {
-        let attr_name = attributes[i].name;
-        if(attr_name !== 'type' && attr_name !== 'srcset' &&
-          attr_name !== 'sizes' && attr_name !== 'media' &&
-          attr_name !== 'src') {
-          element.removeAttribute(attr_name);
-        }
-      }
-    } else if(el_name === 'a') {
-      for(let i = attributes.length - 1; i > -1; i--) {
-        let attr_name = attributes[i].name;
-        if(attr_name !== 'href' && attr_name !== 'name' &&
-          attr_name !== 'title') {
-          element.removeAttribute(attr_name);
-        }
-      }
-    } else if(el_name === 'iframe') {
-      for(let i = attributes.length - 1; i > -1; i--) {
-        let attr_name = attributes[i].name;
-        if(attr_name !== 'src') {
-          element.removeAttribute(attr_name);
-        }
-      }
-    } else if(el_name === 'img') {
-      for(let i = attributes.length - 1; i > -1; i--) {
-        let attr_name = attributes[i].name;
-        if(attr_name !== 'src' && attr_name !== 'alt' &&
-          attr_name !== 'srcset' && attr_name !== 'title') {
-          element.removeAttribute(attr_name);
-        }
+    const body = doc.createElement('body');
+    const noframes = doc.querySelector('noframes');
+    if(noframes) {
+      for(let node = noframes.firstChild; node; node = noframes.firstChild) {
+        body.appendChild(node);
       }
     } else {
-      for(let i = attributes.length - 1; i > -1; i--) {
-        element.removeAttribute(attributes[i].name);
+      const error = doc.createTextNode('Unable to display framed document.');
+      body.appendChild(error);
+    }
+
+    frameset.remove();
+    doc.documentElement.appendChild(body);
+  }
+
+  // TODO: cleanup
+  filterAttributes(doc) {
+    const elements = doc.getElementsByTagName('*');
+    for(let element of elements) {
+      let el_name = element.localName;
+      let attributes = element.attributes;
+      if(!attributes || !attributes.length)
+        continue;
+
+      if(el_name === 'source') {
+        for(let i = attributes.length - 1; i > -1; i--) {
+          let attr_name = attributes[i].name;
+          if(attr_name !== 'type' && attr_name !== 'srcset' &&
+            attr_name !== 'sizes' && attr_name !== 'media' &&
+            attr_name !== 'src') {
+            element.removeAttribute(attr_name);
+          }
+        }
+      } else if(el_name === 'a') {
+        for(let i = attributes.length - 1; i > -1; i--) {
+          let attr_name = attributes[i].name;
+          if(attr_name !== 'href' && attr_name !== 'name' &&
+            attr_name !== 'title') {
+            element.removeAttribute(attr_name);
+          }
+        }
+      } else if(el_name === 'iframe') {
+        for(let i = attributes.length - 1; i > -1; i--) {
+          let attr_name = attributes[i].name;
+          if(attr_name !== 'src') {
+            element.removeAttribute(attr_name);
+          }
+        }
+      } else if(el_name === 'img') {
+        for(let i = attributes.length - 1; i > -1; i--) {
+          let attr_name = attributes[i].name;
+          if(attr_name !== 'src' && attr_name !== 'alt' &&
+            attr_name !== 'srcset' && attr_name !== 'title') {
+            element.removeAttribute(attr_name);
+          }
+        }
+      } else {
+        for(let i = attributes.length - 1; i > -1; i--) {
+          element.removeAttribute(attributes[i].name);
+        }
       }
     }
   }
-}
 
-const hidden_selector = [
-  '[style*="display:none"]',
-  '[style*="display: none"]',
-  '[style*="visibility:hidden"]',
-  '[style*="visibility: hidden"]',
-  '[style*="opacity: 0.0"]',
-  '[aria-hidden="true"]'
-].join(',');
+  filterHidden(doc) {
+    const selector = [
+      '[style*="display:none"]',
+      '[style*="visibility:hidden"]',
+      '[style*="opacity:0.0"]',
+      '[aria-hidden="true"]'
+    ].join(',');
 
-function filter_hidden(doc) {
-  const elements = doc.querySelectorAll(hidden_selector);
-  const doc_element = doc.documentElement;
-  for(let element of elements) {
-    if(element !== doc_element && doc_element.contains(element))
-      unwrap(element);
+    const elements = doc.querySelectorAll(selector);
+    const docElement = doc.documentElement;
+    for(let element of elements) {
+      if(element !== docElement && docElement.contains(element))
+        this.unwrap(element);
+    }
   }
-}
 
-const hr_selector = [
-  'hr + hr', // consecutive hrs
-  'ul > hr', // hierarchy error
-  'ol > hr' // hierarchy error
-].join(',');
-
-function filter_hrs(doc) {
-  const elements = doc.querySelectorAll(hr_selector);
-  for(let element of elements) {
-    element.remove();
-  }
-}
-
-function filter_small_images(doc) {
-  const images = doc.querySelectorAll('img');
-  for(let img of images) {
-    if(img.width < 2 || img.height < 2)
-      img.remove();
-  }
-}
-
-function filter_sourceless_images(doc) {
-  const images = doc.querySelectorAll('img');
-  for(let img of images) {
-    if(!img.hasAttribute('src') && !img.hasAttribute('srcset'))
-      img.remove();
-  }
-}
-
-function filter_invalid_anchors(doc) {
-  const anchors = doc.querySelectorAll('a');
-  for(let anchor of anchors) {
-    if(is_invalid_anchor(anchor))
-      anchor.remove();
-  }
-}
-
-function is_invalid_anchor(anchor) {
-  const href = anchor.getAttribute('href');
-  return href && /^\s*https?:\/\/#/i.test(href);
-}
-
-function filter_leaves(doc) {
-  if(!doc.body)
-    return;
-
-  const doc_element = doc.documentElement;
-  const elements = doc.body.querySelectorAll('*');
-  for(let element of elements) {
-    if(doc_element.contains(element) && is_leaf(element))
+  filterHRs(doc) {
+    const selector = 'hr + hr, ul > hr, ol > hr';
+    const elements = doc.querySelectorAll(selector);
+    for(let element of elements) {
       element.remove();
-  }
-}
-
-function filter_tables(doc, limit) {
-  const tables = doc.querySelectorAll('table');
-  for(let i = 0, len = tables.length; i < len; i++) {
-    const table = tables[i];
-    if(is_single_col_table(table, limit))
-      unwrap_single_col_table(table);
-  }
-}
-
-function is_single_col_table(table, limit) {
-  const rows = table.rows;
-  const upper = Math.min(rows.length, limit);
-  for(let i = 0; i < upper; i++) {
-    if(!is_single_col_row(rows[i]))
-      return false;
-  }
-  return true;
-}
-
-// TODO: for .. of?
-function is_single_col_row(row) {
-  const cells = row.cells;
-  let num_non_empty = 0;
-  for(let i = 0, len = cells.length; i < len; i++) {
-    const cell = cells[i];
-    if(!is_leaf(cell)) {
-      if(++num_non_empty > 1)
-        return false;
     }
   }
 
-  return true;
-}
+  filterSmallImages(doc, minDimValue) {
+    const images = doc.querySelectorAll('img');
+    for(let img of images) {
+      if(img.width < minDimValue || img.height < minDimValue)
+        img.remove();
+    }
+  }
 
-// TODO: only pad if adjacent to text
-// TODO: can i use for..of over table.rows?
-function unwrap_single_col_table(table) {
-  const rows = table.rows;
-  const num_rows = rows.length;
-  const parent = table.parentNode;
-  const doc = table.ownerDocument;
+  static filterSourcelessImages(doc) {
+    const images = doc.querySelectorAll('img');
+    for(let img of images) {
+      if(!img.hasAttribute('src') && !img.hasAttribute('srcset'))
+        img.remove();
+    }
+  }
 
-  parent.insertBefore(doc.createTextNode(' '), table);
-  for(let i = 0; i < num_rows; i++) {
-    const row = rows[i];
-    // TODO: if the cell is a leaf, skip it and do not add a paragraph
-    for(let k = 0, clen = row.cells.length; k < clen; k++) {
-      const cell = row.cells[k];
-      insert_children_before(cell, table);
+  static filterInvalidAnchors(doc) {
+    const anchors = doc.querySelectorAll('a');
+    for(let anchor of anchors) {
+      if(DOMScrubber.isInvalidAnchor(anchor))
+        anchor.remove();
+    }
+  }
+
+  static isInvalidAnchor(anchor) {
+    const href = anchor.getAttribute('href');
+    return href && /^\s*https?:\/\/#/i.test(href);
+  }
+
+  filterLeaves(doc) {
+    if(!doc.body)
+      return;
+
+    const docElement = doc.documentElement;
+    const elements = doc.body.querySelectorAll('*');
+    for(let element of elements) {
+      if(docElement.contains(element) && this.isLeaf(element))
+        element.remove();
+    }
+  }
+
+  // An element is a leaf unless it is a named exception, contains a
+  // non-whitespace-only text node, or contains at least one non-leaf child
+  // element. This is a recursive function.
+  isLeaf(node) {
+
+    const exceptions = {
+      'area': 0, 'audio': 0, 'base': 0, 'col': 0, 'command': 0, 'br': 0,
+      'canvas': 0, 'col': 0, 'hr': 0, 'iframe': 0, 'img': 0, 'input': 0,
+      'keygen': 0, 'meta': 0, 'nobr': 0, 'param': 0, 'path': 0, 'source': 0,
+      'sbg': 0, 'textarea': 0, 'track': 0, 'video': 0, 'wbr': 0
+    };
+
+    switch(node.nodeType) {
+      case Node.ELEMENT_NODE:
+        if(node.localName in exceptions)
+          return false;
+        for(let child = node.firstChild; child; child = child.nextSibling) {
+          if(!this.isLeaf(child))
+            return false;
+        }
+        break;
+      case Node.TEXT_NODE:
+        return !node.nodeValue.trim();
+      case Node.COMMENT_NODE:
+        return true;
+      default:
+        return false;
     }
 
-    parent.insertBefore(doc.createElement('p'), table);
+    return true;
   }
 
-  parent.insertBefore(doc.createTextNode(' '), table);
-  table.remove();
-}
-
-const unwrappable_selector = [
-  'abbr', 'acronym', 'article', 'aside', 'center', 'colgroup', 'data',
-  'details', 'div', 'footer', 'header', 'help', 'hgroup', 'ilayer', 'insert',
-  'layer', 'legend', 'main', 'mark', 'marquee', 'meter', 'multicol', 'nobr',
-  'section', 'span', 'tbody', 'tfoot', 'thead', 'form', 'label', 'big',
-  'blink', 'font', 'plaintext', 'small', 'tt'
-].join(',');
-
-function filter_unwrappables(doc) {
-  const elements = doc.querySelectorAll(unwrappable_selector);
-  for(let element of elements) {
-    unwrap(element);
+  filterTables(doc, limit) {
+    const tables = doc.querySelectorAll('table');
+    for(let table of tables) {
+      if(this.isSingleColTable(table, limit))
+        this.unwrapSingleColTable(table);
+    }
   }
-}
 
-const leaf_exceptions = {
-  'area': 0, 'audio': 0, 'base': 0, 'col': 0, 'command': 0, 'br': 0,
-  'canvas': 0, 'col': 0, 'hr': 0, 'iframe': 0, 'img': 0, 'input': 0,
-  'keygen': 0, 'meta': 0, 'nobr': 0, 'param': 0, 'path': 0, 'source': 0,
-  'sbg': 0, 'textarea': 0, 'track': 0, 'video': 0, 'wbr': 0
-};
-
-// An element is a leaf unless it is a named exception, contains a
-// non-whitespace-only text node, or contains at least one non-leaf child
-// element. This is a recursive function.
-function is_leaf(node) {
-  switch(node.nodeType) {
-    case Node.ELEMENT_NODE:
-      if(node.localName in leaf_exceptions)
+  isSingleColTable(table, limit) {
+    const rows = table.rows;
+    const upper = Math.min(rows.length, limit);
+    for(let i = 0; i < upper; i++) {
+      if(!this.isSingleColRow(rows[i]))
         return false;
-      for(let child = node.firstChild; child; child = child.nextSibling) {
-        if(!is_leaf(child))
+    }
+    return true;
+  }
+
+  // TODO: for .. of?
+  isSingleColRow(row) {
+    const cells = row.cells;
+    let numNonEmpty = 0;
+    for(let i = 0, len = cells.length; i < len; i++) {
+      const cell = cells[i];
+      if(!this.isLeaf(cell)) {
+        if(++numNonEmpty > 1)
           return false;
       }
-      break;
-    case Node.TEXT_NODE:
-      return !node.nodeValue.trim();
-    case Node.COMMENT_NODE:
-      return true;
-    default:
-      return false;
-  }
-
-  return true;
-}
-
-function filter_hairs(doc) {
-  const it = doc.createNodeIterator(doc.documentElement,
-    NodeFilter.SHOW_TEXT);
-  for(let node = it.nextNode(); node; node = it.nextNode()) {
-    const value = node.nodeValue;
-    const modified = value.replace(/&(hairsp|#8082|#x200a);/ig, ' ');
-    if(modified.length !== value.length)
-      node.nodeValue = modified;
-  }
-}
-
-function filter_noscripts(doc) {
-  const elements = doc.querySelectorAll('noscript');
-  for(let element of elements) {
-    unwrap(element);
-  }
-}
-
-function filter_frames(doc) {
-  const frameset = doc.body;
-  if(!frameset || frameset.localName !== 'frameset')
-    return;
-
-  const body = doc.createElement('body');
-  const noframes = doc.querySelector('noframes');
-  if(noframes) {
-    for(let node = noframes.firstChild; node; node = noframes.firstChild) {
-      body.appendChild(node);
     }
-  } else {
-    const error = doc.createTextNode('Unable to display framed document.');
-    body.appendChild(error);
+
+    return true;
   }
 
-  frameset.remove();
-  doc.documentElement.appendChild(body);
-}
+  // TODO: only pad if adjacent to text
+  // TODO: can i use for..of over table.rows?
+  unwrapSingleColTable(table) {
+    const rows = table.rows;
+    const numRows = rows.length;
+    const parent = table.parentNode;
+    const doc = table.ownerDocument;
 
-function filter_figures(doc) {
-  const figures = doc.querySelectorAll('figure');
-  for(let figure of figures) {
-    if(figure.childElementCount === 1)
-      unwrap(figure);
+    parent.insertBefore(doc.createTextNode(' '), table);
+    for(let i = 0; i < numRows; i++) {
+      const row = rows[i];
+      // TODO: if the cell is a leaf, skip it and do not add a paragraph
+      for(let k = 0, clen = row.cells.length; k < clen; k++) {
+        const cell = row.cells[k];
+        this.insertChildrenBefore(cell, table);
+      }
+
+      parent.insertBefore(doc.createElement('p'), table);
+    }
+
+    parent.insertBefore(doc.createTextNode(' '), table);
+    table.remove();
   }
-}
 
-function trim_doc(doc) {
-  if(!doc.body)
-    return;
-  const first_child = doc.body.firstChild;
-  if(first_child) {
-    trim_step(first_child, 'nextSibling');
-    const last_child = doc.body.lastChild;
-    if(last_child && last_child !== first_child)
-      trim_step(last_child, 'previousSibling');
+  filterUnwrappables(doc) {
+    const selector = [
+      'abbr', 'acronym', 'article', 'aside', 'center', 'colgroup', 'data',
+      'details', 'div', 'footer', 'header', 'help', 'hgroup', 'ilayer',
+      'insert', 'layer', 'legend', 'main', 'mark', 'marquee', 'meter',
+      'multicol', 'nobr', 'section', 'span', 'tbody', 'tfoot', 'thead', 'form',
+      'label', 'big', 'blink', 'font', 'plaintext', 'small', 'tt'
+    ].join(',');
+    const elements = doc.querySelectorAll(selector);
+    for(let element of elements) {
+      this.unwrap(element);
+    }
   }
-}
 
-const trimmable_elements = {'br': 0, 'hr': 0, 'nobr': 0};
-
-function can_trim(node) {
-  return node && (node.localName in trimmable_elements ||
-    (node.nodeType === Node.TEXT_NODE && !node.nodeValue.trim()));
-}
-
-function trim_step(start_node, edge) {
-  let node = start_node;
-  while(can_trim(node)) {
-    let sibling = node[edge];
-    node.remove();
-    node = sibling;
+  filterHairs(doc) {
+    const it = doc.createNodeIterator(doc.documentElement,
+      NodeFilter.SHOW_TEXT);
+    for(let node = it.nextNode(); node; node = it.nextNode()) {
+      const value = node.nodeValue;
+      const modified = value.replace(/&(hairsp|#8082|#x200a);/ig, ' ');
+      if(modified.length !== value.length)
+        node.nodeValue = modified;
+    }
   }
-}
 
-function unwrap(element, ref_node) {
-  const target = ref_node || element;
-  const parent = target.parentNode;
-  if(!parent)
-    throw new TypeError();
-  const doc = element.ownerDocument;
-  const prev_sib = target.previousSibling;
-  if(prev_sib && prev_sib.nodeType === Node.TEXT_NODE)
-    parent.insertBefore(doc.createTextNode(' '), target);
-  insert_children_before(element, target);
-  const next_sib = target.nextSibling;
-  if(next_sib && next_sib.nodeType === Node.TEXT_NODE)
-    parent.insertBefore(doc.createTextNode(' '), target);
-  target.remove();
-}
-
-function insert_children_before(parent_node, ref_node) {
-  const ref_parent = ref_node.parentNode;
-  for(let node = parent_node.firstChild; node; node = parent_node.firstChild) {
-    ref_parent.insertBefore(node, ref_node);
+  filterNoscripts(doc) {
+    const elements = doc.querySelectorAll('noscript');
+    for(let element of elements) {
+      this.unwrap(element);
+    }
   }
-}
 
-function filter_single_item_lists(doc) {
-  const lists = doc.querySelectorAll('ul, ol, dl');
-  for(let list of lists) {
-    unwrap_single_item_list(doc, list);
+  filterFigures(doc) {
+    const figures = doc.querySelectorAll('figure');
+    for(let figure of figures) {
+      if(figure.childElementCount === 1)
+        this.unwrap(figure);
+    }
   }
-}
 
-const list_item_names = {'li': 0, 'dt': 0, 'dd': 0};
+  trimDoc(doc) {
+    if(!doc.body)
+      return;
+    const firstChild = doc.body.firstChild;
+    if(firstChild) {
+      this.trimWalk(firstChild, 'nextSibling');
+      const lastChild = doc.body.lastChild;
+      if(lastChild && lastChild !== firstChild)
+        this.trimWalk(lastChild, 'previousSibling');
+    }
+  }
 
-// Unwraps single item or empty list elements
-function unwrap_single_item_list(doc, list) {
-  const list_parent = list.parentNode;
-  if(!list_parent)
-    return;
+  canTrim(node) {
+    const els = ['br', 'hr', 'nobr'];
+    return node && (els.includes(node.localName) ||
+      (node.nodeType === Node.TEXT_NODE && !node.nodeValue.trim()));
+  }
 
-  const item = list.firstElementChild;
+  trimWalk(startNode, edge) {
+    let node = startNode;
+    while(this.canTrim(node)) {
+      let sibling = node[edge];
+      node.remove();
+      node = sibling;
+    }
+  }
 
-  // If the list has no child elements then move its child nodes out of the
-  // list and remove it
-  if(!item) {
-    // If it is just <list>...<item/>...<list> then remove
-    if(!list.firstChild) {
+  unwrap(element, refNode) {
+    const target = refNode || element;
+    const parent = target.parentNode;
+    if(!parent)
+      throw new TypeError();
+    const doc = element.ownerDocument;
+    const prevSib = target.previousSibling;
+    if(prevSib && prevSib.nodeType === Node.TEXT_NODE)
+      parent.insertBefore(doc.createTextNode(' '), target);
+    this.insertChildrenBefore(element, target);
+    const nextSib = target.nextSibling;
+    if(nextSib && nextSib.nodeType === Node.TEXT_NODE)
+      parent.insertBefore(doc.createTextNode(' '), target);
+    target.remove();
+  }
+
+  insertChildrenBefore(parentNode, refNode) {
+    const refParent = refNode.parentNode;
+    for(let node = parentNode.firstChild; node; node = parentNode.firstChild) {
+      refParent.insertBefore(node, refNode);
+    }
+  }
+
+  filterSingleItemLists(doc) {
+    const lists = doc.querySelectorAll('ul, ol, dl');
+    for(let list of lists) {
+      this.filterSingleItemList(doc, list);
+    }
+  }
+
+  // Unwraps single item or empty list elements
+  filterSingleItemList(doc, list) {
+    const listParent = list.parentNode;
+    if(!listParent)
+      return;
+
+    const item = list.firstElementChild;
+
+    // If the list has no child elements then move its child nodes out of the
+    // list and remove it
+    if(!item) {
+      // If it is just <list>...<item/>...<list> then remove
+      if(!list.firstChild) {
+        list.remove();
+        return;
+      }
+      // The list has no child elements, but the list has one or more child
+      // nodes. Move the nodes to before the list. Add padding if needed.
+      if(this.isTextNode(list.previousSibling))
+        listParent.insertBefore(doc.createTextNode(' '), list);
+      for(let node = list.firstChild; node; node = list.firstChild) {
+        listParent.insertBefore(node, list);
+      }
+      if(this.isTextNode(list.nextSibling))
+        listParent.insertBefore(doc.createTextNode(' '), list);
       list.remove();
       return;
     }
-    // The list has no child elements, but the list has one or more child
-    // nodes. Move the nodes to before the list. Add padding if needed.
-    if(is_text_node(list.previousSibling))
-      list_parent.insertBefore(doc.createTextNode(' '), list);
-    for(let node = list.firstChild; node; node = list.firstChild) {
-      list_parent.insertBefore(node, list);
+
+    // If the list has more than one child element then leave the list as is
+    if(item.nextElementSibling)
+      return;
+    // If the list's only child element isn't one of the correct types, ignore it
+    const list_item_names = {'li': 0, 'dt': 0, 'dd': 0};
+    if(!(item.localName in list_item_names))
+      return;
+
+    // If the list has one child element of the correct type, and that child
+    // element has no inner content, then remove the list. This will also remove
+    // any non-element nodes within the list outside of the child element.
+    if(!item.firstChild) {
+      // If removing the list, avoid the possible merging of adjacent text nodes
+      if(this.isTextNode(list.previousSibling) &&
+        this.isTextNode(list.nextSibling))
+        listParent.replaceChild(doc.createTextNode(' '), list);
+      else
+        list.remove();
+      return;
     }
-    if(is_text_node(list.nextSibling))
-      list_parent.insertBefore(doc.createTextNode(' '), list);
+
+    // The list has one child element with one or more child nodes. Move the
+    // child nodes to before the list and then remove it. Add padding if needed.
+    if(this.isTextNode(list.previousSibling) &&
+      this.isTextNode(item.firstChild))
+      listParent.insertBefore(doc.createTextNode(' '), list);
+    this.insertChildrenBefore(item, list);
+    if(this.isTextNode(list.nextSibling) &&
+      this.isTextNode(list.previousSibling))
+      listParent.insertBefore(doc.createTextNode(' '), list);
     list.remove();
-    return;
   }
 
-  // If the list has more than one child element then leave the list as is
-  if(item.nextElementSibling)
-    return;
-  // If the list's only child element isn't one of the correct types, ignore it
-  if(!(item.localName in list_item_names))
-    return;
-
-  // If the list has one child element of the correct type, and that child
-  // element has no inner content, then remove the list. This will also remove
-  // any non-element nodes within the list outside of the child element.
-  if(!item.firstChild) {
-    // If removing the list, avoid the possible merging of adjacent text nodes
-    if(is_text_node(list.previousSibling) && is_text_node(list.nextSibling))
-      list_parent.replaceChild(doc.createTextNode(' '), list);
-    else
-      list.remove();
-    return;
+  isTextNode(node) {
+    return node && node.nodeType === Node.TEXT_NODE;
   }
-
-  // The list has one child element with one or more child nodes. Move the
-  // child nodes to before the list and then remove it. Add padding if needed.
-  if(is_text_node(list.previousSibling) &&
-    is_text_node(item.firstChild))
-    list_parent.insertBefore(doc.createTextNode(' '), list);
-  insert_children_before(item, list);
-  if(is_text_node(list.nextSibling) &&
-    is_text_node(list.previousSibling))
-    list_parent.insertBefore(doc.createTextNode(' '), list);
-  list.remove();
-}
-
-function is_text_node(node) {
-  return node && node.nodeType === Node.TEXT_NODE;
-}
-
-this.scrub_dom = scrub_dom;
-this.add_no_referrer = add_no_referrer;
-this.filter_sourceless_images = filter_sourceless_images;
-this.filter_invalid_anchors = filter_invalid_anchors;
-
 }

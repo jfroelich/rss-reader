@@ -14,6 +14,7 @@ function find_css_rule(sheet, selector_text) {
     rule.selectorText === selector_text);
 }
 
+// TODO: this is way too large of a function
 function display_update_styles() {
 
   // Assume a sheet is always available

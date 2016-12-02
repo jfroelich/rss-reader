@@ -105,69 +105,28 @@ class BoilerplateFilter {
     return totalBias;
   }
 
-  // Computes a bias for an element based on the values of some of its
-  // attributes.
   // Using var due to v8 deopt warnings - Unsupported use of phi const
-
   deriveAttrBias(element) {
-
     var totalBias = 0;
-
-    // Start by merging the element's interesting attribute values into a
-    // string in preparation for tokenization. The values are merged because it
-    // is faster to process a single large string than several small strings
-    // Accessing attributes by property is faster than using getAttribute. It
-    // turns out that getAttribute is horribly slow in Chrome. I have not
-    // figured out why.
     var valsArray = [element.id, element.name, element.className];
-    // join implicitly filters undefined values
     var valsString = valsArray.join(' ');
-
-    // If the element did not have attribute values, then valsString only
-    // contains whitespace or some negligible token, so exit early.
     if(valsString.length < 3)
       return totalBias;
-
-    // Lowercase the values in one pass. Even though toLowerCase now has to
-    // consider extra spaces in its input because it occurs after the join, we
-    // don't have to check if inputs are defined non-natively because join did
-    // that for us. Also, this is one function call in contrast to 3. toLowerCase
-    // scales better with larger strings that the JS engine scales with function
-    // calls.
     var normValsString = valsString.toLowerCase();
     var tokenArray = normValsString.split(/[\s\-_0-9]+/g);
-
-    // Now add up the bias of each distinct token. Previously this was done in
-    // two passes, with the first pass generating a new array of distinct tokens,
-    // and the second pass summing up the distinct token biases. I seem to get
-    // better performance without creating an intermediate array.
     var tokenArrayLen = tokenArray.length;
-
-    // I use the in operator to test membership which follows the prototype
-    // so i think it makes sense to reduce the scope of the lookup by excluding
-    // the prototype here. I have some concern that this actually reduces
-    // performance though, and need to profile
-    var seenTokens = Object.create(null);
-
+    var seenTokens = {};
     var bias = 0;
-    var token;
+    var token = null;
 
-    // Not using for..of here due to deopt warnings
     for(var i = 0; i < tokenArrayLen; i++) {
       token = tokenArray[i];
-
-      // Split can yield empty strings, so skip those.
-      if(!token)
-        continue;
-
-      if(token in seenTokens)
-        continue;
-      else
-        seenTokens[token] = 1;
-
+      if(!token) continue;
+      if(token in seenTokens) continue;
+      seenTokens[token] = 1;
       bias = this.attrTokenWeights[token];
       if(bias)
-        totalBias += bias;
+        totalBias = totalBias + bias;
     }
 
     return totalBias;
@@ -197,7 +156,7 @@ class BoilerplateFilter {
       if(element.closest(navSelector))
         score -= 500.0;
       score += this.deriveAncestorBias(element);
-      score += this.deriveImgBias(element);
+      score += this.deriveImageBias(element);
       score += this.deriveAttrBias(element);
       if(score > highScore) {
         bestElement = element;
@@ -208,34 +167,47 @@ class BoilerplateFilter {
     return bestElement;
   }
 
-  deriveImgBias(parentElement) {
+  deriveImageBias(parentElement) {
     let bias = 0.0;
-    let numImgs = 0;
-
-    for(let element = parentElement.firstElementChild; element;
-      element = element.nextElementSibling) {
-      if(element.localName !== 'img')
-        continue;
-      numImgs++;
-
-      // Reward large images
-      let area = element.width * element.height;
-      if(area)
-        bias = bias + (0.0015 * Math.min(100000.0, area));
-
-      // Reward supporting text
-      if(element.getAttribute('alt'))
-        bias = bias + 20.0;
-      if(element.getAttribute('title'))
-        bias = bias + 30.0;
-      if(this.findCaption(element))
-        bias = bias + 100.0;
+    let images = this.getChildImages(parentElement);
+    for(let image of images) {
+      bias += this.getAreaBias(image) + this.getSupportingTextBias(image);
     }
-
-    // Penalize carousels
-    if(numImgs > 1)
-      bias = bias + (-50.0 * (numImgs - 1));
+    bias += this.getCarouselBias(images);
     return bias;
+  }
+
+  getChildImages(element) {
+    const nodes = element.childNodes;
+    return Array.prototype.filter.call(nodes,
+      (node) => node.localName === 'img');
+  }
+
+  // Penalize carousels
+  getCarouselBias(images) {
+    let bias = 0;
+    const numImages = images.length;
+    if(numImages > 1)
+      bias = -50 * (numImages - 1);
+    return bias;
+  }
+
+  // Reward supporting text
+  getSupportingTextBias(image) {
+    let bias = 0;
+    if(image.hasAttribute('alt'))
+      bias += 20;
+    if(image.hasAttribute('title'))
+      bias += 30;
+    if(this.findCaption(image))
+      bias += 100;
+    return bias;
+  }
+
+  // Reward large images
+  getAreaBias(image) {
+    let area = image.width * image.height;
+    return area ? 0.0015 * Math.min(100000.0, area) : 0.0;
   }
 
   findCaption(image) {
@@ -248,9 +220,6 @@ class BoilerplateFilter {
     const docElement = doc.documentElement;
     if(bestElement === docElement)
       return;
-
-    // The doc element contains check also avoids calling remove on detached
-    // elements
     const elements = doc.body.querySelectorAll('*');
     for(let element of elements) {
       if(!element.contains(bestElement) &&

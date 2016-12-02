@@ -269,8 +269,8 @@ class PollingService {
     }
 
     this.transformLazyImages(doc);
-    filter_sourceless_images(doc);
-    filter_invalid_anchors(doc);
+    DOMScrubber.filterSourcelessImages(doc);
+    DOMScrubber.filterInvalidAnchors(doc);
     resolve_doc(doc, new URL(Entry.getURL(entry)));
     this.filterTrackingImages(doc, config.tracking_hosts);
 
@@ -354,8 +354,10 @@ class PollingService {
   prepDoc(urlString, doc) {
     BP_TEMPLATE_FILTER.prune(urlString, doc);
     this.bpFilter.filterDocument(doc);
-    scrub_dom(doc);
-    add_no_referrer(doc);
+
+    const scrubber = new DOMScrubber();
+    scrubber.scrub(doc);
+    DOMScrubber.addNoReferrer(doc);
   }
 
   transformLazyImages(doc) {

@@ -13,5 +13,9 @@ BP_TEMPLATE_FILTER.add('www.washingtonpost.com', ['header#wp-header',
 ]);
 
 // TODO: bug, seems to be blanking the page
-BP_TEMPLATE_FILTER.add('theweek.com', ['div#head-wrap']);
+// Best guess, I am removing the wrong element?
+// I need to write a test that exclusively tests the template filter
+// module, and test it against specific urls
+// BP_TEMPLATE_FILTER.add('theweek.com', ['div#head-wrap']);
+
 BP_TEMPLATE_FILTER.add('www.usnews.com', ['header.header']);
