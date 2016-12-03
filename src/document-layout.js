@@ -28,17 +28,12 @@ class DocumentLayout {
   // @param image {HTMLImageElement}
   // @param timeout {Number}
   static async getImageDimensions(image, timeout) {
-
-    // Even though this could be done synchronously and externally, this
-    // lets delays in attribute lookup not block each other (in theory).
-    // Perf testing shows that getAttribute and hasAttribute are very slow.
     if(image.hasAttribute('width') && image.hasAttribute('height'))
       return;
 
     // Infer from inline style. Because the assumption is that the input doc
     // was inert, there is no guarantee that the style props initialized the
     // width and height properties, and we know that style wasn't computed
-    // after resolution of external style sheets
     if(image.hasAttribute('style') && image.style.width && image.style.height)
       return {'image': image, 'w': image.style.width,'h': image.style.height};
 

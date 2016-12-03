@@ -254,14 +254,13 @@ class FeedParser {
   static findChildByName(parent, name) {
     const lowerName = name.toLowerCase();
     for(let el = parent.firstElementChild; el; el = el.nextElementSibling) {
-      if(el.localName.toLowerCase() === lowerName) {
+      if(el.localName.toLowerCase() === lowerName)
         return el;
-      }
     }
   }
 
-  static findChildText(element, name) {
-    const child = this.findChildByName(element, name);
+  static findChildText(parent, name) {
+    const child = this.findChildByName(parent, name);
     const text = child ? child.textContent : null;
     return text ? text.trim() : null;
   }

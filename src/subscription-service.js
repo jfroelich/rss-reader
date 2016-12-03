@@ -36,6 +36,7 @@ class SubscriptionService {
   // TODO: this needs some revision, i think it should be throwing errors?
   // TODO: if redirected on fetch, check for redirect url contained in db
   // TODO: just do something like class FeedController {} ?
+  // TODO: create helper functions this function is too large
   async subscribe(feed) {
 
     // TODO: this is sloppy, just refactoring for now

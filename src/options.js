@@ -665,7 +665,7 @@ function import_opml_btn_on_click(event) {
 
 // TODO: visual feedback
 async function export_opml_btn_on_click(event) {
-  console.debug('Clicked export opml button');
+  console.debug('Clicked  opml button');
   const title = 'Subscriptions';
   const file_name = 'subs.xml';
 
@@ -684,8 +684,11 @@ async function export_opml_btn_on_click(event) {
       conn.close();
   }
 
-  if(feeds)
-    export_opml(feeds, title, file_name);
+  if(feeds) {
+    const exporter = new OPMLExporter();
+    exporter.verbose = true;
+    exporter.exportFile(feeds, title, file_name);
+  }
 }
 
 // TODO: sort feeds alphabetically

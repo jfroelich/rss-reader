@@ -140,7 +140,6 @@ class OPMLImporter {
       throw new TypeError(`"${file.name}" has unsupported type "${file.type}"`);
   }
 
-
   // Returns the result of subscribe, which is the added feed object, or null
   // if an error occurs. This wraps so that it can be used with Promise.all
   async subscribe(feed) {

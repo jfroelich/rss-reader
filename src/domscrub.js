@@ -268,11 +268,7 @@ class DOMScrubber {
     }
   }
 
-  // An element is a leaf unless it is a named exception, contains a
-  // non-whitespace-only text node, or contains at least one non-leaf child
-  // element. This is a recursive function.
-  isLeaf(node) {
-
+  isLeafException(element) {
     const exceptions = {
       'area': 0, 'audio': 0, 'base': 0, 'col': 0, 'command': 0, 'br': 0,
       'canvas': 0, 'col': 0, 'hr': 0, 'iframe': 0, 'img': 0, 'input': 0,
@@ -280,9 +276,13 @@ class DOMScrubber {
       'sbg': 0, 'textarea': 0, 'track': 0, 'video': 0, 'wbr': 0
     };
 
+    return element.localName in exceptions;
+  }
+
+  isLeaf(node) {
     switch(node.nodeType) {
       case Node.ELEMENT_NODE:
-        if(node.localName in exceptions)
+        if(this.isLeafException(node))
           return false;
         for(let child = node.firstChild; child; child = child.nextSibling) {
           if(!this.isLeaf(child))

@@ -22,7 +22,6 @@ class DesktopNotification {
       console.warn('Notification permission not granted', title);
     }
 
-
     const default_icon = chrome.extension.getURL('/images/rss_icon_trans.gif');
     const details = {};
     details.body = message || '';

@@ -41,7 +41,6 @@ class EntryStore {
     });
   }
 
-
   // TODO: use getAll, passing in a count parameter as an upper limit, and
   // then using slice or unshift or something to advance.
   // TODO: internally the parameter to getAll might be (offset+limit)

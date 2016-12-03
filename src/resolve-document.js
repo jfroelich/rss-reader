@@ -154,6 +154,4 @@ function resolve_url(url_str, base_url) {
 
 this.resolve_doc = resolve_doc;
 
-
-
 }
