@@ -11,6 +11,35 @@ class FaviconCache {
     this.maxAge = 1000 * 60 * 60 * 24 * 30;// 30d in ms default
   }
 
+  // NOTE: requires ExtensionUtils
+  static async createAlarm(periodInMinutes) {
+    const alarm = await ExtensionUtils.getAlarm('compact-favicons');
+    if(alarm)
+      return;
+    console.debug('Creating alarm compact-favicons');
+    chrome.alarms.create('compact-favicons',
+      {'periodInMinutes': periodInMinutes});
+  }
+
+  static registerAlarmListener() {
+    chrome.alarms.onAlarm.addListener(FaviconCache.onAlarm);
+  }
+
+  static async onAlarm(alarm) {
+    if(alarm.name === 'compact-favicons') {
+      console.debug('Alarm wakeup', alarm.name);
+      const fc = new FaviconCache();
+      try {
+        await fc.connect();
+        await fc.compact();
+      } catch(error) {
+        console.warn(error);
+      } finally {
+        fc.close();
+      }
+    }
+  }
+
   isExpired(entry, currentDate) {
     const age = currentDate - entry.dateUpdated;
     return age > this.maxAge;

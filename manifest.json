@@ -13,7 +13,7 @@
   "background": {
     "persistent": false,
     "scripts": [
-      "/src/archive-entries.js",
+      "/src/entry-archiver.js",
       "/src/background.js",
       "/src/badge.js",
       "/src/boilerplate.js",
@@ -32,7 +32,7 @@
       "/src/notification.js",
       "/src/polling-service.js",
       "/src/reader-db.js",
-      "/src/refresh-feed-icons.js",
+      "/src/feed-favicon.js",
       "/src/resolve-document.js",
       "/src/resource-loader.js",
       "/src/rewrite.js",

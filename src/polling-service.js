@@ -36,6 +36,31 @@ class PollingService {
     this.bpFilter = new BoilerplateFilter();
   }
 
+  static async createAlarm(periodInMinutes) {
+    const alarm = await ExtensionUtils.getAlarm('poll');
+    if(alarm)
+      return;
+    console.debug('Creating alarm poll');
+    chrome.alarms.create('poll', {'periodInMinutes': periodInMinutes});
+  }
+
+  static registerAlarmListener() {
+    chrome.alarms.onAlarm.addListener(PollingService.onAlarm);
+  }
+
+  static async onAlarm(alarm) {
+    if(alarm.name !== 'poll')
+      return;
+
+    const service = new PollingService();
+    service.log = console;
+    try {
+      await service.pollFeeds();
+    } catch(error) {
+      console.warn(error);
+    }
+  }
+
   queryIdleState(idleSecs) {
     return new Promise(function(resolve) {
       chrome.idle.queryState(idleSecs, resolve);

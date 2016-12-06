@@ -19,6 +19,43 @@ class EntryArchiver {
     };
   }
 
+  // Create an extension alarm for this background service
+  static async createAlarm(periodInMinutes) {
+    const name = EntryArchiver.alarmName;
+    const alarm = await ExtensionUtils.getAlarm(name);
+
+    // Do nothing if the alarm already exists
+    if(alarm)
+      return;
+    console.debug('Creating alarm', name);
+    const options = {'periodInMinutes': periodInMinutes};
+    chrome.alarms.create(name, options);
+  }
+
+  static registerAlarmListener() {
+    chrome.alarms.onAlarm.addListener(EntryArchiver.onAlarm);
+  }
+
+  static async onAlarm(alarm) {
+    // Ignore other alarm wakeups
+    if(alarm.name !== EntryArchiver.alarmName)
+      return;
+
+    const db = new ReaderDb();
+    const entryStore = new EntryStore();
+    const archiver = new EntryArchiver();
+    archiver.entryStore = entryStore;
+    try {
+      entryStore.conn = await db.connect();
+      await archiver.archive();
+    } catch(error) {
+      console.warn(error);
+    } finally {
+      if(entryStore.conn)
+        entryStore.conn.close();
+    }
+  }
+
   assertValidMaxAge() {
     if(!Number.isInteger(this.maxAge) || this.maxAge < 0)
       throw new TypeError(`Invalid maxAge: ${this.maxAge}`);
@@ -89,3 +126,5 @@ class EntryArchiver {
     return prop in this.compactedProps;
   }
 }
+
+EntryArchiver.alarmName = 'archive';

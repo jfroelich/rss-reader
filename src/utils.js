@@ -2,6 +2,15 @@
 
 'use strict';
 
+class ExtensionUtils {
+  static getAlarm(name) {
+    return new Promise(function(resolve) {
+      chrome.alarms.get(name, resolve);
+    });
+  }
+}
+
+
 class ObjectUtils {
 
   static isURL(obj) {
