@@ -2,114 +2,107 @@
 
 'use strict';
 
-// TODO: move these todos to github issues
-// TODO: is there a way to not re-register things on every page load?
-// TODO: is there a way to not rebind onalarm per page load
-// TODO: is there a non chrome specific way to do alarms? setInterval would
-// not allow the page to unload. some way to wakeup page?
-// TODO: create a graceful way to rename/remove alarms. Right now if I stop
-// using an alarm it remains silently peristent somewhere in chrome.alarms
-// internal state, indefinitely.
-// TODO: use multiple listeners, so that each alarm can be self registered by
-// the thing that needs it, so I don't have to do all the binding here? I'd
-// rather divide this up.
+class BackgroundPage {
+  static async onAlarm(alarm) {
+    console.debug('Alarm wakeup', alarm.name);
+    if(alarm.name === 'remove-entries-missing-urls') {
+      const readerDb = new ReaderDb();
+      const entryStore = new EntryStore();
+      const entryController = new EntryController(entryStore);
+      let conn;
 
-async function createOtherAlarms() {
+      try {
+        conn = await readerDb.connect();
+        entryStore.conn = conn;
+        entryController.removeEntriesMissingURLs();
+      } catch(error) {
+        console.warn(error);
+      } finally {
+        if(conn)
+          conn.close();
+      }
 
-  let alarm = await ExtensionUtils.getAlarm('refresh-feed-icons');
-  if(!alarm) {
-    console.debug('Creating refresh-feed-icons alarm');
-    chrome.alarms.create('refresh-feed-icons',
-      {'periodInMinutes': 60 * 24 * 7 * 2});
-  }
-
-  // TODO: add to handler
-  alarm = await ExtensionUtils.getAlarm('remove-orphan-entries');
-  if(!alarm) {
-    console.debug('Creating remove-orphan-entries alarm');
-    chrome.alarms.create('remove-orphan-entries',
-      {'periodInMinutes': 60 * 24 * 7});
-  }
-
-  alarm = await ExtensionUtils.getAlarm('remove-entries-missing-urls');
-  if(!alarm) {
-    console.debug('Creating remove-entries-missing-urls alarm');
-    chrome.alarms.create('remove-entries-missing-urls',
-      {'periodInMinutes': 60 * 24 * 7});
-  }
-}
-
-
-
-
-
-chrome.alarms.onAlarm.addListener(async function(alarm) {
-  console.debug('Alarm wakeup', alarm.name);
-  if(alarm.name === 'refresh-feed-icons') {
-    const ff = new FeedFavicon();
-    try {
-      let result = await ff.refresh();
-    } catch(error) {
-      console.warn(error);
     }
-  } else if(alarm.name === 'remove-entries-missing-urls') {
+  }
 
-    const readerDb = new ReaderDb();
-    const entryStore = new EntryStore();
-    const entryController = new EntryController(entryStore);
+  static async onInstalled(event) {
+    console.log('Installing extension ...');
+    const db = new ReaderDb();
     let conn;
-
     try {
-      conn = await readerDb.connect();
-      entryStore.conn = conn;
-      entryController.removeEntriesMissingURLs();
+      // Generally, connect also triggers database upgrade
+      conn = await db.connect();
+      await Badge.updateUnreadCount(conn);
     } catch(error) {
-      console.warn(error);
+      console.debug(error);
     } finally {
       if(conn)
         conn.close();
     }
-
-  } else {
-    console.warn('Unknown alarm', alarm.name);
   }
-});
 
-chrome.runtime.onInstalled.addListener(async function(event) {
-  console.log('Installing extension ...');
-  const db = new ReaderDb();
-  let conn;
-  try {
-    // Generally, connect also triggers database upgrade
-    conn = await db.connect();
-    await Badge.updateUnreadCount(conn);
-  } catch(error) {
-    console.debug(error);
-  } finally {
-    if(conn)
-      conn.close();
+  static onLoad(event) {
+    console.log('Background page dom content loaded');
+
+    console.log('Registering badge click event listener');
+    chrome.browserAction.onClicked.addListener(Badge.onClick);
+
+    console.log('Registering alarm event listeners');
+    BackgroundPage.registerAlarmListeners();
+    BackgroundPage.createAlarms().catch(function(error) {
+      console.warn(error);
+    });
   }
-});
 
-// Must wait for load event because Badge.onClick is in a separate js file
-// loaded concurrently
-function on_bg_loaded() {
-  chrome.browserAction.onClicked.addListener(Badge.onClick);
+  static registerAlarmListeners() {
+    EntryArchiver.registerAlarmListener();
+    PollingService.registerAlarmListener();
+    FaviconCache.registerAlarmListener();
+  }
 
-  EntryArchiver.registerAlarmListener();
-  PollingService.registerAlarmListener();
-  FaviconCache.registerAlarmListener();
+  static async createAlarms() {
 
-  const entryArchiverPeriodInMinutes = 60 * 12;
-  EntryArchiver.createAlarm(entryArchiverPeriodInMinutes);
+    console.log('Creating alarms');
+    const entryArchiverPeriodInMinutes = 60 * 12;
+    EntryArchiver.createAlarm(entryArchiverPeriodInMinutes);
 
-  const pollPeriodInMinutes = 60;
-  PollingService.createAlarm(pollPeriodInMinutes);
+    const pollPeriodInMinutes = 60;
+    PollingService.createAlarm(pollPeriodInMinutes);
 
-  const compactIconsPeriod = 60 * 24 * 7;
-  FaviconCache.createAlarm(compactIconsPeriod);
+    const compactIconsPeriodInMinutes = 60 * 24 * 7;
+    FaviconCache.createAlarm(compactIconsPeriodInMinutes);
 
-  createOtherAlarms();
+    const refreshFeedIconsPeriodInMinutes = 60 * 24 * 7 * 2;
+    FeedFavicon.createAlarm(refreshFeedIconsPeriodInMinutes);
+
+    // TODO: add to handler
+    let alarm = await ExtensionUtils.getAlarm('remove-orphan-entries');
+    if(!alarm) {
+      console.debug('Creating remove-orphan-entries alarm');
+      chrome.alarms.create('remove-orphan-entries',
+        {'periodInMinutes': 60 * 24 * 7});
+    }
+
+    alarm = await ExtensionUtils.getAlarm('remove-entries-missing-urls');
+    if(!alarm) {
+      console.debug('Creating remove-entries-missing-urls alarm');
+      chrome.alarms.create('remove-entries-missing-urls',
+        {'periodInMinutes': 60 * 24 * 7});
+    }
+  }
+
+  static init() {
+    console.log('Initializing background page');
+
+    console.log('Registering general alarm event listener');
+    chrome.alarms.onAlarm.addListener(BackgroundPage.onAlarm);
+
+    console.log('Registering install event listener');
+    chrome.runtime.onInstalled.addListener(BackgroundPage.onInstalled);
+
+    console.log('Registering dom content load event listener');
+    document.addEventListener('DOMContentLoaded', BackgroundPage.onLoad);
+  }
 }
 
-document.addEventListener('DOMContentLoaded', on_bg_loaded, {'once': true});
+BackgroundPage.init();

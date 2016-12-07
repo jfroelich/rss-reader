@@ -11,6 +11,33 @@ class FeedFavicon {
     this.fs = new FaviconService();
   }
 
+  static async createAlarm(periodInMinutes) {
+    const alarm = await ExtensionUtils.getAlarm('refresh-feed-icons');
+    if(alarm)
+      return;
+
+    console.debug('Creating refresh-feed-icons alarm');
+    chrome.alarms.create('refresh-feed-icons',
+      {'periodInMinutes': periodInMinutes});
+
+  }
+
+  static registerAlarmListener() {
+    chrome.alarms.onAlarm.addListener(this.onAlarm);
+  }
+
+  static async onAlarm(alarm) {
+    if(alarm.name !== 'refresh-feed-icons')
+      return;
+
+    const ff = new FeedFavicon();
+    try {
+      let result = await ff.refresh();
+    } catch(error) {
+      console.warn(error);
+    }
+  }
+
   async refresh() {
     if(this.verbose)
       console.log('Refreshing feed favicons...');
@@ -21,7 +48,7 @@ class FeedFavicon {
       const feeds = await this.feedStore.getAll();
       const updatePromises = feeds.map(this.updateFeedFavicon, this);
       const resolutions = await Promise.all(updatePromises);
-      numModified = resolutions.reduce((c,r) => r ? c + 1 : c, 0);
+      numModified = resolutions.reduce((c, r) => r ? c + 1 : c, 0);
     } finally {
       this.closeConnections();
     }
