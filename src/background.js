@@ -4,8 +4,9 @@
 
 class BackgroundPage {
   static async onAlarm(alarm) {
-    console.debug('Alarm wakeup', alarm.name);
+
     if(alarm.name === 'remove-entries-missing-urls') {
+      console.debug('Received remote-entries-missing-urls alarm wakeup');
       const readerDb = new ReaderDb();
       const entryStore = new EntryStore();
       const entryController = new EntryController(entryStore);
@@ -21,12 +22,20 @@ class BackgroundPage {
         if(conn)
           conn.close();
       }
-
     }
   }
 
   static async onInstalled(event) {
-    console.log('Installing extension ...');
+    console.log('Received install event');
+
+    BackgroundPage.registerAlarmListeners();
+
+    try {
+      await BackgroundPage.createAlarms();
+    } catch(error) {
+      console.warn(error);
+    }
+
     const db = new ReaderDb();
     let conn;
     try {
@@ -42,26 +51,19 @@ class BackgroundPage {
   }
 
   static onLoad(event) {
-    console.log('Background page dom content loaded');
-
+    console.log('Received dom content loaded event');
     console.log('Registering badge click event listener');
     chrome.browserAction.onClicked.addListener(Badge.onClick);
-
-    console.log('Registering alarm event listeners');
-    BackgroundPage.registerAlarmListeners();
-    BackgroundPage.createAlarms().catch(function(error) {
-      console.warn(error);
-    });
   }
 
   static registerAlarmListeners() {
+    console.log('Registering alarm event listeners');
     EntryArchiver.registerAlarmListener();
     PollingService.registerAlarmListener();
     FaviconCache.registerAlarmListener();
   }
 
   static async createAlarms() {
-
     console.log('Creating alarms');
     const entryArchiverPeriodInMinutes = 60 * 12;
     EntryArchiver.createAlarm(entryArchiverPeriodInMinutes);

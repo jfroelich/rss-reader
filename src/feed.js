@@ -13,22 +13,22 @@ class Feed {
     if(!('urls' in feed))
       feed.urls = [];
 
-    const norm_url = Feed.normalizeURL(url);
-    if(feed.urls.includes(norm_url)) {
+    const normURL = Feed.normalizeURL(url);
+    if(feed.urls.includes(normURL)) {
       return false;
     }
 
-    feed.urls.push(norm_url);
+    feed.urls.push(normURL);
     return true;
   }
 
-  static normalizeURL(url_str) {
-    const url = new URL(url_str);
+  static normalizeURL(urlString) {
+    const url = new URL(urlString);
     return url.href;
   }
 
-  static sanitize(input_feed) {
-    const feed = Object.assign({}, input_feed);
+  static sanitize(inputFeed) {
+    const feed = Object.assign({}, inputFeed);
 
     if(feed.id) {
       if(!Number.isInteger(feed.id) || feed.id < 1)
@@ -42,21 +42,21 @@ class Feed {
     if(feed.title) {
       let title = feed.title;
       title = StringUtils.filterControlChars(title);
-      title = replace_tags(title, '');
+      title = HTMLUtils.replaceTags(title, '');
       title = title.replace(/\s+/, ' ');
       const title_max_len = 1024;
-      title = truncate_html(title, title_max_len, '');
+      title = HTMLUtils.truncate(title, title_max_len, '');
       feed.title = title;
     }
 
     if(feed.description) {
       let description = feed.description;
       description = StringUtils.filterControlChars(description);
-      description = replace_tags(description, '');
+      description = HTMLUtils.replaceTags(description, '');
       description = description.replace(/\s+/, ' ');
       const before_len = description.length;
       const desc_max_len = 1024 * 10;
-      description = truncate_html(description, desc_max_len, '');
+      description = HTMLUtils.truncate(description, desc_max_len, '');
       if(before_len > description.length) {
         console.warn('Truncated description', description);
       }
@@ -69,11 +69,12 @@ class Feed {
 
   // Returns a new object of the old feed merged with the new feed. Fields from
   // the new feed take precedence, except for URLs, which are merged to generate
-  // a distinct ordered set of oldest to newest url. Impure.
-  static merge(old_feed, new_feed) {
-    const merged = Object.assign({}, old_feed, new_feed);
-    merged.urls = [...old_feed.urls];
-    for(let url of new_feed.urls) {
+  // a distinct ordered set of oldest to newest url. Impure because of copying
+  // by reference.
+  static merge(oldFeed, newFeed) {
+    const merged = Object.assign({}, oldFeed, newFeed);
+    merged.urls = [...oldFeed.urls];
+    for(let url of newFeed.urls) {
       Feed.addURL(merged, url);
     }
     return merged;

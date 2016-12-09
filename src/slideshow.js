@@ -133,7 +133,7 @@ function create_article_title(entry) {
     title.setAttribute('title', entry.title);
     let title_text = entry.title;
     title_text = filter_article_title(title_text);
-    title_text = truncate_html(title_text, 300);
+    title_text = HTMLUtils.truncate(title_text, 300);
     title.innerHTML = title_text;
   } else {
     title.setAttribute('title', 'Untitled');

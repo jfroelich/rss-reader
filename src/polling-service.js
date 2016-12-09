@@ -51,6 +51,7 @@ class PollingService {
   static async onAlarm(alarm) {
     if(alarm.name !== 'poll')
       return;
+    console.log('Poll alarm wokeup');
 
     const service = new PollingService();
     service.log = console;

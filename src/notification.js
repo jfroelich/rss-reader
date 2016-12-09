@@ -2,13 +2,14 @@
 
 'use strict';
 
+// Shows a simple desktop notification with the given title and message.
+// Message and title are interpreted as plain text.
+// To show in notification center, toggle flag
+// chrome://flags/#enable-native-notifications
 class DesktopNotification {
-  // Shows a simple desktop notification with the given title and message.
-  // Message and title are interpreted as plain text.
-  // To show in notification center, toggle flag
-  // chrome://flags/#enable-native-notifications
-  static show(title, message, icon_url) {
-    if(!Notification) {
+
+  static show(title, message, iconURLString) {
+    if(typeof Notification === 'undefined') {
       console.warn('Notification API not supported');
       return;
     }
@@ -22,33 +23,29 @@ class DesktopNotification {
       console.warn('Notification permission not granted', title);
     }
 
-    const default_icon = chrome.extension.getURL('/images/rss_icon_trans.gif');
+    const defaultIconURLString = chrome.extension.getURL(
+      '/images/rss_icon_trans.gif');
     const details = {};
     details.body = message || '';
-    details.icon = icon_url || default_icon;
+    details.icon = iconURLString || defaultIconURLString;
 
-    // Instantiation is now a verb I guess
-    const notification = new Notification(title || 'Untitled', details);
+    // Instantiation also shows
+    const notification = new Notification(title, details);
 
     // Attach a click listener that opens the extension
     // Note: on Mac Chrome 55, double click works
-    notification.addEventListener('click', function(event) {
+    notification.addEventListener('click', this.onClick);
+  }
 
-      // If there is no browser window open, then Badge.showExtension fails with
-      // an unhandable error. This fixes that error.
-      try {
-        const winObject = window.open();
-        winObject.close();
+  static onClick(event) {
+    // Ensure the browser is open to avoid crash
+    try {
+      const winObject = window.open();
+      winObject.close();
+    } catch(error) {
+      console.warn(error);
+    }
 
-        // TODO: Not sure if this line is needed, it is causing Chrome to
-        // 'flash'
-        //window.focus();
-
-      } catch(error) {
-        console.warn(error);
-      }
-
-      Badge.showExtension().catch(console.warn);
-    });
+    ExtensionUtils.show().catch(console.warn);
   }
 }

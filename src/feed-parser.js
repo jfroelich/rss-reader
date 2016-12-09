@@ -63,16 +63,17 @@ class FeedParser {
 
   static findEntries(channel) {
     const docElement = channel.ownerDocument.documentElement;
+    const rootName = docElement.localName.toLowerCase();
     const entries = [];
     let parent, name;
 
-    if(docElement.localName.toLowerCase() === 'feed') {
+    if(rootName === 'feed') {
       parent = docElement;
       name = 'entry';
-    } else if(docElement.localName.toLowerCase() === 'rdf') {
+    } else if(rootName === 'rdf') {
       parent = docElement;
       name = 'item';
-    } else if(docElement.localName.toLowerCase() === 'rss') {
+    } else if(rootName === 'rss') {
       parent = channel;
       name = 'item';
     } else {

@@ -16,13 +16,15 @@ class GoogleFeeds {
   // @param timeout {Number} a positive integer, optional
   static async search(query, timeout = 0) {
     this.assertValidQuery(query);
-    const url = this.buildRequestURL(query);
-    const options = this.buildRequestOptions();
+    const url = this.createRequestURL(query);
+    const options = this.createRequestOptions();
     const response = await this.fetch(url, options, timeout);
     this.assertValidResponse(response);
     const result = await response.json();
     const data = result.responseData;
-    return {'query': data.query || '', 'entries': data.entries || []};
+    const outputQuery = data.query || '';
+    const outputEntries = data.entries || [];
+    return {'query': outputQuery, 'entries': outputEntries};
   }
 
   static async fetch(url, options, timeout) {
@@ -38,7 +40,7 @@ class GoogleFeeds {
     return response;
   }
 
-  static buildRequestOptions() {
+  static createRequestOptions() {
     return {
       'credentials': 'omit',
       'method': 'GET',
@@ -55,7 +57,7 @@ class GoogleFeeds {
       throw new TypeError('Invalid query ' + query);
   }
 
-  static buildRequestURL(query) {
+  static createRequestURL(query) {
     const base = 'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
     return base + encodeURIComponent(query);
   }
@@ -68,7 +70,8 @@ class GoogleFeeds {
   }
 
   static fetchTimeout(timeout) {
-    return new Promise((resolve, reject) =>
-      setTimeout(reject, timeout, new Error('Request timed out')));
+    const error = new Error('Request timed out');
+    return new Promise((_, reject) =>
+      setTimeout(reject, timeout, error));
   }
 }

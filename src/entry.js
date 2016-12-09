@@ -33,9 +33,9 @@ class Entry {
     if(output_entry.author) {
       let author = output_entry.author;
       author = StringUtils.filterControlChars(author);
-      author = replace_tags(author, '');
+      author = HTMLUtils.replaceTags(author, '');
       author = StringUtils.condenseWhitespace(author);
-      author = truncate_html(author, author_max_len);
+      author = HTMLUtils.truncate(author, author_max_len);
       output_entry.author = author;
     }
 
@@ -43,16 +43,16 @@ class Entry {
     // TODO: filter out non-printable characters other than \r\n\t
     if(output_entry.content) {
       let content = output_entry.content;
-      content = truncate_html(content, content_max_len);
+      content = HTMLUtils.truncate(content, content_max_len);
       output_entry.content = content;
     }
 
     if(output_entry.title) {
       let title = output_entry.title;
       title = StringUtils.filterControlChars(title);
-      title = replace_tags(title, '');
+      title = HTMLUtils.replaceTags(title, '');
       title = StringUtils.condenseWhitespace(title);
-      title = truncate_html(title, title_max_len);
+      title = HTMLUtils.truncate(title, title_max_len);
       output_entry.title = title;
     }
 

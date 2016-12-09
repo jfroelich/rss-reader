@@ -8,6 +8,28 @@ class ExtensionUtils {
       chrome.alarms.get(name, resolve);
     });
   }
+
+  static async show() {
+    const viewURL = chrome.extension.getURL('slideshow.html');
+    const newtabURL = 'chrome://newtab/';
+    let tabs = await ExtensionUtils.findTabsByURL(viewURL);
+
+    // First try switching back to the extension's tab if open
+    if(tabs && tabs.length)
+      return chrome.tabs.update(tabs[0].id, {'active': true});
+    // Next try replacing the new tab if open
+    tabs = await ExtensionUtils.findTabsByURL(newtabURL);
+    if(tabs && tabs.length)
+      return chrome.tabs.update(tabs[0].id, {'active': true, 'url': viewURL});
+    // Otherwise open a new tab
+    chrome.tabs.create({'url': viewURL});
+  }
+
+  // Resolves with an array of tabs. Requires 'tabs' permission
+  // @param url {String} the url of the tab searched for
+  static findTabsByURL(url) {
+    return new Promise((resolve) => chrome.tabs.query({'url': url}, resolve));
+  }
 }
 
 

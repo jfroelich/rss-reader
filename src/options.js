@@ -169,7 +169,7 @@ function append_feed(feed, should_insert_in_order) {
 
   const title_element = document.createElement('span');
   let feedTitleStr = feed.title || 'Untitled';
-  feedTitleStr = truncate_html(feedTitleStr, 300);
+  feedTitleStr = HTMLUtils.truncate(feedTitleStr, 300);
   title_element.textContent = feedTitleStr;
   item.appendChild(title_element);
   const feed_list = document.getElementById('feedlist');
@@ -253,7 +253,7 @@ async function show_sub_preview(url) {
     for(let i = 0; i < limit; i++) {
       const entry = fetch_output.entries[i];
       const item = document.createElement('li');
-      item.innerHTML = replace_tags(entry.title || '', '');
+      item.innerHTML = HTMLUtils.replaceTags(entry.title || '', '');
       const content = document.createElement('span');
       content.innerHTML = entry.content || '';
       item.appendChild(content);
@@ -292,7 +292,7 @@ async function start_subscription(url) {
   Feed.addURL(feed, url.href);
 
   const subService = new SubscriptionService();
-  subService.log = console;
+  subService.verbose = true;
   let subbed_feed;
   try {
     await subService.connect();
@@ -469,8 +469,8 @@ async function sub_form_on_submit(event) {
     let title = entry.title;
     if(title) {
       title = StringUtils.filterControlChars(title);
-      title = replace_tags(title, '');
-      title = truncate_html(title, title_max_len);
+      title = HTMLUtils.replaceTags(title, '');
+      title = HTMLUtils.truncate(title, title_max_len);
       entry.title = title;
     }
   });
@@ -483,7 +483,7 @@ async function sub_form_on_submit(event) {
     if(snippet) {
       snippet = StringUtils.filterControlChars(snippet);
       snippet = snippet.replace(/<br\s*>/gi, ' ');
-      snippet = truncate_html(snippet, snippet_max_len, replacement);
+      snippet = HTMLUtils.truncate(snippet, snippet_max_len, replacement);
       entry.contentSnippet = snippet;
     }
   });
@@ -613,7 +613,7 @@ async function unsubscribe_btn_on_click(event) {
     throw new TypeError(`Invalid feed id ${event.target.value}`);
 
   const subService = new SubscriptionService();
-  subService.log = console;// tmp debug
+  subService.verbose = true;// tmp debug
   subService.readerDb.log = console;//tmp debug
 
   try {
