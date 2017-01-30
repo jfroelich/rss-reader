@@ -49,7 +49,7 @@ class SubscriptionService {
       return await this.feedStore.add(feed);
     }
 
-    // TODO: if redirected on fetch, check for redirect url contained in db
+    // TODO: if redirected, check if redirect exists
     let remoteFeed = await this.fetchFeed(url);
     if(!remoteFeed)
       return;
@@ -61,7 +61,7 @@ class SubscriptionService {
     return addedFeed;
   }
 
-  // A fetch error is not fatal, just return null
+  // A fetch error is not fatal
   async fetchFeed(url) {
     let feed = null;
     try {
@@ -74,15 +74,7 @@ class SubscriptionService {
   }
 
   async updateFavicon(feed) {
-    // TODO: use the lookup function in feed-favicon.js
-    // TODO: currently this is bad because it assumes feed.link is valid
-    let lookupURL;
-    if(feed.link) {
-      lookupURL = new URL(feed.link);
-    } else {
-      const feedURL = new URL(Feed.getURL(feed));
-      lookupURL = new URL(feedURL.origin);
-    }
+    const lookupURL = FeedFavicon.getLookupURL(feed);
 
     // Lookup errors are not fatal
     try {
@@ -115,11 +107,17 @@ class SubscriptionService {
     const chan = new BroadcastChannel('db');
     let ids = null;
 
+    // This does not delegate to entry store because the feed remove call
+    // is concurrent with the entry remove calls, making it so unique to this
+    // situation that I would have to move most of this function into the entry
+    // store. Therefore it is reasonable to require the tx to be exposed and
+    // to have this function tied explicitly to an indexedDB storage pattern.
+    // In addition, this shares a transaction across both feeds and entries.
+
     try {
       const tx = this.readerConn.transaction(['feed', 'entry'], 'readwrite');
       ids = await this.entryStore.getIds(tx, feedId);
-      const proms = ids.map((entryId) =>
-        this.entryStore.remove(tx, entryId, chan));
+      const proms = ids.map((id) => this.entryStore.remove(tx, id, chan));
       proms.push(this.feedStore.remove(tx, feedId));
       await Promise.all(proms);
     } finally {
@@ -130,6 +128,8 @@ class SubscriptionService {
       console.debug('Unsubscribed from feed id', feedId);
       console.debug('Deleted %d entries', ids.length);
     }
+
+    Badge.updateUnreadCount(this.readerConn);
 
     return ids.length;
   }

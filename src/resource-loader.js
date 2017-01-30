@@ -97,7 +97,7 @@ class ResourceLoader {
       throw new Error(`${response.status} ${response.statusText} ${url}`);
     const type = ResourceLoader.getMimeType(response);
     if(type !== 'text/html')
-      throw new Error(`Unacceptable mime type ${type}`);
+      throw new Error(`Unacceptable or missing mime type ${type}`);
 
     const text = await response.text();
     const doc = (new DOMParser()).parseFromString(text, 'text/html');

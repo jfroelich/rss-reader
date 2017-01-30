@@ -11,10 +11,10 @@ class Entry {
     return entry.urls[entry.urls.length - 1];
   }
 
-  static addURL(entry, url_str) {
+  static addURL(entry, urlString) {
     if(!entry.urls)
       entry.urls = [];
-    const normalized_url = new URL(url_str);
+    const normalized_url = new URL(urlString);
     if(entry.urls.includes(normalized_url.href))
       return false;
     entry.urls.push(normalized_url.href);
@@ -24,41 +24,40 @@ class Entry {
   // Returns a new entry object where fields have been sanitized. Impure
   // TODO: ensure dates are not in the future, and not too old? Should this be
   // a separate function like validate_entry
-  static sanitize(input_entry) {
-    const author_max_len = 200;
-    const title_max_len = 1000;
-    const content_max_len = 50000;
-    const output_entry = Object.assign({}, input_entry);
+  static sanitize(inputEntry) {
+    const authorMaxLen = 200;
+    const titleMaxLen = 1000;
+    const contentMaxLen = 50000;
+    const outputEntry = Object.assign({}, inputEntry);
 
-    if(output_entry.author) {
-      let author = output_entry.author;
+    if(outputEntry.author) {
+      let author = outputEntry.author;
       author = StringUtils.filterControlChars(author);
       author = HTMLUtils.replaceTags(author, '');
       author = StringUtils.condenseWhitespace(author);
-      author = HTMLUtils.truncate(author, author_max_len);
-      output_entry.author = author;
+      author = HTMLUtils.truncate(author, authorMaxLen);
+      outputEntry.author = author;
     }
 
     // Condensing node whitespace is handled separately
     // TODO: filter out non-printable characters other than \r\n\t
-    if(output_entry.content) {
-      let content = output_entry.content;
-      content = HTMLUtils.truncate(content, content_max_len);
-      output_entry.content = content;
+    if(outputEntry.content) {
+      let content = outputEntry.content;
+      content = HTMLUtils.truncate(content, contentMaxLen);
+      outputEntry.content = content;
     }
 
-    if(output_entry.title) {
-      let title = output_entry.title;
+    if(outputEntry.title) {
+      let title = outputEntry.title;
       title = StringUtils.filterControlChars(title);
       title = HTMLUtils.replaceTags(title, '');
       title = StringUtils.condenseWhitespace(title);
-      title = HTMLUtils.truncate(title, title_max_len);
-      output_entry.title = title;
+      title = HTMLUtils.truncate(title, titleMaxLen);
+      outputEntry.title = title;
     }
 
-    return output_entry;
+    return outputEntry;
   }
-
 }
 
 Entry.UNREAD = 0;

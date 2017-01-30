@@ -84,6 +84,7 @@ class FeedFavicon {
 
   static getLookupURL(feed) {
     if(feed.link) {
+      // Do not assume the link is valid
       try {
         return new URL(feed.link);
       } catch(error) {
@@ -91,6 +92,7 @@ class FeedFavicon {
       }
     }
 
+    // If the link is missing or invalid then use the origin
     const feedURL = Feed.getURL(feed);
     const origin = new URL(feedURL).origin;
     return new URL(origin);

@@ -28,13 +28,7 @@ class BackgroundPage {
   static async onInstalled(event) {
     console.log('Received install event');
 
-    BackgroundPage.registerAlarmListeners();
 
-    try {
-      await BackgroundPage.createAlarms();
-    } catch(error) {
-      console.warn(error);
-    }
 
     const db = new ReaderDb();
     let conn;
@@ -50,10 +44,18 @@ class BackgroundPage {
     }
   }
 
-  static onLoad(event) {
+  static async onLoad(event) {
     console.log('Received dom content loaded event');
     console.log('Registering badge click event listener');
     chrome.browserAction.onClicked.addListener(Badge.onClick);
+
+    BackgroundPage.registerAlarmListeners();
+
+    try {
+      await BackgroundPage.createAlarms();
+    } catch(error) {
+      console.warn(error);
+    }
   }
 
   static registerAlarmListeners() {

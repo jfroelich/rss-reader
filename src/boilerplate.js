@@ -207,7 +207,7 @@ class BoilerplateFilter {
   // Reward large images
   getAreaBias(image) {
     let area = image.width * image.height;
-    return area ? 0.0015 * Math.min(100000.0, area) : 0.0;
+    return area ? 0.0015 * Math.min(100000, area) : 0.0;
   }
 
   findCaption(image) {

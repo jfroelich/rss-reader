@@ -48,10 +48,10 @@ class HTMLUtils {
     var doc = document.implementation.createHTMLDocument();
     doc.documentElement.innerHTML = inputString;
     var it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
-    let acceptingText = true;
-    let totalLength = 0;
+    var acceptingText = true;
+    var totalLength = 0;
 
-    for(let node = it.nextNode(); node; node = it.nextNode()) {
+    for(var node = it.nextNode(); node; node = it.nextNode()) {
       if(!acceptingText) {
         node.remove();
         continue;
