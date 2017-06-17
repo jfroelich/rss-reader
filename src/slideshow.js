@@ -43,7 +43,7 @@ async function mark_slide_read(slide) {
   const entryId = parseInt(slide.getAttribute('entry'), 10);
   const entryController = new EntryController();
   try {
-    await entryController.connect();
+    await entryController.jrDbConnect();
     await entryController.markRead(entryId);
     slide.setAttribute('read', '');
   } finally {
@@ -64,7 +64,7 @@ async function append_slides() {
   let conn;
   let entries = [];
   try {
-    conn = await db.connect();
+    conn = await db.jrDbConnect();
     entryStore.conn = conn;
     entries = await entryStore.getUnarchivedUnread(offset, limit);
   } finally {
@@ -124,7 +124,7 @@ function append_slide(entry) {
 
 function create_article_title(entry) {
   const title = document.createElement('a');
-  title.setAttribute('href', Entry.getURL(entry));
+  title.setAttribute('href', jrGetEntryURLString(entry));
   title.setAttribute('class', 'entry-title');
   title.setAttribute('target','_blank');
   title.setAttribute('rel', 'noreferrer');
@@ -133,7 +133,7 @@ function create_article_title(entry) {
     title.setAttribute('title', entry.title);
     let title_text = entry.title;
     title_text = filter_article_title(title_text);
-    title_text = HTMLUtils.truncate(title_text, 300);
+    title_text = jrUtilsTruncateHTML(title_text, 300);
     title.innerHTML = title_text;
   } else {
     title.setAttribute('title', 'Untitled');
@@ -174,7 +174,7 @@ function create_feed_source(entry) {
   buffer.push(entry.author || 'Unknown author');
   if(entry.datePublished) {
     buffer.push(' on ');
-    buffer.push(DateUtils.format(entry.datePublished));
+    buffer.push(jrUtilsFormatDate(entry.datePublished));
   }
   title_element.textContent = buffer.join('');
   source.appendChild(title_element);
@@ -313,7 +313,7 @@ window.addEventListener('keydown', function(ev) {
 });
 
 document.addEventListener('DOMContentLoaded', function(event) {
-  display_load_styles();
+  jr.style.onLoad();
   append_slides();
 }, {'once': true});
 

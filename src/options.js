@@ -6,121 +6,172 @@
 // TODO: remove subscription preview
 // TODO: lookup favicons after displaying search results, not before
 // TODO: listen for poll events, feed information may have updated
+// TODO: add back button behavior for switching sections (popstate stuff)
 
-{
+// TODO: move font license comments to license.md
+// TODO: remove support for some of these fonts that are not very readable
+const jrOptionsFonts = [
+  'ArchivoNarrow-Regular',
+  'Arial, sans-serif',
+  'Calibri',
+  'Calibri Light',
+  'Cambria',
+  'CartoGothicStd',
+  //http://jaydorsey.com/free-traffic-font/
+  //Clearly Different is released under the SIL Open Font License (OFL) 1.1.
+  //Based on http://mutcd.fhwa.dot.gov/pdfs/clearviewspacingia5.pdf
+  'Clearly Different',
+  /* By John Stracke, Released under the OFL. Downloaded from his website */
+  'Essays1743',
+  // Downloaded free font from fontpalace.com, unknown author
+  'FeltTip',
+  'Georgia',
+  'Montserrat',
+  'MS Sans Serif',
+  'News Cycle, sans-serif',
+  'Noto Sans',
+  'Open Sans Regular',
+  'PathwayGothicOne',
+  'PlayfairDisplaySC',
+  'Raleway, sans-serif',
+  // http://www.google.com/design/spec/resources/roboto-font.html
+  'Roboto Regular'
+];
 
-const settings_chan = new BroadcastChannel('settings');
-let current_menu_item = null;
-let current_section = null;
+const jrOptionsBgImagePaths = [
+  '/images/bgfons-paper_texture318.jpg',
+  '/images/CCXXXXXXI_by_aqueous.jpg',
+  '/images/paper-backgrounds-vintage-white.jpg',
+  '/images/pickering-texturetastic-gray.png',
+  '/images/reusage-recycled-paper-white-first.png',
+  '/images/subtle-patterns-beige-paper.png',
+  '/images/subtle-patterns-cream-paper.png',
+  '/images/subtle-patterns-exclusive-paper.png',
+  '/images/subtle-patterns-groove-paper.png',
+  '/images/subtle-patterns-handmade-paper.png',
+  '/images/subtle-patterns-paper-1.png',
+  '/images/subtle-patterns-paper-2.png',
+  '/images/subtle-patterns-paper.png',
+  '/images/subtle-patterns-rice-paper-2.png',
+  '/images/subtle-patterns-rice-paper-3.png',
+  '/images/subtle-patterns-soft-wallpaper.png',
+  '/images/subtle-patterns-white-wall.png',
+  '/images/subtle-patterns-witewall-3.png',
+  '/images/thomas-zucx-noise-lines.png'
+];
 
-function hide_element(element) {
-  element.style.display = 'none';
-}
 
-function show_element(element) {
-  element.style.display = 'block';
-}
+const jrOptionsSettingsChannel = new BroadcastChannel('settings');
+let jrOptionsCurrentMenuItem = null;
+let jrOptionsCurrentSectionElement = null;
 
-function add_class(element, class_name) {
-  element.classList.add(class_name);
-}
+function jrOptionsShowErrorMessage(msg, shouldFadeIn) {
+  jrOptionsHideErrorMessage();
 
-function remove_class(element, class_name) {
-  element.classList.remove(class_name);
-}
+  const errorElement = document.createElement('div');
+  errorElement.setAttribute('id','options_error_message');
 
-function is_visible(element) {
-  return element.style.display === 'block';
-}
+  const messageElement = document.createElement('span');
+  messageElement.textContent = msg;
+  errorElement.appendChild(messageElement);
 
-function show_err_msg(msg, should_fade_in) {
-  hide_err_msg();
+  const dismissErrorButton = document.createElement('button');
+  dismissErrorButton.setAttribute('id', 'options_dismiss_error_button');
+  dismissErrorButton.textContent = 'Dismiss';
+  dismissErrorButton.onclick = jrOptionsHideErrorMessage;
+  errorElement.appendChild(dismissErrorButton);
 
-  const error_element = document.createElement('div');
-  error_element.setAttribute('id','options_error_message');
-
-  const msg_element = document.createElement('span');
-  msg_element.textContent = msg;
-  error_element.appendChild(msg_element);
-
-  const dismiss_btn = document.createElement('button');
-  dismiss_btn.setAttribute('id', 'options_dismiss_error_button');
-  dismiss_btn.textContent = 'Dismiss';
-  dismiss_btn.onclick = hide_err_msg;
-  error_element.appendChild(dismiss_btn);
-
-  if(should_fade_in) {
-    error_element.style.opacity = '0';
-    document.body.appendChild(error_element);
-    ElementUtils.fade(container, 1,0);
+  if(shouldFadeIn) {
+    errorElement.style.opacity = '0';
+    document.body.appendChild(errorElement);
+    jrUtilsFadeElement(container, 1,0);
   } else {
-    error_element.style.opacity = '1';
-    show_element(error_element);
-    document.body.appendChild(error_element);
+    errorElement.style.opacity = '1';
+    jrUtilsShowElement(errorElement);
+    document.body.appendChild(errorElement);
   }
 }
 
+
+
 // TODO: maybe make an OptionsPageErrorMessage class and have this be
 // a member function.
-function hide_err_msg() {
-  const err_msg = document.getElementById('options_error_message');
-  if(err_msg) {
-    const dismiss_btn = document.getElementById('options_dismiss_error_button');
-    if(dismiss_btn)
-      dismiss_btn.removeEventListener('click', hide_err_msg);
-    err_msg.remove();
+function jrOptionsHideErrorMessage() {
+  const errorMessageElement = document.getElementById('options_error_message');
+  if(errorMessageElement) {
+    const dismissErrorButton = document.getElementById(
+      'options_dismiss_error_button');
+    if(dismissErrorButton) {
+      dismissErrorButton.removeEventListener('click',
+      jrOptionsHideErrorMessage);
+    }
+
+    errorMessageElement.remove();
   }
 }
 
 // TODO: instead of removing and re-adding, reset and reuse
-// TODO: maybe make an OptionsSubscriptionMonitor class and have this just be
-// a member function. Call it a widget.
-function show_sub_monitor() {
+function jrOptionsShowSubMonitor() {
+  let monitorElement = document.getElementById('submon');
+  if(monitorElement) {
+    monitorElement.remove();
+  }
 
-  let monitor = document.getElementById('submon');
-  if(monitor)
-    monitor.remove();
+  monitorElement = document.createElement('div');
+  monitorElement.setAttribute('id', 'submon');
+  monitorElement.style.opacity = '1';
+  document.body.appendChild(monitorElement);
 
-  monitor = document.createElement('div');
-  monitor.setAttribute('id', 'submon');
-  monitor.style.opacity = '1';
-  document.body.appendChild(monitor);
-  const progress = document.createElement('progress');
-  progress.textContent = 'Working...';
-  monitor.appendChild(progress);
+  const progressElement = document.createElement('progress');
+  progressElement.textContent = 'Working...';
+  monitor.appendChild(progressElement);
 }
 
-function append_sub_monitor_msg(msg) {
-  const monitor = document.getElementById('submon');
-  if(!monitor)
-    throw new Error();
-  const msg_element = document.createElement('p');
-  msg_element.textContent = msg;
-  monitor.appendChild(msg_element);
+function jrOptionsAppendSubMonitorMessage(messageString) {
+  const monitorElement = document.getElementById('submon');
+  if(!monitorElement) {
+    throw new Error('Element with id "submon" not found');
+  }
+
+  const messageElement = document.createElement('p');
+  messageElement.textContent = messageString;
+  monitorElement.appendChild(messageElement);
 }
 
-function show_section(menu_item) {
-  if(!menu_item)
-    throw new TypeError();
-  // Do nothing if not switching.
-  if(current_menu_item === menu_item)
+function jrOptionsShowSection(menuItemElement) {
+  if(!menuItemElement) {
+    throw new TypeError('Missing parameter menuItemElement');
+  }
+
+  // Do nothing if not switching sections
+  if(jrOptionsCurrentMenuItem === menuItemElement) {
     return;
+  }
+
   // Make the previous item appear de-selected
-  if(current_menu_item)
-    remove_class(current_menu_item, 'navigation-item-selected');
+  if(jrOptionsCurrentMenuItem) {
+    jrUtilsRemoveElementClass(jrOptionsCurrentMenuItem,
+      'navigation-item-selected');
+  }
+
   // Hide the old section
-  if(current_section)
-    hide_element(current_section);
+  if(jrOptionsCurrentSectionElement) {
+    jrUtilsHideElement(jrOptionsCurrentSectionElement);
+  }
+
   // Make the new item appear selected
-  add_class(menu_item, 'navigation-item-selected');
+  jrUtilsAddElementClass(menuItemElement, 'navigation-item-selected');
+
   // Show the new section
-  const section_id = menu_item.getAttribute('section');
-  const section_element = document.getElementById(section_id);
-  if(section_element)
-    show_element(section_element);
+  const sectionIdString = menuItemElement.getAttribute('section');
+  const sectionElement = document.getElementById(sectionIdString);
+  if(sectionElement) {
+    jrUtilsShowElement(sectionElement);
+  }
+
   // Update the global tracking vars
-  current_menu_item = menu_item;
-  current_section = section_element;
+  jrOptionsCurrentMenuItem = menuItemElement;
+  jrOptionsCurrentSectionElement = sectionElement;
 }
 
 // TODO: also return the count so that caller does not need to potentially
@@ -128,16 +179,20 @@ function show_section(menu_item) {
 // options_set_feed_count (and create options_get_feed_count)
 // Then, also consider if options_get_feed_count should be using the UI as
 // its source of truth or should instead be using the database.
-function update_feed_count() {
-  const feed_list = document.getElementById('feedlist');
-  const feed_count_element = document.getElementById('subscription-count');
-  const count = feed_list.childElementCount;
-  // TODO: use ternary
-  if(count > 1000)
-    feed_count_element.textContent = ' (999+)';
-  else
-    feed_count_element.textContent = ` (${count})`;
+function jrOptionsUpdateFeedCount() {
+  const feedListElement = document.getElementById('feedlist');
+  const feedCountElement = document.getElementById('subscription-count');
+  const count = feedListElement.childElementCount;
+
+  if(count > 1000) {
+    feedCountElement.textContent = ' (999+)';
+  } else {
+    feedCountElement.textContent = ` (${count})`;
+  }
 }
+
+
+
 
 // TODO: this approach doesn't really work, I need to independently sort
 // on load because it should be case-insensitive.
@@ -145,199 +200,172 @@ function update_feed_count() {
 // member function of some type of feed menu object
 // TODO: this should always use inserted sort, that should be invariant, and
 // so I shouldn't accept a parameter
-function append_feed(feed, should_insert_in_order) {
-  const item = document.createElement('li');
-  item.setAttribute('sort-key', feed.title);
+function jrOptionsAppendFeed(feedObject, maintainOrder) {
+  const itemElement = document.createElement('li');
+  itemElement.setAttribute('sort-key', feedObject.title);
 
   // TODO: stop using custom feed attribute?
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
-  item.setAttribute('feed', feed.id);
-  if(feed.description)
-    item.setAttribute('title', feed.description);
-  item.onclick = feed_list_item_on_click;
+  itemElement.setAttribute('feed', feedObject.id);
+  if(feedObject.description) {
+    itemElement.setAttribute('title', feedObject.description);
+  }
+  itemElement.onclick = jrOptionsFeedListItemOnClick;
 
-  if(feed.faviconURLString) {
-    const favicon_element = document.createElement('img');
-    favicon_element.src = feed.faviconURLString;
-    if(feed.title)
-      favicon_element.title = feed.title;
-    favicon_element.setAttribute('width', '16');
-    favicon_element.setAttribute('height', '16');
-    item.appendChild(favicon_element);
+  if(feedObject.faviconURLString) {
+    const faviconElement = document.createElement('img');
+    faviconElement.src = feedObject.faviconURLString;
+    if(feedObject.title)
+      faviconElement.title = feedObject.title;
+    faviconElement.setAttribute('width', '16');
+    faviconElement.setAttribute('height', '16');
+    itemElement.appendChild(faviconElement);
   }
 
-  const title_element = document.createElement('span');
-  let feedTitleStr = feed.title || 'Untitled';
-  feedTitleStr = HTMLUtils.truncate(feedTitleStr, 300);
-  title_element.textContent = feedTitleStr;
-  item.appendChild(title_element);
-  const feed_list = document.getElementById('feedlist');
-  const lc_title_str = feedTitleStr.toLowerCase();
+  const titleElement = document.createElement('span');
+  let feedTitleString = feedObject.title || 'Untitled';
+  feedTitleString = jrUtilsTruncateHTML(feedTitleString, 300);
+  titleElement.textContent = feedTitleString;
+  itemElement.appendChild(titleElement);
+  const feedListElement = document.getElementById('feedlist');
+  const normalizedTitleString = feedTitleString.toLowerCase();
 
-  // Insert the feed item element into the proper position in the list
-  if(should_insert_in_order) {
-    let added = false;
-    for(let child of feed_list.childNodes) {
-      const key = (child.getAttribute('sort-key') || '').toLowerCase();
-      if(indexedDB.cmp(lc_title_str, key) < 0) {
-        feed_list.insertBefore(item, child);
-        added = true;
-        break;
-      }
-    }
-
-    if(!added)
-      feed_list.appendChild(item);
-  } else {
-    feed_list.appendChild(item);
-  }
-}
-
-// TODO: deprecate the ability to preview
-async function show_sub_preview(url) {
-  if(!ObjectUtils.isURL(url))
-    throw new TypeError();
-  hide_sub_preview();
-  if(!('ENABLE_SUBSCRIBE_PREVIEW' in localStorage)) {
-    start_subscription(url);
+  if(!maintainOrder) {
+    feedListElement.appendChild(itemElement);
     return;
   }
 
-  if('onLine' in navigator && !navigator.onLine) {
-    start_subscription(url);
-    return;
+  // Insert the feed element into the proper position in the list
+  let didInsertElement = false;
+  for(let childNode of feedListElement.childNodes) {
+    const keyString = (childNode.getAttribute('sort-key') || '').toLowerCase();
+    if(indexedDB.cmp(normalizedTitleString, keyString) < 1) {
+      feedListElement.insertBefore(itemElement, childNode);
+      didInsertElement = true;
+      break;
+    }
   }
 
-  const preview_element = document.getElementById('subscription-preview');
-  show_element(preview_element);
-  const progress_element = document.getElementById(
-    'sub-preview-load-progress');
-  show_element(progress_element);
-
-  // TODO: do less in the try block
-
-  try {
-    // TODO: use destructuring here
-    const fetch_timeout = 5000;
-    let fetch_output = await ResourceLoader.fetchFeed(url.href, fetch_timeout);
-    const progress_element = document.getElementById(
-      'sub-preview-load-progress');
-    hide_element(progress_element);
-
-    const feed = fetch_output.feed;
-    const title_element = document.getElementById('subscription-preview-title');
-    // TODO: what about HTML in title
-    title_element.textContent = feed.title || 'Untitled';
-
-    // Fetch feed generates an array of URL objects. Use the last one in the
-    // list as the button's value.
-    const continue_btn = document.getElementById(
-      'subscription-preview-continue');
-    continue_btn.value = Feed.getURL(feed);
-
-    const results_list_element = document.getElementById(
-      'subscription-preview-entries');
-
-    if(!fetch_output.entries.length) {
-      let item = document.createElement('li');
-      item.textContent = 'No previewable entries';
-      results_list_element.appendChild(item);
-    }
-
-    // TODO: use for..of. Because I want to limit, I need to
-    // slice or take or whatever
-    // TODO: if tags are replaced by GoogleFeeds.search then I don't need
-    // to do it here
-    const limit = Math.min(5, fetch_output.entries.length);
-    for(let i = 0; i < limit; i++) {
-      const entry = fetch_output.entries[i];
-      const item = document.createElement('li');
-      item.innerHTML = HTMLUtils.replaceTags(entry.title || '', '');
-      const content = document.createElement('span');
-      content.innerHTML = entry.content || '';
-      item.appendChild(content);
-      results_list_element.appendChild(item);
-    }
-  } catch(error) {
-    console.log(error);
-    hide_sub_preview();
-    show_err_msg('Unable to fetch ' + url.href);
+  if(!didInsertElement) {
+    feedListElement.appendChild(itemElement);
   }
+
 }
 
-function hide_sub_preview() {
-  const preview_element = document.getElementById('subscription-preview');
-  hide_element(preview_element);
-  const results_list_element = document.getElementById(
+
+// TODO: deprecate
+function jrOptionsShowSubPreview(urlObject) {
+  jrOptionsStartSubscription(urlObject);
+}
+
+function jrOptionsHideSubPreview() {
+  const previewElement = document.getElementById('subscription-preview');
+  jrUtilsHideElement(previewElement);
+  const resultsListElement = document.getElementById(
     'subscription-preview-entries');
-  while(results_list_element.firstChild) {
-    results_list_element.firstChild.remove();
+  while(resultsListElement.firstChild) {
+    resultsListElement.firstChild.remove();
   }
 }
 
 // TODO: if subscribing from a discover search result, I already know some
 // of the feed's other properties, such as its title and link. I should be
-// passing those along to start_subscription and setting them here. Or
-// start_subscription should expect a feed object as a parameter.
-async function start_subscription(url) {
-  if(!ObjectUtils.isURL(url))
-    throw new TypeError();
+// passing those along to jrOptionsStartSubscription and setting them here. Or
+// jrOptionsStartSubscription should expect a feed object as a parameter.
+async function jrOptionsStartSubscription(urlObject) {
 
-  hide_sub_preview();
-  show_sub_monitor();
-  append_sub_monitor_msg(`Subscribing to ${url.href}`);
+  // TODO: not really sure if this validation is correct to do, my thinking is
+  // that it is overly defensive
+  if(!jrUtilsIsURLObject(urlObject)) {
+    throw new TypeError('Invalid urlObject parameter');
+  }
 
-  const feed = {};
-  Feed.addURL(feed, url.href);
+  // TODO: remove this once preview is deprecated more fully
+  jrOptionsHideSubPreview();
+
+
+  jrOptionsShowSubMonitor();
+  jrOptionsAppendSubMonitorMessage(`Subscribing to ${urlObject.href}`);
+
+  const feedObject = {};
+  jrAddFeedURL(feedObject, urlObject.href);
 
   const subService = new SubscriptionService();
   subService.verbose = true;
-  let subbed_feed;
+  let subcribedFeedObject;
   try {
-    await subService.connect();
-    subbed_feed = await subService.subscribe(feed);
+    await subService.jrDbConnect();
+    subcribedFeedObject = await subService.subscribe(feedObject);
   } catch(error) {
     console.debug(error);
   } finally {
     subService.close();
   }
 
-  if(!subbed_feed)
-    return;
 
-  append_feed(subbed_feed, true);
-  update_feed_count();
-  const feed_url = Feed.getURL(subbed_feed);
-  append_sub_monitor_msg(`Subscribed to ${feed_url}`);
-  const monitor = document.getElementById('submon');
-  await ElementUtils.fade(monitor, 2, 1);
-  monitor.remove();
-  const subs_section = document.getElementById('subs-list-section');
-  show_section(subs_section);
+  if(!subcribedFeedObject) {
+    // TODO: is it correct to return here? shouldn't this be visible error or
+    // something?
+    return;
+  }
+
+  // TODO: what is the second parameter? give it an express name here
+  jrOptionsAppendFeed(subcribedFeedObject, true);
+
+  // TODO: rather than expressly updating the feed count here, this should
+  // happen as a result of some update event that some listener reacts to
+  // That event should probably be a BroadcastChannel message that is fired
+  // by subService.subscribe
+  jrOptionsUpdateFeedCount();
+
+  // Show a brief message that the subscription was successful
+  const feedURLString = jrFeedGetURL(subcribedFeedObject);
+  jrOptionsAppendSubMonitorMessage(`Subscribed to ${feedURLString}`);
+
+  // Hide the sub monitor
+  // TODO: this should be a call to a helper function
+  const monitorElement = document.getElementById('submon');
+  // TODO: the other parameters should be named expressly
+  await jrUtilsFadeElement(monitorElement, 2, 1);
+  monitorElement.remove();
+
+  // After subscribing switch back to the feed list
+  const subsSectionElement = document.getElementById('subs-list-section');
+  jrOptionsShowSection(subsSectionElement);
 }
+
+
+
+
 
 // TODO: show num entries, num unread/red, etc
 // TODO: show dateLastModified, datePublished, dateCreated, dateUpdated
 // TODO: react to errors
 // TODO: should this even catch?
-async function feed_list_item_on_click(event) {
+async function jrOptionsFeedListItemOnClick(event) {
 
+  // Use current target to capture the element with the feed attribute and
+  // not a different element
+  const feedListItemElement = event.currentTarget;
+
+  const feedIdString = feedListItemElement.getAttribute('feed');
+  const parseIntBase = 10;
+  const feedIdNumber = parseInt(feedIdString, parseIntBase);
+
+  if(feedIdNumber < 1) {
+    throw new TypeError('Invalid feed id "%s"', feedIdNumber);
+  }
 
   const readerDb = new ReaderDb();
   const feedStore = new FeedStore();
 
+  let feedObject;
   let conn;
-
-  const feed_id = parseInt(event.currentTarget.getAttribute('feed'), 10);
-  if(!Number.isInteger(feed_id) || feed_id < 1)
-    throw new TypeError();
-
-  let feed;
   try {
-    conn = await readerDb.connect();
+    conn = await readerDb.jrDbConnect();
     feedStore.conn = conn;
-    feed = await feedStore.findById(feed_id);
+    feedObject = await feedStore.findById(feedIdNumber);
   } catch(error) {
     console.warn(error);
   } finally {
@@ -346,106 +374,121 @@ async function feed_list_item_on_click(event) {
   }
 
   // TODO: should this throw?
-  if(!feed) {
-    console.error('No feed found with id', feed_id);
+  if(!feedObject) {
+    console.error('No feed found with id', feedIdNumber);
     return;
   }
 
-  const title_element = document.getElementById('details-title');
-  title_element.textContent = feed.title || 'Untitled';
-  const favicon_element = document.getElementById('details-favicon');
-  if(feed.faviconURLString)
-    favicon_element.setAttribute('src', feed.faviconURLString);
-  else
-    favicon_element.removeAttribute('src');
-  const desc_element = document.getElementById('details-feed-description');
-  if(feed.description)
-    desc_element.textContent = feed.description;
-  else
-    desc_element.textContent = '';
+  const titleElement = document.getElementById('details-title');
+  titleElement.textContent = feedObject.title || 'Untitled';
 
-  const feed_url_element = document.getElementById('details-feed-url');
-  feed_url_element.textContent = Feed.getURL(feed);
-  const feed_link_element = document.getElementById('details-feed-link');
-  feed_link_element.textContent = feed.link || '';
-  const unsub_btn = document.getElementById('details-unsubscribe');
-  unsub_btn.value = '' + feed.id;
+  const faviconElement = document.getElementById('details-favicon');
+  if(feedObject.faviconURLString) {
+    faviconElement.setAttribute('src', feedObject.faviconURLString);
+  } else {
+    faviconElement.removeAttribute('src');
+  }
 
-  const details_element = document.getElementById('mi-feed-details');
-  show_section(details_element);
-  window.scrollTo(0,0);// long list may obscure details otherwise
+  const descriptionElement = document.getElementById(
+    'details-feed-description');
+  if(feedObject.description) {
+    descriptionElement.textContent = feedObject.description;
+  } else {
+    descriptionElement.textContent = '';
+  }
+
+  const feedURLElement = document.getElementById('details-feed-url');
+  feedURLElement.textContent = jrFeedGetURL(feedObject);
+  const feedLinkElement = document.getElementById('details-feed-link');
+  feedLinkElement.textContent = feedObject.link || '';
+  const unsubscribeButton = document.getElementById('details-unsubscribe');
+  unsubscribeButton.value = '' + feedObject.id;
+
+  const detailsElement = document.getElementById('mi-feed-details');
+  jrOptionsShowSection(detailsElement);
+
+  // Scroll to the top to ensure that if a long feed list was shown and
+  // the window was scrolled down that the details are immediately visible
+  window.scrollTo(0,0);
 }
 
+
+// TODO: this function is too large
 // TODO: favicon resolution is too slow. Display the results immediately
 // using a placeholder. Then, in a separate non-blocking
 // task, try and replace the default icon with the proper icon.
 // TODO: Suppress resubmits if last query was a search and the
 // query did not change?
-async function sub_form_on_submit(event) {
+async function jrOptionsSubscribeFormOnSubmit(event) {
   // Prevent normal form submission behavior
   event.preventDefault();
 
-  const query_element = document.getElementById('subscribe-discover-query');
-  let query_str = query_element.value;
-  query_str = query_str || '';
-  query_str = query_str.trim();
+  const queryElement = document.getElementById('subscribe-discover-query');
+  let queryString = queryElement.value;
+  queryString = queryString || '';
+  queryString = queryString.trim();
 
-  if(!query_str)
+  if(!queryString) {
     return false;
+  }
 
-  const no_results_element = document.getElementById('discover-no-results');
+  const noResultsElement = document.getElementById('discover-no-results');
 
   // Do nothing if searching in progress
-  const progress_element = document.getElementById('discover-in-progress');
-  if(is_visible(progress_element))
+  const progressElement = document.getElementById('discover-in-progress');
+  if(jrUtilsIsElementVisible(progressElement)) {
     return false;
+  }
 
   // Do nothing if subscription in progress
-  const monitor = document.getElementById('submon');
-  if(monitor && is_visible(monitor))
+  const monitorElement = document.getElementById('submon');
+  if(monitorElement && jrUtilsIsElementVisible(monitorElement)) {
     return false;
+  }
 
   // Clear the previous results list
-  const results_list_element = document.getElementById('discover-results-list');
-  results_list_element.innerHTML  = '';
+  const resultsListElement = document.getElementById('discover-results-list');
+  resultsListElement.innerHTML  = '';
 
   // Ensure the no-results-found message, if present from a prior search,
   // is hidden. This should never happen because we exit early if it is still
   // visible above.
-  hide_element(progress_element);
+  jrUtilsHideElement(progressElement);
 
-  let url = null;
+  let urlObject = null;
   try {
-    url = new URL(query_str);
+    urlObject = new URL(queryString);
   } catch(exception) {
   }
 
   // If it is a URL, subscribe
-  if(url) {
-    query_element.value = '';
-    show_sub_preview(url);
+  if(urlObject) {
+    queryElement.value = '';
+    // TODO: this should go straight to sub, not call sub preview
+    jrOptionsShowSubPreview(urlObject);
     return false;
   }
 
   // Search for feeds
-  show_element(progress_element);
+  jrUtilsShowElement(progressElement);
 
-  let icon_url, link_url, entries, query;
-  const search_timeout = 5000;
+  let iconURL, linkURL, entryArray, query;
+  const searchTimeout = 5000;
   try {
-    ({query, entries} = await GoogleFeeds.search(query_str, search_timeout));
-    hide_element(progress_element);
+    ({query, entryArray} =
+      await jrGoogleFeedsSearch(queryString, searchTimeout));
   } catch(error) {
-    hide_element(progress_element);
     console.debug(error);
     return false;
+  } finally {
+    jrUtilsHideElement(progressElement);
   }
 
   // Filter entries without urls
-  entries = entries.filter((entry) => entry.url);
+  entryArray = entryArray.filter((entry) => entry.url);
 
-  // Convert to URL objects
-  entries = entries.filter((entry) => {
+  // Convert to URL objects, filter entries with invalid urls
+  entryArray = entryArray.filter((entry) => {
     try {
       entry.url = new URL(entry.url);
       return true;
@@ -454,180 +497,196 @@ async function sub_form_on_submit(event) {
     }
   });
 
-  // Filter duplicates
-  const distinct_urls = [];
-  entries = entries.filter((entry) => {
-    if(distinct_urls.includes(entry.url.href))
+  // Filter entries with identical normalized urls, favoring earlier entries
+  const distinctURLStrings = [];
+  entryArray = entryArray.filter((entry) => {
+    if(distinctURLStrings.includes(entry.url.href))
       return false;
-    distinct_urls.push(entry.url.href);
+    distinctURLStrings.push(entry.url.href);
     return true;
   });
 
-  // Sanitize title
-  const title_max_len = 200;
-  entries.forEach((entry) => {
+  // If, after filtering, there are no more entries, exit early
+  if(!entryArray.length) {
+    jrUtilsHideElement(resultsListElement);
+    jrUtilsShowElement(noResultsElement);
+    return false;
+  }
+
+  // Sanitize entry title
+  const entryTitleMaxLength = 200;
+  entryArray.forEach((entry) => {
     let title = entry.title;
     if(title) {
-      title = StringUtils.filterControlChars(title);
-      title = HTMLUtils.replaceTags(title, '');
-      title = HTMLUtils.truncate(title, title_max_len);
+      title = jrUtilsFilterControlChars(title);
+      title = jrUtilsReplaceHTML(title, '');
+      title = jrUtilsTruncateHTML(title, entryTitleMaxLength);
       entry.title = title;
     }
   });
 
   // Sanitize content snippet
   const replacement = '\u2026';
-  const snippet_max_len = 400;
-  entries.forEach((entry) => {
+  const entrySnippetMaxLength = 400;
+  entryArray.forEach((entry) => {
     let snippet = entry.contentSnippet;
     if(snippet) {
-      snippet = StringUtils.filterControlChars(snippet);
+      snippet = jrUtilsFilterControlChars(snippet);
       snippet = snippet.replace(/<br\s*>/gi, ' ');
-      snippet = HTMLUtils.truncate(snippet, snippet_max_len, replacement);
+      snippet = jrUtilsTruncateHTML(
+        snippet, entrySnippetMaxLength, replacement);
       entry.contentSnippet = snippet;
     }
   });
 
-  if(!entries.length) {
-    hide_element(results_list_element);
-    show_element(no_results_element);
-    return false;
-  }
+  jrUtilsShowElement(resultsListElement);
+  jrUtilsHideElement(noResultsElement);
 
-  show_element(results_list_element);
-  hide_element(no_results_element);
-
-  const item_element = document.createElement('li');
-  item_element.textContent = `Found ${entries.length} feeds.`;
-  results_list_element.appendChild(item_element);
+  const itemElement = document.createElement('li');
+  itemElement.textContent = `Found ${entryArray.length} feeds.`;
+  resultsListElement.appendChild(itemElement);
 
   const fs = new FaviconService();
-  fs.log = console;// tmp, debug
-
-  await fs.connect();
-  for(let result of entries) {
-    if(!result.link)
+  await fs.jrDbConnect();
+  for(let result of entryArray) {
+    if(!result.link) {
       continue;
-    link_url = new URL(result.link);
-    icon_url = await fs.lookup(link_url);
-    result.faviconURLString = icon_url;
+    }
+    linkURL = new URL(result.link);
+    iconURL = await fs.lookup(linkURL);
+    result.faviconURLString = iconURL;
   }
   fs.close();
 
-  const elements = entries.map(create_search_result_element);
-  elements.forEach((el) => results_list_element.appendChild(el));
+  const elementArray = entryArray.map(jrOptionsCreateSearchResultElement);
+  elementArray.forEach((el) => resultsListElement.appendChild(el));
   return false;// Signal no submit
 }
 
+
+
+
 // Creates and returns a search result item to show in the list of search
 // results when searching for feeds.
-function create_search_result_element(feed) {
-  const item = document.createElement('li');
-  const subscribe_btn = document.createElement('button');
-  subscribe_btn.value = feed.url.href;
-  subscribe_btn.title = feed.url.href;
-  subscribe_btn.textContent = 'Subscribe';
-  subscribe_btn.onclick = subscribe_btn_on_click;
-  item.appendChild(subscribe_btn);
+function jrOptionsCreateSearchResultElement(feed) {
+  const itemElement = document.createElement('li');
+  const subscribeButton = document.createElement('button');
+  subscribeButton.value = feed.url.href;
+  subscribeButton.title = feed.url.href;
+  subscribeButton.textContent = 'Subscribe';
+  subscribeButton.onclick = jrOptionsSubscribeButtonOnClick;
+  itemElement.appendChild(subscribeButton);
 
   if(feed.faviconURLString) {
-    const favicon_element = document.createElement('img');
-    favicon_element.setAttribute('src', feed.faviconURLString);
+    const faviconElement = document.createElement('img');
+    faviconElement.setAttribute('src', feed.faviconURLString);
     if(feed.link) {
-      favicon_element.setAttribute('title', feed.link);
+      faviconElement.setAttribute('title', feed.link);
     }
-    favicon_element.setAttribute('width', '16');
-    favicon_element.setAttribute('height', '16');
-    item.appendChild(favicon_element);
+    faviconElement.setAttribute('width', '16');
+    faviconElement.setAttribute('height', '16');
+    itemElement.appendChild(faviconElement);
   }
 
   // TODO: don't allow for empty href value
-  const title_element = document.createElement('a');
+  const titleElement = document.createElement('a');
   if(feed.link) {
-    title_element.setAttribute('href', feed.link);
+    titleElement.setAttribute('href', feed.link);
   }
-  title_element.setAttribute('target', '_blank');
-  title_element.title = feed.title;
-  title_element.innerHTML = feed.title;
-  item.appendChild(title_element);
+  titleElement.setAttribute('target', '_blank');
+  titleElement.title = feed.title;
+  titleElement.innerHTML = feed.title;
+  itemElement.appendChild(titleElement);
 
-  const snippet_element = document.createElement('span');
-  snippet_element.innerHTML = feed.contentSnippet;
-  item.appendChild(snippet_element);
+  const snippetElement = document.createElement('span');
+  snippetElement.innerHTML = feed.contentSnippet;
+  itemElement.appendChild(snippetElement);
 
-  const url_element = document.createElement('span');
-  url_element.setAttribute('class', 'discover-search-result-url');
-  url_element.textContent = feed.url.href;
-  item.appendChild(url_element);
-  return item;
+  const urlElement = document.createElement('span');
+  urlElement.setAttribute('class', 'discover-search-result-url');
+  urlElement.textContent = feed.url.href;
+  itemElement.appendChild(urlElement);
+  return itemElement;
 }
 
-function subscribe_btn_on_click(event) {
-  const button = event.target;
-  const feed_url_str = button.value;
+function jrOptionsSubscribeButtonOnClick(event) {
+  const subscribeButton = event.target;
+  const feedURLString = subscribeButton.value;
 
   // TODO: this will always be defined, so this check isn't necessary, but I
   // tentatively leaving it in here
-  if(!feed_url_str)
+  if(!feedURLString) {
     return;
+  }
+
   // TODO: Ignore future clicks if an error was displayed?
 
   // Ignore future clicks while subscription in progress
   // TODO: use a better element name here.
-  const monitor = document.getElementById('submon');
-  if(monitor && is_visible(monitor))
+  const subMonitorElement = document.getElementById('submon');
+  if(subMonitorElement && jrUtilsIsElementVisible(subMonitorElement)) {
     return;
+  }
+
   // Show subscription preview expects a URL object, so convert. This can
   // throw but never should so I do not use try/catch.
-  const feed_url = new URL(feed_url_str);
-  // TODO: I plan to deprecate the preview step, so this should probably be
-  // making a call directly to the step that starts the subscription process.
-  show_sub_preview(feed_url);
+  const feedURLObject = new URL(feedURLString);
+
+  // TODO: this should make a call directly to the step that starts the
+  // subscription process.
+  jrOptionsShowSubPreview(feedURLObject);
 }
 
-function remove_feed_from_feed_list(feed_id) {
-  const feed_element = document.querySelector(
-    `#feedlist li[feed="${feed_id}"]`);
+function jrOptionsRemoveFeedFromFeedList(feedIdNumber) {
+  const feedElement = document.querySelector(
+    `#feedlist li[feed="${feedIdNumber}"]`);
 
-  if(!feed_element)
-    throw new Error();
-  feed_element.removeEventListener('click', feed_list_item_on_click);
-  feed_element.remove();
+  if(!feedElement) {
+    throw new Error('No feed element found with id ' + feedIdNumber);
+  }
+
+  feedElement.removeEventListener('click', jrOptionsFeedListItemOnClick);
+  feedElement.remove();
+
   // Upon removing the feed, update the displayed number of feeds.
-  update_feed_count();
+  // TODO: this should actually be called from some listener instead by a
+  // BroadcastChannel message, the event should be fired by the actual
+  // thing that removes the feed from storage
+  jrOptionsUpdateFeedCount();
+
   // Upon removing the feed, update the state of the feed list.
   // If the feed list has no items, hide it and show a message instead
-  const feed_list = document.getElementById('feedlist');
-  const no_feeds_element = document.getElementById('nosubs');
-  if(!feed_list.childElementCount) {
-    hide_element(feed_list);
-    show_element(no_feeds_element);
+  const feedListElement = document.getElementById('feedlist');
+  const noFeedsElement = document.getElementById('nosubs');
+  if(!feedListElement.childElementCount) {
+    jrUtilsHideElement(feedListElement);
+    jrUtilsShowElement(noFeedsElement);
   }
 }
 
 // TODO: visually react to unsubscribe error
-async function unsubscribe_btn_on_click(event) {
-  console.debug('Clicked unsubscribe');
-  const feed_id = parseInt(event.target.value, 10);
-  if(!Number.isInteger(feed_id) || feed_id < 1)
+async function jrOptionsUnsubscribeButtonOnClick(event) {
+
+  const feedIdNumber = parseInt(event.target.value, 10);
+
+  if(feedIdNumber < 1) {
     throw new TypeError(`Invalid feed id ${event.target.value}`);
+  }
 
   const subService = new SubscriptionService();
-  subService.verbose = true;// tmp debug
-  subService.readerDb.log = console;//tmp debug
 
   try {
-    await subService.connect();
-    const numDeleted = await subService.unsubscribe(feed_id);
+    await subService.jrDbConnect();
+    const numDeleted = await subService.unsubscribe(feedIdNumber);
   } catch(error) {
     console.warn('Unsubscribe error:', error);
   } finally {
     subService.close();
   }
 
-  remove_feed_from_feed_list(feed_id);
-  const subs_section = document.getElementById('subs-list-section');
-  show_section(subs_section);
+  jrOptionsRemoveFeedFromFeedList(feedIdNumber);
+  const subsListSection = document.getElementById('subs-list-section');
+  jrOptionsShowSection(subsListSection);
 }
 
 // TODO: needs to notify the user of a successful
@@ -637,259 +696,289 @@ async function unsubscribe_btn_on_click(event) {
 // need to be cancelable.
 // TODO: after import the feeds list needs to be refreshed
 // TODO: notify the user if there was an error
-function import_opml_btn_on_click(event) {
+function jrOptionsImportOPMLButtonOnClick(event) {
   const uploader = document.createElement('input');
   uploader.setAttribute('type', 'file');
   uploader.setAttribute('accept', 'application/xml');
-  uploader.onchange = async function on_change(event) {
-    uploader.removeEventListener('change', on_change);
-
-    const importer = new OPMLImporter();
-
-    // Temp, debugging
-    importer.log = console;
-    importer.subService.log = console;
-    importer.subService.readerDb.log = console;
-
-    try {
-      await importer.connect();
-      await importer.importFiles(uploader.files);
-    } catch(error) {
-      console.debug(error);
-    } finally {
-      importer.close();
-    }
-  };
+  uploader.onchange = jrOptionsImportOPMLUploaderOnChange;
   uploader.click();
 }
 
-// TODO: visual feedback
-async function export_opml_btn_on_click(event) {
-  console.debug('Clicked  opml button');
-  const title = 'Subscriptions';
-  const file_name = 'subs.xml';
+async function jrOptionsImportOPMLUploaderOnChange(event) {
+  const uploader = event.target;
+  uploader.removeEventListener('change', jrOptionsImportOPMLUploaderOnChange);
 
-  const readerDb = new ReaderDb();
-  const feedStore = new FeedStore();
-  let conn;
-  let feeds;
+  const importer = new OPMLImporter();
   try {
-    conn = await readerDb.connect();
-    feedStore.conn = conn;
-    feeds = await feedStore.getAll();
-  } catch(error) {
-    console.warn(error);
-  } finally {
-    if(conn)
-      conn.close();
-  }
-
-  if(feeds) {
-    const exporter = new OPMLExporter();
-    exporter.verbose = true;
-    exporter.exportFile(feeds, title, file_name);
-  }
-}
-
-// TODO: sort feeds alphabetically
-// TODO: react to errors
-async function init_subs_section() {
-  const no_feeds_element = document.getElementById('nosubs');
-  const feed_list = document.getElementById('feedlist');
-
-  const readerDb = new ReaderDb();
-  const feedStore = new FeedStore();
-  let conn;
-  let feeds;
-  try {
-    conn = await readerDb.connect();
-    feedStore.conn = conn;
-    feeds = await feedStore.getAll();
+    await importer.jrDbConnect();
+    await importer.jrOPMLImportFiles(uploader.files);
   } catch(error) {
     console.debug(error);
   } finally {
-    if(conn)
-      conn.close();
+    importer.close();
+  }
+}
+
+// TODO: visual feedback
+async function jrOptionsExportOPMLButtonOnClick(event) {
+
+  const titleString = 'Subscriptions';
+  const fileNameString = 'subscriptions.xml';
+
+  const readerDb = new ReaderDb();
+  const feedStore = new FeedStore();
+  let connection;
+  let feedArray;
+  try {
+    connection = await readerDb.jrDbConnect();
+    feedStore.conn = connection;
+    feedArray = await feedStore.getAll();
+  } catch(error) {
+    console.warn(error);
+  } finally {
+    if(connection) {
+      connection.close();
+    }
   }
 
-  if(!feeds) {
+  if(!feedArray) {
+    return;
+  }
+
+  jrOPMLExportFile(feedArray, titleString, fileNameString);
+}
+
+
+
+
+
+// TODO: sort feeds alphabetically
+// TODO: react to errors
+async function jrOptionsInitializeSubscriptionsSection() {
+  const noFeedsElement = document.getElementById('nosubs');
+  const feedListElement = document.getElementById('feedlist');
+
+  const readerDb = new ReaderDb();
+  const feedStore = new FeedStore();
+  let conn;
+  let feedArray;
+  try {
+    conn = await readerDb.jrDbConnect();
+    feedStore.conn = conn;
+    feedArray = await feedStore.getAll();
+  } catch(error) {
+    console.debug(error);
+  } finally {
+    if(conn) {
+      conn.close();
+    }
+  }
+
+  if(!feedArray) {
     console.warn('feeds undefined');
     return;
   }
 
 
   // Sort the feeds by title in memory using indexedDB.cmp
-  feeds.sort(function(a, b) {
+  feedArray.sort(function(a, b) {
     const atitle = a.title ? a.title.toLowerCase() : '';
     const btitle = b.title ? b.title.toLowerCase() : '';
     return indexedDB.cmp(atitle, btitle);
   });
 
-  for(let feed of feeds) {
-    append_feed(feed);
-    update_feed_count();
+  for(let feedObject of feedArray) {
+    jrOptionsAppendFeed(feedObject);
+
+    // TODO: the update should happen as a result of call to append feed,
+    // not here
+    jrOptionsUpdateFeedCount();
   }
 
-  if(!feeds.length) {
-    show_element(no_feeds_element);
-    hide_element(feed_list);
+  if(!feedArray.length) {
+    jrUtilsShowElement(noFeedsElement);
+    jrUtilsHideElement(feedListElement);
   } else {
-    hide_element(no_feeds_element);
-    show_element(feed_list);
+    jrUtilsHideElement(noFeedsElement);
+    jrUtilsShowElement(feedListElement);
   }
 }
 
-
-// Use currentTarget instead of event.target as some of the menu items have a
-// nested element that is the desired target
-// TODO: rather than comment, use a local variable here to clarify why
-// currentTarget is more appropriate
-function nav_item_on_click(event) {
-  show_section(event.currentTarget);
+function jrOptionsNavItemOnClick(event) {
+  const clickedElement = event.target;
+  const sectionElement = event.currentTarget;
+  jrOptionsShowSection(sectionElement);
 }
 
-function enable_notifs_checkbox_on_change(event) {
-  if(event.target.checked)
-    localStorage.SHOW_NOTIFICATIONS = '1';
-  else
-    delete localStorage.SHOW_NOTIFICATIONS;
-}
-
-function enable_bg_process_checkbox_on_click(event) {
+function jrOptionsEnableNotificationsCheckboxOnClick(event) {
   if(event.target.checked) {
-    chrome.permissions.request({'permissions': ['background']}, noop);
-  }
-  else {
-    chrome.permissions.remove({'permissions': ['background']}, noop);
+    localStorage.SHOW_NOTIFICATIONS = '1';
+  } else {
+    delete localStorage.SHOW_NOTIFICATIONS;
   }
 }
 
-function noop() {}
 
-function enable_bg_process_on_check_perm(permitted) {
+function jrOptionsEnableBackgroundProcessingCheckboxOnClick(event) {
+  if(event.target.checked) {
+    chrome.permissions.request({'permissions': ['background']}, jrOptionsNoop);
+  } else {
+    chrome.permissions.remove({'permissions': ['background']}, jrOptionsNoop);
+  }
+}
+
+function jrOptionsNoop() {
+  // No operation
+}
+
+
+function jrOptionsEnableBackgroundProcessingOnCheckPermissions(isPermitted) {
   const checkbox = document.getElementById('enable-background');
-  checkbox.checked = permitted;
+  checkbox.checked = isPermitted;
 }
 
-function restrict_poll_idle_checkbox_on_change(event) {
-  if(event.target.checked)
+
+function jrOptionsRestrictIdlePollingCheckboxOnClick(event) {
+  if(event.target.checked) {
     localStorage.ONLY_POLL_IF_IDLE = '1';
-  else
+  } else {
     delete localStorage.ONLY_POLL_IF_IDLE;
+  }
 }
 
-function enable_preview_checkbox_on_change(event) {
-  if(this.checked)
+
+// TODO: deprecate
+function jrOptionsEnableSubscriptionPreviewCheckboxOnChange(event) {
+  if(event.target.checked) {
     localStorage.ENABLE_SUBSCRIBE_PREVIEW = '1';
-  else
+  } else {
     delete localStorage.ENABLE_SUBSCRIBE_PREVIEW;
+  }
 }
 
-function preview_continue_btn_on_click(event) {
-  const urlString = event.currentTarget.value;
-  hide_sub_preview();
+// TODO: deprecate
+function jrOptionsSubscriptionPreviewContinueButtonOnClick(event) {
+  // TODO: why use currentTarget over target for no reason?
+  const previewButton = event.currentTarget;
+  const urlString = previewButton.value;
+  jrOptionsHideSubPreview();
 
   if(!urlString) {
     console.debug('no url');
     return;
   }
 
-  const feed_url = new URL(urlString);
-  start_subscription(feed_url);
+  const feedURLObject = new URL(urlString);
+  jrOptionsStartSubscription(feedURLObject);
 }
 
-function enable_bg_img_menu_on_change(event) {
-  if(event.target.value)
+function jrOptionsBackgroundImageMenuOnChange(event) {
+  if(event.target.value) {
     localStorage.BACKGROUND_IMAGE = event.target.value;
-  else
+  } else {
     delete localStorage.BACKGROUND_IMAGE;
-  settings_chan.postMessage('changed');
+  }
+
+  jrOptionsSettingsChannel.postMessage('changed');
 }
 
-function header_font_menu_on_change(event){
-  const selected_option = event.target.value;
-  if(selected_option)
-    localStorage.HEADER_FONT_FAMILY = selected_option;
-  else
+function jrOptionsHeaderFontMenuOnChange(event){
+  const selectedOption = event.target.value;
+  if(selectedOption) {
+    localStorage.HEADER_FONT_FAMILY = selectedOption;
+  } else {
     delete localStorage.HEADER_FONT_FAMILY;
-  settings_chan.postMessage('changed');
+  }
+
+  jrOptionsSettingsChannel.postMessage('changed');
 }
 
-function body_font_menu_on_change(event) {
-  if(event.target.value)
+function jrOptionsBodyFontMenuOnChange(event) {
+  if(event.target.value) {
     localStorage.BODY_FONT_FAMILY = event.target.value;
-  else
+  } else {
     delete localStorage.BODY_FONT_FAMILY;
+  }
 
-  settings_chan.postMessage('changed');
+  jrOptionsSettingsChannel.postMessage('changed');
 }
 
-function col_count_menu_on_change(event) {
-  if(event.target.value)
+
+function jrOptionsColumnCountMenuOnChange(event) {
+  if(event.target.value) {
     localStorage.COLUMN_COUNT = event.target.value;
-  else
+  } else {
     delete localStorage.COLUMN_COUNT;
-  settings_chan.postMessage('changed');
+  }
+
+  jrOptionsSettingsChannel.postMessage('changed');
 }
 
-function entry_bg_color_on_input() {
+function jrOptionsEntryBackgroundColorOnInput(event) {
   const element = event.target;
   const value = element.value;
-  if(value)
+  if(value) {
     localStorage.ENTRY_BACKGROUND_COLOR = value;
-  else
+  } else {
     delete localStorage.ENTRY_BACKGROUND_COLOR;
-  settings_chan.postMessage('changed');
+  }
+
+  jrOptionsSettingsChannel.postMessage('changed');
 }
 
-function entry_margin_on_change(event) {
+
+function jrOptionsEntryMarginOnChange(event) {
   // TODO: why am i defaulting to 10 here?
   localStorage.ENTRY_MARGIN = event.target.value || '10';
 
-  settings_chan.postMessage('changed');
+  jrOptionsSettingsChannel.postMessage('changed');
 }
 
-function header_font_size_on_change(event) {
+function jrOptionsHeaderFontSizeOnChange(event) {
   localStorage.HEADER_FONT_SIZE = event.target.value || '1';
-  settings_chan.postMessage('changed');
+  jrOptionsSettingsChannel.postMessage('changed');
 }
 
-function body_font_size_on_change(event) {
+function jrOptionsBodyFontSizeOnChange(event) {
   localStorage.BODY_FONT_SIZE = event.target.value || '1';
-  settings_chan.postMessage('changed');
+  jrOptionsSettingsChannel.postMessage('changed');
 }
 
-function justify_checkbox_on_change(event) {
+function jrOptionsJustifyCheckboxOnChange(event) {
   if(event.target.checked)
     localStorage.JUSTIFY_TEXT = '1';
   else
     delete localStorage.JUSTIFY_TEXT;
-  settings_chan.postMessage('changed');
+  jrOptionsSettingsChannel.postMessage('changed');
 }
 
-function body_height_on_input(event) {
+function jrOptionsBodyHeightInputOnInput(event) {
   localStorage.BODY_LINE_HEIGHT = event.target.value || '10';
-  settings_chan.postMessage('changed');
+  jrOptionsSettingsChannel.postMessage('changed');
 }
 
-function on_dom_loaded(event) {
+function jrOptionsOnDOMContentLoaded(event) {
 
   // Init CSS styles that affect the display preview area
-  display_load_styles();
+  jr.style.onLoad();
 
   // Attach click handlers to feeds in the feed list on the left.
   // TODO: it would probably be easier and more efficient to attach a single
   // click handler that figures out which item was clicked.
-  const nav_feed_items = document.querySelectorAll('#navigation-menu li');
-  for(let item of nav_feed_items) {
-    item.onclick = nav_item_on_click;
+  const navFeedItemList = document.querySelectorAll('#navigation-menu li');
+  for(let navFeedItem of navFeedItemList) {
+    navFeedItem.onclick = jrOptionsNavItemOnClick;
   }
 
   // Setup the Enable Notifications checkbox in the General Settings section
-  const enable_notifs_checkbox = document.getElementById(
+  const enableNotificationsCheckbox = document.getElementById(
     'enable-notifications');
-  enable_notifs_checkbox.checked = 'SHOW_NOTIFICATIONS' in localStorage;
-  enable_notifs_checkbox.onclick = enable_notifs_checkbox_on_change;
+  enableNotificationsCheckbox.checked = 'SHOW_NOTIFICATIONS' in localStorage;
+  // TODO: should i be using on click or on change?
+  enableNotificationsCheckbox.onclick =
+    jrOptionsEnableNotificationsCheckboxOnClick;
+
+
 
   // TODO: this should be using a local storage variable and instead the
   // permission should be permanently defined.
@@ -897,46 +986,55 @@ function on_dom_loaded(event) {
   // function onchange but was listening to onclick
   // TODO: use the new, more global, navigator.permission check instead of
   // the extension API ?
-  const enable_bg_process_checkbox = document.getElementById(
+  const enableBackgroundProcessingCheckbox = document.getElementById(
     'enable-background');
-  enable_bg_process_checkbox.onclick = enable_bg_process_checkbox_on_click;
+  // TODO: should i be using on click or on change?
+  enableBackgroundProcessingCheckbox.onclick =
+    jrOptionsEnableBackgroundProcessingCheckboxOnClick;
   chrome.permissions.contains({'permissions': ['background']},
-    enable_bg_process_on_check_perm);
+    jrOptionsEnableBackgroundProcessingOnCheckPermissions);
 
-  const restrict_poll_idle_checkbox = document.getElementById(
+  const enableRestrictIdlePollingCheckbox = document.getElementById(
     'enable-idle-check');
-  restrict_poll_idle_checkbox.checked = 'ONLY_POLL_IF_IDLE' in localStorage;
-  restrict_poll_idle_checkbox.onclick = restrict_poll_idle_checkbox_on_change;
+  enableRestrictIdlePollingCheckbox.checked =
+    'ONLY_POLL_IF_IDLE' in localStorage;
+  // TODO: should i be using on click or on change
+  enableRestrictIdlePollingCheckbox.onclick =
+    jrOptionsRestrictIdlePollingCheckboxOnClick;
+
 
   // TODO: deprecate this because I plan to deprecate the preview ability.
-  const enable_preview_checkbox =
+  const jrOptionsEnableSubscriptionPreviewCheckbox =
     document.getElementById('enable-subscription-preview');
-  enable_preview_checkbox.checked = 'ENABLE_SUBSCRIBE_PREVIEW' in localStorage;
-  enable_preview_checkbox.onchange = enable_preview_checkbox_on_change;
+  jrOptionsEnableSubscriptionPreviewCheckbox.checked =
+    'ENABLE_SUBSCRIBE_PREVIEW' in localStorage;
+  // TODO: should i be using on click or on change?
+  jrOptionsEnableSubscriptionPreviewCheckbox.onchange =
+    jrOptionsEnableSubscriptionPreviewCheckboxOnChange;
 
   const export_opml_btn = document.getElementById('button-export-opml');
-  export_opml_btn.onclick = export_opml_btn_on_click;
+  export_opml_btn.onclick = jrOptionsExportOPMLButtonOnClick;
   const import_opml_btn = document.getElementById('button-import-opml');
-  import_opml_btn.onclick = import_opml_btn_on_click;
+  import_opml_btn.onclick = jrOptionsImportOPMLButtonOnClick;
 
-  init_subs_section();
+  jrOptionsInitializeSubscriptionsSection();
 
   // Init feed details section unsubscribe button click handler
-  const unsub_btn = document.getElementById('details-unsubscribe');
-  unsub_btn.onclick = unsubscribe_btn_on_click;
+  const unsubscribeButton = document.getElementById('details-unsubscribe');
+  unsubscribeButton.onclick = jrOptionsUnsubscribeButtonOnClick;
 
   // Init the subscription form section
   const sub_form = document.getElementById('subscription-form');
-  sub_form.onsubmit = sub_form_on_submit;
+  sub_form.onsubmit = jrOptionsSubscribeFormOnSubmit;
   const continue_preview_btn = document.getElementById(
     'subscription-preview-continue');
-  continue_preview_btn.onclick = preview_continue_btn_on_click;
+  continue_preview_btn.onclick = jrOptionsSubscriptionPreviewContinueButtonOnClick;
 
   // Init display settings
 
   // Setup the entry background image menu
   const bg_img_menu = document.getElementById('entry-background-image');
-  bg_img_menu.onchange = enable_bg_img_menu_on_change;
+  bg_img_menu.onchange = jrOptionsBackgroundImageMenuOnChange;
 
   // TODO: stop trying to reuse the option variable, create separate variables
   let option = document.createElement('option');
@@ -947,7 +1045,7 @@ function on_dom_loaded(event) {
   // Load bgimages menu
   const current_bg_image_path = localStorage.BACKGROUND_IMAGE;
   const bg_img_path_offset = '/images/'.length;
-  for(let path of config.bg_img_paths) {
+  for(let path of jrOptionsBgImagePaths) {
     let path_option = document.createElement('option');
     path_option.value = path;
     path_option.textContent = path.substring(bg_img_path_offset);
@@ -957,12 +1055,12 @@ function on_dom_loaded(event) {
 
   // Setup header font menu
   const header_font_menu = document.getElementById('select_header_font');
-  header_font_menu.onchange = header_font_menu_on_change;
+  header_font_menu.onchange = jrOptionsHeaderFontMenuOnChange;
   option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
   header_font_menu.appendChild(option);
   const selected_hf = localStorage.HEADER_FONT_FAMILY;
-  for(let ff of config.font_families) {
+  for(let ff of jrOptionsFonts) {
     let ff_option = document.createElement('option');
     ff_option.value = ff;
     ff_option.selected = ff === selected_hf;
@@ -972,12 +1070,12 @@ function on_dom_loaded(event) {
 
   // Setup the body font menu
   const body_font_menu = document.getElementById('select_body_font');
-  body_font_menu.onchange = body_font_menu_on_change;
+  body_font_menu.onchange = jrOptionsBodyFontMenuOnChange;
   option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
   body_font_menu.appendChild(option);
   const current_bff = localStorage.BODY_FONT_FAMILY;
-  for(let bff of config.font_families) {
+  for(let bff of jrOptionsFonts) {
     let bff_option = document.createElement('option');
     bff_option.value = bff;
     bff_option.selected = bff === current_bff;
@@ -995,32 +1093,32 @@ function on_dom_loaded(event) {
     col_count_element.appendChild(option);
   }
 
-  col_count_element.onchange = col_count_menu_on_change;
+  col_count_element.onchange = jrOptionsColumnCountMenuOnChange;
 
   const bg_color_element = document.getElementById('entry-background-color');
   bg_color_element.value = localStorage.ENTRY_BACKGROUND_COLOR || '';
-  bg_color_element.oninput = entry_bg_color_on_input;
+  bg_color_element.oninput = jrOptionsEntryBackgroundColorOnInput;
 
   const margin_element = document.getElementById('entry-margin');
   margin_element.value = localStorage.ENTRY_MARGIN || '10';
-  margin_element.onchange = entry_margin_on_change;
+  margin_element.onchange = jrOptionsEntryMarginOnChange;
 
   const header_font_size_element = document.getElementById('header-font-size');
   header_font_size_element.value = localStorage.HEADER_FONT_SIZE || '1';
-  header_font_size_element.onchange = header_font_size_on_change;
+  header_font_size_element.onchange = jrOptionsHeaderFontSizeOnChange;
 
   const body_font_size_element = document.getElementById('body-font-size');
   body_font_size_element.value = localStorage.BODY_FONT_SIZE || '1';
-  body_font_size_element.onchange = body_font_size_on_change;
+  body_font_size_element.onchange = jrOptionsBodyFontSizeOnChange;
 
   const justify_checkbox = document.getElementById('justify-text');
   justify_checkbox.checked = 'JUSTIFY_TEXT' in localStorage;
-  justify_checkbox.onchange = justify_checkbox_on_change;
+  justify_checkbox.onchange = jrOptionsJustifyCheckboxOnChange;
 
   const body_height_element = document.getElementById('body-line-height');
   const line_height_int = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
   body_height_element.value = (line_height_int / 10).toFixed(2);
-  body_height_element.oninput = body_height_on_input;
+  body_height_element.oninput = jrOptionsBodyHeightInputOnInput;
 
   const manifest = chrome.runtime.getManifest();
   const ext_name_element = document.getElementById('extension-name');
@@ -1034,10 +1132,9 @@ function on_dom_loaded(event) {
   const ext_homepage_element = document.getElementById('extension-homepage');
   ext_homepage_element.textContent = manifest.homepage_url;
 
-  const subs_section = document.getElementById('subs-list-section');
-  show_section(subs_section);
+  const subsListSection = document.getElementById('subs-list-section');
+  jrOptionsShowSection(subsListSection);
 }
 
-document.addEventListener('DOMContentLoaded', on_dom_loaded, {'once': true});
-
-}
+document.addEventListener('DOMContentLoaded', jrOptionsOnDOMContentLoaded,
+  {'once': true});

@@ -2,99 +2,73 @@
 
 'use strict';
 
-class FeedFavicon {
 
-  constructor() {
-    this.verbose = false;
-    this.readerDb = new ReaderDb();
-    this.feedStore = new FeedStore();
-    this.fs = new FaviconService();
+async function jrFeedIconCreateAlarm(periodInMinutes) {
+  const alarm = await jrUtilsGetAlarm('refresh-feed-icons');
+  if(alarm)
+    return;
+  chrome.alarms.create('refresh-feed-icons',
+    {'periodInMinutes': periodInMinutes});
+}
+
+function jrFeedIconRegisterAlarmListener() {
+  chrome.alarms.onAlarm.addListener(jrFeedIconOnAlarm);
+}
+
+async function jrFeedIconOnAlarm(alarm) {
+  if(alarm.name !== 'refresh-feed-icons')
+    return;
+
+  try {
+    await jrFeedIconRefresh();
+  } catch(error) {
+    console.warn(error);
   }
+}
 
-  static async createAlarm(periodInMinutes) {
-    const alarm = await ExtensionUtils.getAlarm('refresh-feed-icons');
-    if(alarm)
-      return;
+async function jrFeedIconRefresh() {
+  let numModified = 0;
 
-    console.debug('Creating refresh-feed-icons alarm');
-    chrome.alarms.create('refresh-feed-icons',
-      {'periodInMinutes': periodInMinutes});
-
+  try {
+    const connections = await Promise.all([this.readerDb.jrDbConnect(),
+      jrFaviconConnect()]);
+    this.feedStore.conn = connections[0];
+    const feeds = await this.feedStore.getAll();
+    const updatePromises = feeds.map(jrFeedIconUpdateIcon, this);
+    const resolutions = await Promise.all(updatePromises);
+    numModified = resolutions.reduce((c, r) => r ? c + 1 : c, 0);
+  } finally {
+    this.fs.close();
+    if(this.feedStore.conn)
+      this.feedStore.conn.close();
   }
+}
 
-  static registerAlarmListener() {
-    chrome.alarms.onAlarm.addListener(this.onAlarm);
-  }
+async function jrFeedIconUpdateIcon(feed) {
+  const lookupURL = FeedFavicon.getLookupURL(feed);
+  const iconURL = await jrFaviconLookup(lookupURL);
+  if(!iconURL)
+    return false;
+  if(feed.faviconURLString === iconURL)
+    return false;
 
-  static async onAlarm(alarm) {
-    if(alarm.name !== 'refresh-feed-icons')
-      return;
+  feed.faviconURLString = iconURL;
+  await jrDbPutFeed(feed);
+  return true;
+}
 
-    const ff = new FeedFavicon();
+function jrFeedIconGetLookupURL(feed) {
+  // Cannot assume the link is set nor valid
+  if(feed.link) {
     try {
-      let result = await ff.refresh();
+      return new URL(feed.link);
     } catch(error) {
       console.warn(error);
     }
   }
 
-  async refresh() {
-    if(this.verbose)
-      console.log('Refreshing feed favicons...');
-    let numModified = 0;
-
-    try {
-      await this.openConnections();
-      const feeds = await this.feedStore.getAll();
-      const updatePromises = feeds.map(this.updateFeedFavicon, this);
-      const resolutions = await Promise.all(updatePromises);
-      numModified = resolutions.reduce((c, r) => r ? c + 1 : c, 0);
-    } finally {
-      this.closeConnections();
-    }
-
-    if(this.verbose)
-      console.log('Refreshed feed favicons. Modified %d', numModified);
-  }
-
-  async openConnections() {
-    const connections = await Promise.all([this.readerDb.connect(),
-      this.fs.connect()]);
-    this.feedStore.conn = connections[0];
-  }
-
-  closeConnections() {
-    this.fs.close();
-    if(this.feedStore.conn)
-      this.feedStore.conn.close();
-  }
-
-  async updateFeedFavicon(feed) {
-    const lookupURL = FeedFavicon.getLookupURL(feed);
-    const iconURL = await this.fs.lookup(lookupURL);
-    if(!iconURL)
-      return false;
-    if(feed.faviconURLString === iconURL)
-      return false;
-
-    feed.faviconURLString = iconURL;
-    await this.feedStore.put(feed);
-    return true;
-  }
-
-  static getLookupURL(feed) {
-    if(feed.link) {
-      // Do not assume the link is valid
-      try {
-        return new URL(feed.link);
-      } catch(error) {
-        console.warn(error);
-      }
-    }
-
-    // If the link is missing or invalid then use the origin
-    const feedURL = Feed.getURL(feed);
-    const origin = new URL(feedURL).origin;
-    return new URL(origin);
-  }
+  // If the link is missing or invalid then use the origin
+  const feedURL = jrFeedGetURL(feed);
+  const origin = new URL(feedURL).origin;
+  return new URL(origin);
 }

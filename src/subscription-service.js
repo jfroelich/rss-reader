@@ -15,9 +15,9 @@ class SubscriptionService {
     this.entryStore = new EntryStore();
   }
 
-  async connect() {
-    const connectionsArray = await Promise.all([this.readerDb.connect(),
-      this.faviconService.connect()]);
+  async jrDbConnect() {
+    const connectionsArray = await Promise.all([this.readerDb.jrDbConnect(),
+      this.faviconService.jrDbConnect()]);
     this.readerConn = connectionsArray[0];
 
     this.feedStore.conn = this.readerConn;
@@ -32,7 +32,7 @@ class SubscriptionService {
 
   // Returns the feed that was added if successful
   async subscribe(feed) {
-    const url = Feed.getURL(feed);
+    const url = jrFeedGetURL(feed);
 
     if(this.verbose)
       console.log('Subscribing to feed with url', url);
@@ -54,7 +54,7 @@ class SubscriptionService {
     if(!remoteFeed)
       return;
 
-    const mergedFeed = Feed.merge(feed, remoteFeed);
+    const mergedFeed = jrFeedMerge(feed, remoteFeed);
     await this.updateFavicon(mergedFeed);
     const addedFeed = await this.feedStore.add(mergedFeed);
     this.showSubNotification(addedFeed);
@@ -65,7 +65,7 @@ class SubscriptionService {
   async fetchFeed(url) {
     let feed = null;
     try {
-      ({feed} = await ResourceLoader.fetchFeed(url, this.fetchTimeout));
+      ({feed} = await jrFetchFeed(url, this.fetchTimeout));
     } catch(error) {
       if(this.verbose)
         console.warn(error);
@@ -90,9 +90,9 @@ class SubscriptionService {
     if(this.suppressNotifications)
       return;
     const title = 'Subscription complete';
-    const feedName = feed.title || Feed.getURL(feed);
+    const feedName = feed.title || jrFeedGetURL(feed);
     const message = 'Subscribed to ' + feedName;
-    DesktopNotification.show(title, message, feed.faviconURLString);
+    jrExtensionShowNotification(title, message, feed.faviconURLString);
   }
 
   assertValidFeedId(feedId) {
@@ -129,7 +129,7 @@ class SubscriptionService {
       console.debug('Deleted %d entries', ids.length);
     }
 
-    Badge.updateUnreadCount(this.readerConn);
+    jrExtensionUpdateBadge(this.entryStore);
 
     return ids.length;
   }

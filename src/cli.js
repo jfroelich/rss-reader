@@ -2,39 +2,33 @@
 
 'use strict';
 
-// Command line interface module. For performing operations from the console,
-// with logging to console.
+async function jrCLIArchiveEntries() {
+  const db = new ReaderDb();
+  const es = new EntryStore();
 
-class cli {
+  const ea = new EntryArchiver();
+  ea.entryStore = es;
+  ea.verbose = true;
 
-  static async archiveEntries() {
-    const db = new ReaderDb();
-    const es = new EntryStore();
+  try {
+    es.conn = await db.jrDbConnect();
+    await ea.archive();
+  } finally {
+    if(es.conn)
+      es.conn.close();
+  }
+}
 
-    const ea = new EntryArchiver();
-    ea.entryStore = es;
-    ea.verbose = true;
+async function jrCLIPollFeeds(nolog) {
+  const service = new PollingService();
+  service.ignoreIdleState = true;
+  service.ignoreModifiedCheck = true;
+  service.ignoreRecencyCheck = true;
 
-    try {
-      es.conn = await db.connect();
-      await ea.archive();
-    } finally {
-      if(es.conn)
-        es.conn.close();
-    }
+  if(!nolog) {
+    service.log = console;
+    service.fs.log = console;
   }
 
-  static async pollFeeds(nolog) {
-    const service = new PollingService();
-    service.ignoreIdleState = true;
-    service.ignoreModifiedCheck = true;
-    service.ignoreRecencyCheck = true;
-
-    if(!nolog) {
-      service.log = console;
-      service.fs.log = console;
-    }
-
-    await service.pollFeeds();
-  }
+  await service.jrPollFeeds();
 }

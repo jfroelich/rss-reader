@@ -2,9 +2,7 @@
 
 'use strict';
 
-{
-
-const attr_map = {
+const jrResolveDocumentAttributeMap = {
   'a': 'href',
   'applet': 'codebase',
   'area': 'href',
@@ -32,126 +30,173 @@ const attr_map = {
   'video': 'src'
 };
 
-function build_selector_part(key) {
-  return `${key}[${attr_map[key]}]`;
+function jrResolveDocumentBuildSelectorPart(key) {
+  return `${key}[${jrResolveDocumentAttributeMap[key]}]`;
 }
 
-const selector = Object.keys(attr_map).map(build_selector_part).join(',');
 
-function resolve_doc(doc, base_url) {
-  if(!parseSrcset)
-    throw new ReferenceError();
-  if(!ObjectUtils.isURL(base_url))
-    throw new TypeError();
 
-  const bases = doc.querySelectorAll('base');
-  for(let base of bases) {
-    base.remove();
+
+function jrResolveDocument(documentObject, baseURLObject) {
+
+  if(!jrUtilsIsURLObject(baseURLObject)) {
+    throw new TypeError('baseURLObject should be of type URL');
   }
 
-  const elements = doc.querySelectorAll(selector);
-  for(let element of elements) {
-    resolve_mapped_attr(element, base_url);
+  const baseList = documentObject.querySelectorAll('base');
+  for(let baseElement of baseList) {
+    baseElement.remove();
   }
 
-  const srcsetEls = doc.querySelectorAll('img[srcset], source[srcset]');
-  for(let element of srcsetEls) {
-    resolve_srcset_attr(element, base_url);
+  const tagNameArray = Object.keys(jrResolveDocumentAttributeMap);
+  const selectPartArray = tagNameArray.map(jrResolveDocumentBuildSelectorPart);
+  const selectorString = selectPartArray.join(',');
+  const elementList = documentObject.querySelectorAll(selectorString);
+  for(let element of elementList) {
+    jrResolveDocumentResolveMappedAttribute(element, baseURLObject);
+  }
+
+  const srcsetList = documentObject.querySelectorAll(
+    'img[srcset], source[srcset]');
+  for(let element of srcsetList) {
+    jrResolveDocumentResolveSrcsetAttribute(element, baseURLObject);
   }
 }
 
-function resolve_mapped_attr(element, base_url) {
-  const element_name = element.localName;
-  const attr_name = attr_map[element_name];
-  if(!attr_name)
+function jrResolveDocumentResolveMappedAttribute(element, baseURLObject) {
+  const elementName = element.localName;
+  const attributeName = jrResolveDocumentAttributeMap[elementName];
+  if(!attributeName) {
     return;
-  const attr_url = element.getAttribute(attr_name);
-  if(!attr_url)
+  }
+
+  const urlString = element.getAttribute(attributeName);
+  if(!urlString) {
     return;
-  const resolved_url = resolve_url(attr_url, base_url);
-  if(resolved_url && resolved_url.href !== attr_url)
-    element.setAttribute(attr_name, resolved_url.href);
+  }
+
+  const resolvedURLObject = jrResolveDocumentResolveURL(urlString,
+    baseURLObject);
+  if(!resolvedURLObject) {
+    return;
+  }
+
+  const resolvedURLString = resolvedURLObject.href;
+  if(resolvedURLString !== urlString) {
+    element.setAttribute(attributeName, resolvedURLString);
+  }
 }
 
-function resolve_srcset_attr(element, base_url) {
-  const attr_url = element.getAttribute('srcset');
-  // The element has the attribute, but it may not have a value. parseSrcset
-  // requires a value or it throws (??).
-  if(!attr_url)
+
+function jrResolveDocumentResolveSrcsetAttribute(element, baseURLObject) {
+
+  // The element has the attribute, but the attribute may not have a value.
+  // parseSrcset requires a value or it may throw. While I catch exceptions
+  // later I'd rather avoid exceptions where feasible
+  const srcsetAttributeValue = element.getAttribute('srcset');
+  if(!srcsetAttributeValue) {
     return;
-  let srcset;
+  }
+
+  let descriptorArray;
   try {
-    srcset = parseSrcset(attr_url);
+    descriptorArray = parseSrcset(srcsetAttributeValue);
   } catch(error) {
     console.warn(error);
     return;
   }
 
-  if(!srcset || !srcset.length)
+  // Working with 3rd party code so extra precaution
+  if(!descriptorArray || !descriptorArray.length) {
     return;
+  }
+
+
+  // Resolve the urls of each descriptor. Set dirtied to true if at least
+  // one url was resolved.
   let dirtied = false;
-  for(let descriptor of srcset) {
-    const resolved_url = resolve_url(descriptor.url, base_url);
-    if(resolved_url && resolved_url.href !== descriptor.url) {
+  for(let descriptor of descriptorArray) {
+    const descriptorURLString = descriptor.url;
+    const resolvedURLObject = jrResolveDocumentResolveURL(descriptorURLString,
+      baseURLObject);
+
+    if(!resolvedURLObject) {
+      continue;
+    }
+
+    if(resolvedURLObject.href !== descriptorURLString) {
       dirtied = true;
-      descriptor.url = resolved_url.href;
+      descriptor.url = resolvedURLObject.href;
     }
   }
 
-  if(dirtied) {
-    const new_srcset_val = serialize_srcset(srcset);
-    if(new_srcset_val)
-      element.setAttribute('srcset', new_srcset_val);
+  if(!dirtied) {
+    return;
   }
+
+  const newSrcsetAttributeValue = jrResolveDocumentSerializeSrcset(
+    descriptorArray);
+
+  if(newSrcsetAttributeValue) {
+    element.setAttribute('srcset', newSrcsetAttributeValue);
+  }
+
 }
 
-// @param descriptors {Array} an array of basic descriptor objects such as the
-// one produced by the parseSrcset library
-function serialize_srcset(descriptors) {
-  const output = [];
-  for(let descriptor of descriptors) {
-    let buf = [descriptor.url];
-    if(descriptor.d) {
-      buf.push(' ');
-      buf.push(descriptor.d);
-      buf.push('x');
-    } else if(descriptor.w) {
-      buf.push(' ');
-      buf.push(descriptor.w);
-      buf.push('w');
-    } else if(descriptor.h) {
-      buf.push(' ');
-      buf.push(descriptor.h);
-      buf.push('h');
+// @param descriptorArray {Array} an array of descriptor objects
+function jrResolveDocumentSerializeSrcset(descriptorArray) {
+  const outputArray = [];
+
+  for(let descriptorObject of descriptorArray) {
+    let stringArray = [descriptorObject.url];
+    if(descriptorObject.d) {
+      stringArray.push(' ');
+      stringArray.push(descriptorObject.d);
+      stringArray.push('x');
+    } else if(descriptorObject.w) {
+      stringArray.push(' ');
+      stringArray.push(descriptorObject.w);
+      stringArray.push('w');
+    } else if(descriptorObject.h) {
+      stringArray.push(' ');
+      stringArray.push(descriptorObject.h);
+      stringArray.push('h');
     }
-    output.push(buf.join(''));
+
+    const descriptorString = stringArray.join('');
+    outputArray.push(descriptorString);
   }
-  return output.join(', ');
+
+  const descriptorsString = outputArray.join(', ');
+  return descriptorsString;
 }
 
+// Returns the absolute (aka canonical) form the input url
+// @param urlString {String}
+// @param baseURLObject {URL}
+function jrResolveDocumentResolveURL(urlString, baseURLObject) {
 
-// @param url_str {String}
-// @param base_url {URL}
-function resolve_url(url_str, base_url) {
-  if(typeof url_str !== 'string')
-    throw new TypeError();
-  if(!ObjectUtils.isURL(base_url))
-    throw new TypeError();
+  if(!jrUtilsIsURLObject(baseURLObject)) {
+    throw new TypeError('baseURLObject must be of type URL');
+  }
+
   // TODO: use a single regex for speed? Or maybe get the protocol,
   // normalize it, and check against a list of bad protocols?
   // TODO: or if it has any protocol, then just return the url as is?
   // - but that would still require a call to new URL
-  if(/^\s*javascript:/i.test(url_str) ||
-    /^\s*data:/i.test(url_str) ||
-    /^\s*mailto:/i.test(url_str))
+  // Or can we just check for the presence of any colon?
+  if(/^\s*javascript:/i.test(urlString) ||
+    /^\s*data:/i.test(urlString) ||
+    /^\s*mailto:/i.test(urlString)) {
     return;
-  try {
-    return new URL(url_str, base_url);
-  } catch(error) {
-    console.warn(url_str, base_url.href, error);
   }
-}
 
-this.resolve_doc = resolve_doc;
+  let absoluteURLObject;
+  try {
+    absoluteURLObject = new URL(urlString, baseURLObject);
+  } catch(error) {
+    console.warn(error, urlString, baseURLObject.href);
+  }
 
+  return absoluteURLObject;
 }
