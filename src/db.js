@@ -6,13 +6,13 @@
 // away from indexedDB in the case I may want to swap the storage mechanism,
 // so I think it is ok to have tx and conn as params to various other fns
 
-const jrDbDefaultName = 'reader';
-const jrDbDefaultVersion = 20;
+const dbDefaultName = 'reader';
+const dbDefaultVersion = 20;
 
-function jrDbConnect(name = jrDbDefaultName, version = jrDbDefaultVersion) {
+function dbConnect(name = dbDefaultName, version = dbDefaultVersion) {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(name, version);
-    request.onupgradeneeded = jrDbOnUpgradeNeeded;
+    request.onupgradeneeded = dbOnUpgradeNeeded;
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
     request.onblocked = () =>
@@ -20,7 +20,7 @@ function jrDbConnect(name = jrDbDefaultName, version = jrDbDefaultVersion) {
   });
 }
 
-function jrDbOnUpgradeNeeded(event) {
+function dbOnUpgradeNeeded(event) {
   const conn = event.target.result;
   const tx = event.target.transaction;
   let feedStore, entryStore;
@@ -57,7 +57,15 @@ function jrDbOnUpgradeNeeded(event) {
   }
 }
 
-function jrDbRemoveFeed(tx, id) {
+function dbDeleteDatabase(name) {
+  return new Promise((resolve, reject) {
+    const request = indexedDB.deleteDatabase(name);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function dbRemoveFeed(tx, id) {
   return new Promise((resolve, reject) => {
     const store = tx.objectStore('feed');
     const request = store.delete(id);
@@ -67,7 +75,7 @@ function jrDbRemoveFeed(tx, id) {
 }
 
 // Load an array of all feed ids
-function jrDbGetFeedIds(conn) {
+function dbGetFeedIds(conn) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -77,7 +85,7 @@ function jrDbGetFeedIds(conn) {
   });
 }
 
-function jrDbGetFeeds(conn) {
+function dbGetFeeds(conn) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -91,7 +99,7 @@ function jrDbGetFeeds(conn) {
 // was given
 // TODO: deprecate, require caller to use put everywhere
 // TODO: move obj prep to caller, use put logic, rename to putFeed
-function jrDbAddFeed(conn, feed) {
+function dbAddFeed(conn, feed) {
   return new Promise((resolve, reject) => {
     if('id' in feed)
       return reject(new TypeError());
@@ -117,7 +125,7 @@ function jrDbAddFeed(conn, feed) {
 // Adds or overwrites a feed in storage. Resolves with the stored feed. If
 // adding then the generated id is set on the input feed object.
 // @param feed {Object}
-function jrDbPutFeed(conn, feed) {
+function dbPutFeed(conn, feed) {
   return new Promise((resolve, reject) => {
     feed.dateUpdated = new Date();
     const tx = conn.transaction('feed', 'readwrite');
@@ -133,7 +141,7 @@ function jrDbPutFeed(conn, feed) {
 
 // Returns true if a feed exists in the database with the given url
 // @param url {String}
-function jrDbContainsFeedWithURL(conn, url) {
+function dbContainsFeedURL(conn, url) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -145,7 +153,7 @@ function jrDbContainsFeedWithURL(conn, url) {
 }
 
 // @param id {Number} feed id, positive integer
-function jrDbFindFeedById(conn, id) {
+function dbFindFeedById(conn, id) {
   return new Promise((resolve, reject) => {
     if(!Number.isInteger(id) || id < 1)
       return reject(new TypeError('Invalid feed id ' + id));
@@ -160,7 +168,7 @@ function jrDbFindFeedById(conn, id) {
 
 // TODO: tx can't be exposed, this is a leaky abstraction? Maybe there is not
 // even that much of a benefit to reusing id, I could just create a tx here
-function jrDbGetEntriesByFeed(tx, feedId) {
+function dbGetEntriesByFeedId(tx, feedId) {
   return new Promise((resolve, reject) => {
     const store = tx.objectStore('entry');
     const index = store.index('feed');
@@ -170,7 +178,7 @@ function jrDbGetEntriesByFeed(tx, feedId) {
   });
 }
 
-function jrDbGetAllEntries(conn) {
+function dbGetEntries(conn) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
@@ -180,12 +188,12 @@ function jrDbGetAllEntries(conn) {
   });
 }
 
-function jrDbGetUnarchivedReadEntries(conn) {
+function dbGetUnarchivedReadEntries(conn) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const key_path = [ENTRY_UNARCHIVED, ENTRY_READ];
+    const key_path = [ENTRY_UNARCHIVED_STATE, ENTRY_READ_STATE];
     const request = index.getAll(key_path);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -195,7 +203,7 @@ function jrDbGetUnarchivedReadEntries(conn) {
 // TODO: use getAll, passing in a count parameter as an upper limit, and
 // then using slice or unshift or something to advance.
 // TODO: internally the parameter to getAll might be (offset+limit)
-function jrDbGetUnarchivedUnreadEntries(conn, offset, limit) {
+function dbGetUnarchivedUnreadEntries(conn, offset, limit) {
   return new Promise((resolve, reject) => {
     const entries = [];
     let counter = 0;
@@ -205,7 +213,7 @@ function jrDbGetUnarchivedUnreadEntries(conn, offset, limit) {
     tx.oncomplete = () => resolve(entries);
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const keyPath = [ENTRY_UNARCHIVED, ENTRY_UNREAD];
+    const keyPath = [ENTRY_UNARCHIVED_STATE, ENTRY_UNREAD_STATE];
     const request = index.openCursor(keyPath);
     request.onsuccess = (event) => {
       const cursor = event.target.result;
@@ -224,7 +232,7 @@ function jrDbGetUnarchivedUnreadEntries(conn, offset, limit) {
   });
 }
 
-function jrDbFindEntryById(conn, id) {
+function dbFindEntryById(conn, id) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('entry');
     const request = tx.objectStore('entry').get(id);
@@ -233,12 +241,12 @@ function jrDbFindEntryById(conn, id) {
   });
 }
 
-function jrDbCountUnreadEntries(conn) {
+function dbCountUnreadEntries(conn) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('readState');
-    const request = index.count(ENTRY_UNREAD);
+    const request = index.count(ENTRY_UNREAD_STATE);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
@@ -249,7 +257,7 @@ function jrDbCountUnreadEntries(conn) {
 // @param tx {IDBTransaction}
 // @param id {int}
 // @param chan {BroadcastChannel}
-function jrDbRemoveEntry(tx, id, chan) {
+function dbRemoveEntry(tx, id, chan) {
   return new Promise((resolve, reject) => {
     const store = tx.objectStore('entry');
     const request = store.delete(id);
@@ -261,9 +269,9 @@ function jrDbRemoveEntry(tx, id, chan) {
   });
 }
 
-async function jrDbRemoveAllEntries(conn, ids, chan) {
+async function dbRemoveEntries(conn, ids, chan) {
   const tx = conn.transaction('entry', 'readwrite');
-  const proms = ids.map((id) => jrDbRemoveEntry(tx, id, chan));
+  const proms = ids.map((id) => dbRemoveEntry(tx, id, chan));
   return await Promise.all(proms);
 }
 
@@ -274,14 +282,14 @@ async function jrDbRemoveAllEntries(conn, ids, chan) {
 // and date created
 // TODO: this should be nothing other than putting. Caller is responsible
 // for sanitizing and setting defaults.
-function jrDbAddEntry(conn, entry) {
+function dbAddEntry(conn, entry) {
   return new Promise((resolve, reject) => {
     if('id' in entry)
       return reject(new TypeError());
     const sanitized = jrSanitizeEntry(entry);
     const storable = jrUtilsFilterEmptyProps(sanitized);
-    storable.readState = ENTRY_UNREAD;
-    storable.archiveState = ENTRY_UNARCHIVED;
+    storable.readState = ENTRY_UNREAD_STATE;
+    storable.archiveState = ENTRY_UNARCHIVED_STATE;
     storable.dateCreated = new Date();
     const tx = conn.transaction('entry', 'readwrite');
     const store = tx.objectStore('entry');
@@ -291,9 +299,9 @@ function jrDbAddEntry(conn, entry) {
   });
 }
 
-async function jrPutEntry(conn, entry) {
+async function dbPutEntry(conn, entry) {
   const tx = conn.transaction('entry', 'readwrite');
-  return await jrDbPutEntryUsingTx(tx, entry);
+  return await dbPutEntryWithTx(tx, entry);
 }
 
 
@@ -306,7 +314,7 @@ async function jrPutEntry(conn, entry) {
 // If entry.id is not set this will result in adding
 // Sets dateUpdated before put. Impure.
 // @param tx {IDBTransaction}
-function jrDbPutEntryUsingTx(tx, entry) {
+function dbPutEntryWithTx(tx, entry) {
   return new Promise((resolve, reject) => {
     entry.dateUpdated = new Date();
     const request = tx.objectStore('entry').put(entry);
@@ -316,16 +324,17 @@ function jrDbPutEntryUsingTx(tx, entry) {
 }
 
 // Promise.all is failfast so this aborts if any one entry fails
-async function jrDbPutAllEntries(conn, entries) {
+async function dbPutEntries(conn, entries) {
   const tx = conn.transaction('entry', 'readwrite');
-  const proms = entries.map((entry) => jrDbPutEntryUsingTx(tx, entry));
-  return await Promise.all(proms);
+  const proms = entries.map((entry) => dbPutEntryWithTx(tx, entry));
+  const putResolutionsArray = await Promise.all(proms);
+  return putResolutionsArray;
 }
 
 // Resolves with a boolean indicating whether an entry with the given url
 // was found in storage
 // @param url {String}
-function jrDbContainsEntriesWithURL(conn, urlString) {
+function dbContainsEntryURL(conn, urlString) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');

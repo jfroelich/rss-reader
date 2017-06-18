@@ -184,8 +184,8 @@ async function jrPollFeeds(logObject, options = jrDefaultPollOptions) {
   const feedStore = new FeedStore();
 
   // TODO: objects deprecated
-  const connectionPromises = [jrPollDb.jrDbConnect(),
-    jrPollFaviconService.jrDbConnect()];
+  const connectionPromises = [jrPollDb.dbConnect(),
+    jrPollFaviconService.dbConnect()];
 
   // TODO: break this up into separate try/catch if possible?
 
@@ -601,7 +601,7 @@ function jrPollPrepareLocalEntry(logObject, entryObject) {
 
 function jrPollPrepareDocument(urlString, documentObject) {
   jrTemplatePrune(urlString, documentObject);
-  jrBPFFilterDocument(documentObject);
+  bpFilterDocument(documentObject);
   jrDomScrubScrub(documentObject);
   jrDOMScrubAddNoReferrer(documentObject);
 }

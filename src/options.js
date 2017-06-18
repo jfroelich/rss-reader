@@ -295,7 +295,7 @@ async function jrOptionsStartSubscription(urlObject) {
   subService.verbose = true;
   let subcribedFeedObject;
   try {
-    await subService.jrDbConnect();
+    await subService.dbConnect();
     subcribedFeedObject = await subService.subscribe(feedObject);
   } catch(error) {
     console.debug(error);
@@ -363,7 +363,7 @@ async function jrOptionsFeedListItemOnClick(event) {
   let feedObject;
   let conn;
   try {
-    conn = await readerDb.jrDbConnect();
+    conn = await readerDb.dbConnect();
     feedStore.conn = conn;
     feedObject = await feedStore.findById(feedIdNumber);
   } catch(error) {
@@ -547,7 +547,7 @@ async function jrOptionsSubscribeFormOnSubmit(event) {
   resultsListElement.appendChild(itemElement);
 
   const fs = new FaviconService();
-  await fs.jrDbConnect();
+  await fs.dbConnect();
   for(let result of entryArray) {
     if(!result.link) {
       continue;
@@ -676,7 +676,7 @@ async function jrOptionsUnsubscribeButtonOnClick(event) {
   const subService = new SubscriptionService();
 
   try {
-    await subService.jrDbConnect();
+    await subService.dbConnect();
     const numDeleted = await subService.unsubscribe(feedIdNumber);
   } catch(error) {
     console.warn('Unsubscribe error:', error);
@@ -710,7 +710,7 @@ async function jrOptionsImportOPMLUploaderOnChange(event) {
 
   const importer = new OPMLImporter();
   try {
-    await importer.jrDbConnect();
+    await importer.dbConnect();
     await importer.jrOPMLImportFiles(uploader.files);
   } catch(error) {
     console.debug(error);
@@ -730,7 +730,7 @@ async function jrOptionsExportOPMLButtonOnClick(event) {
   let connection;
   let feedArray;
   try {
-    connection = await readerDb.jrDbConnect();
+    connection = await readerDb.dbConnect();
     feedStore.conn = connection;
     feedArray = await feedStore.getAll();
   } catch(error) {
@@ -763,7 +763,7 @@ async function jrOptionsInitializeSubscriptionsSection() {
   let conn;
   let feedArray;
   try {
-    conn = await readerDb.jrDbConnect();
+    conn = await readerDb.dbConnect();
     feedStore.conn = conn;
     feedArray = await feedStore.getAll();
   } catch(error) {

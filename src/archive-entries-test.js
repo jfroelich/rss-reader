@@ -4,30 +4,25 @@
 
 // TODO: insert test data, then run archive, make assertions about the
 // state of the database, then delete the database
-async function test() {
-  const max_age = 10;
-  let closed = false;
-  const db = new ReaderDb('test-archive-entries', 1);
-
+async function testArchiveEntries() {
+  console.log('Running test testAchiveArchives');
+  const testDbName = 'test-archive-entries';
+  const testDbVersion = 1;
+  let isClosed = false;
   let conn;
-  try {
-    conn = await db.jrDbConnect();
-    const num_modified = await archive_entries(conn, max_age, console);
-    conn.close();
-    closed = true;
-    await deleteDatabase(conn.name);
-  } catch(error) {
-    console.debug(error);
-  } finally {
-    if(conn && !closed)
-      conn.close();
-  }
-}
 
-function deleteDatabase(name) {
-  return new Promise((resolve, reject) {
-    const request = indexedDB.deleteDatabase(name);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
+  try {
+    conn = await dbConnect(testDbName, testDbVersion);
+    const numEntriesModified = await archiveEntries(conn, undefined, console);
+    console.log('Num entries modified:', numEntriesModified);
+    conn.close();
+    isClosed = true;
+    await dbDeleteDatabase(conn.name);
+  } catch(error) {
+    console.error(error);
+  } finally {
+    if(conn && !isClosed) {
+      conn.close();
+    }
+  }
 }

@@ -8,9 +8,9 @@ async function jrEntryMarkRead(entryStore, id) {
   const entry = await entryStore.findById(id);
   if(!entry)
     throw new Error(`No entry found with id ${id}`);
-  if(entry.readState === ENTRY_READ)
+  if(entry.readState === ENTRY_READ_STATE)
     throw new Error(`Already read entry with id ${id}`);
-  entry.readState = ENTRY_READ;
+  entry.readState = ENTRY_READ_STATE;
   entry.dateRead = new Date();
   entry.dateUpdated = new Date();
   await entryStore.put(entry);
@@ -47,5 +47,25 @@ async function jrEntryRemoveOrphanedEntries(conn, feedStore, entryStore) {
     console.warn(error);
   } finally {
     chan.close();
+  }
+}
+
+async function removeMissingEntriesOnAlarm(alarm) {
+  if(alarm.name === 'remove-entries-missing-urls') {
+    console.debug('Received remote-entries-missing-urls alarm wakeup');
+    const readerDb = new ReaderDb();
+    const entryStore = new EntryStore();
+    const entryController = new EntryController(entryStore);
+    let conn;
+    try {
+      conn = await readerDb.dbConnect();
+      entryStore.conn = conn;
+      entryController.jrEntryRemoveMissingURLs();
+    } catch(error) {
+      console.warn(error);
+    } finally {
+      if(conn)
+        conn.close();
+    }
   }
 }

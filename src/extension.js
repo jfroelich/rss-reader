@@ -6,7 +6,7 @@
 // Updates the number that appears on the icon in Chrome's toolbar
 // TODO: change all callers to pass in conn instead of deprecated entryStore
 async function jrExtensionUpdateBadge(conn) {
-  const count = await jrDbCountUnreadEntries(conn);
+  const count = await dbCountUnreadEntries(conn);
   const text = count > 999 ? '1k+' : '' + count;
   chrome.browserAction.setBadgeText({'text': text});
 }
@@ -59,7 +59,7 @@ async function jrExtensionOnInstalled(event) {
   const db = new ReaderDb();
   let conn;
   try {
-    conn = await db.jrDbConnect();
+    conn = await db.dbConnect();
 
     // Initialize the app badge
     const entryStore = new EntryStore(conn);

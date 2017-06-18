@@ -30,7 +30,7 @@ async function jrFeedIconRefresh() {
   let numModified = 0;
 
   try {
-    const connections = await Promise.all([this.readerDb.jrDbConnect(),
+    const connections = await Promise.all([this.readerDb.dbConnect(),
       jrFaviconConnect()]);
     this.feedStore.conn = connections[0];
     const feeds = await this.feedStore.getAll();
@@ -53,7 +53,7 @@ async function jrFeedIconUpdateIcon(feed) {
     return false;
 
   feed.faviconURLString = iconURL;
-  await jrDbPutFeed(feed);
+  await dbPutFeed(feed);
   return true;
 }
 

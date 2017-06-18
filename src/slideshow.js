@@ -43,7 +43,7 @@ async function mark_slide_read(slide) {
   const entryId = parseInt(slide.getAttribute('entry'), 10);
   const entryController = new EntryController();
   try {
-    await entryController.jrDbConnect();
+    await entryController.dbConnect();
     await entryController.markRead(entryId);
     slide.setAttribute('read', '');
   } finally {
@@ -64,7 +64,7 @@ async function append_slides() {
   let conn;
   let entries = [];
   try {
-    conn = await db.jrDbConnect();
+    conn = await db.dbConnect();
     entryStore.conn = conn;
     entries = await entryStore.getUnarchivedUnread(offset, limit);
   } finally {

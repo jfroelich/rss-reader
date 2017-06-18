@@ -1,36 +1,30 @@
 // See license.md
 
-async function test() {
-  console.log('Starting test');
+async function testDb() {
+  console.log('Starting db test');
 
-  const db = new ReaderDb('test-feed-db', 1);
-  console.log('Connecting to database', db.name);
+  const dbName = 'test-feed-db';
+  const dbVersion = 1;
+  console.log('Connecting to database', dbName);
   let conn;
   try {
-    conn = await db.jrDbConnect();
-    console.log('Connected to', db.name);
+    conn = await dbConnect(dbName, dbVersion);
+    console.log('Connected to', dbName);
   } catch(error) {
     console.warn(error);
   } finally {
-    if(conn)
+    if(conn) {
       conn.close();
+    }
   }
 
-  console.log('Deleting database', db.name);
+  console.log('Deleting database', dbName);
   try {
-    await deleteDatabase(db.name);
-    console.log('Deleted database', db.name);
+    await dbDeleteDatabase(dbName);
+    console.log('Deleted database', dbName);
   } catch(error) {
     console.warn(error);
   }
 
-  console.log('Test completed');
-}
-
-function deleteDatabase(name) {
-  return new Promise((resolve, reject) {
-    const request = indexedDB.deleteDatabase(name);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
+  console.log('Db Test completed');
 }

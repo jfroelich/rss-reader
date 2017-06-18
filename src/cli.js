@@ -2,33 +2,23 @@
 
 'use strict';
 
-async function jrCLIArchiveEntries() {
-  const db = new ReaderDb();
-  const es = new EntryStore();
-
-  const ea = new EntryArchiver();
-  ea.entryStore = es;
-  ea.verbose = true;
-
+async function cliArchiveEntries() {
+  let conn;
+  let maxAge;// intentionally undefined
   try {
-    es.conn = await db.jrDbConnect();
-    await ea.archive();
+    conn = await dbConnect();
+    const numArchived = await archiveEntries(conn, maxAge, console);
   } finally {
-    if(es.conn)
-      es.conn.close();
+    if(conn) {
+      conn.close();
+    }
   }
 }
 
-async function jrCLIPollFeeds(nolog) {
-  const service = new PollingService();
-  service.ignoreIdleState = true;
-  service.ignoreModifiedCheck = true;
-  service.ignoreRecencyCheck = true;
-
-  if(!nolog) {
-    service.log = console;
-    service.fs.log = console;
-  }
-
-  await service.jrPollFeeds();
+async function cliPollFeeds(nolog) {
+  const pollOptionsObject = {};
+  pollOptionsObject.ignoreIdleState = true;
+  pollOptionsObject.ignoreModifiedCheck = true;
+  pollOptionsObject.ignoreRecencyCheck = true;
+  await jrPollFeeds(console, pollOptionsObject);
 }

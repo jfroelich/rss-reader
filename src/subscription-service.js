@@ -15,9 +15,9 @@ class SubscriptionService {
     this.entryStore = new EntryStore();
   }
 
-  async jrDbConnect() {
-    const connectionsArray = await Promise.all([this.readerDb.jrDbConnect(),
-      this.faviconService.jrDbConnect()]);
+  async dbConnect() {
+    const connectionsArray = await Promise.all([this.readerDb.dbConnect(),
+      this.faviconService.dbConnect()]);
     this.readerConn = connectionsArray[0];
 
     this.feedStore.conn = this.readerConn;

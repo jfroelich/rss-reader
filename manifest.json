@@ -13,9 +13,9 @@
   "background": {
     "persistent": false,
     "scripts": [
+      "/src/alarms.js",
       "/src/archive-entries.js",
-      "/src/background.js",
-      "/src/boilerplate.js",
+      "/src/bp.js",
       "/src/cli.js",
       "/src/imagedims.js",
       "/src/domscrub.js",

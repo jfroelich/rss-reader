@@ -11,7 +11,7 @@ async function testFaviconLookup(urlString) {
   fs.log = console;
 
   try {
-    await fs.jrDbConnect();
+    await fs.dbConnect();
     console.debug(await fs.lookup(url));
   } catch(error) {
     console.warn(error);
@@ -24,7 +24,7 @@ async function testCompactFavicons() {
   const fc = new FaviconCache();
 
   try {
-    await fc.jrDbConnect();
+    await fc.dbConnect();
     const numDeleted = await fc.compact();
     console.log('Deleted %d entries', numDeleted);
   } catch(error) {

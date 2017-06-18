@@ -2,10 +2,10 @@
 
 'use strict';
 
-const ENTRY_UNREAD = 0;
-const ENTRY_READ = 1;
-const ENTRY_UNARCHIVED = 0;
-const ENTRY_ARCHIVED = 1;
+const ENTRY_UNREAD_STATE = 0;
+const ENTRY_READ_STATE = 1;
+const ENTRY_UNARCHIVED_STATE = 0;
+const ENTRY_ARCHIVED_STATE = 1;
 
 // Get the last url in an entry's internal url list
 function jrGetEntryURLString(entryObject) {
