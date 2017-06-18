@@ -75,4 +75,4 @@ async function alarmsOnLoad(event) {
   }
 }
 
-document.addEventListener('DOMContentLoaded', alarmsOnLoad);
+document.addEventListener('DOMContentLoaded', alarmsOnLoad, {'once': true});

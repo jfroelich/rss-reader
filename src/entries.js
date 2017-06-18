@@ -2,7 +2,7 @@
 
 'use strict'
 
-async function jrEntryMarkRead(entryStore, id) {
+async function jrEntryMarkRead(conn, id) {
   if(!Number.isInteger(id) || id < 1)
     throw new TypeError(`Invalid entry id ${id}`);
   const entry = await entryStore.findById(id);
@@ -14,7 +14,7 @@ async function jrEntryMarkRead(entryStore, id) {
   entry.dateRead = new Date();
   entry.dateUpdated = new Date();
   await entryStore.put(entry);
-  await jrExtensionUpdateBadge(this.entryStore);
+  await updateBadgeText(this.entryStore);
 }
 
 

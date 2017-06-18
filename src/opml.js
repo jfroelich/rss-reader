@@ -98,7 +98,7 @@ function jrOPMLCreateOutlineElementFromFeed(documentObject, feedObject) {
   }
 
   // This url corresponds to the fetchable location of the feed itself
-  const feedURLString = jrFeedGetURL(feedObject);
+  const feedURLString = feedGetURLString(feedObject);
   outlineElement.setAttribute('xmlUrl', feedURLString);
 
   // Set both title and text, if available

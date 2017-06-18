@@ -5,29 +5,26 @@
 
 // Updates the number that appears on the icon in Chrome's toolbar
 // TODO: change all callers to pass in conn instead of deprecated entryStore
-async function jrExtensionUpdateBadge(conn) {
+async function updateBadgeText(conn) {
   const count = await dbCountUnreadEntries(conn);
   const text = count > 999 ? '1k+' : '' + count;
   chrome.browserAction.setBadgeText({'text': text});
 }
 
 // The response to clicking on the button in Chrome's toolbar
-async function jrExtensionBadgeOnClick(event) {
+async function badgeOnClick(event) {
   try {
-    await jrExtensionShowSlideshow();
+    await showSlideshowTab();
   } catch(error) {
     console.error(error);
   }
 }
 
-chrome.browserAction.onClicked.addListener(jrExtensionBadgeOnClick);
-
-
-async function jrExtensionShowSlideshow() {
+async function showSlideshowTab() {
 
   // First try switching back to the extension's tab if open
   const viewURLString = chrome.extension.getURL('slideshow.html');
-  let tabArray = await jrExtensionFindTabsByURL(viewURLString);
+  let tabArray = await findTabsByURL(viewURLString);
   if(tabArray && tabArray.length) {
     chrome.tabs.update(tabArray[0].id, {'active': true});
     return;
@@ -36,7 +33,7 @@ async function jrExtensionShowSlideshow() {
   // Next try replacing the new tab if open. If multiple new tab tabs are open
   // then the first is used.
   const newtabURLString = 'chrome://newtab/';
-  tabArray = await jrExtensionFindTabsByURL(newtabURLString);
+  tabArray = await findTabsByURL(newtabURLString);
   if(tabArray && tabArray.length) {
     chrome.tabs.update(tabArray[0].id, {'active': true, 'url': viewURLString});
     return;
@@ -48,11 +45,11 @@ async function jrExtensionShowSlideshow() {
 
 // Resolves with an array of tabs. Requires 'tabs' permission
 // @param url {String} the url of the tab searched for
-function jrExtensionFindTabsByURL(url) {
+function findTabsByURL(url) {
   return new Promise((resolve) => chrome.tabs.query({'url': url}, resolve));
 }
 
-async function jrExtensionOnInstalled(event) {
+async function extensionOnInstalled(event) {
   console.log('Received install event');
 
   // Create or upgrade the database by connecting to it
@@ -63,7 +60,7 @@ async function jrExtensionOnInstalled(event) {
 
     // Initialize the app badge
     const entryStore = new EntryStore(conn);
-    await jrExtensionUpdateBadge(entryStore);
+    await updateBadgeText(entryStore);
   } catch(error) {
     console.debug(error);
   } finally {
@@ -73,42 +70,42 @@ async function jrExtensionOnInstalled(event) {
 };
 
 // TODO: rather than bind every page load, only bind once
-chrome.runtime.onInstalled.addListener(jrExtensionOnInstalled);
 
 // Shows a simple desktop notification with the given title and message.
 // Message and title are interpreted as plain text.
 // To show in notification center on mac, toggle flag
 // chrome://flags/#enable-native-notifications
-function jrExtensionShowNotification(title, message, iconURLString) {
+function showNotification(titleString, messageString, iconURLString) {
   if(typeof Notification === 'undefined') {
     console.warn('Notification API not supported');
     return;
   }
 
   if(!('SHOW_NOTIFICATIONS' in localStorage)) {
-    console.warn('Notifications disabled in settings', title);
+    console.warn('Notifications disabled in settings', titleString);
     return;
   }
 
   if(Notification.permission !== 'granted') {
-    console.warn('Notification permission not granted', title);
+    console.warn('Notification permission not granted', titleString);
   }
 
-  const defaultIconURLString = chrome.extension.getURL(
-    '/images/rss_icon_trans.gif');
-  const details = {};
-  details.body = message || '';
-  details.icon = iconURLString || defaultIconURLString;
+  const defaultIconURLString =
+    chrome.extension.getURL('/images/rss_icon_trans.gif');
+
+  const detailsObject = {};
+  detailsObject.body = messageString || '';
+  detailsObject.icon = iconURLString || defaultIconURLString;
 
   // Instantiation also shows
-  const notification = new Notification(title, details);
+  const notification = new Notification(titleString, detailsObject);
 
   // Attach a click listener that opens the extension
   // Note: on Mac Chrome 55, double click triggers click event
-  notification.addEventListener('click', jrExtensionNotificationOnClick);
+  notification.addEventListener('click', notificationOnClick);
 }
 
-async function jrExtensionNotificationOnClick(event) {
+async function notificationOnClick(event) {
   // Ensure the browser is open to avoid mac chrome crash in 55
   try {
     const winObject = window.open();
@@ -118,7 +115,7 @@ async function jrExtensionNotificationOnClick(event) {
   }
 
   try {
-    await jrExtensionShowSlideshow();
+    await showSlideshowTab();
   } catch(error) {
     console.error(error);
   }

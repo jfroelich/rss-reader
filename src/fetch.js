@@ -2,7 +2,7 @@
 
 'use strict';
 
-async function jrFetchFeed(urlString, timeoutMillis) {
+async function fetchFeed(urlString, timeoutMillis) {
 
   // For validating the response mime type
   const acceptedTypesArray = [

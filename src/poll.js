@@ -121,7 +121,7 @@ function jrPollIsFeedNotRecent(logObject, feedObject) {
     millisElapsedSinceLastPoll < jrPollRecencyPeriodMillis;
 
   if(logObject && wasPolledRecently) {
-    logObject.debug('Feed polled too recently', jrFeedGetURL(feedObject));
+    logObject.debug('Feed polled too recently', feedGetURLString(feedObject));
   }
 
   return !wasPolledRecently;
@@ -204,7 +204,7 @@ async function jrPollFeeds(logObject, options = jrDefaultPollOptions) {
 
     if(numAdded) {
       const entryStore = new EntryStore(jrPollReaderConn);
-      await jrExtensionUpdateBadge(entryStore);
+      await updateBadgeText(entryStore);
     }
 
   } finally {
@@ -215,7 +215,7 @@ async function jrPollFeeds(logObject, options = jrDefaultPollOptions) {
   }
 
   if(numAdded) {
-    jrExtensionShowNotification('Updated articles',
+    showNotification('Updated articles',
       `Added ${numAdded} new articles`);
   }
 
@@ -310,10 +310,10 @@ async function jrPollProcessFeed(localFeed) {
   let numAdded = 0;
 
   // TODO: use clearer name? is this string or object?
-  const url = jrFeedGetURL(localFeed);
+  const url = feedGetURLString(localFeed);
 
   // Explicit assignment due to strange destructuring rename behavior
-  const {feed, entries} = await jrFetchFeed(url,
+  const {feed, entries} = await fetchFeed(url,
     jrPollFetchFeedTimeoutMillis);
   const remoteFeed = feed;
   let remoteEntries = entries;

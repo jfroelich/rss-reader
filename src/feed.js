@@ -2,7 +2,7 @@
 
 'use strict';
 
-function jrFeedGetURL(feed) {
+function feedGetURLString(feed) {
   if(!feed.urls.length)
     throw new TypeError();
   return feed.urls[feed.urls.length - 1];
@@ -41,7 +41,7 @@ function jrFeedSanitize(inputFeed) {
     title = jrUtilsReplaceHTML(title, '');
     title = title.replace(/\s+/, ' ');
     const title_max_len = 1024;
-    title = jrUtilsTruncateHTML(title, title_max_len, '');
+    title = truncateHTML(title, title_max_len, '');
     feed.title = title;
   }
 
@@ -52,7 +52,7 @@ function jrFeedSanitize(inputFeed) {
     description = description.replace(/\s+/, ' ');
     const before_len = description.length;
     const desc_max_len = 1024 * 10;
-    description = jrUtilsTruncateHTML(description, desc_max_len, '');
+    description = truncateHTML(description, desc_max_len, '');
     if(before_len > description.length) {
       console.warn('Truncated description', description);
     }
@@ -67,7 +67,7 @@ function jrFeedSanitize(inputFeed) {
 // the new feed take precedence, except for URLs, which are merged to generate
 // a distinct ordered set of oldest to newest url. Impure because of copying
 // by reference.
-function jrFeedMerge(oldFeed, newFeed) {
+function feedMerge(oldFeed, newFeed) {
   const merged = Object.assign({}, oldFeed, newFeed);
   merged.urls = [...oldFeed.urls];
   for(let url of newFeed.urls) {

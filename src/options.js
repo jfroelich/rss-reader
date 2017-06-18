@@ -225,7 +225,7 @@ function jrOptionsAppendFeed(feedObject, maintainOrder) {
 
   const titleElement = document.createElement('span');
   let feedTitleString = feedObject.title || 'Untitled';
-  feedTitleString = jrUtilsTruncateHTML(feedTitleString, 300);
+  feedTitleString = truncateHTML(feedTitleString, 300);
   titleElement.textContent = feedTitleString;
   itemElement.appendChild(titleElement);
   const feedListElement = document.getElementById('feedlist');
@@ -320,7 +320,7 @@ async function jrOptionsStartSubscription(urlObject) {
   jrOptionsUpdateFeedCount();
 
   // Show a brief message that the subscription was successful
-  const feedURLString = jrFeedGetURL(subcribedFeedObject);
+  const feedURLString = feedGetURLString(subcribedFeedObject);
   jrOptionsAppendSubMonitorMessage(`Subscribed to ${feedURLString}`);
 
   // Hide the sub monitor
@@ -398,7 +398,7 @@ async function jrOptionsFeedListItemOnClick(event) {
   }
 
   const feedURLElement = document.getElementById('details-feed-url');
-  feedURLElement.textContent = jrFeedGetURL(feedObject);
+  feedURLElement.textContent = feedGetURLString(feedObject);
   const feedLinkElement = document.getElementById('details-feed-link');
   feedLinkElement.textContent = feedObject.link || '';
   const unsubscribeButton = document.getElementById('details-unsubscribe');
@@ -520,7 +520,7 @@ async function jrOptionsSubscribeFormOnSubmit(event) {
     if(title) {
       title = jrUtilsFilterControlChars(title);
       title = jrUtilsReplaceHTML(title, '');
-      title = jrUtilsTruncateHTML(title, entryTitleMaxLength);
+      title = truncateHTML(title, entryTitleMaxLength);
       entry.title = title;
     }
   });
@@ -533,7 +533,7 @@ async function jrOptionsSubscribeFormOnSubmit(event) {
     if(snippet) {
       snippet = jrUtilsFilterControlChars(snippet);
       snippet = snippet.replace(/<br\s*>/gi, ' ');
-      snippet = jrUtilsTruncateHTML(
+      snippet = truncateHTML(
         snippet, entrySnippetMaxLength, replacement);
       entry.contentSnippet = snippet;
     }
@@ -960,7 +960,7 @@ function jrOptionsBodyHeightInputOnInput(event) {
 function jrOptionsOnDOMContentLoaded(event) {
 
   // Init CSS styles that affect the display preview area
-  jr.style.onLoad();
+  styleOnLoad();
 
   // Attach click handlers to feeds in the feed list on the left.
   // TODO: it would probably be easier and more efficient to attach a single

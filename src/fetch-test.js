@@ -3,7 +3,7 @@
 'use strict';
 
 async function jrTestFetchFeed(url, timeout) {
-  const result = await jrFetchFeed(url, timeout);
+  const result = await fetchFeed(url, timeout);
   console.log(result);
 }
 

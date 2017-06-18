@@ -68,7 +68,7 @@ function jrFeedIconGetLookupURL(feed) {
   }
 
   // If the link is missing or invalid then use the origin
-  const feedURL = jrFeedGetURL(feed);
+  const feedURL = feedGetURLString(feed);
   const origin = new URL(feedURL).origin;
   return new URL(origin);
 }

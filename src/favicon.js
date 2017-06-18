@@ -34,10 +34,7 @@ const jrFaviconFetchImageTimeout = 100;
 async function jrFaviconLookup(conn, urlObject) {
   console.log('LOOKUP', urlObject.href);
 
-  // TODO: this should probably be renamed to just 'urls' as there is no
-  // need for the extra qualification. Need to double check this function
-  // does not use 'urls' elsewhere first (it does)
-  const uniqURLs = [urlObject.href];
+  const uniqueURLsArray = [urlObject.href];
   const currentDate = new Date();
 
   // Lookup the url in the cache
@@ -64,8 +61,9 @@ async function jrFaviconLookup(conn, urlObject) {
   }
 
   // If redirected, add the response url to unique urls
-  if(redirected)
-    uniqURLs.push(responseURL.href);
+  if(redirected) {
+    uniqueURLsArray.push(responseURL.href);
+  }
 
   // If the fetch failed but we have an expired entry, remove it
   if(entry && !doc) {
@@ -84,8 +82,8 @@ async function jrFaviconLookup(conn, urlObject) {
 
     // TODO: these 3 statements should be a call to putAll
     const tx = conn.transaction('favicon-cache', 'readwrite');
-    const proms = uniqURLs.map((urlObject) => jrFaviconPutEntry(tx, urlObject,
-      docIconURL.href));
+    const proms = uniqueURLsArray.map((urlObject) =>
+      jrFaviconPutEntry(tx, urlObject, docIconURL.href));
     await Promise.all(proms);
     return docIconURL.href;
   }
@@ -104,8 +102,8 @@ async function jrFaviconLookup(conn, urlObject) {
   // If the origin is different from the request url and the redirect url,
   // then check the cache for the origin
   let originEntry;
-  if(!uniqURLs.includes(urlObject.origin)) {
-    uniqURLs.push(urlObject.origin);
+  if(!uniqueURLsArray.includes(urlObject.origin)) {
+    uniqueURLsArray.push(urlObject.origin);
     originEntry = await jrFaviconFindEntry(urlObject.origin);
   }
 
@@ -143,8 +141,8 @@ async function jrFaviconLookup(conn, urlObject) {
   // If fetched and size is in range, then resolve to it
   if(imageResponseURL && sizeInRange) {
     const tx = conn.transaction('favicon-cache', 'readwrite');
-    const proms = uniqURLs.map((urlObject) => jrFaviconPutEntry(tx, urlObject,
-      imageResponseURL));
+    const proms = uniqueURLsArray.map((urlObject) =>
+      jrFaviconPutEntry(tx, urlObject, imageResponseURL));
     await Promise.all(proms);
     return imageResponseURL;
   }

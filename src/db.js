@@ -141,12 +141,12 @@ function dbPutFeed(conn, feed) {
 
 // Returns true if a feed exists in the database with the given url
 // @param url {String}
-function dbContainsFeedURL(conn, url) {
+function dbContainsFeedURL(conn, urlString) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
     const index = store.index('urls');
-    const request = index.getKey(url);
+    const request = index.getKey(urlString);
     request.onsuccess = () => resolve(!!request.result);
     request.onerror = () => reject(request.error);
   });
@@ -165,10 +165,7 @@ function dbFindFeedById(conn, id) {
   });
 }
 
-
-// TODO: tx can't be exposed, this is a leaky abstraction? Maybe there is not
-// even that much of a benefit to reusing id, I could just create a tx here
-function dbGetEntriesByFeedId(tx, feedId) {
+function dbGetEntryIdsByFeedId(tx, feedId) {
   return new Promise((resolve, reject) => {
     const store = tx.objectStore('entry');
     const index = store.index('feed');

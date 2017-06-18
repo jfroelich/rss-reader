@@ -36,7 +36,7 @@ function jrUtilsReplaceHTML(inputString, replacementString) {
 // character entity codes. The extension string should be decoded, meaning
 // that it should not contain character entries.
 // NOTE: Using var due to deopt warning "unsupported phi use of const", c55
-function jrUtilsTruncateHTML(inputString, position, extensionString) {
+function truncateHTML(inputString, position, extensionString) {
 
   if(!Number.isInteger(position) || position < 0) {
     throw new TypeError();
