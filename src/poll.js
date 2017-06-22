@@ -81,7 +81,7 @@ const jrPollBoilerplateFilter = new BoilerplateFilter();
 
 
 async function jrPollCreateAlarm(periodInMinutes) {
-  const alarm = await jrUtilsGetAlarm('poll');
+  const alarm = await utils.getAlarm('poll');
   if(alarm)
     return;
   chrome.alarms.create('poll', {'periodInMinutes': periodInMinutes});
@@ -331,7 +331,7 @@ async function jrPollProcessFeed(localFeed) {
 
   const mergedFeed = jrFeedMerge(localFeed, remoteFeed);
   let storableFeed = jrFeedSanitize(mergedFeed);
-  storableFeed = jrUtilsFilterEmptyProps(storableFeed);
+  storableFeed = utils.filterEmptyProperties(storableFeed);
 
   remoteEntries = remoteEntries.filter(jrPollEntryHasURL);
   remoteEntries = remoteEntries.filter(jrPollEntryURLIsValid);
@@ -516,7 +516,7 @@ function jrPollShouldExcludeEntry(entryObject) {
   // these tests together, as an abstraction, is even warranted
 
   const pathname = urlObject.pathname;
-  if(jrUtilsSniffNonHTMLPath(pathname)) {
+  if(utils.sniffNonHTMLPath(pathname)) {
     return true;
   }
 

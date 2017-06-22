@@ -37,22 +37,22 @@ function jrFeedSanitize(inputFeed) {
 
   if(feed.title) {
     let title = feed.title;
-    title = jrUtilsFilterControlChars(title);
-    title = jrUtilsReplaceHTML(title, '');
+    title = utils.filterControlCharacters(title);
+    title = utils.replaceHTML(title, '');
     title = title.replace(/\s+/, ' ');
     const title_max_len = 1024;
-    title = truncateHTML(title, title_max_len, '');
+    title = utils.truncateHTML(title, title_max_len, '');
     feed.title = title;
   }
 
   if(feed.description) {
     let description = feed.description;
-    description = jrUtilsFilterControlChars(description);
-    description = jrUtilsReplaceHTML(description, '');
+    description = utils.filterControlCharacters(description);
+    description = utils.replaceHTML(description, '');
     description = description.replace(/\s+/, ' ');
     const before_len = description.length;
     const desc_max_len = 1024 * 10;
-    description = truncateHTML(description, desc_max_len, '');
+    description = utils.truncateHTML(description, desc_max_len, '');
     if(before_len > description.length) {
       console.warn('Truncated description', description);
     }

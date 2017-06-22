@@ -1,4 +1,4 @@
-Copyright 2016 Josh Froelich. All rights reserved.
+Copyright 2017 Josh Froelich. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -22,3 +22,9 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
 ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Font license information
+
+* Clearly Different is released under the SIL Open Font License (OFL) 1.1.
+* Essays1743 is released under the OFL.
+* Felt Tip is a free font from fontpalace.com

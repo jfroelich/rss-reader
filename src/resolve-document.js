@@ -39,7 +39,7 @@ function jrResolveDocumentBuildSelectorPart(key) {
 
 function jrResolveDocument(documentObject, baseURLObject) {
 
-  if(!jrUtilsIsURLObject(baseURLObject)) {
+  if(!utils.isURLObject(baseURLObject)) {
     throw new TypeError('baseURLObject should be of type URL');
   }
 
@@ -176,7 +176,7 @@ function jrResolveDocumentSerializeSrcset(descriptorArray) {
 // @param baseURLObject {URL}
 function jrResolveDocumentResolveURL(urlString, baseURLObject) {
 
-  if(!jrUtilsIsURLObject(baseURLObject)) {
+  if(!utils.isURLObject(baseURLObject)) {
     throw new TypeError('baseURLObject must be of type URL');
   }
 

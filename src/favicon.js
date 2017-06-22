@@ -160,7 +160,7 @@ async function jrFaviconLookup(conn, urlObject) {
 }
 
 async jrFaviconCreateAlarm(periodInMinutes) {
-  const alarm = await jrUtilsGetAlarm('compact-favicons');
+  const alarm = await utils.getAlarm('compact-favicons');
   if(alarm)
     return;
   console.debug('Creating alarm compact-favicons');

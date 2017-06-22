@@ -7,23 +7,20 @@
 // TODO: lookup favicons after displaying search results, not before
 // TODO: listen for poll events, feed information may have updated
 // TODO: add back button behavior for switching sections (popstate stuff)
+// TODO: remove unreadable fonts
 
-// TODO: move font license comments to license.md
-// TODO: remove support for some of these fonts that are not very readable
-const jrOptionsFonts = [
+
+const optpg = {};
+
+optpg.fontsArray = [
   'ArchivoNarrow-Regular',
   'Arial, sans-serif',
   'Calibri',
   'Calibri Light',
   'Cambria',
   'CartoGothicStd',
-  //http://jaydorsey.com/free-traffic-font/
-  //Clearly Different is released under the SIL Open Font License (OFL) 1.1.
-  //Based on http://mutcd.fhwa.dot.gov/pdfs/clearviewspacingia5.pdf
   'Clearly Different',
-  /* By John Stracke, Released under the OFL. Downloaded from his website */
   'Essays1743',
-  // Downloaded free font from fontpalace.com, unknown author
   'FeltTip',
   'Georgia',
   'Montserrat',
@@ -34,11 +31,10 @@ const jrOptionsFonts = [
   'PathwayGothicOne',
   'PlayfairDisplaySC',
   'Raleway, sans-serif',
-  // http://www.google.com/design/spec/resources/roboto-font.html
   'Roboto Regular'
 ];
 
-const jrOptionsBgImagePaths = [
+optpg.bgImagePathsArray = [
   '/images/bgfons-paper_texture318.jpg',
   '/images/CCXXXXXXI_by_aqueous.jpg',
   '/images/paper-backgrounds-vintage-white.jpg',
@@ -60,58 +56,53 @@ const jrOptionsBgImagePaths = [
   '/images/thomas-zucx-noise-lines.png'
 ];
 
+optpg.settingsChannel = new BroadcastChannel('settings');
+optpg.currentMenuItem = null;
+optpg.currentSectionElement = null;
 
-const jrOptionsSettingsChannel = new BroadcastChannel('settings');
-let jrOptionsCurrentMenuItem = null;
-let jrOptionsCurrentSectionElement = null;
-
-function jrOptionsShowErrorMessage(msg, shouldFadeIn) {
-  jrOptionsHideErrorMessage();
+optpg.showErrorMessage = function(messageString, shouldFadeIn) {
+  optpg.hideErrorMessage();
 
   const errorElement = document.createElement('div');
   errorElement.setAttribute('id','options_error_message');
 
   const messageElement = document.createElement('span');
-  messageElement.textContent = msg;
+  messageElement.textContent = messageString;
   errorElement.appendChild(messageElement);
 
   const dismissErrorButton = document.createElement('button');
-  dismissErrorButton.setAttribute('id', 'options_dismiss_error_button');
+  dismissErrorButton.setAttribute('id', 'dismiss-error-button');
   dismissErrorButton.textContent = 'Dismiss';
-  dismissErrorButton.onclick = jrOptionsHideErrorMessage;
+  dismissErrorButton.onclick = optpg.hideErrorMessage;
   errorElement.appendChild(dismissErrorButton);
 
   if(shouldFadeIn) {
     errorElement.style.opacity = '0';
     document.body.appendChild(errorElement);
-    jrUtilsFadeElement(container, 1,0);
+    utils.fadeElement(container, 1,0);
   } else {
     errorElement.style.opacity = '1';
-    jrUtilsShowElement(errorElement);
+    utils.showElement(errorElement);
     document.body.appendChild(errorElement);
   }
-}
+};
 
-
-
-// TODO: maybe make an OptionsPageErrorMessage class and have this be
-// a member function.
-function jrOptionsHideErrorMessage() {
+optpg.hideErrorMessage = function() {
   const errorMessageElement = document.getElementById('options_error_message');
   if(errorMessageElement) {
     const dismissErrorButton = document.getElementById(
-      'options_dismiss_error_button');
+      'dismiss-error-button');
     if(dismissErrorButton) {
       dismissErrorButton.removeEventListener('click',
-      jrOptionsHideErrorMessage);
+      optpg.hideErrorMessage);
     }
 
     errorMessageElement.remove();
   }
-}
+};
 
 // TODO: instead of removing and re-adding, reset and reuse
-function jrOptionsShowSubMonitor() {
+optpg.showSubscriptionMonitor = function() {
   let monitorElement = document.getElementById('submon');
   if(monitorElement) {
     monitorElement.remove();
@@ -125,9 +116,9 @@ function jrOptionsShowSubMonitor() {
   const progressElement = document.createElement('progress');
   progressElement.textContent = 'Working...';
   monitor.appendChild(progressElement);
-}
+};
 
-function jrOptionsAppendSubMonitorMessage(messageString) {
+optpg.appendSubscriptionMonitorMessage = function(messageString) {
   const monitorElement = document.getElementById('submon');
   if(!monitorElement) {
     throw new Error('Element with id "submon" not found');
@@ -136,50 +127,50 @@ function jrOptionsAppendSubMonitorMessage(messageString) {
   const messageElement = document.createElement('p');
   messageElement.textContent = messageString;
   monitorElement.appendChild(messageElement);
-}
+};
 
-function jrOptionsShowSection(menuItemElement) {
+optpg.showSection = function(menuItemElement) {
   if(!menuItemElement) {
     throw new TypeError('Missing parameter menuItemElement');
   }
 
   // Do nothing if not switching sections
-  if(jrOptionsCurrentMenuItem === menuItemElement) {
+  if(optpg.currentMenuItem === menuItemElement) {
     return;
   }
 
   // Make the previous item appear de-selected
-  if(jrOptionsCurrentMenuItem) {
-    jrUtilsRemoveElementClass(jrOptionsCurrentMenuItem,
+  if(optpg.currentMenuItem) {
+    utils.removeElementClass(optpg.currentMenuItem,
       'navigation-item-selected');
   }
 
   // Hide the old section
-  if(jrOptionsCurrentSectionElement) {
-    jrUtilsHideElement(jrOptionsCurrentSectionElement);
+  if(optpg.currentSectionElement) {
+    utils.hideElement(optpg.currentSectionElement);
   }
 
   // Make the new item appear selected
-  jrUtilsAddElementClass(menuItemElement, 'navigation-item-selected');
+  utils.addElementClass(menuItemElement, 'navigation-item-selected');
 
   // Show the new section
   const sectionIdString = menuItemElement.getAttribute('section');
   const sectionElement = document.getElementById(sectionIdString);
   if(sectionElement) {
-    jrUtilsShowElement(sectionElement);
+    utils.showElement(sectionElement);
   }
 
   // Update the global tracking vars
-  jrOptionsCurrentMenuItem = menuItemElement;
-  jrOptionsCurrentSectionElement = sectionElement;
-}
+  optpg.currentMenuItem = menuItemElement;
+  optpg.currentSectionElement = sectionElement;
+};
 
 // TODO: also return the count so that caller does not need to potentially
 // do it again. Or, require count to be passed in and change this to just
 // options_set_feed_count (and create options_get_feed_count)
 // Then, also consider if options_get_feed_count should be using the UI as
 // its source of truth or should instead be using the database.
-function jrOptionsUpdateFeedCount() {
+optpg.updateFeedCount = function() {
   const feedListElement = document.getElementById('feedlist');
   const feedCountElement = document.getElementById('subscription-count');
   const count = feedListElement.childElementCount;
@@ -189,10 +180,7 @@ function jrOptionsUpdateFeedCount() {
   } else {
     feedCountElement.textContent = ` (${count})`;
   }
-}
-
-
-
+};
 
 // TODO: this approach doesn't really work, I need to independently sort
 // on load because it should be case-insensitive.
@@ -200,7 +188,7 @@ function jrOptionsUpdateFeedCount() {
 // member function of some type of feed menu object
 // TODO: this should always use inserted sort, that should be invariant, and
 // so I shouldn't accept a parameter
-function jrOptionsAppendFeed(feedObject, maintainOrder) {
+optpg.appendFeed = function(feedObject, maintainOrder) {
   const itemElement = document.createElement('li');
   itemElement.setAttribute('sort-key', feedObject.title);
 
@@ -211,7 +199,7 @@ function jrOptionsAppendFeed(feedObject, maintainOrder) {
   if(feedObject.description) {
     itemElement.setAttribute('title', feedObject.description);
   }
-  itemElement.onclick = jrOptionsFeedListItemOnClick;
+  itemElement.onclick = optpg.feedListsItemOnClick;
 
   if(feedObject.faviconURLString) {
     const faviconElement = document.createElement('img');
@@ -225,7 +213,7 @@ function jrOptionsAppendFeed(feedObject, maintainOrder) {
 
   const titleElement = document.createElement('span');
   let feedTitleString = feedObject.title || 'Untitled';
-  feedTitleString = truncateHTML(feedTitleString, 300);
+  feedTitleString = utils.truncateHTML(feedTitleString, 300);
   titleElement.textContent = feedTitleString;
   itemElement.appendChild(titleElement);
   const feedListElement = document.getElementById('feedlist');
@@ -250,46 +238,47 @@ function jrOptionsAppendFeed(feedObject, maintainOrder) {
   if(!didInsertElement) {
     feedListElement.appendChild(itemElement);
   }
-
-}
-
+};
 
 // TODO: deprecate
-function jrOptionsShowSubPreview(urlObject) {
-  jrOptionsStartSubscription(urlObject);
-}
+optpg.showSubscriptionPreview = function(urlObject) {
+  optpg.startSubscription(urlObject);
+};
 
-function jrOptionsHideSubPreview() {
+optpg.hideSubscriptionPreview = function() {
   const previewElement = document.getElementById('subscription-preview');
-  jrUtilsHideElement(previewElement);
+  utils.hideElement(previewElement);
   const resultsListElement = document.getElementById(
     'subscription-preview-entries');
+
   while(resultsListElement.firstChild) {
     resultsListElement.firstChild.remove();
   }
-}
+};
 
 // TODO: if subscribing from a discover search result, I already know some
 // of the feed's other properties, such as its title and link. I should be
-// passing those along to jrOptionsStartSubscription and setting them here. Or
-// jrOptionsStartSubscription should expect a feed object as a parameter.
-async function jrOptionsStartSubscription(urlObject) {
+// passing those along to optpg.startSubscription and setting them here. Or
+// optpg.startSubscription should expect a feed object as a parameter.
+optpg.startSubscription = async function(urlObject) {
 
   // TODO: not really sure if this validation is correct to do, my thinking is
   // that it is overly defensive
-  if(!jrUtilsIsURLObject(urlObject)) {
+  if(!utils.isURLObject(urlObject)) {
     throw new TypeError('Invalid urlObject parameter');
   }
 
   // TODO: remove this once preview is deprecated more fully
-  jrOptionsHideSubPreview();
+  optpg.hideSubscriptionPreview();
 
 
-  jrOptionsShowSubMonitor();
-  jrOptionsAppendSubMonitorMessage(`Subscribing to ${urlObject.href}`);
+  optpg.showSubscriptionMonitor();
+  optpg.appendSubscriptionMonitorMessage(`Subscribing to ${urlObject.href}`);
 
   const feedObject = {};
   jrAddFeedURL(feedObject, urlObject.href);
+
+  // TODO: subscription service object is deprecated
 
   const subService = new SubscriptionService();
   subService.verbose = true;
@@ -303,7 +292,6 @@ async function jrOptionsStartSubscription(urlObject) {
     subService.close();
   }
 
-
   if(!subcribedFeedObject) {
     // TODO: is it correct to return here? shouldn't this be visible error or
     // something?
@@ -311,31 +299,29 @@ async function jrOptionsStartSubscription(urlObject) {
   }
 
   // TODO: what is the second parameter? give it an express name here
-  jrOptionsAppendFeed(subcribedFeedObject, true);
+  optpg.appendFeed(subcribedFeedObject, true);
 
   // TODO: rather than expressly updating the feed count here, this should
   // happen as a result of some update event that some listener reacts to
   // That event should probably be a BroadcastChannel message that is fired
   // by subService.subscribe
-  jrOptionsUpdateFeedCount();
+  optpg.updateFeedCount();
 
   // Show a brief message that the subscription was successful
   const feedURLString = feedGetURLString(subcribedFeedObject);
-  jrOptionsAppendSubMonitorMessage(`Subscribed to ${feedURLString}`);
+  optpg.appendSubscriptionMonitorMessage(`Subscribed to ${feedURLString}`);
 
   // Hide the sub monitor
   // TODO: this should be a call to a helper function
   const monitorElement = document.getElementById('submon');
   // TODO: the other parameters should be named expressly
-  await jrUtilsFadeElement(monitorElement, 2, 1);
+  await utils.fadeElement(monitorElement, 2, 1);
   monitorElement.remove();
 
   // After subscribing switch back to the feed list
   const subsSectionElement = document.getElementById('subs-list-section');
-  jrOptionsShowSection(subsSectionElement);
-}
-
-
+  optpg.showSection(subsSectionElement);
+};
 
 
 
@@ -343,20 +329,17 @@ async function jrOptionsStartSubscription(urlObject) {
 // TODO: show dateLastModified, datePublished, dateCreated, dateUpdated
 // TODO: react to errors
 // TODO: should this even catch?
-async function jrOptionsFeedListItemOnClick(event) {
+// TODO: this function is big, maybe add helpers
+optpg.feedListsItemOnClick = async function(event) {
 
   // Use current target to capture the element with the feed attribute and
   // not a different element
   const feedListItemElement = event.currentTarget;
 
   const feedIdString = feedListItemElement.getAttribute('feed');
-  const parseIntBase = 10;
-  const feedIdNumber = parseInt(feedIdString, parseIntBase);
+  const feedIdNumber = parseInt(feedIdString, 10);
 
-  if(feedIdNumber < 1) {
-    throw new TypeError('Invalid feed id "%s"', feedIdNumber);
-  }
-
+  // TODO: these are deprecated
   const readerDb = new ReaderDb();
   const feedStore = new FeedStore();
 
@@ -405,12 +388,12 @@ async function jrOptionsFeedListItemOnClick(event) {
   unsubscribeButton.value = '' + feedObject.id;
 
   const detailsElement = document.getElementById('mi-feed-details');
-  jrOptionsShowSection(detailsElement);
+  optpg.showSection(detailsElement);
 
   // Scroll to the top to ensure that if a long feed list was shown and
   // the window was scrolled down that the details are immediately visible
   window.scrollTo(0,0);
-}
+};
 
 
 // TODO: this function is too large
@@ -419,7 +402,7 @@ async function jrOptionsFeedListItemOnClick(event) {
 // task, try and replace the default icon with the proper icon.
 // TODO: Suppress resubmits if last query was a search and the
 // query did not change?
-async function jrOptionsSubscribeFormOnSubmit(event) {
+optpg.subscribeFormOnSubmit = async function(event) {
   // Prevent normal form submission behavior
   event.preventDefault();
 
@@ -436,13 +419,13 @@ async function jrOptionsSubscribeFormOnSubmit(event) {
 
   // Do nothing if searching in progress
   const progressElement = document.getElementById('discover-in-progress');
-  if(jrUtilsIsElementVisible(progressElement)) {
+  if(utils.isElementVisible(progressElement)) {
     return false;
   }
 
   // Do nothing if subscription in progress
   const monitorElement = document.getElementById('submon');
-  if(monitorElement && jrUtilsIsElementVisible(monitorElement)) {
+  if(monitorElement && utils.isElementVisible(monitorElement)) {
     return false;
   }
 
@@ -453,7 +436,7 @@ async function jrOptionsSubscribeFormOnSubmit(event) {
   // Ensure the no-results-found message, if present from a prior search,
   // is hidden. This should never happen because we exit early if it is still
   // visible above.
-  jrUtilsHideElement(progressElement);
+  utils.hideElement(progressElement);
 
   let urlObject = null;
   try {
@@ -465,12 +448,12 @@ async function jrOptionsSubscribeFormOnSubmit(event) {
   if(urlObject) {
     queryElement.value = '';
     // TODO: this should go straight to sub, not call sub preview
-    jrOptionsShowSubPreview(urlObject);
+    optpg.showSubscriptionPreview(urlObject);
     return false;
   }
 
   // Search for feeds
-  jrUtilsShowElement(progressElement);
+  utils.showElement(progressElement);
 
   let iconURL, linkURL, entryArray, query;
   const searchTimeout = 5000;
@@ -481,7 +464,7 @@ async function jrOptionsSubscribeFormOnSubmit(event) {
     console.debug(error);
     return false;
   } finally {
-    jrUtilsHideElement(progressElement);
+    utils.hideElement(progressElement);
   }
 
   // Filter entries without urls
@@ -508,8 +491,8 @@ async function jrOptionsSubscribeFormOnSubmit(event) {
 
   // If, after filtering, there are no more entries, exit early
   if(!entryArray.length) {
-    jrUtilsHideElement(resultsListElement);
-    jrUtilsShowElement(noResultsElement);
+    utils.hideElement(resultsListElement);
+    utils.showElement(noResultsElement);
     return false;
   }
 
@@ -518,9 +501,9 @@ async function jrOptionsSubscribeFormOnSubmit(event) {
   entryArray.forEach((entry) => {
     let title = entry.title;
     if(title) {
-      title = jrUtilsFilterControlChars(title);
-      title = jrUtilsReplaceHTML(title, '');
-      title = truncateHTML(title, entryTitleMaxLength);
+      title = utils.filterControlCharacters(title);
+      title = utils.replaceHTML(title, '');
+      title = utils.truncateHTML(title, entryTitleMaxLength);
       entry.title = title;
     }
   });
@@ -531,16 +514,16 @@ async function jrOptionsSubscribeFormOnSubmit(event) {
   entryArray.forEach((entry) => {
     let snippet = entry.contentSnippet;
     if(snippet) {
-      snippet = jrUtilsFilterControlChars(snippet);
+      snippet = utils.filterControlCharacters(snippet);
       snippet = snippet.replace(/<br\s*>/gi, ' ');
-      snippet = truncateHTML(
+      snippet = utils.truncateHTML(
         snippet, entrySnippetMaxLength, replacement);
       entry.contentSnippet = snippet;
     }
   });
 
-  jrUtilsShowElement(resultsListElement);
-  jrUtilsHideElement(noResultsElement);
+  utils.showElement(resultsListElement);
+  utils.hideElement(noResultsElement);
 
   const itemElement = document.createElement('li');
   itemElement.textContent = `Found ${entryArray.length} feeds.`;
@@ -558,7 +541,7 @@ async function jrOptionsSubscribeFormOnSubmit(event) {
   }
   fs.close();
 
-  const elementArray = entryArray.map(jrOptionsCreateSearchResultElement);
+  const elementArray = entryArray.map(utils.createSearchResultElement);
   elementArray.forEach((el) => resultsListElement.appendChild(el));
   return false;// Signal no submit
 }
@@ -568,13 +551,13 @@ async function jrOptionsSubscribeFormOnSubmit(event) {
 
 // Creates and returns a search result item to show in the list of search
 // results when searching for feeds.
-function jrOptionsCreateSearchResultElement(feed) {
+utils.createSearchResultElement = function(feed) {
   const itemElement = document.createElement('li');
   const subscribeButton = document.createElement('button');
   subscribeButton.value = feed.url.href;
   subscribeButton.title = feed.url.href;
   subscribeButton.textContent = 'Subscribe';
-  subscribeButton.onclick = jrOptionsSubscribeButtonOnClick;
+  subscribeButton.onclick = utils.subscribeButtonOnClick;
   itemElement.appendChild(subscribeButton);
 
   if(feed.faviconURLString) {
@@ -607,9 +590,9 @@ function jrOptionsCreateSearchResultElement(feed) {
   urlElement.textContent = feed.url.href;
   itemElement.appendChild(urlElement);
   return itemElement;
-}
+};
 
-function jrOptionsSubscribeButtonOnClick(event) {
+utils.subscribeButtonOnClick = function(event) {
   const subscribeButton = event.target;
   const feedURLString = subscribeButton.value;
 
@@ -624,7 +607,7 @@ function jrOptionsSubscribeButtonOnClick(event) {
   // Ignore future clicks while subscription in progress
   // TODO: use a better element name here.
   const subMonitorElement = document.getElementById('submon');
-  if(subMonitorElement && jrUtilsIsElementVisible(subMonitorElement)) {
+  if(subMonitorElement && utils.isElementVisible(subMonitorElement)) {
     return;
   }
 
@@ -634,10 +617,10 @@ function jrOptionsSubscribeButtonOnClick(event) {
 
   // TODO: this should make a call directly to the step that starts the
   // subscription process.
-  jrOptionsShowSubPreview(feedURLObject);
-}
+  optpg.showSubscriptionPreview(feedURLObject);
+};
 
-function jrOptionsRemoveFeedFromFeedList(feedIdNumber) {
+utils.removeFeedFromFeedList = function(feedIdNumber) {
   const feedElement = document.querySelector(
     `#feedlist li[feed="${feedIdNumber}"]`);
 
@@ -645,49 +628,46 @@ function jrOptionsRemoveFeedFromFeedList(feedIdNumber) {
     throw new Error('No feed element found with id ' + feedIdNumber);
   }
 
-  feedElement.removeEventListener('click', jrOptionsFeedListItemOnClick);
+  feedElement.removeEventListener('click', optpg.feedListsItemOnClick);
   feedElement.remove();
 
   // Upon removing the feed, update the displayed number of feeds.
   // TODO: this should actually be called from some listener instead by a
   // BroadcastChannel message, the event should be fired by the actual
   // thing that removes the feed from storage
-  jrOptionsUpdateFeedCount();
+  optpg.updateFeedCount();
 
   // Upon removing the feed, update the state of the feed list.
   // If the feed list has no items, hide it and show a message instead
   const feedListElement = document.getElementById('feedlist');
   const noFeedsElement = document.getElementById('nosubs');
   if(!feedListElement.childElementCount) {
-    jrUtilsHideElement(feedListElement);
-    jrUtilsShowElement(noFeedsElement);
+    utils.hideElement(feedListElement);
+    utils.showElement(noFeedsElement);
   }
-}
+};
 
 // TODO: visually react to unsubscribe error
-async function jrOptionsUnsubscribeButtonOnClick(event) {
+utils.unsubscribeButtonOnClick = function(event) {
+  const feedIdString = event.target.value;
+  const feedIdNumber = parseInt(feedIdString, 10);
 
-  const feedIdNumber = parseInt(event.target.value, 10);
-
-  if(feedIdNumber < 1) {
-    throw new TypeError(`Invalid feed id ${event.target.value}`);
-  }
-
-  const subService = new SubscriptionService();
-
+  let feedDbConn;
   try {
-    await subService.dbConnect();
-    const numDeleted = await subService.unsubscribe(feedIdNumber);
+    feedDbConn = await dbConnect();
+    const numEntriesDeleted = await unsubscribe(feedDbConn, feedIdNumber);
   } catch(error) {
     console.warn('Unsubscribe error:', error);
   } finally {
-    subService.close();
+    if(feedDbConn) {
+      feedDbConn.close();
+    }
   }
 
-  jrOptionsRemoveFeedFromFeedList(feedIdNumber);
+  utils.removeFeedFromFeedList(feedIdNumber);
   const subsListSection = document.getElementById('subs-list-section');
-  jrOptionsShowSection(subsListSection);
-}
+  optpg.showSection(subsListSection);
+};
 
 // TODO: needs to notify the user of a successful
 // import. In the UI and maybe in a notification. Maybe also combine
@@ -696,13 +676,13 @@ async function jrOptionsUnsubscribeButtonOnClick(event) {
 // need to be cancelable.
 // TODO: after import the feeds list needs to be refreshed
 // TODO: notify the user if there was an error
-function jrOptionsImportOPMLButtonOnClick(event) {
+utils.importOPMLButtonOnClick = function(event) {
   const uploader = document.createElement('input');
   uploader.setAttribute('type', 'file');
   uploader.setAttribute('accept', 'application/xml');
   uploader.onchange = jrOptionsImportOPMLUploaderOnChange;
   uploader.click();
-}
+};
 
 async function jrOptionsImportOPMLUploaderOnChange(event) {
   const uploader = event.target;
@@ -711,7 +691,7 @@ async function jrOptionsImportOPMLUploaderOnChange(event) {
   const importer = new OPMLImporter();
   try {
     await importer.dbConnect();
-    await importer.jrOPMLImportFiles(uploader.files);
+    await importer.backup.importFiles(uploader.files);
   } catch(error) {
     console.debug(error);
   } finally {
@@ -745,7 +725,7 @@ async function jrOptionsExportOPMLButtonOnClick(event) {
     return;
   }
 
-  jrOPMLExportFile(feedArray, titleString, fileNameString);
+  backup.exportFile(feedArray, titleString, fileNameString);
 }
 
 
@@ -788,26 +768,26 @@ async function jrOptionsInitializeSubscriptionsSection() {
   });
 
   for(let feedObject of feedArray) {
-    jrOptionsAppendFeed(feedObject);
+    optpg.appendFeed(feedObject);
 
     // TODO: the update should happen as a result of call to append feed,
     // not here
-    jrOptionsUpdateFeedCount();
+    optpg.updateFeedCount();
   }
 
   if(!feedArray.length) {
-    jrUtilsShowElement(noFeedsElement);
-    jrUtilsHideElement(feedListElement);
+    utils.showElement(noFeedsElement);
+    utils.hideElement(feedListElement);
   } else {
-    jrUtilsHideElement(noFeedsElement);
-    jrUtilsShowElement(feedListElement);
+    utils.hideElement(noFeedsElement);
+    utils.showElement(feedListElement);
   }
 }
 
 function jrOptionsNavItemOnClick(event) {
   const clickedElement = event.target;
   const sectionElement = event.currentTarget;
-  jrOptionsShowSection(sectionElement);
+  optpg.showSection(sectionElement);
 }
 
 function jrOptionsEnableNotificationsCheckboxOnClick(event) {
@@ -861,7 +841,7 @@ function jrOptionsSubscriptionPreviewContinueButtonOnClick(event) {
   // TODO: why use currentTarget over target for no reason?
   const previewButton = event.currentTarget;
   const urlString = previewButton.value;
-  jrOptionsHideSubPreview();
+  optpg.hideSubscriptionPreview();
 
   if(!urlString) {
     console.debug('no url');
@@ -869,7 +849,7 @@ function jrOptionsSubscriptionPreviewContinueButtonOnClick(event) {
   }
 
   const feedURLObject = new URL(urlString);
-  jrOptionsStartSubscription(feedURLObject);
+  optpg.startSubscription(feedURLObject);
 }
 
 function jrOptionsBackgroundImageMenuOnChange(event) {
@@ -879,7 +859,7 @@ function jrOptionsBackgroundImageMenuOnChange(event) {
     delete localStorage.BACKGROUND_IMAGE;
   }
 
-  jrOptionsSettingsChannel.postMessage('changed');
+  optpg.settingsChannel.postMessage('changed');
 }
 
 function jrOptionsHeaderFontMenuOnChange(event){
@@ -890,7 +870,7 @@ function jrOptionsHeaderFontMenuOnChange(event){
     delete localStorage.HEADER_FONT_FAMILY;
   }
 
-  jrOptionsSettingsChannel.postMessage('changed');
+  optpg.settingsChannel.postMessage('changed');
 }
 
 function jrOptionsBodyFontMenuOnChange(event) {
@@ -900,7 +880,7 @@ function jrOptionsBodyFontMenuOnChange(event) {
     delete localStorage.BODY_FONT_FAMILY;
   }
 
-  jrOptionsSettingsChannel.postMessage('changed');
+  optpg.settingsChannel.postMessage('changed');
 }
 
 
@@ -911,7 +891,7 @@ function jrOptionsColumnCountMenuOnChange(event) {
     delete localStorage.COLUMN_COUNT;
   }
 
-  jrOptionsSettingsChannel.postMessage('changed');
+  optpg.settingsChannel.postMessage('changed');
 }
 
 function jrOptionsEntryBackgroundColorOnInput(event) {
@@ -923,7 +903,7 @@ function jrOptionsEntryBackgroundColorOnInput(event) {
     delete localStorage.ENTRY_BACKGROUND_COLOR;
   }
 
-  jrOptionsSettingsChannel.postMessage('changed');
+  optpg.settingsChannel.postMessage('changed');
 }
 
 
@@ -931,17 +911,17 @@ function jrOptionsEntryMarginOnChange(event) {
   // TODO: why am i defaulting to 10 here?
   localStorage.ENTRY_MARGIN = event.target.value || '10';
 
-  jrOptionsSettingsChannel.postMessage('changed');
+  optpg.settingsChannel.postMessage('changed');
 }
 
 function jrOptionsHeaderFontSizeOnChange(event) {
   localStorage.HEADER_FONT_SIZE = event.target.value || '1';
-  jrOptionsSettingsChannel.postMessage('changed');
+  optpg.settingsChannel.postMessage('changed');
 }
 
 function jrOptionsBodyFontSizeOnChange(event) {
   localStorage.BODY_FONT_SIZE = event.target.value || '1';
-  jrOptionsSettingsChannel.postMessage('changed');
+  optpg.settingsChannel.postMessage('changed');
 }
 
 function jrOptionsJustifyCheckboxOnChange(event) {
@@ -949,12 +929,12 @@ function jrOptionsJustifyCheckboxOnChange(event) {
     localStorage.JUSTIFY_TEXT = '1';
   else
     delete localStorage.JUSTIFY_TEXT;
-  jrOptionsSettingsChannel.postMessage('changed');
+  optpg.settingsChannel.postMessage('changed');
 }
 
 function jrOptionsBodyHeightInputOnInput(event) {
   localStorage.BODY_LINE_HEIGHT = event.target.value || '10';
-  jrOptionsSettingsChannel.postMessage('changed');
+  optpg.settingsChannel.postMessage('changed');
 }
 
 function jrOptionsOnDOMContentLoaded(event) {
@@ -1015,17 +995,17 @@ function jrOptionsOnDOMContentLoaded(event) {
   const export_opml_btn = document.getElementById('button-export-opml');
   export_opml_btn.onclick = jrOptionsExportOPMLButtonOnClick;
   const import_opml_btn = document.getElementById('button-import-opml');
-  import_opml_btn.onclick = jrOptionsImportOPMLButtonOnClick;
+  import_opml_btn.onclick = utils.importOPMLButtonOnClick;
 
   jrOptionsInitializeSubscriptionsSection();
 
   // Init feed details section unsubscribe button click handler
   const unsubscribeButton = document.getElementById('details-unsubscribe');
-  unsubscribeButton.onclick = jrOptionsUnsubscribeButtonOnClick;
+  unsubscribeButton.onclick = utils.unsubscribeButtonOnClick;
 
   // Init the subscription form section
   const sub_form = document.getElementById('subscription-form');
-  sub_form.onsubmit = jrOptionsSubscribeFormOnSubmit;
+  sub_form.onsubmit = optpg.subscribeFormOnSubmit;
   const continue_preview_btn = document.getElementById(
     'subscription-preview-continue');
   continue_preview_btn.onclick = jrOptionsSubscriptionPreviewContinueButtonOnClick;
@@ -1045,7 +1025,7 @@ function jrOptionsOnDOMContentLoaded(event) {
   // Load bgimages menu
   const current_bg_image_path = localStorage.BACKGROUND_IMAGE;
   const bg_img_path_offset = '/images/'.length;
-  for(let path of jrOptionsBgImagePaths) {
+  for(let path of optpg.bgImagePathsArray) {
     let path_option = document.createElement('option');
     path_option.value = path;
     path_option.textContent = path.substring(bg_img_path_offset);
@@ -1060,7 +1040,7 @@ function jrOptionsOnDOMContentLoaded(event) {
   option.textContent = 'Use Chrome font settings';
   header_font_menu.appendChild(option);
   const selected_hf = localStorage.HEADER_FONT_FAMILY;
-  for(let ff of jrOptionsFonts) {
+  for(let ff of optpg.fontsArray) {
     let ff_option = document.createElement('option');
     ff_option.value = ff;
     ff_option.selected = ff === selected_hf;
@@ -1075,7 +1055,7 @@ function jrOptionsOnDOMContentLoaded(event) {
   option.textContent = 'Use Chrome font settings';
   body_font_menu.appendChild(option);
   const current_bff = localStorage.BODY_FONT_FAMILY;
-  for(let bff of jrOptionsFonts) {
+  for(let bff of optpg.fontsArray) {
     let bff_option = document.createElement('option');
     bff_option.value = bff;
     bff_option.selected = bff === current_bff;
@@ -1133,7 +1113,7 @@ function jrOptionsOnDOMContentLoaded(event) {
   ext_homepage_element.textContent = manifest.homepage_url;
 
   const subsListSection = document.getElementById('subs-list-section');
-  jrOptionsShowSection(subsListSection);
+  optpg.showSection(subsListSection);
 }
 
 document.addEventListener('DOMContentLoaded', jrOptionsOnDOMContentLoaded,

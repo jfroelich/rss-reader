@@ -104,7 +104,7 @@ function dbAddFeed(conn, feed) {
     if('id' in feed)
       return reject(new TypeError());
     let storable = jrFeedSanitize(feed);
-    storable = jrUtilsFilterEmptyProps(storable);
+    storable = utils.filterEmptyProperties(storable);
     storable.dateCreated = new Date();
     const tx = conn.transaction('feed', 'readwrite');
     const store = tx.objectStore('feed');
@@ -284,7 +284,7 @@ function dbAddEntry(conn, entry) {
     if('id' in entry)
       return reject(new TypeError());
     const sanitized = jrSanitizeEntry(entry);
-    const storable = jrUtilsFilterEmptyProps(sanitized);
+    const storable = utils.filterEmptyProperties(sanitized);
     storable.readState = ENTRY_UNREAD_STATE;
     storable.archiveState = ENTRY_UNARCHIVED_STATE;
     storable.dateCreated = new Date();

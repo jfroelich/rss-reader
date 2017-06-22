@@ -2,10 +2,22 @@
 
 'use strict';
 
+const utils = {};
+
+// Triggers a file download
+utils.download = function(blobObject, fileNameString) {
+  const objectURL = URL.createObjectURL(blobObject);
+  const anchorElement = document.createElement('a');
+  anchorElement.setAttribute('download', fileNameString);
+  anchorElement.href = objectURL;
+  anchorElement.click();
+  URL.revokeObjectURL(objectURL);
+};
+
 // Returns a new string where html elements were replaced with the optional
 // replacement string. HTML entities remain (except some will be
 // replaced, like &#32; with space).
-function jrUtilsReplaceHTML(inputString, replacementString) {
+utils.replaceHTML = function(inputString, replacementString) {
   let outputString = null;
   const documentObject = document.implementation.createHTMLDocument();
   const bodyElement = documentObject.body;
@@ -27,7 +39,7 @@ function jrUtilsReplaceHTML(inputString, replacementString) {
   }
 
   return outputString;
-}
+};
 
 // Truncates a string containing some html, taking special care not to
 // truncate in the midst of a tag or an html entity. The transformation is
@@ -36,7 +48,7 @@ function jrUtilsReplaceHTML(inputString, replacementString) {
 // character entity codes. The extension string should be decoded, meaning
 // that it should not contain character entries.
 // NOTE: Using var due to deopt warning "unsupported phi use of const", c55
-function truncateHTML(inputString, position, extensionString) {
+utils.truncateHTML = function(inputString, position, extensionString) {
 
   if(!Number.isInteger(position) || position < 0) {
     throw new TypeError();
@@ -81,19 +93,20 @@ function truncateHTML(inputString, position, extensionString) {
   }
 
   return outputString;
-}
+};
 
-function jrUtilsGetAlarm(alarmNameString) {
-  return new Promise((resolve) =>
-    chrome.alarms.get(alarmNameString, resolve));
-}
+utils.getAlarm = function(alarmNameString) {
+  return new Promise(function(resolve, reject) {
+    chrome.alarms.get(alarmNameString, resolve);
+  });
+};
 
 // Calculates the approximate size of a value in bytes. This should only be
 // used for basic testing because it is hilariously inaccurate.
 // Adapted from http://stackoverflow.com/questions/1248302
 // Generally does not work on built-ins (dom, XMLHttpRequest, etc)
 // This uses a stack internally to avoid recursion
-function jrUtilsSizeOf(inputValue) {
+utils.sizeOf = function(inputValue) {
   const seen = [];
   const stack = [inputValue];
   const hasOwnProp = Object.prototype.hasOwnProperty;
@@ -151,16 +164,16 @@ function jrUtilsSizeOf(inputValue) {
   }
 
   return size;
-}
+};
 
-function jrUtilsIsURLObject(value) {
+utils.isURLObject = function(value) {
   return Object.prototype.toString.call(value) === '[object URL]';
-}
+};
 
 // Returns a new object that is a copy of the input less empty properties. A
-// property is empty if it s null, undefined, or an empty string. Ignores
+// property is empty if it is null, undefined, or an empty string. Ignores
 // prototype, deep objects, getters, etc. Impure.
-function jrUtilsFilterEmptyProps(object) {
+utils.filterEmptyProperties = function(object) {
   const outputObject = {};
   const hasOwnProperty = Object.prototype.hasOwnProperty;
 
@@ -174,11 +187,11 @@ function jrUtilsFilterEmptyProps(object) {
   }
 
   return outputObject;
-}
+};
 
 // Creates a new object containing only those properties where predicate returns
 // true. Predicate is called with parameters object and prop name
-function jrUtilsFilterObjectProperties(inputObject, predicateFunction) {
+utils.filterObjectProperties = function(inputObject, predicateFunction) {
   const outputObject = {};
   for(let propertyName in inputObject) {
     if(predicateFunction(inputObject, propertyName)) {
@@ -186,21 +199,21 @@ function jrUtilsFilterObjectProperties(inputObject, predicateFunction) {
     }
   }
   return outputObject;
-}
+};
 
-function jrUtilsCondenseWhitespace(string) {
+utils.condenseWhitespace = function(string) {
   return string.replace(/\s{2,}/g, ' ');
-}
+};
 
 // Returns a new string where Unicode Cc-class characters have been removed
 // Adapted from http://stackoverflow.com/questions/4324790
 // http://stackoverflow.com/questions/21284228
 // http://stackoverflow.com/questions/24229262
-function jrUtilsFilterControlChars(string) {
+utils.filterControlCharacters = function(string) {
   return string.replace(/[\x00-\x1F\x7F-\x9F]+/g, '');
-}
+};
 
-function jrUtilsFormatDate(dateObject, delimiterString) {
+utils.formatDate = function(dateObject, delimiterString) {
   const partArray = [];
   if(dateObject) {
     // getMonth is a zero based index
@@ -209,30 +222,31 @@ function jrUtilsFormatDate(dateObject, delimiterString) {
     partArray.push(dateObject.getFullYear());
   }
   return partArray.join(delimiterString || '/');
-}
+};
 
-function jrUtilsFadeElement(element, durationSeconds, delaySeconds) {
+// TODO: this could use some cleanup or at least some clarifying comments
+utils.fadeElement = function(element, durationSeconds, delaySeconds) {
   return new Promise(function(resolve, reject) {
     const style = element.style;
-
-    // TODO: this could use some cleanup or at least some clarifying comments
-
     if(style.display === 'none') {
       style.display = '';
       style.opacity = '0';
     }
 
-    if(!style.opacity)
+    if(!style.opacity) {
       style.opacity = style.display === 'none' ? '0' : '1';
+    }
+
     element.addEventListener('webkitTransitionEnd', resolve, {'once': true});
+
     // property duration function delay
     style.transition = `opacity ${durationSeconds}s ease ${delaySeconds}s`;
     style.opacity = style.opacity === '1' ? '0' : '1';
   });
-}
+};
 
 // A mapping between common file extensions and mime types
-const jrUtilsExtensionMimeMap = {
+utils.extensionMimeMap = {
   'ai':   'application/postscript',
   'aif':  'audio/aiff',
   'atom': 'application/atom+xml',
@@ -292,23 +306,23 @@ const jrUtilsExtensionMimeMap = {
 };
 
 // Guess if the url path is not an html mime type
-function jrUtilsSniffNonHTMLPath(pathString) {
-  const typeString = jrUtilsSniffTypeFromPath(pathString);
+utils.sniffNonHTMLPath = function(pathString) {
+  const typeString = utils.sniffTypeFromPath(pathString);
   if(typeString) {
     const slashPosition = type.indexOf('/');
     const superTypeString = typeString.substring(0, slashPosition);
     const nonHTMLSuperTypes = ['application', 'audio', 'image', 'video'];
     return nonHTMLSuperTypes.includes(superTypeString);
   }
-}
+};
 
 // Guess the mime type of the url path by looking at the filename extension
-function jrUtilsSniffTypeFromPath(pathString) {
-  const extensionString = jrUtilsFindPathExtension(pathString);
+utils.sniffTypeFromPath = function(pathString) {
+  const extensionString = utils.findPathExtension(pathString);
   if(extensionString) {
-    return jrUtilsExtensionMimeMap[extensionString];
+    return utils.extensionMimeMap[extensionString];
   }
-}
+};
 
 // TODO: retest handling of 'foo.' input
 // Returns a file's extension. Some extensions are ignored because this must
@@ -321,7 +335,7 @@ function jrUtilsSniffTypeFromPath(pathString) {
 // whether to filter content.
 // @param pathString {String} path to analyze (paths should have leading /)
 // @returns {String} lowercase extension or undefined
-function jrUtilsFindPathExtension(pathString) {
+utils.findPathExtension = function(pathString) {
 
   // pathString is required
   // TODO: allow an exception to happen instead of checking
@@ -376,27 +390,27 @@ function jrUtilsFindPathExtension(pathString) {
     // Assume no trailing space, so no need to trim
     return extensionString.toLowerCase();
   }
-}
+};
 
 
 // TODO: probably should just deprecate these functions
 
-function jrUtilsHideElement(element) {
+utils.hideElement = function(element) {
   element.style.display = 'none';
-}
+};
 
-function jrUtilsShowElement(element) {
+utils.showElement = function(element) {
   element.style.display = 'block';
-}
+};
 
-function jrUtilsAddElementClass(element, className) {
+utils.addElementClass = function(element, className) {
   element.classList.add(className);
-}
+};
 
-function jrUtilsRemoveElementClass(element, className) {
+utils.removeElementClass = function(element, className) {
   element.classList.remove(className);
-}
+};
 
-function jrUtilsIsElementVisible(element) {
+utils.isElementVisible = function(element) {
   return element.style.display !== 'none';
-}
+};

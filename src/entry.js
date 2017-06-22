@@ -43,10 +43,10 @@ function jrSanitizeEntry(inputEntryObject) {
 
   if(outputEntry.author) {
     let author = outputEntry.author;
-    author = jrUtilsFilterControlChars(author);
-    author = jrUtilsReplaceHTML(author, '');
-    author = jrUtilsCondenseWhitespace(author);
-    author = truncateHTML(author, authorMaxLen);
+    author = utils.filterControlCharacters(author);
+    author = utils.replaceHTML(author, '');
+    author = utils.condenseWhitespace(author);
+    author = utils.truncateHTML(author, authorMaxLen);
     outputEntry.author = author;
   }
 
@@ -54,16 +54,16 @@ function jrSanitizeEntry(inputEntryObject) {
   // TODO: filter out non-printable characters other than \r\n\t
   if(outputEntry.content) {
     let content = outputEntry.content;
-    content = truncateHTML(content, contentMaxLen);
+    content = utils.truncateHTML(content, contentMaxLen);
     outputEntry.content = content;
   }
 
   if(outputEntry.title) {
     let title = outputEntry.title;
-    title = jrUtilsFilterControlChars(title);
-    title = jrUtilsReplaceHTML(title, '');
-    title = jrUtilsCondenseWhitespace(title);
-    title = truncateHTML(title, titleMaxLen);
+    title = utils.filterControlCharacters(title);
+    title = utils.replaceHTML(title, '');
+    title = utils.condenseWhitespace(title);
+    title = utils.truncateHTML(title, titleMaxLen);
     outputEntry.title = title;
   }
 

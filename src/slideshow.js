@@ -142,7 +142,7 @@ function createArticleTitle(entryObject) {
     titleElement.setAttribute('title', entryObject.title);
     let titleText = entryObject.title;
     titleText = filterArticleTitle(titleText);
-    titleText = truncateHTML(titleText, 300);
+    titleText = utils.truncateHTML(titleText, 300);
     titleElement.innerHTML = titleText;
   } else {
     titleElement.setAttribute('title', 'Untitled');
@@ -183,7 +183,7 @@ function createFeedSource(entryObject) {
   buffer.push(entryObject.author || 'Unknown author');
   if(entryObject.datePublished) {
     buffer.push(' on ');
-    buffer.push(jrUtilsFormatDate(entryObject.datePublished));
+    buffer.push(utils.formatDate(entryObject.datePublished));
   }
   titleElement.textContent = buffer.join('');
   sourceElement.appendChild(titleElement);

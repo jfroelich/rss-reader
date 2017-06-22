@@ -57,14 +57,14 @@ async function alarmsOnLoad(event) {
     FeedFavicon.createAlarm(refreshFeedIconsPeriodInMinutes);
 
     // TODO: add to handler
-    let alarm = await jrUtilsGetAlarm('remove-orphan-entries');
+    let alarm = await utils.getAlarm('remove-orphan-entries');
     if(!alarm) {
       console.debug('Creating remove-orphan-entries alarm');
       chrome.alarms.create('remove-orphan-entries',
         {'periodInMinutes': 60 * 24 * 7});
     }
 
-    alarm = await jrUtilsGetAlarm('remove-entries-missing-urls');
+    alarm = await utils.getAlarm('remove-entries-missing-urls');
     if(!alarm) {
       console.debug('Creating remove-entries-missing-urls alarm');
       chrome.alarms.create('remove-entries-missing-urls',

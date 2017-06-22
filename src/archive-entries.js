@@ -48,8 +48,8 @@ async function archiveEntries(conn,
 
   if(logObject) {
     for(let i = 0, length = archivableEntriesArray.length; i < length; i++) {
-      const beforeSize = jrUtilsSizeOf(archivableEntriesArray[i]);
-      const afterSize = jrUtilsSizeOf(compactedEntriesArray[i]);
+      const beforeSize = utils.sizeOf(archivableEntriesArray[i]);
+      const afterSize = utils.sizeOf(compactedEntriesArray[i]);
       logObject.log(beforeSize, 'compacted to', afterSize);
     }
   }

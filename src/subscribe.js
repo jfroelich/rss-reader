@@ -2,15 +2,15 @@
 
 'use strict';
 
-// SubscriptionService
-
+// TODO: need to update all uses of SubscriptionService
+// - the params changed
+// - also for unsubscribe
 
 const subscribeDefaultOptions = {
   'fetchFeedTimeoutMillis': 2000,
   'suppressNotifications': false
 };
 
-// TODO: params changed
 // Returns the feed that was added if successful
 async subscribe(dbConn, iconDbConn, feedObject,
   options = subscribeDefaultOptions, logObject) {
@@ -22,7 +22,6 @@ async subscribe(dbConn, iconDbConn, feedObject,
   }
 
   const isExistingURL = await dbContainsFeedURL(dbConn, urlString);
-
   if(isExistingURL) {
     if(logObject) {
       logObject.warn('Already subscribed to feed with url', urlString);
@@ -83,11 +82,11 @@ async subscribe(dbConn, iconDbConn, feedObject,
   return addedFeed;
 }
 
-
 async subscribeSetFeedFavicon(iconDbConn, feedObject, logObject) {
   const lookupURLObject = jrFeedIconGetLookupURL(feedObject);
 
   // Lookup errors are not fatal so suppress any exceptions
+  // TODO: should that be caller's responsibility?
   try {
     const iconURLString = await jrFaviconLookup(iconDbConn, lookupURLObject);
     feedObject.faviconURLString = iconURLString;
@@ -103,40 +102,4 @@ function subscribeShowNotification(feedObject) {
   const feedName = feedObject.title || feedGetURLString(feedObject);
   const message = 'Subscribed to ' + feedName;
   showNotification(title, message, feedObject.faviconURLString);
-}
-
-
-async unsubscribe(dbConn, feedId, logObject) {
-  if(logObject) {
-    logObject.log('Unsubscribing from feed', feedId);
-  }
-
-  if(!Number.isInteger(feedId) || feedId < 1) {
-    throw new TypeError(`Invalid feed id ${feedId}`);
-  }
-
-  const dbChannel = new BroadcastChannel('db');
-  let entryIdsArray = null;
-
-  // Intentionally not catching database exceptions
-
-  try {
-    const tx = dbConn.transaction(['feed', 'entry'], 'readwrite');
-    entryIdsArray = await dbGetEntryIdsByFeedId(tx, feedId);
-    const removePromises = entryIdsArray.map((id) =>
-      dbRemoveEntry(tx, id, dbChannel));
-    removePromises.push(dbRemoveFeed(tx, feedId));
-    await Promise.all(removePromises);
-  } finally {
-    dbChannel.close();
-  }
-
-  if(logObject) {
-    logObject.debug('Unsubscribed from feed id', feedId);
-    logObject.debug('Deleted %d entries', entryIdsArray.length);
-  }
-
-  updateBadgeText(dbConn);
-
-  return entryIdsArray.length;
 }

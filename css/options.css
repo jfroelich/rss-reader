@@ -358,7 +358,7 @@ ul#navigation-menu li.navigation-item-selected {
   box-shadow: 2px 2px 4px 0px #000000;
 }
 
-#options_dismiss_error_button {
+#dismiss-error-button {
   padding:2px;
   float:right;
 }

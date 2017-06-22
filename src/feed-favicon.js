@@ -4,7 +4,7 @@
 
 
 async function jrFeedIconCreateAlarm(periodInMinutes) {
-  const alarm = await jrUtilsGetAlarm('refresh-feed-icons');
+  const alarm = await utils.getAlarm('refresh-feed-icons');
   if(alarm)
     return;
   chrome.alarms.create('refresh-feed-icons',
