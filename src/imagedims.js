@@ -2,6 +2,11 @@
 
 'use strict';
 
+
+// TODO: refactor into an independent library. Only export a single global
+// TODO: use better variable names
+// TODO: avoid use of Map and such
+
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
 // and modifies each image element's attributes.
@@ -9,8 +14,9 @@
 // @param timeout {Number} optional, if not set or 0 then no timeout, millis
 // @returns {Number} the number of images modified
 async function jrImageDimsTransformDocument(doc, timeout = 0) {
-  if(!Number.isInteger(timeout) || timeout < 0)
+  if(!Number.isInteger(timeout) || timeout < 0) {
     throw new TypeError(`Invalid timeout parameter ${timeout}`);
+  }
 
   // TODO: currently this blocks until all fetched, and then does DOM
   // modification. If the browser supports concurrent DOM modification, it would
@@ -39,22 +45,24 @@ async function jrImageDimsTransformDocument(doc, timeout = 0) {
 // @param image {HTMLImageElement}
 // @param timeout {Number}
 async function jrImageDimsGetImageDimensions(image, timeout) {
-  if(image.hasAttribute('width') && image.hasAttribute('height'))
+  if(image.hasAttribute('width') && image.hasAttribute('height')) {
     return;
+  }
 
   // Infer from inline style. Because the assumption is that the input doc
   // was inert, there is no guarantee that the style props initialized the
   // width and height properties, and we know that style wasn't computed
-  if(image.hasAttribute('style') && image.style.width && image.style.height)
+  if(image.hasAttribute('style') && image.style.width && image.style.height) {
     return {'image': image, 'w': image.style.width,'h': image.style.height};
+  }
 
   // Even though sourceless images are filtered elsewhere, this cannot make
   // any assumptions about that. So this is redundant for the sake of
   // independence.
   const src = image.getAttribute('src');
-  if(!src)
+  if(!src) {
     return;
-
+  }
 
   // Verify the url is syntactically valid and parse the url's protocol
   let url;
@@ -65,13 +73,16 @@ async function jrImageDimsGetImageDimensions(image, timeout) {
   }
 
   // Only try to fetch these protocols
-  if(url.protocol !== 'http:' && url.protocol !== 'https:')
+  if(url.protocol !== 'http:' && url.protocol !== 'https:') {
     return;
+  }
 
   // Race a timeout against a fetch attempt
   const promises = [jrImageDimsFetchImage(url.href)];
-  if(timeout)
+  if(timeout) {
     promises.push(jrImageDimsRejectAfterTimeout(timeout));
+  }
+
   let proxy;
   try {
     proxy = await Promise.race(promises);
@@ -97,8 +108,11 @@ function jrImageDimsFetchImage(url) {
     // Trigger the fetch
     image.src = url;
     // Resolve immediately if cached
-    if(image.complete)
-      return resolve(image);
+    if(image.complete) {
+      resolve(image);
+      return;
+    }
+
     image.onload = () => resolve(image);
     image.onerror = () => reject(new Error(`Failed to load image ${url}`));
   });

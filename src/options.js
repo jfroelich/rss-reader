@@ -271,12 +271,11 @@ optpg.startSubscription = async function(urlObject) {
   // TODO: remove this once preview is deprecated more fully
   optpg.hideSubscriptionPreview();
 
-
   optpg.showSubscriptionMonitor();
   optpg.appendSubscriptionMonitorMessage(`Subscribing to ${urlObject.href}`);
 
   const feedObject = {};
-  jrAddFeedURL(feedObject, urlObject.href);
+  feed.addURLString(feedObject, urlObject.href);
 
   // TODO: subscription service object is deprecated
 
@@ -284,8 +283,11 @@ optpg.startSubscription = async function(urlObject) {
   subService.verbose = true;
   let subcribedFeedObject;
   try {
-    await subService.dbConnect();
-    subcribedFeedObject = await subService.subscribe(feedObject);
+    await subService.db.connect();
+
+    // TODO: this needs entirely different params
+    // dbConn, iconDbConn, feedObject, options, logObject
+    subcribedFeedObject = await operations.subscribe(feedObject);
   } catch(error) {
     console.debug(error);
   } finally {
@@ -304,11 +306,11 @@ optpg.startSubscription = async function(urlObject) {
   // TODO: rather than expressly updating the feed count here, this should
   // happen as a result of some update event that some listener reacts to
   // That event should probably be a BroadcastChannel message that is fired
-  // by subService.subscribe
+  // by operations.subscribe
   optpg.updateFeedCount();
 
   // Show a brief message that the subscription was successful
-  const feedURLString = feedGetURLString(subcribedFeedObject);
+  const feedURLString = feed.getURLString(subcribedFeedObject);
   optpg.appendSubscriptionMonitorMessage(`Subscribed to ${feedURLString}`);
 
   // Hide the sub monitor
@@ -346,7 +348,7 @@ optpg.feedListsItemOnClick = async function(event) {
   let feedObject;
   let conn;
   try {
-    conn = await readerDb.dbConnect();
+    conn = await readerDb.db.connect();
     feedStore.conn = conn;
     feedObject = await feedStore.findById(feedIdNumber);
   } catch(error) {
@@ -381,7 +383,7 @@ optpg.feedListsItemOnClick = async function(event) {
   }
 
   const feedURLElement = document.getElementById('details-feed-url');
-  feedURLElement.textContent = feedGetURLString(feedObject);
+  feedURLElement.textContent = feed.getURLString(feedObject);
   const feedLinkElement = document.getElementById('details-feed-link');
   feedLinkElement.textContent = feedObject.link || '';
   const unsubscribeButton = document.getElementById('details-unsubscribe');
@@ -459,7 +461,7 @@ optpg.subscribeFormOnSubmit = async function(event) {
   const searchTimeout = 5000;
   try {
     ({query, entryArray} =
-      await jrGoogleFeedsSearch(queryString, searchTimeout));
+      await searchGoogleFeeds(queryString, searchTimeout));
   } catch(error) {
     console.debug(error);
     return false;
@@ -468,12 +470,12 @@ optpg.subscribeFormOnSubmit = async function(event) {
   }
 
   // Filter entries without urls
-  entryArray = entryArray.filter((entry) => entry.url);
+  entryArray = entryArray.filter((entryObject) => entryObject.url);
 
   // Convert to URL objects, filter entries with invalid urls
-  entryArray = entryArray.filter((entry) => {
+  entryArray = entryArray.filter((entryObject) => {
     try {
-      entry.url = new URL(entry.url);
+      entryObject.url = new URL(entryObject.url);
       return true;
     } catch(error) {
       return false;
@@ -482,10 +484,10 @@ optpg.subscribeFormOnSubmit = async function(event) {
 
   // Filter entries with identical normalized urls, favoring earlier entries
   const distinctURLStrings = [];
-  entryArray = entryArray.filter((entry) => {
-    if(distinctURLStrings.includes(entry.url.href))
+  entryArray = entryArray.filter((entryObject) => {
+    if(distinctURLStrings.includes(entryObject.url.href))
       return false;
-    distinctURLStrings.push(entry.url.href);
+    distinctURLStrings.push(entryObject.url.href);
     return true;
   });
 
@@ -498,27 +500,27 @@ optpg.subscribeFormOnSubmit = async function(event) {
 
   // Sanitize entry title
   const entryTitleMaxLength = 200;
-  entryArray.forEach((entry) => {
-    let title = entry.title;
+  entryArray.forEach((entryObject) => {
+    let title = entryObject.title;
     if(title) {
       title = utils.filterControlCharacters(title);
       title = utils.replaceHTML(title, '');
       title = utils.truncateHTML(title, entryTitleMaxLength);
-      entry.title = title;
+      entryObject.title = title;
     }
   });
 
   // Sanitize content snippet
   const replacement = '\u2026';
   const entrySnippetMaxLength = 400;
-  entryArray.forEach((entry) => {
-    let snippet = entry.contentSnippet;
+  entryArray.forEach((entryObject) => {
+    let snippet = entryObject.contentSnippet;
     if(snippet) {
       snippet = utils.filterControlCharacters(snippet);
       snippet = snippet.replace(/<br\s*>/gi, ' ');
       snippet = utils.truncateHTML(
         snippet, entrySnippetMaxLength, replacement);
-      entry.contentSnippet = snippet;
+      entryObject.contentSnippet = snippet;
     }
   });
 
@@ -530,7 +532,7 @@ optpg.subscribeFormOnSubmit = async function(event) {
   resultsListElement.appendChild(itemElement);
 
   const fs = new FaviconService();
-  await fs.dbConnect();
+  await fs.db.connect();
   for(let result of entryArray) {
     if(!result.link) {
       continue;
@@ -546,25 +548,22 @@ optpg.subscribeFormOnSubmit = async function(event) {
   return false;// Signal no submit
 }
 
-
-
-
 // Creates and returns a search result item to show in the list of search
 // results when searching for feeds.
-utils.createSearchResultElement = function(feed) {
+utils.createSearchResultElement = function(feedObject) {
   const itemElement = document.createElement('li');
   const subscribeButton = document.createElement('button');
-  subscribeButton.value = feed.url.href;
-  subscribeButton.title = feed.url.href;
+  subscribeButton.value = feedObject.url.href;
+  subscribeButton.title = feedObject.url.href;
   subscribeButton.textContent = 'Subscribe';
   subscribeButton.onclick = utils.subscribeButtonOnClick;
   itemElement.appendChild(subscribeButton);
 
-  if(feed.faviconURLString) {
+  if(feedObject.faviconURLString) {
     const faviconElement = document.createElement('img');
-    faviconElement.setAttribute('src', feed.faviconURLString);
-    if(feed.link) {
-      faviconElement.setAttribute('title', feed.link);
+    faviconElement.setAttribute('src', feedObject.faviconURLString);
+    if(feedObject.link) {
+      faviconElement.setAttribute('title', feedObject.link);
     }
     faviconElement.setAttribute('width', '16');
     faviconElement.setAttribute('height', '16');
@@ -573,21 +572,21 @@ utils.createSearchResultElement = function(feed) {
 
   // TODO: don't allow for empty href value
   const titleElement = document.createElement('a');
-  if(feed.link) {
-    titleElement.setAttribute('href', feed.link);
+  if(feedObject.link) {
+    titleElement.setAttribute('href', feedObject.link);
   }
   titleElement.setAttribute('target', '_blank');
-  titleElement.title = feed.title;
-  titleElement.innerHTML = feed.title;
+  titleElement.title = feedObject.title;
+  titleElement.innerHTML = feedObject.title;
   itemElement.appendChild(titleElement);
 
   const snippetElement = document.createElement('span');
-  snippetElement.innerHTML = feed.contentSnippet;
+  snippetElement.innerHTML = feedObject.contentSnippet;
   itemElement.appendChild(snippetElement);
 
   const urlElement = document.createElement('span');
   urlElement.setAttribute('class', 'discover-search-result-url');
-  urlElement.textContent = feed.url.href;
+  urlElement.textContent = feedObject.url.href;
   itemElement.appendChild(urlElement);
   return itemElement;
 };
@@ -654,8 +653,9 @@ utils.unsubscribeButtonOnClick = function(event) {
 
   let feedDbConn;
   try {
-    feedDbConn = await dbConnect();
-    const numEntriesDeleted = await unsubscribe(feedDbConn, feedIdNumber);
+    feedDbConn = await db.connect();
+    const numEntriesDeleted = await operations.unsubscribe(feedDbConn,
+      feedIdNumber);
   } catch(error) {
     console.warn('Unsubscribe error:', error);
   } finally {
@@ -690,7 +690,7 @@ async function jrOptionsImportOPMLUploaderOnChange(event) {
 
   const importer = new OPMLImporter();
   try {
-    await importer.dbConnect();
+    await importer.db.connect();
     await importer.backup.importFiles(uploader.files);
   } catch(error) {
     console.debug(error);
@@ -710,7 +710,7 @@ async function jrOptionsExportOPMLButtonOnClick(event) {
   let connection;
   let feedArray;
   try {
-    connection = await readerDb.dbConnect();
+    connection = await readerDb.db.connect();
     feedStore.conn = connection;
     feedArray = await feedStore.getAll();
   } catch(error) {
@@ -743,7 +743,7 @@ async function jrOptionsInitializeSubscriptionsSection() {
   let conn;
   let feedArray;
   try {
-    conn = await readerDb.dbConnect();
+    conn = await readerDb.db.connect();
     feedStore.conn = conn;
     feedArray = await feedStore.getAll();
   } catch(error) {

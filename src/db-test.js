@@ -8,7 +8,7 @@ async function testDb() {
   console.log('Connecting to database', dbName);
   let conn;
   try {
-    conn = await dbConnect(dbName, dbVersion);
+    conn = await db.connect(dbName, dbVersion);
     console.log('Connected to', dbName);
   } catch(error) {
     console.warn(error);
@@ -20,7 +20,7 @@ async function testDb() {
 
   console.log('Deleting database', dbName);
   try {
-    await dbDeleteDatabase(dbName);
+    await db.deleteDatabase(dbName);
     console.log('Deleted database', dbName);
   } catch(error) {
     console.warn(error);

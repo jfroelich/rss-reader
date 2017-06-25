@@ -6,7 +6,7 @@
 // Updates the number that appears on the icon in Chrome's toolbar
 // TODO: change all callers to pass in conn instead of deprecated entryStore
 async function updateBadgeText(conn) {
-  const count = await dbCountUnreadEntries(conn);
+  const count = await db.countUnreadEntries(conn);
   const text = count > 999 ? '1k+' : '' + count;
   chrome.browserAction.setBadgeText({'text': text});
 }
@@ -53,14 +53,13 @@ async function extensionOnInstalled(event) {
   console.log('Received install event');
 
   // Create or upgrade the database by connecting to it
-  const db = new ReaderDb();
+
   let conn;
   try {
-    conn = await db.dbConnect();
+    conn = await db.connect();
 
     // Initialize the app badge
-    const entryStore = new EntryStore(conn);
-    await updateBadgeText(entryStore);
+    await updateBadgeText(conn);
   } catch(error) {
     console.debug(error);
   } finally {

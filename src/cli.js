@@ -6,8 +6,8 @@ async function cliArchiveEntries() {
   let conn;
   let maxAge;// intentionally undefined
   try {
-    conn = await dbConnect();
-    const numArchived = await archiveEntries(conn, maxAge, console);
+    conn = await db.connect();
+    const numArchived = await operations.archiveEntries(conn, maxAge, console);
   } finally {
     if(conn) {
       conn.close();

@@ -13,9 +13,10 @@
   "background": {
     "persistent": false,
     "scripts": [
+      "/lib/filter-boilerplate/filter-boilerplate.js",
+      "/lib/parse-feed/parse-feed.js",
+      "/lib/parse-srcset/parse-srcset.js",
       "/src/alarms.js",
-      "/src/archive-entries.js",
-      "/src/bp.js",
       "/src/cli.js",
       "/src/imagedims.js",
       "/src/domscrub.js",
@@ -25,13 +26,12 @@
       "/src/favicon.js",
       "/src/feed.js",
       "/src/feed-favicon.js",
-      "/src/feed-parser.js",
       "/src/fetch.js",
+      "/src/operations.js",
       "/src/poll.js",
       "/src/resolve-document.js",
       "/src/template-filter.js",
-      "/src/utils.js",
-      "/third-party/parse-srcset.js"
+      "/src/utils.js"
     ]
   },
   "options_page": "options.html",

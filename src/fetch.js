@@ -36,45 +36,51 @@ async function fetchFeed(urlString, timeoutMillis) {
   const responseObject = await jrFetch(urlString, fetchOptionsObject,
     acceptedTypesArray, timeoutMillis);
   const responseText = await responseObject.text();
-  const parsedFeed = jrFeedParserParseFromString(responseText);
+  const parsedFeed = parseFeed(responseText);
 
   // TODO: all of this post fetch processing does not belong here. Even though
   // this always happens when fetching a feed, it is not intrinsic to fetching
+
+  // Furthermore, the feed format should not matter. This just downloads its
+  // own type of object that the caller is responsible for manipulating and
+  // coercing into a known format
+
   const entries = parsedFeed.entries;
-  const feed = parsedFeed;
-  delete feed.entries;
+  const feedObject = parsedFeed;
+  delete feedObject.entries;
 
   // Supply a default date for the feed
-  if(!feed.datePublished) {
-    feed.datePublished = new Date();
+  if(!feedObject.datePublished) {
+    feedObject.datePublished = new Date();
   }
 
   // Normalize the feed's link value
-  if(feed.link) {
+  if(feedObject.link) {
     try {
-      feed.link = new URL(feed.link).href;
+      feedObject.link = new URL(feedObject.link).href;
     } catch(error) {
       console.warn(error);
-      delete feed.link;
+      delete feedObject.link;
     }
   }
 
   // Suppy a default date for entries
   entries.filter((e)=> !e.datePublished).forEach((e) =>
-    e.datePublished = feed.datePublished);
+    e.datePublished = feedObject.datePublished);
 
   // Convert entry.link into entry.urls array
   entries.forEach((e) => {
     if(!e.link) return;
-    jrAddEntryURL(e, e.link);
+    entry.addURLString(e, e.link);
     delete e.link;
   });
 
-  jrAddFeedURL(feed, urlString);
-  jrAddFeedURL(feed, responseObject.url);
-  feed.dateFetched = new Date();
-  feed.dateLastModified = jrFetchGetResponseLastModifiedDate(responseObject);
-  return {'feed': feed, 'entries': entries};
+  feed.addURLString(feedObject, urlString);
+  feed.addURLString(feedObject, responseObject.url);
+  feedObject.dateFetched = new Date();
+  feedObject.dateLastModified =
+    jrFetchGetResponseLastModifiedDate(responseObject);
+  return {'feed': feedObject, 'entries': entries};
 }
 
 async function jrFetchHTML(urlString, timeoutMillis) {

@@ -47,8 +47,8 @@ async function markSlideRead(slideElement) {
   let conn;
 
   try {
-    conn = await dbConnect();
-    await jrEntryMarkRead(conn, entryIdInt);
+    conn = await db.connect();
+    await operations.markEntryRead(conn, entryIdInt);
     slideElement.setAttribute('read', '');
   } catch(error) {
     console.error(error);
@@ -69,8 +69,8 @@ async function appendSlides() {
   let conn;
   let entryArray = [];
   try {
-    conn = await dbConnect();
-    entryArray = await dbGetUnarchivedUnreadEntries(conn, offset, limit);
+    conn = await db.connect();
+    entryArray = await db.getUnarchivedUnreadEntryArray(conn, offset, limit);
   } catch(error) {
     console.error(error);
   } finally {
@@ -133,7 +133,7 @@ function appendSlide(entryObject) {
 
 function createArticleTitle(entryObject) {
   const titleElement = document.createElement('a');
-  titleElement.setAttribute('href', jrGetEntryURLString(entryObject));
+  titleElement.setAttribute('href', entry.getURLString(entryObject));
   titleElement.setAttribute('class', 'entry-title');
   titleElement.setAttribute('target','_blank');
   titleElement.setAttribute('rel', 'noreferrer');

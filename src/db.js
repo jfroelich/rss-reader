@@ -2,25 +2,23 @@
 
 'use strict';
 
-// NOTE: after some thought, I don't see much point to abstracting farther
-// away from indexedDB in the case I may want to swap the storage mechanism,
-// so I think it is ok to have tx and conn as params to various other fns
+const db = {};
 
-const dbDefaultName = 'reader';
-const dbDefaultVersion = 20;
+db.defaultName = 'reader';
+db.defaultVersion = 20;
 
-function dbConnect(name = dbDefaultName, version = dbDefaultVersion) {
+db.connect = function(name = db.defaultName, version = db.defaultVersion) {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(name, version);
-    request.onupgradeneeded = dbOnUpgradeNeeded;
+    request.onupgradeneeded = db.onUpgradeNeeded;
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
     request.onblocked = () =>
       console.warn('Waiting on blocked connection...');
   });
-}
+};
 
-function dbOnUpgradeNeeded(event) {
+db.onUpgradeNeeded = function(event) {
   const conn = event.target.result;
   const tx = event.target.transaction;
   let feedStore, entryStore;
@@ -55,27 +53,27 @@ function dbOnUpgradeNeeded(event) {
     feedStore = tx.objectStore('feed');
     entryStore = tx.objectStore('entry');
   }
-}
+};
 
-function dbDeleteDatabase(name) {
-  return new Promise((resolve, reject) {
+db.deleteDatabase = function(name) {
+  return new Promise((resolve, reject) => {
     const request = indexedDB.deleteDatabase(name);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-}
+};
 
-function dbRemoveFeed(tx, id) {
+db.removeFeed = function(tx, feedId) {
   return new Promise((resolve, reject) => {
     const store = tx.objectStore('feed');
-    const request = store.delete(id);
-    request.onsuccess = () => resolve();
+    const request = store.delete(feedId);
+    request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-}
+};
 
 // Load an array of all feed ids
-function dbGetFeedIds(conn) {
+db.getFeedIdArray = function(conn) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -83,9 +81,9 @@ function dbGetFeedIds(conn) {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-}
+};
 
-function dbGetFeeds(conn) {
+db.getFeedArray = function(conn) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -93,17 +91,17 @@ function dbGetFeeds(conn) {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-}
+};
 
 // TODO: this should not be doing anything other than adding the object it
 // was given
 // TODO: deprecate, require caller to use put everywhere
 // TODO: move obj prep to caller, use put logic, rename to putFeed
-function dbAddFeed(conn, feed) {
+db.addFeed = function(conn, feedObject) {
   return new Promise((resolve, reject) => {
-    if('id' in feed)
+    if('id' in feedObject)
       return reject(new TypeError());
-    let storable = jrFeedSanitize(feed);
+    let storable = feed.sanitize(feedObject);
     storable = utils.filterEmptyProperties(storable);
     storable.dateCreated = new Date();
     const tx = conn.transaction('feed', 'readwrite');
@@ -115,7 +113,7 @@ function dbAddFeed(conn, feed) {
     };
     request.onerror = () => reject(request.error);
   });
-}
+};
 
 // TODO: this should do absolutely nothing to to the object it is given, the
 // caller is responsible
@@ -125,23 +123,23 @@ function dbAddFeed(conn, feed) {
 // Adds or overwrites a feed in storage. Resolves with the stored feed. If
 // adding then the generated id is set on the input feed object.
 // @param feed {Object}
-function dbPutFeed(conn, feed) {
+db.putFeed = function(conn, feedObject) {
   return new Promise((resolve, reject) => {
-    feed.dateUpdated = new Date();
+    feedObject.dateUpdated = new Date();
     const tx = conn.transaction('feed', 'readwrite');
     const store = tx.objectStore('feed');
-    const request = store.put(feed);
+    const request = store.put(feedObject);
     request.onsuccess = () => {
-      feed.id = feed.id || request.result;
-      resolve(feed);
+      feedObject.id = feedObject.id || request.result;
+      resolve(feedObject);
     };
     request.onerror = () => reject(request.error);
   });
-}
+};
 
 // Returns true if a feed exists in the database with the given url
 // @param url {String}
-function dbContainsFeedURL(conn, urlString) {
+db.containsFeedURL = function(conn, urlString) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -150,10 +148,10 @@ function dbContainsFeedURL(conn, urlString) {
     request.onsuccess = () => resolve(!!request.result);
     request.onerror = () => reject(request.error);
   });
-}
+};
 
 // @param id {Number} feed id, positive integer
-function dbFindFeedById(conn, id) {
+db.findFeedById = function(conn, id) {
   return new Promise((resolve, reject) => {
     if(!Number.isInteger(id) || id < 1)
       return reject(new TypeError('Invalid feed id ' + id));
@@ -163,9 +161,9 @@ function dbFindFeedById(conn, id) {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-}
+};
 
-function dbGetEntryIdsByFeedId(tx, feedId) {
+db.getEntryIdsByFeedId = function(tx, feedId) {
   return new Promise((resolve, reject) => {
     const store = tx.objectStore('entry');
     const index = store.index('feed');
@@ -173,9 +171,9 @@ function dbGetEntryIdsByFeedId(tx, feedId) {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-}
+};
 
-function dbGetEntries(conn) {
+db.getEntryArray = function(conn) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
@@ -183,24 +181,24 @@ function dbGetEntries(conn) {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-}
+};
 
-function dbGetUnarchivedReadEntries(conn) {
+db.getUnarchivedReadEntryArray = function(conn) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const key_path = [ENTRY_UNARCHIVED_STATE, ENTRY_READ_STATE];
+    const key_path = [entry.UNARCHIVED_STATE, entry.READ_STATE];
     const request = index.getAll(key_path);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-}
+};
 
 // TODO: use getAll, passing in a count parameter as an upper limit, and
 // then using slice or unshift or something to advance.
 // TODO: internally the parameter to getAll might be (offset+limit)
-function dbGetUnarchivedUnreadEntries(conn, offset, limit) {
+db.getUnarchivedUnreadEntryArray = function(conn, offset, limit) {
   return new Promise((resolve, reject) => {
     const entries = [];
     let counter = 0;
@@ -210,51 +208,53 @@ function dbGetUnarchivedUnreadEntries(conn, offset, limit) {
     tx.oncomplete = () => resolve(entries);
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const keyPath = [ENTRY_UNARCHIVED_STATE, ENTRY_UNREAD_STATE];
+    const keyPath = [entry.UNARCHIVED_STATE, entry.UNREAD_STATE];
     const request = index.openCursor(keyPath);
     request.onsuccess = (event) => {
       const cursor = event.target.result;
-      if(!cursor)
+      if(!cursor) {
         return;
+      }
       if(offset && !advanced) {
         advanced = true;
         cursor.advance(offset);
         return;
       }
       entries.push(cursor.value);
-      if(limited && ++counter < limit)
+      if(limited && ++counter < limit) {
         cursor.continue();
+      }
     };
     request.onerror = () => reject(request.error);
   });
-}
+};
 
-function dbFindEntryById(conn, id) {
+db.findEntryByEntryId = function(conn, id) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('entry');
     const request = tx.objectStore('entry').get(id);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-}
+};
 
-function dbCountUnreadEntries(conn) {
+db.countUnreadEntries = function(conn) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('readState');
-    const request = index.count(ENTRY_UNREAD_STATE);
+    const request = index.count(entry.UNREAD_STATE);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-}
+};
 
 // TODO: tx can't be exposed as it is leaky abstraction?
 // TODO: allow for undefined chan
 // @param tx {IDBTransaction}
 // @param id {int}
 // @param chan {BroadcastChannel}
-function dbRemoveEntry(tx, id, chan) {
+db.removeEntryByEntryId = function(tx, id, chan) {
   return new Promise((resolve, reject) => {
     const store = tx.objectStore('entry');
     const request = store.delete(id);
@@ -264,14 +264,13 @@ function dbRemoveEntry(tx, id, chan) {
     };
     request.onerror = () => reject(request.error);
   });
-}
+};
 
-async function dbRemoveEntries(conn, ids, chan) {
+db.removeEntriesWithIds = async function(conn, ids, chan) {
   const tx = conn.transaction('entry', 'readwrite');
-  const proms = ids.map((id) => dbRemoveEntry(tx, id, chan));
+  const proms = ids.map((id) => db.removeEntryByEntryId(tx, id, chan));
   return await Promise.all(proms);
-}
-
+};
 
 // TODO: deprecate in favor of put, and after moving sanitization and
 // default props out, maybe make a helper function in pollfeeds that does this
@@ -279,14 +278,16 @@ async function dbRemoveEntries(conn, ids, chan) {
 // and date created
 // TODO: this should be nothing other than putting. Caller is responsible
 // for sanitizing and setting defaults.
-function dbAddEntry(conn, entry) {
+db.addEntry = function(conn, entryObject) {
   return new Promise((resolve, reject) => {
-    if('id' in entry)
+    if('id' in entryObject) {
       return reject(new TypeError());
-    const sanitized = jrSanitizeEntry(entry);
+    }
+
+    const sanitized = entry.sanitize(entryObject);
     const storable = utils.filterEmptyProperties(sanitized);
-    storable.readState = ENTRY_UNREAD_STATE;
-    storable.archiveState = ENTRY_UNARCHIVED_STATE;
+    storable.readState = entry.UNREAD_STATE;
+    storable.archiveState = entry.UNARCHIVED_STATE;
     storable.dateCreated = new Date();
     const tx = conn.transaction('entry', 'readwrite');
     const store = tx.objectStore('entry');
@@ -296,10 +297,10 @@ function dbAddEntry(conn, entry) {
   });
 }
 
-async function dbPutEntry(conn, entry) {
+db.putEntry = async function(conn, entryObject) {
   const tx = conn.transaction('entry', 'readwrite');
-  return await dbPutEntryWithTx(tx, entry);
-}
+  return await db.putEntryWithTx(tx, entryObject);
+};
 
 
 // TODO: it should be callers responsibility to set dateUpdated, this should
@@ -311,27 +312,32 @@ async function dbPutEntry(conn, entry) {
 // If entry.id is not set this will result in adding
 // Sets dateUpdated before put. Impure.
 // @param tx {IDBTransaction}
-function dbPutEntryWithTx(tx, entry) {
+db.putEntryWithTx = function(tx, entryObject) {
   return new Promise((resolve, reject) => {
-    entry.dateUpdated = new Date();
-    const request = tx.objectStore('entry').put(entry);
+    entryObject.dateUpdated = new Date();
+    const request = tx.objectStore('entry').put(entryObject);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-}
+};
 
 // Promise.all is failfast so this aborts if any one entry fails
-async function dbPutEntries(conn, entries) {
+db.putEntries = async function(conn, entryArray) {
   const tx = conn.transaction('entry', 'readwrite');
-  const proms = entries.map((entry) => dbPutEntryWithTx(tx, entry));
-  const putResolutionsArray = await Promise.all(proms);
-  return putResolutionsArray;
-}
+  const promiseArray = new Array(entryArray.length);
+  for(let entryObject of entryArray) {
+    const promise = db.putEntryWithTx(tx, entryObject);
+    promiseArray.push(promise);
+  }
+
+  const resolutionsArray = await Promise.all(promiseArray);
+  return resolutionsArray;
+};
 
 // Resolves with a boolean indicating whether an entry with the given url
 // was found in storage
 // @param url {String}
-function dbContainsEntryURL(conn, urlString) {
+db.containsEntryWithURL = function(conn, urlString) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
@@ -340,4 +346,4 @@ function dbContainsEntryURL(conn, urlString) {
     request.onsuccess = () => resolve(!!request.result);
     request.onerror = () => reject(request.error);
   });
-}
+};

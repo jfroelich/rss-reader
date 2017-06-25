@@ -121,7 +121,7 @@ function jrPollIsFeedNotRecent(logObject, feedObject) {
     millisElapsedSinceLastPoll < jrPollRecencyPeriodMillis;
 
   if(logObject && wasPolledRecently) {
-    logObject.debug('Feed polled too recently', feedGetURLString(feedObject));
+    logObject.debug('Feed polled too recently', feed.getURLString(feedObject));
   }
 
   return !wasPolledRecently;
@@ -184,8 +184,8 @@ async function jrPollFeeds(logObject, options = jrDefaultPollOptions) {
   const feedStore = new FeedStore();
 
   // TODO: objects deprecated
-  const connectionPromises = [jrPollDb.dbConnect(),
-    jrPollFaviconService.dbConnect()];
+  const connectionPromises = [jrPollDb.db.connect(),
+    jrPollFaviconService.db.connect()];
 
   // TODO: break this up into separate try/catch if possible?
 
@@ -233,10 +233,10 @@ async function jrPollFeeds(logObject, options = jrDefaultPollOptions) {
 
 // Suppresses jrPollProcessFeed exceptions to avoid Promise.all fail fast
 // behavior
-async function jrPollProcessFeedSilently(logObject, feed) {
+async function jrPollProcessFeedSilently(logObject, feedObject) {
   let numEntriesAdded = 0;
   try {
-    numEntriesAdded = await jrPollProcessFeed(logObject, feed);
+    numEntriesAdded = await jrPollProcessFeed(logObject, feedObject);
   } catch(error) {
     if(logObject) {
       logObject.warn(error);
@@ -245,9 +245,9 @@ async function jrPollProcessFeedSilently(logObject, feed) {
   return numEntriesAdded;
 }
 
-
-function jrPollEntryURLIsValid(logObject, entry) {
-  const urlString = entry.urls[0];
+// TODO: reverse params
+function jrPollEntryURLIsValid(logObject, entryObject) {
+  const urlString = entryObject.urls[0];
   let urlObject;
   try {
     urlObject = new URL(urlString);
@@ -259,8 +259,8 @@ function jrPollEntryURLIsValid(logObject, entry) {
     return false;
   }
 
-  // TODO: this really does not belong here and should be exposed elsewhere
   // Hack for a bad feed
+  // TODO: this does not belong here and should be exposed elsewhere
   if(urlObject.pathname.startsWith('//')) {
     return false;
   }
@@ -310,12 +310,14 @@ async function jrPollProcessFeed(localFeed) {
   let numAdded = 0;
 
   // TODO: use clearer name? is this string or object?
-  const url = feedGetURLString(localFeed);
+  const url = feed.getURLString(localFeed);
 
   // Explicit assignment due to strange destructuring rename behavior
-  const {feed, entries} = await fetchFeed(url,
+  // TODO: ensure destructuring names are exact, this used to say feed but now
+  // named feedObject
+  const {feedObject, entries} = await fetchFeed(url,
     jrPollFetchFeedTimeoutMillis);
-  const remoteFeed = feed;
+  const remoteFeed = feedObject;
   let remoteEntries = entries;
 
   if(!jrPollSkipModifiedCheck &&
@@ -330,7 +332,7 @@ async function jrPollProcessFeed(localFeed) {
   }
 
   const mergedFeed = jrFeedMerge(localFeed, remoteFeed);
-  let storableFeed = jrFeedSanitize(mergedFeed);
+  let storableFeed = feed.sanitize(mergedFeed);
   storableFeed = utils.filterEmptyProperties(storableFeed);
 
   remoteEntries = remoteEntries.filter(jrPollEntryHasURL);
@@ -346,8 +348,8 @@ async function jrPollProcessFeed(localFeed) {
   // TODO: why pass feed? Maybe it isn't needed by jrProcessEntry? Can't I just
   // do any delegation of props now, so that jrProcessEntry does not need to
   // have any knowledge of the feed?
-  const promises = remoteEntries.map((entry) => jrProcessEntry(
-    storableFeed, entry));
+  const promises = remoteEntries.map((entryObject) => jrProcessEntry(
+    storableFeed, entryObject));
   promises.push(feedStore.put(storableFeed));
   const resolutions = await Promise.all(promises);
   resolutions.pop();// remove feedStore.put promise
@@ -359,11 +361,11 @@ async function jrPollProcessFeed(localFeed) {
 // generated but if it already existed in urls then this still returns false
 function jrPollRewriteEntryURL(entryObject) {
   const beforeAppendLength = entryObject.urls.length;
-  const urlString = jrGetEntryURLString(entryObject);
+  const urlString = entry.getURLString(entryObject);
   const rewrittenURLString = jrPollRewriteURLString(urlString);
 
   if(rewrittenURLString) {
-    jrAddEntryURL(entryObject, rewrittenURLString);
+    entry.addURLString(entryObject, rewrittenURLString);
   }
   const didAppendURL = entryObject.urls.length > beforeAppendLength;
   return didAppendURL;
@@ -377,7 +379,9 @@ function jrPollRewriteEntryURL(entryObject) {
 // lookup up intermediate urls when possible
 // TODO: this is a pretty large function, it should be broken up into helper
 // functions. One low hanging fruit would be the favicon stuff.
-async function jrProcessEntry(logObject, feed, entryObject) {
+// TODO: feed is very rarely used in this function, it might be better to use
+// only the exact properties needed
+async function jrProcessEntry(logObject, feedObject, entryObject) {
 
   // TODO: entry store is deprecated
   // const entryStore = new EntryStore();
@@ -399,7 +403,7 @@ async function jrProcessEntry(logObject, feed, entryObject) {
 
   // Check if the rewritten url already exists in the database
   if(didAppendRewrittenURL) {
-    const rewrittenURLString = jrGetEntryURLString(entryObject);
+    const rewrittenURLString = entry.getURLString(entryObject);
     const rewrittenURLExists = await entryStore.containsURL(rewrittenURLString);
     if(rewrittenURLExists) {
       return false;
@@ -410,10 +414,10 @@ async function jrProcessEntry(logObject, feed, entryObject) {
   // TODO: move these into a helper function
   // TODO: need to get favicon db connection, favicon.js was refactored
   const faviconDbConn = ???;
-  const lookupURLString = jrGetEntryURLString(entryObject);
+  const lookupURLString = entry.getURLString(entryObject);
   const lookupURLObject = new URL(lookupURLString);
   const iconURL = await jrFaviconLookup(faviconDbConn, lookupURLObject);
-  entryObject.faviconURLString = iconURL || feed.faviconURLString;
+  entryObject.faviconURLString = iconURL || feedObject.faviconURLString;
 
   // Fetch the entry's full text
 
@@ -421,7 +425,7 @@ async function jrProcessEntry(logObject, feed, entryObject) {
   // into a DOM, then the redirect exists check could happen before parsing
   // into a DOM, saving processing
 
-  const fetchURLString = jrGetEntryURLString(entryObject);
+  const fetchURLString = entry.getURLString(entryObject);
   let documentObject, responseURLString;
   try {
     // TODO: now that I renamed these variables, this will not work
@@ -451,7 +455,7 @@ async function jrProcessEntry(logObject, feed, entryObject) {
     }
 
     // If redirected, append the redirected url
-    jrAddEntryURL(entryObject, responseURLString);
+    entry.addURLString(entryObject, responseURLString);
   }
 
   // Process the entry's full text
@@ -459,7 +463,7 @@ async function jrProcessEntry(logObject, feed, entryObject) {
   jrDOMScrubFilterSourcelessImages(documentObject);
   jrDOMScrubFilterInvalidAnchors(documentObject);
 
-  const baseURLString = jrGetEntryURLString(entryObject);
+  const baseURLString = entry.getURLString(entryObject);
   const baseURLObject = new URL(baseURLString);
   jrResolveDocument(documentObject, resolveBaseURLObject);
 
@@ -468,7 +472,7 @@ async function jrProcessEntry(logObject, feed, entryObject) {
   await jrImageDimsTransformDocument(documentObject,
     jrPollFetchImageTimeoutMillis);
 
-  const prepURLString = jrGetEntryURLString(entryObject);
+  const prepURLString = entry.getURLString(entryObject);
   jrPollPrepareDocument(prepURLString, documentObject);
 
   entryObject.content = documentObject.documentElement.outerHTML.trim();
@@ -479,7 +483,7 @@ async function jrProcessEntry(logObject, feed, entryObject) {
 function jrPollShouldExcludeEntry(entryObject) {
 
   // Treat the latest url as representative of the entry
-  const urlString = jrGetEntryURLString(entryObject);
+  const urlString = entry.getURLString(entryObject);
 
   // This should never throw because we know the url is valid
   const urlObject = new URL(urlString);
@@ -538,7 +542,7 @@ async function jrPollAddEntry(logObject, entryObject) {
     let result = await entryStore.add(entryObject);
   } catch(error) {
     if(logObject) {
-      const urlString = jrGetEntryURLString(entryObject);
+      const urlString = entry.getURLString(entryObject);
       logObject.warn(error, urlString);
     }
     return false;
@@ -590,7 +594,7 @@ function jrPollPrepareLocalEntry(logObject, entryObject) {
     return;
   }
 
-  const urlString = jrGetEntryURLString(entryObject);
+  const urlString = entry.getURLString(entryObject);
   jrPollPrepareDocument(urlString, documentObject);
 
   const content = documentObject.documentElement.outerHTML.trim();
@@ -601,7 +605,7 @@ function jrPollPrepareLocalEntry(logObject, entryObject) {
 
 function jrPollPrepareDocument(urlString, documentObject) {
   jrTemplatePrune(urlString, documentObject);
-  bpFilterDocument(documentObject);
+  filterBoilerplate(documentObject);
   jrDomScrubScrub(documentObject);
   jrDOMScrubAddNoReferrer(documentObject);
 }

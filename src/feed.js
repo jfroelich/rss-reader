@@ -2,76 +2,91 @@
 
 'use strict';
 
-function feedGetURLString(feed) {
-  if(!feed.urls.length)
-    throw new TypeError();
-  return feed.urls[feed.urls.length - 1];
-}
+const feed = {};
 
-function jrAddFeedURL(feed, url) {
-  if(!('urls' in feed))
-    feed.urls = [];
-  const normURL = jrFeedNormalizeURL(url);
-  if(feed.urls.includes(normURL))
+// Get the url currently representing the feed
+feed.getURLString = function(feedObject) {
+  if(!feedObject.urls.length) {
+    throw new TypeError('feedObject urls array is invalid');
+  }
+
+  return feedObject.urls[feedObject.urls.length - 1];
+};
+
+// Add a new url to the feed
+feed.addURLString = function(feedObject, url) {
+  if(!('urls' in feedObject)) {
+    feedObject.urls = [];
+  }
+  const normalizedURLString = feed.normalizeURLString(url);
+  if(feedObject.urls.includes(normalizedURLString)) {
     return false;
-  feed.urls.push(normURL);
+  }
+  feedObject.urls.push(normalizedURLString);
   return true;
-}
+};
 
-function jrFeedNormalizeURL(urlString) {
+feed.normalizeURLString = function(urlString) {
   const url = new URL(urlString);
   return url.href;
-}
+};
 
-function jrFeedSanitize(inputFeed) {
-  const feed = Object.assign({}, inputFeed);
+// TODO: sanitize is not same as validate, this should not validate, this is
+// a conflation of functionality
 
-  if(feed.id) {
-    if(!Number.isInteger(feed.id) || feed.id < 1)
-      throw new TypeError();
+feed.sanitize = function(inputFeedObject) {
+  const outputFeedObject = Object.assign({}, inputFeedObject);
+
+  if(outputFeedObject.id) {
+    if(!Number.isInteger(outputFeedObject.id) || outputFeedObject.id < 1) {
+      throw new TypeError('Invalid feed id');
+    }
   }
 
   const types = {'feed': 1, 'rss': 1, 'rdf': 1};
-  if(feed.type && !(feed.type in types))
+  if(outputFeedObject.type && !(outputFeedObject.type in types)) {
     throw new TypeError();
+  }
 
-  if(feed.title) {
-    let title = feed.title;
+  if(outputFeedObject.title) {
+    let title = outputFeedObject.title;
     title = utils.filterControlCharacters(title);
     title = utils.replaceHTML(title, '');
     title = title.replace(/\s+/, ' ');
-    const title_max_len = 1024;
-    title = utils.truncateHTML(title, title_max_len, '');
-    feed.title = title;
+    const titleMaxLength = 1024;
+    title = utils.truncateHTML(title, titleMaxLength, '');
+    outputFeedObject.title = title;
   }
 
-  if(feed.description) {
-    let description = feed.description;
+  if(outputFeedObject.description) {
+    let description = outputFeedObject.description;
     description = utils.filterControlCharacters(description);
     description = utils.replaceHTML(description, '');
     description = description.replace(/\s+/, ' ');
-    const before_len = description.length;
-    const desc_max_len = 1024 * 10;
-    description = utils.truncateHTML(description, desc_max_len, '');
-    if(before_len > description.length) {
-      console.warn('Truncated description', description);
+    const beforeLength = description.length;
+    const descriptionMaxLength = 1024 * 10;
+    description = utils.truncateHTML(description, descriptionMaxLength, '');
+
+    if(beforeLength > description.length) {
+      // console.warn('Truncated description', description);
     }
 
-    feed.description = description;
+    outputFeedObject.description = description;
   }
 
-  return feed;
-}
+  return outputFeedObject;
+};
 
 // Returns a new object of the old feed merged with the new feed. Fields from
 // the new feed take precedence, except for URLs, which are merged to generate
 // a distinct ordered set of oldest to newest url. Impure because of copying
 // by reference.
-function feedMerge(oldFeed, newFeed) {
-  const merged = Object.assign({}, oldFeed, newFeed);
-  merged.urls = [...oldFeed.urls];
-  for(let url of newFeed.urls) {
-    jrAddFeedURL(merged, url);
+feed.merge = function(oldFeedObject, newFeedObject) {
+  const mergedFeedObject = Object.assign({}, oldFeedObject, newFeedObject);
+  mergedFeedObject.urls = [...oldFeedObject.urls];
+
+  for(let urlString of newFeedObject.urls) {
+    feed.addURLString(mergedFeedObject, urlString);
   }
-  return merged;
-}
+  return mergedFeedObject;
+};

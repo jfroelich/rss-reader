@@ -17,8 +17,31 @@ chrome.alarms.onAlarm.addListener(async function(alarmObject) {
 
   let conn;
   try {
-    conn = await dbConnect();
-    const numEntriesArchived = await archiveEntries(conn);
+    conn = await db.connect();
+    const numEntriesArchived = await operations.archiveEntries(conn);
+  } catch(error) {
+    console.warn(error);
+  } finally {
+    if(conn) {
+      conn.close();
+    }
+  }
+});
+
+// TODO: where is remove missing entry urls alarm created? should be here
+
+// React to alarm for removing entries missing urls
+chrome.alarms.onAlarm.addListener(async function(alarm) {
+  if(alarm.name !== 'remove-entries-missing-urls') {
+    return;
+  }
+
+  console.debug('Received remote-entries-missing-urls alarm wakeup');
+
+  let conn;
+  try {
+    conn = await db.connect();
+    operations.removeEntriesMissingURLs(conn);
   } catch(error) {
     console.warn(error);
   } finally {
@@ -29,10 +52,41 @@ chrome.alarms.onAlarm.addListener(async function(alarmObject) {
 });
 
 
-
-
-
+////////////////////////////////////////////////////////////////////////
 // BELOW IS OUTDATED CODE
+
+
+
+
+async jrFaviconCreateAlarm(periodInMinutes) {
+  const alarm = await utils.getAlarm('compact-favicons');
+  if(alarm)
+    return;
+  console.debug('Creating alarm compact-favicons');
+  chrome.alarms.create('compact-favicons',
+    {'periodInMinutes': periodInMinutes});
+}
+
+// Handle an alarm event
+async jrFaviconOnAlarm(alarm) {
+  // This can be called for any alarm, so reject others
+  if(alarm.name !== 'compact-favicons')
+    return;
+  let conn;
+
+  try {
+    conn = await jrFaviconConnect();
+    await jrFaviconCompact(conn);
+  } catch(error) {
+    console.warn(error);
+  } finally {
+    if(conn)
+      conn.close();
+  }
+}
+
+chrome.alarms.onAlarm.addListener(jrFaviconOnAlarm);
+
 
 // Performs tasks that should only happen in the context of when the
 // background page is loaded

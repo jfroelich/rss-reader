@@ -15,10 +15,24 @@ backup.exportFile = function(feedArray = [], titleString = 'Subscriptions',
       fileNameString);
   }
 
-  const documentObject = opml.createDocument(titleString);
-  opml.appendFeeds(documentObject, feedArray);
-  const blobObject = opml.toBlob(documentObject);
-  utils.download(documentObject, fileNameString);
+  const documentObject = OPMLDocument.create(titleString);
+  for(let feedObject of feedArray) {
+    const outlineObject = backup.convertFeedToOutline(feedObject);
+    documentObject.appendOutlineObject(outlineObject);
+  }
+
+  const blobObject = documentObject.toBlob();
+  utils.download(blobObject, fileNameString);
+};
+
+backup.convertFeedToOutline = function(feedObject) {
+  const outlineObject = {};
+  outlineObject.type = feedObject.type;
+  outlineObject.xmlUrl = feed.getURLString(feedObject);
+  outlineObject.title = feedObject.title;
+  outlineObject.description = feedObject.description;
+  outlineObject.htmlUrl = feedObject.link;
+  return outlineObject;
 };
 
 // Import one or more files into the app
@@ -37,7 +51,7 @@ backup.importFiles = async function(fileList, logObject) {
 
   try {
 
-    dbConn = await dbConnect();
+    dbConn = await db.connect();
     iconConn = await jrFaviconConnect();
 
     for(let fileObject of fileList) {
@@ -92,12 +106,11 @@ backup.importFileSilently = async function(dbConn, iconConn, fileObject,
 backup.importFile = async function(dbConn, iconConn, fileObject, logObject) {
 
   if(logObject) {
-    logObject.log('Importing OPML file "%s", byte size %d, mime type "%s"',
-      fileObject.name, fileObject.size, fileObject.type);
+    logObject.log('Importing file:', fileObject.name);
   }
 
   if(fileObject.size < 1) {
-    throw new TypeError(`"${fileObject.name}" is empty`);
+    throw new TypeError(`The file named "${fileObject.name}" is empty`);
   }
 
   if(!backup.isSupportedFileType(fileObject.type)) {
@@ -106,34 +119,28 @@ backup.importFile = async function(dbConn, iconConn, fileObject, logObject) {
   }
 
   const text = await backup.readFileAsText(fileObject);
-  const doc = opml.parseFromString(text);
 
-  const outlineElementArray = opml.selectOutlineElements(doc);
+  const document = OPMLDocument.parse(text);
+  const outlines = document.getOutlineObjects();
 
-  const outlineArray = new Array(outlineElementArray.length);
-  for(let outlineElement of outlineElementArray) {
-    const outlineObject = opml.createOutlineObject(outlineElement);
-    outlineArray.push(outlineObject);
-  }
-
-  const validOutlineArray = new Array(outlineArray.length);
-  for(let outlineObject of outlineArray) {
+  const validOutlineArray = new Array(outlines.length);
+  for(let outlineObject of outlines) {
     if(!/rss|rdf|feed/i.test(outlineObject.type)) {
       continue;
     }
 
-    if(!outlineObject.url) {
+    if(!outlineObject.xmlUrl) {
       continue;
     }
 
     let urlObject;
     try {
-      urlObject = new URL(outlineObject.url);
+      urlObject = new URL(outlineObject.xmlUrl);
     } catch(error) {
     }
 
     if(urlObject) {
-      outlineObject.url = urlObject.href;
+      outlineObject.xmlUrl = urlObject.href;
     } else {
       continue;
     }
@@ -149,20 +156,20 @@ backup.importFile = async function(dbConn, iconConn, fileObject, logObject) {
   const uniqueURLsArray = new Array(validOutlineArray.length);
   const uniqueOutlineArray = new Array(validOutlineArray.length);
   for(let outlineObject of validOutlineArray) {
-    if(!uniqueURLsArray.includes(outlineObject.url)) {
+    if(!uniqueURLsArray.includes(outlineObject.xmlUrl)) {
       uniqueOutlineArray.push(outlineObject);
-      uniqueURLsArray.push(outlineObject.url);
+      uniqueURLsArray.push(outlineObject.xmlUrl);
     }
   }
 
-  // Normalize each outline's link property
+  // Normalize and validate each outline's link property
   for(let outlineObject of uniqueOutlineArray) {
-    if(outlineObject.link) {
+    if(outlineObject.htmlUrl) {
       try {
-        const url = new URL(outlineObject.link);
-        outlineObject.link = url.href;
+        const urlObject = new URL(outlineObject.htmlUrl);
+        outlineObject.htmlUrl = urlObject.href;
       } catch(error) {
-        outlineObject.link = undefined;
+        outlineObject.htmlUrl = undefined;
       }
     }
   }
@@ -170,7 +177,7 @@ backup.importFile = async function(dbConn, iconConn, fileObject, logObject) {
   // Convert the outlines into feeds
   const feedArray = new Array(uniqueOutlineArray.length);
   for(let outlineObject of uniqueOutlineArray) {
-    const feedObject = opml.createFeed(outlineObject);
+    const feedObject = backup.convertOutlineToFeed(outlineObject);
     feedArray.push(feedObject);
   }
 
@@ -194,17 +201,43 @@ backup.importFile = async function(dbConn, iconConn, fileObject, logObject) {
   return numSubscribed;
 };
 
+backup.convertOutlineToFeed = function(outlineObject) {
+  const feedObject = {};
+
+  if(outlineObject.type) {
+    feedObject.type = outlineObject.type;
+  }
+
+  if(outlineObject.title) {
+    feedObject.title = outlineObject.title;
+  } else if(outlineObject.text) {
+    feedObject.text = outlineObject.text;
+  }
+
+  if(outlineObject.description) {
+    feedObject.description = outlineObject.description;
+  }
+
+  if(outlineObject.htmlUrl) {
+    feedObject.link = outlineObject.htmlUrl;
+  }
+
+  feed.addURLString(feedObject, outlineObject.xmlUrl);
+
+  return feedObject;
+};
+
 // Returns the result of subscribe, which is the added feed object, or null
 // if an error occurs. This wraps so that it can be used with Promise.all
 backup.subscribe = async function(dbConn, iconDbConn, feedObject, logObject) {
 
-  const subscribeOptionsObjects = {
+  const options = {
     'suppressNotifications': true
   };
 
   try {
-    const subscribedFeedObject = await subscribe(dbConn, iconDbConn,
-      subscribeOptionsObjects, feedObject);
+    const subscribedFeedObject = await operations.subscribe(dbConn, iconDbConn,
+      feedObject, options, logObject);
 
     return subscribedFeedObject;
   } catch(error) {

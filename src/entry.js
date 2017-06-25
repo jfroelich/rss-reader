@@ -2,23 +2,27 @@
 
 'use strict';
 
-const ENTRY_UNREAD_STATE = 0;
-const ENTRY_READ_STATE = 1;
-const ENTRY_UNARCHIVED_STATE = 0;
-const ENTRY_ARCHIVED_STATE = 1;
+const entry = {};
+
+entry.UNREAD_STATE = 0;
+entry.READ_STATE = 1;
+entry.UNARCHIVED_STATE = 0;
+entry.ARCHIVED_STATE = 1;
 
 // Get the last url in an entry's internal url list
-function jrGetEntryURLString(entryObject) {
+entry.getURLString = function(entryObject) {
   // Allow the natural error to happen if urls is not an array
-  if(!entryObject.urls.length)
+  if(!entryObject.urls.length) {
     throw new TypeError('Entry object has no urls');
+  }
+
   return entryObject.urls[entryObject.urls.length - 1];
-}
+};
 
 // Append a url to the entry's internal url list. Lazily creates the list if
 // need. Also normalizes the url. Returns false if the url already exists and
 // was not added
-function jrAddEntryURL(entryObject, urlString) {
+entry.addURLString = function(entryObject, urlString) {
   const normalizedURLObject = new URL(urlString);
   if(entryObject.urls) {
     if(entryObject.urls.includes(normalizedURLObject.href)) {
@@ -30,15 +34,15 @@ function jrAddEntryURL(entryObject, urlString) {
   }
 
   return true;
-}
+};
 
 // Returns a new entry object where fields have been sanitized. Impure
 // TODO: ensure dates are not in the future, and not too old? Should this be
 // a separate function like validateEntry?
-function jrSanitizeEntry(inputEntryObject) {
-  const authorMaxLen = 200;
-  const titleMaxLen = 1000;
-  const contentMaxLen = 50000;
+entry.sanitize = function(inputEntryObject) {
+  const authorMaxLength = 200;
+  const titleMaxLength = 1000;
+  const contentMaxLength = 50000;
   const outputEntry = Object.assign({}, inputEntryObject);
 
   if(outputEntry.author) {
@@ -46,7 +50,7 @@ function jrSanitizeEntry(inputEntryObject) {
     author = utils.filterControlCharacters(author);
     author = utils.replaceHTML(author, '');
     author = utils.condenseWhitespace(author);
-    author = utils.truncateHTML(author, authorMaxLen);
+    author = utils.truncateHTML(author, authorMaxLength);
     outputEntry.author = author;
   }
 
@@ -54,7 +58,7 @@ function jrSanitizeEntry(inputEntryObject) {
   // TODO: filter out non-printable characters other than \r\n\t
   if(outputEntry.content) {
     let content = outputEntry.content;
-    content = utils.truncateHTML(content, contentMaxLen);
+    content = utils.truncateHTML(content, contentMaxLength);
     outputEntry.content = content;
   }
 
@@ -63,9 +67,9 @@ function jrSanitizeEntry(inputEntryObject) {
     title = utils.filterControlCharacters(title);
     title = utils.replaceHTML(title, '');
     title = utils.condenseWhitespace(title);
-    title = utils.truncateHTML(title, titleMaxLen);
+    title = utils.truncateHTML(title, titleMaxLength);
     outputEntry.title = title;
   }
 
   return outputEntry;
-}
+};

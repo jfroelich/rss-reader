@@ -12,12 +12,12 @@ async function testArchiveEntries() {
   let conn;
 
   try {
-    conn = await dbConnect(testDbName, testDbVersion);
-    const numEntriesModified = await archiveEntries(conn, undefined, console);
+    conn = await db.connect(testDbName, testDbVersion);
+    const numEntriesModified = await operations.archiveEntries(conn, undefined, console);
     console.log('Num entries modified:', numEntriesModified);
     conn.close();
     isClosed = true;
-    await dbDeleteDatabase(conn.name);
+    await db.deleteDatabase(conn.name);
   } catch(error) {
     console.error(error);
   } finally {

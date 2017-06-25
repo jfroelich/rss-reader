@@ -2,8 +2,14 @@
 
 'use strict';
 
-// TODO: review and remove all attempts at abstracting away indexedDB
-
+// TODO: review and remove all attempts at abstracting away indexedDB, just
+// make it explicit that indexedDB is required
+// TODO: refactor into an independent sub-application, remove all knowledge
+// of alarms and such
+// TODO: add an install hook so that the db can be setup at install time
+// TODO: go back to using a class, or at least a namespace, or only export
+// a small number of globals
+// TODO: make it more configurable, maybe using a class helps this
 
 const jrFaviconCacheName = 'favicon-cache';
 const jrFaviconCacheVersion = 2;
@@ -38,9 +44,9 @@ async function jrFaviconLookup(conn, urlObject) {
   const currentDate = new Date();
 
   // Lookup the url in the cache
-  const entry = await jrFaviconFindEntry(urlObject.href);
-  if(entry && !jrFaviconIsExpired(entry, currentDate))
-    return entry.iconURLString;
+  const entryObject = await jrFaviconFindEntry(urlObject.href);
+  if(entryObject && !jrFaviconIsExpired(entryObject, currentDate))
+    return entryObject.iconURLString;
 
   // If we did not find a cached entry, or if we found a cached entry but it
   // is expired, then plan on fetching. Before fetching, check if we are
@@ -66,7 +72,7 @@ async function jrFaviconLookup(conn, urlObject) {
   }
 
   // If the fetch failed but we have an expired entry, remove it
-  if(entry && !doc) {
+  if(entryObject && !doc) {
     const tx = conn.transaction('favicon-cache', 'readwrite');
     await jrFaviconRemoveEntry(tx, urlObject.href);
   }
@@ -149,50 +155,27 @@ async function jrFaviconLookup(conn, urlObject) {
 
   // Remove entries we know that exist but are expired
   const expiredURLs = [];
-  if(entry)
-    expiredURLs.push(entry.pageURLString);
-  if(redirectEntry)
+  if(entryObject) {
+    expiredURLs.push(entryObject.pageURLString);
+  }
+
+  if(redirectEntry) {
     expiredURLs.push(redirectEntry.pageURLString);
-  if(originEntry)
+  }
+
+  if(originEntry) {
     expiredURLs.push(originEntry.pageURLString);
+  }
+
   await jrFaviconRemoveEntries(expiredURLs);
   return null;
 }
 
-async jrFaviconCreateAlarm(periodInMinutes) {
-  const alarm = await utils.getAlarm('compact-favicons');
-  if(alarm)
-    return;
-  console.debug('Creating alarm compact-favicons');
-  chrome.alarms.create('compact-favicons',
-    {'periodInMinutes': periodInMinutes});
-}
-
-// Handle an alarm event
-async jrFaviconOnAlarm(alarm) {
-  // This can be called for any alarm, so reject others
-  if(alarm.name !== 'compact-favicons')
-    return;
-  let conn;
-
-  try {
-    conn = await jrFaviconConnect();
-    await jrFaviconCompact(conn);
-  } catch(error) {
-    console.warn(error);
-  } finally {
-    if(conn)
-      conn.close();
-  }
-}
-
-chrome.alarms.onAlarm.addListener(jrFaviconOnAlarm);
-
 // Returns true if the entry is expired. An entry is expired if the difference
 // between today's date and the date the entry was last updated is greater than
 // max age.
-function jrFaviconIsExpired(entry, currentDate) {
-  const age = currentDate - entry.dateUpdated;
+function jrFaviconIsExpired(entryObject, currentDate) {
+  const age = currentDate - entryObject.dateUpdated;
   return age > jrFaviconCacheMaxAge;
 }
 
@@ -240,13 +223,13 @@ function jrFaviconFindEntry(conn, urlString) {
 // TODO: maybe rename props to pageURL and iconURL
 function jrFaviconPutEntry(tx, pageURL, iconURL) {
   return new Promise((resolve, reject) => {
-    const entry = {
+    const entryObject = {
       'pageURLString': pageURL,
       'iconURLString': iconURL,
       'dateUpdated': new Date()
     };
     const store = tx.objectStore('favicon-cache');
-    const request = store.put(entry);
+    const request = store.put(entryObject);
     request.onsuccess = resolve;
     request.onerror = () => reject(request.error);
   });
