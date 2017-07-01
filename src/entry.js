@@ -48,7 +48,7 @@ entry.sanitize = function(inputEntryObject) {
   if(outputEntry.author) {
     let author = outputEntry.author;
     author = utils.filterControlCharacters(author);
-    author = utils.replaceHTML(author, '');
+    author = replaceHTML(author, '');
     author = utils.condenseWhitespace(author);
     author = utils.truncateHTML(author, authorMaxLength);
     outputEntry.author = author;
@@ -65,7 +65,7 @@ entry.sanitize = function(inputEntryObject) {
   if(outputEntry.title) {
     let title = outputEntry.title;
     title = utils.filterControlCharacters(title);
-    title = utils.replaceHTML(title, '');
+    title = replaceHTML(title, '');
     title = utils.condenseWhitespace(title);
     title = utils.truncateHTML(title, titleMaxLength);
     outputEntry.title = title;

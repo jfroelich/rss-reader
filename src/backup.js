@@ -52,7 +52,7 @@ backup.importFiles = async function(fileList, logObject) {
   try {
 
     dbConn = await db.connect();
-    iconConn = await jrFaviconConnect();
+    iconConn = await favicon.connect();
 
     for(let fileObject of fileList) {
       const promise = backup.importFileSilently(dbConn, iconConn, fileObject,

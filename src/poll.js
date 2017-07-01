@@ -404,19 +404,21 @@ async function jrProcessEntry(logObject, feedObject, entryObject) {
   // Check if the rewritten url already exists in the database
   if(didAppendRewrittenURL) {
     const rewrittenURLString = entry.getURLString(entryObject);
-    const rewrittenURLExists = await entryStore.containsURL(rewrittenURLString);
-    if(rewrittenURLExists) {
+    const isExistingRewrittenURL = await entryStore.containsURL(
+      rewrittenURLString);
+    if(isExistingRewrittenURL) {
       return false;
     }
   }
 
   // Set the entry's favicon url
   // TODO: move these into a helper function
-  // TODO: need to get favicon db connection, favicon.js was refactored
-  const faviconDbConn = ???;
+  // TODO: use try / finally for favicon connection and close it
+  //      - which means this should be shared
+  const faviconDbConn = await favicon.connect();
   const lookupURLString = entry.getURLString(entryObject);
   const lookupURLObject = new URL(lookupURLString);
-  const iconURL = await jrFaviconLookup(faviconDbConn, lookupURLObject);
+  const iconURL = await favicon.lookup(faviconDbConn, lookupURLObject);
   entryObject.faviconURLString = iconURL || feedObject.faviconURLString;
 
   // Fetch the entry's full text

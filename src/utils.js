@@ -14,33 +14,6 @@ utils.download = function(blobObject, fileNameString) {
   URL.revokeObjectURL(objectURL);
 };
 
-// Returns a new string where html elements were replaced with the optional
-// replacement string. HTML entities remain (except some will be
-// replaced, like &#32; with space).
-utils.replaceHTML = function(inputString, replacementString) {
-  let outputString = null;
-  const documentObject = document.implementation.createHTMLDocument();
-  const bodyElement = documentObject.body;
-  bodyElement.innerHTML = inputString;
-
-  if(replacementString) {
-    const nodeIterator = documentObject.createNodeIterator(bodyElement,
-      NodeFilter.SHOW_TEXT);
-    let node = nodeIterator.nextNode();
-    const stringsArray = [];
-    while(node) {
-      stringsArray.push(node.nodeValue);
-      node = nodeIterator.nextNode();
-    }
-
-    outputString = stringsArray.join(replacementString);
-  } else {
-    outputString = bodyElement.textContent;
-  }
-
-  return outputString;
-};
-
 // Truncates a string containing some html, taking special care not to
 // truncate in the midst of a tag or an html entity. The transformation is
 // lossy as some entities are not re-encoded (e.g. &#32;).
@@ -99,71 +72,6 @@ utils.getAlarm = function(alarmNameString) {
   return new Promise(function(resolve, reject) {
     chrome.alarms.get(alarmNameString, resolve);
   });
-};
-
-// Calculates the approximate size of a value in bytes. This should only be
-// used for basic testing because it is hilariously inaccurate.
-// Adapted from http://stackoverflow.com/questions/1248302
-// Generally does not work on built-ins (dom, XMLHttpRequest, etc)
-// This uses a stack internally to avoid recursion
-utils.sizeOf = function(inputValue) {
-  const seen = [];
-  const stack = [inputValue];
-  const hasOwnProp = Object.prototype.hasOwnProperty;
-  const toString = Object.prototype.toString;
-  let size = 0;
-  while(stack.length) {
-    const value = stack.pop();
-
-    // typeof null === 'object'
-    if(value === null)
-      continue;
-
-    switch(typeof value) {
-      case 'undefined':
-        break;
-      case 'boolean':
-        size += 4;
-        break;
-      case 'string':
-        size += value.length * 2;
-        break;
-      case 'number':
-        size += 8;
-        break;
-      case 'function':
-        size += 2 * value.toString().length;
-        break;
-      case 'object':
-        if(seen.indexOf(value) === -1) {
-          seen.push(value);
-          if(ArrayBuffer.isView(value)) {
-            size += value.length;
-          } else if(Array.isArray(value)) {
-            stack.push(...value);
-          } else {
-            const toStringOutput = toString.call(value);
-            if(toStringOutput === '[object Date]') {
-              size += 8;// guess
-            } else if(toStringOutput === '[object URL]') {
-              size += 2 * value.href.length;// guess
-            } else {
-              for(let prop in value) {
-                if(hasOwnProp.call(value, prop)) {
-                  size += prop.length * 2;// prop name
-                  stack.push(value[prop]);
-                }
-              }
-            }
-          }
-        }
-        break;
-      default:
-        break;// ignore
-    }
-  }
-
-  return size;
 };
 
 utils.isURLObject = function(value) {

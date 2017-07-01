@@ -75,8 +75,8 @@ async jrFaviconOnAlarm(alarm) {
   let conn;
 
   try {
-    conn = await jrFaviconConnect();
-    await jrFaviconCompact(conn);
+    conn = await favicon.connect();
+    await favicon.compact(conn);
   } catch(error) {
     console.warn(error);
   } finally {

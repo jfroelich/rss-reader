@@ -31,7 +31,7 @@ async function jrFeedIconRefresh() {
 
   try {
     const connections = await Promise.all([this.readerDb.db.connect(),
-      jrFaviconConnect()]);
+      favicon.connect()]);
     this.feedStore.conn = connections[0];
     const feeds = await this.feedStore.getAll();
     const updatePromises = feeds.map(jrFeedIconUpdateIcon, this);
@@ -46,7 +46,7 @@ async function jrFeedIconRefresh() {
 
 async function jrFeedIconUpdateIcon(feedObject) {
   const lookupURL = FeedFavicon.getLookupURL(feedObject);
-  const iconURL = await jrFaviconLookup(lookupURL);
+  const iconURL = await favicon.lookup(lookupURL);
   if(!iconURL)
     return false;
   if(feedObject.faviconURLString === iconURL)

@@ -499,12 +499,13 @@ optpg.subscribeFormOnSubmit = async function(event) {
   }
 
   // Sanitize entry title
+  // TODO: use for..of
   const entryTitleMaxLength = 200;
   entryArray.forEach((entryObject) => {
     let title = entryObject.title;
     if(title) {
       title = utils.filterControlCharacters(title);
-      title = utils.replaceHTML(title, '');
+      title = replaceHTML(title, '');
       title = utils.truncateHTML(title, entryTitleMaxLength);
       entryObject.title = title;
     }
@@ -513,6 +514,7 @@ optpg.subscribeFormOnSubmit = async function(event) {
   // Sanitize content snippet
   const replacement = '\u2026';
   const entrySnippetMaxLength = 400;
+  // TODO: use for..of
   entryArray.forEach((entryObject) => {
     let snippet = entryObject.contentSnippet;
     if(snippet) {

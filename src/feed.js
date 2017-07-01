@@ -51,7 +51,7 @@ feed.sanitize = function(inputFeedObject) {
   if(outputFeedObject.title) {
     let title = outputFeedObject.title;
     title = utils.filterControlCharacters(title);
-    title = utils.replaceHTML(title, '');
+    title = replaceHTML(title, '');
     title = title.replace(/\s+/, ' ');
     const titleMaxLength = 1024;
     title = utils.truncateHTML(title, titleMaxLength, '');
@@ -61,7 +61,7 @@ feed.sanitize = function(inputFeedObject) {
   if(outputFeedObject.description) {
     let description = outputFeedObject.description;
     description = utils.filterControlCharacters(description);
-    description = utils.replaceHTML(description, '');
+    description = replaceHTML(description, '');
     description = description.replace(/\s+/, ' ');
     const beforeLength = description.length;
     const descriptionMaxLength = 1024 * 10;

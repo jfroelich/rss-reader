@@ -346,20 +346,20 @@ window.addEventListener('keydown', function(event) {
 let scrollCallbackHandle;
 window.addEventListener('keydown', function(event) {
 
-  const DOWN = 40, UP = 38, ae = document.activeElement;
+  const DOWN = 40, UP = 38;
 
   if(event.keyCode !== DOWN && event.keyCode !== UP) {
     return;
   }
 
-  if(!ae) {
+  if(!document.activeElement) {
     return;
   }
 
   event.preventDefault();
   cancelIdleCallback(scrollCallbackHandle);
   scrollCallbackHandle = requestIdleCallback(() =>
-    ae.scrollTop += event.keyCode === UP ? -200 : 200);
+    document.activeElement.scrollTop += event.keyCode === UP ? -200 : 200);
 });
 
 document.addEventListener('DOMContentLoaded', function(event) {

@@ -13,9 +13,12 @@
   "background": {
     "persistent": false,
     "scripts": [
+      "/lib/favicon/favicon.js",
       "/lib/filter-boilerplate/filter-boilerplate.js",
       "/lib/parse-feed/parse-feed.js",
       "/lib/parse-srcset/parse-srcset.js",
+      "/lib/replace-html/replace-html.js",
+      "/lib/sizeof/sizeof.js",
       "/src/alarms.js",
       "/src/cli.js",
       "/src/imagedims.js",
@@ -23,7 +26,6 @@
       "/src/entry.js",
       "/src/db.js",
       "/src/extension.js",
-      "/src/favicon.js",
       "/src/feed.js",
       "/src/feed-favicon.js",
       "/src/fetch.js",

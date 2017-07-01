@@ -49,8 +49,8 @@ operations.archiveEntries = async function(conn,
 
   if(logObject) {
     for(let i = 0, length = archivableEntriesArray.length; i < length; i++) {
-      const beforeSize = utils.sizeOf(archivableEntriesArray[i]);
-      const afterSize = utils.sizeOf(compactedEntriesArray[i]);
+      const beforeSize = sizeof(archivableEntriesArray[i]);
+      const afterSize = sizeof(compactedEntriesArray[i]);
       logObject.log(beforeSize, 'compacted to', afterSize);
     }
   }
@@ -289,7 +289,7 @@ async subscribeSetFeedFavicon(iconDbConn, feedObject, logObject) {
   // Lookup errors are not fatal so suppress any exceptions
   // TODO: should that be caller's responsibility?
   try {
-    const iconURLString = await jrFaviconLookup(iconDbConn, lookupURLObject);
+    const iconURLString = await favicon.lookup(iconDbConn, lookupURLObject);
     feedObject.faviconURLString = iconURLString;
   } catch(error) {
     if(logObject) {
