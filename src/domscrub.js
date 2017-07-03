@@ -2,6 +2,21 @@
 
 'use strict';
 
+// TODO: replace strong with b to shrink document size
+// TODO: replace em with i to shrink document size
+// TODO: replace entities with single unicode character where possible in order
+// to shrink document size?
+// TODO: fix things like <b><table></table></b>,
+// see https://html.spec.whatwg.org/multipage/parsing.html mentions of
+// adoption algorithm and its errata notes
+
+// TODO: make this into its own library, with a single global. Probably best
+// to use an object namespace so that individual functions are exposed
+// TODO: probably simplify the name, just name it scrubby or something
+// or maybe use different libraries, one for disabling script and similar
+// security issues, one for shrinking, one for validation
+
+
 // Module for sanitizing the contents of a document
 const jrDomScrubBlacklist = [
   'applet', 'audio', 'base', 'basefont', 'bgsound', 'button', 'command',
