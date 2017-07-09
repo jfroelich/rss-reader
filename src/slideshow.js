@@ -142,7 +142,7 @@ function createArticleTitle(entryObject) {
     titleElement.setAttribute('title', entryObject.title);
     let titleText = entryObject.title;
     titleText = filterArticleTitle(titleText);
-    titleText = utils.truncateHTML(titleText, 300);
+    titleText = truncateHTML(titleText, 300);
     titleElement.innerHTML = titleText;
   } else {
     titleElement.setAttribute('title', 'Untitled');

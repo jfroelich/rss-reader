@@ -18,10 +18,12 @@
       "/lib/parse-feed/parse-feed.js",
       "/lib/parse-srcset/parse-srcset.js",
       "/lib/replace-html/replace-html.js",
+      "/lib/resolve-document-urls/resolve-document-urls.js",
+      "/lib/set-image-dimensions/set-image-dimensions.js",
       "/lib/sizeof/sizeof.js",
+      "/lib/truncate-html/truncate-html.js",
       "/src/alarms.js",
       "/src/cli.js",
-      "/src/imagedims.js",
       "/src/domscrub.js",
       "/src/entry.js",
       "/src/db.js",
@@ -31,7 +33,6 @@
       "/src/fetch.js",
       "/src/operations.js",
       "/src/poll.js",
-      "/src/resolve-document.js",
       "/src/template-filter.js",
       "/src/utils.js"
     ]

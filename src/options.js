@@ -213,7 +213,7 @@ optpg.appendFeed = function(feedObject, maintainOrder) {
 
   const titleElement = document.createElement('span');
   let feedTitleString = feedObject.title || 'Untitled';
-  feedTitleString = utils.truncateHTML(feedTitleString, 300);
+  feedTitleString = truncateHTML(feedTitleString, 300);
   titleElement.textContent = feedTitleString;
   itemElement.appendChild(titleElement);
   const feedListElement = document.getElementById('feedlist');
@@ -506,7 +506,7 @@ optpg.subscribeFormOnSubmit = async function(event) {
     if(title) {
       title = utils.filterControlCharacters(title);
       title = replaceHTML(title, '');
-      title = utils.truncateHTML(title, entryTitleMaxLength);
+      title = truncateHTML(title, entryTitleMaxLength);
       entryObject.title = title;
     }
   });
@@ -520,7 +520,7 @@ optpg.subscribeFormOnSubmit = async function(event) {
     if(snippet) {
       snippet = utils.filterControlCharacters(snippet);
       snippet = snippet.replace(/<br\s*>/gi, ' ');
-      snippet = utils.truncateHTML(
+      snippet = truncateHTML(
         snippet, entrySnippetMaxLength, replacement);
       entryObject.contentSnippet = snippet;
     }

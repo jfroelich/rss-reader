@@ -467,11 +467,11 @@ async function jrProcessEntry(logObject, feedObject, entryObject) {
 
   const baseURLString = entry.getURLString(entryObject);
   const baseURLObject = new URL(baseURLString);
-  jrResolveDocument(documentObject, resolveBaseURLObject);
+  resolveDocumentURLs(documentObject, resolveBaseURLObject);
 
   jrPollFilterTrackingImages(documentObject, jrPollTrackingHosts);
 
-  await jrImageDimsTransformDocument(documentObject,
+  await setImageDimensions(documentObject,
     jrPollFetchImageTimeoutMillis);
 
   const prepURLString = entry.getURLString(entryObject);

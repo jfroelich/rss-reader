@@ -2,6 +2,12 @@
 
 'use strict';
 
+// TODO: break up into invidiual libs, remove all coupling, remove all
+// knowledge of formatting, like fetchFeed just cares about fetching a
+// feed it does not know how it will be used or stored
+
+// It is perfectly fine to have repetitive code here for these fetching fns
+
 async function fetchFeed(urlString, timeoutMillis) {
 
   // For validating the response mime type
@@ -78,9 +84,24 @@ async function fetchFeed(urlString, timeoutMillis) {
   feed.addURLString(feedObject, urlString);
   feed.addURLString(feedObject, responseObject.url);
   feedObject.dateFetched = new Date();
-  feedObject.dateLastModified =
-    jrFetchGetResponseLastModifiedDate(responseObject);
+  feedObject.dateLastModified = getLastModified(responseObject);
   return {'feed': feedObject, 'entries': entries};
+
+
+  function getLastModified(responseObject) {
+    const lastModifiedString = responseObject.headers.get('Last-Modified');
+    if(!lastModifiedString) {
+      return;
+    }
+
+    let lastModifiedDate;
+    try {
+      lastModifiedDate = new Date(lastModifiedString);
+    } catch(error) {
+    }
+    return lastModifedDate;
+  }
+
 }
 
 async function jrFetchHTML(urlString, timeoutMillis) {
@@ -163,7 +184,7 @@ async function jrFetch(urlString, fetchOptionsObject, typeArray,
   // content type is one of the allowed content types, and throw an exception
   // if not valid
   if(typeArray) {
-    const typeString = jrFetchGetResponseMimeType(responseObject);
+    const typeString = getMimeType(responseObject);
     if(!typeArray.includes(typeString)) {
       throw new Error(
         `Unacceptable content type ${type} ${responseObject.url}`);
@@ -171,43 +192,29 @@ async function jrFetch(urlString, fetchOptionsObject, typeArray,
   }
 
   return responseObject;
-}
 
-function jrFetchWithTimeout(urlString, timeoutMillis) {
-  return new Promise((resolve, reject) => {
-    const error = new Error(`Request timed out ${urlString}`);
-    setTimeout(reject, timeoutMillis, error);
-  });
-}
-
-function jrFetchGetResponseMimeType(responseObject) {
-  let typeString = responseObject.headers.get('Content-Type');
-  if(!typeString) {
-    return;
+  function jrFetchWithTimeout(urlString, timeoutMillis) {
+    return new Promise((resolve, reject) => {
+      const error = new Error(`Request timed out ${urlString}`);
+      setTimeout(reject, timeoutMillis, error);
+    });
   }
 
-  // Discard the semicolon and trailing text portion
-  const semicolonPosition = typeString.indexOf(';');
-  if(semicolonPosition !== -1) {
-    typeString = typeString.substring(0, semicolonPosition);
-  }
+  function getMimeType(responseObject) {
+    let typeString = responseObject.headers.get('Content-Type');
+    if(!typeString) {
+      return;
+    }
 
-  // Remove all whitespace
-  typeString = typeString.replace(/\s+/g, '');
-  typeString = typeString.toLowerCase();
-  return typeString;
-}
+    // Discard the semicolon and trailing text portion
+    const semicolonPosition = typeString.indexOf(';');
+    if(semicolonPosition !== -1) {
+      typeString = typeString.substring(0, semicolonPosition);
+    }
 
-function jrFetchGetResponseLastModifiedDate(responseObject) {
-  const lastModifiedString = responseObject.headers.get('Last-Modified');
-  if(!lastModifiedString) {
-    return;
+    // Remove all whitespace
+    typeString = typeString.replace(/\s+/g, '');
+    typeString = typeString.toLowerCase();
+    return typeString;
   }
-
-  let lastModifiedDate;
-  try {
-    lastModifiedDate = new Date(lastModifiedString);
-  } catch(error) {
-  }
-  return lastModifedDate;
 }

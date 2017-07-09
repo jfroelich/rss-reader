@@ -50,7 +50,7 @@ entry.sanitize = function(inputEntryObject) {
     author = utils.filterControlCharacters(author);
     author = replaceHTML(author, '');
     author = utils.condenseWhitespace(author);
-    author = utils.truncateHTML(author, authorMaxLength);
+    author = truncateHTML(author, authorMaxLength);
     outputEntry.author = author;
   }
 
@@ -58,7 +58,7 @@ entry.sanitize = function(inputEntryObject) {
   // TODO: filter out non-printable characters other than \r\n\t
   if(outputEntry.content) {
     let content = outputEntry.content;
-    content = utils.truncateHTML(content, contentMaxLength);
+    content = truncateHTML(content, contentMaxLength);
     outputEntry.content = content;
   }
 
@@ -67,7 +67,7 @@ entry.sanitize = function(inputEntryObject) {
     title = utils.filterControlCharacters(title);
     title = replaceHTML(title, '');
     title = utils.condenseWhitespace(title);
-    title = utils.truncateHTML(title, titleMaxLength);
+    title = truncateHTML(title, titleMaxLength);
     outputEntry.title = title;
   }
 

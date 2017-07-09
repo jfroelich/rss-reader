@@ -54,7 +54,7 @@ feed.sanitize = function(inputFeedObject) {
     title = replaceHTML(title, '');
     title = title.replace(/\s+/, ' ');
     const titleMaxLength = 1024;
-    title = utils.truncateHTML(title, titleMaxLength, '');
+    title = truncateHTML(title, titleMaxLength, '');
     outputFeedObject.title = title;
   }
 
@@ -65,7 +65,7 @@ feed.sanitize = function(inputFeedObject) {
     description = description.replace(/\s+/, ' ');
     const beforeLength = description.length;
     const descriptionMaxLength = 1024 * 10;
-    description = utils.truncateHTML(description, descriptionMaxLength, '');
+    description = truncateHTML(description, descriptionMaxLength, '');
 
     if(beforeLength > description.length) {
       // console.warn('Truncated description', description);
