@@ -2,6 +2,9 @@
 
 'use strict';
 
+// TODO: because there are no exports here other than one function this should
+// all be wrapped in a block, which means names can be simplified too
+
 // Functionality that deals with html images will look for these attributes
 // containing an alternate url when an image is missing a src
 const jrPollServiceLazyImageAttributes = [
@@ -431,7 +434,7 @@ async function jrProcessEntry(logObject, feedObject, entryObject) {
   let documentObject, responseURLString;
   try {
     // TODO: now that I renamed these variables, this will not work
-    ({documentObject, responseURLString} = await jrFetchHTML(
+    ({documentObject, responseURLString} = await fetchHTML(
       fetchURLString, jrPollFetchHTMLTimeoutMillis));
   } catch(error) {
     if(logObject) {
@@ -608,8 +611,8 @@ function jrPollPrepareLocalEntry(logObject, entryObject) {
 function jrPollPrepareDocument(urlString, documentObject) {
   jrTemplatePrune(urlString, documentObject);
   filterBoilerplate(documentObject);
-  jrDomScrubScrub(documentObject);
-  jrDOMScrubAddNoReferrer(documentObject);
+  scrubby.scrub(documentObject);
+  scrubby.addNoReferrer(documentObject);
 }
 
 // Scans the images in a document and modifies images that appear to be
